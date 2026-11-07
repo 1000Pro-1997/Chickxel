@@ -586,7 +586,7 @@ public class LayerEffectTests
     {
         var (p, g, left, _) = TwoParts();
         int li = p.IndexOf(left);
-        p.SetPartPivot(li, new Pivot(0.5f, 0f));
+        p.SetLayerPivot(li, new Pivot(0.5f, 0f));
         p.SetPartBorder(li, new SpriteBorder(1, 0, 0, 0));
         p.SetLayerEffects(p.IndexOf(g), [new OutlineEffect { Color = Black }]);
         p.SetLayerEffects(li, [new ShadowEffect { Color = Black, OffsetX = 1, OffsetY = 1 }]);

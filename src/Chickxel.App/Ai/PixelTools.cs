@@ -84,8 +84,12 @@ public sealed partial class PixelTools
             "layers [{index,name,kind (normal/group/part),parent (group layer index, parts only),visible,locked (also true for parts of a locked group; locked layers are never changed),opacity," +
             "partWidth,partHeight,partX,partY,skinOverride (parts only; skinOverride = skin this part wears instead of its group's, only when set)," +
             "collapsed,skins,activeSkin (groups only),effects (layer effect type ids in stack order, only when the layer has effects; see get_effects)," +
-            "links (linked cels: [{frames, color}] — frames that share one drawing, only when the layer has links; see link_cels)}] (bottom to top; a group's parts are the layers " +
-            "directly below it), tags, current {frame,layer}, editScope (only when the user limited this turn to the current file: change only this document, never open or create other files), " +
+            "links (linked cels: [{frames, color}] — frames that share one drawing, only when the layer has links; see link_cels)," +
+            "pivot {x,y} (the layer's own base pivot, 0..1, origin bottom-left; parts: part-local, other layers: canvas; used by its effects and, for parts, the part export), " +
+            "pivotPx {x,y} (that pivot in the current frame as canvas pixels, origin top-left), framePivots ([{from,to,x,y}] runs of frames with their own pivot, only when any)}] " +
+            "(bottom to top; a group's parts are the layers directly below it), canvasPivot {pivot (the canvas's own base pivot), framePivots, representative ({layer,name} " +
+            "whose pivot is the canvas pivot, or null), effective {x,y,frame,px} (the export pivot of the current frame)}, " +
+            "tags, current {frame,layer}, editScope (only when the user limited this turn to the current file: change only this document, never open or create other files), " +
             "primary/secondary color, palette, dirty flag, selection bounds, current folder. " +
             "Call this first. Works without an open project.",
             new JsonObject()),
@@ -237,14 +241,15 @@ public sealed partial class PixelTools
             "Add an empty normal layer on top of all layers; it becomes the current layer. Returns its index.",
             new JsonObject { ["name"] = Str("Layer name (default: automatic).") }),
         Tool("set_layer",
-            "Change a layer's name, visibility and/or opacity.",
-            new JsonObject
+            "Change a layer's name, visibility, opacity and/or pivot (any layer kind). pivot_x/pivot_y set the base pivot (frames without their own pivot), " +
+            "or with pivot_from_frame the pivot from that frame on. The export (canvas) pivot is set with set_canvas_pivot. One undo step.",
+            WithLayerPivotProps(new JsonObject
             {
                 ["layer"] = Int("Layer index (0 = bottom).", 0),
                 ["name"] = Str("New name."),
                 ["visible"] = Bool("Show or hide the layer."),
                 ["opacity"] = Int("Opacity 0-255.", 0, 255),
-            },
+            }),
             "layer"),
         Tool("set_current",
             "Select the current frame and/or layer shown to the user in the editor.",
@@ -285,9 +290,9 @@ public sealed partial class PixelTools
             },
             "name", "width", "height"),
         Tool("set_part",
-            "Change a part layer: its position (x, y inside the frame canvas, shared by all frames), its size (width/height; " +
-            "every frame's drawing stays attached to `anchor` and the position is adjusted so pixels stay where they are on the canvas), " +
-            "and/or its Unity pivot (0..1, origin bottom-left). A part of a group with auto layout (get_document `autoLayout`) " +
+            "Change a part layer: its position (x, y inside the frame canvas, shared by all frames) and/or its size (width/height; " +
+            "every frame's drawing stays attached to `anchor` and the position is adjusted so pixels stay where they are on the canvas). " +
+            "Set its pivot with set_layer. A part of a group with auto layout (get_document `autoLayout`) " +
             "cannot be moved with x/y (error) — its position is computed automatically; resizing re-arranges the group. " +
             UiStrings.S_PixelTools_ListTools_72B03826BE,
             new JsonObject
@@ -299,8 +304,6 @@ public sealed partial class PixelTools
                 ["height"] = Int("New part height.", 1, PixelImage.MaxSize),
                 ["anchor"] = Enum("Where the existing drawing is kept when resizing (default center).",
                     "top-left", "top", "top-right", "left", "center", "right", "bottom-left", "bottom", "bottom-right"),
-                ["pivot_x"] = new JsonObject { ["type"] = "number", ["minimum"] = 0, ["maximum"] = 1, ["description"] = "Pivot x (0 = left, 1 = right)." },
-                ["pivot_y"] = new JsonObject { ["type"] = "number", ["minimum"] = 0, ["maximum"] = 1, ["description"] = "Pivot y (0 = bottom, 1 = top)." },
             },
             "layer"),
         Tool("list_skins",
@@ -430,7 +433,8 @@ public sealed partial class PixelTools
         .. EffectToolDefinitions(),
         .. EffectMakerToolDefinitions(),
         .. ReferenceToolDefinitions(),
-        .. GenerateToolDefinitions()]);
+        .. GenerateToolDefinitions(),
+        .. PivotToolDefinitions()]);
 
     private static JsonObject Tool(string name, string description, JsonObject properties, params string[] required)
     {
@@ -548,6 +552,7 @@ public sealed partial class PixelTools
                 "list_script_effects" => ListScriptEffects(),
                 "get_script_effect_source" => GetScriptEffectSource(a),
                 "resize_canvas" => ResizeCanvas(name, a),
+                "set_canvas_pivot" => SetCanvasPivot(name, a),
                 "set_palette" => SetPalette(name, a),
                 "set_colors" => SetColors(name, a),
                 "new_project" => NewProject(name, a),
@@ -641,9 +646,11 @@ public sealed partial class PixelTools
                 }
                 if (l.Effects.Count > 0) o["effects"] = Strings(l.Effects.Select(EffectRegistry.TypeIdOf).ToArray());
                 if (LinksJson(p, i) is { } links) o["links"] = links;
+                AddLayerPivotJson(o, p, l, ctx.CurrentFrame);
                 layers.Add(o);
             }
             doc["layers"] = layers;
+            doc["canvasPivot"] = CanvasPivotJson(p, ctx.CurrentFrame);
             var tags = new JsonArray();
             foreach (var t in p.Tags)
             {
@@ -992,22 +999,33 @@ public sealed partial class PixelTools
         bool? visible = OptBool(a, "visible");
         int? opacity = OptInt(a, "opacity", 0, 255);
         if (string.IsNullOrWhiteSpace(name)) name = null;
-        if (name is null && visible is null && opacity is null)
+        var pivotArgs = ReadPivotArgs(a, p.Frames.Count);
+        if (name is null && visible is null && opacity is null && pivotArgs is null)
             throw new ToolError(UiStrings.S_PixelTools_SetLayer_F617978E39);
         var layer = p.Layers[index];
-        if ((name is null || name.Trim() == layer.Name) && (visible is null || visible == layer.Visible)
-            && (opacity is null || opacity == layer.Opacity))
+        bool properties = !((name is null || name.Trim() == layer.Name) && (visible is null || visible == layer.Visible)
+                            && (opacity is null || opacity == layer.Opacity));
+        var pivotEdit = pivotArgs is { } pa ? LayerPivotEdit(p, index, pa) : null;
+        int frame = pivotArgs?.From ?? Ctx.CurrentFrame;
+        if (!properties && pivotEdit is null)
         {
             Ctx.SetCurrentLayer(index);
-            return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetLayer_A108A37060,tool,index,layer.Name));
+            return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetLayer_A108A37060,tool,index,layer.Name)
+                              + (pivotArgs is null ? "" : "; " + LayerPivotText(p, layer, frame)));
         }
         RequireUnlocked(p, index);
         // 숨긴 부위를 빼고 배치하는 그룹이면 보이기를 바꾸면 다른 부위가 옮겨진다.
         if (visible is { } shown && shown != layer.Visible && layer.IsPart && layer.Parent is { AutoLayout.IncludeHidden: false } layoutGroup)
             RequireLayoutKeepsLocked(p, layoutGroup);
-        p.Edit(Label(tool), ProjectChange.Layers, () => p.SetLayerProperties(index, name, visible, null, (byte?)opacity));
-        Ctx.SetCurrentLayer(index);
-        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetLayer_6917D3B1D2,tool,index,layer.Name,(layer.Visible ? UiStrings.S_PixelTools_SetLayer_E13C63FCCD : UiStrings.S_PixelTools_SetLayer_2CB582875D),layer.Opacity));
+        p.Edit(Label(tool), ProjectChange.Layers | (pivotEdit is null ? ProjectChange.None : ProjectChange.Frames), () =>
+        {
+            if (properties) p.SetLayerProperties(index, name, visible, null, (byte?)opacity);
+            pivotEdit?.Invoke();
+        });
+        if (pivotArgs?.From is { } from) Ctx.SetCurrent(index, from);
+        else Ctx.SetCurrentLayer(index);
+        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetLayer_6917D3B1D2,tool,index,layer.Name,(layer.Visible ? UiStrings.S_PixelTools_SetLayer_E13C63FCCD : UiStrings.S_PixelTools_SetLayer_2CB582875D),layer.Opacity)
+                          + (pivotArgs is null ? "" : "; " + LayerPivotText(p, layer, frame)));
     }
 
     private JsonObject SetCurrent(string tool, JsonObject? a)
@@ -1097,8 +1115,7 @@ public sealed partial class PixelTools
         int? x = OptInt(a, "x", -CoordLimit, CoordLimit), y = OptInt(a, "y", -CoordLimit, CoordLimit);
         int? width = OptInt(a, "width", 1, PixelImage.MaxSize), height = OptInt(a, "height", 1, PixelImage.MaxSize);
         var anchor = ParseAnchor(a);
-        double? pivotX = OptUnit(a, "pivot_x"), pivotY = OptUnit(a, "pivot_y");
-        if (x is null && y is null && width is null && height is null && pivotX is null && pivotY is null)
+        if (x is null && y is null && width is null && height is null)
             throw new ToolError(UiStrings.S_PixelTools_SetPart_DC2B0B514A);
 
         if ((x is not null || y is not null) && part.IsAutoLaidOut)
@@ -1119,16 +1136,10 @@ public sealed partial class PixelTools
                 var target = new Point(x ?? o.X, y ?? o.Y);
                 if (target != o) p.SetPartOffset(index, target);
             }
-            if (pivotX is not null || pivotY is not null)
-            {
-                var cur = part.PartPivot; // 크기를 바꿨으면 조정된 피벗 기준
-                var pivot = new Pivot((float)(pivotX ?? cur.X), (float)(pivotY ?? cur.Y));
-                if (pivot != cur) p.SetPartPivot(index, pivot);
-            }
         });
         Ctx.SetCurrentLayer(index);
         var r = part.PartRect;
-        return TextResult($"{tool}: part {index} \"{part.Name}\" {r.Width}x{r.Height} @({r.X},{r.Y}), pivot ({part.PartPivot.X:0.###},{part.PartPivot.Y:0.###})");
+        return TextResult($"{tool}: part {index} \"{part.Name}\" {r.Width}x{r.Height} @({r.X},{r.Y}), pivot ({part.Pivot.X:0.###},{part.Pivot.Y:0.###})");
     }
 
     // ───────────── 스킨(그룹 = 스킨 슬롯) ─────────────

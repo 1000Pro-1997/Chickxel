@@ -49,7 +49,7 @@ public class AiDrawTests
     {
         var s = new AiDrawSettings { SizeTarget = 48 };
         Assert.False(s.ResizeResult);
-        // 끔: 채팅 크기는 프롬프트 힌트만, 변환은 자동(0). 설정 크기는 쓰지 않음.
+        // 끔: 채팅 크기는 프롬프트 힌트만, 변환은 대표 프리셋 크기(0). 설정 크기는 쓰지 않음.
         Assert.Equal((64, 0), s.SizesFor(64));
         Assert.Equal((0, 0), s.SizesFor(null));
         Assert.Equal((AiDrawSettings.MaxSize, 0), s.SizesFor(999));
@@ -59,6 +59,27 @@ public class AiDrawTests
         Assert.Equal((48, 48), s.SizesFor(null));
         s.SizeTarget = 0;
         Assert.Equal((AiDrawSettings.DefaultSize, AiDrawSettings.DefaultSize), s.SizesFor(null));
+    }
+
+    [Fact]
+    public void Draw_options_override_preset_only_when_turned_on()
+    {
+        var preset = new PixelateSettings { Background = new BackgroundSettings { Mode = BackgroundMode.None } };
+        // 둘 다 끔(기본): 대표 프리셋 그대로.
+        Assert.False(new AiDrawSettings().ForceRemoveBackground);
+        Assert.Same(preset, AiDrawConversion.WithDrawOptions(preset, 0, removeBackground: false));
+        var both = AiDrawConversion.WithDrawOptions(preset, 48, removeBackground: true);
+        Assert.Equal(BackgroundMode.Auto, both.Background.Mode);
+        Assert.Equal((OutputSizeMode.FixedSize, 48, 48, true), (both.Size.Mode, both.Size.Width, both.Size.Height, both.Size.KeepAspect));
+        Assert.Equal(preset with { Background = both.Background, Size = both.Size }, both);
+    }
+
+    [Fact]
+    public void Old_remove_background_value_is_not_read()
+    {
+        // 예전 기본 켬이던 RemoveBackground 값은 새 배경 지우기(기본 끔)로 옮기지 않는다.
+        var s = System.Text.Json.JsonSerializer.Deserialize<AiDrawSettings>("{\"RemoveBackground\":true}")!;
+        Assert.False(s.ForceRemoveBackground);
     }
 
     // ───────────── 프레임 계획 ─────────────
@@ -199,24 +220,18 @@ public class AiDrawTests
     }
 
     [Fact]
-    public void Conversion_settings_split_frames_share_palette_and_fix_size()
+    public void Combine_keeps_full_size_and_shrinks_only_past_image_limit()
     {
-        var s = AiDrawConversion.Settings(new PixelateSettings(), 4, 48, removeBackground: true, keepOffsets: false);
-        Assert.Equal(FrameSplitMode.Grid, s.Frames.Mode);
-        Assert.Equal(4, s.Frames.Columns);
-        Assert.Equal(1, s.Frames.Rows);
-        Assert.Equal(FrameAlign.BottomCenter, s.Frames.Align);
-        Assert.True(s.Palette.Shared);
-        Assert.Equal(BackgroundMode.Auto, s.Background.Mode);
-        Assert.Equal(OutputSizeMode.FixedSize, s.Size.Mode);
-        Assert.Equal(48, s.Size.Width);
-        Assert.Equal(OutlineFit.Shrink, s.Cleanup.OutlineFit);
+        var big = new PixelImage(1024, 1024);
+        var full = AiDrawConversion.Combine([big, big, big, big]);
+        Assert.Equal((4096, 1024), (full.Width, full.Height));
 
-        var one = AiDrawConversion.Settings(new PixelateSettings(), 1, 0, removeBackground: false, keepOffsets: true);
-        Assert.Equal(FrameSplitMode.Single, one.Frames.Mode);
-        Assert.Equal(BackgroundMode.None, one.Background.Mode);
-        Assert.Equal(OutputSizeMode.FromScale, one.Size.Mode);
-        Assert.Equal(FrameAlign.KeepOffsets, AiDrawConversion.Settings(new PixelateSettings(), 3, 0, true, keepOffsets: true).Frames.Align);
+        // 2000px 프레임 9장 = 18000px 띠 > PixelImage.MaxSize: 모든 프레임을 같은 정수 배(×½)로 줄인다.
+        var wide = new PixelImage(2000, 2);
+        wide.Pixels.AsSpan().Fill(Red);
+        var strip = AiDrawConversion.Combine(Enumerable.Repeat(wide, 9).ToList());
+        Assert.Equal((9000, 1), (strip.Width, strip.Height));
+        Assert.Equal(Red, strip.Get(8999, 0));
     }
 
     /// <summary>16×16 원 스프라이트(빨강 + 1px 어두운 외곽선, 흰 바탕)를 <paramref name="scale"/>배로 키운 그림 — 생성 그림 흉내.</summary>
@@ -236,19 +251,41 @@ public class AiDrawTests
     }
 
     [Fact]
-    public void Conversion_runs_frames_together_with_one_grid()
+    public void Conversion_keeps_preset_values_and_splits_by_generated_frame_count()
     {
         var strip = AiDrawConversion.Combine([Generated(8, 0), Generated(8, 1)]);
-        var settings = AiDrawConversion.Settings(new PixelateSettings(), 2, 0, removeBackground: true, keepOffsets: false);
-        var (result, used) = AiDrawConversion.Run(strip, settings, optimize: false, new PixelateOptimizeOptions());
+        // 대표 프리셋이 다른 그림용 격자(2×3)로 저장돼 있어도 프레임은 생성한 수(2)대로, 나머지 값은 프리셋 그대로.
+        var preset = new PixelateSettings
+        {
+            Frames = new FrameSettings { Mode = FrameSplitMode.Grid, Columns = 2, Rows = 3, Align = FrameAlign.Center },
+            Palette = new PaletteSettings { Shared = false },
+        };
+        var (result, used) = AiDrawConversion.Run(strip, preset, 2, new AiDrawSheetLayout(2, 1), optimize: false, new PixelateOptimizeOptions());
         var frames = result.CommonFrames();
         Assert.Equal(2, frames.Count);
         Assert.Equal(frames[0].Size, frames[1].Size);
         Assert.InRange(frames[0].Width, 14, 22);
-        Assert.Equal(settings, used);
-        // 배경은 지워지고 스프라이트 색이 남는다.
+        Assert.Equal((FrameSplitMode.Auto, 2, FrameAlign.Center), (used.Frames.Mode, used.Frames.ExpectedFrames, used.Frames.Align));
+        Assert.Equal(preset with { Frames = used.Frames }, used);
+        // 배경은 프리셋의 자동 지우기로 지워지고 스프라이트 색이 남는다.
         Assert.Equal(0, frames[0].Get(0, 0).A);
         Assert.Contains(frames[0].Pixels, p => p.A == 255 && p.R > 150 && p.G < 100);
+
+        // 한 장이면 프리셋이 격자여도 나누지 않는다.
+        var (single, singleUsed) = AiDrawConversion.Run(Generated(8, 0), preset, 1, new AiDrawSheetLayout(1, 1), optimize: false, new PixelateOptimizeOptions());
+        Assert.Equal(FrameSplitMode.Single, singleUsed.Frames.Mode);
+        Assert.Single(single.CommonFrames());
+    }
+
+    [Fact]
+    public void Conversion_falls_back_to_layout_grid_when_frames_touch()
+    {
+        var sheet = AiDrawConversion.Combine([Generated(4, 0), Generated(4, 0), Generated(4, 0), Generated(4, 0)]);
+        // 모든 프레임을 잇는 바닥 띠: 빈 열이 없어 자동 나누기는 한 덩어리로 본다.
+        sheet.FillRect(new System.Drawing.Rectangle(0, 20 * 4, sheet.Width, 8), Dark);
+        var (result, used) = AiDrawConversion.Run(sheet, new PixelateSettings(), 4, AiDrawSheetLayout.For(4), optimize: false, new PixelateOptimizeOptions());
+        Assert.Equal((FrameSplitMode.Grid, 4, 1), (used.Frames.Mode, used.Frames.Columns, used.Frames.Rows));
+        Assert.Equal(4, result.CommonFrames().Count);
     }
 
     [Fact]
@@ -257,7 +294,7 @@ public class AiDrawTests
         var blank = new PixelImage(40, 40);
         blank.Clear(White);
         Assert.Throws<InvalidOperationException>(() =>
-            AiDrawConversion.Run(blank, AiDrawConversion.Settings(new PixelateSettings(), 1, 0, true, false), false, new PixelateOptimizeOptions()));
+            AiDrawConversion.Run(blank, new PixelateSettings(), 1, new AiDrawSheetLayout(1, 1), false, new PixelateOptimizeOptions()));
     }
 
     [Fact]
@@ -272,9 +309,7 @@ public class AiDrawTests
         Assert.Equal(2, decoded.Images.Count);
         Assert.Equal(new[] { 120, 120 }, decoded.DurationsMs);
         var source = AiDrawConversion.Combine(decoded.Images);
-        var settings = AiDrawConversion.Settings(new PixelateSettings(), 2, 0, removeBackground: true, keepOffsets: true);
-        var (result, _) = AiDrawConversion.Convert(source, settings, 2, sheet: false, keepOffsets: true,
-            optimize: false, new PixelateOptimizeOptions());
+        var (result, _) = AiDrawConversion.Run(source, new PixelateSettings(), 2, new AiDrawSheetLayout(2, 1), optimize: false, new PixelateOptimizeOptions());
         var frames = result.CommonFrames();
         Assert.False(result.Failed);
         Assert.Equal(2, frames.Count);
@@ -307,52 +342,6 @@ public class AiDrawTests
     public void Sheet_layout_uses_one_row_up_to_six_then_two_rows(int frames, int columns, int rows)
         => Assert.Equal(new AiDrawSheetLayout(columns, rows), AiDrawSheetLayout.For(frames));
 
-    [Fact]
-    public void Sheet_split_keeps_auto_when_frame_count_matches()
-    {
-        var sheet = AiDrawConversion.Combine([Generated(4, 0), Generated(4, 1), Generated(4, 0), Generated(4, 1)]);
-        var settings = AiDrawConversion.Settings(new PixelateSettings(), 4, 0, removeBackground: true, keepOffsets: false);
-        var (src, used) = AiDrawConversion.PrepareSheet(sheet, settings, 4, AiDrawSheetLayout.For(4), keepOffsets: false);
-        Assert.Equal(FrameSplitMode.Auto, used.Frames.Mode);
-        Assert.Equal(FrameAlign.BottomCenter, used.Frames.Align);
-        Assert.Equal(4, src.Split.Frames.Count);
-        var (result, _) = AiDrawConversion.Run(src, used, optimize: false, new PixelateOptimizeOptions());
-        var frames = result.CommonFrames();
-        Assert.Equal(4, frames.Count);
-        Assert.All(frames, f => Assert.Equal(frames[0].Size, f.Size));
-    }
-
-    [Fact]
-    public void Sheet_split_falls_back_to_grid_when_frames_touch()
-    {
-        var sheet = AiDrawConversion.Combine([Generated(4, 0), Generated(4, 0), Generated(4, 0), Generated(4, 0)]);
-        // 모든 프레임을 잇는 바닥 띠: 빈 열이 없어 자동 나누기는 한 덩어리로 본다.
-        sheet.FillRect(new System.Drawing.Rectangle(0, 20 * 4, sheet.Width, 8), Dark);
-        var settings = AiDrawConversion.Settings(new PixelateSettings(), 4, 0, removeBackground: true, keepOffsets: true);
-        var (src, used) = AiDrawConversion.PrepareSheet(sheet, settings, 4, AiDrawSheetLayout.For(4), keepOffsets: true);
-        Assert.Equal(FrameSplitMode.Grid, used.Frames.Mode);
-        Assert.Equal(4, used.Frames.Columns);
-        Assert.Equal(1, used.Frames.Rows);
-        Assert.Equal(FrameAlign.KeepOffsets, used.Frames.Align);
-        Assert.Equal(4, src.Split.Frames.Count);
-    }
-
-    [Fact]
-    public void Sheet_split_uses_two_row_grid_from_layout()
-    {
-        var row = AiDrawConversion.Combine([Generated(2, 0), Generated(2, 0), Generated(2, 0), Generated(2, 0)]);
-        var sheet = new PixelImage(row.Width, row.Height * 2);
-        sheet.Blit(row, 0, 0);
-        sheet.Blit(row, 0, row.Height);
-        sheet.FillRect(new System.Drawing.Rectangle(0, 20 * 2, sheet.Width, 4), Dark);
-        sheet.FillRect(new System.Drawing.Rectangle(0, row.Height + 20 * 2, sheet.Width, 4), Dark);
-        var settings = AiDrawConversion.Settings(new PixelateSettings(), 7, 0, true, false);
-        var (_, used) = AiDrawConversion.PrepareSheet(sheet, settings, 7, AiDrawSheetLayout.For(7), keepOffsets: false);
-        Assert.Equal(FrameSplitMode.Grid, used.Frames.Mode);
-        Assert.Equal(4, used.Frames.Columns);
-        Assert.Equal(2, used.Frames.Rows);
-    }
-
     // ───────────── 생성 기록 ─────────────
 
     [Fact]
@@ -361,7 +350,7 @@ public class AiDrawTests
         using var dir = new TempDir();
         var store = new AiDrawJobStore(dir.Path);
         var source = Generated(2, 0);
-        var settings = AiDrawConversion.Settings(new PixelateSettings(), 3, 32, true, false);
+        var settings = new PixelateSettings { Frames = new FrameSettings { Mode = FrameSplitMode.Grid, Columns = 3 } };
         string first = store.Create();
         Assert.False(store.Exists(first));
         store.Save(new AiDrawJob { Id = first, Name = "knight", Frames = 3, Action = "walk", Settings = PixelatePresets.SerializeSettings(settings, false) }, source);

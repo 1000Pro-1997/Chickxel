@@ -299,8 +299,9 @@ internal static class EffectMakerShots
         ShotKit.Call(maker, "RebuildList");
         k.Settle(800);
         var items = list.Items.OfType<ListBoxItem>().ToList();
-        var published = items.Where(i => i.Tag is string).SelectMany(i => ShotKit.All<TextBlock>(i))
-            .Where(t => t.Text == UiStrings.EffectMaker_Uploaded || t.Text == UiStrings.EffectMaker_UploadedModified).Cast<Control>().ToArray();
+        // 올린 내 효과: 이름 옆 작성자 묶음(프로필 사진·이름, 작성자가 없으면 "올린 효과" 글)
+        var published = items.Where(i => i.Tag is string && i.Content is StackPanel { Children: [StackPanel, _] })
+            .Select(i => ((StackPanel)i.Content!).Children[1]).ToArray();
         var remote = items.Single(i => i.Tag is RemoteCatalogEntry);
         var left = Union(maker, header, newRow, remote);
         // 이 컴퓨터에 없는 올린 효과 줄: 테두리를 이름·바로 위 줄 글자보다 오른쪽부터 둔다(번호 동그라미가 위 줄의 아이콘·글자를 가리지 않게)
@@ -388,9 +389,9 @@ internal static class EffectMakerShots
     private static void WaitPreview(ShotKit k, Window maker)
     {
         k.Settle(400);
-        var debounce = ShotKit.Get<DispatcherTimer>(maker, "_debounce");
+        var debounce = ShotKit.Get<UiDebouncer>(maker, "_debounce");
         var sw = Stopwatch.StartNew();
-        while (sw.ElapsedMilliseconds < 20000 && (debounce.IsEnabled || ShotKit.Get<bool>(maker, "_statusBusy"))) k.Settle(50);
+        while (sw.ElapsedMilliseconds < 20000 && (debounce.IsPending || ShotKit.Get<bool>(maker, "_statusBusy"))) k.Settle(50);
         k.Settle(400);
     }
 

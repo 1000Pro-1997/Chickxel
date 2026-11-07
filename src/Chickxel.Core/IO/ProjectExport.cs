@@ -461,7 +461,7 @@ public static class ProjectExport
         var effects = project.EffectsAt(part, frameIndex, skin ?? part.Parent?.SkinList.FirstOrDefault());
         var (image, dx, dy) = LayerEffects.Render(cel, effects, pad);
         // 그 프레임만의 피벗이 있으면 그것(Unity 스프라이트마다 피벗)
-        var partPivot = project.GetPartPivot(part, frameIndex);
+        var partPivot = project.GetLayerPivot(part, frameIndex);
         if (ReferenceEquals(image, cel)) return (cel, partPivot, part.PartBorder);
         int left = -dx, top = -dy, right = image.Width - cel.Width - left, bottom = image.Height - cel.Height - top;
         var (px, py) = partPivot.ToLocalPixel(cel.Width, cel.Height);

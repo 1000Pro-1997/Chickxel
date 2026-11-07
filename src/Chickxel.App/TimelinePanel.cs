@@ -22,7 +22,7 @@ namespace Chickxel.App;
 /// 부위는 "이 부위 스킨"에서 부위만 따로 입힐 스킨을 고른다.
 /// </para>
 /// </summary>
-public sealed class TimelinePanel : UserControl
+public sealed partial class TimelinePanel : UserControl
 {
     /// <summary>움직임 테스트와 연결되는 태그 이름 제안.</summary>
     public static readonly string[] SuggestedNames =
@@ -1380,8 +1380,7 @@ public sealed class TimelinePanel : UserControl
     private void AddFrameTail(List<Control> items, SpriteProject p, int frame)
     {
         items.Add(new Separator());
-        items.Add(Item(UiStrings.S_TimelinePanel_AddFrameTail_30B4C69887, () => _ctx.Structural(() => p.SetFramePivot(frame, null))));
-        items.Add(Item(UiStrings.S_TimelinePanel_AddFrameTail_8439D90B67, () => _ctx.Structural(() => p.SetFramePivot(frame, p.GetFramePivot(frame)))));
+        AddFramePivotItems(items, frame);
         items.Add(Item(UiStrings.S_TimelinePanel_AddFrameTail_3DE73C6921, () =>
         {
             var name = InputDialog.Ask(this, UiStrings.S_TimelinePanel_AddFrameTail_5171DB3A9B, UiStrings.S_TimelinePanel_AddFrameTail_E23FDB5695, p.Frames[frame].Name ?? "");
@@ -1539,6 +1538,8 @@ public sealed class TimelinePanel : UserControl
             });
         }
         items.Add(new Separator());
+        items.Add(PivotLayerItem(p, layer));
+        items.Add(new Separator());
         items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_AA2FF06061, AddLayer));
         items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_13B10F0946, AddGroup));
         if (!layer.IsGroup) items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_804EB6B1D9, AddPart));
@@ -1590,6 +1591,10 @@ public sealed class TimelinePanel : UserControl
         int selected = _grid.Kind == SelKind.Effects ? _grid.SelectedEffectList().Count : 1;
         items.Add(Item(selected > 1 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowEffectMenu_94213B6D1A,selected,DeleteKeyName) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowEffectMenu_0C9DDBBB24,DeleteKeyName), DeleteSelectedEffects));
         items.Add(BakeItem(p, layer, effectIndex));
+        items.Add(Item(UiStrings.EffectCanvas_Menu, () =>
+        {
+            if (EffectCanvasDialog.Run(this, _ctx, p.IndexOf(layer), effectIndex) is { } message) Say(message);
+        }));
         items.Add(new Separator());
         items.Add(Item(UiStrings.S_TimelinePanel_ShowEffectMenu_B155BA0146, () => CopySelection(false)));
         items.Add(Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowEffectMenu_44E405DEFB), () => PasteSelection(), _fxClip is { Count: > 0 }));
@@ -1722,7 +1727,7 @@ public sealed class TimelinePanel : UserControl
     /// 직접 그리는 격자. 가로/세로 스크롤 막대와 이름 고치기 상자를 자식으로 두고, 그 아래에 셀을 그린다.
     /// 행은 위 레이어부터이고, 접힌 그룹의 부위 행은 빠진다.
     /// </summary>
-    private sealed class TimelineGrid : Avalonia.Controls.Grid
+    private sealed partial class TimelineGrid : Avalonia.Controls.Grid
     {
         private const int TagH = 20, HeadH = 30;
         /// <summary>레이어 행(본줄) 높이: 썸네일을 보이면 <see cref="FullCellH"/>, 끄면(간단히 보기) 낮은 <see cref="CompactCellH"/>.</summary>
@@ -2993,23 +2998,6 @@ public sealed class TimelinePanel : UserControl
             VectorIcons.Draw(g, icon, r, 12, hovered ? AppTheme.TextBrush : AppTheme.DimTextBrush);
         }
 
-        /// <summary>왼쪽 위 모서리(프레임 머리글 줄)의 캔버스 크기 칩 자리(이름 칸이 좁으면 칩도 좁아져 경계선 띠와 겹치지 않음).</summary>
-        private Rect CanvasChipRect => new(4, TagH + 5, Math.Min(150, NameW - 4 - DividerGrab - 4), HeadH - 10);
-        private bool _canvasChipHover;
-
-        private bool IsCanvasChipAt(Avalonia.Point pos) => CanvasChipRect.Contains(pos);
-
-        /// <summary>캔버스 크기 칩: 아이콘 + "캔버스 W×H". 누르면 캔버스 크기 모드.</summary>
-        private void DrawCanvasChip(DrawingContext g, SpriteProject p)
-        {
-            var r = CanvasChipRect;
-            if (_canvasChipHover) g.FillRectangle(GhostHoverBrush, r, 3);
-            var ink = _canvasChipHover ? AppTheme.TextBrush : AppTheme.DimTextBrush;
-            VectorIcons.Draw(g, VectorIcon.Maximize2, new Rect(r.X + 3, r.Y, 14, r.Height), 11, ink);
-            Text(g, string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.Timeline_CanvasSize, p.Width, p.Height),
-                new Rect(r.X + 20, r.Y, r.Width - 22, r.Height), ink, small: true);
-        }
-
         /// <summary>배치의 행이 가리키는 레이어 번호(지워져 줄어드는 유령 행은 -1).</summary>
         private int LayerOf(SpriteProject p, Track.View row)
         {
@@ -3091,8 +3079,8 @@ public sealed class TimelinePanel : UserControl
                 else if (l == curLayer && f == cur) g.DrawRectangle(null, _kind == SelKind.Cels ? AccentPen : CurrentCelPen, r.Deflate(_kind == SelKind.Cels ? 1 : 0.5));
                 else g.DrawRectangle(null, BorderPen, r.Deflate(0.5));
                 if (LinkMarksOf(l) is var marks && (uint)f < (uint)marks.Length && marks[f].IsLinked) DrawLinkMark(r, x, marks, f);
-                // 부위가 이 프레임에 따로 둔 피벗·위치가 있으면 왼쪽 위에 피벗 표시(프레임 머리의 프레임 피벗 표시와 같은 모양)
-                if (p.Layers[l] is { IsPart: true } part && p.HasPartFrameOverride(part, f))
+                // 이 레이어가 이 프레임에 따로 둔 피벗(부위는 위치도)이 있으면 왼쪽 위에 피벗 표시(부위는 늘, 일반 레이어·그룹은 지금 레이어만)
+                if (CellPivotMark(p, l, f))
                 {
                     double size = _thumbnails ? 9 : 7;
                     VectorIcons.Draw(g, VectorIcon.Diamond, new Rect(r.X + 3, r.Y + 3, size + 1, size + 1), size, PivotBrush, filled: true);
@@ -3347,14 +3335,14 @@ public sealed class TimelinePanel : UserControl
                 {
                     Text(g, (f + 1).ToString(), new Rect(x, TagH, CellW, 16), numberInk, bold: true, center: true);
                     Text(g, p.Frames[f].DurationMs + "ms", new Rect(x, TagH + 15, CellW, 14), AppTheme.DimTextBrush, small: true, center: true);
-                    if (p.Frames[f].Pivot is not null)
+                    if (HeaderPivotMark(f))
                         VectorIcons.Draw(g, VectorIcon.Diamond, new Rect(x + CellW - 12, TagH + 2, 10, 10), 9, PivotBrush, filled: true);
                 }
                 else
                 {
                     // 간단히 보기(좁은 칸): 번호만(세 자리부터 작은 글씨), 길이는 빼고 피벗 표시는 번호 아래 가운데
                     Text(g, (f + 1).ToString(), new Rect(x, TagH + 3, CellW, 16), numberInk, small: f >= 99, bold: true, center: true);
-                    if (p.Frames[f].Pivot is not null)
+                    if (HeaderPivotMark(f))
                         VectorIcons.Draw(g, VectorIcon.Diamond, new Rect(x + CellW / 2.0 - 4, TagH + 19, 8, 8), 7, PivotBrush, filled: true);
                 }
                 if (f == _playing)
@@ -3497,6 +3485,12 @@ public sealed class TimelinePanel : UserControl
                     if (!layer.EffectsCollapsed && layer.Effects.Count > 0)
                         g.DrawRectangle(ChipAccentBrush, null, new Rect(fx.X + 1, y + (CellH - Math.Min(16, CellH - 6)) / 2, fx.W - 2, Math.Min(16, CellH - 6)), 3, 3);
                     Text(g, "fx", new Rect(fx.X, y, fx.W, CellH), layer.HasActiveEffects ? AppTheme.AccentBrush : AppTheme.DimTextBrush, small: true, bold: true, center: true);
+                }
+                if (ReferenceEquals(p.PivotLayer, layer))
+                {
+                    // 캔버스 피벗 대표 레이어: 이름 앞에 작은 왕관
+                    DrawCrown(g, nameX, y, CellH);
+                    nameX += CrownW;
                 }
                 var name = LayerTitle(layer);
                 Text(g, name, new Rect(nameX, y, Math.Max(1, right - nameX), CellH), shown ? AppTheme.TextBrush : AppTheme.DimTextBrush,
@@ -3692,7 +3686,12 @@ public sealed class TimelinePanel : UserControl
                 InvalidateVisual();
                 return;
             }
-            if (left && IsCanvasChipAt(pos)) { _owner.RequestCanvasSize(); return; }
+            if (left && CanvasChipAt(pos) is var chipPart and not ChipPart.None)
+            {
+                if (chipPart == ChipPart.Size) _owner.RequestCanvasSize();
+                else _owner.RequestCanvasPivot();
+                return;
+            }
             if (left && e.ClickCount == 1 && TagEdgeAt(pos) is { } edge)
             {
                 _tagEdit = edge.Tag;
@@ -3733,10 +3732,17 @@ public sealed class TimelinePanel : UserControl
             }
             if (pos.X < NameW && l >= 0)
             {
-                // 레이어 이름 열: 눈/자물쇠/접기/이름
+                // 레이어 이름 열: 눈/자물쇠/접기/이름. Alt+눈·자물쇠 = 이 레이어만 남기고 나머지 숨기기·잠그기(이미 그렇면 모두 보이기·풀기).
                 var nameLayer = p.Layers[l];
-                if (left && pos.X < 24) { Ctx.Structural(() => p.SetLayerProperties(l, visible: !nameLayer.Visible)); return; }
-                if (left && pos.X < ToggleX) { Ctx.Structural(() => p.SetLayerProperties(l, locked: !nameLayer.Locked)); return; }
+                bool alt = (e.KeyModifiers & KeyModifiers.Alt) != 0;
+                if (left && pos.X < ToggleX)
+                {
+                    bool lockColumn = pos.X >= 24;
+                    if (alt) Ctx.Structural(() => p.IsolateLayer(l, lockColumn));
+                    else if (lockColumn) Ctx.Structural(() => p.SetLayerProperties(l, locked: !nameLayer.Locked));
+                    else Ctx.Structural(() => p.SetLayerProperties(l, visible: !nameLayer.Visible));
+                    return;
+                }
                 if (left && nameLayer.IsGroup && pos.X < NameX) { _owner.ToggleCollapsed(l); return; }
                 if (left && LayoutBadge(nameLayer) is { W: > 0 } lb && pos.X >= lb.X && pos.X < lb.X + lb.W)
                 {
@@ -3784,6 +3790,7 @@ public sealed class TimelinePanel : UserControl
                 }
                 // 고른 이름을 누름 = 끌면 순서 바꾸기(떼면 그것 하나만 고름), 안 고른 이름 = 고르기 + 끌면 사각형으로 여러 레이어 고르기.
                 _pressContent = new Avalonia.Point(ContentX(pos.X), ContentY(pos.Y));
+                Ctx.SetPivotCanvasTarget(false);
                 Ctx.SetCurrentLayer(l);
                 if (_kind == SelKind.Layers && _selLayers.Contains(nameLayer))
                 {
@@ -4268,7 +4275,7 @@ public sealed class TimelinePanel : UserControl
         private void UpdateTip()
         {
             string? tip = _ghostDragShown ? null
-                : _canvasChipHover ? UiStrings.Timeline_CanvasSizeTip
+                : CanvasChipTip is { } chipTip ? chipTip
                 : _layoutBadgeHover is not null ? UiStrings.Timeline_LayoutBadgeTip
                 : _hover.Frame >= 0 ? (_hover.Header ? UiStrings.Timeline_AppendFrameTip : UiStrings.Timeline_AppendFrameCopyTip)
                 : _rowHover switch
@@ -4597,7 +4604,7 @@ public sealed class TimelinePanel : UserControl
         {
             (int, bool) hover = GhostColumnAt(pos) is { } header ? (Ctx.FrameCount, header) : (-1, false);
             var rowHover = GhostRowButtonAt(pos);
-            bool chip = Ctx.Project is not null && IsCanvasChipAt(pos);
+            var chip = Ctx.Project is not null ? CanvasChipAt(pos) : ChipPart.None;
             if (hover == _hover && rowHover == _rowHover && chip == _canvasChipHover) return;
             _canvasChipHover = chip;
             _hover = hover;
@@ -4608,7 +4615,7 @@ public sealed class TimelinePanel : UserControl
         protected override void OnPointerExited(PointerEventArgs e)
         {
             base.OnPointerExited(e);
-            if (_canvasChipHover) { _canvasChipHover = false; InvalidateVisual(); }
+            if (_canvasChipHover != ChipPart.None) { _canvasChipHover = ChipPart.None; InvalidateVisual(); }
             if (_tagHover is not null) { _tagHover = null; InvalidateVisual(); }
             if (_fxHover is not null) { _fxHover = null; InvalidateVisual(); }
             if (_layoutBadgeHover is not null) SetLayoutBadgeHover(null);

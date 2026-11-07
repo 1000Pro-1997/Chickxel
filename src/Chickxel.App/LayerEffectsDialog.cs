@@ -67,8 +67,6 @@ public sealed partial class LayerEffectsDialog : DialogBase
     private int _previewFrame;
     /// <summary>재생 범위: true = 고른 효과 범위, false = 늘린 뒤 전체 프레임. 앱을 켜 둔 동안 유지.</summary>
     private static bool s_effectOnly = true;
-    /// <summary>효과에 맞춘 캔버스 확대 방식. 앱을 켜 둔 동안 유지.</summary>
-    private static EffectCanvasExpandMode s_canvasExpandMode = EffectCanvasExpandMode.KeepCenter;
     /// <summary>확인 단추에서 검증·계산한 캔버스 확대(닫힌 뒤 같은 결과를 적용).</summary>
     private EffectCanvasExpansion? _confirmedCanvasExpansion;
     /// <summary>재생 반복: 끝 프레임 다음 바로 처음으로(끝에서 멈칫하지 않음). 앱을 켜 둔 동안 창을 다시 열어도 유지.</summary>
@@ -150,7 +148,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         }, DispatcherPriority.Background);
 
         _expandMode = Ui.Combo(110, [UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_E64B4CB375, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_F7968CE40F, UiStrings.EffectCanvasExpand_KeepCenter]);
-        _expandMode.SelectedIndex = (int)s_canvasExpandMode;
+        _expandMode.SelectedIndex = (int)EffectCanvasDialog.LastMode;
         _expandNote = Ui.Label("");
         _expandNote.Foreground = AppTheme.DimTextBrush;
         _expandNote.Margin = new Thickness(3, 0, 0, 2);
@@ -163,7 +161,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _expandMode.SelectionChanged += (_, _) =>
         {
             if (_expandMode.SelectedIndex < 0) return;
-            s_canvasExpandMode = (EffectCanvasExpandMode)_expandMode.SelectedIndex;
+            EffectCanvasDialog.LastMode = (EffectCanvasExpandMode)_expandMode.SelectedIndex;
             SyncCanvasExpansion();
             RefreshPreview();
         };

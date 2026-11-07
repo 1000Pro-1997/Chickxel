@@ -329,6 +329,24 @@ internal static class ToolsShots
         ], firstNumber: 5);
     }
 
+    /// <summary>연필 옵션: ① 픽셀 퍼펙트(끔 — 켜면 픽셀 잇기가 흐려짐) ② 픽셀 잇기(ㄱ자, 기본).</summary>
+    [Shot("tools-pencil-options")]
+    public static void PencilOptions(ShotKit k)
+    {
+        var m = Open(k, ToolFileHelp.Sample(k));
+        ToolFileHelp.Tool(k, "연필");
+        var ctx = ToolFileHelp.Ctx(m);
+        ctx.PixelPerfect = false;
+        ctx.PencilOrthogonal = true;
+        k.Settle(200);
+        var options = Opt<Control>(m, "_optionsBox");
+        k.Save(m, crop: R(m, options).Inflate(new Thickness(30, 8, 8, 8)), marks:
+        [
+            Lead(m, Opt<Control>(m, "_pixelPerfect"), 14, 0),
+            Lead(m, Opt<Control>(m, "_pencilStepsRow"), 14, 0),
+        ]);
+    }
+
     /// <summary>그라데이션 연필 설정: ① 방식(반복을 골라 간격 줄이 보이게) ② 간격 ③ 프리셋·기본값 ④ 정지점 편집기.</summary>
     [Shot("tools-gradient-pencil-settings")]
     public static void GradientPencilSettings(ShotKit k)
@@ -715,9 +733,33 @@ internal static class ToolsShots
             Lead(Row(m, Opt<Control>(m, "_crSlice"))),
             Lead(Union(Row(m, Opt<Control>(m, "_crImageWidth")), Row(m, Opt<Control>(m, "_crImageHeight")))),
             Lead(m, Opt<Control>(m, "_crKeepRatio")),
+            Lead(m, Opt<Control>(m, "_crRatio"), 4, -2),
             Lead(Row(m, Opt<Control>(m, "_crX"))),
             Lead(Row(m, Opt<Control>(m, "_crAnchor"))),
+            Lead(Row(m, Opt<Control>(m, "_crFlipH"))),
         ]);
+
+        // 2: 특수 비율 창(1:1, 가로 유지, 캔버스만 바꾸기) — ⑯ 비율 ⑰ 기준 ⑱ 방식 ⑲ 미리보기 ⑳ 새 크기.
+        k.Dialog(() => ShotKit.Call(ToolFileHelp.Options(m), "ApplyCanvasRatio"), d =>
+        {
+            ShotKit.Get<TabStrip>(d, "_presets").SelectedIndex = 0;
+            // 번호 동그라미가 줄 머리 글자를 가리지 않게 본문 왼쪽을 띄운다(창은 내용에 맞춰 넓어짐).
+            ShotKit.Get<StackPanel>(d, "Body").Margin = new Thickness(20, 0, 0, 0);
+            ShotKit.Get<TabStrip>(d, "_basis").SelectedIndex = 0;
+            ShotKit.Get<TabStrip>(d, "_fit").SelectedIndex = 0;
+            ShotKit.Pump(300);
+            Rect In(Control c) => ShotKit.Bounds(c, d);
+            Rect RowIn(Control c) => In((Control)c.Parent!);
+            var preview = ShotKit.Get<Control>(d, "_preview");
+            k.Save(d, "tools-canvas-size-ratio", marks:
+            [
+                Lead(RowIn(ShotKit.Get<Control>(d, "_presets")).Union(RowIn(ShotKit.Get<Control>(d, "_ratioWidth"))), 12, 0),
+                Lead(RowIn(ShotKit.Get<Control>(d, "_basis")), 12, 0),
+                Lead(RowIn(ShotKit.Get<Control>(d, "_fit")), 12, 0),
+                In((Control)preview.Parent!),
+                Lead(In(ShotKit.Get<Control>(d, "_sizes")).Union(In(ShotKit.Get<Control>(d, "_imageSize"))), 12, 0),
+            ], firstNumber: 16);
+        });
     }
 
     [Shot("tools-nine-slice")]
@@ -756,22 +798,25 @@ internal static class ToolsShots
         ShotKit.Call(m, "SetPixelGrid", false);
         var ctx = ToolFileHelp.Ctx(m);
         var p = ctx.Project ?? throw new InvalidOperationException("no project");
-        ctx.Structural(() => p.SetFramePivotsFrom(2, true));
-        ctx.Structural(() => p.SetFramePivotFrom(2, new Chickxel.Core.Model.Pivot(0.5f, 0f)));
-        ctx.SetCurrent(ctx.CurrentLayer, 2);
+        // 피벗 도구는 지금 레이어의 피벗을 고친다: 프레임 3부터 끝까지 따로 둔 레이어 피벗(타임라인 셀의 ◆).
+        int layer = ctx.CurrentLayer;
+        ctx.Structural(() => p.SetLayerFramesFrom(layer, 2, true));
+        ctx.Structural(() => p.SetLayerPivotFrom(layer, 2, new Chickxel.Core.Model.Pivot(0.5f, 0f)));
+        ctx.SetCurrent(layer, 2);
         ToolFileHelp.Tool(k, "피벗");
         k.Settle(400);
-        var (px, py) = ctx.Pivot.ToLocalPixel(ctx.CanvasWidth, ctx.CanvasHeight);
+        var at = ctx.PivotPixel;
         var presets = ShotKit.Get<Button[]>(ToolFileHelp.Options(m), "_presetButtons");
         var buttons = presets.Select(b => R(m, b)).Aggregate((a, b) => a.Union(b));
         var timeline = ShotKit.Get<Control>(m, "_timeline");
         var grid = ShotKit.Get<Control>(timeline, "_grid");
-        var heads = new Rect(grid.TranslatePoint(new Point(NameW + 2 * CellW, TagH), m)!.Value, new Size(4 * CellW, HeadH));
+        int rowY = (int)ShotKit.Call(grid, "LayerY", layer)!;
+        var heads = new Rect(grid.TranslatePoint(new Point(NameW + 2 * CellW, rowY), m)!.Value, new Size(4 * CellW, CellH));
         var crop = ToolFileHelp.CanvasRect(m).Union(ToolFileHelp.OptionsRect(m)).Union(R(m, timeline)).Intersect(new Rect(m.ClientSize));
         crop = crop.WithHeight(heads.Bottom + 2 * CellH + 8 - crop.Y);
         k.Save(m, crop: crop, marks:
         [
-            Around(ToolFileHelp.At(m, px, py), 16),
+            Around(ToolFileHelp.At(m, at.X, at.Y), 16),
             buttons.Inflate(3),
             Lead(Union(Row(m, Opt<Control>(m, "_pivotX")), Row(m, Opt<Control>(m, "_pivotY")))),
             Lead(m, Opt<Control>(m, "_framePivot")),

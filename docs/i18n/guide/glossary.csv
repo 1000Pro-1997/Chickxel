@@ -125,7 +125,7 @@ term.file-browser.to,screen-file-browser,
 term.file-browser.def,폴더의 그림을 썸네일로 보고 여는 왼쪽 패널입니다.,The left panel that shows a folder's images as thumbnails and opens them.
 term.number-field,숫자 칸,number field|number fields
 term.number-field.to,screen-common-controls,
-term.number-field.def,좌우로 끌거나 입력하거나 우클릭 목록으로 값을 바꾸는 칸입니다.,"A field you change by dragging left/right, typing, or picking from its right-click list."
+term.number-field.def,눌러서 입력하거나 오른쪽 끝 위/아래 단추로 바꾸거나 우클릭 목록에서 고르는 칸입니다.,"A field you change by clicking to type, using the up/down buttons at its right end, or picking from its right-click list."
 term.pencil,연필,pencil
 term.pencil.to,tools-pencil,
 term.pencil.def,브러시 모양대로 픽셀을 칠하는 기본 그리기 도구입니다.,The basic drawing tool that paints pixels in the brush shape.

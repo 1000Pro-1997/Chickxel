@@ -1081,6 +1081,15 @@ Alpha is kept and fully transparent pixels are unchanged. One undo step.</value>
   <data name="Ai_Link_BadFrame" xml:space="preserve"><value>Invalid frame index: {value} (must be 0 to less than {count})</value></data>
   <data name="Ai_Link_BadColor" xml:space="preserve"><value>Invalid link color: {value} — available colors: {colors}</value></data>
   <data name="Ai_Link_TwoFrames" xml:space="preserve"><value>Give at least two frames to link</value></data>
+  <data name="Ai_Pivot_FromFrameAlone" xml:space="preserve"><value>Give pivot_from_frame together with pivot_x/pivot_y or clear_frame_pivots</value></data>
+  <data name="Ai_Pivot_CanvasNothing" xml:space="preserve"><value>At least one value to change (pivot_x, pivot_y, clear_frame_pivots, representative_layer) is required</value></data>
+  <data name="Ai_Pivot_Unchanged" xml:space="preserve"><value>nothing changed</value></data>
+  <data name="Ai_Pivot_SpacePart" xml:space="preserve"><value>part-local</value></data>
+  <data name="Ai_Pivot_SpaceCanvas" xml:space="preserve"><value>canvas</value></data>
+  <data name="Ai_Pivot_OwnFrames" xml:space="preserve"><value>, own pivot in frames {frames}</value></data>
+  <data name="Ai_Pivot_NoRepresentative" xml:space="preserve"><value>none</value></data>
+  <data name="Ai_Pivot_LayerText" xml:space="preserve"><value>pivot {pivot} ({space}{frames}), frame {frame}: {current} = canvas pixel {pixel}</value></data>
+  <data name="Ai_Pivot_CanvasText" xml:space="preserve"><value>canvas own pivot {pivot}{frames}, representative layer {representative}, frame {frame} canvas (export) pivot {effective} = canvas pixel {pixel}</value></data>
   <data name="AiSkin_Edit_Nothing" xml:space="preserve"><value>Nothing to change — pass at least one of name, position, part_only, delete</value></data>
   <data name="AiSkin_Edit_DeleteAlone" xml:space="preserve"><value>delete can't be combined with other changes (name, position, part_only)</value></data>
   <data name="AiSkin_Edit_PartOnlyNeedsPart" xml:space="preserve"><value>part_only=true needs the name of the part that will own the skin (part)</value></data>
@@ -1199,14 +1208,14 @@ Alpha is kept and fully transparent pixels are unchanged. One undo step.</value>
   <data name="S_PixelTools_SetLayer_6917D3B1D2" xml:space="preserve"><value>{0}: layer {1} "{2}" — {3}, opacity {4}</value></data>
   <data name="S_PixelTools_SetLayer_A108A37060" xml:space="preserve"><value>{0}: layer {1} "{2}" — nothing changed</value></data>
   <data name="S_PixelTools_SetLayer_E13C63FCCD" xml:space="preserve"><value>visible</value></data>
-  <data name="S_PixelTools_SetLayer_F617978E39" xml:space="preserve"><value>At least one value to change (name, visible, opacity) is required</value></data>
+  <data name="S_PixelTools_SetLayer_F617978E39" xml:space="preserve"><value>At least one value to change (name, visible, opacity, pivot_x, pivot_y, clear_frame_pivots) is required</value></data>
   <data name="S_PixelTools_SetPalette_72B3137A75" xml:space="preserve"><value>{0}: palette set to {1} colors</value></data>
   <data name="S_PixelTools_SetPalette_A5313A3F06" xml:space="preserve"><value>colors: must have 1~256 entries (got: {0})</value></data>
   <data name="S_PixelTools_SetPalette_FD99906145" xml:space="preserve"><value>colors[{0}]: color string required</value></data>
   <data name="S_PixelTools_SetPart_5D875D42AD" xml:space="preserve"><value>it can't be moved with x/y — position is set automatically (width/height and pivot can be changed; resizing re-lays out). </value></data>
   <data name="S_PixelTools_SetPart_9A098737D8" xml:space="preserve"><value>layer</value></data>
   <data name="S_PixelTools_SetPart_CAF27E7871" xml:space="preserve"><value>To move it, ask the user to choose "Turn off auto layout" in the timeline group menu</value></data>
-  <data name="S_PixelTools_SetPart_DC2B0B514A" xml:space="preserve"><value>At least one value to change (x, y, width, height, pivot_x, pivot_y) is required</value></data>
+  <data name="S_PixelTools_SetPart_DC2B0B514A" xml:space="preserve"><value>At least one value to change (x, y, width, height) is required</value></data>
   <data name="S_PixelTools_SetPart_E4221AFE6B" xml:space="preserve"><value>layer {0} "{1}" is not a part layer</value></data>
   <data name="S_PixelTools_SetPart_F85DAA9BD6" xml:space="preserve"><value>Group "{2}" of part {0} "{1}" uses auto layout (auto layout: {3}), so </value></data>
   <data name="S_PixelTools_SetPixels_87EB8FF2FA" xml:space="preserve"><value> — ignored {0} px outside the canvas</value></data>
@@ -1699,7 +1708,6 @@ Unavailable items (skipped):
   <data name="S_TimelinePanel_TagDialog_DF0CF7BD36" xml:space="preserve"><value>Tag "{0}" already exists.</value></data>
   <data name="S_TimelinePanel_TimelinePanel_7AE6DC18E2" xml:space="preserve"><value>Timeline</value></data>
   <data name="S_TimelinePanel_TurnOffGroupLayout_B5D4ABA3A0" xml:space="preserve"><value>Auto layout off for group "{0}" — parts stay where they are</value></data>
-  <data name="S_ToolOptionsPanel_ApplyPivot_4E8342E979" xml:space="preserve"><value>Default pivot</value></data>
   <data name="S_ToolOptionsPanel_Refresh_00F0C73AC7" xml:space="preserve"><value>Moves the selection if any, otherwise the entire current cel.</value></data>
   <data name="S_ToolOptionsPanel_Refresh_147A90B5B7" xml:space="preserve"><value>Drag to select a rectangle (Shift: square). Drag inside to move, Enter to drop. M: next selection tool.</value></data>
   <data name="S_ToolOptionsPanel_Refresh_2AA5BFEE57" xml:space="preserve"><value>Tool settings · {0}</value></data>
@@ -1716,8 +1724,16 @@ Unavailable items (skipped):
   <data name="S_ToolOptionsPanel_RefreshPivot_7752FB81E5" xml:space="preserve"><value>Target: part "{0}" ({1}×{2}, part atlas)</value></data>
   <data name="Pivot_PartFrameTarget" xml:space="preserve"><value>Target: part "{0}", frame {1} to the end ({2}×{3}, part atlas)</value></data>
   <data name="Pivot_FramesFromTip" xml:space="preserve"><value>When on, the pivot (and, for a part, its position) from this frame to the last frame is kept apart from the other frames. Changing the pivot while it is on changes this frame and every frame after it by the same amount; earlier frames stay as they are. It turns on by itself when you move a part in Layer size mode (Ctrl+Shift+C) or permanently apply an effect that moves the drawing. Turning it off clears what was kept apart from this frame to the end.</value></data>
-  <data name="S_ToolOptionsPanel_RefreshPivot_880B20EF26" xml:space="preserve"><value>Target: project default pivot (all frames)</value></data>
-  <data name="S_ToolOptionsPanel_RefreshPivot_DC250333A2" xml:space="preserve"><value>Target: frame {0} to the end</value></data>
+  <data name="Pivot_KindLayer" xml:space="preserve"><value>layer</value></data>
+  <data name="Pivot_KindGroup" xml:space="preserve"><value>group</value></data>
+  <data name="Pivot_LayerTarget" xml:space="preserve"><value>Target: pivot of {0} "{1}" (canvas space, {2}×{3})</value></data>
+  <data name="Pivot_LayerFrameTarget" xml:space="preserve"><value>Target: {0} "{1}", frame {2} to the end (canvas space, {3}×{4})</value></data>
+  <data name="Pivot_CanvasTarget" xml:space="preserve"><value>Target: canvas pivot (export, all frames)</value></data>
+  <data name="Pivot_CanvasFrameTarget" xml:space="preserve"><value>Target: canvas pivot, frame {0} to the end</value></data>
+  <data name="Pivot_CanvasRepresentativeTarget" xml:space="preserve"><value>Target: canvas pivot = pivot of representative layer "{0}" (editing changes that layer's pivot)</value></data>
+  <data name="Pivot_Representative" xml:space="preserve"><value>Representative</value></data>
+  <data name="Pivot_RepresentativeNone" xml:space="preserve"><value>None (canvas's own pivot)</value></data>
+  <data name="Pivot_RepresentativeTip" xml:space="preserve"><value>When set, the canvas pivot of each frame (sheet and Unity export pivot) follows that layer's pivot in that frame. None uses the canvas's own pivot.</value></data>
   <data name="S_ToolOptionsPanel_RefreshSlice_0CBE78E12F" xml:space="preserve"><value>Target: all cells of the frame sheet ({0}×{1})</value></data>
   <data name="S_ToolOptionsPanel_RefreshSlice_4979FEE313" xml:space="preserve"><value>Group view: drag each part's green lines on the canvas. To set numbers, select a part in the timeline.</value></data>
   <data name="S_ToolOptionsPanel_RefreshSlice_6437D6774C" xml:space="preserve"><value>Target: part "{0}" ({1}×{2})</value></data>
@@ -2292,6 +2308,13 @@ Please download it from the release page and replace it manually.</value></data>
   <data name="AiInstaller_LoginComplete" xml:space="preserve"><value>Login complete. Return to Chickxel.</value></data>
   <data name="AiInstaller_LoginFailed" xml:space="preserve"><value>Installation or login failed. Check the error above.</value></data>
   <data name="EffectCanvasExpand_KeepCenter" xml:space="preserve"><value>Expand keeping center</value></data>
+  <data name="EffectCanvas_Title" xml:space="preserve"><value>Expand canvas for effect</value></data>
+  <data name="EffectCanvas_Apply" xml:space="preserve"><value>Expand</value></data>
+  <data name="EffectCanvas_Intro" xml:space="preserve"><value>Grows the canvas so the result of the "{effect}" effect (all frames, including the effects before it) isn't cut off. Image size is unchanged; all layers, parts and pivots move together (one undo step).</value></data>
+  <data name="EffectCanvas_Mode" xml:space="preserve"><value>Mode</value></data>
+  <data name="EffectCanvas_Menu" xml:space="preserve"><value>Expand canvas…</value></data>
+  <data name="EffectCanvas_MenuTip" xml:space="preserve"><value>Grows the canvas as far as this effect's result goes past it (a small window to choose how).</value></data>
+  <data name="EffectCanvas_NoOutput" xml:space="preserve"><value>This effect is not on in any frame, so there is nothing to fit.</value></data>
   <data name="EffectCanvasExpand_ModeTip" xml:space="preserve"><value>On OK or when applying permanently, if the result of an effect with "Expand canvas" on goes past the canvas, the canvas grows the chosen way. Turn it on or off per effect in its settings (on by default). Image size is unchanged; all layers, parts and pivots move together.</value></data>
   <data name="Effect_ExpandCanvasRow" xml:space="preserve"><value>On OK</value></data>
   <data name="Effect_ExpandCanvas" xml:space="preserve"><value>Expand canvas</value></data>
@@ -2431,13 +2454,13 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Chat_Help_GroupFrames" xml:space="preserve"><value>Frames and animation</value></data>
   <data name="Chat_Help_GroupFrames_Text" xml:space="preserve"><value>Adds frames (optionally as copies) or deletes them, and sets frame durations and animation tags. Links cels across frames, unlinks them and recolors links.</value></data>
   <data name="Chat_Help_GroupLayers" xml:space="preserve"><value>Layers</value></data>
-  <data name="Chat_Help_GroupLayers_Text" xml:space="preserve"><value>Adds layers, changes their name, visibility, and opacity, and picks the frame and layer shown in the editor.</value></data>
+  <data name="Chat_Help_GroupLayers_Text" xml:space="preserve"><value>Adds layers, changes their name, visibility, opacity, and pivot, and picks the frame and layer shown in the editor.</value></data>
   <data name="Chat_Help_GroupParts" xml:space="preserve"><value>Groups and parts</value></data>
-  <data name="Chat_Help_GroupParts_Text" xml:space="preserve"><value>Splits a character into parts such as head, body, and arms, and sets each part's position, size, and pivot.</value></data>
+  <data name="Chat_Help_GroupParts_Text" xml:space="preserve"><value>Splits a character into parts such as head, body, and arms, and sets each part's position and size.</value></data>
   <data name="Chat_Help_GroupSkins" xml:space="preserve"><value>Skins and outfits</value></data>
   <data name="Chat_Help_GroupSkins_Text" xml:space="preserve"><value>Creates alternative drawings of the same parts (such as clothes), switches between them, and saves or applies outfit presets.</value></data>
   <data name="Chat_Help_GroupCanvas" xml:space="preserve"><value>Canvas and colors</value></data>
-  <data name="Chat_Help_GroupCanvas_Text" xml:space="preserve"><value>Changes the canvas size, the palette colors, and the primary and secondary colors.</value></data>
+  <data name="Chat_Help_GroupCanvas_Text" xml:space="preserve"><value>Changes the canvas size, the canvas (export) pivot and its representative layer, the palette colors, and the primary and secondary colors.</value></data>
   <data name="Chat_Help_GroupFiles" xml:space="preserve"><value>Files</value></data>
   <data name="Chat_Help_GroupFiles_Text" xml:space="preserve"><value>Creates a new drawing, sets the temporary title of an unsaved new drawing, saves, and opens files (opening and creating are blocked while "Current file only" is on).</value></data>
   <data name="Chat_Help_GroupEffects" xml:space="preserve"><value>Layer effects</value></data>
@@ -3012,9 +3035,9 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="AiDraw_Size_Tip" xml:space="preserve"><value>Size (long side, px) to fit the converted result to when result-size correction is on.</value></data>
   <data name="AiDraw_Size_Custom" xml:space="preserve"><value>Custom</value></data>
   <data name="AiDraw_RemoveBackground" xml:space="preserve"><value>Remove background</value></data>
-  <data name="AiDraw_RemoveBackground_Tip" xml:space="preserve"><value>Removes the background when converting. Unless you ask for a background, images are also generated on a plain transparent background.</value></data>
+  <data name="AiDraw_RemoveBackground_Tip" xml:space="preserve"><value>Off (default): converts with the main preset's background settings. On: removes the background automatically when converting, regardless of the preset. Unless you ask for a background, images are also generated on a plain transparent background.</value></data>
   <data name="AiDraw_AutoOptimize" xml:space="preserve"><value>Auto-optimize the conversion</value></data>
-  <data name="AiDraw_AutoOptimize_Tip" xml:space="preserve"><value>Auto-optimizes like the Pixelate window (its chosen items, trials and time — by default everything except the outline-fit mode, 2000 trials / 120 s) and inserts the top-scoring result. If the top result is a failed one (empty or too small), nothing is inserted.</value></data>
+  <data name="AiDraw_AutoOptimize_Tip" xml:space="preserve"><value>Generated images are converted with the Pixelate window's main preset (background, palette, output size and alignment — only result-size correction and background removal above override it when on); only the frame split follows the number of generated frames. On: like Auto optimize in that window, tries settings within the main preset's per-section optimization, trials and time and inserts the top-scoring result. Off: converts once with those settings (same as Clean up). If the top result is a failed one (empty or too small), nothing is inserted.</value></data>
   <data name="AiDraw_Insert" xml:space="preserve"><value>Insert as</value></data>
   <data name="AiDraw_Insert_Layer" xml:space="preserve"><value>New layer</value></data>
   <data name="AiDraw_Insert_Document" xml:space="preserve"><value>New document</value></data>
@@ -3071,6 +3094,8 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="AiDraw_Progress_Sheet" xml:space="preserve"><value>Generating sprite sheet ({count} frames, Codex)…</value></data>
   <data name="Pixelate_AddToNewTab" xml:space="preserve"><value>Add to new tab</value></data>
   <data name="Pixelate_AddToNewTabTip" xml:space="preserve"><value>Create a new document exactly the size of the selected result and open it in a new tab (frames and durations kept, regardless of the output setting)</value></data>
+  <data name="Pixelate_GrowCanvas" xml:space="preserve"><value>Grow to image size</value></data>
+  <data name="Pixelate_GrowCanvasTip" xml:space="preserve"><value>When on, applying first grows the current canvas from the center to the result size if it is smaller (never shrinks; same undo step as the insert). When off, the canvas stays as is and pixels outside it are kept as off-canvas pixels that show when you enlarge the canvas. Add to new tab always makes a new document of the result size.</value></data>
   <data name="Ffmpeg_StartFailed" xml:space="preserve"><value>Can't start ffmpeg.</value></data>
   <data name="Ffmpeg_NoFrames" xml:space="preserve"><value>ffmpeg produced no frames (the range is outside the video, or the video can't be read).</value></data>
   <data name="Ffmpeg_MissingTitle" xml:space="preserve"><value>ffmpeg needed</value></data>
@@ -3116,10 +3141,10 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="AiDraw_PaletteOnly" xml:space="preserve"><value>Use palette colors only</value></data>
   <data name="AiDraw_PaletteOnly_Text" xml:space="preserve"><value>Colors the AI paints directly (pixels, shapes, fills, color replacement) are changed to the nearest color in the active palette. Erasing (fully transparent) is allowed and semi-transparent colors become opaque. Generated images (the converter's palette settings) and layer effects are not affected.</value></data>
   <data name="AiDraw_PaletteSnapped" xml:space="preserve"><value>Snapped to palette colors: {changes}</value></data>
-  <data name="AiDraw_ResizeResult" xml:space="preserve"><value>Result-size correction</value></data>
-  <data name="AiDraw_ResizeResult_Text" xml:space="preserve"><value>Off (default): ordinary generated art uses its detected pixel grid, and sizes in chat are rough hints. When converting an attached image to pixel art, the result uses the requested size (or a size chosen from the image). On: other generated art is also fitted to the size below or the size from chat.</value></data>
   <data name="AiDraw_AutoPrompt" xml:space="preserve"><value>Automatic prompt</value></data>
   <data name="AiDraw_AutoPrompt_Text" xml:space="preserve"><value>On (default): the subject the AI wrote is wrapped with pixel-art style, background, sprite-sheet layout and pose instructions. Off: your chat message is sent to image generation exactly as written (with attached images in order) to make one image, which is converted to pixel art without the size check, style reference or splitting into animation frames.</value></data>
+  <data name="AiDraw_ResizeResult" xml:space="preserve"><value>Result-size correction</value></data>
+  <data name="AiDraw_ResizeResult_Text" xml:space="preserve"><value>Off (default): converts with the main preset's output size, and sizes in chat are only rough hints for generation. On: the converted result is fitted to the size below or the size from chat.</value></data>
   <data name="AiStatus_Title" xml:space="preserve"><value>AI Status and Settings</value></data>
   <data name="AiStatus_Continue" xml:space="preserve"><value>Continue to AI</value></data>
   <data name="AiStatus_Close" xml:space="preserve"><value>Close</value></data>
@@ -3213,8 +3238,8 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Shape_StepsDiagonalTip" xml:space="preserve"><value>Joins pixels diagonally too, for the thinnest line (default).</value></data>
   <data name="Shape_StepsOrthogonal" xml:space="preserve"><value>Orthogonal</value></data>
   <data name="Shape_StepsOrthogonalTip" xml:space="preserve"><value>Steps only sideways or up/down so every pixel touches the next by an edge (an L-shaped corner at each step).</value></data>
-  <data name="Pencil_StepsDiagonalTip" xml:space="preserve"><value>Joins pixels diagonally too, for the thinnest line (steps touch only at corners — pixel perfect can be used).</value></data>
-  <data name="Pencil_StepsOrthogonalTip" xml:space="preserve"><value>Steps only sideways or up/down so every pixel touches the next by an edge (default; an L-shaped corner at each step). Pixel perfect is not used then.</value></data>
+  <data name="Pencil_StepsDiagonalTip" xml:space="preserve"><value>Joins pixels diagonally too, for the thinnest line (steps touch only at corners).</value></data>
+  <data name="Pencil_StepsOrthogonalTip" xml:space="preserve"><value>Steps only sideways or up/down so every pixel touches the next by an edge (default; an L-shaped corner at each step). Turning on Pixel perfect dims this and draws diagonally.</value></data>
   <data name="Help_NoShortcut" xml:space="preserve"><value>no shortcut</value></data>
   <data name="Busy_Saving" xml:space="preserve"><value>Saving</value></data>
   <data name="Busy_Opening" xml:space="preserve"><value>Opening</value></data>
@@ -3858,6 +3883,9 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="ExportSheet_ScaleTip" xml:space="preserve"><value>Enlarges the output images by a whole number (nearest neighbor — pixels stay sharp). 9-slice borders and Unity PPU are multiplied too, so sprites keep their size in Unity. Spacing between cells is in pixels after scaling.</value></data>
   <data name="Timeline_CanvasSize" xml:space="preserve"><value>Canvas {0}×{1}</value></data>
   <data name="Timeline_CanvasSizeTip" xml:space="preserve"><value>Change canvas size (Ctrl+Alt+C)</value></data>
+  <data name="Timeline_CanvasPivotTip" xml:space="preserve"><value>Edit the canvas pivot (pivot tool; sheet and Unity export pivot). Click a layer name to go back to layer pivots</value></data>
+  <data name="Timeline_PivotLayerSet" xml:space="preserve"><value>Use as canvas pivot representative</value></data>
+  <data name="Timeline_PivotLayerClear" xml:space="preserve"><value>Stop using as canvas pivot representative</value></data>
   <data name="Timeline_LinkCels" xml:space="preserve"><value>Link cels</value></data>
   <data name="Timeline_UnlinkCels" xml:space="preserve"><value>Unlink cels</value></data>
   <data name="Timeline_LinkCels_Done" xml:space="preserve"><value>Linked {0} cels. Editing one cel changes all linked cels.</value></data>
@@ -3870,6 +3898,15 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="LayerResize_Empty" xml:space="preserve"><value>This layer has nothing drawn in any frame.</value></data>
   <data name="LayerResize_Applied" xml:space="preserve"><value>Layer size: "{name}" {width}×{height} @{x},{y} (all frames)</value></data>
   <data name="LayerResize_MovedFrom" xml:space="preserve"><value>Part position: "{name}" @{x},{y} (frame {frame} to the end, pivot follows)</value></data>
+  <data name="LayerResize_Flipped" xml:space="preserve"><value>Flipped layer "{name}" {direction} in place (all frames, Ctrl+Z to undo).</value></data>
+  <data name="LayerResize_FlipHorizontalTip" xml:space="preserve"><value>Flip this layer horizontally in place (all frames, applied at once — Ctrl+Z to undo).</value></data>
+  <data name="LayerResize_FlipVerticalTip" xml:space="preserve"><value>Flip this layer vertically in place (all frames, applied at once — Ctrl+Z to undo).</value></data>
+  <data name="CanvasResize_Flip" xml:space="preserve"><value>Flip</value></data>
+  <data name="CanvasResize_Flipped" xml:space="preserve"><value>Flipped the whole canvas {direction} (all layers and frames, Ctrl+Z to undo).</value></data>
+  <data name="CanvasResize_FlipHorizontalTip" xml:space="preserve"><value>Flip the whole canvas horizontally (all layers and frames, applied at once — Ctrl+Z to undo).</value></data>
+  <data name="CanvasResize_FlipVerticalTip" xml:space="preserve"><value>Flip the whole canvas vertically (all layers and frames, applied at once — Ctrl+Z to undo).</value></data>
+  <data name="Flip_DirHorizontal" xml:space="preserve"><value>horizontally</value></data>
+  <data name="Flip_DirVertical" xml:space="preserve"><value>vertically</value></data>
   <data name="LayerColors_Title" xml:space="preserve"><value>Layer colors</value></data>
   <data name="LayerColors_Tip" xml:space="preserve"><value>Colors used in every frame of the selected layer (most used first, transparent excluded — a group shows its parts, a part its shown skin). Click a swatch for the primary color, right-click for the secondary. Click the header to collapse or expand.</value></data>
   <data name="LayerColors_CountCapped" xml:space="preserve"><value>{0} / {1}</value></data>
@@ -3909,4 +3946,22 @@ Mix white/black: lightening mixes with white, darkening with black.
 Saturation: left makes colors more vivid, right duller (lightness and hue kept).</value></data>
   <data name="DodgeMode_SaturateUndo" xml:space="preserve"><value>Saturate</value></data>
   <data name="DodgeMode_DesaturateUndo" xml:space="preserve"><value>Desaturate</value></data>
+  <data name="CanvasRatio_ButtonTip" xml:space="preserve"><value>Aspect ratio: fit the canvas to a ratio such as 1:1 or 16:9 (small window — OK only sets this mode's values; Apply changes the canvas).</value></data>
+  <data name="CanvasRatio_Title" xml:space="preserve"><value>Aspect ratio</value></data>
+  <data name="CanvasRatio_Intro" xml:space="preserve"><value>OK only sets the Canvas size mode values. The canvas changes when you Apply (Enter) in the mode; Cancel (Esc) reverts.</value></data>
+  <data name="CanvasRatio_Ratio" xml:space="preserve"><value>Ratio</value></data>
+  <data name="CanvasRatio_RatioTip" xml:space="preserve"><value>Width:height ratio (1–100 each). Pick a common ratio above or type your own.</value></data>
+  <data name="CanvasRatio_Basis" xml:space="preserve"><value>Keep</value></data>
+  <data name="CanvasRatio_KeepWidth" xml:space="preserve"><value>Keep width</value></data>
+  <data name="CanvasRatio_KeepHeight" xml:space="preserve"><value>Keep height</value></data>
+  <data name="CanvasRatio_BasisTip" xml:space="preserve"><value>Keep width: the current canvas width stays and the height follows the ratio. Keep height: the height stays and the width follows.</value></data>
+  <data name="CanvasRatio_Fit" xml:space="preserve"><value>Method</value></data>
+  <data name="CanvasRatio_FitCanvas" xml:space="preserve"><value>Canvas only</value></data>
+  <data name="CanvasRatio_FitStretch" xml:space="preserve"><value>Stretch image</value></data>
+  <data name="CanvasRatio_FitTip" xml:space="preserve"><value>Canvas only: the image stays as it is; the changing side gains empty space or is cropped (at the anchor, or the center when no anchor is set — cropped pixels stay as off-canvas pixels).
+Stretch image: the image is stretched or squeezed to fill the new canvas exactly (same as image width/height — 9-slice when it is on).</value></data>
+  <data name="CanvasRatio_CanvasSize" xml:space="preserve"><value>Canvas {from} → {to}</value></data>
+  <data name="CanvasRatio_ImageSize" xml:space="preserve"><value>Image {size}</value></data>
+  <data name="CanvasRatio_OutOfRange" xml:space="preserve"><value>The new size is outside 1–{max} px.</value></data>
+  <data name="CanvasRatio_PreviewTip" xml:space="preserve"><value>Dotted: current canvas. Accent: new canvas. Faded image: parts outside the new canvas.</value></data>
 </root>

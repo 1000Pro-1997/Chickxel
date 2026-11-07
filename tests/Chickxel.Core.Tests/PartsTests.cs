@@ -270,7 +270,7 @@ public class PartsTests
         Paint(p, pi, 0, 0, 3, Red);   // 캔버스 (3,6)
         p.AddFrame();
         Paint(p, pi, 1, 3, 0, Blue);  // 캔버스 (6,3)
-        p.SetPartPivot(pi, Pivot.BottomCenter); // 픽셀 (2,4)
+        p.SetLayerPivot(pi, Pivot.BottomCenter); // 픽셀 (2,4)
 
         p.ResizePart(pi, 6, 5, Anchor.TopRight); // 그림이 (2,0)만큼 옮겨짐
         Assert.Equal(new Size(6, 5), part.PartSize);
@@ -279,11 +279,11 @@ public class PartsTests
         Assert.Equal(Blue, p.GetCel(pi, 1)!.Get(5, 0));
         Assert.Equal(Red, p.Flatten(0).Get(3, 6));
         Assert.Equal(Blue, p.Flatten(1).Get(6, 3));
-        Assert.Equal((4f, 4f), part.PartPivot.ToLocalPixel(6, 5));
+        Assert.Equal((4f, 4f), part.Pivot.ToLocalPixel(6, 5));
         Assert.Throws<ArgumentException>(() => p.ResizePart(0, 2, 2, Anchor.Center)); // 일반 레이어
 
         p.Undo();
-        Assert.Equal((new Size(4, 4), new Point(3, 3), Pivot.BottomCenter), (part.PartSize, part.PartOffset, part.PartPivot));
+        Assert.Equal((new Size(4, 4), new Point(3, 3), Pivot.BottomCenter), (part.PartSize, part.PartOffset, part.Pivot));
         Assert.Equal(Red, p.GetCel(pi, 0)!.Get(0, 3));
     }
 
@@ -297,22 +297,22 @@ public class PartsTests
         p.AddFrame();
         p.AddFrame();
         var topLeft = new Pivot(0, 1);
-        p.SetPartPivot(pi, Pivot.BottomCenter);
-        p.SetPartFramePivot(pi, 1, topLeft);
-        Assert.Equal([Pivot.BottomCenter, topLeft, Pivot.BottomCenter], Enumerable.Range(0, 3).Select(f => p.GetPartPivot(part, f)));
+        p.SetLayerPivot(pi, Pivot.BottomCenter);
+        p.SetLayerFramePivot(pi, 1, topLeft);
+        Assert.Equal([Pivot.BottomCenter, topLeft, Pivot.BottomCenter], Enumerable.Range(0, 3).Select(f => p.GetLayerPivot(part, f)));
         Assert.Equal(new PointF(0, 0), p.EffectPivot(part, 1)); // 효과의 피벗도 그 프레임 것
         // 부위 피벗을 바꿔도 그 프레임은 따로
-        p.SetPartPivot(pi, Pivot.Center);
-        Assert.Equal(topLeft, p.GetPartPivot(part, 1));
+        p.SetLayerPivot(pi, Pivot.Center);
+        Assert.Equal(topLeft, p.GetLayerPivot(part, 1));
         p.Undo();
         p.Undo();
-        Assert.False(p.HasPartFramePivot(part, 1));
+        Assert.False(p.HasLayerFramePivot(part, 1));
         p.Redo();
-        Assert.Equal(topLeft, p.GetPartPivot(part, 1));
+        Assert.Equal(topLeft, p.GetLayerPivot(part, 1));
 
         // 프레임 복제는 그 프레임의 부위 피벗도 복사
         p.DuplicateFrame(1);
-        Assert.Equal(topLeft, p.GetPartPivot(part, 2));
+        Assert.Equal(topLeft, p.GetLayerPivot(part, 2));
 
         // 저장·읽기
         using var stream = new MemoryStream();
@@ -320,15 +320,15 @@ public class PartsTests
         stream.Position = 0;
         var loaded = ProjectIO.Load(stream);
         var lp = loaded.Layers[pi];
-        Assert.Equal([Pivot.BottomCenter, topLeft, topLeft, Pivot.BottomCenter], Enumerable.Range(0, 4).Select(f => loaded.GetPartPivot(lp, f)));
+        Assert.Equal([Pivot.BottomCenter, topLeft, topLeft, Pivot.BottomCenter], Enumerable.Range(0, 4).Select(f => loaded.GetLayerPivot(lp, f)));
 
         // 부위 크기를 바꾸면 그 프레임 피벗도 같은 픽셀을 가리킨다
         p.ResizePart(pi, 6, 5, Anchor.TopRight); // 그림이 (2,0)만큼 옮겨짐
-        Assert.Equal((2f, 0f), p.GetPartPivot(part, 1).ToLocalPixel(6, 5));
+        Assert.Equal((2f, 0f), p.GetLayerPivot(part, 1).ToLocalPixel(6, 5));
 
         // 끄면 다시 부위 피벗
-        p.SetPartFramePivot(pi, 1, null);
-        Assert.Equal(part.PartPivot, p.GetPartPivot(part, 1));
+        p.SetLayerFramePivot(pi, 1, null);
+        Assert.Equal(part.Pivot, p.GetLayerPivot(part, 1));
     }
 
     [Fact]
@@ -350,7 +350,7 @@ public class PartsTests
         Assert.Equal(Color32.Transparent, p.Flatten(1).Get(1, 1));
         Assert.Equal([false, true, true], Enumerable.Range(0, 3).Select(f => p.HasPartFrameOverride(part, f)));
         // 피벗은 부위 기준 비율 그대로라 캔버스에서는 부위와 같이 옮겨 간다
-        Assert.Equal(p.GetPartPivot(part, 0), p.GetPartPivot(part, 1));
+        Assert.Equal(p.GetLayerPivot(part, 0), p.GetLayerPivot(part, 1));
 
         // 기준 위치를 옮기면 프레임마다 옮긴 거리는 그대로 따라간다
         p.SetPartOffset(pi, new Point(2, 1));
@@ -369,7 +369,7 @@ public class PartsTests
         }
 
         // 끄면 그 프레임부터 끝까지 기준 위치로(앞 프레임은 그대로)
-        p.SetPartFramesFrom(pi, 2, own: false);
+        p.SetLayerFramesFrom(pi, 2, own: false);
         Assert.Equal([new Point(1, 1), new Point(4, 3), new Point(1, 1)], Offsets(p, part));
         p.Undo();
         Assert.Equal([new Point(1, 1), new Point(4, 3), new Point(4, 3)], Offsets(p, part));
@@ -384,9 +384,9 @@ public class PartsTests
         int pi = p.IndexOf(part);
         p.AddFrame();
         p.AddFrame();
-        p.SetPartFramePivot(pi, 2, new Pivot(0.25f, 0.5f));
-        p.SetPartPivotFrom(pi, 1, new Pivot(0.5f, 0.75f));
-        Assert.Equal([Pivot.Center, new Pivot(0.5f, 0.75f), new Pivot(0.25f, 0.75f)], Enumerable.Range(0, 3).Select(f => p.GetPartPivot(part, f)));
+        p.SetLayerFramePivot(pi, 2, new Pivot(0.25f, 0.5f));
+        p.SetLayerPivotFrom(pi, 1, new Pivot(0.5f, 0.75f));
+        Assert.Equal([Pivot.Center, new Pivot(0.5f, 0.75f), new Pivot(0.25f, 0.75f)], Enumerable.Range(0, 3).Select(f => p.GetLayerPivot(part, f)));
 
         // 프로젝트(프레임) 피벗도 같은 규칙: 켜면 그 프레임부터 끝까지 지금 피벗을 따로 두고, 바꾸면 같은 만큼
         p.SetFramePivotsFrom(1, own: true);
@@ -434,7 +434,7 @@ public class PartsTests
         p.AddFrame();
         Paint(p, pi, 1, 1, 1, Blue);
         p.SetPartBorder(pi, new SpriteBorder(1, 0, 0, 0));
-        p.SetPartPivot(pi, Pivot.BottomCenter);
+        p.SetLayerPivot(pi, Pivot.BottomCenter);
         Assert.Equal(part.PartRect, p.LayerBounds(pi));
         Assert.Throws<ArgumentException>(() => p.ScaleLayer(pi, new Rectangle(0, 0, 2, 2), new Rectangle(0, 0, 4, 4)));
         int steps = p.History.UndoCount;
@@ -444,7 +444,7 @@ public class PartsTests
         Assert.Equal(steps + 1, p.History.UndoCount);
         Assert.Equal(new Rectangle(4, 3, 4, 6), part.PartRect);
         Assert.Equal(new SpriteBorder(2, 0, 0, 0), part.PartBorder);
-        Assert.Equal(Pivot.BottomCenter, part.PartPivot);
+        Assert.Equal(Pivot.BottomCenter, part.Pivot);
         Assert.Equal(Red, p.Flatten(0).Get(5, 5));
         Assert.Equal(default, p.Flatten(0).Get(6, 6));
         Assert.Equal(Blue, p.Flatten(1).Get(7, 8));
@@ -452,6 +452,31 @@ public class PartsTests
         p.Undo();
         Assert.Equal(new Rectangle(1, 1, 2, 2), part.PartRect);
         Assert.Equal(Red, p.GetCel(pi, 0)!.Get(0, 0));
+    }
+
+    [Fact]
+    public void FlipLayer_Part_MirrorsSkinCellsInsidePartArea_PivotAndBorderFollow()
+    {
+        var p = new SpriteProject(10, 10);
+        var g = p.AddGroup();
+        var part = p.AddPart(g, "팔", 4, 2, new Point(1, 1));
+        int pi = p.IndexOf(part);
+        Paint(p, pi, 0, 0, 0, Red);
+        p.SetPartBorder(pi, new SpriteBorder(1, 0, 0, 0));
+        p.SetLayerPivot(pi, Pivot.FromLocalPixel(1, 1, 4, 2));
+        int steps = p.History.UndoCount;
+
+        p.FlipLayer(pi, horizontal: true);
+
+        Assert.Equal(steps + 1, p.History.UndoCount);
+        Assert.Equal(new Rectangle(1, 1, 4, 2), part.PartRect);
+        Assert.Equal(Red, p.GetCel(pi, 0)!.Get(3, 0));
+        Assert.Equal(new SpriteBorder(0, 0, 1, 0), part.PartBorder);
+        Assert.Equal(Pivot.FromLocalPixel(3, 1, 4, 2), part.Pivot);
+
+        p.Undo();
+        Assert.Equal(Red, p.GetCel(pi, 0)!.Get(0, 0));
+        Assert.Equal(new SpriteBorder(1, 0, 0, 0), part.PartBorder);
     }
 
     [Fact]
@@ -464,7 +489,7 @@ public class PartsTests
         Paint(p, pi, 0, 0, 0, Red);   // (2,2)
         Paint(p, pi, 0, 3, 3, Blue);  // (5,5)
         p.SetPartBorder(pi, new SpriteBorder(1, 1, 1, 1));
-        p.SetPartPivot(pi, Pivot.FromLocalPixel(1, 1, 4, 4)); // 캔버스 (3,3)
+        p.SetLayerPivot(pi, Pivot.FromLocalPixel(1, 1, 4, 4)); // 캔버스 (3,3)
         var flat = p.Flatten(0);
         int steps = p.History.UndoCount;
 
@@ -475,7 +500,7 @@ public class PartsTests
         Assert.Equal(new Rectangle(3, 3, 5, 5), part.PartRect);
         Assert.Equal(default, p.Flatten(0).Get(2, 2));          // 잘린 빨강
         Assert.Equal(Blue, p.Flatten(0).Get(5, 5));              // 제자리
-        var (px, py) = part.PartPivot.ToLocalPixel(5, 5);
+        var (px, py) = part.Pivot.ToLocalPixel(5, 5);
         Assert.Equal((0f, 0f), (px, py));                       // 같은 캔버스 지점 (3,3)
         Assert.Equal(new SpriteBorder(0, 0, 3, 3), part.PartBorder); // 같은 그림 경계(왼쪽 위 경계는 잘린 자리)
 
@@ -503,7 +528,7 @@ public class PartsTests
         cel.Set(3, 2, Blue);
         p.CommitCelStroke("점");
         p.SetPartBorder(pi, new SpriteBorder(1, 2, 3, 4));
-        p.SetPartPivot(pi, new Pivot(0.25f, 0f));
+        p.SetLayerPivot(pi, new Pivot(0.25f, 0f));
 
         p.ResizeCanvas(14, 12, Anchor.BottomRight); // (4,4)만큼
         Assert.Equal(new Point(9, 6), part.PartOffset);
@@ -528,11 +553,11 @@ public class PartsTests
 
         // 시계 방향 회전: 크기가 바뀌고 피벗·테두리도 회전
         var size = part.PartSize;
-        var (border, pivot) = (part.PartBorder, part.PartPivot);
+        var (border, pivot) = (part.PartBorder, part.Pivot);
         p.RotateCanvas90();
         Assert.Equal(new Size(size.Height, size.Width), part.PartSize);
         Assert.Equal(new SpriteBorder(border.Bottom, border.Left, border.Top, border.Right), part.PartBorder);
-        Assert.Equal(new Pivot(pivot.Y, 1f - pivot.X), part.PartPivot);
+        Assert.Equal(new Pivot(pivot.Y, 1f - pivot.X), part.Pivot);
         p.Undo();
         Assert.Equal(size, part.PartSize);
     }
@@ -611,7 +636,7 @@ public class PartsTests
         p.SetActiveSkin(g, knight);
         Paint(p, pi, 0, 0, 2, Blue);
         p.SetPartBorder(pi, new SpriteBorder(1, 1, 1, 2));
-        p.SetPartPivot(pi, new Pivot(0.25f, 0f));
+        p.SetLayerPivot(pi, new Pivot(0.25f, 0f));
         p.Edit("피벗", ProjectChange.Settings, () => p.Sprite.DefaultPivot = Pivot.BottomCenter); // 픽셀 (4,8)
         p.SetActiveSkin(g, baseSkin);
 
@@ -619,7 +644,7 @@ public class PartsTests
         p.ResizeCanvasAndScale(20, 18, new Rectangle(2, 1, 16, 16));
         Assert.Equal(new Rectangle(4, 5, 4, 6), part.PartRect);
         Assert.Equal(new SpriteBorder(2, 2, 2, 4), part.PartBorder);
-        Assert.Equal(new Pivot(0.25f, 0f), part.PartPivot);
+        Assert.Equal(new Pivot(0.25f, 0f), part.Pivot);
         AssertPivotAt(p.Sprite.DefaultPivot, 20, 18, 10, 17);
         var baseCel = p.GetOwnCel(part, p.Frames[0], baseSkin)!;
         Assert.Equal(new Size(4, 6), baseCel.Size);
@@ -726,7 +751,7 @@ public class PartsTests
         var part = p.AddPart(g, "P", 3, 2);
         p.SetPartOffset(1, new Point(-2, 7));
         p.SetPartOffset(1, new Point(-2, 7)); // 같으면 기록 없음
-        p.SetPartPivot(1, Pivot.BottomCenter);
+        p.SetLayerPivot(1, Pivot.BottomCenter);
         p.SetPartBorder(1, new SpriteBorder(1, 0, 1, 0));
         p.ResizePart(1, 5, 2, Anchor.MiddleLeft);
         Assert.Equal(6, p.History.UndoCount);
@@ -741,7 +766,7 @@ public class PartsTests
 
         for (int i = 0; i < 4; i++) p.Undo();
         Assert.Equal((new Size(3, 2), new Point(2, 3), Pivot.Center, SpriteBorder.None),
-            (part.PartSize, part.PartOffset, part.PartPivot, part.PartBorder));
+            (part.PartSize, part.PartOffset, part.Pivot, part.PartBorder));
         p.Undo();
         Assert.DoesNotContain(part, p.Layers);
         p.Undo();
@@ -772,7 +797,7 @@ public class PartsTests
         p.AddFrame();
         Paint(p, 1, 0, 3, 5, Red);
         Paint(p, 2, 1, 7, 4, Blue);
-        p.SetPartPivot(2, new Pivot(0.25f, 0.75f));
+        p.SetLayerPivot(2, new Pivot(0.25f, 0.75f));
         p.SetPartBorder(1, new SpriteBorder(1, 2, 3, 4));
         p.SetLayerProperties(3, opacity: 200, locked: true);
         p.SetLayerCollapsed(3, true);
@@ -802,8 +827,8 @@ public class PartsTests
         var back = ProjectIO.Load(path, warnings);
         Assert.Empty(warnings);
         Assert.Equal(Names(p), Names(back));
-        Assert.Equal(p.Layers.Select(l => (l.Kind, l.Parent?.Name, l.Visible, l.Locked, l.Opacity, l.PartSize, l.PartOffset, l.PartPivot, l.PartBorder, l.PartSourceRect)),
-            back.Layers.Select(l => (l.Kind, l.Parent?.Name, l.Visible, l.Locked, l.Opacity, l.PartSize, l.PartOffset, l.PartPivot, l.PartBorder, l.PartSourceRect)));
+        Assert.Equal(p.Layers.Select(l => (l.Kind, l.Parent?.Name, l.Visible, l.Locked, l.Opacity, l.PartSize, l.PartOffset, l.Pivot, l.PartBorder, l.PartSourceRect)),
+            back.Layers.Select(l => (l.Kind, l.Parent?.Name, l.Visible, l.Locked, l.Opacity, l.PartSize, l.PartOffset, l.Pivot, l.PartBorder, l.PartSourceRect)));
         Assert.True(back.Layers[3].Collapsed);
         AssertHierarchy(back);
         for (int f = 0; f < 2; f++)
@@ -912,7 +937,7 @@ public class PartsTests
         {
             var part = p.Layers[3 - i];
             Assert.Equal((PlayerNames[i], PlayerRects[i].Size, PlayerRects[i].Location, PlayerPivots[i], (Rectangle?)PlayerRects[i]),
-                (part.Name, part.PartSize, part.PartOffset, part.PartPivot, part.PartSourceRect));
+                (part.Name, part.PartSize, part.PartOffset, part.Pivot, part.PartSourceRect));
             Assert.True(p.GetCel(3 - i, 0)!.ContentEquals(sheet.Crop(PlayerRects[i])));
         }
         Assert.True(p.Flatten(0).ContentEquals(sheet));
@@ -963,7 +988,7 @@ public class PartsTests
         var a = p.Layers[1];
         var b = p.Layers[0];
         Assert.Equal((new Point(0, 0), new Point(4, 0)), (a.PartOffset, b.PartOffset));
-        Assert.Equal(new Pivot(0, 1), a.PartPivot); // 피벗이 없으면 기본 피벗
+        Assert.Equal(new Pivot(0, 1), a.Pivot); // 피벗이 없으면 기본 피벗
         Assert.Equal(new SpriteBorder(1, 0, 1, 0), a.PartBorder);
         Assert.Null(a.PartSourceRect);
         var merged = p.GetCel(1, 0)!;
@@ -992,7 +1017,7 @@ public class PartsTests
         p.BeginCelStroke(2, 0).Clear(Blue);
         p.CommitCelStroke("머리");
         Paint(p, 2, 1, 7, 4, Blue);
-        p.SetPartPivot(2, Pivot.BottomCenter);
+        p.SetLayerPivot(2, Pivot.BottomCenter);
         p.SetPartBorder(1, new SpriteBorder(1, 1, 1, 1));
 
         var saved = ProjectIO.SaveWithExport(p, path);
@@ -1167,7 +1192,7 @@ public class PartsTests
         {
             var part = p.Layers[3 - i];
             Assert.Equal((PlayerNames[i], PlayerRects[i].Size, PlayerRects[i].Location, PlayerPivots[i], (Rectangle?)PlayerRects[i]),
-                (part.Name, part.PartSize, part.PartOffset, part.PartPivot, part.PartSourceRect));
+                (part.Name, part.PartSize, part.PartOffset, part.Pivot, part.PartSourceRect));
             Assert.True(p.GetCel(3 - i, 0)!.ContentEquals(image.Crop(PlayerRects[i])));
         }
         Assert.True(p.Flatten(0).ContentEquals(image));
@@ -1195,7 +1220,7 @@ public class PartsTests
         var parts = ProjectImport.Import(analysis, ImportMode.Parts).Project;
         Assert.Equal(["b", "a", "tiles"], Names(parts));
         Assert.Equal(new SpriteBorder(1, 2, 3, 4), parts.Layers[1].PartBorder);
-        Assert.Equal(Pivot.BottomCenter, parts.Layers[0].PartPivot);
+        Assert.Equal(Pivot.BottomCenter, parts.Layers[0].Pivot);
 
         // 칸 없는 PNG를 부위로 → 이미지 전체 1개(이름이 겹치면 그룹 이름이 바뀜)
         var plain = dir.File("plain.png");

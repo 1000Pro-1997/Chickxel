@@ -58,7 +58,8 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 부위들을 그룹 밖 일반 레이어로 꺼낸다(실행취소 한 단계). <paramref name="slot"/> = 넣을 자리(나머지 최상위 레이어·그룹 중 아래에 둘 수, 0 = 맨 아래).
-    /// 지금 보이는 스킨 그림이 캔버스의 같은 자리에 남고(캔버스 밖으로 나간 부분은 캔버스 밖 그림), 다른 스킨 셀·그 부위 전용 스킨·피벗·9-slice 테두리는
+    /// 지금 보이는 스킨 그림이 캔버스의 같은 자리에 남고(캔버스 밖으로 나간 부분은 캔버스 밖 그림), 피벗은 캔버스 기준으로 바꿔 같은 그림 지점을 가리킨다
+    /// (프레임마다 옮긴 위치가 있던 프레임은 그 프레임만의 피벗으로). 다른 스킨 셀·그 부위 전용 스킨·9-slice 테두리는
     /// 없어진다(<see cref="HasHiddenSkinContent"/>). 부위가 아니면 <see cref="ArgumentException"/>, 잠겼으면 <see cref="InvalidOperationException"/>.
     /// </summary>
     public void MoveOutOfGroup(IReadOnlyList<Layer> parts, int slot)
@@ -69,6 +70,13 @@ public sealed partial class SpriteProject
         {
             foreach (var part in moving)
             {
+                // 피벗: 부위 기준 → 캔버스 기준(프레임마다 옮긴 위치가 다르면 그 프레임만의 피벗으로 — 위치를 지우기 전에)
+                var size = part.PartSize;
+                var basePivot = PartPivotToCanvas(part.Pivot, size, part.PartOffset);
+                var framePivots = new List<(Frame Frame, Pivot Pivot)>();
+                for (int f = 0; f < _frames.Count; f++)
+                    if (HasPartFrameOverride(part, f))
+                        framePivots.Add((_frames[f], PartPivotToCanvas(GetLayerPivot(part, f), size, GetPartOffset(part, f))));
                 // 프레임마다 옮긴 위치가 다를 수 있으므로 링크된 셀은 같은 자리일 때만 같은 그림을 같이 쓴다(링크 색은 첫 자리만 따라감)
                 var split = new Dictionary<PixelImage, Dictionary<Point, (PixelImage Cel, CelOverflow? Overflow)>>(ReferenceEqualityComparer.Instance);
                 foreach (var (frame, cel) in TakeShownCels(part))
@@ -89,12 +97,13 @@ public sealed partial class SpriteProject
                 part.Parent = null;
                 part.PartSize = default;
                 part.PartOffset = default;
-                part.PartPivot = Pivot.Center;
+                part.Pivot = basePivot;
                 foreach (var f in _frames)
                 {
-                    f.PartPivots.Remove(part);
+                    f.LayerPivots.Remove(part);
                     f.PartShifts.Remove(part);
                 }
+                foreach (var (frame, pivot) in framePivots) frame.LayerPivots[part] = pivot;
                 part.PartBorder = default;
                 part.PartSourceRect = null;
             }
@@ -151,6 +160,7 @@ public sealed partial class SpriteProject
     /// <summary>
     /// 일반 레이어를 모든 프레임 그림(캔버스 밖 그림 포함)을 감싸는 영역의 부위로 바꾼다(그림은 캔버스의 같은 자리에 남음, 그룹은 부르는 쪽이 정함).
     /// 빈 레이어이거나 원본 없이 그리는 효과(글씨 등)가 있으면 캔버스까지 감싸고, 그 효과가 켜진 셀 없는 프레임에는 빈 셀을 둔다.
+    /// 레이어 피벗(기본·프레임마다)은 부위 기준으로 바꿔 같은 그림 지점을 가리킨다.
     /// </summary>
     private void NormalToPart(Layer layer)
     {
@@ -199,12 +209,8 @@ public sealed partial class SpriteProject
         layer.Kind = LayerKind.Part;
         layer.PartSize = area.Size;
         layer.PartOffset = area.Location;
-        layer.PartPivot = Pivot.Center;
-        foreach (var f in _frames)
-        {
-            f.PartPivots.Remove(layer);
-            f.PartShifts.Remove(layer);
-        }
+        MapLayerPivots(layer, p => CanvasPivotToPart(p, area));
+        foreach (var f in _frames) f.PartShifts.Remove(layer);
         layer.PartBorder = default;
         layer.PartSourceRect = null;
     }

@@ -28,7 +28,8 @@ public sealed record FrameSplit(IReadOnlyList<FrameRegion> Frames, int[] Labels)
 /// </para>
 /// <para>
 /// 수동: 지정한 자리의 순서를 유지하고 빈 자리는 결과에서 뺀다. 겹치는 픽셀과 같은 거리의 픽셀은 앞자리의 것으로 본다.
-/// 연결된 덩어리는 격자와 같이 주인이 뚜렷하면 통째로 주고, 아니면 픽셀마다 가장 가까운 자리에 나눈다.
+/// 연결된 덩어리는 격자와 같이 주인이 뚜렷하면 통째로 주고, 아니면 픽셀마다 가장 가까운 자리에 나눈다. 다만 프레임에는 그 자리 상자 안 픽셀만 넣는다 —
+/// 상자 밖으로 나간 덩어리 끝과 상자 밖 잡티는 버린다(결과·원본 보기에 상자 밖 그림이 섞이지 않음). 프레임 범위는 받은 픽셀을 합친 사각형.
 /// </para>
 /// </summary>
 public static class FrameSplitter
@@ -144,23 +145,29 @@ public static class FrameSplitter
         Array.Fill(minY, int.MaxValue);
         Array.Fill(maxX, -1);
         Array.Fill(maxY, -1);
-        for (int i = 0; i < fg.Length; i++)
+        // 자리 밖 픽셀은 어느 프레임에도 넣지 않는다(주인 자리 밖으로 나간 덩어리 끝·자리 밖 잡티는 버림) — 프레임은 그 자리 상자가 자른 만큼만.
+        void Put(int i, int k)
         {
-            int b = id[i];
-            if (b < 0 || whole[b] == Small) continue;
-            int k = whole[b] == Cut ? nearest[i] : whole[b];
-            labels[i] = k;
             int x = i % w, y = i / w;
+            if (!slots[k].Contains(x, y)) return;
+            labels[i] = k;
             if (x < minX[k]) minX[k] = x;
             if (x > maxX[k]) maxX[k] = x;
             if (y < minY[k]) minY[k] = y;
             if (y > maxY[k]) maxY[k] = y;
         }
+        for (int i = 0; i < fg.Length; i++)
+        {
+            int b = id[i];
+            if (b < 0 || whole[b] == Small) continue;
+            Put(i, whole[b] == Cut ? nearest[i] : whole[b]);
+        }
         for (int k = 0; k < slots.Length; k++)
             if (maxX[k] >= 0) bounds[k] = Rectangle.FromLTRB(minX[k], minY[k], maxX[k] + 1, maxY[k] + 1);
 
         // 작은 덩어리의 대상은 큰 덩어리의 범위만 보고 정한다(작은 덩어리의 순서에 영향받지 않음).
-        var had = bounds.Select(b => !b.IsEmpty).ToArray();
+        var had = new bool[slots.Length];
+        for (int k = 0; k < slots.Length; k++) had[k] = maxX[k] >= 0;
         for (int b = 0; b < size.Count; b++)
         {
             if (whole[b] != Small) continue;
@@ -178,9 +185,10 @@ public static class FrameSplitter
             var bb = box[b];
             for (int y = bb.Top; y < bb.Bottom; y++)
                 for (int x = bb.Left; x < bb.Right; x++)
-                    if (id[y * w + x] == b) labels[y * w + x] = best;
-            bounds[best] = bounds[best].IsEmpty ? bb : Rectangle.Union(bounds[best], bb);
+                    if (id[y * w + x] == b) Put(y * w + x, best);
         }
+        for (int k = 0; k < slots.Length; k++)
+            bounds[k] = maxX[k] >= 0 ? Rectangle.FromLTRB(minX[k], minY[k], maxX[k] + 1, maxY[k] + 1) : Rectangle.Empty;
 
         var frames = new List<FrameRegion>(slots.Length);
         var index = new int[slots.Length];

@@ -48,6 +48,30 @@ internal static class GuidePaintToolsCompareShots
         Save(k, "tools-pencil-compare", 8, [[off, on]]);
     }
 
+    /// <summary>
+    /// 연필 픽셀 잇기: 빠르게 끈 S자 곡선(마우스 점이 몇 칸씩 떨어짐)을 대각선(<see cref="Raster.Line"/>, 왼쪽)과
+    /// ㄱ자(<see cref="Raster.Line4"/>, 오른쪽 — 기본)로 이은 크기 1 획. 픽셀 퍼펙트는 끈 상태(켜면 대각선으로 잇는다).
+    /// </summary>
+    [Shot("tools-pencil-compare-steps")]
+    public static void PencilStepsCompare(ShotKit k)
+    {
+        var mouse = new List<System.Drawing.Point>();
+        for (double t = 0; t <= 1.0001; t += 1 / 12.0)
+        {
+            double x = 2 + 50 * t;
+            double y = 12 - 9.5 * Math.Sin(t * 2 * Math.PI) + 4 * (t - 0.5);
+            mouse.Add(new System.Drawing.Point((int)Math.Floor(x), (int)Math.Floor(y)));
+        }
+        var diagonal = Blank(55, 25, Paper);
+        var orthogonal = Blank(55, 25, Paper);
+        for (int i = 1; i < mouse.Count; i++)
+        {
+            foreach (var p in Raster.Line(mouse[i - 1], mouse[i])) diagonal.Set(p.X, p.Y, Ink);
+            foreach (var p in Raster.Line4(mouse[i - 1], mouse[i])) orthogonal.Set(p.X, p.Y, Ink);
+        }
+        Save(k, "tools-pencil-compare-steps", 8, [[diagonal, orthogonal]]);
+    }
+
     /// <summary>브러시 모양: 위에서부터 사각·원·마름모, 왼쪽부터 크기 2·3·4·5·7·9의 도장 하나(<see cref="Raster.Brush"/>).</summary>
     [Shot("tools-brush-compare")]
     public static void BrushShapes(ShotKit k)

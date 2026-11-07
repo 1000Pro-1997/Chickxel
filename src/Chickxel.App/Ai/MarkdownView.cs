@@ -5,12 +5,14 @@ namespace Chickxel.App.Ai;
 
 /// <summary>
 /// AI 답 글 보기: <see cref="MiniMarkdown"/>이 읽은 블록마다 컨트롤 하나(문단·제목·목록 항목 = 고를 수 있는 글, 코드 블록 = 고정폭 상자,
-/// 인용 = 왼쪽 막대). 글은 <see cref="SelectableTextBlock"/>의 Run이라 골라 복사하면 표시 기호 없는 글이 나온다.
+/// 인용 = 왼쪽 막대, 표 = 칸마다 고를 수 있는 글을 넣은 격자(넓으면 가로로 넘김), 가로줄 = 가는 선). 글은 <see cref="SelectableTextBlock"/>의 Run이라 골라 복사하면 표시 기호 없는 글이 나온다.
 /// 링크(http·https)는 눌러서 연다. <see cref="SetText"/>를 다시 부르면 원문이 그대로인 앞쪽 블록은 두고 바뀐 뒤쪽만 새로 그린다(스트리밍).
 /// </summary>
 internal sealed class MarkdownView : StackPanel
 {
     private static readonly double[] HeadingSizes = [AppTheme.FontSize + 4, AppTheme.FontSize + 2, AppTheme.FontSize + 1];
+    /// <summary>표 칸 글이 이보다 넓으면 줄을 바꾼다(긴 설명 칸 하나로 표가 한없이 넓어지지 않게).</summary>
+    private const double MaxCellWidth = 360;
     private static readonly Cursor HandCursor = new(StandardCursorType.Hand);
 
     private readonly FontFamily _mono;
@@ -96,9 +98,74 @@ internal sealed class MarkdownView : StackPanel
                         Foreground = AppTheme.TextBrush,
                     },
                 };
+            case MdBlockKind.Table:
+                return Table(block, foreground);
+            case MdBlockKind.Rule:
+                return new Border { Height = 1, Background = AppTheme.BorderBrush, Margin = new Thickness(0, 4) };
             default:
                 return Text(block.Spans, foreground);
         }
+    }
+
+    /// <summary>표: 머리 줄은 굵게·바탕색, 칸 사이에 가는 선. 채팅 칸보다 넓으면 가로 스크롤(세로 휠은 바깥 목록이 받는다).</summary>
+    private Control Table(MdBlock block, IBrush foreground)
+    {
+        int columns = block.Columns.Count;
+        var grid = new Grid();
+        for (int c = 0; c < columns; c++) grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+        for (int r = 0; r < block.Rows.Count; r++)
+        {
+            grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+            for (int c = 0; c < columns; c++)
+            {
+                var text = Text(block.Rows[r][c], foreground);
+                text.MaxWidth = MaxCellWidth;
+                // 줄 안 코드(고정폭 글꼴)가 있는 칸은 줄 높이가 달라 세로 가운데로 맞춘다.
+                text.VerticalAlignment = VerticalAlignment.Center;
+                text.TextAlignment = block.Columns[c] switch
+                {
+                    MdAlign.Center => TextAlignment.Center,
+                    MdAlign.Right => TextAlignment.Right,
+                    _ => TextAlignment.Left,
+                };
+                text.HorizontalAlignment = block.Columns[c] switch
+                {
+                    MdAlign.Center => HorizontalAlignment.Center,
+                    MdAlign.Right => HorizontalAlignment.Right,
+                    _ => HorizontalAlignment.Left,
+                };
+                if (r == 0) text.FontWeight = FontWeight.Bold;
+                var cell = new Border
+                {
+                    BorderBrush = AppTheme.BorderBrush,
+                    BorderThickness = new Thickness(c > 0 ? 1 : 0, r > 0 ? 1 : 0, 0, 0),
+                    Background = r == 0 ? AppTheme.InputBrush : null,
+                    Padding = new Thickness(8, 4),
+                    Child = text,
+                };
+                Grid.SetRow(cell, r);
+                Grid.SetColumn(cell, c);
+                grid.Children.Add(cell);
+            }
+        }
+        var frame = new Border
+        {
+            BorderBrush = AppTheme.BorderBrush,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(4),
+            ClipToBounds = true,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Child = grid,
+        };
+        var scroll = new ScrollViewer
+        {
+            Content = frame,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
+        };
+        // 넘칠 때만 아래를 띄워 겹쳐 뜨는 가로 스크롤 막대가 마지막 줄을 가리지 않게 한다.
+        scroll.ScrollChanged += (_, _) => frame.Margin = new Thickness(0, 0, 0, scroll.Extent.Width > scroll.Viewport.Width + 0.5 ? 10 : 0);
+        return scroll;
     }
 
     /// <summary>꾸민 글 한 덩이. 링크 자리(글 안 위치)를 기억해 누르면 연다.</summary>
@@ -113,6 +180,7 @@ internal sealed class MarkdownView : StackPanel
             var run = new Run(span.Text);
             if (span.Style.HasFlag(MdStyle.Bold)) run.FontWeight = FontWeight.Bold;
             if (span.Style.HasFlag(MdStyle.Italic)) run.FontStyle = FontStyle.Italic;
+            if (span.Style.HasFlag(MdStyle.Strike)) run.TextDecorations = TextDecorations.Strikethrough;
             if (span.Style.HasFlag(MdStyle.Code))
             {
                 run.FontFamily = _mono;
@@ -121,7 +189,7 @@ internal sealed class MarkdownView : StackPanel
             if (span.Url is { } url)
             {
                 run.Foreground = AppTheme.AccentBrush;
-                run.TextDecorations = TextDecorations.Underline;
+                run.TextDecorations = span.Style.HasFlag(MdStyle.Strike) ? [.. TextDecorations.Underline, .. TextDecorations.Strikethrough] : TextDecorations.Underline;
                 (links ??= []).Add((pos, pos + span.Text.Length, url));
             }
             inlines.Add(run);

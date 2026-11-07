@@ -45,7 +45,7 @@ public enum AiDrawAnimationMethod
 /// </summary>
 public sealed class AiDrawSettings
 {
-    /// <summary>결과 크기 직접 입력의 범위(px, 긴 변).</summary>
+    /// <summary>결과 크기·채팅에서 정한 크기의 범위(px, 긴 변).</summary>
     public const int MinSize = 8, MaxSize = 256;
     /// <summary>애니메이션 프레임 수 범위.</summary>
     public const int MinFrames = 2, MaxFrames = 12;
@@ -60,9 +60,8 @@ public sealed class AiDrawSettings
     public bool PaletteOnly { get; set; }
 
     /// <summary>
-    /// 결과 크기 보정(기본 끔): 일반 생성 그림에서 켜면 변환 결과를 <see cref="SizeTarget"/>(또는 채팅에서 정한 크기)에 맞춘다.
-    /// 끄면 대표 프리셋의 결과 크기 설정을 따른다. 참고 이미지를 픽셀 아트로 바꾸는 차례는 채팅 크기, 켜 둔 보정 크기,
-    /// 이미지 판정 크기 중 먼저 정해진 값으로 결과를 맞춘다. 예전 설정 파일에는 없으면 끔이다.
+    /// 결과 크기 보정(기본 끔): 켜면 변환 결과를 <see cref="SizeTarget"/>(또는 채팅에서 정한 크기)에 맞춘다. 끄면 대표 프리셋의 결과 크기 설정을 따르고
+    /// 채팅 크기는 생성 프롬프트의 크기 힌트로만 쓴다.
     /// </summary>
     public bool ResizeResult { get; set; }
 
@@ -73,8 +72,8 @@ public sealed class AiDrawSettings
     public int SizeTarget { get; set; } = DefaultSize;
 
     /// <summary>
-    /// 생성 프롬프트에 넣을 크기 힌트와 변환 고정 크기(0 = 없음·자동): <paramref name="requested"/> = 채팅에서 정한 크기(없으면 null).
-    /// 보정이 꺼져 있으면 힌트는 채팅에서 정한 크기뿐이고 변환은 자동, 켜져 있으면 둘 다 채팅 크기 또는 설정 크기.
+    /// 생성 프롬프트에 넣을 크기 힌트와 변환 고정 크기(0 = 대표 프리셋 크기): <paramref name="requested"/> = 채팅에서 정한 크기(없으면 null).
+    /// 보정이 꺼져 있으면 힌트는 채팅에서 정한 크기뿐이고 변환은 프리셋 크기, 켜져 있으면 둘 다 채팅 크기 또는 설정 크기.
     /// </summary>
     public (int Hint, int Convert) SizesFor(int? requested)
     {
@@ -84,10 +83,13 @@ public sealed class AiDrawSettings
         return (size, size);
     }
 
-    /// <summary>변환할 때 배경을 지운다(기본 켬).</summary>
-    public bool RemoveBackground { get; set; } = true;
+    /// <summary>
+    /// 배경 지우기(기본 끔): 켜면 대표 프리셋의 배경 설정 대신 변환할 때 배경을 자동으로 지운다. 끄면 프리셋 배경 설정 그대로.
+    /// 예전 <c>RemoveBackground</c>(기본 켬이던 값)는 읽지 않아 모두 끔으로 시작한다.
+    /// </summary>
+    public bool ForceRemoveBackground { get; set; }
 
-    /// <summary>변환할 때 자동 최적화를 돌린다(기본 켬).</summary>
+    /// <summary>변환할 때 대표 프리셋의 최적화 설정으로 자동 최적화를 돌린다(기본 켬). 끄면 대표 프리셋 값 그대로 한 번 변환한다.</summary>
     public bool AutoOptimize { get; set; } = true;
 
     /// <summary>

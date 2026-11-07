@@ -384,7 +384,7 @@ internal static class ScreenTimelineShots
         var expandNote = ShotKit.Get<Control>(w, "_expandNote");
         var extend = ShotKit.Get<Control>(w, "_extendPanel");
         var addRow = (Control)ShotKit.Get<Control>(w, "_addAll").Parent!;
-        var shared = InWindow(w, GroupOf(expandRow, list));
+        var shared = InWindow(w, SettingsAreaGroup(w, expandRow));
 
         // 4: 전체(번호가 글자·체크 상자를 가리지 않게 묶음 왼쪽 끝에 맞춘 사각형)
         var expand = Union(w, expandRow, expandNote);
@@ -395,7 +395,7 @@ internal static class ScreenTimelineShots
             presets,
             PadLeft(InWindow(w, addRow), 10),
             Union(w, list, buttons),
-            GroupOf(settings, list),
+            InWindow(w, SettingsAreaGroup(w, settings)).Intersect(InWindow(w, ShotKit.Get<ScrollViewer>(w, "_settingsScroll"))),
             Union(w, play, preview),
             strip,
             new Rect(shared.X + 2, expand.Y - 2, shared.Width - 4, expand.Height + 4),
@@ -406,12 +406,16 @@ internal static class ScreenTimelineShots
         TrashShots(k, w, strip);
 
         // 2: 피격 번쩍임의 설정 — 색 칸, 일반색/그라데이션 목록(펼침), 클리핑
+        // (설정 묶음만 자르는 그림이라, 높이가 고정된 스크롤 칸에서 설정 줄이 가려지지 않게 그 위 공통 설정 묶음을 잠시 숨긴다)
+        var common = SettingsAreaGroup(w, expandRow);
+        common.IsVisible = false;
         list.SelectedIndex = 1;
-        ShotKit.Pump(400);
+        ShotKit.Pump(600);
         var field = ShotKit.All<ColorField>(settings).First();
         var mode = ShotKit.All<ComboBox>((Control)field.Parent!).First();
         var clipBox = ShotKit.All<CheckBox>(settings).First(c => c.Content as string == UiStrings.EffectPreset_ClipToPrevious);
-        var group = InWindow(w, GroupOf(settings, list));
+        // 설정 묶음 중 스크롤 칸 안에 보이는 부분
+        var group = InWindow(w, SettingsAreaGroup(w, settings)).Intersect(InWindow(w, ShotKit.Get<ScrollViewer>(w, "_settingsScroll")));
         mode.IsDropDownOpen = true;
         ShotKit.Pump(400);
         var area = group;
@@ -428,6 +432,7 @@ internal static class ScreenTimelineShots
         k.Save(w, "screen-layer-effects-3", crop: popup.Union(InWindow(w, (Control)field.Parent!)).Inflate(8).Intersect(new Rect(w.ClientSize)));
         PopupMenus.CloseAll();
         ShotKit.Pump(300);
+        common.IsVisible = true;
 
         // 5: 프리셋 탭 — 현재 효과 프리셋 저장
         tabs.SelectedIndex = 1;
@@ -689,6 +694,7 @@ internal static class ScreenTimelineShots
             // 1: 효과 탭 끝(앱에 든 효과 뒤)의 개인 스크립트 효과 상자 + 설정 칸
             var tile = ShotKit.Get<Panel>(w, "_effectsWrap").Children.OfType<Control>().Last(c => ShotKit.Get<AssetEntry?>(c, "Entry") is { Script: not null });
             tile.BringIntoView();
+            ScrollToSettings(w);
             ShotKit.Pump(500);
             var settings = ShotKit.Get<Panel>(w, "_settings");
             var children = settings.Children.ToList();
@@ -745,11 +751,11 @@ internal static class ScreenTimelineShots
             string sparks = project.AddScript(SparksScript);
             trust.GetMethod("TrustLocal", Any)!.Invoke(null, [sparks]);
             ShotKit.Call(w, "AddScriptEffect", sparks);
-            // 설정 칸 스크롤 높이 제한을 풀어 모든 설정 줄이 한 번에 보이게 하고, 맨 아래 레이어 고르기 목록이 아래로 펼쳐질 빈자리를 둔다
+            // 설정 칸 스크롤 높이 고정을 풀어 모든 설정 줄이 한 번에 보이게 하고, 맨 아래 레이어 고르기 목록이 아래로 펼쳐질 빈자리를 둔다
             // (창 높이는 그대로라 그림 밖인 공통 설정 묶음을 잠시 숨겨 설정 칸을 위로 올리고, 창을 화면 위로 올려 목록이 화면 밖으로 넘지 않게)
-            var common = GroupOf((Control)ShotKit.Get<Control>(w, "_expandCanvas").Parent!, ShotKit.Get<ListBox>(w, "_list"));
+            var common = SettingsAreaGroup(w, (Control)ShotKit.Get<Control>(w, "_expandMode").Parent!);
             common.IsVisible = false;
-            settings.GetVisualAncestors().OfType<ScrollViewer>().First().MaxHeight = double.PositiveInfinity;
+            ShotKit.Get<ScrollViewer>(w, "_settingsScroll").Height = double.NaN;
             settings.Margin = new Thickness(0, 0, 0, 170);
             w.Position = new PixelPoint(w.Position.X, 0);
             ShotKit.Pump(1500);
@@ -786,6 +792,29 @@ internal static class ScreenTimelineShots
             var buttons = Union(w, ShotKit.Get<Control>(trustDialog, "OkButton"), ShotKit.Get<Control>(trustDialog, "CancelButtonControl"));
             k.Save(w, "screen-script-effects-3", marks: [list, PadLeft(buttons, 10)], firstNumber: 17);
         }, settleMs: 600);
+    }
+
+    /// <summary>효과 창 가운데 스크롤 칸(공통 설정·설정 묶음)에서 <paramref name="c"/>를 담은 Ui.Group 테두리.</summary>
+    internal static Control SettingsAreaGroup(Window w, Control c)
+    {
+        var stack = ShotKit.Get<ScrollViewer>(w, "_settingsScroll").Content as Visual;
+        return c.GetVisualAncestors().OfType<Control>().First(a => ReferenceEquals(a.GetVisualParent(), stack));
+    }
+
+    /// <summary>효과 창 가운데 스크롤 칸을 설정 묶음이 맨 위에 오게 스크롤한다(높이가 고정된 칸이라 공통 설정 아래 설정 줄이 가려지지 않게).</summary>
+    internal static void ScrollToSettings(Window w)
+    {
+        var scroll = ShotKit.Get<ScrollViewer>(w, "_settingsScroll");
+        // 효과를 고르면 설정 칸을 다시 쌓으므로 배치가 끝난 뒤 옮기고, 다시 쌓여 맨 위로 돌아갔으면 한 번 더 옮긴다.
+        for (int i = 0; i < 3; i++)
+        {
+            ShotKit.Pump(300);
+            scroll.UpdateLayout();
+            double y = SettingsAreaGroup(w, ShotKit.Get<Control>(w, "_settings")).Bounds.Y;
+            scroll.Offset = new Vector(0, y);
+            ShotKit.Pump(300);
+            if (scroll.Offset.Y > 0) break;
+        }
     }
 
     /// <summary><paramref name="c"/>를 담은 묶음(<paramref name="sibling"/>과 같은 세로 줄에 놓인 Ui.Group 테두리).</summary>

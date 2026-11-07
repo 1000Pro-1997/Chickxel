@@ -19,6 +19,8 @@ namespace Chickxel.App;
 public sealed class PixelateOptions
 {
     public bool NewDocument { get; set; }
+    /// <summary>적용·새 탭에 추가할 때 캔버스를 결과 그림 크기만큼 늘릴지(줄이지는 않음, 기본 끔 — 끄면 캔버스 밖 픽셀은 캔버스 밖 그림으로 남음).</summary>
+    public bool GrowCanvas { get; set; }
     public int FrameDurationMs { get; set; } = 100;
     public int Fps { get; set; } = 8;
     public bool SavePalette { get; set; }
@@ -562,6 +564,7 @@ public sealed record PixelateOutcome(
     PixelateInput Input,
     PixelateResult Result,
     bool NewDocument,
+    bool GrowCanvas,
     int FrameDurationMs,
     bool SavePalette,
     bool AiTouchUp,
@@ -584,10 +587,19 @@ public sealed class PixelateDialog : DialogBase
     private readonly PixelateOptions _opt;
     /// <summary>원본(null = 아직 없음 — 빈 화면에서 끌어 놓기·붙여 넣기·파일 찾기를 기다림).</summary>
     private PixelateInput? _input;
-    private readonly bool _canInsertLayer;
+    private bool _canInsertLayer;
+    /// <summary>
+    /// 정말 닫는 중(<see cref="CloseForGood"/>·주 창 닫기·앱 끝내기). 아니면 닫기(적용·취소·창 닫기 단추·Esc)는 창을 숨기기만 해 원본·후보·고른 칸·
+    /// 돌던 최적화가 그대로 남고, 원본 없이 다시 열면(<see cref="Reopen"/>) 이어진다.
+    /// </summary>
+    private bool _closeForGood;
+    /// <summary>처음 띄웠는지(다시 띄울 때 처음 후보 줄을 다시 돌리지 않게).</summary>
+    private bool _openedOnce;
     private readonly Action<PixelateOutcome> _apply;
     /// <summary>"새 탭에 추가": 고른 결과 크기의 새 문서를 새 탭에(넣기 설정과 관계없이) 만들고 닫는다.</summary>
     private readonly Button _newTab;
+    /// <summary>"이미지 크기만큼 늘리기": 적용할 때 지금 캔버스를 결과 그림 크기까지 늘린다(새 탭은 늘 결과 크기).</summary>
+    private readonly CheckBox _growCanvas;
     private readonly Action<string, string, IReadOnlyList<PixelImage>> _askAi;
     /// <summary>파일 찾기의 처음 폴더(주 창 파일 브라우저의 폴더, 없으면 마지막 폴더).</summary>
     private readonly Func<string?> _browseFolder;
@@ -1464,6 +1476,10 @@ public sealed class PixelateDialog : DialogBase
             if (_selected is null) { DialogResult = DialogResult.None; return; }
             Apply(_selected, newDocument: true);
         };
+        _growCanvas = Ui.Check(UiStrings.Pixelate_GrowCanvas, _opt.GrowCanvas).Tip(UiStrings.Pixelate_GrowCanvasTip);
+        _growCanvas.VerticalAlignment = VerticalAlignment.Center;
+        _growCanvas.Margin = new Thickness(0, 0, 8, 0);
+        AddFooter(_growCanvas, _newTab);
 
         // 처음: 기억한 설정, 칸별 최적화·최적화 기준은 마지막으로 고른 프리셋의 것(AI 그리기의 '변환 설정 보기'는 프리셋 없이).
         _current = _presetGiven ? null : _opt.OptimizePresets.FirstOrDefault(p => p.Name == _opt.SelectedPreset);
@@ -1476,11 +1492,44 @@ public sealed class PixelateDialog : DialogBase
         _autoOptimizePending = input is not null && _optAuto.On() && !_presetGiven;
         Opened += (_, _) =>
         {
+            if (_openedOnce) return;
+            _openedOnce = true;
             Dispatcher.UIThread.Post(() => { if (!_settingsAnim.IsEnabled) _settingsHost.IsVisible = _settingsExpanded; }, DispatcherPriority.Background);
             // AI 그리기의 '변환 설정 보기'는 그 설정으로 바로 보인다(불러오면 자동 최적화와 관계없이).
             Rerun(lineup: _autoOptimizePending || _presetGiven);
         };
         Closed += (_, _) => OnClosedSave();
+    }
+
+    /// <summary>닫기를 숨기기로 바꾼다(<see cref="_closeForGood"/>가 아니고 이 창 자신을 닫을 때만 — 주 창 닫기·앱 끝내기는 정말 닫음). 숨길 때 화면 설정은 기억한다.</summary>
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        base.OnClosing(e);
+        if (e.Cancel || _closeForGood || e.CloseReason != WindowCloseReason.WindowClosing) return;
+        e.Cancel = true;
+        SaveOptions();
+        Hide();
+    }
+
+    /// <summary>숨겨 둔 창을 정말 닫는다(새 원본으로 창을 다시 만들 때): 돌던 일을 멈추고 화면 설정을 기억한다.</summary>
+    public void CloseForGood()
+    {
+        _closeForGood = true;
+        Close();
+    }
+
+    /// <summary>
+    /// 숨겨 둔(또는 열려 있는) 창을 그대로 다시 띄운다: 원본·후보·고른 칸·돌던 최적화가 이어진다. 지금 문서에 새 레이어로 넣을 수 있는지
+    /// (<paramref name="canInsertLayer"/>)만 다시 맞춘다(넣을 수 없으면 새 문서로).
+    /// </summary>
+    public void Reopen(Window owner, bool canInsertLayer)
+    {
+        _canInsertLayer = canInsertLayer;
+        _outLayer.IsEnabled = canInsertLayer;
+        if (!canInsertLayer) _outDoc.IsChecked = true;
+        else if (!_opt.NewDocument) _outLayer.IsChecked = true;
+        if (!IsVisible) Show(owner);
+        Activate();
     }
 
     private static string TitleFor(PixelateInput? input) => input is null ? UiStrings.Pixelate_Title : $"{UiStrings.Pixelate_Title} — {input.Name}";
@@ -2721,7 +2770,7 @@ public sealed class PixelateDialog : DialogBase
         _palInfo.Text = UiStrings.FormatPixelate_Pal_Info(count: r.Palette.Count);
         var frames = r.CommonFrames();
         var source = _input is { } input ? FindSource(input.Image, r.Settings) : null;
-        _preview.SetFrames(frames, r.CommonExcludedFrames(), source?.Cleaned, r.Maps, r.Frames.All(f => f.Size == r.Size));
+        _preview.SetFrames(frames, r.CommonExcludedFrames(), source, r.Maps, r.Frames.All(f => f.Size == r.Size));
         if (source is null) LoadPreviewSource(r.Settings);
         // 썸네일은 한 번 만들어 두 띠가 함께 쓴다(옛 썸네일은 두 띠가 새것으로 바꾼 뒤 정리).
         var oldThumbs = _thumbs;
@@ -3103,7 +3152,7 @@ public sealed class PixelateDialog : DialogBase
                 Dispatcher.UIThread.Post(() =>
                 {
                     if (_previewSourcePending == (s.Background, s.Frames)) _previewSourcePending = null;
-                    if (ReferenceEquals(_input?.Image, image) && _selected is { } sel && src.Matches(sel.Result.Settings)) _preview.SetSource(src.Cleaned);
+                    if (ReferenceEquals(_input?.Image, image) && _selected is { } sel && src.Matches(sel.Result.Settings)) _preview.SetSource(src);
                 });
             }
             catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or IndexOutOfRangeException or AggregateException)
@@ -4107,7 +4156,7 @@ public sealed class PixelateDialog : DialogBase
     {
         if (_input is not { } input) return;
         SaveOptions();
-        _apply(new PixelateOutcome(input, c.Result, newDocument || _outDoc.On() || !_canInsertLayer, (int)_outDuration.NumValue(), _outPalette.On(),
+        _apply(new PixelateOutcome(input, c.Result, newDocument || _outDoc.On() || !_canInsertLayer, _growCanvas.On(), (int)_outDuration.NumValue(), _outPalette.On(),
             _aiTouch.On(), _aiPrompt.Text ?? "", ProviderId, _aiReference.On()));
     }
 
@@ -4448,6 +4497,7 @@ public sealed class PixelateDialog : DialogBase
     private void SaveOptions()
     {
         if (_canInsertLayer) _opt.NewDocument = _outDoc.On();
+        _opt.GrowCanvas = _growCanvas.On();
         _opt.FrameDurationMs = (int)_outDuration.NumValue();
         _opt.Fps = (int)_fps.NumValue();
         _opt.SavePalette = _outPalette.On();
@@ -5731,15 +5781,16 @@ public sealed class PixelateDialog : DialogBase
             {
                 double ScreenX(double x) => rdest.X + (x - sx0) * kx;
                 double ScreenY(double y) => rdest.Y + (y - sy0) * ky;
-                // 원본 그림 밖은 잘라서 그린다(원본 사각형이 그림을 넘으면 늘어나 그려지지 않게).
-                var full = new Rect(0, 0, src.PixelSize.Width, src.PixelSize.Height);
+                // 원본 쪽 그림은 그 프레임 범위만(그림 (0,0) = 범위 왼쪽 위) — 범위 밖은 비워 두고, 원본 사각형이 그림을 넘으면 늘어나 그려지지 않게 잘라서 그린다.
+                var origin = map.SourceBounds.Location;
+                var full = new Rect(origin.X, origin.Y, src.PixelSize.Width, src.PixelSize.Height);
                 var srcRect = new Rect(sx0, sy0, rdest.Width / kx, rdest.Height / ky).Intersect(full);
                 AppTheme.DrawChecker(g, rdest.Intersect(right), 8);
                 if (srcRect.Width > 0 && srcRect.Height > 0)
                 {
                     var to = new Rect(ScreenX(srcRect.X), ScreenY(srcRect.Y), srcRect.Width * kx, srcRect.Height * ky);
                     using (ImageUtil.Pixelated(g))
-                        g.DrawImage(src, srcRect, to);
+                        g.DrawImage(src, srcRect.Translate(new Vector(-origin.X, -origin.Y)), to);
                 }
                 if (ShowGrid) CutOverlay.Draw(g, map, ScreenX, ScreenY, kx, right);
                 if (_preview.Marked is { } marked && marked.Frame == _preview.Index)
@@ -5759,7 +5810,7 @@ public sealed class PixelateDialog : DialogBase
                 }
                 if (PickPulse is { } level)
                 {
-                    var shown = rdest.Intersect(new Rect(ScreenX(0), ScreenY(0), src.PixelSize.Width * kx, src.PixelSize.Height * ky)).Intersect(right);
+                    var shown = rdest.Intersect(new Rect(ScreenX(full.X), ScreenY(full.Y), full.Width * kx, full.Height * ky)).Intersect(right);
                     CutOverlay.DrawPickPulse(g, shown, level);
                 }
             }
@@ -5767,7 +5818,8 @@ public sealed class PixelateDialog : DialogBase
     }
 
     /// <summary>
-    /// 고른 후보 크게 보기: 왼쪽은 지금 프레임(휠로 세밀하게 확대, 체커), 오른쪽은 같은 프레임의 원본(배경 지운 모습, 칸 선은 왼쪽 큰 원본 보기에만).
+    /// 고른 후보 크게 보기: 왼쪽은 지금 프레임(휠로 세밀하게 확대, 체커), 오른쪽은 같은 프레임의 원본(배경 지운 모습에서 그 프레임 픽셀만 — 상자 밖·이웃 프레임·버린 잡티는 빼고,
+    /// 칸 선은 왼쪽 큰 원본 보기에만).
     /// 원본 보기에서 칸에 마우스를 올리면 그 프레임에 멈추고 결과의 같은 픽셀을 강조한다. 프레임은 <see cref="Index"/>로 바꾼다.
     /// 누르면 키보드 초점(Space·←→)을 받고, 결과·원본 그림을 끌지 않고 좌클릭하면 <see cref="OpenRequested"/>(크게 보기 — <see cref="ZoomOverlay"/>),
     /// 결과 그림을 우클릭하면 <see cref="ResultPixelRightClicked"/>(그 픽셀 색 빼기/되살리기).
@@ -5776,8 +5828,9 @@ public sealed class PixelateDialog : DialogBase
     private sealed class FramePreview : Control
     {
         private List<WriteableBitmap> _frames = [];
-        private WriteableBitmap? _source;
-        private PixelImage? _sourceImage;
+        /// <summary>원본 쪽 준비 결과(null = 비움)와 프레임마다 그 프레임 픽셀만 남긴 원본 그림(<see cref="PixelateSource.FrameImage"/> — 처음 보일 때 만듦).</summary>
+        private PixelateSource? _sourceData;
+        private WriteableBitmap?[] _sources = [];
         private IReadOnlyList<PixelateFrameMap> _maps = [];
         private bool _sameCanvas;
         private int _index;
@@ -5810,7 +5863,7 @@ public sealed class PixelateDialog : DialogBase
 
         /// <param name="excluded">색 빼기 전 색(<see cref="PixelateResult.CommonExcludedFrames"/>, 프레임과 같은 자리 — 없으면 빈 목록).</param>
         /// <param name="sameCanvas">결과 프레임이 칸 대응(<see cref="PixelateFrameMap"/>)과 같은 캔버스인지(아니면 결과 쪽 강조는 하지 않음).</param>
-        public void SetFrames(IReadOnlyList<PixelImage> frames, IReadOnlyList<PixelImage> excluded, PixelImage? source, IReadOnlyList<PixelateFrameMap> maps, bool sameCanvas)
+        public void SetFrames(IReadOnlyList<PixelImage> frames, IReadOnlyList<PixelImage> excluded, PixelateSource? source, IReadOnlyList<PixelateFrameMap> maps, bool sameCanvas)
         {
             foreach (var b in _frames) b.Dispose();
             _frames = frames.Select(ImageUtil.ToBitmap).ToList();
@@ -5827,13 +5880,13 @@ public sealed class PixelateDialog : DialogBase
             IndexChanged?.Invoke(_index);
         }
 
-        /// <summary>원본 쪽 그림(배경 지운 원본 — 고른 후보의 준비 결과, null = 비움)만 바꾼다.</summary>
-        public void SetSource(PixelImage? source)
+        /// <summary>원본 쪽 그림(고른 후보의 준비 결과 — 프레임마다 그 프레임 픽셀만, null = 비움)만 바꾼다.</summary>
+        public void SetSource(PixelateSource? source)
         {
-            if (ReferenceEquals(source, _sourceImage)) return;
-            _source?.Dispose();
-            _source = source is null ? null : ImageUtil.ToBitmap(source);
-            _sourceImage = source;
+            if (ReferenceEquals(source, _sourceData)) return;
+            foreach (var b in _sources) b?.Dispose();
+            _sourceData = source;
+            _sources = source is null ? [] : new WriteableBitmap?[source.Split.Frames.Count];
             InvalidateVisual();
         }
 
@@ -5916,8 +5969,13 @@ public sealed class PixelateDialog : DialogBase
 
         /// <summary>보이는 프레임 그림(없으면 null) — 크게 보기가 같은 그림을 그린다.</summary>
         public WriteableBitmap? FrameBitmap => _frames.Count == 0 ? null : _frames[_index];
-        /// <summary>배경 지운 원본 그림.</summary>
-        public WriteableBitmap? SourceBitmap => _source;
+        /// <summary>
+        /// 보이는 프레임의 원본 그림: 배경 지운 원본을 그 프레임 범위(<see cref="PixelateFrameMap.SourceBounds"/> — 그림 (0,0) = 범위 왼쪽 위)로 자르고 그 프레임 픽셀만 남긴 것.
+        /// 범위 밖·버린 잡티·이웃 프레임은 그리지 않는다(결과에 들어갈 수 있는 원본만). 없으면 null.
+        /// </summary>
+        public WriteableBitmap? SourceBitmap => _sourceData is { } data && _index < _sources.Length
+            ? _sources[_index] ??= ImageUtil.ToBitmap(data.FrameImage(_index))
+            : null;
         /// <summary>보이는 프레임의 칸 대응(없으면 null).</summary>
         public PixelateFrameMap? Map => _index < _maps.Count ? _maps[_index] : null;
         /// <summary>결과 프레임이 칸 대응과 같은 캔버스인지.</summary>
@@ -6046,11 +6104,12 @@ public sealed class PixelateDialog : DialogBase
                 double z = dest.Width / size.Width;
                 CutOverlay.DrawMark(g, new Rect(dest.X + mk.X * z, dest.Y + mk.Y * z, z, z));
             }
-            if (_source is null || _index >= _maps.Count) return;
+            if (SourceBitmap is not { } source || _index >= _maps.Count) return;
             var sourceBounds = _maps[_index].SourceBounds;
             AppTheme.DrawTextIn(g, UiStrings.Pixelate_Preview_Source + " · " + ZoomImageView.SizeText(sourceBounds.Width, sourceBounds.Height),
                 new Rect(half + 4, 0, bounds.Width - half - 8, 18), AppTheme.TextBrush, AppTheme.SmallFontSize, bold: true);
-            _sourceRect = ImageUtil.DrawFitted(g, _source, _maps[_index].SourceBounds, new Rect(half + 4, 20, bounds.Width - half - 8, bounds.Height - 24), checker: true);
+            _sourceRect = ImageUtil.DrawFitted(g, source, new Rectangle(0, 0, source.PixelSize.Width, source.PixelSize.Height),
+                new Rect(half + 4, 20, bounds.Width - half - 8, bounds.Height - 24), checker: true);
             if (_pickHover is { } ph && ph.Frame == _index && _sourceRect.Width > 0)
             {
                 var b = _maps[_index].SourceBounds;

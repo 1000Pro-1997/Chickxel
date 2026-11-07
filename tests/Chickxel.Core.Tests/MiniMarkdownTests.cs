@@ -148,4 +148,116 @@ public class MiniMarkdownTests
         Assert.Equal([S("b **b")], partial[^1].Spans);
         Assert.Equal([S("b "), S("bold", MdStyle.Bold)], done[^1].Spans);
     }
+
+    [Fact]
+    public void H4_to_h6_render_as_level_three()
+    {
+        var blocks = MiniMarkdown.Parse("#### Four\n##### Five\n###### Six\n####### Seven");
+        Assert.Equal([3, 3, 3], blocks.Take(3).Select(b => b.Level));
+        Assert.All(blocks.Take(3), b => Assert.Equal(MdBlockKind.Heading, b.Kind));
+        Assert.Equal(["Four", "Five", "Six"], blocks.Take(3).Select(b => b.Spans.Single().Text));
+        Assert.Equal(MdBlockKind.Paragraph, blocks[3].Kind);
+    }
+
+    [Fact]
+    public void Table_with_alignment_and_inline_cells()
+    {
+        var blocks = MiniMarkdown.Parse("| 순서 | 레이어 이름 | 수 |\n|---|:---:|--:|\n| 1 | `bg_far` | **3** |\n| 2 | [link](https://a.example) | 4 |");
+        var table = Assert.Single(blocks);
+        Assert.Equal(MdBlockKind.Table, table.Kind);
+        Assert.Equal([MdAlign.Left, MdAlign.Center, MdAlign.Right], table.Columns);
+        Assert.Equal(3, table.Rows.Count);
+        Assert.Equal([S("순서")], table.Rows[0][0]);
+        Assert.Equal([S("레이어 이름")], table.Rows[0][1]);
+        Assert.Equal([S("bg_far", MdStyle.Code)], table.Rows[1][1]);
+        Assert.Equal([S("3", MdStyle.Bold)], table.Rows[1][2]);
+        Assert.Equal([S("link", url: "https://a.example")], table.Rows[2][1]);
+    }
+
+    [Fact]
+    public void Table_without_outer_pipes_and_escaped_pipe()
+    {
+        var blocks = MiniMarkdown.Parse("a | b\n:-- | ---\n`x \\| y` | c \\| d");
+        var table = Assert.Single(blocks);
+        Assert.Equal(MdBlockKind.Table, table.Kind);
+        Assert.Equal([MdAlign.Left, MdAlign.Left], table.Columns);
+        Assert.Equal([S("x | y", MdStyle.Code)], table.Rows[1][0]);
+        Assert.Equal([S("c | d")], table.Rows[1][1]);
+    }
+
+    [Fact]
+    public void Table_rows_are_padded_or_trimmed_to_header()
+    {
+        var table = MiniMarkdown.Parse("| a | b | c |\n|---|---|---|\n| 1 |\n| 1 | 2 | 3 | 4 |")[0];
+        Assert.All(table.Rows, r => Assert.Equal(3, r.Count));
+        Assert.Empty(table.Rows[1][1]);
+        Assert.Empty(table.Rows[1][2]);
+        Assert.Equal([S("3")], table.Rows[2][2]);
+    }
+
+    [Theory]
+    [InlineData("| a | b |")]
+    [InlineData("| a | b |\n|---")]
+    [InlineData("| a | b |\n|---|---|---|")]
+    [InlineData("| a | b |\n| x | y |")]
+    [InlineData("a\n---|x")]
+    public void Table_needs_matching_delimiter_row(string text)
+    {
+        Assert.All(MiniMarkdown.Parse(text), b => Assert.NotEqual(MdBlockKind.Table, b.Kind));
+    }
+
+    [Fact]
+    public void Table_ends_at_blank_or_pipeless_line()
+    {
+        var blocks = MiniMarkdown.Parse("Intro:\n| a | b |\n|---|---|\n| 1 | 2 |\nafter text\n\n| c | d |\n|---|---|\n\nend");
+        Assert.Equal([MdBlockKind.Paragraph, MdBlockKind.Table, MdBlockKind.Paragraph, MdBlockKind.Table, MdBlockKind.Paragraph], blocks.Select(b => b.Kind));
+        Assert.Equal("Intro:", blocks[0].Spans.Single().Text);
+        Assert.Equal(2, blocks[1].Rows.Count);
+        Assert.Equal("after text", blocks[2].Spans.Single().Text);
+        Assert.Single(blocks[3].Rows);
+    }
+
+    [Fact]
+    public void Rules_versus_lists_and_setext()
+    {
+        var blocks = MiniMarkdown.Parse("---\n***\n___\n- - -\n * * *\n- item\ntext\n---\nmore\n===\n--\n-- x");
+        Assert.Equal(
+            [MdBlockKind.Rule, MdBlockKind.Rule, MdBlockKind.Rule, MdBlockKind.Rule, MdBlockKind.Rule, MdBlockKind.ListItem,
+             MdBlockKind.Paragraph, MdBlockKind.Rule, MdBlockKind.Paragraph],
+            blocks.Select(b => b.Kind));
+        Assert.Equal("text", blocks[6].Spans.Single().Text);
+        Assert.Equal("more\n===\n--\n-- x", blocks[8].Spans.Single().Text);
+    }
+
+    [Fact]
+    public void Strikethrough_needs_balanced_double_tildes()
+    {
+        Assert.Equal([S("old", MdStyle.Strike)], Inline("~~old~~"));
+        Assert.Equal([S("a "), S("b ", MdStyle.Strike), S("c", MdStyle.Strike | MdStyle.Bold)], Inline("a ~~b **c**~~"));
+        Assert.Equal([S("a"), S("b", MdStyle.Strike), S("c")], Inline("a~~b~~c"));
+        Assert.Equal([S("a~~b")], Inline("a~~b"));
+        Assert.Equal([S("~~ a ~~")], Inline("~~ a ~~"));
+        Assert.Equal([S("~a~ and ~~~b~~~")], Inline("~a~ and ~~~b~~~"));
+        Assert.Equal([S("~~x~~")], Inline(@"\~~x~~"));
+    }
+
+    [Fact]
+    public void Streaming_table_keeps_earlier_block_sources()
+    {
+        var full = "Intro text.\n\n| a | b |\n|---|---|\n| `x` | y |\n\n---\n\n#### Done ~~old~~";
+        var done = MiniMarkdown.Parse(full);
+        Assert.Equal([MdBlockKind.Paragraph, MdBlockKind.Table, MdBlockKind.Rule, MdBlockKind.Heading], done.Select(b => b.Kind));
+        for (int len = 1; len < full.Length; len++)
+        {
+            var partial = MiniMarkdown.Parse(full[..len]);
+            // 끝 블록 말고는 다 끝난 블록과 같은 원문이다.
+            for (int i = 0; i < partial.Count - 1; i++)
+            {
+                Assert.Equal(done[i].Kind, partial[i].Kind);
+                Assert.Equal(done[i].Source, partial[i].Source);
+            }
+        }
+        // 구분 줄이 덜 왔으면 머리 줄은 문단으로 남는다.
+        Assert.Equal(MdBlockKind.Paragraph, MiniMarkdown.Parse(full[..full.IndexOf("|---")])[^1].Kind);
+    }
 }

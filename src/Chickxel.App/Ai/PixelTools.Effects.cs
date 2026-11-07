@@ -472,32 +472,21 @@ public sealed partial class PixelTools
         };
         List<Layer> targets = only is { } l ? [p.Layers[l]] : p.Layers.Where(x => x.Visible && x.Effects.Count > 0).ToList();
         int width = p.Width, height = p.Height;
-        var bounds = new Rectangle(0, 0, width, height);
+        var bounds = Rectangle.Empty;
         bool any = false;
         foreach (var layer in targets)
         {
-            for (int frame = 0; frame < p.Frames.Count; frame++)
-            {
-                if (p.EffectSource(layer, frame) is not { } source) continue;
-                // 캔버스 늘리기를 끈 효과는 재지 않는다(효과 창 확인과 같음)
-                var effects = LayerEffects.ExpandingOnly(p.EffectsAt(layer, frame));
-                if (!LayerEffects.AnyEnabled(effects)) continue;
-                any = true;
-                var (rendered, dx, dy) = LayerEffects.Render(source, effects);
-                var opaque = rendered.GetOpaqueBounds();
-                if (opaque.IsEmpty) continue;
-                var at = layer.IsPart ? p.GetPartOffset(layer, frame) : Point.Empty;
-                opaque.Offset(at.X + dx, at.Y + dy);
-                bounds = Rectangle.Union(bounds, opaque);
-            }
+            // 캔버스 늘리기를 끈 효과는 재지 않는다(효과 창 확인과 같음)
+            if (p.EffectOutputBounds(layer) is not { } b) continue;
+            any = true;
+            if (!b.IsEmpty) bounds = bounds.IsEmpty ? b : Rectangle.Union(bounds, b);
         }
         if (!any) return TextResult(UiStrings.FormatAi_Effect_ExpandNoEffects(tool: tool));
-        var plan = EffectCanvasExpansion.FromBounds(width, height, bounds, mode);
+        var plan = p.PlanEffectCanvas(bounds, mode);
         if (plan.IsNone(width, height)) return TextResult(UiStrings.FormatAi_Effect_ExpandNone(tool: tool, width: width, height: height));
         var locked = p.Layers.Where((_, i) => p.IsLayerLocked(i)).ToList();
         if (locked.Count > 0) throw new ToolError(UiStrings.FormatAi_Locked_ResizeCanvas(layers: LayerList(p, locked)));
-        p.Edit(Label(tool), ProjectChange.Canvas | ProjectChange.Pixels | ProjectChange.Frames | ProjectChange.Layers | ProjectChange.Settings,
-            () => p.ResizeCanvasAndScale(plan.Width, plan.Height, new Rectangle(plan.OffsetX, plan.OffsetY, width, height)));
+        p.ApplyEffectCanvas(plan, Label(tool));
         return TextResult(UiStrings.FormatAi_Effect_Expanded(tool: tool, oldWidth: width, oldHeight: height, width: plan.Width, height: plan.Height,
             x: plan.OffsetX, y: plan.OffsetY));
     }

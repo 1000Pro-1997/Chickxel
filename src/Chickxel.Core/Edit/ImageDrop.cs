@@ -10,22 +10,21 @@ public sealed record DroppedImage(string Name, IReadOnlyList<PixelImage> Frames,
 }
 
 /// <summary>
-/// 끌어 넣기 결과: 새 레이어들(넣은 순서 — 마지막이 맨 위), 레이어마다 그림 왼쪽 위 위치(프레임 좌표 — 잘리기 전 그림 자리),
-/// 맨 끝에 더한 프레임 수, 캔버스보다 커서 가운데 놓고 잘린 그림이 있었는지.
+/// 끌어 넣기 결과: 새 레이어들(넣은 순서 — 마지막이 맨 위), 레이어마다 그림 왼쪽 위 위치(프레임 좌표),
+/// 맨 끝에 더한 프레임 수, 캔버스보다 커서 가운데 놓고 캔버스 밖으로 나간 그림이 있었는지(나간 픽셀은 캔버스 밖 그림으로 남음).
 /// </summary>
 public sealed record ImageDropResult(IReadOnlyList<Layer> Layers, IReadOnlyList<Point> Locations, int AddedFrames, bool Oversized);
 
 /// <summary>
 /// 파일 끌어 넣기: 그림마다 새 일반 레이어를 현재 레이어(부위면 그 그룹, 그룹이면 그 그룹) 위에 넣고, 현재 프레임부터 그림 프레임을 차례로 넣는다.
-/// 위치는 놓은 픽셀이 그림 가운데가 되게(정수 픽셀, 캔버스 밖은 잘림), 그림이 캔버스보다 크면(한 변이라도) 캔버스 가운데.
-/// 프레임이 모자라면 맨 끝에 더하고 길이는 그림 프레임 길이를 쓴다. 모두 실행취소 한 단계.
+/// 위치는 놓은 픽셀이 그림 가운데가 되게(정수 픽셀), 그림이 캔버스보다 크면(한 변이라도) 캔버스 가운데. 캔버스 밖으로 나간 픽셀은 잘리지 않고
+/// 캔버스 밖 그림으로 남는다(캔버스를 키우면 보임). 프레임이 모자라면 맨 끝에 더하고 길이는 그림 프레임 길이를 쓴다. 모두 실행취소 한 단계.
 /// </summary>
 public static class ImageDrop
 {
     /// <summary>
     /// 그림 왼쪽 위 위치(프레임 좌표). 그림이 캔버스보다 크면(한 변이라도) 캔버스 가운데에 놓고 <c>Oversized</c> = true,
-    /// 아니면 <paramref name="drop"/> 픽셀(캔버스 밖이면 가장 가까운 가장자리 픽셀)이 가운데(짝수 변이면 가운데 둘 중 오른쪽·아래)가 되게 놓는다
-    /// (캔버스 밖으로 나간 부분은 넣을 때 잘림).
+    /// 아니면 <paramref name="drop"/> 픽셀(캔버스 밖이면 가장 가까운 가장자리 픽셀)이 가운데(짝수 변이면 가운데 둘 중 오른쪽·아래)가 되게 놓는다.
     /// </summary>
     public static (Point Location, bool Oversized) Place(Size canvas, Size image, Point drop)
     {
@@ -40,16 +39,31 @@ public static class ImageDrop
     /// <summary>
     /// 그림들을 새 레이어로 넣는다(실행취소 한 단계 <paramref name="label"/>). <paramref name="currentLayer"/> 위 자리는 레이어 추가와 같다
     /// (부위면 그 그룹 위 — 그룹 안에는 넣지 않음). 그림이 없으면 아무것도 하지 않는다.
+    /// <paramref name="growCanvas"/>면 먼저 캔버스를 가장 큰 그림이 들어가게 가운데 기준으로 늘린다(줄이지는 않음 — 같은 실행취소 단계, 놓는 자리는
+    /// 늘린 캔버스의 같은 지점).
     /// </summary>
-    public static ImageDropResult Apply(SpriteProject p, IReadOnlyList<DroppedImage> images, int currentLayer, int currentFrame, Point drop, string label)
+    public static ImageDropResult Apply(SpriteProject p, IReadOnlyList<DroppedImage> images, int currentLayer, int currentFrame, Point drop, string label,
+        bool growCanvas = false)
     {
         if (images.Count == 0) return new ImageDropResult([], [], 0, false);
         var layers = new List<Layer>(images.Count);
         var locations = new List<Point>(images.Count);
         int added = 0;
         bool oversized = false;
-        p.Edit(label, ProjectChange.Layers | ProjectChange.Frames | ProjectChange.Tags | ProjectChange.Pixels, () =>
+        var change = ProjectChange.Layers | ProjectChange.Frames | ProjectChange.Tags | ProjectChange.Pixels;
+        if (growCanvas) change |= ProjectChange.Canvas | ProjectChange.Settings;
+        p.Edit(label, change, () =>
         {
+            if (growCanvas)
+            {
+                int w = Math.Max(p.Width, images.Max(i => i.Size.Width)), h = Math.Max(p.Height, images.Max(i => i.Size.Height));
+                if (w != p.Width || h != p.Height)
+                {
+                    var (ox, oy) = PixelImage.AnchorOffset(p.Width, p.Height, w, h, Anchor.Center);
+                    drop = new Point(drop.X + ox, drop.Y + oy);
+                    p.ResizeCanvas(w, h, Anchor.Center);
+                }
+            }
             var current = p.Layers[Math.Clamp(currentLayer, 0, p.Layers.Count - 1)];
             int at = p.IndexOf(current.Parent ?? current) + 1;
             foreach (var image in images)
@@ -71,9 +85,7 @@ public static class ImageDrop
                         p.SetFrameDuration(f, Math.Max(1, image.DurationsMs[i]));
                         added++;
                     }
-                    var cel = new PixelImage(p.Width, p.Height);
-                    cel.Blit(image.Frames[i], loc.X, loc.Y);
-                    if (!cel.IsRegionEmpty(cel.Bounds)) p.SetCel(index, f, cel);
+                    p.SetFullCel(index, f, image.Frames[i], loc);
                 }
             }
         });

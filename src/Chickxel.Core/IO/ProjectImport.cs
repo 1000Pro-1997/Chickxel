@@ -164,6 +164,7 @@ public static class ProjectImport
             var single = SpriteProject.FromImage(doc.Image);
             single.Sprite.CopyFrom(doc.Sprite);
             single.Sprite.Mode = doc.Sprite.Mode;
+            single.Layers[0].Pivot = doc.Sprite.DefaultPivot; // 레이어 피벗 = 캔버스 피벗(효과의 피벗)
             return single;
         }
 
@@ -181,6 +182,7 @@ public static class ProjectImport
         project.Sprite.Mode = SpriteMode.Multiple;
         var defaultPivot = new Pivot(px / width, 1f - py / height);
         project.Sprite.DefaultPivot = defaultPivot;
+        layer.Pivot = defaultPivot; // 레이어 피벗도 같은 칸 피벗(프레임마다 다르면 아래에서 그 프레임만의 피벗)
 
         // 칸 → 프레임(작업 목록은 프레임 객체 순서)
         var work = new List<Frame>();
@@ -198,6 +200,7 @@ public static class ProjectImport
                 Name = slice.Name,
                 Pivot = MathF.Abs(actual.X - defaultPivot.X) > 1e-4f || MathF.Abs(actual.Y - defaultPivot.Y) > 1e-4f ? actual : null,
             };
+            if (frame.Pivot is { } own) frame.LayerPivots[layer] = own;
             work.Add(frame);
             celOf[frame] = cel;
             home.TryAdd(slice.Name, frame);
@@ -245,7 +248,7 @@ public static class ProjectImport
                 Kind = LayerKind.Part,
                 PartSize = rect.Size,
                 PartOffset = rect.Location,
-                PartPivot = pivot,
+                Pivot = pivot,
                 PartBorder = border,
                 PartSourceRect = rect,
             };
@@ -254,7 +257,7 @@ public static class ProjectImport
             var cel = doc.Image.Crop(rect);
             if (!cel.IsRegionEmpty(cel.Bounds)) project.SetCelRaw(part, frame, cel);
         }
-        var group = new Layer(project.UniqueLayerName(doc.BaseName)) { Kind = LayerKind.Group };
+        var group = new Layer(project.UniqueLayerName(doc.BaseName)) { Kind = LayerKind.Group, Pivot = project.Sprite.DefaultPivot };
         foreach (var part in parts) part.Parent = group;
         project.ReplaceLayersRaw([.. Enumerable.Reverse(parts), group]);
 

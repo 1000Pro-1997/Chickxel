@@ -80,8 +80,12 @@ public sealed class Layer
     public Point PartOffset { get; internal set; }
     /// <summary>부위: 캔버스 안 영역(기준 위치 — 프레임의 영역은 <see cref="SpriteProject.GetPartRect"/>).</summary>
     public Rectangle PartRect => new(PartOffset, PartSize);
-    /// <summary>부위: 부위 아틀라스 내보내기 피벗(부위 기준 0~1, 아래 왼쪽 원점).</summary>
-    public Pivot PartPivot { get; internal set; } = Pivot.Center;
+    /// <summary>
+    /// 레이어 피벗(0~1, 아래 왼쪽 원점) — 그 프레임만의 피벗(<see cref="Frame.LayerPivots"/>)이 없는 프레임에 쓴다. 레이어 효과의 피벗이며,
+    /// 부위는 부위 기준(부위 아틀라스 내보내기 피벗), 일반 레이어·그룹은 캔버스 기준(<see cref="SpriteSettings.DefaultPivot"/>와 같은 공간)이다.
+    /// 프레임의 실제 피벗은 <see cref="SpriteProject.GetLayerPivot"/>로 읽는다.
+    /// </summary>
+    public Pivot Pivot { get; internal set; } = Pivot.Center;
     /// <summary>부위: 부위 아틀라스 내보내기 9-slice 테두리(px).</summary>
     public SpriteBorder PartBorder { get; internal set; }
     /// <summary>부위: 가져온 시트에서의 원래 칸(왼쪽 위 원점). "원래 위치 유지" 내보내기에 쓴다. 없으면 null.</summary>
@@ -246,10 +250,10 @@ public sealed class Frame
     public Pivot? Pivot { get; set; }
 
     /// <summary>
-    /// 부위마다 이 프레임만의 피벗(부위 기준 0~1, 아래 왼쪽 원점). 없는 부위는 그 부위의 피벗(<see cref="Layer.PartPivot"/>)을 쓴다.
-    /// 읽을 때는 <see cref="SpriteProject.GetPartPivot"/>, 바꿀 때는 <see cref="SpriteProject.SetPartFramePivot"/>로. 지운 레이어의 항목은 남아도 쓰이지 않는다.
+    /// 레이어마다 이 프레임만의 피벗(그 레이어의 공간 — 부위는 부위 기준, 그 밖에는 캔버스 기준 0~1, 아래 왼쪽 원점). 없는 레이어는 그 레이어의 피벗(<see cref="Layer.Pivot"/>)을 쓴다.
+    /// 읽을 때는 <see cref="SpriteProject.GetLayerPivot"/>, 바꿀 때는 <see cref="SpriteProject.SetLayerFramePivot"/>로. 지운 레이어의 항목은 남아도 쓰이지 않는다.
     /// </summary>
-    internal Dictionary<Layer, Pivot> PartPivots { get; } = [];
+    internal Dictionary<Layer, Pivot> LayerPivots { get; } = [];
 
     /// <summary>
     /// 부위마다 이 프레임에서 기준 위치(<see cref="Layer.PartOffset"/>)에서 옮긴 거리(px, 0이 아닌 것만). 거리로 담으므로 기준 위치를 바꾸면(부위 옮기기·크기·자동 배치)

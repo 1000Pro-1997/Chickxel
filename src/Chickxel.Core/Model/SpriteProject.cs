@@ -237,17 +237,6 @@ public sealed partial class SpriteProject
     public string FrameTagFor(IReadOnlyList<LayerEffect> effects, int frameIndex)
         => LayerEffects.ReadsFrameTag(effects) ? TagOfFrame(frameIndex)?.Name ?? "" : "";
 
-    /// <summary>프레임의 실제 피벗(재정의가 없으면 기본 피벗).</summary>
-    public Pivot GetFramePivot(int frameIndex) => _frames[frameIndex].Pivot ?? Sprite.DefaultPivot;
-
-    /// <summary>부위 <paramref name="part"/>의 프레임 <paramref name="frameIndex"/> 피벗(부위 기준): 그 프레임만의 피벗이 있으면 그것, 없으면 부위 피벗.</summary>
-    public Pivot GetPartPivot(Layer part, int frameIndex)
-        => (uint)frameIndex < (uint)_frames.Count && _frames[frameIndex].PartPivots.TryGetValue(part, out var own) ? own : part.PartPivot;
-
-    /// <summary>부위 <paramref name="part"/>가 프레임 <paramref name="frameIndex"/>에서 다른 프레임과 다른 피벗을 쓰는지(<see cref="SetPartFramePivot"/>).</summary>
-    public bool HasPartFramePivot(Layer part, int frameIndex)
-        => (uint)frameIndex < (uint)_frames.Count && _frames[frameIndex].PartPivots.ContainsKey(part);
-
     /// <summary>부위 <paramref name="part"/>의 프레임 <paramref name="frameIndex"/> 위치(캔버스 안 왼쪽 위): 기준 위치 + 그 프레임에서 옮긴 거리(<see cref="MovePartFrom"/>).</summary>
     public Point GetPartOffset(Layer part, int frameIndex)
     {
@@ -258,28 +247,13 @@ public sealed partial class SpriteProject
     /// <summary>부위 <paramref name="part"/>의 프레임 <paramref name="frameIndex"/> 영역(캔버스 좌표, <see cref="GetPartOffset"/> + 부위 크기).</summary>
     public Rectangle GetPartRect(Layer part, int frameIndex) => new(GetPartOffset(part, frameIndex), part.PartSize);
 
-    /// <summary>
-    /// 부위 <paramref name="part"/>가 프레임 <paramref name="frameIndex"/>에서 따로 둔 피벗이나 옮긴 위치가 있는지(도구 설정의 "현재 프레임부터" —
-    /// <see cref="SetPartFramesFrom"/>·<see cref="SetPartPivotFrom"/>·<see cref="MovePartFrom"/>).
-    /// </summary>
-    public bool HasPartFrameOverride(Layer part, int frameIndex)
-        => (uint)frameIndex < (uint)_frames.Count && (_frames[frameIndex].PartPivots.ContainsKey(part) || _frames[frameIndex].PartShifts.ContainsKey(part));
-
-    /// <summary>프레임 사본(표시 시간·피벗·부위별 프레임 피벗·위치 — 이름은 빼고).</summary>
+    /// <summary>프레임 사본(표시 시간·피벗·레이어별 프레임 피벗·부위 위치 — 이름은 빼고).</summary>
     private static Frame CopyFrame(Frame src)
     {
         var copy = new Frame { DurationMs = src.DurationMs, Pivot = src.Pivot };
-        foreach (var (part, pivot) in src.PartPivots) copy.PartPivots[part] = pivot;
+        foreach (var (layer, pivot) in src.LayerPivots) copy.LayerPivots[layer] = pivot;
         foreach (var (part, shift) in src.PartShifts) copy.PartShifts[part] = shift;
         return copy;
-    }
-
-    /// <summary>부위 피벗과 그 부위의 프레임별 피벗을 모두 <paramref name="map"/>으로 바꾼다(부위 크기·자리를 바꿀 때 같은 그림 지점을 가리키게). Edit 안에서.</summary>
-    private void MapPartPivots(Layer part, Func<Pivot, Pivot> map)
-    {
-        part.PartPivot = map(part.PartPivot);
-        foreach (var f in _frames)
-            if (f.PartPivots.TryGetValue(part, out var own)) f.PartPivots[part] = map(own);
     }
 
     /// <summary>부위의 프레임마다 옮긴 거리를 모두 <paramref name="map"/>으로 바꾼다(0이 되면 지움 — 캔버스 뒤집기·회전·크기 바꾸기). Edit 안에서.</summary>
@@ -506,15 +480,6 @@ public sealed partial class SpriteProject
     /// </summary>
     public Func<int, PixelImage?> EffectFrameSource(Layer layer) => f => (uint)f < (uint)_frames.Count ? EffectSource(layer, f) : null;
 
-    /// <summary>효과의 "피벗" 자리(효과 원본 왼쪽 위 기준 px): 부위면 부위 피벗(부위 셀 기준), 그 밖에는 프레임 피벗(캔버스 기준).</summary>
-    public PointF EffectPivot(Layer layer, int frameIndex)
-    {
-        var (x, y) = layer.IsPart
-            ? GetPartPivot(layer, Math.Clamp(frameIndex, 0, _frames.Count - 1)).ToLocalPixel(layer.PartSize.Width, layer.PartSize.Height)
-            : GetFramePivot(Math.Clamp(frameIndex, 0, _frames.Count - 1)).ToLocalPixel(_width, _height);
-        return new PointF(x, y);
-    }
-
     // ───────────── 스트로크(픽셀 편집) ─────────────
 
     public bool IsStrokeActive => _stroke is not null;
@@ -702,20 +667,24 @@ public sealed partial class SpriteProject
         return layer.IsPart ? layer : throw new ArgumentException(DomainStrings.Project_NotPartLayer, nameof(layerIndex));
     }
 
-    /// <summary>빈 일반 레이어를 <paramref name="index"/>(기본: 맨 위, 그룹 안이면 그 그룹 위)에 넣는다.</summary>
+    /// <summary>빈 일반 레이어를 <paramref name="index"/>(기본: 맨 위, 그룹 안이면 그 그룹 위)에 넣는다. 피벗은 캔버스 기본 피벗.</summary>
     public Layer AddLayer(int? index = null, string? name = null)
     {
         int at = TopLevelInsertIndex(index ?? _layers.Count);
-        var layer = new Layer(string.IsNullOrWhiteSpace(name) ? NextLayerName() : UniqueLayerName(name.Trim()));
+        var layer = new Layer(string.IsNullOrWhiteSpace(name) ? NextLayerName() : UniqueLayerName(name.Trim())) { Pivot = Sprite.DefaultPivot };
         Edit(DomainStrings.Project_AddLayer, ProjectChange.Layers, () => _layers.Insert(at, layer));
         return layer;
     }
 
-    /// <summary>빈 그룹(합친 레이어)을 <paramref name="index"/>(기본: 맨 위, 그룹 안이면 그 그룹 위)에 넣는다.</summary>
+    /// <summary>빈 그룹(합친 레이어)을 <paramref name="index"/>(기본: 맨 위, 그룹 안이면 그 그룹 위)에 넣는다. 피벗은 캔버스 기본 피벗.</summary>
     public Layer AddGroup(string? name = null, int? index = null)
     {
         int at = TopLevelInsertIndex(index ?? _layers.Count);
-        var group = new Layer(UniqueLayerName(string.IsNullOrWhiteSpace(name) ? DomainStrings.Project_DefaultGroupName : name.Trim())) { Kind = LayerKind.Group };
+        var group = new Layer(UniqueLayerName(string.IsNullOrWhiteSpace(name) ? DomainStrings.Project_DefaultGroupName : name.Trim()))
+        {
+            Kind = LayerKind.Group,
+            Pivot = Sprite.DefaultPivot,
+        };
         Edit(DomainStrings.Project_AddGroup, ProjectChange.Layers, () => _layers.Insert(at, group));
         return group;
     }
@@ -817,7 +786,7 @@ public sealed partial class SpriteProject
             foreach (var (key, cel) in CelsOf(part)) _cels[key] = resize(cel);
             part.PartSize = new Size(width, height);
             part.PartOffset = offset;
-            MapPartPivots(part, Moved);
+            MapLayerPivots(part, Moved);
         });
     }
 
@@ -873,7 +842,8 @@ public sealed partial class SpriteProject
     /// <summary>
     /// 레이어 크기 바꾸기(캔버스는 그대로, 실행취소 한 단계): 모든 프레임에서 레이어 그림의 <paramref name="from"/> 자리(캔버스 좌표)를
     /// <paramref name="to"/> 자리에 그 크기로 최근접으로 늘이거나 줄여 옮긴다. 일반 레이어는 셀과 캔버스 밖 그림을 같은 대응 하나로 옮기고
-    /// 캔버스 밖으로 나간 픽셀은 캔버스 밖 그림으로 남긴다. 부위는 <paramref name="from"/>이 부위 영역이어야 하고, 위치·크기가 <paramref name="to"/>가 되며
+    /// 캔버스 밖으로 나간 픽셀은 캔버스 밖 그림으로 남기며, 레이어 피벗(기본·프레임마다)도 같은 대응(<see cref="MapLayerResizePoint"/>)으로 옮긴다.
+    /// 부위는 <paramref name="from"/>이 부위 영역이어야 하고, 위치·크기가 <paramref name="to"/>가 되며
     /// 모든 스킨 셀을 새 크기로, 9-slice 테두리는 비율대로 바꾼다(부위 피벗은 부위 기준이라 그대로). 그룹이면 <see cref="ArgumentException"/>.
     /// </summary>
     public void ScaleLayer(int layerIndex, Rectangle from, Rectangle to)
@@ -928,13 +898,84 @@ public sealed partial class SpriteProject
             changes.Add((key, result.Cel, result.Overflow));
         }
         if (changes.Count == 0) return;
-        Edit(DomainStrings.Project_LayerSize, ProjectChange.Pixels, () =>
+        var canvasPivot = CanvasPivotMap(canvas, canvas, p => MapLayerResizePoint(p, from, to));
+        Edit(DomainStrings.Project_LayerSize, ProjectChange.Layers | ProjectChange.Pixels | RepresentativeChange(layer), () =>
         {
             foreach (var (key, cel, overflow) in changes)
             {
                 _cels[key] = cel;
                 SetOverflow(key, overflow);
             }
+            MapLayerPivots(layer, canvasPivot);
+        });
+    }
+
+    /// <summary>
+    /// 레이어 하나를 제자리에서 뒤집는다(<paramref name="horizontal"/> = 좌우, 아니면 상하 — 캔버스는 그대로, 모든 프레임, 실행취소 한 단계).
+    /// 일반 레이어는 모든 프레임 그림을 감싸는 자리(<see cref="LayerBounds"/>)의 가운데 선을 기준으로 셀과 캔버스 밖 그림을 함께 뒤집고
+    /// (캔버스 밖으로 나간 픽셀은 캔버스 밖 그림으로 남음) 레이어 피벗(기본·프레임마다)도 같은 가운데 선으로 뒤집고,
+    /// 부위는 모든 스킨 셀을 부위 영역 안에서 뒤집으며 부위 피벗·9-slice 테두리도 뒤집는다.
+    /// 캔버스 자신의 피벗은 그대로다. 그림이 없으면 아무것도 하지 않는다. 그룹이면 <see cref="ArgumentException"/>.
+    /// </summary>
+    public void FlipLayer(int layerIndex, bool horizontal)
+    {
+        var layer = _layers[layerIndex];
+        if (layer.IsGroup) throw new ArgumentException(GroupHasNoCelsMessage, nameof(layerIndex));
+        Func<PixelImage, PixelImage> flip = horizontal ? ImageTransform.FlipHorizontal : ImageTransform.FlipVertical;
+        string label = horizontal ? DomainStrings.Project_FlipHorizontal : DomainStrings.Project_FlipVertical;
+        if (layer.IsPart)
+        {
+            if (CelsOf(layer).Count == 0) return;
+            Edit(label, ProjectChange.Layers | ProjectChange.Pixels, () =>
+            {
+                var map = OncePerImage(flip);
+                foreach (var (key, cel) in CelsOf(layer)) _cels[key] = map(cel);
+                MapLayerPivots(layer, horizontal ? p => new Pivot(1f - p.X, p.Y) : p => new Pivot(p.X, 1f - p.Y));
+                var b = layer.PartBorder;
+                layer.PartBorder = horizontal ? new SpriteBorder(b.Right, b.Top, b.Left, b.Bottom) : new SpriteBorder(b.Left, b.Bottom, b.Right, b.Top);
+            });
+            return;
+        }
+        var bounds = LayerBounds(layerIndex);
+        if (bounds.IsEmpty) return;
+        var canvas = Size;
+        var changes = new List<(CelKey Key, PixelImage Cel, CelOverflow? Overflow)>();
+        // 링크된 셀(같은 그림·같은 캔버스 밖 그림)은 한 번만 계산해 같은 새 그림을 같이 쓴다
+        var done = new Dictionary<PixelImage, (PixelImage Cel, CelOverflow? Overflow)>(ReferenceEqualityComparer.Instance);
+        foreach (var key in LayerCelKeys(layer))
+        {
+            var cel = _cels.GetValueOrDefault(key);
+            if (!HasContent(cel) && !_overflow.ContainsKey(key)) continue;
+            if (cel is not null && done.TryGetValue(cel, out var same))
+            {
+                changes.Add((key, same.Cel, same.Overflow));
+                continue;
+            }
+            var (full, origin) = FullOf(key, cel, canvas);
+            // 자리 가운데 선 기준 거울 자리: 왼쪽(위) 끝 → 2·자리 시작 + 자리 크기 − 오른쪽(아래) 끝.
+            var at = horizontal
+                ? new Point(2 * bounds.X + bounds.Width - origin.X - full.Width, origin.Y)
+                : new Point(origin.X, 2 * bounds.Y + bounds.Height - origin.Y - full.Height);
+            var result = Split(flip(full), at, canvas);
+            if (cel is not null)
+            {
+                done[cel] = result;
+                InheritLinkTag(cel, result.Cel);
+            }
+            changes.Add((key, result.Cel, result.Overflow));
+        }
+        if (changes.Count == 0) return;
+        var mirror = CanvasPivotMap(canvas, canvas, horizontal
+            ? p => new PointF(2 * bounds.X + bounds.Width - p.X, p.Y)
+            : p => new PointF(p.X, 2 * bounds.Y + bounds.Height - p.Y));
+        Edit(label, ProjectChange.Layers | ProjectChange.Pixels | RepresentativeChange(layer), () =>
+        {
+            foreach (var (key, cel, overflow) in changes)
+            {
+                _cels[key] = cel;
+                SetOverflow(key, overflow);
+            }
+            MapLayerPivots(layer, mirror);
         });
     }
 
@@ -943,7 +984,7 @@ public sealed partial class SpriteProject
     /// (<see cref="ScaleLayer"/>), 레이어 자리를 <paramref name="area"/>로 바꾼다 — 그 밖으로 나간 픽셀은 잘려 없어진다(캔버스 크기 바꾸기와 같은 방식).
     /// 부위는 위치·크기가 <paramref name="area"/>가 되고(넓히면 빈 칸), 피벗은 같은 그림 지점을, 9-slice 테두리는 같은 그림 경계를 가리킨다
     /// (새 크기에 맞지 않으면 테두리 없음). 일반 레이어는 셀과 캔버스 밖 그림에서 <paramref name="area"/> 밖 픽셀을 지운다(넓혀도 그림은 그대로).
-    /// 일반 레이어는 프레임 피벗(기본 피벗과 프레임마다의 피벗)도 그림과 같은 대응(<see cref="MapLayerResizePoint"/>)으로 옮겨 같은 그림 지점을 가리킨다.
+    /// 일반 레이어는 레이어 피벗(기본과 프레임마다의 피벗)도 그림과 같은 대응(<see cref="MapLayerResizePoint"/>)으로 옮겨 같은 그림 지점을 가리킨다.
     /// 그룹이면 <see cref="ArgumentException"/>.
     /// </summary>
     public void ResizeLayer(int layerIndex, Rectangle from, Rectangle image, Rectangle area)
@@ -952,26 +993,11 @@ public sealed partial class SpriteProject
         if (layer.IsGroup) throw new ArgumentException(GroupHasNoCelsMessage, nameof(layerIndex));
         if (area.Width < 1 || area.Height < 1 || area.Width > PixelImage.MaxSize || area.Height > PixelImage.MaxSize)
             throw new ArgumentOutOfRangeException(nameof(area), DomainStrings.FormatProject_InvalidImageSize(max: PixelImage.MaxSize, width: area.Width, height: area.Height));
-        Edit(DomainStrings.Project_LayerSize, ProjectChange.Layers | ProjectChange.Pixels | (layer.IsPart || from == image ? ProjectChange.None : ProjectChange.Frames | ProjectChange.Settings), () =>
+        Edit(DomainStrings.Project_LayerSize, ProjectChange.Layers | ProjectChange.Pixels | RepresentativeChange(layer), () =>
         {
             ScaleLayer(layerIndex, from, image);
             if (layer.IsPart) CropPart(layer, area);
-            else
-            {
-                CropNormalLayer(layer, area);
-                if (from != image)
-                {
-                    Pivot Map(Pivot p)
-                    {
-                        var (x, y) = p.ToLocalPixel(_width, _height);
-                        var at = MapLayerResizePoint(new PointF(x, y), from, image);
-                        return new Pivot(at.X / _width, 1f - at.Y / _height);
-                    }
-                    Sprite.DefaultPivot = Map(Sprite.DefaultPivot);
-                    foreach (var f in _frames)
-                        if (f.Pivot is { } fp) f.Pivot = Map(fp);
-                }
-            }
+            else CropNormalLayer(layer, area);
         });
     }
 
@@ -1007,7 +1033,7 @@ public sealed partial class SpriteProject
             return next;
         });
         foreach (var (key, cel) in CelsOf(part)) _cels[key] = moved(cel);
-        MapPartPivots(part, p =>
+        MapLayerPivots(part, p =>
         {
             var (px, py) = p.ToLocalPixel(cur.Width, cur.Height);
             return new Pivot((px + ox) / area.Width, 1f - (py + oy) / area.Height);
@@ -1061,73 +1087,6 @@ public sealed partial class SpriteProject
     private List<CelKey> LayerCelKeys(Layer layer)
         => _cels.Keys.Where(k => ReferenceEquals(k.Layer, layer)).Concat(_overflow.Keys.Where(k => ReferenceEquals(k.Layer, layer))).Distinct().ToList();
 
-    /// <summary>부위 피벗(부위 기준 0~1, 아래 왼쪽 원점) — 그 프레임만의 피벗이 없는 프레임에 쓴다. 부위 아틀라스 내보내기·효과의 피벗에 쓴다.</summary>
-    public void SetPartPivot(int layerIndex, Pivot pivot)
-    {
-        var part = RequirePart(layerIndex);
-        Edit(DomainStrings.Project_PartPivot, ProjectChange.Layers, () => part.PartPivot = pivot);
-    }
-
-    /// <summary>
-    /// 부위의 프레임 <paramref name="frameIndex"/>만의 피벗(부위 기준 0~1): 다른 프레임과 다르게 둔다. null이면 그 프레임도 부위 피벗(<see cref="Layer.PartPivot"/>)을 따른다.
-    /// </summary>
-    public void SetPartFramePivot(int layerIndex, int frameIndex, Pivot? pivot)
-    {
-        var part = RequirePart(layerIndex);
-        var frame = _frames[frameIndex];
-        if (pivot is { } p ? frame.PartPivots.TryGetValue(part, out var cur) && cur == p : !frame.PartPivots.ContainsKey(part)) return;
-        Edit(DomainStrings.Project_PartFramePivot, ProjectChange.Layers, () =>
-        {
-            if (pivot is { } value) frame.PartPivots[part] = value;
-            else frame.PartPivots.Remove(part);
-        });
-    }
-
-    /// <summary>
-    /// 부위를 프레임 <paramref name="fromFrame"/>부터 끝까지 따로 두거나(<paramref name="own"/> — 그 프레임들의 지금 피벗을 그 프레임만의 피벗으로, 모습은 그대로)
-    /// 되돌린다(그 프레임들에 따로 둔 피벗과 옮긴 위치를 지워 부위 피벗·기준 위치를 따름). 도구 설정의 "현재 프레임부터". 실행취소 한 단계, 바뀌는 것이 없으면 기록 없음.
-    /// </summary>
-    public void SetPartFramesFrom(int layerIndex, int fromFrame, bool own)
-    {
-        var part = RequirePart(layerIndex);
-        var frames = FramesFrom(fromFrame);
-        bool moves = !own && frames.Any(f => f.PartShifts.ContainsKey(part));
-        if (own ? frames.All(f => f.PartPivots.ContainsKey(part)) : !moves && !frames.Any(f => f.PartPivots.ContainsKey(part))) return;
-        Edit(DomainStrings.Project_PartFramesFrom, ProjectChange.Layers | ProjectChange.Frames | (moves ? ProjectChange.Pixels : ProjectChange.None), () =>
-        {
-            foreach (var f in frames)
-            {
-                if (own) f.PartPivots.TryAdd(part, part.PartPivot);
-                else
-                {
-                    f.PartPivots.Remove(part);
-                    f.PartShifts.Remove(part);
-                }
-            }
-        });
-    }
-
-    /// <summary>
-    /// 부위 피벗을 프레임 <paramref name="fromFrame"/>부터 끝까지 바꾼다(실행취소 한 단계): <paramref name="fromFrame"/>의 피벗이 <paramref name="pivot"/>이 되고,
-    /// 뒤 프레임들도 같은 만큼 옮긴다(프레임마다 달랐던 차이는 그대로). 그 프레임들은 모두 그 프레임만의 피벗을 갖는다. 같으면 기록 없음.
-    /// </summary>
-    public void SetPartPivotFrom(int layerIndex, int fromFrame, Pivot pivot)
-    {
-        var part = RequirePart(layerIndex);
-        var frames = FramesFrom(fromFrame);
-        var start = GetPartPivot(part, fromFrame);
-        float dx = pivot.X - start.X, dy = pivot.Y - start.Y;
-        if (dx == 0 && dy == 0 && frames.All(f => f.PartPivots.ContainsKey(part))) return;
-        Edit(DomainStrings.Project_PartFramePivot, ProjectChange.Layers | ProjectChange.Frames, () =>
-        {
-            foreach (var f in frames)
-            {
-                var cur = f.PartPivots.TryGetValue(part, out var own) ? own : part.PartPivot;
-                f.PartPivots[part] = ReferenceEquals(f, frames[0]) ? pivot : new Pivot(cur.X + dx, cur.Y + dy);
-            }
-        });
-    }
-
     /// <summary>
     /// 부위를 프레임 <paramref name="fromFrame"/>부터 끝까지 (<paramref name="dx"/>, <paramref name="dy"/>)px 옮긴다(실행취소 한 단계). 피벗은 부위 기준 비율이라 부위와 같이 옮겨 간다.
     /// 첫 프레임부터면 기준 위치를 옮기고(자동 배치 중인 그룹의 부위는 빼고), 아니면 그 프레임들에 옮긴 거리를 더한다(앞 프레임은 그대로).
@@ -1148,40 +1107,6 @@ public sealed partial class SpriteProject
             {
                 var s = f.PartShifts.GetValueOrDefault(part);
                 SetShift(f, part, new Point(s.X + dx, s.Y + dy));
-            }
-        });
-    }
-
-    /// <summary>
-    /// 프레임 <paramref name="fromFrame"/>부터 끝까지 프레임 피벗을 따로 두거나(<paramref name="own"/> — 지금 피벗을 그 프레임만의 피벗으로, 모습은 그대로)
-    /// 되돌린다(기본 피벗을 따름). 도구 설정의 "현재 프레임부터". 실행취소 한 단계, 바뀌는 것이 없으면 기록 없음.
-    /// </summary>
-    public void SetFramePivotsFrom(int fromFrame, bool own)
-    {
-        var frames = FramesFrom(fromFrame);
-        if (frames.All(f => (f.Pivot is not null) == own)) return;
-        Edit(DomainStrings.Project_FramePivot, ProjectChange.Frames, () =>
-        {
-            foreach (var f in frames) f.Pivot = own ? f.Pivot ?? Sprite.DefaultPivot : null;
-        });
-    }
-
-    /// <summary>
-    /// 프레임 피벗을 프레임 <paramref name="fromFrame"/>부터 끝까지 바꾼다(실행취소 한 단계): <paramref name="fromFrame"/>의 피벗이 <paramref name="pivot"/>이 되고,
-    /// 뒤 프레임들도 같은 만큼 옮긴다(프레임마다 달랐던 차이는 그대로). 그 프레임들은 모두 그 프레임만의 피벗을 갖는다. 같으면 기록 없음.
-    /// </summary>
-    public void SetFramePivotFrom(int fromFrame, Pivot pivot)
-    {
-        var frames = FramesFrom(fromFrame);
-        var start = GetFramePivot(fromFrame);
-        float dx = pivot.X - start.X, dy = pivot.Y - start.Y;
-        if (dx == 0 && dy == 0 && frames.All(f => f.Pivot is not null)) return;
-        Edit(DomainStrings.Project_FramePivot, ProjectChange.Frames, () =>
-        {
-            foreach (var f in frames)
-            {
-                var cur = f.Pivot ?? Sprite.DefaultPivot;
-                f.Pivot = ReferenceEquals(f, frames[0]) ? pivot : new Pivot(cur.X + dx, cur.Y + dy);
             }
         });
     }
@@ -1274,7 +1199,7 @@ public sealed partial class SpriteProject
             AutoLayout = src.AutoLayout,
             PartSize = src.PartSize,
             PartOffset = src.PartOffset,
-            PartPivot = src.PartPivot,
+            Pivot = src.Pivot,
             PartBorder = src.PartBorder,
             Effects = src.Effects,
         };
@@ -1290,7 +1215,7 @@ public sealed partial class SpriteProject
             _cels[new(copy, key.Frame, key.Skin is { } s && skinMap.TryGetValue(s, out var mapped) ? mapped : key.Skin)] = clone(cel);
         foreach (var f in _frames)
         {
-            if (f.PartPivots.TryGetValue(src, out var own)) f.PartPivots[copy] = own;
+            if (f.LayerPivots.TryGetValue(src, out var own)) f.LayerPivots[copy] = own;
             if (f.PartShifts.TryGetValue(src, out var shift)) f.PartShifts[copy] = shift;
         }
         foreach (var (key, overflow) in _overflow.Where(kv => ReferenceEquals(kv.Key.Layer, src)).ToList())
@@ -1314,6 +1239,7 @@ public sealed partial class SpriteProject
             }
             if (layer is { IsPart: true, Parent: { IsGroup: true } g })
                 g.ReplaceSkinsRaw(g.SkinList.Where(s => !ReferenceEquals(s.Owner, layer)).ToList());
+            if (PivotLayer is { } rep && _layers.IndexOf(rep) is var ri && ri >= start && ri < start + count) PivotLayer = null;
             _layers.RemoveRange(start, count);
         });
     }
@@ -1439,6 +1365,7 @@ public sealed partial class SpriteProject
             }
             PutKeepingLinks(merges);
             RemoveOverflowOf(upper);
+            if (ReferenceEquals(PivotLayer, upper)) PivotLayer = null;
             _layers.RemoveAt(index);
         });
     }
@@ -1586,7 +1513,7 @@ public sealed partial class SpriteProject
                     return moved;
                 });
                 foreach (var (key, cel) in CelsOf(layer)) _cels[key] = grown(cel);
-                MapPartPivots(layer, p =>
+                MapLayerPivots(layer, p =>
                 {
                     var (px, py) = p.ToLocalPixel(size.Width, size.Height);
                     return new Pivot((px + ox) / area.Width, 1f - (py + oy) / area.Height);
@@ -2354,13 +2281,6 @@ public sealed partial class SpriteProject
         Edit(DomainStrings.Project_FrameDuration, ProjectChange.Frames, () => frame.DurationMs = durationMs);
     }
 
-    /// <summary>프레임 피벗 재정의(null = 기본 피벗 사용).</summary>
-    public void SetFramePivot(int index, Pivot? pivot)
-    {
-        var frame = _frames[index];
-        Edit(DomainStrings.Project_FramePivot, ProjectChange.Frames, () => frame.Pivot = pivot);
-    }
-
     /// <summary>내보낼 칸 이름 재정의(null/빈 문자열 = 이름 규칙 사용).</summary>
     public void SetFrameName(int index, string? name)
     {
@@ -2515,9 +2435,7 @@ public sealed partial class SpriteProject
             }
             _width = width;
             _height = height;
-            Sprite.DefaultPivot = Map(Sprite.DefaultPivot);
-            foreach (var f in _frames)
-                if (f.Pivot is { } fp) f.Pivot = Map(fp);
+            MapCanvasPivots(Map);
             // 프레임 칸 테두리: 그림 가장자리에서 같은 픽셀 수(그림 바깥 여백만큼 더하고, 캔버스 밖으로 잘린 만큼 뺌).
             if (sliced)
                 Sprite.Border = new SpriteBorder(
@@ -2595,14 +2513,12 @@ public sealed partial class SpriteProject
                 });
                 part.PartOffset = r.Location;
                 part.PartSize = r.Size;
-                MapPartPivots(part, pivotMap);
+                MapLayerPivots(part, pivotMap);
                 part.PartBorder = borderMap(part.PartBorder);
             }
             _width = probe.Width;
             _height = probe.Height;
-            Sprite.DefaultPivot = pivotMap(Sprite.DefaultPivot);
-            foreach (var f in _frames)
-                if (f.Pivot is { } fp) f.Pivot = pivotMap(fp);
+            MapCanvasPivots(pivotMap);
         });
     }
 
@@ -2780,11 +2696,11 @@ public sealed partial class SpriteProject
 
     private readonly record struct LayerState(
         Layer Layer, string Name, bool Visible, bool Locked, byte Opacity, LayerKind Kind, Layer? Parent,
-        Size PartSize, Point PartOffset, Pivot PartPivot, SpriteBorder PartBorder, Rectangle? PartSourceRect,
+        Size PartSize, Point PartOffset, Pivot Pivot, SpriteBorder PartBorder, Rectangle? PartSourceRect,
         (Skin Skin, string Name, Layer? Owner)[]? Skins, Skin? ActiveSkin, IReadOnlyList<LayerEffect> Effects, GroupLayout? AutoLayout)
     {
         public static LayerState Of(Layer l) => new(l, l.Name, l.Visible, l.Locked, l.Opacity, l.Kind, l.Parent,
-            l.PartSize, l.PartOffset, l.PartPivot, l.PartBorder, l.PartSourceRect,
+            l.PartSize, l.PartOffset, l.Pivot, l.PartBorder, l.PartSourceRect,
             l.IsGroup ? l.SkinList.Select(s => (s, s.Name, s.Owner)).ToArray() : null, l.IsGroup ? l.ActiveSkin : null, l.Effects, l.AutoLayout);
 
         /// <summary>
@@ -2801,7 +2717,7 @@ public sealed partial class SpriteProject
             Layer.Parent = Parent;
             Layer.PartSize = PartSize;
             Layer.PartOffset = PartOffset;
-            Layer.PartPivot = PartPivot;
+            Layer.Pivot = Pivot;
             Layer.PartBorder = PartBorder;
             Layer.PartSourceRect = PartSourceRect;
             Layer.AutoLayout = AutoLayout;
@@ -2828,7 +2744,9 @@ public sealed partial class SpriteProject
     {
         private int _w, _h;
         private LayerState[] _layers = [];
-        private (Frame Frame, int Ms, Pivot? Pivot, string? Name, KeyValuePair<Layer, Pivot>[] PartPivots, KeyValuePair<Layer, Point>[] PartShifts)[] _frames = [];
+        private (Frame Frame, int Ms, Pivot? Pivot, string? Name, KeyValuePair<Layer, Pivot>[] LayerPivots, KeyValuePair<Layer, Point>[] PartShifts)[] _frames = [];
+        /// <summary>캔버스 피벗의 대표 레이어(<see cref="SpriteProject.PivotLayer"/>).</summary>
+        private Layer? _pivotLayer;
         private (AnimationTag Tag, AnimationTag State)[] _tags = [];
         private (Outfit Outfit, string Name, IReadOnlyList<OutfitSlot> Slots, IReadOnlyList<OutfitPart> Parts)[] _outfits = [];
         private KeyValuePair<CelKey, PixelImage>[] _cels = [];
@@ -2842,8 +2760,9 @@ public sealed partial class SpriteProject
             _h = p._height,
             _layers = p._layers.Select(LayerState.Of).ToArray(),
             // 지운 레이어의 프레임 피벗·위치는 빼고(쓰이지 않음 — 편집 기록 파일에 없는 레이어가 남지 않게)
-            _frames = p._frames.Select(f => (f, f.DurationMs, f.Pivot, f.Name, f.PartPivots.Where(kv => p._layers.Contains(kv.Key)).ToArray(),
+            _frames = p._frames.Select(f => (f, f.DurationMs, f.Pivot, f.Name, f.LayerPivots.Where(kv => p._layers.Contains(kv.Key)).ToArray(),
                 f.PartShifts.Where(kv => p._layers.Contains(kv.Key)).ToArray())).ToArray(),
+            _pivotLayer = p.PivotLayer,
             _tags = p._tags.Select(t => (t, t.Clone())).ToArray(),
             _outfits = p._outfits.Select(o => (o, o.Name, o.Slots, o.Parts)).ToArray(),
             _cels = p._cels.ToArray(),
@@ -2859,17 +2778,18 @@ public sealed partial class SpriteProject
             p._layers.Clear();
             foreach (var state in _layers) p._layers.Add(state.Apply());
             p._frames.Clear();
-            foreach (var (frame, ms, pivot, name, partPivots, partShifts) in _frames)
+            foreach (var (frame, ms, pivot, name, layerPivots, partShifts) in _frames)
             {
                 frame.DurationMs = ms;
                 frame.Pivot = pivot;
                 frame.Name = name;
-                frame.PartPivots.Clear();
-                foreach (var (part, partPivot) in partPivots) frame.PartPivots[part] = partPivot;
+                frame.LayerPivots.Clear();
+                foreach (var (layer, layerPivot) in layerPivots) frame.LayerPivots[layer] = layerPivot;
                 frame.PartShifts.Clear();
                 foreach (var (part, shift) in partShifts) frame.PartShifts[part] = shift;
                 p._frames.Add(frame);
             }
+            p.PivotLayer = _pivotLayer;
             p._tags.Clear();
             foreach (var (tag, state) in _tags)
             {

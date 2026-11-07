@@ -65,7 +65,7 @@ public class UndoHistoryTests
         p.SaveOutfit("전투");
         p.AddFrame();
         Draw(p, 0, 1, 5, 5, Color32.White);
-        p.SetPartFramePivot(p.IndexOf(head), 1, new Pivot(0.25f, 0.75f));
+        p.SetLayerFramePivot(p.IndexOf(head), 1, new Pivot(0.25f, 0.75f));
         p.AddTag("걷기", 0, 1);
         p.DeleteLayer(p.IndexOf(top));
         p.SetFrameDuration(1, 250);
@@ -273,5 +273,142 @@ public class UndoHistoryTests
         Assert.Equal(2, store.Cleanup(UndoHistoryPolicy.Default, now));
         Assert.Equal([Path.GetFullPath(keep)], store.Entries().Select(e => e.FilePath));
         Assert.Equal(1, store.Usage().Files);
+    }
+
+    [Fact]
+    public void RoundTrip_KeepsLayerPivotsAndPivotLayer()
+    {
+        using var tmp = new TempDir();
+        var file = tmp.File("a.chickxel");
+        var dir = tmp.File("history");
+        var p = new SpriteProject(8, 8);
+        p.AddFrame();
+        var group = p.AddGroup("g");
+        p.SetLayerPivot(0, new Pivot(0.25f, 0.25f));
+        p.SetLayerFramePivot(0, 1, new Pivot(0.75f, 0.5f));
+        p.SetLayerPivot(p.IndexOf(group), new Pivot(0.125f, 0.5f));
+        p.SetPivotLayer(group);
+        p.SetPivotLayer(p.Layers[0]);
+        p.Undo();
+        ProjectIO.Save(p, file);
+        UndoHistoryIO.Write(UndoHistoryIO.Capture(p, 1000)!, dir);
+        var expected = Walk(p);
+
+        var q = ProjectIO.Load(file);
+        UndoHistoryIO.Read(q, dir);
+        Assert.Equal(expected, Walk(q));
+        Assert.Same(q.Layers[p.IndexOf(group)], q.PivotLayer);
+        q.Redo();
+        Assert.Same(q.Layers[0], q.PivotLayer);
+        q.Undo();
+        q.Undo();
+        Assert.Null(q.PivotLayer);
+    }
+
+    [Fact]
+    public void Version3History_GivesNormalLayersAndGroupsTheCanvasPivots()
+    {
+        using var tmp = new TempDir();
+        var file = tmp.File("a.chickxel");
+        var dir = tmp.File("history");
+        var p = new SpriteProject(8, 8);
+        p.AddFrame();
+        var group = p.AddGroup("g");
+        var part = p.AddPart(group, "부위", 4, 4);
+        p.SetLayerPivot(p.IndexOf(part), Pivot.BottomCenter);
+        p.SetLayerFramePivot(p.IndexOf(part), 1, Pivot.Center);
+        var framePivot = new Pivot(0.25f, 0.75f);
+        p.SetFramePivot(1, framePivot);
+        ProjectIO.Save(p, file);
+        UndoHistoryIO.Write(UndoHistoryIO.Capture(p, 1000)!, dir);
+        DowngradeHistoryTo3(dir);
+
+        var q = ProjectIO.Load(file);
+        Assert.Equal(p.History.UndoCount, UndoHistoryIO.Read(q, dir));
+        Layer normal = q.Layers[0], qGroup = q.Layers[p.IndexOf(group)], qPart = q.Layers[p.IndexOf(part)];
+        // 예전 기록의 상태: 일반 레이어·그룹은 캔버스 피벗(기본 + 프레임마다)을 자기 피벗으로, 부위는 부위 피벗 그대로
+        q.Undo();
+        Assert.Null(q.Frames[1].Pivot);
+        foreach (var layer in new[] { normal, qGroup })
+        {
+            Assert.Equal(q.Sprite.DefaultPivot, layer.Pivot);
+            Assert.False(q.HasLayerFramePivot(layer, 1));
+        }
+        Assert.Equal([Pivot.BottomCenter, Pivot.Center], Enumerable.Range(0, 2).Select(f => q.GetLayerPivot(qPart, f)));
+        q.Redo();
+        Assert.Equal(framePivot, q.Frames[1].Pivot);
+        foreach (var layer in new[] { normal, qGroup }) Assert.Equal(framePivot, q.GetLayerPivot(layer, 1));
+        q.Undo();
+        q.Undo();
+        Assert.False(q.HasLayerFramePivot(qPart, 1));
+        Assert.Equal(Pivot.BottomCenter, qPart.Pivot);
+        q.Undo();
+        Assert.Equal(Pivot.Center, qPart.Pivot);
+
+        // 다시 쓰면 새 형식(예전 상태 조각을 그대로 쓰지 않음) — 다시 읽어도 같은 상태들(지금 상태는 파일에서 읽으므로 빼고 비교)
+        while (q.History.CanRedo) q.Redo();
+        UndoHistoryIO.Write(UndoHistoryIO.Capture(q, 1000)!, dir);
+        var r = ProjectIO.Load(file);
+        UndoHistoryIO.Read(r, dir);
+        Assert.Equal(Walk(q).Skip(1), Walk(r).Skip(1));
+    }
+
+    /// <summary>
+    /// 기록을 형식 3으로 낮춘다: 상태 조각마다 부위만 피벗(<c>partPivot</c>·프레임의 <c>partPivots</c>), 일반 레이어·그룹 피벗과 대표 레이어 없음
+    /// (조각 이름 = 내용 해시이므로 새 이름으로 쓰고 목록의 이름도 바꾼다).
+    /// </summary>
+    private static void DowngradeHistoryTo3(string dir)
+    {
+        static byte[] Inflate(byte[] data)
+        {
+            using var z = new ZLibStream(new MemoryStream(data), CompressionMode.Decompress);
+            using var ms = new MemoryStream();
+            z.CopyTo(ms);
+            return ms.ToArray();
+        }
+        static byte[] Deflate(byte[] data)
+        {
+            using var ms = new MemoryStream();
+            using (var z = new ZLibStream(ms, CompressionLevel.Optimal, leaveOpen: true)) z.Write(data);
+            return ms.ToArray();
+        }
+        var blobs = Path.Combine(dir, UndoHistoryIO.BlobFolder);
+        var manifestPath = Path.Combine(dir, UndoHistoryIO.ManifestName);
+        var manifest = System.Text.Encoding.UTF8.GetString(Inflate(File.ReadAllBytes(manifestPath)));
+        foreach (var path in Directory.GetFiles(blobs))
+        {
+            var payload = Inflate(File.ReadAllBytes(path));
+            if (payload.Length == 0 || payload[0] != (byte)'{') continue;
+            var json = System.Text.Json.Nodes.JsonNode.Parse(payload)!.AsObject();
+            if (json["layers"] is not System.Text.Json.Nodes.JsonArray layers) continue;
+            var parts = new HashSet<int>();
+            foreach (var node in layers)
+            {
+                var l = node!.AsObject();
+                var pivot = l["pivot"]?.DeepClone();
+                l.Remove("pivot");
+                if (l["kind"]?.GetValue<string>() != "Part") continue;
+                parts.Add(l["id"]!.GetValue<int>());
+                l["partPivot"] = pivot;
+            }
+            foreach (var node in json["frames"]!.AsArray())
+            {
+                var f = node!.AsObject();
+                if (f["layerPivots"] is System.Text.Json.Nodes.JsonArray list)
+                {
+                    var kept = list.Where(e => parts.Contains(e!["layer"]!.GetValue<int>())).Select(e => e!.DeepClone()).ToArray();
+                    if (kept.Length > 0) f["partPivots"] = new System.Text.Json.Nodes.JsonArray(kept);
+                }
+                f.Remove("layerPivots");
+            }
+            json.Remove("pivotLayer");
+            var bytes = System.Text.Encoding.UTF8.GetBytes(json.ToJsonString());
+            var hash = Convert.ToHexStringLower(SHA256.HashData(bytes))[..32];
+            File.WriteAllBytes(Path.Combine(blobs, hash), Deflate(bytes));
+            manifest = manifest.Replace(Path.GetFileName(path), hash);
+        }
+        var m = System.Text.Json.Nodes.JsonNode.Parse(manifest)!;
+        m["version"] = 3;
+        File.WriteAllBytes(manifestPath, Deflate(System.Text.Encoding.UTF8.GetBytes(m.ToJsonString())));
     }
 }

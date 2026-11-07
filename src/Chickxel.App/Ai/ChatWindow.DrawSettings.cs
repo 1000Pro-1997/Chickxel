@@ -9,7 +9,7 @@ namespace Chickxel.App.Ai;
 // 자동 애니메이션은 GIF 프레임을 만들어 변환하므로 수동 생성 방식 선택은 그림 생성 모드에서만 쓴다.
 public sealed partial class ChatWindow
 {
-    /// <summary>결과 크기 칸의 고정 값(0 = 자동, 마지막 칸은 직접 입력).</summary>
+    /// <summary>결과 크기 칸의 고정 값(마지막 칸은 직접 입력).</summary>
     private static readonly int[] SizeChoices = [32, 48, 64];
 
     private RadioButton? _modeAuto, _modeGenerate, _modeDirect;
@@ -285,7 +285,7 @@ public sealed partial class ChatWindow
             _sizeCustom!.Value = size;
             _resizeResult!.IsChecked = o.ResizeResult;
             _autoPrompt!.IsChecked = o.AutoPrompt;
-            _removeBackground!.IsChecked = o.RemoveBackground;
+            _removeBackground!.IsChecked = o.ForceRemoveBackground;
             _paletteOnly!.IsChecked = o.PaletteOnly;
             _autoOptimize!.IsChecked = o.AutoOptimize;
             _insertCombo!.SelectedIndex = o.Insert == AiDrawInsert.NewDocument ? 1 : 0;
@@ -329,9 +329,9 @@ public sealed partial class ChatWindow
         var mode = _settings.AiDraw.Mode;
         _generateOptions.IsVisible = mode != AiDrawMode.Direct;
         _paletteRow!.IsVisible = mode != AiDrawMode.Generate;
+        _styleRefCombo!.IsVisible = _styleCombo!.SelectedIndex == (int)AiDrawStyleReference.Specific;
         _sizeCustom!.IsVisible = _sizeCombo!.SelectedIndex == SizeChoices.Length;
         _sizeRow!.IsEnabled = _resizeResult!.On();
-        _styleRefCombo!.IsVisible = _styleCombo!.SelectedIndex == (int)AiDrawStyleReference.Specific;
         _animCombo!.IsEnabled = mode == AiDrawMode.Generate;
         _animWarning!.IsVisible = mode == AiDrawMode.Generate && _animCombo.SelectedIndex == 1;
         bool autoPrompt = _autoPrompt!.On();
@@ -348,13 +348,13 @@ public sealed partial class ChatWindow
 
     private void OnDrawOptionChanged()
     {
-        if (_drawFilling || _sizeCombo is null) return;
+        if (_drawFilling || _autoPrompt is null) return;
         var o = _settings.AiDraw;
-        int si = _sizeCombo.SelectedIndex;
+        o.AutoPrompt = _autoPrompt.On();
+        int si = _sizeCombo!.SelectedIndex;
         o.SizeTarget = si >= 0 && si < SizeChoices.Length ? SizeChoices[si] : (int)_sizeCustom!.NumValue();
         o.ResizeResult = _resizeResult!.On();
-        o.AutoPrompt = _autoPrompt!.On();
-        o.RemoveBackground = _removeBackground!.On();
+        o.ForceRemoveBackground = _removeBackground!.On();
         o.PaletteOnly = _paletteOnly!.On();
         o.AutoOptimize = _autoOptimize!.On();
         o.Insert = _insertCombo!.SelectedIndex == 1 ? AiDrawInsert.NewDocument : AiDrawInsert.NewLayer;

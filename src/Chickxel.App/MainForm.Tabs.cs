@@ -639,7 +639,7 @@ public sealed partial class MainForm
     private void RestoreSession()
     {
         if (_settings.OpenTabs?.Normalized() is not { Groups.Count: > 0 } session) return;
-        int opened = 0, missing = 0, group = 0, focus = 0;
+        int opened = 0, missing = 0, converted = 0, group = 0, focus = 0;
         for (int g = 0; g < session.Groups.Count; g++)
         {
             var paths = session.Groups[g];
@@ -656,6 +656,7 @@ public sealed partial class MainForm
                 var doc = LoadDocument(full, interactive: false, out _, out _, out _);
                 if (doc is null) { missing++; continue; }
                 doc.Project.DirtyChanged += OnDocumentDirtyChanged;
+                if (doc.Project.ConvertedFromVersion is not null) converted++;
                 var tab = new DocumentTab(doc);
                 _tabs.Add(tab, group, index: group < _tabs.GroupCount ? _tabs.Tabs(group).Count : 0);
                 opened++;
@@ -671,6 +672,7 @@ public sealed partial class MainForm
         _tabs.Focus(focus);
         // 지금 문서가 없던 처음 상태이므로 다른 묶음의 고른 탭도 먼저 실어 보기 상태(화면 맞춤)를 잡아 둘 필요는 없다(그리기만 하는 칸은 맞춰 그림).
         ShowActiveTab();
-        ShowMessage(MainStrings.FormatTabs_Restored(count: opened) + (missing > 0 ? MainStrings.FormatTabs_RestoredMissing(count: missing) : ""));
+        ShowMessage(MainStrings.FormatTabs_Restored(count: opened) + (missing > 0 ? MainStrings.FormatTabs_RestoredMissing(count: missing) : "")
+            + (converted > 0 ? MainStrings.FormatTabs_RestoredConverted(count: converted) : ""));
     }
 }

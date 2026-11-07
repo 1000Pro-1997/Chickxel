@@ -100,7 +100,7 @@ internal static class ScreenPanelShots
 
     /// <summary>
     /// 팔레트: 1 = ① 기본색/보조색 ② 쌓인 팔레트(그림에서 만든 팔레트) ③ 새 팔레트 ④ 팔레트 머리글 ⑤ 활성 팔레트 파란 줄 ⑥ 기본색 칸 ⑦ 보조색 칸,
-    /// 2 = ⑧ 머리글 메뉴, 3 = 팔레트 색으로 변환 창(⑨ 대상 ⑩ 디더링 ⑪ 전·후 미리보기 ⑫ 색 수).
+    /// 2 = ⑧ 머리글 메뉴, 3 = 팔레트 색으로 변환 창(⑨ 대상 ⑩ 색 고르는 규칙 ⑪ 디더링 ⑫ 전·후 미리보기 ⑬ 색 수).
     /// </summary>
     [Shot("screen-palette")]
     public static void Palette(ShotKit k)
@@ -160,6 +160,7 @@ internal static class ScreenPanelShots
             k.Save(w, "screen-palette-3", marks:
             [
                 U(w, ShotKit.Get<Control>(w, "_cel"), ShotKit.Get<Control>(w, "_layer"), ShotKit.Get<Control>(w, "_all")),
+                U(w, [.. ShotKit.Get<RadioButton[]>(w, "_rules"), ShotKit.Get<Control>(w, "_distance")]),
                 U(w, ShotKit.Get<Control>(w, "_noDither"), ShotKit.Get<Control>(w, "_bayer")),
                 U(w, ShotKit.Get<Control>(w, "_before"), ShotKit.Get<Control>(w, "_after")),
                 Above(ShotKit.Bounds(ShotKit.Get<Control>(w, "_count"), w)),

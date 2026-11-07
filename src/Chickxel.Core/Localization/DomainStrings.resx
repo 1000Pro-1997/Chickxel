@@ -146,6 +146,7 @@
   <data name="Project_LockedLayerCannotDraw" xml:space="preserve"><value>잠긴 레이어에는 그릴 수 없습니다.</value></data>
   <data name="Project_GroupCannotDraw" xml:space="preserve"><value>그룹 레이어에는 그릴 수 없습니다 — 부위 레이어를 고르세요.</value></data>
   <data name="Project_NotPartLayer" xml:space="preserve"><value>부위 레이어가 아닙니다.</value></data>
+  <data name="Project_NotNormalLayer" xml:space="preserve"><value>일반 레이어가 아닙니다.</value></data>
   <data name="Project_AddLayer" xml:space="preserve"><value>레이어 추가</value></data>
   <data name="Project_AddGroup" xml:space="preserve"><value>그룹 추가</value></data>
   <data name="Project_AddPartRequiresGroup" xml:space="preserve"><value>부위는 이 프로젝트의 그룹 레이어에만 넣을 수 있습니다.</value></data>
@@ -159,8 +160,9 @@
   <data name="Project_ResizePart" xml:space="preserve"><value>부위 크기</value></data>
   <data name="Project_LayerSize" xml:space="preserve"><value>레이어 크기</value><comment>실행취소 기록 이름: 레이어 하나의 그림 크기·자리 바꾸기(캔버스는 그대로)</comment></data>
   <data name="Project_LayerSizeNotPartRect" xml:space="preserve"><value>부위의 원래 자리는 부위 영역이어야 합니다.</value></data>
-  <data name="Project_PartPivot" xml:space="preserve"><value>부위 피벗</value></data>
-  <data name="Project_PartFramePivot" xml:space="preserve"><value>부위 프레임 피벗</value><comment>실행취소 이름: 부위의 한 프레임만 다른 피벗으로 두거나 되돌림</comment></data>
+  <data name="Project_LayerPivot" xml:space="preserve"><value>레이어 피벗</value><comment>실행취소 이름: 레이어(부위·그룹 포함)의 피벗을 바꿈</comment></data>
+  <data name="Project_LayerFramePivot" xml:space="preserve"><value>레이어 프레임 피벗</value><comment>실행취소 이름: 레이어의 한 프레임(또는 그 프레임부터)만 다른 피벗으로 두거나 되돌림</comment></data>
+  <data name="Project_PivotLayer" xml:space="preserve"><value>피벗 대표 레이어</value><comment>실행취소 이름: 캔버스 피벗을 따를 대표 레이어를 고르거나 끔</comment></data>
   <data name="Project_PartFramesFrom" xml:space="preserve"><value>부위 프레임 위치·피벗</value><comment>실행취소 이름: 부위를 한 프레임부터 끝까지 따로 둔 위치·피벗으로 두거나 되돌림</comment></data>
   <data name="Project_PartBorder" xml:space="preserve"><value>부위 테두리</value></data>
   <data name="Project_DefaultLayerName" xml:space="preserve"><value>레이어 {number}</value><comment>number = 새 프로젝트에서 만든 레이어 번호. 기존 파일의 이름은 바꾸지 않음.</comment></data>
@@ -186,7 +188,12 @@
   <data name="Project_CannotMergePartGroup" xml:space="preserve"><value>부위·그룹 레이어는 아래로 병합할 수 없습니다.</value></data>
   <data name="Project_MergeDown" xml:space="preserve"><value>아래 레이어와 병합</value></data>
   <data name="Project_LayerProperties" xml:space="preserve"><value>레이어 속성</value></data>
+  <data name="Project_HideOtherLayers" xml:space="preserve"><value>다른 레이어 숨기기</value><comment>실행취소 이름: Alt+눈으로 이 레이어만 보이게</comment></data>
+  <data name="Project_ShowAllLayers" xml:space="preserve"><value>모든 레이어 보이기</value></data>
+  <data name="Project_LockOtherLayers" xml:space="preserve"><value>다른 레이어 잠그기</value><comment>실행취소 이름: Alt+자물쇠로 이 레이어만 풀어 두기</comment></data>
+  <data name="Project_UnlockAllLayers" xml:space="preserve"><value>모든 레이어 잠금 풀기</value></data>
   <data name="Project_LayerEffects" xml:space="preserve"><value>레이어 효과</value></data>
+  <data name="Project_ExpandCanvasForEffect" xml:space="preserve"><value>효과에 맞춰 캔버스 늘리기</value><comment>실행취소 이름</comment></data>
   <data name="Project_CannotBakeGroupEffects" xml:space="preserve"><value>그룹 효과는 영구 적용할 수 없습니다 — 부위에 적용하세요.</value></data>
   <data name="Project_CannotBakeLockedLayerEffects" xml:space="preserve"><value>잠긴 레이어에는 효과를 영구 적용할 수 없습니다.</value></data>
   <data name="Project_NoEffectsToBake" xml:space="preserve"><value>영구 적용할 효과가 없습니다.</value></data>

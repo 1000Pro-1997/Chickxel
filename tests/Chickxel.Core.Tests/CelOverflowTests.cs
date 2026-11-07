@@ -202,6 +202,43 @@ public class CelOverflowTests
     }
 
     [Fact]
+    public void FlipLayer_MirrorsOneLayerInPlace_EveryFrame_IncludingOffCanvasPixels()
+    {
+        var p = new SpriteProject(6, 4);
+        var green = new Color32(0, 255, 0);
+        var blue = new Color32(0, 0, 255);
+        Draw(p, 0, 0, green);
+        p.AddLayer();
+        p.AddFrame();
+        Draw(p, 2, 1, Red, layer: 1);
+        Draw(p, 3, 1, blue, layer: 1);
+        Draw(p, 3, 2, Red, layer: 1, frame: 1);
+        // 프레임 1의 캔버스 밖 픽셀(7,2): 레이어 자리는 x 2..7.
+        Assert.Equal(1, p.ShiftCels("옮기기", [(1, 1)], 4, 0));
+        Assert.Equal(new Rectangle(2, 1, 6, 2), p.LayerBounds(1));
+        int steps = p.History.UndoCount;
+
+        p.FlipLayer(1, horizontal: true);
+
+        Assert.Equal(steps + 1, p.History.UndoCount);
+        // 자리 가운데 선(x = 5) 기준: x → 9 − x. 자리는 그대로, 다른 레이어도 그대로.
+        Assert.Equal(new Rectangle(2, 1, 6, 2), p.LayerBounds(1));
+        Assert.Equal((blue, Red), (FullAt(p, 6, 1, layer: 1), FullAt(p, 7, 1, layer: 1)));
+        Assert.Equal(Red, FullAt(p, 2, 2, layer: 1, frame: 1));
+        Assert.Null(p.GetCelOverflow(1, 1));
+        Assert.NotNull(p.GetCelOverflow(1, 0));
+        Assert.Equal(green, p.GetCel(0, 0)![0, 0]);
+
+        p.FlipLayer(1, horizontal: false);
+        Assert.Equal((blue, Red), (FullAt(p, 6, 2, layer: 1), FullAt(p, 7, 2, layer: 1)));
+
+        p.Undo();
+        p.Undo();
+        Assert.Equal((Red, blue), (FullAt(p, 2, 1, layer: 1), FullAt(p, 3, 1, layer: 1)));
+        Assert.Equal(Red, FullAt(p, 7, 2, layer: 1, frame: 1));
+    }
+
+    [Fact]
     public void ResizeLayer_NormalLayer_CropsPixelsOutsideTheArea_InEveryFrameAndOffCanvas()
     {
         var p = new SpriteProject(6, 4);
@@ -236,24 +273,26 @@ public class CelOverflowTests
     }
 
     [Fact]
-    public void ResizeLayer_NormalLayer_MovingOrScalingTheImage_MovesFramePivotsAlong()
+    public void ResizeLayer_NormalLayer_MovingOrScalingTheImage_MovesLayerPivotsAlong()
     {
         var p = new SpriteProject(8, 8);
         p.AddFrame();
         Draw(p, 2, 2, Red);
-        p.Sprite.DefaultPivot = Pivot.FromLocalPixel(2, 2, 8, 8);
-        p.SetFramePivot(1, Pivot.FromLocalPixel(3, 3, 8, 8));
+        p.SetLayerPivot(0, Pivot.FromLocalPixel(2, 2, 8, 8));
+        p.SetLayerFramePivot(0, 1, Pivot.FromLocalPixel(3, 3, 8, 8));
+        var canvasPivot = p.GetFramePivot(0);
         var from = new Rectangle(2, 2, 1, 1);
 
-        // (2,2) → (5,4)로 옮기기: 기본·프레임 피벗이 같은 거리만큼
+        // (2,2) → (5,4)로 옮기기: 레이어 피벗(기본·프레임마다)이 같은 거리만큼, 캔버스 피벗은 그대로
         p.ResizeLayer(0, from, new Rectangle(5, 4, 1, 1), new Rectangle(5, 4, 1, 1));
-        Assert.Equal((5f, 4f), p.GetFramePivot(0).ToLocalPixel(8, 8));
-        Assert.Equal((6f, 5f), p.GetFramePivot(1).ToLocalPixel(8, 8));
+        Assert.Equal(new PointF(5, 4), p.LayerPivotPixel(p.Layers[0], 0));
+        Assert.Equal(new PointF(6, 5), p.LayerPivotPixel(p.Layers[0], 1));
+        Assert.Equal(canvasPivot, p.GetFramePivot(0));
         p.Undo();
-        Assert.Equal((2f, 2f), p.GetFramePivot(0).ToLocalPixel(8, 8));
+        Assert.Equal(new PointF(2, 2), p.LayerPivotPixel(p.Layers[0], 0));
 
         // 자리만 바꾸면(그림 그대로) 피벗도 그대로
         p.ResizeLayer(0, from, from, new Rectangle(0, 0, 4, 4));
-        Assert.Equal((3f, 3f), p.GetFramePivot(1).ToLocalPixel(8, 8));
+        Assert.Equal(new PointF(3, 3), p.LayerPivotPixel(p.Layers[0], 1));
     }
 }

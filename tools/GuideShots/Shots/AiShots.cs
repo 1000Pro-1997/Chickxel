@@ -563,7 +563,7 @@ internal static class AiShots
             marks: [settingsButton, Room(codexStatus, w, left: 12, up: 0), Room(info, w, up: 12), Room(modeAuto, w, left: 12, up: 0), Room(modeGenerate, w, left: 12, up: 0),
                 Room(modeDirect, w, left: 12, up: 0), Room(paletteRow, w, left: 14, up: 0)]);
 
-        // ⑧~⑮ 생성 옵션(표 순서).
+        // ⑧~⑯ 생성 옵션(표 순서).
         modeGenerate.IsChecked = true;
         k.Settle(400);
         // 선택지 줄(이름 + 컨트롤) — 번호가 체크 상자·이름을 가리지 않게 왼쪽 여백 쪽으로 늘린다.
@@ -577,6 +577,7 @@ internal static class AiShots
         var options = ShotKit.Get<Control>(w, "_generateOptions");
         k.Save(w, "ai-generate-2", crop: new Rect(0, 0, w.Bounds.Width, Math.Min(w.Bounds.Height, ShotKit.Bounds(options, w).Bottom + 16)), titleBar: true, marks:
         [
+            Row("_autoPrompt"),
             Row("_resizeResult"),
             Row("_sizeRow", 0),
             Row("_removeBackground"),
@@ -589,7 +590,7 @@ internal static class AiShots
         settingsButton.IsChecked = false;
         FinishPanel(k, w);
 
-        // ⑱⑲ 생성 결과 카드: 새 빈 그림에 "늑대귀 모험가"를 생성해 넣은 차례.
+        // ⑲⑳ 생성 결과 카드: 새 빈 그림에 "늑대귀 모험가"를 생성해 넣은 차례.
         var wolf = Wolf(chat);
         var host = (IAiHost)main;
         host.CreateProject(64, 112, null, null, null, out _);
@@ -613,12 +614,13 @@ internal static class AiShots
             .Done(null, 71300);
         chat.Resume(Codex, rest);
         var cardButton = ShotKit.All<Button>(chat.Messages(Codex)).First(b => ShotKit.All<TextBlock>(b).Any(t => t.Text == UiStrings.AiDraw_ViewSettings));
-        var card = (Control)cardButton.GetVisualParent()!;
+        // 결과 카드 전체(썸네일·결과 글·단추 줄): 단추 줄만 표시하면 ⑲가 ⑳ 단추 번호에 가려진다.
+        var card = cardButton.GetVisualAncestors().OfType<StackPanel>().First(s => s.Children.OfType<SelectableTextBlock>().Any());
         var askRow = LastUserRow(chat, Codex);
         var cardCrop = Union(w, 10, askRow, card);
-        k.Save(w, "ai-generate-4", crop: cardCrop.WithHeight(ShotKit.Bounds(card, w).Bottom + 8 - cardCrop.Y), marks: [card, cardButton], firstNumber: 18);
+        k.Save(w, "ai-generate-4", crop: cardCrop.WithHeight(ShotKit.Bounds(card, w).Bottom + 8 - cardCrop.Y), marks: [card, cardButton], firstNumber: 19);
 
-        // ⑯⑰ 애니메이션: 스프라이트 시트 한 장 생성 중인 진행 줄과 정지 단추.
+        // ⑰⑱ 애니메이션: 스프라이트 시트 한 장 생성 중인 진행 줄과 정지 단추.
         chat.Send(Codex, "Make a 4-frame walk animation of her", new Script()
             .Think(300)
             .ToolLine("generate_pixel_art", new JsonObject { ["prompt"] = "wolf-eared adventurer walk cycle", ["animation"] = "walk", ["frames"] = 4 })
@@ -629,9 +631,9 @@ internal static class AiShots
         var stop = chat.Field<Button>(Codex, "_stopButton");
         WidenGutter(k, chat, Codex);
         var progressArea = Union(w, 8, LastUserRow(chat, Codex), thinking, stop);
-        k.Save(w, "ai-generate-3", crop: new Rect(0, progressArea.Y, w.Bounds.Width, progressArea.Height), marks: [Room(thinking, w, left: Gutter - 2, up: 0), stop], firstNumber: 16);
+        k.Save(w, "ai-generate-3", crop: new Rect(0, progressArea.Y, w.Bounds.Width, progressArea.Height), marks: [Room(thinking, w, left: Gutter - 2, up: 0), stop], firstNumber: 17);
 
-        // ⑳ Claude 탭: 그림 생성 옆 빨간 경고 아이콘과 그 풍선.
+        // ㉑ Claude 탭: 그림 생성 옆 빨간 경고 아이콘과 그 풍선.
         chat.Show(Claude);
         settingsButton.IsChecked = true;
         FinishPanel(k, w);
@@ -642,11 +644,11 @@ internal static class AiShots
         var tip = TipRect(warning, w);
         var panelRect = ShotKit.Bounds(drawPanel, w);
         var crop = new Rect(panelRect.X - 8, 0, panelRect.Width + 8, ShotKit.Bounds(codexStatus, w).Bottom + 16).Union(tip.Inflate(8)).Intersect(new Rect(w.Bounds.Size));
-        k.Save(w, "ai-generate-5", crop: crop, marks: [warning], firstNumber: 20);
+        k.Save(w, "ai-generate-5", crop: crop, marks: [warning], firstNumber: 21);
         ToolTip.SetIsOpen(warning, false);
     }
 
-    /// <summary>㉑㉒ 생성 프롬프트 카드: 붙인 그림을 48px 픽셀 아트로 바꿔 달라는 차례에서 생성 지시 전문을 펼친 모습.</summary>
+    /// <summary>㉒㉓ 생성 프롬프트 카드: 붙인 그림을 48px 픽셀 아트로 바꿔 달라는 차례에서 생성 지시 전문을 펼친 모습.</summary>
     [Shot("ai-generate-6")]
     public static void GeneratePrompt(ShotKit k)
     {
@@ -676,7 +678,7 @@ internal static class AiShots
         var header = (Control)expander.Header!;
         var full = ShotKit.All<SelectableTextBlock>(expander).First(t => t.Text == instruction);
         var crop = Union(w, 10, LastUserRow(chat, Codex), card);
-        k.Save(w, crop: crop.Intersect(new Rect(w.Bounds.Size)), marks: [Room(header, w, left: 14, up: 4), ShotKit.Bounds(full, w).Intersect(ShotKit.Bounds(card, w))], firstNumber: 21);
+        k.Save(w, crop: crop.Intersect(new Rect(w.Bounds.Size)), marks: [Room(header, w, left: 14, up: 4), ShotKit.Bounds(full, w).Intersect(ShotKit.Bounds(card, w))], firstNumber: 22);
     }
 
     // ───────────── AI의 질문 ─────────────

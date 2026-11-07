@@ -1,9 +1,9 @@
 key,ko,en
 #name,한국어,English
 head.2,사용 가이드 — Chickxel,Guide — Chickxel
-head.3.content,Chickxel은 Unity 2D 게임을 위한 무료 픽셀 아트 편집기입니다. 프레임·레이어·부위·스킨을 그리고 저장할 때 PNG 스프라이트 시트와 Unity .meta를 함께 내보냅니다. Windows·macOS.,"Chickxel is a free pixel art editor for Unity 2D games. Draw frames, layers, parts and skins, and export a PNG sprite sheet with Unity .meta every time you save. Windows and macOS."
+head.3.content,Chickxel은 Unity 2D 게임을 위한 무료 픽셀 아트 편집기입니다. 프레임·레이어·부위·스킨을 그리고 저장할 때 PNG 스프라이트 시트와 Unity .meta를 함께 내보냅니다. Windows·macOS·Linux.,"Chickxel is a free pixel art editor for Unity 2D games. Draw frames, layers, parts and skins, and export a PNG sprite sheet with Unity .meta every time you save. Windows, macOS and Linux."
 head.4.content,사용 가이드 — Chickxel,Guide — Chickxel
-head.5.content,Chickxel은 Unity 2D 게임을 위한 무료 픽셀 아트 편집기입니다. 프레임·레이어·부위·스킨을 그리고 저장할 때 PNG 스프라이트 시트와 Unity .meta를 함께 내보냅니다. Windows·macOS.,"Chickxel is a free pixel art editor for Unity 2D games. Draw frames, layers, parts and skins, and export a PNG sprite sheet with Unity .meta every time you save. Windows and macOS."
+head.5.content,Chickxel은 Unity 2D 게임을 위한 무료 픽셀 아트 편집기입니다. 프레임·레이어·부위·스킨을 그리고 저장할 때 PNG 스프라이트 시트와 Unity .meta를 함께 내보냅니다. Windows·macOS·Linux.,"Chickxel is a free pixel art editor for Unity 2D games. Draw frames, layers, parts and skins, and export a PNG sprite sheet with Unity .meta every time you save. Windows, macOS and Linux."
 head.6.content,https://chickxel.com/assets/screenshot.png,https://chickxel.com/assets/screenshot-en.png
 head.canonical,https://chickxel.com/guide,https://chickxel.com/en/guide
 head.7.script,  if (want !== 'ko') location.replace('en/' + 'guide.html' + location.search + location.hash);,  if (want !== 'en') location.replace('../' + 'guide.html' + location.search + location.hash);

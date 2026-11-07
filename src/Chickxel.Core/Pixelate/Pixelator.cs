@@ -112,6 +112,23 @@ public sealed class PixelateSource
         }
     }
 
+    /// <summary>
+    /// 프레임 하나의 원본 그림: 배경을 지운 원본을 그 프레임 범위(<see cref="FrameRegion.Bounds"/>)로 자르고 그 프레임 픽셀(<see cref="FrameSplit.Labels"/>)만 남긴 것 —
+    /// 범위 안의 버린 잡티·이웃 프레임 픽셀은 투명. 결과와 나란히 보이는 같은 프레임 원본(새 그림, 왼쪽 위 = 범위 왼쪽 위).
+    /// </summary>
+    public PixelImage FrameImage(int frame)
+    {
+        var b = Split.Frames[frame].Bounds;
+        var img = new PixelImage(b.Width, b.Height);
+        var labels = Split.Labels;
+        var px = Cleaned.Pixels;
+        int w = Cleaned.Width;
+        for (int y = b.Top; y < b.Bottom; y++)
+            for (int x = b.Left; x < b.Right; x++)
+                if (labels[y * w + x] == frame) img[x - b.Left, y - b.Top] = px[y * w + x];
+        return img;
+    }
+
     public static PixelateSource Prepare(PixelImage image, PixelateSettings s)
     {
         var bg = BackgroundRemoval.Run(image, s.Background);

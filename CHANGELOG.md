@@ -2,6 +2,66 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.104 (2026-11-08)
+### AI drawing: images converted at full size
+- Generated frames are no longer halved to 640 px before conversion, and there is no size cap on frames or sprite sheets; the image is converted at the size the generator returned.
+- Converting the same image yourself with the main preset in the Pixelate window now starts from the same source, so cell sizes and the outline match.
+- Frames are shrunk only when the joined strip would pass the 16384 px image limit (all frames by the same whole factor).
+- Conversion and auto optimization of multi-frame animations take longer.
+
+### AI drawing: converted with the main preset by default
+- Generated images are converted with the Pixelate window's main preset as saved (background, palette, output size and alignment); only the frame split follows the generated frames (one image is not split, several use automatic split with the expected frame count, falling back to the sheet layout grid).
+- Result-size correction and Remove background stay as drawing settings that override the preset only when turned on. Both are now off by default; the old Remove background value is not carried over.
+- Auto-optimize the conversion stays: on optimizes within the main preset's budget, off converts once.
+
+### Inserting images keeps off-canvas pixels
+- Dropping an image on the canvas and applying from the Pixelate window no longer cut the parts outside the canvas; they stay as off-canvas pixels and show when you enlarge the canvas.
+- After applying from the transform mode that follows an insert, parts outside the canvas are kept too; Esc keeps the image as inserted.
+- The Pixelate window has **Grow to image size** next to Add to new tab: when on, applying first grows the canvas from the center to the result size (same undo step).
+
+### Pixelate: frames keep only what is inside the frame box
+- Frame results and the same-frame source preview no longer pick up specks from outside the blue frame box (for example white fragments at the lower left); only pixels inside the box are used.
+- A hand or foot crossing the box edge is cut at the box; drag the box larger to keep it.
+
+### Canvas and layer size modes: flip buttons
+- Tool settings in Canvas size mode (Ctrl+Alt+C) and Layer size mode (Ctrl+Shift+C) have a **Flip** row with horizontal and vertical flip buttons.
+- In Canvas size mode they flip the whole canvas (all layers and frames); in Layer size mode they flip that layer in place across all frames, including off-canvas pixels (part pivots and 9-slice borders follow).
+- Each flip applies at once as its own undo step, and the mode stays open.
+
+### Canvas size mode: aspect ratio
+- Tool settings in Canvas size mode (Ctrl+Alt+C) have an **Aspect ratio** button next to Keep image ratio. Its small window picks a ratio (1:1, 4:3, 3:4, 3:2, 2:3, 16:9, 9:16 or your own W:H), keep width or keep height, and Canvas only or Stretch image, with a live preview and the new size.
+- Canvas only keeps the image and adds empty space or crops on the changed side at the chosen anchor (center when no anchor is set; cropped pixels stay as off-canvas pixels). Stretch image fills the new canvas and turns off Keep image ratio when the ratio differs.
+- OK only sets the mode's values; Apply (Enter) changes the canvas and Cancel (Esc) reverts. The choices are remembered until you quit.
+- When the image and canvas share a size, the anchor buttons now keep the anchor you picked (Center at first) instead of jumping to the top left.
+
+### Pixelate: the window keeps its last state
+- Closing the Pixelate AI image window (Apply, Cancel, the close button or Esc) now only hides it; until you quit the app, opening it again from the AI menu brings back the same source, candidates, selection and any optimization still running.
+- Opening it with a new source (file browser, current layer, View conversion settings) replaces the previous window as before.
+
+### Pencil and eraser: Pixel perfect takes priority over pixel steps
+- Pixel perfect can always be turned on now; when it is on, Pixel steps is dimmed and strokes are joined diagonally with the L-shaped corners removed.
+- With Pixel perfect off, Pixel steps (Orthogonal by default or Diagonal) applies as before.
+
+### Timeline: Alt+click the eye or lock to solo a layer
+- Alt+click a layer's eye to hide every other layer; Alt+click its lock to lock every other layer. A group keeps its parts, and a part keeps its group.
+- Alt+click again while it is the only one shown (or unlocked) to show (or unlock) all layers. Each is one undo step.
+
+### Pivots per layer
+- Every layer (normal, group and part) now has its own pivot, also per frame ("from this frame on"). Layer effects such as rotation, moving the pivot and script `ctx.pivot` use that layer's pivot, so layers no longer share one pivot.
+- The canvas pivot used by sheet and Unity exports is separate. Click the "Canvas W×H" text in the timeline chip to edit it (the icon still opens Canvas size mode), and optionally pick a **representative layer** whose pivot becomes the canvas pivot; it is marked with a small crown.
+- Moving, resizing or flipping a layer's pixels moves its pivot along; canvas resize, flip and rotate map every layer's pivot.
+- The project file format is now version 5. Older files open converted automatically (each layer gets the old canvas pivot, so nothing looks different) with a notice in the status bar; saved files can't be opened by older versions.
+- AI tools: `get_document` reports layer and canvas pivots, `set_layer` sets a layer's pivot, and the new `set_canvas_pivot` sets the canvas pivot and representative layer.
+
+### Effects: expand the canvas for one effect
+- The effect right-click menu in the timeline and the effect panel in tool settings have **Expand canvas…**: a small window shows how the canvas would grow to fit that effect's result (all frames, including the effects before it) in the chosen mode, and Expand applies it as one undo step.
+- The expand mode is shared with the Effects window's common setting.
+
+### AI chat: Markdown tables, rules and strikethrough
+- GitHub-style tables in AI replies now show as a grid: bold header row, thin lines between cells, left/center/right column alignment from the `:---:` row, and formatting such as `code`, bold and links inside cells. Wide tables scroll sideways.
+- `---`, `***` and `___` on their own line draw a thin horizontal line, `~~text~~` is struck through, and `####` to `######` headings show like `###`.
+- While a reply streams in, a table stays plain text until its `|---|` row arrives.
+
 ## v1.14.103 (2026-11-07)
 ### Pencil and eraser: pixel steps
 - Tool settings for the pencil, gradient pencil and eraser have **Pixel steps**: Orthogonal (default) or Diagonal.

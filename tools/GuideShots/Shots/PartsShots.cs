@@ -101,9 +101,9 @@ internal static class PartsShots
         // 이름표(테두리 위)까지 담고 번호가 이름표를 가리지 않게 넉넉히
         var hover = PartOnCanvas(main, legs);
         hover = hover.Union(new Rect(hover.X, hover.Y - 22, 90, 22)).Inflate(10);
-        var (bx, by) = body.PartPivot.ToLocalPixel(body.PartSize.Width, body.PartSize.Height);
+        var (bx, by) = body.Pivot.ToLocalPixel(body.PartSize.Width, body.PartSize.Height);
         var pivot = Ctx(main).Pivot.ToLocalPixel(CanvasW, CanvasH);
-        // ① 마우스 올린 부위 ② 고른 부위 ③ 부위 피벗(파랑) ④ 프레임 피벗(주황)
+        // ① 마우스 올린 부위 ② 고른 부위 ③ 부위 피벗(파랑) ④ 그룹 피벗(주황 — 피벗 도구 대상 = 지금 레이어인 그룹)
         k.Save(main, crop: new Rect(tl, br).Inflate(new Thickness(160, 30)), marks:
         [
             hover, PartOnCanvas(main, head), Around(CanvasPoint(main, body.PartOffset.X + bx, body.PartOffset.Y + by), 10),

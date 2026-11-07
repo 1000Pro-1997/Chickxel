@@ -24,6 +24,10 @@ public enum VectorIcon
     MoveHorizontal,
     /// <summary>위아래 화살표 하나(↕).</summary>
     MoveVertical,
+    /// <summary>좌우 뒤집기: 세로 점선 양쪽의 마주 보는 삼각형(Lucide flip-vertical-2).</summary>
+    FlipLeftRight,
+    /// <summary>상하 뒤집기: 가로 점선 위아래의 마주 보는 삼각형(Lucide flip-horizontal-2).</summary>
+    FlipUpDown,
     Check,
     X,
     /// <summary>작은 점(채워 그리면 ●).</summary>
@@ -93,6 +97,10 @@ public enum VectorIcon
     ImageDown,
     /// <summary>대각선 양쪽 화살표(크게).</summary>
     Maximize2,
+    /// <summary>세로·가로 둥근 사각형 겹침(캔버스 특수 비율 — Lucide ratio).</summary>
+    Ratio,
+    /// <summary>왕관(캔버스 피벗 대표 레이어 표시 — Lucide crown).</summary>
+    Crown,
     /// <summary>가로 슬라이더 세 줄(설정).</summary>
     SlidersHorizontal,
     /// <summary>톱니바퀴(설정 — Lucide settings).</summary>
@@ -242,6 +250,18 @@ public static class VectorIcons
         VectorIcon.Swap => ["M8 3 4 7l4 4", "M4 7h16", "m16 21 4-4-4-4", "M20 17H4"],
         VectorIcon.MoveHorizontal => ["m18 8 4 4-4 4", "M2 12h20", "m6 8-4 4 4 4"],
         VectorIcon.MoveVertical => ["M12 2v20", "m8 18 4 4 4-4", "m8 6 4-4 4 4"],
+        VectorIcon.FlipLeftRight =>
+        [
+            "M12 14v2", "M12 20v2", "M12 2v2", "M12 8v2",
+            "M20.288 16.703A1 1 0 0 0 22 16V8a1 1 0 0 0-1.712-.703l-3.99 3.991a1 1 0 0 0-.001 1.424z",
+            "M3.712 16.703A1 1 0 0 1 2 16V8a1 1 0 0 1 1.712-.703l3.99 3.991a1 1 0 0 1 .001 1.424z",
+        ],
+        VectorIcon.FlipUpDown =>
+        [
+            "M10 12H8", "M16 12h-2", "M22 12h-2", "M4 12H2",
+            "M7.298 20.288A1 1 0 0 0 8 22h8a1 1 0 0 0 .703-1.712l-3.991-3.99a1 1 0 0 0-1.424-.001z",
+            "M7.298 3.712A1 1 0 0 1 8 2h8a1 1 0 0 1 .703 1.712l-3.991 3.99a1 1 0 0 1-1.424.001z",
+        ],
         VectorIcon.Check => ["M20 6 9 17l-5-5"],
         VectorIcon.X => ["M18 6 6 18", "m6 6 12 12"],
         VectorIcon.Dot => [Circle(12, 12, 4)],
@@ -360,6 +380,16 @@ public static class VectorIcons
             Circle(9, 9, 2),
         ],
         VectorIcon.Maximize2 => ["M15 3h6v6", "m21 3-7 7", "m3 21 7-7", "M9 21H3v-6"],
+        VectorIcon.Ratio =>
+        [
+            "M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z",
+            "M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z",
+        ],
+        VectorIcon.Crown =>
+        [
+            "M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z",
+            "M5 21h14",
+        ],
         VectorIcon.Settings =>
         [
             "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z",

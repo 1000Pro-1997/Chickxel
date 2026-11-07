@@ -1044,6 +1044,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         };
         // 레이어 크기 모드를 적용하면 캔버스는 그대로라 화면은 두고 알리기만 한다.
         _ctx.LayerResized += (_, message) => ShowMessage(message);
+        _toolOptions.StatusMessage += (_, message) => ShowMessage(message);
         // 레이어 크기 모드가 끝나면(적용·취소) 들어가기 전 보기로 되돌린다(같은 문서일 때만).
         _ctx.CanvasResizeChanged += (_, _) =>
         {
@@ -1057,6 +1058,13 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _canvas.Message += (_, m) => ShowMessage(m);
         _timeline.Message += (_, m) => ShowMessage(m);
         _timeline.CanvasSizeRequested += (_, _) => BeginCanvasResize();
+        // 캔버스 칩의 글자: 피벗 도구로 캔버스 피벗을 고친다(레이어 행을 누르면 다시 레이어 피벗).
+        _timeline.CanvasPivotRequested += (_, _) =>
+        {
+            _ctx.Tool = ToolKind.Pivot;
+            _ctx.SetPivotCanvasTarget(true);
+            UpdateToolUi();
+        };
         // 타임라인에서 효과 하나를 고르면 오른쪽 독 도구 설정 아래에 그 효과 설정을 보인다.
         _timeline.EffectFocusChanged += (_, focus) => _toolOptions.ShowEffect(focus?.Layer, focus?.Index ?? -1);
         _toolOptions.EffectDialogRequested += (layer, index) => _timeline.OpenEffect(layer, index);
@@ -2272,6 +2280,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         message = result.Imported
             ? MainStrings.FormatMessage_361(value: Path.GetFileName(full), contents: contents, path: Path.GetFileName(p.Path))
             : MainStrings.FormatMessage_362(displayName: p.DisplayName, count: p.Layers.Count, contents: contents);
+        // 예전 형식 파일이면 새 형식으로 바꿔 읽었음을 알린다(레이어마다 캔버스 피벗을 복사함 — 저장하면 새 형식).
+        if (!result.Imported && p.ConvertedFromVersion is { } oldVersion) message += " " + MainStrings.FormatMessage_ConvertedProject(version: oldVersion);
         message += historyNote + UnsavedSuffix;
         ShowMessage(message);
         if (result.Warning is { } w)

@@ -688,6 +688,9 @@ public class DialogBase : Window
         return b;
     }
 
+    /// <summary>단추 줄에 단추 아닌 것(체크 상자 등)을 <paramref name="before"/> 앞에 둔다(누르면 닫히지 않음).</summary>
+    protected void AddFooter(Control control, Control before) => _buttons.Children.Insert(_buttons.Children.IndexOf(before), control);
+
     private readonly TaskCompletionSource _closed = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     /// <summary>창이 닫히면 끝나는 작업 — Closed 처리기보다 먼저 끝나므로 처리기가 예외를 내도 끝난다(<see cref="Ui.ShowModal{T}"/>).</summary>

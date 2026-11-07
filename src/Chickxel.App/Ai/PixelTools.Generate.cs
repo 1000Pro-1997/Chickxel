@@ -120,7 +120,8 @@ public sealed partial class PixelTools
                 ["background"] = Str("Only if the user explicitly asked for a background or scene: describe it in English. Omit otherwise; a plain transparent background is used."),
                 ["size"] = Int($"Sprite size in pixels (long side, {AiDrawSettings.MinSize}-{AiDrawSettings.MaxSize}) only when the user specifies one (e.g. \"128x128\"). " +
                     "Omit otherwise: before generating, the app chooses a suitable logical pixel size from the attached subject image or the subject description, " +
-                    "unless result-size correction is enabled (then the user's configured size applies).",
+                    "unless result-size correction is enabled (then the user's configured size applies). The pixel-art conversion uses the user's main Pixelate preset; " +
+                    "only with result-size correction enabled is the result fitted to this size.",
                     AiDrawSettings.MinSize, AiDrawSettings.MaxSize),
                 ["subject_image"] = Int("Number N of an image the user attached to this message (written as [Image #N] in the message) that shows the character/item to draw " +
                     "(e.g. \"make this character as pixel art\"). A suitable pixel-art style reference is then added automatically.", 1),
@@ -172,7 +173,7 @@ public sealed partial class PixelTools
         var poses = OptStringList(a, "poses");
         if (animation == AiDrawActions.Custom && poses.Count == 0) throw new ToolError(UiStrings.AiDraw_Error_CustomPoses);
         int? frames = OptInt(a, "frames", AiDrawSettings.MinFrames, AiDrawSettings.MaxFrames);
-        // 사용자가 크기를 지정했으면 그대로 쓰고, 없으면 결과 크기 설정 또는 생성 전 영어 판정으로 정한다.
+        // 사용자가 크기를 지정했으면 그대로 쓰고, 없으면 결과 크기 보정 크기 또는 생성 전 영어 판정으로 정한다(보정을 끄면 변환은 대표 프리셋 크기).
         int? requestedSize = OptInt(a, "size", AiDrawSettings.MinSize, AiDrawSettings.MaxSize);
         var (size, convertSize) = options.SizesFor(requestedSize);
         int? subjectIndex = OptInt(a, "subject_image", 1, Math.Max(1, TurnImages.Count)) is { } number ? number - 1 : null;
@@ -242,8 +243,6 @@ public sealed partial class PixelTools
                 size = await generator.SuggestSizeAsync(subject, subjectFile, cts.Token);
                 request = request with { SizeTarget = size };
             }
-            // 참고 그림 변환은 명시 크기 또는 판정 크기로 결과 캔버스를 맞춘다.
-            if (subjectIndex is not null) convertSize = size;
             var style = autoPrompt ? StyleReference(options, styleId, subject, kind, size, subjectFile is not null && !subjectIsPixelArt, subjectIsPixelArt) : null;
             string? styleFile = null;
             if (style is not null)
@@ -260,12 +259,13 @@ public sealed partial class PixelTools
             if (styleFile is not null) { firstRoles.Add(AiDrawImageRole.Style); firstFiles.Add(styleFile); }
             bool animatedGif = count > 1 && options.Mode == AiDrawMode.Auto && Scope is null;
             bool sheet = count > 1 && !animatedGif && options.AnimationMethod == AiDrawAnimationMethod.SingleSheet;
-            bool keepOffsets = animation == AiDrawActions.Jump;
             var pixelate = _host.Settings.Pixelate ??= new PixelateOptions();
             pixelate.Migrate(_host.Settings);
+            // AI 그림은 대표 프리셋의 시작 설정(그리기 설정에서 켠 결과 크기 보정·배경 지우기만 덮어씀)과 칸별 최적화·예산·점수 기준으로,
+            // 프레임 나누기만 생성한 프레임 수에 맞춰 변환한다.
             var representative = pixelate.PrimaryPreset;
             var optimize = representative.Options();
-            var settings = AiDrawConversion.Settings(representative.StartSettings(), count, convertSize, options.RemoveBackground, keepOffsets);
+            var settings = AiDrawConversion.WithDrawOptions(representative.StartSettings(), convertSize, options.ForceRemoveBackground);
             PixelImage source;
             string firstImage;
             var layout = AiDrawSheetLayout.For(count);
@@ -278,7 +278,7 @@ public sealed partial class PixelTools
                 var instruction = AiDrawPrompts.CodexInstruction(prompt, request.Transparent, turnFiles.Count);
                 AiDrawPromptReady?.Invoke(instruction, 1, 1);
                 await generator.GenerateAsync(instruction, turnFiles, firstImage, cts.Token);
-                source = AiDrawConversion.Downscale(LoadGenerated(firstImage), AiDrawConversion.MaxFrameSide);
+                source = LoadGenerated(firstImage);
             }
             else if (sheet)
             {
@@ -290,7 +290,7 @@ public sealed partial class PixelTools
                 var instruction = AiDrawPrompts.CodexInstruction(prompt, request.Transparent, firstFiles.Count, landscape: true);
                 AiDrawPromptReady?.Invoke(instruction, 1, 1);
                 await generator.GenerateAsync(instruction, firstFiles, firstImage, cts.Token);
-                source = AiDrawConversion.Downscale(LoadGenerated(firstImage), AiDrawConversion.MaxSheetSide);
+                source = LoadGenerated(firstImage);
             }
             else
             {
@@ -328,8 +328,7 @@ public sealed partial class PixelTools
                     Report(progress, UiStrings.AiDraw_Progress_Converting);
                     source = await Task.Run(() =>
                     {
-                        var gifFrames = images.Select(i => new GifFrame(AiDrawConversion.Downscale(i, AiDrawConversion.MaxFrameSide),
-                            AiDrawActions.DurationMs(animation))).ToArray();
+                        var gifFrames = images.Select(i => new GifFrame(i, AiDrawActions.DurationMs(animation))).ToArray();
                         cts.Token.ThrowIfCancellationRequested();
                         GifWriter.Save(gifFrames, gifPath, new GifOptions());
                         cts.Token.ThrowIfCancellationRequested();
@@ -339,11 +338,10 @@ public sealed partial class PixelTools
                     }, cts.Token);
                 }
                 else
-                    source = AiDrawConversion.Combine([.. images.Select(i => AiDrawConversion.Downscale(i, AiDrawConversion.MaxFrameSide))]);
+                    source = AiDrawConversion.Combine(images);
             }
 
             Report(progress, options.AutoOptimize ? UiStrings.AiDraw_Progress_Optimizing : UiStrings.AiDraw_Progress_Converting);
-            // AI 그림은 대표 프리셋에 저장한 단계 설정·칸별 최적화·예산·점수 기준으로 변환한다.
             // 진행: UI 스레드로(이 메서드의 동기화 문맥), 0.2초에 한 번쯤.
             IProgress<PixelateOptimizeProgress> ui = new Progress<PixelateOptimizeProgress>(p =>
             {
@@ -365,7 +363,8 @@ public sealed partial class PixelTools
             PixelateSettings used;
             try
             {
-                (result, used) = await Task.Run(() => AiDrawConversion.Convert(source, settings, count, sheet, keepOffsets, options.AutoOptimize, optimize, OnProgress, cts.Token), cts.Token);
+                var arranged = sheet ? layout : new AiDrawSheetLayout(count, 1);
+                (result, used) = await Task.Run(() => AiDrawConversion.Run(source, settings, count, arranged, options.AutoOptimize, optimize, OnProgress, cts.Token), cts.Token);
             }
             catch (InvalidOperationException)
             {

@@ -1233,7 +1233,7 @@ public sealed partial class PixelCanvas : Control
         {
             if (!p.IsLayerVisible(p.IndexOf(part))) continue;
             var offset = ReferenceEquals(part, _arrangePart) ? _arrangeOffset : FrameOffsetOf(part);
-            var (lx, ly) = p.GetPartPivot(part, _ctx.CurrentFrame).ToLocalPixel(part.PartSize.Width, part.PartSize.Height);
+            var (lx, ly) = p.GetLayerPivot(part, _ctx.CurrentFrame).ToLocalPixel(part.PartSize.Width, part.PartSize.Height);
             var shift = _ctx.EffectPivotShift(part, _ctx.CurrentFrame);
             var c = ImageToScreen(offset.X + lx + shift.X, offset.Y + ly + shift.Y);
             const double r = 3, arm = 3;
@@ -1250,14 +1250,17 @@ public sealed partial class PixelCanvas : Control
     private static readonly IPen PivotTrailPen = AppTheme.Pen(Color.FromArgb(200, 255, 255, 255), 1, new ImmutableDashStyle([2.0, 2.0], 0));
 
     /// <summary>
-    /// 피벗 표시: 부위 화면이면 부위 피벗, 아니면 프레임 피벗. 효과 보기면 지금 레이어(부위면 그룹 효과까지)의 효과가 이 프레임에 그림을 옮긴 만큼 옮긴 자리에 그린다
+    /// 피벗 표시: 피벗 대상(<see cref="EditorContext.PivotTargetLayer"/> — 지금 레이어의 피벗, 캔버스 대상이면 캔버스 피벗)의 지금 프레임 피벗(캔버스 픽셀 —
+    /// 부위 화면이면 부위 기준으로 옮겨 그림). 레이어 피벗이고 효과 보기면 그 레이어(부위면 그룹 효과까지)의 효과가 이 프레임에 그림을 옮긴 만큼 옮긴 자리에 그린다
     /// (<see cref="EditorContext.EffectPivotShift"/> — 회전 같은 뒤 효과가 실제로 도는 중심). 피벗 도구로 고치는 것은 옮기기 전 피벗이라, 피벗 도구일 때는 그 자리를
     /// 작은 원과 점선으로 함께 보인다.
     /// </summary>
     private void DrawPivot(DrawingContext g)
     {
-        var (px, py) = _ctx.Pivot.ToLocalPixel(W, H);
-        var shift = _ctx.CurrentLayerObject is { } layer ? _ctx.EffectPivotShift(layer, _ctx.CurrentFrame) : System.Drawing.PointF.Empty;
+        var at = _ctx.PivotPixel;
+        var origin0 = ShownOrigin;
+        float px = at.X - origin0.X, py = at.Y - origin0.Y;
+        var shift = _ctx.PivotTargetLayer is { } layer ? _ctx.EffectPivotShift(layer, _ctx.CurrentFrame) : System.Drawing.PointF.Empty;
         var p = ImageToScreen(px + shift.X, py + shift.Y);
         var pen = _ctx.Tool == ToolKind.Pivot ? PivotActivePen : PivotPen;
         if (!shift.IsEmpty && _ctx.Tool == ToolKind.Pivot)
@@ -1389,8 +1392,8 @@ public sealed partial class PixelCanvas : Control
     private static bool IsStrokeTool(ToolKind t)
         => t is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.Eraser or ToolKind.Dodge or ToolKind.Dither or ToolKind.ReplaceBrush;
 
-    /// <summary>이 도구의 획을 ㄱ자 4방향 선으로 잇는지: 연필·그라데이션 연필·지우개이고 픽셀 잇기가 ㄱ자일 때.</summary>
-    private bool OrthogonalStroke(ToolKind t) => _ctx.PencilOrthogonal && t is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.Eraser;
+    /// <summary>이 도구의 획을 ㄱ자 4방향 선으로 잇는지: 연필·그라데이션 연필·지우개이고 픽셀 잇기가 ㄱ자이며 픽셀 퍼펙트가 꺼졌을 때(켜면 대각선으로 이음).</summary>
+    private bool OrthogonalStroke(ToolKind t) => _ctx.PencilOrthogonal && !_ctx.PixelPerfect && t is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.Eraser;
 
     /// <summary>획의 두 점을 잇는 브러시 중심들(양 끝 포함): ㄱ자면 4방향, 아니면 대각선도 쓰는 브레젠험.</summary>
     private static List<Point> StrokeLine(Point a, Point b, bool orthogonal) => orthogonal ? Raster.Line4(a, b) : Raster.Line(a, b);
@@ -2081,9 +2084,9 @@ public sealed partial class PixelCanvas : Control
         _partialErase = _strokeColor.A == 0 && tool is ToolKind.Eraser or ToolKind.Pencil or ToolKind.GradientPencil
                         && !PartialErase.IsFull(_ctx.EraserStrength, _ctx.EraserRed, _ctx.EraserGreen, _ctx.EraserBlue);
         _visited = tool == ToolKind.Dodge || _partialErase ? new HashSet<Point>() : null;
-        // ㄱ자 잇기는 ㄱ자 모서리를 남기려는 것이라 픽셀 퍼펙트(ㄱ자 겹 픽셀 지우기)와 같이 쓰지 않는다.
+        // 픽셀 퍼펙트를 켜면 ㄱ자 잇기 대신 대각선으로 잇고(OrthogonalStroke) 그 계단의 ㄱ자 겹 픽셀을 지운다.
         _strokeOrthogonal = OrthogonalStroke(tool);
-        _ppStroke = tool is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.Eraser && _ctx.PixelPerfect && _ctx.BrushSize == 1 && !_strokeOrthogonal ? new PixelPerfectStroke() : null;
+        _ppStroke = tool is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.Eraser && _ctx.PixelPerfect && _ctx.BrushSize == 1 ? new PixelPerfectStroke() : null;
         // 그라데이션 연필: 오른쪽 버튼 = 지우개 설정이면 연필처럼 지우고, 아니면 (어느 버튼이든) 그라데이션으로 칠한다.
         _gradientStroke = tool == ToolKind.GradientPencil && !(right && _ctx.RightButtonErases) ? new GradientStroke(start, _strokeOrthogonal) : null;
         _strokeGradient = _ctx.PencilGradient;
@@ -2489,9 +2492,10 @@ public sealed partial class PixelCanvas : Control
     private void DragPivot(Point screen)
     {
         var f = ScreenToImageF(screen);
-        // 반 픽셀 단위로 맞춘다.
+        // 반 픽셀 단위로 맞춘다(그림 좌표 — 부위 화면이면 부위 기준이라 캔버스 좌표로 옮겨 대상 공간으로 바꾼다).
         float fx = MathF.Round((float)f.X * 2) / 2, fy = MathF.Round((float)f.Y * 2) / 2;
-        _ctx.PreviewPivot(Pivot.FromLocalPixel(fx, fy, W, H));
+        var o = ShownOrigin;
+        _ctx.PreviewPivot(_ctx.PivotFromCanvasPixel(fx + o.X, fy + o.Y));
     }
 
     // ───────────── 그룹 화면: 부위 배치 ─────────────

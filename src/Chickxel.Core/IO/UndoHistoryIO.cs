@@ -23,10 +23,12 @@ namespace Chickxel.Core.IO;
 public static class UndoHistoryIO
 {
     /// <summary>
+    /// 4 = 레이어마다의 피벗(일반 레이어·그룹 포함, <c>pivot</c>·프레임의 <c>layerPivots</c>)과 캔버스 피벗의 대표 레이어(<c>pivotLayer</c>)를 담는 판.
     /// 3 = 기록의 상태들이 쓰는 스크립트 원문(<c>scripts</c>: 해시 → 원문)을 함께 담는 판. 2 = 레이어 효과를 프로젝트 형식 4와 같은 JSON
-    /// (<see cref="Effects.EffectCodec"/>)으로 쓰는 판. 1·2판도 읽는다(원문 없음 — 프로젝트 표에 없는 원문의 효과는 원문 없음으로 남음).
+    /// (<see cref="Effects.EffectCodec"/>)으로 쓰는 판. 1~3판도 읽는다(원문 없음 — 프로젝트 표에 없는 원문의 효과는 원문 없음으로 남음; 3판 이하의 상태는
+    /// 예전 프로젝트 파일을 읽을 때처럼 일반 레이어·그룹이 캔버스 피벗을 자기 피벗으로 갖는다).
     /// </summary>
-    public const int FormatVersion = 3;
+    public const int FormatVersion = 4;
     public const string ManifestName = "history.json.gz";
     public const string BlobFolder = "blobs";
 
@@ -335,6 +337,8 @@ internal sealed class HistorySnapshotDto
     public List<HistoryLayerDto> Layers { get; set; } = [];
     public List<HistoryFrameDto> Frames { get; set; } = [];
     public List<HistoryTagDto> Tags { get; set; } = [];
+    /// <summary>캔버스 피벗의 대표 레이어 번호(0 = 없음, 형식 4부터).</summary>
+    public int PivotLayer { get; set; }
     public List<HistoryOutfitDto> Outfits { get; set; } = [];
     /// <summary>셀: [레이어, 프레임, 스킨(0 = 없음), 그림].</summary>
     public List<int[]> Cels { get; set; } = [];
@@ -357,6 +361,9 @@ internal sealed class HistoryLayerDto
     public LayerKind Kind { get; set; }
     public int Parent { get; set; }
     public int[] Part { get; set; } = [];
+    /// <summary>레이어 피벗(그 레이어의 공간, 형식 4부터).</summary>
+    public ProjectIO.PivotDto? Pivot { get; set; }
+    /// <summary>형식 3 이하 전용(쓰지 않음): 부위 피벗.</summary>
     public ProjectIO.PivotDto? PartPivot { get; set; }
     public int[] PartBorder { get; set; } = [];
     public int[]? PartSource { get; set; }
@@ -380,14 +387,16 @@ internal sealed class HistoryFrameDto
     public int DurationMs { get; set; }
     public ProjectIO.PivotDto? Pivot { get; set; }
     public string? Name { get; set; }
-    /// <summary>부위마다 이 프레임만의 피벗(없으면 null).</summary>
-    public List<HistoryPartPivotDto>? PartPivots { get; set; }
+    /// <summary>레이어마다 이 프레임만의 피벗(없으면 null, 형식 4부터).</summary>
+    public List<HistoryLayerPivotDto>? LayerPivots { get; set; }
+    /// <summary>형식 3 이하 전용(쓰지 않음): 부위마다 이 프레임만의 피벗.</summary>
+    public List<HistoryLayerPivotDto>? PartPivots { get; set; }
     /// <summary>부위마다 이 프레임에서 기준 위치에서 옮긴 거리 [부위, x, y](없으면 null).</summary>
     public List<int[]>? PartShifts { get; set; }
 }
 
-/// <summary>프레임 하나에서 부위 하나만의 피벗(편집 기록).</summary>
-internal sealed class HistoryPartPivotDto
+/// <summary>프레임 하나에서 레이어 하나만의 피벗(편집 기록).</summary>
+internal sealed class HistoryLayerPivotDto
 {
     public int Layer { get; set; }
     public ProjectIO.PivotDto Pivot { get; set; } = new();

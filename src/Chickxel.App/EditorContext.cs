@@ -51,7 +51,7 @@ public enum ToolKind
 /// 피벗은 그 부위 기준(부위 안 좌표)이고, 그룹이면 프레임 합성을 보며 부위를 배치한다(그리기 없음).
 /// </para>
 /// </summary>
-public sealed class EditorContext
+public sealed partial class EditorContext
 {
     public const int MaxRecentColors = 16;
 
@@ -230,7 +230,7 @@ public sealed class EditorContext
 
     public bool PixelPerfect { get => _pixelPerfect; set { _pixelPerfect = value; OptionsChanged(); } }
     private bool _pencilOrthogonal = true;
-    /// <summary>연필·그라데이션 연필·지우개 획의 픽셀 잇기: true = ㄱ자(4방향, 모든 픽셀이 변으로 붙음 — 픽셀 퍼펙트는 쓰지 않음), false = 대각선으로도 이음.</summary>
+    /// <summary>연필·그라데이션 연필·지우개 획의 픽셀 잇기: true = ㄱ자(4방향, 모든 픽셀이 변으로 붙음 — 픽셀 퍼펙트를 켜면 쓰지 않고 대각선), false = 대각선으로도 이음.</summary>
     public bool PencilOrthogonal { get => _pencilOrthogonal; set { if (_pencilOrthogonal == value) return; _pencilOrthogonal = value; OptionsChanged(); } }
     /// <summary>채우기: true = 이어진 영역만, false = 맞는 색 전체.</summary>
     public bool FillContiguous { get => _fillContiguous; set { _fillContiguous = value; OptionsChanged(); } }
@@ -350,7 +350,7 @@ public sealed class EditorContext
     /// <summary>대칭 그리기: 상하.</summary>
     public bool MirrorY { get => _mirrorY; set { _mirrorY = value; OptionsChanged(); } }
     /// <summary>
-    /// 대칭 그리기 축을 캔버스 가운데 대신 지금 피벗(<see cref="Pivot"/>: 부위면 부위 피벗, 아니면 현재 프레임 피벗)을 지나는 선으로 둔다.
+    /// 대칭 그리기 축을 캔버스 가운데 대신 지금 레이어의 피벗(<see cref="SpriteProject.LayerPivotPixel"/> — 부위면 부위 피벗, 그 밖에는 레이어 피벗)을 지나는 선으로 둔다.
     /// </summary>
     public bool MirrorAtPivot { get => _mirrorAtPivot; set { if (_mirrorAtPivot == value) return; _mirrorAtPivot = value; OptionsChanged(); } }
     /// <summary>지금 대칭 축(캔버스 좌표): 피벗 기준이면 피벗을 지나는 반 픽셀 단위 선, 아니면 캔버스 가운데.</summary>
@@ -359,7 +359,7 @@ public sealed class EditorContext
         get
         {
             if (!_mirrorAtPivot) return MirrorAxes.Center(CanvasWidth, CanvasHeight);
-            var (x, y) = Pivot.ToLocalPixel(CanvasWidth, CanvasHeight);
+            var (x, y) = CurrentLayerPivotLocal();
             return MirrorAxes.Through(x, y);
         }
     }
@@ -530,6 +530,7 @@ public sealed class EditorContext
         _canvasSize = CurrentCanvasSize;
         _selectedTag = null;
         _pivotPreview = null;
+        _pivotCanvas = false;
         if (project is not null)
         {
             project.History.Capacity = UndoCapacity;
@@ -597,6 +598,7 @@ public sealed class EditorContext
                 _selectionStrokeOpen = false;
             }
             _pivotPreview = null;
+            _pivotCanvas = false;
         }
         _layer = layer;
         _frame = frame;
@@ -934,8 +936,8 @@ public sealed class EditorContext
             source = new FreeTransform(new PixelImage(union.Width, union.Height), new PixelMask(union));
         }
         _transform = new TransformSession(source!, lifted, multi, before, celBefore);
-        // 회전 중심은 처음에 지금 대상의 피벗(부위면 부위 피벗, 아니면 프레임/기본 피벗 — 캔버스의 피벗 표시) 자리.
-        var (px, py) = Pivot.ToLocalPixel(CanvasWidth, CanvasHeight);
+        // 회전 중심은 처음에 지금 레이어의 피벗(부위면 부위 피벗, 그 밖에는 레이어 피벗) 자리.
+        var (px, py) = CurrentLayerPivotLocal();
         var pivotSource = source!.Unmap(_transform.Params, px, py);
         if (double.IsFinite(pivotSource.X) && double.IsFinite(pivotSource.Y)) _transform.PivotSource = pivotSource;
         NotifyPixels();
@@ -950,9 +952,9 @@ public sealed class EditorContext
     public int TransformLockedSkipped => _transform?.Multi?.LockedSkipped ?? 0;
 
     /// <summary>
-    /// 방금 지금 셀에 넣은 그림(<paramref name="image"/>를 <paramref name="location"/>에 — 캔버스 밖은 잘려 들어감)을 잘리기 전 그대로 떠 있는 상태로 들고
-    /// 변형 모드에 들어간다: 셀에서 넣은 픽셀을 지우고 원본 전체(투명 테두리는 뺌)를 띄운다. 적용(Enter)하면 그때 자리에서 캔버스 밖이 잘려
-    /// 내려앉고(실행취소 한 단계 — 넣기와 따로), 취소(Esc)하면 넣은 그대로(잘린 그림)로 돌아간다.
+    /// 방금 지금 셀에 넣은 그림(<paramref name="image"/>를 <paramref name="location"/>에 — 캔버스 밖은 캔버스 밖 그림으로 들어감)을 그대로 떠 있는 상태로 들고
+    /// 변형 모드에 들어간다: 셀에서 넣은 픽셀과 캔버스 밖 그림을 지우고 원본 전체(투명 테두리는 뺌)를 띄운다. 적용(Enter)하면 그때 자리에 내려앉고
+    /// 캔버스 밖으로 나간 픽셀은 다시 캔버스 밖 그림이 되며(실행취소 한 단계 — 넣기와 따로), 취소(Esc)하면 넣은 그대로 돌아간다.
     /// 못 들어가면 상태 표시줄에 보일 이유, 들어갔으면 null.
     /// </summary>
     public string? BeginPlacedTransform(PixelImage image, Point location)
@@ -968,7 +970,8 @@ public sealed class EditorContext
         var before = Selection.Save();
         BeginSelectionEdit();
         var cel = EditImage!;
-        // 넣으며 셀에 그려진(잘린) 픽셀을 지운다 — 떠 있는 원본이 그 자리를 대신한다.
+        // 넣으며 셀에 그려진 픽셀과 캔버스 밖 그림을 지운다 — 떠 있는 원본이 그 자리를 대신한다(옮긴 뒤 예전 자리에 남지 않게).
+        Project.ClearStrokeOverflow();
         var r = region.Bounds;
         for (int y = 0; y < floating.Height; y++)
             for (int x = 0; x < floating.Width; x++)
@@ -1117,6 +1120,9 @@ public sealed class EditorContext
     /// <summary>원래 그림 크기: 캔버스 크기 모드면 원래 캔버스(프레임) 크기, 레이어 크기 모드면 레이어의 원래 크기.</summary>
     public Size CanvasResizeSource => _canvasResize is { } s ? s.Layer is null ? s.Source.Size : s.From.Size : Size.Empty;
 
+    /// <summary>캔버스 크기 모드의 원래 그림(현재 프레임 합성 — 특수 비율 창 미리보기). 레이어 크기 모드거나 모드가 아니면 null. 호출자는 바꾸지 않는다.</summary>
+    public PixelImage? CanvasResizeSourceImage => _canvasResize is { Layer: null } s ? s.Source : null;
+
     /// <summary>레이어 크기 모드: 레이어의 원래 자리(캔버스 좌표 — 일반 레이어는 모든 프레임의 칠한 자리, 부위는 부위 영역). 그 밖에는 빈 사각형.</summary>
     public Rectangle LayerResizeFrom => _canvasResize is { Layer: not null } s ? s.From : Rectangle.Empty;
 
@@ -1243,8 +1249,9 @@ public sealed class EditorContext
             if (_canvasResize is not { } s || Project is not { } p || _frame < 0 || _frame >= p.Frames.Count) return null;
             if (s.Layer is { } layer)
             {
-                // 부위 피벗은 부위 기준, 일반 레이어는 프레임 피벗(캔버스 기준) — 둘 다 캔버스 좌표로
-                var (x, y) = layer.IsPart ? p.GetPartPivot(layer, _frame).ToLocalPixel(s.From.Width, s.From.Height) : p.GetFramePivot(_frame).ToLocalPixel(p.Width, p.Height);
+                // 부위 피벗은 부위 기준, 일반 레이어·그룹은 레이어 피벗(캔버스 기준) — 둘 다 캔버스 좌표로
+                var layerPivot = p.GetLayerPivot(layer, _frame);
+                var (x, y) = layer.IsPart ? layerPivot.ToLocalPixel(s.From.Width, s.From.Height) : layerPivot.ToLocalPixel(p.Width, p.Height);
                 var at = layer.IsPart ? new System.Drawing.PointF(s.From.X + x, s.From.Y + y) : new System.Drawing.PointF(x, y);
                 return SpriteProject.MapLayerResizePoint(at, s.From, s.Image);
             }
@@ -1448,6 +1455,29 @@ public sealed class EditorContext
         CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>
+    /// 캔버스·레이어 크기 모드 중 뒤집기(<paramref name="horizontal"/> = 좌우): 바로 적용하고(실행취소 한 단계) 모드는 이어진다 — 미리보기는
+    /// 뒤집힌 그림으로 다시 그린다(<see cref="SyncCanvasResize"/>). 레이어 크기 모드면 그 레이어를 제자리에서(모든 프레임, <see cref="SpriteProject.FlipLayer"/>),
+    /// 캔버스 크기 모드면 캔버스 전체(모든 레이어·프레임)를 뒤집는다. 모드 적용(<see cref="CommitFloating"/>)을 거치지 않도록 프로젝트를 직접 고친다.
+    /// 상태 표시줄에 보일 글(했으면 무엇을 뒤집었는지, 못 하면 이유)을 돌려준다. 모드가 아니면 null.
+    /// </summary>
+    public string? FlipDuringResize(bool horizontal)
+    {
+        if (_canvasResize is not { } s || Project is not { } p) return null;
+        string dir = horizontal ? UiStrings.Flip_DirHorizontal : UiStrings.Flip_DirVertical;
+        if (s.Layer is { } layer)
+        {
+            int index = p.IndexOf(layer);
+            if (index < 0) return null;
+            if (p.IsLayerLocked(index)) return UiStrings.LayerResize_Locked;
+            p.FlipLayer(index, horizontal);
+            return UiStrings.FormatLayerResize_Flipped(name: layer.Name, direction: dir);
+        }
+        if (horizontal) p.FlipCanvasHorizontal();
+        else p.FlipCanvasVertical();
+        return UiStrings.FormatCanvasResize_Flipped(direction: dir);
+    }
+
     private void ApplyCanvasResize()
     {
         if (_canvasResize is not { } s || Project is not { } p) return;
@@ -1620,37 +1650,6 @@ public sealed class EditorContext
         if (Project is null) return false;
         CommitFloating();
         return Project.Redo();
-    }
-
-    // ───────────── 피벗 ─────────────
-
-    /// <summary>현재 피벗(끄는 중이면 미리보기 값): 부위면 그 부위의 현재 프레임 피벗, 아니면 현재 프레임 피벗.</summary>
-    public Pivot Pivot
-        => _pivotPreview ?? (Project is not { } p ? Pivot.Center : CurrentPart is { } part ? p.GetPartPivot(part, _frame) : p.GetFramePivot(_frame));
-
-    /// <summary>피벗 끄는 중: 기록 없이 화면만 바꾼다.</summary>
-    public void PreviewPivot(Pivot pivot)
-    {
-        _pivotPreview = pivot;
-        ViewChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    /// <summary>
-    /// 끌기를 마친 피벗을 기록한다. 부위면 그 부위가 이 프레임에 따로 둔 피벗·위치가 있으면 이 프레임부터 끝까지, 없으면 부위 피벗을,
-    /// 아니면 현재 프레임에 피벗 재정의가 있으면 이 프레임부터 끝까지, 없으면 프로젝트 기본 피벗을 바꾼다.
-    /// </summary>
-    public void CommitPivot(Pivot before)
-    {
-        if (Project is not { } p || _pivotPreview is not { } after) return;
-        _pivotPreview = null;
-        if (after == before) { ViewChanged?.Invoke(this, EventArgs.Empty); return; }
-        if (CurrentPart is { } part)
-        {
-            if (p.HasPartFrameOverride(part, _frame)) p.SetPartPivotFrom(_layer, _frame, after);
-            else p.SetPartPivot(_layer, after);
-        }
-        else if (p.Frames[_frame].Pivot is not null) p.SetFramePivotFrom(_frame, after);
-        else p.Edit(UiStrings.S_EditorContext_CommitPivot_463E10A971, ProjectChange.Settings, () => p.Sprite.DefaultPivot = after);
     }
 
     // ───────────── 합성 결과(RenderService) ─────────────

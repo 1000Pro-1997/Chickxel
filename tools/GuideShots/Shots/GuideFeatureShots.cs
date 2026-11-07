@@ -58,7 +58,8 @@ internal static class GuideFeatureShots
         var border = (Point)ShotKit.Call(Canvas(m), "ImageToScreen", (double)area.X, (double)area.Y)!;
         var handle = Canvas(m).TranslatePoint(border, m)!.Value;
         var crop = R(m, Canvas(m)).Union(R(m, opt)).Intersect(new Rect(m.ClientSize));
-        k.Save(m, crop: crop, marks: [new Rect(handle.X - 17, handle.Y - 17, 34, 34), R(m, ShotKit.Get<Control>(opt, "_canvasResizeBox"))]);
+        var flip = (Control)ShotKit.Get<Control>(opt, "_crFlipH").Parent!;
+        k.Save(m, crop: crop, marks: [new Rect(handle.X - 17, handle.Y - 17, 34, 34), R(m, ShotKit.Get<Control>(opt, "_canvasResizeBox")), R(m, flip)]);
     }
 
     [Shot("screen-effect-dock")]
@@ -332,7 +333,7 @@ internal static class GuideFeatureShots
         var m = Demo(k);
         var p = Project(m);
         int part = Layer(m, "Gem");
-        Ctx(m).Structural(() => p.SetPartFramePivot(part, 2, new Pivot(0.25f, 0.75f)));
+        Ctx(m).Structural(() => p.SetLayerFramePivot(part, 2, new Pivot(0.25f, 0.75f)));
         Ctx(m).SetCurrent(part, 2);
         ToolFileHelp.Tool(k, "피벗");
         k.Settle(350);

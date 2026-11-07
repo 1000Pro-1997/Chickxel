@@ -69,7 +69,7 @@ public sealed partial class LayerEffectsDialog
     private EffectCanvasExpansion CanvasExpansion(IReadOnlyList<LayerEffect> all)
         => GrowScopeOf(all) == GrowScope.None
             ? new EffectCanvasExpansion(_project.Width, _project.Height, 0, 0, true)
-            : EffectCanvasExpansion.FromBounds(_project.Width, _project.Height, WaitOutputBounds(all), s_canvasExpandMode);
+            : EffectCanvasExpansion.FromBounds(_project.Width, _project.Height, WaitOutputBounds(all), EffectCanvasDialog.LastMode);
 
     /// <summary>
     /// 모든 프레임에서 캔버스 늘리기를 켠 효과만 남긴 결과 범위. 작업 스레드가 다 그렸으면 그 결과를 쓰고, 아직 그리는 중이면 덮개(퍼센트)를 띄우고 끝날 때까지 기다린다 —
@@ -117,14 +117,14 @@ public sealed partial class LayerEffectsDialog
         {
             if (scope != GrowScope.None)
             {
-                var plan = EffectCanvasExpansion.FromBounds(_project.Width, _project.Height, grow, s_canvasExpandMode);
+                var plan = EffectCanvasExpansion.FromBounds(_project.Width, _project.Height, grow, EffectCanvasDialog.LastMode);
                 _previewCanvas = new Rectangle(-plan.OffsetX, -plan.OffsetY, plan.Width, plan.Height);
                 _previewBounds = _previewCanvas;
                 _expandNote.Foreground = AppTheme.DimTextBrush;
                 _expandNote.Text = plan.IsNone(_project.Width, _project.Height)
                     ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_LayerEffectsDialog_Canvas_SyncCanvasExpansion_BDEB632BC8, _project.Width, _project.Height)
                     : $"{_project.Width}×{_project.Height} → {plan.Width}×{plan.Height}"
-                      + (s_canvasExpandMode == EffectCanvasExpandMode.KeepRatio && !plan.RatioPreserved ? UiStrings.S_LayerEffectsDialog_Canvas_SyncCanvasExpansion_6BBDE7B81F : "");
+                      + (EffectCanvasDialog.LastMode == EffectCanvasExpandMode.KeepRatio && !plan.RatioPreserved ? UiStrings.S_LayerEffectsDialog_Canvas_SyncCanvasExpansion_6BBDE7B81F : "");
                 ToolTip.SetTip(_expandNote, plan.IsNone(_project.Width, _project.Height)
                     ? UiStrings.S_LayerEffectsDialog_Canvas_SyncCanvasExpansion_EFFF97903C
                     : string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_LayerEffectsDialog_Canvas_SyncCanvasExpansion_AA4018CCC5, plan.OffsetX, plan.OffsetY));

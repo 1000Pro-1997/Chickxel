@@ -3923,6 +3923,15 @@ echo __LOGIN_FAILED__
   <data name="Ai_Link_BadFrame" xml:space="preserve"><value>프레임 번호가 잘못되었습니다: {value} (0~{count}보다 작은 수)</value><comment>AI 도구 오류. value = 받은 값, count = 프레임 수.</comment></data>
   <data name="Ai_Link_BadColor" xml:space="preserve"><value>링크 색 이름이 잘못되었습니다: {value} — 쓸 수 있는 색: {colors}</value><comment>AI 도구 오류. value = 받은 값, colors = 색 이름 목록(영어).</comment></data>
   <data name="Ai_Link_TwoFrames" xml:space="preserve"><value>링크하려면 프레임을 둘 이상 주세요</value></data>
+  <data name="Ai_Pivot_FromFrameAlone" xml:space="preserve"><value>pivot_from_frame은 pivot_x·pivot_y나 clear_frame_pivots와 함께 주세요</value><comment>AI 도구 오류.</comment></data>
+  <data name="Ai_Pivot_CanvasNothing" xml:space="preserve"><value>바꿀 값(pivot_x, pivot_y, clear_frame_pivots, representative_layer) 중 하나 이상이 필요합니다</value><comment>AI 도구 오류(set_canvas_pivot).</comment></data>
+  <data name="Ai_Pivot_Unchanged" xml:space="preserve"><value>바뀐 것 없음</value></data>
+  <data name="Ai_Pivot_SpacePart" xml:space="preserve"><value>부위 기준</value><comment>AI 도구 결과: 피벗 좌표 공간.</comment></data>
+  <data name="Ai_Pivot_SpaceCanvas" xml:space="preserve"><value>캔버스 기준</value><comment>AI 도구 결과: 피벗 좌표 공간.</comment></data>
+  <data name="Ai_Pivot_OwnFrames" xml:space="preserve"><value>, 따로 둔 프레임 {frames}</value><comment>AI 도구 결과 꼬리. frames = 프레임 번호 목록(예: 3-5, 8).</comment></data>
+  <data name="Ai_Pivot_NoRepresentative" xml:space="preserve"><value>없음</value><comment>AI 도구 결과: 대표 레이어 없음.</comment></data>
+  <data name="Ai_Pivot_LayerText" xml:space="preserve"><value>피벗 {pivot}({space}{frames}), 프레임 {frame}: {current} = 캔버스 픽셀 {pixel}</value><comment>AI 도구 결과. pivot = 기본 피벗(0~1, 아래 왼쪽 원점), space = 좌표 공간, frames = 따로 둔 프레임 꼬리, current = 그 프레임 피벗, pixel = 캔버스 픽셀.</comment></data>
+  <data name="Ai_Pivot_CanvasText" xml:space="preserve"><value>캔버스 자신의 피벗 {pivot}{frames}, 대표 레이어 {representative}, 프레임 {frame}의 캔버스(내보내기) 피벗 {effective} = 캔버스 픽셀 {pixel}</value><comment>AI 도구 결과. pivot = 캔버스 기본 피벗, frames = 따로 둔 프레임 꼬리, representative = 대표 레이어, effective = 실제 캔버스 피벗, pixel = 캔버스 픽셀.</comment></data>
   <data name="AiSkin_Edit_Nothing" xml:space="preserve"><value>바꿀 것이 없습니다 — name, position, part_only, delete 중 하나 이상을 주세요</value><comment>AI 도구 오류(edit_skin).</comment></data>
   <data name="AiSkin_Edit_DeleteAlone" xml:space="preserve"><value>delete는 다른 변경(name, position, part_only)과 같이 쓸 수 없습니다</value><comment>AI 도구 오류(edit_skin).</comment></data>
   <data name="AiSkin_Edit_PartOnlyNeedsPart" xml:space="preserve"><value>part_only=true에는 스킨을 가질 부위 이름(part)이 필요합니다</value><comment>AI 도구 오류(edit_skin).</comment></data>
@@ -4240,7 +4249,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\Ai\PixelTools.cs:885 · SetLayer · "보임"</comment>
   </data>
   <data name="S_PixelTools_SetLayer_F617978E39" xml:space="preserve">
-    <value>바꿀 값(name, visible, opacity) 중 하나 이상이 필요합니다</value>
+    <value>바꿀 값(name, visible, opacity, pivot_x, pivot_y, clear_frame_pivots) 중 하나 이상이 필요합니다</value>
     <comment>src/Chickxel.App\Ai\PixelTools.cs:875 · SetLayer · "바꿀 값(name, visible, opacity) 중 하나 이상이 필요합니다"</comment>
   </data>
   <data name="S_PixelTools_SetPalette_72B3137A75" xml:space="preserve">
@@ -4268,7 +4277,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\Ai\PixelTools.cs:979 · SetPart · "옮기려면 사용자에게 타임라인 그룹 메뉴의 \"자동 배치 끄기\"를 부탁하세요"</comment>
   </data>
   <data name="S_PixelTools_SetPart_DC2B0B514A" xml:space="preserve">
-    <value>바꿀 값(x, y, width, height, pivot_x, pivot_y) 중 하나 이상이 필요합니다</value>
+    <value>바꿀 값(x, y, width, height) 중 하나 이상이 필요합니다</value>
     <comment>src/Chickxel.App\Ai\PixelTools.cs:974 · SetPart · "바꿀 값(x, y, width, height, pivot_x, pivot_y) 중 하나 이상이 필요합니다"</comment>
   </data>
   <data name="S_PixelTools_SetPart_E4221AFE6B" xml:space="preserve">
@@ -6212,10 +6221,6 @@ echo __LOGIN_FAILED__
     <value>그룹 "{0}" 자동 배치 끔 — 부위는 지금 자리에 그대로</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:725 · TurnOffGroupLayout · $"그룹 \"{group.Name}\" 자동 배치 끔 — 부위는 지금 자리에 그대로"</comment>
   </data>
-  <data name="S_ToolOptionsPanel_ApplyPivot_4E8342E979" xml:space="preserve">
-    <value>기본 피벗</value>
-    <comment>src/Chickxel.App\ToolOptionsPanel.cs:728 · ApplyPivot · "기본 피벗"</comment>
-  </data>
   <data name="S_ToolOptionsPanel_Refresh_00F0C73AC7" xml:space="preserve">
     <value>선택이 있으면 선택 내용을, 없으면 현재 셀 전체를 옮깁니다.</value>
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:489 · Refresh · "선택이 있으면 선택 내용을, 없으면 현재 셀 전체를 옮깁니다."</comment>
@@ -6274,14 +6279,16 @@ echo __LOGIN_FAILED__
   </data>
   <data name="Pivot_PartFrameTarget" xml:space="preserve"><value>대상: 부위 "{0}"의 프레임 {1}부터 끝까지 ({2}×{3}, 부위 아틀라스)</value><comment>피벗 도구 설정의 대상 글: 부위를 이 프레임부터 끝까지 따로 둔 위치·피벗(0 = 부위 이름, 1 = 프레임 번호, 2·3 = 부위 크기)</comment></data>
   <data name="Pivot_FramesFromTip" xml:space="preserve"><value>켜면 이 프레임부터 끝 프레임까지 피벗(부위면 위치도)을 다른 프레임과 따로 둡니다. 켠 채로 피벗을 바꾸면 이 프레임과 그 뒤 프레임이 모두 같은 만큼 바뀌고, 앞 프레임은 그대로입니다. 레이어 크기 모드(Ctrl+Shift+C)에서 부위를 옮기거나 그림을 옮기는 효과를 영구 적용하면 저절로 켜집니다. 끄면 이 프레임부터 끝까지 따로 둔 것을 지웁니다.</value><comment>피벗 도구 설정 "현재 프레임부터" 체크의 도움말</comment></data>
-  <data name="S_ToolOptionsPanel_RefreshPivot_880B20EF26" xml:space="preserve">
-    <value>대상: 프로젝트 기본 피벗(모든 프레임)</value>
-    <comment>src/Chickxel.App\ToolOptionsPanel.cs:687 · RefreshPivot · "대상: 프로젝트 기본 피벗(모든 프레임)"</comment>
-  </data>
-  <data name="S_ToolOptionsPanel_RefreshPivot_DC250333A2" xml:space="preserve">
-    <value>대상: 프레임 {0}부터 끝까지</value>
-    <comment>src/Chickxel.App\ToolOptionsPanel.cs · RefreshPivot · 프레임 {0}부터 끝 프레임까지 따로 둔 피벗</comment>
-  </data>
+  <data name="Pivot_KindLayer" xml:space="preserve"><value>레이어</value><comment>피벗 대상 글의 종류({0}): 일반 레이어</comment></data>
+  <data name="Pivot_KindGroup" xml:space="preserve"><value>그룹</value><comment>피벗 대상 글의 종류({0}): 그룹</comment></data>
+  <data name="Pivot_LayerTarget" xml:space="preserve"><value>대상: {0} "{1}"의 피벗 (캔버스 기준 {2}×{3})</value><comment>피벗 도구 설정의 대상 글: 0 = 레이어 종류(레이어/그룹), 1 = 이름, 2·3 = 캔버스 크기</comment></data>
+  <data name="Pivot_LayerFrameTarget" xml:space="preserve"><value>대상: {0} "{1}"의 프레임 {2}부터 끝까지 (캔버스 기준 {3}×{4})</value><comment>피벗 도구 설정의 대상 글: 0 = 레이어 종류, 1 = 이름, 2 = 프레임 번호, 3·4 = 캔버스 크기</comment></data>
+  <data name="Pivot_CanvasTarget" xml:space="preserve"><value>대상: 캔버스 피벗 (내보내기, 모든 프레임)</value><comment>피벗 도구 설정의 대상 글: 타임라인 캔버스 칩으로 고른 캔버스 자신의 피벗</comment></data>
+  <data name="Pivot_CanvasFrameTarget" xml:space="preserve"><value>대상: 캔버스 피벗, 프레임 {0}부터 끝까지</value><comment>{0}=프레임 번호</comment></data>
+  <data name="Pivot_CanvasRepresentativeTarget" xml:space="preserve"><value>대상: 캔버스 피벗 = 대표 레이어 "{0}"의 피벗 (고치면 그 레이어의 피벗이 바뀝니다)</value><comment>{0}=대표 레이어 이름</comment></data>
+  <data name="Pivot_Representative" xml:space="preserve"><value>대표 레이어</value><comment>캔버스 피벗 대상일 때 도구 설정의 고르기 이름</comment></data>
+  <data name="Pivot_RepresentativeNone" xml:space="preserve"><value>없음 (캔버스 자신의 피벗)</value></data>
+  <data name="Pivot_RepresentativeTip" xml:space="preserve"><value>고르면 프레임마다 캔버스 피벗(시트·Unity 내보내기 피벗)이 그 레이어의 그 프레임 피벗을 따릅니다. 없음이면 캔버스 자신의 피벗을 씁니다.</value></data>
   <data name="S_ToolOptionsPanel_RefreshSlice_0CBE78E12F" xml:space="preserve">
     <value>대상: 프레임 시트 모든 칸 ({0}×{1})</value>
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:628 · RefreshSlice · $"대상: 프레임 시트 모든 칸 ({w}×{h})"</comment>
@@ -8121,6 +8128,13 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="AiInstaller_LoginComplete" xml:space="preserve"><value>로그인 완료. Chickxel로 돌아가세요.</value></data>
   <data name="AiInstaller_LoginFailed" xml:space="preserve"><value>설치 또는 로그인에 실패했습니다. 위 오류를 확인하세요.</value></data>
   <data name="EffectCanvasExpand_KeepCenter" xml:space="preserve"><value>중심 유지 확대</value></data>
+  <data name="EffectCanvas_Title" xml:space="preserve"><value>효과에 맞춰 캔버스 늘리기</value></data>
+  <data name="EffectCanvas_Apply" xml:space="preserve"><value>늘리기</value></data>
+  <data name="EffectCanvas_Intro" xml:space="preserve"><value>"{effect}" 효과의 결과(모든 프레임, 앞 효과 포함)가 캔버스 밖으로 나가지 않게 캔버스를 늘립니다. 그림 크기는 바꾸지 않고 모든 레이어·부위·피벗을 함께 옮깁니다(실행취소 한 단계).</value><comment>effect = 효과 이름</comment></data>
+  <data name="EffectCanvas_Mode" xml:space="preserve"><value>늘리는 방식</value></data>
+  <data name="EffectCanvas_Menu" xml:space="preserve"><value>캔버스 늘리기…</value><comment>효과 줄 우클릭 메뉴·효과 칸 단추: 이 효과 결과에 맞춰 캔버스를 늘리는 작은 창</comment></data>
+  <data name="EffectCanvas_MenuTip" xml:space="preserve"><value>이 효과 결과가 캔버스 밖으로 나가는 만큼 캔버스를 늘립니다(방식을 고르는 작은 창).</value></data>
+  <data name="EffectCanvas_NoOutput" xml:space="preserve"><value>이 효과가 켜진 프레임이 없어 늘릴 범위가 없습니다.</value></data>
   <data name="EffectCanvasExpand_ModeTip" xml:space="preserve"><value>확인하거나 영구 적용할 때 '캔버스 늘리기'를 켠 효과의 결과가 캔버스 밖으로 나가면 고른 방식으로 캔버스를 늘립니다. 효과마다 설정에서 켜고 끕니다(기본 켜짐). 그림 크기는 바꾸지 않고 모든 레이어·부위·피벗을 함께 옮깁니다.</value><comment>효과 창 공통 설정: 캔버스 늘리기 방식 줄 이름의 도움말</comment></data>
   <data name="Effect_ExpandCanvasRow" xml:space="preserve"><value>확인할 때</value><comment>효과 설정 줄 이름: 효과 창에서 확인·영구 적용할 때 할 일</comment></data>
   <data name="Effect_ExpandCanvas" xml:space="preserve"><value>캔버스 늘리기</value><comment>효과 설정 체크(효과마다)이자 공통 설정의 늘리는 방식 줄 이름</comment></data>
@@ -8260,13 +8274,13 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Chat_Help_GroupFrames" xml:space="preserve"><value>프레임·애니메이션</value></data>
   <data name="Chat_Help_GroupFrames_Text" xml:space="preserve"><value>프레임을 더하거나(복사 포함) 지우고, 프레임 시간과 애니메이션 태그를 정합니다. 여러 프레임의 셀을 링크로 묶거나 풀고 링크 색을 바꿉니다.</value></data>
   <data name="Chat_Help_GroupLayers" xml:space="preserve"><value>레이어</value></data>
-  <data name="Chat_Help_GroupLayers_Text" xml:space="preserve"><value>레이어를 더하고 이름·보이기·불투명도를 바꾸며, 편집기에서 보는 프레임·레이어를 고릅니다.</value></data>
+  <data name="Chat_Help_GroupLayers_Text" xml:space="preserve"><value>레이어를 더하고 이름·보이기·불투명도·피벗을 바꾸며, 편집기에서 보는 프레임·레이어를 고릅니다.</value></data>
   <data name="Chat_Help_GroupParts" xml:space="preserve"><value>그룹·부위</value></data>
-  <data name="Chat_Help_GroupParts_Text" xml:space="preserve"><value>캐릭터를 머리·몸·팔 같은 부위로 나누고, 부위의 위치·크기·피벗을 정합니다.</value></data>
+  <data name="Chat_Help_GroupParts_Text" xml:space="preserve"><value>캐릭터를 머리·몸·팔 같은 부위로 나누고, 부위의 위치·크기를 정합니다.</value></data>
   <data name="Chat_Help_GroupSkins" xml:space="preserve"><value>스킨·의상</value></data>
   <data name="Chat_Help_GroupSkins_Text" xml:space="preserve"><value>같은 부위의 다른 그림(옷 등)을 만들어 바꿔 입히고, 의상 프리셋을 저장·적용합니다.</value></data>
   <data name="Chat_Help_GroupCanvas" xml:space="preserve"><value>캔버스·색</value></data>
-  <data name="Chat_Help_GroupCanvas_Text" xml:space="preserve"><value>캔버스 크기, 팔레트 색, 주·보조 색을 바꿉니다.</value></data>
+  <data name="Chat_Help_GroupCanvas_Text" xml:space="preserve"><value>캔버스 크기와 캔버스(내보내기) 피벗·대표 레이어, 팔레트 색, 주·보조 색을 바꿉니다.</value></data>
   <data name="Chat_Help_GroupFiles" xml:space="preserve"><value>파일</value></data>
   <data name="Chat_Help_GroupFiles_Text" xml:space="preserve"><value>새 그림 만들기, 저장 전 새 그림의 임시 제목 정하기, 저장, 파일 열기("지금 그림만"이 켜져 있으면 열기·만들기는 막힘).</value></data>
   <data name="Chat_Help_GroupEffects" xml:space="preserve"><value>레이어 효과</value></data>
@@ -8841,9 +8855,9 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="AiDraw_Size_Tip" xml:space="preserve"><value>결과 크기 보정을 켰을 때 변환 결과를 맞출 크기(긴 변, px).</value></data>
   <data name="AiDraw_Size_Custom" xml:space="preserve"><value>직접 입력</value></data>
   <data name="AiDraw_RemoveBackground" xml:space="preserve"><value>배경 지우기</value></data>
-  <data name="AiDraw_RemoveBackground_Tip" xml:space="preserve"><value>변환할 때 배경을 지웁니다. 배경을 말하지 않으면 생성할 때부터 투명한 빈 배경으로 만듭니다.</value></data>
+  <data name="AiDraw_RemoveBackground_Tip" xml:space="preserve"><value>끄면(기본) 대표 프리셋의 배경 설정 그대로 변환합니다. 켜면 프리셋 설정과 관계없이 변환할 때 배경을 자동으로 지웁니다. 배경을 말하지 않으면 생성할 때부터 투명한 빈 배경으로 만듭니다.</value></data>
   <data name="AiDraw_AutoOptimize" xml:space="preserve"><value>변환 자동 최적화</value></data>
-  <data name="AiDraw_AutoOptimize_Tip" xml:space="preserve"><value>정리 창의 자동 최적화와 같이(정리 창에서 고른 항목·시도 수·시간 — 기본은 외곽선 맞추기 방식만 빼고 모두, 2000번·120초) 설정을 바꿔 보며 점수 1위 결과를 넣습니다. 1위가 실패한 결과(비었거나 너무 작음)면 넣지 않습니다.</value></data>
+  <data name="AiDraw_AutoOptimize_Tip" xml:space="preserve"><value>생성 그림은 픽셀로 정리 창의 대표 프리셋 설정(배경·팔레트·결과 크기·맞춤 — 위에서 켠 결과 크기 보정·배경 지우기만 덮어씀)으로 변환하고, 프레임 나누기만 생성한 프레임 수에 맞춥니다. 켜면 정리 창의 자동 최적화처럼 대표 프리셋의 칸별 최적화·시도 수·시간으로 설정을 바꿔 보며 점수 1위 결과를 넣고, 끄면 그 설정 그대로 한 번 변환합니다(정리 창의 정리하기와 같음). 1위가 실패한 결과(비었거나 너무 작음)면 넣지 않습니다.</value></data>
   <data name="AiDraw_Insert" xml:space="preserve"><value>넣는 곳</value></data>
   <data name="AiDraw_Insert_Layer" xml:space="preserve"><value>새 레이어</value></data>
   <data name="AiDraw_Insert_Document" xml:space="preserve"><value>새 문서</value></data>
@@ -8900,6 +8914,8 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="AiDraw_Progress_Sheet" xml:space="preserve"><value>스프라이트 시트 생성 중({count}프레임, Codex)…</value></data>
   <data name="Pixelate_AddToNewTab" xml:space="preserve"><value>새 탭에 추가</value></data>
   <data name="Pixelate_AddToNewTabTip" xml:space="preserve"><value>고른 결과 크기 그대로 새 문서를 만들어 새 탭에 엽니다(프레임·길이 그대로, 넣기 설정과 관계없이)</value></data>
+  <data name="Pixelate_GrowCanvas" xml:space="preserve"><value>이미지 크기만큼 늘리기</value></data>
+  <data name="Pixelate_GrowCanvasTip" xml:space="preserve"><value>켜면 적용할 때 지금 캔버스가 결과 그림보다 작으면 결과 크기까지 가운데 기준으로 늘린 뒤 넣습니다(줄이지는 않음, 넣기와 같은 실행취소 한 단계). 끄면 캔버스는 그대로이고 캔버스 밖으로 나간 픽셀은 캔버스 밖 그림으로 남아 캔버스를 키우면 보입니다. 새 탭에 추가는 늘 결과 크기의 새 문서입니다.</value></data>
   <data name="Ffmpeg_StartFailed" xml:space="preserve"><value>ffmpeg를 실행할 수 없습니다.</value></data>
   <data name="Ffmpeg_NoFrames" xml:space="preserve"><value>ffmpeg가 프레임을 하나도 내보내지 않았습니다(구간이 영상 밖이거나 읽을 수 없는 영상입니다).</value></data>
   <data name="Ffmpeg_MissingTitle" xml:space="preserve"><value>ffmpeg 필요</value></data>
@@ -8945,10 +8961,10 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="AiDraw_PaletteOnly" xml:space="preserve"><value>팔레트 색만 사용</value></data>
   <data name="AiDraw_PaletteOnly_Text" xml:space="preserve"><value>AI가 직접 칠하는 색(점·선·채우기·색 바꾸기)을 활성 팔레트에서 가장 가까운 색으로 바꿉니다. 지우기(완전 투명)는 되고 반투명은 불투명이 됩니다. 그림 생성 결과(변환기의 팔레트 설정)와 레이어 효과에는 영향이 없습니다.</value></data>
   <data name="AiDraw_PaletteSnapped" xml:space="preserve"><value>팔레트 색으로 맞춤: {changes}</value></data>
-  <data name="AiDraw_ResizeResult" xml:space="preserve"><value>결과 크기 보정</value></data>
-  <data name="AiDraw_ResizeResult_Text" xml:space="preserve"><value>끄면(기본) 일반 생성 그림은 픽셀 칸 크기대로 자동 변환하고, 채팅에서 말한 크기는 대략적인 힌트로 씁니다. 참고 이미지를 픽셀 아트로 바꿀 때는 말한 크기(없으면 이미지를 보고 정한 크기)로 결과를 맞춥니다. 켜면 다른 생성 그림도 아래 크기나 채팅 크기로 맞춥니다.</value></data>
   <data name="AiDraw_AutoPrompt" xml:space="preserve"><value>자동 프롬프트</value></data>
   <data name="AiDraw_AutoPrompt_Text" xml:space="preserve"><value>켜면(기본) AI가 정리한 대상 설명에 픽셀 아트 스타일·배경·스프라이트 시트 배치·자세 지시를 붙여 생성합니다. 끄면 채팅에 쓴 글을 그대로(붙인 그림도 순서대로) 이미지 생성에 보내 한 장을 만들고, 생성 전 크기 판정·스타일 참고·애니메이션 프레임 나누기 없이 그 한 장을 픽셀 아트로 변환합니다.</value></data>
+  <data name="AiDraw_ResizeResult" xml:space="preserve"><value>결과 크기 보정</value></data>
+  <data name="AiDraw_ResizeResult_Text" xml:space="preserve"><value>끄면(기본) 대표 프리셋의 결과 크기 설정으로 변환하고, 채팅에서 말한 크기는 생성할 때의 대략적인 힌트로만 씁니다. 켜면 변환 결과를 아래 크기나 채팅에서 말한 크기에 맞춥니다.</value></data>
   <data name="AiStatus_Title" xml:space="preserve"><value>AI 상태 및 설정</value></data>
   <data name="AiStatus_Continue" xml:space="preserve"><value>확인하고 AI 열기</value></data>
   <data name="AiStatus_Close" xml:space="preserve"><value>닫기</value></data>
@@ -9042,8 +9058,8 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Shape_StepsDiagonalTip" xml:space="preserve"><value>픽셀을 대각선으로도 이어 가장 가는 선으로 그립니다(기본).</value><comment>픽셀 잇기 대각선 풍선</comment></data>
   <data name="Shape_StepsOrthogonal" xml:space="preserve"><value>ㄱ자</value><comment>픽셀 잇기: 가로·세로로만(4방향)</comment></data>
   <data name="Shape_StepsOrthogonalTip" xml:space="preserve"><value>가로·세로로만 이어 모든 픽셀이 변으로 붙게 그립니다(계단마다 ㄱ자 모서리).</value><comment>픽셀 잇기 ㄱ자 풍선</comment></data>
-  <data name="Pencil_StepsDiagonalTip" xml:space="preserve"><value>픽셀을 대각선으로도 이어 가장 가는 선으로 그립니다(모서리로만 닿는 계단 — 픽셀 퍼펙트를 쓸 수 있음).</value><comment>연필·지우개 도구 설정의 픽셀 잇기 대각선 풍선</comment></data>
-  <data name="Pencil_StepsOrthogonalTip" xml:space="preserve"><value>가로·세로로만 이어 모든 픽셀이 변으로 붙게 그립니다(기본, 계단마다 ㄱ자 모서리). 이때는 픽셀 퍼펙트를 쓰지 않습니다.</value><comment>연필·지우개 도구 설정의 픽셀 잇기 ㄱ자 풍선</comment></data>
+  <data name="Pencil_StepsDiagonalTip" xml:space="preserve"><value>픽셀을 대각선으로도 이어 가장 가는 선으로 그립니다(모서리로만 닿는 계단).</value><comment>연필·지우개 도구 설정의 픽셀 잇기 대각선 풍선</comment></data>
+  <data name="Pencil_StepsOrthogonalTip" xml:space="preserve"><value>가로·세로로만 이어 모든 픽셀이 변으로 붙게 그립니다(기본, 계단마다 ㄱ자 모서리). 픽셀 퍼펙트를 켜면 이 칸은 흐려지고 대각선으로 그립니다.</value><comment>연필·지우개 도구 설정의 픽셀 잇기 ㄱ자 풍선</comment></data>
   <data name="Help_NoShortcut" xml:space="preserve"><value>단축키 없음</value><comment>사용 가이드(F1): 가이드가 가리키는 명령의 단축키를 사용자가 모두 지웠을 때</comment></data>
   <data name="Busy_Saving" xml:space="preserve"><value>저장하는 중</value><comment>오래 걸리는 저장·내보내기 동안 창을 덮는 검은 덮개의 제목</comment></data>
   <data name="Busy_Opening" xml:space="preserve"><value>여는 중</value><comment>프로젝트 파일을 여는 동안의 덮개 제목</comment></data>
@@ -9687,6 +9703,9 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="ExportSheet_ScaleTip" xml:space="preserve"><value>결과 이미지를 정수 배로 키웁니다(최근접 — 픽셀을 그대로 키움). 9-slice 테두리와 Unity PPU에도 같은 배율을 곱해 Unity에서 보이는 크기는 그대로입니다. 칸 사이 간격은 키운 뒤 px입니다.</value></data>
   <data name="Timeline_CanvasSize" xml:space="preserve"><value>캔버스 {0}×{1}</value><comment>타임라인 왼쪽 위 칩: {0}=너비, {1}=높이(px)</comment></data>
   <data name="Timeline_CanvasSizeTip" xml:space="preserve"><value>캔버스 크기 바꾸기 (Ctrl+Alt+C)</value></data>
+  <data name="Timeline_CanvasPivotTip" xml:space="preserve"><value>캔버스 피벗 고치기 (피벗 도구 — 시트·Unity 내보내기 피벗). 레이어 이름을 누르면 다시 레이어 피벗</value></data>
+  <data name="Timeline_PivotLayerSet" xml:space="preserve"><value>캔버스 피벗 대표 레이어로</value><comment>레이어 메뉴: 캔버스 피벗이 이 레이어의 피벗을 따르게 함(이름 앞 왕관 표시)</comment></data>
+  <data name="Timeline_PivotLayerClear" xml:space="preserve"><value>캔버스 피벗 대표 레이어 풀기</value></data>
   <data name="Timeline_LinkCels" xml:space="preserve"><value>셀 링크</value><comment>셀 우클릭 메뉴: 고른 칸들이 그림 하나를 같이 쓰게 함</comment></data>
   <data name="Timeline_UnlinkCels" xml:space="preserve"><value>셀 링크 풀기</value></data>
   <data name="Timeline_LinkCels_Done" xml:space="preserve"><value>셀 {0}개를 링크했습니다. 한 칸을 고치면 링크된 칸이 모두 바뀝니다.</value><comment>{0}=새로 링크한 셀 수</comment></data>
@@ -9699,6 +9718,15 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="LayerResize_Empty" xml:space="preserve"><value>이 레이어에는 어느 프레임에도 그림이 없습니다.</value></data>
   <data name="LayerResize_Applied" xml:space="preserve"><value>레이어 크기: "{name}" {width}×{height} @{x},{y} (모든 프레임)</value><comment>레이어 크기 모드를 적용한 뒤 상태 표시줄. name = 레이어 이름, width·height = 새 크기(px), x·y = 왼쪽 위(캔버스 좌표)</comment></data>
   <data name="LayerResize_MovedFrom" xml:space="preserve"><value>부위 위치: "{name}" @{x},{y} (프레임 {frame}부터 끝까지, 피벗도 같이)</value><comment>레이어 크기 모드에서 부위를 옮기기만 하고 적용한 뒤 상태 표시줄. name = 부위 이름, x·y = 이 프레임의 왼쪽 위(캔버스 좌표), frame = 지금 프레임 번호</comment></data>
+  <data name="LayerResize_Flipped" xml:space="preserve"><value>"{name}" 레이어를 제자리에서 {direction} 뒤집었습니다(모든 프레임, Ctrl+Z로 되돌림).</value><comment>레이어 크기 모드의 뒤집기 단추를 누른 뒤 상태 표시줄. name = 레이어 이름, direction = Flip_DirHorizontal/Flip_DirVertical</comment></data>
+  <data name="LayerResize_FlipHorizontalTip" xml:space="preserve"><value>이 레이어를 제자리에서 좌우로 뒤집습니다(모든 프레임, 바로 적용 — Ctrl+Z로 되돌림).</value></data>
+  <data name="LayerResize_FlipVerticalTip" xml:space="preserve"><value>이 레이어를 제자리에서 상하로 뒤집습니다(모든 프레임, 바로 적용 — Ctrl+Z로 되돌림).</value></data>
+  <data name="CanvasResize_Flip" xml:space="preserve"><value>뒤집기</value><comment>캔버스·레이어 크기 모드 도구 설정의 뒤집기 단추 줄 앞 글</comment></data>
+  <data name="CanvasResize_Flipped" xml:space="preserve"><value>캔버스 전체를 {direction} 뒤집었습니다(모든 레이어·프레임, Ctrl+Z로 되돌림).</value><comment>캔버스 크기 모드의 뒤집기 단추를 누른 뒤 상태 표시줄. direction = Flip_DirHorizontal/Flip_DirVertical</comment></data>
+  <data name="CanvasResize_FlipHorizontalTip" xml:space="preserve"><value>캔버스 전체를 좌우로 뒤집습니다(모든 레이어·프레임, 바로 적용 — Ctrl+Z로 되돌림).</value></data>
+  <data name="CanvasResize_FlipVerticalTip" xml:space="preserve"><value>캔버스 전체를 상하로 뒤집습니다(모든 레이어·프레임, 바로 적용 — Ctrl+Z로 되돌림).</value></data>
+  <data name="Flip_DirHorizontal" xml:space="preserve"><value>좌우로</value></data>
+  <data name="Flip_DirVertical" xml:space="preserve"><value>상하로</value></data>
   <data name="LayerColors_Title" xml:space="preserve"><value>레이어 색</value><comment>색 패널 맨 아래 머리글: 지금 고른 레이어에 쓰인 색</comment></data>
   <data name="LayerColors_Tip" xml:space="preserve"><value>지금 고른 레이어의 모든 프레임에 쓰인 색입니다(많이 쓰인 순, 투명 제외 — 그룹이면 그 부위들, 부위면 보이는 스킨). 칸을 누르면 기본색, 오른쪽 클릭하면 보조색이 됩니다. 머리글을 누르면 접고 펼칩니다.</value><comment>"레이어 색" 머리글의 도움말</comment></data>
   <data name="LayerColors_CountCapped" xml:space="preserve"><value>{0} / {1}</value><comment>레이어 색이 너무 많아 일부만 보일 때 개수: 0 = 보이는 색 수, 1 = 전체 색 수</comment></data>
@@ -9738,4 +9766,22 @@ HSV 명도: 예전 방식. 명도를 더하고 빼며, 가장 밝으면 채도�
 채도: 왼쪽은 진하게, 오른쪽은 흐리게(밝기·색상 유지).</value></data>
   <data name="DodgeMode_SaturateUndo" xml:space="preserve"><value>채도 올리기</value></data>
   <data name="DodgeMode_DesaturateUndo" xml:space="preserve"><value>채도 내리기</value></data>
+  <data name="CanvasRatio_ButtonTip" xml:space="preserve"><value>특수 비율: 캔버스를 1:1·16:9 같은 비율로 맞춥니다(작은 창 — 확인하면 이 모드 값만 바뀌고, 적용해야 캔버스가 바뀝니다).</value></data>
+  <data name="CanvasRatio_Title" xml:space="preserve"><value>특수 비율</value></data>
+  <data name="CanvasRatio_Intro" xml:space="preserve"><value>확인하면 캔버스 크기 모드 값만 바뀝니다. 캔버스는 모드에서 적용(Enter)해야 바뀌고, 취소(Esc)하면 되돌아갑니다.</value></data>
+  <data name="CanvasRatio_Ratio" xml:space="preserve"><value>비율</value></data>
+  <data name="CanvasRatio_RatioTip" xml:space="preserve"><value>가로:세로 비율(각 1~100). 위 단추로 자주 쓰는 비율을 고르거나 직접 넣습니다.</value></data>
+  <data name="CanvasRatio_Basis" xml:space="preserve"><value>기준</value></data>
+  <data name="CanvasRatio_KeepWidth" xml:space="preserve"><value>가로 유지</value></data>
+  <data name="CanvasRatio_KeepHeight" xml:space="preserve"><value>세로 유지</value></data>
+  <data name="CanvasRatio_BasisTip" xml:space="preserve"><value>가로 유지: 지금 캔버스 가로는 그대로 두고 세로를 비율로 정합니다. 세로 유지: 세로를 두고 가로를 정합니다.</value></data>
+  <data name="CanvasRatio_Fit" xml:space="preserve"><value>방식</value></data>
+  <data name="CanvasRatio_FitCanvas" xml:space="preserve"><value>캔버스만 바꾸기</value></data>
+  <data name="CanvasRatio_FitStretch" xml:space="preserve"><value>그림 늘리기</value></data>
+  <data name="CanvasRatio_FitTip" xml:space="preserve"><value>캔버스만 바꾸기: 그림은 그대로 두고, 바뀌는 쪽에 빈칸이 붙거나 잘립니다(기준점 자리, 기준점이 없으면 가운데 — 잘린 픽셀은 캔버스 밖 그림으로 남음).
+그림 늘리기: 그림을 새 캔버스에 꼭 맞게 늘이거나 줄입니다(그림 가로/세로와 같은 방법 — 9-slice를 켰으면 9-slice).</value></data>
+  <data name="CanvasRatio_CanvasSize" xml:space="preserve"><value>캔버스 {from} → {to}</value><comment>from·to = 캔버스 크기(가로×세로)</comment></data>
+  <data name="CanvasRatio_ImageSize" xml:space="preserve"><value>그림 {size}</value><comment>size = 그림 크기(가로×세로)</comment></data>
+  <data name="CanvasRatio_OutOfRange" xml:space="preserve"><value>새 크기가 1~{max}px 밖입니다.</value><comment>max = 가장 큰 캔버스 크기</comment></data>
+  <data name="CanvasRatio_PreviewTip" xml:space="preserve"><value>점선: 지금 캔버스, 강조색: 새 캔버스, 흐린 그림: 새 캔버스 밖으로 나가는 부분.</value></data>
 </root>

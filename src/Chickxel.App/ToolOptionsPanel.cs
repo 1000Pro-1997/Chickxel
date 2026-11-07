@@ -10,14 +10,14 @@ namespace Chickxel.App;
 /// 오른쪽 독 "도구 설정": 고른 도구의 세부 설정만 보인다. 브러시(모양·크기·미리보기), 채우기(허용 오차·이어진 영역·대각선·기준),
 /// 스포이드(기준), 밝게/어둡게(세기), 디더링(무늬), 글씨(글꼴), 그라데이션(색 정지점 바·보간·디더링), 그라데이션 연필(방식·반복 간격·프리셋·정지점 바), 도형(모양·꼭짓점/뿔/감은 수·채움), 이동(순환), 대칭(피벗 기준 포함), 피벗 도구(K)의 피벗(픽셀 단위), 9-slice 도구(S)의 테두리(L·T·R·B).
 /// 변형 모드(Ctrl+T) 중에는 변형 값(각도·가로·세로 %·중심 X/Y)·리샘플링·적용/취소만 보인다(캔버스 손잡이와 함께 움직임).
-/// 캔버스 크기 모드(Ctrl+Alt+C) 중에는 캔버스 가로·세로와 중심 기준, 그림 가로·세로(%)·위치, 그림 기준점 9방향, 비율 유지, 확인/취소를 보인다(캔버스 손잡이와 함께 움직임).
-/// 레이어 크기 모드(Ctrl+Shift+C)는 같은 묶음에서 캔버스 가로·세로·중심 기준·9-slice 줄을 숨기고 제목·설명만 바꾼다.
+/// 캔버스 크기 모드(Ctrl+Alt+C) 중에는 캔버스 가로·세로와 중심 기준, 그림 가로·세로(%)·위치, 그림 기준점 9방향, 비율 유지·특수 비율(작은 창), 확인/취소를 보인다(캔버스 손잡이와 함께 움직임).
+/// 레이어 크기 모드(Ctrl+Shift+C)는 같은 묶음에서 캔버스 가로·세로·중심 기준·9-slice 줄·특수 비율 단추를 숨기고 제목·설명만 바꾼다.
 /// 도구 설정은 <see cref="EditorContext"/>에 있고(실행취소 없음) 바뀌면 <see cref="EditorContext.ToolOptionsChanged"/>로 다시 맞춘다.
 /// 피벗 값 바꾸기는 프로젝트 편집이라 실행취소된다.
 /// 타임라인에서 효과 하나를 고르면 맨 아래에 그 효과의 설정이 보인다(<see cref="ShowEffect"/> — 바로 문서에 들어가고, 잠깐 사이에 이어 바꾼 값은 실행취소 한 단계).
 /// 묶음 상자는 제목 줄을 눌러 접고 편다(<see cref="Ui.Foldable"/>).
 /// </summary>
-public sealed class ToolOptionsPanel : UserControl
+public sealed partial class ToolOptionsPanel : UserControl
 {
     /// <summary>피벗 5×5 단추 칸 수(한 변). 칸 사이 간격 = 1/4.</summary>
     private const int PivotSteps = 5;
@@ -107,7 +107,7 @@ public sealed class ToolOptionsPanel : UserControl
     private readonly TabStrip _lineSteps = new(TabStripKind.Segmented) { Focusable = false, IsTabStop = false, Margin = default };
     private readonly StackPanel _lineStepsRow;
     private readonly StackPanel _sidesRow, _starRow, _turnsRow;
-    /// <summary>연필·그라데이션 연필·지우개 획의 픽셀 잇기(0 = 대각선, 1 = ㄱ자 4방향 — 픽셀 퍼펙트는 꺼짐). 클릭해도 캔버스 포커스를 빼앗지 않는다.</summary>
+    /// <summary>연필·그라데이션 연필·지우개 획의 픽셀 잇기(0 = 대각선, 1 = ㄱ자 4방향 — 픽셀 퍼펙트를 켜면 흐려지고 대각선으로 그림). 클릭해도 캔버스 포커스를 빼앗지 않는다.</summary>
     private readonly TabStrip _pencilSteps = new(TabStripKind.Segmented) { Focusable = false, IsTabStop = false, Margin = default };
     private readonly StackPanel _pencilStepsRow;
 
@@ -135,6 +135,9 @@ public sealed class ToolOptionsPanel : UserControl
     private readonly NumericUpDown _pivotX, _pivotY;
     private readonly CheckBox _framePivot;
     private readonly TextBlock _pivotTarget, _pivotXMax, _pivotYMax;
+    /// <summary>캔버스 피벗 대상일 때만: 대표 레이어 고르기(없음 + 레이어들 — <see cref="_pivotLayerChoices"/>와 같은 차례).</summary>
+    private readonly ComboBox _pivotLayer;
+    private readonly StackPanel _pivotLayerRow;
 
     // 변형 모드
     private readonly Border _transformBox;
@@ -152,6 +155,13 @@ public sealed class ToolOptionsPanel : UserControl
     private readonly StackPanel _crCanvasRow, _crSliceRow;
     /// <summary>캔버스 크기 줄 앞 글(레이어 크기 모드에서는 "레이어 가로" — 그 줄이 적용 뒤 레이어 자리 크기).</summary>
     private readonly TextBlock _crCanvasLabel;
+    /// <summary>특수 비율 단추(캔버스 크기 모드만 — 레이어 크기 모드에서는 숨김).</summary>
+    private readonly Button _crRatio;
+    /// <summary>캔버스·레이어 크기 모드의 좌우·상하 뒤집기 단추(바로 적용 — 캔버스 모드면 캔버스 전체, 레이어 모드면 그 레이어).</summary>
+    private readonly Button _crFlipH, _crFlipV;
+
+    /// <summary>상태 표시줄에 보일 글(뒤집기 단추 결과 등).</summary>
+    public event EventHandler<string>? StatusMessage;
     private readonly TextBlock _crTitle;
     private readonly Control _crInfo;
     private readonly Button _crApply;
@@ -461,24 +471,28 @@ public sealed class ToolOptionsPanel : UserControl
         _framePivot.Tip(UiStrings.Pivot_FramesFromTip);
         _framePivot.IsCheckedChanged += (_, _) =>
         {
-            if (_updating || _ctx.Project is not { } p) return;
-            int f = _ctx.CurrentFrame;
-            // 부위면 그 부위의 이 프레임부터 끝까지(피벗·위치), 아니면 프로젝트의 이 프레임부터 끝까지(켤 때는 지금 피벗에서 시작)
-            if (_ctx.CurrentPart is { } part)
-            {
-                int index = p.IndexOf(part);
-                _ctx.Structural(() => p.SetPartFramesFrom(index, f, _framePivot.On()));
-            }
-            else _ctx.Structural(() => p.SetFramePivotsFrom(f, _framePivot.On()));
+            // 피벗 대상(레이어 — 부위면 위치도 — 또는 캔버스)의 이 프레임부터 끝까지(켤 때는 지금 피벗에서 시작)
+            if (_updating || !_ctx.HasProject) return;
+            _ctx.SetPivotTargetFramesFrom(_framePivot.On());
         };
         _pivotTarget = Dim("");
         _pivotTarget.TextWrapping = TextWrapping.Wrap;
+        _pivotLayer = Ui.Combo(170);
+        _pivotLayer.Tip(UiStrings.Pivot_RepresentativeTip);
+        _pivotLayer.SelectionChanged += (_, _) =>
+        {
+            int i = _pivotLayer.SelectedIndex;
+            if (_updating || i < 0 || i >= _pivotLayerChoices.Count) return;
+            _ctx.SetPivotLayer(_pivotLayerChoices[i]);
+        };
+        _pivotLayerRow = Ui.Row(Ui.Label(UiStrings.Pivot_Representative), _pivotLayer);
         _pivotBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_C554693D22, Ui.Stack(
+            _pivotTarget,
+            _pivotLayerRow,
             presetGrid,
             Ui.Row(Ui.Label("X"), _pivotX, _pivotXMax),
             Ui.Row(Ui.Label("Y"), _pivotY, _pivotYMax),
-            _framePivot,
-            _pivotTarget));
+            _framePivot));
 
         // ── 9-slice(S): 캔버스에서 초록 선을 끌거나 숫자로
         _sL = SliceNum();
@@ -540,6 +554,8 @@ public sealed class ToolOptionsPanel : UserControl
         // ── 캔버스 크기 모드(Ctrl+Alt+C): 숫자는 캔버스 손잡이와 함께 움직인다.
         _crKeepRatio = Ui.Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_93E9A22B2D, true).Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_2CD545CAF3);
         _crKeepRatio.Focusable = false;
+        _crRatio = Ui.IconButton(VectorIcon.Ratio, UiStrings.CanvasRatio_ButtonTip, (_, _) => ApplyCanvasRatio(), size: 16);
+        _crRatio.Focusable = false;
         _crFromCenter = Ui.Check(UiStrings.CanvasResize_FromCenter, false).Tip(UiStrings.CanvasResize_FromCenterTip);
         _crFromCenter.Focusable = false;
         _crFromCenter.IsCheckedChanged += (_, _) => { if (!_updating) _ctx.CanvasResizeFromCenter = _crFromCenter.On(); };
@@ -584,6 +600,9 @@ public sealed class ToolOptionsPanel : UserControl
         };
         _crApply = Ui.Button(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_666F59D00B, (_, _) => _ctx.CommitCanvasResize()).Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E905102901);
         var crCancel = Ui.Button(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_BDB140E2ED, (_, _) => _ctx.CancelCanvasResize()).Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_495785D5E4);
+        _crFlipH = Ui.IconButton(VectorIcon.FlipLeftRight, UiStrings.CanvasResize_FlipHorizontalTip, (_, _) => FlipDuringResize(true), size: 16);
+        _crFlipV = Ui.IconButton(VectorIcon.FlipUpDown, UiStrings.CanvasResize_FlipVerticalTip, (_, _) => FlipDuringResize(false), size: 16);
+        _crFlipH.Focusable = _crFlipV.Focusable = false;
         _crCanvasLabel = Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4ED6D3C2A9);
         _crCanvasRow = Ui.Row(_crCanvasLabel, _crWidth, Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A5A2849291), _crHeight);
         _crSliceRow = Ui.Row(_crSlice, _crSliceFill);
@@ -593,9 +612,10 @@ public sealed class ToolOptionsPanel : UserControl
             _crSliceRow,
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_42E9812F72), _crImageWidth, _crWidthPercent),
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_EA7C872715), _crImageHeight, _crHeightPercent),
-            _crKeepRatio,
+            Ui.Row(_crKeepRatio, _crRatio),
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_CD2CB5A3E8), _crX, Ui.Label("Y"), _crY),
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_2B00AF339B), _crAnchor),
+            Ui.Row(Ui.Label(UiStrings.CanvasResize_Flip), _crFlipH, _crFlipV),
             Ui.Row(_crApply, crCancel)));
         // InfoGroup 머리 줄 = (제목, 정보박스): 레이어 크기 모드에서 바꾼다.
         var crHead = (StackPanel)((StackPanel)_canvasResizeBox.Child!).Children[0];
@@ -611,7 +631,15 @@ public sealed class ToolOptionsPanel : UserControl
             EffectDialogRequested?.Invoke(layer, _fxIndex);
         }).Tip(UiStrings.EffectDock_OpenTip);
         openEffect.Focusable = false;
-        _effectBox = InfoGroup("", "", Ui.Stack(_effectStatus, _effectSettings, Ui.Row(openEffect)));
+        // 이 효과 결과에 맞춰 캔버스 늘리기(방식을 고르는 작은 창 — 확인하면 바로 늘림)
+        var growCanvas = Ui.Button(VectorIcon.Maximize2, UiStrings.EffectCanvas_Menu, (_, _) =>
+        {
+            if (_fxLayer is not { } layer || _ctx.Project is not { } p) return;
+            EndEffectEdit();
+            if (EffectCanvasDialog.Run(this, _ctx, p.IndexOf(layer), _fxIndex) is { } message) StatusMessage?.Invoke(this, message);
+        }).Tip(UiStrings.EffectCanvas_MenuTip);
+        growCanvas.Focusable = false;
+        _effectBox = InfoGroup("", "", Ui.Stack(_effectStatus, _effectSettings, Ui.Row(openEffect, growCanvas)));
         var effectHead = (StackPanel)((StackPanel)_effectBox.Child!).Children[0];
         _effectTitle = (TextBlock)effectHead.Children[0];
         _effectInfo = effectHead.Children[1];
@@ -756,6 +784,12 @@ public sealed class ToolOptionsPanel : UserControl
     private void SetCanvasResizeImage(Func<Rectangle, Rectangle> change)
         => _ctx.SetCanvasResize(_ctx.CanvasResizeCanvas, change(_ctx.CanvasResizeImage));
 
+    /// <summary>뒤집기 단추: 캔버스 크기 모드면 캔버스 전체, 레이어 크기 모드면 그 레이어를 바로 뒤집고 결과를 상태 표시줄로 알린다(모드는 이어짐).</summary>
+    private void FlipDuringResize(bool horizontal)
+    {
+        if (_ctx.FlipDuringResize(horizontal) is { } message) StatusMessage?.Invoke(this, message);
+    }
+
     /// <summary>
     /// 숫자 크기 변경: 중심 기준이면 캔버스 원점을 함께 옮기고 그림의 화면 위치는 유지한다. 레이어 크기 모드면 적용 뒤 레이어 자리 크기(왼쪽 위 고정, 그림은 그대로 —
     /// 밖으로 나간 그림은 잘림).
@@ -788,6 +822,20 @@ public sealed class ToolOptionsPanel : UserControl
     {
         var s = _ctx.CanvasResizeSource;
         return Math.Max(1, (int)Math.Round((double)height * s.Width / s.Height));
+    }
+
+    /// <summary>
+    /// 특수 비율 창: 확인하면 계산한 캔버스·그림 값을 캔버스 크기 모드에 넣는다(적용·취소는 모드에서). 그림 늘리기로 원래 그림과 다른 비율이 되면
+    /// '그림 비율 유지'를 꺼 둔다(뒤에 그림 가로/세로를 고쳐도 원래 비율로 되돌아가지 않게).
+    /// </summary>
+    private void ApplyCanvasRatio()
+    {
+        // 기준점: 도구 설정에 눌려 보이는 것(그림이 9방향 중 하나에 맞을 때만, 여럿 맞으면 마지막으로 고른 것)
+        var anchor = CanvasRatio.MatchAnchor(_ctx.CanvasResizeCanvas.Size, _ctx.CanvasResizeImage, _crAnchor.Value);
+        if (CanvasRatioDialog.Run(this, _ctx, anchor) is not { } result) return;
+        _ctx.SetCanvasResize(result.Canvas, result.Image);
+        var i = _ctx.CanvasResizeImage;
+        if (result.Fit == CanvasRatioFit.Stretch && RatioHeight(i.Width) != i.Height && RatioWidth(i.Height) != i.Width) _crKeepRatio.IsChecked = false;
     }
 
     /// <summary>피벗 픽셀 칸(0.5 단위). 예시 값은 대상 크기에 맞춰 <see cref="RefreshPivot"/>에서 정한다.</summary>
@@ -863,8 +911,10 @@ public sealed class ToolOptionsPanel : UserControl
             _crTitle.Text = layer ? UiStrings.LayerResize_GroupTitle : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_EDE86CE801;
             ToolTip.SetTip(_crInfo, layer ? UiStrings.LayerResize_Info : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8CE505E7D6);
             _crApply.Tip(layer ? UiStrings.LayerResize_ApplyTip : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E905102901);
+            _crFlipH.Tip(layer ? UiStrings.LayerResize_FlipHorizontalTip : UiStrings.CanvasResize_FlipHorizontalTip);
+            _crFlipV.Tip(layer ? UiStrings.LayerResize_FlipVerticalTip : UiStrings.CanvasResize_FlipVerticalTip);
             _crCanvasLabel.Text = layer ? UiStrings.LayerResize_AreaWidth : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4ED6D3C2A9;
-            _crFromCenter.IsVisible = _crSliceRow.IsVisible = !layer;
+            _crFromCenter.IsVisible = _crSliceRow.IsVisible = _crRatio.IsVisible = !layer;
             foreach (var box in new Control[] { _shapeBox, _brushBox, _pencilGradientBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox, _hint })
                 box.IsVisible = false;
         }
@@ -890,8 +940,8 @@ public sealed class ToolOptionsPanel : UserControl
             _ditherPattern.SelectedIndex = (int)_ctx.DitherPattern;
             RefreshText();
             _pixelPerfect.IsChecked = _ctx.PixelPerfect;
-            // ㄱ자 잇기에서는 픽셀 퍼펙트를 쓰지 않는다(ㄱ자 모서리를 지우는 기능이라).
-            _pixelPerfect.IsEnabled = !_ctx.PencilOrthogonal;
+            // 픽셀 퍼펙트(대각선 계단의 ㄱ자 겹 픽셀 지우기)를 켜면 획은 대각선으로 이으므로 픽셀 잇기를 흐린다.
+            _pencilStepsRow.IsEnabled = !_ctx.PixelPerfect;
             _pencilSteps.SelectedIndex = _ctx.PencilOrthogonal ? 1 : 0;
             _shapeFilled.IsChecked = _ctx.ShapeFilled;
             _rightErase.IsChecked = _ctx.RightButtonErases;
@@ -1028,9 +1078,7 @@ public sealed class ToolOptionsPanel : UserControl
             _crY.Value = Math.Clamp(i.Y, _crY.Minimum, _crY.Maximum);
             _crWidthPercent.Text = $"{i.Width * 100.0 / s.Width:0.#}%";
             _crHeightPercent.Text = $"{i.Height * 100.0 / s.Height:0.#}%";
-            var anchors = Enum.GetValues<Anchor>();
-            int match = Array.FindIndex(anchors, a => PixelImage.AnchorOffset(i.Width, i.Height, c.Width, c.Height, a) == (i.X, i.Y));
-            _crAnchor.Show(match < 0 ? null : anchors[match]);
+            _crAnchor.Show(CanvasRatio.MatchAnchor(c.Size, i, _crAnchor.Value));
         }
         finally
         {
@@ -1071,109 +1119,6 @@ public sealed class ToolOptionsPanel : UserControl
         {
             _updating = wasUpdating;
         }
-    }
-
-    // ───────────── 피벗(픽셀) ─────────────
-
-    /// <summary>피벗 대상의 픽셀 크기: 부위면 부위 크기, 아니면 프레임(캔버스) 크기.</summary>
-    private int TargetWidth => Math.Max(1, _ctx.CanvasWidth);
-    private int TargetHeight => Math.Max(1, _ctx.CanvasHeight);
-
-    /// <summary>저장된 대상 피벗(부위 = 그 부위의 현재 프레임 피벗, 그 밖 = 현재 프레임/기본값).</summary>
-    private Pivot? TargetPivot()
-    {
-        if (_ctx.Project is not { } p) return null;
-        int f = _ctx.CurrentFrame;
-        return _ctx.CurrentPart is { } part ? p.GetPartPivot(part, f) : p.GetFramePivot(f);
-    }
-
-    /// <summary>
-    /// 5×5 단추(<paramref name="col"/>, <paramref name="row"/> = 0~4, 위 왼쪽부터)를 정수 픽셀에 맞춘 피벗:
-    /// 0 / 1/4 / 1/2 / 3/4 / 끝(가운데는 내림 15px → 7px, 1/4 = 16px → 4px, 3/4 = 너비 − 1/4 → 12px, 오른쪽 = 너비, 위 = 높이).
-    /// </summary>
-    private Pivot SnappedStep(int col, int row)
-    {
-        int w = TargetWidth, h = TargetHeight;
-        static int Snap(int step, int size) => step switch
-        {
-            0 => 0,
-            1 => size / 4,
-            2 => size / 2,
-            3 => size - size / 4,
-            _ => size,
-        };
-        return new Pivot(Snap(col, w) / (float)w, Snap(PivotSteps - 1 - row, h) / (float)h);
-    }
-
-    /// <summary>피벗 대상(부위 = 그 부위, 그 밖 = 현재 프레임/기본값)을 화면에 보인다. 피벗 도구일 때만.</summary>
-    private void RefreshPivot()
-    {
-        _pivotBox.IsEnabled = _ctx.HasProject;
-        if (!_pivotBox.IsVisible || _ctx.Project is not { } p) return;
-        bool wasUpdating = _updating;
-        _updating = true;
-        try
-        {
-            int f = _ctx.CurrentFrame;
-            if (_ctx.CurrentPart is { } part)
-            {
-                bool own = p.HasPartFrameOverride(part, f);
-                _framePivot.IsVisible = true;
-                _framePivot.IsChecked = own;
-                var culture = global::System.Globalization.CultureInfo.CurrentCulture;
-                _pivotTarget.Text = own
-                    ? string.Format(culture, UiStrings.Pivot_PartFrameTarget, part.Name, f + 1, part.PartSize.Width, part.PartSize.Height)
-                    : string.Format(culture, UiStrings.S_ToolOptionsPanel_RefreshPivot_7752FB81E5, part.Name, part.PartSize.Width, part.PartSize.Height);
-            }
-            else
-            {
-                bool own = p.Frames[f].Pivot is not null;
-                _framePivot.IsVisible = true;
-                _framePivot.IsChecked = own;
-                _pivotTarget.Text = own ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ToolOptionsPanel_RefreshPivot_DC250333A2,f + 1) : UiStrings.S_ToolOptionsPanel_RefreshPivot_880B20EF26;
-            }
-            // 끄는 중이면 미리보기 값.
-            var pivot = _ctx.Pivot;
-            int w = TargetWidth, h = TargetHeight;
-            _pivotX.Maximum = w;
-            _pivotY.Maximum = h;
-            _pivotX.Presets(Quarters(w));
-            _pivotY.Presets(Quarters(h));
-            _pivotX.Value = Math.Round((decimal)Math.Clamp(pivot.X * w, 0, w), 2);
-            _pivotY.Value = Math.Round((decimal)Math.Clamp(pivot.Y * h, 0, h), 2);
-            _pivotXMax.Text = $"/ {w} px";
-            _pivotYMax.Text = $"/ {h} px";
-            for (int i = 0; i < _presetButtons.Length; i++)
-            {
-                int col = i % PivotSteps, row = i / PivotSteps;
-                var exact = new Pivot(col / 4f, (PivotSteps - 1 - row) / 4f);
-                var snapped = SnappedStep(col, row);
-                bool on = pivot == exact
-                    || (Math.Abs((pivot.X - snapped.X) * w) < 0.01f && Math.Abs((pivot.Y - snapped.Y) * h) < 0.01f);
-                _presetButtons[i].Background = on ? AppTheme.AccentBrush : AppTheme.InputBrush;
-            }
-        }
-        finally
-        {
-            _updating = wasUpdating;
-        }
-    }
-
-    private void ApplyPivot(Pivot pivot)
-    {
-        if (_updating || _ctx.Project is not { } p) return;
-        int f = _ctx.CurrentFrame;
-        if (_ctx.CurrentPart is { } part)
-        {
-            int index = p.IndexOf(part);
-            if (p.HasPartFrameOverride(part, f)) _ctx.Structural(() => p.SetPartPivotFrom(index, f, pivot));
-            else if (part.PartPivot != pivot) _ctx.Structural(() => p.SetPartPivot(index, pivot));
-            return;
-        }
-        // (프로젝트) 이 프레임에 따로 둔 피벗이 있으면 이 프레임부터 끝까지, 없으면 기본 피벗
-        if (p.Frames[f].Pivot is not null) _ctx.Structural(() => p.SetFramePivotFrom(f, pivot));
-        else if (p.Sprite.DefaultPivot != pivot)
-            _ctx.Structural(() => p.Edit(UiStrings.S_ToolOptionsPanel_ApplyPivot_4E8342E979, ProjectChange.Settings, () => p.Sprite.DefaultPivot = pivot));
     }
 
     // ───────────── 타임라인에서 고른 효과 ─────────────
@@ -1382,7 +1327,7 @@ public sealed class ToolOptionsPanel : UserControl
         if (Array.IndexOf(_presetButtons, c) >= 0 || ReferenceEquals(c, _presetButtons[0].Parent)) return At("tools-pivot", "The 5×5 buttons");
         if (InRow(_pivotX) || InRow(_pivotY)) return At("tools-pivot", "X is measured");
         if (Is(_framePivot)) return At("tools-pivot", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8A93F258A3);
-        if (Is(_pivotTarget)) return At("tools-pivot", "Target");
+        if (Is(_pivotTarget) || InRow(_pivotLayer)) return At("tools-pivot", "Target");
         if (Is(_pivotBox)) return At("tools-pivot", "Moving the pivot");
         if (Is(_sliceTarget)) return At("tools-nine-slice", "Target");
         if (Is(_sliceBox)) return At("tools-nine-slice", "Setting the borders");

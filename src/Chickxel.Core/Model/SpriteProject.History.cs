@@ -219,7 +219,7 @@ public sealed partial class SpriteProject
         Snapshot Snap(string? hash)
         {
             if (hash is not null && snapshots.TryGetValue(hash, out var known)) return known;
-            var s = Snapshot.FromDto(ReadSnap(hash), r);
+            var s = Snapshot.FromDto(ReadSnap(hash), r, legacyPivots: m.Version < 4);
             snapshots[hash!] = s;
             return s;
         }
@@ -259,7 +259,9 @@ public sealed partial class SpriteProject
             // 다음 쓰기가 같은 번호·조각을 그대로 쓰게 한다(바뀐 단계만 새로 씀).
             var ids = new HistoryIdTable();
             foreach (var (id, obj) in r.Objects) ids.Set(obj, id);
-            foreach (var (hash, s) in snapshots) ids.SetHash(s, hash);
+            // 형식 3 이하의 상태 조각은 피벗을 예전 방식으로 담으므로 다시 쓰지 않는다(다음 쓰기에서 새 형식으로)
+            if (m.Version >= 4)
+                foreach (var (hash, s) in snapshots) ids.SetHash(s, hash);
             foreach (var (hash, p) in patches) ids.SetHash(p, hash);
             _historyIds = ids;
         }
@@ -293,7 +295,7 @@ public sealed partial class SpriteProject
                 Kind = s.Kind,
                 Parent = s.Parent is { } parent ? ids.Of(parent) : 0,
                 Part = [s.PartSize.Width, s.PartSize.Height, s.PartOffset.X, s.PartOffset.Y],
-                PartPivot = ProjectIO.PivotDto.From(s.PartPivot),
+                Pivot = ProjectIO.PivotDto.From(s.Pivot),
                 PartBorder = [s.PartBorder.Left, s.PartBorder.Top, s.PartBorder.Right, s.PartBorder.Bottom],
                 PartSource = s.PartSourceRect is { } rect ? [rect.X, rect.Y, rect.Width, rect.Height] : null,
                 Skins = s.Skins?.Select(k => new HistorySkinDto { Id = ids.Of(k.Skin), Name = k.Name, Owner = k.Owner is { } o ? ids.Of(o) : 0 }).ToList(),
@@ -304,12 +306,13 @@ public sealed partial class SpriteProject
             Frames = _frames.Select(f => new HistoryFrameDto
             {
                 Id = ids.Of(f.Frame), DurationMs = f.Ms, Pivot = f.Pivot is { } p ? ProjectIO.PivotDto.From(p) : null, Name = f.Name,
-                PartPivots = f.PartPivots.Length == 0 ? null
-                    : f.PartPivots.Select(kv => new HistoryPartPivotDto { Layer = ids.Of(kv.Key), Pivot = ProjectIO.PivotDto.From(kv.Value) })
+                LayerPivots = f.LayerPivots.Length == 0 ? null
+                    : f.LayerPivots.Select(kv => new HistoryLayerPivotDto { Layer = ids.Of(kv.Key), Pivot = ProjectIO.PivotDto.From(kv.Value) })
                         .OrderBy(d => d.Layer).ToList(),
                 PartShifts = f.PartShifts.Length == 0 ? null
                     : f.PartShifts.Select(kv => new[] { ids.Of(kv.Key), kv.Value.X, kv.Value.Y }).OrderBy(s => s[0]).ToList(),
             }).ToList(),
+            PivotLayer = _pivotLayer is { } pivotLayer ? ids.Of(pivotLayer) : 0,
             Tags = _tags.Select(t => new HistoryTagDto
             {
                 Id = ids.Of(t.Tag), Name = t.State.Name, From = t.State.From, To = t.State.To, Direction = t.State.Direction, Loop = t.State.Loop,
@@ -341,7 +344,10 @@ public sealed partial class SpriteProject
             ExcludedLayers = o.ExcludedLayers.Count > 0 ? o.ExcludedLayers.Select(ids.Of).ToList() : null,
         };
 
-        public static Snapshot FromDto(HistorySnapshotDto d, HistoryResolver r)
+        /// <param name="legacyPivots">
+        /// 형식 3 이하 기록의 상태: 부위만 피벗을 가졌으므로 예전 프로젝트 파일을 읽을 때처럼 일반 레이어·그룹은 캔버스 피벗(기본 + 프레임마다)을 자기 피벗으로 갖는다.
+        /// </param>
+        public static Snapshot FromDto(HistorySnapshotDto d, HistoryResolver r, bool legacyPivots)
         {
             var sprite = new SpriteSettings();
             d.Sprite.ApplyTo(sprite);
@@ -353,6 +359,15 @@ public sealed partial class SpriteProject
                 export.PartsOverride = new SheetOptions();
                 ApplySheet(export.PartsOverride, partsSheet, d.PartsRefs, r);
             }
+            var layerPivots = d.Frames.Select(f => (f.LayerPivots ?? []).Select(pp => KeyValuePair.Create(r.Layer(pp.Layer), pp.Pivot.ToPivot())).ToList()).ToList();
+            if (legacyPivots)
+                for (int i = 0; i < d.Frames.Count; i++)
+                {
+                    var f = d.Frames[i];
+                    layerPivots[i].AddRange((f.PartPivots ?? []).Select(pp => KeyValuePair.Create(r.Layer(pp.Layer), pp.Pivot.ToPivot())));
+                    if (f.Pivot?.ToPivot() is { } canvasPivot)
+                        layerPivots[i].AddRange(d.Layers.Where(l => l.Kind != LayerKind.Part).Select(l => KeyValuePair.Create(r.Layer(l.Id), canvasPivot)));
+                }
             return new Snapshot
             {
                 _w = d.W,
@@ -361,16 +376,17 @@ public sealed partial class SpriteProject
                     r.Layer(l.Id), l.Name, l.Visible, l.Locked, l.Opacity, l.Kind, l.Parent == 0 ? null : r.Layer(l.Parent),
                     l.Part is [var w, var h, _, _] ? new Size(w, h) : throw Corrupt(),
                     new Point(l.Part[2], l.Part[3]),
-                    l.PartPivot?.ToPivot() ?? Pivot.Center,
+                    !legacyPivots ? l.Pivot?.ToPivot() ?? Pivot.Center
+                        : l.Kind == LayerKind.Part ? l.PartPivot?.ToPivot() ?? Pivot.Center : sprite.DefaultPivot,
                     l.PartBorder is [var bl, var bt, var br, var bb] ? new SpriteBorder(bl, bt, br, bb) : throw Corrupt(),
                     l.PartSource is [var sx, var sy, var sw, var sh] ? new Rectangle(sx, sy, sw, sh) : null,
                     l.Skins?.Select(s => (r.Skin(s.Id), s.Name, s.Owner == 0 ? (Layer?)null : r.Layer(s.Owner))).ToArray(),
                     l.ActiveSkin == 0 ? null : r.Skin(l.ActiveSkin),
                     l.Effects?.Select(EffectCodec.Read).ToArray() ?? [],
                     l.AutoLayout?.ToLayout())).ToArray(),
-                _frames = d.Frames.Select(f => (r.Frame(f.Id), f.DurationMs, f.Pivot?.ToPivot(), f.Name,
-                    (f.PartPivots ?? []).Select(pp => KeyValuePair.Create(r.Layer(pp.Layer), pp.Pivot.ToPivot())).ToArray(),
+                _frames = d.Frames.Select((f, i) => (r.Frame(f.Id), f.DurationMs, f.Pivot?.ToPivot(), f.Name, layerPivots[i].ToArray(),
                     (f.PartShifts ?? []).Select(s => s is [var l, var x, var y] ? KeyValuePair.Create(r.Layer(l), new Point(x, y)) : throw Corrupt()).ToArray())).ToArray(),
+                _pivotLayer = d.PivotLayer == 0 ? null : r.Layer(d.PivotLayer),
                 _tags = d.Tags.Select(t => (r.Tag(t.Id), new AnimationTag(t.Name, t.From, t.To)
                 {
                     Direction = t.Direction,

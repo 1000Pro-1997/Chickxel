@@ -664,13 +664,13 @@ public class AnimatedEffectTests
         p.SetCel(pi, 0, Filled(2, 2, Red));
         p.SetLayerEffects(pi, [new ShadowEffect { Color = Black, OffsetX = 1, OffsetY = 1 }]);
         var before = p.Flatten(0);
-        var (px, py) = part.PartPivot.ToLocalPixel(2, 2);
+        var (px, py) = part.Pivot.ToLocalPixel(2, 2);
 
         var (_, _, _, grown) = p.BakeLayerEffects(pi, [0]);
         Assert.True(grown);
         Assert.Equal(new Rectangle(4, 4, 3, 3), part.PartRect);
         Assert.True(p.Flatten(0).ContentEquals(before));
-        var (qx, qy) = part.PartPivot.ToLocalPixel(3, 3);
+        var (qx, qy) = part.Pivot.ToLocalPixel(3, 3);
         Assert.Equal(px, qx, 4);
         Assert.Equal(py, qy, 4);
         Assert.Throws<InvalidOperationException>(() => p.BakeLayerEffects(p.IndexOf(g), [0]));

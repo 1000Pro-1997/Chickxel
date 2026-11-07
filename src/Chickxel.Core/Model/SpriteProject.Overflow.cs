@@ -96,8 +96,47 @@ public sealed partial class SpriteProject
     }
 
     /// <summary>
+    /// 일반 레이어 셀 내용을 캔버스 좌표 <paramref name="origin"/>에 놓인 <paramref name="image"/>로 바꾼다(실행취소 한 단계): 캔버스 안은 셀,
+    /// 밖으로 나간 픽셀은 캔버스 밖 그림(남기는 범위 안)으로 남아 캔버스를 키우면 보인다. 캔버스 안이 비면 셀은 비우고 캔버스 밖 그림만 둔다.
+    /// 일반 레이어가 아니면 <see cref="ArgumentException"/>.
+    /// </summary>
+    public void SetFullCel(int layerIndex, int frameIndex, PixelImage image, Point origin, string? label = null)
+    {
+        var layer = _layers[layerIndex];
+        if (layer.Kind != LayerKind.Normal) throw new ArgumentException(DomainStrings.Project_NotNormalLayer, nameof(layerIndex));
+        var key = new CelKey(layer, _frames[frameIndex], null);
+        var (cel, overflow) = Split(image, origin, Size);
+        Edit(label ?? DomainStrings.Project_ChangeCel, ProjectChange.Pixels, () =>
+        {
+            if (HasContent(cel)) SetLinked(key, cel, overflow);
+            else
+            {
+                _cels.Remove(key);
+                SetOverflow(key, overflow);
+            }
+        });
+    }
+
+    /// <summary>
+    /// 열린 스트로크(일반 레이어) 셀의 캔버스 밖 그림을 지운다(스트로크를 확정하면 함께 기록, 취소하면 돌아옴). 넣은 그림 전체를 떠 있는 상태로
+    /// 들 때(<c>BeginPlacedTransform</c>) 쓴다 — 내려놓으면 밖으로 나간 픽셀이 다시 캔버스 밖 그림이 된다. 지울 것이 없으면 false.
+    /// </summary>
+    public bool ClearStrokeOverflow()
+    {
+        if (_stroke is not { } s || !_overflow.TryGetValue(s.Key, out var existing)) return false;
+        if (!_strokeOverflowChanged)
+        {
+            _strokeOverflowBefore = existing;
+            _strokeOverflowChanged = true;
+        }
+        SetOverflow(s.Key, null);
+        return true;
+    }
+
+    /// <summary>
     /// 일반 레이어 셀들의 내용을 캔버스 밖 그림까지 통째로 (<paramref name="dx"/>, <paramref name="dy"/>)만큼 옮긴다(실행취소 한 단계, 밖으로 나간 픽셀은 캔버스 밖 그림으로 남음).
-    /// 링크된 셀은 함께 옮겨지고(한 번만), 부위·그룹·잠긴 레이어·빈 셀은 건너뛴다. 옮긴 셀 수(고른 셀 기준)를 돌려준다(0이면 기록 없음).
+    /// 링크된 셀은 함께 옮겨지고(한 번만), 부위·그룹·잠긴 레이어·빈 셀은 건너뛴다. 그림이 옮겨진 프레임(링크된 셀의 프레임 포함)의 레이어 피벗도 같이 옮긴다.
+    /// 옮긴 셀 수(고른 셀 기준)를 돌려준다(0이면 기록 없음).
     /// </summary>
     public int ShiftCels(string label, IEnumerable<(int Layer, int Frame)> cels, int dx, int dy)
     {
@@ -121,9 +160,17 @@ public sealed partial class SpriteProject
                 changes.Add((key, moved, overflow));
             }
         if (changes.Count == 0) return 0;
-        Edit(label, ProjectChange.Pixels, () =>
+        // 그림이 옮겨질 프레임(링크된 셀 포함): 레이어마다
+        var movedFrames = new Dictionary<Layer, HashSet<Frame>>();
+        foreach (var (key, _, _) in changes)
+        {
+            if (!movedFrames.TryGetValue(key.Layer, out var frames)) movedFrames[key.Layer] = frames = [];
+            foreach (var k in LinkedKeys(key)) frames.Add(k.Frame);
+        }
+        Edit(label, ProjectChange.Pixels | ProjectChange.Layers | (PivotLayer is { } rep && movedFrames.ContainsKey(rep) ? ProjectChange.Frames : ProjectChange.None), () =>
         {
             foreach (var (key, cel, overflow) in changes) SetLinked(key, cel, overflow);
+            foreach (var (layer, frames) in movedFrames) ShiftLayerPivots(layer, frames, dx, dy);
         });
         return count;
     }

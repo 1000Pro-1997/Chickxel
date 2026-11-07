@@ -137,11 +137,14 @@ public static class ProjectMerge
         List<string>? notes = null)
     {
         if (sources.Count == 0) throw new ArgumentException(Chickxel.Core.Localization.DomainStrings.Merge_NoSources, nameof(sources));
-        var p = new Builder(sources, options, notes).Build();
-        if (sources.FirstOrDefault(s => s.IsProject) is { } first)
+        var first = sources.FirstOrDefault(s => s.IsProject);
+        // 결과 캔버스 기본 피벗: 첫 프로젝트 파일의 것(결과 캔버스로 옮김), 없으면 기본 설정. 새로 만드는 그룹의 피벗도 이것.
+        var defaultPivot = first is not null ? Builder.ShiftPivot(first.Project.Sprite.DefaultPivot, first, options) : spriteDefaults?.DefaultPivot ?? Pivot.Center;
+        var p = new Builder(sources, options, notes, defaultPivot).Build();
+        if (first is not null)
         {
             p.Sprite.CopyFrom(first.Project.Sprite);
-            p.Sprite.DefaultPivot = Builder.ShiftPivot(first.Project.Sprite.DefaultPivot, first, options);
+            p.Sprite.DefaultPivot = defaultPivot;
         }
         else if (spriteDefaults is not null) p.Sprite.CopyFrom(spriteDefaults);
         return p;
@@ -178,7 +181,8 @@ public static class ProjectMerge
     }
 
     /// <summary>합치기 한 번의 작업 상태. 레이어는 <see cref="_stack"/>(아래 → 위)에 모았다가 마지막에 이름을 맞춰 넣는다.</summary>
-    private sealed class Builder(IReadOnlyList<MergeSource> sources, MergeOptions options, List<string>? notes)
+    /// <param name="groupPivot">새로 만드는 그룹의 피벗(결과 캔버스 기본 피벗).</param>
+    private sealed class Builder(IReadOnlyList<MergeSource> sources, MergeOptions options, List<string>? notes, Pivot groupPivot)
     {
         private readonly SpriteProject _p = SpriteProject.CreateBlank(options.Width, options.Height);
         private readonly List<Layer> _stack = new();
@@ -226,7 +230,7 @@ public static class ProjectMerge
                 var list = new List<Layer>();
                 if (s.ImageLayer is { } l)
                 {
-                    var layer = CopyProps(l, null, 0);
+                    var layer = CopyProps(s, l, null, 0);
                     layer.Name = s.Name;
                     MapsOf(s).Layers[l] = layer;
                     CopyCanvasCels(s, l, layer, _frames);
@@ -254,7 +258,7 @@ public static class ProjectMerge
                 group = MapsOf(t.Source).Layers[t.Group];
                 Note(Chickxel.Core.Localization.DomainStrings.FormatMerge_KeepGroupAsParts(name: t.Source.FileName, kept: Kept(t.Source), group: t.Group.Name));
             }
-            group ??= new Layer(NewGroupName()) { Kind = LayerKind.Group };
+            group ??= new Layer(NewGroupName()) { Kind = LayerKind.Group, Pivot = groupPivot };
             for (int i = 0; i < sources.Count; i++)
             {
                 var s = sources[i];
@@ -314,7 +318,7 @@ public static class ProjectMerge
             {
                 // 그룹 있는 프로젝트가 없으면: 새 그룹, 부위 "부위" 하나(가장 큰 그림 파일 크기), 그림 파일마다 스킨 하나(첫 파일 = 첫 스킨·지금 스킨).
                 var images = sources.Where(s => s.ImageLayer is not null).ToList();
-                group = new Layer(NewGroupName()) { Kind = LayerKind.Group };
+                group = new Layer(NewGroupName()) { Kind = LayerKind.Group, Pivot = groupPivot };
                 var size = new Size(images.Max(s => s.Size.Width), images.Max(s => s.Size.Height));
                 var (x, y) = PixelImage.AnchorOffset(size.Width, size.Height, W, H, options.Anchor);
                 var part = new Layer(Chickxel.Core.Localization.DomainStrings.Project_DefaultPartName) { Kind = LayerKind.Part, Parent = group, PartSize = size, PartOffset = new Point(x, y) };
@@ -393,9 +397,9 @@ public static class ProjectMerge
                 var (px, py) = pivot.ToLocalPixel(old.Width, old.Height);
                 return new Pivot((px + ox) / width, 1f - (py + oy) / height);
             }
-            part.PartPivot = Moved(part.PartPivot);
+            part.Pivot = Moved(part.Pivot);
             foreach (var frame in _frames)
-                if (frame.PartPivots.TryGetValue(part, out var own)) frame.PartPivots[part] = Moved(own);
+                if (frame.LayerPivots.TryGetValue(part, out var own)) frame.LayerPivots[part] = Moved(own);
             part.PartOffset = new Point(part.PartOffset.X - ox, part.PartOffset.Y - oy);
             part.PartSize = new Size(width, height);
         }
@@ -411,7 +415,7 @@ public static class ProjectMerge
             {
                 if (parts.FirstOrDefault(x => x.Name == sp.Name) is not { } tp) return false;
                 if (sp.PartSize != tp.PartSize || new Point(sp.PartOffset.X + shift.X, sp.PartOffset.Y + shift.Y) != tp.PartOffset
-                    || sp.PartPivot != tp.PartPivot || sp.PartBorder != tp.PartBorder || sp.Opacity != tp.Opacity || !sp.Effects.SequenceEqual(tp.Effects))
+                    || sp.Pivot != tp.Pivot || sp.PartBorder != tp.PartBorder || sp.Opacity != tp.Opacity || !sp.Effects.SequenceEqual(tp.Effects))
                     return false;
             }
             return true;
@@ -463,7 +467,7 @@ public static class ProjectMerge
                                  ?? _stack.LastOrDefault(l => l is { Kind: LayerKind.Normal, Visible: true, Opacity: 255 } && l.Effects.All(e => e.Frames is not null));
                     if (target is null)
                     {
-                        target = CopyProps(image, null, start);
+                        target = CopyProps(s, image, null, start);
                         if (!s.IsProject) target.Name = Chickxel.Core.Localization.DomainStrings.FormatProject_DefaultLayerName(number: 1);
                         _stack.Add(target);
                     }
@@ -518,6 +522,7 @@ public static class ProjectMerge
                     CopyCanvasCels(s, top, target, frameMap);
                     continue;
                 }
+                CopyCanvasPivots(s, top, target, frameMap);
                 var srcParts = s.Project.ChildrenOf(top);
                 var parts = ChildrenInStack(target);
                 for (int k = 0; k < srcParts.Count; k++) maps.Layers[srcParts[k]] = parts[k];
@@ -559,7 +564,7 @@ public static class ProjectMerge
             {
                 var (sp, tp) = (srcParts[k], parts[k]);
                 if (sp.Name != tp.Name || sp.PartSize != tp.PartSize || new Point(sp.PartOffset.X + shift.X, sp.PartOffset.Y + shift.Y) != tp.PartOffset
-                    || sp.PartPivot != tp.PartPivot || sp.PartBorder != tp.PartBorder || sp.Visible != tp.Visible || sp.Opacity != tp.Opacity
+                    || sp.Pivot != tp.Pivot || sp.PartBorder != tp.PartBorder || sp.Visible != tp.Visible || sp.Opacity != tp.Opacity
                     || !SameEffects(sp, tp))
                     return false;
             }
@@ -599,7 +604,7 @@ public static class ProjectMerge
         {
             var src = s.Project;
             var maps = MapsOf(s);
-            var copy = CopyProps(top, null, frameShift);
+            var copy = CopyProps(s, top, null, frameShift);
             maps.Layers[top] = copy;
             if (!top.IsGroup)
             {
@@ -615,7 +620,7 @@ public static class ProjectMerge
             var block = new List<Layer>(children.Count + 1);
             foreach (var part in children)
             {
-                var c = CopyProps(part, copy, frameShift);
+                var c = CopyProps(s, part, copy, frameShift);
                 c.PartOffset = new Point(part.PartOffset.X + shift.X, part.PartOffset.Y + shift.Y);
                 maps.Layers[part] = c;
                 block.Add(c);
@@ -630,6 +635,7 @@ public static class ProjectMerge
                     if (skin.Owner is null || ReferenceEquals(skin.Owner, part))
                         CopyPartCels(src, part, skin, c, maps.Skins[skin], frameMap);
             }
+            CopyCanvasPivots(s, top, copy, frameMap);
             block.Add(copy);
             return block;
         }
@@ -637,19 +643,24 @@ public static class ProjectMerge
         /// <summary>그림 같은 파일의 레이어를 그룹의 부위로(파일 크기, 기준점 위치, 프레임 그대로).</summary>
         private Layer ImagePart(MergeSource s, Layer layer, string name, Layer group)
         {
-            var part = CopyProps(layer, group, 0);
+            var part = CopyProps(s, layer, group, 0);
             part.Name = name;
             part.Kind = LayerKind.Part;
             part.PartSize = s.Size;
             part.PartOffset = Shift(s);
+            // 부위 = 원본 캔버스 크기·자리이므로 캔버스 기준 피벗 값이 그대로 부위 기준 피벗
+            part.Pivot = layer.Pivot;
             MapsOf(s).Layers[layer] = part;
+            for (int i = 0; i < s.FrameCount; i++)
+                if (s.Project.Frames[i].LayerPivots.TryGetValue(layer, out var own)) _frames[i].LayerPivots.TryAdd(part, own);
             for (int i = 0; i < s.FrameCount; i++)
                 if (s.Project.GetCelRaw(layer, s.Project.Frames[i], null) is { } cel && HasContent(cel))
                     _p.SetCelRaw(part, _frames[i], cel.Clone());
             return part;
         }
 
-        private static Layer CopyProps(Layer src, Layer? parent, int frameShift) => new(src.Name)
+        /// <summary>레이어 속성 사본(셀 없이). 일반 레이어·그룹의 피벗(캔버스 기준)은 결과 캔버스의 같은 그림 지점으로 옮긴다.</summary>
+        private Layer CopyProps(MergeSource s, Layer src, Layer? parent, int frameShift) => new(src.Name)
         {
             Visible = src.Visible,
             Locked = src.Locked,
@@ -661,7 +672,7 @@ public static class ProjectMerge
             AutoLayout = src.AutoLayout,
             PartSize = src.PartSize,
             PartOffset = src.PartOffset,
-            PartPivot = src.PartPivot,
+            Pivot = src.IsPart ? src.Pivot : ShiftPivot(src.Pivot, s, options),
             PartBorder = src.PartBorder,
             PartSourceRect = src.PartSourceRect,
             Effects = frameShift == 0 || src.Effects.All(e => e.Frames is null)
@@ -669,7 +680,7 @@ public static class ProjectMerge
                 : src.Effects.Select(e => e.Frames is { } r ? e with { Frames = new FrameRange(r.From + frameShift, r.To + frameShift) } : e).ToArray(),
         };
 
-        /// <summary>일반 레이어 셀(원본 캔버스 크기)을 결과 캔버스에 기준점으로 놓아 복사한다.</summary>
+        /// <summary>일반 레이어 셀(원본 캔버스 크기)을 결과 캔버스에 기준점으로 놓아 복사한다(프레임마다 피벗도 — <see cref="CopyCanvasPivots"/>).</summary>
         private void CopyCanvasCels(MergeSource s, Layer src, Layer dst, IReadOnlyList<Frame> frameMap)
         {
             for (int i = 0; i < s.FrameCount; i++)
@@ -677,6 +688,20 @@ public static class ProjectMerge
                 if (s.Project.GetCelRaw(src, s.Project.Frames[i], null) is not { } cel || !HasContent(cel)) continue;
                 var img = cel.ResizeCanvas(W, H, options.Anchor);
                 if (HasContent(img)) _p.SetCelRaw(dst, frameMap[i], img);
+            }
+            CopyCanvasPivots(s, src, dst, frameMap);
+        }
+
+        /// <summary>
+        /// 일반 레이어·그룹의 프레임마다 피벗(캔버스 기준)을 결과 캔버스의 같은 그림 지점으로 옮겨, 결과 레이어 피벗과 다르면 그 프레임만의 피벗으로 둔다
+        /// (이미 둔 프레임은 먼저 넣은 파일의 것).
+        /// </summary>
+        private void CopyCanvasPivots(MergeSource s, Layer src, Layer dst, IReadOnlyList<Frame> frameMap)
+        {
+            for (int i = 0; i < s.FrameCount; i++)
+            {
+                var pivot = ShiftPivot(s.Project.GetLayerPivot(src, i), s, options);
+                if (pivot != dst.Pivot) frameMap[i].LayerPivots.TryAdd(dst, pivot);
             }
         }
 
@@ -686,7 +711,7 @@ public static class ProjectMerge
             for (int i = 0; i < src.Frames.Count; i++)
             {
                 // 그 프레임만의 부위 피벗·옮긴 거리(먼저 넣은 파일의 것)
-                if (src.Frames[i].PartPivots.TryGetValue(srcPart, out var framePivot)) frameMap[i].PartPivots.TryAdd(dstPart, framePivot);
+                if (src.Frames[i].LayerPivots.TryGetValue(srcPart, out var framePivot)) frameMap[i].LayerPivots.TryAdd(dstPart, framePivot);
                 if (src.Frames[i].PartShifts.TryGetValue(srcPart, out var frameShift)) frameMap[i].PartShifts.TryAdd(dstPart, frameShift);
                 var cel = src.GetCelRaw(srcPart, src.Frames[i], srcSkin);
                 if (HasContent(cel)) _p.SetCelRaw(dstPart, frameMap[i], cel!.Clone(), dstSkin);

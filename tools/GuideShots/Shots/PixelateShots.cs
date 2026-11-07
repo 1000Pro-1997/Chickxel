@@ -310,7 +310,7 @@ internal static class PixelateShots
         k.Save(dlg, "pixelate-open-5", crop: new Rect(rb.X - 8, rb.Y - 90, 640, rb.Height + 104), marks: [PixelateKit.Box(replace, dlg)], firstNumber: 9);
     }
 
-    // 설정 단계: 접힌 막대(①), 펼친 단계를 두 개씩(②~⑨), 외곽선 1px 맞추기 목록(⑪), 프레임 맞추기(⑫).
+    // 설정 단계: 접힌 막대(①), 간편 설정의 결과 크기 줄·모든 프레임이 한 팔레트(②③), 펼친 단계를 두 개씩(④⑤ …), 외곽선 1px 맞추기 목록, 프레임 맞추기.
     [Shot("pixelate-settings")]
     public static void Settings(ShotKit k)
     {
@@ -337,7 +337,12 @@ internal static class PixelateShots
             k.Save(dlg, name, crop: crop, marks: marks(ea, eb), firstNumber: first);
         }
 
-        Pair("pixelate-settings-2", 2, UiStrings.Pixelate_Section_Background, UiStrings.Pixelate_Section_Frames, (a, b) => [a, b!]);
+        Pair("pixelate-settings-4", 2, UiStrings.Pixelate_Section_Quick, null, (_, _) =>
+        [
+            PixelateKit.LeftBox((Control)ShotKit.Get<CheckBox>(dlg, "_quickAuto").Parent!, dlg, 10),
+            PixelateKit.LeftBox(ShotKit.Get<CheckBox>(dlg, "_quickShared"), dlg, 10),
+        ]);
+        Pair("pixelate-settings-2", 4, UiStrings.Pixelate_Section_Background, UiStrings.Pixelate_Section_Frames, (a, b) => [a, b!]);
         // 픽셀 격자 쪽(①②), 칸 색과 팔레트 쪽(①~④).
         Pair("pixelate-grid", 1, UiStrings.Pixelate_Section_Grid, UiStrings.Pixelate_Section_Size, (a, b) => [a, b!]);
         Pair("pixelate-palette", 1, UiStrings.Pixelate_Section_Downsample, UiStrings.Pixelate_Section_Palette, (a, b) =>
@@ -499,8 +504,8 @@ internal static class PixelateShots
             marks: [criteria, PixelateKit.Box(toggle, dlg, 2)]);
     }
 
-    // 원본과 미리보기 쪽: 전체 창(①~⑤), 원본 아래 막대(⑥~⑩). 색 빼기와 고정 색 쪽(①~③), 크게 보기와 색 판정 쪽(①~⑥),
-    // 픽셀 격자 쪽의 칸 경계 지역 보정(③), 설정 단계 쪽의 스티커 테두리 지우기·배경 남기기(④⑤).
+    // 원본과 미리보기 쪽: 전체 창(①~⑤), 원본 아래 막대(⑥⑦). 색 빼기와 고정 색 쪽(①~③), 크게 보기와 색 판정 쪽(①~⑥),
+    // 픽셀 격자 쪽의 칸 경계 지역 보정(③), 설정 단계 쪽의 스티커 테두리 지우기·배경 남기기(⑥⑦).
     [Shot("pixelate-view")]
     public static void View(ShotKit k)
     {
@@ -598,10 +603,10 @@ internal static class PixelateShots
         PixelateKit.OnlyExpand(k, dlg, UiStrings.Pixelate_Section_Background);
         var bg = PixelateKit.Section(dlg, UiStrings.Pixelate_Section_Background);
         PixelateKit.ScrollToTop(k, bg);
-        k.SaveControl(bg, "pixelate-settings-3", pad: 14, marks: [PixelateKit.LeftBox(ShotKit.Get<CheckBox>(dlg, "_bgSticker"), dlg, 10), PixelateKit.LeftBox(ShotKit.Get<CheckBox>(dlg, "_bgKeep"), dlg, 10)], firstNumber: 4);
+        k.SaveControl(bg, "pixelate-settings-3", pad: 14, marks: [PixelateKit.LeftBox(ShotKit.Get<CheckBox>(dlg, "_bgSticker"), dlg, 10), PixelateKit.LeftBox(ShotKit.Get<CheckBox>(dlg, "_bgKeep"), dlg, 10)], firstNumber: 6);
     }
 
-    // 넣기: 넣기 단계(①~④) + 창 아래 단추(⑤⑥).
+    // 넣기: 넣기 단계(①~④) + 창 아래 단추(⑤ 이미지 크기만큼 늘리기 ⑥ 새 탭에 추가 ⑦ 적용).
     [Shot("pixelate-output")]
     public static void Output(ShotKit k)
     {
@@ -620,12 +625,14 @@ internal static class PixelateShots
             PixelateKit.LeftBox(duration, dlg, 10),
             PixelateKit.LeftBox(palette, dlg, 10),
         ]);
+        var grow = ShotKit.Get<CheckBox>(dlg, "_growCanvas");
         var newTab = ShotKit.Get<Button>(dlg, "_newTab");
         var ok = ShotKit.Get<Button>(dlg, "OkButton");
         var row = (Control)newTab.Parent!;
         var rb = ShotKit.Bounds(row, dlg);
-        k.Save(dlg, "pixelate-output-2", crop: new Rect(dlg.Bounds.Width - 520, rb.Y - 40, 520, rb.Height + 52),
-            marks: [PixelateKit.Box(newTab, dlg, 2), PixelateKit.Box(ok, dlg, 2)], firstNumber: 5);
+        var left = Math.Max(0, ShotKit.Bounds(grow, dlg).X - 40);
+        k.Save(dlg, "pixelate-output-2", crop: new Rect(left, rb.Y - 40, dlg.Bounds.Width - left, rb.Height + 52),
+            marks: [PixelateKit.LeftBox(grow, dlg, 10), PixelateKit.Box(newTab, dlg, 2), PixelateKit.Box(ok, dlg, 2)], firstNumber: 5);
     }
 
     // AI로 다듬기: AI 단계(①~⑥) + 모델 목록(⑦).

@@ -347,7 +347,7 @@ Reloading will discard your current edits. Reload?</value></data>
   <data name="Drop_UndoLabel" xml:space="preserve"><value>Drop image</value></data>
   <data name="Drop_Added" xml:space="preserve"><value>Added as new layer: {names}</value></data>
   <data name="Drop_FramesAdded" xml:space="preserve"><value> · {count} frames added</value></data>
-  <data name="Drop_Oversized" xml:space="preserve"><value> — An image larger than the canvas was centered and the parts outside the canvas were cut. To keep everything, enlarge the canvas first in Canvas size mode (Edit > Canvas size…).</value></data>
+  <data name="Drop_Oversized" xml:space="preserve"><value> — An image larger than the canvas was centered. The parts outside the canvas are kept as off-canvas pixels and show when you enlarge the canvas (Edit > Canvas size…).</value></data>
   <data name="Drop_Unreadable" xml:space="preserve"><value>Could not read image: {names}</value></data>
   <data name="Menu_Ai_Pixelate" xml:space="preserve"><value>Pixelate AI image…</value></data>
   <data name="Menu_Ai_PixelateLayer" xml:space="preserve"><value>Pixelate current layer…</value></data>
@@ -372,6 +372,8 @@ Reloading will discard your current edits. Reload?</value></data>
   <data name="Tabs_Reloaded" xml:space="preserve"><value>Reloaded a file changed outside the app: {name}</value></data>
   <data name="Tabs_Restored" xml:space="preserve"><value>Reopened {count} tabs from last time</value></data>
   <data name="Tabs_RestoredMissing" xml:space="preserve"><value> · skipped {count} files that couldn't be opened</value></data>
+  <data name="Tabs_RestoredConverted" xml:space="preserve"><value> · converted {count} files from the older format (each layer got a copy of the canvas pivot; saving writes the new format)</value></data>
+  <data name="Message_ConvertedProject" xml:space="preserve"><value>· Converted from the older format (version {version}): each layer got a copy of the old canvas pivot. Saving writes the new format.</value></data>
   <data name="Tabs_TempTitle" xml:space="preserve"><value>Temporary title…</value></data>
   <data name="Tabs_TempTitle_DialogTitle" xml:space="preserve"><value>Temporary title</value></data>
   <data name="Tabs_TempTitle_Prompt" xml:space="preserve"><value>Shown on the tab until you save, and suggested as the file name the first time you save (leave empty to clear).</value></data>
@@ -380,7 +382,7 @@ Reloading will discard your current edits. Reload?</value></data>
   <data name="Ai_TempTitle_HasFile" xml:space="preserve"><value>"{name}" already has a file, so it can't have a temporary title (its name is the file name).</value></data>
   <data name="Ai_TempTitle_Detached" xml:space="preserve"><value>The Effect Maker preview scene can't have a temporary title.</value></data>
   <data name="Ai_NewProjectTitled" xml:space="preserve"><value>New project "{title}" {width}×{height} — no save location yet</value></data>
-  <data name="Place_TransformHint" xml:space="preserve"><value> — Transform mode: drag inside = move, handles = size, outside = rotate, Enter = apply (parts outside the canvas are cut then), Esc = keep as inserted</value></data>
+  <data name="Place_TransformHint" xml:space="preserve"><value> — Transform mode: drag inside = move, handles = size, outside = rotate, Enter = apply (parts outside the canvas are kept as off-canvas pixels), Esc = keep as inserted</value></data>
   <data name="Place_MultiFrameHint" xml:space="preserve"><value> — inserted without transform mode because the image has several frames (move each frame with Ctrl+T)</value></data>
   <data name="Open_FilterSupported" xml:space="preserve"><value>All supported files</value></data>
   <data name="Open_FilterImages" xml:space="preserve"><value>Images (PNG, JPG, BMP, GIF, WebP, ICO, AVIF, HEIC)</value></data>

@@ -29,8 +29,12 @@ public sealed record ProjectSaveResult(string ProjectPath, ProjectExportResult? 
 /// </summary>
 public static partial class ProjectIO
 {
-    /// <summary>4 = 레이어 효과를 안정된 종류 ID와 설정 객체로 쓰는 판(<see cref="EffectCodec"/>). 3 이하의 짧은 효과 ID는 읽을 때 바꾼다.</summary>
-    public const int CurrentVersion = 4;
+    /// <summary>
+    /// 5 = 레이어마다 피벗(일반 레이어·그룹 포함 — 레이어의 <c>pivot</c>, 프레임의 <c>layerPivots</c>)과 캔버스 피벗의 대표 레이어(<c>pivotLayer</c>)를 쓰는 판.
+    /// 4 이하 파일은 일반 레이어·그룹이 캔버스 피벗(기본 + 프레임마다)을 자기 피벗으로 갖도록 바꿔 읽는다(그림은 그대로, <see cref="SpriteProject.ConvertedFromVersion"/>).
+    /// 4 = 레이어 효과를 안정된 종류 ID와 설정 객체로 쓰는 판(<see cref="EffectCodec"/>). 3 이하의 짧은 효과 ID는 읽을 때 바꾼다.
+    /// </summary>
+    public const int CurrentVersion = 5;
     public const string ProjectEntryName = "project.json";
 
     internal static readonly JsonSerializerOptions Options = new()
@@ -862,7 +866,7 @@ public static partial class ProjectIO
                 Kind = LayerKind.Part,
                 PartSize = new Size(sd.Width, sd.Height),
                 PartOffset = offsets[si],
-                PartPivot = sd.Pivot?.ToPivot() ?? project.Sprite.DefaultPivot,
+                Pivot = sd.Pivot?.ToPivot() ?? project.Sprite.DefaultPivot,
                 PartBorder = sd.Border is { Length: >= 4 } b ? new SpriteBorder(b[0], b[1], b[2], b[3]) : SpriteBorder.None,
                 PartSourceRect = Source(sd),
             };
@@ -874,7 +878,8 @@ public static partial class ProjectIO
                 if (visible[li].Item1 && cels.TryGetValue((si, li), out var cel)) flat.Composite(cel, 0, 0, visible[li].Item2);
             if (!flat.IsRegionEmpty(flat.Bounds)) project.SetCelRaw(part, frame, flat);
         }
-        var group = new Layer(project.UniqueLayerName("부위")) { Kind = LayerKind.Group };
+        var group = new Layer(project.UniqueLayerName("부위")) { Kind = LayerKind.Group, Pivot = project.Sprite.DefaultPivot };
+        project.ConvertedFromVersion = dto.Version;
         foreach (var part in parts) part.Parent = group;
         project.ReplaceLayersRaw([.. Enumerable.Reverse(parts), group]);
 
@@ -908,7 +913,7 @@ public static partial class ProjectIO
             PartHeight = l.IsPart ? l.PartSize.Height : null,
             PartX = l.IsPart ? l.PartOffset.X : null,
             PartY = l.IsPart ? l.PartOffset.Y : null,
-            PartPivot = l.IsPart ? PivotDto.From(l.PartPivot) : null,
+            Pivot = PivotDto.From(l.Pivot),
             PartBorder = l.IsPart && !l.PartBorder.IsNone ? [l.PartBorder.Left, l.PartBorder.Top, l.PartBorder.Right, l.PartBorder.Bottom] : null,
             PartSource = l.IsPart && l.PartSourceRect is { } r ? [r.X, r.Y, r.Width, r.Height] : null,
             Skins = l.IsGroup ? l.AllSkins.Select(s => s.Name).ToList() : null,
@@ -923,8 +928,8 @@ public static partial class ProjectIO
             DurationMs = f.DurationMs,
             Pivot = f.Pivot is { } fp ? PivotDto.From(fp) : null,
             Name = f.Name,
-            PartPivots = NullIfEmptyList(f.PartPivots.Where(kv => kv.Key.IsPart && p.IndexOf(kv.Key) >= 0)
-                .Select(kv => new FramePartPivotDto { Layer = p.IndexOf(kv.Key), Pivot = PivotDto.From(kv.Value) }).OrderBy(d => d.Layer).ToList()),
+            LayerPivots = NullIfEmptyList(f.LayerPivots.Where(kv => p.IndexOf(kv.Key) >= 0)
+                .Select(kv => new FrameLayerPivotDto { Layer = p.IndexOf(kv.Key), Pivot = PivotDto.From(kv.Value) }).OrderBy(d => d.Layer).ToList()),
             PartShifts = NullIfEmptyList(f.PartShifts.Where(kv => kv.Key.IsPart && p.IndexOf(kv.Key) >= 0)
                 .Select(kv => new FramePartShiftDto { Layer = p.IndexOf(kv.Key), X = kv.Value.X, Y = kv.Value.Y }).OrderBy(d => d.Layer).ToList()),
         }).ToList(),
@@ -932,6 +937,7 @@ public static partial class ProjectIO
         {
             Name = t.Name, From = t.From, To = t.To, Direction = t.Direction, Loop = t.Loop, Color = t.Color.ToHex(),
         }).ToList(),
+        PivotLayer = p.PivotLayer is { } pivotLayer && p.IndexOf(pivotLayer) is >= 0 and var pli ? pli : null,
         Unity = UnityDto.From(p.Sprite),
         Export = ExportDto.From(p.Export, p),
         Outfits = p.Outfits.Count == 0 ? null : p.Outfits.Select(o => new OutfitDto
@@ -1073,6 +1079,8 @@ public static partial class ProjectIO
             if (ScriptLibrary.IsHash(hash) && source is not null && ScriptEffectProgram.HashOf(source) == hash) p.AddScript(source);
             else warnings?.Add(Chickxel.Core.Localization.DomainStrings.FormatProject_BadScript(hash: ShortHash(hash)));
         }
+        // 버전 4 이하: 부위만 피벗이 있었다(일반 레이어·그룹은 아래에서 캔버스 피벗을 옮겨 받음)
+        bool legacyPivots = dto.Version < 5;
         var layerDtos = dto.Layers ?? [];
         var fileLayers = new List<Layer>(layerDtos.Count);
         foreach (var l in layerDtos)
@@ -1086,12 +1094,12 @@ public static partial class ProjectIO
                 Kind = kind,
                 Collapsed = kind == LayerKind.Group && l.Collapsed == true,
                 EffectsCollapsed = l.EffectsCollapsed == true,
+                Pivot = (legacyPivots ? kind == LayerKind.Part ? l.PartPivot : null : l.Pivot)?.ToPivot() ?? Pivot.Center,
             };
             if (kind == LayerKind.Part)
             {
                 layer.PartSize = new Size(Math.Clamp(l.PartWidth ?? 1, 1, PixelImage.MaxSize), Math.Clamp(l.PartHeight ?? 1, 1, PixelImage.MaxSize));
                 layer.PartOffset = new Point(l.PartX ?? 0, l.PartY ?? 0);
-                layer.PartPivot = l.PartPivot?.ToPivot() ?? Pivot.Center;
                 layer.PartBorder = l.PartBorder is { Length: >= 4 } b ? new SpriteBorder(b[0], b[1], b[2], b[3]) : SpriteBorder.None;
                 layer.PartSourceRect = l.PartSource is { Length: >= 4 } r && r[2] > 0 && r[3] > 0 ? new Rectangle(r[0], r[1], r[2], r[3]) : null;
             }
@@ -1146,7 +1154,8 @@ public static partial class ProjectIO
                 for (int k = 1; k < all.Count && k < owners.Count; k++)
                     if (ResolveLayer(fileLayers, owners[k]) is { IsPart: true } owner && ReferenceEquals(owner.Parent, fileLayers[i])) all[k].Owner = owner;
             }
-        if (p.Layers.Count == 0) p.AddLayerRaw(new Layer(p.NextLayerName()));
+        Layer? fallback = null;
+        if (p.Layers.Count == 0) p.AddLayerRaw(fallback = new Layer(p.NextLayerName()));
 
         foreach (var f in dto.Frames ?? [])
         {
@@ -1156,9 +1165,10 @@ public static partial class ProjectIO
                 Pivot = f.Pivot?.ToPivot(),
                 Name = string.IsNullOrWhiteSpace(f.Name) ? null : f.Name,
             };
-            // 부위마다 이 프레임만의 피벗(부위가 아닌 레이어·없는 번호는 버림)
-            foreach (var pp in f.PartPivots ?? [])
-                if (ResolveLayer(fileLayers, pp.Layer) is { IsPart: true } part && pp.Pivot is { } pivot) frame.PartPivots[part] = pivot.ToPivot();
+            // 레이어마다 이 프레임만의 피벗(없는 번호는 버림 — 버전 4 이하는 부위만)
+            foreach (var pp in (legacyPivots ? f.PartPivots : f.LayerPivots) ?? [])
+                if (ResolveLayer(fileLayers, pp.Layer) is { } owner && (!legacyPivots || owner.IsPart) && pp.Pivot is { } pivot)
+                    frame.LayerPivots[owner] = pivot.ToPivot();
             // 부위마다 이 프레임에서 옮긴 거리(부위가 아닌 레이어·없는 번호·0은 버림)
             foreach (var ps in f.PartShifts ?? [])
                 if (ResolveLayer(fileLayers, ps.Layer) is { IsPart: true } part && (ps.X != 0 || ps.Y != 0)) frame.PartShifts[part] = new Point(ps.X, ps.Y);
@@ -1185,9 +1195,28 @@ public static partial class ProjectIO
         }
 
         ApplySettings(p, dto);
+        if (fallback is not null) fallback.Pivot = p.Sprite.DefaultPivot;
+        if (legacyPivots) MigrateCanvasPivots(p, dto.Version);
+        else if (dto.PivotLayer is int pli && ResolveLayer(fileLayers, pli) is { } pivotLayer && p.IndexOf(pivotLayer) >= 0) p.SetPivotLayerRaw(pivotLayer);
         ApplyOutfits(p, dto, fileLayers);
         if (dto.Export is { } export) ApplySheets(p, export, fileLayers, warnings);
         return (p, fileLayers);
+    }
+
+    /// <summary>
+    /// 버전 4 이하 파일 바꾸기: 일반 레이어·그룹의 효과는 캔버스 피벗을 썼으므로 캔버스 피벗(기본 = 레이어 피벗, 프레임마다 = 그 프레임만의 피벗)을
+    /// 일반 레이어·그룹마다 옮겨 받아 그림이 같게 한다(캔버스 피벗은 그대로, 대표 레이어 없음). 바꾼 버전을 <see cref="SpriteProject.ConvertedFromVersion"/>에 남긴다.
+    /// </summary>
+    private static void MigrateCanvasPivots(SpriteProject p, int version)
+    {
+        foreach (var layer in p.Layers)
+        {
+            if (layer.IsPart) continue;
+            layer.Pivot = p.Sprite.DefaultPivot;
+            foreach (var frame in p.Frames)
+                if (frame.Pivot is { } own) frame.LayerPivots[layer] = own;
+        }
+        p.ConvertedFromVersion = version;
     }
 
     /// <summary>파일 안 (레이어 번호, 스킨 번호) → 그룹 스킨. 그룹이 아니거나 번호가 잘못되면 null.</summary>
@@ -1402,6 +1431,8 @@ public static partial class ProjectIO
         public List<int[]>? CelLinks { get; set; }
         /// <summary>링크 묶음 색(없으면 행에서 쓰지 않은 색 차례로 보임): [레이어, 묶음의 첫 프레임, 색 번호(<see cref="SpriteProject.LinkColorNames"/>)(, 스킨 번호)].</summary>
         public List<int[]>? CelLinkColors { get; set; }
+        /// <summary>캔버스 피벗의 대표 레이어 번호(없으면 캔버스 자신의 피벗, 버전 5부터).</summary>
+        public int? PivotLayer { get; set; }
     }
 
     /// <summary>착장 프리셋: 이름, 그룹마다 스킨(레이어 = 그룹 번호), 부위 재정의(레이어 = 부위 번호, 스킨 = 그 그룹의 스킨 번호).</summary>
@@ -1444,6 +1475,9 @@ public static partial class ProjectIO
         public int? PartHeight { get; set; }
         public int? PartX { get; set; }
         public int? PartY { get; set; }
+        /// <summary>레이어 피벗(부위는 부위 기준, 그 밖에는 캔버스 기준 — 버전 5부터 모든 레이어).</summary>
+        public PivotDto? Pivot { get; set; }
+        /// <summary>버전 4 이하 전용(쓰지 않음): 부위 피벗.</summary>
         public PivotDto? PartPivot { get; set; }
         /// <summary>부위 테두리 [왼쪽, 위, 오른쪽, 아래].</summary>
         public int[]? PartBorder { get; set; }
@@ -1582,13 +1616,15 @@ public static partial class ProjectIO
         public int DurationMs { get; set; } = Frame.DefaultDurationMs;
         public PivotDto? Pivot { get; set; }
         public string? Name { get; set; }
-        /// <summary>부위마다 이 프레임만의 피벗(레이어 번호, 없으면 null).</summary>
-        public List<FramePartPivotDto>? PartPivots { get; set; }
+        /// <summary>레이어마다 이 프레임만의 피벗(레이어 번호, 없으면 null, 버전 5부터).</summary>
+        public List<FrameLayerPivotDto>? LayerPivots { get; set; }
+        /// <summary>버전 4 이하 전용(쓰지 않음): 부위마다 이 프레임만의 피벗.</summary>
+        public List<FrameLayerPivotDto>? PartPivots { get; set; }
         /// <summary>부위마다 이 프레임에서 기준 위치에서 옮긴 거리(레이어 번호, 없으면 null).</summary>
         public List<FramePartShiftDto>? PartShifts { get; set; }
     }
 
-    private sealed class FramePartPivotDto
+    private sealed class FrameLayerPivotDto
     {
         public int Layer { get; set; }
         public PivotDto? Pivot { get; set; }

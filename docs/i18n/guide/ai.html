@@ -263,10 +263,10 @@
 <tr><td><strong>{{UiStrings.Chat_Help_GroupFrames}}</strong></td><td>{{UiStrings.Chat_Help_GroupFrames_Text}}</td><td><code>add_frame</code> <code>delete_frame</code> <code>set_frame_duration</code> <code>add_tag</code> <code>link_cels</code> <code>unlink_cels</code> <code>set_link_color</code></td></tr>
 <tr><td><strong>{{UiStrings.Chat_Help_GroupLayers}}</strong></td><td>{{UiStrings.Chat_Help_GroupLayers_Text}}</td><td><code>add_layer</code> <code>set_layer</code> <code>set_current</code></td></tr>
 <tr><td><strong>{{UiStrings.Chat_Help_GroupParts}}</strong></td><td>{{UiStrings.Chat_Help_GroupParts_Text}}</td><td><code>add_group</code> <code>add_part</code> <code>set_part</code></td></tr>
-<tr><td><strong>{{UiStrings.Chat_Help_GroupSkins}}</strong></td><td>{{UiStrings.Chat_Help_GroupSkins_Text}}</td><td><code>list_skins</code> <code>add_skin</code> <code>set_skin</code> <code>list_outfits</code> <code>save_outfit</code> <code>apply_outfit</code></td></tr>
+<tr><td><strong>{{UiStrings.Chat_Help_GroupSkins}}</strong></td><td>{{UiStrings.Chat_Help_GroupSkins_Text}}</td><td><code>list_skins</code> <code>add_skin</code> <code>set_skin</code> <code>edit_skin</code> <code>list_outfits</code> <code>save_outfit</code> <code>apply_outfit</code></td></tr>
 <tr><td><strong><a href="#ai-effects">{{UiStrings.Chat_Help_GroupEffects}}</a></strong></td><td>{{UiStrings.Chat_Help_GroupEffects_Text}}</td><td><code>list_effect_types</code> <code>get_effects</code> <code>add_effect</code> <code>set_effect</code> <code>remove_effect</code> <code>apply_effects</code> <code>expand_canvas_for_effects</code></td></tr>
 <tr><td><strong><a href="#ai-effects">{{UiStrings.Chat_Help_GroupEffectMaker}}</a></strong></td><td>{{UiStrings.Chat_Help_GroupEffectMaker_Text}}</td><td><code>get_script_api</code> <code>write_script_effect</code> <code>preview_effects</code> <code>save_script_effect</code> <code>list_script_effects</code> <code>get_script_effect_source</code> <code>get_effect_maker_source</code> <code>set_effect_maker_source</code> <code>check_effect_maker</code></td></tr>
-<tr><td><strong>{{UiStrings.Chat_Help_GroupCanvas}}</strong></td><td>{{UiStrings.Chat_Help_GroupCanvas_Text}}</td><td><code>resize_canvas</code> <code>set_palette</code> <code>set_colors</code></td></tr>
+<tr><td><strong>{{UiStrings.Chat_Help_GroupCanvas}}</strong></td><td>{{UiStrings.Chat_Help_GroupCanvas_Text}}</td><td><code>resize_canvas</code> <code>set_canvas_pivot</code> <code>set_palette</code> <code>set_colors</code></td></tr>
 <tr><td><strong>{{UiStrings.Chat_Help_GroupFiles}}</strong></td><td>{{UiStrings.Chat_Help_GroupFiles_Text}}</td><td><code>new_project</code> <code>set_document_title</code> <code>save_project</code> <code>open_file</code></td></tr>
 <tr><td><strong><a href="#ai-references">{{UiStrings.Chat_Help_GroupReferences}}</a></strong></td><td>{{UiStrings.Chat_Help_GroupReferences_Text}}</td><td><code>search_references</code> <code>get_reference</code> <code>get_style_rules</code> <code>add_reference</code> <code>set_reference_info</code></td></tr>
 <tr><td><strong><a href="#ai-questions">{{UiStrings.Chat_Help_GroupOther}}</a></strong></td><td>{{ai-edits.other}}</td><td><code>ask_user</code></td></tr>
@@ -282,7 +282,7 @@
 <h3 id="ai-generate">{{ai-generate.1}}</h3>
 <p>{{ai-generate.2}}</p>
 <h4>{{ai-generate.h-panel}}</h4>
-<figure class="shot"><img src="{{root}}assets/guide/ai-generate.png" alt="{{ai-generate.9.alt}}" width="810" height="259" loading="lazy"><figcaption>{{ai-generate.10}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-generate.png" alt="{{ai-generate.9.alt}}" width="810" height="262" loading="lazy"><figcaption>{{ai-generate.10}}</figcaption></figure>
 <ul>
 <li>{{ai-generate.3}}</li>
 <li>{{ai-generate.4}}</li>
@@ -290,16 +290,17 @@
 <li>{{ai-generate.42}}</li>
 </ul>
 <h4>{{ai-generate.h-options}}</h4>
-<figure class="shot"><img src="{{root}}assets/guide/ai-generate-2.png" alt="{{ai-generate.29.alt}}" width="810" height="655" loading="lazy"><figcaption>{{ai-generate.30}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-generate-2.png" alt="{{ai-generate.29.alt}}" width="810" height="694" loading="lazy"><figcaption>{{ai-generate.30}}</figcaption></figure>
 <div class="table-wrap"><table>
 <thead><tr><th>{{ai-generate.11}}</th><th>{{ai-generate.12}}</th></tr></thead>
 <tbody>
-<tr><td>⑧ <strong>{{UiStrings.AiDraw_ResizeResult}}</strong></td><td>{{ai-generate.14}}</td></tr>
-<tr><td>⑨ <strong>{{UiStrings.AiDraw_Size}}</strong></td><td>{{ai-generate.16}}</td></tr>
-<tr><td>⑩ <strong>{{UiStrings.AiDraw_RemoveBackground}}</strong></td><td>{{ai-generate.18}}</td></tr>
-<tr><td>⑪ <strong>{{UiStrings.AiDraw_AutoOptimize}}</strong></td><td>{{ai-generate.20}}</td></tr>
+<tr><td>⑧ <strong>{{UiStrings.AiDraw_AutoPrompt}}</strong></td><td>{{ai-generate.47}}</td></tr>
+<tr><td>⑨ <strong>{{UiStrings.AiDraw_ResizeResult}}</strong></td><td>{{ai-generate.14}}</td></tr>
+<tr><td>⑩ <strong>{{UiStrings.AiDraw_Size}}</strong></td><td>{{ai-generate.16}}</td></tr>
+<tr><td>⑪ <strong>{{UiStrings.AiDraw_RemoveBackground}}</strong></td><td>{{ai-generate.18}}</td></tr>
+<tr><td>⑫ <strong>{{UiStrings.AiDraw_AutoOptimize}}</strong></td><td>{{ai-generate.20}}</td></tr>
 <tr><td>{{ai-generate.21}}</td><td>{{ai-generate.22}}</td></tr>
-<tr><td>⑬ <strong>{{UiStrings.AiDraw_Style}}</strong></td><td>{{ai-generate.24}}</td></tr>
+<tr><td>⑭ <strong>{{UiStrings.AiDraw_Style}}</strong></td><td>{{ai-generate.24}}</td></tr>
 <tr><td>{{ai-generate.25}}</td><td>{{ai-generate.26}}</td></tr>
 <tr><td>{{ai-generate.27}}</td><td>{{ai-generate.28}}</td></tr>
 </tbody>
@@ -310,18 +311,18 @@
 <li>{{ai-generate.31}}</li>
 </ul>
 <h4>{{ai-generate.h-anim}}</h4>
-<figure class="shot"><img src="{{root}}assets/guide/ai-generate-3.png" alt="{{ai-generate.35.alt}}" width="470" height="212" loading="lazy"><figcaption>{{ai-generate.36}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-generate-3.png" alt="{{ai-generate.35.alt}}" width="470" height="215" loading="lazy"><figcaption>{{ai-generate.36}}</figcaption></figure>
 <ul>
 <li>{{ai-generate.32}}</li>
 <li>{{ai-generate.44}}</li>
 </ul>
 <h4>{{ai-generate.h-card}}</h4>
-<figure class="shot"><img src="{{root}}assets/guide/ai-generate-4.png" alt="{{ai-generate.37.alt}}" width="468" height="347" loading="lazy"><figcaption>{{ai-generate.38}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-generate-4.png" alt="{{ai-generate.37.alt}}" width="468" height="350" loading="lazy"><figcaption>{{ai-generate.38}}</figcaption></figure>
 <ul class="marks">
 <li>{{ai-generate.33}}</li>
 </ul>
 <h4>{{ai-generate.h-claude}}</h4>
-<figure class="shot"><img src="{{root}}assets/guide/ai-generate-5.png" alt="{{ai-generate.39.alt}}" width="438" height="185" loading="lazy"><figcaption>{{ai-generate.40}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-generate-5.png" alt="{{ai-generate.39.alt}}" width="418" height="188" loading="lazy"><figcaption>{{ai-generate.40}}</figcaption></figure>
 <p>{{ai-generate.34}}</p>
 <h4>{{ai-generate.h-prompt}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/ai-generate-6.png" alt="{{ai-generate.45.alt}}" width="468" height="516" loading="lazy"><figcaption>{{ai-generate.46}}</figcaption></figure>

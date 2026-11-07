@@ -21,7 +21,7 @@ public class ImageDropTests
     [Theory]
     [InlineData(3, 3, 10, 10, 9, 9, false)]  // 홀수: 놓은 픽셀이 정가운데
     [InlineData(4, 2, 10, 10, 8, 9, false)]  // 짝수: 가운데 둘 중 오른쪽·아래
-    [InlineData(5, 5, 0, 0, -2, -2, false)]  // 가장자리: 캔버스 밖은 넣을 때 잘림
+    [InlineData(5, 5, 0, 0, -2, -2, false)]  // 가장자리: 캔버스 밖은 캔버스 밖 그림으로 남음
     [InlineData(40, 8, 3, 3, -4, 12, true)]  // 가로가 캔버스보다 큼: 캔버스 가운데
     [InlineData(5, 5, -10, 40, -2, 29, false)] // 캔버스 밖에 놓음: 가장 가까운 가장자리 픽셀 기준
     [InlineData(33, 33, 3, 3, -1, -1, true)] // 홀수 차이: 왼쪽·위로 내림
@@ -33,7 +33,7 @@ public class ImageDropTests
     }
 
     [Fact]
-    public void Apply_AddsLayerAboveCurrentWithClippedPixels_OneUndoStep()
+    public void Apply_AddsLayerAboveCurrent_KeepsOutsidePixels_OneUndoStep()
     {
         var p = new SpriteProject(8, 8);
         p.AddLayer(); // 레이어 2개, 현재 = 0
@@ -54,10 +54,39 @@ public class ImageDropTests
         Assert.Equal(Color32.Transparent, cel.Get(2, 7));
         Assert.Equal(Color32.Transparent, cel.Get(0, 5));
         Assert.Equal(4, cel.Pixels.Count(c => c == Red));
+        // 캔버스 밖으로 나간 5픽셀은 캔버스 밖 그림으로 남아 셀 전체는 넣은 그림 그대로다.
+        var (full, origin) = p.GetFullCel(1, 0);
+        Assert.Equal(Solid(3, 3, Red).Pixels, full.Crop(new Rectangle(-1 - origin.X, 6 - origin.Y, 3, 3)).Pixels);
+        Assert.Equal(9, full.Pixels.Count(c => c == Red));
 
         Assert.Equal(undoBefore + 1, p.History.UndoCount);
         p.Undo();
         Assert.Equal(2, p.Layers.Count);
+    }
+
+    [Fact]
+    public void Apply_GrowCanvas_EnlargesFromCenterToFitImage_InSameUndoStep()
+    {
+        var p = new SpriteProject(4, 4);
+        p.SetCel(0, 0, Solid(4, 4, Blue));
+        var big = new PixelImage(6, 2);
+        for (int x = 0; x < 6; x++) big.Set(x, 0, new Color32((byte)(x + 1), 0, 0));
+        int undoBefore = p.History.UndoCount;
+
+        var result = ImageDrop.Apply(p, [One("big", big)], 0, 0, new Point(2, 2), "drop", growCanvas: true);
+
+        Assert.Equal((6, 4), (p.Width, p.Height));
+        Assert.False(result.Oversized);
+        Assert.Null(p.GetCelOverflow(1, 0));
+        Assert.Equal(new Color32(1, 0, 0), p.GetCel(1, 0)!.Get(0, 1));
+        Assert.Equal(new Color32(6, 0, 0), p.GetCel(1, 0)!.Get(5, 1));
+        // 원래 그림은 늘린 캔버스 가운데(가로 +1)에 그대로.
+        Assert.Equal(Blue, p.GetCel(0, 0)!.Get(1, 0));
+        Assert.Equal(Color32.Transparent, p.GetCel(0, 0)!.Get(0, 0));
+
+        Assert.Equal(undoBefore + 1, p.History.UndoCount);
+        p.Undo();
+        Assert.Equal((4, 4, 1), (p.Width, p.Height, p.Layers.Count));
     }
 
     [Fact]
@@ -85,6 +114,47 @@ public class ImageDropTests
         // 가로 6 → x -1부터: 캔버스 x0 = 그림 x1, 세로 2 → y 1부터
         Assert.Equal(new Color32(2, 0, 0), cel.Get(0, 1));
         Assert.Equal(new Color32(5, 0, 0), cel.Get(3, 1));
+        // 잘리지 않고 캔버스 밖 그림으로 남는다: 캔버스를 키우면 양 끝이 보인다.
+        p.ResizeCanvas(6, 4, Anchor.Center);
+        Assert.Equal(new Color32(1, 0, 0), p.GetCel(1, 0)!.Get(0, 1));
+        Assert.Equal(new Color32(6, 0, 0), p.GetCel(1, 0)!.Get(5, 1));
+    }
+
+    [Fact]
+    public void LiftingInsertedImage_ClearsItsOutsidePixels_UntilCancelled()
+    {
+        // 변형 모드로 넣은 그림을 들 때(BeginPlacedTransform): 셀과 캔버스 밖 그림을 비우고 떠 있는 원본만 남긴다 — 옮긴 뒤 예전 자리에 남지 않게.
+        var p = new SpriteProject(4, 4);
+        var image = TestUtil.RandomImage(8, 4, opaque: true);
+        var result = ImageDrop.Apply(p, [One("big", image)], 0, 0, new Point(0, 0), "drop");
+        int layer = p.IndexOf(result.Layers[0]);
+        Assert.NotNull(p.GetCelOverflow(layer, 0));
+
+        var cel = p.BeginCelStroke(layer, 0);
+        var selection = new Selection { AnchoringOutside = (_, floating, at) => p.AddStrokeOverflow(floating, at) };
+        Assert.True(p.ClearStrokeOverflow());
+        cel.Clear(Color32.Transparent);
+        selection.SetFloating(image.Clone(), new PixelMask(new Rectangle(result.Locations[0], image.Size)));
+        selection.MoveBy(cel, 0, 2);
+        selection.Deselect(cel);
+        Assert.True(p.CommitCelStroke("변형"));
+
+        // 아래로 2 옮긴 그림만 남는다(예전 자리 위 두 줄은 비어 있음).
+        var (full, origin) = p.GetFullCel(layer, 0);
+        var expected = new PixelImage(8, 6);
+        expected.Blit(image, 0, 2);
+        Assert.Equal(new Point(-2, 0), origin);
+        Assert.Equal(expected.Pixels, full.Pixels);
+
+        // 취소하면 넣은 그대로(캔버스 밖 그림 포함).
+        p.Undo();
+        p.BeginCelStroke(layer, 0);
+        Assert.True(p.ClearStrokeOverflow());
+        Assert.Null(p.GetCelOverflow(layer, 0));
+        p.CancelCelStroke();
+        var (back, backOrigin) = p.GetFullCel(layer, 0);
+        Assert.Equal(new Point(-2, 0), backOrigin);
+        Assert.Equal(image.Pixels, back.Pixels);
     }
 
     [Fact]
@@ -135,7 +205,7 @@ public class ImageDropTests
     [Fact]
     public void Apply_ReportsUncroppedLocation_AndFloatingCopyCropsOnlyWhereAnchored()
     {
-        // 64×64 그림을 16×16 캔버스에: 캔버스 가운데에 놓여 잘려 들어가고, 위치는 잘리기 전 자리.
+        // 64×64 그림을 16×16 캔버스에: 캔버스 가운데에 놓이고(밖은 캔버스 밖 그림), 위치는 그림 왼쪽 위 자리.
         var p = new SpriteProject(16, 16);
         var image = Solid(64, 64, Red);
         image.Set(0, 0, Blue); // 왼쪽 위 모서리 표시
@@ -145,7 +215,7 @@ public class ImageDropTests
         var cel = p.GetCel(p.IndexOf(result.Layers[0]), 0)!;
         Assert.Equal(Red, cel.Get(0, 0));
 
-        // 잘리기 전 원본을 그 자리에 띄워 두면 캔버스 밖 픽셀도 남아 있다가, 옮긴 뒤 내려놓을 때 그 자리 기준으로 잘린다.
+        // 원본을 그 자리에 띄워 두면 캔버스 밖 픽셀도 남아 있다가, 옮긴 뒤 내려놓을 때 그 자리 기준으로 잘린다(셀만 볼 때).
         var sel = new Selection();
         cel.Clear(Color32.Transparent);
         sel.SetFloating(image.Clone(), new PixelMask(new Rectangle(result.Locations[0], image.Size)));

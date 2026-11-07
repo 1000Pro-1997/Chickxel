@@ -93,7 +93,7 @@ internal static class ScreenMainShots
         }
     }
 
-    /// <summary>숫자 칸(도구 설정의 브러시 크기) ①과 우클릭 자주 쓰는 값 목록 ②.</summary>
+    /// <summary>숫자 칸(도구 설정의 브러시 크기) ①과 우클릭 자주 쓰는 값 목록 ②, 칸 오른쪽 끝 위/아래 단추 ③.</summary>
     [Shot("screen-common-controls")]
     public static void CommonControls(ShotKit k)
     {
@@ -103,15 +103,19 @@ internal static class ScreenMainShots
         var size = ShotKit.Get<NumericUpDown>(options, "_sizeNum");
         Ctx(main).BrushSize = 4;
         k.Settle(200);
-        // 칸 오른쪽 끝을 우클릭해 목록이 칸을 가리지 않게.
+        // 칸 가운데 아래를 우클릭해 목록이 칸 아래로 열리게(오른쪽 끝 위/아래 단추를 가리지 않게).
         var s = ShotKit.Bounds(size, main);
-        k.Click(main, new Point(s.Right - 3, s.Bottom - 2), MouseButton.Right, settleMs: 500);
+        k.Click(main, new Point(s.Center.X, s.Bottom - 2), MouseButton.Right, settleMs: 500);
         var list = PopupArea(k, main) ?? throw new InvalidOperationException("no preset list");
         var brush = ShotKit.Get<Control>(options, "_brushBox");
         var o = ShotKit.Bounds(options, main);
         var panel = new Rect(o.X, o.Y, o.Width, ShotKit.Bounds(brush, main).Bottom + 4 - o.Y);
-        var field = ShotKit.FindText(options, "Size").GetVisualAncestors().OfType<Control>().First(a => ShotKit.Bounds(a, main).Contains(s.Center));
-        Shot(k, main, null, panel.Union(list).Inflate(6), [Room(field, main), Pop(list)], only: [panel, list]);
+        var label = ShotKit.FindText(options, "Size");
+        var spin = (Control)size.InnerRightContent!;
+        // 번호 동그라미가 숫자 값을 가리지 않게: ① 칸 왼쪽 여백, ② 목록 왼쪽(칸 아래), ③ 단추 모서리.
+        var listMark = new Rect(list.X - 16, list.Y + 8, list.Width + 16, list.Height - 8);
+        Shot(k, main, null, panel.Union(list).Inflate(new Thickness(22, 6, 6, 6)),
+            [Left(U(main, label, size)), listMark, ShotKit.Bounds(spin, main).Inflate(2)], only: [panel, list]);
     }
 
     /// <summary>도구 막대: ① 폴더 단추 ② 묶음 칸 ③ 펼친 목록 ④ 저장 ⑤ 되돌리기.</summary>

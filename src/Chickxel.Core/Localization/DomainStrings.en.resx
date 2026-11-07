@@ -138,6 +138,7 @@
   <data name="Project_LockedLayerCannotDraw" xml:space="preserve"><value>Can't draw on a locked layer.</value></data>
   <data name="Project_GroupCannotDraw" xml:space="preserve"><value>Can't draw on a group layer — select a part layer.</value></data>
   <data name="Project_NotPartLayer" xml:space="preserve"><value>Not a part layer.</value></data>
+  <data name="Project_NotNormalLayer" xml:space="preserve"><value>Not a normal layer.</value></data>
   <data name="Project_AddLayer" xml:space="preserve"><value>Add layer</value></data>
   <data name="Project_AddGroup" xml:space="preserve"><value>Add group</value></data>
   <data name="Project_AddPartRequiresGroup" xml:space="preserve"><value>Parts can only be added to a group layer in this project.</value></data>
@@ -151,8 +152,9 @@
   <data name="Project_ResizePart" xml:space="preserve"><value>Part size</value></data>
   <data name="Project_LayerSize" xml:space="preserve"><value>Layer size</value></data>
   <data name="Project_LayerSizeNotPartRect" xml:space="preserve"><value>A part's original rectangle must be its part area.</value></data>
-  <data name="Project_PartPivot" xml:space="preserve"><value>Part pivot</value></data>
-  <data name="Project_PartFramePivot" xml:space="preserve"><value>Part frame pivot</value></data>
+  <data name="Project_LayerPivot" xml:space="preserve"><value>Layer pivot</value></data>
+  <data name="Project_LayerFramePivot" xml:space="preserve"><value>Layer frame pivot</value></data>
+  <data name="Project_PivotLayer" xml:space="preserve"><value>Pivot representative layer</value></data>
   <data name="Project_PartFramesFrom" xml:space="preserve"><value>Part frame position and pivot</value></data>
   <data name="Project_PartBorder" xml:space="preserve"><value>Part border</value></data>
   <data name="Project_DefaultLayerName" xml:space="preserve"><value>Layer {number}</value></data>
@@ -178,7 +180,12 @@
   <data name="Project_CannotMergePartGroup" xml:space="preserve"><value>Part and group layers can't be merged down.</value></data>
   <data name="Project_MergeDown" xml:space="preserve"><value>Merge down</value></data>
   <data name="Project_LayerProperties" xml:space="preserve"><value>Layer properties</value></data>
+  <data name="Project_HideOtherLayers" xml:space="preserve"><value>Hide other layers</value></data>
+  <data name="Project_ShowAllLayers" xml:space="preserve"><value>Show all layers</value></data>
+  <data name="Project_LockOtherLayers" xml:space="preserve"><value>Lock other layers</value></data>
+  <data name="Project_UnlockAllLayers" xml:space="preserve"><value>Unlock all layers</value></data>
   <data name="Project_LayerEffects" xml:space="preserve"><value>Layer effects</value></data>
+  <data name="Project_ExpandCanvasForEffect" xml:space="preserve"><value>Expand canvas for effect</value></data>
   <data name="Project_CannotBakeGroupEffects" xml:space="preserve"><value>Group effects can't be applied permanently — apply them to parts.</value></data>
   <data name="Project_CannotBakeLockedLayerEffects" xml:space="preserve"><value>Effects can't be applied permanently to a locked layer.</value></data>
   <data name="Project_NoEffectsToBake" xml:space="preserve"><value>No effects to apply permanently.</value></data>
