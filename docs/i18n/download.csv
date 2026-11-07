@@ -1,9 +1,9 @@
 key,ko,en
 #name,한국어,English
 head.2,Chickxel 다운로드 — 처음 실행할 때,Download Chickxel — First launch
-head.3.content,"Chickxel을 내려받고, Windows·macOS에서 처음 실행할 때 뜨는 보안 경고를 넘기는 법을 그림과 함께 안내합니다.","Download Chickxel and see, with pictures, how to get past the security warning Windows and macOS show on first launch."
+head.3.content,"Chickxel을 내려받고, Windows·macOS에서 처음 실행할 때 뜨는 보안 경고를 넘기는 법과 Linux에서 실행하는 법을 그림과 함께 안내합니다.","Download Chickxel and see, with pictures, how to get past the security warning Windows and macOS show on first launch, and how to run it on Linux."
 head.4.content,Chickxel 다운로드 — 처음 실행할 때,Download Chickxel — First launch
-head.5.content,"Chickxel을 내려받고, Windows·macOS에서 처음 실행할 때 뜨는 보안 경고를 넘기는 법을 그림과 함께 안내합니다.","Download Chickxel and see, with pictures, how to get past the security warning Windows and macOS show on first launch."
+head.5.content,"Chickxel을 내려받고, Windows·macOS에서 처음 실행할 때 뜨는 보안 경고를 넘기는 법과 Linux에서 실행하는 법을 그림과 함께 안내합니다.","Download Chickxel and see, with pictures, how to get past the security warning Windows and macOS show on first launch, and how to run it on Linux."
 head.6.content,https://chickxel.com/assets/screenshot.png,https://chickxel.com/assets/screenshot-en.png
 head.canonical,https://chickxel.com/download,https://chickxel.com/en/download
 head.7.script,  if (want !== 'ko') location.replace('en/' + 'download.html' + location.search + location.hash);,  if (want !== 'en') location.replace('../' + 'download.html' + location.search + location.hash);
@@ -20,7 +20,7 @@ nav.logout,로그아웃,Sign out
 nav.language,언어,Language
 dl.title,Chickxel을 받아 주셔서 고맙습니다,Thanks for downloading Chickxel
 dl.starting,"<code id=""dl-file""></code> 다운로드가 시작됩니다. 시작되지 않으면 <a id=""dl-retry"" href=""#"">다시 받기</a>를 누르세요.","Your download of <code id=""dl-file""></code> is starting. If it doesn't, click <a id=""dl-retry"" href=""#"">Download again</a>."
-dl.pick,내 컴퓨터에 맞는 파일을 누르면 다운로드가 시작됩니다. Mac 칩은 Apple 메뉴 → 이 Mac에 관하여에서 확인합니다.,"Click the file for your computer to start the download. To check your Mac's chip, open the Apple menu → About This Mac."
+dl.pick,"내 컴퓨터에 맞는 파일을 누르면 다운로드가 시작됩니다. Mac 칩은 Apple 메뉴 → 이 Mac에 관하여에서, Linux의 CPU는 터미널의 <code>uname -m</code>(<code>x86_64</code> = x64, <code>aarch64</code> = ARM64)으로 확인합니다.","Click the file for your computer to start the download. To check your Mac's chip, open the Apple menu → About This Mac; on Linux, run <code>uname -m</code> in a terminal (<code>x86_64</code> = x64, <code>aarch64</code> = ARM64)."
 dl.next,"다 받은 뒤에는 아래 안내대로 처음 실행하고, <a href=""guide.html#start-install"">사용 가이드</a>에서 첫 사용 흐름을 따라가 보세요.","Once it's downloaded, follow the steps below for the first launch, then try the first steps in the <a href=""guide.html#start-install"">guide</a>."
 win.title,처음 실행할 때 파란 경고 창이 뜨면,If a blue warning appears on first launch
 win.lead,Chickxel은 개인 개발자가 만든 앱이라 아직 코드 서명(Microsoft가 인정하는 게시자 인증서)이 없습니다. 그래서 Windows가 처음 보는 앱을 한 번 막습니다. 파일에 문제가 있다는 뜻은 아닙니다.,"Chickxel is made by an independent developer and isn't code-signed yet (no publisher certificate recognized by Microsoft), so Windows stops it once as an app it hasn't seen before. It doesn't mean anything is wrong with the file."
@@ -49,9 +49,16 @@ mac.2,"<code>Chickxel.app</code>을 우클릭해 <strong>열기</strong>를 누�
 mac.3,그래도 열리지 않으면 <strong>시스템 설정 → 개인정보 보호 및 보안</strong> 아래쪽의 <strong>그래도 열기</strong>를 누릅니다.,"If it still won't open, go to <strong>System Settings → Privacy &amp; Security</strong> and click <strong>Open Anyway</strong> near the bottom."
 mac.cmd.title,경고 없이 설치하기 (터미널),Install without the warning (Terminal)
 mac.cmd.text,<strong>터미널</strong> 앱에 아래 한 줄을 붙여 넣은 뒤 Enter를 누릅니다. Mac 칩에 맞는 최신 버전을 GitHub에서 받아 <code>/Applications/Chickxel.app</code>에 설치하고 실행합니다.,"Paste the line below into the <strong>Terminal</strong> app and press Enter. It downloads the latest version for your Mac's chip from GitHub, installs it as <code>/Applications/Chickxel.app</code> and opens it."
+linux.title,Linux에서 실행하기,Running on Linux
+linux.lead,"x64·ARM64 데스크톱 Linux(Ubuntu·Fedora·Debian 등)에서 실행됩니다. 따로 설치할 것은 없고, 처음 실행할 때 경고 창도 뜨지 않습니다.","Chickxel runs on x64 and ARM64 desktop Linux (Ubuntu, Fedora, Debian and others). There's nothing else to install, and no warning appears on first launch."
+linux.1,"받은 zip을 풀고, 풀린 폴더의 <code>Chickxel</code>을 더블클릭하거나 터미널에서 <code>./Chickxel</code>로 실행합니다.","Extract the downloaded zip, then double-click <code>Chickxel</code> in the extracted folder or run <code>./Chickxel</code> in a terminal."
+linux.2,"실행되지 않으면 파일 속성에서 <strong>프로그램으로 실행 허용</strong>을 켜거나 터미널에서 <code>chmod +x Chickxel</code>을 실행합니다.","If it doesn't start, turn on <strong>Allow executing file as program</strong> in the file's properties, or run <code>chmod +x Chickxel</code> in a terminal."
+linux.3,"자동 업데이트는 <code>Chickxel</code> 파일을 새 버전으로 바꿉니다. 그래서 내 계정으로 쓸 수 있는 폴더(예: 홈 폴더 아래)에 두어야 합니다.","Automatic updates replace the <code>Chickxel</code> file with the new version, so keep it in a folder your account can write to (for example, under your home folder)."
+linux.cmd.title,터미널로 설치하기,Install from the terminal
+linux.cmd.text,"터미널에 아래 한 줄을 붙여 넣은 뒤 Enter를 누릅니다. CPU에 맞는 최신 버전을 GitHub에서 받아 <code>~/.local/share/Chickxel</code>에 설치하고, 프로그램 메뉴에 등록한 뒤 실행합니다. sudo는 필요 없습니다.","Paste the line below into a terminal and press Enter. It downloads the latest version for your CPU from GitHub, installs it in <code>~/.local/share/Chickxel</code>, adds it to the applications menu and starts it. No sudo needed."
 cmd.copy,복사,Copy
 safe.title,받은 파일이 원본인지 확인하려면,Check that the file is the original
-safe.text,"Chickxel은 <a href=""https://github.com/1000Pro-1997/Chickxel/releases"">GitHub 릴리스</a>와 이 홈페이지에서만 배포합니다. 받은 zip의 SHA-256 값(Windows PowerShell <code>Get-FileHash 파일.zip</code>, macOS 터미널 <code>shasum -a 256 파일.zip</code>)이 릴리스에 함께 올린 <code>SHA256SUMS.txt</code>의 값과 같으면 원본 그대로입니다.","Chickxel is only published on <a href=""https://github.com/1000Pro-1997/Chickxel/releases"">GitHub Releases</a> and this website. If the SHA-256 of the downloaded zip (Windows PowerShell <code>Get-FileHash file.zip</code>, macOS Terminal <code>shasum -a 256 file.zip</code>) matches the value in <code>SHA256SUMS.txt</code> on the release, the file is the original."
+safe.text,"Chickxel은 <a href=""https://github.com/1000Pro-1997/Chickxel/releases"">GitHub 릴리스</a>와 이 홈페이지에서만 배포합니다. 받은 zip의 SHA-256 값(Windows PowerShell <code>Get-FileHash 파일.zip</code>, macOS 터미널 <code>shasum -a 256 파일.zip</code>, Linux 터미널 <code>sha256sum 파일.zip</code>)이 릴리스에 함께 올린 <code>SHA256SUMS.txt</code>의 값과 같으면 원본 그대로입니다.","Chickxel is only published on <a href=""https://github.com/1000Pro-1997/Chickxel/releases"">GitHub Releases</a> and this website. If the SHA-256 of the downloaded zip (Windows PowerShell <code>Get-FileHash file.zip</code>, macOS Terminal <code>shasum -a 256 file.zip</code>, Linux terminal <code>sha256sum file.zip</code>) matches the value in <code>SHA256SUMS.txt</code> on the release, the file is the original."
 safe.help,"설치가 안 되거나 Windows 보안이 파일을 격리했다면 알림에 나온 이름과 함께 <a href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">Discord</a>로 알려 주세요.","If installing fails or Windows Security quarantines the file, tell us on <a href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">Discord</a> with the name shown in the notification."
 footer,"
 <span><strong>Chickxel</strong> · <a href=""https://github.com/1000Pro-1997/Chickxel/blob/main/LICENSE"">소스 공개 라이선스</a> · © 2026 천성훈 (1000Pro-1997)</span>

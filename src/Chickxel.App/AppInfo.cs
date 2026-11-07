@@ -4,7 +4,7 @@ using Chickxel.App.Localization;
 
 namespace Chickxel.App;
 
-/// <summary>앱이 놓인 형태. 자동 업데이트는 배포판(Windows 단일 exe, macOS .app 묶음)만 바꿀 수 있다.</summary>
+/// <summary>앱이 놓인 형태. 자동 업데이트는 배포판(Windows·Linux 단일 실행 파일, macOS .app 묶음)만 바꿀 수 있다.</summary>
 public enum InstallKind
 {
     /// <summary>소스에서 빌드·실행(<c>dotnet run</c>, run.sh 등).</summary>
@@ -13,6 +13,8 @@ public enum InstallKind
     WindowsExe,
     /// <summary>Chickxel.app 묶음 안에서 실행.</summary>
     MacBundle,
+    /// <summary>publish로 만든 단일 파일 Chickxel(Linux).</summary>
+    LinuxExe,
 }
 
 /// <summary>앱 이름·버전·설치 형태와 프로젝트 주소.</summary>
@@ -39,7 +41,7 @@ public static class AppInfo
 
     public static InstallKind InstallKind { get; }
 
-    /// <summary>자동 업데이트가 바꿀 곳: Windows는 실행 중인 exe, macOS는 .app 묶음 폴더. 개발 빌드면 null.</summary>
+    /// <summary>자동 업데이트가 바꿀 곳: Windows·Linux는 실행 중인 실행 파일, macOS는 .app 묶음 폴더. 개발 빌드면 null.</summary>
     public static string? InstallPath { get; }
 
     /// <summary>
@@ -62,15 +64,16 @@ public static class AppInfo
     private static (InstallKind, string?) DetectInstall()
     {
         var baseDir = Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory);
-        if (OperatingSystem.IsWindows())
+        if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux())
         {
-            // 단일 파일 publish는 Chickxel.App.dll을 exe 안에 묶는다. dll이 옆에 있으면 빌드 출력(dotnet run/build)이다.
+            // 단일 파일 publish는 Chickxel.App.dll을 실행 파일 안에 묶는다. dll이 옆에 있으면 빌드 출력(dotnet run/build)이다.
+            bool windows = OperatingSystem.IsWindows();
             var exe = Environment.ProcessPath;
             if (exe is not null
-                && string.Equals(Path.GetExtension(exe), ".exe", StringComparison.OrdinalIgnoreCase)
+                && (!windows || string.Equals(Path.GetExtension(exe), ".exe", StringComparison.OrdinalIgnoreCase))
                 && !string.Equals(Path.GetFileNameWithoutExtension(exe), "dotnet", StringComparison.OrdinalIgnoreCase)
                 && !File.Exists(Path.Combine(baseDir, "Chickxel.App.dll")))
-                return (InstallKind.WindowsExe, exe);
+                return (windows ? InstallKind.WindowsExe : InstallKind.LinuxExe, exe);
         }
         else if (OperatingSystem.IsMacOS())
         {

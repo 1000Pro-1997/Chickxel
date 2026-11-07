@@ -1,9 +1,9 @@
 key,ko,en
 #name,한국어,English
 head.2,Chickxel — 게임용 픽셀 아트 편집기,Chickxel — Pixel art editor for games
-head.3.content,Chickxel은 Unity 2D 게임을 위한 무료 픽셀 아트 편집기입니다. 프레임·레이어·부위·스킨을 그리고 저장할 때 PNG 스프라이트 시트와 Unity .meta를 함께 내보냅니다. Windows·macOS.,"Chickxel is a free pixel art editor for Unity 2D games. Draw frames, layers, parts and skins, and export a PNG sprite sheet with Unity .meta every time you save. Windows and macOS."
+head.3.content,Chickxel은 Unity 2D 게임을 위한 무료 픽셀 아트 편집기입니다. 프레임·레이어·부위·스킨을 그리고 저장할 때 PNG 스프라이트 시트와 Unity .meta를 함께 내보냅니다. Windows·macOS·Linux.,"Chickxel is a free pixel art editor for Unity 2D games. Draw frames, layers, parts and skins, and export a PNG sprite sheet with Unity .meta every time you save. Windows, macOS and Linux."
 head.4.content,Chickxel — 게임용 픽셀 아트 편집기,Chickxel — Pixel art editor for games
-head.5.content,Chickxel은 Unity 2D 게임을 위한 무료 픽셀 아트 편집기입니다. 프레임·레이어·부위·스킨을 그리고 저장할 때 PNG 스프라이트 시트와 Unity .meta를 함께 내보냅니다. Windows·macOS.,"Chickxel is a free pixel art editor for Unity 2D games. Draw frames, layers, parts and skins, and export a PNG sprite sheet with Unity .meta every time you save. Windows and macOS."
+head.5.content,Chickxel은 Unity 2D 게임을 위한 무료 픽셀 아트 편집기입니다. 프레임·레이어·부위·스킨을 그리고 저장할 때 PNG 스프라이트 시트와 Unity .meta를 함께 내보냅니다. Windows·macOS·Linux.,"Chickxel is a free pixel art editor for Unity 2D games. Draw frames, layers, parts and skins, and export a PNG sprite sheet with Unity .meta every time you save. Windows, macOS and Linux."
 head.6.content,https://chickxel.com/assets/screenshot.png,https://chickxel.com/assets/screenshot-en.png
 head.canonical,https://chickxel.com/,https://chickxel.com/en/
 head.7.script,  if (want !== 'ko') location.replace('en/' + '' + location.search + location.hash);,  if (want !== 'en') location.replace('../' + '' + location.search + location.hash);
@@ -23,8 +23,8 @@ lang-select.3,"프레임·레이어·부위·스킨을 그리고, 저장하면 P
 lang-select.4,다운로드,Download
 hero.guide,사용 가이드,Guide
 hero.support,후원하기,Support
-lang-select.5,"바로 받기: <a href=""download.html?os=windows"">Windows</a> · <a href=""download.html?os=mac-arm64"">macOS (Apple Silicon)</a> · <a href=""download.html?os=mac-x64"">macOS (Intel)</a>","Direct download: <a href=""download.html?os=windows"">Windows</a> · <a href=""download.html?os=mac-arm64"">macOS (Apple Silicon)</a> · <a href=""download.html?os=mac-x64"">macOS (Intel)</a>"
-lang-select.6,"<span class=""fact"">무료</span><span class=""fact"">소스 공개</span><span class=""fact"">Windows 10/11</span><span class=""fact"">macOS 12+</span><span class=""fact"">설치할 것 없음</span>","<span class=""fact"">Free</span><span class=""fact"">Source available</span><span class=""fact"">Windows 10/11</span><span class=""fact"">macOS 12+</span><span class=""fact"">Nothing to install</span>"
+lang-select.5,"바로 받기: <a href=""download.html?os=windows"">Windows</a> · <a href=""download.html?os=mac-arm64"">macOS (Apple Silicon)</a> · <a href=""download.html?os=mac-x64"">macOS (Intel)</a> · <a href=""download.html?os=linux-x64"">Linux (x64)</a> · <a href=""download.html?os=linux-arm64"">Linux (ARM64)</a>","Direct download: <a href=""download.html?os=windows"">Windows</a> · <a href=""download.html?os=mac-arm64"">macOS (Apple Silicon)</a> · <a href=""download.html?os=mac-x64"">macOS (Intel)</a> · <a href=""download.html?os=linux-x64"">Linux (x64)</a> · <a href=""download.html?os=linux-arm64"">Linux (ARM64)</a>"
+lang-select.6,"<span class=""fact"">무료</span><span class=""fact"">소스 공개</span><span class=""fact"">Windows 10/11</span><span class=""fact"">macOS 12+</span><span class=""fact"">Linux</span><span class=""fact"">설치할 것 없음</span>","<span class=""fact"">Free</span><span class=""fact"">Source available</span><span class=""fact"">Windows 10/11</span><span class=""fact"">macOS 12+</span><span class=""fact"">Linux</span><span class=""fact"">Nothing to install</span>"
 lang-select.7.src,assets/screenshot.png,../assets/screenshot-en.png
 lang-select.8.alt,"Chickxel 편집 화면: 왼쪽 도구 막대와 팔레트, 가운데 캔버스, 아래 타임라인, 오른쪽 미리보기와 도구 설정","Chickxel editor: tool bar and palette on the left, canvas in the middle, timeline below, preview and tool settings on the right"
 core.1,대표 기능,Key features
@@ -97,10 +97,14 @@ download.4,"ZIP 다운로드</span></a>
 download.5,"ZIP 다운로드</span></a>
 ","Download zip</span></a>
 "
+download.linux-x64,64비트 PC · Ubuntu·Fedora·Debian 등,"64-bit PC · Ubuntu, Fedora, Debian and more"
+download.linux-arm64,ARM 64비트 · 라즈베리 파이 4/5 등,64-bit ARM · Raspberry Pi 4/5 and more
+download.zip,ZIP 다운로드,Download zip
 download.6,"처음 실행할 때 경고가 뜨면 <a href=""download.html"">처음 실행 안내</a>를 보세요. 지난 버전과 바뀐 점은 <a href=""https://github.com/1000Pro-1997/Chickxel/releases"">릴리스</a>에 있습니다.","If a warning appears on first launch, see the <a href=""download.html"">first launch help</a>. What changed in each version is on the <a href=""https://github.com/1000Pro-1997/Chickxel/releases"">Releases</a> page."
 install.title,터미널로 설치,Install from the terminal
 install.win,"<strong>PowerShell</strong>에 아래 한 줄을 붙여 넣고 Enter를 누르면 GitHub에서 최신 버전을 받아 설치하고 실행합니다. 브라우저로 받은 파일이 아니라서 Windows의 PC 보호 창이 뜨지 않습니다.","Paste the line below into <strong>PowerShell</strong> and press Enter to download the latest version from GitHub, install it and start it. Because the file isn't downloaded by a browser, Windows protected your PC doesn't appear."
 install.mac,"<strong>터미널</strong> 앱에 아래 한 줄을 붙여 넣고 Enter를 누르면 Mac 칩에 맞는 최신 버전을 GitHub에서 받아 <code>/Applications</code>에 설치하고 실행합니다.","Paste the line below into the <strong>Terminal</strong> app and press Enter to download the latest version for your Mac's chip from GitHub, install it in <code>/Applications</code> and open it."
+install.linux,"터미널에 아래 한 줄을 붙여 넣고 Enter를 누르면 CPU에 맞는 최신 버전을 GitHub에서 받아 <code>~/.local/share/Chickxel</code>에 설치하고, 프로그램 메뉴에 등록한 뒤 실행합니다.","Paste the line below into a terminal and press Enter to download the latest version for your CPU from GitHub, install it in <code>~/.local/share/Chickxel</code>, add it to the applications menu and start it."
 cmd.copy,복사,Copy
 download.7,<span>제보·아이디어는 Discord로</span></a>,<span>Bugs and ideas: join us on Discord</span></a>
 download.support,Chickxel 개발 후원하기,Support Chickxel development

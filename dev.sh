@@ -16,8 +16,15 @@ if ! command -v dotnet >/dev/null 2>&1; then
 fi
 
 # 이 실행 파일로 떠 있는 프로세스 번호들(실행 파일 경로가 정확히 같은 것만).
+# Linux의 ps comm은 이름(15자까지)뿐이라 /proc/<pid>/exe로, macOS는 ps comm(전체 경로)으로 맞춘다.
 pids() {
-  ps -axo pid=,comm= | awk -v exe="$exe" '{ pid = $1; $1 = ""; sub(/^ +/, ""); if ($0 == exe) print pid }'
+  if [ -d /proc/self ]; then
+    for p in /proc/[0-9]*; do
+      if [ "$(readlink "$p/exe" 2>/dev/null)" = "$exe" ]; then echo "${p#/proc/}"; fi
+    done
+  else
+    ps -axo pid=,comm= | awk -v exe="$exe" '{ pid = $1; $1 = ""; sub(/^ +/, ""); if ($0 == exe) print pid }'
+  fi
 }
 
 stop_all() {

@@ -79,6 +79,10 @@ public class UpdateTests
               "browser_download_url": "https://github.com/1000Pro-1997/Chickxel/releases/download/v1.3.0/Chickxel-macos-x64.zip" },
             { "name": "Chickxel-windows-x64.zip", "size": 48000000,
               "browser_download_url": "https://github.com/1000Pro-1997/Chickxel/releases/download/v1.3.0/Chickxel-windows-x64.zip" },
+            { "name": "Chickxel-linux-x64.zip", "size": 50000000,
+              "browser_download_url": "https://github.com/1000Pro-1997/Chickxel/releases/download/v1.3.0/Chickxel-linux-x64.zip" },
+            { "name": "Chickxel-linux-arm64.zip", "size": 49000000,
+              "browser_download_url": "https://github.com/1000Pro-1997/Chickxel/releases/download/v1.3.0/Chickxel-linux-arm64.zip" },
             { "name": "SHA256SUMS.txt", "size": 300,
               "browser_download_url": "https://github.com/1000Pro-1997/Chickxel/releases/download/v1.3.0/SHA256SUMS.txt" },
             { "name": "evil.zip", "size": 1, "browser_download_url": "http://example.com/evil.zip" },
@@ -100,7 +104,8 @@ public class UpdateTests
         Assert.False(r.IsPrerelease);
         Assert.Equal(new DateTimeOffset(2026, 10, 1, 12, 34, 56, TimeSpan.Zero), r.PublishedAt);
         // http 주소·이름 없는 파일은 버린다.
-        Assert.Equal(["Chickxel-macos-arm64.zip", "Chickxel-macos-x64.zip", "Chickxel-windows-x64.zip", "SHA256SUMS.txt"], r.Assets.Select(a => a.Name));
+        Assert.Equal(["Chickxel-macos-arm64.zip", "Chickxel-macos-x64.zip", "Chickxel-windows-x64.zip", "Chickxel-linux-x64.zip", "Chickxel-linux-arm64.zip", "SHA256SUMS.txt"],
+            r.Assets.Select(a => a.Name));
         Assert.Equal(48000000, r.Asset("chickxel-windows-x64.zip")!.Size);
     }
 
@@ -160,6 +165,16 @@ public class UpdateTests
         Assert.NotNull(r.Asset(AppUpdate.ChecksumsAssetName));
     }
 
+    [Fact]
+    public void LatestRedirect_HasEveryFileAnOsCanSelect()
+    {
+        var r = AppUpdate.ReleaseFromLatestRedirect(new Uri("https://github.com/1000Pro-1997/Chickxel/releases/tag/v1.2.3"))!;
+        foreach (var os in Enum.GetValues<UpdateOs>())
+        foreach (var arch in Enum.GetValues<Architecture>())
+            if (AppUpdate.AssetName(os, arch) is { } name)
+                Assert.True(r.Asset(name) is not null, name);
+    }
+
     [Theory]
     [InlineData("https://github.com/1000Pro-1997/Chickxel/releases")]          // 릴리스 없음
     [InlineData("https://github.com/1000Pro-1997/Chickxel/releases/tag/nightly")] // 버전 아닌 태그
@@ -172,6 +187,9 @@ public class UpdateTests
     [InlineData(UpdateOs.Windows, Architecture.Arm64, "Chickxel-windows-x64.zip")]
     [InlineData(UpdateOs.MacOS, Architecture.Arm64, "Chickxel-macos-arm64.zip")]
     [InlineData(UpdateOs.MacOS, Architecture.X64, "Chickxel-macos-x64.zip")]
+    [InlineData(UpdateOs.Linux, Architecture.X64, "Chickxel-linux-x64.zip")]
+    [InlineData(UpdateOs.Linux, Architecture.Arm64, "Chickxel-linux-arm64.zip")]
+    [InlineData(UpdateOs.Linux, Architecture.Arm, null)]
     [InlineData(UpdateOs.Windows, Architecture.X86, null)]
     [InlineData(UpdateOs.Other, Architecture.X64, null)]
     public void SelectAsset_PicksZipForOsAndArch(UpdateOs os, Architecture arch, string? expected)

@@ -5,3 +5,5 @@ catalog/** -text
 docs/catalog/** -text
 # 공식 효과 원문은 SHA-256으로 신뢰·패키지를 맞추므로(Official/hashes.txt) 줄 끝을 바꾸지 않는다.
 src/Chickxel.Core/Scripting/Official/** -text
+# 셸 스크립트는 Windows 체크아웃을 WSL·Linux에서 그대로 실행할 수 있게 LF로 둔다(CRLF면 sh가 읽지 못함).
+*.sh text eol=lf

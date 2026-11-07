@@ -12,10 +12,10 @@ using Chickxel.App.Localization;
 
 namespace Chickxel.App;
 
-/// <summary>자동 설치 준비: 내려받을 파일, 체크섬 파일, 바꿀 곳(Windows exe / macOS .app).</summary>
+/// <summary>자동 설치 준비: 내려받을 파일, 체크섬 파일, 바꿀 곳(Windows exe / Linux 실행 파일 / macOS .app).</summary>
 public sealed record InstallPlan(ReleaseInfo Release, ReleaseAsset Asset, ReleaseAsset Checksums, InstallKind Kind, string Target);
 
-/// <summary>검증·압축 해제까지 끝난 새 버전. <see cref="NewApp"/>은 새 Chickxel.exe 또는 Chickxel.app.</summary>
+/// <summary>검증·압축 해제까지 끝난 새 버전. <see cref="NewApp"/>은 새 Chickxel.exe, Chickxel(Linux) 또는 Chickxel.app.</summary>
 public sealed record StagedUpdate(InstallPlan Plan, string Directory, string NewApp);
 
 /// <summary>내려받기 진행: 단계 글자와 받은/전체 바이트(전체를 모르면 0).</summary>
@@ -28,7 +28,7 @@ public sealed class UpdateException(string message) : Exception(message);
 /// GitHub 릴리스로 업데이트: 시작할 때마다(배포판만, 끌 수 있음 — 새 버전이면 업데이트 창) 또는 메뉴에서 최신 릴리스를 확인하고,
 /// 새 버전이면 상태 표시줄·위 막대 단추로 알린다(수동 확인은 바로 업데이트 창).
 /// 설치는 이 OS·CPU용 zip을 받아 SHA256SUMS로 검증하고 임시 폴더에 풀어 둔 뒤, 앱이 끝나기를 기다렸다가
-/// 바꿔 넣고 다시 실행하는 작은 스크립트(Windows PowerShell / macOS sh)에 맡긴다. 이전 앱은 새 앱이 자리 잡은 뒤에만 지운다.
+/// 바꿔 넣고 다시 실행하는 작은 스크립트(Windows PowerShell / macOS·Linux sh)에 맡긴다. 이전 앱은 새 앱이 자리 잡은 뒤에만 지운다.
 /// </summary>
 public sealed class Updater
 {
@@ -279,7 +279,10 @@ public sealed class Updater
             return (null, UiStrings.S_Updater_PlanInstall_3ABC93510F + manual);
         if (AppInfo.IsDevBuild)
             return (null, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Updater_PlanInstall_FA52471F79,AppInfo.VersionText) + manual);
-        var os = OperatingSystem.IsWindows() ? UpdateOs.Windows : OperatingSystem.IsMacOS() ? UpdateOs.MacOS : UpdateOs.Other;
+        var os = OperatingSystem.IsWindows() ? UpdateOs.Windows
+            : OperatingSystem.IsMacOS() ? UpdateOs.MacOS
+            : OperatingSystem.IsLinux() ? UpdateOs.Linux
+            : UpdateOs.Other;
         var arch = RuntimeInformation.OSArchitecture;
         if (AppUpdate.AssetName(os, arch) is not { } assetName)
             return (null, UiStrings.S_Updater_PlanInstall_AF27F58056 + manual);
@@ -351,8 +354,11 @@ public sealed class Updater
             await ExtractAsync(zip, extracted, cancellationToken).ConfigureAwait(false);
             File.Delete(zip);
             string? newApp;
-            if (plan.Kind == InstallKind.WindowsExe)
-                newApp = Directory.EnumerateFiles(extracted, "Chickxel.exe", SearchOption.AllDirectories).FirstOrDefault();
+            if (plan.Kind is InstallKind.WindowsExe or InstallKind.LinuxExe)
+            {
+                var name = plan.Kind == InstallKind.WindowsExe ? "Chickxel.exe" : "Chickxel";
+                newApp = Directory.EnumerateFiles(extracted, name, SearchOption.AllDirectories).FirstOrDefault();
+            }
             else
             {
                 var app = Path.Combine(extracted, "Chickxel.app");
@@ -460,7 +466,10 @@ public sealed class Updater
         else
         {
             var script = Path.Combine(staged.Directory, "install.sh");
-            File.WriteAllText(script, BuildMacScript(pid, staged.Plan.Target, staged.NewApp, staged.Directory, LogPath), new UTF8Encoding(false));
+            var text = staged.Plan.Kind == InstallKind.LinuxExe
+                ? BuildLinuxScript(pid, staged.Plan.Target, staged.NewApp, staged.Directory, LogPath, UiStrings.Updater_InstallFailedAlert)
+                : BuildMacScript(pid, staged.Plan.Target, staged.NewApp, staged.Directory, LogPath);
+            File.WriteAllText(script, text, new UTF8Encoding(false));
             psi = new ProcessStartInfo("/bin/sh") { UseShellExecute = false };
             psi.ArgumentList.Add(script);
         }
@@ -482,6 +491,57 @@ public sealed class Updater
     /// 격리 표시(com.apple.quarantine)를 지우고 open으로 다시 실행한 뒤 .old를 지운다. 복사가 실패하면 .old를 되돌리고 이전 버전을 연다.
     /// </summary>
     public static string BuildMacScript(int pid, string targetApp, string newApp, string stagingDir, string logPath) => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Updater_BuildMacScript_6FF460617F,pid,ShQuote(targetApp),ShQuote(newApp),ShQuote(stagingDir),ShQuote(logPath));
+
+    /// <summary>
+    /// Linux 설치 스크립트(sh): 앱이 끝나기를 기다렸다가(최대 2분) 실행 파일을 .old로 옮기고 새 파일을 복사해 실행 권한을 준 뒤
+    /// 새 세션으로 다시 실행하고 .old를 지운다. 복사가 실패하면 .old를 되돌리고 이전 버전을 실행한다.
+    /// 실패 알림은 있는 것(zenity → kdialog → notify-send)으로 띄운다. 원문 줄 끝은 이 소스 파일의 체크아웃을 따르므로(Windows는 CRLF) LF로 맞춘다.
+    /// </summary>
+    public static string BuildLinuxScript(int pid, string targetExe, string newExe, string stagingDir, string logPath, string alertText) => $$"""
+        #!/bin/sh
+        # Chickxel update (Linux): once the app exits, replace the executable and relaunch. On failure, restore the previous one.
+        APP_PID={{pid}}
+        TARGET={{ShQuote(targetExe)}}
+        NEW={{ShQuote(newExe)}}
+        STAGING={{ShQuote(stagingDir)}}
+        LOG={{ShQuote(logPath)}}
+        ALERT={{ShQuote(alertText)}}
+        BACKUP="$TARGET.old"
+        exec >>"$LOG" 2>&1
+        echo "$(date '+%Y-%m-%dT%H:%M:%S') update to $NEW"
+        alert() {
+          if command -v zenity >/dev/null 2>&1; then zenity --warning --title=Chickxel --text="$ALERT" >/dev/null 2>&1
+          elif command -v kdialog >/dev/null 2>&1; then kdialog --title Chickxel --sorry "$ALERT" >/dev/null 2>&1
+          elif command -v notify-send >/dev/null 2>&1; then notify-send Chickxel "$ALERT"
+          fi
+        }
+        launch() {
+          if command -v setsid >/dev/null 2>&1; then setsid "$TARGET" </dev/null >/dev/null 2>&1 &
+          else nohup "$TARGET" </dev/null >/dev/null 2>&1 &
+          fi
+        }
+        i=0
+        while kill -0 "$APP_PID" 2>/dev/null; do
+          i=$((i + 1))
+          if [ "$i" -gt 600 ]; then echo "app did not exit"; alert; exit 1; fi
+          sleep 0.2
+        done
+        rm -f "$BACKUP"
+        if ! mv "$TARGET" "$BACKUP"; then echo "move failed"; alert; launch; exit 1; fi
+        if ! cp "$NEW" "$TARGET" || ! chmod +x "$TARGET"; then
+          echo "copy failed"
+          rm -f "$TARGET"
+          mv "$BACKUP" "$TARGET"
+          alert
+          launch
+          exit 1
+        fi
+        rm -f "$BACKUP"
+        launch
+        rm -rf "$STAGING"
+        echo "done"
+
+        """.ReplaceLineEndings("\n");
 
     /// <summary>지난 업데이트가 남긴 것(이전 exe/.app의 .old, 하루 넘은 준비 폴더)을 지운다. 실패는 무시.</summary>
     private static void CleanupPreviousUpdate()

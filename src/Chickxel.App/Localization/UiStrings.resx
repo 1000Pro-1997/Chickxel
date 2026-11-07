@@ -8102,6 +8102,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Timeline_LayoutBadgeTip" xml:space="preserve"><value>자동 배치 켜짐 — 눌러 설정</value></data>
   <data name="Updater_ManualInstall" xml:space="preserve"><value>&#10;릴리스 페이지에서 받아 직접 바꿔 주세요.</value></data>
   <data name="Updater_Downloading" xml:space="preserve"><value>내려받는 중…</value></data>
+  <data name="Updater_InstallFailedAlert" xml:space="preserve"><value>Chickxel 업데이트를 설치하지 못했습니다. 이전 버전을 그대로 둡니다. 자세한 내용은 임시 폴더의 chickxel-update.log에 있습니다.</value><comment>Linux 설치 스크립트가 실패할 때 zenity·kdialog·notify-send로 띄우는 알림.</comment></data>
   <data name="PixelTools_NoProject" xml:space="preserve"><value>열린 프로젝트가 없습니다 — new_project로 만드세요</value></data>
   <data name="AiCli_LoginDone" xml:space="preserve"><value>로그인이 끝나면 이 창을 닫고 Chickxel에서 '다시 확인'을 누르세요.</value></data>
   <data name="AiInstaller_NodeFolderExists" xml:space="preserve"><value>Node 설치 폴더가 이미 있습니다: {path}</value><comment>path = Node.js 설치 경로. PowerShell 오류.</comment></data>

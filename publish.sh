@@ -3,9 +3,11 @@
 #   dist/Chickxel-windows-x64.zip  → 압축 풀고 Chickxel.exe 더블클릭
 #   dist/Chickxel-macos-arm64.zip  → Apple Silicon(M1~) Mac용 Chickxel.app
 #   dist/Chickxel-macos-x64.zip    → Intel Mac용 Chickxel.app
+#   dist/Chickxel-linux-x64.zip    → Linux(x64)용 실행 파일 Chickxel과 메뉴 아이콘 chickxel.png
+#   dist/Chickxel-linux-arm64.zip  → Linux(ARM64)용, 같은 구성
 #   dist/SHA256SUMS.txt          → zip들의 SHA-256(앱의 자동 업데이트가 이것으로 검증한다)
 # 사용: ./publish.sh [버전]   (예: ./publish.sh 1.2.0, 기본 1.0.0)
-# Linux에서도 Windows zip은 만들 수 있다(.app 서명은 macOS에서만).
+# Linux에서도 Windows·Linux zip은 만들 수 있다(.app 서명은 macOS에서만).
 set -eu
 cd "$(dirname "$0")"
 
@@ -34,6 +36,17 @@ publish win-x64 "$WORK/win-x64" -p:PublishSingleFile=true -p:IncludeNativeLibrar
 mkdir -p "$WORK/Chickxel-windows-x64"
 cp "$WORK/win-x64/Chickxel.App.exe" "$WORK/Chickxel-windows-x64/Chickxel.exe"
 (cd "$WORK" && zip -qr "../Chickxel-windows-x64.zip" "Chickxel-windows-x64")
+
+# ── Linux: 실행 파일 하나(네이티브 라이브러리도 안에 묶음) + 프로그램 메뉴 아이콘(install.sh가 등록)
+for arch in x64 arm64; do
+  publish "linux-$arch" "$WORK/linux-$arch" -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+  pkg="$WORK/Chickxel-linux-$arch"
+  mkdir -p "$pkg"
+  cp "$WORK/linux-$arch/Chickxel.App" "$pkg/Chickxel"
+  chmod 755 "$pkg/Chickxel"
+  cp src/Chickxel.App/Assets/AppIcon/chickxel-256.png "$pkg/chickxel.png"
+  (cd "$WORK" && zip -qr "../Chickxel-linux-$arch.zip" "Chickxel-linux-$arch")
+done
 
 # ── macOS: Chickxel.app 묶음(Apple Silicon / Intel)
 if [ "$(uname -s)" = "Darwin" ]; then

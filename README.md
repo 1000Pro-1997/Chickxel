@@ -2,7 +2,7 @@
 
 **홈페이지·사용 설명서: <https://1000pro-1997.github.io/Chickxel/>** · **제보·아이디어: [Discord](https://discord.gg/Avw7aUVxqr)**
 
-게임(특히 Unity 2D)용 픽셀 아트 편집기입니다(Windows·macOS). 저장하면 PNG 스프라이트 시트와 Unity `.meta`가 함께 나옵니다. 앱 안에서는 **F1**로 같은 사용 가이드를 엽니다.
+게임(특히 Unity 2D)용 픽셀 아트 편집기입니다(Windows·macOS·Linux). 저장하면 PNG 스프라이트 시트와 Unity `.meta`가 함께 나옵니다. 앱 안에서는 **F1**로 같은 사용 가이드를 엽니다.
 
 ## 대표 기능
 
@@ -67,8 +67,10 @@
 | Windows 10/11 (x64·ARM64) | [Chickxel-windows-x64.zip](https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-windows-x64.zip) | 압축을 풀고 `Chickxel.exe` 더블클릭 |
 | macOS 12+ Apple Silicon (M1 이후) | [Chickxel-macos-arm64.zip](https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-arm64.zip) | 압축을 풀고 `Chickxel.app`을 응용 프로그램 폴더로 옮긴 뒤 더블클릭 |
 | macOS 12+ Intel | [Chickxel-macos-x64.zip](https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-x64.zip) | 위와 같음 |
+| Linux x64 (Ubuntu·Fedora·Debian 등) | [Chickxel-linux-x64.zip](https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-linux-x64.zip) | 압축을 풀고 `Chickxel` 실행 |
+| Linux ARM64 | [Chickxel-linux-arm64.zip](https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-linux-arm64.zip) | 위와 같음 |
 
-개발자 서명이 없는 앱이라 처음 한 번은 경고가 뜹니다(Windows **추가 정보 → 실행**, macOS **우클릭 → 열기**). 터미널 설치·업데이트·네트워크 사용은 [FEATURES.md](FEATURES.md#설치실행-그냥-쓰기--net-설치-필요-없음)에 있습니다.
+개발자 서명이 없는 앱이라 Windows·macOS에서는 처음 한 번 경고가 뜹니다(Windows **추가 정보 → 실행**, macOS **우클릭 → 열기**). Linux는 경고가 없습니다. 터미널 설치·업데이트·네트워크 사용은 [FEATURES.md](FEATURES.md#설치실행-그냥-쓰기--net-설치-필요-없음)에 있습니다.
 
 `*.chickxel`은 Chickxel 프로젝트 파일입니다. 새 버전의 앱을 한 번 실행하면 Windows는 이 사용자 계정에 파일 연결을 등록하고, macOS는 응용 프로그램 폴더의 앱이 파일을 엽니다. 더블클릭하면 실행 중인 앱의 문서 탭에서 열립니다. 다른 앱으로 연결된 파일은 Finder/탐색기의 **연결 프로그램**에서 Chickxel을 선택하세요.
 

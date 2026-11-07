@@ -282,12 +282,12 @@ td { color: var(--body); }
 .cmd-copy .done, .cmd-copy.copied .copy { visibility: hidden; }
 .cmd-copy.copied .done { visibility: visible; color: var(--accent); }
 
-/* 다운로드 안내(download.html): 받는 OS의 안내만 보임(모르면 둘 다) */
+/* 다운로드 안내(download.html): 받는 OS의 안내만 보임(모르면 모두) */
 .dl-hero { padding: 64px 0 36px; }
 .dl-hero h1 { font-size: clamp(34px, 4.4vw, 52px); }
 .dl-hero .lead { max-width: 760px; }
 .dl-hero .dl-files { margin-top: 26px; gap: 8px; }
-.dl-page[data-os="windows"] #macos, .dl-page[data-os="mac"] #windows { display: none; }
+.dl-page[data-os="windows"] .dl-os:not(#windows), .dl-page[data-os="mac"] .dl-os:not(#macos), .dl-page[data-os="linux"] .dl-os:not(#linux) { display: none; }
 .dl-doc > * { max-width: 820px; }
 .dl-doc > p, .dl-doc li { color: var(--body); line-height: 1.75; }
 .dl-doc strong { color: var(--ink); }

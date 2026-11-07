@@ -11,8 +11,10 @@
 | Windows 10/11 (x64·ARM64) | [Chickxel-windows-x64.zip](https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-windows-x64.zip) | 압축을 풀고 `Chickxel.exe` 더블클릭 |
 | macOS 12+ Apple Silicon (M1 이후) | [Chickxel-macos-arm64.zip](https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-arm64.zip) | 압축을 풀고 `Chickxel.app`을 응용 프로그램 폴더로 옮긴 뒤 더블클릭 |
 | macOS 12+ Intel | [Chickxel-macos-x64.zip](https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-x64.zip) | 위와 같음 |
+| Linux x64 (Ubuntu·Fedora·Debian 등) | [Chickxel-linux-x64.zip](https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-linux-x64.zip) | 압축을 풀고 `Chickxel` 실행(안 되면 `chmod +x Chickxel`) |
+| Linux ARM64 | [Chickxel-linux-arm64.zip](https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-linux-arm64.zip) | 위와 같음 |
 
-지난 버전과 바뀐 점은 [Releases](https://github.com/1000Pro-1997/Chickxel/releases)에 있습니다. 내 Mac 칩은  메뉴 → 이 Mac에 관하여에서 확인합니다.
+지난 버전과 바뀐 점은 [Releases](https://github.com/1000Pro-1997/Chickxel/releases)에 있습니다. 내 Mac 칩은  메뉴 → 이 Mac에 관하여에서, Linux CPU는 터미널 `uname -m`(`x86_64` = x64, `aarch64` = ARM64)으로 확인합니다.
 
 ### 터미널로 설치
 
@@ -22,7 +24,7 @@
 irm https://raw.githubusercontent.com/1000Pro-1997/Chickxel/main/install.ps1 | iex
 ```
 
-**macOS** (터미널 앱에 붙여 넣기 — 칩에 맞는 파일을 골라 `/Applications/Chickxel.app`에 설치하고 실행):
+**macOS·Linux** (터미널에 붙여 넣기 — macOS는 칩에 맞는 파일을 골라 `/Applications/Chickxel.app`에 설치하고 실행, Linux는 CPU에 맞는 파일을 `~/.local/share/Chickxel/Chickxel`에 두고 프로그램 메뉴·아이콘을 등록한 뒤 실행, sudo 필요 없음):
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/1000Pro-1997/Chickxel/main/install.sh | sh
@@ -32,11 +34,11 @@ curl -fsSL https://raw.githubusercontent.com/1000Pro-1997/Chickxel/main/install.
 
 ### 처음 실행할 때
 
-- 개발자 서명이 없는 앱이라 처음 한 번은 경고가 뜹니다. 그림과 함께 보는 안내는 [홈페이지 다운로드 안내](https://chickxel.com/download)에 있습니다.
+- 개발자 서명이 없는 앱이라 Windows·macOS에서는 처음 한 번 경고가 뜹니다(Linux는 경고 없음). 그림과 함께 보는 안내는 [홈페이지 다운로드 안내](https://chickxel.com/download)에 있습니다.
   - Windows "PC 보호" 창: **추가 정보 → 실행**. 압축을 풀기 전에 zip의 **속성 → 차단 해제**에 체크하면 창이 뜨지 않습니다.
   - macOS "확인되지 않은 개발자": `Chickxel.app` **우클릭 → 열기**. 안 되면 시스템 설정 → 개인정보 보호 및 보안 → **그래도 열기**, 또는 터미널에서 `xattr -dr com.apple.quarantine /Applications/Chickxel.app`.
 - macOS: 단축키의 Ctrl은 ⌘(Command)입니다(예: ⌘S 저장, ⌘⇧O 폴더 열기). 메뉴와 도움말에도 ⌘로 표시됩니다. 스포이드는 ⌥+클릭, ⌘를 누르는 동안은 임시 이동 도구.
-- 명령줄: Windows `Chickxel.exe --open-folder <폴더> --open <파일.chickxel|파일.png>`, macOS `open -a Chickxel --args --open <파일>` (경로만 주면 `--open`).
+- 명령줄: Windows `Chickxel.exe --open-folder <폴더> --open <파일.chickxel|파일.png>`, macOS `open -a Chickxel --args --open <파일>`, Linux `Chickxel --open <파일>` (경로만 주면 `--open`).
 
 ### 업데이트
 
@@ -44,7 +46,7 @@ Chickxel은 시작할 때마다 GitHub 릴리스에서 새 버전을 확인합�
 
 업데이트 창에는 지금 버전 다음부터 새 버전까지의 **바뀐 점**이 보입니다(저장소의 [CHANGELOG.md](CHANGELOG.md)(영어)·[CHANGELOG.ko.md](CHANGELOG.ko.md)(한국어)를 릴리스와 함께 올려 읽음). 한국어 화면이면 한국어, 그 밖의 모든 화면 언어이면 영어로 보이고, 영어로 쓰지 않은 옛 버전(v1.14.22 이하)만 한국어로 보입니다. 못 읽으면 그 버전의 릴리스 페이지 주소를 보여 주고, 창 아래 **"Chickxel X.Y.Z 바뀐 점 — 릴리스 페이지 열기"** 링크(바깥 링크 아이콘)는 늘 있습니다.
 
-업데이트 창에서 **지금 업데이트**를 누르면 이 OS·CPU용 zip을 내려받아 릴리스의 `SHA256SUMS.txt`로 검증한 뒤, 앱을 닫고 새 버전으로 바꿔 다시 실행합니다(저장하지 않은 작업은 먼저 묻고, 실패하면 이전 버전을 그대로 둡니다). 설치 폴더에 쓸 권한이 없거나(예: 권한 없는 /Applications) Linux에서는 릴리스 페이지에서 직접 받으세요.
+업데이트 창에서 **지금 업데이트**를 누르면 이 OS·CPU용 zip을 내려받아 릴리스의 `SHA256SUMS.txt`로 검증한 뒤, 앱을 닫고 새 버전으로 바꿔 다시 실행합니다(저장하지 않은 작업은 먼저 묻고, 실패하면 이전 버전을 그대로 둡니다 — Linux는 실패 알림을 zenity·kdialog·notify-send 중 있는 것으로 띄움). 설치 폴더에 쓸 권한이 없으면(예: 권한 없는 /Applications, Linux의 /opt) 릴리스 페이지에서 직접 받으세요.
 
 ### 네트워크·개인정보
 

@@ -2,6 +2,13 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.102 (2026-11-07)
+### Linux version
+- Chickxel now ships for Linux as `Chickxel-linux-x64.zip` and `Chickxel-linux-arm64.zip`: unzip and run `Chickxel`, no warning on first launch.
+- The terminal installer (`curl … install.sh | sh`) now also works on Linux: it installs to `~/.local/share/Chickxel` without sudo and adds Chickxel to the applications menu.
+- Linux installs update themselves like Windows and macOS: the app downloads and verifies the new version, replaces the executable and restarts.
+- The website picks the Linux file for your CPU on its download button and shows Linux steps on the download page.
+
 ## v1.14.101 (2026-11-07)
 ### Convert to palette colors: color matching rules
 - A new Color matching group offers Nearest color (with RGB, OKLab or CIEDE2000 distance), Brightness order, Palette order, Hue first and Lightness only.

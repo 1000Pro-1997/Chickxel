@@ -107,6 +107,7 @@ public enum UpdateOs
 {
     Windows,
     MacOS,
+    Linux,
     Other,
 }
 
@@ -133,7 +134,8 @@ public static class AppUpdate
     public static readonly Uri LatestReleasePageUrl = new(ReleasesUrl + "/latest");
 
     /// <summary>릴리스에 올리는 파일 이름들(<see cref="AssetName"/>이 고르는 것 + 체크섬).</summary>
-    public static readonly string[] KnownAssetNames = ["Chickxel-windows-x64.zip", "Chickxel-macos-arm64.zip", "Chickxel-macos-x64.zip", ChecksumsAssetName];
+    public static readonly string[] KnownAssetNames =
+        ["Chickxel-windows-x64.zip", "Chickxel-macos-arm64.zip", "Chickxel-macos-x64.zip", "Chickxel-linux-x64.zip", "Chickxel-linux-arm64.zip", ChecksumsAssetName];
 
     /// <summary>
     /// <see cref="LatestReleasePageUrl"/>가 넘겨 준 주소(<c>…/releases/tag/vX.Y.Z</c>)에서 릴리스 정보를 만든다. 파일 주소는
@@ -214,13 +216,15 @@ public static class AppUpdate
 
 
     /// <summary>
-    /// 이 OS·CPU에 맞는 릴리스 파일 이름. Windows는 x64 하나(ARM64 Windows도 x64 에뮬레이션으로 실행), macOS는 arm64/x64. 없으면 null.
+    /// 이 OS·CPU에 맞는 릴리스 파일 이름. Windows는 x64 하나(ARM64 Windows도 x64 에뮬레이션으로 실행), macOS·Linux는 arm64/x64. 없으면 null.
     /// </summary>
     public static string? AssetName(UpdateOs os, Architecture arch) => os switch
     {
         UpdateOs.Windows when arch is Architecture.X64 or Architecture.Arm64 => "Chickxel-windows-x64.zip",
         UpdateOs.MacOS when arch == Architecture.Arm64 => "Chickxel-macos-arm64.zip",
         UpdateOs.MacOS when arch == Architecture.X64 => "Chickxel-macos-x64.zip",
+        UpdateOs.Linux when arch == Architecture.X64 => "Chickxel-linux-x64.zip",
+        UpdateOs.Linux when arch == Architecture.Arm64 => "Chickxel-linux-arm64.zip",
         _ => null,
     };
 
