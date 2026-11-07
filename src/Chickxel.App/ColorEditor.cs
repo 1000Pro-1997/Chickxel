@@ -7,6 +7,7 @@ namespace Chickxel.App;
 /// <summary>
 /// 메인 색 패널과 색 팝업이 함께 쓰는 동일한 색 편집기:
 /// 사각형·벌집·색상환·슬라이더, 알파 막대, RGBA·HSV·HEX, 최근 색.
+/// 접을 수 있게 만들면(메인 색 패널) "색" 머리글과 "최근 색" 글을 눌러 고르기 칸과 최근 색을 따로 접고 펼친다.
 /// </summary>
 internal sealed class ColorEditor : UserControl
 {
@@ -24,12 +25,17 @@ internal sealed class ColorEditor : UserControl
     /// <summary>R·G·B / H·S·V / A·# 입력 칸 격자와 "최근 색" 글.</summary>
     private readonly Grid _numbers;
     private readonly TextBlock _recentLabel;
+    /// <summary>고르기 칸·알파 막대·입력 칸("색" 머리글로 접는 부분).</summary>
+    private readonly StackPanel _pickerBody;
+    private readonly IconView _colorArrow = FoldArrow(), _recentArrow = FoldArrow();
+    private bool _colorCollapsed, _recentCollapsed;
     private Color32 _color;
     private bool _updating;
     private float _h, _s, _v;
     private bool _opaque;
 
-    public ColorEditor(Color32 initial, IEnumerable<Color32>? recent = null)
+    /// <param name="collapsible">"색" 머리글과 "최근 색" 글을 눌러 접고 펼 수 있게 한다(메인 색 패널).</param>
+    public ColorEditor(Color32 initial, IEnumerable<Color32>? recent = null, bool collapsible = false)
     {
         Background = AppTheme.PanelBrush;
         MinWidth = 200;
@@ -85,15 +91,18 @@ internal sealed class ColorEditor : UserControl
 
         var pickerArea = new Panel { Children = { _squarePicker, _honeycomb, _wheel, _sliders } };
         _numbers = NumberGrid();
+        _pickerBody = Ui.Stack(pickerArea, _alpha, _numbers);
+        _pickerBody.Margin = default;
         _recentLabel = Ui.Label(UiStrings.S_ColorEditor_ColorEditor_2156C5C575);
-        var body = Ui.Stack(pickerArea, _alpha, _numbers, _recentLabel, _recent);
+        Control recentHeader = collapsible ? Foldable(_recentArrow, _recentLabel, () => RecentCollapsed = !RecentCollapsed) : _recentLabel;
+        var body = Ui.Stack(_pickerBody, recentHeader, _recent);
         var header = Ui.Header(UiStrings.S_ColorEditor_ColorEditor_551150B3F7);
-        var title = header.Child!;
+        var title = (Control)header.Child!;
         header.Child = null;
         var headerRow = new DockPanel();
         DockPanel.SetDock(_modeTabs, Dock.Right);
         headerRow.Children.Add(_modeTabs);
-        headerRow.Children.Add(title);
+        headerRow.Children.Add(collapsible ? Foldable(_colorArrow, title, () => ColorCollapsed = !ColorCollapsed) : title);
         header.Child = headerRow;
 
         var root = new DockPanel { Background = AppTheme.PanelBrush };
@@ -108,6 +117,55 @@ internal sealed class ColorEditor : UserControl
     public event EventHandler? ColorChanged;
     public event EventHandler? ModeChanged;
     public event EventHandler<(Color32 Color, MouseButton Button)>? RecentColorClicked;
+
+    /// <summary>고르기 칸·알파 막대·입력 칸을 접었는지(머리글과 최근 색은 남음).</summary>
+    public bool ColorCollapsed
+    {
+        get => _colorCollapsed;
+        set
+        {
+            _colorCollapsed = value;
+            _pickerBody.IsVisible = !value;
+            _colorArrow.Icon = value ? VectorIcon.ChevronRight : VectorIcon.ChevronDown;
+        }
+    }
+
+    /// <summary>최근 색 칸을 접었는지("최근 색" 글은 남음).</summary>
+    public bool RecentCollapsed
+    {
+        get => _recentCollapsed;
+        set
+        {
+            _recentCollapsed = value;
+            _recent.IsVisible = !value;
+            _recentArrow.Icon = value ? VectorIcon.ChevronRight : VectorIcon.ChevronDown;
+        }
+    }
+
+    /// <summary>접기 화살표(펼침 = 아래 꺾쇠, 접힘 = 오른쪽 꺾쇠 — "레이어 색"과 같은 모양).</summary>
+    private static IconView FoldArrow() => new(VectorIcon.ChevronDown, AppTheme.DimTextBrush)
+    {
+        Width = 12, Height = 12, IsHitTestVisible = false, VerticalAlignment = VerticalAlignment.Center,
+    };
+
+    /// <summary>화살표 + 제목: 왼쪽 클릭하면 <paramref name="toggle"/>.</summary>
+    private static Border Foldable(IconView arrow, Control title, Action toggle)
+    {
+        title.VerticalAlignment = VerticalAlignment.Center;
+        var b = new Border
+        {
+            Background = Brushes.Transparent,
+            Cursor = new Cursor(StandardCursorType.Hand),
+            Child = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { arrow, title } },
+        };
+        b.PointerPressed += (_, e) =>
+        {
+            if (!e.GetCurrentPoint(b).Properties.IsLeftButtonPressed) return;
+            e.Handled = true;
+            toggle();
+        };
+        return b;
+    }
 
     public Color32 Color
     {

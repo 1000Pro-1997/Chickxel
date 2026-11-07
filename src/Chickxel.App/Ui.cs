@@ -94,7 +94,7 @@ public static class Ui
             FormatString = decimals > 0 ? "F" + decimals : "0",
             Margin = new Thickness(3),
             ClipValueToMinMax = true,
-            ShowButtonSpinner = false, // 좌우로 끌어 바꾼다(NumberScrub)
+            ShowButtonSpinner = false, // 테마 단추 대신 NumberScrub의 위/아래 단추
         };
 
     /// <summary>숫자 상자 값(비었으면 최소값).</summary>
@@ -516,13 +516,19 @@ public static class Ui
 /// 결과가 정해진 단추(<see cref="OkButton"/>·<see cref="CancelButtonControl"/>·<see cref="AddButton"/>)를 누르면 그 결과로 닫히는데,
 /// 그 단추의 Click 처리기에서 <c>DialogResult = DialogResult.None</c>으로 하면 닫지 않는다(입력 검사용).
 /// 코드에서 <see cref="DialogResult"/>를 None 아닌 값으로 정하면 바로 그 결과로 닫힌다.
+/// 창은 그 화면의 작업 영역(작업 표시줄 제외)을 넘지 않게 열리고, 내용이 더 길면 본문(<see cref="Body"/>)만 세로로 스크롤된다(단추 줄은 늘 보임).
 /// </summary>
 public class DialogBase : Window
 {
+    /// <summary>창을 띄우기 전 제목 줄·테두리 높이를 모를 때 어림하는 값(DIP) — 띄운 뒤 실제 값으로 다시 맞춘다.</summary>
+    private const double EstimatedChrome = 40;
+
     protected readonly StackPanel Body;
     protected readonly Button OkButton;
     protected readonly Button CancelButtonControl;
     private readonly StackPanel _buttons;
+    /// <summary>본문을 감싼 스크롤: 내용에 맞춰 크기가 정해지는 창이면 화면보다 길 때 세로로 스크롤, 크기를 정해 둔 창이면 본문을 창 높이에 맞춤(스크롤 없음).</summary>
+    private readonly ScrollViewer _bodyScroll;
     private readonly Dictionary<Button, DialogResult> _results = new();
     private DialogResult _result;
     private bool _vetoed;
@@ -552,13 +558,75 @@ public class DialogBase : Window
         };
         _buttons.Children.Add(OkButton);
         _buttons.Children.Add(CancelButtonControl);
+        _bodyScroll = new ScrollViewer
+        {
+            Content = Body,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+        };
         var root = new DockPanel { Margin = new Thickness(12), LastChildFill = true };
         DockPanel.SetDock(_buttons, Dock.Bottom);
         root.Children.Add(_buttons);
-        root.Children.Add(Body);
+        root.Children.Add(_bodyScroll);
         Content = root;
         // 단추 자신의 Click 처리기가 모두 끝난 뒤(창까지 올라온 뒤) 결과를 정한다.
         AddHandler(Button.ClickEvent, OnAnyButtonClick, RoutingStrategies.Bubble);
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        // 크기를 정해 둔 창(직접 정한 크기·사용자가 끌어 바꾼 크기)은 본문이 창 높이를 채우는 배치(안쪽 목록 스크롤 등)를 쓰므로 바깥 스크롤을 끈다.
+        if (change.Property == SizeToContentProperty && _bodyScroll is not null)
+            _bodyScroll.VerticalScrollBarVisibility = SizeToContent.HasFlag(SizeToContent.Height) ? ScrollBarVisibility.Auto : ScrollBarVisibility.Disabled;
+        // 띄운 뒤 내용이 늘어 창이 커지면(효과를 넣는 등) 아래가 작업 영역 밖으로 나가지 않게 다시 옮긴다.
+        else if (change.Property == ClientSizeProperty && IsVisible) Dispatcher.UIThread.Post(ClampPosition, DispatcherPriority.Background);
+    }
+
+    /// <summary>본문이 창에 다 들어가지 못해 스크롤로 가려진 높이(DIP, 들어가면 0).</summary>
+    protected double BodyOverflow => Math.Max(0, _bodyScroll.Extent.Height - _bodyScroll.Viewport.Height);
+
+    /// <summary>띄우기 전에 그 화면의 작업 영역으로 최대 크기를 어림해 둔다(가운데 맞춤이 줄어든 크기로 되게).</summary>
+    internal void LimitToScreen(Avalonia.Platform.Screen? screen)
+    {
+        if (screen is null) return;
+        double scale = screen.Scaling;
+        MaxWidth = Math.Max(MinWidth, Math.Min(MaxWidth, screen.WorkingArea.Width / scale - EstimatedChrome / 2));
+        MaxHeight = Math.Max(MinHeight, Math.Min(MaxHeight, screen.WorkingArea.Height / scale - EstimatedChrome));
+    }
+
+    protected override void OnOpened(EventArgs e)
+    {
+        base.OnOpened(e);
+        KeepOnScreen();
+    }
+
+    /// <summary>띄운 뒤: 실제 제목 줄·테두리 크기로 최대 크기를 다시 맞추고, 창이 작업 영역 밖으로 나가 있으면 안으로 옮긴다.</summary>
+    private void KeepOnScreen()
+    {
+        if ((Screens.ScreenFromWindow(this) ?? Screens.Primary) is not { } screen) return;
+        var area = screen.WorkingArea;
+        double scale = screen.Scaling;
+        if (FrameSize is { } frame)
+        {
+            double chromeW = Math.Max(0, frame.Width - ClientSize.Width), chromeH = Math.Max(0, frame.Height - ClientSize.Height);
+            MaxWidth = Math.Max(MinWidth, area.Width / scale - chromeW);
+            MaxHeight = Math.Max(MinHeight, area.Height / scale - chromeH);
+        }
+        // 줄어든 크기가 배치된 뒤에 자리를 맞춘다.
+        Dispatcher.UIThread.Post(ClampPosition, DispatcherPriority.Background);
+    }
+
+    /// <summary>창(제목 줄 포함)이 그 화면의 작업 영역 밖으로 나가 있으면 안으로 옮긴다 — 작업 영역보다 크면 위·왼쪽을 맞춘다.</summary>
+    private void ClampPosition()
+    {
+        if (!IsVisible || FrameSize is not { } size || (Screens.ScreenFromWindow(this) ?? Screens.Primary) is not { } screen) return;
+        var area = screen.WorkingArea;
+        double scale = screen.Scaling;
+        int w = (int)Math.Ceiling(size.Width * scale), h = (int)Math.Ceiling(size.Height * scale);
+        int x = Math.Clamp(Position.X, area.X, Math.Max(area.X, area.Right - w));
+        int y = Math.Clamp(Position.Y, area.Y, Math.Max(area.Y, area.Bottom - h));
+        if (x != Position.X || y != Position.Y) Position = new PixelPoint(x, y);
     }
 
     /// <summary>결과. None 아닌 값을 넣으면 그 결과로 닫히고, 단추 Click 처리기 안에서 None을 넣으면 닫기를 취소한다.</summary>
@@ -592,6 +660,7 @@ public class DialogBase : Window
     public DialogResult ShowDialog(Visual? owner)
     {
         _vetoed = false;
+        if (Ui.Owner(owner) is { } o) LimitToScreen(o.Screens.ScreenFromWindow(o));
         var r = Ui.ShowModal<DialogResult>(this, owner);
         return r == DialogResult.None ? (_result == DialogResult.None ? DialogResult.Cancel : _result) : r;
     }

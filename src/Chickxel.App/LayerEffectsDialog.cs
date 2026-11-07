@@ -17,6 +17,11 @@ public sealed partial class LayerEffectsDialog : DialogBase
     private const int RightWidth = PreviewBox * 2 + 72;
     /// <summary>가운데(효과 목록·설정) 칸 폭.</summary>
     private const int SettingsWidth = 350;
+    /// <summary>
+    /// 공통 설정 + 효과 설정 칸 높이(고정 — 효과를 넣거나 골라도 창 높이가 그대로, 넘치는 내용은 이 칸 안에서 스크롤). 화면이 낮아 창이 작업 영역을 넘으면
+    /// 넘친 만큼 줄이되 <see cref="MinSettingsAreaHeight"/>까지만(그래도 넘치면 창 본문이 스크롤 — <see cref="DialogBase"/>).
+    /// </summary>
+    private const int SettingsAreaHeight = 540, MinSettingsAreaHeight = 260;
 
     private static readonly string[] Easings = [UiStrings.S_LayerEffectsDialog_Easings_4FA414FBAC, UiStrings.S_LayerEffectsDialog_Easings_BDEEAEDE46, UiStrings.S_LayerEffectsDialog_Easings_503369007B, UiStrings.S_LayerEffectsDialog_Easings_7665ED231C];
     private static readonly string[] Repeats = [UiStrings.S_LayerEffectsDialog_Repeats_3E39AFFB4A, UiStrings.S_LayerEffectsDialog_Repeats_753C57FE3B, UiStrings.S_LayerEffectsDialog_Repeats_466235A991];
@@ -42,6 +47,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
 
     private readonly ListBox _list;
     private readonly StackPanel _settings;
+    /// <summary>공통 설정과 설정 칸(<see cref="_settings"/>)을 함께 감싼 스크롤(높이 고정 — <see cref="SettingsAreaHeight"/>).</summary>
+    private readonly ScrollViewer _settingsScroll;
     /// <summary>설정 칸(<see cref="_settings"/>)에 줄을 쌓는 도우미.</summary>
     private readonly EffectForm _form;
     private readonly Button _remove, _up, _down, _bake, _play;
@@ -131,6 +138,16 @@ public sealed partial class LayerEffectsDialog : DialogBase
         };
         _settings = new StackPanel { Spacing = 2, MinHeight = 120, Width = SettingsWidth };
         _form = new EffectForm(_settings, this);
+        _settingsScroll = new ScrollViewer
+        {
+            Height = SettingsAreaHeight,
+            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+        };
+        // 화면이 낮아 창 본문이 넘치면 설정 칸을 그만큼 줄여 확인 단추 줄까지 한 화면에 들어오게 한다(창이 화면에 맞춰진 뒤 한 번).
+        Opened += (_, _) => Dispatcher.UIThread.Post(() =>
+        {
+            if (BodyOverflow > 0) _settingsScroll.Height = Math.Max(MinSettingsAreaHeight, SettingsAreaHeight - Math.Ceiling(BodyOverflow));
+        }, DispatcherPriority.Background);
 
         _expandMode = Ui.Combo(110, [UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_E64B4CB375, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_F7968CE40F, UiStrings.EffectCanvasExpand_KeepCenter]);
         _expandMode.SelectedIndex = (int)s_canvasExpandMode;
@@ -175,8 +192,9 @@ public sealed partial class LayerEffectsDialog : DialogBase
             Ui.Row(rangeLabel, _addAll, Ui.Label(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4782D0C688), _addFrom, Ui.Label("~"), _addTo),
             _list,
             Ui.Row(_remove, _up, _down, _bake),
-            shared,
-            Ui.Group(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4D4CF63BB1, new ScrollViewer { Content = _settings, MaxHeight = 320, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled }));
+            // 공통 설정·설정 칸은 높이를 고정한 스크롤 하나에 둔다 — 효과를 넣거나 고를 때마다 창 높이가 바뀌어 아래 확인 단추가 화면 밖으로 밀리지 않게.
+            _settingsScroll);
+        _settingsScroll.Content = Ui.Stack(shared, Ui.Group(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4D4CF63BB1, _settings));
         left.Width = SettingsWidth + 30;
 
         _preview.Width = PreviewBox * 2 + 12;

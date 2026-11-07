@@ -637,16 +637,18 @@ public sealed class PixelateDialog : DialogBase
     /// <summary>배경 지우기를 다시 켤 때 돌아갈 방식(마지막으로 쓴, 지우지 않음이 아닌 방식).</summary>
     private BackgroundMode _barBgMode = BackgroundMode.Auto;
     /// <summary>
-    /// 원본 아래 막대의 결과 크기: 자동(= 4단계 방식이 고정 크기가 아님) · 가로×세로 · 비율 묶기.
-    /// 4단계 칸과 같은 설정을 함께 쓴다 — 막대를 바꾸면 4단계 칸에 적고, 4단계 칸(불러오기 포함)이 바뀌면 <see cref="SyncBarSize"/>가 막대를 맞춘다.
+    /// 설정 칸 '간편 설정'(0번 다음)의 결과 크기: 자동(= 4단계 방식이 고정 크기가 아님) · 가로×세로 · 비율 묶기.
+    /// 4단계 칸과 같은 설정을 함께 쓴다 — 간편 설정을 바꾸면 4단계 칸에 적고, 4단계 칸(불러오기 포함)이 바뀌면 <see cref="SyncQuickSettings"/>가 간편 설정을 맞춘다.
     /// </summary>
-    private readonly CheckBox _barAuto;
-    private readonly NumericUpDown _barW, _barH;
-    private readonly ToggleButton _barAspect;
-    /// <summary>막대를 설정에 맞추는 중(막대 쪽 이벤트 무시).</summary>
+    private readonly CheckBox _quickAuto;
+    private readonly NumericUpDown _quickW, _quickH;
+    private readonly ToggleButton _quickAspect;
+    /// <summary>간편 설정의 '모든 프레임이 한 팔레트' — 6단계 <see cref="_palShared"/>와 같은 설정.</summary>
+    private readonly CheckBox _quickShared;
+    /// <summary>원본 아래 막대·간편 설정을 설정에 맞추는 중(그쪽 이벤트 무시).</summary>
     private bool _barSyncing;
     /// <summary>자동을 다시 켤 때 돌아갈 방식(마지막으로 쓴, 고정 크기가 아닌 방식).</summary>
-    private OutputSizeMode _barAutoMode = OutputSizeMode.FromScale;
+    private OutputSizeMode _quickAutoMode = OutputSizeMode.FromScale;
     private readonly NumericUpDown _fps;
     /// <summary>프레임 띠(큰 미리보기·크게 보기 — 썸네일 <see cref="_thumbs"/>를 함께 씀).</summary>
     private readonly FrameStrip _strip, _zoomStrip;
@@ -1025,8 +1027,8 @@ public sealed class PixelateDialog : DialogBase
         _szW = Num(4, 1024, 32, 0).Presets(16, 24, 32, 48, 64, 96, 128);
         _szH = Num(4, 1024, 32, 0).Presets(16, 24, 32, 48, 64, 96, 128);
         _szAspect = Ui.Check(UiStrings.Pixelate_Size_KeepAspect);
-        _szAuto = Ui.Check(UiStrings.Pixelate_Auto, true).Tip(UiStrings.Pixelate_Bar_AutoTip);
-        _szAuto.IsCheckedChanged += (_, _) => { if (!_barSyncing) _barAuto!.IsChecked = _szAuto.On(); };
+        _szAuto = Ui.Check(UiStrings.Pixelate_Auto, true).Tip(UiStrings.Pixelate_Quick_AutoTip);
+        _szAuto.IsCheckedChanged += (_, _) => { if (!_barSyncing) _quickAuto!.IsChecked = _szAuto.On(); };
         _szPad = Num(0, 64, 1, 0);
         _szFactor = Num(PixelateRanges.Factor, 0.125m, 3, 0.005m).Presets(0.0625m, 0.1m, 0.125m, 0.25m, 0.5m);
         _szInfo = Info();
@@ -1150,8 +1152,33 @@ public sealed class PixelateDialog : DialogBase
             _aiReference,
             Ui.Row(rank, Ui.Label(UiStrings.Pixelate_Ai_RankCount), _aiRankCount));
 
+        // ── 간편 설정: 자주 바꾸는 값(4. 결과 크기, 6. 팔레트와 같은 설정)을 맨 위에 모은다.
+        // 결과 크기: 자동이면 회색 숫자로 지금 결과 크기, 끄면 적은 가로×세로에 맞춤.
+        _quickAuto = Ui.Check(UiStrings.Pixelate_Auto, true).Tip(UiStrings.Pixelate_Quick_AutoTip);
+        _quickW = Ui.Num(4, 1024, 32, 58).Presets(16, 24, 32, 48, 64, 96, 128);
+        _quickH = Ui.Num(4, 1024, 32, 58).Presets(16, 24, 32, 48, 64, 96, 128);
+        var linkIcon = Ui.Icon(VectorIcon.Link, 14);
+        linkIcon.Margin = new Thickness(0, 1);
+        _quickAspect = new ToggleButton
+        {
+            Content = linkIcon,
+            Margin = new Thickness(2, 0),
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+        }.Tip(UiStrings.Pixelate_Quick_KeepAspectTip);
+        _quickAuto.IsCheckedChanged += (_, _) => QuickAutoChanged();
+        _quickW.ValueChanged += (_, _) => QuickSizeChanged(width: true);
+        _quickH.ValueChanged += (_, _) => QuickSizeChanged(width: false);
+        _quickAspect.IsCheckedChanged += (_, _) => { if (!_barSyncing) _szAspect.IsChecked = _quickAspect.On(); };
+        _quickShared = Ui.Check(UiStrings.Pixelate_Pal_Shared).Tip(UiStrings.Pixelate_Quick_SharedTip);
+        _quickShared.IsCheckedChanged += (_, _) => { if (!_barSyncing) _palShared.IsChecked = _quickShared.On(); };
+        var quickBody = Ui.Stack(
+            Ui.Row(Ui.Label(UiStrings.Pixelate_Quick_Size), _quickAuto, _quickW, Ui.Label(UiStrings.Pixelate_Size_By), _quickH, _quickAspect),
+            _quickShared);
+
         var left = new StackPanel { Spacing = 2, Margin = new Thickness(0, 0, 8, 0) };
         left.Children.Add(Section(UiStrings.Pixelate_Section_Criteria, crBody, false));
+        left.Children.Add(Section(UiStrings.Pixelate_Section_Quick, quickBody, true));
         left.Children.Add(Section(UiStrings.Pixelate_Section_Background, bgBody, true, OptimizeSection.Background));
         left.Children.Add(Section(UiStrings.Pixelate_Section_Frames, frBody, true));
         left.Children.Add(Section(UiStrings.Pixelate_Section_Grid, grBody, true, OptimizeSection.Grid));
@@ -1282,26 +1309,7 @@ public sealed class PixelateDialog : DialogBase
 
         // 원본 바꾸기(원본이 있을 때): 파일 찾기 — 창에 끌어 놓거나 Ctrl+V로 붙여 넣어도 바뀐다.
         _replaceSource = Ui.IconButton(VectorIcon.FolderOpen, UiStrings.Pixelate_ReplaceSource + "\n" + UiStrings.Pixelate_ReplaceSourceTip, (_, _) => BrowseSource());
-        // 결과 크기(4단계와 같은 설정): 자동이면 회색 숫자로 지금 결과 크기, 끄면 적은 가로×세로에 맞춤.
-        _barAuto = Ui.Check(UiStrings.Pixelate_Auto, true).Tip(UiStrings.Pixelate_Bar_AutoTip);
-        _barW = Ui.Num(4, 1024, 32, 58).Presets(16, 24, 32, 48, 64, 96, 128);
-        _barH = Ui.Num(4, 1024, 32, 58).Presets(16, 24, 32, 48, 64, 96, 128);
-        var linkIcon = Ui.Icon(VectorIcon.Link, 14);
-        linkIcon.Margin = new Thickness(0, 1);
-        _barAspect = new ToggleButton
-        {
-            Content = linkIcon,
-            Margin = new Thickness(2, 0),
-            HorizontalContentAlignment = HorizontalAlignment.Center,
-            VerticalContentAlignment = VerticalAlignment.Center,
-        }.Tip(UiStrings.Pixelate_Bar_KeepAspectTip);
-        _barAuto.IsCheckedChanged += (_, _) => BarAutoChanged();
-        _barW.ValueChanged += (_, _) => BarSizeChanged(width: true);
-        _barH.ValueChanged += (_, _) => BarSizeChanged(width: false);
-        _barAspect.IsCheckedChanged += (_, _) => { if (!_barSyncing) _szAspect.IsChecked = _barAspect.On(); };
-        var barLabel = Ui.Label(UiStrings.Pixelate_Bar_Size);
-        barLabel.Margin = new Thickness(10, 3, 3, 3);
-        var toolbar = Ui.Row(_replaceSource, _showGrid, _bgRemove, barLabel, _barAuto, _barW, Ui.Label(UiStrings.Pixelate_Size_By), _barH, _barAspect);
+        var toolbar = Ui.Row(_replaceSource, _showGrid, _bgRemove);
         var statusRow = new DockPanel { Margin = new Thickness(0, 2) };
         DockPanel.SetDock(toolbar, Dock.Left);
         statusRow.Children.Add(toolbar);
@@ -1469,7 +1477,8 @@ public sealed class PixelateDialog : DialogBase
         Opened += (_, _) =>
         {
             Dispatcher.UIThread.Post(() => { if (!_settingsAnim.IsEnabled) _settingsHost.IsVisible = _settingsExpanded; }, DispatcherPriority.Background);
-            Rerun();
+            // AI 그리기의 '변환 설정 보기'는 그 설정으로 바로 보인다(불러오면 자동 최적화와 관계없이).
+            Rerun(lineup: _autoOptimizePending || _presetGiven);
         };
         Closed += (_, _) => OnClosedSave();
     }
@@ -1531,7 +1540,7 @@ public sealed class PixelateDialog : DialogBase
         _sourceView.SetImage(input.Image, null);
         UpdateSourceState();
         _autoOptimizePending = _optAuto.On();
-        Rerun();
+        Rerun(lineup: _autoOptimizePending);
     }
 
     /// <summary>후보·고른 후보의 미리보기·단계 안내 글을 비운다(원본을 바꿀 때).</summary>
@@ -1549,7 +1558,7 @@ public sealed class PixelateDialog : DialogBase
         _selectedInfo.Text = _breakdown.Text = "";
         _largeWarning.IsVisible = false;
         _bgInfo.Text = _frInfo.Text = _grInfo.Text = _szInfo.Text = _palInfo.Text = "";
-        SyncBarSize();
+        SyncQuickSettings();
         _preview.SetFrames([], [], null, [], true);
         var oldThumbs = _thumbs;
         _thumbs = [];
@@ -2010,39 +2019,42 @@ public sealed class PixelateDialog : DialogBase
         _palMethodKeep.IsEnabled = _palDitherKeep.IsEnabled = _sectionToggles.TryGetValue(OptimizeSection.Palette, out var palToggle) && palToggle.On();
         // 칸 맞추기 따로 최적화면 격자 칸은 그 체크로 최적화하므로 칸 머리의 '최적화'는 쓰지 않는다.
         if (_sectionToggles.TryGetValue(OptimizeSection.Grid, out var gridToggle)) gridToggle.IsEnabled = !_grFirst.On();
-        SyncBarSize();
+        SyncQuickSettings();
         SyncBarBackground();
     }
 
-    /// <summary>원본 아래 막대의 결과 크기를 4단계 칸(설정)과 고른 결과에 맞춘다(막대 이벤트는 무시).</summary>
-    private void SyncBarSize()
+    /// <summary>간편 설정을 4단계·6단계 칸(설정)과 고른 결과에 맞춘다(간편 설정 이벤트는 무시).</summary>
+    private void SyncQuickSettings()
     {
         var mode = At<OutputSizeMode>(_szMode);
         bool auto = mode != OutputSizeMode.FixedSize;
-        if (auto) _barAutoMode = mode;
+        if (auto) _quickAutoMode = mode;
         _barSyncing = true;
         try
         {
-            _barAuto.IsChecked = auto;
+            _quickAuto.IsChecked = auto;
             _szAuto.IsChecked = auto;
-            _barAspect.IsChecked = _szAspect.On();
-            _barW.IsEnabled = _barH.IsEnabled = _barAspect.IsEnabled = !auto;
+            _quickAspect.IsChecked = _szAspect.On();
+            _quickW.IsEnabled = _quickH.IsEnabled = _quickAspect.IsEnabled = !auto;
             if (auto)
             {
                 // 자동: 고른 결과의 실제 크기(4~1024 밖일 수도 있어 범위를 넓힘), 결과가 없으면 비움.
                 var size = _selected?.Result.Size;
-                _barW.Minimum = _barH.Minimum = 0;
-                _barW.Maximum = _barH.Maximum = int.MaxValue;
-                _barW.Value = size is { Width: > 0 } s ? s.Width : null;
-                _barH.Value = size is { Height: > 0 } t ? t.Height : null;
+                _quickW.Minimum = _quickH.Minimum = 0;
+                _quickW.Maximum = _quickH.Maximum = int.MaxValue;
+                _quickW.Value = size is { Width: > 0 } s ? s.Width : null;
+                _quickH.Value = size is { Height: > 0 } t ? t.Height : null;
             }
             else
             {
-                _barW.Minimum = _barH.Minimum = _szW.Minimum;
-                _barW.Maximum = _barH.Maximum = _szW.Maximum;
-                _barW.Value = _szW.Value;
-                _barH.Value = _szH.Value;
+                _quickW.Minimum = _quickH.Minimum = _szW.Minimum;
+                _quickW.Maximum = _quickH.Maximum = _szW.Maximum;
+                _quickW.Value = _szW.Value;
+                _quickH.Value = _szH.Value;
             }
+            // 6단계와 같은 값·켜짐(팔레트 방식에 따라 꺼짐).
+            _quickShared.IsChecked = _palShared.On();
+            _quickShared.IsEnabled = _palShared.IsEnabled;
         }
         finally
         {
@@ -2075,13 +2087,13 @@ public sealed class PixelateDialog : DialogBase
         _bgMode.SelectedIndex = Index(_bgRemove.On() ? _barBgMode : BackgroundMode.None);
     }
 
-    /// <summary>막대의 "자동"을 바꿈: 켜면 마지막 자동 방식(칸 크기대로·배율), 끄면 지금 보이는 결과 크기에서 시작하는 고정 크기.</summary>
-    private void BarAutoChanged()
+    /// <summary>간편 설정의 "자동"을 바꿈: 켜면 마지막 자동 방식(칸 크기대로·배율), 끄면 지금 보이는 결과 크기에서 시작하는 고정 크기.</summary>
+    private void QuickAutoChanged()
     {
         if (_barSyncing) return;
-        if (_barAuto.On())
+        if (_quickAuto.On())
         {
-            _szMode.SelectedIndex = Index(_barAutoMode);
+            _szMode.SelectedIndex = Index(_quickAutoMode);
             return;
         }
         if (_selected?.Result.Size is { Width: > 0, Height: > 0 } size)
@@ -2094,15 +2106,15 @@ public sealed class PixelateDialog : DialogBase
         _szMode.SelectedIndex = Index(OutputSizeMode.FixedSize);
     }
 
-    /// <summary>막대의 가로·세로를 바꿈(고정 크기일 때): 4단계 칸에 적고, 비율 묶기면 다른 쪽을 지금 결과(없으면 원본) 비율대로 맞춘다.</summary>
-    private void BarSizeChanged(bool width)
+    /// <summary>간편 설정의 가로·세로를 바꿈(고정 크기일 때): 4단계 칸에 적고, 비율 묶기면 다른 쪽을 지금 결과(없으면 원본) 비율대로 맞춘다.</summary>
+    private void QuickSizeChanged(bool width)
     {
-        if (_barSyncing || _barAuto.On()) return;
-        var (edited, target, other) = width ? (_barW, _szW, _szH) : (_barH, _szH, _szW);
+        if (_barSyncing || _quickAuto.On()) return;
+        var (edited, target, other) = width ? (_quickW, _szW, _szH) : (_quickH, _szH, _szW);
         if (edited.Value is not { } v) return;
         _loading = true;
         target.Value = Math.Clamp(v, target.Minimum, target.Maximum);
-        if (_barAspect.On() && AspectBasis() is { } a)
+        if (_quickAspect.On() && AspectBasis() is { } a)
         {
             double ratio = width ? a.Height / (double)a.Width : a.Width / (double)a.Height;
             other.Value = Math.Clamp(Math.Round(v * (decimal)ratio), other.Minimum, other.Maximum);
@@ -2168,8 +2180,10 @@ public sealed class PixelateDialog : DialogBase
     /// <summary>
     /// 원본을 준비하고(배경 지우기·프레임 나누기·격자 찾기 — <see cref="OnPrepared"/>) 후보 줄을 새로 채운다: '불러오면 자동 최적화'가 기다리면 자동 최적화,
     /// 아니면 체크한 프리셋을 저장한 설정 그대로 한 번씩(<see cref="StartLineup"/>). 원본을 넣거나 바꿀 때·프레임 나누기를 적용할 때 부른다.
+    /// <paramref name="lineup"/>이 false면(원본을 넣을 때 '불러오면 자동 최적화'가 꺼져 있음) 준비만 하고 아무것도 돌리지 않는다 — 후보 줄은 체크한 프리셋의
+    /// '돌리지 않음' 칸만 남고, 정리하기·자동 최적화·칸 우클릭 '이 프리셋만 돌리기'로 돌린다.
     /// </summary>
-    private void Rerun()
+    private void Rerun(bool lineup = true)
     {
         if (_input is not { } input) return;
         _cts?.Cancel();
@@ -2206,7 +2220,8 @@ public sealed class PixelateDialog : DialogBase
                         _status.Text = UiStrings.Pixelate_Status_NoSprite;
                         return;
                     }
-                    StartLineup();
+                    if (lineup) StartLineup();
+                    else _status.Text = UiStrings.Pixelate_Status_NotRun;
                 });
             }
             catch (OperationCanceledException)
@@ -2698,7 +2713,7 @@ public sealed class PixelateDialog : DialogBase
             bad: Math.Round(p.Badness * 100),
             weight: p.Weight.ToString("0.#", CultureInfo.CurrentCulture))));
         _szInfo.Text = UiStrings.FormatPixelate_Size_Info(width: r.Size.Width, height: r.Size.Height);
-        SyncBarSize();
+        SyncQuickSettings();
         // 실패한 결과(칸 크기 감지가 잘못됨)·다시 정리한 결과면 그 안내, 아니면 결과의 긴 쪽이 클 때 칸 크기가 진짜 칸의 몇 분의 1일 수 있다(아직 확대된 그림).
         var note = FailureNote(r);
         _largeWarning.IsVisible = note is not null || Math.Max(r.Size.Width, r.Size.Height) > LargeResultSide;
@@ -3890,7 +3905,8 @@ public sealed class PixelateDialog : DialogBase
         // 고를 후보: 도는 동안 사용자가 고른 칸, 아니면 모든 프리셋을 돌렸으면 지금 열린 프리셋의 칸(없으면 첫 칸), 하나만 돌렸으면 그 칸.
         var opened = !single && _current is { } cur ? _candidates.FirstOrDefault(x => _optimized.TryGetValue(x, out var o) && ReferenceEquals(o.Spec.Owner, cur)) : null;
         var best = picked >= 0 && picked < _candidates.Count ? _candidates[picked] : opened ?? first!;
-        _userPicked = false;
+        // 하나만 돌린 칸(정리하기·다시 돌리기·이 프리셋만 돌리기)은 사용자가 직접 돌린 것이라 그 칸을 누른 것과 같게 고른 칸으로 친다.
+        _userPicked = single;
         // 고른 후보의 준비한 원본(배경 지운 모습)을 불러온다.
         if (sourceOf.GetValueOrDefault(best) is { } src && !ReferenceEquals(_prepared, src))
         {

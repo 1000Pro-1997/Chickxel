@@ -90,6 +90,13 @@ public sealed class AiDrawSettings
     /// <summary>변환할 때 자동 최적화를 돌린다(기본 켬).</summary>
     public bool AutoOptimize { get; set; } = true;
 
+    /// <summary>
+    /// 자동 프롬프트(기본 켬): 켜면 AI가 정한 대상 설명을 앱의 생성 틀(스타일·픽셀 규칙·배경·시트 배치·자세·스타일 참고)로 감싸 보낸다.
+    /// 끄면 사용자 메시지를 그대로 이미지 생성에 보내고(붙인 그림은 순서대로 함께), 생성 전 크기 판정·스타일 참고·애니메이션 계획 없이 한 장을 그대로 변환한다.
+    /// 예전 설정 파일에는 없으면 켬이다.
+    /// </summary>
+    public bool AutoPrompt { get; set; } = true;
+
     public AiDrawInsert Insert { get; set; } = AiDrawInsert.NewLayer;
 
     public AiDrawStyleReference StyleReference { get; set; } = AiDrawStyleReference.Auto;

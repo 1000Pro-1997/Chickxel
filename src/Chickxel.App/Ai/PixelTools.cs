@@ -334,6 +334,23 @@ public sealed partial class PixelTools
                 ["part"] = Str("Part layer name: set the skin for this part only instead of the whole group."),
                 ["follow_group"] = Bool("With `part`: clear the part's own skin so it follows the group again (default false)."),
             }),
+        Tool("edit_skin",
+            "Change an existing skin (undoable, one step): rename it (`name`), reorder it (`position`: 0-based place among the group skins — 0 makes it the base " +
+            "(default) skin; for a part-only skin, its place among that part's part-only skins), turn a part-only skin into a group skin every part can wear " +
+            "(`part_only`=false; the other parts start empty) or a group skin into a part-only skin of `part` (`part_only`=true; the other parts' drawings in it " +
+            "are deleted; not the base skin or the last group skin), or delete it (`delete`=true, alone; deletes its drawings; the last group skin can't be deleted). " +
+            "Pass at least one change. Use list_skins for the names.",
+            new JsonObject
+            {
+                ["group"] = Int("Index of the group layer (default: the selected group, or the group of the selected part; with `part`, narrows the part search).", 0),
+                ["skin"] = Str("Current skin name (see list_skins). Part-only skins need `part`."),
+                ["part"] = Str("Part layer name: the part that owns the part-only skin, or the part to give the skin to with part_only=true."),
+                ["name"] = Str("New skin name (must be unique within the group, including part-only skins)."),
+                ["position"] = Int("New 0-based position (clamped to the list).", 0),
+                ["part_only"] = Bool("true: make the group skin a part-only skin of `part`; false: make the part-only skin a group skin."),
+                ["delete"] = Bool("Delete the skin and its drawings (cannot be combined with other changes)."),
+            },
+            "skin"),
         Tool("list_outfits",
             "List outfit presets: named snapshots of every group's skin plus per-part skin overrides. Each entry has its slots " +
             "(group → skin), part overrides, whether it matches what is shown now, and entries that no longer exist (deleted group/part/skin, skipped on apply).",
@@ -514,6 +531,7 @@ public sealed partial class PixelTools
                 "apply_outfit" => ApplyOutfit(name, a),
                 "add_skin" => AddSkin(name, a),
                 "set_skin" => SetSkin(name, a),
+                "edit_skin" => EditSkin(name, a),
                 "list_effect_types" => ListEffectTypes(),
                 "get_effects" => GetEffects(a),
                 "add_effect" => AddEffect(name, a),
@@ -1244,6 +1262,72 @@ public sealed partial class PixelTools
         var own = FindSkin(owner, name, part);
         Ctx.SetPartSkin(part, own);
         return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetSkin_7A841A0D99,tool,p.IndexOf(part),part.Name,own.Name,(own.IsPartOnly ? UiStrings.S_PixelTools_SetSkin_1F0ADB2566 : ""),owner.Name,owner.ActiveSkin?.Name));
+    }
+
+    /// <summary>
+    /// 있는 스킨 고치기(이름·순서·부위 전용 ↔ 그룹 스킨·삭제)를 실행취소 한 단계로. 삭제는 다른 변경과 같이 쓸 수 없다.
+    /// 순서는 이름 → 부위 전용/그룹 스킨 바꾸기 → 위치(바꾼 뒤 목록 기준). 중간에 실패하면 모델이 전부 되돌린다.
+    /// </summary>
+    private JsonObject EditSkin(string tool, JsonObject? a)
+    {
+        var p = BeginMutation();
+        var skinName = OptString(a, "skin")?.Trim() ?? "";
+        if (skinName.Length == 0) throw new ToolError(UiStrings.S_PixelTools_SetSkin_5A7BD93C92);
+        var part = string.IsNullOrEmpty(OptString(a, "part")?.Trim()) ? null : FindPart(p, a);
+        var group = part?.Parent ?? SkinGroup(p, a);
+        RequireUnlocked(p, p.IndexOf(group));
+        if (part is not null) RequireUnlocked(p, p.IndexOf(part));
+        var skin = FindSkin(group, skinName, part);
+        var newName = OptString(a, "name")?.Trim();
+        if (newName?.Length == 0) newName = null;
+        int? position = OptInt(a, "position", 0, int.MaxValue);
+        bool? partOnly = OptBool(a, "part_only");
+        bool delete = OptBool(a, "delete") ?? false;
+        if (delete && (newName is not null || position is not null || partOnly is not null)) throw new ToolError(UiStrings.AiSkin_Edit_DeleteAlone);
+        if (!delete && newName is null && position is null && partOnly is null) throw new ToolError(UiStrings.AiSkin_Edit_Nothing);
+        if (partOnly == true && part is null) throw new ToolError(UiStrings.AiSkin_Edit_PartOnlyNeedsPart);
+
+        var oldName = skin.Name;
+        var changes = new List<string>();
+        if (delete)
+        {
+            p.Edit(Label(tool), ProjectChange.Layers | ProjectChange.Pixels, () => p.DeleteSkin(group, skin));
+            changes.Add(UiStrings.FormatAiSkin_Edit_Deleted(skin: oldName));
+        }
+        else
+            p.Edit(Label(tool), ProjectChange.Layers | ProjectChange.Pixels, () =>
+            {
+                if (newName is not null && newName != skin.Name)
+                {
+                    p.RenameSkin(group, skin, newName);
+                    changes.Add(UiStrings.FormatAiSkin_Edit_Renamed(from: oldName, to: skin.Name));
+                }
+                if (partOnly == true && skin.Owner is null)
+                {
+                    p.DemoteSkin(group, skin, part!);
+                    changes.Add(UiStrings.FormatAiSkin_Edit_Demoted(skin: skin.Name, part: part!.Name));
+                }
+                else if (partOnly == false && skin.Owner is not null)
+                {
+                    p.PromoteSkin(group, skin);
+                    changes.Add(UiStrings.FormatAiSkin_Edit_Promoted(skin: skin.Name));
+                }
+                if (position is { } to)
+                {
+                    var list = skin.Owner is { } owner ? group.AllSkins.Where(s => ReferenceEquals(s.Owner, owner)).ToList() : group.Skins.ToList();
+                    int from = list.IndexOf(skin), target = Math.Clamp(to, 0, list.Count - 1);
+                    if (from != target)
+                    {
+                        p.MoveSkin(group, skin, target - from);
+                        changes.Add(UiStrings.FormatAiSkin_Edit_Moved(skin: skin.Name, position: target));
+                    }
+                }
+            });
+        var summary = changes.Count == 0 ? UiStrings.AiSkin_Edit_Unchanged : string.Join("; ", changes);
+        var partSkins = p.ChildrenOf(group).Where(l => l.OwnSkins is { Count: > 0 })
+            .Select(l => $"{l.Name}: {SkinNames(l.OwnSkins!)}").ToList();
+        return TextResult(UiStrings.FormatAiSkin_Edit_Result(tool: tool, index: p.IndexOf(group), group: group.Name, changes: summary,
+            skins: SkinNames(group), active: group.ActiveSkin?.Name ?? "") + (partSkins.Count > 0 ? " · partSkins " + string.Join(" / ", partSkins) : ""));
     }
 
     private JsonObject ListOutfits()

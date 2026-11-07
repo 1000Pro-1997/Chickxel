@@ -178,7 +178,7 @@
     <value>연필</value>
   </data>
   <data name="Ui_057" xml:space="preserve">
-    <value>확대율 — 눌러서 직접 입력(%) · 좌우로 끌어 바꾸기 · 우클릭 = 화면에 맞추기·배율 목록</value>
+    <value>확대율 — 눌러서 직접 입력(%) · 오른쪽 위/아래 단추를 누르거나 위아래로 끌어 바꾸기 · 우클릭 = 화면에 맞추기·배율 목록</value>
   </data>
   <data name="Ui_058" xml:space="preserve">
     <value>화면에 맞추기</value>

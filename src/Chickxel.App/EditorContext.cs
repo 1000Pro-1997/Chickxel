@@ -229,6 +229,9 @@ public sealed class EditorContext
     public BrushFootprint Brush => BrushFootprint.Get(_brushShape, _brushSize);
 
     public bool PixelPerfect { get => _pixelPerfect; set { _pixelPerfect = value; OptionsChanged(); } }
+    private bool _pencilOrthogonal = true;
+    /// <summary>연필·그라데이션 연필·지우개 획의 픽셀 잇기: true = ㄱ자(4방향, 모든 픽셀이 변으로 붙음 — 픽셀 퍼펙트는 쓰지 않음), false = 대각선으로도 이음.</summary>
+    public bool PencilOrthogonal { get => _pencilOrthogonal; set { if (_pencilOrthogonal == value) return; _pencilOrthogonal = value; OptionsChanged(); } }
     /// <summary>채우기: true = 이어진 영역만, false = 맞는 색 전체.</summary>
     public bool FillContiguous { get => _fillContiguous; set { _fillContiguous = value; OptionsChanged(); } }
     /// <summary>채우기 허용 오차(0~100%, 0 = 정확히 같은 색만). 채널 차이 최댓값 기준(<see cref="Raster.Matches"/>).</summary>

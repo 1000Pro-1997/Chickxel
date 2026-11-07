@@ -1207,6 +1207,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _ctx.StarPoints = s.StarPoints;
         _ctx.SpiralTurns = s.SpiralTurns;
         _ctx.ShapeOrthogonal = s.ShapeOrthogonal;
+        _ctx.PencilOrthogonal = s.PencilOrthogonal;
         _ctx.RightButtonErases = s.RightButtonErases;
         _ctx.MoveWrap = s.MoveWrap;
         _ctx.TransformResample = s.TransformResample;
@@ -1230,6 +1231,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _ctx.Secondary = ColorParse.ParseOr(s.SecondaryColor, Color32.Transparent);
         _colors.PickerMode = s.ColorPickerMode;
         _colors.LayerColorsCollapsed = s.LayerColorsCollapsed;
+        _colors.ColorCollapsed = s.ColorCollapsed;
+        _colors.RecentColorsCollapsed = s.RecentColorsCollapsed;
         _colors.LospecSort = s.LospecSort ?? LospecPaletteDialog.DefaultSortKey;
         _browser.IncludeSubfolders = s.IncludeSubfolders;
         _canvas.AutoFit = s.AutoFit;
@@ -1385,6 +1388,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         s.StarPoints = _ctx.StarPoints;
         s.SpiralTurns = _ctx.SpiralTurns;
         s.ShapeOrthogonal = _ctx.ShapeOrthogonal;
+        s.PencilOrthogonal = _ctx.PencilOrthogonal;
         s.RightButtonErases = _ctx.RightButtonErases;
         s.MoveWrap = _ctx.MoveWrap;
         s.TransformResample = _ctx.TransformResample;
@@ -1408,6 +1412,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         s.Palettes = _colors.Palettes.Select(PaletteSetting.From).ToList();
         s.ColorPickerMode = _colors.PickerMode;
         s.LayerColorsCollapsed = _colors.LayerColorsCollapsed;
+        s.ColorCollapsed = _colors.ColorCollapsed;
+        s.RecentColorsCollapsed = _colors.RecentColorsCollapsed;
         s.LospecSort = _colors.LospecSort;
         s.IncludeSubfolders = _browser.IncludeSubfolders;
         s.LastFolder = _browser.RootFolder ?? s.LastFolder;

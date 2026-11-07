@@ -59,7 +59,7 @@
   <data name="Ui_054" xml:space="preserve"><value>When on, fits each image to the screen when opened (also fits once when turned on) · Ctrl+0: fit now</value></data>
   <data name="Ui_055" xml:space="preserve"><value>AI chat (Claude·Codex): create and edit art with words (Ctrl+L)</value></data>
   <data name="Ui_056" xml:space="preserve"><value>Pencil</value></data>
-  <data name="Ui_057" xml:space="preserve"><value>Zoom — click to type (%) · drag left/right to change · Right-click = fit to screen, zoom list</value></data>
+  <data name="Ui_057" xml:space="preserve"><value>Zoom — click to type (%) · click the up/down buttons on the right or drag them up/down to change · Right-click = fit to screen, zoom list</value></data>
   <data name="Ui_058" xml:space="preserve"><value>Fit to screen</value></data>
   <data name="Menu_File" xml:space="preserve"><value>_File</value></data>
   <data name="Ui_061" xml:space="preserve"><value>Recent folders</value></data>

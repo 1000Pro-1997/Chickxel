@@ -27,9 +27,15 @@ public sealed class GradientStroke
 
     private readonly Dictionary<Point, double> _pixels = new();
     private Point _end;
+    private readonly bool _orthogonal;
 
     /// <param name="start">첫 브러시 중심(거리 0). 이 점의 도장은 부르는 쪽이 거리 0으로 기록한다.</param>
-    public GradientStroke(Point start) => _end = start;
+    /// <param name="orthogonal">구간을 ㄱ자 4방향 선(<see cref="Raster.Line4"/>)으로 잇는다(아니면 대각선도 쓰는 브레젠험).</param>
+    public GradientStroke(Point start, bool orthogonal = false)
+    {
+        _end = start;
+        _orthogonal = orthogonal;
+    }
 
     /// <summary>지금까지 그린 길이(px, 꺾은선을 따라).</summary>
     public double Length { get; private set; }
@@ -48,7 +54,7 @@ public sealed class GradientStroke
         var from = _end;
         double dx = to.X - from.X, dy = to.Y - from.Y;
         double length = Math.Sqrt(dx * dx + dy * dy);
-        var line = Raster.Line(from, to);
+        var line = _orthogonal ? Raster.Line4(from, to) : Raster.Line(from, to);
         for (int i = 1; i < line.Count; i++)
         {
             var p = line[i];

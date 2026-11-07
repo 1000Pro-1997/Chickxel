@@ -2,6 +2,33 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.103 (2026-11-07)
+### Pencil and eraser: pixel steps
+- Tool settings for the pencil, gradient pencil and eraser have **Pixel steps**: Orthogonal (default) or Diagonal.
+- Orthogonal joins every stroke and Shift+click line sideways or up/down only, so each pixel touches the next by an edge (an L-shaped corner at each step). Pixel perfect is not used then.
+- Diagonal draws the thinnest line, as before, and works with Pixel perfect. The choice is remembered separately from the Shape tool's pixel steps.
+
+### Number fields: up/down buttons
+- Every number field has small up/down buttons at its right end: click to step by one (Ctrl steps by 10), or drag up and down on them to change the value (Shift is 10× slower).
+- Clicking the number itself starts typing with the value selected, as before; dragging the number no longer changes it.
+- While typing, the mouse wheel changes the value one step at a time. The right-click value list is unchanged.
+
+### Pixelate: quick settings and no run on load
+- A new **Quick settings** section right after 0. Optimize criteria holds the output size (Auto, width × height, keep aspect) and **One palette for all frames**; both are the same settings as steps 4 and 6. The output size controls moved there from the bar under the source.
+- With **Auto optimize on load** off (the default), loading a source no longer runs anything: the checked presets wait as 'Not run' tiles until you press Clean up, Auto optimize or a tile's 'Run this preset only'.
+- A tile you rerun with Clean up counts as picked right away, as if you had clicked it.
+
+### AI chat: automatic prompt switch
+- Drawing settings have **Automatic prompt** (on by default). Turn it off to send your chat message to Codex image generation exactly as written, with attached images in order.
+- With it off, the size check, style reference and animation planning are skipped and the single generated image is converted to pixel art as is.
+- A new AI tool `edit_skin` renames, reorders, deletes or converts existing skins (part-only ↔ group skin) in one undo step.
+
+### Smaller window and panel fixes
+- The effects window keeps the same height when you add or pick effects: common and effect settings scroll inside one fixed area, which shrinks on short screens so OK and Cancel stay visible.
+- Dialogs no longer open taller than the screen's work area; longer content scrolls and the buttons stay visible.
+- In the color panel, **Color** and **Recent colors** can each be folded from their headers, like Layer colors.
+- Right-clicking the preview's zoom button (Fit/1×/2×/4×) opens a zoom list instead of stepping back.
+
 ## v1.14.102 (2026-11-07)
 ### Linux version
 - Chickxel now ships for Linux as `Chickxel-linux-x64.zip` and `Chickxel-linux-arm64.zip`: unzip and run `Chickxel`, no warning on first launch.

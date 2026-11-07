@@ -100,6 +100,8 @@ public sealed class AppSettings
     public int StarPoints { get; set; } = 5;
     public int SpiralTurns { get; set; } = 3;
     public bool ShapeOrthogonal { get; set; }
+    /// <summary>연필·지우개 획의 픽셀 잇기 ㄱ자(4방향, 기본 켬). 끄면 대각선으로도 잇는다.</summary>
+    public bool PencilOrthogonal { get; set; } = true;
     public bool RightButtonErases { get; set; }
     /// <summary>이동 도구 순환(밖으로 나간 픽셀을 반대편으로). 끄면(기본) 일반 레이어는 캔버스 밖으로 나간 픽셀을 남긴다.</summary>
     public bool MoveWrap { get; set; }
@@ -135,6 +137,10 @@ public sealed class AppSettings
     public ColorPickerMode ColorPickerMode { get; set; } = ColorPickerMode.Square;
     /// <summary>색 패널 맨 아래 "레이어 색"을 접어 두었는지.</summary>
     public bool LayerColorsCollapsed { get; set; }
+    /// <summary>색 패널의 색 편집기("색": 고르기 칸·알파 막대·입력 칸)를 접어 두었는지.</summary>
+    public bool ColorCollapsed { get; set; }
+    /// <summary>색 패널의 "최근 색"을 접어 두었는지.</summary>
+    public bool RecentColorsCollapsed { get; set; }
     /// <summary>팔레트 열의 팔레트들(위 → 아래). null = 처음 실행(기본 팔레트 하나).</summary>
     public List<PaletteSetting>? Palettes { get; set; }
     /// <summary>예전 버전의 팔레트 하나(읽기만 — <see cref="Load"/>가 <see cref="Palettes"/> 첫 항목으로 옮기고 다시 쓰지 않음).</summary>

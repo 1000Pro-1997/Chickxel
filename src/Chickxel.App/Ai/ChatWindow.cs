@@ -790,7 +790,7 @@ public sealed partial class ChatWindow : Window
         (UiStrings.Chat_Help_GroupFrames, UiStrings.Chat_Help_GroupFrames_Text, ["add_frame", "delete_frame", "set_frame_duration", "add_tag", "link_cels", "unlink_cels", "set_link_color"]),
         (UiStrings.Chat_Help_GroupLayers, UiStrings.Chat_Help_GroupLayers_Text, ["add_layer", "set_layer", "set_current"]),
         (UiStrings.Chat_Help_GroupParts, UiStrings.Chat_Help_GroupParts_Text, ["add_group", "add_part", "set_part"]),
-        (UiStrings.Chat_Help_GroupSkins, UiStrings.Chat_Help_GroupSkins_Text, ["list_skins", "add_skin", "set_skin", "list_outfits", "save_outfit", "apply_outfit"]),
+        (UiStrings.Chat_Help_GroupSkins, UiStrings.Chat_Help_GroupSkins_Text, ["list_skins", "add_skin", "set_skin", "edit_skin", "list_outfits", "save_outfit", "apply_outfit"]),
         (UiStrings.Chat_Help_GroupEffects, UiStrings.Chat_Help_GroupEffects_Text,
             ["list_effect_types", "get_effects", "add_effect", "set_effect", "remove_effect", "apply_effects", "expand_canvas_for_effects"]),
         (UiStrings.Chat_Help_GroupEffectMaker, UiStrings.Chat_Help_GroupEffectMaker_Text,
@@ -1466,7 +1466,7 @@ public sealed partial class ChatWindow : Window
 
         private static bool AffectsDrawing(string name) => name is
             "draw_pixels" or "set_pixels" or "draw_shape" or "fill" or "clear" or "replace_color" or
-            "add_part" or "set_part" or "set_skin" or "apply_outfit" or
+            "add_part" or "set_part" or "set_skin" or "edit_skin" or "apply_outfit" or
             "add_effect" or "set_effect" or "remove_effect" or "apply_effects" or "resize_canvas";
 
         private void HookSession(IChatSession s)
@@ -1666,12 +1666,14 @@ public sealed partial class ChatWindow : Window
             try
             {
                 _w._mcp.Tools.TurnImages = [.. attachments.Select(a => (a.Png, a.PixelArt))];
+                _w._mcp.Tools.TurnMessage = modelText.Trim();
                 session.Send(message, attachments.Select(a => a.Png).ToList());
             }
             catch (Exception ex) when (ex is Win32Exception or IOException or InvalidOperationException or UnauthorizedAccessException)
             {
                 _w._mcp.Tools.Scope = null;
                 _w._mcp.Tools.TurnImages = [];
+                _w._mcp.Tools.TurnMessage = "";
                 AddSystemLine(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_Send_E1ACACFBF7,Provider.Command,ex.Message), error: true, record: false);
                 return false;
             }
@@ -1740,6 +1742,7 @@ public sealed partial class ChatWindow : Window
             _turn = null;
             _w._mcp.Tools.Scope = null;
             _w._mcp.Tools.TurnImages = [];
+            _w._mcp.Tools.TurnMessage = "";
             _aiDrawStatus = null;
             FinishStream(turn);
             CloseConversionPreview();

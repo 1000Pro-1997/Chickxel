@@ -107,6 +107,9 @@ public sealed class ToolOptionsPanel : UserControl
     private readonly TabStrip _lineSteps = new(TabStripKind.Segmented) { Focusable = false, IsTabStop = false, Margin = default };
     private readonly StackPanel _lineStepsRow;
     private readonly StackPanel _sidesRow, _starRow, _turnsRow;
+    /// <summary>연필·그라데이션 연필·지우개 획의 픽셀 잇기(0 = 대각선, 1 = ㄱ자 4방향 — 픽셀 퍼펙트는 꺼짐). 클릭해도 캔버스 포커스를 빼앗지 않는다.</summary>
+    private readonly TabStrip _pencilSteps = new(TabStripKind.Segmented) { Focusable = false, IsTabStop = false, Margin = default };
+    private readonly StackPanel _pencilStepsRow;
 
     // 그라데이션
     private readonly Border _gradientBox;
@@ -401,7 +404,11 @@ public sealed class ToolOptionsPanel : UserControl
         _shapeFilled = Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_FCE800703F, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A43E20CBEA, v => _ctx.ShapeFilled = v);
         _rightErase = Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4E9F04FE20, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E1EAC3C042, v => _ctx.RightButtonErases = v);
         _wrap = Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4AF6C42C92, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_07A907E085, v => _ctx.MoveWrap = v);
-        _optionsBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_0B9E51B984, Ui.Stack(_pixelPerfect, _shapeFilled, _rightErase, _wrap));
+        _pencilSteps.Add(UiStrings.Shape_StepsDiagonal, tip: UiStrings.Pencil_StepsDiagonalTip);
+        _pencilSteps.Add(UiStrings.Shape_StepsOrthogonal, tip: UiStrings.Pencil_StepsOrthogonalTip);
+        _pencilSteps.SelectionChanged += (_, _) => { if (!_updating && _pencilSteps.SelectedIndex >= 0) _ctx.PencilOrthogonal = _pencilSteps.SelectedIndex == 1; };
+        _pencilStepsRow = Ui.Row(Ui.Label(UiStrings.Shape_Steps), _pencilSteps);
+        _optionsBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_0B9E51B984, Ui.Stack(_pixelPerfect, _pencilStepsRow, _shapeFilled, _rightErase, _wrap));
 
         // ── 대칭
         _mirrorX = Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8BE1DA620D, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_2ADAF37DF1, v => _ctx.MirrorX = v);
@@ -822,6 +829,7 @@ public sealed class ToolOptionsPanel : UserControl
         _gradientBox.IsVisible = tool == ToolKind.Gradient;
         _pencilGradientBox.IsVisible = tool == ToolKind.GradientPencil;
         _pixelPerfect.IsVisible = tool is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.Eraser;
+        _pencilStepsRow.IsVisible = _pixelPerfect.IsVisible;
         _shapeFilled.IsVisible = tool == ToolKind.Shape && Shapes.CanFill(_ctx.ShapeKind);
         _rightErase.IsVisible = tool is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.Shape or ToolKind.Fill;
         _wrap.IsVisible = tool == ToolKind.Move;
@@ -882,6 +890,9 @@ public sealed class ToolOptionsPanel : UserControl
             _ditherPattern.SelectedIndex = (int)_ctx.DitherPattern;
             RefreshText();
             _pixelPerfect.IsChecked = _ctx.PixelPerfect;
+            // ㄱ자 잇기에서는 픽셀 퍼펙트를 쓰지 않는다(ㄱ자 모서리를 지우는 기능이라).
+            _pixelPerfect.IsEnabled = !_ctx.PencilOrthogonal;
+            _pencilSteps.SelectedIndex = _ctx.PencilOrthogonal ? 1 : 0;
             _shapeFilled.IsChecked = _ctx.ShapeFilled;
             _rightErase.IsChecked = _ctx.RightButtonErases;
             _wrap.IsChecked = _ctx.MoveWrap;
@@ -1298,6 +1309,7 @@ public sealed class ToolOptionsPanel : UserControl
 
         // 옵션
         if (Is(_pixelPerfect)) return At("tools-pencil", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_B655203628);
+        if (InRow(_pencilSteps)) return At("tools-pencil", UiStrings.Shape_Steps);
         if (Is(_rightErase)) return At("tools-basics", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4E9F04FE20);
         if (Is(_wrap)) return At("tools-move", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4AF6C42C92);
         if (Is(_shapeFilled)) return At("tools-shape", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_FCE800703F);

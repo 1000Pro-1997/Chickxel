@@ -85,13 +85,9 @@ public sealed class PreviewPanel : UserControl
             VerticalAlignment = VerticalAlignment.Center,
             Focusable = false,
         }.Tip(UiStrings.S_PreviewPanel_PreviewPanel_6984708585);
-        _scaleButton.Click += (_, _) => StepScale(+1);
-        _scaleButton.PointerReleased += (_, e) =>
-        {
-            if (e.InitialPressMouseButton != MouseButton.Right) return;
-            StepScale(-1);
-            e.Handled = true;
-        };
+        _scaleButton.Click += (_, _) => StepScale();
+        // 우클릭: 배율 목록(지금 배율에 라디오 점)에서 바로 고른다 — 숫자 상자 우클릭 목록과 같은 모양.
+        _scaleButton.ContextRequested += (_, e) => PopupMenus.Show(_scaleButton, ScaleMenuItems(), e);
         _background = new ComboBox
         {
             Margin = new Thickness(1, 2, 1, 2),
@@ -286,16 +282,36 @@ public sealed class PreviewPanel : UserControl
         return new StackPanel { Orientation = Orientation.Horizontal, Children = { label, combo } };
     }
 
-    private void StepScale(int direction)
+    private void StepScale()
     {
         int i = Array.IndexOf(ScaleSteps, _scale);
-        SetScale(ScaleSteps[(i + direction + ScaleSteps.Length) % ScaleSteps.Length]);
+        SetScale(ScaleSteps[(i + 1) % ScaleSteps.Length]);
     }
+
+    /// <summary>배율 단추 우클릭 목록: 맞춤 · 1× · 2× · 4×(지금 배율에 라디오 점).</summary>
+    private List<Control> ScaleMenuItems()
+    {
+        var items = new List<Control>(ScaleSteps.Length);
+        foreach (int scale in ScaleSteps)
+        {
+            var item = new MenuItem
+            {
+                Header = new TextBlock { Text = ScaleLabel(scale), HorizontalAlignment = HorizontalAlignment.Left },
+                ToggleType = MenuItemToggleType.Radio,
+                IsChecked = scale == _scale,
+            };
+            item.Click += (_, _) => SetScale(scale);
+            items.Add(item);
+        }
+        return items;
+    }
+
+    private static string ScaleLabel(int scale) => scale == 0 ? UiStrings.S_PreviewPanel_SetScale_EBF1B9D1AA : $"{scale}×";
 
     private void SetScale(int scale)
     {
         _scale = scale;
-        _scaleButton.Content = scale == 0 ? UiStrings.S_PreviewPanel_SetScale_EBF1B9D1AA : $"{scale}×";
+        _scaleButton.Content = ScaleLabel(scale);
         Redraw();
     }
 

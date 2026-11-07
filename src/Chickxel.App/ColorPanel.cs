@@ -59,7 +59,7 @@ public sealed class ColorPanel : UserControl
         _secondarySlot.Click += (_, _) => SetEditTarget(true);
         var swap = Ui.IconButton(VectorIcon.Swap, UiStrings.S_ColorPanel_ColorPanel_B61A799223, (_, _) => _ctx.SwapColors(), 26);
 
-        _editor = new ColorEditor(_ctx.Primary, _ctx.RecentColors);
+        _editor = new ColorEditor(_ctx.Primary, _ctx.RecentColors, collapsible: true);
         _editor.ColorChanged += (_, _) => SetCurrent(_editor.Color);
         _editor.RecentColorClicked += OnSwatchClicked;
 
@@ -150,6 +150,20 @@ public sealed class ColorPanel : UserControl
     {
         get => _layerColors.Collapsed;
         set => _layerColors.Collapsed = value;
+    }
+
+    /// <summary>색 편집기의 고르기 칸("색")이 접혀 있는지(설정 저장용).</summary>
+    public bool ColorCollapsed
+    {
+        get => _editor.ColorCollapsed;
+        set => _editor.ColorCollapsed = value;
+    }
+
+    /// <summary>"최근 색"이 접혀 있는지(설정 저장용).</summary>
+    public bool RecentColorsCollapsed
+    {
+        get => _editor.RecentCollapsed;
+        set => _editor.RecentCollapsed = value;
     }
 
     private void SyncFromContext()

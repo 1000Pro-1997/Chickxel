@@ -132,6 +132,8 @@ public sealed partial class PixelCanvas : Control
     private WriteableBitmap? _outsideBmp;
     private PixelImage? _outsideSource;
     private PixelPerfectStroke? _ppStroke;
+    /// <summary>이번 획을 ㄱ자 4방향 선으로 잇는지(연필·그라데이션 연필·지우개 + 픽셀 잇기 ㄱ자 — 누를 때 정해 끝까지 쓴다).</summary>
+    private bool _strokeOrthogonal;
     /// <summary>그라데이션 연필로 칠하는 획(오른쪽 버튼 지우개면 null — 연필처럼 지움). 그라데이션·모드·간격은 누를 때 정해 끝까지 쓴다.</summary>
     private GradientStroke? _gradientStroke;
     private Chickxel.Core.IO.GradientPreset _strokeGradient = EditorContext.DefaultPencilGradient;
@@ -1387,6 +1389,12 @@ public sealed partial class PixelCanvas : Control
     private static bool IsStrokeTool(ToolKind t)
         => t is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.Eraser or ToolKind.Dodge or ToolKind.Dither or ToolKind.ReplaceBrush;
 
+    /// <summary>이 도구의 획을 ㄱ자 4방향 선으로 잇는지: 연필·그라데이션 연필·지우개이고 픽셀 잇기가 ㄱ자일 때.</summary>
+    private bool OrthogonalStroke(ToolKind t) => _ctx.PencilOrthogonal && t is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.Eraser;
+
+    /// <summary>획의 두 점을 잇는 브러시 중심들(양 끝 포함): ㄱ자면 4방향, 아니면 대각선도 쓰는 브레젠험.</summary>
+    private static List<Point> StrokeLine(Point a, Point b, bool orthogonal) => orthogonal ? Raster.Line4(a, b) : Raster.Line(a, b);
+
     /// <summary>
     /// 브러시 도구에서 Shift를 누르고 있으면 클릭했을 때 그어질 직선(마지막 획 끝 → 포인터, 브러시 두께·대칭 포함)을
     /// 반투명하게 미리 보인다. 연필은 기본색, 그 밖의 도구는 흰색.
@@ -1398,7 +1406,7 @@ public sealed partial class PixelCanvas : Control
             || _ctx.IsGroupSelected || _ctx.IsTransforming || _ctx.IsCanvasResizing || !_ctx.CanEdit) return;
         var to = ScreenToPixel(_mouseScreen);
         var cells = new HashSet<Point>();
-        foreach (var p in Raster.Line(from, to))
+        foreach (var p in StrokeLine(from, to, OrthogonalStroke(_ctx.Tool)))
             cells.UnionWith(Raster.Brush(p.X, p.Y, _ctx.BrushSize, _ctx.BrushShape));
         var c = _ctx.Tool == ToolKind.Pencil && _ctx.Primary.A != 0 ? _ctx.Primary : Color32.White;
         FillCells(g, Targets(cells), new SolidColorBrush(Color.FromArgb(150, c.R, c.G, c.B)));
@@ -1699,7 +1707,7 @@ public sealed partial class PixelCanvas : Control
                 // Shift+클릭: 마지막 점에서 직선
                 var strokeFrom = (mods & KeyModifiers.Shift) != 0 && _lastStrokeEnd is { } from ? from : px;
                 if (_gradientStroke is not null) StartGradientStroke(strokeFrom, px);
-                else foreach (var p in Raster.Line(strokeFrom, px)) StampAt(p);
+                else foreach (var p in StrokeLine(strokeFrom, px, _strokeOrthogonal)) StampAt(p);
                 _ctx.NotifyPixels();
                 _drag = DragMode.Stroke;
                 break;
@@ -1813,7 +1821,7 @@ public sealed partial class PixelCanvas : Control
             case DragMode.Stroke:
                 if (px == _lastPx) return;
                 if (_gradientStroke is not null) ContinueGradientStroke(px);
-                else foreach (var p in Raster.Line(_lastPx, px).Skip(1)) StampAt(p);
+                else foreach (var p in StrokeLine(_lastPx, px, _strokeOrthogonal).Skip(1)) StampAt(p);
                 _ctx.NotifyPixels();
                 break;
             case DragMode.Shape:
@@ -2073,9 +2081,11 @@ public sealed partial class PixelCanvas : Control
         _partialErase = _strokeColor.A == 0 && tool is ToolKind.Eraser or ToolKind.Pencil or ToolKind.GradientPencil
                         && !PartialErase.IsFull(_ctx.EraserStrength, _ctx.EraserRed, _ctx.EraserGreen, _ctx.EraserBlue);
         _visited = tool == ToolKind.Dodge || _partialErase ? new HashSet<Point>() : null;
-        _ppStroke = tool is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.Eraser && _ctx.PixelPerfect && _ctx.BrushSize == 1 ? new PixelPerfectStroke() : null;
+        // ㄱ자 잇기는 ㄱ자 모서리를 남기려는 것이라 픽셀 퍼펙트(ㄱ자 겹 픽셀 지우기)와 같이 쓰지 않는다.
+        _strokeOrthogonal = OrthogonalStroke(tool);
+        _ppStroke = tool is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.Eraser && _ctx.PixelPerfect && _ctx.BrushSize == 1 && !_strokeOrthogonal ? new PixelPerfectStroke() : null;
         // 그라데이션 연필: 오른쪽 버튼 = 지우개 설정이면 연필처럼 지우고, 아니면 (어느 버튼이든) 그라데이션으로 칠한다.
-        _gradientStroke = tool == ToolKind.GradientPencil && !(right && _ctx.RightButtonErases) ? new GradientStroke(start) : null;
+        _gradientStroke = tool == ToolKind.GradientPencil && !(right && _ctx.RightButtonErases) ? new GradientStroke(start, _strokeOrthogonal) : null;
         _strokeGradient = _ctx.PencilGradient;
         _strokeGradientMode = _ctx.PencilGradientMode;
         _strokeGradientInterval = _ctx.PencilGradientInterval;
@@ -2142,7 +2152,7 @@ public sealed partial class PixelCanvas : Control
     /// </summary>
     private void StartGradientStroke(Point from, Point to)
     {
-        _gradientStroke = new GradientStroke(from);
+        _gradientStroke = new GradientStroke(from, _strokeOrthogonal);
         StampGradient(from, 0);
         ContinueGradientStroke(to);
     }

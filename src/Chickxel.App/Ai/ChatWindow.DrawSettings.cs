@@ -20,7 +20,9 @@ public sealed partial class ChatWindow
     /// <summary>"프레임마다 따로"를 고르면 보이는 일관성 경고 아이콘.</summary>
     private Control? _animWarning;
     private NumericUpDown? _sizeCustom;
-    private CheckBox? _removeBackground, _autoOptimize, _paletteOnly, _resizeResult;
+    private CheckBox? _removeBackground, _autoOptimize, _paletteOnly, _resizeResult, _autoPrompt;
+    /// <summary>자동 프롬프트를 끄면 쓰이지 않는 칸(스타일 참고, 애니메이션 생성 방식, 기본 프레임 수).</summary>
+    private readonly List<Control> _autoPromptRows = [];
     /// <summary>결과 크기 칸(결과 크기 보정이 켜졌을 때만 쓸 수 있음).</summary>
     private Control? _sizeRow;
     /// <summary>팔레트 색만 사용 줄(직접 찍기를 골랐을 때만 보임).</summary>
@@ -122,6 +124,10 @@ public sealed partial class ChatWindow
         options.Children.Add(new Border { Height = 1, Background = AppTheme.BorderBrush, Margin = new Thickness(0, 4) });
         options.Children.Add(TitleText(UiStrings.AiDraw_Options_Title));
 
+        _autoPrompt = Ui.Check(UiStrings.AiDraw_AutoPrompt);
+        _autoPrompt.IsCheckedChanged += (_, _) => OnDrawOptionChanged();
+        options.Children.Add(WithInfo(_autoPrompt, UiStrings.AiDraw_AutoPrompt_Text));
+
         _resizeResult = Ui.Check(UiStrings.AiDraw_ResizeResult);
         _resizeResult.IsCheckedChanged += (_, _) => OnDrawOptionChanged();
         options.Children.Add(WithInfo(_resizeResult, UiStrings.AiDraw_ResizeResult_Text));
@@ -146,7 +152,8 @@ public sealed partial class ChatWindow
 
         _styleCombo = Ui.Combo(150, UiStrings.AiDraw_Style_Auto, UiStrings.AiDraw_Style_None, UiStrings.AiDraw_Style_Specific);
         _styleCombo.SelectionChanged += (_, _) => OnDrawOptionChanged();
-        options.Children.Add(OptionRow(UiStrings.AiDraw_Style, UiStrings.AiDraw_Style_Text, _styleCombo));
+        var styleRow = OptionRow(UiStrings.AiDraw_Style, UiStrings.AiDraw_Style_Text, _styleCombo);
+        options.Children.Add(styleRow);
         _styleRefCombo = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(3) };
         _styleRefCombo.SelectionChanged += (_, _) => OnDrawOptionChanged();
         options.Children.Add(_styleRefCombo);
@@ -159,7 +166,8 @@ public sealed partial class ChatWindow
         _animCombo.SelectionChanged += (_, _) => OnDrawOptionChanged();
         // "프레임마다 따로"를 고르면 콤보 옆에 빨간 경고 아이콘(마우스를 올리면 까닭).
         _animWarning = AlertIcon(UiStrings.AiDraw_Anim_PerFrame_Warning);
-        options.Children.Add(OptionRow(UiStrings.AiDraw_Anim, UiStrings.AiDraw_Anim_Tip, Ui.Row(_animCombo, _animWarning)));
+        var animRow = OptionRow(UiStrings.AiDraw_Anim, UiStrings.AiDraw_Anim_Tip, Ui.Row(_animCombo, _animWarning));
+        options.Children.Add(animRow);
         var frames = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,*,Auto") };
         int row = 0, col = 0;
         foreach (var action in AiDrawActions.All)
@@ -178,6 +186,7 @@ public sealed partial class ChatWindow
             if (++col == 2) { col = 0; row++; }
         }
         options.Children.Add(frames);
+        _autoPromptRows.AddRange([styleRow, _styleRefCombo, framesHeader, animRow, frames]);
         _generateOptions = options;
         stack.Children.Add(options);
 
@@ -275,6 +284,7 @@ public sealed partial class ChatWindow
             _sizeCombo!.SelectedIndex = index >= 0 ? index : SizeChoices.Length;
             _sizeCustom!.Value = size;
             _resizeResult!.IsChecked = o.ResizeResult;
+            _autoPrompt!.IsChecked = o.AutoPrompt;
             _removeBackground!.IsChecked = o.RemoveBackground;
             _paletteOnly!.IsChecked = o.PaletteOnly;
             _autoOptimize!.IsChecked = o.AutoOptimize;
@@ -324,6 +334,8 @@ public sealed partial class ChatWindow
         _styleRefCombo!.IsVisible = _styleCombo!.SelectedIndex == (int)AiDrawStyleReference.Specific;
         _animCombo!.IsEnabled = mode == AiDrawMode.Generate;
         _animWarning!.IsVisible = mode == AiDrawMode.Generate && _animCombo.SelectedIndex == 1;
+        bool autoPrompt = _autoPrompt!.On();
+        foreach (var row in _autoPromptRows) row.IsEnabled = autoPrompt;
     }
 
     private void OnDrawModeChanged()
@@ -341,6 +353,7 @@ public sealed partial class ChatWindow
         int si = _sizeCombo.SelectedIndex;
         o.SizeTarget = si >= 0 && si < SizeChoices.Length ? SizeChoices[si] : (int)_sizeCustom!.NumValue();
         o.ResizeResult = _resizeResult!.On();
+        o.AutoPrompt = _autoPrompt!.On();
         o.RemoveBackground = _removeBackground!.On();
         o.PaletteOnly = _paletteOnly!.On();
         o.AutoOptimize = _autoOptimize!.On();

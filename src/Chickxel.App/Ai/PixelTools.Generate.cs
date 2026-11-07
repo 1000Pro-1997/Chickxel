@@ -39,6 +39,8 @@ public sealed partial class PixelTools
 
     /// <summary>지금 차례에 사용자가 붙인 그림(PNG, 픽셀 아트인지) — 보낸 순서. 채팅 창이 차례마다 넣고 끝나면 비운다.</summary>
     public IReadOnlyList<(byte[] Png, bool PixelArt)> TurnImages { get; set; } = [];
+    /// <summary>지금 차례에 사용자가 보낸 글(그림 칩은 <c>[Image #N]</c>) — 자동 프롬프트를 끄면 이 글을 그대로 이미지 생성에 보낸다. 채팅 창이 차례마다 넣고 끝나면 비운다.</summary>
+    public string TurnMessage { get; set; } = "";
 
     /// <summary>그림 생성 진행(사용자에게 보일 짧은 글 — "프레임 2/6 생성 중"). UI 스레드.</summary>
     public event Action<string>? AiDrawProgress;
@@ -163,8 +165,10 @@ public sealed partial class PixelTools
         var options = _host.Settings.AiDraw;
         var subject = ReqString(a, "subject").Trim();
         if (subject.Length == 0) throw new ToolError(UiStrings.AiDraw_Error_NoSubject);
+        // 자동 프롬프트를 끄면 사용자 글을 그대로 한 번 생성해 한 장으로 변환한다(애니메이션 계획·자세 없음).
+        bool autoPrompt = options.AutoPrompt;
         var kind = OptEnum(a, "kind", KindValues) ?? ReferenceKinds.Character;
-        var animation = OptEnum(a, "animation", AnimationValues) is { } an && an != "none" ? an : null;
+        var animation = OptEnum(a, "animation", AnimationValues) is { } an && an != "none" && autoPrompt ? an : null;
         var poses = OptStringList(a, "poses");
         if (animation == AiDrawActions.Custom && poses.Count == 0) throw new ToolError(UiStrings.AiDraw_Error_CustomPoses);
         int? frames = OptInt(a, "frames", AiDrawSettings.MinFrames, AiDrawSettings.MaxFrames);
@@ -196,12 +200,24 @@ public sealed partial class PixelTools
         var dir = _jobs.DirectoryOf(jobId);
 
         // 함께 보낼 그림: 사용자가 붙인 대상 그림, 픽셀 아트 스타일 참고.
+        // 자동 프롬프트를 끄면 사용자 글의 [Image #N]이 N번째 그림을 가리키게 붙인 그림을 모두 순서대로 보낸다.
+        var turnFiles = new List<string>();
+        if (!autoPrompt)
+            for (int i = 0; i < TurnImages.Count; i++)
+            {
+                var file = Path.Combine(dir, $"image-{i + 1}.png");
+                await File.WriteAllBytesAsync(file, TurnImages[i].Png, ct);
+                turnFiles.Add(file);
+            }
         string? subjectFile = null;
         bool subjectIsPixelArt = false;
         if (subjectIndex is { } si)
         {
-            subjectFile = Path.Combine(dir, "subject.png");
-            await File.WriteAllBytesAsync(subjectFile, TurnImages[si].Png, ct);
+            if (autoPrompt)
+            {
+                subjectFile = Path.Combine(dir, "subject.png");
+                await File.WriteAllBytesAsync(subjectFile, TurnImages[si].Png, ct);
+            }
             subjectIsPixelArt = TurnImages[si].PixelArt;
         }
         else if (OptBool(a, "previous_result_as_subject") == true)
@@ -211,6 +227,8 @@ public sealed partial class PixelTools
             File.Copy(previous, subjectFile, overwrite: true);
             // 이미 픽셀 아트 그림이라 스타일 참고는 붙이지 않는다.
             subjectIsPixelArt = true;
+            // 자동 프롬프트를 끄면 붙인 그림 뒤에 함께 보낸다(사용자 글이 방금 그린 그림을 이어 그리라고 함).
+            if (!autoPrompt) turnFiles.Add(subjectFile);
         }
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         _aiDrawCts = cts;
@@ -218,7 +236,7 @@ public sealed partial class PixelTools
         try
         {
             var generator = new CodexImageGenerator(codexPath, _host.Settings.CodexModel);
-            if (requestedSize is null && !options.ResizeResult)
+            if (autoPrompt && requestedSize is null && !options.ResizeResult)
             {
                 Report(progress, UiStrings.AiDraw_Progress_Size);
                 size = await generator.SuggestSizeAsync(subject, subjectFile, cts.Token);
@@ -226,7 +244,7 @@ public sealed partial class PixelTools
             }
             // 참고 그림 변환은 명시 크기 또는 판정 크기로 결과 캔버스를 맞춘다.
             if (subjectIndex is not null) convertSize = size;
-            var style = StyleReference(options, styleId, subject, kind, size, subjectFile is not null && !subjectIsPixelArt, subjectIsPixelArt);
+            var style = autoPrompt ? StyleReference(options, styleId, subject, kind, size, subjectFile is not null && !subjectIsPixelArt, subjectIsPixelArt) : null;
             string? styleFile = null;
             if (style is not null)
             {
@@ -251,7 +269,18 @@ public sealed partial class PixelTools
             PixelImage source;
             string firstImage;
             var layout = AiDrawSheetLayout.For(count);
-            if (sheet)
+            if (!autoPrompt)
+            {
+                Report(progress, UiStrings.AiDraw_Progress_Image);
+                var prompt = TurnMessage.Trim() is { Length: > 0 } typed ? typed : subject;
+                prompts.Add(prompt);
+                firstImage = _jobs.FramePath(jobId, 0);
+                var instruction = AiDrawPrompts.CodexInstruction(prompt, request.Transparent, turnFiles.Count);
+                AiDrawPromptReady?.Invoke(instruction, 1, 1);
+                await generator.GenerateAsync(instruction, turnFiles, firstImage, cts.Token);
+                source = AiDrawConversion.Downscale(LoadGenerated(firstImage), AiDrawConversion.MaxFrameSide);
+            }
+            else if (sheet)
             {
                 // 애니메이션 전체를 한 번에 한 장(스프라이트 시트)으로 — 같은 그림 안이라 프레임끼리 캐릭터가 맞는다.
                 Report(progress, UiStrings.FormatAiDraw_Progress_Sheet(count: count));
@@ -390,7 +419,9 @@ public sealed partial class PixelTools
                           (newDocument ? "as a new document" : "as a new layer in the open document") + $" (\"{name}\")" +
                           (style is not null ? $", pixel-art style reference: {style.Item.Id}" : "") +
                           $". The image shows the result{(outFrames.Count > 1 ? " frames side by side" : "")} at {zoom}. " +
-                          "The user can tweak the conversion with the \"View conversion settings\" button in the chat. Reply briefly.";
+                          "The user can tweak the conversion with the \"View conversion settings\" button in the chat. " +
+                          (autoPrompt ? "" : "The user turned off the automatic prompt: their message was sent to image generation as written and the result was converted as one image, without animation frames. ") +
+                          "Reply briefly.";
             return ImageResult(png, summary);
         }
         finally

@@ -115,12 +115,19 @@ internal static class PixelateKit
 
     public static void WaitCandidates(ShotKit k, PixelateDialog dlg, int timeoutMs = 120000)
     {
-        // 처음 후보 줄(체크한 프리셋을 설정 그대로 한 번씩)이 끝나고 후보 하나가 골라질 때까지.
+        // '불러오면 자동 최적화'가 꺼져 있으면 원본을 넣어도 돌리지 않으므로, 준비가 끝나면 체크한 프리셋을 설정 그대로 한 번씩 돌린다
+        // (프레임 나누기 적용 뒤와 같은 후보 줄). 그 줄이 끝나고 후보 하나가 골라질 때까지 기다린다.
         var sw = System.Diagnostics.Stopwatch.StartNew();
+        bool started = false;
         while (sw.ElapsedMilliseconds < timeoutMs)
         {
             k.Settle(200);
             if (ShotKit.Get<object?>(dlg, "_selected") is not null && ShotKit.Get<object?>(dlg, "_optCts") is null) break;
+            if (!started && ShotKit.Get<object?>(dlg, "_prepared") is not null && ShotKit.Get<object?>(dlg, "_optCts") is null)
+            {
+                started = true;
+                ShotKit.Call(dlg, "StartLineup");
+            }
         }
         k.Settle(600);
     }
@@ -518,21 +525,14 @@ internal static class PixelateShots
             tiles,
         ]);
 
-        // 원본 아래 막대.
+        // 원본 아래 막대(결과 크기는 설정 칸 '간편 설정'으로 옮김).
         var showGrid = ShotKit.Get<ToggleButton>(dlg, "_showGrid");
         var bgRemove = ShotKit.Get<ToggleButton>(dlg, "_bgRemove");
-        var barAuto = ShotKit.Get<CheckBox>(dlg, "_barAuto");
-        var barW = ShotKit.Get<Control>(dlg, "_barW");
-        var barH = ShotKit.Get<Control>(dlg, "_barH");
-        var aspect = ShotKit.Get<ToggleButton>(dlg, "_barAspect");
         var toolbar = (Control)showGrid.Parent!;
         var tb = ShotKit.Bounds(toolbar, dlg);
         k.Save(dlg, "pixelate-view-2", crop: new Rect(tb.X - 8, tb.Y - 36, tb.Width + 20, tb.Height + 46), marks:
         [
             PixelateKit.UpBox(bgRemove, dlg),
-            PixelateKit.UpBox(barAuto, dlg),
-            PixelateKit.UpBox(barW, dlg).Union(PixelateKit.UpBox(barH, dlg)),
-            PixelateKit.UpBox(aspect, dlg),
             PixelateKit.UpBox(showGrid, dlg),
         ], firstNumber: 6);
 
