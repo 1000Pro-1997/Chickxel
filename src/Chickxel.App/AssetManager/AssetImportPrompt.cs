@@ -25,10 +25,10 @@ public sealed class AssetImportPrompt : DialogBase
             TextWrapping = TextWrapping.Wrap,
             Foreground = AppTheme.TextBrush,
         });
-        Body.Children.Add(Side(UiStrings.AssetImport_Incoming, item.Kind, item.DisplayName, item.Author, item.Store?.Version));
+        Body.Children.Add(Side(UiStrings.AssetImport_Incoming, item.Kind, item.DisplayName, item.Author, item.Store));
         if (item.Existing is { } existing)
         {
-            Body.Children.Add(Side(UiStrings.AssetImport_Existing, existing.Kind, existing.DisplayName, existing.Author, existing.Store?.Version));
+            Body.Children.Add(Side(UiStrings.AssetImport_Existing, existing.Kind, existing.DisplayName, existing.Author, existing.Store));
             if (existing.Modified) Body.Children.Add(Note(UiStrings.AssetImport_Modified, AppTheme.WarningBrush));
         }
         if (item.SameContent) Body.Children.Add(Note(UiStrings.AssetImport_SameContent, AppTheme.DimTextBrush));
@@ -63,8 +63,11 @@ public sealed class AssetImportPrompt : DialogBase
         button.MinWidth = 90;
     }
 
-    /// <summary>한쪽(가져오는 것·있는 것) 묶음: 제목, 종류 아이콘과 이름, 종류 · 작성자 · 버전.</summary>
-    private static Control Side(string header, string kind, string name, AssetAuthor? author, string? version)
+    /// <summary>
+    /// 한쪽(가져오는 것·있는 것) 묶음: 제목, 종류 아이콘과 이름, 작성자 배지 · 종류 · 버전.
+    /// 상점에서 받은 에셋(<paramref name="store"/>가 있음)만 작성자 프로필 그림을 쓰고, 나머지는 사람 아이콘(에셋 관리자 목록과 같음).
+    /// </summary>
+    private static Control Side(string header, string kind, string name, AssetAuthor? author, AssetStoreLink? store)
     {
         var title = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
         title.Children.Add(Ui.Icon(AssetManagerWindow.KindIcon(kind), 13));
@@ -72,9 +75,9 @@ public sealed class AssetImportPrompt : DialogBase
         string facts = string.Join(" · ", new[]
         {
             AssetManagerWindow.KindText(kind),
-            author?.Name ?? UiStrings.Assets_SourceLocal,
-            version is null ? null : UiStrings.Assets_Version + " " + version,
+            store is null ? null : UiStrings.Assets_Version + " " + store.Version,
         }.Where(s => !string.IsNullOrEmpty(s)));
+        var by = IdentityBadge.Author(store is null ? null : author, 16, fallback: author?.Name ?? UiStrings.Assets_SourceLocal, dim: true, caption: facts);
         return new Border
         {
             Background = AppTheme.InputBrush,
@@ -89,7 +92,7 @@ public sealed class AssetImportPrompt : DialogBase
                 {
                     new TextBlock { Text = header, Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize },
                     title,
-                    new TextBlock { Text = facts, Foreground = AppTheme.DimTextBrush, TextWrapping = TextWrapping.Wrap },
+                    by,
                 },
             },
         };

@@ -308,11 +308,8 @@ public sealed partial class AssetManagerWindow
         var name = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
         name.Children.Add(Ui.Icon(RemoteIcon(entry), 14));
         name.Children.Add(Ui.Label(entry.DisplayName, bold: true));
-        var by = new StackPanel
-        {
-            Orientation = Orientation.Horizontal, Spacing = 5,
-            Children = { AuthorAvatarView.Create(entry.Author, 16), Dim(string.Join(" · ", entry.Author.Name, entry.Version, RemoteKindText(entry))) },
-        };
+        var by = IdentityBadge.Author(entry.Author, 16, dim: true, fontSize: AppTheme.SmallFontSize,
+            caption: string.Join(" · ", entry.Version, RemoteKindText(entry)));
         var panel = new StackPanel { Children = { name, by } };
         if (RemoteState(entry) is { } state)
         {
@@ -339,7 +336,7 @@ public sealed partial class AssetManagerWindow
             (UiStrings.Assets_Id, entry.Id),
             (UiStrings.Assets_Version, entry.Version),
             (UiStrings.Assets_InstalledColumn, installed?.Version),
-            (UiStrings.Assets_Author, entry.Author.Name),
+            (UiStrings.Assets_Author, IdentityBadge.Author(entry.Author, 16)),
             (UiStrings.Assets_License, entry.License),
             (IsSingleAsset(entry) ? UiStrings.Assets_Kind : UiStrings.Assets_Contents, RemoteKindText(entry)),
             (UiStrings.Assets_MinApp, entry.MinAppVersion),

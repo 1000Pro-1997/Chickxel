@@ -41,14 +41,8 @@ public sealed class EffectMakerWindow : Window
     private readonly TextBox _title, _description;
     /// <summary>제목·설명 칸이 고치는 언어 이름(기본 선언 값이 아닌 번역을 고칠 때, 또는 선언에 <c>language</c>가 있을 때).</summary>
     private readonly TextBlock _titleLanguage = LanguageCaption(), _descriptionLanguage = LanguageCaption();
-    /// <summary>정보 제목 옆의 현재 효과 개발자(선택이 없을 때는 숨김).</summary>
-    private readonly StackPanel _authorHeader = new() { Orientation = Orientation.Horizontal, Spacing = 3, IsVisible = false };
-    private readonly ContentControl _authorAvatar = new() { Width = 18, Height = 18, VerticalAlignment = VerticalAlignment.Center };
-    private readonly TextBlock _authorName = new()
-    {
-        MaxWidth = 90, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center,
-        Foreground = AppTheme.DimTextBrush,
-    };
+    /// <summary>정보 제목 옆의 현재 효과 개발자 배지(선택이 없을 때는 숨김).</summary>
+    private readonly ContentControl _authorBadge = new() { IsVisible = false, VerticalAlignment = VerticalAlignment.Center };
     /// <summary>선언 <c>tags</c>(올릴 때 태그) 칩 편집기.</summary>
     private readonly TagChipEditor _tags = new(double.NaN);
     /// <summary>제목·설명 칸이 고치는 번역 언어(<see cref="ScriptTranslations.EditLanguage"/>). null이면 선언의 기본 name·description.</summary>
@@ -228,12 +222,10 @@ public sealed class EffectMakerWindow : Window
             InfoLabel(UiStrings.EffectMaker_DescriptionLabel, _descriptionLanguage), _description,
             Ui.Row(Ui.Label(UiStrings.EffectMaker_TagsLabel), Ui.InfoBadge(UiStrings.EffectMaker_TagsTip)), _tags,
             _languages));
-        _authorHeader.Children.Add(_authorAvatar);
-        _authorHeader.Children.Add(_authorName);
         var infoStack = (StackPanel)info.Child!;
         var infoTitle = infoStack.Children[0];
         infoStack.Children.RemoveAt(0);
-        infoStack.Children.Insert(0, Ui.Row(infoTitle, _authorHeader));
+        infoStack.Children.Insert(0, Ui.Row(infoTitle, _authorBadge));
         // "정보" 제목 줄 오른쪽에 규칙 단추(효과를 만들 때 지킬 규칙·API — 복사해 다른 AI에 붙여 넣음)
         var rules = Ui.Button(VectorIcon.BookOpen, UiStrings.EffectMaker_Rules, (_, _) => ShowRules()).Tip(UiStrings.EffectMaker_RulesTip);
         rules.Padding = new Thickness(6, 1);
@@ -476,12 +468,15 @@ public sealed class EffectMakerWindow : Window
             else
             {
                 bool mine = AppAssets.IsMine(entry);
-                string note = entry.Author?.Name ?? (mine ? entry.Modified ? UiStrings.EffectMaker_UploadedModified : UiStrings.EffectMaker_Uploaded : "");
                 var label = Ui.IconLabel(mine ? VectorIcon.Code : VectorIcon.Package, entry.DisplayName);
-                var name = new TextBlock { Text = note, Foreground = AppTheme.DimTextBrush, VerticalAlignment = VerticalAlignment.Center };
-                content = entry.Author is { } author
-                    ? Ui.Row(AuthorAvatarView.Create(author, 20), label, name)
-                    : Ui.Row(label, name);
+                Control by = entry.Author is { } author
+                    ? IdentityBadge.Author(author, 20, dim: true)
+                    : new TextBlock
+                    {
+                        Text = mine ? entry.Modified ? UiStrings.EffectMaker_UploadedModified : UiStrings.EffectMaker_Uploaded : "",
+                        Foreground = AppTheme.DimTextBrush, VerticalAlignment = VerticalAlignment.Center,
+                    };
+                content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { label, by } };
             }
             _list.Items.Add(new ListBoxItem { Content = content, Tag = entry.Id });
         }
@@ -499,8 +494,10 @@ public sealed class EffectMakerWindow : Window
             var row = new DockPanel { Opacity = _downloadingId == upload.Id ? 0.8 : 0.5 };
             DockPanel.SetDock(download, Dock.Right);
             row.Children.Add(download);
-            row.Children.Add(Ui.Row(AuthorAvatarView.Create(upload.Author, 20), label,
-                new TextBlock { Text = upload.Author.Name, Foreground = AppTheme.DimTextBrush, VerticalAlignment = VerticalAlignment.Center }));
+            row.Children.Add(new StackPanel
+            {
+                Orientation = Orientation.Horizontal, Spacing = 6, Children = { label, IdentityBadge.Author(upload.Author, 20, dim: true) },
+            });
             ToolTip.SetTip(row, UiStrings.EffectMaker_DownloadUploadedTip);
             _list.Items.Add(new ListBoxItem { Content = row, Tag = upload, HorizontalContentAlignment = HorizontalAlignment.Stretch });
         }
@@ -724,18 +721,16 @@ public sealed class EffectMakerWindow : Window
     /// <summary>게시된 효과만 게시자 그림을 쓰고, 로컬 효과는 출처와 기본 사람 그림을 보인다.</summary>
     private void UpdateAuthorIdentity()
     {
-        _authorHeader.IsVisible = _open;
+        _authorBadge.IsVisible = _open;
         if (!_open)
         {
-            _authorAvatar.Content = null;
-            _authorName.Text = "";
+            _authorBadge.Content = null;
             return;
         }
         var entry = _shownId is { } id ? AppAssets.Catalog.Find(id) : null;
         var author = entry?.Store is not null ? entry.Author : null;
-        _authorAvatar.Content = AuthorAvatarView.Create(author, 18);
-        _authorName.Text = author?.Name ?? (entry?.Store is not null ? UiStrings.EffectMaker_Uploaded : UiStrings.Assets_SourceLocal);
-        ToolTip.SetTip(_authorName, _authorName.Text);
+        _authorBadge.Content = IdentityBadge.Author(author, 18,
+            fallback: entry?.Store is not null ? UiStrings.EffectMaker_Uploaded : UiStrings.Assets_SourceLocal, dim: true, maxWidth: 113);
     }
 
     private void UpdateButtons()

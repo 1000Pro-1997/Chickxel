@@ -19,23 +19,8 @@ public static class AuthorAvatarView
     private static readonly Dictionary<Uri, (Bitmap Image, LinkedListNode<Uri> Node)> Memory = [];
     private static readonly LinkedList<Uri> Recent = [];
 
-    /// <summary>그림이 없거나 받지 못하면 SVG 기반 사람 아이콘을 남기는 둥근 칸.</summary>
-    public static Control Create(AssetAuthor? author, double size)
-    {
-        var host = new Border
-        {
-            Width = size, Height = size, CornerRadius = new CornerRadius(size / 2), ClipToBounds = true,
-            VerticalAlignment = VerticalAlignment.Center,
-            Child = new IconView(VectorIcon.CircleUser, AppTheme.DimTextBrush)
-            {
-                Width = Math.Round(size * 0.72), Height = Math.Round(size * 0.72),
-            },
-        };
-        Show(host, author);
-        return host;
-    }
-
-    private static async void Show(Border host, AssetAuthor? author)
+    /// <summary><see cref="IdentityBadge"/>의 둥근 칸에 작성자 그림을 채운다(받지 못하면 사람 아이콘 그대로).</summary>
+    internal static async void Show(Border host, AssetAuthor? author)
     {
         if (await LoadAsync(author) is not { } bitmap) return;
         host.Child = new Image { Source = bitmap, Stretch = Stretch.UniformToFill, Width = host.Width, Height = host.Height };

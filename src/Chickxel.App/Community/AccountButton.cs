@@ -13,10 +13,11 @@ namespace Chickxel.App;
 internal sealed class AccountButton : Button
 {
     private const double AvatarSize = 18;
+    /// <summary>배지 최대 너비(그림 + 이름 약 160px — 넘으면 말줄임).</summary>
+    private const double BadgeMaxWidth = 184;
 
     private readonly Window _owner;
     private readonly StackPanel _content = new() { Orientation = Orientation.Horizontal, Spacing = 6 };
-    private readonly TextBlock _name = new() { VerticalAlignment = VerticalAlignment.Center, MaxWidth = 160, TextTrimming = TextTrimming.CharacterEllipsis };
     private bool _verified;
 
     public AccountButton(Window owner)
@@ -61,15 +62,13 @@ internal sealed class AccountButton : Button
         _content.Children.Clear();
         if (saved.Current is { } current)
         {
-            _content.Children.Add(AppCommunity.Avatar(client.User, AvatarSize));
-            _name.Text = AppCommunity.DisplayName(client.User ?? current.User);
+            _content.Children.Add(IdentityBadge.User(client.User ?? current.User, AvatarSize, loadPicture: client.User is not null, maxWidth: BadgeMaxWidth));
         }
         else
         {
             _content.Children.Add(Ui.Icon(VectorIcon.CircleUser, 16));
-            _name.Text = UiStrings.Account_SignInButton;
+            _content.Children.Add(new TextBlock { Text = UiStrings.Account_SignInButton, VerticalAlignment = VerticalAlignment.Center });
         }
-        _content.Children.Add(_name);
         if (saved.List.Count > 0) _content.Children.Add(Ui.Icon(VectorIcon.ChevronDown, 10));
     }
 
@@ -93,7 +92,7 @@ internal sealed class AccountButton : Button
             var account = saved.List[i];
             bool current = i == saved.Active;
             var user = current ? client.User ?? account.User : account.User;
-            items.Add(Item(AccountHeader(user, current), AppCommunity.Avatar(user, 16), () => SwitchTo(account)));
+            items.Add(Item(AccountHeader(user, current), null, () => SwitchTo(account)));
         }
         items.Add(new Separator());
         items.Add(Item(UiStrings.Account_AddAccount, Ui.Icon(VectorIcon.UserPlus, 14), () => AccountDialog.Show(_owner, addAccount: true)));
@@ -109,14 +108,11 @@ internal sealed class AccountButton : Button
         PopupMenus.Show(this, items, PlacementMode.BottomEdgeAlignedRight);
     }
 
-    /// <summary>계정 메뉴 한 줄: 이름(지금 계정은 굵게)과 @핸들, 지금 계정이면 오른쪽 체크 아이콘.</summary>
+    /// <summary>계정 메뉴 한 줄: 프로필 배지(이름 — 지금 계정은 굵게 — 와 @핸들), 지금 계정이면 오른쪽 체크 아이콘.</summary>
     private static Control AccountHeader(CommunityUser? user, bool current)
     {
-        var names = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
-        names.Children.Add(new TextBlock { Text = AppCommunity.DisplayName(user), FontWeight = current ? FontWeight.Bold : FontWeight.Normal, VerticalAlignment = VerticalAlignment.Center });
-        if (user is not null) names.Children.Add(new TextBlock { Text = "@" + user.Handle, Foreground = AppTheme.DimTextBrush, VerticalAlignment = VerticalAlignment.Center });
         var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
-        row.Children.Add(names);
+        row.Children.Add(IdentityBadge.User(user, 16, handle: IdentityHandle.Inline, bold: current));
         if (current)
         {
             var check = Ui.Icon(VectorIcon.Check, 13);
@@ -127,7 +123,7 @@ internal sealed class AccountButton : Button
         return row;
     }
 
-    private static MenuItem Item(object header, Control icon, Action action)
+    private static MenuItem Item(object header, Control? icon, Action action)
     {
         var item = new MenuItem { Header = header, Icon = icon };
         // 메뉴가 닫힌 뒤에 한다(계정 창이 메뉴 위에 뜨지 않게).

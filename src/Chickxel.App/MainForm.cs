@@ -66,7 +66,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     /// <summary>지금 만드는 위 메뉴 이름(명령 분류).</summary>
     private string _cmdCategory = "";
     private string _cmdCategoryDisplay = "";
-    private readonly Dictionary<(Key Key, KeyModifiers Mods), (KeyScope Scope, Func<bool> Action)> _keys = new();
+    private readonly Dictionary<KeyChord, (KeyScope Scope, Func<bool> Action)> _keys = new();
 
     /// <summary>단축키의 "Ctrl" 자리(macOS = ⌘).</summary>
     private static readonly KeyModifiers Ctrl = Platform.CommandModifier;
@@ -256,8 +256,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         root.Children.Add(status);
         root.Children.Add(_splitFiles);
         var surface = new Grid { Children = { root, _helpPicker } };
-        _helpPicker.PointerPressed += OnHelpPickerPressed;
-        _helpPicker.PointerReleased += OnHelpPickerReleased;
+        AttachHelpPicker();
         Content = surface;
 
         KeyState.Attach(this);
@@ -265,6 +264,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         AddHandler(KeyDownEvent, OnSpaceKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
         AddHandler(KeyUpEvent, OnSpaceKeyUp, RoutingStrategies.Tunnel, handledEventsToo: true);
         AddHandler(PointerPressedEvent, (_, _) => _spaceTapStart = null, RoutingStrategies.Tunnel, handledEventsToo: true);
+        AddHandler(PointerPressedEvent, OnShortcutPointerPressed, RoutingStrategies.Tunnel);
         Deactivated += (_, _) => { (_spaceTapStart, _spaceHeld) = (null, false); StopHelpPicker(); };
         // 숫자·글자 입력란(도구 설정의 크기 등) 밖을 누르면 입력 상태를 끝내고 캔버스로 포커스를 돌린다(공통 모듈).
         TextFocusRelease.SetFallback(this, () => _canvas);
@@ -356,6 +356,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         var cell = new Border
         {
             Width = width,
+            // 대상 도움말(F1)이 글자 밖 빈 곳에서도 이 칸을 찾게.
+            Background = Brushes.Transparent,
             BorderBrush = AppTheme.BorderBrush,
             BorderThickness = new Thickness(0, 0, 1, 0),
             Padding = new Thickness(4, 0, 4, 0),
@@ -949,11 +951,11 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             c.Keys = _settings.Shortcuts is { } map && map.TryGetValue(c.Info.Id, out var custom)
                 ? custom.Select(Shortcuts.Parse).OfType<KeyChord>().Distinct().ToList()
                 : c.Info.Defaults.ToList();
-            foreach (var k in c.Keys) _keys[(k.Key, k.Mods)] = (c.Scope, c.Action);
+            foreach (var k in c.Keys) _keys[k] = (c.Scope, c.Action);
             if (c.Item is { } mi)
                 mi.Header = MenuHeader(MenuText(mi), c.Keys.Count > 0 ? Shortcuts.Format(c.Keys[0]) : c.FixedKeyText);
         }
-        _canvas.PeekKey = Command("보기/이전 프레임 보기(누르고 있기)").Keys.Select(k => (Key?)k.Key).FirstOrDefault();
+        _canvas.PeekKey = Command("보기/이전 프레임 보기(누르고 있기)").Keys.Where(k => !k.IsMouse).Select(k => (Key?)k.Key).FirstOrDefault();
         HelpWindow.Shortcuts = id => _commands.FirstOrDefault(c => c.Info.Id == id)?.Keys;
         HelpWindow.RefreshShortcuts();
         foreach (var slot in _toolSlots) slot.RefreshTip();
@@ -1151,9 +1153,25 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         }
         if (s.Maximized) WindowState = WindowState.Maximized;
 
-        _timeline.Thumbnails = s.TimelineThumbnails;
         _timeline.NameWidth = s.TimelineNameWidth;
         _canvas.InitZoom(s.Zoom);
+        ApplyEditorSettings();
+        foreach (var hex in s.RecentColors.AsEnumerable().Reverse())
+            if (Color32.TryParseHex(hex, out var c)) _ctx.PushRecentColor(c);
+        _colors.SetRecent(_ctx.RecentColors);
+        var palettes = s.Palettes ?? [new PaletteSetting { Name = AppSettings.DefaultPaletteName, Colors = [.. AppSettings.DefaultPalette] }];
+        _colors.SetPalettes(palettes.Select(p => p.ToPalette()));
+        _start.SetRecent(s.RecentFolders, s.RecentFiles);
+    }
+
+    /// <summary>
+    /// 설정의 보기·도구·색·미리보기 값을 화면과 편집 상태에 맞춘다(켤 때, 설정 초기화 뒤). 창 배치·확대율·팔레트·최근 목록은
+    /// 다루지 않는다(<see cref="AppSettings.ResetToDefaults"/>가 그대로 두는 값).
+    /// </summary>
+    private void ApplyEditorSettings()
+    {
+        var s = _settings;
+        _timeline.Thumbnails = s.TimelineThumbnails;
         _canvas.ShowPixelGrid = s.ShowPixelGrid;
         _canvas.ShowPivot = s.ShowPivot;
         _canvas.ShowTileGrid = s.ShowTileGrid;
@@ -1192,8 +1210,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _ctx.RightButtonErases = s.RightButtonErases;
         _ctx.MoveWrap = s.MoveWrap;
         _ctx.TransformResample = s.TransformResample;
-        if (ParseGradientStops(s.GradientStops) is { } stops) _ctx.GradientStops = stops;
-        if (ParseGradientAlphaStops(s.GradientAlphaStops) is { } alphaStops) _ctx.GradientAlphaStops = alphaStops;
+        _ctx.GradientStops = ParseGradientStops(s.GradientStops) ?? EditorContext.DefaultGradientStops;
+        _ctx.GradientAlphaStops = ParseGradientAlphaStops(s.GradientAlphaStops) ?? EditorContext.DefaultGradientAlphaStops;
         _ctx.GradientInterpolation = s.GradientInterpolation;
         _ctx.GradientDither = s.GradientDither;
         _ctx.GradientColorSpace = s.GradientColorSpace ?? GradientColorSpace.Rgb;
@@ -1210,11 +1228,6 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _ctx.MirrorAtPivot = s.MirrorAtPivot;
         _ctx.Primary = ColorParse.ParseOr(s.PrimaryColor, Color32.Black);
         _ctx.Secondary = ColorParse.ParseOr(s.SecondaryColor, Color32.Transparent);
-        foreach (var hex in s.RecentColors.AsEnumerable().Reverse())
-            if (Color32.TryParseHex(hex, out var c)) _ctx.PushRecentColor(c);
-        _colors.SetRecent(_ctx.RecentColors);
-        var palettes = s.Palettes ?? [new PaletteSetting { Name = AppSettings.DefaultPaletteName, Colors = [.. AppSettings.DefaultPalette] }];
-        _colors.SetPalettes(palettes.Select(p => p.ToPalette()));
         _colors.PickerMode = s.ColorPickerMode;
         _colors.LayerColorsCollapsed = s.LayerColorsCollapsed;
         _colors.LospecSort = s.LospecSort ?? LospecPaletteDialog.DefaultSortKey;
@@ -1223,7 +1236,6 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _preview.ZoomSetting = s.PreviewZoom;
         _preview.FpsSetting = s.PreviewFps;
         _preview.BackgroundSetting = s.PreviewBackground;
-        _start.SetRecent(s.RecentFolders, s.RecentFiles);
     }
 
     /// <summary>일반(최대화·최소화 아닌) 상태의 창 위치·크기를 기억한다(WinForms RestoreBounds 대신).</summary>
@@ -1535,8 +1547,21 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         // 단축키가 시작한 변형·붙여넣기가 ⌘를 뗄 때의 도구 되돌리기에 적용(취소)되지 않게.
         _canvas.EndTempMoveForShortcut(e.Key);
         if (e.Handled) return;
-        var mods = e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Shift | KeyModifiers.Alt | KeyModifiers.Meta);
-        if (_keys.TryGetValue((e.Key, mods), out var entry) && CanRun(entry.Scope, mods) && entry.Action())
+        var mods = Shortcuts.ChordMods(e.KeyModifiers);
+        if (_keys.TryGetValue(new KeyChord(e.Key, mods), out var entry) && CanRun(entry.Scope, mods) && entry.Action())
+            e.Handled = true;
+    }
+
+    /// <summary>
+    /// 창 전체 마우스 미리 받기(터널): 마우스 4·5번 단추(+ 수정자)에 단축키를 정했으면 키 단축키처럼 실행하고 누름을 먹는다.
+    /// 정하지 않았으면 그대로 흘려 보낸다(앱은 이 단추에 따로 하는 일이 없음). 다른 단추·휠은 보지 않는다.
+    /// </summary>
+    private void OnShortcutPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        var button = Shortcuts.BindableMouse(e.GetCurrentPoint(this).Properties.PointerUpdateKind);
+        if (button == MouseButton.None || WorkOverlay.IsActive || _helpPicker.IsVisible) return;
+        var mods = Shortcuts.ChordMods(e.KeyModifiers);
+        if (_keys.TryGetValue(new KeyChord(Key.None, mods, button), out var entry) && CanRun(entry.Scope, mods) && entry.Action())
             e.Handled = true;
     }
 
@@ -1912,14 +1937,20 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             Ui.Row(Ui.Label(MainStrings.Message_277), color, Ui.InfoBadge(MainStrings.Message_278)));
     }
 
-    /// <summary>환경 설정(화면 언어·실행취소 횟수·실행취소 기록 남기기·자동 저장·앱 휴지통 보관 기간·업데이트 자동 확인·단축키·AI 참고 자료).</summary>
+    /// <summary>환경 설정(화면 언어·실행취소 횟수·실행취소 기록 남기기·자동 저장·앱 휴지통 보관 기간·업데이트 자동 확인·단축키·AI 참고 자료, 설정 초기화).</summary>
     private void ShowPreferences()
     {
         var dlg = new PreferencesDialog(_settings.Language ?? UiLanguage.Current, _settings.UndoSteps, _settings.UndoHistoryEnabled, _settings.UndoHistoryPolicy, _history,
             _settings.AutoSave, _settings.AutoSaveIdleSeconds, _settings.TrashPolicy, _settings.UpdateCheck,
             _commands.Select(c => c.Info).ToList(), _commands.ToDictionary(c => c.Info.Id, c => c.Keys.ToList()),
             _settings.ReferencesFolder, _settings.ReferencesShowExamples, _settings.FfmpegPath, owner => ShowAiStatus(owner));
-        if (dlg.ShowDialog(this) != DialogResult.OK) return;
+        var result = dlg.ShowDialog(this);
+        if (dlg.ResetRequested)
+        {
+            ResetSettings();
+            return;
+        }
+        if (result != DialogResult.OK) return;
         // 화면 언어는 다시 시작해야 바뀐다(정적 필드에 담긴 문구도 있음).
         bool languageChanged = !string.Equals(dlg.Language, _settings.Language, StringComparison.OrdinalIgnoreCase);
         _settings.Language = dlg.Language;
@@ -1966,6 +1997,40 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             && Ui.Ask(this, UiStrings.Language_RestartNotice, "Chickxel", MessageButtons.YesNo, MessageIcon.Question,
                 UiStrings.Language_RestartNow, UiStrings.Language_RestartLater) == DialogResult.Yes)
             RestartApp();
+    }
+
+    /// <summary>
+    /// 환경 설정의 "설정 초기화": 설정을 처음 값으로 되돌리고(<see cref="AppSettings.ResetToDefaults"/> — 최근 목록·창 배치·팔레트 등은 그대로)
+    /// 바로 적용한다. 열린 문서는 건드리지 않는다. 화면 언어는 컴퓨터 언어로 돌아가며, 지금 언어와 다르면 다시 시작해야 바뀐다.
+    /// </summary>
+    private void ResetSettings()
+    {
+        var oldRefsFolder = _settings.ReferencesFolder;
+        _settings.ResetToDefaults();
+        _settings.Language = UiLanguage.Detect(UiLanguage.SystemCulture, UiLanguage.Available());
+        // 실행취소 단계 수를 줄이면 열린 문서의 기록이 잘리므로, 줄어드는 값은 다음 시작부터 쓴다.
+        if (_settings.UndoSteps >= _ctx.UndoCapacity) _ctx.UndoCapacity = _settings.UndoSteps;
+        if (!_settings.AutoSave) _autoSave.Stop();
+        if (oldRefsFolder is not null)
+        {
+            _refs = null;
+            _refsWindow?.Close();
+        }
+        if (_refs is { } refs && refs.ShowBuiltIns != _settings.ReferencesShowExamples)
+        {
+            refs.ShowBuiltIns = _settings.ReferencesShowExamples;
+            _refsWindow?.Reload();
+        }
+        ApplyEditorSettings();
+        ApplyShortcuts();
+        _settings.Save();
+        if (!string.Equals(_settings.Language, UiLanguage.Current, StringComparison.OrdinalIgnoreCase))
+        {
+            if (Ui.Ask(this, UiStrings.Prefs_ResetSettings_DoneRestart, UiStrings.Prefs_ResetSettings_Title, MessageButtons.YesNo, MessageIcon.Question,
+                    UiStrings.Language_RestartNow, UiStrings.Language_RestartLater) == DialogResult.Yes)
+                RestartApp();
+        }
+        else ShowMessage(UiStrings.Prefs_ResetSettings_Done);
     }
 
     /// <summary>시작 화면: 모든 탭을 닫는다(저장 안 한 문서는 한 창에 모아 묻는다 — <see cref="CloseAllTabs"/>). 마지막 탭이 닫히면 시작 화면이 Unity 목록을 새로 읽는다.</summary>

@@ -9,7 +9,7 @@ namespace Chickxel.App;
 
 /// <summary>
 /// 에셋 게시 창(계획 8.4, 9.3, 14장 5단계): 내 에셋 하나를 공개 패키지로 Chickxel 커뮤니티 서비스에 올린다(로그인 필요).
-/// 왼쪽은 작성자(로그인한 계정의 핸들·표시 이름, 고칠 수 없음), 패키지 묶음 맨 위의 모드 줄(서버에 물어 "새 패키지" / "이름 업데이트: 1.0.0 → 1.0.1"),
+/// 왼쪽은 작성자(로그인한 계정의 프로필 배지 — 이름·@핸들, 고칠 수 없음), 패키지 묶음 맨 위의 모드 줄(서버에 물어 "새 패키지" / "이름 업데이트: 1.0.0 → 1.0.1"),
 /// 이름·짧은 설명(언어 설정으로 언어별 이름·설명), 고칠 수 없는 패키지 ID(<see cref="AssetPublishCheck.ResolveTarget"/> — 내가 올린 에셋이면 그 상점 ID, 아니면 핸들.이름 조각),
 /// 버전(이미 올린 버전에서 다음 수 버전 제안)·태그(<see cref="TagChipEditor"/>), 고정 라이선스(<see cref="AssetPublishCheck.License"/>),
 /// 오른쪽은 올릴 에셋, 목록 미리보기(에셋 미리보기나 고른 PNG), 올리기 전 검사 결과.
@@ -31,7 +31,9 @@ public sealed class AssetPublishDialog : DialogBase
     private readonly TagChipEditor _tags;
     /// <summary>꼭 달아야 하는 태그: 다른 레이어를 읽으면 <see cref="ScriptAsset.LayerReferenceTag"/>, 다른 프레임을 읽으면 <see cref="ScriptAsset.FrameReferenceTag"/>.</summary>
     private readonly string[] _forcedTags;
-    private readonly SelectableTextBlock _authorId, _authorName, _idText;
+    private readonly SelectableTextBlock _idText;
+    /// <summary>작성자: 로그인한 계정의 프로필 배지(핸들이 작성자 ID, 이름이 표시 이름).</summary>
+    private readonly ContentControl _author = new() { Margin = new Thickness(3, 4, 6, 4) };
     private readonly TextBlock _languages = Note(""), _checksSummary = Note(""), _previewNote = Note("");
     /// <summary>패키지 묶음 맨 위의 모드 줄(새 패키지 / 업데이트 / 확인 중 / 확인 못 함)과 그 아래 덧붙임.</summary>
     private readonly TextBlock _mode = new() { FontWeight = FontWeight.Bold, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
@@ -137,8 +139,7 @@ public sealed class AssetPublishDialog : DialogBase
 
         // ── 왼쪽: 작성자·패키지·라이선스 ──
         // 작성자 ID = 계정 핸들(서버가 패키지 ID 첫 조각·작성자 ID를 핸들과 맞춰 봄), 표시 이름 = 계정 이름. 둘 다 계정 창에서 바꾼다.
-        _authorId = ReadOnlyText(user.Handle);
-        _authorName = ReadOnlyText(user.Name);
+        _author.Content = AuthorBadge(user);
         _name = Field(name);
         _name.MaxLength = AssetManifest.MaxNameLength;
         _summary = new TextBox
@@ -186,8 +187,7 @@ public sealed class AssetPublishDialog : DialogBase
             {
                 Note(UiStrings.Publish_Intro),
                 Ui.Group(UiStrings.Publish_Author, Ui.Stack(
-                    Rows((UiStrings.Publish_AuthorId, _authorId, UiStrings.Publish_AuthorIdTip),
-                        (UiStrings.Publish_AuthorName, _authorName, null)),
+                    Ui.Row(_author, Ui.InfoBadge(UiStrings.Publish_AuthorIdTip)),
                     Note(UiStrings.Publish_AuthorFromAccount))),
                 Ui.Group(UiStrings.Publish_Package, Ui.Stack(
                     mode,
@@ -313,10 +313,8 @@ public sealed class AssetPublishDialog : DialogBase
     private static TextBox Field(string value, string? watermark = null)
         => new() { Text = value, Width = FieldWidth, Margin = new Thickness(3), Watermark = watermark };
 
-    private static SelectableTextBlock ReadOnlyText(string value) => new()
-    {
-        Text = value, Foreground = AppTheme.TextBrush, Margin = new Thickness(3, 6, 3, 3), FontWeight = FontWeight.SemiBold,
-    };
+    private static Control AuthorBadge(CommunityUser user)
+        => IdentityBadge.User(user, 28, handle: IdentityHandle.Below, bold: true, maxWidth: FieldWidth);
 
     private static TextBlock Note(string text) => new()
     {
@@ -581,8 +579,7 @@ public sealed class AssetPublishDialog : DialogBase
     {
         _user = user;
         _settings.AuthorName = user.Name;
-        _authorId.Text = user.Handle;
-        _authorName.Text = user.Name;
+        _author.Content = AuthorBadge(user);
         UpdateTarget();
         Changed();
     }

@@ -1,4 +1,6 @@
+using System.Text;
 using System.Text.Json;
+using Avalonia.Animation;
 using Avalonia.Automation;
 using Avalonia.Controls.Documents;
 using Chickxel.App.Localization;
@@ -18,7 +20,8 @@ public sealed class HelpWindow : Window
     private static readonly FontFamily MonoFont = new("Consolas, Menlo, DejaVu Sans Mono, monospace");
     // 홈페이지(style.css)와 같은 색: 금색 제목, 노란 강조, 파란 링크, 노란 빛 알림 상자.
     private static readonly IBrush Gold = AppTheme.Brush(Color.FromRgb(0xE8, 0xB9, 0x3A));
-    private static readonly IBrush Yellow = AppTheme.Brush(Color.FromRgb(0xFF, 0xD0, 0x2F));
+    /// <summary>찾은 곳 표시 노랑(대상 도움말 고르기 테두리도 같은 색).</summary>
+    internal static readonly IBrush Yellow = AppTheme.Brush(Color.FromRgb(0xFF, 0xD0, 0x2F));
     private static readonly IBrush OnYellow = AppTheme.Brush(Color.FromRgb(0x17, 0x14, 0x0A));
     private static readonly IBrush LinkBrush = AppTheme.Brush(Color.FromRgb(0x8A, 0xA0, 0xFF));
     private static readonly IBrush BodyBrush = AppTheme.Brush(Color.FromRgb(0xC9, 0xCC, 0xD4));
@@ -58,6 +61,10 @@ public sealed class HelpWindow : Window
     private IReadOnlyList<string> _terms = [];
     /// <summary>지금 쪽을 그리며 처음 칠한 글 줄(그리로 스크롤).</summary>
     private Control? _firstHit;
+    /// <summary>지금 쪽을 그리며 대상 도움말 자리에 덧그린 노란 테두리(그리로 스크롤).</summary>
+    private Control? _anchorMark;
+    /// <summary>영어 쪽 데이터(쪽 id → 쪽): 한국어 화면에서 영어 가이드 글로 적은 대상 도움말 자리를 찾을 때 처음 읽는다.</summary>
+    private static Dictionary<string, HelpPage>? _englishPages;
     private Control? _currentTocRow;
     private int _renderVersion;
 
@@ -392,27 +399,31 @@ public sealed class HelpWindow : Window
 
     // ───────────── 쪽 ─────────────
 
-    /// <summary>쪽을 열고, 지정한 그림이 있으면 그 자리로 이동한다.</summary>
-    public void ShowPage(string pageId, string? shot = null)
+    /// <summary>쪽을 열고, 지정한 그림이 있으면 그 자리로, 아니면 <paramref name="anchor"/>(소제목·표 줄·목록 항목 글)가 있으면 그 자리로 이동해 잠깐 노랗게 표시한다.</summary>
+    public void ShowPage(string pageId, string? shot = null, string? anchor = null)
     {
-        if (_byId.TryGetValue(pageId, out var page)) Show(page, shot);
+        if (_byId.TryGetValue(pageId, out var page)) Show(page, shot, anchor);
     }
 
-    private void Show(HelpPage page, string? shot = null)
+    /// <summary>대상 도움말(F1)이 고른 자리를 연다.</summary>
+    internal void ShowPage(HelpTarget target) => ShowPage(target.PageId, target.Shot, target.Anchor);
+
+    private void Show(HelpPage page, string? shot = null, string? anchor = null)
     {
         _page = page;
         _lastPageId = page.Id;
         _expanded.Clear();
         _expanded.Add(page.Chapter.Id);
         RenderToc();
-        RenderPage(shot);
+        RenderPage(shot, anchor);
     }
 
-    private void RenderPage(string? shot = null)
+    private void RenderPage(string? shot = null, string? anchor = null)
     {
         var page = _page;
         _terms = string.IsNullOrWhiteSpace(Query) ? [] : HelpSearch.ResolveTerms(page.Title + "\n" + page.Text, HelpSearch.HighlightTerms(Query));
         _firstHit = null;
+        _anchorMark = null;
         _body.Children.Clear();
 
         if (page.Chapter.HasSubPages)
@@ -442,16 +453,18 @@ public sealed class HelpWindow : Window
         _body.Children.Add(title);
 
         Control? target = null;
-        foreach (var block in page.Blocks)
+        var spot = shot is null && anchor is not null ? AnchorSpot(page, anchor) : null;
+        for (int i = 0; i < page.Blocks.Length; i++)
         {
-            var control = Block(block, BodyBrush);
+            var block = page.Blocks[i];
+            var control = spot is { } s && s.Block == i ? MarkedBlock(block, s.Row) : Block(block, BodyBrush);
             _body.Children.Add(control);
             if (block.Type == "shot" && block.Src == shot) target = control;
         }
 
         _body.Children.Add(Pager(page));
 
-        var hit = target ?? _firstHit;
+        var hit = target ?? _anchorMark ?? _firstHit;
         int version = ++_renderVersion;
         Dispatcher.UIThread.Post(() =>
         {
@@ -461,6 +474,148 @@ public sealed class HelpWindow : Window
             else
                 _pageScroll.Offset = default;
         }, DispatcherPriority.Loaded);
+    }
+
+    // ───────────── 대상 도움말 자리(anchor) ─────────────
+
+    /// <summary>
+    /// 쪽 안에서 <paramref name="anchor"/>가 가리키는 블록(Row = 표 줄·목록 항목 번호, 블록 전체면 -1). 못 찾으면 null(쪽 맨 위).
+    /// 한국어 화면에서는 영어 쪽에서 먼저 찾아(영어 가이드 글로 적은 자리) 같은 자리로 옮긴다 — 두 언어 쪽은 같은 틀에서 만들어 블록 차례가 같다.
+    /// 거기 없으면(한국어 앱 문자열) 이 쪽에서 찾는다.
+    /// </summary>
+    private (int Block, int Row)? AnchorSpot(HelpPage page, string anchor)
+    {
+        if (_korean)
+        {
+            _englishPages ??= LoadBook("en").Groups.SelectMany(g => g.Chapters).SelectMany(c => c.Pages).ToDictionary(p => p.Id);
+            if (_englishPages.TryGetValue(page.Id, out var english) && FindAnchor(english.Blocks, anchor) is { } spot && SameSpot(english, page, spot))
+                return spot;
+        }
+        return FindAnchor(page.Blocks, anchor);
+    }
+
+    /// <summary>다른 언어 쪽에서 찾은 자리가 이 쪽에도 같은 모양(블록 종류·줄 수)으로 있는지.</summary>
+    private static bool SameSpot(HelpPage from, HelpPage to, (int Block, int Row) spot)
+    {
+        if (spot.Block >= to.Blocks.Length) return false;
+        HelpBlock a = from.Blocks[spot.Block], b = to.Blocks[spot.Block];
+        if (a.Type != b.Type) return false;
+        return spot.Row < 0 || spot.Row < (b.Type == "table" ? b.Rows?.Length ?? 0 : b.Items?.Length ?? 0);
+    }
+
+    /// <summary>
+    /// 자리 찾기(앞의 규칙이 먼저): 소제목이 같음 → 표 줄의 첫 칸이 그 글로 시작 → 목록 항목이 그 글로 시작 → 소제목이 그 글로 시작
+    /// → 목록 항목에 그 글이 들어 있음 → 문단에 그 글이 들어 있음. 비교는 대소문자·공백·끝의 …/:·앞의 그림 번호(①…)를 가리지 않는다.
+    /// </summary>
+    private static (int Block, int Row)? FindAnchor(HelpBlock[] blocks, string anchor)
+    {
+        var a = AnchorKey(anchor, stripMarks: false);
+        if (a.Length == 0) return null;
+        static string Plain(HelpRun[]? runs) => runs is null ? "" : string.Concat(runs.Select(r => r.T));
+        static string ItemText(HelpItem item) => item.Title is { Length: > 0 } title ? Plain(title) : Plain(item.Runs);
+        static bool IsList(HelpBlock b) => b.Type is "ul" or "ol" or "steps";
+
+        for (int i = 0; i < blocks.Length; i++)
+            if (blocks[i].Type == "h4" && AnchorKey(Plain(blocks[i].Runs), true) == a) return (i, -1);
+        for (int i = 0; i < blocks.Length; i++)
+        {
+            if (blocks[i].Type != "table" || blocks[i].Rows is not { } rows) continue;
+            for (int r = 0; r < rows.Length; r++)
+            {
+                var cell = Plain(rows[r].Length > 0 ? rows[r][0] : null);
+                if (AnchorKey(cell, true).StartsWith(a, StringComparison.Ordinal) || AnchorKey(cell, false).StartsWith(a, StringComparison.Ordinal)) return (i, r);
+            }
+        }
+        for (int i = 0; i < blocks.Length; i++)
+        {
+            if (!IsList(blocks[i]) || blocks[i].Items is not { } items) continue;
+            for (int r = 0; r < items.Length; r++)
+                if (AnchorKey(ItemText(items[r]), true).StartsWith(a, StringComparison.Ordinal)) return (i, r);
+        }
+        for (int i = 0; i < blocks.Length; i++)
+            if (blocks[i].Type == "h4" && AnchorKey(Plain(blocks[i].Runs), true).StartsWith(a, StringComparison.Ordinal)) return (i, -1);
+        for (int i = 0; i < blocks.Length; i++)
+        {
+            if (!IsList(blocks[i]) || blocks[i].Items is not { } items) continue;
+            for (int r = 0; r < items.Length; r++)
+                if (AnchorKey(ItemText(items[r]), true).Contains(a, StringComparison.Ordinal)) return (i, r);
+        }
+        for (int i = 0; i < blocks.Length; i++)
+            if (blocks[i].Type == "p" && AnchorKey(Plain(blocks[i].Runs), true).Contains(a, StringComparison.Ordinal)) return (i, -1);
+        return null;
+    }
+
+    /// <summary>비교용 글: 소문자, 공백 하나로, 끝의 …·...·:를 떼고, <paramref name="stripMarks"/>면 앞의 그림 번호(①…)도 뗀다(남는 글이 있을 때만).</summary>
+    private static string AnchorKey(string text, bool stripMarks)
+    {
+        var sb = new StringBuilder(text.Length);
+        bool space = false;
+        foreach (char ch in text)
+        {
+            if (char.IsWhiteSpace(ch))
+            {
+                space = sb.Length > 0;
+                continue;
+            }
+            if (space) sb.Append(' ');
+            space = false;
+            sb.Append(char.ToLowerInvariant(ch));
+        }
+        var s = sb.ToString();
+        while (true)
+        {
+            var t = s.TrimEnd(' ', ':');
+            if (t.EndsWith('…')) t = t[..^1];
+            else if (t.EndsWith("...", StringComparison.Ordinal)) t = t[..^3];
+            if (t == s) break;
+            s = t;
+        }
+        if (stripMarks)
+        {
+            int i = 0;
+            while (i < s.Length && (IsFigureMark(s[i]) || s[i] == ' ')) i++;
+            if (i < s.Length) s = s[i..];
+        }
+        return s;
+    }
+
+    /// <summary>그림 번호 글자(①~⑳, ㉑~㉟).</summary>
+    private static bool IsFigureMark(char c) => c is >= '\u2460' and <= '\u2473' or >= '\u3251' and <= '\u325F';
+
+    /// <summary>대상 도움말 자리 블록: 블록 전체(Row &lt; 0) 또는 표 줄·목록 항목 하나에 노란 테두리를 덧그린다.</summary>
+    private Control MarkedBlock(HelpBlock b, int row) => row < 0 ? Marked(Block(b, BodyBrush)) : b.Type switch
+    {
+        "table" => Table(b, row),
+        "steps" => Steps(b, row),
+        _ => ListBlock(b, BodyBrush, row),
+    };
+
+    /// <summary><paramref name="content"/> 둘레에 노란 테두리를 덧그린 것(자리는 그대로).</summary>
+    private Control Marked(Control content)
+    {
+        var ring = MarkRing();
+        ring.Margin = new Thickness(-6, -3);
+        var host = new Panel { Margin = content.Margin, Children = { content, ring } };
+        content.Margin = default;
+        return host;
+    }
+
+    /// <summary>
+    /// 대상 도움말 자리 테두리: 검색으로 찾은 그림과 같은 노란 2px 테두리. 잠깐 보인 뒤 흐려져 사라지고, 그리로 스크롤한다(<see cref="_anchorMark"/>).
+    /// </summary>
+    private Border MarkRing()
+    {
+        var ring = new Border
+        {
+            BorderBrush = Yellow,
+            BorderThickness = new Thickness(2),
+            CornerRadius = new CornerRadius(6),
+            IsHitTestVisible = false,
+            Transitions = new Transitions { new DoubleTransition { Property = OpacityProperty, Duration = TimeSpan.FromMilliseconds(600) } },
+        };
+        DispatcherTimer.RunOnce(() => ring.Opacity = 0, TimeSpan.FromSeconds(2.5));
+        _anchorMark = ring;
+        return ring;
     }
 
     private Control Block(HelpBlock b, IBrush fg)
@@ -532,7 +687,8 @@ public sealed class HelpWindow : Window
         }
     }
 
-    private Control ListBlock(HelpBlock b, IBrush fg)
+    /// <summary>목록. <paramref name="mark"/> 번째 항목(0부터)이 있으면 그 항목에 대상 도움말 테두리를 덧그린다.</summary>
+    private Control ListBlock(HelpBlock b, IBrush fg, int mark = -1)
     {
         var stack = new StackPanel { Spacing = 4, Margin = new Thickness(0, 0, 0, 12) };
         int n = 0;
@@ -555,12 +711,13 @@ public sealed class HelpWindow : Window
             }
             Grid.SetColumn(content, 1);
             grid.Children.Add(content);
-            stack.Children.Add(grid);
+            stack.Children.Add(n - 1 == mark ? Marked(grid) : grid);
         }
         return stack;
     }
 
-    private Control Steps(HelpBlock b)
+    /// <summary>단계 상자들. <paramref name="mark"/> 번째 단계(0부터)가 있으면 그 상자에 대상 도움말 테두리를 덧그린다.</summary>
+    private Control Steps(HelpBlock b, int mark = -1)
     {
         var stack = new StackPanel { Spacing = 8, Margin = new Thickness(0, 2, 0, 14) };
         int n = 0;
@@ -581,7 +738,7 @@ public sealed class HelpWindow : Window
             text.Margin = new Thickness(0, 2, 0, 0);
             var content = new StackPanel { Children = { title, text } };
             Grid.SetColumn(content, 1);
-            stack.Children.Add(new Border
+            var box = new Border
             {
                 Background = SoftBrush,
                 BorderBrush = AppTheme.BorderBrush,
@@ -589,12 +746,14 @@ public sealed class HelpWindow : Window
                 CornerRadius = new CornerRadius(10),
                 Padding = new Thickness(14, 12),
                 Child = new Grid { ColumnDefinitions = new ColumnDefinitions("40,*"), Children = { badge, content } },
-            });
+            };
+            stack.Children.Add(n - 1 == mark ? Marked(box) : box);
         }
         return stack;
     }
 
-    private Control Table(HelpBlock b)
+    /// <summary>표. <paramref name="mark"/> 번째 본문 줄(0부터, 머리 줄 빼고)이 있으면 그 줄에 대상 도움말 테두리를 덧그린다.</summary>
+    private Control Table(HelpBlock b, int mark = -1)
     {
         var rows = new List<(HelpRun[][] Cells, bool Head)>();
         if (b.Head is { Length: > 0 } head) rows.Add((head, true));
@@ -625,6 +784,14 @@ public sealed class HelpWindow : Window
                 Grid.SetColumn(cell, c);
                 grid.Children.Add(cell);
             }
+        }
+        int markRow = mark < 0 ? -1 : mark + (b.Head is { Length: > 0 } ? 1 : 0);
+        if (markRow >= 0 && markRow < rows.Count && cols > 0)
+        {
+            var ring = MarkRing();
+            Grid.SetRow(ring, markRow);
+            Grid.SetColumnSpan(ring, cols);
+            grid.Children.Add(ring);
         }
         return new Border
         {

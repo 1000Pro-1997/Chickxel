@@ -4,9 +4,15 @@ using Chickxel.App.Localization;
 
 namespace Chickxel.App;
 
-/// <summary>단축키 하나(키 + 수정자).</summary>
-public readonly record struct KeyChord(Key Key, KeyModifiers Mods)
+/// <summary>
+/// 단축키 하나: 키 + 수정자, 또는 마우스 옆 단추(<see cref="Mouse"/> = XButton1·XButton2, 이때 <see cref="Key"/>는 None) + 수정자.
+/// 왼쪽·오른쪽·가운데 단추와 휠은 단축키로 쓰지 않는다(<see cref="Shortcuts.IsBindableMouse"/>).
+/// </summary>
+public readonly record struct KeyChord(Key Key, KeyModifiers Mods, MouseButton Mouse = MouseButton.None)
 {
+    /// <summary>마우스 옆 단추 단축키인지.</summary>
+    public bool IsMouse => Mouse != MouseButton.None;
+
     public override string ToString() => Shortcuts.Format(this);
 }
 
@@ -35,6 +41,23 @@ public static class Shortcuts
     public static bool IsModifierKey(Key k) => k is Key.LeftCtrl or Key.RightCtrl or Key.LeftShift or Key.RightShift
         or Key.LeftAlt or Key.RightAlt or Key.LWin or Key.RWin or Key.System or Key.None;
 
+    /// <summary>단축키로 쓸 수 있는 마우스 단추: 4번(XButton1, 뒤로)·5번(XButton2, 앞으로)만.</summary>
+    public static bool IsBindableMouse(MouseButton b) => b is MouseButton.XButton1 or MouseButton.XButton2;
+
+    /// <summary>눌린 마우스 단추(포인터 누름의 <see cref="PointerUpdateKind"/>)가 단축키로 쓸 수 있는 옆 단추면 그 단추, 아니면 None.</summary>
+    public static MouseButton BindableMouse(PointerUpdateKind kind) => kind switch
+    {
+        PointerUpdateKind.XButton1Pressed => MouseButton.XButton1,
+        PointerUpdateKind.XButton2Pressed => MouseButton.XButton2,
+        _ => MouseButton.None,
+    };
+
+    /// <summary>단축키로 보는 수정자(Ctrl·Shift·Alt·Meta)만 남긴다.</summary>
+    public static KeyModifiers ChordMods(KeyModifiers m) => m & (KeyModifiers.Control | KeyModifiers.Shift | KeyModifiers.Alt | KeyModifiers.Meta);
+
+    /// <summary>마우스 단추 표기(설정·JSON 파일과 화면에 같은 글자).</summary>
+    private const string Mouse4 = "Mouse4", Mouse5 = "Mouse5";
+
     public static string Format(KeyChord c)
     {
         var parts = new List<string>(4);
@@ -44,7 +67,7 @@ public static class Shortcuts
         if ((mods & KeyModifiers.Meta) != 0) parts.Add("Meta");
         if ((mods & KeyModifiers.Alt) != 0) parts.Add("Alt");
         if ((mods & KeyModifiers.Shift) != 0) parts.Add("Shift");
-        parts.Add(KeyName(c.Key));
+        parts.Add(c.Mouse switch { MouseButton.XButton1 => Mouse4, MouseButton.XButton2 => Mouse5, _ => KeyName(c.Key) });
         return string.Join("+", parts);
     }
 
@@ -79,6 +102,8 @@ public static class Shortcuts
             mods |= m.Value;
             text = text[(plus + 1)..];
         }
+        if (text == Mouse4) return new KeyChord(Key.None, mods, MouseButton.XButton1);
+        if (text == Mouse5) return new KeyChord(Key.None, mods, MouseButton.XButton2);
         foreach (var (key, name) in Names) if (name == text) return new KeyChord(key, mods);
         return Enum.TryParse<Key>(text, ignoreCase: false, out var k) && !IsModifierKey(k) && Enum.IsDefined(k) ? new KeyChord(k, mods) : null;
     }

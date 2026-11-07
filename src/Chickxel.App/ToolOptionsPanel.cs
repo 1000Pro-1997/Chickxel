@@ -94,6 +94,8 @@ public sealed class ToolOptionsPanel : UserControl
     /// <summary>줄 맞춤(왼쪽·가운데·오른쪽 = <see cref="TextAlign"/> 순서). 클릭해도 캔버스 포커스를 빼앗지 않는다.</summary>
     private readonly TabStrip _textAlign = new(TabStripKind.Segmented) { Focusable = false, IsTabStop = false, Margin = default };
     private readonly CheckBox _textSmooth;
+    /// <summary>글꼴 더하기·폴더 열기 단추 줄.</summary>
+    private readonly StackPanel _textFontButtons;
 
     // 도형
     private readonly Border _shapeBox;
@@ -117,6 +119,8 @@ public sealed class ToolOptionsPanel : UserControl
     private readonly TabStrip _pencilGradientMode = new(TabStripKind.Segmented) { Focusable = false, IsTabStop = false, Margin = default };
     private readonly NumericUpDown _pencilIntervalNum;
     private readonly StackPanel _pencilIntervalRow;
+    /// <summary>프리셋·기본값 단추 줄.</summary>
+    private readonly StackPanel _pencilPresetRow;
 
     // 피벗
     private readonly Border _pivotBox;
@@ -332,9 +336,10 @@ public sealed class ToolOptionsPanel : UserControl
             .Presets(TextScales).Unit("%").RecentKey("text.scale");
         _textScaleY.Tip(UiStrings.TextEffect_ScaleYTip);
         _textSmooth = Check(UiStrings.TextEffect_Smooth, UiStrings.TextEffect_SmoothTip, v => SetTextStyle(s => s with { Smooth = v }));
+        _textFontButtons = Ui.Row(addFont, openFonts);
         _textBox = Ui.Group(UiStrings.TextTool_Group, Ui.Stack(
             Ui.Row(Ui.Label(UiStrings.TextEffect_Font), _textFont.Combo),
-            Ui.Row(addFont, openFonts),
+            _textFontButtons,
             _textMissing,
             Ui.Row(Ui.Label(UiStrings.TextEffect_Size), _textSize, Ui.Label("px"), _textBold, _textItalic),
             Ui.Row(Ui.Label(UiStrings.TextEffect_Align), _textAlign),
@@ -384,10 +389,11 @@ public sealed class ToolOptionsPanel : UserControl
         pencilPresets.Click += (_, _) => _pencilGradientEditor.ShowPresetMenu(pencilPresets);
         var pencilReset = Ui.Button(VectorIcon.Undo2, UiStrings.GradientPencil_Reset, (_, _) => _ctx.PencilGradient = EditorContext.DefaultPencilGradient)
             .Tip(UiStrings.GradientPencil_ResetTip);
+        _pencilPresetRow = Ui.Row(pencilPresets, pencilReset);
         _pencilGradientBox = InfoGroup(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_3700B54FB1, UiStrings.GradientPencil_Info, Ui.Stack(
             Ui.Row(Ui.Label(UiStrings.GradientPencil_Mode), _pencilGradientMode),
             _pencilIntervalRow,
-            Ui.Row(pencilPresets, pencilReset),
+            _pencilPresetRow,
             _pencilGradientEditor));
 
         // ── 옵션(도구마다 보이는 것만)
@@ -1258,6 +1264,133 @@ public sealed class ToolOptionsPanel : UserControl
         DockPanel.SetDock(icon, Dock.Left);
         var label = new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.WarningBrush };
         _effectStatus.Children.Add(new DockPanel { Children = { icon, label } });
+    }
+
+    // ───────────── 대상 도움말(F1) ─────────────
+
+    /// <summary>
+    /// 대상 도움말(F1): 이 패널 안의 컨트롤 <paramref name="c"/>(점 아래 가장 안쪽부터 바깥으로 물음)에 맞는 가이드 자리. 모르는 컨트롤이면 null.
+    /// 자리 글은 가이드가 컨트롤의 앱 문자열을 그대로 쓰면 그 문자열, 아니면 영어 가이드 글이다(<see cref="HelpTarget"/>).
+    /// 도구 쪽에 그 설정 절이 없으면 설명이 있는 쪽(브러시 설정·그리기 기본·채우기 등)으로 간다.
+    /// </summary>
+    internal HelpTarget? HelpTargetFor(Control c)
+    {
+        var tool = _ctx.Tool;
+        bool Is(Control control) => ReferenceEquals(c, control);
+        // 숫자 칸·고르기 상자는 그 줄(앞 글 포함)도.
+        bool InRow(Control control) => Is(control) || ReferenceEquals(c, control.Parent);
+        static HelpTarget At(string page, string anchor) => new(page, Anchor: anchor);
+
+        // 제목 줄
+        if (Is(_hint)) return new(HelpTarget.ToolPage(tool));
+        if (InRow(_title) || ReferenceEquals(c, _title.Parent?.Parent)) return At("screen-tool-settings", "Collapsing");
+
+        // 브러시
+        if (Is(_shapes) || Is(_brushPreview)) return At("tools-brush", "Pick the shape");
+        if (InRow(_sizeNum)) return At("tools-brush", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_CAF69A1BB7);
+        if (Is(_brushBox)) return tool switch
+        {
+            ToolKind.Pencil => At("tools-pencil", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_244D56A524),
+            ToolKind.Shape => At("tools-brush", "In the Shape tool"),
+            ToolKind.Eraser => At("tools-brush", "The eraser remembers"),
+            _ => At("tools-brush", "Shape and size"),
+        };
+
+        // 옵션
+        if (Is(_pixelPerfect)) return At("tools-pencil", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_B655203628);
+        if (Is(_rightErase)) return At("tools-basics", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4E9F04FE20);
+        if (Is(_wrap)) return At("tools-move", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4AF6C42C92);
+        if (Is(_shapeFilled)) return At("tools-shape", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_FCE800703F);
+        if (Is(_optionsBox)) return new(HelpTarget.ToolPage(tool));
+
+        // 대칭
+        if (Is(_mirrorX)) return At("tools-brush", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8BE1DA620D);
+        if (Is(_mirrorY)) return At("tools-brush", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_B4DDF34C98);
+        if (Is(_mirrorAtPivot)) return At("tools-brush", UiStrings.Mirror_AtPivot);
+        if (Is(_mirrorBox)) return At("tools-brush", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_0E1824FF47);
+
+        // 도형: 모양 단추는 "모양마다 그리는 법" 표의 그 줄
+        int shape = Array.FindIndex(_shapeButtons, b => ReferenceEquals(b, c));
+        if (shape >= 0) return At("tools-shape", ShapeDefs[shape].Name);
+        if (Is(_shapeHint)) return At("tools-shape", "The line under the shape buttons");
+        if (InRow(_sidesNum)) return At("tools-shape", UiStrings.Shape_Sides);
+        if (InRow(_starNum)) return At("tools-shape", UiStrings.Shape_Points);
+        if (InRow(_turnsNum)) return At("tools-shape", UiStrings.Shape_Turns);
+        if (InRow(_lineSteps)) return At("tools-shape", UiStrings.Shape_Steps);
+        if (Is(_shapeBox)) return At("tools-shape", "Shape settings");
+
+        // 채우기(스마트 선택도 같은 설정 — 칸 설명은 채우기 쪽)
+        if (InRow(_tolNum)) return At("tools-fill", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A41D1B8B02);
+        if (Is(_contiguous)) return At("tools-fill", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A91BCFC490);
+        if (Is(_diagonal)) return At("tools-fill", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_B062F4CFD2);
+        if (InRow(_fillSource)) return At("tools-fill", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_810B27E1C0);
+        if (Is(_fillBox)) return tool == ToolKind.MagicWand ? At("tools-select", MainStrings.Tool_MagicWand_Name) : At("tools-fill", "Fill settings");
+
+        // 스포이드
+        if (InRow(_pickSource)) return At("tools-picker", "Source");
+        if (Is(_pickerBox)) return At("tools-picker", "Picking colors");
+
+        // 밝게/어둡게: 방식은 "방식" 표의 지금 방식 줄
+        if (InRow(_dodgeMode)) return At("tools-dodge", _dodgeMode.SelectedItem as string ?? UiStrings.DodgeMode_Label);
+        if (InRow(_dodgeNum)) return At("tools-dodge", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_43C9B223D1);
+        if (Is(_dodgeBox)) return At("tools-dodge", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_D0A7B65132);
+
+        // 지우개
+        if (InRow(_eraserNum)) return At("tools-eraser", UiStrings.Eraser_Strength);
+        if (InRow(_eraseRed) || Is(_eraseGreen) || Is(_eraseBlue)) return At("tools-eraser", UiStrings.Eraser_Channels);
+        if (Is(_eraserBox)) return At("tools-eraser", UiStrings.Eraser_Group);
+
+        // 디더링
+        if (InRow(_ditherPattern) || Is(_ditherBox)) return At("tools-dither", "Patterns");
+
+        // 글씨
+        if (InRow(_textFont.Combo)) return At("tools-text", "Font");
+        if (Is(_textFontButtons)) return At("tools-text", UiStrings.TextTool_AddFont);
+        if (Is(_textMissing)) return At("tools-text", "Fonts");
+        if (InRow(_textSize)) return At("tools-text", UiStrings.TextEffect_Size);
+        if (InRow(_textAlign)) return At("tools-text", "Alignment");
+        if (InRow(_textLetter)) return At("tools-text", "Letter spacing");
+        if (InRow(_textLine)) return At("tools-text", UiStrings.TextEffect_LineSpacing);
+        if (InRow(_textScaleX) || InRow(_textScaleY)) return At("tools-text", "Width and height scale");
+        if (Is(_textSmooth)) return At("tools-text", "Smooth");
+        if (Is(_textBox)) return At("tools-text", UiStrings.TextTool_Group);
+
+        // 그라데이션
+        if (Is(_gradientEditor)) return At("tools-gradient", "Gradient bar");
+        if (Is(_gradientBox)) return At("tools-gradient", "Dragging and settings");
+
+        // 그라데이션 연필
+        if (InRow(_pencilGradientMode)) return At("tools-gradient-pencil", UiStrings.GradientPencil_Mode);
+        if (InRow(_pencilIntervalNum)) return At("tools-gradient-pencil", UiStrings.GradientPencil_Interval);
+        if (Is(_pencilPresetRow)) return At("tools-gradient-pencil", UiStrings.GradientPencil_Presets);
+        if (Is(_pencilGradientEditor)) return At("tools-gradient-pencil", "The stop bar");
+        if (Is(_pencilGradientBox)) return At("tools-gradient-pencil", "Gradient settings");
+
+        // 피벗·9-slice
+        if (Array.IndexOf(_presetButtons, c) >= 0 || ReferenceEquals(c, _presetButtons[0].Parent)) return At("tools-pivot", "The 5×5 buttons");
+        if (InRow(_pivotX) || InRow(_pivotY)) return At("tools-pivot", "X is measured");
+        if (Is(_framePivot)) return At("tools-pivot", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8A93F258A3);
+        if (Is(_pivotTarget)) return At("tools-pivot", "Target");
+        if (Is(_pivotBox)) return At("tools-pivot", "Moving the pivot");
+        if (Is(_sliceTarget)) return At("tools-nine-slice", "Target");
+        if (Is(_sliceBox)) return At("tools-nine-slice", "Setting the borders");
+
+        // 변형·캔버스 크기·레이어 크기 모드
+        if (InRow(_tfResample)) return At("tools-transform", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_652CB69BF4);
+        if (Is(_transformBox)) return At("tools-transform", "Entering numbers");
+        bool layerSize = _ctx.CanvasResizeLayer is not null;
+        if (InRow(_crApply)) return At(layerSize ? "tools-layer-size" : "tools-canvas-size", "Controls");
+        if (Is(_crSliceRow) || Is(_crSlice) || Is(_crSliceFill)) return At("tools-canvas-size", UiStrings.CanvasResize_NineSlice);
+        if (Is(_canvasResizeBox)) return layerSize ? At("tools-layer-size", "In the Layer size") : At("tools-canvas-size", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E39101186F);
+
+        // 고른 효과 설정
+        if (Is(_effectSection) || Is(_effectBox)) return At("screen-tool-settings", "Settings of the selected effect");
+
+        if (Is(this))
+            return _ctx.IsTransforming ? new("tools-transform")
+                : _ctx.IsCanvasResizing ? new(layerSize ? "tools-layer-size" : "tools-canvas-size")
+                : new(HelpTarget.ToolPage(tool));
+        return null;
     }
 
     /// <summary>브러시 도장을 칸(픽셀)으로 그린 작은 미리보기.</summary>

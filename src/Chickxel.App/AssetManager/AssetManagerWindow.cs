@@ -267,7 +267,7 @@ public sealed partial class AssetManagerWindow : DialogBase
     };
 
     /// <summary>
-    /// 에셋 줄: 즐겨찾기 별, 종류 아이콘, 이름(그라데이션은 띠). 아래에는 작성자 아바타와 이름,
+    /// 에셋 줄: 즐겨찾기 별, 종류 아이콘, 이름(그라데이션은 띠). 아래에는 작성자 배지(받은 에셋만 프로필 그림)와
     /// 받은 에셋의 상점 버전 또는 올린 내 에셋의 버전·고침 상태를 보인다.
     /// </summary>
     private static Control AssetRow(AssetEntry entry, bool mine)
@@ -285,15 +285,10 @@ public sealed partial class AssetManagerWindow : DialogBase
             panel.Children.Add(new GradientSwatch { Preset = gradient, Height = 10, Margin = new Thickness(0, 3, 0, 1) });
         string authorName = entry.Author?.Name ?? (entry.Store is null ? UiStrings.Assets_SourceLocal : "");
         string?[] parts = mine
-            ? [authorName, entry.Store is { } store ? F(UiStrings.Assets_PublishedVersion, store.Version) : null, entry.Modified ? UiStrings.Assets_ModifiedNote : null]
-            : [authorName, entry.Store?.Version];
-        string sub = string.Join(" · ", parts.Where(s => !string.IsNullOrEmpty(s)));
-        var by = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,5,*") };
-        by.Children.Add(AuthorAvatarView.Create(entry.Store is not null ? entry.Author : null, 16));
-        var caption = Dim(sub);
-        Grid.SetColumn(caption, 2);
-        by.Children.Add(caption);
-        panel.Children.Add(by);
+            ? [entry.Store is { } store ? F(UiStrings.Assets_PublishedVersion, store.Version) : null, entry.Modified ? UiStrings.Assets_ModifiedNote : null]
+            : [entry.Store?.Version];
+        panel.Children.Add(IdentityBadge.Author(entry.Store is not null ? entry.Author : null, 16, fallback: authorName, dim: true,
+            fontSize: AppTheme.SmallFontSize, caption: string.Join(" · ", parts.Where(s => !string.IsNullOrEmpty(s)))));
         return panel;
     }
 

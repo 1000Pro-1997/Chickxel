@@ -30,6 +30,8 @@ public sealed class PreviewPanel : UserControl
     private readonly NumericUpDown _fps;
     private readonly ComboBox _background;
     private readonly Button _scaleButton;
+    /// <summary>제목 줄 오른쪽 끝 "탭으로 열기" 단추.</summary>
+    private readonly Control _tabButton;
     private static readonly int[] ScaleSteps = [0, 1, 2, 4];
     private int _scale; // 0 = 맞춤
     private Color? _bgColor;
@@ -132,9 +134,9 @@ public sealed class PreviewPanel : UserControl
         var header = Ui.Header(UiStrings.S_PreviewPanel_PreviewPanel_015AD8431D);
         var title = (Control)header.Child!;
         header.Child = null;
-        var tabButton = HeaderIconButton(VectorIcon.Columns2, UiStrings.Preview_OpenTabTip, () => TabRequested?.Invoke(this, EventArgs.Empty));
-        DockPanel.SetDock(tabButton, Dock.Right);
-        header.Child = new DockPanel { Children = { tabButton, title } };
+        _tabButton = HeaderIconButton(VectorIcon.Columns2, UiStrings.Preview_OpenTabTip, () => TabRequested?.Invoke(this, EventArgs.Empty));
+        DockPanel.SetDock(_tabButton, Dock.Right);
+        header.Child = new DockPanel { Children = { _tabButton, title } };
         root.Children.Add(header);
         root.Children.Add(bar);
         root.Children.Add(_outfitHost);
@@ -174,6 +176,24 @@ public sealed class PreviewPanel : UserControl
             if ((e.Change & ProjectChange.Layers) != 0) RebuildOutfit();
         };
         RebuildOutfit();
+    }
+
+    /// <summary>
+    /// 대상 도움말(F1): 이 패널 안의 컨트롤에 맞는 "미리보기" 가이드 자리(모르는 컨트롤이면 null).
+    /// 그림·FPS·확대 단추는 가이드 첫 그림의 번호 표(①②③) 줄로 간다.
+    /// </summary>
+    internal HelpTarget? HelpTargetFor(Control c)
+    {
+        const string page = "screen-preview";
+        if (ReferenceEquals(c, _view)) return new(page, Anchor: "①");
+        if (ReferenceEquals(c, _play)) return new(page, Anchor: "Playback");
+        if (ReferenceEquals(c, _fps)) return new(page, Anchor: "②");
+        if (ReferenceEquals(c, _scaleButton)) return new(page, Anchor: "③");
+        if (ReferenceEquals(c, _background)) return new(page, Anchor: UiStrings.S_GifExportDialog_GifExportDialog_7934F88ACA);
+        if (ReferenceEquals(c, _outfitHost)) return new(page, Anchor: UiStrings.S_PreviewPanel_RebuildOutfit_E5D30D48F5);
+        if (ReferenceEquals(c, _tabButton)) return new(page, Anchor: "Enlarged view and preview tab");
+        if (ReferenceEquals(c, this)) return new(page);
+        return null;
     }
 
     // ───────────── 착장(그룹마다 보일 스킨) ─────────────

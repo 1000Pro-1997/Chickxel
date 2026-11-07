@@ -25,6 +25,8 @@ public sealed class GalleryUploadDialog : DialogBase
     private readonly TextBox _title, _description, _tags;
     private readonly TextBlock _info = Note(""), _account = Note(""), _error, _progressText = Note("");
     private readonly ProgressBar _progress = new() { Minimum = 0, Maximum = 1, Height = 4, MinHeight = 4, Width = 260, Foreground = AppTheme.AccentBrush };
+    /// <summary>올릴 계정의 프로필 배지(확인한 계정이 있을 때만 — 없으면 <see cref="_account"/> 안내).</summary>
+    private readonly ContentControl _accountBadge = new() { IsVisible = false };
     private readonly StackPanel _progressRow;
     private readonly Control _form;
     private readonly PreviewView _preview = new() { Width = 220, Height = 220 };
@@ -90,7 +92,7 @@ public sealed class GalleryUploadDialog : DialogBase
                     Ui.Label(UiStrings.Gallery_TitleLabel), _title,
                     Ui.Label(UiStrings.Gallery_DescriptionLabel), _description,
                     Ui.Label(UiStrings.Gallery_TagsLabel), _tags)),
-                Ui.Group(UiStrings.Account_Title, Ui.Stack(_account, accountButton)),
+                Ui.Group(UiStrings.Account_Title, Ui.Stack(_account, _accountBadge, accountButton)),
             },
         };
         _form = settings;
@@ -147,8 +149,11 @@ public sealed class GalleryUploadDialog : DialogBase
     private void UpdateAccount()
     {
         var client = AppCommunity.Client;
-        _account.Text = client.User is { } user ? F(UiStrings.Gallery_SignedInAs, user.Name, user.Handle)
-            : client.IsSignedIn ? UiStrings.Gallery_SignedInUnknown : UiStrings.Gallery_SignInLater;
+        var user = client.User;
+        _accountBadge.Content = user is null ? null : IdentityBadge.User(user, 20, handle: IdentityHandle.Inline, maxWidth: FieldWidth);
+        _accountBadge.IsVisible = user is not null;
+        _account.IsVisible = user is null;
+        _account.Text = user is not null ? "" : client.IsSignedIn ? UiStrings.Gallery_SignedInUnknown : UiStrings.Gallery_SignInLater;
     }
 
     private void ShowError(string? text)

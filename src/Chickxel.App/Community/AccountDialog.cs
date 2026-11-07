@@ -161,19 +161,7 @@ public sealed class AccountDialog : DialogBase
 
     private void BuildSignedIn(CommunityUser user)
     {
-        var avatar = AppCommunity.Avatar(user, 56);
-        avatar.Background = AppTheme.PanelBrush;
-        avatar.VerticalAlignment = VerticalAlignment.Top;
-        var names = new StackPanel
-        {
-            Spacing = 2, Margin = new Thickness(10, 4, 0, 0), VerticalAlignment = VerticalAlignment.Center,
-            Children =
-            {
-                new TextBlock { Text = user.Name, FontWeight = FontWeight.Bold, FontSize = 16, Foreground = AppTheme.TextBrush, TextWrapping = TextWrapping.Wrap },
-                new TextBlock { Text = "@" + user.Handle, Foreground = AppTheme.DimTextBrush },
-            },
-        };
-        _view.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { avatar, names } });
+        _view.Children.Add(IdentityBadge.User(user, 56, handle: IdentityHandle.Below, bold: true));
 
         var name = new TextBox { Text = user.Name, Width = 240, MaxLength = CommunityRules.MaxNameLength };
         // 에셋 패키지를 올린 뒤에는 서버가 핸들을 바꾸지 않으므로(패키지 ID·작성자 ID가 핸들) 고칠 수 없는 칸으로 보인다.
@@ -208,9 +196,7 @@ public sealed class AccountDialog : DialogBase
         {
             if (i == saved.Active) continue;
             var account = saved.List[i];
-            var names = new StackPanel { Spacing = 0, Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-            names.Children.Add(new TextBlock { Text = AppCommunity.DisplayName(account.User), Foreground = AppTheme.TextBrush, TextTrimming = TextTrimming.CharacterEllipsis });
-            if (account.User is { } user) names.Children.Add(new TextBlock { Text = "@" + user.Handle, Foreground = AppTheme.DimTextBrush, FontSize = 11 });
+            var badge = IdentityBadge.User(account.User, 28, handle: IdentityHandle.Below);
             var switchButton = Ui.Button(UiStrings.Account_Switch, (_, _) => SwitchTo(account));
             var signOut = Ui.IconButton(VectorIcon.LogOut, F(UiStrings.Account_SignOutOf, AppCommunity.DisplayName(account.User)), (_, _) => SignOut(account));
             var buttons = Ui.Row(switchButton, signOut);
@@ -218,7 +204,7 @@ public sealed class AccountDialog : DialogBase
             var row = new DockPanel();
             DockPanel.SetDock(buttons, Dock.Right);
             row.Children.Add(buttons);
-            row.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { AppCommunity.Avatar(account.User, 28), names } });
+            row.Children.Add(badge);
             rows.Children.Add(row);
         }
         if (rows.Children.Count > 0) _view.Children.Add(Ui.Group(UiStrings.Account_SavedAccounts, rows));

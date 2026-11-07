@@ -6,9 +6,9 @@ using Chickxel.App.Localization;
 namespace Chickxel.App;
 
 /// <summary>
-/// 환경 설정: 일반(화면 언어·번역 CSV 내보내기/언어 추가, 실행취소 횟수, 실행취소 기록 남기기·보관 기간·용량, 자동 저장, 앱 휴지통 보관 기간·용량, 업데이트 자동 확인) + 단축키(명령마다 바꾸기·추가·없음·기본값, 모두 기본값, JSON 내보내기·불러오기)
+/// 환경 설정: 일반(화면 언어·번역 CSV 내보내기/언어 추가, 실행취소 횟수, 실행취소 기록 남기기·보관 기간·용량, 자동 저장, 앱 휴지통 보관 기간·용량, 업데이트 자동 확인, 설정 초기화) + 단축키(명령마다 바꾸기·추가·없음·기본값, 모두 기본값, JSON 내보내기·불러오기)
 /// + AI 참고 자료(폴더 위치·열기, 기본 예시 보이기) + 프리셋(지운 기본 프리셋 되돌리기 — 자동 최적화·그라데이션) + 영상(ffmpeg 위치 — 영상·AVIF·HEIC 열기).
-/// 단축키는 서로 겹치지 않게 한다(이미 쓰는 키를 지정하면 그 명령에서 빼도 되는지 묻는다).
+/// 단축키는 키 또는 마우스 4·5번 단추(+ 수정자)이고, 서로 겹치지 않게 한다(이미 쓰는 키를 지정하면 그 명령에서 빼도 되는지 묻는다).
 /// </summary>
 public sealed class PreferencesDialog : DialogBase
 {
@@ -123,7 +123,10 @@ public sealed class PreferencesDialog : DialogBase
             _trash,
             Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_B4D135E19E, bold: true),
             _updateCheck,
-            updateNote);
+            updateNote,
+            Ui.Label(UiStrings.Prefs_ResetSettings_Title, bold: true),
+            Ui.Row(Ui.Button(VectorIcon.Undo2, UiStrings.Prefs_ResetSettings_Button, (_, _) => RequestReset()),
+                Ui.InfoBadge(UiStrings.Prefs_ResetSettings_Info)));
 
         _search = new TextBox { Watermark = UiStrings.S_PreferencesDialog_PreferencesDialog_3384322E72, Width = 260, Margin = new Thickness(2) };
         _search.TextChanged += (_, _) => RebuildRows();
@@ -276,8 +279,20 @@ public sealed class PreferencesDialog : DialogBase
         tabs.AddPage(UiStrings.Ffmpeg_Prefs_Tab, video);
         Body.Children.Add(tabs);
         RebuildRows();
-        // 키를 기다리는 중이면 어떤 키든(Enter·Tab 포함) 단축키로 받는다.
+        // 키를 기다리는 중이면 어떤 키든(Enter·Tab 포함) 단축키로 받는다. 마우스는 옆 단추(4·5번)만 받고 다른 단추·휠은 평소대로 둔다.
         AddHandler(KeyDownEvent, OnCaptureKeyDown, RoutingStrategies.Tunnel);
+        AddHandler(PointerPressedEvent, OnCapturePointerPressed, RoutingStrategies.Tunnel);
+    }
+
+    /// <summary>"설정 초기화"를 확인했는지. 그러면 창은 취소로 닫히고 부른 쪽이 초기화한다(이 창에서 고친 값은 버림).</summary>
+    public bool ResetRequested { get; private set; }
+
+    private void RequestReset()
+    {
+        if (Ui.Ask(this, UiStrings.Prefs_ResetSettings_Confirm, UiStrings.Prefs_ResetSettings_Title,
+                MessageButtons.YesNo, MessageIcon.Warning) != DialogResult.Yes) return;
+        ResetRequested = true;
+        DialogResult = DialogResult.Cancel;
     }
 
     /// <summary>고른 화면 언어 코드(다시 시작하면 적용).</summary>
@@ -420,7 +435,22 @@ public sealed class PreferencesDialog : DialogBase
             RebuildRows();
             return;
         }
-        var chord = new KeyChord(e.Key, e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Shift | KeyModifiers.Alt | KeyModifiers.Meta));
+        AddCaptured(cap, new KeyChord(e.Key, Shortcuts.ChordMods(e.KeyModifiers)));
+    }
+
+    /// <summary>키를 기다리는 중에 마우스 4·5번 단추를 누르면 그 단추(+ 누르고 있는 수정자)를 단축키로 받는다.</summary>
+    private void OnCapturePointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (_capture is not { } cap) return;
+        var button = Shortcuts.BindableMouse(e.GetCurrentPoint(this).Properties.PointerUpdateKind);
+        if (button == MouseButton.None) return;
+        e.Handled = true;
+        _capture = null;
+        AddCaptured(cap, new KeyChord(Key.None, Shortcuts.ChordMods(e.KeyModifiers), button));
+    }
+
+    private void AddCaptured((string Id, bool Replace) cap, KeyChord chord)
+    {
         var keys = cap.Replace ? new List<KeyChord>() : _keys[cap.Id].ToList();
         if (!keys.Contains(chord)) keys.Add(chord);
         SetKeys(cap.Id, keys);

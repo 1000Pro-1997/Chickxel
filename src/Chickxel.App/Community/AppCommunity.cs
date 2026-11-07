@@ -87,23 +87,12 @@ public static class AppCommunity
     /// <summary>계정 이름(정보를 아직 모르면 "확인하지 않은 계정").</summary>
     public static string DisplayName(CommunityUser? user) => user?.Name ?? UiStrings.Account_Unverified;
 
-    /// <summary>둥근 프로필 그림 칸: 처음엔 사람 아이콘, 그림을 받으면 바꾼다(HTTPS·2 MiB 이하, 못 받으면 아이콘 그대로).</summary>
-    public static Border Avatar(CommunityUser? user, double size)
+    /// <summary>
+    /// <see cref="IdentityBadge"/>의 둥근 칸에 계정 프로필 그림을 채운다(HTTPS·2 MiB 이하, 못 받으면 사람 아이콘 그대로).
+    /// </summary>
+    internal static async void ShowAvatar(Border host, CommunityUser? user)
     {
-        double icon = Math.Round(size * 0.72);
-        var host = new Border
-        {
-            Width = size, Height = size, CornerRadius = new CornerRadius(size / 2), ClipToBounds = true,
-            Child = new IconView(VectorIcon.CircleUser, AppTheme.DimTextBrush) { Width = icon, Height = icon },
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        LoadAvatar(host, user?.AvatarUrl);
-        return host;
-    }
-
-    private static async void LoadAvatar(Border host, string? url)
-    {
-        if (Client.Resolve(url) is not { } uri) return;
+        if (Client.Resolve(user?.AvatarUrl) is not { } uri) return;
         if (!Avatars.TryGetValue(uri, out var download)) Avatars[uri] = download = DownloadAvatarAsync(uri);
         if (await download is not { } bitmap)
         {

@@ -21,6 +21,9 @@ internal sealed class ColorEditor : UserControl
     private readonly NumericUpDown _r, _g, _b, _a, _hNum, _sNum, _vNum;
     private readonly TextBox _hex;
     private readonly SwatchGrid _recent;
+    /// <summary>R·G·B / H·S·V / A·# 입력 칸 격자와 "최근 색" 글.</summary>
+    private readonly Grid _numbers;
+    private readonly TextBlock _recentLabel;
     private Color32 _color;
     private bool _updating;
     private float _h, _s, _v;
@@ -81,7 +84,9 @@ internal sealed class ColorEditor : UserControl
         _recent.ColorClicked += (_, e) => RecentColorClicked?.Invoke(this, e);
 
         var pickerArea = new Panel { Children = { _squarePicker, _honeycomb, _wheel, _sliders } };
-        var body = Ui.Stack(pickerArea, _alpha, NumberGrid(), Ui.Label(UiStrings.S_ColorEditor_ColorEditor_2156C5C575), _recent);
+        _numbers = NumberGrid();
+        _recentLabel = Ui.Label(UiStrings.S_ColorEditor_ColorEditor_2156C5C575);
+        var body = Ui.Stack(pickerArea, _alpha, _numbers, _recentLabel, _recent);
         var header = Ui.Header(UiStrings.S_ColorEditor_ColorEditor_551150B3F7);
         var title = header.Child!;
         header.Child = null;
@@ -138,6 +143,22 @@ internal sealed class ColorEditor : UserControl
     public void Pick(Color32 color) => SetFromRgb(color);
 
     public void SetRecent(IEnumerable<Color32> colors) => _recent.SetColors(colors);
+
+    /// <summary>대상 도움말(F1): 이 편집기 안의 컨트롤에 맞는 "색 고르기" 가이드 자리(모르는 컨트롤이면 null).</summary>
+    internal HelpTarget? HelpTargetFor(Control c)
+    {
+        const string page = "screen-color-picker";
+        if (ReferenceEquals(c, _modeTabs)) return new(page, Anchor: "Picking modes");
+        // 보이는 고르기 칸 = 지금 방식 → "고르는 방식" 표의 그 줄
+        if (ReferenceEquals(c, _squarePicker) || ReferenceEquals(c, _honeycomb) || ReferenceEquals(c, _wheel) || ReferenceEquals(c, _sliders))
+            return new(page, Anchor: ColorPickerModes.Name(Mode));
+        if (ReferenceEquals(c, _alpha)) return new(page, Anchor: "alpha bar");
+        if (ReferenceEquals(c, _hex)) return new(page, Anchor: "The HEX field");
+        if (ReferenceEquals(c, _numbers)) return new(page, Anchor: "Input fields");
+        if (ReferenceEquals(c, _recent) || ReferenceEquals(c, _recentLabel)) return new(page, Anchor: UiStrings.S_ColorEditor_ColorEditor_2156C5C575);
+        if (ReferenceEquals(c, this)) return new(page);
+        return null;
+    }
 
     private void ShowPicker()
     {
@@ -213,6 +234,8 @@ internal sealed class ColorEditor : UserControl
         {
             ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,*,Auto,*"),
             RowDefinitions = new RowDefinitions("Auto,Auto,Auto"),
+            // 대상 도움말(F1)이 칸 사이 빈 곳에서도 입력 칸 묶음을 찾게.
+            Background = Brushes.Transparent,
         };
         void Put(Control control, int row, int column, int span = 1)
         {

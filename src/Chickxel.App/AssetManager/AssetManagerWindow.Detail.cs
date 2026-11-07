@@ -23,18 +23,20 @@ public sealed partial class AssetManagerWindow
     private static TextBlock TitleText(string text)
         => new() { Text = text, FontWeight = FontWeight.Bold, FontSize = 15, Foreground = AppTheme.TextBrush, TextWrapping = TextWrapping.Wrap };
 
-    private void Facts(params (string Label, string? Value)[] facts) => _detail.Children.Add(FactsGrid(facts));
+    private void Facts(params (string Label, object? Value)[] facts) => _detail.Children.Add(FactsGrid(facts));
 
-    /// <summary>이름: 값 표(값이 비면 그 줄을 뺀다).</summary>
-    private static Grid FactsGrid(params (string Label, string? Value)[] facts)
+    /// <summary>이름: 값 표(값은 글이나 컨트롤 — 글이 비면 그 줄을 뺀다).</summary>
+    private static Grid FactsGrid(params (string Label, object? Value)[] facts)
     {
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), Margin = new Thickness(0, 2, 0, 4) };
         int row = 0;
-        foreach (var (label, value) in facts.Where(f => !string.IsNullOrEmpty(f.Value)))
+        foreach (var (label, value) in facts.Where(f => f.Value is Control or string { Length: > 0 }))
         {
             grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
             var name = new TextBlock { Text = label, Foreground = AppTheme.DimTextBrush, Margin = new Thickness(0, 1, 12, 1) };
-            var text = new SelectableTextBlock { Text = value, Foreground = AppTheme.TextBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 1) };
+            var text = value as Control
+                       ?? new SelectableTextBlock { Text = (string)value!, Foreground = AppTheme.TextBrush, TextWrapping = TextWrapping.Wrap };
+            text.Margin = new Thickness(0, 1);
             Grid.SetRow(name, row);
             Grid.SetRow(text, row);
             Grid.SetColumn(text, 1);
@@ -107,7 +109,7 @@ public sealed partial class AssetManagerWindow
         bool allowed = scripts.All(hash => ScriptLibrary.TrustOf(hash) == ScriptTrust.Trusted);
         Facts(
             (UiStrings.Assets_Kind, KindText(entry.Kind)),
-            (UiStrings.Assets_Author, entry.Author?.Name ?? UiStrings.Assets_SourceLocal),
+            (UiStrings.Assets_Author, IdentityBadge.Author(store is not null ? entry.Author : null, 16, fallback: entry.Author?.Name ?? UiStrings.Assets_SourceLocal)),
             (UiStrings.Assets_License, entry.License),
             (UiStrings.Assets_StoreId, store?.PackageId),
             (UiStrings.Assets_Version, store?.Version),

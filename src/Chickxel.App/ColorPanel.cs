@@ -18,8 +18,12 @@ public sealed class ColorPanel : UserControl
 {
     private readonly EditorContext _ctx;
     private readonly ColorSlot _primarySlot, _secondarySlot;
+    /// <summary>기본/보조색 칸과 바꾸기 단추 줄.</summary>
+    private readonly StackPanel _slots;
     private readonly ColorEditor _editor;
     private readonly LayerColorsSection _layerColors;
+    /// <summary>팔레트 목록이 스크롤될 때 오른쪽에 비워 두는 폭(px) — 펼친 Fluent 스크롤바 폭.</summary>
+    private const double PaletteScrollGutter = 12;
     private readonly ScrollViewer _paletteHost;
     private readonly StackPanel _sectionsPanel;
     private readonly Button _addPalette;
@@ -62,11 +66,13 @@ public sealed class ColorPanel : UserControl
         // ── 위: 팔레트 제목 + 기본/보조색
         var header = Ui.Header(UiStrings.S_ColorPanel_ColorPanel_B96AEE0468);
 
-        var slots = Ui.Row(_primarySlot, _secondarySlot, swap);
-        slots.Height = 48;
-        slots.Margin = new Thickness(2, 2, 0, 0);
+        _slots = Ui.Row(_primarySlot, _secondarySlot, swap);
+        _slots.Height = 48;
+        _slots.Margin = new Thickness(2, 2, 0, 0);
+        // 대상 도움말(F1)이 칸 사이 빈 곳에서도 이 줄을 찾게.
+        _slots.Background = Brushes.Transparent;
         swap.VerticalAlignment = VerticalAlignment.Center;
-        DockPanel.SetDock(slots, Dock.Top);
+        DockPanel.SetDock(_slots, Dock.Top);
 
         // ── 가운데: 팔레트 칸들(머리글 + 색 칸) + 새 팔레트 단추(스크롤)
         _addPalette = Ui.Button(VectorIcon.Plus, UiStrings.S_ColorPanel_ColorPanel_C7B5B33FE3, (_, _) => AddPalette()).Tip(UiStrings.S_ColorPanel_ColorPanel_197998B972);
@@ -81,6 +87,12 @@ public sealed class ColorPanel : UserControl
             VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
             Background = AppTheme.InputBrush,
         };
+        // Fluent 스크롤바는 내용 위에 겹쳐 그려진다: 스크롤할 수 있을 때만 오른쪽에 스크롤바 폭만큼 비워 끝의 메뉴 단추·칸을 가리지 않게 한다.
+        _paletteHost.ScrollChanged += (_, _) =>
+        {
+            double gutter = _paletteHost.Extent.Height > _paletteHost.Viewport.Height + 0.5 ? PaletteScrollGutter : 0;
+            if (_sectionsPanel.Margin.Right != gutter) _sectionsPanel.Margin = new Thickness(0, 0, gutter, 0);
+        };
         SetPalettes([]);
 
         // ── 아래: 메인과 팝업이 똑같이 공유하는 색 편집기, 그 아래 지금 레이어에 쓰인 색(메인에만)
@@ -91,7 +103,7 @@ public sealed class ColorPanel : UserControl
 
         var root = new DockPanel();
         root.Children.Add(header);
-        root.Children.Add(slots);
+        root.Children.Add(_slots);
         root.Children.Add(_layerColors);
         root.Children.Add(_editor);
         root.Children.Add(_paletteHost);
@@ -152,6 +164,29 @@ public sealed class ColorPanel : UserControl
     {
         if (e.Button == MouseButton.Right) _ctx.Secondary = e.Color;
         else _ctx.Primary = e.Color;
+    }
+
+    /// <summary>
+    /// 대상 도움말(F1): 이 패널 안의 컨트롤에 맞는 가이드 자리(모르는 컨트롤이면 null).
+    /// 위쪽(기본/보조색·팔레트)은 "팔레트" 쪽, 아래 색 편집기·레이어 색은 "색 고르기" 쪽의 그 절로 간다.
+    /// </summary>
+    internal HelpTarget? HelpTargetFor(Control c)
+    {
+        const string palette = "screen-palette";
+        if (_editor.HelpTargetFor(c) is { } editor) return editor;
+        if (ReferenceEquals(c, _layerColors)) return new("screen-color-picker", Anchor: UiStrings.LayerColors_Title);
+        if (ReferenceEquals(c, _slots) || ReferenceEquals(c, _primarySlot) || ReferenceEquals(c, _secondarySlot))
+            return new(palette, Anchor: "Primary and secondary colors");
+        foreach (var s in _sections)
+        {
+            if (ReferenceEquals(c, s.MenuButton)) return new(palette, Anchor: "Palette menu");
+            if (ReferenceEquals(c, s.Header)) return new(palette, Anchor: "Each palette's header");
+            if (ReferenceEquals(c, s.Grid)) return new(palette, Anchor: "Picking swatches");
+        }
+        if (ReferenceEquals(c, _addPalette)) return new(palette, Anchor: UiStrings.S_ColorPanel_ColorPanel_C7B5B33FE3);
+        if (ReferenceEquals(c, _paletteHost)) return new(palette, Anchor: "Stacked palettes and the active palette");
+        if (ReferenceEquals(c, this)) return new(palette);
+        return null;
     }
 
     // ───────────── 팔레트 ─────────────

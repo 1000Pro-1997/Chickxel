@@ -2,7 +2,33 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.101 (2026-11-07)
+### Convert to palette colors: color matching rules
+- A new Color matching group offers Nearest color (with RGB, OKLab or CIEDE2000 distance), Brightness order, Palette order, Hue first and Lightness only.
+- Brightness order and Palette order rank the picture's colors by lightness and spread them over the palette sorted by lightness or in its listed order, so light and dark areas keep their structure.
+- Every rule works with ordered dithering, the preview updates live, and the last rule is remembered.
+
+### F1 help: hover box and finer targets
+- In F1 help mode a yellow box shows which control a click will open.
+- Tool settings options (such as Pixel perfect), the color panel, the palette panel, the preview, the timeline and the status bar now open the matching heading, table row or list item and briefly outline it.
+
+### Account name and picture as one unit
+- The profile picture and name now appear together wherever an account or author is shown: account button and menu, account window, asset manager and store, Effect Maker, gallery upload, asset publishing and import prompts.
+- The website uses the same combined picture and name in gallery and asset cards, post pages, profiles, the account menu and admin reports.
+
+### Preferences: reset settings and mouse buttons 4/5
+- General has a Reset settings button that restores default settings and shortcuts after confirmation. Recent files, window layout, palettes, Pixelate presets, script trust and accounts are kept.
+- Shortcuts can be bound to mouse buttons 4 and 5 (back/forward), with modifier keys if needed. Left, right and middle buttons and the wheel cannot be bound.
+
+### Palette panel scroll bar no longer covers buttons
+- When the palette list scrolls, room is kept for the scroll bar so the palette menu buttons and the last swatches stay visible.
+
 ## v1.14.100 (2026-11-07)
+### Target help (F1) points at the exact section
+- In target help, clicking a control now opens its guide page scrolled to the matching heading, table row or list item, briefly outlined in yellow (for example Pixel perfect in Tool settings opens the Pencil page at Pixel perfect).
+- Tool settings, the color picker (mode tabs, picker area, alpha bar, input fields, HEX, recent colors, layer colors), the palette panel (primary/secondary, palette header, menu button, swatches, New palette), the preview, the timeline areas and the status bar cells each open their own section.
+- While choosing, a yellow box outlines the control that a click would open help for.
+
 ### Gallery: share the editable project file
 - File > Upload to Gallery can now attach the editable `.chickxel` project alongside the PNG or GIF image. The option is off by default.
 - The shared copy leaves out local folder paths such as the export folder; script effect source code is included, and people who open the project are asked before scripts run.

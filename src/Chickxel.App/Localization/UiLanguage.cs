@@ -44,6 +44,9 @@ public static class UiLanguage
     /// <summary>지금 쓰는 언어 코드(<see cref="Apply"/>로 정함).</summary>
     public static string Current { get; private set; } = English;
 
+    /// <summary>컴퓨터 화면 언어(<see cref="Apply"/>가 CurrentUICulture를 바꾸기 전 값 — 처음 쓰기 전에 정적 초기화로 잡음). 설정 초기화가 언어를 다시 고를 때도 쓴다.</summary>
+    public static CultureInfo SystemCulture { get; } = CultureInfo.CurrentUICulture;
+
     public static bool IsBuiltIn(string code) => BuiltIns.Any(b => Same(b.Code, code));
 
     private static bool Same(string a, string b) => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);

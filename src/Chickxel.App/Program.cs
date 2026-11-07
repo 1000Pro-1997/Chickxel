@@ -110,7 +110,7 @@ static class Program
         App.Settings = AppSettings.Load();
         var languages = Localization.UiLanguage.Available();
         if (App.Settings.Language is not { } language || !languages.Any(l => string.Equals(l.Code, language, StringComparison.OrdinalIgnoreCase)))
-            App.Settings.Language = Localization.UiLanguage.Detect(System.Globalization.CultureInfo.CurrentUICulture, languages);
+            App.Settings.Language = Localization.UiLanguage.Detect(Localization.UiLanguage.SystemCulture, languages);
         Localization.UiLanguage.Apply(App.Settings.Language);
         int exitCode = CrashGuard.Run(BuildAvaloniaApp(), args);
         if (App.RestartOnExit) Relaunch();

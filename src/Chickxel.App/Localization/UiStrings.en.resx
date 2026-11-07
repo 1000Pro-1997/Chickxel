@@ -1002,7 +1002,7 @@ Alpha is kept and fully transparent pixels are unchanged. One undo step.</value>
   <data name="S_PaletteConvertDialog_PaletteConvertDialog_487B63AF2E" xml:space="preserve"><value>After</value></data>
   <data name="S_PaletteConvertDialog_PaletteConvertDialog_4BF144BF9A" xml:space="preserve"><value>Current cel (selection only, if any)</value></data>
   <data name="S_PaletteConvertDialog_PaletteConvertDialog_52F9376144" xml:space="preserve"><value>Convert</value></data>
-  <data name="S_PaletteConvertDialog_PaletteConvertDialog_541E54A55D" xml:space="preserve"><value>No dithering (nearest color)</value></data>
+  <data name="S_PaletteConvertDialog_PaletteConvertDialog_541E54A55D" xml:space="preserve"><value>No dithering</value></data>
   <data name="S_PaletteConvertDialog_PaletteConvertDialog_8CE25638B7" xml:space="preserve"><value>Palette "{0}" — {1} non-transparent colors</value></data>
   <data name="S_PaletteConvertDialog_PaletteConvertDialog_8D277CDF45" xml:space="preserve"><value>Before</value></data>
   <data name="S_PaletteConvertDialog_PaletteConvertDialog_982BB7EF41" xml:space="preserve"><value>All frames of current layer (all skins if a part)</value></data>
@@ -1317,11 +1317,11 @@ Alpha is kept and fully transparent pixels are unchanged. One undo step.</value>
   <data name="S_PreferencesDialog_PreferencesDialog_D3AF99B338" xml:space="preserve"><value>Autosave</value></data>
   <data name="S_PreferencesDialog_PreferencesDialog_D87D2E02E0" xml:space="preserve"><value>Lowering this discards the oldest history of open projects first. Higher values use more memory.</value></data>
   <data name="S_PreferencesDialog_PreferencesDialog_DA9395C360" xml:space="preserve"><value>Shortcuts</value></data>
-  <data name="S_PreferencesDialog_PreferencesDialog_DAAB44E61A" xml:space="preserve"><value>Press "Change" or "Add", then press a key (Esc = cancel).</value></data>
+  <data name="S_PreferencesDialog_PreferencesDialog_DAAB44E61A" xml:space="preserve"><value>Press "Change" or "Add", then press a key or mouse button 4/5 (Esc = cancel).</value></data>
   <data name="S_PreferencesDialog_PreferencesDialog_F7A34332AC" xml:space="preserve"><value>MB (default {0}) — when exceeded, history of files not opened for the longest is cleared first</value></data>
   <data name="S_PreferencesDialog_PreferencesDialog_F8AA857BED" xml:space="preserve"><value>Counted from when the file was last saved or opened.</value></data>
   <data name="S_PreferencesDialog_RebuildRows_49F151E4F2" xml:space="preserve"><value>Default</value></data>
-  <data name="S_PreferencesDialog_RebuildRows_57377CDB79" xml:space="preserve"><value>Press a key… (Esc to cancel)</value></data>
+  <data name="S_PreferencesDialog_RebuildRows_57377CDB79" xml:space="preserve"><value>Press a key or mouse button 4/5… (Esc to cancel)</value></data>
   <data name="S_PreferencesDialog_RebuildRows_688679199B" xml:space="preserve"><value>None</value></data>
   <data name="S_PreferencesDialog_RebuildRows_6C524CA777" xml:space="preserve"><value>Change</value></data>
   <data name="S_PreferencesDialog_RebuildRows_9004EC4503" xml:space="preserve"><value>Add</value></data>
@@ -2261,6 +2261,14 @@ Move Chickxel.app to the Applications folder or similar and relaunch it to use a
   <data name="Image_Copied" xml:space="preserve"><value>Copied the image ({0}×{1}).</value></data>
   <data name="Image_CopyFailed" xml:space="preserve"><value>Couldn't copy the image to the clipboard.</value></data>
   <data name="PaletteConvert_Title" xml:space="preserve"><value>Convert to palette colors</value></data>
+  <data name="PaletteConvert_Rule" xml:space="preserve"><value>Color matching</value></data>
+  <data name="PaletteConvert_Rule_Nearest" xml:space="preserve"><value>Nearest color</value></data>
+  <data name="PaletteConvert_Rule_BrightnessOrder" xml:space="preserve"><value>Brightness order</value></data>
+  <data name="PaletteConvert_Rule_PaletteOrder" xml:space="preserve"><value>Palette order</value></data>
+  <data name="PaletteConvert_Rule_HueFirst" xml:space="preserve"><value>Hue first</value></data>
+  <data name="PaletteConvert_Rule_LightnessOnly" xml:space="preserve"><value>Lightness only</value></data>
+  <data name="PaletteConvert_Distance_Rgb" xml:space="preserve"><value>RGB (redmean)</value></data>
+  <data name="PaletteConvert_Rule_Tip" xml:space="preserve"><value>Nearest color: the most similar palette color by color distance. RGB is the previous behavior; OKLab and CIEDE2000 are closer to how differences look.&#10;Brightness order: ranks the image's distinct colors by lightness and maps them proportionally onto the palette colors sorted by lightness. The darkest color becomes the darkest palette color and the lightest the lightest, so the light and dark structure survives even with very different hues.&#10;Palette order: the same ranking, mapped onto the palette in its listed order (first color = darkest place). Suits palettes where you arranged shade ramps yourself.&#10;Hue first: among the palette colors with the closest hue, the one with the closest lightness. Near-gray colors pick among the gray palette colors by lightness.&#10;Lightness only: the closest lightness, ignoring hue. Suits black-and-white or 4-color Game Boy-like palettes.&#10;&#10;Order rules rank the colors of all target cels together, so the same color becomes the same palette color in every frame. With dithering on, the two colors the rule chose (around the original lightness or rank position) are mixed in a pattern.</value></data>
   <data name="Timeline_LayoutBadgeTip" xml:space="preserve"><value>Auto layout on — click to configure</value></data>
   <data name="Updater_ManualInstall" xml:space="preserve"><value>
 Please download it from the release page and replace it manually.</value></data>
@@ -2307,6 +2315,18 @@ Please download it from the release page and replace it manually.</value></data>
   <data name="Presets_Prefs_Tab" xml:space="preserve"><value>Presets</value></data>
   <data name="Presets_Prefs_Title" xml:space="preserve"><value>Restore built-in presets</value></data>
   <data name="Presets_Prefs_Note" xml:space="preserve"><value>Adds back built-in presets you deleted and resets edited built-in presets to their original values. Presets you made and favorites stay. Changes are saved immediately.</value></data>
+  <data name="Prefs_ResetSettings_Title" xml:space="preserve"><value>Reset settings</value></data>
+  <data name="Prefs_ResetSettings_Button" xml:space="preserve"><value>Reset settings…</value></data>
+  <data name="Prefs_ResetSettings_Info" xml:space="preserve"><value>Returns app settings to their defaults, including shortcuts and display language. Recent files and folders, window and panel layout, palettes and recent colors, presets you made, accounts and asset publishing records, and script trust decisions stay, and open documents are not touched. You'll see what changes and confirm before anything is reset.</value></data>
+  <data name="Prefs_ResetSettings_Confirm" xml:space="preserve"><value>Reset app settings to their defaults? This can't be undone.
+
+Reset: shortcuts, display language (back to your computer's language — applies after restart), undo steps, undo history, auto save, app trash and update check settings, view options (grids, tiles, onion skin, etc.), tool, brush, text and gradient settings and primary/secondary colors, color picker mode, file browser, preview and GIF export settings, AI chat settings (AI, model, CLI paths, drawing settings), references folder location, ffmpeg path, skipped update version.
+
+Kept: signed-in accounts, recent files and folders and tabs to reopen, window size/position and panel sizes, canvas zoom, palettes and recent colors, Pixelate window settings and presets you made, asset publishing records, script trust decisions, files (undo history, app trash, references, translation CSVs). Open documents are not touched.
+
+Unconfirmed changes made in this window are discarded and the window closes. If the undo step count gets smaller, it applies from the next start so open documents keep their history.</value></data>
+  <data name="Prefs_ResetSettings_Done" xml:space="preserve"><value>Settings were reset to their defaults.</value></data>
+  <data name="Prefs_ResetSettings_DoneRestart" xml:space="preserve"><value>Settings were reset to their defaults. The display language changes after you restart Chickxel.</value></data>
   <data name="Presets_RestoreOptimizer" xml:space="preserve"><value>Restore auto optimize presets</value></data>
   <data name="Presets_RestoreOptimizerQuestion" xml:space="preserve"><value>Restore the built-in auto optimize presets? Deleted built-in presets come back, and presets you made stay.</value></data>
   <data name="Presets_RestoreGradients" xml:space="preserve"><value>Restore gradient presets</value></data>
@@ -3216,9 +3236,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Publish_NotMine" xml:space="preserve"><value>Received assets can't be published. Copy it to your assets first and publish the copy.</value></data>
   <data name="Publish_LinkError" xml:space="preserve"><value>The package was uploaded, but its store link couldn't be saved to the asset: {0}</value></data>
   <data name="Publish_Author" xml:space="preserve"><value>Author</value></data>
-  <data name="Publish_AuthorId" xml:space="preserve"><value>Author ID</value></data>
   <data name="Publish_AuthorIdTip" xml:space="preserve"><value>Your Chickxel account handle is the author ID. It becomes the first part of the package ID; you can change the handle in Help > Chickxel Account (not after you have uploaded a package).</value></data>
-  <data name="Publish_AuthorName" xml:space="preserve"><value>Display name</value></data>
   <data name="Publish_AuthorFromAccount" xml:space="preserve"><value>The handle and display name of the Chickxel account you are signed in with are used. Change them in Help > Chickxel Account.</value></data>
   <data name="Publish_Package" xml:space="preserve"><value>Package</value></data>
   <data name="Publish_Name" xml:space="preserve"><value>Name</value></data>
@@ -3536,7 +3554,6 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Gallery_TagsLabel" xml:space="preserve"><value>Tags (optional)</value></data>
   <data name="Gallery_TagsHint" xml:space="preserve"><value>Comma-separated (e.g. character, idle) — up to 8</value></data>
   <data name="Gallery_PublicNote" xml:space="preserve"><value>Uploaded pictures are public on the chickxel.com gallery right away. Don't upload other people's work or pictures you have no rights to.</value></data>
-  <data name="Gallery_SignedInAs" xml:space="preserve"><value>Uploading as {0} (@{1}).</value></data>
   <data name="Gallery_SignedInUnknown" xml:space="preserve"><value>Signed in. The account is checked when you upload.</value></data>
   <data name="Gallery_SignInLater" xml:space="preserve"><value>Not signed in. You'll sign in when you upload.</value></data>
   <data name="Gallery_LoginReason" xml:space="preserve"><value>Sign in with your Chickxel account to upload to the gallery.</value></data>

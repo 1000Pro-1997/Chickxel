@@ -3626,8 +3626,8 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\PaletteConvertDialog.cs:35 · PaletteConvertDialog · "변환"</comment>
   </data>
   <data name="S_PaletteConvertDialog_PaletteConvertDialog_541E54A55D" xml:space="preserve">
-    <value>디더링 없음(가장 가까운 색)</value>
-    <comment>src/Chickxel.App\PaletteConvertDialog.cs:43 · PaletteConvertDialog · "디더링 없음(가장 가까운 색)"</comment>
+    <value>디더링 없음</value>
+    <comment>src/Chickxel.App\PaletteConvertDialog.cs:63 · PaletteConvertDialog · "디더링 없음"</comment>
   </data>
   <data name="S_PaletteConvertDialog_PaletteConvertDialog_8CE25638B7" xml:space="preserve">
     <value>팔레트 "{0}" — 투명이 아닌 색 {1}개</value>
@@ -4736,8 +4736,8 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\PreferencesDialog.cs:113 · PreferencesDialog · "단축키"</comment>
   </data>
   <data name="S_PreferencesDialog_PreferencesDialog_DAAB44E61A" xml:space="preserve">
-    <value>"바꾸기"·"추가"를 누른 뒤 키를 누르세요(Esc = 취소).</value>
-    <comment>src/Chickxel.App\PreferencesDialog.cs:98 · PreferencesDialog · "\"바꾸기\"·\"추가\"를 누른 뒤 키를 누르세요(Esc = 취소)."</comment>
+    <value>"바꾸기"·"추가"를 누른 뒤 키나 마우스 4·5번 단추를 누르세요(Esc = 취소).</value>
+    <comment>src/Chickxel.App\PreferencesDialog.cs · PreferencesDialog · 단축키 탭 위 안내(마우스 4·5번 = 뒤로·앞으로 옆 단추).</comment>
   </data>
   <data name="S_PreferencesDialog_PreferencesDialog_F7A34332AC" xml:space="preserve">
     <value>MB (기본 {0}) — 넘치면 오래 안 연 파일 기록부터 지웁니다</value>
@@ -4752,8 +4752,8 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\PreferencesDialog.cs:156 · RebuildRows · "기본값"</comment>
   </data>
   <data name="S_PreferencesDialog_RebuildRows_57377CDB79" xml:space="preserve">
-    <value>키를 누르세요… (Esc 취소)</value>
-    <comment>src/Chickxel.App\PreferencesDialog.cs:148 · RebuildRows · "키를 누르세요… (Esc 취소)"</comment>
+    <value>키나 마우스 4·5번 단추를 누르세요… (Esc 취소)</value>
+    <comment>src/Chickxel.App\PreferencesDialog.cs · RebuildRows · 키를 기다리는 줄(마우스 4·5번 = 뒤로·앞으로 옆 단추).</comment>
   </data>
   <data name="S_PreferencesDialog_RebuildRows_688679199B" xml:space="preserve">
     <value>없음</value>
@@ -8091,6 +8091,14 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Image_Copied" xml:space="preserve"><value>이미지를 복사했습니다({0}×{1}).</value></data>
   <data name="Image_CopyFailed" xml:space="preserve"><value>이미지를 클립보드에 복사하지 못했습니다.</value></data>
   <data name="PaletteConvert_Title" xml:space="preserve"><value>팔레트 색으로 변환</value></data>
+  <data name="PaletteConvert_Rule" xml:space="preserve"><value>색 고르는 규칙</value></data>
+  <data name="PaletteConvert_Rule_Nearest" xml:space="preserve"><value>가장 가까운 색</value></data>
+  <data name="PaletteConvert_Rule_BrightnessOrder" xml:space="preserve"><value>밝기 순서</value></data>
+  <data name="PaletteConvert_Rule_PaletteOrder" xml:space="preserve"><value>팔레트 순서</value></data>
+  <data name="PaletteConvert_Rule_HueFirst" xml:space="preserve"><value>색상 먼저</value></data>
+  <data name="PaletteConvert_Rule_LightnessOnly" xml:space="preserve"><value>밝기만</value></data>
+  <data name="PaletteConvert_Distance_Rgb" xml:space="preserve"><value>RGB(redmean)</value></data>
+  <data name="PaletteConvert_Rule_Tip" xml:space="preserve"><value>가장 가까운 색: 색 거리로 가장 비슷한 팔레트 색입니다. RGB는 예전 방식이고, OKLab·CIEDE2000은 눈에 보이는 차이에 더 가깝습니다.&#10;밝기 순서: 그림의 서로 다른 색을 밝기 순으로 줄 세워, 그 순위 비율대로 밝기 순 팔레트 색에 짝짓습니다. 가장 어두운 색은 가장 어두운 팔레트 색, 가장 밝은 색은 가장 밝은 팔레트 색이 되어 색상이 전혀 달라도 명암이 남습니다.&#10;팔레트 순서: 밝기 순서와 같은 순위를 팔레트에 놓인 차례(첫 색 = 가장 어두운 자리)에 짝짓습니다. 명암 줄을 직접 늘어놓은 팔레트에 맞습니다.&#10;색상 먼저: 색상이 가장 가까운 팔레트 색들 중에서 밝기가 가장 가까운 색입니다. 회색에 가까운 흐린 색은 회색 팔레트 색 중에서 밝기로 고릅니다.&#10;밝기만: 색상은 보지 않고 밝기가 가장 가까운 색입니다. 흑백이나 4색 게임보이풍 팔레트에 맞습니다.&#10;&#10;순서 규칙은 대상에 드는 모든 셀의 색을 함께 줄 세워 프레임마다 같은 색이 같은 팔레트 색이 됩니다. 디더링을 켜면 규칙이 고른 두 색(원래 밝기나 순위 자리를 사이에 두는 두 색)을 무늬로 섞습니다.</value></data>
   <data name="Timeline_LayoutBadgeTip" xml:space="preserve"><value>자동 배치 켜짐 — 눌러 설정</value></data>
   <data name="Updater_ManualInstall" xml:space="preserve"><value>&#10;릴리스 페이지에서 받아 직접 바꿔 주세요.</value></data>
   <data name="Updater_Downloading" xml:space="preserve"><value>내려받는 중…</value></data>
@@ -8136,6 +8144,18 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Presets_Prefs_Tab" xml:space="preserve"><value>프리셋</value></data>
   <data name="Presets_Prefs_Title" xml:space="preserve"><value>기본 프리셋 되돌리기</value></data>
   <data name="Presets_Prefs_Note" xml:space="preserve"><value>지운 기본 프리셋을 다시 넣고, 고친 기본 프리셋은 처음 값으로 되돌립니다. 직접 만든 프리셋과 즐겨찾기는 그대로 둡니다. 누르면 바로 저장됩니다.</value></data>
+  <data name="Prefs_ResetSettings_Title" xml:space="preserve"><value>설정 초기화</value></data>
+  <data name="Prefs_ResetSettings_Button" xml:space="preserve"><value>설정 초기화…</value></data>
+  <data name="Prefs_ResetSettings_Info" xml:space="preserve"><value>앱 설정을 처음 값으로 되돌립니다(단축키·화면 언어 포함). 최근 파일·폴더, 창과 패널 배치, 팔레트·최근 색, 직접 만든 프리셋, 계정과 에셋 게시 기록, 스크립트 신뢰 결정은 그대로 두고, 열린 문서도 건드리지 않습니다. 누르면 무엇이 바뀌는지 보여 주고 확인을 받습니다.</value></data>
+  <data name="Prefs_ResetSettings_Confirm" xml:space="preserve"><value>앱 설정을 처음 값으로 되돌릴까요? 되돌릴 수 없습니다.
+
+되돌리는 것: 단축키, 화면 언어(컴퓨터 언어로 — 다시 시작해야 바뀜), 실행취소 단계 수·실행취소 기록·자동 저장·앱 휴지통·업데이트 확인 설정, 보기 옵션(격자·타일·양파 껍질 등), 도구·브러시·글씨·그라데이션 설정과 주/보조 색, 색 고르기 방식, 파일 브라우저·미리보기·GIF 내보내기 설정, AI 채팅 설정(사용할 AI·모델·CLI 경로·그리기 설정), 참고 자료 폴더 위치, ffmpeg 경로, 건너뛴 업데이트 버전.
+
+그대로 두는 것: 로그인한 계정, 최근 파일·폴더와 다시 열 탭, 창 크기·위치와 패널 크기, 캔버스 확대율, 팔레트·최근 색, 픽셀로 정리 창의 설정과 직접 만든 프리셋, 에셋 게시 기록, 스크립트 신뢰 결정, 파일(실행취소 기록·앱 휴지통·참고 자료·번역 CSV). 열린 문서는 건드리지 않습니다.
+
+이 창에서 바꾸고 확인하지 않은 값은 버리고 창을 닫습니다. 실행취소 단계 수가 줄어들면 열린 문서의 기록을 자르지 않도록 다음 시작부터 적용합니다.</value></data>
+  <data name="Prefs_ResetSettings_Done" xml:space="preserve"><value>설정을 처음 값으로 되돌렸습니다.</value></data>
+  <data name="Prefs_ResetSettings_DoneRestart" xml:space="preserve"><value>설정을 처음 값으로 되돌렸습니다. 화면 언어는 Chickxel을 다시 시작해야 바뀝니다.</value></data>
   <data name="Presets_RestoreOptimizer" xml:space="preserve"><value>자동 최적화 기본 프리셋 되돌리기</value></data>
   <data name="Presets_RestoreOptimizerQuestion" xml:space="preserve"><value>자동 최적화 기본 프리셋을 처음 상태로 되돌릴까요? 지운 기본 프리셋은 다시 들어가고, 직접 만든 프리셋은 그대로 남습니다.</value></data>
   <data name="Presets_RestoreGradients" xml:space="preserve"><value>그라데이션 기본 프리셋 되돌리기</value></data>
@@ -9045,9 +9065,7 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Publish_NotMine" xml:space="preserve"><value>받은 에셋은 올릴 수 없습니다. 내 에셋으로 복사한 뒤 그 사본을 올리세요.</value></data>
   <data name="Publish_LinkError" xml:space="preserve"><value>올렸지만 에셋에 상점 연결을 저장하지 못했습니다: {0}</value><comment>0 = 까닭.</comment></data>
   <data name="Publish_Author" xml:space="preserve"><value>작성자</value></data>
-  <data name="Publish_AuthorId" xml:space="preserve"><value>작성자 ID</value></data>
   <data name="Publish_AuthorIdTip" xml:space="preserve"><value>Chickxel 계정 핸들이 작성자 ID입니다. 패키지 ID의 첫 조각이 되며, 핸들은 도움말 > Chickxel 계정에서 바꿀 수 있습니다(패키지를 한 번 올리면 못 바꿈).</value></data>
-  <data name="Publish_AuthorName" xml:space="preserve"><value>표시 이름</value></data>
   <data name="Publish_AuthorFromAccount" xml:space="preserve"><value>로그인한 Chickxel 계정의 핸들과 표시 이름이 그대로 쓰입니다. 바꾸려면 도움말 > Chickxel 계정에서 바꾸세요.</value></data>
   <data name="Publish_Package" xml:space="preserve"><value>패키지</value></data>
   <data name="Publish_Name" xml:space="preserve"><value>이름</value></data>
@@ -9365,7 +9383,6 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Gallery_TagsLabel" xml:space="preserve"><value>태그(선택)</value></data>
   <data name="Gallery_TagsHint" xml:space="preserve"><value>쉼표로 나눔(예: character, idle) — 8개까지</value></data>
   <data name="Gallery_PublicNote" xml:space="preserve"><value>올린 그림은 바로 chickxel.com 갤러리에 공개됩니다. 다른 사람의 그림이나 권리가 없는 그림은 올리지 마세요.</value></data>
-  <data name="Gallery_SignedInAs" xml:space="preserve"><value>{0} (@{1})(으)로 올립니다.</value></data>
   <data name="Gallery_SignedInUnknown" xml:space="preserve"><value>로그인돼 있습니다. 올릴 때 계정을 확인합니다.</value></data>
   <data name="Gallery_SignInLater" xml:space="preserve"><value>로그인하지 않았습니다. 올릴 때 로그인합니다.</value></data>
   <data name="Gallery_LoginReason" xml:space="preserve"><value>갤러리에 올리려면 Chickxel 계정으로 로그인하세요.</value></data>

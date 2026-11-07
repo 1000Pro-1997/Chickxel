@@ -38,6 +38,8 @@ public sealed class TimelinePanel : UserControl
     private readonly TextBlock _info;
     /// <summary>제목 줄 오른쪽 끝 프레임 미리보기(썸네일) 켜기/끄기 단추의 아이콘.</summary>
     private readonly IconView _thumbIcon;
+    /// <summary>제목 줄 오른쪽 끝 프레임 미리보기 켜기/끄기 단추.</summary>
+    private readonly Border _thumbButton;
 
     public TimelinePanel(EditorContext ctx, PreviewPanel preview)
     {
@@ -59,9 +61,9 @@ public sealed class TimelinePanel : UserControl
         DockPanel.SetDock(title, Dock.Left);
         headerRow.Children.Add(title);
         // 스킨 관리 창은 이름 칸의 스킨 칩(클릭)·레이어 우클릭·프레임·레이어 메뉴에서 연다.
-        var thumbButton = ThumbnailToggleButton(out _thumbIcon);
-        DockPanel.SetDock(thumbButton, Dock.Right);
-        headerRow.Children.Add(thumbButton);
+        _thumbButton = ThumbnailToggleButton(out _thumbIcon);
+        DockPanel.SetDock(_thumbButton, Dock.Right);
+        headerRow.Children.Add(_thumbButton);
         headerRow.Children.Add(_info);
         var header = new Border { Height = 24, Background = AppTheme.BackBrush, Padding = new Thickness(6, 0, 0, 0), Child = headerRow };
         DockPanel.SetDock(header, Dock.Top);
@@ -84,6 +86,18 @@ public sealed class TimelinePanel : UserControl
         preview.PlayingFrameChanged += (_, f) => _grid.PlayingFrame = f;
         _grid.SyncLayout(animate: false);
         RefreshUi();
+    }
+
+    /// <summary>
+    /// 대상 도움말(F1): 이 패널 안의 컨트롤 <paramref name="c"/>와 그 안의 점 <paramref name="local"/>(c 좌표)에 맞는 "타임라인" 가이드 자리와
+    /// 대상 범위(c 좌표). 격자는 점이 있는 영역(태그 띠·크기 칩·프레임 머리글·레이어 이름·셀·효과 줄·더하기 칸)마다 다르다. 모르는 컨트롤이면 null.
+    /// </summary>
+    internal (HelpTarget Target, Rect Area)? HelpTargetFor(Control c, Avalonia.Point local)
+    {
+        if (ReferenceEquals(c, _grid)) return _grid.HelpTargetAt(local);
+        if (ReferenceEquals(c, _thumbButton)) return (new("screen-timeline", Anchor: "Compact view and scrolling"), new Rect(c.Bounds.Size));
+        if (ReferenceEquals(c, this)) return (new("screen-timeline"), new Rect(c.Bounds.Size));
+        return null;
     }
 
     private void RefreshUi()
@@ -2731,6 +2745,47 @@ public sealed class TimelinePanel : UserControl
             if (Ctx.Project is not { } proj || p.Y >= TagH || p.X < NameW) return null;
             int f = FrameAt(p.X);
             return f < 0 ? null : proj.Tags.LastOrDefault(t => t.Contains(f));
+        }
+
+        /// <summary>대상 도움말(F1): 점(이 격자 좌표) 아래 영역의 가이드 자리와 그 영역(같은 좌표).</summary>
+        internal (HelpTarget Target, Rect Area) HelpTargetAt(Avalonia.Point p)
+        {
+            const string page = "screen-timeline";
+            double w = Bounds.Width, h = Bounds.Height, top = TagH + HeadH;
+            var frames = new Rect(NameW, 0, Math.Max(0, w - NameW), h);
+            var rows = new Rect(0, top, w, Math.Max(0, h - top));
+            static (HelpTarget, Rect) At(string anchor, Rect area, string pageId = page) => (new HelpTarget(pageId, Anchor: anchor), area);
+            double ghostX = NameW + _colT.Total - HValue;
+
+            foreach (var bar in new Control[] { _h, _v })
+                if (bar.IsVisible && bar.Bounds.Contains(p)) return At("Compact view and scrolling", bar.Bounds);
+            if (p.Y < top)
+            {
+                if (p.X < NameW) return At("The canvas size chip", new Rect(0, 0, NameW, top));
+                if (p.Y < TagH)
+                {
+                    if (TagAt(p) is { } tag)
+                    {
+                        double x0 = FrameX(tag.From), x1 = FrameX(tag.To) + FrameW(tag.To);
+                        return At("Editing and playing tags", new Rect(x0, 0, x1 - x0, TagH).Intersect(frames), "screen-tags");
+                    }
+                    return At("Tag strip, canvas size chip and playback marker", new Rect(NameW, 0, frames.Width, TagH));
+                }
+                if (IsGhostColumn(p.X)) return At("Adding frames and layers", new Rect(ghostX, TagH, CellW, HeadH).Intersect(frames));
+                if (FrameAt(p.X) is var hf and >= 0) return At("Frame columns and durations", new Rect(FrameX(hf), TagH, FrameW(hf), HeadH).Intersect(frames));
+                return (new HelpTarget(page), new Rect(Bounds.Size));
+            }
+            if (IsGhostRow(p.Y)) return At("Adding frames and layers", new Rect(0, top + _rowT.Total - VValue, w, CellH).Intersect(rows));
+            if (FxRowAt(p.Y) is { } fx)
+                return (new HelpTarget("screen-effect-timeline"), new Rect(0, LayerY(fx.Layer) + CellH + fx.Effect * FxH, w, FxH).Intersect(rows));
+            if (LayerAt(p.Y) is var l and >= 0)
+            {
+                double y = LayerY(l);
+                if (p.X < NameW) return At("Layer rows", new Rect(0, y, NameW, CellH).Intersect(rows));
+                if (IsGhostColumn(p.X)) return At("Adding frames and layers", new Rect(ghostX, y, CellW, CellH).Intersect(rows).Intersect(frames));
+                if (FrameAt(p.X) is var f and >= 0) return At("Frame columns and durations", new Rect(FrameX(f), y, FrameW(f), CellH).Intersect(rows).Intersect(frames));
+            }
+            return (new HelpTarget(page), new Rect(Bounds.Size));
         }
 
         /// <summary>레이어 이름이 시작하는 x(부위는 들여 씀).</summary>

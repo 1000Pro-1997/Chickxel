@@ -224,6 +224,12 @@ public sealed class AppSettings
     /// <summary>배경색(#RRGGBB, 투명으로 돌려도 기억).</summary>
     public string GifBackgroundColor { get; set; } = "#FFFFFF";
 
+    // 팔레트 색으로 변환(마지막으로 쓴 값, 앱 전체)
+    /// <summary>색 고르는 규칙.</summary>
+    public Chickxel.Core.Edit.PaletteMatchRule PaletteConvertRule { get; set; }
+    /// <summary>가장 가까운 색 규칙의 색 거리.</summary>
+    public Chickxel.Core.Edit.PaletteMatchDistance PaletteConvertDistance { get; set; }
+
     // 편집·파일 브라우저(환경 설정 창)
     /// <summary>실행취소 단계 수(1~10000).</summary>
     public int UndoSteps { get; set; } = UndoStack.DefaultCapacity;
@@ -394,6 +400,38 @@ public sealed class AppSettings
         {
             return false;
         }
+    }
+
+    /// <summary>
+    /// "설정 초기화"(환경 설정)가 그대로 두는 값: 최근 목록·다시 열 탭, 창·패널 배치와 캔버스 확대율(끌 때 지금 창 상태로 다시 저장되는 것),
+    /// 사용자가 만든 것(팔레트·최근 색·픽셀로 정리 프리셋과 옵션·에셋 게시 기록), 스크립트 신뢰 결정(설치한 에셋의 스크립트도 여기에 있어
+    /// 지우면 설치한 효과가 멈춤), 저장된 AI 대화 위치·모델 ID 캐시.
+    /// </summary>
+    private static readonly HashSet<string> KeptOnReset =
+    [
+        nameof(RecentFolders), nameof(RecentFiles), nameof(LastFolder), nameof(OpenTabs),
+        nameof(WindowX), nameof(WindowY), nameof(WindowWidth), nameof(WindowHeight), nameof(Maximized), nameof(FilesVisible),
+        nameof(LeftWidth), nameof(PaletteWidth), nameof(RightWidth), nameof(BottomHeight), nameof(BrowserTreeHeight), nameof(PreviewHeight),
+        nameof(TimelineNameWidth), nameof(Zoom),
+        nameof(ChatX), nameof(ChatY), nameof(ChatWidth), nameof(ChatHeight), nameof(ChatOpen),
+        nameof(ExportX), nameof(ExportY), nameof(ExportWidth), nameof(ExportHeight), nameof(ExportSplit), nameof(ExportCollapsed),
+        nameof(Palettes), nameof(RecentColors), nameof(Pixelate), nameof(PixelateSettings), nameof(AssetPublish), nameof(ScriptTrust),
+        nameof(ChatLastOpen), nameof(ClaudeResolvedModels),
+    ];
+
+    /// <summary>
+    /// 설정을 처음 값(<c>new AppSettings()</c>)으로 되돌린다 — 단축키·화면 언어(null = 다음 시작 때 컴퓨터 언어) 포함, <see cref="KeptOnReset"/>는 그대로.
+    /// 같은 객체를 고치므로 이 설정을 들고 있는 창들이 바로 새 값을 본다. 저장은 부른 쪽이 한다.
+    /// </summary>
+    public void ResetToDefaults()
+    {
+        var defaults = new AppSettings();
+        foreach (var p in typeof(AppSettings).GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+        {
+            if (!p.CanRead || !p.CanWrite || p.GetIndexParameters().Length > 0 || KeptOnReset.Contains(p.Name)) continue;
+            p.SetValue(this, p.GetValue(defaults));
+        }
+        Migrate(this);
     }
 
     public static void PushRecent(List<string> list, string path)
