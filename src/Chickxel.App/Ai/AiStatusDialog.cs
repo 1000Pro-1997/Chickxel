@@ -36,6 +36,10 @@ internal sealed class AiStatusDialog : DialogBase
         // 기본 폭 90에서는 "확인하고 AI 열기"가 잘리므로 글에 맞춘다.
         OkButton.Width = double.NaN;
         OkButton.MinWidth = 90;
+        // 대상 도움말(F1): 창은 "AI 상태와 설정 창" 절, 줄·단추는 그 절 표의 줄로. 점검 결과 글은 문제 해결 쪽(먼저 다시 점검하라는 곳).
+        const string page = "ai-setup";
+        this.HelpAt(page, anchor: "The AI Status and Settings window");
+        OkButton.HelpAt(page, anchor: "Chickxel checks the install and login status");
 
         var intro = Ui.Label(UiStrings.AiStatus_Intro);
         intro.TextWrapping = TextWrapping.Wrap;
@@ -45,7 +49,7 @@ internal sealed class AiStatusDialog : DialogBase
         _progress = new ProgressBar { Height = 4, IsIndeterminate = true, Margin = new Thickness(2, 2, 2, 6) };
         _serverIcon = StatusIcon();
         _serverText = StatusText();
-        var serverRow = StatusRow(UiStrings.AiStatus_McpServer, _serverIcon, _serverText);
+        var serverRow = StatusRow(UiStrings.AiStatus_McpServer, _serverIcon, _serverText).HelpAt(page, anchor: "MCP server");
         var serverGroup = Ui.Group(UiStrings.AiStatus_ChickxelConnection, serverRow);
 
         var cards = new StackPanel { Spacing = 4 };
@@ -60,19 +64,23 @@ internal sealed class AiStatusDialog : DialogBase
         _message.TextWrapping = TextWrapping.Wrap;
         _message.Foreground = AppTheme.DimTextBrush;
         _message.Margin = new Thickness(4, 4, 4, 0);
+        _message.HelpAt("ai-troubleshoot");
         _hideUntilChange = Ui.Check(UiStrings.AiStatus_DontShowUntilChange,
             string.Equals(settings.AiStatusDismissedFingerprint, AiStatusProbe.Fingerprint(settings), StringComparison.Ordinal));
         _hideUntilChange.Margin = new Thickness(4, 8, 4, 0);
+        _hideUntilChange.HelpAt(page, anchor: "Don't show again");
         _centerChat = Ui.Check(UiStrings.AiStatus_CenterChat, settings.ChatCenterOnOpen);
         _centerChat.Margin = new Thickness(16, 8, 4, 0);
+        _centerChat.HelpAt(page, anchor: "Open in center");
         var options = new StackPanel { Orientation = Orientation.Horizontal };
         options.Children.AddRange([_hideUntilChange, _centerChat]);
         var note = Ui.Label(UiStrings.AiStatus_DontShowNote);
         note.TextWrapping = TextWrapping.Wrap;
         note.Foreground = AppTheme.DimTextBrush;
         note.Margin = new Thickness(25, 0, 4, 2);
+        note.HelpAt(page, anchor: "Don't show again");
 
-        _recheck = Ui.Button(VectorIcon.Refresh, UiStrings.AiStatus_Recheck, async (_, _) => await CheckAllAsync());
+        _recheck = Ui.Button(VectorIcon.Refresh, UiStrings.AiStatus_Recheck, async (_, _) => await CheckAllAsync()).HelpAt(page, anchor: "Check all again");
         _recheck.HorizontalAlignment = HorizontalAlignment.Left;
         Body.Children.AddRange([intro, _progress, serverGroup, Ui.ScrollHost(cards), _message, options, note, _recheck]);
 
@@ -286,7 +294,7 @@ internal sealed class AiStatusDialog : DialogBase
 
     private static Grid StatusRow(string label, IconView icon, TextBlock text)
     {
-        var row = new Grid { ColumnDefinitions = new ColumnDefinitions("120,22,*"), Margin = new Thickness(2, 2) };
+        var row = new Grid { ColumnDefinitions = new ColumnDefinitions("120,22,*"), Margin = new Thickness(2, 2), Background = Brushes.Transparent };
         row.Children.Add(new TextBlock { Text = label, Foreground = AppTheme.DimTextBrush, VerticalAlignment = VerticalAlignment.Center });
         Grid.SetColumn(icon, 1);
         row.Children.Add(icon);
@@ -327,15 +335,16 @@ internal sealed class AiStatusDialog : DialogBase
         {
             _owner = owner;
             _provider = provider;
-            _install = Ui.Button(VectorIcon.Download, UiStrings.AiStatus_InstallUpdate, (_, _) => owner.StartInstall(provider));
-            _login = Ui.Button(UiStrings.AiStatus_Login, (_, _) => owner.StartLogin(provider));
-            _logout = Ui.Button(UiStrings.AiStatus_Logout, async (_, _) => await owner.LogoutAsync(provider));
-            _changePath = Ui.Button(UiStrings.AiStatus_ChangePath, (_, _) => owner.ChangePath(provider));
-            _automaticPath = Ui.Button(UiStrings.AiStatus_AutomaticPath, (_, _) => owner.UseAutomaticPath(provider));
+            const string page = "ai-setup";
+            _install = Ui.Button(VectorIcon.Download, UiStrings.AiStatus_InstallUpdate, (_, _) => owner.StartInstall(provider)).HelpAt(page, anchor: "Install or update");
+            _login = Ui.Button(UiStrings.AiStatus_Login, (_, _) => owner.StartLogin(provider)).HelpAt(page, anchor: "Sign in");
+            _logout = Ui.Button(UiStrings.AiStatus_Logout, async (_, _) => await owner.LogoutAsync(provider)).HelpAt(page, anchor: "Sign out");
+            _changePath = Ui.Button(UiStrings.AiStatus_ChangePath, (_, _) => owner.ChangePath(provider)).HelpAt(page, anchor: "Change executable");
+            _automaticPath = Ui.Button(UiStrings.AiStatus_AutomaticPath, (_, _) => owner.UseAutomaticPath(provider)).HelpAt(page, anchor: "Find automatically");
             var stack = new StackPanel { Spacing = 1 };
-            stack.Children.Add(StatusRow(UiStrings.AiStatus_CliVersion, _cliIcon, _cliText));
-            stack.Children.Add(StatusRow(UiStrings.AiStatus_LoginState, _loginIcon, _loginText));
-            stack.Children.Add(StatusRow(UiStrings.AiStatus_McpConnection, _mcpIcon, _mcpText));
+            stack.Children.Add(StatusRow(UiStrings.AiStatus_CliVersion, _cliIcon, _cliText).HelpAt(page, anchor: "CLI/version"));
+            stack.Children.Add(StatusRow(UiStrings.AiStatus_LoginState, _loginIcon, _loginText).HelpAt(page, anchor: "Sign-in"));
+            stack.Children.Add(StatusRow(UiStrings.AiStatus_McpConnection, _mcpIcon, _mcpText).HelpAt(page, anchor: "MCP connection"));
             stack.Children.Add(new WrapPanel { Margin = new Thickness(0, 4, 0, 0), Children = { _install, _login, _logout, _changePath, _automaticPath } });
             Root = Ui.Group(provider.ProductName, stack);
             SetPending();

@@ -88,14 +88,17 @@ internal sealed class CanvasRatioDialog : DialogBase
         _fit.SelectionChanged += (_, _) => Refresh();
 
         Body.Children.Add(intro);
-        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.CanvasRatio_Ratio), _presets));
-        Body.Children.Add(Ui.Row(_ratioWidth, Ui.Label(":"), _ratioHeight));
-        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.CanvasRatio_Basis), _basis));
-        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.CanvasRatio_Fit), _fit));
-        Body.Children.Add(new Border { Child = _preview, BorderBrush = AppTheme.BorderBrush, BorderThickness = new Thickness(1), HorizontalAlignment = HorizontalAlignment.Left });
-        Body.Children.Add(_sizes);
-        Body.Children.Add(_imageSize);
-        Body.Children.Add(_error);
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.CanvasRatio_Ratio), _presets).HelpAt("tools-canvas-size", anchor: "Ratio:"));
+        Body.Children.Add(Ui.Row(_ratioWidth, Ui.Label(":"), _ratioHeight).HelpAt("tools-canvas-size", anchor: "Ratio:"));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.CanvasRatio_Basis), _basis).HelpAt("tools-canvas-size", anchor: "Keep:"));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.CanvasRatio_Fit), _fit).HelpAt("tools-canvas-size", anchor: "Method:"));
+        Body.Children.Add(new Border { Child = _preview, BorderBrush = AppTheme.BorderBrush, BorderThickness = new Thickness(1), HorizontalAlignment = HorizontalAlignment.Left }
+            .HelpAt("tools-canvas-size", anchor: "The preview shows"));
+        Body.Children.Add(_sizes.HelpAt("tools-canvas-size", anchor: "Below it you see"));
+        Body.Children.Add(_imageSize.HelpAt("tools-canvas-size", anchor: "Below it you see"));
+        Body.Children.Add(_error.HelpAt("tools-canvas-size", anchor: "Below it you see"));
+        // 대상 도움말(F1)
+        this.HelpAt("tools-canvas-size", anchor: "Aspect ratio");
         Refresh();
     }
 

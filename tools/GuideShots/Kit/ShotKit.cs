@@ -26,7 +26,7 @@ public sealed class ShotKit
     private static readonly List<Popup> s_popups = [];
 
     public static string Root { get; } = FindRoot();
-    /// <summary>화면 언어(영어 한 벌 — 한국어·영어 가이드가 같은 그림을 씀).</summary>
+    /// <summary>화면 언어(기본 영어 한 벌 — 한국어·영어 가이드가 같은 그림을 씀). 한국어 화면 움짤처럼 다른 언어가 필요하면 <see cref="UseLanguage"/>.</summary>
     private const string Language = "en";
     /// <summary>찍은 그림이 가는 곳(홈페이지·F1 가이드 그림).</summary>
     public static string OutDir => Path.Combine(Root, "docs", "assets", "guide");
@@ -59,6 +59,13 @@ public sealed class ShotKit
         Chickxel.App.Localization.UiLanguage.Apply(Language);
     }
 
+    /// <summary>화면 언어를 바꾼다(<see cref="Main"/> 전에 부름 — 창을 만들 때 문구를 읽음). 예: 한국어 화면 움짤은 <c>UseLanguage(UiLanguage.Korean)</c>.</summary>
+    public static void UseLanguage(string code)
+    {
+        App.Settings.Language = code;
+        Chickxel.App.Localization.UiLanguage.Apply(code);
+    }
+
     public static void InstallTracking()
     {
         Window.WindowOpenedEvent.AddClassHandler<Window>((w, _) => { if (!s_windows.Contains(w)) s_windows.Add(w); });
@@ -76,6 +83,9 @@ public sealed class ShotKit
 
     /// <summary>열려 있는 창(연 순서).</summary>
     public IReadOnlyList<Window> Windows => s_windows.Where(w => w.IsVisible).ToList();
+
+    /// <summary>열려 있는 팝업(메뉴·우클릭 메뉴·펼친 목록 등, 연 순서).</summary>
+    public static IReadOnlyList<Popup> OpenPopups => s_popups.Where(p => p.IsOpen).ToList();
 
     // ───────────── 준비 ─────────────
 
@@ -323,12 +333,13 @@ public sealed class ShotKit
     }
 
     /// <summary>창·팝업의 화면 위치(팝업 위치는 플랫폼 구현의 Position — 공개 API가 아니어서 리플렉션).</summary>
-    private static PixelPoint Position(TopLevel top) => top is Window w ? w.Position
+    public static PixelPoint Position(TopLevel top) => top is Window w ? w.Position
         : top.PlatformImpl is { } impl && impl.GetType().GetProperty("Position", Any)?.GetValue(impl) is PixelPoint p ? p : default;
 
     public const int TitleHeight = 32;
 
-    private static void DrawTitleBar(DrawingContext ctx, string title, int width)
+    /// <summary>창 제목 줄(아이콘·제목·최소화·최대화·닫기)을 (0,0)부터 <paramref name="width"/> 폭으로 그린다(높이 <see cref="TitleHeight"/>).</summary>
+    public static void DrawTitleBar(DrawingContext ctx, string title, int width)
     {
         ctx.FillRectangle(new SolidColorBrush(Color.FromRgb(32, 32, 36)), new Rect(0, 0, width, TitleHeight));
         ctx.FillRectangle(new SolidColorBrush(Color.FromRgb(60, 60, 66)), new Rect(0, TitleHeight - 1, width, 1));

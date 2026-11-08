@@ -28,19 +28,23 @@ internal sealed class ScriptEditorWindow : Window
         ShowInTaskbar = false;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         Background = AppTheme.BackBrush;
+        // 대상 도움말(F1): 창 = "스크립트 효과"의 편집 창 그림, 원문 = 코드 편집기 항목, 오류 목록·상태 = ⑭ 항목, 안내·적용 줄 = ③(⑫·⑮) 항목
+        const string page = "screen-script-effects";
+        this.HelpAt(page, shot: "screen-script-effects-2");
 
         _code.Text = ScriptEffectProgram.NormalizeSource(source);
-        var hint = Ui.Label(UiStrings.ScriptEditor_Hint);
+        _code.HelpAt(page, anchor: "The code editor is the same as in the Effect Maker");
+        var hint = Ui.Label(UiStrings.ScriptEditor_Hint).HelpAt(page, anchor: "Edit script… opens an editor");
         hint.TextWrapping = TextWrapping.Wrap;
         hint.Foreground = AppTheme.DimTextBrush;
         _result = Ui.Label("");
-        _status = Ui.Label("");
+        _status = Ui.Label("").HelpAt(page, anchor: "Syntax and declaration errors are listed");
         _status.TextWrapping = TextWrapping.Wrap;
         var applyButton = Ui.Button(UiStrings.ScriptEditor_Apply, (_, _) => Apply(), 90);
         ToolTip.SetTip(applyButton, Ui.Shortcut(UiStrings.ScriptEditor_ApplyTip));
         var close = Ui.Button(UiStrings.S_Ui_CloseOnly_11312F9A81, (_, _) => Close(), 90);
-        var buttons = Ui.Row(applyButton, close, _result);
-        var bottom = Ui.Stack(new ScrollViewer { Content = _errors, MaxHeight = 120 }, _status, buttons);
+        var buttons = Ui.Row(applyButton, close, _result).HelpAt(page, anchor: "Edit script… opens an editor");
+        var bottom = Ui.Stack(new ScrollViewer { Content = _errors, MaxHeight = 120 }.HelpAt(page, anchor: "Syntax and declaration errors are listed"), _status, buttons);
         bottom.Margin = new Thickness(0, 6, 0, 0);
         DockPanel.SetDock(hint, Dock.Top);
         DockPanel.SetDock(bottom, Dock.Bottom);

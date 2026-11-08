@@ -18,6 +18,11 @@ internal sealed class ScriptTrustDialog : DialogBase
     public ScriptTrustDialog(IReadOnlyList<string> hashes) : base(UiStrings.ScriptTrust_Title, UiStrings.ScriptTrust_Run)
     {
         CancelButtonControl.Content = UiStrings.ScriptTrust_DontRun;
+        // 대상 도움말(F1): 창 = "스크립트 효과"의 실행 허용 절, 스크립트 목록 = ⑰, 실행·실행 안 함 = ⑱(같은 문단)
+        const string page = "screen-script-effects";
+        this.HelpAt(page, anchor: "Allowing scripts to run");
+        OkButton.HelpAt(page, anchor: "⑱ Run runs only the checked ones");
+        CancelButtonControl.HelpAt(page, anchor: "⑱ Run runs only the checked ones");
         var message = Ui.Label(UiStrings.ScriptTrust_Message);
         message.TextWrapping = TextWrapping.Wrap;
         message.MaxWidth = TextWidth;
@@ -45,7 +50,8 @@ internal sealed class ScriptTrustDialog : DialogBase
             list.Children.Add(new StackPanel { Spacing = 1, Children = { run, author, id } });
             _rows.Add((hash, run));
         }
-        Body.Children.Add(new ScrollViewer { Content = list, MaxHeight = 360, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
+        Body.Children.Add(new ScrollViewer { Content = list, MaxHeight = 360, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled }
+            .HelpAt(page, anchor: "⑰ Each script has a checkbox"));
     }
 
     /// <summary>해시 → 실행 여부. "실행"이면 체크한 것만 true, 아니면 모두 false.</summary>

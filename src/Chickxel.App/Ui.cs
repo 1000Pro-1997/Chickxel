@@ -803,6 +803,8 @@ internal sealed class ColorPickDialog : DialogBase
 
     public ColorPickDialog(string title, Color32 initial, Action<Color32>? onPreview = null) : base(title)
     {
+        // 대상 도움말(F1): 창 = "색 고르기"의 다른 창의 색 고르기 소제목(편집기 안은 편집기가 자리를 정함)
+        this.HelpAt("screen-color-picker", anchor: "Color pickers in other windows");
         _editor = new ColorPickerEditor(initial);
         if (onPreview is not null) _editor.ColorChanged += (_, _) => onPreview(_editor.Color);
         Body.Children.Add(_editor);

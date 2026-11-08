@@ -24,5 +24,7 @@ dotnet run --project tools/GuideShots -- --list
 
 - `Kit/ShotKit.cs`: 메인 창 띄우기(`Main`), 창·대화상자 찍기(`Save`, `Dialog`), 영역 자르기(`SaveControl`, `SaveArea`), 빨간 번호 테두리(`marks` — 컨트롤이나 창 좌표 사각형, `Mark`), 키·마우스 입력, 메뉴 명령 실행(`Command`), 비공개 멤버 접근(`Get`/`Set`/`Call`). 열린 메뉴·우클릭 메뉴는 그림에 합쳐지고, 창에는 제목 줄을 그려 넣습니다.
 - `Shots/<장>*.cs`: `[Shot("<쪽 id>")]` 메서드 하나가 그림 한 장 이상을 찍습니다. 여러 장이면 `<쪽 id>-2`처럼 이름을 붙입니다.
+- `Kit/ClipRecorder.cs`: 움짤·기능 영상 녹화. 샷 안에서 실제 앱에 마우스·키 입력을 보내며(포인터 이동·누르기·끌기·글자 입력) 그때마다 메인 창(그 위에 뜬 대화상자·팝업 포함)의 한 영역을 프레임으로 찍고, 벡터로 그린 커서(화살표·손·I자·위아래 화살표·십자)와 누르는 동안의 빨간 고리를 얹습니다. 같은 그림이 이어지면 한 프레임으로 합칩니다. 저장은 애니메이션 WebP(Pillow — `python`과 Pillow 필요), GIF(ffmpeg palettegen/paletteuse), MP4 H.264(ffmpeg, yuv420p, faststart) + JPG 포스터입니다.
+- `Shots/ClipShots.cs`: `clip-<파일 이름>` 샷이 움짤·영상 하나를 다시 녹화합니다(`clip-tools-pencil` → `docs/assets/guide/tools-pencil.webp`, `clip-feature-pivot` → `docs/assets/feature-pivot.mp4`·`.jpg` 등). 모두 다시 찍으려면 `-- clip-`. 가이드 움짤의 도구 장 캔버스는 12배, 홈페이지 기능 영상은 1280×656 창 + 제목 줄(1280×688)입니다. 앱 도움말의 숫자 칸 움짤(`screen-common-controls.webp`)만 한국어 화면(`ShotKit.UseLanguage`)이고 나머지는 영어 화면입니다.
 - `Sample/wolf.png`: 예시 그림(늑대귀 모험가). 열면 49×98 픽셀 그림으로 가져와집니다.
 - 그림 목록과 움짤 요청은 저장소 루트의 `가이드-이미지.md`에 있습니다.

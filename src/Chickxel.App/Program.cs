@@ -67,6 +67,7 @@ public sealed class App : Application
         AppTheme.Install(this);
         PopupMenus.Install();
         TextFocusRelease.Install();
+        HelpPicker.Install();
     }
 
     /// <summary>SIGTERM을 창 닫기로 바꾸는 등록(살아 있는 동안만 유효해 필드에 둔다).</summary>
@@ -106,6 +107,8 @@ static class Program
         // OS가 연결한 주소·파일로 띄워졌는데 이미 켜진 Chickxel이 있으면 그 창에 넘기고 끝낸다(Windows).
         if (App.Args.Activation is { } activation && AppActivation.TryForward(activation)) return 0;
         Platform.MigrateLegacyFolders();
+        // 프로젝트 파일의 내보내기 경로를 암호화할 이 설치의 열쇠(처음 쓸 때 만듦 — 설정 초기화와 관계없이 남음).
+        Chickxel.Core.IO.LocalPathCipher.Current = new Chickxel.Core.IO.LocalPathCipher(Path.Combine(Platform.AppFolder, "local-path-key.bin"));
         // 문구를 읽기 전에(창·정적 필드보다 먼저) 화면 언어를 정한다. 처음 켤 때(또는 고른 언어의 CSV를 지웠으면) 컴퓨터 언어로 고른다.
         App.Settings = AppSettings.Load();
         var languages = Localization.UiLanguage.Available();

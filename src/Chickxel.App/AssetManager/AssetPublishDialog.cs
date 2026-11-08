@@ -59,6 +59,8 @@ public sealed class AssetPublishDialog : DialogBase
     private string _suggested = "1.0.0";
     private PublishResult? _result;
     private CancellationTokenSource? _upload;
+    /// <summary>대상 도움말(F1)의 온라인 올리기 가이드 쪽.</summary>
+    internal const string HelpPage = "screen-asset-publish";
 
     /// <summary>서버 조회 결과 하나: 올린 패키지(없으면 null — 새 패키지), 연결 실패면 <see cref="Failed"/>.</summary>
     private sealed record Lookup(CommunityPackage? Package, bool Failed);
@@ -188,7 +190,7 @@ public sealed class AssetPublishDialog : DialogBase
                 Note(UiStrings.Publish_Intro),
                 Ui.Group(UiStrings.Publish_Author, Ui.Stack(
                     Ui.Row(_author, Ui.InfoBadge(UiStrings.Publish_AuthorIdTip)),
-                    Note(UiStrings.Publish_AuthorFromAccount))),
+                    Note(UiStrings.Publish_AuthorFromAccount))).HelpAt(HelpPage, anchor: "Author: the profile picture"),
                 Ui.Group(UiStrings.Publish_Package, Ui.Stack(
                     mode,
                     Rows((UiStrings.Publish_Name, _name, null),
@@ -196,10 +198,11 @@ public sealed class AssetPublishDialog : DialogBase
                         (UiStrings.Publish_LanguagesLabel, Ui.Stack(languages, _languages), null),
                         (UiStrings.Publish_Id, _idText, UiStrings.Publish_IdTip),
                         (UiStrings.Publish_Version, Ui.Row(_version, _useSuggestion), null),
-                        (UiStrings.Publish_Tags, new StackPanel { Children = { _tags, forcedTagNote } }, UiStrings.Publish_TagsTip)))),
+                        (UiStrings.Publish_Tags, new StackPanel { Children = { _tags.HelpAt(HelpPage, anchor: "Checks and tags"), forcedTagNote } }, UiStrings.Publish_TagsTip)))
+                    ).HelpAt(HelpPage, anchor: "Package: the top line"),
                 Ui.Group(UiStrings.Publish_License, Ui.Stack(
                     Ui.Row(Ui.Icon(VectorIcon.Check, 13), Ui.Label(AssetPublishCheck.License, bold: true)),
-                    Note(UiStrings.Publish_LicenseFixed))),
+                    Note(UiStrings.Publish_LicenseFixed))).HelpAt(HelpPage, anchor: "License: always"),
             },
         };
 
@@ -221,14 +224,14 @@ public sealed class AssetPublishDialog : DialogBase
             Spacing = 2,
             Children =
             {
-                Ui.Group(UiStrings.Publish_Asset, Ui.Stack(assetRow)),
+                Ui.Group(UiStrings.Publish_Asset, Ui.Stack(assetRow)).HelpAt(HelpPage, anchor: "Asset: the name and kind"),
                 new Border
                 {
                     BorderBrush = AppTheme.BorderBrush, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(3),
                     Padding = new Thickness(6, 4, 6, 6), Margin = new Thickness(2, 4, 2, 2),
                     Child = new StackPanel { Spacing = 2, Children = { previewHeader, _preview, new WrapPanel { Children = { replace, _previewAuto } }, _previewNote } },
-                },
-                Ui.Group(UiStrings.Publish_Checks, Ui.Stack(_checksSummary, _checks)),
+                }.HelpAt(HelpPage, anchor: "List preview: the picture"),
+                Ui.Group(UiStrings.Publish_Checks, Ui.Stack(_checksSummary, _checks)).HelpAt(HelpPage, anchor: "Pre-upload check: checked as you type"),
             },
         };
 
@@ -242,7 +245,10 @@ public sealed class AssetPublishDialog : DialogBase
         _columns = columns;
         var cancelUpload = Ui.Button(VectorIcon.X, UiStrings.Publish_CancelUpload, (_, _) => _upload?.Cancel());
         _progress.VerticalAlignment = _progressText.VerticalAlignment = VerticalAlignment.Center;
-        _progressRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0, 8, 0, 0), IsVisible = false, Children = { _progress, _progressText, cancelUpload } };
+        _progressRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0, 8, 0, 0), IsVisible = false, Children = { _progress, _progressText, cancelUpload } }
+            .HelpAt(HelpPage, anchor: "While uploading");
+        OkButton.HelpAt(HelpPage, anchor: "Uploading");
+        this.HelpAt(HelpPage, shot: "screen-asset-manager-3");
         DockPanel.SetDock(_progressRow, Dock.Bottom);
         var root = (DockPanel)Content!;
         root.Children.Remove(Body);

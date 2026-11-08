@@ -48,15 +48,18 @@ public sealed class GroupLayoutDialog : DialogBase
         _preview = new GroupLayoutPreview(project, group, frameIndex) { Width = 340, Height = 190 };
 
         _columnsRow = Ui.Row(Ui.Label(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_4B983CA7BF), _columns);
+        // 대상 도움말(F1): 창 = "자동 배치" 설정 창 그림, 줄마다 설정 표의 그 줄(④~⑩), 미리 보기 ②·적용 ③, 끄기 = 끄는 법 항목
+        const string page = "parts-auto-layout";
+        this.HelpAt(page, shot: "parts-auto-layout-2");
         int parts = project.ChildCount(group);
         Body.Children.Add(Note(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_6446F8431F,parts)));
-        Body.Children.Add(Ui.Row(FieldLabel(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_9331E25300), _direction, _columnsRow));
-        Body.Children.Add(Ui.Row(_alignLabel, _align));
-        Body.Children.Add(Ui.Row(_distLabel, _distribution));
-        Body.Children.Add(Ui.Row(FieldLabel(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_3C32EBCE78), _gap, Ui.Label("px"), Ui.Label(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_BE647B487C), _margin, Ui.Label("px")));
-        Body.Children.Add(Ui.Row(FieldLabel(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_915D00697D), _order));
-        Body.Children.Add(Ui.Row(FieldLabel(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_639D409AD1), _wholeCanvas, Ui.Label("X"), _ax, Ui.Label("Y"), _ay, Ui.Label("W"), _aw, Ui.Label("H"), _ah));
-        Body.Children.Add(Ui.Row(FieldLabel(""), _includeHidden));
+        Body.Children.Add(Ui.Row(FieldLabel(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_9331E25300), _direction, _columnsRow).HelpAt(page, anchor: "Direction"));
+        Body.Children.Add(Ui.Row(_alignLabel, _align).HelpAt(page, anchor: "Align"));
+        Body.Children.Add(Ui.Row(_distLabel, _distribution).HelpAt(page, anchor: "Distribution"));
+        Body.Children.Add(Ui.Row(FieldLabel(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_3C32EBCE78), _gap, Ui.Label("px"), Ui.Label(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_BE647B487C), _margin, Ui.Label("px")).HelpAt(page, anchor: "Spacing · padding"));
+        Body.Children.Add(Ui.Row(FieldLabel(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_915D00697D), _order).HelpAt(page, anchor: "Order"));
+        Body.Children.Add(Ui.Row(FieldLabel(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_639D409AD1), _wholeCanvas, Ui.Label("X"), _ax, Ui.Label("Y"), _ay, Ui.Label("W"), _aw, Ui.Label("H"), _ah).HelpAt(page, anchor: "Area"));
+        Body.Children.Add(Ui.Row(FieldLabel(""), _includeHidden).HelpAt(page, anchor: "Hidden parts keep their space"));
         Body.Children.Add(new Border
         {
             Child = _preview,
@@ -64,14 +67,16 @@ public sealed class GroupLayoutDialog : DialogBase
             BorderThickness = new Thickness(1),
             Margin = new Thickness(3, 6, 3, 0),
             HorizontalAlignment = HorizontalAlignment.Left,
-        });
+        }.HelpAt(page, anchor: "②"));
         Body.Children.Add(Note(current is null
             ? UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_878F07851A
             : UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_FA3F69CD5B));
+        OkButton.HelpAt(page, anchor: "③");
         if (current is not null)
         {
             var off = AddButton(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_27D562E065, DialogResult.No);
             off.Width = 120;
+            off.HelpAt(page, anchor: "Turn it off with Turn off auto layout");
         }
 
         _direction.SelectionChanged += (_, _) => Refresh();

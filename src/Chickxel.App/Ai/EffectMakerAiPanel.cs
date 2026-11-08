@@ -74,6 +74,9 @@ internal sealed class EffectMakerAiPanel : Border
         Background = AppTheme.PanelBrush;
         BorderBrush = AppTheme.BorderBrush;
         BorderThickness = new Thickness(1);
+        // 대상 도움말(F1): 칸 = "효과 만들기"의 AI 칸 절, 머리줄 = 그 항목, 대화·입력 = ㉖, 첨부 단추 = ㉗, 모델·보내기 = ㉘, 대기 줄 = 그 항목
+        const string page = "screen-effect-maker";
+        this.HelpAt(page, anchor: "AI panel");
 
         // ── 머리줄: 제목 · AI(Claude/Codex) · 새 대화 · 닫기, 아래 상태 글
         _providers = new TabStrip(TabStripKind.Segmented) { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(3, 0) };
@@ -98,15 +101,15 @@ internal sealed class EffectMakerAiPanel : Border
             BorderThickness = new Thickness(0, 0, 0, 1),
             Padding = new Thickness(6, 4),
             Child = new StackPanel { Children = { headerRow, _status } },
-        };
+        }.HelpAt(page, anchor: "The header has the Claude/Codex switch");
         DockPanel.SetDock(header, Dock.Top);
 
         // ── 채팅 화면: 대화(안내 글로 시작) + 그림 칩 입력란·첨부 단추·보내기/멈춤
-        _scroll = Ui.ScrollHost(_messages);
+        _scroll = Ui.ScrollHost(_messages).HelpAt(page, anchor: "㉖ Send the effect you want");
         _thinking = new TextBlock { Foreground = AppTheme.DimTextBrush, FontStyle = FontStyle.Italic, Margin = new Thickness(2), TextWrapping = TextWrapping.Wrap };
-        _imageInput = new ChatImageInput(UiStrings.EffectMakerAi_Watermark);
+        _imageInput = new ChatImageInput(UiStrings.EffectMakerAi_Watermark).HelpAt(page, anchor: "㉖ Send the effect you want");
         _imageInput.Input.AddHandler(InputElement.KeyDownEvent, OnInputKeyDown, RoutingStrategies.Tunnel);
-        _pending = new PendingMessages(_imageInput);
+        _pending = new PendingMessages(_imageInput).HelpAt(page, anchor: "Pressing Enter or Send while the AI's turn is running");
         var attachFile = Ui.IconButton(VectorIcon.FolderOpen, UiStrings.S_ChatWindow_ChatTab_046C36A571, (_, _) => _imageInput.AttachFile());
         var attachCanvas = Ui.IconButton(VectorIcon.Image, UiStrings.EffectMakerAi_AttachCanvasTip, (_, _) => AttachCanvas());
         var attachPreview = Ui.IconButton(VectorIcon.Film, UiStrings.EffectMakerAi_AttachPreviewTip, (_, _) => AttachPreview());
@@ -122,10 +125,11 @@ internal sealed class EffectMakerAiPanel : Border
                 (label, _) => new TextBlock { Text = label, TextTrimming = TextTrimming.CharacterEllipsis }, supportsRecycling: false),
         };
         _models = new ChatModelSelector(_model, settings, () => _provider, OnModelChanged);
-        var sendButtons = Ui.Row(_send, _stop);
-        var attachButtons = Ui.Row(attachFile, attachCanvas, attachPreview);
+        var sendButtons = Ui.Row(_send, _stop).HelpAt(page, anchor: "The model list left of Send");
+        var attachButtons = Ui.Row(attachFile, attachCanvas, attachPreview).HelpAt(page, anchor: "The three buttons under the input attach");
         // 모델 칸은 남는 폭만 쓴다(좁으면 이름 말줄임 — 차례 중에 보내기·멈춤이 함께 보여도 단추가 밀리지 않게).
         _model.HorizontalAlignment = HorizontalAlignment.Right;
+        _model.HelpAt(page, anchor: "The model list left of Send");
         var buttons = new DockPanel { Margin = new Thickness(0, 4, 0, 0) };
         DockPanel.SetDock(sendButtons, Dock.Right);
         DockPanel.SetDock(attachButtons, Dock.Left);

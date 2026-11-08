@@ -22,10 +22,12 @@ public sealed class PreviewMotionDialog : DialogBase
     private PreviewMotionDialog(PreviewMotion motion, int steps) : base(UiStrings.EffectMaker_PreviewMotion)
     {
         _steps = Math.Max(1, steps);
+        // 대상 도움말(F1): 창 = "효과 만들기"의 미리보기 움직임 그림, 고르기 줄 = ⑯, 칸마다 자리 표 = ⑰(같은 문단)
+        this.HelpAt("screen-effect-maker", shot: "screen-effect-maker-3");
         _choice = Ui.Combo(140, [.. PreviewMotion.Presets.Select(Describe), UiStrings.EffectMaker_PreviewMotionCustom]);
         var choiceLabel = Ui.Label(UiStrings.EffectMaker_PreviewMotionChoice);
         choiceLabel.VerticalAlignment = VerticalAlignment.Center;
-        var choiceRow = Ui.Row(choiceLabel, _choice);
+        var choiceRow = Ui.Row(choiceLabel, _choice).HelpAt("screen-effect-maker", anchor: "⑯ None, Right, Left");
 
         var table = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto"), Margin = new Thickness(0, 6, 0, 0) };
         void Add(Control cell, int row, int column)
@@ -59,7 +61,8 @@ public sealed class PreviewMotionDialog : DialogBase
             Add(y, k + 1, 2);
             _rows.Add((x, y));
         }
-        var scroll = new ScrollViewer { Content = table, MaxHeight = 360, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
+        var scroll = new ScrollViewer { Content = table, MaxHeight = 360, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled }
+            .HelpAt("screen-effect-maker", anchor: "⑰ the table");
 
         Body.Children.Add(choiceRow);
         Body.Children.Add(scroll);

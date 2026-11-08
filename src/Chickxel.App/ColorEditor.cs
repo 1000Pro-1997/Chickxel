@@ -9,7 +9,7 @@ namespace Chickxel.App;
 /// 사각형·벌집·색상환·슬라이더, 알파 막대, RGBA·HSV·HEX, 최근 색.
 /// 접을 수 있게 만들면(메인 색 패널) "색" 머리글과 "최근 색" 글을 눌러 고르기 칸과 최근 색을 따로 접고 펼친다.
 /// </summary>
-internal sealed class ColorEditor : UserControl
+internal sealed class ColorEditor : UserControl, IHelpTargetSource
 {
     private readonly SvBox _sv;
     private readonly HueBar _hue;
@@ -202,8 +202,10 @@ internal sealed class ColorEditor : UserControl
 
     public void SetRecent(IEnumerable<Color32> colors) => _recent.SetColors(colors);
 
+    (HelpTarget Target, Rect Area)? IHelpTargetSource.HelpTargetFor(Control c, Avalonia.Point local) => HelpTargets.Whole(c, HelpTargetFor(c));
+
     /// <summary>대상 도움말(F1): 이 편집기 안의 컨트롤에 맞는 "색 고르기" 가이드 자리(모르는 컨트롤이면 null).</summary>
-    internal HelpTarget? HelpTargetFor(Control c)
+    private HelpTarget? HelpTargetFor(Control c)
     {
         const string page = "screen-color-picker";
         if (ReferenceEquals(c, _modeTabs)) return new(page, Anchor: "Picking modes");

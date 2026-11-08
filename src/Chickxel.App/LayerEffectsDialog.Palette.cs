@@ -51,7 +51,9 @@ public sealed partial class LayerEffectsDialog
         store.HorizontalAlignment = HorizontalAlignment.Stretch;
         store.Margin = new Thickness(2, 6, 2, 0);
         ToolTip.SetTip(store, UiStrings.EffectPreset_OpenStoreTip);
-        _savePreset = Ui.Button(VectorIcon.Layers, UiStrings.EffectPreset_SavePreset, (_, _) => SavePresetGroup());
+        store.HelpAt("screen-asset-manager", anchor: "Open Store at the bottom of the Effects tab");
+        _savePreset = Ui.Button(VectorIcon.Layers, UiStrings.EffectPreset_SavePreset, (_, _) => SavePresetGroup())
+            .HelpAt("screen-effect-recipes", anchor: "① Save Current Effects as Preset");
         _savePreset.HorizontalAlignment = HorizontalAlignment.Stretch;
         ToolTip.SetTip(_savePreset, UiStrings.EffectPreset_SaveGroupTip);
         var presetsHelp = Ui.Label(UiStrings.EffectPreset_PresetsHelp);
@@ -86,15 +88,17 @@ public sealed partial class LayerEffectsDialog
         // 효과 탭: 맨 아래에 상점 단추를 고정하고 격자는 남은 자리에서 스크롤한다(효과를 만드는 일은 효과 만들기 창에서).
         DockPanel.SetDock(_effectsError, Dock.Top);
         DockPanel.SetDock(store, Dock.Bottom);
-        var effects = new DockPanel { Children = { _effectsError, store, Scroll(_effectsWrap) } };
+        var effects = new DockPanel { Children = { _effectsError, store, Scroll(_effectsWrap) } }.HelpAt("screen-effect-list");
         var presetHead = Ui.Stack(_savePreset, presetsHelp, _presetEmpty);
         presetHead.Margin = new Thickness(0);
         DockPanel.SetDock(presetHead, Dock.Top);
-        var presets = new DockPanel { Children = { presetHead, Scroll(_presetWrap) } };
+        var presets = new DockPanel { Children = { presetHead, Scroll(_presetWrap) } }.HelpAt("screen-effect-recipes", anchor: "Presets tab");
+        // 대상 도움말(F1): 탭 머리 = 효과 창 그림 ⑥·⑦ 줄, 탭 내용 = 기본 효과 목록·효과 프리셋 쪽(상자마다 자기 자리 — AddPaletteTile)
         var tabs = new TabControl { Width = width, Height = 590 };
-        tabs.Items.Add(new TabItem { Header = UiStrings.EffectPreset_EffectsTab, Content = effects });
-        tabs.Items.Add(new TabItem { Header = UiStrings.EffectPreset_PresetsTab, Content = presets });
-        return Ui.Stack(Ui.Row(Ui.Label(UiStrings.S_LayerEffectsDialog_Palette_BuildPalette_F3EEB77504, bold: true), Ui.InfoBadge(UiStrings.EffectPreset_PaletteHelp)), tabs);
+        tabs.Items.Add(new TabItem { Header = UiStrings.EffectPreset_EffectsTab, Content = effects }.HelpAt(HelpPage, anchor: "⑥ Effects tab"));
+        tabs.Items.Add(new TabItem { Header = UiStrings.EffectPreset_PresetsTab, Content = presets }.HelpAt(HelpPage, anchor: "⑦ Presets tab"));
+        return Ui.Stack(Ui.Row(Ui.Label(UiStrings.S_LayerEffectsDialog_Palette_BuildPalette_F3EEB77504, bold: true), Ui.InfoBadge(UiStrings.EffectPreset_PaletteHelp))
+            .HelpAt(HelpPage, anchor: "⑥ Effects tab"), tabs);
     }
 
     /// <summary>공식 스크립트가 없는 C# 효과(<see cref="EffectRegistry.Selectable"/> — 글씨)마다 기본 설정 효과 하나짜리 상자.</summary>
@@ -105,6 +109,7 @@ public sealed partial class LayerEffectsDialog
             var ui = UiOf(definition);
             var tile = new EffectTile(ui.Name, [definition.Create()]);
             ToolTip.SetTip(tile, $"{ui.Name}\n{ui.Description}" + MotionNote(tile));
+            tile.HelpAt("screen-effect-list", anchor: definition.TypeId == TextDefinition.Id ? "Text" : null);
             yield return tile;
         }
     }
@@ -169,6 +174,10 @@ public sealed partial class LayerEffectsDialog
         if (entry.ScriptHashes.Any(hash => ScriptLibrary.TrustOf(hash) != ScriptTrust.Trusted))
             tip += "\n" + string.Format(culture, UiStrings.EffectPreset_ScriptTileNote, recipe.Effects.Count(effect => effect is ScriptEffect));
         ToolTip.SetTip(tile, tip + (script ? MotionNote(tile) : ""));
+        // 대상 도움말(F1): 공식 효과 = 기본 효과 목록의 그 효과 줄, 받은·내 스크립트 = 스크립트 효과 ① 상자 항목, 프리셋 = 프리셋 탭 ①~③ 항목
+        if (OfficialHelpTarget(AssetCatalog.OfficialIdOf(entry)) is { } official) tile.HelpAt(official.PageId, anchor: official.Anchor);
+        else if (script) tile.HelpAt("screen-script-effects", anchor: "After the official effects and Text");
+        else tile.HelpAt("screen-effect-recipes", anchor: "Build an effect list in the effects dialog and click");
         AddPaletteTile(tile, script ? _effectsWrap : _presetWrap);
     }
 

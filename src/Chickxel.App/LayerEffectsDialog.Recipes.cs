@@ -114,7 +114,7 @@ public sealed partial class LayerEffectsDialog
         }
         row.Children.Add(check);
         if (effect.ClipToPrevious)
-            row.Children.Add(Ui.Icon(VectorIcon.CornerDownRight, 12));
+            row.Children.Add(Ui.Icon(VectorIcon.CornerDownRight, 12).HelpAt("screen-effect-colors", anchor: "Clipping"));
         row.Children.Add(text);
         return row;
     }
@@ -148,6 +148,7 @@ public sealed partial class LayerEffectsDialog
         row.Children.Add(Ui.Icon(VectorIcon.Layers, 12));
         row.Children.Add(new TextBlock { Text = GroupSummary(listRow, recipe), VerticalAlignment = VerticalAlignment.Center });
         ToolTip.SetTip(row, UiStrings.EffectRecipe_GroupTip);
+        row.HelpAt("screen-effect-recipes", anchor: "A preset with parameters appears in the effect list");
         return row;
     }
 
@@ -296,7 +297,7 @@ public sealed partial class LayerEffectsDialog
             expanded ? UiStrings.EffectRecipe_Collapse : UiStrings.EffectRecipe_Expand, (_, _) => ToggleRecipeExpanded(recipe.Id, row.First));
         var detach = Ui.Button(UiStrings.EffectRecipe_Detach, (_, _) => DetachRecipe(recipe.Id, row.First));
         ToolTip.SetTip(detach, UiStrings.EffectRecipe_DetachTip);
-        _form.Row("", toggle, detach);
+        HelpRow(_form.Row("", toggle, detach), "screen-effect-recipes", "Show effects lists the effects inside");
     }
 
     /// <summary>매개변수 값을 바꾼다: 연결된 구성 효과 설정을 모두 함께 바꾸고 캔버스·미리보기에 반영한다(확인하면 창 전체가 실행취소 한 단계).</summary>

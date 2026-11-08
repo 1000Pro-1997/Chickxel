@@ -22,7 +22,7 @@ namespace Chickxel.App;
 /// 부위는 "이 부위 스킨"에서 부위만 따로 입힐 스킨을 고른다.
 /// </para>
 /// </summary>
-public sealed partial class TimelinePanel : UserControl
+public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
 {
     /// <summary>움직임 테스트와 연결되는 태그 이름 제안.</summary>
     public static readonly string[] SuggestedNames =
@@ -92,7 +92,7 @@ public sealed partial class TimelinePanel : UserControl
     /// 대상 도움말(F1): 이 패널 안의 컨트롤 <paramref name="c"/>와 그 안의 점 <paramref name="local"/>(c 좌표)에 맞는 "타임라인" 가이드 자리와
     /// 대상 범위(c 좌표). 격자는 점이 있는 영역(태그 띠·크기 칩·프레임 머리글·레이어 이름·셀·효과 줄·더하기 칸)마다 다르다. 모르는 컨트롤이면 null.
     /// </summary>
-    internal (HelpTarget Target, Rect Area)? HelpTargetFor(Control c, Avalonia.Point local)
+    (HelpTarget Target, Rect Area)? IHelpTargetSource.HelpTargetFor(Control c, Avalonia.Point local)
     {
         if (ReferenceEquals(c, _grid)) return _grid.HelpTargetAt(local);
         if (ReferenceEquals(c, _thumbButton)) return (new("screen-timeline", Anchor: "Compact view and scrolling"), new Rect(c.Bounds.Size));
@@ -4959,11 +4959,14 @@ public sealed class TagDialog : DialogBase
         _direction.SelectedIndex = (int)(tag?.Direction ?? TagDirection.Forward);
         _loop = Ui.Check(UiStrings.S_TimelinePanel_TagDialog_C8283F32B5, tag?.Loop ?? true);
         _color = new ColorField(tag?.Color ?? AnimationTag.DefaultColors[project.Tags.Count % AnimationTag.DefaultColors.Count]);
-        Body.Children.Add(Ui.Label(UiStrings.S_TimelinePanel_TagDialog_9C825E0AF6));
-        Body.Children.Add(_name);
-        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_TimelinePanel_TagDialog_0F6A4740E4), _from, Ui.Label("~"), _to));
-        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_TimelinePanel_TagDialog_94754AAEF6), _direction, _loop));
-        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_TimelinePanel_TagDialog_6A8F38ED94), _color));
+        // 대상 도움말(F1): 창 = "태그"의 태그 창 그림, 칸마다 태그 설정 표의 그 줄(③ 이름 ~ ⑥ 색)
+        const string page = "screen-tags";
+        this.HelpAt(page, shot: "screen-tags-2");
+        Body.Children.Add(Ui.Label(UiStrings.S_TimelinePanel_TagDialog_9C825E0AF6).HelpAt(page, anchor: "Name"));
+        Body.Children.Add(_name.HelpAt(page, anchor: "Name"));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_TimelinePanel_TagDialog_0F6A4740E4), _from, Ui.Label("~"), _to).HelpAt(page, anchor: "Frames"));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_TimelinePanel_TagDialog_94754AAEF6), _direction, _loop.HelpAt(page, anchor: "Loop")).HelpAt(page, anchor: "Direction"));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_TimelinePanel_TagDialog_6A8F38ED94), _color).HelpAt(page, anchor: "Color"));
         OkButton.Click += (_, _) =>
         {
             if (TagName.Length == 0) { Ui.Error(this, UiStrings.S_TimelinePanel_TagDialog_84CC38ACF3); DialogResult = DialogResult.None; return; }

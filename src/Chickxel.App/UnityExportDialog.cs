@@ -22,6 +22,8 @@ public sealed class UnityExportDialog : DialogBase
     /// <summary>시트 설정·파일 묶음 이름표 너비.</summary>
     private const int SettingLabelWidth = 118;
     private const int DefaultWidth = 1100, DefaultHeight = 760, MinW = 760, MinH = 480;
+    /// <summary>대상 도움말(F1) 가이드 쪽("내보내기 창").</summary>
+    private const string GuidePage = "screen-export";
     private static readonly IImmutableSolidColorBrush CellPenColor = new ImmutableSolidColorBrush(Color.FromArgb(200, 230, 200, 90));
     private static readonly string[] PivotNames = ["Center", "Top Left", "Top", "Top Right", "Left", "Right", "Bottom Left", "Bottom", "Bottom Right", "Custom"];
 
@@ -64,7 +66,9 @@ public sealed class UnityExportDialog : DialogBase
         export.Foreground = Brushes.White;
         export.FontWeight = FontWeight.Bold;
         export.HorizontalContentAlignment = HorizontalAlignment.Center;
-        export.Tip(UiStrings.S_UnityExportDialog_UnityExportDialog_C7A33C7D9E);
+        export.Tip(UiStrings.S_UnityExportDialog_UnityExportDialog_C7A33C7D9E).HelpAt(GuidePage, anchor: "①");
+        // 대상 도움말(F1): 창 = "내보내기 창" 쪽. 칸마다 그 칸을 설명하는 자리(묶음 = 묶음 설명, 줄 = 그 줄의 목록·표 항목)를 붙인다.
+        this.HelpAt(GuidePage);
         CanResize = true;
         SizeToContent = SizeToContent.Manual;
         MinWidth = MinW;
@@ -75,21 +79,22 @@ public sealed class UnityExportDialog : DialogBase
         _framesSection = BuildSection("① ", null);
         // 부위 아틀라스가 따로 설정을 쓰면 그 설정이 있는 곳 안내(설정 칸은 왼쪽 "고급"에만 둔다).
         var overrideLine = Beside(Note(UiStrings.S_UnityExportDialog_UnityExportDialog_97F3AEFCEC),
-            Ui.Button(UiStrings.S_UnityExportDialog_UnityExportDialog_777398C2AE, (_, _) => ShowAdvanced()).Tip(UiStrings.S_UnityExportDialog_UnityExportDialog_A76A76E0B6));
+            Ui.Button(UiStrings.S_UnityExportDialog_UnityExportDialog_777398C2AE, (_, _) => ShowAdvanced()).Tip(UiStrings.S_UnityExportDialog_UnityExportDialog_A76A76E0B6))
+            .HelpAt(GuidePage, anchor: "Turning on Advanced > Per sheet");
         _refresh.Add(p => overrideLine.IsVisible = p.Export.PartsOverride is not null);
         _partsSection = BuildSection("② ", overrideLine);
         var previewHelp = Beside(
             Note(UiStrings.S_UnityExportDialog_UnityExportDialog_D06F53C998),
             Ui.InfoBadge(UiStrings.S_UnityExportDialog_UnityExportDialog_434197E825 +
                  UiStrings.S_UnityExportDialog_UnityExportDialog_68A441DB4C));
-        var preview = Ui.ScrollHost(Ui.Stack(previewHelp, _framesSection.Panel, _partsSection.Panel));
+        var preview = Ui.ScrollHost(Ui.Stack(previewHelp, _framesSection.Panel, _partsSection.Panel)).HelpAt(GuidePage, anchor: "The output preview lists each file");
 
         // ── 왼쪽: 설정(위에서 아래로) ──
         var commonTitle = SectionTitle();
         var (files, frames, parts, advanced) = BuildExportSections();
-        var framesBox = Section("frames", SectionTitle(UiStrings.S_UnityExportDialog_UnityExportDialog_D2793FD9C8), frames);
-        var partsBox = Section("parts", SectionTitle(UiStrings.S_UnityExportDialog_UnityExportDialog_B18F4A0368), parts);
-        _advanced = Section("advanced", SectionTitle(UiStrings.S_UnityExportDialog_UnityExportDialog_6A9E6CDC2F), advanced);
+        var framesBox = Section("frames", SectionTitle(UiStrings.S_UnityExportDialog_UnityExportDialog_D2793FD9C8), frames).HelpAt(GuidePage, anchor: "Frame sheet section");
+        var partsBox = Section("parts", SectionTitle(UiStrings.S_UnityExportDialog_UnityExportDialog_B18F4A0368), parts).HelpAt(GuidePage, anchor: "Part atlas section");
+        _advanced = Section("advanced", SectionTitle(UiStrings.S_UnityExportDialog_UnityExportDialog_6A9E6CDC2F), advanced).HelpAt(GuidePage, anchor: "Turning on Advanced > Per sheet");
         _refresh.Add(p =>
         {
             // 고른 결과의 묶음만 보인다(둘 다 꺼진 예전 설정이면 프레임 시트 묶음).
@@ -97,11 +102,11 @@ public sealed class UnityExportDialog : DialogBase
             partsBox.IsVisible = _advanced.IsVisible = PartsShown(p);
         });
         var settingsColumn = Ui.ScrollHost(Ui.Stack(
-            Section("common", commonTitle, BuildCommonBlock(commonTitle)),
-            Section("files", SectionTitle(UiStrings.S_UnityExportDialog_UnityExportDialog_F066DF325B), files),
+            Section("common", commonTitle, BuildCommonBlock(commonTitle)).HelpAt(GuidePage, anchor: "Common section"),
+            Section("files", SectionTitle(UiStrings.S_UnityExportDialog_UnityExportDialog_F066DF325B), files).HelpAt(GuidePage, anchor: "Files section"),
             framesBox,
             partsBox,
-            _advanced));
+            _advanced)).HelpAt(GuidePage, anchor: "Left = settings");
 
         double split = double.IsFinite(settings.ExportSplit) ? Math.Clamp(settings.ExportSplit, 0.2, 0.8) : 0.46;
         _columns = new Grid
@@ -119,7 +124,7 @@ public sealed class UnityExportDialog : DialogBase
             Background = AppTheme.BorderBrush,
             Width = 6,
             HorizontalAlignment = HorizontalAlignment.Stretch,
-        }.Tip(UiStrings.S_UnityExportDialog_UnityExportDialog_22A1711719);
+        }.Tip(UiStrings.S_UnityExportDialog_UnityExportDialog_22A1711719).HelpAt(GuidePage, anchor: "Drag ⑥ the divider");
         Grid.SetColumn(splitter, 1);
         Grid.SetColumn(preview, 2);
         _columns.Children.Add(settingsColumn);
@@ -127,8 +132,9 @@ public sealed class UnityExportDialog : DialogBase
         _columns.Children.Add(preview);
 
         _tabs.AddPage(UiStrings.S_UnityExportDialog_UnityExportDialog_C53EAC78FD, _columns);
-        _importPage = Ui.ScrollHost(BuildImportTab());
+        _importPage = Ui.ScrollHost(BuildImportTab()).HelpAt(GuidePage, anchor: "Import Settings");
         _tabs.AddPage("Import Settings", _importPage);
+        _tabs.Strip.HelpAt(MainPage, GuidePage, anchor: "②").HelpAt(ImportPage, GuidePage, anchor: "Import Settings");
         Opened += (_, _) => { if (_previewDirty) RebuildPreview(); };
         // Unity Import Settings는 .meta를 쓸 때만 의미가 있다(숨기면 내보내기 탭으로).
         _refresh.Add(p => _tabs.SetPageVisible(ImportPage, p.Export.WriteMeta != false));
@@ -147,7 +153,7 @@ public sealed class UnityExportDialog : DialogBase
             Content = Ui.IconLabel(VectorIcon.ChevronDown, UiStrings.S_UnityExportDialog_UnityExportDialog_DF3C668D29, iconAfter: true),
             Padding = new Thickness(10, 3),
             Margin = new Thickness(8, 0, 2, 1),
-        }.Tip(UiStrings.S_UnityExportDialog_UnityExportDialog_73AC3FD6C5);
+        }.Tip(UiStrings.S_UnityExportDialog_UnityExportDialog_73AC3FD6C5).HelpAt(GuidePage, anchor: "Preset (far right of the tab row)");
         presetButton.Click += (_, _) => PopupMenus.Show(presetButton, presetFlyout);
         _tabs.Strip.Trailing = presetButton;
         var root = (DockPanel)Content!;
@@ -245,15 +251,15 @@ public sealed class UnityExportDialog : DialogBase
         _refresh.Add(p => ppu.Value = (decimal)Math.Clamp(p.Sprite.PixelsPerUnit, 1, 10000));
         var mesh = Choice(UiStrings.S_UnityExportDialog_BuildImportTab_A9228F6E80, [true, false], ["Full Rect", "Tight"], p => p.Sprite.FullRectMesh, (p, v) => p.Sprite.FullRectMesh = v);
         var extrudeRow = Field("Extrude Edges", UiStrings.S_UnityExportDialog_BuildImportTab_E5A971BA01,
-            IntSlider("Extrude Edges", 0, 32, [0, 1, 2, 3, 4, 6, 8, 16, 32], "px", "unity.extrude", p => p.Sprite.ExtrudeEdges, (p, v) => p.Sprite.ExtrudeEdges = v));
+            IntSlider("Extrude Edges", 0, 32, [0, 1, 2, 3, 4, 6, 8, 16, 32], "px", "unity.extrude", p => p.Sprite.ExtrudeEdges, (p, v) => p.Sprite.ExtrudeEdges = v)).HelpAt(GuidePage, anchor: "Mesh Type · Extrude Edges");
         _refresh.Add(p => SetEnabled(extrudeRow, !p.Sprite.FullRectMesh));
 
         // 피벗(Single 모드만): 프리셋 또는 Custom(X/Y). 피벗 도구(K)와 같은 프로젝트 기본 피벗.
         var pivot = Ui.Combo(220, PivotNames);
         var pivotX = Ui.Num(0, 1, 0.5m, 60, 3, 0.05m).Presets(0, 0.25m, 0.5m, 0.75m, 1).RecentKey("unity.pivot");
         var pivotY = Ui.Num(0, 1, 0.5m, 60, 3, 0.05m).Presets(0, 0.25m, 0.5m, 0.75m, 1).RecentKey("unity.pivot");
-        var pivotRow = Field("Pivot", UiStrings.S_UnityExportDialog_BuildImportTab_11ED340A24, pivot);
-        var customRow = Field("Custom Pivot", UiStrings.S_UnityExportDialog_BuildImportTab_FD5172C338, Ui.Row(Ui.Label("X"), pivotX, Ui.Label("Y"), pivotY));
+        var pivotRow = Field("Pivot", UiStrings.S_UnityExportDialog_BuildImportTab_11ED340A24, pivot).HelpAt(GuidePage, anchor: "Pivot");
+        var customRow = Field("Custom Pivot", UiStrings.S_UnityExportDialog_BuildImportTab_FD5172C338, Ui.Row(Ui.Label("X"), pivotX, Ui.Label("Y"), pivotY)).HelpAt(GuidePage, anchor: "Pivot");
         pivot.SelectionChanged += (_, _) =>
         {
             if (_updating || pivot.SelectedIndex < 0) return;
@@ -289,6 +295,7 @@ public sealed class UnityExportDialog : DialogBase
         var alphaTransparencyRow = Field("Alpha Is Transparency", UiStrings.S_UnityExportDialog_BuildImportTab_4E85B1FB7D,
             Toggle("Alpha Is Transparency", p => p.Sprite.AlphaIsTransparency, (p, v) => p.Sprite.AlphaIsTransparency = v));
         _refresh.Add(p => SetEnabled(alphaTransparencyRow, p.Sprite.AlphaSource != SpriteAlphaSource.None));
+        // Import Settings의 Advanced 줄은 앞의 "⑪ 고급"(설정 묶음 표)과 이름이 같아 자리 글로는 못 가리키므로 Import Settings 그림으로.
         var advanced = new Expander
         {
             Header = "Advanced",
@@ -307,7 +314,7 @@ public sealed class UnityExportDialog : DialogBase
                     Toggle("Read/Write", p => p.Sprite.Readable, (p, v) => p.Sprite.Readable = v)),
                 Field("Generate Mip Maps", UiStrings.S_UnityExportDialog_BuildImportTab_D8CF27C662,
                     Toggle(UiStrings.S_UnityExportDialog_BuildImportTab_8C05EBC81F, p => p.Sprite.GenerateMipMaps, (p, v) => p.Sprite.GenerateMipMaps = v))),
-        };
+        }.HelpAt(GuidePage, shot: "screen-export-5");
 
         // 플랫폼(Default) 설정
         int[] maxSizes = [0, .. SpriteSettings.MaxTextureSizes];
@@ -329,7 +336,8 @@ public sealed class UnityExportDialog : DialogBase
                     ["None", "Low Quality", "Normal Quality", "High Quality"], p => p.Sprite.Compression, (p, v) => p.Sprite.Compression = v)),
             Field("Use Crunch Compression", UiStrings.S_UnityExportDialog_BuildImportTab_10E5A1675F,
                 Toggle(UiStrings.S_UnityExportDialog_BuildImportTab_14113A283A, p => p.Sprite.CrunchCompression, (p, v) => p.Sprite.CrunchCompression = v)),
-            qualityRow));
+            qualityRow)).HelpAt(GuidePage, anchor: "Default platform");
+        platform.Background = Brushes.Transparent;
 
         var note = Ui.Label(UiStrings.S_UnityExportDialog_BuildImportTab_1D025CB8E9);
         note.Foreground = AppTheme.DimTextBrush;
@@ -340,24 +348,24 @@ public sealed class UnityExportDialog : DialogBase
             Field("Texture Type", UiStrings.S_UnityExportDialog_BuildImportTab_7223CFD811, ReadOnlyCombo("Sprite (2D and UI)")),
             Field("Texture Shape", UiStrings.S_UnityExportDialog_BuildImportTab_59FAD55BAB, ReadOnlyCombo("2D")),
             Rule(),
-            Field("Sprite Mode", UiStrings.S_UnityExportDialog_BuildImportTab_97B943F75D, mode),
-            Field("Pixels Per Unit", UiStrings.S_UnityExportDialog_BuildImportTab_732DC45A45, ppu),
-            Field("Mesh Type", UiStrings.S_UnityExportDialog_BuildImportTab_A9E5086574, mesh),
+            Field("Sprite Mode", UiStrings.S_UnityExportDialog_BuildImportTab_97B943F75D, mode).HelpAt(GuidePage, anchor: "Sprite Mode"),
+            Field("Pixels Per Unit", UiStrings.S_UnityExportDialog_BuildImportTab_732DC45A45, ppu).HelpAt(GuidePage, anchor: "Pixels Per Unit"),
+            Field("Mesh Type", UiStrings.S_UnityExportDialog_BuildImportTab_A9E5086574, mesh).HelpAt(GuidePage, anchor: "Mesh Type · Extrude Edges"),
             extrudeRow,
             pivotRow,
             customRow,
             Field("Generate Physics Shape", UiStrings.S_UnityExportDialog_BuildImportTab_B36C666A23,
-                Toggle("Physics Shape", p => p.Sprite.GeneratePhysicsShape, (p, v) => p.Sprite.GeneratePhysicsShape = v)),
+                Toggle("Physics Shape", p => p.Sprite.GeneratePhysicsShape, (p, v) => p.Sprite.GeneratePhysicsShape = v)).HelpAt(GuidePage, anchor: "Generate Physics Shape"),
             advanced,
             Rule(),
             Field("Wrap Mode", UiStrings.S_UnityExportDialog_BuildImportTab_E72E67B19F,
                 Choice("Wrap Mode", [TextureWrap.Repeat, TextureWrap.Clamp, TextureWrap.Mirror, TextureWrap.MirrorOnce], ["Repeat", "Clamp", "Mirror", "Mirror Once"],
-                    p => p.Sprite.WrapMode, (p, v) => p.Sprite.WrapMode = v)),
+                    p => p.Sprite.WrapMode, (p, v) => p.Sprite.WrapMode = v)).HelpAt(GuidePage, anchor: "Wrap · Filter · Aniso"),
             Field("Filter Mode", UiStrings.S_UnityExportDialog_BuildImportTab_B2432FCBD9,
                 Choice("Filter Mode", [TextureFilter.Point, TextureFilter.Bilinear, TextureFilter.Trilinear], ["Point (no filter)", "Bilinear", "Trilinear"],
-                    p => p.Sprite.FilterMode, (p, v) => p.Sprite.FilterMode = v)),
+                    p => p.Sprite.FilterMode, (p, v) => p.Sprite.FilterMode = v)).HelpAt(GuidePage, anchor: "Wrap · Filter · Aniso"),
             Field("Aniso Level", UiStrings.S_UnityExportDialog_BuildImportTab_1AD908EBD2,
-                IntSlider("Aniso Level", 0, 16, [0, 1, 2, 4, 8, 16], "", "unity.aniso", p => p.Sprite.AnisoLevel, (p, v) => p.Sprite.AnisoLevel = v)),
+                IntSlider("Aniso Level", 0, 16, [0, 1, 2, 4, 8, 16], "", "unity.aniso", p => p.Sprite.AnisoLevel, (p, v) => p.Sprite.AnisoLevel = v)).HelpAt(GuidePage, anchor: "Wrap · Filter · Aniso"),
             platform);
     }
 
@@ -397,7 +405,7 @@ public sealed class UnityExportDialog : DialogBase
             int v = (int)singleFrame.NumValue() - 1;
             EditSettings(UiStrings.S_UnityExportDialog_BuildExportSections_130FEEBB20, p => p.Export.SingleFrameIndex != v, p => p.Export.SingleFrameIndex = v);
         };
-        var singleRow = Setting(UiStrings.S_UnityExportDialog_BuildExportSections_130FEEBB20, UiStrings.S_UnityExportDialog_BuildExportSections_8F1FF0667F, singleFrame);
+        var singleRow = Setting(UiStrings.S_UnityExportDialog_BuildExportSections_130FEEBB20, UiStrings.S_UnityExportDialog_BuildExportSections_8F1FF0667F, singleFrame).HelpAt(GuidePage, anchor: "Frame sheet section");
         _refresh.Add(p =>
         {
             singleFrame.Maximum = Math.Max(1, p.Frames.Count);
@@ -415,6 +423,7 @@ public sealed class UnityExportDialog : DialogBase
         // ── 부위 아틀라스 ──
         var keepRow = Setting(UiStrings.S_UnityExportDialog_BuildExportSections_90263CB3CF, UiStrings.S_UnityExportDialog_BuildExportSections_543B1162BD,
             OnOff(UiStrings.S_UnityExportDialog_BuildExportSections_90263CB3CF, p => p.Export.KeepImportedRects, (p, v) => p.Export.KeepImportedRects = v));
+        // Sprite Library 줄·안내·결과 경로 = "Unity Sprite Library" 쪽 그림(① 켜기 · ② 만들어지는 .spriteLib)
         var libraryRow = Setting("Sprite Library", null, Line(
             OnOff("Sprite Library", p => p.Export.WriteSpriteLibrary, (p, v) => p.Export.WriteSpriteLibrary = v),
             Ui.InfoBadge(UiStrings.S_UnityExportDialog_BuildExportSections_44908E5316 +
@@ -422,10 +431,10 @@ public sealed class UnityExportDialog : DialogBase
                  UiStrings.S_UnityExportDialog_BuildExportSections_EF4A7BEB35 +
                  UiStrings.S_UnityExportDialog_BuildExportSections_9119F759EB +
                  UiStrings.S_UnityExportDialog_BuildExportSections_6C1F44F368 +
-                 UiStrings.S_UnityExportDialog_BuildExportSections_8C604F71D0)));
-        var libraryNote = Setting("", null, Note(UiStrings.S_UnityExportDialog_BuildExportSections_B3B5CB7352));
+                 UiStrings.S_UnityExportDialog_BuildExportSections_8C604F71D0))).HelpAt("parts-sprite-library", shot: "parts-sprite-library");
+        var libraryNote = Setting("", null, Note(UiStrings.S_UnityExportDialog_BuildExportSections_B3B5CB7352)).HelpAt("parts-sprite-library", shot: "parts-sprite-library");
         var partsPath = PathLabel();
-        var libraryPath = PathLabel();
+        var libraryPath = PathLabel().HelpAt("parts-sprite-library", shot: "parts-sprite-library");
 
         var overrideRow = Setting(UiStrings.S_UnityExportDialog_BuildExportSections_ADA96235D6, null, Line(
             Seg(UiStrings.S_UnityExportDialog_BuildExportSections_ADA96235D6, [false, true], [UiStrings.S_UnityExportDialog_BuildExportSections_F059194EC7, UiStrings.S_UnityExportDialog_BuildExportSections_810DBA0E4E], p => p.Export.PartsOverride is not null,
@@ -450,7 +459,8 @@ public sealed class UnityExportDialog : DialogBase
         });
         var partsBox = Ui.Stack(
             Setting(UiStrings.S_UnityExportDialog_BuildExportSections_BE408B1AB8, UiStrings.S_UnityExportDialog_BuildExportSections_B18FB8517E,
-                NameText(UiStrings.S_UnityExportDialog_BuildExportSections_924DFE7AE7, UiStrings.S_UnityExportDialog_BuildExportSections_8C3B4A4899, 220, p => p.Export.PartsFileName, (p, v) => p.Export.PartsFileName = v)),
+                NameText(UiStrings.S_UnityExportDialog_BuildExportSections_924DFE7AE7, UiStrings.S_UnityExportDialog_BuildExportSections_8C3B4A4899, 220, p => p.Export.PartsFileName, (p, v) => p.Export.PartsFileName = v))
+                .HelpAt("parts-export", anchor: "If ④ the name is empty"),
             keepRow,
             libraryRow,
             libraryNote,
@@ -491,7 +501,7 @@ public sealed class UnityExportDialog : DialogBase
     /// </summary>
     private Control BuildCommonBlock(TextBlock title)
     {
-        var output = Setting(UiStrings.S_UnityExportDialog_BuildCommonBlock_FE8EEAD4AB, null, OutputChoice());
+        var output = Setting(UiStrings.S_UnityExportDialog_BuildCommonBlock_FE8EEAD4AB, null, OutputChoice()).HelpAt("parts-export", anchor: "turn each on or off in ③ Output");
         _refresh.Add(p =>
         {
             output.IsVisible = HasParts(p) || !p.Export.ExportFrames;
@@ -595,9 +605,10 @@ public sealed class UnityExportDialog : DialogBase
             .SetTip(1, overrideBlock
                 ? UiStrings.S_UnityExportDialog_SheetRows_F2F5553CF3
                 : UiStrings.S_UnityExportDialog_SheetRows_7899007C04);
-        var pick = Ui.Button(UiStrings.S_UnityExportDialog_SheetRows_464CB34F8D, (_, _) => PickSkins(options, overrideBlock));
+        var pick = Ui.Button(UiStrings.S_UnityExportDialog_SheetRows_464CB34F8D, (_, _) => PickSkins(options, overrideBlock)).HelpAt("parts-skin-export", anchor: "Choose skins dialog");
         pick.Tip(UiStrings.S_UnityExportDialog_SheetRows_6FEB1E8831);
-        var skinRow = Setting(UiStrings.S_UnityExportDialog_SheetRows_4EAC72F29F, UiStrings.S_UnityExportDialog_SheetRows_2ADE7F7827, Line(skins, pick));
+        // 스킨 줄 = "스킨 내보내기" 그림(① 지금 착장 · ② 고른 스킨 · ③ 스킨 고르기), 스킨 담기 = 고른 스킨 표 줄(④ 한 이미지 · ⑤ 따로 파일)
+        var skinRow = Setting(UiStrings.S_UnityExportDialog_SheetRows_4EAC72F29F, UiStrings.S_UnityExportDialog_SheetRows_2ADE7F7827, Line(skins, pick)).HelpAt("parts-skin-export", shot: "parts-skin-export");
         var skinLabel = RowLabel(skinRow);
         _refresh.Add(p =>
         {
@@ -614,29 +625,29 @@ public sealed class UnityExportDialog : DialogBase
         var splitSkins = Setting(UiStrings.S_UnityExportDialog_SheetRows_F65F934352, UiStrings.S_UnityExportDialog_SheetRows_EF7328D2A3,
             Seg(u + UiStrings.S_UnityExportDialog_SheetRows_960330D064, [false, true], [UiStrings.S_UnityExportDialog_SheetRows_FDB5482E0D, UiStrings.S_UnityExportDialog_SheetRows_2F498E0DBD], p => O(p).SplitSkins, (p, v) => O(p).SplitSkins = v)
                 .SetTip(0, UiStrings.S_UnityExportDialog_SheetRows_633C0A1A7E)
-                .SetTip(1, UiStrings.S_UnityExportDialog_SheetRows_C243699911));
+                .SetTip(1, UiStrings.S_UnityExportDialog_SheetRows_C243699911)).HelpAt("parts-skin-export", anchor: "Selected skins");
         _refresh.Add(p => splitSkins.IsVisible = O(p).Skins == SkinSource.Selected);
 
         // ── 배치 ──
         var layout = Setting(UiStrings.S_UnityExportDialog_SheetRows_9F7B4168D5, null,
             Seg(u + UiStrings.S_UnityExportDialog_SheetRows_7595356F17, [SheetLayout.Grid, SheetLayout.Packed], [UiStrings.S_UnityExportDialog_SheetRows_FAA35616D9, UiStrings.S_UnityExportDialog_SheetRows_51579C6814], p => O(p).Layout, (p, v) => O(p).Layout = v)
                 .SetTip(0, UiStrings.S_UnityExportDialog_SheetRows_D5A4FBD978)
-                .SetTip(1, UiStrings.S_UnityExportDialog_SheetRows_45F33B13CA));
-        var order = OrderRow(O, PartsUse, u);
+                .SetTip(1, UiStrings.S_UnityExportDialog_SheetRows_45F33B13CA)).HelpAt(GuidePage, anchor: "Layout");
+        var order = OrderRow(O, PartsUse, u).HelpAt(GuidePage, anchor: "Sort order");
         var gridMode = Seg(u + UiStrings.S_UnityExportDialog_SheetRows_C060144CBD, [SheetGrid.Auto, SheetGrid.Columns, SheetGrid.Rows], [UiStrings.S_UnityExportDialog_SheetRows_B4F569F8B2, UiStrings.S_UnityExportDialog_SheetRows_265CCB0B30, UiStrings.S_UnityExportDialog_SheetRows_E451F865FA], p => O(p).Grid, (p, v) => O(p).Grid = v)
             .SetTip(0, UiStrings.S_UnityExportDialog_SheetRows_5D0E463631)
             .SetTip(1, UiStrings.S_UnityExportDialog_SheetRows_4D7C715814)
             .SetTip(2, UiStrings.S_UnityExportDialog_SheetRows_7C6D9F2388);
         var gridCount = IntNum(u + UiStrings.S_UnityExportDialog_SheetRows_C060144CBD, 1, SheetOptions.MaxGridCount, 60, p => O(p).GridCount, (p, v) => O(p).GridCount = v)
             .Presets(1, 2, 3, 4, 5, 6, 8, 10, 12, 16).Unit(UiStrings.S_UnityExportDialog_SheetRows_1EF56C7D67).RecentKey("export.grid.count");
-        var gridRow = Setting(UiStrings.S_UnityExportDialog_SheetRows_C060144CBD, UiStrings.S_UnityExportDialog_SheetRows_C46F34C2EF, Line(gridMode, gridCount));
+        var gridRow = Setting(UiStrings.S_UnityExportDialog_SheetRows_C060144CBD, UiStrings.S_UnityExportDialog_SheetRows_C46F34C2EF, Line(gridMode, gridCount)).HelpAt(GuidePage, anchor: "Cell count");
         var maxWidthRow = Setting(UiStrings.S_UnityExportDialog_SheetRows_D0C0CFBF0A, UiStrings.S_UnityExportDialog_SheetRows_DF2E272C7F,
             Line(IntNum(u + UiStrings.S_UnityExportDialog_SheetRows_D0C0CFBF0A, 0, PixelImage.MaxSize, 64, p => O(p).MaxWidth, (p, v) => O(p).MaxWidth = v)
-                .Presets([0, 128, 256, 512, 1024, 2048, 4096], [], v => v == 0 ? UiStrings.S_UnityExportDialog_SheetRows_E7664692A5 : $"{v:0} px").RecentKey("export.maxwidth"), Ui.Label(UiStrings.S_UnityExportDialog_SheetRows_779AC4B31C)));
+                .Presets([0, 128, 256, 512, 1024, 2048, 4096], [], v => v == 0 ? UiStrings.S_UnityExportDialog_SheetRows_E7664692A5 : $"{v:0} px").RecentKey("export.maxwidth"), Ui.Label(UiStrings.S_UnityExportDialog_SheetRows_779AC4B31C))).HelpAt(GuidePage, anchor: "Max width and packing order");
         var packOrder = Setting(UiStrings.S_UnityExportDialog_SheetRows_EDAD9AFF8D, null,
             Seg(u + UiStrings.S_UnityExportDialog_SheetRows_EDAD9AFF8D, [AtlasPackOrder.KeepOrder, AtlasPackOrder.LargestFirst], [UiStrings.S_UnityExportDialog_SheetRows_83CAF1B991, UiStrings.S_UnityExportDialog_SheetRows_E287743C3B], p => O(p).PackOrder, (p, v) => O(p).PackOrder = v)
                 .SetTip(0, UiStrings.S_UnityExportDialog_SheetRows_47D5F16C63)
-                .SetTip(1, UiStrings.S_UnityExportDialog_SheetRows_2B1F42EE49));
+                .SetTip(1, UiStrings.S_UnityExportDialog_SheetRows_2B1F42EE49)).HelpAt(GuidePage, anchor: "Max width and packing order");
         _refresh.Add(p =>
         {
             var o = O(p);
@@ -655,31 +666,31 @@ public sealed class UnityExportDialog : DialogBase
         var partsSplit = Line(Ui.Label(UiStrings.S_UnityExportDialog_SheetRows_2FD0706089), OnOff(u + UiStrings.S_UnityExportDialog_SheetRows_D02E3A264C, p => O(p).SplitParts, (p, v) => O(p).SplitParts = v))
             .Tip(UiStrings.S_UnityExportDialog_SheetRows_87AFE7E2DF);
         var split = Setting(UiStrings.S_UnityExportDialog_SheetRows_2F498E0DBD, UiStrings.S_UnityExportDialog_SheetRows_62FC29D723,
-            Line(tagsSplit, partsSplit));
+            Line(tagsSplit, partsSplit)).HelpAt(GuidePage, anchor: "Separate files");
         _refresh.Add(p => partsSplit.IsVisible = PartsUse(p));
 
         // ── 칸 이름 ──
         var naming = Setting(UiStrings.S_UnityExportDialog_SheetRows_76CF081665, UiStrings.S_UnityExportDialog_SheetRows_92FFEFEAFD,
             Seg(u + UiStrings.S_UnityExportDialog_SheetRows_67ADFFC0B2, [SpriteNaming.FrameNumber, SpriteNaming.ByTag], [UiStrings.S_UnityExportDialog_SheetRows_B9859A455B, UiStrings.S_UnityExportDialog_SheetRows_28A0B72DEC], p => O(p).Naming, (p, v) => O(p).Naming = v)
                 .SetTip(0, UiStrings.S_UnityExportDialog_SheetRows_6080E49509)
-                .SetTip(1, UiStrings.S_UnityExportDialog_SheetRows_30EC589AAC));
+                .SetTip(1, UiStrings.S_UnityExportDialog_SheetRows_30EC589AAC)).HelpAt("files-cell-names", anchor: "Naming rules");
         var namingWarning = Warning(UiStrings.S_UnityExportDialog_SheetRows_0A17492980 +
-                                    UiStrings.S_UnityExportDialog_SheetRows_AD38083975);
+                                    UiStrings.S_UnityExportDialog_SheetRows_AD38083975).HelpAt("files-cell-names", anchor: "Cell names in Unity");
         SpriteNaming? namingAtOpen = null;
         _atOpen.Add(p => namingAtOpen = O(p).Naming);
         _refresh.Add(p => namingWarning.IsVisible = namingAtOpen is { } n && O(p).Naming != n);
 
         var spacing = Setting(UiStrings.S_UnityExportDialog_SheetRows_B3349939E8, UiStrings.S_UnityExportDialog_SheetRows_D967A479A6,
             Line(IntNum(u + UiStrings.S_UnityExportDialog_SheetRows_E0A76444ED, 0, 64, 54, p => O(p).Spacing, (p, v) => O(p).Spacing = v)
-                .Presets(0, 1, 2, 3, 4, 8, 16).Unit("px").RecentKey("export.spacing"), Ui.Label("px")));
+                .Presets(0, 1, 2, 3, 4, 8, 16).Unit("px").RecentKey("export.spacing"), Ui.Label("px"))).HelpAt(GuidePage, anchor: "Spacing between cells");
         var trim = Setting(UiStrings.S_UnityExportDialog_SheetRows_0032A9731C, UiStrings.S_UnityExportDialog_SheetRows_07C4949BB7,
-            OnOff(u + UiStrings.S_UnityExportDialog_SheetRows_0032A9731C, p => O(p).Trim, (p, v) => O(p).Trim = v));
+            OnOff(u + UiStrings.S_UnityExportDialog_SheetRows_0032A9731C, p => O(p).Trim, (p, v) => O(p).Trim = v)).HelpAt(GuidePage, anchor: "Trim borders");
         var pot = Setting(UiStrings.S_UnityExportDialog_SheetRows_8BCD5F0C5E, UiStrings.S_UnityExportDialog_SheetRows_B34DD4CFD6,
-            OnOff(u + UiStrings.S_UnityExportDialog_SheetRows_8BCD5F0C5E, p => O(p).PowerOfTwo, (p, v) => O(p).PowerOfTwo = v));
+            OnOff(u + UiStrings.S_UnityExportDialog_SheetRows_8BCD5F0C5E, p => O(p).PowerOfTwo, (p, v) => O(p).PowerOfTwo = v)).HelpAt(GuidePage, anchor: "Power of two");
         // Single 모드 프레임 시트도 키우므로 배치 설정 묶음 밖에 둔다.
         var scale = Setting(UiStrings.ExportSheet_Scale, UiStrings.ExportSheet_ScaleTip,
             Line(IntNum(u + UiStrings.ExportSheet_Scale, 1, SheetOptions.MaxScale, 54, p => O(p).Scale, (p, v) => O(p).Scale = v)
-                .Presets(1, 2, 3, 4, 6, 8).Unit("×").RecentKey("export.scale"), Ui.Label("×")));
+                .Presets(1, 2, 3, 4, 6, 8).Unit("×").RecentKey("export.scale"), Ui.Label("×"))).HelpAt(GuidePage, anchor: "Scale (at the bottom of the Common group");
 
         // 프레임 시트만 이 설정을 쓰는데 Single 모드면 배치 설정은 쓰이지 않는다(프레임 하나를 캔버스 크기 그대로).
         var layoutRows = Ui.Stack(layout, order, gridRow, maxWidthRow, packOrder, split, naming, namingWarning, spacing, trim, pot);
@@ -860,7 +871,8 @@ public sealed class UnityExportDialog : DialogBase
     /// </summary>
     private static Grid Field(string label, string? tip, Control editor, int labelWidth = LabelWidth)
     {
-        var g = new Grid { ColumnDefinitions = new ColumnDefinitions($"{labelWidth},*"), Margin = new Thickness(0, 1) };
+        // 투명 배경: 이름표와 편집 칸 사이 빈 곳도 그 줄로 눌린다(대상 도움말 F1이 줄 전체를 고름).
+        var g = new Grid { ColumnDefinitions = new ColumnDefinitions($"{labelWidth},*"), Margin = new Thickness(0, 1), Background = Brushes.Transparent };
         var l = Ui.Label(label);
         l.TextWrapping = TextWrapping.Wrap;
         editor.VerticalAlignment = VerticalAlignment.Center;

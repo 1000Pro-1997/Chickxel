@@ -889,6 +889,7 @@ public sealed class PixelateDialog : DialogBase
         MinWidth = 900;
         MinHeight = 600;
         ShowInTaskbar = true;
+        this.HelpAt("pixelate-open");
 
         // 기억한 마지막 설정은 다른 그림에 쓰므로 그림마다 다른 격자 값은 뺀다(AI 그리기의 '변환 설정 보기'는 같은 그림이라 그대로).
         var initial = preset ?? (PixelatePresets.ParseSettings(settings.PixelateSettings) is { } last ? OptimizePreset.WithoutImageGrid(last) : null) ?? OptimizePreset.DefaultSettings;
@@ -917,6 +918,13 @@ public sealed class PixelateDialog : DialogBase
         _runButton.Foreground = Brushes.White;
         KeepFillOnHover(_runButton);
         ToolTip.SetShowOnDisabled(_runButton, true);
+        // 대상 도움말(F1): 프리셋 줄 단추마다 "프리셋 줄" 표의 그 줄.
+        _preset.HelpAt("pixelate-presets", anchor: "Preset list");
+        _presetSave.HelpAt("pixelate-presets", anchor: "Save");
+        _presetRename.HelpAt("pixelate-presets", anchor: "Rename");
+        _presetCopy.HelpAt("pixelate-presets", anchor: "Copy");
+        _presetDelete.HelpAt("pixelate-presets", anchor: "Delete");
+        _runButton.HelpAt("pixelate-presets", anchor: "Clean up");
 
         // ── 0. 최적화 기준(프리셋에 함께 저장): 예산·점수용 색 거리·점수 항목별 비중
         _crTrials = Ui.Num(OptimizePreset.MinBudget, OptimizePreset.MaxTrials, OptimizePreset.DefaultTrials, 64, 0, 10).Presets(0, 100, 200, 500, 1000, 2000, 5000, 10000).Tip(UiStrings.Pixelate_Opt_UnlimitedTip);
@@ -964,6 +972,13 @@ public sealed class PixelateDialog : DialogBase
             crNote,
             Ui.Label(UiStrings.Pixelate_Opt_ScoreWeights, bold: true),
             weightGrid);
+        // 대상 도움말(F1): 0. 최적화 기준 표의 줄.
+        foreach (var c in new Control[] { _crTrials, _crSeconds }) c.HelpAt("pixelate-score", anchor: "Trials");
+        foreach (var c in new Control[] { _crTargetColors, _crTargetAuto, _crTargetStrict }) c.HelpAt("pixelate-score", anchor: "Target colors");
+        foreach (var c in new Control[] { _crFidelity, _crCenter }) c.HelpAt("pixelate-score", anchor: "Fidelity · Center weighted");
+        foreach (var c in new Control[] { _crCellRef, _crGroupRadius }) c.HelpAt("pixelate-score", anchor: "Cell color · Group range");
+        foreach (var c in new Control[] { _crDistance, _crLightWeight, _crChromaWeight, _crHueWeight }) c.HelpAt("pixelate-score", anchor: "Scoring color distance");
+        weightGrid.HelpAt("pixelate-score", anchor: "Score weights");
 
         // ── 1. 배경
         _bgMode = Ui.Combo(170, UiStrings.Pixelate_Bg_None, UiStrings.Pixelate_Bg_Auto, UiStrings.Pixelate_Bg_Pick);
@@ -987,6 +1002,14 @@ public sealed class PixelateDialog : DialogBase
             _bgConnected, _bgKeepAlpha, _bgSticker, _bgKeep,
             Ui.Row(Ui.Label(UiStrings.Pixelate_Bg_AlphaThreshold), _bgAlpha, Ui.Label(UiStrings.Pixelate_Bg_Specks), _bgSpecks),
             _bgInfo);
+        // 대상 도움말(F1): 1. 배경 표·목록의 그 설정.
+        foreach (var c in new Control[] { _bgMode, _bgColor }) c.HelpAt("pixelate-settings", anchor: "Mode");
+        foreach (var c in new Control[] { _bgTol, _bgAutoTol }) c.HelpAt("pixelate-settings", anchor: "Tolerance");
+        _bgConnected.HelpAt("pixelate-settings", anchor: "Only background connected to the border");
+        _bgKeepAlpha.HelpAt("pixelate-settings", anchor: "Use existing transparency");
+        _bgSticker.HelpAt("pixelate-settings", anchor: "Remove sticker border");
+        _bgKeep.HelpAt("pixelate-settings", anchor: "Keep background (one color)");
+        foreach (var c in new Control[] { _bgAlpha, _bgSpecks }) c.HelpAt("pixelate-settings", anchor: "Alpha threshold · Specks");
 
         // ── 2. 프레임
         _frMode = Ui.Combo(170, UiStrings.Pixelate_Frames_Single, UiStrings.Pixelate_Frames_Auto, UiStrings.Pixelate_Frames_Grid);
@@ -1004,6 +1027,12 @@ public sealed class PixelateDialog : DialogBase
             Ui.Row(Ui.Label(UiStrings.Pixelate_Frames_Merge), _frMerge, Ui.Label(UiStrings.Pixelate_Frames_MergeDistance), _frMergeDist),
             Ui.Row(Ui.Label(UiStrings.Pixelate_Frames_Align), _frAlign),
             _frCommon, _frApply, _frInfo);
+        // 대상 도움말(F1): 2. 프레임의 나누기 방식 표·목록.
+        foreach (var c in new Control[] { _frCols, _frRows }) c.HelpAt("pixelate-settings", anchor: "Grid");
+        foreach (var c in new Control[] { _frMerge, _frMergeDist }) c.HelpAt("pixelate-settings", anchor: "Auto (split by empty space)");
+        _frAlign.HelpAt("pixelate-settings", anchor: "Align");
+        _frCommon.HelpAt("pixelate-settings", anchor: "Same canvas size for all frames");
+        _frApply.HelpAt("pixelate-settings", anchor: "Frames are split once");
 
         // ── 3. 격자
         _grMode = Ui.Combo(170, UiStrings.Pixelate_Grid_Auto, UiStrings.Pixelate_Grid_Manual);
@@ -1033,6 +1062,19 @@ public sealed class PixelateDialog : DialogBase
             Ui.Row(Ui.Label(UiStrings.Pixelate_Grid_LocalShift), _grLocalShift, Ui.Label(UiStrings.Pixelate_Grid_LocalBand), _grLocalBand),
             Ui.Row(Ui.Label(UiStrings.Pixelate_Grid_LocalMinCell), _grLocalMinCell),
             _grInfo);
+        // 대상 도움말(F1): 3. 픽셀 격자의 격자 찾기·수동 격자·부분 칸 보정.
+        _grMode.HelpAt("pixelate-grid", anchor: "Grid detection");
+        foreach (var c in new Control[] { _grScale, _grOffX, _grOffY, useDetected }) c.HelpAt("pixelate-grid", anchor: "Manual · Pixel size (px) · Offset X·Y");
+        _grJitter.HelpAt("pixelate-grid", anchor: "Allowed size jitter");
+        _grAdjust.HelpAt("pixelate-grid", anchor: "Add to auto pixel size");
+        _grSource.HelpAt("pixelate-grid", anchor: "Pixel size from");
+        _grFirst.HelpAt("pixelate-grid", anchor: "Optimize grid fit first");
+        _grPreview.HelpAt("pixelate-grid", anchor: "Preview cells");
+        _grLocal.HelpAt("pixelate-grid", anchor: "Local cell correction");
+        _grLocalShift.HelpAt("pixelate-grid", anchor: "Max shift (% of cell)");
+        _grLocalBand.HelpAt("pixelate-grid", anchor: "Band (cells)");
+        _grLocalMinCell.HelpAt("pixelate-grid", anchor: "Minimum cell size (px)");
+        _grInfo.HelpAt("pixelate-grid", anchor: "The info line under the settings");
 
         // ── 4. 크기
         _szMode = Ui.Combo(170, UiStrings.Pixelate_Size_FromScale, UiStrings.Pixelate_Size_Fixed, UiStrings.Pixelate_Size_Factor);
@@ -1049,6 +1091,9 @@ public sealed class PixelateDialog : DialogBase
             Ui.Row(Ui.Label(UiStrings.Pixelate_Size_WH), _szW, Ui.Label(UiStrings.Pixelate_Size_By), _szH, _szAspect),
             Ui.Row(Ui.Label(UiStrings.Pixelate_Size_FactorLabel), _szFactor, Ui.Label(UiStrings.Pixelate_Size_Padding), _szPad),
             _szInfo);
+        // 대상 도움말(F1): 4. 결과 크기 방식 표의 줄.
+        foreach (var c in new Control[] { _szW, _szH, _szAspect, _szPad }) c.HelpAt("pixelate-grid", anchor: "Fit a fixed size");
+        _szFactor.HelpAt("pixelate-grid", anchor: "Scale factor");
 
         // ── 5. 칸 색
         _dsMode = Ui.Combo(170, UiStrings.Pixelate_Ds_Mode, UiStrings.Pixelate_Ds_Median, UiStrings.Pixelate_Ds_Center,
@@ -1061,6 +1106,10 @@ public sealed class PixelateDialog : DialogBase
             Ui.Row(Ui.Label(UiStrings.Pixelate_Ds_Border), _dsBorder),
             Ui.Row(Ui.Label(UiStrings.Pixelate_Ds_Alpha), _dsAlpha),
             Ui.Row(Ui.Label(UiStrings.Pixelate_Ds_Snap), _dsSnap));
+        // 대상 도움말(F1): 5. 칸 색 문단·표.
+        _dsBorder.HelpAt("pixelate-palette", anchor: "Ignore cell border");
+        _dsAlpha.HelpAt("pixelate-palette", anchor: "Transparency threshold");
+        _dsSnap.HelpAt("pixelate-palette", anchor: "Most frequent color");
 
         // ── 6. 팔레트
         _palMethod = Ui.Combo(170, UiStrings.Pixelate_Pal_KMeans, UiStrings.Pixelate_Pal_MedianCut, UiStrings.Pixelate_Pal_Existing, UiStrings.Pixelate_Pal_Keep, UiStrings.Pixelate_Pal_OkLch,
@@ -1110,6 +1159,19 @@ public sealed class PixelateDialog : DialogBase
             Ui.Row(Ui.Label(UiStrings.Pixelate_Pal_DistinctArea), _palHueArea),
             Ui.Row(_palSnap, _palDark),
             _palInfo);
+        // 대상 도움말(F1): 6. 팔레트의 방식 표·팔레트 색·색 거리·색 지키기·디더링.
+        foreach (var c in new Control[] { _palColors, _palAuto }) c.HelpAt("pixelate-palette", anchor: "Automatic color count");
+        foreach (var c in new Control[] { _palOkL, _palOkC, _palOkH }) c.HelpAt("pixelate-palette", anchor: "OKLCH grouping");
+        _palRadius.HelpAt("pixelate-palette", anchor: "Distance grouping");
+        _palWhich.HelpAt("pixelate-palette", anchor: "Existing palette");
+        _palSource.HelpAt("pixelate-palette", anchor: "Palette colors");
+        _palEdge.HelpAt("pixelate-palette", anchor: "Edge cell weight");
+        _palShared.HelpAt("pixelate-palette", anchor: "With One palette for all frames");
+        foreach (var c in new Control[] { _palDither, _palDitherKeep }) c.HelpAt("pixelate-palette", anchor: "Dithering");
+        foreach (var c in new Control[] { _palDistance, _palHueWeight }) c.HelpAt("pixelate-palette", anchor: "Color distance");
+        _palShade.HelpAt("pixelate-palette", anchor: "Prefer shade family");
+        foreach (var c in new Control[] { _palDistinct, _palHueChroma, _palHueMin, _palHueArea }) c.HelpAt("pixelate-palette", anchor: "Keep distinct hues");
+        foreach (var c in new Control[] { _palSnap, _palDark }) c.HelpAt("pixelate-palette", anchor: "Snap near-black to one outline color");
 
         // ── 7. 정리
         _clOrphans = Ui.Check(UiStrings.Pixelate_Clean_Orphans);
@@ -1127,6 +1189,13 @@ public sealed class PixelateDialog : DialogBase
             Ui.Row(Ui.Label(UiStrings.Pixelate_Clean_VectorTolerance), _clVecTol, Ui.Label(UiStrings.Pixelate_Clean_VectorBlob), _clVecBlob),
             Ui.Row(Ui.Label(UiStrings.Pixelate_Clean_Outline), _clOutline),
             _clJaggies);
+        // 대상 도움말(F1): 7. 정리 표의 줄.
+        foreach (var c in new Control[] { _clOrphans, _clContrast }) c.HelpAt("pixelate-cleanup", anchor: "Remove orphan pixels");
+        _clHoles.HelpAt("pixelate-cleanup", anchor: "Fill 1-px holes");
+        _clFit.HelpAt("pixelate-cleanup", anchor: "Fit outline to 1 px");
+        foreach (var c in new Control[] { _clVecTol, _clVecBlob }) c.HelpAt("pixelate-cleanup", anchor: "Vector simplify");
+        _clOutline.HelpAt("pixelate-cleanup", anchor: "Outline");
+        _clJaggies.HelpAt("pixelate-cleanup", anchor: "Reduce L-corner doubles");
 
         // ── 8. 프레임 맞추기
         _coTemporal = Ui.Check(UiStrings.Pixelate_Cons_Temporal);
@@ -1140,6 +1209,11 @@ public sealed class PixelateDialog : DialogBase
         _outDuration = Num(10, 10000, _opt.FrameDurationMs, 0).Presets(50, 80, 100, 125, 150, 200);
         _outPalette = Ui.Check(UiStrings.Pixelate_Out_SavePalette, _opt.SavePalette);
         var outBody = Ui.Stack(_outLayer, _outDoc, Ui.Row(Ui.Label(UiStrings.Pixelate_Out_Duration), _outDuration), _outPalette);
+        // 대상 도움말(F1): 넣기 표의 줄.
+        _outLayer.HelpAt("pixelate-output", anchor: "New layer");
+        _outDoc.HelpAt("pixelate-output", anchor: "New document");
+        _outDuration.HelpAt("pixelate-output", anchor: "Frame duration");
+        _outPalette.HelpAt("pixelate-output", anchor: "Also save the colors as a new palette");
 
         // ── AI
         _aiTouch = Ui.Check(UiStrings.Pixelate_Ai_TouchUp, _opt.AiTouchUp);
@@ -1163,6 +1237,11 @@ public sealed class PixelateDialog : DialogBase
             _aiPrompt,
             _aiReference,
             Ui.Row(rank, Ui.Label(UiStrings.Pixelate_Ai_RankCount), _aiRankCount));
+        // 대상 도움말(F1): AI(실험) 표의 줄.
+        _aiTouch.HelpAt("pixelate-ai", anchor: "Touch up with AI after applying");
+        _aiProvider.HelpAt("pixelate-ai", anchor: "Model");
+        _aiReference.HelpAt("pixelate-ai", anchor: "Add the source to AI references");
+        foreach (var c in new Control[] { rank, _aiRankCount }) c.HelpAt("pixelate-ai", anchor: "Ask AI to rank candidates");
 
         // ── 간편 설정: 자주 바꾸는 값(4. 결과 크기, 6. 팔레트와 같은 설정)을 맨 위에 모은다.
         // 결과 크기: 자동이면 회색 숫자로 지금 결과 크기, 끄면 적은 가로×세로에 맞춤.
@@ -1187,22 +1266,27 @@ public sealed class PixelateDialog : DialogBase
         var quickBody = Ui.Stack(
             Ui.Row(Ui.Label(UiStrings.Pixelate_Quick_Size), _quickAuto, _quickW, Ui.Label(UiStrings.Pixelate_Size_By), _quickH, _quickAspect),
             _quickShared);
+        // 대상 도움말(F1): 간편 설정 목록의 항목.
+        foreach (var c in new Control[] { _quickAuto, _quickW, _quickH }) c.HelpAt("pixelate-settings", anchor: "In the output size row");
+        _quickAspect.HelpAt("pixelate-settings", anchor: "With the link button");
+        _quickShared.HelpAt("pixelate-settings", anchor: "One palette for all frames");
 
         var left = new StackPanel { Spacing = 2, Margin = new Thickness(0, 0, 8, 0) };
-        left.Children.Add(Section(UiStrings.Pixelate_Section_Criteria, crBody, false));
-        left.Children.Add(Section(UiStrings.Pixelate_Section_Quick, quickBody, true));
-        left.Children.Add(Section(UiStrings.Pixelate_Section_Background, bgBody, true, OptimizeSection.Background));
-        left.Children.Add(Section(UiStrings.Pixelate_Section_Frames, frBody, true));
-        left.Children.Add(Section(UiStrings.Pixelate_Section_Grid, grBody, true, OptimizeSection.Grid));
-        left.Children.Add(Section(UiStrings.Pixelate_Section_Size, szBody, true));
-        left.Children.Add(Section(UiStrings.Pixelate_Section_Downsample, dsBody, false, OptimizeSection.Downsample));
-        left.Children.Add(Section(UiStrings.Pixelate_Section_Palette, palBody, true, OptimizeSection.Palette));
-        left.Children.Add(Section(UiStrings.Pixelate_Section_Cleanup, clBody, true, OptimizeSection.Cleanup));
-        left.Children.Add(Section(UiStrings.Pixelate_Section_Consistency, coBody, false));
-        left.Children.Add(Section(UiStrings.Pixelate_Section_Output, outBody, true));
-        left.Children.Add(Section(UiStrings.Pixelate_Section_Ai, aiBody, false));
+        // 설정 칸마다 그 단계를 설명하는 가이드 자리(안쪽 컨트롤에 따로 붙인 자리가 먼저).
+        left.Children.Add(Section(UiStrings.Pixelate_Section_Criteria, crBody, false).HelpAt("pixelate-score", anchor: "0. Optimize criteria"));
+        left.Children.Add(Section(UiStrings.Pixelate_Section_Quick, quickBody, true).HelpAt("pixelate-settings", anchor: "Quick settings"));
+        left.Children.Add(Section(UiStrings.Pixelate_Section_Background, bgBody, true, OptimizeSection.Background).HelpAt("pixelate-settings", anchor: "1. Background"));
+        left.Children.Add(Section(UiStrings.Pixelate_Section_Frames, frBody, true).HelpAt("pixelate-settings", anchor: "2. Frames"));
+        left.Children.Add(Section(UiStrings.Pixelate_Section_Grid, grBody, true, OptimizeSection.Grid).HelpAt("pixelate-grid", shot: "pixelate-grid"));
+        left.Children.Add(Section(UiStrings.Pixelate_Section_Size, szBody, true).HelpAt("pixelate-grid", anchor: "4. Output size"));
+        left.Children.Add(Section(UiStrings.Pixelate_Section_Downsample, dsBody, false, OptimizeSection.Downsample).HelpAt("pixelate-palette", anchor: "5. Cell color"));
+        left.Children.Add(Section(UiStrings.Pixelate_Section_Palette, palBody, true, OptimizeSection.Palette).HelpAt("pixelate-palette", anchor: "6. Palette method"));
+        left.Children.Add(Section(UiStrings.Pixelate_Section_Cleanup, clBody, true, OptimizeSection.Cleanup).HelpAt("pixelate-cleanup", anchor: "7. Cleanup"));
+        left.Children.Add(Section(UiStrings.Pixelate_Section_Consistency, coBody, false).HelpAt("pixelate-cleanup", anchor: "8. Frame consistency"));
+        left.Children.Add(Section(UiStrings.Pixelate_Section_Output, outBody, true).HelpAt("pixelate-output", shot: "pixelate-output"));
+        left.Children.Add(Section(UiStrings.Pixelate_Section_Ai, aiBody, false).HelpAt("pixelate-ai", shot: "pixelate-ai"));
         // 프리셋 줄은 설정을 굴려도 맨 위에 고정한다.
-        var presetBar = Ui.Row(_preset, _presetSave, _presetRename, _presetCopy, _presetDelete, _runButton);
+        var presetBar = Ui.Row(_preset, _presetSave, _presetRename, _presetCopy, _presetDelete, _runButton).HelpAt("pixelate-presets", anchor: "The preset bar");
         presetBar.Margin = new Thickness(0, 0, 8, 4);
         DockPanel.SetDock(presetBar, Dock.Top);
         var leftScroll = new ScrollViewer
@@ -1225,7 +1309,7 @@ public sealed class PixelateDialog : DialogBase
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
             Content = new StackPanel { Spacing = 8, Children = { Ui.Icon(VectorIcon.SlidersHorizontal, 14), _settingsChevron } },
-        };
+        }.HelpAt("pixelate-settings", shot: "pixelate-settings");
         _settingsToggle.Click += (_, _) => SetSettingsExpanded(!_settingsExpanded, animate: true);
         _settingsAnim.Tick += (_, _) => StepSettingsAnimation();
         var settingsColumn = new DockPanel { LastChildFill = true };
@@ -1267,6 +1351,10 @@ public sealed class PixelateDialog : DialogBase
         _sourceView.CellPicked += PickCell;
         // 원본 우클릭: 보이는 모습(배경 지우기를 켰으면 배경 지운 모습) 복사·PNG로 저장. 스포이드 중에는 우클릭이 스포이드 취소라 메뉴 없음.
         PopupMenus.Attach(_sourceView, SourceMenu);
+        // 대상 도움말(F1): 크게 보기 안의 색 판정 줄·색 칸·프레임 띠(겹판 자신의 자리는 ZoomOverlay가 붙임).
+        _trace.HelpAt("pixelate-zoom", anchor: "Color decision");
+        _zoomColors.HelpAt("pixelate-zoom", anchor: "Color swatches");
+        _zoomStripScroll.HelpAt("pixelate-zoom", anchor: "Space · Left/Right");
         _preview.CellPicked += PickCell;
         _zoom.View.CellPicked += PickCell;
         _sourceView.PickCancelled += () => SetPicking(false);
@@ -1318,17 +1406,26 @@ public sealed class PixelateDialog : DialogBase
         Grid.SetColumn(previewPanel, 2);
         views.Children.Add(_sourceView);
         views.Children.Add(previewPanel);
+        // 대상 도움말(F1): "원본과 미리보기" 표의 영역(① 원본 보기 · ② 큰 미리보기 · ③ 색 칸 · ④ 재생과 프레임 띠).
+        _sourceView.HelpAt("pixelate-view", anchor: "Source view");
+        previewPanel.HelpAt("pixelate-view", anchor: "Large preview");
+        _colors.HelpAt("pixelate-view", anchor: "Color swatches");
+        foreach (var c in new Control[] { playRow, stripScroll }) c.HelpAt("pixelate-view", anchor: "Playback and frame strip");
 
         // 원본 바꾸기(원본이 있을 때): 파일 찾기 — 창에 끌어 놓거나 Ctrl+V로 붙여 넣어도 바뀐다.
         _replaceSource = Ui.IconButton(VectorIcon.FolderOpen, UiStrings.Pixelate_ReplaceSource + "\n" + UiStrings.Pixelate_ReplaceSourceTip, (_, _) => BrowseSource());
         var toolbar = Ui.Row(_replaceSource, _showGrid, _bgRemove);
-        var statusRow = new DockPanel { Margin = new Thickness(0, 2) };
+        // 막대 빈 곳·상태 글도 "원본 아래 막대"로(투명 바탕 = 누를 수 있음).
+        var statusRow = new DockPanel { Margin = new Thickness(0, 2), Background = Brushes.Transparent }.HelpAt("pixelate-view", anchor: "The bar under the source");
         DockPanel.SetDock(toolbar, Dock.Left);
         statusRow.Children.Add(toolbar);
         statusRow.Children.Add(_status);
+        _replaceSource.HelpAt("pixelate-open", anchor: "Replace source");
+        _showGrid.HelpAt("pixelate-view", anchor: "Show grid");
+        _bgRemove.HelpAt("pixelate-view", anchor: "Remove background");
 
         // 원본이 없을 때 가운데 안내: 끌어 놓기·붙여 넣기·파일 찾기.
-        var browse = Ui.Button(VectorIcon.FolderOpen, UiStrings.Pixelate_Browse, (_, _) => BrowseSource());
+        var browse = Ui.Button(VectorIcon.FolderOpen, UiStrings.Pixelate_Browse, (_, _) => BrowseSource()).HelpAt("pixelate-open", anchor: "Browse");
         browse.HorizontalAlignment = HorizontalAlignment.Center;
         _emptyState = new Border
         {
@@ -1354,7 +1451,7 @@ public sealed class PixelateDialog : DialogBase
                     browse,
                 },
             },
-        };
+        }.HelpAt("pixelate-open", shot: "pixelate-open-2");
 
         _tiles = new WrapPanel { Orientation = Orientation.Horizontal };
         var tileScroll = new ScrollViewer
@@ -1363,7 +1460,7 @@ public sealed class PixelateDialog : DialogBase
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             Background = AppTheme.InputBrush,
-        };
+        }.HelpAt("pixelate-candidates", shot: "pixelate-candidates-2");
 
         // ── 자동 최적화(후보 위): 실행·진행만 남기고 프리셋(항목·예산·점수 기준)·시도 기록은 별도 창에서 편집한다.
         _optAuto = Ui.Check(UiStrings.Pixelate_Opt_AutoOnLoad, _opt.AutoOptimizeOnLoad).Tip(UiStrings.Pixelate_Opt_AutoOnLoadTip);
@@ -1384,7 +1481,15 @@ public sealed class PixelateDialog : DialogBase
         KeepFillOnHover(_optContinue);
         ToolTip.SetTip(_optGraph, UiStrings.Pixelate_Opt_GraphTip);
         _optTable = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto,*"), Margin = new Thickness(2) };
-        var optBar = new DockPanel { LastChildFill = true };
+        // 대상 도움말(F1): 자동 최적화 막대 — "시작과 결과 읽기" 표의 그 줄(빈 곳은 쪽 맨 위).
+        _optRun.HelpAt("pixelate-optimize", anchor: "Auto optimize");
+        optSettings.HelpAt("pixelate-optimize", anchor: "Settings button");
+        _optGraph.HelpAt("pixelate-optimize", anchor: "Best-score graph");
+        _optContinue.HelpAt("pixelate-optimize", anchor: "Continue optimizing");
+        _optRevert.HelpAt("pixelate-optimize", anchor: "Revert");
+        _optText.HelpAt("pixelate-optimize", anchor: "One-line summary");
+        _optAuto.HelpAt("pixelate-optimize-settings", anchor: "Auto optimize on load");
+        var optBar = new DockPanel { LastChildFill = true, Background = Brushes.Transparent }.HelpAt("pixelate-optimize");
         foreach (var c in new Control[] { _optRun, optSettings, _optGraph, _optContinue, _optRevert })
         {
             c.VerticalAlignment = VerticalAlignment.Center;
@@ -1400,8 +1505,8 @@ public sealed class PixelateDialog : DialogBase
         Put(views, 0);
         Put(_emptyState, 0);
         Put(statusRow, 1);
-        Put(new StackPanel { Children = { _selectedInfo, _largeWarning } }, 2);
-        Put(_breakdown, 3);
+        Put(new StackPanel { Children = { _selectedInfo.HelpAt("pixelate-candidates", anchor: "The line under the preview"), _largeWarning.HelpAt("pixelate-candidates", anchor: "If the selected result's long side") } }, 2);
+        Put(_breakdown.HelpAt("pixelate-score", anchor: "Score terms"), 3);
         Put(optBlock, 4);
         Put(tileScroll, 5);
 
@@ -1480,6 +1585,11 @@ public sealed class PixelateDialog : DialogBase
         _growCanvas.VerticalAlignment = VerticalAlignment.Center;
         _growCanvas.Margin = new Thickness(0, 0, 8, 0);
         AddFooter(_growCanvas, _newTab);
+        // 대상 도움말(F1): 창 아래 단추 — 넣기 쪽의 ⑤~⑦ 그림·목록, 취소는 창 닫기 문단.
+        _growCanvas.HelpAt("pixelate-output", anchor: "Grow to image size");
+        _newTab.HelpAt("pixelate-output", anchor: "Add to new tab");
+        OkButton.HelpAt("pixelate-output", shot: "pixelate-output-2");
+        CancelButtonControl.HelpAt("pixelate-open", anchor: "Closing the window");
 
         // 처음: 기억한 설정, 칸별 최적화·최적화 기준은 마지막으로 고른 프리셋의 것(AI 그리기의 '변환 설정 보기'는 프리셋 없이).
         _current = _presetGiven ? null : _opt.OptimizePresets.FirstOrDefault(p => p.Name == _opt.SelectedPreset);
@@ -1776,7 +1886,7 @@ public sealed class PixelateDialog : DialogBase
         if (optimize is { } section)
         {
             var toggle = new CheckBox { Content = UiStrings.Pixelate_Section_Optimize, Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) }
-                .Tip(UiStrings.Pixelate_Section_OptimizeTip);
+                .Tip(UiStrings.Pixelate_Section_OptimizeTip).HelpAt("pixelate-score", anchor: "Per-step Optimize");
             toggle.IsCheckedChanged += (_, _) => Changed();
             _sectionToggles[section] = toggle;
             var dock = new DockPanel { LastChildFill = true };
@@ -3344,8 +3454,9 @@ public sealed class PixelateDialog : DialogBase
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             ShowInTaskbar = false,
             Background = AppTheme.BackBrush,
-        };
-        var list = new ListBox { Background = AppTheme.InputBrush, Foreground = AppTheme.TextBrush, Margin = new Thickness(8, 0, 8, 4) };
+        }.HelpAt("pixelate-optimize-settings");
+        var list = new ListBox { Background = AppTheme.InputBrush, Foreground = AppTheme.TextBrush, Margin = new Thickness(8, 0, 8, 4) }
+            .HelpAt("pixelate-optimize-settings", anchor: "Preset checklist");
         var badges = new List<(OptimizePreset Preset, Button Badge)>();
         // '대표' 단추: 고른 프리셋만 초록 바탕, 나머지는 테두리만.
         void PaintBadges()
@@ -3393,6 +3504,7 @@ public sealed class PixelateDialog : DialogBase
                     PaintBadges();
                 };
                 badges.Add((preset, badge));
+                badge.HelpAt("pixelate-optimize-settings", anchor: "Main");
                 var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { check, badge } };
                 row.Children.Add(new TextBlock { Text = preset.Name, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis });
                 list.Items.Add(new ListBoxItem { Content = row, Tag = preset });
@@ -3438,6 +3550,10 @@ public sealed class PixelateDialog : DialogBase
         content.Children.Add(bottom);
         content.Children.Add(history);
         content.Children.Add(list);
+        // 대상 도움말(F1): 표의 그 줄('불러오면 자동 최적화'는 만들 때 붙임).
+        header.HelpAt("pixelate-optimize-settings", anchor: "Preset checklist");
+        history.HelpAt("pixelate-optimize-settings", anchor: "Trial history");
+        reset.HelpAt("pixelate-optimize-settings", anchor: "Reset");
         popup.Content = content;
         popup.Closed += (_, _) =>
         {
@@ -5166,6 +5282,8 @@ public sealed class PixelateDialog : DialogBase
         public ColorsBlock(PixelateDialog owner)
         {
             _owner = owner;
+            // 색 칸 사이 빈 곳도 대상 도움말(F1)에서 이 묶음으로 잡히게(투명 바탕 = 누를 수 있음).
+            Background = Brushes.Transparent;
             _label = new TextBlock { Foreground = AppTheme.TextBrush, FontSize = AppTheme.SmallFontSize, FontWeight = FontWeight.Bold, Margin = new Thickness(0, 0, 0, 2) };
             ToolTip.SetTip(_label, UiStrings.Pixelate_Colors_Tip);
             _swatches = new WrapPanel { Orientation = Orientation.Horizontal };
@@ -5181,6 +5299,10 @@ public sealed class PixelateDialog : DialogBase
             _notice = Notice(_excludeText, UiStrings.Pixelate_Exclude_RestoreAll, owner.RestoreAllColors);
             _pinText = new TextBlock { Foreground = AppTheme.AccentBrush, FontSize = AppTheme.SmallFontSize, VerticalAlignment = VerticalAlignment.Center };
             _pinNotice = Notice(_pinText, UiStrings.Pixelate_Pin_ClearAll, owner.ClearPins);
+            // 대상 도움말(F1): '+'(원본에서 색 추가)·고정 색 알림은 "색 고정", 뺀 색 알림은 "색 빼기"(색 칸 자체는 묶음에 붙인 자리).
+            _add.HelpAt("pixelate-color-edit", anchor: "Pinning a color");
+            _pinNotice.HelpAt("pixelate-color-edit", anchor: "Pinning a color");
+            _notice.HelpAt("pixelate-color-edit", anchor: "Excluding a color");
             // 색이 많아 견본이 들어 있는 패널의 절반을 넘으면 그 높이에서 자르고 세로로 스크롤한다(미리보기가 가려지지 않게).
             _swatchScroll = new ScrollViewer
             {
@@ -5456,6 +5578,14 @@ public sealed class PixelateDialog : DialogBase
             content.Children.Add(colors);
             content.Children.Add(trace);
             content.Children.Add(_view);
+            // 대상 도움말(F1): 판 = 크게 보기 쪽, 어두운 바탕 = 닫기 줄, 위 줄 단추·두 칸 그림·최적화 정보는 그 설명 자리.
+            this.HelpAt("pixelate-zoom", anchor: "Esc · click outside");
+            _view.HelpAt("pixelate-zoom", anchor: "Zooming and panning");
+            foreach (var c in new Control[] { prev, PlayButton, next }) c.HelpAt("pixelate-zoom", anchor: "Space · Left/Right");
+            GridButton.HelpAt("pixelate-zoom", anchor: "Show grid button");
+            fitButton.HelpAt("pixelate-zoom", anchor: "Fit image");
+            closeButton.HelpAt("pixelate-zoom", anchor: "Esc · click outside");
+            graphBox.HelpAt("pixelate-zoom", anchor: "Optimization info");
             Children.Add(new Border
             {
                 Child = content,
@@ -5465,7 +5595,7 @@ public sealed class PixelateDialog : DialogBase
                 CornerRadius = new CornerRadius(4),
                 Padding = new Thickness(6),
                 Margin = new Thickness(28),
-            });
+            }.HelpAt("pixelate-zoom", shot: "pixelate-zoom"));
             KeyDown += (_, e) =>
             {
                 if (e.Key == Key.Escape) close();
@@ -6387,8 +6517,15 @@ public sealed class PixelateDialog : DialogBase
             var fit = new TextBlock { Text = FitName(c.Settings.Cleanup.OutlineFit), Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize };
             var lines = new StackPanel { Spacing = 2, Children = { Thumb, title, info, fit } };
             if (marker is not null)
-                lines.Children.Add(new TextBlock { Text = marker, Foreground = AppTheme.AccentBrush, FontSize = AppTheme.SmallFontSize, FontWeight = FontWeight.Bold });
+                lines.Children.Add(new TextBlock { Text = marker, Foreground = AppTheme.AccentBrush, FontSize = AppTheme.SmallFontSize, FontWeight = FontWeight.Bold }
+                    .HelpAt("pixelate-candidates", anchor: "Blue line at the bottom"));
             Child = lines;
+            // 대상 도움말(F1): "후보 칸 읽기" 표 — 칸 전체, 그 안의 썸네일·이름·색 수와 크기·외곽선 맞춤 줄.
+            this.HelpAt("pixelate-candidates", anchor: "Reading a candidate tile");
+            Thumb.HelpAt("pixelate-candidates", anchor: "Candidate tile thumbnail");
+            title.HelpAt("pixelate-candidates", anchor: "Preset name");
+            info.HelpAt("pixelate-candidates", anchor: "Colors · size · frames");
+            fit.HelpAt("pixelate-candidates", anchor: "Outline fit mode");
             Cursor = new Cursor(StandardCursorType.Hand);
             ToolTip.SetTip(this, Tip(c, name, marker));
             IsSelected = selected;
@@ -6441,6 +6578,8 @@ public sealed class PixelateDialog : DialogBase
                 FontWeight = FontWeight.Bold,
             };
             Child = new StackPanel { Spacing = 2, Children = { thumb, title, marker } };
+            // 대상 도움말(F1): 도는 칸·기다리는 칸·돌리지 않은 칸.
+            this.HelpAt("pixelate-candidates", anchor: "Running and not-run tiles");
         }
 
         public string PresetName { get; }

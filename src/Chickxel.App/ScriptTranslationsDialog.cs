@@ -24,6 +24,8 @@ public sealed class ScriptTranslationsDialog : DialogBase
     private ScriptTranslationsDialog(ScriptEffectProgram program) : base(UiStrings.ScriptLanguages_Title)
     {
         _program = program;
+        // 대상 도움말(F1): 창·기본 언어 = "효과 만들기"의 ③ 언어 설정 항목, 언어별 칸 = "스크립트 API" 선언 표의 translations 줄
+        this.HelpAt("screen-effect-maker", anchor: "Languages below opens a window");
         _empty = new TextBlock { Text = UiStrings.ScriptLanguages_Empty, Foreground = AppTheme.DimTextBrush, Margin = new Thickness(3, 6) };
         Body.Children.Add(new TextBlock
         {
@@ -51,7 +53,7 @@ public sealed class ScriptTranslationsDialog : DialogBase
             BorderBrush = AppTheme.BorderBrush, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(6), Margin = new Thickness(0, 0, 0, 8),
             Child = Ui.Stack(Ui.Row(Ui.Label(UiStrings.ScriptLanguages_Base, bold: true), _base.View), baseText, baseNote),
         });
-        Body.Children.Add(new ScrollViewer { Content = Ui.Stack(_empty, _sections), MaxHeight = 460, Width = FieldWidth + 190 });
+        Body.Children.Add(new ScrollViewer { Content = Ui.Stack(_empty, _sections), MaxHeight = 460, Width = FieldWidth + 190 }.HelpAt("screen-script-api", anchor: "translations"));
         Body.Children.Add(Ui.Button(VectorIcon.Plus, UiStrings.ScriptLanguages_Add, (_, _) => AddSection(NextLanguage(), null)));
         foreach (var (code, translation) in program.Translations) AddSection(code, translation);
         UpdateEmpty();

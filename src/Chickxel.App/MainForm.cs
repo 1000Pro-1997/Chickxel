@@ -139,17 +139,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private bool _settingsApplied;
     private bool _closeConfirmed, _closePending;
     private Ai.McpServer? _mcp;
-    private readonly Border _helpPicker = new()
-    {
-        Background = Brushes.Transparent,
-        Cursor = new Cursor(StandardCursorType.Help),
-        IsVisible = false,
-        Focusable = true,
-    };
-    private Control? _helpPreviousFocus;
+    /// <summary>대상 도움말을 고르기 전 상태 표시줄 글(고르기를 마치면 되돌림).</summary>
     private string? _helpPreviousMessage;
-    private HelpTarget? _helpPickedPage;
-    private bool _helpClickPending;
     private Control _helpMenuRow = null!, _helpContextBar = null!, _helpStatus = null!;
     private Ai.ChatWindow? _chat;
     /// <summary>AI 참고 자료 보관소(처음 쓸 때 연다, 폴더 설정을 바꾸면 다시 연다).</summary>
@@ -255,9 +246,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         root.Children.Add(contextBar);
         root.Children.Add(status);
         root.Children.Add(_splitFiles);
-        var surface = new Grid { Children = { root, _helpPicker } };
-        AttachHelpPicker();
-        Content = surface;
+        Content = root;
 
         KeyState.Attach(this);
         AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
@@ -265,7 +254,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         AddHandler(KeyUpEvent, OnSpaceKeyUp, RoutingStrategies.Tunnel, handledEventsToo: true);
         AddHandler(PointerPressedEvent, (_, _) => _spaceTapStart = null, RoutingStrategies.Tunnel, handledEventsToo: true);
         AddHandler(PointerPressedEvent, OnShortcutPointerPressed, RoutingStrategies.Tunnel);
-        Deactivated += (_, _) => { (_spaceTapStart, _spaceHeld) = (null, false); StopHelpPicker(); };
+        Deactivated += (_, _) => (_spaceTapStart, _spaceHeld) = (null, false);
         // 숫자·글자 입력란(도구 설정의 크기 등) 밖을 누르면 입력 상태를 끝내고 캔버스로 포커스를 돌린다(공통 모듈).
         TextFocusRelease.SetFallback(this, () => _canvas);
         Opened += (_, _) => OnShown();
@@ -821,7 +810,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         discord.Foreground = AppTheme.DiscordBrush;
         discord.Icon = new IconView(VectorIcon.Discord, AppTheme.DiscordBrush) { Width = 14, Height = 14, VerticalAlignment = VerticalAlignment.Center };
         AddItems(help,
-            Cmd("대상 도움말", UiStrings.Help_SelectTarget, ToggleHelpPicker, "F1", KeyScope.Global, (Key.F1, NoMods)),
+            Cmd("대상 도움말", UiStrings.Help_SelectTarget, () => HelpPicker.Toggle(this), "F1", KeyScope.Global, (Key.F1, NoMods)),
             Cmd("사용 가이드", MainStrings.Menu_Help_Guide, () => HelpWindow.Open(this)),
             website,
             WithIcon(Cmd("Chickxel 계정", UiStrings.Account_Menu, () => AccountDialog.Show(this)), VectorIcon.CircleUser),
@@ -1551,13 +1540,6 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             e.Handled = true;
             return;
         }
-        if (_helpPicker.IsVisible)
-        {
-            if (e.Key == Key.Escape || (e.Key == Key.F1 && e.KeyModifiers == KeyModifiers.None))
-                StopHelpPicker();
-            e.Handled = true;
-            return;
-        }
         // 단축키가 시작한 변형·붙여넣기가 ⌘를 뗄 때의 도구 되돌리기에 적용(취소)되지 않게.
         _canvas.EndTempMoveForShortcut(e.Key);
         if (e.Handled) return;
@@ -1573,7 +1555,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private void OnShortcutPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         var button = Shortcuts.BindableMouse(e.GetCurrentPoint(this).Properties.PointerUpdateKind);
-        if (button == MouseButton.None || WorkOverlay.IsActive || _helpPicker.IsVisible) return;
+        if (button == MouseButton.None || WorkOverlay.IsActive || HelpPicker.IsActive(this)) return;
         var mods = Shortcuts.ChordMods(e.KeyModifiers);
         if (_keys.TryGetValue(new KeyChord(Key.None, mods, button), out var entry) && CanRun(entry.Scope, mods) && entry.Action())
             e.Handled = true;

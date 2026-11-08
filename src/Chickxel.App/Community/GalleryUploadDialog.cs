@@ -87,12 +87,13 @@ public sealed class GalleryUploadDialog : DialogBase
             Children =
             {
                 Ui.Group(UiStrings.Gallery_What, Ui.Stack(_png, _gif, Ui.Row(Ui.Label(UiStrings.Gallery_Scale), _scale), _info,
-                    Ui.Row(_shareProject, Ui.InfoBadge(UiStrings.Gallery_ShareProjectTip)), _scriptsNote)),
+                    Ui.Row(_shareProject, Ui.InfoBadge(UiStrings.Gallery_ShareProjectTip)).HelpAt("screen-gallery", anchor: "Sharing the editable file"),
+                    _scriptsNote.HelpAt("screen-gallery", anchor: "Sharing the editable file"))).HelpAt("screen-gallery", anchor: "Picture:"),
                 Ui.Group(UiStrings.Gallery_Details, Ui.Stack(
                     Ui.Label(UiStrings.Gallery_TitleLabel), _title,
                     Ui.Label(UiStrings.Gallery_DescriptionLabel), _description,
-                    Ui.Label(UiStrings.Gallery_TagsLabel), _tags)),
-                Ui.Group(UiStrings.Account_Title, Ui.Stack(_account, _accountBadge, accountButton)),
+                    Ui.Label(UiStrings.Gallery_TagsLabel), _tags)).HelpAt("screen-gallery", anchor: "Details:"),
+                Ui.Group(UiStrings.Account_Title, Ui.Stack(_account, _accountBadge, accountButton)).HelpAt("screen-gallery", anchor: "The account to upload with"),
             },
         };
         _form = settings;
@@ -102,9 +103,12 @@ public sealed class GalleryUploadDialog : DialogBase
             Children = { _preview, Note(UiStrings.Gallery_PublicNote) },
         };
         previewColumn.Width = 240;
-        Body.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { settings, previewColumn } });
-        Body.Children.Add(_error);
-        Body.Children.Add(_progressRow);
+        Body.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { settings, previewColumn.HelpAt("screen-gallery", anchor: "A still image of the current frame") } });
+        Body.Children.Add(_error.HelpAt("screen-gallery", anchor: "Uploading"));
+        Body.Children.Add(_progressRow.HelpAt("screen-gallery", anchor: "Uploading"));
+        // 대상 도움말(F1)
+        this.HelpAt("screen-gallery");
+        OkButton.HelpAt("screen-gallery", anchor: "Uploading");
 
         _png.IsCheckedChanged += (_, _) => UpdateInfo();
         _scale.ValueChanged += (_, _) => UpdateInfo();

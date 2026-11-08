@@ -22,6 +22,9 @@ public sealed class VideoImportDialog : DialogBase
     public VideoImportDialog(string fileName, VideoInfo info, VideoImportOptions? initial = null)
         : base(UiStrings.Video_Title, UiStrings.Video_Import)
     {
+        // 대상 도움말(F1): 창 = "그림·움직이는 그림·영상 열기"의 영상 가져오기 그림(⑨~⑮), 줄마다 그 번호가 있는 문단, 부드럽게 = "부드럽게 켜고 끄기"
+        const string page = "files-open-media";
+        this.HelpAt(page, shot: "files-open-media-5");
         _info = info;
         var o = initial ?? VideoImportPlan.Defaults(info);
         var s = info.Best;
@@ -41,34 +44,34 @@ public sealed class VideoImportDialog : DialogBase
         _scale.SelectedIndex = o.Scale == VideoScaleMode.FitLongSide ? 1 : 0;
         _longSide = Ui.Num(1, Chickxel.Core.Model.PixelImage.MaxSize, o.LongSide, 70)
             .Presets(Ui.SpriteSizes).Unit("px").RecentKey("video.longSide");
-        _smooth = Ui.Check(UiStrings.Video_Smooth, o.Smooth).Tip(UiStrings.Video_SmoothTip);
-        _estimate = Ui.Label("");
+        _smooth = Ui.Check(UiStrings.Video_Smooth, o.Smooth).Tip(UiStrings.Video_SmoothTip).HelpAt(page, anchor: "Smooth on and off");
+        _estimate = Ui.Label("").HelpAt(page, anchor: "⑭");
         _estimate.FontWeight = FontWeight.SemiBold;
-        _warning = Ui.Label(UiStrings.Video_MemoryWarning);
+        _warning = Ui.Label(UiStrings.Video_MemoryWarning).HelpAt(page, anchor: "More frames use more memory");
         _warning.Foreground = AppTheme.WarningBrush;
         _warning.TextWrapping = TextWrapping.Wrap;
         _warning.MaxWidth = 460;
 
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*") };
-        void AddRow(string label, Control content)
+        void AddRow(string label, Control content, string mark)
         {
             int row = grid.RowDefinitions.Count;
             grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-            var l = Ui.Label(label);
+            var l = Ui.Label(label).HelpAt(page, anchor: mark);
             Grid.SetRow(l, row);
             Grid.SetRow(content, row);
             Grid.SetColumn(content, 1);
             grid.Children.Add(l);
-            grid.Children.Add(content);
+            grid.Children.Add(content.HelpAt(page, anchor: mark));
         }
         bool timed = !info.IsStill && duration > 0;
         if (timed)
             AddRow(UiStrings.Video_Range, Ui.Row(_start, Ui.Label("–"), _end,
-                Ui.Button(UiStrings.Video_WholeClip, (_, _) => { _start.Value = 0; _end.Value = duration; })));
-        AddRow(UiStrings.Video_Fps, Ui.Row(_fps, Ui.Label(UiStrings.FormatVideo_FpsNote(fps: Num(s.Fps)))));
-        AddRow(UiStrings.Video_MaxFrames, _maxFrames);
-        AddRow(UiStrings.Video_Scale, Ui.Row(_scale, _longSide, _smooth));
-
+                Ui.Button(UiStrings.Video_WholeClip, (_, _) => { _start.Value = 0; _end.Value = duration; })), "⑨");
+        AddRow(UiStrings.Video_Fps, Ui.Row(_fps, Ui.Label(UiStrings.FormatVideo_FpsNote(fps: Num(s.Fps)))), "⑩");
+        AddRow(UiStrings.Video_MaxFrames, _maxFrames, "⑪");
+        AddRow(UiStrings.Video_Scale, Ui.Row(_scale, _longSide, _smooth), "⑫");
+        OkButton.HelpAt(page, anchor: "⑮");
         Body.Children.Add(summary);
         Body.Children.Add(grid);
         Body.Children.Add(_estimate);
@@ -129,6 +132,8 @@ public sealed class ProgressDialog<T> : DialogBase where T : class
 
     private ProgressDialog(string title, string message, int total) : base(title)
     {
+        // 대상 도움말(F1): 이 창은 그림·영상 열기(움직이는 그림 풀기·ffmpeg로 영상 풀기)에만 쓰인다.
+        this.HelpAt("files-open-media");
         _total = Math.Max(1, total);
         OkButton.IsVisible = false;
         OkButton.IsDefault = false;

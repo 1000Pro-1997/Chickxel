@@ -20,6 +20,9 @@ internal sealed class UnsavedChangesDialog : DialogBase
 
     public UnsavedChangesDialog(IReadOnlyList<UnsavedFile> files) : base(UiStrings.S_UnsavedChangesDialog_UnsavedChangesDialog_CDE0AC4DCE, UiStrings.S_UnsavedChangesDialog_UnsavedChangesDialog_2541BFCB80)
     {
+        // 대상 도움말(F1): 창 = "닫을 때 저장 묻기", 파일 줄 = 목록 문단, 단추 = ②~④ 항목
+        const string page = "files-quit";
+        this.HelpAt(page);
         Body.Children.Add(Ui.Label(files.Count == 1
             ? UiStrings.S_UnsavedChangesDialog_UnsavedChangesDialog_10BDA86213
             : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UnsavedChangesDialog_UnsavedChangesDialog_8786C69C9A,files.Count), bold: true));
@@ -32,10 +35,12 @@ internal sealed class UnsavedChangesDialog : DialogBase
             MinWidth = 380,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-        });
+        }.HelpAt(page, anchor: "In the list, never-saved new documents"));
         SetButtonResult(OkButton, DialogResult.Yes);
         OkButton.Width = 130;
-        AddButton(UiStrings.S_UnsavedChangesDialog_UnsavedChangesDialog_A5BC13DA85, DialogResult.No);
+        OkButton.HelpAt(page, anchor: "Save selected files");
+        AddButton(UiStrings.S_UnsavedChangesDialog_UnsavedChangesDialog_A5BC13DA85, DialogResult.No).HelpAt(page, anchor: "Don't save");
+        CancelButtonControl.HelpAt(page, anchor: "Cancel: nothing closes");
         UpdateOk();
         Opened += (_, _) => OkButton.Focus();
         Closed += (_, _) => { foreach (var t in _thumbs) t.Dispose(); };

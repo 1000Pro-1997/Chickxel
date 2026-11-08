@@ -109,7 +109,11 @@ public sealed partial class AssetManagerWindow : DialogBase
         var restore = Ui.Button(VectorIcon.Undo2, UiStrings.Assets_RestoreOfficial, (sender, _) => RestoreOfficialEffects((Control)sender!))
             .Tip(UiStrings.Assets_RestoreOfficialTip);
         var toolbar = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 6) };
-        toolbar.Children.AddRange([_filter, _search, import, export, publish, restore]);
+        toolbar.Children.AddRange([
+            _filter.HelpAt(HelpPage, anchor: "Filter by Effects"), _search.HelpAt(HelpPage, anchor: "Filter by Effects"),
+            import.HelpAt(HelpPage, anchor: "Import from File"), export.HelpAt(HelpPage, anchor: "Import from File"),
+            publish.HelpAt(HelpPage, anchor: "Import from File"), restore.HelpAt(HelpPage, anchor: "Import from File"),
+        ]);
         foreach (var child in toolbar.Children) child.Margin = new Thickness(0, 0, 8, 0);
 
         _list.SelectionChanged += (_, _) =>
@@ -118,16 +122,19 @@ public sealed partial class AssetManagerWindow : DialogBase
             _selectKey = Selected is { } entry ? AssetKey(entry.Id) : null;
             ShowDetail();
         };
-        var split = new Grid { ColumnDefinitions = new ColumnDefinitions("340,*"), Children = { _list, DetailScroller(_detail) } };
-        var installed = new DockPanel();
+        _list.HelpAt(HelpPage, anchor: "The list shows My assets");
+        var split = new Grid { ColumnDefinitions = new ColumnDefinitions("340,*"), Children = { _list, DetailScroller(_detail).HelpAt(HelpPage, anchor: "Shows the selected asset's preview") } };
+        var installed = new DockPanel().HelpAt(HelpPage, anchor: "Installed tab");
         DockPanel.SetDock(toolbar, Dock.Top);
         installed.Children.Add(toolbar);
         installed.Children.Add(split);
 
-        _updatesTab = new TabItem { Header = UiStrings.Assets_TabUpdates, Content = UpdatesTab() };
-        _tabs.Items.Add(new TabItem { Header = UiStrings.Assets_TabInstalled, Content = installed });
-        _tabs.Items.Add(new TabItem { Header = UiStrings.Assets_TabStore, Content = StoreTab(_filter.SelectedIndex) });
+        // 탭 머리(①)는 탭 칸 설명으로, 탭 안은 각 탭 절로.
+        _updatesTab = new TabItem { Header = UiStrings.Assets_TabUpdates, Content = UpdatesTab() }.HelpAt(HelpPage, anchor: "There are Installed");
+        _tabs.Items.Add(new TabItem { Header = UiStrings.Assets_TabInstalled, Content = installed }.HelpAt(HelpPage, anchor: "There are Installed"));
+        _tabs.Items.Add(new TabItem { Header = UiStrings.Assets_TabStore, Content = StoreTab(_filter.SelectedIndex) }.HelpAt(HelpPage, anchor: "There are Installed"));
         _tabs.Items.Add(_updatesTab);
+        this.HelpAt(HelpPage);
         // 온라인 목록은 상점·업데이트 탭을 처음 열 때 받는다(관리자를 열기만 해서는 요청하지 않음).
         _tabs.SelectionChanged += (_, _) =>
         {

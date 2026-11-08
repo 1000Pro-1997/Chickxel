@@ -35,6 +35,9 @@ public sealed class UpdateDialog : DialogBase
     public UpdateDialog(ReleaseInfo release, InstallPlan? plan, string? reason, Updater updater)
         : base(UiStrings.S_UpdateDialog_UpdateDialog_EBAD7C8C6E, UiStrings.S_UpdateDialog_UpdateDialog_0A1D8AF8D9)
     {
+        // 대상 도움말(F1): 창 = "업데이트"의 업데이트 창 소제목, 부분·단추마다 그 표의 ②~⑥ 줄
+        const string page = "start-update";
+        this.HelpAt(page, anchor: "Update dialog");
         _release = release;
         _plan = plan;
         _updater = updater;
@@ -48,7 +51,7 @@ public sealed class UpdateDialog : DialogBase
             Foreground = AppTheme.TextBrush,
             Margin = new Thickness(3, 0, 3, 2),
         });
-        Body.Children.Add(Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UpdateDialog_UpdateDialog_7B9D65167A,release.Version,AppInfo.VersionText,published)));
+        Body.Children.Add(Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UpdateDialog_UpdateDialog_7B9D65167A,release.Version,AppInfo.VersionText,published)).HelpAt(page, anchor: "Versions"));
         string pageUrl = release.PageUrl.ToString();
         var notes = new MarkdownView(MonoFont, url => Updater.OpenUrl(this, url)) { ListIndent = 10, HeadingGap = 6, Margin = new Thickness(10, 8, 10, 10) };
         notes.SetText(release.Notes.Trim().Length > 0
@@ -68,7 +71,7 @@ public sealed class UpdateDialog : DialogBase
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                 Content = notes,
             },
-        });
+        }.HelpAt(page, anchor: "Changes"));
         // 버전별 릴리스 페이지 링크(설명을 읽었든 못 읽었든 늘 보임)
         var linkLabel = Ui.IconLabel(VectorIcon.ExternalLink, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UpdateDialog_UpdateDialog_D7A2B2A2F5,release.Version), iconAfter: true);
         ((TextBlock)linkLabel.Children[0]).TextDecorations = TextDecorations.Underline;
@@ -82,7 +85,7 @@ public sealed class UpdateDialog : DialogBase
             Cursor = new Cursor(StandardCursorType.Hand),
         }.Tip(pageUrl);
         link.Click += (_, _) => Updater.OpenUrl(this, pageUrl);
-        Body.Children.Add(link);
+        Body.Children.Add(link.HelpAt(page, anchor: "Open release page"));
         _note = new TextBlock
         {
             TextWrapping = TextWrapping.Wrap,
@@ -91,7 +94,7 @@ public sealed class UpdateDialog : DialogBase
             Foreground = AppTheme.WarningBrush,
             IsVisible = false,
         };
-        Body.Children.Add(_note);
+        Body.Children.Add(_note.HelpAt(page, anchor: "For development or test builds"));
         if (reason is not null) ShowNote(reason, warning: true);
 
         _progress = new ProgressBar { Minimum = 0, Maximum = 1, Width = 580, Height = 8, Margin = new Thickness(3, 6, 3, 0) };
@@ -100,14 +103,15 @@ public sealed class UpdateDialog : DialogBase
         _progressRow = new StackPanel { Spacing = 2, IsVisible = false };
         _progressRow.Children.Add(_progress);
         _progressRow.Children.Add(_progressText);
-        Body.Children.Add(_progressRow);
+        Body.Children.Add(_progressRow.HelpAt(page, anchor: "Update now"));
 
         OkButton.IsEnabled = plan is not null;
         OkButton.Click += OnInstallClick;
+        OkButton.HelpAt(page, anchor: "Update now");
         _skip = AddButton(UiStrings.S_UpdateDialog_UpdateDialog_610C2A5D3F, DialogResult.No);
-        _skip.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UpdateDialog_UpdateDialog_DFA012F0A4,release.Version));
+        _skip.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UpdateDialog_UpdateDialog_DFA012F0A4,release.Version)).HelpAt(page, anchor: "Don't show until the next update");
         _skip.Click += (_, _) => Choice = UpdateChoice.Skip;
-        _page = AddButton(UiStrings.S_UpdateDialog_UpdateDialog_6150741919, DialogResult.Yes);
+        _page = AddButton(UiStrings.S_UpdateDialog_UpdateDialog_6150741919, DialogResult.Yes).HelpAt(page, anchor: "Open release page");
         _page.Click += (_, _) =>
         {
             DialogResult = DialogResult.None; // 창은 그대로 둔다
@@ -119,7 +123,7 @@ public sealed class UpdateDialog : DialogBase
             _page.IsDefault = true;
         }
         CancelButtonControl.Content = UiStrings.S_UpdateDialog_UpdateDialog_45C551D917;
-        CancelButtonControl.Tip(UiStrings.S_UpdateDialog_UpdateDialog_024D578A11);
+        CancelButtonControl.Tip(UiStrings.S_UpdateDialog_UpdateDialog_024D578A11).HelpAt(page, anchor: "Later");
         CancelButtonControl.Click += (_, _) =>
         {
             if (_cts is not { } cts) return; // 나중에 → 닫기

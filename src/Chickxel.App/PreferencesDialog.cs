@@ -44,6 +44,10 @@ public sealed class PreferencesDialog : DialogBase
         string? referencesFolder, bool showReferenceExamples, string? ffmpegPath, Action<Window> showAiStatus)
         : base(UiStrings.S_PreferencesDialog_PreferencesDialog_0B1C3F663F)
     {
+        // 대상 도움말(F1): 창 = "환경 설정", 탭 머리글 = 그 탭을 설명하는 표 줄·소제목, 탭 안의 묶음 = 그 설정을 자세히 설명하는 쪽
+        // (언어 = 화면 언어 바꾸기·새 언어 만들기, 실행취소 기록, 자동 저장, 앱 휴지통, 업데이트, 단축키 = 단축키 바꾸기, AI 참고 자료, 영상 = ffmpeg 그림).
+        const string page = "files-settings";
+        this.HelpAt(page);
         _commands = commands;
         _keys = commands.ToDictionary(c => c.Id, c => keys.TryGetValue(c.Id, out var k) ? k.ToList() : c.Defaults.ToList());
         _language = Ui.Combo(220);
@@ -92,43 +96,48 @@ public sealed class PreferencesDialog : DialogBase
             ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_4B32B49831,AppInfo.VersionText)
             : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_80B1F80264,AppInfo.VersionText));
         updateNote.Foreground = AppTheme.DimTextBrush;
+        const string languagePage = "language-change", makePage = "language-make";
         var general = Ui.Stack(
-            Ui.Label(UiStrings.Language_Title, bold: true),
-            Ui.Row(Ui.Label(UiStrings.Language_Label), _language),
+            Ui.Label(UiStrings.Language_Title, bold: true).HelpAt(languagePage, anchor: "Choosing a language"),
+            Ui.Row(Ui.Label(UiStrings.Language_Label), _language).HelpAt(languagePage, anchor: "Choose from the"),
             Ui.Row(
-                Ui.Button(UiStrings.Language_Export, (_, _) => ExportLanguages()),
-                Ui.Button(UiStrings.Language_Import, (_, _) => ImportLanguages()),
+                Ui.Button(UiStrings.Language_Export, (_, _) => ExportLanguages()).HelpAt(makePage, anchor: "Save a CSV file with"),
+                Ui.Button(UiStrings.Language_Import, (_, _) => ImportLanguages()).HelpAt(makePage, anchor: "Choose the file with"),
                 Ui.Button(UiStrings.Language_OpenFolder, (_, _) =>
                 {
                     Directory.CreateDirectory(UiLanguage.Folder);
                     Platform.OpenFolder(UiLanguage.Folder);
-                })),
-            languageNote,
-            _languageStatus,
-            Ui.Label(UiStrings.Language_UndoTitle, bold: true),
-            Ui.Row(Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_1F7416F7D9), _undo, Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_20DF2ED64F,UndoStack.DefaultCapacity,UndoStack.MaxCapacity))),
-            Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_D87D2E02E0),
-            Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_02113E25F5, bold: true),
-            _historyOn,
+                }).HelpAt(page, anchor: "Languages/")),
+            languageNote.HelpAt(languagePage, anchor: "Restarting to apply"),
+            _languageStatus.HelpAt(makePage, anchor: "The number of strings added"),
+            Ui.Label(UiStrings.Language_UndoTitle, bold: true).HelpAt(page, anchor: "Undo steps"),
+            Ui.Row(Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_1F7416F7D9), _undo, Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_20DF2ED64F,UndoStack.DefaultCapacity,UndoStack.MaxCapacity)))
+                .HelpAt(page, anchor: "Undo steps"),
+            Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_D87D2E02E0).HelpAt(page, anchor: "Undo steps"),
+            Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_02113E25F5, bold: true).HelpAt("files-history", shot: "files-history"),
+            _historyOn.HelpAt("files-history", shot: "files-history"),
             Ui.Row(Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_566552BAB9), _historyDays, Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_8FA707928D))
-                .Tip(UiStrings.S_PreferencesDialog_PreferencesDialog_F8AA857BED),
-            Ui.Row(Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_AFE766F9E0), _historyMb, Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_F7A34332AC,UndoHistoryPolicy.DefaultMaxMegabytes))),
-            Ui.Row(historyUsage, historyClear),
-            historyNote,
-            Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_06B0DD01B8, bold: true),
+                .Tip(UiStrings.S_PreferencesDialog_PreferencesDialog_F8AA857BED).HelpAt("files-history", shot: "files-history"),
+            Ui.Row(Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_AFE766F9E0), _historyMb, Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_F7A34332AC,UndoHistoryPolicy.DefaultMaxMegabytes)))
+                .HelpAt("files-history", shot: "files-history"),
+            Ui.Row(historyUsage, historyClear).HelpAt("files-history", shot: "files-history"),
+            historyNote.HelpAt("files-history", anchor: "When history is discarded"),
+            Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_06B0DD01B8, bold: true).HelpAt("files-autosave", anchor: "Turning it on/off and the wait time"),
             Ui.Row(_autoSave, _autoSaveDelay,
-                Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_19CDB23584,AppSettings.DefaultAutoSaveDelay,AppSettings.MinAutoSaveDelay,AppSettings.MaxAutoSaveDelay))),
-            autoSaveNote,
-            Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_B57D05987F, bold: true),
-            _trash,
-            Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_B4D135E19E, bold: true),
-            _updateCheck,
-            updateNote,
-            Ui.Label(UiStrings.Prefs_ResetSettings_Title, bold: true),
+                Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_19CDB23584,AppSettings.DefaultAutoSaveDelay,AppSettings.MinAutoSaveDelay,AppSettings.MaxAutoSaveDelay)))
+                .HelpAt("files-autosave", anchor: "Turning it on/off and the wait time"),
+            autoSaveNote.HelpAt("files-autosave", anchor: "When it saves and when it doesn't"),
+            Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_B57D05987F, bold: true).HelpAt("screen-file-browser", anchor: "Retention policy"),
+            _trash.HelpAt("screen-file-browser", anchor: "Retention policy"),
+            Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_B4D135E19E, bold: true).HelpAt("start-update", anchor: "Clear this checkbox"),
+            _updateCheck.HelpAt("start-update", anchor: "Clear this checkbox"),
+            updateNote.HelpAt("start-update", anchor: "Clear this checkbox"),
+            Ui.Label(UiStrings.Prefs_ResetSettings_Title, bold: true).HelpAt(page, anchor: "Reset settings"),
             Ui.Row(Ui.Button(VectorIcon.Undo2, UiStrings.Prefs_ResetSettings_Button, (_, _) => RequestReset()),
-                Ui.InfoBadge(UiStrings.Prefs_ResetSettings_Info)));
+                Ui.InfoBadge(UiStrings.Prefs_ResetSettings_Info)).HelpAt(page, anchor: "Reset settings"));
 
-        _search = new TextBox { Watermark = UiStrings.S_PreferencesDialog_PreferencesDialog_3384322E72, Width = 260, Margin = new Thickness(2) };
+        const string keysPage = "shortcuts-customize";
+        _search = new TextBox { Watermark = UiStrings.S_PreferencesDialog_PreferencesDialog_3384322E72, Width = 260, Margin = new Thickness(2) }.HelpAt(keysPage, anchor: "Search by command");
         _search.TextChanged += (_, _) => RebuildRows();
         _status = Ui.Label("");
         _status.Foreground = AppTheme.DimTextBrush;
@@ -137,14 +146,15 @@ public sealed class PreferencesDialog : DialogBase
         DockPanel.SetDock(top, Dock.Top);
         var bottom = Ui.Stack(
             Ui.Row(
-                Ui.Button(UiStrings.S_PreferencesDialog_PreferencesDialog_CAB27CF286, (_, _) => ResetAll()),
-                Ui.Button(UiStrings.S_PreferencesDialog_PreferencesDialog_CC8999072A, (_, _) => Export()),
-                Ui.Button(UiStrings.S_PreferencesDialog_PreferencesDialog_1B59D72F85, (_, _) => Import())),
+                Ui.Button(UiStrings.S_PreferencesDialog_PreferencesDialog_CAB27CF286, (_, _) => ResetAll()).HelpAt(keysPage, anchor: "Search by command"),
+                Ui.Button(UiStrings.S_PreferencesDialog_PreferencesDialog_CC8999072A, (_, _) => Export()).HelpAt(keysPage, anchor: "Export (JSON)"),
+                Ui.Button(UiStrings.S_PreferencesDialog_PreferencesDialog_1B59D72F85, (_, _) => Import()).HelpAt(keysPage, anchor: "Export (JSON)")),
             _status);
         DockPanel.SetDock(bottom, Dock.Bottom);
         shortcuts.Children.Add(top);
         shortcuts.Children.Add(bottom);
-        shortcuts.Children.Add(new ScrollViewer { Content = _rows, Height = 420, Width = 720, Background = AppTheme.InputBrush });
+        // 명령 줄(다시 만들어짐)은 감싼 스크롤이 받는다: 줄마다 바꾸기·추가·없음·기본값 항목.
+        shortcuts.Children.Add(new ScrollViewer { Content = _rows, Height = 420, Width = 720, Background = AppTheme.InputBrush }.HelpAt(keysPage, anchor: "For each row choose"));
 
         // AI 참고 자료
         _refsFolder = string.IsNullOrWhiteSpace(referencesFolder) ? null : referencesFolder;
@@ -158,8 +168,8 @@ public sealed class PreferencesDialog : DialogBase
         refsNote.MaxWidth = 640;
         refsNote.HorizontalAlignment = HorizontalAlignment.Left;
         var references = Ui.Stack(
-            Ui.Label(UiStrings.Refs_Prefs_Folder, bold: true),
-            _refsFolderBox,
+            Ui.Label(UiStrings.Refs_Prefs_Folder, bold: true).HelpAt("ai-references", anchor: "Folder (⑭)"),
+            _refsFolderBox.HelpAt("ai-references", anchor: "Folder (⑭)"),
             Ui.Row(
                 Ui.Button(UiStrings.Refs_Prefs_ChangeFolder, (_, _) =>
                 {
@@ -185,8 +195,8 @@ public sealed class PreferencesDialog : DialogBase
                         Ui.Error(this, ex.Message);
                     }
                 })),
-            _refsExamples,
-            refsNote);
+            _refsExamples.HelpAt("ai-references", anchor: "Built-in references (marked"),
+            refsNote).HelpAt("ai-references", anchor: "Preferences: in Edit");
 
         // 영상(ffmpeg)
         _ffmpegBox = new TextBox { Text = ffmpegPath ?? "", Watermark = UiStrings.Ffmpeg_Prefs_Auto, Width = 460, Margin = new Thickness(2) };
@@ -229,7 +239,7 @@ public sealed class PreferencesDialog : DialogBase
                 }),
                 Ui.Button(UiStrings.Ffmpeg_OpenDownload, (_, _) => Updater.OpenUrl(this, FfmpegTool.DownloadUrl))),
             ffmpegStatus,
-            ffmpegNote);
+            ffmpegNote).HelpAt("files-open-media", shot: "files-open-media-4");
 
         var aiStatusNote = Ui.Label(UiStrings.AiStatus_SettingsNote);
         aiStatusNote.TextWrapping = TextWrapping.Wrap;
@@ -239,7 +249,7 @@ public sealed class PreferencesDialog : DialogBase
         var ai = Ui.Stack(
             Ui.Label(UiStrings.AiStatus_SettingsTitle, bold: true),
             aiStatusNote,
-            Ui.Button(VectorIcon.Info, UiStrings.AiStatus_Open, (_, _) => showAiStatus(this)));
+            Ui.Button(VectorIcon.Info, UiStrings.AiStatus_Open, (_, _) => showAiStatus(this))).HelpAt("ai-setup", anchor: "Open AI status and settings in Preferences");
 
         // 프리셋: 지운 기본 프리셋 되살리기(누르면 바로 저장 — 확인·취소와 무관).
         var presetsNote = Ui.Label(UiStrings.Presets_Prefs_Note);
@@ -268,15 +278,19 @@ public sealed class PreferencesDialog : DialogBase
                         MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
                 if (GradientPresetUi.RestoreBuiltIns(this)) presetsStatus.Text = UiStrings.Presets_Restored;
             }),
-            presetsStatus);
+            presetsStatus).HelpAt(page, anchor: "Presets");
 
         var tabs = new TabView();
-        tabs.AddPage(UiStrings.S_PreferencesDialog_PreferencesDialog_2626F2C3C7, general);
-        tabs.AddPage(UiStrings.S_PreferencesDialog_PreferencesDialog_DA9395C360, shortcuts);
+        tabs.AddPage(UiStrings.S_PreferencesDialog_PreferencesDialog_2626F2C3C7, general.HelpAt(page, anchor: "General tab"));
+        tabs.AddPage(UiStrings.S_PreferencesDialog_PreferencesDialog_DA9395C360, shortcuts.HelpAt(keysPage, anchor: "Shortcuts tab"));
         tabs.AddPage(UiStrings.AiStatus_SettingsTab, ai);
         tabs.AddPage(UiStrings.Refs_Prefs_Tab, references);
         tabs.AddPage(UiStrings.Presets_Prefs_Tab, presets);
         tabs.AddPage(UiStrings.Ffmpeg_Prefs_Tab, video);
+        tabs.Strip.HelpAt(0, page, anchor: "General tab").HelpAt(1, keysPage, anchor: "Shortcuts tab").HelpAt(2, page, anchor: "AI Status")
+            .HelpAt(3, page, anchor: "AI references").HelpAt(4, page, anchor: "Presets").HelpAt(5, page, anchor: "Video (ffmpeg)");
+        // 탭 안의 빈 곳(줄 사이)도 그 탭의 자리로 가게 바탕을 칠한다(투명).
+        foreach (var content in new Panel[] { general, shortcuts, ai, references, presets, video }) content.Background = Brushes.Transparent;
         Body.Children.Add(tabs);
         RebuildRows();
         // 키를 기다리는 중이면 어떤 키든(Enter·Tab 포함) 단축키로 받는다. 마우스는 옆 단추(4·5번)만 받고 다른 단추·휠은 평소대로 둔다.

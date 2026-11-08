@@ -18,8 +18,9 @@ internal static class ScreenPanelShots
 
     /// <summary>
     /// 파일 브라우저: 1 = ① 폴더 트리 ② 썸네일 목록 ③ 검색 ④ 하위 폴더 포함 ⑤ 제목 줄 아이콘 셋 ⑥ .chickxel 배지 ⑦ 저장 안 한 빨간 점,
-    /// 2 = ⑧ 여러 개 고름 ⑨ 우클릭 메뉴, 3 = 합치기 창(⑩ 순서 ⑪ 이름 ⑫ 방식 ⑬ 캔버스·기준점·원본 삭제 ⑭ 미리보기 ⑮ 타임라인 모양),
-    /// 4 = 앱 휴지통(⑯ 목록·미리보기 ⑰ 되살리기·영구 삭제·비우기 ⑱ 보관 정책).
+    /// 5 = 프로젝트 묶음(⑧ 펼치기/접기 화살표 ⑨ 펼친 묶음의 검은 테두리 띠), 2 = ⑩ 여러 개 고름 ⑪ 우클릭 메뉴,
+    /// 3 = 합치기 창(⑫ 순서 ⑬ 이름 ⑭ 방식 ⑮ 캔버스·기준점·원본 삭제 ⑯ 미리보기 ⑰ 타임라인 모양),
+    /// 4 = 앱 휴지통(⑱ 목록·미리보기 ⑲ 되살리기·영구 삭제·비우기 ⑳ 보관 정책).
     /// </summary>
     [Shot("screen-file-browser")]
     public static void FileBrowser(ShotKit k)
@@ -50,13 +51,25 @@ internal static class ScreenPanelShots
             search, includeSub, U(main, headerButtons).Inflate(new Thickness(4, 4, 2, 2)), Grow(badge, main, 3), Grow(dot, main, 5),
         ], only: [panel]);
 
+        // 5: 프로젝트 묶음을 펼친 모습(내보낸 _night·_hurt가 프로젝트 칸 뒤에 이어지고 검은 테두리로 묶임)
+        var projectPath = ShotKit.Get<string>(project.Tag!, "Path");
+        ShotKit.Call(browser, "SetGroupExpanded", projectPath, true);
+        k.Settle(500);
+        var arrow = ShotKit.Get<Control>(FileItem(browser, projectName).Tag!, "Arrow");
+        var bundle = new[] { projectName, nightName, SampleName + "_hurt.png" }
+            .Select(n => ShotKit.Bounds(FileItem(browser, n), main)).Aggregate((x, y) => x.Union(y));
+        var bundleItems = ShotKit.All<ListBoxItem>(browser).Where(i => i.IsEffectivelyVisible).Select(i => ShotKit.Bounds(i, main)).Aggregate((x, y) => x.Union(y));
+        var listArea = new Rect(b.X, ShotKit.Bounds(list, main).Y, b.Width, bundleItems.Bottom + 12 - ShotKit.Bounds(list, main).Y);
+        Shot(k, main, "screen-file-browser-5", listArea, [Grow(arrow, main, 3), bundle.Inflate(7)], 8, only: [listArea]);
+
         // 2: 여러 개 고르고 우클릭
         k.Click(FileItem(browser, projectName));
         k.Click(FileItem(browser, nightName), mods: RawInputModifiers.Control);
         k.Click(FileItem(browser, nightName), MouseButton.Right, settleMs: 500);
         var menu = PopupArea(k, main) ?? throw new InvalidOperationException("no file menu");
         var chosen = U(main, FileItem(browser, projectName), FileItem(browser, nightName));
-        Shot(k, main, "screen-file-browser-2", panel.Union(menu).Inflate(4), [chosen, Pop(menu)], 8, only: [panel, menu]);
+        var expandedPanel = new Rect(b.X, b.Y, b.Width, bundleItems.Bottom + 12 - b.Y);
+        Shot(k, main, "screen-file-browser-2", expandedPanel.Union(menu).Inflate(4), [chosen, Pop(menu)], 10, only: [expandedPanel, menu]);
         PopupMenus.CloseAll();
         k.Settle(200);
 
@@ -75,7 +88,7 @@ internal static class ScreenPanelShots
                 U(w, ShotKit.Get<Control>(w, "_w"), ShotKit.Get<Control>(w, "_h"), ShotKit.Get<Control>(w, "_anchor"), ShotKit.Get<Control>(w, "_deleteOriginals")),
                 ShotKit.Get<Control>(w, "_preview"),
                 ShotKit.Get<Control>(w, "_timeline"),
-            ], firstNumber: 10);
+            ], firstNumber: 12);
         });
 
         // 4: 앱 휴지통(하나 지운 뒤)
@@ -94,7 +107,7 @@ internal static class ScreenPanelShots
                 U(w, ShotKit.Get<Control>(w, "_list"), ShotKit.Get<Control>(w, "_preview")),
                 U(w, buttons),
                 ShotKit.Get<Control>(w, "_policy"),
-            ], firstNumber: 16);
+            ], firstNumber: 18);
         });
     }
 

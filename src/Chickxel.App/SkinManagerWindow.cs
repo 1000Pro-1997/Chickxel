@@ -13,6 +13,8 @@ namespace Chickxel.App;
 public sealed class SkinManagerWindow : Window
 {
     private const int GroupThumb = 72, PartThumb = 52, PreviewH = 200;
+    /// <summary>대상 도움말(F1) 가이드 쪽.</summary>
+    private const string Page = "parts-skin-manager";
     private static readonly Cursor HandCursor = new(StandardCursorType.Hand);
     private static readonly Cursor PanCursor = new(StandardCursorType.SizeWestEast);
     /// <summary>처음 크기(예전 680×720의 1.7배 — 화면보다 크면 화면 안으로 줄임).</summary>
@@ -62,14 +64,18 @@ public sealed class SkinManagerWindow : Window
             Foreground = AppTheme.DimTextBrush,
             Margin = new Thickness(0, 0, 0, 6),
         };
-        var previewTitle = Ui.Label(UiStrings.S_SkinManagerWindow_SkinManagerWindow_98420F8C46, bold: true);
+        var previewTitle = Ui.Label(UiStrings.S_SkinManagerWindow_SkinManagerWindow_98420F8C46, bold: true).HelpAt(Page, anchor: "The full outfit is at the top");
         previewTitle.Margin = new Thickness(0, 0, 0, 2);
         _filter.SelectedIndex = 0;
         _filter.SetTip(0, UiStrings.S_SkinManagerWindow_SkinManagerWindow_2AEC4F8E08)
             .SetTip(1, UiStrings.S_SkinManagerWindow_SkinManagerWindow_5094948406)
             .SetTip(2, UiStrings.S_SkinManagerWindow_SkinManagerWindow_FE001EBC56);
         _filter.SelectionChanged += (_, _) => Dispatcher.UIThread.Post(Rebuild);
-        var filterLine = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4), Children = { Ui.Label(UiStrings.S_SkinManagerWindow_SkinManagerWindow_479B536E62), _filter } };
+        var filterLine = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4), Background = Brushes.Transparent, Children = { Ui.Label(UiStrings.S_SkinManagerWindow_SkinManagerWindow_479B536E62), _filter } }
+            .HelpAt(Page, anchor: "Use the ⑪ All");
+        // 대상 도움말(F1): 창 = "스킨 관리 창" 쪽, 위 거르기 ⑪·전체 착장 ④, 카드·줄은 만들 때(Rebuild) 그 자리를 붙인다
+        this.HelpAt(Page);
+        _preview.HelpAt(Page, anchor: "The full outfit is at the top");
         var content = new StackPanel { Margin = new Thickness(10, 8), Children = { filterLine, help, previewTitle, _preview, _outfits, _list } };
         // 아래 확인 단추(Enter·Esc도 닫기): 카드를 누를 때마다 이미 적용되므로 창만 닫는다.
         var ok = new Button { Content = UiStrings.S_SkinManagerWindow_SkinManagerWindow_E08E14A158, MinWidth = 90, IsDefault = true, IsCancel = true, HorizontalContentAlignment = HorizontalAlignment.Center };
@@ -310,7 +316,9 @@ public sealed class SkinManagerWindow : Window
     /// <summary>착장 프리셋 묶음: 제목 + "지금 착장 저장…", 건너뛴 항목 안내, 착장 카드(누르면 적용, 우클릭 = 메뉴).</summary>
     private Control OutfitSection(SpriteProject p, int frame)
     {
+        const string outfitsPage = "parts-outfits";
         var save = new Button { Content = UiStrings.S_SkinManagerWindow_OutfitSection_D0B9C07D70, Padding = new Thickness(6, 1), VerticalAlignment = VerticalAlignment.Center }
+            .HelpAt(outfitsPage, anchor: "Use ④ Save current outfit")
             .Tip(UiStrings.S_SkinManagerWindow_OutfitSection_199CA8C134);
         save.Click += (_, _) => Dispatcher.UIThread.Post(SaveOutfit);
         var title = new TextBlock { Text = UiStrings.S_SkinManagerWindow_OutfitSection_E9FE78438D, FontWeight = FontWeight.Bold, VerticalAlignment = VerticalAlignment.Center };
@@ -353,7 +361,7 @@ public sealed class SkinManagerWindow : Window
                 var outfit = outfits[i];
                 var missing = p.MissingOutfitEntries(outfit);
                 var bmp = Track(p.FlattenOutfit(frame, outfit, null));
-                var card = Card(bmp, p.Size, GroupThumb, outfit.Name, IsCurrentOutfit(p, outfit), missing.Count > 0 ? "!" : null);
+                var card = Card(bmp, p.Size, GroupThumb, outfit.Name, IsCurrentOutfit(p, outfit), missing.Count > 0 ? "!" : null).HelpAt(outfitsPage, anchor: "click ⑤ its card");
                 card.Tip(missing.Count == 0
                     ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_OutfitSection_104A3435D1,outfit.Name)
                     : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_OutfitSection_B497B58B96,outfit.Name) + string.Join("\n", missing.Select(m => "· " + m)));
@@ -363,6 +371,7 @@ public sealed class SkinManagerWindow : Window
             }
             body.Children.Add(cards);
         }
+        // 대상 도움말(F1): 착장 프리셋 묶음 = "착장 바꾸기와 착장 프리셋"의 착장 프리셋(저장 단추 ④·카드 ⑤ 문단)
         return new Border
         {
             Background = AppTheme.BackBrush,
@@ -371,7 +380,7 @@ public sealed class SkinManagerWindow : Window
             CornerRadius = new CornerRadius(3),
             Padding = new Thickness(6),
             Child = body,
-        };
+        }.HelpAt(outfitsPage, anchor: "Outfit presets");
     }
 
     /// <summary>지금 착장이 이 착장 프리셋과 같은지(<see cref="SpriteProject.ApplyOutfit"/>가 바꿀 것이 없으면 같음).</summary>
@@ -459,7 +468,7 @@ public sealed class SkinManagerWindow : Window
             Margin = new Thickness(0, 0, 6, 0),
             VerticalAlignment = VerticalAlignment.Center,
             IsEnabled = parts.Count > 0 && ShowFull,
-        }.Tip(UiStrings.S_SkinManagerWindow_GroupRow_5734D99416);
+        }.HelpAt(Page, anchor: "Expand ⑨ Per part").Tip(UiStrings.S_SkinManagerWindow_GroupRow_5734D99416);
         toggle.Click += (_, _) =>
         {
             if (!_expanded.Remove(group)) _expanded.Add(group);
@@ -479,7 +488,7 @@ public sealed class SkinManagerWindow : Window
         if (overrides > 0)
         {
             var reset = new Button { Content = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_GroupRow_6FDB1B90E3,overrides), Padding = new Thickness(6, 1), VerticalAlignment = VerticalAlignment.Center }
-                .Tip(UiStrings.S_SkinManagerWindow_GroupRow_D93BDD8066);
+                .HelpAt("parts-per-part", anchor: "A single part in a group can wear a different skin").Tip(UiStrings.S_SkinManagerWindow_GroupRow_D93BDD8066);
             reset.Click += (_, _) => _ctx.ResetPartSkins(group);
             DockPanel.SetDock(reset, Dock.Right);
             head.Children.Add(reset);
@@ -504,15 +513,16 @@ public sealed class SkinManagerWindow : Window
             {
                 var skin = skins[i];
                 var bmp = p.RenderCelThumbnail(gi, frame, skin) is { } thumb ? Track(thumb) : null;
-                var card = Card(bmp, cardSize, GroupThumb, i == 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_GroupRow_3C53E562C4,skin.Name) : skin.Name, ReferenceEquals(skin, group.ActiveSkin), badge: null);
+                var card = Card(bmp, cardSize, GroupThumb, i == 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_GroupRow_3C53E562C4,skin.Name) : skin.Name, ReferenceEquals(skin, group.ActiveSkin), badge: null)
+                    .HelpAt(Page, anchor: "In a card's right-click menu");
                 card.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_GroupRow_FC60E8F0BD,group.Name,skin.Name));
                 int index = i;
                 Clickable(card, () => _ctx.SetActiveSkin(group, skin), () => GroupCardMenu(group, skin, index), onRelease: true);
                 drag.Attach(card);
                 cards.Children.Add(card);
             }
-            var add = Ui.Button(VectorIcon.Plus, UiStrings.S_SkinManagerWindow_GroupRow_9C2AC337EC, (_, _) => SkinOps.AddSkin(_ctx, group, null)).Tip(UiStrings.S_SkinManagerWindow_GroupRow_DB88A91B7D);
-            var dup = Ui.Button(UiStrings.S_SkinManagerWindow_GroupRow_A6B044A804, (_, _) => SkinOps.AddSkin(_ctx, group, group.ActiveSkin)).Tip(UiStrings.S_SkinManagerWindow_GroupRow_9D0EB19E37);
+            var add = Ui.Button(VectorIcon.Plus, UiStrings.S_SkinManagerWindow_GroupRow_9C2AC337EC, (_, _) => SkinOps.AddSkin(_ctx, group, null)).HelpAt("parts-skin-empty", anchor: "New skin (empty)").Tip(UiStrings.S_SkinManagerWindow_GroupRow_DB88A91B7D);
+            var dup = Ui.Button(UiStrings.S_SkinManagerWindow_GroupRow_A6B044A804, (_, _) => SkinOps.AddSkin(_ctx, group, group.ActiveSkin)).HelpAt("parts-skin-empty", anchor: "Duplicate").Tip(UiStrings.S_SkinManagerWindow_GroupRow_9D0EB19E37);
             add.HorizontalAlignment = dup.HorizontalAlignment = HorizontalAlignment.Stretch;
             // 단추는 카드 줄 끝에(등록하지 않은 줄이라 끄는 동안 제자리를 지킨다).
             cards.Children.Add(new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0), Children = { add, dup } });
@@ -536,7 +546,7 @@ public sealed class SkinManagerWindow : Window
             CornerRadius = new CornerRadius(3),
             Padding = new Thickness(6),
             Child = body,
-        };
+        }.HelpAt(Page, anchor: "skin cards for each group");
         if (ReferenceEquals(group, _focus)) focusRow = row;
         return row;
     }
@@ -558,7 +568,7 @@ public sealed class SkinManagerWindow : Window
         if (ShowFull)
         {
             // 첫 카드 "없음" = 이 부위만 따로 입힌 스킨 없음(그룹 스킨을 그대로 보임) — 그림 대신 금지 표시.
-            var follow = Card(null, size, PartThumb, UiStrings.S_SkinManagerWindow_PartRow_7B30E64531, own is null, badge: null, none: true);
+            var follow = Card(null, size, PartThumb, UiStrings.S_SkinManagerWindow_PartRow_7B30E64531, own is null, badge: null, none: true).HelpAt(Page, anchor: "Expand ⑨ Per part");
             follow.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_99B0FAABB1,group.ActiveSkin?.Name));
             Clickable(follow, () => _ctx.SetPartSkin(part, null), () => PartCardMenu(group, part, null));
             cards.Children.Add(follow);
@@ -566,7 +576,8 @@ public sealed class SkinManagerWindow : Window
             for (int i = 0; i < skins.Count; i++)
             {
                 var skin = skins[i];
-                var card = Card(Cel(skin), size, PartThumb, i == 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_E3B6A5EA65,skin.Name) : skin.Name, ReferenceEquals(skin, own), badge: null);
+                var card = Card(Cel(skin), size, PartThumb, i == 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_E3B6A5EA65,skin.Name) : skin.Name, ReferenceEquals(skin, own), badge: null)
+                    .HelpAt(Page, anchor: "Expand ⑨ Per part");
                 card.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_CEF2198767,part.Name,skin.Name));
                 Clickable(card, () => _ctx.SetPartSkin(part, skin), () => PartCardMenu(group, part, skin));
                 cards.Children.Add(card);
@@ -578,15 +589,15 @@ public sealed class SkinManagerWindow : Window
             for (int i = 0; i < ownSkins.Count; i++)
             {
                 var skin = ownSkins[i];
-                var card = Card(Cel(skin), size, PartThumb, skin.Name, ReferenceEquals(skin, own), badge: null, partOnly: true);
+                var card = Card(Cel(skin), size, PartThumb, skin.Name, ReferenceEquals(skin, own), badge: null, partOnly: true).HelpAt("parts-per-part", anchor: "Part-only skins");
                 card.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_85DEDD2457,part.Name,skin.Name) + UiStrings.S_SkinManagerWindow_PartRow_EA54194A02);
                 int index = i, count = ownSkins.Count;
                 Clickable(card, () => _ctx.SetPartSkin(part, skin), () => PartOnlyCardMenu(group, part, skin, index, count));
                 cards.Children.Add(card);
             }
-            var add = Ui.Button(VectorIcon.Plus, UiStrings.S_SkinManagerWindow_PartRow_F72FB89182, (_, _) => SkinOps.AddPartSkin(_ctx, this, part, null, prompt: true))
+            var add = Ui.Button(VectorIcon.Plus, UiStrings.S_SkinManagerWindow_PartRow_F72FB89182, (_, _) => SkinOps.AddPartSkin(_ctx, this, part, null, prompt: true)).HelpAt("parts-per-part", anchor: "Part-only skins")
                 .Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_A8A111B223,part.Name));
-            var dup = Ui.Button(UiStrings.S_SkinManagerWindow_PartRow_E91B568A36, (_, _) => SkinOps.AddPartSkin(_ctx, this, part, part.ShownSkin, prompt: true))
+            var dup = Ui.Button(UiStrings.S_SkinManagerWindow_PartRow_E91B568A36, (_, _) => SkinOps.AddPartSkin(_ctx, this, part, part.ShownSkin, prompt: true)).HelpAt("parts-per-part", anchor: "Part-only skins")
                 .Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_D7A2D2C8A0,part.Name,part.ShownSkin?.Name));
             add.HorizontalAlignment = dup.HorizontalAlignment = HorizontalAlignment.Stretch;
             cards.Children.Add(new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0), Children = { add, dup } });
@@ -606,15 +617,17 @@ public sealed class SkinManagerWindow : Window
         grid.Children.Add(label);
         Grid.SetColumn(cards, 1);
         grid.Children.Add(cards);
+        // 대상 도움말(F1): 부위 줄 = "부위마다" ⑨ 항목(빈 곳도 눌리게 투명 배경)
         return new Border
         {
             Margin = new Thickness(0, 4, 0, 0),
             Padding = new Thickness(2),
+            Background = Brushes.Transparent,
             BorderBrush = focused ? AppTheme.AccentBrush : AppTheme.BorderBrush,
             BorderThickness = new Thickness(focused ? 2 : 0, focused ? 2 : 1, focused ? 2 : 0, focused ? 2 : 0),
             CornerRadius = new CornerRadius(focused ? 3 : 0),
             Child = grid,
-        };
+        }.HelpAt(Page, anchor: "Expand ⑨ Per part");
     }
 
     /// <summary>썸네일 + 이름(+ 작은 표시, 부위 전용이면 왼쪽 위 "개별") 카드. 고른 카드는 강조 테두리.</summary>

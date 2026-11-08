@@ -91,6 +91,19 @@ public sealed class PaletteConvertDialog : DialogBase
         Body.Children.Add(_count);
         Body.Children.Add(Ui.Label(UiStrings.S_PaletteConvertDialog_PaletteConvertDialog_0988821852));
 
+        // 대상 도움말(F1): 규칙 단추는 가이드 표의 그 규칙 줄로.
+        this.HelpAt("screen-palette", anchor: "Convert to palette colors");
+        foreach (var r in new[] { _cel, _layer, _all }) r.HelpAt("screen-palette", anchor: "Choose the target from");
+        string[] ruleRows = ["Nearest color", "Brightness order", "Palette order", "Hue first", "Lightness only"];
+        for (int i = 0; i < _rules.Length; i++) _rules[i].HelpAt("screen-palette", anchor: ruleRows[i]);
+        distanceRow.HelpAt("screen-palette", anchor: "Nearest color");
+        _distance.HelpAt("screen-palette", anchor: "Nearest color");
+        _noDither.HelpAt("screen-palette", anchor: "Dithering is No dithering");
+        _bayer.HelpAt("screen-palette", anchor: "Dithering is No dithering");
+        _before.HelpAt("screen-palette", anchor: "A before/after preview");
+        _after.HelpAt("screen-palette", anchor: "A before/after preview");
+        _count.HelpAt("screen-palette", anchor: "the change in color count");
+
         _remap = BuildRemap();
         foreach (var r in new[] { _cel, _layer, _all, _noDither, _bayer }.Concat(_rules))
             // 같은 묶음의 다른 단추가 아직 꺼지기 전에 불리므로, 한 묶음의 바뀜이 다 끝난 뒤에 미리보기를 고친다.

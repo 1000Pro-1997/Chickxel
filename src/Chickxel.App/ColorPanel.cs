@@ -14,7 +14,7 @@ namespace Chickxel.App;
 /// 마지막으로 누르거나 고친 팔레트가 "활성 팔레트"(머리글 아래 파란 줄)이고, 편집 메뉴의 팔레트 명령과 Claude 도구는 활성 팔레트를 쓴다.
 /// 투명 칸은 첫 팔레트 맨 앞에만 있다.
 /// </summary>
-public sealed class ColorPanel : UserControl
+public sealed class ColorPanel : UserControl, IHelpTargetSource
 {
     private readonly EditorContext _ctx;
     private readonly ColorSlot _primarySlot, _secondarySlot;
@@ -180,14 +180,15 @@ public sealed class ColorPanel : UserControl
         else _ctx.Primary = e.Color;
     }
 
+    (HelpTarget Target, Rect Area)? IHelpTargetSource.HelpTargetFor(Control c, Avalonia.Point local) => HelpTargets.Whole(c, HelpTargetFor(c));
+
     /// <summary>
     /// 대상 도움말(F1): 이 패널 안의 컨트롤에 맞는 가이드 자리(모르는 컨트롤이면 null).
-    /// 위쪽(기본/보조색·팔레트)은 "팔레트" 쪽, 아래 색 편집기·레이어 색은 "색 고르기" 쪽의 그 절로 간다.
+    /// 위쪽(기본/보조색·팔레트)은 "팔레트" 쪽, 레이어 색은 "색 고르기" 쪽의 그 절로 간다(색 편집기는 스스로 답함).
     /// </summary>
-    internal HelpTarget? HelpTargetFor(Control c)
+    private HelpTarget? HelpTargetFor(Control c)
     {
         const string palette = "screen-palette";
-        if (_editor.HelpTargetFor(c) is { } editor) return editor;
         if (ReferenceEquals(c, _layerColors)) return new("screen-color-picker", Anchor: UiStrings.LayerColors_Title);
         if (ReferenceEquals(c, _slots) || ReferenceEquals(c, _primarySlot) || ReferenceEquals(c, _secondarySlot))
             return new(palette, Anchor: "Primary and secondary colors");

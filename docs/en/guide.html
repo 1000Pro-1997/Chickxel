@@ -152,7 +152,7 @@
 <p>Basic controls that work the same everywhere in the app. Each part of the screen is covered in detail in the <a href="#screen">Screen layout</a> chapter.</p>
 
 <h3 id="featured-number-field">Changing number fields</h3>
-<figure class="core-media guide-media"><img src="../assets/feature-number-field.gif" alt="Clicking the pivot X/Y number fields to type, dragging them left and right, and picking a value from the right-click list" width="512" height="1031" loading="lazy"></figure>
+<figure class="core-media guide-media"><img src="../assets/feature-number-field.gif" alt="Clicking the up/down buttons at the right end of the pivot X field to step by one, dragging up and down on them, picking a value from the right-click list, then clicking the Y field and typing a number" width="512" height="1031" loading="lazy"></figure>
 <p>Size, coordinates, FPS, zoom, effect strength — every <a class="term" href="#screen-common-controls">number field</a> in the app supports the same three methods. Use whichever fits the moment.</p>
 <ol class="core-steps">
 <li><strong>Click and type</strong><span>Click the field and type a number. You can also type arithmetic such as <code>256*2</code> (add, subtract, multiply, divide). Press <kbd>Enter</kbd> or click elsewhere to confirm.</span></li>
@@ -250,7 +250,7 @@
 <div class="note"><p>Reference site: <a href="https://lospec.com/palette-list" target="_blank" rel="noopener">lospec.com/palette-list</a> (internet required — favorites work offline; palette copyrights belong to their authors)</p></div>
 
 <h3 id="featured-palette-convert">Recoloring with a palette</h3>
-<figure class="core-media wide guide-media"><video src="../assets/feature-convert.mp4" poster="../assets/feature-convert.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Converting the barrel sprite to another palette in the Convert to palette colors window, turning it into a blue barrel" width="1280" height="688"></video></figure>
+<figure class="core-media wide guide-media"><video src="../assets/feature-convert.mp4" poster="../assets/feature-convert.jpg" autoplay loop muted playsinline preload="metadata" aria-label="In the Convert to palette colors window opened from the palette menu, switching the target, the color matching rule (Nearest color with OKLab color distance, Brightness order, Hue first) and dithering while watching the before/after preview, then converting the character to a cool-toned palette" width="1280" height="688"></video></figure>
 <p>Replace every color in a sprite with colors from a chosen <a class="term" href="#screen-palette">palette</a>, in one step. Map to the nearest colors, or spread the sprite's shading evenly over the palette (for example by brightness order) to keep the shading even with a palette of completely different hues. Try the same sprite in a different mood, or bring a whole game onto one palette.</p>
 <ol class="core-steps">
 <li><strong>Pick a palette</strong><span>Open the palette with the colors you want — palettes imported from <a class="term" href="#screen-palette">Lospec</a> work too.</span></li>
@@ -289,7 +289,7 @@
 <p>Values you set in Chickxel carry straight into Unity. The exported files are covered in the <a href="#files">Files · saving · export</a> chapter.</p>
 
 <h3 id="featured-pivot">Pivot sync</h3>
-<figure class="core-media wide guide-media"><video src="../assets/feature-pivot.mp4" poster="../assets/feature-pivot.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Moving a character's anchor with the Pivot tool and rotating around that pivot" width="1280" height="688"></video></figure>
+<figure class="core-media wide guide-media"><video src="../assets/feature-pivot.mp4" poster="../assets/feature-pivot.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Moving the Body layer's pivot to the feet with the Pivot tool, showing the separate pivots of the Shadow layer and the Props group (a blue dot per part), then editing the canvas pivot from the timeline canvas chip and making Body the canvas pivot representative layer (crown before its name)" width="1280" height="688"></video></figure>
 <p>The <a class="term" href="#tools-pivot">canvas pivot</a> you set in Chickxel is written into the Unity <code>.meta</code> sprite <a class="term" href="#tools-pivot">pivot</a> when you save. No adjusting in Unity — the anchor you want, like a character's feet or a weapon's grip, lines up the same in the game. Every <a class="term" href="#screen-timeline">layer</a> also has its own pivot, so rotation, symmetry and transforms center on that layer's anchor.</p>
 <ol class="core-steps">
 <li><strong>Pick the <a class="term" href="#tools-pivot">Pivot tool</a> (K)</strong><span>Drag the anchor on the <a class="term" href="#screen-canvas">canvas</a>, or use the 5×5 buttons and X/Y fields in the tool settings.</span></li>
@@ -404,7 +404,7 @@
 <p>If the clipboard holds an image (a PNG or bitmap copied in another program, otherwise an image copied inside Chickxel), a thumbnail and a ① <strong>Paste the clipboard image (width×height)</strong> checkbox appear at the top. Turning it on sets the canvas to the image size and puts the image on the first layer. If you change the size, the image stays at the top left (anything outside the canvas is cut off); with transparent background off, it sits on the secondary color. While it is on you can't start with parts, and images wider or taller than 16384px are not offered.</p>
 
 <h3 id="start-help">Getting help (F1)</h3>
-<p>If you wonder what a button or panel does, press <span class="key" data-cmd="도움말/대상 도움말"><kbd>F1</kbd></span> and click it. The guide page that explains it opens right away. For a feature you know by name, open the guide window with <strong>Help &gt; Guide…</strong> and search for it or find it in the contents.</p>
+<p>If you wonder what a button or panel does, press <span class="key" data-cmd="도움말/대상 도움말"><kbd>F1</kbd></span> and click it. The guide page that explains it opens right away. This works not only in the main window but also in the <a class="term" href="#pixelate">Pixelate</a>, Effects, <a class="term" href="#ai">AI chat</a>, Effect maker, Export, <a class="term" href="#parts-skin-manager">Skin manager</a>, Preferences and Asset manager windows and in small dialogs. For a feature you know by name, open the guide window with <strong>Help &gt; Guide…</strong> and search for it or find it in the contents.</p>
 <h4>Choosing help on screen</h4>
 <figure class="shot"><img src="../assets/guide/start-help.png" alt="The Help menu open with the Choose help on screen (F1) and Guide… items marked" width="285" height="284" loading="lazy"><figcaption>① Choose help on screen (F1) · ② Guide…</figcaption></figure>
 <figure class="shot"><img src="../assets/guide/start-help-2.png" alt="The note in the status bar while choosing help: click an area to see its help; Esc, F1 or right-click cancels" width="956" height="63" loading="lazy"><figcaption>③ The status bar note while choosing help</figcaption></figure>
@@ -413,9 +413,16 @@
 <li>The mouse pointer turns into the question-mark help cursor and ③ a note appears in the <a class="term" href="#screen-status-bar">status bar</a>. As you move the mouse, a yellow box surrounds the control whose help would open, so you can see in advance what you'll get. While it is on, clicking a button does not run its usual action.</li>
 <li>Left-click the area you want to know about. The guide window opens at the page that explains it. If a heading, table row or list item describes that control, the page scrolls to it and briefly outlines it in yellow.</li>
 </ol>
-<p><kbd>Esc</kbd>, pressing <span class="key" data-cmd="도움말/대상 도움말"><kbd>F1</kbd></span> again, or a right-click ends it without opening a page. Switching to another window also ends it. Clicking an area with no linked page shows "No help is linked to this area. Search the user guide from the Help menu." in the status bar; for those areas, search in ② <strong>Guide…</strong>.</p>
+<p><kbd>Esc</kbd>, pressing <span class="key" data-cmd="도움말/대상 도움말"><kbd>F1</kbd></span> again, or a right-click ends it without opening a page. Switching to another window also ends it. In the main window, clicking an area with no linked page ends choosing and shows "No help is linked to this area. Search the user guide from the Help menu." in the status bar; for those areas, search in ② <strong>Guide…</strong>.</p>
+<h4>Choosing help in other windows</h4>
+<figure class="shot"><img src="../assets/guide/start-help-4.png" alt="The yellow-outlined note band at the top center of the Preferences window while choosing help: click an area to see its help; Esc, F1 or right-click cancels" width="1058" height="156" loading="lazy"><figcaption>④ The note band at the top while choosing help in a window other than the main window</figcaption></figure>
+<ul>
+<li>In a window without a status bar, pressing <span class="key" data-cmd="도움말/대상 도움말"><kbd>F1</kbd></span> shows ④ a yellow-outlined note band at the top center of the window. The band doesn't block clicks; when the mouse reaches it, it moves to the bottom edge of the window so the controls under it show (and back to the top when the mouse reaches it again).</li>
+<li>Clicking an area with no linked page changes the text in ④ the band to "No help is linked to this area. Search the user guide from the Help menu." and keeps choosing, so you can click another area right away.</li>
+<li>The guide window opens as a window of the main window, so it stays open after you close the dialog you opened it from.</li>
+</ul>
 <h4>Which page opens for each area</h4>
-<p>Tool slots, view buttons, <a class="term" href="#screen-tool-settings">Tool options</a>, the color panel, the preview, the <a class="term" href="#screen-timeline">timeline</a> and the status bar go straight to the place that explains the control you clicked. Other areas open the top of the page for that area.</p>
+<p>Tool slots, view buttons, <a class="term" href="#screen-tool-settings">Tool options</a>, the color panel, the preview, the <a class="term" href="#screen-timeline">timeline</a> and the status bar go straight to the place that explains the control you clicked. Other areas open the top of the page for that area. In separate windows, too, a control with its own place goes there, and anything else opens the page for that window.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>Area clicked</th><th>Page that opens</th></tr></thead>
 <tbody>
@@ -433,15 +440,17 @@
 <tr><td><a class="term" href="#start-first-run">Start screen</a></td><td><a href="#start-first-run">First launch</a></td></tr>
 <tr><td>The menu bar and the rest of the top bar</td><td><a href="#screen-top-bar">Menu and top bar</a></td></tr>
 <tr><td>The status bar at the bottom</td><td>The numbered row for that cell in the table on the <a href="#screen-status-bar">Status bar</a> page</td></tr>
+<tr><td>Separate windows (Pixelate, Effects, AI chat, Effect maker, Export, Skin manager, Preferences, Asset manager, small dialogs)</td><td>The place that explains the control you clicked, otherwise the page for that window (for example <a href="#pixelate">Pixelate</a>, <a href="#screen-effects-dialog">Effects dialog</a>, <a href="#ai-chat">AI chat</a>, <a href="#screen-effect-maker">Effect maker</a>, <a href="#screen-export">Export</a>, <a href="#parts-skin-manager">Skin manager</a>, <a href="#files-settings">Preferences</a>, <a href="#screen-asset-manager">Asset manager</a>)</td></tr>
+<tr><td>Message and confirmation boxes without their own page</td><td>The page of the window that opened it</td></tr>
 </tbody>
 </table></div>
 <h4>Guide window</h4>
-<figure class="shot"><img src="../assets/guide/start-help-3.png" alt="The guide window: a search term in the search box at the top left with results below it, the selected page on the right, and the Support development and Open on website buttons above it" width="1000" height="672" loading="lazy"><figcaption>④ Search box · ⑤ Contents (search results while searching) · ⑥ Selected page · ⑦ Open on website · ⑧ Support development</figcaption></figure>
+<figure class="shot"><img src="../assets/guide/start-help-3.png" alt="The guide window: a search term in the search box at the top left with results below it, the selected page on the right, and the Support development and Open on website buttons above it" width="1000" height="672" loading="lazy"><figcaption>⑤ Search box · ⑥ Contents (search results while searching) · ⑦ Selected page · ⑧ Open on website · ⑨ Support development</figcaption></figure>
 <ul class="marks">
-<li>④ Type words in the search box to search the whole guide on this computer. Choose a result with <kbd>↑</kbd>/<kbd>↓</kbd> and open it with <kbd>Enter</kbd>. On the opened page the matches are highlighted in yellow and the page scrolls to the first one.</li>
-<li>⑤ With an empty search box this is the contents by chapter. Use the arrows to expand and collapse chapters and click a page name to open it.</li>
-<li>⑥ The page text. Links open other pages in the same window, and <strong>Previous</strong> and <strong>Next</strong> at the bottom go to the neighboring pages.</li>
-<li>⑦ <strong>Open on website</strong> opens the current page in the website guide, and ⑧ <strong>Support development</strong> opens the support page.</li>
+<li>⑤ Type words in the search box to search the whole guide on this computer. Choose a result with <kbd>↑</kbd>/<kbd>↓</kbd> and open it with <kbd>Enter</kbd>. On the opened page the matches are highlighted in yellow and the page scrolls to the first one.</li>
+<li>⑥ With an empty search box this is the contents by chapter. Use the arrows to expand and collapse chapters and click a page name to open it.</li>
+<li>⑦ The page text. Links open other pages in the same window, and <strong>Previous</strong> and <strong>Next</strong> at the bottom go to the neighboring pages.</li>
+<li>⑧ <strong>Open on website</strong> opens the current page in the website guide, and ⑨ <strong>Support development</strong> opens the support page.</li>
 </ul>
 <ul>
 <li><strong>Guide…</strong> has no default shortcut; if you use it often, assign one in <a href="#shortcuts-customize">Customizing shortcuts</a>. Only one guide window opens, and it remembers the last page you viewed while the app is running. <kbd>Esc</kbd> clears the search, or closes the window when the search is empty.</li>
@@ -628,7 +637,7 @@
 <p>⑥ The AI chat button opens and closes the <a href="#ai-chat">AI chat</a> window (<span class="key" data-cmd="AI/AI 채팅"><kbd>Ctrl</kbd>+<kbd>L</kbd></span>). An <strong>Update</strong> button appears on the top bar only when a new version is available; click it to see what's new and install (<a href="#start-update">Updates</a>).</p>
 
 <h3 id="screen-common-controls">Number fields and menus</h3>
-<figure class="clip"><img src="../assets/guide/screen-common-controls.webp" alt="Dragging the Size number field in Tool options left and right, picking a value from the right-click list, and clicking to type a number" width="432" height="442" loading="lazy"></figure>
+<figure class="clip"><img src="../assets/guide/screen-common-controls.webp" alt="Clicking the up/down buttons at the right end of the Size field in Tool options to step by one, dragging up and down on them, picking a value from the right-click list, then clicking the field and typing a number" width="432" height="442" loading="lazy"></figure>
 <figure class="shot"><img src="../assets/guide/screen-common-controls.png" alt="Common values list opened by right-clicking the Size field in tool options, which has up/down buttons at its right end (dot at the current 4 px)" width="328" height="434" loading="lazy"><figcaption>① Number field (Size) · ② Right-click value list · ③ Up/down buttons</figcaption></figure>
 <p>The ① number fields and the right-click and button menus throughout the app work the same way in every window. Change a number field by clicking to type, with ③ the up/down buttons at its right end, or by picking from ② its right-click list.</p>
 <h4>Up/down buttons</h4>
@@ -700,7 +709,7 @@
 </ul>
 
 <h3 id="screen-file-browser">File browser</h3>
-<figure class="shot"><img src="../assets/guide/screen-file-browser.png" alt="File browser: folder tree, search, include subfolders, thumbnail list with the .chickxel badge and red dot" width="252" height="600" loading="lazy"><figcaption>① Folder tree · ② Thumbnail list · ③ Search · ④ Include subfolders · ⑤ New pixel file, New folder, Refresh · ⑥ .chickxel badge · ⑦ Unsaved changes (red dot)</figcaption></figure>
+<figure class="shot"><img src="../assets/guide/screen-file-browser.png" alt="File browser: folder tree, search, include subfolders, thumbnail list with the .chickxel badge and red dot" width="252" height="500" loading="lazy"><figcaption>① Folder tree · ② Thumbnail list · ③ Search · ④ Include subfolders · ⑤ New pixel file, New folder, Refresh · ⑥ .chickxel badge · ⑦ Unsaved changes (red dot)</figcaption></figure>
 <p>The file browser on the left shows the images in the chosen folder as thumbnails and opens them in a new <a href="#screen-tabs">document tab</a> when clicked. From the top it has ① the folder tree, ③ the search box with ④ Include subfolders, and ② the thumbnail list. Changes to files in the folder show up in the list right away.</p>
 <h4>Choosing a folder</h4>
 <ul>
@@ -713,21 +722,26 @@
 <ul>
 <li>The list is sorted by path and the thumbnail size is fixed. It shows <code>.chickxel</code> (including older <code>.gpixel</code>) and PNG files.</li>
 <li>JPG, BMP, GIF, WebP, APNG, ICO, AVIF and HEIC images and videos (MP4, WebM, MOV, MKV, AVI, …) are listed too (thumbnail = first <a class="term" href="#screen-timeline">frame</a>). Videos get a film badge, with a first-frame thumbnail when <a class="term" href="#files-open-media">ffmpeg</a> is available. Clicking one opens it in a new tab as in <a href="#files-open-media">Opening images, animations and videos</a>.</li>
-<li><code>.chickxel</code> projects get ⑥ a blue <a class="term" href="#screen-timeline">layer</a> badge in the bottom-right of the thumbnail. PNGs exported by a project (same-name PNG, <a class="term" href="#screen-export">frame sheet</a>, <a class="term" href="#parts-export">part atlas</a>) are hidden from the list so only the single <code>.chickxel</code> is shown. Hover it to see the exported file names; searching by those names also finds it.</li>
-<li>③ The search box filters the list as you type. It matches file names (ignoring case) and the names of files a project exports, not folder paths or file contents.</li>
+</ul>
+<figure class="shot"><img src="../assets/guide/screen-file-browser-5.png" alt="The file list with the Wolf Adventurer.chickxel bundle expanded: the arrow at the right of the project tile marked 8, and the black outline band around the project and its three exported images marked 9" width="254" height="303" loading="lazy"><figcaption>⑧ Bundle expand/collapse arrow · ⑨ Expanded bundle (black outline band)</figcaption></figure>
+<ul>
+<li><code>.chickxel</code> projects get ⑥ a blue <a class="term" href="#screen-timeline">layer</a> badge in the bottom-right of the thumbnail. Files a project exported (its registered exports, plus images and videos in the same folder named <code>&lt;project&gt;.*</code>, <code>&lt;project&gt;_*</code> or <code>&lt;project&gt;@*</code> — frame sheets, part atlases, GIF exports, frames saved from the preview and so on) don't get their own tiles but are bundled into the project tile. A file matching several project names goes to the project with the longest name. Hover the project to see the bundled file names.</li>
+<li>When a project has bundled files, ⑧ a small arrow appears at the right of its tile. Click it, or select the project (or a file in its bundle) and press <kbd>Ctrl</kbd>+<kbd>→</kbd> (macOS <kbd>⌘</kbd>+<kbd>→</kbd>), to expand it; click again or press <kbd>Ctrl</kbd>+<kbd>←</kbd> to collapse it (collapsing with a bundled file selected selects the project). The expanded files follow right after the project, and ⑨ the project and its files are joined by one black outline band. The outline stays when you hover or select them, and when the row wraps, the open row end shows that the bundle continues on the next row.</li>
+<li>Each project's expanded state is remembered until you quit the app. Files in a bundle can be opened, selected, dragged, renamed and deleted like any other file; deleting one deletes only that file.</li>
+<li>③ The search box filters the list as you type. It matches file names (ignoring case), not folder paths or file contents. When a file in a bundle matches, the project is shown expanded with only the matching files (all of its files if the project name itself matches).</li>
 </ul>
 <h4>New file and new folder</h4>
 <p>⑤ The three icons on the right of the title row are <strong>New pixel file</strong>, <strong>New folder</strong> and <strong>Refresh</strong>.</p>
 <p><strong>New pixel file</strong> opens the <a class="term" href="#start-new-project">new project dialog</a>. Set the file name (<code>new_sprite</code> at first), width and height (1–16384 px, quick picks 16×16 to 256×256), transparent background (on), and Normal (Layer 1) or Start with parts (group + first part); if the clipboard has an image you can start by pasting it. Confirm to save it as a <code>.chickxel</code> in the selected folder and open it. If a file with that name exists, it isn't overwritten and you're told.</p>
 <h4>Selecting and dragging</h4>
-<figure class="shot"><img src="../assets/guide/screen-file-browser-2.png" alt="Right-click menu with two files selected" width="344" height="790" loading="lazy"><figcaption>⑧ Several files selected · ⑨ Right-click menu</figcaption></figure>
+<figure class="shot"><img src="../assets/guide/screen-file-browser-2.png" alt="Right-click menu with two files selected" width="427" height="796" loading="lazy"><figcaption>⑩ Several files selected · ⑪ Right-click menu</figcaption></figure>
 <ul>
-<li>A plain click selects and opens one file. <kbd>Ctrl</kbd>+click (add/remove one at a time), <kbd>Shift</kbd>+click (range), or drag a rectangle over the list to ⑧ select several (multiple selections don't open).</li>
+<li>A plain click selects and opens one file. <kbd>Ctrl</kbd>+click (add/remove one at a time), <kbd>Shift</kbd>+click (range), or drag a rectangle over the list to ⑩ select several (multiple selections don't open).</li>
 <li>Hold <kbd>Ctrl</kbd> (macOS <kbd>⌘</kbd>) while dragging a rectangle to add to the <a class="term" href="#tools-select">selection</a>. Drag past the top or bottom of the list to scroll it.</li>
 <li>Press a file and drag it out of the list to the left or right to drag the file itself (if the item was already selected, all selected files). Dropping it on the <a class="term" href="#screen-canvas">canvas</a> adds it as a <a href="#files-drop-layer">new layer</a>; dropping it in Explorer, Finder or another app copies the file.</li>
 </ul>
 <h4>Right-click menu</h4>
-<p>⑨ Right-click files for a menu that fits the selection. Right-clicking an empty spot clears the selection and the menu applies to the current folder.</p>
+<p>⑪ Right-click files for a menu that fits the selection. Right-clicking an empty spot clears the selection and the menu applies to the current folder.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>Item</th><th>What it does</th></tr></thead>
 <tbody>
@@ -754,12 +768,12 @@
 </ul>
 <h4>Merge</h4>
 <p>Select two or more <code>.chickxel</code> or PNG files and choose <strong>Merge…</strong> from the right-click menu to combine them into one <code>.chickxel</code>. Other image formats and videos can't be merged. In the dialog you set:</p>
-<figure class="shot"><img src="../assets/guide/screen-file-browser-3.png" alt="Merge dialog: order, name, mode, canvas, preview and timeline layout" width="819" height="914" loading="lazy"><figcaption>⑩ Order · ⑪ Name · ⑫ Mode · ⑬ Canvas size, anchor, delete originals · ⑭ Preview · ⑮ How it will look in the timeline</figcaption></figure>
+<figure class="shot"><img src="../assets/guide/screen-file-browser-3.png" alt="Merge dialog: order, name, mode, canvas, preview and timeline layout" width="819" height="914" loading="lazy"><figcaption>⑫ Order · ⑬ Name · ⑭ Mode · ⑮ Canvas size, anchor, delete originals · ⑯ Preview · ⑰ How it will look in the timeline</figcaption></figure>
 <ul class="marks">
-<li>⑩ <strong>Order</strong>: the order you selected the files in at first. Drag rows or use the up/down buttons (top = first). Each row shows its size and frame count.</li>
-<li>⑪ <strong>Name</strong>: suggested automatically from words common to the file names (e.g. <code>potato_growing</code>, <code>potato_mature</code> → <code>potato</code>). If the result file already exists, <code>_2</code>, <code>_3</code> … is added to the suggestion.</li>
-<li>⑫ <strong>Mode</strong>: see the table below (As layers at first). With <strong>As a group</strong>, turn on <strong>Empty thumbnail</strong> to create it with the parts hidden.</li>
-<li>⑬ <strong>Canvas size</strong> (at first the largest width and height among the files, 1–16384 px; <strong>Largest size</strong> resets it), <strong>anchor</strong> (9 directions), <strong>delete originals</strong> (off at first; when on, originals go to the app trash).</li>
+<li>⑫ <strong>Order</strong>: the order you selected the files in at first. Drag rows or use the up/down buttons (top = first). Each row shows its size and frame count.</li>
+<li>⑬ <strong>Name</strong>: suggested automatically from words common to the file names (e.g. <code>potato_growing</code>, <code>potato_mature</code> → <code>potato</code>). If the result file already exists, <code>_2</code>, <code>_3</code> … is added to the suggestion.</li>
+<li>⑭ <strong>Mode</strong>: see the table below (As layers at first). With <strong>As a group</strong>, turn on <strong>Empty thumbnail</strong> to create it with the parts hidden.</li>
+<li>⑮ <strong>Canvas size</strong> (at first the largest width and height among the files, 1–16384 px; <strong>Largest size</strong> resets it), <strong>anchor</strong> (9 directions), <strong>delete originals</strong> (off at first; when on, originals go to the app trash).</li>
 </ul>
 <div class="table-wrap"><table>
 <thead><tr><th>Mode</th><th>Result</th></tr></thead>
@@ -770,16 +784,16 @@
 <tr><td>As frames</td><td>Frames appended in file order</td></tr>
 </tbody>
 </table></div>
-<p>Along with ⑭ a preview (played if there are several frames), ⑮ <strong>"How it will look in the <a class="term" href="#screen-timeline">timeline</a>"</strong> shows the resulting timeline layout, plus notes on what is kept and how. Structure in <code>.chickxel</code> files such as layers, groups, skins, effects and <a class="term" href="#screen-tags">tags</a> is carried over in every mode. The result is saved as <code>&lt;name&gt;.chickxel</code> in the first file's folder and opened right away. If the result name collides with another file, nothing is merged and you're told (with Delete originals on, a name equal to an original is allowed: the original goes to the trash first).</p>
+<p>Along with ⑯ a preview (played if there are several frames), ⑰ <strong>"How it will look in the <a class="term" href="#screen-timeline">timeline</a>"</strong> shows the resulting timeline layout, plus notes on what is kept and how. Structure in <code>.chickxel</code> files such as layers, groups, skins, effects and <a class="term" href="#screen-tags">tags</a> is carried over in every mode. The result is saved as <code>&lt;name&gt;.chickxel</code> in the first file's folder and opened right away. If the result name collides with another file, nothing is merged and you're told (with Delete originals on, a name equal to an original is allowed: the original goes to the trash first).</p>
 <h4>Deleting and the app trash</h4>
 <ul>
 <li>Deleted files (<kbd>Delete</kbd>, multiple allowed) and originals removed by merging go to the app's own trash without asking (including their PNG and <code>.meta</code> files).</li>
 <li>Press <span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span> in the file list to restore the last deletion to its original place.</li>
 </ul>
-<figure class="shot"><img src="../assets/guide/screen-file-browser-4.png" alt="App trash window: retention policy, deleted files with preview, restore/delete/empty" width="774" height="558" loading="lazy"><figcaption>⑯ List and preview · ⑰ Restore, Delete permanently, Empty · ⑱ Retention policy</figcaption></figure>
+<figure class="shot"><img src="../assets/guide/screen-file-browser-4.png" alt="App trash window: retention policy, deleted files with preview, restore/delete/empty" width="774" height="558" loading="lazy"><figcaption>⑱ List and preview · ⑲ Restore, Delete permanently, Empty · ⑳ Retention policy</figcaption></figure>
 <ul class="marks">
-<li>In <strong>View app trash…</strong> on the right-click menu, ⑯ browse each item's deletion time, description, days left, size and a preview (size and original folder), and ⑰ restore (double-click), delete permanently or empty the trash. You can select several items; permanent deletion and emptying ask for confirmation. An item isn't restored if a file with the same name is already in its original place.</li>
-<li>⑱ Retention policy: <strong>Time limit</strong> (off at first; when on, items older than the chosen 1–3650 days are deleted permanently, 30 at first) and <strong>Size limit</strong> (on at 1 GB at first, 0.1–1000 GB; the oldest items are deleted first when exceeded). Change them in the trash window or <strong>Edit &gt; Preferences…</strong>.</li>
+<li>In <strong>View app trash…</strong> on the right-click menu, ⑱ browse each item's deletion time, description, days left, size and a preview (size and original folder), and ⑲ restore (double-click), delete permanently or empty the trash. You can select several items; permanent deletion and emptying ask for confirmation. An item isn't restored if a file with the same name is already in its original place.</li>
+<li>⑳ Retention policy: <strong>Time limit</strong> (off at first; when on, items older than the chosen 1–3650 days are deleted permanently, 30 at first) and <strong>Size limit</strong> (on at 1 GB at first, 0.1–1000 GB; the oldest items are deleted first when exceeded). Change them in the trash window or <strong>Edit &gt; Preferences…</strong>.</li>
 </ul>
 
 <h3 id="screen-palette">Palette</h3>
@@ -1829,6 +1843,7 @@
 <li><strong>Frame sheet</strong> section: name (empty = the project name) and path. <strong>Single frame</strong> appears only when Sprite Mode in Import Settings is Single; it exports one chosen frame at canvas size (only the scale applies) and ignores the common layout settings.</li>
 <li><strong>Part atlas</strong> section: name (empty = the frame sheet name + <code>_parts</code>), <strong>Keep original positions</strong> (auto layout; on at first), <a href="#parts-sprite-library">Sprite Library</a> (also writes the part <code>.meta</code>) and path.</li>
 <li>Turning on <strong>Advanced &gt; Per sheet</strong> copies the current common values into a second set of settings for the part atlas.</li>
+<li>The folder and the sheet and part atlas names are written to the project file encrypted with this install's own key, so this computer's paths aren't revealed. As a result, opened on another computer or by another user, or after the <a class="term" href="#files-settings">settings folder</a> is deleted, they go back to the defaults (the project folder and the project name) (see <a href="#files-roles">File types and where they go</a>).</li>
 </ul>
 <h4>Presets</h4>
 <figure class="shot"><img src="../assets/guide/screen-export-4.png" alt="Popup opened by the Preset button: save, load, manage, reset to defaults" width="432" height="172" loading="lazy"><figcaption>⑰ Preset popup</figcaption></figure>
@@ -1885,7 +1900,7 @@
 <li>④ A still image of the current frame, and a notice that uploads are public right away and that you shouldn't upload other people's work. The preview doesn't change when you choose GIF or a scale.</li>
 </ul>
 <h4>Sharing the editable file</h4>
-<p>Turn on <strong>Also share the editable .chickxel file</strong> (off by default) at the bottom of group ① to upload this project's <code>.chickxel</code> file along with the PNG or GIF, so anyone can download it from the picture's page and open and edit it in Chickxel. The shared copy has folder paths on this computer, such as the export folder, removed. <a class="term" href="#screen-script-effects">Script effects</a>' source code is included (the window says so when it's on), and people are asked whether to run it when they open the file (see <a href="#screen-script-effects">Script effects</a>). The file can be up to 8 MiB; if it's larger, you're told to turn off file sharing and upload only the picture. The gallery post has separate buttons to download the PNG/GIF and the Chickxel file.</p>
+<p>Turn on <strong>Also share the editable .chickxel file</strong> (off by default) at the bottom of group ① to upload this project's <code>.chickxel</code> file along with the PNG or GIF, so anyone can download it from the picture's page and open and edit it in Chickxel. The shared copy drops this computer's export folder and keeps the sheet and <a class="term" href="#parts-export">part atlas</a> names as plain names without folders (see <a href="#files-roles">File types and where they go</a>). <a class="term" href="#screen-script-effects">Script effects</a>' source code is included (the window says so when it's on), and people are asked whether to run it when they open the file (see <a href="#screen-script-effects">Script effects</a>). The file can be up to 8 MiB; if it's larger, you're told to turn off file sharing and upload only the picture. The gallery post has separate buttons to download the PNG/GIF and the Chickxel file.</p>
 <h4>Uploading</h4>
 <p>Clicking <strong>Upload</strong> first opens the account window if you aren't signed in. While the picture is being made, <strong>Making the picture</strong> is shown; while uploading, a progress bar and <strong>Cancel Upload</strong> appear; when done, the picture's page (<code>chickxel.com/gallery/…</code>) opens in your browser. A file over 4 MB or a GIF with more than 1000 frames is refused with a hint to lower the scale or upload just the current frame. If you hit the daily upload limit, you're asked to try again in a few minutes. The project isn't changed.</p>
 
@@ -2596,10 +2611,12 @@
 <p>Exporting separate files per tag, skin or part creates several files named after the project followed by that name. The folder can be a path relative to the project folder or a full path; empty means the project folder (<a href="#screen-export">Export dialog</a>).</p>
 <h4>What's inside a project file</h4>
 <p>A <code>.chickxel</code> is a ZIP archive. It holds <code>project.json</code> with the structure and settings, plus a PNG for every <a class="term" href="#screen-timeline">cel</a> that has pixels (layer × frame, and per skin if there are skins); empty cels aren't stored. Pixels pushed outside the <a class="term" href="#screen-canvas">canvas</a> are saved too.</p>
+<p>The export folder and export names (sheet name and part atlas name) are written with export path encryption, locked with a key that belongs to this install. The file only shows <code>chickxel-enc:v1:…</code>, so giving a <code>.chickxel</code> to someone doesn't reveal your folder names or user name. The key is made at random the first time you save and kept in <code>local-path-key.bin</code> in the <a href="#files-settings">settings folder</a> (on Windows encrypted so only your user can unlock it; on macOS and Linux readable only by your user).</p>
+<p>The same user on the same computer gets them back as is. Opened on another computer or by another user, they can't be unlocked and the defaults are used (the project file's folder and the project name). Deleting the <a class="term" href="#files-settings">settings folder</a> (including when you delete it while reinstalling) also resets the export folder and names of projects saved earlier to the defaults. Older files with plain paths are still read and are encrypted the next time you save.</p>
 <p>Projects saved by this version use a new <code>.chickxel</code> format (format version 5) that stores a pivot for every layer, so older versions of Chickxel can't open them. Effects are stored by stable type IDs, so effects this version doesn't know (for example, ones added in a newer Chickxel) aren't drawn but are kept when you save, and script effect sources are saved inside the project file (see <a href="#screen-script-effects">Script effects</a>).</p>
 <p>Files in the older format without <a class="term" href="#tools-pivot">layer pivots</a>, and effect presets, still open. Older-format files are converted without asking: every normal layer and group gets a copy of the old <a class="term" href="#tools-pivot">canvas pivot</a> (the default pivot and any per-frame pivots), so nothing looks different; the canvas pivot stays as it was and there is no <a class="term" href="#tools-pivot">representative layer</a> (see <a href="#tools-pivot">Pivot tool</a>). The <a class="term" href="#screen-status-bar">status bar</a> message for opening ends with <code>Converted from the older format (version N)</code>, and when the app reopens your last tabs at startup it reports how many files were converted. Saving writes the new format, which older versions of Chickxel can't open.</p>
 <p>A file in a format version from a newer Chickxel isn't opened; you're told <code>This file was made with a newer Chickxel (format version N)</code>. Update the app in that case (<a href="#start-update">Updates</a>). <code>.gpixel</code> files from the app's former name (Gpixel) open as projects too.</p>
-<p><a class="term" href="#files-history">Undo history</a>, the <a class="term" href="#screen-file-browser">app trash</a> and preferences are kept separately in the <a class="term" href="#files-settings">app settings folder</a>, not in the project file (<a href="#files-settings">Preferences</a>).</p>
+<p><a class="term" href="#files-history">Undo history</a>, the <a class="term" href="#screen-file-browser">app trash</a> and preferences are kept separately in the app settings folder, not in the project file (<a href="#files-settings">Preferences</a>).</p>
 
 <h3 id="files-open">Opening files</h3>
 <p>Each file opens in its own <a class="term" href="#screen-tabs">document tab</a>. Opening a file that is already open switches to its tab instead of creating a new one, and the <a class="term" href="#screen-status-bar">status bar</a> shows <code>Already open</code>. Whichever way you open a file, it is handled the same way for its file type.</p>
@@ -2890,6 +2907,7 @@
 <tr><td><code>settings.json</code></td><td>Preferences, recent files and folders and other app settings</td></tr>
 <tr><td><code>export-presets.json</code></td><td>Export setting presets saved in the <a class="term" href="#screen-export">export dialog</a></td></tr>
 <tr><td><code>community-session.bin</code></td><td>Signed-in Chickxel accounts (the account list, the current account and each account's last known name and handle). On Windows it is encrypted so only your user can read it; on other systems the file is readable only by your user.</td></tr>
+<tr><td><code>local-path-key.bin</code></td><td>This install's key that locks the export folder and names written in project files (<a href="#files-roles">File types and where they go</a>). On Windows it is encrypted so only your user can read it; on other systems the file is readable only by your user. Deleting it resets the export folder and names of earlier projects to the defaults.</td></tr>
 <tr><td><code>History/</code></td><td>Undo history that survives closing (<a href="#files-history">Undo history that survives closing</a>)</td></tr>
 <tr><td><code>Trash/</code></td><td>The app trash (<a href="#files-cleanup">Cleaning up old outputs</a>)</td></tr>
 <tr><td><code>Logs/</code></td><td><a class="term" href="#files-crash-log">Error logs</a> (<a href="#files-crash-log">When errors occur</a>)</td></tr>
@@ -4818,6 +4836,7 @@
 <tr><td><a href="#files-cell-names">export cell name</a> <span class="term-aka nolink">(export cell names, cell naming rule)</span></td><td>The name of a cell (Unity sprite) in an exported sheet, set per frame or generated by the naming rule.</td></tr>
 <tr><td><a href="#screen-export">Export dialog</a></td><td>The dialog that sets up <a class="term" href="#screen-export">frame sheet</a> and <a class="term" href="#parts-export">part atlas</a> PNGs and Unity settings.</td></tr>
 <tr><td><a href="#files-save">export on save</a></td><td>The <a class="term" href="#screen-export">export dialog</a> setting that creates the outputs (images, <a class="term" href="#files-save">meta files</a>) whenever you save; on for new projects.</td></tr>
+<tr><td><a href="#files-roles">export path encryption</a></td><td>Writing a <a class="term" href="#files-roles">project file</a>'s export folder and names locked with this install's own key (<code>local-path-key.bin</code>), so others can't see your folder paths.</td></tr>
 <tr><td><a href="#screen-export">export preset</a> <span class="term-aka nolink">(export presets)</span></td><td>Named export settings you can reuse in other projects.</td></tr>
 <tr><td><a href="#screen-effects-dialog">Extend frames</a></td><td>An effects dialog setting that adds frames to an effect's range to create animation frames.</td></tr>
 <tr><td><a href="#tools-picker">eyedropper</a></td><td>A tool that picks a canvas color into the <a class="term" href="#screen-palette">primary</a> or <a class="term" href="#screen-palette">secondary color</a>.</td></tr>

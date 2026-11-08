@@ -63,8 +63,8 @@ public sealed class HelpWindow : Window
     private Control? _firstHit;
     /// <summary>지금 쪽을 그리며 대상 도움말 자리에 덧그린 노란 테두리(그리로 스크롤).</summary>
     private Control? _anchorMark;
-    /// <summary>영어 쪽 데이터(쪽 id → 쪽): 한국어 화면에서 영어 가이드 글로 적은 대상 도움말 자리를 찾을 때 처음 읽는다.</summary>
-    private static Dictionary<string, HelpPage>? _englishPages;
+    /// <summary>언어별 쪽 데이터(쪽 id·장 id → 쪽): 한국어 화면에서 영어 가이드 글로 적은 자리를 찾을 때와 <see cref="Resolves"/>가 처음 읽는다.</summary>
+    private static readonly Dictionary<string, Dictionary<string, HelpPage>> PagesByLanguage = new();
     private Control? _currentTocRow;
     private int _renderVersion;
 
@@ -126,6 +126,9 @@ public sealed class HelpWindow : Window
         MinHeight = 400;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         Background = AppTheme.BackBrush;
+        // 대상 도움말(F1): 창 = "도움말 보기"의 가이드 창 소제목, 검색 칸·목차·쪽·위 단추 = 그 목록의 ④~⑧ 항목
+        const string help = "start-help";
+        this.HelpAt(help, anchor: "Guide window");
 
         // 왼쪽: 검색 칸 + 목차/결과
         _clear = Ui.IconButton(VectorIcon.X, UiStrings.Help_ClearSearch, (_, _) => { _query!.Text = ""; _query.Focus(); }, size: 12);
@@ -140,7 +143,7 @@ public sealed class HelpWindow : Window
             InnerRightContent = _clear,
             VerticalContentAlignment = VerticalAlignment.Center,
             Margin = new Thickness(10, 10, 10, 6),
-        };
+        }.HelpAt(help, anchor: "Type words in the search box");
         _debounce = new UiDebouncer(TimeSpan.FromMilliseconds(150), RunSearch);
         _query.TextChanged += (_, _) =>
         {
@@ -153,7 +156,7 @@ public sealed class HelpWindow : Window
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             Content = _toc,
-        };
+        }.HelpAt(help, anchor: "With an empty search box");
         var side = new DockPanel { Background = AppTheme.PanelBrush };
         DockPanel.SetDock(_query, Dock.Top);
         side.Children.Add(_query);
@@ -161,9 +164,9 @@ public sealed class HelpWindow : Window
 
         // 오른쪽: 위 막대(홈페이지에서 열기) + 쪽
         var website = Ui.Button(VectorIcon.ExternalLink, UiStrings.Help_OpenWebsite, (_, _) => Updater.OpenUrl(this, PageUrl(_page.Id)));
-        website.Tip(UiStrings.Help_OpenWebsite);
+        website.Tip(UiStrings.Help_OpenWebsite).HelpAt(help, anchor: "Open on website opens");
         var support = Ui.Button(VectorIcon.Heart, UiStrings.Help_Support, (_, _) => Updater.OpenUrl(this, AppInfo.SupportUrl));
-        support.Tip(UiStrings.Help_Support);
+        support.Tip(UiStrings.Help_Support).HelpAt(help, anchor: "Open on website opens");
         var header = new Border
         {
             BorderBrush = AppTheme.BorderBrush,
@@ -176,7 +179,7 @@ public sealed class HelpWindow : Window
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             Content = _body,
-        };
+        }.HelpAt(help, anchor: "The page text");
         var main = new DockPanel();
         DockPanel.SetDock(header, Dock.Top);
         main.Children.Add(header);
@@ -483,15 +486,38 @@ public sealed class HelpWindow : Window
     /// 한국어 화면에서는 영어 쪽에서 먼저 찾아(영어 가이드 글로 적은 자리) 같은 자리로 옮긴다 — 두 언어 쪽은 같은 틀에서 만들어 블록 차례가 같다.
     /// 거기 없으면(한국어 앱 문자열) 이 쪽에서 찾는다.
     /// </summary>
-    private (int Block, int Row)? AnchorSpot(HelpPage page, string anchor)
+    private (int Block, int Row)? AnchorSpot(HelpPage page, string anchor) => AnchorSpot(page, anchor, _korean);
+
+    private static (int Block, int Row)? AnchorSpot(HelpPage page, string anchor, bool korean)
     {
-        if (_korean)
-        {
-            _englishPages ??= LoadBook("en").Groups.SelectMany(g => g.Chapters).SelectMany(c => c.Pages).ToDictionary(p => p.Id);
-            if (_englishPages.TryGetValue(page.Id, out var english) && FindAnchor(english.Blocks, anchor) is { } spot && SameSpot(english, page, spot))
-                return spot;
-        }
+        if (korean && PagesOf("en").TryGetValue(page.Id, out var english) && FindAnchor(english.Blocks, anchor) is { } spot && SameSpot(english, page, spot))
+            return spot;
         return FindAnchor(page.Blocks, anchor);
+    }
+
+    /// <summary><paramref name="lang"/>("ko"·"en") 가이드의 쪽 id·장 id(그 장의 첫 쪽) → 쪽. 처음 부를 때 읽어 둔다.</summary>
+    private static Dictionary<string, HelpPage> PagesOf(string lang)
+    {
+        if (PagesByLanguage.TryGetValue(lang, out var pages)) return pages;
+        pages = new Dictionary<string, HelpPage>();
+        foreach (var chapter in LoadBook(lang).Groups.SelectMany(g => g.Chapters))
+        {
+            foreach (var page in chapter.Pages) pages[page.Id] = page;
+            pages.TryAdd(chapter.Id, chapter.Pages[0]);
+        }
+        PagesByLanguage[lang] = pages;
+        return pages;
+    }
+
+    /// <summary>
+    /// 대상 도움말 자리가 <paramref name="lang"/>("ko"·"en") 가이드에서 찾아지는가: 쪽(또는 장)이 있고, 그림을 적었으면 그 쪽에 그 그림이,
+    /// 아니고 자리 글을 적었으면 그 자리가 있다(<see cref="ShowPage(string, string?, string?)"/>와 같은 규칙 — 확인용).
+    /// </summary>
+    internal static bool Resolves(HelpTarget t, string lang)
+    {
+        if (!PagesOf(lang).TryGetValue(t.PageId, out var page)) return false;
+        if (t.Shot is { } shot) return page.Blocks.Any(b => b.Type == "shot" && b.Src == shot);
+        return t.Anchor is not { } anchor || AnchorSpot(page, anchor, lang == "ko") is not null;
     }
 
     /// <summary>다른 언어 쪽에서 찾은 자리가 이 쪽에도 같은 모양(블록 종류·줄 수)으로 있는지.</summary>

@@ -20,6 +20,8 @@ public sealed class UnityHubDialog : DialogBase
 
     public UnityHubDialog() : base(UiStrings.S_UnityHubDialog_UnityHubDialog_01D74C119C, UiStrings.S_UnityHubDialog_UnityHubDialog_F72E128AEB)
     {
+        // 대상 도움말(F1): "파일 브라우저"의 Unity 프로젝트 열기 문단(창 전체가 이 문단 하나로 설명됨)
+        this.HelpAt("screen-file-browser", anchor: "lists the projects registered in Unity Hub");
         _list = new ListBox();
         _list.DoubleTapped += (_, _) => { if (TryAccept()) DialogResult = DialogResult.OK; };
         var table = Table(_list, Columns);

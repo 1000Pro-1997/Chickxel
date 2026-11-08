@@ -139,13 +139,26 @@ public static partial class ProjectIO
         return string.IsNullOrWhiteSpace(last) ? null : last;
     }
 
+    /// <summary>
+    /// 내보내기 폴더·이름(폴더가 붙었을 수 있는 값)을 이 설치의 열쇠로 암호화한다(<see cref="LocalPathCipher"/>). 다른 컴퓨터에서 열면 풀지 못해 기본값이 된다.
+    /// </summary>
+    private static void ProtectLocalPaths(ProjectDto dto)
+    {
+        if (dto.Export is not { } export) return;
+        export.Folder = LocalPathCipher.ProtectCurrent(export.Folder);
+        export.FileName = LocalPathCipher.ProtectCurrent(export.FileName);
+        export.PartsFileName = LocalPathCipher.ProtectCurrent(export.PartsFileName);
+    }
+
     /// <param name="projectPath">저장할 프로젝트 전체 경로(내보내기 기록을 이 파일 기준 상대 경로로 씀). null이면 기록을 쓰지 않는다.</param>
     /// <param name="adjust">쓰기 전에 <c>project.json</c> 내용을 고친다(남에게 줄 파일). null이면 그대로.</param>
     private static void Save(SpriteProject project, Stream stream, string? projectPath, WorkStage? stage, Action<ProjectDto>? adjust = null)
     {
         using var zip = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true);
         var dto = ToDto(project, projectPath);
-        adjust?.Invoke(dto);
+        // 이 컴퓨터의 경로는 이 설치의 열쇠로 암호화해 쓴다(남에게 줄 파일은 경로를 빼고 이름만 남기므로 그대로).
+        if (adjust is null) ProtectLocalPaths(dto);
+        else adjust(dto);
         WriteProjectJson(zip, dto);
 
         // 셀 PNG는 여러 코어에서 묶음씩 만들고 ZIP에는 정한 차례대로 쓴다(파일 내용은 차례대로 만든 것과 같다). 묶음만큼만 메모리에 둔다.
@@ -432,13 +445,13 @@ public static partial class ProjectIO
         using (var zip = ZipFile.OpenRead(projectPath))
             dto = ReadDto(zip);
         var export = dto.Export;
-        if (export is not { OnSave: true } || !string.IsNullOrWhiteSpace(export.Folder)
-            || !string.IsNullOrWhiteSpace(export.FileName)) return [];
+        if (export is not { OnSave: true } || !string.IsNullOrWhiteSpace(LocalPathCipher.UnprotectCurrent(export.Folder))
+            || !string.IsNullOrWhiteSpace(LocalPathCipher.UnprotectCurrent(export.FileName))) return [];
 
         var full = Path.GetFullPath(projectPath);
         var dir = Path.GetDirectoryName(full) ?? "";
         var stem = Path.GetFileNameWithoutExtension(full);
-        var customParts = string.IsNullOrWhiteSpace(export.PartsFileName) ? null : export.PartsFileName.Trim();
+        var customParts = LocalPathCipher.UnprotectCurrent(export.PartsFileName) is { } parts && !string.IsNullOrWhiteSpace(parts) ? parts.Trim() : null;
         return RegisteredPaths(dto, full)
             .Where(p => IsDefaultNamed(p, dir, stem) && !(customParts is not null && HasStem(Path.GetFileName(p), customParts)) && File.Exists(p))
             .ToList();
@@ -449,7 +462,7 @@ public static partial class ProjectIO
         => string.Equals(Path.GetDirectoryName(path), dir, StringComparison.OrdinalIgnoreCase) && HasStem(Path.GetFileName(path), stem);
 
     /// <summary>이름이 <c>{stem}.…</c>, <c>{stem}_…</c>, <c>{stem}@…</c>(착장·스킨 파일)인지.</summary>
-    private static bool HasStem(string fileName, string stem)
+    internal static bool HasStem(string fileName, string stem)
         => fileName.StartsWith(stem + ".", StringComparison.OrdinalIgnoreCase) || fileName.StartsWith(stem + "_", StringComparison.OrdinalIgnoreCase)
            || fileName.StartsWith(stem + ProjectExport.SkinSeparator, StringComparison.OrdinalIgnoreCase);
 
@@ -1253,11 +1266,12 @@ public static partial class ProjectIO
     internal static void ApplyExport(ExportSettings x, ExportDto e)
     {
         x.ExportOnSave = e.OnSave;
-        x.Folder = string.IsNullOrWhiteSpace(e.Folder) ? null : e.Folder;
-        x.FileName = string.IsNullOrWhiteSpace(e.FileName) ? null : e.FileName;
+        // 이 설치의 열쇠로 암호화한 경로는 풀어 쓰고, 풀지 못하면(다른 컴퓨터에서 저장한 파일) 기본값(프로젝트 파일 옆·프로젝트 이름).
+        x.Folder = LocalPathCipher.UnprotectCurrent(string.IsNullOrWhiteSpace(e.Folder) ? null : e.Folder);
+        x.FileName = LocalPathCipher.UnprotectCurrent(string.IsNullOrWhiteSpace(e.FileName) ? null : e.FileName);
         x.ExportFrames = e.ExportFrames;
         x.ExportParts = e.ExportParts;
-        x.PartsFileName = string.IsNullOrWhiteSpace(e.PartsFileName) ? null : e.PartsFileName;
+        x.PartsFileName = LocalPathCipher.UnprotectCurrent(string.IsNullOrWhiteSpace(e.PartsFileName) ? null : e.PartsFileName);
         x.ImageFormat = Enum.IsDefined(e.ImageFormat) ? e.ImageFormat : ExportImageFormat.Png;
         x.JpegQuality = e.JpegQuality;
         x.SingleFrameIndex = e.SingleFrame;

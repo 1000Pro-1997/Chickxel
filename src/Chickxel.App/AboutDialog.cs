@@ -10,6 +10,9 @@ public sealed class AboutDialog : DialogBase
 
     public AboutDialog() : base(UiStrings.S_AboutDialog_AboutDialog_39A221AE8E)
     {
+        // 대상 도움말(F1): 창 = "제보·아이디어"의 정보 창 그림(④~⑦), 버전 = 버그 제보의 버전 항목, 링크 줄 = 제보할 곳·개발 후원, 설정 파일 위치 = "환경 설정"의 설정 폴더
+        const string page = "start-feedback";
+        this.HelpAt(page, shot: "start-feedback-2");
         CloseOnly();
 
         using var png = new MemoryStream(Icons.AppIconPng());
@@ -17,7 +20,8 @@ public sealed class AboutDialog : DialogBase
         RenderOptions.SetBitmapInterpolationMode(icon, BitmapInterpolationMode.HighQuality);
         var heading = new StackPanel { Spacing = 2, Margin = new Thickness(12, 0, 0, 0) };
         heading.Children.Add(new TextBlock { Text = AppInfo.Name, FontSize = 22, FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush });
-        heading.Children.Add(Text(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_AboutDialog_AboutDialog_280F145056,AppInfo.VersionText) + (AppInfo.IsDevBuild ? UiStrings.S_AboutDialog_AboutDialog_27606A6DB7 : "")));
+        heading.Children.Add(Text(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_AboutDialog_AboutDialog_280F145056,AppInfo.VersionText) + (AppInfo.IsDevBuild ? UiStrings.S_AboutDialog_AboutDialog_27606A6DB7 : ""))
+            .HelpAt(page, anchor: "Version: shown in"));
         heading.Children.Add(Text(UiStrings.S_AboutDialog_AboutDialog_4A7237E3B0));
         var top = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
         DockPanel.SetDock(icon, Dock.Left);
@@ -29,10 +33,10 @@ public sealed class AboutDialog : DialogBase
             Link(UiStrings.S_AboutDialog_AboutDialog_1BCE018BCE, AppUpdate.RepoUrl),
             Link(UiStrings.S_AboutDialog_AboutDialog_617FEF961D, AppUpdate.ReleasesUrl),
             Ui.DiscordButton(UiStrings.About_Discord, (_, _) => Updater.OpenUrl(this, AppInfo.DiscordUrl)),
-            Link(UiStrings.S_AboutDialog_AboutDialog_9A9BD8295A, AppUpdate.IssuesUrl)));
+            Link(UiStrings.S_AboutDialog_AboutDialog_9A9BD8295A, AppUpdate.IssuesUrl)).HelpAt(page, anchor: "Where to report"));
         Body.Children.Add(Ui.Row(
             Link(VectorIcon.Globe, UiStrings.About_Website, AppInfo.LocalizedWebsiteUrl),
-            Link(VectorIcon.Coffee, UiStrings.About_BuyCoffee, AppInfo.SupportUrl)));
+            Link(VectorIcon.Coffee, UiStrings.About_BuyCoffee, AppInfo.SupportUrl)).HelpAt(page, anchor: "Supporting development"));
         Body.Children.Add(Section(UiStrings.S_AboutDialog_AboutDialog_E3F28341F4));
         Body.Children.Add(Text(UiStrings.S_AboutDialog_AboutDialog_BE04412652));
         Body.Children.Add(Text(UiStrings.S_AboutDialog_AboutDialog_38A0479DD2));
@@ -43,7 +47,7 @@ public sealed class AboutDialog : DialogBase
         var settings = Text(UiStrings.S_AboutDialog_AboutDialog_D59819BEBD + AppSettings.FilePath);
         settings.Foreground = AppTheme.DimTextBrush;
         settings.Margin = new Thickness(3, 10, 3, 3);
-        Body.Children.Add(settings);
+        Body.Children.Add(settings.HelpAt("files-settings", anchor: "The settings folder"));
     }
 
     private static SelectableTextBlock Text(string text) => new()

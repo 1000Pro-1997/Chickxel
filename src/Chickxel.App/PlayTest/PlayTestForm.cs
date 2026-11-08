@@ -50,6 +50,8 @@ public sealed class PlayTestForm : Window
         _currentDocument = currentDocument ?? throw new ArgumentNullException(nameof(currentDocument));
 
         Title = UiStrings.S_PlayTestForm_PlayTestForm_B00519A8EF;
+        // 대상 도움말(F1): 가이드에서 이 창을 설명하는 곳은 "보기와 캔버스" 단축키 표의 움직임 테스트 줄뿐
+        this.HelpAt("shortcuts-view", anchor: "Movement test");
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         Width = 1060;
         Height = 680;

@@ -45,6 +45,8 @@ internal sealed class EffectCanvasDialog : DialogBase
     public EffectCanvasDialog(SpriteProject project, Rectangle effectBounds, string effectName)
         : base(UiStrings.EffectCanvas_Title, UiStrings.EffectCanvas_Apply)
     {
+        // 대상 도움말(F1): 창 = "효과 창" 쪽의 효과 하나에 맞춰 캔버스 늘리기 문단, 방식 줄 = 그림 ⑬ 늘리는 방식 줄
+        this.HelpAt("screen-effects-dialog", anchor: "To grow just the canvas to fit one effect");
         _project = project;
         _bounds = effectBounds;
         var intro = Ui.Label(UiStrings.FormatEffectCanvas_Intro(effect: effectName));
@@ -65,7 +67,7 @@ internal sealed class EffectCanvasDialog : DialogBase
             Refresh();
         };
         Body.Children.Add(intro);
-        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.EffectCanvas_Mode), mode));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.EffectCanvas_Mode), mode).HelpAt("screen-effects-dialog", anchor: "⑬ Canvas expansion method"));
         Body.Children.Add(_size);
         Body.Children.Add(_note);
         Refresh();

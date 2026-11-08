@@ -59,6 +59,9 @@ public sealed partial class AssetManagerWindow
 
     private static SemVersion? AppVersion => AppAssets.Options.AppVersion;
 
+    /// <summary>대상 도움말(F1)의 에셋 관리자 가이드 쪽.</summary>
+    private const string HelpPage = "screen-asset-manager";
+
     private Control StoreTab(int kindIndex)
     {
         _remoteFilter.SelectedIndex = kindIndex;
@@ -73,7 +76,11 @@ public sealed partial class AssetManagerWindow
             .Tip(UiStrings.Assets_OpenWebsiteTip);
         var toolbar = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 6) };
         toolbar.Children.AddRange([_remoteFilter, _remoteSearch, _tagFilter, refresh, website]);
-        foreach (var child in toolbar.Children) child.Margin = new Thickness(0, 0, 8, 0);
+        foreach (var child in toolbar.Children)
+        {
+            child.Margin = new Thickness(0, 0, 8, 0);
+            child.HelpAt(HelpPage, anchor: "The online list is downloaded");
+        }
 
         _remoteList.SelectionChanged += (_, _) =>
         {
@@ -87,8 +94,9 @@ public sealed partial class AssetManagerWindow
             }
             ShowRemoteDetail();
         };
-        var split = new Grid { ColumnDefinitions = new ColumnDefinitions("340,*"), Children = { _remoteList, DetailScroller(_remoteDetail) } };
-        var panel = new DockPanel();
+        _remoteList.HelpAt(HelpPage, anchor: "Each row shows the name");
+        var split = new Grid { ColumnDefinitions = new ColumnDefinitions("340,*"), Children = { _remoteList, DetailScroller(_remoteDetail).HelpAt(HelpPage, anchor: "Preview image, short description") } };
+        var panel = new DockPanel().HelpAt(HelpPage, anchor: "Store tab");
         DockPanel.SetDock(toolbar, Dock.Top);
         DockPanel.SetDock(_remoteStatus, Dock.Top);
         panel.Children.AddRange([toolbar, _remoteStatus, split]);
@@ -100,13 +108,13 @@ public sealed partial class AssetManagerWindow
 
     private Control UpdatesTab()
     {
-        var check = Ui.Button(VectorIcon.Refresh, UiStrings.Assets_CheckUpdates, (_, _) => LoadRemote());
+        var check = Ui.Button(VectorIcon.Refresh, UiStrings.Assets_CheckUpdates, (_, _) => LoadRemote()).HelpAt(HelpPage, anchor: "Check for updates downloads");
         var note = new TextBlock { Text = UiStrings.Assets_UpdatesNote, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.DimTextBrush, Margin = new Thickness(0, 0, 0, 6) };
         var top = new StackPanel { Margin = new Thickness(0, 8, 0, 0), Children = { check, note, _updatesStatus } };
         check.HorizontalAlignment = HorizontalAlignment.Left;
         check.Margin = new Thickness(0, 0, 0, 8);
         var scroll = new ScrollViewer { Content = _updatesList, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
-        var panel = new DockPanel();
+        var panel = new DockPanel().HelpAt(HelpPage, anchor: "Updates tab");
         DockPanel.SetDock(top, Dock.Top);
         panel.Children.AddRange([top, scroll]);
         return panel;
@@ -426,7 +434,7 @@ public sealed partial class AssetManagerWindow
                 CornerRadius = new CornerRadius(4),
                 Padding = new Thickness(10, 8),
                 Child = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Children = { info, action } },
-            });
+            }.HelpAt(HelpPage, anchor: "Check for updates downloads"));
         }
     }
 
@@ -445,7 +453,7 @@ public sealed partial class AssetManagerWindow
             Spacing = 8,
             Margin = new Thickness(0, 4, 0, 0),
             Children = { bar, text, cancel },
-        };
+        }.HelpAt(HelpPage, anchor: "Clicking Install shows a progress bar");
     }
 
     private string DownloadText() => F(UiStrings.Assets_Downloading, (int)Math.Floor(_downloadFraction * 100));

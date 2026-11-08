@@ -68,16 +68,30 @@ public sealed class GifExportDialog : DialogBase
         _info = new TextBlock { Foreground = AppTheme.TextBrush, Margin = new Thickness(2, 4, 2, 0), TextWrapping = TextWrapping.Wrap, MaxWidth = 400 };
         _result = new TextBlock { Foreground = AppTheme.AccentBrush, Margin = new Thickness(2, 2, 2, 0), TextWrapping = TextWrapping.Wrap, MaxWidth = 400, IsVisible = false };
 
+        // 대상 도움말(F1): 창 = "GIF 애니메이션으로 내보내기" 창 그림, 묶음마다 설정 목록의 그 항목(①~④), 태그 목록 ⑦ 그림,
+        // 미리보기 ⑤·정보 ⑥ 문단, 내보내기 단추 = 저장 문단. 묶음 상자는 빈 곳도 눌리게 투명 배경을 준다.
+        const string page = "screen-gif";
+        this.HelpAt(page, shot: "screen-gif");
+        static Border Section(string title, Control content, string anchor)
+        {
+            var group = Ui.Group(title, content).HelpAt(page, anchor: anchor);
+            group.Background = Brushes.Transparent;
+            return group;
+        }
+        _tagCombo.HelpAt(page, shot: "screen-gif-2");
+        _preview.HelpAt(page, anchor: "The preview on the right plays");
+        _info.HelpAt(page, anchor: "⑥");
+        OkButton.HelpAt(page, anchor: "Export… opens a save dialog");
         var settingsColumn = new StackPanel
         {
             Spacing = 2,
             Width = 300,
             Children =
             {
-                Ui.Group(UiStrings.S_GifExportDialog_GifExportDialog_463F80B168, Ui.Stack(_rangeCurrent, _rangeAll, Ui.Row(_rangeTag, _tagCombo))),
-                Ui.Group(UiStrings.S_GifExportDialog_GifExportDialog_012E0A74BF, Ui.Row(_scale, Ui.Label(UiStrings.S_GifExportDialog_GifExportDialog_5AE6A9747B))),
-                Ui.Group(UiStrings.S_GifExportDialog_GifExportDialog_C51C583CC7, Ui.Stack(_loopForever, Ui.Row(_loopCount, _plays, Ui.Label(UiStrings.S_GifExportDialog_GifExportDialog_D748D56877)))),
-                Ui.Group(UiStrings.S_GifExportDialog_GifExportDialog_7934F88ACA, Ui.Stack(_bgTransparent, Ui.Row(_bgColor, _color))),
+                Section(UiStrings.S_GifExportDialog_GifExportDialog_463F80B168, Ui.Stack(_rangeCurrent, _rangeAll, Ui.Row(_rangeTag, _tagCombo)), "Range"),
+                Section(UiStrings.S_GifExportDialog_GifExportDialog_012E0A74BF, Ui.Row(_scale, Ui.Label(UiStrings.S_GifExportDialog_GifExportDialog_5AE6A9747B)), "Zoom"),
+                Section(UiStrings.S_GifExportDialog_GifExportDialog_C51C583CC7, Ui.Stack(_loopForever, Ui.Row(_loopCount, _plays, Ui.Label(UiStrings.S_GifExportDialog_GifExportDialog_D748D56877))), "Loop"),
+                Section(UiStrings.S_GifExportDialog_GifExportDialog_7934F88ACA, Ui.Stack(_bgTransparent, Ui.Row(_bgColor, _color)), "Background"),
             },
         };
         var previewColumn = new StackPanel { Spacing = 2, Margin = new Thickness(10, 0, 0, 0), Children = { _preview, _info, _result } };

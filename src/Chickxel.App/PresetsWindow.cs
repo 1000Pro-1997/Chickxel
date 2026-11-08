@@ -71,6 +71,11 @@ public sealed class PresetsWindow : DialogBase
         ToolTip.SetTip(manager, UiStrings.Assets_ManagerTip);
         var listButtons = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 0) };
         listButtons.Children.AddRange([_favorite, _rename, _delete, manager]);
+        // F1: ⑬~⑯은 한 목록 항목에서 함께 설명, ⑰ 에셋 관리자는 따로.
+        const string page = "tools-gradient", presets = "Manage Gradient Presets";
+        _list.HelpAt(page, anchor: presets);
+        foreach (var button in new Control[] { _favorite, _rename, _delete }) button.HelpAt(page, anchor: presets);
+        manager.HelpAt(page, anchor: "Asset Manager: opens the Asset Manager");
         var left = new DockPanel();
         DockPanel.SetDock(listButtons, Dock.Bottom);
         left.Children.Add(listButtons);
@@ -110,7 +115,7 @@ public sealed class PresetsWindow : DialogBase
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             Margin = new Thickness(12, 0, 0, 0),
             Padding = new Thickness(0, 0, 8, 0),
-        };
+        }.HelpAt(page, anchor: presets);
         Grid.SetColumn(right, 1);
         var gradients = new Grid
         {
@@ -120,7 +125,8 @@ public sealed class PresetsWindow : DialogBase
         };
 
         var tabs = new TabControl();
-        tabs.Items.Add(new TabItem { Header = UiStrings.GradientPreset_Category, Content = gradients });
+        tabs.Items.Add(new TabItem { Header = UiStrings.GradientPreset_Category, Content = gradients }.HelpAt(page, anchor: presets));
+        this.HelpAt(page, shot: "tools-gradient-3");
         tabs.SelectedIndex = (int)tab;
 
         // The dialog body (StackPanel) gives no height, so the tabs go straight into the outer DockPanel's fill slot.

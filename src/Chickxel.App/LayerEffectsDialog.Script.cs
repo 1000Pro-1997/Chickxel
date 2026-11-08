@@ -177,6 +177,7 @@ public sealed partial class LayerEffectsDialog
             mark.Classes.Add(ScriptMarkClass);
             mark.Margin = new Thickness(4, 0, 0, 0);
             ToolTip.SetTip(mark, ScriptStatusText.Of(status));
+            mark.HelpAt("screen-script-effects", anchor: "When a script can't draw");
             row.Children.Add(mark);
         }
     }

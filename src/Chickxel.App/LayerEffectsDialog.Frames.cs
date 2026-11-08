@@ -175,6 +175,9 @@ public sealed partial class LayerEffectsDialog
         private bool OnTrash(Avalonia.Point p)
             => ShowsTrash && CellAt(p) == _thumbs.Length && CellRect(_thumbs.Length).Contains(p);
 
+        /// <summary>점 <paramref name="p"/>가 지우기 칸 위면 그 칸(대상 도움말이 두를 범위), 아니면 null.</summary>
+        public Rect? TrashAt(Avalonia.Point p) => OnTrash(p) ? CellRect(_thumbs.Length) : null;
+
         /// <summary>누름(끌지 않음): 그 프레임을 미리보기에.</summary>
         public event Action<int>? FrameClicked;
 

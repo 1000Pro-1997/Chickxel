@@ -14,7 +14,7 @@ namespace Chickxel.App;
 /// 그림을 누르면 크기를 바꿀 수 있는 크게 보기 창(<see cref="ZoomWindow"/>)이 열리고, 우클릭하면 보이는 프레임을 복사(1×·×4)·PNG로 저장하거나 GIF 내보내기 창을 연다.
 /// 제목 줄 오른쪽 끝 단추는 미리보기 탭(<see cref="TabView"/>를 메인 창이 나눈 칸에 닮)을 열어 달라고 알린다. 미리보기 탭이 열려 있으면 그림을 눌러도 그 탭을 보인다(큰 미리보기는 하나만).
 /// </summary>
-public sealed class PreviewPanel : UserControl
+public sealed class PreviewPanel : UserControl, IHelpTargetSource
 {
     private static readonly string[] Backgrounds = [UiStrings.S_PreviewPanel_Backgrounds_D9726B3169, UiStrings.S_PreviewPanel_Backgrounds_7DB5254C5D, UiStrings.S_PreviewPanel_Backgrounds_E200745781, UiStrings.S_PreviewPanel_Backgrounds_3785BA5E7F, UiStrings.S_PreviewPanel_Backgrounds_9E0985F1EA, UiStrings.S_PreviewPanel_Backgrounds_0814BC3C7C];
     private static readonly Color?[] PresetColors = [null, Colors.Black, Colors.White, Color.FromRgb(128, 128, 128), Color.FromRgb(60, 140, 70), null];
@@ -174,11 +174,13 @@ public sealed class PreviewPanel : UserControl
         RebuildOutfit();
     }
 
+    (HelpTarget Target, Rect Area)? IHelpTargetSource.HelpTargetFor(Control c, Avalonia.Point local) => HelpTargets.Whole(c, HelpTargetFor(c));
+
     /// <summary>
     /// 대상 도움말(F1): 이 패널 안의 컨트롤에 맞는 "미리보기" 가이드 자리(모르는 컨트롤이면 null).
     /// 그림·FPS·확대 단추는 가이드 첫 그림의 번호 표(①②③) 줄로 간다.
     /// </summary>
-    internal HelpTarget? HelpTargetFor(Control c)
+    private HelpTarget? HelpTargetFor(Control c)
     {
         const string page = "screen-preview";
         if (ReferenceEquals(c, _view)) return new(page, Anchor: "①");
@@ -677,7 +679,9 @@ public sealed class PreviewPanel : UserControl
             MinHeight = 160;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             Background = AppTheme.PanelBrush;
-            _view = new View(owner, fit: true);
+            // 대상 도움말(F1): 창 = "크게 보기와 미리보기 탭" 그림, 그림 = 휠 확대·끌기 설명 문단
+            this.HelpAt("screen-preview", shot: "screen-preview-large");
+            _view = new View(owner, fit: true).HelpAt("screen-preview", anchor: "In the enlarged window and the preview tab");
             PopupMenus.Attach(_view, owner.ViewMenu);
             Content = _view;
             Closing += (_, _) => s_size = ClientSize;

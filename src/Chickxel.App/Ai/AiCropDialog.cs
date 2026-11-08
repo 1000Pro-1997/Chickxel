@@ -15,6 +15,10 @@ internal sealed class AiCropDialog : DialogBase
         ArgumentNullException.ThrowIfNull(image);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(canvasWidth);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(canvasHeight);
+        // 대상 도움말(F1): 이 창은 "AI의 질문에 답하기"의 "캔버스보다 큰 생성 그림" 절이 설명한다(미리보기·크기와 위치·이 영역 사용).
+        const string page = "ai-questions", keepAnchor = "Check the size and position to keep";
+        this.HelpAt(page, anchor: "Generated images larger than the canvas");
+        OkButton.HelpAt(page, anchor: keepAnchor);
 
         var instruction = Ui.Label(UiStrings.AiCrop_Instruction);
         instruction.TextWrapping = TextWrapping.Wrap;
@@ -23,6 +27,7 @@ internal sealed class AiCropDialog : DialogBase
 
         var position = Ui.Label("");
         position.Foreground = AppTheme.DimTextBrush;
+        position.HelpAt(page, anchor: keepAnchor);
         _preview = new CropPreview(image, canvasWidth, canvasHeight, origin =>
             position.Text = string.Format(CultureInfo.CurrentCulture, UiStrings.AiCrop_Position,
                 canvasWidth, canvasHeight, origin.X, origin.Y));
@@ -36,7 +41,7 @@ internal sealed class AiCropDialog : DialogBase
             BorderBrush = AppTheme.BorderBrush,
             BorderThickness = new Thickness(1),
             Margin = new Thickness(0, 8, 0, 6),
-        });
+        }.HelpAt(page, anchor: "The Choose crop position window"));
         Body.Children.Add(position);
         Opened += (_, _) => _preview.Focus();
     }

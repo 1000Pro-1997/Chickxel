@@ -10,7 +10,7 @@ namespace Chickxel.App;
 /// 고치는 동안 캔버스에도 바로 보이고(<see cref="SpriteProject.PreviewLayerEffects"/>), 확인이면 대화상자 한 번이 실행취소 한 단계,
 /// 취소·창 닫기면 원래대로 돌아간다(<see cref="SpriteProject.EndLayerEffectsPreview"/>).
 /// </summary>
-public sealed partial class LayerEffectsDialog : DialogBase
+public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
 {
     private const int PreviewBox = 220;
     /// <summary>오른쪽(미리보기) 칸 폭 — 고정(넉넉히): 설명 글이 바뀌어도 창 폭이 그대로.</summary>
@@ -88,6 +88,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
         OkButton.IsDefault = false;
         OpenCount++;
         Closed += (_, _) => OpenCount--;
+        // 대상 도움말(F1): 창 = "효과 창" 쪽, 칸마다 그 그림 번호(⑥~⑭) 줄·자세한 쪽(설정 줄은 만들 때, 프레임 줄·설정 칸은 IHelpTargetSource)
+        this.HelpAt(HelpPage);
         _motionRange = motionRange ?? newRange;
         _project = ctx.Project ?? throw new InvalidOperationException(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_42089F3C1D);
         _layer = layer;
@@ -115,8 +117,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _remove = Ui.Button(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_DEC8D5CC64, (_, _) => Remove(), 60);
         _up = Ui.Button(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4E920AEA13, (_, _) => Move(-1), 60);
         _down = Ui.Button(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_FE8FEDFCFF, (_, _) => Move(1), 60);
-        _bake = Ui.Button(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_769C41A711, (_, _) => Bake(), 80);
-        _list = new ListBox { Width = SettingsWidth, Height = 170, Margin = new Thickness(3) };
+        _bake = Ui.Button(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_769C41A711, (_, _) => Bake(), 80).HelpAt("screen-layer-effects", anchor: "Applying permanently");
+        _list = new ListBox { Width = SettingsWidth, Height = 170, Margin = new Thickness(3) }.HelpAt(HelpPage, anchor: "⑨ Effect list");
         ToolTip.SetTip(_list, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_A48FBAD60B);
         _list.KeyDown += (_, e) =>
         {
@@ -184,15 +186,16 @@ public sealed partial class LayerEffectsDialog : DialogBase
             : null;
         var rangeLabel = Ui.Label(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_CE6B076915);
         if (motionTip is not null) ToolTip.SetTip(rangeLabel, motionTip);
-        var canvasExpand = Ui.Stack(Ui.Row(expandLabel, _expandMode), _expandNote);
-        var shared = Ui.Group(UiStrings.EffectShared_Title, Ui.Stack(canvasExpand, _extendPanel));
+        var canvasExpand = Ui.Stack(Ui.Row(expandLabel, _expandMode), _expandNote).HelpAt(HelpPage, anchor: "⑬ Canvas expansion method");
+        _extendPanel.HelpAt(HelpPage, anchor: "⑭ Extend frames");
+        var shared = Ui.Group(UiStrings.EffectShared_Title, Ui.Stack(canvasExpand, _extendPanel)).HelpAt("screen-effect-settings", shot: "screen-layer-effects-current");
         var left = Ui.Stack(
-            Ui.Row(rangeLabel, _addAll, Ui.Label(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4782D0C688), _addFrom, Ui.Label("~"), _addTo),
+            Ui.Row(rangeLabel, _addAll, Ui.Label(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4782D0C688), _addFrom, Ui.Label("~"), _addTo).HelpAt(HelpPage, anchor: "⑧ Add range"),
             _list,
-            Ui.Row(_remove, _up, _down, _bake),
+            Ui.Row(_remove, _up, _down, _bake).HelpAt(HelpPage, anchor: "⑨ Effect list"),
             // 공통 설정·설정 칸은 높이를 고정한 스크롤 하나에 둔다 — 효과를 넣거나 고를 때마다 창 높이가 바뀌어 아래 확인 단추가 화면 밖으로 밀리지 않게.
             _settingsScroll);
-        _settingsScroll.Content = Ui.Stack(shared, Ui.Group(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4D4CF63BB1, _settings));
+        _settingsScroll.Content = Ui.Stack(shared, Ui.Group(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4D4CF63BB1, _settings).HelpAt(HelpPage, anchor: "⑩ Settings"));
         left.Width = SettingsWidth + 30;
 
         _preview.Width = PreviewBox * 2 + 12;
@@ -228,10 +231,10 @@ public sealed partial class LayerEffectsDialog : DialogBase
         ToolTip.SetTip(_loop, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_0500474F59);
         _timer.Tick += (_, _) => NextPreviewFrame();
         var right = Ui.Stack(
-            Ui.Row(_play, _effectOnly, _loop, Ui.InfoBadge(Intro(layer))),
-            _caption,
-            _preview,
-            BuildFrameStrip());
+            Ui.Row(_play, _effectOnly, _loop, Ui.InfoBadge(Intro(layer))).HelpAt(HelpPage, anchor: PreviewAnchor),
+            _caption.HelpAt(HelpPage, anchor: PreviewAnchor),
+            _preview.HelpAt(HelpPage, anchor: PreviewAnchor),
+            BuildFrameStrip().HelpAt(HelpPage, anchor: StripAnchor));
         right.Width = RightWidth; // 고정 — 진행 % 등 글 길이에 따라 창 폭이 흔들리지 않게
 
         var root = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
@@ -572,14 +575,15 @@ public sealed partial class LayerEffectsDialog : DialogBase
     /// <summary>움직이는 효과의 빠르기 곡선·반복(한 번/반복/왕복 + 횟수) 줄.</summary>
     private static void AddTimingEditors(EffectForm form, AnimatedEffect a, Action<Func<LayerEffect, LayerEffect>> set)
     {
-        form.Row(UiStrings.S_LayerEffectsDialog_AddTimingEditors_E1B19358AF, ChoiceEditor(Easings, (int)a.Easing, k => set(o => (AnimatedEffect)o with { Easing = (EffectEasing)k })));
+        HelpRow(form.Row(UiStrings.S_LayerEffectsDialog_AddTimingEditors_E1B19358AF, ChoiceEditor(Easings, (int)a.Easing, k => set(o => (AnimatedEffect)o with { Easing = (EffectEasing)k }))),
+            "screen-effect-settings", "Speed and repeat");
         var count = NumEditor(1, AnimatedEffect.MaxRepeatCount, a.RepeatCount, NumKinds.Repeat, v => set(o => (AnimatedEffect)o with { RepeatCount = v }));
         count.IsEnabled = a.Repeat != EffectRepeat.Once;
-        form.Row(UiStrings.S_LayerEffectsDialog_AddTimingEditors_E8E7F0E20B, ChoiceEditor(Repeats, (int)a.Repeat, k =>
+        HelpRow(form.Row(UiStrings.S_LayerEffectsDialog_AddTimingEditors_E8E7F0E20B, ChoiceEditor(Repeats, (int)a.Repeat, k =>
         {
             count.IsEnabled = (EffectRepeat)k != EffectRepeat.Once;
             set(o => (AnimatedEffect)o with { Repeat = (EffectRepeat)k });
-        }), count, Ui.Label(UiStrings.S_LayerEffectsDialog_AddTimingEditors_433F81EB07));
+        }), count, Ui.Label(UiStrings.S_LayerEffectsDialog_AddTimingEditors_433F81EB07)), "screen-effect-settings", "Speed and repeat");
     }
 
     /// <summary>
@@ -639,7 +643,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         };
         from.ValueChanged += (_, _) => Apply();
         to.ValueChanged += (_, _) => Apply();
-        _rangeRow = _form.Row(UiStrings.S_LayerEffectsDialog_AddRangeEditor_C773F4F9DC, all, from, Ui.Label("~"), to);
+        _rangeRow = HelpRow(_form.Row(UiStrings.S_LayerEffectsDialog_AddRangeEditor_C773F4F9DC, all, from, Ui.Label("~"), to), "screen-effect-settings", "Effect range");
     }
 
     /// <summary>고른 효과를 앞의 비클리핑 효과가 만든 영역에만 적용한다.</summary>
@@ -658,7 +662,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
             ReplaceEffect(i, _effects[i] with { ClipToPrevious = clip.On() });
             RebuildList(i);
         };
-        _form.Row(UiStrings.EffectPreset_ApplyTarget, clip);
+        HelpRow(_form.Row(UiStrings.EffectPreset_ApplyTarget, clip), "screen-effect-colors", "Clipping");
     }
 
     /// <summary>확인·영구 적용할 때 이 효과 결과가 캔버스 밖으로 나가면 캔버스를 늘릴지(<see cref="LayerEffect.ExpandCanvas"/>). 늘리는 방식은 공통 설정.</summary>
@@ -667,7 +671,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         var expand = Ui.Check(UiStrings.Effect_ExpandCanvas, effect.ExpandCanvas);
         ToolTip.SetTip(expand, UiStrings.Effect_ExpandCanvasTip);
         expand.IsCheckedChanged += (_, _) => set(o => o.ExpandCanvas != expand.On() ? o with { ExpandCanvas = expand.On() } : o);
-        _form.Row(UiStrings.Effect_ExpandCanvasRow, expand);
+        HelpRow(_form.Row(UiStrings.Effect_ExpandCanvasRow, expand), "screen-effect-settings", "Expand canvas is on by default");
     }
 
     /// <summary>
@@ -680,7 +684,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         var move = Ui.Check(UiStrings.Effect_MovePivot, effect.MovePivot);
         ToolTip.SetTip(move, UiStrings.Effect_MovePivotTip);
         move.IsCheckedChanged += (_, _) => set(o => o.MovePivot != move.On() ? o with { MovePivot = move.On() } : o);
-        form.Row(UiStrings.Effect_MovePivotRow, move);
+        HelpRow(form.Row(UiStrings.Effect_MovePivotRow, move), "screen-effect-settings", "Move pivot along");
     }
 
     /// <summary>
@@ -695,7 +699,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         hold.IsEnabled = a.Frames is not null || a.HoldEnd;
         ToolTip.SetTip(hold, a.Frames is null ? UiStrings.Effect_HoldEndAllFramesTip : UiStrings.Effect_HoldEndTip);
         hold.IsCheckedChanged += (_, _) => set(o => o is AnimatedEffect current && current.HoldEnd != hold.On() ? current with { HoldEnd = hold.On() } : o);
-        form.Row(UiStrings.Effect_HoldEndRow, hold);
+        HelpRow(form.Row(UiStrings.Effect_HoldEndRow, hold), "screen-effect-settings", "Keep the end look");
     }
 
     /// <summary>설명 글. 설정 칸에 넣으면 <see cref="EffectForm.TakeHints"/>로 모아 정보 표시 풍선으로 옮긴다(펼침 상자 안에서는 그대로 보임).</summary>
@@ -778,6 +782,67 @@ public sealed partial class LayerEffectsDialog : DialogBase
         var c = Ui.Check(text, value);
         c.IsCheckedChanged += (_, _) => changed(c.On());
         return c;
+    }
+
+    // ───────────── 대상 도움말(F1) ─────────────
+
+    /// <summary>효과 창 가이드 쪽.</summary>
+    private const string HelpPage = "screen-effects-dialog";
+
+    /// <summary>효과 창 그림의 ⑪ 전/후 미리보기 줄(크게 보기 창도), ⑫ 프레임 줄.</summary>
+    private const string PreviewAnchor = "⑪ Before/after preview", StripAnchor = "⑫ Frame strip";
+
+    /// <summary>공식 효과 ID → "기본 효과 목록" 쪽 표 줄의 첫 칸(영어 가이드 글 — 한국어 화면은 같은 줄로 감).</summary>
+    private static readonly Dictionary<string, string> OfficialGuideRows = new(StringComparer.Ordinal)
+    {
+        ["outline"] = "Outline", ["shadow"] = "Shadow", ["rimlight"] = "Edge light · shade", ["coloroverlay"] = "Color overlay",
+        ["innerglow"] = "Inner glow", ["paletteswap"] = "Palette swap", ["coloradjust"] = "Color adjustment", ["reflection"] = "Reflection",
+        ["explode"] = "Explode", ["shine"] = "Light sweep", ["squash"] = "Squash & stretch", ["hitflash"] = "Hit flash", ["blink"] = "Blink",
+        ["shake"] = "Shake", ["bob"] = "Bob", ["appear"] = "Appear / disappear", ["fade"] = "Fade in · out", ["melt"] = "Melt", ["rotate"] = "Rotate",
+        ["afterimage"] = "Afterimage", ["colorcycle"] = "Color cycle", ["shockwave"] = "Shockwave ring", ["hologram"] = "Hologram",
+    };
+
+    /// <summary>공식 효과 <paramref name="officialId"/>(공식이 아니면 null)를 설명하는 "기본 효과 목록" 표 줄. 모르는 ID면 null.</summary>
+    private static HelpTarget? OfficialHelpTarget(string? officialId)
+        => officialId is not null && OfficialGuideRows.TryGetValue(officialId, out var row) ? new HelpTarget("screen-effect-list", Anchor: row) : null;
+
+    /// <summary>
+    /// 설정 줄(<see cref="EffectForm.Row"/>이 돌려준 값 열)에 대상 도움말 자리를 붙이고 그 값 열을 돌려준다. 넓은 칸이면 이름 열까지 한 줄 격자 전체,
+    /// 좁은 칸(오른쪽 독)이면 값 열만. 효과 창·도구 설정 독·효과 만들기가 함께 쓰는 줄이라 세 곳 모두 이 자리로 간다.
+    /// </summary>
+    private static Panel HelpRow(Panel values, string page, string anchor)
+    {
+        (values.Parent as Grid ?? (Control)values).HelpAt(page, anchor: anchor);
+        return values;
+    }
+
+    /// <summary>프레임 줄은 점에 따라(지우기 칸 = 프레임 지우기 절), 설정 칸은 고른 효과에 따라 자리가 바뀐다. 그 밖은 컨트롤에 붙인 자리.</summary>
+    (HelpTarget Target, Rect Area)? IHelpTargetSource.HelpTargetFor(Control c, Avalonia.Point local)
+    {
+        if (ReferenceEquals(c, _strip))
+            return _strip.TrashAt(local) is { } trash
+                ? (new HelpTarget(HelpPage, Anchor: "Deleting frames in the effects dialog"), trash)
+                : (new HelpTarget(HelpPage, Anchor: StripAnchor), new Rect(c.Bounds.Size));
+        return ReferenceEquals(c, _settings) ? HelpTargets.Whole(c, SettingsHelpTarget()) : null;
+    }
+
+    /// <summary>
+    /// 설정 칸 빈자리·자리를 따로 붙이지 않은 설정 줄의 자리: 공식 효과 = 기본 효과 목록의 그 효과 줄, 글씨 = 같은 표의 글씨 줄,
+    /// 다른 스크립트 효과 = 선언으로 만든 설정 항목, 프리셋 묶음 머리 = 묶음 줄을 고른 설정 칸 항목, 모르는 효과 = 그 절. 고른 것이 없으면 null(⑩ 설정 묶음).
+    /// </summary>
+    private HelpTarget? SettingsHelpTarget()
+    {
+        if (SelectedRow is { Recipe: not null }) return new("screen-effect-recipes", Anchor: "Selecting that row shows");
+        int i = Selected;
+        if (i < 0 || i >= _effects.Count) return null;
+        return _effects[i] switch
+        {
+            MissingEffect => new("screen-layer-effects", Anchor: "Effects this version doesn't know"),
+            ScriptEffect s => OfficialHelpTarget(Chickxel.Core.Scripting.OfficialEffects.IdOfShippedHash(s.ScriptHash))
+                              ?? new("screen-script-effects", Anchor: "The settings come from the declared settings"),
+            TextEffect => new("screen-effect-list", Anchor: "Text"),
+            _ => null,
+        };
     }
 
     // ───────────── 미리보기 ─────────────
@@ -995,6 +1060,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
             Background = AppTheme.BackBrush,
             Content = new DockPanel { Children = { bar, view } },
         };
+        // 대상 도움말(F1): 크게 보기 창 = 효과 창 ⑪ 전/후 미리보기 줄(크게 보기·재생·이전/다음 프레임·재생 범위 체크를 설명)
+        large.HelpAt(HelpPage, anchor: PreviewAnchor);
         large.KeyDown += (_, e) =>
         {
             // 단추·체크에 포커스가 있으면 Space는 그 단추를 누른다 — 창에서 또 재생을 바꾸지 않는다.

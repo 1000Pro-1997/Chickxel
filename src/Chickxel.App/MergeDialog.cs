@@ -28,6 +28,9 @@ public sealed class MergeDialog : DialogBase
     /// <param name="folder">결과 <c>.chickxel</c>을 만들 폴더.</param>
     public MergeDialog(IReadOnlyList<(string Path, MergeSource Source)> items, string folder) : base(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_MergeDialog_MergeDialog_B96DE665FA,items.Count), UiStrings.S_MergeDialog_MergeDialog_FB647D2B95)
     {
+        // 대상 도움말(F1): 창 = "파일 브라우저"의 합치기 소제목, 부분마다 ⑩~⑮ 항목·방식 표의 줄
+        const string page = "screen-file-browser";
+        this.HelpAt(page, anchor: "Merge");
         _items = items.ToList();
         _folder = folder;
 
@@ -36,7 +39,7 @@ public sealed class MergeDialog : DialogBase
         _drag.Moved += (from, to) => MoveItem(from, to);
         var up = Ui.IconButton(VectorIcon.ChevronUp, UiStrings.S_MergeDialog_MergeDialog_23AA50B513, (_, _) => MoveSelected(-1), 32);
         var down = Ui.IconButton(VectorIcon.ChevronDown, UiStrings.S_MergeDialog_MergeDialog_BDD18DAAB9, (_, _) => MoveSelected(1), 32);
-        _blankCover = Ui.Check(UiStrings.S_MergeDialog_MergeDialog_40FF1DF2B5);
+        _blankCover = Ui.Check(UiStrings.S_MergeDialog_MergeDialog_40FF1DF2B5).HelpAt(page, anchor: "Mode: see the table");
         _blankCover.IsEnabled = false;
         _blankCover.VerticalAlignment = VerticalAlignment.Center;
         _blankCover.Tip(UiStrings.S_MergeDialog_MergeDialog_7C6B20A094
@@ -45,16 +48,16 @@ public sealed class MergeDialog : DialogBase
 
         var maxW = items.Max(i => i.Source.Size.Width);
         var maxH = items.Max(i => i.Source.Size.Height);
-        _layers = Radio(UiStrings.S_MergeDialog_MergeDialog_B3BA45594D, UiStrings.S_MergeDialog_MergeDialog_9D32BDB124, true);
-        _group = Radio(UiStrings.S_MergeDialog_MergeDialog_2A89E3C4B6, UiStrings.S_MergeDialog_MergeDialog_7306C9C995, false);
+        _layers = Radio(UiStrings.S_MergeDialog_MergeDialog_B3BA45594D, UiStrings.S_MergeDialog_MergeDialog_9D32BDB124, true).HelpAt(page, anchor: "As layers");
+        _group = Radio(UiStrings.S_MergeDialog_MergeDialog_2A89E3C4B6, UiStrings.S_MergeDialog_MergeDialog_7306C9C995, false).HelpAt(page, anchor: "As a group");
         _skins = Radio(UiStrings.S_MergeDialog_MergeDialog_0A7DC12A34, UiStrings.S_MergeDialog_MergeDialog_C9D3632FB9
-                                  + UiStrings.S_MergeDialog_MergeDialog_A54A1EF2B9, false);
-        _frames = Radio(UiStrings.S_MergeDialog_MergeDialog_6233362607, UiStrings.S_MergeDialog_MergeDialog_C112F96D7C, false);
+                                  + UiStrings.S_MergeDialog_MergeDialog_A54A1EF2B9, false).HelpAt(page, anchor: "As skins");
+        _frames = Radio(UiStrings.S_MergeDialog_MergeDialog_6233362607, UiStrings.S_MergeDialog_MergeDialog_C112F96D7C, false).HelpAt(page, anchor: "As frames");
         _name = Ui.Text(UniqueName(ProjectMerge.SuggestName(items.Select(i => i.Source.Name).ToList())), 200);
         _w = Ui.Num(1, PixelImage.MaxSize, maxW, 70).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
         _h = Ui.Num(1, PixelImage.MaxSize, maxH, 70).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
         var fit = Ui.Button(UiStrings.S_MergeDialog_MergeDialog_FAF5E33EF9, (_, _) => { _w.Value = maxW; _h.Value = maxH; });
-        _deleteOriginals = Ui.Check(UiStrings.S_MergeDialog_MergeDialog_FBCED3F611);
+        _deleteOriginals = Ui.Check(UiStrings.S_MergeDialog_MergeDialog_FBCED3F611).HelpAt(page, anchor: "Canvas size (at first");
         _info = Ui.Label("");
         _warning = Ui.Label("");
         _warning.Foreground = Brushes.OrangeRed;
@@ -65,22 +68,25 @@ public sealed class MergeDialog : DialogBase
         _notes.TextWrapping = TextWrapping.Wrap;
         _notes.MaxWidth = 300;
 
+        const string order = "Order: the order you selected", size = "Canvas size (at first";
         var left = Ui.Stack(
-            Ui.Label(UiStrings.S_MergeDialog_MergeDialog_D350916435, bold: true),
-            Ui.Row(_order, Ui.Stack(up, down)),
-            Ui.Row(Ui.Label(UiStrings.S_MergeDialog_MergeDialog_C6EEBDB85A), _name, Ui.Label(SpriteProject.FileExtension)),
-            Ui.Label(UiStrings.S_MergeDialog_MergeDialog_0D1516342C, bold: true),
+            Ui.Label(UiStrings.S_MergeDialog_MergeDialog_D350916435, bold: true).HelpAt(page, anchor: order),
+            Ui.Row(_order, Ui.Stack(up, down)).HelpAt(page, anchor: order),
+            Ui.Row(Ui.Label(UiStrings.S_MergeDialog_MergeDialog_C6EEBDB85A), _name, Ui.Label(SpriteProject.FileExtension)).HelpAt(page, anchor: "Name: suggested automatically"),
+            Ui.Label(UiStrings.S_MergeDialog_MergeDialog_0D1516342C, bold: true).HelpAt(page, anchor: "Mode: see the table"),
             _layers, GroupRow(), _skins, _frames,
-            Ui.Label(UiStrings.S_MergeDialog_MergeDialog_6DB1865E38, bold: true),
-            Ui.Row(Ui.Label(UiStrings.S_MergeDialog_MergeDialog_9EA164CE93), _w, Ui.Label(UiStrings.S_MergeDialog_MergeDialog_B655521669), _h, Ui.Label("px"), fit),
-            Ui.Label(UiStrings.S_MergeDialog_MergeDialog_58E4493C15),
-            _anchor,
+            Ui.Label(UiStrings.S_MergeDialog_MergeDialog_6DB1865E38, bold: true).HelpAt(page, anchor: size),
+            Ui.Row(Ui.Label(UiStrings.S_MergeDialog_MergeDialog_9EA164CE93), _w, Ui.Label(UiStrings.S_MergeDialog_MergeDialog_B655521669), _h, Ui.Label("px"), fit).HelpAt(page, anchor: size),
+            Ui.Label(UiStrings.S_MergeDialog_MergeDialog_58E4493C15).HelpAt(page, anchor: size),
+            _anchor.HelpAt(page, anchor: size),
             _deleteOriginals,
             _warning);
-        var right = Ui.Stack(Ui.Label(UiStrings.S_MergeDialog_MergeDialog_5A49C66873, bold: true), _preview, _info, _notes);
+        const string preview = "a preview (played if there are several frames)";
+        var right = Ui.Stack(Ui.Label(UiStrings.S_MergeDialog_MergeDialog_5A49C66873, bold: true).HelpAt(page, anchor: preview), _preview.HelpAt(page, anchor: preview),
+            _info.HelpAt(page, anchor: preview), _notes.HelpAt(page, anchor: preview));
         Body.Children.Add(Ui.Row(left, right));
         // 합친 결과가 타임라인에서 어떻게 보이는지(행 = 레이어·그룹·부위, 열 = 프레임) — 방식을 바꾸면 바로 바뀐다.
-        Body.Children.Add(Ui.Label(UiStrings.S_MergeDialog_MergeDialog_E564B919E5, bold: true));
+        Body.Children.Add(Ui.Label(UiStrings.S_MergeDialog_MergeDialog_E564B919E5, bold: true).HelpAt(page, anchor: "How it will look in the timeline"));
         Body.Children.Add(new ScrollViewer
         {
             Content = _timeline,
@@ -89,7 +95,7 @@ public sealed class MergeDialog : DialogBase
             HorizontalAlignment = HorizontalAlignment.Left,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-        });
+        }.HelpAt(page, anchor: "How it will look in the timeline"));
 
         foreach (var r in new[] { _layers, _group, _skins, _frames }) r.IsCheckedChanged += (_, _) => { _blankCover.IsEnabled = _group.On(); UpdatePreview(); };
         _blankCover.IsCheckedChanged += (_, _) => UpdatePreview();

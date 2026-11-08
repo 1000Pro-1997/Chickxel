@@ -26,6 +26,10 @@ public sealed class SkinPickerWindow : DialogBase
         : base(partsOnly ? UiStrings.S_SkinPickerWindow_SkinPickerWindow_CDBDEDBE4D : UiStrings.S_SkinPickerWindow_SkinPickerWindow_30B8F1EF08)
     {
         frame = Math.Clamp(frame, 0, Math.Max(0, project.Frames.Count - 1));
+        // 대상 도움말(F1): 창 = "스킨 내보내기"의 스킨 고르기 창 그림, 스킨 칸 ⑥·착장 프리셋 칸 ⑦(같은 문단),
+        // 레이어 칸 = 내보내기 창 공통 설정의 스킨 고르기… 항목(합칠 레이어를 고른다는 설명)
+        const string page = "parts-skin-export";
+        this.HelpAt(page, shot: "parts-skin-export-2");
         var content = new StackPanel { Spacing = 2, Width = 460 };
 
         var intro = Note(partsOnly
@@ -52,13 +56,13 @@ public sealed class SkinPickerWindow : DialogBase
 
         if (groups.Count > 0)
         {
-            content.Children.Add(Heading(UiStrings.S_SkinPickerWindow_SkinPickerWindow_FFE48329B5));
+            content.Children.Add(Heading(UiStrings.S_SkinPickerWindow_SkinPickerWindow_FFE48329B5).HelpAt(page, anchor: "⑥"));
             foreach (var group in groups)
             {
                 var name = Ui.Label(options.ExcludedLayers.Contains(group) ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinPickerWindow_SkinPickerWindow_E3EF38CCC4,group.Name) : group.Name, bold: true);
                 name.TextWrapping = TextWrapping.Wrap;
-                content.Children.Add(name);
-                var wrap = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(8, 0, 0, 2) };
+                content.Children.Add(name.HelpAt(page, anchor: "⑥"));
+                var wrap = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(8, 0, 0, 2) }.HelpAt(page, anchor: "⑥");
                 var skins = group.Skins;
                 int gi = project.IndexOf(group);
                 for (int i = 0; i < skins.Count; i++)
@@ -82,8 +86,8 @@ public sealed class SkinPickerWindow : DialogBase
                     var partName = Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinPickerWindow_SkinPickerWindow_4B4DDD65E9,part.Name));
                     partName.Foreground = AppTheme.DimTextBrush;
                     partName.Margin = new Thickness(20, 0, 0, 0);
-                    content.Children.Add(partName);
-                    var partWrap = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(28, 0, 0, 2) };
+                    content.Children.Add(partName.HelpAt(page, anchor: "⑥"));
+                    var partWrap = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(28, 0, 0, 2) }.HelpAt(page, anchor: "⑥");
                     var f = project.Frames[frame];
                     foreach (var skin in own)
                     {
@@ -100,9 +104,9 @@ public sealed class SkinPickerWindow : DialogBase
 
         if (!partsOnly && project.Outfits.Count > 0)
         {
-            content.Children.Add(Heading(UiStrings.S_SkinPickerWindow_SkinPickerWindow_E73FD24EBA));
-            content.Children.Add(Note(UiStrings.S_SkinPickerWindow_SkinPickerWindow_F5BB7790A1));
-            var wrap = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(8, 0, 0, 2) };
+            content.Children.Add(Heading(UiStrings.S_SkinPickerWindow_SkinPickerWindow_E73FD24EBA).HelpAt(page, anchor: "⑦"));
+            content.Children.Add(Note(UiStrings.S_SkinPickerWindow_SkinPickerWindow_F5BB7790A1).HelpAt(page, anchor: "⑦"));
+            var wrap = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(8, 0, 0, 2) }.HelpAt(page, anchor: "⑦");
             foreach (var outfit in project.Outfits)
             {
                 var box = Ui.Check(outfit.Name, options.Outfits.Contains(outfit));
@@ -118,11 +122,11 @@ public sealed class SkinPickerWindow : DialogBase
         var tops = project.Layers.Where(l => !l.IsPart).Reverse().ToList();
         if (tops.Count > 0)
         {
-            content.Children.Add(Heading(UiStrings.S_SkinPickerWindow_SkinPickerWindow_76ACD5089E));
+            content.Children.Add(Heading(UiStrings.S_SkinPickerWindow_SkinPickerWindow_76ACD5089E).HelpAt("screen-export", anchor: "Choose skins…"));
             content.Children.Add(Note(partsOnly
                 ? UiStrings.S_SkinPickerWindow_SkinPickerWindow_CB68D989C3
-                : UiStrings.S_SkinPickerWindow_SkinPickerWindow_8D6FC7397A));
-            var wrap = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(8, 0, 0, 2) };
+                : UiStrings.S_SkinPickerWindow_SkinPickerWindow_8D6FC7397A).HelpAt("screen-export", anchor: "Choose skins…"));
+            var wrap = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(8, 0, 0, 2) }.HelpAt("screen-export", anchor: "Choose skins…");
             foreach (var layer in tops)
             {
                 var text = (layer.IsGroup ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinPickerWindow_SkinPickerWindow_8923EA543C,layer.Name) : layer.Name) + (layer.Visible ? "" : UiStrings.S_SkinPickerWindow_SkinPickerWindow_5EBB32EC59);

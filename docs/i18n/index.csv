@@ -31,7 +31,7 @@ core.1,대표 기능,Key features
 core.2,"Chickxel을 쓰면서 가장 자주 만나는 기능을 움직이는 화면과 함께 소개합니다. 사용 가이드의 <a href=""guide.html#featured-common"">빠른 작업</a>에서도 볼 수 있습니다.","The features you'll use most, shown in action. Also in the guide under <a href=""guide.html#featured-common"">Quick tasks</a>."
 core.3,"<span class=""core-tag"">공통 기능</span>","<span class=""core-tag"">Common controls</span>"
 core.4,숫자 칸 바꾸는 법,Changing number fields
-core.5.alt,"피벗 X·Y 숫자 칸을 클릭해 입력하고, 좌우로 끌어 바꾸고, 우클릭 목록에서 값을 고르는 모습","Clicking the pivot X/Y number fields to type, dragging them left and right, and picking a value from the right-click list"
+core.5.alt,"피벗 X 칸 오른쪽 끝의 위/아래 단추를 눌러 한 칸씩 바꾸고, 단추 위에서 위아래로 끌어 바꾸고, 우클릭 목록에서 값을 고른 뒤, Y 칸을 눌러 숫자를 입력하는 모습","Clicking the up/down buttons at the right end of the pivot X field to step by one, dragging up and down on them, picking a value from the right-click list, then clicking the Y field and typing a number"
 core.6,AI로 그리기,Drawing with AI
 core.7.aria-label,Codex 채팅에 32×32 나무 통을 그려 달라고 하자 AI가 캔버스에 나무 통을 그리는 모습,"Asking Codex chat to draw a 32×32 wooden barrel, and the AI drawing it on the canvas"
 core.zoom.tag,"<span class=""core-tag"">픽셀로 정리</span>","<span class=""core-tag"">Pixelate</span>"
@@ -54,7 +54,7 @@ core.21,Lospec 팔레트 가져오기,Importing Lospec palettes
 core.22.aria-label,팔레트 웹 창에서 Lospec 팔레트를 둘러보고 예시 그림을 확인한 뒤 새 팔레트로 가져오는 모습,"Browsing Lospec palettes in the Palette web window, checking the example art, and importing one as a new palette"
 core.23,"<span class=""core-tag"">팔레트 사용</span>","<span class=""core-tag"">Using palettes</span>"
 core.24,팔레트로 색 바꾸기,Recoloring with a palette
-core.25.aria-label,나무 통 그림을 팔레트 색으로 변환 창에서 다른 팔레트로 바꾸자 푸른 색 통으로 바뀌는 모습,"Converting the barrel sprite to another palette in the Convert to palette colors window, turning it into a blue barrel"
+core.25.aria-label,"팔레트 메뉴에서 연 팔레트 색으로 변환 창에서 대상, 색 고르는 규칙(가장 가까운 색의 색 거리 OKLab, 밝기 순서, 색상 먼저)과 디더링을 바꿔 가며 전·후 미리보기를 보고, 캐릭터 그림을 차가운 색 팔레트로 바꾸는 모습","In the Convert to palette colors window opened from the palette menu, switching the target, the color matching rule (Nearest color with OKLab color distance, Brightness order, Hue first) and dithering while watching the before/after preview, then converting the character to a cool-toned palette"
 core.26,"<span class=""core-tag"">스킨 설정</span>","<span class=""core-tag"">Skins</span>"
 core.27,스킨 관리,Managing skins
 core.28.aria-label,캐릭터의 머리카락 스킨을 스킨 칩과 스킨 관리 창에서 바꿔 끼우는 모습,Swapping a character's hair skin with the skin chip and the Skin manager
@@ -63,7 +63,7 @@ core.30,타일·아이템 스킨,Tile and item skins
 core.31.aria-label,블록 타일과 아이템 부위를 한 그룹에 두고 나무판·흙·광석 스킨으로 바꿔 보는 모습,"Keeping a block tile and its item parts in one group and switching between plank, dirt and ore skins"
 core.32,"<span class=""core-tag"">유니티 연동</span>","<span class=""core-tag"">Unity integration</span>"
 core.33,피벗 연동,Pivot sync
-core.34.aria-label,피벗 도구로 캐릭터의 기준점을 옮기고 그 피벗을 중심으로 회전시키는 모습,Moving a character's anchor with the Pivot tool and rotating around that pivot
+core.34.aria-label,"피벗 도구로 몸 레이어의 피벗을 발밑으로 옮기고, 그림자 레이어와 Props 그룹(부위마다 파란 점)의 따로 둔 피벗을 본 뒤, 타임라인 캔버스 칩으로 캔버스 피벗을 고치고 몸 레이어를 캔버스 피벗 대표 레이어(이름 앞 왕관)로 정하는 모습","Moving the Body layer's pivot to the feet with the Pivot tool, showing the separate pivots of the Shadow layer and the Props group (a blue dot per part), then editing the canvas pivot from the timeline canvas chip and making Body the canvas pivot representative layer (crown before its name)"
 core.35,내보내기,Export
 core.36.aria-label,내보내기 창에서 스킨을 따로 내보내거나 한 장에 모으도록 바꾸며 미리보기와 파일 목록이 바뀌는 모습,"Switching between exporting skins separately and packing them into one image in the export window, with the preview and file list updating"
 features.1,무엇을 할 수 있나요,What it does

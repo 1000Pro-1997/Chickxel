@@ -3964,4 +3964,8 @@ Stretch image: the image is stretched or squeezed to fill the new canvas exactly
   <data name="CanvasRatio_ImageSize" xml:space="preserve"><value>Image {size}</value></data>
   <data name="CanvasRatio_OutOfRange" xml:space="preserve"><value>The new size is outside 1–{max} px.</value></data>
   <data name="CanvasRatio_PreviewTip" xml:space="preserve"><value>Dotted: current canvas. Accent: new canvas. Faded image: parts outside the new canvas.</value></data>
+  <data name="FileBrowser_GroupExpand" xml:space="preserve"><value>Show {count} exported files (Ctrl+→)</value></data>
+  <data name="FileBrowser_GroupCollapse" xml:space="preserve"><value>Hide {count} exported files (Ctrl+←)</value></data>
+  <data name="FileBrowser_GroupChildTip" xml:space="preserve"><value>
+Belongs to {project}</value></data>
 </root>

@@ -19,6 +19,9 @@ public sealed class TrashDialog : DialogBase
     /// <param name="restored">되살린 파일 경로들.</param>
     public TrashDialog(AppTrash trash, TrashPolicy policy, Action<TrashPolicy> policyChanged, Action<IReadOnlyList<string>> restored) : base(UiStrings.S_TrashDialog_TrashDialog_5DAE31D03A)
     {
+        // 대상 도움말(F1): 창 = "파일 브라우저"의 지우기와 앱 휴지통, 목록·미리보기 = ⑯, 단추 = ⑰, 보관 정책 = ⑱ 항목
+        const string page = "screen-file-browser";
+        this.HelpAt(page, shot: "screen-file-browser-4");
         _trash = trash;
         _restored = restored;
         CloseOnly();
@@ -30,7 +33,7 @@ public sealed class TrashDialog : DialogBase
             Background = AppTheme.InputBrush,
             Foreground = AppTheme.TextBrush,
         };
-        _policy = new TrashPolicyEditor(policy);
+        _policy = new TrashPolicyEditor(policy).HelpAt(page, anchor: "Retention policy");
         _policy.Changed += (_, _) =>
         {
             policyChanged(_policy.Policy);
@@ -41,9 +44,9 @@ public sealed class TrashDialog : DialogBase
         var restore = Ui.Button(UiStrings.S_TrashDialog_TrashDialog_2C94038691, (_, _) => RestoreSelected(), 100);
         var delete = Ui.Button(UiStrings.S_TrashDialog_TrashDialog_C67DF450F5, (_, _) => DeleteSelected(), 100);
         var empty = Ui.Button(UiStrings.S_TrashDialog_TrashDialog_9D1463258E, (_, _) => EmptyAll(), 100);
-        Body.Children.Add(Ui.Label(UiStrings.S_TrashDialog_TrashDialog_A74F61165C));
+        Body.Children.Add(Ui.Label(UiStrings.S_TrashDialog_TrashDialog_A74F61165C).HelpAt(page, anchor: "Retention policy"));
         Body.Children.Add(_policy);
-        Body.Children.Add(_usage);
+        Body.Children.Add(_usage.HelpAt(page, anchor: "Retention policy"));
         // 왼쪽 목록(이미지면 작은 미리보기), 오른쪽 고른 항목의 큰 미리보기.
         _preview = new Image { Width = PreviewSize, Height = PreviewSize, Stretch = Stretch.Uniform };
         RenderOptions.SetBitmapInterpolationMode(_preview, BitmapInterpolationMode.None);
@@ -57,9 +60,9 @@ public sealed class TrashDialog : DialogBase
                 _previewInfo,
             },
         };
-        Body.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { _list, previewBox } });
+        Body.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { _list, previewBox } }.HelpAt(page, anchor: "⑯"));
         _list.SelectionChanged += (_, _) => ShowPreview();
-        Body.Children.Add(Ui.Row(restore, delete, empty));
+        Body.Children.Add(Ui.Row(restore, delete, empty).HelpAt(page, anchor: "⑰"));
         _list.DoubleTapped += (_, _) => RestoreSelected();
         Reload();
     }

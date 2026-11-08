@@ -236,6 +236,21 @@ public sealed class LospecPaletteDialog : DialogBase
         Put(detail, 4);
         Put(credit, 5);
 
+        // 대상 도움말(F1)
+        this.HelpAt("screen-palette", anchor: "Palette web (Lospec)");
+        _sort.HelpAt("screen-palette", anchor: "Choose Favorites in the sort box");
+        _tag.HelpAt("screen-palette", anchor: "Filter by sort order");
+        search.HelpAt("screen-palette", anchor: "Filter by sort order");
+        _filter.HelpAt("screen-palette", anchor: "Filter the color count");
+        _count.HelpAt("screen-palette", anchor: "Filter the color count");
+        _more.HelpAt("screen-palette", anchor: "Filter the color count");
+        _list.HelpAt("screen-palette", anchor: "Selecting a palette");
+        swatchHost.HelpAt("screen-palette", anchor: "Selecting a palette");
+        examplesHost.HelpAt("screen-palette", anchor: "Selecting a palette");
+        foreach (var b in new Control[] { _use, _add, _save, _web }) b.HelpAt("screen-palette", anchor: "Use as palette");
+        _viewFavorites.HelpAt("screen-palette", anchor: "Choose Favorites in the sort box");
+        credit.HelpAt("screen-palette", anchor: "Palette copyrights belong");
+
         // 대화상자 본문(StackPanel)은 높이를 주지 않으므로 바깥 DockPanel의 채우기 칸에 바로 둔다.
         var root = (DockPanel)Content!;
         root.Children.Remove(Body);
@@ -440,6 +455,7 @@ public sealed class LospecPaletteDialog : DialogBase
             VerticalAlignment = VerticalAlignment.Center,
             Focusable = false,
         };
+        b.HelpAt("screen-palette", anchor: "Favorites: click the star");
         b.Click += (_, e) =>
         {
             e.Handled = true;
@@ -551,7 +567,7 @@ public sealed class LospecPaletteDialog : DialogBase
             Content = new StackPanel { Children = { head, strip } },
             Tag = p,
             Padding = new Thickness(6, 4),
-        };
+        }.HelpAt("screen-palette", anchor: "Selecting a palette");
         ToolTip.SetTip(item, p.Tags.Count > 0 ? UiStrings.S_LospecPaletteDialog_MakeItem_759399DD94 + string.Join(", ", p.Tags) : null);
         return item;
     }

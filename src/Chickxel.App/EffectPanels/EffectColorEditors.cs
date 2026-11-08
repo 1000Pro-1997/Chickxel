@@ -16,9 +16,13 @@ public sealed partial class LayerEffectsDialog
         bool gradientMode = effect.ColorGradients.ContainsKey(slot);
         EffectColorGradient? savedGradient = effect.ColorGradients.TryGetValue(slot, out var currentGradient)
             ? currentGradient : null;
-        var mode = Ui.Combo(104, UiStrings.S_EffectColorEditors_EffectColorEditor_87B10DCF76, UiStrings.S_EffectColorEditors_EffectColorEditor_14AD8463A1);
+        var mode = Ui.Combo(104, UiStrings.S_EffectColorEditors_EffectColorEditor_87B10DCF76, UiStrings.S_EffectColorEditors_EffectColorEditor_14AD8463A1)
+            .HelpAt("screen-effect-colors", anchor: "Each color setting can be a ④ solid color");
         // 넓은 칸에서는 띠 폭(GradientBar.PreferredWidth)까지, 좁은 칸(오른쪽 독)에서는 칸 폭에 맞춘다
-        var editor = new GradientEditor(spatialAngle: true) { MaxWidth = GradientBar.PreferredWidth, HorizontalAlignment = HorizontalAlignment.Left };
+        var editor = new GradientEditor(spatialAngle: true) { MaxWidth = GradientBar.PreferredWidth, HorizontalAlignment = HorizontalAlignment.Left }
+            .HelpAt("screen-effect-colors", anchor: "Gradient modes");
+        // 대상 도움말(F1): 색 칸 = "효과 색과 클리핑" 그림 ③ 항목, 단색·그라데이션 = ④ 항목, 그라데이션 편집기 = 그라데이션 모드 절
+        field.HelpAt("screen-effect-colors", anchor: "Clicking a ③ color swatch");
         var body = Ui.Stack(trailing is null ? Ui.Row(field, mode) : Ui.Row(field, mode, trailing), editor);
         body.Margin = new Thickness(0);
 

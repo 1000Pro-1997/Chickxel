@@ -40,10 +40,13 @@ public sealed class RecipeSaveDialog : DialogBase
         for (int i = 0; i < PreviewChicks.Ids.Count; i++) _chicks.Items.Add(ChickItem(PreviewChicks.Ids[i], i + 1));
         _chicks.SelectedIndex = Math.Max(0, PreviewChicks.Ids.ToList().IndexOf(chick));
 
-        Body.Children.Add(Ui.Label(UiStrings.EffectPreset_NamePrompt));
-        Body.Children.Add(_name);
-        Body.Children.Add(Ui.Label(UiStrings.EffectPreset_PreviewChick, bold: true));
-        Body.Children.Add(_chicks);
+        // 대상 도움말(F1): 창 = "효과 프리셋"의 저장 창 그림, 이름 = ④, 미리보기 병아리 = ⑤(같은 문단)
+        const string page = "screen-effect-recipes";
+        this.HelpAt(page, shot: "screen-effect-recipes-4");
+        Body.Children.Add(Ui.Label(UiStrings.EffectPreset_NamePrompt).HelpAt(page, anchor: "Enter ④ a name"));
+        Body.Children.Add(_name.HelpAt(page, anchor: "Enter ④ a name"));
+        Body.Children.Add(Ui.Label(UiStrings.EffectPreset_PreviewChick, bold: true).HelpAt(page, anchor: "⑤ Preview chick"));
+        Body.Children.Add(_chicks.HelpAt(page, anchor: "⑤ Preview chick"));
         Body.Children.Add(new TextBlock
         {
             Text = UiStrings.EffectPreset_PreviewChickHint, Width = 420, TextWrapping = TextWrapping.Wrap,

@@ -202,6 +202,13 @@ public sealed class TabStrip : Border
         return this;
     }
 
+    /// <summary>탭 하나(머리글)의 대상 도움말(F1) 자리 — <see cref="HelpTargets.HelpAt"/>와 같음.</summary>
+    public TabStrip HelpAt(int index, string page, string? shot = null, string? anchor = null)
+    {
+        _tabs[index].Box.HelpAt(page, shot, anchor);
+        return this;
+    }
+
     /// <summary>글자가 있는 탭의 글자를 바꾼다(예: 작업 중 표시).</summary>
     public TabStrip SetText(int index, string text)
     {

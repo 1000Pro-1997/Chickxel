@@ -26,6 +26,8 @@ public sealed class RecipeParametersDialog : DialogBase
         : base(string.Format(CultureInfo.CurrentCulture, UiStrings.RecipeParams_Title, recipe.Name))
     {
         _effects = recipe.Effects;
+        // 대상 도움말(F1): 창 = "효과 프리셋"의 매개변수 정하기 절, 목록·이름 = ⑥⑦, 연결할 설정 = ⑧, 기본값·범위·고를 값 = ⑨ 단계, 문제 = 그 아래 문단
+        this.HelpAt(HelpPage, anchor: "Setting parameters");
         _parameters = [.. recipe.Parameters];
         _list.SelectionChanged += (_, _) =>
         {
@@ -35,7 +37,7 @@ public sealed class RecipeParametersDialog : DialogBase
         };
         var add = Ui.Button(VectorIcon.Plus, UiStrings.RecipeParams_Add, (_, _) => AddParameter());
         _remove = Ui.Button(VectorIcon.Trash, UiStrings.RecipeParams_Remove, (_, _) => RemoveParameter());
-        var left = Ui.Stack(Ui.Label(UiStrings.RecipeParams_Parameters, bold: true), _list, Ui.Row(add, _remove));
+        var left = Ui.Stack(Ui.Label(UiStrings.RecipeParams_Parameters, bold: true), _list, Ui.Row(add, _remove)).HelpAt(HelpPage, anchor: "Click Add to create a parameter");
         var right = new ScrollViewer
         {
             Content = _editor, MaxHeight = 460,
@@ -45,12 +47,15 @@ public sealed class RecipeParametersDialog : DialogBase
         root.Children.Add(left);
         root.Children.Add(right);
         Body.Children.Add(root);
-        Body.Children.Add(_issues);
+        Body.Children.Add(_issues.HelpAt(HelpPage, anchor: "Invalid links or ranges are listed"));
         RebuildList(_parameters.Count > 0 ? 0 : -1);
     }
 
     /// <summary>확인했을 때의 매개변수(<see cref="EffectRecipe.WithParameters"/>에 넘김).</summary>
     public IReadOnlyList<RecipeParameter> Parameters => _parameters;
+
+    /// <summary>대상 도움말(F1) 가이드 쪽.</summary>
+    private const string HelpPage = "screen-effect-recipes";
 
     /// <summary>내 레시피의 매개변수를 고치고 확인하면 그 자리에 저장한다(효과 창 프리셋 탭·에셋 관리자 상세에서). 받은 레시피는 고치지 않는다.</summary>
     public static void Edit(Visual owner, AssetEntry entry)
@@ -136,10 +141,10 @@ public sealed class RecipeParametersDialog : DialogBase
             if (_list.Items[k] is ListBoxItem item) item.Content = _parameters[k].Name;
             Validate();
         };
-        _editor.Children.Add(Ui.Row(Ui.Label(UiStrings.RecipeParams_Name), name));
+        _editor.Children.Add(Ui.Row(Ui.Label(UiStrings.RecipeParams_Name), name).HelpAt(HelpPage, anchor: "Click Add to create a parameter"));
 
-        _editor.Children.Add(Ui.Label(UiStrings.RecipeParams_Settings, bold: true));
-        _editor.Children.Add(Dim(UiStrings.RecipeParams_SettingsHint));
+        _editor.Children.Add(Ui.Label(UiStrings.RecipeParams_Settings, bold: true).HelpAt(HelpPage, anchor: "Under ⑧ Linked settings"));
+        _editor.Children.Add(Dim(UiStrings.RecipeParams_SettingsHint).HelpAt(HelpPage, anchor: "Under ⑧ Linked settings"));
         var settings = new StackPanel { Spacing = 0 };
         for (int e = 0; e < _effects.Count; e++)
         {
@@ -161,7 +166,8 @@ public sealed class RecipeParametersDialog : DialogBase
                 settings.Children.Add(check);
             }
         }
-        _editor.Children.Add(new ScrollViewer { Content = settings, MaxHeight = 220, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled });
+        _editor.Children.Add(new ScrollViewer { Content = settings, MaxHeight = 220, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled }
+            .HelpAt(HelpPage, anchor: "Under ⑧ Linked settings"));
 
         if (parameter.Bindings.Count > 0) AddValueEditors(k);
         Validate();
@@ -216,6 +222,8 @@ public sealed class RecipeParametersDialog : DialogBase
             Validate();
         }
 
+        // ⑨ 기본값·범위·고를 값(종류마다 줄 수가 달라 넣은 줄마다 자리를 붙인다)
+        int first = _editor.Children.Count;
         switch (parameter.Kind)
         {
             case RecipeParameterKind.Color:
@@ -281,6 +289,7 @@ public sealed class RecipeParametersDialog : DialogBase
                 }
                 break;
         }
+        foreach (var row in _editor.Children.Skip(first)) row.HelpAt(HelpPage, anchor: "Depending on the kind, set ⑨");
     }
 
     /// <summary>패키지 검사와 같은 규칙으로 검사해 문제를 보이고, 문제가 있으면 확인을 막는다.</summary>

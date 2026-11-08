@@ -23,6 +23,8 @@ public sealed class PackageTranslationsDialog : DialogBase
     {
         _name = name;
         _summary = summary;
+        // 언어 설정은 올리기 창 ⑩ 패키지 묶음의 한 줄.
+        this.HelpAt(AssetPublishDialog.HelpPage, anchor: "Package: the top line");
         _empty = new TextBlock { Text = UiStrings.ScriptLanguages_Empty, Foreground = AppTheme.DimTextBrush, Margin = new Thickness(3, 6) };
         Body.Children.Add(new TextBlock
         {

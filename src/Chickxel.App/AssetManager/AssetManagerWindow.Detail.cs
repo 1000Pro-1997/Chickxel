@@ -177,6 +177,8 @@ public sealed partial class AssetManagerWindow
                 entry.Author?.Url is { } url ? Ui.Button(VectorIcon.ExternalLink, UiStrings.Assets_WebPage, (_, _) => Updater.OpenUrl(this, url)).Tip(url) : null,
                 entry.LicenseFilePath is { } license ? Ui.Button(VectorIcon.Info, UiStrings.Assets_ViewLicense, (_, _) => ShowLicense(entry, license)) : null,
                 delete);
+        // 동작 단추 줄: 내 에셋·받은 에셋 표의 줄로.
+        _detail.Children[^1].HelpAt(HelpPage, anchor: mine ? "My assets" : "Received assets");
     }
 
     // ───────────── 동작 ─────────────

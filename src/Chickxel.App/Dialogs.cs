@@ -23,6 +23,9 @@ public sealed class NewImageDialog : DialogBase
     /// <param name="clipboard">클립보드 그림(없거나 너무 크면 null — 붙여넣기 줄을 보이지 않음).</param>
     public NewImageDialog(int width, int height, string? fileName = null, PixelImage? clipboard = null) : base(UiStrings.S_Dialogs_NewImageDialog_7A2F4AE34E, UiStrings.S_Dialogs_NewImageDialog_7D347172F9)
     {
+        // 대상 도움말(F1): 창 = "새 프로젝트", 줄마다 설정 표의 ①~④ 줄, 파일 이름 줄 = 파일 브라우저의 새 파일 만들기
+        const string page = "start-new-project";
+        this.HelpAt(page);
         _w = Ui.Num(1, PixelImage.MaxSize, width, 80).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
         _h = Ui.Num(1, PixelImage.MaxSize, height, 80).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
         _transparent = Ui.Check(UiStrings.S_Dialogs_NewImageDialog_1BD6059500, true);
@@ -31,13 +34,15 @@ public sealed class NewImageDialog : DialogBase
         _partName = Ui.Text(UiStrings.S_Dialogs_NewImageDialog_AB87E30975, 100);
         _partW = Ui.Num(1, PixelImage.MaxSize, Math.Min(8, width), 70).Presets(Ui.PartSizes).Unit("px").RecentKey("part.size");
         _partH = Ui.Num(1, PixelImage.MaxSize, Math.Min(8, height), 70).Presets(Ui.PartSizes).Unit("px").RecentKey("part.size");
-        _partRow = Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_7C07F3BD59), _partName, Ui.Label(UiStrings.S_Dialogs_NewImageDialog_D02D24EC7E), _partW, Ui.Label(UiStrings.S_Dialogs_NewImageDialog_03DEAAFD72), _partH, Ui.Label("px"));
+        _partRow = Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_7C07F3BD59), _partName, Ui.Label(UiStrings.S_Dialogs_NewImageDialog_D02D24EC7E), _partW, Ui.Label(UiStrings.S_Dialogs_NewImageDialog_03DEAAFD72), _partH, Ui.Label("px"))
+            .HelpAt(page, anchor: "Start");
         _partRow.IsEnabled = false;
         _parts.IsCheckedChanged += (_, _) => _partRow.IsEnabled = _parts.On();
         if (fileName is not null)
         {
             _name = Ui.Text(fileName, 220);
-            Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_BF763338DC), _name, Ui.Label(SpriteProject.FileExtension)));
+            Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_BF763338DC), _name, Ui.Label(SpriteProject.FileExtension))
+                .HelpAt("screen-file-browser", anchor: "New file and new folder"));
         }
         if (clipboard is not null)
         {
@@ -62,19 +67,20 @@ public sealed class NewImageDialog : DialogBase
                 }
                 _parts.IsEnabled = !on;
             };
-            Body.Children.Add(Ui.Row(thumb, _paste));
+            Body.Children.Add(Ui.Row(thumb, _paste).HelpAt(page, anchor: "Paste the clipboard image"));
         }
-        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_3231BB27CA), Ui.Label(UiStrings.S_Dialogs_NewImageDialog_D02D24EC7E), _w, Ui.Label(UiStrings.S_Dialogs_NewImageDialog_03DEAAFD72), _h, Ui.Label("px")));
-        var presets = Ui.Row();
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_3231BB27CA), Ui.Label(UiStrings.S_Dialogs_NewImageDialog_D02D24EC7E), _w, Ui.Label(UiStrings.S_Dialogs_NewImageDialog_03DEAAFD72), _h, Ui.Label("px"))
+            .HelpAt(page, anchor: "Canvas"));
+        var presets = Ui.Row().HelpAt(page, anchor: "Canvas");
         foreach (var (pw, ph) in new[] { (16, 16), (32, 32), (16, 32), (64, 64), (128, 128), (256, 256) })
             presets.Children.Add(Ui.Button($"{pw}×{ph}", (_, _) => { _w.Value = pw; _h.Value = ph; }));
         Body.Children.Add(presets);
-        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_DA31ACDA8F, bold: true));
-        Body.Children.Add(_normal);
-        Body.Children.Add(_parts);
+        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_DA31ACDA8F, bold: true).HelpAt(page, anchor: "Start"));
+        Body.Children.Add(_normal.HelpAt(page, anchor: "Start"));
+        Body.Children.Add(_parts.HelpAt(page, anchor: "Start"));
         Body.Children.Add(_partRow);
-        Body.Children.Add(_transparent);
-        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_8376337E30));
+        Body.Children.Add(_transparent.HelpAt(page, anchor: "Transparent background"));
+        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_8376337E30).HelpAt(page, anchor: "Transparent background"));
         OkButton.Click += (_, _) =>
         {
             if (_name is not null && (FileName.Length == 0 || FileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0))
@@ -112,19 +118,21 @@ public sealed class NewPartDialog : DialogBase
 
     public NewPartDialog(string name, int width, int height) : base(UiStrings.S_Dialogs_NewPartDialog_2F37A51A37, UiStrings.S_Dialogs_NewPartDialog_961BAAAD27)
     {
+        // 대상 도움말(F1): 창 = "만들기"의 부위 추가 창 그림, 이름 줄 ⑤·크기 줄 ⑥, 아래 안내 = 새 부위가 놓이는 자리 문단
+        this.HelpAt("parts-create", shot: "parts-create-3");
         _name = Ui.Text(name, 200);
         _w = Ui.Num(1, PixelImage.MaxSize, width, 80).Presets(Ui.PartSizes).Unit("px").RecentKey("part.size");
         _h = Ui.Num(1, PixelImage.MaxSize, height, 80).Presets(Ui.PartSizes).Unit("px").RecentKey("part.size");
-        var names = Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewPartDialog_A37D1FAE04), _name);
+        var names = Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewPartDialog_A37D1FAE04), _name).HelpAt("parts-create", anchor: "⑤");
         foreach (var n in new[] { UiStrings.S_Dialogs_NewPartDialog_2C2DA45F93, UiStrings.S_Dialogs_NewPartDialog_24E2B88EB7, UiStrings.S_Dialogs_NewPartDialog_EA5F33CDE6, UiStrings.S_Dialogs_NewPartDialog_FE7511726E })
             names.Children.Add(Ui.Button(n, (_, _) => _name.Text = n));
         Body.Children.Add(names);
-        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewPartDialog_0DFD005474), _w, Ui.Label(UiStrings.S_Dialogs_NewPartDialog_F6B6C03DD0), _h, Ui.Label("px")));
-        var presets = Ui.Row();
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewPartDialog_0DFD005474), _w, Ui.Label(UiStrings.S_Dialogs_NewPartDialog_F6B6C03DD0), _h, Ui.Label("px")).HelpAt("parts-create", anchor: "⑥"));
+        var presets = Ui.Row().HelpAt("parts-create", anchor: "⑥");
         foreach (var (pw, ph) in new[] { (8, 8), (8, 5), (16, 16), (16, 32), (32, 32) })
             presets.Children.Add(Ui.Button($"{pw}×{ph}", (_, _) => { _w.Value = pw; _h.Value = ph; }));
         Body.Children.Add(presets);
-        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_NewPartDialog_A409FD6D21));
+        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_NewPartDialog_A409FD6D21).HelpAt("parts-create", anchor: "A new part goes in as the top part"));
         Opened += (_, _) => { _name.Focus(); _name.SelectAll(); };
     }
 
@@ -142,10 +150,12 @@ public sealed class PartOffsetDialog : DialogBase
     {
         // 프레임 캔버스 안의 왼쪽 위 위치: 흔한 칸 경계 위주, 조금 밖으로 내민 음수도
         decimal[] positions = [-8, -4, 0, 2, 4, 8, 12, 16, 24, 32, 48, 64];
+        // 대상 도움말(F1): 창 = "프레임마다 부위 위치 바꾸기"의 위치… 항목, X·Y 줄 = "그리기(부위 선택)"의 위치를 숫자로 정하기
+        this.HelpAt("parts-frame-position", anchor: "The part's right-click Position");
         _x = Ui.Num(-PixelImage.MaxSize, PixelImage.MaxSize, offset.X, 80).Presets(positions).Unit("px").RecentKey("part.position");
         _y = Ui.Num(-PixelImage.MaxSize, PixelImage.MaxSize, offset.Y, 80).Presets(positions).Unit("px").RecentKey("part.position");
         Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_PartOffsetDialog_0C8997B97B));
-        Body.Children.Add(Ui.Row(Ui.Label("X"), _x, Ui.Label("Y"), _y, Ui.Label("px")));
+        Body.Children.Add(Ui.Row(Ui.Label("X"), _x, Ui.Label("Y"), _y, Ui.Label("px")).HelpAt("parts-draw", anchor: "Set the position numerically"));
     }
 
     public Point Offset => new((int)_x.NumValue(), (int)_y.NumValue());
@@ -156,13 +166,17 @@ public sealed class ImportKindDialog : DialogBase
 {
     public ImportKindDialog(string fileName, int sliceCount, Size sliceSize) : base(UiStrings.S_Dialogs_ImportKindDialog_E1ED0FF7D0, UiStrings.S_Dialogs_ImportKindDialog_5EAAD1D0AB)
     {
+        // 대상 도움말(F1): 창 = "PNG 열기"의 ①·② 그림, 부위로 = 고르기 항목, 애니메이션 프레임으로 = 프레임으로 가져오기 항목
+        const string page = "files-png-import";
+        this.HelpAt(page, shot: "files-png-import");
         Body.Children.Add(Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Dialogs_ImportKindDialog_F7F2CAA9B5,fileName,sliceCount,sliceSize.Width,sliceSize.Height), bold: true));
         Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_ImportKindDialog_0162B199AF));
-        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_ImportKindDialog_6C0B0B1FB9));
-        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_ImportKindDialog_C65D508A8F));
+        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_ImportKindDialog_6C0B0B1FB9).HelpAt(page, anchor: "you're asked to choose"));
+        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_ImportKindDialog_C65D508A8F).HelpAt(page, anchor: "Importing as animation frames"));
         SetButtonResult(OkButton, DialogResult.Yes);
         OkButton.Width = 110;
-        var anim = AddButton(UiStrings.S_Dialogs_ImportKindDialog_F16B548693, DialogResult.No);
+        OkButton.HelpAt(page, anchor: "you're asked to choose");
+        var anim = AddButton(UiStrings.S_Dialogs_ImportKindDialog_F16B548693, DialogResult.No).HelpAt(page, anchor: "Importing as animation frames");
         anim.Width = 150;
     }
 
@@ -187,12 +201,14 @@ public sealed class ResizeDialog : DialogBase
 
     public ResizeDialog(int width, int height, string title) : base(title)
     {
+        // 대상 도움말(F1): 부위 크기 창(부위에만 쓰임) — 창·크기 줄 = "그리기(부위 선택)"의 크기 바꾸기 항목, 기준점 = ⑥ 9방향 기준점 그림
+        this.HelpAt("parts-draw", anchor: "Resize: Frame·Layer");
         _w = Ui.Num(1, PixelImage.MaxSize, width, 80).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
         _h = Ui.Num(1, PixelImage.MaxSize, height, 80).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
         Body.Children.Add(Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Dialogs_ResizeDialog_EA62E1C6CB,width,height)));
-        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_ResizeDialog_C4A4F3494A), _w, Ui.Label(UiStrings.S_Dialogs_ResizeDialog_F0673D9964), _h, Ui.Label("px")));
-        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_ResizeDialog_497FE1221E));
-        Body.Children.Add(_anchor);
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_ResizeDialog_C4A4F3494A), _w, Ui.Label(UiStrings.S_Dialogs_ResizeDialog_F0673D9964), _h, Ui.Label("px")).HelpAt("parts-draw", anchor: "Resize: Frame·Layer"));
+        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_ResizeDialog_497FE1221E).HelpAt("parts-draw", shot: "parts-draw-4"));
+        Body.Children.Add(_anchor.HelpAt("parts-draw", shot: "parts-draw-4"));
     }
 
     public int NewWidth => (int)_w.NumValue();
@@ -269,7 +285,10 @@ public sealed class SplitFramesDialog : DialogBase
     public SplitFramesDialog(Chickxel.Core.Model.PixelImage image, int cellW, int cellH) : base(UiStrings.S_Dialogs_SplitFramesDialog_AA00952270, UiStrings.S_Dialogs_SplitFramesDialog_CC55D4341C)
     {
         _image = image;
-        _method = Ui.Combo(170, UiStrings.S_Dialogs_SplitFramesDialog_E531B3BF12, UiStrings.S_Dialogs_SplitFramesDialog_6D54D43F1D, UiStrings.S_Dialogs_SplitFramesDialog_08AC8DBD4F);
+        // 대상 도움말(F1): 창 = "PNG 열기"의 칸 정보 없는 시트 나누기, 방식 = ④ 그림, 칸 크기·칸 수·자동 최소 크기 줄 = ⑤~⑦ 그림
+        this.HelpAt("files-png-import", anchor: "Splitting sheets without cell information");
+        _method = Ui.Combo(170, UiStrings.S_Dialogs_SplitFramesDialog_E531B3BF12, UiStrings.S_Dialogs_SplitFramesDialog_6D54D43F1D, UiStrings.S_Dialogs_SplitFramesDialog_08AC8DBD4F)
+            .HelpAt("files-png-import", shot: "files-png-import-3");
         if (_method.SelectedIndex < 0) _method.SelectedIndex = 0;
         decimal[] counts = [1, 2, 3, 4, 5, 6, 8, 10, 12, 16];
         _cellW = Ui.Num(1, image.Width, Math.Min(cellW, image.Width), 60).Presets(Ui.SpriteSizes).Unit("px").RecentKey("cell.size");
@@ -285,11 +304,11 @@ public sealed class SplitFramesDialog : DialogBase
         _result = Ui.Label("");
         Body.Children.Add(Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Dialogs_SplitFramesDialog_B7C2E8311F,image.Width,image.Height)));
         Body.Children.Add(_method);
-        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_84FD67B968), _cellW, Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_5473AAAF60), _cellH));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_84FD67B968), _cellW, Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_5473AAAF60), _cellH).HelpAt("files-png-import", shot: "files-png-import-4"));
         Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_9C87DD306F), _offX, Ui.Label("Y"), _offY));
         Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_DC3CD0F4DA), _padX, Ui.Label("Y"), _padY));
-        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_D213350F0D), _cols, Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_7F8BCA446D), _rows));
-        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_36ABCCA237), _minSize));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_D213350F0D), _cols, Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_7F8BCA446D), _rows).HelpAt("files-png-import", shot: "files-png-import-4"));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_36ABCCA237), _minSize).HelpAt("files-png-import", shot: "files-png-import-4"));
         Body.Children.Add(_skipEmpty);
         Body.Children.Add(_result);
         foreach (var n in new[] { _cellW, _cellH, _offX, _offY, _padX, _padY, _cols, _rows, _minSize })
@@ -420,9 +439,11 @@ public sealed class ReplaceColorDialog : DialogBase
 
     public ReplaceColorDialog(Color32 from, Color32 to, bool hasSelection) : base(UiStrings.S_Dialogs_ReplaceColorDialog_D512F65023, UiStrings.S_Dialogs_ReplaceColorDialog_EDA3D827F9)
     {
+        // 대상 도움말(F1): 창 = "그리기 기본"의 편집 메뉴 표 ⑥ 색 바꾸기 줄, 선택 영역만 = 선택 도구의 색 바꾸기 문장
+        this.HelpAt("tools-basics", anchor: "Replace color");
         _from = new ColorField(from);
         _to = new ColorField(to);
-        _selectionOnly = Ui.Check(UiStrings.S_Dialogs_ReplaceColorDialog_0B7DF97295, hasSelection);
+        _selectionOnly = Ui.Check(UiStrings.S_Dialogs_ReplaceColorDialog_0B7DF97295, hasSelection).HelpAt("tools-select", anchor: "window offers Selection only");
         _selectionOnly.IsEnabled = hasSelection;
         Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_ReplaceColorDialog_B456BDF62D), _from));
         Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_ReplaceColorDialog_D361ED4C0A), _to));
@@ -443,15 +464,18 @@ public sealed class GridSettingsDialog : DialogBase
 
     public GridSettingsDialog(Color32 pixelColor, Size tile, Color32 tileColor) : base(UiStrings.S_Dialogs_GridSettingsDialog_100AEB4ECD)
     {
+        // 대상 도움말(F1): 창 = "메뉴와 위 막대"의 격자 설정… 문단, 픽셀 격자·타일 격자 부분 = 보기 옵션 표의 ⑧·⑨ 줄
+        const string page = "screen-top-bar";
+        this.HelpAt(page, anchor: "sets the grid colors and tile size");
         _pixelColor = new ColorField(pixelColor);
         _tileColor = new ColorField(tileColor);
         _tileW = Ui.Num(1, 4096, tile.Width, 64).Presets(Ui.TileSizes).Unit("px").RecentKey("tile.size");
         _tileH = Ui.Num(1, 4096, tile.Height, 64).Presets(Ui.TileSizes).Unit("px").RecentKey("tile.size");
-        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_32C718E6B0, bold: true));
-        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_0F749AB890), _pixelColor));
-        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_1E51753746, bold: true));
-        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_8997F6CAB3), _tileW, Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_934A32A181), _tileH, Ui.Label("px")));
-        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_0F749AB890), _tileColor));
+        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_32C718E6B0, bold: true).HelpAt(page, anchor: "Pixel grid"));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_0F749AB890), _pixelColor).HelpAt(page, anchor: "Pixel grid"));
+        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_1E51753746, bold: true).HelpAt(page, anchor: "Tile grid"));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_8997F6CAB3), _tileW, Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_934A32A181), _tileH, Ui.Label("px")).HelpAt(page, anchor: "Tile grid"));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_0F749AB890), _tileColor).HelpAt(page, anchor: "Tile grid"));
         Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_356D2B7E9E));
     }
 
@@ -585,25 +609,26 @@ public sealed class ShortcutHelpDialog : DialogBase
 
     public ShortcutHelpDialog() : base(UiStrings.S_Dialogs_ShortcutHelpDialog_40F6EB91B0)
     {
+        // 대상 도움말(F1): 창 = "단축키 바꾸기"의 단축키 목록 그림이 있는 소제목, 표의 줄 = 그 묶음의 단축키 쪽(줄 전체를 두름 — 글자는 누르기를 통과시킴)
+        this.HelpAt("shortcuts-customize", anchor: "Checking changed keys");
         CloseOnly();
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("70,200,270") };
         int row = 0;
-        void AddRow(string a, string b, string c, bool bold, IBrush? back)
+        void AddRow(string a, string b, string c, bool bold, IBrush? back, HelpTarget? help)
         {
             grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-            if (back is not null)
-            {
-                var bg = new Border { Background = back };
-                Grid.SetRow(bg, row);
-                Grid.SetColumnSpan(bg, 3);
-                grid.Children.Add(bg);
-            }
+            var bg = new Border { Background = back ?? Brushes.Transparent };
+            if (help is { } h) bg.HelpAt(h.PageId, h.Shot, h.Anchor);
+            Grid.SetRow(bg, row);
+            Grid.SetColumnSpan(bg, 3);
+            grid.Children.Add(bg);
             string[] texts = [a, b, c];
             for (int col = 0; col < 3; col++)
             {
                 var t = Ui.Label(texts[col], bold);
                 t.Margin = new Thickness(4, 2);
                 t.TextWrapping = TextWrapping.Wrap;
+                t.IsHitTestVisible = false;
                 Grid.SetRow(t, row);
                 Grid.SetColumn(t, col);
                 grid.Children.Add(t);
@@ -611,9 +636,9 @@ public sealed class ShortcutHelpDialog : DialogBase
             row++;
         }
         Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_ShortcutHelpDialog_66FDB77042));
-        AddRow(UiStrings.S_Dialogs_ShortcutHelpDialog_12C51EAE62, UiStrings.S_Dialogs_ShortcutHelpDialog_378916AAF8, UiStrings.S_Dialogs_ShortcutHelpDialog_DF90340663, true, AppTheme.PanelBrush);
+        AddRow(UiStrings.S_Dialogs_ShortcutHelpDialog_12C51EAE62, UiStrings.S_Dialogs_ShortcutHelpDialog_378916AAF8, UiStrings.S_Dialogs_ShortcutHelpDialog_DF90340663, true, AppTheme.PanelBrush, null);
         foreach (var (group, key, action) in Shortcuts)
-            AddRow(group, Ui.Shortcut(key), Ui.Shortcut(action), false, null);
+            AddRow(group, Ui.Shortcut(key), Ui.Shortcut(action), false, null, HelpFor(group, key));
         Body.Children.Add(new ScrollViewer
         {
             Content = grid,
@@ -622,5 +647,22 @@ public sealed class ShortcutHelpDialog : DialogBase
             Background = AppTheme.InputBrush,
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
         });
+    }
+
+    /// <summary>단축키 목록 한 줄(묶음 <paramref name="group"/>, 키 <paramref name="key"/>)을 설명하는 "단축키" 장의 쪽.</summary>
+    private static HelpTarget HelpFor(string group, string key)
+    {
+        if (group == UiStrings.S_Dialogs_Shortcuts_7D7F9ACF6D) return new("shortcuts-file");
+        // 편집 묶음 가운데 뒤집기·회전·변형·외곽선·색 바꾸기·크기·환경 설정은 "변형과 이미지" 쪽에 있다.
+        if (group == UiStrings.S_Dialogs_Shortcuts_145FCAB3DD)
+            return new(key is "Shift+H / Shift+V" or "Ctrl+R / Ctrl+Shift+R" or "Ctrl+T" or "Ctrl+Alt+O" or "Ctrl+Alt+R" or "Ctrl+Alt+C" or "Ctrl+Shift+C" or "Ctrl+,"
+                ? "shortcuts-transform" : "shortcuts-edit");
+        if (group == UiStrings.S_Dialogs_Shortcuts_6657ADE48E) return new("shortcuts-tools");
+        if (group == UiStrings.S_Dialogs_Shortcuts_CBA6A95A08) return new("shortcuts-view");
+        if (group == UiStrings.S_Dialogs_Shortcuts_249FBBC3DD) return new("shortcuts-view", Anchor: "Movement test");
+        if (group == UiStrings.S_Dialogs_Shortcuts_3577B85684) return new("tools-basics", Anchor: "Mouse buttons");
+        if (group == "AI" || group == UiStrings.S_Dialogs_Shortcuts_8FC1214E44) return new("shortcuts-ai-help");
+        // 프레임·레이어·타임라인·부위
+        return new("shortcuts-timeline");
     }
 }

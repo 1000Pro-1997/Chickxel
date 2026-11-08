@@ -2,6 +2,29 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.105 (2026-11-08)
+### F1 target help in every window
+- F1 (Help > Select target) now works in every separate window too: the Pixelate window, Effects window, AI chat, Effect Maker, Export, Skin manager, Preferences, Asset manager and the smaller dialogs.
+- While picking, a yellow box marks the part under the pointer and a small banner at the top of the window says what to do. Clicking opens the guide page for that part; right-click, Esc or F1 again cancels.
+- Message and confirm boxes without a page of their own open the page of the window they came from. The guide window stays usable and in front even when a modal dialog is open.
+- A rebound "Select target" shortcut applies in every window.
+
+### Files: exports fold under their project
+- Images, GIFs and saved preview frames named after a project (`sprite_3.gif`, `sprite_3_01.png`), and its registered exports, no longer get their own tiles; they are bundled under the `.chickxel` tile.
+- A small arrow on the right of the project tile shows or hides them (Ctrl+→ / Ctrl+←). They appear right after the project inside a black outline that joins the project and all its files, and the open state is kept until you quit. The outline stays visible when you hover over or select a file.
+- Bundled files open, select, drag, rename and delete like any other file. A name search that matches one shows its project unfolded.
+- A file that fits several project names goes to the longest one (`sprite_3.gif` belongs to `sprite_3`, not `sprite`). Deleting or renaming a project still takes only its default exports along.
+
+### Project files no longer reveal your folders
+- The export folder, sheet name and parts atlas name stored in a `.chickxel` are now encrypted (AES-GCM) with a random key made for this installation, so a project you hand to someone doesn't show your user name or folder layout.
+- The key is kept in the settings folder (`local-path-key.bin`), protected for your Windows user (DPAPI) or readable only by you on macOS and Linux.
+- On the same installation everything works as before. Opened on another computer or by another user, those settings fall back to the defaults (next to the project, named after it).
+- Older files with plain paths still open as they are and are encrypted the next time they're saved. Saving the same settings again leaves the file unchanged.
+
+### Guide updates
+- The guide covers F1 target help in every window, project bundles in the file browser and the encrypted export paths.
+- The number field, pivot, palette conversion, pencil and eraser animations were recorded again with the current interface.
+
 ## v1.14.104 (2026-11-08)
 ### AI drawing: images converted at full size
 - Generated frames are no longer halved to 640 px before conversion, and there is no size cap on frames or sprite sheets; the image is converted at the size the generator returned.

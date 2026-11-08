@@ -108,6 +108,7 @@ public sealed partial class ChatWindow : Window
         MinHeight = 360;
         Width = Math.Clamp(settings.ChatWidth, WindowMinWidth, 3000);
         Height = Math.Clamp(settings.ChatHeight, 360, 3000);
+        this.HelpAt("ai-chat");
         // 가운데 열기가 켜져 있거나 기억한 위치가 어느 화면에도 걸치지 않으면 메인 창 가운데로.
         var bounds = new PixelRect(settings.ChatX, settings.ChatY, (int)Width, (int)Height);
         if (!settings.ChatCenterOnOpen && settings.ChatX >= 0 && settings.ChatY >= 0 && Screens.All.Any(sc => sc.WorkingArea.Intersects(bounds)))
@@ -196,6 +197,13 @@ public sealed partial class ChatWindow : Window
 
         _body = new Border { Background = AppTheme.PanelBrush };
         var chatColumn = new DockPanel { Children = { headerBorder, _body } };
+        // 대상 도움말(F1): 머리줄의 상태 글(로그인 계정)·AI 탭·모델·새 대화·그리기 설정·"?"는 그것을 설명하는 가이드 자리로.
+        _status.HelpAt("ai-setup", anchor: "Signing in");
+        _providerToggle.HelpAt("ai-tabs");
+        _modelHost.HelpAt("ai-chat", anchor: "Choosing a model");
+        _newChat.HelpAt("ai-history");
+        _drawSettings.HelpAt("ai-generate", anchor: "Drawing settings");
+        _help.HelpAt("ai-help");
 
         _helpPanel = BuildHelpPanel();
         _drawPanel = BuildDrawSettingsPanel();
@@ -514,7 +522,8 @@ public sealed partial class ChatWindow : Window
     /// </summary>
     private Button InsertImageButton(Bitmap bmp)
     {
-        var button = Ui.Button(VectorIcon.Layers, UiStrings.Chat_InsertImage, null).Tip(UiStrings.Chat_InsertImage_Tip);
+        var button = Ui.Button(VectorIcon.Layers, UiStrings.Chat_InsertImage, null).Tip(UiStrings.Chat_InsertImage_Tip)
+            .HelpAt("ai-undo", anchor: "Adding a chat image as a new layer");
         button.HorizontalAlignment = HorizontalAlignment.Left;
         button.Click += (_, _) =>
         {
@@ -661,7 +670,7 @@ public sealed partial class ChatWindow : Window
             Width = HelpPanelWidth - 1,
             HorizontalAlignment = HorizontalAlignment.Left,
             Children = { header, _helpScroll },
-        };
+        }.HelpAt("ai-help");
     }
 
     /// <summary>
@@ -808,10 +817,11 @@ public sealed partial class ChatWindow : Window
     /// </summary>
     private Control BuildHelp(Action<string> useExample)
     {
+        const string page = "ai-help", toolsAnchor = "What the AI can do", examplesAnchor = "Example requests", tipsAnchor = "Tips";
         var stack = new StackPanel { Spacing = 8, Margin = new Thickness(12, 10) };
 
-        stack.Children.Add(TitleText(UiStrings.Chat_Help_ToolsTitle));
-        stack.Children.Add(WrapText(UiStrings.Chat_Help_ToolsIntro, dim: true));
+        stack.Children.Add(TitleText(UiStrings.Chat_Help_ToolsTitle).HelpAt(page, anchor: toolsAnchor));
+        stack.Children.Add(WrapText(UiStrings.Chat_Help_ToolsIntro, dim: true).HelpAt(page, anchor: toolsAnchor));
         var names = _mcp.Tools.ListTools().Select(t => t?["name"]?.GetValue<string>()).OfType<string>().ToList();
         var shown = new HashSet<string>(StringComparer.Ordinal);
         foreach (var (name, text, tools) in HelpGroups())
@@ -819,13 +829,13 @@ public sealed partial class ChatWindow : Window
             var present = tools.Where(names.Contains).ToList();
             if (present.Count == 0) continue;
             shown.UnionWith(present);
-            stack.Children.Add(HelpGroup(name, text, present));
+            stack.Children.Add(HelpGroup(name, text, present).HelpAt(page, anchor: toolsAnchor));
         }
         if (names.Where(n => !shown.Contains(n)).ToList() is { Count: > 0 } other)
-            stack.Children.Add(HelpGroup(UiStrings.Chat_Help_GroupOther, null, other));
+            stack.Children.Add(HelpGroup(UiStrings.Chat_Help_GroupOther, null, other).HelpAt(page, anchor: toolsAnchor));
 
-        stack.Children.Add(TitleText(UiStrings.Chat_Help_ExamplesTitle));
-        stack.Children.Add(WrapText(UiStrings.Chat_Help_ExamplesIntro, dim: true));
+        stack.Children.Add(TitleText(UiStrings.Chat_Help_ExamplesTitle).HelpAt(page, anchor: examplesAnchor));
+        stack.Children.Add(WrapText(UiStrings.Chat_Help_ExamplesIntro, dim: true).HelpAt(page, anchor: examplesAnchor));
         string[] examples =
         [
             UiStrings.Chat_Help_Example1, UiStrings.Chat_Help_Example2, UiStrings.Chat_Help_Example3, UiStrings.Chat_Help_Example4,
@@ -840,12 +850,12 @@ public sealed partial class ChatWindow : Window
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 HorizontalContentAlignment = HorizontalAlignment.Left,
                 Padding = new Thickness(8, 5),
-            }.Tip(UiStrings.Chat_Help_ExampleTip);
+            }.Tip(UiStrings.Chat_Help_ExampleTip).HelpAt(page, anchor: examplesAnchor);
             button.Click += (_, _) => useExample(example);
             stack.Children.Add(button);
         }
 
-        stack.Children.Add(TitleText(UiStrings.Chat_Help_TipsTitle));
+        stack.Children.Add(TitleText(UiStrings.Chat_Help_TipsTitle).HelpAt(page, anchor: tipsAnchor));
         string[] tips =
         [
             UiStrings.Chat_Help_Tip1, UiStrings.Chat_Help_Tip2, UiStrings.Chat_Help_Tip3,
@@ -854,7 +864,7 @@ public sealed partial class ChatWindow : Window
         ];
         foreach (var tip in tips)
         {
-            var row = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*") };
+            var row = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*") }.HelpAt(page, anchor: tipsAnchor);
             row.Children.Add(new IconView(VectorIcon.Dot, AppTheme.AccentBrush) { Filled = true, Width = 8, Height = 8, Margin = new Thickness(2, 6, 8, 0), VerticalAlignment = VerticalAlignment.Top });
             var text = WrapText(tip);
             Grid.SetColumn(text, 1);
@@ -1088,6 +1098,18 @@ public sealed partial class ChatWindow : Window
             _listScroll = Ui.ScrollHost(_list);
             _center.Child = _listScroll;
             _chatPanel = new DockPanel { Children = { inputArea, _center } };
+            // 대상 도움말(F1): 입력 줄의 단추·입력란·대기 줄·질문 칸·진행 줄, 지난 대화 목록은 그것을 설명하는 가이드 자리로.
+            imageButton.HelpAt("ai-chat", anchor: "Attach a reference image");
+            canvasButton.HelpAt("ai-chat", anchor: "Show the current frame");
+            _scopeToggle.HelpAt("ai-file-only");
+            _sendButton.HelpAt("ai-chat", anchor: "Send / new line");
+            _stopButton.HelpAt("ai-chat", anchor: "Stop the reply");
+            _imageInput.HelpAt("ai-chat", anchor: "Attaching images: image chips");
+            _pending.HelpAt("ai-chat", anchor: "Sending while a reply is coming in");
+            _questionHost.HelpAt("ai-questions");
+            _thinking.HelpAt("ai-progress");
+            _conversionPreview.HelpAt("ai-progress");
+            _listScroll.HelpAt("ai-history");
 
             _terminalPoll.Tick += async (_, _) => await PollLoginAsync();
             _installPoll.Tick += async (_, _) => await PollInstallAsync();
@@ -1184,7 +1206,7 @@ public sealed partial class ChatWindow : Window
                     Foreground = AppTheme.DimTextBrush,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center,
-                });
+                }.HelpAt("ai-setup"));
                 var path = Provider.Locate(_w._settings);
                 if (path is null)
                 {
@@ -1256,17 +1278,18 @@ public sealed partial class ChatWindow : Window
         {
             var p = Provider;
             SetHeader(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ShowNoCli_C0F440A767,p.ProductName), inChat: false);
-            var stack = new StackPanel { Spacing = 8, Margin = new Thickness(14, 12) };
+            const string failAnchor = "If installation fails";
+            var stack = new StackPanel { Spacing = 8, Margin = new Thickness(14, 12) }.HelpAt("ai-setup", anchor: "Installing a CLI");
             stack.Children.Add(TitleText(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ShowNoCli_EB50F0AD30,p.ProductName)));
             stack.Children.Add(WrapText(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ShowNoCli_A6A8288124,p.ProductName,p.Command,p.AccountText) +
                                         UiStrings.S_ChatWindow_ShowNoCli_4D48263369));
-            var install = Ui.Button(UiStrings.S_ChatWindow_ShowNoCli_ED06427F94, (_, _) => StartInstall());
+            var install = Ui.Button(UiStrings.S_ChatWindow_ShowNoCli_ED06427F94, (_, _) => StartInstall()).HelpAt("ai-setup", anchor: "If the CLI is missing");
             install.HorizontalAlignment = HorizontalAlignment.Left;
             stack.Children.Add(install);
             if (_installPoll.IsEnabled) stack.Children.Add(WrapText(UiStrings.S_ChatWindow_ShowNoCli_37191A6276, dim: true));
             else stack.Children.Add(WrapText(UiStrings.S_ChatWindow_ShowNoCli_3EA0647605, dim: true));
-            foreach (var (title, command) in p.InstallCommands) stack.Children.Add(_w.CommandBox(title, command));
-            var recheck = Ui.Button(UiStrings.S_ChatWindow_ShowNoCli_2736EF27CC, (_, _) => Recheck());
+            foreach (var (title, command) in p.InstallCommands) stack.Children.Add(_w.CommandBox(title, command).HelpAt("ai-setup", anchor: failAnchor));
+            var recheck = Ui.Button(UiStrings.S_ChatWindow_ShowNoCli_2736EF27CC, (_, _) => Recheck()).HelpAt("ai-setup", anchor: failAnchor);
             recheck.HorizontalAlignment = HorizontalAlignment.Left;
             stack.Children.Add(recheck);
 
@@ -1293,7 +1316,7 @@ public sealed partial class ChatWindow : Window
             pathStack.Children.Add(pathRow);
             if (!string.IsNullOrWhiteSpace(overridePath))
                 pathStack.Children.Add(WrapText(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ShowNoCli_F8C688F131,p.Command,overridePath), error: true));
-            stack.Children.Add(Ui.Group(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ShowNoCli_09620464D8,p.Command), pathStack));
+            stack.Children.Add(Ui.Group(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ShowNoCli_09620464D8,p.Command), pathStack).HelpAt("ai-setup", anchor: failAnchor));
             SetBody(Ui.ScrollHost(stack));
         }
 
@@ -1302,7 +1325,7 @@ public sealed partial class ChatWindow : Window
         {
             var p = Provider;
             SetHeader(UiStrings.S_ChatWindow_ShowLogin_3B08918AF3, inChat: false);
-            var stack = new StackPanel { Spacing = 8, Margin = new Thickness(14, 12) };
+            var stack = new StackPanel { Spacing = 8, Margin = new Thickness(14, 12) }.HelpAt("ai-setup", anchor: "Signing in");
             stack.Children.Add(TitleText(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ShowLogin_9B4E400681,p.Name)));
             stack.Children.Add(WrapText(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ShowLogin_4B41926EA7,p.AccountText,p.Name) +
                                         string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ShowLogin_7211786FF1,p.ProductName)));
@@ -1562,7 +1585,8 @@ public sealed partial class ChatWindow : Window
                 else AddSystemLine(msg, error: true);
             };
             s.Notice += text => AddSystemLine(text, error: false);
-            s.McpProblem += text => AddSystemLine(text + "\n" + UiStrings.FormatChat_McpCliPath(path: sessionPath ?? UiStrings.AiStatus_Unknown), error: true);
+            s.McpProblem += text => AddSystemLine(text + "\n" + UiStrings.FormatChat_McpCliPath(path: sessionPath ?? UiStrings.AiStatus_Unknown), error: true)
+                .HelpAt("ai-troubleshoot", anchor: "When the AI can't reach the editor");
             s.ModelResolved += model =>
             {
                 if (ReferenceEquals(s, _session) && Provider.RememberResolved(_w._settings, s.Model, model)) _models.Fill();
@@ -1628,7 +1652,7 @@ public sealed partial class ChatWindow : Window
             if (_session is not { } session) return false;
             if (_cliPath != Provider.Locate(_w._settings))
             {
-                AddSystemLine(UiStrings.Chat_CliPathChanged, error: false, record: false);
+                AddSystemLine(UiStrings.Chat_CliPathChanged, error: false, record: false).HelpAt("ai-troubleshoot", anchor: "When the CLI path changes");
                 Recheck();
                 return false;
             }
@@ -1703,7 +1727,7 @@ public sealed partial class ChatWindow : Window
             };
             AddUserBubble(userItem, [.. attachments.Select(a => (Bitmap?)a.Thumb)], attachments);
             Record(userItem);
-            if (scope is not null) AddSystemLine(UiStrings.FormatChat_FileOnly_Notice(name: scope.Project.DisplayName), error: false);
+            if (scope is not null) AddSystemLine(UiStrings.FormatChat_FileOnly_Notice(name: scope.Project.DisplayName), error: false).HelpAt("ai-file-only", anchor: "The chat shows the scope");
 
             var label = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_Send_9DB69B8394,Provider.Name,Shorten(plain.Length > 0 ? plain : UiStrings.S_ChatWindow_Send_A2D9AB8F67, 24));
             var turn = new Turn(label) { DirectDrawing = drawingMode == AiDrawMode.Direct, DirectFallback = fallback };
@@ -1894,7 +1918,7 @@ public sealed partial class ChatWindow : Window
                     break;
                 case ChatItemKind.Snapshot:
                     if (item.Images is [var png, ..] && DecodeImage(png) is { } shot)
-                        AddItem(new StackPanel { Spacing = 4, Margin = new Thickness(2, 2, 0, 0), Children = { SnapshotView(shot), _w.InsertImageButton(shot) } });
+                        AddItem(new StackPanel { Spacing = 4, Margin = new Thickness(2, 2, 0, 0), Children = { SnapshotView(shot), _w.InsertImageButton(shot) } }.HelpAt("ai-undo"));
                     break;
                 case ChatItemKind.AiDraw:
                     AddItem(_w.AiDrawCard(item.Images is [var drawn, ..] ? DecodeImage(drawn) : null, item.Text,
@@ -1919,7 +1943,7 @@ public sealed partial class ChatWindow : Window
             {
                 chats = [];
             }
-            var intro = WrapText(chats.Count == 0 ? UiStrings.Chat_History_Empty : UiStrings.Chat_History_StartHint, dim: true);
+            var intro = WrapText(chats.Count == 0 ? UiStrings.Chat_History_Empty : UiStrings.Chat_History_StartHint, dim: true).HelpAt("ai-history", anchor: "Type a message in the ⑤ box");
             intro.Margin = new Thickness(2, 2, 2, 6);
             _list.Children.Add(intro);
             if (chats.Count == 0) return;
@@ -1944,7 +1968,7 @@ public sealed partial class ChatWindow : Window
                 Padding = new Thickness(5),
                 VerticalAlignment = VerticalAlignment.Center,
                 Focusable = false,
-            }.Tip(c.Favorite ? UiStrings.Chat_History_Unfavorite : UiStrings.Chat_History_Favorite);
+            }.Tip(c.Favorite ? UiStrings.Chat_History_Unfavorite : UiStrings.Chat_History_Favorite).HelpAt("ai-history", anchor: "The ③ star icon");
             star.Click += (_, _) =>
             {
                 try
@@ -1979,9 +2003,9 @@ public sealed partial class ChatWindow : Window
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 HorizontalContentAlignment = HorizontalAlignment.Left,
                 Cursor = new Cursor(StandardCursorType.Hand),
-            }.Tip(UiStrings.Chat_History_Open);
+            }.Tip(UiStrings.Chat_History_Open).HelpAt("ai-history", anchor: "Click a row");
             open.Click += (_, _) => OpenSaved(c.Id);
-            var delete = Ui.IconButton(VectorIcon.Trash, UiStrings.Chat_History_Delete, (_, _) => DeleteSaved(c), size: 13);
+            var delete = Ui.IconButton(VectorIcon.Trash, UiStrings.Chat_History_Delete, (_, _) => DeleteSaved(c), size: 13).HelpAt("ai-history", anchor: "The ③ star icon");
             delete.Background = Brushes.Transparent;
             delete.BorderThickness = new Thickness(0);
             delete.Padding = new Thickness(5);
@@ -2249,15 +2273,15 @@ public sealed partial class ChatWindow : Window
                 CornerRadius = new CornerRadius(6),
                 HorizontalAlignment = HorizontalAlignment.Right,
                 Child = stack,
-            };
+            }.HelpAt("ai-chat", anchor: "The sent message shows chips");
             var turnActions = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
                 IsVisible = false,
                 Children =
                 {
-                    TurnButton(VectorIcon.Pencil, UiStrings.Chat_Turn_Edit_Tip, () => RemoveLastTurn(edit: true)),
-                    TurnButton(VectorIcon.Trash, UiStrings.Chat_Turn_Delete_Tip, () => RemoveLastTurn(edit: false)),
+                    TurnButton(VectorIcon.Pencil, UiStrings.Chat_Turn_Edit_Tip, () => RemoveLastTurn(edit: true)).HelpAt("ai-edit-last", anchor: "Edit"),
+                    TurnButton(VectorIcon.Trash, UiStrings.Chat_Turn_Delete_Tip, () => RemoveLastTurn(edit: false)).HelpAt("ai-edit-last", anchor: "Delete"),
                 },
             };
             var actions = new StackPanel
@@ -2266,7 +2290,7 @@ public sealed partial class ChatWindow : Window
                 HorizontalAlignment = HorizontalAlignment.Right,
                 Children =
                 {
-                    TurnButton(VectorIcon.Copy, UiStrings.Chat_Turn_Copy_Tip, () => _w.CopyText(ChatImageTokens.WithoutTokens(item.Text))),
+                    TurnButton(VectorIcon.Copy, UiStrings.Chat_Turn_Copy_Tip, () => _w.CopyText(ChatImageTokens.WithoutTokens(item.Text))).HelpAt("ai-chat", anchor: "Every message you sent"),
                     turnActions,
                 },
             };
@@ -2345,11 +2369,13 @@ public sealed partial class ChatWindow : Window
             FocusInput();
         }
 
-        /// <summary>안내·오류 한 줄을 붙이고, <paramref name="record"/>면 저장할 내용에도 넣는다.</summary>
-        private void AddSystemLine(string text, bool error, bool record = true)
+        /// <summary>안내·오류 한 줄을 붙이고(그 줄을 돌려줌), <paramref name="record"/>면 저장할 내용에도 넣는다.</summary>
+        private SelectableTextBlock AddSystemLine(string text, bool error, bool record = true)
         {
-            AddItem(SystemLine(text, error));
+            var line = SystemLine(text, error);
+            AddItem(line);
             if (record) Record(new ChatItem { Kind = error ? ChatItemKind.Error : ChatItemKind.Notice, Text = text });
+            return line;
         }
 
         private static SelectableTextBlock SystemLine(string text, bool error) => new()
@@ -2429,7 +2455,7 @@ public sealed partial class ChatWindow : Window
         /// <summary>차례가 끝난 뒤 캔버스 모습과 "이 단계 되돌리기/다시 적용" 단추. 모습은 작은 그림이면 저장할 내용에도 넣는다(단추는 저장하지 않음).</summary>
         private void AddSnapshot(SpriteProject project, IUndoCommand group)
         {
-            var panel = new StackPanel { Spacing = 4, Margin = new Thickness(2, 2, 0, 0) };
+            var panel = new StackPanel { Spacing = 4, Margin = new Thickness(2, 2, 0, 0) }.HelpAt("ai-undo");
             Bitmap? shot = null;
             if (_w.Composite(project) is { } img)
             {
@@ -2442,7 +2468,7 @@ public sealed partial class ChatWindow : Window
                     Record(new ChatItem { Kind = ChatItemKind.Snapshot, Images = [Convert.ToBase64String(ms.ToArray())] });
                 }
             }
-            var button = Ui.Button(UiStrings.S_ChatWindow_AddSnapshot_C5F0084B6D);
+            var button = Ui.Button(UiStrings.S_ChatWindow_AddSnapshot_C5F0084B6D).HelpAt("ai-undo", anchor: "Undo this step");
             button.HorizontalAlignment = HorizontalAlignment.Left;
             var step = new UndoStep(project, group, button);
             button.Click += (_, _) => ToggleStep(step);

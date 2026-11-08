@@ -104,6 +104,8 @@ public sealed class AccountDialog : DialogBase
     private void Build()
     {
         _view.Children.Clear();
+        // 대상 도움말(F1): 로그인한 화면은 계정 창, 아니면 로그인 설명으로.
+        this.HelpAt("start-account", anchor: Client.User is null ? "Signing in" : "Account window");
         if (_reason is not null && Client.User is null)
             _view.Children.Add(new TextBlock { Text = _reason, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.WarningBrush });
         if (_loginUrl is not null) BuildWaiting();
@@ -161,7 +163,7 @@ public sealed class AccountDialog : DialogBase
 
     private void BuildSignedIn(CommunityUser user)
     {
-        _view.Children.Add(IdentityBadge.User(user, 56, handle: IdentityHandle.Below, bold: true));
+        _view.Children.Add(IdentityBadge.User(user, 56, handle: IdentityHandle.Below, bold: true).HelpAt("start-account", anchor: "The signed-in account's picture"));
 
         var name = new TextBox { Text = user.Name, Width = 240, MaxLength = CommunityRules.MaxNameLength };
         // 에셋 패키지를 올린 뒤에는 서버가 핸들을 바꾸지 않으므로(패키지 ID·작성자 ID가 핸들) 고칠 수 없는 칸으로 보인다.
@@ -173,7 +175,7 @@ public sealed class AccountDialog : DialogBase
         var profile = Ui.Stack(grid);
         if (user.HandleLocked) profile.Children.Add(Dim(UiStrings.Account_HandleLocked));
         profile.Children.Add(save);
-        _view.Children.Add(Ui.Group(UiStrings.Account_Profile, profile));
+        _view.Children.Add(Ui.Group(UiStrings.Account_Profile, profile).HelpAt("start-account", anchor: "Profile:"));
 
         var page = Ui.Button(VectorIcon.ExternalLink, UiStrings.Account_OpenPage, (_, _) => AppCommunity.Open(this, Client.UserPageUrl(user.Handle)));
         var logout = Ui.Button(VectorIcon.LogOut, UiStrings.Account_SignOut, (_, _) => SignOut(null));
@@ -183,8 +185,8 @@ public sealed class AccountDialog : DialogBase
             SetStatus(null);
             Build();
         });
-        _view.Children.Add(Ui.Row(page, logout));
-        _view.Children.Add(Ui.Row(add));
+        _view.Children.Add(Ui.Row(page, logout).HelpAt("start-account", anchor: "Open My Gallery Page"));
+        _view.Children.Add(Ui.Row(add).HelpAt("start-account", anchor: "Open My Gallery Page"));
     }
 
     /// <summary>이 컴퓨터에 로그인해 둔 다른 계정(지금 계정 빼고): 프로필 그림·이름·핸들, 전환, 로그아웃.</summary>
@@ -207,7 +209,8 @@ public sealed class AccountDialog : DialogBase
             row.Children.Add(badge);
             rows.Children.Add(row);
         }
-        if (rows.Children.Count > 0) _view.Children.Add(Ui.Group(UiStrings.Account_SavedAccounts, rows));
+        if (rows.Children.Count > 0)
+            _view.Children.Add(Ui.Group(UiStrings.Account_SavedAccounts, rows).HelpAt("start-account", anchor: "Other accounts signed in on this computer"));
     }
 
     /// <summary>이름표 | 칸 한 줄(이름표 옆 풍선 도움말 선택).</summary>

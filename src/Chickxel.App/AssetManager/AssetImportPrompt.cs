@@ -19,6 +19,7 @@ public sealed class AssetImportPrompt : DialogBase
         Body.MinWidth = 380;
         Body.MaxWidth = 520;
         Body.Spacing = 6;
+        this.HelpAt("screen-asset-manager", anchor: "If it overlaps an unlinked asset");
         Body.Children.Add(new TextBlock
         {
             Text = string.Format(CultureInfo.CurrentCulture, UiStrings.AssetImport_Question, item.DisplayName),

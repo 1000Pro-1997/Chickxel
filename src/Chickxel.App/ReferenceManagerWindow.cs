@@ -51,18 +51,21 @@ public sealed class ReferenceManagerWindow : Window
         ShowInTaskbar = false;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         Background = AppTheme.BackBrush;
+        // 대상 도움말(F1): 창은 "참고 자료 창" 절, 단추는 그 절 표의 줄, 목록·검색·고른 자료 칸은 그림 아래 문단, 종류 거르기는 그 그림으로.
+        const string page = "ai-references", panesAnchor = "On the left are";
+        this.HelpAt(page, anchor: "The references window");
 
         // 위: 단추 줄
         var toolbar = new WrapPanel { Margin = new Thickness(8, 6) };
-        toolbar.Children.Add(Ui.Button(VectorIcon.FilePlus, UiStrings.Refs_AddFiles, (_, _) => AddFiles()).Tip(UiStrings.Refs_AddFiles_Tip));
-        toolbar.Children.Add(Ui.Button(VectorIcon.Image, UiStrings.Refs_AddCanvas, (_, _) => AddCanvas()).Tip(UiStrings.Refs_AddCanvas_Tip));
-        toolbar.Children.Add(Ui.Button(VectorIcon.FolderOpen, UiStrings.Refs_OpenFolder, (_, _) => OpenFolder()).Tip(_lib.Root));
-        toolbar.Children.Add(Ui.Button(VectorIcon.Pencil, UiStrings.Refs_EditRules, (_, _) => EditRules()).Tip(UiStrings.Refs_EditRules_Tip));
-        toolbar.Children.Add(Ui.Button(VectorIcon.Sparkles, UiStrings.Refs_CaptionWithAi, (_, _) => CaptionWithAi()).Tip(UiStrings.Refs_CaptionWithAi_Tip));
+        toolbar.Children.Add(Ui.Button(VectorIcon.FilePlus, UiStrings.Refs_AddFiles, (_, _) => AddFiles()).Tip(UiStrings.Refs_AddFiles_Tip).HelpAt(page, anchor: "Add files"));
+        toolbar.Children.Add(Ui.Button(VectorIcon.Image, UiStrings.Refs_AddCanvas, (_, _) => AddCanvas()).Tip(UiStrings.Refs_AddCanvas_Tip).HelpAt(page, anchor: "Add current canvas"));
+        toolbar.Children.Add(Ui.Button(VectorIcon.FolderOpen, UiStrings.Refs_OpenFolder, (_, _) => OpenFolder()).Tip(_lib.Root).HelpAt(page, anchor: "Open folder"));
+        toolbar.Children.Add(Ui.Button(VectorIcon.Pencil, UiStrings.Refs_EditRules, (_, _) => EditRules()).Tip(UiStrings.Refs_EditRules_Tip).HelpAt(page, anchor: "Edit rules"));
+        toolbar.Children.Add(Ui.Button(VectorIcon.Sparkles, UiStrings.Refs_CaptionWithAi, (_, _) => CaptionWithAi()).Tip(UiStrings.Refs_CaptionWithAi_Tip).HelpAt(page, anchor: "Caption with AI"));
         foreach (var c in toolbar.Children) c.Margin = new Thickness(0, 0, 4, 0);
 
         _noticeText = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center };
-        var noticeButton = Ui.Button(VectorIcon.Sparkles, UiStrings.Refs_CaptionWithAi, (_, _) => CaptionWithAi());
+        var noticeButton = Ui.Button(VectorIcon.Sparkles, UiStrings.Refs_CaptionWithAi, (_, _) => CaptionWithAi()).HelpAt(page, anchor: "Caption with AI");
         var noticeRow = new DockPanel();
         DockPanel.SetDock(noticeButton, Dock.Right);
         noticeRow.Children.Add(noticeButton);
@@ -77,14 +80,15 @@ public sealed class ReferenceManagerWindow : Window
             Margin = new Thickness(8, 0, 8, 6),
             Child = noticeRow,
             IsVisible = false,
-        };
+        }.HelpAt(page, anchor: "When some references have no description");
 
         // 왼쪽: 검색 + 종류 + 목록
-        _search = new TextBox { Watermark = UiStrings.Refs_SearchWatermark, Margin = new Thickness(8, 6, 8, 4) };
+        _search = new TextBox { Watermark = UiStrings.Refs_SearchWatermark, Margin = new Thickness(8, 6, 8, 4) }.HelpAt(page, anchor: panesAnchor);
         _debounce = new UiDebouncer(TimeSpan.FromMilliseconds(200), Reload);
         _search.TextChanged += (_, _) => _debounce.Restart();
         _kindFilter = Ui.Combo(160, [UiStrings.Refs_KindAll, .. ReferenceKinds.All.Select(AppReferences.KindLabel)]);
         _kindFilter.Margin = new Thickness(8, 0, 8, 6);
+        _kindFilter.HelpAt(page, shot: "ai-references-2");
         _kindFilter.SelectionChanged += (_, _) => Reload();
         var side = new DockPanel { Background = AppTheme.PanelBrush };
         var sideTop = new StackPanel { Children = { _search, _kindFilter } };
@@ -94,11 +98,11 @@ public sealed class ReferenceManagerWindow : Window
         {
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
             Content = new Border { Padding = new Thickness(6, 0, 6, 6), Child = _list },
-        });
+        }.HelpAt(page, anchor: panesAnchor));
 
         var body = new Grid { ColumnDefinitions = new ColumnDefinitions("320,Auto,*") };
         var splitter = new GridSplitter { Width = 4, Background = AppTheme.BorderBrush, ResizeDirection = GridResizeDirection.Columns };
-        var detailScroll = new ScrollViewer { HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled, Content = _detail };
+        var detailScroll = new ScrollViewer { HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled, Content = _detail }.HelpAt(page, anchor: panesAnchor);
         Grid.SetColumn(side, 0);
         Grid.SetColumn(splitter, 1);
         Grid.SetColumn(detailScroll, 2);
@@ -191,7 +195,7 @@ public sealed class ReferenceManagerWindow : Window
 
         var title = new TextBlock { Text = item.Title, FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush, TextTrimming = TextTrimming.CharacterEllipsis };
         var titleLine = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4 };
-        if (item.BuiltIn) titleLine.Children.Add(Chip(UiStrings.Refs_BuiltInChip, UiStrings.Refs_BuiltIn_Tip));
+        if (item.BuiltIn) titleLine.Children.Add(Chip(UiStrings.Refs_BuiltInChip, UiStrings.Refs_BuiltIn_Tip).HelpAt("ai-references", anchor: "Built-in references"));
         if (!item.IsImage) titleLine.Children.Add(Chip(UiStrings.Refs_NoteChip, null));
         titleLine.Children.Add(title);
         var meta = item.IsImage
@@ -290,7 +294,7 @@ public sealed class ReferenceManagerWindow : Window
         bool editable = !item.BuiltIn;
 
         var head = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-        if (item.BuiltIn) head.Children.Add(Chip(UiStrings.Refs_BuiltInChip, UiStrings.Refs_BuiltIn_Tip));
+        if (item.BuiltIn) head.Children.Add(Chip(UiStrings.Refs_BuiltInChip, UiStrings.Refs_BuiltIn_Tip).HelpAt("ai-references", anchor: "Built-in references"));
         head.Children.Add(new SelectableTextBlock { Text = item.Id, Foreground = AppTheme.DimTextBrush, VerticalAlignment = VerticalAlignment.Center });
         stack.Children.Add(head);
 
@@ -357,7 +361,7 @@ public sealed class ReferenceManagerWindow : Window
 
         if (editable)
         {
-            var delete = Ui.Button(VectorIcon.Trash, UiStrings.Refs_Delete, (_, _) => Delete(item)).Tip(UiStrings.Refs_Delete_Tip);
+            var delete = Ui.Button(VectorIcon.Trash, UiStrings.Refs_Delete, (_, _) => Delete(item)).Tip(UiStrings.Refs_Delete_Tip).HelpAt("ai-references", anchor: "Delete");
             delete.HorizontalAlignment = HorizontalAlignment.Left;
             delete.Margin = new Thickness(0, 8, 0, 0);
             stack.Children.Add(delete);

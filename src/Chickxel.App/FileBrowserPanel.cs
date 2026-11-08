@@ -9,10 +9,10 @@ namespace Chickxel.App;
 
 /// <summary>
 /// 파일 브라우저: 루트 폴더 아래 폴더 트리 + 선택 폴더의 .chickxel 프로젝트와 그림(PNG·GIF·WebP·JPG …)·영상 썸네일 목록(하위 포함 토글,
-/// 프로젝트가 내보내는 이미지는 프로젝트 하나로 묶어 보여 줌), 이름 검색, 파일 변경 감시, 우클릭 메뉴(새 프로젝트·이름 바꾸기·탐색기에서 열기·휴지통으로 삭제),
-/// 항목을 목록 밖으로 끌어 내기(캔버스에 놓으면 새 레이어).
+/// 프로젝트가 내보낸 그림·GIF·저장한 프레임은 프로젝트 칸 옆 화살표로 펼치는 묶음 — <c>FileBrowserPanel.Groups.cs</c>), 이름 검색, 파일 변경 감시,
+/// 우클릭 메뉴(새 프로젝트·이름 바꾸기·탐색기에서 열기·휴지통으로 삭제), 항목을 목록 밖으로 끌어 내기(캔버스에 놓으면 새 레이어).
 /// </summary>
-public sealed class FileBrowserPanel : UserControl
+public sealed partial class FileBrowserPanel : UserControl
 {
     private const int ThumbSize = 56;
     private const int ItemWidth = 84;
@@ -38,8 +38,16 @@ public sealed class FileBrowserPanel : UserControl
     /// <summary>이름 바꾸기 중이면 끝내는 동작(true = 적용, false = 취소).</summary>
     private Action<bool>? _endRename;
 
-    /// <summary>목록 한 칸: 경로, 그 칸의 컨트롤들(Dot = 저장 안 한 변경 빨간 점), 기본 도움말.</summary>
-    private sealed record FileItem(string Path, ListBoxItem Container, Image Thumb, TextBlock Label, StackPanel Content, Control Dot, string Tip);
+    /// <summary>
+    /// 목록 한 칸: 경로, 그 칸의 컨트롤들(Dot = 저장 안 한 변경 빨간 점), 기본 도움말,
+    /// 묶음 안의 파일이면 딸린 프로젝트(<see cref="Parent"/>), 딸린 파일이 있는 프로젝트면 펼치기 화살표(<see cref="Arrow"/>).
+    /// </summary>
+    private sealed record FileItem(string Path, ListBoxItem Container, Image Thumb, TextBlock Label, StackPanel Content, Control Dot, string Tip, string? Parent)
+    {
+        public Button? Arrow { get; init; }
+        /// <summary>내용을 감싸는 테두리(펼친 묶음이면 묶음 테두리·띠를 그림).</summary>
+        public required Border Frame { get; init; }
+    }
 
     /// <summary>
     /// 왼쪽 버튼을 누른 상태: 누른 곳(항목 패널 좌표, 스크롤과 함께 움직임), 그때의 선택(Ctrl이면 유지), 끌기 시작 여부,
@@ -135,6 +143,8 @@ public sealed class FileBrowserPanel : UserControl
             if (e.Key == Key.F2 && SelectedPaths.Count == 1 && SelectedItem is { } item) { BeginRename(item); e.Handled = true; }
             else if (IsDeleteKey(e) && SelectedPath is not null) { DeleteSelected(); e.Handled = true; }
         };
+        // Ctrl+→/← = 고른 프로젝트 묶음 펼치기/접기(그냥 ←→는 목록 이동). 목록이 Ctrl+화살표를 먼저 쓰지 않게 터널로 받는다.
+        _list.AddHandler(KeyDownEvent, OnGroupKey, RoutingStrategies.Tunnel);
         // 빈 곳을 오른쪽 클릭하면 선택을 지운다(메뉴는 폴더 대상). 왼쪽 버튼은 끌어서 고르기.
         _list.AddHandler(PointerPressedEvent, OnListPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
         _list.AddHandler(PointerMovedEvent, OnListPointerMoved, RoutingStrategies.Tunnel, handledEventsToo: true);
@@ -461,8 +471,7 @@ public sealed class FileBrowserPanel : UserControl
         _suppressActivate = false;
         if (folder is null || !Directory.Exists(folder)) return;
 
-        List<string> files;
-        var exportsOf = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+        List<string> projects, media;
         try
         {
             var options = new EnumerationOptions
@@ -472,33 +481,18 @@ public sealed class FileBrowserPanel : UserControl
                 MatchCasing = MatchCasing.CaseInsensitive,
                 AttributesToSkip = FileAttributes.Hidden | FileAttributes.System,
             };
-            var projects = SpriteProject.FileExtensions.SelectMany(e => Directory.EnumerateFiles(folder, "*" + e, options)).ToList();
-            var projectKeys = projects.Select(p => Path.ChangeExtension(p, null)).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            // 프로젝트가 내보내는 이미지(같은 이름 PNG + 등록된 프레임 시트·부위 아틀라스)는 목록에서 빼고 프로젝트 하나로 보여 준다.
-            var exported = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var p in projects)
-            {
-                var outputs = ProjectIO.GetRegisteredExportPaths(p);
-                exportsOf[p] = outputs;
-                exported.UnionWith(outputs);
-            }
-            files = projects
-                .Concat(Directory.EnumerateFiles(folder, "*", options)
-                    .Where(p => MediaFormats.KindOf(p) is MediaKind.Image or MediaKind.Video
-                                && !(p.EndsWith(".png", StringComparison.OrdinalIgnoreCase) && projectKeys.Contains(Path.ChangeExtension(p, null)))
-                                && !exported.Contains(Path.GetFullPath(p))))
-                .Order(StringComparer.OrdinalIgnoreCase)
-                .ToList();
+            projects = SpriteProject.FileExtensions.SelectMany(e => Directory.EnumerateFiles(folder, "*" + e, options)).ToList();
+            media = Directory.EnumerateFiles(folder, "*", options).Where(p => MediaFormats.KindOf(p) is MediaKind.Image or MediaKind.Video).ToList();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            files = new();
+            projects = [];
+            media = [];
         }
-        var query = (_search.Text ?? "").Trim();
-        if (query.Length > 0)
-            files = files.Where(f => Path.GetFileName(f).Contains(query, StringComparison.OrdinalIgnoreCase)
-                                     || exportsOf.TryGetValue(f, out var outs) && outs.Any(o => Path.GetFileName(o).Contains(query, StringComparison.OrdinalIgnoreCase)))
-                .ToList();
+        // 프로젝트가 내보낸 그림(등록된 결과물 + 같은 폴더의 이름이 프로젝트 이름으로 시작하는 그림·영상)은 따로 칸을 만들지 않고 프로젝트 묶음으로 펼친다.
+        var family = ProjectFamily.Group(projects, media, ProjectIO.GetRegisteredExportPaths);
+        var grouped = family.Values.SelectMany(c => c).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var files = SetGroups(projects.Concat(media.Where(m => !grouped.Contains(m))).Order(StringComparer.OrdinalIgnoreCase), family, (_search.Text ?? "").Trim());
 
         var pending = new List<(string Path, DateTime Stamp)>();
         FileItem? kept = null;
@@ -507,16 +501,11 @@ public sealed class FileBrowserPanel : UserControl
         {
             foreach (var f in files)
             {
-                var tip = Path.GetRelativePath(RootFolder ?? folder, f);
-                if (exportsOf.TryGetValue(f, out var outputs) && outputs.Count > 0)
-                    tip += UiStrings.S_FileBrowserPanel_RefreshList_AB16A8824B + string.Join(", ", outputs.Select(o => Path.GetRelativePath(Path.GetDirectoryName(f)!, o)));
-                var item = MakeItem(f, tip);
-                var stamp = SafeStamp(f);
-                if (_thumbCache.TryGetValue(f, out var cached) && cached.Stamp == stamp) item.Thumb.Source = cached.Thumb;
-                else pending.Add((f, stamp));
-                ApplyUnsaved(item);
-                _list.Items.Add(item.Container);
+                AddItem(f, null, pending);
+                if (IsExpanded(f) && _children.TryGetValue(f, out var children))
+                    foreach (var child in children) AddItem(child, f, pending);
             }
+            ApplyGroupStyle();
             // 고른 순서대로 다시 고른다(순서 기억도 그대로).
             foreach (var path in keepSelected)
             {
@@ -531,6 +520,27 @@ public sealed class FileBrowserPanel : UserControl
         }
         if (kept is not null) _list.ScrollIntoView(kept.Container);
         if (pending.Count > 0) LoadThumbnails(pending);
+    }
+
+    /// <summary>
+    /// 목록 칸 하나를 만들어 <paramref name="index"/>(음수면 끝)에 넣는다: 도움말(프로젝트면 딸린 파일 목록, 묶음 안이면 프로젝트 이름),
+    /// 캐시된 썸네일(없으면 <paramref name="pending"/>에 더함), 저장 안 한 변경 표시.
+    /// </summary>
+    private FileItem AddItem(string path, string? parent, List<(string Path, DateTime Stamp)> pending, int index = -1)
+    {
+        var tip = Path.GetRelativePath(RootFolder ?? CurrentFolder ?? Path.GetDirectoryName(path)!, path);
+        var children = parent is null ? _children.GetValueOrDefault(path) : null;
+        if (children is { Count: > 0 })
+            tip += UiStrings.S_FileBrowserPanel_RefreshList_AB16A8824B + string.Join(", ", children.Select(o => Path.GetRelativePath(Path.GetDirectoryName(path)!, o)));
+        if (parent is not null) tip += UiStrings.FormatFileBrowser_GroupChildTip(project: Path.GetFileName(parent));
+        var item = MakeItem(path, tip, parent, children?.Count ?? 0);
+        var stamp = SafeStamp(path);
+        if (_thumbCache.TryGetValue(path, out var cached) && cached.Stamp == stamp) item.Thumb.Source = cached.Thumb;
+        else pending.Add((path, stamp));
+        ApplyUnsaved(item);
+        if (index < 0) _list.Items.Add(item.Container);
+        else _list.Items.Insert(index, item.Container);
+        return item;
     }
 
     /// <summary>
@@ -573,7 +583,9 @@ public sealed class FileBrowserPanel : UserControl
         IsHitTestVisible = false,
     };
 
-    private FileItem MakeItem(string path, string tip)
+    /// <param name="parent">묶음 안의 파일이면 딸린 프로젝트(이름을 흐리게).</param>
+    /// <param name="childCount">프로젝트에 딸린 파일 수(있으면 칸 오른쪽에 펼치기 화살표).</param>
+    private FileItem MakeItem(string path, string tip, string? parent, int childCount)
     {
         var thumb = new Image { Width = ThumbSize, Height = ThumbSize, HorizontalAlignment = HorizontalAlignment.Center };
         RenderOptions.SetBitmapInterpolationMode(thumb, BitmapInterpolationMode.None);
@@ -585,7 +597,7 @@ public sealed class FileBrowserPanel : UserControl
             MaxLines = 2,
             TextAlignment = TextAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Center,
-            Foreground = AppTheme.TextBrush,
+            Foreground = parent is null ? AppTheme.TextBrush : AppTheme.DimTextBrush,
         };
         var content = new StackPanel { Orientation = Orientation.Vertical, Spacing = 2 };
         var dot = UnsavedDot();
@@ -600,19 +612,35 @@ public sealed class FileBrowserPanel : UserControl
         tile.Children.Add(dot);
         content.Children.Add(tile);
         content.Children.Add(label);
+        var arrow = childCount > 0 ? GroupArrow(path) : null;
+        // 묶음 테두리·띠는 칸 바탕(마우스 올림·고름 색이 덮어씀)이 아니라 내용 위 이 테두리에 그려 늘 보이게 한다(ApplyGroupStyle).
+        var frame = new Border
+        {
+            Padding = new Thickness(2, 4),
+            Child = arrow is null ? content : new Grid { Children = { content, arrow } },
+        };
         var container = new ListBoxItem
         {
-            Content = content,
+            Content = frame,
             Width = ItemWidth,
-            Padding = new Thickness(2, 4),
+            Padding = new Thickness(0),
             Margin = new Thickness(1),
             VerticalAlignment = VerticalAlignment.Top,
-            HorizontalContentAlignment = HorizontalAlignment.Center,
+            // 묶음 화살표는 칸 오른쪽 끝에 붙고 묶음 테두리는 칸 전체를 두르므로 내용을 칸 크기로 편다(썸네일·이름은 가운데 그대로).
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            VerticalContentAlignment = VerticalAlignment.Stretch,
         };
         ToolTip.SetTip(container, tip);
-        var item = new FileItem(path, container, thumb, label, content, dot, tip);
+        // 묶음 안 파일의 흐린 이름은 고르면 또렷하게(강조색 바탕에서 읽히게).
+        if (parent is not null)
+            container.PropertyChanged += (_, e) =>
+            {
+                if (e.Property == ListBoxItem.IsSelectedProperty) label.Foreground = container.IsSelected ? AppTheme.TextBrush : AppTheme.DimTextBrush;
+            };
+        var item = new FileItem(path, container, thumb, label, content, dot, tip, parent) { Arrow = arrow, Frame = frame };
         container.Tag = item;
         _items[path] = item;
+        if (arrow is not null) UpdateGroupArrow(item, childCount);
         return item;
     }
 
@@ -624,7 +652,8 @@ public sealed class FileBrowserPanel : UserControl
 
     private void LoadThumbnails(List<(string Path, DateTime Stamp)> files)
     {
-        var cts = new CancellationTokenSource();
+        // 펼친 묶음의 썸네일은 목록을 새로 만들기 전까지 진행 중인 읽기와 함께 취소된다.
+        var cts = _thumbCts is { IsCancellationRequested: false } running ? running : new CancellationTokenSource();
         _thumbCts = cts;
         var token = cts.Token;
         var ffmpeg = new Lazy<string?>(() => FfmpegTool.Locate(App.Settings));
@@ -731,14 +760,15 @@ public sealed class FileBrowserPanel : UserControl
             item.Thumb.Source = _thumbCache.TryGetValue(item.Path, out var cached) ? cached.Thumb : null;
     }
 
-    /// <summary>목록에서 파일을 선택 표시한다(열기 이벤트 없이).</summary>
+    /// <summary>목록에서 파일을 선택 표시한다(열기 이벤트 없이). 접힌 묶음 안의 파일이면 묶음을 펼친다.</summary>
     public void SelectFile(string? path)
     {
+        var item = path is null ? null : RevealItem(path);
         _suppressActivate = true;
         try
         {
             _list.SelectedItem = null;
-            if (path is not null && _items.TryGetValue(path, out var item))
+            if (item is not null)
             {
                 _list.SelectedItem = item.Container;
                 _list.ScrollIntoView(item.Container);
@@ -846,7 +876,8 @@ public sealed class FileBrowserPanel : UserControl
             return;
         }
         if (!props.IsLeftButtonPressed || _list.ItemsPanelRoot is not { } panel) return;
-        if (source?.FindAncestorOfType<ScrollBar>(includeSelf: true) is not null || source is TextBox || source?.FindAncestorOfType<TextBox>() is not null) return;
+        if (source?.FindAncestorOfType<ScrollBar>(includeSelf: true) is not null || source is TextBox || source?.FindAncestorOfType<TextBox>() is not null
+            || source?.FindAncestorOfType<Button>(includeSelf: true) is not null) return; // 묶음 펼치기 화살표
         bool command = Ui.HasCommand(e.KeyModifiers);
         bool modifier = command || (e.KeyModifiers & KeyModifiers.Shift) != 0;
         // Ctrl/⌘를 누르고 끌면 지금 선택에 더한다.
@@ -1055,6 +1086,7 @@ public sealed class FileBrowserPanel : UserControl
             return;
         }
         FileRenamed?.Invoke(this, (oldPath, newPath));
+        if (_expanded.Remove(oldPath)) _expanded.Add(newPath);
         Dispatcher.UIThread.Post(() =>
         {
             RefreshList();
@@ -1191,12 +1223,16 @@ public sealed class FileBrowserPanel : UserControl
     private void OnRestored(IReadOnlyList<string> restored)
     {
         RefreshList();
+        // 접힌 묶음 안의 파일은 펼쳐 보인다(프로젝트와 함께 되살린 내보내기는 프로젝트 칸으로 충분).
+        var restoredSet = restored.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var items = restored
+            .Select(p => _items.GetValueOrDefault(p) ?? (_parentOf.TryGetValue(p, out var parent) && restoredSet.Contains(parent) ? null : RevealItem(p)))
+            .OfType<FileItem>().ToList();
         _suppressActivate = true;
         try
         {
             _list.SelectedItem = null;
-            foreach (var p in restored)
-                if (_items.TryGetValue(p, out var item)) _list.SelectedItems?.Add(item.Container);
+            foreach (var item in items) _list.SelectedItems?.Add(item.Container);
         }
         finally
         {

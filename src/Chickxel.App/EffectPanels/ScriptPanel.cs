@@ -27,8 +27,10 @@ public sealed partial class LayerEffectsDialog
         var meta = Ui.Label((info?.Author is { } author ? UiStrings.FormatScriptEffect_Author(author: author) + " · " : "")
                             + UiStrings.FormatScriptEffect_Hash(hash: s.ScriptHash.Length > 12 ? s.ScriptHash[..12] : s.ScriptHash));
         meta.Foreground = AppTheme.DimTextBrush;
-        _settings.Children.Add(Ui.Stack(head, meta));
-        _scriptStatus = new StackPanel { Spacing = 2, Margin = new Thickness(3, 2, 3, 4) };
+        // 대상 도움말(F1): "스크립트 효과" 쪽 효과 창 그림의 ②~④ 항목(문제 상태 줄은 RefreshScriptStatus), 설정 줄은 AddScriptSettingRows, 나머지는 설정 칸 자리
+        const string page = "screen-script-effects";
+        _settings.Children.Add(Ui.Stack(head, meta).HelpAt(page, anchor: "With a script effect selected"));
+        _scriptStatus = new StackPanel { Spacing = 2, Margin = new Thickness(3, 2, 3, 4) }.HelpAt(page, anchor: "With a script effect selected");
         _settings.Children.Add(_scriptStatus);
         RefreshScriptStatus();
         var edit = Ui.Button(VectorIcon.Pencil, UiStrings.ScriptEffect_Edit, (_, _) => OpenScriptEditor(Selected));
@@ -41,8 +43,8 @@ public sealed partial class LayerEffectsDialog
         // 꺼진 단추도 풍선이 보이게 감싼다
         var saveHolder = new Border { Child = save, Background = Brushes.Transparent };
         ToolTip.SetTip(saveHolder, trusted ? UiStrings.ScriptEffect_SaveAssetTip : UiStrings.ScriptEffect_SaveAssetNeedsTrust);
-        _settings.Children.Add(Ui.Row(edit, open));
-        _settings.Children.Add(Ui.Row(saveHolder));
+        _settings.Children.Add(Ui.Row(edit, open).HelpAt(page, anchor: "With a script effect selected"));
+        _settings.Children.Add(Ui.Row(saveHolder).HelpAt(page, anchor: "Save as asset"));
 
         if (ScriptLibrary.Runnable(s.ScriptHash) is not { } program)
         {
@@ -147,7 +149,9 @@ public sealed partial class LayerEffectsDialog
             MaxWidth = SettingsWidth - 30,
             Foreground = status.IsProblem ? AppTheme.WarningBrush : AppTheme.DimTextBrush,
         };
-        _scriptStatus.Children.Add(status.IsProblem ? Ui.Row(WarningIcon(), text) : text);
+        // 대상 도움말(F1): 그리지 못하는 상태 줄 = 그 절, 허용·다시 실행 단추 = 그 절 표의 "허용 안 됨"·"멈춤" 줄
+        const string page = "screen-script-effects";
+        _scriptStatus.Children.Add(status.IsProblem ? Ui.Row(WarningIcon(), text).HelpAt(page, anchor: "When a script can't draw") : text);
         var hash = effect!.ScriptHash;
         switch (status.State)
         {
@@ -157,11 +161,11 @@ public sealed partial class LayerEffectsDialog
                     ScriptTrustStore.Decide(new Dictionary<string, bool> { [hash] = true });
                     ScriptTrustStore.Prewarm([hash]);
                     ShowSettings();
-                })));
+                })).HelpAt(page, anchor: "Not allowed"));
                 break;
             case ScriptEffectState.Suspended:
                 int index = Selected;
-                _scriptStatus.Children.Add(Ui.Row(Ui.Button(VectorIcon.Refresh, UiStrings.ScriptEffect_Resume, (_, _) => ResumeScript(index))));
+                _scriptStatus.Children.Add(Ui.Row(Ui.Button(VectorIcon.Refresh, UiStrings.ScriptEffect_Resume, (_, _) => ResumeScript(index))).HelpAt(page, anchor: "Stopped"));
                 break;
         }
     }

@@ -30,8 +30,11 @@ internal sealed class ScriptGuideWindow : Window
         MinHeight = 360;
         ShowInTaskbar = false;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        // 대상 도움말(F1): 창·규칙 글 = "스크립트 API" 쪽, 안내·원문 포함·복사 줄 = "효과 만들기"의 규칙 창 절과 ㉕ 문단
+        this.HelpAt("screen-script-api");
 
-        var hint = new TextBlock { Text = UiStrings.EffectRules_Hint, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.DimTextBrush, Margin = new Thickness(2, 0, 2, 8) };
+        var hint = new TextBlock { Text = UiStrings.EffectRules_Hint, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.DimTextBrush, Margin = new Thickness(2, 0, 2, 8) }
+            .HelpAt("screen-effect-maker", anchor: "Rules window");
         DockPanel.SetDock(hint, Dock.Top);
         var scroll = Ui.ScrollHost(new Border { Padding = new Thickness(10, 8), Child = _view });
         var body = new Border { BorderBrush = AppTheme.BorderBrush, BorderThickness = new Thickness(1), Child = scroll };
@@ -47,6 +50,7 @@ internal sealed class ScriptGuideWindow : Window
         DockPanel.SetDock(right, Dock.Right);
         bottom.Children.Add(right);
         bottom.Children.Add(Ui.Row(_includeSource, _copied));
+        bottom.HelpAt("screen-effect-maker", anchor: "㉕ Include the current source");
         DockPanel.SetDock(bottom, Dock.Bottom);
 
         Content = new DockPanel { Margin = new Thickness(10), Children = { hint, bottom, body } };

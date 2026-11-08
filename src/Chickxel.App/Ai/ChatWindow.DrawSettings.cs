@@ -98,77 +98,77 @@ public sealed partial class ChatWindow
         };
         DockPanel.SetDock(header, Dock.Top);
 
+        // 대상 도움말(F1): 칸 전체는 "그리기 설정 칸" 절, 줄마다 그것을 설명하는 목록 항목·생성 옵션 표의 줄로(정보 아이콘은 InfoIcon이 정함).
+        const string page = "ai-generate", modeAnchor = "Drawing mode";
         var stack = new StackPanel { Spacing = 6, Margin = new Thickness(12, 10) };
-        stack.Children.Add(TitleText(UiStrings.AiDraw_Mode_Title));
+        stack.Children.Add(TitleText(UiStrings.AiDraw_Mode_Title).HelpAt(page, anchor: modeAnchor));
         _modeAuto = new RadioButton { Content = UiStrings.AiDraw_Mode_Auto, GroupName = "aidraw-mode", Foreground = AppTheme.TextBrush };
         _modeGenerate = new RadioButton { Content = UiStrings.AiDraw_Mode_Generate, GroupName = "aidraw-mode", Foreground = AppTheme.TextBrush };
         _modeDirect = new RadioButton { Content = UiStrings.AiDraw_Mode_Direct, GroupName = "aidraw-mode", Foreground = AppTheme.TextBrush };
-        _modeWarning = AlertIcon(UiStrings.AiDraw_Mode_ClaudeWarning);
+        _modeWarning = AlertIcon(UiStrings.AiDraw_Mode_ClaudeWarning).HelpAt(page, anchor: "In the Claude tab");
         _modeAuto.IsCheckedChanged += (_, _) => OnDrawModeChanged();
         _modeGenerate.IsCheckedChanged += (_, _) => OnDrawModeChanged();
         _modeDirect.IsCheckedChanged += (_, _) => OnDrawModeChanged();
-        stack.Children.Add(WithInfo(_modeAuto, UiStrings.AiDraw_Mode_Auto_Text));
-        stack.Children.Add(WithInfo(_modeGenerate, UiStrings.AiDraw_Mode_Generate_Text, _modeWarning));
-        stack.Children.Add(WithInfo(_modeDirect, UiStrings.AiDraw_Mode_Direct_Text));
+        stack.Children.Add(WithInfo(_modeAuto, UiStrings.AiDraw_Mode_Auto_Text).HelpAt(page, anchor: modeAnchor));
+        stack.Children.Add(WithInfo(_modeGenerate, UiStrings.AiDraw_Mode_Generate_Text, _modeWarning).HelpAt(page, anchor: modeAnchor));
+        stack.Children.Add(WithInfo(_modeDirect, UiStrings.AiDraw_Mode_Direct_Text).HelpAt(page, anchor: modeAnchor));
         // 직접 찍기를 골랐을 때만: 팔레트 색만 사용.
         _paletteOnly = Ui.Check(UiStrings.AiDraw_PaletteOnly);
         _paletteOnly.IsCheckedChanged += (_, _) => OnDrawOptionChanged();
-        _paletteRow = WithInfo(_paletteOnly, UiStrings.AiDraw_PaletteOnly_Text);
+        _paletteRow = WithInfo(_paletteOnly, UiStrings.AiDraw_PaletteOnly_Text).HelpAt(page, anchor: "Use palette colors only");
         _paletteRow.Margin = new Thickness(22, 0, 0, 0);
         stack.Children.Add(_paletteRow);
-        _codexStatus = WrapText("", dim: true);
-        stack.Children.Add(_codexStatus);
-
+        _codexStatus = WrapText("", dim: true).HelpAt(page, anchor: "Drawing settings");
         // 그림 생성을 골랐을 때만: 생성 옵션.
         var options = new StackPanel { Spacing = 6 };
         options.Children.Add(new Border { Height = 1, Background = AppTheme.BorderBrush, Margin = new Thickness(0, 4) });
-        options.Children.Add(TitleText(UiStrings.AiDraw_Options_Title));
+        options.Children.Add(TitleText(UiStrings.AiDraw_Options_Title).HelpAt(page, anchor: "Generation options"));
 
         _autoPrompt = Ui.Check(UiStrings.AiDraw_AutoPrompt);
         _autoPrompt.IsCheckedChanged += (_, _) => OnDrawOptionChanged();
-        options.Children.Add(WithInfo(_autoPrompt, UiStrings.AiDraw_AutoPrompt_Text));
+        options.Children.Add(WithInfo(_autoPrompt, UiStrings.AiDraw_AutoPrompt_Text).HelpAt(page, anchor: "Automatic prompt"));
 
         _resizeResult = Ui.Check(UiStrings.AiDraw_ResizeResult);
         _resizeResult.IsCheckedChanged += (_, _) => OnDrawOptionChanged();
-        options.Children.Add(WithInfo(_resizeResult, UiStrings.AiDraw_ResizeResult_Text));
+        options.Children.Add(WithInfo(_resizeResult, UiStrings.AiDraw_ResizeResult_Text).HelpAt(page, anchor: "Result-size correction"));
         _sizeCombo = Ui.Combo(120, "32", "48", "64", UiStrings.AiDraw_Size_Custom);
         _sizeCustom = Ui.Num(AiDrawSettings.MinSize, AiDrawSettings.MaxSize, 32, 64);
         _sizeCombo.SelectionChanged += (_, _) => OnDrawOptionChanged();
         _sizeCustom.ValueChanged += (_, _) => OnDrawOptionChanged();
-        _sizeRow = OptionRow(UiStrings.AiDraw_Size, UiStrings.AiDraw_Size_Tip, Ui.Row(_sizeCombo, _sizeCustom));
+        _sizeRow = OptionRow(UiStrings.AiDraw_Size, UiStrings.AiDraw_Size_Tip, Ui.Row(_sizeCombo, _sizeCustom)).HelpAt(page, anchor: "Result size");
         _sizeRow.Margin = new Thickness(22, 0, 0, 0);
         options.Children.Add(_sizeRow);
 
         _removeBackground = Ui.Check(UiStrings.AiDraw_RemoveBackground);
         _removeBackground.IsCheckedChanged += (_, _) => OnDrawOptionChanged();
-        options.Children.Add(WithInfo(_removeBackground, UiStrings.AiDraw_RemoveBackground_Tip));
+        options.Children.Add(WithInfo(_removeBackground, UiStrings.AiDraw_RemoveBackground_Tip).HelpAt(page, anchor: "Remove background"));
         _autoOptimize = Ui.Check(UiStrings.AiDraw_AutoOptimize);
         _autoOptimize.IsCheckedChanged += (_, _) => OnDrawOptionChanged();
-        options.Children.Add(WithInfo(_autoOptimize, UiStrings.AiDraw_AutoOptimize_Tip));
+        options.Children.Add(WithInfo(_autoOptimize, UiStrings.AiDraw_AutoOptimize_Tip).HelpAt(page, anchor: "Auto-optimize the conversion"));
 
         _insertCombo = Ui.Combo(150, UiStrings.AiDraw_Insert_Layer, UiStrings.AiDraw_Insert_Document);
         _insertCombo.SelectionChanged += (_, _) => OnDrawOptionChanged();
-        options.Children.Add(OptionRow(UiStrings.AiDraw_Insert, null, _insertCombo));
+        options.Children.Add(OptionRow(UiStrings.AiDraw_Insert, null, _insertCombo).HelpAt(page, anchor: "Insert as"));
 
         _styleCombo = Ui.Combo(150, UiStrings.AiDraw_Style_Auto, UiStrings.AiDraw_Style_None, UiStrings.AiDraw_Style_Specific);
         _styleCombo.SelectionChanged += (_, _) => OnDrawOptionChanged();
-        var styleRow = OptionRow(UiStrings.AiDraw_Style, UiStrings.AiDraw_Style_Text, _styleCombo);
+        var styleRow = OptionRow(UiStrings.AiDraw_Style, UiStrings.AiDraw_Style_Text, _styleCombo).HelpAt(page, anchor: "Style reference");
         options.Children.Add(styleRow);
-        _styleRefCombo = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(3) };
+        _styleRefCombo = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(3) }.HelpAt(page, anchor: "Style reference");
         _styleRefCombo.SelectionChanged += (_, _) => OnDrawOptionChanged();
         options.Children.Add(_styleRefCombo);
 
         var framesTitle = new TextBlock { Text = UiStrings.AiDraw_Frames, FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center };
-        var framesHeader = WithInfo(framesTitle, UiStrings.AiDraw_Frames_Text);
+        var framesHeader = WithInfo(framesTitle, UiStrings.AiDraw_Frames_Text).HelpAt(page, anchor: "Default animation frames");
         framesHeader.Margin = new Thickness(0, 4, 0, 0);
         options.Children.Add(framesHeader);
         _animCombo = Ui.Combo(170, UiStrings.AiDraw_Anim_Sheet, UiStrings.AiDraw_Anim_PerFrame);
         _animCombo.SelectionChanged += (_, _) => OnDrawOptionChanged();
         // "프레임마다 따로"를 고르면 콤보 옆에 빨간 경고 아이콘(마우스를 올리면 까닭).
         _animWarning = AlertIcon(UiStrings.AiDraw_Anim_PerFrame_Warning);
-        var animRow = OptionRow(UiStrings.AiDraw_Anim, UiStrings.AiDraw_Anim_Tip, Ui.Row(_animCombo, _animWarning));
+        var animRow = OptionRow(UiStrings.AiDraw_Anim, UiStrings.AiDraw_Anim_Tip, Ui.Row(_animCombo, _animWarning)).HelpAt(page, anchor: "Generation");
         options.Children.Add(animRow);
-        var frames = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,*,Auto") };
+        var frames = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,*,Auto") }.HelpAt(page, anchor: "Default animation frames");
         int row = 0, col = 0;
         foreach (var action in AiDrawActions.All)
         {
@@ -203,7 +203,7 @@ public sealed partial class ChatWindow
             HorizontalAlignment = HorizontalAlignment.Left,
             IsVisible = false,
             Children = { header, scroll },
-        };
+        }.HelpAt(page, anchor: "The drawing settings panel");
     }
 
     /// <summary>
@@ -229,7 +229,7 @@ public sealed partial class ChatWindow
         Cursor = new Cursor(StandardCursorType.Help),
         Background = Brushes.Transparent,
         Child = new IconView(VectorIcon.Info, AppTheme.DimTextBrush, 2) { Width = 14, Height = 14 },
-    }.Tip(tip);
+    }.Tip(tip).HelpAt("ai-generate", anchor: "Hover over an option");
 
     /// <summary>경고 풍선을 띄우는 빨간 경고 아이콘(Lucide circle-alert).</summary>
     private static Border AlertIcon(string tip) => new Border
@@ -455,13 +455,13 @@ public sealed partial class ChatWindow
             CornerRadius = new CornerRadius(6),
             Margin = new Thickness(2, 4, 2, 4),
             Child = expander,
-        };
+        }.HelpAt("ai-generate", anchor: "Generation prompt card");
     }
 
     /// <summary>AI 그리기 결과 칸: 결과 그림, 결과 글, "변환 설정 보기"(기록이 있을 때)·"새 레이어로 넣기"(그림이 있을 때) 단추.</summary>
     private Control AiDrawCard(Bitmap? image, string text, string? jobId)
     {
-        var panel = new StackPanel { Spacing = 4, Margin = new Thickness(2, 2, 0, 0) };
+        var panel = new StackPanel { Spacing = 4, Margin = new Thickness(2, 2, 0, 0) }.HelpAt("ai-generate", anchor: "Result card");
         if (image is not null) panel.Children.Add(SnapshotView(image));
         if (text.Length > 0) panel.Children.Add(new SelectableTextBlock { Text = text, Foreground = AppTheme.DimTextBrush, TextWrapping = TextWrapping.Wrap });
         var buttons = new List<Control>();

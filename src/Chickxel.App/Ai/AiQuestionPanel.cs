@@ -10,6 +10,8 @@ internal sealed class AiQuestionPanel : Border
     private readonly TextBox _otherInput;
     private readonly Button _submit;
     private bool _answered;
+    /// <summary>대상 도움말(F1) 쪽: 질문 카드와 그 단추는 "AI의 질문에 답하기"의 그 자리로.</summary>
+    private const string Page = "ai-questions";
 
     internal AiQuestionPanel(string question, IReadOnlyList<string> options, Action<string?> answer)
     {
@@ -27,14 +29,16 @@ internal sealed class AiQuestionPanel : Border
             TextWrapping = TextWrapping.Wrap,
             FontWeight = FontWeight.SemiBold,
             Foreground = AppTheme.TextBrush,
-        };
+            // 대상 도움말(F1): 글자 밖 빈 곳을 눌러도 질문 줄로 잡히게.
+            Background = Brushes.Transparent,
+        }.HelpAt(Page, anchor: "When the AI needs a decision");
         AutomationProperties.SetName(questionText, question);
 
         var choices = new WrapPanel { Orientation = Orientation.Horizontal };
         foreach (var option in options)
         {
             var label = option;
-            choices.Children.Add(Ui.Button(label, (_, _) => Answer(label)));
+            choices.Children.Add(Ui.Button(label, (_, _) => Answer(label)).HelpAt(Page, anchor: "Click one of the options"));
         }
 
         _otherInput = new TextBox
@@ -42,7 +46,7 @@ internal sealed class AiQuestionPanel : Border
             Watermark = UiStrings.AiQuestion_OtherInput,
             MinWidth = 160,
             HorizontalAlignment = HorizontalAlignment.Stretch,
-        };
+        }.HelpAt(Page, anchor: "Other shows");
         AutomationProperties.SetName(_otherInput, UiStrings.AiQuestion_OtherInput);
         _otherInput.KeyDown += (_, e) =>
         {
@@ -58,7 +62,7 @@ internal sealed class AiQuestionPanel : Border
             }
         };
 
-        _submit = Ui.Button(UiStrings.AiQuestion_Submit, (_, _) => Submit());
+        _submit = Ui.Button(UiStrings.AiQuestion_Submit, (_, _) => Submit()).HelpAt(Page, anchor: "Other shows");
         _submit.IsEnabled = false;
         _otherInput.TextChanged += (_, _) => _submit.IsEnabled = !string.IsNullOrWhiteSpace(_otherInput.Text);
         var otherRow = new Grid
@@ -74,9 +78,10 @@ internal sealed class AiQuestionPanel : Border
         {
             otherRow.IsVisible = true;
             _otherInput.Focus();
-        }));
-        choices.Children.Add(Ui.Button(UiStrings.AiQuestion_Cancel, (_, _) => Answer(null)));
+        }).HelpAt(Page, anchor: "Other shows"));
+        choices.Children.Add(Ui.Button(UiStrings.AiQuestion_Cancel, (_, _) => Answer(null)).HelpAt(Page, anchor: "Cancel"));
         Child = new StackPanel { Spacing = 6, Children = { questionText, choices, otherRow } };
+        this.HelpAt(Page);
     }
 
     private void Submit()

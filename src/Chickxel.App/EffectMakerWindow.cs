@@ -26,6 +26,8 @@ namespace Chickxel.App;
 public sealed class EffectMakerWindow : Window
 {
     private const int PreviewBox = 300;
+    /// <summary>대상 도움말(F1) 가이드 쪽.</summary>
+    private const string HelpPage = "screen-effect-maker";
     private const int ChickScale = 2;
     /// <summary>AI 칸 너비(창 오른쪽에 한 칸 더 — 여는 만큼 창이 넓어짐).</summary>
     private const int AiPanelWidth = 380;
@@ -193,6 +195,8 @@ public sealed class EffectMakerWindow : Window
         MinHeight = 600;
         ShowInTaskbar = false;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        // 대상 도움말(F1): 창 = "효과 만들기" 쪽, 칸마다 창 그림 ①~⑬ 항목과 아래 절(미리보기 움직임·끝 그림·장면·상태·받은 효과)
+        this.HelpAt(HelpPage);
 
         // ── 왼쪽: 내 효과 목록, 아래 제목·설명
         _list.SelectionChanged += (_, _) => OnListSelection();
@@ -206,6 +210,8 @@ public sealed class EffectMakerWindow : Window
         DockPanel.SetDock(_showAll, Dock.Right);
         header.Children.Add(_showAll);
         header.Children.Add(Ui.Label(UiStrings.EffectMaker_MyEffects, bold: true));
+        header.HelpAt(HelpPage, anchor: "My effects:");
+        _list.HelpAt(HelpPage, anchor: "My effects:");
         _title = new TextBox { Margin = new Thickness(3), MaxLength = 100, Watermark = UiStrings.EffectMaker_TitleHint };
         _title.TextChanged += (_, _) => InfoEdited("name", _title.Text?.Trim() is { Length: > 0 } t ? t : _infoLanguage is null ? "" : null);
         _description = new TextBox
@@ -226,12 +232,16 @@ public sealed class EffectMakerWindow : Window
         var infoTitle = infoStack.Children[0];
         infoStack.Children.RemoveAt(0);
         infoStack.Children.Insert(0, Ui.Row(infoTitle, _authorBadge));
+        info.HelpAt(HelpPage, anchor: "Info: the header shows");
+        _authorBadge.HelpAt(HelpPage, anchor: "Effects published with your account");
+        _languages.HelpAt(HelpPage, anchor: "Languages below opens a window");
         // "정보" 제목 줄 오른쪽에 규칙 단추(효과를 만들 때 지킬 규칙·API — 복사해 다른 AI에 붙여 넣음)
-        var rules = Ui.Button(VectorIcon.BookOpen, UiStrings.EffectMaker_Rules, (_, _) => ShowRules()).Tip(UiStrings.EffectMaker_RulesTip);
+        var rules = Ui.Button(VectorIcon.BookOpen, UiStrings.EffectMaker_Rules, (_, _) => ShowRules()).Tip(UiStrings.EffectMaker_RulesTip)
+            .HelpAt(HelpPage, anchor: "Rules (right of the Info header");
         rules.Padding = new Thickness(6, 1);
         HeaderButtons(info, rules);
         var left = new DockPanel { Width = 260, LastChildFill = true };
-        var leftTop = Ui.Stack(header, Ui.Row(newScript, openJs));
+        var leftTop = Ui.Stack(header, Ui.Row(newScript, openJs).HelpAt(HelpPage, anchor: "New script starts from a short skeleton"));
         DockPanel.SetDock(leftTop, Dock.Top);
         DockPanel.SetDock(info, Dock.Bottom);
         left.Children.Add(leftTop);
@@ -240,8 +250,10 @@ public sealed class EffectMakerWindow : Window
 
         // ── 가운데: 원문과 미리보기 설정 값
         _code.TextChanged += (_, _) => Edited();
+        _code.HelpAt(HelpPage, anchor: "The code editor is the same as the script editor");
         // 색 그라데이션·색 목록 칸이 들어가도록 넉넉히(넘치면 스크롤)
-        var settingsBox = Ui.Group(UiStrings.EffectMaker_PreviewSettings, new ScrollViewer { Content = _scriptSettings, MaxHeight = 220 });
+        var settingsBox = Ui.Group(UiStrings.EffectMaker_PreviewSettings, new ScrollViewer { Content = _scriptSettings, MaxHeight = 220 })
+            .HelpAt(HelpPage, anchor: "Preview setting values: pick");
         // 제목 줄 오른쪽: 미리보기 값을 원문 기본값으로 되돌리기 / 지금 값을 원문 기본값으로 쓰기
         _resetValues = Ui.Button(VectorIcon.Undo2, UiStrings.EffectMaker_ResetValues, (_, _) => ResetValues()).Tip(UiStrings.EffectMaker_ResetValuesTip);
         _setDefaults = Ui.Button(VectorIcon.Pencil, UiStrings.EffectMaker_SetDefaults, (_, _) => SetDefaults()).Tip(UiStrings.EffectMaker_SetDefaultsTip);
@@ -252,7 +264,7 @@ public sealed class EffectMakerWindow : Window
         script.Children.Add(settingsBox);
         script.Children.Add(_code);
         _scriptPanel = script;
-        _emptyPanel = Ui.Stack(Hint(UiStrings.EffectMaker_Empty));
+        _emptyPanel = Ui.Stack(Hint(UiStrings.EffectMaker_Empty)).HelpAt(HelpPage, anchor: "Basic workflow");
         _center.Content = _emptyPanel;
         _center.Margin = new Thickness(8, 0);
 
@@ -298,6 +310,7 @@ public sealed class EffectMakerWindow : Window
             VerticalAlignment = VerticalAlignment.Center,
         }.Tip(UiStrings.EffectMakerAi_ButtonTip);
         _aiToggle.IsCheckedChanged += (_, _) => ShowAiPanel(_aiToggle.On());
+        _aiToggle.HelpAt(HelpPage, anchor: "AI (right of the Preview header");
         var previewHeader = new DockPanel { LastChildFill = true };
         DockPanel.SetDock(_aiToggle, Dock.Right);
         previewHeader.Children.Add(_aiToggle);
@@ -313,32 +326,38 @@ public sealed class EffectMakerWindow : Window
         {
             Spacing = 2, Margin = new Thickness(0, 6, 0, 0), IsVisible = false,
             Children = { Ui.Row(sceneTitle, Ui.InfoBadge(UiStrings.EffectMaker_SceneTip)), Ui.Row(_sceneEdit, _sceneRemove), _sceneLayers },
-        };
+        }.HelpAt(HelpPage, anchor: "Preview scene");
+        _sceneEdit.HelpAt(HelpPage, anchor: "Edit in main editor: without a scene");
+        _preview.HelpAt(HelpPage, anchor: "The preview is the same image");
+        _stripScroll.HelpAt(HelpPage, anchor: "The preview is the same image");
+        _previewMotion.HelpAt(HelpPage, anchor: "Preview motion");
         var right = Ui.Stack(
-            previewHeader,
+            previewHeader.HelpAt(HelpPage, anchor: "The preview is the same image"),
             _preview,
             _stripScroll,
             ChickRows(),
-            playRow,
+            playRow.HelpAt(HelpPage, anchor: "Play/pause icon button"),
             _sceneRow);
         right.Width = PreviewBox + 24;
         _previewSlot = right;
 
         // ── 아래 줄
-        _copy = Ui.Button(VectorIcon.Copy, UiStrings.Assets_CopyToPersonal, (_, _) => CopySelected()).Tip(UiStrings.Assets_CopyToPersonalTip);
-        _save = Ui.Button(VectorIcon.Save, UiStrings.EffectMaker_Save, (_, _) => Save()).Tip(UiStrings.EffectMaker_SaveTip);
-        _insert = Ui.Button(VectorIcon.Plus, UiStrings.EffectMaker_Insert, (_, _) => InsertIntoLayer()).Tip(UiStrings.EffectMaker_InsertTip);
-        _validate = Ui.Button(VectorIcon.Check, UiStrings.EffectMaker_Validate, async (_, _) => await ValidateAsync()).Tip(UiStrings.EffectMaker_ValidateTip);
-        _upload = Ui.Button(VectorIcon.Upload, UiStrings.EffectMaker_Upload, (_, _) => Upload()).Tip(UiStrings.EffectMaker_UploadTip);
+        _copy = Ui.Button(VectorIcon.Copy, UiStrings.Assets_CopyToPersonal, (_, _) => CopySelected()).Tip(UiStrings.Assets_CopyToPersonalTip)
+            .HelpAt(HelpPage, anchor: "Received effects are read-only");
+        _save = Ui.Button(VectorIcon.Save, UiStrings.EffectMaker_Save, (_, _) => Save()).Tip(UiStrings.EffectMaker_SaveTip).HelpAt(HelpPage, anchor: "Save (Ctrl+S) saves it");
+        _insert = Ui.Button(VectorIcon.Plus, UiStrings.EffectMaker_Insert, (_, _) => InsertIntoLayer()).Tip(UiStrings.EffectMaker_InsertTip).HelpAt(HelpPage, anchor: "Save (Ctrl+S) saves it");
+        _validate = Ui.Button(VectorIcon.Check, UiStrings.EffectMaker_Validate, async (_, _) => await ValidateAsync()).Tip(UiStrings.EffectMaker_ValidateTip)
+            .HelpAt(HelpPage, anchor: "Check: runs the install-time");
+        _upload = Ui.Button(VectorIcon.Upload, UiStrings.EffectMaker_Upload, (_, _) => Upload()).Tip(UiStrings.EffectMaker_UploadTip).HelpAt(HelpPage, anchor: "Upload…: saves");
         _upload.Background = AppTheme.AccentBrush;
         _upload.Foreground = Brushes.White;
-        var close = Ui.Button(UiStrings.S_Ui_CloseOnly_11312F9A81, (_, _) => Close(), 90);
+        var close = Ui.Button(UiStrings.S_Ui_CloseOnly_11312F9A81, (_, _) => Close(), 90).HelpAt(HelpPage, anchor: "Check, Upload… and Close");
         // 상태 단추: 누르면 자세한 상태(상태 글과 오류·실행 경로·안내 줄)를 띄운다
         _statusButton = new Button
         {
             Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5, Children = { _statusIcon, _statusLabel } },
             Margin = new Thickness(8, 2, 2, 2),
-        }.Tip(UiStrings.EffectMaker_StatusTip);
+        }.Tip(UiStrings.EffectMaker_StatusTip).HelpAt(HelpPage, anchor: "Status button: green");
         _statusFlyout = new Flyout
         {
             Placement = PlacementMode.TopEdgeAlignedLeft,
@@ -384,7 +403,7 @@ public sealed class EffectMakerWindow : Window
             e.Handled = true;
             Expand();
         };
-        var compact = new DockPanel { Margin = new Thickness(8) };
+        var compact = new DockPanel { Margin = new Thickness(8) }.HelpAt(HelpPage, shot: "screen-effect-maker-6");
         DockPanel.SetDock(compactHeader, Dock.Top);
         compact.Children.Add(compactHeader);
         compact.Children.Add(_compactPreviewHost);
@@ -491,7 +510,7 @@ public sealed class EffectMakerWindow : Window
             download.VerticalAlignment = VerticalAlignment.Center;
             var label = Ui.IconLabel(VectorIcon.Package, upload.DisplayName);
             label.VerticalAlignment = VerticalAlignment.Center;
-            var row = new DockPanel { Opacity = _downloadingId == upload.Id ? 0.8 : 0.5 };
+            var row = new DockPanel { Opacity = _downloadingId == upload.Id ? 0.8 : 0.5 }.HelpAt(HelpPage, anchor: "Effects published with the current account that aren't");
             DockPanel.SetDock(download, Dock.Right);
             row.Children.Add(download);
             row.Children.Add(new StackPanel
@@ -1375,7 +1394,8 @@ public sealed class EffectMakerWindow : Window
         {
             Grid.SetRow(cells[i], i / 2);
             Grid.SetColumn(cells[i], i % 2);
-            grid.Children.Add(cells[i]);
+            // 대상 도움말(F1): 미리보기 병아리 줄 = ⑨ 항목, 끝 그림 줄 = 끝 그림 병아리 절
+            grid.Children.Add(cells[i].HelpAt(HelpPage, anchor: i < 2 ? "Preview chick: pick one of 20" : "End chick (transform effects)"));
         }
         return grid;
     }

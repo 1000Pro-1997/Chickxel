@@ -11,7 +11,8 @@ internal static class GuideStartLangKeysShots
 {
     // ① 화면에서 도움말 선택(F1) ② 사용 가이드… — 도움말 메뉴.
     // ③ 도움말을 고르는 동안 상태 줄의 안내.
-    // ④ 검색 칸 ⑤ 검색 결과(검색하지 않으면 목차) ⑥ 고른 쪽 ⑦ 홈페이지에서 열기 ⑧ 개발 후원하기 — 사용 가이드 창.
+    // ④ 메인이 아닌 창(환경 설정)에서 고르는 동안 창 위쪽의 안내 띠.
+    // ⑤ 검색 칸 ⑥ 검색 결과(검색하지 않으면 목차) ⑦ 고른 쪽 ⑧ 홈페이지에서 열기 ⑨ 개발 후원하기 — 사용 가이드 창.
     [Shot("start-help")]
     public static void Help(ShotKit k)
     {
@@ -28,7 +29,7 @@ internal static class GuideStartLangKeysShots
         k.Settle(200);
 
         // 도움말 고르기: 상태 줄에 안내가 뜬다(마우스 커서는 그림에 찍히지 않음).
-        ShotKit.Call(main, "ToggleHelpPicker");
+        HelpPicker.Toggle(main);
         k.Settle(300);
         var status = ShotKit.Get<Control>(main, "_helpStatus");
         var message = (TextBlock)ShotKit.FindText(status, UiStrings.Help_SelectHint);
@@ -39,8 +40,21 @@ internal static class GuideStartLangKeysShots
         var hint = new Rect(m.X - 6, m.Y - 2, formatted.Width + 12, m.Height + 4);
         k.Save(main, "start-help-2", crop: new Rect(0, s.Y - 40, Math.Min(main.ClientSize.Width, hint.Right + 40), s.Height + 40),
             marks: [hint], firstNumber: 3);
-        ShotKit.Call(main, "StopHelpPicker");
+        HelpPicker.Stop();
         k.Settle(200);
+
+        // 따로 뜬 창(환경 설정)에서 고르기: 상태 표시줄 대신 창 위쪽 안내 띠.
+        k.Dialog(() => k.Command("편집/환경 설정…"), d =>
+        {
+            HelpPicker.Toggle(d);
+            ShotKit.Pump(300);
+            var session = typeof(HelpPicker).GetField("_session", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!.GetValue(null)
+                ?? throw new InvalidOperationException("help picking did not start");
+            var banner = ShotKit.Get<Control>(session, "_banner");
+            k.Save(d, "start-help-4", crop: new Rect(0, 0, d.ClientSize.Width, ShotKit.Bounds(banner, d).Bottom + 120), marks: [banner], firstNumber: 4);
+            HelpPicker.Stop();
+            ShotKit.Pump(100);
+        });
 
         // 사용 가이드 창: 검색어를 넣은 모습.
         var w = HelpWindow.Open(main);
@@ -55,7 +69,7 @@ internal static class GuideStartLangKeysShots
         k.Settle(800);
         var side = ShotKit.Get<Control>(w, "_sideScroll");
         var page = ShotKit.Get<Control>(w, "_pageScroll");
-        k.Save(w, "start-help-3", firstNumber: 4, marks:
+        k.Save(w, "start-help-3", firstNumber: 5, marks:
         [
             query,
             side,

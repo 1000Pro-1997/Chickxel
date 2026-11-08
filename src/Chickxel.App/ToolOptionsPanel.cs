@@ -17,7 +17,7 @@ namespace Chickxel.App;
 /// 타임라인에서 효과 하나를 고르면 맨 아래에 그 효과의 설정이 보인다(<see cref="ShowEffect"/> — 바로 문서에 들어가고, 잠깐 사이에 이어 바꾼 값은 실행취소 한 단계).
 /// 묶음 상자는 제목 줄을 눌러 접고 편다(<see cref="Ui.Foldable"/>).
 /// </summary>
-public sealed partial class ToolOptionsPanel : UserControl
+public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
 {
     /// <summary>피벗 5×5 단추 칸 수(한 변). 칸 사이 간격 = 1/4.</summary>
     private const int PivotSteps = 5;
@@ -1224,12 +1224,14 @@ public sealed partial class ToolOptionsPanel : UserControl
 
     // ───────────── 대상 도움말(F1) ─────────────
 
+    (HelpTarget Target, Rect Area)? IHelpTargetSource.HelpTargetFor(Control c, Avalonia.Point local) => HelpTargets.Whole(c, HelpTargetFor(c));
+
     /// <summary>
     /// 대상 도움말(F1): 이 패널 안의 컨트롤 <paramref name="c"/>(점 아래 가장 안쪽부터 바깥으로 물음)에 맞는 가이드 자리. 모르는 컨트롤이면 null.
     /// 자리 글은 가이드가 컨트롤의 앱 문자열을 그대로 쓰면 그 문자열, 아니면 영어 가이드 글이다(<see cref="HelpTarget"/>).
     /// 도구 쪽에 그 설정 절이 없으면 설명이 있는 쪽(브러시 설정·그리기 기본·채우기 등)으로 간다.
     /// </summary>
-    internal HelpTarget? HelpTargetFor(Control c)
+    private HelpTarget? HelpTargetFor(Control c)
     {
         var tool = _ctx.Tool;
         bool Is(Control control) => ReferenceEquals(c, control);
