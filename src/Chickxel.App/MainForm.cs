@@ -1049,13 +1049,6 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             ShowMessage(message);
         };
         _toolOptions.StatusMessage += (_, message) => ShowMessage(message);
-        // 레이어 전체 변형이 끝나면(적용·취소) 들어가기 전 보기로 되돌린다(같은 문서일 때만).
-        _ctx.TransformChanged += (_, _) =>
-        {
-            if (_ctx.IsTransforming || _viewBeforeLayerTransform is not { } before) return;
-            _viewBeforeLayerTransform = null;
-            if (ReferenceEquals(_ctx.Project, before.Project)) _canvas.RestoreView(before.View);
-        };
 
         _canvas.ZoomChanged += (_, _) => { _settings.Zoom = _canvas.Zoom; UpdateStatus(); };
         _canvas.HoverChanged += (_, p) => UpdateHover(p);
@@ -3173,27 +3166,14 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     /// </summary>
     private void BeginLayerTransform()
     {
-        bool already = _ctx.IsTransforming;
         if (_ctx.BeginTransform(wholeLayer: true) is { } error)
         {
             ShowMessage(error);
             return;
         }
         ShowMessage(MainStrings.Message_LayerTransform);
-        // 상자를 화면에 크게(손잡이를 끌 여백을 두고) 보인다. 끝나면 지금 보기로 되돌린다(이미 변형 중이었으면 그대로).
-        if (!already && _ctx.IsLayerTransform && _ctx.TransformBox is { } box)
-        {
-            _viewBeforeLayerTransform = (_ctx.Project!, _canvas.View);
-            var at = _ctx.CurrentPart is { } part ? _ctx.Project!.GetPartOffset(part, _ctx.CurrentFrame) : System.Drawing.Point.Empty;
-            var r = box.Bounds;
-            r.Offset(at);
-            _canvas.FitToRect(r);
-        }
         _canvas.Focus();
     }
-
-    /// <summary>레이어 전체 변형에 들어가기 전의 문서와 캔버스 보기(변형이 끝나면 되돌림). 아니면 null.</summary>
-    private (SpriteProject Project, CanvasView View)? _viewBeforeLayerTransform;
 
     // ───────────── AI 채팅(Claude·Codex, AI 도구 호스트) ─────────────
 

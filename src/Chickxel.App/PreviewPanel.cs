@@ -159,8 +159,6 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
             Redraw();
         };
         ctx.ViewChanged += (_, _) => Redraw();
-        // 레이어 전체 변형에 들어가고 나올 때·여백을 바꿀 때 보이는 자리가 바뀐다(그 상자 자리만 크게)
-        ctx.TransformChanged += (_, _) => Redraw();
         ctx.RenderUpdated += (_, _) => Redraw();
         _busyTimer.Tick += (_, _) => Redraw();
         // 재생 중에 태그를 만들거나 고르면 그 태그 안에서 반복하도록 순서를 바꾼다.
@@ -814,17 +812,6 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
             var view = ctx.FrameView(frame);
             if (view.Bitmap is not { } bmp) return;
             var src = new Rectangle(0, 0, bmp.PixelSize.Width, bmp.PixelSize.Height);
-            // 레이어 전체 변형(Ctrl+Shift+C): 휠로 배율을 고르지 않았으면 그 상자 자리만 칸에 맞춰 크게
-            bool layerFocus = false;
-            if (!(_fit && _zoom > 0) && ctx.LayerTransformFocus is { IsEmpty: false } from)
-            {
-                var focus = Rectangle.Intersect(from, src);
-                if (focus.Width > 0 && focus.Height > 0)
-                {
-                    src = focus;
-                    layerFocus = true;
-                }
-            }
             Rect shown;
             if (_fit && _zoom > 0)
             {
@@ -834,7 +821,7 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
                 using (ImageUtil.Pixelated(g))
                     g.DrawImage(bmp, new Rect(0, 0, src.Width, src.Height), shown);
             }
-            else shown = ImageUtil.DrawFitted(g, bmp, src, area, _fit || layerFocus ? 0 : _owner._scale);
+            else shown = ImageUtil.DrawFitted(g, bmp, src, area, _fit ? 0 : _owner._scale);
             _shown = shown;
             // 재생 중 다음 프레임을 기다리거나, 보이는 프레임을 다시 계산하는 중이면 로딩 아이콘(그림은 이전 것 그대로)
             var wait = _owner._waiting && _owner._waitFrame < ctx.FrameCount ? ctx.FrameView(_owner._waitFrame) : view;

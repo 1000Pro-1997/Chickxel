@@ -1149,18 +1149,6 @@ public sealed partial class EditorContext
         }
     }
 
-    /// <summary>레이어 전체 변형의 상자 자리(캔버스 좌표, 지금 프레임 — 미리보기 패널이 이 자리를 크게 맞춤). 레이어 전체 변형이 아니면 빈 사각형.</summary>
-    public Rectangle LayerTransformFocus
-    {
-        get
-        {
-            if (_layerTransform is not { Engine: { WholeLayer: true } engine } || Project is not { } p || _frame >= p.Frames.Count) return Rectangle.Empty;
-            var r = engine.Box.Bounds;
-            if (engine.ReferenceLayer.IsPart) r.Offset(p.GetPartOffset(engine.ReferenceLayer, _frame));
-            return r;
-        }
-    }
-
     /// <summary>미리보기의 캔버스 밖으로 나간 픽셀과 잘릴 픽셀(흐리게 그림)과 그 자리(캔버스 좌표). 없으면 null. 호출자는 Dispose하지 않는다.</summary>
     public (WriteableBitmap Bitmap, Rectangle Rect)? LayerTransformOutside
     {

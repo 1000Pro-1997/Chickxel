@@ -6,7 +6,7 @@ namespace Chickxel.App;
 /// <summary>
 /// 그라데이션 바(도구 설정, PowerPoint/Photoshop 방식): 왼쪽 0% ~ 오른쪽 100% 미리보기 띠(체커 위, 불투명도 반영),
 /// 띠 **위**에 불투명도 정지점 상자(회색 = 불투명도), 띠 **아래**에 색 정지점 상자.
-/// 띠 위쪽 빈 곳 클릭 = 그 위치에 불투명도 정지점 추가, 띠·아래쪽 빈 곳 클릭 = 색 정지점 추가(값은 그 지점의 지금 값),
+/// 띠의 가운데 줄을 기준으로 위 절반(위쪽 줄 + 띠 위 절반) 빈 곳 클릭 = 그 위치에 불투명도 정지점 추가, 아래 절반(띠 아래 절반 + 아래쪽 줄) = 색 정지점 추가(값은 그 지점의 지금 값),
 /// 상자 클릭 = 고르기(강조), 상자 좌우 끌기 = 위치 바꾸기, Delete = 고른 정지점 삭제(종류마다 2개는 남긴다).
 /// </summary>
 public sealed class GradientBar : Control
@@ -17,6 +17,8 @@ public sealed class GradientBar : Control
     private const double BandTop = MarkerHeight + 3;
     private const double BandHeight = 18;
     private const double BandBottom = BandTop + BandHeight;
+    /// <summary>클릭을 나누는 띠 가운데 줄: 이보다 위는 불투명도, 아래는 색.</summary>
+    private const double BandMiddle = BandTop + BandHeight / 2;
     private const double ColorTop = BandBottom + 3;
 
     private static readonly IPen OutlinePen = AppTheme.Pen(AppTheme.BorderColor);
@@ -151,6 +153,8 @@ public sealed class GradientBar : Control
 
     public override void Render(DrawingContext g)
     {
+        // 띠 위·아래 빈 곳도 눌리게(그린 곳만 눌리는 히트 테스트): 띠 위 빈 곳 클릭 = 불투명도 정지점 추가.
+        PickerPaint.FillHitArea(g, Bounds);
         var band = new Rect(Side, BandTop, BandWidth, BandHeight);
         AppTheme.DrawChecker(g, band, 4);
         var sorted = Gradient.Sorted(_stops);
@@ -201,13 +205,13 @@ public sealed class GradientBar : Control
         g.DrawRectangle(null, pen, box);
     }
 
-    /// <summary>화면 점에 있는 정지점(고른 것 먼저). 없으면 null.</summary>
+    /// <summary>위 절반(띠 가운데 줄 위)이면 불투명도, 아래 절반이면 색 정지점 쪽.</summary>
+    private static bool IsAlphaHalf(Avalonia.Point p) => p.Y < BandMiddle;
+
+    /// <summary>화면 점에 있는 정지점(고른 것 먼저, 띠 가운데 줄로 나눈 그 쪽 정지점만). 없으면 null.</summary>
     private (bool Alpha, int Index)? MarkerAt(Avalonia.Point p)
     {
-        bool alpha;
-        if (p.Y < BandTop) alpha = true;
-        else if (p.Y >= BandBottom - 2) alpha = false;
-        else return null;
+        bool alpha = IsAlphaHalf(p);
         bool Hit(int i) => Math.Abs(p.X - XOf(PositionOf(alpha, i))) <= MarkerWidth / 2 + 1;
         if (alpha == _selectedAlpha && Count(alpha) > 0 && Hit(_selected)) return (alpha, _selected);
         for (int i = Count(alpha) - 1; i >= 0; i--) if (Hit(i)) return (alpha, i);
@@ -224,9 +228,9 @@ public sealed class GradientBar : Control
         if (MarkerAt(p) is { } hit) Select(hit.Alpha, hit.Index);
         else
         {
-            // 빈 곳: 그 위치의 지금 값(부드럽게 보간한 값)으로 정지점을 더한다. 띠 위쪽 = 불투명도, 띠·아래쪽 = 색.
+            // 빈 곳: 그 위치의 지금 값(부드럽게 보간한 값)으로 정지점을 더한다. 띠 가운데 줄 위 = 불투명도, 아래 = 색.
             double pos = Math.Round(PositionAt(p.X), 3);
-            if (p.Y < BandTop)
+            if (IsAlphaHalf(p))
             {
                 var list = _alphaStops.ToList();
                 list.Add(new GradientAlphaStop(pos, Gradient.AlphaAt(Gradient.SortedAlpha(_alphaStops), pos)));

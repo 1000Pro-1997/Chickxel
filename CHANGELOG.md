@@ -2,6 +2,15 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.113 (2026-11-09)
+### Gradient bar: the band is split in half for adding stops
+- Clicking the upper half of the band (or the row above it) adds an opacity stop; the lower half (or the row below it) adds a color stop.
+- Clicking on the band right over an existing stop selects it instead of adding a new one, so you can drag it from there.
+
+### Layer size (Ctrl+Shift+C) no longer jumps the view
+- Entering the mode keeps the canvas zoom and position instead of zooming to the box, so only the edited layer moves on screen.
+- The preview panel keeps showing the whole frame instead of zooming to the box.
+
 ## v1.14.112 (2026-11-08)
 ### Transform (Ctrl+T) is a blue box that changes only the current cel
 - With a selection only those pixels change and pivots stay. Without one the whole drawing of the current cel (and the cels picked with it in the timeline) changes, and that frame's pivot follows it.
