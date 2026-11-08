@@ -1,6 +1,6 @@
 /*
  * Windows 탐색기 썸네일 처리기(IThumbnailProvider): .chickxel(ZIP) 안의 thumbnail.png(앱이 저장할 때 넣는 첫 프레임 합성,
- * 압축 없이 저장)를 꺼내 최근접으로 키우고 오른쪽 아래에 병아리 배지(리소스 1, chick-palette.png)를 얹어 돌려준다.
+ * 압축 없이 저장)를 꺼내 최근접으로 키우고 오른쪽 아래에 병아리 배지(badge.h, chick-palette.png)를 얹어 돌려준다.
  * 앱(WindowsShellRegistration)이 이 DLL을 로컬 앱 데이터 폴더에 풀어 HKCU에 등록한다. thumbnail.png가 없는 예전 파일은 실패를 돌려
  * 탐색기가 보통 아이콘을 쓴다. 빌드: publish.sh·publish.bat(zig cc, x86_64-windows-gnu → exe에 묶음).
  */
@@ -13,6 +13,8 @@
 #include <wincodec.h>
 #include <stddef.h>
 #include <string.h>
+
+#include "badge.h"
 
 /* {C38796F8-4011-498E-A702-A102FB10300F}: WindowsShellRegistration.ThumbnailClsid와 같아야 함 */
 static const GUID kClsidProvider = {0xc38796f8, 0x4011, 0x498e, {0xa7, 0x02, 0xa1, 0x02, 0xfb, 0x10, 0x30, 0x0f}};
@@ -27,7 +29,6 @@ static const GUID kFormatBgra = {0x6fddc324, 0x4e03, 0x4bfe, {0xb1, 0x85, 0x3d, 
 #define THUMBNAIL_ENTRY "thumbnail.png"
 #define MAX_ENTRY_BYTES (16u << 20)     /* thumbnail.png 한도(앱은 256px 이하만 넣음) */
 #define MAX_DIRECTORY_BYTES (64u << 20) /* ZIP 중앙 디렉터리 한도 */
-#define BADGE_RESOURCE 1
 
 static HINSTANCE g_module;
 static volatile LONG g_locks;
@@ -183,11 +184,7 @@ static HRESULT Decode(IWICImagingFactory *factory, const BYTE *data, ULONG lengt
 
 static HRESULT DecodeBadge(IWICImagingFactory *factory, Image *image)
 {
-    HRSRC resource = FindResourceW(g_module, MAKEINTRESOURCEW(BADGE_RESOURCE), (LPCWSTR)RT_RCDATA);
-    HGLOBAL loaded = resource ? LoadResource(g_module, resource) : NULL;
-    const BYTE *data = loaded ? LockResource(loaded) : NULL;
-    if (!data) return E_FAIL;
-    return Decode(factory, data, SizeofResource(g_module, resource), image);
+    return Decode(factory, kBadgePng, sizeof kBadgePng, image);
 }
 
 /* ───────────── 합성 ───────────── */

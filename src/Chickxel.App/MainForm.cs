@@ -1294,7 +1294,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         int before = AppCommunity.Client.User?.Level ?? 0;
         if (await AppCommunity.CheckInQuietlyAsync() is not { Granted: true } checkIn) return;
         ShowMessage(before > 0 && checkIn.Level > before
-            ? UiStrings.Level_CheckInStatus + " · " + string.Format(CultureInfo.CurrentCulture, UiStrings.Level_UpStatus, checkIn.Level)
+            ? UiStrings.Level_CheckInStatus + " · " + string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.Level_UpStatus, checkIn.Level)
             : UiStrings.Level_CheckInStatus);
     }
 

@@ -37,7 +37,7 @@ publish() { # $1 = RID, $2 = 출력 폴더, 나머지 = 추가 속성
 
 # ── Windows: exe 하나(실행할 때 필요한 네이티브 라이브러리와 탐색기 썸네일 처리기 DLL도 안에 묶음)
 thumbnails="$PWD/$WORK/ChickxelThumbnails.dll"
-(cd src/Chickxel.ThumbnailProvider && zig cc -target x86_64-windows-gnu -shared -O2 -s -o "$thumbnails" thumbnail.c thumbnail.rc exports.def -lole32 -lgdi32)
+(cd src/Chickxel.ThumbnailProvider && zig cc -target x86_64-windows-gnu -shared -O2 -s -o "$thumbnails" thumbnail.c exports.def -lole32 -lgdi32)
 publish win-x64 "$WORK/win-x64" -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:ThumbnailProviderDll="$thumbnails"
 mkdir -p "$WORK/Chickxel-windows-x64"
 cp "$WORK/win-x64/Chickxel.App.exe" "$WORK/Chickxel-windows-x64/Chickxel.exe"

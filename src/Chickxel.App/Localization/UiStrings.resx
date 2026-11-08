@@ -9432,6 +9432,7 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Level_Title" xml:space="preserve"><value>레벨 {0}</value><comment>0 = 레벨.</comment></data>
   <data name="Level_Progress" xml:space="preserve"><value>{0:N0} XP · 다음 레벨까지 {1:N0} XP</value><comment>0 = 지금 경험치, 1 = 다음 레벨까지 남은 경험치.</comment></data>
   <data name="Level_HowTip" xml:space="preserve"><value>경험치 쌓는 법: 갤러리 그림 +10(편집용 .chickxel 파일을 같이 올리면 +5 더, 하루 3개까지 셈), 에셋 패키지 공개 +30(새 버전 +5), 다른 사람이 누른 좋아요 +2, 로그인한 채 앱을 켜 둔 한 시간마다 +1. 올린 것을 지우면 그것으로 받은 경험치도 빠집니다.</value></data>
+  <data name="Level_CheckInStatus" xml:space="preserve"><value>출석 +10 XP</value><comment>앱을 켤 때 하루 출석 경험치를 받았을 때 상태 표시줄.</comment></data>
   <data name="Level_UpStatus" xml:space="preserve"><value>레벨 업! Lv {0}</value><comment>0 = 새 레벨(앱을 켜 둔 시간 경험치로 올랐을 때 상태 표시줄).</comment></data>
   <data name="EffectMaker_Menu" xml:space="preserve"><value>효과 만들기…</value></data>
   <data name="EffectMaker_Title" xml:space="preserve"><value>효과 만들기</value></data>

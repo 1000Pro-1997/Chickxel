@@ -15,7 +15,7 @@ where zig >nul 2>nul || (echo zig가 필요합니다^(Windows 탐색기 썸네�
 if exist dist rmdir /s /q dist
 mkdir dist\.work
 pushd src\Chickxel.ThumbnailProvider
-zig cc -target x86_64-windows-gnu -shared -O2 -s -o "%~dp0dist\.work\ChickxelThumbnails.dll" thumbnail.c thumbnail.rc exports.def -lole32 -lgdi32 || (popd & exit /b 1)
+zig cc -target x86_64-windows-gnu -shared -O2 -s -o "%~dp0dist\.work\ChickxelThumbnails.dll" thumbnail.c exports.def -lole32 -lgdi32 || (popd & exit /b 1)
 popd
 dotnet publish src\Chickxel.App\Chickxel.App.csproj -c Release -r win-x64 --self-contained true ^
   -p:Version=%VERSION% -p:DebugType=none -p:DebugSymbols=false ^
