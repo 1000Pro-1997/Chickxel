@@ -7,7 +7,7 @@ using Chickxel.Core.Model;
 namespace Chickxel.App;
 
 /// <summary>
-/// 파일 > 갤러리에 올리기: 지금 프레임을 PNG로, 또는 애니메이션(프레임 길이 그대로, 무한 반복)을 GIF로 만들어
+/// 파일 > 갤러리에 올리기: 지금 프레임을 PNG로, 또는 애니메이션(속도는 <see cref="GifTimingField"/> — 원래 속도 / 배속 / 같은 FPS, 무한 반복)을 GIF로 만들어
 /// 제목·설명·태그와 함께 Chickxel 갤러리에 올린다(그림은 프레임 시트·GIF 내보내기와 같이 합성 — 레이어 효과·지금 착장, 숨긴 레이어 제외).
 /// GIF는 모든 프레임, 태그 하나(그 재생 방향대로), 프레임 번호 범위, 창을 열 때 타임라인에서 고른 프레임(둘 이상일 때) 중에서 고르고
 /// (<see cref="GalleryFrames"/>), 미리보기가 그 순서로 재생한다.
@@ -32,6 +32,9 @@ public sealed class GalleryUploadDialog : DialogBase
     private readonly CheckBox _allowDownload;
     private readonly TextBlock _scriptsNote;
     private readonly NumericUpDown _scale;
+    /// <summary>GIF 재생 속도(GIF 내보내기와 같은 칸, 앱 설정에 같이 기억).</summary>
+    private readonly GifTimingField _timing = new(App.Settings);
+    private readonly StackPanel _timingRow;
     private readonly TextBox _title, _description, _tags;
     private readonly TextBlock _info = Note(""), _account = Note(""), _error, _progressText = Note("");
     private readonly ProgressBar _progress = new() { Minimum = 0, Maximum = 1, Height = 4, MinHeight = 4, Width = 260, Foreground = AppTheme.AccentBrush };
@@ -98,6 +101,7 @@ public sealed class GalleryUploadDialog : DialogBase
         int side = Math.Max(_project.Width, _project.Height);
         int maxScale = Math.Clamp(CommunityRules.MaxArtSide / Math.Max(1, side), 1, 10);
         _scale = Ui.Num(1, maxScale, 1, width: 60).Unit("×");
+        _timingRow = Ui.Row(Ui.Label(UiStrings.GifTiming_Label), _timing);
         _title = new TextBox
         {
             Text = Path.GetFileNameWithoutExtension(_project.DisplayName), Width = FieldWidth, MaxLength = CommunityRules.MaxTitleLength,
@@ -133,7 +137,7 @@ public sealed class GalleryUploadDialog : DialogBase
             Children =
             {
                 Ui.Group(UiStrings.Gallery_What, Ui.Stack(_png, Ui.Row(_gif, Ui.InfoBadge(UiStrings.Gallery_RangeTip)), _rangePanel,
-                    Ui.Row(Ui.Label(UiStrings.Gallery_Scale), _scale), _info,
+                    Ui.Row(Ui.Label(UiStrings.Gallery_Scale), _scale), _timingRow, _info,
                     Ui.Row(_shareProject, Ui.InfoBadge(UiStrings.Gallery_ShareProjectTip)).HelpAt("screen-gallery", anchor: "Sharing the editable file"),
                     _scriptsNote.HelpAt("screen-gallery", anchor: "Sharing the editable file"),
                     Ui.Row(_allowDownload, Ui.InfoBadge(UiStrings.Gallery_AllowDownloadTip)))).HelpAt("screen-gallery", anchor: "Picture:"),
@@ -176,6 +180,14 @@ public sealed class GalleryUploadDialog : DialogBase
                 else RangeChanged();
             };
         _scale.ValueChanged += (_, _) => UpdateInfo();
+        _timing.Changed += () =>
+        {
+            if (_play.IsEnabled)
+            {
+                _play.Stop();
+                Schedule();
+            }
+        };
         _play.Tick += (_, _) => Advance();
         OkButton.Click += (_, _) =>
         {
@@ -195,6 +207,7 @@ public sealed class GalleryUploadDialog : DialogBase
         {
             AppCommunity.Client.AccountsChanged -= onAccounts;
             _upload?.Cancel();
+            _timing.Save(App.Settings);
             _play.Stop();
             foreach (var bitmap in _bitmaps.Values) bitmap.Dispose();
             _bitmaps.Clear();
@@ -233,7 +246,7 @@ public sealed class GalleryUploadDialog : DialogBase
     /// <summary>형식·범위가 바뀌면 올릴 프레임 순서를 다시 고르고 미리보기를 처음부터(PNG면 지금 프레임 한 장).</summary>
     private void RangeChanged()
     {
-        _rangePanel.IsEnabled = AsGif;
+        _rangePanel.IsEnabled = _timingRow.IsEnabled = AsGif;
         var tag = _tagCombo.SelectedIndex >= 0 && _tagCombo.SelectedIndex < _project.Tags.Count ? _project.Tags[_tagCombo.SelectedIndex] : null;
         _order = GalleryFrames.Select(_project, RangeMode, tag, (int)_from.NumValue(), (int)_to.NumValue(), _selectedFrames);
         _play.Stop();
@@ -248,10 +261,11 @@ public sealed class GalleryUploadDialog : DialogBase
         UpdateInfo();
     }
 
-    /// <summary>지금 보이는 프레임 길이만큼 기다렸다 다음 프레임으로.</summary>
+    /// <summary>지금 보이는 프레임 길이(고른 속도로 바꾼 길이, GIF 최소 지연 이상)만큼 기다렸다 다음 프레임으로.</summary>
     private void Schedule()
     {
-        _play.Interval = TimeSpan.FromMilliseconds(Math.Max(20, _project.Frames[_order[_playIndex]].DurationMs));
+        int ms = _timing.Timing.DurationMs(_project.Frames[_order[_playIndex]].DurationMs);
+        _play.Interval = TimeSpan.FromMilliseconds(Math.Max(GifWriter.MinDelayCs * 10, ms));
         _play.Start();
     }
 
@@ -426,6 +440,7 @@ public sealed class GalleryUploadDialog : DialogBase
         var project = _project;
         int scale = Scale, frame = _ctx.CurrentFrame;
         bool gif = AsGif, share = ShareProject;
+        var timing = _timing.Timing;
         var order = _order;
         return WorkOverlay.Run(this, UiStrings.Gallery_Encoding, progress =>
         {
@@ -444,7 +459,7 @@ public sealed class GalleryUploadDialog : DialogBase
                 if (order.Count == 0) throw new InvalidOperationException(UiStrings.Gallery_NoFrames);
                 if (order.Count > CommunityRules.MaxArtFrames) throw new InvalidOperationException(F(UiStrings.Gallery_TooManyFrames, CommunityRules.MaxArtFrames));
                 var frames = GifWriter.ProjectFramesAt(project, order, progress);
-                GifWriter.Write(frames, buffer, new GifOptions { Scale = scale });
+                GifWriter.Write(frames, buffer, new GifOptions { Scale = scale, Timing = timing });
             }
             else
             {

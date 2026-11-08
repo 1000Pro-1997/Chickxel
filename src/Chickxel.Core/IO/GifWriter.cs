@@ -18,6 +18,9 @@ public sealed record GifOptions
     /// <summary>배경색. null이면 투명(알파 &lt; 128 → 투명 색), 있으면 그 색 위에 합성해 불투명하게.</summary>
     public Color32? Background { get; init; }
 
+    /// <summary>재생 속도(프레임 길이를 바꿈). 기본은 프레임 길이 그대로.</summary>
+    public GifTiming Timing { get; init; } = GifTiming.Original;
+
     public const int MaxScale = 64;
 }
 
@@ -87,7 +90,7 @@ public static class GifWriter
         bool exact = all.Count <= limit;
         uint[]? global = exact ? BuildExactPalette(all, transparent) : null;
 
-        var delays = DelaysCs(frames.Select(f => f.DurationMs));
+        var delays = DelaysCs(frames.Select(f => options.Timing.DurationMs(f.DurationMs)));
         var bw = new BinaryWriter(stream);
         bw.Write("GIF89a"u8);
         WriteU16(bw, sw);

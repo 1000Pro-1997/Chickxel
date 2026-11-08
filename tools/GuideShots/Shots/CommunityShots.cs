@@ -74,7 +74,7 @@ internal static class CommunityShots
     }
 
     /// <summary>
-    /// 갤러리에 올리기 창(타임라인에서 프레임 셋을 고르고 연 것, GIF·태그 idle): ① 올릴 그림·배율 ② GIF 범위 ③ 제목·설명·태그 ④ 계정
+    /// 갤러리에 올리기 창(타임라인에서 프레임 셋을 고르고 연 것, GIF·태그 idle): ① 올릴 그림·배율·속도 ② GIF 범위 ③ 제목·설명·태그 ④ 계정
     /// ⑤ 미리보기와 공개 안내 ⑥ 갤러리 보기.
     /// </summary>
     [Shot("screen-gallery")]

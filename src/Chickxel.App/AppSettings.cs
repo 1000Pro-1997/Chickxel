@@ -222,13 +222,19 @@ public sealed class AppSettings
     /// <summary>접어 둔 설정 묶음 이름(설정 프리셋·공통·파일·프레임 시트·부위 아틀라스·고급).</summary>
     public List<string> ExportCollapsed { get; set; } = new();
 
-    // GIF 애니메이션 내보내기(마지막으로 쓴 값, 앱 전체)
+    // GIF 애니메이션 내보내기(마지막으로 쓴 값, 앱 전체 — 속도는 갤러리에 올리기도 같이 씀)
     /// <summary>재생 횟수(0 = 무한 반복).</summary>
     public int GifPlayCount { get; set; }
     /// <summary>배경색 위에 합성(꺼짐 = 투명 배경).</summary>
     public bool GifUseBackground { get; set; }
     /// <summary>배경색(#RRGGBB, 투명으로 돌려도 기억).</summary>
     public string GifBackgroundColor { get; set; } = "#FFFFFF";
+    /// <summary>재생 속도 방식(원래 속도 / 배속 / FPS).</summary>
+    public Chickxel.Core.IO.GifTimingMode GifTimingMode { get; set; }
+    /// <summary>배속(배속 방식일 때).</summary>
+    public double GifSpeed { get; set; } = 1;
+    /// <summary>초당 프레임 수(FPS 방식일 때).</summary>
+    public int GifFps { get; set; } = Chickxel.Core.IO.GifTiming.DefaultFps;
 
     // 팔레트 색으로 변환(마지막으로 쓴 값, 앱 전체)
     /// <summary>색 고르는 규칙.</summary>

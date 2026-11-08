@@ -1928,31 +1928,32 @@
 
 <h3 id="screen-gif">GIF 애니메이션으로 내보내기</h3>
 <p><strong>파일 &gt; GIF 애니메이션으로 내보내기…</strong>는 공유용 GIF 한 파일을 만듭니다. 프로젝트와 내보내기 설정은 바뀌지 않습니다. 미리보기 그림 우클릭 <strong>GIF로 저장…</strong>도 같은 창을 엽니다.</p>
-<figure class="shot"><img src="assets/guide/screen-gif.png" alt="GIF 애니메이션으로 내보내기 창: 범위, 배율, 반복, 배경, 미리보기, 결과 정보" width="738" height="568" loading="lazy"><figcaption>① 범위 · ② 배율(Zoom) · ③ 반복 · ④ 배경 · ⑤ 미리보기 · ⑥ 결과 크기·프레임 수·길이·색 수</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-gif-2.png" alt="태그 고르기 목록을 연 모습" width="308" height="186" loading="lazy"><figcaption>⑦ 태그 목록</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-gif.png" alt="GIF 애니메이션으로 내보내기 창: 범위, 배율, 속도, 반복, 배경, 미리보기, 결과 정보" width="738" height="572" loading="lazy"><figcaption>① 범위 · ② 배율(Zoom) · ③ 속도 · ④ 반복 · ⑤ 배경 · ⑥ 미리보기 · ⑦ 결과 크기·프레임 수·길이·색 수</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-gif-2.png" alt="태그 고르기 목록을 연 모습" width="308" height="186" loading="lazy"><figcaption>⑧ 태그 목록</figcaption></figure>
 <h4>설정</h4>
 <ul class="marks">
-<li>① <strong>범위</strong>: 현재 <a class="term" href="#screen-tags">태그</a>(현재 <a class="term" href="#screen-timeline">프레임</a>이 태그 안에 없으면 꺼짐), 모든 프레임, ⑦ 태그 고르기(태그가 없으면 꺼짐, 목록에 프레임 범위와 역방향·<a class="term" href="#screen-tags">왕복</a> 표시). 처음에는 현재 태그가 있으면 현재 태그, 없으면 모든 프레임이고, 태그의 방향대로 프레임을 늘어놓습니다.</li>
+<li>① <strong>범위</strong>: 현재 <a class="term" href="#screen-tags">태그</a>(현재 <a class="term" href="#screen-timeline">프레임</a>이 태그 안에 없으면 꺼짐), 모든 프레임, ⑧ 태그 고르기(태그가 없으면 꺼짐, 목록에 프레임 범위와 역방향·<a class="term" href="#screen-tags">왕복</a> 표시). 처음에는 현재 태그가 있으면 현재 태그, 없으면 모든 프레임이고, 태그의 방향대로 프레임을 늘어놓습니다.</li>
 <li>② <strong>배율</strong>: 1~10배, <a class="term" href="#tools-transform">최근접</a>으로 픽셀 그대로 키웁니다(처음 = 결과가 256px쯤 되는 배율).</li>
-<li>③ <strong>반복</strong>: 무한 반복 또는 1~100번 재생(1 = 한 번).</li>
-<li>④ <strong>배경</strong>: 투명(알파 50% 미만은 투명, 나머지는 불투명) 또는 배경색 위에 합성.</li>
+<li>③ <strong>속도</strong>: <strong>원래 속도</strong>(프레임마다 정한 길이 그대로, 처음 값), <strong>배속</strong>(0.1~10배, 모든 <a class="term" href="#screen-timeline">프레임 길이</a>를 배속으로 나눔 — 2배면 두 배 빠르고 0.5배면 절반 속도), <strong>같은 FPS</strong>(1~50, 모든 프레임을 1초 ÷ FPS 길이로 맞춤) 중에서 고릅니다. ⑥ 미리보기와 ⑦ 길이도 고른 속도를 따르고, 프로젝트의 프레임 길이는 바뀌지 않습니다. <a href="#screen-gallery">갤러리에 올리기</a>에도 같은 칸이 있습니다.</li>
+<li>④ <strong>반복</strong>: 무한 반복 또는 1~100번 재생(1 = 한 번).</li>
+<li>⑤ <strong>배경</strong>: 투명(알파 50% 미만은 투명, 나머지는 불투명) 또는 배경색 위에 합성.</li>
 </ul>
-<p>반복과 배경 설정은 앱 설정이라 다음에도 그대로이고, 범위와 배율은 열 때마다 다시 정해집니다.</p>
+<p>속도·반복·배경 설정은 앱 설정이라 다음에도 그대로이고(속도는 <a class="term" href="#screen-gallery">갤러리에 올리기</a>와 같이 씀), 범위와 배율은 열 때마다 다시 정해집니다.</p>
 <h4>미리보기와 저장</h4>
-<p>오른쪽 ⑤ 미리보기가 <a class="term" href="#screen-timeline">프레임 길이</a>대로 재생되고 ⑥ 결과 크기·프레임 수·길이·색 수가 보입니다. GIF의 프레임 길이는 1/100초 단위로 반올림되고 20ms보다 짧아지지 않습니다. 색이 적으면(투명이 있으면 255개, 없으면 256개 이하) 무손실로 저장되고, 더 많으면 프레임마다 <a class="term" href="#screen-palette">팔레트</a>를 따로 써서 색을 줄입니다(<a class="term" href="#tools-dither">디더링</a> 없음).</p>
+<p>오른쪽 ⑥ 미리보기가 고른 속도로 재생되고 ⑦ 결과 크기·프레임 수·길이·색 수가 보입니다. GIF의 프레임 길이는 1/100초 단위로 반올림되고 20ms보다 짧아지지 않습니다(그래서 같은 FPS는 50까지). 색이 적으면(투명이 있으면 255개, 없으면 256개 이하) 무손실로 저장되고, 더 많으면 프레임마다 <a class="term" href="#screen-palette">팔레트</a>를 따로 써서 색을 줄입니다(<a class="term" href="#tools-dither">디더링</a> 없음).</p>
 <p><strong>내보내기…</strong>를 누르면 저장 창이 열립니다. 기본 이름은 프로젝트 옆 <code>&lt;프로젝트&gt;.gif</code>(태그면 <code>&lt;프로젝트&gt;_&lt;태그&gt;.gif</code>)이고, 저장한 적 없는 프로젝트는 마지막으로 쓴 폴더에 둡니다. 저장한 뒤에도 창은 열려 있어 파일 크기와 결과를 보여 주고, 설정을 바꿔 다시 저장할 수 있습니다(취소 단추가 <strong>닫기</strong>로 바뀜). <a class="term" href="#shortcuts-customize">단축키</a>는 <a href="#shortcuts-customize">환경 설정 &gt; 단축키</a>에서 정할 수 있습니다.</p>
 <p>미리보기 프레임을 합성하거나 GIF 파일을 쓰는 데 오래 걸리면 끝날 때까지 창 전체가 검은 반투명 덮개로 덮이고, 가운데 상자에 <strong>프레임 합성하는 중</strong> 또는 <strong>GIF 만드는 중</strong>과 퍼센트·진행 막대가 보입니다.</p>
 
 <h3 id="screen-gallery">갤러리에 올리기</h3>
-<figure class="shot"><img src="assets/guide/screen-gallery.png" alt="갤러리에 올리기 창: 왼쪽 올릴 그림(지금 프레임·애니메이션)과 GIF로 올릴 프레임 범위(모든 프레임·태그·프레임 번호·타임라인에서 고른 프레임), 배율·편집 가능한 .chickxel 파일도 공유·그림 받기 허용 체크, 제목·설명·태그, 레벨 칩이 붙은 Chickxel 계정, 오른쪽 미리보기와 공개 안내, 왼쪽 아래 갤러리 보기 단추" width="614" height="774" loading="lazy"><figcaption>① 올릴 그림·배율 · ② GIF 범위 · ③ 설명 · ④ 계정 · ⑤ 미리보기와 안내 · ⑥ 갤러리 보기</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-gallery.png" alt="갤러리에 올리기 창: 왼쪽 올릴 그림(지금 프레임·애니메이션)과 GIF로 올릴 프레임 범위(모든 프레임·태그·프레임 번호·타임라인에서 고른 프레임), 배율·속도·편집 가능한 .chickxel 파일도 공유·그림 받기 허용 체크, 제목·설명·태그, 레벨 칩이 붙은 Chickxel 계정, 오른쪽 미리보기와 공개 안내, 왼쪽 아래 갤러리 보기 단추" width="614" height="806" loading="lazy"><figcaption>① 올릴 그림·배율·속도 · ② GIF 범위 · ③ 설명 · ④ 계정 · ⑤ 미리보기와 안내 · ⑥ 갤러리 보기</figcaption></figure>
 <p><strong>파일 &gt; 갤러리에 올리기…</strong>(GIF 내보내기 아래)나 메뉴 줄 오른쪽의 <a href="#screen-top-bar">갤러리 단추</a>(가게 아이콘)로 지금 그림을 chickxel.com 갤러리에 올립니다. 애니메이션은 전체나 일부 <a class="term" href="#screen-timeline">프레임</a>만 GIF로 올릴 수 있습니다.</p>
 <h4>올리기 전</h4>
 <ul class="marks">
-<li>① <strong>올릴 그림</strong>: <strong>지금 프레임(PNG)</strong> 또는 <strong>애니메이션(GIF)</strong>(② 범위의 프레임을 <a class="term" href="#screen-timeline">프레임 길이</a> 그대로, 무한 반복, 투명 배경 — GIF 내보내기와 같은 합성, 프레임이 하나면 꺼짐). <strong>배율</strong>는 1배부터 결과가 가로·세로 2048px를 넘지 않는 데까지, 최대 10배이고(처음 1배), 아래 정보 줄에 크기와 프레임 번호(PNG) 또는 프레임 수(GIF)가 보입니다. 원래 그림이 2048px보다 크면 올릴 수 없습니다.</li>
+<li>① <strong>올릴 그림</strong>: <strong>지금 프레임(PNG)</strong> 또는 <strong>애니메이션(GIF)</strong>(② 범위의 프레임을 고른 속도로, 무한 반복, 투명 배경 — GIF 내보내기와 같은 합성, 프레임이 하나면 꺼짐). <strong>배율</strong>는 1배부터 결과가 가로·세로 2048px를 넘지 않는 데까지, 최대 10배이고(처음 1배), 아래 정보 줄에 크기와 프레임 번호(PNG) 또는 프레임 수(GIF)가 보입니다. 원래 그림이 2048px보다 크면 올릴 수 없습니다. <strong>속도</strong>(GIF일 때만 켜짐)는 <a href="#screen-gif">GIF 애니메이션으로 내보내기</a>와 같은 칸으로 <strong>원래 속도</strong>·<strong>배속</strong>·<strong>같은 FPS</strong> 중에서 고르고, 마지막 값을 두 창이 같이 기억합니다.</li>
 <li>② GIF로 올릴 프레임(<strong>애니메이션(GIF)</strong>를 골랐을 때만 켜짐): <strong>모든 프레임</strong>(처음 값, 순서대로), <strong><a class="term" href="#screen-tags">태그</a></strong>(목록에서 고른 태그 하나를 그 재생 방향대로 — 역방향·<a class="term" href="#screen-tags">왕복</a>도 그대로, 처음엔 지금 프레임의 태그, 태그가 없으면 꺼짐), <strong>프레임</strong>(시작~끝 번호, 1부터 셈, 시작이 끝보다 크면 거꾸로 재생), <strong><a class="term" href="#screen-timeline">타임라인</a>에서 고른 프레임</strong>(창을 열기 전에 타임라인에서 프레임을 둘 이상 골랐을 때만 보이며, 그 프레임들을 번호 순서로). 태그 목록이나 번호 칸을 바꾸면 그 항목이 저절로 골라집니다. 범위를 바꾸면 정보 줄의 프레임 수와 ⑤ 미리보기가 바로 바뀌고, 올릴 프레임이 없거나 1000개를 넘으면 정보 줄에 빨갛게 까닭이 보이며 <strong>올리기</strong>가 꺼집니다.</li>
 <li>③ <strong>설명</strong>: 제목(1~100자, 처음엔 파일 이름), 설명(선택, 2000자 이하), 태그(선택, 쉼표로 나눠 8개까지, 하나에 32자 이하의 소문자·숫자·하이픈).</li>
 <li>④ 올릴 계정이 프로필 사진과 이름, 이름 뒤 <a class="term" href="#start-account">레벨 칩</a>으로 보이고 <strong><a class="term" href="#start-account">Chickxel 계정</a>…</strong>로 계정 창을 엽니다(<a href="#start-account">Chickxel 계정</a>). 앱을 켤 때 계정을 확인해 두므로 처음부터 확인된 정보로 보이고, 확인하지 못했으면 올릴 때 확인한다고 안내합니다.</li>
-<li>⑤ 미리보기: PNG면 지금 프레임의 정지 그림이고, GIF면 ②에서 고른 프레임을 그 순서대로 프레임 길이만큼 보이며 되풀이합니다(배율을 바꿔도 미리보기 크기는 그대로). 아래에는 올린 그림은 바로 공개되니 다른 사람의 그림이나 권리가 없는 그림을 올리지 말라는 안내가 있습니다.</li>
+<li>⑤ 미리보기: PNG면 지금 프레임의 정지 그림이고, GIF면 ②에서 고른 프레임을 그 순서대로 고른 속도로 보이며 되풀이합니다(배율을 바꿔도 미리보기 크기는 그대로). 아래에는 올린 그림은 바로 공개되니 다른 사람의 그림이나 권리가 없는 그림을 올리지 말라는 안내가 있습니다.</li>
 <li>⑥ 왼쪽 아래 <strong>갤러리 보기</strong>는 chickxel.com 갤러리를 브라우저로 엽니다. 올리지 않고도 다른 사람들이 올린 그림을 볼 수 있습니다.</li>
 </ul>
 <h4>편집 파일 같이 올리기</h4>

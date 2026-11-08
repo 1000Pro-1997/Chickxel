@@ -80,7 +80,7 @@ internal static class ScreenDialogShots
         }, settleMs: 900);
     }
 
-    /// <summary>GIF로 내보내기: 1 = ① 범위 ② 배율 ③ 반복 ④ 배경 ⑤ 미리보기 ⑥ 결과 정보, 2 = ⑦ 태그 고르기 목록.</summary>
+    /// <summary>GIF로 내보내기: 1 = ① 범위 ② 배율 ③ 속도 ④ 반복 ⑤ 배경 ⑥ 미리보기 ⑦ 결과 정보, 2 = ⑧ 태그 고르기 목록.</summary>
     [Shot("screen-gif")]
     public static void Gif(ShotKit k)
     {
@@ -99,7 +99,7 @@ internal static class ScreenDialogShots
             ShotKit.Pump(500);
             var list = PopupArea(k, w) ?? throw new InvalidOperationException("no tag list");
             var range = ShotKit.Bounds(groups[0], w);
-            Shot(k, w, "screen-gif-2", range.Union(list).Inflate(6), [Pop(list)], 7, only: [range, list]);
+            Shot(k, w, "screen-gif-2", range.Union(list).Inflate(6), [Pop(list)], 8, only: [range, list]);
             combo.IsDropDownOpen = false;
         }, settleMs: 900);
     }

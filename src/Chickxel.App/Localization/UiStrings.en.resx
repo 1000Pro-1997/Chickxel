@@ -3612,6 +3612,11 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Gallery_ShareProjectScripts" xml:space="preserve"><value>The source code of script effects is uploaded too.</value></data>
   <data name="Gallery_AllowDownload" xml:space="preserve"><value>Allow image download (PNG/GIF)</value></data>
   <data name="Gallery_AllowDownloadTip" xml:space="preserve"><value>Shows the PNG/GIF download button on the picture's page. When off, only you and admins see it; the picture stays public. You can change it later with Edit on the picture's page.</value></data>
+  <data name="GifTiming_Label" xml:space="preserve"><value>Speed</value></data>
+  <data name="GifTiming_Original" xml:space="preserve"><value>Original speed</value></data>
+  <data name="GifTiming_Speed" xml:space="preserve"><value>Speed multiplier</value></data>
+  <data name="GifTiming_Fps" xml:space="preserve"><value>Fixed FPS</value></data>
+  <data name="GifTiming_Tip" xml:space="preserve"><value>Original speed: plays each frame for its own duration. Speed multiplier: divides every frame's duration by the multiplier (2× = twice as fast, 0.5× = half speed). Fixed FPS: gives every frame the same duration (1 s ÷ FPS). GIF delays are in 1/100 s, so a frame never gets shorter than 0.02 s (50 fps). The project's frame durations don't change.</value></data>
   <data name="Gallery_ProjectTooLarge" xml:space="preserve"><value>The .chickxel file is {0:0.##} MB, over the {1} MB limit. Turn off sharing the file to upload only the picture.</value></data>
   <data name="Gallery_RangeAll" xml:space="preserve"><value>All frames ({0})</value></data>
   <data name="Gallery_RangeTag" xml:space="preserve"><value>Tag</value></data>

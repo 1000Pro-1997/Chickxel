@@ -95,6 +95,22 @@ public class GifTests
         Assert.Equal([3, 4, 3], gif.Frames.Select(f => f.DelayCs));
     }
 
+    [Fact]
+    public void Timing_ChangesWrittenDelaysOnly()
+    {
+        var img = Image(1, 1, (_, _) => Red);
+        GifFrame[] frames = [new(img, 100), new(img, 300)];
+        int[] Delays(GifTiming timing) => [.. Encode(frames, new GifOptions { Timing = timing }).Frames.Select(f => f.DelayCs)];
+
+        Assert.Equal([10, 30], Delays(GifTiming.Original));
+        Assert.Equal([5, 15], Delays(new GifTiming { Mode = GifTimingMode.Speed, Speed = 2 }));
+        Assert.Equal([20, 60], Delays(new GifTiming { Mode = GifTimingMode.Speed, Speed = 0.5 }));
+        // 같은 FPS는 프레임 길이를 무시하고, 50fps를 넘는 값·지나친 배속은 GIF 최소 지연(2cs)으로 막힌다
+        Assert.Equal([10, 10], Delays(new GifTiming { Mode = GifTimingMode.Fps, Fps = 10 }));
+        Assert.Equal([2, 2], Delays(new GifTiming { Mode = GifTimingMode.Fps, Fps = 120 }));
+        Assert.Equal([2, 2], Delays(new GifTiming { Mode = GifTimingMode.Speed, Speed = 100 }));
+    }
+
     [Theory]
     [InlineData(0, 0)]
     [InlineData(3, 2)]

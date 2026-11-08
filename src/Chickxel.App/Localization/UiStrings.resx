@@ -9417,6 +9417,11 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Gallery_ShareProjectScripts" xml:space="preserve"><value>스크립트 효과 원문(코드)도 같이 올라갑니다.</value></data>
   <data name="Gallery_AllowDownload" xml:space="preserve"><value>그림 받기 허용 (PNG·GIF)</value></data>
   <data name="Gallery_AllowDownloadTip" xml:space="preserve"><value>그림 쪽에 PNG·GIF 받기 버튼을 보입니다. 끄면 올린 사람과 관리자에게만 보이고, 그림은 그대로 공개됩니다. 나중에 그림 쪽의 고치기에서 바꿀 수 있습니다.</value></data>
+  <data name="GifTiming_Label" xml:space="preserve"><value>속도</value><comment>GIF 재생 속도(GIF 내보내기·갤러리에 올리기).</comment></data>
+  <data name="GifTiming_Original" xml:space="preserve"><value>원래 속도</value></data>
+  <data name="GifTiming_Speed" xml:space="preserve"><value>배속</value></data>
+  <data name="GifTiming_Fps" xml:space="preserve"><value>같은 FPS</value></data>
+  <data name="GifTiming_Tip" xml:space="preserve"><value>원래 속도: 프레임마다 정한 길이 그대로 재생합니다. 배속: 모든 프레임 길이를 배속으로 나눕니다(2× = 두 배 빠르게, 0.5× = 절반 속도). 같은 FPS: 모든 프레임을 같은 길이(1초 ÷ FPS)로 맞춥니다. GIF는 1/100초 단위라 한 프레임이 0.02초(50fps)보다 짧아지지 않습니다. 프로젝트의 프레임 길이는 바뀌지 않습니다.</value></data>
   <data name="Gallery_ProjectTooLarge" xml:space="preserve"><value>.chickxel 파일이 {0:0.##}MB로 {1}MB 한도를 넘습니다. 파일 공유를 끄고 그림만 올리세요.</value><comment>0 = 파일 크기(MB), 1 = 한도(MB).</comment></data>
   <data name="Gallery_RangeAll" xml:space="preserve"><value>모든 프레임({0}개)</value><comment>0 = 프레임 수.</comment></data>
   <data name="Gallery_RangeTag" xml:space="preserve"><value>태그</value></data>

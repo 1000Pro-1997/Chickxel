@@ -5,10 +5,10 @@ using Chickxel.App.Localization;
 namespace Chickxel.App;
 
 /// <summary>
-/// GIF 애니메이션으로 내보내기: 범위(현재 태그 / 모든 프레임 / 고른 태그 — 태그 방향(역방향·왕복) 그대로), 배율(1~10×), 반복(무한 / N번),
-/// 배경(투명 / 색)을 고르고, 그 배율로 실제 프레임 길이대로 재생되는 미리보기를 본다. 그림은 프레임 시트와 똑같이 합성한다
+/// GIF 애니메이션으로 내보내기: 범위(현재 태그 / 모든 프레임 / 고른 태그 — 태그 방향(역방향·왕복) 그대로), 배율(1~10×), 속도(<see cref="GifTimingField"/>:
+/// 원래 속도 / 배속 / 같은 FPS), 반복(무한 / N번), 배경(투명 / 색)을 고르고, 그 배율·속도로 재생되는 미리보기를 본다. 그림은 프레임 시트와 똑같이 합성한다
 /// (<see cref="GifWriter.ProjectFrames"/>: 레이어 효과·지금 착장, 숨긴·내보내기에서 뺀 레이어 제외). 프로젝트는 바꾸지 않는다.
-/// 반복·배경은 앱 설정(<see cref="AppSettings"/>)에 기억한다. 내보낸 뒤에도 창은 열려 있고 결과(크기·용량)를 보인다.
+/// 속도·반복·배경은 앱 설정(<see cref="AppSettings"/>)에 기억한다. 내보낸 뒤에도 창은 열려 있고 결과(크기·용량)를 보인다.
 /// </summary>
 public sealed class GifExportDialog : DialogBase
 {
@@ -24,6 +24,7 @@ public sealed class GifExportDialog : DialogBase
     private readonly ComboBox _tagCombo;
     private readonly NumericUpDown _scale, _plays;
     private readonly ColorField _color;
+    private readonly GifTimingField _timing;
     private readonly Preview _preview;
     private readonly TextBlock _info, _result;
     private readonly DispatcherTimer _timer = new();
@@ -63,16 +64,17 @@ public sealed class GifExportDialog : DialogBase
         _bgColor = Radio("bg", UiStrings.S_GifExportDialog_GifExportDialog_E03CFDC4D0);
         _color = new ColorField(Color32.TryParseHex(settings.GifBackgroundColor, out var bg) ? bg.WithAlpha(255) : Color32.White);
         (settings.GifUseBackground ? _bgColor : _bgTransparent).IsChecked = true;
+        _timing = new GifTimingField(settings);
 
         _preview = new Preview();
         _info = new TextBlock { Foreground = AppTheme.TextBrush, Margin = new Thickness(2, 4, 2, 0), TextWrapping = TextWrapping.Wrap, MaxWidth = 400 };
         _result = new TextBlock { Foreground = AppTheme.AccentBrush, Margin = new Thickness(2, 2, 2, 0), TextWrapping = TextWrapping.Wrap, MaxWidth = 400, IsVisible = false };
 
-        // 대상 도움말(F1): 창 = "GIF 애니메이션으로 내보내기" 창 그림, 묶음마다 설정 목록의 그 항목(①~④), 태그 목록 ⑦ 그림,
-        // 미리보기 ⑤·정보 ⑥ 문단, 내보내기 단추 = 저장 문단. 묶음 상자는 빈 곳도 눌리게 투명 배경을 준다.
+        // 대상 도움말(F1): 창 = "GIF 애니메이션으로 내보내기" 창 그림, 묶음마다 설정 목록의 그 항목(①~⑤), 태그 목록 ⑧ 그림,
+        // 미리보기 ⑥·정보 ⑦ 문단, 내보내기 단추 = 저장 문단. 묶음 상자는 빈 곳도 눌리게 투명 배경을 준다.
         const string page = "screen-gif";
         this.HelpAt(page, shot: "screen-gif");
-        static Border Section(string title, Control content, string anchor)
+        static Border Section(string title, Control content, string? anchor)
         {
             var group = Ui.Group(title, content).HelpAt(page, anchor: anchor);
             group.Background = Brushes.Transparent;
@@ -80,7 +82,7 @@ public sealed class GifExportDialog : DialogBase
         }
         _tagCombo.HelpAt(page, shot: "screen-gif-2");
         _preview.HelpAt(page, anchor: "The preview on the right plays");
-        _info.HelpAt(page, anchor: "⑥");
+        _info.HelpAt(page, anchor: "⑦");
         OkButton.HelpAt(page, anchor: "Export… opens a save dialog");
         var settingsColumn = new StackPanel
         {
@@ -90,6 +92,7 @@ public sealed class GifExportDialog : DialogBase
             {
                 Section(UiStrings.S_GifExportDialog_GifExportDialog_463F80B168, Ui.Stack(_rangeCurrent, _rangeAll, Ui.Row(_rangeTag, _tagCombo)), "Range"),
                 Section(UiStrings.S_GifExportDialog_GifExportDialog_012E0A74BF, Ui.Row(_scale, Ui.Label(UiStrings.S_GifExportDialog_GifExportDialog_5AE6A9747B)), "Zoom"),
+                Section(UiStrings.GifTiming_Label, _timing, "Speed multiplier"),
                 Section(UiStrings.S_GifExportDialog_GifExportDialog_C51C583CC7, Ui.Stack(_loopForever, Ui.Row(_loopCount, _plays, Ui.Label(UiStrings.S_GifExportDialog_GifExportDialog_D748D56877))), "Loop"),
                 Section(UiStrings.S_GifExportDialog_GifExportDialog_7934F88ACA, Ui.Stack(_bgTransparent, Ui.Row(_bgColor, _color)), "Background"),
             },
@@ -114,6 +117,11 @@ public sealed class GifExportDialog : DialogBase
         };
         _scale.ValueChanged += (_, _) => { _preview.Scale = Scale; UpdateInfo(); };
         _plays.ValueChanged += (_, _) => { if (!_loopCount.On()) _loopCount.IsChecked = true; };
+        _timing.Changed += () =>
+        {
+            Restart();
+            UpdateInfo();
+        };
 
         _timer.Tick += (_, _) => Advance();
         OkButton.Click += (_, _) =>
@@ -185,23 +193,33 @@ public sealed class GifExportDialog : DialogBase
             if (!bitmaps.TryGetValue(f.Image, out var bmp)) bitmaps[f.Image] = bmp = ImageUtil.ToBitmap(GifWriter.Prepare(f.Image, bg));
             return bmp;
         }).ToList(), bg);
+        Restart();
+        UpdateInfo();
+    }
+
+    /// <summary>미리보기를 첫 프레임부터 다시 재생.</summary>
+    private void Restart()
+    {
         _index = 0;
         _preview.Index = 0;
         _timer.Stop();
         if (_frames.Count > 1)
         {
-            _timer.Interval = TimeSpan.FromMilliseconds(_frames[0].DurationMs);
+            _timer.Interval = FrameDelay(0);
             _timer.Start();
         }
-        UpdateInfo();
     }
+
+    /// <summary>프레임 <paramref name="index"/>가 보이는 시간: 고른 속도로 바꾼 길이(GIF 최소 지연 이상).</summary>
+    private TimeSpan FrameDelay(int index)
+        => TimeSpan.FromMilliseconds(Math.Max(GifWriter.MinDelayCs * 10, _timing.Timing.DurationMs(_frames[index].DurationMs)));
 
     private void Advance()
     {
         if (_frames.Count == 0) return;
         _index = (_index + 1) % _frames.Count;
         _preview.Index = _index;
-        _timer.Interval = TimeSpan.FromMilliseconds(_frames[_index].DurationMs);
+        _timer.Interval = FrameDelay(_index);
     }
 
     private void UpdateInfo()
@@ -213,7 +231,8 @@ public sealed class GifExportDialog : DialogBase
             return;
         }
         OkButton.IsEnabled = true;
-        int totalCs = GifWriter.DelaysCs(_frames.Select(f => f.DurationMs)).Sum();
+        var timing = _timing.Timing;
+        int totalCs = GifWriter.DelaysCs(_frames.Select(f => timing.DurationMs(f.DurationMs))).Sum();
         var bg = BackgroundColor;
         var colors = new HashSet<uint>();
         foreach (var img in _frames.Select(f => f.Image).Distinct(ReferenceEqualityComparer.Instance).Cast<PixelImage>())
@@ -240,7 +259,7 @@ public sealed class GifExportDialog : DialogBase
     {
         try
         {
-            var options = new GifOptions { Scale = Scale, PlayCount = PlayCount, Background = BackgroundColor };
+            var options = new GifOptions { Scale = Scale, PlayCount = PlayCount, Background = BackgroundColor, Timing = _timing.Timing };
             var frames = _frames;
             var info = WorkOverlay.Run(this, UiStrings.Busy_GifSaving, progress => GifWriter.Save(frames, path, options, progress));
             long bytes = new FileInfo(path).Length;
@@ -269,6 +288,7 @@ public sealed class GifExportDialog : DialogBase
         _settings.GifPlayCount = PlayCount;
         _settings.GifUseBackground = _bgColor.On();
         _settings.GifBackgroundColor = _color.Color.WithAlpha(255).ToHex();
+        _timing.Save(_settings);
     }
 
     private static RadioButton Radio(string group, string text)

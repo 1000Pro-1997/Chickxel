@@ -2,6 +2,17 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.109 (2026-11-08)
+### GIF export and Upload to Gallery: choose the playback speed
+- Both windows have a new **Speed** setting: **Original speed** (each frame's own duration), **Speed multiplier** (0.1 to 10×) or **Fixed FPS** (1 to 50, the same duration for every frame).
+- The preview and the result's length follow the chosen speed; the project's frame durations don't change.
+- Both windows remember the last speed you picked. GIF delays are in 1/100 s, so a frame never gets shorter than 0.02 s (50 fps).
+- The guide's Export as animated GIF and Upload to gallery pages describe the setting.
+
+### Upload to Gallery: sharing the editable file no longer fails
+- With **Also share the editable .chickxel file** on, the server rejected the upload because it didn't know `thumbnail.png` (the first-frame preview for Windows Explorer); this is fixed on chickxel.com.
+- No app change is needed; earlier versions upload fine now too.
+
 ## v1.14.108 (2026-11-08)
 ### "Playing Chickxel" on Discord
 - While the Discord app is running on this computer, your profile shows "Playing Chickxel" with the chick picture and how long you've been at it. Nothing about your work, such as document names, is shown.
