@@ -18,7 +18,7 @@ nav.admin,관리,Admin
 nav.login,로그인,Sign in
 nav.logout,로그아웃,Sign out
 nav.language,언어,Language
-lang-select.2,"게임용<br><span class=""highlight"">픽셀 아트 편집기.</span>","A pixel art editor<br><span class=""highlight"">built for games.</span>"
+lang-select.2,"<span class=""highlight"">픽셀 아트 편집기.</span>","<span class=""highlight"">Pixel art editor.</span>"
 lang-select.3,"프레임·레이어·부위·스킨을 그리고, 저장하면 PNG 스프라이트 시트와 Unity <code>.meta</code>가 함께 만들어집니다.","Draw frames, layers, parts and skins — every save writes a PNG sprite sheet and Unity <code>.meta</code> alongside."
 lang-select.4,다운로드,Download
 hero.guide,사용 가이드,Guide

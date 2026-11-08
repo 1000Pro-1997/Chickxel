@@ -113,9 +113,8 @@ pre code { background: none; border: 0; padding: 0; }
 .highlight { background: linear-gradient(transparent 70%, rgba(255, 208, 47, .55) 70%); }
 .hero .lead { margin: 0; max-width: 560px; font-size: 18px; line-height: 1.7; color: var(--lead); }
 .hero .buttons { margin-top: 30px; gap: 6px; }
-/* 다운로드 뒤 줄바꿈: 두 칸 화면에서 글 칸이 좁아 단추가 펼쳐지면 넘칠 때(961~1259px)와 휴대폰에서 아이콘 단추를 둘째 줄에 모음 */
-.hero .row-break { display: none; flex-basis: 100%; height: 0; }
-@media (min-width: 961px) and (max-width: 1259px) { .hero .row-break { display: block; } }
+/* 다운로드 뒤 줄바꿈: 나머지 단추(가이드·SNS·후원)는 늘 둘째 줄 */
+.hero .row-break { flex-basis: 100%; height: 0; }
 @media (prefers-reduced-motion: reduce) { .btn.expand, .btn.expand .label { transition: none; } }
 .os-links { margin: 18px 0 0; font-size: 14px; color: var(--muted); }
 .os-links a { color: var(--ink); font-weight: 650; border-bottom: 1px solid var(--line); }
@@ -326,7 +325,6 @@ td { color: var(--body); }
   .account-btn { padding: 3px; gap: 4px; }
   .account-btn .label, .account-btn .chev { display: none; }
   .hero { padding: 48px 0 48px; }
-  .hero .row-break { display: block; }
   .btn.expand { padding: 10px; }
   .features, .downloads, .core-grid { grid-template-columns: 1fr; }
   .section { padding: 52px 0; }
