@@ -86,7 +86,6 @@ public sealed partial class AssetManagerWindow : DialogBase
     {
         s_current = this;
         CloseOnly();
-        CancelButtonControl.IsDefault = false;
         CanResize = true;
         SizeToContent = SizeToContent.Manual;
         Width = 980;

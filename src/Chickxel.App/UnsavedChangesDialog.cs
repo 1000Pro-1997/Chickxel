@@ -42,7 +42,6 @@ internal sealed class UnsavedChangesDialog : DialogBase
         AddButton(UiStrings.S_UnsavedChangesDialog_UnsavedChangesDialog_A5BC13DA85, DialogResult.No).HelpAt(page, anchor: "Don't save");
         CancelButtonControl.HelpAt(page, anchor: "Cancel: nothing closes");
         UpdateOk();
-        Opened += (_, _) => OkButton.Focus();
         Closed += (_, _) => { foreach (var t in _thumbs) t.Dispose(); };
     }
 

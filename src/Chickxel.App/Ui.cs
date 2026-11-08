@@ -517,6 +517,7 @@ public static class Ui
 /// 그 단추의 Click 처리기에서 <c>DialogResult = DialogResult.None</c>으로 하면 닫지 않는다(입력 검사용).
 /// 코드에서 <see cref="DialogResult"/>를 None 아닌 값으로 정하면 바로 그 결과로 닫힌다.
 /// 창은 그 화면의 작업 영역(작업 표시줄 제외)을 넘지 않게 열리고, 내용이 더 길면 본문(<see cref="Body"/>)만 세로로 스크롤된다(단추 줄은 늘 보임).
+/// Enter는 어떤 단추에도 연결하지 않는다(확인·적용·닫기는 단추로만, Esc = 취소). 알림 상자(<see cref="MessageDialog"/>의 확인 하나)만 확인 단추에 초점을 둬 Enter로 닫힌다.
 /// </summary>
 public class DialogBase : Window
 {
@@ -546,7 +547,6 @@ public class DialogBase : Window
 
         Body = new StackPanel { Orientation = Orientation.Vertical, Spacing = 2 };
         OkButton = Ui.Button(okText, width: 90);
-        OkButton.IsDefault = true;
         CancelButtonControl = Ui.Button(UiStrings.S_Ui_DialogBase_A9649D1FA1, width: 90);
         CancelButtonControl.IsCancel = true;
         _results[OkButton] = DialogResult.OK;
@@ -674,9 +674,7 @@ public class DialogBase : Window
     protected void CloseOnly()
     {
         OkButton.IsVisible = false;
-        OkButton.IsDefault = false;
         CancelButtonControl.Content = UiStrings.S_Ui_CloseOnly_11312F9A81;
-        CancelButtonControl.IsDefault = true;
     }
 
     /// <summary>
@@ -741,7 +739,8 @@ internal sealed class MessageDialog : DialogBase
                 break;
         }
         _noOnClose = buttons == MessageButtons.YesNo;
-        Opened += (_, _) => (OkButton.IsVisible ? OkButton : CancelButtonControl).Focus();
+        // 알림(확인 하나)만 확인에 초점을 둬 Enter·Esc로 닫는다. 묻는 상자는 단추에 초점을 두지 않아 Enter로 답하지 않는다.
+        if (buttons == MessageButtons.OK) Opened += (_, _) => OkButton.Focus();
     }
 
     public void SetOkText(string text) => OkButton.Content = text;
@@ -754,7 +753,7 @@ internal sealed class MessageDialog : DialogBase
         if (_noButton is not null) _noButton.Content = text;
     }
 
-    /// <summary>확인 앞에 단추를 하나 더 둔다(누르면 <paramref name="result"/>로 닫힘 — Enter·Esc는 그대로 확인).</summary>
+    /// <summary>확인 앞에 단추를 하나 더 둔다(누르면 <paramref name="result"/>로 닫힘 — 알림이면 Enter·Esc는 그대로 확인).</summary>
     public void AddChoice(string text, DialogResult result) => AddButton(text, result, beforeOk: true);
 
     private Button? _noButton;

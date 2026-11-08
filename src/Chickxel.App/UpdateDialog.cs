@@ -117,11 +117,6 @@ public sealed class UpdateDialog : DialogBase
             DialogResult = DialogResult.None; // 창은 그대로 둔다
             Updater.OpenUrl(this, _release.PageUrl.ToString());
         };
-        if (plan is null)
-        {
-            OkButton.IsDefault = false;
-            _page.IsDefault = true;
-        }
         CancelButtonControl.Content = UiStrings.S_UpdateDialog_UpdateDialog_45C551D917;
         CancelButtonControl.Tip(UiStrings.S_UpdateDialog_UpdateDialog_024D578A11).HelpAt(page, anchor: "Later");
         CancelButtonControl.Click += (_, _) =>

@@ -136,7 +136,6 @@ public sealed class ProgressDialog<T> : DialogBase where T : class
         this.HelpAt("files-open-media");
         _total = Math.Max(1, total);
         OkButton.IsVisible = false;
-        OkButton.IsDefault = false;
         _bar = new ProgressBar
         {
             Minimum = 0, Maximum = _total, IsIndeterminate = total <= 0, Width = 380, Height = 8, Margin = new Thickness(3, 6, 3, 0),

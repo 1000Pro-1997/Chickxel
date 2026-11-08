@@ -307,7 +307,6 @@ internal sealed class CrashDialog : DialogBase
         OkButton.Content = UiStrings.S_CrashGuard_CrashDialog_AA2995CAF6;
         OkButton.Width = double.NaN; // 기본 폭 90에 "로그 폴더 열기"가 잘리므로 글에 맞춘다.
         OkButton.MinWidth = 90;
-        OkButton.IsDefault = false;
         OkButton.HelpAt("files-crash-log", anchor: "Log files");
         OkButton.Click += (_, _) =>
         {
@@ -319,7 +318,6 @@ internal sealed class CrashDialog : DialogBase
             DialogResult = DialogResult.None; // 닫지 않음
         };
         CancelButtonControl.Content = UiStrings.S_CrashGuard_CrashDialog_8FDCF832FD;
-        CancelButtonControl.IsDefault = true;
         Opened += (_, _) => CancelButtonControl.Focus();
     }
 }

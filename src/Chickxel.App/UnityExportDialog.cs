@@ -58,8 +58,6 @@ public sealed class UnityExportDialog : DialogBase
         _settings = settings;
         _ppuChanged = ppuChanged;
         CloseOnly();
-        // Enter로 창이 닫히거나 내보내지지 않게 한다(닫기는 단추·Esc만). 이름 칸의 Enter는 그 값 반영.
-        CancelButtonControl.IsDefault = false;
         // 닫기 옆 파란 "내보내기": 창을 닫고(입력 중인 값도 반영) 호출한 쪽이 내보낸다.
         var export = AddButton(UiStrings.S_UnityExportDialog_UnityExportDialog_C53EAC78FD, DialogResult.OK);
         export.Background = AppTheme.AccentBrush;

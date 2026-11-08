@@ -2,6 +2,17 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.110 (2026-11-08)
+### Enter no longer confirms or uploads in dialogs
+- In Upload to Gallery and every other dialog, pressing Enter no longer confirms, uploads, applies, exports or closes. Click the button instead; Esc still cancels.
+- Yes/No questions and the save-on-quit prompt don't answer on Enter either. Only notices with a single OK button close with Enter or Esc.
+- Enter inside fields (confirming numbers or names, searching, sending a chat message) works as before.
+
+### chickxel.com gallery: bigger thumbnails, image download after sign-in
+- Art cards in the gallery list and on user pages now scale each picture until one side reaches the card edge, so small art no longer sits at its original size in the middle.
+- On an art page, the PNG/GIF download button sends visitors who aren't signed in to the sign-in page instead of downloading; after signing in they return to the same art page.
+- These are website changes; the app doesn't need to change.
+
 ## v1.14.109 (2026-11-08)
 ### GIF export and Upload to Gallery: choose the playback speed
 - Both windows have a new **Speed** setting: **Original speed** (each frame's own duration), **Speed multiplier** (0.1 to 10×) or **Fixed FPS** (1 to 50, the same duration for every frame).

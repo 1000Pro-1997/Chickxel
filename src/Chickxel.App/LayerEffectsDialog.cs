@@ -84,8 +84,6 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
     /// <param name="motionRange">추가 범위를 그대로 두고 움직이는 효과를 추가할 때 쓸 범위(한 칸만 골랐으면 태그 끝까지 넓힌 것). null = newRange.</param>
     public LayerEffectsDialog(EditorContext ctx, Layer layer, int focus = -1, FrameRange? newRange = null, FrameRange? motionRange = null) : base(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_7E8F1A60E2,layer.Name))
     {
-        // 숫자·색 값 입력에서 Enter는 입력만 확정한다. 효과 적용은 확인 단추로만 한다.
-        OkButton.IsDefault = false;
         OpenCount++;
         Closed += (_, _) => OpenCount--;
         // 대상 도움말(F1): 창 = "효과 창" 쪽, 칸마다 그 그림 번호(⑥~⑭) 줄·자세한 쪽(설정 줄은 만들 때, 프레임 줄·설정 칸은 IHelpTargetSource)

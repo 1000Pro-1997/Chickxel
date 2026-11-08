@@ -77,8 +77,8 @@ public sealed class SkinManagerWindow : Window
         this.HelpAt(Page);
         _preview.HelpAt(Page, anchor: "The full outfit is at the top");
         var content = new StackPanel { Margin = new Thickness(10, 8), Children = { filterLine, help, previewTitle, _preview, _outfits, _list } };
-        // 아래 확인 단추(Enter·Esc도 닫기): 카드를 누를 때마다 이미 적용되므로 창만 닫는다.
-        var ok = new Button { Content = UiStrings.S_SkinManagerWindow_SkinManagerWindow_E08E14A158, MinWidth = 90, IsDefault = true, IsCancel = true, HorizontalContentAlignment = HorizontalAlignment.Center };
+        // 아래 확인 단추(Esc도 닫기): 카드를 누를 때마다 이미 적용되므로 창만 닫는다.
+        var ok = new Button { Content = UiStrings.S_SkinManagerWindow_SkinManagerWindow_E08E14A158, MinWidth = 90, IsCancel = true, HorizontalContentAlignment = HorizontalAlignment.Center };
         ok.Click += (_, _) => Close();
         var footer = new Border
         {

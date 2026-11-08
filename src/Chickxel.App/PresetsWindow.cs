@@ -44,7 +44,6 @@ public sealed class PresetsWindow : DialogBase
     private PresetsWindow(PresetsTab tab) : base(UiStrings.Presets_Title)
     {
         CloseOnly();
-        CancelButtonControl.IsDefault = false; // Enter belongs to the number fields.
         CanResize = true;
         SizeToContent = SizeToContent.Manual;
         Width = 1000;

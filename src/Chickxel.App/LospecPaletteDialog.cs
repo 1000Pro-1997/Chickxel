@@ -74,7 +74,6 @@ public sealed class LospecPaletteDialog : DialogBase
         _replace = replace;
         _append = append;
         CloseOnly();
-        CancelButtonControl.IsDefault = false; // Enter는 태그 검색에 쓴다.
         // 확인 = 고른 팔레트를 팔레트로 쓰고 닫기(덮어쓰기 확인에서 취소하면 닫지 않음).
         OkButton.IsVisible = true;
         OkButton.IsEnabled = false;

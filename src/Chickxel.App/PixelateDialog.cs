@@ -1566,8 +1566,6 @@ public sealed class PixelateDialog : DialogBase
         foreach (var c in new[] { _crDistance, _crFidelity, _crCellRef }) c.SelectionChanged += (_, _) => Changed();
         _crCenter.IsCheckedChanged += (_, _) => Changed();
 
-        // 숫자·설정 입력의 Enter가 결과 적용으로 이어지지 않게 한다. 적용은 단추로만 한다.
-        OkButton.IsDefault = false;
         OkButton.Click += (_, _) =>
         {
             if (_selected is null) { DialogResult = DialogResult.None; return; }
@@ -2964,7 +2962,6 @@ public sealed class PixelateDialog : DialogBase
     {
         if (_zoom.IsVisible || _preview.FrameCount == 0) return;
         CancelButtonControl.IsCancel = false;
-        OkButton.IsDefault = false;
         _zoom.Open();
     }
 
@@ -2974,7 +2971,6 @@ public sealed class PixelateDialog : DialogBase
         if (!_zoom.IsVisible) return;
         _zoom.IsVisible = false;
         CancelButtonControl.IsCancel = true;
-        OkButton.IsDefault = false;
         _preview.Focus();
     }
 
