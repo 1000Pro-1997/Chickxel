@@ -502,8 +502,9 @@
 </tbody>
 </table></div>
 <p>The connection <a class="term" href="#ai-edits">AI tools</a> use to control Chickxel (<a class="term" href="#ai-how">MCP</a>) is opened only on this computer (<code>127.0.0.1</code>) and can't be reached from outside.</p>
+<p>Discord activity status doesn't go over the internet either. Chickxel tells only the Discord app running on this computer, and your profile shows just the chick picture, "Playing Chickxel" and how long you've been at it. Nothing about your work, such as document names, is sent. To turn it off, clear <strong>Show activity on Discord (&quot;Playing Chickxel&quot;)</strong> in <strong>Edit &gt; Preferences… &gt; General &gt; Discord</strong> (see <a href="#files-settings">Preferences</a>).</p>
 <h4>Turning off update checks</h4>
-<figure class="shot"><img src="../assets/guide/start-privacy.png" alt="The General tab of Edit &gt; Preferences… with the Check for a new version at startup checkbox in the Updates part marked" width="1058" height="832" loading="lazy"><figcaption>① Check for a new version at startup: clear it and Chickxel no longer goes online to check for updates</figcaption></figure>
+<figure class="shot"><img src="../assets/guide/start-privacy.png" alt="The General tab of Edit &gt; Preferences… with the Check for a new version at startup checkbox in the Updates part marked" width="1058" height="940" loading="lazy"><figcaption>① Check for a new version at startup: clear it and Chickxel no longer goes online to check for updates</figcaption></figure>
 <ul class="marks">
 <li>① Clear this checkbox in <strong>Edit &gt; Preferences… &gt; General</strong> and Chickxel no longer checks for updates at startup. Manual checks still work (see <a href="#start-update">Updates</a>).</li>
 </ul>
@@ -2925,7 +2926,7 @@
 <figure class="shot"><img src="../assets/guide/files-settings.png" alt="The Edit menu opened, with Preferences marked 1" width="337" height="614" loading="lazy"><figcaption>① Preferences… in the Edit menu — Ctrl+,</figcaption></figure>
 <p>App-wide settings are changed in ① <strong>Edit &gt; Preferences…</strong> (<span class="key" data-cmd="편집/환경 설정…"><kbd>Ctrl</kbd>+<kbd>,</kbd></span>). Per-project settings (such as export) live in the <a class="term" href="#files-roles">project file</a>, not here.</p>
 <h4>General tab</h4>
-<figure class="shot"><img src="../assets/guide/files-settings-2.png" alt="The General tab of Preferences, with the tab, undo steps, undo history, autosave and app trash retention marked 2 to 6, and the Reset settings button at the bottom" width="1080" height="886" loading="lazy"><figcaption>② General tab · ③ Undo steps · ④ Undo history · ⑤ Autosave · ⑥ App trash retention</figcaption></figure>
+<figure class="shot"><img src="../assets/guide/files-settings-2.png" alt="The General tab of Preferences, with the tab, undo steps, undo history, autosave, app trash retention and Discord activity marked 2 to 7, and the Reset settings button at the bottom" width="1080" height="940" loading="lazy"><figcaption>② General tab · ③ Undo steps · ④ Undo history · ⑤ Autosave · ⑥ App trash retention · ⑦ Discord activity</figcaption></figure>
 <p>The ② <strong>General</strong> tab has these groups.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>Group</th><th>What it does</th></tr></thead>
@@ -2936,13 +2937,14 @@
 <tr><td>⑤ Save</td><td><a class="term" href="#files-autosave">Autosave</a> on/off and wait time (<a href="#files-autosave">Autosave</a>).</td></tr>
 <tr><td>⑥ <a class="term" href="#screen-file-browser">App trash</a> retention</td><td>The app trash time limit (off by default) and size limit (default 1 GB) (<a href="#screen-file-browser">File browser</a>).</td></tr>
 <tr><td>Updates</td><td>Check for a new version at startup (<a href="#start-update">Updates</a>).</td></tr>
+<tr><td>⑦ Discord</td><td><strong>Show activity on Discord (&quot;Playing Chickxel&quot;)</strong> (on by default): while the Discord app is running on this computer, your profile shows the chick picture, "Playing Chickxel" and how long you've been at it. Nothing about your work, such as document names, is sent, and only the Discord app on this computer is told (see <a href="#start-privacy">Network and privacy</a>).</td></tr>
 <tr><td>Reset settings</td><td><strong>Reset settings…</strong> at the bottom: shows what will be reset and asks you to confirm, then returns app settings and shortcuts to their defaults. <a class="term" href="#files-open">Recent files</a> and folders, window and panel layout, palettes and <a class="term" href="#screen-color-picker">recent colors</a>, presets you made (such as <a class="term" href="#pixelate">Pixelate</a> presets), script trust decisions, accounts and asset publishing records stay, and open documents aren't touched. The display language goes back to your computer's language; if that differs from the current one, you're asked whether to restart.</td></tr>
 </tbody>
 </table></div>
 <h4>Shortcuts tab</h4>
-<figure class="shot"><img src="../assets/guide/files-settings-3.png" alt="The Shortcuts tab of Preferences searching for save, with the tab, the Change/Add/None/Default buttons, the search box and the JSON buttons marked 7 to 10" width="766" height="638" loading="lazy"><figcaption>⑦ Shortcuts tab · ⑧ Change · Add · None · Default · ⑨ Search (e.g. save) · ⑩ Export / Import (JSON)</figcaption></figure>
-<figure class="shot"><img src="../assets/guide/files-settings-4.png" alt="The shortcut conflict question, with Yes marked 11" width="343" height="160" loading="lazy"><figcaption>⑪ Asked when the key (Ctrl+S) is used by another command — Yes removes it there and assigns it here</figcaption></figure>
-<p>In the ⑦ <strong>Shortcuts</strong> tab you ⑧ change, add, clear or reset the key of any command or tool, ⑨ search by command name or key, and ⑩ export or import them as JSON. Assigning a key used by another command ⑪ asks whether to remove it there. See <a href="#shortcuts-customize">Customizing shortcuts</a> for details.</p>
+<figure class="shot"><img src="../assets/guide/files-settings-3.png" alt="The Shortcuts tab of Preferences searching for save, with the tab, the Change/Add/None/Default buttons, the search box and the JSON buttons marked 8 to 11" width="766" height="638" loading="lazy"><figcaption>⑧ Shortcuts tab · ⑨ Change · Add · None · Default · ⑩ Search (e.g. save) · ⑪ Export / Import (JSON)</figcaption></figure>
+<figure class="shot"><img src="../assets/guide/files-settings-4.png" alt="The shortcut conflict question, with Yes marked 12" width="343" height="160" loading="lazy"><figcaption>⑫ Asked when the key (Ctrl+S) is used by another command — Yes removes it there and assigns it here</figcaption></figure>
+<p>In the ⑧ <strong>Shortcuts</strong> tab you ⑨ change, add, clear or reset the key of any command or tool, ⑩ search by command name or key, and ⑪ export or import them as JSON. Assigning a key used by another command ⑫ asks whether to remove it there. See <a href="#shortcuts-customize">Customizing shortcuts</a> for details.</p>
 <h4>Other tabs</h4>
 <div class="table-wrap"><table>
 <thead><tr><th>Tab</th><th>What it does</th></tr></thead>

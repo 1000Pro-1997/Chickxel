@@ -7,52 +7,23 @@ using System.Text.Json.Nodes;
 namespace Chickxel.Core.Community;
 
 /// <summary>
-/// Discord 활동 상태 한 벌(Rich Presence의 <c>activity</c>): 두 줄 글(<see cref="Details"/>·<see cref="State"/>, 각 2~128자 — 짧으면 채우고 길면 자름),
-/// 경과 시간을 셀 시작 시각, 큰 그림(그림 주소 또는 Developer Portal에 올린 그림 키)과 그 풍선 글, 단추(최대 2개, 이름 32자까지, 다른 사람에게만 보임).
+/// Discord 활동 상태(Rich Presence의 <c>activity</c>): "앱 이름 하는 중"과 <see cref="Start"/>부터 지난 시간, 큰 그림(그림 주소 또는 Developer Portal에
+/// 올린 그림 키)과 그 풍선 글(128자까지 — 길면 잘림). 앱 이름은 Discord 애플리케이션 이름에서 온다.
 /// </summary>
-public sealed record DiscordActivity(
-    string? Details,
-    string? State,
-    DateTimeOffset? Start = null,
-    string? LargeImage = null,
-    string? LargeText = null,
-    IReadOnlyList<DiscordButton>? Buttons = null)
+public sealed record DiscordActivity(DateTimeOffset Start, string? LargeImage = null, string? LargeText = null)
 {
-    /// <summary>같은 활동인지(단추 목록은 내용으로 견줌) — 바뀌지 않은 활동을 다시 보내지 않으려고.</summary>
-    public bool SameAs(DiscordActivity? other)
-        => other is not null && Details == other.Details && State == other.State && Start == other.Start && LargeImage == other.LargeImage
-           && LargeText == other.LargeText && (Buttons ?? []).SequenceEqual(other.Buttons ?? []);
-
     /// <summary>Discord <c>SET_ACTIVITY</c>의 <c>activity</c> 객체.</summary>
     internal JsonObject ToJson()
     {
-        var o = new JsonObject();
-        if (Text(Details, 128) is { } details) o["details"] = details;
-        if (Text(State, 128) is { } state) o["state"] = state;
-        if (Start is { } start) o["timestamps"] = new JsonObject { ["start"] = start.ToUnixTimeSeconds() };
+        var o = new JsonObject { ["timestamps"] = new JsonObject { ["start"] = Start.ToUnixTimeSeconds() } };
         var assets = new JsonObject();
-        if (Text(LargeImage, 300) is { } image) assets["large_image"] = image;
-        if (Text(LargeText, 128) is { } text) assets["large_text"] = text;
+        if (!string.IsNullOrWhiteSpace(LargeImage)) assets["large_image"] = LargeImage;
+        // Discord는 2~128자만 받는다.
+        if (LargeText?.Trim() is { Length: >= 2 } text) assets["large_text"] = text.Length <= 128 ? text : text[..127] + "…";
         if (assets.Count > 0) o["assets"] = assets;
-        var buttons = new JsonArray();
-        foreach (var b in (Buttons ?? []).Take(2))
-            if (Text(b.Label, 32) is { } label && !string.IsNullOrWhiteSpace(b.Url)) buttons.Add(new JsonObject { ["label"] = label, ["url"] = b.Url });
-        if (buttons.Count > 0) o["buttons"] = buttons;
         return o;
     }
-
-    /// <summary>Discord가 받는 길이로: 비면 null, 1자면 공백을 붙여 2자, 길면 잘라 끝에 줄임표.</summary>
-    private static string? Text(string? value, int max)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return null;
-        value = value.Trim();
-        if (value.Length < 2) return value + " ";
-        return value.Length <= max ? value : value[..(max - 1)] + "…";
-    }
 }
-
-/// <summary>활동 상태의 단추 하나(누르면 <see cref="Url"/>을 엶).</summary>
-public sealed record DiscordButton(string Label, string Url);
 
 /// <summary>
 /// 이 컴퓨터에서 실행 중인 Discord 앱과의 로컬 RPC 연결 하나(Rich Presence). 인터넷이나 계정 정보는 쓰지 않고, Discord가 연

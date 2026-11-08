@@ -284,6 +284,10 @@ public sealed class AppSettings
     public bool UpdateCheck { get; set; } = true;
     /// <summary>"다음 업데이트까지 띄우지 않기"로 고른 버전(자동 확인에서 알리지 않음). null = 없음.</summary>
     public string? SkippedVersion { get; set; }
+    /// <summary>
+    /// Discord 활동 상태(Rich Presence, "Chickxel 하는 중"): 이 컴퓨터에서 실행 중인 Discord 앱에만 로컬로 알린다(<see cref="Chickxel.App.DiscordPresence"/>).
+    /// </summary>
+    public bool DiscordPresence { get; set; } = true;
 
     // 스크립트 효과
     /// <summary>

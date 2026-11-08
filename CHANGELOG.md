@@ -2,6 +2,13 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.108 (2026-11-08)
+### "Playing Chickxel" on Discord
+- While the Discord app is running on this computer, your profile shows "Playing Chickxel" with the chick picture and how long you've been at it. Nothing about your work, such as document names, is shown.
+- The app only tells the Discord app on this computer and sends nothing over the internet itself. Without Discord it does nothing, and it connects on its own when Discord starts later.
+- Turn it off under Edit > Preferences > General > **Discord**.
+- The guide's Preferences and privacy pages describe the option.
+
 ## v1.14.107 (2026-11-08)
 ### Upload to Gallery: choose whether others can download the picture
 - A new **Allow image download (PNG/GIF)** box in Upload to Gallery, on by default, decides whether the picture's page shows its PNG/GIF download button to visitors.

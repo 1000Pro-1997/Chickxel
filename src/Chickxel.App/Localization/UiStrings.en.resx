@@ -3631,6 +3631,9 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Level_HowTip" xml:space="preserve"><value>How to earn XP: gallery art +10 (+5 more with the editable .chickxel file, up to 3 a day), a newly published asset package +10 (one a day) and a new version +1 (once a day), each like from someone else +2, liking someone else's art or assets +1 (3 a day), a daily check-in (your first visit to the app or site each day) +10, and +1 for every hour the app is open while you're signed in. Days are UTC days. Deleting something you shared removes the XP it earned.</value></data>
   <data name="Level_CheckInStatus" xml:space="preserve"><value>Daily check-in +10 XP</value></data>
   <data name="Level_UpStatus" xml:space="preserve"><value>Level up! Lv {0}</value></data>
+  <data name="Prefs_Discord_Title" xml:space="preserve"><value>Discord</value></data>
+  <data name="Prefs_Discord_Show" xml:space="preserve"><value>Show activity on Discord ("Playing Chickxel")</value></data>
+  <data name="Prefs_Discord_Info" xml:space="preserve"><value>While the Discord app is running on this computer, your profile shows "Playing Chickxel" and how long you've been at it. Nothing about your documents is shown. The app only tells the Discord app on this computer and sends nothing over the internet itself. Nothing shows if "Share your detected activities" is off in Discord's Activity Privacy settings.</value></data>
   <data name="EffectMaker_Menu" xml:space="preserve"><value>Effect Maker…</value></data>
   <data name="EffectMaker_Title" xml:space="preserve"><value>Effect Maker</value></data>
   <data name="EffectMaker_TitleWith" xml:space="preserve"><value>Effect Maker - {0}</value></data>

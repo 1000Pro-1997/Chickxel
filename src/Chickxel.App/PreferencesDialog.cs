@@ -22,6 +22,7 @@ public sealed class PreferencesDialog : DialogBase
     private readonly CheckBox _autoSave;
     private readonly NumericUpDown _autoSaveDelay;
     private readonly CheckBox _updateCheck;
+    private readonly CheckBox _discord;
     private readonly IReadOnlyList<ShortcutCommand> _commands;
     private readonly Dictionary<string, List<KeyChord>> _keys;
     private readonly TextBox _search;
@@ -39,7 +40,7 @@ public sealed class PreferencesDialog : DialogBase
     /// <param name="history">남긴 실행취소 기록(지금 용량 표시·모두 지우기).</param>
     /// <param name="language">지금 화면 언어 코드.</param>
     public PreferencesDialog(string language, int undoSteps, bool historyEnabled, UndoHistoryPolicy historyPolicy, UndoHistoryKeeper history,
-        bool autoSave, int autoSaveDelay, TrashPolicy trashPolicy, bool updateCheck,
+        bool autoSave, int autoSaveDelay, TrashPolicy trashPolicy, bool updateCheck, bool discordPresence,
         IReadOnlyList<ShortcutCommand> commands, IReadOnlyDictionary<string, List<KeyChord>> keys,
         string? referencesFolder, bool showReferenceExamples, string? ffmpegPath, Action<Window> showAiStatus)
         : base(UiStrings.S_PreferencesDialog_PreferencesDialog_0B1C3F663F)
@@ -96,6 +97,7 @@ public sealed class PreferencesDialog : DialogBase
             ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_4B32B49831,AppInfo.VersionText)
             : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_80B1F80264,AppInfo.VersionText));
         updateNote.Foreground = AppTheme.DimTextBrush;
+        _discord = Ui.Check(UiStrings.Prefs_Discord_Show, discordPresence);
         const string languagePage = "language-change", makePage = "language-make";
         var general = Ui.Stack(
             Ui.Label(UiStrings.Language_Title, bold: true).HelpAt(languagePage, anchor: "Choosing a language"),
@@ -132,6 +134,8 @@ public sealed class PreferencesDialog : DialogBase
             Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_B4D135E19E, bold: true).HelpAt("start-update", anchor: "Clear this checkbox"),
             _updateCheck.HelpAt("start-update", anchor: "Clear this checkbox"),
             updateNote.HelpAt("start-update", anchor: "Clear this checkbox"),
+            Ui.Label(UiStrings.Prefs_Discord_Title, bold: true).HelpAt(page),
+            Ui.Row(_discord, Ui.InfoBadge(UiStrings.Prefs_Discord_Info)).HelpAt(page),
             Ui.Label(UiStrings.Prefs_ResetSettings_Title, bold: true).HelpAt(page, anchor: "Reset settings"),
             Ui.Row(Ui.Button(VectorIcon.Undo2, UiStrings.Prefs_ResetSettings_Button, (_, _) => RequestReset()),
                 Ui.InfoBadge(UiStrings.Prefs_ResetSettings_Info)).HelpAt(page, anchor: "Reset settings"));
@@ -382,6 +386,7 @@ public sealed class PreferencesDialog : DialogBase
     public int AutoSaveIdleSeconds => (int)_autoSaveDelay.NumValue();
     public TrashPolicy TrashPolicy => _trash.Policy;
     public bool UpdateCheck => _updateCheck.On();
+    public bool DiscordPresence => _discord.On();
     /// <summary>명령 Id → 정한 단축키(모든 명령).</summary>
     public IReadOnlyDictionary<string, List<KeyChord>> Keys => _keys;
 

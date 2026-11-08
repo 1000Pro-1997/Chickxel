@@ -1,5 +1,6 @@
 using Avalonia.Input.Platform;
 using Chickxel.App.PlayTest;
+using Chickxel.Core.Community;
 using Chickxel.Core.Edit;
 using Chickxel.App.Localization;
 using Chickxel.Core.IO;
@@ -96,6 +97,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private readonly GalleryButton _galleryButton;
     /// <summary>로그인한 채 켜 둔 시간 경험치(1분마다 세고 한 시간마다 서버에 알림).</summary>
     private readonly UptimeXp _uptimeXp;
+    /// <summary>Discord 활동 상태("Chickxel 하는 중", 켜 둔 시간은 앱을 켠 때부터 — <see cref="UpdateDiscord"/>).</summary>
+    private readonly DiscordPresence _discord = new();
+    private readonly DateTimeOffset _discordStart = DateTimeOffset.UtcNow;
 
     // 나눔 막대(Grid + GridSplitter): 고정되는 쪽의 열/행만 픽셀 크기, 나머지는 *.
     private readonly Grid _splitFiles, _splitPalette, _splitRight, _splitTimeline, _splitRightDock;
@@ -267,7 +271,11 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         Opened += (_, _) => OnShown();
         Closing += OnWindowClosing;
         _uptimeXp = new UptimeXp(ShowMessage);
-        Closed += (_, _) => _uptimeXp.Stop();
+        Closed += (_, _) =>
+        {
+            _uptimeXp.Stop();
+            _discord.Dispose();
+        };
         // Windows는 최대화할 때 WindowState가 바뀌기 전에 위치·크기 이벤트가 오므로 상태가 정해진 뒤에 기록한다.
         PositionChanged += (_, _) => Dispatcher.UIThread.Post(RememberNormalBounds);
         SizeChanged += (_, _) => Dispatcher.UIThread.Post(RememberNormalBounds);
@@ -1277,6 +1285,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _canvas.Focus();
         _updater.OnStartup();
         StartAccount();
+        UpdateDiscord();
         // 에셋 저장소를 열어 첫 실행의 예전 프리셋 migration을 끝내고, 손상된 상태 파일이 있으면 한 번 알린다.
         Dispatcher.UIThread.Post(() => AppAssets.ShowProblems(this), DispatcherPriority.Background);
         // OS가 넘긴 주소·패키지·프로젝트 파일은 시작을 마친 뒤에 처리한다(그 뒤에 온 것도 바로).
@@ -1297,6 +1306,15 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             ? UiStrings.Level_CheckInStatus + " · " + string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.Level_UpStatus, checkIn.Level)
             : UiStrings.Level_CheckInStatus);
     }
+
+    /// <summary>
+    /// Discord 활동 상태를 설정에 맞춘다: 켜져 있으면 "Chickxel 하는 중"과 앱을 켠 때부터 지난 시간(병아리 그림, 풍선 = 앱 버전) — 문서에 대한 것은 보내지 않는다.
+    /// 꺼져 있으면 지운다(<see cref="AppSettings.DiscordPresence"/>).
+    /// </summary>
+    private void UpdateDiscord()
+        => _discord.Show(_settings.DiscordPresence
+            ? new DiscordActivity(_discordStart, AppInfo.WebsiteUrl + "static/chickxel.png", "Chickxel " + AppInfo.VersionText)
+            : null);
 
     /// <summary>
     /// OS가 넘긴 일: 창을 앞으로 가져오고, 홈페이지 링크·패키지는 에셋 관리자에서, 프로젝트는 문서 탭에서 연다.
@@ -1963,7 +1981,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private void ShowPreferences()
     {
         var dlg = new PreferencesDialog(_settings.Language ?? UiLanguage.Current, _settings.UndoSteps, _settings.UndoHistoryEnabled, _settings.UndoHistoryPolicy, _history,
-            _settings.AutoSave, _settings.AutoSaveIdleSeconds, _settings.TrashPolicy, _settings.UpdateCheck,
+            _settings.AutoSave, _settings.AutoSaveIdleSeconds, _settings.TrashPolicy, _settings.UpdateCheck, _settings.DiscordPresence,
             _commands.Select(c => c.Info).ToList(), _commands.ToDictionary(c => c.Info.Id, c => c.Keys.ToList()),
             _settings.ReferencesFolder, _settings.ReferencesShowExamples, _settings.FfmpegPath, owner => ShowAiStatus(owner));
         var result = dlg.ShowDialog(this);
@@ -1988,6 +2006,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _history.Cleanup();
         _settings.TrashPolicy = dlg.TrashPolicy;
         _settings.UpdateCheck = dlg.UpdateCheck;
+        _settings.DiscordPresence = dlg.DiscordPresence;
+        UpdateDiscord();
         _settings.FfmpegPath = dlg.FfmpegPath;
         // 끄면 기다리던 자동 저장도 바로 멈춘다. 바꾼 시간은 다음 편집부터.
         _settings.AutoSave = dlg.AutoSave;

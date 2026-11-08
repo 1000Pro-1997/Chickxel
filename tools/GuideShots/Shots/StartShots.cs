@@ -244,6 +244,7 @@ internal static class StartShots
         k.Dialog(() => k.Command("편집/환경 설정…"), w =>
         {
             Scrub(w, Changelog().Heads[0].Version.ToString());
+            ShotKit.Get<CheckBox>(w, "_discord").IsChecked = true; // Discord 활동 상태는 기본 켬(샷은 설정을 꺼 둠)
             ShotKit.Pump(200);
             var check = ShotKit.Get<Control>(w, "_updateCheck");
             k.Save(w, marks: [Pad(check, w, 12)]);

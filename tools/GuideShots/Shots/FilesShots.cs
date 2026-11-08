@@ -104,8 +104,7 @@ internal static class FilesShots
         using (var ctx = target.CreateDrawingContext())
         {
             using (ctx.PushTransform(Matrix.CreateTranslation(margin, 0)))
-                typeof(ShotKit).GetMethod("DrawTitleBar", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
-                    .Invoke(null, [ctx, w.Title ?? "Chickxel", frame.PixelSize.Width]);
+                ShotKit.DrawTitleBar(ctx, w.Title ?? "Chickxel", frame.PixelSize.Width);
             ctx.DrawImage(frame, new Rect(margin, bar, frame.PixelSize.Width, frame.PixelSize.Height));
             ShotKit.DrawMarks(ctx, marks.Select(mk => mk.In(w).Translate(new Vector(margin, bar))), firstNumber,
                 new Rect(0, 0, size.Width, size.Height));
@@ -510,7 +509,9 @@ internal static class FilesShots
         MenuShot(k, m, 1, "편집/환경 설정", "files-settings", 1);
         Preferences(k, w =>
         {
-            // ②~⑥ 일반 탭: 실행취소 횟수, 실행취소 기록, 자동 저장, 앱 휴지통 보관.
+            // ②~⑦ 일반 탭: 실행취소 횟수, 실행취소 기록, 자동 저장, 앱 휴지통 보관, Discord 활동 상태.
+            // 샷은 Discord에 보내지 않게 설정을 꺼 두므로 체크만 기본값(켬)으로 보인다(창은 확인 없이 닫힘).
+            ShotKit.Get<CheckBox>(w, "_discord").IsChecked = true;
             var undo = ShotKit.Get<Control>(w, "_undo");
             var historyOn = ShotKit.Get<Control>(w, "_historyOn");
             var clear = Button(w, UiStrings.S_PreferencesDialog_PreferencesDialog_A127858673);
@@ -525,9 +526,10 @@ internal static class FilesShots
                 new Rect(history.X - 10, history.Y, history.Width + 10, history.Height),
                 Union(w, autoSave, delay).Inflate(new Thickness(10, 0, 0, 0)),
                 Lead(trash, w),
+                Lead(ShotKit.Get<Control>(w, "_discord"), w),
             ], 2);
 
-            // ⑦~⑩ 단축키 탭: 바꾸기·추가·없음·기본값, 검색("save"), JSON 내보내기·불러오기(글 순서).
+            // ⑧~⑪ 단축키 탭: 바꾸기·추가·없음·기본값, 검색("save"), JSON 내보내기·불러오기(글 순서).
             PrefsTab(w, 1);
             var search = ShotKit.Get<TextBox>(w, "_search");
             search.Text = "save";
@@ -543,14 +545,14 @@ internal static class FilesShots
                 rowButtons,
                 Lead(search, w, 14),
                 Union(w, export, import),
-            ], 7);
+            ], 8);
 
-            // ⑪ 다른 명령이 쓰는 키(Ctrl+S)를 저장한 내용으로 되돌리기에 주면 묻는 창.
+            // ⑫ 다른 명령이 쓰는 키(Ctrl+S)를 저장한 내용으로 되돌리기에 주면 묻는 창.
             var commands = ShotKit.Get<IReadOnlyList<ShortcutCommand>>(w, "_commands");
             var revert = commands.First(c => c.Id == "파일/저장한 내용으로 되돌리기");
             var ctrlS = commands.First(c => c.Id == "파일/저장(+ 시트 내보내기)").Defaults.ToList();
             k.Dialog(() => ShotKit.Call(w, "SetKeys", revert.Id, ctrlS), ask =>
-                k.Save(ask, name: "files-settings-4", marks: [Button(ask, UiStrings.S_Ui_MessageDialog_76C4BD0F9B)], firstNumber: 11));
+                k.Save(ask, name: "files-settings-4", marks: [Button(ask, UiStrings.S_Ui_MessageDialog_76C4BD0F9B)], firstNumber: 12));
         });
     }
 

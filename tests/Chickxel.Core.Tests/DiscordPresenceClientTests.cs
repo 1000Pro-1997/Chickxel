@@ -70,15 +70,14 @@ public sealed class DiscordPresenceClientTests
         Assert.NotNull(client);
 
         var start = DateTimeOffset.FromUnixTimeSeconds(1_800_000_000);
-        var activity = new DiscordActivity("Drawing pixel art", "64×104 · 4 frames", start, "https://chickxel.com/static/chickxel.png", "Chickxel 1.0",
-            [new DiscordButton("Get Chickxel", "https://chickxel.com"), new DiscordButton("Second", "https://chickxel.com/gallery"), new DiscordButton("Third", "https://x")]);
-        var setting = client!.SetActivityAsync(activity);
+        var setting = client!.SetActivityAsync(new DiscordActivity(start, "https://chickxel.com/static/chickxel.png", "Chickxel 1.0"));
         var (setOp, set) = await discord.ReadAsync();
         Assert.Equal((1, "SET_ACTIVITY", 4242), (setOp, set!["cmd"]!.GetValue<string>(), set["args"]!["pid"]!.GetValue<int>()));
-        var sent = set["args"]!["activity"]!;
-        Assert.Equal(("Drawing pixel art", "64×104 · 4 frames", 1_800_000_000L), (sent["details"]!.GetValue<string>(), sent["state"]!.GetValue<string>(), sent["timestamps"]!["start"]!.GetValue<long>()));
+        var sent = set["args"]!["activity"]!.AsObject();
+        // Only "playing" and the elapsed time with the picture: no text lines or buttons.
+        Assert.Equal(["timestamps", "assets"], sent.Select(p => p.Key));
+        Assert.Equal(1_800_000_000L, sent["timestamps"]!["start"]!.GetValue<long>());
         Assert.Equal(("https://chickxel.com/static/chickxel.png", "Chickxel 1.0"), (sent["assets"]!["large_image"]!.GetValue<string>(), sent["assets"]!["large_text"]!.GetValue<string>()));
-        Assert.Equal(["Get Chickxel", "Second"], sent["buttons"]!.AsArray().Select(b => b!["label"]!.GetValue<string>())); // Discord takes at most two
 
         // A ping before the answer gets a pong with the same body; the answer is matched by its nonce.
         await discord.WriteAsync(3, """{ "n": 7 }""");
@@ -108,14 +107,13 @@ public sealed class DiscordPresenceClientTests
     }
 
     [Fact]
-    public void Activity_Text_IsKeptWithinDiscordLimits()
+    public void Activity_PictureText_IsKeptWithinDiscordLimits()
     {
-        var json = new DiscordActivity("x", new string('a', 200), Buttons: [new DiscordButton(new string('b', 40), "https://chickxel.com"), new DiscordButton("No url", " ")]).ToJson();
-        Assert.Equal("x ", json["details"]!.GetValue<string>()); // at least 2 characters
-        Assert.Equal(128, json["state"]!.GetValue<string>().Length);
-        Assert.EndsWith("…", json["state"]!.GetValue<string>());
-        Assert.Equal(32, Assert.Single(json["buttons"]!.AsArray())!["label"]!.GetValue<string>().Length);
-        Assert.False(json.ContainsKey("assets"));
-        Assert.False(json.ContainsKey("timestamps"));
+        var start = DateTimeOffset.FromUnixTimeSeconds(1);
+        var text = new DiscordActivity(start, LargeText: new string('a', 200)).ToJson()["assets"]!["large_text"]!.GetValue<string>();
+        Assert.Equal(128, text.Length);
+        Assert.EndsWith("…", text);
+        // Shorter than Discord's 2-character minimum, or no picture at all: no assets.
+        Assert.False(new DiscordActivity(start, LargeText: "x").ToJson().ContainsKey("assets"));
     }
 }

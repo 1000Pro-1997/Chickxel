@@ -56,6 +56,8 @@ public sealed class ShotKit
         Environment.SetEnvironmentVariable(Platform.DataDirVariable, data);
         App.Settings = AppSettings.Load();
         App.Settings.Language = Language;
+        // 샷을 찍는 동안 이 컴퓨터의 Discord에 활동 상태를 보내지 않는다.
+        App.Settings.DiscordPresence = false;
         Chickxel.App.Localization.UiLanguage.Apply(Language);
     }
 

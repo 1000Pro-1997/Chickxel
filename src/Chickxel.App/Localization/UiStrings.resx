@@ -9436,6 +9436,9 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Level_HowTip" xml:space="preserve"><value>경험치 쌓는 법: 갤러리 그림 +10(편집용 .chickxel 파일을 같이 올리면 +5 더, 하루 3개까지 셈), 에셋 패키지 처음 공개 +10(하루 1개까지)·새 버전 +1(하루 1번까지), 다른 사람이 누른 좋아요 +2, 다른 사람 그림·에셋에 좋아요 누르기 +1(하루 3번까지), 하루 출석(그날 처음 앱이나 사이트에 들어오기) +10, 로그인한 채 앱을 켜 둔 한 시간마다 +1. 하루는 UTC 기준(한국 시간 오전 9시에 바뀜)이고, 올린 것을 지우면 그것으로 받은 경험치도 빠집니다.</value></data>
   <data name="Level_CheckInStatus" xml:space="preserve"><value>출석 +10 XP</value><comment>앱을 켤 때 하루 출석 경험치를 받았을 때 상태 표시줄.</comment></data>
   <data name="Level_UpStatus" xml:space="preserve"><value>레벨 업! Lv {0}</value><comment>0 = 새 레벨(앱을 켜 둔 시간 경험치로 올랐을 때 상태 표시줄).</comment></data>
+  <data name="Prefs_Discord_Title" xml:space="preserve"><value>Discord</value><comment>환경 설정 일반 탭의 묶음 제목.</comment></data>
+  <data name="Prefs_Discord_Show" xml:space="preserve"><value>Discord에 활동 상태 보이기("Chickxel 하는 중")</value></data>
+  <data name="Prefs_Discord_Info" xml:space="preserve"><value>이 컴퓨터에서 Discord 앱이 켜져 있으면 프로필에 "Chickxel 하는 중"과 몇 분째 하는 중인지가 보입니다. 문서에 대한 것은 아무것도 보이지 않습니다. 앱은 이 컴퓨터의 Discord 앱에만 알리고 인터넷으로 따로 보내지 않습니다. Discord 설정 > 활동 개인정보에서 "활동 상태 표시"가 꺼져 있으면 보이지 않습니다.</value></data>
   <data name="EffectMaker_Menu" xml:space="preserve"><value>효과 만들기…</value></data>
   <data name="EffectMaker_Title" xml:space="preserve"><value>효과 만들기</value></data>
   <data name="EffectMaker_TitleWith" xml:space="preserve"><value>효과 만들기 - {0}</value><comment>0 = 고치는 효과 이름(저장하지 않았으면 끝에 *).</comment></data>
