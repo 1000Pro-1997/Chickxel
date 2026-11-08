@@ -9,7 +9,7 @@ public sealed record NumberAction(string Label, Action Run, KeyGesture? Gesture 
 
 /// <summary>
 /// 모든 숫자 상자(<see cref="NumericUpDown"/>) 공통: 입력 중이 아닐 때 우클릭하면 목록이 떠서 골라 넣는다. 위에서부터
-/// 특수 항목(<see cref="NumberAction"/>, 예: 화면에 맞추기) → <b>최근 값</b> 하나(이 종류 상자에서 마지막으로 정한 값) → 예시 값(지금 값 ●).
+/// 특수 항목(<see cref="NumberAction"/>, 예: 화면에 맞추기) → <b>최근 값</b> 하나(이 종류 상자에서 마지막으로 바꾸기 전 값, 지금 값과 같으면 숨김) → 예시 값(지금 값 ●).
 /// 값에는 단위(<see cref="Unit"/>: °, %, px, ms …)를 붙여 보인다. 입력 중(글자 커서가 있는 상자)이면 보통 글상자 메뉴.
 /// 값 목록은 상자마다 <see cref="Presets(NumericUpDown, decimal[])"/>로 정하고, 정하지 않으면 범위로 만든다(<see cref="Generate"/>).
 /// <see cref="NumberScrub.Install"/>이 모든 숫자 상자에 붙인다.
@@ -20,7 +20,7 @@ public static class NumberPresets
     private static readonly ConditionalWeakTable<NumericUpDown, string> Units = new();
     /// <summary>최근 값을 함께 쓰는 상자 묶음 이름(정하지 않으면 단위·범위로).</summary>
     private static readonly ConditionalWeakTable<NumericUpDown, string> Keys = new();
-    /// <summary>묶음마다 마지막으로 정한 값(앱을 켜 둔 동안).</summary>
+    /// <summary>묶음마다 사용자가 마지막으로 바꾸기 전 값(앱을 켜 둔 동안).</summary>
     private static readonly Dictionary<string, decimal> Recent = new();
     private static readonly Cursor MenuCursor = new(StandardCursorType.Arrow);
 
@@ -65,10 +65,10 @@ public static class NumberPresets
     private static string KeyOf(NumericUpDown n)
         => Keys.TryGetValue(n, out var k) ? k : $"{(Units.TryGetValue(n, out var u) ? u : "")}:{n.Minimum}~{n.Maximum}";
 
-    /// <summary>사용자가 정한 값을 최근 값으로 기억한다(메뉴에서 고름·입력을 마침·끌기를 마침).</summary>
-    internal static void Remember(NumericUpDown n)
+    /// <summary>사용자가 값을 바꾸면(메뉴에서 고름·입력을 마침·끌기를 마침) 바꾸기 전 값 <paramref name="before"/>를 최근 값으로 기억한다. 그대로면 두고 넘어간다.</summary>
+    internal static void Remember(NumericUpDown n, decimal? before)
     {
-        if (n.Value is { } v) Recent[KeyOf(n)] = v;
+        if (before is { } b && n.Value != b) Recent[KeyOf(n)] = b;
     }
 
     /// <summary>숫자 상자 우클릭(터널): 입력 중이 아니면 특수 항목·최근 값·예시 값 목록을 띄운다.</summary>
@@ -87,10 +87,11 @@ public static class NumberPresets
         string Label(decimal v) => spec?.Format?.Invoke(v) ?? Format(n, v);
         void Pick(decimal value)
         {
+            var before = n.Value;
             n.Value = value;
-            Remember(n);
+            Remember(n, before);
         }
-        if (Recent.TryGetValue(KeyOf(n), out var recent) && recent >= n.Minimum && recent <= n.Maximum)
+        if (Recent.TryGetValue(KeyOf(n), out var recent) && recent != n.Value && recent >= n.Minimum && recent <= n.Maximum)
         {
             if (items.Count > 0) items.Add(new Separator());
             var item = new MenuItem { Header = new TextBlock { Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_NumberPresets_OnContextRequested_246AFAFD23,Label(recent)), HorizontalAlignment = HorizontalAlignment.Left } };

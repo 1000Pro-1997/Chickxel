@@ -680,7 +680,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             DocCmd("색 바꾸기…", MainStrings.Menu_Edit_ReplaceColor_119, ReplaceColor, "Ctrl+Alt+R", KeyScope.NotInText, (Key.R, Ctrl | Alt)),
             new Separator(),
             DocCmd("캔버스 크기…", MainStrings.Menu_Edit_BeginCanvasResize_121, BeginCanvasResize, "Ctrl+Alt+C", KeyScope.Global, (Key.C, Ctrl | Alt)),
-            DocCmd("레이어 크기…", MainStrings.Menu_Edit_BeginLayerResize, BeginLayerResize, "Ctrl+Shift+C", KeyScope.NotInText, (Key.C, Ctrl | Shift)),
+            DocCmd("레이어 크기…", MainStrings.Menu_Edit_BeginLayerResize, BeginLayerTransform, "Ctrl+Shift+C", KeyScope.NotInText, (Key.C, Ctrl | Shift)),
             DocCmd("캔버스 전체 좌우 뒤집기(모든 프레임)", MainStrings.Menu_Edit_Structural_123, () => _ctx.Structural(() => _ctx.Project!.FlipCanvasHorizontal())),
             DocCmd("캔버스 전체 상하 뒤집기(모든 프레임)", MainStrings.Menu_Edit_Structural_125, () => _ctx.Structural(() => _ctx.Project!.FlipCanvasVertical())),
             DocCmd("이미지에서 팔레트 만들기", MainStrings.Menu_Edit_Command_127, _colors.PaletteFromImage),
@@ -1048,14 +1048,12 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             _canvas.FitToWindow();
             ShowMessage(message);
         };
-        // 레이어 크기 모드를 적용하면 캔버스는 그대로라 화면은 두고 알리기만 한다.
-        _ctx.LayerResized += (_, message) => ShowMessage(message);
         _toolOptions.StatusMessage += (_, message) => ShowMessage(message);
-        // 레이어 크기 모드가 끝나면(적용·취소) 들어가기 전 보기로 되돌린다(같은 문서일 때만).
-        _ctx.CanvasResizeChanged += (_, _) =>
+        // 레이어 전체 변형이 끝나면(적용·취소) 들어가기 전 보기로 되돌린다(같은 문서일 때만).
+        _ctx.TransformChanged += (_, _) =>
         {
-            if (_ctx.IsCanvasResizing || _viewBeforeLayerResize is not { } before) return;
-            _viewBeforeLayerResize = null;
+            if (_ctx.IsTransforming || _viewBeforeLayerTransform is not { } before) return;
+            _viewBeforeLayerTransform = null;
             if (ReferenceEquals(_ctx.Project, before.Project)) _canvas.RestoreView(before.View);
         };
 
@@ -2899,9 +2897,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             return true;
         }
         if (!_ctx.IsCanvasResizing) return false;
-        bool layer = _ctx.CanvasResizeLayer is not null;
         _ctx.CancelCanvasResize();
-        ShowMessage(layer ? MainStrings.Message_LayerResizeCanceled : MainStrings.Message_311);
+        ShowMessage(MainStrings.Message_311);
         return true;
     }
 
@@ -3072,12 +3069,12 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     }
 
     /// <summary>
-    /// 변형 모드(Ctrl+T): 선택 영역(없으면 현재 셀의 칠한 픽셀 전체)을 손잡이로 회전·크기·옮기기. Enter 적용, Esc·Ctrl+Z 취소.
+    /// 지금 셀 변형(Ctrl+T, 파란 상자): 선택 영역(없으면 현재 셀의 칠한 픽셀 전체)을 손잡이로 회전·크기·옮기기, Ctrl+손잡이 = 여백. Enter 적용, Esc·Ctrl+Z 취소.
     /// 타임라인에서 셀 여러 칸(프레임·레이어 선택 포함)을 골라 두었으면 그 셀들을 모두 같은 변형으로 함께 바꾼다.
     /// </summary>
     private void BeginTransform()
     {
-        if (_ctx.BeginTransform() is { } error)
+        if (_ctx.BeginTransform(wholeLayer: false) is { } error)
         {
             ShowMessage(error);
             return;
@@ -3171,28 +3168,32 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     }
 
     /// <summary>
-    /// 레이어 크기 모드(Ctrl+Shift+C): 현재 레이어(일반 레이어는 모든 프레임의 칠한 픽셀을 감싸는 자리, 부위는 부위 영역)를 캔버스 크기 모드와 같은
-    /// 손잡이·숫자로 늘이거나 줄이고 옮긴다. 캔버스와 다른 레이어는 그대로. Enter·확인 = 적용(그 레이어의 모든 프레임), Esc·Ctrl+Z = 취소.
+    /// 레이어 전체 변형(Ctrl+Shift+C, 주황 상자): 지금 레이어의 모든 프레임(부위는 모든 스킨)을 같은 손잡이로 바꾼다 — 선택 영역이 있으면 그 자리만, 회전은 프레임마다
+    /// 그 프레임의 피벗을 중심으로. 같은 레이어의 다른 프레임으로 가도 이어지고 다른 레이어를 고르면 취소된다. Enter·확인 = 적용, Esc·Ctrl+Z = 취소.
     /// </summary>
-    private void BeginLayerResize()
+    private void BeginLayerTransform()
     {
-        if (_ctx.BeginLayerResize() is { } error)
+        bool already = _ctx.IsTransforming;
+        if (_ctx.BeginTransform(wholeLayer: true) is { } error)
         {
             ShowMessage(error);
             return;
         }
-        ShowMessage(MainStrings.Message_LayerResize);
-        // 레이어 자리를 화면에 크게(손잡이를 끌 여백을 두고) 보인다. 끝나면 지금 보기로 되돌린다(이미 모드였으면 그대로).
-        if (_viewBeforeLayerResize is null && _ctx.CanvasResizeLayer is not null)
+        ShowMessage(MainStrings.Message_LayerTransform);
+        // 상자를 화면에 크게(손잡이를 끌 여백을 두고) 보인다. 끝나면 지금 보기로 되돌린다(이미 변형 중이었으면 그대로).
+        if (!already && _ctx.IsLayerTransform && _ctx.TransformBox is { } box)
         {
-            _viewBeforeLayerResize = (_ctx.Project!, _canvas.View);
-            _canvas.FitToRect(_ctx.LayerResizeFrom);
+            _viewBeforeLayerTransform = (_ctx.Project!, _canvas.View);
+            var at = _ctx.CurrentPart is { } part ? _ctx.Project!.GetPartOffset(part, _ctx.CurrentFrame) : System.Drawing.Point.Empty;
+            var r = box.Bounds;
+            r.Offset(at);
+            _canvas.FitToRect(r);
         }
         _canvas.Focus();
     }
 
-    /// <summary>레이어 크기 모드에 들어가기 전의 문서와 캔버스 보기(모드가 끝나면 되돌림). 모드가 아니면 null.</summary>
-    private (SpriteProject Project, CanvasView View)? _viewBeforeLayerResize;
+    /// <summary>레이어 전체 변형에 들어가기 전의 문서와 캔버스 보기(변형이 끝나면 되돌림). 아니면 null.</summary>
+    private (SpriteProject Project, CanvasView View)? _viewBeforeLayerTransform;
 
     // ───────────── AI 채팅(Claude·Codex, AI 도구 호스트) ─────────────
 

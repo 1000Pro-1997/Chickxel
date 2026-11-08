@@ -91,59 +91,73 @@ public sealed class FreeTransform
 
     /// <param name="image">떼어 낸 픽셀(크기 = <paramref name="region"/> 사각형 크기, 모양 밖은 무시).</param>
     /// <param name="region">원본 영역(캔버스 좌표).</param>
-    public FreeTransform(PixelImage image, PixelMask region)
+    public FreeTransform(PixelImage image, PixelMask region) : this(region, CheckSize(image, region).Clone())
+    {
+    }
+
+    /// <summary>이 원본만 쓰는 그림을 복사하지 않고 담는다.</summary>
+    private FreeTransform(PixelMask region, PixelImage image)
+    {
+        _image = image;
+        _region = region;
+    }
+
+    /// <summary>
+    /// 이미 따로 만든 그림을 복사하지 않고 원본으로 삼는다(만든 쪽은 더 고치지 않는다). 크기가 영역 사각형과 다르면 <see cref="ArgumentException"/>.
+    /// </summary>
+    public static FreeTransform Own(PixelImage image, PixelMask region) => new(region, CheckSize(image, region));
+
+    private static PixelImage CheckSize(PixelImage image, PixelMask region)
     {
         if (region.Bounds.Width != image.Width || region.Bounds.Height != image.Height)
             throw new ArgumentException(Chickxel.Core.Localization.DomainStrings.Transform_RegionSizeMismatch, nameof(image));
-        _image = image.Clone();
-        _region = region;
+        return image;
     }
 
     /// <summary>원본 영역을 감싸는 사각형(캔버스 좌표).</summary>
     public Rectangle SourceBounds => _region.Bounds;
 
-    /// <summary>원본 그대로 두는 값.</summary>
-    public TransformParams Identity => TransformParams.Identity(SourceBounds);
+    /// <summary>원본 사각형의 변형 상자(손잡이·값의 대응).</summary>
+    public TransformBox Box => new(SourceBounds);
 
-    /// <summary>원본 중심(연속 좌표).</summary>
-    public (double X, double Y) SourceCenter => (SourceBounds.X + SourceBounds.Width / 2.0, SourceBounds.Y + SourceBounds.Height / 2.0);
-
-    /// <summary>원본 좌표(연속) → 변형한 캔버스 좌표.</summary>
-    public (double X, double Y) Map(TransformParams p, double x, double y)
+    /// <summary>
+    /// 원본 사각형을 <paramref name="bounds"/>로 바꾼 새 원본(여백): 좁히면 밖 픽셀을 버리고, 넓히면 <paramref name="extendEdges"/>면 가장자리 픽셀(과 모양)을
+    /// 바깥으로 복사해 채우고 아니면 비워 둔다. 원래 픽셀은 같은 좌표에 그대로 있다.
+    /// </summary>
+    public FreeTransform Reframe(Rectangle bounds, bool extendEdges)
     {
-        var (sx0, sy0) = SourceCenter;
-        double lx = (x - sx0) * p.ScaleX, ly = (y - sy0) * p.ScaleY;
-        var (sin, cos) = p.SinCos();
-        return (p.CenterX + lx * cos - ly * sin, p.CenterY + lx * sin + ly * cos);
-    }
-
-    /// <summary>캔버스 좌표 → 원본 좌표(연속, <see cref="Map"/>의 반대). 배율이 0이면 NaN.</summary>
-    public (double X, double Y) Unmap(TransformParams p, double x, double y)
-    {
-        var (sx0, sy0) = SourceCenter;
-        double dx = x - p.CenterX, dy = y - p.CenterY;
-        var (sin, cos) = p.SinCos();
-        double lx = dx * cos + dy * sin, ly = -dx * sin + dy * cos;
-        return (sx0 + lx / p.ScaleX, sy0 + ly / p.ScaleY);
+        if (bounds == SourceBounds) return this;
+        var (image, region) = Fit(_image, _region, bounds, extendEdges);
+        return Own(image, region);
     }
 
     /// <summary>
-    /// 다른 원본 <paramref name="other"/>을 이 변형의 값 <paramref name="p"/>와 똑같은 행렬(같은 각도·배율, 같은 자리로 옮김)로 그리는 값.
-    /// <paramref name="other"/>의 좌표 + (<paramref name="dx"/>, <paramref name="dy"/>) = 이 변형의 좌표(다른 레이어·부위의 셀을 기준 공간에 맞출 때).
-    /// 원본 중심이 달라도 결과는 같은 자리를 기준으로 돌고 커진다. <paramref name="other"/>가 자신이고 차이가 0이면 <paramref name="p"/> 그대로.
+    /// <paramref name="image"/>(크기 = <paramref name="region"/> 사각형)를 <paramref name="bounds"/> 사각형에 맞춘 그림과 모양: 겹치는 칸은 그대로, 넓힌 칸은
+    /// <paramref name="extendEdges"/>면 가장 가까운 가장자리 칸(색과 모양)을 복사하고 아니면 비운다. 빈 원본이면 모두 빈 칸.
     /// </summary>
-    public TransformParams ParamsFor(FreeTransform other, TransformParams p, double dx = 0, double dy = 0)
+    public static (PixelImage Image, PixelMask Region) Fit(PixelImage image, PixelMask region, Rectangle bounds, bool extendEdges)
     {
-        var (ox, oy) = other.SourceCenter;
-        var (cx, cy) = Map(p, ox + dx, oy + dy);
-        return p with { CenterX = cx - dx, CenterY = cy - dy };
-    }
-
-    /// <summary>변형한 원본 사각형의 네 꼭짓점(캔버스 좌표): 원본의 왼쪽 위, 오른쪽 위, 오른쪽 아래, 왼쪽 아래 순.</summary>
-    public (double X, double Y)[] Corners(TransformParams p)
-    {
-        var r = SourceBounds;
-        return [Map(p, r.Left, r.Top), Map(p, r.Right, r.Top), Map(p, r.Right, r.Bottom), Map(p, r.Left, r.Bottom)];
+        var src = region.Bounds;
+        var dst = new PixelImage(bounds.Width, bounds.Height);
+        var bits = new bool[bounds.Width * bounds.Height];
+        bool all = true;
+        bool empty = src.Width <= 0 || src.Height <= 0;
+        for (int y = 0; y < bounds.Height; y++)
+            for (int x = 0; x < bounds.Width; x++)
+            {
+                int cx = bounds.X + x, cy = bounds.Y + y;
+                if (!empty && extendEdges)
+                {
+                    cx = Math.Clamp(cx, src.Left, src.Right - 1);
+                    cy = Math.Clamp(cy, src.Top, src.Bottom - 1);
+                }
+                bool inside = !empty && region.Contains(cx, cy);
+                int i = y * bounds.Width + x;
+                bits[i] = inside;
+                all &= inside;
+                if (inside) dst.Pixels[i] = image.Pixels[(cy - src.Y) * src.Width + (cx - src.X)];
+            }
+        return (dst, all ? new PixelMask(bounds) : new PixelMask(bounds, bits));
     }
 
     /// <summary>
@@ -153,12 +167,13 @@ public sealed class FreeTransform
     public TransformResult Render(TransformParams p, ResampleMode mode)
     {
         var src = SourceBounds;
+        var box = Box;
         int w = src.Width, h = src.Height;
         bool rotSprite = mode == ResampleMode.RotSprite && !p.IsAxisAligned && (long)w * h <= MaxRotSpriteArea;
         if (rotSprite) EnsureUpscaled();
 
         // 변형한 사각형을 감싸는 대상 픽셀 범위
-        var corners = Corners(p);
+        var corners = box.Corners(p);
         double minX = corners.Min(c => c.X), maxX = corners.Max(c => c.X);
         double minY = corners.Min(c => c.Y), maxY = corners.Max(c => c.Y);
         if (!double.IsFinite(minX + maxX + minY + maxY)) return EmptyResult(p);
@@ -170,7 +185,7 @@ public sealed class FreeTransform
         var colors = new Color32[bw * bh];
         var bits = new bool[bw * bh];
         int minOx = int.MaxValue, minOy = int.MaxValue, maxOx = -1, maxOy = -1;
-        var (sx0, sy0) = SourceCenter;
+        var (sx0, sy0) = box.Center;
         var (sin, cos) = p.SinCos();
         double isx = 1 / p.ScaleX, isy = 1 / p.ScaleY;
         int w8 = w * 8, h8 = h * 8;

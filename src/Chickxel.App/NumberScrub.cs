@@ -31,6 +31,8 @@ public static class NumberScrub
         public PixelPoint Start, Last;
         public double Pixels;
         public decimal BaseValue;
+        /// <summary>누른 순간의 값(끌기·단추가 바꾸기 전 — 최근 값으로 기억).</summary>
+        public decimal? PressValue;
         public KeyModifiers Mods;
         public TextBox? Text;
         public SpinButtons? Buttons;
@@ -75,11 +77,12 @@ public static class NumberScrub
                         System.Globalization.CultureInfo.CurrentCulture)?.ToString();
                     if (enter) editingValue = n.Value;
                 }
-                text.GotFocus += (_, _) => editingValue = n.Value;
+                decimal? focusValue = n.Value;
+                text.GotFocus += (_, _) => editingValue = focusValue = n.Value;
                 text.LostFocus += (_, _) =>
                 {
                     CommitExpression(false);
-                    NumberPresets.Remember(n);
+                    NumberPresets.Remember(n, focusValue);
                 };
                 text.KeyDown += (_, e) =>
                 {
@@ -125,6 +128,7 @@ public static class NumberScrub
         s.Start = s.Last = ScreenPoint(n, e);
         s.Pixels = 0;
         s.BaseValue = n.Value ?? n.Minimum;
+        s.PressValue = n.Value;
         s.Mods = e.KeyModifiers;
         e.Pointer.Capture(n);
         e.Handled = true;
@@ -191,14 +195,14 @@ public static class NumberScrub
         if (scrubbed)
         {
             Ended?.Invoke(null, n);
-            NumberPresets.Remember(n);
+            NumberPresets.Remember(n, s.PressValue);
             return;
         }
         // 끌지 않고 단추를 뗌: 한 칸.
         if (spin != 0)
         {
             Step(n, spin, e.KeyModifiers);
-            NumberPresets.Remember(n);
+            NumberPresets.Remember(n, s.PressValue);
             return;
         }
         // 숫자 칸 클릭: 글자 입력.
@@ -214,7 +218,7 @@ public static class NumberScrub
         if (sender is not NumericUpDown n || !States.TryGetValue(n, out var s) || !s.Pressed) return;
         bool scrubbed = s.Scrubbing;
         Reset(s);
-        if (scrubbed) { Ended?.Invoke(null, n); NumberPresets.Remember(n); }
+        if (scrubbed) { Ended?.Invoke(null, n); NumberPresets.Remember(n, s.PressValue); }
     }
 
     private static void Reset(State s)

@@ -150,8 +150,6 @@
   <data name="Project_AutoLayout" xml:space="preserve"><value>Auto layout</value></data>
   <data name="Project_AutoLayoutSettings" xml:space="preserve"><value>Auto layout settings</value></data>
   <data name="Project_ResizePart" xml:space="preserve"><value>Part size</value></data>
-  <data name="Project_LayerSize" xml:space="preserve"><value>Layer size</value></data>
-  <data name="Project_LayerSizeNotPartRect" xml:space="preserve"><value>A part's original rectangle must be its part area.</value></data>
   <data name="Project_LayerPivot" xml:space="preserve"><value>Layer pivot</value></data>
   <data name="Project_LayerFramePivot" xml:space="preserve"><value>Layer frame pivot</value></data>
   <data name="Project_PivotLayer" xml:space="preserve"><value>Pivot representative layer</value></data>

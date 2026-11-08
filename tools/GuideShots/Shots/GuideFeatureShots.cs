@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Input;
 using Chickxel.App;
+using Chickxel.App.Localization;
 using Chickxel.Core.Model;
 using Chickxel.Core.Effects;
 using static GuideShots.ScreenDemo;
@@ -48,18 +49,20 @@ internal static class GuideFeatureShots
         var m = Demo(k, group: false);
         k.Command("레이어 크기…");
         k.Settle(400);
-        var from = Ctx(m).LayerResizeFrom;
-        if (from.IsEmpty) throw new InvalidOperationException("layer resize was not entered");
-        // Reducing the layer area clips the picture; the clipped pixels remain dimmed until Apply.
+        var ctx = Ctx(m);
+        if (!ctx.IsLayerTransform || ctx.TransformBox is not { } box) throw new InvalidOperationException("layer transform was not entered");
+        // Narrowing the box (Ctrl+handle = margin) crops the picture; the cropped pixels remain dimmed until Apply.
+        var from = box.Bounds;
         var area = new System.Drawing.Rectangle(from.X + 5, from.Y + 4, from.Width - 10, from.Height - 12);
-        Ctx(m).SetLayerResize(area, from);
+        ctx.SetTransformBox(area);
         k.Settle(350);
         var opt = Options(m);
         var border = (Point)ShotKit.Call(Canvas(m), "ImageToScreen", (double)area.X, (double)area.Y)!;
         var handle = Canvas(m).TranslatePoint(border, m)!.Value;
         var crop = R(m, Canvas(m)).Union(R(m, opt)).Intersect(new Rect(m.ClientSize));
-        var flip = (Control)ShotKit.Get<Control>(opt, "_crFlipH").Parent!;
-        k.Save(m, crop: crop, marks: [new Rect(handle.X - 17, handle.Y - 17, 34, 34), R(m, ShotKit.Get<Control>(opt, "_canvasResizeBox")), R(m, flip)]);
+        var group = ShotKit.Get<Control>(opt, "_transformBox");
+        var flip = ShotKit.FindText(group, UiStrings.CanvasResize_Flip, ancestorControl: true);
+        k.Save(m, crop: crop, marks: [new Rect(handle.X - 17, handle.Y - 17, 34, 34), R(m, group), flip]);
     }
 
     [Shot("screen-effect-dock")]

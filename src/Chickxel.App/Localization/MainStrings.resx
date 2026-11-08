@@ -682,7 +682,7 @@
     <value>캔버스 회전(모든 프레임)</value>
   </data>
   <data name="Message_325" xml:space="preserve">
-    <value>변형: 안쪽 = 옮기기, 손잡이 = 크기, 바깥 = 회전 — Enter 적용, Esc 취소</value>
+    <value>변형(지금 셀, 파란 상자): 안쪽 = 옮기기, 손잡이 = 크기, Ctrl+손잡이 = 여백, 바깥 = 회전 — Enter 적용, Esc 취소</value>
   </data>
   <data name="Message_326" xml:space="preserve">
     <value>현재 레이어가 잠겨 있습니다.</value>
@@ -1124,9 +1124,8 @@
   <data name="Shortcut_ShapeLine" xml:space="preserve"><value>도형: 선</value><comment>단축키 이름: 도형 도구를 선 모양으로 고름(L)</comment></data>
   <data name="Tool_Text_Name" xml:space="preserve"><value>글씨</value><comment>도구 이름: 캔버스를 눌러 글씨 레이어(글씨 효과가 붙은 빈 레이어)를 만드는 글씨 도구</comment></data>
   <data name="Tool_Text_Hint" xml:space="preserve"><value>드래그: 글상자 · 클릭: 한 줄 글씨 · 글씨 위 클릭: 고치기 · Enter: 줄 바꿈 · Esc / Ctrl+Enter / 바깥 클릭: 마침 · 크기·굵게·글꼴은 도구 설정에서</value><comment>글씨 도구 상태 줄 안내</comment></data>
-  <data name="Menu_Edit_BeginLayerResize" xml:space="preserve"><value>레이어 크기…</value><comment>편집 메뉴: 지금 레이어만 크기·자리 바꾸기(캔버스는 그대로)</comment></data>
-  <data name="Message_LayerResize" xml:space="preserve"><value>레이어 크기: 손잡이 = 레이어 자리(밖은 잘림), Ctrl+손잡이 = 그림 크기도 함께, Shift 비율 유지, Alt 가운데 기준, 레이어 안쪽 = 옮기기 — Enter 확인, Esc 취소</value></data>
-  <data name="Message_LayerResizeCanceled" xml:space="preserve"><value>레이어 크기 취소</value></data>
+  <data name="Menu_Edit_BeginLayerResize" xml:space="preserve"><value>레이어 크기…</value><comment>편집 메뉴: 지금 레이어의 모든 프레임을 회전·크기·옮기기(레이어 전체 변형, 캔버스는 그대로)</comment></data>
+  <data name="Message_LayerTransform" xml:space="preserve"><value>레이어 전체 변형(주황 상자, 모든 프레임): 안쪽 = 옮기기, 손잡이 = 크기, Ctrl+손잡이 = 여백, 바깥 = 회전(프레임마다 그 피벗 기준) — 다른 프레임을 눌러도 이어짐, Enter 적용, Esc 취소</value></data>
   <data name="Ui_CanvasEffects" xml:space="preserve"><value>효과</value><comment>위 막대 보기 단추: 캔버스에 레이어 효과 보기</comment></data>
   <data name="Ui_CanvasEffectsTip" xml:space="preserve"><value>캔버스에 레이어 효과 보기 (Ctrl+Shift+E) · 끄면 고칠 그림 그대로 보임(미리보기·타임라인·내보내기는 그대로)</value></data>
   <data name="Menu_View_CanvasEffects" xml:space="preserve"><value>캔버스에 효과 보기</value><comment>보기 메뉴(체크): 끄면 캔버스에 효과 없는 그림</comment></data>

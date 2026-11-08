@@ -139,31 +139,33 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
     private readonly ComboBox _pivotLayer;
     private readonly StackPanel _pivotLayerRow;
 
-    // 변형 모드
+    // 변형 모드(Ctrl+T 지금 셀 · Ctrl+Shift+C 레이어 전체 — 제목·설명만 바뀜)
     private readonly Border _transformBox;
-    private readonly NumericUpDown _tfAngle, _tfScaleX, _tfScaleY, _tfX, _tfY;
+    private readonly NumericUpDown _tfAngle, _tfScaleX, _tfScaleY, _tfX, _tfY, _tfBoxWidth, _tfBoxHeight;
     private readonly ComboBox _tfResample;
     private readonly TextBlock _tfInfo;
+    /// <summary>9-slice로 늘리기(레이어 전체 변형에서 테두리가 있는 부위를 선택 없이 바꿀 때만 보임 — 캔버스 크기 모드와 같은 설정).</summary>
+    private readonly CheckBox _tfSlice;
+    private readonly ComboBox _tfSliceFill;
+    private readonly StackPanel _tfSliceRow;
+    private readonly TextBlock _tfTitle;
+    private readonly Control _tfHelp;
 
-    // 캔버스 크기 모드(레이어 크기 모드도 같은 묶음 — 캔버스 줄·9-slice 줄을 숨기고 제목·설명을 바꿈)
+    // 캔버스 크기 모드
     private readonly Border _canvasResizeBox;
     private readonly NumericUpDown _crWidth, _crHeight, _crImageWidth, _crImageHeight, _crX, _crY;
     private readonly TextBlock _crWidthPercent, _crHeightPercent;
     private readonly CheckBox _crKeepRatio, _crFromCenter, _crSlice;
     private readonly ComboBox _crSliceFill;
     private readonly AnchorPicker _crAnchor = new();
-    private readonly StackPanel _crCanvasRow, _crSliceRow;
-    /// <summary>캔버스 크기 줄 앞 글(레이어 크기 모드에서는 "레이어 가로" — 그 줄이 적용 뒤 레이어 자리 크기).</summary>
-    private readonly TextBlock _crCanvasLabel;
-    /// <summary>특수 비율 단추(캔버스 크기 모드만 — 레이어 크기 모드에서는 숨김).</summary>
+    private readonly StackPanel _crSliceRow;
+    /// <summary>특수 비율 단추.</summary>
     private readonly Button _crRatio;
-    /// <summary>캔버스·레이어 크기 모드의 좌우·상하 뒤집기 단추(바로 적용 — 캔버스 모드면 캔버스 전체, 레이어 모드면 그 레이어).</summary>
+    /// <summary>캔버스 크기 모드의 좌우·상하 뒤집기 단추(바로 적용 — 캔버스 전체).</summary>
     private readonly Button _crFlipH, _crFlipV;
 
     /// <summary>상태 표시줄에 보일 글(뒤집기 단추 결과 등).</summary>
     public event EventHandler<string>? StatusMessage;
-    private readonly TextBlock _crTitle;
-    private readonly Control _crInfo;
     private readonly Button _crApply;
 
     // 타임라인에서 고른 효과(하나만 골랐을 때): 도구 설정 아래 "효과" 제목 줄(접고 폄)과 그 효과 이름의 묶음 상자
@@ -516,7 +518,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
 
         _hint = Ui.InfoBadge("");
 
-        // ── 변형 모드(Ctrl+T): 숫자는 캔버스 손잡이와 함께 움직인다.
+        // ── 변형 모드(Ctrl+T 지금 셀 · Ctrl+Shift+C 레이어 전체): 숫자는 캔버스 손잡이와 함께 움직인다.
         _tfAngle = TransformNum(-180, 180, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_DF32263ADE,
             v => _ctx.SetTransformParams(_ctx.RotatedAboutPivot(_ctx.TransformParams, v)))
             .Presets(-180, -135, -90, -45, -30, -15, 0, 15, 30, 45, 90, 180).Unit("°").RecentKey("transform.angle");
@@ -540,6 +542,23 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
             if (_updating || _tfResample.SelectedIndex < 0) return;
             _ctx.TransformResample = (ResampleMode)_tfResample.SelectedIndex;
         };
+        // 상자 가로·세로 = 여백(그림은 그대로 두고 상자 원본 사각형만 — 왼쪽 위 고정)
+        _tfBoxWidth = CanvasResizeNum(1, UiStrings.Transform_BoxTip, v => SetTransformBoxSize(v, null)).Presets(Ui.SpriteSizes).Unit("px").RecentKey("transform.box");
+        _tfBoxHeight = CanvasResizeNum(1, UiStrings.Transform_BoxTip, v => SetTransformBoxSize(null, v)).Presets(Ui.SpriteSizes).Unit("px").RecentKey("transform.box");
+        var tfFlipH = Ui.IconButton(VectorIcon.FlipLeftRight, UiStrings.Transform_FlipHorizontalTip, (_, _) => _ctx.FlipTransform(true), size: 16);
+        var tfFlipV = Ui.IconButton(VectorIcon.FlipUpDown, UiStrings.Transform_FlipVerticalTip, (_, _) => _ctx.FlipTransform(false), size: 16);
+        tfFlipH.Focusable = tfFlipV.Focusable = false;
+        // 9-slice는 캔버스 크기 모드와 같은 설정을 쓴다.
+        _tfSlice = Ui.Check(UiStrings.CanvasResize_NineSlice, true).Tip(UiStrings.Transform_NineSliceTip);
+        _tfSlice.Focusable = false;
+        _tfSlice.IsCheckedChanged += (_, _) => { if (!_updating) _ctx.CanvasResizeNineSlice = _tfSlice.On(); };
+        _tfSliceFill = Ui.Combo(90, UiStrings.CanvasResize_FillStretch, UiStrings.CanvasResize_FillTile);
+        _tfSliceFill.Tip(UiStrings.CanvasResize_FillTip);
+        _tfSliceFill.SelectionChanged += (_, _) =>
+        {
+            if (!_updating && _tfSliceFill.SelectedIndex >= 0) _ctx.CanvasResizeSliceFill = (NineSliceFill)_tfSliceFill.SelectedIndex;
+        };
+        _tfSliceRow = Ui.Row(_tfSlice, _tfSliceFill);
         _tfInfo = Dim("");
         var tfApply = Ui.Button(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8D7A9F13B5, (_, _) => _ctx.CommitTransform()).Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_2077BDA76D);
         var tfCancel = Ui.Button(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_BDB140E2ED, (_, _) => _ctx.CancelTransform()).Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_F1CB28FBF9);
@@ -547,9 +566,16 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_51B15B9385), _tfAngle, Ui.Label("°")),
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_571538645F), _tfScaleX, Ui.Label("%"), Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A5A2849291), _tfScaleY, Ui.Label("%")),
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_CADA521CE3), _tfX, Ui.Label("Y"), _tfY),
+            Ui.Row(Ui.Label(UiStrings.Transform_BoxWidth), _tfBoxWidth, Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A5A2849291), _tfBoxHeight),
+            Ui.Row(Ui.Label(UiStrings.CanvasResize_Flip), tfFlipH, tfFlipV),
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_652CB69BF4), _tfResample),
+            _tfSliceRow,
             _tfInfo,
             Ui.Row(tfApply, tfCancel)));
+        // InfoGroup 머리 줄 = (제목, 정보박스): 지금 셀 / 레이어 전체에 따라 바꾼다.
+        var tfHead = (StackPanel)((StackPanel)_transformBox.Child!).Children[0];
+        _tfTitle = (TextBlock)tfHead.Children[0];
+        _tfHelp = tfHead.Children[1];
 
         // ── 캔버스 크기 모드(Ctrl+Alt+C): 숫자는 캔버스 손잡이와 함께 움직인다.
         _crKeepRatio = Ui.Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_93E9A22B2D, true).Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_2CD545CAF3);
@@ -603,11 +629,9 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         _crFlipH = Ui.IconButton(VectorIcon.FlipLeftRight, UiStrings.CanvasResize_FlipHorizontalTip, (_, _) => FlipDuringResize(true), size: 16);
         _crFlipV = Ui.IconButton(VectorIcon.FlipUpDown, UiStrings.CanvasResize_FlipVerticalTip, (_, _) => FlipDuringResize(false), size: 16);
         _crFlipH.Focusable = _crFlipV.Focusable = false;
-        _crCanvasLabel = Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4ED6D3C2A9);
-        _crCanvasRow = Ui.Row(_crCanvasLabel, _crWidth, Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A5A2849291), _crHeight);
         _crSliceRow = Ui.Row(_crSlice, _crSliceFill);
         _canvasResizeBox = InfoGroup(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_EDE86CE801, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8CE505E7D6, Ui.Stack(
-            _crCanvasRow,
+            Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4ED6D3C2A9), _crWidth, Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A5A2849291), _crHeight),
             _crFromCenter,
             _crSliceRow,
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_42E9812F72), _crImageWidth, _crWidthPercent),
@@ -617,10 +641,6 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_2B00AF339B), _crAnchor),
             Ui.Row(Ui.Label(UiStrings.CanvasResize_Flip), _crFlipH, _crFlipV),
             Ui.Row(_crApply, crCancel)));
-        // InfoGroup 머리 줄 = (제목, 정보박스): 레이어 크기 모드에서 바꾼다.
-        var crHead = (StackPanel)((StackPanel)_canvasResizeBox.Child!).Children[0];
-        _crTitle = (TextBlock)crHead.Children[0];
-        _crInfo = crHead.Children[1];
 
         // ── 효과(타임라인에서 효과 하나를 고르면): 효과 창과 같은 효과 고유 설정 + 나머지 설정은 효과 창에서
         _effectForm = new EffectForm(_effectSettings, this, stacked: true);
@@ -784,30 +804,29 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
     private void SetCanvasResizeImage(Func<Rectangle, Rectangle> change)
         => _ctx.SetCanvasResize(_ctx.CanvasResizeCanvas, change(_ctx.CanvasResizeImage));
 
-    /// <summary>뒤집기 단추: 캔버스 크기 모드면 캔버스 전체, 레이어 크기 모드면 그 레이어를 바로 뒤집고 결과를 상태 표시줄로 알린다(모드는 이어짐).</summary>
+    /// <summary>뒤집기 단추(캔버스 크기 모드): 캔버스 전체를 바로 뒤집고 결과를 상태 표시줄로 알린다(모드는 이어짐).</summary>
     private void FlipDuringResize(bool horizontal)
     {
         if (_ctx.FlipDuringResize(horizontal) is { } message) StatusMessage?.Invoke(this, message);
     }
 
-    /// <summary>
-    /// 숫자 크기 변경: 중심 기준이면 캔버스 원점을 함께 옮기고 그림의 화면 위치는 유지한다. 레이어 크기 모드면 적용 뒤 레이어 자리 크기(왼쪽 위 고정, 그림은 그대로 —
-    /// 밖으로 나간 그림은 잘림).
-    /// </summary>
+    /// <summary>숫자 크기 변경: 중심 기준이면 캔버스 원점을 함께 옮기고 그림의 화면 위치는 유지한다.</summary>
     private void SetCanvasResizeSize(int? width, int? height)
     {
         var image = _ctx.CanvasResizeImage;
-        if (_ctx.CanvasResizeLayer is not null)
-        {
-            var a = _ctx.LayerResizeArea;
-            _ctx.SetLayerResize(a with { Width = width ?? a.Width, Height = height ?? a.Height }, image);
-            return;
-        }
         var c = _ctx.CanvasResizeCanvas;
         int x = _ctx.CanvasResizeFromCenter && width is not null ? (_ctx.CanvasResizeCenter2.X - width.Value) / 2 : c.X;
         int y = _ctx.CanvasResizeFromCenter && height is not null ? (_ctx.CanvasResizeCenter2.Y - height.Value) / 2 : c.Y;
         image.Offset(c.X - x, c.Y - y);
         _ctx.SetCanvasResize(new Rectangle(x, y, width ?? c.Width, height ?? c.Height), image);
+    }
+
+    /// <summary>변형 상자 가로·세로(여백): 그림은 그대로 두고 상자 원본 사각형의 크기만 바꾼다(왼쪽 위 고정).</summary>
+    private void SetTransformBoxSize(int? width, int? height)
+    {
+        if (_ctx.TransformBox is not { } box) return;
+        var r = box.Bounds;
+        _ctx.SetTransformBox(r with { Width = width ?? r.Width, Height = height ?? r.Height });
     }
 
     /// <summary>원래 그림 비율로 그림 가로 <paramref name="width"/>에 맞는 세로(1 이상).</summary>
@@ -903,18 +922,12 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         _effectSection.IsVisible = _fxLayer is not null && !_ctx.IsTransforming && !_ctx.IsCanvasResizing;
         if (_ctx.IsTransforming || _ctx.IsCanvasResizing)
         {
-            // 변형·캔버스 크기 모드 중에는 그 값만 보인다.
-            bool layer = _ctx.CanvasResizeLayer is not null;
-            _title.Text = _ctx.IsTransforming ? UiStrings.S_ToolOptionsPanel_Refresh_DD7EA3035B
-                : layer ? UiStrings.LayerResize_PanelTitle : UiStrings.S_ToolOptionsPanel_Refresh_6281D2CC20;
-            // 레이어 크기 모드: 캔버스는 그대로라 중심 기준·9-slice 줄을 숨기고, 크기 줄은 적용 뒤 레이어 자리 크기.
-            _crTitle.Text = layer ? UiStrings.LayerResize_GroupTitle : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_EDE86CE801;
-            ToolTip.SetTip(_crInfo, layer ? UiStrings.LayerResize_Info : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8CE505E7D6);
-            _crApply.Tip(layer ? UiStrings.LayerResize_ApplyTip : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E905102901);
-            _crFlipH.Tip(layer ? UiStrings.LayerResize_FlipHorizontalTip : UiStrings.CanvasResize_FlipHorizontalTip);
-            _crFlipV.Tip(layer ? UiStrings.LayerResize_FlipVerticalTip : UiStrings.CanvasResize_FlipVerticalTip);
-            _crCanvasLabel.Text = layer ? UiStrings.LayerResize_AreaWidth : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4ED6D3C2A9;
-            _crFromCenter.IsVisible = _crSliceRow.IsVisible = _crRatio.IsVisible = !layer;
+            // 변형·캔버스 크기 모드 중에는 그 값만 보인다. 변형은 지금 셀(Ctrl+T)·레이어 전체(Ctrl+Shift+C)에 따라 제목·설명만 다르다.
+            bool layer = _ctx.IsLayerTransform;
+            _title.Text = !_ctx.IsTransforming ? UiStrings.S_ToolOptionsPanel_Refresh_6281D2CC20
+                : layer ? UiStrings.LayerTransform_PanelTitle : UiStrings.S_ToolOptionsPanel_Refresh_DD7EA3035B;
+            _tfTitle.Text = layer ? UiStrings.LayerTransform_GroupTitle : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E4C9B1697C;
+            ToolTip.SetTip(_tfHelp, layer ? UiStrings.LayerTransform_Info : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_BFD255FFEA);
             foreach (var box in new Control[] { _shapeBox, _brushBox, _pencilGradientBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox, _hint })
                 box.IsVisible = false;
         }
@@ -1022,7 +1035,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
     /// <summary>변형 값을 숫자 칸에 보인다(변형 중일 때만).</summary>
     private void RefreshTransform()
     {
-        if (!_transformBox.IsVisible || _ctx.Transform is not { } t) return;
+        if (!_transformBox.IsVisible || _ctx.TransformBox is not { } box) return;
         var p = _ctx.TransformParams;
         bool wasUpdating = _updating;
         _updating = true;
@@ -1037,8 +1050,14 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
             _tfX.Presets(Quarters(Math.Max(1, _ctx.CanvasWidth)));
             _tfY.Presets(Quarters(Math.Max(1, _ctx.CanvasHeight)));
             _tfResample.SelectedIndex = (int)_ctx.TransformResample;
-            var src = t.SourceBounds;
-            var dst = _ctx.Selection.Bounds;
+            var src = box.Bounds;
+            _tfBoxWidth.Value = Math.Clamp(src.Width, (int)_tfBoxWidth.Minimum, (int)_tfBoxWidth.Maximum);
+            _tfBoxHeight.Value = Math.Clamp(src.Height, (int)_tfBoxHeight.Minimum, (int)_tfBoxHeight.Maximum);
+            _tfSliceRow.IsVisible = _ctx.TransformSliceAvailable;
+            _tfSlice.IsChecked = _ctx.CanvasResizeNineSlice;
+            _tfSliceFill.IsEnabled = _ctx.CanvasResizeNineSlice;
+            _tfSliceFill.SelectedIndex = (int)_ctx.CanvasResizeSliceFill;
+            var dst = box.MappedBounds(p);
             bool fallback = _ctx.TransformResample == ResampleMode.RotSprite && (long)src.Width * src.Height > FreeTransform.MaxRotSpriteArea;
             _tfInfo.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ToolOptionsPanel_RefreshTransform_DB65681040,src.Width,src.Height,dst.Width,dst.Height)
                            + (fallback ? UiStrings.S_ToolOptionsPanel_RefreshTransform_08535E328B : "");
@@ -1062,7 +1081,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         _updating = true;
         try
         {
-            var size = _ctx.CanvasResizeLayer is not null ? _ctx.LayerResizeArea.Size : c.Size;
+            var size = c.Size;
             _crWidth.Value = size.Width;
             _crHeight.Value = size.Height;
             _crFromCenter.IsChecked = _ctx.CanvasResizeFromCenter;
@@ -1334,20 +1353,21 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         if (Is(_sliceTarget)) return At("tools-nine-slice", "Target");
         if (Is(_sliceBox)) return At("tools-nine-slice", "Setting the borders");
 
-        // 변형·캔버스 크기·레이어 크기 모드
+        // 변형(지금 셀·레이어 전체)·캔버스 크기 모드
+        string transformPage = _ctx.IsLayerTransform ? "tools-layer-size" : "tools-transform";
         if (InRow(_tfResample)) return At("tools-transform", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_652CB69BF4);
-        if (Is(_transformBox)) return At("tools-transform", "Entering numbers");
-        bool layerSize = _ctx.CanvasResizeLayer is not null;
-        if (InRow(_crApply)) return At(layerSize ? "tools-layer-size" : "tools-canvas-size", "Controls");
+        if (Is(_tfSliceRow) || Is(_tfSlice) || Is(_tfSliceFill)) return At("tools-canvas-size", UiStrings.CanvasResize_NineSlice);
+        if (Is(_transformBox)) return _ctx.IsLayerTransform ? new(transformPage) : At("tools-transform", "Entering numbers");
+        if (InRow(_crApply)) return At("tools-canvas-size", "Controls");
         if (Is(_crSliceRow) || Is(_crSlice) || Is(_crSliceFill)) return At("tools-canvas-size", UiStrings.CanvasResize_NineSlice);
-        if (Is(_canvasResizeBox)) return layerSize ? At("tools-layer-size", "In the Layer size") : At("tools-canvas-size", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E39101186F);
+        if (Is(_canvasResizeBox)) return At("tools-canvas-size", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E39101186F);
 
         // 고른 효과 설정
         if (Is(_effectSection) || Is(_effectBox)) return At("screen-tool-settings", "Settings of the selected effect");
 
         if (Is(this))
-            return _ctx.IsTransforming ? new("tools-transform")
-                : _ctx.IsCanvasResizing ? new(layerSize ? "tools-layer-size" : "tools-canvas-size")
+            return _ctx.IsTransforming ? new(transformPage)
+                : _ctx.IsCanvasResizing ? new("tools-canvas-size")
                 : new(HelpTarget.ToolPage(tool));
         return null;
     }

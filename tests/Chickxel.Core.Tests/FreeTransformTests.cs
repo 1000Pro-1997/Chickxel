@@ -30,7 +30,7 @@ public class FreeTransformTests
         var t = RectSource(img, 3, 2);
         foreach (var mode in Modes)
         {
-            var r = t.Render(t.Identity, mode);
+            var r = t.Render(t.Box.Identity, mode);
             Assert.Equal(new Rectangle(3, 2, 5, 4), r.Region.Bounds);
             Assert.True(r.Region.IsRectangle);
             Assert.True(r.Image.ContentEquals(img));
@@ -45,7 +45,7 @@ public class FreeTransformTests
         var t = new FreeTransform(img, region);
         foreach (var mode in Modes)
         {
-            var r = t.Render(t.Identity, mode);
+            var r = t.Render(t.Box.Identity, mode);
             Assert.Equal(region.Bounds, r.Region.Bounds);
             for (int y = region.Bounds.Top; y < region.Bounds.Bottom; y++)
                 for (int x = region.Bounds.Left; x < region.Bounds.Right; x++)
@@ -64,7 +64,7 @@ public class FreeTransformTests
         var t = RectSource(img, 4, 4);
         foreach (var mode in Modes)
         {
-            var p = t.Identity with { CenterX = t.Identity.CenterX + 7, CenterY = t.Identity.CenterY - 3 };
+            var p = t.Box.Identity with { CenterX = t.Box.Identity.CenterX + 7, CenterY = t.Box.Identity.CenterY - 3 };
             var r = t.Render(p, mode);
             Assert.Equal(new Rectangle(11, 1, 6, 3), r.Region.Bounds);
             Assert.True(r.Image.ContentEquals(img));
@@ -94,7 +94,7 @@ public class FreeTransformTests
         var t = RectSource(canvas.Crop(rect), rect.X, rect.Y);
         foreach (var mode in Modes)
         {
-            var r = t.Render(t.Identity with { Angle = clockwise ? 90 : -90 }, mode);
+            var r = t.Render(t.Box.Identity with { Angle = clockwise ? 90 : -90 }, mode);
             Assert.Equal(expectedBounds, r.Region.Bounds);
             Assert.True(r.Region.IsRectangle);
             Assert.True(r.Image.ContentEquals(expectedImage), $"{mode} {w}×{h} {(clockwise ? "cw" : "ccw")}");
@@ -108,7 +108,7 @@ public class FreeTransformTests
         var t = RectSource(img, 0, 0);
         foreach (var mode in Modes)
         {
-            var r = t.Render(t.Identity with { Angle = 180 }, mode);
+            var r = t.Render(t.Box.Identity with { Angle = 180 }, mode);
             Assert.Equal(new Rectangle(0, 0, 5, 4), r.Region.Bounds);
             Assert.True(r.Image.ContentEquals(ImageTransform.Rotate180(img)));
         }
@@ -120,13 +120,13 @@ public class FreeTransformTests
         // 짝수 크기라 2배 사각형도 격자에 맞는다: 왼쪽 위 = 중심 − W.
         var img = TestUtil.RandomImage(4, 2, seed: 13);
         var t = RectSource(img, 10, 6);
-        var r = t.Render(t.Identity with { ScaleX = 2, ScaleY = 2 }, ResampleMode.Nearest);
+        var r = t.Render(t.Box.Identity with { ScaleX = 2, ScaleY = 2 }, ResampleMode.Nearest);
         Assert.Equal(new Rectangle(8, 5, 8, 4), r.Region.Bounds);
         for (int y = 0; y < 4; y++)
             for (int x = 0; x < 8; x++)
                 Assert.Equal(img.Get(x / 2, y / 2), r.Image.Get(x, y));
         // 축에 맞는 확대는 RotSprite도 최근접과 같다(번지지 않음).
-        Assert.True(t.Render(t.Identity with { ScaleX = 2, ScaleY = 2 }, ResampleMode.RotSprite).Image.ContentEquals(r.Image));
+        Assert.True(t.Render(t.Box.Identity with { ScaleX = 2, ScaleY = 2 }, ResampleMode.RotSprite).Image.ContentEquals(r.Image));
     }
 
     [Fact]
@@ -136,10 +136,10 @@ public class FreeTransformTests
         var t = RectSource(img, 2, 2);
         foreach (var mode in Modes)
         {
-            var h = t.Render(t.Identity with { ScaleX = -1 }, mode);
+            var h = t.Render(t.Box.Identity with { ScaleX = -1 }, mode);
             Assert.Equal(new Rectangle(2, 2, 5, 3), h.Region.Bounds);
             Assert.True(h.Image.ContentEquals(ImageTransform.FlipHorizontal(img)));
-            var v = t.Render(t.Identity with { ScaleY = -1 }, mode);
+            var v = t.Render(t.Box.Identity with { ScaleY = -1 }, mode);
             Assert.Equal(new Rectangle(2, 2, 5, 3), v.Region.Bounds);
             Assert.True(v.Image.ContentEquals(ImageTransform.FlipVertical(img)));
         }
@@ -157,7 +157,7 @@ public class FreeTransformTests
             for (int x = 0; x < 9; x++)
                 img.Set(x, y, region.Contains(x, y) ? ((x + y) % 2 == 0 ? Blue : Green) : Red);
         var t = new FreeTransform(img, region);
-        var r = t.Render(t.Identity with { Angle = 33, ScaleX = 1.4, ScaleY = 0.8 }, mode);
+        var r = t.Render(t.Box.Identity with { Angle = 33, ScaleX = 1.4, ScaleY = 0.8 }, mode);
         var b = r.Region.Bounds;
         Assert.False(r.Region.IsRectangle);
         for (int y = 0; y < b.Height; y++)
@@ -179,7 +179,7 @@ public class FreeTransformTests
         var t = RectSource(img, 0, 0);
         foreach (var angle in new[] { 17.0, 45, -63.5, 120 })
         {
-            var r = t.Render(t.Identity with { Angle = angle, ScaleX = 1.3, ScaleY = -0.9 }, ResampleMode.RotSprite);
+            var r = t.Render(t.Box.Identity with { Angle = angle, ScaleX = 1.3, ScaleY = -0.9 }, ResampleMode.RotSprite);
             Assert.All(r.Image.Pixels, c => Assert.Contains(c, colors));
         }
         Assert.All(FreeTransform.Scale2x(img).Pixels, c => Assert.Contains(c, colors));
@@ -204,13 +204,13 @@ public class FreeTransformTests
     public void MapAndUnmap_AreInverse()
     {
         var t = RectSource(new PixelImage(7, 5), 3, 4);
-        var p = t.Identity with { CenterX = 20.25, CenterY = -3.5, Angle = 37, ScaleX = -1.7, ScaleY = 0.6 };
-        var (x, y) = t.Map(p, 4.5, 8.25);
-        var (u, v) = t.Unmap(p, x, y);
+        var p = t.Box.Identity with { CenterX = 20.25, CenterY = -3.5, Angle = 37, ScaleX = -1.7, ScaleY = 0.6 };
+        var (x, y) = t.Box.Map(p, 4.5, 8.25);
+        var (u, v) = t.Box.Unmap(p, x, y);
         Assert.Equal(4.5, u, 9);
         Assert.Equal(8.25, v, 9);
         // 꼭짓점: 원본 사각형 네 모서리를 옮긴 것
-        var corners = t.Corners(t.Identity);
+        var corners = t.Box.Corners(t.Box.Identity);
         Assert.Equal((3.0, 4.0), corners[0]);
         Assert.Equal((10.0, 9.0), corners[2]);
     }

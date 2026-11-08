@@ -60,7 +60,7 @@ internal static class GuideEditToolsCompareShots
         var cel = p.GetCel(0, 0) ?? throw new InvalidOperationException("empty sample");
         var rect = new Rectangle(7, 3, 35, 33);
         var t = new FreeTransform(cel.Crop(rect), new PixelMask(rect));
-        var param = t.Identity with { Angle = 30 };
+        var param = t.Box.Identity with { Angle = 30 };
         var nearest = t.Render(param, ResampleMode.Nearest);
         var rotSprite = t.Render(param, ResampleMode.RotSprite);
         var bounds = Rectangle.Union(nearest.Region.Bounds, rotSprite.Region.Bounds);

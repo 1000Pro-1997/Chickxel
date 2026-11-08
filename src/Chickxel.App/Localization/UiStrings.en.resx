@@ -1814,7 +1814,7 @@ Unavailable items (skipped):
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_B4DDF34C98" xml:space="preserve"><value>Vertical symmetry</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_B655203628" xml:space="preserve"><value>Pixel perfect</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_BDB140E2ED" xml:space="preserve"><value>Cancel</value></data>
-  <data name="S_ToolOptionsPanel_ToolOptionsPanel_BFD255FFEA" xml:space="preserve"><value>Canvas: drag inside = move (1px steps), square handles = size (Shift keeps ratio, Alt from center, dragging past the opposite side flips), outside = rotate (Shift 15°), drag the center mark = rotation center (double-click = back to center). Arrow keys = move 1px.</value></data>
+  <data name="S_ToolOptionsPanel_ToolOptionsPanel_BFD255FFEA" xml:space="preserve"><value>Changes only the current cel (and the cels picked with it in the timeline) — blue box. Canvas: drag inside = move (1px steps), square handles = size (Shift keeps ratio, Alt from center, dragging past the opposite side flips), Ctrl (⌘) + handle = margin (the drawing stays, only the box changes — shrinking crops what falls outside; a selection grows by repeating its edge pixels), outside = rotate (Shift 15°), drag the center mark = rotation center (double-click = back to center). Arrow keys = move 1px. Without a selection the frame's pivot follows the drawing, and a part grows its area when the drawing goes past it.</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_C554693D22" xml:space="preserve"><value>Pivot (focus) — drag on the canvas</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_CADA521CE3" xml:space="preserve"><value>Center X</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_CAF69A1BB7" xml:space="preserve"><value>Size</value></data>
@@ -1826,7 +1826,7 @@ Unavailable items (skipped):
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_DF32263ADE" xml:space="preserve"><value>Rotation angle (°, clockwise) — around the rotation center (orange mark on the canvas)</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_E1EAC3C042" xml:space="preserve"><value>Erase with the right button instead of the secondary color</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_E39101186F" xml:space="preserve"><value>Tool options</value></data>
-  <data name="S_ToolOptionsPanel_ToolOptionsPanel_E4C9B1697C" xml:space="preserve"><value>Transform (rotate/size)</value></data>
+  <data name="S_ToolOptionsPanel_ToolOptionsPanel_E4C9B1697C" xml:space="preserve"><value>Transform · current cel</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_E905102901" xml:space="preserve"><value>Apply the canvas size (Enter) — one undo step</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_EA7C872715" xml:space="preserve"><value>Image height</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_EA92356D34" xml:space="preserve"><value>RotSprite: samples from an image upscaled with Scale2x three times (8×) so rotated lines break less (no blending, so no new colors). Nearest: samples original pixels as is. Both are the same at 0°/90°/180°/270°.</value></data>
@@ -3925,14 +3925,14 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Timeline_UnlinkCels_Done" xml:space="preserve"><value>Unlinked {0} cels. Each cel is now edited separately.</value></data>
   <data name="Timeline_UnlinkCels_DoneBaked" xml:space="preserve"><value>Unlinked {0} cels ({1} cel(s) showing an effect's held end look were baked into the drawing as shown).</value></data>
   <data name="Timeline_ScatteredCelsCopy" xml:space="preserve"><value>Cels picked one by one with Ctrl+click can't be copied. Drag to select neighbouring cels.</value></data>
-  <data name="LayerResize_Group" xml:space="preserve"><value>A group can't be resized as a layer. Select a part or a layer.</value></data>
-  <data name="LayerResize_Locked" xml:space="preserve"><value>The layer is locked and can't be resized.</value></data>
-  <data name="LayerResize_Empty" xml:space="preserve"><value>This layer has nothing drawn in any frame.</value></data>
-  <data name="LayerResize_Applied" xml:space="preserve"><value>Layer size: "{name}" {width}×{height} @{x},{y} (all frames)</value></data>
-  <data name="LayerResize_MovedFrom" xml:space="preserve"><value>Part position: "{name}" @{x},{y} (frame {frame} to the end, pivot follows)</value></data>
-  <data name="LayerResize_Flipped" xml:space="preserve"><value>Flipped layer "{name}" {direction} in place (all frames, Ctrl+Z to undo).</value></data>
-  <data name="LayerResize_FlipHorizontalTip" xml:space="preserve"><value>Flip this layer horizontally in place (all frames, applied at once — Ctrl+Z to undo).</value></data>
-  <data name="LayerResize_FlipVerticalTip" xml:space="preserve"><value>Flip this layer vertically in place (all frames, applied at once — Ctrl+Z to undo).</value></data>
+  <data name="LayerTransform_Group" xml:space="preserve"><value>A group can't be transformed as a whole layer. Select a part or a layer.</value></data>
+  <data name="LayerTransform_Locked" xml:space="preserve"><value>The layer is locked and can't be transformed.</value></data>
+  <data name="LayerTransform_Empty" xml:space="preserve"><value>This layer has nothing to transform in any frame.</value></data>
+  <data name="Transform_BoxWidth" xml:space="preserve"><value>Box width</value></data>
+  <data name="Transform_BoxTip" xml:space="preserve"><value>Margin: changes only the box size and leaves the drawing where it is (top left stays). Shrinking crops what falls outside; growing extends a selection by repeating its edge pixels and otherwise adds empty space. On the canvas, Ctrl (⌘) + handle.</value></data>
+  <data name="Transform_FlipHorizontalTip" xml:space="preserve"><value>Flip the box horizontally (takes effect when you apply).</value></data>
+  <data name="Transform_FlipVerticalTip" xml:space="preserve"><value>Flip the box vertically (takes effect when you apply).</value></data>
+  <data name="Transform_NineSliceTip" xml:space="preserve"><value>When resizing without rotating, keeps the part's 9-slice border as is and stretches only the middle. Same setting as canvas size mode.</value></data>
   <data name="CanvasResize_Flip" xml:space="preserve"><value>Flip</value></data>
   <data name="CanvasResize_Flipped" xml:space="preserve"><value>Flipped the whole canvas {direction} (all layers and frames, Ctrl+Z to undo).</value></data>
   <data name="CanvasResize_FlipHorizontalTip" xml:space="preserve"><value>Flip the whole canvas horizontally (all layers and frames, applied at once — Ctrl+Z to undo).</value></data>
@@ -3942,12 +3942,11 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="LayerColors_Title" xml:space="preserve"><value>Layer colors</value></data>
   <data name="LayerColors_Tip" xml:space="preserve"><value>Colors used in every frame of the selected layer (most used first, transparent excluded — a group shows its parts, a part its shown skin). Click a swatch for the primary color, right-click for the secondary. Click the header to collapse or expand.</value></data>
   <data name="LayerColors_CountCapped" xml:space="preserve"><value>{0} / {1}</value></data>
-  <data name="LayerResize_Label" xml:space="preserve"><value>{name} · {size} @{x},{y}</value></data>
-  <data name="LayerResize_PanelTitle" xml:space="preserve"><value>Tool settings · Layer size</value></data>
-  <data name="LayerResize_GroupTitle" xml:space="preserve"><value>Layer size</value></data>
-  <data name="LayerResize_Info" xml:space="preserve"><value>Changes the size and position of only the current layer. The canvas and the other layers stay as they are. Same controls as canvas size (Ctrl+Alt+C): square handles = drag that edge of the layer box (the drawing stays — growing adds empty space, shrinking crops what falls outside), Ctrl (⌘) + handle = resize the drawing too (nearest neighbor), corner + Shift keeps the ratio, Alt keeps the center, drag inside the layer or use the arrow keys = move. A normal layer starts at the box around its drawing in every frame, a part at its part area. Applying changes every frame of the layer (a normal layer just keeps its drawing when the box grows; a part changes its part size). The preview is shown without layer effects; pixels that will be cropped are faded.</value></data>
-  <data name="LayerResize_ApplyTip" xml:space="preserve"><value>Apply the layer size (Enter) — every frame of the layer, one undo step</value></data>
-  <data name="LayerResize_Shortcut" xml:space="preserve"><value>Layer size (canvas unchanged)</value></data>
+  <data name="LayerTransform_PanelTitle" xml:space="preserve"><value>Tool settings · Transform whole layer</value></data>
+  <data name="LayerTransform_GroupTitle" xml:space="preserve"><value>Transform · whole layer</value></data>
+  <data name="LayerTransform_Info" xml:space="preserve"><value>Changes every frame of the current layer (every skin for a part) together — orange box. Canvas: drag inside = move, square handles = size (Shift keeps ratio, Alt from center), Ctrl (⌘) + handle = margin (the drawing stays, only the box changes — shrinking crops what falls outside), outside = rotate (Shift 15°, each frame turns around its own pivot), drag the center mark = rotation center. With a selection only that spot changes in every frame (growing the margin repeats the edge pixels) and pivots stay; without one the whole drawing changes and the pivots follow it. A part's area follows the box (rotating makes it as big as needed) and rotating removes its 9-slice border. Clicking another frame of the same layer keeps the transform going; picking another layer cancels it. The preview is shown without layer effects.</value></data>
+  <data name="LayerTransform_Undo" xml:space="preserve"><value>Layer transform</value></data>
+  <data name="LayerTransform_Shortcut" xml:space="preserve"><value>Transform whole layer (all frames)</value></data>
   <data name="Fold_Collapse" xml:space="preserve"><value>Collapse</value></data>
   <data name="Fold_Expand" xml:space="preserve"><value>Expand</value></data>
   <data name="EffectDock_Header" xml:space="preserve"><value>Effect</value></data>
@@ -3959,7 +3958,6 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Timeline_AddSkinToLayer" xml:space="preserve"><value>Add skin (turns into a group)</value></data>
   <data name="Timeline_AddSkinToLayer_Copy" xml:space="preserve"><value>Duplicate current drawing</value></data>
   <data name="Timeline_AddSkinToLayer_Done" xml:space="preserve"><value>Moved "{0}" into the new group "{1}" as a part and added skin "{2}". The current drawing is in skin "{3}".</value></data>
-  <data name="LayerResize_AreaWidth" xml:space="preserve"><value>Layer width</value></data>
   <data name="Publish_PivotMoveTag" xml:space="preserve"><value>This effect reports how far it moves the drawing (ctx.movePivot), so it always carries the pivot-move tag (it can't be removed and counts toward the 8 tags).</value></data>
   <data name="Help_SelectTarget" xml:space="preserve"><value>Choose help on screen</value></data>
   <data name="Help_SelectHint" xml:space="preserve"><value>Click an area to see its help. Esc, F1 or right-click cancels.</value></data>

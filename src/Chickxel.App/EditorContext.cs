@@ -559,6 +559,7 @@ public sealed partial class EditorContext
         {
             InvalidateRenders(p, e.Change);
             SyncCanvasResize();
+            SyncLayerTransform(p);
         }
         int layer = Math.Clamp(_layer, 0, p.Layers.Count - 1), frame = Math.Clamp(_frame, 0, p.Frames.Count - 1);
         bool currentChanged = layer != _layer || frame != _frame;
@@ -578,8 +579,8 @@ public sealed partial class EditorContext
     }
 
     /// <summary>
-    /// 현재 레이어·프레임을 바꾼다(떠 있는 선택은 먼저 내려놓음). 캔버스 크기가 다른 레이어(부위 ↔ 프레임, 크기가 다른 부위)로
-    /// 바뀌면 선택 영역은 해제된다.
+    /// 현재 레이어·프레임을 바꾼다(떠 있는 선택·변형은 먼저 적용함). 레이어 전체 변형 중이면 같은 레이어의 다른 프레임으로 가도 변형을 이어 가고
+    /// (그 프레임 모습을 보임), 다른 레이어로 가면 변형을 취소한다. 캔버스 크기가 다른 레이어(부위 ↔ 프레임, 크기가 다른 부위)로 바뀌면 선택 영역은 해제된다.
     /// </summary>
     public void SetCurrent(int layer, int frame)
     {
@@ -587,7 +588,9 @@ public sealed partial class EditorContext
         layer = Math.Clamp(layer, 0, p.Layers.Count - 1);
         frame = Math.Clamp(frame, 0, p.Frames.Count - 1);
         if (layer == _layer && frame == _frame) return;
-        CommitFloating();
+        bool keepLayerTransform = IsLayerTransform && layer == _layer;
+        if (IsLayerTransform && !keepLayerTransform) CancelTransform();
+        else if (!keepLayerTransform) CommitFloating();
         if (layer != _layer)
         {
             var next = p.Layers[layer];
@@ -603,6 +606,7 @@ public sealed partial class EditorContext
         _layer = layer;
         _frame = frame;
         _canvasSize = CurrentCanvasSize;
+        if (keepLayerTransform) RebaseLayerTransform(p);
         CurrentChanged?.Invoke(this, EventArgs.Empty);
         ViewChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -775,7 +779,7 @@ public sealed partial class EditorContext
     }
 
     /// <summary>
-    /// 떠 있는 픽셀을 내려놓고 열린 선택 편집 기록을 확정한다. 변형 중이면 변형을 적용한 뒤 내려놓고(실행취소 한 단계),
+    /// 떠 있는 픽셀을 내려놓고 열린 선택 편집 기록을 확정한다. 변형 중이면 변형을 적용하고(실행취소 한 단계),
     /// 캔버스 크기 모드면 그것을 적용한다(실행취소 한 단계). 먼저 <see cref="CommittingEdits"/>를 알린다(캔버스 글씨 편집 확정).
     /// </summary>
     public void CommitFloating()
@@ -783,33 +787,16 @@ public sealed partial class EditorContext
         if (Project is not { } p) return;
         CommittingEdits?.Invoke(this, EventArgs.Empty);
         ApplyCanvasResize();
+        ApplyLayerTransform();
         var transform = _transform;
         _transform = null;
         if (Selection.IsFloating && _strokeImage is { } img) Selection.Anchor(img);
-        if (transform?.Multi is { } multi) CommitMultiTransform(p, transform, multi);
-        else if (_selectionStrokeOpen)
+        if (_selectionStrokeOpen)
         {
             _selectionStrokeOpen = false;
             CommitStroke(transform is not null ? UiStrings.S_EditorContext_CommitFloating_19E799222E : UiStrings.S_EditorContext_CommitFloating_9E9E894C6C);
         }
         if (transform is not null) TransformChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    /// <summary>
-    /// 여러 셀 변형 적용: 지금 셀(선택 편집 기록 안에서 내려놓은 결과)과 다른 셀들을 실행취소 한 단계로 — 열린 기록은 되돌리고
-    /// 지금 셀의 결과 그림을 다른 셀들과 같은 편집 안에서 넣는다.
-    /// </summary>
-    private void CommitMultiTransform(SpriteProject p, TransformSession t, MultiCelTransform multi)
-    {
-        int layer = _layer, frame = _frame;
-        PixelImage? after = null;
-        if (_selectionStrokeOpen)
-        {
-            _selectionStrokeOpen = false;
-            after = TakeStrokeResult(p);
-        }
-        multi.Commit(UiStrings.S_EditorContext_CommitFloating_19E799222E, t.Source, t.Params, _transformResample,
-            after is null ? null : () => p.SetCel(layer, frame, after));
     }
 
     /// <summary>
@@ -826,30 +813,40 @@ public sealed partial class EditorContext
         return (before is null ? after.GetOpaqueBounds().IsEmpty : after.ContentEquals(before)) ? null : after;
     }
 
-    // ───────────── 자유 변형 ─────────────
+    // ───────────── 변형 모드 ─────────────
 
     /// <summary>
-    /// 변형 중인 상태: 손잡이 기준 원본(<paramref name="source"/>), 지금 셀에서 떼어 낸 원본(<paramref name="lifted"/> — 여러 셀이 아니면 손잡이 기준과 같음,
-    /// 지금 셀이 비었으면 null), 함께 변형할 다른 셀들(<paramref name="multi"/>), 지금 값, 시작 전 선택 상태(취소용).
+    /// 떠 있는 픽셀 변형(넣은 그림을 들고 들어간 변형 — <see cref="BeginPlacedTransform"/>): 원본(여백을 바꾸면 바뀜), 지금 값, 회전 중심(원본 좌표), 시작 전 선택 상태.
     /// </summary>
-    private sealed class TransformSession(FreeTransform source, FreeTransform? lifted, MultiCelTransform? multi, SelectionState before, PixelImage? celBefore)
+    private sealed class FloatingTransform(FreeTransform source, SelectionState before)
     {
-        /// <summary>손잡이·값의 기준 원본: 한 셀이면 떼어 낸 픽셀, 여러 셀이면 모든 셀의 원본을 감싸는 사각형.</summary>
-        public FreeTransform Source { get; } = source;
-        /// <summary>지금 셀에서 떼어 낸 원본(캔버스에 떠 있는 그림). 지금 셀에 뗄 것이 없으면 null.</summary>
-        public FreeTransform? Lifted { get; } = lifted;
-        /// <summary>타임라인에서 함께 고른 다른 셀들(같은 행렬로 적용 때 한꺼번에 바뀜). 한 셀이면 null.</summary>
-        public MultiCelTransform? Multi { get; } = multi;
-        /// <summary>시작 전 선택 상태(영역·모양·떠 있는 픽셀).</summary>
+        public FreeTransform Source { get; set; } = source;
         public SelectionState Before { get; } = before;
-        /// <summary>이미 열린 선택 편집 기록 안에서 시작했으면 그때의 셀 픽셀(취소 때 되돌림). 변형이 기록을 열었으면 null(기록째 취소).</summary>
-        public PixelImage? CelBefore { get; } = celBefore;
-        public TransformParams Params { get; set; } = source.Identity;
-        /// <summary>회전 중심(원본 좌표 — 변형을 따라 움직인다).</summary>
-        public (double X, double Y) PivotSource { get; set; } = source.SourceCenter;
+        public TransformParams Params { get; set; } = source.Box.Identity;
+        public (double X, double Y) PivotSource { get; set; } = source.Box.Center;
     }
 
-    private TransformSession? _transform;
+    /// <summary>
+    /// 셀 변형(Ctrl+T, 지금 셀)·레이어 변형(Ctrl+Shift+C, 레이어 전체): 픽셀 엔진, 지금 값(기준 프레임 값), 회전 중심(원본 좌표), 미리보기.
+    /// 셀은 적용할 때까지 그대로이고 캔버스에는 미리보기 합성을 그린다.
+    /// </summary>
+    private sealed class LayerTransformSession(SpriteProject.LayerTransform engine)
+    {
+        public SpriteProject.LayerTransform Engine { get; } = engine;
+        public TransformParams Params { get; set; } = engine.Box.Identity;
+        public (double X, double Y) PivotSource { get; set; } = engine.Box.Center;
+        /// <summary>지금 프레임 합성 미리보기(캔버스 크기)와 캔버스 밖·잘릴 픽셀(흐리게, 캔버스 좌표). 값이 바뀌면 버린다.</summary>
+        public WriteableBitmap? Preview { get; set; }
+        public WriteableBitmap? Outside { get; set; }
+        public Rectangle OutsideRect { get; set; }
+        /// <summary>대상 레이어 아래·위 레이어 합성(<see cref="BackdropFrame"/> 프레임). 프레임·프로젝트가 바뀌면 버린다.</summary>
+        public PixelImage? Below { get; set; }
+        public PixelImage? Above { get; set; }
+        public int BackdropFrame { get; set; } = -1;
+    }
+
+    private FloatingTransform? _transform;
+    private LayerTransformSession? _layerTransform;
     private ResampleMode _transformResample = ResampleMode.RotSprite;
 
     /// <summary>
@@ -858,17 +855,23 @@ public sealed partial class EditorContext
     /// </summary>
     public event EventHandler? CommittingEdits;
 
-    /// <summary>변형 모드에 들어가거나 나옴, 변형 값·회전 중심·리샘플링이 바뀜.</summary>
+    /// <summary>변형 모드에 들어가거나 나옴, 변형 값·여백·회전 중심·리샘플링·보이는 프레임이 바뀜.</summary>
     public event EventHandler? TransformChanged;
 
-    /// <summary>변형 모드(Ctrl+T)인지.</summary>
-    public bool IsTransforming => _transform is not null;
+    /// <summary>변형 모드(Ctrl+T·Ctrl+Shift+C·넣은 그림 변형)인지.</summary>
+    public bool IsTransforming => _transform is not null || _layerTransform is not null;
 
-    /// <summary>변형 원본(변형 중이 아니면 null).</summary>
-    public FreeTransform? Transform => _transform?.Source;
+    /// <summary>레이어 전체 변형(Ctrl+Shift+C, 주황 상자 — 모든 프레임)인지. 아니면 지금 셀 변형(파란 상자).</summary>
+    public bool IsLayerTransform => _layerTransform?.Engine.WholeLayer == true;
+
+    /// <summary>선택 영역(또는 넣은 그림)만 바꾸는 변형인지 — 피벗은 그대로이고 여백을 넓히면 가장자리 픽셀로 채운다.</summary>
+    public bool TransformHasSelection => _transform is not null || _layerTransform?.Engine.HasSelection == true;
+
+    /// <summary>변형 상자(손잡이·값의 기준, 지금 그리는 그림 좌표). 변형 중이 아니면 null.</summary>
+    public TransformBox? TransformBox => _layerTransform?.Engine.Box ?? _transform?.Source.Box;
 
     /// <summary>지금 변형 값(변형 중이 아니면 기본값).</summary>
-    public TransformParams TransformParams => _transform?.Params ?? default;
+    public TransformParams TransformParams => _layerTransform?.Params ?? _transform?.Params ?? default;
 
     /// <summary>변형 리샘플링(기본 RotSprite). 변형 중에 바꾸면 바로 다시 그린다.</summary>
     public ResampleMode TransformResample
@@ -879,77 +882,58 @@ public sealed partial class EditorContext
             if (!Enum.IsDefined(value)) value = ResampleMode.RotSprite;
             if (_transformResample == value) return;
             _transformResample = value;
-            if (_transform is not null) RenderTransform();
-            else TransformChanged?.Invoke(this, EventArgs.Empty);
+            RenderTransform();
         }
     }
 
-    /// <summary>회전 중심(캔버스 연속 좌표). 변형 중이 아니면 (0,0).</summary>
+    /// <summary>레이어 변형이 부위를 늘릴 때 쓸 9-slice 가운데 채우기(캔버스 크기 모드의 9-slice 설정을 같이 씀). 끄면 null.</summary>
+    private NineSliceFill? TransformSlice => _canvasResizeNineSlice ? _canvasResizeSliceFill : null;
+
+    /// <summary>9-slice로 늘릴 수 있는 레이어 변형인지: 레이어 전체, 선택 없음, 테두리가 있는 부위.</summary>
+    public bool TransformSliceAvailable
+        => _layerTransform is { Engine: { WholeLayer: true, HasSelection: false, ReferenceLayer: { IsPart: true, PartBorder.IsNone: false } } };
+
+    /// <summary>회전 중심(지금 그리는 그림 좌표, 연속). 변형 중이 아니면 (0,0).</summary>
     public (double X, double Y) TransformPivot
-        => _transform is { } t ? t.Source.Map(t.Params, t.PivotSource.X, t.PivotSource.Y) : (0, 0);
+    {
+        get
+        {
+            if (TransformBox is not { } box) return (0, 0);
+            var (x, y) = _layerTransform?.PivotSource ?? _transform!.PivotSource;
+            return box.Map(TransformParams, x, y);
+        }
+    }
 
     /// <summary>
-    /// 변형 모드에 들어간다: 선택 영역(없으면 현재 셀의 칠한 픽셀 전체)을 떼어 원본으로 삼는다. 회전 중심은 처음에 대상의 피벗 자리.
-    /// <paramref name="cels"/>(함께 바꿀 셀들, 레이어·프레임 번호 — null이면 <see cref="SelectedCels"/>)에 지금 셀 말고 다른 셀이 있으면 그 셀들도 같은 영역(선택이 없으면 셀마다 칠한 픽셀 전체)을
-    /// 떼어 함께 변형한다: 손잡이는 모든 원본을 감싸는 사각형, 캔버스에는 지금 셀이 떠서 움직이고, 적용하면 모든 셀이 같은 행렬로 바뀐다(실행취소 한 단계).
-    /// 빈 셀·잠긴 레이어·그룹은 건너뛴다(<see cref="TransformLockedSkipped"/>).
+    /// 변형 모드에 들어간다: <paramref name="wholeLayer"/>면 지금 레이어의 모든 프레임(Ctrl+Shift+C, 프레임마다 그 피벗을 중심으로 돎), 아니면 지금 셀과
+    /// 타임라인에서 함께 고른 셀들(<see cref="SelectedCels"/>, Ctrl+T). 선택 영역이 있으면 그 모양 안 픽셀만(피벗은 그대로), 없으면 칠한 픽셀 전체(피벗도 따라감).
+    /// 셀은 적용할 때까지 그대로이고 캔버스는 미리보기를 그린다. 회전 중심은 처음에 지금 레이어의 피벗 자리.
     /// 못 들어가면 상태 표시줄에 보일 이유, 들어갔으면(이미 변형 중이어도) null.
     /// </summary>
-    public string? BeginTransform(IReadOnlyList<(int Layer, int Frame)>? cels = null)
+    public string? BeginTransform(bool wholeLayer)
     {
         if (Project is not { } p) return UiStrings.S_EditorContext_BeginTransform_E708BAFBC9;
-        if (_transform is not null) return null;
-        if (IsGroupSelected) return UiStrings.S_EditorContext_BeginTransform_10405489AE;
-        // 캔버스 크기 모드면 먼저 적용한다(캔버스가 바뀌면 선택이 풀리므로 시작 전 선택 상태를 저장하기 전에).
-        ApplyCanvasResize();
-        if (!CanEdit) return UiStrings.S_EditorContext_BeginTransform_C545365EE1;
-        bool hadStroke = _selectionStrokeOpen;
-        var celBefore = hadStroke ? _strokeImage?.Clone() : null;
-        var before = Selection.Save();
-        BeginSelectionEdit();
-        var img = EditImage!;
-        // 함께 고른 다른 셀들: 지금 셀의 선택 영역(없으면 셀마다 칠한 픽셀 전체)을 같은 자리에서 뗀다(셀은 적용할 때까지 그대로).
-        var others = (cels ?? SelectedCels?.Invoke())?.Where(c => c.Layer != _layer || c.Frame != _frame).ToList();
-        var multi = others is { Count: > 0 } ? MultiCelTransform.Create(p, _layer, others, Selection.HasSelection ? Selection.Region : null) : null;
-        if (!Selection.HasSelection && img.GetOpaqueBounds() is { IsEmpty: false } content) Selection.Select(img, content);
-        FreeTransform? lifted = null;
-        if (Selection.HasSelection)
-        {
-            Selection.Lift(img);
-            lifted = new FreeTransform(Selection.Floating!, Selection.Region);
-        }
-        var othersBounds = multi?.Bounds ?? Rectangle.Empty;
-        if (lifted is null && othersBounds.IsEmpty)
-        {
-            if (!hadStroke)
-            {
-                _selectionStrokeOpen = false;
-                CancelStroke();
-            }
-            return multi is null ? UiStrings.S_EditorContext_BeginTransform_433795A813 : UiStrings.Transform_NoPixelsInCels;
-        }
-        var source = lifted;
-        if (!othersBounds.IsEmpty)
-        {
-            // 손잡이는 모든 셀의 원본을 감싸는 사각형(움직임 전체가 보이게).
-            var union = lifted is null ? othersBounds : Rectangle.Union(othersBounds, lifted.SourceBounds);
-            source = new FreeTransform(new PixelImage(union.Width, union.Height), new PixelMask(union));
-        }
-        _transform = new TransformSession(source!, lifted, multi, before, celBefore);
-        // 회전 중심은 처음에 지금 레이어의 피벗(부위면 부위 피벗, 그 밖에는 레이어 피벗) 자리.
+        if (IsTransforming) return null;
+        if (IsGroupSelected) return wholeLayer ? UiStrings.LayerTransform_Group : UiStrings.S_EditorContext_BeginTransform_10405489AE;
+        // 캔버스 크기 모드·떠 있는 선택은 먼저 적용한다(캔버스가 바뀌면 선택이 풀리므로 선택을 읽기 전에).
+        CommitFloating();
+        if (!CanEdit) return wholeLayer ? UiStrings.LayerTransform_Locked : UiStrings.S_EditorContext_BeginTransform_C545365EE1;
+        PixelMask? selection = Selection.HasSelection ? Selection.Region : null;
+        var cels = wholeLayer ? [] : SelectedCels?.Invoke() ?? [];
+        if (SpriteProject.LayerTransform.Create(p, _layer, _frame, cels, selection, wholeLayer) is not { } engine)
+            return wholeLayer ? UiStrings.LayerTransform_Empty
+                : cels.Any(c => c.Layer != _layer || c.Frame != _frame) ? UiStrings.Transform_NoPixelsInCels : UiStrings.S_EditorContext_BeginTransform_433795A813;
         var (px, py) = CurrentLayerPivotLocal();
-        var pivotSource = source!.Unmap(_transform.Params, px, py);
-        if (double.IsFinite(pivotSource.X) && double.IsFinite(pivotSource.Y)) _transform.PivotSource = pivotSource;
-        NotifyPixels();
+        _layerTransform = new LayerTransformSession(engine) { PivotSource = (px, py) };
         TransformChanged?.Invoke(this, EventArgs.Empty);
         return null;
     }
 
-    /// <summary>변형 중인 셀 수(지금 셀에 뗄 것이 있으면 그것 포함, 함께 고른 다른 셀들). 변형 중이 아니면 0.</summary>
-    public int TransformCelCount => _transform is { } t ? (t.Lifted is null ? 0 : 1) + (t.Multi?.Targets.Count ?? 0) : 0;
+    /// <summary>변형 중인 셀 수(부위 레이어 전체면 스킨마다). 변형 중이 아니면 0.</summary>
+    public int TransformCelCount => _layerTransform?.Engine.Targets.Count ?? (_transform is null ? 0 : 1);
 
     /// <summary>함께 고른 셀 중 레이어가 잠겨 건너뛴 셀 수(그림이 있는 것만). 변형 중이 아니면 0.</summary>
-    public int TransformLockedSkipped => _transform?.Multi?.LockedSkipped ?? 0;
+    public int TransformLockedSkipped => _layerTransform?.Engine.LockedSkipped ?? 0;
 
     /// <summary>
     /// 방금 지금 셀에 넣은 그림(<paramref name="image"/>를 <paramref name="location"/>에 — 캔버스 밖은 캔버스 밖 그림으로 들어감)을 그대로 떠 있는 상태로 들고
@@ -977,8 +961,7 @@ public sealed partial class EditorContext
             for (int x = 0; x < floating.Width; x++)
                 if (floating.Pixels[y * floating.Width + x].A != 0) cel.Set(r.X + x, r.Y + y, Color32.Transparent);
         Selection.SetFloating(floating, region);
-        var placed = new FreeTransform(floating, region);
-        _transform = new TransformSession(placed, placed, null, before, null);
+        _transform = new FloatingTransform(new FreeTransform(floating, region), before);
         NotifyPixels();
         TransformChanged?.Invoke(this, EventArgs.Empty);
         return null;
@@ -987,30 +970,64 @@ public sealed partial class EditorContext
     /// <summary>변형 값을 바꾸고 원본에서 다시 그린다(끄는 동안의 미리보기도 이것). 배율 0은 막는다.</summary>
     public void SetTransformParams(TransformParams p)
     {
-        if (_transform is not { } t) return;
+        if (!IsTransforming) return;
         if (!double.IsFinite(p.CenterX) || !double.IsFinite(p.CenterY) || !double.IsFinite(p.Angle)
             || !double.IsFinite(p.ScaleX) || !double.IsFinite(p.ScaleY) || p.ScaleX == 0 || p.ScaleY == 0) return;
         p = p with { Angle = TransformParams.NormalizeAngle(p.Angle) };
-        if (p == t.Params) return;
-        t.Params = p;
+        if (p == TransformParams) return;
+        if (_layerTransform is { } s) s.Params = p;
+        else _transform!.Params = p;
         RenderTransform();
     }
 
-    /// <summary>회전 중심을 캔버스 좌표로 옮긴다(그림은 그대로).</summary>
+    /// <summary>
+    /// 여백: 변형 상자의 원본 사각형을 <paramref name="bounds"/>(원본 좌표)로 바꾼다. 그림은 제자리에 있고, 좁힌 쪽 밖은 잘리며 넓힌 쪽은 선택 영역(넣은 그림)이면
+    /// 가장자리 픽셀을 복사해 늘리고 아니면 빈 자리(부위는 영역이 넓어짐)가 된다. 크기는 1px 이상.
+    /// </summary>
+    public void SetTransformBox(Rectangle bounds)
+    {
+        bounds.Width = Math.Clamp(bounds.Width, 1, PixelImage.MaxSize);
+        bounds.Height = Math.Clamp(bounds.Height, 1, PixelImage.MaxSize);
+        if (_layerTransform is { } s)
+        {
+            if (bounds == s.Engine.Box.Bounds) return;
+            s.Params = s.Engine.SetBox(bounds, s.Params);
+        }
+        else if (_transform is { } t)
+        {
+            if (bounds == t.Source.SourceBounds) return;
+            var next = t.Source.Reframe(bounds, extendEdges: true);
+            t.Params = t.Source.Box.ParamsFor(next.Box, t.Params);
+            t.Source = next;
+        }
+        else return;
+        RenderTransform();
+    }
+
+    /// <summary>변형 상자를 그 가운데를 지나는 축으로 뒤집는다(<paramref name="horizontal"/> = 좌우, 상자의 가로 축 기준 — 배율 부호를 바꿈).</summary>
+    public void FlipTransform(bool horizontal)
+    {
+        var p = TransformParams;
+        SetTransformParams(horizontal ? p with { ScaleX = -p.ScaleX } : p with { ScaleY = -p.ScaleY });
+    }
+
+    /// <summary>회전 중심을 지금 그리는 그림 좌표로 옮긴다(그림은 그대로).</summary>
     public void SetTransformPivot(double x, double y)
     {
-        if (_transform is not { } t) return;
-        var src = t.Source.Unmap(t.Params, x, y);
+        if (TransformBox is not { } box) return;
+        var src = box.Unmap(TransformParams, x, y);
         if (!double.IsFinite(src.X) || !double.IsFinite(src.Y)) return;
-        t.PivotSource = src;
+        if (_layerTransform is { } s) s.PivotSource = src;
+        else _transform!.PivotSource = src;
         TransformChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>회전 중심을 원본 가운데로 되돌린다.</summary>
     public void ResetTransformPivot()
     {
-        if (_transform is not { } t) return;
-        t.PivotSource = t.Source.SourceCenter;
+        if (TransformBox is not { } box) return;
+        if (_layerTransform is { } s) s.PivotSource = box.Center;
+        else _transform!.PivotSource = box.Center;
         TransformChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -1019,64 +1036,214 @@ public sealed partial class EditorContext
     /// </summary>
     public TransformParams RotatedAboutPivot(TransformParams start, double angle)
     {
-        if (_transform is not { } t) return start;
-        var (px, py) = t.Source.Map(start, t.PivotSource.X, t.PivotSource.Y);
+        if (TransformBox is not { } box) return start;
+        var (sx, sy) = _layerTransform?.PivotSource ?? _transform!.PivotSource;
+        var (px, py) = box.Map(start, sx, sy);
         double rad = (angle - start.Angle) * Math.PI / 180;
         double s = Math.Sin(rad), c = Math.Cos(rad);
         double dx = start.CenterX - px, dy = start.CenterY - py;
         return start with { Angle = angle, CenterX = px + dx * c - dy * s, CenterY = py + dx * s + dy * c };
     }
 
-    /// <summary>변형을 적용한다: 결과를 내려놓고 실행취소 한 단계로 기록한다(결과 모양은 선택으로 남음).</summary>
+    /// <summary>변형을 적용한다(실행취소 한 단계). 선택 영역 변형이면 옮긴 모양이 선택으로 남는다.</summary>
     public void CommitTransform() => CommitFloating();
 
-    /// <summary>변형을 취소한다: 셀 픽셀과 선택(떠 있었는지 포함)을 변형 전 그대로 되돌린다. 기록은 남지 않는다.</summary>
+    /// <summary>변형을 취소한다: 셀 픽셀과 선택을 변형 전 그대로 둔다. 기록은 남지 않는다.</summary>
     public void CancelTransform()
     {
-        if (_transform is not { } t || Project is null) return;
-        _transform = null;
-        if (t.CelBefore is { } cel && _strokeImage is { } img)
+        if (Project is null) return;
+        if (_layerTransform is { } s)
         {
-            // 이미 열려 있던 선택 편집 기록은 그대로 두고 그 안의 변형 전 상태로.
-            img.CopyFrom(cel);
-            Selection.Restore(t.Before);
-            NotifyPixels();
+            _layerTransform = null;
+            DropLayerTransformPreview(s);
         }
-        else
+        else if (_transform is { } t)
         {
+            _transform = null;
             _selectionStrokeOpen = false;
             CancelStroke();
             Selection.Restore(t.Before);
         }
+        else return;
         TransformChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>값이 바뀌면 다시 그린다: 넣은 그림은 떠 있는 픽셀을, 셀·레이어 변형은 미리보기를.</summary>
     private void RenderTransform()
     {
-        if (_transform is not { } t) return;
-        if (t.Lifted is { } lifted)
+        if (_layerTransform is { } s) DropLayerTransformPreview(s);
+        else if (_transform is { } t)
         {
-            // 여러 셀이면 손잡이 기준(모든 원본을 감싸는 사각형)과 같은 행렬로 지금 셀 원본을 그린다.
-            var r = lifted.Render(t.Source.ParamsFor(lifted, t.Params), _transformResample);
+            var r = t.Source.Render(t.Params, _transformResample);
             Selection.SetFloating(r.Image, r.Region);
+            NotifyPixels();
         }
-        NotifyPixels();
         TransformChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>셀·레이어 변형을 적용한다(실행취소 한 단계). 선택 영역 변형이면 옮긴 모양을 선택으로 남긴다.</summary>
+    private void ApplyLayerTransform()
+    {
+        if (_layerTransform is not { } s) return;
+        _layerTransform = null;
+        DropLayerTransformPreview(s);
+        var engine = s.Engine;
+        var layer = engine.ReferenceLayer;
+        var origin = layer.IsPart ? layer.PartOffset : Point.Empty;
+        var after = engine.SelectionAfter(s.Params, _transformResample);
+        string label = engine.WholeLayer ? UiStrings.LayerTransform_Undo : UiStrings.S_EditorContext_CommitFloating_19E799222E;
+        if (engine.Commit(label, s.Params, _transformResample, TransformSlice) && after is { } mask && ReferenceEquals(CurrentLayerObject, layer))
+        {
+            // 부위 영역이 넓어졌으면 부위 좌표가 그만큼 옮겨 간다.
+            var moved = layer.IsPart ? layer.PartOffset : Point.Empty;
+            Selection.Select(EditImageOrEmpty, mask.Offset(origin.X - moved.X, origin.Y - moved.Y));
+        }
+        TransformChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// 레이어 전체 변형 중 같은 레이어의 다른 프레임으로 감: 그 프레임을 기준으로 값과 회전 중심을 옮긴다(모든 프레임의 결과는 그대로).
+    /// </summary>
+    private void RebaseLayerTransform(SpriteProject p)
+    {
+        if (_layerTransform is not { } s) return;
+        var (q, center) = s.Engine.Rebase(p.Frames[_frame], s.Params, TransformPivot);
+        s.Params = q;
+        s.PivotSource = s.Engine.Box.Unmap(q, center.X, center.Y);
+        DropLayerTransformPreview(s);
+        TransformChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>모드 중에 프로젝트가 바뀜(레이어 보이기 등): 대상 레이어가 없어졌거나 잠겼으면 취소하고, 아니면 미리보기를 새 합성으로.</summary>
+    private void SyncLayerTransform(SpriteProject p)
+    {
+        if (_layerTransform is not { } s) return;
+        int index = p.IndexOf(s.Engine.ReferenceLayer);
+        if (index < 0 || p.IsLayerLocked(index) || !p.Frames.Contains(s.Engine.ReferenceFrame))
+        {
+            CancelTransform();
+            return;
+        }
+        s.Below = s.Above = null;
+        s.BackdropFrame = -1;
+        DropLayerTransformPreview(s);
+        TransformChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private static void DropLayerTransformPreview(LayerTransformSession s)
+    {
+        s.Preview?.Dispose();
+        s.Preview = null;
+        s.Outside?.Dispose();
+        s.Outside = null;
+    }
+
+    /// <summary>셀·레이어 변형의 미리보기(지금 프레임 합성, 캔버스 크기 — 대상 레이어는 효과 없이 변형한 모습). 그런 변형이 아니면 null. 호출자는 Dispose하지 않는다.</summary>
+    public WriteableBitmap? LayerTransformPreview
+    {
+        get
+        {
+            if (_layerTransform is not { } s) return null;
+            EnsureLayerTransformPreview(s);
+            return s.Preview;
+        }
+    }
+
+    /// <summary>레이어 전체 변형의 상자 자리(캔버스 좌표, 지금 프레임 — 미리보기 패널이 이 자리를 크게 맞춤). 레이어 전체 변형이 아니면 빈 사각형.</summary>
+    public Rectangle LayerTransformFocus
+    {
+        get
+        {
+            if (_layerTransform is not { Engine: { WholeLayer: true } engine } || Project is not { } p || _frame >= p.Frames.Count) return Rectangle.Empty;
+            var r = engine.Box.Bounds;
+            if (engine.ReferenceLayer.IsPart) r.Offset(p.GetPartOffset(engine.ReferenceLayer, _frame));
+            return r;
+        }
+    }
+
+    /// <summary>미리보기의 캔버스 밖으로 나간 픽셀과 잘릴 픽셀(흐리게 그림)과 그 자리(캔버스 좌표). 없으면 null. 호출자는 Dispose하지 않는다.</summary>
+    public (WriteableBitmap Bitmap, Rectangle Rect)? LayerTransformOutside
+    {
+        get
+        {
+            if (_layerTransform is not { } s) return null;
+            EnsureLayerTransformPreview(s);
+            return s.Outside is { } bmp ? (bmp, s.OutsideRect) : null;
+        }
+    }
+
+    /// <summary>
+    /// 미리보기를 만든다: 아래 레이어 합성 위에 대상 레이어의 지금 프레임 결과(레이어 불투명도, 효과 없이)를 놓고 위 레이어 합성을 덮는다.
+    /// 캔버스 밖으로 나간 결과와 상자 밖으로 잘릴 원래 픽셀은 <see cref="LayerTransformSession.Outside"/>로 따로 둔다.
+    /// </summary>
+    private void EnsureLayerTransformPreview(LayerTransformSession s)
+    {
+        if (s.Preview is not null || Project is not { } p || _frame < 0 || _frame >= p.Frames.Count) return;
+        var layer = s.Engine.ReferenceLayer;
+        int index = p.IndexOf(layer);
+        if (index < 0) return;
+        if (s.BackdropFrame != _frame || s.Below is null)
+        {
+            if (layer.IsPart)
+            {
+                s.Below = p.PlanFrame(_frame, layerFilter: l => !ReferenceEquals(l, layer)).Render();
+                s.Above = null;
+            }
+            else
+            {
+                // 그룹과 그 부위는 레이어 목록에 이어 붙어 있어 일반 레이어의 같은 쪽에 함께 있다.
+                s.Below = p.PlanFrame(_frame, layerFilter: l => p.IndexOf(l) < index).Render();
+                s.Above = p.PlanFrame(_frame, layerFilter: l => p.IndexOf(l) > index).Render();
+            }
+            s.BackdropFrame = _frame;
+        }
+        var preview = s.Below.Clone();
+        var at = layer.IsPart ? p.GetPartOffset(layer, _frame) : Point.Empty;
+        var outside = new List<(PixelImage Image, Point Origin)>();
+        var canvas = new Rectangle(Point.Empty, p.Size);
+        void Place(PixelImage image, Point origin)
+        {
+            var rect = new Rectangle(origin.X + at.X, origin.Y + at.Y, image.Width, image.Height);
+            preview.Composite(image, rect.X, rect.Y, layer.Opacity);
+            if (canvas.Contains(rect)) return;
+            var cut = image.Clone();
+            cut.FillRect(new Rectangle(-rect.X, -rect.Y, canvas.Width, canvas.Height), Color32.Transparent);
+            outside.Add((cut, rect.Location));
+        }
+        var frame = p.Frames[_frame];
+        if (s.Engine.ShownTarget(frame) is { } target)
+        {
+            if (s.Engine.Render(target, s.Params, _transformResample, TransformSlice) is { } r) Place(r.Image, r.Origin);
+            if (s.Engine.CutPixels(target) is { } cut) outside.Add((cut.Image, new Point(cut.Origin.X + at.X, cut.Origin.Y + at.Y)));
+        }
+        else if (layer.IsPart) { if (p.GetCel(index, _frame) is { } cel) Place(cel, Point.Empty); }
+        else
+        {
+            var (full, origin) = p.GetFullCel(index, _frame);
+            Place(full, origin);
+        }
+        if (s.Above is { } above) preview.Composite(above, 0, 0, 255);
+        s.Preview = ImageUtil.ToBitmap(preview);
+        if (outside.Count == 0) return;
+        var bounds = outside.Select(o => new Rectangle(o.Origin, o.Image.Size)).Aggregate(Rectangle.Union);
+        var all = new PixelImage(bounds.Width, bounds.Height);
+        foreach (var (image, origin) in outside) all.Composite(image, origin.X - bounds.X, origin.Y - bounds.Y, layer.Opacity);
+        s.Outside = ImageUtil.ToBitmap(all);
+        s.OutsideRect = bounds;
     }
 
     // ───────────── 캔버스 크기 모드 ─────────────
 
     /// <summary>
     /// 캔버스 크기 모드 상태: 원래 그림(현재 프레임 합성), 새 캔버스 자리, 원래 그림이 놓일 사각형, 미리보기.
-    /// 레이어 크기 모드(<see cref="Layer"/>가 있음)면 캔버스는 그대로이고, 원래 그림은 그 레이어의 현재 프레임 그림, 사각형은 레이어가 놓일 자리(캔버스 좌표)다.
     /// </summary>
     private sealed class CanvasResizeSession(PixelImage source)
     {
-        /// <summary>현재 프레임 합성(미리보기 원본 — 늘 이것에서 다시 그려 누적되지 않음). 레이어 크기 모드면 그 레이어의 현재 프레임 그림(캔버스 밖 그림 포함).</summary>
+        /// <summary>현재 프레임 합성(미리보기 원본 — 늘 이것에서 다시 그려 누적되지 않음).</summary>
         public PixelImage Source { get; set; } = source;
-        /// <summary>새 캔버스(원래 프레임 좌표: 가장자리를 끄는 동안 화면에서 제자리에 보이게). 레이어 크기 모드면 지금 캔버스 그대로.</summary>
+        /// <summary>새 캔버스(원래 프레임 좌표: 가장자리를 끄는 동안 화면에서 제자리에 보이게).</summary>
         public Rectangle Canvas { get; set; } = new(0, 0, source.Width, source.Height);
-        /// <summary>원래 그림이 놓일 사각형(새 캔버스 좌표, 크기 = 그림 크기). 레이어 크기 모드면 레이어가 놓일 자리.</summary>
+        /// <summary>원래 그림이 놓일 사각형(새 캔버스 좌표, 크기 = 그림 크기).</summary>
         public Rectangle Image { get; set; } = new(0, 0, source.Width, source.Height);
         /// <summary>중심 기준 크기 조정의 고정된 캔버스 중심(픽셀 두 배 좌표).</summary>
         public Point Center2 { get; set; }
@@ -1086,18 +1253,6 @@ public sealed partial class EditorContext
         /// <summary>적용하면 될 그림 전체(캔버스 밖으로 나가는 부분 포함)와 그 자리(새 캔버스 좌표) — <see cref="Preview"/>와 함께 만들고 버린다.</summary>
         public WriteableBitmap? Outside { get; set; }
         public Rectangle OutsideRect { get; set; }
-
-        /// <summary>레이어 크기 모드(Ctrl+Shift+C)의 대상 레이어. 캔버스 크기 모드면 null.</summary>
-        public Layer? Layer { get; init; }
-        /// <summary>레이어 크기 모드: 레이어의 원래 자리(캔버스 좌표, <see cref="SpriteProject.LayerBounds"/>).</summary>
-        public Rectangle From { get; init; }
-        /// <summary>레이어 크기 모드: 적용 뒤 레이어 자리(캔버스 좌표 — 손잡이로 바꿈, 그 밖으로 나간 그림은 잘림). 처음 = <see cref="From"/>.</summary>
-        public Rectangle Area { get; set; }
-        /// <summary>레이어 크기 모드: <see cref="Source"/>의 왼쪽 위(캔버스 좌표).</summary>
-        public Point SourceOrigin { get; set; }
-        /// <summary>레이어 크기 모드: 대상 레이어 아래·위 레이어들의 현재 프레임 합성(캔버스 크기, 위가 없으면 null).</summary>
-        public PixelImage? Below { get; set; }
-        public PixelImage? Above { get; set; }
     }
 
     private CanvasResizeSession? _canvasResize;
@@ -1108,26 +1263,14 @@ public sealed partial class EditorContext
     /// <summary>캔버스 크기 모드를 적용해 프로젝트가 바뀜(상태 표시줄 알림 글).</summary>
     public event EventHandler<string>? CanvasResized;
 
-    /// <summary>레이어 크기 모드를 적용해 레이어가 바뀜(상태 표시줄 알림 글). 캔버스는 그대로다.</summary>
-    public event EventHandler<string>? LayerResized;
-
-    /// <summary>캔버스 크기 모드(Ctrl+Alt+C)나 레이어 크기 모드(Ctrl+Shift+C)인지 — 두 모드는 같은 손잡이·숫자를 쓴다.</summary>
+    /// <summary>캔버스 크기 모드(Ctrl+Alt+C)인지.</summary>
     public bool IsCanvasResizing => _canvasResize is not null;
 
-    /// <summary>레이어 크기 모드(Ctrl+Shift+C)의 대상 레이어. 캔버스 크기 모드이거나 모드가 아니면 null.</summary>
-    public Layer? CanvasResizeLayer => _canvasResize?.Layer;
+    /// <summary>원래 그림 크기(원래 캔버스·프레임 크기). 모드가 아니면 빈 크기.</summary>
+    public Size CanvasResizeSource => _canvasResize?.Source.Size ?? Size.Empty;
 
-    /// <summary>원래 그림 크기: 캔버스 크기 모드면 원래 캔버스(프레임) 크기, 레이어 크기 모드면 레이어의 원래 크기.</summary>
-    public Size CanvasResizeSource => _canvasResize is { } s ? s.Layer is null ? s.Source.Size : s.From.Size : Size.Empty;
-
-    /// <summary>캔버스 크기 모드의 원래 그림(현재 프레임 합성 — 특수 비율 창 미리보기). 레이어 크기 모드거나 모드가 아니면 null. 호출자는 바꾸지 않는다.</summary>
-    public PixelImage? CanvasResizeSourceImage => _canvasResize is { Layer: null } s ? s.Source : null;
-
-    /// <summary>레이어 크기 모드: 레이어의 원래 자리(캔버스 좌표 — 일반 레이어는 모든 프레임의 칠한 자리, 부위는 부위 영역). 그 밖에는 빈 사각형.</summary>
-    public Rectangle LayerResizeFrom => _canvasResize is { Layer: not null } s ? s.From : Rectangle.Empty;
-
-    /// <summary>레이어 크기 모드: 적용 뒤 레이어 자리(캔버스 좌표 — 그 밖은 잘림). 그 밖에는 빈 사각형.</summary>
-    public Rectangle LayerResizeArea => _canvasResize is { Layer: not null } s ? s.Area : Rectangle.Empty;
+    /// <summary>캔버스 크기 모드의 원래 그림(현재 프레임 합성 — 특수 비율 창 미리보기). 모드가 아니면 null. 호출자는 바꾸지 않는다.</summary>
+    public PixelImage? CanvasResizeSourceImage => _canvasResize?.Source;
 
     /// <summary>새 캔버스(원래 프레임 좌표, 크기 = 새 캔버스 크기). 모드가 아니면 빈 사각형.</summary>
     public Rectangle CanvasResizeCanvas => _canvasResize?.Canvas ?? Rectangle.Empty;
@@ -1187,9 +1330,8 @@ public sealed partial class EditorContext
 
     /// <summary>
     /// 캔버스 크기 모드가 그림 크기를 9-slice로 바꾸는지(켰고 쓸 테두리가 있음). 조작(Ctrl+끌기·그림 가로/세로)은 같고 늘리는 방법만 바뀐다.
-    /// 레이어 크기 모드는 늘 최근접이다.
     /// </summary>
-    public bool CanvasResizeUsesSlice => _canvasResizeNineSlice && _canvasResize?.Layer is null && CanvasResizeSliceAvailable;
+    public bool CanvasResizeUsesSlice => _canvasResizeNineSlice && CanvasResizeSliceAvailable;
 
     /// <summary>9-slice로 늘릴 때 그림의 가장 작은 크기: 프레임 칸 테두리 두 쪽 + 가운데 1px(테두리가 없으면 1).</summary>
     public Size CanvasResizeMinImage
@@ -1203,6 +1345,8 @@ public sealed partial class EditorContext
 
     private void OnCanvasResizeSliceChanged()
     {
+        // 레이어 변형도 같은 9-slice 설정을 쓴다.
+        if (_layerTransform is not null) RenderTransform();
         if (_canvasResize is not { } s) return;
         var min = CanvasResizeMinImage;
         s.Image = s.Image with { Width = Math.Max(s.Image.Width, min.Width), Height = Math.Max(s.Image.Height, min.Height) };
@@ -1239,22 +1383,13 @@ public sealed partial class EditorContext
     }
 
     /// <summary>
-    /// 캔버스·레이어 크기 모드를 적용하면 피벗이 놓일 자리(연속 좌표 — 캔버스 크기 모드는 새 캔버스 좌표의 지금 프레임 피벗, 레이어 크기 모드는 캔버스 좌표의
-    /// 부위 피벗이나 프레임 피벗). 피벗은 그림을 따라간다(<see cref="SpriteProject.MapResizedCanvasPoint"/>·<see cref="SpriteProject.MapLayerResizePoint"/>). 모드가 아니면 null.
+    /// 캔버스 크기 모드를 적용하면 지금 프레임 피벗이 놓일 자리(새 캔버스 좌표, 연속). 피벗은 그림을 따라간다(<see cref="SpriteProject.MapResizedCanvasPoint"/>). 모드가 아니면 null.
     /// </summary>
     public System.Drawing.PointF? CanvasResizePivot
     {
         get
         {
             if (_canvasResize is not { } s || Project is not { } p || _frame < 0 || _frame >= p.Frames.Count) return null;
-            if (s.Layer is { } layer)
-            {
-                // 부위 피벗은 부위 기준, 일반 레이어·그룹은 레이어 피벗(캔버스 기준) — 둘 다 캔버스 좌표로
-                var layerPivot = p.GetLayerPivot(layer, _frame);
-                var (x, y) = layer.IsPart ? layerPivot.ToLocalPixel(s.From.Width, s.From.Height) : layerPivot.ToLocalPixel(p.Width, p.Height);
-                var at = layer.IsPart ? new System.Drawing.PointF(s.From.X + x, s.From.Y + y) : new System.Drawing.PointF(x, y);
-                return SpriteProject.MapLayerResizePoint(at, s.From, s.Image);
-            }
             var (fx, fy) = p.GetFramePivot(_frame).ToLocalPixel(s.Source.Width, s.Source.Height);
             return SpriteProject.MapResizedCanvasPoint(new System.Drawing.PointF(fx, fy), s.Source.Size, s.Image, CanvasResizeUsesSlice ? CanvasResizeBorder : SpriteBorder.None);
         }
@@ -1267,11 +1402,6 @@ public sealed partial class EditorContext
     private void EnsureCanvasResizePreview(CanvasResizeSession s)
     {
         if (s.Preview is not null || Project is not { } p) return;
-        if (s.Layer is not null)
-        {
-            EnsureLayerResizePreview(s);
-            return;
-        }
         var (full, origin) = FrameWithOverflow(p, s.Source);
         var canvas = s.Canvas.Size;
         int m = SpriteProject.OverflowMargin;
@@ -1285,61 +1415,6 @@ public sealed partial class EditorContext
             s.OutsideRect = new Rectangle(mv.Origin, mv.Image.Size);
         }
         s.Preview = ImageUtil.ToBitmap(preview);
-    }
-
-    /// <summary>
-    /// 레이어 크기 모드 미리보기: 아래 레이어 합성 위에 대상 레이어 그림(효과 없이, 레이어 불투명도)을 적용과 같은 대응으로 옮겨 레이어 자리(<see cref="CanvasResizeSession.Area"/>) 안만
-    /// 놓고 위 레이어 합성을 덮는다. 레이어 자리 밖으로 나가 잘릴 그림(캔버스 밖 포함)은 <see cref="CanvasResizeSession.Outside"/>로 둔다(화면이 흐리게).
-    /// </summary>
-    private static void EnsureLayerResizePreview(CanvasResizeSession s)
-    {
-        var canvas = s.Canvas.Size;
-        var preview = s.Below?.Clone() ?? new PixelImage(canvas.Width, canvas.Height);
-        int m = SpriteProject.OverflowMargin;
-        var origin = new Point(s.SourceOrigin.X - s.From.X, s.SourceOrigin.Y - s.From.Y);
-        if (ImageTransform.ScaleWithCanvas(s.Source, origin, s.From.Size, s.Image, new Rectangle(-m, -m, canvas.Width + 2 * m, canvas.Height + 2 * m)) is { } mv)
-        {
-            var at = new Rectangle(mv.Origin, mv.Image.Size);
-            var kept = Rectangle.Intersect(at, s.Area);
-            var cut = mv.Image.Clone();
-            if (kept.Width > 0 && kept.Height > 0)
-            {
-                var inside = new Rectangle(kept.X - at.X, kept.Y - at.Y, kept.Width, kept.Height);
-                preview.Composite(mv.Image.Crop(inside), kept.X, kept.Y, s.Layer!.Opacity);
-                cut.FillRect(inside, Color32.Transparent);
-            }
-            if (!cut.GetOpaqueBounds().IsEmpty)
-            {
-                s.Outside = ImageUtil.ToBitmap(cut);
-                s.OutsideRect = at;
-            }
-        }
-        if (s.Above is { } above) preview.Composite(above, 0, 0, 255);
-        s.Preview = ImageUtil.ToBitmap(preview);
-    }
-
-    /// <summary>
-    /// 레이어 크기 모드 원본을 지금 프레임으로 맞춘다: 대상 레이어 그림(일반 레이어는 캔버스 밖 그림까지, 부위는 지금 보이는 스킨 셀)과
-    /// 그 아래·위 레이어 합성(부위면 그 부위만 뺀 합성을 아래로). 대상 레이어가 없어졌으면 false.
-    /// </summary>
-    private bool LoadLayerResizeSource(CanvasResizeSession s, SpriteProject p)
-    {
-        int index = s.Layer is { } layer ? p.IndexOf(layer) : -1;
-        if (index < 0 || _frame < 0 || _frame >= p.Frames.Count) return false;
-        var target = s.Layer!;
-        if (target.IsPart)
-        {
-            s.Source = p.GetCel(index, _frame) ?? new PixelImage(target.PartSize.Width, target.PartSize.Height);
-            s.SourceOrigin = p.GetPartOffset(target, _frame);
-            s.Below = p.PlanFrame(_frame, layerFilter: l => !ReferenceEquals(l, target)).Render();
-            s.Above = null;
-            return true;
-        }
-        (s.Source, s.SourceOrigin) = p.GetFullCel(index, _frame);
-        // 그룹과 그 부위는 레이어 목록에 이어 붙어 있어 일반 레이어의 같은 쪽에 함께 있다.
-        s.Below = p.PlanFrame(_frame, layerFilter: l => p.IndexOf(l) < index).Render();
-        s.Above = p.PlanFrame(_frame, layerFilter: l => p.IndexOf(l) > index).Render();
-        return true;
     }
 
     /// <summary>현재 프레임 합성(캔버스 안)에 보이는 일반 레이어의 캔버스 밖 그림을 아래 레이어부터(레이어 불투명도) 겹친 그림과 왼쪽 위(캔버스 좌표).</summary>
@@ -1376,33 +1451,8 @@ public sealed partial class EditorContext
     }
 
     /// <summary>
-    /// 레이어 크기 모드(Ctrl+Shift+C)에 들어간다: 떠 있는 선택·변형을 먼저 적용하고, 현재 레이어(일반 레이어는 모든 프레임의 칠한 픽셀을 감싸는 자리,
-    /// 부위는 부위 영역)를 캔버스 크기 모드와 같은 손잡이·숫자로 늘이거나 줄이고 옮긴다. 캔버스와 다른 레이어는 그대로이고, 적용하면 그 레이어의 모든 프레임이 바뀐다.
-    /// 못 들어가면 상태 표시줄에 보일 이유, 들어갔으면(이미 모드여도) null.
-    /// </summary>
-    public string? BeginLayerResize()
-    {
-        if (Project is not { } p) return UiStrings.S_EditorContext_BeginCanvasResize_9D67D0C8F0;
-        if (_canvasResize is not null) return null;
-        CommitFloating();
-        if (CurrentLayerObject is not { } layer) return UiStrings.S_EditorContext_BeginCanvasResize_9D67D0C8F0;
-        if (layer.IsGroup) return UiStrings.LayerResize_Group;
-        if (p.IsLayerLocked(_layer)) return UiStrings.LayerResize_Locked;
-        if (_frame < 0 || _frame >= p.Frames.Count) return UiStrings.S_EditorContext_BeginCanvasResize_1378D58776;
-        // 부위는 지금 프레임의 자리(프레임마다 옮긴 위치 — 옮기기만 하면 이 프레임부터 끝까지, 크기를 바꾸면 모든 프레임)
-        var from = layer.IsPart ? p.GetPartRect(layer, _frame) : p.LayerBounds(_layer);
-        if (from.IsEmpty) return UiStrings.LayerResize_Empty;
-        var s = new CanvasResizeSession(new PixelImage(1, 1)) { Layer = layer, From = from, Canvas = p.Bounds, Image = from, Area = from };
-        if (!LoadLayerResizeSource(s, p)) return UiStrings.S_EditorContext_BeginCanvasResize_1378D58776;
-        _canvasResize = s;
-        CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
-        return null;
-    }
-
-    /// <summary>
     /// 새 캔버스(원래 프레임 좌표)와 그림 사각형(새 캔버스 좌표)을 바꾼다. 크기는 1~<see cref="PixelImage.MaxSize"/>로 맞추고,
-    /// 9-slice로 늘이면 그림은 테두리 두 쪽 + 1px보다 작아지지 않는다(<see cref="CanvasResizeMinImage"/>). 레이어 크기 모드면 캔버스는 바뀌지 않고
-    /// (도구 설정 숫자·방향키): 레이어 자리가 그림과 같았으면 함께 바뀌고, 아니면 그림을 옮긴 만큼 함께 옮긴다(크기만 바꾸면 그대로).
+    /// 9-slice로 늘이면 그림은 테두리 두 쪽 + 1px보다 작아지지 않는다(<see cref="CanvasResizeMinImage"/>).
     /// </summary>
     public void SetCanvasResize(Rectangle canvas, Rectangle image)
     {
@@ -1411,33 +1461,8 @@ public sealed partial class EditorContext
         var min = CanvasResizeMinImage;
         canvas.Size = new Size(Clamp(canvas.Width), Clamp(canvas.Height));
         image.Size = new Size(Clamp(image.Width, min.Width), Clamp(image.Height, min.Height));
-        if (s.Layer is not null)
-        {
-            var area = s.Area == s.Image ? image
-                : image.Size == s.Image.Size ? s.Area with { X = s.Area.X + image.X - s.Image.X, Y = s.Area.Y + image.Y - s.Image.Y }
-                : s.Area;
-            SetLayerResize(area, image);
-            return;
-        }
         if (canvas == s.Canvas && image == s.Image) return;
         s.Canvas = canvas;
-        s.Image = image;
-        DropCanvasResizePreview(s);
-        CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    /// <summary>
-    /// 레이어 크기 모드: 적용 뒤 레이어 자리(<paramref name="area"/> — 그 밖은 잘림)와 그림이 놓일 사각형(<paramref name="image"/> — 원래 레이어 그림을 이 크기로 늘이거나 줄임)을
-    /// 바꾼다(캔버스 좌표, 크기는 1~<see cref="PixelImage.MaxSize"/>). 레이어 크기 모드가 아니면 아무것도 하지 않는다.
-    /// </summary>
-    public void SetLayerResize(Rectangle area, Rectangle image)
-    {
-        if (_canvasResize is not { Layer: not null } s) return;
-        static Size Clamp(Size v) => new(Math.Clamp(v.Width, 1, PixelImage.MaxSize), Math.Clamp(v.Height, 1, PixelImage.MaxSize));
-        area.Size = Clamp(area.Size);
-        image.Size = Clamp(image.Size);
-        if (area == s.Area && image == s.Image) return;
-        s.Area = area;
         s.Image = image;
         DropCanvasResizePreview(s);
         CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
@@ -1456,23 +1481,14 @@ public sealed partial class EditorContext
     }
 
     /// <summary>
-    /// 캔버스·레이어 크기 모드 중 뒤집기(<paramref name="horizontal"/> = 좌우): 바로 적용하고(실행취소 한 단계) 모드는 이어진다 — 미리보기는
-    /// 뒤집힌 그림으로 다시 그린다(<see cref="SyncCanvasResize"/>). 레이어 크기 모드면 그 레이어를 제자리에서(모든 프레임, <see cref="SpriteProject.FlipLayer"/>),
-    /// 캔버스 크기 모드면 캔버스 전체(모든 레이어·프레임)를 뒤집는다. 모드 적용(<see cref="CommitFloating"/>)을 거치지 않도록 프로젝트를 직접 고친다.
-    /// 상태 표시줄에 보일 글(했으면 무엇을 뒤집었는지, 못 하면 이유)을 돌려준다. 모드가 아니면 null.
+    /// 캔버스 크기 모드 중 뒤집기(<paramref name="horizontal"/> = 좌우): 캔버스 전체(모든 레이어·프레임)를 바로 뒤집고(실행취소 한 단계) 모드는 이어진다 —
+    /// 미리보기는 뒤집힌 그림으로 다시 그린다(<see cref="SyncCanvasResize"/>). 모드 적용(<see cref="CommitFloating"/>)을 거치지 않도록 프로젝트를 직접 고친다.
+    /// 상태 표시줄에 보일 글을 돌려준다. 모드가 아니면 null.
     /// </summary>
     public string? FlipDuringResize(bool horizontal)
     {
-        if (_canvasResize is not { } s || Project is not { } p) return null;
+        if (_canvasResize is null || Project is not { } p) return null;
         string dir = horizontal ? UiStrings.Flip_DirHorizontal : UiStrings.Flip_DirVertical;
-        if (s.Layer is { } layer)
-        {
-            int index = p.IndexOf(layer);
-            if (index < 0) return null;
-            if (p.IsLayerLocked(index)) return UiStrings.LayerResize_Locked;
-            p.FlipLayer(index, horizontal);
-            return UiStrings.FormatLayerResize_Flipped(name: layer.Name, direction: dir);
-        }
         if (horizontal) p.FlipCanvasHorizontal();
         else p.FlipCanvasVertical();
         return UiStrings.FormatCanvasResize_Flipped(direction: dir);
@@ -1483,30 +1499,6 @@ public sealed partial class EditorContext
         if (_canvasResize is not { } s || Project is not { } p) return;
         _canvasResize = null;
         DropCanvasResizePreview(s);
-        if (s.Layer is { } layer)
-        {
-            int index = p.IndexOf(layer);
-            bool moved = index >= 0 && !p.IsLayerLocked(index) && (s.Image != s.From || s.Area != s.From);
-            // 부위를 옮기기만 했으면(크기·자리 안 그림 그대로) 이 프레임부터 끝까지 옮긴다(피벗은 부위 기준 비율이라 같이 따라감)
-            bool shiftOnly = moved && layer.IsPart && s.Area.Size == s.From.Size && s.Image == s.Area;
-            if (shiftOnly)
-            {
-                p.MovePartFrom(index, _frame, s.Area.X - s.From.X, s.Area.Y - s.From.Y);
-                CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
-                LayerResized?.Invoke(this, UiStrings.FormatLayerResize_MovedFrom(name: layer.Name, x: s.Area.X, y: s.Area.Y, frame: _frame + 1));
-                return;
-            }
-            if (moved)
-            {
-                // 크기 바꾸기는 모든 프레임: 지금 프레임 자리를 기준 위치로 옮겨 맞춘다(다른 프레임은 옮긴 거리만큼 그대로 따라감)
-                var shift = layer.IsPart ? p.GetPartOffset(layer, _frame) - (Size)layer.PartOffset : Point.Empty;
-                Rectangle Base(Rectangle r) => r with { X = r.X - shift.X, Y = r.Y - shift.Y };
-                p.ResizeLayer(index, Base(s.From), Base(s.Image), Base(s.Area));
-            }
-            CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
-            if (moved) LayerResized?.Invoke(this, UiStrings.FormatLayerResize_Applied(name: layer.Name, width: s.Area.Width, height: s.Area.Height, x: s.Area.X, y: s.Area.Y));
-            return;
-        }
         var (canvas, image) = (s.Canvas.Size, s.Image);
         bool changed = canvas != p.Size || image != new Rectangle(Point.Empty, p.Size);
         if (changed) p.ResizeCanvasAndScale(canvas.Width, canvas.Height, image, CanvasResizeUsesSlice ? _canvasResizeSliceFill : null);
@@ -1518,21 +1510,10 @@ public sealed partial class EditorContext
 
     /// <summary>
     /// 모드 중에 프로젝트가 바뀜(레이어 보이기 등): 캔버스 크기가 그대로면 미리보기 원본을 새 합성으로, 바뀌었으면 모드를 취소한다.
-    /// 레이어 크기 모드면 대상 레이어가 없어졌거나 부위 영역이 바뀌어도 취소한다.
     /// </summary>
     private void SyncCanvasResize()
     {
         if (_canvasResize is not { } s || Project is not { } p) return;
-        if (s.Layer is { } layer)
-        {
-            if (p.Size != s.Canvas.Size || (layer.IsPart && p.GetPartRect(layer, _frame) != s.From) || !LoadLayerResizeSource(s, p)) CancelCanvasResize();
-            else
-            {
-                DropCanvasResizePreview(s);
-                CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
-            }
-            return;
-        }
         if (p.Size != s.Source.Size || FrameImage(_frame) is not { } image)
         {
             CancelCanvasResize();

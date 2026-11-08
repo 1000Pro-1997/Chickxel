@@ -112,27 +112,6 @@ public class LayerPivotTests
     }
 
     [Fact]
-    public void FlipLayer_NormalLayer_MirrorsItsPivotAroundTheImageBounds()
-    {
-        var p = new SpriteProject(8, 8);
-        var image = new PixelImage(8, 8);
-        image[1, 1] = White;
-        image[3, 1] = White; // 자리 x 1~4
-        p.SetCel(0, 0, image);
-        p.SetLayerPivot(0, At(1.5f, 1.5f));
-        p.Edit("피벗", ProjectChange.Settings, () => p.Sprite.DefaultPivot = At(1.5f, 1.5f));
-
-        p.FlipLayer(0, horizontal: true);
-        Assert.Equal(new PointF(3.5f, 1.5f), p.LayerPivotPixel(p.Layers[0], 0));
-        Assert.Equal(At(1.5f, 1.5f), p.Sprite.DefaultPivot); // 캔버스 피벗은 그대로
-        p.FlipLayer(0, horizontal: false); // 자리 y 1~2
-        Assert.Equal(new PointF(3.5f, 1.5f), p.LayerPivotPixel(p.Layers[0], 0));
-        p.Undo();
-        p.Undo();
-        Assert.Equal(new PointF(1.5f, 1.5f), p.LayerPivotPixel(p.Layers[0], 0));
-    }
-
-    [Fact]
     public void CanvasFlipAndRotate_MapEveryLayerPivotInItsOwnSpace()
     {
         var p = new SpriteProject(8, 8);
@@ -157,16 +136,6 @@ public class LayerPivotTests
         Assert.Equal(new PointF(5.5f, 1.5f), p.LayerPivotPixel(normal, 0));
         Assert.Equal(new PointF(1.5f, 6.5f), p.LayerPivotPixel(group, 0));
         Assert.Equal(new PointF(7, 1), p.LayerPivotPixel(part, 0));
-    }
-
-    [Fact]
-    public void ScaleLayer_NormalLayer_MapsItsPivotWithTheImage()
-    {
-        var p = new SpriteProject(8, 8);
-        p.SetCel(0, 0, Dot(1, 1));
-        p.SetLayerPivot(0, At(1, 1));
-        p.ScaleLayer(0, new Rectangle(1, 1, 1, 1), new Rectangle(2, 2, 4, 4));
-        Assert.Equal(new PointF(2, 2), p.LayerPivotPixel(p.Layers[0], 0));
     }
 
     [Fact]

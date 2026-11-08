@@ -227,7 +227,7 @@
   <data name="Message_322" xml:space="preserve"><value>The current layer is locked.</value></data>
   <data name="Message_323" xml:space="preserve"><value>Selection rotated — press Enter to drop</value></data>
   <data name="Message_324" xml:space="preserve"><value>Rotate canvas (all frames)</value></data>
-  <data name="Message_325" xml:space="preserve"><value>Transform: inside = move, handles = size, outside = rotate — Enter to apply, Esc to cancel</value></data>
+  <data name="Message_325" xml:space="preserve"><value>Transform (current cel, blue box): inside = move, handles = size, Ctrl+handles = margin, outside = rotate — Enter to apply, Esc to cancel</value></data>
   <data name="Message_326" xml:space="preserve"><value>The current layer is locked.</value></data>
   <data name="Message_327" xml:space="preserve"><value>The current layer is locked.</value></data>
   <data name="Message_328" xml:space="preserve"><value>Select a group or part to change that group's skin.</value></data>
@@ -407,8 +407,7 @@ Open all frames, or only the first {limit}?</value></data>
   <data name="Tool_Text_Name" xml:space="preserve"><value>Text</value></data>
   <data name="Tool_Text_Hint" xml:space="preserve"><value>Drag: text box · Click: one-line text · Click on text: edit it · Enter: new line · Esc / Ctrl+Enter / click outside: done · size, bold, fonts in Tool options</value></data>
   <data name="Menu_Edit_BeginLayerResize" xml:space="preserve"><value>Layer size…</value></data>
-  <data name="Message_LayerResize" xml:space="preserve"><value>Layer size: handles = layer box (outside is cropped), Ctrl+handles = resize the drawing too, Shift keeps ratio, Alt keeps the center, inside the layer = move — Enter to confirm, Esc to cancel</value></data>
-  <data name="Message_LayerResizeCanceled" xml:space="preserve"><value>Layer resize canceled</value></data>
+  <data name="Message_LayerTransform" xml:space="preserve"><value>Transform whole layer (orange box, all frames): inside = move, handles = size, Ctrl+handles = margin, outside = rotate (each frame around its pivot) — other frames keep the transform, Enter to apply, Esc to cancel</value></data>
   <data name="Ui_CanvasEffects" xml:space="preserve"><value>Effects</value></data>
   <data name="Ui_CanvasEffectsTip" xml:space="preserve"><value>Show layer effects on the canvas (Ctrl+Shift+E) · off = the pixels you edit (preview, timeline and export unchanged)</value></data>
   <data name="Menu_View_CanvasEffects" xml:space="preserve"><value>Show effects on canvas</value></data>

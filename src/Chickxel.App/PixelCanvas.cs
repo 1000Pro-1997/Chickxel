@@ -28,7 +28,7 @@ public sealed partial class PixelCanvas : Control
     public static readonly int[] ZoomLevels = [1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 64];
 
     private enum DragMode { None, Pan, Stroke, Shape, Gradient, Fill, Picker, Marquee, Lasso, MoveSelection, MoveLayer, MoveText, Pivot, Arrange, Slice,
-        TransformMove, TransformScale, TransformRotate, TransformPivot, CanvasResizeEdge, CanvasResizeMove,
+        TransformMove, TransformScale, TransformMargin, TransformRotate, TransformPivot, CanvasResizeEdge, CanvasResizeMove,
         TextCreate, TextSelect, TextResize, TextMoveBox }
 
     /// <summary>변형 모드에서 화면 위치가 가리키는 것.</summary>
@@ -57,13 +57,22 @@ public sealed partial class PixelCanvas : Control
     private static readonly IPen DropHighlightPen = AppTheme.Pen(Color.FromArgb(200, AppTheme.AccentColor.R, AppTheme.AccentColor.G, AppTheme.AccentColor.B), 2);
     private static readonly IPen DropGhostPen = AppTheme.Pen(AppTheme.AccentColor, 1.5, Dash);
     private static readonly IBrush DropGhostBrush = AppTheme.Brush(Color.FromArgb(40, AppTheme.AccentColor.R, AppTheme.AccentColor.G, AppTheme.AccentColor.B));
-    /// <summary>변형 모드: 변형한 사각형 테두리(주황 점선, 어두운 바탕선 위) — 선택 개미 줄·올가미 미리보기(파랑)와 구별된다.</summary>
-    private static readonly IPen TransformPen = AppTheme.Pen(Color.FromRgb(255, 168, 0), 1.5, new ImmutableDashStyle([5.0, 3.0], 0));
+    /// <summary>
+    /// 변형 모드: 변형한 사각형 테두리(점선, 어두운 바탕선 위)·손잡이·회전 중심 — 지금 셀 변형(Ctrl+T)은 파랑, 레이어 전체 변형(Ctrl+Shift+C)은 주황.
+    /// 선택 개미 줄·올가미 미리보기(옅은 파랑 점선)와 구별된다.
+    /// </summary>
+    private static readonly Color TransformCelColor = Color.FromRgb(40, 140, 255);
+    private static readonly Color TransformLayerColor = Color.FromRgb(255, 168, 0);
+    private static readonly ImmutableDashStyle TransformDash = new([5.0, 3.0], 0);
+    private static readonly IPen TransformCelPen = AppTheme.Pen(TransformCelColor, 1.5, TransformDash);
+    private static readonly IPen TransformLayerPen = AppTheme.Pen(TransformLayerColor, 1.5, TransformDash);
     private static readonly IPen TransformBackPen = AppTheme.Pen(Color.FromArgb(170, 0, 0, 0), 3);
-    private static readonly IBrush TransformHandleBrush = AppTheme.Brush(Color.FromRgb(255, 168, 0));
+    private static readonly IBrush TransformCelBrush = AppTheme.Brush(TransformCelColor);
+    private static readonly IBrush TransformLayerBrush = AppTheme.Brush(TransformLayerColor);
     private static readonly IPen TransformHandlePen = AppTheme.Pen(Color.FromArgb(230, 20, 12, 0), 1);
-    private static readonly IPen TransformPivotPen = AppTheme.Pen(Color.FromRgb(255, 168, 0), 1.5);
-    /// <summary>캔버스 크기 모드: 새 캔버스 테두리(하늘색 점선)와 흰 손잡이 — 변형 모드(주황)와 구별된다.</summary>
+    private static readonly IPen TransformCelPivotPen = AppTheme.Pen(TransformCelColor, 1.5);
+    private static readonly IPen TransformLayerPivotPen = AppTheme.Pen(TransformLayerColor, 1.5);
+    /// <summary>캔버스 크기 모드: 새 캔버스 테두리(하늘색 점선)와 흰 손잡이 — 변형 모드(색으로 채운 작은 손잡이)와 구별된다.</summary>
     private static readonly IPen CanvasResizePen = AppTheme.Pen(Color.FromRgb(60, 210, 255), 1.5, new ImmutableDashStyle([5.0, 3.0], 0));
     private static readonly IBrush CanvasResizeHandleBrush = AppTheme.Brush(Colors.White);
     private static readonly IPen CanvasResizeHandlePen = AppTheme.Pen(Color.FromRgb(0, 120, 170), 1.5);
@@ -186,7 +195,7 @@ public sealed partial class PixelCanvas : Control
     // 캔버스 크기 모드 끌기: 잡은 손잡이(-1/0/1), 시작점(이미지 좌표), 시작할 때의 캔버스·그림 사각형
     private int _crHx, _crHy;
     private Avalonia.Point _crStartImg;
-    private Rectangle _crStartCanvas, _crStartImage, _crStartArea;
+    private Rectangle _crStartCanvas, _crStartImage;
 
     // 그룹 화면(부위 배치)
     private Layer? _arrangePart, _hoverPart;
@@ -299,11 +308,14 @@ public sealed partial class PixelCanvas : Control
     {
         if (_commandHeld == held) return;
         _commandHeld = held;
-        if (_ctx.IsCanvasResizing) InvalidateVisual();
+        if (_ctx.IsCanvasResizing || _ctx.IsTransforming) InvalidateVisual();
     }
 
-    /// <summary>캔버스·레이어 크기 모드에서 Ctrl(⌘)을 누르고 있어 손잡이를 끌면 그림 크기도 함께 바뀌는지.</summary>
+    /// <summary>캔버스 크기 모드에서 Ctrl(⌘)을 누르고 있어 손잡이를 끌면 그림 크기도 함께 바뀌는지.</summary>
     private bool CanvasResizeScaleLook => _commandHeld && _ctx.IsCanvasResizing;
+
+    /// <summary>변형 모드에서 Ctrl(⌘)을 누르고 있어 손잡이를 끌면 여백(상자 가장자리만)이 바뀌는지 — 손잡이가 바깥쪽 화살표로 보인다.</summary>
+    private bool TransformMarginLook => _commandHeld && _ctx.IsTransforming;
 
     // ───────────── 임시 이동 도구(Ctrl/⌘를 누르는 동안) ─────────────
 
@@ -793,6 +805,11 @@ public sealed partial class PixelCanvas : Control
         if (_ctx.IsCanvasResizing)
         {
             DrawCanvasResize(g);
+            return;
+        }
+        if (_ctx.LayerTransformPreview is { } transformPreview)
+        {
+            DrawLayerTransform(g, transformPreview);
             return;
         }
         int frame = _ctx.CurrentFrame;
@@ -1956,6 +1973,7 @@ public sealed partial class PixelCanvas : Control
                 break;
             case DragMode.TransformMove:
             case DragMode.TransformScale:
+            case DragMode.TransformMargin:
             case DragMode.TransformRotate:
             case DragMode.TransformPivot:
                 DragTransform(loc);
@@ -2083,6 +2101,7 @@ public sealed partial class PixelCanvas : Control
                 break;
             case DragMode.TransformMove:
             case DragMode.TransformScale:
+            case DragMode.TransformMargin:
             case DragMode.TransformRotate:
             case DragMode.TransformPivot:
             case DragMode.CanvasResizeEdge:
@@ -2696,7 +2715,7 @@ public sealed partial class PixelCanvas : Control
         return true;
     }
 
-    // ───────────── 변형 모드(Ctrl+T) ─────────────
+    // ───────────── 변형 모드(Ctrl+T 지금 셀 · Ctrl+Shift+C 레이어 전체) ─────────────
 
     /// <summary>손잡이를 잡는 거리(화면 px, 손잡이 가운데에서 가로·세로).</summary>
     private const double TransformHandleGrab = 6;
@@ -2707,21 +2726,53 @@ public sealed partial class PixelCanvas : Control
     private static readonly (int Hx, int Hy)[] TransformHandles =
         [(-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0)];
 
+    // 여백 끌기(Ctrl+손잡이): 시작할 때의 상자 원본 사각형
+    private Rectangle _tfStartBox;
+
     /// <summary>원본 기준 손잡이(-1/0/1)의 화면 위치.</summary>
-    private Avalonia.Point TransformHandleScreen(FreeTransform t, TransformParams p, int hx, int hy)
+    private Avalonia.Point TransformHandleScreen(TransformBox box, TransformParams p, int hx, int hy)
     {
-        var (cx, cy) = t.SourceCenter;
-        var r = t.SourceBounds;
-        var (x, y) = t.Map(p, cx + hx * r.Width / 2.0, cy + hy * r.Height / 2.0);
+        var (cx, cy) = box.Center;
+        var r = box.Bounds;
+        var (x, y) = box.Map(p, cx + hx * r.Width / 2.0, cy + hy * r.Height / 2.0);
         return ImageToScreen(x, y);
     }
 
-    /// <summary>변형 모드: 변형한 사각형(주황 점선), 손잡이 8개, 회전 중심 표시.</summary>
+    /// <summary>
+    /// 셀·레이어 변형의 캔버스: 미리보기 합성(대상 레이어는 효과 없이 변형한 모습)을 체커 위에, 캔버스 밖으로 나간 픽셀과 상자 밖으로 잘릴 픽셀은 흐리게,
+    /// 그 위에 픽셀 격자·캔버스 테두리·변형 상자.
+    /// </summary>
+    private void DrawLayerTransform(DrawingContext g, WriteableBitmap preview)
+    {
+        var o = ShownOrigin;
+        var canvas = new Rectangle(-o.X, -o.Y, preview.PixelSize.Width, preview.PixelSize.Height);
+        using (ImageUtil.Pixelated(g))
+        {
+            DrawBitmapAt(g, preview, canvas.X, canvas.Y, canvas.Width, canvas.Height, checker: true);
+            if (_ctx.LayerTransformOutside is { } outside)
+            {
+                var at = new Rectangle(outside.Rect.X + canvas.X, outside.Rect.Y + canvas.Y, outside.Rect.Width, outside.Rect.Height);
+                using (g.PushOpacity(OutsideOpacity))
+                    g.DrawImage(outside.Bitmap, new Rect(0, 0, outside.Bitmap.PixelSize.Width, outside.Bitmap.PixelSize.Height), ToRect(ImageToScreen(at)));
+            }
+        }
+        var visible = VisibleSourceRect(canvas.X, canvas.Y, canvas.Width, canvas.Height);
+        if (_showPixelGrid && _zoom >= _pixelGridMinZoom && !visible.IsEmpty)
+            DrawPixelGrid(g, new Rectangle(visible.X + canvas.X, visible.Y + canvas.Y, visible.Width, visible.Height));
+        var c = ImageToScreen(canvas);
+        g.DrawRectangle(null, BorderPen, new Rect(c.X - 0.5, c.Y - 0.5, c.Width + 1, c.Height + 1));
+        if (!_peekPrevious) DrawTransform(g);
+    }
+
+    /// <summary>
+    /// 변형 상자: 변형한 사각형(점선 — 지금 셀은 파랑, 레이어 전체는 주황), 손잡이 8개(Ctrl(⌘)을 누르는 동안은 같은 색의 바깥쪽 화살표 = 여백), 회전 중심 표시.
+    /// </summary>
     private void DrawTransform(DrawingContext g)
     {
-        if (_ctx.Transform is not { } t) return;
+        if (_ctx.TransformBox is not { } box) return;
+        bool layer = _ctx.IsLayerTransform;
         var p = _ctx.TransformParams;
-        var corners = t.Corners(p).Select(c => ImageToScreen(c.X, c.Y)).ToArray();
+        var corners = box.Corners(p).Select(c => ImageToScreen(c.X, c.Y)).ToArray();
         var geo = new StreamGeometry();
         using (var c = geo.Open())
         {
@@ -2730,31 +2781,37 @@ public sealed partial class PixelCanvas : Control
             c.EndFigure(true);
         }
         g.DrawGeometry(null, TransformBackPen, geo);
-        g.DrawGeometry(null, TransformPen, geo);
+        g.DrawGeometry(null, layer ? TransformLayerPen : TransformCelPen, geo);
+        var brush = layer ? TransformLayerBrush : TransformCelBrush;
+        bool margin = TransformMarginLook;
+        var center = TransformHandleScreen(box, p, 0, 0);
         foreach (var (hx, hy) in TransformHandles)
         {
-            var h = TransformHandleScreen(t, p, hx, hy);
-            g.DrawRectangle(TransformHandleBrush, TransformHandlePen, new Rect(Math.Round(h.X) - 3.5, Math.Round(h.Y) - 3.5, 7, 7));
+            var h = TransformHandleScreen(box, p, hx, hy);
+            var at = new Avalonia.Point(Math.Round(h.X), Math.Round(h.Y));
+            if (margin) g.DrawGeometry(brush, TransformHandlePen, OutwardArrow(at, h.X - center.X, h.Y - center.Y));
+            else g.DrawRectangle(brush, TransformHandlePen, new Rect(at.X - 3.5, at.Y - 3.5, 7, 7));
         }
         var (px, py) = _ctx.TransformPivot;
         var pv = ImageToScreen(px, py);
+        var pivotPen = layer ? TransformLayerPivotPen : TransformCelPivotPen;
         const double r = 4.5;
         g.DrawEllipse(null, PivotBackPen, pv, r, r);
-        g.DrawEllipse(null, TransformPivotPen, pv, r, r);
-        g.DrawLine(TransformPivotPen, new Avalonia.Point(pv.X - r - 3, pv.Y), new Avalonia.Point(pv.X + r + 3, pv.Y));
-        g.DrawLine(TransformPivotPen, new Avalonia.Point(pv.X, pv.Y - r - 3), new Avalonia.Point(pv.X, pv.Y + r + 3));
+        g.DrawEllipse(null, pivotPen, pv, r, r);
+        g.DrawLine(pivotPen, new Avalonia.Point(pv.X - r - 3, pv.Y), new Avalonia.Point(pv.X + r + 3, pv.Y));
+        g.DrawLine(pivotPen, new Avalonia.Point(pv.X, pv.Y - r - 3), new Avalonia.Point(pv.X, pv.Y + r + 3));
     }
 
-    /// <summary>화면 위치가 가리키는 변형 동작: 손잡이(크기) → 회전 중심 → 안쪽(옮기기) → 바깥 띠(회전) 순.</summary>
+    /// <summary>화면 위치가 가리키는 변형 동작: 손잡이(크기·여백) → 회전 중심 → 안쪽(옮기기) → 바깥 띠(회전) 순.</summary>
     private (TransformHit Kind, int Hx, int Hy) TransformHitAt(Point screen)
     {
-        if (_ctx.Transform is not { } t) return (TransformHit.None, 0, 0);
+        if (_ctx.TransformBox is not { } box) return (TransformHit.None, 0, 0);
         var p = _ctx.TransformParams;
         double best = double.MaxValue;
         (TransformHit, int, int) hit = (TransformHit.None, 0, 0);
         foreach (var (hx, hy) in TransformHandles)
         {
-            var h = TransformHandleScreen(t, p, hx, hy);
+            var h = TransformHandleScreen(box, p, hx, hy);
             double dx = Math.Abs(screen.X - h.X), dy = Math.Abs(screen.Y - h.Y);
             if (dx > TransformHandleGrab || dy > TransformHandleGrab || dx + dy >= best) continue;
             best = dx + dy;
@@ -2765,10 +2822,10 @@ public sealed partial class PixelCanvas : Control
         var pv = ImageToScreen(px, py);
         if (Math.Abs(screen.X - pv.X) <= TransformHandleGrab && Math.Abs(screen.Y - pv.Y) <= TransformHandleGrab) return (TransformHit.Pivot, 0, 0);
         var img = ScreenToImageF(screen);
-        var (u, v) = t.Unmap(p, img.X, img.Y);
-        var r = t.SourceBounds;
+        var (u, v) = box.Unmap(p, img.X, img.Y);
+        var r = box.Bounds;
         if (u >= r.Left && u <= r.Right && v >= r.Top && v <= r.Bottom) return (TransformHit.Move, 0, 0);
-        var corners = t.Corners(p).Select(c => ImageToScreen(c.X, c.Y)).ToArray();
+        var corners = box.Corners(p).Select(c => ImageToScreen(c.X, c.Y)).ToArray();
         double distance = double.MaxValue;
         for (int i = 0; i < 4; i++) distance = Math.Min(distance, SegmentDistance(screen, corners[i], corners[(i + 1) % 4]));
         return distance <= TransformRotateBand ? (TransformHit.Rotate, 0, 0) : (TransformHit.None, 0, 0);
@@ -2796,10 +2853,10 @@ public sealed partial class PixelCanvas : Control
                 return RotateCursor.Value;
             case TransformHit.Scale:
             {
-                var t = _ctx.Transform!;
+                var box = _ctx.TransformBox!.Value;
                 var p = _ctx.TransformParams;
-                var h = TransformHandleScreen(t, p, hx, hy);
-                var c = TransformHandleScreen(t, p, 0, 0);
+                var h = TransformHandleScreen(box, p, hx, hy);
+                var c = TransformHandleScreen(box, p, 0, 0);
                 double dx = h.X - c.X, dy = h.Y - c.Y;
                 if (dx * dx + dy * dy < 1e-6) return SizeAllCursor;
                 // 화면 y가 아래: 0° = 오른쪽, 45° = 오른쪽 아래(＼)
@@ -2812,7 +2869,7 @@ public sealed partial class PixelCanvas : Control
         }
     }
 
-    /// <summary>변형 모드에서 왼쪽 버튼 누르기: 가리키는 동작의 끌기를 시작했으면 true.</summary>
+    /// <summary>변형 모드에서 왼쪽 버튼 누르기: 가리키는 동작의 끌기를 시작했으면 true. 손잡이를 Ctrl(⌘)과 함께 누르면 여백 끌기.</summary>
     private bool BeginTransformDrag(Point screen, int clickCount)
     {
         var (kind, hx, hy) = TransformHitAt(screen);
@@ -2821,7 +2878,8 @@ public sealed partial class PixelCanvas : Control
         {
             case TransformHit.Scale:
                 (_tfHx, _tfHy) = (hx, hy);
-                _drag = DragMode.TransformScale;
+                _tfStartBox = _ctx.TransformBox!.Value.Bounds;
+                _drag = Ui.HasCommand(_mods) ? DragMode.TransformMargin : DragMode.TransformScale;
                 return true;
             case TransformHit.Pivot:
                 if (clickCount >= 2)
@@ -2852,9 +2910,10 @@ public sealed partial class PixelCanvas : Control
     /// <summary>변형 끌기 중 마우스 이동.</summary>
     private void DragTransform(Point screen)
     {
-        if (_ctx.Transform is not { } t) return;
+        if (_ctx.TransformBox is not { } box) return;
         var m = ScreenToImageF(screen);
         bool shift = (_mods & KeyModifiers.Shift) != 0;
+        bool alt = (_mods & KeyModifiers.Alt) != 0;
         switch (_drag)
         {
             case DragMode.TransformMove:
@@ -2878,7 +2937,10 @@ public sealed partial class PixelCanvas : Control
                 _ctx.SetTransformPivot(Math.Round(m.X * 2) / 2, Math.Round(m.Y * 2) / 2);
                 break;
             case DragMode.TransformScale:
-                DragTransformScale(t, m, shift, (_mods & KeyModifiers.Alt) != 0);
+                DragTransformScale(box, m, shift, alt);
+                break;
+            case DragMode.TransformMargin:
+                DragTransformMargin(m, shift, alt);
                 break;
         }
     }
@@ -2887,15 +2949,15 @@ public sealed partial class PixelCanvas : Control
     /// 손잡이로 크기 바꾸기: 반대쪽 변(Alt면 가운데)을 제자리에 두고 잡은 변을 마우스로. 모서리는 가로·세로 둘 다, 변은 한 축만.
     /// Shift = 시작 때의 가로세로 비율 유지. 반대쪽을 넘어가면 뒤집힌다. 크기는 정수 픽셀로 맞춘다.
     /// </summary>
-    private void DragTransformScale(FreeTransform t, Avalonia.Point m, bool shift, bool alt)
+    private void DragTransformScale(TransformBox box, Avalonia.Point m, bool shift, bool alt)
     {
         if (alt) _altUsed = true;   // Alt를 떼도 메뉴가 열리지 않게
         var p0 = _tfStart;
-        var src = t.SourceBounds;
+        var src = box.Bounds;
         double hw = src.Width / 2.0, hh = src.Height / 2.0;
-        var (cx, cy) = t.SourceCenter;
+        var (cx, cy) = box.Center;
         int ax = alt ? 0 : -_tfHx, ay = alt ? 0 : -_tfHy;
-        var anchor = t.Map(p0, cx + ax * hw, cy + ay * hh);
+        var anchor = box.Map(p0, cx + ax * hw, cy + ay * hh);
         var (sin, cos) = p0.SinCos();
         double vx = m.X - anchor.X, vy = m.Y - anchor.Y;
         double lx = vx * cos + vy * sin, ly = -vx * sin + vy * cos;
@@ -2919,32 +2981,52 @@ public sealed partial class PixelCanvas : Control
             return (s < 0 ? -px : px) / size;
         }
         var next = p0 with { ScaleX = Snap(sx, src.Width), ScaleY = Snap(sy, src.Height) };
-        var moved = t.Map(next, cx + ax * hw, cy + ay * hh);
+        var moved = box.Map(next, cx + ax * hw, cy + ay * hh);
         _ctx.SetTransformParams(next with { CenterX = next.CenterX + anchor.X - moved.X, CenterY = next.CenterY + anchor.Y - moved.Y });
+    }
+
+    /// <summary>
+    /// Ctrl(⌘)+손잡이 = 여백: 그림은 그대로 두고 상자 원본 사각형의 잡은 가장자리만 마우스가 가리키는 원본 픽셀 경계로 옮긴다(넓히면 빈 자리 — 선택 영역이면
+    /// 가장자리 픽셀을 복사해 늘림, 좁히면 잘림). Alt = 맞은편도 같은 만큼(가운데 기준), 모서리 + Shift = 시작 때 상자 비율 유지. 크기는 1px 이상.
+    /// </summary>
+    private void DragTransformMargin(Avalonia.Point m, bool shift, bool alt)
+    {
+        if (alt) _altUsed = true;
+        var start = _tfStartBox;
+        // 여백을 바꿔도 원본 좌표는 그대로라, 시작 때의 상자로 되돌린 좌표가 곧 원본 픽셀 경계다.
+        var (u, v) = new TransformBox(start).Unmap(_tfStart, m.X, m.Y);
+        if (!double.IsFinite(u) || !double.IsFinite(v)) return;
+        int gx = _tfHx == 0 ? 0 : _tfHx * ((int)Math.Round(u) - (_tfHx < 0 ? start.Left : start.Right));
+        int gy = _tfHy == 0 ? 0 : _tfHy * ((int)Math.Round(v) - (_tfHy < 0 ? start.Top : start.Bottom));
+        int k = alt ? 2 : 1;
+        if (shift && _tfHx != 0 && _tfHy != 0)
+        {
+            double kx = (start.Width + gx * k) / (double)start.Width, ky = (start.Height + gy * k) / (double)start.Height;
+            double s = Math.Abs(kx - 1) >= Math.Abs(ky - 1) ? kx : ky;
+            gx = ((int)Math.Round(start.Width * s) - start.Width) / k;
+            gy = ((int)Math.Round(start.Height * s) - start.Height) / k;
+        }
+        gx = Math.Max(gx, (1 - start.Width) / k);
+        gy = Math.Max(gy, (1 - start.Height) / k);
+        int left = start.Left, top = start.Top, right = start.Right, bottom = start.Bottom;
+        if (_tfHx < 0 || alt && _tfHx != 0) left -= gx;
+        if (_tfHx > 0 || alt && _tfHx != 0) right += gx;
+        if (_tfHy < 0 || alt && _tfHy != 0) top -= gy;
+        if (_tfHy > 0 || alt && _tfHy != 0) bottom += gy;
+        _ctx.SetTransformBox(Rectangle.FromLTRB(left, top, Math.Max(right, left + 1), Math.Max(bottom, top + 1)));
     }
 
     // ───────────── 캔버스 크기 모드(Ctrl+Alt+C) ─────────────
 
-    /// <summary>
-    /// 새 캔버스·그림 사각형·레이어 자리(보이는 좌표 — 부위 화면이면 부위 위치만큼 옮긴 프레임 좌표). 레이어 자리는 레이어 크기 모드에서만(아니면 빈 사각형).
-    /// </summary>
-    private (Rectangle Canvas, Rectangle Image, Rectangle Area) CanvasResizeViewRects()
+    /// <summary>새 캔버스·그림 사각형(보이는 좌표 — 부위 화면이면 부위 위치만큼 옮긴 프레임 좌표).</summary>
+    private (Rectangle Canvas, Rectangle Image) CanvasResizeViewRects()
     {
         var o = ShownOrigin;
         var canvas = _ctx.CanvasResizeCanvas;
         canvas.Offset(-o.X, -o.Y);
         var image = _ctx.CanvasResizeImage;
         image.Offset(canvas.X, canvas.Y);
-        var area = _ctx.LayerResizeArea;
-        if (!area.IsEmpty) area.Offset(canvas.X, canvas.Y);
-        return (canvas, image, area);
-    }
-
-    /// <summary>손잡이 8개가 붙는 사각형(보이는 좌표): 캔버스 크기 모드면 새 캔버스, 레이어 크기 모드면 적용 뒤 레이어 자리.</summary>
-    private Rectangle CanvasResizeHandleRect()
-    {
-        var (canvas, _, area) = CanvasResizeViewRects();
-        return _ctx.CanvasResizeLayer is null ? canvas : area;
+        return (canvas, image);
     }
 
     /// <summary>손잡이(-1/0/1)의 화면 위치.</summary>
@@ -2954,27 +3036,22 @@ public sealed partial class PixelCanvas : Control
     /// <summary>
     /// 캔버스 크기 모드: 적용하면 될 그림 전체(새 캔버스 밖으로 나가는 부분과 캔버스 밖 그림 포함 — 캔버스 안·밖이 같은 배율)는 흐리게,
     /// 새 캔버스 안은 체커 위에 적용될 모습 그대로. 그림 자리(흰 점선), 캔버스 테두리(하늘색 점선)·손잡이 8개, 위에 크기 글.
-    /// 레이어 크기 모드: 캔버스는 보통 테두리, 하늘색 점선·손잡이는 적용 뒤 레이어 자리에, 그 밖으로 나가 잘릴 그림은 위에 흐리게.
     /// Ctrl(⌘)을 누르는 동안(손잡이 = 그림 크기도 함께)은 테두리·크기 글이 노랗고 손잡이가 바깥쪽 화살표(<see cref="CanvasResizeScaleLook"/>).
     /// </summary>
     private void DrawCanvasResize(DrawingContext g)
     {
-        var (canvas, image, area) = CanvasResizeViewRects();
-        var layer = _ctx.CanvasResizeLayer;
+        var (canvas, image) = CanvasResizeViewRects();
         var imageScreen = ImageToScreen(image);
         using (ImageUtil.Pixelated(g))
         {
-            void DrawOutside()
+            // 새 캔버스 밖만 흐리게(안은 미리보기가 덮음)
+            if (_ctx.CanvasResizeOutside is { } outside)
             {
-                if (_ctx.CanvasResizeOutside is not { } outside) return;
                 var at = new Rectangle(outside.Rect.X + canvas.X, outside.Rect.Y + canvas.Y, outside.Rect.Width, outside.Rect.Height);
                 using (g.PushOpacity(OutsideOpacity))
                     g.DrawImage(outside.Bitmap, new Rect(0, 0, outside.Bitmap.PixelSize.Width, outside.Bitmap.PixelSize.Height), ToRect(ImageToScreen(at)));
             }
-            // 캔버스 크기 모드는 새 캔버스 밖만 흐리게(안은 미리보기가 덮음), 레이어 크기 모드는 잘릴 그림만 담겨 있어 캔버스 안에서도 보이게 위에
-            if (layer is null) DrawOutside();
             DrawBitmapAt(g, _ctx.CanvasResizeBitmap, canvas.X, canvas.Y, canvas.Width, canvas.Height, checker: true);
-            if (layer is not null) DrawOutside();
         }
         var visible = VisibleSourceRect(canvas.X, canvas.Y, canvas.Width, canvas.Height);
         if (_showPixelGrid && _zoom >= _pixelGridMinZoom && !visible.IsEmpty)
@@ -2990,38 +3067,33 @@ public sealed partial class PixelCanvas : Control
         }
         var c = ImageToScreen(canvas);
         var border = new Rect(c.X - 0.5, c.Y - 0.5, c.Width + 1, c.Height + 1);
-        // 레이어 크기 모드: 캔버스는 그대로(보통 테두리), 하늘색 점선·손잡이는 적용 뒤 레이어 자리에.
-        var handles = layer is null ? canvas : area;
-        var h0 = ImageToScreen(handles);
-        var frame = layer is null ? border : new Rect(h0.X - 0.5, h0.Y - 0.5, h0.Width + 1, h0.Height + 1);
-        if (layer is not null) g.DrawRectangle(null, BorderPen, border);
-        g.DrawRectangle(null, TransformBackPen, frame);
+        g.DrawRectangle(null, TransformBackPen, border);
         bool scaleLook = CanvasResizeScaleLook;
-        g.DrawRectangle(null, scaleLook ? CanvasResizeScalePen : CanvasResizePen, frame);
+        g.DrawRectangle(null, scaleLook ? CanvasResizeScalePen : CanvasResizePen, border);
         foreach (var (hx, hy) in TransformHandles)
         {
-            var h = CanvasResizeHandleScreen(handles, hx, hy);
+            var h = CanvasResizeHandleScreen(canvas, hx, hy);
             var at = new Avalonia.Point(Math.Round(h.X), Math.Round(h.Y));
             if (scaleLook) g.DrawGeometry(CanvasResizeScaleBrush, CanvasResizeArrowPen, OutwardArrow(at, hx, hy));
             else g.DrawRectangle(CanvasResizeHandleBrush, CanvasResizeHandlePen, new Rect(at.X - 4, at.Y - 4, 8, 8));
         }
-        // 적용하면 피벗이 놓일 자리(그림을 따라감 — 캔버스 크기 모드는 새 캔버스, 레이어 크기 모드는 캔버스 좌표라 둘 다 캔버스 자리만큼 옮김)
+        // 적용하면 피벗이 놓일 자리(그림을 따라감 — 새 캔버스 좌표라 캔버스 자리만큼 옮김)
         if (_ctx.CanvasResizePivot is { } pivot) DrawPivotMark(g, ImageToScreen(canvas.X + pivot.X, canvas.Y + pivot.Y), PivotPen);
-        // 레이어 글의 위치는 프레임 좌표(부위 화면에서 보이는 좌표가 아니라).
-        var label = layer is null ? CanvasResizeLabel(canvas.Size, image.Size, _ctx.CanvasResizeSource)
-            : LayerResizeLabel(layer.Name, _ctx.LayerResizeArea, _ctx.CanvasResizeImage.Size, _ctx.CanvasResizeSource);
+        var label = CanvasResizeLabel(canvas.Size, image.Size, _ctx.CanvasResizeSource);
         var size = AppTheme.MeasureText(label, AppTheme.SmallFontSize);
-        var top = layer is null ? c : h0;
-        double ly = top.Y - size.Height - 10 >= 0 ? top.Y - size.Height - 10 : top.Bottom + 8;
-        g.FillRectangle(LabelBrush, new Rect(top.X, ly, size.Width + 6, size.Height + 2));
-        AppTheme.DrawText(g, label, new Avalonia.Point(top.X + 3, ly + 1), scaleLook ? CanvasResizeScaleBrush : Brushes.White, AppTheme.SmallFontSize);
+        double ly = c.Y - size.Height - 10 >= 0 ? c.Y - size.Height - 10 : c.Bottom + 8;
+        g.FillRectangle(LabelBrush, new Rect(c.X, ly, size.Width + 6, size.Height + 2));
+        AppTheme.DrawText(g, label, new Avalonia.Point(c.X + 3, ly + 1), scaleLook ? CanvasResizeScaleBrush : Brushes.White, AppTheme.SmallFontSize);
     }
 
-    /// <summary>손잡이 자리(<paramref name="at"/>)에서 중심 바깥쪽(손잡이 방향 -1/0/1)을 가리키는 화살표 — 모서리는 대각선, 가장자리 가운데는 그 가장자리에 수직.</summary>
-    private static StreamGeometry OutwardArrow(Avalonia.Point at, int hx, int hy)
+    /// <summary>
+    /// 손잡이 자리(<paramref name="at"/>)에서 (<paramref name="dx"/>, <paramref name="dy"/>) 방향(중심 바깥쪽)을 가리키는 화살표 — 손잡이 방향 -1/0/1이면 모서리는 대각선,
+    /// 가장자리 가운데는 그 가장자리에 수직. 변형 상자는 화면에서 돌아간 방향을 그대로 준다.
+    /// </summary>
+    private static StreamGeometry OutwardArrow(Avalonia.Point at, double dx, double dy)
     {
-        double len = Math.Sqrt(hx * hx + hy * hy);
-        double ux = hx / len, uy = hy / len; // 화살표 방향
+        double len = Math.Sqrt(dx * dx + dy * dy);
+        double ux = len > 1e-6 ? dx / len : 1, uy = len > 1e-6 ? dy / len : 0; // 화살표 방향
         Avalonia.Point P(double along, double across) => new(at.X + ux * along - uy * across, at.Y + uy * along + ux * across);
         var geo = new StreamGeometry();
         using (var c = geo.Open())
@@ -3058,33 +3130,23 @@ public sealed partial class PixelCanvas : Control
     }
 
     /// <summary>
-    /// 레이어 크기 글: <c>레이어 1 · 32×16 @4,2</c>(적용 뒤 레이어 자리), 그림 크기를 바꿨으면 <c>레이어 1 · 32×16 · 그림 64×32 (200%) @4,2</c>
-    /// (캔버스 크기 글과 같은 꼴).
-    /// </summary>
-    private static string LayerResizeLabel(string name, Rectangle area, Size image, Size source)
-        => UiStrings.FormatLayerResize_Label(name: name, size: CanvasResizeLabel(area.Size, image, source), x: area.X, y: area.Y);
-
-    /// <summary>
-    /// 화면 위치가 가리키는 캔버스 크기 동작: 손잡이(가장 가까운 것, 가장자리) → 그림 안쪽(레이어 크기 모드는 레이어 자리나 그림 안쪽, 옮기기) 순.
-    /// 없으면 <see cref="DragMode.None"/>.
+    /// 화면 위치가 가리키는 캔버스 크기 동작: 손잡이(가장 가까운 것, 가장자리) → 그림 안쪽(옮기기) 순. 없으면 <see cref="DragMode.None"/>.
     /// </summary>
     private (DragMode Mode, int Hx, int Hy) CanvasResizeHitAt(Point screen)
     {
-        var (_, image, area) = CanvasResizeViewRects();
-        var handles = CanvasResizeHandleRect();
+        var (canvas, image) = CanvasResizeViewRects();
         double best = double.MaxValue;
         (DragMode, int, int) hit = (DragMode.None, 0, 0);
         foreach (var (hx, hy) in TransformHandles)
         {
-            var h = CanvasResizeHandleScreen(handles, hx, hy);
+            var h = CanvasResizeHandleScreen(canvas, hx, hy);
             double dx = Math.Abs(screen.X - h.X), dy = Math.Abs(screen.Y - h.Y);
             if (dx > TransformHandleGrab || dy > TransformHandleGrab || dx + dy >= best) continue;
             best = dx + dy;
             hit = (DragMode.CanvasResizeEdge, hx, hy);
         }
         if (hit.Item1 != DragMode.None) return hit;
-        bool inside = ImageToScreen(image).Contains(screen) || _ctx.CanvasResizeLayer is not null && ImageToScreen(area).Contains(screen);
-        return inside ? (DragMode.CanvasResizeMove, 0, 0) : hit;
+        return ImageToScreen(image).Contains(screen) ? (DragMode.CanvasResizeMove, 0, 0) : hit;
     }
 
     /// <summary>캔버스 크기 모드 커서: 손잡이는 그 방향의 크기 조절 화살표, 그림 안쪽은 옮기기.</summary>
@@ -3108,7 +3170,6 @@ public sealed partial class PixelCanvas : Control
         _crStartImg = ScreenToImageF(screen);
         _crStartCanvas = _ctx.CanvasResizeCanvas;
         _crStartImage = _ctx.CanvasResizeImage;
-        _crStartArea = _ctx.LayerResizeArea;
         _drag = mode;
         return true;
     }
@@ -3117,22 +3178,12 @@ public sealed partial class PixelCanvas : Control
     /// 캔버스 크기 끌기(1px 단위): 그림 안쪽이면 그림을 옮기고, 손잡이면 그 캔버스 가장자리만 옮긴다(그림은 제자리 → 여백이 늘거나 잘림).
     /// Ctrl(⌘)이면 그림 가장자리도 함께 움직여 여백은 그대로 두고 그림 크기를 바꾼다(모서리 + Shift = 시작 때 그림 비율 유지). 크기는 1px 이상.
     /// 9-slice로 늘리기가 켜져 있어도 조작은 같고(<see cref="EditorContext.CanvasResizeUsesSlice"/>는 그림을 늘리는 방법만 바꿈), 그때 그림은 테두리 두 쪽 + 1px보다 작아지지 않는다.
-    /// 레이어 크기 모드도 같은 조작으로 레이어 자리를 바꾼다(<see cref="DragLayerResize"/>).
     /// </summary>
     private void DragCanvasResize(Point screen)
     {
         var m = ScreenToImageF(screen);
         int dx = (int)Math.Round(m.X - _crStartImg.X), dy = (int)Math.Round(m.Y - _crStartImg.Y);
         Rectangle c = _crStartCanvas, i = _crStartImage;
-        if (_ctx.CanvasResizeLayer is not null)
-        {
-            // 레이어 크기 모드: 안쪽을 끌면 레이어 자리와 그림을 함께 옮긴다
-            var a = _crStartArea;
-            if (_drag == DragMode.CanvasResizeMove)
-                _ctx.SetLayerResize(a with { X = a.X + dx, Y = a.Y + dy }, i with { X = i.X + dx, Y = i.Y + dy });
-            else DragLayerResize(a, i, dx, dy);
-            return;
-        }
         if (_drag == DragMode.CanvasResizeMove)
         {
             _ctx.SetCanvasResize(c, new Rectangle(i.X + dx, i.Y + dy, i.Width, i.Height));
@@ -3166,34 +3217,6 @@ public sealed partial class PixelCanvas : Control
         var (cx, cw, ix, iw) = GrowAxis(_crHx, gx, c.X, c.Width, i.X, i.Width, scale);
         var (cy, ch, iy, ih) = GrowAxis(_crHy, gy, c.Y, c.Height, i.Y, i.Height, scale);
         _ctx.SetCanvasResize(new Rectangle(cx, cy, cw, ch), new Rectangle(ix, iy, iw, ih));
-    }
-
-    /// <summary>
-    /// 레이어 크기 모드 손잡이 끌기(캔버스 크기 모드와 같은 조작, 캔버스는 그대로): 잡은 레이어 자리 가장자리만 옮긴다(그림은 제자리 → 자리가 넓어지거나
-    /// 밖으로 나간 그림이 잘림). Ctrl(⌘)이면 그림 가장자리도 함께 움직여 그림 크기를 바꾼다. 모서리 + Shift = 시작 때 비율 유지(Ctrl이면 그림, 아니면 자리),
-    /// Alt = 가운데를 고정하고 양쪽을 함께. 크기는 1px ~ 최대 크기.
-    /// </summary>
-    private void DragLayerResize(Rectangle a, Rectangle i, int dx, int dy)
-    {
-        bool scale = Ui.HasCommand(_mods), center = (_mods & KeyModifiers.Alt) != 0;
-        int k = center ? 2 : 1;
-        int gx = _crHx * dx * k, gy = _crHy * dy * k;
-        if ((_mods & KeyModifiers.Shift) != 0 && _crHx != 0 && _crHy != 0)
-        {
-            var basis = scale ? i : a;
-            double kx = (basis.Width + gx) / (double)basis.Width, ky = (basis.Height + gy) / (double)basis.Height;
-            double s = Math.Abs(kx - 1) >= Math.Abs(ky - 1) ? kx : ky;
-            gx = (int)Math.Round(basis.Width * s) - basis.Width;
-            gy = (int)Math.Round(basis.Height * s) - basis.Height;
-        }
-        // 자리는 1px ~ 최대 크기, 함께 늘이는 그림도 1px ~ 최대 크기
-        gx = Math.Clamp(gx, scale ? Math.Max(1 - a.Width, 1 - i.Width) : 1 - a.Width, PixelImage.MaxSize - (scale ? Math.Max(a.Width, i.Width) : a.Width));
-        gy = Math.Clamp(gy, scale ? Math.Max(1 - a.Height, 1 - i.Height) : 1 - a.Height, PixelImage.MaxSize - (scale ? Math.Max(a.Height, i.Height) : a.Height));
-        Rectangle Grow(Rectangle r) => new(
-            center ? r.X - gx / 2 : _crHx < 0 ? r.X - gx : r.X,
-            center ? r.Y - gy / 2 : _crHy < 0 ? r.Y - gy : r.Y,
-            r.Width + gx, r.Height + gy);
-        _ctx.SetLayerResize(Grow(a), scale ? Grow(i) : i);
     }
 
     /// <summary>

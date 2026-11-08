@@ -644,12 +644,12 @@ internal static class ToolsShots
         var ctx = ToolFileHelp.Ctx(m);
         ctx.SetTransformParams(ctx.RotatedAboutPivot(ctx.TransformParams, 18));
         k.Settle(400);
-        var t = ctx.Transform ?? throw new InvalidOperationException("not transforming");
+        var box = ctx.TransformBox ?? throw new InvalidOperationException("not transforming");
         var p = ctx.TransformParams;
-        var src = t.SourceBounds;
+        var src = box.Bounds;
         Point Mapped(double x, double y)
         {
-            var (cx, cy) = t.Map(p, x, y);
+            var (cx, cy) = box.Map(p, x, y);
             return ToolFileHelp.At(m, cx, cy);
         }
         var center = Mapped(src.X + src.Width / 2.0, src.Y + src.Height / 2.0);
@@ -661,9 +661,9 @@ internal static class ToolsShots
         var rotate = corner + outward * (16 / len);
         var (pvx, pvy) = ctx.TransformPivot;
         var pivot = ToolFileHelp.At(m, pvx, pvy);
-        var box = Opt<Control>(m, "_transformBox");
-        var apply = ShotKit.FindText(box, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8D7A9F13B5, ancestorControl: true);
-        var cancel = ShotKit.FindText(box, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_BDB140E2ED, ancestorControl: true);
+        var group = Opt<Control>(m, "_transformBox");
+        var apply = ShotKit.FindText(group, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8D7A9F13B5, ancestorControl: true);
+        var cancel = ShotKit.FindText(group, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_BDB140E2ED, ancestorControl: true);
         k.Save(m, crop: ToolFileHelp.CanvasAndOptions(m), marks:
         [
             Around(inside, 18),
@@ -695,8 +695,8 @@ internal static class ToolsShots
         k.Settle(300);
         ctx.SetTransformParams(ctx.RotatedAboutPivot(ctx.TransformParams, -12));
         k.Settle(400);
-        var t = ctx.Transform ?? throw new InvalidOperationException("not transforming");
-        var corners = t.Corners(ctx.TransformParams).Select(c => ToolFileHelp.At(m, c.X, c.Y)).ToList();
+        var box = ctx.TransformBox ?? throw new InvalidOperationException("not transforming");
+        var corners = box.Corners(ctx.TransformParams).Select(c => ToolFileHelp.At(m, c.X, c.Y)).ToList();
         var handles = new Rect(new Point(corners.Min(c => c.X), corners.Min(c => c.Y)), new Point(corners.Max(c => c.X), corners.Max(c => c.Y)));
         var cels = new Rect(grid.TranslatePoint(new Point(NameW, TagH), m)!.Value, new Size(4 * CellW, HeadH + CellH));
         var message = ShotKit.Get<TextBlock>(m, "_stMessage");

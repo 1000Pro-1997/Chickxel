@@ -2,6 +2,27 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.112 (2026-11-08)
+### Transform (Ctrl+T) is a blue box that changes only the current cel
+- With a selection only those pixels change and pivots stay. Without one the whole drawing of the current cel (and the cels picked with it in the timeline) changes, and that frame's pivot follows it.
+- When a part's drawing goes past its area the part area grows (other frames stay in place). Moving a part without a selection moves that frame's part position.
+- Tool options gained box width/height (margin) and flip buttons.
+
+### Layer size (Ctrl+Shift+C) is an orange box that changes the whole layer
+- Moves, resizes and rotates every frame of the current layer (every skin for a part) with the same handles; each frame turns around its own pivot.
+- With a selection only that spot changes in every frame; without one the drawing and the pivots follow together.
+- A part's area follows the box (rotating makes it as big as needed) and resizing without rotating uses 9-slice; rotating removes the 9-slice border.
+- Clicking another frame of the same layer keeps it going and shows that frame; picking another layer cancels it.
+- The handles changed: plain drag = size, Ctrl+drag = margin (the reverse of before).
+
+### Both transforms: Ctrl+handle = margin
+- Grows or shrinks only the box and leaves the drawing in place. Shrinking crops what falls outside (shown dimmed); growing a selection repeats its edge pixels.
+- While Ctrl is held the box keeps its color and only the handles turn into outward arrows.
+
+### "Recent" in a number field's right-click list is the previous value
+- "Recent: …" shows the value before your last change instead of the current one. Picking it toggles between the two, and it is hidden when it equals the current value.
+- The previous value is shared by fields of the same kind and is remembered from dragging, the spin buttons, typing and picking from the list.
+
 ## v1.14.111 (2026-11-08)
 ### Pixelate: a yellow line circles the running tile
 - Instead of a blinking yellow border, a short yellow line with a fading tail now circles clockwise around the running candidate tile.

@@ -33,12 +33,12 @@ internal sealed class CanvasRatioDialog : DialogBase
     public CanvasRatioFit Fit => s_fit;
 
     /// <summary>
-    /// 캔버스 크기 모드(레이어 크기 모드는 아님)의 지금 값으로 창을 띄운다. 확인하면 넣을 값과 방식, 취소했거나 모드가 아니면 null.
+    /// 캔버스 크기 모드의 지금 값으로 창을 띄운다. 확인하면 넣을 값과 방식, 취소했거나 모드가 아니면 null.
     /// <paramref name="anchor"/>는 도구 설정에 눌려 보이는 기준점(그림이 9방향 어디에도 맞지 않으면 null — 가운데로 늘거나 줆).
     /// </summary>
     public static (Rectangle Canvas, Rectangle Image, CanvasRatioFit Fit)? Run(Visual owner, EditorContext ctx, Anchor? anchor)
     {
-        if (!ctx.IsCanvasResizing || ctx.CanvasResizeLayer is not null || ctx.CanvasResizeSourceImage is not { } source) return null;
+        if (!ctx.IsCanvasResizing || ctx.CanvasResizeSourceImage is not { } source) return null;
         var dialog = new CanvasRatioDialog(source, ctx.CanvasResizeCanvas, ctx.CanvasResizeImage, anchor);
         if (dialog.ShowDialog(owner) != DialogResult.OK || dialog.Plan is not { } plan) return null;
         return (plan.Canvas, plan.Image, dialog.Fit);
