@@ -93,6 +93,43 @@ internal static class GuideScreenEffectsCompareShots
         Compose(k, k.Id, [Row(EffectEasing.Linear), Row(EffectEasing.EaseOut)], zoom: 4);
     }
 
+    /// <summary>
+    /// 미리보기 자리·피벗: 효과 만들기의 변신 예(<see cref="EffectMakerShots.MorphScript"/>, 1번 병아리 → 끝 그림 병아리 마법사, 6칸)의 첫·가운데·마지막 칸.
+    /// 왼쪽 = 끝 그림 병아리 자리 0(제자리에서 바뀜) / 오른쪽 = 끝 그림 병아리 자리 (16, 0)(바뀌면서 오른쪽으로 옮겨 감).
+    /// 앱 미리보기와 같은 <see cref="AssetPreview.Render"/>로 그린다. 오른쪽 칸은 옮긴 만큼 캔버스가 넓으므로, 모든 칸을 넓은 쪽 너비의 칸에 왼쪽(첫 병아리 자리)을
+    /// 맞춰 놓아 두 쪽의 첫 병아리가 같은 자리에 오게 하고, 한 쪽의 칸은 어두운 1px 줄로 나눠 한 띠로 붙인다.
+    /// </summary>
+    [Shot("screen-effect-maker-compare-end-offset")]
+    public static void EndOffset(ShotKit k)
+    {
+        const int steps = 6;
+        string hash = ScriptLibrary.Add(EffectMakerShots.MorphScript);
+        ScriptLibrary.SetTrust(hash, true);
+        var program = ScriptLibrary.Runnable(hash) ?? throw new InvalidOperationException("morph script didn't parse");
+        LayerEffect morph = program.CreateEffect();
+        var chick = PreviewChicks.Load(program.PreviewChick);
+        var end = AssetPreview.EndChick(program.PreviewEndChick);
+        List<PixelImage> Frames(PreviewPlacement placement)
+            => [.. new[] { 0, steps / 2, steps - 1 }.Select(step => AssetPreview.Render([morph], chick, step, steps, end, PreviewMotion.None, placement))];
+        var moved = new PreviewPlacement(new System.Drawing.Point(16, 0), System.Drawing.Point.Empty, System.Drawing.Point.Empty);
+        List<PixelImage>[] sides = [Frames(PreviewPlacement.None), Frames(moved)];
+        int slot = sides.SelectMany(s => s).Max(f => f.Width), height = sides.SelectMany(s => s).Max(f => f.Height);
+        PixelImage Strip(List<PixelImage> frames)
+        {
+            var strip = new PixelImage(frames.Count * (slot + 1) - 1, height);
+            var line = new Color32(24, 24, 27);
+            for (int i = 0; i < frames.Count; i++)
+            {
+                int x = i * (slot + 1);
+                if (i > 0)
+                    for (int y = 0; y < height; y++) strip[x - 1, y] = line;
+                strip.Blit(frames[i], x, height - frames[i].Height);
+            }
+            return strip;
+        }
+        Compose(k, k.Id, [[Strip(sides[0]), Strip(sides[1])]], zoom: 3);
+    }
+
     /// <summary>공식 효과 <paramref name="id"/>를 기본값에 <paramref name="values"/>만 바꿔 만든다(앱이 효과 창에서 넣을 때와 같은 <see cref="ScriptEffectProgram.CreateEffect"/>).</summary>
     private static ScriptEffect Effect(string id, params (string Key, object Value)[] values)
         => OfficialEffects.Program(id).CreateEffect(values.ToDictionary(v => v.Key, v => v.Value));

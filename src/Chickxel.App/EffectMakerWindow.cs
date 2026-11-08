@@ -13,8 +13,8 @@ namespace Chickxel.App;
 /// 병아리 견본, 선언의 <c>previewFrames</c>칸 — 미리보기 아래 칸 띠에서 칸마다 볼 수 있음)로 확인하고, 내 스크립트 에셋으로 저장·지금 레이어에 넣기·검증·올리기(게시 창으로 이어짐)를 한다.
 /// 세 칸: 왼쪽은 내 효과 목록(모두 보기를 켜면 복사본·받은 에셋의 스크립트도)과 제목·설명 칸, 가운데는 원문, 오른쪽은 미리보기와 미리보기 장면.
 /// 아래 줄 저장·넣기 옆의 상태 단추는 상태를 색(초록 = 문제 없음, 빨강 = 오류, 노랑 = 경고만)과 짧은 글로 보이고, 누르면 자세한 상태(오류 줄 — 누르면 원문의 그 자리로)를 띄운다.
-/// 제목·설명·병아리·끝 그림 병아리·프레임 수 칸과 미리보기 움직임 창은 원문 선언의 <c>name</c>·<c>description</c>·<c>previewChick</c>·<c>previewEndChick</c>·<c>previewFrames</c>·
-/// <c>previewMotion</c>을 고친다(원문 하나가 효과 하나 — 어느 앱에서나 같은 효과).
+/// 제목·설명·병아리·끝 그림 병아리·프레임 수 칸과 미리보기 움직임·자리·피벗 창은 원문 선언의 <c>name</c>·<c>description</c>·<c>previewChick</c>·<c>previewEndChick</c>·<c>previewFrames</c>·
+/// <c>previewMotion</c>·<c>previewPivot</c>·<c>previewEndOffset</c>·<c>previewEndPivot</c>을 고친다(원문 하나가 효과 하나 — 어느 앱에서나 같은 효과).
 /// 미리보기 설정 값의 "기본값으로"는 지금 값을 선언 settings의 <c>default</c>로 쓰고, "초기화"는 값을 원문의 기본값으로 되돌린다.
 /// 기본 효과를 합친 레시피는 여기서 만들지 않는다(효과 창의 "전체 효과 저장" — 내 컴퓨터에서만 쓰고 온라인에 올리지 않음).
 /// 창은 하나만 열리고(모달이 아님) 메인 편집기와 함께 쓴다.
@@ -64,6 +64,8 @@ public sealed class EffectMakerWindow : Window
     private readonly NumericUpDown _frameCount;
     /// <summary>미리보기 움직임 창을 여는 단추(선언의 <c>previewMotion</c>을 고침, 풍선에 지금 움직임).</summary>
     private readonly Button _previewMotion;
+    /// <summary>미리보기 자리·피벗 창을 여는 단추(선언의 <c>previewPivot</c>·<c>previewEndOffset</c>·<c>previewEndPivot</c>을 고침, 풍선에 지금 값).</summary>
+    private readonly Button _previewPlacement;
     /// <summary>미리보기 아래 칸 띠: 그려 둔 칸마다 작은 그림과 번호(누르면 멈추고 그 칸을 봄).</summary>
     private readonly StackPanel _strip = new() { Orientation = Orientation.Horizontal, Spacing = 2 };
     private readonly ScrollViewer _stripScroll;
@@ -299,8 +301,9 @@ public sealed class EffectMakerWindow : Window
         frameLabel.VerticalAlignment = VerticalAlignment.Center;
         frameLabel.Margin = new Thickness(10, 0, 2, 0);
         _previewMotion = Ui.IconButton(VectorIcon.Settings, UiStrings.EffectMaker_PreviewMotion, (_, _) => EditPreviewMotion());
-        // 재생·효과 없이 보기(아이콘 단추)와 프레임 수·미리보기 움직임을 한 줄에
-        var playRow = Ui.Row(_play, _original, frameLabel, _frameCount, _previewMotion);
+        _previewPlacement = Ui.IconButton(VectorIcon.Crosshair, UiStrings.EffectMaker_PreviewPlacement, (_, _) => EditPreviewPlacement());
+        // 재생·효과 없이 보기(아이콘 단추)와 프레임 수·미리보기 움직임·자리·피벗을 한 줄에
+        var playRow = Ui.Row(_play, _original, frameLabel, _frameCount, _previewMotion, _previewPlacement);
         foreach (var child in playRow.Children) child.VerticalAlignment = VerticalAlignment.Center;
         // "미리보기" 제목 줄 오른쪽에 AI 단추: 누르면 창 오른쪽에 AI 칸이 열린다
         _aiToggle = new ToggleButton
@@ -331,6 +334,7 @@ public sealed class EffectMakerWindow : Window
         _preview.HelpAt(HelpPage, anchor: "The preview is the same image");
         _stripScroll.HelpAt(HelpPage, anchor: "The preview is the same image");
         _previewMotion.HelpAt(HelpPage, anchor: "Preview motion");
+        _previewPlacement.HelpAt(HelpPage);
         var right = Ui.Stack(
             previewHeader.HelpAt(HelpPage, anchor: "The preview is the same image"),
             _preview,
@@ -762,11 +766,14 @@ public sealed class EffectMakerWindow : Window
         _validate.IsEnabled = _open;
         _upload.IsEnabled = editable;
         _title.IsEnabled = _description.IsEnabled = _tags.IsEnabled = editable;
-        _frameCount.IsEnabled = _languages.IsEnabled = _previewMotion.IsEnabled = editable && _program is not null;
+        _frameCount.IsEnabled = _languages.IsEnabled = _previewMotion.IsEnabled = _previewPlacement.IsEnabled = editable && _program is not null;
         _chick.IsEnabled = _endChick.IsEnabled = editable;
         ToolTip.SetTip(_previewMotion, _program is { } shown
             ? UiStrings.FormatEffectMaker_PreviewMotionTip(motion: PreviewMotionDialog.Describe(shown.PreviewMotion))
             : UiStrings.EffectMaker_PreviewMotion);
+        ToolTip.SetTip(_previewPlacement, _program is { } placed
+            ? UiStrings.FormatEffectMaker_PreviewPlacementTip(placement: PreviewPlacementDialog.Describe(placed.PreviewPlacement))
+            : UiStrings.EffectMaker_PreviewPlacement);
         _statusButton.IsEnabled = _open;
         UpdateValueButtons();
         _sceneEdit.IsEnabled = editable;
@@ -972,6 +979,7 @@ public sealed class EffectMakerWindow : Window
         var endId = _program.PreviewEndChick;
         var program = _program;
         var motion = program.PreviewMotion;
+        var placement = program.PreviewPlacement;
         var scene = _scene;
         int steps = program.PreviewFrames;
         var values = new Dictionary<string, object>(_previewValues, StringComparer.Ordinal);
@@ -991,7 +999,7 @@ public sealed class EffectMakerWindow : Window
             if (scene is not null)
             {
                 // 장면 위: 병아리 레이어에 효과를 입혀 장면 레이어와 함께 그린다. 실행 오류·시간은 같은 img·ctx(레이어 포함)로 직접 돌려 본다
-                var render = new PreviewSceneRender(scene, effects, chick, steps, end, motion);
+                var render = new PreviewSceneRender(scene, effects, chick, steps, end, motion, placement);
                 var probe = render.Probe(program, values, steps / 2, cancel.Token);
                 if (ProbeError(probe) is { } error) runError = error;
                 else msPerFrame = probe.Elapsed.TotalMilliseconds;
@@ -1002,7 +1010,7 @@ public sealed class EffectMakerWindow : Window
             else
             {
                 // 실행 오류·시간은 효과를 거치지 않고 직접 한 번 돌려 본다(효과 렌더러는 오류를 삼키고 효과를 건너뛴다). 원본·다른 프레임 원본은 미리보기와 같다
-                var (sample, context) = AssetPreview.ScriptFrame(chick, end, motion, steps / 2, steps);
+                var (sample, context) = AssetPreview.ScriptFrame(chick, end, motion, steps / 2, steps, placement);
                 var probe = sample.Clone();
                 var watch = Stopwatch.StartNew();
                 try
@@ -1015,8 +1023,8 @@ public sealed class EffectMakerWindow : Window
                     runError = ex.Error;
                 }
                 for (int step = 0; step < steps && !cancel.IsCancellationRequested; step++)
-                    frames.Add(AssetPreview.Render(effects, chick, step, steps, end, motion));
-                original = AssetPreview.Original(effects, chick, 0, steps, end, motion);
+                    frames.Add(AssetPreview.Render(effects, chick, step, steps, end, motion, placement));
+                original = AssetPreview.Original(effects, chick, 0, steps, end, motion, placement);
             }
             return (frames, original, runError, msPerFrame, path);
         }, cancel.Token).ContinueWith(task =>
@@ -1220,6 +1228,23 @@ public sealed class EffectMakerWindow : Window
         if (PreviewMotionDialog.Ask(this, program.PreviewMotion, program.PreviewFrames) is not { } motion
             || motion.SameAs(program.PreviewMotion, program.PreviewFrames)) return;
         if (ScriptDeclarationEdit.SetPreviewMotion(_source, motion) is not { } edited)
+        {
+            Ui.Info(this, UiStrings.EffectMaker_FixSourceFirst, UiStrings.EffectMaker_Title);
+            return;
+        }
+        if (edited != _source) ApplyDeclarationEdit(edited);
+    }
+
+    /// <summary>
+    /// "미리보기 자리·피벗": 창의 값을 선언의 <c>previewPivot</c>·<c>previewEndOffset</c>·<c>previewEndPivot</c>으로 쓴다(실행취소 한 단계, 0인 값은 그 속성을 지움).
+    /// 값이 지금과 같으면 원문을 그대로 둔다. 선언을 고칠 수 없는 원문이면 원문 오류를 안내한다.
+    /// </summary>
+    private void EditPreviewPlacement()
+    {
+        if (!_open || _program is not { } program) return;
+        if (PreviewPlacementDialog.Ask(this, program.PreviewPlacement, program.PreviewEndChick is not null) is not { } placement
+            || placement == program.PreviewPlacement) return;
+        if (ScriptDeclarationEdit.SetPreviewPlacement(_source, placement) is not { } edited)
         {
             Ui.Info(this, UiStrings.EffectMaker_FixSourceFirst, UiStrings.EffectMaker_Title);
             return;
@@ -1686,7 +1711,8 @@ public sealed class EffectMakerWindow : Window
 
         var seen = new HashSet<(string, int, int)>();
         var chicks = PreviewChicks.Ids.Select(PreviewChicks.Load).ToList();
-        // 끝 그림 병아리(선언의 previewEndChick)가 있으면 견본 병아리마다 마지막 칸이 그 병아리고, 움직임(previewMotion)이 있으면 병아리가 칸마다 옮겨 간다(미리보기와 같음)
+        // 끝 그림 병아리(선언의 previewEndChick)가 있으면 견본 병아리마다 마지막 칸이 그 병아리고, 움직임(previewMotion)이 있으면 병아리가 칸마다 옮겨 가며
+        // 자리·피벗(previewEndOffset·previewPivot·previewEndPivot)이 끝 그림 병아리 자리와 칸마다 피벗을 옮긴다(미리보기와 같음)
         var end = AssetPreview.EndChick(program.PreviewEndChick);
         // 장면이 있으면 병아리 레이어에 기본 설정의 이 효과를 입힌 장면 위에서 돌린다(다른 레이어 함수가 장면 레이어를 읽음)
         IReadOnlyList<LayerEffect> effects = scene is null ? [] : [program.CreateEffect() with { ScriptHash = ScriptLibrary.Add(source) }];
@@ -1696,7 +1722,8 @@ public sealed class EffectMakerWindow : Window
         for (int c = 0; c < chicks.Count; c++)
         {
             var chick = chicks[c];
-            var render = scene is null ? null : new PreviewSceneRender(scene, effects, chick, program.PreviewFrames, end, program.PreviewMotion);
+            var render = scene is null ? null
+                : new PreviewSceneRender(scene, effects, chick, program.PreviewFrames, end, program.PreviewMotion, program.PreviewPlacement);
             for (int step = 0; step < program.PreviewFrames; step++)
             {
                 cancel.ThrowIfCancellationRequested();
@@ -1735,8 +1762,8 @@ public sealed class EffectMakerWindow : Window
         for (int step = 0; step < program.PreviewFrames; step++)
         {
             cancel.ThrowIfCancellationRequested();
-            var before = AssetPreview.Original(template, chick, step, program.PreviewFrames, end, program.PreviewMotion).GetOpaqueBounds();
-            var after = AssetPreview.Render(template, chick, step, program.PreviewFrames, end, program.PreviewMotion).GetOpaqueBounds();
+            var before = AssetPreview.Original(template, chick, step, program.PreviewFrames, end, program.PreviewMotion, program.PreviewPlacement).GetOpaqueBounds();
+            var after = AssetPreview.Render(template, chick, step, program.PreviewFrames, end, program.PreviewMotion, program.PreviewPlacement).GetOpaqueBounds();
             if (before.IsEmpty || after.IsEmpty || Math.Abs(after.Width - before.Width) > 2 || Math.Abs(after.Height - before.Height) > 2) continue;
             float dx = (after.Left + after.Right - before.Left - before.Right) / 2f, dy = (after.Top + after.Bottom - before.Top - before.Bottom) / 2f;
             if (Math.Abs(dx) >= 2 || Math.Abs(dy) >= 2) return true;
@@ -1745,11 +1772,11 @@ public sealed class EffectMakerWindow : Window
     }
 
     /// <summary>
-    /// 병아리 견본 하나(끝 그림 병아리 <paramref name="end"/>, 선언의 움직임 — <see cref="AssetPreview.ScriptFrame"/>)에 한 칸을 직접 돌린다: 실행 오류(없으면 null)와 걸린 시간(ms).
+    /// 병아리 견본 하나(끝 그림 병아리 <paramref name="end"/>, 선언의 움직임·자리·피벗 — <see cref="AssetPreview.ScriptFrame"/>)에 한 칸을 직접 돌린다: 실행 오류(없으면 null)와 걸린 시간(ms).
     /// </summary>
     private static (ScriptError? Error, double Ms) RunOnChick(ScriptEffectProgram program, PixelImage chick, PixelImage? end, int step, CancellationToken cancel)
     {
-        var (sample, context) = AssetPreview.ScriptFrame(chick, end, program.PreviewMotion, step, program.PreviewFrames);
+        var (sample, context) = AssetPreview.ScriptFrame(chick, end, program.PreviewMotion, step, program.PreviewFrames, program.PreviewPlacement);
         var image = sample.Clone();
         var watch = Stopwatch.StartNew();
         try
@@ -1945,12 +1972,12 @@ public sealed class EffectMakerWindow : Window
         int step = Math.Clamp(_preview.Index, 0, steps - 1);
         if (_scene is { } scene)
         {
-            var render = new PreviewSceneRender(scene, effects, chick, steps, end, _program.PreviewMotion);
+            var render = new PreviewSceneRender(scene, effects, chick, steps, end, _program.PreviewMotion, _program.PreviewPlacement);
             return _original.On() ? render.Original(0) : render.Render(step);
         }
         return _original.On()
-            ? AssetPreview.Original(effects, chick, 0, steps, end, _program.PreviewMotion)
-            : AssetPreview.Render(effects, chick, step, steps, end, _program.PreviewMotion);
+            ? AssetPreview.Original(effects, chick, 0, steps, end, _program.PreviewMotion, _program.PreviewPlacement)
+            : AssetPreview.Render(effects, chick, step, steps, end, _program.PreviewMotion, _program.PreviewPlacement);
     }
 
     /// <summary>편집기의 지금 원문(줄바꿈을 정리한 것).</summary>

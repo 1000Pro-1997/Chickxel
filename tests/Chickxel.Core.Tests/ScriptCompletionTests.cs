@@ -69,7 +69,7 @@ public class ScriptCompletionTests
 
     [Theory]
     [InlineData("effect({ na|", new[] { "name" })]
-    [InlineData("effect({\n  name: \"x\",\n  pre|", new[] { "previewChick", "previewEndChick", "previewFrames", "previewMotion" })]
+    [InlineData("effect({\n  name: \"x\",\n  pre|", new[] { "previewChick", "previewEndChick", "previewFrames", "previewMotion", "previewEndOffset", "previewPivot", "previewEndPivot" })]
     [InlineData("effect({ name: 'x', settings: [{ key: 'a', ty|", new[] { "type" })]
     [InlineData("effect({ name: 'x', settings: [{ key: 'a', type: \"co|", new[] { "color", "colorList", "colorPairs" })]
     [InlineData("effect({ name: 'x', settings: [{ key: 'a', type: \"|", new[] { "int", "number", "bool", "color", "choice", "colorList", "colorPairs", "layer" })]

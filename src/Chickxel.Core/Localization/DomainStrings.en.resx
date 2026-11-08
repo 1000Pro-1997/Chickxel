@@ -274,6 +274,7 @@
   <data name="Script_InvalidPreviewEndChick" xml:space="preserve"><value>previewEndChick must be a chick ID string (lowercase letters, digits and dashes, e.g. "wizard").</value></data>
   <data name="Script_InvalidPreviewFrames" xml:space="preserve"><value>previewFrames must be a whole number from {min} to {max}.</value></data>
   <data name="Script_InvalidPreviewMotion" xml:space="preserve"><value>previewMotion must be one of "none", "right", "left", "up" and "down", or an array of 1 to {frames} whole-number pairs [x, y] (each -{max} to {max}) giving the chick's place in each frame.</value></data>
+  <data name="Script_InvalidPreviewOffset" xml:space="preserve"><value>{key} must be a whole-number pair [x, y] (each -{max} to {max}).</value></data>
   <data name="Script_InvalidTranslations" xml:space="preserve"><value>translations must be an object keyed by language code (e.g. "en", "ja", "zh-Hans") whose values hold that language's name, description and labels (up to {max} languages).</value></data>
   <data name="Script_InvalidTranslationLanguage" xml:space="preserve"><value>'{code}' in translations is not a language code (e.g. "en", "ja", "zh-Hans") or is repeated.</value></data>
   <data name="Script_InvalidTranslation" xml:space="preserve"><value>translations.{code} must be an object holding name, description and labels (labels is an object too).</value></data>

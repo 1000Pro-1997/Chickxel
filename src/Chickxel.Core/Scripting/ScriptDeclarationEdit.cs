@@ -52,6 +52,24 @@ public static class ScriptDeclarationEdit
             ["previewFrames", "previewEndChick", "previewChick", "name"]);
 
     /// <summary>
+    /// 선언의 미리보기 자리·피벗(<c>previewPivot</c>·<c>previewEndOffset</c>·<c>previewEndPivot</c>)을 <paramref name="placement"/>로 바꾼다. 값이 0인 키는 지우고,
+    /// 없는 키는 <c>previewPivot</c>은 <c>previewChick</c> 다음에(없으면 <c>previewEndChick</c>·<c>previewFrames</c>·<c>previewMotion</c>·<c>name</c> 차례로),
+    /// 끝 값 둘은 <c>previewEndChick</c> 다음에(없으면 앞 키·<c>previewChick</c>·<c>name</c> 차례로) 더한다. 원문을 해석하지 못하면 null.
+    /// </summary>
+    public static string? SetPreviewPlacement(string source, Assets.PreviewPlacement placement)
+    {
+        string? edited = SetLiteral(source, Assets.PreviewPlacement.PivotKey, Assets.PreviewPlacement.Literal(placement.Pivot),
+            ["previewChick", "previewEndChick", "previewFrames", "previewMotion", "name"]);
+        if (edited is not null)
+            edited = SetLiteral(edited, Assets.PreviewPlacement.EndOffsetKey, Assets.PreviewPlacement.Literal(placement.EndOffset),
+                ["previewEndChick", Assets.PreviewPlacement.PivotKey, "previewChick", "name"]);
+        if (edited is not null)
+            edited = SetLiteral(edited, Assets.PreviewPlacement.EndPivotKey, Assets.PreviewPlacement.Literal(placement.EndPivot),
+                [Assets.PreviewPlacement.EndOffsetKey, "previewEndChick", Assets.PreviewPlacement.PivotKey, "previewChick", "name"]);
+        return edited;
+    }
+
+    /// <summary>
     /// 선언의 새 효과 공통 처음 값(<c>easing</c>·<c>repeat</c>·<c>repeatCount</c>·<c>movePivot</c> — <see cref="ScriptEffectProgram.CreateEffect"/>)을 바꾼다(효과 만들기의 "기본값으로").
     /// null인 값은 그대로 두고, 앱의 기본값(Linear·Once·1·true)이면 그 속성을 지운다. 없으면 이 차례의 앞 키 다음에
     /// (없으면 <c>animated</c>·<c>name</c> 다음에) 더한다. 원문을 해석하지 못하면 null.

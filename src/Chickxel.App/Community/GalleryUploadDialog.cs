@@ -29,6 +29,7 @@ public sealed class GalleryUploadDialog : DialogBase
     /// <summary>창을 열 때 타임라인에서 고른 프레임(0부터, 오름차순).</summary>
     private readonly IReadOnlyList<int> _selectedFrames;
     private readonly CheckBox _shareProject;
+    private readonly CheckBox _allowDownload;
     private readonly TextBlock _scriptsNote;
     private readonly NumericUpDown _scale;
     private readonly TextBox _title, _description, _tags;
@@ -113,6 +114,8 @@ public sealed class GalleryUploadDialog : DialogBase
         _scriptsNote = Note(UiStrings.Gallery_ShareProjectScripts);
         _scriptsNote.IsVisible = false;
         _shareProject.IsCheckedChanged += (_, _) => _scriptsNote.IsVisible = hasScripts && ShareProject;
+        // 그림 쪽의 PNG/GIF 받기 버튼(기본 켬, 끄면 올린 사람과 관리자에게만 보임)
+        _allowDownload = Ui.Check(UiStrings.Gallery_AllowDownload, value: true);
         _error = new TextBlock { Foreground = AppTheme.UnsavedBrush, TextWrapping = TextWrapping.Wrap, MaxWidth = 560, IsVisible = false };
         var cancelUpload = Ui.Button(VectorIcon.X, UiStrings.Gallery_CancelUpload, (_, _) => _upload?.Cancel());
         _progressRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, IsVisible = false, Children = { _progress, _progressText, cancelUpload } };
@@ -132,7 +135,8 @@ public sealed class GalleryUploadDialog : DialogBase
                 Ui.Group(UiStrings.Gallery_What, Ui.Stack(_png, Ui.Row(_gif, Ui.InfoBadge(UiStrings.Gallery_RangeTip)), _rangePanel,
                     Ui.Row(Ui.Label(UiStrings.Gallery_Scale), _scale), _info,
                     Ui.Row(_shareProject, Ui.InfoBadge(UiStrings.Gallery_ShareProjectTip)).HelpAt("screen-gallery", anchor: "Sharing the editable file"),
-                    _scriptsNote.HelpAt("screen-gallery", anchor: "Sharing the editable file"))).HelpAt("screen-gallery", anchor: "Picture:"),
+                    _scriptsNote.HelpAt("screen-gallery", anchor: "Sharing the editable file"),
+                    Ui.Row(_allowDownload, Ui.InfoBadge(UiStrings.Gallery_AllowDownloadTip)))).HelpAt("screen-gallery", anchor: "Picture:"),
                 Ui.Group(UiStrings.Gallery_Details, Ui.Stack(
                     Ui.Label(UiStrings.Gallery_TitleLabel), _title,
                     Ui.Label(UiStrings.Gallery_DescriptionLabel), _description,
@@ -359,7 +363,8 @@ public sealed class GalleryUploadDialog : DialogBase
         try
         {
             var before = AppCommunity.Client.User;
-            var upload = new ArtUpload(data, AsGif ? CommunityArtType.Gif : CommunityArtType.Png, title, description, tags, projectFile);
+            var upload = new ArtUpload(data, AsGif ? CommunityArtType.Gif : CommunityArtType.Png, title, description, tags, projectFile,
+                AllowDownload: _allowDownload.IsChecked == true);
             var art = await AppCommunity.Client.UploadArtAsync(upload, new Progress<double>(ReportProgress), cancel.Token);
             Uploaded = true;
             AppCommunity.Open(this, AppCommunity.Client.ArtPageUrl(art.Id));

@@ -262,6 +262,25 @@ public class CommunityClientTests
     }
 
     [Fact]
+    public async Task CheckIn_PostsWithTheToken_UpdatesTheSavedLevel_AndRepeatsAreNotGranted()
+    {
+        var (client, handler, tokens) = Make();
+        handler.Routes["GET /api/me"] = _ => Json(HttpStatusCode.OK, UserJson.Replace("\"isAdmin\": false", "\"isAdmin\": false, \"level\": 2, \"xp\": 15, \"levelStartXp\": 10, \"nextLevelXp\": 22"));
+        await client.GetMeAsync();
+        handler.Routes["POST /api/me/checkin"] = _ => Json(HttpStatusCode.OK,
+            """{ "granted": true, "nextInMs": 50000000, "xp": 25, "level": 3, "levelStartXp": 22, "nextLevelXp": 36 }""");
+        Assert.Equal(new CommunityCheckIn(true, 3, 25), await client.CheckInAsync());
+        var sent = handler.Requests[^1];
+        Assert.Equal((HttpMethod.Post, "https://chickxel.com/api/me/checkin", "Bearer secret-token"), (sent.Method, sent.Url, sent.Authorization));
+        Assert.Equal((3, 25, 22, (int?)36), (client.User!.Level, client.User.Xp, client.User.LevelStartXp, client.User.NextLevelXp));
+        Assert.Equal(client.User, tokens.Saved.Current!.User);
+
+        handler.Routes["POST /api/me/checkin"] = _ => Json(HttpStatusCode.OK,
+            """{ "granted": false, "nextInMs": 49000000, "xp": 25, "level": 3, "levelStartXp": 22, "nextLevelXp": 36 }""");
+        Assert.False((await client.CheckInAsync()).Granted);
+    }
+
+    [Fact]
     public void Uptime_Json_ReadsTheGrantAndLevel_AndToleratesMissingFields()
     {
         var refused = CommunityUptime.Read(JsonNode.Parse("""{ "granted": false, "nextInMs": 120000.0, "xp": 9, "level": 1, "levelStartXp": 0, "nextLevelXp": 10 }"""));

@@ -54,6 +54,8 @@ public sealed record ScriptAsset : IAssetData
     public int PreviewFrames { get; init; } = AssetPreview.PackageFrames;
     /// <summary>선언의 <c>previewMotion</c>: 패키지 미리보기 칸마다 병아리를 옮기는 양(<see cref="ScriptEffectProgram.PreviewMotion"/>).</summary>
     public PreviewMotion PreviewMotion { get; init; } = PreviewMotion.None;
+    /// <summary>선언의 미리보기 자리·피벗: 패키지 미리보기의 끝 그림 병아리 자리와 칸마다 피벗(<see cref="ScriptEffectProgram.PreviewPlacement"/>).</summary>
+    public PreviewPlacement PreviewPlacement { get; init; } = PreviewPlacement.None;
     /// <summary>선언의 설정 schema(선언 순서).</summary>
     public IReadOnlyList<ScriptSetting> Settings { get; init; } = [];
     /// <summary>선언의 <c>translations</c>(<see cref="ScriptEffectProgram.Translations"/>). 화면에는 <see cref="NameFor"/>·<see cref="DescriptionFor"/>로 보인다.</summary>
@@ -86,7 +88,8 @@ public sealed record ScriptAsset : IAssetData
             Id = id, Name = program.Name.Trim(), Author = program.Author, Description = program.Description,
             Tags = tags, ReadsOtherLayers = layers, ReadsOtherFrames = frames, MovesPivot = pivot,
             Source = program.Source, Hash = program.ContentHash, Animated = program.Animated, Easing = program.Easing, PreviewChick = program.PreviewChick,
-            PreviewEndChick = program.PreviewEndChick, PreviewFrames = program.PreviewFrames, PreviewMotion = program.PreviewMotion, Settings = program.Settings,
+            PreviewEndChick = program.PreviewEndChick, PreviewFrames = program.PreviewFrames, PreviewMotion = program.PreviewMotion,
+            PreviewPlacement = program.PreviewPlacement, Settings = program.Settings,
             Translations = program.Translations, Language = program.Language,
         };
     }

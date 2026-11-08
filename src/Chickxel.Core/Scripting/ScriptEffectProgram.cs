@@ -226,6 +226,12 @@ public sealed class ScriptEffectProgram
     public Assets.PreviewMotion PreviewMotion { get; init; } = Assets.PreviewMotion.None;
 
     /// <summary>
+    /// 선언의 <c>previewEndOffset</c>·<c>previewPivot</c>·<c>previewEndPivot</c>(없으면 <see cref="Assets.PreviewPlacement.None"/>): 미리보기에서 끝 그림 병아리를
+    /// 다른 자리에 놓고 칸마다 피벗을 옮겨, 두 그림의 자리·중심이 다를 때 뜻이 있는 효과를 미리보기에서 보이게 한다(<see cref="Assets.AssetPreview.Frame"/>).
+    /// </summary>
+    public Assets.PreviewPlacement PreviewPlacement { get; init; } = Assets.PreviewPlacement.None;
+
+    /// <summary>
     /// 선언의 <c>previewFrames</c>(<see cref="MinPreviewFrames"/>~<see cref="MaxPreviewFrames"/>, 기본 <see cref="Assets.AssetPreview.PackageFrames"/>):
     /// 효과 만들기 미리보기·검증과 올릴 때 굽는 패키지 미리보기에서 효과를 돌리는 칸 수.
     /// </summary>

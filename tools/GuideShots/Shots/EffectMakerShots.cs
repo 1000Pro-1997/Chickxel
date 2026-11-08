@@ -99,8 +99,8 @@ internal static class EffectMakerShots
         });
         """;
 
-    /// <summary>4: 범위 첫 그림을 끝 그림(끝 그림 병아리)으로 픽셀마다 옮겨 바꾸는 변신.</summary>
-    private const string MorphScript = """
+    /// <summary>4·10: 범위 첫 그림을 끝 그림(끝 그림 병아리)으로 픽셀마다 옮겨 바꾸는 변신(비교 그림 <see cref="GuideScreenEffectsCompareShots.EndOffset"/>도 씀).</summary>
+    internal const string MorphScript = """
         effect({
           name: "Morph",
           author: "pixel-cat",
@@ -201,7 +201,8 @@ internal static class EffectMakerShots
     /// <summary>
     /// 효과 만들기: 1 = 창 전체(①~⑬), 2 = 올린 효과가 보이는 목록(⑭ 올림 표시 ⑮ 이 컴퓨터에 없는 올린 효과), 3 = 미리보기 움직임 창(⑯ 움직임 ⑰ 칸마다 자리),
     /// 4 = 변신(⑱ 끝 그림 병아리 ⑲ 칸 띠), 5 = 레이어 설정과 미리보기 장면(⑳ 레이어 설정 ㉑ 장면 줄), 6 = 장면을 메인 편집기에서 고치는 동안의 작은 창(㉒),
-    /// 7 = 상태 창(㉓ 상태 단추 ㉔ 자세한 상태), 8 = 규칙 창(㉕ 원문 포함·복사), 9 = AI 칸(㉖ 대화·입력 ㉗ 첨부 단추 ㉘ 모델·보내기).
+    /// 7 = 상태 창(㉓ 상태 단추 ㉔ 자세한 상태), 8 = 규칙 창(㉕ 원문 포함·복사), 9 = AI 칸(㉖ 대화·입력 ㉗ 첨부 단추 ㉘ 모델·보내기),
+    /// 10 = 미리보기 자리·피벗 창(번호 없음 — 가이드에서 4와 5 사이에 놓이고 세 줄은 표로 설명).
     /// </summary>
     [Shot("screen-effect-maker")]
     public static void EffectMaker(ShotKit k)
@@ -320,6 +321,14 @@ internal static class EffectMakerShots
         var endLabel = chickRows.Children[2];
         var endChick = ShotKit.Get<Control>(maker, "_endChick");
         k.Save(maker, "screen-effect-maker-4", crop: Union(maker, previewTop, play).Inflate(8), marks: [Union(maker, endLabel, endChick), strip], firstNumber: 18);
+
+        // 10: 미리보기 자리·피벗 창 — 끝 그림 병아리를 오른쪽으로 16px 옮긴 값(끝 그림 병아리가 있어 끝 값 두 줄이 켜짐). 창을 닫으면(취소) 원문은 그대로
+        k.Dialog(() => ShotKit.Call(maker, "EditPreviewPlacement"), d =>
+        {
+            ShotKit.Get<(NumericUpDown X, NumericUpDown Y)>(d, "_endOffset").X.Value = 16;
+            ShotKit.Pump(200);
+            k.Save(d, "screen-effect-maker-10");
+        }, settleMs: 500);
 
         // 5: 레이어 설정과 미리보기 장면(하늘·바닥 레이어, 바닥 위에 병아리)
         OpenSource(k, maker, ShadowScript);

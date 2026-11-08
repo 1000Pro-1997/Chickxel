@@ -65,7 +65,8 @@ public sealed partial class PixelTools
                 ["chick"] = Str("Preview chick id to write into the declaration's previewChick before saving (optional; e.g. knight, wizard, ninja)."),
             });
         yield return Tool("get_effect_maker_source",
-            "Read the script open in the Effect Maker window: its full source, unsaved flag, parse errors (line and column), the declared name, language, description, tags, previewChick, previewEndChick (null if none), previewFrames, previewMotion (preset name, list of [x, y] offsets, or null if none) and animated, " +
+            "Read the script open in the Effect Maker window: its full source, unsaved flag, parse errors (line and column), the declared name, language, description, tags, previewChick, previewEndChick (null if none), previewFrames, previewMotion (preset name, list of [x, y] offsets, or null if none), " +
+            "previewEndOffset, previewPivot and previewEndPivot ([x, y] or null if none) and animated, " +
             "the execution path (fast path, or Jint with the reason and line), the preview setting values and the preview scene: the layers drawn around the preview chick (names bottom to top and which layers the chick sits between), " +
             "which the user can pick in the effect's layer settings (type: \"layer\") and ctx.layer/layerWithEffects/layerEffects read in the preview, Check and the upload preview. Fails if the Effect Maker is closed or has no script open.",
             new JsonObject());
@@ -78,7 +79,8 @@ public sealed partial class PixelTools
             "source");
         yield return Tool(CheckMakerTool,
             "Run the Effect Maker's Validate check on its current source (same as the Validate button): the install/source check, the name, and every preview chick at every " +
-            $"preview frame (the declared previewFrames, default {AssetPreview.PackageFrames}; with previewEndChick the last frame shows that chick; with previewMotion the chick moves by that offset each frame) with the declared default settings. Returns each problem (where, line and column) or the number of runs and the slowest frame, " +
+            $"preview frame (the declared previewFrames, default {AssetPreview.PackageFrames}; with previewEndChick the last frame shows that chick; with previewMotion the chick moves by that offset each frame; " +
+            "previewEndOffset, previewPivot and previewEndPivot move the end chick and each frame's pivot) with the declared default settings. Returns each problem (where, line and column) or the number of runs and the slowest frame, " +
             "plus the execution path and gradient hints: color settings that stay one flat color when the user picks a gradient (it renders each color setting with a sample gradient and compares). " +
             "Gradient hints are recommendations, not problems; follow them unless the effect really needs one flat color. Fails if the Effect Maker is closed or has no script open.",
             new JsonObject());
@@ -95,13 +97,15 @@ public sealed partial class PixelTools
 
     /// <summary>
     /// 스크립트를 쓰는 도구 설명에 붙이는 선언 규칙: 언어·설명·태그를 늘 적고 효과와 맞춘다(<see cref="ScriptEffectGuide"/>의 규칙과 같음).
-    /// 그림을 바꾸는 효과의 끝 그림 병아리와 움직임에 반응하는 효과의 미리보기 움직임도.
+    /// 그림을 바꾸는 효과의 끝 그림 병아리·자리·피벗과 움직임에 반응하는 효과의 미리보기 움직임도.
     /// </summary>
     private const string DeclarationNote =
         "Always declare language (the language code of the declared name, description and labels, e.g. \"ko\" or \"en\"), description (one short sentence) " +
         "and tags (3-6 lowercase English tags, e.g. tags: [\"neon\", \"glow\"]), and keep them, translations.en and other translations in sync whenever the effect changes. " +
         "For an effect that turns one image into another over frames, also declare previewEndChick (a chick id other than previewChick): the preview's last frame shows that chick " +
-        "and ctx.frameSource(ctx.rangeEnd) reads it. The preview chick stays in place unless previewMotion is declared: for an effect that follows movement " +
+        "and ctx.frameSource(ctx.rangeEnd) reads it. When the two images should sit in different places or have different centers (pivots), also declare previewEndOffset: [x, y] " +
+        "(moves the end chick, px) and previewPivot / previewEndPivot: [x, y] (moves the pivot of the other frames / the last frame from the chick's center, px; each -64 to 64). " +
+        "The preview chick stays in place unless previewMotion is declared: for an effect that follows movement " +
         "(afterimages, trails, motion blur) declare previewMotion: \"right\" (or \"left\", \"up\", \"down\": 1 px per frame, or [[x, y], ...] per frame) so the preview shows it. ";
 
     /// <summary>스크립트를 쓰는 도구 설명에 붙이는 그라데이션 권장(<see cref="ScriptEffectGuide"/>의 규칙과 같음 — 꼭 지킬 규칙이 아니라 권장).</summary>
@@ -194,6 +198,9 @@ public sealed partial class PixelTools
         o["preview_end_chick"] = program.PreviewEndChick;
         o["preview_frames"] = program.PreviewFrames;
         o["preview_motion"] = MotionJson(program.PreviewMotion);
+        o["preview_end_offset"] = OffsetJson(program.PreviewPlacement.EndOffset);
+        o["preview_pivot"] = OffsetJson(program.PreviewPlacement.Pivot);
+        o["preview_end_pivot"] = OffsetJson(program.PreviewPlacement.EndPivot);
         o["animated"] = program.Animated;
         o["execution_path"] = PathText(program.ExecutionPath);
         var values = new JsonObject();
@@ -210,6 +217,9 @@ public sealed partial class PixelTools
         => motion.IsNone ? null
             : motion.Preset is { } name ? JsonValue.Create(name)
             : new JsonArray([.. motion.Offsets.Select(o => (JsonNode?)new JsonArray(o.X, o.Y))]);
+
+    /// <summary>선언의 미리보기 자리·피벗 값 하나(모델이 읽음): <c>[x, y]</c>, 0이면 null(선언에 없음).</summary>
+    private static JsonNode? OffsetJson(System.Drawing.Point offset) => offset.IsEmpty ? null : new JsonArray(offset.X, offset.Y);
 
     /// <summary>미리보기 장면(모델이 읽음 — 영어): 크기·프레임 수, 레이어 이름(아래에서 위로, 병아리 자리 표시)과 병아리 위아래 레이어.</summary>
     private static JsonObject SceneJson(PreviewScene scene)
@@ -244,7 +254,7 @@ public sealed partial class PixelTools
         if (RunError(program, effect, program.PreviewChick, scene) is { } error) text += "\n" + UiStrings.FormatAi_Script_RunError(error: ErrorLine(error));
         text += GradientHintText(ScriptGradientCheck.Static(program).Select(h => h.Message));
         return ImageResult(PreviewStrip([effect], PreviewChicks.Load(program.PreviewChick), program.PreviewFrames, scene, AssetPreview.EndChick(program.PreviewEndChick),
-            program.PreviewMotion), text);
+            program.PreviewMotion, program.PreviewPlacement), text);
     }
 
     /// <summary>그라데이션 안내 줄들(머리 줄 + 안내마다 한 줄, 앞에 줄바꿈). 없으면 빈 글.</summary>
@@ -330,7 +340,7 @@ public sealed partial class PixelTools
         text += GradientHintText(ScriptGradientCheck.Static(program).Select(h => h.Message));
         text += "\n" + EffectsJson(p, index).ToJsonString(JsonOptions);
         return ImageResult(PreviewStrip([effect], PreviewChicks.Load(program.PreviewChick), program.PreviewFrames, null, AssetPreview.EndChick(program.PreviewEndChick),
-            program.PreviewMotion), text);
+            program.PreviewMotion, program.PreviewPlacement), text);
     }
 
     /// <summary>
@@ -434,18 +444,18 @@ public sealed partial class PixelTools
     /// 효과를 병아리에 입힌 칸들(<paramref name="steps"/>칸 — 스크립트는 선언의 <c>previewFrames</c>, 그 밖은 <see cref="AssetPreview.PackageFrames"/> — 중
     /// 고르게 몇 칸)을 2px 사이를 두고 가로로 이어 키운 PNG(base64). <paramref name="scene"/>이 있으면 장면 위에서 그린 칸(<see cref="PreviewSceneRender"/>).
     /// <paramref name="end"/>(선언의 <c>previewEndChick</c>)가 있으면 마지막 칸이 그 병아리고, <paramref name="motion"/>(null이면 효과 묶음에서 정함)이 있으면
-    /// 병아리가 칸마다 옮겨 간다(<see cref="AssetPreview.Frame"/>).
+    /// 병아리가 칸마다 옮겨 가며, <paramref name="placement"/>가 끝 그림 병아리 자리와 칸마다 피벗을 옮긴다(<see cref="AssetPreview.Frame"/>).
     /// </summary>
     private static string PreviewStrip(IReadOnlyList<LayerEffect> effects, PixelImage chick, int steps = AssetPreview.PackageFrames, PreviewScene? scene = null,
-        PixelImage? end = null, PreviewMotion? motion = null)
+        PixelImage? end = null, PreviewMotion? motion = null, PreviewPlacement? placement = null)
     {
         bool animated = effects.Any(e => e is AnimatedEffect || e.ColorGradients.Values.Any(g => g.Animated));
         int count = animated ? Math.Min(PreviewStripFrames, steps) : 1;
         motion ??= AssetPreview.MotionOf(effects);
-        var render = scene is null ? null : new PreviewSceneRender(scene, effects, chick, steps, end, motion);
+        var render = scene is null ? null : new PreviewSceneRender(scene, effects, chick, steps, end, motion, placement);
         var frames = Enumerable.Range(0, count)
             .Select(i => count == 1 ? 0 : (int)Math.Round(i * (steps - 1) / (double)(count - 1)))
-            .Select(step => render?.Render(step) ?? AssetPreview.Render(effects, chick, step, steps, end, motion))
+            .Select(step => render?.Render(step) ?? AssetPreview.Render(effects, chick, step, steps, end, motion, placement))
             .ToList();
         return Enlarge(SideBySide(frames), null).Base64;
     }
@@ -481,8 +491,8 @@ public sealed partial class PixelTools
 
     /// <summary>
     /// 병아리에 진행 0.5로(미리보기 칸 수의 가운데 칸) 직접 한 번 돌려 본 실행 오류(없으면 null). <paramref name="scene"/>이 있으면 장면 위의 병아리 레이어에서
-    /// (같은 img·ctx — 다른 레이어 함수가 장면 레이어를 읽음). 원본·다른 프레임 원본은 선언의 끝 그림 병아리(<c>previewEndChick</c>)·움직임(<c>previewMotion</c>)을 따라
-    /// 미리보기와 같다.
+    /// (같은 img·ctx — 다른 레이어 함수가 장면 레이어를 읽음). 원본·다른 프레임 원본·피벗은 선언의 끝 그림 병아리(<c>previewEndChick</c>)·움직임(<c>previewMotion</c>)·
+    /// 자리·피벗(<c>previewEndOffset</c>·<c>previewPivot</c>·<c>previewEndPivot</c>)을 따라 미리보기와 같다.
     /// </summary>
     private static ScriptError? RunError(ScriptEffectProgram program, ScriptEffect effect, string chickId, PreviewScene? scene = null)
     {
@@ -490,8 +500,9 @@ public sealed partial class PixelTools
         var end = AssetPreview.EndChick(program.PreviewEndChick);
         int steps = program.PreviewFrames, step = (steps - 1) / 2;
         if (scene is not null)
-            return EffectMakerWindow.ProbeError(new PreviewSceneRender(scene, [effect], chick, steps, end, program.PreviewMotion).Probe(program, effect.Settings, step, default));
-        var (image, context) = AssetPreview.ScriptFrame(chick, end, program.PreviewMotion, step, steps);
+            return EffectMakerWindow.ProbeError(new PreviewSceneRender(scene, [effect], chick, steps, end, program.PreviewMotion, program.PreviewPlacement)
+                .Probe(program, effect.Settings, step, default));
+        var (image, context) = AssetPreview.ScriptFrame(chick, end, program.PreviewMotion, step, steps, program.PreviewPlacement);
         try
         {
             program.Render(image, new Rectangle(0, 0, image.Width, image.Height), context with { Time = 0.5, Progress = 0.5 }, effect.Settings);

@@ -77,6 +77,17 @@ internal static partial class ScriptDeclarationReader
             else Fail(DomainStrings.FormatScript_InvalidPreviewMotion(max: PreviewMotion.MaxOffset, frames: ScriptEffectProgram.MaxPreviewFrames), "previewMotion");
         }
 
+        // 미리보기 자리·피벗: 끝 그림 병아리 자리, 시작·끝 칸 피벗을 기본 자리에서 옮기는 [x, y](없으면 0)
+        System.Drawing.Point Offset(string key)
+        {
+            var value = declaration.Get(key);
+            if (value.IsUndefined()) return default;
+            if (ReadOffset(value) is { } offset) return offset;
+            Fail(DomainStrings.FormatScript_InvalidPreviewOffset(key: key, max: PreviewPlacement.MaxOffset), key);
+            return default;
+        }
+        var previewPlacement = new PreviewPlacement(Offset(PreviewPlacement.EndOffsetKey), Offset(PreviewPlacement.PivotKey), Offset(PreviewPlacement.EndPivotKey));
+
         var areaValue = declaration.Get("area");
         var area = ScriptEffectArea.Global;
         if (areaValue is JsString && areaValue.AsString() == "local") area = ScriptEffectArea.Local;
@@ -204,6 +215,7 @@ internal static partial class ScriptDeclarationReader
                 previewChick ?? PreviewChicks.Default, previewFrames, translations, deferred, easing, clipsBySource, erasesSource, erasesSourceSetting)
             {
                 Motion = motion, Tags = tags, Language = language, PreviewEndChick = previewEndChick, PreviewMotion = previewMotion,
+                PreviewPlacement = previewPlacement.IsNone ? PreviewPlacement.None : previewPlacement,
                 Repeat = repeat, RepeatCount = repeatCount, MovePivot = movePivot,
             }, []);
     }
@@ -223,6 +235,12 @@ internal static partial class ScriptDeclarationReader
         }
         return PreviewMotion.FromOffsets(offsets);
     }
+
+    /// <summary>정수 <c>[x, y]</c> 쌍 하나(각 ±<see cref="PreviewPlacement.MaxOffset"/>). 아니면 null.</summary>
+    private static System.Drawing.Point? ReadOffset(JsValue value)
+        => value is ArrayInstance pair && ScriptHostApi.Length(pair) == 2 && Whole(pair[0]) is { } x && Whole(pair[1]) is { } y
+            && Math.Abs(x) <= PreviewPlacement.MaxOffset && Math.Abs(y) <= PreviewPlacement.MaxOffset
+            ? new((int)x, (int)y) : null;
 
     /// <summary>
     /// <c>tags: ["neon", "glow"]</c>: 올릴 때 쓸 목록 태그. 문자열 배열이고 <see cref="RemoteCatalogFormat.MaxTags"/>개까지.

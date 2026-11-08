@@ -1,3 +1,4 @@
+using System.Drawing;
 using Chickxel.Core.Edit;
 using Chickxel.Core.Effects;
 using Chickxel.Core.IO;
@@ -46,14 +47,15 @@ public static class AssetPreview
     /// <summary>
     /// 효과 묶음을 <paramref name="source"/>에 입힌 그림 — 움직이는 효과는 <paramref name="steps"/>칸 중 <paramref name="step"/>번째.
     /// 칸은 <see cref="Frame"/>을 따른다: 끝 그림 병아리 <paramref name="end"/>가 있으면 마지막 칸이 그 병아리, <paramref name="motion"/>(null이면 묶음에서 정함 —
-    /// <see cref="MotionOf"/>)이 있으면 칸마다 병아리가 그만큼 옮겨 간다. 둘 다 없으면 <paramref name="source"/> 그대로이고, 다른 프레임 원본은
-    /// 다른 프레임을 쓰는 효과(<see cref="LayerEffects.UsesOtherFrames"/>)에만 준다(칸마다 같은 그림).
+    /// <see cref="MotionOf"/>)이 있으면 칸마다 병아리가 그만큼 옮겨 가고, <paramref name="placement"/>가 끝 그림 병아리 자리와 칸마다 피벗을 옮긴다.
+    /// 모두 없으면 <paramref name="source"/> 그대로이고, 다른 프레임 원본은 다른 프레임을 쓰는 효과(<see cref="LayerEffects.UsesOtherFrames"/>)에만 준다(칸마다 같은 그림).
     /// </summary>
     public static PixelImage Render(IReadOnlyList<LayerEffect> template, PixelImage source, int step, int steps = Steps, PixelImage? end = null,
-        PreviewMotion? motion = null)
+        PreviewMotion? motion = null, PreviewPlacement? placement = null)
     {
-        var (src, frames) = Source(template, source, end, motion, step, steps);
-        var animated = LayerEffects.Animate(template, step, steps, null, frames);
+        var stage = Source(template, source, end, motion, placement, step, steps);
+        var src = stage.Image;
+        var animated = LayerEffects.Animate(template, step, steps, stage.Pivot?.Invoke(step), stage.Frames, stage.Pivot);
         var pad = LayerEffects.Padding(template, src.Width, src.Height);
         var (image, x, y) = LayerEffects.Render(src, animated, pad);
         // 미리보기 칸은 모두 같은 크기: 옮겨 간 만큼 넓혀 그렸으면 정한 여백 자리로 자른다
@@ -65,9 +67,9 @@ public static class AssetPreview
 
     /// <summary><see cref="Render"/>의 <paramref name="step"/>칸 원본 자리에 효과 없이 놓은 견본(효과를 입힌 그림과 같은 크기).</summary>
     public static PixelImage Original(IReadOnlyList<LayerEffect> template, PixelImage source, int step, int steps = Steps, PixelImage? end = null,
-        PreviewMotion? motion = null)
+        PreviewMotion? motion = null, PreviewPlacement? placement = null)
     {
-        var (src, _) = Source(template, source, end, motion, step, steps);
+        var src = Source(template, source, end, motion, placement, step, steps).Image;
         var padding = LayerEffects.Padding(template, src.Width, src.Height);
         var image = new PixelImage(src.Width + padding.Left + padding.Right, src.Height + padding.Top + padding.Bottom);
         image.Blit(src, padding.Left, padding.Top);
@@ -90,12 +92,25 @@ public static class AssetPreview
     /// 미리보기의 <paramref name="step"/>칸 원본과 다른 프레임 원본(<c>ctx.frameSource</c>, 0..steps-1 밖은 null) — 미리보기·효과 만들기 진단·검증·그라데이션 검사·AI 도구가
     /// 같이 쓴다. 칸 k는 <paramref name="start"/>(<paramref name="end"/>가 있으면 마지막 칸은 <paramref name="end"/>)를 제자리 + <paramref name="motion"/>의 k칸 자리에 놓은 것이다.
     /// 제자리: 두 병아리를 가로 가운데·불투명 바닥 같은 줄로 맞춘 자리(폭은 큰 쪽, 높이는 바닥을 맞춘 만큼). 캔버스는 모든 칸의 자리를 합친 크기라 칸마다 크기가 같다.
-    /// <paramref name="end"/>도 움직임도 없으면 <paramref name="start"/> 그대로이고 다른 프레임 원본도 칸마다 <paramref name="start"/>다.
+    /// <paramref name="placement"/>(<see cref="PreviewPlacement"/>)가 있으면 끝 그림 병아리는 제자리에서 그만큼 더 옮기고, 캔버스는 옮긴 끝 그림 병아리와 피벗 자리까지 넓힌다
+    /// (피벗은 <see cref="ScriptFrame"/>·<see cref="Render"/>가 준다).
+    /// <paramref name="end"/>도 움직임도 자리·피벗도 없으면 <paramref name="start"/> 그대로이고 다른 프레임 원본도 칸마다 <paramref name="start"/>다.
     /// </summary>
-    public static (PixelImage Image, Func<int, PixelImage?> Frames) Frame(PixelImage start, PixelImage? end, PreviewMotion motion, int step, int steps)
+    public static (PixelImage Image, Func<int, PixelImage?> Frames) Frame(PixelImage start, PixelImage? end, PreviewMotion motion, int step, int steps,
+        PreviewPlacement? placement = null)
+    {
+        var stage = Stage(start, end, motion, placement, step, steps);
+        return (stage.Image, stage.Frames!);
+    }
+
+    /// <summary><see cref="Frame"/>의 칸 그림·다른 프레임 원본과 칸마다 피벗(효과 원본 왼쪽 위 기준 px, null이면 모든 칸이 원본 가운데).</summary>
+    private readonly record struct Staged(PixelImage Image, Func<int, PixelImage?>? Frames, Func<int, PointF?>? Pivot);
+
+    private static Staged Stage(PixelImage start, PixelImage? end, PreviewMotion motion, PreviewPlacement? placement, int step, int steps)
     {
         int last = Math.Max(1, steps) - 1;
-        if (end is null && motion.IsNone) return (start, frame => frame >= 0 && frame <= last ? start : null);
+        var place = (placement ?? PreviewPlacement.None).For(end is not null);
+        if (end is null && motion.IsNone && place.IsNone) return new(start, frame => frame >= 0 && frame <= last ? start : null, null);
         int startBottom = OpaqueBottom(start), endBottom = end is null ? startBottom : OpaqueBottom(end);
         // 바닥 줄 위(바닥 줄 포함)와 아래 높이를 따로 맞춘다
         int above = Math.Max(startBottom, endBottom) + 1;
@@ -107,18 +122,50 @@ public static class AssetPreview
             var o = motion.OffsetAt(k, steps);
             (minX, maxX, minY, maxY) = (Math.Min(minX, o.X), Math.Max(maxX, o.X), Math.Min(minY, o.Y), Math.Max(maxY, o.Y));
         }
-        int width = baseWidth + maxX - minX, height = above + below + maxY - minY;
+        // 자리·피벗을 옮기기 전 캔버스(모든 칸의 제자리 + 움직임). 기본 피벗은 그 가운데
+        int baseCanvasWidth = baseWidth + maxX - minX, baseCanvasHeight = above + below + maxY - minY;
+        bool IsEnd(int frame) => end is not null && frame >= last;
+        Point At(int frame)
+        {
+            bool isEnd = IsEnd(frame);
+            var image = isEnd ? end! : start;
+            var o = motion.OffsetAt(frame, steps);
+            var shift = isEnd ? place.EndOffset : Point.Empty;
+            return new((baseWidth - image.Width) / 2 + o.X - minX + shift.X, above - 1 - (isEnd ? endBottom : startBottom) + o.Y - minY + shift.Y);
+        }
+        PointF PivotAt(int frame)
+        {
+            var o = place.PivotAt(frame, steps, end is not null);
+            return new(baseCanvasWidth / 2f + o.X, baseCanvasHeight / 2f + o.Y);
+        }
+        // 캔버스: 옮기기 전 캔버스에 옮긴 끝 그림 병아리와 피벗 자리까지 넣은 범위
+        int left = 0, top = 0, right = baseCanvasWidth, bottom = baseCanvasHeight;
+        if (end is not null && !place.EndOffset.IsEmpty)
+        {
+            var p = At(last);
+            (left, top, right, bottom) = (Math.Min(left, p.X), Math.Min(top, p.Y), Math.Max(right, p.X + end.Width), Math.Max(bottom, p.Y + end.Height));
+        }
+        if (place.MovesPivot)
+            foreach (int frame in (int[])[0, last])
+            {
+                var p = PivotAt(frame);
+                (left, top) = (Math.Min(left, (int)MathF.Floor(p.X)), Math.Min(top, (int)MathF.Floor(p.Y)));
+                (right, bottom) = (Math.Max(right, (int)MathF.Ceiling(p.X)), Math.Max(bottom, (int)MathF.Ceiling(p.Y)));
+            }
+        int width = right - left, height = bottom - top;
         PixelImage Placed(int frame)
         {
-            bool isEnd = end is not null && frame >= last;
-            var image = isEnd ? end! : start;
-            int bottom = isEnd ? endBottom : startBottom;
-            var o = motion.OffsetAt(frame, steps);
+            var p = At(frame);
             var canvas = new PixelImage(width, height);
-            canvas.Blit(image, (baseWidth - image.Width) / 2 + o.X - minX, above - 1 - bottom + o.Y - minY);
+            canvas.Blit(IsEnd(frame) ? end! : start, p.X - left, p.Y - top);
             return canvas;
         }
-        return (Placed(Math.Clamp(step, 0, last)), frame => frame >= 0 && frame <= last ? Placed(frame) : null);
+        Func<int, PointF?>? pivot = place.IsNone ? null : frame =>
+        {
+            var p = PivotAt(Math.Clamp(frame, 0, last));
+            return new PointF(p.X - left, p.Y - top);
+        };
+        return new(Placed(Math.Clamp(step, 0, last)), frame => frame >= 0 && frame <= last ? Placed(frame) : null, pivot);
     }
 
     /// <summary>불투명 픽셀이 있는 가장 아래 줄(모두 투명이면 맨 아래 줄).</summary>
@@ -127,20 +174,22 @@ public static class AssetPreview
 
     /// <summary>
     /// 스크립트를 직접 돌리는 진단(효과 만들기 진단·검증·그라데이션 검사·AI 도구)의 <paramref name="step"/>칸 원본과 ctx:
-    /// <see cref="Frame"/>의 원본과, <see cref="ScriptFrameContext.PreviewStep"/>에 그 다른 프레임 원본을 넣은 것.
+    /// <see cref="Frame"/>의 원본과, <see cref="ScriptFrameContext.PreviewStep"/>에 그 다른 프레임 원본과 그 칸의 피벗(<paramref name="placement"/>)을 넣은 것.
     /// </summary>
-    public static (PixelImage Image, ScriptFrameContext Context) ScriptFrame(PixelImage start, PixelImage? end, PreviewMotion motion, int step, int steps)
+    public static (PixelImage Image, ScriptFrameContext Context) ScriptFrame(PixelImage start, PixelImage? end, PreviewMotion motion, int step, int steps,
+        PreviewPlacement? placement = null)
     {
-        var (image, frames) = Frame(start, end, motion, step, steps);
-        return (image, ScriptFrameContext.PreviewStep(step, steps) with { FrameSource = frames });
+        var stage = Stage(start, end, motion, placement, step, steps);
+        return (stage.Image, ScriptFrameContext.PreviewStep(step, steps) with { FrameSource = stage.Frames, Pivot = stage.Pivot?.Invoke(step) });
     }
 
-    private static (PixelImage Source, Func<int, PixelImage?>? Frames) Source(IReadOnlyList<LayerEffect> template, PixelImage source, PixelImage? end,
-        PreviewMotion? motion, int step, int steps)
+    private static Staged Source(IReadOnlyList<LayerEffect> template, PixelImage source, PixelImage? end, PreviewMotion? motion, PreviewPlacement? placement,
+        int step, int steps)
     {
         motion ??= MotionOf(template);
-        if (end is null && motion.IsNone && !LayerEffects.UsesOtherFrames(template)) return (source, null);
-        return Frame(source, end, motion, step, steps);
+        if (end is null && motion.IsNone && (placement ?? PreviewPlacement.None).For(false).IsNone && !LayerEffects.UsesOtherFrames(template))
+            return new(source, null, null);
+        return Stage(source, end, motion, placement, step, steps);
     }
 
     /// <summary>그라데이션 띠(가로 위치 0→1, 디더는 칸 좌표로).</summary>
@@ -165,16 +214,17 @@ public static class AssetPreview
     /// 미리보기 장면(<see cref="ScriptAsset.Scene"/>)이 있는 스크립트는 장면 캔버스 전체(<see cref="PreviewSceneRender"/>)를 같은 규칙으로 그리고,
     /// 장면 레이어가 있으면 그 레이어를 숨긴 그림·원본(<see cref="PackagePreview.SoloPng"/>)도 같은 규칙·같은 크기로 그린다.
     /// 끝 그림 병아리(<see cref="ScriptAsset.PreviewEndChick"/>)가 있는 스크립트는 마지막 칸이 그 병아리고, 움직임(<see cref="ScriptAsset.PreviewMotion"/>)이 있으면
-    /// 병아리가 칸마다 옮겨 간다(<see cref="Frame"/>). 레시피에는 끝 그림 병아리가 없고 움직임은 효과 묶음에서 정한다(<see cref="MotionOf"/>).
+    /// 병아리가 칸마다 옮겨 가며, 자리·피벗(<see cref="ScriptAsset.PreviewPlacement"/>)이 끝 그림 병아리 자리와 칸마다 피벗을 옮긴다(<see cref="Frame"/>).
+    /// 레시피에는 끝 그림 병아리·자리·피벗이 없고 움직임은 효과 묶음에서 정한다(<see cref="MotionOf"/>).
     /// 스크립트는 실행을 허락한 원문만 그린다. 모르는 종류면 null.
     /// </summary>
     public static PackagePreview? Package(IAssetData data) => data switch
     {
-        EffectRecipe recipe => EffectPreview(recipe.Effects, PreviewChicks.Load(recipe.PreviewChick), PackageFrames, null, null),
+        EffectRecipe recipe => EffectPreview(recipe.Effects, PreviewChicks.Load(recipe.PreviewChick), PackageFrames, null, null, null),
         ScriptAsset { Scene: { } scene } script => ScenePreview(scene, script.ToRecipe().Effects, PreviewChicks.Load(script.PreviewChick), script.PreviewFrames,
-            EndChick(script.PreviewEndChick), script.PreviewMotion),
+            EndChick(script.PreviewEndChick), script.PreviewMotion, script.PreviewPlacement),
         ScriptAsset script => EffectPreview(script.ToRecipe().Effects, PreviewChicks.Load(script.PreviewChick), script.PreviewFrames, EndChick(script.PreviewEndChick),
-            script.PreviewMotion),
+            script.PreviewMotion, script.PreviewPlacement),
         GradientAsset gradient => new PackagePreview(Encode([new PngFrame(RenderGradient(gradient.Gradient, PngMaxSize, 16), PackageFrameMs)]), null),
         _ => null,
     };
@@ -182,19 +232,22 @@ public static class AssetPreview
     /// <summary>선언의 끝 그림 병아리 ID(<c>previewEndChick</c>)의 그림. 없으면 null.</summary>
     public static PixelImage? EndChick(string? id) => id is null ? null : PreviewChicks.Load(id);
 
-    private static PackagePreview EffectPreview(IReadOnlyList<LayerEffect> effects, PixelImage chick, int steps, PixelImage? end, PreviewMotion? motion)
+    private static PackagePreview EffectPreview(IReadOnlyList<LayerEffect> effects, PixelImage chick, int steps, PixelImage? end, PreviewMotion? motion,
+        PreviewPlacement? placement)
     {
         motion ??= MotionOf(effects);
-        return new(Animation(step => Render(effects, chick, step, steps, end, motion), steps), Still(Original(effects, chick, 0, steps, end, motion)));
+        return new(Animation(step => Render(effects, chick, step, steps, end, motion, placement), steps),
+            Still(Original(effects, chick, 0, steps, end, motion, placement)));
     }
 
     /// <summary>
     /// 장면 위 미리보기. 장면 레이어가 있으면 그 레이어를 숨긴 그림(효과는 장면 레이어를 그대로 읽음)과 원본도 같은 칸 수·같은 배율로 그린다
     /// (캔버스가 같아 크기도 같음). 칸 줄이기는 따로 하고, 그래도 미리보기 크기 한도를 넘는 것이 있으면 숨긴 그림은 둘 다 뺀다.
     /// </summary>
-    private static PackagePreview ScenePreview(PreviewScene scene, IReadOnlyList<LayerEffect> effects, PixelImage chick, int steps, PixelImage? end, PreviewMotion motion)
+    private static PackagePreview ScenePreview(PreviewScene scene, IReadOnlyList<LayerEffect> effects, PixelImage chick, int steps, PixelImage? end, PreviewMotion motion,
+        PreviewPlacement placement)
     {
-        var render = new PreviewSceneRender(scene, effects, chick, steps, end, motion);
+        var render = new PreviewSceneRender(scene, effects, chick, steps, end, motion, placement);
         byte[] png = Animation(step => render.Render(step), steps), original = Still(render.Original(0));
         if (scene.Layers.Count == 0) return new PackagePreview(png, original);
         byte[] solo = Animation(step => render.Render(step, hideSceneLayers: true), steps), soloOriginal = Still(render.Original(0, hideSceneLayers: true));

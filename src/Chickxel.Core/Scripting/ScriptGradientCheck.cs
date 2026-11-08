@@ -59,7 +59,7 @@ public static class ScriptGradientCheck
                 for (int step = 0; step < steps && !varies; step++)
                 {
                     cancel.ThrowIfCancellationRequested();
-                    var (source, frame) = AssetPreview.ScriptFrame(chick, end, program.PreviewMotion, step, steps);
+                    var (source, frame) = AssetPreview.ScriptFrame(chick, end, program.PreviewMotion, step, steps, program.PreviewPlacement);
                     if (Draw(program, source, frame, solid, cancel) is not { } a
                         || Draw(program, source, frame with { Gradients = gradients }, solid, cancel) is not { } b) continue;
                     if (!a.ContentEquals(b)) varies = true;
@@ -72,7 +72,7 @@ public static class ScriptGradientCheck
             foreach (var (chick, step, image) in flat)
             {
                 cancel.ThrowIfCancellationRequested();
-                var (source, frame) = AssetPreview.ScriptFrame(chick, end, program.PreviewMotion, step, steps);
+                var (source, frame) = AssetPreview.ScriptFrame(chick, end, program.PreviewMotion, step, steps, program.PreviewPlacement);
                 if (Draw(program, source, frame, other, cancel) is { } c && !c.ContentEquals(image))
                 {
                     hints.Add(Hint(program, setting, slot));

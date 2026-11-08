@@ -105,6 +105,8 @@ public enum VectorIcon
     SlidersHorizontal,
     /// <summary>톱니바퀴(설정 — Lucide settings).</summary>
     Settings,
+    /// <summary>원과 네 방향 짧은 선(과녁 — 미리보기 자리·피벗, Lucide crosshair).</summary>
+    Crosshair,
     /// <summary>왼쪽으로 돌아가는 화살표(되돌리기).</summary>
     Undo2,
     /// <summary>원 안의 느낌표(경고 — Lucide circle-alert).</summary>
@@ -395,6 +397,7 @@ public static class VectorIcons
             "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z",
             Circle(12, 12, 3),
         ],
+        VectorIcon.Crosshair => [Circle(12, 12, 10), "M22 12h-4", "M6 12H2", "M12 6V2", "M12 22v-4"],
         VectorIcon.SlidersHorizontal =>
         [
             "M21 4h-7", "M10 4H3", "M21 12h-9", "M8 12H3", "M21 20h-5", "M12 20H3",

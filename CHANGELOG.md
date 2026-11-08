@@ -2,6 +2,28 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.107 (2026-11-08)
+### Upload to Gallery: choose whether others can download the picture
+- A new **Allow image download (PNG/GIF)** box in Upload to Gallery, on by default, decides whether the picture's page shows its PNG/GIF download button to visitors.
+- When it is off, only you and admins see the button; the picture itself stays public, and the editable `.chickxel` download is not affected.
+- You can change it later with Edit on the picture's page on chickxel.com.
+
+### New XP rules and a daily check-in
+- Starting the app now does a daily check-in for +10 XP (once per server UTC day). The status bar shows "Daily check-in +10 XP", and your first visit to chickxel.com that day counts as the same check-in.
+- A newly published asset package now gives +10 (one a day) and a new version +1 (once a day). Liking someone else's art or assets gives you +1 (3 a day).
+- XP already earned from packages is recalculated under the new rules, so some levels may go down. The how-to-earn info box in the account window follows the new rules.
+
+### Deleted uploads on chickxel.com can be restored by admins
+- Deleting a gallery picture or an asset package (by you, an admin or a report) now removes it from the site, the catalog and your profile, but the server keeps it so an admin can restore it.
+- A deleted upload gives its space back to your storage limit right away and stops counting toward your XP; if an admin restores it, both come back.
+- The id of a deleted asset package stays taken: publishing under it again is refused until an admin restores the package or deletes it permanently.
+- Admins get a **Deleted** tab next to the report queue with **Restore** and **Delete permanently** buttons.
+
+### Effect Maker: separate place for the end chick and preview pivots
+- The crosshair button next to Preview motion (**Preview position and pivot**) puts the end chick somewhere else and moves each frame's pivot (`ctx.pivot`) from the chick's center, so morph and rotation effects that matter when the two images sit in different places or have different centers show in the preview.
+- The chick pivot applies to every frame but the end chick's, the end chick pivot to the last frame, and the end values only when an end chick is chosen.
+- They are saved in the source's declaration as `previewEndOffset`, `previewPivot` and `previewEndPivot` (`[x, y]`, -64 to 64 px each), so Check, the AI preview, the upload preview and preview scenes draw the same. Documents are not affected.
+
 ## v1.14.106 (2026-11-08)
 ### Gallery button that sparkles after you save
 - A store-shaped **Gallery** button now sits just left of the account button at the right end of the menu bar. Clicking it does the same as File > Upload to Gallery.

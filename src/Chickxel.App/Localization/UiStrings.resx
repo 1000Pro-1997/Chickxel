@@ -9415,6 +9415,8 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Gallery_ShareProject" xml:space="preserve"><value>편집 가능한 .chickxel 파일도 공유</value></data>
   <data name="Gallery_ShareProjectTip" xml:space="preserve"><value>그림과 함께 이 프로젝트의 .chickxel 파일을 올립니다. 그림 쪽에서 누구나 받아 Chickxel에서 열고 고칠 수 있습니다. 내보내기 폴더처럼 이 컴퓨터의 폴더 경로는 빼고 올립니다. 스크립트 효과가 있으면 그 원문(코드)도 들어가며, 받은 사람이 파일을 열 때 실행할지 먼저 묻습니다.</value></data>
   <data name="Gallery_ShareProjectScripts" xml:space="preserve"><value>스크립트 효과 원문(코드)도 같이 올라갑니다.</value></data>
+  <data name="Gallery_AllowDownload" xml:space="preserve"><value>그림 받기 허용 (PNG·GIF)</value></data>
+  <data name="Gallery_AllowDownloadTip" xml:space="preserve"><value>그림 쪽에 PNG·GIF 받기 버튼을 보입니다. 끄면 올린 사람과 관리자에게만 보이고, 그림은 그대로 공개됩니다. 나중에 그림 쪽의 고치기에서 바꿀 수 있습니다.</value></data>
   <data name="Gallery_ProjectTooLarge" xml:space="preserve"><value>.chickxel 파일이 {0:0.##}MB로 {1}MB 한도를 넘습니다. 파일 공유를 끄고 그림만 올리세요.</value><comment>0 = 파일 크기(MB), 1 = 한도(MB).</comment></data>
   <data name="Gallery_RangeAll" xml:space="preserve"><value>모든 프레임({0}개)</value><comment>0 = 프레임 수.</comment></data>
   <data name="Gallery_RangeTag" xml:space="preserve"><value>태그</value></data>
@@ -9431,7 +9433,7 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Level_ChipTip" xml:space="preserve"><value>레벨 {0} — 갤러리에 그림을 올리고 에셋을 공유하고 좋아요를 받고, 로그인한 채 앱을 켜 두면 경험치가 쌓입니다.</value><comment>0 = 레벨.</comment></data>
   <data name="Level_Title" xml:space="preserve"><value>레벨 {0}</value><comment>0 = 레벨.</comment></data>
   <data name="Level_Progress" xml:space="preserve"><value>{0:N0} XP · 다음 레벨까지 {1:N0} XP</value><comment>0 = 지금 경험치, 1 = 다음 레벨까지 남은 경험치.</comment></data>
-  <data name="Level_HowTip" xml:space="preserve"><value>경험치 쌓는 법: 갤러리 그림 +10(편집용 .chickxel 파일을 같이 올리면 +5 더, 하루 3개까지 셈), 에셋 패키지 공개 +30(새 버전 +5), 다른 사람이 누른 좋아요 +2, 로그인한 채 앱을 켜 둔 한 시간마다 +1. 올린 것을 지우면 그것으로 받은 경험치도 빠집니다.</value></data>
+  <data name="Level_HowTip" xml:space="preserve"><value>경험치 쌓는 법: 갤러리 그림 +10(편집용 .chickxel 파일을 같이 올리면 +5 더, 하루 3개까지 셈), 에셋 패키지 처음 공개 +10(하루 1개까지)·새 버전 +1(하루 1번까지), 다른 사람이 누른 좋아요 +2, 다른 사람 그림·에셋에 좋아요 누르기 +1(하루 3번까지), 하루 출석(그날 처음 앱이나 사이트에 들어오기) +10, 로그인한 채 앱을 켜 둔 한 시간마다 +1. 하루는 UTC 기준(한국 시간 오전 9시에 바뀜)이고, 올린 것을 지우면 그것으로 받은 경험치도 빠집니다.</value></data>
   <data name="Level_CheckInStatus" xml:space="preserve"><value>출석 +10 XP</value><comment>앱을 켤 때 하루 출석 경험치를 받았을 때 상태 표시줄.</comment></data>
   <data name="Level_UpStatus" xml:space="preserve"><value>레벨 업! Lv {0}</value><comment>0 = 새 레벨(앱을 켜 둔 시간 경험치로 올랐을 때 상태 표시줄).</comment></data>
   <data name="EffectMaker_Menu" xml:space="preserve"><value>효과 만들기…</value></data>
@@ -9463,6 +9465,13 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="EffectMaker_PreviewMotionCustom" xml:space="preserve"><value>직접</value></data>
   <data name="EffectMaker_PreviewMotionFrame" xml:space="preserve"><value>칸</value></data>
   <data name="EffectMaker_PreviewMotionHint" xml:space="preserve"><value>미리보기 병아리를 칸마다 이 자리(제자리에서 옮긴 px, 오른쪽·아래가 +)에 놓아 잔상·자취처럼 움직임에 반응하는 효과를 볼 수 있게 합니다. 효과 만들기 미리보기·검증·올릴 때 미리보기에만 쓰고 문서와는 상관없습니다. 원문 선언의 previewMotion을 고칩니다.</value></data>
+  <data name="EffectMaker_PreviewPlacement" xml:space="preserve"><value>미리보기 자리·피벗</value></data>
+  <data name="EffectMaker_PreviewPlacementTip" xml:space="preserve"><value>미리보기 자리·피벗: {placement}</value><comment>placement = 0이 아닌 값 목록(예: 끝 그림 병아리 자리 (12, 0)) 또는 없음.</comment></data>
+  <data name="EffectMaker_PreviewPlacementPart" xml:space="preserve"><value>{name} ({x}, {y})</value><comment>name = 항목 이름(병아리 피벗 등), x·y = px.</comment></data>
+  <data name="EffectMaker_PreviewPivot" xml:space="preserve"><value>병아리 피벗</value></data>
+  <data name="EffectMaker_PreviewEndOffset" xml:space="preserve"><value>끝 그림 병아리 자리</value></data>
+  <data name="EffectMaker_PreviewEndPivot" xml:space="preserve"><value>끝 그림 병아리 피벗</value></data>
+  <data name="EffectMaker_PreviewPlacementHint" xml:space="preserve"><value>미리보기에서 끝 그림 병아리를 제자리에서 옮기고, 칸마다 피벗(ctx.pivot)을 기본 자리(병아리 가운데)에서 옮깁니다(px, 오른쪽·아래가 +). 두 그림의 자리나 중심이 다를 때 뜻이 있는 효과를 볼 수 있습니다. 끝 그림 병아리가 있으면 병아리 피벗은 마지막 칸을 뺀 칸에, 끝 그림 병아리 피벗은 마지막 칸에 쓰고, 끝 값 둘은 끝 그림 병아리를 골랐을 때만 씁니다. 효과 만들기 미리보기·검증·올릴 때 미리보기에만 쓰고 문서와는 상관없습니다. 원문 선언의 previewPivot·previewEndOffset·previewEndPivot을 고칩니다.</value></data>
   <data name="EffectMaker_FrameThumbTip" xml:space="preserve"><value>{0}번째 칸 — 누르면 재생을 멈추고 이 칸을 봅니다.</value><comment>0 = 미리보기 칸 번호(1부터).</comment></data>
   <data name="EffectMaker_Languages" xml:space="preserve"><value>언어 설정</value></data>
   <data name="EffectMaker_LanguagesTip" xml:space="preserve"><value>다른 언어의 제목·설명·설정 이름을 적습니다(원문 선언의 translations). 앱 화면 언어에 맞는 것이 보이고, 없으면 여기 적은 제목·설명이 보입니다.</value></data>

@@ -28,6 +28,9 @@
   <data name="Api_effect_previewEndChick" xml:space="preserve"><value>여러 프레임에 걸쳐 그림을 바꾸는 효과의 끝 그림 병아리 ID(선택). 미리보기의 마지막 칸이 이 병아리이고 ctx.frameSource(ctx.rangeEnd)로 읽습니다.</value></data>
   <data name="Api_effect_previewFrames" xml:space="preserve"><value>미리보기·올릴 때 미리보기에서 효과를 돌리는 칸 수(2~20, 기본 10).</value></data>
   <data name="Api_effect_previewMotion" xml:space="preserve"><value>움직임에 반응하는 효과(잔상·자취)를 위해 미리보기 병아리를 움직입니다(선택): "right"·"left"·"up"·"down"(칸마다 1px) 또는 칸마다 자리 [x, y](-32~32, 뒤 칸은 마지막 값). 미리보기만 움직이고 기본은 "none".</value></data>
+  <data name="Api_effect_previewEndOffset" xml:space="preserve"><value>끝 그림 병아리를 제자리에서 옮기는 [x, y](px, 오른쪽·아래가 +, -64~64, 선택). 두 그림의 자리가 다를 때 뜻이 있는 변신을 미리보기에서 보입니다. 미리보기만 바뀝니다.</value></data>
+  <data name="Api_effect_previewPivot" xml:space="preserve"><value>미리보기 칸의 피벗(ctx.pivot)을 기본 자리(병아리 가운데)에서 옮기는 [x, y](px, -64~64, 선택). 끝 그림 병아리가 있으면 마지막 칸을 뺀 칸에 씁니다. 미리보기만 바뀝니다.</value></data>
+  <data name="Api_effect_previewEndPivot" xml:space="preserve"><value>끝 그림 병아리 칸(미리보기 마지막 칸)의 피벗을 기본 자리에서 옮기는 [x, y](px, -64~64, 선택). 두 그림의 중심이 다를 때 뜻이 있는 효과에 씁니다. 미리보기만 바뀝니다.</value></data>
   <data name="Api_effect_settings" xml:space="preserve"><value>효과 창에 보일 설정 칸 목록. 값은 render의 s.키로 읽습니다.</value></data>
   <data name="Api_effect_padding" xml:space="preserve"><value>효과가 그림 밖으로 넓히는 여백: 고정 [왼, 위, 오른, 아래] 또는 설정·크기로 계산하는 함수.</value></data>
   <data name="Api_effect_render" xml:space="preserve"><value>프레임마다 불려 img.data를 제자리에서 바꿉니다. 같은 입력이면 늘 같은 결과여야 합니다.</value></data>

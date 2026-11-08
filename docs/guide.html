@@ -540,14 +540,17 @@
 <li>⑤ <strong>이 컴퓨터에 로그인한 다른 계정</strong>: 지금 계정 말고 로그인해 둔 계정마다 프로필 그림·이름·레벨 칩·@핸들, <strong>전환</strong>와 로그아웃 아이콘 단추가 있습니다.</li>
 </ul>
 <h4>계정 레벨</h4>
-<p>공유하면 계정에 경험치(XP)가 쌓여 레벨이 오릅니다. 경험치는 chickxel.com 서버가 지금 올라 있는 공유와 앱을 켜 둔 시간으로 셈하며, 올린 것을 지우면 그것으로 받은 경험치(받은 좋아요 포함)도 빠지고 누른 좋아요를 거두면 그 경험치도 빠집니다.</p>
+<p>공유하면 계정에 경험치(XP)가 쌓여 레벨이 오릅니다. 경험치는 chickxel.com 서버가 지금 올라 있는 공유와 좋아요, 출석, 앱을 켜 둔 시간으로 셈하며, 누른 좋아요를 거두면 그 경험치도 빠집니다. 하루는 UTC 기준(한국 시간 오전 9시에 바뀜)입니다.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>쌓는 법</th><th>경험치</th></tr></thead>
 <tbody>
 <tr><td>갤러리에 그림 올리기(하루 3개까지 셈)</td><td>+10</td></tr>
 <tr><td>그림과 함께 편집용 <code>.chickxel</code> 파일도 올리기</td><td>+5</td></tr>
-<tr><td>에셋 패키지 공개(새 버전마다 +5)</td><td>+30</td></tr>
+<tr><td>에셋 패키지 처음 공개(하루 1개까지 셈)</td><td>+10</td></tr>
+<tr><td>공개한 패키지의 새 버전 올리기(하루 1번까지 셈)</td><td>+1</td></tr>
 <tr><td>다른 사람이 내 그림·에셋에 누른 좋아요 하나</td><td>+2</td></tr>
+<tr><td>다른 사람 그림·에셋에 좋아요 누르기(하루 3번까지 셈)</td><td>+1</td></tr>
+<tr><td>하루 출석(그날 처음 앱을 켜거나 사이트에 들어올 때)</td><td>+10</td></tr>
 <tr><td>로그인한 채 앱을 켜 둔 한 시간</td><td>+1</td></tr>
 </tbody>
 </table></div>
@@ -565,6 +568,8 @@
 </table></div>
 <p>레벨 칩(<code>Lv 7</code>)은 이름 뒤에 붙어 계정 단추·계정 메뉴·계정 창·<a href="#screen-gallery">갤러리에 올리기</a> 창, <a href="#screen-asset-manager">에셋 관리자</a> 온라인 목록과 상세의 작성자 옆에 보이고, chickxel.com에서도 이름마다 같은 단계의 칩이 붙습니다(사이트의 내 계정 쪽에는 경험치 막대와 쌓는 법). 칩에 마우스를 올리면 레벨과 쌓는 법이 풍선으로 보입니다. 레벨을 모르면(예전 서버, 확인 전 다른 사람) 칩이 없습니다.</p>
 <p>앱을 켜 둔 시간은 로그인해 있는 동안만 1분마다 세고, 한 시간이 차면 서버에 알려 +1 XP를 받습니다(서버는 계정마다 한 시간에 한 번만 줌 — 여러 컴퓨터에서 켜도 같음). 로그아웃한 동안은 세지 않고, 연결이 안 되면 다음 1분에 다시 알립니다. 이 경험치로 레벨이 오르면 <a class="term" href="#screen-status-bar">상태 표시줄</a>에 "레벨 업! Lv N"이 보입니다.</p>
+<p>하루 출석은 로그인한 채 그날 처음 앱을 켜거나 chickxel.com에 들어올 때 서버가 한 번 줍니다. 앱에서 받으면 상태 표시줄에 "출석 +10 XP"가 보이고, 그날 이미 받았으면 아무것도 보이지 않습니다.</p>
+<p>chickxel.com에서 그림이나 에셋 패키지를 지우면(본인이 지우거나 관리자가 지우거나 신고 처리로 지워져도) 사이트·카탈로그·프로필에서 사라지고, 그것으로 받은 경험치(받은 좋아요 포함)가 빠지며 저장 공간 한도도 바로 돌아옵니다. 다만 서버에는 남아 있어 관리자가 되살리거나 영구 삭제할 수 있습니다.</p>
 <h4>메뉴 줄의 계정 단추</h4>
 <p>메뉴 줄 오른쪽 끝의 계정 단추는 로그인했으면 둥근 프로필 그림과 이름, 레벨 칩을 한 묶음으로(그림은 앱을 켤 때 계정을 확인한 뒤에 받고, 그 전에는 사람 아이콘), 아니면 사람 아이콘과 <strong>로그인</strong>을 보입니다. 로그인해 둔 계정이 없으면 누를 때 바로 계정 창이 열리고, 있으면 계정 메뉴가 열립니다: 로그인해 둔 계정들(프로필 그림·이름·@핸들, 지금 계정은 굵게와 체크 표시, 누르면 그 계정으로 전환), <strong>다른 계정 추가…</strong>, <strong>계정 관리…</strong>(로그아웃 상태면 <strong>로그인…</strong>), <strong>로그아웃</strong>. 계정 단추 바로 왼쪽의 갤러리 단추는 <a href="#screen-top-bar">메뉴와 위 막대</a>에 있습니다.</p>
 <p>갤러리·에셋 올리기는 지금 계정으로 갑니다. 서버가 로그인을 끝낸 계정은 목록에서 빠지고, 그 계정으로 바꾸려 했으면 "이 계정의 로그인이 끝나 목록에서 뺐습니다. 다시 로그인하세요."와 함께 계정 창이 열립니다.</p>
@@ -1539,6 +1544,7 @@
 <tr><td><code>previewChick</code> · <code>previewEndChick</code></td><td><a class="term" href="#screen-effect-maker">미리보기 병아리</a> ID(기본 <code>"original"</code>)와 <a class="term" href="#screen-effect-maker">끝 그림 병아리</a> ID. 번호 1~20 차례로 <span class="nolink">original, painter, pencil, palette, easel, paint-bucket, designer, heart-canvas, cursor, hatch, knight, wizard, archer, ninja, pirate, astronaut, viking, king, gamer, healer</span>(소문자·숫자·하이픈이 아니면 선언 오류)</td></tr>
 <tr><td><code>previewFrames</code></td><td>미리보기·검증·올리는 미리보기의 칸 수(2~20, 기본 10)</td></tr>
 <tr><td><code>previewMotion</code></td><td>미리보기 병아리 움직임: <code>"none"</code>(기본)·<code>"right"</code>·<code>"left"</code>·<code>"up"</code>·<code>"down"</code>(칸마다 1px) 또는 칸마다 <code>[x, y]</code>(−32~32, 뒤 칸은 마지막 값). 미리보기에서만 움직임</td></tr>
+<tr><td><code>previewPivot</code> · <code>previewEndOffset</code> · <code>previewEndPivot</code></td><td><a class="term" href="#screen-effect-maker">미리보기 자리·피벗</a>(각각 <code>[x, y]</code> px, 오른쪽·아래가 +, −64~64, 적지 않으면 0): 칸마다 <a class="term" href="#tools-pivot">피벗</a>(<code>ctx.pivot</code>)을 기본 자리(병아리 가운데)에서 옮기는 양(끝 그림 병아리가 있으면 마지막 칸을 뺀 칸) · 끝 그림 병아리를 제자리에서 옮기는 양 · 마지막 칸(끝 그림 병아리 칸)의 피벗을 옮기는 양. 끝 값 둘은 <code>previewEndChick</code>이 있을 때만 씀. 미리보기에서만 바뀜</td></tr>
 </tbody>
 </table></div>
 <h4>스크립트 API: 설정 종류</h4>
@@ -1565,7 +1571,7 @@
 <tr><td><code>ctx.progress</code> · <code>ctx.phase</code> · <code>ctx.t</code></td><td><a class="term" href="#screen-effect-settings">효과 범위</a> 안 진행 0~1: progress는 반복·빠르기 곡선을 넣은 값(움직이는 효과는 보통 이것), phase는 반복만 넣은 값, t는 둘 다 넣기 전</td></tr>
 <tr><td><code>ctx.frame</code> · <code>ctx.step</code> · <code>ctx.span</code></td><td>그리는 프레임 번호(0부터) · 범위 첫 프레임부터 몇 번째 · 범위 길이 − 1</td></tr>
 <tr><td><code>ctx.rangeStart</code> · <code>ctx.rangeEnd</code> · <code>ctx.frameTag</code></td><td>효과 범위의 첫·끝 프레임 번호(효과 만들기 미리보기에서는 0과 마지막 칸) · 지금 프레임이 든 태그 이름(없거나 미리보기면 <code>""</code>)</td></tr>
-<tr><td><code>ctx.source</code> · <code>ctx.pivot</code> · <code>ctx.center</code></td><td>여백 넣은 그림 안의 원본 자리 <code>{ x, y, w, h }</code> · <a class="term" href="#tools-pivot">피벗</a> <code>{ x, y }</code> · 원본(<a class="term" href="#screen-canvas">캔버스</a>, <a class="term" href="#parts-concept">부위</a>면 부위 칸)의 가운데 <code>{ x, y }</code>(피벗과 달리 늘 가운데)</td></tr>
+<tr><td><code>ctx.source</code> · <code>ctx.pivot</code> · <code>ctx.center</code></td><td>여백 넣은 그림 안의 원본 자리 <code>{ x, y, w, h }</code> · 피벗 <code>{ x, y }</code> · 원본(<a class="term" href="#screen-canvas">캔버스</a>, <a class="term" href="#parts-concept">부위</a>면 부위 칸)의 가운데 <code>{ x, y }</code>(피벗과 달리 늘 가운데)</td></tr>
 <tr><td><code>ctx.movePivot(dx, dy)</code></td><td>그림을 옮긴 거리(px)를 이번 프레임의 피벗·<a class="term" href="#screen-effect-settings">효과 여백</a>·뒤 효과에 알려 줌. 소수 가능, 여러 번 부르면 합침, 반환값 없음, 빠른 실행에서도 동작</td></tr>
 <tr><td><code>ctx.slice</code></td><td><a class="term" href="#tools-nine-slice">9-slice</a> 테두리 <code>{ left, top, right, bottom }</code>(캔버스는 프로젝트 테두리, 부위는 부위 테두리). 없거나 맞지 않거나 프로젝트 밖이면 null</td></tr>
 <tr><td><code>ctx.color(키, x, y, 범위?)</code> · <code>ctx.colorAt(키, i, x, y, 범위?)</code> · <code>ctx.pairColor(키, i, "from"|"to", x, y, 범위?)</code></td><td>색 설정·색 목록 항목·색 쌍의 (x, y) 색 <code>{ r, g, b, a }</code>. 단색이면 그 색, 그라데이션이면 효과 전 그림의 불투명 범위(범위 <code>{ x, y, w, h }</code>를 주면 그 범위)에서 <a class="term" href="#screen-effect-list">공식 효과</a>와 같게 고름</td></tr>
@@ -1613,7 +1619,7 @@
 <li>공개하려면 <strong>검증</strong>로 견본 병아리 20마리에 돌려 본 뒤 <strong>올리기…</strong>를 누릅니다.</li>
 </ol>
 <h4>창 구성</h4>
-<figure class="shot"><img src="assets/guide/screen-effect-maker.png" alt="효과 만들기 창: 왼쪽 내 효과 목록과 정보 칸, 가운데 코드 편집기와 미리보기 설정 값, 오른쪽 병아리 미리보기와 칸 띠, 아래 저장·넣기·상태·검증·올리기 단추" width="1240" height="812" loading="lazy"><figcaption>① 내 효과 목록 · ② 새 스크립트·JS 파일 열기 · ③ 정보 · ④ 규칙 · ⑤ 코드 편집기 · ⑥ 미리보기 설정 값 · ⑦ AI · ⑧ 미리보기와 칸 띠 · ⑨ 미리보기 병아리·끝 그림 병아리 · ⑩ 재생·효과 없이 보기·프레임 수·움직임 · ⑪ 저장·지금 레이어에 넣기 · ⑫ 상태 단추 · ⑬ 검증·올리기·닫기</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-effect-maker.png" alt="효과 만들기 창: 왼쪽 내 효과 목록과 정보 칸, 가운데 코드 편집기와 미리보기 설정 값, 오른쪽 병아리 미리보기와 칸 띠, 아래 저장·넣기·상태·검증·올리기 단추" width="1240" height="812" loading="lazy"><figcaption>① 내 효과 목록 · ② 새 스크립트·JS 파일 열기 · ③ 정보 · ④ 규칙 · ⑤ 코드 편집기 · ⑥ 미리보기 설정 값 · ⑦ AI · ⑧ 미리보기와 칸 띠 · ⑨ 미리보기 병아리·끝 그림 병아리 · ⑩ 재생·효과 없이 보기·프레임 수·움직임·자리·피벗 · ⑪ 저장·지금 레이어에 넣기 · ⑫ 상태 단추 · ⑬ 검증·올리기·닫기</figcaption></figure>
 <ul class="marks">
 <li>① <strong>내 효과</strong>: 이 컴퓨터에서 만들었거나 내 계정으로 올린 스크립트 효과입니다(받은 효과의 원문을 그대로 복사한 것은 빠짐). 오른쪽 위 <strong>모두 보기</strong>를 켜면 그 복사본과 받은 스크립트 효과(패키지 아이콘)도 보입니다. 상점에 연결된 효과는 이름 옆에 작성자의 프로필 사진(없으면 사람 아이콘)과 이름이 보이고, 이 컴퓨터에서만 만든 효과는 코드 아이콘과 이름만 보입니다. 우클릭: 삭제(내 것만)·<strong>에셋 관리자에서 보기</strong>.</li>
 <li>② <strong>새 스크립트</strong>는 짧은 뼈대(<a class="term" href="#language-change">화면 언어</a>로 된 이름, 설정 "세기" 하나, 픽셀마다 도는 반복문)로 시작하고, <strong>JS 파일 열기…</strong>는 <code>.js</code> 파일의 원문으로 새 효과를 엽니다(저장 전).</li>
@@ -1625,7 +1631,7 @@
 <li>⑦ <strong>AI</strong>(미리보기 제목 줄 오른쪽, 반짝이 아이콘)는 창 오른쪽에 AI 칸을 열고 닫습니다(아래 AI 칸).</li>
 <li>⑧ 미리보기는 올릴 때 만들어지는 미리보기와 같은 그림입니다: 고른 병아리에 효과를 <a class="term" href="#screen-timeline">프레임</a> 수만큼의 칸(칸마다 0.1초)으로 입힙니다. 원문·설정을 고치면 잠깐 뒤 다시 그립니다. 아래 칸 띠에 칸마다 작은 그림과 번호가 보이고, 누르면 재생을 멈추고 그 칸을 봅니다(재생 중에는 테두리가 따라감).</li>
 <li>⑨ <strong>미리보기 병아리</strong>: 병아리 그림과 번호로 20마리 중 고릅니다(원문의 <code>previewChick</code>을 고침, 원문에 오류가 있으면 먼저 고치라고 안내). <strong>끝 그림 병아리</strong>은 변신 효과에 씁니다(아래).</li>
-<li>⑩ 재생/멈춤 아이콘 단추, <strong>효과 없이 보기</strong>(눈 가림 아이콘 토글), <strong>프레임 수</strong>(2~20, 원문 <code>previewFrames</code> — 미리보기·검증·올리는 미리보기가 같이 쓰고, 올리는 미리보기가 크기 한도를 넘으면 두 칸씩 합침), 톱니바퀴 = <strong>미리보기 움직임</strong>(아래).</li>
+<li>⑩ 재생/멈춤 아이콘 단추, <strong>효과 없이 보기</strong>(눈 가림 아이콘 토글), <strong>프레임 수</strong>(2~20, 원문 <code>previewFrames</code> — 미리보기·검증·올리는 미리보기가 같이 쓰고, 올리는 미리보기가 크기 한도를 넘으면 두 칸씩 합침), 톱니바퀴 = <strong>미리보기 움직임</strong>, 과녁 = <strong>미리보기 자리·피벗</strong>(둘 다 아래).</li>
 <li>⑪ <strong>저장</strong>(<kbd>Ctrl</kbd>+<kbd>S</kbd>)은 내 스크립트 효과로 저장합니다(미리보기 장면도 함께 — 효과 창 효과 탭과 에셋 관리자에 보임). <strong>지금 레이어에 넣기</strong>는 미리보기 설정 값 그대로 메인 창 지금 레이어의 효과 목록 끝에 넣습니다(모든 프레임, 실행취소 한 단계). 효과 창이 열려 있거나 레이어가 잠겨 있으면 안내만 합니다.</li>
 <li>⑫ 상태 단추는 지금 상태를 색으로 보이고, 누르면 자세한 내용이 뜹니다(아래 상태와 검증).</li>
 <li>⑬ <strong>검증</strong>·<strong>올리기…</strong>·닫기. 고치고 저장하지 않은 채 다른 효과를 고르거나 새 스크립트를 열거나 닫으면 저장·버리기·취소를 묻습니다(창 제목의 효과 이름 뒤 <code>*</code> = 고침).</li>
@@ -1638,7 +1644,7 @@
 <li>⑮ 지금 계정으로 올렸지만 이 컴퓨터에 없는 효과는 목록 맨 아래 회색 줄로 보입니다. 오른쪽 내려받기 단추를 누르면 온라인 목록에서 크기·SHA-256을 확인해 받아 설치하고 엽니다. 회색 줄 자체는 눌러도 열리지 않습니다. 로그인해 있으면 창을 열 때와 계정이 바뀔 때 온라인 목록을 받아 찾습니다.</li>
 </ul>
 <h4>받은 효과는 읽기 전용</h4>
-<p>남이 만든 효과(받은 스크립트 효과)는 효과 만들기에서 읽기 전용으로 열립니다. 원문·정보·미리보기 병아리·프레임 수·움직임·장면을 고칠 수 없고 <strong>저장</strong>·<strong>올리기…</strong>·AI 칸이 꺼집니다. 미리보기 설정 값을 바꿔 미리 보기, <strong>검증</strong>, <strong>지금 레이어에 넣기</strong>는 됩니다.</p>
+<p>남이 만든 효과(받은 스크립트 효과)는 효과 만들기에서 읽기 전용으로 열립니다. 원문·정보·미리보기 병아리·프레임 수·움직임·자리·피벗·장면을 고칠 수 없고 <strong>저장</strong>·<strong>올리기…</strong>·AI 칸이 꺼집니다. 미리보기 설정 값을 바꿔 미리 보기, <strong>검증</strong>, <strong>지금 레이어에 넣기</strong>는 됩니다.</p>
 <ol>
 <li>고칠 효과를 엽니다(목록에 없으면 <strong>모두 보기</strong>를 켬).</li>
 <li>아래 줄의 <strong><a class="term" href="#screen-asset-manager">내 에셋</a>으로 복사</strong>를 누릅니다. 받은 원본은 그대로 두고 같은 원문의 내 사본을 만들어 바로 엽니다(같은 원문의 내 효과가 이미 있으면 그것을 엶).</li>
@@ -1651,6 +1657,20 @@
 <h4>끝 그림 병아리(변신 효과)</h4>
 <figure class="shot"><img src="assets/guide/screen-effect-maker-4.png" alt="변신 효과의 미리보기: 끝 그림 병아리를 고르고, 칸 띠가 첫 병아리에서 다른 병아리로 바뀌는 모습" width="340" height="535" loading="lazy"><figcaption>⑱ 끝 그림 병아리 · ⑲ 칸 띠</figcaption></figure>
 <p>⑱ <strong>끝 그림 병아리</strong>(정보박스, 처음 항목 <strong>없음</strong>)을 고르면 선언의 <code>previewEndChick</code>이 바뀌고, 미리보기·검증·올리는 미리보기의 마지막 칸이 그 병아리가 됩니다(두 병아리는 같은 크기 <a class="term" href="#screen-canvas">캔버스</a>에 발끝을 맞춤). 한 그림을 여러 프레임에 걸쳐 다른 그림으로 바꾸는 효과는 <code>ctx.frameSource(ctx.rangeEnd)</code>로 끝 그림을 읽으므로, ⑲ 칸 띠에서 저장 전에 변신을 보고 검증할 수 있습니다(<a href="#screen-script-effects">스크립트 효과</a>의 "여러 프레임을 쓰는 효과").</p>
+<h4>미리보기 자리·피벗</h4>
+<figure class="shot"><img src="assets/guide/screen-effect-maker-10.png" alt="미리보기 자리·피벗 창: 병아리 피벗·끝 그림 병아리 자리·끝 그림 병아리 피벗의 X·Y 표(끝 그림 병아리 자리 X가 16)와 아래의 흐린 안내" width="344" height="377" loading="lazy"></figure>
+<p>⑩의 과녁 단추로 <strong>미리보기 자리·피벗</strong> 창을 엽니다(풍선에 0이 아닌 지금 값 — 예: "미리보기 자리·피벗: 끝 그림 병아리 자리 (16, -6)", 모두 0이면 "없음"). 표의 세 줄마다 X·Y를 px로 적습니다(오른쪽·아래가 +, −64~64). 끝 그림 병아리가 없으면 끝 두 줄은 흐리게 꺼집니다(값은 남지만 쓰지 않음). 피벗 값은 기본 피벗(병아리 가운데)에서 옮긴 양이라, 끝 그림 병아리만 옮기면 피벗은 그대로입니다. 확인하면 바뀐 값만 선언의 <code>previewPivot</code>·<code>previewEndOffset</code>·<code>previewEndPivot</code>(<code>[x, y]</code>, 0이면 그 키를 지움)으로 고칩니다(편집기 실행취소 한 단계).</p>
+<div class="table-wrap"><table>
+<thead><tr><th>줄</th><th>하는 일</th></tr></thead>
+<tbody>
+<tr><td><strong>병아리 피벗</strong></td><td>칸마다 피벗(<code>ctx.pivot</code>)을 옮깁니다. 끝 그림 병아리가 있으면 마지막 칸(끝 그림 병아리 칸)을 뺀 칸에, 없으면 모든 칸에 씁니다.</td></tr>
+<tr><td><strong>끝 그림 병아리 자리</strong></td><td>끝 그림 병아리를 제자리(첫 병아리와 발끝을 맞춘 자리)에서 옮깁니다.</td></tr>
+<tr><td><strong>끝 그림 병아리 피벗</strong></td><td>마지막 칸(끝 그림 병아리 칸)의 피벗을 옮깁니다.</td></tr>
+</tbody>
+</table></div>
+<p>이 값은 미리보기에만 씁니다: 효과 만들기 미리보기, <strong>검증</strong>, AI 미리보기, 올릴 때 미리보기, 미리보기 장면(문서와는 상관없음). 두 그림의 자리나 중심이 달라야 뜻이 있는 변신·회전 효과를 저장 전에 보고 검증할 때 씁니다. 미리보기 장면에서는 끝 그림 병아리가 장면의 병아리 자리에서 옮겨 가고 칸마다 피벗은 장면 캔버스 안으로 맞춰지며, 장면이 없으면 미리보기 캔버스가 옮긴 병아리와 피벗까지 넓어집니다.</p>
+<figure class="shot"><img src="assets/guide/screen-effect-maker-compare-end-offset.png" alt="변신 효과의 첫·가운데·마지막 칸 두 묶음: 왼쪽은 끝 그림 병아리가 첫 병아리 자리에서 나타나고, 오른쪽은 픽셀이 바뀌면서 오른쪽으로 16px 옮겨 감" width="654" height="89" loading="lazy"><figcaption>왼쪽: 끝 그림 병아리 자리 (0, 0) · 오른쪽: 끝 그림 병아리 자리 (16, 0) — 묶음마다 6칸 중 첫·가운데·마지막 칸</figcaption></figure>
+<p>위 그림은 ⑲ 칸 띠의 변신 예(<code>ctx.frameSource(ctx.rangeEnd)</code>로 끝 그림을 읽어 픽셀마다 옮김)를 같은 효과로 그린 것입니다. 끝 그림 병아리 자리가 0이면 그 자리에서 바뀌고, 오른쪽으로 16px 옮기면 끝 그림도 옮긴 자리에서 읽히므로 바뀌면서 그 자리로 옮겨 갑니다.</p>
 <h4>미리보기 장면</h4>
 <figure class="shot"><img src="assets/guide/screen-effect-maker-5.png" alt="레이어 고르기 설정이 있는 효과: ctx.layer로 읽는 코드, 미리보기 설정 값의 레이어 고르기 칸, 오른쪽 미리보기 장면 줄" width="962" height="734" loading="lazy"><figcaption>⑳ 레이어 고르기 칸 · ㉑ 미리보기 장면 줄</figcaption></figure>
 <ul>
@@ -1666,7 +1686,7 @@
 <ul>
 <li>㉓ 상태 단추: 초록 = 정상·검증 통과, 노랑 = 경고만(Jint로 계산, 그라데이션 안내, 장면 읽기 실패), 빨강 = 오류(개수), 흐림 = 그리는 중·검증 중·스크립트 없음.</li>
 <li>㉔ 누르면 자세한 상태가 뜹니다: 병아리 한 프레임 계산 시간, 실행 경로(<a class="term" href="#screen-script-api">빠른 경로</a> / Jint와 몇 줄의 무엇 때문인지), 원문·실행 오류와 검증 결과. 오류 줄을 누르면 그 코드로 갑니다.</li>
-<li><strong>검증</strong>: 설치할 때와 같은 원문 검사와 제목(1~100자)을 보고, 선언의 기본 설정으로 병아리 견본 20마리 × 프레임 수 칸을 돌려(미리보기 장면·끝 그림 병아리·움직임도 그대로) 실행 오류(같은 오류는 처음 한 번, "병아리 N번 M칸:")와 가장 느린 칸을 보입니다.</li>
+<li><strong>검증</strong>: 설치할 때와 같은 원문 검사와 제목(1~100자)을 보고, 선언의 기본 설정으로 병아리 견본 20마리 × 프레임 수 칸을 돌려(미리보기 장면·끝 그림 병아리·움직임·자리·피벗도 그대로) 실행 오류(같은 오류는 처음 한 번, "병아리 N번 M칸:")와 가장 느린 칸을 보입니다.</li>
 <li>실행 오류가 없으면 색 설정마다 <strong>그라데이션 안내</strong>도 봅니다: 견본 그라데이션으로 그려 보고, 그라데이션을 골라도 한 색으로만 그려지는 색 설정을 노란 안내 줄로 알립니다(색 목록은 첫 항목, 색 쌍 목록은 첫 쌍의 바뀐 색을 보고, 쓰지 않는 색 설정은 안내하지 않음). 권장 안내라 문제 수에 들지 않고 올리기를 막지 않습니다 — 픽셀마다 <code>ctx.color</code>로 고르게 고치면 사라집니다.</li>
 <li><strong>올리기…</strong>: 저장하고 검증을 통과하면 이 효과 하나를 올리는 <a href="#screen-asset-publish">온라인에 올리기</a> 창이 열립니다(짧은 설명은 선언의 description, 태그는 선언의 tags가 처음 값이고 미리보기는 저절로 만들어짐). 다른 레이어를 읽는 효과에는 <code>layer-reference</code>, 다른 프레임을 읽는 효과에는 <code>frame-reference</code> 태그가 꼭 붙습니다. 통과하지 못하면 상태 단추를 눌러 문제를 보라는 안내만 합니다.</li>
 </ul>
@@ -1780,6 +1800,8 @@
 <li>주요 오류: 패키지 ID·버전(SemVer)·이름·짧은 설명·언어 설정·태그 형식, 꼭 붙어야 하는 태그를 넣을 자리 없음, 목록 미리보기 없음, 다른 패키지와 이름이 겹침, 이미 올린 가장 높은 버전(온라인 목록과 이 컴퓨터의 올린 기록) 이하의 버전 — "이미 올린 버전 X보다 높은 버전을 적으세요"(올린 버전은 바꿀 수 없음). 경고: 태그 없음.</li>
 <li>원문에서 <code>ctx.movePivot</code>을 쓰는 스크립트 효과는 올릴 때 <code>pivot-move</code> 태그가 저절로 붙습니다. 이 태그는 layer-reference·frame-reference처럼 지울 수 없고 전체 태그 8개 한도에 포함됩니다.</li>
 </ul>
+<h4>올린 패키지 지우기</h4>
+<p>chickxel.com에서 올린 패키지를 지우면(본인이 지우거나 관리자가 지우거나 신고 처리로 지워져도) 사이트·상점 목록·프로필에서 사라지고, 그 패키지로 받은 <a class="term" href="#start-account">경험치</a>가 빠지며 저장 공간 한도도 바로 돌아옵니다. 다만 서버에는 남아 있어 관리자가 되살리거나 영구 삭제할 수 있습니다. 그래서 지운 패키지의 ID는 관리자가 되살리거나 영구 삭제하기 전까지 다시 쓸 수 없고, 같은 ID로 올리면 서버가 받지 않습니다.</p>
 <h3 id="screen-preview">미리보기</h3>
 <figure class="shot"><img src="assets/guide/screen-preview.png" alt="미리보기 패널: 재생 화면, FPS, 배율 단추, 배경" width="339" height="234" loading="lazy"><figcaption>① 재생 화면 · ② FPS · ③ 배율 단추(Fit) · ④ 배경</figcaption></figure>
 <p>오른쪽 위의 미리보기는 효과까지 입힌 애니메이션을 실제 속도로 재생합니다. 편집하는 <a class="term" href="#screen-timeline">프레임</a>과 따로 움직이므로 그리면서 움직임을 확인할 수 있습니다.</p>
@@ -1921,7 +1943,7 @@
 <p>미리보기 프레임을 합성하거나 GIF 파일을 쓰는 데 오래 걸리면 끝날 때까지 창 전체가 검은 반투명 덮개로 덮이고, 가운데 상자에 <strong>프레임 합성하는 중</strong> 또는 <strong>GIF 만드는 중</strong>과 퍼센트·진행 막대가 보입니다.</p>
 
 <h3 id="screen-gallery">갤러리에 올리기</h3>
-<figure class="shot"><img src="assets/guide/screen-gallery.png" alt="갤러리에 올리기 창: 왼쪽 올릴 그림(지금 프레임·애니메이션)과 GIF로 올릴 프레임 범위(모든 프레임·태그·프레임 번호·타임라인에서 고른 프레임), 배율·편집 가능한 .chickxel 파일도 공유 체크, 제목·설명·태그, 레벨 칩이 붙은 Chickxel 계정, 오른쪽 미리보기와 공개 안내, 왼쪽 아래 갤러리 보기 단추" width="614" height="744" loading="lazy"><figcaption>① 올릴 그림·배율 · ② GIF 범위 · ③ 설명 · ④ 계정 · ⑤ 미리보기와 안내 · ⑥ 갤러리 보기</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-gallery.png" alt="갤러리에 올리기 창: 왼쪽 올릴 그림(지금 프레임·애니메이션)과 GIF로 올릴 프레임 범위(모든 프레임·태그·프레임 번호·타임라인에서 고른 프레임), 배율·편집 가능한 .chickxel 파일도 공유·그림 받기 허용 체크, 제목·설명·태그, 레벨 칩이 붙은 Chickxel 계정, 오른쪽 미리보기와 공개 안내, 왼쪽 아래 갤러리 보기 단추" width="614" height="774" loading="lazy"><figcaption>① 올릴 그림·배율 · ② GIF 범위 · ③ 설명 · ④ 계정 · ⑤ 미리보기와 안내 · ⑥ 갤러리 보기</figcaption></figure>
 <p><strong>파일 &gt; 갤러리에 올리기…</strong>(GIF 내보내기 아래)나 메뉴 줄 오른쪽의 <a href="#screen-top-bar">갤러리 단추</a>(가게 아이콘)로 지금 그림을 chickxel.com 갤러리에 올립니다. 애니메이션은 전체나 일부 <a class="term" href="#screen-timeline">프레임</a>만 GIF로 올릴 수 있습니다.</p>
 <h4>올리기 전</h4>
 <ul class="marks">
@@ -1933,7 +1955,9 @@
 <li>⑥ 왼쪽 아래 <strong>갤러리 보기</strong>는 chickxel.com 갤러리를 브라우저로 엽니다. 올리지 않고도 다른 사람들이 올린 그림을 볼 수 있습니다.</li>
 </ul>
 <h4>편집 파일 같이 올리기</h4>
-<p>① 묶음 맨 아래 <strong>편집 가능한 .chickxel 파일도 공유</strong>(처음엔 꺼짐)를 켜면 PNG·GIF 그림과 함께 이 프로젝트의 <code>.chickxel</code> 파일이 올라가, 누구나 그림 쪽에서 받아 Chickxel에서 열고 고칠 수 있습니다. 공유하는 사본에서는 이 컴퓨터의 내보내기 폴더를 지우고, 시트 이름·<a class="term" href="#parts-export">부위 아틀라스</a> 이름은 폴더 없이 이름만 그대로 적어 둡니다(<a href="#files-roles">파일의 종류와 저장 위치</a>). <a class="term" href="#screen-script-effects">스크립트 효과</a>가 있으면 그 원문(코드)도 들어가고(켜면 창에 그렇게 알림), 받은 사람이 파일을 열 때 실행할지 먼저 묻습니다(<a href="#screen-script-effects">스크립트 효과</a>). 파일은 8MiB까지 올릴 수 있고, 넘으면 파일 공유를 끄고 그림만 올리라고 알립니다. 갤러리 게시물에는 PNG/GIF 받기와 Chickxel 파일 받기 단추가 따로 있습니다.</p>
+<p>① 묶음 아래쪽 <strong>편집 가능한 .chickxel 파일도 공유</strong>(처음엔 꺼짐)를 켜면 PNG·GIF 그림과 함께 이 프로젝트의 <code>.chickxel</code> 파일이 올라가, 누구나 그림 쪽에서 받아 Chickxel에서 열고 고칠 수 있습니다. 공유하는 사본에서는 이 컴퓨터의 내보내기 폴더를 지우고, 시트 이름·<a class="term" href="#parts-export">부위 아틀라스</a> 이름은 폴더 없이 이름만 그대로 적어 둡니다(<a href="#files-roles">파일의 종류와 저장 위치</a>). <a class="term" href="#screen-script-effects">스크립트 효과</a>가 있으면 그 원문(코드)도 들어가고(켜면 창에 그렇게 알림), 받은 사람이 파일을 열 때 실행할지 먼저 묻습니다(<a href="#screen-script-effects">스크립트 효과</a>). 파일은 8MiB까지 올릴 수 있고, 넘으면 파일 공유를 끄고 그림만 올리라고 알립니다. 갤러리 게시물에는 PNG/GIF 받기와 Chickxel 파일 받기 단추가 따로 있습니다.</p>
+<h4>그림 받기 허용</h4>
+<p>① 묶음 맨 아래 <strong>그림 받기 허용 (PNG·GIF)</strong>(처음엔 켜짐)는 chickxel.com 그림 쪽에서 구경하는 사람에게 PNG·GIF 받기 단추를 보일지 정합니다. 끄면 그 단추는 올린 사람과 관리자에게만 보이고, 그림 자체는 그대로 공개됩니다. 편집용 <code>.chickxel</code> 파일 받기(위 <strong>편집 가능한 .chickxel 파일도 공유</strong>)와는 따로 정합니다. 올린 뒤에도 그림 쪽의 고치기에서 바꿀 수 있습니다.</p>
 <h4>올리기</h4>
 <p><strong>올리기</strong>를 누르면 로그인하지 않았을 때 먼저 계정 창이 열립니다. 그림을 만드는 동안 <strong>그림을 만드는 중</strong>이, 올리는 동안 진행 막대와 <strong>올리기 취소</strong>가 보이고, 끝나면 브라우저에 그 그림 쪽(<code>chickxel.com/gallery/…</code>)이 열립니다. 파일이 4MB를 넘으면 배율을 줄이거나 지금 프레임만 올리라고 알립니다. 하루 올리기 횟수 한도에 걸리면 몇 분 뒤에 다시 하라고 알립니다. 프로젝트는 바뀌지 않습니다.</p>
 <p>올린 그림은 계정의 <a class="term" href="#start-account">경험치</a>가 됩니다(<a href="#start-account">계정 레벨</a>). 다 올린 뒤 내 정보를 다시 받아 경험치가 늘었으면 완료 알림 아래에 <code>+10 XP · Lv 3</code>처럼 늘어난 경험치와 지금 레벨이, 레벨이 올랐으면 "레벨이 올랐습니다! Lv 3"이 함께 보입니다(서버가 레벨을 알려 주지 않으면 없음). 올린 문서는 다시 손으로 저장할 때 메뉴 줄 갤러리 단추가 또 반짝여 공유를 권합니다.</p>
@@ -4834,7 +4858,7 @@
 <tr><td><a href="#parts-sprite-library">Sprite Library</a></td><td>Unity에서 <a class="term" href="#parts-skins">스킨</a>을 바꿔 끼우는 데 쓰는 .spriteLib 에셋입니다.</td></tr>
 <tr><td><a href="#tools-canvas-size">가운데 채우기</a></td><td><a class="term" href="#tools-nine-slice">9-slice</a>로 늘릴 때 가운데를 늘일지(늘이기) 무늬를 반복할지(되풀이) 정하는 설정입니다.</td></tr>
 <tr><td><a href="#screen-gallery">갤러리에 올리기</a></td><td>chickxel.com 갤러리에 그림을 올리는 창입니다.</td></tr>
-<tr><td><a href="#start-account">경험치</a></td><td>갤러리 그림·에셋 공유·받은 좋아요·앱을 켜 둔 시간으로 쌓여 <a class="term" href="#start-account">계정 레벨</a>을 올리는 점수입니다.</td></tr>
+<tr><td><a href="#start-account">경험치</a></td><td>갤러리 그림·에셋 공유·좋아요·하루 출석·앱을 켜 둔 시간으로 쌓여 <a class="term" href="#start-account">계정 레벨</a>을 올리는 점수입니다.</td></tr>
 <tr><td><a href="#start-account">계정 레벨</a> <span class="term-aka nolink">(레벨 칩)</span></td><td>공유로 쌓은 <a class="term" href="#start-account">경험치</a>에 따라 오르는 <a class="term" href="#start-account">Chickxel 계정</a>의 레벨로, 이름 옆 Lv 칩으로 보입니다.</td></tr>
 <tr><td><a href="#pixelate-color-edit">고정 색</a></td><td>원본 칸에서 집어 결과 <a class="term" href="#screen-palette">팔레트</a>에 더한 색으로, 그 색에 더 가까운 픽셀만 바뀝니다.</td></tr>
 <tr><td><a href="#screen-effect-list">공식 효과</a></td><td>앱이 기본으로 설치하는 <a class="term" href="#screen-script-effects">스크립트 효과</a> 23개(외곽선·그림자·피격 번쩍임 등)입니다.</td></tr>
@@ -4879,6 +4903,7 @@
 <tr><td><a href="#pixelate-score">목표 색 수</a></td><td>결과 색 수가 넘으면(강제면 모자라도) 점수를 깎는 기준 색 수입니다.</td></tr>
 <tr><td><a href="#screen-tabs">문서 탭</a></td><td>열린 문서마다 캔버스 위에 하나씩 생기는 탭입니다.</td></tr>
 <tr><td><a href="#screen-effect-maker">미리보기 병아리</a></td><td>효과·프리셋 미리보기에서 효과를 입혀 보이는 번호 붙은 병아리 그림 20가지입니다.</td></tr>
+<tr><td><a href="#screen-effect-maker">미리보기 자리·피벗</a></td><td><a class="term" href="#screen-effect-maker">효과 만들기</a> 미리보기에서 <a class="term" href="#screen-effect-maker">끝 그림 병아리</a> 자리와 칸마다 피벗을 옮기는 선언 값입니다.</td></tr>
 <tr><td><a href="#screen-effect-maker">미리보기 장면</a></td><td>다른 레이어를 읽는 효과를 미리 볼 때 병아리와 함께 쓰는 작은 그림입니다.</td></tr>
 <tr><td><a href="#screen-preview">미리보기 크게 보기</a></td><td>미리보기를 크기 조절 가능한 창에서 크게 재생하는 창입니다.</td></tr>
 <tr><td><a href="#screen-tabs">미리보기 탭</a></td><td>편집 중인 문서를 다른 칸에서 크게 재생하는 초록빛 탭입니다.</td></tr>
