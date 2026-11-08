@@ -262,11 +262,11 @@ internal static class PartsShots
         k.Click(Card(box, "Hat"), MouseButton.Right, settleMs: 400);
         SaveWindowMenu(k, w, "parts-per-part-4", box, [MenuItemByText(UiStrings.S_SkinManagerWindow_PartOnlyCardMenu_C1E4068EB0)], 9);
         CloseMenus(k, w);
-        // ⑩ 이 부위 전용으로 내리기 (Head 줄의 knight 카드 우클릭)
+        // ⑩ 이 부위 전용으로 추가 (Head 줄의 knight 카드 우클릭)
         box = GroupBox(w, "Per part (3");
         var headKnight = Card(box, "knight", 1);
         k.Click(headKnight, MouseButton.Right, settleMs: 400);
-        SaveWindowMenu(k, w, "parts-per-part-5", box, [MenuItemStarting(UiStrings.S_SkinManagerWindow_PartCardMenu_2BB7F0B311)], 10);
+        SaveWindowMenu(k, w, "parts-per-part-5", box, [MenuItemStarting(UiStrings.SkinManager_AddAsPartOnly)], 10);
         CloseMenus(k, w);
         w.Close();
         k.Settle(200);

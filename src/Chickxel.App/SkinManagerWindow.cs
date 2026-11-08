@@ -5,7 +5,7 @@ namespace Chickxel.App;
 
 /// <summary>
 /// 스킨 관리 창(모드리스, 하나만): 맨 위 보기 거르기 [전체 | 그룹 스킨 | 개별 스킨], 지금 프레임의 전체 착장, 착장 프리셋 카드 줄, 그룹마다(타임라인처럼 위→아래) 스킨 카드 줄.
-/// 카드를 누르면 바로 그 스킨(착장)을 입히고, 우클릭 메뉴로 복제·이름·삭제·순서를 고친다(실행취소됨). "▸ 부위별"을 펼치면
+/// 카드를 누르면 바로 그 스킨(착장)을 입히고, 우클릭 메뉴로 복제·이름·삭제·순서를 고친다(실행취소됨 — 이 창에서도 실행취소·다시 실행 단축키가 듣는다). "▸ 부위별"을 펼치면
 /// 부위마다 "없음" + 그룹 스킨 카드 + 그 부위 전용(개별) 스킨 카드("개별" 표시)가 보여 부위 하나만 다른 스킨을 입힐 수 있고, 줄 끝 "＋ 이 부위 스킨"으로 부위 전용 스킨을 만든다.
 /// "개별 스킨" 거르기면 그룹 카드는 숨기고 부위 줄을 모두 펼쳐 부위 전용 스킨만 보인다.
 /// 프로젝트 변경·현재 프레임 변경·다른 프로젝트 열기 때 약 100ms 늦춰 다시 만든다(그리는 중에는 끝날 때까지 미룸).
@@ -105,9 +105,14 @@ public sealed class SkinManagerWindow : Window
         _ctx.ProjectReplaced += OnProjectReplaced;
         KeyDown += (_, e) =>
         {
-            if (e.Key != Key.Escape) return;
-            e.Handled = true;
-            Close();
+            if (e.Key == Key.Escape)
+            {
+                e.Handled = true;
+                Close();
+                return;
+            }
+            // 삭제·복제·이름 바꾸기 등은 문서 실행취소에 남으므로 이 창에 있어도 메인 창의 실행취소·다시 실행 키로 되돌린다.
+            if (Owner is MainForm main && main.RunUndoKey(e)) e.Handled = true;
         };
     }
 
@@ -745,8 +750,8 @@ public sealed class SkinManagerWindow : Window
         if (skin is not null)
         {
             items.Add(new Separator());
-            items.Add(Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartCardMenu_2BB7F0B311,part.Name), () => SkinOps.DemoteSkin(_ctx, this, group, skin, part),
-                !ReferenceEquals(skin, group.BaseSkin) && group.Skins.Count > 1));
+            items.Add(Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.SkinManager_AddAsPartOnly, part.Name),
+                () => SkinOps.AddPartSkinFrom(_ctx, this, part, skin)).Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.SkinManager_AddAsPartOnly_Tip, part.Name, skin.Name)));
         }
         return [.. items];
     }
@@ -908,30 +913,28 @@ public static class SkinOps
         }
     }
 
+    /// <summary>
+    /// 전체 스킨 <paramref name="skin"/>의 그 부위 그림을 복사해 같은 이름(겹치면 " 2" …)의 <paramref name="part"/> 전용 스킨을 하나 더하고 입힌다.
+    /// 전체 스킨과 다른 부위는 그대로다(실행취소됨).
+    /// </summary>
+    public static void AddPartSkinFrom(EditorContext ctx, Visual owner, Layer part, Skin skin)
+    {
+        if (ctx.Project is not { } p) return;
+        try
+        {
+            ctx.Structural(() => p.AddPartSkin(part, skin.Name, skin));
+        }
+        catch (ArgumentException ex)
+        {
+            Ui.Error(owner, Message(ex));
+        }
+    }
+
     /// <summary>부위 전용 스킨을 그룹 전체 스킨으로 올린다(다른 부위에서도 고를 수 있게).</summary>
     public static void PromoteSkin(EditorContext ctx, Layer group, Skin skin)
     {
         if (ctx.Project is not { } p) return;
         ctx.Structural(() => p.PromoteSkin(group, skin));
-    }
-
-    /// <summary>전체 스킨을 <paramref name="part"/> 전용으로 내린다(다른 부위의 그 스킨 그림이 지워지므로 확인, 실행취소됨).</summary>
-    public static void DemoteSkin(EditorContext ctx, Visual owner, Layer group, Skin skin, Layer part)
-    {
-        if (ctx.Project is not { } p) return;
-        int drawn = p.ChildrenOf(group).Count(other => !ReferenceEquals(other, part)
-            && p.Frames.Any(f => p.GetOwnCel(other, f, skin) is { } cel && !cel.IsRegionEmpty(cel.Bounds)));
-        var message = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_DemoteSkin_CD129F742E,skin.Name,part.Name) +
-                      (drawn > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_DemoteSkin_627652FF4A,drawn,skin.Name) : "") + UiStrings.S_SkinManagerWindow_DemoteSkin_AECBB9115D;
-        if (Ui.Ask(owner, message, UiStrings.S_SkinManagerWindow_DemoteSkin_C54435452C, MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
-        try
-        {
-            ctx.Structural(() => p.DemoteSkin(group, skin, part));
-        }
-        catch (InvalidOperationException ex)
-        {
-            Ui.Info(owner, ex.Message);
-        }
     }
 
     /// <summary>예외 글에서 " (Parameter '…')"를 뗀다.</summary>

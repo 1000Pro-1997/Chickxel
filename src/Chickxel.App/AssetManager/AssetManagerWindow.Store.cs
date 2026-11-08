@@ -317,7 +317,7 @@ public sealed partial class AssetManagerWindow
         name.Children.Add(Ui.Icon(RemoteIcon(entry), 14));
         name.Children.Add(Ui.Label(entry.DisplayName, bold: true));
         var by = IdentityBadge.Author(entry.Author, 16, dim: true, fontSize: AppTheme.SmallFontSize,
-            caption: string.Join(" · ", entry.Version, RemoteKindText(entry)));
+            caption: string.Join(" · ", entry.Version, RemoteKindText(entry)), level: entry.AuthorLevel);
         var panel = new StackPanel { Children = { name, by } };
         if (RemoteState(entry) is { } state)
         {
@@ -344,7 +344,7 @@ public sealed partial class AssetManagerWindow
             (UiStrings.Assets_Id, entry.Id),
             (UiStrings.Assets_Version, entry.Version),
             (UiStrings.Assets_InstalledColumn, installed?.Version),
-            (UiStrings.Assets_Author, IdentityBadge.Author(entry.Author, 16)),
+            (UiStrings.Assets_Author, IdentityBadge.Author(entry.Author, 16, level: entry.AuthorLevel)),
             (UiStrings.Assets_License, entry.License),
             (IsSingleAsset(entry) ? UiStrings.Assets_Kind : UiStrings.Assets_Contents, RemoteKindText(entry)),
             (UiStrings.Assets_MinApp, entry.MinAppVersion),

@@ -20,7 +20,8 @@ public sealed record ProjectSaveResult(string ProjectPath, ProjectExportResult? 
 /// <c>project.json</c>(버전 4, 캔버스·레이어(종류·그룹·스킨·부위 크기·위치·피벗·테두리·효과)·프레임·태그·Unity·내보내기 설정,
 /// 스크립트 효과가 있으면 스크립트 표 <c>scripts</c>: 원문 해시 → 원문, 링크된 셀이 있으면 <c>celLinks</c>: 같은 그림을 같이 쓰는 셀) +
 /// <c>cels/L{레이어 번호}_F{프레임 번호}.png</c>(셀, 부위 셀은 부위 크기 — 부위는 그룹의 첫 스킨 셀) +
-/// <c>cels/L{레이어}_F{프레임}_S{스킨 번호}.png</c>(부위의 첫 스킨이 아닌 스킨 셀, 스킨 번호 = 그룹 스킨 목록 번호 1~).
+/// <c>cels/L{레이어}_F{프레임}_S{스킨 번호}.png</c>(부위의 첫 스킨이 아닌 스킨 셀, 스킨 번호 = 그룹 스킨 목록 번호 1~) +
+/// <c>thumbnail.png</c>(첫 프레임 합성, 긴 변 <see cref="ThumbnailMaxSize"/>px 이하 — 읽을 때는 쓰지 않고 Windows 탐색기 미리보기가 읽음, 압축 없이 저장).
 /// 빈 셀은 생략, 번호는 0부터, 레이어 0 = 맨 아래.
 /// <para>
 /// 버전 2 이하 파일은 그대로 읽는다(그룹마다 스킨 "기본" 하나). 버전 1 아틀라스 파일(<c>kind: Atlas</c>, <c>atlas/S{스프라이트}_L{레이어}.png</c>)은
@@ -36,6 +37,10 @@ public static partial class ProjectIO
     /// </summary>
     public const int CurrentVersion = 5;
     public const string ProjectEntryName = "project.json";
+    public const string ThumbnailEntryName = "thumbnail.png";
+
+    /// <summary><see cref="ThumbnailEntryName"/>의 긴 변 최대 크기(px). 더 큰 캔버스는 최근접으로 줄여 넣는다.</summary>
+    public const int ThumbnailMaxSize = 256;
 
     internal static readonly JsonSerializerOptions Options = new()
     {
@@ -199,6 +204,20 @@ public static partial class ProjectIO
                 encoded[i] = null;
             }
         }
+        // 탐색기 미리보기(Windows 썸네일 처리기)가 셀을 합성하지 않고 바로 읽는 첫 프레임 그림. 압축 없이 넣어 ZIP에서 그대로 꺼낼 수 있게 한다.
+        var thumbnail = zip.CreateEntry(ThumbnailEntryName, CompressionLevel.NoCompression);
+        using var ts = thumbnail.Open();
+        PngIO.Save(Thumbnail(project), ts);
+    }
+
+    /// <summary><see cref="ThumbnailEntryName"/>에 넣을 그림: 첫 프레임 합성(긴 변이 <see cref="ThumbnailMaxSize"/>보다 크면 최근접으로 줄임).</summary>
+    internal static PixelImage Thumbnail(SpriteProject project)
+    {
+        var image = project.Flatten(0);
+        int longest = Math.Max(image.Width, image.Height);
+        if (longest <= ThumbnailMaxSize) return image;
+        return ImageTransform.ScaleNearest(image,
+            Math.Max(1, image.Width * ThumbnailMaxSize / longest), Math.Max(1, image.Height * ThumbnailMaxSize / longest));
     }
 
     /// <summary>저장할 셀(이름, 그림) — 레이어 → 프레임 → 스킨 차례, 일반 레이어 셀 뒤에 그 셀의 캔버스 밖 그림. 빈 셀도 들어 있다(<see cref="EncodeCel"/>이 거른다).</summary>

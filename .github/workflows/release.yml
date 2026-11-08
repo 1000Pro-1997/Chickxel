@@ -20,6 +20,11 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
+      # Windows 탐색기 썸네일 처리기(네이티브 DLL)를 macOS에서 Windows용으로 만든다(publish.sh)
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.15.2
+
       - name: Test
         run: dotnet test tests/Chickxel.Core.Tests -c Release
 

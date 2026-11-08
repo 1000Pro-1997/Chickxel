@@ -236,6 +236,44 @@ public class CommunityClientTests
     }
 
     [Fact]
+    public async Task Uptime_PostsWithTheToken_UpdatesTheSavedLevel_AndOldServersAreNotFound()
+    {
+        var (client, handler, tokens) = Make();
+        handler.Routes["GET /api/me"] = _ => Json(HttpStatusCode.OK, UserJson.Replace("\"isAdmin\": false", "\"isAdmin\": false, \"level\": 3, \"xp\": 35, \"levelStartXp\": 22, \"nextLevelXp\": 36"));
+        await client.GetMeAsync();
+        int changes = 0;
+        client.AccountsChanged += () => changes++;
+        handler.Routes["POST /api/me/uptime"] = _ => Json(HttpStatusCode.OK,
+            """{ "granted": true, "nextInMs": 3600000, "xp": 36, "level": 4, "levelStartXp": 36, "nextLevelXp": 52 }""");
+        var uptime = await client.ReportUptimeAsync();
+        Assert.Equal(new CommunityUptime(true, 3_600_000, 4, 36, 36, 52), uptime);
+        var sent = handler.Requests[^1];
+        Assert.Equal((HttpMethod.Post, "https://chickxel.com/api/me/uptime", "Bearer secret-token"), (sent.Method, sent.Url, sent.Authorization));
+        Assert.Empty(sent.Body);
+        Assert.Equal((4, 36, 36, (int?)52), (client.User!.Level, client.User.Xp, client.User.LevelStartXp, client.User.NextLevelXp));
+        Assert.Equal("Pixel Cat", client.User.Name);
+        Assert.Equal(client.User, tokens.Saved.Current!.User);
+        Assert.True(changes > 0);
+
+        handler.Routes.Remove("POST /api/me/uptime");
+        var old = await Assert.ThrowsAsync<CommunityException>(() => client.ReportUptimeAsync());
+        Assert.Equal(CommunityErrorCode.NotFound, old.Code);
+        Assert.Equal(4, client.User!.Level);
+    }
+
+    [Fact]
+    public void Uptime_Json_ReadsTheGrantAndLevel_AndToleratesMissingFields()
+    {
+        var refused = CommunityUptime.Read(JsonNode.Parse("""{ "granted": false, "nextInMs": 120000.0, "xp": 9, "level": 1, "levelStartXp": 0, "nextLevelXp": 10 }"""));
+        Assert.Equal(new CommunityUptime(false, 120_000, 1, 9, 0, 10), refused);
+        var bare = CommunityUptime.Read(JsonNode.Parse("""{ "granted": true }"""));
+        Assert.Equal(new CommunityUptime(true, 0, 0, 0, 0, null), bare);
+        var odd = CommunityUptime.Read(JsonNode.Parse("""{ "granted": "yes", "nextInMs": -5, "level": 0, "xp": 40 }"""));
+        Assert.Equal(new CommunityUptime(false, 0, 0, 0, 0, null), odd);
+        Assert.Throws<CommunityException>(() => CommunityUptime.Read(JsonNode.Parse("[]")));
+    }
+
+    [Fact]
     public async Task UploadArt_SendsMultipartFileTitleDescriptionAndTags_WithProgress()
     {
         var (client, handler, _) = Make();
@@ -261,6 +299,7 @@ public class CommunityClientTests
         Assert.Equal("Idle", Encoding.UTF8.GetString(parts["title"].Data));
         Assert.Equal("첫 줄\n둘째 줄", Encoding.UTF8.GetString(parts["description"].Data));
         Assert.Equal("idle,cat", Encoding.UTF8.GetString(parts["tags"].Data));
+        Assert.Equal("1", Encoding.UTF8.GetString(parts["allowDownload"].Data)); // 기본: 그림 받기 허용
         Assert.False(parts.ContainsKey("project"));
         Assert.True(reports.Count > 2, reports.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
         Assert.Equal(1.0, reports[^1]);
@@ -287,6 +326,7 @@ public class CommunityClientTests
         Assert.Equal(png, parts["file"].Data);
         Assert.Equal(("project.chickxel", "application/zip"), (parts["project"].FileName, parts["project"].Type));
         Assert.Equal(project, parts["project"].Data);
+        Assert.Equal("1", Encoding.UTF8.GetString(parts["allowDownload"].Data));
         Assert.True(reports.Count > 2, reports.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
         Assert.Equal(1.0, reports[^1]);
 
@@ -297,6 +337,19 @@ public class CommunityClientTests
         handler.Routes["POST /api/art"] = _ => Json(HttpStatusCode.Created,
             """{ "id": "art2345art2345ab", "title": "Idle", "image": { "url": "/a.png" }, "project": { "bytes": 5 } }""");
         Assert.Null((await client.UploadArtAsync(new ArtUpload(png, CommunityArtType.Png, "Idle", "", []))).Project);
+    }
+
+    [Fact]
+    public async Task UploadArt_WithDownloadOff_SendsAllowDownloadZero()
+    {
+        var (client, handler, _) = Make();
+        handler.Routes["POST /api/art"] = _ => Json(HttpStatusCode.Created,
+            """{ "id": "art2345art2345ab", "title": "Idle", "image": { "url": "/a.png" } }""");
+        await client.UploadArtAsync(new ArtUpload([1, 2, 3], CommunityArtType.Png, "Idle", "", [], AllowDownload: false));
+
+        var parts = Parts(Assert.Single(handler.Requests));
+        Assert.Equal("0", Encoding.UTF8.GetString(parts["allowDownload"].Data));
+        Assert.False(parts.ContainsKey("project"));
     }
 
     [Fact]

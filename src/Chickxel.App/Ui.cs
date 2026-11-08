@@ -527,6 +527,8 @@ public class DialogBase : Window
     protected readonly Button OkButton;
     protected readonly Button CancelButtonControl;
     private readonly StackPanel _buttons;
+    /// <summary>단추 줄(왼쪽 끝 단추 자리 + 오른쪽 결과 단추들).</summary>
+    private readonly DockPanel _footer;
     /// <summary>본문을 감싼 스크롤: 내용에 맞춰 크기가 정해지는 창이면 화면보다 길 때 세로로 스크롤, 크기를 정해 둔 창이면 본문을 창 높이에 맞춤(스크롤 없음).</summary>
     private readonly ScrollViewer _bodyScroll;
     private readonly Dictionary<Button, DialogResult> _results = new();
@@ -554,10 +556,10 @@ public class DialogBase : Window
             Orientation = Orientation.Horizontal,
             HorizontalAlignment = HorizontalAlignment.Right,
             Spacing = 4,
-            Margin = new Thickness(0, 12, 0, 0),
         };
         _buttons.Children.Add(OkButton);
         _buttons.Children.Add(CancelButtonControl);
+        _footer = new DockPanel { Margin = new Thickness(0, 12, 0, 0), Children = { _buttons } };
         _bodyScroll = new ScrollViewer
         {
             Content = Body,
@@ -565,8 +567,8 @@ public class DialogBase : Window
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
         };
         var root = new DockPanel { Margin = new Thickness(12), LastChildFill = true };
-        DockPanel.SetDock(_buttons, Dock.Bottom);
-        root.Children.Add(_buttons);
+        DockPanel.SetDock(_footer, Dock.Bottom);
+        root.Children.Add(_footer);
         root.Children.Add(_bodyScroll);
         Content = root;
         // 단추 자신의 Click 처리기가 모두 끝난 뒤(창까지 올라온 뒤) 결과를 정한다.
@@ -690,6 +692,13 @@ public class DialogBase : Window
 
     /// <summary>단추 줄에 단추 아닌 것(체크 상자 등)을 <paramref name="before"/> 앞에 둔다(누르면 닫히지 않음).</summary>
     protected void AddFooter(Control control, Control before) => _buttons.Children.Insert(_buttons.Children.IndexOf(before), control);
+
+    /// <summary>단추 줄 왼쪽 끝에 둔다(누르면 닫히지 않음 — 웹 쪽 열기 같은 곁 동작).</summary>
+    protected void AddFooterLeft(Control control)
+    {
+        DockPanel.SetDock(control, Dock.Left);
+        _footer.Children.Insert(0, control);
+    }
 
     private readonly TaskCompletionSource _closed = new(TaskCreationOptions.RunContinuationsAsynchronously);
 

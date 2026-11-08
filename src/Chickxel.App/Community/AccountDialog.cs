@@ -163,7 +163,14 @@ public sealed class AccountDialog : DialogBase
 
     private void BuildSignedIn(CommunityUser user)
     {
-        _view.Children.Add(IdentityBadge.User(user, 56, handle: IdentityHandle.Below, bold: true).HelpAt("start-account", anchor: "The signed-in account's picture"));
+        // 프로필 머리와 레벨·경험치 막대는 한 칸(대상 도움말·가이드 그림이 칸 순서를 씀)
+        var head = new StackPanel { Spacing = 8, Children = { IdentityBadge.User(user, 56, handle: IdentityHandle.Below, bold: true) } };
+        if (LevelChip.Progress(user, 240) is { } level)
+        {
+            level.Margin = new Thickness(66, 0, 0, 0);
+            head.Children.Add(level);
+        }
+        _view.Children.Add(head.HelpAt("start-account", anchor: "The signed-in account's picture"));
 
         var name = new TextBox { Text = user.Name, Width = 240, MaxLength = CommunityRules.MaxNameLength };
         // 에셋 패키지를 올린 뒤에는 서버가 핸들을 바꾸지 않으므로(패키지 ID·작성자 ID가 핸들) 고칠 수 없는 칸으로 보인다.

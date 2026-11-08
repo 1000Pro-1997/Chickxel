@@ -421,7 +421,15 @@ public class ProjectTests
         using (var zip = ZipFile.OpenRead(path))
         {
             var names = zip.Entries.Select(e => e.FullName).OrderBy(n => n).ToList();
-            Assert.Equal(["cels/L0_F0.png", "cels/L1_F2.png", "project.json"], names);
+            Assert.Equal(["cels/L0_F0.png", "cels/L1_F2.png", "project.json", ProjectIO.ThumbnailEntryName], names);
+            // 탐색기 썸네일 처리기는 압축을 풀지 않으므로 그대로(stored) 든 첫 프레임 합성이어야 한다
+            var thumbnail = zip.GetEntry(ProjectIO.ThumbnailEntryName)!;
+            Assert.Equal(thumbnail.Length, thumbnail.CompressedLength);
+            using var ts = thumbnail.Open();
+            using var ms = new MemoryStream();
+            ts.CopyTo(ms);
+            ms.Position = 0;
+            Assert.True(PngIO.Load(ms).ContentEquals(p.Flatten(0)));
         }
 
         var back = ProjectIO.Load(path);
@@ -448,6 +456,16 @@ public class ProjectTests
         Assert.True(p.GetCel(0, 0)!.ContentEquals(back.GetCel(0, 0)!));
         Assert.Equal(Blue, back.GetCel(1, 2)!.Get(7, 7));
         Assert.True(ProjectIO.LoadThumbnail(path).ContentEquals(back.Flatten(0)));
+    }
+
+    [Fact]
+    public void ProjectIO_Thumbnail_ShrinksLongSideToLimit()
+    {
+        var wide = new SpriteProject(ProjectIO.ThumbnailMaxSize * 2, 100);
+        var thumbnail = ProjectIO.Thumbnail(wide);
+        Assert.Equal((ProjectIO.ThumbnailMaxSize, 50), (thumbnail.Width, thumbnail.Height));
+        var fits = new SpriteProject(ProjectIO.ThumbnailMaxSize, 3);
+        Assert.Equal((ProjectIO.ThumbnailMaxSize, 3), (ProjectIO.Thumbnail(fits).Width, ProjectIO.Thumbnail(fits).Height));
     }
 
     [Fact]
@@ -481,7 +499,7 @@ public class ProjectTests
         shared.Position = 0;
         using (var zip = new ZipArchive(shared, ZipArchiveMode.Read, leaveOpen: true))
         {
-            Assert.Equal(["cels/L0_F0.png", "cels/L1_F2.png", "project.json"], zip.Entries.Select(e => e.FullName).OrderBy(n => n));
+            Assert.Equal(["cels/L0_F0.png", "cels/L1_F2.png", "project.json", ProjectIO.ThumbnailEntryName], zip.Entries.Select(e => e.FullName).OrderBy(n => n));
             using var reader = new StreamReader(zip.GetEntry(ProjectIO.ProjectEntryName)!.Open());
             var json = reader.ReadToEnd();
             Assert.DoesNotContain(Path.GetFileName(dir.Path), json);

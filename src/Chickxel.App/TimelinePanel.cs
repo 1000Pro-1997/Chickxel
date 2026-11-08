@@ -182,7 +182,7 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
     private enum SelKind { Cels, Frames, Layers, Effects }
 
     /// <summary>고른 프레임(오름차순): 프레임 선택이면 그 프레임들, 셀 묶음이면 그 프레임 범위(떨어진 칸이면 그 칸들의 프레임), 아니면 현재 프레임.</summary>
-    private List<int> SelectedFrames()
+    internal List<int> SelectedFrames()
     {
         if (_grid.Kind == SelKind.Frames) return _grid.SelectedFrameList();
         if (_grid.ScatteredCels) return [.. _grid.ScatteredCelList().Select(c => c.Frame).Distinct().Order()];

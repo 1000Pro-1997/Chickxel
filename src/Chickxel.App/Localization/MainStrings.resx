@@ -151,7 +151,7 @@
     <value>피벗</value>
   </data>
   <data name="Ui_048" xml:space="preserve">
-    <value>피벗 표시</value>
+    <value>피벗 표시: 보이는 모든 레이어와 캔버스의 지금 프레임 피벗(이름 붙임, 부위는 파랑) · 지금 레이어 피벗은 크게</value>
   </data>
   <data name="Ui_049" xml:space="preserve">
     <value>양파</value>

@@ -2,6 +2,39 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.106 (2026-11-08)
+### Gallery button that sparkles after you save
+- A store-shaped **Gallery** button now sits just left of the account button at the right end of the menu bar. Clicking it does the same as File > Upload to Gallery.
+- When you save a document with a drawing in it yourself (not autosave), the button sparkles for about 6 seconds to invite you to show it off. Clicking stops it, and each document sparkles once per run (again after you upload it and save).
+
+### Upload to Gallery: only some frames, and View Gallery
+- When uploading an animation (GIF) you can pick all frames, one tag (in its playback direction), a frame range, or the frames selected in the timeline. The frame count and preview update right away.
+- **View Gallery** at the bottom left opens the chickxel.com gallery.
+- After uploading, the done message shows the XP and level you got (for example "+10 XP · Lv 3" or "Level up!").
+
+### Account levels and XP
+- Sharing earns XP and raises your level: a gallery post +10 (+5 with the editable `.chickxel`, up to 3 posts a day), a new asset package +30 and each new version +5, a like from someone else +2, and +1 for every hour the app is open while you're signed in.
+- Each level needs 2 XP more than the one before, starting at 10, and there is no top level. Deleting what you shared, or a like being taken back, removes that XP.
+- An `Lv N` chip that gets fancier at higher levels appears on the account button, in the account window, next to asset authors and next to every name on chickxel.com; the account window also has an XP bar. Leveling up shows a status bar message.
+
+### Picture previews for .chickxel files in Windows Explorer
+- In Windows Explorer's medium and large icon views, `.chickxel` files now show their first frame instead of the app icon, with a small chick-with-palette badge in the bottom-right corner so they stand apart from PNGs and GIFs.
+- Saving puts the first-frame composite (at most 256 px on the long side) into the `.chickxel` as `thumbnail.png`, and Explorer reads only that. Older versions still open these files as before.
+- The preview handler ships inside the exe and is registered for your user account when the app starts (no administrator rights). Files saved before this version show their picture after you save them once more.
+
+### Skin manager: undo shortcuts and "Add as part-only"
+- Ctrl+Z and Ctrl+Y (or your rebound undo/redo keys) now work while the skin manager is focused, undoing skin deletes, duplicates, renames and reordering without going back to the main window.
+- The "Demote to … only" item on a group skin card in a part row is now **Add as "part" only**. It copies that skin's drawing of the part into a new part-only skin with the same name (" 2" added if taken) and puts it on; the group skin and the other parts stay as they are.
+
+### Pivot view shows every pivot
+- With **Pivot** on in the top bar, the canvas now shows this frame's pivot of every visible layer (normal, group and part) and of the canvas, each as a small mark with the layer name, not just the current layer's.
+- Parts are blue and everything else orange; the current layer's pivot is still the large mark. Pivots at the same spot share one label ("+N more" past three), and the canvas pivot's representative layer gets "(Canvas)" after its name.
+- With the pivot view off, the Pivot tool (K) shows only the pivot it edits (plus part pivots in the group view), as before.
+
+### Saved account checked at startup
+- If you're signed in, the app now checks the last-used account once in the background at startup, so the account button's picture and level and the gallery upload window's account field show verified info from the start.
+- If the check finishes after the gallery upload window opens, its account field updates right away. Offline, the saved info stays as it was.
+
 ## v1.14.105 (2026-11-08)
 ### F1 target help in every window
 - F1 (Help > Select target) now works in every separate window too: the Pixelate window, Effects window, AI chat, Effect Maker, Export, Skin manager, Preferences, Asset manager and the smaller dialogs.

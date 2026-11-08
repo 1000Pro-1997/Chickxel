@@ -1,0 +1,4 @@
+LIBRARY ChickxelThumbnails
+EXPORTS
+    DllGetClassObject PRIVATE
+    DllCanUnloadNow PRIVATE

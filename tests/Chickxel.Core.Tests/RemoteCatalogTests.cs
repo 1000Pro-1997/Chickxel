@@ -131,6 +131,15 @@ public class RemoteCatalogTests
         Assert.Equal(entry.Preview, read.Preview);
     }
 
+    [Fact]
+    public void Index_AuthorLevel_IsReadWhenPresent_AndUnknownOtherwise()
+    {
+        var page = OnePage(Entry() with { AuthorLevel = 12 });
+        Assert.Equal(12, Assert.Single(RemoteCatalogFormat.Read(PageBytes(page)).Packages).AuthorLevel);
+        page["packages"]![0]!["author"]!.AsObject().Remove("level");
+        Assert.Equal(0, Assert.Single(RemoteCatalogFormat.Read(PageBytes(page)).Packages).AuthorLevel);
+    }
+
     [Theory]
     [InlineData("schemaVersion", null, "schemaVersion")]
     [InlineData("packages", "[{\"id\":\"x\"}]", "packages[0].id")]

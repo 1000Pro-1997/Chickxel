@@ -113,7 +113,7 @@ shortcuts-view.h-cmd.d2,캔버스를 창에 맞추거나 1배로 봅니다.,Fits
 shortcuts-view.h-cmd.d3,"픽셀마다 선을 그립니다. 위 막대 단추를 우클릭하면 설정이 열립니다(<a href=""#screen-top-bar"">메뉴와 위 막대</a>).","Draws a line around every pixel. Right-click the top bar button for its settings (see <a href=""#screen-top-bar"">Menu and top bar</a>)."
 shortcuts-view.h-cmd.d4,정한 타일 크기마다 선을 그립니다.,Draws lines at every tile of the set size.
 shortcuts-view.h-cmd.d5,그림을 둘레에 반복해 보여 이음매를 확인합니다.,Repeats the image around itself so you can check the seams.
-shortcuts-view.h-cmd.d6,캔버스에 피벗 표시를 보이거나 숨깁니다.,Shows or hides the pivot marker on the canvas.
+shortcuts-view.h-cmd.d6,"캔버스에 보이는 모든 레이어와 캔버스의 피벗 표시(이름 붙임)를 보이거나 숨깁니다(<a href=""#screen-canvas"">캔버스</a>).","Shows or hides the pivot markers (with names) of every visible layer and of the canvas (see <a href=""#screen-canvas"">Canvas</a>)."
 shortcuts-view.h-cmd.d7,앞뒤 프레임을 반투명하게 겹쳐 봅니다.,Overlays neighboring frames translucently.
 shortcuts-view.h-cmd.d8,편집 캔버스에 레이어 효과를 보이거나 빼고 그림만 봅니다. 미리보기·내보내기는 그대로입니다.,Shows layer effects on the editing canvas or hides them to see only the pixels. The preview and export are unaffected.
 shortcuts-view.h-cmd.d9,픽셀 격자·타일 격자의 색과 타일 크기를 정합니다.,Sets the colors of the pixel and tile grids and the tile size.

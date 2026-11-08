@@ -50,7 +50,7 @@
   <data name="Ui_045" xml:space="preserve"><value>Tile mode</value></data>
   <data name="Ui_046" xml:space="preserve"><value>Tiled view and seamless drawing (Ctrl+Shift+T) · Right-click = repeat size, dim surroundings</value></data>
   <data name="Ui_047" xml:space="preserve"><value>Pivot</value></data>
-  <data name="Ui_048" xml:space="preserve"><value>Show pivot</value></data>
+  <data name="Ui_048" xml:space="preserve"><value>Show pivots: every visible layer's and the canvas's pivot on this frame (named, parts in blue) · the current layer's pivot is the large mark</value></data>
   <data name="Ui_049" xml:space="preserve"><value>Onion</value></data>
   <data name="Ui_050" xml:space="preserve"><value>Onion skin: overlay previous/next frames (Ctrl+J) · Right-click = frame count, strength, color</value></data>
   <data name="Ui_051" xml:space="preserve"><value>Zoom out (Ctrl+-)</value></data>

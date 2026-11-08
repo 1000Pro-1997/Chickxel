@@ -92,6 +92,10 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private readonly ToolOptionsPanel _toolOptions;
     private readonly TimelinePanel _timeline;
     private readonly PreviewPanel _preview;
+    /// <summary>메뉴 줄 오른쪽 갤러리 단추(계정 단추 왼쪽).</summary>
+    private readonly GalleryButton _galleryButton;
+    /// <summary>로그인한 채 켜 둔 시간 경험치(1분마다 세고 한 시간마다 서버에 알림).</summary>
+    private readonly UptimeXp _uptimeXp;
 
     // 나눔 막대(Grid + GridSplitter): 고정되는 쪽의 열/행만 픽셀 크기, 나머지는 *.
     private readonly Grid _splitFiles, _splitPalette, _splitRight, _splitTimeline, _splitRightDock;
@@ -228,11 +232,14 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             Child = statusBar,
         };
 
-        // 메뉴 줄: 왼쪽 메뉴, 오른쪽 끝 계정 단추(로그인·계정 전환)
+        // 메뉴 줄: 왼쪽 메뉴, 오른쪽 끝 계정 단추(로그인·계정 전환)와 그 왼쪽 갤러리 단추(갤러리에 올리기 — 손으로 저장하면 반짝여 공유를 권함)
         var account = new AccountButton(this);
+        _galleryButton = new GalleryButton(UploadToGallery);
         var menuRow = new DockPanel { Background = AppTheme.PanelBrush };
         DockPanel.SetDock(account, Dock.Right);
+        DockPanel.SetDock(_galleryButton, Dock.Right);
         menuRow.Children.Add(account);
+        menuRow.Children.Add(_galleryButton);
         menuRow.Children.Add(BuildMenu());
         var contextBar = BuildContextBar();
         _helpMenuRow = menuRow;
@@ -259,6 +266,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         TextFocusRelease.SetFallback(this, () => _canvas);
         Opened += (_, _) => OnShown();
         Closing += OnWindowClosing;
+        _uptimeXp = new UptimeXp(ShowMessage);
+        Closed += (_, _) => _uptimeXp.Stop();
         // Windows는 최대화할 때 WindowState가 바뀌기 전에 위치·크기 이벤트가 오므로 상태가 정해진 뒤에 기록한다.
         PositionChanged += (_, _) => Dispatcher.UIThread.Post(RememberNormalBounds);
         SizeChanged += (_, _) => Dispatcher.UIThread.Post(RememberNormalBounds);
@@ -628,7 +637,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             _miRevert = Cmd("저장한 내용으로 되돌리기", MainStrings.Menu_File_Command_075, RevertToSaved),
             DocCmd("내보내기…", MainStrings.Menu_File_OpenExportDialog_077, OpenExportDialog, "Ctrl+E", KeyScope.Global, (Key.E, Ctrl)),
             DocCmd("GIF 애니메이션으로 내보내기…", MainStrings.Menu_File_Command_079, ExportGif),
-            WithIcon(DocCmd("갤러리에 올리기…", UiStrings.Gallery_Menu, () => GalleryUploadDialog.Run(_ctx, this)), VectorIcon.Upload),
+            WithIcon(DocCmd("갤러리에 올리기…", UiStrings.Gallery_Menu, UploadToGallery), VectorIcon.Upload),
             DocCmd("닫기", MainStrings.Menu_File_CloseProject_081, CloseActiveTab, "Ctrl+W", KeyScope.Global, (Key.W, Ctrl)),
             new Separator(),
             Cmd("시작 화면", MainStrings.Menu_File_Command_083, ShowStart),
@@ -1267,10 +1276,26 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         if (s.ChatOpen) Dispatcher.UIThread.Post(ToggleChat);
         _canvas.Focus();
         _updater.OnStartup();
+        StartAccount();
         // 에셋 저장소를 열어 첫 실행의 예전 프리셋 migration을 끝내고, 손상된 상태 파일이 있으면 한 번 알린다.
         Dispatcher.UIThread.Post(() => AppAssets.ShowProblems(this), DispatcherPriority.Background);
         // OS가 넘긴 주소·패키지·프로젝트 파일은 시작을 마친 뒤에 처리한다(그 뒤에 온 것도 바로).
         Dispatcher.UIThread.Post(() => AppActivation.SetHandler(HandleActivation), DispatcherPriority.Background);
+    }
+
+    /// <summary>
+    /// 마지막으로 쓴 계정을 백그라운드에서 한 번 확인해 내 정보(이름·프로필 그림·레벨)를 채우고 — 계정 단추·갤러리 올리기 창이 처음부터 확인된 계정을 보인다 —
+    /// 하루 출석(+10 XP)을 한다(받았으면 상태 표시줄에 알림, 레벨이 오르면 레벨 업도). 로그인하지 않았으면 아무것도 하지 않고,
+    /// 연결이 안 되면 저장해 둔 정보 그대로(끝난 세션이면 목록에서 빠짐).
+    /// </summary>
+    private async void StartAccount()
+    {
+        if (await AppCommunity.VerifyQuietlyAsync() != true) return;
+        int before = AppCommunity.Client.User?.Level ?? 0;
+        if (await AppCommunity.CheckInQuietlyAsync() is not { Granted: true } checkIn) return;
+        ShowMessage(before > 0 && checkIn.Level > before
+            ? UiStrings.Level_CheckInStatus + " · " + string.Format(CultureInfo.CurrentCulture, UiStrings.Level_UpStatus, checkIn.Level)
+            : UiStrings.Level_CheckInStatus);
     }
 
     /// <summary>
@@ -1621,6 +1646,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _canvas.IsVisible = has;
         foreach (var item in _docItems) item.IsEnabled = has;
         _miPlayTest.IsEnabled = has;
+        _galleryButton.IsEnabled = has;
         UpdateTitle();
         UpdateStatus();
         UpdateUndoItems();
@@ -2399,12 +2425,27 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     /// <summary>Ctrl+S: 지금 문서 저장.</summary>
     private bool Save() => _ctx.Project is { } p && Save(p);
 
-    /// <summary>.chickxel 저장 + (켜져 있으면) 시트·메타 내보내기. 저장한 적 없는 문서는 저장 위치를 묻는다. 저장했으면 true.</summary>
+    /// <summary>
+    /// .chickxel 저장 + (켜져 있으면) 시트·메타 내보내기. 저장한 적 없는 문서는 저장 위치를 묻는다. 저장했으면 true.
+    /// 손으로 하는 저장(Ctrl+S, 닫을 때 묻는 저장)이라 갤러리 단추가 공유를 권할 수 있다(자동 저장은 이 길을 거치지 않음).
+    /// </summary>
     private bool Save(SpriteProject p)
     {
         if (p.Path is null) return SaveAs(p);
         // PNG를 가져온 프로젝트는 아직 .chickxel 파일이 없다 — 제안된 경로에 그대로 저장한다.
-        return SaveDocument(p, p.Path, interactive: true, out _);
+        if (!SaveDocument(p, p.Path, interactive: true, out _)) return false;
+        SavedByHand(p);
+        return true;
+    }
+
+    /// <summary>손으로 저장했다: 지금 문서면 갤러리 단추가 반짝여 공유를 권한다(그림이 있고 이번 실행에서 처음일 때).</summary>
+    private void SavedByHand(SpriteProject p) => _galleryButton.Saved(p, ReferenceEquals(p, _ctx.Project));
+
+    /// <summary>파일 > 갤러리에 올리기(메뉴 줄 갤러리 단추도): 타임라인에서 고른 프레임을 넘겨 창을 열고, 올렸으면 다음 저장 때 다시 권할 수 있게 한다.</summary>
+    private void UploadToGallery()
+    {
+        if (_ctx.Project is not { } p) return;
+        if (GalleryUploadDialog.Run(_ctx, this, _timeline.SelectedFrames())) _galleryButton.Uploaded(p);
     }
 
     /// <summary>자동 저장 타이머를 처음부터 다시 잰다(편집할 때마다 — 편집이 멈춘 지 정한 시간이 지나야 저장). 꺼져 있으면 멈춘다.</summary>
@@ -2505,7 +2546,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         var path = Ui.SaveFile(this, MainStrings.Message_296, folder, name, SpriteProject.FileExtension,
             new FileFilter(MainStrings.Ui_297, "*" + SpriteProject.FileExtension));
         if (path is null) return false;
-        return SaveDocument(p, path, interactive: true, out _);
+        if (!SaveDocument(p, path, interactive: true, out _)) return false;
+        SavedByHand(p);
+        return true;
     }
 
     private bool SaveTo(string path) => SaveTo(path, interactive: true, out _);
@@ -2791,6 +2834,26 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             _browser.RestoreLastDeleted();
             return;
         }
+        UndoEdit();
+    }
+
+    /// <summary>
+    /// 다른 창(스킨 관리 창)에서 누른 키가 실행취소·다시 실행 단축키(사용자가 바꾼 키 포함)면 메인 창과 같이 문서·팔레트를 되돌린다
+    /// (파일 브라우저의 삭제 되살리기는 메인 창에서만). 처리했으면 true.
+    /// </summary>
+    public bool RunUndoKey(KeyEventArgs e)
+    {
+        if (WorkOverlay.IsActive) return false;
+        var chord = new KeyChord(e.Key, Shortcuts.ChordMods(e.KeyModifiers));
+        if (Command("편집/실행취소").Keys.Contains(chord)) UndoEdit();
+        else if (Command("편집/다시 실행").Keys.Contains(chord)) Redo();
+        else return false;
+        return true;
+    }
+
+    /// <summary>문서·팔레트 실행취소(휘던 곡선·변형·캔버스 크기 모드면 그것만 취소).</summary>
+    private void UndoEdit()
+    {
         // 휘던 곡선은 버리고, 변형·캔버스 크기 모드면 시작 전으로 되돌린다(Esc와 같음).
         if (_canvas.CancelCurve() || CancelMode()) return;
         switch (_undoOrder.NextUndo)

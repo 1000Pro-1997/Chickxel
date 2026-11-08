@@ -16,10 +16,10 @@ public enum IdentityHandle
 }
 
 /// <summary>
-/// 사람 하나를 보이는 한 묶음: 둥근 프로필 그림과 이름(선택: @핸들, 굵게, 흐리게, 뒤에 붙는 흐린 덧붙임).
+/// 사람 하나를 보이는 한 묶음: 둥근 프로필 그림과 이름(선택: @핸들, 굵게, 흐리게, 뒤에 붙는 흐린 덧붙임), 계정이면 레벨을 알 때 이름 뒤 레벨 칩(<see cref="LevelChip"/>).
 /// 게시 작성자(<see cref="AssetAuthor"/>)는 <see cref="AuthorAvatarView"/>의 규칙(같은 사이트 HTTPS·디스크 보관)으로,
 /// 로그인한 계정(<see cref="CommunityUser"/>)은 <see cref="AppCommunity"/>의 규칙으로 그림을 받는다. 그림이 없으면 사람 아이콘.
-/// 그림과 글 사이 간격·큰 그림의 글 크기는 그림 크기에서 정하고, 글이 잘리면 풍선 도움말로 전체를 보인다.
+/// 그림과 글 사이 간격·큰 그림의 글 크기는 그림 크기에서 정하고, 글이 잘리면 풍선 도움말로 전체를 보인다(레벨 칩은 잘리지 않음).
 /// </summary>
 public static class IdentityBadge
 {
@@ -28,14 +28,14 @@ public static class IdentityBadge
 
     /// <summary>
     /// 게시 작성자 배지. <paramref name="author"/>가 null이면(로컬 에셋 등) 사람 아이콘과 <paramref name="fallback"/>을 보인다.
-    /// 이름은 작성자 이름, 없으면 <paramref name="fallback"/>.
+    /// 이름은 작성자 이름, 없으면 <paramref name="fallback"/>. <paramref name="level"/>(온라인 목록이 알려 준 작성자 레벨)이 0보다 크면 레벨 칩.
     /// </summary>
     public static Control Author(AssetAuthor? author, double size, string? fallback = null, IdentityHandle handle = IdentityHandle.None,
-        bool bold = false, bool dim = false, double fontSize = double.NaN, string? caption = null, double maxWidth = double.PositiveInfinity)
+        bool bold = false, bool dim = false, double fontSize = double.NaN, string? caption = null, double maxWidth = double.PositiveInfinity, int level = 0)
     {
         var avatar = Circle(size);
         AuthorAvatarView.Show(avatar, author);
-        return Build(avatar, author?.Name ?? fallback ?? "", author?.Id, size, handle, bold, dim, fontSize, caption, maxWidth);
+        return Build(avatar, author?.Name ?? fallback ?? "", author?.Id, size, handle, bold, dim, fontSize, caption, maxWidth, author is null ? 0 : level);
     }
 
     /// <summary>
@@ -49,7 +49,7 @@ public static class IdentityBadge
         var avatar = Circle(size);
         if (loadPicture) AppCommunity.ShowAvatar(avatar, user);
         string name = user?.Name ?? fallback ?? AppCommunity.DisplayName(null);
-        return Build(avatar, name, user?.Handle, size, handle, bold, dim, fontSize, caption, maxWidth);
+        return Build(avatar, name, user?.Handle, size, handle, bold, dim, fontSize, caption, maxWidth, user?.Level ?? 0);
     }
 
     /// <summary>둥근 그림 칸(처음엔 사람 아이콘 — 그림을 받으면 그 그림으로 바뀜).</summary>
@@ -66,7 +66,7 @@ public static class IdentityBadge
     }
 
     private static Control Build(Border avatar, string name, string? handle, double size, IdentityHandle handlePlace,
-        bool bold, bool dim, double fontSize, string? caption, double maxWidth)
+        bool bold, bool dim, double fontSize, string? caption, double maxWidth, int level)
     {
         bool large = size >= LargeSize;
         avatar.Margin = new Thickness(0, 0, Math.Clamp(Math.Round(size * 0.3), 4, 10), 0);
@@ -90,14 +90,25 @@ public static class IdentityBadge
             text = new StackPanel { Spacing = large ? 2 : 0, VerticalAlignment = VerticalAlignment.Center, Children = { line, second } };
         }
         Grid.SetColumn(text, 1);
-        return new Grid
+        var grid = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("Auto,*"),
+            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
             HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Center,
             MaxWidth = maxWidth,
             Children = { avatar, text },
         };
+        if (level > 0)
+        {
+            var chip = LevelChip.Create(level, large ? AppTheme.SmallFontSize : double.NaN);
+            // 핸들이 아래 줄이면 이름 줄 높이에 맞춘다
+            bool twoLines = text is StackPanel;
+            chip.Margin = new Thickness(5, twoLines ? (large ? 4 : 1) : 0, 0, 0);
+            if (twoLines) chip.VerticalAlignment = VerticalAlignment.Top;
+            Grid.SetColumn(chip, 2);
+            grid.Children.Add(chip);
+        }
+        return grid;
     }
 
     /// <summary>한 줄 글(조각마다 굵기·색): 칸이 좁아 잘리면 전체 글을 풍선 도움말로 보인다.</summary>

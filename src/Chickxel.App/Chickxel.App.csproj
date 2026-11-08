@@ -42,6 +42,12 @@
     <EmbeddedResource Include="Assets\Help\shots\*.webp" LogicalName="Chickxel.Help.shots.%(Filename)%(Extension)" WithCulture="false" />
   </ItemGroup>
 
+  <!-- Windows 탐색기 썸네일 처리기(src/Chickxel.ThumbnailProvider, zig cc로 만든 네이티브 DLL): publish.sh·publish.bat이 만들어 경로를 넘긴다.
+       앱이 켤 때 풀어 등록한다(WindowsShellRegistration). 넘기지 않은 빌드는 썸네일 처리기 없이 돈다. -->
+  <ItemGroup Condition="'$(ThumbnailProviderDll)' != ''">
+    <EmbeddedResource Include="$(ThumbnailProviderDll)" LogicalName="Chickxel.ThumbnailProvider.dll" WithCulture="false" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.3.22" />
     <PackageReference Include="Avalonia.Desktop" Version="11.3.22" />

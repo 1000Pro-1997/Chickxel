@@ -9,11 +9,18 @@ set VERSION=%~1
 if "%VERSION%"=="" set VERSION=1.0.0
 
 where dotnet >nul 2>nul || (echo .NET 10 SDK가 필요합니다: https://dotnet.microsoft.com/download & exit /b 1)
+rem Windows 탐색기 썸네일 처리기(네이티브 DLL)는 zig cc로 만든다.
+where zig >nul 2>nul || (echo zig가 필요합니다^(Windows 탐색기 썸네일 처리기^): https://ziglang.org/download/ & exit /b 1)
 
 if exist dist rmdir /s /q dist
+mkdir dist\.work
+pushd src\Chickxel.ThumbnailProvider
+zig cc -target x86_64-windows-gnu -shared -O2 -s -o "%~dp0dist\.work\ChickxelThumbnails.dll" thumbnail.c thumbnail.rc exports.def -lole32 -lgdi32 || (popd & exit /b 1)
+popd
 dotnet publish src\Chickxel.App\Chickxel.App.csproj -c Release -r win-x64 --self-contained true ^
   -p:Version=%VERSION% -p:DebugType=none -p:DebugSymbols=false ^
   -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true ^
+  -p:ThumbnailProviderDll="%~dp0dist\.work\ChickxelThumbnails.dll" ^
   -o dist\.work\win-x64 || exit /b 1
 
 mkdir dist\Chickxel-windows-x64

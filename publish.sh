@@ -20,6 +20,10 @@ if ! command -v dotnet >/dev/null 2>&1; then
   if [ -x "$HOME/.dotnet/dotnet" ]; then PATH="$HOME/.dotnet:$PATH"; export PATH
   else echo ".NET 10 SDK가 필요합니다: https://dotnet.microsoft.com/download" >&2; exit 1; fi
 fi
+# Windows 탐색기 썸네일 처리기(네이티브 DLL)는 zig cc로 만든다 — 어느 OS에서나 Windows용으로 만들 수 있다.
+if ! command -v zig >/dev/null 2>&1; then
+  echo "zig가 필요합니다(Windows 탐색기 썸네일 처리기): https://ziglang.org/download/" >&2; exit 1
+fi
 
 rm -rf "$DIST"
 mkdir -p "$WORK"
@@ -31,8 +35,10 @@ publish() { # $1 = RID, $2 = 출력 폴더, 나머지 = 추가 속성
     -p:Version="$VERSION" -p:DebugType=none -p:DebugSymbols=false -o "$out" "$@"
 }
 
-# ── Windows: exe 하나(실행할 때 필요한 네이티브 라이브러리도 안에 묶음)
-publish win-x64 "$WORK/win-x64" -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+# ── Windows: exe 하나(실행할 때 필요한 네이티브 라이브러리와 탐색기 썸네일 처리기 DLL도 안에 묶음)
+thumbnails="$PWD/$WORK/ChickxelThumbnails.dll"
+(cd src/Chickxel.ThumbnailProvider && zig cc -target x86_64-windows-gnu -shared -O2 -s -o "$thumbnails" thumbnail.c thumbnail.rc exports.def -lole32 -lgdi32)
+publish win-x64 "$WORK/win-x64" -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:ThumbnailProviderDll="$thumbnails"
 mkdir -p "$WORK/Chickxel-windows-x64"
 cp "$WORK/win-x64/Chickxel.App.exe" "$WORK/Chickxel-windows-x64/Chickxel.exe"
 (cd "$WORK" && zip -qr "../Chickxel-windows-x64.zip" "Chickxel-windows-x64")

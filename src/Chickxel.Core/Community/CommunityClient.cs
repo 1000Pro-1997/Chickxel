@@ -122,6 +122,9 @@ public sealed class CommunityClient
         return new Uri(BaseUrl, "login?" + query);
     }
 
+    /// <summary>갤러리 목록 쪽 <c>/gallery</c>.</summary>
+    public Uri GalleryPageUrl() => new(BaseUrl, "gallery");
+
     public Uri ArtPageUrl(string id) => new(BaseUrl, "gallery/" + Uri.EscapeDataString(id));
 
     public Uri PackagePageUrl(string id) => new(BaseUrl, "packages/" + Uri.EscapeDataString(id));
@@ -212,6 +215,40 @@ public sealed class CommunityClient
         return Remember(token, CommunityUser.Read(json));
     }
 
+    /// <summary>
+    /// <c>POST /api/me/uptime</c>(지금 계정): 앱을 로그인한 채 한 시간 켜 두었다고 알린다(+1 XP — 서버는 마지막으로 준 지 58분이 안 됐으면 주지 않음).
+    /// 받은 레벨·경험치는 내 정보와 저장한 계정에도 적는다(<see cref="AccountsChanged"/>). 로그인하지 않았으면 <see cref="CommunityErrorCode.Unauthorized"/>,
+    /// 예전 서버면 <see cref="CommunityErrorCode.NotFound"/>.
+    /// </summary>
+    public async Task<CommunityUptime> ReportUptimeAsync(CancellationToken cancellationToken = default)
+        => CommunityUptime.Read(await PostLevelGrantAsync("api/me/uptime", cancellationToken).ConfigureAwait(false));
+
+    /// <summary>
+    /// <c>POST /api/me/checkin</c>(지금 계정): 하루 출석(+10 XP, 서버의 UTC 하루에 한 번 — 이미 했으면 <see cref="CommunityCheckIn.Granted"/>가 false).
+    /// 받은 레벨·경험치는 내 정보와 저장한 계정에도 적는다. 로그인하지 않았으면 <see cref="CommunityErrorCode.Unauthorized"/>, 예전 서버면
+    /// <see cref="CommunityErrorCode.NotFound"/>.
+    /// </summary>
+    public async Task<CommunityCheckIn> CheckInAsync(CancellationToken cancellationToken = default)
+        => CommunityCheckIn.Read(await PostLevelGrantAsync("api/me/checkin", cancellationToken).ConfigureAwait(false));
+
+    /// <summary>경험치를 주는 요청(<paramref name="path"/>, 본문 없음)을 보내고 답의 레벨 칸을 지금 계정 정보에 적는다.</summary>
+    private async Task<JsonNode?> PostLevelGrantAsync(string path, CancellationToken cancellationToken)
+    {
+        string token = Token ?? throw new CommunityException(CommunityErrorCode.Unauthorized);
+        var json = await SendAsync(HttpMethod.Post, path, null, auth: true, _options.RequestTimeout, cancellationToken, token).ConfigureAwait(false);
+        if (json is JsonObject o && CommunityJson.Int(o["level"]) > 0 && FindUser(token) is { } user) Remember(token, user.WithLevel(o));
+        return json;
+    }
+
+    /// <summary>저장한 계정 <paramref name="token"/>의 정보(지금 계정이면 이번 실행에서 받은 것 먼저, 없으면 null).</summary>
+    private CommunityUser? FindUser(string token)
+    {
+        var accounts = State;
+        int i = IndexOf(accounts, token);
+        if (i < 0) return null;
+        return (i == accounts.Active ? User : null) ?? accounts.List[i].User;
+    }
+
     /// <summary>계정 <paramref name="token"/>의 새 정보를 저장한다(지금 계정이면 <see cref="User"/>도). 그 사이 지운 계정이면 저장하지 않는다.</summary>
     private CommunityUser Remember(string token, CommunityUser user)
     {
@@ -275,7 +312,7 @@ public sealed class CommunityClient
 
     /// <summary>
     /// 갤러리에 그림을 올린다(<c>POST /api/art</c> multipart: <c>file</c>, <c>title</c>, <c>description</c>, <c>tags</c> 쉼표 목록,
-    /// 편집용 파일이 있으면 <c>project</c>(<c>project.chickxel</c>, <c>application/zip</c>)).
+    /// <c>allowDownload</c> <c>1</c>/<c>0</c>, 편집용 파일이 있으면 <c>project</c>(<c>project.chickxel</c>, <c>application/zip</c>)).
     /// <paramref name="progress"/>는 보낸 비율 0~1(본문 전체).
     /// </summary>
     public async Task<CommunityArt> UploadArtAsync(ArtUpload upload, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
@@ -287,6 +324,7 @@ public sealed class CommunityClient
             TextPart("title", upload.Title.Trim()),
             TextPart("description", upload.Description.Trim()),
             TextPart("tags", string.Join(",", upload.Tags)),
+            TextPart("allowDownload", upload.AllowDownload ? "1" : "0"),
         };
         if (upload.Project is { } project) parts.Add(FilePart("project", "project.chickxel", "application/zip", project));
         var form = Form([.. parts]);

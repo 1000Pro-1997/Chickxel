@@ -1383,12 +1383,6 @@ Remove it from that command and assign it here?</value></data>
   <data name="S_SkinManagerWindow_AddPartSkin_56578CE0FC" xml:space="preserve"><value>Name for a new skin only in "{0}" (starts empty)</value></data>
   <data name="S_SkinManagerWindow_AddPartSkin_F025057A5B" xml:space="preserve"><value>Duplicate part skin</value></data>
   <data name="S_SkinManagerWindow_ApplyOutfit_8925AE2CD4" xml:space="preserve"><value>Skipped in outfit "{0}": {1}</value></data>
-  <data name="S_SkinManagerWindow_DemoteSkin_627652FF4A" xml:space="preserve"><value>
-Images of "{1}" drawn on {0} other part(s) will be deleted (can be undone).</value></data>
-  <data name="S_SkinManagerWindow_DemoteSkin_AECBB9115D" xml:space="preserve"><value>
-Continue?</value></data>
-  <data name="S_SkinManagerWindow_DemoteSkin_C54435452C" xml:space="preserve"><value>Demote to part-only</value></data>
-  <data name="S_SkinManagerWindow_DemoteSkin_CD129F742E" xml:space="preserve"><value>Demotes skin "{0}" to a part-only (individual) skin for "{1}" — it will disappear from other parts and the group list.</value></data>
   <data name="S_SkinManagerWindow_GroupCardMenu_120694637E" xml:space="preserve"><value>Rename…</value></data>
   <data name="S_SkinManagerWindow_GroupCardMenu_61F6FB267B" xml:space="preserve"><value>Delete</value></data>
   <data name="S_SkinManagerWindow_GroupCardMenu_676B513AAC" xml:space="preserve"><value>Move forward</value></data>
@@ -1424,7 +1418,10 @@ Unavailable items (skipped):
   <data name="S_SkinManagerWindow_OutfitSection_D0B9C07D70" xml:space="preserve"><value>Save current outfit…</value></data>
   <data name="S_SkinManagerWindow_OutfitSection_E9FE78438D" xml:space="preserve"><value>Outfit presets</value></data>
   <data name="S_SkinManagerWindow_PartCardMenu_17D1AA6157" xml:space="preserve"><value>Apply to whole group</value></data>
-  <data name="S_SkinManagerWindow_PartCardMenu_2BB7F0B311" xml:space="preserve"><value>Demote to "{0}" only…</value></data>
+  <data name="SkinManager_AddAsPartOnly" xml:space="preserve"><value>Add as "{0}" only</value></data>
+  <data name="SkinManager_AddAsPartOnly_Tip" xml:space="preserve"><value>Copies this skin's drawing of "{0}" into a new skin only "{0}" has (named "{1}") and puts it on. The group skin and other parts stay as they are.</value></data>
+  <data name="Canvas_PivotCanvas" xml:space="preserve"><value>Canvas</value></data>
+  <data name="Canvas_PivotMore" xml:space="preserve"><value>{names} +{count} more</value></data>
   <data name="S_SkinManagerWindow_PartCardMenu_88C8CE302D" xml:space="preserve"><value>Set all parts to group skin</value></data>
   <data name="S_SkinManagerWindow_PartCardMenu_A682C5668A" xml:space="preserve"><value>Apply to "{0}" only</value></data>
   <data name="S_SkinManagerWindow_PartCardMenu_B707E8D06F" xml:space="preserve"><value>Follow group skin</value></data>
@@ -3584,7 +3581,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Gallery_Upload" xml:space="preserve"><value>Upload</value></data>
   <data name="Gallery_What" xml:space="preserve"><value>Picture</value></data>
   <data name="Gallery_KindPng" xml:space="preserve"><value>Current frame (PNG)</value></data>
-  <data name="Gallery_KindGif" xml:space="preserve"><value>Whole animation (GIF, {0} frames)</value></data>
+  <data name="Gallery_KindGif" xml:space="preserve"><value>Animation (GIF)</value></data>
   <data name="Gallery_Scale" xml:space="preserve"><value>Scale</value></data>
   <data name="Gallery_InfoPng" xml:space="preserve"><value>{0}×{1} · frame {2}</value></data>
   <data name="Gallery_InfoGif" xml:space="preserve"><value>{0}×{1} · {2} frames · loops forever</value></data>
@@ -3614,6 +3611,23 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Gallery_ShareProjectTip" xml:space="preserve"><value>Uploads this project's .chickxel file with the picture. Anyone can download it from the picture's page and open and edit it in Chickxel. Folder paths on this computer, such as the export folder, are removed. If the project has script effects, their source code is included, and people are asked before it runs when they open the file.</value></data>
   <data name="Gallery_ShareProjectScripts" xml:space="preserve"><value>The source code of script effects is uploaded too.</value></data>
   <data name="Gallery_ProjectTooLarge" xml:space="preserve"><value>The .chickxel file is {0:0.##} MB, over the {1} MB limit. Turn off sharing the file to upload only the picture.</value></data>
+  <data name="Gallery_RangeAll" xml:space="preserve"><value>All frames ({0})</value></data>
+  <data name="Gallery_RangeTag" xml:space="preserve"><value>Tag</value></data>
+  <data name="Gallery_RangeFrames" xml:space="preserve"><value>Frames</value></data>
+  <data name="Gallery_RangeSelected" xml:space="preserve"><value>Frames selected in the timeline ({0})</value></data>
+  <data name="Gallery_RangeTip" xml:space="preserve"><value>Upload only part of the animation as the GIF. A tag plays in its own direction (reverse, ping-pong); a frame range counts from 1 and plays backwards when the start is greater than the end. Select two or more frames in the timeline before opening this window to upload just those frames.</value></data>
+  <data name="Gallery_NoFrames" xml:space="preserve"><value>There are no frames to upload. Choose the range again.</value></data>
+  <data name="Gallery_OpenGallery" xml:space="preserve"><value>View Gallery</value></data>
+  <data name="Gallery_OpenGalleryTip" xml:space="preserve"><value>Opens the chickxel.com gallery in your browser.</value></data>
+  <data name="Gallery_XpGained" xml:space="preserve"><value>+{0} XP · Lv {1}</value></data>
+  <data name="Gallery_LevelUp" xml:space="preserve"><value>Level up! Lv {0}</value></data>
+  <data name="Gallery_ButtonTip" xml:space="preserve"><value>Upload to Gallery — show off your art in the chickxel.com gallery</value></data>
+  <data name="Gallery_ButtonSparkleTip" xml:space="preserve"><value>Saved! Share this drawing in the chickxel.com gallery</value></data>
+  <data name="Level_ChipTip" xml:space="preserve"><value>Level {0} — earn XP by uploading art to the gallery, sharing assets, getting likes, and keeping the app open while signed in.</value></data>
+  <data name="Level_Title" xml:space="preserve"><value>Level {0}</value></data>
+  <data name="Level_Progress" xml:space="preserve"><value>{0:N0} XP · {1:N0} XP to the next level</value></data>
+  <data name="Level_HowTip" xml:space="preserve"><value>How to earn XP: gallery art +10 (+5 more with the editable .chickxel file, up to 3 a day), a published asset package +30 (each new version +5), each like from someone else +2, and +1 for every hour the app is open while you're signed in. Deleting something you shared removes the XP it earned.</value></data>
+  <data name="Level_UpStatus" xml:space="preserve"><value>Level up! Lv {0}</value></data>
   <data name="EffectMaker_Menu" xml:space="preserve"><value>Effect Maker…</value></data>
   <data name="EffectMaker_Title" xml:space="preserve"><value>Effect Maker</value></data>
   <data name="EffectMaker_TitleWith" xml:space="preserve"><value>Effect Maker - {0}</value></data>

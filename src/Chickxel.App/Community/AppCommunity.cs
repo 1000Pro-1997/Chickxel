@@ -84,6 +84,23 @@ public static class AppCommunity
         }
     }
 
+    /// <summary>
+    /// 하루 출석(+10 XP, 서버의 UTC 하루에 한 번)을 조용히 한다. 받은 레벨은 계정 단추·배지가 <see cref="CommunityClient.AccountsChanged"/>로 다시 그린다.
+    /// 로그인하지 않았거나 확인하지 못했으면(연결 문제·예전 서버) null.
+    /// </summary>
+    public static async Task<CommunityCheckIn?> CheckInQuietlyAsync()
+    {
+        if (!Client.IsSignedIn) return null;
+        try
+        {
+            return await Client.CheckInAsync();
+        }
+        catch (Exception ex) when (ex is CommunityException or OperationCanceledException)
+        {
+            return null;
+        }
+    }
+
     /// <summary>계정 이름(정보를 아직 모르면 "확인하지 않은 계정").</summary>
     public static string DisplayName(CommunityUser? user) => user?.Name ?? UiStrings.Account_Unverified;
 

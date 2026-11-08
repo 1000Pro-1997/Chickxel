@@ -475,12 +475,19 @@ public static class GifWriter
     /// </summary>
     /// <param name="progress">진행(합성할 프레임마다 한 몫).</param>
     public static List<GifFrame> ProjectFrames(SpriteProject project, AnimationTag? tag, WorkProgress? progress = null)
+        => ProjectFramesAt(project, tag?.GetPlaybackOrder() ?? Enumerable.Range(0, project.Frames.Count).ToList(), progress);
+
+    /// <summary>
+    /// 프레임 번호(0부터) 순서 <paramref name="order"/>대로 GIF 프레임을 만든다(같은 프레임은 한 번만 합성, 범위 밖 번호는 건너뜀).
+    /// 합성은 <see cref="ProjectFrames(SpriteProject, AnimationTag?, WorkProgress?)"/>와 같다.
+    /// </summary>
+    /// <param name="progress">진행(합성할 프레임마다 한 몫).</param>
+    public static List<GifFrame> ProjectFramesAt(SpriteProject project, IReadOnlyList<int> order, WorkProgress? progress = null)
     {
-        var order = tag?.GetPlaybackOrder() ?? Enumerable.Range(0, project.Frames.Count).ToList();
         var cache = new Dictionary<int, PixelImage>();
         var effects = ProjectExport.NewCache();
         var list = new List<GifFrame>(order.Count);
-        using var stage = progress?.Begin(order.Distinct().Count());
+        using var stage = progress?.Begin(order.Where(fi => fi >= 0 && fi < project.Frames.Count).Distinct().Count());
         foreach (var fi in order)
         {
             if (fi < 0 || fi >= project.Frames.Count) continue;

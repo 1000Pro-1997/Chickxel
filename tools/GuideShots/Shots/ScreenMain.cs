@@ -93,6 +93,28 @@ internal static class ScreenMainShots
         }
     }
 
+    /// <summary>
+    /// 메뉴 줄 오른쪽 끝: ⑫ 갤러리 단추(손으로 저장한 뒤 반짝이는 모습 — 빛이 가장 밝고 별 둘이 뜬 3초째로 멈춰 둠),
+    /// ⑬ 계정 단추(가짜 서버로 로그인한 계정, 이름 뒤 레벨 칩).
+    /// </summary>
+    [Shot("screen-top-bar-menu")]
+    public static void MenuButtons(ShotKit k)
+    {
+        CommunityShots.UseFakeAccount(signedIn: true);
+        var main = Open(k);
+        Build(k, main);
+        var gallery = ShotKit.Get<Button>(main, "_galleryButton");
+        ShotKit.Call(gallery, "Saved", Project(main), true);
+        ShotKit.Get<Avalonia.Threading.DispatcherTimer>(gallery, "_timer").Stop();
+        ShotKit.Set(ShotKit.Get<Control>(gallery, "_icon"), "Phase", 3.0);
+        k.Settle(300);
+        var account = ShotKit.All<Button>(main).First(b => b.GetType().Name == "AccountButton");
+        var row = ShotKit.Bounds((Control)gallery.Parent!, main);
+        var g = ShotKit.Bounds(gallery, main);
+        var crop = new Rect(g.X - 160, row.Y, row.Right - (g.X - 160), row.Height);
+        Shot(k, main, null, crop, [g.Inflate(2), ShotKit.Bounds(account, main).Inflate(2)], 12, scale: 2);
+    }
+
     /// <summary>숫자 칸(도구 설정의 브러시 크기) ①과 우클릭 자주 쓰는 값 목록 ②, 칸 오른쪽 끝 위/아래 단추 ③.</summary>
     [Shot("screen-common-controls")]
     public static void CommonControls(ShotKit k)

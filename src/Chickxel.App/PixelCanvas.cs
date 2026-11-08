@@ -78,6 +78,8 @@ public sealed partial class PixelCanvas : Control
     /// <summary>그룹 화면에서 부위마다의 피벗(파란색, 프레임 피벗보다 작게).</summary>
     private static readonly IPen PartPivotPen = AppTheme.Pen(Color.FromRgb(90, 170, 255), 1.5);
     private static readonly IBrush PartPivotBrush = AppTheme.Brush(Color.FromRgb(90, 170, 255));
+    /// <summary>피벗 보기에서 대상이 아닌 일반 레이어·그룹·캔버스 피벗의 점(테두리는 <see cref="PivotPen"/>과 같은 주황).</summary>
+    private static readonly IBrush OtherPivotBrush = AppTheme.Brush(Color.FromArgb(255, 255, 120, 80));
     private static readonly IPen PivotBackPen = AppTheme.Pen(Color.FromArgb(160, 0, 0, 0), 3.5);
     private static readonly IPen WhitePen = AppTheme.Pen(Colors.White);
     private static readonly IPen CursorWhitePen = AppTheme.Pen(Color.FromArgb(200, 255, 255, 255));
@@ -869,7 +871,9 @@ public sealed partial class PixelCanvas : Control
         if (!slicing) DrawPartBorder(g);
         if (_ctx.IsGroupSelected && !_peekPrevious) DrawPartOutlines(g);
         if (slicing) DrawSliceEditor(g);
-        if ((_showPivot || _ctx.Tool == ToolKind.Pivot) && _ctx.IsGroupSelected && !_peekPrevious) DrawPartPivots(g);
+        // 피벗 보기: 보이는 모든 레이어·캔버스 피벗(이름 붙임), 그 위에 피벗 대상을 크게. 보기를 끈 피벗 도구는 대상(+ 그룹 화면의 부위 피벗)만.
+        if (_showPivot && !_peekPrevious) DrawAllPivots(g);
+        else if (_ctx.Tool == ToolKind.Pivot && _ctx.IsGroupSelected && !_peekPrevious) DrawPartPivots(g);
         if (_showPivot || _ctx.Tool == ToolKind.Pivot) DrawPivot(g);
         if (_ctx.IsTransforming) { if (!_peekPrevious) DrawTransform(g); }
         else if (_ctx.Selection.HasSelection) DrawSelection(g);
@@ -1236,14 +1240,73 @@ public sealed partial class PixelCanvas : Control
             var (lx, ly) = p.GetLayerPivot(part, _ctx.CurrentFrame).ToLocalPixel(part.PartSize.Width, part.PartSize.Height);
             var shift = _ctx.EffectPivotShift(part, _ctx.CurrentFrame);
             var c = ImageToScreen(offset.X + lx + shift.X, offset.Y + ly + shift.Y);
-            const double r = 3, arm = 3;
-            g.DrawEllipse(null, PivotBackPen, c, r, r);
-            g.DrawEllipse(PartPivotBrush, null, c, r - 1, r - 1);
-            g.DrawLine(PartPivotPen, new Avalonia.Point(c.X - r - arm, c.Y), new Avalonia.Point(c.X - r, c.Y));
-            g.DrawLine(PartPivotPen, new Avalonia.Point(c.X + r, c.Y), new Avalonia.Point(c.X + r + arm, c.Y));
-            g.DrawLine(PartPivotPen, new Avalonia.Point(c.X, c.Y - r - arm), new Avalonia.Point(c.X, c.Y - r));
-            g.DrawLine(PartPivotPen, new Avalonia.Point(c.X, c.Y + r), new Avalonia.Point(c.X, c.Y + r + arm));
+            DrawSmallPivotMark(g, c, PartPivotPen, PartPivotBrush);
         }
+    }
+
+    /// <summary>
+    /// 피벗 보기(<see cref="ShowPivot"/>): 보이는 레이어(일반·그룹·부위)마다 지금 프레임 피벗을 작은 표시와 레이어 이름으로, 대표 레이어가 없으면 캔버스 자신의 피벗도
+    /// "캔버스"로 그린다(대표 레이어면 이름 뒤에 붙임). 피벗 대상은 <see cref="DrawPivot"/>가 크게 그리므로 빼고, 화면에서 같은 자리의 것은 이름을 묶는다.
+    /// 부위는 파란색, 그 밖에는 주황색. 효과 보기면 효과가 그림을 옮긴 만큼 옮긴 자리(<see cref="EditorContext.EffectPivotShift"/>), 끄는 부위는 옮긴 자리.
+    /// </summary>
+    private void DrawAllPivots(DrawingContext g)
+    {
+        if (_ctx.Project is not { } p) return;
+        int frame = _ctx.CurrentFrame;
+        var origin = ShownOrigin;
+        var target = _ctx.PivotTargetLayer;
+        var marks = new List<(Avalonia.Point At, bool Part, List<string> Names)>();
+        void Add(double x, double y, bool part, string name)
+        {
+            var at = ImageToScreen(x - origin.X, y - origin.Y);
+            foreach (var m in marks)
+                if (Math.Abs(m.At.X - at.X) < 2 && Math.Abs(m.At.Y - at.Y) < 2)
+                {
+                    m.Names.Add(name);
+                    return;
+                }
+            marks.Add((at, part, [name]));
+        }
+        for (int i = 0; i < p.Layers.Count; i++)
+        {
+            var layer = p.Layers[i];
+            if (ReferenceEquals(layer, target) || !p.IsLayerVisible(i)) continue;
+            var at = p.LayerPivotPixel(layer, frame);
+            if (ReferenceEquals(layer, _arrangePart))
+            {
+                var o = FrameOffsetOf(layer);
+                at = new System.Drawing.PointF(at.X + _arrangeOffset.X - o.X, at.Y + _arrangeOffset.Y - o.Y);
+            }
+            var shift = _ctx.EffectPivotShift(layer, frame);
+            Add(at.X + shift.X, at.Y + shift.Y, layer.IsPart, ReferenceEquals(layer, p.PivotLayer) ? $"{layer.Name} ({UiStrings.Canvas_PivotCanvas})" : layer.Name);
+        }
+        // 대표 레이어가 없으면 캔버스 피벗은 캔버스 자신의 값(캔버스가 피벗 대상이면 DrawPivot이 그림)
+        if (p.PivotLayer is null && !_ctx.IsPivotCanvasTarget)
+        {
+            var (cx, cy) = p.GetCanvasOwnPivot(frame).ToLocalPixel(p.Width, p.Height);
+            Add(cx, cy, false, UiStrings.Canvas_PivotCanvas);
+        }
+        foreach (var (at, part, _) in marks)
+            DrawSmallPivotMark(g, at, part ? PartPivotPen : PivotPen, part ? PartPivotBrush : OtherPivotBrush);
+        foreach (var (at, _, names) in marks)
+        {
+            var label = names.Count <= 3 ? string.Join(", ", names) : UiStrings.FormatCanvas_PivotMore(names: string.Join(", ", names.Take(2)), count: names.Count - 2);
+            var size = AppTheme.MeasureText(label, AppTheme.SmallFontSize);
+            g.FillRectangle(LabelBrush, new Rect(at.X + 8, at.Y + 4, size.Width + 6, size.Height + 2));
+            AppTheme.DrawText(g, label, new Avalonia.Point(at.X + 11, at.Y + 5), Brushes.White, AppTheme.SmallFontSize);
+        }
+    }
+
+    /// <summary>작은 피벗 표시(채운 점 + 짧은 십자) — 부위 피벗·피벗 보기의 대상이 아닌 피벗.</summary>
+    private static void DrawSmallPivotMark(DrawingContext g, Avalonia.Point c, IPen pen, IBrush brush)
+    {
+        const double r = 3, arm = 3;
+        g.DrawEllipse(null, PivotBackPen, c, r, r);
+        g.DrawEllipse(brush, null, c, r - 1, r - 1);
+        g.DrawLine(pen, new Avalonia.Point(c.X - r - arm, c.Y), new Avalonia.Point(c.X - r, c.Y));
+        g.DrawLine(pen, new Avalonia.Point(c.X + r, c.Y), new Avalonia.Point(c.X + r + arm, c.Y));
+        g.DrawLine(pen, new Avalonia.Point(c.X, c.Y - r - arm), new Avalonia.Point(c.X, c.Y - r));
+        g.DrawLine(pen, new Avalonia.Point(c.X, c.Y + r), new Avalonia.Point(c.X, c.Y + r + arm));
     }
 
     /// <summary>효과가 옮기기 전 피벗(피벗 도구가 고치는 자리)과 옮긴 피벗을 잇는 점선.</summary>
