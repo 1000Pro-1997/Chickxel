@@ -2,6 +2,25 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.111 (2026-11-08)
+### Pixelate: a yellow line circles the running tile
+- Instead of a blinking yellow border, a short yellow line with a fading tail now circles clockwise around the running candidate tile.
+- The border keeps its color (blue on the selected tile, grey otherwise), so a selected tile that is running shows both the blue border and the yellow line.
+- Clicking a running tile turns its border blue with the yellow line still circling on top.
+
+### Pixelate: rerunning the selected tile shows progress
+- Rerunning the selected candidate tile (Clean up, rerun or Continue optimizing) now shows the best result so far in the large preview, the enlarged view and the source's cell boundaries from the start, without a click.
+- Before, the tile stayed selected but the large preview kept showing the old result until the run finished.
+
+### Document tabs: close several tabs from one spot
+- When you close a tab with its X (or a middle click), the next tab's X lands in the same spot while the mouse stays on the tab strip; closing the last tab brings the previous tab's X there.
+- Meanwhile that tab keeps a fixed width, so its title may be shortened or leave empty space; it returns to its normal width when the mouse leaves the strip.
+- On a strip with overflowing tabs, the scroll position doesn't jump.
+
+### Help updates
+- The guide covers the new running-tile display and its pictures, closing tabs from one spot, and gallery image downloads sending visitors who aren't signed in to sign in first.
+- The in-app F1 guide has the same changes.
+
 ## v1.14.110 (2026-11-08)
 ### Enter no longer confirms or uploads in dialogs
 - In Upload to Gallery and every other dialog, pressing Enter no longer confirms, uploads, applies, exports or closes. Click the button instead; Esc still cancels.

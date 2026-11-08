@@ -8403,7 +8403,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Pixelate_Preset_New" xml:space="preserve"><value>새 프리셋</value></data>
   <data name="Pixelate_Preset_UnsavedQuestion" xml:space="preserve"><value>'{name}' 프리셋에 저장하지 않은 변경이 있습니다. 저장할까요?</value></data>
   <data name="Pixelate_Run" xml:space="preserve"><value>정리하기</value></data>
-  <data name="Pixelate_RunTip" xml:space="preserve"><value>지금 왼쪽 값으로 고른 프리셋 하나를 돌려 아래 후보 줄의 그 칸만 바꿉니다(다른 후보는 그대로, 같은 이름 칸이 없으면 맨 앞에 새 칸). 도는 칸은 노란 테두리가 깜빡입니다. 최적화를 켠 칸이 있으면 그 칸만 자동 최적화하고(적힌 값에서 시작, '0. 최적화 기준'의 예산·점수 기준), 없으면 설정 그대로 한 번 정리합니다. 저장한 프리셋 그대로면 '이 설정만 다시 돌리기'와 같고, 저장하지 않고 고친 값이면 '이름(변경)' 칸으로 돌리며 프리셋은 바꾸지 않습니다. 설정을 바꾼 것만으로는 다시 정리하지 않습니다.</value></data>
+  <data name="Pixelate_RunTip" xml:space="preserve"><value>지금 왼쪽 값으로 고른 프리셋 하나를 돌려 아래 후보 줄의 그 칸만 바꿉니다(다른 후보는 그대로, 같은 이름 칸이 없으면 맨 앞에 새 칸). 도는 칸은 테두리를 따라 짧은 노란 선이 돕니다. 최적화를 켠 칸이 있으면 그 칸만 자동 최적화하고(적힌 값에서 시작, '0. 최적화 기준'의 예산·점수 기준), 없으면 설정 그대로 한 번 정리합니다. 저장한 프리셋 그대로면 '이 설정만 다시 돌리기'와 같고, 저장하지 않고 고친 값이면 '이름(변경)' 칸으로 돌리며 프리셋은 바꾸지 않습니다. 설정을 바꾼 것만으로는 다시 정리하지 않습니다.</value></data>
   <data name="Pixelate_RunNoSourceTip" xml:space="preserve"><value>먼저 원본 그림을 넣으세요.</value></data>
   <data name="Pixelate_CurrentSettings" xml:space="preserve"><value>지금 설정</value></data>
   <data name="Pixelate_Section_Criteria" xml:space="preserve"><value>0. 최적화 기준</value></data>

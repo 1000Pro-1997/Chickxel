@@ -386,8 +386,8 @@ internal static class PixelateShots
         var breakdown = ShotKit.Get<TextBlock>(dlg, "_breakdown");
         var tiles = ShotKit.Get<WrapPanel>(dlg, "_tiles");
         var scroll = tiles.FindAncestorOfType<ScrollViewer>()!;
-        var tileList = tiles.Children.OfType<Border>().ToList();
-        List<TextBlock> Lines(Border tile) => [.. ((StackPanel)tile.Child!).Children.OfType<TextBlock>()];
+        var tileList = tiles.Children.OfType<Decorator>().ToList();
+        List<TextBlock> Lines(Decorator tile) => [.. ((StackPanel)tile.Child!).Children.OfType<TextBlock>()];
         // 결과 칸: 이름 · 색 수와 크기 · 외곽선 맞추기 방식 (· 까닭과 점수). 아직 돌리지 않은 칸은 이름 · "돌리지 않음"뿐.
         var results = tileList.Where(t => Lines(t).Count >= 3).ToList();
         var idle = tileList.Last(t => Lines(t).Count < 3);
@@ -432,7 +432,7 @@ internal static class PixelateShots
         var sw = System.Diagnostics.Stopwatch.StartNew();
         while (sw.ElapsedMilliseconds < 20000 && ShotKit.Get<int>(dlg, "_optDone") < 40 && ShotKit.Get<object?>(dlg, "_optCts") is not null) k.Settle(50);
         if (ShotKit.Get<object?>(dlg, "_optCts") is null) throw new InvalidOperationException("optimize finished before the running shot");
-        var pending = tiles.Children.OfType<Border>().ToList();
+        var pending = tiles.Children.OfType<Decorator>().ToList();
         if (pending.Count < 2) throw new InvalidOperationException("expected a running and a waiting preset tile");
         var runningArea = ShotKit.Bounds(bar, dlg).Union(ShotKit.Bounds(scroll, dlg));
         var progress = PixelateKit.TextRect(text, dlg);
@@ -444,12 +444,12 @@ internal static class PixelateShots
         // 시도 수·시간 예산으로 끝난 후보를 골라 '이어서 최적화' 단추가 보이게 한다.
         var continueButton = ShotKit.Get<Button>(dlg, "_optContinue");
         string[] budgetStops = [UiStrings.Pixelate_Opt_Marker_Trials.Split('(')[0], UiStrings.Pixelate_Opt_Marker_Time.Split('(')[0]];
-        TextBlock Marker(Border t) => ((StackPanel)t.Child!).Children.OfType<TextBlock>().Last();
+        TextBlock Marker(Decorator t) => ((StackPanel)t.Child!).Children.OfType<TextBlock>().Last();
         if (!continueButton.IsVisible
-            && tiles.Children.OfType<Border>().FirstOrDefault(t => budgetStops.Any(s => Marker(t).Text?.StartsWith(s, StringComparison.Ordinal) == true)) is { } stopped)
+            && tiles.Children.OfType<Decorator>().FirstOrDefault(t => budgetStops.Any(s => Marker(t).Text?.StartsWith(s, StringComparison.Ordinal) == true)) is { } stopped)
             k.Click(stopped, settleMs: 800);
         if (!continueButton.IsVisible) throw new InvalidOperationException("no candidate stopped by the trial or time budget");
-        var optimized = tiles.Children.OfType<Border>().FirstOrDefault(t => ((StackPanel)t.Child!).Children.OfType<TextBlock>().Any(x => x.Foreground == AppTheme.AccentBrush))
+        var optimized = tiles.Children.OfType<Decorator>().FirstOrDefault(t => ((StackPanel)t.Child!).Children.OfType<TextBlock>().Any(x => x.Foreground == AppTheme.AccentBrush))
                         ?? throw new InvalidOperationException("no optimized tile");
         var marker = Marker(optimized);
         var area = ShotKit.Bounds(bar, dlg).Union(ShotKit.Bounds(scroll, dlg));

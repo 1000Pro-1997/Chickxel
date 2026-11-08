@@ -821,14 +821,14 @@ public sealed class PixelateDialog : DialogBase
     private TextBlock? _optRunningMarker;
     /// <summary>하나만 돌리는데(정리하기·다시 돌리기) 같은 이름 칸이 없을 때 맨 앞에 미리 만드는 빈 칸의 이름(끝나면 그 자리에 결과). 없으면 null.</summary>
     private string? _singlePending;
-    /// <summary>지금 도는 칸 이름(그 칸 테두리가 노랗게 깜빡임). 돌지 않으면 null.</summary>
+    /// <summary>지금 도는 칸 이름(그 칸 테두리를 노란 선이 돎). 돌지 않으면 null.</summary>
     private string? _runningName;
     /// <summary>이어 돌리는 동안 이름 대신 정확히 표시할 후보 칸.</summary>
     private OptimizedTile? _runningTile;
-    /// <summary>도는 칸 테두리 깜빡임 시계와 주기(초).</summary>
-    private readonly DispatcherTimer _blink = new() { Interval = TimeSpan.FromMilliseconds(40) };
-    private readonly Stopwatch _blinkClock = new();
-    private const double BlinkPeriod = 1.6;
+    /// <summary>도는 칸 테두리의 노란 선 시계와 한 바퀴 시간(초).</summary>
+    private readonly DispatcherTimer _spin = new() { Interval = TimeSpan.FromMilliseconds(16) };
+    private readonly Stopwatch _spinClock = new();
+    private const double SpinPeriod = 2.0;
     /// <summary>도는 칸에 보일 지금까지의 1위 후보(돌기 전·프리셋이 바뀌면 null), 아직 그리지 않았는지, 마지막으로 그린 뒤 시간(0.2초에 한 번까지).</summary>
     private PixelateCandidate? _livePreview;
     private bool _livePreviewDirty;
@@ -1346,7 +1346,7 @@ public sealed class PixelateDialog : DialogBase
         _preview.ResultPixelRightClicked += OnResultPixelRight;
         _zoom.View.SourceCellClicked += OnSourceCell;
         _pickPulse.Tick += OnPickPulse;
-        _blink.Tick += OnBlink;
+        _spin.Tick += OnSpin;
         // 원본에서 색 추가(스포이드): 왼쪽 큰 원본·큰 미리보기의 원본 칸·크게 보기의 원본 칸에서 칸을 누르면 고정 색으로.
         _sourceView.CellPicked += PickCell;
         // 원본 우클릭: 보이는 모습(배경 지우기를 켰으면 배경 지운 모습) 복사·PNG로 저장. 스포이드 중에는 우클릭이 스포이드 취소라 메뉴 없음.
@@ -2525,7 +2525,7 @@ public sealed class PixelateDialog : DialogBase
     /// <summary>
     /// 후보 줄을 다시 그린다: 하나만 돌리는데 같은 이름 칸이 없으면 맨 앞에 그 이름의 빈 칸(<see cref="_singlePending"/>), 후보 칸들, 모든 프리셋을 돌리는 중이면
     /// 아직 안 끝난 프리셋 칸(<see cref="_optPending"/>), 마지막에 체크했지만 아직 칸이 없는 프리셋의 빈 칸(<see cref="IdlePresets"/> — "돌리지 않음").
-    /// 도는 칸(<see cref="_runningName"/>)은 노란 테두리가 천천히 깜빡인다(<see cref="MarkRunning"/>).
+    /// 도는 칸(<see cref="_runningName"/>)은 테두리를 노란 선이 돈다(<see cref="MarkRunning"/>).
     /// </summary>
     private void RebuildTiles()
     {
@@ -2624,8 +2624,8 @@ public sealed class PixelateDialog : DialogBase
     }
 
     /// <summary>
-    /// 도는 칸(이름이 <see cref="_runningName"/>인 후보 칸 또는 빈 칸)만 깜빡이게 표시하고, 도는 칸이 있으면 깜빡임 시계를 켜고 없으면 끈다
-    /// (테두리는 고른 칸 파랑·보통 회색으로 돌아감).
+    /// 도는 칸(이름이 <see cref="_runningName"/>인 후보 칸 또는 빈 칸)만 노란 선이 돌게 표시하고, 도는 칸이 있으면 선 시계를 켜고 없으면 끈다
+    /// (테두리는 고른 칸 파랑·보통 회색 그대로).
     /// </summary>
     private void MarkRunning()
     {
@@ -2637,6 +2637,7 @@ public sealed class PixelateDialog : DialogBase
                 ? tile is CandidateTile selectedCandidate && ReferenceEquals(_optimized.GetValueOrDefault(selectedCandidate.Candidate), selectedTile)
                 : name == _runningName && (tile is PendingTile || _singlePending is null));
             any |= tile.IsRunning;
+            if (_watchingLive) tile.IsSelected = tile.IsRunning;
             if (tile is PendingTile)
             {
                 tile.Cursor = tile.IsRunning ? new Cursor(StandardCursorType.Hand) : null;
@@ -2645,20 +2646,20 @@ public sealed class PixelateDialog : DialogBase
         }
         // 다시 그린 칸에도 지금까지의 1위 그림을 곧바로.
         if (any && _livePreview is not null) ShowLivePreview();
-        if (any && !_blink.IsEnabled)
+        if (any && !_spin.IsEnabled)
         {
-            _blinkClock.Restart();
-            _blink.Start();
+            _spinClock.Restart();
+            _spin.Start();
         }
-        else if (!any) _blink.Stop();
+        else if (!any) _spin.Stop();
     }
 
-    /// <summary>깜빡임 한 번: 도는 칸 테두리의 노란색 진하기를 1.6초 주기로 부드럽게(코사인) 오르내리고, 미뤄 둔 1위 그림이 있으면 그린다.</summary>
-    private void OnBlink(object? sender, EventArgs e)
+    /// <summary>선 시계 한 번: 도는 칸 테두리의 노란 선을 <see cref="SpinPeriod"/>초에 한 바퀴 돌리고, 미뤄 둔 1위 그림이 있으면 그린다.</summary>
+    private void OnSpin(object? sender, EventArgs e)
     {
-        double level = 0.5 - 0.5 * Math.Cos(2 * Math.PI * _blinkClock.Elapsed.TotalSeconds / BlinkPeriod);
+        double phase = _spinClock.Elapsed.TotalSeconds / SpinPeriod % 1;
         foreach (var tile in _tiles.Children.OfType<TileBase>())
-            if (tile.IsRunning) tile.Pulse = level;
+            if (tile.IsRunning) tile.Phase = phase;
         if (_livePreviewDirty && _livePreviewClock.Elapsed.TotalSeconds >= LivePreviewSeconds) ShowLivePreview();
     }
 
@@ -2686,7 +2687,7 @@ public sealed class PixelateDialog : DialogBase
         _watchingLive = true;
         _userPicked = true;
         SetPicking(false);
-        foreach (var t in _tiles.Children.OfType<CandidateTile>()) t.IsSelected = false;
+        MarkSelectedTiles();
         if (_livePreview is { } best) Select(WithColorEdits(best));
         else _selectedInfo.Text = UiStrings.FormatPixelate_Live_Selected(name: _runningName ?? "") + " · " + UiStrings.Pixelate_Opt_Marker_Running;
         UpdateZoomOptInfo();
@@ -2710,6 +2711,14 @@ public sealed class PixelateDialog : DialogBase
         var back = _beforeLive is { } b && _candidates.Contains(b) ? b : _candidates.FirstOrDefault();
         _beforeLive = null;
         if (back is not null) Select(back);
+        else MarkSelectedTiles();
+    }
+
+    /// <summary>칸 테두리 파랑: 도는 칸을 보는 중이면 도는 칸(그 위로 노란 선이 돎), 아니면 고른 후보의 칸.</summary>
+    private void MarkSelectedTiles()
+    {
+        foreach (var t in _tiles.Children.OfType<TileBase>())
+            t.IsSelected = _watchingLive ? t.IsRunning : t is CandidateTile ct && ReferenceEquals(ct.Candidate, _selected);
     }
 
     /// <summary>도는 프리셋 칸의 표시: 아직 시도 전이면 "최적화 중…", 시도가 있으면 지금까지 최고 점수를 붙인다.</summary>
@@ -2843,7 +2852,7 @@ public sealed class PixelateDialog : DialogBase
         ClearTrace();
         _selected = c;
         UpdateZoomOptInfo();
-        foreach (var t in _tiles.Children.OfType<CandidateTile>()) t.IsSelected = ReferenceEquals(t.Candidate, c);
+        MarkSelectedTiles();
         var r = c.Result;
         _selectedInfo.Text = UiStrings.FormatPixelate_Selected(
             name: _optimized.TryGetValue(c, out var tile) ? tile.Name
@@ -3728,7 +3737,7 @@ public sealed class PixelateDialog : DialogBase
 
     /// <summary>
     /// 프리셋 최적화를 배경에서 하나씩 돌린다(<see cref="PresetRun"/>마다 자기 시작 설정·칸별 최적화·예산·점수 기준).
-    /// <paramref name="single"/>(정리하기·다시 돌리기)이면 후보 줄은 그대로 두고 그 칸을 노랗게 깜빡이며 돌린다 — 같은 이름 칸이 없으면 맨 앞에 빈 칸을 먼저 만들고
+    /// <paramref name="single"/>(정리하기·다시 돌리기)이면 후보 줄은 그대로 두고 그 칸 테두리에 노란 선을 돌리며 돌린다 — 같은 이름 칸이 없으면 맨 앞에 빈 칸을 먼저 만들고
     /// 끝나면 그 자리에 결과, 있으면 끝나면 그 칸만 바꾼다.
     /// 아니면(자동 최적화) 돌던 후보 만들기를 멈추고(결과가 섞이지 않게), 후보 줄을 돌릴 프리셋 칸(대기·최적화 중)으로 바꿔 프리셋이 끝날 때마다 그 1위로 채운다.
     /// 다 끝나면 고른 후보의 설정을 왼쪽에 불러온다(손으로 고친 값이 있으면 두고, 다시 돌리지 않음). 취소하면 남은 프리셋은 건너뛰고 그때까지 돈 프리셋
@@ -3783,6 +3792,8 @@ public sealed class PixelateDialog : DialogBase
             || _candidates.Any(c => _optimized.TryGetValue(c, out var o) && o.Name == runs[0].Name) || IdlePresets().Any(p => p.Name == runs[0].Name)
             ? null : runs[0].Name;
         RebuildTiles();
+        // 고른 칸을 다시 돌리면 그 칸을 누른 것과 같게 지금까지의 1위를 큰 미리보기에 따라 보인다(고른 채로 중간 결과가 안 보이지 않게).
+        if (single && _tiles.Children.OfType<CandidateTile>().Any(t => t.IsRunning && ReferenceEquals(t.Candidate, _selected))) WatchLive();
         var clock = Stopwatch.StartNew();
         Task.Run(() =>
         {
@@ -3986,7 +3997,7 @@ public sealed class PixelateDialog : DialogBase
         {
             _optLiveBest = p.BestScore;
             WriteOptimized(_optRunningTarget, latest.Settings);
-            // 도는 칸에 지금까지의 1위 그림 — 1위가 바뀔 때만, 너무 자주면 깜빡임 시계가 미뤄 0.2초에 한 번.
+            // 도는 칸에 지금까지의 1위 그림 — 1위가 바뀔 때만, 너무 자주면 선 시계가 미뤄 0.2초에 한 번.
             _livePreview = latest;
             _livePreviewDirty = true;
             if (_livePreviewClock.Elapsed.TotalSeconds >= LivePreviewSeconds) ShowLivePreview();
@@ -6421,46 +6432,104 @@ public sealed class PixelateDialog : DialogBase
     }
 
     /// <summary>
-    /// 후보 줄의 칸 바탕: 테두리 = 도는 중이면 노랑(<see cref="Pulse"/>로 진하기가 오르내림), 아니면 고른 칸 파랑, 보통 회색.
+    /// 후보 줄의 칸 바탕: 둥근 네모, 테두리 = 고른 칸 파랑, 보통 회색. 도는 중이면 그 위로 짧은 노란 선(꼬리는 흐림)이 테두리를 따라 시계 방향으로 돈다
+    /// (<see cref="Phase"/> = 한 바퀴 중 머리 위치). <see cref="Border.Render"/>는 봉인이라 바탕·테두리를 직접 그린다.
     /// </summary>
-    private abstract class TileBase : Border
+    private abstract class TileBase : Decorator
     {
-        private static readonly Color RunningColor = AppTheme.FavoriteColor;
+        /// <summary>테두리 두께, 바깥 모서리 반지름, 테두리 안쪽 여백.</summary>
+        private const double Edge = 2, Radius = 3, Inset = 4;
+        private static readonly IPen NormalPen = AppTheme.Pen(AppTheme.BorderColor, Edge);
+        private static readonly IPen SelectedPen = AppTheme.Pen(AppTheme.AccentColor, Edge);
+        /// <summary>도는 노란 선 길이(px, 둘레의 1/3까지)와 꼬리를 나눈 조각 수 — 조각마다 펜(꼬리 쪽일수록 흐림).</summary>
+        private const double SpinLength = 100;
+        private const int SpinPieces = 10;
+        private static readonly IPen[] SpinPens = [.. Enumerable.Range(1, SpinPieces).Select(i =>
+            AppTheme.Pen(Color.FromArgb((byte)Math.Round(255 * Math.Pow((double)i / SpinPieces, 1.5)), AppTheme.FavoriteColor.R, AppTheme.FavoriteColor.G, AppTheme.FavoriteColor.B), Edge))];
         private bool _selected, _running;
-        private double _pulse = 1;
+        private double _phase;
 
         protected TileBase()
         {
-            Padding = new Thickness(4);
+            Padding = new Thickness(Edge + Inset);
             Margin = new Thickness(3);
-            BorderThickness = new Thickness(2);
-            CornerRadius = new CornerRadius(3);
-            Background = AppTheme.PanelBrush;
-            Paint();
         }
 
         public bool IsSelected
         {
             get => _selected;
-            set { _selected = value; Paint(); }
+            set { _selected = value; InvalidateVisual(); }
         }
 
         public bool IsRunning
         {
             get => _running;
-            set { if (_running == value) return; _running = value; _pulse = 1; Paint(); }
+            set { if (_running == value) return; _running = value; InvalidateVisual(); }
         }
 
-        /// <summary>도는 중 테두리 진하기(0~1 — 0이어도 흐리게 보임).</summary>
-        public double Pulse
+        /// <summary>도는 노란 선 머리의 위치(0~1 — 위 변 왼쪽 끝에서 시작해 시계 방향 한 바퀴).</summary>
+        public double Phase
         {
-            get => _pulse;
-            set { _pulse = value; if (_running) Paint(); }
+            get => _phase;
+            set { _phase = value; if (_running) InvalidateVisual(); }
         }
 
-        private void Paint() => BorderBrush = _running
-            ? new SolidColorBrush(Color.FromArgb((byte)Math.Round(255 * (0.25 + 0.75 * _pulse)), RunningColor.R, RunningColor.G, RunningColor.B))
-            : _selected ? AppTheme.AccentBrush : AppTheme.BorderBrush;
+        public override void Render(DrawingContext g)
+        {
+            // 테두리 한가운데를 지나는 둥근 네모(바탕은 테두리 가운데까지, 테두리는 바깥 반지름 Radius).
+            var r = new Rect(Bounds.Size).Deflate(Edge / 2);
+            double rc = Radius - Edge / 2;
+            g.DrawRectangle(AppTheme.PanelBrush, _selected ? SelectedPen : NormalPen, r, rc, rc);
+            if (!_running) return;
+            double a = r.Width - 2 * rc, b = r.Height - 2 * rc, arc = Math.PI * rc / 2;
+            if (a <= 0 || b <= 0) return;
+            double perimeter = 2 * (a + b) + 4 * arc;
+            double length = Math.Min(SpinLength, perimeter / 3), head = _phase * perimeter;
+
+            Avalonia.Point At(double s)
+            {
+                s %= perimeter;
+                if (s < 0) s += perimeter;
+                // 위 변 → 오른쪽 위 호 → 오른쪽 변 → 오른쪽 아래 호 → 아래 변 → 왼쪽 아래 호 → 왼쪽 변 → 왼쪽 위 호.
+                if (s < a) return new(r.Left + rc + s, r.Top);
+                s -= a;
+                if (s < arc) return Corner(r.Right - rc, r.Top + rc, -Math.PI / 2, s);
+                s -= arc;
+                if (s < b) return new(r.Right, r.Top + rc + s);
+                s -= b;
+                if (s < arc) return Corner(r.Right - rc, r.Bottom - rc, 0, s);
+                s -= arc;
+                if (s < a) return new(r.Right - rc - s, r.Bottom);
+                s -= a;
+                if (s < arc) return Corner(r.Left + rc, r.Bottom - rc, Math.PI / 2, s);
+                s -= arc;
+                if (s < b) return new(r.Left, r.Bottom - rc - s);
+                s -= b;
+                return Corner(r.Left + rc, r.Top + rc, Math.PI, Math.Min(s, arc));
+            }
+
+            Avalonia.Point Corner(double cx, double cy, double start, double s)
+            {
+                double t = start + (rc > 0 ? s / rc : 0);
+                return new(cx + rc * Math.Cos(t), cy + rc * Math.Sin(t));
+            }
+
+            // 꼬리(흐림)부터 머리(진함)까지 조각마다 1px 간격으로 둘레를 따라 잇는다.
+            double piece = length / SpinPieces;
+            for (int i = 0; i < SpinPieces; i++)
+            {
+                double from = head - length + i * piece;
+                int steps = Math.Max(1, (int)Math.Ceiling(piece));
+                var geo = new StreamGeometry();
+                using (var ctx = geo.Open())
+                {
+                    ctx.BeginFigure(At(from), false);
+                    for (int k = 1; k <= steps; k++) ctx.LineTo(At(from + piece * k / steps));
+                    ctx.EndFigure(false);
+                }
+                g.DrawGeometry(null, SpinPens[i], geo);
+            }
+        }
 
         /// <summary>칸 썸네일(112×112, 정수 배율로 또렷하게).</summary>
         protected Image Thumb { get; } = CreateThumb();

@@ -15,6 +15,8 @@ internal readonly record struct DocumentTabInfo(string Title, string Tip, bool D
 internal sealed class DocumentTabStrip : Border
 {
     private const double TabHeight = 28;
+    /// <summary>닫은 자리에 맞춰 너비를 고정할 때 가장 좁은 탭(제목은 줄임표, 닫기 X는 보임).</summary>
+    private const double MinTabWidth = 48;
     private static readonly IBrush Clear = Brushes.Transparent;
     private static readonly IBrush TabHover = AppTheme.Brush(Color.FromArgb(18, 255, 255, 255));
     /// <summary>미리보기 탭 색(문서 탭과 한눈에 구분되게): 글자·아이콘·위 선, 옅은 바탕.</summary>
@@ -39,11 +41,24 @@ internal sealed class DocumentTabStrip : Border
     private Avalonia.Point _pressAt;
     private bool _dragging;
 
+    // 마우스로 연달아 닫기(Chrome처럼): 닫은 탭 번호(−1 = 없음), 그 탭 오른쪽 끝·줄 전체 너비(줄 좌표). 다시 그린 뒤 그 자리로 온 탭의 너비를 고정해
+    // 닫기 X가 같은 곳에 오게 하고, 줄 끝 빈 칸(_spacer)으로 줄 너비를 지켜 넘친 줄의 스크롤 위치가 당겨지지 않게 한다. 마우스가 줄을 나가면 원래 너비로.
+    private int _closedIndex = -1;
+    private double _closedRight, _closedExtent;
+    private readonly Border _spacer = new() { IsHitTestVisible = false };
+    private bool _frozen;
+    /// <summary>마우스가 탭 줄 안에 있는지(탭을 지우면 Avalonia가 마우스가 그대로여도 나감 알림을 보내 <see cref="InputElement.IsPointerOver"/>를 믿지 않는다).</summary>
+    private bool _pointerInside;
+    /// <summary>고정한 동안 마우스 움직임을 보는 창(<see cref="WatchPointer"/>)과 그 처리기.</summary>
+    private TopLevel? _watchTop;
+    private readonly EventHandler<PointerEventArgs> _onTopPointerMoved;
+
     public DocumentTabStrip()
     {
         Background = AppTheme.PanelBrush;
         BorderBrush = AppTheme.BorderBrush;
         BorderThickness = new Thickness(0, 0, 0, 2);
+        _onTopPointerMoved = OnTopPointerMoved;
         _scroll = new ScrollViewer
         {
             Content = _row,
@@ -61,11 +76,20 @@ internal sealed class DocumentTabStrip : Border
         _newButton.Margin = new Thickness(3, 0);
         // 탭이 없어도(시작 화면) "+"는 보인다.
         _row.Children.Add(_newButton);
+        _row.Children.Add(_spacer);
         _splitButton = FlatIcon(VectorIcon.Columns2, () => SplitRequested?.Invoke());
         _splitButton.Margin = new Thickness(3, 0, 4, 0);
         DockPanel.SetDock(_splitButton, Dock.Right);
         Child = new DockPanel { LastChildFill = true, Height = TabHeight, Children = { _splitButton, _scroll } };
         _reorder.Moved += (from, to) => Reordered?.Invoke(from, to);
+        PointerEntered += (_, _) => _pointerInside = true;
+        PointerExited += (_, e) =>
+        {
+            // 마우스 아래 탭이 지워져 생긴 나감 알림(위치는 아직 줄 안)은 무시한다.
+            if (new Rect(Bounds.Size).Contains(e.GetPosition(this))) return;
+            _pointerInside = false;
+            ReleaseFreeze();
+        };
     }
 
     /// <summary>탭을 왼쪽 버튼으로 누름(번호).</summary>
@@ -133,6 +157,9 @@ internal sealed class DocumentTabStrip : Border
             }
             return;
         }
+        // 마우스로 탭 하나를 닫은 결과인지(닫기를 취소했거나 다른 변경이면 고정하지 않음).
+        int closed = _closedIndex >= 0 && tabs.Count == _infos.Count - 1 && tabs.Count > 0 && _pointerInside ? _closedIndex : -1;
+        _closedIndex = -1;
         _infos = tabs.ToList();
         _active = active;
         _hover = -1;
@@ -148,8 +175,83 @@ internal sealed class DocumentTabStrip : Border
             AttachDrag(i, box);
         }
         _row.Children.Add(_newButton);
+        _row.Children.Add(_spacer);
+        if (closed >= 0) FreezeAfterClose(closed);
+        else ReleaseFreeze();
         UpdateVisuals();
         BringActiveIntoView();
+    }
+
+    /// <summary>탭 닫기 요청: 마우스 아래 자리를 기억해 두고(<see cref="FreezeAfterClose"/>) 알린다.</summary>
+    private void RequestClose(int index)
+    {
+        _closedIndex = index;
+        _closedRight = _tabs[index].Box.Bounds.Right;
+        _closedExtent = _row.Bounds.Width;
+        CloseRequested?.Invoke(index);
+    }
+
+    /// <summary>
+    /// 닫은 탭 자리로 온 탭(뒤 탭, 맨 끝을 닫았으면 앞 탭)의 오른쪽 끝을 닫은 탭의 오른쪽 끝에 맞춘다 — 닫기 X가 마우스 아래 그대로 와서 같은 곳을 계속 눌러 닫을 수 있다.
+    /// 줄 너비는 닫기 전만큼 지킨다(넘친 줄이면 스크롤 위치가 그대로).
+    /// </summary>
+    private void FreezeAfterClose(int closed)
+    {
+        int target = Math.Min(closed, _tabs.Count - 1);
+        var box = _tabs[target].Box;
+        // 먼저 넉넉한 빈 칸으로 줄이 줄지 않게 해 두고 배치해 그 탭의 왼쪽 끝을 읽는다.
+        _spacer.Width = _closedExtent;
+        UpdateLayout();
+        box.Width = Math.Max(MinTabWidth, _closedRight - box.Bounds.X);
+        UpdateLayout();
+        _spacer.Width = Math.Max(0, _closedExtent - (_row.Bounds.Width - _spacer.Width));
+        _frozen = true;
+        WatchPointer(true);
+        // 줄이 바뀌어도 마우스는 그대로라 들어옴 알림이 없을 수 있다: 그 탭에 닫기 X를 바로 보인다.
+        _hover = target;
+    }
+
+    /// <summary>마우스가 탭 줄을 나감: 고정한 탭 너비와 줄 끝 빈 칸을 풀어 원래 너비로.</summary>
+    private void ReleaseFreeze()
+    {
+        _closedIndex = -1;
+        if (!_frozen) return;
+        _frozen = false;
+        WatchPointer(false);
+        foreach (var t in _tabs) t.Box.Width = double.NaN;
+        _spacer.Width = 0;
+    }
+
+    /// <summary>
+    /// 고정한 동안 창 전체의 마우스 움직임을 본다: 탭을 지운 뒤에는 줄의 나감 알림이 오지 않을 수 있어(<see cref="_pointerInside"/>),
+    /// 줄 밖에서 움직이면 풀어 준다.
+    /// </summary>
+    private void WatchPointer(bool on)
+    {
+        if (on == _watchTop is not null) return;
+        if (on)
+        {
+            _watchTop = TopLevel.GetTopLevel(this);
+            _watchTop?.AddHandler(PointerMovedEvent, _onTopPointerMoved, RoutingStrategies.Tunnel, handledEventsToo: true);
+        }
+        else
+        {
+            _watchTop!.RemoveHandler(PointerMovedEvent, _onTopPointerMoved);
+            _watchTop = null;
+        }
+    }
+
+    private void OnTopPointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (new Rect(Bounds.Size).Contains(e.GetPosition(this))) return;
+        _pointerInside = false;
+        ReleaseFreeze();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        ReleaseFreeze();
     }
 
     private (Border Box, TextBlock Title, Border Close) MakeTab(int index, DocumentTabInfo info)
@@ -158,10 +260,12 @@ internal sealed class DocumentTabStrip : Border
         {
             Text = info.Title,
             VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Left,
             TextTrimming = TextTrimming.CharacterEllipsis,
             MaxWidth = 220,
+            Margin = new Thickness(0, 0, 5, 0),
         };
-        var dot = new IconView(VectorIcon.Dot, AppTheme.UnsavedBrush) { Width = 8, Height = 8, Filled = true, IsVisible = info.Dirty, VerticalAlignment = VerticalAlignment.Center };
+        var dot = new IconView(VectorIcon.Dot, AppTheme.UnsavedBrush) { Width = 8, Height = 8, Filled = true, IsVisible = info.Dirty, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 5, 0) };
         var close = new Border
         {
             Width = 18,
@@ -178,8 +282,21 @@ internal sealed class DocumentTabStrip : Border
         {
             if (!e.GetCurrentPoint(close).Properties.IsLeftButtonPressed) return;
             e.Handled = true;
-            CloseRequested?.Invoke(index);
+            RequestClose(index);
         };
+        // 닫기 X(와 저장 안 한 점)는 오른쪽 끝에 붙인다 — 닫은 자리를 지키려고 탭 너비를 고정하면(FreezeAfterClose) 남는 칸은 제목 뒤, 모자라면 제목이 줄임표로.
+        DockPanel.SetDock(close, Dock.Right);
+        DockPanel.SetDock(dot, Dock.Right);
+        var content = new DockPanel { LastChildFill = true };
+        if (info.Preview)
+        {
+            var play = new IconView(VectorIcon.Play, PreviewBrush) { Width = 12, Height = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 5, 0) };
+            DockPanel.SetDock(play, Dock.Left);
+            content.Children.Add(play);
+        }
+        content.Children.Add(close);
+        content.Children.Add(dot);
+        content.Children.Add(title);
         var box = new Border
         {
             Height = TabHeight,
@@ -187,20 +304,20 @@ internal sealed class DocumentTabStrip : Border
             BorderThickness = new Thickness(0, 2, 0, 0),
             Background = Clear,
             BorderBrush = Clear,
-            Child = info.Preview
-                ? new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5, Children = { new IconView(VectorIcon.Play, PreviewBrush) { Width = 12, Height = 12, VerticalAlignment = VerticalAlignment.Center }, title, dot, close } }
-                : new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5, Children = { title, dot, close } },
+            Child = content,
         };
         ToolTip.SetTip(box, info.Tip);
-        box.PointerEntered += (_, _) => { _hover = index; UpdateVisuals(); };
-        box.PointerExited += (_, _) => { if (_hover == index) _hover = -1; UpdateVisuals(); };
+        // 지운 탭(같은 번호의 새 탭이 대신함)에 늦게 오는 알림은 무시한다.
+        bool Current() => index < _tabs.Count && ReferenceEquals(_tabs[index].Box, box);
+        box.PointerEntered += (_, _) => { if (!Current()) return; _hover = index; UpdateVisuals(); };
+        box.PointerExited += (_, _) => { if (!Current()) return; if (_hover == index) _hover = -1; UpdateVisuals(); };
         box.PointerPressed += (_, e) =>
         {
             var props = e.GetCurrentPoint(box).Properties;
             if (props.IsMiddleButtonPressed)
             {
                 e.Handled = true;
-                CloseRequested?.Invoke(index);
+                RequestClose(index);
             }
             else if (props.IsLeftButtonPressed)
             {
