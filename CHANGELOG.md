@@ -2,6 +2,11 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.115 (2026-11-09)
+### Transform: right-drag rotates around the box center
+- In Ctrl+T and Transform whole layer (Alt+Shift+C), right-dragging just outside the box (where it rotates) turns it around the middle of the box (the selected drawing) instead of the rotation center.
+- A distorted box turns around the middle of its four corners, and the rotation center turns with the drawing. Shift snaps to 15° as with a left drag.
+
 ## v1.14.114 (2026-11-09)
 ### Transform: Ctrl+handle distorts freely, like Photoshop
 - Ctrl (⌘) + a corner handle moves just that corner; Ctrl + a side handle moves that whole side, so the box can become any convex quadrilateral (perspective). With Alt the opposite corner or side moves the other way.

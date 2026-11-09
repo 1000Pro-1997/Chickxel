@@ -188,7 +188,7 @@ public sealed partial class PixelCanvas : Control
     /// <summary>그라데이션 도구로 끄는 중인 끝점(이미지 좌표, Shift 각도 고정 반영).</summary>
     private Point _gradientEnd;
 
-    // 변형 모드 끌기: 시작할 때의 값, 잡은 손잡이(원본 기준 -1/0/1), 시작점(이미지 좌표), 회전 시작 각(라디안)
+    // 변형 모드 끌기: 시작할 때의 값, 잡은 손잡이(원본 기준 -1/0/1), 시작점(이미지 좌표), 회전 시작 각(라디안)과 회전 기준점(이미지 좌표, 왼쪽 = 회전 중심, 오른쪽 = 상자 가운데)
     private TransformParams _tfStart;
     private int _tfHx, _tfHy;
     private Avalonia.Point _tfStartImg;
@@ -196,6 +196,7 @@ public sealed partial class PixelCanvas : Control
     private (double X, double Y)[] _tfStartCorners = [];
     private (double X, double Y) _tfImageMoved;
     private double _tfStartAngle;
+    private (double X, double Y) _tfRotateCenter;
 
     // 캔버스 크기 모드 끌기: 잡은 손잡이(-1/0/1), 시작점(이미지 좌표), 시작할 때의 캔버스·그림 사각형,
     // 우클릭(여백 = 캔버스 가장자리만)인지, Ctrl(테두리 꼭짓점을 마음대로)인지와 그때 시작 꼭짓점(원래 프레임 좌표)
@@ -1782,7 +1783,7 @@ public sealed partial class PixelCanvas : Control
         }
         if (_ctx.IsTransforming)
         {
-            // 변형 모드: 손잡이·안쪽·바깥 띠만 끈다(도구는 쓰지 않음). 우클릭은 손잡이 = 여백, 안쪽 = 그림만 옮기기(끌지 않고 떼면 메뉴).
+            // 변형 모드: 손잡이·안쪽·바깥 띠만 끈다(도구는 쓰지 않음). 우클릭은 손잡이 = 여백, 안쪽 = 그림만 옮기기(끌지 않고 떼면 메뉴), 바깥 띠 = 상자 가운데 기준 회전.
             if (BeginTransformDrag(loc, e.ClickCount, button)) e.Pointer.Capture(this);
             return;
         }
@@ -2967,7 +2968,8 @@ public sealed partial class PixelCanvas : Control
 
     /// <summary>
     /// 변형 모드에서 버튼 누르기: 가리키는 동작의 끌기를 시작했으면 true.
-    /// 왼쪽: 손잡이 = 크기(Ctrl(⌘)과 함께 = 자유 변형), 회전 중심, 안쪽 = 옮기기, 바깥 띠 = 회전. 오른쪽: 손잡이 = 여백, 안쪽(회전 중심 포함) = 그림만 옮기기.
+    /// 왼쪽: 손잡이 = 크기(Ctrl(⌘)과 함께 = 자유 변형), 회전 중심, 안쪽 = 옮기기, 바깥 띠 = 회전 중심 기준 회전.
+    /// 오른쪽: 손잡이 = 여백, 안쪽(회전 중심 포함) = 그림만 옮기기, 바깥 띠 = 상자 가운데 기준 회전.
     /// </summary>
     private bool BeginTransformDrag(Point screen, int clickCount, MouseButton button)
     {
@@ -2992,6 +2994,15 @@ public sealed partial class PixelCanvas : Control
                     _tfImageMoved = (0, 0);
                     _drag = DragMode.TransformImageMove;
                     return true;
+                case TransformHit.Rotate:
+                {
+                    // 상자 가운데(네 꼭짓점의 평균 — 찌그러뜨린 상자도 보이는 모양의 가운데)를 기준으로 돈다. 회전 중심은 그림을 따라 돈다.
+                    var corners = box.Corners(_tfStart);
+                    double cx = 0, cy = 0;
+                    foreach (var (x, y) in corners) { cx += x; cy += y; }
+                    BeginTransformRotate((cx / corners.Length, cy / corners.Length));
+                    return true;
+                }
                 default:
                     return false;
             }
@@ -3024,15 +3035,19 @@ public sealed partial class PixelCanvas : Control
                 _drag = DragMode.TransformMove;
                 return true;
             case TransformHit.Rotate:
-            {
-                var (px, py) = _ctx.TransformPivot;
-                _tfStartAngle = Math.Atan2(_tfStartImg.Y - py, _tfStartImg.X - px);
-                _drag = DragMode.TransformRotate;
+                BeginTransformRotate(_ctx.TransformPivot);
                 return true;
-            }
             default:
                 return false;
         }
+    }
+
+    /// <summary>점 <paramref name="center"/>(이미지 좌표)를 기준으로 도는 회전 끌기를 시작한다.</summary>
+    private void BeginTransformRotate((double X, double Y) center)
+    {
+        _tfRotateCenter = center;
+        _tfStartAngle = Math.Atan2(_tfStartImg.Y - center.Y, _tfStartImg.X - center.X);
+        _drag = DragMode.TransformRotate;
     }
 
     /// <summary>변형 모드 우클릭 메뉴: 회전 중심 기준 180°·90° 회전, 상자 뒤집기. 고르면 캔버스로 포커스를 돌린다(Enter = 적용).</summary>
@@ -3077,11 +3092,11 @@ public sealed partial class PixelCanvas : Control
             }
             case DragMode.TransformRotate:
             {
-                var (px, py) = _ctx.TransformPivot;
+                var (px, py) = _tfRotateCenter;
                 double delta = (Math.Atan2(m.Y - py, m.X - px) - _tfStartAngle) * 180 / Math.PI;
                 double angle = _tfStart.Angle + delta;
                 if (shift) angle = Math.Round(angle / 15) * 15;
-                _ctx.SetTransformParams(_ctx.RotatedAboutPivot(_tfStart, angle));
+                _ctx.SetTransformParams(EditorContext.RotatedAbout(_tfStart, angle, px, py));
                 break;
             }
             case DragMode.TransformPivot:

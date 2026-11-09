@@ -1074,6 +1074,14 @@ public sealed partial class EditorContext
         if (TransformBox is not { } box) return start;
         var (sx, sy) = _layerTransform?.PivotSource ?? _transform!.PivotSource;
         var (px, py) = box.Map(start, sx, sy);
+        return RotatedAbout(start, angle, px, py);
+    }
+
+    /// <summary>
+    /// 점 (<paramref name="px"/>, <paramref name="py"/>)(지금 그리는 그림 좌표)를 기준으로 <paramref name="angle"/>(도)로 돌린 값: 그 점은 화면에서 제자리에 있다.
+    /// </summary>
+    public static TransformParams RotatedAbout(TransformParams start, double angle, double px, double py)
+    {
         double rad = (angle - start.Angle) * Math.PI / 180;
         double s = Math.Sin(rad), c = Math.Cos(rad);
         double dx = start.CenterX - px, dy = start.CenterY - py;
