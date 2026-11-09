@@ -23,14 +23,23 @@ public enum ResampleMode
 /// 좌표는 연속 좌표: 픽셀 (x,y)는 [x, x+1)×[y, y+1) 칸이고 중심은 (x+0.5, y+0.5). 원본 중심은
 /// (X + W/2, Y + H/2)라 크기가 홀수면 반 픽셀 위치다.
 /// </para>
+/// <para>
+/// <see cref="Distort"/>가 있으면 배율·회전 전에 원본 사각형 네 꼭짓점을 그만큼 옮긴 원근 대응(호모그래피)을 먼저 입힌다(자유 왜곡).
+/// </para>
 /// </summary>
 public readonly record struct TransformParams(double CenterX, double CenterY, double Angle, double ScaleX, double ScaleY)
 {
+    /// <summary>원본 사각형 꼭짓점을 옮긴 양(배율·회전 전, 원본 사각형 가로·세로를 1로 둔 단위). 기본값 = 찌그러뜨리지 않음.</summary>
+    public CornerOffsets Distort { get; init; }
+
+    /// <summary>찌그러뜨렸는지(꼭짓점을 하나라도 옮김).</summary>
+    public bool IsDistorted => !Distort.IsNone;
+
     /// <summary>원본 그대로 두는 값(중심 = <paramref name="source"/> 중심, 0°, 100%).</summary>
     public static TransformParams Identity(Rectangle source)
         => new(source.X + source.Width / 2.0, source.Y + source.Height / 2.0, 0, 1, 1);
 
-    /// <summary>각도가 90°의 배수인지(축에 맞는 변형: 회전해도 픽셀 격자가 그대로 맞는다).</summary>
+    /// <summary>각도가 90°의 배수인지(축에 맞는 변형: 회전해도 픽셀 격자가 그대로 맞는다). 찌그러뜨림은 보지 않는다.</summary>
     public bool IsAxisAligned
     {
         get
@@ -67,15 +76,25 @@ public readonly record struct TransformParams(double CenterX, double CenterY, do
     }
 }
 
+/// <summary>
+/// 상자 네 꼭짓점(왼쪽 위, 오른쪽 위, 오른쪽 아래, 왼쪽 아래)을 옮긴 양 — 상자 가로·세로를 1로 둔 단위, 배율·회전 전 상자 자체 공간.
+/// 상자를 이 꼭짓점들의 사각형으로 보내는 원근 대응(호모그래피)이 된다. 모두 0이면 찌그러뜨리지 않음.
+/// </summary>
+public readonly record struct CornerOffsets(double X0, double Y0, double X1, double Y1, double X2, double Y2, double X3, double Y3)
+{
+    /// <summary>옮긴 꼭짓점이 없는지(모두 0).</summary>
+    public bool IsNone => X0 == 0 && Y0 == 0 && X1 == 0 && Y1 == 0 && X2 == 0 && Y2 == 0 && X3 == 0 && Y3 == 0;
+}
+
 /// <summary>변형 결과: 떠 있는 픽셀(크기 = 영역 사각형 크기, 영역 밖은 투명)과 그 영역(캔버스 좌표).</summary>
 public readonly record struct TransformResult(PixelImage Image, PixelMask Region);
 
 /// <summary>
-/// 자유 변형(회전·크기·옮기기): 떼어 낸 원본 픽셀과 모양을 갖고 있다가 <see cref="TransformParams"/>마다 새로 그린다.
+/// 자유 변형(회전·크기·옮기기·찌그러뜨리기): 떼어 낸 원본 픽셀과 모양을 갖고 있다가 <see cref="TransformParams"/>마다 새로 그린다.
 /// 늘 원본에서 다시 그리므로(누적하지 않음) 원래 값이면 원본과 똑같고, 정수 픽셀 옮기기는 무손실이다.
 /// <para>
 /// 대상 픽셀마다 그 중심을 원본으로 되돌려(역변환) 떨어지는 원본 칸을 집는다. RotSprite는 원본을 Scale2x로 세 번 키운
-/// 8배 그림(처음 쓸 때 한 번 만듦)에서 집는다. 모양 밖 칸은 집지 않으므로 결과에서도 투명하고 영역에서 빠진다.
+/// 8배 그림(처음 쓸 때 한 번 만듦)에서 집는다(찌그러뜨리면 축에 맞는 각도여도 RotSprite). 모양 밖 칸은 집지 않으므로 결과에서도 투명하고 영역에서 빠진다.
 /// </para>
 /// </summary>
 public sealed class FreeTransform
@@ -132,6 +151,26 @@ public sealed class FreeTransform
     }
 
     /// <summary>
+    /// 모양 <paramref name="keep"/>(캔버스 좌표) 밖 칸을 원본에서 뺀 새 원본. 원본 사각형(<see cref="SourceBounds"/>)은 그대로라 같은 값으로 그리면 같은 자리에 놓인다.
+    /// 그림은 복사하지 않고 함께 쓴다. 빠지는 칸이 없으면 이것.
+    /// </summary>
+    public FreeTransform Clip(PixelMask keep)
+    {
+        var b = SourceBounds;
+        var bits = new bool[b.Width * b.Height];
+        bool changed = false;
+        for (int y = 0; y < b.Height; y++)
+            for (int x = 0; x < b.Width; x++)
+            {
+                bool inside = _region.Contains(b.X + x, b.Y + y);
+                bool kept = inside && keep.Contains(b.X + x, b.Y + y);
+                changed |= inside != kept;
+                bits[y * b.Width + x] = kept;
+            }
+        return changed ? new FreeTransform(new PixelMask(b, bits), _image) : this;
+    }
+
+    /// <summary>
     /// <paramref name="image"/>(크기 = <paramref name="region"/> 사각형)를 <paramref name="bounds"/> 사각형에 맞춘 그림과 모양: 겹치는 칸은 그대로, 넓힌 칸은
     /// <paramref name="extendEdges"/>면 가장 가까운 가장자리 칸(색과 모양)을 복사하고 아니면 비운다. 빈 원본이면 모두 빈 칸.
     /// </summary>
@@ -166,12 +205,7 @@ public sealed class FreeTransform
     /// </summary>
     public TransformResult Render(TransformParams p, ResampleMode mode)
     {
-        var src = SourceBounds;
         var box = Box;
-        int w = src.Width, h = src.Height;
-        bool rotSprite = mode == ResampleMode.RotSprite && !p.IsAxisAligned && (long)w * h <= MaxRotSpriteArea;
-        if (rotSprite) EnsureUpscaled();
-
         // 변형한 사각형을 감싸는 대상 픽셀 범위
         var corners = box.Corners(p);
         double minX = corners.Min(c => c.X), maxX = corners.Max(c => c.X);
@@ -179,25 +213,116 @@ public sealed class FreeTransform
         if (!double.IsFinite(minX + maxX + minY + maxY)) return EmptyResult(p);
         int left = (int)Math.Floor(minX), top = (int)Math.Floor(minY);
         int right = (int)Math.Ceiling(maxX), bottom = (int)Math.Ceiling(maxY);
-        int bw = right - left, bh = bottom - top;
+        return RenderRange(box, p, mode, new Rectangle(left, top, right - left, bottom - top));
+    }
+
+    /// <summary>
+    /// 원본 사각형이 아닌 기준 상자 <paramref name="box"/>의 값 <paramref name="p"/>가 정하는 대응으로 원본 전체를 그린다(영역·결과는 <see cref="Render(TransformParams, ResampleMode)"/>와 같음).
+    /// <see cref="TransformBox.ParamsFor"/>로 원본 상자의 값을 따로 구하지 않으므로 원본이 원근의 지평선을 넘어도 같은 대응 그대로이고 지평선 너머 칸만 빠진다.
+    /// 대상은 <paramref name="clip"/> 안만 계산하고, 범위가 넓으면 띠로 나눠 계산해 합친다(지평선 가까이에서 끝없이 늘어난 그림도 clip 안은 남음).
+    /// </summary>
+    public TransformResult Render(TransformBox box, TransformParams p, ResampleMode mode, Rectangle clip)
+    {
+        var src = SourceBounds;
+        var range = clip;
+        // 원본 네 꼭짓점이 모두 지평선 이쪽이면 옮긴 볼록 사각형을 감싸는 범위로 줄인다(아니면 옮긴 그림이 끝없이 뻗으므로 clip 전체).
+        (double X, double Y)[] corners = [(src.Left, src.Top), (src.Right, src.Top), (src.Right, src.Bottom), (src.Left, src.Bottom)];
+        if (corners.All(c => box.InFront(p, c.X, c.Y)))
+        {
+            for (int i = 0; i < corners.Length; i++) corners[i] = box.Map(p, corners[i].X, corners[i].Y);
+            double minX = corners.Min(c => c.X), maxX = corners.Max(c => c.X);
+            double minY = corners.Min(c => c.Y), maxY = corners.Max(c => c.Y);
+            if (!double.IsFinite(minX + maxX + minY + maxY)) return EmptyResult(p);
+            // 클립 안으로 먼저 줄여 int로 넘치지 않게 한다.
+            double l = Math.Max(Math.Floor(minX), clip.Left), t = Math.Max(Math.Floor(minY), clip.Top);
+            double r = Math.Min(Math.Ceiling(maxX), clip.Right), b = Math.Min(Math.Ceiling(maxY), clip.Bottom);
+            if (r <= l || b <= t) return EmptyResult(p);
+            range = Rectangle.FromLTRB((int)l, (int)t, (int)r, (int)b);
+        }
+        if (range.Width <= 0 || range.Height <= 0) return EmptyResult(p);
+        int rows = (int)Math.Clamp(BandArea / range.Width, 1, range.Height);
+        if (rows == range.Height) return RenderRange(box, p, mode, range);
+
+        var bands = new List<TransformResult>();
+        for (int y = range.Top; y < range.Bottom; y += rows)
+        {
+            var band = RenderRange(box, p, mode, Rectangle.FromLTRB(range.Left, y, range.Right, Math.Min(y + rows, range.Bottom)));
+            if (!band.Region.IsEmpty) bands.Add(band);
+        }
+        if (bands.Count == 0) return EmptyResult(p);
+        if (bands.Count == 1) return bands[0];
+        var union = bands.Select(bd => bd.Region.Bounds).Aggregate(Rectangle.Union);
+        var image = new PixelImage(union.Width, union.Height);
+        var bits = new bool[union.Width * union.Height];
+        foreach (var (bandImage, region) in bands)
+        {
+            var rb = region.Bounds;
+            for (int y = 0; y < rb.Height; y++)
+                for (int x = 0; x < rb.Width; x++)
+                {
+                    if (!region.Contains(rb.X + x, rb.Y + y)) continue;
+                    int i = (rb.Y + y - union.Y) * union.Width + rb.X + x - union.X;
+                    image.Pixels[i] = bandImage.Pixels[y * rb.Width + x];
+                    bits[i] = true;
+                }
+        }
+        return new TransformResult(image, bits.All(v => v) ? new PixelMask(union) : new PixelMask(union, bits));
+    }
+
+    /// <summary>넓은 대상 범위를 나눠 계산하는 띠 하나의 넓이 한도(픽셀) — 계산용 임시 배열 크기를 묶는다.</summary>
+    private const long BandArea = 1 << 22;
+
+    /// <summary>
+    /// 대상 픽셀 범위 <paramref name="range"/>의 칸마다 그 중심을 기준 상자 <paramref name="box"/>의 값 <paramref name="p"/>로 원본에 되돌려 집는다.
+    /// 집은 칸을 꼭 맞게 감싸도록 줄인 결과(없거나 범위가 너무 크면 빈 결과).
+    /// </summary>
+    private TransformResult RenderRange(TransformBox box, TransformParams p, ResampleMode mode, Rectangle range)
+    {
+        var src = SourceBounds;
+        int w = src.Width, h = src.Height;
+        bool distorted = p.IsDistorted;
+        bool rotSprite = mode == ResampleMode.RotSprite && (distorted || !p.IsAxisAligned) && (long)w * h <= MaxRotSpriteArea;
+
+        int left = range.X, top = range.Y, bw = range.Width, bh = range.Height;
         if (bw <= 0 || bh <= 0 || (long)bw * bh > (long)PixelImage.MaxSize * PixelImage.MaxSize / 4) return EmptyResult(p);
+        if (rotSprite) EnsureUpscaled();
 
         var colors = new Color32[bw * bh];
         var bits = new bool[bw * bh];
         int minOx = int.MaxValue, minOy = int.MaxValue, maxOx = -1, maxOy = -1;
         var (sx0, sy0) = box.Center;
+        var basis = box.Bounds;
+        // 기준 상자 왼쪽 위 기준 좌표 → 원본 사각형 왼쪽 위 기준 좌표로 옮기는 양(기준 상자가 원본이면 0)
+        double shiftX = basis.X - src.X, shiftY = basis.Y - src.Y;
         var (sin, cos) = p.SinCos();
         double isx = 1 / p.ScaleX, isy = 1 / p.ScaleY;
         int w8 = w * 8, h8 = h * 8;
+        // 찌그러뜨림: 기준 상자 왼쪽 위 기준 좌표에 바로 쓰도록 단위 상자 크기를 앞뒤로 곱한 역 호모그래피(한 번만 구함).
+        var k = distorted ? Homography.Of(p.Distort).Inverse() : default;
+        if (distorted)
+        {
+            double kw = basis.Width, kh = basis.Height;
+            k = new Homography(k.M00, k.M01 * kw / kh, k.M02 * kw, k.M10 * kh / kw, k.M11, k.M12 * kh, k.M20 / kw, k.M21 / kh, k.M22);
+        }
         for (int oy = 0; oy < bh; oy++)
         {
             double dy = top + oy + 0.5 - p.CenterY;
             for (int ox = 0; ox < bw; ox++)
             {
                 double dx = left + ox + 0.5 - p.CenterX;
-                // 원본 사각형 왼쪽 위 기준 연속 좌표
-                double lx = sx0 + (dx * cos + dy * sin) * isx - src.X;
-                double ly = sy0 + (-dx * sin + dy * cos) * isy - src.Y;
+                // 기준 상자 왼쪽 위 기준 연속 좌표
+                double lx = sx0 + (dx * cos + dy * sin) * isx - basis.X;
+                double ly = sy0 + (-dx * sin + dy * cos) * isy - basis.Y;
+                if (distorted)
+                {
+                    var (hx, hy, hw) = k.ApplyHomogeneous(lx, ly);
+                    if (!(hw > 0)) continue;   // 원근의 지평선 너머: 원본이 없다
+                    lx = hx / hw;
+                    ly = hy / hw;
+                }
+                // 원본 사각형 왼쪽 위 기준으로
+                lx += shiftX;
+                ly += shiftY;
                 Color32 c;
                 if (rotSprite)
                 {

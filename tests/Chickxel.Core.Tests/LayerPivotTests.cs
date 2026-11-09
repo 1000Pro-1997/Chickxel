@@ -112,6 +112,18 @@ public class LayerPivotTests
     }
 
     [Fact]
+    public void ShiftCels_WithoutMovingPivots_MovesOnlyThePixels()
+    {
+        var p = new SpriteProject(8, 8);
+        p.SetCel(0, 0, Dot(2, 2));
+        var layer = p.Layers[0];
+        Assert.Equal(1, p.ShiftCels("옮기기", [(0, 0)], 2, 1, movePivots: false));
+        Assert.Equal(new PointF(4, 4), p.LayerPivotPixel(layer, 0));
+        Assert.False(p.HasLayerFramePivot(layer, 0));
+        Assert.Equal(White, p.GetCel(0, 0)![4, 3]);
+    }
+
+    [Fact]
     public void CanvasFlipAndRotate_MapEveryLayerPivotInItsOwnSpace()
     {
         var p = new SpriteProject(8, 8);

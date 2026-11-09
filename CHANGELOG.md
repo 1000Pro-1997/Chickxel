@@ -2,6 +2,31 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.114 (2026-11-09)
+### Transform: Ctrl+handle distorts freely, like Photoshop
+- Ctrl (⌘) + a corner handle moves just that corner; Ctrl + a side handle moves that whole side, so the box can become any convex quadrilateral (perspective). With Alt the opposite corner or side moves the other way.
+- Moving, sizing and rotating keep the distorted shape. Handles keep Shift = keep proportions and Alt = from center.
+- Works in Ctrl+T, Layer size and after dropping an image. Rotating or distorting a part removes its 9-slice border.
+
+### Transform: right-click menu and right-drag
+- Right-click inside the box opens a menu: Rotate 180°, Rotate 90° clockwise, Rotate 90° counterclockwise, Flip horizontal, Flip vertical.
+- Right-drag inside the box moves only the drawing; the rotation center and the pivot stay where they are, also after applying.
+- Right-drag a handle sets the margin (this used to be Ctrl+handle). Shift keeps the ratio, Alt works from the center, and Ctrl moves the box corners freely; whatever falls outside that shape is cropped.
+
+### Ctrl+T changes only the current cel; Layer size moves to Alt+Shift+C
+- Ctrl+T no longer includes the cels picked in the timeline (the Move tool still moves them together).
+- Layer size (transform the whole layer) is now Alt+Shift+C instead of Ctrl+Shift+C.
+
+### Canvas size (Ctrl+Alt+C) works like transform
+- Dragging a handle now stretches the image with the canvas (this used to be Ctrl+drag); right-drag a handle to move only the canvas edge (margin).
+- In both, Shift keeps the ratio (a side handle grows the other side too, from its center) and Alt resizes from the center.
+- Ctrl moves the canvas corners freely and the new canvas is the rectangle enclosing that shape. When stretching (left drag), the image is skewed in perspective to fit that shape and the leftover space becomes margin; with the margin (right drag), everything outside that shape is cropped.
+
+### Modifier keys during a drag; Alt no longer opens the menu
+- Pressing or releasing Ctrl, Alt or Shift while dragging a transform or canvas-size handle takes effect right away, as if it had been held from the start.
+- Releasing Alt after using it for a drag or the temporary eyedropper no longer leaves the File menu open, so the next Enter applies instead of opening the menu.
+- Right-drag with the Move tool (or with Ctrl held in other tools) shifts the cel without moving the layer pivot; left drag still moves the pivot with the drawing.
+
 ## v1.14.113 (2026-11-09)
 ### Gradient bar: the band is split in half for adding stops
 - Clicking the upper half of the band (or the row above it) adds an opacity stop; the lower half (or the row below it) adds a color stop.

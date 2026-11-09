@@ -45,6 +45,7 @@
   <data name="Gradient_EmptyStops" xml:space="preserve"><value>At least one stop is required.</value></data>
   <data name="Canvas_InvalidSize" xml:space="preserve"><value>Canvas size must be between 1 and {max}: {width}×{height}</value></data>
   <data name="Canvas_EffectTooLarge" xml:space="preserve"><value>To fit the effect without clipping, the canvas must be {width}×{height}px (max {max}×{max}px).</value></data>
+  <data name="Canvas_NonConvexCorners" xml:space="preserve"><value>The four corners must form a convex quadrilateral (not twisted, folded, or with three corners in a line).</value></data>
   <data name="Palette_NoOpaqueColors" xml:space="preserve"><value>The palette has no opaque colors.</value></data>
   <data name="Mask_NegativeSize" xml:space="preserve"><value>Region size can't be negative.</value></data>
   <data name="Mask_BitSizeMismatch" xml:space="preserve"><value>Region bit count differs from the rectangle size.</value></data>

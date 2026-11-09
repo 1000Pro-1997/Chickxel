@@ -11,7 +11,7 @@ namespace Chickxel.App;
 /// 스포이드(기준), 밝게/어둡게(세기), 디더링(무늬), 글씨(글꼴), 그라데이션(색 정지점 바·보간·디더링), 그라데이션 연필(방식·반복 간격·프리셋·정지점 바), 도형(모양·꼭짓점/뿔/감은 수·채움), 이동(순환), 대칭(피벗 기준 포함), 피벗 도구(K)의 피벗(픽셀 단위), 9-slice 도구(S)의 테두리(L·T·R·B).
 /// 변형 모드(Ctrl+T) 중에는 변형 값(각도·가로·세로 %·중심 X/Y)·리샘플링·적용/취소만 보인다(캔버스 손잡이와 함께 움직임).
 /// 캔버스 크기 모드(Ctrl+Alt+C) 중에는 캔버스 가로·세로와 중심 기준, 그림 가로·세로(%)·위치, 그림 기준점 9방향, 비율 유지·특수 비율(작은 창), 확인/취소를 보인다(캔버스 손잡이와 함께 움직임).
-/// 레이어 크기 모드(Ctrl+Shift+C)는 같은 묶음에서 캔버스 가로·세로·중심 기준·9-slice 줄·특수 비율 단추를 숨기고 제목·설명만 바꾼다.
+/// 레이어 크기 모드(Alt+Shift+C)는 같은 묶음에서 캔버스 가로·세로·중심 기준·9-slice 줄·특수 비율 단추를 숨기고 제목·설명만 바꾼다.
 /// 도구 설정은 <see cref="EditorContext"/>에 있고(실행취소 없음) 바뀌면 <see cref="EditorContext.ToolOptionsChanged"/>로 다시 맞춘다.
 /// 피벗 값 바꾸기는 프로젝트 편집이라 실행취소된다.
 /// 타임라인에서 효과 하나를 고르면 맨 아래에 그 효과의 설정이 보인다(<see cref="ShowEffect"/> — 바로 문서에 들어가고, 잠깐 사이에 이어 바꾼 값은 실행취소 한 단계).
@@ -139,7 +139,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
     private readonly ComboBox _pivotLayer;
     private readonly StackPanel _pivotLayerRow;
 
-    // 변형 모드(Ctrl+T 지금 셀 · Ctrl+Shift+C 레이어 전체 — 제목·설명만 바뀜)
+    // 변형 모드(Ctrl+T 지금 셀 · Alt+Shift+C 레이어 전체 — 제목·설명만 바뀜)
     private readonly Border _transformBox;
     private readonly NumericUpDown _tfAngle, _tfScaleX, _tfScaleY, _tfX, _tfY, _tfBoxWidth, _tfBoxHeight;
     private readonly ComboBox _tfResample;
@@ -518,7 +518,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
 
         _hint = Ui.InfoBadge("");
 
-        // ── 변형 모드(Ctrl+T 지금 셀 · Ctrl+Shift+C 레이어 전체): 숫자는 캔버스 손잡이와 함께 움직인다.
+        // ── 변형 모드(Ctrl+T 지금 셀 · Alt+Shift+C 레이어 전체): 숫자는 캔버스 손잡이와 함께 움직인다.
         _tfAngle = TransformNum(-180, 180, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_DF32263ADE,
             v => _ctx.SetTransformParams(_ctx.RotatedAboutPivot(_ctx.TransformParams, v)))
             .Presets(-180, -135, -90, -45, -30, -15, 0, 15, 30, 45, 90, 180).Unit("°").RecentKey("transform.angle");
@@ -922,7 +922,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         _effectSection.IsVisible = _fxLayer is not null && !_ctx.IsTransforming && !_ctx.IsCanvasResizing;
         if (_ctx.IsTransforming || _ctx.IsCanvasResizing)
         {
-            // 변형·캔버스 크기 모드 중에는 그 값만 보인다. 변형은 지금 셀(Ctrl+T)·레이어 전체(Ctrl+Shift+C)에 따라 제목·설명만 다르다.
+            // 변형·캔버스 크기 모드 중에는 그 값만 보인다. 변형은 지금 셀(Ctrl+T)·레이어 전체(Alt+Shift+C)에 따라 제목·설명만 다르다.
             bool layer = _ctx.IsLayerTransform;
             _title.Text = !_ctx.IsTransforming ? UiStrings.S_ToolOptionsPanel_Refresh_6281D2CC20
                 : layer ? UiStrings.LayerTransform_PanelTitle : UiStrings.S_ToolOptionsPanel_Refresh_DD7EA3035B;

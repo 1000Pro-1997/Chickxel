@@ -156,6 +156,52 @@ public readonly struct PixelMask
         return new PixelMask(r, bits);
     }
 
+    /// <summary>
+    /// 꼭짓점(픽셀 경계 좌표, 소수 가능)을 차례로 이은 닫힌 다각형 안에 중심이 드는 픽셀(짝홀 규칙). 변 위의 픽셀을 따로 넣지 않는다 —
+    /// 사각형 꼭짓점이면 그 사각형 픽셀과 똑같다. 자유롭게 옮긴 여백 사각형으로 원본을 자를 때 쓴다. 꼭짓점이 없거나 들어가는 픽셀이 없으면 빈 영역.
+    /// </summary>
+    public static PixelMask CentersInside(IReadOnlyList<(double X, double Y)> vertices)
+    {
+        if (vertices.Count < 3) return default;
+        double minX = double.MaxValue, minY = double.MaxValue, maxX = double.MinValue, maxY = double.MinValue;
+        foreach (var (x, y) in vertices)
+        {
+            if (!double.IsFinite(x) || !double.IsFinite(y)) return default;
+            minX = Math.Min(minX, x);
+            maxX = Math.Max(maxX, x);
+            minY = Math.Min(minY, y);
+            maxY = Math.Max(maxY, y);
+        }
+        var r = Rectangle.FromLTRB((int)Math.Floor(minX), (int)Math.Floor(minY), (int)Math.Ceiling(maxX), (int)Math.Ceiling(maxY));
+        if (r.Width <= 0 || r.Height <= 0) return default;
+        var bits = new bool[r.Width * r.Height];
+        int n = vertices.Count;
+        var xs = new List<double>();
+        for (int y = r.Top; y < r.Bottom; y++)
+        {
+            // 픽셀 중심 줄(y + 0.5)과 변의 교차점(아래 끝은 포함, 위 끝은 제외: 꼭짓점을 두 번 세지 않는다).
+            double cy = y + 0.5;
+            xs.Clear();
+            for (int i = 0; i < n; i++)
+            {
+                var a = vertices[i];
+                var b = vertices[(i + 1) % n];
+                if (a.Y == b.Y) continue;
+                if ((a.Y <= cy && cy < b.Y) || (b.Y <= cy && cy < a.Y))
+                    xs.Add(a.X + (cy - a.Y) * (b.X - a.X) / (b.Y - a.Y));
+            }
+            xs.Sort();
+            for (int k = 0; k + 1 < xs.Count; k += 2)
+            {
+                // 중심 x + 0.5가 [xs[k], xs[k+1]) 안인 칸
+                int from = Math.Max(r.Left, (int)Math.Ceiling(xs[k] - 0.5));
+                int to = Math.Min(r.Right - 1, (int)Math.Ceiling(xs[k + 1] - 0.5) - 1);
+                for (int x = from; x <= to; x++) bits[(y - r.Y) * r.Width + (x - r.X)] = true;
+            }
+        }
+        return new PixelMask(r, bits);
+    }
+
     /// <summary>영역을 같은 크기 그림으로(들어간 칸은 불투명, 나머지는 투명). 뒤집기·회전을 그림과 똑같이 하려고 쓴다.</summary>
     internal PixelImage ToImage()
     {

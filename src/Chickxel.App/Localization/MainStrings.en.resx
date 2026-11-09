@@ -28,7 +28,7 @@
   <data name="Tool_MagicWand_Name" xml:space="preserve"><value>Magic wand</value></data>
   <data name="Tool_MagicWand_Hint" xml:space="preserve"><value>Selects areas similar to the clicked color (tolerance, contiguous, and sampling use the same settings as Fill) · Move: V/arrow keys</value></data>
   <data name="Tool_Move_Name" xml:space="preserve"><value>Move</value></data>
-  <data name="Tool_Move_Hint" xml:space="preserve"><value>Moves the selection if there is one; otherwise shifts the whole cel (wrap option) · On text layers (empty cel + Text effect) moves the text · Ctrl+drag in other tools (move tool while held)</value></data>
+  <data name="Tool_Move_Hint" xml:space="preserve"><value>Moves the selection if there is one; otherwise shifts the whole cel (wrap option — the pivot moves too; right-drag keeps the pivot in place) · On text layers (empty cel + Text effect) moves the text · Ctrl+drag in other tools (move tool while held)</value></data>
   <data name="Tool_Dodge_Name" xml:space="preserve"><value>Dodge/burn</value></data>
   <data name="Tool_Dodge_Hint" xml:space="preserve"><value>Left: lighten · Right: darken (once per stroke)</value></data>
   <data name="Tool_Dither_Name" xml:space="preserve"><value>Dithering</value></data>
@@ -227,12 +227,12 @@
   <data name="Message_322" xml:space="preserve"><value>The current layer is locked.</value></data>
   <data name="Message_323" xml:space="preserve"><value>Selection rotated — press Enter to drop</value></data>
   <data name="Message_324" xml:space="preserve"><value>Rotate canvas (all frames)</value></data>
-  <data name="Message_325" xml:space="preserve"><value>Transform (current cel, blue box): inside = move, handles = size, Ctrl+handles = margin, outside = rotate — Enter to apply, Esc to cancel</value></data>
+  <data name="Message_325" xml:space="preserve"><value>Transform (current cel, blue box): inside = move, handles = size (Shift keeps proportions, Alt from center), Ctrl+handles = free distort, outside = rotate, right-click = rotate/flip menu, right-drag = move image only (inside) / margin (handles) — Enter to apply, Esc to cancel</value></data>
   <data name="Message_326" xml:space="preserve"><value>The current layer is locked.</value></data>
   <data name="Message_327" xml:space="preserve"><value>The current layer is locked.</value></data>
   <data name="Message_328" xml:space="preserve"><value>Select a group or part to change that group's skin.</value></data>
   <data name="Ui_331" xml:space="preserve"><value>Split by grid</value></data>
-  <data name="Message_332" xml:space="preserve"><value>Canvas size: handles = edges, Ctrl+drag = resize the image too (Shift keeps ratio), inside the image = move — Enter to confirm, Esc to cancel</value></data>
+  <data name="Message_332" xml:space="preserve"><value>Canvas size: handles = stretch the image too, right-drag handles = margin (canvas edge only) — Shift keeps ratio, Alt from center, Ctrl moves corners freely (stretching skews the image to that shape with margin around it; margin crops everything outside it), inside the image = move — Enter to confirm, Esc to cancel</value></data>
   <data name="Message_333" xml:space="preserve"><value>No folder is open, so it can't be saved to a file. Create it without file_name or ask the user to open a folder.</value></data>
   <data name="Message_334" xml:space="preserve"><value>No project is open.</value></data>
   <data name="Message_335" xml:space="preserve"><value>This project has no save location yet. Tell the user to press Ctrl+S (⌘S) to choose a save location.</value></data>
@@ -399,15 +399,13 @@ Open all frames, or only the first {limit}?</value></data>
   <data name="Open_Decoding" xml:space="preserve"><value>Decoding frames of {name}…</value></data>
   <data name="Open_Unreadable" xml:space="preserve"><value>Can't open {name} (unsupported format or damaged file).</value></data>
   <data name="Open_Opened" xml:space="preserve"><value>Opened {name} — {frames} frames, {width}×{height}, {ms} ms total · not saved yet (saving asks where to put the .chickxel)</value></data>
-  <data name="Transform_Cels" xml:space="preserve"><value>Transforming {count} cels together · </value></data>
-  <data name="Transform_LockedSkipped" xml:space="preserve"><value>Skipped {count} cels on locked layers · </value></data>
   <data name="Tool_Shape_Name" xml:space="preserve"><value>Shape</value></data>
   <data name="Tool_Shape_Hint" xml:space="preserve"><value>Shift: keep proportions · U: outline/filled · pick the shape in Tool options</value></data>
   <data name="Shortcut_ShapeLine" xml:space="preserve"><value>Shape: line</value></data>
   <data name="Tool_Text_Name" xml:space="preserve"><value>Text</value></data>
   <data name="Tool_Text_Hint" xml:space="preserve"><value>Drag: text box · Click: one-line text · Click on text: edit it · Enter: new line · Esc / Ctrl+Enter / click outside: done · size, bold, fonts in Tool options</value></data>
   <data name="Menu_Edit_BeginLayerResize" xml:space="preserve"><value>Layer size…</value></data>
-  <data name="Message_LayerTransform" xml:space="preserve"><value>Transform whole layer (orange box, all frames): inside = move, handles = size, Ctrl+handles = margin, outside = rotate (each frame around its pivot) — other frames keep the transform, Enter to apply, Esc to cancel</value></data>
+  <data name="Message_LayerTransform" xml:space="preserve"><value>Transform whole layer (orange box, all frames): inside = move, handles = size (Shift keeps proportions, Alt from center), Ctrl+handles = free distort, outside = rotate (each frame around its pivot), right-click = rotate/flip menu, right-drag = move image only (inside) / margin (handles) — other frames keep the transform, Enter to apply, Esc to cancel</value></data>
   <data name="Ui_CanvasEffects" xml:space="preserve"><value>Effects</value></data>
   <data name="Ui_CanvasEffectsTip" xml:space="preserve"><value>Show layer effects on the canvas (Ctrl+Shift+E) · off = the pixels you edit (preview, timeline and export unchanged)</value></data>
   <data name="Menu_View_CanvasEffects" xml:space="preserve"><value>Show effects on canvas</value></data>

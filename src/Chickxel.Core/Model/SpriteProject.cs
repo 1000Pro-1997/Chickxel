@@ -2129,14 +2129,18 @@ public sealed partial class SpriteProject
     /// 일반 레이어 셀을 그 테두리로 늘이고 부위 가장자리·피벗도 같은 대응으로 옮기며, 테두리는 그림 가장자리에서 같은 픽셀 수로 남긴다(여백만큼 더함).
     /// 자기 테두리(<see cref="Layer.PartBorder"/>)가 있는 부위는 그 테두리로 늘이고 테두리 값을 그대로 둔다(새 크기에 다 안 들어가면 비율대로).
     /// </para>
+    /// <para>
+    /// <paramref name="keep"/>(새 캔버스 좌표)가 있으면 바꾼 뒤 그 모양 밖 픽셀을 모두 지운다 — 일반 레이어의 캔버스 밖 그림과 부위(프레임마다 그 위치에서) 포함.
+    /// 캔버스 크기 모드에서 테두리 꼭짓점을 마음대로 옮긴 여백(사다리꼴 등)으로 자를 때 쓴다.
+    /// </para>
     /// </summary>
-    public void ResizeCanvasAndScale(int width, int height, Rectangle image, NineSliceFill? slice = null)
+    public void ResizeCanvasAndScale(int width, int height, Rectangle image, NineSliceFill? slice = null, PixelMask? keep = null)
     {
         ValidateSize(width, height);
         if (image.Width < 1 || image.Height < 1 || image.Width > PixelImage.MaxSize || image.Height > PixelImage.MaxSize)
             throw new ArgumentOutOfRangeException(nameof(image), DomainStrings.FormatProject_InvalidImageSize(max: PixelImage.MaxSize, width: image.Width, height: image.Height));
         int oldW = _width, oldH = _height;
-        if (width == oldW && height == oldH && image == new Rectangle(0, 0, oldW, oldH)) return;
+        if (width == oldW && height == oldH && image == new Rectangle(0, 0, oldW, oldH) && keep is null) return;
         var fill = slice ?? NineSliceFill.Stretch;
         var border = slice is not null && NineSlice.Applies(Sprite.Border, oldW, oldH) ? Sprite.Border : SpriteBorder.None;
         bool sliced = !border.IsNone;
@@ -2209,7 +2213,63 @@ public sealed partial class SpriteProject
                 Sprite.Border = new SpriteBorder(
                     Math.Max(0, border.Left + image.X), Math.Max(0, border.Top + image.Y),
                     Math.Max(0, border.Right + width - image.Right), Math.Max(0, border.Bottom + height - image.Bottom));
+            if (keep is { } k) ClearOutside(k);
         });
+    }
+
+    /// <summary>
+    /// 모양 <paramref name="keep"/>(캔버스 좌표) 밖 픽셀을 모든 셀에서 지운다(<see cref="Edit(string, ProjectChange, Action)"/> 안에서): 일반 레이어는 캔버스 밖 그림까지,
+    /// 부위는 프레임마다 그 부위 위치에서 본 자리로. 링크된 셀은 같은 결과면 한 그림을 같이 쓴다.
+    /// </summary>
+    private void ClearOutside(PixelMask keep)
+    {
+        var size = Size;
+        var done = new HashSet<PixelImage>(ReferenceEqualityComparer.Instance);
+        foreach (var key in _cels.Keys.Where(k => !k.Layer.IsPart).Concat(_overflow.Keys).Distinct().ToList())
+        {
+            var cel = _cels.GetValueOrDefault(key);
+            if (cel is not null && !done.Add(cel)) continue;
+            var (full, origin) = FullOf(key, cel, size);
+            full = full.Clone();
+            bool changed = false;
+            for (int y = 0; y < full.Height; y++)
+                for (int x = 0; x < full.Width; x++)
+                {
+                    int i = y * full.Width + x;
+                    if (full.Pixels[i].A == 0 || keep.Contains(origin.X + x, origin.Y + y)) continue;
+                    full.Pixels[i] = Color32.Transparent;
+                    changed = true;
+                }
+            if (!changed) continue;
+            var (next, overflow) = Split(full, origin, size);
+            if (HasContent(next)) SetLinked(key, next, overflow);
+            else
+                foreach (var k in LinkedKeys(key))
+                {
+                    _cels.Remove(k);
+                    SetOverflow(k, overflow);
+                }
+        }
+        // 부위: 같은 그림이 같은 위치에 놓인 셀끼리만 결과를 같이 쓴다(위치가 다르면 잘리는 자리도 달라 링크가 갈라짐).
+        var parts = new Dictionary<(PixelImage Cel, Point At), PixelImage>();
+        foreach (var (key, cel) in _cels.Where(c => c.Key.Layer.IsPart).ToList())
+        {
+            var at = GetPartOffset(key.Layer, _frames.IndexOf(key.Frame));
+            if (!parts.TryGetValue((cel, at), out var next))
+            {
+                next = cel;
+                for (int y = 0; y < cel.Height; y++)
+                    for (int x = 0; x < cel.Width; x++)
+                    {
+                        if (cel.Pixels[y * cel.Width + x].A == 0 || keep.Contains(at.X + x, at.Y + y)) continue;
+                        if (ReferenceEquals(next, cel)) next = cel.Clone();
+                        next.Pixels[y * cel.Width + x] = Color32.Transparent;
+                    }
+                InheritLinkTag(cel, next);
+                parts[(cel, at)] = next;
+            }
+            _cels[key] = next;
+        }
     }
 
     /// <summary>9-slice 테두리를 부위 크기 비율대로(반올림) 바꾼다. 마주 보는 두 변의 합은 새 크기를 넘지 않는다.</summary>

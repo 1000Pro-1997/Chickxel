@@ -216,6 +216,107 @@ public class FreeTransformTests
     }
 
     [Fact]
+    public void WithCorners_RoundTrips_RejectsNonConvex()
+    {
+        var box = RectSource(new PixelImage(7, 5), 3, 4).Box;
+        var basis = box.Identity with { CenterX = 20.25, CenterY = -3.5, Angle = 37, ScaleX = -1.7, ScaleY = 0.6 };
+        var c = box.Corners(basis);
+        var q = PushCorners(basis, c, 0.3, 0, 0.5, 0.1);
+        var r = box.WithCorners(basis, q);
+        Assert.NotNull(r);
+        var p = r.Value;
+        Assert.True(p.IsDistorted);
+        Assert.Equal((basis.CenterX, basis.CenterY, basis.Angle, basis.ScaleX, basis.ScaleY), (p.CenterX, p.CenterY, p.Angle, p.ScaleX, p.ScaleY));
+        var got = box.Corners(p);
+        for (int i = 0; i < 4; i++)
+        {
+            Assert.Equal(q[i].X, got[i].X, 9);
+            Assert.Equal(q[i].Y, got[i].Y, 9);
+        }
+        // 원본 꼭짓점 → 옮긴 꼭짓점(Map), 되돌리기(Unmap)
+        var (mx, my) = box.Map(p, 10, 9);
+        Assert.Equal(q[2].X, mx, 9);
+        Assert.Equal(q[2].Y, my, 9);
+        var (u, v) = box.Unmap(p, box.Map(p, 5.5, 6.25).X, box.Map(p, 5.5, 6.25).Y);
+        Assert.Equal(5.5, u, 9);
+        Assert.Equal(6.25, v, 9);
+        // 꼭짓점을 그대로 두면 찌그러뜨림 없음
+        Assert.False(box.WithCorners(basis, c)!.Value.IsDistorted);
+        // 꼬인 사각형(두 꼭짓점을 바꿈), 오목한 사각형, 유한하지 않은 꼭짓점은 받지 않는다.
+        Assert.Null(box.WithCorners(basis, [q[0], q[2], q[1], q[3]]));
+        var mid = ((q[0].X + q[2].X) / 2, (q[0].Y + q[2].Y) / 2);
+        Assert.Null(box.WithCorners(basis, [q[0], q[1], q[2], (mid.Item1 * 0.8 + q[1].X * 0.2, mid.Item2 * 0.8 + q[1].Y * 0.2)]));
+        Assert.Null(box.WithCorners(basis, [q[0], q[1], (double.NaN, 0), q[3]]));
+    }
+
+    [Fact]
+    public void Distort_DraggedCorner_CoversTheQuad()
+    {
+        var img = new PixelImage(8, 8);
+        img.FillRect(new Rectangle(0, 0, 8, 8), Red);
+        var t = RectSource(img, 0, 0);
+        var id = t.Box.Identity;
+        // 오른쪽 아래 꼭짓점을 (8,8) → (16,16)으로
+        var p = t.Box.WithCorners(id, [(0, 0), (8, 0), (16, 16), (0, 8)])!.Value;
+        foreach (var mode in Modes)
+        {
+            var r = t.Render(p, mode);
+            Assert.Equal(new Rectangle(0, 0, 16, 16), r.Region.Bounds);
+            Color32 At(int x, int y) => r.Region.Contains(x, y) ? r.Image.Get(x - r.Region.Bounds.X, y - r.Region.Bounds.Y) : Color32.Transparent;
+            // 늘어난 삼각형 안
+            Assert.Equal(Red, At(12, 12));
+            Assert.Equal(Red, At(9, 4));
+            Assert.Equal(Red, At(1, 1));
+            // 사각형 밖
+            Assert.Equal(Color32.Transparent, At(15, 2));
+            Assert.Equal(Color32.Transparent, At(2, 15));
+        }
+    }
+
+    [Fact]
+    public void Distort_None_RendersExactlyAsUndistorted()
+    {
+        var img = TestUtil.RandomImage(7, 6, seed: 11, opaque: true);
+        var t = RectSource(img, 2, 3);
+        var p = t.Box.Identity with { CenterX = 9.3, CenterY = 7.1, Angle = 23, ScaleX = 1.4, ScaleY = -0.9 };
+        // 꼭짓점을 그대로 두고 맞춘 값은 찌그러뜨림이 없다(작은 오차는 0으로).
+        var same = t.Box.WithCorners(p, t.Box.Corners(p))!.Value;
+        Assert.False(same.IsDistorted);
+        foreach (var mode in Modes)
+        {
+            var a = t.Render(p, mode);
+            var b = t.Render(same, mode);
+            Assert.Equal(a.Region.Bounds, b.Region.Bounds);
+            Assert.True(a.Image.ContentEquals(b.Image));
+        }
+    }
+
+    [Fact]
+    public void Distort_ParamsForWiderSource_LeavesPixelsInPlace()
+    {
+        var img = TestUtil.RandomImage(6, 5, seed: 13, opaque: true);
+        var t = RectSource(img, 2, 3);
+        var basis = t.Box.Identity with { CenterX = 6.2, CenterY = 5.7, Angle = 17, ScaleX = 1.3, ScaleY = 1.1 };
+        var c = t.Box.Corners(basis);
+        var p = t.Box.WithCorners(basis, PushCorners(basis, c, 0, 0.3, 0, 0.2))!.Value;
+        var before = t.Render(p, ResampleMode.Nearest);
+
+        // 원본 사각형을 사방으로 넓힌다(넓힌 곳은 비움): 같은 대응으로 그리면 그림이 제자리
+        var wide = t.Reframe(new Rectangle(0, 1, 10, 9), extendEdges: false);
+        var q = t.Box.ParamsFor(wide.Box, p);
+        Assert.True(q.IsDistorted);
+        var after = wide.Render(q, ResampleMode.Nearest);
+        Assert.Equal(before.Region.Bounds, after.Region.Bounds);
+        Assert.True(before.Image.ContentEquals(after.Image));
+    }
+
+    /// <summary>
+    /// 꼭짓점마다 중심에서 대각선을 따라 바깥으로 그 비율만큼 민 사각형(대각선이 안에서 만나므로 늘 볼록).
+    /// </summary>
+    private static (double X, double Y)[] PushCorners(TransformParams p, (double X, double Y)[] c, params double[] k)
+        => [.. c.Select((v, i) => (p.CenterX + (1 + k[i]) * (v.X - p.CenterX), p.CenterY + (1 + k[i]) * (v.Y - p.CenterY)))];
+
+    [Fact]
     public void NormalizeAngle_WrapsIntoHalfOpenRange()
     {
         Assert.Equal(180, TransformParams.NormalizeAngle(-180));

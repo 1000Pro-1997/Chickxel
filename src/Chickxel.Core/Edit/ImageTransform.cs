@@ -135,6 +135,50 @@ public static class ImageTransform
         return ((int)Math.Ceiling((decimal)start * dstLength / srcLength), (int)Math.Ceiling((decimal)end * dstLength / srcLength));
     }
 
+    /// <summary>
+    /// 캔버스 원근 변형의 대응: 원래 캔버스 [0, <paramref name="oldCanvas"/>.W]×[0, H]를 기준 상자로 두고 그 네 꼭짓점이 <paramref name="corners"/>(새 캔버스 좌표,
+    /// 왼쪽 위·오른쪽 위·오른쪽 아래·왼쪽 아래)로 가는 값. 점은 <see cref="TransformBox.Map"/>으로 옮긴다(지평선 너머인지는 <see cref="TransformBox.InFront"/>).
+    /// 배율·중심은 네 꼭짓점을 감싸는 사각형에 맞춰 두어 꼭짓점이 축에 맞는 사각형이면 찌그러뜨리지 않은 값(최근접으로 정확히 옮김)이 된다.
+    /// 꼭짓점이 유한하지 않거나 사각형이 볼록하지 않으면 null.
+    /// </summary>
+    public static (TransformBox Box, TransformParams Params)? CanvasWarp(Size oldCanvas, ReadOnlySpan<(double X, double Y)> corners)
+    {
+        if (corners.Length != 4 || oldCanvas.Width < 1 || oldCanvas.Height < 1) return null;
+        double minX = double.PositiveInfinity, minY = double.PositiveInfinity, maxX = double.NegativeInfinity, maxY = double.NegativeInfinity;
+        foreach (var (x, y) in corners)
+        {
+            minX = Math.Min(minX, x);
+            minY = Math.Min(minY, y);
+            maxX = Math.Max(maxX, x);
+            maxY = Math.Max(maxY, y);
+        }
+        if (!double.IsFinite(minX + minY + maxX + maxY) || !(maxX > minX) || !(maxY > minY)) return null;
+        var box = new TransformBox(new Rectangle(Point.Empty, oldCanvas));
+        var basis = new TransformParams((minX + maxX) / 2, (minY + maxY) / 2, 0, (maxX - minX) / oldCanvas.Width, (maxY - minY) / oldCanvas.Height);
+        return box.WithCorners(basis, corners) is { } p ? (box, p) : null;
+    }
+
+    /// <summary>
+    /// 캔버스 원근 변형에서 캔버스 밖까지 든 그림 하나: <paramref name="full"/>(그 왼쪽 위 = <paramref name="origin"/>, 원래 캔버스 좌표 — 캔버스 밖 그림 포함)을,
+    /// 원래 캔버스 [0, <paramref name="oldCanvas"/>.W]×[0, H]의 네 꼭짓점이 <paramref name="corners"/>(새 캔버스 좌표, 왼쪽 위·오른쪽 위·오른쪽 아래·왼쪽 아래)로 가는
+    /// 원근 대응(<see cref="CanvasWarp"/>) 하나로 옮긴 그림과 왼쪽 위(새 캔버스 좌표). 캔버스 안·밖이 같은 대응이라 이음매가 없고, 지평선 너머로 가는 칸은 빠진다.
+    /// <paramref name="clip"/>(새 캔버스 좌표) 밖은 계산하지 않고, 남는 칸이 없거나 사각형이 볼록하지 않으면 null.
+    /// </summary>
+    public static (PixelImage Image, Point Origin)? WarpWithCanvas(PixelImage full, Point origin, Size oldCanvas, ReadOnlySpan<(double X, double Y)> corners, Rectangle clip,
+        ResampleMode mode)
+    {
+        if (CanvasWarp(oldCanvas, corners) is not { } warp) return null;
+        // 투명 칸은 둘레 1칸만 남기고 잘라 계산할 범위를 줄인다. 남긴 1칸이 바깥 투명을 대신하므로 RotSprite(Scale2x)도 같은 그림을 집는다.
+        var opaque = full.GetOpaqueBounds();
+        if (opaque.IsEmpty) return null;
+        var keep = Rectangle.Intersect(Rectangle.Inflate(opaque, 1, 1), full.Bounds);
+        var source = keep == full.Bounds ? full : full.Crop(keep);
+        var region = new PixelMask(new Rectangle(origin.X + keep.X, origin.Y + keep.Y, keep.Width, keep.Height));
+        var result = FreeTransform.Own(source, region).Render(warp.Box, warp.Params, mode, clip);
+        if (result.Region.IsEmpty) return null;
+        return (result.Image, result.Region.Bounds.Location);
+    }
+
     /// <summary>정수 배율 확대/축소(최근접). 축소는 각 칸의 왼쪽 위 픽셀을 쓴다.</summary>
     public static PixelImage ScaleNearest(PixelImage src, int width, int height)
     {

@@ -680,7 +680,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             DocCmd("색 바꾸기…", MainStrings.Menu_Edit_ReplaceColor_119, ReplaceColor, "Ctrl+Alt+R", KeyScope.NotInText, (Key.R, Ctrl | Alt)),
             new Separator(),
             DocCmd("캔버스 크기…", MainStrings.Menu_Edit_BeginCanvasResize_121, BeginCanvasResize, "Ctrl+Alt+C", KeyScope.Global, (Key.C, Ctrl | Alt)),
-            DocCmd("레이어 크기…", MainStrings.Menu_Edit_BeginLayerResize, BeginLayerTransform, "Ctrl+Shift+C", KeyScope.NotInText, (Key.C, Ctrl | Shift)),
+            DocCmd("레이어 크기…", MainStrings.Menu_Edit_BeginLayerResize, BeginLayerTransform, "Alt+Shift+C", KeyScope.NotInText, (Key.C, Alt | Shift)),
             DocCmd("캔버스 전체 좌우 뒤집기(모든 프레임)", MainStrings.Menu_Edit_Structural_123, () => _ctx.Structural(() => _ctx.Project!.FlipCanvasHorizontal())),
             DocCmd("캔버스 전체 상하 뒤집기(모든 프레임)", MainStrings.Menu_Edit_Structural_125, () => _ctx.Structural(() => _ctx.Project!.FlipCanvasVertical())),
             DocCmd("이미지에서 팔레트 만들기", MainStrings.Menu_Edit_Command_127, _colors.PaletteFromImage),
@@ -1065,7 +1065,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         // 타임라인에서 효과 하나를 고르면 오른쪽 독 도구 설정 아래에 그 효과 설정을 보인다.
         _timeline.EffectFocusChanged += (_, focus) => _toolOptions.ShowEffect(focus?.Layer, focus?.Index ?? -1);
         _toolOptions.EffectDialogRequested += (layer, index) => _timeline.OpenEffect(layer, index);
-        // 변형(Ctrl+T)·이동 도구는 타임라인에서 고른 셀들을 함께 바꾼다.
+        // 이동 도구는 타임라인에서 고른 셀들을 함께 옮긴다.
         _ctx.SelectedCels = _timeline.SelectedCelTargets;
         _preview.Message += (_, m) => ShowMessage(m);
         _preview.CopyRequested += (_, img) =>
@@ -3062,8 +3062,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     }
 
     /// <summary>
-    /// 지금 셀 변형(Ctrl+T, 파란 상자): 선택 영역(없으면 현재 셀의 칠한 픽셀 전체)을 손잡이로 회전·크기·옮기기, Ctrl+손잡이 = 여백. Enter 적용, Esc·Ctrl+Z 취소.
-    /// 타임라인에서 셀 여러 칸(프레임·레이어 선택 포함)을 골라 두었으면 그 셀들을 모두 같은 변형으로 함께 바꾼다.
+    /// 지금 셀 변형(Ctrl+T, 파란 상자): 지금 셀 하나의 선택 영역(없으면 칠한 픽셀 전체)을 손잡이로 회전·크기·옮기기, Ctrl+손잡이 = 자유 변형,
+    /// 우클릭 = 회전·뒤집기 메뉴, 우클릭 끌기 = 그림만 옮기기·여백. Enter 적용, Esc·Ctrl+Z 취소.
     /// </summary>
     private void BeginTransform()
     {
@@ -3072,10 +3072,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             ShowMessage(error);
             return;
         }
-        int cels = _ctx.TransformCelCount, locked = _ctx.TransformLockedSkipped;
-        string prefix = cels > 1 ? MainStrings.FormatTransform_Cels(count: cels) : "";
-        if (locked > 0) prefix += MainStrings.FormatTransform_LockedSkipped(count: locked);
-        ShowMessage(prefix + MainStrings.Message_325);
+        ShowMessage(MainStrings.Message_325);
         _canvas.Focus();
     }
 
@@ -3161,7 +3158,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     }
 
     /// <summary>
-    /// 레이어 전체 변형(Ctrl+Shift+C, 주황 상자): 지금 레이어의 모든 프레임(부위는 모든 스킨)을 같은 손잡이로 바꾼다 — 선택 영역이 있으면 그 자리만, 회전은 프레임마다
+    /// 레이어 전체 변형(Alt+Shift+C, 주황 상자): 지금 레이어의 모든 프레임(부위는 모든 스킨)을 같은 손잡이로 바꾼다 — 선택 영역이 있으면 그 자리만, 회전은 프레임마다
     /// 그 프레임의 피벗을 중심으로. 같은 레이어의 다른 프레임으로 가도 이어지고 다른 레이어를 고르면 취소된다. Enter·확인 = 적용, Esc·Ctrl+Z = 취소.
     /// </summary>
     private void BeginLayerTransform()

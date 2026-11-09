@@ -53,6 +53,7 @@
   <data name="Gradient_EmptyStops" xml:space="preserve"><value>정지점이 하나 이상 있어야 합니다.</value></data>
   <data name="Canvas_InvalidSize" xml:space="preserve"><value>캔버스 크기는 1~{max} 사이여야 합니다: {width}×{height}</value><comment>max = 최대 축 크기; width, height = 전달된 캔버스 크기.</comment></data>
   <data name="Canvas_EffectTooLarge" xml:space="preserve"><value>효과를 자르지 않고 담으려면 캔버스가 {width}×{height}px여야 합니다(최대 {max}×{max}px).</value><comment>width, height = 필요한 캔버스 크기; max = 최대 축 크기.</comment></data>
+  <data name="Canvas_NonConvexCorners" xml:space="preserve"><value>네 꼭짓점은 볼록한 사각형을 이루어야 합니다(꼬이거나 접히거나 한 변이 일직선이면 안 됨).</value></data>
   <data name="Palette_NoOpaqueColors" xml:space="preserve"><value>팔레트에 투명이 아닌 색이 없습니다.</value></data>
   <data name="Mask_NegativeSize" xml:space="preserve"><value>영역 크기는 음수일 수 없습니다.</value></data>
   <data name="Mask_BitSizeMismatch" xml:space="preserve"><value>영역 비트 수가 사각형 크기와 다릅니다.</value></data>

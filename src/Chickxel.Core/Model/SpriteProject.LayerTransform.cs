@@ -7,28 +7,27 @@ namespace Chickxel.Core.Model;
 public sealed partial class SpriteProject
 {
     /// <summary>
-    /// 여러 셀에 같은 자유 변형(회전·크기·옮기기)과 여백을 입힌다. 셀 자체는 <see cref="Commit"/> 때까지 건드리지 않는다.
+    /// 셀에 자유 변형(회전·크기·옮기기·찌그러뜨리기)과 여백을 입힌다: 지금 셀 하나, 또는 레이어 전체(모든 프레임·스킨). 셀 자체는 <see cref="Commit"/> 때까지 건드리지 않는다.
     /// <list type="bullet">
-    /// <item>좌표는 기준 레이어 좌표(부위면 부위 안 좌표)다. 다른 레이어의 셀은 그 프레임에서 기준 레이어와의 자리 차이(<see cref="Target.Offset"/>)만큼 맞춘다.</item>
+    /// <item>좌표는 기준 레이어 좌표(부위면 부위 안 좌표)다.</item>
     /// <item>선택 영역이 있으면 셀마다 그 모양 안 픽셀만 떼어 같은 대응으로 옮기고, 피벗은 그대로다. 여백을 넓히면 가장자리 픽셀을 복사해 늘린다.</item>
     /// <item>선택이 없으면 칠한 픽셀 전체를 옮기고 피벗도 그림을 따라간다. 상자(<see cref="Box"/>) 밖 픽셀은 잘린다(여백을 좁힘).
     /// 레이어 전체(<see cref="WholeLayer"/>)면 프레임마다 그 프레임의 피벗을 중심으로 돈다.</item>
     /// <item>부위는 결과가 영역 밖으로 나가면 영역을 넓힌다(모든 프레임·스킨). 선택 없이 레이어 전체면 영역이 상자를 따라가고(돌리면 감싸는 크기),
-    /// 돌리면 9-slice 테두리는 지운다. 선택 없이 옮기기만 하면 그림 대신 부위 위치를 옮긴다(지금 셀이면 그 프레임만).</item>
+    /// 돌리거나 찌그러뜨리면 9-slice 테두리는 지운다. 선택 없이 옮기기만 하면 그림 대신 부위 위치를 옮긴다(지금 셀이면 그 프레임만).</item>
     /// </list>
     /// </summary>
     public sealed class LayerTransform
     {
-        /// <summary>변형할 셀 하나: 레이어·프레임, 기준 레이어와의 자리 차이와 떼어 낸 원본.</summary>
+        /// <summary>변형할 셀 하나: 레이어·프레임과 떼어 낸 원본.</summary>
         public sealed class Target
         {
-            internal Target(Layer layer, Frame frame, CelKey key, PixelImage? cel, Point offset, FreeTransform raw, PixelImage? rest, Point restOrigin, PixelImage full, Point fullOrigin)
+            internal Target(Layer layer, Frame frame, CelKey key, PixelImage? cel, FreeTransform raw, PixelImage? rest, Point restOrigin, PixelImage full, Point fullOrigin)
             {
                 Layer = layer;
                 Frame = frame;
                 Key = key;
                 Cel = cel;
-                Offset = offset;
                 Raw = raw;
                 Rest = rest;
                 RestOrigin = restOrigin;
@@ -38,9 +37,6 @@ public sealed partial class SpriteProject
 
             public Layer Layer { get; }
             public Frame Frame { get; }
-
-            /// <summary>이 셀 좌표 + <see cref="Offset"/> = 기준 레이어 좌표.</summary>
-            public Point Offset { get; }
 
             internal CelKey Key { get; }
             /// <summary>원래 셀 그림(링크된 셀은 같은 그림 — 한 번만 바꿈). 캔버스 밖 그림만 있는 셀이면 null.</summary>
@@ -62,7 +58,7 @@ public sealed partial class SpriteProject
         private readonly List<Target> _targets;
         private readonly PixelMask? _selection;
 
-        private LayerTransform(SpriteProject project, Layer layer, Frame frame, List<Target> targets, PixelMask? selection, bool wholeLayer, Rectangle start, int locked)
+        private LayerTransform(SpriteProject project, Layer layer, Frame frame, List<Target> targets, PixelMask? selection, bool wholeLayer, Rectangle start)
         {
             _project = project;
             ReferenceLayer = layer;
@@ -72,7 +68,6 @@ public sealed partial class SpriteProject
             WholeLayer = wholeLayer;
             StartBox = start;
             Box = new TransformBox(start);
-            LockedSkipped = locked;
         }
 
         /// <summary>좌표 기준 레이어(캔버스에 보이는 레이어).</summary>
@@ -81,7 +76,7 @@ public sealed partial class SpriteProject
         /// <summary>값의 기준 프레임: 레이어 전체면 프레임마다 피벗 차이만큼 옮긴 값을 쓴다(<see cref="ParamsAt"/>).</summary>
         public Frame ReferenceFrame { get; private set; }
 
-        /// <summary>레이어 전체(모든 프레임·모든 스킨, 프레임마다 그 피벗을 중심으로)인지. 아니면 고른 셀만.</summary>
+        /// <summary>레이어 전체(모든 프레임·모든 스킨, 프레임마다 그 피벗을 중심으로)인지. 아니면 지금 셀 하나.</summary>
         public bool WholeLayer { get; }
 
         /// <summary>선택 영역 안 픽셀만 옮기는지(피벗·부위 영역은 그대로 — 영역 밖으로 나가면 넓힘).</summary>
@@ -93,6 +88,26 @@ public sealed partial class SpriteProject
         /// <summary>지금 상자(여백을 바꾸면 달라짐) — 손잡이와 값(<see cref="TransformParams"/>)의 기준.</summary>
         public TransformBox Box { get; private set; }
 
+        private PixelMask? _clip;
+
+        /// <summary>
+        /// 여백 모양(기준 레이어 좌표): 자유롭게 옮긴 여백 사각형처럼 상자가 그것을 감싸는 사각형일 때, 원본에서 이 모양 안 픽셀만 남긴다(밖은 잘림).
+        /// null이면 상자 전체. 바꾸면 셀마다 원본을 다시 맞춘다.
+        /// </summary>
+        public PixelMask? Clip
+        {
+            get => _clip;
+            set
+            {
+                _clip = value;
+                foreach (var t in _targets)
+                {
+                    t.Source = null;
+                    t.SourceBox = Rectangle.Empty;   // 상자는 1px 이상이라 다음에 꼭 다시 만든다
+                }
+            }
+        }
+
         public IReadOnlyList<Target> Targets => _targets;
 
         /// <summary>기준 레이어의 프레임 <paramref name="frame"/>에서 지금 보이는 셀(부위면 보이는 스킨)의 대상. 그 셀을 바꾸지 않으면 null.</summary>
@@ -102,45 +117,34 @@ public sealed partial class SpriteProject
             return _targets.FirstOrDefault(t => t.Key == key);
         }
 
-        /// <summary>그림이 있지만 레이어가 잠겨 건너뛴 셀 수.</summary>
-        public int LockedSkipped { get; }
+        /// <summary>기준 프레임에서 기준 레이어의 피벗(기준 레이어 좌표 px).</summary>
+        public (double X, double Y) ReferencePivot => PivotPixel(ReferenceLayer, ReferenceFrame);
 
         /// <summary>
-        /// 셀들에서 원본을 뗀다. <paramref name="layer"/>·<paramref name="frame"/>은 기준(캔버스에 보이는 셀), <paramref name="selection"/>은 기준 레이어 좌표의 선택 영역
-        /// (null = 셀마다 칠한 픽셀 전체). <paramref name="wholeLayer"/>면 <paramref name="cels"/> 대신 그 레이어의 모든 프레임(부위는 모든 스킨)을 쓴다.
-        /// 그룹·빈 셀·잠긴 레이어는 건너뛰고, 뗄 것이 하나도 없으면 null.
+        /// 셀에서 원본을 뗀다. <paramref name="layer"/>·<paramref name="frame"/>은 기준(캔버스에 보이는 셀), <paramref name="selection"/>은 기준 레이어 좌표의 선택 영역
+        /// (null = 셀마다 칠한 픽셀 전체). <paramref name="wholeLayer"/>면 그 레이어의 모든 프레임(부위는 모든 스킨), 아니면 그 셀 하나.
+        /// 그룹·빈 셀·잠긴 레이어면 뗄 것이 없어 null.
         /// </summary>
-        public static LayerTransform? Create(SpriteProject project, int layer, int frame, IEnumerable<(int Layer, int Frame)> cels, PixelMask? selection, bool wholeLayer)
+        public static LayerTransform? Create(SpriteProject project, int layer, int frame, PixelMask? selection, bool wholeLayer)
         {
+            if (layer < 0 || layer >= project._layers.Count || frame < 0 || frame >= project._frames.Count) return null;
             var reference = project._layers[layer];
             var refFrame = project._frames[frame];
+            if (reference.IsGroup || project.IsLayerLocked(layer)) return null;
             if (selection is { IsEmpty: true }) selection = null;
-            var list = wholeLayer ? Enumerable.Range(0, project._frames.Count).Select(f => (layer, f)) : cels.Prepend((layer, frame));
+            IEnumerable<int> frames = wholeLayer ? Enumerable.Range(0, project._frames.Count) : [frame];
             var targets = new List<Target>();
-            var seen = new HashSet<(int, int)>();
-            int locked = 0;
-            foreach (var (l, f) in list)
+            foreach (var f in frames)
             {
-                if (!seen.Add((l, f)) || l < 0 || l >= project._layers.Count || f < 0 || f >= project._frames.Count) continue;
-                var target = project._layers[l];
-                if (target.IsGroup) continue;
-                var keys = target.IsPart && wholeLayer
-                    ? project.CelsOf(target).Where(c => ReferenceEquals(c.Key.Frame, project._frames[f])).Select(c => c.Key).ToList()
-                    : [new CelKey(target, project._frames[f], ActiveKey(target))];
+                var keys = reference.IsPart && wholeLayer
+                    ? project.CelsOf(reference).Where(c => ReferenceEquals(c.Key.Frame, project._frames[f])).Select(c => c.Key).ToList()
+                    : [new CelKey(reference, project._frames[f], ActiveKey(reference))];
                 foreach (var key in keys)
                 {
                     var cel = project._cels.GetValueOrDefault(key);
-                    bool overflow = !target.IsPart && project._overflow.ContainsKey(key);
+                    bool overflow = !reference.IsPart && project._overflow.ContainsKey(key);
                     if (!HasContent(cel) && !overflow) continue;
-                    if (project.IsLayerLocked(l))
-                    {
-                        locked++;
-                        continue;
-                    }
-                    var at = project.LayerOrigin(target, f);
-                    var refAt = project.LayerOrigin(reference, f);
-                    var offset = new Point(at.X - refAt.X, at.Y - refAt.Y);
-                    if (Lift(project, key, cel, offset, selection) is { } t) targets.Add(t);
+                    if (Lift(project, key, cel, selection) is { } t) targets.Add(t);
                 }
             }
             if (targets.Count == 0) return null;
@@ -153,15 +157,14 @@ public sealed partial class SpriteProject
                 foreach (var t in targets)
                 {
                     var r = t.Raw.SourceBounds;
-                    r.Offset(t.Offset);
                     start = start.IsEmpty ? r : Rectangle.Union(start, r);
                 }
             }
-            return new LayerTransform(project, reference, refFrame, targets, selection, wholeLayer, start, locked);
+            return new LayerTransform(project, reference, refFrame, targets, selection, wholeLayer, start);
         }
 
         /// <summary>셀 하나에서 원본을 뗀다(선택 모양 안 또는 칠한 픽셀 전체). 뗄 픽셀이 없으면 null.</summary>
-        private static Target? Lift(SpriteProject project, CelKey key, PixelImage? cel, Point offset, PixelMask? selection)
+        private static Target? Lift(SpriteProject project, CelKey key, PixelImage? cel, PixelMask? selection)
         {
             var layer = key.Layer;
             var (full, origin) = layer.IsPart
@@ -174,10 +177,10 @@ public sealed partial class SpriteProject
                 if (opaque.IsEmpty) return null;
                 opaque.Offset(origin);
                 var lifted = full.Crop(new Rectangle(opaque.X - origin.X, opaque.Y - origin.Y, opaque.Width, opaque.Height));
-                return new Target(layer, key.Frame, key, cel, offset, FreeTransform.Own(lifted, new PixelMask(opaque)), null, origin, full, origin);
+                return new Target(layer, key.Frame, key, cel, FreeTransform.Own(lifted, new PixelMask(opaque)), null, origin, full, origin);
             }
-            // 선택 모양(이 셀 좌표)을 셀 전체 안으로 자르고 그 안 픽셀을 뗀다.
-            var region = sel.Offset(-offset.X, -offset.Y).Trim(fullRect);
+            // 선택 모양을 셀 전체 안으로 자르고 그 안 픽셀을 뗀다.
+            var region = sel.Trim(fullRect);
             if (region.IsEmpty) return null;
             var b = region.Bounds;
             var take = new PixelImage(b.Width, b.Height);
@@ -195,7 +198,7 @@ public sealed partial class SpriteProject
                     any = true;
                 }
             if (!any) return null;
-            return new Target(layer, key.Frame, key, cel, offset, FreeTransform.Own(take, region), rest, origin, full, origin);
+            return new Target(layer, key.Frame, key, cel, FreeTransform.Own(take, region), rest, origin, full, origin);
         }
 
         // ───────────── 상자·값 ─────────────
@@ -215,12 +218,34 @@ public sealed partial class SpriteProject
             return q;
         }
 
-        /// <summary>프레임 <paramref name="frame"/>에서 쓸 값: 레이어 전체이고 선택이 없으면 기준 프레임과의 피벗 차이만큼 옮겨 그 프레임의 피벗을 중심으로 돈다.</summary>
+        /// <summary>
+        /// 프레임 <paramref name="frame"/>에서 쓸 값: 레이어 전체이고 선택이 없으면 기준 프레임과의 피벗 차이 v만큼 옮긴 대응 M(x − v) + v로,
+        /// 그 프레임의 피벗을 중심으로 돌고 찌그러뜨린다.
+        /// </summary>
         public TransformParams ParamsAt(Frame frame, TransformParams p)
         {
             if (!WholeLayer || HasSelection || ReferenceEquals(frame, ReferenceFrame)) return p;
-            var (dx, dy) = PivotShift(frame, p);
-            return p with { CenterX = p.CenterX + dx, CenterY = p.CenterY + dy };
+            var (ax, ay) = ReferencePivot;
+            var (bx, by) = PivotPixel(ReferenceLayer, frame);
+            double vx = bx - ax, vy = by - ay;
+            // 배율·회전 부분: 중심이 (I − A)v만큼 옮겨 간다.
+            var (lx, ly) = Box.Linear(p, vx, vy);
+            var basis = p with { CenterX = p.CenterX + vx - lx, CenterY = p.CenterY + vy - ly };
+            if (!p.IsDistorted) return basis;
+            // 찌그러뜨림: 상자 꼭짓점이 옮긴 대응으로 가는 곳에 맞춘다.
+            var r = Box.Bounds;
+            Span<(double X, double Y)> corners = stackalloc (double X, double Y)[4];
+            corners[0] = Shifted(r.Left, r.Top);
+            corners[1] = Shifted(r.Right, r.Top);
+            corners[2] = Shifted(r.Right, r.Bottom);
+            corners[3] = Shifted(r.Left, r.Bottom);
+            return Box.WithCorners(basis, corners) ?? basis;
+
+            (double X, double Y) Shifted(double x, double y)
+            {
+                var (mx, my) = Box.Map(p, x - vx, y - vy);
+                return (mx + vx, my + vy);
+            }
         }
 
         /// <summary>
@@ -241,16 +266,6 @@ public sealed partial class SpriteProject
             return (q, center);
         }
 
-        /// <summary>레이어 전체 변형에서 프레임 <paramref name="frame"/>의 중심 이동: (I − A)(그 프레임 피벗 − 기준 프레임 피벗).</summary>
-        private (double X, double Y) PivotShift(Frame frame, TransformParams p)
-        {
-            var (ax, ay) = PivotPixel(ReferenceLayer, ReferenceFrame);
-            var (bx, by) = PivotPixel(ReferenceLayer, frame);
-            double vx = bx - ax, vy = by - ay;
-            var (lx, ly) = Box.Linear(p, vx, vy);
-            return (vx - lx, vy - ly);
-        }
-
         /// <summary>레이어의 그 프레임 피벗(그 레이어 좌표 px, 연속).</summary>
         private (double X, double Y) PivotPixel(Layer layer, Frame frame)
         {
@@ -258,21 +273,17 @@ public sealed partial class SpriteProject
             return (x, y);
         }
 
-        /// <summary>셀 <paramref name="t"/>의 점(그 셀 좌표)을 값 <paramref name="p"/>(기준 프레임 값)로 옮긴 곳(그 셀 좌표).</summary>
-        private (double X, double Y) MapPoint(Target t, TransformParams p, double x, double y)
-        {
-            var (mx, my) = Box.Map(ParamsAt(t.Frame, p), x + t.Offset.X, y + t.Offset.Y);
-            return (mx - t.Offset.X, my - t.Offset.Y);
-        }
+        /// <summary>셀 <paramref name="t"/>의 점(기준 레이어 좌표)을 값 <paramref name="p"/>(기준 프레임 값)로 옮긴 곳.</summary>
+        private (double X, double Y) MapPoint(Target t, TransformParams p, double x, double y) => Box.Map(ParamsAt(t.Frame, p), x, y);
 
-        /// <summary>옮기기만 했는지(각도 0, 배율 1, 여백 그대로, 정수 픽셀만큼).</summary>
+        /// <summary>옮기기만 했는지(각도 0, 배율 1, 찌그러뜨림 없음, 여백 그대로, 정수 픽셀만큼).</summary>
         private bool IsShiftOnly(TransformParams p, out int dx, out int dy)
         {
             var id = Box.Identity;
             double fx = p.CenterX - id.CenterX, fy = p.CenterY - id.CenterY;
             dx = (int)Math.Round(fx);
             dy = (int)Math.Round(fy);
-            return p.Angle == 0 && p.ScaleX == 1 && p.ScaleY == 1 && Box.Bounds == StartBox
+            return p.Angle == 0 && p.ScaleX == 1 && p.ScaleY == 1 && !p.IsDistorted && Box.Bounds == StartBox && _clip is null
                    && Math.Abs(fx - dx) < 1e-9 && Math.Abs(fy - dy) < 1e-9;
         }
 
@@ -309,24 +320,27 @@ public sealed partial class SpriteProject
         }
 
         /// <summary>
-        /// 잘릴 픽셀(선택 없이 상자를 좁혀 상자 밖으로 남는 원래 픽셀)과 왼쪽 위(그 셀 좌표) — 화면에 흐리게 보인다. 없으면 null.
+        /// 잘릴 픽셀(선택 없이 상자를 좁히거나 여백 모양(<see cref="Clip"/>) 밖으로 남는 원래 픽셀)과 왼쪽 위(셀 좌표) — 화면에 흐리게 보인다. 없으면 null.
         /// </summary>
         public (PixelImage Image, Point Origin)? CutPixels(Target t)
         {
             if (HasSelection) return null;
             var box = Box.Bounds;
-            box.Offset(-t.Offset.X, -t.Offset.Y);
             var full = new Rectangle(t.FullOrigin, t.Full.Size);
             var opaque = t.Full.GetOpaqueBounds();
             opaque.Offset(t.FullOrigin);
-            if (opaque.IsEmpty || box.Contains(opaque)) return null;
+            if (opaque.IsEmpty || (_clip is null && box.Contains(opaque))) return null;
             var cut = t.Full.Crop(new Rectangle(opaque.X - full.X, opaque.Y - full.Y, opaque.Width, opaque.Height));
-            var keep = Rectangle.Intersect(box, opaque);
-            if (keep.Width > 0 && keep.Height > 0) cut.FillRect(new Rectangle(keep.X - opaque.X, keep.Y - opaque.Y, keep.Width, keep.Height), Color32.Transparent);
+            for (int y = 0; y < opaque.Height; y++)
+                for (int x = 0; x < opaque.Width; x++)
+                {
+                    int cx = opaque.X + x, cy = opaque.Y + y;
+                    if (box.Contains(cx, cy) && (_clip is not { } clip || clip.Contains(cx, cy))) cut.Pixels[y * opaque.Width + x] = Color32.Transparent;
+                }
             return cut.GetOpaqueBounds().IsEmpty ? null : (cut, opaque.Location);
         }
 
-        /// <summary>셀 하나의 옮긴 픽셀(그 셀 좌표). 상자 밖으로 모두 잘렸으면 null.</summary>
+        /// <summary>셀 하나의 옮긴 픽셀. 상자 밖으로 모두 잘렸으면 null.</summary>
         private TransformResult? RenderMoved(Target t, TransformParams p, ResampleMode mode, NineSliceFill? slice)
         {
             if (SourceOf(t) is not { } src) return null;
@@ -343,16 +357,16 @@ public sealed partial class SpriteProject
                 if (at.ScaleY < 0) scaled = ImageTransform.FlipVertical(scaled);
                 return new TransformResult(scaled, new PixelMask(to));
             }
-            var r = src.Render(Box.ParamsFor(src.Box, at, t.Offset.X, t.Offset.Y), mode);
+            var r = src.Render(Box.ParamsFor(src.Box, at), mode);
             return r.Region.IsEmpty ? null : r;
         }
 
         /// <summary>
-        /// 9-slice로 늘릴 테두리(상자 기준): 레이어 전체 부위를 선택 없이 각도 0으로 늘리고 테두리가 상자에 맞을 때만. 아니면 null.
+        /// 9-slice로 늘릴 테두리(상자 기준): 레이어 전체 부위를 선택 없이 각도 0으로 늘리고(찌그러뜨리지 않음, 여백 모양 없음) 테두리가 상자에 맞을 때만. 아니면 null.
         /// </summary>
         private SpriteBorder? SliceBorder(Layer layer, TransformParams p, NineSliceFill? slice)
         {
-            if (slice is null || !WholeLayer || HasSelection || !layer.IsPart || p.Angle != 0 || layer.PartBorder.IsNone) return null;
+            if (slice is null || !WholeLayer || HasSelection || !layer.IsPart || p.Angle != 0 || p.IsDistorted || _clip is not null || layer.PartBorder.IsNone) return null;
             var b = BorderInBox(layer);
             return NineSlice.Applies(b, Box.Bounds.Width, Box.Bounds.Height) ? b : null;
         }
@@ -366,11 +380,10 @@ public sealed partial class SpriteProject
             return new SpriteBorder(b.Left - box.X, b.Top - box.Y, b.Right - (size.Width - box.Right), b.Bottom - (size.Height - box.Bottom));
         }
 
-        /// <summary>지금 상자에 맞춘 셀 원본(여백만큼 자르거나, 선택 영역이면 가장자리 픽셀로 늘림). 모두 잘렸으면 null.</summary>
+        /// <summary>지금 상자에 맞춘 셀 원본(여백만큼 자르거나, 선택 영역이면 가장자리 픽셀로 늘림 — 여백 모양(<see cref="Clip"/>)이 있으면 그 밖은 뺌). 모두 잘렸으면 null.</summary>
         private FreeTransform? SourceOf(Target t)
         {
             var box = Box.Bounds;
-            box.Offset(-t.Offset.X, -t.Offset.Y);
             if (t.Source is not null && t.SourceBox == box) return t.Source;
             var raw = t.Raw.SourceBounds;
             Rectangle bounds;
@@ -378,7 +391,6 @@ public sealed partial class SpriteProject
             {
                 // 처음 상자 가장자리에 닿아 있던 쪽만 여백만큼 늘리고, 좁히면 그 안만 남긴다.
                 var start = StartBox;
-                start.Offset(-t.Offset.X, -t.Offset.Y);
                 int l = box.Left < start.Left ? (raw.Left == start.Left ? box.Left : raw.Left) : Math.Max(raw.Left, box.Left);
                 int top = box.Top < start.Top ? (raw.Top == start.Top ? box.Top : raw.Top) : Math.Max(raw.Top, box.Top);
                 int r = box.Right > start.Right ? (raw.Right == start.Right ? box.Right : raw.Right) : Math.Min(raw.Right, box.Right);
@@ -388,6 +400,7 @@ public sealed partial class SpriteProject
             else bounds = Rectangle.Intersect(raw, box);
             t.SourceBox = box;
             t.Source = bounds.Width > 0 && bounds.Height > 0 ? t.Raw.Reframe(bounds, extendEdges: HasSelection) : null;
+            if (t.Source is { } source && _clip is { } clip) t.Source = source.Clip(clip);
             return t.Source;
         }
 
@@ -398,6 +411,7 @@ public sealed partial class SpriteProject
         {
             if (_selection is not { } sel) return null;
             var shape = FreeTransform.Own(new PixelImage(sel.Bounds.Width, sel.Bounds.Height), sel).Reframe(Box.Bounds, extendEdges: true);
+            if (_clip is { } clip) shape = shape.Clip(clip);
             var r = shape.Render(Box.ParamsFor(shape.Box, p), mode);
             return r.Region.IsEmpty ? null : r.Region;
         }
@@ -406,13 +420,15 @@ public sealed partial class SpriteProject
 
         /// <summary>
         /// 모든 셀에 적용한다(실행취소 한 단계 <paramref name="label"/>). 그동안 없어졌거나 잠긴 레이어·프레임의 셀은 건너뛴다. 바꾼 셀이 있으면 true.
+        /// 피벗이 그림을 따라가면(선택 없음) 프레임마다 그 피벗 + <paramref name="pivotSlip"/>(기준 레이어 원본 좌표의 어긋남, 모든 프레임 같음)이 옮겨 간 곳에 놓는다
+        /// — 그림만 옮기고 피벗은 제자리에 둘 때 쓴다(기본값 = 피벗 지점 그대로 따라감).
         /// </summary>
-        public bool Commit(string label, TransformParams p, ResampleMode mode, NineSliceFill? slice)
+        public bool Commit(string label, TransformParams p, ResampleMode mode, NineSliceFill? slice, (double X, double Y) pivotSlip = default)
         {
             var groups = _targets.Where(t => _project._layers.Contains(t.Layer) && _project._frames.Contains(t.Frame) && !_project.IsLayerLocked(_project.IndexOf(t.Layer)))
                 .GroupBy(t => t.Layer).ToList();
             if (groups.Count == 0) return false;
-            if (Box.Bounds == StartBox && p == Box.Identity) return false;
+            if (Box.Bounds == StartBox && _clip is null && p == Box.Identity) return false;
             int dx = 0, dy = 0;
             bool shift = !HasSelection && IsShiftOnly(p, out dx, out dy);
             // 픽셀은 기록 밖에서 미리 그려 둔다(Edit 안에서는 바꾸기만).
@@ -427,33 +443,51 @@ public sealed partial class SpriteProject
                     var targets = group.ToList();
                     if (group.Key.IsPart)
                     {
-                        if (shift) ShiftPart(group.Key, targets, dx, dy);
-                        else CommitPart(group.Key, targets, results, p, slice);
+                        if (shift) ShiftPart(group.Key, targets, dx, dy, pivotSlip);
+                        else CommitPart(group.Key, targets, results, p, slice, pivotSlip);
                     }
-                    else CommitNormal(group.Key, targets, results, p);
+                    else CommitNormal(group.Key, targets, results, p, pivotSlip);
                 }
             });
             return true;
         }
 
-        /// <summary>부위를 옮기기만 함: 그림 대신 부위 위치를 옮긴다(레이어 전체면 모든 프레임, 아니면 그 셀들의 프레임). 피벗은 부위 기준이라 같이 따라간다.</summary>
-        private void ShiftPart(Layer part, List<Target> targets, int dx, int dy)
+        /// <summary>
+        /// 부위를 옮기기만 함: 그림 대신 부위 위치를 옮긴다(레이어 전체면 모든 프레임, 아니면 그 셀들의 프레임). 피벗은 부위 기준이라 같이 따라가고,
+        /// 부위 안에서 <paramref name="slip"/>만큼 더 옮긴다.
+        /// </summary>
+        private void ShiftPart(Layer part, List<Target> targets, int dx, int dy, (double X, double Y) slip)
         {
             var frames = WholeLayer ? _project._frames.ToList() : targets.Select(t => t.Frame).Distinct().ToList();
             if (frames.Count == _project._frames.Count && !part.IsAutoLaidOut)
-            {
                 part.PartOffset = new Point(part.PartOffset.X + dx, part.PartOffset.Y + dy);
+            else
+                foreach (var f in frames)
+                {
+                    var s = f.PartShifts.GetValueOrDefault(part);
+                    SetShift(f, part, new Point(s.X + dx, s.Y + dy));
+                }
+            if (slip == default) return;
+            var size = part.PartSize;
+            Pivot ToPivot(double x, double y) => new((float)(x / size.Width), 1f - (float)(y / size.Height));
+            if (WholeLayer)
+            {
+                _project.MapLayerPivots(part, q =>
+                {
+                    var (x, y) = q.ToLocalPixel(size.Width, size.Height);
+                    return ToPivot(x + slip.X, y + slip.Y);
+                });
                 return;
             }
             foreach (var f in frames)
             {
-                var s = f.PartShifts.GetValueOrDefault(part);
-                SetShift(f, part, new Point(s.X + dx, s.Y + dy));
+                var (px, py) = PivotPixel(part, f);
+                f.LayerPivots[part] = ToPivot(px + slip.X, py + slip.Y);
             }
         }
 
         /// <summary>일반 레이어: 셀과 캔버스 밖 그림을 바꾸고(링크된 셀은 한 번), 선택이 없으면 피벗도 그림을 따라가게 한다.</summary>
-        private void CommitNormal(Layer layer, List<Target> targets, Dictionary<Target, (PixelImage Image, Point Origin)?> results, TransformParams p)
+        private void CommitNormal(Layer layer, List<Target> targets, Dictionary<Target, (PixelImage Image, Point Origin)?> results, TransformParams p, (double X, double Y) slip)
         {
             var size = _project.Size;
             var done = new HashSet<PixelImage>(ReferenceEqualityComparer.Instance);
@@ -474,7 +508,7 @@ public sealed partial class SpriteProject
             Pivot ToPivot(double x, double y) => new((float)(x / w), 1f - (float)(y / h));
             if (WholeLayer)
             {
-                var (sx, sy) = PivotFollow(p);
+                var (sx, sy) = PivotFollow(p, slip);
                 _project.MapLayerPivots(layer, q =>
                 {
                     var (x, y) = q.ToLocalPixel(w, h);
@@ -485,23 +519,26 @@ public sealed partial class SpriteProject
             foreach (var t in targets.GroupBy(t => t.Frame).Select(g => g.First()))
             {
                 var (px, py) = PivotPixel(layer, t.Frame);
-                var (x, y) = MapPoint(t, p, px, py);
+                var (x, y) = MapPoint(t, p, px + slip.X, py + slip.Y);
                 t.Frame.LayerPivots[layer] = ToPivot(x, y);
             }
         }
 
-        /// <summary>레이어 전체 변형에서 모든 피벗이 옮겨 가는 거리: 기준 프레임 피벗이 옮겨 간 곳 − 원래 자리(프레임마다 그 피벗을 중심으로 돌아 모두 같음).</summary>
-        private (double X, double Y) PivotFollow(TransformParams p)
+        /// <summary>
+        /// 레이어 전체 변형에서 모든 피벗이 옮겨 가는 거리: 기준 프레임 피벗 + <paramref name="slip"/>이 옮겨 간 곳 − 원래 피벗 자리
+        /// (프레임마다 대응을 그 피벗 차이만큼 옮겨 쓰므로 모두 같음).
+        /// </summary>
+        private (double X, double Y) PivotFollow(TransformParams p, (double X, double Y) slip)
         {
-            var (px, py) = PivotPixel(ReferenceLayer, ReferenceFrame);
-            var (x, y) = Box.Map(p, px, py);
+            var (px, py) = ReferencePivot;
+            var (x, y) = Box.Map(p, px + slip.X, py + slip.Y);
             return (x - px, y - py);
         }
 
         /// <summary>
         /// 부위: 새 영역(결과가 들어가게 넓히거나 상자를 따라감)으로 모든 스킨 셀을 맞추고 결과를 넣는다. 테두리와 피벗도 같은 그림 지점을 가리키게 한다.
         /// </summary>
-        private void CommitPart(Layer part, List<Target> targets, Dictionary<Target, (PixelImage Image, Point Origin)?> results, TransformParams p, NineSliceFill? slice)
+        private void CommitPart(Layer part, List<Target> targets, Dictionary<Target, (PixelImage Image, Point Origin)?> results, TransformParams p, NineSliceFill? slice, (double X, double Y) slip)
         {
             var size = part.PartSize;
             var old = new Rectangle(Point.Empty, size);
@@ -556,7 +593,7 @@ public sealed partial class SpriteProject
             if (!b.IsNone)
             {
                 SpriteBorder next;
-                if (!HasSelection && p.Angle != 0) next = SpriteBorder.None;
+                if (!HasSelection && (p.Angle != 0 || p.IsDistorted)) next = SpriteBorder.None;
                 else if (!HasSelection && WholeLayer)
                 {
                     var inBox = BorderInBox(part);
@@ -580,10 +617,10 @@ public sealed partial class SpriteProject
                 foreach (var t in targets.GroupBy(t => t.Frame).Select(g => g.First()))
                 {
                     var (px, py) = PivotPixel(part, t.Frame);
-                    var (x, y) = MapPoint(t, p, px, py);
+                    var (x, y) = MapPoint(t, p, px + slip.X, py + slip.Y);
                     own.Add((t.Frame, ToPivot(x, y)));
                 }
-            var (sx, sy) = !HasSelection && WholeLayer ? PivotFollow(p) : (0, 0);
+            var (sx, sy) = !HasSelection && WholeLayer ? PivotFollow(p, slip) : (0, 0);
             _project.MapLayerPivots(part, q =>
             {
                 var (x, y) = q.ToLocalPixel(size.Width, size.Height);

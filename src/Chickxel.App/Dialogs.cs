@@ -548,7 +548,7 @@ public sealed class ShortcutHelpDialog : DialogBase
         (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, "Ctrl+Alt+O", UiStrings.S_Dialogs_Shortcuts_669BA7D949),
         (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, "Ctrl+Alt+R", UiStrings.S_Dialogs_Shortcuts_5F294C19DF),
         (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, "Ctrl+Alt+C", UiStrings.S_Dialogs_Shortcuts_F869736C79),
-        (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, "Ctrl+Shift+C", UiStrings.LayerTransform_Shortcut),
+        (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, "Alt+Shift+C", UiStrings.LayerTransform_Shortcut),
         (UiStrings.S_Dialogs_Shortcuts_A069FAB880, "Shift+Enter", UiStrings.S_Dialogs_Shortcuts_E5B5E47196),
         (UiStrings.S_Dialogs_Shortcuts_A069FAB880, ", / .", UiStrings.S_Dialogs_Shortcuts_864C7AA661),
         (UiStrings.S_Dialogs_Shortcuts_A069FAB880, "Home / End", UiStrings.S_Dialogs_Shortcuts_D49FC130EF),
@@ -655,7 +655,7 @@ public sealed class ShortcutHelpDialog : DialogBase
         if (group == UiStrings.S_Dialogs_Shortcuts_7D7F9ACF6D) return new("shortcuts-file");
         // 편집 묶음 가운데 뒤집기·회전·변형·외곽선·색 바꾸기·크기·환경 설정은 "변형과 이미지" 쪽에 있다.
         if (group == UiStrings.S_Dialogs_Shortcuts_145FCAB3DD)
-            return new(key is "Shift+H / Shift+V" or "Ctrl+R / Ctrl+Shift+R" or "Ctrl+T" or "Ctrl+Alt+O" or "Ctrl+Alt+R" or "Ctrl+Alt+C" or "Ctrl+Shift+C" or "Ctrl+,"
+            return new(key is "Shift+H / Shift+V" or "Ctrl+R / Ctrl+Shift+R" or "Ctrl+T" or "Ctrl+Alt+O" or "Ctrl+Alt+R" or "Ctrl+Alt+C" or "Alt+Shift+C" or "Ctrl+,"
                 ? "shortcuts-transform" : "shortcuts-edit");
         if (group == UiStrings.S_Dialogs_Shortcuts_6657ADE48E) return new("shortcuts-tools");
         if (group == UiStrings.S_Dialogs_Shortcuts_CBA6A95A08) return new("shortcuts-view");

@@ -121,6 +121,29 @@ public class CelOverflowTests
     }
 
     [Fact]
+    public void CanvasResize_KeepShape_ErasesEverythingOutsideIt_IncludingOffCanvas_OneUndoStep()
+    {
+        var p = new SpriteProject(4, 4);
+        p.SetCel(0, 0, TestUtil.RandomImage(4, 4, opaque: true));
+        Draw(p, 0, 0, Red);
+        // 캔버스 밖 그림 하나: 오른쪽 위 밖
+        p.ResizeCanvasAndScale(3, 4, new Rectangle(0, 0, 4, 4));
+        Assert.NotEqual(default, FullAt(p, 3, 0));
+        int steps = p.History.UndoCount;
+
+        // 같은 크기, 오른쪽 위 꼭짓점을 왼쪽으로 옮긴 사다리꼴로 자르기: 오른쪽 위 삼각형과 캔버스 밖은 지워짐
+        p.ResizeCanvasAndScale(3, 4, new Rectangle(0, 0, 3, 4), keep: PixelMask.CentersInside([(0, 0), (1, 0), (3, 4), (0, 4)]));
+
+        Assert.Equal(steps + 1, p.History.UndoCount);
+        Assert.Equal(Red, FullAt(p, 0, 0));
+        Assert.Equal(default, FullAt(p, 2, 0));
+        Assert.Equal(default, FullAt(p, 3, 0));
+        Assert.NotEqual(default, FullAt(p, 2, 3));
+        p.Undo();
+        Assert.NotEqual(default, FullAt(p, 3, 0));
+    }
+
+    [Fact]
     public void DuplicateMergeAndFlip_CarryOutsidePixels()
     {
         var p = new SpriteProject(4, 4);

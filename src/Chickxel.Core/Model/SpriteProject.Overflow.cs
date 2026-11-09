@@ -135,10 +135,10 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 일반 레이어 셀들의 내용을 캔버스 밖 그림까지 통째로 (<paramref name="dx"/>, <paramref name="dy"/>)만큼 옮긴다(실행취소 한 단계, 밖으로 나간 픽셀은 캔버스 밖 그림으로 남음).
-    /// 링크된 셀은 함께 옮겨지고(한 번만), 부위·그룹·잠긴 레이어·빈 셀은 건너뛴다. 그림이 옮겨진 프레임(링크된 셀의 프레임 포함)의 레이어 피벗도 같이 옮긴다.
-    /// 옮긴 셀 수(고른 셀 기준)를 돌려준다(0이면 기록 없음).
+    /// 링크된 셀은 함께 옮겨지고(한 번만), 부위·그룹·잠긴 레이어·빈 셀은 건너뛴다. <paramref name="movePivots"/>면 그림이 옮겨진 프레임(링크된 셀의 프레임 포함)의
+    /// 레이어 피벗도 같이 옮기고, 아니면 피벗은 제자리다. 옮긴 셀 수(고른 셀 기준)를 돌려준다(0이면 기록 없음).
     /// </summary>
-    public int ShiftCels(string label, IEnumerable<(int Layer, int Frame)> cels, int dx, int dy)
+    public int ShiftCels(string label, IEnumerable<(int Layer, int Frame)> cels, int dx, int dy, bool movePivots = true)
     {
         if (_stroke is not null) CommitCelStroke(DomainStrings.Project_Edit);
         var changes = new List<(CelKey Key, PixelImage Cel, CelOverflow? Overflow)>();
@@ -167,10 +167,12 @@ public sealed partial class SpriteProject
             if (!movedFrames.TryGetValue(key.Layer, out var frames)) movedFrames[key.Layer] = frames = [];
             foreach (var k in LinkedKeys(key)) frames.Add(k.Frame);
         }
-        Edit(label, ProjectChange.Pixels | ProjectChange.Layers | (PivotLayer is { } rep && movedFrames.ContainsKey(rep) ? ProjectChange.Frames : ProjectChange.None), () =>
+        bool pivotsChange = movePivots && PivotLayer is { } rep && movedFrames.ContainsKey(rep);
+        Edit(label, ProjectChange.Pixels | ProjectChange.Layers | (pivotsChange ? ProjectChange.Frames : ProjectChange.None), () =>
         {
             foreach (var (key, cel, overflow) in changes) SetLinked(key, cel, overflow);
-            foreach (var (layer, frames) in movedFrames) ShiftLayerPivots(layer, frames, dx, dy);
+            if (movePivots)
+                foreach (var (layer, frames) in movedFrames) ShiftLayerPivots(layer, frames, dx, dy);
         });
         return count;
     }

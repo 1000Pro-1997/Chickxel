@@ -85,7 +85,7 @@
     <value>이동</value>
   </data>
   <data name="Tool_Move_Hint" xml:space="preserve">
-    <value>선택이 있으면 선택 이동, 없으면 셀 전체 밀기(순환 옵션) · 글씨 레이어(빈 셀 + 글씨 효과)는 글씨 위치를 옮김 · 다른 도구에서도 Ctrl+드래그(누르는 동안 이동 도구)</value>
+    <value>선택이 있으면 선택 이동, 없으면 셀 전체 밀기(순환 옵션 — 피벗도 함께, 우클릭으로 끌면 피벗은 제자리) · 글씨 레이어(빈 셀 + 글씨 효과)는 글씨 위치를 옮김 · 다른 도구에서도 Ctrl+드래그(누르는 동안 이동 도구)</value>
   </data>
   <data name="Tool_Dodge_Name" xml:space="preserve">
     <value>밝게/어둡게</value>
@@ -682,7 +682,7 @@
     <value>캔버스 회전(모든 프레임)</value>
   </data>
   <data name="Message_325" xml:space="preserve">
-    <value>변형(지금 셀, 파란 상자): 안쪽 = 옮기기, 손잡이 = 크기, Ctrl+손잡이 = 여백, 바깥 = 회전 — Enter 적용, Esc 취소</value>
+    <value>변형(지금 셀, 파란 상자): 안쪽 = 옮기기, 손잡이 = 크기(Shift 비율 유지, Alt 가운데 기준), Ctrl+손잡이 = 자유 변형, 바깥 = 회전, 우클릭 = 회전·뒤집기 메뉴, 우클릭 끌기 = 그림만 옮기기(안쪽)·여백(손잡이) — Enter 적용, Esc 취소</value>
   </data>
   <data name="Message_326" xml:space="preserve">
     <value>현재 레이어가 잠겨 있습니다.</value>
@@ -697,7 +697,7 @@
     <value>격자로 나누기</value>
   </data>
   <data name="Message_332" xml:space="preserve">
-    <value>캔버스 크기: 손잡이 = 가장자리, Ctrl+끌기 = 그림 크기도 함께(Shift 비율 유지), 그림 안쪽 = 옮기기 — Enter 확인, Esc 취소</value>
+    <value>캔버스 크기: 손잡이 = 그림도 함께 늘리기, 손잡이 우클릭 = 여백(캔버스 가장자리만) — Shift 비율 유지, Alt 가운데 기준, Ctrl 꼭짓점을 마음대로(늘리기면 그림이 그 모양대로 기울고 남는 자리는 여백, 여백이면 그 모양 밖은 잘림), 그림 안쪽 = 옮기기 — Enter 확인, Esc 취소</value>
   </data>
   <data name="Message_333" xml:space="preserve">
     <value>열린 폴더가 없어 파일로 저장할 수 없습니다. file_name 없이 만들거나 사용자에게 폴더를 열어 달라고 하세요.</value>
@@ -1117,15 +1117,13 @@
   <data name="Open_Decoding" xml:space="preserve"><value>{name} 프레임 푸는 중…</value><comment>name = 파일 이름.</comment></data>
   <data name="Open_Unreadable" xml:space="preserve"><value>{name}을(를) 열 수 없습니다(지원하지 않는 형식이거나 파일이 손상되었습니다).</value><comment>name = 파일 이름.</comment></data>
   <data name="Open_Opened" xml:space="preserve"><value>{name} 열기 — 프레임 {frames}개, {width}×{height}, 전체 {ms}ms · 아직 저장 안 함(저장하면 .chickxel 위치를 묻습니다)</value><comment>name = 파일 이름, frames = 프레임 수, width·height = 캔버스 크기(px), ms = 전체 길이(ms).</comment></data>
-  <data name="Transform_Cels" xml:space="preserve"><value>셀 {count}칸 함께 변형 · </value><comment>count = 함께 변형하는 셀 수(타임라인에서 고른 셀).</comment></data>
-  <data name="Transform_LockedSkipped" xml:space="preserve"><value>잠긴 레이어의 셀 {count}칸은 건너뜀 · </value><comment>count = 레이어가 잠겨 변형에서 뺀 셀 수.</comment></data>
   <data name="Tool_Shape_Name" xml:space="preserve"><value>도형</value><comment>도구 이름: 사각형·원·삼각형·별 등을 그리는 도형 도구</comment></data>
   <data name="Tool_Shape_Hint" xml:space="preserve"><value>Shift: 비율 고정 · U: 외곽/채움 · 모양은 도구 설정에서</value><comment>도형 도구 상태 줄 안내</comment></data>
   <data name="Shortcut_ShapeLine" xml:space="preserve"><value>도형: 선</value><comment>단축키 이름: 도형 도구를 선 모양으로 고름(L)</comment></data>
   <data name="Tool_Text_Name" xml:space="preserve"><value>글씨</value><comment>도구 이름: 캔버스를 눌러 글씨 레이어(글씨 효과가 붙은 빈 레이어)를 만드는 글씨 도구</comment></data>
   <data name="Tool_Text_Hint" xml:space="preserve"><value>드래그: 글상자 · 클릭: 한 줄 글씨 · 글씨 위 클릭: 고치기 · Enter: 줄 바꿈 · Esc / Ctrl+Enter / 바깥 클릭: 마침 · 크기·굵게·글꼴은 도구 설정에서</value><comment>글씨 도구 상태 줄 안내</comment></data>
   <data name="Menu_Edit_BeginLayerResize" xml:space="preserve"><value>레이어 크기…</value><comment>편집 메뉴: 지금 레이어의 모든 프레임을 회전·크기·옮기기(레이어 전체 변형, 캔버스는 그대로)</comment></data>
-  <data name="Message_LayerTransform" xml:space="preserve"><value>레이어 전체 변형(주황 상자, 모든 프레임): 안쪽 = 옮기기, 손잡이 = 크기, Ctrl+손잡이 = 여백, 바깥 = 회전(프레임마다 그 피벗 기준) — 다른 프레임을 눌러도 이어짐, Enter 적용, Esc 취소</value></data>
+  <data name="Message_LayerTransform" xml:space="preserve"><value>레이어 전체 변형(주황 상자, 모든 프레임): 안쪽 = 옮기기, 손잡이 = 크기(Shift 비율 유지, Alt 가운데 기준), Ctrl+손잡이 = 자유 변형, 바깥 = 회전(프레임마다 그 피벗 기준), 우클릭 = 회전·뒤집기 메뉴, 우클릭 끌기 = 그림만 옮기기(안쪽)·여백(손잡이) — 다른 프레임을 눌러도 이어짐, Enter 적용, Esc 취소</value></data>
   <data name="Ui_CanvasEffects" xml:space="preserve"><value>효과</value><comment>위 막대 보기 단추: 캔버스에 레이어 효과 보기</comment></data>
   <data name="Ui_CanvasEffectsTip" xml:space="preserve"><value>캔버스에 레이어 효과 보기 (Ctrl+Shift+E) · 끄면 고칠 그림 그대로 보임(미리보기·타임라인·내보내기는 그대로)</value></data>
   <data name="Menu_View_CanvasEffects" xml:space="preserve"><value>캔버스에 효과 보기</value><comment>보기 메뉴(체크): 끄면 캔버스에 효과 없는 그림</comment></data>

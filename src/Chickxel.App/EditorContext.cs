@@ -684,7 +684,7 @@ public sealed partial class EditorContext
     }
 
     /// <summary>
-    /// 타임라인에서 고른 셀들(레이어·프레임 번호) — 변형(Ctrl+T)·이동 도구가 지금 셀과 함께 바꿀 셀. 창이 타임라인 선택에 잇는다(null이면 지금 셀만).
+    /// 타임라인에서 고른 셀들(레이어·프레임 번호) — 이동 도구가 지금 셀과 함께 옮길 셀. 창이 타임라인 선택에 잇는다(null이면 지금 셀만).
     /// </summary>
     public Func<IReadOnlyList<(int Layer, int Frame)>>? SelectedCels { get; set; }
 
@@ -693,12 +693,13 @@ public sealed partial class EditorContext
     /// 그 셀들도 같은 만큼 밀어 실행취소 한 단계로 묶는다(그룹·빈 셀·잠긴 레이어는 건너뜀). <paramref name="wrap"/>이면 밖으로 나간 픽셀이 반대쪽으로,
     /// 아니면 일반 레이어는 캔버스 밖 그림까지 통째로 옮겨 밖으로 나간 픽셀을 남긴다(<see cref="SpriteProject.ShiftCels"/>, 부위는 부위 칸 밖이 잘림).
     /// 지금 셀이 일반 레이어이고 순환이 아니면 열린 스트로크(미리 보기)는 버리고 모델에서 다시 옮긴다. 함께 민 다른 셀 수를 돌려준다.
+    /// <paramref name="movePivot"/>가 false면(이동 도구 우클릭 끌기) 레이어 피벗은 제자리에 둔다.
     /// </summary>
-    public int CommitCelShift(string label, int dx, int dy, bool wrap)
+    public int CommitCelShift(string label, int dx, int dy, bool wrap, bool movePivot = true)
     {
         if (Project is not { } p) return 0;
         var others = (SelectedCels?.Invoke() ?? []).Where(c => c.Layer != _layer || c.Frame != _frame).Distinct().ToList();
-        if (!wrap && p.Layers[_layer].Kind == LayerKind.Normal) return CommitCelShiftKeepingOutside(p, label, others, dx, dy);
+        if (!wrap && p.Layers[_layer].Kind == LayerKind.Normal) return CommitCelShiftKeepingOutside(p, label, others, dx, dy, movePivot);
         if (others.Count == 0 || (dx == 0 && dy == 0))
         {
             CommitStroke(label);
@@ -717,7 +718,7 @@ public sealed partial class EditorContext
     }
 
     /// <summary>순환 없이 일반 레이어 지금 셀을 옮김: 일반 레이어 셀은 캔버스 밖 그림까지 옮기고, 함께 고른 부위 셀은 부위 칸 안에서 민다(실행취소 한 단계).</summary>
-    private int CommitCelShiftKeepingOutside(SpriteProject p, string label, List<(int Layer, int Frame)> others, int dx, int dy)
+    private int CommitCelShiftKeepingOutside(SpriteProject p, string label, List<(int Layer, int Frame)> others, int dx, int dy, bool movePivot)
     {
         if (_strokeImage is not null)
         {
@@ -730,11 +731,11 @@ public sealed partial class EditorContext
         var parts = ShiftedPixels(p, others.Where(c => c.Layer >= 0 && c.Layer < p.Layers.Count && p.Layers[c.Layer].IsPart).ToList(), dx, dy, wrap: false);
         bool current = !p.IsCelEmpty(_layer, _frame) || p.GetCelOverflow(_layer, _frame) is not null;
         int shifted = 0;
-        if (parts.Count == 0) shifted = p.ShiftCels(label, normal, dx, dy);
+        if (parts.Count == 0) shifted = p.ShiftCels(label, normal, dx, dy, movePivot);
         else
             p.Edit(label, ProjectChange.Pixels, () =>
             {
-                shifted = p.ShiftCels(label, normal, dx, dy);
+                shifted = p.ShiftCels(label, normal, dx, dy, movePivot);
                 foreach (var (l, f, image) in parts) p.SetCel(l, f, image);
             });
         return Math.Max(0, shifted - (current ? 1 : 0)) + parts.Count;
@@ -820,14 +821,18 @@ public sealed partial class EditorContext
     /// </summary>
     private sealed class FloatingTransform(FreeTransform source, SelectionState before)
     {
+        /// <summary>여백 사각형에 맞춘 원본(<see cref="Source"/>는 여기서 여백 모양 밖을 뺀 것).</summary>
+        public FreeTransform Framed { get; set; } = source;
+        /// <summary>그리는 원본: 여백 모양(<see cref="MarginQuad"/>)이 있으면 그 밖을 뺀 것, 아니면 <see cref="Framed"/>.</summary>
         public FreeTransform Source { get; set; } = source;
         public SelectionState Before { get; } = before;
         public TransformParams Params { get; set; } = source.Box.Identity;
         public (double X, double Y) PivotSource { get; set; } = source.Box.Center;
+        public (double X, double Y)[]? MarginQuad { get; set; }
     }
 
     /// <summary>
-    /// 셀 변형(Ctrl+T, 지금 셀)·레이어 변형(Ctrl+Shift+C, 레이어 전체): 픽셀 엔진, 지금 값(기준 프레임 값), 회전 중심(원본 좌표), 미리보기.
+    /// 셀 변형(Ctrl+T, 지금 셀)·레이어 변형(Alt+Shift+C, 레이어 전체): 픽셀 엔진, 지금 값(기준 프레임 값), 회전 중심(원본 좌표), 미리보기.
     /// 셀은 적용할 때까지 그대로이고 캔버스에는 미리보기 합성을 그린다.
     /// </summary>
     private sealed class LayerTransformSession(SpriteProject.LayerTransform engine)
@@ -835,6 +840,16 @@ public sealed partial class EditorContext
         public SpriteProject.LayerTransform Engine { get; } = engine;
         public TransformParams Params { get; set; } = engine.Box.Identity;
         public (double X, double Y) PivotSource { get; set; } = engine.Box.Center;
+        /// <summary>
+        /// 그림을 따라가는 레이어 피벗이 원본에서 가리키는 점과 기준 피벗(<see cref="SpriteProject.LayerTransform.ReferencePivot"/>)의 차이(원본 좌표).
+        /// 그림만 옮기면(<see cref="MoveTransformImage"/>) 피벗이 제자리에 남도록 바뀐다.
+        /// </summary>
+        public (double X, double Y) PivotSlip { get; set; }
+        /// <summary>
+        /// Ctrl+손잡이 우클릭 끌기로 마음대로 옮긴 여백 상자의 네 꼭짓점(원본 좌표, 왼쪽 위·오른쪽 위·오른쪽 아래·왼쪽 아래). 실제 상자는 이것을 감싸는 사각형이고
+        /// 원본은 이 모양 밖이 잘린다(적용해도 그대로). Ctrl 없이 여백을 끌거나 상자 크기 숫자를 바꾸면 없어진다(사각형 여백으로). 없으면 null.
+        /// </summary>
+        public (double X, double Y)[]? MarginQuad { get; set; }
         /// <summary>지금 프레임 합성 미리보기(캔버스 크기)와 캔버스 밖·잘릴 픽셀(흐리게, 캔버스 좌표). 값이 바뀌면 버린다.</summary>
         public WriteableBitmap? Preview { get; set; }
         public WriteableBitmap? Outside { get; set; }
@@ -858,10 +873,10 @@ public sealed partial class EditorContext
     /// <summary>변형 모드에 들어가거나 나옴, 변형 값·여백·회전 중심·리샘플링·보이는 프레임이 바뀜.</summary>
     public event EventHandler? TransformChanged;
 
-    /// <summary>변형 모드(Ctrl+T·Ctrl+Shift+C·넣은 그림 변형)인지.</summary>
+    /// <summary>변형 모드(Ctrl+T·Alt+Shift+C·넣은 그림 변형)인지.</summary>
     public bool IsTransforming => _transform is not null || _layerTransform is not null;
 
-    /// <summary>레이어 전체 변형(Ctrl+Shift+C, 주황 상자 — 모든 프레임)인지. 아니면 지금 셀 변형(파란 상자).</summary>
+    /// <summary>레이어 전체 변형(Alt+Shift+C, 주황 상자 — 모든 프레임)인지. 아니면 지금 셀 변형(파란 상자).</summary>
     public bool IsLayerTransform => _layerTransform?.Engine.WholeLayer == true;
 
     /// <summary>선택 영역(또는 넣은 그림)만 바꾸는 변형인지 — 피벗은 그대로이고 여백을 넓히면 가장자리 픽셀로 채운다.</summary>
@@ -905,8 +920,8 @@ public sealed partial class EditorContext
     }
 
     /// <summary>
-    /// 변형 모드에 들어간다: <paramref name="wholeLayer"/>면 지금 레이어의 모든 프레임(Ctrl+Shift+C, 프레임마다 그 피벗을 중심으로 돎), 아니면 지금 셀과
-    /// 타임라인에서 함께 고른 셀들(<see cref="SelectedCels"/>, Ctrl+T). 선택 영역이 있으면 그 모양 안 픽셀만(피벗은 그대로), 없으면 칠한 픽셀 전체(피벗도 따라감).
+    /// 변형 모드에 들어간다: <paramref name="wholeLayer"/>면 지금 레이어의 모든 프레임(Alt+Shift+C, 프레임마다 그 피벗을 중심으로 돎), 아니면 지금 셀 하나(Ctrl+T).
+    /// 선택 영역이 있으면 그 모양 안 픽셀만(피벗은 그대로), 없으면 칠한 픽셀 전체(피벗도 따라감).
     /// 셀은 적용할 때까지 그대로이고 캔버스는 미리보기를 그린다. 회전 중심은 처음에 지금 레이어의 피벗 자리.
     /// 못 들어가면 상태 표시줄에 보일 이유, 들어갔으면(이미 변형 중이어도) null.
     /// </summary>
@@ -919,21 +934,13 @@ public sealed partial class EditorContext
         CommitFloating();
         if (!CanEdit) return wholeLayer ? UiStrings.LayerTransform_Locked : UiStrings.S_EditorContext_BeginTransform_C545365EE1;
         PixelMask? selection = Selection.HasSelection ? Selection.Region : null;
-        var cels = wholeLayer ? [] : SelectedCels?.Invoke() ?? [];
-        if (SpriteProject.LayerTransform.Create(p, _layer, _frame, cels, selection, wholeLayer) is not { } engine)
-            return wholeLayer ? UiStrings.LayerTransform_Empty
-                : cels.Any(c => c.Layer != _layer || c.Frame != _frame) ? UiStrings.Transform_NoPixelsInCels : UiStrings.S_EditorContext_BeginTransform_433795A813;
+        if (SpriteProject.LayerTransform.Create(p, _layer, _frame, selection, wholeLayer) is not { } engine)
+            return wholeLayer ? UiStrings.LayerTransform_Empty : UiStrings.S_EditorContext_BeginTransform_433795A813;
         var (px, py) = CurrentLayerPivotLocal();
         _layerTransform = new LayerTransformSession(engine) { PivotSource = (px, py) };
         TransformChanged?.Invoke(this, EventArgs.Empty);
         return null;
     }
-
-    /// <summary>변형 중인 셀 수(부위 레이어 전체면 스킨마다). 변형 중이 아니면 0.</summary>
-    public int TransformCelCount => _layerTransform?.Engine.Targets.Count ?? (_transform is null ? 0 : 1);
-
-    /// <summary>함께 고른 셀 중 레이어가 잠겨 건너뛴 셀 수(그림이 있는 것만). 변형 중이 아니면 0.</summary>
-    public int TransformLockedSkipped => _layerTransform?.Engine.LockedSkipped ?? 0;
 
     /// <summary>
     /// 방금 지금 셀에 넣은 그림(<paramref name="image"/>를 <paramref name="location"/>에 — 캔버스 밖은 캔버스 밖 그림으로 들어감)을 그대로 떠 있는 상태로 들고
@@ -981,28 +988,56 @@ public sealed partial class EditorContext
     }
 
     /// <summary>
+    /// Ctrl+손잡이 우클릭 끌기로 마음대로 옮긴 여백 상자의 네 꼭짓점(원본 좌표, 왼쪽 위부터 시계 방향). 실제 상자(<see cref="TransformBox"/>)는 이것을 감싸는 사각형이다.
+    /// 없으면 null.
+    /// </summary>
+    public (double X, double Y)[]? TransformMarginQuad => _layerTransform is { } s ? s.MarginQuad : _transform?.MarginQuad;
+
+    /// <summary>
     /// 여백: 변형 상자의 원본 사각형을 <paramref name="bounds"/>(원본 좌표)로 바꾼다. 그림은 제자리에 있고, 좁힌 쪽 밖은 잘리며 넓힌 쪽은 선택 영역(넣은 그림)이면
     /// 가장자리 픽셀을 복사해 늘리고 아니면 빈 자리(부위는 영역이 넓어짐)가 된다. 크기는 1px 이상.
+    /// <paramref name="quad"/>는 자유롭게 옮긴 여백 꼭짓점(<see cref="TransformMarginQuad"/> — 상자는 그것을 감싸는 사각형으로 넘기고, 원본은 그 모양 밖이 잘림), null이면 지운다.
     /// </summary>
-    public void SetTransformBox(Rectangle bounds)
+    public void SetTransformBox(Rectangle bounds, (double X, double Y)[]? quad = null)
     {
         bounds.Width = Math.Clamp(bounds.Width, 1, PixelImage.MaxSize);
         bounds.Height = Math.Clamp(bounds.Height, 1, PixelImage.MaxSize);
+        bool quadChanged = !SameQuad(TransformMarginQuad, quad);
+        // 여백 모양: 원본에서 이 모양 안 픽셀만 남긴다(상자는 그것을 감싸는 사각형).
+        PixelMask? clip = quad is null ? null : PixelMask.CentersInside(quad);
         if (_layerTransform is { } s)
         {
-            if (bounds == s.Engine.Box.Bounds) return;
-            s.Params = s.Engine.SetBox(bounds, s.Params);
+            if (bounds == s.Engine.Box.Bounds && !quadChanged) return;
+            s.MarginQuad = quad;
+            if (bounds != s.Engine.Box.Bounds) s.Params = s.Engine.SetBox(bounds, s.Params);
+            if (quadChanged) s.Engine.Clip = clip;
         }
         else if (_transform is { } t)
         {
-            if (bounds == t.Source.SourceBounds) return;
-            var next = t.Source.Reframe(bounds, extendEdges: true);
-            t.Params = t.Source.Box.ParamsFor(next.Box, t.Params);
-            t.Source = next;
+            if (bounds == t.Framed.SourceBounds && !quadChanged) return;
+            t.MarginQuad = quad;
+            if (bounds != t.Framed.SourceBounds)
+            {
+                var next = t.Framed.Reframe(bounds, extendEdges: true);
+                t.Params = t.Framed.Box.ParamsFor(next.Box, t.Params);
+                t.Framed = next;
+            }
+            t.Source = clip is { } c ? t.Framed.Clip(c) : t.Framed;
         }
         else return;
         RenderTransform();
     }
+
+    /// <summary>자유롭게 옮긴 여백 꼭짓점을 지우고 그것을 감싸는 사각형(지금 상자)만 남긴다. 없으면 아무것도 하지 않는다.</summary>
+    public void DropTransformMarginQuad()
+    {
+        if (TransformMarginQuad is null || TransformBox is not { } box) return;
+        SetTransformBox(box.Bounds);
+    }
+
+    /// <summary>두 꼭짓점 목록이 같은지(둘 다 null이면 같음).</summary>
+    private static bool SameQuad((double X, double Y)[]? a, (double X, double Y)[]? b)
+        => a is null || b is null ? a is null && b is null : a.AsSpan().SequenceEqual(b);
 
     /// <summary>변형 상자를 그 가운데를 지나는 축으로 뒤집는다(<paramref name="horizontal"/> = 좌우, 상자의 가로 축 기준 — 배율 부호를 바꿈).</summary>
     public void FlipTransform(bool horizontal)
@@ -1043,6 +1078,38 @@ public sealed partial class EditorContext
         double s = Math.Sin(rad), c = Math.Cos(rad);
         double dx = start.CenterX - px, dy = start.CenterY - py;
         return start with { Angle = angle, CenterX = px + dx * c - dy * s, CenterY = py + dx * s + dy * c };
+    }
+
+    /// <summary>회전 중심을 기준으로 지금 각도에서 <paramref name="degrees"/>(도, 시계 방향)만큼 더 돌린다(우클릭 메뉴의 90°·180° 회전).</summary>
+    public void RotateTransformBy(double degrees)
+    {
+        var p = TransformParams;
+        SetTransformParams(RotatedAboutPivot(p, p.Angle + degrees));
+    }
+
+    /// <summary>
+    /// 그림만 (<paramref name="dx"/>, <paramref name="dy"/>)만큼 옮긴다(우클릭 끌기): 회전 중심과, 선택 없이 셀·레이어를 바꿀 때 그림을 따라가는 레이어 피벗은
+    /// 화면에서 제자리에 둔다(적용해도 피벗은 그 자리).
+    /// </summary>
+    public void MoveTransformImage(double dx, double dy)
+    {
+        if (TransformBox is not { } box || (dx == 0 && dy == 0)) return;
+        var p = TransformParams;
+        var next = p with { CenterX = p.CenterX + dx, CenterY = p.CenterY + dy };
+        var (cx, cy) = TransformPivot;
+        var center = box.Unmap(next, cx, cy);
+        if (!double.IsFinite(center.X) || !double.IsFinite(center.Y)) return;
+        if (_layerTransform is { } s)
+        {
+            var (rx, ry) = s.Engine.ReferencePivot;
+            var at = box.Map(p, rx + s.PivotSlip.X, ry + s.PivotSlip.Y);
+            var src = box.Unmap(next, at.X, at.Y);
+            if (!double.IsFinite(src.X) || !double.IsFinite(src.Y)) return;
+            s.PivotSlip = (src.X - rx, src.Y - ry);
+            s.PivotSource = center;
+        }
+        else _transform!.PivotSource = center;
+        SetTransformParams(next);
     }
 
     /// <summary>변형을 적용한다(실행취소 한 단계). 선택 영역 변형이면 옮긴 모양이 선택으로 남는다.</summary>
@@ -1092,7 +1159,7 @@ public sealed partial class EditorContext
         var origin = layer.IsPart ? layer.PartOffset : Point.Empty;
         var after = engine.SelectionAfter(s.Params, _transformResample);
         string label = engine.WholeLayer ? UiStrings.LayerTransform_Undo : UiStrings.S_EditorContext_CommitFloating_19E799222E;
-        if (engine.Commit(label, s.Params, _transformResample, TransformSlice) && after is { } mask && ReferenceEquals(CurrentLayerObject, layer))
+        if (engine.Commit(label, s.Params, _transformResample, TransformSlice, s.PivotSlip) && after is { } mask && ReferenceEquals(CurrentLayerObject, layer))
         {
             // 부위 영역이 넓어졌으면 부위 좌표가 그만큼 옮겨 간다.
             var moved = layer.IsPart ? layer.PartOffset : Point.Empty;
@@ -1233,6 +1300,21 @@ public sealed partial class EditorContext
         public Rectangle Canvas { get; set; } = new(0, 0, source.Width, source.Height);
         /// <summary>원래 그림이 놓일 사각형(새 캔버스 좌표, 크기 = 그림 크기).</summary>
         public Rectangle Image { get; set; } = new(0, 0, source.Width, source.Height);
+        /// <summary>
+        /// Ctrl+손잡이 끌기로 마음대로 옮긴 캔버스 테두리의 네 꼭짓점(원래 프레임 좌표, 왼쪽 위부터 시계 방향). 새 캔버스(<see cref="Canvas"/>)는 이것을 감싸는 사각형.
+        /// Ctrl 없이 손잡이를 끌거나 숫자를 바꾸면 없어진다. 없으면 null.
+        /// </summary>
+        public (double X, double Y)[]? Quad { get; set; }
+        /// <summary>
+        /// <see cref="Quad"/>를 늘리기(왼쪽 Ctrl 끌기)로 만들었으면 원래 캔버스의 네 꼭짓점이 놓일 자리(새 캔버스 좌표) — 그림을 그 모양으로 원근 변형하고 남는 자리는 여백.
+        /// 여백(우클릭)으로 만든 모양이거나 모양이 없으면 null.
+        /// </summary>
+        public (double X, double Y)[]? Warp { get; set; }
+        /// <summary>원근 변형을 시작할 때의 캔버스·그림 사각형(<see cref="Warp"/>를 셈하는 기준).</summary>
+        public Rectangle WarpBaseCanvas { get; set; }
+        public Rectangle WarpBaseImage { get; set; }
+        /// <summary>원근 변형 중에 그림만 옮긴 양(새 캔버스 좌표, 변형한 뒤에 더함).</summary>
+        public Point WarpShift { get; set; }
         /// <summary>중심 기준 크기 조정의 고정된 캔버스 중심(픽셀 두 배 좌표).</summary>
         public Point Center2 { get; set; }
         public bool ResizeFromCenter { get; set; }
@@ -1379,6 +1461,13 @@ public sealed partial class EditorContext
         {
             if (_canvasResize is not { } s || Project is not { } p || _frame < 0 || _frame >= p.Frames.Count) return null;
             var (fx, fy) = p.GetFramePivot(_frame).ToLocalPixel(s.Source.Width, s.Source.Height);
+            if (s.Warp is { } warp)
+            {
+                var box = new TransformBox(new Rectangle(Point.Empty, s.Source.Size));
+                if (box.WithCorners(box.Identity, warp) is not { } h) return null;
+                var (wx, wy) = box.Map(h, fx, fy);
+                return new System.Drawing.PointF((float)wx, (float)wy);
+            }
             return SpriteProject.MapResizedCanvasPoint(new System.Drawing.PointF(fx, fy), s.Source.Size, s.Image, CanvasResizeUsesSlice ? CanvasResizeBorder : SpriteBorder.None);
         }
     }
@@ -1393,17 +1482,33 @@ public sealed partial class EditorContext
         var (full, origin) = FrameWithOverflow(p, s.Source);
         var canvas = s.Canvas.Size;
         int m = SpriteProject.OverflowMargin;
-        var moved = ImageTransform.ScaleWithCanvas(full, origin, s.Source.Size, s.Image, new Rectangle(-m, -m, canvas.Width + 2 * m, canvas.Height + 2 * m),
-            CanvasResizeUsesSlice ? CanvasResizeBorder : SpriteBorder.None, _canvasResizeSliceFill);
+        var clip = new Rectangle(-m, -m, canvas.Width + 2 * m, canvas.Height + 2 * m);
+        // 테두리 모양대로 늘리면 원근 변형(리샘플링은 변형 모드 설정), 아니면 그림 사각형으로 늘리기
+        var moved = s.Warp is { } warp
+            ? ImageTransform.WarpWithCanvas(full, origin, s.Source.Size, warp, clip, _transformResample)
+            : ImageTransform.ScaleWithCanvas(full, origin, s.Source.Size, s.Image, clip, CanvasResizeUsesSlice ? CanvasResizeBorder : SpriteBorder.None, _canvasResizeSliceFill);
         var preview = new PixelImage(canvas.Width, canvas.Height);
         if (moved is { } mv)
         {
-            preview.Blit(mv.Image, mv.Origin.X, mv.Origin.Y);
-            s.Outside = ImageUtil.ToBitmap(mv.Image);
-            s.OutsideRect = new Rectangle(mv.Origin, mv.Image.Size);
+            var shown = mv.Image;
+            // 여백 모양(사다리꼴 등)이면 그 밖은 적용할 때 지워지므로 미리보기에서도 뺀다(받은 그림은 원본일 수 있어 복사해서).
+            if (CanvasResizeKeep(s) is { } keep)
+            {
+                shown = shown.Clone();
+                for (int y = 0; y < shown.Height; y++)
+                    for (int x = 0; x < shown.Width; x++)
+                        if (!keep.Contains(mv.Origin.X + x, mv.Origin.Y + y)) shown.Pixels[y * shown.Width + x] = Color32.Transparent;
+            }
+            preview.Blit(shown, mv.Origin.X, mv.Origin.Y);
+            s.Outside = ImageUtil.ToBitmap(shown);
+            s.OutsideRect = new Rectangle(mv.Origin, shown.Size);
         }
         s.Preview = ImageUtil.ToBitmap(preview);
     }
+
+    /// <summary>여백으로 테두리 꼭짓점을 마음대로 옮겼으면 남길 모양(새 캔버스 좌표 — 그 밖은 적용할 때 지워짐). 아니면 null.</summary>
+    private static PixelMask? CanvasResizeKeep(CanvasResizeSession s)
+        => s.Quad is { } quad && s.Warp is null ? PixelMask.CentersInside(quad.Select(c => (c.X - s.Canvas.X, c.Y - s.Canvas.Y)).ToArray()) : null;
 
     /// <summary>현재 프레임 합성(캔버스 안)에 보이는 일반 레이어의 캔버스 밖 그림을 아래 레이어부터(레이어 불투명도) 겹친 그림과 왼쪽 위(캔버스 좌표).</summary>
     private (PixelImage Image, Point Origin) FrameWithOverflow(SpriteProject p, PixelImage source)
@@ -1438,20 +1543,87 @@ public sealed partial class EditorContext
         return null;
     }
 
+    /// <summary>Ctrl+손잡이 끌기로 마음대로 옮긴 캔버스 테두리의 네 꼭짓점(원래 프레임 좌표, 왼쪽 위부터 시계 방향). 새 캔버스는 이것을 감싸는 사각형. 없으면 null.</summary>
+    public (double X, double Y)[]? CanvasResizeQuad => _canvasResize?.Quad;
+
+    /// <summary>테두리 모양(<see cref="CanvasResizeQuad"/>)대로 그림을 원근 변형하는 중이면 원래 캔버스 네 꼭짓점이 놓일 자리(새 캔버스 좌표). 아니면 null.</summary>
+    public (double X, double Y)[]? CanvasResizeWarp => _canvasResize?.Warp;
+
     /// <summary>
     /// 새 캔버스(원래 프레임 좌표)와 그림 사각형(새 캔버스 좌표)을 바꾼다. 크기는 1~<see cref="PixelImage.MaxSize"/>로 맞추고,
     /// 9-slice로 늘이면 그림은 테두리 두 쪽 + 1px보다 작아지지 않는다(<see cref="CanvasResizeMinImage"/>).
+    /// <paramref name="quad"/>는 여백으로 자유롭게 옮긴 캔버스 테두리(<see cref="CanvasResizeQuad"/> — 캔버스는 그것을 감싸는 사각형으로 넘김), null이면 지운다.
+    /// 원근 변형(<see cref="CanvasResizeWarp"/>)은 없앤다(그림은 <paramref name="image"/> 사각형으로).
     /// </summary>
-    public void SetCanvasResize(Rectangle canvas, Rectangle image)
+    public void SetCanvasResize(Rectangle canvas, Rectangle image, (double X, double Y)[]? quad = null)
     {
         if (_canvasResize is not { } s) return;
         static int Clamp(int v, int min = 1) => Math.Clamp(v, min, PixelImage.MaxSize);
         var min = CanvasResizeMinImage;
         canvas.Size = new Size(Clamp(canvas.Width), Clamp(canvas.Height));
         image.Size = new Size(Clamp(image.Width, min.Width), Clamp(image.Height, min.Height));
-        if (canvas == s.Canvas && image == s.Image) return;
+        bool shapeChanged = !SameQuad(s.Quad, quad) || s.Warp is not null;
+        s.Quad = quad;
+        s.Warp = null;
+        if (canvas == s.Canvas && image == s.Image && !shapeChanged) return;
         s.Canvas = canvas;
         s.Image = image;
+        DropCanvasResizePreview(s);
+        CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>원근 변형 중이면 그 기준(시작할 때의 캔버스·그림 사각형, 그 뒤 그림만 옮긴 양). 아니면 null.</summary>
+    public (Rectangle Canvas, Rectangle Image, Point Shift)? CanvasResizeWarpBase
+        => _canvasResize is { Warp: not null } s ? (s.WarpBaseCanvas, s.WarpBaseImage, s.WarpShift) : null;
+
+    /// <summary>
+    /// 늘리기를 Ctrl로: 캔버스 테두리 꼭짓점을 <paramref name="quad"/>(원래 프레임 좌표, 왼쪽 위부터 시계 방향)로 옮기고, 그림은 그 모양을 따라 원근으로 찌그러뜨린다
+    /// (<paramref name="baseCanvas"/> 사각형이 그 모양으로 가는 대응 — 그 안의 그림 자리 <paramref name="baseImage"/>도 같은 대응, 그 뒤 <paramref name="shift"/>만큼 옮김).
+    /// 새 캔버스는 그 모양을 감싸는 사각형이고 남는 자리는 여백이다. 꼬이거나 오목한 모양이면 받지 않고 false.
+    /// </summary>
+    public bool SetCanvasResizeWarp((double X, double Y)[] quad, Rectangle baseCanvas, Rectangle baseImage, Point shift)
+    {
+        if (_canvasResize is not { } s) return false;
+        var box = new TransformBox(baseCanvas);
+        if (box.WithCorners(box.Identity, quad) is not { } h) return false;
+        int left = (int)Math.Floor(quad.Min(c => c.X)), top = (int)Math.Floor(quad.Min(c => c.Y));
+        int right = (int)Math.Ceiling(quad.Max(c => c.X)), bottom = (int)Math.Ceiling(quad.Max(c => c.Y));
+        var canvas = Rectangle.FromLTRB(left, top, Math.Max(right, left + 1), Math.Max(bottom, top + 1));
+        if (canvas.Width > PixelImage.MaxSize || canvas.Height > PixelImage.MaxSize) return false;
+        (double X, double Y) At(double u, double v)
+        {
+            var (x, y) = box.Map(h, baseCanvas.X + baseImage.X + u * baseImage.Width, baseCanvas.Y + baseImage.Y + v * baseImage.Height);
+            return (x + shift.X - canvas.X, y + shift.Y - canvas.Y);
+        }
+        (double X, double Y)[] warp = [At(0, 0), At(1, 0), At(1, 1), At(0, 1)];
+        int il = (int)Math.Floor(warp.Min(c => c.X)), it = (int)Math.Floor(warp.Min(c => c.Y));
+        int ir = (int)Math.Ceiling(warp.Max(c => c.X)), ib = (int)Math.Ceiling(warp.Max(c => c.Y));
+        s.WarpBaseCanvas = baseCanvas;
+        s.WarpBaseImage = baseImage;
+        s.WarpShift = shift;
+        s.Quad = quad;
+        s.Warp = warp;
+        s.Canvas = canvas;
+        s.Image = Rectangle.FromLTRB(il, it, Math.Max(ir, il + 1), Math.Max(ib, it + 1));
+        DropCanvasResizePreview(s);
+        CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
+        return true;
+    }
+
+    /// <summary>
+    /// 캔버스는 그대로 두고 그림을 (<paramref name="dx"/>, <paramref name="dy"/>)만큼 옮긴다(그림 안쪽 끌기·방향키). 테두리 모양은 그대로이고, 원근 변형 중이면 그 그림도 함께 옮긴다.
+    /// </summary>
+    public void MoveCanvasResizeImage(int dx, int dy)
+    {
+        if (_canvasResize is not { } s || (dx == 0 && dy == 0)) return;
+        var image = s.Image;
+        image.Offset(dx, dy);
+        s.Image = image;
+        if (s.Warp is { } warp)
+        {
+            s.Warp = warp.Select(c => (c.X + dx, c.Y + dy)).ToArray();
+            s.WarpShift = new Point(s.WarpShift.X + dx, s.WarpShift.Y + dy);
+        }
         DropCanvasResizePreview(s);
         CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -1488,8 +1660,13 @@ public sealed partial class EditorContext
         _canvasResize = null;
         DropCanvasResizePreview(s);
         var (canvas, image) = (s.Canvas.Size, s.Image);
-        bool changed = canvas != p.Size || image != new Rectangle(Point.Empty, p.Size);
-        if (changed) p.ResizeCanvasAndScale(canvas.Width, canvas.Height, image, CanvasResizeUsesSlice ? _canvasResizeSliceFill : null);
+        var keep = CanvasResizeKeep(s);
+        bool changed = canvas != p.Size || image != new Rectangle(Point.Empty, p.Size) || s.Warp is not null || keep is not null;
+        if (changed)
+        {
+            if (s.Warp is { } warp) p.WarpCanvas(canvas.Width, canvas.Height, warp, _transformResample);
+            else p.ResizeCanvasAndScale(canvas.Width, canvas.Height, image, CanvasResizeUsesSlice ? _canvasResizeSliceFill : null, keep);
+        }
         CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
         if (!changed) return;
         bool scaled = image.Size != s.Source.Size;
