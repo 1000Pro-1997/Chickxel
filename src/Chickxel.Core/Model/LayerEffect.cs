@@ -25,12 +25,6 @@ public abstract record LayerEffect
     public bool ClipToPrevious { get; init; }
 
     /// <summary>
-    /// 효과 창에서 확인·영구 적용할 때 이 효과 결과가 캔버스 밖으로 나가면 캔버스를 늘린다(기본 켜짐). 끄면 이 효과는 캔버스에 잘린 채로 둔다.
-    /// 그리기는 이 값을 보지 않는다. 저장된다(꺼졌을 때만 — 없으면 켜짐).
-    /// </summary>
-    public bool ExpandCanvas { get; init; } = true;
-
-    /// <summary>
     /// 이 효과가 그림을 옮기면(알린 만큼 — 스크립트는 <c>ctx.movePivot(dx, dy)</c>) 목록에서 뒤에 오는 효과들의 피벗(중심)도 같이 옮긴다(기본 켜짐).
     /// 끄면 그림은 그대로 옮기지만 뒤 효과의 피벗은 그대로다(<see cref="Edit.LayerEffects.Apply(PixelImage, IReadOnlyList{LayerEffect}, System.Drawing.Rectangle)"/>).
     /// 저장된다(꺼졌을 때만 — 없으면 켜짐).

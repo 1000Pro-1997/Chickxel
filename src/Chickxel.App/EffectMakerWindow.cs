@@ -98,8 +98,9 @@ public sealed class EffectMakerWindow : Window
     private readonly CancellationTokenSource _closing = new();
     /// <summary>이 계정으로 올렸지만 이 컴퓨터에 설치하지 않은 스크립트 효과(온라인 목록에서, 목록 아래 회색 줄).</summary>
     private IReadOnlyList<RemoteCatalogEntry> _uploads = [];
-    /// <summary><see cref="_uploads"/>를 찾은 계정의 핸들(바뀌면 다시 찾음).</summary>
-    private string? _uploadsHandle;
+    /// <summary>마지막으로 읽은 온라인 목록(패키지 ID → 최신 버전 줄). 웹과 다른 효과 표시(<see cref="WebDifference"/>)와 <see cref="_uploads"/>에 쓴다.</summary>
+    private RemoteCatalogSnapshot _remote = RemoteCatalogSnapshot.Empty(null);
+    private IReadOnlyDictionary<string, RemoteCatalogEntry> _remoteById = new Dictionary<string, RemoteCatalogEntry>();
     /// <summary>지금 내려받는 올린 효과의 패키지 ID(그 줄의 단추를 끔).</summary>
     private string? _downloadingId;
     /// <summary>"AI" 단추(켜짐 = AI 칸 열림)와 AI 칸 자리. 칸은 처음 열 때 만들고 창을 닫을 때까지 둔다(대화·세션 유지).</summary>
@@ -131,10 +132,10 @@ public sealed class EffectMakerWindow : Window
     /// <summary>미리보기 효과의 색 그라데이션(슬롯 = <see cref="ScriptColorSlots"/>). 미리보기·지금 레이어에 넣기에만 쓰고 원문에는 쓰지 않는다.</summary>
     private readonly Dictionary<string, EffectColorGradient> _previewGradients = new(StringComparer.Ordinal);
     /// <summary>
-    /// 미리보기 효과의 공통 값(빠르기 곡선·반복·반복 횟수·피벗 같이 옮기기·확인할 때 캔버스 늘리기) 중 원문 선언과 다르게 고른 것(null = 선언 값을 따름).
+    /// 미리보기 효과의 공통 값(빠르기 곡선·반복·반복 횟수·피벗 같이 옮기기) 중 원문 선언과 다르게 고른 것(null = 선언 값을 따름).
     /// 미리보기·지금 레이어에 넣기에 쓰고, 원문에는 "기본값으로"를 눌러야 쓴다(<see cref="ScriptDeclarationEdit.SetEffectDefaults"/>).
     /// </summary>
-    private (EffectEasing? Easing, EffectRepeat? Repeat, int? RepeatCount, bool? MovePivot, bool? ExpandCanvas) _previewCommon;
+    private (EffectEasing? Easing, EffectRepeat? Repeat, int? RepeatCount, bool? MovePivot) _previewCommon;
     private bool _loading, _syncingList, _syncingInfo, _syncingFrames;
     /// <summary>
     /// 마지막으로 불러오거나 저장한 원문(새 스크립트면 null). 고친 것이 있는지는 이것과 견줘 정한다 — 편집기의 TextChanged는 값을 넣은 뒤에 늦게 올 수 있어
@@ -458,12 +459,10 @@ public sealed class EffectMakerWindow : Window
             UpdateButtons();
         });
         AppAssets.Changed += _onAssetsChanged;
-        // 계정을 바꾸거나 로그인하면 "내가 올린 효과"가 달라진다.
+        // 계정을 바꾸거나 로그인하면 "내가 올린 효과"가 달라진다(온라인 목록은 이미 받아 둠).
         _onAccountsChanged = () => Dispatcher.UIThread.Post(() =>
         {
-            // 다른 계정이 되었을 때만 목록을 새로 받는다(같은 계정의 정보 확인마다 받지 않게).
-            if (AppAssets.MyHandle != _uploadsHandle) LoadUploads(fetch: true);
-            else RebuildList();
+            ShowRemote(_remote);
             if (_shownId is { } id && AppAssets.Catalog.Find(id) is { } entry)
                 _entryId = AppAssets.IsMine(entry) ? id : null;
             UpdateButtons();
@@ -488,7 +487,7 @@ public sealed class EffectMakerWindow : Window
             s_window = null;
         };
         RebuildList();
-        LoadUploads(fetch: true);
+        LoadRemote(fetch: true);
         UpdateButtons();
     }
 
@@ -526,7 +525,15 @@ public sealed class EffectMakerWindow : Window
                     };
                 content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { label, by } };
             }
-            _list.Items.Add(new ListBoxItem { Content = content, Tag = entry.Id });
+            var item = new ListBoxItem { Content = content, Tag = entry.Id };
+            // 웹에 올라간 것과 다르면(새 버전이 있음·올린 새 버전이 아직 없음·받거나 올린 뒤 고침) 이름을 주황색으로, 까닭은 풍선 도움말로.
+            if (WebDifference(entry) is { } difference)
+            {
+                var name = content is StackPanel { Children: [StackPanel inner, ..] } ? inner : content;
+                name.SetValue(Avalonia.Controls.Documents.TextElement.ForegroundProperty, AppTheme.WarningBrush);
+                ToolTip.SetTip(item, difference);
+            }
+            _list.Items.Add(item);
         }
         // 올렸지만 이 컴퓨터에 없는 효과: 회색 줄 + 오른쪽 내려받기 단추(누르면 설치하고 연다).
         foreach (var upload in _uploads)
@@ -555,32 +562,43 @@ public sealed class EffectMakerWindow : Window
     }
 
     /// <summary>
-    /// 이 계정으로 올린 스크립트 효과 중 이 컴퓨터에 없는 것을 온라인 목록에서 찾는다. 먼저 받아 둔 목록(cache)으로 보이고,
-    /// <paramref name="fetch"/>면 목록을 새로 받아 다시 보인다(로그인하지 않았으면 받지 않음).
+    /// 웹(온라인 목록)에 올라간 것과 이 컴퓨터의 효과가 다른 까닭(목록 이름을 주황색으로, 풍선 도움말). 같거나 온라인 목록에 없으면(올리지 않음·목록을 못 받음) null.
+    /// 버전이 다르면 두 버전을(온라인이 새것 = 업데이트할 수 있음, 이 컴퓨터가 새것 = 올린 새 버전이 아직 목록에 없음), 받거나 올린 뒤 고쳤으면 그것을 적는다.
     /// </summary>
-    private async void LoadUploads(bool fetch)
+    private string? WebDifference(AssetEntry entry)
     {
-        _uploadsHandle = AppAssets.MyHandle;
-        if (_uploadsHandle is null)
-        {
-            _uploads = [];
-            RebuildList();
-            return;
-        }
-        if (AppAssets.Remote.LoadCache() is { } cached) ShowUploads(cached);
+        if (entry.Store is not { } store || !_remoteById.TryGetValue(store.PackageId, out var web)) return null;
+        var reasons = new List<string>(2);
+        if (web.SemanticVersion > store.SemanticVersion)
+            reasons.Add(string.Format(CultureInfo.CurrentCulture, UiStrings.EffectMaker_WebNewer, web.Version, store.Version));
+        else if (web.SemanticVersion < store.SemanticVersion)
+            reasons.Add(string.Format(CultureInfo.CurrentCulture, UiStrings.EffectMaker_WebOlder, web.Version, store.Version));
+        if (entry.Modified) reasons.Add(UiStrings.EffectMaker_WebModified);
+        return reasons.Count == 0 ? null : string.Join("\n", reasons);
+    }
+
+    /// <summary>
+    /// 온라인 목록을 읽는다: 먼저 받아 둔 목록(cache)으로 보이고, <paramref name="fetch"/>면 목록을 새로 받아 다시 보인다(받지 못하면 cache 그대로).
+    /// 웹과 다른 효과 표시와 이 계정으로 올렸지만 이 컴퓨터에 없는 효과 줄에 쓴다.
+    /// </summary>
+    private async void LoadRemote(bool fetch)
+    {
+        if (AppAssets.Remote.LoadCache() is { } cached) ShowRemote(cached);
         if (!fetch) return;
         try
         {
-            ShowUploads(await AppAssets.Remote.FetchCatalogAsync(_closing.Token));
+            ShowRemote(await AppAssets.Remote.FetchCatalogAsync(_closing.Token));
         }
         catch (OperationCanceledException)
         {
         }
     }
 
-    private void ShowUploads(RemoteCatalogSnapshot snapshot)
+    private void ShowRemote(RemoteCatalogSnapshot snapshot)
     {
         if (_closing.IsCancellationRequested) return;
+        _remote = snapshot;
+        _remoteById = snapshot.Packages.ToDictionary(e => e.Id, StringComparer.Ordinal);
         string? handle = AppAssets.MyHandle;
         _uploads = handle is null ? [] : snapshot.Packages
             .Where(e => e.Author.Id == handle && e.Kinds.ContainsKey(AssetKinds.EffectScript))
@@ -832,8 +850,7 @@ public sealed class EffectMakerWindow : Window
 
     /// <summary>미리보기 효과의 공통 값이 원문 선언의 처음 값과 다른지.</summary>
     private static bool CommonDiffers(ScriptEffectProgram program, ScriptEffect effect)
-        => effect.Easing != program.Easing || effect.Repeat != program.Repeat || effect.RepeatCount != program.RepeatCount || effect.MovePivot != program.MovePivot
-           || effect.ExpandCanvas != program.ExpandCanvas;
+        => effect.Easing != program.Easing || effect.Repeat != program.Repeat || effect.RepeatCount != program.RepeatCount || effect.MovePivot != program.MovePivot;
 
     /// <summary>창 제목·묻는 글에 보일 이름: 화면 언어의 번역(없으면 선언의 <c>name</c>).</summary>
     private string CurrentName() => _program?.NameFor(CultureInfo.CurrentUICulture) ?? UiStrings.ScriptEffect_Name;
@@ -969,7 +986,6 @@ public sealed class EffectMakerWindow : Window
             Repeat = _previewCommon.Repeat ?? effect.Repeat,
             RepeatCount = _previewCommon.RepeatCount ?? effect.RepeatCount,
             MovePivot = _previewCommon.MovePivot ?? effect.MovePivot,
-            ExpandCanvas = _previewCommon.ExpandCanvas ?? effect.ExpandCanvas,
         };
     }
 
@@ -988,7 +1004,7 @@ public sealed class EffectMakerWindow : Window
         _previewGradients.Clear();
         foreach (var (slot, gradient) in after.ColorGradients) _previewGradients[slot] = gradient;
         _previewCommon = (Unless(after.Easing, program.Easing), Unless(after.Repeat, program.Repeat), Unless(after.RepeatCount, program.RepeatCount),
-            Unless(after.MovePivot, program.MovePivot), Unless(after.ExpandCanvas, program.ExpandCanvas));
+            Unless(after.MovePivot, program.MovePivot));
         UpdateValueButtons();
         _debounce.Restart();
     }
@@ -1023,8 +1039,6 @@ public sealed class EffectMakerWindow : Window
         var scene = _scene;
         int steps = program.PreviewFrames;
         var values = new Dictionary<string, object>(_previewValues, StringComparer.Ordinal);
-        // 확인할 때 캔버스를 늘리지 않으면 병아리 캔버스 밖은 잘릴 부분이라 효과 창처럼 흐리게 보인다(장면은 이미 장면 캔버스로 잘림)
-        bool clip = !effects[0].ExpandCanvas;
         var cancel = new CancellationTokenSource();
         _render = cancel;
         if (report) SetStatus(UiStrings.EffectMaker_Rendering, busy: true);
@@ -1068,7 +1082,8 @@ public sealed class EffectMakerWindow : Window
                 for (int step = 0; step < steps && !cancel.IsCancellationRequested; step++)
                     frames.Add(AssetPreview.Render(effects, chick, step, steps, end, motion, placement));
                 original = AssetPreview.Original(effects, chick, 0, steps, end, motion, placement);
-                if (clip) canvas = AssetPreview.Canvas(effects, chick, steps, end, motion, placement);
+                // 레이어에 넣으면 병아리 캔버스 밖은 잘릴 부분이라 효과 창처럼 흐리게 보인다(장면은 이미 장면 캔버스로 잘림)
+                canvas = AssetPreview.Canvas(effects, chick, steps, end, motion, placement);
             }
             return (frames, original, canvas, runError, msPerFrame, path);
         }, cancel.Token).ContinueWith(task =>
@@ -1151,7 +1166,7 @@ public sealed class EffectMakerWindow : Window
         bool schemaChanged = _program is null || !_program.Settings.SequenceEqual(parsed.Program.Settings)
                              || _program.Translations.Count != parsed.Program.Translations.Count
                              || _program.Translations.Any(t => !parsed.Program.Translations.TryGetValue(t.Key, out var other) || !t.Value.SameAs(other));
-        // 공통 줄(빠르기 곡선·반복·캔버스 늘리기·피벗 같이 옮기기)이 생기거나 없어지거나 선언의 처음 값이 바뀌어도
+        // 공통 줄(빠르기 곡선·반복·피벗 같이 옮기기)이 생기거나 없어지거나 선언의 처음 값이 바뀌어도
         var rows = CommonRows(parsed.Program);
         schemaChanged |= rows != _commonRows;
         _commonRows = rows;
@@ -1172,15 +1187,15 @@ public sealed class EffectMakerWindow : Window
     }
 
     /// <summary>미리보기 설정 칸의 공통 줄을 정하는 선언 값(바뀌면 칸을 다시 만듦 — <see cref="ParseScript"/>).</summary>
-    private (bool Animated, bool Motion, EffectEasing Easing, EffectRepeat Repeat, int RepeatCount, bool MovePivot, bool ExpandCanvas, bool Reports) _commonRows;
+    private (bool Animated, bool Motion, EffectEasing Easing, EffectRepeat Repeat, int RepeatCount, bool MovePivot, bool Reports) _commonRows;
 
-    private (bool, bool, EffectEasing, EffectRepeat, int, bool, bool, bool) CommonRows(ScriptEffectProgram program)
-        => (program.Animated, program.Motion, program.Easing, program.Repeat, program.RepeatCount, program.MovePivot, program.ExpandCanvas,
+    private (bool, bool, EffectEasing, EffectRepeat, int, bool, bool) CommonRows(ScriptEffectProgram program)
+        => (program.Animated, program.Motion, program.Easing, program.Repeat, program.RepeatCount, program.MovePivot,
             Chickxel.Core.Edit.LayerEffects.CanMovePivot(new ScriptEffect { ScriptHash = PreviewHash(_source) }));
 
     /// <summary>
     /// 미리보기 설정 칸: 효과를 넣었을 때 오른쪽 독에 보이는 줄과 같은 줄·차례(<see cref="LayerEffectsDialog.AddScriptEffectRows"/> — 선언의 settings,
-    /// 움직이는 효과의 빠르기 곡선·반복, 옮긴 거리를 알리는 효과의 피벗 같이 옮기기, 끝 모습 이어 가기)에 효과 창의 "확인할 때 캔버스 늘리기"를 더한다.
+    /// 움직이는 효과의 빠르기 곡선·반복, 옮긴 거리를 알리는 효과의 피벗 같이 옮기기, 끝 모습 이어 가기)를 둔다.
     /// 값은 미리보기·지금 레이어에 넣기에만 쓰고 원문의 처음 값은 "기본값으로"를 눌러야 바뀐다. 끝 모습 이어 가기는 새로 넣는 효과(모든 프레임)처럼 꺼진 채 고칠 수 없다.
     /// </summary>
     private void BuildScriptSettings()
@@ -1190,7 +1205,7 @@ public sealed class EffectMakerWindow : Window
         if (program.Settings.Count == 0) _scriptSettings.Children.Add(Hint(UiStrings.ScriptEffect_NoSettings));
         // 줄을 고를 때 원문 정보(피벗을 옮기는지 등)를 보므로 스크립트 목록에 올린 해시로
         LayerEffectsDialog.AddScriptEffectRows(new EffectForm(_scriptSettings, this), program, PreviewEffect(program) with { ScriptHash = PreviewHash(_source) },
-            ChangePreview, BuildScriptSettings, SceneLayerChoices(), expandCanvas: true);
+            ChangePreview, BuildScriptSettings, SceneLayerChoices());
     }
 
     /// <summary>
@@ -1219,8 +1234,8 @@ public sealed class EffectMakerWindow : Window
     }
 
     /// <summary>
-    /// 지금 미리보기 설정 값 중 기본값과 다른 것을 원문 선언의 각 설정 <c>default</c>로, 다른 공통 값은 선언의 <c>easing</c>·<c>repeat</c>·<c>repeatCount</c>·<c>movePivot</c>·
-    /// <c>expandCanvas</c>로 쓴다(편집기 실행취소 한 단계). 쓴 뒤 미리보기 값은 새 기본값과 같으므로 칸은 그대로 보인다. 선언을 고칠 수 없는 원문이면 원문 오류를 안내한다.
+    /// 지금 미리보기 설정 값 중 기본값과 다른 것을 원문 선언의 각 설정 <c>default</c>로, 다른 공통 값은 선언의 <c>easing</c>·<c>repeat</c>·<c>repeatCount</c>·<c>movePivot</c>으로
+    /// 쓴다(편집기 실행취소 한 단계). 쓴 뒤 미리보기 값은 새 기본값과 같으므로 칸은 그대로 보인다. 선언을 고칠 수 없는 원문이면 원문 오류를 안내한다.
     /// </summary>
     private void SetDefaults()
     {
@@ -1234,7 +1249,7 @@ public sealed class EffectMakerWindow : Window
         string? edited = changed.Count == 0 ? _source : ScriptDeclarationEdit.SetSettingDefaults(_source, changed);
         if (edited is not null && common)
             edited = ScriptDeclarationEdit.SetEffectDefaults(edited, Unless(effect.Easing, program.Easing), Unless(effect.Repeat, program.Repeat),
-                Unless(effect.RepeatCount, program.RepeatCount), Unless(effect.MovePivot, program.MovePivot), Unless(effect.ExpandCanvas, program.ExpandCanvas));
+                Unless(effect.RepeatCount, program.RepeatCount), Unless(effect.MovePivot, program.MovePivot));
         if (edited is null)
         {
             SetStatus(UiStrings.EffectMaker_FixSourceFirst, problem: true);
@@ -2135,7 +2150,7 @@ public sealed class EffectMakerWindow : Window
         private WriteableBitmap?[] _frames = [];
         private WriteableBitmap? _original;
         private int _index;
-        /// <summary>확인할 때 잘릴 캔버스(그림 좌표, 캔버스 늘리기를 끈 효과). null이면 그림 전체를 그대로 그린다.</summary>
+        /// <summary>레이어에 넣으면 잘릴 캔버스(그림 좌표 — 병아리 캔버스). null이면 그림 전체를 그대로 그린다(장면).</summary>
         private Rectangle? _canvas;
 
         /// <summary>그린 칸들이 바뀜(칸 띠를 다시 만듦).</summary>

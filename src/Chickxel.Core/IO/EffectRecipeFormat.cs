@@ -97,8 +97,8 @@ public sealed record EffectRecipe : IAssetData
 ///                { "type": "chickxel.effect.script", "settings": { … }, "script": "&lt;SHA-256&gt;" } ],
 ///   "parameters": [ { "id": "glow", "name": "빛 색", "kind": "color", "default": "#00FFC8", "bindings": [ { "effect": 0, "key": "color" } ] } ],
 ///   "scripts": { "&lt;SHA-256&gt;": "effect({ … })" } }</code>
-/// 효과 하나는 프로젝트와 같은 <see cref="EffectCodec"/> 형식이고(<c>frames</c>는 쓰지 않음), 순서 = 목록 순서, 클리핑 = <c>clipToPrevious</c>,
-/// 확인할 때 캔버스 늘리지 않기 = <c>"expandCanvas": false</c>(켜짐이면 쓰지 않음).
+/// 효과 하나는 프로젝트와 같은 <see cref="EffectCodec"/> 형식이고(<c>frames</c>는 쓰지 않음), 순서 = 목록 순서, 클리핑 = <c>clipToPrevious</c>
+/// (예전 키 <c>expandCanvas</c>는 받아들이되 읽지 않음).
 /// 매개변수(<see cref="RecipeParameterFormat"/>)는 형식 2부터, 스크립트 원문 <c>scripts</c>(해시 → 정리한 원문, 해시 순서)는 형식 3부터,
 /// 미리보기 병아리 <c>previewChick</c>(기본 병아리가 아닐 때만 씀, <c>"none"</c> = 병아리 없이 빈 캔버스, 모르는 ID는 기본 병아리로 그림)는 형식 4부터다 —
 /// 그것이 없으면 낮은 형식으로 써서 예전 앱도 읽는다. 원문 글은 문자열 한도 대신 <see cref="AssetPackageLimits.MaxScriptBytes"/>로 잰다.
@@ -122,7 +122,7 @@ public static class EffectRecipeFormat
 
     private static readonly HashSet<string> EffectKeys =
     [
-        EffectCodec.TypeKey, EffectCodec.VersionKey, EffectCodec.EnabledKey, EffectCodec.ClipKey, EffectCodec.ExpandCanvasKey, EffectCodec.SettingsKey,
+        EffectCodec.TypeKey, EffectCodec.VersionKey, EffectCodec.EnabledKey, EffectCodec.ClipKey, EffectCodec.RetiredExpandCanvasKey, EffectCodec.SettingsKey,
         EffectCodec.GradientsKey, EffectCodec.MovePivotKey,
     ];
 
@@ -374,7 +374,6 @@ public static class EffectRecipeFormat
             Bad(EffectCodec.VersionKey);
         if (json[EffectCodec.EnabledKey] is { } enabled && !AssetJson.TryBool(enabled, out _)) Bad(EffectCodec.EnabledKey);
         if (json[EffectCodec.ClipKey] is { } clip && !AssetJson.TryBool(clip, out _)) Bad(EffectCodec.ClipKey);
-        if (json[EffectCodec.ExpandCanvasKey] is { } expand && !AssetJson.TryBool(expand, out _)) Bad(EffectCodec.ExpandCanvasKey);
         if (json[EffectCodec.MovePivotKey] is { } movePivot && !AssetJson.TryBool(movePivot, out _)) Bad(EffectCodec.MovePivotKey);
 
         // 스크립트 효과: 원문이 레시피에 있어야 한다. 원문을 해석하지 못했으면(문제는 이미 남김) 스크립트 설정은 보지 않는다.

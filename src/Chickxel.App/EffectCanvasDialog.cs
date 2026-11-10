@@ -8,17 +8,19 @@ using Chickxel.Core.Model;
 namespace Chickxel.App;
 
 /// <summary>
-/// 효과 하나의 '캔버스 늘리기…'(타임라인 효과 줄 우클릭·효과 칸): 그 효과 결과(모든 프레임, 앞 효과 포함·뒤 효과 빼고)가 캔버스 밖으로 나가는 만큼
+/// 효과 하나의 '캔버스 늘리기…'(타임라인 효과 줄 우클릭·효과 칸·효과 창): 그 효과 결과(모든 프레임, 앞 효과 포함·뒤 효과 빼고)가 캔버스 밖으로 나가는 만큼
 /// 늘릴 방식(최소·비율 유지·중심 유지)을 고르고, 새 크기를 보고 확인하면 늘린다(<see cref="Plan"/>을 부르는 쪽이 적용). 이미 들어가면 확인을 끈다.
 /// </summary>
 internal sealed class EffectCanvasDialog : DialogBase
 {
-    /// <summary>늘리는 방식(앱을 켜 둔 동안 기억 — 효과 창의 공통 설정과 같은 값).</summary>
+    /// <summary>늘리는 방식(앱을 켜 둔 동안 기억).</summary>
     internal static EffectCanvasExpandMode LastMode { get; set; } = EffectCanvasExpandMode.KeepCenter;
 
     private readonly SpriteProject _project;
     private readonly Rectangle _bounds;
     private readonly TextBlock _size, _note;
+    /// <summary>방식을 바꿔 계획이 바뀔 때마다 부름(늘릴 것이 없으면 null) — 효과 창이 그 캔버스를 미리보기로 보인다.</summary>
+    private readonly Action<EffectCanvasExpansion?>? _planChanged;
 
     /// <summary>확인했을 때 적용할 캔버스 확대(계산하지 못했거나 늘릴 것이 없으면 null).</summary>
     public EffectCanvasExpansion? Plan { get; private set; }
@@ -33,22 +35,33 @@ internal sealed class EffectCanvasDialog : DialogBase
         var layer = p.Layers[layerIndex];
         if (effectIndex < 0 || effectIndex >= layer.Effects.Count) return null;
         ctx.CommitFloating();
-        var bounds = WorkOverlay.Run(owner, UiStrings.Busy_EffectBounds, _ => p.EffectOutputBounds(layer, effectIndex, expandingOnly: false));
+        var bounds = WorkOverlay.Run(owner, UiStrings.Busy_EffectBounds, _ => p.EffectOutputBounds(layer, effectIndex));
         if (bounds is not { } b) return UiStrings.EffectCanvas_NoOutput;
-        var dialog = new EffectCanvasDialog(p, b, layer.Effects[effectIndex].DisplayName);
-        if (dialog.ShowDialog(owner) != DialogResult.OK || dialog.Plan is not { } plan) return null;
+        if (Ask(owner, p, b, layer.Effects[effectIndex].DisplayName) is not { } plan) return null;
         int oldWidth = p.Width, oldHeight = p.Height;
         ctx.Structural(() => p.ApplyEffectCanvas(plan));
         return string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_LayerEffectsDialog_Canvas_CanvasExpansionSummary_332F7D70DF, oldWidth, oldHeight, plan.Width, plan.Height);
     }
 
-    public EffectCanvasDialog(SpriteProject project, Rectangle effectBounds, string effectName)
+    /// <summary>
+    /// 효과 범위 <paramref name="effectBounds"/>(캔버스 좌표)에 맞춰 늘릴 방식을 묻는다. 늘리기를 누르면 그 계획, 취소했으면 null(프로젝트는 바꾸지 않음).
+    /// <paramref name="planChanged"/>는 방식을 고를 때마다 그 계획(늘릴 것이 없으면 null)을 받는다.
+    /// </summary>
+    public static EffectCanvasExpansion? Ask(Avalonia.Visual owner, SpriteProject project, Rectangle effectBounds, string effectName,
+        Action<EffectCanvasExpansion?>? planChanged = null)
+    {
+        var dialog = new EffectCanvasDialog(project, effectBounds, effectName, planChanged);
+        return dialog.ShowDialog(owner) == DialogResult.OK ? dialog.Plan : null;
+    }
+
+    private EffectCanvasDialog(SpriteProject project, Rectangle effectBounds, string effectName, Action<EffectCanvasExpansion?>? planChanged)
         : base(UiStrings.EffectCanvas_Title, UiStrings.EffectCanvas_Apply)
     {
         // 대상 도움말(F1): 창 = "효과 창" 쪽의 효과 하나에 맞춰 캔버스 늘리기 문단, 방식 줄 = 그림 ⑬ 늘리는 방식 줄
         this.HelpAt("screen-effects-dialog", anchor: "To grow just the canvas to fit one effect");
         _project = project;
         _bounds = effectBounds;
+        _planChanged = planChanged;
         var intro = Ui.Label(UiStrings.FormatEffectCanvas_Intro(effect: effectName));
         intro.TextWrapping = TextWrapping.Wrap;
         intro.MaxWidth = 360;
@@ -97,5 +110,6 @@ internal sealed class EffectCanvasDialog : DialogBase
             _note.Text = ex.Message;
         }
         OkButton.IsEnabled = Plan is not null;
+        _planChanged?.Invoke(Plan);
     }
 }

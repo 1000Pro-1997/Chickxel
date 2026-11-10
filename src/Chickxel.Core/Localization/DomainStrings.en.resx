@@ -433,7 +433,6 @@
   <data name="Font_Unreadable" xml:space="preserve"><value>Couldn't read the font file "{0}". It is damaged or in an unsupported format.</value></data>
   <data name="Publish_PivotMoveTag" xml:space="preserve"><value>Effects that report how far they move the drawing (move the pivot) must have the pivot-move tag.</value></data>
   <data name="Publish_PivotMoveTagFull" xml:space="preserve"><value>Effects that move the pivot need the pivot-move tag, but that would make more than 8 tags. Remove a tag.</value></data>
-  <data name="Script_InvalidExpandCanvas" xml:space="preserve"><value>expandCanvas must be true or false.</value></data>
   <data name="StampSet_Leaves" xml:space="preserve"><value>Leaves</value></data>
   <data name="StampSet_Grass" xml:space="preserve"><value>Grass</value></data>
   <data name="StampSet_Flowers" xml:space="preserve"><value>Flowers</value></data>

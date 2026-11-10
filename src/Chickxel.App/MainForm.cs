@@ -700,7 +700,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             DocCmd("복사", MainStrings.Menu_Edit_Copy_095, Copy, "Ctrl+C", KeyScope.NotInText, (Key.C, Ctrl)),
             DocCmd("이미지만 복사", MainStrings.Menu_Edit_CopyImagesOnly, CopyImagesOnly, "Ctrl+Shift+C", KeyScope.NotInText, (Key.C, Ctrl | Shift)),
             DocCmd("붙여넣기", MainStrings.Menu_Edit_Paste_097, Paste, "Ctrl+V", KeyScope.NotInText, (Key.V, Ctrl)),
-            DocCmd("지우기", MainStrings.Menu_Edit_DeleteSelection_099, DeleteSelection, "Delete", KeyScope.Canvas, deleteKeys),
+            DocKeyCmd("지우기", MainStrings.Menu_Edit_DeleteSelection_099, DeleteSelection, DeleteSelectionKey, "Delete", KeyScope.NotInText, deleteKeys),
             new Separator(),
             DocCmd("모두 선택", MainStrings.Menu_Edit_SelectAll_101, SelectAll, "Ctrl+A", KeyScope.NotInText, (Key.A, Ctrl)),
             DocCmd("선택 해제", MainStrings.Menu_Edit_Deselect_103, Deselect, "Ctrl+D", KeyScope.NotInText, (Key.D, Ctrl)),
@@ -737,9 +737,11 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             if (!CancelMode()) Deselect();
             return true;
         }, (Key.Escape, NoMods));
+        // ←→(수정자 없음)는 프레임 이동(아래 "이전·다음 프레임(방향키)") — 옮기기 모드에서만 그쪽이 1px 옮기기를 부른다.
         foreach (var (k, dx, dy, dir, displayDir) in new[] { (Key.Left, -1, 0, "왼쪽으로", MainStrings.Ui_134), (Key.Right, 1, 0, "오른쪽으로", MainStrings.Ui_135), (Key.Up, 0, -1, "위로", MainStrings.Ui_136), (Key.Down, 0, 1, "아래로", MainStrings.Ui_137) })
         {
-            Bind("편집", $"1px {dir} 옮기기", MainStrings.ShortcutCategory_Edit, MainStrings.FormatShortcut_NudgeOne(direction: displayDir), KeyScope.Canvas, () => _canvas.Nudge(dx, dy), (k, NoMods), (k, Ctrl | Shift));
+            Bind("편집", $"1px {dir} 옮기기", MainStrings.ShortcutCategory_Edit, MainStrings.FormatShortcut_NudgeOne(direction: displayDir), KeyScope.Canvas, () => _canvas.Nudge(dx, dy),
+                dx == 0 ? [(k, NoMods), (k, Ctrl | Shift)] : [(k, Ctrl | Shift)]);
             Bind("편집", $"8px {dir} 옮기기", MainStrings.ShortcutCategory_Edit, MainStrings.FormatShortcut_NudgeEight(direction: displayDir), KeyScope.Canvas, () => _canvas.Nudge(dx * 8, dy * 8), (k, Shift));
         }
 
@@ -796,6 +798,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             DocCmd("새 태그(애니메이션)…", MainStrings.Menu_FrameLayer_Command_196, _timeline.NewTag),
             new Separator(),
             DocCmd("격자로 나눠 프레임 만들기(시트 → 프레임)…", MainStrings.Menu_FrameLayer_Command_198, SplitIntoFrames));
+        // ←→ = 이전·다음 프레임(글자 입력란 밖이면 어디서든 — 팔레트 등을 만진 뒤에도). ArrowStepFrame이 타임라인 표·캔버스 옮기기 모드를 가른다.
+        foreach (var (k, delta, name, display) in new[] { (Key.Left, -1, "이전 프레임(방향키)", MainStrings.Shortcut_StepFrameArrowPrevious), (Key.Right, 1, "다음 프레임(방향키)", MainStrings.Shortcut_StepFrameArrowNext) })
+            Bind("프레임·레이어", name, MainStrings.ShortcutCategory_FrameLayer, display, KeyScope.NotInText, () => ArrowStepFrame(delta), (k, NoMods));
 
         // 도구: 선택 도구 넷은 "선택" 아래, 그리기 옵션과 브러시 명령은 "그리기 옵션" 아래에 넣어 메뉴를 짧게 둔다.
         var tools = TopMenu("도구(_T)", MainStrings.Menu_Tools);
@@ -959,6 +964,19 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         return mi;
     }
 
+    /// <summary>
+    /// 프로젝트가 있어야 쓸 수 있는 명령인데, 단축키는 <paramref name="keyAction"/>이 true일 때만 키를 먹는다(false면 포커스된 컨트롤이 키를 받음).
+    /// 메뉴로 고르면 <paramref name="action"/>을 그대로 한다.
+    /// </summary>
+    private MenuItem DocKeyCmd(string id, string text, Action action, Func<bool> keyAction, string keyText, KeyScope scope, params (Key, KeyModifiers)[] keys)
+    {
+        var mi = new MenuItem { Header = MenuHeader(text, keyText) };
+        mi.Click += (_, _) => Dispatcher.UIThread.Post(() => { if (_ctx.HasProject) action(); });
+        Register(_cmdCategory, id, _cmdCategoryDisplay, text, scope, () => _ctx.HasProject && keyAction(), keys, mi, keys.Length == 0 ? keyText : null);
+        _docItems.Add(mi);
+        return mi;
+    }
+
     /// <summary>메뉴 없는 단축키 명령. <paramref name="action"/>이 false면 키를 처리하지 않은 것으로 본다.</summary>
     private void Bind(string category, string name, string categoryDisplay, string nameDisplay, KeyScope scope, Func<bool> action, params (Key, KeyModifiers)[] keys)
         => Register(category, name, categoryDisplay, nameDisplay, scope, action, keys, null, null);
@@ -1105,16 +1123,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         // 이동 도구는 타임라인에서 고른 셀들을 함께 옮긴다.
         _ctx.SelectedCels = _timeline.SelectedCelTargets;
         _preview.Message += (_, m) => ShowMessage(m);
-        _preview.CopyRequested += (_, img) =>
-        {
-            _ctx.Clipboard = img;
-            PutOnSystemClipboard(img);
-        };
-        _timeline.ImageCopyRequested += (_, img) =>
-        {
-            _ctx.Clipboard = img;
-            PutOnSystemClipboard(img);
-        };
+        // 프레임 화면 그림(캔버스 크기)은 프레임 (0,0)에 있던 그림으로 본다.
+        _preview.CopyRequested += (_, img) => PutImageOnClipboard(img, FrameImageOrigin(img));
+        _timeline.ImageCopyRequested += (_, img) => PutImageOnClipboard(img, FrameImageOrigin(img));
         _preview.GifExportRequested += (_, _) => ExportGif();
         _preview.FileSaved += (_, path) => _browser.RefreshFile(path);
         _preview.TabRequested += (_, _) => OpenPreviewTab();
@@ -1241,6 +1252,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _ctx.EraserStrength = s.EraserStrength;
         (_ctx.EraserRed, _ctx.EraserGreen, _ctx.EraserBlue) = (s.EraserRed, s.EraserGreen, s.EraserBlue);
         _ctx.DitherPattern = s.DitherPattern;
+        (_ctx.StrokeFramesBefore, _ctx.StrokeFramesAfter) = (s.StrokeFramesBefore, s.StrokeFramesAfter);
         _ctx.TextStyle = s.TextStyle ?? new();
         _ctx.PixelPerfect = s.PixelPerfect;
         _ctx.FillContiguous = s.FillContiguous;
@@ -1454,6 +1466,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         s.EraserStrength = _ctx.EraserStrength;
         (s.EraserRed, s.EraserGreen, s.EraserBlue) = (_ctx.EraserRed, _ctx.EraserGreen, _ctx.EraserBlue);
         s.DitherPattern = _ctx.DitherPattern;
+        (s.StrokeFramesBefore, s.StrokeFramesAfter) = (_ctx.StrokeFramesBefore, _ctx.StrokeFramesAfter);
         s.TextStyle = _ctx.TextStyle;
         s.PixelPerfect = _ctx.PixelPerfect;
         s.FillContiguous = _ctx.FillContiguous;
@@ -1653,6 +1666,18 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         if (scope == KeyScope.Canvas) return ReferenceEquals(focus, _canvas);
         // 글자 입력란(숫자 상자·편집 가능한 콤보 상자 안쪽 입력란 포함)이면 그 입력란이 키를 받는다.
         return focus is not TextBox;
+    }
+
+    /// <summary>
+    /// ←→ 프레임 이동. 타임라인 표에 포커스가 있으면 표가 제 방향키(셀 선택 이동)로 처리하게 넘기고, 캔버스가 옮기기 모드
+    /// (이동 도구·변형·캔버스 크기·그룹 부위 배치)면 1px 옮긴다. 선택 도구로 고른 영역은 옮기지 않는다(Ctrl+Shift+방향키·Shift+방향키는 그대로 옮김).
+    /// </summary>
+    private bool ArrowStepFrame(int delta)
+    {
+        if (!_ctx.HasProject || _timeline.IsGridFocused) return false;
+        if (ReferenceEquals(FocusManager?.GetFocusedElement(), _canvas) && _canvas.ArrowsMoveContent) return _canvas.Nudge(delta, 0);
+        _timeline.StepFrame(delta);
+        return true;
     }
 
     /// <summary>Space를 이만큼 안에 눌렀다 떼면 미리보기 재생/정지(더 오래 누르면 화면 이동만 하려던 것으로 본다).</summary>
@@ -2969,15 +2994,20 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         // 타임라인에 포커스가 있으면 셀/프레임 대상
         if (_timeline.IsGridFocused) { _timeline.CopySelection(false); ShowMessage(MainStrings.Message_312); return; }
         PixelImage? clip;
-        if (_ctx.Selection.HasSelection) clip = _ctx.Selection.Copy(_ctx.EditImageOrEmpty);
+        Point origin;
+        if (_ctx.Selection.HasSelection)
+        {
+            clip = _ctx.Selection.Copy(_ctx.EditImageOrEmpty);
+            origin = _canvas.ToFramePoint(_ctx.Selection.Bounds.Location);
+        }
         else
         {
             // 선택이 없으면 부위는 그 부위 셀, 그 밖에는 현재 프레임 합성 그림 전체를 복사한다.
             clip = _ctx.CurrentPart is not null ? _ctx.EditImageOrEmpty.Clone() : _ctx.Project!.Flatten(_ctx.CurrentFrame);
+            origin = _canvas.ToFramePoint(Point.Empty);
         }
         if (clip is null) return;
-        _ctx.Clipboard = clip;
-        PutOnSystemClipboard(clip);
+        PutImageOnClipboard(clip, origin);
         ShowMessage(MainStrings.FormatMessage_383(width: clip.Width, height: clip.Height));
     }
 
@@ -3003,16 +3033,45 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         }
         if (!_ctx.CanEdit) { ShowMessage(MainStrings.Message_315); return; }
         _ctx.BeginSelectionEdit();
+        var origin = _canvas.ToFramePoint(_ctx.Selection.Bounds.Location);
         var clip = _ctx.Selection.Cut(_ctx.EditImage!)!;
         _ctx.NotifyPixels();
         _ctx.CommitFloating();
-        _ctx.Clipboard = clip;
-        PutOnSystemClipboard(clip);
+        PutImageOnClipboard(clip, origin);
         ShowMessage(MainStrings.FormatMessage_384(width: clip.Width, height: clip.Height));
     }
 
     /// <summary>시스템 클립보드에 PNG로 올린다(다른 그림 프로그램에 붙여넣기용). 실패하면 앱 내부 클립보드만 쓴다.</summary>
     private void PutOnSystemClipboard(PixelImage clip) => ImageActions.Copy(this, clip);
+
+    /// <summary>마지막으로 앱에서 복사한 그림과 그 그림이 프레임에서 있던 자리(붙일 때 같은 자리에 두려고). 자리를 모르면 null.</summary>
+    private (PixelImage Image, Point Origin)? _copiedAt;
+
+    /// <summary>
+    /// 그림을 앱·시스템 클립보드에 올린다. <paramref name="origin"/> = 그 그림이 프레임에서 있던 자리(모르면 null). 다음 붙여넣기가 이 그림이 되도록
+    /// 타임라인 셀·효과 복사는 비운다.
+    /// </summary>
+    private void PutImageOnClipboard(PixelImage image, Point? origin)
+    {
+        _ctx.Clipboard = image;
+        _copiedAt = origin is { } o ? (image, o) : null;
+        _timeline.ForgetCopy();
+        PutOnSystemClipboard(image);
+    }
+
+    /// <summary>프레임 화면 그림이면(캔버스 크기) 프레임 (0,0), 아니면 자리를 모름.</summary>
+    private Point? FrameImageOrigin(PixelImage image) => _ctx.Project is { } p && image.Size == p.Size ? Point.Empty : null;
+
+    /// <summary>클립보드를 거쳐 온 그림이 앱에서 복사한 그림과 같은지(PNG를 거치며 투명 픽셀의 색은 바뀔 수 있어 투명끼리는 같다고 봄).</summary>
+    private static bool SamePicture(PixelImage a, PixelImage b)
+    {
+        if (a.Width != b.Width || a.Height != b.Height) return false;
+        var pa = a.Pixels;
+        var pb = b.Pixels;
+        for (int i = 0; i < pa.Length; i++)
+            if (pa[i] != pb[i] && (pa[i].A != 0 || pb[i].A != 0)) return false;
+        return true;
+    }
 
     private PixelImage? ReadClipboard()
     {
@@ -3057,10 +3116,28 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         if (_ctx.Tool is not (ToolKind.Select or ToolKind.EllipseSelect or ToolKind.Lasso)) _ctx.Tool = ToolKind.Select;
         _ctx.CommitFloating();
         _ctx.BeginSelectionEdit();
-        _ctx.Selection.Paste(_ctx.EditImage!, clip, _canvas.PasteLocation());
+        // 앱에서 복사한 그림이면 복사한 자리(프레임 기준)에 — 선택이 있으면 선택 자리가 먼저.
+        Point? copiedAt = _copiedAt is { } copied && SamePicture(copied.Image, clip) ? copied.Origin : null;
+        _ctx.Selection.Paste(_ctx.EditImage!, clip, _canvas.PasteLocation(copiedAt));
         _ctx.NotifyPixels();
         ShowMessage(MainStrings.FormatMessage_385(width: clip.Width, height: clip.Height));
         _canvas.Focus();
+    }
+
+    /// <summary>
+    /// 지우기 키: 캔버스에 포커스가 있거나, 캔버스에 선택이 있는 채 타임라인 표에 포커스가 있으면(프레임을 누른 뒤) 선택 내용만 지운다.
+    /// 그 밖(선택 없는 타임라인 = 프레임·레이어·셀 지우기, 파일 목록 등)은 포커스된 컨트롤이 키를 받는다.
+    /// </summary>
+    private bool DeleteSelectionKey()
+    {
+        if (ReferenceEquals(FocusManager?.GetFocusedElement(), _canvas))
+        {
+            DeleteSelection();
+            return true;
+        }
+        if (!_timeline.IsGridFocused || !_ctx.Selection.HasSelection) return false;
+        DeleteSelection();
+        return true;
     }
 
     private void DeleteSelection()

@@ -212,11 +212,10 @@ internal static class GuideFeatureShots
         k.Dialog(() => ShotKit.Call(Timeline(m), "EditLayerEffects", body, 0, null, null), w =>
         {
             var settings = ShotKit.Get<Control>(w, "_settings");
-            var expand = ShotKit.All<CheckBox>(settings).First(c => c.Content is string s && s == Chickxel.App.Localization.UiStrings.Effect_ExpandCanvas);
             var pivot = ShotKit.All<CheckBox>(settings).First(c => c.Content is string s && s == Chickxel.App.Localization.UiStrings.Effect_MovePivot);
             var hold = ShotKit.All<CheckBox>(settings).First(c => c.Content is string s && s == Chickxel.App.Localization.UiStrings.Effect_HoldEnd);
-            var mode = ShotKit.Get<Control>(w, "_expandMode");
-            k.Save(w, marks: [expand, pivot, hold, (Control)mode.Parent!]);
+            var grow = ShotKit.Get<Control>(w, "_growCanvas");
+            k.Save(w, marks: [pivot, hold, (Control)grow.Parent!]);
             ToolTip.SetIsOpen(pivot, true);
             ShotKit.Pump(400);
             var tooltip = ScreenTimelineShots.PopupArea(w) ?? throw new InvalidOperationException("pivot movement tooltip did not open");

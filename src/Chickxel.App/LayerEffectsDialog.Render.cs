@@ -26,11 +26,10 @@ public sealed partial class LayerEffectsDialog
     private const int ShownMax = 1024;
 
     /// <summary>
-    /// 프레임 하나의 결과: 효과 입힌 그림(모든 효과 여백만큼 넓힘)과 원래 그림 대비 자리, 줄인 썸네일, 그리고 원래 그림 기준 불투명 범위 둘 —
-    /// <c>Output</c>은 켜진 효과 전부의 결과, <c>Grow</c>는 캔버스 늘리기를 켠 효과만 남긴 결과(<see cref="LayerEffects.ExpandingOnly"/>).
-    /// 범위 안 켜진 효과가 없거나 불투명 픽셀이 없으면 <see cref="Rectangle.Empty"/>.
+    /// 프레임 하나의 결과: 효과 입힌 그림(모든 효과 여백만큼 넓힘)과 원래 그림 대비 자리, 줄인 썸네일, 그리고 원래 그림 기준 켜진 효과 결과의 불투명 범위
+    /// (범위 안 켜진 효과가 없거나 불투명 픽셀이 없으면 <see cref="Rectangle.Empty"/>).
     /// </summary>
-    private sealed record FrameResult(PixelImage Image, int X, int Y, WriteableBitmap Thumb, Rectangle Output, Rectangle Grow);
+    private sealed record FrameResult(PixelImage Image, int X, int Y, WriteableBitmap Thumb, Rectangle Output);
 
     /// <summary>효과 목록 한 판의 모든 프레임 결과(작업 스레드가 채움).</summary>
     private sealed class FrameRenders(int count)
@@ -191,7 +190,6 @@ public sealed partial class LayerEffectsDialog
         if (_previewBounds.IsEmpty) _previewBounds = _previewCanvas = new Rectangle(0, 0, _project.Width, _project.Height);
         int count = VirtualCount;
         var all = VirtualEffects();
-        var scope = GrowScopeOf(all);
         var sources = new PixelImage?[count];
         var pivots = new System.Drawing.PointF[count];
         // 다른 레이어·테두리를 읽는 스크립트가 볼 것과 ctx.frameTag(원래 프레임 기준) — 프로젝트를 읽으므로 여기서(UI 스레드) 담는다
@@ -231,13 +229,8 @@ public sealed partial class LayerEffectsDialog
                         var padding = LayerEffects.Padding(all, source.Width, source.Height);
                         var (image, x, y) = LayerEffects.Render(source, effects, padding, layer, token);
                         var thumb = ImageUtil.ToBitmap(RenderService.Shrink(image, StripThumbMax));
-                        bool active = LayerEffects.AnyEnabled(effects);
-                        var output = active ? OpaqueAt(image, x, y) : Rectangle.Empty;
-                        // 캔버스 늘리기 범위: 모두 켰으면 같은 결과, 일부만이면 켠 효과만 남겨 한 번 더 그린다(이 작업 스레드에서 — 확인 때 기다리지 않게)
-                        var grow = !active || scope == GrowScope.None ? Rectangle.Empty
-                            : scope == GrowScope.All ? output
-                            : GrowingOutput(source, effects, padding, layer, token);
-                        Volatile.Write(ref job.Results[f], new FrameResult(image, x, y, thumb, output, grow));
+                        var output = LayerEffects.AnyEnabled(effects) ? OpaqueAt(image, x, y) : Rectangle.Empty;
+                        Volatile.Write(ref job.Results[f], new FrameResult(image, x, y, thumb, output));
                     }
                     Interlocked.Decrement(ref job.Remaining);
                     Dispatcher.UIThread.Post(() => OnFrameRendered(job, f));
@@ -305,7 +298,7 @@ public sealed partial class LayerEffectsDialog
         }
     }
 
-    /// <summary>모든 프레임을 그림: 확인 때 늘릴 캔버스 범위를 정하고 미리보기를 그 자리·배율로 다시 그린 뒤, 재생용 그림을 작업 스레드에서 만든다.</summary>
+    /// <summary>모든 프레임을 그림: 미리보기 자리·배율(잘릴 부분 포함)을 정하고 그 자리·배율로 다시 그린 뒤, 재생용 그림을 작업 스레드에서 만든다.</summary>
     private void OnRendersComplete(FrameRenders job)
     {
         job.Applied = true;
@@ -320,7 +313,7 @@ public sealed partial class LayerEffectsDialog
     }
 
     /// <summary>
-    /// 재생용 전·후 그림을 지금 미리보기 범위로 작업 스레드에서 만든다(<see cref="ShownFrames"/>). 범위가 바뀌면(캔버스 늘리기를 켜고 끔) 다시 만든다.
+    /// 재생용 전·후 그림을 지금 미리보기 범위로 작업 스레드에서 만든다(<see cref="ShownFrames"/>). 범위가 바뀌면('캔버스 늘리기…'로 정한 확대) 다시 만든다.
     /// </summary>
     private void BuildShownFrames(FrameRenders job)
     {
@@ -367,17 +360,16 @@ public sealed partial class LayerEffectsDialog
     }
 
     /// <summary>
-    /// 늘린 뒤 모든 프레임에서 이 레이어의 켜진 효과 결과가 차지하는 캔버스 좌표 범위 — 다 그린 결과가 있으면 그것으로, 아직이면 null.
-    /// <paramref name="grow"/>면 캔버스 늘리기를 켠 효과만 남긴 결과(<see cref="FrameResult.Grow"/>)로 잰다.
+    /// 모든 프레임에서 이 레이어의 켜진 효과 결과가 차지하는 캔버스 좌표 범위(지금 캔버스 포함) — 다 그린 결과가 있으면 그것으로, 아직이면 null.
     /// </summary>
-    private Rectangle? RenderedOutputBounds(bool grow)
+    private Rectangle? RenderedOutputBounds()
     {
         if (_renders is not { Complete: true } job) return null;
         var bounds = new Rectangle(0, 0, _project.Width, _project.Height);
         for (int frame = 0; frame < job.Count; frame++)
         {
             if (job.Results[frame] is not { } r) continue;
-            var opaque = grow ? r.Grow : r.Output;
+            var opaque = r.Output;
             if (opaque.IsEmpty) continue;
             var at = _layer.IsPart ? _project.GetPartOffset(_layer, frame) : Point.Empty;
             opaque.Offset(at.X, at.Y);

@@ -10,10 +10,9 @@ public sealed partial class SpriteProject
     /// <summary>
     /// 레이어 <paramref name="layer"/>의 효과 결과가 모든 프레임에서 놓이는 범위(캔버스 좌표, 효과를 그린 불투명 픽셀만 — 지금 캔버스는 넣지 않음).
     /// <paramref name="throughEffect"/>가 있으면 그 번호까지의 효과만 쓰고(뒤 효과는 빼고, 그 효과가 앞 효과 결과 위에 그리므로 앞은 둠), 없으면 모든 효과.
-    /// <paramref name="expandingOnly"/>면 캔버스 늘리기를 끈 효과(<see cref="LayerEffect.ExpandCanvas"/>)는 끈 셈으로 잰다(효과 창 확인과 같음).
     /// 켜진 효과가 어느 프레임에도 없으면 null, 켜진 효과는 있지만 그린 픽셀이 없으면 <see cref="Rectangle.Empty"/>.
     /// </summary>
-    public Rectangle? EffectOutputBounds(Layer layer, int? throughEffect = null, bool expandingOnly = true)
+    public Rectangle? EffectOutputBounds(Layer layer, int? throughEffect = null)
     {
         IReadOnlyList<LayerEffect> list = throughEffect is { } last ? [.. layer.Effects.Take(last + 1)] : layer.Effects;
         bool any = false;
@@ -22,7 +21,6 @@ public sealed partial class SpriteProject
         {
             if (EffectSource(layer, frame) is not { } source) continue;
             var effects = EffectsAt(layer, list, frame, ActiveKey(layer), null);
-            if (expandingOnly) effects = LayerEffects.ExpandingOnly(effects);
             if (!LayerEffects.AnyEnabled(effects)) continue;
             any = true;
             var (rendered, dx, dy) = LayerEffects.Render(source, effects);

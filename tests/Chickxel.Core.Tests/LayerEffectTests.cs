@@ -456,21 +456,6 @@ public class LayerEffectTests
         Assert.NotEqual(src[0, 0], anchorOnly[0, 0]);
     }
 
-    [Fact]
-    public void ExpandingOnly_KeepsAnchorOfAGrowingClippedEffect()
-    {
-        LayerEffect[] effects =
-        [
-            new OutlineEffect { ExpandCanvas = false },
-            new ShadowEffect { ClipToPrevious = true, OffsetX = 4 },
-            new InnerGlowEffect { ExpandCanvas = false },
-            new ShadowEffect { ClipToPrevious = true, ExpandCanvas = false },
-        ];
-        var measured = LayerEffects.ExpandingOnly(effects);
-        // 캔버스를 늘리는 클리핑 그림자는 외곽선 층에서 그리므로 외곽선은 켠 채로 재고, 늘리는 클리핑 효과가 없는 묶음은 끈다
-        Assert.Equal([true, true, false, false], measured.Select(e => e.Enabled).ToArray());
-    }
-
     // ───────────── 합성 ─────────────
 
     /// <summary>8×8 캔버스, 그룹 안 부위 둘(2×2 빨강을 (2,2), 2×2 파랑을 (4,2) — 나란히 붙음).</summary>
@@ -849,45 +834,16 @@ public class LayerEffectTests
     }
 
     [Fact]
-    public void ExpandingOnly_MeasuresOnlyEffectsThatExpandTheCanvas()
+    public void RetiredExpandCanvasKey_IsIgnoredOnRead_AndNotWritten()
     {
-        var src = Filled(1, 1, Red);
-        LayerEffect right = new ShadowEffect { Color = Black, OffsetX = 2, OffsetY = 0 };
-        LayerEffect down = new ShadowEffect { Color = Blue, OffsetX = 0, OffsetY = 3, ExpandCanvas = false };
-        LayerEffect[] mixed = [right, down];
-
-        // 아래 그림자는 그려지지만(전부 그린 결과는 아래로 3칸), 캔버스를 늘릴 범위는 오른쪽 그림자만
-        var (all, ax, ay) = LayerEffects.Render(src, mixed);
-        var full = all.GetOpaqueBounds();
-        full.Offset(ax, ay);
-        Assert.Equal(new Rectangle(0, 0, 3, 4), full);
-        var growing = LayerEffects.ExpandingOnly(mixed);
-        Assert.Equal([true, false], growing.Select(e => e.Enabled));
-        var (grown, gx, gy) = LayerEffects.Render(src, growing);
-        var bounds = grown.GetOpaqueBounds();
-        bounds.Offset(gx, gy);
-        Assert.Equal(new Rectangle(0, 0, 3, 1), bounds);
-
-        // 모두 켰으면 같은 목록, 하나도 없으면 잴 효과가 없다
-        LayerEffect[] expanding = [right, down with { ExpandCanvas = true }];
-        Assert.Same(expanding, LayerEffects.ExpandingOnly(expanding));
-        Assert.False(LayerEffects.AnyEnabled(LayerEffects.ExpandingOnly([right with { ExpandCanvas = false }, down])));
-    }
-
-    [Fact]
-    public void ExpandCanvas_SavedOnlyWhenOff_OldFilesReadAsOn()
-    {
-        var on = Chickxel.Core.Effects.EffectCodec.Write(new ShadowEffect());
-        Assert.False(on.ContainsKey(Chickxel.Core.Effects.EffectCodec.ExpandCanvasKey));
-        Assert.True(Chickxel.Core.Effects.EffectCodec.Read(on).ExpandCanvas);
-
-        var (p, g, _, _) = TwoPartsFourFrames();
-        p.SetLayerEffects(p.IndexOf(g), [new OutlineEffect(), new ShadowEffect { ExpandCanvas = false }]);
-        using var stream = new MemoryStream();
-        ProjectIO.Save(p, stream);
-        stream.Position = 0;
-        // 예전 기본 효과는 공식 스크립트로 바뀌어 열려도 값이 남는다
-        Assert.Equal([true, false], ProjectIO.Load(stream).Layers.Single(l => l.IsGroup).Effects.Select(e => e.ExpandCanvas));
+        const string key = Chickxel.Core.Effects.EffectCodec.RetiredExpandCanvasKey;
+        var json = Chickxel.Core.Effects.EffectCodec.Write(new ShadowEffect());
+        Assert.False(json.ContainsKey(key));
+        // 예전 판이 쓴 "expandCanvas": false도 그대로 읽히고, 다시 쓰면 그 키는 없다
+        json[key] = false;
+        var read = Chickxel.Core.Effects.EffectCodec.Read(json);
+        Assert.IsNotType<MissingEffect>(read);
+        Assert.False(Chickxel.Core.Effects.EffectCodec.Write(read).ContainsKey(key));
     }
 
     [Theory]

@@ -343,7 +343,7 @@ public sealed class CodexSession : IChatSession
 
     /// <summary>
     /// <c>-c</c> 설정: 편집기 MCP 서버만, MCP 도구는 묻지 않고 허용(그림 생성처럼 오래 걸리는 도구도 기다림), 읽기 전용, 알림·AGENTS.md 끔, 시스템 프롬프트.
-    /// 웹 검색은 채팅(<see cref="McpScope.Full"/>)에서만 켠다 — 사용자가 시킬 때만 쓰라는 규칙은 <see cref="AiCli.SystemPrompt"/>. 효과 만들기 AI 칸은 끈다.
+    /// 웹 검색은 채팅·효과 만들기 AI 칸(<see cref="AiCli.AllowsWebSearch"/>)에서만 켠다 — 사용자가 시킬 때만 쓰라는 규칙은 각 시스템 프롬프트.
     /// </summary>
     private IEnumerable<string> ConfigOverrides()
     {
@@ -351,7 +351,7 @@ public sealed class CodexSession : IChatSession
         yield return $"mcp_servers={{{McpServer.ServerName}={{url={TomlString(_mcp.Url)},bearer_token_env_var={TomlString(TokenVariable)},default_tools_approval_mode=\"approve\",tool_timeout_sec={ToolTimeoutSeconds}}}}}";
         yield return "approval_policy=\"never\"";
         yield return "sandbox_mode=\"read-only\"";
-        yield return _scope == McpScope.Full ? "web_search=\"live\"" : "web_search=\"disabled\"";
+        yield return AiCli.AllowsWebSearch(_scope) ? "web_search=\"live\"" : "web_search=\"disabled\"";
         yield return "notify=[]";
         yield return "project_doc_max_bytes=0";
         yield return "developer_instructions=" + TomlString(_systemPrompt);
@@ -527,7 +527,7 @@ public sealed class CodexSession : IChatSession
                 }
                 break;
             case "web_search":
-                // 채팅에서 사용자가 시켜 한 웹 검색. 시작 이벤트는 검색어가 비어 있어 끝날 때 결과 글로 검색어를 보인다.
+                // 사용자가 시켜 한 웹 검색(채팅·효과 만들기 AI 칸). 시작 이벤트는 검색어가 비어 있어 끝날 때 결과 글로 검색어를 보인다.
                 if (started) ToolUse?.Invoke(new ToolUseInfo(id, "web_search", AiCli.Str(item["query"]) is { Length: > 0 } q ? new JsonObject { ["query"] = q } : null));
                 else if (completed) ToolResult?.Invoke(new ToolResultInfo(id, AiCli.Str(item["status"]) == "failed", AiCli.Str(item["query"]) ?? ""));
                 break;

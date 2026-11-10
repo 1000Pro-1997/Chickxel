@@ -7,6 +7,25 @@ using Chickxel.Core.Text;
 
 namespace Chickxel.App;
 
+/// <summary>그리기 도구의 획을 지금 프레임 말고 어느 프레임에도 같은 자리로 함께 적용할지(<see cref="EditorContext.StrokeFrameTargets"/>).</summary>
+public enum StrokeFrameRange
+{
+    /// <summary>지금 프레임만.</summary>
+    Current,
+    /// <summary>지금 + 앞 <see cref="EditorContext.StrokeFramesBefore"/>개.</summary>
+    Before,
+    /// <summary>지금 + 뒤 <see cref="EditorContext.StrokeFramesAfter"/>개.</summary>
+    After,
+    /// <summary>앞 <see cref="EditorContext.StrokeFramesBefore"/>개 + 지금 + 뒤 <see cref="EditorContext.StrokeFramesAfter"/>개.</summary>
+    BeforeAndAfter,
+    /// <summary>첫 프레임부터 지금까지.</summary>
+    ToFirst,
+    /// <summary>지금부터 마지막 프레임까지.</summary>
+    ToLast,
+    /// <summary>모든 프레임.</summary>
+    All,
+}
+
 /// <summary>편집 도구 종류.</summary>
 public enum ToolKind
 {
@@ -289,6 +308,58 @@ public sealed partial class EditorContext
     {
         get => _ditherPattern;
         set { if (!Enum.IsDefined(value)) value = DitherPattern.Checker; if (_ditherPattern == value) return; _ditherPattern = value; OptionsChanged(); }
+    }
+
+    private StrokeFrameRange _strokeFrames;
+    private int _strokeFramesBefore = 1, _strokeFramesAfter = 1;
+    /// <summary>앞·뒤 프레임 수 칸의 최댓값.</summary>
+    public const int MaxStrokeFrameCount = 999;
+
+    /// <summary>그리기 도구의 획을 함께 적용할 프레임 범위(앱을 켜면 늘 지금 프레임만 — 모르고 여러 프레임을 고치지 않게 저장하지 않음).</summary>
+    public StrokeFrameRange StrokeFrames
+    {
+        get => _strokeFrames;
+        set { if (!Enum.IsDefined(value)) value = StrokeFrameRange.Current; if (_strokeFrames == value) return; _strokeFrames = value; OptionsChanged(); }
+    }
+    /// <summary>앞 프레임 수(1~<see cref="MaxStrokeFrameCount"/>, <see cref="StrokeFrameRange.Before"/>·<see cref="StrokeFrameRange.BeforeAndAfter"/>).</summary>
+    public int StrokeFramesBefore
+    {
+        get => _strokeFramesBefore;
+        set { value = Math.Clamp(value, 1, MaxStrokeFrameCount); if (_strokeFramesBefore == value) return; _strokeFramesBefore = value; OptionsChanged(); }
+    }
+    /// <summary>뒤 프레임 수(1~<see cref="MaxStrokeFrameCount"/>, <see cref="StrokeFrameRange.After"/>·<see cref="StrokeFrameRange.BeforeAndAfter"/>).</summary>
+    public int StrokeFramesAfter
+    {
+        get => _strokeFramesAfter;
+        set { value = Math.Clamp(value, 1, MaxStrokeFrameCount); if (_strokeFramesAfter == value) return; _strokeFramesAfter = value; OptionsChanged(); }
+    }
+
+    /// <summary>지금 프레임 기준으로 <see cref="StrokeFrames"/>가 덮는 프레임 범위(0부터, 양 끝 포함 — 타임라인 밖은 잘림). 프로젝트가 없으면 null.</summary>
+    public (int First, int Last)? StrokeFrameSpan()
+    {
+        if (Project is not { } p || p.Frames.Count == 0) return null;
+        int current = Math.Clamp(_frame, 0, p.Frames.Count - 1), last = p.Frames.Count - 1;
+        var (first, end) = _strokeFrames switch
+        {
+            StrokeFrameRange.Before => (current - _strokeFramesBefore, current),
+            StrokeFrameRange.After => (current, current + _strokeFramesAfter),
+            StrokeFrameRange.BeforeAndAfter => (current - _strokeFramesBefore, current + _strokeFramesAfter),
+            StrokeFrameRange.ToFirst => (0, current),
+            StrokeFrameRange.ToLast => (current, last),
+            StrokeFrameRange.All => (0, last),
+            _ => (current, current),
+        };
+        return (Math.Max(0, first), Math.Min(last, end));
+    }
+
+    /// <summary>획을 지금 프레임 말고 함께 적용할 프레임 번호(오름차순, 지금 프레임은 뺌). 없으면 빈 목록.</summary>
+    public List<int> StrokeFrameTargets()
+    {
+        var targets = new List<int>();
+        if (StrokeFrameSpan() is not { } span) return targets;
+        for (int f = span.First; f <= span.Last; f++)
+            if (f != _frame) targets.Add(f);
+        return targets;
     }
 
     private TextStyle _textStyle = new();
@@ -2084,21 +2155,22 @@ public sealed partial class EditorContext
     }
 
     /// <summary>
-    /// 현재 캔버스에서 보이는 그림 전체(캔버스 크기, 새 이미지): 각 픽셀이 <see cref="CompositeColorAt"/>와 같다.
-    /// 채우기의 "보이는 레이어 전체" 기준에 쓴다.
+    /// 현재 캔버스에서 보이는 그림 전체(캔버스 크기, 새 이미지): 각 픽셀이 <see cref="CompositeColorAt"/>와 같다. <paramref name="frameIndex"/>를 주면
+    /// 그 프레임에서 같은 레이어를 고칠 때 보일 그림(채우기를 다른 프레임에 함께 적용할 때). 채우기의 "보이는 레이어 전체" 기준에 쓴다.
     /// </summary>
-    public PixelImage VisibleImage()
+    public PixelImage VisibleImage(int? frameIndex = null)
     {
+        int f = frameIndex ?? _frame;
         int w = Math.Max(1, CanvasWidth), h = Math.Max(1, CanvasHeight);
         var img = new PixelImage(w, h);
-        if (FrameImage(_frame) is not { } frame) return img;
+        if (FrameImage(f) is not { } frame) return img;
         if (CurrentPart is not { } part)
         {
             img.CopyFrom(frame);
             return img;
         }
-        var cel = EditImage;
-        var at = Project!.GetPartOffset(part, _frame);
+        var cel = f == _frame ? EditImage : Project!.GetCel(_layer, f);
+        var at = Project!.GetPartOffset(part, f);
         for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
             {

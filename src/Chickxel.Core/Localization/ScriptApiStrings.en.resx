@@ -156,5 +156,4 @@
   <data name="Completion_Setting" xml:space="preserve"><value>Setting ({type})</value></data>
   <data name="Completion_Chick" xml:space="preserve"><value>Chick {number}</value></data>
   <data name="Completion_ChickNone" xml:space="preserve"><value>No chick (empty canvas)</value></data>
-  <data name="Api_effect_expandCanvas" xml:space="preserve"><value>When false, a newly added effect starts with "Expand canvas" (on OK) off (default true): what the effect draws past the canvas is cut off instead of growing the canvas (like flames rising above the picture).</value></data>
 </root>

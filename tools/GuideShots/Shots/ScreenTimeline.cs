@@ -380,14 +380,13 @@ internal static class ScreenTimelineShots
         var play = (Control)ShotKit.Get<Control>(w, "_play").Parent!;
         var preview = ShotKit.Get<Control>(w, "_preview");
         var strip = ShotKit.Get<Control>(w, "_strip");
-        var expandRow = (Control)ShotKit.Get<Control>(w, "_expandMode").Parent!;
-        var expandNote = ShotKit.Get<Control>(w, "_expandNote");
+        var expandRow = (Control)ShotKit.Get<Control>(w, "_growCanvas").Parent!;
         var extend = ShotKit.Get<Control>(w, "_extendPanel");
         var addRow = (Control)ShotKit.Get<Control>(w, "_addAll").Parent!;
         var shared = InWindow(w, SettingsAreaGroup(w, expandRow));
 
         // 4: 전체(번호가 글자·체크 상자를 가리지 않게 묶음 왼쪽 끝에 맞춘 사각형)
-        var expand = Union(w, expandRow, expandNote);
+        var expand = InWindow(w, expandRow);
         var ext = InWindow(w, extend);
         k.Save(w, "screen-layer-effects-4", marks:
         [
@@ -753,7 +752,7 @@ internal static class ScreenTimelineShots
             ShotKit.Call(w, "AddScriptEffect", sparks);
             // 설정 칸 스크롤 높이 고정을 풀어 모든 설정 줄이 한 번에 보이게 하고, 맨 아래 레이어 고르기 목록이 아래로 펼쳐질 빈자리를 둔다
             // (창 높이는 그대로라 그림 밖인 공통 설정 묶음을 잠시 숨겨 설정 칸을 위로 올리고, 창을 화면 위로 올려 목록이 화면 밖으로 넘지 않게)
-            var common = SettingsAreaGroup(w, (Control)ShotKit.Get<Control>(w, "_expandMode").Parent!);
+            var common = SettingsAreaGroup(w, (Control)ShotKit.Get<Control>(w, "_growCanvas").Parent!);
             common.IsVisible = false;
             ShotKit.Get<ScrollViewer>(w, "_settingsScroll").Height = double.NaN;
             settings.Margin = new Thickness(0, 0, 0, 170);

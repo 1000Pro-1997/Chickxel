@@ -2270,6 +2270,7 @@ public sealed partial class PixelCanvas : Control
         _strokeGradient = _ctx.PencilGradient;
         _strokeGradientMode = _ctx.PencilGradientMode;
         _strokeGradientInterval = _ctx.PencilGradientInterval;
+        BeginFrameRecord(img);
     }
 
     private void EndPixelStroke()
@@ -2288,7 +2289,7 @@ public sealed partial class PixelCanvas : Control
             ToolKind.Dither => UiStrings.S_PixelCanvas_EndPixelStroke_1C14189718,
             _ => UiStrings.S_PixelCanvas_EndPixelStroke_E40CB15E95,
         };
-        _ctx.CommitStroke(label);
+        CommitStrokeWithFrames(label);
         if (_strokeTool is not (ToolKind.Eraser or ToolKind.Dodge or ToolKind.Gradient or ToolKind.GradientPencil or ToolKind.ShapePen) && _strokeColor.A != 0) _ctx.PushRecentColor(_strokeColor);
         _strokeBase = null;
         _ppStroke = null;
@@ -2296,6 +2297,7 @@ public sealed partial class PixelCanvas : Control
         EndShapeStamps();
         _visited = null;
         _strokeOutside = Rectangle.Empty;
+        EndFrameRecord();
     }
 
     /// <summary>도형(또는 브러시 획)을 그리는 중에 반대쪽 버튼을 누르면 그 획을 취소한다. 취소했으면 true.</summary>
@@ -2322,6 +2324,7 @@ public sealed partial class PixelCanvas : Control
         EndShapeStamps();
         _visited = null;
         _strokeOutside = Rectangle.Empty;
+        EndFrameRecord();
         Message?.Invoke(this, UiStrings.S_PixelCanvas_CancelPixelStroke_53972D288A);
         InvalidateVisual();
     }
@@ -2352,9 +2355,12 @@ public sealed partial class PixelCanvas : Control
         else if (_strokeOutside.Contains(m)) _ctx.Project!.SetStrokeOutside(m.X, m.Y, color);
     }
 
-    /// <summary>점들을 칠한다(<see cref="Raster.Plot"/> + 캔버스 밖 칸, 선택 영역 밖은 무시).</summary>
+    /// <summary>점들을 칠한다(<see cref="Raster.Plot"/> + 캔버스 밖 칸, 선택 영역 밖은 무시). 적용 프레임 기록에는 색 넣기로 남긴다.</summary>
     private void Plot(PixelImage img, IEnumerable<Point> points, Color32 color, PixelMask? clip)
     {
+        if (_frameOps is not null)
+            foreach (var m in points)
+                if (clip is null || clip.Value.Contains(m)) RecordOp(img, m, new PixelOp(PixelOpKind.Set, color));
         if (_strokeOutside.IsEmpty)
         {
             Raster.Plot(img, points, color, clip);
@@ -2415,7 +2421,11 @@ public sealed partial class PixelCanvas : Control
             case ToolKind.Dither:
                 foreach (var m in Targets(Raster.Brush(p.X, p.Y, _ctx.BrushSize, _ctx.BrushShape)))
                     if (clip is null || clip.Value.Contains(m))
-                        Put(img, m, Raster.DitherUsesPrimary(m.X, m.Y, _ctx.DitherPattern) ? _strokeColor : _strokeColor2);
+                    {
+                        var color = Raster.DitherUsesPrimary(m.X, m.Y, _ctx.DitherPattern) ? _strokeColor : _strokeColor2;
+                        Put(img, m, color);
+                        RecordOp(img, m, new PixelOp(PixelOpKind.Set, color));
+                    }
                 return;
             case ToolKind.Dodge:
             {
@@ -2423,14 +2433,20 @@ public sealed partial class PixelCanvas : Control
                 var mode = _ctx.DodgeMode;
                 foreach (var m in Targets(Raster.Brush(p.X, p.Y, _ctx.BrushSize, _ctx.BrushShape)))
                     if ((clip is null || clip.Value.Contains(m)) && CanPaint(img, m) && _visited!.Add(m))
+                    {
                         Put(img, m, DodgeBurn.Apply(PixelAt(img, m), _strokeLighten, amount, mode));
+                        RecordOp(img, m, new PixelOp(PixelOpKind.Dodge));
+                    }
                 return;
             }
             case ToolKind.ReplaceBrush:
+                // 다른 프레임에서는 같은 자리의 그 프레임 색이 획을 시작한 색과 같을 때 바꾸므로, 덮은 칸은 모두 기록한다.
                 foreach (var m in Targets(Raster.Brush(p.X, p.Y, _ctx.BrushSize, _ctx.BrushShape)))
-                    if ((clip is null || clip.Value.Contains(m)) && CanPaint(img, m)
-                        && Color32.SameVisible(BaseAt(m), _replaceTarget))
-                        Put(img, m, _strokeColor);
+                    if ((clip is null || clip.Value.Contains(m)) && CanPaint(img, m))
+                    {
+                        RecordOp(img, m, new PixelOp(PixelOpKind.Replace, _strokeColor));
+                        if (Color32.SameVisible(BaseAt(m), _replaceTarget)) Put(img, m, _strokeColor);
+                    }
                 return;
         }
         if (_partialErase)
@@ -2444,6 +2460,7 @@ public sealed partial class PixelCanvas : Control
                         {
                             Put(img, m, BaseAt(m));
                             _visited!.Remove(m);
+                            ForgetOp(m);
                         }
                 if (draw is { } d) EraseCells(Targets([d]));
                 return;
@@ -2456,7 +2473,11 @@ public sealed partial class PixelCanvas : Control
             var (draw, restore) = _ppStroke.Add(p);
             if (restore is { } r)
                 foreach (var m in Targets([r]))
-                    if (clip is null || clip.Value.Contains(m)) Put(img, m, BaseAt(m));
+                    if (clip is null || clip.Value.Contains(m))
+                    {
+                        Put(img, m, BaseAt(m));
+                        ForgetOp(m);
+                    }
             if (draw is { } d) Plot(img, Targets([d]), _strokeColor, clip);
             return;
         }
@@ -2467,7 +2488,10 @@ public sealed partial class PixelCanvas : Control
         {
             foreach (var m in cells)
                 if ((clip is null || clip.Value.Contains(m)) && CanPaint(img, m) && _visited!.Add(m))
+                {
                     Put(img, m, PartialErase.Apply(BaseAt(m), _ctx.EraserStrength, _ctx.EraserRed, _ctx.EraserGreen, _ctx.EraserBlue));
+                    RecordOp(img, m, new PixelOp(PixelOpKind.PartialErase));
+                }
         }
     }
 
@@ -2476,6 +2500,7 @@ public sealed partial class PixelCanvas : Control
         var img = _ctx.EditImage!;
         img.CopyFrom(_strokeBase!);
         _ctx.Project?.ResetStrokeOutside();
+        _frameOps?.Clear();
         bool shift = (_mods & KeyModifiers.Shift) != 0;
         var pts = _ctx.ShapeFilled && Shapes.CanFill(_strokeShape.Kind)
             ? Shapes.Fill(_strokeShape, _startPx, end, shift)
@@ -2495,6 +2520,7 @@ public sealed partial class PixelCanvas : Control
         _ctx.CancelStroke();
         _strokeBase = null;
         _strokeOutside = Rectangle.Empty;
+        EndFrameRecord();
         _curve = (a, b, _dragButton);
         _curveThrough = new Point((a.X + b.X) / 2, (a.Y + b.Y) / 2);
         Message?.Invoke(this, UiStrings.Shape_CurveBend);
@@ -2573,10 +2599,13 @@ public sealed partial class PixelCanvas : Control
         if (sample is not null && (sample.Width != img.Width || sample.Height != img.Height)) sample = null;
         int changed = 0;
         foreach (var m in Targets([p]))
+        {
+            _frameFillSeeds?.Add(m);
             changed += img.Contains(m.X, m.Y)
                 ? Raster.FloodFill(img, m.X, m.Y, _strokeColor, _ctx.FillContiguous, _ctx.Selection.Clip,
                     _ctx.FillToleranceChannels, _ctx.FillDiagonal, sample, _ctx.FillColorMode)
                 : FillOutside(m);
+        }
         if (changed > 0) _ctx.NotifyPixels();
     }
 
@@ -2587,21 +2616,33 @@ public sealed partial class PixelCanvas : Control
     private int FillOutside(Point m)
     {
         if (!_strokeOutside.Contains(m) || _ctx.Project is not { } p || p.GetCelOverflowLive(_ctx.CurrentLayer, _ctx.CurrentFrame) is not { } o) return 0;
-        var bounds = o.Image.GetOpaqueBounds();
-        int sx = m.X - o.Origin.X, sy = m.Y - o.Origin.Y;
-        if (!bounds.Contains(sx, sy)) return 0;
-        var canvas = new Rectangle(-o.Origin.X, -o.Origin.Y, W, H);
+        int changed = 0;
+        foreach (var at in OutsideFillRegion(o.Image, o.Origin, m))
+            if (p.SetStrokeOutside(at.X, at.Y, _strokeColor)) changed++;
+        return changed;
+    }
+
+    /// <summary>
+    /// 캔버스 밖 그림 <paramref name="image"/>(왼쪽 위 = 캔버스 좌표 <paramref name="origin"/>)에서 <paramref name="m"/>을 눌러 채울 칸들(캔버스 좌표):
+    /// 그림을 감싼 사각형 안에서 그 그림의 색으로 영역을 정하고 캔버스 칸은 벽이다. 그림이 없는 빈 곳이면 없음.
+    /// </summary>
+    private List<Point> OutsideFillRegion(PixelImage image, Point origin, Point m)
+    {
+        var cells = new List<Point>();
+        var bounds = image.GetOpaqueBounds();
+        int sx = m.X - origin.X, sy = m.Y - origin.Y;
+        if (!bounds.Contains(sx, sy)) return cells;
+        var canvas = new Rectangle(-origin.X, -origin.Y, W, H);
         var bits = new bool[bounds.Width * bounds.Height];
         for (int y = 0; y < bounds.Height; y++)
             for (int x = 0; x < bounds.Width; x++)
                 bits[y * bounds.Width + x] = !canvas.Contains(bounds.X + x, bounds.Y + y);
-        var region = Raster.FloodRegion(o.Image, sx, sy, _ctx.FillContiguous, new PixelMask(bounds, bits), _ctx.FillToleranceChannels,
+        var region = Raster.FloodRegion(image, sx, sy, _ctx.FillContiguous, new PixelMask(bounds, bits), _ctx.FillToleranceChannels,
             _ctx.FillDiagonal, _ctx.FillColorMode);
-        int changed = 0;
         for (int y = bounds.Top; y < bounds.Bottom; y++)
             for (int x = bounds.Left; x < bounds.Right; x++)
-                if (region.Contains(x, y) && p.SetStrokeOutside(o.Origin.X + x, o.Origin.Y + y, _strokeColor)) changed++;
-        return changed;
+                if (region.Contains(x, y)) cells.Add(new Point(origin.X + x, origin.Y + y));
+        return cells;
     }
 
     /// <summary>캔버스 밖 칸의 색: 또렷이 보이는 지금 레이어의 캔버스 밖 그림에서(그림을 감싼 사각형 안만, 아니면 null).</summary>
@@ -2691,6 +2732,9 @@ public sealed partial class PixelCanvas : Control
         _drag = DragMode.MoveLayer;
     }
 
+    /// <summary>←→가 프레임 대신 내용을 옮기는 모드인지: 이동 도구·변형·캔버스 크기·그룹 부위 배치.</summary>
+    public bool ArrowsMoveContent => _ctx.IsCanvasResizing || _ctx.IsGroupSelected || _ctx.IsTransforming || _ctx.Tool == ToolKind.Move;
+
     /// <summary>방향키로 선택 내용(없으면 이동 도구에서 레이어 내용, 그룹 화면이면 부위 위치, 캔버스 크기 모드면 그림 자리)을 옮긴다.</summary>
     public bool Nudge(int dx, int dy)
     {
@@ -2738,11 +2782,26 @@ public sealed partial class PixelCanvas : Control
         if (others > 0) Message?.Invoke(this, UiStrings.FormatMove_OtherCels(count: others));
     }
 
-    /// <summary>붙여넣을 위치: 선택이 있으면 그 자리, 없으면 화면에 보이는 영역의 왼쪽 위.</summary>
-    public Point PasteLocation()
+    /// <summary>캔버스(지금 편집 그림) 좌표를 프레임 좌표로: 부위 화면이면 부위의 지금 프레임 위치만큼 더한다.</summary>
+    public Point ToFramePoint(Point p)
+    {
+        var o = ShownOrigin;
+        return new Point(p.X + o.X, p.Y + o.Y);
+    }
+
+    /// <summary>
+    /// 붙여넣을 위치: 선택이 있으면 그 자리, 없으면 <paramref name="copiedAt"/>(복사한 그림이 프레임에서 있던 자리 — 지금 캔버스 좌표로 바꿈,
+    /// 캔버스·부위 크기가 달라 밖으로 나가도 그대로), 그것도 없으면 화면에 보이는 영역의 왼쪽 위.
+    /// </summary>
+    public Point PasteLocation(Point? copiedAt)
     {
         if (!_ctx.HasProject) return Point.Empty;
         if (_ctx.Selection.HasSelection) return _ctx.Selection.Bounds.Location;
+        if (copiedAt is { } at)
+        {
+            var o = ShownOrigin;
+            return new Point(at.X - o.X, at.Y - o.Y);
+        }
         var src = VisibleSourceRect(0, 0);
         return src.IsEmpty ? Point.Empty : src.Location;
     }

@@ -810,7 +810,6 @@ Export: </value></data>
   <data name="S_LayerEffectsDialog_Extend_CountKind_C5B2B11647" xml:space="preserve"><value>{0} frames</value></data>
   <data name="S_LayerEffectsDialog_Extend_CountKind_C66AF18AEF" xml:space="preserve"><value>{0} frames (×2)</value></data>
   <data name="S_LayerEffectsDialog_Extend_EndPreview_1FF7594D8B" xml:space="preserve"><value> — undo with Ctrl+Z.</value></data>
-  <data name="S_LayerEffectsDialog_Extend_EndPreview_3FACEB3EDB" xml:space="preserve"><value>Couldn't expand the canvas, so the effect wasn't applied: {0}</value></data>
   <data name="S_LayerEffectsDialog_Extend_EndPreview_7BCD2BFB57" xml:space="preserve"><value>Layer effects · expand canvas</value></data>
   <data name="S_LayerEffectsDialog_Extend_EndPreview_E092F138F7" xml:space="preserve"><value>Layer effects · extend frames</value></data>
   <data name="S_LayerEffectsDialog_Extend_EndPreview_FE2B132140" xml:space="preserve"><value>Layer effects · extend frames and canvas</value></data>
@@ -1125,7 +1124,7 @@ Alpha is kept and fully transparent pixels are unchanged. One undo step.</value>
   <data name="Ai_Effect_Removed" xml:space="preserve"><value>{tool}: removed effect {effect} ({type}) from layer {layer} "{name}"</value></data>
   <data name="Ai_Effect_NoEffects" xml:space="preserve"><value>Layer {layer} "{name}" has no effects — check with get_effects</value></data>
   <data name="Ai_Effect_NoneToBake" xml:space="preserve"><value>Layer {layer} "{name}" has no enabled effects to apply</value></data>
-  <data name="Ai_Effect_ExpandNoEffects" xml:space="preserve"><value>{tool}: no enabled effects with expand canvas on to fit — nothing changed</value></data>
+  <data name="Ai_Effect_ExpandNoEffects" xml:space="preserve"><value>{tool}: no enabled effects to fit — nothing changed</value></data>
   <data name="Ai_Effect_ExpandNone" xml:space="preserve"><value>{tool}: the effects already fit in the {width}x{height} canvas — nothing changed</value></data>
   <data name="Ai_Effect_Expanded" xml:space="preserve"><value>{tool}: canvas {oldWidth}x{oldHeight} → {width}x{height} (the drawing moved by {x},{y})</value></data>
   <data name="Ai_Effect_SettingsObject" xml:space="preserve"><value>settings: must be a JSON object of setting keys and values (see list_effect_types)</value></data>
@@ -2310,10 +2309,6 @@ Please download it from the release page and replace it manually.</value></data>
   <data name="EffectCanvas_Menu" xml:space="preserve"><value>Expand canvas…</value></data>
   <data name="EffectCanvas_MenuTip" xml:space="preserve"><value>Grows the canvas as far as this effect's result goes past it (a small window to choose how).</value></data>
   <data name="EffectCanvas_NoOutput" xml:space="preserve"><value>This effect is not on in any frame, so there is nothing to fit.</value></data>
-  <data name="EffectCanvasExpand_ModeTip" xml:space="preserve"><value>On OK or when applying permanently, if the result of an effect with "Expand canvas" on goes past the canvas, the canvas grows the chosen way. Turn it on or off per effect in its settings (on by default). Image size is unchanged; all layers, parts and pivots move together.</value></data>
-  <data name="Effect_ExpandCanvasRow" xml:space="preserve"><value>On OK</value></data>
-  <data name="Effect_ExpandCanvas" xml:space="preserve"><value>Expand canvas</value></data>
-  <data name="Effect_ExpandCanvasTip" xml:space="preserve"><value>On OK or when applying permanently, if this effect's result goes past the canvas, the canvas grows to fit it (the way it grows is chosen in Common settings). Turn it off to clip this effect to the canvas — the part that will be cut off shows faded in the preview.</value></data>
   <data name="Effect_MovePivotRow" xml:space="preserve"><value>Later effects</value></data>
   <data name="Effect_MovePivot" xml:space="preserve"><value>Move pivot along</value></data>
   <data name="Effect_MovePivotTip" xml:space="preserve"><value>When an effect that moves the image (shake, bob, jump, throw…) moves it, the pivot (center) of the effects after it in the list (rotate, squash…) follows by the same amount. The effect has to report how far it moved: the official Shake and Bob do, and your own script effects report it with ctx.movePivot(dx, dy). Turn it off to move only the image and keep the later effects' pivot where it was.</value></data>
@@ -3576,6 +3571,9 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Chat_SendQueuesTip" xml:space="preserve"><value>Enter — sent when the current turn finishes</value></data>
   <data name="EffectMaker_Uploaded" xml:space="preserve"><value>Published</value></data>
   <data name="EffectMaker_UploadedModified" xml:space="preserve"><value>Published · edited</value></data>
+  <data name="EffectMaker_WebNewer" xml:space="preserve"><value>A newer version {0} is online (this computer: {1}). You can update it from the Store in the Asset Manager.</value></data>
+  <data name="EffectMaker_WebOlder" xml:space="preserve"><value>Version {1} on this computer isn't in the online list yet (online: {0}; it may be in review).</value></data>
+  <data name="EffectMaker_WebModified" xml:space="preserve"><value>Edited after downloading or publishing, so it differs from the online version.</value></data>
   <data name="EffectMaker_DownloadUploadedTip" xml:space="preserve"><value>You published this effect with this account. It isn't on this computer yet; click to download, install and open it.</value></data>
   <data name="Assets_LinkNotFound" xml:space="preserve"><value>The package '{0}' opened from the website isn't in the online list. It may have been hidden or removed. If you downloaded it from the website, install it with Import.</value></data>
   <data name="Gallery_Title" xml:space="preserve"><value>Upload to Gallery</value></data>
@@ -4134,4 +4132,25 @@ Transparent pixels compare alpha only; between visible pixels the alpha differen
   <data name="ShapePen_ExportFailed" xml:space="preserve"><value>Couldn't export the set: {error}</value></data>
   <data name="ShapePen_Imported" xml:space="preserve"><value>Imported the set '{name}' ({count} shapes)</value></data>
   <data name="ShapePen_ImportFailed" xml:space="preserve"><value>These files couldn't be read as shape pen sets: {names}</value></data>
+  <data name="FrameRange_Group" xml:space="preserve"><value>Apply to frames</value></data>
+  <data name="FrameRange_Info" xml:space="preserve"><value>After drawing on the current frame, the same stroke is applied at the same place on the same layer in the other frames of the chosen range (one undo step together with the current frame). Pencil, eraser, dither and shapes put the same colors on the same pixels; lighten/darken and partial erasing change that frame's pixels by the same amount; the replace brush changes only pixels that have the color you first clicked; fill fills again from the same spot in that frame; and gradients are drawn again with the same start and end. Linked cels are changed once and locked layers aren't changed. The canvas shows only the current frame. The app always starts with the current frame only.</value></data>
+  <data name="FrameRange_Label" xml:space="preserve"><value>Range</value></data>
+  <data name="FrameRange_Tip" xml:space="preserve"><value>Frames that also get the stroke you draw</value></data>
+  <data name="FrameRange_Current" xml:space="preserve"><value>Current frame only</value></data>
+  <data name="FrameRange_Before" xml:space="preserve"><value>Up to N frames before</value></data>
+  <data name="FrameRange_After" xml:space="preserve"><value>Up to N frames after</value></data>
+  <data name="FrameRange_BeforeAndAfter" xml:space="preserve"><value>Before and after</value></data>
+  <data name="FrameRange_ToFirst" xml:space="preserve"><value>Back to the first frame</value></data>
+  <data name="FrameRange_ToLast" xml:space="preserve"><value>On to the last frame</value></data>
+  <data name="FrameRange_All" xml:space="preserve"><value>All frames</value></data>
+  <data name="FrameRange_BeforeCount" xml:space="preserve"><value>Before</value></data>
+  <data name="FrameRange_AfterCount" xml:space="preserve"><value>After</value></data>
+  <data name="FrameRange_FramesUnit" xml:space="preserve"><value>frames</value></data>
+  <data name="FrameRange_BeforeTip" xml:space="preserve"><value>How many frames before the current one also get the stroke (stops at the first frame)</value></data>
+  <data name="FrameRange_AfterTip" xml:space="preserve"><value>How many frames after the current one also get the stroke (stops at the last frame)</value></data>
+  <data name="FrameRange_Span" xml:space="preserve"><value>Applies to frames {0}–{1} ({2})</value></data>
+  <data name="FrameRange_SpanOne" xml:space="preserve"><value>Applies to frame {0} only</value></data>
+  <data name="FrameRange_Applied" xml:space="preserve"><value>Also applied at the same place on {0} other frames. One Ctrl+Z undoes all of it.</value></data>
+  <data name="EffectCanvas_Staged" xml:space="preserve"><value>On OK: {0}×{1} → {2}×{3}</value></data>
+  <data name="EffectCanvas_Drop" xml:space="preserve"><value>Don't expand — keep the canvas; effects past it are cut off</value></data>
 </root>

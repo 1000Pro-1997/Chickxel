@@ -534,7 +534,7 @@ public sealed partial class LayerEffectsDialog
     // ───────────── 확정 ─────────────
 
     /// <summary>
-    /// 미리보기 끝(창이 닫힘): 확인이면 효과와 선택한 프레임·캔버스 늘리기를 한 실행취소 단계로 확정한다. 취소면 모두 원래대로.
+    /// 미리보기 끝(창이 닫힘): 확인이면 효과와 선택한 프레임 늘리기·'캔버스 늘리기…'로 정한 확대를 한 실행취소 단계로 확정한다. 취소면 모두 원래대로.
     /// </summary>
     private void EndPreview(int index, bool commit)
     {
@@ -543,19 +543,7 @@ public sealed partial class LayerEffectsDialog
             _project.EndLayerEffectsPreview(index, _original, commit: false);
             return;
         }
-        var list = VirtualEffects();
-        EffectCanvasExpansion? expansion = null;
-        try
-        {
-            var plan = _confirmedCanvasExpansion ?? CanvasExpansion(list);
-            if (!plan.IsNone(_project.Width, _project.Height)) expansion = plan;
-        }
-        catch (InvalidOperationException ex)
-        {
-            _project.EndLayerEffectsPreview(index, _original, commit: false);
-            ResultMessage = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Extend_EndPreview_3FACEB3EDB,ex.Message);
-            return;
-        }
+        var expansion = _canvasPlan;
         int trim = Trim, keep = VirtualCount;
         if (_extension is null && expansion is null && trim == 0)
         {

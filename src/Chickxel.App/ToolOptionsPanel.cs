@@ -85,6 +85,15 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
     /// <summary>제목 줄의 "i": 도구 쓰는 법(선택·이동·그라데이션 등, 없으면 숨김).</summary>
     private readonly Border _hint;
 
+    // 적용 프레임(그리기 도구의 획을 다른 프레임에도 같은 자리로)
+    private readonly Border _frameRangeBox;
+    /// <summary>범위(<see cref="StrokeFrameRange"/> 순서).</summary>
+    private readonly ComboBox _frameRange;
+    private readonly NumericUpDown _framesBefore, _framesAfter;
+    private readonly StackPanel _framesBeforeRow, _framesAfterRow;
+    /// <summary>지금 프레임 기준으로 덮는 프레임(예: "프레임 3~7 (5개)").</summary>
+    private readonly TextBlock _frameRangeSpan;
+
     // 글씨
     private readonly FontPicker _textFont = new(170);
     /// <summary>고른 글꼴이 이 컴퓨터에 없을 때 경고(기본 글꼴로 그림).</summary>
@@ -446,6 +455,31 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         _mirrorAtPivot = Check(UiStrings.Mirror_AtPivot, UiStrings.Mirror_AtPivotTip, v => _ctx.MirrorAtPivot = v);
         _mirrorBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_0E1824FF47, Ui.Stack(_mirrorX, _mirrorY, _mirrorAtPivot));
 
+        // ── 적용 프레임: 범위 + 앞·뒤 프레임 수 + 지금 덮는 프레임
+        _frameRange = Ui.Combo(170, UiStrings.FrameRange_Current, UiStrings.FrameRange_Before, UiStrings.FrameRange_After,
+            UiStrings.FrameRange_BeforeAndAfter, UiStrings.FrameRange_ToFirst, UiStrings.FrameRange_ToLast, UiStrings.FrameRange_All);
+        _frameRange.SelectionChanged += (_, _) =>
+        {
+            if (_updating || _frameRange.SelectedIndex < 0) return;
+            _ctx.StrokeFrames = (StrokeFrameRange)_frameRange.SelectedIndex;
+        };
+        _frameRange.Tip(UiStrings.FrameRange_Tip);
+        _framesBefore = NumBox(1, EditorContext.MaxStrokeFrameCount, v => _ctx.StrokeFramesBefore = v)
+            .Presets(1, 2, 3, 4, 5, 6, 8, 10, 12, 16).RecentKey("stroke.frames");
+        _framesAfter = NumBox(1, EditorContext.MaxStrokeFrameCount, v => _ctx.StrokeFramesAfter = v)
+            .Presets(1, 2, 3, 4, 5, 6, 8, 10, 12, 16).RecentKey("stroke.frames");
+        _framesBefore.Tip(UiStrings.FrameRange_BeforeTip);
+        _framesAfter.Tip(UiStrings.FrameRange_AfterTip);
+        _framesBeforeRow = Ui.Row(Ui.Label(UiStrings.FrameRange_BeforeCount), _framesBefore, Ui.Label(UiStrings.FrameRange_FramesUnit));
+        _framesAfterRow = Ui.Row(Ui.Label(UiStrings.FrameRange_AfterCount), _framesAfter, Ui.Label(UiStrings.FrameRange_FramesUnit));
+        _frameRangeSpan = Dim("");
+        _frameRangeSpan.TextWrapping = TextWrapping.Wrap;
+        _frameRangeBox = InfoGroup(UiStrings.FrameRange_Group, UiStrings.FrameRange_Info, Ui.Stack(
+            Ui.Row(Ui.Label(UiStrings.FrameRange_Label), _frameRange),
+            _framesBeforeRow,
+            _framesAfterRow,
+            _frameRangeSpan));
+
         // ── 피벗(픽셀: X는 왼쪽에서, Y는 아래에서)
         // 5×5: 가로·세로 0, 1/4, 1/2, 3/4, 1 지점(위 왼쪽 단추 = 왼쪽 위).
         var stepDefs = string.Join(",", Enumerable.Repeat("Auto", PivotSteps));
@@ -683,7 +717,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         // 캔버스 등 다른 곳을 고치러 나가면 묶음을 닫는다(다른 편집이 효과 변경과 한 단계로 묶이지 않게).
         PointerExited += (_, _) => EndEffectEdit();
 
-        Control[] boxes = [_canvasResizeBox, _transformBox, _shapeBox, _brushBox, _pencilGradientBox, _shapePenBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox];
+        Control[] boxes = [_canvasResizeBox, _transformBox, _shapeBox, _brushBox, _pencilGradientBox, _shapePenBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _frameRangeBox, _pivotBox, _sliceBox];
         foreach (var box in boxes) Ui.Foldable((Border)box);
         Ui.Foldable(_effectBox);
         var header = Ui.Header(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E39101186F);
@@ -714,9 +748,9 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
             if (_canvasResizeBox.IsVisible != _ctx.IsCanvasResizing) Refresh();
             else RefreshCanvasResize();
         };
-        ctx.ProjectReplaced += (_, _) => { RefreshPivot(); RefreshSlice(); ShowEffect(null, -1); };
-        ctx.ProjectChanged += (_, _) => { RefreshPivot(); RefreshSlice(); SyncEffect(); };
-        ctx.CurrentChanged += (_, _) => { RefreshPivot(); RefreshSlice(); };
+        ctx.ProjectReplaced += (_, _) => { RefreshPivot(); RefreshSlice(); ShowEffect(null, -1); RefreshFrameRange(); };
+        ctx.ProjectChanged += (_, _) => { RefreshPivot(); RefreshSlice(); SyncEffect(); RefreshFrameRange(); };
+        ctx.CurrentChanged += (_, _) => { RefreshPivot(); RefreshSlice(); RefreshFrameRange(); };
         // 피벗 도구로 끄는 동안(미리보기 값)에도 숫자가 따라가게. 스크립트 효과 실행 상태가 바뀌어도 여기로 온다.
         ctx.ViewChanged += (_, _) =>
         {
@@ -919,6 +953,8 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         _wrap.IsVisible = tool == ToolKind.Move;
         _optionsBox.IsVisible = _pixelPerfect.IsVisible || _shapeFilled.IsVisible || _rightErase.IsVisible || _wrap.IsVisible;
         _mirrorBox.IsVisible = paint;
+        // 적용 프레임: 셀 그림을 칠하는 도구(그라데이션 포함)
+        _frameRangeBox.IsVisible = paint || tool == ToolKind.Gradient;
         _pivotBox.IsVisible = tool == ToolKind.Pivot;
         _sliceBox.IsVisible = tool == ToolKind.Slice;
         var hint = tool switch
@@ -945,7 +981,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
                 : layer ? UiStrings.LayerTransform_PanelTitle : UiStrings.S_ToolOptionsPanel_Refresh_DD7EA3035B;
             _tfTitle.Text = layer ? UiStrings.LayerTransform_GroupTitle : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E4C9B1697C;
             ToolTip.SetTip(_tfHelp, layer ? UiStrings.LayerTransform_Info : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_BFD255FFEA);
-            foreach (var box in new Control[] { _shapeBox, _brushBox, _pencilGradientBox, _shapePenBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox, _hint })
+            foreach (var box in new Control[] { _shapeBox, _brushBox, _pencilGradientBox, _shapePenBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _frameRangeBox, _pivotBox, _sliceBox, _hint })
                 box.IsVisible = false;
         }
 
@@ -981,6 +1017,9 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
             _mirrorY.IsChecked = _ctx.MirrorY;
             _mirrorAtPivot.IsChecked = _ctx.MirrorAtPivot;
             _mirrorAtPivot.IsEnabled = _ctx.MirrorX || _ctx.MirrorY;
+            _frameRange.SelectedIndex = (int)_ctx.StrokeFrames;
+            _framesBefore.Value = _ctx.StrokeFramesBefore;
+            _framesAfter.Value = _ctx.StrokeFramesAfter;
             _pencilGradientMode.SelectedIndex = (int)_ctx.PencilGradientMode;
             _pencilIntervalNum.Value = _ctx.PencilGradientInterval;
             _pencilIntervalRow.IsVisible = _ctx.PencilGradientMode == GradientStrokeMode.Repeat;
@@ -995,10 +1034,29 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         {
             _updating = false;
         }
+        RefreshFrameRange();
         RefreshPivot();
         RefreshSlice();
         RefreshTransform();
         RefreshCanvasResize();
+    }
+
+    /// <summary>적용 프레임: 범위에 맞는 프레임 수 칸만 보이고, 지금 프레임 기준으로 덮는 프레임을 적는다.</summary>
+    private void RefreshFrameRange()
+    {
+        var range = _ctx.StrokeFrames;
+        _framesBeforeRow.IsVisible = range is StrokeFrameRange.Before or StrokeFrameRange.BeforeAndAfter;
+        _framesAfterRow.IsVisible = range is StrokeFrameRange.After or StrokeFrameRange.BeforeAndAfter;
+        if (_ctx.StrokeFrameSpan() is not { } span)
+        {
+            _frameRangeSpan.Text = "";
+            return;
+        }
+        int count = span.Last - span.First + 1;
+        _frameRangeSpan.Text = count == 1
+            ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.FrameRange_SpanOne, span.First + 1)
+            : string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.FrameRange_Span, span.First + 1, span.Last + 1, count);
+        _frameRangeSpan.Foreground = count > 1 ? AppTheme.WarningBrush : AppTheme.DimTextBrush;
     }
 
     /// <summary>글씨 설정 칸에 글씨 도구 설정(<see cref="EditorContext.TextStyle"/>)을 보인다. 매끄럽게는 벡터 글꼴일 때만 쓸 수 있다.</summary>

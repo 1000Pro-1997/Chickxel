@@ -37,8 +37,7 @@ public sealed partial class PixelTools
         yield return Tool("get_effects",
             "List the effects of a layer or group in stack order (index 0 is applied first): index, type, name, enabled, frames (\"all\" or {from,to} " +
             "frame indices, inclusive), clipToAbove (" + ClipNote + "), " +
-            "holdEnd (only when on), expandCanvas (false only when the effect does not grow the canvas), movePivot (false only when the effect does not move " +
-            "later effects' pivot) and the full settings.",
+            "holdEnd (only when on), movePivot (false only when the effect does not move later effects' pivot) and the full settings.",
             new JsonObject { ["layer"] = Int("Layer index (normal, part or group). Default: current.", 0) });
         yield return Tool("add_effect",
             "Add a layer effect (or an effect recipe stack) to a normal, part or group layer. Non-destructive; one undo step. " +
@@ -56,13 +55,12 @@ public sealed partial class PixelTools
                 ["to_frame"] = Int("Last frame index of the effect's range, inclusive (default: last frame).", 0),
                 ["enabled"] = Bool("Draw the effect (default true)."),
                 ["clip_to_above"] = Bool(ClipNote + ". Not allowed at index 0 (default false)."),
-                ["expand_canvas"] = Bool(ExpandCanvasNote + " Default: the effect's own initial value (true, or false when a script declares expandCanvas: false; a preset keeps its own value)."),
                 ["move_pivot"] = Bool(MovePivotNote + " Default: the effect's own initial value (true, or false when a script declares movePivot: false; a preset keeps its own value)."),
                 ["index"] = Int("Stack position to insert at (0 = applied first; default: end).", 0),
             });
         yield return Tool("set_effect",
             "Change one effect of a layer: partial `settings` (only the keys to change; null resets a key to its default), frame range, enabled, " +
-            "clip_to_above, hold_end, expand_canvas, move_pivot, and/or its stack position (move_to). One undo step.",
+            "clip_to_above, hold_end, move_pivot, and/or its stack position (move_to). One undo step.",
             new JsonObject
             {
                 ["layer"] = Int("Layer index. Default: current.", 0),
@@ -78,7 +76,6 @@ public sealed partial class PixelTools
                                     "show exactly the range's last-frame look (e.g. a throw on frames 0-17 keeps the thrown ball on linked frame 18); other cels (different drawings) are " +
                                     "moved to where the effect moved the subject at the range end, and later effects' pivot follows when move_pivot is on (only effects that report " +
                                     "their movement, see move_pivot). The timeline shows a faint tail."),
-                ["expand_canvas"] = Bool(ExpandCanvasNote),
                 ["move_pivot"] = Bool(MovePivotNote),
             },
             "effect");
@@ -107,8 +104,8 @@ public sealed partial class PixelTools
             });
         yield return Tool("expand_canvas_for_effects",
             "Enlarge the canvas so effect results that spill outside it (outer outlines, shadows, reflections, shake, explode, ...) are not cut off in any frame, " +
-            "like the effects dialog's per-effect \"expand canvas\" on OK. Effects with expand_canvas false (see get_effects) are left out: they stay clipped to the canvas. " +
-            "The drawing keeps its size; only the canvas grows. Refused while any layer is locked. One undo step.",
+            "like the effect's \"Expand canvas…\" button in the editor. Effects are never fitted automatically: without this call (or that button) what spills " +
+            "outside the canvas is cut off. The drawing keeps its size; only the canvas grows. Refused while any layer is locked. One undo step.",
             new JsonObject
             {
                 ["layer"] = Int("Only fit this layer's effects (default: every visible layer with effects).", 0),
@@ -120,9 +117,6 @@ public sealed partial class PixelTools
     private const string ClipNote = "true = clipped to the nearest non-clipped effect above (lower index): the effect is drawn as if only that effect had been drawn — it sees " +
                                     "just the pixels that effect changed (the rest transparent) and its result is laid over the picture, also where it spreads beyond those " +
                                     "pixels (e.g. flames clipped to rain grow from the raindrops); consecutive clipped effects each build on the previous clipped result";
-
-    private const string ExpandCanvasNote = "true = when the user confirms the effects dialog (or bakes), and with expand_canvas_for_effects, the canvas grows so this effect's " +
-                                            "result is not cut off; false = the effect is clipped to the canvas. get_effects reports expandCanvas: false only when off.";
 
     private const string MovePivotNote = "true = when this effect moves the drawing (shake, bob, jump, throw…; script effects report it with ctx.movePivot(dx, dy)), the pivot of " +
                                          "the effects after it in the stack (rotate, squash, …) moves along by the same amount; false = only the drawing moves and later effects keep " +
@@ -295,7 +289,6 @@ public sealed partial class PixelTools
                 ["frames"] = e.Frames is { } r ? new JsonObject { ["from"] = r.From, ["to"] = r.To } : (JsonNode)"all",
                 ["clipToAbove"] = e.ClipToPrevious,
                 ["holdEnd"] = e is AnimatedEffect { HoldEnd: true } ? true : null,
-                ["expandCanvas"] = e.ExpandCanvas ? null : false,
                 ["movePivot"] = e.MovePivot ? null : false,
                 ["settings"] = EffectSettings.ToJson(e),
             });
@@ -322,7 +315,6 @@ public sealed partial class PixelTools
         var range = NewRange(a, p);
         bool enabled = OptBool(a, "enabled") ?? true;
         bool clip = OptBool(a, "clip_to_above") ?? false;
-        bool? expand = OptBool(a, "expand_canvas");
         bool? movePivot = OptBool(a, "move_pivot");
         int at = OptInt(a, "index", 0, layer.Effects.Count) ?? layer.Effects.Count;
         if (clip && at == 0) throw new ToolError(UiStrings.Ai_Effect_ClipFirst);
@@ -338,7 +330,7 @@ public sealed partial class PixelTools
             var created = choice.Template is { } template ? template.Instantiate(p, range)[0] : choice.Effect;
             var (effect, adjusted) = MergeSettings(created, settings);
             clamped = adjusted;
-            added = [effect with { Frames = range, Enabled = enabled, ClipToPrevious = clip, ExpandCanvas = expand ?? effect.ExpandCanvas, MovePivot = movePivot ?? effect.MovePivot }];
+            added = [effect with { Frames = range, Enabled = enabled, ClipToPrevious = clip, MovePivot = movePivot ?? effect.MovePivot }];
         }
         else
         {
@@ -355,7 +347,6 @@ public sealed partial class PixelTools
             added = preset.Instantiate(p, range).Select((effect, i) => effect with
             {
                 Enabled = enabled,
-                ExpandCanvas = expand ?? effect.ExpandCanvas,
                 MovePivot = movePivot ?? effect.MovePivot,
                 ClipToPrevious = i == 0 ? clip : effect.ClipToPrevious,
             }).ToArray();
@@ -380,12 +371,11 @@ public sealed partial class PixelTools
         bool? enabled = OptBool(a, "enabled");
         bool? clip = OptBool(a, "clip_to_above");
         bool? holdEnd = OptBool(a, "hold_end");
-        bool? expand = OptBool(a, "expand_canvas");
         bool? movePivot = OptBool(a, "move_pivot");
         int? moveTo = OptInt(a, "move_to", 0, layer.Effects.Count - 1);
         var effect = layer.Effects[e];
         var (rangeGiven, range) = ChangedRange(a, p, effect.Frames);
-        if (settings is null && !rangeGiven && enabled is null && clip is null && holdEnd is null && expand is null && movePivot is null && moveTo is null)
+        if (settings is null && !rangeGiven && enabled is null && clip is null && holdEnd is null && movePivot is null && moveTo is null)
             throw new ToolError(UiStrings.Ai_Effect_NothingToChange);
         if (holdEnd is not null && effect is not AnimatedEffect) throw new ToolError(UiStrings.Ai_Effect_HoldEndNotAnimated);
         RequireUnlocked(p, index);
@@ -393,7 +383,6 @@ public sealed partial class PixelTools
         var (changed, clamped) = MergeSettings(effect, settings);
         if (rangeGiven) changed = changed with { Frames = range };
         if (enabled is { } on) changed = changed with { Enabled = on };
-        if (expand is { } grow) changed = changed with { ExpandCanvas = grow };
         if (movePivot is { } follow) changed = changed with { MovePivot = follow };
         if (holdEnd is { } hold && changed is AnimatedEffect animated) changed = animated with { HoldEnd = hold };
         var list = layer.Effects.ToList();
@@ -480,7 +469,6 @@ public sealed partial class PixelTools
         bool any = false;
         foreach (var layer in targets)
         {
-            // 캔버스 늘리기를 끈 효과는 재지 않는다(효과 창 확인과 같음)
             if (p.EffectOutputBounds(layer) is not { } b) continue;
             any = true;
             if (!b.IsEmpty) bounds = bounds.IsEmpty ? b : Rectangle.Union(bounds, b);

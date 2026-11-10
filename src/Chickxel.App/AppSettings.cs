@@ -81,6 +81,9 @@ public sealed class AppSettings
     public int DodgeStrength { get; set; } = EditorContext.DefaultDodgeStrength;
     public DodgeMode DodgeMode { get; set; } = DodgeBurn.DefaultMode;
     public DitherPattern DitherPattern { get; set; } = DitherPattern.Checker;
+    /// <summary>그리기 도구를 함께 적용할 앞·뒤 프레임 수(범위 자체는 저장하지 않음 — <see cref="EditorContext.StrokeFrames"/>).</summary>
+    public int StrokeFramesBefore { get; set; } = 1;
+    public int StrokeFramesAfter { get; set; } = 1;
     /// <summary>글씨 도구 설정(글꼴 이름·크기·굵게·기울임·간격·배율·줄 맞춤, 마지막으로 쓴 것). null = 기본.</summary>
     public Chickxel.Core.Text.TextStyle? TextStyle { get; set; }
     /// <summary>

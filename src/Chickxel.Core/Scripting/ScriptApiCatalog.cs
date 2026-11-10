@@ -107,7 +107,6 @@ public static class ScriptApiCatalog
         M(Declaration, "repeat", ScriptApiKind.Key, "repeat: \"Once\" | \"Loop\" | \"PingPong\""),
         M(Declaration, "repeatCount", ScriptApiKind.Key, "repeatCount: 1~8"),
         M(Declaration, "movePivot", ScriptApiKind.Key, "movePivot: false"),
-        M(Declaration, "expandCanvas", ScriptApiKind.Key, "expandCanvas: false"),
         M(Declaration, "area", ScriptApiKind.Key, "area: \"global\" | \"local\"", Area),
         M(Declaration, "radius", ScriptApiKind.Key, "radius: 0~16384"),
         M(Declaration, "previewChick", ScriptApiKind.Key, "previewChick: \"knight\""),

@@ -96,29 +96,6 @@ public static class LayerEffects
         return false;
     }
 
-    /// <summary>
-    /// 캔버스를 늘릴 범위를 잴 목록: 켜진 효과 중 캔버스 늘리기(<see cref="LayerEffect.ExpandCanvas"/>)를 끈 것은 끈 셈으로 바꾼다(차례·나머지 값은 그대로).
-    /// 다만 같은 클리핑 묶음에서 뒤에 캔버스 늘리기를 켠 클리핑 효과가 있으면 그대로 둔다 — 그 효과는 앞 효과가 그린 층에서 그리므로 끄면 재지 못한다.
-    /// 모두 켰으면 같은 목록.
-    /// </summary>
-    public static IReadOnlyList<LayerEffect> ExpandingOnly(IReadOnlyList<LayerEffect> effects)
-    {
-        LayerEffect[]? result = null;
-        bool clippedGrows = false;
-        for (int i = effects.Count - 1; i >= 0; i--)
-        {
-            var e = effects[i];
-            if (e is { Enabled: true, ExpandCanvas: false } && !clippedGrows)
-            {
-                result ??= [.. effects];
-                result[i] = e with { Enabled = false };
-            }
-            if (!e.ClipToPrevious) clippedGrows = false;
-            else if (e is { Enabled: true, ExpandCanvas: true }) clippedGrows = true;
-        }
-        return result ?? effects;
-    }
-
     /// <summary>프레임 <paramref name="frameIndex"/>에 입혀질(켜져 있고 범위 안 — 또는 범위 끝 모습을 이어 가는) 효과가 하나라도 있는지.</summary>
     public static bool AnyActive(IReadOnlyList<LayerEffect> effects, int frameIndex)
     {

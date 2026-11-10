@@ -998,6 +998,12 @@
   <data name="Shortcut_PeekPrevious" xml:space="preserve">
     <value>이전 프레임 보기(누르고 있기)</value>
   </data>
+  <data name="Shortcut_StepFrameArrowPrevious" xml:space="preserve">
+    <value>이전 프레임(방향키)</value>
+  </data>
+  <data name="Shortcut_StepFrameArrowNext" xml:space="preserve">
+    <value>다음 프레임(방향키)</value>
+  </data>
   <data name="Shortcut_CycleSelection" xml:space="preserve">
     <value>선택 칸(다음 선택 도구)</value>
   </data>

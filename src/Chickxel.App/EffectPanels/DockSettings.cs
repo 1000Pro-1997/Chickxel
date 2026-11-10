@@ -42,16 +42,14 @@ public sealed partial class LayerEffectsDialog
     }
 
     /// <summary>
-    /// 스크립트 효과 하나의 설정 줄을 독과 같은 차례로 넣는다: schema 설정 → 움직이는 효과의 빠르기 곡선·반복 → (<paramref name="expandCanvas"/>면 확인할 때 캔버스 늘리기)
+    /// 스크립트 효과 하나의 설정 줄을 독과 같은 차례로 넣는다: schema 설정 → 움직이는 효과의 빠르기 곡선·반복
     /// → 뒤 효과의 피벗 같이 옮기기 → 링크된 뒤 칸에 끝 모습 이어 가기. 오른쪽 독과 효과 만들기의 미리보기 설정 칸이 같이 쓴다(넣었을 때와 같은 모습).
-    /// 캔버스 늘리기는 효과 창에서만 고치므로 독에는 없고, 효과 만들기는 선언의 처음 값(<c>expandCanvas</c>)을 고르려고 보인다.
     /// </summary>
     internal static void AddScriptEffectRows(EffectForm form, ScriptEffectProgram program, ScriptEffect script, Action<Func<LayerEffect, LayerEffect>> set,
-        Action rebuild, ScriptLayerChoices choices, bool expandCanvas = false)
+        Action rebuild, ScriptLayerChoices choices)
     {
         AddScriptSettingRows(program, script, set, rebuild, choices, form.ScriptRow);
         if (program.Animated && program.Motion) AddTimingEditors(form, script, set);
-        if (expandCanvas) AddExpandCanvasEditor(form, script, set);
         AddMovePivotEditor(form, script, set);
         AddHoldEndEditor(form, script, set);
     }

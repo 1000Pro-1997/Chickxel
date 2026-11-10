@@ -57,8 +57,9 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
     private Button? _largePlay;
     private TextBlock? _largeCaption;
     private CheckBox? _largeEffectOnly, _largeLoop;
-    private readonly ComboBox _expandMode;
-    private readonly TextBlock _expandNote;
+    /// <summary>'캔버스 늘리기…'(고른 줄에 맞춤)와 정해 둔 확대의 안내 글·늘리지 않기 단추(정한 것이 있을 때만 보임).</summary>
+    private readonly Button _growCanvas, _dropGrow;
+    private readonly TextBlock _growNote;
     private readonly TextBlock _caption;
     private readonly PreviewView _preview = new();
     private Window? _previewWindow;
@@ -67,8 +68,6 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
     private int _previewFrame;
     /// <summary>재생 범위: true = 고른 효과 범위, false = 늘린 뒤 전체 프레임. 앱을 켜 둔 동안 유지.</summary>
     private static bool s_effectOnly = true;
-    /// <summary>확인 단추에서 검증·계산한 캔버스 확대(닫힌 뒤 같은 결과를 적용).</summary>
-    private EffectCanvasExpansion? _confirmedCanvasExpansion;
     /// <summary>재생 반복: 끝 프레임 다음 바로 처음으로(끝에서 멈칫하지 않음). 앱을 켜 둔 동안 창을 다시 열어도 유지.</summary>
     private static bool s_seamlessLoop;
     private bool _syncing, _baked;
@@ -147,44 +146,21 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
             if (BodyOverflow > 0) _settingsScroll.Height = Math.Max(MinSettingsAreaHeight, SettingsAreaHeight - Math.Ceiling(BodyOverflow));
         }, DispatcherPriority.Background);
 
-        _expandMode = Ui.Combo(110, [UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_E64B4CB375, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_F7968CE40F, UiStrings.EffectCanvasExpand_KeepCenter]);
-        _expandMode.SelectedIndex = (int)EffectCanvasDialog.LastMode;
-        _expandNote = Ui.Label("");
-        _expandNote.Foreground = AppTheme.DimTextBrush;
-        _expandNote.Margin = new Thickness(3, 0, 0, 2);
-        _expandNote.TextWrapping = TextWrapping.Wrap;
-        _expandNote.MaxWidth = SettingsWidth;
-        var expandLabel = Ui.Label(UiStrings.Effect_ExpandCanvas);
-        expandLabel.VerticalAlignment = VerticalAlignment.Center;
-        ToolTip.SetTip(expandLabel, UiStrings.EffectCanvasExpand_ModeTip);
-        ToolTip.SetTip(_expandMode, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4DF95CBC10);
-        _expandMode.SelectionChanged += (_, _) =>
-        {
-            if (_expandMode.SelectedIndex < 0) return;
-            EffectCanvasDialog.LastMode = (EffectCanvasExpandMode)_expandMode.SelectedIndex;
-            SyncCanvasExpansion();
-            RefreshPreview();
-        };
-        OkButton.Click += (_, _) =>
-        {
-            _confirmedCanvasExpansion = null;
-            try
-            {
-                _confirmedCanvasExpansion = CanvasExpansion(VirtualEffects());
-            }
-            catch (InvalidOperationException ex)
-            {
-                DialogResult = DialogResult.None;
-                Ui.Error(this, ex.Message);
-            }
-        };
+        // 효과 하나에 맞춰 캔버스 늘리기: 독의 효과 칸 단추와 같은 작은 창. 정한 확대는 확인할 때 효과와 함께 적용(그 전에는 미리보기만)
+        _growCanvas = Ui.Button(VectorIcon.Maximize2, UiStrings.EffectCanvas_Menu, (_, _) => GrowCanvas()).Tip(UiStrings.EffectCanvas_MenuTip);
+        _growNote = Ui.Label("");
+        _growNote.Foreground = AppTheme.DimTextBrush;
+        _growNote.VerticalAlignment = VerticalAlignment.Center;
+        _growNote.IsVisible = false;
+        _dropGrow = Ui.IconButton(VectorIcon.X, UiStrings.EffectCanvas_Drop, (_, _) => SetCanvasPlan(null));
+        _dropGrow.IsVisible = false;
 
         string? motionTip = _motionRange != newRange && _motionRange is { } mr
             ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_F60FBD674C,mr.From + 1,mr.To + 1)
             : null;
         var rangeLabel = Ui.Label(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_CE6B076915);
         if (motionTip is not null) ToolTip.SetTip(rangeLabel, motionTip);
-        var canvasExpand = Ui.Stack(Ui.Row(expandLabel, _expandMode), _expandNote).HelpAt(HelpPage, anchor: "⑬ Canvas expansion method");
+        var canvasExpand = Ui.Row(_growCanvas, _growNote, _dropGrow).HelpAt(HelpPage, anchor: "⑬ Canvas expansion method");
         _extendPanel.HelpAt(HelpPage, anchor: "⑭ Extend frames");
         var shared = Ui.Group(UiStrings.EffectShared_Title, Ui.Stack(canvasExpand, _extendPanel)).HelpAt("screen-effect-settings", shot: "screen-layer-effects-current");
         var left = Ui.Stack(
@@ -299,7 +275,7 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
     private void UpdateButtons()
     {
         var block = SelectedBlock;
-        _remove.IsEnabled = block is not null;
+        _remove.IsEnabled = _growCanvas.IsEnabled = block is not null;
         _up.IsEnabled = block is { First: > 0 };
         _down.IsEnabled = block is { } b && b.Last < _effects.Count - 1;
         if (_savePreset is not null) _savePreset.IsEnabled = block is not null;
@@ -409,7 +385,6 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
             else _project.PreviewLayerEffects(index, _effects);
         }
         RestartRenders();
-        SyncExpandControls();
     }
 
     private string EffectSummary(LayerEffect e)
@@ -449,23 +424,12 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
         int index = _project.IndexOf(_layer);
         var selected = SelectedIndices();
         if (index < 0 || selected.Count == 0) return;
-        var list = VirtualEffects().ToList();
         var extension = _extension;
         int trim = Trim, keep = VirtualCount;
         // 지울 프레임과 함께 없어지는 효과는 빼고 확정하므로, 고른 효과 번호도 남는 목록 번호로
         var commitList = CommitEffects();
         var bakeIndices = selected.Where(i => !TrimmedAway(i)).Select(i => i - Enumerable.Range(0, i).Count(TrimmedAway)).ToList();
-        EffectCanvasExpansion? expansion = null;
-        try
-        {
-            var plan = CanvasExpansion(list);
-            if (!plan.IsNone(_project.Width, _project.Height)) expansion = plan;
-        }
-        catch (InvalidOperationException ex)
-        {
-            Ui.Error(this, ex.Message);
-            return;
-        }
+        var expansion = _canvasPlan;
         int oldWidth = _project.Width, oldHeight = _project.Height;
         _project.EndLayerEffectsPreview(index, _original, commit: false);
         try
@@ -551,7 +515,6 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
         void Set(Func<LayerEffect, LayerEffect> change) => Update(i, change(_effects[i]));
         AddRangeEditor(i);
         AddClipEditor(i);
-        AddExpandCanvasEditor(_form, e, Set);
         AddMovePivotEditor(_form, e, Set);
         AddHoldEndEditor(_form, e, Set);
         ui.Panel(this, e, Set);
@@ -661,18 +624,6 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
             RebuildList(i);
         };
         HelpRow(_form.Row(UiStrings.EffectPreset_ApplyTarget, clip), "screen-effect-colors", "Clipping");
-    }
-
-    /// <summary>
-    /// 확인·영구 적용할 때 이 효과 결과가 캔버스 밖으로 나가면 캔버스를 늘릴지(<see cref="LayerEffect.ExpandCanvas"/>). 늘리는 방식은 공통 설정.
-    /// 효과 창과 효과 만들기의 미리보기 설정 칸이 같이 쓴다.
-    /// </summary>
-    private static void AddExpandCanvasEditor(EffectForm form, LayerEffect effect, Action<Func<LayerEffect, LayerEffect>> set)
-    {
-        var expand = Ui.Check(UiStrings.Effect_ExpandCanvas, effect.ExpandCanvas);
-        ToolTip.SetTip(expand, UiStrings.Effect_ExpandCanvasTip);
-        expand.IsCheckedChanged += (_, _) => set(o => o.ExpandCanvas != expand.On() ? o with { ExpandCanvas = expand.On() } : o);
-        HelpRow(form.Row(UiStrings.Effect_ExpandCanvasRow, expand), "screen-effect-settings", "Expand canvas is on by default");
     }
 
     /// <summary>

@@ -165,26 +165,20 @@ public sealed class ScriptEffectProgram
     public bool MovePivot { get; init; } = true;
 
     /// <summary>
-    /// 선언의 <c>expandCanvas</c>(기본 true): 새로 넣는 효과의 "확인할 때 캔버스 늘리기"(<see cref="LayerEffect.ExpandCanvas"/>) 처음 값(<see cref="CreateEffect"/>).
-    /// false면 효과 결과가 캔버스에서 잘린다(그림 위로 솟는 불꽃처럼 캔버스를 키우지 않을 효과).
-    /// </summary>
-    public bool ExpandCanvas { get; init; } = true;
-
-    /// <summary>
     /// 선언의 <c>motion</c>(기본 true): false면 움직이는 효과라도 빠르기 곡선·반복을 쓰지 않으므로(프레임 수로 정하는 깜빡임 등) 효과 창·효과 만들기에서
     /// 그 편집기를 숨긴다. 저장되는 움직임 설정은 그대로다.
     /// </summary>
     public bool Motion { get; init; } = true;
 
     /// <summary>
-    /// 이 스크립트를 쓰는 새 효과: 설정은 <paramref name="values"/>를 schema에 맞춘 값(null이면 기본값), 빠르기 곡선·반복·반복 횟수·피벗 같이 옮기기·캔버스 늘리기는
-    /// 선언의 <c>easing</c>·<c>repeat</c>·<c>repeatCount</c>·<c>movePivot</c>·<c>expandCanvas</c>. 원문은 부르는 쪽이 프로젝트 스크립트 표에 넣는다.
+    /// 이 스크립트를 쓰는 새 효과: 설정은 <paramref name="values"/>를 schema에 맞춘 값(null이면 기본값), 빠르기 곡선·반복·반복 횟수·피벗 같이 옮기기는
+    /// 선언의 <c>easing</c>·<c>repeat</c>·<c>repeatCount</c>·<c>movePivot</c>. 원문은 부르는 쪽이 프로젝트 스크립트 표에 넣는다.
     /// </summary>
     public ScriptEffect CreateEffect(IReadOnlyDictionary<string, object>? values = null)
         => new()
         {
             ScriptHash = ContentHash, Settings = ScriptSettingValues.Normalized(this, values), Easing = Easing, Repeat = Repeat, RepeatCount = RepeatCount,
-            MovePivot = MovePivot, ExpandCanvas = ExpandCanvas,
+            MovePivot = MovePivot,
         };
 
     /// <summary>선언의 <c>previewChick</c>(기본 <see cref="Assets.PreviewChicks.Default"/>, <see cref="Assets.PreviewChicks.None"/>이면 빈 캔버스): 패키지 미리보기에서 효과를 입힐 병아리.</summary>

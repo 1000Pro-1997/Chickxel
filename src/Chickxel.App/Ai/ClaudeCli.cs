@@ -384,9 +384,9 @@ public sealed class ClaudeSession : IChatSession
             "--system-prompt-file", WriteSystemPromptFile(_systemPrompt),
             "--strict-mcp-config",
             "--mcp-config", _mcp.WriteMcpConfigFile(_scope),
-            "--allowedTools", _scope == McpScope.Full ? string.Join(",", ["mcp__" + McpServer.ServerName, .. AiCli.ClaudeWebTools]) : "mcp__" + McpServer.ServerName,
-            // 기본 도구는 끄되, 채팅(Full)은 사용자가 시킬 때만 쓰는 웹 검색·웹 읽기를 남긴다(AiCli.SystemPrompt의 규칙).
-            "--tools", _scope == McpScope.Full ? string.Join(",", AiCli.ClaudeWebTools) : "",
+            "--allowedTools", AiCli.AllowsWebSearch(_scope) ? string.Join(",", ["mcp__" + McpServer.ServerName, .. AiCli.ClaudeWebTools]) : "mcp__" + McpServer.ServerName,
+            // 기본 도구는 끄되, 채팅·효과 만들기 AI 칸은 사용자가 시킬 때만 쓰는 웹 검색·웹 읽기를 남긴다(AiCli.SystemPrompt·EffectMakerSystemPrompt의 규칙).
+            "--tools", AiCli.AllowsWebSearch(_scope) ? string.Join(",", AiCli.ClaudeWebTools) : "",
         };
         if (!string.IsNullOrEmpty(Model)) args.AddRange(["--model", Model]);
         if (SessionId is not null) args.AddRange(["--resume", SessionId]);
@@ -548,8 +548,8 @@ public sealed class ClaudeSession : IChatSession
                             var id = AiCli.Str(part["id"]) ?? "";
                             if (!name.StartsWith(ToolPrefix, StringComparison.Ordinal))
                             {
-                                // 채팅에서 켠 웹 도구는 도구 줄로 보이고, 그 밖의 이름은 Claude Code가 늘 돌려보낸다(위 _rejectedToolIds).
-                                if (_scope == McpScope.Full && AiCli.ClaudeWebTools.Contains(name)) ToolUse?.Invoke(new ToolUseInfo(id, name, part["input"] as JsonObject));
+                                // 켠 웹 도구(채팅·효과 만들기 AI 칸)는 도구 줄로 보이고, 그 밖의 이름은 Claude Code가 늘 돌려보낸다(위 _rejectedToolIds).
+                                if (AiCli.AllowsWebSearch(_scope) && AiCli.ClaudeWebTools.Contains(name)) ToolUse?.Invoke(new ToolUseInfo(id, name, part["input"] as JsonObject));
                                 else _rejectedToolIds.Add(id);
                                 break;
                             }

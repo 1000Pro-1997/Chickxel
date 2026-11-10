@@ -322,6 +322,8 @@ Reloading will discard your current edits. Reload?</value></data>
   <data name="Shortcut_CommitSelection" xml:space="preserve"><value>Drop selection</value></data>
   <data name="Shortcut_DeselectCanvas" xml:space="preserve"><value>Deselect (canvas)</value></data>
   <data name="Shortcut_PeekPrevious" xml:space="preserve"><value>Peek previous frame (hold)</value></data>
+  <data name="Shortcut_StepFrameArrowPrevious" xml:space="preserve"><value>Previous frame (arrow key)</value></data>
+  <data name="Shortcut_StepFrameArrowNext" xml:space="preserve"><value>Next frame (arrow key)</value></data>
   <data name="Shortcut_CycleSelection" xml:space="preserve"><value>Selection slot (next selection tool)</value></data>
   <data name="Shortcut_NudgeOne" xml:space="preserve"><value>Move 1px {direction}</value></data>
   <data name="Shortcut_NudgeEight" xml:space="preserve"><value>Move 8px {direction}</value></data>

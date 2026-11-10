@@ -64,6 +64,7 @@ public sealed partial class PixelCanvas
                 if (clip is { } k && !k.Contains(t) || !CanPaint(img, t)) continue;
                 var below = PixelAt(img, t);
                 Put(img, t, _stampErase ? ShapeStamp.Erase(below, c.A) : Color32.BlendOver(below, c));
+                RecordOp(img, t, _stampErase ? new PixelOp(PixelOpKind.StampErase, c) : new PixelOp(PixelOpKind.BlendOver, c));
             }
         _stampLast = shape;
         _ctx.AdvanceShapePen();

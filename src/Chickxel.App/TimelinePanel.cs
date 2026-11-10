@@ -800,10 +800,16 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
             Say(string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.Timeline_CopyNothingVisible, frame + 1));
             return;
         }
-        _clip = null;
-        _fxClip = null;
+        ForgetCopy();
         ImageCopyRequested?.Invoke(this, image);
         Say(done);
+    }
+
+    /// <summary>타임라인 셀·프레임·효과 복사를 비운다(다른 곳에서 그림을 복사했으면 다음 붙여넣기가 그 그림이 되게).</summary>
+    public void ForgetCopy()
+    {
+        _clip = null;
+        _fxClip = null;
     }
 
     /// <summary>

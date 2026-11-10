@@ -159,6 +159,7 @@ internal static partial class ScriptDeclarationReader
         if (!motionValue.IsUndefined() && !motionValue.IsBoolean()) Fail(DomainStrings.Script_InvalidMotion, "motion");
 
         // 예전 선언 clipsBySource·erasesSource는 읽지 않는다: 클리핑된 효과는 늘 기준 효과가 그린 층만 받고 결과도 그 밖으로 번진다(LayerEffects.Apply).
+        // 예전 선언 expandCanvas(효과 창 확인 때 저절로 캔버스 늘리기의 처음 값 — 없앰)도 읽지 않는다.
         // 모르는 키처럼 무시하므로 그 선언이 든 원문(공식 반사·외곽선, 저장된 예전 원문)도 해시가 바뀌지 않은 채 그대로 해석된다.
 
         var easingValue = declaration.Get("easing");
@@ -191,10 +192,6 @@ internal static partial class ScriptDeclarationReader
         var movePivotValue = declaration.Get("movePivot");
         bool movePivot = !movePivotValue.IsBoolean() || movePivotValue.AsBoolean();
         if (!movePivotValue.IsUndefined() && !movePivotValue.IsBoolean()) Fail(DomainStrings.Script_InvalidMovePivot, "movePivot");
-        // 새로 넣는 효과의 "확인할 때 캔버스 늘리기" 처음 값
-        var expandCanvasValue = declaration.Get("expandCanvas");
-        bool expandCanvas = !expandCanvasValue.IsBoolean() || expandCanvasValue.AsBoolean();
-        if (!expandCanvasValue.IsUndefined() && !expandCanvasValue.IsBoolean()) Fail(DomainStrings.Script_InvalidExpandCanvas, "expandCanvas");
 
         var translations = ReadTranslations(declaration.Get("translations"), settings, Fail);
         var tags = ReadTags(declaration.Get("tags"), Fail);
@@ -211,7 +208,7 @@ internal static partial class ScriptDeclarationReader
             {
                 Motion = motion, Tags = tags, Language = language, PreviewEndChick = previewEndChick, PreviewMotion = previewMotion,
                 PreviewPlacement = previewPlacement.IsNone ? PreviewPlacement.None : previewPlacement,
-                Repeat = repeat, RepeatCount = repeatCount, MovePivot = movePivot, ExpandCanvas = expandCanvas,
+                Repeat = repeat, RepeatCount = repeatCount, MovePivot = movePivot,
             }, []);
     }
 

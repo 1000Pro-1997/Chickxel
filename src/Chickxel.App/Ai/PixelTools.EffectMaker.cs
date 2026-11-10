@@ -106,7 +106,6 @@ public sealed partial class PixelTools
         "and ctx.frameSource(ctx.rangeEnd) reads it. When the two images should sit in different places or have different centers (pivots), also declare previewEndOffset: [x, y] " +
         "(moves the end chick, px) and previewPivot / previewEndPivot: [x, y] (moves the pivot of the other frames / the last frame from the chick's center, px; each -64 to 64). " +
         "An effect that draws on its own without needing a subject (rain, snow, weather, backgrounds) declares previewChick: \"none\" so the preview shows it on an empty canvas. " +
-        "An effect that should be cut off by the canvas instead of growing it when the user confirms the effects window (flames rising above the picture) declares expandCanvas: false. " +
         "The preview chick stays in place unless previewMotion is declared: for an effect that follows movement " +
         "(afterimages, trails, motion blur) declare previewMotion: \"right\" (or \"left\", \"up\", \"down\": 1 px per frame, or [[x, y], ...] per frame) so the preview shows it. ";
 

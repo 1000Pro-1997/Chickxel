@@ -56,7 +56,6 @@ public static class LegacyEffects
             Enabled = builtIn.Enabled,
             Frames = builtIn.Frames,
             ClipToPrevious = builtIn.ClipToPrevious,
-            ExpandCanvas = builtIn.ExpandCanvas,
             MovePivot = builtIn.MovePivot,
             Recipe = builtIn.Recipe,
             // 그라데이션이 없으면 빈 표를 그대로(새 사전을 만들면 같은 효과 값이 달라 보임)

@@ -78,7 +78,7 @@ public static class AssetPreview
 
     /// <summary>
     /// <see cref="Render"/>·<see cref="Original"/> 그림 안에서 원본 캔버스(효과를 입히기 전 견본 칸)의 자리 — 효과 여백을 뺀 자리이고 모든 칸이 같다.
-    /// 확인할 때 캔버스를 늘리지 않는 효과(<see cref="LayerEffect.ExpandCanvas"/>가 false)는 이 밖이 잘린다.
+    /// 레이어에 넣으면 이 밖은 캔버스에 잘린다(캔버스를 늘리기 전까지).
     /// </summary>
     public static Rectangle Canvas(IReadOnlyList<LayerEffect> template, PixelImage source, int steps = Steps, PixelImage? end = null,
         PreviewMotion? motion = null, PreviewPlacement? placement = null)

@@ -70,12 +70,11 @@ public static class ScriptDeclarationEdit
     }
 
     /// <summary>
-    /// 선언의 새 효과 공통 처음 값(<c>easing</c>·<c>repeat</c>·<c>repeatCount</c>·<c>movePivot</c>·<c>expandCanvas</c> — <see cref="ScriptEffectProgram.CreateEffect"/>)을 바꾼다
-    /// (효과 만들기의 "기본값으로"). null인 값은 그대로 두고, 앱의 기본값(Linear·Once·1·true·true)이면 그 속성을 지운다. 없으면 이 차례의 앞 키 다음에
+    /// 선언의 새 효과 공통 처음 값(<c>easing</c>·<c>repeat</c>·<c>repeatCount</c>·<c>movePivot</c> — <see cref="ScriptEffectProgram.CreateEffect"/>)을 바꾼다
+    /// (효과 만들기의 "기본값으로"). null인 값은 그대로 두고, 앱의 기본값(Linear·Once·1·true)이면 그 속성을 지운다. 없으면 이 차례의 앞 키 다음에
     /// (없으면 <c>animated</c>·<c>name</c> 다음에) 더한다. 원문을 해석하지 못하면 null.
     /// </summary>
-    public static string? SetEffectDefaults(string source, EffectEasing? easing = null, EffectRepeat? repeat = null, int? repeatCount = null, bool? movePivot = null,
-        bool? expandCanvas = null)
+    public static string? SetEffectDefaults(string source, EffectEasing? easing = null, EffectRepeat? repeat = null, int? repeatCount = null, bool? movePivot = null)
     {
         string? edited = source;
         if (easing is { } e)
@@ -86,8 +85,6 @@ public static class ScriptDeclarationEdit
             edited = SetLiteral(edited, "repeatCount", n == 1 ? null : NumberLiteral(n), ["repeat", "easing", "animated", "name"]);
         if (edited is not null && movePivot is { } m)
             edited = SetLiteral(edited, "movePivot", m ? null : "false", ["repeatCount", "repeat", "easing", "animated", "name"]);
-        if (edited is not null && expandCanvas is { } x)
-            edited = SetLiteral(edited, "expandCanvas", x ? null : "false", ["movePivot", "repeatCount", "repeat", "easing", "animated", "name"]);
         return edited;
     }
 
