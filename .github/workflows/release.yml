@@ -76,3 +76,4 @@ jobs:
       tag: ${{ github.ref_name }}
     secrets:
       DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+      DISCORD_RELEASE_WEBHOOK_KR: ${{ secrets.DISCORD_RELEASE_WEBHOOK_KR }}

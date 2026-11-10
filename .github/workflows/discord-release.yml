@@ -9,10 +9,16 @@ on:
     secrets:
       DISCORD_RELEASE_WEBHOOK:
         required: true
+      DISCORD_RELEASE_WEBHOOK_KR:
+        required: false
   workflow_dispatch:
     inputs:
       message_id:
         description: "Existing webhook message to update (empty = new announcement)"
+        required: false
+        type: string
+      language:
+        description: "Channel of the message to update: en or ko (only used with message_id)"
         required: false
         type: string
       tag:
@@ -39,6 +45,8 @@ jobs:
           MESSAGE_ID: ${{ inputs.message_id }}
           GH_TOKEN: ${{ github.token }}
           DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          DISCORD_RELEASE_WEBHOOK_KR: ${{ secrets.DISCORD_RELEASE_WEBHOOK_KR }}
+          TARGET_LANG: ${{ inputs.language }}
           RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
         run: |
           python3 - <<'PY'
@@ -64,35 +72,6 @@ jobs:
           if release.get("draft"):
               raise SystemExit("Refusing to announce a draft release")
           url = release["html_url"]
-          headings = []
-          fence = None
-          english_section = True
-          for line in (release.get("body") or "").splitlines():
-              marker = re.match(r"^ {0,3}(`{3,}|~{3,})", line)
-              if marker:
-                  token = marker.group(1)
-                  if fence is None:
-                      fence = token
-                  elif token[0] == fence[0] and len(token) >= len(fence):
-                      fence = None
-                  continue
-              if fence:
-                  continue
-              heading = re.match(r"^ {0,3}(#{2,6})\s+(.+?)\s*$", line)
-              if not heading:
-                  continue
-              title = re.sub(r"\s+#+\s*$", "", heading.group(2)).strip()
-              if title.lower() == "english":
-                  english_section = True
-                  continue
-              if title.lower() in ("한국어", "korean"):
-                  english_section = False
-                  continue
-              if english_section and title and not re.search(r"[가-힣]", title) and re.search(r"[A-Za-z]", title):
-                  headings.append("- " + title)
-          body = "\n".join(headings).strip() or "See the full release notes for details."
-          if len(body) > 3800:
-              body = body[:3750].rsplit("\n", 1)[0] + "\n\nSee the full release notes for more."
           downloads = []
           labels = {"Chickxel-windows-x64.zip": "Windows",
                     "Chickxel-macos-arm64.zip": "macOS Apple Silicon",
@@ -101,29 +80,105 @@ jobs:
               label = labels.get(asset["name"])
               if label:
                   downloads.append("[" + label + "](" + asset["browser_download_url"] + ")")
-          embed = {"title": ("Chickxel " + release["tag_name"] + " Update")[:256],
-                   "url": url, "description": body, "color": 0x37CDBE,
-                   "fields": [{"name": "Downloads", "value": " · ".join(downloads) or "[Release page](" + url + ")"},
-                              {"name": "Full release notes", "value": "[View on GitHub](" + url + ")"}],
-                   "footer": {"text": "Chickxel Updates"}}
-          payload = {"username": "Chickxel Updates", "allowed_mentions": {"parse": []}, "embeds": [embed]}
-          hook = os.environ.get("DISCORD_RELEASE_WEBHOOK", "").rstrip("/")
-          if not hook.startswith("https://discord.com/api/webhooks/"):
-              raise SystemExit("DISCORD_RELEASE_WEBHOOK is missing or invalid")
+
+          def section_headings(korean):
+              # Release notes: English section first, then "## 한국어" section (see release.yml).
+              headings = []
+              fence = None
+              english_section = True
+              for line in (release.get("body") or "").splitlines():
+                  marker = re.match(r"^ {0,3}(`{3,}|~{3,})", line)
+                  if marker:
+                      token = marker.group(1)
+                      if fence is None:
+                          fence = token
+                      elif token[0] == fence[0] and len(token) >= len(fence):
+                          fence = None
+                      continue
+                  if fence:
+                      continue
+                  heading = re.match(r"^ {0,3}(#{2,6})\s+(.+?)\s*$", line)
+                  if not heading:
+                      continue
+                  title = re.sub(r"\s+#+\s*$", "", heading.group(2)).strip()
+                  if title.lower() == "english":
+                      english_section = True
+                      continue
+                  if title.lower() in ("한국어", "korean"):
+                      english_section = False
+                      continue
+                  if not title:
+                      continue
+                  if korean:
+                      if not english_section:
+                          headings.append("- " + title)
+                  elif english_section and not re.search(r"[가-힣]", title) and re.search(r"[A-Za-z]", title):
+                      headings.append("- " + title)
+              return headings
+
+          TEXT = {
+              "en": {"title": "Chickxel {tag} Update", "empty": "See the full release notes for details.",
+                     "more": "See the full release notes for more.", "downloads": "Downloads",
+                     "release_page": "Release page", "notes": "Full release notes", "view": "View on GitHub",
+                     "footer": "Chickxel Updates"},
+              "ko": {"title": "Chickxel {tag} 업데이트", "empty": "자세한 내용은 전체 릴리스 노트를 확인하세요.",
+                     "more": "더 많은 내용은 전체 릴리스 노트를 확인하세요.", "downloads": "다운로드",
+                     "release_page": "릴리스 페이지", "notes": "전체 릴리스 노트", "view": "GitHub에서 보기",
+                     "footer": "Chickxel 업데이트"},
+          }
+
+          def build_payload(lang):
+              t = TEXT[lang]
+              headings = section_headings(lang == "ko")
+              if lang == "ko" and not headings:
+                  headings = section_headings(False)  # no Korean notes for this release: fall back to English headings
+              body = "\n".join(headings).strip() or t["empty"]
+              if len(body) > 3800:
+                  body = body[:3750].rsplit("\n", 1)[0] + "\n\n" + t["more"]
+              embed = {"title": t["title"].format(tag=release["tag_name"])[:256],
+                       "url": url, "description": body, "color": 0x37CDBE,
+                       "fields": [{"name": t["downloads"], "value": " · ".join(downloads) or "[" + t["release_page"] + "](" + url + ")"},
+                                  {"name": t["notes"], "value": "[" + t["view"] + "](" + url + ")"}],
+                       "footer": {"text": t["footer"]}}
+              return {"username": "Chickxel Updates", "allowed_mentions": {"parse": []}, "embeds": [embed]}
+
           message_id = os.environ.get("MESSAGE_ID", "").strip()
           if message_id and not message_id.isdigit():
               raise SystemExit("MESSAGE_ID must contain digits only")
-          delivery_url = hook + ("/messages/" + message_id if message_id else "?wait=true")
-          request = urllib.request.Request(delivery_url,
-              data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-              headers={"Content-Type": "application/json", "User-Agent": "Chickxel-release-notify"},
-              method="PATCH" if message_id else "POST")
-          try:
-              with urllib.request.urlopen(request, timeout=30) as response:
-                  message = json.load(response)
-          except urllib.error.HTTPError as error:
-              raise SystemExit("Discord delivery failed (HTTP " + str(error.code) + ")") from None
-          except urllib.error.URLError:
-              raise SystemExit("Discord delivery connection failed; inspect channel before retrying") from None
-          print("Discord announcement sent for " + release["tag_name"] + "; message ID " + message["id"])
+          target_lang = os.environ.get("TARGET_LANG", "").strip() or "en"
+          if message_id and target_lang not in ("en", "ko"):
+              raise SystemExit("TARGET_LANG must be en or ko when MESSAGE_ID is set")
+
+          hooks = [("en", "DISCORD_RELEASE_WEBHOOK", True), ("ko", "DISCORD_RELEASE_WEBHOOK_KR", False)]
+          failed = False
+          for lang, secret_name, required in hooks:
+              if message_id and lang != target_lang:
+                  continue  # updating an existing message only touches that language's channel
+              hook = os.environ.get(secret_name, "").rstrip("/")
+              if not hook:
+                  if required:
+                      raise SystemExit(secret_name + " is missing")
+                  print(secret_name + " is not set; skipping " + lang + " announcement")
+                  continue
+              if not hook.startswith("https://discord.com/api/webhooks/"):
+                  raise SystemExit(secret_name + " is invalid")
+              delivery_url = hook + ("/messages/" + message_id if message_id else "?wait=true")
+              request = urllib.request.Request(delivery_url,
+                  data=json.dumps(build_payload(lang), ensure_ascii=False).encode("utf-8"),
+                  headers={"Content-Type": "application/json", "User-Agent": "Chickxel-release-notify"},
+                  method="PATCH" if message_id else "POST")
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      message = json.load(response)
+              except urllib.error.HTTPError as error:
+                  print("Discord delivery failed for " + lang + " (HTTP " + str(error.code) + ")")
+                  failed = True
+                  continue
+              except urllib.error.URLError:
+                  print("Discord delivery connection failed for " + lang + "; inspect channel before retrying")
+                  failed = True
+                  continue
+              print("Discord " + lang + " announcement sent for " + release["tag_name"] + "; message ID " + message["id"])
+          if failed:
+              raise SystemExit(1)
           PY
