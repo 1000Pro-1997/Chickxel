@@ -1350,7 +1350,6 @@
 <tbody>
 <tr><td><strong>Apply to</strong></td><td>All effects</td><td>Clip to effect above (see <a href="#screen-effect-colors">Effect colors and clipping</a>)</td></tr>
 <tr><td><strong>Speed</strong> · <strong>Repeat</strong></td><td><a class="term" href="#screen-effect-list">Animated effects</a> (except Blink and Afterimage)</td><td>Easing and repetition of the motion within the effect range</td></tr>
-<tr><td><strong>On OK: Expand canvas</strong></td><td>All effects</td><td>Whether OK and <a class="term" href="#screen-layer-effects">Apply permanently</a> grow the canvas to fit this effect's result</td></tr>
 <tr><td><strong>Later effects: Move pivot along</strong></td><td>Effects that report how far they move the image (Shake, Bob, scripts using <code>ctx.movePivot</code>)</td><td>Whether the center (<a class="term" href="#tools-pivot">pivot</a>) of the effects after it moves too</td></tr>
 <tr><td><strong>Cels after the range: Keep the end look</strong></td><td>Animated effects (when the range isn't All <a class="term" href="#screen-timeline">frames</a>)</td><td>Whether frames after the range keep the effect's final appearance</td></tr>
 </tbody>
@@ -1374,7 +1373,7 @@
 <figure class="shot"><img src="../assets/guide/screen-layer-effects-current.png" alt="Effects dialog showing per-effect canvas expansion, pivot motion, keep the end look and common expansion method" width="1364" height="884" loading="lazy"><figcaption>① Per-effect Expand canvas · ② Move pivot along · ③ Keep the end look after the range · ④ Shared canvas expansion method</figcaption></figure>
 <p>① Decide per effect whether <strong>On OK: Expand canvas</strong> is on, and choose the expansion method in ④ the common settings. For an effect that moves the image, decide ② whether later effects' centers (pivots) move with it; for an animated effect, decide ③ whether frames after the range keep its final appearance.</p>
 <ul class="marks">
-<li>① Expand canvas is on by default. On OK or Apply permanently, only effects with it on are measured for the canvas size; the others are cut off at the canvas edge (the part to be cut is dimmed in the preview). Pixels aren't scaled; every <a class="term" href="#screen-timeline">layer</a>, part and pivot moves together.</li>
+<li>① Expand canvas is on by default. On OK or <a class="term" href="#screen-layer-effects">Apply permanently</a>, only effects with it on are measured for the canvas size; the others are cut off at the canvas edge (the part to be cut is dimmed in the preview). Pixels aren't scaled; every <a class="term" href="#screen-timeline">layer</a>, part and pivot moves together.</li>
 <li>④ The expansion method is minimal / keep aspect / keep center (default); it is disabled when no effect has Expand canvas on.</li>
 </ul>
 <h4>Move pivot along</h4>

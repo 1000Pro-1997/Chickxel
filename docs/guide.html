@@ -1350,7 +1350,6 @@
 <tbody>
 <tr><td><strong>적용 대상</strong></td><td>모든 효과</td><td>바로 위 효과에 클리핑(<a href="#screen-effect-colors">효과 색과 클리핑</a>)</td></tr>
 <tr><td><strong>빠르기</strong> · <strong>반복</strong></td><td><a class="term" href="#screen-effect-list">움직이는 효과</a>(깜빡이기·잔상 제외)</td><td>효과 범위 안에서 움직임의 빠르기 곡선과 되풀이</td></tr>
-<tr><td><strong>확인할 때: 캔버스 늘리기</strong></td><td>모든 효과</td><td>확인·<a class="term" href="#screen-layer-effects">영구 적용</a> 때 이 효과 결과에 맞춰 캔버스를 늘릴지</td></tr>
 <tr><td><strong>뒤 효과: 중심(피벗) 같이 옮기기</strong></td><td>그림을 옮긴 거리를 알리는 효과(흔들기·둥실둥실, <code>ctx.movePivot</code>을 쓰는 스크립트)</td><td>목록에서 뒤에 오는 효과의 중심(<a class="term" href="#tools-pivot">피벗</a>)도 같이 옮길지</td></tr>
 <tr><td><strong>범위 뒤 칸: 끝 모습 이어 가기</strong></td><td>움직이는 효과(범위가 모든 <a class="term" href="#screen-timeline">프레임</a>이 아닐 때)</td><td>범위가 끝난 뒤의 칸에도 효과의 끝 모습을 이어 갈지</td></tr>
 </tbody>
@@ -1374,7 +1373,7 @@
 <figure class="shot"><img src="assets/guide/screen-layer-effects-current.png" alt="효과 창에서 효과별 캔버스 늘리기, 피벗 이동, 범위 뒤 끝 모습과 공통 캔버스 늘리는 방식이 보이는 화면" width="1364" height="884" loading="lazy"><figcaption>① 효과마다 캔버스 늘리기 · ② 중심(피벗) 같이 옮기기 · ③ 범위 뒤 끝 모습 이어 가기 · ④ 공통 캔버스 늘리는 방식</figcaption></figure>
 <p>① 고른 효과마다 <strong>확인할 때: 캔버스 늘리기</strong>를 정하고 ④ 공통 설정에서 늘리는 방식을 고릅니다. 그림을 옮기는 효과라면 ② 뒤 효과의 중심(피벗)을 같이 옮길지, 움직이는 효과라면 ③ 범위 뒤 칸에 끝 모습을 이어 갈지 정합니다.</p>
 <ul class="marks">
-<li>① 캔버스 늘리기는 기본으로 켜져 있습니다. 확인·영구 적용 때 켠 효과의 결과만 캔버스 크기를 재고, 끈 효과는 캔버스에서 잘립니다(미리보기에서 잘릴 부분은 흐리게 보임). 그림 크기는 그대로이고 모든 <a class="term" href="#screen-timeline">레이어</a>·<a class="term" href="#parts-concept">부위</a>·피벗이 함께 옮겨집니다.</li>
+<li>① 캔버스 늘리기는 기본으로 켜져 있습니다. 확인·<a class="term" href="#screen-layer-effects">영구 적용</a> 때 켠 효과의 결과만 캔버스 크기를 재고, 끈 효과는 캔버스에서 잘립니다(미리보기에서 잘릴 부분은 흐리게 보임). 그림 크기는 그대로이고 모든 <a class="term" href="#screen-timeline">레이어</a>·<a class="term" href="#parts-concept">부위</a>·피벗이 함께 옮겨집니다.</li>
 <li>④ 늘리는 방식은 최소한으로 / 비율 유지 / 중심 유지 확대(기본) 중에서 고르고, 켠 효과가 하나도 없으면 고를 수 없습니다.</li>
 </ul>
 <h4>중심(피벗) 같이 옮기기</h4>

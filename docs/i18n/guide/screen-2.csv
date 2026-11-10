@@ -226,9 +226,6 @@ screen-effect-settings.8,"바로 위 효과에 클리핑(<a href=""#screen-effec
 screen-effect-settings.9,<strong>{{UiStrings.S_LayerEffectsDialog_AddTimingEditors_E1B19358AF}}</strong> · <strong>{{UiStrings.S_LayerEffectsDialog_AddTimingEditors_E8E7F0E20B}}</strong>,<strong>{{UiStrings.S_LayerEffectsDialog_AddTimingEditors_E1B19358AF}}</strong> · <strong>{{UiStrings.S_LayerEffectsDialog_AddTimingEditors_E8E7F0E20B}}</strong>
 screen-effect-settings.10,움직이는 효과(깜빡이기·잔상 제외),Animated effects (except Blink and Afterimage)
 screen-effect-settings.11,효과 범위 안에서 움직임의 빠르기 곡선과 되풀이,Easing and repetition of the motion within the effect range
-screen-effect-settings.12,<strong>{{UiStrings.Effect_ExpandCanvasRow}}: {{UiStrings.Effect_ExpandCanvas}}</strong>,<strong>{{UiStrings.Effect_ExpandCanvasRow}}: {{UiStrings.Effect_ExpandCanvas}}</strong>
-screen-effect-settings.13,모든 효과,All effects
-screen-effect-settings.14,확인·영구 적용 때 이 효과 결과에 맞춰 캔버스를 늘릴지,Whether OK and Apply permanently grow the canvas to fit this effect's result
 screen-effect-settings.15,<strong>{{UiStrings.Effect_MovePivotRow}}: {{UiStrings.Effect_MovePivot}}</strong>,<strong>{{UiStrings.Effect_MovePivotRow}}: {{UiStrings.Effect_MovePivot}}</strong>
 screen-effect-settings.16,"그림을 옮긴 거리를 알리는 효과(흔들기·둥실둥실, <code>ctx.movePivot</code>을 쓰는 스크립트)","Effects that report how far they move the image (Shake, Bob, scripts using <code>ctx.movePivot</code>)"
 screen-effect-settings.17,목록에서 뒤에 오는 효과의 중심(피벗)도 같이 옮길지,Whether the center (pivot) of the effects after it moves too
