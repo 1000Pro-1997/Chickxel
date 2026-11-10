@@ -95,7 +95,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private readonly PreviewPanel _preview;
     /// <summary>메뉴 줄 오른쪽 갤러리 단추(계정 단추 왼쪽).</summary>
     private readonly GalleryButton _galleryButton;
-    /// <summary>로그인한 채 켜 둔 시간 경험치(1분마다 세고 한 시간마다 서버에 알림).</summary>
+    /// <summary>로그인한 채 켜 둔 시간 경험치(10분마다 세고 한 시간마다 서버에 알림).</summary>
     private readonly UptimeXp _uptimeXp;
     /// <summary>Discord 활동 상태("Chickxel 하는 중", 켜 둔 시간은 앱을 켠 때부터 — <see cref="UpdateDiscord"/>).</summary>
     private readonly DiscordPresence _discord = new();

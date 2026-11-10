@@ -2,6 +2,28 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.116 (2026-11-10)
+### Pixelate AI image: F1 help for every setting and option, with comparison pictures
+- With F1, each label and its value now highlight together as one setting; pointing at a dropdown opens the explanation of the option currently selected, and pointing at its label explains the setting.
+- The guide explains every dropdown option (cell color, palette method, dithering, color distance OKLab / CIEDE2000 / OKLCh hue-weighted, cell reference, outline and more), with when to use each.
+- New comparison pictures made with the app's own code show cell color methods, palette methods, color distances, dithering, outline options and cell reference side by side.
+
+### Pixelate AI image: target colors in Quick settings, selectable not-run tiles
+- Quick settings has a Target colors row (number and Auto), the same setting as in 0. Optimize criteria.
+- Clicking a "Not run yet" tile loads that preset into the settings on the left and marks the tile as selected; the preview stays as it is.
+
+### Effects dialog: question mark on effect tiles
+- Tiles of effects with a description have a question mark at the top right; click it for a small window with the effect's name and description.
+- The code mark of non-official script effects moved to the left of the question mark.
+
+### File browser: Details window
+- **Details…** at the bottom of the right-click menu shows the name, location, kind, size, created and modified dates of one item.
+- Pictures add pixel size and frames, `.chickxel` files canvas size, frames and layers, videos length and frame rate (with ffmpeg), and folders their item count and total size.
+
+### Account level: app time counted every 10 minutes
+- Signed-in app time for the hourly +1 XP is now counted every 10 minutes instead of every minute (the first 10 minutes after starting are counted too).
+- If reporting fails, the app tries again at the next check, 10 minutes later.
+
 ## v1.14.115 (2026-11-09)
 ### Transform: right-drag rotates around the box center
 - In Ctrl+T and Transform whole layer (Alt+Shift+C), right-dragging just outside the box (where it rotates) turns it around the middle of the box (the selected drawing) instead of the rotation center.

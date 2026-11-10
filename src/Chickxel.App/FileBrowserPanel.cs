@@ -10,7 +10,7 @@ namespace Chickxel.App;
 /// <summary>
 /// 파일 브라우저: 루트 폴더 아래 폴더 트리 + 선택 폴더의 .chickxel 프로젝트와 그림(PNG·GIF·WebP·JPG …)·영상 썸네일 목록(하위 포함 토글,
 /// 프로젝트가 내보낸 그림·GIF·저장한 프레임은 프로젝트 칸 옆 화살표로 펼치는 묶음 — <c>FileBrowserPanel.Groups.cs</c>), 이름 검색, 파일 변경 감시,
-/// 우클릭 메뉴(새 프로젝트·이름 바꾸기·탐색기에서 열기·휴지통으로 삭제), 항목을 목록 밖으로 끌어 내기(캔버스에 놓으면 새 레이어).
+/// 우클릭 메뉴(새 프로젝트·이름 바꾸기·탐색기에서 열기·휴지통으로 삭제·상세 정보), 항목을 목록 밖으로 끌어 내기(캔버스에 놓으면 새 레이어).
 /// </summary>
 public sealed partial class FileBrowserPanel : UserControl
 {
@@ -845,6 +845,10 @@ public sealed partial class FileBrowserPanel : UserControl
                                              + UiStrings.S_FileBrowserPanel_ListMenu_1BFD2CD3AE);
         }
         bool image = count == 1 && PixelateDialog.IsImageFile(paths[0]);
+        // 상세 정보: 고른 항목 하나, 빈 곳을 우클릭했으면(고른 것 없음) 트리에서 고른 폴더 — 탐색기에서 열기와 같은 대상.
+        string? detailsPath = count == 1 ? paths[0] : count == 0 ? CurrentFolder : null;
+        var details = Item(UiStrings.FileInfo_MenuItem, () => { if (detailsPath is not null) new FileInfoDialog(detailsPath).ShowDialog(this); }, detailsPath is not null);
+        details.Icon = Ui.Icon(VectorIcon.Info, 14);
         return
         [
             Item(UiStrings.S_FileBrowserPanel_ListMenu_1299ADE057, () => NewImageRequested?.Invoke(this, CurrentFolder ?? RootFolder ?? ""), RootFolder is not null),
@@ -862,6 +866,8 @@ public sealed partial class FileBrowserPanel : UserControl
             new Separator(),
             Item(UiStrings.S_FileBrowserPanel_ListMenu_FD792AE5B7, () => RestoreLastDeleted(), Trash.Entries().Count > 0, new KeyGesture(Key.Z, Platform.CommandModifier)),
             Item(UiStrings.S_FileBrowserPanel_ListMenu_5FC61831E6, ShowTrash, true),
+            new Separator(),
+            details,
         ];
     }
 

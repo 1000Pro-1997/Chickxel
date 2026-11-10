@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Chickxel.App;
 using Chickxel.App.Localization;
+using Chickxel.Core.Edit;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
 
@@ -20,7 +21,7 @@ internal static class GuidePartsCompareShots
 
     /// <summary>
     /// 부위 위치 옮기기: 왼쪽 = 기준 위치를 옮김(그룹 화면 끌기·방향키·위치… — <see cref="SpriteProject.SetPartOffset"/>, 네 프레임 모두),
-    /// 오른쪽 = 프레임 3부터 옮김(레이어 크기 모드 — <see cref="SpriteProject.MovePartFrom"/>, 프레임 1·2는 그대로). 각 쪽은 프레임 1~4 합성을 가로로.
+    /// 오른쪽 = 프레임 3·4에서 각각 선택 없이 지금 셀 변형(Ctrl+T)으로 옮김(<see cref="SpriteProject.LayerTransform"/>, 프레임 1·2는 그대로). 각 쪽은 프레임 1~4 합성을 가로로.
     /// </summary>
     [Shot("parts-frame-position-compare")]
     public static void FramePosition(ShotKit k)
@@ -31,7 +32,15 @@ internal static class GuidePartsCompareShots
         all.SetPartOffset(all.IndexOf(weapon), new DPoint(weapon.PartOffset.X, weapon.PartOffset.Y + Lift));
 
         var from = Load();
-        from.MovePartFrom(from.IndexOf(from.Layers.First(l => l.Name == "Weapon")), 2, 0, Lift);
+        int index = from.IndexOf(from.Layers.First(l => l.Name == "Weapon"));
+        foreach (int f in new[] { 2, 3 })
+        {
+            var t = SpriteProject.LayerTransform.Create(from, index, f, null, wholeLayer: false)
+                ?? throw new InvalidOperationException($"Weapon frame {f + 1} has nothing to transform");
+            var id = t.Box.Identity;
+            if (!t.Commit("move", id with { CenterY = id.CenterY + Lift }, ResampleMode.Nearest, null))
+                throw new InvalidOperationException("transform commit changed nothing");
+        }
 
         const int pad = 8, gap = 4, between = 32;
         int fw = all.Width * Zoom, fh = all.Height * Zoom, n = all.Frames.Count;

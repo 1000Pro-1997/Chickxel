@@ -107,7 +107,7 @@ public sealed partial class LayerEffectsDialog
         foreach (var definition in EffectRegistry.Selectable)
         {
             var ui = UiOf(definition);
-            var tile = new EffectTile(ui.Name, [definition.Create()]);
+            var tile = new EffectTile(ui.Name, [definition.Create()]) { Description = ui.Description };
             ToolTip.SetTip(tile, $"{ui.Name}\n{ui.Description}" + MotionNote(tile));
             tile.HelpAt("screen-effect-list", anchor: definition.TypeId == TextDefinition.Id ? "Text" : null);
             yield return tile;
@@ -170,9 +170,11 @@ public sealed partial class LayerEffectsDialog
             (false, true) => string.Format(culture, UiStrings.EffectPreset_TileTip, recipe.Effects.Count),
             (false, false) => string.Format(culture, UiStrings.EffectPreset_ReceivedTileTip, ReceivedFrom(entry), recipe.Effects.Count),
         };
-        if (entry.Script?.DescriptionFor(global::System.Globalization.CultureInfo.CurrentUICulture) is { Length: > 0 } description) tip = description + "\n" + tip;
+        string? description = entry.Script?.DescriptionFor(global::System.Globalization.CultureInfo.CurrentUICulture) is { Length: > 0 } text ? text : null;
+        if (description is not null) tip = description + "\n" + tip;
         if (entry.ScriptHashes.Any(hash => ScriptLibrary.TrustOf(hash) != ScriptTrust.Trusted))
             tip += "\n" + string.Format(culture, UiStrings.EffectPreset_ScriptTileNote, recipe.Effects.Count(effect => effect is ScriptEffect));
+        tile.Description = description;
         ToolTip.SetTip(tile, tip + (script ? MotionNote(tile) : ""));
         // 대상 도움말(F1): 공식 효과 = 기본 효과 목록의 그 효과 줄, 받은·내 스크립트 = 스크립트 효과 ① 상자 항목, 프리셋 = 프리셋 탭 ①~③ 항목
         if (OfficialHelpTarget(AssetCatalog.OfficialIdOf(entry)) is { } official) tile.HelpAt(official.PageId, anchor: official.Anchor);
@@ -276,6 +278,13 @@ public sealed partial class LayerEffectsDialog
         tile.PointerPressed += (_, e) =>
         {
             if (!e.GetCurrentPoint(tile).Properties.IsLeftButtonPressed) return;
+            // 오른쪽 위 물음표: 넣지 않고 설명만 띄운다(두 번째 누르기도 넣기로 넘기지 않음)
+            if (tile.HelpHit(e.GetPosition(tile)))
+            {
+                e.Handled = true;
+                ShowTileHelp(tile);
+                return;
+            }
             if (e.ClickCount == 2)
             {
                 Add(tile.Effects, _effects.Count, tile.Template);
@@ -307,6 +316,18 @@ public sealed partial class LayerEffectsDialog
         {
             if (_pressedTile == tile) EndTileDrag();
         };
+    }
+
+    /// <summary>상자 오른쪽 위 물음표를 누르면 효과 이름과 설명만 띄운다. 같은 물음표를 다시 누르거나 바깥을 누르면 닫힌다.</summary>
+    private void ShowTileHelp(EffectTile tile)
+    {
+        var text = new TextBlock { Text = tile.Description, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.TextBrush };
+        var flyout = new Flyout
+        {
+            Placement = PlacementMode.RightEdgeAlignedTop,
+            Content = new Border { Width = 300, Padding = new Thickness(4), Child = Ui.Stack(Ui.Label(tile.Title, bold: true), text) },
+        };
+        PopupMenus.Show(tile, flyout);
     }
 
     private void EndTileDrag()
@@ -354,7 +375,7 @@ public sealed partial class LayerEffectsDialog
     {
         private readonly WriteableBitmap?[] _frames;
         private int _shown;
-        private bool _hover;
+        private bool _hover, _helpHover;
 
         public EffectTile(string name, IReadOnlyList<LayerEffect> effects, AssetEntry? entry = null, EffectRecipe? template = null)
         {
@@ -395,6 +416,8 @@ public sealed partial class LayerEffectsDialog
             };
 
         public string Title { get; }
+        /// <summary>효과 설명(물음표 창의 글). 없으면 물음표를 그리지 않는다.</summary>
+        public string? Description { get; set; }
         public IReadOnlyList<LayerEffect> Effects { get; }
         /// <summary>카탈로그 에셋 상자의 항목(앱에 든 효과 종류 상자는 null).</summary>
         public AssetEntry? Entry { get; }
@@ -411,6 +434,21 @@ public sealed partial class LayerEffectsDialog
             InvalidateVisual();
         }
 
+        /// <summary>오른쪽 위 물음표 자리(상자 좌표).</summary>
+        private static Rect HelpRect(Avalonia.Size size) => new(size.Width - 19, 3, 16, 16);
+
+        /// <summary><paramref name="p"/>(상자 좌표)가 물음표 위인가(조금 넉넉히). 설명이 없으면 물음표가 없어 늘 false.</summary>
+        public bool HelpHit(Avalonia.Point p) => Description is not null && HelpRect(Bounds.Size).Inflate(2).Contains(p);
+
+        protected override void OnPointerMoved(PointerEventArgs e)
+        {
+            base.OnPointerMoved(e);
+            bool over = HelpHit(e.GetPosition(this));
+            if (over == _helpHover) return;
+            _helpHover = over;
+            InvalidateVisual();
+        }
+
         protected override void OnPointerEntered(PointerEventArgs e)
         {
             base.OnPointerEntered(e);
@@ -421,7 +459,7 @@ public sealed partial class LayerEffectsDialog
         protected override void OnPointerExited(PointerEventArgs e)
         {
             base.OnPointerExited(e);
-            _hover = false;
+            _hover = _helpHover = false;
             InvalidateVisual();
         }
 
@@ -450,9 +488,18 @@ public sealed partial class LayerEffectsDialog
                     AppTheme.DrawTextIn(g, author.Name, new Rect(18, b.Height - 19, Math.Max(1, b.Width - 21), 17),
                         AppTheme.DimTextBrush, AppTheme.SmallFontSize);
             }
-            // 공식 효과가 아닌 스크립트 효과가 든 상자: 오른쪽 위에 코드 표시
+            // 설명이 있으면 오른쪽 위 물음표(누르면 설명 창), 공식 효과가 아닌 스크립트 효과가 든 상자는 그 왼쪽(물음표가 없으면 오른쪽 위)에 코드 표시
+            double codeRight = b.Width - 3;
+            if (Description is not null)
+            {
+                var help = HelpRect(b.Size);
+                var helpBrush = _helpHover ? AppTheme.TextBrush : AppTheme.DimTextBrush;
+                g.DrawRectangle(_helpHover ? AppTheme.PanelBrush : null, new Pen(helpBrush, 1), help.Deflate(0.5), 4, 4);
+                VectorIcons.Draw(g, VectorIcon.QuestionMark, help, 11, helpBrush, 2.6);
+                codeRight = help.X - 3;
+            }
             if (_codeMark)
-                VectorIcons.Draw(g, VectorIcon.Code, new Rect(b.Width - 17, 3, 14, 14), 12, AppTheme.DimTextBrush);
+                VectorIcons.Draw(g, VectorIcon.Code, new Rect(codeRight - 14, 3, 14, 14), 12, AppTheme.DimTextBrush);
         }
 
         public void Dispose()

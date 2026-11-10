@@ -51,7 +51,7 @@ internal static class GuideFeatureShots
         k.Settle(400);
         var ctx = Ctx(m);
         if (!ctx.IsLayerTransform || ctx.TransformBox is not { } box) throw new InvalidOperationException("layer transform was not entered");
-        // Narrowing the box (Ctrl+handle = margin) crops the picture; the cropped pixels remain dimmed until Apply.
+        // Narrowing the box (right-drag a handle = margin) crops the picture; the cropped pixels remain dimmed until Apply.
         var from = box.Bounds;
         var area = new System.Drawing.Rectangle(from.X + 5, from.Y + 4, from.Width - 10, from.Height - 12);
         ctx.SetTransformBox(area);
@@ -62,7 +62,8 @@ internal static class GuideFeatureShots
         var crop = R(m, Canvas(m)).Union(R(m, opt)).Intersect(new Rect(m.ClientSize));
         var group = ShotKit.Get<Control>(opt, "_transformBox");
         var flip = ShotKit.FindText(group, UiStrings.CanvasResize_Flip, ancestorControl: true);
-        k.Save(m, crop: crop, marks: [new Rect(handle.X - 17, handle.Y - 17, 34, 34), R(m, group), flip]);
+        var flipRow = R(m, (Control)flip.Parent!);
+        k.Save(m, crop: crop, marks: [new Rect(handle.X - 17, handle.Y - 17, 34, 34), R(m, group), new Rect(flipRow.X - 12, flipRow.Y + 2, flipRow.Width + 12, flipRow.Height - 4)]);
     }
 
     [Shot("screen-effect-dock")]
@@ -308,6 +309,10 @@ internal static class GuideFeatureShots
         m.MouseUp(to, MouseButton.Left, RawInputModifiers.Shift);
     }
 
+    /// <summary>
+    /// 캔버스 크기 모드에서 오른쪽 아래 손잡이를 Ctrl(⌘)과 함께 우클릭으로 끄는 중: 노란 테두리·바깥쪽 화살표(우클릭 = 여백)와
+    /// 안쪽으로 옮긴 꼭짓점(Ctrl = 꼭짓점을 마음대로 — 그 모양 밖은 잘림). ㉑ 노란 테두리와 화살표 손잡이 ㉒ 옮긴 꼭짓점(쪽 번호에 이어서).
+    /// </summary>
     [Shot("tools-canvas-size-ctrl")]
     public static void CanvasSizeWithControl(ShotKit k)
     {
@@ -316,18 +321,21 @@ internal static class GuideFeatureShots
         k.Settle(350);
         var c = Ctx(m).CanvasResizeCanvas;
         var canvas = Canvas(m);
-        var from = canvas.TranslatePoint((Point)ShotKit.Call(canvas, "ImageToScreen", (double)c.Right, (double)c.Bottom)!, m)!.Value;
-        var to = new Point(from.X + 32, from.Y + 24);
-        m.MouseMove(from, RawInputModifiers.Control);
-        m.MouseDown(from, MouseButton.Left, RawInputModifiers.Control);
+        Point Screen(double x, double y) => canvas.TranslatePoint((Point)ShotKit.Call(canvas, "ImageToScreen", x, y)!, m)!.Value;
+        var from = Screen(c.Right, c.Bottom);
+        var to = Screen(c.Right - 14, c.Bottom - 22);
+        const RawInputModifiers ctrl = RawInputModifiers.Control;
+        m.MouseMove(from, ctrl);
+        m.MouseDown(from, MouseButton.Right, ctrl);
         for (int i = 1; i <= 12; i++)
         {
-            m.MouseMove(from + (to - from) * (i / 12.0), RawInputModifiers.Control);
+            m.MouseMove(from + (to - from) * (i / 12.0), ctrl | RawInputModifiers.RightMouseButton);
             k.Settle(20);
         }
         k.Settle(250);
-        k.Save(m, crop: R(m, canvas), marks: [new Rect(to.X - 18, to.Y - 18, 36, 36)]);
-        m.MouseUp(to, MouseButton.Left, RawInputModifiers.Control);
+        var top = Screen(c.X + c.Width / 2.0, c.Y);
+        k.Save(m, crop: R(m, canvas), marks: [new Rect(top.X - 20, top.Y - 18, 40, 36), new Rect(to.X - 18, to.Y - 18, 36, 36)], firstNumber: 21);
+        m.MouseUp(to, MouseButton.Right, ctrl);
     }
 
     [Shot("parts-pivot-frame")]

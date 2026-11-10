@@ -53,11 +53,23 @@ internal interface IHelpPickerHost
     void HelpPickerStopped(bool noTarget);
 }
 
-/// <summary>컨트롤에 붙이는 대상 도움말 자리(<see cref="HelpAt"/>). 창에 붙이면 그 창 어디를 눌러도 열리는 쪽이 된다.</summary>
+/// <summary>
+/// 컨트롤에 붙이는 대상 도움말 자리(<see cref="HelpAt"/>). 창에 붙이면 그 창 어디를 눌러도 열리는 쪽이 된다.
+/// 이름 글과 값 칸처럼 한 설정을 이루는 컨트롤들은 묶음(<see cref="HelpGroup"/>)으로 붙여 어느 것을 가리켜도 모두 함께 두르고,
+/// 고르기 상자는 고른 항목마다 자리(<see cref="HelpOptions"/>)를 줄 수 있다 — 상자를 가리키면 지금 고른 항목의 설명, 이름 글을 가리키면 설정의 설명.
+/// </summary>
 internal static class HelpTargets
 {
     public static readonly AttachedProperty<HelpTarget?> TargetProperty =
         AvaloniaProperty.RegisterAttached<Control, HelpTarget?>("Target", typeof(HelpTargets));
+
+    /// <summary>같은 자리를 함께 두르는 묶음(<see cref="HelpGroup"/> — 이름 글과 값 칸들).</summary>
+    public static readonly AttachedProperty<Control[]?> GroupProperty =
+        AvaloniaProperty.RegisterAttached<Control, Control[]?>("Group", typeof(HelpTargets));
+
+    /// <summary>고르기 상자의 항목 번호마다 자리(null 항목 = 상자에 붙인 자리).</summary>
+    public static readonly AttachedProperty<HelpTarget?[]?> OptionsProperty =
+        AvaloniaProperty.RegisterAttached<Control, HelpTarget?[]?>("Options", typeof(HelpTargets));
 
     public static HelpTarget? Get(Control control) => control.GetValue(TargetProperty);
 
@@ -66,6 +78,51 @@ internal static class HelpTargets
     {
         control.SetValue(TargetProperty, new HelpTarget(page, shot, anchor));
         return control;
+    }
+
+    /// <summary>
+    /// 한 설정을 이루는 컨트롤들(이름 글 + 값 칸·체크 등)에 같은 자리(쪽 <paramref name="page"/>의 자리 글 <paramref name="anchor"/>)를 붙이고 묶는다:
+    /// 어느 것을 가리켜도 노란 상자가 보이는 묶음 전체를 두른다. 묶음 안 고르기 상자에 <see cref="HelpOptions"/>가 있으면 상자만은 고른 항목 자리.
+    /// </summary>
+    public static void HelpGroup(string page, string? anchor, params Control[] members)
+    {
+        var target = new HelpTarget(page, Anchor: anchor);
+        foreach (var member in members)
+        {
+            member.SetValue(TargetProperty, target);
+            member.SetValue(GroupProperty, members);
+        }
+    }
+
+    /// <summary>
+    /// 고르기 상자를 가리키면 지금 고른 항목(번호 = <paramref name="anchors"/> 차례)을 설명하는 쪽 <paramref name="page"/>의 자리 글로 간다.
+    /// null 자리 글이나 범위 밖 항목은 상자에 붙인 자리(<see cref="HelpAt"/>)를 쓴다. 노란 상자는 고르기 상자만 두른다.
+    /// </summary>
+    public static ComboBox HelpOptions(this ComboBox combo, string page, params string?[] anchors)
+    {
+        combo.SetValue(OptionsProperty, [.. anchors.Select(a => a is null ? (HelpTarget?)null : new HelpTarget(page, Anchor: a))]);
+        return combo;
+    }
+
+    /// <summary>고르기 상자의 지금 고른 항목 자리(<see cref="HelpOptions"/>로 정한 것). 없으면 null.</summary>
+    public static HelpTarget? Option(Control control)
+        => control is ComboBox { SelectedIndex: >= 0 } combo && combo.GetValue(OptionsProperty) is { } options && combo.SelectedIndex < options.Length
+            ? options[combo.SelectedIndex] : null;
+
+    /// <summary>
+    /// 컨트롤 <paramref name="c"/>에 붙인 자리와 두를 범위(c 좌표): 고르기 상자면 고른 항목 자리와 상자, 아니면 붙인 자리와 컨트롤(묶음이면 보이는 묶음 전체).
+    /// 붙인 자리가 없으면 null.
+    /// </summary>
+    public static (HelpTarget Target, Rect Area)? Of(Control c)
+    {
+        var area = new Rect(c.Bounds.Size);
+        if (Option(c) is { } option) return (option, area);
+        if (Get(c) is not { } target) return null;
+        if (c.GetValue(GroupProperty) is { } group)
+            foreach (var member in group)
+                if (!ReferenceEquals(member, c) && member.IsEffectivelyVisible && member.TranslatePoint(default, c) is { } at)
+                    area = area.Union(new Rect(at, member.Bounds.Size));
+        return (target, area);
     }
 
     /// <summary>컨트롤 전체를 두르는 자리(<paramref name="target"/>이 null이면 null) — 점과 상관없는 <see cref="IHelpTargetSource"/> 구현용.</summary>
@@ -187,7 +244,7 @@ public static class HelpPicker
     /// <summary>
     /// 점(<paramref name="window"/> 좌표) 아래의 대상 도움말 자리와 그 대상의 범위(<paramref name="surface"/> 좌표). 상자와 누른 결과가 모두 이것으로 정해진다.
     /// 겹판(<paramref name="surface"/>) 아래에서 실제로 그려진 맨 위 컨트롤부터 창까지 올라가며, 컨트롤마다 (1) 그것을 품은 <see cref="IHelpTargetSource"/>
-    /// (가장 가까운 것부터, 자신 포함)가 자리를 주면 그것, (2) 아니면 그 컨트롤에 붙인 <see cref="HelpTargets.Target"/>를 쓴다(가장 안쪽 대상이 이김).
+    /// (가장 가까운 것부터, 자신 포함)가 자리를 주면 그것, (2) 아니면 그 컨트롤에 붙인 자리(<see cref="HelpTargets.Of"/> — 고른 항목·짝 포함)를 쓴다(가장 안쪽 대상이 이김).
     /// 아무것도 없고 창에도 쪽이 없으면(메시지·입력·진행 같은 공용 대화상자) 주인 창을 따라 올라가 처음 만나는 창 쪽을 쓴다(상자는 창 전체).
     /// </summary>
     internal static (HelpTarget Target, Rect Bounds)? TargetAt(TopLevel window, Visual surface, Avalonia.Point at)
@@ -206,8 +263,8 @@ public static class HelpPicker
                 if (source.HelpTargetFor(c, local.Value) is { } found)
                     return Clip(c, found.Area, window, surface) is { } area ? (found.Target, area) : null;
             }
-            if (HelpTargets.Get(c) is { } target)
-                return Clip(c, new Rect(c.Bounds.Size), window, surface) is { } bounds ? (target, bounds) : null;
+            if (HelpTargets.Of(c) is { } own)
+                return Clip(c, own.Area, window, surface) is { } bounds ? (own.Target, bounds) : null;
         }
         // 여기까지 왔으면 창(경로의 끝)에도 쪽이 없다.
         if (path.Count == 0 || OwnerTarget(window) is not { } owned) return null;

@@ -227,7 +227,7 @@
   <data name="Message_322" xml:space="preserve"><value>The current layer is locked.</value></data>
   <data name="Message_323" xml:space="preserve"><value>Selection rotated — press Enter to drop</value></data>
   <data name="Message_324" xml:space="preserve"><value>Rotate canvas (all frames)</value></data>
-  <data name="Message_325" xml:space="preserve"><value>Transform (current cel, blue box): inside = move, handles = size (Shift keeps proportions, Alt from center), Ctrl+handles = free distort, outside = rotate, right-click = rotate/flip menu, right-drag = move image only (inside) / margin (handles) — Enter to apply, Esc to cancel</value></data>
+  <data name="Message_325" xml:space="preserve"><value>Transform (current cel, blue box): inside = move, handles = size (Shift keeps proportions, Alt from center), Ctrl+handles = free distort, outside = rotate, right-click = rotate/flip menu, right-drag = move image only (inside) / margin (handles) / rotate around the box center (outside) — Enter to apply, Esc to cancel</value></data>
   <data name="Message_326" xml:space="preserve"><value>The current layer is locked.</value></data>
   <data name="Message_327" xml:space="preserve"><value>The current layer is locked.</value></data>
   <data name="Message_328" xml:space="preserve"><value>Select a group or part to change that group's skin.</value></data>
@@ -404,8 +404,8 @@ Open all frames, or only the first {limit}?</value></data>
   <data name="Shortcut_ShapeLine" xml:space="preserve"><value>Shape: line</value></data>
   <data name="Tool_Text_Name" xml:space="preserve"><value>Text</value></data>
   <data name="Tool_Text_Hint" xml:space="preserve"><value>Drag: text box · Click: one-line text · Click on text: edit it · Enter: new line · Esc / Ctrl+Enter / click outside: done · size, bold, fonts in Tool options</value></data>
-  <data name="Menu_Edit_BeginLayerResize" xml:space="preserve"><value>Layer size…</value></data>
-  <data name="Message_LayerTransform" xml:space="preserve"><value>Transform whole layer (orange box, all frames): inside = move, handles = size (Shift keeps proportions, Alt from center), Ctrl+handles = free distort, outside = rotate (each frame around its pivot), right-click = rotate/flip menu, right-drag = move image only (inside) / margin (handles) — other frames keep the transform, Enter to apply, Esc to cancel</value></data>
+  <data name="Menu_Edit_BeginLayerResize" xml:space="preserve"><value>Transform whole layer…</value></data>
+  <data name="Message_LayerTransform" xml:space="preserve"><value>Transform whole layer (orange box, all frames): inside = move, handles = size (Shift keeps proportions, Alt from center), Ctrl+handles = free distort, outside = rotate (each frame around its pivot), right-click = rotate/flip menu, right-drag = move image only (inside) / margin (handles) / rotate around the box center (outside) — other frames keep the transform, Enter to apply, Esc to cancel</value></data>
   <data name="Ui_CanvasEffects" xml:space="preserve"><value>Effects</value></data>
   <data name="Ui_CanvasEffectsTip" xml:space="preserve"><value>Show layer effects on the canvas (Ctrl+Shift+E) · off = the pixels you edit (preview, timeline and export unchanged)</value></data>
   <data name="Menu_View_CanvasEffects" xml:space="preserve"><value>Show effects on canvas</value></data>

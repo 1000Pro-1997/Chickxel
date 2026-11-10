@@ -85,25 +85,25 @@ shortcuts-transform.overview,"<strong>편집</strong> 메뉴 아래쪽의 뒤집
 shortcuts-transform.h-cmd,메뉴 명령,Menu commands
 shortcuts-transform.h-cmd.d1,선택을 뒤집습니다. 선택이 없으면 현재 셀을 뒤집습니다.,"Flips the selection, or the current cel if nothing is selected."
 shortcuts-transform.h-cmd.d2,선택을 돌립니다. 선택이 없으면 캔버스 전체를 돌립니다.,"Rotates the selection, or the whole canvas if nothing is selected."
-shortcuts-transform.h-cmd.d3,"손잡이로 돌리고 늘리고 옮기는 <a href=""#tools-transform"">변형 모드</a>를 시작합니다.","Starts <a href=""#tools-transform"">Transform mode</a> for rotating, scaling and moving with handles."
+shortcuts-transform.h-cmd.d3,"지금 셀 하나를 손잡이로 돌리고 늘리고 옮기는 <a href=""#tools-transform"">변형 모드</a>(파란 상자)를 시작합니다. <kbd>Ctrl</kbd>+손잡이 끌기는 자유 변형이고, 상자를 우클릭하면 회전·뒤집기 메뉴가 열립니다. 우클릭으로 끌면 안쪽은 그림만 옮기고(피벗은 제자리), 손잡이는 여백을 바꾸고, 테두리 바깥은 상자 가운데를 기준으로 돌립니다.","Starts <a href=""#tools-transform"">Transform mode</a> (blue box) for rotating, scaling and moving the current cel with handles. <kbd>Ctrl</kbd>+drag a handle for free distort, and right-click the box for a rotate/flip menu. Right-dragging moves only the image inside the box (the pivot stays), changes the margin on a handle, and rotates around the box center outside the border."
 shortcuts-transform.h-cmd.d4,그림 둘레에 기본색 1픽셀 외곽선을 그립니다.,Draws a 1-pixel outline in the primary color around the art.
 shortcuts-transform.h-cmd.d5,대각선 방향까지 채운 외곽선을 그립니다.,Draws an outline that also fills the diagonal corners.
 shortcuts-transform.h-cmd.d6,한 색을 다른 색으로 바꿉니다.,Replaces one color with another.
 shortcuts-transform.h-cmd.d7,"<a href=""#tools-canvas-size"">캔버스 크기 모드</a>를 시작합니다.","Starts <a href=""#tools-canvas-size"">Canvas size mode</a>."
-shortcuts-transform.h-cmd.d8,"캔버스는 그대로 두고 레이어(부위) 하나의 크기·위치를 바꾸는 <a href=""#tools-layer-size"">레이어 크기 모드</a>를 시작합니다.","Starts <a href=""#tools-layer-size"">Layer size mode</a>, which changes one layer's (part's) size and position while the canvas stays the same."
+shortcuts-transform.h-cmd.d8,"지금 레이어의 모든 프레임(부위는 모든 스킨)을 주황 상자 하나로 함께 돌리고 늘리고 옮기는 <a href=""#tools-layer-size"">레이어 전체 변형</a>을 시작합니다. 캔버스 크기는 그대로입니다.","Starts <a href=""#tools-layer-size"">Transform whole layer</a>, which rotates, scales and moves every frame of the current layer (every skin of a part) together with one orange box. The canvas size stays the same."
 shortcuts-transform.h-cmd.d9,모든 레이어·프레임을 함께 뒤집습니다.,Flips every layer and frame together.
 shortcuts-transform.h-cmd.d10,"지금 그림에 쓰인 색으로 팔레트를 만듭니다(<a href=""#screen-palette"">팔레트</a>).","Makes a palette from the colors used in the image (see <a href=""#screen-palette"">Palette</a>)."
 shortcuts-transform.h-cmd.d11,"그림의 색을 지금 팔레트의 가까운 색으로 바꿉니다(<a href=""#featured-palette-convert"">팔레트로 색 바꾸기</a>).","Converts the image's colors to the nearest colors of the current palette (see <a href=""#featured-palette-convert"">Recoloring with a palette</a>)."
 shortcuts-transform.h-cmd.d12,환경 설정 창을 엽니다. 단축키도 여기서 바꿉니다.,"Opens Preferences, where you also change shortcuts."
 shortcuts-transform.h-modes,변형·크기 모드에서,In transform and size modes
-shortcuts-transform.h-modes.d1,변형·캔버스 크기·레이어 크기 모드를 실행취소 한 단계로 적용합니다.,"Applies Transform, Canvas size or Layer size mode as one undo step."
+shortcuts-transform.h-modes.d1,변형·캔버스 크기·레이어 전체 변형을 실행취소 한 단계로 적용합니다.,"Applies Transform, Canvas size or Transform whole layer as one undo step."
 shortcuts-transform.h-modes.d2,적용하지 않고 원래대로 둡니다.,Leaves everything as it was.
 shortcuts-transform.h-menu,메뉴에서 키 확인,Keys in the menu
 shortcuts-transform.15.alt,"편집 메뉴를 펼친 모습: 좌우·상하 뒤집기, 90° 회전, 변형, 외곽선, 색 바꾸기, 캔버스 크기 오른쪽의 키","The Edit menu open: the keys to the right of Flip horizontal and vertical, Rotate 90°, Transform, Add outline, Replace color and Canvas size"
 shortcuts-transform.16,① 편집(Edit) 메뉴의 뒤집기~캔버스 크기 키,"① Edit menu keys, flips to Canvas size"
-shortcuts-transform.10,변형·캔버스/레이어 크기 모드 적용,Apply transform / canvas or layer size mode
-shortcuts-transform.11,변형·캔버스/레이어 크기 모드 취소,Cancel transform / canvas or layer size mode
-shortcuts-transform.13,"캔버스·레이어 크기 모드 모두 손잡이를 그냥 끌면 자리만 바뀌고 <kbd>Ctrl</kbd>+끌면 그림 크기도 함께 바뀝니다. 그림 안을 끌면 그림을 옮기며 Shift는 모서리 비율 유지, Alt는 중심 기준입니다.","In Canvas and Layer size modes, dragging a handle changes only the bounds and <kbd>Ctrl</kbd>+drag also resizes the art. Drag inside to move; Shift on a corner keeps aspect ratio and Alt uses the center as anchor."
+shortcuts-transform.10,변형·캔버스 크기·레이어 전체 변형 적용,Apply transform / canvas size / whole-layer transform
+shortcuts-transform.11,변형·캔버스 크기·레이어 전체 변형 취소,Cancel transform / canvas size / whole-layer transform
+shortcuts-transform.13,"캔버스 크기 모드에서 손잡이를 끌면 그림도 함께 늘어나고, 우클릭으로 끌면 그림은 두고 여백만 바뀝니다. 둘 다 <kbd>Shift</kbd>는 비율 유지, <kbd>Alt</kbd>는 가운데 기준, <kbd>Ctrl</kbd>은 꼭짓점을 마음대로 옮깁니다. 변형과 레이어 전체 변형에서는 안쪽을 끌면 옮기고, 손잡이를 끌면 크기가 바뀌며(<kbd>Shift</kbd> 비율 유지, <kbd>Alt</kbd> 가운데 기준), <kbd>Ctrl</kbd>+손잡이 끌기는 자유 변형입니다.","In Canvas size mode, dragging a handle stretches the image along with the canvas, and right-dragging changes only the margin and leaves the image as it is. In both, <kbd>Shift</kbd> keeps the ratio, <kbd>Alt</kbd> works from the center and <kbd>Ctrl</kbd> moves corners freely. In Transform and Transform whole layer, drag inside to move, drag a handle to resize (<kbd>Shift</kbd> keeps the ratio, <kbd>Alt</kbd> from the center), and <kbd>Ctrl</kbd>+drag a handle for free distort."
 shortcuts-transform.14,<strong>편집</strong> 메뉴의 ① 뒤집기부터 캔버스 크기까지 오른쪽에도 같은 키가 보입니다.,"The same keys appear at ① in the <strong>Edit</strong> menu, from the flips to Canvas size."
 shortcuts-view.1,보기와 캔버스,View and canvas
 shortcuts-view.overview,"확대·격자·보기 옵션·탭·창을 다루는 <strong>보기</strong> 메뉴의 키와, 캔버스에서 쓰는 마우스 조작입니다.","Keys for the <strong>View</strong> menu, which handles zoom, grids, view options, tabs and panels, plus the mouse actions used on the canvas."

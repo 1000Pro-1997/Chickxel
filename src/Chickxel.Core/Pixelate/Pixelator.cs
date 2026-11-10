@@ -1200,54 +1200,57 @@ public static class Pixelator
     }
 
     /// <summary>
-    /// 칸끼리 색 차이의 합(칸마다 표본 수만큼 셈 — <see cref="PerceivedError"/>와 같은 크기): 칸마다 원본 대표 색과 결과 색의 점수용 색 거리(<paramref name="metric"/>).
-    /// 대표 색: 칸 평균이거나, 우세 색 묶음 — 무게 큰 표본부터 씨앗으로 OKLab <see cref="FidelityJudge.GroupRadius"/> 안의 가장 가까운 묶음에 넣고(없으면 새 묶음),
-    /// 무게 합이 가장 큰 묶음(같으면 표본 수가 많은 것)의 무게 평균.
+    /// 칸끼리 색 차이의 합(칸마다 표본 수만큼 셈 — <see cref="PerceivedError"/>와 같은 크기): 칸마다 원본 대표 색(<see cref="ReferenceColor"/>)과 결과 색의 점수용 색 거리(<paramref name="metric"/>).
     /// </summary>
     private static double CellError(IEnumerable<(Lab Out, List<(Lab Color, double Weight)> List)> cells, ColorMetric metric, FidelityJudge judge)
     {
-        double radius = PixelateRanges.FidelityGroupRadius.Clamp(judge.GroupRadius);
-        double r2 = radius * radius;
         var groups = new List<(Lab Seed, double W, double L, double A, double B, int N)>();
         double sum = 0;
         foreach (var (output, list) in cells)
+            sum += list.Count * metric.Distance(metric.Point(ReferenceColor(list, judge, groups)), metric.Point(output));
+        return sum;
+    }
+
+    /// <summary>
+    /// 칸 표본(OKLab 색·무게)의 대표 색(<see cref="FidelityJudge.Reference"/>): 칸 평균이면 무게 평균, 우세 색 묶음이면 무게 큰 표본부터 씨앗으로
+    /// OKLab <see cref="FidelityJudge.GroupRadius"/> 안의 가장 가까운 묶음에 넣고(없으면 새 묶음) 무게 합이 가장 큰 묶음(같으면 표본 수가 많은 것)의 무게 평균.
+    /// <paramref name="samples"/>는 무게 순으로 다시 늘어놓는다. <paramref name="groups"/>는 묶음 계산에 다시 쓰는 목록(없으면 새로 만듦).
+    /// </summary>
+    public static Lab ReferenceColor(List<(Lab Color, double Weight)> samples, FidelityJudge judge,
+        List<(Lab Seed, double W, double L, double A, double B, int N)>? groups = null)
+    {
+        if (judge.Reference == CellReference.Mean)
         {
-            Lab reference;
-            if (judge.Reference == CellReference.Mean)
+            double w = 0, l = 0, a = 0, b = 0;
+            foreach (var (c, cw) in samples) { w += cw; l += c.L * cw; a += c.A * cw; b += c.B * cw; }
+            return new Lab((float)(l / w), (float)(a / w), (float)(b / w));
+        }
+        double radius = PixelateRanges.FidelityGroupRadius.Clamp(judge.GroupRadius);
+        double r2 = radius * radius;
+        groups ??= [];
+        groups.Clear();
+        samples.Sort((p, q) => q.Weight.CompareTo(p.Weight));
+        foreach (var (c, cw) in samples)
+        {
+            int best = -1;
+            double bestD = r2;
+            for (int g = 0; g < groups.Count; g++)
             {
-                double w = 0, l = 0, a = 0, b = 0;
-                foreach (var (c, cw) in list) { w += cw; l += c.L * cw; a += c.A * cw; b += c.B * cw; }
-                reference = new Lab((float)(l / w), (float)(a / w), (float)(b / w));
+                var s = groups[g].Seed;
+                double dl = c.L - s.L, da = c.A - s.A, db = c.B - s.B, d = dl * dl + da * da + db * db;
+                if (d <= bestD) { bestD = d; best = g; }
             }
+            if (best < 0) groups.Add((c, cw, c.L * cw, c.A * cw, c.B * cw, 1));
             else
             {
-                groups.Clear();
-                list.Sort((p, q) => q.Weight.CompareTo(p.Weight));
-                foreach (var (c, cw) in list)
-                {
-                    int best = -1;
-                    double bestD = r2;
-                    for (int g = 0; g < groups.Count; g++)
-                    {
-                        var s = groups[g].Seed;
-                        double dl = c.L - s.L, da = c.A - s.A, db = c.B - s.B, d = dl * dl + da * da + db * db;
-                        if (d <= bestD) { bestD = d; best = g; }
-                    }
-                    if (best < 0) groups.Add((c, cw, c.L * cw, c.A * cw, c.B * cw, 1));
-                    else
-                    {
-                        var g = groups[best];
-                        groups[best] = (g.Seed, g.W + cw, g.L + c.L * cw, g.A + c.A * cw, g.B + c.B * cw, g.N + 1);
-                    }
-                }
-                var top = groups[0];
-                foreach (var g in groups)
-                    if (g.W > top.W || g.W == top.W && g.N > top.N) top = g;
-                reference = new Lab((float)(top.L / top.W), (float)(top.A / top.W), (float)(top.B / top.W));
+                var g = groups[best];
+                groups[best] = (g.Seed, g.W + cw, g.L + c.L * cw, g.A + c.A * cw, g.B + c.B * cw, g.N + 1);
             }
-            sum += list.Count * metric.Distance(metric.Point(reference), metric.Point(output));
         }
-        return sum;
+        var top = groups[0];
+        foreach (var g in groups)
+            if (g.W > top.W || g.W == top.W && g.N > top.N) top = g;
+        return new Lab((float)(top.L / top.W), (float)(top.A / top.W), (float)(top.B / top.W));
     }
 
     /// <summary>

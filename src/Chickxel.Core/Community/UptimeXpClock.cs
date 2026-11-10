@@ -2,7 +2,7 @@ namespace Chickxel.Core.Community;
 
 /// <summary>
 /// 앱을 로그인한 채 켜 둔 시간 경험치(+1 XP/시간)를 언제 서버에 알릴지 정한다(시각은 밖에서 넣음 — 화면·네트워크 없음).
-/// 앱은 1분쯤마다 <see cref="Tick"/>을 부르고, true면 <c>POST /api/me/uptime</c>을 보낸 뒤 결과를 <see cref="Reported"/>·<see cref="Failed"/>·
+/// 앱은 <see cref="Interval"/>마다 <see cref="Tick"/>을 부르고, true면 <c>POST /api/me/uptime</c>을 보낸 뒤 결과를 <see cref="Reported"/>·<see cref="Failed"/>·
 /// <see cref="Unsupported"/>로 알린다. 로그인한 동안의 시간만 세고, 한 번에 <see cref="MaxStep"/>보다 긴 틈(컴퓨터가 잠든 사이 등)은 그만큼만 센다.
 /// 실패하면 그 한 시간을 남겨 다음 틱에 다시 보내고(서버가 58분 안에 두 번 주지 않음), 예전 서버(404)면 이번 실행 동안 멈춘다.
 /// </summary>
@@ -10,8 +10,10 @@ public sealed class UptimeXpClock
 {
     /// <summary>경험치 1을 받는 시간.</summary>
     public static readonly TimeSpan Hour = TimeSpan.FromHours(1);
-    /// <summary>틱 한 번에 더하는 가장 긴 시간.</summary>
-    public static readonly TimeSpan MaxStep = TimeSpan.FromMinutes(2);
+    /// <summary>앱이 <see cref="Tick"/>을 부르는 간격.</summary>
+    public static readonly TimeSpan Interval = TimeSpan.FromMinutes(10);
+    /// <summary>틱 한 번에 더하는 가장 긴 시간(늦은 틱 하나는 다 세고, 컴퓨터가 잠든 사이 같은 긴 틈은 자름).</summary>
+    public static readonly TimeSpan MaxStep = Interval * 2;
     /// <summary>서버가 주지 않았을 때 다시 보내기까지 가장 짧게 기다리는 시간.</summary>
     public static readonly TimeSpan MinRetry = TimeSpan.FromMinutes(1);
 

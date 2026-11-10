@@ -673,34 +673,37 @@ internal static class ToolsShots
             apply,
             cancel,
             Lead(Union(Row(m, Opt<Control>(m, "_tfAngle")), Row(m, Opt<Control>(m, "_tfScaleX")), Row(m, Opt<Control>(m, "_tfX")))),
+            Lead(Row(m, Opt<Control>(m, "_tfBoxWidth"))),
+            Lead(Row(m, ShotKit.FindText(group, UiStrings.CanvasResize_Flip, ancestorControl: true))),
             Lead(Row(m, Opt<Control>(m, "_tfResample"))),
         ]);
     }
 
-    /// <summary>여러 셀 함께 변형: 프레임 4개를 머리글로 고르고 Ctrl+T(타임라인이 보이게 기본 높이로 연다).</summary>
+    /// <summary>
+    /// 자유 변형과 우클릭 메뉴: 머리를 Ctrl+T로 연 뒤 오른쪽 위 꼭짓점을 바깥으로, 왼쪽 아래 꼭짓점을 안으로 옮긴 모양(Ctrl+손잡이 끌기와 같은 값)에서
+    /// 상자 안쪽을 우클릭해 메뉴를 연다. ⑪ 옮긴 꼭짓점 ⑫ 우클릭 메뉴(쪽 첫 그림에 이어서).
+    /// </summary>
     [Shot("tools-transform-2")]
-    public static void TransformCels(ShotKit k)
+    public static void TransformDistortMenu(ShotKit k)
     {
-        var m = Open(k, ToolFileHelp.Sample(k));
+        var m = Open(k, ToolFileHelp.Sample(k), timeline: 110);
         ShotKit.Call(m, "SetPixelGrid", false);
-        var ctx = ToolFileHelp.Ctx(m);
-        for (int i = 0; i < 3; i++) k.Command("프레임 복제");
-        ctx.SetCurrentFrame(0);
-        k.Settle(200);
-        var timeline = ShotKit.Get<Control>(m, "_timeline");
-        var grid = ShotKit.Get<Control>(timeline, "_grid");
-        ShotKit.Call(grid, "SelectFrames", (IEnumerable<int>)[0, 1, 2, 3]);
-        k.Settle(200);
+        ToolFileHelp.Tool(k, "사각 선택");
+        k.Drag(m, ToolFileHelp.At(m, 7, 3), ToolFileHelp.At(m, 42, 36));
         k.Command("편집/변형(회전·크기)…");
         k.Settle(300);
-        ctx.SetTransformParams(ctx.RotatedAboutPivot(ctx.TransformParams, -12));
-        k.Settle(400);
+        var ctx = ToolFileHelp.Ctx(m);
         var box = ctx.TransformBox ?? throw new InvalidOperationException("not transforming");
-        var corners = box.Corners(ctx.TransformParams).Select(c => ToolFileHelp.At(m, c.X, c.Y)).ToList();
-        var handles = new Rect(new Point(corners.Min(c => c.X), corners.Min(c => c.Y)), new Point(corners.Max(c => c.X), corners.Max(c => c.Y)));
-        var cels = new Rect(grid.TranslatePoint(new Point(NameW, TagH), m)!.Value, new Size(4 * CellW, HeadH + CellH));
-        var message = ShotKit.Get<TextBlock>(m, "_stMessage");
-        k.Save(m, "tools-transform-2", marks: [cels, handles.Inflate(8), Lead(TextRect(m, message), 14, 2)], firstNumber: 9);
+        var c = box.Corners(ctx.TransformParams);
+        (double X, double Y)[] moved = [c[0], (c[1].X + 6, c[1].Y - 4), c[2], (c[3].X + 5, c[3].Y - 3)];
+        var distorted = box.WithCorners(ctx.TransformParams, moved) ?? throw new InvalidOperationException("distortion rejected");
+        ctx.SetTransformParams(distorted);
+        k.Settle(400);
+        var corner = ToolFileHelp.At(m, moved[1].X, moved[1].Y);
+        k.Click(m, ToolFileHelp.At(m, 20, 22), MouseButton.Right, settleMs: 500);
+        var menu = ToolFileShotsMenus.OpenMenuRect(m) ?? throw new InvalidOperationException("transform menu did not open");
+        var crop = ToolFileHelp.SpriteRect(m).Inflate(30).Union(menu.Inflate(12));
+        k.Save(m, "tools-transform-2", crop: ToolFileHelp.Clamp(crop, m), marks: [Around(corner, 14), menu.Inflate(4)], firstNumber: 11);
     }
 
     [Shot("tools-canvas-size")]

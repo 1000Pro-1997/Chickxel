@@ -51,9 +51,9 @@ term.transform.def,선택한 그림을 손잡이로 돌리고 늘리고 옮기�
 term.canvas-size,캔버스 크기 모드,canvas size mode
 term.canvas-size.to,tools-canvas-size,
 term.canvas-size.def,캔버스 위에서 새 크기와 그림 자리를 정하는 모드입니다.,A mode for setting the new canvas size and image position directly on the canvas.
-term.layer-size,레이어 크기 모드,layer size mode
+term.layer-size,레이어 전체 변형,transform whole layer
 term.layer-size.to,tools-layer-size,
-term.layer-size.def,레이어(부위) 하나의 크기와 위치를 캔버스 위에서 바꾸는 모드입니다.,A mode for changing the size and position of one layer (part) on the canvas.
+term.layer-size.def,"레이어 하나의 모든 프레임(부위는 모든 스킨)을 주황 상자 하나로 함께 돌리고, 늘리고, 옮기고, 찌그러뜨리는 모드입니다.","A mode that rotates, scales, moves and distorts every frame of one layer (every skin of a part) together with one orange box."
 term.offcanvas,캔버스 밖 그림,pixels outside the canvas
 term.offcanvas.to,tools-move,
 term.offcanvas.def,캔버스 밖으로 밀려난 그림입니다. 지워지지 않고 남아 다시 들여올 수 있습니다.,Pixels pushed past the canvas edge. They are kept and can be brought back.

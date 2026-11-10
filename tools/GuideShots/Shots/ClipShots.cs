@@ -237,6 +237,148 @@ internal static class ClipShots
         }
     }
 
+    /// <summary><paramref name="w"/>×<paramref name="h"/> 빈 그림 가운데에 빨간 하트(11×10, <see cref="ToolFileHelp.HeartPng"/>)를 놓는다.</summary>
+    private static PixelImage HeartOn(ShotKit k, int w, int h)
+    {
+        var heart = PngIO.Load(ToolFileHelp.HeartPng(Path.Combine(k.WorkDir, "heart.png")));
+        var img = new PixelImage(w, h);
+        int ox = (w - heart.Width) / 2, oy = (h - heart.Height) / 2;
+        for (int y = 0; y < heart.Height; y++)
+            for (int x = 0; x < heart.Width; x++)
+                img.Pixels[(oy + y) * w + ox + x] = heart.Pixels[y * heart.Width + x];
+        return img;
+    }
+
+    /// <summary>
+    /// 지금 셀 변형(Ctrl+T, 파란 상자): 하트를 열고 바깥 띠를 끌어 돌리기, 변 손잡이를 끌어 늘리기, Ctrl+모서리 끌기로 자유 변형,
+    /// 안쪽 우클릭 끌기로 그림만 옮기기(회전 중심은 제자리), 안쪽 우클릭 메뉴에서 가로로 뒤집기, Enter로 적용.
+    /// </summary>
+    [Shot("clip-tools-transform")]
+    public static void Transform(ShotKit k)
+    {
+        var (m, rec) = CanvasClip(k, HeartOn(k, 32, 20), 384, 240);
+        using (rec)
+        {
+            var ctx = ToolFileHelp.Ctx(m);
+            rec.Cursor = ClipCursor.Arrow;
+            k.Command("편집/변형(회전·크기)…");
+            ctx.ResetTransformPivot();
+            k.Settle(200);
+            (double X, double Y)[] Corners() => ctx.TransformBox!.Value.Corners(ctx.TransformParams);
+            Point At((double X, double Y) c) => ToolFileHelp.At(m, c.X, c.Y);
+            Point Mid((double X, double Y) a, (double X, double Y) b) => ToolFileHelp.At(m, (a.X + b.X) / 2, (a.Y + b.Y) / 2);
+            var start = Corners();
+            rec.Place(At(start[2]) + new Vector(40, 30));
+            rec.Hold(700);
+            // 1) 바깥 띠(오른쪽 위 꼭짓점 바로 바깥)를 끌어 돌린다.
+            var c = Corners();
+            var outside = At(c[1]) + new Vector(12, -12);
+            rec.Drag(outside, outside + new Vector(26, 56), 1000);
+            rec.Hold(500);
+            // 2) 오른쪽 변 손잡이를 바깥으로 끌어 늘린다.
+            c = Corners();
+            var right = Mid(c[1], c[2]);
+            var outward = right - Mid(c[0], c[3]);
+            outward /= Math.Sqrt(outward.X * outward.X + outward.Y * outward.Y);
+            rec.Drag(right, right + outward * 40, 900);
+            rec.Hold(500);
+            // 3) Ctrl+모서리 끌기 = 자유 변형(그 꼭짓점만).
+            c = Corners();
+            var corner = At(c[3]);
+            rec.Move(corner, 500);
+            rec.KeyDown(Key.LeftCtrl);
+            rec.Modifiers = RawInputModifiers.Control;
+            rec.Hold(300);
+            rec.Down();
+            rec.Move(corner + new Vector(-30, 26), 900);
+            rec.Up();
+            rec.Modifiers = RawInputModifiers.None;
+            rec.KeyUp(Key.LeftCtrl);
+            rec.Hold(500);
+            // 4) 안쪽 우클릭 끌기 = 그림만 옮기기(회전 중심은 제자리).
+            c = Corners();
+            var inside = ToolFileHelp.At(m, c.Average(p => p.X), c.Average(p => p.Y)) + new Vector(18, 14);
+            rec.Drag(inside, inside + new Vector(-36, -12), 900, MouseButton.Right);
+            rec.Hold(500);
+            // 5) 안쪽 우클릭 = 메뉴 → 가로로 뒤집기.
+            c = Corners();
+            // 메뉴가 녹화 영역 안에 다 보이게 상자 위쪽을 누른다.
+            inside = ToolFileHelp.At(m, c.Average(p => p.X), c.Average(p => p.Y)) + new Vector(-6, -48);
+            rec.Click(inside, 500, MouseButton.Right, afterMs: 700);
+            var flip = rec.At(MenuItemNamed(Chickxel.App.Localization.UiStrings.Transform_FlipHorizontal));
+            rec.Move(flip, 600);
+            rec.Hold(300);
+            rec.Click(flip, 0, afterMs: 800);
+            // 6) Enter = 적용.
+            rec.Key(Key.Enter, afterMs: 400);
+            rec.Move(rec.Pointer + new Vector(30, 40), 400);
+            rec.Hold(1500);
+            rec.Save("docs/assets/guide/tools-transform", ClipFormat.WebP);
+        }
+    }
+
+    /// <summary>
+    /// 캔버스 크기 모드(Ctrl+Alt+C): 오른쪽 손잡이 끌기 = 늘리기(그림도), 왼쪽 손잡이 우클릭 끌기 = 여백(노란 테두리), 아래 손잡이 우클릭 끌기 = 잘라 내기(흐리게),
+    /// 그림 안쪽 끌기 = 옮기기, Ctrl+오른쪽 위 손잡이 끌기 = 원근으로 기울이기. 적용하지 않고 끝(Enter는 화면을 다시 맞춤).
+    /// </summary>
+    [Shot("clip-tools-canvas-size")]
+    public static void CanvasSize(ShotKit k)
+    {
+        var (m, rec) = CanvasClip(k, HeartOn(k, 20, 14), 480, 300);
+        using (rec)
+        {
+            var ctx = ToolFileHelp.Ctx(m);
+            rec.Cursor = ClipCursor.Arrow;
+            k.Command("편집/캔버스 크기…");
+            k.Settle(200);
+            Point At(double x, double y) => ToolFileHelp.At(m, x, y);
+            var cv = ctx.CanvasResizeCanvas;
+            rec.Place(At(cv.Right, cv.Bottom) + new Vector(40, 30));
+            rec.Hold(700);
+            // 1) 오른쪽 손잡이 끌기 = 늘리기(그림도 함께).
+            cv = ctx.CanvasResizeCanvas;
+            var right = At(cv.Right, cv.Y + cv.Height / 2.0);
+            rec.Drag(right, right + new Vector(4 * Zoom, 0), 900);
+            rec.Hold(500);
+            // 2) 왼쪽 손잡이 우클릭 끌기 = 여백(캔버스 가장자리만, 노란 테두리).
+            cv = ctx.CanvasResizeCanvas;
+            var left = At(cv.X, cv.Y + cv.Height / 2.0);
+            rec.Move(left, 500);
+            rec.Down(MouseButton.Right);
+            rec.Move(left - new Vector(3 * Zoom, 0), 800);
+            rec.Hold(400);
+            rec.Up();
+            rec.Hold(400);
+            // 3) 아래 손잡이 우클릭 끌기로 위로 = 아래를 잘라 냄(잘릴 부분이 흐리게).
+            cv = ctx.CanvasResizeCanvas;
+            var bottom = At(cv.X + cv.Width / 2.0, cv.Bottom);
+            rec.Drag(bottom, bottom - new Vector(0, 3 * Zoom), 800, MouseButton.Right);
+            rec.Hold(500);
+            // 4) 그림 안쪽 끌기 = 옮기기(그림 사각형은 새 캔버스 좌표).
+            cv = ctx.CanvasResizeCanvas;
+            var img = ctx.CanvasResizeImage;
+            var inside = At(cv.X + img.X + img.Width / 2.0, cv.Y + img.Y + img.Height / 2.0);
+            rec.Drag(inside, inside + new Vector(0, 2 * Zoom), 700);
+            rec.Hold(500);
+            // 5) Ctrl+오른쪽 위 손잡이 끌기 = 그 꼭짓점만(그림이 원근으로 기욺).
+            cv = ctx.CanvasResizeCanvas;
+            var corner = At(cv.Right, cv.Y);
+            rec.Move(corner, 500);
+            rec.KeyDown(Key.LeftCtrl);
+            rec.Modifiers = RawInputModifiers.Control;
+            rec.Hold(300);
+            rec.Down();
+            rec.Move(corner + new Vector(-2 * Zoom, 3 * Zoom), 900);
+            rec.Up();
+            rec.Modifiers = RawInputModifiers.None;
+            rec.KeyUp(Key.LeftCtrl);
+            rec.Hold(400);
+            rec.Move(rec.Pointer + new Vector(40, 30), 400);
+            rec.Hold(1500);
+            rec.Save("docs/assets/guide/tools-canvas-size", ClipFormat.WebP);
+        }
+    }
+
     // ───────────── 숫자 칸 ─────────────
 
     /// <summary>숫자 칸 우클릭 목록에서 지금 값이 아닌 예시 값 하나(<paramref name="label"/>로 시작하는 항목, 없으면 지금 값 다음 항목).</summary>

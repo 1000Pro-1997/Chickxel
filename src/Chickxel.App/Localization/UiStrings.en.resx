@@ -466,7 +466,7 @@ Run "{1}" in a terminal yourself, then click "Check again".</value></data>
   <data name="S_Dialogs_Shortcuts_DB4E346999" xml:space="preserve"><value>Open Unity project (Unity Hub)</value></data>
   <data name="S_Dialogs_Shortcuts_DD21ABD0E2" xml:space="preserve"><value>Copy / cut / paste cells and frames (after clicking the timeline)</value></data>
   <data name="S_Dialogs_Shortcuts_E014D4B8B3" xml:space="preserve"><value>Move 8 pixels</value></data>
-  <data name="S_Dialogs_Shortcuts_E1937C2A7E" xml:space="preserve"><value>Transform current cel (selection, or painted pixels of current cell if none): drag inside = move, handles = size (Shift keeps ratio, Alt from center), Ctrl+handles = free distort (Alt mirrors the opposite side), outside = rotate (Shift 15°), right-click = rotate/flip menu, right-drag = move image only (inside) / margin (handles)</value></data>
+  <data name="S_Dialogs_Shortcuts_E1937C2A7E" xml:space="preserve"><value>Transform current cel (selection, or painted pixels of current cell if none): drag inside = move, handles = size (Shift keeps ratio, Alt from center), Ctrl+handles = free distort (Alt mirrors the opposite side), outside = rotate (Shift 15°), right-click = rotate/flip menu, right-drag = move image only (inside) / margin (handles) / rotate around the box center (outside)</value></data>
   <data name="S_Dialogs_Shortcuts_E1C05D9B32" xml:space="preserve"><value>Enter / Esc · Ctrl+Z while transforming</value></data>
   <data name="S_Dialogs_Shortcuts_E485ABF61D" xml:space="preserve"><value>New group</value></data>
   <data name="S_Dialogs_Shortcuts_E4A0BFBB0C" xml:space="preserve"><value>Redo</value></data>
@@ -1814,7 +1814,7 @@ Unavailable items (skipped):
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_B4DDF34C98" xml:space="preserve"><value>Vertical symmetry</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_B655203628" xml:space="preserve"><value>Pixel perfect</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_BDB140E2ED" xml:space="preserve"><value>Cancel</value></data>
-  <data name="S_ToolOptionsPanel_ToolOptionsPanel_BFD255FFEA" xml:space="preserve"><value>Changes only the current cel — blue box. Canvas: drag inside = move (1px steps), square handles = size (Shift keeps ratio, Alt from center, dragging past the opposite side flips), Ctrl (⌘) + handle = free distort (a corner moves just that corner, a side moves that whole side — with Alt the opposite one moves the other way), outside = rotate (Shift 15°), drag the center mark = rotation center (double-click = back to center), right-click = 180°/90° rotate and flip menu, right-drag inside = move only the drawing (rotation center and pivot stay put), right-drag a handle = margin (the drawing stays, only the box changes — shrinking crops what falls outside; a selection grows by repeating its edge pixels. Shift keeps ratio, Alt from center, Ctrl moves corners freely — what falls outside that shape is cropped). Arrow keys = move 1px. Without a selection the frame's pivot follows the drawing, and a part grows its area when the drawing goes past it.</value></data>
+  <data name="S_ToolOptionsPanel_ToolOptionsPanel_BFD255FFEA" xml:space="preserve"><value>Changes only the current cel — blue box. Canvas: drag inside = move (1px steps), square handles = size (Shift keeps ratio, Alt from center, dragging past the opposite side flips), Ctrl (⌘) + handle = free distort (a corner moves just that corner, a side moves that whole side — with Alt the opposite one moves the other way), outside = rotate (Shift 15°), drag the center mark = rotation center (double-click = back to center), right-click = 180°/90° rotate and flip menu, right-drag inside = move only the drawing (rotation center and pivot stay put), right-drag outside = rotate around the box center (the rotation center turns with the drawing), right-drag a handle = margin (the drawing stays, only the box changes — shrinking crops what falls outside; a selection grows by repeating its edge pixels. Shift keeps ratio, Alt from center, Ctrl moves corners freely — what falls outside that shape is cropped). Arrow keys = move 1px. Without a selection the frame's pivot follows the drawing, and a part grows its area when the drawing goes past it.</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_C554693D22" xml:space="preserve"><value>Pivot (focus) — drag on the canvas</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_CADA521CE3" xml:space="preserve"><value>Center X</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_CAF69A1BB7" xml:space="preserve"><value>Size</value></data>
@@ -2950,7 +2950,7 @@ Press Clean up to apply the change.</value></data>
   <data name="Pixelate_Opt_RerunPreset" xml:space="preserve"><value>Rerun only this preset</value></data>
   <data name="Pixelate_Opt_Marker_NotRun" xml:space="preserve"><value>Not run yet</value></data>
   <data name="Pixelate_Opt_RunPreset" xml:space="preserve"><value>Run only this preset</value></data>
-  <data name="Pixelate_Opt_IdleTip" xml:space="preserve"><value>A checked preset that hasn't run yet. Right-click and choose Run only this preset to run just this one; Auto-optimize runs every checked preset.</value></data>
+  <data name="Pixelate_Opt_IdleTip" xml:space="preserve"><value>A checked preset that hasn't run yet. Click to load this preset into the settings on the left (there's no result yet, so the preview stays as it is). Right-click and choose Run only this preset to run just this one; Auto-optimize runs every checked preset.</value></data>
   <data name="Pixelate_Menu_SavePng" xml:space="preserve"><value>Save as PNG…</value></data>
   <data name="Pixelate_Menu_CopyFrame" xml:space="preserve"><value>Copy frame {index}</value></data>
   <data name="Pixelate_Menu_SaveFrame" xml:space="preserve"><value>Save frame {index} as PNG…</value></data>
@@ -3948,7 +3948,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="LayerColors_CountCapped" xml:space="preserve"><value>{0} / {1}</value></data>
   <data name="LayerTransform_PanelTitle" xml:space="preserve"><value>Tool settings · Transform whole layer</value></data>
   <data name="LayerTransform_GroupTitle" xml:space="preserve"><value>Transform · whole layer</value></data>
-  <data name="LayerTransform_Info" xml:space="preserve"><value>Changes every frame of the current layer (every skin for a part) together — orange box. Canvas: drag inside = move, square handles = size (Shift keeps ratio, Alt from center), Ctrl (⌘) + handle = free distort (a corner moves just that corner, a side moves that whole side — with Alt the opposite one moves the other way), outside = rotate (Shift 15°, each frame turns around its own pivot), drag the center mark = rotation center, right-click = 180°/90° rotate and flip menu, right-drag inside = move only the drawing (rotation center and pivots stay put), right-drag a handle = margin (the drawing stays, only the box changes — shrinking crops what falls outside. Shift keeps ratio, Alt from center, Ctrl moves corners freely — what falls outside that shape is cropped). With a selection only that spot changes in every frame (growing the margin repeats the edge pixels) and pivots stay; without one the whole drawing changes and the pivots follow it. A part's area follows the box (rotating makes it as big as needed) and rotating or distorting removes its 9-slice border. Clicking another frame of the same layer keeps the transform going; picking another layer cancels it. The preview is shown without layer effects.</value></data>
+  <data name="LayerTransform_Info" xml:space="preserve"><value>Changes every frame of the current layer (every skin for a part) together — orange box. Canvas: drag inside = move, square handles = size (Shift keeps ratio, Alt from center), Ctrl (⌘) + handle = free distort (a corner moves just that corner, a side moves that whole side — with Alt the opposite one moves the other way), outside = rotate (Shift 15°, each frame turns around its own pivot), drag the center mark = rotation center, right-click = 180°/90° rotate and flip menu, right-drag inside = move only the drawing (rotation center and pivots stay put), right-drag outside = rotate around the box center (the rotation center turns with the drawing), right-drag a handle = margin (the drawing stays, only the box changes — shrinking crops what falls outside. Shift keeps ratio, Alt from center, Ctrl moves corners freely — what falls outside that shape is cropped). With a selection only that spot changes in every frame (growing the margin repeats the edge pixels) and pivots stay; without one the whole drawing changes and the pivots follow it. A part's area follows the box (rotating makes it as big as needed) and rotating or distorting removes its 9-slice border. Clicking another frame of the same layer keeps the transform going; picking another layer cancels it. The preview is shown without layer effects.</value></data>
   <data name="LayerTransform_Undo" xml:space="preserve"><value>Layer transform</value></data>
   <data name="LayerTransform_Shortcut" xml:space="preserve"><value>Transform whole layer (all frames)</value></data>
   <data name="Fold_Collapse" xml:space="preserve"><value>Collapse</value></data>
@@ -4002,4 +4002,33 @@ Stretch image: the image is stretched or squeezed to fill the new canvas exactly
   <data name="FileBrowser_GroupCollapse" xml:space="preserve"><value>Hide {count} exported files (Ctrl+←)</value></data>
   <data name="FileBrowser_GroupChildTip" xml:space="preserve"><value>
 Belongs to {project}</value></data>
+  <data name="FileInfo_MenuItem" xml:space="preserve"><value>Details…</value></data>
+  <data name="FileInfo_Title" xml:space="preserve"><value>Details</value></data>
+  <data name="FileInfo_Name" xml:space="preserve"><value>Name</value></data>
+  <data name="FileInfo_Location" xml:space="preserve"><value>Location</value></data>
+  <data name="FileInfo_Kind" xml:space="preserve"><value>Type</value></data>
+  <data name="FileInfo_Size" xml:space="preserve"><value>Size</value></data>
+  <data name="FileInfo_Created" xml:space="preserve"><value>Created</value></data>
+  <data name="FileInfo_Modified" xml:space="preserve"><value>Modified</value></data>
+  <data name="FileInfo_Pixels" xml:space="preserve"><value>Dimensions</value></data>
+  <data name="FileInfo_Canvas" xml:space="preserve"><value>Canvas size</value></data>
+  <data name="FileInfo_Frames" xml:space="preserve"><value>Frames</value></data>
+  <data name="FileInfo_Layers" xml:space="preserve"><value>Layers</value></data>
+  <data name="FileInfo_Parts" xml:space="preserve"><value>Parts</value></data>
+  <data name="FileInfo_Duration" xml:space="preserve"><value>Length</value></data>
+  <data name="FileInfo_FrameRate" xml:space="preserve"><value>Frame rate</value></data>
+  <data name="FileInfo_Contents" xml:space="preserve"><value>Contains</value></data>
+  <data name="FileInfo_FilesSize" xml:space="preserve"><value>Total file size</value></data>
+  <data name="FileInfo_FolderItems" xml:space="preserve"><value>{files} files, {folders} folders</value></data>
+  <data name="FileInfo_FolderSize" xml:space="preserve"><value>{size} (excluding subfolders)</value></data>
+  <data name="FileInfo_SizeValue" xml:space="preserve"><value>{size} ({bytes} bytes)</value></data>
+  <data name="FileInfo_KindFolder" xml:space="preserve"><value>Folder</value></data>
+  <data name="FileInfo_KindProject" xml:space="preserve"><value>Chickxel project</value></data>
+  <data name="FileInfo_KindImage" xml:space="preserve"><value>{format} image</value></data>
+  <data name="FileInfo_KindVideo" xml:space="preserve"><value>{format} video</value></data>
+  <data name="FileInfo_KindFile" xml:space="preserve"><value>{format} file</value></data>
+  <data name="FileInfo_Loading" xml:space="preserve"><value>Reading…</value></data>
+  <data name="FileInfo_Unreadable" xml:space="preserve"><value>Could not read</value></data>
+  <data name="FileInfo_NeedsFfmpeg" xml:space="preserve"><value>Needs ffmpeg to read</value></data>
+  <data name="FileInfo_Missing" xml:space="preserve"><value>The file or folder no longer exists.</value></data>
 </root>
