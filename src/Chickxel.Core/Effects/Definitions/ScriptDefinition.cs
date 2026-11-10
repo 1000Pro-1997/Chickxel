@@ -26,7 +26,7 @@ public static class ScriptDefinition
             if (!ScriptEffectRuntime.Render(image, effect, source, hooks?.Owner, hooks?.Cancellation ?? CancellationToken.None, out var moved)) hooks?.ReportScriptFailure();
             return moved;
         },
-        Padding, UsesOtherFrames, ClipsBySource, ErasesSource, MayMovePivot, new EffectCodecHooks(WriteSettings, WriteRoot, Read));
+        Padding, UsesOtherFrames, MayMovePivot, new EffectCodecHooks(WriteSettings, WriteRoot, Read));
 
     // 원문에 movePivot이 나오는 실행할 수 있는 스크립트만 그림을 옮긴 거리를 알릴 수 있다
     private static bool MayMovePivot(ScriptEffect effect)
@@ -40,12 +40,6 @@ public static class ScriptDefinition
     private static bool UsesOtherFrames(ScriptEffect effect)
         => ScriptLibrary.TrustOf(effect.ScriptHash) == ScriptTrust.Trusted
            && ScriptLibrary.InfoOf(effect.ScriptHash) is { } info && (info.ReadsOtherFrames || info.ReadsRenderedFrames);
-
-    // 클리핑 방식과 원본 지우기는 선언(clipsBySource·erasesSource)을 따른다. 실행할 수 없는 원문은 그리지 않으므로 기본 방식
-    private static bool ClipsBySource(ScriptEffect effect) => ScriptLibrary.Runnable(effect.ScriptHash) is { ClipsBySource: true };
-
-    private static bool ErasesSource(ScriptEffect effect)
-        => ScriptLibrary.Runnable(effect.ScriptHash) is { } program && program.ErasesSourceWith(effect.Settings);
 
     /// <summary>
     /// 실행할 수 있는 스크립트가 <c>deferred: true</c>를 선언했는지 — 다른 효과를 모두 입힌 뒤에 그린다(<see cref="LayerEffects.IsDeferred"/>).

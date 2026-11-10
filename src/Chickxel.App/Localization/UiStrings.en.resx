@@ -285,8 +285,6 @@ Run "{1}" in a terminal yourself, then click "Check again".</value></data>
   <data name="S_ColorPanel_SectionMenu_E11BC26CCA" xml:space="preserve"><value>Remove primary color from palette</value></data>
   <data name="S_ColorPanel_SectionMenu_F324D27E74" xml:space="preserve"><value>Delete palette</value></data>
   <data name="S_ColorPanel_SectionMenu_F614342A09" xml:space="preserve"><value>Load palette (.hex/.gpl)…</value></data>
-  <data name="S_ColorPickerModules_ColorSourcePicker_72F60739D7" xml:space="preserve"><value>When the current frame image is shown, click the pixel you want (transparent areas are not picked)</value></data>
-  <data name="S_ColorPickerModules_ColorSourcePicker_B498EFF5EB" xml:space="preserve"><value>Eyedropper — pick from image</value></data>
   <data name="S_ColorPickerModules_Swatches_3FF5B6C54B" xml:space="preserve"><value>Transparent</value></data>
   <data name="S_ColorPickers_Name_5E5B391CB2" xml:space="preserve"><value>Color wheel</value></data>
   <data name="S_ColorPickers_Name_73C3C4C63D" xml:space="preserve"><value>Sliders</value></data>
@@ -1757,7 +1755,7 @@ Unavailable items (skipped):
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_1D5510BF06" xml:space="preserve"><value>Extends contiguous area to diagonal neighbors</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_2077BDA76D" xml:space="preserve"><value>Apply transform (Enter) — one undo step</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_244D56A524" xml:space="preserve"><value>Brush</value></data>
-  <data name="S_ToolOptionsPanel_ToolOptionsPanel_2990A5AB95" xml:space="preserve"><value>Tolerance (%): 0 = exact color only. Higher values also fill similar colors (max RGBA channel difference ≤ this ratio × 255).</value></data>
+  <data name="S_ToolOptionsPanel_ToolOptionsPanel_2990A5AB95" xml:space="preserve"><value>Tolerance (%): 0 = exact color only, 100 = every color. Higher values also fill similar colors, measured by 'Compare by' (default: max RGBA channel difference ≤ this ratio × 255).</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_2ADAF37DF1" xml:space="preserve"><value>Horizontal symmetry drawing (Shift+X)</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_2B00AF339B" xml:space="preserve"><value>Anchor</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_2CD545CAF3" xml:space="preserve"><value>Changing image width or height adjusts the other to keep the original aspect ratio</value></data>
@@ -2365,7 +2363,7 @@ Unconfirmed changes made in this window are discarded and the window closes. If 
   <data name="Presets_Restored" xml:space="preserve"><value>Built-in presets restored.</value></data>
   <data name="EffectPreset_EffectsTab" xml:space="preserve"><value>Effects</value></data>
   <data name="EffectPreset_PresetsTab" xml:space="preserve"><value>Presets</value></data>
-  <data name="EffectPreset_PaletteHelp" xml:space="preserve"><value>The Effects tab has every effect you add one at a time: the official effects the app installs by default (Outline, Shadow and so on), then ones you made and ones from installed packages. The Presets tab has presets: several effects saved together with their values and clipping. Double-click or drag onto the effect list to add (dropping inserts at that spot). Get new effects from the Store or make your own in Tools > Effect Maker. Bring back deleted official effects with "Restore default effects" in the Asset Manager.</value></data>
+  <data name="EffectPreset_PaletteHelp" xml:space="preserve"><value>The Effects tab has every effect you add one at a time: the official effects the app installs by default (Outline, Shadow and so on), then ones you made and ones from installed packages. The Presets tab has presets: several effects saved together with their values and clipping. Double-click or drag onto the effect list to add (dropping inserts at that spot). Get new effects from the Store or make your own in AI > Effect Maker. Bring back deleted official effects with "Restore default effects" in the Asset Manager.</value></data>
   <data name="EffectPreset_OpenStore" xml:space="preserve"><value>Open Store</value></data>
   <data name="EffectPreset_OpenStoreTip" xml:space="preserve"><value>Find and install effects made by others in the Asset Manager's Store. Installed effects show up in this tab.</value></data>
   <data name="EffectPreset_SavePreset" xml:space="preserve"><value>Save Current Effects as Preset</value></data>
@@ -2388,7 +2386,7 @@ Unconfirmed changes made in this window are discarded and the window closes. If 
   <data name="EffectPreset_SaveError" xml:space="preserve"><value>Couldn't save the change: {0}</value></data>
   <data name="EffectPreset_ApplyTarget" xml:space="preserve"><value>Apply to</value></data>
   <data name="EffectPreset_ClipToPrevious" xml:space="preserve"><value>Clip to effect above</value></data>
-  <data name="EffectPreset_ClipTip" xml:space="preserve"><value>Applies based on the pixels changed by the preceding non-clipped effect. Reflection and afterimage also show moved pixels.</value></data>
+  <data name="EffectPreset_ClipTip" xml:space="preserve"><value>Draws this effect as if only the preceding non-clipped effect had been drawn: it sees just that effect's pixels, and its result is laid over the picture even where it spreads beyond them. Consecutive clipped effects build on each other's result.</value></data>
   <data name="EffectPreset_ClipUnavailableTip" xml:space="preserve"><value>Requires a base effect before it. Afterimage can't be used as a clipping base.</value></data>
   <data name="EffectPreset_ClippedSuffix" xml:space="preserve"><value> · clipped to effect above</value></data>
   <data name="EffectPreview_OpenLarge" xml:space="preserve"><value>Click to enlarge the before/after preview</value></data>
@@ -3405,6 +3403,11 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_ContentsGradients" xml:space="preserve"><value>Gradients: {0}</value></data>
   <data name="Assets_ContentsOther" xml:space="preserve"><value>{0}: {1}</value></data>
   <data name="EffectPreset_ShowInManager" xml:space="preserve"><value>Show in Asset Manager</value></data>
+  <data name="ViewOption_SettingsTip" xml:space="preserve"><value>Settings (same as right-clicking the button)</value></data>
+  <data name="GradientEditor_MenuTip" xml:space="preserve"><value>Gradient menu: save current, favorites, presets, manage (same as right-clicking the bar)</value></data>
+  <data name="Preview_ScaleMenuTip" xml:space="preserve"><value>Zoom list (same as right-clicking the button)</value></data>
+  <data name="Preview_BackgroundTip" xml:space="preserve"><value>Preview background: click for the next one (checker → black → white → gray → green → custom color); the arrow beside it or right-click opens the list</value></data>
+  <data name="Preview_BackgroundMenuTip" xml:space="preserve"><value>Background list (same as right-clicking the button)</value></data>
   <data name="EffectPreset_ReceivedTileTip" xml:space="preserve"><value>A received preset of {1} effects ({0}). Double-click or drag it into the effect list.</value></data>
   <data name="ScriptEffect_Name" xml:space="preserve"><value>Script effect</value></data>
   <data name="ScriptEffect_Description" xml:space="preserve"><value>An effect you write in JavaScript. Its source is saved with the project.</value></data>
@@ -3813,6 +3816,22 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Ai_Maker_CheckFailed" xml:space="preserve"><value>The check found {count} problem(s):</value></data>
   <data name="Ai_Script_GradientHints" xml:space="preserve"><value>Gradient hints (recommended, not problems; they don't change the check result. Unless the effect really needs one flat color, it is better to pick the color per pixel):</value></data>
   <data name="Ai_Scope_EffectMakerOnly" xml:space="preserve"><value>{tool}: not available in the Effect Maker AI. The Effect Maker AI can only look at the document and change the Effect Maker's source.</value></data>
+  <data name="Ai_Scope_ExternalOff" xml:space="preserve"><value>{tool}: not available over the external AI connection. Opening files and image generation work only after the user turns them on in Chickxel's Preferences &gt; AI Status; ask the user anything you need in your own conversation.</value></data>
+  <data name="AiDraw_Error_ExternalImage" xml:space="preserve"><value>Couldn't read subject_image as a PNG image. It must be a base64-encoded PNG without a data: prefix.</value></data>
+  <data name="McpBridge_Unavailable" xml:space="preserve"><value>Chickxel isn't running or its external AI connection is off. Start Chickxel and turn on "Allow external AI apps" in Preferences &gt; AI Status.</value></data>
+  <data name="McpBridge_Failed" xml:space="preserve"><value>Couldn't reach Chickxel: {message}</value></data>
+  <data name="ExternalMcp_Title" xml:space="preserve"><value>External AI connection</value></data>
+  <data name="ExternalMcp_Allow" xml:space="preserve"><value>Allow external AI apps</value></data>
+  <data name="ExternalMcp_Info" xml:space="preserve"><value>Other AI apps on this computer (Claude Desktop, Cursor, Claude Code and others) look at and edit your drawings with the AI tools of the running Chickxel. Paste the settings from "Copy connection settings" into that app's MCP settings; it then starts "Chickxel --mcp", which connects to this window. The connection is open only on this computer (127.0.0.1) and ends as soon as you turn it off. Each change is one undo step, and the tool that asks you questions isn't offered.</value></data>
+  <data name="ExternalMcp_OpenFile" xml:space="preserve"><value>Allow opening files (opens images and projects by path)</value></data>
+  <data name="ExternalMcp_Generate" xml:space="preserve"><value>Allow image generation (with your Codex, uses your Codex quota)</value></data>
+  <data name="ExternalMcp_CopyConfig" xml:space="preserve"><value>Copy connection settings</value></data>
+  <data name="ExternalMcp_CopyConfigTip" xml:space="preserve"><value>Copies the JSON to paste into another AI app's MCP settings. Copy and paste it again if you move Chickxel.</value></data>
+  <data name="ExternalMcp_Copied" xml:space="preserve"><value>Copied</value></data>
+  <data name="ExternalMcp_Status" xml:space="preserve"><value>External AI</value></data>
+  <data name="ExternalMcp_StatusTool" xml:space="preserve"><value>External AI: {tool}</value></data>
+  <data name="ExternalMcp_StatusTip" xml:space="preserve"><value>The external AI connection is on. When another AI app calls a tool, its name shows here briefly. Turn it off in Preferences &gt; AI Status.</value></data>
+  <data name="ExternalMcp_StartFailed" xml:space="preserve"><value>Couldn't turn on the external AI connection: {message}</value></data>
   <data name="Ai_Script_UnknownEffect" xml:space="preserve"><value>Couldn't find the script effect "{effect}". Check ids and names with list_script_effects.</value></data>
   <data name="EffectMakerAi_AttachCanvasTip" xml:space="preserve"><value>Attach the current frame of the open drawing (reference).</value></data>
   <data name="EffectMakerAi_AttachPreviewTip" xml:space="preserve"><value>Attach the frame now shown in the preview (the chick with the effect).</value></data>
@@ -4031,4 +4050,88 @@ Belongs to {project}</value></data>
   <data name="FileInfo_Unreadable" xml:space="preserve"><value>Could not read</value></data>
   <data name="FileInfo_NeedsFfmpeg" xml:space="preserve"><value>Needs ffmpeg to read</value></data>
   <data name="FileInfo_Missing" xml:space="preserve"><value>The file or folder no longer exists.</value></data>
+  <data name="FillMatch_Label" xml:space="preserve"><value>Compare by</value></data>
+  <data name="FillMatch_ChannelMax" xml:space="preserve"><value>Max channel difference (default)</value></data>
+  <data name="FillMatch_Rgb" xml:space="preserve"><value>RGB distance</value></data>
+  <data name="FillMatch_OkLab" xml:space="preserve"><value>OKLab (perceptual)</value></data>
+  <data name="FillMatch_Ciede2000" xml:space="preserve"><value>CIEDE2000 (perceptual, precise)</value></data>
+  <data name="FillMatch_Hue" xml:space="preserve"><value>Hue only</value></data>
+  <data name="FillMatch_Tip" xml:space="preserve"><value>Chooses how the tolerance is measured. In every mode 0% matches only the exact same color and 100% matches every color.
+Max channel difference (default): the largest R/G/B/A channel difference is at most ratio × 255.
+RGB distance: the straight-line R/G/B distance is at most ratio × 441 (255√3).
+OKLab: measures how different the colors look to the eye (black to white is 100%).
+CIEDE2000: measures the perceptual color difference ΔE00 (100% ≈ ΔE 120). More precise but a little slower.
+Hue only: ignores lightness and saturation and compares the hue angle (100% = 180°). Nearly colorless colors (grays, white, black) count as the same hue as each other and as farthest from colored ones.
+Transparent pixels compare alpha only; between visible pixels the alpha difference must also be at most ratio × 255.</value></data>
+  <data name="ColorPick_FromImage" xml:space="preserve"><value>Pick from image</value></data>
+  <data name="ColorPick_FromImageTip" xml:space="preserve"><value>Shows the current frame enlarged in a separate window; click a pixel to pick its color (transparent areas are not picked)</value></data>
+  <data name="ColorPick_FromScreen" xml:space="preserve"><value>Pick from screen</value></data>
+  <data name="ColorPick_FromScreenTip" xml:space="preserve"><value>Picks the color under the click anywhere on the screen, other apps included (shows a snapshot taken when you press it; Esc or right-click cancels)</value></data>
+  <data name="ColorPick_ImageTitle" xml:space="preserve"><value>Pick a color from the image</value></data>
+  <data name="ColorPick_ImageHint" xml:space="preserve"><value>Click = pick · Wheel = zoom · Drag = pan · Esc = close</value></data>
+  <data name="ColorPick_ImageNoPixel" xml:space="preserve"><value>Hover over the image to see the pixel's color</value></data>
+  <data name="ColorPick_ScreenHint" xml:space="preserve"><value>Click = pick color · Esc or right-click = cancel</value></data>
+  <data name="ColorPick_ScreenFailed" xml:space="preserve"><value>Could not capture the screen. ({error})</value></data>
+  <data name="ColorPick_ScreenMacPermission" xml:space="preserve"><value>To pick colors from the screen, allow Chickxel in System Settings → Privacy &amp; Security → Screen Recording, then restart the app.</value></data>
+  <data name="ColorPick_ScreenWayland" xml:space="preserve"><value>Not available in a Wayland session because other apps cannot be captured (works in an X11 session)</value></data>
+  <data name="ColorPick_ScreenNoDisplay" xml:space="preserve"><value>Not available because no X11 display (DISPLAY) was found</value></data>
+  <data name="ColorPick_ScreenUnsupported" xml:space="preserve"><value>Picking colors from the screen is not supported on this operating system</value></data>
+  <data name="EffectPreset_PreviewChickNone" xml:space="preserve"><value>None</value></data>
+  <data name="Timeline_CopyCelsImagesOnly" xml:space="preserve"><value>Copy cels — images only, no links (Ctrl+Shift+C)</value></data>
+  <data name="Timeline_CopyFramesImagesOnly" xml:space="preserve"><value>Copy frames — images only, no links (Ctrl+Shift+C)</value></data>
+  <data name="ShapePen_UndoLabel" xml:space="preserve"><value>Shape pen</value></data>
+  <data name="ShapePen_EmptySet" xml:space="preserve"><value>The selected set has no shapes — add one in the tool settings</value></data>
+  <data name="ShapePen_Group" xml:space="preserve"><value>Shape pen</value></data>
+  <data name="ShapePen_Info" xml:space="preserve"><value>Stamps the selected set's shape centered where you click (the shape's own colors and opacity — transparent pixels leave what is below, semi-transparent ones blend). Dragging stamps again every spacing (1 = a continuous trail); with Optimized spacing each stamp lands where the next shape touches the previous one without overlapping. When the set has several shapes, the order picks them (random, in order, or the selected one). Symmetry (stamps flipped), tile mode, the selection and drawing outside the canvas work like the pencil, and one stroke is one undo step. The next shape shows under the cursor. Click a shape tile to choose the next shape; add shapes from the selection, the current cel or PNG files (the transparent border is trimmed). Sets are saved in the app settings folder.</value></data>
+  <data name="ShapePen_Set" xml:space="preserve"><value>Set</value></data>
+  <data name="ShapePen_SetTip" xml:space="preserve"><value>Pick the shape set to stamp (the picture is the set's first shape)</value></data>
+  <data name="ShapePen_NewSetTip" xml:space="preserve"><value>New set</value></data>
+  <data name="ShapePen_NewSetName" xml:space="preserve"><value>Set {number}</value></data>
+  <data name="ShapePen_SetNamePrompt" xml:space="preserve"><value>Set name:</value></data>
+  <data name="ShapePen_NewSetHint" xml:space="preserve"><value>Created a new set — add shapes with Add shape</value></data>
+  <data name="ShapePen_RenameSetTip" xml:space="preserve"><value>Rename set</value></data>
+  <data name="ShapePen_DeleteSetTip" xml:space="preserve"><value>Delete set</value></data>
+  <data name="ShapePen_DeleteSet" xml:space="preserve"><value>Delete</value></data>
+  <data name="ShapePen_DeleteSetConfirm" xml:space="preserve"><value>Delete the set '{name}' and its {count} shapes? This can't be undone (built-in sets come back with Restore built-in sets).</value></data>
+  <data name="ShapePen_RestoreDefaultsTip" xml:space="preserve"><value>Restore built-in sets</value></data>
+  <data name="ShapePen_RestoreDefaults" xml:space="preserve"><value>Restore</value></data>
+  <data name="ShapePen_RestoreDefaultsConfirm" xml:space="preserve"><value>Restores the twenty built-in sets (leaves, autumn leaves, pine needles, grass, flowers, petals, sparkles, stars, dots, bubbles, clouds, pebbles, bricks, raindrops, snowflakes, hearts, smoke puffs, wood grain, cracks, coins and gems) to how they shipped. Deleted built-in sets come back, and shapes added to or removed from them, their names and order are reset. Your own sets are kept.</value></data>
+  <data name="ShapePen_AddShape" xml:space="preserve"><value>Add shape</value></data>
+  <data name="ShapePen_AddShapeTip" xml:space="preserve"><value>Adds a shape to the selected set: from the selection or the current cel (transparent border trimmed, opacity kept) or from PNG files</value></data>
+  <data name="ShapePen_AddFromSelection" xml:space="preserve"><value>From selection</value></data>
+  <data name="ShapePen_AddFromCel" xml:space="preserve"><value>From current cel</value></data>
+  <data name="ShapePen_AddFromPng" xml:space="preserve"><value>From PNG files…</value></data>
+  <data name="ShapePen_ShapeTip" xml:space="preserve"><value>Click to stamp this shape next · Right-click: delete</value></data>
+  <data name="ShapePen_DeleteShape" xml:space="preserve"><value>Delete shape</value></data>
+  <data name="ShapePen_DeleteShapeTip" xml:space="preserve"><value>Removes the selected shape (the next one to stamp) from the set</value></data>
+  <data name="ShapePen_Order" xml:space="preserve"><value>Order</value></data>
+  <data name="ShapePen_OrderRandom" xml:space="preserve"><value>Random</value></data>
+  <data name="ShapePen_OrderRandomTip" xml:space="preserve"><value>Each stamp picks any shape from the set (never the same one twice in a row). Remembered per set.</value></data>
+  <data name="ShapePen_OrderSequential" xml:space="preserve"><value>In order</value></data>
+  <data name="ShapePen_OrderSequentialTip" xml:space="preserve"><value>Each stamp uses the set's next shape (after the last comes the first). Remembered per set.</value></data>
+  <data name="ShapePen_Spacing" xml:space="preserve"><value>Spacing</value></data>
+  <data name="ShapePen_SpacingTip" xml:space="preserve"><value>Distance between stamps while dragging (px, 1 or more). 1 stamps on every pixel passed, leaving a continuous trail. Not used while Optimized spacing is on.</value></data>
+  <data name="ShapePen_Tint" xml:space="preserve"><value>Tint with current color</value></data>
+  <data name="ShapePen_TintTip" xml:space="preserve"><value>Keeps the shape's shading and opacity but recolors it with the primary color (right button = secondary): the shape's most common color becomes that color. Off = the shape's own colors.</value></data>
+  <data name="ShapePen_EmptyContent" xml:space="preserve"><value>Nothing to add — the pixels are all transparent</value></data>
+  <data name="ShapePen_TooBig" xml:space="preserve"><value>The shape is too big ({width}×{height}) — up to {max}px per side</value></data>
+  <data name="ShapePen_PngTitle" xml:space="preserve"><value>PNG files to add as shapes</value></data>
+  <data name="ShapePen_PngFilter" xml:space="preserve"><value>PNG images</value></data>
+  <data name="ShapePen_PngFailed" xml:space="preserve"><value>{name}: couldn't read the PNG — {error}</value></data>
+  <data name="ShapePen_Added" xml:space="preserve"><value>Added {count} shape(s) to '{set}' ({width}×{height})</value></data>
+  <data name="ShapePen_SaveFailed" xml:space="preserve"><value>Couldn't save the shape pen sets: {error}</value></data>
+  <data name="ShapePen_OrderSelected" xml:space="preserve"><value>Selected</value></data>
+  <data name="ShapePen_OrderSelectedTip" xml:space="preserve"><value>Always stamps the selected (highlighted) shape tile. Remembered per set.</value></data>
+  <data name="ShapePen_OptimizedSpacing" xml:space="preserve"><value>Optimized spacing</value></data>
+  <data name="ShapePen_OptimizedSpacingTip" xml:space="preserve"><value>While dragging, stamps where the next shape no longer overlaps the previous stamp, so stamps touch along the drag without overlapping. Measured on the shapes' opaque pixels (transparent borders don't count), using the actual next shape. While on, the spacing box is not used.</value></data>
+  <data name="ShapePen_ExportSet" xml:space="preserve"><value>Export set…</value></data>
+  <data name="ShapePen_ExportSetTip" xml:space="preserve"><value>Export set…: saves the selected set as one file (.chickxel-shapes — name, order and shapes with their opacity), to share it or move it to another computer.</value></data>
+  <data name="ShapePen_ImportSet" xml:space="preserve"><value>Import sets…</value></data>
+  <data name="ShapePen_ImportSetTip" xml:space="preserve"><value>Import sets…: adds set files (.chickxel-shapes, several at once) as new sets — existing sets are never overwritten and a number is added when a name is taken. A PNG becomes a set with that one shape. Dropping a set file on the window imports it too.</value></data>
+  <data name="ShapePen_SetFileType" xml:space="preserve"><value>Shape pen set</value></data>
+  <data name="ShapePen_ImportFileType" xml:space="preserve"><value>Shape pen sets and PNG</value></data>
+  <data name="ShapePen_Exported" xml:space="preserve"><value>Exported the set '{name}': {path}</value></data>
+  <data name="ShapePen_ExportFailed" xml:space="preserve"><value>Couldn't export the set: {error}</value></data>
+  <data name="ShapePen_Imported" xml:space="preserve"><value>Imported the set '{name}' ({count} shapes)</value></data>
+  <data name="ShapePen_ImportFailed" xml:space="preserve"><value>These files couldn't be read as shape pen sets: {names}</value></data>
 </root>

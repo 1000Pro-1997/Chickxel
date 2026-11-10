@@ -518,7 +518,15 @@ public sealed partial class SpriteProject
         var s = _stroke;
         _stroke = null;
         if (s is null) return false;
-        if (_strokeOverflowChanged) return CommitOverflowStroke(s, label);
+        FlushStrokeOutside(s.Key);
+        if (_strokeOverflowChanged)
+        {
+            if (!SameOverflow(_overflow.TryGetValue(s.Key, out var o) ? o : null, _strokeOverflowBefore)) return CommitOverflowStroke(s, label);
+            // 캔버스 밖 그림이 결국 그대로면 셀 픽셀만 기록한다.
+            SetOverflow(s.Key, _strokeOverflowBefore);
+            _strokeOverflowChanged = false;
+            _strokeOverflowBefore = null;
+        }
         var patch = PixelPatch.Create(s.Before, s.Image);
         if (patch is null)
         {

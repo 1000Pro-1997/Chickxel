@@ -367,6 +367,28 @@ internal static class ToolsShots
         ]);
     }
 
+    /// <summary>모양 펜 설정: ① 세트 ② 세트 단추(새·이름·지우기·되돌리기·내보내기·가져오기) ③ 모양 칸 ④ 모양 더하기·지우기 ⑤ 순서 ⑥ 간격 ⑦ 최적화 간격 ⑧ 물들이기.</summary>
+    [Shot("tools-shape-pen")]
+    public static void ShapePenSettings(ShotKit k)
+    {
+        var m = Open(k, ToolFileHelp.Sample(k));
+        ToolFileHelp.Tool(k, "모양 펜");
+        var ctx = ToolFileHelp.Ctx(m);
+        ctx.ShapePenSetId = "leaves";
+        k.Settle(300);
+        k.Save(m, crop: OptionsUpTo(m, Opt<Control>(m, "_shapePenBox")), marks:
+        [
+            Lead(Row(m, Opt<Control>(m, "_shapePenSets")), 4, 0),
+            Lead(m, Opt<Control>(m, "_shapePenSetButtons"), 4, 0),
+            Lead(m, Opt<Control>(m, "_shapePenShapes"), 4, 0),
+            Lead(m, Opt<Control>(m, "_shapePenShapeButtons"), 4, 0),
+            Lead(Row(m, Opt<Control>(m, "_shapePenOrder")), 4, 0),
+            Lead(m, Opt<Control>(m, "_shapePenSpacingRow"), 4, 0),
+            Lead(m, Opt<Control>(m, "_shapePenOptimized"), 4, 0),
+            Lead(m, Opt<Control>(m, "_shapePenTint"), 4, 0),
+        ]);
+    }
+
     /// <summary>밝게/어둡게 설정: ① 방식 ② 세기.</summary>
     [Shot("tools-dodge")]
     public static void Dodge(ShotKit k)
@@ -490,6 +512,7 @@ internal static class ToolsShots
         k.Save(m, crop: ToolFileHelp.Clamp(crop, m), marks:
         [
             Lead(Row(m, Opt<Control>(m, "_tolNum"))),
+            Lead(Row(m, Opt<Control>(m, "_fillMatch"))),
             Lead(m, Opt<Control>(m, "_contiguous")),
             Lead(m, Opt<Control>(m, "_diagonal")),
             Lead(Row(m, source)),
@@ -500,7 +523,26 @@ internal static class ToolsShots
         // 2: 스포이드도 같은 기준 설정.
         ToolFileHelp.Tool(k, "스포이드");
         k.Save(m, "tools-fill-2", crop: OptionsUpTo(m, Opt<Control>(m, "_pickerBox")),
-            marks: [Lead(Row(m, Opt<Control>(m, "_pickSource")))], firstNumber: 5);
+            marks: [Lead(Row(m, Opt<Control>(m, "_pickSource")))], firstNumber: 6);
+    }
+
+    /// <summary>캔버스 밖에 그리기: 일반 레이어에서 연필로 캔버스 안에서 오른쪽 밖까지 끈 획 — 캔버스 밖 부분도 또렷이 칠해져 보인다.</summary>
+    [Shot("tools-move-paint")]
+    public static void PaintOutside(ShotKit k)
+    {
+        var m = Open(k, ToolFileHelp.Sample(k));
+        ShotKit.Call(m, "SetPixelGrid", false);
+        var ctx = ToolFileHelp.Ctx(m);
+        ToolFileHelp.Tool(k, "연필");
+        ctx.BrushSize = 3;
+        ctx.Primary = new Color32(228, 59, 68);
+        k.Settle(200);
+        int w = ctx.CanvasWidth, h = ctx.CanvasHeight;
+        k.Drag(m, ToolFileHelp.At(m, w - 12, h * 0.3), ToolFileHelp.At(m, w + 14, h * 0.45));
+        k.Drag(m, ToolFileHelp.At(m, w + 14, h * 0.45), ToolFileHelp.At(m, w - 8, h * 0.7));
+        k.Settle(300);
+        var area = ToolFileHelp.SpriteRect(m);
+        k.Save(m, crop: new Rect(area.X - 20, area.Y - 20, area.Width + 40 + (ToolFileHelp.At(m, w + 20, 0).X - area.Right), area.Height + 40));
     }
 
     [Shot("tools-select")]

@@ -59,7 +59,7 @@ internal sealed class ColorPickerEditor : StackPanel
     }
 }
 
-/// <summary>색 편집기 오른쪽에서 앱 팔레트와 현재 프레임 스포이드를 제공하는 재사용 모듈.</summary>
+/// <summary>색 편집기 오른쪽에서 앱 팔레트와 스포이드(현재 프레임 창·화면 전체 — <see cref="ImagePickWindow"/>·<see cref="ScreenColorPicker"/>)를 제공하는 재사용 모듈.</summary>
 internal sealed class ColorSourcePicker : ScrollViewer
 {
     private readonly List<PaletteSection> _palettes = new();
@@ -89,22 +89,29 @@ internal sealed class ColorSourcePicker : ScrollViewer
             body.Children.Add(palette);
         }
 
-
+        // 스포이드: 그림에서 집기(현재 프레임을 따로 창에 크게) · 화면에서 집기(다른 앱을 포함한 화면 전체).
         if (sources.Image() is { } image)
+            body.Children.Add(Wide(Ui.Button(VectorIcon.Pipette, UiStrings.ColorPick_FromImage,
+                (s, _) => ImagePickWindow.Open(s as Visual, image, pick)).Tip(UiStrings.ColorPick_FromImageTip)));
+        var fromScreen = Wide(Ui.Button(VectorIcon.Monitor, UiStrings.ColorPick_FromScreen, (s, _) => ScreenColorPicker.Start(s as Visual, pick)));
+        if (ScreenColorPicker.UnavailableReason is { } reason)
         {
-            var picker = new ImagePicker(image, pick) { IsVisible = false };
-            var dropper = new ToggleButton
-            {
-                Content = UiStrings.S_ColorPickerModules_ColorSourcePicker_B498EFF5EB,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                HorizontalContentAlignment = HorizontalAlignment.Center,
-            }.Tip(UiStrings.S_ColorPickerModules_ColorSourcePicker_72F60739D7);
-            dropper.IsCheckedChanged += (_, _) => picker.IsVisible = dropper.IsChecked == true;
-            body.Children.Add(dropper);
-            body.Children.Add(picker);
+            fromScreen.IsEnabled = false;
+            ToolTip.SetShowOnDisabled(fromScreen, true);
+            fromScreen.Tip(reason);
         }
+        else fromScreen.Tip(UiStrings.ColorPick_FromScreenTip);
+        body.Children.Add(fromScreen);
 
         Content = body;
+    }
+
+    /// <summary>본문 폭을 채우고 내용을 가운데에 둔 단추.</summary>
+    private static Button Wide(Button button)
+    {
+        button.HorizontalAlignment = HorizontalAlignment.Stretch;
+        button.HorizontalContentAlignment = HorizontalAlignment.Center;
+        return button;
     }
 
     public void SetSelected(Color32 color)
@@ -138,73 +145,5 @@ internal sealed class ColorSourcePicker : ScrollViewer
     private sealed class SwatchCell(Color32 color) : Control
     {
         public override void Render(DrawingContext context) => ImageUtil.DrawSwatch(context, new Rect(Bounds.Size), color);
-    }
-
-    private sealed class ImagePicker : Control
-    {
-        private const double Box = 220;
-        private readonly PixelImage _image;
-        private readonly WriteableBitmap _bitmap;
-        private readonly Action<Color32> _pick;
-
-        public ImagePicker(PixelImage image, Action<Color32> pick)
-        {
-            _image = image;
-            _bitmap = ImageUtil.ToBitmap(image);
-            _pick = pick;
-            Width = Box;
-            Height = Box;
-            Cursor = new Cursor(StandardCursorType.Cross);
-            ClipToBounds = true;
-        }
-
-        private Rect ImageRect
-        {
-            get
-            {
-                double fit = Math.Min(Box / _image.Width, Box / _image.Height);
-                double scale = fit >= 1 ? Math.Floor(fit) : fit;
-                double width = _image.Width * scale, height = _image.Height * scale;
-                return new Rect((Box - width) / 2, (Box - height) / 2, width, height);
-            }
-        }
-
-        public override void Render(DrawingContext context)
-        {
-            var rect = ImageRect;
-            context.FillRectangle(AppTheme.InputBrush, new Rect(Bounds.Size));
-            AppTheme.DrawChecker(context, rect, 6);
-            using (ImageUtil.Pixelated(context))
-                context.DrawImage(_bitmap, new Rect(0, 0, _image.Width, _image.Height), rect);
-        }
-
-        protected override void OnPointerPressed(PointerPressedEventArgs e)
-        {
-            base.OnPointerPressed(e);
-            e.Pointer.Capture(this);
-            PickAt(e.GetPosition(this));
-        }
-
-        protected override void OnPointerMoved(PointerEventArgs e)
-        {
-            base.OnPointerMoved(e);
-            if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) PickAt(e.GetPosition(this));
-        }
-
-        protected override void OnPointerReleased(PointerReleasedEventArgs e)
-        {
-            base.OnPointerReleased(e);
-            e.Pointer.Capture(null);
-        }
-
-        private void PickAt(Avalonia.Point point)
-        {
-            var rect = ImageRect;
-            int x = (int)Math.Floor((point.X - rect.X) / rect.Width * _image.Width);
-            int y = (int)Math.Floor((point.Y - rect.Y) / rect.Height * _image.Height);
-            if (!_image.Contains(x, y)) return;
-            var color = _image.Get(x, y);
-            if (color.A > 0) _pick(color);
-        }
     }
 }

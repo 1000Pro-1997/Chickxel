@@ -43,7 +43,7 @@ public sealed class GradientEditor : StackPanel
     /// <summary>Spatial mode combo index of <see cref="EffectGradientShape.Uniform"/> (after the static/animated pairs).</summary>
     private const int UniformModeIndex = 8;
 
-    /// <param name="presetMenu">False hides the right-click preset menu (the presets window edits the catalog itself).</param>
+    /// <param name="presetMenu">False hides the preset menu (bar right-click and the menu button at the bar's end — the presets window edits the catalog itself).</param>
     public GradientEditor(Func<Color32>? primaryColor = null, bool spatialAngle = false, bool presetMenu = true)
     {
         Spacing = 4;
@@ -99,7 +99,27 @@ public sealed class GradientEditor : StackPanel
             _ditherMode = (GradientDither)_dither.SelectedIndex;
             Changed?.Invoke();
         };
-        Children.Add(_bar);
+        // 막대 끝 얇은 아래 화살표 단추: 우클릭하지 않아도 보이게, 막대 우클릭과 같은 프리셋 메뉴를 연다.
+        if (presetMenu)
+        {
+            var menu = new Button
+            {
+                Content = Ui.Icon(VectorIcon.ChevronDown, 9),
+                Padding = new Thickness(2, 7),
+                MinWidth = 0,
+                MinHeight = 0,
+                Focusable = false,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(4, 0, 0, 0),
+            }.Tip(UiStrings.GradientEditor_MenuTip);
+            menu.Click += (_, _) => ShowPresetMenu(menu);
+            var barRow = new DockPanel { LastChildFill = true };
+            DockPanel.SetDock(menu, Dock.Right);
+            barRow.Children.Add(menu);
+            barRow.Children.Add(_bar);
+            Children.Add(barRow);
+        }
+        else Children.Add(_bar);
         Children.Add(Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_3C9416C632), _position, Ui.Label("%"), _delete));
         Children.Add(_colorRow);
         Children.Add(_alphaRow);

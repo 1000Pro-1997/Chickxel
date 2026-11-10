@@ -208,9 +208,14 @@ public sealed class PixelateResult
     public required IReadOnlyList<PixelImage> BaseFrames { get; init; }
     /// <summary>
     /// 결과 픽셀 자리의 원본 칸 색(팔레트 전, <see cref="Pixelator.CellColor"/>와 같은 색): <see cref="Frames"/>와 같은 크기·배치, 칸이 없거나 투명한 자리는 투명.
-    /// 색 빼기가 뺀 픽셀을 이 색에 가장 가까운 남은 색으로 바꾼다.
+    /// 크게 보기의 원본 칸 표시가 쓴다.
     /// </summary>
     public required IReadOnlyList<PixelImage> SourceColors { get; init; }
+    /// <summary>
+    /// 고정 색·색 빼기가 견주는 색: <see cref="SourceColors"/>와 같되 팔레트 뒤 정리가 바꾼 픽셀은 정리한 색(<see cref="Pixelator.PaletteEditSources"/>).
+    /// 고정 색은 이 색이 지금 색보다 고정 색에 더 가까운 픽셀만, 색 빼기는 뺀 픽셀을 이 색에 가장 가까운 남은 색으로 바꾼다.
+    /// </summary>
+    public required IReadOnlyList<PixelImage> PaletteEditSources { get; init; }
     public required IReadOnlyList<PixelateFrameMap> Maps { get; init; }
     /// <summary>결과에 쓰인 색(밝기 순).</summary>
     public required IReadOnlyList<Color32> Palette { get; init; }
@@ -405,6 +410,8 @@ public static class Pixelator
 
         // 2) 팔레트.
         int resolved = ApplyPalette(cells, s.Palette, rec);
+        // 정리 전 팔레트 색: 정리가 바꾼 픽셀을 알아 고정 색·색 빼기가 되돌리지 않게(PixelateResult.PaletteEditSources).
+        var paletted = cells.Select(c => c.Clone()).ToArray();
         ct.ThrowIfCancellationRequested();
 
         // 3) 정리.
@@ -431,13 +438,18 @@ public static class Pixelator
         // 4) 캔버스에 놓기. 원본 칸 색도 결과와 같은 자리로(칸 (c, r) → 캔버스 (c + OffsetX, r + OffsetY)).
         var (frames, maps) = Arrange(src, s, cells, layouts, grids);
         var sourceColors = new List<PixelImage>(nf);
+        var palettedFrames = new List<PixelImage>(nf);
         for (int f = 0; f < nf; f++)
         {
             var canvas = new PixelImage(frames[f].Width, frames[f].Height);
             canvas.Blit(raw[f], maps[f].OffsetX, maps[f].OffsetY);
             sourceColors.Add(canvas);
+            var before = new PixelImage(frames[f].Width, frames[f].Height);
+            before.Blit(paletted[f], maps[f].OffsetX, maps[f].OffsetY);
+            palettedFrames.Add(before);
         }
         if (s.Consistency.TemporalMajority) PixelCleanup.TemporalMajority(frames, s.Consistency.MaxContrast);
+        var editSources = PaletteEditSources(frames, palettedFrames, sourceColors);
         PixelTrace? pixelTrace = null;
         if (rec is not null)
         {
@@ -466,6 +478,7 @@ public static class Pixelator
             Frames = frames,
             BaseFrames = frames,
             SourceColors = sourceColors,
+            PaletteEditSources = editSources,
             Maps = maps,
             Palette = palette,
             Scale = scale,
@@ -481,6 +494,27 @@ public static class Pixelator
         return s.Palette.PinnedColors.Count == 0 && s.Palette.ExcludedColors.Count == 0
             ? result
             : WithPaletteEdits(result, s.Palette.PinnedColors, s.Palette.ExcludedColors);
+    }
+
+    /// <summary>
+    /// 고정 색·색 빼기가 견줄 색(<see cref="PixelateResult.PaletteEditSources"/>): 원본 칸 색, 다만 팔레트 뒤 정리(외곽선 맞추기·얇게·하나로·외톨이·구멍·L자·
+    /// 프레임 떨림 줄이기)가 팔레트 색에서 바꾼 픽셀은 그 정리한 색. 원본 칸 색으로 견주면 정리가 일부러 바꾼 픽셀(예: 겹 외곽선을 벗겨 안쪽 밝은 색으로 바꾼
+    /// 자리)이 원본 칸 색(어두운 외곽선)에 더 가까운 고정 색으로 다시 바뀐다.
+    /// </summary>
+    private static List<PixelImage> PaletteEditSources(IReadOnlyList<PixelImage> frames, IReadOnlyList<PixelImage> paletted, IReadOnlyList<PixelImage> sources)
+    {
+        var result = new List<PixelImage>(frames.Count);
+        for (int f = 0; f < frames.Count; f++)
+        {
+            var img = sources[f].Clone();
+            var px = img.Pixels;
+            var now = frames[f].Pixels;
+            var before = paletted[f].Pixels;
+            for (int i = 0; i < px.Length; i++)
+                if (now[i] != before[i]) px[i] = now[i];
+            result.Add(img);
+        }
+        return result;
     }
 
     /// <summary>
@@ -506,10 +540,10 @@ public static class Pixelator
         {
             var metric = ColorMetric.For(settings.Palette);
             var copy = r.BaseFrames.Select(f => f.Clone()).ToList();
-            int changed = PaletteEdits.AddPins(copy, r.SourceColors, pinned, metric);
+            int changed = PaletteEdits.AddPins(copy, r.PaletteEditSources, pinned, metric);
             Note(PixelTraceStep.Pinned, copy);
             var replaced = new PixelImage?[copy.Count];
-            if (PaletteEdits.Apply(copy, r.SourceColors, excluded, pinned, replaced, metric) > 0)
+            if (PaletteEdits.Apply(copy, r.PaletteEditSources, excluded, pinned, replaced, metric) > 0)
             {
                 changed++;
                 excludedFrames = replaced.Select((x, i) => x ?? new PixelImage(copy[i].Width, copy[i].Height)).ToList();
@@ -523,6 +557,7 @@ public static class Pixelator
             Frames = frames,
             BaseFrames = r.BaseFrames,
             SourceColors = r.SourceColors,
+            PaletteEditSources = r.PaletteEditSources,
             Maps = r.Maps,
             Palette = ReferenceEquals(frames, r.Frames) ? r.Palette : UsedColors(frames),
             Scale = r.Scale,

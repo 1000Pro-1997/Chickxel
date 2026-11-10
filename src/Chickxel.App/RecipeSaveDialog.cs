@@ -7,8 +7,8 @@ using Chickxel.Core.Assets;
 namespace Chickxel.App;
 
 /// <summary>
-/// 효과 프리셋(레시피) 저장 창: 이름과 미리보기 병아리(<see cref="PreviewChicks"/>, 번호 = 목록 차례 + 1).
-/// 고른 병아리는 레시피에 남아 온라인에 올릴 때 패키지 미리보기(<see cref="AssetPreview.Package"/>)가 된다.
+/// 효과 프리셋(레시피) 저장 창: 이름과 미리보기 병아리(<see cref="PreviewChicks"/>, 첫 칸 = 없음, 번호 = 목록 차례 + 1).
+/// 고른 병아리는 레시피에 남아 온라인에 올릴 때 패키지 미리보기(<see cref="AssetPreview.Package"/>)가 된다(없음이면 빈 캔버스).
 /// </summary>
 public sealed class RecipeSaveDialog : DialogBase
 {
@@ -37,8 +37,9 @@ public sealed class RecipeSaveDialog : DialogBase
             ItemsPanel = new FuncTemplate<Panel?>(() => new WrapPanel { Orientation = Orientation.Horizontal }),
         };
         ScrollViewer.SetHorizontalScrollBarVisibility(_chicks, ScrollBarVisibility.Disabled);
+        _chicks.Items.Add(Tile(new Border { Height = 20 * ChickScale }, UiStrings.EffectPreset_PreviewChickNone, UiStrings.EffectPreset_PreviewChickNone));
         for (int i = 0; i < PreviewChicks.Ids.Count; i++) _chicks.Items.Add(ChickItem(PreviewChicks.Ids[i], i + 1));
-        _chicks.SelectedIndex = Math.Max(0, PreviewChicks.Ids.ToList().IndexOf(chick));
+        _chicks.SelectedIndex = chick == PreviewChicks.None ? 0 : Math.Max(0, PreviewChicks.Ids.ToList().IndexOf(chick)) + 1;
 
         // 대상 도움말(F1): 창 = "효과 프리셋"의 저장 창 그림, 이름 = ④, 미리보기 병아리 = ⑤(같은 문단)
         const string page = "screen-effect-recipes";
@@ -64,7 +65,7 @@ public sealed class RecipeSaveDialog : DialogBase
 
     public string Value => _name.Text?.Trim() ?? "";
 
-    public string Chick => PreviewChicks.Ids[Math.Max(0, _chicks.SelectedIndex)];
+    public string Chick => _chicks.SelectedIndex <= 0 ? PreviewChicks.None : PreviewChicks.Ids[_chicks.SelectedIndex - 1];
 
     /// <summary>이름과 병아리를 묻는다. 취소하거나 이름이 비었으면 null.</summary>
     public static (string Name, string Chick)? Ask(Visual? owner, string name, string chick, IEnumerable<string> names)
@@ -82,6 +83,13 @@ public sealed class RecipeSaveDialog : DialogBase
             HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Bottom,
         };
         RenderOptions.SetBitmapInterpolationMode(view, BitmapInterpolationMode.None);
+        return Tile(new Border { Height = 20 * ChickScale, Child = view }, number.ToString(CultureInfo.CurrentCulture),
+            string.Format(CultureInfo.CurrentCulture, UiStrings.EffectPreset_PreviewChickTip, number));
+    }
+
+    /// <summary>고르기 칸 하나: 위에 그림 자리, 아래에 글(번호나 "없음").</summary>
+    private static ListBoxItem Tile(Border picture, string label, string tip)
+    {
         var item = new ListBoxItem
         {
             Width = 64, Padding = new Thickness(4),
@@ -90,12 +98,12 @@ public sealed class RecipeSaveDialog : DialogBase
                 Spacing = 2,
                 Children =
                 {
-                    new Border { Height = 20 * ChickScale, Child = view },
-                    new TextBlock { Text = number.ToString(CultureInfo.CurrentCulture), HorizontalAlignment = HorizontalAlignment.Center, Foreground = AppTheme.DimTextBrush },
+                    picture,
+                    new TextBlock { Text = label, HorizontalAlignment = HorizontalAlignment.Center, Foreground = AppTheme.DimTextBrush },
                 },
             },
         };
-        ToolTip.SetTip(item, string.Format(CultureInfo.CurrentCulture, UiStrings.EffectPreset_PreviewChickTip, number));
+        ToolTip.SetTip(item, tip);
         return item;
     }
 }

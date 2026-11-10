@@ -35,6 +35,8 @@ public sealed class EffectMakerWindow : Window
     private const int BaseMinWidth = 980;
     /// <summary>작게 보기의 미리보기 크기(메인 편집기에서 장면을 고치는 동안).</summary>
     private const int CompactPreviewBox = 200;
+    /// <summary>저장하지 않은 변경이 있을 때 저장 단추에 붙이는 클래스(빨간 바탕을 마우스를 올려도 유지).</summary>
+    private const string UnsavedClass = "unsaved";
     private static EffectMakerWindow? s_window;
 
     private readonly EditorContext _ctx;
@@ -106,6 +108,8 @@ public sealed class EffectMakerWindow : Window
     private Ai.EffectMakerAiPanel? _aiPanel;
     /// <summary>AI 칸을 열며 창을 넓힌 너비(닫을 때 그만큼 줄임, 최대화 중이면 0).</summary>
     private double _aiGrowth;
+    /// <summary>창을 처음 띄울 때 AI 칸 너비를 미리 넣어 두었음(<see cref="ShowAiPanel"/>가 다시 넓히지 않음).</summary>
+    private bool _aiPreSized;
     private Ai.ScriptGuideWindow? _rules;
     /// <summary>창 전체 내용과 작게 보기 내용(미리보기만 — <see cref="Compact"/>). 미리보기는 둘 사이를 옮겨 다닌다.</summary>
     private readonly Control _fullContent, _compactContent;
@@ -127,10 +131,10 @@ public sealed class EffectMakerWindow : Window
     /// <summary>미리보기 효과의 색 그라데이션(슬롯 = <see cref="ScriptColorSlots"/>). 미리보기·지금 레이어에 넣기에만 쓰고 원문에는 쓰지 않는다.</summary>
     private readonly Dictionary<string, EffectColorGradient> _previewGradients = new(StringComparer.Ordinal);
     /// <summary>
-    /// 미리보기 효과의 공통 값(빠르기 곡선·반복·반복 횟수·피벗 같이 옮기기) 중 원문 선언과 다르게 고른 것(null = 선언 값을 따름).
+    /// 미리보기 효과의 공통 값(빠르기 곡선·반복·반복 횟수·피벗 같이 옮기기·확인할 때 캔버스 늘리기) 중 원문 선언과 다르게 고른 것(null = 선언 값을 따름).
     /// 미리보기·지금 레이어에 넣기에 쓰고, 원문에는 "기본값으로"를 눌러야 쓴다(<see cref="ScriptDeclarationEdit.SetEffectDefaults"/>).
     /// </summary>
-    private (EffectEasing? Easing, EffectRepeat? Repeat, int? RepeatCount, bool? MovePivot) _previewCommon;
+    private (EffectEasing? Easing, EffectRepeat? Repeat, int? RepeatCount, bool? MovePivot, bool? ExpandCanvas) _previewCommon;
     private bool _loading, _syncingList, _syncingInfo, _syncingFrames;
     /// <summary>
     /// 마지막으로 불러오거나 저장한 원문(새 스크립트면 null). 고친 것이 있는지는 이것과 견줘 정한다 — 편집기의 TextChanged는 값을 넣은 뒤에 늦게 올 수 있어
@@ -175,9 +179,27 @@ public sealed class EffectMakerWindow : Window
         AppAssets.ShowProblems(owner);
         var window = new EffectMakerWindow(ctx);
         s_window = window;
+        // AI 칸은 처음부터 열어 두므로 그 너비까지 넣은 크기로 띄운다(띄운 뒤 넓히면 화면 밖으로 잘림). 주인 창 화면의 작업 영역에 맞춘다.
+        double step = AiPanelWidth + window._aiHost.Margin.Left;
+        window.Width += step;
+        window.MinWidth = BaseMinWidth + step;
+        window._aiPreSized = true;
+        if (owner.Screens.ScreenFromWindow(owner) is { } screen)
+        {
+            window.Width = Math.Min(window.Width, screen.WorkingArea.Width / screen.Scaling);
+            window.Height = Math.Min(window.Height, screen.WorkingArea.Height / screen.Scaling);
+        }
         window.Show(owner);
         if (assetId is not null) window.TryOpen(assetId);
         else if (window.Entries().FirstOrDefault() is { } first) window.TryOpen(first.Id);
+        // 고칠 수 있는 효과를 열었으면 AI 칸을 연다. 열지 못했으면(단추가 꺼짐·AI 서버 실패) 넣어 둔 너비를 되돌린다.
+        if (window._aiToggle.IsEnabled) window._aiToggle.IsChecked = true;
+        if (window._aiPreSized)
+        {
+            window._aiPreSized = false;
+            window.MinWidth = BaseMinWidth;
+            window.Width = Math.Max(BaseMinWidth, window.Width - step);
+        }
     }
 
     private EffectMakerWindow(EditorContext ctx)
@@ -271,6 +293,7 @@ public sealed class EffectMakerWindow : Window
         _center.Margin = new Thickness(8, 0);
 
         // ── 오른쪽: 미리보기·상태
+        _chick.Items.Add(new ComboBoxItem { Content = new TextBlock { Text = UiStrings.EffectPreset_PreviewChickNone, VerticalAlignment = VerticalAlignment.Center } });
         for (int i = 0; i < PreviewChicks.Ids.Count; i++) _chick.Items.Add(ChickItem(PreviewChicks.Ids[i], i + 1));
         _chick.SelectionChanged += (_, _) => ChickChanged();
         _endChick.Items.Add(new ComboBoxItem { Content = new TextBlock { Text = UiStrings.EffectMaker_EndChickNone, VerticalAlignment = VerticalAlignment.Center } });
@@ -349,6 +372,8 @@ public sealed class EffectMakerWindow : Window
         _copy = Ui.Button(VectorIcon.Copy, UiStrings.Assets_CopyToPersonal, (_, _) => CopySelected()).Tip(UiStrings.Assets_CopyToPersonalTip)
             .HelpAt(HelpPage, anchor: "Received effects are read-only");
         _save = Ui.Button(VectorIcon.Save, UiStrings.EffectMaker_Save, (_, _) => Save()).Tip(UiStrings.EffectMaker_SaveTip).HelpAt(HelpPage, anchor: "Save (Ctrl+S) saves it");
+        ToolTip.SetShowOnDisabled(_save, true);
+        Ui.KeepFillOnHover(_save, UnsavedClass);
         _insert = Ui.Button(VectorIcon.Plus, UiStrings.EffectMaker_Insert, (_, _) => InsertIntoLayer()).Tip(UiStrings.EffectMaker_InsertTip).HelpAt(HelpPage, anchor: "Save (Ctrl+S) saves it");
         _validate = Ui.Button(VectorIcon.Check, UiStrings.EffectMaker_Validate, async (_, _) => await ValidateAsync()).Tip(UiStrings.EffectMaker_ValidateTip)
             .HelpAt(HelpPage, anchor: "Check: runs the install-time");
@@ -760,7 +785,20 @@ public sealed class EffectMakerWindow : Window
     {
         bool editable = _open && !Foreign;
         _code.IsReadOnly = !editable;
-        _save.IsEnabled = editable;
+        // 저장은 고친 것이 있을 때만 — 그때는 빨간 바탕으로 눈에 띄게(픽셀로 정리 프리셋의 저장 단추와 같은 색)
+        bool unsaved = editable && Dirty;
+        _save.IsEnabled = unsaved;
+        _save.Classes.Set(UnsavedClass, unsaved);
+        if (unsaved)
+        {
+            _save.Background = AppTheme.UnsavedBrush;
+            _save.Foreground = Brushes.White;
+        }
+        else
+        {
+            _save.ClearValue(BackgroundProperty);
+            _save.ClearValue(ForegroundProperty);
+        }
         _copy.IsVisible = Foreign;
         _insert.IsEnabled = _open && _ctx.Project is not null;
         _validate.IsEnabled = _open;
@@ -794,7 +832,8 @@ public sealed class EffectMakerWindow : Window
 
     /// <summary>미리보기 효과의 공통 값이 원문 선언의 처음 값과 다른지.</summary>
     private static bool CommonDiffers(ScriptEffectProgram program, ScriptEffect effect)
-        => effect.Easing != program.Easing || effect.Repeat != program.Repeat || effect.RepeatCount != program.RepeatCount || effect.MovePivot != program.MovePivot;
+        => effect.Easing != program.Easing || effect.Repeat != program.Repeat || effect.RepeatCount != program.RepeatCount || effect.MovePivot != program.MovePivot
+           || effect.ExpandCanvas != program.ExpandCanvas;
 
     /// <summary>창 제목·묻는 글에 보일 이름: 화면 언어의 번역(없으면 선언의 <c>name</c>).</summary>
     private string CurrentName() => _program?.NameFor(CultureInfo.CurrentUICulture) ?? UiStrings.ScriptEffect_Name;
@@ -930,6 +969,7 @@ public sealed class EffectMakerWindow : Window
             Repeat = _previewCommon.Repeat ?? effect.Repeat,
             RepeatCount = _previewCommon.RepeatCount ?? effect.RepeatCount,
             MovePivot = _previewCommon.MovePivot ?? effect.MovePivot,
+            ExpandCanvas = _previewCommon.ExpandCanvas ?? effect.ExpandCanvas,
         };
     }
 
@@ -948,7 +988,7 @@ public sealed class EffectMakerWindow : Window
         _previewGradients.Clear();
         foreach (var (slot, gradient) in after.ColorGradients) _previewGradients[slot] = gradient;
         _previewCommon = (Unless(after.Easing, program.Easing), Unless(after.Repeat, program.Repeat), Unless(after.RepeatCount, program.RepeatCount),
-            Unless(after.MovePivot, program.MovePivot));
+            Unless(after.MovePivot, program.MovePivot), Unless(after.ExpandCanvas, program.ExpandCanvas));
         UpdateValueButtons();
         _debounce.Restart();
     }
@@ -983,6 +1023,8 @@ public sealed class EffectMakerWindow : Window
         var scene = _scene;
         int steps = program.PreviewFrames;
         var values = new Dictionary<string, object>(_previewValues, StringComparer.Ordinal);
+        // 확인할 때 캔버스를 늘리지 않으면 병아리 캔버스 밖은 잘릴 부분이라 효과 창처럼 흐리게 보인다(장면은 이미 장면 캔버스로 잘림)
+        bool clip = !effects[0].ExpandCanvas;
         var cancel = new CancellationTokenSource();
         _render = cancel;
         if (report) SetStatus(UiStrings.EffectMaker_Rendering, busy: true);
@@ -996,6 +1038,7 @@ public sealed class EffectMakerWindow : Window
             var path = program.ExecutionPath;
             var frames = new List<PixelImage>();
             PixelImage original;
+            Rectangle? canvas = null;
             if (scene is not null)
             {
                 // 장면 위: 병아리 레이어에 효과를 입혀 장면 레이어와 함께 그린다. 실행 오류·시간은 같은 img·ctx(레이어 포함)로 직접 돌려 본다
@@ -1025,8 +1068,9 @@ public sealed class EffectMakerWindow : Window
                 for (int step = 0; step < steps && !cancel.IsCancellationRequested; step++)
                     frames.Add(AssetPreview.Render(effects, chick, step, steps, end, motion, placement));
                 original = AssetPreview.Original(effects, chick, 0, steps, end, motion, placement);
+                if (clip) canvas = AssetPreview.Canvas(effects, chick, steps, end, motion, placement);
             }
-            return (frames, original, runError, msPerFrame, path);
+            return (frames, original, canvas, runError, msPerFrame, path);
         }, cancel.Token).ContinueWith(task =>
         {
             if (cancel.IsCancellationRequested || task.IsCanceled || !ReferenceEquals(_render, cancel)) return;
@@ -1037,8 +1081,8 @@ public sealed class EffectMakerWindow : Window
                     SetStatus(string.Format(CultureInfo.CurrentCulture, UiStrings.EffectMaker_RenderFailed, task.Exception!.GetBaseException().Message), problem: true);
                 return;
             }
-            var (frames, original, runError, ms, path) = task.Result;
-            _preview.SetFrames(frames, original);
+            var (frames, original, canvas, runError, ms, path) = task.Result;
+            _preview.SetFrames(frames, original, canvas);
             if (_check is not null) return;
             SetStatus(runError is not null ? UiStrings.EffectMaker_RunFailed
                 : ms is { } t ? string.Format(CultureInfo.CurrentCulture, UiStrings.EffectMaker_FrameTime, t.ToString("0.00", CultureInfo.CurrentCulture))
@@ -1107,7 +1151,7 @@ public sealed class EffectMakerWindow : Window
         bool schemaChanged = _program is null || !_program.Settings.SequenceEqual(parsed.Program.Settings)
                              || _program.Translations.Count != parsed.Program.Translations.Count
                              || _program.Translations.Any(t => !parsed.Program.Translations.TryGetValue(t.Key, out var other) || !t.Value.SameAs(other));
-        // 공통 줄(빠르기 곡선·반복·피벗 같이 옮기기)이 생기거나 없어지거나 선언의 처음 값이 바뀌어도
+        // 공통 줄(빠르기 곡선·반복·캔버스 늘리기·피벗 같이 옮기기)이 생기거나 없어지거나 선언의 처음 값이 바뀌어도
         var rows = CommonRows(parsed.Program);
         schemaChanged |= rows != _commonRows;
         _commonRows = rows;
@@ -1117,7 +1161,7 @@ public sealed class EffectMakerWindow : Window
             if (!ScriptColorSlots.TryParse(_program.Settings, slot, out _, out _, out _)) _previewGradients.Remove(slot);
         SetInfo(_program);
         _loading = true;
-        _chick.SelectedIndex = Math.Max(0, PreviewChicks.Ids.ToList().IndexOf(_program.PreviewChick));
+        _chick.SelectedIndex = ChickIndex(_program.PreviewChick);
         _endChick.SelectedIndex = EndChickIndex(_program.PreviewEndChick);
         _loading = false;
         _syncingFrames = true;
@@ -1128,16 +1172,16 @@ public sealed class EffectMakerWindow : Window
     }
 
     /// <summary>미리보기 설정 칸의 공통 줄을 정하는 선언 값(바뀌면 칸을 다시 만듦 — <see cref="ParseScript"/>).</summary>
-    private (bool Animated, bool Motion, EffectEasing Easing, EffectRepeat Repeat, int RepeatCount, bool MovePivot, bool Reports) _commonRows;
+    private (bool Animated, bool Motion, EffectEasing Easing, EffectRepeat Repeat, int RepeatCount, bool MovePivot, bool ExpandCanvas, bool Reports) _commonRows;
 
-    private (bool, bool, EffectEasing, EffectRepeat, int, bool, bool) CommonRows(ScriptEffectProgram program)
-        => (program.Animated, program.Motion, program.Easing, program.Repeat, program.RepeatCount, program.MovePivot,
+    private (bool, bool, EffectEasing, EffectRepeat, int, bool, bool, bool) CommonRows(ScriptEffectProgram program)
+        => (program.Animated, program.Motion, program.Easing, program.Repeat, program.RepeatCount, program.MovePivot, program.ExpandCanvas,
             Chickxel.Core.Edit.LayerEffects.CanMovePivot(new ScriptEffect { ScriptHash = PreviewHash(_source) }));
 
     /// <summary>
     /// 미리보기 설정 칸: 효과를 넣었을 때 오른쪽 독에 보이는 줄과 같은 줄·차례(<see cref="LayerEffectsDialog.AddScriptEffectRows"/> — 선언의 settings,
-    /// 움직이는 효과의 빠르기 곡선·반복, 옮긴 거리를 알리는 효과의 피벗 같이 옮기기, 끝 모습 이어 가기). 값은 미리보기·지금 레이어에 넣기에만 쓰고
-    /// 원문의 처음 값은 "기본값으로"를 눌러야 바뀐다. 끝 모습 이어 가기는 새로 넣는 효과(모든 프레임)처럼 꺼진 채 고칠 수 없다.
+    /// 움직이는 효과의 빠르기 곡선·반복, 옮긴 거리를 알리는 효과의 피벗 같이 옮기기, 끝 모습 이어 가기)에 효과 창의 "확인할 때 캔버스 늘리기"를 더한다.
+    /// 값은 미리보기·지금 레이어에 넣기에만 쓰고 원문의 처음 값은 "기본값으로"를 눌러야 바뀐다. 끝 모습 이어 가기는 새로 넣는 효과(모든 프레임)처럼 꺼진 채 고칠 수 없다.
     /// </summary>
     private void BuildScriptSettings()
     {
@@ -1146,7 +1190,7 @@ public sealed class EffectMakerWindow : Window
         if (program.Settings.Count == 0) _scriptSettings.Children.Add(Hint(UiStrings.ScriptEffect_NoSettings));
         // 줄을 고를 때 원문 정보(피벗을 옮기는지 등)를 보므로 스크립트 목록에 올린 해시로
         LayerEffectsDialog.AddScriptEffectRows(new EffectForm(_scriptSettings, this), program, PreviewEffect(program) with { ScriptHash = PreviewHash(_source) },
-            ChangePreview, BuildScriptSettings, SceneLayerChoices());
+            ChangePreview, BuildScriptSettings, SceneLayerChoices(), expandCanvas: true);
     }
 
     /// <summary>
@@ -1175,8 +1219,8 @@ public sealed class EffectMakerWindow : Window
     }
 
     /// <summary>
-    /// 지금 미리보기 설정 값 중 기본값과 다른 것을 원문 선언의 각 설정 <c>default</c>로, 다른 공통 값은 선언의 <c>easing</c>·<c>repeat</c>·<c>repeatCount</c>·<c>movePivot</c>로
-    /// 쓴다(편집기 실행취소 한 단계). 쓴 뒤 미리보기 값은 새 기본값과 같으므로 칸은 그대로 보인다. 선언을 고칠 수 없는 원문이면 원문 오류를 안내한다.
+    /// 지금 미리보기 설정 값 중 기본값과 다른 것을 원문 선언의 각 설정 <c>default</c>로, 다른 공통 값은 선언의 <c>easing</c>·<c>repeat</c>·<c>repeatCount</c>·<c>movePivot</c>·
+    /// <c>expandCanvas</c>로 쓴다(편집기 실행취소 한 단계). 쓴 뒤 미리보기 값은 새 기본값과 같으므로 칸은 그대로 보인다. 선언을 고칠 수 없는 원문이면 원문 오류를 안내한다.
     /// </summary>
     private void SetDefaults()
     {
@@ -1190,7 +1234,7 @@ public sealed class EffectMakerWindow : Window
         string? edited = changed.Count == 0 ? _source : ScriptDeclarationEdit.SetSettingDefaults(_source, changed);
         if (edited is not null && common)
             edited = ScriptDeclarationEdit.SetEffectDefaults(edited, Unless(effect.Easing, program.Easing), Unless(effect.Repeat, program.Repeat),
-                Unless(effect.RepeatCount, program.RepeatCount), Unless(effect.MovePivot, program.MovePivot));
+                Unless(effect.RepeatCount, program.RepeatCount), Unless(effect.MovePivot, program.MovePivot), Unless(effect.ExpandCanvas, program.ExpandCanvas));
         if (edited is null)
         {
             SetStatus(UiStrings.EffectMaker_FixSourceFirst, problem: true);
@@ -1373,13 +1417,13 @@ public sealed class EffectMakerWindow : Window
     private void ChickChanged()
     {
         if (_loading || _chick.SelectedIndex < 0 || !_open || Foreign) return;
-        string id = PreviewChicks.Ids[_chick.SelectedIndex];
+        string id = _chick.SelectedIndex == 0 ? PreviewChicks.None : PreviewChicks.Ids[_chick.SelectedIndex - 1];
         if (_program?.PreviewChick == id) return;
         if (ScriptDeclarationEdit.SetPreviewChick(_source, id) is not { } edited)
         {
             Ui.Info(this, UiStrings.EffectMaker_FixSourceFirst, UiStrings.EffectMaker_Title);
             _loading = true;
-            _chick.SelectedIndex = Math.Max(0, PreviewChicks.Ids.ToList().IndexOf(_program?.PreviewChick ?? PreviewChicks.Default));
+            _chick.SelectedIndex = ChickIndex(_program?.PreviewChick ?? PreviewChicks.Default);
             _loading = false;
             return;
         }
@@ -1404,6 +1448,9 @@ public sealed class EffectMakerWindow : Window
         }
         _code.Replace(edited); // TextChanged → Edited → 다시 그리기
     }
+
+    /// <summary>미리보기 병아리 칸의 차례(0 = 없음, 모르는 ID는 기본 병아리처럼 그리므로 기본 병아리).</summary>
+    private static int ChickIndex(string id) => id == PreviewChicks.None ? 0 : Math.Max(0, PreviewChicks.Ids.ToList().IndexOf(id)) + 1;
 
     /// <summary>끝 그림 병아리 칸의 차례(없거나 모르는 ID면 0 = 없음).</summary>
     private static int EndChickIndex(string? id) => id is null ? 0 : PreviewChicks.Ids.ToList().IndexOf(id) + 1;
@@ -1585,7 +1632,8 @@ public sealed class EffectMakerWindow : Window
         if (_sceneDoc is not { } doc) return null;
         try
         {
-            _scene = PreviewScene.FromProject(doc.Project, doc.ChickLayer);
+            // 병아리 없음이면 병아리 레이어가 비어 있으므로 앞 장면의 발 자리를 쓴다
+            _scene = PreviewScene.FromProject(doc.Project, doc.ChickLayer, _program?.PreviewChick == PreviewChicks.None ? _scene?.ChickAnchor : null);
         }
         catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or InvalidDataException)
         {
@@ -1927,7 +1975,9 @@ public sealed class EffectMakerWindow : Window
         {
             _aiGrowth = WindowState == WindowState.Normal ? step : 0;
             MinWidth = BaseMinWidth + step;
-            if (_aiGrowth > 0)
+            // 처음 띄울 때 이미 넓혀 두었으면 그대로(닫을 때 줄일 너비만 기억)
+            if (_aiPreSized) _aiPreSized = false;
+            else if (_aiGrowth > 0)
             {
                 Width += _aiGrowth;
                 if (Screens.ScreenFromWindow(this) is { } screen)
@@ -2076,12 +2126,17 @@ public sealed class EffectMakerWindow : Window
 
     private const int ThumbSize = 40;
 
-    /// <summary>미리보기: 체크무늬 위에 정수 배로 키운 칸(재생은 창의 타이머가 넘김), 원본 보기면 효과 없는 견본.</summary>
+    /// <summary>
+    /// 미리보기: 체크무늬 위에 정수 배로 키운 칸(재생은 창의 타이머가 넘김), 원본 보기면 효과 없는 견본. 잘릴 캔버스가 있으면 그 밖은 효과 창처럼 흐리게
+    /// (<see cref="LayerEffectsDialog.DrawWithCanvas"/>).
+    /// </summary>
     private sealed class MakerPreview : Control
     {
         private WriteableBitmap?[] _frames = [];
         private WriteableBitmap? _original;
         private int _index;
+        /// <summary>확인할 때 잘릴 캔버스(그림 좌표, 캔버스 늘리기를 끈 효과). null이면 그림 전체를 그대로 그린다.</summary>
+        private Rectangle? _canvas;
 
         /// <summary>그린 칸들이 바뀜(칸 띠를 다시 만듦).</summary>
         public event Action? FramesChanged;
@@ -2107,10 +2162,14 @@ public sealed class EffectMakerWindow : Window
             }
         }
 
-        /// <summary>새 칸들로 바꾼다. 보던 칸 번호는 새 칸 수 안에서 그대로 둔다(멈춰 둔 칸에서 설정을 바꿔 볼 수 있게).</summary>
-        public void SetFrames(IReadOnlyList<PixelImage> frames, PixelImage? original)
+        /// <summary>
+        /// 새 칸들로 바꾼다. 보던 칸 번호는 새 칸 수 안에서 그대로 둔다(멈춰 둔 칸에서 설정을 바꿔 볼 수 있게).
+        /// <paramref name="canvas"/>가 있으면 그 밖은 흐리게 그린다.
+        /// </summary>
+        public void SetFrames(IReadOnlyList<PixelImage> frames, PixelImage? original, Rectangle? canvas = null)
         {
             var old = _frames;
+            _canvas = canvas;
             _original?.Dispose();
             _frames = frames.Select(ImageUtil.ToBitmap).ToArray<WriteableBitmap?>();
             _original = original is null ? null : ImageUtil.ToBitmap(original);
@@ -2145,6 +2204,11 @@ public sealed class EffectMakerWindow : Window
             var bmp = _showOriginal ? _original : _frames.Length > 0 ? _frames[Math.Min(_index, _frames.Length - 1)] : null;
             if (bmp is null) return;
             var area = b.Deflate(10);
+            if (_canvas is { } canvas)
+            {
+                LayerEffectsDialog.DrawWithCanvas(g, bmp, new Size(bmp.PixelSize.Width, bmp.PixelSize.Height), area, canvas);
+                return;
+            }
             var src = new Rectangle(0, 0, bmp.PixelSize.Width, bmp.PixelSize.Height);
             double fit = Math.Min(area.Width / src.Width, area.Height / src.Height);
             ImageUtil.DrawFitted(g, bmp, src, area, fit >= 1 ? (int)Math.Floor(fit) : 0, checker: true);

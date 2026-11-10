@@ -13,6 +13,8 @@ public enum ToolKind
     Pencil,
     /// <summary>그라데이션 연필: 연필처럼 그리되 픽셀 색을 획을 따라 잰 거리로 그라데이션에서 고른다(획 전체 / 반복, 도구 설정).</summary>
     GradientPencil,
+    /// <summary>모양 펜: 고른 세트의 모양(알파 포함 픽셀)을 누른 곳 가운데에 찍고, 끌면 간격마다 찍는다(무작위·차례대로, 도구 설정).</summary>
+    ShapePen,
     Eraser,
     Fill,
     /// <summary>선형 그라데이션: 끌어서 시작점 → 끝점(색 정지점·보간·디더링은 도구 설정).</summary>
@@ -234,7 +236,7 @@ public sealed partial class EditorContext
     public bool PencilOrthogonal { get => _pencilOrthogonal; set { if (_pencilOrthogonal == value) return; _pencilOrthogonal = value; OptionsChanged(); } }
     /// <summary>채우기: true = 이어진 영역만, false = 맞는 색 전체.</summary>
     public bool FillContiguous { get => _fillContiguous; set { _fillContiguous = value; OptionsChanged(); } }
-    /// <summary>채우기 허용 오차(0~100%, 0 = 정확히 같은 색만). 채널 차이 최댓값 기준(<see cref="Raster.Matches"/>).</summary>
+    /// <summary>채우기·스마트 선택 허용 오차(0~100%, 0 = 정확히 같은 색만, 100 = 모든 색). <see cref="FillColorMode"/>로 잰다.</summary>
     public int FillTolerance
     {
         get => _fillTolerance;
@@ -242,6 +244,13 @@ public sealed partial class EditorContext
     }
     /// <summary><see cref="FillTolerance"/>(%)를 채널 단위(0~255)로.</summary>
     public int FillToleranceChannels => (int)Math.Round(_fillTolerance * 255 / 100.0);
+    private FillColorMode _fillColorMode;
+    /// <summary>채우기·스마트 선택이 허용 오차를 잴 색 비교 방식(<see cref="FillColorMatcher"/>, 기본 = 채널 차이 최댓값).</summary>
+    public FillColorMode FillColorMode
+    {
+        get => _fillColorMode;
+        set { if (!Enum.IsDefined(value)) value = FillColorMode.ChannelMax; if (_fillColorMode == value) return; _fillColorMode = value; OptionsChanged(); }
+    }
     /// <summary>채우기: 이어진 영역을 대각선으로도 잇는다(8방향).</summary>
     public bool FillDiagonal { get => _fillDiagonal; set { _fillDiagonal = value; OptionsChanged(); } }
     /// <summary>채우기 영역을 보이는 레이어 합성으로 정한다(칠하기는 현재 레이어). false = 현재 레이어.</summary>
@@ -363,7 +372,7 @@ public sealed partial class EditorContext
             return MirrorAxes.Through(x, y);
         }
     }
-    /// <summary>오른쪽 버튼으로 보조색 대신 지운다(연필·도형·채우기).</summary>
+    /// <summary>오른쪽 버튼으로 보조색 대신 지운다(연필·그라데이션 연필·도형·채우기, 모양 펜은 모양 불투명도만큼 지움).</summary>
     public bool RightButtonErases { get => _rightErases; set { _rightErases = value; OptionsChanged(); } }
     /// <summary>이동 도구로 셀 내용을 옮길 때 밖으로 나간 픽셀을 반대편으로 돌린다. 끄면 일반 레이어는 밖으로 나간 픽셀을 캔버스 밖 그림으로 남긴다.</summary>
     public bool MoveWrap { get => _moveWrap; set { _moveWrap = value; OptionsChanged(); } }

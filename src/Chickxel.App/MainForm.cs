@@ -29,6 +29,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     [
         (ToolKind.Pencil, "연필", MainStrings.Tool_Pencil_Name, "B", MainStrings.Tool_Pencil_Hint),
         (ToolKind.GradientPencil, "그라데이션 연필", MainStrings.Tool_GradientPencil_Name, "Shift+B", MainStrings.Tool_GradientPencil_Hint),
+        (ToolKind.ShapePen, "모양 펜", MainStrings.Tool_ShapePen_Name, "", MainStrings.Tool_ShapePen_Hint),
         (ToolKind.Eraser, "지우개", MainStrings.Tool_Eraser_Name, "E", MainStrings.Tool_Eraser_Hint),
         (ToolKind.Fill, "채우기", MainStrings.Tool_Fill_Name, "G", MainStrings.Tool_Fill_Hint),
         (ToolKind.Gradient, "그라데이션", MainStrings.Tool_Gradient_Name, "F", MainStrings.Tool_Gradient_Hint),
@@ -48,12 +49,12 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     ];
 
     /// <summary>
-    /// 도구 막대 칸(위에서부터). 한 칸의 도구는 서로 바꿔 쓰는 변형이다: 연필(연필·그라데이션 연필), 채우기(채우기·그라데이션), 선택(사각·원·자유·스마트).
+    /// 도구 막대 칸(위에서부터). 한 칸의 도구는 서로 바꿔 쓰는 변형이다: 연필(연필·그라데이션 연필·모양 펜), 채우기(채우기·그라데이션), 선택(사각·원·자유·스마트).
     /// 칸은 마지막으로 고른 도구를 보이고, 길게 누르거나 오른쪽 클릭하면 옆에 펼쳐 바꾼다(<see cref="ToolSlotButton"/>).
     /// </summary>
     private static readonly ToolKind[][] ToolSlots =
     [
-        [ToolKind.Pencil, ToolKind.GradientPencil], [ToolKind.Eraser], [ToolKind.Fill, ToolKind.Gradient], [ToolKind.Picker],
+        [ToolKind.Pencil, ToolKind.GradientPencil, ToolKind.ShapePen], [ToolKind.Eraser], [ToolKind.Fill, ToolKind.Gradient], [ToolKind.Picker],
         [ToolKind.Shape], [ToolKind.Text],
         [ToolKind.Select, ToolKind.EllipseSelect, ToolKind.Lasso, ToolKind.MagicWand],
         [ToolKind.Move], [ToolKind.Dodge], [ToolKind.Dither], [ToolKind.ReplaceBrush], [ToolKind.Pivot], [ToolKind.Slice],
@@ -138,6 +139,12 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         VerticalAlignment = VerticalAlignment.Center,
         Margin = new Thickness(0, 0, 4, 0),
     };
+    /// <summary>상태 표시줄 오른쪽 끝의 외부 AI 연결 표시(켜져 있을 때만 — <see cref="ShowExternalActivity"/>).</summary>
+    private readonly Border _stExternal;
+    private readonly TextBlock _stExternalText = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 0, 0) };
+    private readonly IconView _stExternalIcon = new(VectorIcon.Plug) { Width = 12, Height = 12, VerticalAlignment = VerticalAlignment.Center };
+    /// <summary>외부 AI가 도구를 부른 뒤 표시를 평소대로 되돌리는 타이머.</summary>
+    private readonly DispatcherTimer _externalIdle = new() { Interval = TimeSpan.FromSeconds(4) };
 
     private PlayTestForm? _play;
     /// <summary>움직임 테스트 창: 편집이 잠시(400ms) 멈추면 문서를 다시 읽게 한다.</summary>
@@ -180,6 +187,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         Height = 800;
         MinWidth = 1000;
         MinHeight = 600;
+
+        LoadShapeSets();
 
         // ── 패널
         _canvas = new PixelCanvas(_ctx);
@@ -227,6 +236,18 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             TextTrimming = TextTrimming.CharacterEllipsis,
             Margin = new Thickness(6, 0, 6, 0),
         };
+        _stExternal = new Border
+        {
+            IsVisible = false,
+            Background = Brushes.Transparent,
+            BorderBrush = AppTheme.BorderBrush,
+            BorderThickness = new Thickness(1, 0, 0, 0),
+            Padding = new Thickness(6, 0, 6, 0),
+            Child = new StackPanel { Orientation = Orientation.Horizontal, Children = { _stExternalIcon, _stExternalText } },
+        }.Tip(UiStrings.ExternalMcp_StatusTip).HelpAt("ai-external", shot: "ai-external-2");
+        DockPanel.SetDock(_stExternal, Dock.Right);
+        statusBar.Children.Add(_stExternal);
+        _externalIdle.Tick += (_, _) => ShowExternalActivity(null);
         statusBar.Children.Add(_stMessage);
         var status = new Border
         {
@@ -478,13 +499,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _cbPivot = Toggle(right, MainStrings.Ui_047, MainStrings.Ui_048, () => SetShowPivot(!_canvas.ShowPivot));
         _cbOnion = Toggle(right, MainStrings.Ui_049, MainStrings.Ui_050, () => _ctx.OnionSkin = !_ctx.OnionSkin);
         _cbEffects = Toggle(right, MainStrings.Ui_CanvasEffects, MainStrings.Ui_CanvasEffectsTip, ToggleCanvasEffects);
-        // 우클릭 = 그 보기의 설정 팝업(바꾸면 바로 적용, 꺼져 있으면 켬)
+        // 설정이 있는 보기: 단추 오른쪽에 붙인 아래 삼각형을 누르거나 단추를 우클릭하면 그 보기의 설정 팝업(바꾸면 바로 적용, 꺼져 있으면 켬)
         foreach (var (button, flyout) in new (ToggleButton, Func<Flyout>)[] { (_cbGrid, PixelGridFlyout), (_cbTiles, TileGridFlyout), (_cbTiled, TiledModeFlyout), (_cbOnion, OnionFlyout) })
-            button.ContextRequested += (_, e) =>
-            {
-                e.Handled = true;
-                PopupMenus.Show(button, flyout());
-            };
+            WithSettingsArrow(right, button, flyout);
         right.Children.Add(BarSeparator());
         BarButton(right, BarIcon(VectorIcon.Minus), MainStrings.Ui_051, () => _canvas.ZoomStep(-1));
         right.Children.Add(_cbZoom = ZoomBox());
@@ -596,6 +613,24 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         return b;
     }
 
+    /// <summary>
+    /// 보기 단추 <paramref name="toggle"/>을 오른쪽 끝 작은 아래 화살표 칸과 한 단추처럼 붙인 묶음(<see cref="Ui.WithMenuArrow"/>)으로 바꾼다(같은 자리).
+    /// 화살표를 누르거나 단추를 우클릭하면 설정 팝업(<paramref name="flyout"/>)을 묶음 아래에 연다.
+    /// </summary>
+    private static void WithSettingsArrow(Panel host, ToggleButton toggle, Func<Flyout> flyout)
+    {
+        int index = host.Children.IndexOf(toggle);
+        host.Children.RemoveAt(index);
+        toggle.Padding = new Thickness(6, 2, 4, 2);
+        var group = Ui.WithMenuArrow(toggle, UiStrings.ViewOption_SettingsTip, anchor => PopupMenus.Show(anchor, flyout()));
+        host.Children.Insert(index, group);
+        toggle.ContextRequested += (_, e) =>
+        {
+            e.Handled = true;
+            PopupMenus.Show(group, flyout());
+        };
+    }
+
     /// <summary>위쪽 막대 단추 안 아이콘(글자 단추와 같은 높이).</summary>
     private static IconView BarIcon(VectorIcon icon)
     {
@@ -663,6 +698,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             new Separator(),
             DocCmd("잘라내기", MainStrings.Menu_Edit_Cut_093, Cut, "Ctrl+X", KeyScope.NotInText, (Key.X, Ctrl)),
             DocCmd("복사", MainStrings.Menu_Edit_Copy_095, Copy, "Ctrl+C", KeyScope.NotInText, (Key.C, Ctrl)),
+            DocCmd("이미지만 복사", MainStrings.Menu_Edit_CopyImagesOnly, CopyImagesOnly, "Ctrl+Shift+C", KeyScope.NotInText, (Key.C, Ctrl | Shift)),
             DocCmd("붙여넣기", MainStrings.Menu_Edit_Paste_097, Paste, "Ctrl+V", KeyScope.NotInText, (Key.V, Ctrl)),
             DocCmd("지우기", MainStrings.Menu_Edit_DeleteSelection_099, DeleteSelection, "Delete", KeyScope.Canvas, deleteKeys),
             new Separator(),
@@ -802,8 +838,6 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         AddItems(tools, new Separator(), drawOptions);
         // 그라데이션 프리셋은 에셋 관리자에서 보고 고친다(그라데이션 편집기의 관리 단추는 프리셋 창을 그대로 연다).
         AddItems(tools, new Separator(), WithIcon(Cmd("에셋 관리자", UiStrings.Assets_Menu, () => AssetManagerWindow.Open(this)), VectorIcon.Package));
-        // 효과를 만드는 사람은 적으므로 효과 넣기 흐름과 따로, 도구 메뉴 맨 아래 별도 항목으로 둔다(설계 3.1).
-        AddItems(tools, new Separator(), WithIcon(Cmd("효과 만들기", UiStrings.EffectMaker_Menu, () => EffectMakerWindow.Open(this, _ctx)), VectorIcon.Sparkles));
 
 
         // AI
@@ -816,7 +850,10 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             refs,
             new Separator(),
             WithIcon(Cmd("AI 그림 픽셀로 정리…", MainStrings.Menu_Ai_Pixelate, () => ShowPixelate(null)), VectorIcon.Grid3x3),
-            WithIcon(DocCmd("현재 레이어를 픽셀로 정리…", MainStrings.Menu_Ai_PixelateLayer, PixelateCurrentLayer), VectorIcon.Grid3x3));
+            WithIcon(DocCmd("현재 레이어를 픽셀로 정리…", MainStrings.Menu_Ai_PixelateLayer, PixelateCurrentLayer), VectorIcon.Grid3x3),
+            // 효과 만들기는 AI 칸과 함께 쓰는 창이라 AI 메뉴에 둔다(효과 넣기 흐름과는 따로).
+            new Separator(),
+            WithIcon(Cmd("효과 만들기", UiStrings.EffectMaker_Menu, () => EffectMakerWindow.Open(this, _ctx)), VectorIcon.Sparkles));
 
         // 도움말
         var help = TopMenu("도움말(_H)", MainStrings.Menu_Help);
@@ -1195,6 +1232,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _ctx.PencilBrush = (s.BrushSize, s.BrushShape);
         _ctx.EraserBrush = (s.EraserBrushSize, s.EraserBrushShape);
         _ctx.FillTolerance = s.FillTolerance;
+        _ctx.FillColorMode = s.FillColorMode;
         _ctx.FillDiagonal = s.FillDiagonal;
         _ctx.FillSampleVisible = s.FillSampleVisible;
         _ctx.PickerSampleVisible = s.PickerSampleVisible;
@@ -1231,6 +1269,10 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         };
         _ctx.PencilGradientMode = s.PencilGradientMode;
         _ctx.PencilGradientInterval = s.PencilGradientInterval;
+        _ctx.ShapePenSetId = s.ShapePenSet;
+        _ctx.ShapePenTint = s.ShapePenTint;
+        _ctx.ShapePenSpacing = s.ShapePenSpacing;
+        _ctx.ShapePenOptimizedSpacing = s.ShapePenOptimizedSpacing;
         _ctx.MirrorAtPivot = s.MirrorAtPivot;
         _ctx.Primary = ColorParse.ParseOr(s.PrimaryColor, Color32.Black);
         _ctx.Secondary = ColorParse.ParseOr(s.SecondaryColor, Color32.Transparent);
@@ -1277,6 +1319,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _updater.OnStartup();
         StartAccount();
         UpdateDiscord();
+        ApplyExternalMcp();
         // 에셋 저장소를 열어 첫 실행의 예전 프리셋 migration을 끝내고, 손상된 상태 파일이 있으면 한 번 알린다.
         Dispatcher.UIThread.Post(() => AppAssets.ShowProblems(this), DispatcherPriority.Background);
         // OS가 넘긴 주소·패키지·프로젝트 파일은 시작을 마친 뒤에 처리한다(그 뒤에 온 것도 바로).
@@ -1402,6 +1445,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         (s.BrushSize, s.BrushShape) = _ctx.PencilBrush;
         (s.EraserBrushSize, s.EraserBrushShape) = _ctx.EraserBrush;
         s.FillTolerance = _ctx.FillTolerance;
+        s.FillColorMode = _ctx.FillColorMode;
         s.FillDiagonal = _ctx.FillDiagonal;
         s.FillSampleVisible = _ctx.FillSampleVisible;
         s.PickerSampleVisible = _ctx.PickerSampleVisible;
@@ -1436,6 +1480,10 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         s.PencilGradientColorSpace = pencilGradient.ColorSpace;
         s.PencilGradientMode = _ctx.PencilGradientMode;
         s.PencilGradientInterval = _ctx.PencilGradientInterval;
+        s.ShapePenSet = _ctx.ShapePenSetId;
+        s.ShapePenTint = _ctx.ShapePenTint;
+        s.ShapePenSpacing = _ctx.ShapePenSpacing;
+        s.ShapePenOptimizedSpacing = _ctx.ShapePenOptimizedSpacing;
         s.MirrorAtPivot = _ctx.MirrorAtPivot;
         s.PrimaryColor = _ctx.Primary.ToHex();
         s.SecondaryColor = _ctx.Secondary.ToHex();
@@ -1974,7 +2022,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         var dlg = new PreferencesDialog(_settings.Language ?? UiLanguage.Current, _settings.UndoSteps, _settings.UndoHistoryEnabled, _settings.UndoHistoryPolicy, _history,
             _settings.AutoSave, _settings.AutoSaveIdleSeconds, _settings.TrashPolicy, _settings.UpdateCheck, _settings.DiscordPresence,
             _commands.Select(c => c.Info).ToList(), _commands.ToDictionary(c => c.Info.Id, c => c.Keys.ToList()),
-            _settings.ReferencesFolder, _settings.ReferencesShowExamples, _settings.FfmpegPath, owner => ShowAiStatus(owner));
+            _settings.ReferencesFolder, _settings.ReferencesShowExamples, _settings.FfmpegPath, owner => ShowAiStatus(owner),
+            _settings.AiExternalMcp, _settings.AiExternalOpenFile, _settings.AiExternalGenerate);
         var result = dlg.ShowDialog(this);
         if (dlg.ResetRequested)
         {
@@ -2000,6 +2049,10 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _settings.DiscordPresence = dlg.DiscordPresence;
         UpdateDiscord();
         _settings.FfmpegPath = dlg.FfmpegPath;
+        _settings.AiExternalMcp = dlg.ExternalMcp;
+        _settings.AiExternalOpenFile = dlg.ExternalOpenFile;
+        _settings.AiExternalGenerate = dlg.ExternalGenerate;
+        ApplyExternalMcp();
         // 끄면 기다리던 자동 저장도 바로 멈춘다. 바꾼 시간은 다음 편집부터.
         _settings.AutoSave = dlg.AutoSave;
         _settings.AutoSaveIdleSeconds = dlg.AutoSaveIdleSeconds;
@@ -2055,6 +2108,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             _refsWindow?.Reload();
         }
         ApplyEditorSettings();
+        ApplyExternalMcp();
         ApplyShortcuts();
         _settings.Save();
         if (!string.Equals(_settings.Language, UiLanguage.Current, StringComparison.OrdinalIgnoreCase))
@@ -2927,6 +2981,17 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         ShowMessage(MainStrings.FormatMessage_383(width: clip.Width, height: clip.Height));
     }
 
+    /// <summary>
+    /// 이미지만 복사(Ctrl/⌘+Shift+C): 타임라인에 포커스가 있으면 고른 셀/프레임의 그림만 링크 없이 복사한다(붙인 셀이 따로 논다).
+    /// 캔버스 복사는 원래 그림만이므로 그 밖에서는 복사와 같다.
+    /// </summary>
+    private void CopyImagesOnly()
+    {
+        if (!_timeline.IsGridFocused) { Copy(); return; }
+        _timeline.CopySelection(false, links: false);
+        ShowMessage(MainStrings.Message_TimelineCopyImagesOnly);
+    }
+
     private void Cut()
     {
         // 타임라인에 포커스가 있으면 셀/프레임 대상
@@ -3186,8 +3251,46 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             Ui.Error(owner, MainStrings.FormatMessage_394(message: ex.Message));
             return false;
         }
+        server.ExternalToolCalled += name => ShowExternalActivity(name);
         _mcp = server;
         return true;
+    }
+
+    /// <summary>
+    /// 외부 AI 연결(<see cref="AppSettings.AiExternalMcp"/>)을 설정에 맞춘다: 켜져 있으면 MCP 서버를 시작해 잠금 파일을 쓰고(허락한 도구도 맞춤),
+    /// 꺼져 있으면 외부 토큰을 버리고 파일을 지운다. 켜지 못하면 알리고 설정을 끈다. 상태 표시줄 표시도 따라간다.
+    /// </summary>
+    private void ApplyExternalMcp()
+    {
+        if (!_settings.AiExternalMcp)
+            _mcp?.SetExternal(null);
+        else if (EnsureMcp(this))
+        {
+            try
+            {
+                _mcp!.SetExternal(new Ai.McpExternalAccess(_settings.AiExternalOpenFile, _settings.AiExternalGenerate));
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                _mcp!.SetExternal(null);
+                _settings.AiExternalMcp = false;
+                Ui.Error(this, UiStrings.FormatExternalMcp_StartFailed(message: ex.Message));
+            }
+        }
+        else _settings.AiExternalMcp = false;
+        _stExternal.IsVisible = _mcp?.ExternalEnabled == true;
+        ShowExternalActivity(null);
+    }
+
+    /// <summary>상태 표시줄의 외부 AI 연결 표시: 도구 이름이 있으면 강조색으로 "외부 AI: 도구"를 잠깐 보이고, null이면 평소(흐린 "외부 AI").</summary>
+    private void ShowExternalActivity(string? tool)
+    {
+        _externalIdle.Stop();
+        var brush = tool is null ? AppTheme.DimTextBrush : AppTheme.AccentBrush;
+        _stExternalIcon.Foreground = brush;
+        _stExternalText.Foreground = brush;
+        _stExternalText.Text = tool is null ? UiStrings.ExternalMcp_Status : UiStrings.FormatExternalMcp_StatusTool(tool: tool);
+        if (tool is not null) _externalIdle.Start();
     }
 
     /// <summary>AI 설치·버전·로그인·MCP 연결 상태 창을 연다. 채팅 진입이면 확인 단추가 채팅을 이어 열겠다고 표시한다.</summary>

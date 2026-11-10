@@ -411,4 +411,8 @@ Open all frames, or only the first {limit}?</value></data>
   <data name="Menu_View_CanvasEffects" xml:space="preserve"><value>Show effects on canvas</value></data>
   <data name="Message_CanvasEffectsOn" xml:space="preserve"><value>Effects shown on the canvas</value></data>
   <data name="Message_CanvasEffectsOff" xml:space="preserve"><value>Effects hidden on the canvas; showing the pixels you edit (the preview still shows effects)</value></data>
+  <data name="Menu_Edit_CopyImagesOnly" xml:space="preserve"><value>Copy images only (no links)</value></data>
+  <data name="Message_TimelineCopyImagesOnly" xml:space="preserve"><value>Timeline: copied images only (no links)</value></data>
+  <data name="Tool_ShapePen_Name" xml:space="preserve"><value>Shape Pen</value></data>
+  <data name="Tool_ShapePen_Hint" xml:space="preserve"><value>Stamps the chosen shape where you click (dragging stamps every spacing; sets and order in tool settings) · Right: secondary color when tinting (erases in the shape if the right button erases) · Alt+click: pick color</value></data>
 </root>

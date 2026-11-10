@@ -61,17 +61,18 @@ public sealed partial class PixelTools
     /// <summary>
     /// 도구 하나를 실행한다(UI 스레드). 그림 생성은 기다리며 <paramref name="progress"/>로 진행을 알리고 <paramref name="ct"/>(클라이언트가 끊음)로 멈춘다.
     /// 효과 만들기 검증은 작업 스레드에서 도는 검증을 기다린다. 다른 도구는 <see cref="Call"/>과 같다. 예외는 밖으로 내보내지 않는다.
+    /// <paramref name="external"/>: 외부 AI 연결(<see cref="McpScope.External"/>)에서 온 호출 — 채팅 차례의 편집 범위·첨부 그림·보낸 글을 쓰지 않는다.
     /// </summary>
-    public async Task<JsonObject> CallAsync(string name, JsonObject? arguments, Action<string>? progress, CancellationToken ct)
+    public async Task<JsonObject> CallAsync(string name, JsonObject? arguments, Action<string>? progress, CancellationToken ct, bool external = false)
     {
-        if (name is not (GenerateTool or AskTool or CheckMakerTool)) return Call(name, arguments);
+        if (name is not (GenerateTool or AskTool or CheckMakerTool)) return Call(name, arguments, external);
         try
         {
             return name switch
             {
                 AskTool => await AskUserAsync(arguments, ct),
                 CheckMakerTool => await CheckEffectMakerAsync(),
-                _ => await GeneratePixelArtAsync(arguments, progress, ct),
+                _ => await GeneratePixelArtAsync(arguments, progress, ct, external),
             };
         }
         catch (ToolError e)
@@ -148,6 +149,45 @@ public sealed partial class PixelTools
             "question", "options");
     }
 
+    /// <summary>
+    /// 외부 AI 연결의 도구 목록(<see cref="McpScope.External"/>): 채팅의 그림 칩 번호 대신 <c>subject_image</c>로 PNG 그림을 base64로 받는다.
+    /// <paramref name="tools"/>는 <see cref="ListTools"/>가 만든 새 배열이라 그 자리에서 고친다.
+    /// </summary>
+    public static void AdaptForExternal(JsonArray tools)
+    {
+        foreach (var tool in tools)
+            if (tool?["name"]?.GetValue<string>() == GenerateTool && tool["inputSchema"]?["properties"] is JsonObject properties)
+                properties["subject_image"] = Str("Base64-encoded PNG image (no data: prefix) of the character/item to draw " +
+                    "(e.g. \"make this character as pixel art\"). A suitable pixel-art style reference is then added automatically.");
+    }
+
+    /// <summary>외부 AI 연결에서 막지 않는 도구인지: 사용자에게 묻기는 채팅 창에서만, 파일 열기·그림 생성은 사용자가 켰을 때만.</summary>
+    public static bool ExternalAllows(string name, McpExternalAccess access) => name switch
+    {
+        AskTool => false,
+        "open_file" => access.OpenFile,
+        GenerateTool => access.Generate,
+        _ => true,
+    };
+
+    /// <summary>외부 AI 연결이 <c>subject_image</c>로 보낸 base64 PNG(없으면 빈 목록). PNG로 읽을 수 없으면 도구 오류.</summary>
+    private static IReadOnlyList<(byte[] Png, bool PixelArt)> ExternalSubject(JsonObject? a)
+    {
+        if (OptString(a, "subject_image")?.Trim() is not { Length: > 0 } text) return [];
+        byte[] png;
+        try
+        {
+            png = Convert.FromBase64String(text);
+            using var stream = new MemoryStream(png, writable: false);
+            PngIO.Load(stream);
+        }
+        catch (Exception e) when (e is FormatException or InvalidDataException or IOException or ArgumentException or NotSupportedException)
+        {
+            throw new ToolError(UiStrings.AiDraw_Error_ExternalImage);
+        }
+        return [(png, false)];
+    }
+
     private async Task<JsonObject> AskUserAsync(JsonObject? arguments, CancellationToken ct)
     {
         var question = ReqString(arguments, "question").Trim();
@@ -160,9 +200,13 @@ public sealed partial class PixelTools
             : UiStrings.FormatAiQuestion_Custom(answer: answer));
     }
 
-    private async Task<JsonObject> GeneratePixelArtAsync(JsonObject? a, Action<string>? progress, CancellationToken ct)
+    private async Task<JsonObject> GeneratePixelArtAsync(JsonObject? a, Action<string>? progress, CancellationToken ct, bool external)
     {
         if (_aiDrawCts is not null) throw new ToolError(UiStrings.AiDraw_Error_Busy);
+        // 외부 연결은 채팅 차례의 편집 범위·첨부 그림·보낸 글과 관계없다(채팅이 같은 때 돌아도).
+        var scope = external ? null : Scope;
+        var turnImages = external ? ExternalSubject(a) : TurnImages;
+        var turnMessage = external ? "" : TurnMessage;
         var options = _host.Settings.AiDraw;
         var subject = ReqString(a, "subject").Trim();
         if (subject.Length == 0) throw new ToolError(UiStrings.AiDraw_Error_NoSubject);
@@ -176,8 +220,10 @@ public sealed partial class PixelTools
         // 사용자가 크기를 지정했으면 그대로 쓰고, 없으면 결과 크기 보정 크기 또는 생성 전 영어 판정으로 정한다(보정을 끄면 변환은 대표 프리셋 크기).
         int? requestedSize = OptInt(a, "size", AiDrawSettings.MinSize, AiDrawSettings.MaxSize);
         var (size, convertSize) = options.SizesFor(requestedSize);
-        int? subjectIndex = OptInt(a, "subject_image", 1, Math.Max(1, TurnImages.Count)) is { } number ? number - 1 : null;
-        if (subjectIndex >= TurnImages.Count) throw new ToolError(UiStrings.AiDraw_Error_NoImageAttached);
+        int? subjectIndex = external
+            ? (turnImages.Count > 0 ? 0 : null)
+            : OptInt(a, "subject_image", 1, Math.Max(1, turnImages.Count)) is { } number ? number - 1 : null;
+        if (subjectIndex >= turnImages.Count) throw new ToolError(UiStrings.AiDraw_Error_NoImageAttached);
         var styleId = OptString(a, "style_reference")?.Trim();
         var name = OptString(a, "name")?.Trim() is { Length: > 0 } n ? n : ShortName(subject);
         var request = new AiDrawRequest
@@ -191,7 +237,7 @@ public sealed partial class PixelTools
         };
 
         // 넣을 곳: "지금 그림만"이면 그 문서의 새 레이어, 열린 문서가 없으면 새 문서.
-        bool newDocument = Scope is null && (options.Insert == AiDrawInsert.NewDocument || Ctx.Project is null);
+        bool newDocument = scope is null && (options.Insert == AiDrawInsert.NewDocument || Ctx.Project is null);
         if (!newDocument) BeginMutation();
         var codexPath = AiProvider.Codex.Locate(_host.Settings) ?? throw new ToolError(UiStrings.AiDraw_Error_NoCodex);
 
@@ -204,10 +250,10 @@ public sealed partial class PixelTools
         // 자동 프롬프트를 끄면 사용자 글의 [Image #N]이 N번째 그림을 가리키게 붙인 그림을 모두 순서대로 보낸다.
         var turnFiles = new List<string>();
         if (!autoPrompt)
-            for (int i = 0; i < TurnImages.Count; i++)
+            for (int i = 0; i < turnImages.Count; i++)
             {
                 var file = Path.Combine(dir, $"image-{i + 1}.png");
-                await File.WriteAllBytesAsync(file, TurnImages[i].Png, ct);
+                await File.WriteAllBytesAsync(file, turnImages[i].Png, ct);
                 turnFiles.Add(file);
             }
         string? subjectFile = null;
@@ -217,9 +263,9 @@ public sealed partial class PixelTools
             if (autoPrompt)
             {
                 subjectFile = Path.Combine(dir, "subject.png");
-                await File.WriteAllBytesAsync(subjectFile, TurnImages[si].Png, ct);
+                await File.WriteAllBytesAsync(subjectFile, turnImages[si].Png, ct);
             }
-            subjectIsPixelArt = TurnImages[si].PixelArt;
+            subjectIsPixelArt = turnImages[si].PixelArt;
         }
         else if (OptBool(a, "previous_result_as_subject") == true)
         {
@@ -257,7 +303,7 @@ public sealed partial class PixelTools
             var firstFiles = new List<string>();
             if (subjectFile is not null) { firstRoles.Add(AiDrawImageRole.Subject); firstFiles.Add(subjectFile); }
             if (styleFile is not null) { firstRoles.Add(AiDrawImageRole.Style); firstFiles.Add(styleFile); }
-            bool animatedGif = count > 1 && options.Mode == AiDrawMode.Auto && Scope is null;
+            bool animatedGif = count > 1 && options.Mode == AiDrawMode.Auto && scope is null;
             bool sheet = count > 1 && !animatedGif && options.AnimationMethod == AiDrawAnimationMethod.SingleSheet;
             var pixelate = _host.Settings.Pixelate ??= new PixelateOptions();
             pixelate.Migrate(_host.Settings);
@@ -272,7 +318,7 @@ public sealed partial class PixelTools
             if (!autoPrompt)
             {
                 Report(progress, UiStrings.AiDraw_Progress_Image);
-                var prompt = TurnMessage.Trim() is { Length: > 0 } typed ? typed : subject;
+                var prompt = turnMessage.Trim() is { Length: > 0 } typed ? typed : subject;
                 prompts.Add(prompt);
                 firstImage = _jobs.FramePath(jobId, 0);
                 var instruction = AiDrawPrompts.CodexInstruction(prompt, request.Transparent, turnFiles.Count);
@@ -379,7 +425,7 @@ public sealed partial class PixelTools
             AiDrawPreview?.Invoke(outFrames[0]);
 
             // 생성하는 동안 사용자가 문서를 바꿨을 수 있다.
-            if (Scope is { } scope && !ReferenceEquals(Ctx.Project, scope.Project)) throw new ToolError(UiStrings.Ai_Scope_OtherDocument);
+            if (scope is not null && !ReferenceEquals(Ctx.Project, scope.Project)) throw new ToolError(UiStrings.Ai_Scope_OtherDocument);
             if (!newDocument && Ctx.Project is null) newDocument = true;
             int duration = AiDrawActions.DurationMs(animation);
             // 기다리는 동안 저장·열기 덮개가 떴으면(작업 스레드가 프로젝트를 읽는 중) 끝난 뒤에 넣는다.

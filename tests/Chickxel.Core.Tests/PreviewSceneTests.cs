@@ -212,10 +212,11 @@ public class PreviewSceneTests
         Assert.Equal(new Point(anchor.X + 3, anchor.Y - 2), back.ChickAnchor);
         Assert.Equal(3, back.Layers.Count);
 
-        // 병아리 레이어가 비면 장면을 만들 수 없다
+        // 병아리 레이어가 비면 장면을 만들 수 없다 — 병아리 없음(빈 캔버스)이면 넘긴 앞 장면의 발 자리를 쓴다
         project.SetCel(project.IndexOf(chickLayer), 0, null);
         Assert.Throws<InvalidOperationException>(() => PreviewScene.FromProject(project, chickLayer));
-        Assert.Throws<InvalidOperationException>(() => PreviewScene.FromProject(project, new Layer("other")));
+        Assert.Equal(anchor, PreviewScene.FromProject(project, chickLayer, anchor).ChickAnchor);
+        Assert.Throws<InvalidOperationException>(() => PreviewScene.FromProject(project, new Layer("other"), anchor));
     }
 
     [Fact]

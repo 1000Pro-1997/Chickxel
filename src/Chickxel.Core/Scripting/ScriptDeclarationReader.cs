@@ -158,17 +158,8 @@ internal static partial class ScriptDeclarationReader
         bool motion = !motionValue.IsBoolean() || motionValue.AsBoolean();
         if (!motionValue.IsUndefined() && !motionValue.IsBoolean()) Fail(DomainStrings.Script_InvalidMotion, "motion");
 
-        var clipsValue = declaration.Get("clipsBySource");
-        bool clipsBySource = clipsValue.IsBoolean() && clipsValue.AsBoolean();
-        if (!clipsValue.IsUndefined() && !clipsValue.IsBoolean()) Fail(DomainStrings.Script_InvalidClipsBySource, "clipsBySource");
-
-        // 원본 지우기: true(늘) 또는 bool 설정 키(그 설정이 참일 때)
-        var erasesValue = declaration.Get("erasesSource");
-        bool erasesSource = erasesValue.IsBoolean() && erasesValue.AsBoolean();
-        string? erasesSourceSetting = null;
-        if (erasesValue is JsString erasesKey && settings.Any(s => s.Key == erasesKey.ToString() && s.Type == ScriptSettingType.Bool))
-            erasesSourceSetting = erasesKey.ToString();
-        else if (!erasesValue.IsUndefined() && !erasesValue.IsBoolean()) Fail(DomainStrings.Script_InvalidErasesSource, "erasesSource");
+        // 예전 선언 clipsBySource·erasesSource는 읽지 않는다: 클리핑된 효과는 늘 기준 효과가 그린 층만 받고 결과도 그 밖으로 번진다(LayerEffects.Apply).
+        // 모르는 키처럼 무시하므로 그 선언이 든 원문(공식 반사·외곽선, 저장된 예전 원문)도 해시가 바뀌지 않은 채 그대로 해석된다.
 
         var easingValue = declaration.Get("easing");
         var easing = EffectEasing.Linear;
@@ -200,6 +191,10 @@ internal static partial class ScriptDeclarationReader
         var movePivotValue = declaration.Get("movePivot");
         bool movePivot = !movePivotValue.IsBoolean() || movePivotValue.AsBoolean();
         if (!movePivotValue.IsUndefined() && !movePivotValue.IsBoolean()) Fail(DomainStrings.Script_InvalidMovePivot, "movePivot");
+        // 새로 넣는 효과의 "확인할 때 캔버스 늘리기" 처음 값
+        var expandCanvasValue = declaration.Get("expandCanvas");
+        bool expandCanvas = !expandCanvasValue.IsBoolean() || expandCanvasValue.AsBoolean();
+        if (!expandCanvasValue.IsUndefined() && !expandCanvasValue.IsBoolean()) Fail(DomainStrings.Script_InvalidExpandCanvas, "expandCanvas");
 
         var translations = ReadTranslations(declaration.Get("translations"), settings, Fail);
         var tags = ReadTags(declaration.Get("tags"), Fail);
@@ -212,11 +207,11 @@ internal static partial class ScriptDeclarationReader
         return errors.Count > 0
             ? new(null, errors)
             : new(new ScriptEffectProgram(script, source, hash, sandbox.Limits, name, author, description, animated, area, radius, settings, fixedPadding,
-                previewChick ?? PreviewChicks.Default, previewFrames, translations, deferred, easing, clipsBySource, erasesSource, erasesSourceSetting)
+                previewChick ?? PreviewChicks.Default, previewFrames, translations, deferred, easing)
             {
                 Motion = motion, Tags = tags, Language = language, PreviewEndChick = previewEndChick, PreviewMotion = previewMotion,
                 PreviewPlacement = previewPlacement.IsNone ? PreviewPlacement.None : previewPlacement,
-                Repeat = repeat, RepeatCount = repeatCount, MovePivot = movePivot,
+                Repeat = repeat, RepeatCount = repeatCount, MovePivot = movePivot, ExpandCanvas = expandCanvas,
             }, []);
     }
 

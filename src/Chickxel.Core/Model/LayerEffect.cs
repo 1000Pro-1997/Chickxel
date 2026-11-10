@@ -19,8 +19,8 @@ public abstract record LayerEffect
     public FrameRange? Frames { get; init; }
 
     /// <summary>
-    /// 바로 앞의 클리핑되지 않은 효과가 바꾼 픽셀을 기준으로 이 효과를 적용한다.
-    /// 연속된 클리핑 효과는 같은 기준 효과의 영역을 공유한다. 반사·잔상은 기준 픽셀을 이동한 결과도 표시한다.
+    /// 바로 앞의 클리핑되지 않은 효과(기준 효과)만 그려졌다고 보고 이 효과를 그린다: 기준 효과가 바꾼 픽셀만 있는 층에 그리고 그 결과를 그림 위에 얹는다
+    /// (결과는 그 픽셀 밖으로도 번짐). 연속된 클리핑 효과는 앞 클리핑 효과가 고친 층을 이어받는다(<see cref="Edit.LayerEffects"/>).
     /// </summary>
     public bool ClipToPrevious { get; init; }
 

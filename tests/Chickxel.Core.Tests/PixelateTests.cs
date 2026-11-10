@@ -1849,7 +1849,7 @@ public class PixelateTests
     private static Color32 Nearest(IEnumerable<Color32> colors, Color32 to, ColorMetric? metric = null)
         => colors.OrderBy(c => (metric ?? ColorMetric.OkLab).Distance(c, to)).First();
 
-    /// <summary>뺀 결과가 색 빼기 전 결과의 뒤처리인지: 뺀 색 픽셀만 원본 칸 색에 (팔레트의 색 거리로) 가장 가까운 남은 색으로, 다른 픽셀·측정값은 그대로, 새 색 없음.</summary>
+    /// <summary>뺀 결과가 색 빼기 전 결과의 뒤처리인지: 뺀 색 픽셀만 견줄 색(원본 칸 색, 정리가 바꾼 픽셀은 정리한 색)에 (팔레트의 색 거리로) 가장 가까운 남은 색으로, 다른 픽셀·측정값은 그대로, 새 색 없음.</summary>
     private static void AssertPostProcessed(PixelateResult baseline, PixelateResult r, IReadOnlyCollection<Color32> removed)
     {
         Assert.Equal(baseline.Palette.Count - removed.Count, r.Palette.Count);
@@ -1862,7 +1862,7 @@ public class PixelateTests
         {
             var before = baseline.Frames[f].Pixels;
             var after = r.Frames[f].Pixels;
-            var source = r.SourceColors[f].Pixels;
+            var source = r.PaletteEditSources[f].Pixels;
             Assert.Equal(before.Length, after.Length);
             for (int i = 0; i < before.Length; i++)
             {
@@ -2079,7 +2079,7 @@ public class PixelateTests
             for (int i = 0; i < r.Frames[f].Pixels.Length; i++)
             {
                 var before = baseline.Frames[f].Pixels[i];
-                var from = r.SourceColors[f].Pixels[i];
+                var from = r.PaletteEditSources[f].Pixels[i];
                 if (before.A == 0 || from.A == 0) { Assert.Equal(before, r.Frames[f].Pixels[i]); continue; }
                 bool nearer = metric.Distance(from, skin) < metric.Distance(from, before);
                 Assert.Equal(nearer ? skin : before, r.Frames[f].Pixels[i]);
@@ -2091,6 +2091,28 @@ public class PixelateTests
         var back = Pixelator.WithPaletteEdits(r, [], []);
         Assert.Equal(baseline.Frames.Select(f => f.Pixels), back.Frames.Select(f => f.Pixels));
         Assert.Equal(baseline.Palette, back.Palette);
+    }
+
+    [Fact]
+    public void PinnedColorDoesNotRevertCleanup()
+    {
+        // 외곽선만 얇게가 겹 외곽선 안쪽 픽셀을 밝은 색으로 바꾼 자리: 원본 칸 색(어두운 외곽선)과 같은 색을 고정해도 그 자리는 정리한 색 그대로
+        // (예전에는 원본 칸 색이 정리한 밝은 색보다 고정 색에 가까워 고정 색이 되어, 외곽선 옆에 엉뚱한 고정 색 점이 생겼다).
+        var source = Render([ThickOutlineSprite()]);
+        var thin = SixColors with { Cleanup = SixColors.Cleanup with { OutlineFit = OutlineFit.Thin } };
+        var src = PixelateSource.Prepare(source, thin);
+        var baseline = Pixelator.Run(src, thin);
+        var f0 = Assert.Single(baseline.Frames).Pixels;
+        var raw = baseline.SourceColors[0].Pixels;
+        var edit = baseline.PaletteEditSources[0].Pixels;
+        var peeled = Enumerable.Range(0, f0.Length).Where(i => raw[i].A != 0 && f0[i].A != 0 && edit[i] != raw[i]).ToList();
+        Assert.NotEmpty(peeled);
+        var pin = raw[peeled[0]];
+        Assert.NotEqual(pin, f0[peeled[0]]);
+
+        var r = Pixelator.Run(src, thin with { Palette = thin.Palette with { PinnedColors = [pin.ToHex()] } });
+        var after = Assert.Single(r.Frames).Pixels;
+        Assert.All(peeled, i => Assert.Equal(f0[i], after[i]));
     }
 
     [Fact]

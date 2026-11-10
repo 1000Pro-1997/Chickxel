@@ -261,7 +261,7 @@ internal static class ScreenTimelineShots
         // 1: 셀 묶음 우클릭(복사해 둔 뒤라 붙여넣기도 켜짐)
         k.Click(main, Cell(main, RowBody, 1));
         k.Click(main, Cell(main, RowShadow, 2), mods: RawInputModifiers.Shift);
-        ShotKit.Call(Timeline(main), "CopySelection", false);
+        ShotKit.Call(Timeline(main), "CopySelection", false, true);
         k.Settle(200);
         var block = Cells(main, RowBody, RowShadow, 1, 2);
         RightClick(k, main, block, selectFirst: false);
@@ -632,7 +632,7 @@ internal static class ScreenTimelineShots
                 var nameBox = name.GetVisualDescendants().OfType<TextBox>().First();
                 nameBox.SelectionStart = nameBox.SelectionEnd = nameBox.CaretIndex = name.Text.Length;
                 var chicks = ShotKit.Get<ListBox>(d, "_chicks");
-                chicks.SelectedIndex = PreviewChicks.Ids.ToList().IndexOf("knight");
+                chicks.SelectedIndex = PreviewChicks.Ids.ToList().IndexOf("knight") + 1; // 첫 칸 = 없음
                 ShotKit.Pump(400);
                 var form = (Panel)name.Parent!;
                 var label = form.Children[form.Children.IndexOf(name) - 1];

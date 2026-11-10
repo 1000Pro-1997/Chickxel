@@ -6,7 +6,7 @@ using Chickxel.Core.Localization;
 namespace Chickxel.Core.Scripting;
 
 /// <summary>
-/// 스크립트 효과를 만드는 사람·AI에게 주는 안내(Markdown): 지킬 규칙(선언 하나, 제자리 고치기, 결정론, 실행 한도, 설정 종류, 그라데이션을 따르는 색(권장), 대상을 옮기면 <c>ctx.movePivot</c>으로 알리기, 빠른 경로,
+/// 스크립트 효과를 만드는 사람·AI에게 주는 안내(Markdown): 지킬 규칙(선언 하나, 제자리 고치기, 결정론, 실행 한도, 설정 종류, 그라데이션을 따르는 색(권장), 대상을 옮기면 <c>ctx.movePivot</c>으로 알리기, 빠른 경로, 클리핑될 때 받는 그림,
 /// 다른 레이어 읽기(미리보기 장면·<c>layer-reference</c> 태그), 다른 프레임 읽기(변신·<c>matchPixels</c>·끝 그림 병아리·<c>frame-reference</c> 태그), 설명·견본 병아리),
 /// 답하는 방식, <see cref="ScriptApiCatalog.ToMarkdown"/>의 API 목록, 그리고 주면 지금 원문.
 /// 규칙 글은 지금 화면 언어(<see cref="ScriptGuideStrings"/>), API 목록은 늘 영어다.
@@ -49,6 +49,7 @@ public static class ScriptEffectGuide
         Rule(md, ScriptGuideStrings.Guide_RuleAnimated);
         Rule(md, ScriptGuideStrings.Guide_RuleMovePivot);
         Rule(md, ScriptGuideStrings.Guide_RuleFast);
+        Rule(md, ScriptGuideStrings.Guide_RuleClipping);
         Rule(md, ScriptGuideStrings.FormatGuide_RuleLayers(tag: IO.ScriptAsset.LayerReferenceTag));
         Rule(md, ScriptGuideStrings.FormatGuide_RuleFrames(tag: IO.ScriptAsset.FrameReferenceTag));
         Rule(md, ScriptGuideStrings.Guide_RuleLanguage);

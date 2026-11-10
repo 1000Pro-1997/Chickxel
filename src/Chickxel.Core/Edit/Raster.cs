@@ -242,21 +242,21 @@ public static class Raster
 
     /// <summary>
     /// 채우기. <paramref name="contiguous"/>면 이어진 영역만(<paramref name="diagonal"/>이면 8방향, 아니면 4방향), 아니면 영역 안의 맞는 색 전체를 바꾼다.
-    /// 영역은 <see cref="FloodRegion"/>으로 정한다.
+    /// 영역은 <see cref="FloodRegion"/>으로 정한다(<paramref name="mode"/> = 허용 오차를 잴 색 비교 방식).
     /// <para>
     /// <paramref name="sample"/>을 주면 영역은 그 그림(같은 크기, 예: 보이는 레이어 합성)의 색으로 정하고 칠하기는 <paramref name="image"/>에 한다.
     /// </para>
     /// 바뀐 픽셀 수를 돌려준다.
     /// </summary>
     public static int FloodFill(PixelImage image, int x, int y, Color32 color, bool contiguous = true, PixelMask? clip = null,
-        int tolerance = 0, bool diagonal = false, PixelImage? sample = null)
+        int tolerance = 0, bool diagonal = false, PixelImage? sample = null, FillColorMode mode = FillColorMode.ChannelMax)
     {
         if (sample is not null && (sample.Width != image.Width || sample.Height != image.Height))
             throw new ArgumentException(Chickxel.Core.Localization.DomainStrings.Fill_SourceSizeMismatch, nameof(sample));
         if (!image.Contains(x, y)) return 0;
         // 같은 그림에서 정확히 같은 색으로 채우면 바뀔 것이 없다.
         if (sample is null && tolerance <= 0 && image.Get(x, y) == color) return 0;
-        var region = FloodRegion(sample ?? image, x, y, contiguous, clip, tolerance, diagonal);
+        var region = FloodRegion(sample ?? image, x, y, contiguous, clip, tolerance, diagonal, mode);
         var r = region.Bounds;
         var px = image.Pixels;
         int changed = 0;
@@ -275,24 +275,24 @@ public static class Raster
     /// 채우기·스마트 선택 영역: <paramref name="source"/>에서 (x,y)(씨앗)의 색과 맞는 칸.
     /// <paramref name="contiguous"/>면 씨앗에서 이어진 칸만(<paramref name="diagonal"/>이면 8방향, 아니면 4방향), 아니면 <paramref name="clip"/> 안의 맞는 칸 전체.
     /// <para>
-    /// 맞는 색: 씨앗 색과 RGBA 채널마다의 차이 중 가장 큰 값이 <paramref name="tolerance"/>(0~255) 이하인 색(<see cref="Matches"/>).
-    /// 0이면 정확히 같은 색만이다. 투명(알파 0) 픽셀은 RGB가 없는 것으로 보아, 한쪽이 투명이면 알파 차이만 잰다(둘 다 투명이면 같은 색).
+    /// 맞는 색: 씨앗 색과의 차이가 <paramref name="tolerance"/>(0~255, 255 = 모든 색) 안인 색 — <paramref name="mode"/>로 재는
+    /// <see cref="FillColorMatcher"/>(기본 = RGBA 채널 차이의 최댓값). 0이면 정확히 같은 색만이다.
+    /// 투명(알파 0) 픽셀은 RGB가 없는 것으로 보아, 한쪽이 투명이면 알파 차이만 잰다(둘 다 투명이면 같은 색).
     /// </para>
     /// 씨앗이 그림이나 <paramref name="clip"/> 밖이면 빈 영역. 돌려주는 영역은 그림 크기를 감싼다(필요하면 <see cref="PixelMask.Trim"/>).
     /// </summary>
     public static PixelMask FloodRegion(PixelImage source, int x, int y, bool contiguous = true, PixelMask? clip = null,
-        int tolerance = 0, bool diagonal = false)
+        int tolerance = 0, bool diagonal = false, FillColorMode mode = FillColorMode.ChannelMax)
     {
         var area = Rectangle.Intersect(clip?.Bounds ?? source.Bounds, source.Bounds);
         if (!area.Contains(x, y) || clip is { } c0 && !c0.Contains(x, y)) return default;
         // 모양 제한이면 칸마다 확인한다(사각형은 area로 충분).
         PixelMask? shape = clip is { IsRectangle: false } ? clip : null;
-        tolerance = Math.Clamp(tolerance, 0, 255);
+        var match = new FillColorMatcher(source.Pixels[y * source.Width + x], tolerance, mode);
         int w = source.Width;
         var src = source.Pixels;
-        var seed = src[y * w + x];
         var bits = new bool[src.Length];
-        bool Ok(int cx, int cy) => (shape is not { } s || s.Contains(cx, cy)) && Matches(src[cy * w + cx], seed, tolerance);
+        bool Ok(int cx, int cy) => (shape is not { } s || s.Contains(cx, cy)) && match.Matches(src[cy * w + cx]);
 
         if (!contiguous)
         {
@@ -332,17 +332,6 @@ public static class Raster
                 inSpan = match;
             }
         }
-    }
-
-    /// <summary>
-    /// <see cref="FloodRegion"/>의 색 비교: RGBA 채널 차이의 최댓값 ≤ <paramref name="tolerance"/>. 한쪽이 투명이면 알파 차이만 잰다.
-    /// </summary>
-    public static bool Matches(Color32 c, Color32 seed, int tolerance)
-    {
-        if (c.Argb == seed.Argb) return true;
-        if (c.A == 0 || seed.A == 0) return Math.Abs(c.A - seed.A) <= tolerance;
-        return Math.Abs(c.R - seed.R) <= tolerance && Math.Abs(c.G - seed.G) <= tolerance
-            && Math.Abs(c.B - seed.B) <= tolerance && Math.Abs(c.A - seed.A) <= tolerance;
     }
 
     /// <summary>영역 안의 <paramref name="target"/>(투명은 모두 같은 색) 픽셀을 모두 바꾼다.</summary>

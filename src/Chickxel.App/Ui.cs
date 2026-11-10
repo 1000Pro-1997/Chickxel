@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
+using Avalonia.Styling;
 using Chickxel.Core.Model;
 using Chickxel.App.Localization;
 
@@ -182,6 +183,59 @@ public static class Ui
         b.HorizontalContentAlignment = HorizontalAlignment.Center;
         b.VerticalContentAlignment = VerticalAlignment.Center;
         return b.Tip(tip);
+    }
+
+    /// <summary>
+    /// 단추에 직접 칠한 바탕·글자·테두리 색(초록 '대표', 빨간 '초기화'·'취소'·저장 안 한 '저장')을 마우스를 올리거나 누를 때도 유지한다(테마의 회색 대신 — 조금 흐려져 눌린 느낌만 줌).
+    /// <paramref name="onlyClass"/>가 있으면 단추에 그 클래스가 붙어 있을 때만(색을 칠했다 지웠다 하는 단추).
+    /// </summary>
+    public static void KeepFillOnHover(Button button, string? onlyClass = null)
+    {
+        foreach (var state in new[] { ":pointerover", ":pressed" })
+            button.Styles.Add(new Avalonia.Styling.Style(x => (onlyClass is null ? x.OfType<Button>() : x.OfType<Button>().Class(onlyClass)).Class(state).Template().OfType<Avalonia.Controls.Presenters.ContentPresenter>().Name("PART_ContentPresenter"))
+            {
+                Setters =
+                {
+                    new Avalonia.Styling.Setter(Avalonia.Controls.Presenters.ContentPresenter.BackgroundProperty, new Avalonia.Data.TemplateBinding(TemplatedControl.BackgroundProperty)),
+                    new Avalonia.Styling.Setter(Avalonia.Controls.Presenters.ContentPresenter.ForegroundProperty, new Avalonia.Data.TemplateBinding(TemplatedControl.ForegroundProperty)),
+                    new Avalonia.Styling.Setter(Avalonia.Controls.Presenters.ContentPresenter.BorderBrushProperty, new Avalonia.Data.TemplateBinding(TemplatedControl.BorderBrushProperty)),
+                    new Avalonia.Styling.Setter(Visual.OpacityProperty, state == ":pressed" ? 0.7 : 0.85),
+                },
+            });
+    }
+
+    /// <summary>
+    /// 단추 <paramref name="button"/> 오른쪽 끝에 작은 아래 화살표 칸을 붙여 한 단추처럼 보이는 묶음을 만든다(사이는 가는 나눔선만). 화살표를 누르면
+    /// <paramref name="open"/>(묶음을 받아 그 아래에 메뉴·팝업을 엶). 켜고 끄는 단추면 켜졌을 때 화살표 칸도 같은 색으로 칠한다. 단추의 바깥 여백은 묶음으로 옮긴다.
+    /// 우클릭으로도 같은 것이 열린다는 것을 화살표로 보이기 위한 모양 — 우클릭 연결은 부르는 쪽이 한다.
+    /// </summary>
+    public static StackPanel WithMenuArrow(Button button, string tip, Action<Control> open)
+    {
+        var margin = button.Margin;
+        button.Margin = default;
+        button.CornerRadius = new CornerRadius(4, 0, 0, 4);
+        var arrow = new Button
+        {
+            Content = Icon(VectorIcon.ChevronDown, 9),
+            Padding = new Thickness(2, 0, 3, 0),
+            MinWidth = 0,
+            MinHeight = 0,
+            BorderThickness = new Thickness(1, 0, 0, 0),
+            BorderBrush = AppTheme.BackBrush,
+            CornerRadius = new CornerRadius(0, 4, 4, 0),
+            Focusable = false,
+            VerticalAlignment = VerticalAlignment.Stretch,
+            VerticalContentAlignment = VerticalAlignment.Center,
+        }.Tip(tip);
+        var group = new StackPanel { Orientation = Orientation.Horizontal, Margin = margin, VerticalAlignment = button.VerticalAlignment, Children = { button, arrow } };
+        arrow.Click += (_, _) => open(group);
+        if (button is ToggleButton toggle)
+            toggle.IsCheckedChanged += (_, _) =>
+            {
+                if (toggle.IsChecked == true) arrow.Background = AppTheme.AccentBrush;
+                else arrow.ClearValue(TemplatedControl.BackgroundProperty);
+            };
+        return group;
     }
 
     public static CheckBox Check(string text, bool value = false) => new()

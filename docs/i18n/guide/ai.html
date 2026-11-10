@@ -4,7 +4,7 @@
 <div class="table-wrap"><table>
 <thead><tr><th>{{ai.intro.th1}}</th><th>{{ai.intro.th2}}</th></tr></thead>
 <tbody>
-<tr><td>{{ai.intro.g1}}</td><td><a href="#ai-overview">{{ai-overview.1}}</a> · <a href="#ai-setup">{{ai-setup.1}}</a> · <a href="#ai-open">{{ai-open.1}}</a> · <a href="#ai-tabs">{{ai-tabs.1}}</a> · <a href="#ai-how">{{ai-how.1}}</a></td></tr>
+<tr><td>{{ai.intro.g1}}</td><td><a href="#ai-overview">{{ai-overview.1}}</a> · <a href="#ai-setup">{{ai-setup.1}}</a> · <a href="#ai-open">{{ai-open.1}}</a> · <a href="#ai-tabs">{{ai-tabs.1}}</a> · <a href="#ai-how">{{ai-how.1}}</a> · <a href="#ai-external">{{ai-external.1}}</a></td></tr>
 <tr><td>{{ai.intro.g2}}</td><td><a href="#ai-chat">{{ai-chat.1}}</a> · <a href="#ai-progress">{{ai-progress.1}}</a> · <a href="#ai-questions">{{ai-questions.1}}</a> · <a href="#ai-edit-last">{{ai-edit-last.1}}</a> · <a href="#ai-history">{{ai-history.1}}</a> · <a href="#ai-help">{{ai-help.1}}</a></td></tr>
 <tr><td>{{ai.intro.g3}}</td><td><a href="#ai-edits">{{ai-edits.1}}</a> · <a href="#ai-generate">{{ai-generate.1}}</a> · <a href="#ai-effects">{{ai-effects.1}}</a> · <a href="#ai-references">{{ai-references.1}}</a></td></tr>
 <tr><td>{{ai.intro.g4}}</td><td><a href="#ai-undo">{{ai-undo.1}}</a> · <a href="#ai-file-only">{{ai-file-only.1}}</a> · <a href="#ai-locked">{{ai-locked.1}}</a></td></tr>
@@ -125,6 +125,7 @@
 <h4>{{ai-how.h-server}}</h4>
 <p>{{ai-how.server-1}}</p>
 <p>{{ai-how.server-2}}</p>
+<p>{{ai-how.server-3}}</p>
 <h4>{{ai-how.h-limits}}</h4>
 <div class="table-wrap"><table>
 <thead><tr><th>{{ai-how.th-cli}}</th><th>{{ai-how.th-limits}}</th></tr></thead>
@@ -142,6 +143,87 @@
 <li>{{ai-how.data-1}}</li>
 <li>{{ai-how.data-2}}</li>
 </ul>
+
+<h3 id="ai-external">{{ai-external.1}}</h3>
+<p>{{ai-external.lead}}</p>
+<h4>{{ai-external.h-on}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/ai-external.png" alt="{{ai-external.shot1.alt}}" width="658" height="382" loading="lazy"><figcaption>{{ai-external.shot1}}</figcaption></figure>
+<ul class="marks">
+<li>{{ai-external.m1}}</li>
+<li>{{ai-external.m3}}</li>
+<li>{{ai-external.m4}}</li>
+<li>{{ai-external.m5}}</li>
+</ul>
+<p>{{ai-external.after-on}}</p>
+<h4>{{ai-external.h-apps}}</h4>
+<p>{{ai-external.apps-lead}}</p>
+<pre><code>{
+  "mcpServers": {
+    "chickxel": {
+      "command": "C:\\Users\\me\\AppData\\Local\\Programs\\Chickxel\\Chickxel.exe",
+      "args": ["--mcp"]
+    }
+  }
+}</code></pre>
+<p>{{ai-external.apps-path}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-external.th-app}}</th><th>{{ai-external.th-where}}</th></tr></thead>
+<tbody>
+<tr><td>Claude Desktop</td><td>{{ai-external.app-desktop}}</td></tr>
+<tr><td>Claude Code</td><td>{{ai-external.app-code}}</td></tr>
+<tr><td>Cursor</td><td>{{ai-external.app-cursor}}</td></tr>
+<tr><td>Codex CLI</td><td>{{ai-external.app-codex}}</td></tr>
+</tbody>
+</table></div>
+<pre><code>[mcp_servers.chickxel]
+command = 'C:\Users\me\AppData\Local\Programs\Chickxel\Chickxel.exe'
+args = ["--mcp"]</code></pre>
+<p>{{ai-external.apps-check}}</p>
+<h4>{{ai-external.h-how}}</h4>
+<ol>
+<li>{{ai-external.how-1}}</li>
+<li>{{ai-external.how-2}}</li>
+<li>{{ai-external.how-3}}</li>
+<li>{{ai-external.how-4}}</li>
+</ol>
+<p>{{ai-external.how-restart}}</p>
+<h4>{{ai-external.h-status}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/ai-external-2.png" alt="{{ai-external.shot2.alt}}" width="526" height="63" loading="lazy"><figcaption>{{ai-external.shot2}}</figcaption></figure>
+<p>{{ai-external.status}}</p>
+<h4>{{ai-external.h-diff}}</h4>
+<p>{{ai-external.diff-lead}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-external.th-item}}</th><th>{{ai-external.th-chat}}</th><th>{{ai-external.th-ext}}</th></tr></thead>
+<tbody>
+<tr><td>{{ai-external.d-start}}</td><td>{{ai-external.d-start.chat}}</td><td>{{ai-external.d-start.ext}}</td></tr>
+<tr><td>{{ai-external.d-cost}}</td><td>{{ai-external.d-cost.chat}}</td><td>{{ai-external.d-cost.ext}}</td></tr>
+<tr><td>{{ai-external.d-undo}}</td><td>{{ai-external.d-undo.chat}}</td><td>{{ai-external.d-undo.ext}}</td></tr>
+<tr><td>{{ai-external.d-ask}}</td><td>{{ai-external.d-ask.chat}}</td><td>{{ai-external.d-ask.ext}}</td></tr>
+<tr><td>{{ai-external.d-open}}</td><td>{{ai-external.d-open.chat}}</td><td>{{ai-external.d-open.ext}}</td></tr>
+<tr><td>{{ai-external.d-gen}}</td><td>{{ai-external.d-gen.chat}}</td><td>{{ai-external.d-gen.ext}}</td></tr>
+<tr><td>{{ai-external.d-file-only}}</td><td>{{ai-external.d-file-only.chat}}</td><td>{{ai-external.d-file-only.ext}}</td></tr>
+<tr><td>{{ai-external.d-locked}}</td><td>{{ai-external.d-locked.chat}}</td><td>{{ai-external.d-locked.ext}}</td></tr>
+<tr><td>{{ai-external.d-rules}}</td><td>{{ai-external.d-rules.chat}}</td><td>{{ai-external.d-rules.ext}}</td></tr>
+<tr><td>{{ai-external.d-see}}</td><td>{{ai-external.d-see.chat}}</td><td>{{ai-external.d-see.ext}}</td></tr>
+</tbody>
+</table></div>
+<h4>{{ai-external.h-safety}}</h4>
+<ul>
+<li>{{ai-external.safe-1}}</li>
+<li>{{ai-external.safe-2}}</li>
+<li>{{ai-external.safe-3}}</li>
+<li>{{ai-external.safe-4}}</li>
+</ul>
+<h4>{{ai-external.h-trouble}}</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-external.th-sym}}</th><th>{{ai-external.th-fix}}</th></tr></thead>
+<tbody>
+<tr><td>{{ai-external.t-off}}</td><td>{{ai-external.t-off.fix}}</td></tr>
+<tr><td>{{ai-external.t-notools}}</td><td>{{ai-external.t-notools.fix}}</td></tr>
+<tr><td>{{ai-external.t-missing}}</td><td>{{ai-external.t-missing.fix}}</td></tr>
+<tr><td>{{ai-external.t-image}}</td><td>{{ai-external.t-image.fix}}</td></tr>
+</tbody>
+</table></div>
 
 <h3 id="ai-chat">{{ai-chat.1}}</h3>
 <p>{{ai-chat.lead}}</p>

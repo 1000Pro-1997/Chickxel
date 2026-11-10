@@ -17,5 +17,5 @@ public static class OutlineDefinition
         s.Bool("hideOriginal", e => e.HideOriginal, (e, v) => e with { HideOriginal = v }),
         s.Choice("colorMode", e => e.ColorMode, (e, v) => e with { ColorMode = v }, legacy: ["mode"]),
         s.Int("shadeAmount", -100, 100, e => e.ShadeAmount, (e, v) => e with { ShadeAmount = v }, legacy: ["amount"]),
-    ], padding: OutlineRender.Padding, erasesSource: e => e.HideOriginal);
+    ], padding: OutlineRender.Padding);
 }

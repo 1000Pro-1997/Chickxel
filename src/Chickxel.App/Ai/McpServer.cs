@@ -15,7 +15,15 @@ public enum McpScope
     Full,
     /// <summary>효과 만들기 AI 칸: 읽기 도구와 효과 만들기 편집기 도구만(<see cref="PixelTools.EffectMakerScopeTools"/>).</summary>
     EffectMaker,
+    /// <summary>
+    /// 외부 AI 연결(<c>Chickxel --mcp</c> 다리로 들어온 다른 AI 앱): 사용자에게 묻기를 뺀 도구, 파일 열기·그림 생성은 사용자가 켰을 때만
+    /// (<see cref="PixelTools.ExternalAllows"/>). 채팅 차례의 편집 범위·첨부 그림은 쓰지 않는다.
+    /// </summary>
+    External,
 }
+
+/// <summary>외부 AI 연결에서 따로 허락하는 도구: 경로로 파일 열기(<c>open_file</c>), 내 Codex로 그림 생성(<c>generate_pixel_art</c>).</summary>
+public sealed record McpExternalAccess(bool OpenFile, bool Generate);
 
 /// <summary>
 /// 앱 안에서 도는 최소 MCP 서버(Streamable HTTP, <see cref="HttpListener"/>). 127.0.0.1의 빈 포트에서
@@ -25,6 +33,10 @@ public enum McpScope
 /// <para>
 /// 요청마다 백그라운드 작업에서 처리하고, <c>tools/call</c>만 UI 스레드로 넘겨 <see cref="PixelTools.CallAsync"/>를 부른다. 오래 걸리는 도구(그림 생성)는
 /// 클라이언트가 받으면 SSE로 답해 기다리는 동안 신호·진행을 보낸다. 어떤 예외도 받기 루프 밖으로 나가지 않는다. 응답이 필요 없는 메시지(알림·응답)는 202, GET은 405, DELETE는 200.
+/// </para>
+/// <para>
+/// 외부 AI 연결을 켜면(<see cref="SetExternal"/>) 외부 토큰을 만들고 주소·토큰을 잠금 파일(<see cref="ExternalLockPath"/>)에 쓴다. <c>Chickxel --mcp</c>
+/// 다리(<see cref="McpBridge"/>)가 그 파일을 읽어 stdio 메시지를 이 서버로 넘긴다. 끄거나 앱을 끝내면 토큰을 버리고 파일을 지운다.
 /// </para>
 /// </summary>
 public sealed class McpServer : IDisposable
@@ -46,6 +58,9 @@ public sealed class McpServer : IDisposable
     private readonly object _traceGate = new();
     private readonly Queue<(long Sequence, string Operation, int Status, string? Failure)> _recentRequests = new();
     private const int MaxRecentRequests = 8;
+    /// <summary>외부 AI 연결 토큰(꺼져 있으면 null).</summary>
+    private volatile string? _externalToken;
+    private volatile McpExternalAccess _externalAccess = new(false, false);
 
 
     public McpServer(PixelTools tools)
@@ -53,6 +68,64 @@ public sealed class McpServer : IDisposable
         _tools = tools;
         Token = NewToken();
         EffectMakerToken = NewToken();
+    }
+
+    /// <summary>외부 AI 연결이 도구를 부름(도구 이름). UI 스레드.</summary>
+    public event Action<string>? ExternalToolCalled;
+
+    /// <summary>
+    /// 외부 AI 연결 잠금 파일(설정 폴더의 <c>mcp-external.json</c>): <c>{ "url", "token", "pid" }</c>. 켜져 있는 동안만 있다.
+    /// 토큰이 들어 있으므로 macOS·Linux에서는 본인만 읽을 수 있게 만든다(Windows는 사용자 폴더).
+    /// </summary>
+    public static string ExternalLockPath => Path.Combine(Platform.AppFolder, "mcp-external.json");
+
+    /// <summary>
+    /// 외부 AI 연결을 켜거나(<paramref name="access"/> = 따로 허락한 도구) 끈다(null). 켜면 서버를 시작하고 처음이면 새 토큰을 만들어 잠금 파일을 쓴다
+    /// (허락만 바뀌면 토큰은 그대로). 끄면 토큰을 버려 다리의 요청이 401이 되고 잠금 파일을 지운다. 서버를 시작하지 못하면 예외(<see cref="Start"/>).
+    /// </summary>
+    public void SetExternal(McpExternalAccess? access)
+    {
+        if (access is null)
+        {
+            _externalToken = null;
+            DeleteExternalLock();
+            return;
+        }
+        Start();
+        _externalAccess = access;
+        _externalToken ??= NewToken();
+        WriteExternalLock(_externalToken);
+    }
+
+    /// <summary>외부 AI 연결이 켜져 있는지.</summary>
+    public bool ExternalEnabled => _externalToken is not null;
+
+    private void WriteExternalLock(string token)
+    {
+        var json = new JsonObject { ["url"] = Url, ["token"] = token, ["pid"] = Environment.ProcessId };
+        var path = ExternalLockPath;
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        var temp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        var options = new FileStreamOptions { Mode = FileMode.CreateNew, Access = FileAccess.Write, Share = FileShare.None };
+        if (!OperatingSystem.IsWindows()) options.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+        using (var fs = new FileStream(temp, options)) fs.Write(Encoding.UTF8.GetBytes(json.ToJsonString()));
+        File.Move(temp, path, overwrite: true);
+    }
+
+    /// <summary>잠금 파일이 이 앱의 것이면 지운다(다른 Chickxel이 쓴 파일은 그대로).</summary>
+    private static void DeleteExternalLock()
+    {
+        var path = ExternalLockPath;
+        try
+        {
+            if (!File.Exists(path)) return;
+            if (JsonNode.Parse(File.ReadAllText(path))?["pid"]?.GetValue<int>() != Environment.ProcessId) return;
+            File.Delete(path);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException or FormatException)
+        {
+            // 지우지 못하면 남는다 — 다리는 pid가 끝났거나 토큰이 틀리면 꺼진 것으로 안내한다.
+        }
     }
 
     private static string NewToken() => Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
@@ -228,6 +301,8 @@ public sealed class McpServer : IDisposable
             _configPaths.Clear();
         }
         try { listener?.Close(); } catch { /* 종료 중 오류는 무시 */ }
+        _externalToken = null;
+        DeleteExternalLock();
         foreach (var path in configPaths)
             try { File.Delete(path); } catch { /* 지우지 못해도 임시 폴더라 괜찮다 */ }
     }
@@ -317,11 +392,17 @@ public sealed class McpServer : IDisposable
         // 두 토큰을 모두 견준다(어느 쪽이 맞았는지로 걸리는 시간이 달라지지 않게)
         bool full = CryptographicOperations.FixedTimeEquals(given, Encoding.UTF8.GetBytes(Token));
         bool maker = CryptographicOperations.FixedTimeEquals(given, Encoding.UTF8.GetBytes(EffectMakerToken));
-        return full ? McpScope.Full : maker ? McpScope.EffectMaker : null;
+        bool external = _externalToken is { } token && CryptographicOperations.FixedTimeEquals(given, Encoding.UTF8.GetBytes(token));
+        return full ? McpScope.Full : maker ? McpScope.EffectMaker : external ? McpScope.External : null;
     }
 
     /// <summary><paramref name="scope"/>에서 <paramref name="name"/> 도구를 쓸 수 있는지.</summary>
-    public static bool Allows(McpScope scope, string name) => scope == McpScope.Full || PixelTools.EffectMakerScopeTools.Contains(name);
+    private bool Allows(McpScope scope, string name) => scope switch
+    {
+        McpScope.Full => true,
+        McpScope.EffectMaker => PixelTools.EffectMakerScopeTools.Contains(name),
+        _ => PixelTools.ExternalAllows(name, _externalAccess),
+    };
 
     private async Task HandlePostAsync(HttpListenerRequest request, HttpListenerResponse response, McpScope scope, RequestTrace trace)
     {
@@ -499,20 +580,25 @@ public sealed class McpServer : IDisposable
             switch (method)
             {
                 case "initialize":
-                    return Result(id, new JsonObject
+                    var info = new JsonObject
                     {
                         ["protocolVersion"] = AsString(parameters?["protocolVersion"]) ?? DefaultProtocolVersion,
                         ["capabilities"] = new JsonObject { ["tools"] = new JsonObject { ["listChanged"] = false } },
                         ["serverInfo"] = new JsonObject { ["name"] = ServerName, ["version"] = "1.0" },
-                    });
+                    };
+                    // 외부 AI 앱은 채팅의 시스템 프롬프트를 받지 않으므로 같은 그리기 규칙을 여기서 준다.
+                    if (scope == McpScope.External) info["instructions"] = AiCli.ExternalInstructions;
+                    return Result(id, info);
                 case "ping":
                     return Result(id, new JsonObject());
                 case "tools/list":
-                    Interlocked.Increment(ref _toolLists);
+                    // 채팅의 연결 확인(ToolsListedSince)은 CLI가 받아 간 것만 센다.
+                    if (scope != McpScope.External) Interlocked.Increment(ref _toolLists);
                     var tools = _tools.ListTools();
                     if (scope != McpScope.Full)
                         foreach (var tool in tools.ToList())
                             if (AsString(tool?["name"]) is not { } listed || !Allows(scope, listed)) tools.Remove(tool);
+                    if (scope == McpScope.External) PixelTools.AdaptForExternal(tools);
                     return Result(id, new JsonObject { ["tools"] = tools });
                 case "tools/call":
                     var name = AsString(parameters?["name"]);
@@ -541,15 +627,21 @@ public sealed class McpServer : IDisposable
         if (!Allows(scope, name))
             return new JsonObject
             {
-                ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = UiStrings.FormatAi_Scope_EffectMakerOnly(tool: name) }),
+                ["content"] = new JsonArray(new JsonObject
+                {
+                    ["type"] = "text",
+                    ["text"] = scope == McpScope.External ? UiStrings.FormatAi_Scope_ExternalOff(tool: name) : UiStrings.FormatAi_Scope_EffectMakerOnly(tool: name),
+                }),
                 ["isError"] = true,
             };
+        bool external = scope == McpScope.External;
         try
         {
             return await Dispatcher.UIThread.InvokeAsync(async () =>
             {
                 while (WorkOverlay.IsActive) await WorkOverlay.WhenIdle();
-                return await _tools.CallAsync(name, arguments, progress, ct);
+                if (external) ExternalToolCalled?.Invoke(name);
+                return await _tools.CallAsync(name, arguments, progress, ct, external);
             });
         }
         catch (Exception e)

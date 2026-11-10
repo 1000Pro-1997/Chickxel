@@ -5,7 +5,7 @@
 <thead><tr><th>{{tools.intro.th1}}</th><th>{{tools.intro.th2}}</th><th>{{tools.intro.th3}}</th></tr></thead>
 <tbody>
 <tr><td>{{tools.intro.basics}}</td><td><a href="#tools-list">{{tools-list.1}}</a> · <a href="#tools-basics">{{tools-basics.1}}</a> · <a href="#tools-groups">{{tools-groups.1}}</a> · <a href="#tools-brush">{{tools-brush.1}}</a></td><td>{{tools.intro.basics-use}}</td></tr>
-<tr><td>{{tools.intro.draw}}</td><td><a href="#tools-pencil">{{MainStrings.Tool_Pencil_Name}}</a> · <a href="#tools-gradient-pencil">{{MainStrings.Tool_GradientPencil_Name}}</a> · <a href="#tools-eraser">{{MainStrings.Tool_Eraser_Name}}</a> · <a href="#tools-shape">{{MainStrings.Tool_Shape_Name}}</a> · <a href="#tools-text">{{MainStrings.Tool_Text_Name}}</a></td><td>{{tools.intro.draw-use}}</td></tr>
+<tr><td>{{tools.intro.draw}}</td><td><a href="#tools-pencil">{{MainStrings.Tool_Pencil_Name}}</a> · <a href="#tools-gradient-pencil">{{MainStrings.Tool_GradientPencil_Name}}</a> · <a href="#tools-shape-pen">{{MainStrings.Tool_ShapePen_Name}}</a> · <a href="#tools-eraser">{{MainStrings.Tool_Eraser_Name}}</a> · <a href="#tools-shape">{{MainStrings.Tool_Shape_Name}}</a> · <a href="#tools-text">{{MainStrings.Tool_Text_Name}}</a></td><td>{{tools.intro.draw-use}}</td></tr>
 <tr><td>{{tools.intro.color}}</td><td><a href="#tools-fill">{{MainStrings.Tool_Fill_Name}}</a> · <a href="#tools-gradient">{{MainStrings.Tool_Gradient_Name}}</a> · <a href="#tools-picker">{{MainStrings.Tool_Picker_Name}}</a> · <a href="#tools-dodge">{{MainStrings.Tool_Dodge_Name}}</a> · <a href="#tools-dither">{{MainStrings.Tool_Dither_Name}}</a> · <a href="#tools-replace-brush">{{MainStrings.Tool_ReplaceBrush_Name}}</a></td><td>{{tools.intro.color-use}}</td></tr>
 <tr><td>{{tools.intro.select}}</td><td><a href="#tools-select">{{tools.intro.select-tools}}</a> · <a href="#tools-move">{{MainStrings.Tool_Move_Name}}</a> · <a href="#tools-transform">{{tools.intro.transform}}</a> · <a href="#tools-canvas-size">{{tools.intro.canvas-size}}</a> · <a href="#tools-layer-size">{{tools.intro.layer-size}}</a></td><td>{{tools.intro.select-use}}</td></tr>
 <tr><td>{{tools.intro.unity}}</td><td><a href="#tools-pivot">{{MainStrings.Tool_Pivot_Name}}</a> · <a href="#tools-nine-slice">9-slice</a></td><td>{{tools.intro.unity-use}}</td></tr>
@@ -23,6 +23,7 @@
 <tbody>
 <tr><td>③ <a href="#tools-pencil">{{MainStrings.Tool_Pencil_Name}}</a></td><td>{{key:도구/연필}}</td><td>{{tools-list.9}}</td></tr>
 <tr><td>③ <a href="#tools-gradient-pencil">{{MainStrings.Tool_GradientPencil_Name}}</a></td><td>{{key:도구/그라데이션 연필}}</td><td>{{tools-list.41}}</td></tr>
+<tr><td>③ <a href="#tools-shape-pen">{{MainStrings.Tool_ShapePen_Name}}</a></td><td>{{tools-list.no-key}}</td><td>{{tools-list.shape-pen}}</td></tr>
 <tr><td>④ <a href="#tools-eraser">{{MainStrings.Tool_Eraser_Name}}</a></td><td>{{key:도구/지우개}}</td><td>{{tools-list.11}}</td></tr>
 <tr><td>⑤ <a href="#tools-fill">{{MainStrings.Tool_Fill_Name}}</a></td><td>{{key:도구/채우기}}</td><td>{{tools-list.13}}</td></tr>
 <tr><td>⑤ <a href="#tools-gradient">{{MainStrings.Tool_Gradient_Name}}</a></td><td>{{key:도구/그라데이션}}</td><td>{{tools-list.15}}</td></tr>
@@ -92,7 +93,7 @@
 </table></div>
 
 <h3 id="tools-groups">{{tools-groups.1}}</h3>
-<figure class="shot"><img src="{{root}}assets/guide/tools-groups.png" alt="{{tools-groups.5.alt}}" width="319" height="374" loading="lazy"><figcaption>{{tools-groups.6}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/tools-groups.png" alt="{{tools-groups.5.alt}}" width="316" height="374" loading="lazy"><figcaption>{{tools-groups.6}}</figcaption></figure>
 <p>{{tools-groups.2}}</p>
 <ul>
 <li>{{tools-groups.3}}</li>
@@ -173,6 +174,68 @@
 <h4>{{tools-gradient-pencil.how}}</h4>
 <p>{{tools-gradient-pencil.3}}</p>
 <p>{{tools-gradient-pencil.alpha}}</p>
+
+<h3 id="tools-shape-pen">{{MainStrings.Tool_ShapePen_Name}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/tools-shape-pen-example.png" alt="{{tools-shape-pen.example.alt}}" width="504" height="280" loading="lazy"><figcaption>{{tools-shape-pen.example.cap}}</figcaption></figure>
+<p>{{tools-shape-pen.intro}}</p>
+<ul>
+<li>{{tools-shape-pen.click}}</li>
+<li>{{tools-shape-pen.drag}}</li>
+<li>{{tools-shape-pen.same}}</li>
+</ul>
+<h4>{{tools-shape-pen.settings}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/tools-shape-pen.png" alt="{{tools-shape-pen.settings.alt}}" width="338" height="334" loading="lazy"><figcaption>{{tools-shape-pen.settings.cap}}</figcaption></figure>
+<p>{{tools-shape-pen.settings.intro}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{tools-shape-pen.col-item}}</th><th>{{tools-shape-pen.col-does}}</th></tr></thead>
+<tbody>
+<tr><td>① <strong>{{UiStrings.ShapePen_Set}}</strong></td><td>{{tools-shape-pen.set}}</td></tr>
+<tr><td>② {{tools-shape-pen.setbtn-name}}</td><td>{{tools-shape-pen.setbtn}}</td></tr>
+<tr><td>③ {{tools-shape-pen.tiles-name}}</td><td>{{tools-shape-pen.shapes}}</td></tr>
+<tr><td>④ <strong>{{UiStrings.ShapePen_AddShape}}</strong></td><td>{{tools-shape-pen.add-row}}</td></tr>
+<tr><td>⑤ <strong>{{UiStrings.ShapePen_Order}}</strong></td><td>{{tools-shape-pen.order-row}}</td></tr>
+<tr><td>⑥ <strong>{{UiStrings.ShapePen_Spacing}}</strong></td><td>{{tools-shape-pen.spacing-row}}</td></tr>
+<tr><td>⑦ <strong>{{UiStrings.ShapePen_OptimizedSpacing}}</strong></td><td>{{tools-shape-pen.optimized-row}}</td></tr>
+<tr><td>⑧ <strong>{{UiStrings.ShapePen_Tint}}</strong></td><td>{{tools-shape-pen.tint-row}}</td></tr>
+</tbody>
+</table></div>
+<h4>{{tools-shape-pen.sets-h}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/tools-shape-pen-sets.png" alt="{{tools-shape-pen.sets.alt}}" width="582" height="552" loading="lazy"><figcaption>{{tools-shape-pen.sets.cap}}</figcaption></figure>
+<p>{{tools-shape-pen.sets}}</p>
+<p>{{tools-shape-pen.restore}}</p>
+<h4>{{tools-shape-pen.add-h}}</h4>
+<p>{{tools-shape-pen.add}}</p>
+<ul>
+<li>{{tools-shape-pen.add-sel}}</li>
+<li>{{tools-shape-pen.add-cel}}</li>
+<li>{{tools-shape-pen.add-png}}</li>
+</ul>
+<p>{{tools-shape-pen.add-trim}}</p>
+<h4>{{tools-shape-pen.order-h}}</h4>
+<p>{{tools-shape-pen.order}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{tools-shape-pen.order-h}}</th><th>{{tools-shape-pen.col-does}}</th></tr></thead>
+<tbody>
+<tr><td><strong>{{UiStrings.ShapePen_OrderRandom}}</strong></td><td>{{tools-shape-pen.random}}</td></tr>
+<tr><td><strong>{{UiStrings.ShapePen_OrderSequential}}</strong></td><td>{{tools-shape-pen.sequential}}</td></tr>
+<tr><td><strong>{{UiStrings.ShapePen_OrderSelected}}</strong></td><td>{{tools-shape-pen.selected}}</td></tr>
+</tbody>
+</table></div>
+<h4>{{tools-shape-pen.spacing-h}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/tools-shape-pen-compare.png" alt="{{tools-shape-pen.compare.alt}}" width="764" height="144" loading="lazy"><figcaption>{{tools-shape-pen.compare}}</figcaption></figure>
+<p>{{tools-shape-pen.compare-text}}</p>
+<h4>{{tools-shape-pen.tint-h}}</h4>
+<p>{{tools-shape-pen.tint}}</p>
+<p>{{tools-shape-pen.right}}</p>
+<h4>{{tools-shape-pen.share-h}}</h4>
+<ul>
+<li>{{tools-shape-pen.export}}</li>
+<li>{{tools-shape-pen.import}}</li>
+<li>{{tools-shape-pen.drop}}</li>
+</ul>
+<p>{{tools-shape-pen.file}}</p>
+<h4>{{tools-shape-pen.store-h}}</h4>
+<p>{{tools-shape-pen.store}}</p>
 
 <h3 id="tools-eraser">{{MainStrings.Tool_Eraser_Name}}</h3>
 <figure class="clip"><img src="{{root}}assets/guide/tools-eraser.webp" alt="{{tools-eraser.1.alt}}" width="378" height="185" loading="lazy"></figure>
@@ -259,14 +322,27 @@
 <figure class="clip"><img src="{{root}}assets/guide/tools-fill.webp" alt="{{tools-fill.10.alt}}" width="376" height="186" loading="lazy"></figure>
 <p>{{tools-fill.11}}</p>
 <h4>{{tools-fill.settings}}</h4>
-<figure class="shot"><img src="{{root}}assets/guide/tools-fill.png" alt="{{tools-fill.6.alt}}" width="338" height="259" loading="lazy"><figcaption>{{tools-fill.7}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/tools-fill.png" alt="{{tools-fill.6.alt}}" width="338" height="294" loading="lazy"><figcaption>{{tools-fill.7}}</figcaption></figure>
 <ul class="marks">
 <li>{{tools-fill.2}}</li>
+<li>{{tools-fill.match}}</li>
+</ul>
+<div class="table-wrap"><table>
+<thead><tr><th>{{tools-fill.match-th-mode}}</th><th>{{tools-fill.match-th-how}}</th></tr></thead>
+<tbody>
+<tr><td>{{UiStrings.FillMatch_ChannelMax}}</td><td>{{tools-fill.match-channel}}</td></tr>
+<tr><td>{{UiStrings.FillMatch_Rgb}}</td><td>{{tools-fill.match-rgb}}</td></tr>
+<tr><td>{{UiStrings.FillMatch_OkLab}}</td><td>{{tools-fill.match-oklab}}</td></tr>
+<tr><td>{{UiStrings.FillMatch_Ciede2000}}</td><td>{{tools-fill.match-ciede}}</td></tr>
+<tr><td>{{UiStrings.FillMatch_Hue}}</td><td>{{tools-fill.match-hue}}</td></tr>
+</tbody>
+</table></div>
+<ul class="marks">
 <li>{{tools-fill.3}}</li>
 <li>{{tools-fill.4}}</li>
 <li>{{tools-fill.source}}</li>
 </ul>
-<figure class="shot"><img src="{{root}}assets/guide/tools-fill-2.png" alt="{{tools-fill.8.alt}}" width="338" height="119" loading="lazy"><figcaption>{{tools-fill.9}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/tools-fill-2.png" alt="{{tools-fill.8.alt}}" width="338" height="120" loading="lazy"><figcaption>{{tools-fill.9}}</figcaption></figure>
 <ul class="marks">
 <li>{{tools-fill.5}}</li>
 </ul>
@@ -275,9 +351,12 @@
 <p>{{tools-fill.compare-text}}</p>
 <figure class="shot"><img src="{{root}}assets/guide/tools-fill-compare-2.png" alt="{{tools-fill.compare-2.alt}}" width="300" height="144" loading="lazy"><figcaption>{{tools-fill.compare-2}}</figcaption></figure>
 <p>{{tools-fill.compare-2-text}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/tools-fill-compare-3.png" alt="{{tools-fill.compare-3.alt}}" width="672" height="144" loading="lazy"><figcaption>{{tools-fill.compare-3}}</figcaption></figure>
+<p>{{tools-fill.compare-3-text}}</p>
 <h4>{{tools-fill.more}}</h4>
 <ul>
 <li>{{tools-fill.symmetry}}</li>
+<li>{{tools-fill.outside}}</li>
 <li>{{tools-fill.same}}</li>
 </ul>
 
@@ -296,7 +375,7 @@
 <figure class="shot"><img src="{{root}}assets/guide/tools-gradient-compare.png" alt="{{tools-gradient.compare.alt}}" width="408" height="240" loading="lazy"><figcaption>{{tools-gradient.compare}}</figcaption></figure>
 <p>{{tools-gradient.compare-text}}</p>
 <h4>{{tools-gradient.presets}}</h4>
-<figure class="shot"><img src="{{root}}assets/guide/tools-gradient-2.png" alt="{{tools-gradient.12.alt}}" width="396" height="463" loading="lazy"><figcaption>{{tools-gradient.13}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/tools-gradient-2.png" alt="{{tools-gradient.12.alt}}" width="406" height="514" loading="lazy"><figcaption>{{tools-gradient.13}}</figcaption></figure>
 <ul>
 <li>{{tools-gradient.7}}</li>
 <li>{{tools-gradient.8}}</li>

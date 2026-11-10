@@ -884,14 +884,6 @@ echo __LOGIN_FAILED__
     <value>팔레트 불러오기(.hex/.gpl)…</value>
     <comment>src/Chickxel.App\ColorPanel.cs:232 · SectionMenu · "팔레트 불러오기(.hex/.gpl)…"</comment>
   </data>
-  <data name="S_ColorPickerModules_ColorSourcePicker_72F60739D7" xml:space="preserve">
-    <value>현재 프레임 그림이 보이면 원하는 픽셀을 누르세요(투명한 곳은 집지 않음)</value>
-    <comment>src/Chickxel.App\ColorPickerModules.cs:93 · ColorSourcePicker · "현재 프레임 그림이 보이면 원하는 픽셀을 누르세요(투명한 곳은 집지 않음)"</comment>
-  </data>
-  <data name="S_ColorPickerModules_ColorSourcePicker_B498EFF5EB" xml:space="preserve">
-    <value>스포이드 — 그림에서 집기</value>
-    <comment>src/Chickxel.App\ColorPickerModules.cs:90 · ColorSourcePicker · "스포이드 — 그림에서 집기"</comment>
-  </data>
   <data name="S_ColorPickerModules_Swatches_3FF5B6C54B" xml:space="preserve">
     <value>투명</value>
     <comment>src/Chickxel.App\ColorPickerModules.cs:123 · Swatches · "투명"</comment>
@@ -6376,7 +6368,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:104 · ToolOptionsPanel · "브러시"</comment>
   </data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_2990A5AB95" xml:space="preserve">
-    <value>허용 오차(%): 0 = 정확히 같은 색만. 높일수록 비슷한 색(RGBA 채널 차이의 최댓값이 이 비율×255 이하)도 같은 색으로 채웁니다.</value>
+    <value>허용 오차(%): 0 = 정확히 같은 색만, 100 = 모든 색. 높일수록 비슷한 색도 같은 색으로 채웁니다. 얼마나 비슷한지는 '비교 방식'으로 잽니다(기본: RGBA 채널 차이의 최댓값이 이 비율×255 이하).</value>
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:110 · ToolOptionsPanel · "허용 오차(%): 0 = 정확히 같은 색만. 높일수록 비슷한 색(RGBA 채널 차이의 최댓값이 이 비율×255 이하)도 같은 색으로 채웁니다."</comment>
   </data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_2ADAF37DF1" xml:space="preserve">
@@ -8170,7 +8162,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Presets_Restored" xml:space="preserve"><value>기본 프리셋을 되돌렸습니다.</value></data>
   <data name="EffectPreset_EffectsTab" xml:space="preserve"><value>효과</value><comment>효과 창 종류 칸의 탭: 하나씩 넣는 효과 모두.</comment></data>
   <data name="EffectPreset_PresetsTab" xml:space="preserve"><value>프리셋</value><comment>효과 창 종류 칸의 탭: 여러 효과와 값을 묶어 저장한 프리셋.</comment></data>
-  <data name="EffectPreset_PaletteHelp" xml:space="preserve"><value>효과 탭에는 하나씩 넣는 효과가 모두 있습니다: 앱이 기본으로 설치하는 공식 효과(외곽선·그림자 등) 다음에 직접 만들었거나 설치한 패키지의 효과. 프리셋 탭에는 여러 효과와 값, 클리핑 관계를 묶어 저장한 프리셋이 있습니다. 두 번 누르거나 효과 목록으로 끌어 놓으면 추가합니다(끌어 놓으면 놓은 자리에). 새 효과는 상점에서 받거나 도구 > 효과 만들기에서 만듭니다. 지운 공식 효과는 에셋 관리자의 "기본 효과 되돌리기"로 다시 넣습니다.</value></data>
+  <data name="EffectPreset_PaletteHelp" xml:space="preserve"><value>효과 탭에는 하나씩 넣는 효과가 모두 있습니다: 앱이 기본으로 설치하는 공식 효과(외곽선·그림자 등) 다음에 직접 만들었거나 설치한 패키지의 효과. 프리셋 탭에는 여러 효과와 값, 클리핑 관계를 묶어 저장한 프리셋이 있습니다. 두 번 누르거나 효과 목록으로 끌어 놓으면 추가합니다(끌어 놓으면 놓은 자리에). 새 효과는 상점에서 받거나 AI > 효과 만들기에서 만듭니다. 지운 공식 효과는 에셋 관리자의 "기본 효과 되돌리기"로 다시 넣습니다.</value></data>
   <data name="EffectPreset_OpenStore" xml:space="preserve"><value>상점 보기</value></data>
   <data name="EffectPreset_OpenStoreTip" xml:space="preserve"><value>에셋 관리자의 상점에서 다른 사람이 만든 효과를 찾아 설치합니다. 설치한 효과는 이 탭에 함께 보입니다.</value></data>
   <data name="EffectPreset_SavePreset" xml:space="preserve"><value>현재 효과 프리셋 저장</value></data>
@@ -8193,7 +8185,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="EffectPreset_SaveError" xml:space="preserve"><value>바꾼 내용을 저장하지 못했습니다: {0}</value></data>
   <data name="EffectPreset_ApplyTarget" xml:space="preserve"><value>적용 대상</value></data>
   <data name="EffectPreset_ClipToPrevious" xml:space="preserve"><value>바로 위 효과에 클리핑</value></data>
-  <data name="EffectPreset_ClipTip" xml:space="preserve"><value>앞의 비클리핑 효과가 바꾼 픽셀을 기준으로 적용합니다. 반사와 잔상은 이동한 픽셀도 표시합니다.</value></data>
+  <data name="EffectPreset_ClipTip" xml:space="preserve"><value>앞의 비클리핑 효과만 그려졌다고 보고 이 효과를 그립니다: 그 효과가 그린 픽셀만 보고 만든 결과를 그림 위에 얹으며, 결과는 그 픽셀 밖으로도 번집니다. 이어진 클리핑 효과는 앞 클리핑 효과의 결과를 이어받습니다.</value></data>
   <data name="EffectPreset_ClipUnavailableTip" xml:space="preserve"><value>앞에 기준 효과가 있어야 합니다. 잔상은 클리핑 기준으로 사용할 수 없습니다.</value></data>
   <data name="EffectPreset_ClippedSuffix" xml:space="preserve"><value> · 위 효과에 클리핑</value></data>
   <data name="EffectPreview_OpenLarge" xml:space="preserve"><value>클릭해서 전·후 미리보기 크게 보기</value></data>
@@ -9210,6 +9202,11 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Assets_ContentsGradients" xml:space="preserve"><value>그라데이션 {0}개</value></data>
   <data name="Assets_ContentsOther" xml:space="preserve"><value>{0} {1}개</value></data>
   <data name="EffectPreset_ShowInManager" xml:space="preserve"><value>에셋 관리자에서 보기</value></data>
+  <data name="ViewOption_SettingsTip" xml:space="preserve"><value>설정(단추 우클릭과 같음)</value><comment>위 막대 보기 단추(격자·타일 격자·타일 모드·양파) 오른쪽 아래 삼각형 칸의 풍선.</comment></data>
+  <data name="GradientEditor_MenuTip" xml:space="preserve"><value>그라데이션 메뉴: 지금 것 저장·즐겨찾기·프리셋·관리(막대 우클릭과 같음)</value><comment>그라데이션 편집 막대 오른쪽 끝 메뉴 단추의 풍선.</comment></data>
+  <data name="Preview_ScaleMenuTip" xml:space="preserve"><value>배율 목록(단추 우클릭과 같음)</value><comment>미리보기 배율 단추 옆 아래 화살표의 풍선.</comment></data>
+  <data name="Preview_BackgroundTip" xml:space="preserve"><value>미리보기 배경: 누르면 다음 배경(체커 → 검정 → 흰색 → 회색 → 초록 → 사용자 색), 옆 화살표나 우클릭은 배경 목록</value><comment>미리보기 배경 단추 풍선.</comment></data>
+  <data name="Preview_BackgroundMenuTip" xml:space="preserve"><value>배경 목록(단추 우클릭과 같음)</value><comment>미리보기 배경 단추 옆 아래 화살표의 풍선.</comment></data>
   <data name="EffectPreset_ReceivedTileTip" xml:space="preserve"><value>받은 프리셋입니다({0}). 효과 {1}개를 묶었습니다. 두 번 누르거나 효과 목록으로 끌어 넣습니다.</value></data>
   <data name="ScriptEffect_Name" xml:space="preserve"><value>스크립트 효과</value></data>
   <data name="ScriptEffect_Description" xml:space="preserve"><value>JavaScript로 직접 쓴 효과입니다. 원문은 프로젝트에 함께 저장됩니다.</value></data>
@@ -9618,6 +9615,22 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Ai_Maker_CheckFailed" xml:space="preserve"><value>검증에서 문제 {count}개를 찾았습니다:</value></data>
   <data name="Ai_Script_GradientHints" xml:space="preserve"><value>그라데이션 안내(권장 — 문제가 아니며 검증 결과에 영향 없음. 한 색이 꼭 필요한 효과가 아니면 픽셀마다 색을 고르도록 바꾸면 좋습니다):</value></data>
   <data name="Ai_Scope_EffectMakerOnly" xml:space="preserve"><value>{tool}: 효과 만들기 AI에서는 쓸 수 없는 도구입니다. 효과 만들기 AI는 문서를 보기만 하고 효과 만들기 편집기의 원문만 고칠 수 있습니다.</value></data>
+  <data name="Ai_Scope_ExternalOff" xml:space="preserve"><value>{tool}: 외부 AI 연결에서는 쓸 수 없는 도구입니다. 파일 열기와 그림 생성은 사용자가 Chickxel의 환경 설정 &gt; AI 상태에서 켜야 쓸 수 있고, 사용자에게 물을 것은 지금 대화에서 직접 물어보세요.</value><comment>tool = 도구 이름.</comment></data>
+  <data name="AiDraw_Error_ExternalImage" xml:space="preserve"><value>subject_image를 PNG 그림으로 읽지 못했습니다. data: 머리 없이 base64로 적은 PNG여야 합니다.</value></data>
+  <data name="McpBridge_Unavailable" xml:space="preserve"><value>Chickxel이 켜져 있지 않거나 외부 AI 연결이 꺼져 있습니다. Chickxel을 켜고 환경 설정 &gt; AI 상태에서 "외부 AI 연결 허용"을 켜 주세요.</value></data>
+  <data name="McpBridge_Failed" xml:space="preserve"><value>Chickxel에 연결하지 못했습니다: {message}</value><comment>message = 오류 내용.</comment></data>
+  <data name="ExternalMcp_Title" xml:space="preserve"><value>외부 AI 연결</value></data>
+  <data name="ExternalMcp_Allow" xml:space="preserve"><value>외부 AI 연결 허용</value></data>
+  <data name="ExternalMcp_Info" xml:space="preserve"><value>이 컴퓨터의 다른 AI 앱(Claude Desktop, Cursor, Claude Code 등)이 켜져 있는 Chickxel의 AI 도구로 그림을 보고 고칩니다. 아래 "연결 설정 복사"로 받은 설정을 그 앱의 MCP 설정에 붙여 넣으면, 그 앱이 "Chickxel --mcp"를 띄워 이 창에 연결합니다. 이 컴퓨터 안(127.0.0.1)에서만 열리고, 끄면 바로 끊깁니다. 고친 내용은 도구마다 실행취소 한 단계이고, 사용자에게 묻는 도구는 쓰지 않습니다.</value></data>
+  <data name="ExternalMcp_OpenFile" xml:space="preserve"><value>파일 열기 허락(경로를 받아 그림·프로젝트를 엶)</value></data>
+  <data name="ExternalMcp_Generate" xml:space="preserve"><value>그림 생성 허락(내 Codex로 생성 — Codex 사용량을 씀)</value></data>
+  <data name="ExternalMcp_CopyConfig" xml:space="preserve"><value>연결 설정 복사</value></data>
+  <data name="ExternalMcp_CopyConfigTip" xml:space="preserve"><value>다른 AI 앱의 MCP 설정(JSON)에 붙여 넣을 내용을 복사합니다. Chickxel을 다른 곳으로 옮기면 다시 복사해 붙여 넣으세요.</value></data>
+  <data name="ExternalMcp_Copied" xml:space="preserve"><value>복사했습니다</value></data>
+  <data name="ExternalMcp_Status" xml:space="preserve"><value>외부 AI</value></data>
+  <data name="ExternalMcp_StatusTool" xml:space="preserve"><value>외부 AI: {tool}</value><comment>tool = 방금 부른 도구 이름.</comment></data>
+  <data name="ExternalMcp_StatusTip" xml:space="preserve"><value>외부 AI 연결이 켜져 있습니다. 다른 AI 앱이 도구를 부르면 여기에 잠깐 그 이름이 보입니다. 환경 설정 &gt; AI 상태에서 끌 수 있습니다.</value></data>
+  <data name="ExternalMcp_StartFailed" xml:space="preserve"><value>외부 AI 연결을 켜지 못했습니다: {message}</value><comment>message = 오류 내용.</comment></data>
   <data name="Ai_Script_UnknownEffect" xml:space="preserve"><value>스크립트 효과 "{effect}"를 찾지 못했습니다. list_script_effects로 ID와 이름을 확인하세요.</value></data>
   <data name="EffectMakerAi_AttachCanvasTip" xml:space="preserve"><value>열린 그림의 지금 프레임을 첨부합니다(참고 그림).</value></data>
   <data name="EffectMakerAi_AttachPreviewTip" xml:space="preserve"><value>미리보기에 지금 보이는 칸(효과를 입힌 병아리)을 첨부합니다.</value></data>
@@ -9836,4 +9849,88 @@ HSV 명도: 예전 방식. 명도를 더하고 빼며, 가장 밝으면 채도�
   <data name="FileInfo_Unreadable" xml:space="preserve"><value>읽을 수 없음</value></data>
   <data name="FileInfo_NeedsFfmpeg" xml:space="preserve"><value>ffmpeg가 있어야 읽을 수 있음</value></data>
   <data name="FileInfo_Missing" xml:space="preserve"><value>파일이나 폴더가 없습니다.</value></data>
+  <data name="FillMatch_Label" xml:space="preserve"><value>비교 방식</value><comment>채우기·스마트 선택: 허용 오차를 재는 색 비교 방식</comment></data>
+  <data name="FillMatch_ChannelMax" xml:space="preserve"><value>채널 최대 차 (기본)</value></data>
+  <data name="FillMatch_Rgb" xml:space="preserve"><value>RGB 거리</value></data>
+  <data name="FillMatch_OkLab" xml:space="preserve"><value>OKLab (눈에 보이는 차이)</value></data>
+  <data name="FillMatch_Ciede2000" xml:space="preserve"><value>CIEDE2000 (눈에 보이는 차이, 정밀)</value></data>
+  <data name="FillMatch_Hue" xml:space="preserve"><value>색상만</value></data>
+  <data name="FillMatch_Tip" xml:space="preserve"><value>허용 오차를 무엇으로 잴지 고릅니다. 어느 방식이든 0%는 정확히 같은 색만, 100%는 모든 색입니다.
+채널 최대 차(기본): R·G·B·A 중 가장 많이 다른 채널의 차이가 비율 × 255 이하.
+RGB 거리: R·G·B 차이의 직선 거리가 비율 × 441(255√3) 이하.
+OKLab: 사람 눈에 다르게 보이는 정도로 잽니다(검정–흰색 차이가 100%).
+CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 정밀하지만 조금 느립니다.
+색상만: 밝기·채도는 보지 않고 색상각 차이로 잽니다(100% = 180도). 회색·흰색·검정처럼 색이 거의 없는 색끼리는 같은 색상, 색 있는 색과는 가장 먼 색으로 봅니다.
+투명한 칸은 알파 차이만 재고, 보이는 칸끼리는 알파 차이도 비율 × 255 이하여야 합니다.</value></data>
+  <data name="ColorPick_FromImage" xml:space="preserve"><value>그림에서 집기</value></data>
+  <data name="ColorPick_FromImageTip" xml:space="preserve"><value>현재 프레임 그림을 따로 창에 크게 띄워, 누른 픽셀의 색을 집습니다(투명한 곳은 집지 않음)</value></data>
+  <data name="ColorPick_FromScreen" xml:space="preserve"><value>화면에서 집기</value></data>
+  <data name="ColorPick_FromScreenTip" xml:space="preserve"><value>다른 앱을 포함한 화면 전체에서 누른 곳의 색을 집습니다(누른 때의 화면을 찍어 보여 줌, Esc·우클릭 = 그만)</value></data>
+  <data name="ColorPick_ImageTitle" xml:space="preserve"><value>그림에서 색 집기</value></data>
+  <data name="ColorPick_ImageHint" xml:space="preserve"><value>누르기 = 색 집기 · 휠 = 확대·축소 · 끌기 = 이동 · Esc = 닫기</value></data>
+  <data name="ColorPick_ImageNoPixel" xml:space="preserve"><value>그림 위에 마우스를 올리면 그 픽셀의 색이 보입니다</value></data>
+  <data name="ColorPick_ScreenHint" xml:space="preserve"><value>누르기 = 색 집기 · Esc·우클릭 = 그만</value></data>
+  <data name="ColorPick_ScreenFailed" xml:space="preserve"><value>화면을 찍지 못했습니다. ({error})</value><comment>error = 운영체제가 알린 오류 글.</comment></data>
+  <data name="ColorPick_ScreenMacPermission" xml:space="preserve"><value>화면에서 색을 집으려면 시스템 설정 → 개인정보 보호 및 보안 → 화면 기록에서 Chickxel을 허용한 뒤 앱을 다시 켜세요.</value></data>
+  <data name="ColorPick_ScreenWayland" xml:space="preserve"><value>Wayland 세션에서는 다른 앱 화면을 찍을 수 없어 쓸 수 없습니다(X11 세션에서 쓸 수 있음)</value></data>
+  <data name="ColorPick_ScreenNoDisplay" xml:space="preserve"><value>X11 화면(DISPLAY)을 찾지 못해 쓸 수 없습니다</value></data>
+  <data name="ColorPick_ScreenUnsupported" xml:space="preserve"><value>이 운영체제에서는 화면에서 색을 집을 수 없습니다</value></data>
+  <data name="EffectPreset_PreviewChickNone" xml:space="preserve"><value>없음</value><comment>미리보기 병아리 고르기의 "병아리 없음"(효과를 빈 캔버스에 입힘).</comment></data>
+  <data name="Timeline_CopyCelsImagesOnly" xml:space="preserve"><value>셀 복사 — 이미지만, 링크 없이 (Ctrl+Shift+C)</value><comment>셀 우클릭: 링크 묶음 없이 그림만 복사(붙인 셀이 따로 놂). "셀 복사 (Ctrl+C)"는 링크째 복사.</comment></data>
+  <data name="Timeline_CopyFramesImagesOnly" xml:space="preserve"><value>프레임 복사 — 이미지만, 링크 없이 (Ctrl+Shift+C)</value><comment>프레임 머리글 우클릭: 링크 묶음 없이 그림만 복사.</comment></data>
+  <data name="ShapePen_UndoLabel" xml:space="preserve"><value>모양 펜</value><comment>실행취소 이름</comment></data>
+  <data name="ShapePen_EmptySet" xml:space="preserve"><value>고른 세트에 모양이 없습니다 — 도구 설정에서 모양을 더하세요</value></data>
+  <data name="ShapePen_Group" xml:space="preserve"><value>모양 펜</value><comment>도구 설정 묶음 제목</comment></data>
+  <data name="ShapePen_Info" xml:space="preserve"><value>고른 세트의 모양을 누른 곳 가운데에 찍습니다(모양의 색과 불투명도 그대로 — 투명한 칸은 아래를 덮지 않고 반투명한 칸은 섞임). 끌면 간격(px)마다 찍고(1이면 이어진 자국), 최적화 간격을 켜면 다음 모양이 앞 도장과 겹치지 않고 붙는 자리마다 찍습니다. 세트에 모양이 여럿이면 순서(무작위·차례로·선택된 것)대로 바뀝니다. 대칭(뒤집혀 찍힘)·타일 모드·선택 영역·캔버스 밖 그리기는 연필과 같고 한 획이 실행취소 한 단계입니다. 커서 아래에 다음 모양이 반투명하게 보입니다. 모양 칸을 눌러 다음 모양을 고르고, 선택 영역·지금 셀·PNG에서 모양을 더합니다(투명한 둘레는 잘라 냄). 세트는 앱 설정 폴더에 저장됩니다.</value></data>
+  <data name="ShapePen_Set" xml:space="preserve"><value>세트</value><comment>모양 펜 세트 고르기 줄 이름</comment></data>
+  <data name="ShapePen_SetTip" xml:space="preserve"><value>찍을 모양 세트를 고릅니다(앞 그림 = 세트의 첫 모양)</value></data>
+  <data name="ShapePen_NewSetTip" xml:space="preserve"><value>새 세트</value><comment>단추 풍선이자 이름 묻는 창 제목</comment></data>
+  <data name="ShapePen_NewSetName" xml:space="preserve"><value>세트 {number}</value><comment>새 세트 기본 이름</comment></data>
+  <data name="ShapePen_SetNamePrompt" xml:space="preserve"><value>세트 이름:</value></data>
+  <data name="ShapePen_NewSetHint" xml:space="preserve"><value>새 세트를 만들었습니다 — '모양 더하기'로 모양을 넣으세요</value></data>
+  <data name="ShapePen_RenameSetTip" xml:space="preserve"><value>세트 이름 바꾸기</value><comment>단추 풍선이자 이름 묻는 창 제목</comment></data>
+  <data name="ShapePen_DeleteSetTip" xml:space="preserve"><value>세트 지우기</value><comment>단추 풍선이자 확인 창 제목</comment></data>
+  <data name="ShapePen_DeleteSet" xml:space="preserve"><value>지우기</value><comment>세트 지우기 확인 단추</comment></data>
+  <data name="ShapePen_DeleteSetConfirm" xml:space="preserve"><value>'{name}' 세트와 모양 {count}개를 지울까요? 되돌릴 수 없습니다(기본 세트는 '기본 세트 되돌리기'로 다시 넣을 수 있음).</value></data>
+  <data name="ShapePen_RestoreDefaultsTip" xml:space="preserve"><value>기본 세트 되돌리기</value><comment>단추 풍선이자 확인 창 제목</comment></data>
+  <data name="ShapePen_RestoreDefaults" xml:space="preserve"><value>되돌리기</value><comment>기본 세트 되돌리기 확인 단추</comment></data>
+  <data name="ShapePen_RestoreDefaultsConfirm" xml:space="preserve"><value>기본 세트 스무 가지(나뭇잎·단풍잎·솔잎·풀·꽃·꽃잎·반짝이·별·점·거품·구름·돌멩이·벽돌·빗방울·눈송이·하트·연기·나뭇결·금·동전과 보석)를 처음 모양으로 되돌립니다. 지운 기본 세트는 다시 넣고, 기본 세트에서 더하거나 지운 모양·바꾼 이름·순서는 처음대로 돌아갑니다. 직접 만든 세트는 그대로입니다.</value></data>
+  <data name="ShapePen_AddShape" xml:space="preserve"><value>모양 더하기</value><comment>모양 더하기 메뉴 단추</comment></data>
+  <data name="ShapePen_AddShapeTip" xml:space="preserve"><value>고른 세트에 모양을 더합니다: 선택 영역·지금 셀(투명한 둘레는 잘라 냄, 불투명도 그대로) 또는 PNG 파일</value></data>
+  <data name="ShapePen_AddFromSelection" xml:space="preserve"><value>선택 영역에서</value></data>
+  <data name="ShapePen_AddFromCel" xml:space="preserve"><value>지금 셀에서</value></data>
+  <data name="ShapePen_AddFromPng" xml:space="preserve"><value>PNG 파일에서…</value></data>
+  <data name="ShapePen_ShapeTip" xml:space="preserve"><value>누르면 다음에 이 모양을 찍습니다 · 우클릭: 지우기</value><comment>모양 칸 풍선(앞에 크기가 붙음)</comment></data>
+  <data name="ShapePen_DeleteShape" xml:space="preserve"><value>모양 지우기</value></data>
+  <data name="ShapePen_DeleteShapeTip" xml:space="preserve"><value>고른 모양(다음에 찍을 모양)을 세트에서 지웁니다</value></data>
+  <data name="ShapePen_Order" xml:space="preserve"><value>순서</value><comment>모양 펜 순서 줄 이름</comment></data>
+  <data name="ShapePen_OrderRandom" xml:space="preserve"><value>무작위</value></data>
+  <data name="ShapePen_OrderRandomTip" xml:space="preserve"><value>찍을 때마다 세트에서 아무 모양이나 고릅니다(같은 모양이 잇달아 나오지 않음). 세트마다 따로 기억합니다.</value></data>
+  <data name="ShapePen_OrderSequential" xml:space="preserve"><value>차례로</value></data>
+  <data name="ShapePen_OrderSequentialTip" xml:space="preserve"><value>찍을 때마다 세트의 다음 모양을 찍습니다(끝 다음은 처음). 세트마다 따로 기억합니다.</value></data>
+  <data name="ShapePen_Spacing" xml:space="preserve"><value>간격</value><comment>모양 펜 끌기 간격 줄 이름</comment></data>
+  <data name="ShapePen_SpacingTip" xml:space="preserve"><value>끌 때 도장 사이 거리(px, 1 이상). 1이면 지나간 모든 픽셀에 찍어 이어진 자국이 됩니다. 최적화 간격을 켜면 쓰지 않습니다.</value></data>
+  <data name="ShapePen_Tint" xml:space="preserve"><value>지금 색으로 물들이기</value></data>
+  <data name="ShapePen_TintTip" xml:space="preserve"><value>모양의 명암과 불투명도는 두고 색만 기본색(오른쪽 버튼 = 보조색)으로 바꿉니다 — 모양에서 가장 많은 색이 그 색이 됩니다. 끄면 모양 색 그대로 찍습니다.</value></data>
+  <data name="ShapePen_EmptyContent" xml:space="preserve"><value>투명한 픽셀뿐이라 더할 모양이 없습니다</value></data>
+  <data name="ShapePen_TooBig" xml:space="preserve"><value>모양이 너무 큽니다({width}×{height}) — 한 변 {max}px까지 더할 수 있습니다</value></data>
+  <data name="ShapePen_PngTitle" xml:space="preserve"><value>모양으로 더할 PNG</value></data>
+  <data name="ShapePen_PngFilter" xml:space="preserve"><value>PNG 그림</value></data>
+  <data name="ShapePen_PngFailed" xml:space="preserve"><value>{name}: PNG를 읽지 못했습니다 — {error}</value></data>
+  <data name="ShapePen_Added" xml:space="preserve"><value>'{set}' 세트에 모양 {count}개를 더했습니다({width}×{height})</value></data>
+  <data name="ShapePen_SaveFailed" xml:space="preserve"><value>모양 펜 세트를 저장하지 못했습니다: {error}</value></data>
+  <data name="ShapePen_OrderSelected" xml:space="preserve"><value>선택된 것</value><comment>모양 펜 순서: 고른 모양 칸만 늘 찍음</comment></data>
+  <data name="ShapePen_OrderSelectedTip" xml:space="preserve"><value>늘 고른 모양 칸(강조된 것)만 찍습니다. 세트마다 따로 기억합니다.</value></data>
+  <data name="ShapePen_OptimizedSpacing" xml:space="preserve"><value>최적화 간격</value><comment>모양 펜: 겹치지 않고 붙게 찍는 간격</comment></data>
+  <data name="ShapePen_OptimizedSpacingTip" xml:space="preserve"><value>끌 때 다음 모양이 앞 도장과 겹치지 않는 첫 자리마다 찍어, 도장이 끄는 방향으로 겹치지 않고 붙어 이어집니다. 모양의 불투명한 픽셀로 재고(투명한 둘레는 셈하지 않음), 다음 모양이 다르면 그 모양으로 잽니다. 켜면 간격 칸은 쓰지 않습니다.</value></data>
+  <data name="ShapePen_ExportSet" xml:space="preserve"><value>세트 내보내기…</value><comment>저장 창 제목</comment></data>
+  <data name="ShapePen_ExportSetTip" xml:space="preserve"><value>세트 내보내기…: 고른 세트를 파일 하나(.chickxel-shapes)로 저장합니다(이름·순서·모양, 불투명도 그대로). 다른 컴퓨터나 사람에게 세트를 넘길 때.</value></data>
+  <data name="ShapePen_ImportSet" xml:space="preserve"><value>세트 가져오기…</value><comment>열기 창 제목</comment></data>
+  <data name="ShapePen_ImportSetTip" xml:space="preserve"><value>세트 가져오기…: 세트 파일(.chickxel-shapes, 여러 개)을 새 세트로 더합니다 — 있는 세트는 덮어쓰지 않고 이름이 겹치면 번호를 붙입니다. PNG를 고르면 그 그림 하나짜리 세트가 됩니다. 세트 파일을 창에 끌어 놓아도 가져옵니다.</value></data>
+  <data name="ShapePen_SetFileType" xml:space="preserve"><value>모양 펜 세트</value><comment>파일 대화상자 형식 이름</comment></data>
+  <data name="ShapePen_ImportFileType" xml:space="preserve"><value>모양 펜 세트·PNG</value><comment>파일 대화상자 형식 이름</comment></data>
+  <data name="ShapePen_Exported" xml:space="preserve"><value>'{name}' 세트를 내보냈습니다: {path}</value></data>
+  <data name="ShapePen_ExportFailed" xml:space="preserve"><value>세트를 내보내지 못했습니다: {error}</value></data>
+  <data name="ShapePen_Imported" xml:space="preserve"><value>'{name}' 세트를 가져왔습니다 (모양 {count}개)</value></data>
+  <data name="ShapePen_ImportFailed" xml:space="preserve"><value>모양 펜 세트로 읽을 수 없는 파일입니다: {names}</value></data>
 </root>

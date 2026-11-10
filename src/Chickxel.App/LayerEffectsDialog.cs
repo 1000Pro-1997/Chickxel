@@ -551,7 +551,7 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
         void Set(Func<LayerEffect, LayerEffect> change) => Update(i, change(_effects[i]));
         AddRangeEditor(i);
         AddClipEditor(i);
-        AddExpandCanvasEditor(e, Set);
+        AddExpandCanvasEditor(_form, e, Set);
         AddMovePivotEditor(_form, e, Set);
         AddHoldEndEditor(_form, e, Set);
         ui.Panel(this, e, Set);
@@ -644,7 +644,7 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
         _rangeRow = HelpRow(_form.Row(UiStrings.S_LayerEffectsDialog_AddRangeEditor_C773F4F9DC, all, from, Ui.Label("~"), to), "screen-effect-settings", "Effect range");
     }
 
-    /// <summary>고른 효과를 앞의 비클리핑 효과가 만든 영역에만 적용한다.</summary>
+    /// <summary>고른 효과를 앞의 비클리핑 효과에 클리핑하는 칸(그 효과만 그려졌다고 보고 그림).</summary>
     private void AddClipEditor(int i)
     {
         var effect = _effects[i];
@@ -663,13 +663,16 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
         HelpRow(_form.Row(UiStrings.EffectPreset_ApplyTarget, clip), "screen-effect-colors", "Clipping");
     }
 
-    /// <summary>확인·영구 적용할 때 이 효과 결과가 캔버스 밖으로 나가면 캔버스를 늘릴지(<see cref="LayerEffect.ExpandCanvas"/>). 늘리는 방식은 공통 설정.</summary>
-    private void AddExpandCanvasEditor(LayerEffect effect, Action<Func<LayerEffect, LayerEffect>> set)
+    /// <summary>
+    /// 확인·영구 적용할 때 이 효과 결과가 캔버스 밖으로 나가면 캔버스를 늘릴지(<see cref="LayerEffect.ExpandCanvas"/>). 늘리는 방식은 공통 설정.
+    /// 효과 창과 효과 만들기의 미리보기 설정 칸이 같이 쓴다.
+    /// </summary>
+    private static void AddExpandCanvasEditor(EffectForm form, LayerEffect effect, Action<Func<LayerEffect, LayerEffect>> set)
     {
         var expand = Ui.Check(UiStrings.Effect_ExpandCanvas, effect.ExpandCanvas);
         ToolTip.SetTip(expand, UiStrings.Effect_ExpandCanvasTip);
         expand.IsCheckedChanged += (_, _) => set(o => o.ExpandCanvas != expand.On() ? o with { ExpandCanvas = expand.On() } : o);
-        HelpRow(_form.Row(UiStrings.Effect_ExpandCanvasRow, expand), "screen-effect-settings", "Expand canvas is on by default");
+        HelpRow(form.Row(UiStrings.Effect_ExpandCanvasRow, expand), "screen-effect-settings", "Expand canvas is on by default");
     }
 
     /// <summary>
@@ -1171,30 +1174,13 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
             double half = (b.Width - 12) / 2, top = 18;
             AppTheme.DrawTextIn(g, UiStrings.S_LayerEffectsDialog_Render_71A8D08947, new Rect(0, 0, half, 16), AppTheme.DimTextBrush, AppTheme.SmallFontSize, center: true);
             AppTheme.DrawTextIn(g, UiStrings.S_LayerEffectsDialog_Render_894FF3899A, new Rect(half + 12, 0, half, 16), AppTheme.DimTextBrush, AppTheme.SmallFontSize, center: true);
-            DrawImage(g, before, data._size, new Rect(0, top, half, b.Height - top), data._canvas);
-            var shown = DrawImage(g, after, data._size, new Rect(half + 12, top, half, b.Height - top), data._canvas);
+            DrawWithCanvas(g, before, data._size, new Rect(0, top, half, b.Height - top), data._canvas);
+            var shown = DrawWithCanvas(g, after, data._size, new Rect(half + 12, top, half, b.Height - top), data._canvas);
             if (data._pending)
             {
                 RenderOverlay.DrawVeil(g, shown);
                 RenderOverlay.DrawBusy(g, shown, data._progress);
             }
-        }
-
-        /// <summary>원래 크기 <paramref name="size"/>의 그림을 정수 배율(작으면 축소)로 그린다 — 비트맵이 미리 줄인 것이어도 자리·크기는 같다.</summary>
-        private static Rect DrawImage(DrawingContext g, WriteableBitmap bitmap, Size size, Rect area, Rectangle canvas)
-        {
-            // The faint spill shows where the effect continues beyond the actual project canvas.
-            Rect dest;
-            using (g.PushOpacity(0.25))
-                dest = ImageUtil.DrawFittedThumb(g, bitmap, size, area);
-            // DrawFittedThumb returns the exact pixel-snapped destination, including downscaled images.
-            var canvasRect = new Rect(dest.X + canvas.X * dest.Width / size.Width, dest.Y + canvas.Y * dest.Height / size.Height,
-                canvas.Width * dest.Width / size.Width, canvas.Height * dest.Height / size.Height);
-            using (g.PushClip(canvasRect))
-                ImageUtil.DrawFittedThumb(g, bitmap, size, area, checker: true);
-            using (g.PushClip(dest))
-                g.DrawRectangle(null, AppTheme.Pen(AppTheme.BorderColor), canvasRect);
-            return dest;
         }
 
         public void Dispose()
@@ -1207,5 +1193,25 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
             _before = _after = null;
             _owned = false;
         }
+    }
+
+    /// <summary>
+    /// 원래 크기 <paramref name="size"/>의 그림을 정수 배율(작으면 축소)로 그리되 캔버스 <paramref name="canvas"/>(그림 좌표) 밖은 흐리게 — 확인할 때 잘릴 부분.
+    /// 비트맵이 미리 줄인 것이어도 자리·크기는 같다. 효과 창 전·후 미리보기와 효과 만들기 미리보기가 같이 쓴다.
+    /// </summary>
+    internal static Rect DrawWithCanvas(DrawingContext g, WriteableBitmap bitmap, Size size, Rect area, Rectangle canvas)
+    {
+        // The faint spill shows where the effect continues beyond the actual project canvas.
+        Rect dest;
+        using (g.PushOpacity(0.25))
+            dest = ImageUtil.DrawFittedThumb(g, bitmap, size, area);
+        // DrawFittedThumb returns the exact pixel-snapped destination, including downscaled images.
+        var canvasRect = new Rect(dest.X + canvas.X * dest.Width / size.Width, dest.Y + canvas.Y * dest.Height / size.Height,
+            canvas.Width * dest.Width / size.Width, canvas.Height * dest.Height / size.Height);
+        using (g.PushClip(canvasRect))
+            ImageUtil.DrawFittedThumb(g, bitmap, size, area, checker: true);
+        using (g.PushClip(dest))
+            g.DrawRectangle(null, AppTheme.Pen(AppTheme.BorderColor), canvasRect);
+        return dest;
     }
 }

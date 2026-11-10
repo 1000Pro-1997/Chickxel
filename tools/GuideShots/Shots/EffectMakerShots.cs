@@ -218,6 +218,9 @@ internal static class EffectMakerShots
         var maker = k.Windows.OfType<EffectMakerWindow>().Single();
         ShotKit.Call(maker, "TryOpen", glow.Id);
         WaitPreview(k, maker);
+        // 고칠 수 있는 효과를 열면 AI 칸이 저절로 열린다 — 창 전체 그림(①~⑬)은 AI 칸을 닫고 찍는다(AI 칸은 9에서 대본 세션으로)
+        ShotKit.Get<ToggleButton>(maker, "_aiToggle").IsChecked = false;
+        k.Settle(300);
 
         var list = ShotKit.Get<ListBox>(maker, "_list");
         var header = (Control)ShotKit.Get<Control>(maker, "_showAll").Parent!;

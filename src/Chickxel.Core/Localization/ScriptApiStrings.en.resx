@@ -23,7 +23,7 @@
   <data name="Api_effect_animated" xml:space="preserve"><value>true if the look changes with frame progress (ctx.progress). Adds easing and repeat settings.</value></data>
   <data name="Api_effect_area" xml:space="preserve"><value>Work area: "global" (default, once per frame) or "local" (per tile, with radius px of margin).</value></data>
   <data name="Api_effect_radius" xml:space="preserve"><value>Margin in px around each tile when area is "local".</value></data>
-  <data name="Api_effect_previewChick" xml:space="preserve"><value>Chick ID for the preview made when you publish (default "original").</value></data>
+  <data name="Api_effect_previewChick" xml:space="preserve"><value>Chick ID for the preview made when you publish (default "original"). For an effect that draws on its own, such as rain, "none" applies it to an empty canvas without a chick.</value></data>
   <data name="Api_effect_previewEndChick" xml:space="preserve"><value>Optional end chick ID for effects that turn one image into another over frames. The preview's last frame shows this chick; read it with ctx.frameSource(ctx.rangeEnd).</value></data>
   <data name="Api_effect_previewFrames" xml:space="preserve"><value>Number of frames the effect runs in the preview and the published preview (2-20, default 10).</value></data>
   <data name="Api_effect_previewMotion" xml:space="preserve"><value>Optional movement of the preview chick, for effects that react to movement (afterimages, trails): "right", "left", "up" or "down" (1 px per frame) or one [x, y] offset per frame (-32 to 32; later frames keep the last one). Only previews move; default "none".</value></data>
@@ -35,8 +35,6 @@
   <data name="Api_effect_render" xml:space="preserve"><value>Called for every frame; changes img.data in place. The same input must always give the same result.</value></data>
   <data name="Api_effect_deferred" xml:space="preserve"><value>When true, the effect draws after all other effects regardless of its place in the list (like Afterimage). Only such effects get other frames with the other effects applied through ctx.renderedFrameSource.</value></data>
   <data name="Api_effect_motion" xml:space="preserve"><value>When false, an animated effect doesn't use easing or repeat (for example blinking timed in frames), so the effects window hides those fields. Default true.</value></data>
-  <data name="Api_effect_clipsBySource" xml:space="preserve"><value>When true and the effect is clipped to the previous one, img holds only the pixels the previous effect changed, and results outside that area are kept behind the picture (effects that move pixels, like Reflection). Clipped such effects still widen the padding. Otherwise only results inside the area remain.</value></data>
-  <data name="Api_effect_erasesSource" xml:space="preserve"><value>true, or the key of a bool setting (then only while that setting is on): the effect erases the source and keeps only lines (like Outline with "Hide original"). Pixels it made transparent are removed from the area that following clipped effects use.</value></data>
   <data name="Api_effect_easing" xml:space="preserve"><value>Initial easing of a newly added effect (default "Linear").</value></data>
   <data name="Api_effect_easing_Linear" xml:space="preserve"><value>Even speed.</value></data>
   <data name="Api_effect_easing_EaseIn" xml:space="preserve"><value>Starts slowly.</value></data>
@@ -157,4 +155,6 @@
   <data name="Completion_Keyword" xml:space="preserve"><value>JavaScript keyword</value></data>
   <data name="Completion_Setting" xml:space="preserve"><value>Setting ({type})</value></data>
   <data name="Completion_Chick" xml:space="preserve"><value>Chick {number}</value></data>
+  <data name="Completion_ChickNone" xml:space="preserve"><value>No chick (empty canvas)</value></data>
+  <data name="Api_effect_expandCanvas" xml:space="preserve"><value>When false, a newly added effect starts with "Expand canvas" (on OK) off (default true): what the effect draws past the canvas is cut off instead of growing the canvas (like flames rising above the picture).</value></data>
 </root>

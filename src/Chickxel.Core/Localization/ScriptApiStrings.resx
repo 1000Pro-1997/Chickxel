@@ -24,7 +24,7 @@
   <data name="Api_effect_animated" xml:space="preserve"><value>프레임 진행(ctx.progress)에 따라 모습이 바뀌면 true. 빠르기 곡선·반복 설정이 생깁니다.</value></data>
   <data name="Api_effect_area" xml:space="preserve"><value>계산 범위: "global"(기본, 프레임마다 한 번) 또는 "local"(조각마다, radius만큼 여유).</value></data>
   <data name="Api_effect_radius" xml:space="preserve"><value>area가 "local"일 때 조각 둘레에 붙일 여유 px.</value></data>
-  <data name="Api_effect_previewChick" xml:space="preserve"><value>온라인에 올릴 때 미리보기에 쓸 병아리 ID(기본 "original").</value></data>
+  <data name="Api_effect_previewChick" xml:space="preserve"><value>온라인에 올릴 때 미리보기에 쓸 병아리 ID(기본 "original"). 비처럼 스스로 그리는 효과는 "none"이면 병아리 없이 빈 캔버스에 입힙니다.</value></data>
   <data name="Api_effect_previewEndChick" xml:space="preserve"><value>여러 프레임에 걸쳐 그림을 바꾸는 효과의 끝 그림 병아리 ID(선택). 미리보기의 마지막 칸이 이 병아리이고 ctx.frameSource(ctx.rangeEnd)로 읽습니다.</value></data>
   <data name="Api_effect_previewFrames" xml:space="preserve"><value>미리보기·올릴 때 미리보기에서 효과를 돌리는 칸 수(2~20, 기본 10).</value></data>
   <data name="Api_effect_previewMotion" xml:space="preserve"><value>움직임에 반응하는 효과(잔상·자취)를 위해 미리보기 병아리를 움직입니다(선택): "right"·"left"·"up"·"down"(칸마다 1px) 또는 칸마다 자리 [x, y](-32~32, 뒤 칸은 마지막 값). 미리보기만 움직이고 기본은 "none".</value></data>
@@ -36,8 +36,6 @@
   <data name="Api_effect_render" xml:space="preserve"><value>프레임마다 불려 img.data를 제자리에서 바꿉니다. 같은 입력이면 늘 같은 결과여야 합니다.</value></data>
   <data name="Api_effect_deferred" xml:space="preserve"><value>true면 목록 자리와 관계없이 다른 효과를 모두 입힌 뒤에 그립니다(잔상처럼). 이런 효과만 ctx.renderedFrameSource로 다른 프레임에 다른 효과를 입힌 그림을 받습니다.</value></data>
   <data name="Api_effect_motion" xml:space="preserve"><value>false면 움직이는 효과라도 빠르기 곡선·반복을 쓰지 않습니다(프레임 수로 정하는 깜빡임 등): 효과 창에서 그 칸을 숨깁니다(기본 true).</value></data>
-  <data name="Api_effect_clipsBySource" xml:space="preserve"><value>true면 앞 효과에 클리핑됐을 때 img에 앞 효과가 바꾼 픽셀만 받고, 그 영역 밖에 생긴 결과는 그림 뒤에 남깁니다(반사처럼 픽셀을 옮기는 효과). 클리핑돼도 여백을 넓힙니다. 아니면 영역 안의 결과만 남습니다.</value></data>
-  <data name="Api_effect_erasesSource" xml:space="preserve"><value>true나 bool 설정 키(그 설정이 켜졌을 때만): 원본을 지워 선만 남기는 효과입니다(원본 지우기 외곽선처럼). 투명하게 지운 자리는 뒤따르는 클리핑 효과의 영역에서 빠집니다.</value></data>
   <data name="Api_effect_easing" xml:space="preserve"><value>새로 넣는 효과의 빠르기 곡선 처음 값(기본 "Linear").</value></data>
   <data name="Api_effect_easing_Linear" xml:space="preserve"><value>고르게.</value></data>
   <data name="Api_effect_easing_EaseIn" xml:space="preserve"><value>천천히 시작.</value></data>
@@ -158,4 +156,6 @@
   <data name="Completion_Keyword" xml:space="preserve"><value>JavaScript 키워드</value></data>
   <data name="Completion_Setting" xml:space="preserve"><value>설정({type})</value><comment>type = 설정 종류(int, number, bool, color, choice).</comment></data>
   <data name="Completion_Chick" xml:space="preserve"><value>병아리 {number}번</value><comment>number = 병아리 번호(효과 저장 창과 같은 번호).</comment></data>
+  <data name="Completion_ChickNone" xml:space="preserve"><value>병아리 없음(빈 캔버스)</value></data>
+  <data name="Api_effect_expandCanvas" xml:space="preserve"><value>false면 새로 넣는 효과의 "확인할 때 캔버스 늘리기"가 꺼진 채로 들어갑니다(기본 true): 효과 결과가 캔버스 밖으로 나가도 캔버스를 늘리지 않고 잘립니다(그림 위로 솟는 불꽃처럼).</value></data>
 </root>

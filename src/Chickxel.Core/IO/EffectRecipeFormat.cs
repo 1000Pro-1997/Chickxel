@@ -100,7 +100,7 @@ public sealed record EffectRecipe : IAssetData
 /// 효과 하나는 프로젝트와 같은 <see cref="EffectCodec"/> 형식이고(<c>frames</c>는 쓰지 않음), 순서 = 목록 순서, 클리핑 = <c>clipToPrevious</c>,
 /// 확인할 때 캔버스 늘리지 않기 = <c>"expandCanvas": false</c>(켜짐이면 쓰지 않음).
 /// 매개변수(<see cref="RecipeParameterFormat"/>)는 형식 2부터, 스크립트 원문 <c>scripts</c>(해시 → 정리한 원문, 해시 순서)는 형식 3부터,
-/// 미리보기 병아리 <c>previewChick</c>(기본 병아리가 아닐 때만 씀, 모르는 ID는 기본 병아리로 그림)는 형식 4부터다 —
+/// 미리보기 병아리 <c>previewChick</c>(기본 병아리가 아닐 때만 씀, <c>"none"</c> = 병아리 없이 빈 캔버스, 모르는 ID는 기본 병아리로 그림)는 형식 4부터다 —
 /// 그것이 없으면 낮은 형식으로 써서 예전 앱도 읽는다. 원문 글은 문자열 한도 대신 <see cref="AssetPackageLimits.MaxScriptBytes"/>로 잰다.
 /// 엄격 모드는 효과를 등록된 schema로 검사한다: 등록된 종류 ID와 지원 버전, 모르는 설정 키 없음, 값 모양·범위·고를 수 있는 값,
 /// 색 슬롯에 맞는 그라데이션. 스크립트 효과는 원문이 레시피에 있어야 하고, 원문은 해시가 맞고 해석되어야 하며(<see cref="ScriptAssetFormat.Check"/>),

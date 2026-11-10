@@ -422,3 +422,88 @@ term.undo-step.def,AI 답 하나가 바꾼 것을 통째로 되돌리는 답 아
 term.locked-layer,잠긴 레이어|레이어 잠금,locked layer|locked layers
 term.locked-layer.to,screen-timeline,
 term.locked-layer.def,타임라인의 자물쇠로 잠가 그리기와 AI 편집을 막은 레이어입니다.,A layer locked with the timeline padlock so that drawing and AI edits can't change it.
+ai-how.server-3,"환경 설정 &gt; {{UiStrings.AiStatus_SettingsTab}}에서 <strong>{{UiStrings.ExternalMcp_Allow}}</strong>을 켜 두면 Chickxel은 켤 때 바로 이 MCP 서버를 열고, 다른 AI 앱이 따로 받은 토큰으로 같은 편집기 도구를 쓸 수 있습니다(<a href=""#ai-external"">다른 AI 앱에서 쓰기</a>).","If <strong>{{UiStrings.ExternalMcp_Allow}}</strong> is on in Preferences &gt; {{UiStrings.AiStatus_SettingsTab}}, Chickxel opens this MCP server as soon as it starts, and other AI apps can use the same editor tools with a token of their own (<a href=""#ai-external"">Using other AI apps</a>)."
+ai-external.1,다른 AI 앱에서 쓰기,Using other AI apps
+ai-external.lead,"Claude Desktop·Cursor·Claude Code·Codex CLI처럼 이미 쓰는 AI 앱에서, 켜져 있는 Chickxel의 그림을 보고 고치게 할 수 있습니다. 그 앱의 대화에서 부탁하면 AI 채팅과 같은 편집기 도구로 픽셀을 찍고 프레임·레이어·부위·효과를 다룹니다. 익숙한 앱에서 일하고 싶을 때나 그 앱의 다른 도구와 함께 쓰고 싶을 때 씁니다. 처음에는 꺼져 있습니다.","You can let an AI app you already use, such as Claude Desktop, Cursor, Claude Code or Codex CLI, look at and edit the image in the running Chickxel. Ask in that app's conversation, and it places pixels and works with frames, layers, parts and effects through the same editor tools as AI chat. Use it when you'd rather work in an app you know, or alongside that app's other tools. It is off at first."
+ai-external.h-on,켜기,Turning it on
+ai-external.shot1.alt,"환경 설정의 AI 상태 탭: 외부 AI 연결 묶음의 허용 체크(켬), 정보박스, 파일 열기 허락·그림 생성 허락 체크, 연결 설정 복사 단추","The AI Status tab of Preferences: in the External AI connection group, the allow checkbox (on), the info box, the open-files and image-generation checkboxes, and the Copy connection settings button"
+ai-external.shot1,① {{UiStrings.ExternalMcp_Allow}}과 정보박스 · ② 파일 열기 허락 · ③ 그림 생성 허락 · ④ {{UiStrings.ExternalMcp_CopyConfig}},① {{UiStrings.ExternalMcp_Allow}} and its info box · ② Allow opening files · ③ Allow image generation · ④ {{UiStrings.ExternalMcp_CopyConfig}}
+ai-external.m1,"① <strong>{{UiStrings.ExternalMcp_Allow}}</strong>: <strong>편집 &gt; 환경 설정…</strong>의 <strong>{{UiStrings.AiStatus_SettingsTab}}</strong> 탭에 있습니다. 켜고 <strong>확인</strong>을 누르면 바로 연결을 받기 시작하고, 끄고 확인을 누르면 연결된 앱도 그 자리에서 끊깁니다. 다음에 Chickxel을 켤 때도 이 설정대로 엽니다. 옆의 정보박스에 마우스를 올리면 이 기능의 짧은 설명이 뜹니다.",① <strong>{{UiStrings.ExternalMcp_Allow}}</strong>: on the <strong>{{UiStrings.AiStatus_SettingsTab}}</strong> tab of <strong>Edit &gt; Preferences…</strong>. Turn it on and press <strong>OK</strong> to start accepting connections; turn it off and press OK to cut off connected apps right away. Chickxel keeps this setting the next time it starts. Hover over the info box next to it for a short explanation.
+ai-external.m3,"② <strong>파일 열기 허락</strong>: 켜면 AI가 <code>open_file</code>로 경로를 주어 이 컴퓨터의 그림·프로젝트를 새 탭에 엽니다. 끄면 그 도구가 목록에서 빠져, 열려 있는 그림과 AI가 새로 만드는 그림만 다룹니다.","② <strong>Allow opening files</strong>: when on, the AI can open any image or project on this computer in a new tab by giving its path to <code>open_file</code>. When off, that tool is left out and the AI works only on open images and ones it creates."
+ai-external.m4,"③ <strong>그림 생성 허락</strong>: 켜면 AI가 <code>generate_pixel_art</code>로 <a href=""#ai-generate"">그림 생성 → 픽셀 변환</a>을 부릅니다. 내 Codex CLI로 그리므로 Codex 사용량이 들고, Codex CLI가 설치·로그인되어 있어야 합니다. 크기·변환 같은 옵션은 AI 채팅의 그리기 설정을 따릅니다.","③ <strong>Allow image generation</strong>: when on, the AI can call <a href=""#ai-generate"">Generate image → pixelate</a> with <code>generate_pixel_art</code>. It draws with your Codex CLI, so it uses your Codex quota and needs Codex CLI installed and signed in. Options such as size and conversion follow AI chat's drawing settings."
+ai-external.m5,"④ <strong>{{UiStrings.ExternalMcp_CopyConfig}}</strong>: 다른 AI 앱의 MCP 설정에 붙여 넣을 JSON을 클립보드에 복사합니다. 지금 실행 중인 Chickxel 실행 파일의 경로가 들어 있으므로, Chickxel을 다른 폴더로 옮기면 다시 복사해 붙여 넣습니다.","④ <strong>{{UiStrings.ExternalMcp_CopyConfig}}</strong>: copies the JSON to paste into another AI app's MCP settings. It contains the path of the running Chickxel executable, so copy and paste it again if you move Chickxel to another folder."
+ai-external.after-on,②③을 바꾸면 그 AI 앱이 도구 목록을 다시 받아야 바뀐 목록이 보입니다. 그 앱을 다시 시작하거나 MCP 서버를 다시 연결하세요.,"After changing ② or ③, the AI app sees the new tool list only once it fetches the list again: restart the app or reconnect its MCP server."
+ai-external.h-apps,다른 AI 앱에 등록하기,Registering Chickxel in another AI app
+ai-external.apps-lead,④로 복사한 내용은 아래와 같은 모양입니다. 그 앱이 Chickxel 실행 파일을 <code>--mcp</code> 인수로 띄우면 창을 열지 않고 연결만 하는 작은 다리로 돕니다.,"What ④ copies looks like this. When the app starts the Chickxel executable with <code>--mcp</code>, it runs as a small bridge that opens no window and only relays the connection."
+ai-external.apps-path,"설치 스크립트로 설치했다면 Windows는 <code>%LOCALAPPDATA%\Programs\Chickxel\Chickxel.exe</code>, macOS는 <code>/Applications/Chickxel.app/Contents/MacOS/Chickxel.App</code>입니다. 직접 적기보다 ④로 복사한 것을 쓰는 것이 가장 정확합니다. 앱마다 붙여 넣는 곳은 다음과 같습니다.","With the install scripts, the path is <code>%LOCALAPPDATA%\Programs\Chickxel\Chickxel.exe</code> on Windows and <code>/Applications/Chickxel.app/Contents/MacOS/Chickxel.App</code> on macOS. Copying it with ④ is more reliable than typing it. Where to paste it in each app:"
+ai-external.th-app,앱,App
+ai-external.th-where,등록하는 곳,Where to register it
+ai-external.app-desktop,"설정 &gt; 개발자(Developer) &gt; <strong>설정 편집(Edit Config)</strong>이 여는 <code>claude_desktop_config.json</code>(Windows <code>%APPDATA%\Claude\</code>, macOS <code>~/Library/Application Support/Claude/</code>)의 <code>mcpServers</code>에 <code>chickxel</code> 항목을 넣고, Claude Desktop을 완전히 끈 뒤 다시 켭니다.","Add the <code>chickxel</code> entry to <code>mcpServers</code> in <code>claude_desktop_config.json</code>, which Settings &gt; Developer &gt; <strong>Edit Config</strong> opens (Windows <code>%APPDATA%\Claude\</code>, macOS <code>~/Library/Application Support/Claude/</code>), then quit Claude Desktop completely and start it again."
+ai-external.app-code,"프로젝트 폴더의 <code>.mcp.json</code>에 같은 JSON을 넣거나(처음 쓸 때 쓸지 묻습니다), 모든 폴더에서 쓰려면 터미널에서 <code>claude mcp add --scope user chickxel -- ""실행 파일 경로"" --mcp</code>로 등록합니다.","Put the same JSON in <code>.mcp.json</code> in the project folder (it asks before using it the first time), or register it for every folder from a terminal with <code>claude mcp add --scope user chickxel -- ""path to the executable"" --mcp</code>."
+ai-external.app-cursor,"<code>~/.cursor/mcp.json</code>(모든 프로젝트) 또는 프로젝트의 <code>.cursor/mcp.json</code>에 같은 JSON을 넣고, Cursor 설정의 MCP 목록에서 <code>chickxel</code>이 켜져 있는지 봅니다.","Put the same JSON in <code>~/.cursor/mcp.json</code> (all projects) or in the project's <code>.cursor/mcp.json</code>, and check that <code>chickxel</code> is enabled in the MCP list of Cursor's settings."
+ai-external.app-codex,JSON 대신 <code>~/.codex/config.toml</code>에 아래처럼 <code>[mcp_servers.chickxel]</code>를 더합니다. Windows 경로는 작은따옴표로 감쌉니다(TOML에서 역슬래시를 그대로 둠).,"Instead of JSON, add <code>[mcp_servers.chickxel]</code> to <code>~/.codex/config.toml</code> as below. Wrap a Windows path in single quotes (so TOML keeps the backslashes)."
+ai-external.apps-check,"등록한 뒤 그 앱에서 <code>chickxel</code> 도구가 보이면 연결된 것입니다. 연결할 때 Chickxel의 그리기 규칙(먼저 문서 정보 보기, 좌표, 부위, 효과 쓰는 법 등)도 함께 넘어갑니다. 그 앱에 ""열린 그림에 1px 흰 외곽선 넣어 줘""처럼 부탁해 보세요.","Once registered, the app lists the <code>chickxel</code> tools. Chickxel's drawing rules (look at the document first, coordinates, parts, how to use effects and so on) are passed along when it connects. Try asking the app something like ""add a 1px white outline to the open image""."
+ai-external.h-how,작동 방식,How it works
+ai-external.how-1,"그 AI 앱이 <code>Chickxel --mcp</code>를 띄웁니다. 이 프로세스는 창을 열지 않고, 켜져 있는 Chickxel과 그 앱 사이에서 메시지만 넘깁니다.",The AI app starts <code>Chickxel --mcp</code>. This process opens no window; it only passes messages between that app and the running Chickxel.
+ai-external.how-2,다리는 메시지마다 설정 폴더의 <code>mcp-external.json</code>에서 Chickxel MCP 서버 주소(<code>http://127.0.0.1:포트/mcp</code>)와 외부 연결 토큰을 읽습니다. 이 파일은 외부 AI 연결이 켜져 있는 동안만 있습니다.,"For each message, the bridge reads the Chickxel MCP server address (<code>http://127.0.0.1:port/mcp</code>) and the external connection token from <code>mcp-external.json</code> in the settings folder. The file exists only while the external AI connection is on."
+ai-external.how-3,"Chickxel은 그 토큰으로 들어온 요청에 허락한 도구만 보이고 실행합니다. 도구는 편집기에서 실행되어 캔버스에 바로 보이고, 결과(글이나 그림)가 그 앱으로 돌아갑니다.","Chickxel shows and runs only the allowed tools for requests with that token. Tools run in the editor, so the canvas changes right away, and the result (text or an image) goes back to the app."
+ai-external.how-4,"그 앱이 보낸 차례대로 도구를 실행합니다. 그림 생성처럼 오래 걸리는 도구는 기다리는 동안 진행 알림을 보내고, 그동안 다른 요청도 받습니다.","Tools run in the order the app sends them. Long tools such as image generation send progress notes while you wait, and other requests are accepted meanwhile."
+ai-external.how-restart,다리가 메시지마다 파일을 새로 읽으므로 Chickxel을 껐다 켜도 그 앱을 다시 시작할 필요가 없습니다. Chickxel이 꺼져 있으면 그 앱은 안내 오류를 받습니다(아래 연결이 안 될 때).,"Because the bridge rereads the file for every message, you don't need to restart the app after restarting Chickxel. While Chickxel is closed, the app gets an explanatory error (see If it doesn't connect below)."
+ai-external.h-status,연결 표시,Connection indicator
+ai-external.shot2.alt,상태 표시줄 오른쪽 끝: 외부 AI가 draw_pixels를 부른 직후 강조색으로 바뀐 플러그 아이콘과 External AI: draw_pixels,"Right end of the status bar: the plug icon and ""External AI: draw_pixels"" highlighted right after an external AI called draw_pixels"
+ai-external.shot2,⑤ 외부 AI 연결 표시,⑤ External AI connection indicator
+ai-external.status,"⑤ 외부 AI 연결이 켜져 있는 동안 <a href=""#screen-status-bar"">상태 표시줄</a> 오른쪽 끝에 플러그 아이콘과 <strong>{{UiStrings.ExternalMcp_Status}}</strong>가 흐리게 보입니다. 다른 AI 앱이 도구를 부르면 4초 동안 강조색으로 바뀌고 그 도구 이름이 붙습니다(그림은 <code>draw_pixels</code>를 부른 직후). 끄면 표시도 사라집니다.","⑤ While the external AI connection is on, a plug icon and a dim <strong>{{UiStrings.ExternalMcp_Status}}</strong> show at the right end of the <a href=""#screen-status-bar"">status bar</a>. When another AI app calls a tool, it turns the accent color for 4 seconds with the tool's name (the picture is right after a <code>draw_pixels</code> call). It disappears when you turn the connection off."
+ai-external.h-diff,AI 채팅과 다른 점,Differences from AI chat
+ai-external.diff-lead,편집기 도구는 같지만 대화가 그 앱에서 이루어지므로 몇 가지가 다릅니다.,"The editor tools are the same, but since the conversation happens in the other app, a few things differ."
+ai-external.th-item,항목,Item
+ai-external.th-chat,AI 채팅,AI chat
+ai-external.th-ext,외부 AI 연결,External AI connection
+ai-external.d-start,연결,Connection
+ai-external.d-start.chat,Chickxel이 CLI를 띄우고 임시 MCP 설정을 넘깁니다.,Chickxel starts the CLI and passes it a temporary MCP config.
+ai-external.d-start.ext,그 앱이 <code>Chickxel --mcp</code>를 띄웁니다. 그 앱에 한 번 등록해 둡니다.,The app starts <code>Chickxel --mcp</code>. You register it in the app once.
+ai-external.d-cost,사용량,Usage
+ai-external.d-cost.chat,내 Claude·ChatGPT 구독(CLI 로그인),Your Claude or ChatGPT subscription (CLI sign-in)
+ai-external.d-cost.ext,그 앱의 계정과 요금제. 그림 생성을 켜면 Codex 사용량도 듭니다.,"That app's account and plan, plus your Codex quota if image generation is on."
+ai-external.d-undo,실행취소,Undo
+ai-external.d-undo.chat,"답 하나가 한 단계(<a href=""#ai-undo"">되돌리기</a>)","One reply is one step (<a href=""#ai-undo"">Undoing</a>)"
+ai-external.d-undo.ext,"도구 하나가 한 단계(""AI: 도구 이름""). 여러 도구를 부른 부탁은 여러 번 되돌립니다.","One tool call is one step (""AI: tool name""). A request that called several tools takes several undos."
+ai-external.d-ask,AI가 묻기,AI questions
+ai-external.d-ask.chat,"입력란 위 질문 카드(<a href=""#ai-questions"">AI의 질문에 답하기</a>)","A question card above the input box (<a href=""#ai-questions"">Answering the AI's questions</a>)"
+ai-external.d-ask.ext,<code>ask_user</code>가 없습니다. 고를 것이 있으면 그 앱의 대화에서 묻습니다.,There is no <code>ask_user</code>; the AI asks in that app's conversation instead.
+ai-external.d-open,파일 열기,Opening files
+ai-external.d-open.chat,<code>open_file</code>로 엽니다.,Opens files with <code>open_file</code>.
+ai-external.d-open.ext,② 파일 열기 허락을 켰을 때만,Only with ② Allow opening files
+ai-external.d-gen,그림 생성,Image generation
+ai-external.d-gen.chat,그리기 설정의 그리는 방식을 따릅니다.,Follows the drawing mode in drawing settings.
+ai-external.d-gen.ext,③ 그림 생성 허락을 켰을 때만. 대상 그림은 붙인 그림 번호 대신 base64 PNG(<code>subject_image</code>)로 받습니다.,Only with ③ Allow image generation. The subject image comes as a base64 PNG (<code>subject_image</code>) instead of an attached image number.
+ai-external.d-file-only,지금 그림만,Current file only
+ai-external.d-file-only.chat,"채팅의 단추로 켭니다(<a href=""#ai-file-only"">지금 그림만 고치게 하기</a>).","Turned on with the chat button (<a href=""#ai-file-only"">Limiting edits to the current file</a>)."
+ai-external.d-file-only.ext,쓰지 않습니다. AI 채팅에서 켜 둔 상태와도 관계없습니다.,"Not used, whatever its state in AI chat."
+ai-external.d-locked,잠긴 레이어,Locked layers
+ai-external.d-locked.chat,언제나 건드리지 않습니다.,Never touched.
+ai-external.d-locked.ext,같습니다.,The same.
+ai-external.d-rules,그리기 규칙,Drawing rules
+ai-external.d-rules.chat,시스템 프롬프트로 받습니다.,Given as the system prompt.
+ai-external.d-rules.ext,연결할 때 MCP <code>instructions</code>로 같은 규칙을 받습니다(앱에 따라 쓰지 않을 수도 있음).,The same rules arrive as MCP <code>instructions</code> on connecting (some apps may not use them).
+ai-external.d-see,보이는 곳,Where you see it
+ai-external.d-see.chat,채팅 창의 도구 줄과 결과 그림,Tool lines and result pictures in the chat window
+ai-external.d-see.ext,그 앱의 대화. Chickxel에는 캔버스 변화와 ⑤ 연결 표시만 보입니다.,The app's conversation; Chickxel shows only the canvas changes and the ⑤ indicator.
+ai-external.h-safety,안전,Safety
+ai-external.safe-1,"연결은 이 컴퓨터 안(127.0.0.1)에서만 열리고, 외부 연결 토큰이 맞는 요청만 받습니다. 토큰은 Chickxel을 켤 때마다 새로 만듭니다.","The connection is open only on this computer (127.0.0.1), and only requests with the external connection token are accepted. The token is new each time Chickxel starts."
+ai-external.safe-2,"토큰이 든 <code>&lt;설정 폴더&gt;/Chickxel/mcp-external.json</code>은 켜져 있는 동안만 있고, 끄거나 Chickxel을 닫으면 지웁니다. 이 컴퓨터에서 내 계정으로 도는 프로그램은 이 파일을 읽어 연결할 수 있으므로 쓰지 않을 때는 꺼 두세요.","<code>&lt;settings folder&gt;/Chickxel/mcp-external.json</code>, which holds the token, exists only while the connection is on and is deleted when you turn it off or close Chickxel. Programs running under your account on this computer can read it and connect, so turn the connection off when you don't use it."
+ai-external.safe-3,"파일 열기와 그림 생성은 따로 켜야 하고, 잠긴 레이어는 외부 AI도 건드리지 않습니다. AI는 부탁할 때만 저장하도록 규칙을 받습니다.","Opening files and image generation must be turned on separately, and external AIs never touch locked layers either. The rules tell the AI to save only when asked."
+ai-external.safe-4,그 앱이 도구로 본 그림과 문서 정보는 그 앱의 모델로 갑니다. 어디로 가는지는 그 앱의 개인정보 설명을 따릅니다.,"Images and document details the app looks at with tools go to that app's model, as described in that app's privacy information."
+ai-external.h-trouble,연결이 안 될 때,If it doesn't connect
+ai-external.th-sym,증상,Symptom
+ai-external.th-fix,까닭과 푸는 법,Cause and fix
+ai-external.t-off,"그 앱이 ""Chickxel이 켜져 있지 않거나 외부 AI 연결이 꺼져 있습니다"" 오류를 받음","The app gets ""Chickxel isn't running or its external AI connection is off"""
+ai-external.t-off.fix,"Chickxel을 켜고 ①이 켜져 있는지 봅니다. Chickxel이 갑자기 꺼졌을 때도 같고, 다시 켜면 그 앱을 다시 시작하지 않아도 이어집니다.","Start Chickxel and check that ① is on. The same happens if Chickxel quit unexpectedly; once it is running again, the app continues without a restart."
+ai-external.t-notools,그 앱에 <code>chickxel</code> 도구가 없음,The app has no <code>chickxel</code> tools
+ai-external.t-notools.fix,"설정 파일 위치와 JSON 모양(쉼표·괄호)을 확인하고 그 앱을 다시 시작합니다. 그 앱이 실행 파일을 직접 띄우므로 경로가 실제 파일을 가리켜야 하며, Chickxel을 옮겼다면 ④로 다시 복사합니다.","Check the config file's location and JSON (commas and brackets) and restart the app. The app starts the executable itself, so the path must point to the real file; if you moved Chickxel, copy it again with ④."
+ai-external.t-missing,"<code>open_file</code>·<code>generate_pixel_art</code>가 없거나 ""외부 AI 연결에서는 쓸 수 없는 도구""로 거절됨","<code>open_file</code> or <code>generate_pixel_art</code> is missing or refused as ""not available over the external AI connection"""
+ai-external.t-missing.fix,②③를 켜고 그 앱이 도구 목록을 다시 받게 다시 연결합니다. <code>ask_user</code>는 외부 연결에서 언제나 빠집니다.,Turn on ② or ③ and reconnect so the app fetches the tool list again. <code>ask_user</code> is always left out for external connections.
+ai-external.t-image,"그림 생성이 ""subject_image를 PNG 그림으로 읽지 못했습니다""로 실패","Image generation fails with ""Couldn't read subject_image as a PNG image"""
+ai-external.t-image.fix,대상 그림은 <code>data:</code> 머리 없는 base64 PNG여야 합니다. 그 앱이 그림을 그렇게 넘기지 못하면 대상 그림 없이 설명으로 부탁합니다.,"The subject image must be a base64 PNG without a <code>data:</code> prefix. If the app can't pass images that way, describe the subject in words instead."
+term.external-ai,외부 AI 연결,external AI connection
+term.external-ai.to,ai-external,
+term.external-ai.def,다른 AI 앱이 <code>Chickxel --mcp</code>로 켜져 있는 Chickxel의 편집기 도구를 쓰게 하는 설정입니다.,A setting that lets other AI apps use the running Chickxel's editor tools through <code>Chickxel --mcp</code>.

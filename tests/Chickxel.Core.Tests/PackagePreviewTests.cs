@@ -164,6 +164,73 @@ public class PackagePreviewTests
     }
 
     [Fact]
+    public void NoneChick_IsAnEmptyCanvasOfTheDefaultChickSize_AndNotANumberedChick()
+    {
+        var blank = PreviewChicks.Load(PreviewChicks.None);
+        var chick = PreviewChicks.Load(PreviewChicks.Default);
+        Assert.Equal((chick.Width, chick.Height), (blank.Width, blank.Height));
+        Assert.True(blank.GetOpaqueBounds().IsEmpty);
+        Assert.True(PreviewChicks.IsKnown(PreviewChicks.None));
+        Assert.DoesNotContain(PreviewChicks.None, PreviewChicks.Ids);
+    }
+
+    [Fact]
+    public void RecipeChick_None_IsWrittenAndReadBack()
+    {
+        var recipe = new EffectRecipe { Id = "personal.a", Name = "Outline", PreviewChick = PreviewChicks.None, Effects = [new OutlineEffect()] };
+        var json = EffectRecipeFormat.Write(recipe);
+        Assert.Equal((EffectRecipeFormat.SchemaVersion, "none"), ((int)json["schemaVersion"]!, (string)json["previewChick"]!));
+        var context = new AssetReadContext("recipe.json", strict: true);
+        Assert.Equal(PreviewChicks.None, EffectRecipeFormat.Read(JsonNode.Parse(json.ToJsonString()), context)!.PreviewChick);
+        Assert.Empty(context.Issues);
+    }
+
+    [Fact]
+    public void ScriptDeclaration_PreviewChickNone_IsReadAndWritten_AndOldSourcesKeepTheDefaultChick()
+    {
+        const string body = "render(img, ctx, s) {} })";
+        var none = ScriptEffectProgram.Parse("effect({ name: \"A\", previewChick: \"none\", " + body).Program!;
+        Assert.Equal(PreviewChicks.None, ScriptAsset.From("", none).PreviewChick);
+        string edited = ScriptDeclarationEdit.SetPreviewChick("effect({ name: \"A\", " + body, PreviewChicks.None)!;
+        Assert.Contains("previewChick: \"none\"", edited, StringComparison.Ordinal);
+        Assert.Equal(PreviewChicks.None, ScriptEffectProgram.Parse(edited).Program!.PreviewChick);
+        // 적지 않은 예전 원문은 그대로 기본 병아리
+        Assert.Equal(PreviewChicks.Default, ScriptAsset.From("", ScriptEffectProgram.Parse("effect({ name: \"A\", " + body).Program!).PreviewChick);
+    }
+
+    [Fact]
+    public void NoneChick_PackagePreview_DrawsTheEffectOnAnEmptyCanvas()
+    {
+        // 비처럼 스스로 그리는 효과: 칸마다 한 줄씩 내려가는 파란 줄
+        const string source = """
+            effect({ name: "rain", tags: ["rain"], animated: true, previewChick: "none", render(img, ctx) {
+              const y = ctx.step % img.height;
+              for (let x = 0; x < img.width; x += 2) {
+                const i = (y * img.width + x) * 4;
+                img.data[i] = 40; img.data[i + 1] = 90; img.data[i + 2] = 230; img.data[i + 3] = 255;
+              }
+            } });
+            // NoneChick_PackagePreview_DrawsTheEffectOnAnEmptyCanvas
+            """;
+        var program = ScriptEffectProgram.Parse(source).Program!;
+        ScriptLibrary.Add(program.Source);
+        ScriptLibrary.SetTrust(program.ContentHash, true);
+        var preview = AssetPreview.Package(ScriptAsset.From("", program))!;
+
+        var chick = PreviewChicks.Load(PreviewChicks.Default);
+        int scale = AssetPreview.PngMaxSize / Math.Max(chick.Width, chick.Height);
+        var image = Decode(preview.Png);
+        var original = Decode(preview.OriginalPng!);
+        Assert.Equal((chick.Width * scale, chick.Height * scale), (image.Width, image.Height));
+        Assert.True(original.GetOpaqueBounds().IsEmpty);
+        Assert.False(image.GetOpaqueBounds().IsEmpty);
+        Assert.Contains(Chunks(preview.Png), chunk => chunk.Type == "acTL");
+        var issues = new List<AssetIssue>();
+        AssetPackageValidator.CheckPreview("previews/rain.png", preview.Png, AssetPackageLimits.Default, issues);
+        Assert.Empty(issues);
+    }
+
+    [Fact]
     public void EveryListedChick_IsItsOwnEmbeddedPicture()
     {
         var images = PreviewChicks.Ids.Select(PreviewChicks.Load).ToList();

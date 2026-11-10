@@ -77,6 +77,18 @@ public static class AssetPreview
     }
 
     /// <summary>
+    /// <see cref="Render"/>·<see cref="Original"/> 그림 안에서 원본 캔버스(효과를 입히기 전 견본 칸)의 자리 — 효과 여백을 뺀 자리이고 모든 칸이 같다.
+    /// 확인할 때 캔버스를 늘리지 않는 효과(<see cref="LayerEffect.ExpandCanvas"/>가 false)는 이 밖이 잘린다.
+    /// </summary>
+    public static Rectangle Canvas(IReadOnlyList<LayerEffect> template, PixelImage source, int steps = Steps, PixelImage? end = null,
+        PreviewMotion? motion = null, PreviewPlacement? placement = null)
+    {
+        var src = Source(template, source, end, motion, placement, 0, steps).Image;
+        var padding = LayerEffects.Padding(template, src.Width, src.Height);
+        return new Rectangle(padding.Left, padding.Top, src.Width, src.Height);
+    }
+
+    /// <summary>
     /// 효과 묶음의 미리보기 움직임: 켜진 스크립트 효과 중 실행할 수 있는 원문이 움직임(<see cref="ScriptEffectProgram.PreviewMotion"/>)을 선언한 첫 효과의 것.
     /// 없으면 <see cref="PreviewMotion.None"/>. 효과 창 상자·에셋 미리보기·레시피 패키지 미리보기처럼 선언을 따로 넘기지 않는 곳이 쓴다.
     /// </summary>

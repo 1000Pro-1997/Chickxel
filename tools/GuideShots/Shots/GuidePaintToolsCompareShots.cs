@@ -227,6 +227,37 @@ internal static class GuidePaintToolsCompareShots
     }
 
     /// <summary>
+    /// 채우기 비교 방식: 색상(빨강·주황·초록·파랑·회색 — 위에서부터) × 밝기(왼쪽 어두움 → 오른쪽 밝음) 견본표의 가운데 빨강 칸을
+    /// 이어진 영역만 끔, 같은 허용 오차로 채운다. 왼쪽부터 채널 최대 차 · RGB 거리 · OKLab · CIEDE2000 · 색상만(<see cref="FillColorMode"/>).
+    /// </summary>
+    [Shot("tools-fill-compare-3")]
+    public static void FillModeCompare(ShotKit k)
+    {
+        Color32[] hues = [new(200, 40, 50), new(230, 120, 30), new(60, 170, 70), new(50, 90, 210), new(128, 128, 128)];
+        const int cell = 3, steps = 5;
+        var chart = Blank(cell * steps, cell * hues.Length, Paper);
+        for (int r = 0; r < hues.Length; r++)
+            for (int s = 0; s < steps; s++)
+            {
+                // 가운데(s = 2)가 원래 색, 왼쪽은 검정 쪽, 오른쪽은 흰색 쪽으로 30%씩 섞는다.
+                double t = (s - 2) * 0.3;
+                var c = hues[r];
+                byte Mix(byte v) => (byte)Math.Round(t < 0 ? v * (1 + t) : v + (255 - v) * t);
+                FillRect(chart, s * cell, r * cell, cell, cell, new Color32(Mix(c.R), Mix(c.G), Mix(c.B)));
+            }
+        var mark = new Color32(255, 0, 255);
+        int tol = (int)Math.Round(25 * 255 / 100.0);
+        var row = new List<PixelImage>();
+        foreach (var mode in new[] { FillColorMode.ChannelMax, FillColorMode.RgbDistance, FillColorMode.OkLab, FillColorMode.Ciede2000, FillColorMode.Hue })
+        {
+            var img = chart.Clone();
+            Raster.FloodFill(img, 2 * cell + 1, 1, mark, contiguous: false, tolerance: tol, mode: mode);
+            row.Add(img);
+        }
+        Save(k, "tools-fill-compare-3", 8, [row], gap: 12);
+    }
+
+    /// <summary>
     /// 그라데이션 보간·디더링: 같은 세 정지점(남색 → 하늘색 → 크림, OKLCH)을 위에서부터 부드럽게 · 단계 · 부드럽게 + 2×2 Bayer · 부드럽게 + 4×4 Bayer로 칠한다.
     /// </summary>
     [Shot("tools-gradient-compare")]
@@ -264,6 +295,121 @@ internal static class GuidePaintToolsCompareShots
     }
 
     // ───────────── 도움 ─────────────
+
+    /// <summary>
+    /// 모양 펜 간격: 같은 물결 경로를 나뭇잎 세트(무작위, 씨앗 고정)로 간격 1(왼쪽 — 지나간 모든 픽셀에 찍어 겹친 자국)과
+    /// 최적화 간격(오른쪽 — 앞 도장과 겹치지 않는 첫 자리마다)으로 끈 결과. 실제 <see cref="StampTrail"/>·<see cref="ShapeStamp"/>를 쓴다.
+    /// </summary>
+    [Shot("tools-shape-pen-compare")]
+    public static void ShapePenSpacingCompare(ShotKit k)
+    {
+        var leaves = BuiltIn("leaves");
+        var path = WavePath(6, 84, 15, 6);
+        var dense = Blank(90, 30, Paper);
+        var optimized = Blank(90, 30, Paper);
+        StampAlong(dense, leaves, path, optimized: false, seed: 7);
+        StampAlong(optimized, leaves, path, optimized: true, seed: 7);
+        Save(k, "tools-shape-pen-compare", 4, [[dense, optimized]]);
+    }
+
+    /// <summary>모양 펜 기본 세트 스무 가지: <see cref="StampBuiltIns.Ids"/> 차례로 왼쪽 위부터 한 줄에 두 세트(세트마다 모양을 나란히).</summary>
+    [Shot("tools-shape-pen-sets")]
+    public static void ShapePenSets(ShotKit k)
+    {
+        var strips = StampBuiltIns.Sets().Select(set =>
+        {
+            const int gap = 3;
+            int w = set.Shapes.Sum(s => s.Width) + gap * (set.Shapes.Count + 1);
+            int h = set.Shapes.Max(s => s.Height) + gap * 2;
+            var strip = Blank(w, h, Paper);
+            int x = gap;
+            foreach (var s in set.Shapes)
+            {
+                int y = (h - s.Height) / 2;
+                for (int sy = 0; sy < s.Height; sy++)
+                    for (int sx = 0; sx < s.Width; sx++)
+                        strip.Set(x + sx, y + sy, Color32.BlendOver(strip.Get(x + sx, y + sy), s.Get(sx, sy)));
+                x += s.Width + gap;
+            }
+            return strip;
+        }).ToList();
+        var rows = new List<List<PixelImage>>();
+        for (int i = 0; i < strips.Count; i += 2) rows.Add([.. strips.Skip(i).Take(2)]);
+        // 줄마다 왼쪽 띠를 같은 너비로 맞춰 오른쪽 세트가 한 세로줄에 서게.
+        int leftWidth = rows.Max(r => r[0].Width);
+        foreach (var r in rows)
+        {
+            var padded = Blank(leftWidth, r[0].Height, Back);
+            for (int y = 0; y < r[0].Height; y++)
+                for (int x = 0; x < r[0].Width; x++) padded.Set(x, y, r[0].Get(x, y));
+            r[0] = padded;
+        }
+        Save(k, "tools-shape-pen-sets", 3, rows, gap: 9);
+    }
+
+    /// <summary>모양 펜 예시: 연필 가지를 따라 나뭇잎(최적화 간격), 바닥에 풀(최적화 간격)과 꽃, 하늘에 반짝이를 찍은 그림.</summary>
+    [Shot("tools-shape-pen-example")]
+    public static void ShapePenExample(ShotKit k)
+    {
+        var img = Blank(120, 64, new Color32(214, 234, 246));
+        var bark = new Color32(110, 74, 46);
+        var branch = WavePath(4, 100, 22, 4);
+        foreach (var p in branch) { img.Set(p.X, p.Y, bark); img.Set(p.X, p.Y + 1, bark); }
+        StampAlong(img, BuiltIn("leaves"), [.. branch.Where((_, i) => i % 2 == 0).Select(p => new System.Drawing.Point(p.X, p.Y - 2))], optimized: true, seed: 3);
+        StampAlong(img, BuiltIn("grass"), WavePath(2, 118, 58, 1), optimized: true, seed: 5);
+        var flowers = BuiltIn("flowers");
+        var picker = new StampPicker(11);
+        int f = picker.First(flowers.Shapes.Count, flowers.Order);
+        foreach (var x in new[] { 14, 37, 61, 88, 109 })
+        {
+            ShapeStamp.Stamp(img, flowers.Shapes[f], new System.Drawing.Point(x, 53));
+            f = picker.Next(f, flowers.Shapes.Count, flowers.Order);
+        }
+        var sparkles = BuiltIn("sparkles");
+        int s = 0;
+        foreach (var (x, y) in new[] { (20, 8), (52, 6), (78, 11), (104, 5), (36, 38), (96, 36) })
+        {
+            ShapeStamp.Stamp(img, sparkles.Shapes[s], new System.Drawing.Point(x, y));
+            s = (s + 1) % sparkles.Shapes.Count;
+        }
+        Save(k, "tools-shape-pen-example", 4, [[img]]);
+    }
+
+    private static StampSet BuiltIn(string id) => StampBuiltIns.Sets().First(s => s.Id == id);
+
+    /// <summary>왼쪽 <paramref name="x0"/>에서 오른쪽 <paramref name="x1"/>까지 높이 <paramref name="y"/> 둘레로 <paramref name="amp"/>만큼 물결치는 마우스 점.</summary>
+    private static List<System.Drawing.Point> WavePath(int x0, int x1, int y, double amp)
+    {
+        var path = new List<System.Drawing.Point>();
+        for (int x = x0; x <= x1; x += 2)
+            path.Add(new System.Drawing.Point(x, (int)Math.Round(y + amp * Math.Sin((x - x0) / 14.0))));
+        return path;
+    }
+
+    /// <summary>
+    /// 앱의 모양 펜 끌기와 같은 길: 첫 점에 찍고 <see cref="StampTrail"/>로 간격 1(<paramref name="optimized"/> 끔) 또는
+    /// 최적화 간격(앞 도장과 <see cref="ShapeStamp.Overlaps"/>가 아닌 첫 자리)마다 세트 순서대로 다음 모양을 찍는다.
+    /// </summary>
+    private static void StampAlong(PixelImage img, StampSet set, List<System.Drawing.Point> path, bool optimized, int seed)
+    {
+        var picker = new StampPicker(seed);
+        int index = picker.First(set.Shapes.Count, set.Order);
+        PixelImage? last = null;
+        void StampAt(System.Drawing.Point p)
+        {
+            var shape = set.Shapes[index];
+            ShapeStamp.Stamp(img, shape, p);
+            last = shape;
+            index = picker.Next(index, set.Shapes.Count, set.Order);
+        }
+        Func<System.Drawing.Point, System.Drawing.Point, bool> due = optimized
+            ? (a, b) => last is null || !ShapeStamp.Overlaps(last, a, set.Shapes[index], b)
+            : StampTrail.Spacing(1);
+        var trail = new StampTrail(path[0]);
+        StampAt(path[0]);
+        foreach (var p in path.Skip(1))
+            foreach (var at in trail.MoveTo(p, due)) StampAt(at);
+    }
 
     private static PixelImage Blank(int w, int h, Color32 fill)
     {

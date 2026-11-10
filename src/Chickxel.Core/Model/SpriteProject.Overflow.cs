@@ -26,6 +26,19 @@ public sealed partial class SpriteProject
     private CelOverflow? _strokeOverflowBefore;
     private bool _strokeOverflowChanged;
 
+    /// <summary>
+    /// 열린 스트로크에서 캔버스 밖 칸을 칠하는 작업 그림(<see cref="SetStrokeOutside"/> — 처음 칠할 때 지금 캔버스 밖 그림을 복사해 만들고 칠하는 대로 넓힘)과
+    /// 왼쪽 위(캔버스 좌표). 확정·<see cref="AddStrokeOverflow"/>·<see cref="ClearStrokeOverflow"/> 전에 캔버스 밖 그림으로 넘기고, 취소하면 버린다.
+    /// </summary>
+    private PixelImage? _strokeOutside;
+    private Point _strokeOutsideOrigin;
+
+    /// <summary>캔버스 밖 작업 그림이 바뀔 때마다 늘어나는 번호(화면 비트맵을 다시 채울지 정할 때).</summary>
+    public int StrokeOutsideVersion { get; private set; }
+
+    /// <summary>일반 레이어 셀이 캔버스 밖 그림을 남길 수 있는 범위(캔버스 좌표, 캔버스 포함).</summary>
+    public Rectangle OverflowBounds => OverflowArea(Size);
+
     /// <summary>캔버스 밖 그림을 남기는 범위(캔버스 좌표).</summary>
     private static Rectangle OverflowArea(Size canvas)
     {
@@ -76,18 +89,28 @@ public sealed partial class SpriteProject
     {
         var cel = new PixelImage(canvas.Width, canvas.Height);
         cel.Blit(full, origin.X, origin.Y);
+        return (cel, OutsideOf(full, origin, canvas));
+    }
+
+    /// <summary><see cref="Split"/>의 캔버스 밖 그림만(셀은 만들지 않음).</summary>
+    private static CelOverflow? OutsideOf(PixelImage full, Point origin, Size canvas)
+    {
         var canvasRect = new Rectangle(Point.Empty, canvas);
         var placed = new Rectangle(origin, full.Size);
-        if (canvasRect.Contains(placed)) return (cel, null);
+        if (canvasRect.Contains(placed)) return null;
         var keep = Rectangle.Intersect(placed, OverflowArea(canvas));
-        if (keep.IsEmpty) return (cel, null);
+        if (keep.IsEmpty) return null;
         var outside = full.Crop(new Rectangle(keep.X - origin.X, keep.Y - origin.Y, keep.Width, keep.Height));
         outside.FillRect(new Rectangle(-keep.X, -keep.Y, canvas.Width, canvas.Height), default);
         var opaque = outside.GetOpaqueBounds();
-        if (opaque.IsEmpty) return (cel, null);
+        if (opaque.IsEmpty) return null;
         var image = opaque.Size == outside.Size ? outside : outside.Crop(opaque);
-        return (cel, new CelOverflow(image, new Point(keep.X + opaque.X, keep.Y + opaque.Y)));
+        return new CelOverflow(image, new Point(keep.X + opaque.X, keep.Y + opaque.Y));
     }
+
+    /// <summary>두 캔버스 밖 그림이 같은 자리·같은 픽셀인지(둘 다 없음 포함).</summary>
+    private static bool SameOverflow(CelOverflow? a, CelOverflow? b)
+        => a is { } x ? b is { } y && x.Origin == y.Origin && (ReferenceEquals(x.Image, y.Image) || x.Image.ContentEquals(y.Image)) : b is null;
 
     private void SetOverflow(CelKey key, CelOverflow? overflow)
     {
@@ -123,7 +146,9 @@ public sealed partial class SpriteProject
     /// </summary>
     public bool ClearStrokeOverflow()
     {
-        if (_stroke is not { } s || !_overflow.TryGetValue(s.Key, out var existing)) return false;
+        if (_stroke is not { } s) return false;
+        FlushStrokeOutside(s.Key);
+        if (!_overflow.TryGetValue(s.Key, out var existing)) return false;
         if (!_strokeOverflowChanged)
         {
             _strokeOverflowBefore = existing;
@@ -185,6 +210,7 @@ public sealed partial class SpriteProject
     public bool AddStrokeOverflow(PixelImage source, Point at)
     {
         if (_stroke is not { } s || s.Key.Layer.Kind != LayerKind.Normal) return false;
+        FlushStrokeOutside(s.Key);
         var canvas = Size;
         var placed = new Rectangle(at, source.Size);
         if (Bounds.Contains(placed)) return false;
@@ -200,7 +226,7 @@ public sealed partial class SpriteProject
                 var c = source.Pixels[y * source.Width + x];
                 if (c.A != 0) image.Set(at.X + x - rect.X, at.Y + y - rect.Y, c);
             }
-        var (_, overflow) = Split(image, rect.Location, canvas);
+        var overflow = OutsideOf(image, rect.Location, canvas);
         if (!_strokeOverflowChanged)
         {
             _strokeOverflowBefore = existing;
@@ -210,13 +236,104 @@ public sealed partial class SpriteProject
         return true;
     }
 
+    /// <summary>열린 스트로크가 일반 레이어 셀이면 그 키(캔버스 밖 칸을 칠할 수 있음).</summary>
+    private CelKey? OutsideStrokeKey => _stroke is { } s && s.Key.Layer.Kind == LayerKind.Normal ? s.Key : null;
+
+    /// <summary>
+    /// 열린 스트로크(일반 레이어) 셀의 캔버스 밖 칸 (x, y) 색: 이 스트로크에서 칠한 것까지(<paramref name="before"/>면 스트로크 시작 때 색).
+    /// 캔버스 밖 그림이 없는 칸·일반 레이어 스트로크가 아니면 투명(캔버스 안 칸은 셀에서 읽는다).
+    /// </summary>
+    public Color32 GetStrokeOutside(int x, int y, bool before = false)
+    {
+        if (OutsideStrokeKey is not { } key) return default;
+        if (!before && _strokeOutside is { } work) return work.Get(x - _strokeOutsideOrigin.X, y - _strokeOutsideOrigin.Y);
+        var o = before && _strokeOverflowChanged ? _strokeOverflowBefore : _overflow.TryGetValue(key, out var current) ? current : (CelOverflow?)null;
+        return o is { } v ? v.Image.Get(x - v.Origin.X, y - v.Origin.Y) : default;
+    }
+
+    /// <summary>
+    /// 열린 스트로크(일반 레이어) 셀의 캔버스 밖 칸 (x, y)를 칠한다(남기는 범위 안). 스트로크를 확정하면 셀과 함께 실행취소 한 단계로 기록되고
+    /// (밖을 다 지우면 캔버스 밖 그림이 없어짐), 취소하면 돌아온다. 캔버스 안·범위 밖·일반 레이어 스트로크가 아니면 무시. 색이 바뀌었으면 true.
+    /// </summary>
+    public bool SetStrokeOutside(int x, int y, Color32 color)
+    {
+        if (OutsideStrokeKey is not { } key || Bounds.Contains(x, y)) return false;
+        var area = OverflowArea(Size);
+        if (!area.Contains(x, y)) return false;
+        if (_strokeOutside is null)
+        {
+            if (GetStrokeOutside(x, y) == color) return false;
+            CelOverflow? current = _overflow.TryGetValue(key, out var o) ? o : null;
+            if (!_strokeOverflowChanged)
+            {
+                _strokeOverflowBefore = current;
+                _strokeOverflowChanged = true;
+            }
+            if (current is { } c)
+            {
+                _strokeOutside = c.Image.Clone();
+                _strokeOutsideOrigin = c.Origin;
+            }
+        }
+        if (_strokeOutside is not { } work || !new Rectangle(_strokeOutsideOrigin, work.Size).Contains(x, y)) work = GrowStrokeOutside(x, y, area);
+        if (!work.Set(x - _strokeOutsideOrigin.X, y - _strokeOutsideOrigin.Y, color)) return false;
+        StrokeOutsideVersion++;
+        return true;
+    }
+
+    /// <summary>작업 그림을 (x, y)가 들어가게 넓힌다 — 칠할 때마다 다시 만들지 않게 둘레에 여유를 두고, 남기는 범위로 자른다.</summary>
+    private PixelImage GrowStrokeOutside(int x, int y, Rectangle area)
+    {
+        const int pad = 32;
+        var want = new Rectangle(x - pad, y - pad, 2 * pad + 1, 2 * pad + 1);
+        var old = _strokeOutside;
+        var oldRect = old is null ? Rectangle.Empty : new Rectangle(_strokeOutsideOrigin, old.Size);
+        var rect = Rectangle.Intersect(old is null ? want : Rectangle.Union(oldRect, want), area);
+        var image = new PixelImage(rect.Width, rect.Height);
+        if (old is not null) image.Blit(old, oldRect.X - rect.X, oldRect.Y - rect.Y);
+        _strokeOutside = image;
+        _strokeOutsideOrigin = rect.Location;
+        return image;
+    }
+
+    /// <summary>열린 스트로크에서 칠한 캔버스 밖 칸을 스트로크 시작 때로 되돌린다(도형처럼 끌 때마다 처음 그림 위에 다시 그리는 도구).</summary>
+    public void ResetStrokeOutside()
+    {
+        if (_strokeOutside is not { } work) return;
+        work.Clear();
+        if (_strokeOverflowBefore is { } b) work.Blit(b.Image, b.Origin.X - _strokeOutsideOrigin.X, b.Origin.Y - _strokeOutsideOrigin.Y);
+        StrokeOutsideVersion++;
+    }
+
+    /// <summary>
+    /// 화면용 셀의 캔버스 밖 그림: 그 셀에 열린 스트로크가 캔버스 밖을 칠하는 중이면 칠한 것까지 보이는 작업 그림(스트로크 동안 바뀜 —
+    /// <see cref="StrokeOutsideVersion"/>으로 알아챔, 고치지 않는다), 아니면 <see cref="GetCelOverflow"/>.
+    /// </summary>
+    public (PixelImage Image, Point Origin)? GetCelOverflowLive(int layerIndex, int frameIndex)
+    {
+        if (_strokeOutside is { } work && _stroke is { } s && ReferenceEquals(s.Key.Layer, _layers[layerIndex]) && ReferenceEquals(s.Key.Frame, _frames[frameIndex]))
+            return (work, _strokeOutsideOrigin);
+        return GetCelOverflow(layerIndex, frameIndex);
+    }
+
+    /// <summary>작업 그림을 캔버스 밖 그림으로 넘긴다(꼭 맞게 자르고 비면 없앰, 시작 때와 같으면 시작 때 그림 그대로).</summary>
+    private void FlushStrokeOutside(CelKey key)
+    {
+        if (_strokeOutside is not { } work) return;
+        _strokeOutside = null;
+        StrokeOutsideVersion++;
+        var overflow = OutsideOf(work, _strokeOutsideOrigin, Size);
+        SetOverflow(key, SameOverflow(overflow, _strokeOverflowBefore) ? _strokeOverflowBefore : overflow);
+    }
+
     /// <summary>
     /// 캔버스 밖 그림이 바뀐 스트로크를 확정: 셀을 시작 전으로 되돌린 뒤 바뀐 셀·캔버스 밖 그림을 구조 편집 한 단계로 넣는다
     /// (스트로크 단계는 셀 픽셀만 담으므로).
     /// </summary>
     private bool CommitOverflowStroke(StrokeState s, string label)
     {
-        var after = s.Image.Clone();
+        // 셀이 그대로면(캔버스 밖만 칠함) 셀 그림도 그대로 써서 실행취소 기록이 셀 사본을 갖지 않게 한다.
+        var after = s.Image.ContentEquals(s.Before) ? s.Image : s.Image.Clone();
         var overflowAfter = _overflow.TryGetValue(s.Key, out var o) ? o : (CelOverflow?)null;
         s.Image.CopyFrom(s.Before);
         if (s.Created) _cels.Remove(s.Key);
@@ -238,6 +355,7 @@ public sealed partial class SpriteProject
     /// <summary>스트로크 취소: 바꾼 캔버스 밖 그림을 시작 전으로.</summary>
     private void RevertStrokeOverflow(StrokeState s)
     {
+        _strokeOutside = null;
         if (_strokeOverflowChanged) SetOverflow(s.Key, _strokeOverflowBefore);
         _strokeOverflowChanged = false;
         _strokeOverflowBefore = null;
@@ -297,7 +415,6 @@ public sealed partial class SpriteProject
     internal void SetOverflowRaw(Layer layer, Frame frame, PixelImage image, Point origin)
     {
         if (layer.Kind != LayerKind.Normal) return;
-        var (_, overflow) = Split(image, origin, Size);
-        SetOverflow(new(layer, frame, null), overflow);
+        SetOverflow(new(layer, frame, null), OutsideOf(image, origin, Size));
     }
 }

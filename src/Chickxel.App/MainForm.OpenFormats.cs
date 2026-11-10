@@ -43,7 +43,7 @@ public sealed partial class MainForm
 
     // ───────────── 창 끌어 놓기 ─────────────
 
-    /// <summary>창 어디든(캔버스가 처리하지 않은 곳) 파일을 놓으면 새 탭으로 연다.</summary>
+    /// <summary>창 어디든(캔버스가 처리하지 않은 곳) 파일을 놓으면 새 탭으로 연다. 모양 펜 세트 파일은 세트로 가져온다(<see cref="ImportDroppedShapeSets"/>).</summary>
     private void AttachWindowDrop()
     {
         DragDrop.SetAllowDrop(this, true);
@@ -59,15 +59,18 @@ public sealed partial class MainForm
     private void OnWindowDragOver(object? sender, DragEventArgs e)
     {
         e.Handled = true;
-        e.DragEffects = !WorkOverlay.IsActive && OpenableFiles(e.DataTransfer).Count > 0 ? DragDropEffects.Copy : DragDropEffects.None;
+        e.DragEffects = !WorkOverlay.IsActive && (OpenableFiles(e.DataTransfer).Count > 0 || ShapeSetFiles(e.DataTransfer).Count > 0)
+            ? DragDropEffects.Copy : DragDropEffects.None;
     }
 
     private void OnWindowDrop(object? sender, DragEventArgs e)
     {
         List<string> files = WorkOverlay.IsActive ? [] : OpenableFiles(e.DataTransfer);
+        List<string> shapeSets = WorkOverlay.IsActive ? [] : ShapeSetFiles(e.DataTransfer);
         e.Handled = true;
-        e.DragEffects = files.Count > 0 ? DragDropEffects.Copy : DragDropEffects.None;
+        e.DragEffects = files.Count > 0 || shapeSets.Count > 0 ? DragDropEffects.Copy : DragDropEffects.None;
         // 끌어 놓기가 끝난 뒤에 연다(대화상자가 끌기 도중에 뜨지 않게).
+        if (shapeSets.Count > 0) Dispatcher.UIThread.Post(() => ImportDroppedShapeSets(shapeSets));
         if (files.Count > 0) Dispatcher.UIThread.Post(() => OpenFiles(files));
     }
 

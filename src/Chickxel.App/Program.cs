@@ -6,6 +6,7 @@ namespace Chickxel.App;
 /// <summary>
 /// 명령줄 인수: <c>--open-folder &lt;폴더&gt;</c>, <c>--open &lt;파일&gt;</c>(.chickxel/.png). 경로만 주면 --open과 같다.
 /// <c>chickxel://asset/…</c> 주소나 <c>.chickxel-asset</c> 파일, <c>.chickxel</c> 파일은 <see cref="Activation"/>으로 받는다.
+/// <c>--mcp</c> 하나만 주면 창을 띄우지 않고 외부 AI 연결 다리(<see cref="Ai.McpBridge"/>)로 돈다.
 /// </summary>
 public sealed record StartupArgs(string? OpenFolder, string? OpenFile, Activation? Activation = null)
 {
@@ -103,21 +104,32 @@ static class Program
     [STAThread]
     static int Main(string[] args)
     {
+        // 다른 AI 앱이 띄우는 외부 AI 연결 다리: 창·폴더 정리 없이 화면 언어만 맞추고 stdio를 켜져 있는 Chickxel로 넘긴다.
+        if (args is ["--mcp"])
+        {
+            ApplyLanguage();
+            return Ai.McpBridge.Run();
+        }
         App.Args = StartupArgs.Parse(args);
         // OS가 연결한 주소·파일로 띄워졌는데 이미 켜진 Chickxel이 있으면 그 창에 넘기고 끝낸다(Windows).
         if (App.Args.Activation is { } activation && AppActivation.TryForward(activation)) return 0;
         Platform.MigrateLegacyFolders();
         // 프로젝트 파일의 내보내기 경로를 암호화할 이 설치의 열쇠(처음 쓸 때 만듦 — 설정 초기화와 관계없이 남음).
         Chickxel.Core.IO.LocalPathCipher.Current = new Chickxel.Core.IO.LocalPathCipher(Path.Combine(Platform.AppFolder, "local-path-key.bin"));
-        // 문구를 읽기 전에(창·정적 필드보다 먼저) 화면 언어를 정한다. 처음 켤 때(또는 고른 언어의 CSV를 지웠으면) 컴퓨터 언어로 고른다.
+        ApplyLanguage();
+        int exitCode = CrashGuard.Run(BuildAvaloniaApp(), args);
+        if (App.RestartOnExit) Relaunch();
+        return exitCode;
+    }
+
+    /// <summary>문구를 읽기 전에(창·정적 필드보다 먼저) 설정을 읽고 화면 언어를 정한다. 처음 켤 때(또는 고른 언어의 CSV를 지웠으면) 컴퓨터 언어로 고른다.</summary>
+    private static void ApplyLanguage()
+    {
         App.Settings = AppSettings.Load();
         var languages = Localization.UiLanguage.Available();
         if (App.Settings.Language is not { } language || !languages.Any(l => string.Equals(l.Code, language, StringComparison.OrdinalIgnoreCase)))
             App.Settings.Language = Localization.UiLanguage.Detect(Localization.UiLanguage.SystemCulture, languages);
         Localization.UiLanguage.Apply(App.Settings.Language);
-        int exitCode = CrashGuard.Run(BuildAvaloniaApp(), args);
-        if (App.RestartOnExit) Relaunch();
-        return exitCode;
     }
 
     /// <summary>같은 실행 파일로 새로 띄운다(빌드 출력을 <c>dotnet Chickxel.App.dll</c>로 돌렸으면 dll을 인수로).</summary>

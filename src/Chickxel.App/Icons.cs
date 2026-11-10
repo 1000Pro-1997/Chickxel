@@ -15,6 +15,7 @@ public static class Icons
     {
         [ToolKind.Pencil] = "pencil",
         [ToolKind.GradientPencil] = "gradient_pencil",
+        [ToolKind.ShapePen] = "shape_pen",
         [ToolKind.Eraser] = "eraser",
         [ToolKind.Fill] = "fill",
         [ToolKind.Gradient] = "gradient",

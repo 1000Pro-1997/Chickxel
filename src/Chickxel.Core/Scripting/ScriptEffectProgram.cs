@@ -57,8 +57,7 @@ public sealed class ScriptEffectProgram
 
     internal ScriptEffectProgram(Prepared<Script> script, string source, string contentHash, ScriptLimits limits, string name, string? author, string? description,
         bool animated, ScriptEffectArea area, int radius, IReadOnlyList<ScriptSetting> settings, EffectPadding? fixedPadding, string previewChick, int previewFrames,
-        IReadOnlyDictionary<string, ScriptTranslation> translations, bool deferred = false, EffectEasing easing = EffectEasing.Linear,
-        bool clipsBySource = false, bool erasesSource = false, string? erasesSourceSetting = null)
+        IReadOnlyDictionary<string, ScriptTranslation> translations, bool deferred = false, EffectEasing easing = EffectEasing.Linear)
     {
         _script = script;
         Source = source;
@@ -77,9 +76,6 @@ public sealed class ScriptEffectProgram
         Translations = translations;
         Deferred = deferred;
         Easing = easing;
-        ClipsBySource = clipsBySource;
-        ErasesSource = erasesSource;
-        ErasesSourceSetting = erasesSourceSetting;
         _fast = new(CompileFast, LazyThreadSafetyMode.ExecutionAndPublication);
     }
 
@@ -169,48 +165,29 @@ public sealed class ScriptEffectProgram
     public bool MovePivot { get; init; } = true;
 
     /// <summary>
+    /// 선언의 <c>expandCanvas</c>(기본 true): 새로 넣는 효과의 "확인할 때 캔버스 늘리기"(<see cref="LayerEffect.ExpandCanvas"/>) 처음 값(<see cref="CreateEffect"/>).
+    /// false면 효과 결과가 캔버스에서 잘린다(그림 위로 솟는 불꽃처럼 캔버스를 키우지 않을 효과).
+    /// </summary>
+    public bool ExpandCanvas { get; init; } = true;
+
+    /// <summary>
     /// 선언의 <c>motion</c>(기본 true): false면 움직이는 효과라도 빠르기 곡선·반복을 쓰지 않으므로(프레임 수로 정하는 깜빡임 등) 효과 창·효과 만들기에서
     /// 그 편집기를 숨긴다. 저장되는 움직임 설정은 그대로다.
     /// </summary>
     public bool Motion { get; init; } = true;
 
     /// <summary>
-    /// 선언의 <c>clipsBySource</c>(기본 false): 클리핑되면 기준 효과가 바꾼 픽셀만 원본(<c>img</c>)으로 받고, 기준 영역 밖에 생긴 결과는 그림 뒤에 놓는다 —
-    /// 픽셀을 옮기는 효과(반사)용. 클리핑돼도 여백을 넓힌다(<see cref="Effects.EffectDefinition.ClipsBySource"/>). 아니면 결과 중 기준 영역 안만 남는다.
-    /// </summary>
-    public bool ClipsBySource { get; }
-
-    /// <summary>
-    /// 선언의 <c>erasesSource: true</c>: 원본을 지워(투명하게) 선 같은 결과만 남기는 효과 — 지워진 자리는 뒤따르는 클리핑 효과의 기준 영역에서 빠진다.
-    /// 설정 키로 선언하면 <see cref="ErasesSourceSetting"/>(그 bool 설정이 참일 때만)이고 이 값은 false다. <see cref="ErasesSourceWith"/>로 효과마다 판단한다.
-    /// </summary>
-    public bool ErasesSource { get; }
-
-    /// <summary>선언의 <c>erasesSource: "설정키"</c>: 그 bool 설정이 참일 때만 원본을 지우는 효과(없으면 null).</summary>
-    public string? ErasesSourceSetting { get; }
-
-    /// <summary>설정 <paramref name="values"/>(빠지거나 틀린 값은 기본값)로 그린 효과가 원본을 지우는지(<see cref="ErasesSource"/>·<see cref="ErasesSourceSetting"/>).</summary>
-    public bool ErasesSourceWith(IReadOnlyDictionary<string, object>? values)
-    {
-        if (ErasesSource) return true;
-        if (ErasesSourceSetting is not { } key || Settings.FirstOrDefault(s => s.Key == key) is not { } setting) return false;
-        object? value = null;
-        values?.TryGetValue(key, out value);
-        return (Coerce(setting, value) ?? setting.Default) is true;
-    }
-
-    /// <summary>
-    /// 이 스크립트를 쓰는 새 효과: 설정은 <paramref name="values"/>를 schema에 맞춘 값(null이면 기본값), 빠르기 곡선·반복·반복 횟수·피벗 같이 옮기기는
-    /// 선언의 <c>easing</c>·<c>repeat</c>·<c>repeatCount</c>·<c>movePivot</c>. 원문은 부르는 쪽이 프로젝트 스크립트 표에 넣는다.
+    /// 이 스크립트를 쓰는 새 효과: 설정은 <paramref name="values"/>를 schema에 맞춘 값(null이면 기본값), 빠르기 곡선·반복·반복 횟수·피벗 같이 옮기기·캔버스 늘리기는
+    /// 선언의 <c>easing</c>·<c>repeat</c>·<c>repeatCount</c>·<c>movePivot</c>·<c>expandCanvas</c>. 원문은 부르는 쪽이 프로젝트 스크립트 표에 넣는다.
     /// </summary>
     public ScriptEffect CreateEffect(IReadOnlyDictionary<string, object>? values = null)
         => new()
         {
             ScriptHash = ContentHash, Settings = ScriptSettingValues.Normalized(this, values), Easing = Easing, Repeat = Repeat, RepeatCount = RepeatCount,
-            MovePivot = MovePivot,
+            MovePivot = MovePivot, ExpandCanvas = ExpandCanvas,
         };
 
-    /// <summary>선언의 <c>previewChick</c>(기본 <see cref="Assets.PreviewChicks.Default"/>): 패키지 미리보기에서 효과를 입힐 병아리.</summary>
+    /// <summary>선언의 <c>previewChick</c>(기본 <see cref="Assets.PreviewChicks.Default"/>, <see cref="Assets.PreviewChicks.None"/>이면 빈 캔버스): 패키지 미리보기에서 효과를 입힐 병아리.</summary>
     public string PreviewChick { get; }
 
     /// <summary>

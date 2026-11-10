@@ -78,6 +78,18 @@ internal static class GuideScreenEffectsCompareShots
         Compose(k, k.Id, [[Static([outline, overlay]), Static([outline, overlay with { ClipToPrevious = true }])]]);
     }
 
+    /// <summary>
+    /// 클리핑한 효과는 기준 픽셀 밖으로도 번진다: 외곽선 → 그림자. 클리핑 끔 = 병아리와 외곽선 전체의 그림자 /
+    /// 클리핑 켬 = 외곽선만 그려졌다고 보고 그 외곽선의 그림자를 그림 위에 얹음(병아리 몸 위로도 선 그림자가 보임).
+    /// </summary>
+    [Shot("screen-effect-colors-compare-clip-spread")]
+    public static void ClipSpread(ShotKit k)
+    {
+        var outline = Effect("outline");
+        var shadow = Effect("shadow", ("color", "#5a6eb4"), ("offsetX", 2), ("offsetY", 2));
+        Compose(k, k.Id, [[Static([outline, shadow]), Static([outline, shadow with { ClipToPrevious = true }])]]);
+    }
+
     /// <summary>빠르기 곡선: 같은 충격파 고리를 6프레임 범위에 — 위 줄 일정하게(Linear), 아래 줄 처음 빠르게(EaseOut). 왼쪽부터 범위의 1~6번째 프레임.</summary>
     [Shot("screen-effect-settings-compare-easing")]
     public static void Easing(ShotKit k)

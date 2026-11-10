@@ -46,6 +46,8 @@ public sealed record ScriptAsset : IAssetData
     public bool Animated { get; init; }
     /// <summary>선언의 <c>easing</c>: 넣는 효과의 빠르기 곡선 처음 값(<see cref="ScriptEffectProgram.Easing"/>).</summary>
     public EffectEasing Easing { get; init; } = EffectEasing.Linear;
+    /// <summary>선언의 <c>expandCanvas</c>: 넣는 효과의 "확인할 때 캔버스 늘리기" 처음 값(<see cref="ScriptEffectProgram.ExpandCanvas"/>).</summary>
+    public bool ExpandCanvas { get; init; } = true;
     /// <summary>선언의 <c>previewChick</c>: 패키지 미리보기 병아리(<see cref="PreviewChicks"/>의 ID).</summary>
     public string PreviewChick { get; init; } = PreviewChicks.Default;
     /// <summary>선언의 <c>previewEndChick</c>(없으면 null): 패키지 미리보기 마지막 칸의 끝 그림 병아리(<see cref="ScriptEffectProgram.PreviewEndChick"/>).</summary>
@@ -87,7 +89,8 @@ public sealed record ScriptAsset : IAssetData
         {
             Id = id, Name = program.Name.Trim(), Author = program.Author, Description = program.Description,
             Tags = tags, ReadsOtherLayers = layers, ReadsOtherFrames = frames, MovesPivot = pivot,
-            Source = program.Source, Hash = program.ContentHash, Animated = program.Animated, Easing = program.Easing, PreviewChick = program.PreviewChick,
+            Source = program.Source, Hash = program.ContentHash, Animated = program.Animated, Easing = program.Easing, ExpandCanvas = program.ExpandCanvas,
+            PreviewChick = program.PreviewChick,
             PreviewEndChick = program.PreviewEndChick, PreviewFrames = program.PreviewFrames, PreviewMotion = program.PreviewMotion,
             PreviewPlacement = program.PreviewPlacement, Settings = program.Settings,
             Translations = program.Translations, Language = program.Language,
@@ -105,6 +108,7 @@ public sealed record ScriptAsset : IAssetData
         Effects = [new ScriptEffect
         {
             ScriptHash = Hash, Settings = ScriptSettingValues.From(Settings.Select(s => new KeyValuePair<string, object>(s.Key, s.Default))), Easing = Easing,
+            ExpandCanvas = ExpandCanvas,
         }],
         Scripts = new SortedDictionary<string, string>(StringComparer.Ordinal) { [Hash] = Source },
     };

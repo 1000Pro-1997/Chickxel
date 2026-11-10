@@ -85,6 +85,110 @@ public class CelOverflowTests
     }
 
     [Fact]
+    public void PaintOutside_CreatesOverflow_WithCanvasPixels_InOneUndoStep()
+    {
+        var p = new SpriteProject(4, 4);
+        var blue = new Color32(0, 0, 255);
+        int steps = p.History.UndoCount;
+        var cel = p.BeginCelStroke(0, 0);
+        cel.Set(3, 1, Red);
+        Assert.True(p.SetStrokeOutside(4, 1, Red));
+        Assert.True(p.SetStrokeOutside(6, -2, blue));
+        Assert.False(p.SetStrokeOutside(4, 1, Red)); // 같은 색
+        Assert.False(p.SetStrokeOutside(2, 2, Red)); // 캔버스 안은 셀에
+        Assert.False(p.SetStrokeOutside(p.OverflowBounds.Left - 1, 0, Red)); // 남기는 범위 밖
+        Assert.Equal(Red, p.GetStrokeOutside(4, 1));
+        Assert.Equal(default, p.GetStrokeOutside(4, 1, before: true));
+        // 확정 전: 칠한 것은 화면용 작업 그림에만
+        Assert.Null(p.GetCelOverflow(0, 0));
+        var (live, liveOrigin) = p.GetCelOverflowLive(0, 0)!.Value;
+        Assert.Equal(blue, live[6 - liveOrigin.X, -2 - liveOrigin.Y]);
+
+        Assert.True(p.CommitCelStroke("연필"));
+        Assert.Equal(steps + 1, p.History.UndoCount);
+        var (image, origin) = p.GetCelOverflow(0, 0)!.Value;
+        Assert.Equal((new Point(4, -2), new Size(3, 4)), (origin, image.Size)); // 칠한 픽셀을 꼭 맞게 감쌈
+        Assert.Equal((Red, Red, blue), (FullAt(p, 3, 1), FullAt(p, 4, 1), FullAt(p, 6, -2)));
+
+        p.Undo();
+        Assert.True(p.IsCelEmpty(0, 0));
+        Assert.Null(p.GetCelOverflow(0, 0));
+        p.Redo();
+        Assert.Equal((Red, Red, blue), (FullAt(p, 3, 1), FullAt(p, 4, 1), FullAt(p, 6, -2)));
+    }
+
+    [Fact]
+    public void EraseOutsideToEmpty_RemovesOverflow_UndoBringsItBack()
+    {
+        var p = new SpriteProject(4, 4);
+        Draw(p, 3, 1, Red);
+        p.ShiftCels("옮기기", [(0, 0)], 2, 0); // (5, 1)
+        var cel = p.GetCel(0, 0);
+
+        p.BeginCelStroke(0, 0);
+        Assert.Equal(Red, p.GetStrokeOutside(5, 1));
+        Assert.True(p.SetStrokeOutside(5, 1, Color32.Transparent));
+        Assert.True(p.CommitCelStroke("지우개"));
+        Assert.Null(p.GetCelOverflow(0, 0));
+        Assert.Same(cel, p.GetCel(0, 0)); // 캔버스 안은 그대로라 셀 그림도 그대로
+
+        p.Undo();
+        Assert.Equal(Red, FullAt(p, 5, 1));
+        p.Redo();
+        Assert.Null(p.GetCelOverflow(0, 0));
+    }
+
+    [Fact]
+    public void ResetOrCancelOutside_LeavesNothing()
+    {
+        var p = new SpriteProject(4, 4);
+        int steps = p.History.UndoCount;
+        p.BeginCelStroke(0, 0);
+        Assert.True(p.SetStrokeOutside(-1, 0, Red));
+        p.ResetStrokeOutside(); // 도형을 다시 그리듯 시작 때로
+        Assert.Equal(default, p.GetStrokeOutside(-1, 0));
+        Assert.False(p.CommitCelStroke("선"));
+        Assert.Equal(steps, p.History.UndoCount);
+        Assert.Null(p.GetCelOverflow(0, 0));
+
+        p.BeginCelStroke(0, 0);
+        Assert.True(p.SetStrokeOutside(-1, 0, Red));
+        p.CancelCelStroke();
+        Assert.Null(p.GetCelOverflowLive(0, 0));
+        Assert.Equal(steps, p.History.UndoCount);
+    }
+
+    [Fact]
+    public void PaintOutside_LinkedCelsShareResult()
+    {
+        var p = new SpriteProject(4, 4);
+        p.AddFrame();
+        Draw(p, 0, 0, Red);
+        p.LinkCels([(0, 0), (0, 1)]);
+
+        p.BeginCelStroke(0, 0);
+        Assert.True(p.SetStrokeOutside(-2, 0, Red));
+        Assert.True(p.CommitCelStroke("연필"));
+        Assert.True(p.AreCelsLinked(0, 0, 1));
+        Assert.Equal((Red, Red), (FullAt(p, -2, 0, frame: 0), FullAt(p, -2, 0, frame: 1)));
+
+        p.Undo();
+        Assert.True(p.AreCelsLinked(0, 0, 1));
+        Assert.Null(p.GetCelOverflow(0, 1));
+    }
+
+    [Fact]
+    public void PaintOutside_OnlyNormalLayers()
+    {
+        var p = new SpriteProject(8, 8);
+        var g = p.AddGroup("G");
+        var a = p.AddPart(g, "A", 2, 2, new Point(0, 0));
+        p.BeginCelStroke(p.IndexOf(a), 0);
+        Assert.False(p.SetStrokeOutside(-1, 0, Red));
+        p.CancelCelStroke();
+    }
+
+    [Fact]
     public void CanvasShrinkThenGrow_RestoresImage()
     {
         var p = new SpriteProject(4, 4);

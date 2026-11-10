@@ -1129,4 +1129,8 @@
   <data name="Menu_View_CanvasEffects" xml:space="preserve"><value>캔버스에 효과 보기</value><comment>보기 메뉴(체크): 끄면 캔버스에 효과 없는 그림</comment></data>
   <data name="Message_CanvasEffectsOn" xml:space="preserve"><value>캔버스에 효과를 보입니다</value></data>
   <data name="Message_CanvasEffectsOff" xml:space="preserve"><value>캔버스에 효과를 끄고 고칠 그림 그대로 보입니다(미리보기에는 효과가 보임)</value></data>
+  <data name="Menu_Edit_CopyImagesOnly" xml:space="preserve"><value>이미지만 복사 (링크 없이)</value><comment>편집 메뉴(Ctrl+Shift+C): 타임라인 셀·프레임을 링크 없이 그림만 복사, 캔버스에서는 복사와 같음</comment></data>
+  <data name="Message_TimelineCopyImagesOnly" xml:space="preserve"><value>타임라인: 이미지만 복사(링크 없이)</value></data>
+  <data name="Tool_ShapePen_Name" xml:space="preserve"><value>모양 펜</value></data>
+  <data name="Tool_ShapePen_Hint" xml:space="preserve"><value>고른 모양을 누른 곳에 찍기(끌면 간격마다, 세트·순서는 도구 설정) · 오른쪽: 물들이기면 보조색(오른쪽 버튼 = 지우개면 모양대로 지움) · Alt+클릭: 색 집기</value></data>
 </root>

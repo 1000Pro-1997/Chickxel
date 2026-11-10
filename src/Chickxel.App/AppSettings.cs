@@ -70,6 +70,8 @@ public sealed class AppSettings
     public BrushShape EraserBrushShape { get; set; } = BrushShape.Square;
     /// <summary>채우기 허용 오차(0~100%).</summary>
     public int FillTolerance { get; set; }
+    /// <summary>채우기·스마트 선택 색 비교 방식(없던 설정은 기본 = 채널 차이 최댓값).</summary>
+    public FillColorMode FillColorMode { get; set; }
     public bool FillDiagonal { get; set; }
     /// <summary>채우기 기준: 보이는 레이어 전체(false = 현재 레이어).</summary>
     public bool FillSampleVisible { get; set; }
@@ -126,6 +128,11 @@ public sealed class AppSettings
     /// <summary>그라데이션 연필 방식(획 전체·반복)과 반복 간격(px).</summary>
     public GradientStrokeMode PencilGradientMode { get; set; } = GradientStrokeMode.WholeStroke;
     public int PencilGradientInterval { get; set; } = GradientStroke.DefaultInterval;
+    /// <summary>모양 펜: 고른 세트 id(null = 첫 세트), 지금 색으로 물들이기, 끌기 간격(px, 1 이상), 최적화 간격. 세트 모음 자체는 ShapePen/shape-sets.json.</summary>
+    public string? ShapePenSet { get; set; }
+    public bool ShapePenTint { get; set; }
+    public int ShapePenSpacing { get; set; } = 1;
+    public bool ShapePenOptimizedSpacing { get; set; } = true;
     /// <summary>대칭 그리기 축을 피벗에 둔다(좌우·상하 대칭 켜기 자체는 저장하지 않음).</summary>
     public bool MirrorAtPivot { get; set; }
     public string PrimaryColor { get; set; } = "#000000";
@@ -205,6 +212,15 @@ public sealed class AppSettings
     /// AI 상태 창을 다시 보지 않기로 한 CLI 구성 지문. 찾은 AI CLI 경로나 직접 지정 경로가 바뀌면 지문이 달라져 다시 보인다(앱·CLI 업데이트로는 바뀌지 않음).
     /// </summary>
     public string? AiStatusDismissedFingerprint { get; set; }
+    /// <summary>
+    /// 외부 AI 연결: 이 컴퓨터의 다른 AI 앱(Claude Desktop·Cursor·Claude Code 등)이 <c>Chickxel --mcp</c>로 켜져 있는 Chickxel의 MCP 도구를 쓰게 한다
+    /// (<see cref="Ai.McpScope.External"/>). 기본 끔.
+    /// </summary>
+    public bool AiExternalMcp { get; set; }
+    /// <summary>외부 AI 연결에서 <c>open_file</c>(경로를 받아 아무 그림·프로젝트나 엶)을 허락한다. 기본 끔.</summary>
+    public bool AiExternalOpenFile { get; set; }
+    /// <summary>외부 AI 연결에서 <c>generate_pixel_art</c>(내 Codex로 그림 생성 — Codex 사용량을 씀)를 허락한다. 기본 끔.</summary>
+    public bool AiExternalGenerate { get; set; }
 
     // AI 그림 픽셀로 정리
     /// <summary>마지막 단계 설정(JSON — <see cref="Chickxel.Core.Pixelate.PixelatePresets.SerializeSettings"/>). null = 기본.</summary>

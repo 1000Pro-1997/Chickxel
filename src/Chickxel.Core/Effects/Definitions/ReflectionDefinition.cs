@@ -18,7 +18,7 @@ public static class ReflectionDefinition
         s.Bool("ditherFade", e => e.DitherFade, (e, v) => e with { DitherFade = v }),
         s.Color("tint", e => e.Tint, (e, v) => e with { Tint = v }, legacy: ["color"]),
         s.Int("wave", 0, ReflectionEffect.MaxWave, e => e.Wave, (e, v) => e with { Wave = v }),
-    ], padding: ReflectionRender.Padding, clipsBySource: true,
+    ], padding: ReflectionRender.Padding,
         // 예전 파일의 반사 위·아래(above) — 방향이 없거나 틀렸으면 그것으로
         legacyFixup: (flat, e) => !EffectJson.TryEnum<ReflectionDirection>(flat["direction"], out _) && EffectJson.Bool(flat["above"]) == true
             ? e with { Direction = ReflectionDirection.Up }

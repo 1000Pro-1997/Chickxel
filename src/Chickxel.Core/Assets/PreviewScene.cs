@@ -286,15 +286,18 @@ public sealed class PreviewScene
 
     /// <summary>
     /// 문서에서 장면을 다시 읽는다: 최상위 일반 레이어만(그룹·부위·효과는 무시) 프로젝트 차례대로, 프레임은 앞에서 <see cref="MaxFrames"/>개까지.
-    /// 병아리 자리 = <paramref name="chickLayer"/> 프레임 0의 불투명 영역 아래 가운데. 병아리 레이어가 프로젝트에 없거나 프레임 0이 비었으면
-    /// <see cref="InvalidOperationException"/>, 장면 한도(크기·레이어 수·칸 격자)를 넘으면 <see cref="ArgumentException"/>.
+    /// 병아리 자리 = <paramref name="chickLayer"/> 프레임 0의 불투명 영역 아래 가운데 — 비었으면 <paramref name="emptyChickAnchor"/>
+    /// (병아리 없음 <see cref="PreviewChicks.None"/>의 빈 캔버스는 그릴 것이 없으므로 앞 장면의 자리). 병아리 레이어가 프로젝트에 없거나
+    /// 프레임 0이 비었는데 <paramref name="emptyChickAnchor"/>가 없으면 <see cref="InvalidOperationException"/>, 장면 한도(크기·레이어 수·칸 격자)를 넘으면 <see cref="ArgumentException"/>.
     /// 레이어 이름은 앞뒤 공백을 빼고 <see cref="MaxNameLength"/>자로 자른다.
     /// </summary>
-    public static PreviewScene FromProject(SpriteProject project, Layer chickLayer)
+    public static PreviewScene FromProject(SpriteProject project, Layer chickLayer, Point? emptyChickAnchor = null)
     {
         if (!project.Layers.Contains(chickLayer) || project.Frames.Count == 0) throw new InvalidOperationException(DomainStrings.PreviewScene_NoChick);
         var cel = project.GetCel(chickLayer, project.Frames[0]);
-        if (cel?.GetOpaqueBounds() is not { IsEmpty: false } b) throw new InvalidOperationException(DomainStrings.PreviewScene_NoChick);
+        Point anchor;
+        if (cel?.GetOpaqueBounds() is { IsEmpty: false } b) anchor = new Point(b.X + b.Width / 2, b.Bottom);
+        else anchor = emptyChickAnchor ?? throw new InvalidOperationException(DomainStrings.PreviewScene_NoChick);
         int frames = Math.Min(project.Frames.Count, MaxFrames);
         var layers = new List<PreviewSceneLayer>();
         int chickIndex = 0;
@@ -310,7 +313,7 @@ public sealed class PreviewScene
             for (int f = 0; f < frames; f++) images[f] = project.GetCel(layer, project.Frames[f])?.Clone() ?? new PixelImage(project.Width, project.Height);
             layers.Add(new PreviewSceneLayer(LayerName(layer.Name), images, layer.Opacity, layer.Visible));
         }
-        return new PreviewScene(project.Width, project.Height, frames, layers, chickIndex, new Point(b.X + b.Width / 2, b.Bottom));
+        return new PreviewScene(project.Width, project.Height, frames, layers, chickIndex, anchor);
     }
 
     private static string LayerName(string name)

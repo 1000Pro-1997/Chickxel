@@ -28,15 +28,20 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
     private readonly View _view;
     private readonly Button _play;
     private readonly NumericUpDown _fps;
-    private readonly ComboBox _background;
+    /// <summary>배경 단추(지금 배경 견본 — 누르면 다음 배경)와 그 옆 아래 화살표(배경 목록) 묶음.</summary>
+    private readonly Button _background;
+    private readonly StackPanel _backgroundGroup;
     private readonly Button _scaleButton;
+    /// <summary>배율 단추와 그 옆 아래 화살표(배율 목록) 묶음.</summary>
+    private readonly StackPanel _scaleGroup;
     /// <summary>제목 줄 오른쪽 끝 "탭으로 열기" 단추.</summary>
     private readonly Control _tabButton;
     private static readonly int[] ScaleSteps = [0, 1, 2, 4];
     private int _scale; // 0 = 맞춤
     private Color? _bgColor;
     private Color _customColor = Color.FromRgb(40, 60, 90);
-    private bool _suppressBackground;
+    /// <summary>지금 배경의 <see cref="Backgrounds"/> 번호(마지막 = 사용자 색).</summary>
+    private int _backgroundIndex;
     private List<int> _order = new();
     private int _orderIndex;
     private double _elapsedInFrame;
@@ -86,22 +91,24 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
             Focusable = false,
         }.Tip(UiStrings.S_PreviewPanel_PreviewPanel_6984708585);
         _scaleButton.Click += (_, _) => StepScale();
-        // 우클릭: 배율 목록(지금 배율에 라디오 점)에서 바로 고른다 — 숫자 상자 우클릭 목록과 같은 모양.
+        // 우클릭·옆 아래 화살표: 배율 목록(지금 배율에 라디오 점)에서 바로 고른다 — 숫자 상자 우클릭 목록과 같은 모양.
         _scaleButton.ContextRequested += (_, e) => PopupMenus.Show(_scaleButton, ScaleMenuItems(), e);
-        _background = new ComboBox
+        _scaleGroup = Ui.WithMenuArrow(_scaleButton, UiStrings.Preview_ScaleMenuTip, anchor => PopupMenus.Show(anchor, ScaleMenuItems(), PlacementMode.BottomEdgeAlignedRight));
+        // 배경: 누르면 다음 배경으로(사용자 색은 고른 색 그대로), 옆 아래 화살표·우클릭은 배경 목록(사용자 색은 거기서 고르면 색 고르기 창).
+        _background = new Button
         {
             Margin = new Thickness(1, 2, 1, 2),
+            Padding = new Thickness(6, 2, 4, 2),
             MinWidth = 0,
+            MinHeight = 0,
             VerticalAlignment = VerticalAlignment.Center,
-            // 펼친 목록은 견본 + 이름, 닫힌 상자는 견본만.
-            ItemTemplate = new FuncDataTemplate<BackgroundOption>((o, _) => SwatchRow(o), supportsRecycling: false),
-            SelectionBoxItemTemplate = new FuncDataTemplate<BackgroundOption>((o, _) => Swatch(o), supportsRecycling: false),
-        };
-        for (int i = 0; i < Backgrounds.Length; i++)
-            _background.Items.Add(new BackgroundOption(Backgrounds[i], i == Backgrounds.Length - 1 ? _customColor : PresetColors[i]));
-        _background.SelectedIndex = 0;
-        _background.Tip(UiStrings.S_PreviewPanel_PreviewPanel_83BA43E90E);
-        _background.SelectionChanged += (_, _) => { if (!_suppressBackground) OnBackgroundChanged(); };
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Focusable = false,
+        }.Tip(UiStrings.Preview_BackgroundTip);
+        _background.Click += (_, _) => SetBackground((_backgroundIndex + 1) % Backgrounds.Length, pickCustom: false);
+        _background.ContextRequested += (_, e) => PopupMenus.Show(_background, BackgroundMenuItems(), e);
+        _backgroundGroup = Ui.WithMenuArrow(_background, UiStrings.Preview_BackgroundMenuTip, ShowBackgroundMenu);
+        SetBackground(0, pickCustom: false);
         var bar = new WrapPanel { Orientation = Orientation.Horizontal, Background = AppTheme.PanelBrush };
         DockPanel.SetDock(bar, Dock.Bottom);
         bar.Children.Add(_play);
@@ -109,8 +116,8 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
         fpsLabel.VerticalAlignment = VerticalAlignment.Center;
         bar.Children.Add(fpsLabel);
         bar.Children.Add(_fps);
-        bar.Children.Add(_scaleButton);
-        bar.Children.Add(_background);
+        bar.Children.Add(_scaleGroup);
+        bar.Children.Add(_backgroundGroup);
         _outfitHost = new Border
         {
             Background = AppTheme.PanelBrush,
@@ -184,8 +191,8 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
         if (ReferenceEquals(c, _view)) return new(page, Anchor: "①");
         if (ReferenceEquals(c, _play)) return new(page, Anchor: "Playback");
         if (ReferenceEquals(c, _fps)) return new(page, Anchor: "②");
-        if (ReferenceEquals(c, _scaleButton)) return new(page, Anchor: "③");
-        if (ReferenceEquals(c, _background)) return new(page, Anchor: UiStrings.S_GifExportDialog_GifExportDialog_7934F88ACA);
+        if (ReferenceEquals(c, _scaleGroup)) return new(page, Anchor: "③");
+        if (ReferenceEquals(c, _backgroundGroup)) return new(page, Anchor: UiStrings.S_GifExportDialog_GifExportDialog_7934F88ACA);
         if (ReferenceEquals(c, _outfitHost)) return new(page, Anchor: UiStrings.S_PreviewPanel_RebuildOutfit_E5D30D48F5);
         if (ReferenceEquals(c, _tabButton)) return new(page, Anchor: "Enlarged view and preview tab");
         if (ReferenceEquals(c, this)) return new(page);
@@ -338,44 +345,44 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
             if (value != "checker" && Color32.TryParseHex(value, out var c))
             {
                 _customColor = c.ToColor();
-                _bgColor = _customColor;
-                UpdateCustomOption();
                 int idx = Array.FindIndex(PresetColors, p => p == _customColor);
-                _suppressBackground = true;
-                _background.SelectedIndex = idx >= 0 ? idx : Backgrounds.Length - 1;
-                _suppressBackground = false;
+                SetBackground(idx >= 0 ? idx : Backgrounds.Length - 1, pickCustom: false);
             }
-            Redraw();
+            else SetBackground(0, pickCustom: false);
         }
     }
 
-    private void OnBackgroundChanged()
+    /// <summary>배경 목록 항목 <paramref name="i"/>(마지막 = 지금 사용자 색).</summary>
+    private BackgroundOption BackgroundAt(int i) => new(Backgrounds[i], i == Backgrounds.Length - 1 ? _customColor : PresetColors[i]);
+
+    /// <summary>배경을 <paramref name="i"/>번으로 바꾼다. 사용자 색을 목록에서 고르면(<paramref name="pickCustom"/>) 색 고르기 창을 먼저 연다(취소면 지금 사용자 색).</summary>
+    private void SetBackground(int i, bool pickCustom)
     {
-        int i = _background.SelectedIndex;
-        if (i < 0) return;
-        if (i == Backgrounds.Length - 1)
-        {
-            if (Ui.PickColor(this, _customColor.ToColor32()) is { } picked) _customColor = picked.ToColor();
-            _bgColor = _customColor;
-            UpdateCustomOption();
-        }
-        else _bgColor = PresetColors[i];
+        int last = Backgrounds.Length - 1;
+        if (i == last && pickCustom && Ui.PickColor(this, _customColor.ToColor32()) is { } picked) _customColor = picked.ToColor();
+        _backgroundIndex = i;
+        _bgColor = i == last ? _customColor : PresetColors[i];
+        _background.Content = Swatch(BackgroundAt(i));
         Redraw();
     }
 
-    /// <summary>"사용자 색…" 항목의 견본을 현재 사용자 색으로 바꾼다(선택은 유지).</summary>
-    private void UpdateCustomOption()
+    /// <summary>배경 목록(견본 + 이름, 지금 배경에 라디오 점)을 <paramref name="anchor"/> 아래에 연다 — 배경 단추 옆 아래 화살표.</summary>
+    private void ShowBackgroundMenu(Control anchor) => PopupMenus.Show(anchor, BackgroundMenuItems(), PlacementMode.BottomEdgeAlignedRight);
+
+    private List<Control> BackgroundMenuItems()
     {
-        int last = Backgrounds.Length - 1;
-        if (_background.Items[last] is BackgroundOption { Color: var c } && c == _customColor) return;
-        bool selected = _background.SelectedIndex == last;
-        _suppressBackground = true;
-        _background.Items[last] = new BackgroundOption(Backgrounds[last], _customColor);
-        if (selected) _background.SelectedIndex = last;
-        _suppressBackground = false;
+        var items = new List<Control>(Backgrounds.Length);
+        for (int i = 0; i < Backgrounds.Length; i++)
+        {
+            int index = i;
+            var item = new MenuItem { Header = SwatchRow(BackgroundAt(i)), ToggleType = MenuItemToggleType.Radio, IsChecked = i == _backgroundIndex };
+            item.Click += (_, _) => SetBackground(index, pickCustom: true);
+            items.Add(item);
+        }
+        return items;
     }
 
-    /// <summary>둥근 색 견본 + 이름(닫힌 상자와 펼친 목록 모두).</summary>
+    /// <summary>둥근 색 견본 + 이름(배경 목록 항목).</summary>
     private static Control SwatchRow(BackgroundOption? o) => new StackPanel
     {
         Orientation = Orientation.Horizontal,

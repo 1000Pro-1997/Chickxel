@@ -211,6 +211,34 @@ internal static class GuidePixelateCompareShots
             "pixelate-palette-compare-distance");
     }
 
+    /// <summary>
+    /// OKLCh의 세 축: 살색(OKLab) 하나에서 밝기(L)만, 채도(C)만, 색상(H)만 바꾼 띠 셋(위부터, 칸 12개씩 — sRGB 밖은 잘림).
+    /// 점수용·팔레트 색 거리의 L·C·H 가중치가 무엇을 재는지 보이는 그림.
+    /// </summary>
+    [Shot("pixelate-compare-lch")]
+    public static void LchAxes(ShotKit k)
+    {
+        const int steps = 12, s = 40;
+        var skin = OkLab.FromColor(Color32.TryParseHex("#e8a882", out var c) ? c : Color32.Black);
+        double chroma = Math.Sqrt(skin.A * skin.A + skin.B * skin.B), hue = Math.Atan2(skin.B, skin.A);
+        Color32 Lch(double l, double ch, double h) => OkLab.ToColor(new Lab((float)l, (float)(ch * Math.Cos(h)), (float)(ch * Math.Sin(h))));
+        var img = new PixelImage(steps, 3);
+        for (int i = 0; i < steps; i++)
+        {
+            double t = i / (double)(steps - 1);
+            img[i, 0] = Lch(0.3 + 0.65 * t, chroma, hue);
+            img[i, 1] = Lch(skin.L, 0.2 * t, hue);
+            img[i, 2] = Lch(skin.L, chroma, hue + 2 * Math.PI * i / steps);
+        }
+        // 줄 사이를 띄워 세 띠로 보이게(배경 = 투명 → 체커).
+        var spaced = new PixelImage(steps * s, 3 * s + 2 * (s / 4));
+        for (int row = 0; row < 3; row++)
+            for (int y = 0; y < s; y++)
+                for (int x = 0; x < steps * s; x++)
+                    spaced[x, row * (s + s / 4) + y] = img[x / s, row];
+        Save(k, Row(spaced), "pixelate-score-compare-lch");
+    }
+
     /// <summary>얼굴 가운데(결과 49×98 기준) — 팔레트 방식 차이를 여러 장 나란히 볼 때.</summary>
     private static readonly (int X, int Y, int W, int H) FaceTight = (9, 13, 32, 30);
     /// <summary>치마 아래부터 발까지(결과 칸 기준) — 외곽선 정리 차이를 볼 곳.</summary>

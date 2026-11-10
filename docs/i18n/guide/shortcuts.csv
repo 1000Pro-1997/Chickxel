@@ -64,6 +64,7 @@ shortcuts-edit.h-cmd.d1,마지막 작업을 되돌립니다. 파일 목록에서
 shortcuts-edit.h-cmd.d2,되돌린 작업을 다시 합니다. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd>도 됩니다.,Redoes an undone action. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> works too.
 shortcuts-edit.h-cmd.d3,선택 영역을 잘라 클립보드에 넣습니다.,Cuts the selection to the clipboard.
 shortcuts-edit.h-cmd.d4,선택 영역을 복사합니다. 선택이 없으면 프레임 전체를 복사합니다.,"Copies the selection, or the whole frame if nothing is selected."
+shortcuts-edit.h-cmd.d4b,"타임라인을 누른 뒤에는 고른 셀·프레임을 링크 묶음 없이 그림만 복사해, 붙인 칸이 링크 없이 따로 놉니다(<a href=""#screen-timeline-edit"">타임라인 편집</a>). 그 밖에서는 복사와 같습니다.","With the timeline focused, copies the selected cels or frames as images only, without link groups, so pasted cels stand alone (see <a href=""#screen-timeline-edit"">Editing the timeline</a>). Elsewhere it works like Copy."
 shortcuts-edit.h-cmd.d5,클립보드 그림을 떠 있는 선택으로 붙여 넣습니다.,Pastes the clipboard image as a floating selection.
 shortcuts-edit.h-cmd.d6,"선택 영역의 픽셀을 지웁니다. macOS는 <kbd class=""os-keep"">⌫</kbd>도 됩니다.","Clears the pixels in the selection. On macOS <kbd class=""os-keep"">⌫</kbd> works too."
 shortcuts-edit.h-cmd.d7,캔버스 전체를 고릅니다.,Selects the whole canvas.
@@ -74,7 +75,7 @@ shortcuts-edit.h-extra.d2,"변형·크기 모드를 취소하거나, 아니면 �
 shortcuts-edit.h-extra.d3,선택(이동 도구면 셀 그림)을 1픽셀 옮깁니다. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+방향키도 됩니다.,Moves the selection (the cel's pixels with the Move tool) by 1 pixel. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+arrow keys work too.
 shortcuts-edit.h-extra.d4,같은 대상을 8픽셀씩 옮깁니다.,Moves the same thing by 8 pixels.
 shortcuts-edit.h-menu,메뉴에서 키 확인,Keys in the menu
-shortcuts-edit.17.alt,편집 메뉴를 펼친 모습: 실행취소·다시 실행·잘라내기·복사·붙여넣기·지우기·모두 선택·선택 해제 오른쪽의 키,"The Edit menu open: the keys to the right of Undo, Redo, Cut, Copy, Paste, Delete, Select all and Deselect"
+shortcuts-edit.17.alt,편집 메뉴를 펼친 모습: 실행취소·다시 실행·잘라내기·복사·이미지만 복사·붙여넣기·지우기·모두 선택·선택 해제 오른쪽의 키,"The Edit menu open: the keys to the right of Undo, Redo, Cut, Copy, Copy images only, Paste, Delete, Select all and Deselect"
 shortcuts-edit.18,① 편집(Edit) 메뉴의 실행취소~선택 해제 키,"① Edit menu keys, Undo to Deselect"
 shortcuts-edit.15,"실행취소는 획 단위로 기본 1000단계이며, 환경 설정에서 최대 10000단계까지 늘릴 수 있습니다. 파일 목록에서 {{key:편집/실행취소}}를 누르면 마지막으로 삭제한 파일을 되살립니다.","Undo works per stroke with 1000 steps by default, which you can raise to up to 10000 in Preferences. Pressing {{key:편집/실행취소}} in the file list restores the last deleted file."
 shortcuts-edit.16,<strong>편집</strong> 메뉴를 펼치면 ① 실행취소부터 선택 해제까지의 키가 보입니다.,The <strong>Edit</strong> menu shows the keys from Undo to Deselect at ①.

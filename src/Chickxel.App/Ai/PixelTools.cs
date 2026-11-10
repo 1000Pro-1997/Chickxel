@@ -52,8 +52,15 @@ public sealed partial class PixelTools
     /// 편집 범위(채팅의 "지금 그림만" — 차례 동안). 있으면 그 문서 안에서만 고치고(레이어·프레임·그룹·부위·스킨·태그 추가도 됨),
     /// 다른 파일을 열거나 새로 만드는 도구(<see cref="FileSwitchTools"/>)는 거부한다. 차례 중에 사용자가 다른 문서로 바꿨으면
     /// 읽기 도구(<see cref="ReadTools"/>) 말고는 모두 거부한다. 잠긴 레이어는 범위와 관계없이 고치지 않는다. null = 제한 없음.
+    /// 외부 AI 연결의 호출에는 쓰지 않는다(<see cref="CallScope"/>).
     /// </summary>
     public EditScope? Scope { get; set; }
+
+    /// <summary>지금 실행하는 도구가 외부 AI 연결(<see cref="McpScope.External"/>)에서 왔는지(<see cref="Call"/> 동안만).</summary>
+    private bool _external;
+
+    /// <summary>이번 호출의 편집 범위: 채팅의 <see cref="Scope"/>는 채팅 차례에만 해당하므로 외부 연결 호출에는 없다.</summary>
+    private EditScope? CallScope => _external ? null : Scope;
 
     /// <summary>문서도 편집기 상태도 바꾸지 않는 도구(범위 밖 문서가 열려 있어도 쓸 수 있음). 참고 자료 읽기·효과 만들기 원문 읽기·검증 포함.</summary>
     private static readonly HashSet<string> ReadTools =
@@ -472,10 +479,12 @@ public sealed partial class PixelTools
     /// 도구 하나를 실행한다(UI 스레드). 결과는 MCP CallToolResult:
     /// { content:[{type:"text",text} | {type:"image",data,mimeType}], isError }. 예외는 밖으로 내보내지 않는다.
     /// "팔레트 색만 사용"이 켜져 있으면 칠하는 도구의 색을 활성 팔레트 색으로 바꾸고(<see cref="Paint"/>), 바꾼 색을 결과 글에 덧붙인다.
+    /// <paramref name="external"/>: 외부 AI 연결에서 온 호출(채팅의 편집 범위를 쓰지 않음).
     /// </summary>
-    public JsonObject Call(string name, JsonObject? arguments)
+    public JsonObject Call(string name, JsonObject? arguments, bool external = false)
     {
         _paint = _host.Settings.AiDraw.PaletteOnly && new PaletteLock(_host.Palette) is { IsEmpty: false } paletteLock ? paletteLock : null;
+        _external = external;
         try
         {
             var result = CallTool(name, arguments);
@@ -486,6 +495,7 @@ public sealed partial class PixelTools
         finally
         {
             _paint = null;
+            _external = false;
         }
     }
 
@@ -500,7 +510,7 @@ public sealed partial class PixelTools
         try
         {
             var a = arguments;
-            if (Scope is { } scope && !ReadTools.Contains(name) && !LibraryTools.Contains(name))
+            if (CallScope is { } scope && !ReadTools.Contains(name) && !LibraryTools.Contains(name))
             {
                 if (FileSwitchTools.Contains(name)) throw new ToolError(UiStrings.Ai_Scope_FileOnly);
                 if (!ReferenceEquals(Ctx.Project, scope.Project)) throw new ToolError(UiStrings.Ai_Scope_OtherDocument);
@@ -661,7 +671,7 @@ public sealed partial class PixelTools
             }
             doc["tags"] = tags;
             doc["current"] = new JsonObject { ["frame"] = ctx.CurrentFrame, ["layer"] = ctx.CurrentLayer };
-            if (Scope is { } scope)
+            if (CallScope is { } scope)
                 doc["editScope"] = ReferenceEquals(scope.Project, p)
                     ? new JsonObject
                     {

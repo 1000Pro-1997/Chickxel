@@ -53,7 +53,7 @@ public sealed partial class PixelTools
                 ["layer"] = Int("Layer index whose effects to preview. Default: current.", 0),
                 ["recipe"] = Str("Saved effect recipe name or id instead of a layer's effects (see list_effect_types presets)."),
                 ["on"] = Enum("Draw on the preview chick (default; same as the published preview) or on the layer's own image.", "chick", "layer"),
-                ["chick"] = Str("Preview chick id when on = chick (default \"original\"; e.g. knight, wizard, ninja)."),
+                ["chick"] = Str("Preview chick id when on = chick (default \"original\"; e.g. knight, wizard, ninja; \"none\" = an empty canvas for effects that draw on their own)."),
             });
         yield return Tool("save_script_effect",
             "Save a script effect of a layer as the user's own script effect asset (its name, settings and preview chick come from the source's effect({...}) declaration) " +
@@ -62,7 +62,7 @@ public sealed partial class PixelTools
             {
                 ["layer"] = Int("Layer index. Default: current.", 0),
                 ["effect"] = Int("Index of the script effect on that layer. Default: the last script effect.", 0),
-                ["chick"] = Str("Preview chick id to write into the declaration's previewChick before saving (optional; e.g. knight, wizard, ninja)."),
+                ["chick"] = Str("Preview chick id to write into the declaration's previewChick before saving (optional; e.g. knight, wizard, ninja; \"none\" = no chick, the preview draws on an empty canvas)."),
             });
         yield return Tool("get_effect_maker_source",
             "Read the script open in the Effect Maker window: its full source, unsaved flag, parse errors (line and column), the declared name, language, description, tags, previewChick, previewEndChick (null if none), previewFrames, previewMotion (preset name, list of [x, y] offsets, or null if none), " +
@@ -105,6 +105,8 @@ public sealed partial class PixelTools
         "For an effect that turns one image into another over frames, also declare previewEndChick (a chick id other than previewChick): the preview's last frame shows that chick " +
         "and ctx.frameSource(ctx.rangeEnd) reads it. When the two images should sit in different places or have different centers (pivots), also declare previewEndOffset: [x, y] " +
         "(moves the end chick, px) and previewPivot / previewEndPivot: [x, y] (moves the pivot of the other frames / the last frame from the chick's center, px; each -64 to 64). " +
+        "An effect that draws on its own without needing a subject (rain, snow, weather, backgrounds) declares previewChick: \"none\" so the preview shows it on an empty canvas. " +
+        "An effect that should be cut off by the canvas instead of growing it when the user confirms the effects window (flames rising above the picture) declares expandCanvas: false. " +
         "The preview chick stays in place unless previewMotion is declared: for an effect that follows movement " +
         "(afterimages, trails, motion blur) declare previewMotion: \"right\" (or \"left\", \"up\", \"down\": 1 px per frame, or [[x, y], ...] per frame) so the preview shows it. ";
 
@@ -419,7 +421,8 @@ public sealed partial class PixelTools
             throw new ToolError(UiStrings.FormatAi_Script_NotScript(effect: position, layer: index));
         if (OptString(a, "chick")?.Trim() is { Length: > 0 } chick)
         {
-            if (!PreviewChicks.IsKnown(chick)) throw new ToolError(UiStrings.FormatAi_Script_UnknownChick(chick: chick, chicks: string.Join(", ", PreviewChicks.Ids)));
+            if (!PreviewChicks.IsKnown(chick))
+                throw new ToolError(UiStrings.FormatAi_Script_UnknownChick(chick: chick, chicks: string.Join(", ", PreviewChicks.Ids.Append(PreviewChicks.None))));
             source = ScriptDeclarationEdit.SetPreviewChick(source, chick) ?? source;
         }
         AssetEntry saved;

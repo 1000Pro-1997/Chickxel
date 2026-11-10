@@ -169,6 +169,12 @@ public enum VectorIcon
     GitHub,
     /// <summary>Google 로고(채운 도형, Simple Icons — 로그인 단추).</summary>
     Google,
+    /// <summary>스포이드(색 고르기 팝업의 그림에서 집기 — Lucide pipette).</summary>
+    Pipette,
+    /// <summary>모니터(색 고르기 팝업의 화면에서 집기 — Lucide monitor).</summary>
+    Monitor,
+    /// <summary>플러그(외부 AI 연결 — Lucide plug).</summary>
+    Plug,
 }
 
 public static class VectorIcons
@@ -455,6 +461,14 @@ public static class VectorIcons
         [
             "M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z",
         ],
+        VectorIcon.Pipette =>
+        [
+            "m12 9-8.414 8.414A2 2 0 0 0 3 18.828v1.344a2 2 0 0 1-.586 1.414A2 2 0 0 1 3.828 21h1.344a2 2 0 0 0 1.414-.586L15 12",
+            "m18 9 .4.4a1 1 0 1 1-3 3l-3.8-3.8a1 1 0 1 1 3-3l.4.4 3.4-3.4a1 1 0 1 1 3 3z",
+            "m2 22 .414-.414",
+        ],
+        VectorIcon.Monitor => ["M4 3h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z", "M8 21h8", "M12 17v4"],
+        VectorIcon.Plug => ["M12 22v-5", "M9 8V2", "M15 8V2", "M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8z"],
         _ => [],
     };
 

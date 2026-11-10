@@ -87,7 +87,7 @@ public static partial class ScriptCompletion
                 : BeforeEasing().IsMatch(before) ? Members(ScriptApiCatalog.Easing, quoted: false)
                 : BeforePreviewMotion().IsMatch(before) ? Members(ScriptApiCatalog.PreviewMotion, quoted: false)
                 : BeforeWidget().IsMatch(before) ? Members(ScriptApiCatalog.Widget, quoted: false)
-                : BeforeChick().IsMatch(before) ? Chicks()
+                : BeforeChick().Match(before) is { Success: true } chick ? Chicks(end: chick.Groups[1].Success)
                 : before.EndsWith('(') && CalleeBefore(text, code, before.Length - 1) is [var head, var method] && head == names.Ctx
                     ? method switch
                     {
@@ -246,9 +246,13 @@ public static partial class ScriptCompletion
         => new(setting.Key, setting.Type == "color" ? ScriptApiKind.Object : ScriptApiKind.Value,
             ScriptApiStrings.FormatCompletion_Setting(type: setting.Type), "");
 
-    private static IEnumerable<ScriptCompletionItem> Chicks()
-        => PreviewChicks.Ids.Select((id, i) => new ScriptCompletionItem(id, ScriptApiKind.Literal,
+    /// <summary>병아리 ID 후보(번호와 함께). 미리보기 병아리는 맨 뒤에 "none"(병아리 없음)도 — 끝 그림 병아리의 없음은 속성을 빼는 것이다.</summary>
+    private static IEnumerable<ScriptCompletionItem> Chicks(bool end)
+    {
+        var items = PreviewChicks.Ids.Select((id, i) => new ScriptCompletionItem(id, ScriptApiKind.Literal,
             ScriptApiStrings.FormatCompletion_Chick(number: (i + 1).ToString(CultureInfo.CurrentCulture)), ""));
+        return end ? items : items.Append(new ScriptCompletionItem(PreviewChicks.None, ScriptApiKind.Literal, ScriptApiStrings.Completion_ChickNone, ""));
+    }
 
     // ───────────── 글자 훑기 ─────────────
 

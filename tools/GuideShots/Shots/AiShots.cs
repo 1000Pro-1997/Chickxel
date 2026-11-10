@@ -904,6 +904,37 @@ internal static class AiShots
         });
     }
 
+    [Shot("ai-external")]
+    public static void External(ShotKit k)
+    {
+        var main = k.Main(Sample(k));
+        // ①~④ 환경 설정 > AI 상태: 외부 AI 연결 허용(켬, 옆 정보박스까지)·파일 열기 허락·그림 생성 허락·연결 설정 복사.
+        ShortcutsShots.Preferences(k, 2, d =>
+        {
+            var allow = ShotKit.Get<CheckBox>(d, "_external");
+            allow.IsChecked = true;
+            ShotKit.Pump(300);
+            k.Save(d, "ai-external", marks:
+            [
+                Room(ShotKit.Bounds(allow, d).Inflate(new Thickness(0, 0, 26, 0)), left: 14, up: 0),
+                Room(ShotKit.Get<CheckBox>(d, "_externalOpenFile"), d, left: 14, up: 0),
+                Room(ShotKit.Get<CheckBox>(d, "_externalGenerate"), d, left: 14, up: 0),
+                VisibleButton(d, UiStrings.ExternalMcp_CopyConfig),
+            ]);
+        });
+
+        // ⑤ 켜져 있을 때 상태 표시줄 오른쪽 끝: 외부 AI가 draw_pixels를 막 부른 모습(4초 뒤 흐린 "External AI"로 돌아가는 타이머는 멈춰 둠).
+        App.Settings.AiExternalMcp = true;
+        ShotKit.Call(main, "ApplyExternalMcp");
+        ShotKit.Call(main, "ShowExternalActivity", "draw_pixels");
+        ShotKit.Get<Avalonia.Threading.DispatcherTimer>(main, "_externalIdle").Stop();
+        k.Settle(300);
+        var indicator = ShotKit.Bounds(ShotKit.Get<Control>(main, "_stExternal"), main);
+        // 상태 표시줄 한 줄(안내 칸 뒷부분 ~ 오른쪽 끝), 번호는 칸 위 어두운 여백에.
+        var crop = new Rect(indicator.Right - 520, indicator.Y, 520, indicator.Height);
+        ScreenShot.Shot(k, main, "ai-external-2", crop, [indicator.Inflate(new Thickness(3, 18, 1, 1))], first: 5, only: [crop]);
+    }
+
     // ───────────── 되돌리기 · 마지막 메시지 · 문제 ─────────────
 
     [Shot("ai-undo")]

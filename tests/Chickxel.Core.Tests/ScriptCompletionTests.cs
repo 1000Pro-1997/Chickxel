@@ -78,6 +78,8 @@ public class ScriptCompletionTests
     [InlineData("effect({ name: 'x', area: \"lo|", new[] { "local" })]
     [InlineData("effect({ name: 'x', previewChick: \"kn|", new[] { "knight" })]
     [InlineData("effect({ name: 'x', previewEndChick: \"wi|", new[] { "wizard" })]
+    [InlineData("effect({ name: 'x', previewChick: \"n|", new[] { "ninja", "none" })]
+    [InlineData("effect({ name: 'x', previewEndChick: \"n|", new[] { "ninja" })]
     [InlineData("effect({ name: 'x', previewMotion: \"|", new[] { "none", "right", "left", "up", "down" })]
     public void Declaration_and_setting_keys_and_values_are_offered_in_place(string text, string[] expected)
         => Assert.Equal(expected, At(text).Names);

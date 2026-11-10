@@ -171,23 +171,33 @@ public class LayerEffectTests
     }
 
     [Fact]
-    public void Outline_HideOriginal_ClippedEffectsSeeOnlyTheLine_LaterEffectsSeeNoOriginal()
+    public void Outline_HideOriginal_ClippedEffectsSeeOnlyTheLine_ErasedOriginalStaysErased()
     {
         var src = Filled(3, 3, Red);
-        var (img, _, _) = LayerEffects.Render(src,
+        var (img, x, y) = LayerEffects.Render(src,
         [
             new OutlineEffect { Color = Blue, HideOriginal = true },
             new ColorOverlayEffect { Color = White, Amount = 100, ClipToPrevious = true },
-            // 지워진 원본 자리는 기준 영역이 아니라 클리핑된 그림자가 그 구멍을 채우지 못한다.
+            // 선 고리만 받은 그림자: 고리 뒤로 오른쪽 1칸 — 지워진 안쪽 자리에도 번지지만 지운 원본(빨강)은 되살아나지 않는다
             new ShadowEffect { Color = Black, OffsetX = 1, OffsetY = 0, ClipToPrevious = true },
         ]);
-        Assert.Equal(new Size(5, 5), img.Size);
+        // 클리핑된 그림자도 여백을 넓힌다(오른쪽 1 + 1)
+        Assert.Equal((-1, -1, new Size(6, 5)), (x, y, img.Size));
         Assert.Equal(12, Count(img, White));
-        Assert.Equal(0, Count(img, Black));
         Assert.Equal(0, Count(img, Red));
+        Assert.Equal(8, Count(img, Black));
         for (int py = 1; py <= 3; py++)
-            for (int px = 1; px <= 3; px++)
+        {
+            Assert.Equal(Black, img.Get(1, py)); // 왼쪽 고리의 그림자가 비워진 안쪽에
+            Assert.Equal(Black, img.Get(5, py));
+            for (int px = 2; px <= 3; px++)
                 Assert.Equal(Color32.Transparent, img.Get(px, py));
+        }
+
+        // 클리핑 효과가 아무것도 바꾸지 않으면 기준 효과만 그린 것과 바이트까지 같다(지운 원본 자리도 그대로 투명)
+        var anchorOnly = LayerEffects.Render(src, [new OutlineEffect { Color = Blue, HideOriginal = true }]).Image;
+        var noop = LayerEffects.Render(src, [new OutlineEffect { Color = Blue, HideOriginal = true }, new ColorOverlayEffect { Amount = 0, ClipToPrevious = true }]).Image;
+        Assert.True(noop.ContentEquals(anchorOnly));
 
         // 뒤따르는 클리핑되지 않은 효과는 원본이 지워진 결과를 받는다: 선 고리의 그림자가 비워진 안쪽 자리에도 보인다.
         var (stacked, _, _) = LayerEffects.Render(src,
@@ -342,7 +352,7 @@ public class LayerEffectTests
     }
 
     [Fact]
-    public void ClippedEffects_ShareAnchorMask_AndDisabledAnchorProducesNothing()
+    public void ClippedEffects_ChainOnAnchorLayer_AndDisabledAnchorProducesNothing()
     {
         var outline = new OutlineEffect { Color = Black };
         var red = new ColorOverlayEffect { ClipToPrevious = true, Color = Red };
@@ -380,7 +390,7 @@ public class LayerEffectTests
     }
 
     [Fact]
-    public void ClippedEffect_DoesNotAddPadding_AndBakesWithWholeGroup()
+    public void ClippedEffect_AddsPadding_AndBakesWithWholeGroup()
     {
         LayerEffect[] effects =
         [
@@ -390,9 +400,75 @@ public class LayerEffectTests
             new InnerGlowEffect(),
         ];
 
-        Assert.Equal(new EffectPadding(1, 1, 1, 1), LayerEffects.Padding(effects, 2, 2));
+        // 클리핑된 그림자(오른쪽 8, 기본 아래 1)는 외곽선 층에서 그리고 그 밖으로 번지므로 여백을 넓힌다
+        Assert.Equal(new EffectPadding(1, 1, 9, 2), LayerEffects.Padding(effects, 2, 2));
         Assert.Equal([0, 1, 2], LayerEffects.BakeSet(effects, [0]));
         Assert.Equal([0, 1, 2], LayerEffects.BakeSet(effects, [1]));
+    }
+
+    [Fact]
+    public void ClippedEffect_SeesOnlyTheAnchorLayer()
+    {
+        // 투명한 픽셀을 모두 초록으로 채우는 스크립트: 외곽선에 클리핑되면 원본(흰 칸)은 보지 못하므로 그 자리도 투명으로 받아 채운다
+        var fill = EffectParity.Trusted("effect({ name: 'fill empty', render(img) { const d = img.data;"
+                                        + " for (let i = 0; i < d.length; i += 4) if (d[i + 3] === 0) { d[i] = 0; d[i + 1] = 255; d[i + 2] = 0; d[i + 3] = 255; } } });");
+        var green = new Color32(0, 255, 0);
+        var (image, x, y) = LayerEffects.Render(Filled(1, 1, White), [new OutlineEffect { Color = Black }, fill.CreateEffect() with { ClipToPrevious = true }]);
+        Assert.Equal((-1, -1, new Size(3, 3)), (x, y, image.Size));
+        Assert.Equal(green, image[1, 1]);  // 원본 자리: 클리핑 효과의 결과가 그림 위에 얹힘
+        Assert.Equal(green, image[0, 0]);  // 기준 픽셀 밖(모서리)에도 남음
+        Assert.Equal(Black, image[1, 0]);  // 외곽선 픽셀은 그대로
+        Assert.Equal(5, Count(image, green));
+    }
+
+    [Fact]
+    public void ChainedClippedEffect_TakesThePreviousClippedResult()
+    {
+        // 외곽선 → (클리핑) 오른쪽 2칸 그림자 → (클리핑) 흰색 덮기: 덮기는 외곽선뿐 아니라 그림자까지 받아 칠하고, 원본은 받지 않는다
+        var (image, x, y) = LayerEffects.Render(Filled(1, 1, Red),
+        [
+            new OutlineEffect { Color = Black },
+            new ShadowEffect { Color = Blue, OffsetX = 2, OffsetY = 0, ClipToPrevious = true },
+            new ColorOverlayEffect { Color = White, Amount = 100, ClipToPrevious = true },
+        ]);
+        Assert.Equal((-1, -1, new Size(5, 3)), (x, y, image.Size));
+        Assert.Equal(Red, image[1, 1]);
+        Assert.Equal(White, image[1, 0]);  // 외곽선
+        Assert.Equal(White, image[4, 1]);  // 오른쪽 외곽선 칸 (2,1)의 그림자 → (4,1)
+        Assert.Equal(White, image[3, 0]);  // 위 외곽선 칸 (1,0)의 그림자 → (3,0)
+        Assert.Equal(0, Count(image, Blue));
+        Assert.Equal(0, Count(image, Black));
+    }
+
+    [Fact]
+    public void ClippedEffect_LeavesPixelsItDidNotChangeBitIdentical()
+    {
+        // 반투명 원본을 바꾼 색 덮기(기준 효과) 위에 클리핑한 바깥 외곽선: 덮기가 바꾼 반투명 픽셀은 아래 그림과 다시 합성되지 않고 그대로
+        var src = Filled(3, 3, Red.WithAlpha(128));
+        var overlay = new ColorOverlayEffect { Color = Blue, Amount = 50 };
+        var anchorOnly = LayerEffects.Render(src, [overlay]).Image;
+        var (image, x, y) = LayerEffects.Render(src, [overlay, new OutlineEffect { Color = Black, ClipToPrevious = true }]);
+        Assert.Equal((-1, -1), (x, y));
+        for (int py = 0; py < 3; py++)
+            for (int px = 0; px < 3; px++)
+                Assert.Equal(anchorOnly[px, py], image[px + 1, py + 1]);
+        Assert.NotEqual(0, image[0, 2].A);
+        Assert.NotEqual(src[0, 0], anchorOnly[0, 0]);
+    }
+
+    [Fact]
+    public void ExpandingOnly_KeepsAnchorOfAGrowingClippedEffect()
+    {
+        LayerEffect[] effects =
+        [
+            new OutlineEffect { ExpandCanvas = false },
+            new ShadowEffect { ClipToPrevious = true, OffsetX = 4 },
+            new InnerGlowEffect { ExpandCanvas = false },
+            new ShadowEffect { ClipToPrevious = true, ExpandCanvas = false },
+        ];
+        var measured = LayerEffects.ExpandingOnly(effects);
+        // 캔버스를 늘리는 클리핑 그림자는 외곽선 층에서 그리므로 외곽선은 켠 채로 재고, 늘리는 클리핑 효과가 없는 묶음은 끈다
+        Assert.Equal([true, true, false, false], measured.Select(e => e.Enabled).ToArray());
     }
 
     // ───────────── 합성 ─────────────

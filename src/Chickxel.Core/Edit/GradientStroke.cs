@@ -95,18 +95,21 @@ public sealed class GradientStroke
 
     /// <summary>
     /// 기록한 픽셀을 모두 <paramref name="gradient"/>의 색(색·불투명도 정지점, 보간, 색 공간, 부드럽게일 때 디더링)으로 칠한다.
-    /// 획 전체 모드는 길이가 늘 때마다 다시 불러 지금 길이로 다시 칠한다. 이미지 밖 픽셀은 건너뛴다.
+    /// 획 전체 모드는 길이가 늘 때마다 다시 불러 지금 길이로 다시 칠한다. 이미지 밖 픽셀은 <paramref name="outside"/>에 넘긴다(없으면 건너뜀).
     /// </summary>
-    public void Render(PixelImage image, GradientPreset gradient, GradientStrokeMode mode, int interval)
+    public void Render(PixelImage image, GradientPreset gradient, GradientStrokeMode mode, int interval, Action<int, int, Color32>? outside = null)
     {
         var stops = Gradient.Sorted(gradient.Stops);
         var alphaStops = Gradient.SortedAlpha(gradient.AlphaStops);
         var dither = gradient.Interpolation == GradientInterpolation.Smooth ? gradient.Dither : GradientDither.None;
         foreach (var (p, distance) in _pixels)
         {
-            if (!image.Contains(p.X, p.Y)) continue;
+            bool inside = image.Contains(p.X, p.Y);
+            if (!inside && outside is null) continue;
             double t = T(distance, mode, interval);
-            image.Set(p.X, p.Y, Gradient.Sample(stops, alphaStops, t, gradient.Interpolation, dither, p.X, p.Y, gradient.ColorSpace));
+            var color = Gradient.Sample(stops, alphaStops, t, gradient.Interpolation, dither, p.X, p.Y, gradient.ColorSpace);
+            if (inside) image.Set(p.X, p.Y, color);
+            else outside!(p.X, p.Y, color);
         }
     }
 }

@@ -2,6 +2,52 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.117 (2026-11-11)
+### External AI connection: other AI apps use Chickxel's tools
+- Preferences > AI Status has **Allow external AI apps** (off by default). When on, other AI apps such as Claude Desktop, Cursor and Claude Code use the drawing, layer and effect tools of the running Chickxel.
+- Paste the JSON from **Copy connection settings** into that app's MCP settings; it then starts `Chickxel --mcp` to connect. The connection is open only on this computer and ends as soon as you turn it off.
+- The tool that asks you questions isn't offered, and opening files and image generation (your Codex quota) each need their own checkbox. Each change is one undo step.
+- While it is on, "External AI" shows at the right end of the status bar, and the name of a tool briefly lights up when an external AI calls it.
+- The guide's AI chapter has a new **Using other AI apps** page (turning it on, where to register it in each app, how it works, differences from AI chat, safety, and what to do if it doesn't connect).
+
+### Shape pen: stamp your own shapes
+- A third tool in the pencil group: clicking stamps the next shape of the chosen set with its own colors and transparency, and dragging keeps stamping along the way.
+- 20 built-in sets (leaves, grass, flowers, stars, bricks, raindrops, snowflakes and more) with 6 to 10 shapes each. Add shapes from a selection, the current cel or PNG files, and create, rename, delete, export and import sets.
+- Each set picks shapes at random, in order, or always the selected one. Spacing 1 leaves a continuous trail; Optimized spacing (on by default) places shapes touching without overlapping.
+- Tint with current color keeps the shading and transparency but uses your color.
+
+### Effects: "Clip to effect above" now draws as if only that effect existed
+- A clipped effect gets only the pixels the effect above drew, and its result is laid over the picture and may spread beyond them (flames clipped to rain rise from the raindrops).
+- Chained clipped effects continue from the previous result, clipped effects count for padding and canvas expansion, and an outline's hidden original stays hidden.
+- Shadows and afterimages clipped to an outline now sit over the picture instead of behind it. The script declarations `clipsBySource` and `erasesSource` are no longer needed and are ignored.
+
+### Effect Maker: in the AI menu, AI panel open, preview chick "None", expand canvas
+- Effect Maker moved to the end of the AI menu and opens with the AI panel already open, sized to fit the screen.
+- The preview chick can be "None" (an empty canvas, for effects like rain or snow).
+- Preview settings have "On OK [Expand canvas]"; Set as defaults writes `expandCanvas: false`, so newly added effects start with it off.
+- The Save button is enabled only when there are unsaved changes, and turns red then.
+
+### Timeline: copy with links, images-only copy, Ctrl+drag copy
+- Ctrl+C/V on cels keeps their link groups: in the same row they join the original group, in other rows or documents they form new groups.
+- New **Edit > Copy images only** (Ctrl+Shift+C) pastes unlinked copies.
+- Ctrl+drag copies the selected cels (even one) with their links. The horizontal scrollbar now sits above the grid.
+
+### Drawing: paint outside the canvas, fill compare modes
+- Paint tools and the eyedropper work on a normal layer's pixels outside the canvas; each stroke is one undo step.
+- Fill and Magic wand have **Compare by**: channel max (default, as before), RGB distance, OKLab, CIEDE2000 or hue only.
+
+### Color popup: pick from the image or the screen
+- **Pick from image** opens the frame enlarged in its own window (wheel to zoom, drag to pan, click to pick).
+- **Pick from screen** picks any color on the screen, other apps included (macOS needs screen recording permission; Linux needs X11).
+
+### Menu arrows on view and preview buttons
+- The grid, tile grid, tile mode and onion skin buttons, the gradient bar and the preview's scale and background buttons have small arrows that open their menus (right-click works too).
+- The preview background is a button that cycles backgrounds, with the list on its arrow. Pixelate's quick settings got the Strict check for target colors.
+
+### Pixelate: pinned colors no longer repaint cleaned-up outline pixels
+- With a pinned color, pixels changed by cleanup (such as Thin outline to 1px) were switched back to whichever pinned color was closer to their dark source cell, leaving stray dots such as purple next to the outline.
+- Pinned colors and excluded colors now compare those pixels with their cleaned-up color, so they no longer undo cleanup.
+
 ## v1.14.116 (2026-11-10)
 ### Pixelate AI image: F1 help for every setting and option, with comparison pictures
 - With F1, each label and its value now highlight together as one setting; pointing at a dropdown opens the explanation of the option currently selected, and pointing at its label explains the setting.

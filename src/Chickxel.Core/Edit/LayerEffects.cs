@@ -98,16 +98,23 @@ public static class LayerEffects
 
     /// <summary>
     /// 캔버스를 늘릴 범위를 잴 목록: 켜진 효과 중 캔버스 늘리기(<see cref="LayerEffect.ExpandCanvas"/>)를 끈 것은 끈 셈으로 바꾼다(차례·나머지 값은 그대로).
+    /// 다만 같은 클리핑 묶음에서 뒤에 캔버스 늘리기를 켠 클리핑 효과가 있으면 그대로 둔다 — 그 효과는 앞 효과가 그린 층에서 그리므로 끄면 재지 못한다.
     /// 모두 켰으면 같은 목록.
     /// </summary>
     public static IReadOnlyList<LayerEffect> ExpandingOnly(IReadOnlyList<LayerEffect> effects)
     {
         LayerEffect[]? result = null;
-        for (int i = 0; i < effects.Count; i++)
+        bool clippedGrows = false;
+        for (int i = effects.Count - 1; i >= 0; i--)
         {
-            if (effects[i] is not { Enabled: true, ExpandCanvas: false } e) continue;
-            result ??= [.. effects];
-            result[i] = e with { Enabled = false };
+            var e = effects[i];
+            if (e is { Enabled: true, ExpandCanvas: false } && !clippedGrows)
+            {
+                result ??= [.. effects];
+                result[i] = e with { Enabled = false };
+            }
+            if (!e.ClipToPrevious) clippedGrows = false;
+            else if (e is { Enabled: true, ExpandCanvas: true }) clippedGrows = true;
         }
         return result ?? effects;
     }
@@ -376,8 +383,8 @@ public static class LayerEffects
     /// <summary>
     /// <paramref name="width"/>×<paramref name="height"/> 그림에 켜진 효과들이 그림 밖으로 넓힐 수 있는 최대 여백(차례대로 쌓임: 외곽선 뒤 그림자면 외곽선까지 그림자가 진다).
     /// 프레임 범위·진행은 보지 않으므로 어느 프레임의 효과 묶음 여백보다도 작지 않다(효과를 빼면 여백은 줄기만 함) — 모든 프레임 같은 크기로 넓힐 때 쓴다.
-    /// 효과마다 그 정의의 여백 함수(<see cref="EffectDefinition.Padding"/>)에 그때까지 넓힌 크기를 넘겨 더한다. 클리핑된 효과는 넓히지 않는다
-    /// (기준 픽셀을 옮기는 효과 — <see cref="EffectDefinition.ClipsBySource"/> — 는 넓힌다). 모르는 효과는 여백이 없다.
+    /// 효과마다 그 정의의 여백 함수(<see cref="EffectDefinition.Padding"/>)에 그때까지 넓힌 크기를 넘겨 더한다. 클리핑된 효과도 넓힌다(기준 층에서 그린 결과는 기준 픽셀 밖으로 번짐).
+    /// 모르는 효과는 여백이 없다.
     /// 넓힌 크기가 <see cref="PixelImage.MaxSize"/>를 넘는 축은 여백 없이(그 축은 이미지 끝에서 잘림).
     /// </summary>
     public static EffectPadding Padding(IReadOnlyList<LayerEffect> effects, int width, int height)
@@ -386,7 +393,6 @@ public static class LayerEffects
         foreach (var e in effects)
         {
             if (!e.Enabled || EffectRegistry.Of(e) is not { } definition) continue;
-            if (e.ClipToPrevious && !definition.ClipsBySource(e)) continue;
             var add = definition.Padding(e, width + l + r, height + t + b);
             l += add.Left;
             t += add.Top;
@@ -501,11 +507,15 @@ public static class LayerEffects
     /// <summary>
     /// 켜진 효과를 차례로 <paramref name="image"/>에 바로 입힌다(크기는 그대로 — 번질 자리는 부르는 쪽이 미리 넓혀 둔다).
     /// <paramref name="source"/> = 효과 원본(셀, 그룹이면 캔버스)이 이 이미지 안에 놓인 자리: 터지기의 조각 격자·무작위와 직접 중심·피벗의 기준이다.
-    /// 클리핑된 반사는 기준 효과의 픽셀만 뒤집어 원본 그림 뒤에 놓는다(이동한 픽셀은 기준 영역 밖에도 남는다).
+    /// <para>
+    /// 클리핑(<see cref="LayerEffect.ClipToPrevious"/>): 앞의 클리핑되지 않은 효과(기준 효과)가 바꾼 픽셀만 담은 층(기준 층 — 나머지는 투명)이 따로 그려졌다고 보고,
+    /// 클리핑된 효과는 그 층만 있는 그림에 그린다(결과는 기준 픽셀 밖으로도 번진다 — 빗방울에서 피어오르는 불꽃). 이어진 클리핑 효과는 앞 클리핑 효과가 고친 층을 받는다.
+    /// 고친 층은 기준 효과 전 그림(기준 효과가 투명하게 지운 자리는 투명) 위에 얹고, 층이 기준 층과 같은 픽셀은 기준 효과를 입힌 그림 그대로다(<see cref="ClipGroup"/>).
+    /// </para>
     /// <para>
     /// 피벗 같이 옮기기: 켜진 효과가 그림을 옮겼다고 알리면(<see cref="EffectDefinition.Render"/>의 결과 — 스크립트의 <c>ctx.movePivot</c>) 그 효과의
     /// <see cref="LayerEffect.MovePivot"/>가 켜져 있을 때 그 거리를 쌓아 두고, 뒤에 그리는 효과는 모두 피벗(<see cref="AnimatedEffect.PivotPoint"/>, 없으면 원본 가운데)에 쌓인 거리를 더해 그린다.
-    /// 클리핑된 효과는 쌓인 거리만큼 옮긴 피벗으로 그리지만 자기 이동은 쌓지 않는다(기준 효과의 픽셀만 옮기므로 대상은 그 자리). 미루는 효과는 미루지 않는 효과를 모두 그린 뒤의
+    /// 클리핑된 효과는 쌓인 거리만큼 옮긴 피벗으로 그리지만 자기 이동은 쌓지 않는다(기준 층만 옮기므로 — 옮겨 간 범위는 여백 넓히기에 센다). 미루는 효과는 미루지 않는 효과를 모두 그린 뒤의
     /// 거리로 그리고, 클리핑되지 않은 미루는 효과의 이동은 그 뒤에 그리는 미루는 효과에 더한다. 아무 효과도 알리지 않으면 피벗은 그대로(결과도 그대로)다.
     /// </para>
     /// </summary>
@@ -528,46 +538,33 @@ public static class LayerEffects
         // 미루는 효과(잔상·deferred 스크립트)는 효과마다 한 번 가린다(스크립트는 해석 결과를 찾는다)
         var deferred = new bool[effects.Count];
         for (int i = 0; i < deferred.Length; i++) deferred[i] = IsDeferred(effects[i]);
-        List<LayerEffect>? clippedDeferred = null;
-        bool[]? clipMask = null;
+        // 미루는 클리핑 효과는 끝에 그리므로 그 기준 층을 같이 둔다
+        List<(LayerEffect Effect, ClipGroup Clip)>? clippedDeferred = null;
+        ClipGroup? clip = null;
         for (int index = start; index < effects.Count; index++)
         {
             cancel.ThrowIfCancellationRequested();
             var effect = effects[index];
             if (deferred[index])
             {
-                if (effect.ClipToPrevious && effect.Enabled && clipMask is not null)
-                    (clippedDeferred ??= []).Add(effect);
-                if (!effect.ClipToPrevious) clipMask = null;
+                if (effect.ClipToPrevious && effect.Enabled && clip is not null)
+                    (clippedDeferred ??= []).Add((effect, clip));
+                if (!effect.ClipToPrevious) clip = null;
                 continue;
             }
             // 꺼진 효과와 모르는 효과(그리지 않음)는 건너뛴다. 정의는 효과마다 한 번 찾는다.
             if (!effect.Enabled || EffectRegistry.Of(effect) is not { } definition)
             {
-                if (!effect.ClipToPrevious) clipMask = null;
+                if (!effect.ClipToPrevious) clip = null;
                 continue;
             }
             if (effect.ClipToPrevious)
             {
-                if (clipMask is not null)
+                if (clip is not null)
                 {
-                    if (definition.ClipsBySource(effect))
-                    {
-                        var moved = new PixelImage(image.Width, image.Height);
-                        for (int i = 0; i < image.Pixels.Length; i++)
-                            if (clipMask[i]) moved.Pixels[i] = image.Pixels[i];
-                        RenderOne(definition, moved, Shifted(effect, moves.Shift, source), source, hooks);
-                        for (int i = 0; i < image.Pixels.Length; i++)
-                            if (!clipMask[i] && moved.Pixels[i].A != 0)
-                                image.Pixels[i] = Color32.BlendOver(moved.Pixels[i], image.Pixels[i]);
-                    }
-                    else
-                    {
-                        var before = (Color32[])image.Pixels.Clone();
-                        RenderOne(definition, image, Shifted(effect, moves.Shift, source), source, hooks);
-                        for (int i = 0; i < before.Length; i++)
-                            if (!clipMask[i]) image.Pixels[i] = before[i];
-                    }
+                    var moved = RenderOne(definition, clip.Layer, Shifted(effect, moves.Shift, source), source, hooks);
+                    moves = moves.Reach(moved);
+                    clip.Show(image.Pixels);
                 }
                 checkpoints?.Store(index, image, moves);
                 done?.Invoke(image);
@@ -578,12 +575,7 @@ public static class LayerEffects
             Color32[]? anchorBefore = hasClippedFollower ? (Color32[])image.Pixels.Clone() : null;
             var reported = RenderOne(definition, image, Shifted(effect, moves.Shift, source), source, hooks);
             moves = moves.Add(reported, effect.MovePivot);
-            clipMask = anchorBefore is null ? null : ChangedPixels(anchorBefore, image.Pixels);
-            // 원본을 지우는 효과(원본 지우기 외곽선): 지워진(투명해진) 원본 자리는 기준 영역이 아니다 — 클리핑된 효과는 남은 픽셀만 보고,
-            // 뒤따르는 클리핑되지 않은 효과는 원본이 지워진 결과를 그대로 받는다.
-            if (clipMask is not null && definition.ErasesSource(effect))
-                for (int i = 0; i < clipMask.Length; i++)
-                    if (image.Pixels[i].A == 0) clipMask[i] = false;
+            clip = anchorBefore is null ? null : new ClipGroup(anchorBefore, image);
             checkpoints?.Store(index, image, moves);
             done?.Invoke(image);
         }
@@ -599,10 +591,13 @@ public static class LayerEffects
                 done?.Invoke(image);
             }
         if (clippedDeferred is not null)
-            foreach (var effect in clippedDeferred)
+            foreach (var (effect, group) in clippedDeferred)
             {
                 cancel.ThrowIfCancellationRequested();
-                RenderDeferred(image, Shifted(effect, moves.Shift, source), source, hooks);
+                // 기준 층만 있는 그림에 그리고(다른 프레임 모습도 기준 층만 — ClippedGhostSource) 다 그린 그림 위에 얹는다
+                var layer = group.NewLayer();
+                moves = moves.Reach(RenderDeferred(layer, Shifted(effect, moves.Shift, source), source, hooks));
+                group.ShowOver(image.Pixels, layer.Pixels);
                 ghosts++;
                 done?.Invoke(image);
             }
@@ -681,20 +676,79 @@ public static class LayerEffects
         return animated with { PivotPoint = new PointF(pivot.X + shift.X, pivot.Y + shift.Y) };
     }
 
-    private static bool[] ChangedPixels(Color32[] before, Color32[] after)
+    /// <summary>
+    /// 클리핑 묶음 하나(<see cref="Apply(PixelImage, IReadOnlyList{LayerEffect}, Rectangle)"/>): 기준 효과가 바꾼 픽셀(기준 층 — 나머지는 투명),
+    /// 그 아래 그림(기준 효과 전 그림 — 기준 효과가 투명하게 지운 자리는 투명: 지운 원본이 되살아나지 않게)과 기준 효과를 입힌 그림.
+    /// 클리핑된 효과는 <see cref="Layer"/>(처음엔 기준 층)를 차례로 고치고, <see cref="Show"/>가 그 층을 아래 그림 위에 얹는다.
+    /// </summary>
+    private sealed class ClipGroup
     {
         // 크기를 모르므로 한 줄로 보고 같은 길이 토막으로 나눠 돈다
-        const int chunk = 4096;
-        var changed = new bool[before.Length];
-        EffectParallel.For(0, (before.Length + chunk - 1) / chunk, chunk, c =>
+        private const int Chunk = 4096;
+        private readonly int _width, _height;
+        private readonly bool[] _changed;
+        private readonly Color32[] _under, _anchored;
+        private PixelImage? _layer;
+
+        /// <summary><paramref name="before"/> = 기준 효과 전 그림(묶음이 가져가 아래 그림으로 고침), <paramref name="anchored"/> = 기준 효과를 입힌 그림.</summary>
+        public ClipGroup(Color32[] before, PixelImage anchored)
         {
-            int start = c * chunk, length = Math.Min(chunk, before.Length - start);
-            var from = before.AsSpan(start, length);
-            var to = after.AsSpan(start, length);
-            var mark = changed.AsSpan(start, length);
-            for (int i = 0; i < mark.Length; i++) mark[i] = from[i] != to[i];
-        });
-        return changed;
+            _width = anchored.Width;
+            _height = anchored.Height;
+            _anchored = (Color32[])anchored.Pixels.Clone();
+            _changed = new bool[before.Length];
+            _under = before;
+            Chunks(before.Length, (start, length) =>
+            {
+                for (int i = start, end = start + length; i < end; i++)
+                {
+                    _changed[i] = before[i] != _anchored[i];
+                    if (_changed[i] && _anchored[i].A == 0) before[i] = Color32.Transparent;
+                }
+            });
+        }
+
+        /// <summary>이어진 클리핑 효과가 차례로 고치는 층(처음엔 기준 층).</summary>
+        public PixelImage Layer => _layer ??= NewLayer();
+
+        /// <summary>기준 층만 있는 새 그림.</summary>
+        public PixelImage NewLayer()
+        {
+            var layer = new PixelImage(_width, _height);
+            var px = layer.Pixels;
+            for (int i = 0; i < px.Length; i++)
+                if (_changed[i]) px[i] = _anchored[i];
+            return layer;
+        }
+
+        /// <summary>
+        /// <see cref="Layer"/>를 아래 그림 위에 보통 합성해 <paramref name="target"/>에 쓴다. 층이 기준 층과 같은 픽셀은 기준 효과를 입힌 그림 그대로다
+        /// (반투명 픽셀도 바이트까지 — 클리핑 효과가 건드리지 않은 자리는 바뀌지 않음).
+        /// </summary>
+        public void Show(Color32[] target) => Compose(target, Layer.Pixels, final: false);
+
+        /// <summary>
+        /// 미루는 클리핑 효과가 그린 층 <paramref name="layer"/>를 다 그린 그림 <paramref name="target"/>에 얹는다: 기준 층과 같은 픽셀은 그대로,
+        /// 기준 픽셀 자리는 아래 그림 위에, 그 밖은 다 그린 그림 위에.
+        /// </summary>
+        public void ShowOver(Color32[] target, Color32[] layer) => Compose(target, layer, final: true);
+
+        private void Compose(Color32[] target, Color32[] layer, bool final)
+            => Chunks(target.Length, (start, length) =>
+            {
+                for (int i = start, end = start + length; i < end; i++)
+                {
+                    var top = layer[i];
+                    if (top == (_changed[i] ? _anchored[i] : Color32.Transparent))
+                    {
+                        if (!final) target[i] = _anchored[i];
+                    }
+                    else target[i] = Color32.BlendOver(final && !_changed[i] ? target[i] : _under[i], top);
+                }
+            });
+
+        private static void Chunks(int length, Action<int, int> body)
+            => EffectParallel.For(0, (length + Chunk - 1) / Chunk, Chunk, c => body(c * Chunk, Math.Min(Chunk, length - c * Chunk)));
     }
 
     /// <summary>피벗 자리(이미지 기준): 없으면 원본 가운데.</summary>
@@ -818,5 +872,13 @@ internal readonly record struct EffectMoves(PointF Shift, PointF Sum, float MinX
         var sum = new PointF(Sum.X + reported.X, Sum.Y + reported.Y);
         return new EffectMoves(movePivot ? new PointF(Shift.X + reported.X, Shift.Y + reported.Y) : Shift, sum,
             Math.Min(MinX, sum.X), Math.Min(MinY, sum.Y), Math.Max(MaxX, sum.X), Math.Max(MaxY, sum.Y));
+    }
+
+    /// <summary>클리핑된 효과가 알린 이동 <paramref name="reported"/>: 기준 층만 옮기므로 쌓인 이동은 두고 닿은 범위만 넓힌다.</summary>
+    public EffectMoves Reach(PointF reported)
+    {
+        if (reported.IsEmpty) return this;
+        float x = Sum.X + reported.X, y = Sum.Y + reported.Y;
+        return this with { MinX = Math.Min(MinX, x), MinY = Math.Min(MinY, y), MaxX = Math.Max(MaxX, x), MaxY = Math.Max(MaxY, y) };
     }
 }

@@ -548,4 +548,101 @@ public class LinkedCelTests
         Assert.False(p.IsCelLinked(ai, 0));
         Assert.False(p.IsCelLinked(bi, 0));
     }
+
+    /// <summary>프레임 <paramref name="frames"/>개: 0·1 = 파랑 묶음(빨간 점), 2·3 = 주황 묶음(초록 점).</summary>
+    private static SpriteProject BlueOrange(int frames)
+    {
+        var p = Frames(frames);
+        Draw(p, 1, 1, Green, frame: 2);
+        Assert.Equal(1, Link(p, 0, 1));
+        Assert.Equal(1, Link(p, 2, 3));
+        Assert.Equal(0, p.LinkMarks(0)[0].Color); // 파랑
+        Assert.Equal(1, p.LinkMarks(0)[2].Color); // 주황
+        return p;
+    }
+
+    [Fact]
+    public void PasteCels_SameRow_JoinsSourceGroups_UndoOneStep()
+    {
+        var p = BlueOrange(6);
+        var copies = p.CopyCels(p.Layers[0], [0, 2]);
+        Assert.True(copies[0]!.IsLinked);
+        Assert.Equal(1, copies[1]!.LinkColor);
+        int steps = p.History.UndoCount;
+        p.PasteCels([(0, 4, copies[0]), (0, 5, copies[1])]);
+        Assert.Equal(steps + 1, p.History.UndoCount);
+        Assert.Equal([0, 1, 4], p.LinkedFrames(0, 4));
+        Assert.Equal([2, 3, 5], p.LinkedFrames(0, 5));
+        var marks = p.LinkMarks(0);
+        Assert.Equal(0, marks[4].Color);
+        Assert.Equal(1, marks[5].Color);
+
+        // 붙인 칸을 고치면 원래 묶음도 함께 바뀐다
+        Draw(p, 3, 3, Blue, frame: 4);
+        Assert.Equal(Blue, At(p, 0, 3, 3));
+        p.Undo(); // 그리기
+        p.Undo(); // 붙여넣기
+        Assert.True(p.IsCelEmpty(0, 4));
+        Assert.True(p.IsCelEmpty(0, 5));
+        Assert.Equal([0, 1], p.LinkedFrames(0, 0));
+    }
+
+    [Fact]
+    public void PasteCels_IntoLinkedCel_LeavesItsGroupAndJoinsSource()
+    {
+        var p = BlueOrange(4);
+        var copies = p.CopyCels(p.Layers[0], [0]);
+        p.PasteCels([(0, 3, copies[0])]);
+        Assert.Equal([0, 1, 3], p.LinkedFrames(0, 3));
+        Assert.False(p.IsCelLinked(0, 2)); // 주황 묶음은 혼자 남음
+        Assert.Equal(Green, At(p, 2, 1, 1));
+    }
+
+    [Fact]
+    public void PasteCels_OtherDocumentOrRow_RecreatesGroupsAndColors()
+    {
+        var p = BlueOrange(5);
+        var copies = p.CopyCels(p.Layers[0], [0, 1, 2, 3]);
+
+        // 다른 문서: 같은 묶음에서 온 칸끼리 새 묶음(색 그대로), 원래 문서와는 따로
+        var q = new SpriteProject(4, 4);
+        for (int i = 1; i < 4; i++) q.AddFrame();
+        q.PasteCels([.. Enumerable.Range(0, 4).Select(f => (0, f, copies[f]))]);
+        Assert.Equal([0, 1], q.LinkedFrames(0, 0));
+        Assert.Equal([2, 3], q.LinkedFrames(0, 3));
+        Assert.Equal(0, q.LinkMarks(0)[1].Color);
+        Assert.Equal(1, q.LinkMarks(0)[2].Color);
+        Assert.Equal(Red, At(q, 1, 0, 0));
+        Assert.Equal(Green, At(q, 3, 1, 1));
+        Draw(q, 3, 3, Blue, frame: 0);
+        Assert.Equal(Blue, At(q, 1, 3, 3));
+        Assert.Equal(default, At(p, 0, 3, 3));
+
+        // 다른 행(같은 문서): 새 묶음, 그 행에서 이미 쓰는 색이면 쓰지 않은 첫 색. 한 칸만 오면 링크 없음
+        p.AddLayer();
+        Draw(p, 2, 2, Blue, layer: 1, frame: 2);
+        Assert.Equal(1, p.LinkCels([(1, 2), (1, 3)])); // 이 행의 파랑
+        p.PasteCels([(1, 0, copies[0]), (1, 1, copies[1]), (1, 4, copies[2])]);
+        Assert.Equal([0, 1], p.LinkedFrames(1, 0));
+        Assert.Equal(0, p.LinkMarks(1)[3].Color);
+        Assert.Equal(1, p.LinkMarks(1)[0].Color); // 파랑은 이 행에서 쓰므로 주황
+        Assert.False(p.IsCelLinked(1, 4));
+        Assert.Equal(Green, At(p, 4, 1, 1, layer: 1));
+        Assert.Equal([0, 1], p.LinkedFrames(0, 0)); // 원래 행 그대로
+    }
+
+    [Fact]
+    public void PasteCels_ImagesOnly_PastesUnlinkedCopies()
+    {
+        var p = BlueOrange(6);
+        var copies = p.CopyCels(p.Layers[0], [0, 1], links: false);
+        Assert.All(copies, c => Assert.False(c!.IsLinked));
+        p.PasteCels([(0, 4, copies[0]), (0, 5, copies[1])]);
+        Assert.False(p.IsCelLinked(0, 4));
+        Assert.False(p.IsCelLinked(0, 5));
+        Assert.Equal(Red, At(p, 4, 0, 0));
+        Draw(p, 3, 3, Blue, frame: 4);
+        Assert.Equal(default, At(p, 0, 3, 3));
+        Assert.Equal(default, At(p, 5, 3, 3));
+    }
 }

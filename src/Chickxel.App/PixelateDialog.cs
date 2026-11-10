@@ -661,9 +661,9 @@ public sealed class PixelateDialog : DialogBase
     private readonly ToggleButton _quickAspect;
     /// <summary>간편 설정의 '모든 프레임이 한 팔레트' — 6단계 <see cref="_palShared"/>와 같은 설정.</summary>
     private readonly CheckBox _quickShared;
-    /// <summary>간편 설정의 목표 색 수·자동 — 0. 최적화 기준 <see cref="_crTargetColors"/>·<see cref="_crTargetAuto"/>와 같은 설정.</summary>
+    /// <summary>간편 설정의 목표 색 수·자동·강제 — 0. 최적화 기준 <see cref="_crTargetColors"/>·<see cref="_crTargetAuto"/>·<see cref="_crTargetStrict"/>와 같은 설정.</summary>
     private readonly NumericUpDown _quickTargetColors;
-    private readonly CheckBox _quickTargetAuto;
+    private readonly CheckBox _quickTargetAuto, _quickTargetStrict;
     /// <summary>원본 아래 막대·간편 설정을 설정에 맞추는 중(그쪽 이벤트 무시).</summary>
     private bool _barSyncing;
     /// <summary>자동을 다시 켤 때 돌아갈 방식(마지막으로 쓴, 고정 크기가 아닌 방식).</summary>
@@ -918,12 +918,12 @@ public sealed class PixelateDialog : DialogBase
         _presetDelete = Ui.IconButton(VectorIcon.Trash, UiStrings.Pixelate_Preset_Delete, (_, _) => DeletePreset());
         _presetDelete.Background = AppTheme.UnsavedBrush;
         _presetDelete.Foreground = Brushes.White;
-        KeepFillOnHover(_presetDelete);
+        Ui.KeepFillOnHover(_presetDelete);
         _runButton = Ui.IconButton(VectorIcon.Play, UiStrings.Pixelate_Run, (_, _) => RunCurrent());
         AutomationProperties.SetName(_runButton, UiStrings.Pixelate_Run);
         _runButton.Background = AppTheme.SavedBrush;
         _runButton.Foreground = Brushes.White;
-        KeepFillOnHover(_runButton);
+        Ui.KeepFillOnHover(_runButton);
         ToolTip.SetShowOnDisabled(_runButton, true);
         // 대상 도움말(F1): 프리셋 줄 단추마다 "프리셋 줄" 표의 그 줄.
         _preset.HelpAt("pixelate-presets", anchor: "Preset list");
@@ -1384,18 +1384,20 @@ public sealed class PixelateDialog : DialogBase
         _quickTargetAuto = Ui.Check(UiStrings.Pixelate_Auto, true).Tip(UiStrings.Pixelate_Opt_TargetColorsAutoTip);
         _quickTargetColors.ValueChanged += (_, _) => { if (!_barSyncing && _quickTargetColors.Value is { } v) _crTargetColors.Value = v; };
         _quickTargetAuto.IsCheckedChanged += (_, _) => { if (!_barSyncing) _crTargetAuto.IsChecked = _quickTargetAuto.On(); };
+        _quickTargetStrict = Ui.Check(UiStrings.Pixelate_Opt_TargetStrict).Tip(UiStrings.Pixelate_Opt_TargetStrictTip);
+        _quickTargetStrict.IsCheckedChanged += (_, _) => { if (!_barSyncing) _crTargetStrict.IsChecked = _quickTargetStrict.On(); };
         var quickTargetLabel = Ui.Label(UiStrings.Pixelate_Opt_TargetColors);
         var quickSizeLabel = Ui.Label(UiStrings.Pixelate_Quick_Size);
         var quickByLabel = Ui.Label(UiStrings.Pixelate_Size_By);
         var quickBody = Ui.Stack(
             Ui.Row(quickSizeLabel, _quickAuto, _quickW, quickByLabel, _quickH, _quickAspect),
-            Ui.Row(quickTargetLabel, _quickTargetColors, _quickTargetAuto),
+            Ui.Row(quickTargetLabel, _quickTargetColors, _quickTargetAuto, _quickTargetStrict),
             _quickShared);
         // 대상 도움말(F1): 간편 설정 목록의 항목.
         HelpTargets.HelpGroup("pixelate-settings", "In the output size row", quickSizeLabel, _quickAuto, _quickW, quickByLabel, _quickH);
         _quickAspect.HelpAt("pixelate-settings", anchor: "With the link button");
         _quickShared.HelpAt("pixelate-settings", anchor: "One palette for all frames");
-        HelpTargets.HelpGroup("pixelate-settings", "In the target colors row", quickTargetLabel, _quickTargetColors, _quickTargetAuto);
+        HelpTargets.HelpGroup("pixelate-settings", "In the target colors row", quickTargetLabel, _quickTargetColors, _quickTargetAuto, _quickTargetStrict);
 
         var left = new StackPanel { Spacing = 2, Margin = new Thickness(0, 0, 8, 0) };
         // 설정 칸마다 그 단계를 설명하는 가이드 자리(안쪽 컨트롤에 따로 붙인 자리가 먼저).
@@ -1592,7 +1594,7 @@ public sealed class PixelateDialog : DialogBase
         _optAuto = Ui.Check(UiStrings.Pixelate_Opt_AutoOnLoad, _opt.AutoOptimizeOnLoad).Tip(UiStrings.Pixelate_Opt_AutoOnLoadTip);
         _optRun = Ui.Button(VectorIcon.Sparkles, UiStrings.Pixelate_Opt_Toggle, (_, _) => OnOptimizeClicked()).Tip(UiStrings.Pixelate_Opt_ToggleTip);
         ToolTip.SetShowOnDisabled(_optRun, true);
-        KeepFillOnHover(_optRun, DangerClass);
+        Ui.KeepFillOnHover(_optRun, DangerClass);
         // 도는 동안 우클릭: 남은 프리셋까지 모두 취소.
         PopupMenus.Attach(_optRun, () => _optCts is null ? null : [MenuCommand(UiStrings.Pixelate_Opt_CancelAll, VectorIcon.X, CancelAllOptimize)]);
         var optSettings = Ui.IconButton(VectorIcon.SlidersHorizontal, UiStrings.Pixelate_Opt_Settings, (_, _) => OpenOptimizeSettings());
@@ -1604,7 +1606,7 @@ public sealed class PixelateDialog : DialogBase
         _optContinue.Background = AppTheme.FavoriteBrush;
         _optContinue.Foreground = Brushes.Black;
         _optContinue.IsVisible = false;
-        KeepFillOnHover(_optContinue);
+        Ui.KeepFillOnHover(_optContinue);
         ToolTip.SetTip(_optGraph, UiStrings.Pixelate_Opt_GraphTip);
         _optTable = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto,*"), Margin = new Thickness(2) };
         // 대상 도움말(F1): 자동 최적화 막대 — "시작과 결과 읽기" 표의 그 줄(빈 곳은 쪽 맨 위).
@@ -2338,10 +2340,12 @@ public sealed class PixelateDialog : DialogBase
             // 6단계와 같은 값·켜짐(팔레트 방식에 따라 꺼짐).
             _quickShared.IsChecked = _palShared.On();
             _quickShared.IsEnabled = _palShared.IsEnabled;
-            // 0. 최적화 기준과 같은 목표 색 수(자동이면 숫자는 꺼짐).
+            // 0. 최적화 기준과 같은 목표 색 수·자동·강제(자동이면 숫자·강제는 꺼짐).
             _quickTargetColors.Value = _crTargetColors.Value;
             _quickTargetAuto.IsChecked = _crTargetAuto.On();
+            _quickTargetStrict.IsChecked = _crTargetStrict.On();
             _quickTargetColors.IsEnabled = _crTargetColors.IsEnabled;
+            _quickTargetStrict.IsEnabled = _crTargetStrict.IsEnabled;
         }
         finally
         {
@@ -3567,25 +3571,6 @@ public sealed class PixelateDialog : DialogBase
     }
 
     /// <summary>
-    /// 단추에 직접 칠한 바탕·글자·테두리 색(초록 '대표', 빨간 '초기화'·'취소')을 마우스를 올리거나 누를 때도 유지한다(테마의 회색 대신 — 조금 흐려져 눌린 느낌만 줌).
-    /// <paramref name="onlyClass"/>가 있으면 단추에 그 클래스가 붙어 있을 때만(색을 칠했다 지웠다 하는 단추).
-    /// </summary>
-    private static void KeepFillOnHover(Button button, string? onlyClass = null)
-    {
-        foreach (var state in new[] { ":pointerover", ":pressed" })
-            button.Styles.Add(new Style(x => (onlyClass is null ? x.OfType<Button>() : x.OfType<Button>().Class(onlyClass)).Class(state).Template().OfType<Avalonia.Controls.Presenters.ContentPresenter>().Name("PART_ContentPresenter"))
-            {
-                Setters =
-                {
-                    new Setter(Avalonia.Controls.Presenters.ContentPresenter.BackgroundProperty, new Avalonia.Data.TemplateBinding(Avalonia.Controls.Primitives.TemplatedControl.BackgroundProperty)),
-                    new Setter(Avalonia.Controls.Presenters.ContentPresenter.ForegroundProperty, new Avalonia.Data.TemplateBinding(Avalonia.Controls.Primitives.TemplatedControl.ForegroundProperty)),
-                    new Setter(Avalonia.Controls.Presenters.ContentPresenter.BorderBrushProperty, new Avalonia.Data.TemplateBinding(Avalonia.Controls.Primitives.TemplatedControl.BorderBrushProperty)),
-                    new Setter(Visual.OpacityProperty, state == ":pressed" ? 0.7 : 0.85),
-                },
-            });
-    }
-
-    /// <summary>
     /// 자동 최적화 설정 창: 일괄 최적화 체크와 AI 그림 변환의 대표 프리셋('대표' 단추 — 고른 것은 초록), 마지막 시도 기록,
     /// '불러오면 자동 최적화', 처음 설치 상태로 초기화. 도는 동안은 선택을 바꿀 수 없다. 닫으면 설정 파일에 저장한다.
     /// </summary>
@@ -3647,7 +3632,7 @@ public sealed class PixelateDialog : DialogBase
                     VerticalAlignment = VerticalAlignment.Center,
                 }.Tip(UiStrings.OptimizePreset_RepresentativeTip);
                 AutomationProperties.SetName(badge, $"{UiStrings.OptimizePreset_Representative}: {preset.Name}");
-                KeepFillOnHover(badge);
+                Ui.KeepFillOnHover(badge);
                 badge.Click += (_, _) =>
                 {
                     if (ReferenceEquals(preset, _opt.PrimaryPreset)) return;
@@ -3687,7 +3672,7 @@ public sealed class PixelateDialog : DialogBase
         }).Tip(UiStrings.Pixelate_Opt_ResetTip);
         reset.Background = AppTheme.UnsavedBrush;
         reset.Foreground = Brushes.White;
-        KeepFillOnHover(reset);
+        Ui.KeepFillOnHover(reset);
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Children = { reset, close } };
         var bottom = new DockPanel { LastChildFill = true, Margin = new Thickness(8, 4, 8, 8) };
         DockPanel.SetDock(buttons, Dock.Right);

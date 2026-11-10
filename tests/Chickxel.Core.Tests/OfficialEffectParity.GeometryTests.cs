@@ -7,148 +7,80 @@ namespace Chickxel.Core.Tests;
 
 /// <summary>
 /// 모양을 바꾸는 공식 스크립트 효과(외곽선·반사·회전)가 기본 효과와 효과 파이프라인에서 바이트까지 같은지(<see cref="EffectParity"/>, 빠른 경로·Jint),
-/// 그리고 그 효과들이 쓰는 선언 <c>clipsBySource</c>·<c>erasesSource</c>를 파이프라인이 기본 효과의 정의처럼 다루는지.
+/// 그리고 클리핑됐을 때도 기본 효과와 같은지(예전 선언 <c>clipsBySource</c>·<c>erasesSource</c>는 무시됨).
 /// </summary>
 public class OfficialEffectParityGeometryTests
 {
-    // ───────────── clipsBySource · erasesSource 선언 ─────────────
-
-    [Fact]
-    public void Clip_declarations_default_to_off()
-    {
-        var program = Parse("effect({ name: 'x', render() {} });");
-        Assert.False(program.ClipsBySource);
-        Assert.False(program.ErasesSource);
-        Assert.Null(program.ErasesSourceSetting);
-        Assert.False(program.ErasesSourceWith(null));
-    }
-
-    [Fact]
-    public void Clip_declarations_read_booleans_and_a_bool_setting_key()
-    {
-        var always = Parse("effect({ name: 'x', clipsBySource: true, erasesSource: true, render() {} });");
-        Assert.True(always.ClipsBySource);
-        Assert.True(always.ErasesSource);
-        Assert.True(always.ErasesSourceWith(null));
-
-        var off = Parse("effect({ name: 'x', clipsBySource: false, erasesSource: false, render() {} });");
-        Assert.False(off.ClipsBySource);
-        Assert.False(off.ErasesSourceWith(null));
-
-        var keyed = Parse("effect({ name: 'x', erasesSource: 'hide', settings: [{ key: 'hide', label: 'h', type: 'bool', default: true }], render() {} });");
-        Assert.False(keyed.ErasesSource);
-        Assert.Equal("hide", keyed.ErasesSourceSetting);
-        Assert.True(keyed.ErasesSourceWith(null)); // 빠진 값은 기본값
-        Assert.False(keyed.ErasesSourceWith(new Dictionary<string, object> { ["hide"] = false }));
-        Assert.True(keyed.ErasesSourceWith(new Dictionary<string, object> { ["hide"] = true }));
-        Assert.True(keyed.ErasesSourceWith(new Dictionary<string, object> { ["hide"] = 3.0 })); // 틀린 모양은 기본값
-    }
+    // ───────────── 클리핑 ─────────────
 
     [Theory]
-    [InlineData("clipsBySource: 1", "clipsBySource")]
-    [InlineData("clipsBySource: 'yes'", "clipsBySource")]
-    [InlineData("erasesSource: 1", "erasesSource")]
-    [InlineData("erasesSource: 'missing'", "erasesSource")]
-    [InlineData("erasesSource: 'size'", "erasesSource")]
-    [InlineData("erasesSource: 'mode'", "erasesSource")]
-    public void Invalid_clip_declarations_are_reported(string declaration, string key)
+    [InlineData("clipsBySource: true, erasesSource: true")]
+    [InlineData("clipsBySource: 1, erasesSource: 'missing'")]
+    [InlineData("clipsBySource: 'yes', erasesSource: 'size'")]
+    public void Retired_clip_declarations_are_ignored(string declaration)
     {
-        var result = ScriptEffectProgram.Parse("effect({ name: 'x', " + declaration + ",\n settings: [{ key: 'size', label: 's', type: 'int', min: 0, max: 3, default: 1 },"
-                                               + " { key: 'mode', label: 'm', type: 'choice', default: 'a', choices: [{ value: 'a', label: 'a' }] }], render() {} });");
-        Assert.False(result.Success);
-        var error = Assert.Single(result.Errors);
-        Assert.Contains(key, error.Message);
-        Assert.Equal(1, error.Line);
+        // 그 선언을 담은 예전 원문(프로젝트·레시피에 저장된 것)도 그대로 해석된다
+        var result = ScriptEffectProgram.Parse("effect({ name: 'x', " + declaration + ",\n settings: [{ key: 'size', label: 's', type: 'int', min: 0, max: 3, default: 1 }],"
+                                               + " render() {} });");
+        Assert.True(result.Success, string.Join("\n", result.Errors));
     }
 
     [Fact]
-    public void Script_definition_takes_clip_flags_from_the_declaration()
-    {
-        var definition = ScriptDefinition.Definition;
-        var mover = EffectParity.Trusted(MoverSource(clips: true));
-        var plain = EffectParity.Trusted(MoverSource(clips: false));
-        var keyed = EffectParity.Trusted("effect({ name: 'eraser', erasesSource: 'hide', settings: [{ key: 'hide', label: 'h', type: 'bool', default: false }],"
-                                         + " render(img) { if (img.width > 0) img.data[3] = 0; } });");
-        Assert.True(definition.ClipsBySource(mover.CreateEffect()));
-        Assert.False(definition.ClipsBySource(plain.CreateEffect()));
-        Assert.False(definition.ErasesSource(mover.CreateEffect()));
-        Assert.False(definition.ErasesSource(keyed.CreateEffect()));
-        Assert.True(definition.ErasesSource(keyed.CreateEffect(new Dictionary<string, object> { ["hide"] = true })));
-        // 실행할 수 없는(모르는) 원문은 기본 방식
-        Assert.False(definition.ClipsBySource(new ScriptEffect { ScriptHash = new string('0', 64) }));
-        Assert.False(definition.ErasesSource(new ScriptEffect { ScriptHash = new string('0', 64) }));
-    }
-
-    [Fact]
-    public void Clipped_script_widens_padding_only_when_it_clips_by_source()
-    {
-        var mover = EffectParity.Trusted(MoverSource(clips: true)).CreateEffect() with { ClipToPrevious = true };
-        var plain = EffectParity.Trusted(MoverSource(clips: false)).CreateEffect() with { ClipToPrevious = true };
-        var outline = new OutlineEffect();
-        Assert.Equal(new EffectPadding(1, 1, 1, 4), LayerEffects.Padding([outline, mover], 8, 8));
-        Assert.Equal(new EffectPadding(1, 1, 1, 1), LayerEffects.Padding([outline, plain], 8, 8));
-        // 기본 반사와 같은 규칙
-        Assert.Equal(LayerEffects.Padding([outline, new ReflectionEffect { ClipToPrevious = true }], 8, 8),
-            LayerEffects.Padding([outline, EffectParity.ToScript(new ReflectionEffect { ClipToPrevious = true }, EffectParity.Official("reflection"))], 8, 8));
-    }
-
-    [Fact]
-    public void Clipped_script_that_clips_by_source_keeps_moved_pixels_behind_the_picture()
+    public void Clipped_script_moves_only_the_anchor_layer_and_widens_padding()
     {
         var source = new PixelImage(4, 4);
         for (int y = 1; y < 3; y++)
             for (int x = 1; x < 3; x++)
                 source[x, y] = new Color32(200, 40, 40);
         var outline = new OutlineEffect { Color = new Color32(0, 0, 255) };
-        var mover = EffectParity.Trusted(MoverSource(clips: true)).CreateEffect() with { ClipToPrevious = true };
-        var plain = EffectParity.Trusted(MoverSource(clips: false)).CreateEffect() with { ClipToPrevious = true };
+        var mover = EffectParity.Trusted(MoverSource).CreateEffect() with { ClipToPrevious = true };
+        Assert.Equal(new EffectPadding(1, 1, 1, 4), LayerEffects.Padding([outline, mover], 8, 8));
 
         var (moved, mx, my) = LayerEffects.Render(source, [outline, mover]);
-        var (kept, kx, ky) = LayerEffects.Render(source, [outline, plain]);
         var blue = new Color32(0, 0, 255);
-        // 바깥 외곽선(파랑 고리)만 기준 영역: 옮긴 고리는 기준 영역 밖(아래)에 그림 뒤로 남고, 기준 영역 안(고리 자리)은 그대로
+        // 외곽선 고리만 아래로 3칸: 옮긴 고리는 기준 영역 밖에 남고, 고리가 떠난 자리는 비며, 원본은 옮기지 않는다(받지 않았으므로)
         Assert.Equal((-1, -1, 6, 9), (mx, my, moved.Width, moved.Height));
         Assert.Equal(blue, moved[2, 7]);   // 고리 아래 칸 (2, 4) → (2, 7)
-        Assert.Equal(blue, moved[1, 2]);   // 고리 왼쪽 칸은 그대로
-        Assert.Equal(new Color32(200, 40, 40), moved[2, 2]); // 원본 자리는 그대로(옮긴 픽셀은 그림 뒤)
-        // 기본 방식: 클리핑되면 넓히지 않고, 기준 영역 안만 옮긴 결과(고리 왼쪽 칸 위 3칸은 이미지 밖 = 투명)
-        Assert.Equal((-1, -1, 6, 6), (kx, ky, kept.Width, kept.Height));
-        Assert.Equal(Color32.Transparent, kept[1, 2]);
-        Assert.Equal(new Color32(200, 40, 40), kept[2, 2]);
+        Assert.Equal(blue, moved[1, 5]);   // 고리 왼쪽 칸 (1, 2) → (1, 5)
+        Assert.Equal(blue, moved[2, 4]);   // 고리 위 칸 (2, 1) → (2, 4)
+        Assert.Equal(Color32.Transparent, moved[1, 2]); // 고리가 떠난 자리
+        Assert.Equal(new Color32(200, 40, 40), moved[2, 2]); // 원본은 그대로
+        Assert.Equal(Color32.Transparent, moved[2, 5]); // 원본을 옮긴 그림은 없다
     }
 
     [Fact]
-    public void Erasing_script_removes_erased_pixels_from_the_clip_area()
+    public void Clipped_reflection_matches_the_built_in_effect()
     {
-        // 원본 지우기 외곽선 뒤 클리핑된 효과는 선에만 입혀진다(기본 효과와 같음)
+        var reflection = new ReflectionEffect { ClipToPrevious = true };
+        var script = EffectParity.ToScript(reflection, EffectParity.Official("reflection"));
+        var outline = new OutlineEffect();
+        Assert.Equal(LayerEffects.Padding([outline, reflection], 8, 8), LayerEffects.Padding([outline, script], 8, 8));
+        EffectParity.AssertSameLists([outline, reflection], [outline, script], frameCount: 1, label: "clipped reflection");
+    }
+
+    [Fact]
+    public void Clipped_effect_after_erasing_outline_matches_the_built_in_effect()
+    {
+        // 원본 지우기 외곽선 뒤 클리핑된 효과는 선 층만 받고, 지운 원본은 되살아나지 않는다(기본 효과와 같음)
         var program = EffectParity.Official("outline");
         var tint = new ColorOverlayEffect { Color = new Color32(0, 255, 0), ClipToPrevious = true };
+        var shadow = new ShadowEffect { OffsetX = 1, OffsetY = 1, ClipToPrevious = true };
         foreach (var inside in new[] { false, true })
         {
             var hide = new OutlineEffect { HideOriginal = true, Inside = inside, Thickness = 2 };
-            EffectParity.AssertSameLists([hide, tint], [EffectParity.ToScript(hide, program), tint], frameCount: 1, label: $"inside {inside}");
+            EffectParity.AssertSameLists([hide, tint, shadow], [EffectParity.ToScript(hide, program), tint, shadow], frameCount: 1, label: $"inside {inside}");
         }
-        var shown = EffectParity.ToScript(new OutlineEffect(), program);
-        Assert.False(ScriptDefinition.Definition.ErasesSource(shown));
-        Assert.True(ScriptDefinition.Definition.ErasesSource(EffectParity.ToScript(new OutlineEffect { HideOriginal = true }, program)));
     }
 
     /// <summary>그림을 아래로 3px 옮기는 스크립트(여백 아래 3).</summary>
-    private static string MoverSource(bool clips) =>
-        "effect({ name: 'mover " + clips + "', clipsBySource: " + (clips ? "true" : "false") + ", padding: [0, 0, 0, 3], render(img) {\n"
+    private const string MoverSource =
+        "effect({ name: 'mover', padding: [0, 0, 0, 3], render(img) {\n"
         + "  const w = img.width, h = img.height, d = img.data;\n"
         + "  for (let y = h - 1; y >= 0; y--) for (let x = 0; x < w; x++) for (let c = 0; c < 4; c++) {\n"
         + "    const i = (y * w + x) * 4 + c;\n"
         + "    d[i] = y >= 3 ? d[((y - 3) * w + x) * 4 + c] : 0;\n"
         + "  }\n"
         + "} });";
-
-    private static ScriptEffectProgram Parse(string source)
-    {
-        var result = ScriptEffectProgram.Parse(source);
-        Assert.True(result.Success, string.Join("\n", result.Errors));
-        return result.Program;
-    }
 
     /// <summary>
     /// 무거운 묶음(Scale2x로 8배 키우는 회전, 픽셀마다 그라데이션을 고르는 외곽선)에 쓰는 입력: 기본 입력에서 병아리 둘을 뺀 것 —

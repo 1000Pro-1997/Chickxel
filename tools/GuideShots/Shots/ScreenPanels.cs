@@ -1,8 +1,10 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.VisualTree;
 using Chickxel.App;
+using Chickxel.App.Localization;
 using Chickxel.Core.Model;
 using static GuideShots.ScreenDemo;
 using static GuideShots.ScreenShot;
@@ -217,6 +219,55 @@ internal static class ScreenPanelShots
         }
     }
 
+    /// <summary>
+    /// 다른 창의 색 고르기(색 바꾸기 창의 첫 색 칸): 6 = 색 팝업의 ⑫ 그림에서 집기 ⑬ 화면에서 집기,
+    /// 7 = 그림에서 집기 창(⑭ 크게 띄운 그림 — 올린 픽셀 테두리 ⑮ 아래 줄의 색·HEX·좌표).
+    /// </summary>
+    [Shot("screen-color-picker-popup")]
+    public static void ColorPopup(ShotKit k)
+    {
+        var main = Open(k);
+        Build(k, main);
+        k.Dialog(() => k.Command("편집/색 바꾸기…"), w =>
+        {
+            // 팝업(폭 약 480)이 창 그림 안에 다 들어가게 창을 넓힌다.
+            w.SizeToContent = SizeToContent.Manual;
+            w.Width = 760;
+            w.Height = 640;
+            ShotKit.Pump(300);
+            var field = ShotKit.Get<ColorField>(w, "_from");
+            k.Click((Control)field.Children[0], settleMs: 0);
+            ShotKit.Pump(600);
+            var popup = PopupArea(k, w) ?? throw new InvalidOperationException("no color popup");
+            Button PopupButton(string text) => ShotKit.OpenPopups.Select(p => p.Child).OfType<Control>()
+                .SelectMany(ShotKit.All<TextBlock>).First(t => t.Text == text).GetVisualAncestors().OfType<Button>().First();
+            var fromImage = PopupButton(UiStrings.ColorPick_FromImage);
+            var fromScreen = PopupButton(UiStrings.ColorPick_FromScreen);
+            Shot(k, w, "screen-color-picker-6", popup.Union(ScreenTimelineShots.InWindow(w, field)).Inflate(8),
+                [Left(ScreenTimelineShots.InWindow(w, fromImage)), Left(ScreenTimelineShots.InWindow(w, fromScreen))], 12);
+
+            // 7: 그림에서 집기 창 — 몸 가운데쯤 불투명한 픽셀에 마우스를 올려 아래 줄에 색·HEX·좌표가 보이게
+            k.Dialog(() => fromImage.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)), pw =>
+            {
+                pw.Width = 440;
+                pw.Height = 560;
+                ShotKit.Pump(400);
+                var view = ShotKit.Get<Control>(pw, "_view");
+                var image = ShotKit.Get<PixelImage>(view, "Image");
+                var rect = ShotKit.Get<Rect>(view, "ImageRect");
+                double s = ShotKit.Get<double>(view, "Scale");
+                var (x, y) = Enumerable.Range(0, image.Width * image.Height)
+                    .Select(i => (X: i % image.Width, Y: i / image.Width))
+                    .Where(p => image.Get(p.X, p.Y).A == 255)
+                    .MinBy(p => Math.Abs(p.X - image.Width / 2.0) + Math.Abs(p.Y - image.Height * 0.45));
+                var v = ShotKit.Bounds(view, pw);
+                k.Hover(pw, new Point(v.X + rect.X + (x + 0.5) * s, v.Y + rect.Y + (y + 0.5) * s));
+                var status = (Control)ShotKit.Get<Control>(pw, "_info").Parent!;
+                k.Save(pw, "screen-color-picker-7", marks: [(Control)view.Parent!, Left(ShotKit.Bounds(status, pw))], firstNumber: 14);
+            }, settleMs: 600);
+        }, settleMs: 600);
+    }
+
     /// <summary>미리보기: 1 = ① 재생 화면 ② FPS ③ 배율 단추 ④ 배경, 2 = ⑤ 그림 위 우클릭 메뉴, 3 = ⑥ 배경 목록.</summary>
     [Shot("screen-preview")]
     public static void Preview(ShotKit k)
@@ -229,7 +280,7 @@ internal static class ScreenPanelShots
         var fps = U(main, ShotKit.FindText(preview, "FPS"), ShotKit.Get<Control>(preview, "_fps"));
         var p = ShotKit.Bounds(preview, main);
         Shot(k, main, null, p,
-            [Left(ShotKit.Bounds(view, main)), Above(fps), Above(ShotKit.Bounds(ShotKit.Get<Control>(preview, "_scaleButton"), main)), Above(ShotKit.Bounds(ShotKit.Get<Control>(preview, "_background"), main))],
+            [Left(ShotKit.Bounds(view, main)), Above(fps), Above(ShotKit.Bounds(ShotKit.Get<Control>(preview, "_scaleGroup"), main)), Above(ShotKit.Bounds(ShotKit.Get<Control>(preview, "_backgroundGroup"), main))],
             only: [p]);
 
         // 2: 그림 위 우클릭 메뉴
@@ -240,13 +291,12 @@ internal static class ScreenPanelShots
         PopupMenus.CloseAll();
         k.Settle(200);
 
-        // 3: 배경 목록
-        var background = ShotKit.Get<ComboBox>(preview, "_background");
-        background.IsDropDownOpen = true;
+        // 3: 배경 목록(배경 단추 옆 아래 화살표로 연 것)
+        ShotKit.Call(preview, "ShowBackgroundMenu", ShotKit.Get<Control>(preview, "_backgroundGroup"));
         k.Settle(500);
         var list = PopupArea(k, main) ?? throw new InvalidOperationException("no background list");
         Shot(k, main, "screen-preview-3", p.Union(list).Inflate(4), [Pop(list)], 6, only: [p, list]);
-        background.IsDropDownOpen = false;
+        PopupMenus.CloseAll();
     }
 
     /// <summary>

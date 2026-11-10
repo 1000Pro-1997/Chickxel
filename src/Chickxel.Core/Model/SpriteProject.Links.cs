@@ -14,6 +14,31 @@ public readonly record struct CelLinkMark(int Group, int Color)
 /// <summary>셀 링크 풀기 결과(<see cref="SpriteProject.UnlinkCels"/>): <see cref="Unlinked"/> = 링크를 푼 셀 수, <see cref="Baked"/> = 효과 끝 모습을 보이는 그대로 그림에 넣은 셀 수(링크가 남은 칸 포함).</summary>
 public readonly record struct UnlinkResult(int Unlinked, int Baked);
 
+/// <summary>
+/// 붙여넣기용 셀 사본(<see cref="SpriteProject.CopyCels"/> → <see cref="SpriteProject.PasteCels"/>): 복사할 때 그림의 사본과, 링크된 셀이었으면
+/// 그 링크 묶음(같이 쓰던 그림)과 보이던 색. 그림은 고치지 않는다(붙일 때 사본을 넣음).
+/// </summary>
+public sealed class CelCopy
+{
+    internal CelCopy(PixelImage image, PixelImage? link, int linkColor)
+    {
+        Image = image;
+        Link = link;
+        LinkColor = linkColor;
+    }
+
+    /// <summary>복사할 때 그림(사본).</summary>
+    public PixelImage Image { get; }
+
+    /// <summary>링크된 셀이었으면 그 묶음 그림(복사한 문서의 셀 그림 그대로), 아니면 null.</summary>
+    internal PixelImage? Link { get; }
+
+    /// <summary>링크 묶음 색 번호(<see cref="SpriteProject.LinkColorNames"/>, 링크가 아니면 -1).</summary>
+    public int LinkColor { get; }
+
+    public bool IsLinked => Link is not null;
+}
+
 // 링크된 셀: 같은 레이어(부위면 같은 스킨)의 여러 프레임 셀이 그림 하나(같은 PixelImage)를 같이 쓴다.
 // 스트로크는 그 그림을 그 자리에서 고치므로 링크된 셀이 모두 함께 바뀌고, 셀 내용을 새 그림으로 바꾸는 편집(SetCel·MapCels·옮기기·변형·
 // 캔버스·레이어 크기 등)도 링크된 셀 모두에 같은 새 그림을 넣어 링크를 지킨다. 캔버스 밖 그림도 링크된 셀끼리 같다.
@@ -522,7 +547,7 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 지금 스킨의 셀 하나만 새 그림으로 갈아 끼운다(null = 비우기, 실행취소됨): 링크된 셀이면 이 셀만 링크에서 빠지고 다른 셀은 그대로다
-    /// (타임라인 붙여넣기·옮기기처럼 셀 자체를 바꿀 때). 셀 내용을 고쳐 링크된 셀도 함께 바꾸려면 <see cref="SetCel"/>.
+    /// (앞 프레임 그림 복사처럼 셀 자체를 바꿀 때 — 셀 사본을 링크째 붙이려면 <see cref="PasteCels"/>). 셀 내용을 고쳐 링크된 셀도 함께 바꾸려면 <see cref="SetCel"/>.
     /// </summary>
     public void PlaceCel(int layerIndex, int frameIndex, PixelImage? image, string? label = null)
     {
@@ -531,6 +556,102 @@ public sealed partial class SpriteProject
         {
             if (image is null) _cels.Remove(key);
             else _cels[key] = image;
+        });
+    }
+
+    /// <summary>
+    /// 레이어 <paramref name="layer"/>의 프레임 <paramref name="frames"/> 셀(지금 스킨 자신의 셀, 빈 셀 = null)을 붙여넣기용으로 복사한다(<see cref="PasteCels"/>).
+    /// <paramref name="links"/>면 링크된 셀은 그 묶음·색도 담고, 아니면 그림만. 같은 그림을 쓰던 셀은 사본 하나를 같이 쓴다. 그룹이면 모두 null.
+    /// </summary>
+    public CelCopy?[] CopyCels(Layer layer, IReadOnlyList<int> frames, bool links = true)
+    {
+        var result = new CelCopy?[frames.Count];
+        if (layer.IsGroup) return result;
+        var skin = ActiveKey(layer);
+        var marks = links ? LinkMarks(_layers.IndexOf(layer)) : null;
+        var clones = new Dictionary<PixelImage, PixelImage>(ReferenceEqualityComparer.Instance);
+        for (int i = 0; i < frames.Count; i++)
+        {
+            int f = frames[i];
+            if (!_cels.TryGetValue(new(layer, _frames[f], skin), out var image)) continue;
+            if (!clones.TryGetValue(image, out var clone)) clones[image] = clone = image.Clone();
+            var mark = marks?[f] ?? CelLinkMark.None;
+            result[i] = new CelCopy(clone, mark.IsLinked ? image : null, mark.Color);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// 셀 사본(<see cref="CopyCels"/>)을 칸(레이어 번호, 프레임 번호 — 지금 스킨의 셀)에 놓는다(실행취소 한 단계, <see cref="Edit(string, ProjectChange, Action)"/> 안이면 그 단계에 든다).
+    /// <see cref="PlaceCel"/>처럼 그 셀만 갈아 끼우므로 링크된 칸이면 그 칸만 원래 묶음에서 빠진다. null = 비움.
+    /// <para>
+    /// 링크된 셀이었던 사본은 링크를 지킨다: 놓을 행(레이어·지금 스킨)에 그 묶음 그림이 (붙이기 전에) 있으면 그 묶음에 들어가고(같은 그림·색, 일반 레이어면
+    /// 캔버스 밖 그림도 묶음과 같게), 없으면(다른 레이어·다른 문서, 묶음이 사라짐) 같은 묶음에서 온 사본이 한 행에 둘 이상일 때 그 칸들이 새 묶음 하나를
+    /// 같이 쓴다(복사할 때 그림, 색 = 원래 색 — 그 행의 다른 묶음이 쓰는 색이면 쓰지 않은 첫 색, 캔버스 밖 그림 없음). 하나뿐이면 따로 둔다.
+    /// </para>
+    /// 그룹이면 <see cref="InvalidOperationException"/>, 그림 크기가 셀 크기와 다르면 <see cref="ArgumentException"/>.
+    /// </summary>
+    public void PasteCels(IReadOnlyList<(int Layer, int Frame, CelCopy? Cel)> cels, string? label = null)
+    {
+        // 놓을 행에 남아 있는 묶음 칸(붙이기 전 모습으로 본다 — 없으면 null)
+        var members = new Dictionary<(Layer, Skin?, PixelImage), CelKey?>();
+        CelKey? MemberOf(CelKey key, PixelImage link)
+        {
+            var row = (key.Layer, key.Skin, link);
+            if (members.TryGetValue(row, out var member)) return member;
+            member = null;
+            foreach (var frame in _frames)
+            {
+                var k = key with { Frame = frame };
+                if (_cels.TryGetValue(k, out var image) && ReferenceEquals(image, link)) { member = k; break; }
+            }
+            return members[row] = member;
+        }
+        var plan = new List<(CelKey Key, CelCopy? Cel, bool Join, CelOverflow? Overflow)>();
+        var regroup = new Dictionary<(Layer, Skin?, PixelImage), List<CelKey>>();
+        foreach (var (li, fi, cel) in cels)
+        {
+            var key = CelKeyFor(li, fi, cel?.Image);
+            if (cel?.Link is { } link)
+            {
+                if (MemberOf(key, link) is { } member)
+                {
+                    plan.Add((key, cel, true, _overflow.TryGetValue(member, out var o) ? o : null));
+                    continue;
+                }
+                var row = (key.Layer, key.Skin, link);
+                if (!regroup.TryGetValue(row, out var keys)) regroup[row] = keys = [];
+                keys.Add(key);
+            }
+            plan.Add((key, cel, false, null));
+        }
+        foreach (var (row, keys) in regroup.Where(r => r.Value.Count < 2).ToList()) regroup.Remove(row);
+        var grouped = regroup.Values.SelectMany(k => k).ToHashSet();
+        Edit(label ?? DomainStrings.Project_ChangeCel, ProjectChange.Pixels, () =>
+        {
+            foreach (var (key, cel, join, overflow) in plan)
+            {
+                // 새 묶음 칸은 아래에서 넣는다(색을 고를 때 그 칸의 예전 그림을 세지 않게 먼저 비움)
+                if (cel is null || grouped.Contains(key)) _cels.Remove(key);
+                else if (!join) _cels[key] = cel.Image.Clone();
+                else
+                {
+                    _cels[key] = cel.Link!;
+                    if (key.Layer.Kind == LayerKind.Normal) SetOverflow(key, overflow);
+                }
+            }
+            foreach (var (row, keys) in regroup)
+            {
+                var (layer, skin, _) = row;
+                var copy = plan.First(s => s.Key == keys[0]).Cel!;
+                bool taken = LinkGroupsOf(layer, skin).Any(g => ColorOf(g.Image) == copy.LinkColor);
+                var image = Tagged(copy.Image.Clone(), copy.LinkColor >= 0 && !taken ? copy.LinkColor : NextLinkColor(layer, skin));
+                foreach (var key in keys)
+                {
+                    _cels[key] = image;
+                    if (layer.Kind == LayerKind.Normal) SetOverflow(key, null);
+                }
+            }
         });
     }
 
