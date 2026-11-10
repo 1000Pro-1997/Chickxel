@@ -161,7 +161,7 @@ public sealed partial class CodexProvider : AiProvider
 
 /// <summary>
 /// Codex 대화 하나. 메시지마다 <c>codex exec --json</c>(이어 가면 <c>codex exec resume &lt;스레드&gt;</c>) 프로세스를 하나 띄워
-/// JSONL 이벤트를 읽는다. 편집기 MCP 서버만 쓰게 하고(셸·웹 검색·앱·플러그인 끔, 읽기 전용 샌드박스, MCP 도구는 묻지 않고 허용),
+/// JSONL 이벤트를 읽는다. 편집기 MCP 서버만 쓰게 하고(셸·앱·플러그인 끔, 웹 검색은 채팅에서 사용자가 시킬 때만, 읽기 전용 샌드박스, MCP 도구는 묻지 않고 허용),
 /// 시스템 프롬프트는 <c>developer_instructions</c>로 넘긴다. 사용자의 Codex 설정(로그인·기본 모델)은 그대로 쓴다.
 /// 이어 가기에 실패하면 새 대화로 같은 메시지를 다시 보낸다. 이벤트는 모두 UI 스레드에서 발생한다(끝낸 프로세스의 이벤트는 버림).
 /// </summary>
@@ -341,14 +341,17 @@ public sealed class CodexSession : IChatSession
             obj => Handle(gen, obj), (code, tail) => OnExit(gen, code, tail));
     }
 
-    /// <summary><c>-c</c> 설정: 편집기 MCP 서버만, MCP 도구는 묻지 않고 허용(그림 생성처럼 오래 걸리는 도구도 기다림), 읽기 전용, 웹 검색·알림·AGENTS.md 끔, 시스템 프롬프트.</summary>
+    /// <summary>
+    /// <c>-c</c> 설정: 편집기 MCP 서버만, MCP 도구는 묻지 않고 허용(그림 생성처럼 오래 걸리는 도구도 기다림), 읽기 전용, 알림·AGENTS.md 끔, 시스템 프롬프트.
+    /// 웹 검색은 채팅(<see cref="McpScope.Full"/>)에서만 켠다 — 사용자가 시킬 때만 쓰라는 규칙은 <see cref="AiCli.SystemPrompt"/>. 효과 만들기 AI 칸은 끈다.
+    /// </summary>
     private IEnumerable<string> ConfigOverrides()
     {
         _mcp.Start();
         yield return $"mcp_servers={{{McpServer.ServerName}={{url={TomlString(_mcp.Url)},bearer_token_env_var={TomlString(TokenVariable)},default_tools_approval_mode=\"approve\",tool_timeout_sec={ToolTimeoutSeconds}}}}}";
         yield return "approval_policy=\"never\"";
         yield return "sandbox_mode=\"read-only\"";
-        yield return "web_search=\"disabled\"";
+        yield return _scope == McpScope.Full ? "web_search=\"live\"" : "web_search=\"disabled\"";
         yield return "notify=[]";
         yield return "project_doc_max_bytes=0";
         yield return "developer_instructions=" + TomlString(_systemPrompt);
@@ -522,6 +525,11 @@ public sealed class CodexSession : IChatSession
                     bool failed = error is not null || AiCli.Str(item["status"]) == "failed" || AiCli.Bool(item["result"]?["is_error"]) == true;
                     ToolResult?.Invoke(new ToolResultInfo(id, failed, error ?? ResultText(item["result"]?["content"])));
                 }
+                break;
+            case "web_search":
+                // 채팅에서 사용자가 시켜 한 웹 검색. 시작 이벤트는 검색어가 비어 있어 끝날 때 결과 글로 검색어를 보인다.
+                if (started) ToolUse?.Invoke(new ToolUseInfo(id, "web_search", AiCli.Str(item["query"]) is { Length: > 0 } q ? new JsonObject { ["query"] = q } : null));
+                else if (completed) ToolResult?.Invoke(new ToolResultInfo(id, AiCli.Str(item["status"]) == "failed", AiCli.Str(item["query"]) ?? ""));
                 break;
             case "command_execution":
                 // 셸 도구는 꺼 두지만 켜진 버전이면 무엇을 했는지는 보인다.

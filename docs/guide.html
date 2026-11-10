@@ -4272,7 +4272,7 @@
 <li><strong>되돌리기</strong>: AI의 답 하나가 실행취소 한 단계입니다. 답 아래 <strong><a class="term" href="#ai-undo">이 단계 되돌리기</a></strong>나 <span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span>로 통째로 되돌립니다(<a href="#ai-undo">되돌리기</a>).</li>
 <li><strong><a class="term" href="#screen-timeline">잠긴 레이어</a></strong>: AI는 <a class="term" href="#screen-timeline">타임라인</a>에서 잠근 레이어를 언제나 건드리지 않습니다(<a href="#ai-locked">잠긴 레이어 지키기</a>).</li>
 <li><strong><a class="term" href="#ai-file-only">지금 그림만</a></strong>: 켜면 AI가 보내는 순간 열린 그림 하나만 고치고 다른 파일을 열거나 만들지 못합니다(<a href="#ai-file-only">지금 그림만 고치게 하기</a>).</li>
-<li><strong>저장과 도구</strong>: AI는 부탁할 때만 저장하고, 셸 명령·웹 검색 같은 CLI 기본 기능은 꺼진 채 Chickxel 도구만 씁니다(<a href="#ai-how">작동 방식과 연결</a>).</li>
+<li><strong>저장과 도구</strong>: AI는 부탁할 때만 저장하고, 셸 명령 같은 CLI 기본 기능은 꺼진 채 Chickxel 도구만 씁니다. 웹 검색은 사용자가 직접 시킬 때만 씁니다(<a href="#ai-how">작동 방식과 연결</a>).</li>
 </ul>
 
 <h3 id="ai-overview">무엇을 할 수 있나요</h3>
@@ -4386,17 +4386,17 @@
 <div class="table-wrap"><table>
 <thead><tr><th>CLI</th><th>실행 설정</th></tr></thead>
 <tbody>
-<tr><td>Claude Code</td><td>기본 도구를 모두 끄고(<code>--tools ""</code>) Chickxel <a class="term" href="#ai-edits">MCP 도구</a>만 허용합니다. 사용자 설정의 다른 MCP 서버는 읽지 않습니다.</td></tr>
-<tr><td>Codex CLI</td><td>셸·웹 검색·브라우저·이미지 생성 같은 기능을 끄고 읽기 전용 샌드박스로 실행합니다. Chickxel MCP 도구는 묻지 않고 허용하며, 작업 폴더의 <code>AGENTS.md</code> 같은 프로젝트 문서는 읽지 않습니다.</td></tr>
+<tr><td>Claude Code</td><td>기본 도구는 웹 검색·웹 읽기만 남기고 모두 끄며(<code>--tools "WebSearch,WebFetch"</code>) Chickxel <a class="term" href="#ai-edits">MCP 도구</a>만 허용합니다. 웹 도구는 사용자가 찾아보라고 시킬 때만 씁니다(<a href="#ai-references">참고 자료</a>의 웹에서 찾아보기). 사용자 설정의 다른 MCP 서버는 읽지 않습니다.</td></tr>
+<tr><td>Codex CLI</td><td>셸·브라우저·이미지 생성 같은 기능을 끄고 읽기 전용 샌드박스로 실행합니다. 웹 검색(<code>web_search="live"</code>)은 켜 두지만 사용자가 찾아보라고 시킬 때만 씁니다. Chickxel MCP 도구는 묻지 않고 허용하며, 작업 폴더의 <code>AGENTS.md</code> 같은 프로젝트 문서는 읽지 않습니다.</td></tr>
 </tbody>
 </table></div>
 <ul>
-<li><a href="#ai-generate">그림 생성 → 픽셀 변환</a>은 그 그림을 만드는 동안만 이미지 생성을 켠 Codex CLI를 따로 실행합니다.</li>
-<li><a href="#screen-effect-maker">효과 만들기</a> 창의 AI 칸은 다른 토큰을 써서 문서·<a class="term" href="#ai-references">참고 자료</a>를 읽는 도구와 그 편집기의 원문 바꾸기만 쓸 수 있습니다.</li>
+<li><a href="#ai-generate">그림 생성 → 픽셀 변환</a>은 그 그림을 만드는 동안만 이미지 생성을 켠 Codex CLI를 따로 실행합니다(웹 검색은 끔).</li>
+<li><a href="#screen-effect-maker">효과 만들기</a> 창의 AI 칸은 다른 토큰을 써서 문서·<a class="term" href="#ai-references">참고 자료</a>를 읽는 도구와 그 편집기의 원문 바꾸기만 쓸 수 있습니다(웹 검색은 끔).</li>
 </ul>
 <h4>어디로 가고 어디에 남나요</h4>
 <ul>
-<li>보낸 글과 첨부 그림, AI가 도구로 본 그림과 문서 정보는 CLI를 거쳐 그 회사의 모델로 갑니다.</li>
+<li>보낸 글과 첨부 그림, AI가 도구로 본 그림과 문서 정보는 CLI를 거쳐 그 회사의 모델로 갑니다. 웹 검색을 시키면 검색어와 읽은 페이지 내용도 그 모델로 갑니다.</li>
 <li>대화는 이 컴퓨터의 <code>&lt;설정 폴더&gt;/Chickxel/Chats/</code> 아래 AI별 폴더에 저장됩니다(<a href="#ai-history">지난 대화 이어 하기</a>).</li>
 </ul>
 
@@ -4713,6 +4713,7 @@ args = ["--mcp"]</code></pre>
 <ul>
 <li><strong>부탁하기</strong>: "참고 자료의 슬라임처럼 32px 박쥐 그려 줘"처럼 말하면 AI가 참고 자료를 찾아 보고 그립니다. 채팅 도움말(물음표 단추)에 <strong>참고 자료</strong> 도구 묶음과 이 예시가 있습니다.</li>
 <li><strong>채팅에서 넣기</strong>: "이거 참고 자료에 넣어 둘래"라고 하면 AI가 지금 캔버스(또는 <a class="term" href="#screen-timeline">레이어</a>, 프레임 범위)를 제목·설명·<span class="nolink">태그</span>와 함께 넣습니다. 참고 자료에 넣기·설명 붙이기는 자료 폴더에만 쓰므로 <a href="#ai-file-only">지금 그림만</a>을 켜도 됩니다.</li>
+<li><strong>웹에서 찾아보기</strong>: 참고 자료에 없는 것은 "웹에서 찾아보고 그려 줘"처럼 직접 시키면 AI가 웹을 검색하고 읽은 내용을 보고 그립니다(Claude는 웹 검색·웹 읽기, Codex는 웹 검색). 시키지 않으면 참고 자료에 없어도 스스로 찾지 않고, 그림을 첨부하거나 웹 검색을 부탁하라고 권합니다. 웹 결과는 글이라 페이지의 그림은 보지 못하고 읽은 설명으로 그립니다. 검색은 채팅에 <a class="term" href="#ai-edits">도구 줄</a>(<code>WebSearch</code>·<code>WebFetch</code>·<code>web_search</code>)로 보입니다.</li>
 </ul>
 <h4>폴더와 파일</h4>
 <figure class="shot"><img src="assets/guide/ai-references-3.png" alt="환경 설정의 AI 참고 자료 탭" width="673" height="301" loading="lazy"><figcaption>⑭ 참고 자료 폴더 · ⑮ 바꾸기…(Change…) · ⑯ 기본 폴더(Default) · ⑰ 폴더 열기(Open folder) · ⑱ 기본 예시 보이기</figcaption></figure>

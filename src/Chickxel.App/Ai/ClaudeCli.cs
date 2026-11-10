@@ -263,8 +263,8 @@ public sealed class ClaudeSession : IChatSession
     /// <summary>Claude Code가 init에서 알려 준 chickxel 서버 상태("connected"·"pending"·"failed" 등, 목록에 없으면 "목록에 없음").</summary>
     private string? _mcpStatus;
     /// <summary>
-    /// MCP 접두어 없이 부른 도구 호출 id. 기본 도구를 모두 끄므로(<c>--tools ""</c>) Claude Code가 늘 "No such tool"로 돌려보내고
-    /// 모델이 곧 제 이름으로 다시 부른다 — 사용자에게는 오류 줄로만 보이므로 호출·결과를 모두 알리지 않는다.
+    /// MCP 접두어 없이 부른 도구 호출 id(채팅에서 켠 웹 도구 <see cref="AiCli.ClaudeWebTools"/>는 빼고). 그 밖의 기본 도구는 모두 끄므로 Claude Code가 늘
+    /// "No such tool"로 돌려보내고 모델이 곧 제 이름으로 다시 부른다 — 사용자에게는 오류 줄로만 보이므로 호출·결과를 모두 알리지 않는다.
     /// </summary>
     private readonly HashSet<string> _rejectedToolIds = new(StringComparer.Ordinal);
 
@@ -384,8 +384,9 @@ public sealed class ClaudeSession : IChatSession
             "--system-prompt-file", WriteSystemPromptFile(_systemPrompt),
             "--strict-mcp-config",
             "--mcp-config", _mcp.WriteMcpConfigFile(_scope),
-            "--allowedTools", "mcp__" + McpServer.ServerName,
-            "--tools", "",
+            "--allowedTools", _scope == McpScope.Full ? string.Join(",", ["mcp__" + McpServer.ServerName, .. AiCli.ClaudeWebTools]) : "mcp__" + McpServer.ServerName,
+            // 기본 도구는 끄되, 채팅(Full)은 사용자가 시킬 때만 쓰는 웹 검색·웹 읽기를 남긴다(AiCli.SystemPrompt의 규칙).
+            "--tools", _scope == McpScope.Full ? string.Join(",", AiCli.ClaudeWebTools) : "",
         };
         if (!string.IsNullOrEmpty(Model)) args.AddRange(["--model", Model]);
         if (SessionId is not null) args.AddRange(["--resume", SessionId]);
@@ -547,7 +548,9 @@ public sealed class ClaudeSession : IChatSession
                             var id = AiCli.Str(part["id"]) ?? "";
                             if (!name.StartsWith(ToolPrefix, StringComparison.Ordinal))
                             {
-                                _rejectedToolIds.Add(id);
+                                // 채팅에서 켠 웹 도구는 도구 줄로 보이고, 그 밖의 이름은 Claude Code가 늘 돌려보낸다(위 _rejectedToolIds).
+                                if (_scope == McpScope.Full && AiCli.ClaudeWebTools.Contains(name)) ToolUse?.Invoke(new ToolUseInfo(id, name, part["input"] as JsonObject));
+                                else _rejectedToolIds.Add(id);
                                 break;
                             }
                             ToolUse?.Invoke(new ToolUseInfo(id, name[ToolPrefix.Length..], part["input"] as JsonObject));

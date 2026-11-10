@@ -4272,7 +4272,7 @@
 <li><strong>Undo</strong>: each AI reply is one undo step. Undo it all at once with <strong><a class="term" href="#ai-undo">Undo this step</a></strong> under the reply or <span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span> (<a href="#ai-undo">Undoing</a>).</li>
 <li><strong><a class="term" href="#screen-timeline">Locked layers</a></strong>: the AI never touches layers locked in the <a class="term" href="#screen-timeline">timeline</a> (<a href="#ai-locked">Protecting locked layers</a>).</li>
 <li><strong><a class="term" href="#ai-file-only">Current file only</a></strong>: when on, the AI edits only the image open when you send and can't open or create other files (<a href="#ai-file-only">Limiting edits to the current file</a>).</li>
-<li><strong>Saving and tools</strong>: the AI saves only when asked, and runs with the CLI's built-in features such as shell commands and web search turned off, using only Chickxel's tools (<a href="#ai-how">How it works</a>).</li>
+<li><strong>Saving and tools</strong>: the AI saves only when asked, and runs with the CLI's built-in features such as shell commands turned off, using only Chickxel's tools. It searches the web only when you ask it to (<a href="#ai-how">How it works</a>).</li>
 </ul>
 
 <h3 id="ai-overview">What it can do</h3>
@@ -4386,17 +4386,17 @@
 <div class="table-wrap"><table>
 <thead><tr><th>CLI</th><th>Launch settings</th></tr></thead>
 <tbody>
-<tr><td>Claude Code</td><td>All built-in tools are turned off (<code>--tools ""</code>) and only Chickxel's <a class="term" href="#ai-edits">MCP tools</a> are allowed. Other MCP servers from your settings aren't loaded.</td></tr>
-<tr><td>Codex CLI</td><td>Features such as the shell, web search, the browser and image generation are turned off, and it runs in a read-only sandbox. Chickxel's MCP tools are allowed without asking, and project documents such as <code>AGENTS.md</code> in the working folder aren't read.</td></tr>
+<tr><td>Claude Code</td><td>All built-in tools except web search and web fetch are turned off (<code>--tools "WebSearch,WebFetch"</code>) and only Chickxel's <a class="term" href="#ai-edits">MCP tools</a> are allowed. The web tools are used only when you ask the AI to look something up (see Looking it up on the web under <a href="#ai-references">References</a>). Other MCP servers from your settings aren't loaded.</td></tr>
+<tr><td>Codex CLI</td><td>Features such as the shell, the browser and image generation are turned off, and it runs in a read-only sandbox. Web search (<code>web_search="live"</code>) stays on but is used only when you ask the AI to look something up. Chickxel's MCP tools are allowed without asking, and project documents such as <code>AGENTS.md</code> in the working folder aren't read.</td></tr>
 </tbody>
 </table></div>
 <ul>
-<li><a href="#ai-generate">Generate image → pixelate</a> starts a separate Codex CLI with image generation turned on, only while it makes that image.</li>
-<li>The AI pane of the <a href="#screen-effect-maker">Effect Maker</a> window uses a different token and can only use tools that read the document and references, plus replacing that editor's source.</li>
+<li><a href="#ai-generate">Generate image → pixelate</a> starts a separate Codex CLI with image generation turned on, only while it makes that image (web search off).</li>
+<li>The AI pane of the <a href="#screen-effect-maker">Effect Maker</a> window uses a different token and can only use tools that read the document and references, plus replacing that editor's source (web search off).</li>
 </ul>
 <h4>What is sent and what is stored</h4>
 <ul>
-<li>Your messages and attached images, and the images and document details the AI looks at with tools, go through the CLI to that company's model.</li>
+<li>Your messages and attached images, and the images and document details the AI looks at with tools, go through the CLI to that company's model. When you ask for a web search, the search terms and the pages it reads go to that model too.</li>
 <li>Chats are saved on this computer in a per-AI folder under <code>&lt;settings folder&gt;/Chickxel/Chats/</code> (<a href="#ai-history">Continuing past chats</a>).</li>
 </ul>
 
@@ -4713,6 +4713,7 @@ args = ["--mcp"]</code></pre>
 <ul>
 <li><strong>Asking</strong>: say something like "Draw a 32px bat like the slime in the references." and the AI looks up the references before drawing. The chat help (question-mark button) has a <strong>References</strong> tool <span class="nolink">group</span> and this example.</li>
 <li><strong>Adding from the chat</strong>: say "save this to my references" and the AI adds the current canvas (or a <a class="term" href="#screen-timeline">layer</a> or frame range) with a title, description and <span class="nolink">tags</span>. Adding and captioning references only write to the library folder, so they work even with <a href="#ai-file-only">Current file only</a> on.</li>
+<li><strong>Looking it up on the web</strong>: for things that aren't in your references, ask directly, for example "look it up on the web and draw it", and the AI searches the web and draws from what it reads (Claude: web search and web fetch; Codex: web search). It never searches unprompted, even when the references have nothing; instead it suggests attaching an image or asking for a web search. Web results are text, so the AI can't see pictures on the pages and draws from the descriptions it read. Searches show in the chat as <a class="term" href="#ai-edits">tool lines</a> (<code>WebSearch</code>, <code>WebFetch</code>, <code>web_search</code>).</li>
 </ul>
 <h4>Folder and files</h4>
 <figure class="shot"><img src="../assets/guide/ai-references-3.png" alt="The AI references tab in Preferences" width="673" height="301" loading="lazy"><figcaption>⑭ References folder · ⑮ Change… · ⑯ Default · ⑰ Open folder · ⑱ Show built-in examples</figcaption></figure>

@@ -2,6 +2,12 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.118 (2026-11-11)
+### AI chat: web search when you ask
+- When you explicitly ask in AI chat, for example "look it up on the web and draw it", the AI searches the web and uses what it reads (Claude: web search and web fetch; Codex: web search).
+- It never searches unprompted, even when the references have nothing; it suggests attaching an image or asking for a web search instead. Searches appear as tool lines.
+- Web results are text, so the AI can't see pictures on the pages. The Effect Maker's AI pane still doesn't use web search.
+
 ## v1.14.117 (2026-11-11)
 ### External AI connection: other AI apps use Chickxel's tools
 - Preferences > AI Status has **Allow external AI apps** (off by default). When on, other AI apps such as Claude Desktop, Cursor and Claude Code use the drawing, layer and effect tools of the running Chickxel.
