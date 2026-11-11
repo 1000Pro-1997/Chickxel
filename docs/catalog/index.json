@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "page": 1,
   "pageCount": 1,
-  "totalCount": 37,
+  "totalCount": 34,
   "next": null,
   "packages": [
     {
@@ -1174,126 +1174,6 @@
       },
       "published": "2026-10-28",
       "updated": "2026-10-28",
-      "review": "official"
-    },
-    {
-      "id": "chickxel.shapes.christmas-bells",
-      "version": "1.0.0",
-      "name": "Christmas Bells \u0026 Bows",
-      "summary": "Gold and silver bells, double bells with a bow, and red and gold ribbon bows for a Christmas tree.",
-      "translations": {
-        "ko": {
-          "name": "\uD06C\uB9AC\uC2A4\uB9C8\uC2A4 \uC885\u00B7\uB9AC\uBCF8",
-          "summary": "\uD2B8\uB9AC\uC5D0 \uB2E4\uB294 \uAE08\uC0C9\u00B7\uC740\uC0C9 \uC885, \uB9AC\uBCF8\uC744 \uB2E8 \uC30D\uC885, \uBE68\uAC04\uC0C9\u00B7\uAE08\uC0C9 \uB9AC\uBCF8."
-        }
-      },
-      "tags": [
-        "shape-set",
-        "christmas",
-        "official"
-      ],
-      "author": {
-        "id": "chickxel",
-        "name": "Chickxel",
-        "url": "https://1000pro-1997.github.io/Chickxel/"
-      },
-      "license": "MIT",
-      "kinds": {
-        "shape-set": 1
-      },
-      "minAppVersion": "1.14.120",
-      "package": {
-        "url": "packages/chickxel.shapes.christmas-bells-1.0.0.chickxel-asset",
-        "size": 5682,
-        "sha256": "29c8c030bfed3bfd5f696faed66780546d1e121d005051e8e81b73e7e5c452eb"
-      },
-      "preview": {
-        "url": "previews/chickxel.shapes.christmas-bells-1.0.0.png",
-        "size": 2055,
-        "sha256": "6a0ad5bceb23077396c266f8f565006259c873f7a417e68b48b3ab6cea0cc0ef"
-      },
-      "published": "2026-11-11",
-      "updated": "2026-11-11",
-      "review": "official"
-    },
-    {
-      "id": "chickxel.shapes.christmas-lights",
-      "version": "1.0.0",
-      "name": "Christmas Lights",
-      "summary": "String-light bulbs in five colors, glowing bulbs and short light strings for decorating a Christmas tree.",
-      "translations": {
-        "ko": {
-          "name": "\uD06C\uB9AC\uC2A4\uB9C8\uC2A4 \uC804\uAD6C",
-          "summary": "\uD2B8\uB9AC\uB97C \uAFB8\uBBF8\uB294 \uB2E4\uC12F \uAC00\uC9C0 \uC0C9 \uC804\uAD6C, \uBE5B\uB098\uB294 \uC804\uAD6C, \uC9E7\uC740 \uC804\uAD6C \uC904."
-        }
-      },
-      "tags": [
-        "shape-set",
-        "christmas",
-        "official"
-      ],
-      "author": {
-        "id": "chickxel",
-        "name": "Chickxel",
-        "url": "https://1000pro-1997.github.io/Chickxel/"
-      },
-      "license": "MIT",
-      "kinds": {
-        "shape-set": 1
-      },
-      "minAppVersion": "1.14.120",
-      "package": {
-        "url": "packages/chickxel.shapes.christmas-lights-1.0.0.chickxel-asset",
-        "size": 6195,
-        "sha256": "852f65b075bf9a6849508a7f4f5dff89463929a56d9ba534b1c83f626747a85c"
-      },
-      "preview": {
-        "url": "previews/chickxel.shapes.christmas-lights-1.0.0.png",
-        "size": 2108,
-        "sha256": "472c92d1a1ad7822eea85bb38ff4ec491087c4d3758680b09f8fd583ef721ac4"
-      },
-      "published": "2026-11-11",
-      "updated": "2026-11-11",
-      "review": "official"
-    },
-    {
-      "id": "chickxel.shapes.christmas-ornaments",
-      "version": "1.0.0",
-      "name": "Christmas Ornaments",
-      "summary": "Shiny baubles, a tree-top star, a candy cane, gift boxes, a pine cone and a snowflake for a Christmas tree.",
-      "translations": {
-        "ko": {
-          "name": "\uD06C\uB9AC\uC2A4\uB9C8\uC2A4 \uC7A5\uC2DD",
-          "summary": "\uD2B8\uB9AC\uC5D0 \uB2E4\uB294 \uBC18\uC9DD\uC774\uB294 \uBC29\uC6B8, \uAF2D\uB300\uAE30 \uBCC4, \uC9C0\uD321\uC774 \uC0AC\uD0D5, \uC120\uBB3C \uC0C1\uC790, \uC194\uBC29\uC6B8, \uB208\uC1A1\uC774."
-        }
-      },
-      "tags": [
-        "shape-set",
-        "christmas",
-        "official"
-      ],
-      "author": {
-        "id": "chickxel",
-        "name": "Chickxel",
-        "url": "https://1000pro-1997.github.io/Chickxel/"
-      },
-      "license": "MIT",
-      "kinds": {
-        "shape-set": 1
-      },
-      "minAppVersion": "1.14.120",
-      "package": {
-        "url": "packages/chickxel.shapes.christmas-ornaments-1.0.0.chickxel-asset",
-        "size": 5232,
-        "sha256": "d4bd4ac918d52a5fe4f928288b4ea0796f929a655eeb3d10a83de8f12647d455"
-      },
-      "preview": {
-        "url": "previews/chickxel.shapes.christmas-ornaments-1.0.0.png",
-        "size": 1853,
-        "sha256": "87dee8d770d7c7d7d081fb43d32ad34475607d471d4922ba8cd7bf4fe4a92d8d"
-      },
-      "published": "2026-11-11",
-      "updated": "2026-11-11",
       "review": "official"
     }
   ]

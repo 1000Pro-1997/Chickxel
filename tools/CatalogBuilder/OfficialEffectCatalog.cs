@@ -44,7 +44,7 @@ internal static class OfficialEffectCatalog
             if (Directory.Exists(folder))
                 foreach (var old in Directory.GetFiles(folder, "*" + AssetPackage.Extension))
                     writes[$"{packageId}/{Path.GetFileName(old)}"] = null;
-            writes[$"{packageId}/review.json"] = Review(Path.Combine(folder, "review.json"), OfficialEffectPackages.SummaryOf(program), OfficialEffectPackages.Tags(program));
+            writes[$"{packageId}/review.json"] = Review(Path.Combine(folder, "review.json"), program);
         }
         return (problems, writes);
     }
@@ -84,8 +84,8 @@ internal static class OfficialEffectCatalog
         return ScriptEffectProgram.NormalizeSource(Text(asset.Path)) == OfficialEffects.Source(id) ? null : "script source changed";
     }
 
-    /// <summary>검토 정보(<c>review.json</c> 바이트): 요약·꼬리표는 지금 선언에서, 처음 게시한 날짜는 <paramref name="existing"/>에 있던 값 그대로. 공식 모양 펜 세트도 쓴다.</summary>
-    internal static byte[] Review(string existing, string summary, IReadOnlyList<string> tags)
+    // 검토 정보: 요약·꼬리표는 지금 선언에서, 처음 게시한 날짜는 있던 값 그대로
+    private static byte[] Review(string existing, ScriptEffectProgram program)
     {
         string today = DateTime.UtcNow.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
         string published = today;
@@ -93,8 +93,8 @@ internal static class OfficialEffectCatalog
         var review = new JsonObject
         {
             ["schemaVersion"] = 1,
-            ["summary"] = summary,
-            ["tags"] = new JsonArray(tags.Select(tag => (JsonNode)JsonValue.Create(tag)!).ToArray()),
+            ["summary"] = OfficialEffectPackages.SummaryOf(program),
+            ["tags"] = new JsonArray(OfficialEffectPackages.Tags(program).Select(tag => (JsonNode)JsonValue.Create(tag)!).ToArray()),
             ["review"] = "official",
             ["published"] = published,
             ["updated"] = today,

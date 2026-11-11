@@ -8,7 +8,7 @@ namespace Chickxel.Core.IO;
 /// <summary>모양 펜 세트: 이름, 모양 고르는 순서, 모양들(알파 포함 픽셀 그대로).</summary>
 public sealed class StampSet
 {
-    /// <summary>바뀌지 않는 이름표(기본 세트는 <see cref="StampBuiltIns.Ids"/>, 사용자 세트는 GUID).</summary>
+    /// <summary>바뀌지 않는 이름표(기본 세트는 <see cref="StampBuiltIns.Ids"/>, 사용자 세트는 GUID — 예전 기본 세트에서 남은 사용자 세트는 <see cref="StampBuiltIns.RetiredIds"/>).</summary>
     public string Id { get; init; } = Guid.NewGuid().ToString("N");
     /// <summary>사용자가 붙인 이름. null = 기본 세트 이름(지금 언어로, <see cref="DisplayName"/>).</summary>
     public string? Name { get; set; }
@@ -47,7 +47,7 @@ public sealed class StampLibrary
         return library;
     }
 
-    /// <summary>기본 세트를 처음 모양으로 되돌린다: 있는 것은 그 자리에서 바꾸고, 지운 것은 기본 차례 자리에 다시 넣는다. 사용자 세트는 그대로.</summary>
+    /// <summary>기본 세트를 처음 모양으로 되돌린다: 있는 것은 그 자리에서 바꾸고, 지운 것은 기본 차례 자리에 다시 넣는다. 사용자 세트(예전 기본 세트에서 남은 것도)는 그대로.</summary>
     public void RestoreDefaults()
     {
         var builtIns = StampBuiltIns.Sets();
@@ -152,7 +152,10 @@ public sealed class StampLibrary
         Sets = Sets.Select(s => ToDto(s, s.Id, s.Name)).ToList(),
     }, Options);
 
-    /// <summary>JSON을 읽는다. 형식이 틀리거나 모양 PNG를 풀 수 없으면 null(일부만 살려 저장하다 잃지 않게 통째로 거부).</summary>
+    /// <summary>
+    /// JSON을 읽는다. 형식이 틀리거나 모양 PNG를 풀 수 없으면 null(일부만 살려 저장하다 잃지 않게 통째로 거부).
+    /// 이름 없는 예전 기본 세트(<see cref="StampBuiltIns.RetiredIds"/>)에는 그때 이름(지금 언어)을 붙여 사용자 세트로 남긴다.
+    /// </summary>
     public static StampLibrary? Parse(string json)
     {
         try
@@ -164,6 +167,8 @@ public sealed class StampLibrary
                 if (dto is null || string.IsNullOrWhiteSpace(dto.Id) || library.Find(dto.Id) is not null) continue;
                 library.Sets.Add(FromDto(dto, dto.Id));
             }
+            foreach (var set in library.Sets)
+                if (set.Name is null && StampBuiltIns.RetiredName(set.Id) is { } retired) set.Name = library.UniqueName(retired);
             library.AddNewBuiltIns(file.KnownBuiltIns ?? StampBuiltIns.FirstIds);
             return library;
         }

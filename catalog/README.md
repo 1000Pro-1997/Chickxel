@@ -36,7 +36,7 @@ catalog/
 - 에셋 하나에 패키지 하나가 기본입니다. 그래야 둘러보기에서 에셋마다 이름으로 검색되고, 미리보기가 보이고, 따로 설치·삭제·업데이트됩니다.
 - 레시피는 앱의 기본 효과를 `type`으로 부르고 그라데이션·스크립트 원문은 값으로 복사하므로, 다른 패키지에 기대는 에셋은 없습니다. 공통 기능이 필요하면 앱의 기본 효과나 스크립트 기본 함수로 넣습니다(라이브러리 패키지를 두지 않음).
 - 같이 써야 맞는 테마 세트(한 팔레트에 맞춘 그라데이션 묶음, 한 게임 스타일의 피격·사망·회복 효과 묶음)만 한 패키지에 묶습니다.
-- 공식 패키지 ID는 `chickxel.gradients.<이름>`, `chickxel.effects.<이름>`, `chickxel.shapes.<이름>`(모양 펜 세트)입니다.
+- 공식 패키지 ID는 `chickxel.gradients.<이름>`, `chickxel.effects.<이름>`입니다.
 
 ## 검사 규칙
 
@@ -71,4 +71,10 @@ dotnet run --project tools/CatalogBuilder -- --check # 검사만, docs/catalog/�
 
 공식 효과 패키지(`chickxel.effects.<효과 ID>`, 앱에 든 `src/Chickxel.Core/Scripting/Official/<ID>.js` 원문)는 CatalogBuilder가 지금 버전 파일이 없을 때 만듭니다. 원문을 고치면 `OfficialEffectPackages`의 버전을 올립니다(올리지 않으면 `--check`가 실패). CatalogBuilder는 지금 원문과 이 폴더·`docs/catalog/packages/`의 공식 효과 패키지(모든 버전) 원문의 해시를 `src/Chickxel.Core/Scripting/Official/hashes.txt`에 더하고, `--check`는 빠진 해시가 있으면 실패합니다. 앱은 이 목록의 원문을 묻지 않고 실행하므로, 예전 공식 원문을 담은 프로젝트·레시피도 원문이 바뀐 뒤에 그대로 열립니다. 목록의 줄은 지우지 않습니다.
 
-공식 모양 펜 세트 패키지(`chickxel.shapes.<ID>`, 그림은 `tools/CatalogBuilder/ChristmasShapeSets.cs`)도 CatalogBuilder가 지금 버전 파일이 없을 때 만듭니다. 그림·이름·설명을 고치면 `tools/CatalogBuilder/OfficialShapeSets.cs`의 버전을 올립니다(올리지 않으면 `--check`가 실패).
+## 로컬 모양 펜 세트 파일
+
+```
+dotnet run --project tools/CatalogBuilder -- --shape-sets <폴더>
+```
+
+앱에 넣지 않는 모양 펜 세트(예전 기본 세트 열다섯 가지 — 그림은 `tools/CatalogBuilder/FormerBuiltInShapeSets.cs`, 크리스마스 세트 셋 — `ChristmasShapeSets.cs`)를 세트마다 상점에 올릴 수 있는 패키지(`chickxel.shapes.<ID>-1.0.0.chickxel-asset`, MIT, 영어·한국어 이름과 요약, 모양 격자 미리보기)와 앱에서 바로 가져올 세트 파일(`chickxel.shapes.<ID>.chickxel-shapes`)로 `<폴더>`에 씁니다. 목록·이름·설명은 `tools/CatalogBuilder/LocalShapeSets.cs`에 있습니다. 쓴 파일은 앱의 패키지 검사(엄격)와 세트 파일 읽기로 다시 읽어 확인합니다. 이 명령은 `catalog/`와 `docs/catalog/`를 건드리지 않으며, 올릴지는 사람이 정합니다.

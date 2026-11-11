@@ -443,22 +443,22 @@
   <data name="Publish_PivotMoveTagFull" xml:space="preserve"><value>피벗을 옮기는 효과에는 pivot-move 태그가 붙어야 하는데 태그가 8개를 넘습니다. 태그를 빼세요.</value><comment>pivot-move는 태그 이름 그대로(번역하지 않음).</comment></data>
   <data name="StampSet_Leaves" xml:space="preserve"><value>나뭇잎</value><comment>모양 펜 기본 세트 이름</comment></data>
   <data name="StampSet_Grass" xml:space="preserve"><value>풀</value><comment>모양 펜 기본 세트 이름</comment></data>
-  <data name="StampSet_Flowers" xml:space="preserve"><value>꽃</value><comment>모양 펜 기본 세트 이름</comment></data>
-  <data name="StampSet_Sparkles" xml:space="preserve"><value>반짝이</value><comment>모양 펜 기본 세트 이름(반투명 빛)</comment></data>
-  <data name="StampSet_Dots" xml:space="preserve"><value>점</value><comment>모양 펜 기본 세트 이름(크기별 점, 차례대로)</comment></data>
+  <data name="StampSet_Flowers" xml:space="preserve"><value>꽃</value><comment>예전(1.14.117~1.14.120) 모양 펜 기본 세트 이름 — 예전 세트 파일에 이름 없이 남은 그 세트에 붙인다</comment></data>
+  <data name="StampSet_Sparkles" xml:space="preserve"><value>반짝이</value><comment>예전(1.14.117~1.14.120) 모양 펜 기본 세트 이름 — 예전 세트 파일에 이름 없이 남은 그 세트에 붙인다</comment></data>
+  <data name="StampSet_Dots" xml:space="preserve"><value>점</value><comment>예전(1.14.117~1.14.120) 모양 펜 기본 세트 이름 — 예전 세트 파일에 이름 없이 남은 그 세트에 붙인다</comment></data>
   <data name="StampSet_AutumnLeaves" xml:space="preserve"><value>단풍잎</value><comment>모양 펜 기본 세트 이름</comment></data>
-  <data name="StampSet_PineNeedles" xml:space="preserve"><value>솔잎</value><comment>모양 펜 기본 세트 이름</comment></data>
-  <data name="StampSet_Petals" xml:space="preserve"><value>꽃잎</value><comment>모양 펜 기본 세트 이름</comment></data>
+  <data name="StampSet_PineNeedles" xml:space="preserve"><value>솔잎</value><comment>예전(1.14.117~1.14.120) 모양 펜 기본 세트 이름 — 예전 세트 파일에 이름 없이 남은 그 세트에 붙인다</comment></data>
+  <data name="StampSet_Petals" xml:space="preserve"><value>꽃잎</value><comment>예전(1.14.117~1.14.120) 모양 펜 기본 세트 이름 — 예전 세트 파일에 이름 없이 남은 그 세트에 붙인다</comment></data>
   <data name="StampSet_Stars" xml:space="preserve"><value>별</value><comment>모양 펜 기본 세트 이름</comment></data>
   <data name="StampSet_Bubbles" xml:space="preserve"><value>거품</value><comment>모양 펜 기본 세트 이름</comment></data>
-  <data name="StampSet_Clouds" xml:space="preserve"><value>구름</value><comment>모양 펜 기본 세트 이름</comment></data>
-  <data name="StampSet_Rocks" xml:space="preserve"><value>돌멩이</value><comment>모양 펜 기본 세트 이름</comment></data>
-  <data name="StampSet_Bricks" xml:space="preserve"><value>벽돌</value><comment>모양 펜 기본 세트 이름</comment></data>
-  <data name="StampSet_Rain" xml:space="preserve"><value>빗방울</value><comment>모양 펜 기본 세트 이름</comment></data>
-  <data name="StampSet_Snowflakes" xml:space="preserve"><value>눈송이</value><comment>모양 펜 기본 세트 이름</comment></data>
-  <data name="StampSet_Hearts" xml:space="preserve"><value>하트</value><comment>모양 펜 기본 세트 이름</comment></data>
-  <data name="StampSet_Puffs" xml:space="preserve"><value>연기·먼지</value><comment>모양 펜 기본 세트 이름</comment></data>
-  <data name="StampSet_WoodGrain" xml:space="preserve"><value>나뭇결</value><comment>모양 펜 기본 세트 이름</comment></data>
-  <data name="StampSet_Cracks" xml:space="preserve"><value>금</value><comment>모양 펜 기본 세트 이름</comment></data>
-  <data name="StampSet_Treasure" xml:space="preserve"><value>동전·보석</value><comment>모양 펜 기본 세트 이름</comment></data>
+  <data name="StampSet_Clouds" xml:space="preserve"><value>구름</value><comment>예전(1.14.117~1.14.120) 모양 펜 기본 세트 이름 — 예전 세트 파일에 이름 없이 남은 그 세트에 붙인다</comment></data>
+  <data name="StampSet_Rocks" xml:space="preserve"><value>돌멩이</value><comment>예전(1.14.117~1.14.120) 모양 펜 기본 세트 이름 — 예전 세트 파일에 이름 없이 남은 그 세트에 붙인다</comment></data>
+  <data name="StampSet_Bricks" xml:space="preserve"><value>벽돌</value><comment>예전(1.14.117~1.14.120) 모양 펜 기본 세트 이름 — 예전 세트 파일에 이름 없이 남은 그 세트에 붙인다</comment></data>
+  <data name="StampSet_Rain" xml:space="preserve"><value>빗방울</value><comment>예전(1.14.117~1.14.120) 모양 펜 기본 세트 이름 — 예전 세트 파일에 이름 없이 남은 그 세트에 붙인다</comment></data>
+  <data name="StampSet_Snowflakes" xml:space="preserve"><value>눈송이</value><comment>예전(1.14.117~1.14.120) 모양 펜 기본 세트 이름 — 예전 세트 파일에 이름 없이 남은 그 세트에 붙인다</comment></data>
+  <data name="StampSet_Hearts" xml:space="preserve"><value>하트</value><comment>예전(1.14.117~1.14.120) 모양 펜 기본 세트 이름 — 예전 세트 파일에 이름 없이 남은 그 세트에 붙인다</comment></data>
+  <data name="StampSet_Puffs" xml:space="preserve"><value>연기·먼지</value><comment>예전(1.14.117~1.14.120) 모양 펜 기본 세트 이름 — 예전 세트 파일에 이름 없이 남은 그 세트에 붙인다</comment></data>
+  <data name="StampSet_WoodGrain" xml:space="preserve"><value>나뭇결</value><comment>예전(1.14.117~1.14.120) 모양 펜 기본 세트 이름 — 예전 세트 파일에 이름 없이 남은 그 세트에 붙인다</comment></data>
+  <data name="StampSet_Cracks" xml:space="preserve"><value>금</value><comment>예전(1.14.117~1.14.120) 모양 펜 기본 세트 이름 — 예전 세트 파일에 이름 없이 남은 그 세트에 붙인다</comment></data>
+  <data name="StampSet_Treasure" xml:space="preserve"><value>동전·보석</value><comment>예전(1.14.117~1.14.120) 모양 펜 기본 세트 이름 — 예전 세트 파일에 이름 없이 남은 그 세트에 붙인다</comment></data>
 </root>

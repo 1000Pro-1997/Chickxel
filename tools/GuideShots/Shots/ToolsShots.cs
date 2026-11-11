@@ -367,7 +367,7 @@ internal static class ToolsShots
         ]);
     }
 
-    /// <summary>모양 펜 설정: ① 세트 ② 세트 단추(새·이름·지우기·되돌리기·내보내기·가져오기) ③ 모양 칸 ④ 모양 더하기·지우기 ⑤ 순서 ⑥ 간격 ⑦ 최적화 간격 ⑧ 물들이기.</summary>
+    /// <summary>모양 펜 설정: ① 세트 ② 세트 단추(새·이름·지우기·되돌리기·세트 관리) ③ 모양 칸 ④ 모양 더하기·지우기 ⑤ 순서 ⑥ 간격 ⑦ 최적화 간격 ⑧ 물들이기.</summary>
     [Shot("tools-shape-pen")]
     public static void ShapePenSettings(ShotKit k)
     {

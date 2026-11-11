@@ -312,7 +312,7 @@ internal static class GuidePaintToolsCompareShots
         Save(k, "tools-shape-pen-compare", 4, [[dense, optimized]]);
     }
 
-    /// <summary>모양 펜 기본 세트 스무 가지: <see cref="StampBuiltIns.Ids"/> 차례로 왼쪽 위부터 한 줄에 두 세트(세트마다 모양을 나란히).</summary>
+    /// <summary>모양 펜 기본 세트 다섯 가지: <see cref="StampBuiltIns.Ids"/> 차례로 왼쪽 위부터 한 줄에 두 세트(세트마다 모양을 나란히).</summary>
     [Shot("tools-shape-pen-sets")]
     public static void ShapePenSets(ShotKit k)
     {
@@ -347,7 +347,7 @@ internal static class GuidePaintToolsCompareShots
         Save(k, "tools-shape-pen-sets", 3, rows, gap: 9);
     }
 
-    /// <summary>모양 펜 예시: 연필 가지를 따라 나뭇잎(최적화 간격), 바닥에 풀(최적화 간격)과 꽃, 하늘에 반짝이를 찍은 그림.</summary>
+    /// <summary>모양 펜 예시: 연필 가지를 따라 나뭇잎(최적화 간격), 바닥에 풀(최적화 간격)과 떨어진 단풍잎, 하늘에 별을 찍은 그림.</summary>
     [Shot("tools-shape-pen-example")]
     public static void ShapePenExample(ShotKit k)
     {
@@ -357,20 +357,20 @@ internal static class GuidePaintToolsCompareShots
         foreach (var p in branch) { img.Set(p.X, p.Y, bark); img.Set(p.X, p.Y + 1, bark); }
         StampAlong(img, BuiltIn("leaves"), [.. branch.Where((_, i) => i % 2 == 0).Select(p => new System.Drawing.Point(p.X, p.Y - 2))], optimized: true, seed: 3);
         StampAlong(img, BuiltIn("grass"), WavePath(2, 118, 58, 1), optimized: true, seed: 5);
-        var flowers = BuiltIn("flowers");
+        var autumn = BuiltIn("autumn");
         var picker = new StampPicker(11);
-        int f = picker.First(flowers.Shapes.Count, flowers.Order);
+        int f = picker.First(autumn.Shapes.Count, autumn.Order);
         foreach (var x in new[] { 14, 37, 61, 88, 109 })
         {
-            ShapeStamp.Stamp(img, flowers.Shapes[f], new System.Drawing.Point(x, 53));
-            f = picker.Next(f, flowers.Shapes.Count, flowers.Order);
+            ShapeStamp.Stamp(img, autumn.Shapes[f], new System.Drawing.Point(x, 53));
+            f = picker.Next(f, autumn.Shapes.Count, autumn.Order);
         }
-        var sparkles = BuiltIn("sparkles");
+        var stars = BuiltIn("stars");
         int s = 0;
         foreach (var (x, y) in new[] { (20, 8), (52, 6), (78, 11), (104, 5), (36, 38), (96, 36) })
         {
-            ShapeStamp.Stamp(img, sparkles.Shapes[s], new System.Drawing.Point(x, y));
-            s = (s + 1) % sparkles.Shapes.Count;
+            ShapeStamp.Stamp(img, stars.Shapes[s], new System.Drawing.Point(x, y));
+            s = (s + 1) % stars.Shapes.Count;
         }
         Save(k, "tools-shape-pen-example", 4, [[img]]);
     }

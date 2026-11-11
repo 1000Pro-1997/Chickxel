@@ -2,6 +2,17 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.121 (2026-11-11)
+### Shape pen: five built-in sets
+- The shape pen now comes with five built-in sets: Leaves, Autumn leaves, Grass, Stars and Bubbles. **Restore built-in sets** restores only these five.
+- The other fifteen sets (Pine needles, Flowers, Petals, Sparkles, Dots, Clouds, Pebbles, Bricks, Raindrops, Snowflakes, Hearts, Smoke puffs, Wood grain, Cracks, Coins & gems) are no longer built in.
+- If your sets file still has any of them, they stay as your own sets with their old name, and you can edit, rename, export or delete them like any set you made.
+- The Christmas sets announced in v1.14.120 are not in the store.
+
+### Shape pen: one Manage sets button
+- The shape pen set row keeps only the editing buttons (new, rename, delete, restore) plus a single **Manage sets…** button.
+- It opens a small window with the selected set and its actions: browse the store, installed sets, publish to the store, export to a file, import set files and, for received sets, copy to my sets.
+
 ## v1.14.120 (2026-11-11)
 ### Shape pen sets in the store
 - Shape pen sets are a new store asset kind. The Asset Manager and the Assets page on chickxel.com have a **Shape pen** tab.

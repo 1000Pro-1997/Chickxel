@@ -5,7 +5,7 @@ using Chickxel.Core.Model;
 namespace CatalogBuilder;
 
 /// <summary>
-/// 크리스마스 트리 장식 모양 펜 세트 세 가지(공식 패키지 <see cref="OfficialShapeSets"/>의 그림): 전구, 종·리본, 장식.
+/// 크리스마스 트리 장식 모양 펜 세트 세 가지(로컬 세트 파일 <see cref="LocalShapeSets"/>의 그림): 전구, 종·리본, 장식.
 /// 손으로 그린 글자 그림(글자마다 한 픽셀, 팔레트 0xAARRGGBB)에 색 변형·빛 번짐·겹쳐 놓기를 더한다. 초록 트리 위에서 보이게 테두리는 어둡게, 빛은 왼쪽 위에서.
 /// 모양은 모두 투명한 둘레를 잘라 담는다. 같은 코드면 늘 같은 모양이다.
 /// </summary>

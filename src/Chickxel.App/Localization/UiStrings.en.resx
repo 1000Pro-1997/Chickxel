@@ -4139,7 +4139,24 @@ Transparent pixels compare alpha only; between visible pixels the alpha differen
   <data name="ShapePen_CopySetTip" xml:space="preserve"><value>Copy to my sets: received sets (from the store or a package file) can't be edited, so this makes an editable copy of your own. The received original stays as is.</value></data>
   <data name="ShapePen_PublishSetTip" xml:space="preserve"><value>Publish to store…: publishes the selected set of yours to the Shape pen tab of the Chickxel store (sign-in required, 1–64 shapes). Default sets and received sets can't be published. Publishing again under the same name makes a new version.</value></data>
   <data name="ShapePen_ManagerTip" xml:space="preserve"><value>Asset Manager: view or delete received shape pen sets, or get new ones from the store's Shape pen tab.</value></data>
-  <data name="ShapePen_ReadOnlyNote" xml:space="preserve"><value>Received set (read-only). Copy it to your sets to edit it. Delete it in the Asset Manager.</value></data>
+  <data name="ShapePen_ReadOnlyNote" xml:space="preserve"><value>Received set (read-only). To edit it, copy it to your sets with Manage sets…; delete it there under Installed sets.</value></data>
+  <data name="ShapePen_ManageSets" xml:space="preserve"><value>Manage sets…</value></data>
+  <data name="ShapePen_ManageSetsTip" xml:space="preserve"><value>Manage sets…: browse the store, see installed sets, publish to the store, export and import sets, and copy received sets to your sets — all in one window.</value></data>
+  <data name="ShapePen_ManageTitle" xml:space="preserve"><value>Manage shape pen sets</value></data>
+  <data name="ShapePen_ManageNoSet" xml:space="preserve"><value>No set selected</value></data>
+  <data name="ShapePen_ManageMine" xml:space="preserve"><value>Your set</value></data>
+  <data name="ShapePen_ManageBuiltIn" xml:space="preserve"><value>Built-in set</value></data>
+  <data name="ShapePen_ManageReceived" xml:space="preserve"><value>Received set (read-only)</value></data>
+  <data name="ShapePen_ManageStore" xml:space="preserve"><value>Browse store…</value></data>
+  <data name="ShapePen_ManageStoreDesc" xml:space="preserve"><value>Find and get new sets in the store's Shape pen tab</value></data>
+  <data name="ShapePen_ManageInstalled" xml:space="preserve"><value>Installed sets…</value></data>
+  <data name="ShapePen_ManageInstalledDesc" xml:space="preserve"><value>View or delete sets received from the store or packages (Asset Manager)</value></data>
+  <data name="ShapePen_ManagePublish" xml:space="preserve"><value>Publish to store…</value></data>
+  <data name="ShapePen_ManagePublishDesc" xml:space="preserve"><value>Share this set in the store (your own sets, not built-in; sign-in required)</value></data>
+  <data name="ShapePen_ManageExportDesc" xml:space="preserve"><value>Save this set as one .chickxel-shapes file</value></data>
+  <data name="ShapePen_ManageImportDesc" xml:space="preserve"><value>Add set files or PNGs as new sets</value></data>
+  <data name="ShapePen_ManageCopy" xml:space="preserve"><value>Copy to my sets</value></data>
+  <data name="ShapePen_ManageCopyDesc" xml:space="preserve"><value>Make an editable copy of this received set</value></data>
   <data name="ShapePen_Copied" xml:space="preserve"><value>Copied to your sets: {name}</value></data>
   <data name="ShapePen_PublishEmpty" xml:space="preserve"><value>A set without shapes can't be published. Add at least one shape.</value></data>
   <data name="ShapePen_PublishTooMany" xml:space="preserve"><value>A set with more than {max} shapes can't be published (it has {count}).</value></data>

@@ -4,18 +4,22 @@ namespace CatalogBuilder;
 
 /// <summary>
 /// <c>catalog/</c>(제출 패키지 + review.json)를 검사해 <c>docs/catalog/</c>(쪽 index JSON, 패키지, 미리보기)를 만든다. 먼저 공식 효과 패키지
-/// (<see cref="OfficialEffectCatalog"/>)와 공식 모양 펜 세트 패키지(<see cref="OfficialShapeSets"/>)의 지금 버전이 <c>catalog/</c>에 없으면 만들어 두고,
-/// 공식 원문 해시 목록(<c>src/Chickxel.Core/Scripting/Official/hashes.txt</c>)에 지금 원문과 카탈로그 공식 패키지의 해시를 더한다.
+/// (<see cref="OfficialEffectCatalog"/>)의 지금 버전이 <c>catalog/</c>에 없으면 만들어 두고, 공식 원문 해시 목록(<c>src/Chickxel.Core/Scripting/Official/hashes.txt</c>)에
+/// 지금 원문과 카탈로그 공식 패키지의 해시를 더한다.
 /// <c>--check</c>는 쓰지 않고, 검사 실패나 커밋한 결과가 최신이 아니면(해시 목록에 빠진 해시가 있어도) 1로 끝난다(CI).
+/// <c>--shape-sets &lt;폴더&gt;</c>는 카탈로그를 건드리지 않고 앱에 넣지 않는 모양 펜 세트의 로컬 패키지·세트 파일만 쓴다(<see cref="LocalShapeSets"/>).
 /// </summary>
 public static class Program
 {
+    private const string Usage = "usage: dotnet run --project tools/CatalogBuilder -- [--check | --shape-sets <output folder>]";
+
     public static int Main(string[] args)
     {
+        if (args is ["--shape-sets", var folder]) return LocalShapeSets.Write(Path.GetFullPath(folder));
         bool check = args.Contains("--check");
         if (args.Any(arg => arg != "--check"))
         {
-            Console.Error.WriteLine("usage: dotnet run --project tools/CatalogBuilder -- [--check]");
+            Console.Error.WriteLine(Usage);
             return 2;
         }
         string root = RepoRoot();
@@ -23,13 +27,10 @@ public static class Program
         string output = Path.Combine(root, "docs", "catalog");
 
         var (problems, writes) = OfficialEffectCatalog.Plan(source);
-        var (shapeProblems, shapeWrites) = OfficialShapeSets.Plan(source);
-        problems.AddRange(shapeProblems);
-        foreach (var (path, data) in shapeWrites) writes[path] = data;
         foreach (var problem in problems) Console.Error.WriteLine("catalog/" + problem);
         if (problems.Count > 0)
         {
-            Console.Error.WriteLine($"{problems.Count} official package(s) out of date.");
+            Console.Error.WriteLine($"{problems.Count} official effect package(s) out of date.");
             return 1;
         }
 
@@ -54,7 +55,7 @@ public static class Program
             if (check)
             {
                 foreach (var path in writes.Keys) Console.Error.WriteLine("stale: catalog/" + path);
-                Console.Error.WriteLine("catalog/ is missing official packages. Run: dotnet run --project tools/CatalogBuilder");
+                Console.Error.WriteLine("catalog/ is missing official effect packages. Run: dotnet run --project tools/CatalogBuilder");
                 return 1;
             }
             OfficialEffectCatalog.Apply(source, writes);
