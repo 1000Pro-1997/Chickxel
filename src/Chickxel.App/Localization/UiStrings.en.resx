@@ -3397,6 +3397,10 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_ContentsRecipes" xml:space="preserve"><value>Effect presets: {0}</value></data>
   <data name="Assets_ContentsGradients" xml:space="preserve"><value>Gradients: {0}</value></data>
   <data name="Assets_ContentsOther" xml:space="preserve"><value>{0}: {1}</value></data>
+  <data name="Assets_FilterShapeSets" xml:space="preserve"><value>Shape pen</value></data>
+  <data name="Assets_KindShapeSet" xml:space="preserve"><value>Shape pen set</value></data>
+  <data name="Assets_ContentsShapeSets" xml:space="preserve"><value>Shape pen sets: {0}</value></data>
+  <data name="Assets_ShapeCount" xml:space="preserve"><value>{0} shapes</value></data>
   <data name="EffectPreset_ShowInManager" xml:space="preserve"><value>Show in Asset Manager</value></data>
   <data name="ViewOption_SettingsTip" xml:space="preserve"><value>Settings (same as right-clicking the button)</value></data>
   <data name="GradientEditor_MenuTip" xml:space="preserve"><value>Gradient menu: save current, favorites, presets, manage (same as right-clicking the bar)</value></data>
@@ -4132,6 +4136,13 @@ Transparent pixels compare alpha only; between visible pixels the alpha differen
   <data name="ShapePen_ExportFailed" xml:space="preserve"><value>Couldn't export the set: {error}</value></data>
   <data name="ShapePen_Imported" xml:space="preserve"><value>Imported the set '{name}' ({count} shapes)</value></data>
   <data name="ShapePen_ImportFailed" xml:space="preserve"><value>These files couldn't be read as shape pen sets: {names}</value></data>
+  <data name="ShapePen_CopySetTip" xml:space="preserve"><value>Copy to my sets: received sets (from the store or a package file) can't be edited, so this makes an editable copy of your own. The received original stays as is.</value></data>
+  <data name="ShapePen_PublishSetTip" xml:space="preserve"><value>Publish to store…: publishes the selected set of yours to the Shape pen tab of the Chickxel store (sign-in required, 1–64 shapes). Default sets and received sets can't be published. Publishing again under the same name makes a new version.</value></data>
+  <data name="ShapePen_ManagerTip" xml:space="preserve"><value>Asset Manager: view or delete received shape pen sets, or get new ones from the store's Shape pen tab.</value></data>
+  <data name="ShapePen_ReadOnlyNote" xml:space="preserve"><value>Received set (read-only). Copy it to your sets to edit it. Delete it in the Asset Manager.</value></data>
+  <data name="ShapePen_Copied" xml:space="preserve"><value>Copied to your sets: {name}</value></data>
+  <data name="ShapePen_PublishEmpty" xml:space="preserve"><value>A set without shapes can't be published. Add at least one shape.</value></data>
+  <data name="ShapePen_PublishTooMany" xml:space="preserve"><value>A set with more than {max} shapes can't be published (it has {count}).</value></data>
   <data name="FrameRange_Group" xml:space="preserve"><value>Apply to frames</value></data>
   <data name="FrameRange_Info" xml:space="preserve"><value>After drawing on the current frame, the same stroke is applied at the same place on the same layer in the other frames of the chosen range (one undo step together with the current frame). Pencil, eraser, dither and shapes put the same colors on the same pixels; lighten/darken and partial erasing change that frame's pixels by the same amount; the replace brush changes only pixels that have the color you first clicked; fill fills again from the same spot in that frame; and gradients are drawn again with the same start and end. Linked cels are changed once and locked layers aren't changed. The canvas shows only the current frame. The app always starts with the current frame only.</value></data>
   <data name="FrameRange_Label" xml:space="preserve"><value>Range</value></data>

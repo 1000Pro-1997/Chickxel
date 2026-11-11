@@ -15,14 +15,19 @@ public interface IAssetData
 /// 에셋 종류 하나: manifest의 <c>kind</c> 값, 패키지 안 폴더와 허용 확장자, 파일을 읽고 검사하는 함수.
 /// 새 종류는 <see cref="AssetKinds.All"/>에 정의 한 줄을 더한다 — 검사기·저장소·카탈로그는 이 목록만 본다.
 /// 개인 에셋 파일(<c>personal-assets.json</c>)의 <c>data</c>는 JSON 객체라, 파일이 JSON이 아닌 종류는 <paramref name="readPersonal"/>·<paramref name="writePersonal"/>로
-/// 따로 쓴다(없으면 패키지 파일 JSON 그대로).
+/// 따로 쓴다(없으면 패키지 파일 JSON 그대로). <paramref name="minAppVersion"/>은 이 종류를 처음 읽는 앱 버전 — 이 종류가 든 패키지는 manifest의
+/// 최소 앱 버전이 그보다 낮지 않게 쓴다(<see cref="AssetPackageWriter.Write"/>).
 /// </summary>
 public sealed class AssetKindDefinition(string kind, string folder, IReadOnlyList<string> extensions,
     Func<ReadOnlyMemory<byte>, AssetReadContext, IAssetData?> read, Func<IAssetData, string, ReadOnlyMemory<byte>> write,
-    Func<JsonObject, AssetReadContext, IAssetData?>? readPersonal = null, Func<IAssetData, string, JsonObject>? writePersonal = null)
+    Func<JsonObject, AssetReadContext, IAssetData?>? readPersonal = null, Func<IAssetData, string, JsonObject>? writePersonal = null,
+    string minAppVersion = "0.0.0")
 {
     /// <summary>manifest <c>kind</c> 값(영구).</summary>
     public string Kind { get; } = kind;
+
+    /// <summary>이 종류를 처음 읽는 앱 버전(이 종류가 든 패키지의 최소 앱 버전 하한).</summary>
+    public string MinAppVersion { get; } = minAppVersion;
 
     /// <summary>패키지 안 폴더(끝에 '/').</summary>
     public string Folder { get; } = folder;
@@ -57,6 +62,11 @@ public static class AssetKinds
     public const string Gradient = "gradient";
     /// <summary>JS 스크립트 효과 하나(<c>assets/scripts/*.js</c>, <see cref="ScriptAssetFormat"/>).</summary>
     public const string EffectScript = "effect-script";
+    /// <summary>모양 펜 세트 하나(<c>assets/shapes/*.json</c>, <see cref="ShapeSetAssetFormat"/>). 앱 1.14.120부터 읽는다.</summary>
+    public const string ShapeSet = "shape-set";
+
+    /// <summary>모양 펜 세트를 처음 읽는 앱 버전.</summary>
+    public const string ShapeSetMinAppVersion = "1.14.120";
 
     public static IReadOnlyList<AssetKindDefinition> All { get; } =
     [
@@ -74,7 +84,24 @@ public static class AssetKinds
             (value, _) => ScriptAssetFormat.Write((ScriptAsset)value),
             ScriptAssetFormat.ReadPersonal,
             (value, id) => ScriptAssetFormat.WritePersonal((ScriptAsset)value, id)),
+        new(ShapeSet, "assets/shapes/", [".json"],
+            ShapeSetAssetFormat.Read,
+            (value, _) => ShapeSetAssetFormat.Write(((ShapeSetAsset)value).Set),
+            minAppVersion: ShapeSetMinAppVersion),
     ];
 
     public static AssetKindDefinition? Find(string? kind) => All.FirstOrDefault(definition => definition.Kind == kind);
+
+    /// <summary>
+    /// <paramref name="manifest"/>의 에셋 종류가 요구하는 최소 앱 버전을 반영한 최소 앱 버전: manifest의 값과 종류마다 <see cref="AssetKindDefinition.MinAppVersion"/> 중 가장 높은 것.
+    /// </summary>
+    public static string RequiredAppVersion(AssetManifest manifest)
+    {
+        string result = manifest.MinAppVersion;
+        SemVersion.TryParse(result, out var best);
+        foreach (var entry in manifest.Assets)
+            if (Find(entry.Kind) is { } definition && SemVersion.TryParse(definition.MinAppVersion, out var required) && required > best)
+                (best, result) = (required, definition.MinAppVersion);
+        return result;
+    }
 }

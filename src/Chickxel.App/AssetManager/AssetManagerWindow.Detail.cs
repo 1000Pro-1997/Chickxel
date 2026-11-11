@@ -66,13 +66,15 @@ public sealed partial class AssetManagerWindow
         AssetKinds.EffectRecipe => 0,
         AssetKinds.Gradient => 1,
         AssetKinds.EffectScript => 2,
-        _ => 3,
+        AssetKinds.ShapeSet => 3,
+        _ => 4,
     };
 
     internal static string KindText(string kind) => kind switch
     {
         AssetKinds.Gradient => UiStrings.Assets_KindGradient,
         AssetKinds.EffectScript => UiStrings.Assets_KindScript,
+        AssetKinds.ShapeSet => UiStrings.Assets_KindShapeSet,
         _ => UiStrings.Assets_KindEffect,
     };
 
@@ -97,7 +99,7 @@ public sealed partial class AssetManagerWindow
         AddTitle(entry.DisplayName);
         if (entry.Gradient is { } gradient)
             _detail.Children.Add(new GradientSwatch { Preset = gradient, Height = 48 });
-        if (entry.EffectTemplate is not null || entry.PreviewPath is not null)
+        if (entry.EffectTemplate is not null || entry.PreviewPath is not null || entry.ShapeSet is not null)
             _detail.Children.Add(new AssetPreviewView(entry));
         string? description = entry.Script is { } described ? described.DescriptionFor(culture)
             : entry.Recipe is { } recipeText ? recipeText.Description
@@ -125,6 +127,8 @@ public sealed partial class AssetManagerWindow
                                      + (declared.Settings.Count > 0
                                          ? ": " + string.Join(", ", declared.Settings.Select(s => declared.LabelFor(s, culture)))
                                          : "")));
+        if (entry.ShapeSet is { } shapeSet)
+            _detail.Children.Add(Dim(F(UiStrings.Assets_ShapeCount, shapeSet.Shapes.Count)));
 
         if (entry.Recipe is { } recipe)
         {
@@ -316,7 +320,7 @@ public sealed partial class AssetManagerWindow
         Ui.Info(this, text, entry.DisplayName + " · " + UiStrings.Assets_License);
     }
 
-    /// <summary>내 효과 프리셋·그라데이션의 이름을 바꾼다(같은 종류의 내 에셋과 이름이 겹치면 알림). 스크립트 이름은 원문의 선언이라 여기서 바꾸지 않는다.</summary>
+    /// <summary>내 효과 프리셋·그라데이션·모양 펜 세트의 이름을 바꾼다(같은 종류의 내 에셋과 이름이 겹치면 알림). 스크립트 이름은 원문의 선언이라 여기서 바꾸지 않는다.</summary>
     private void Rename(AssetEntry entry)
     {
         string? handle = AppAssets.MyHandle;
@@ -332,12 +336,26 @@ public sealed partial class AssetManagerWindow
         {
             if (entry.Recipe is { } recipe) AppAssets.Store.SaveRecipe(recipe with { Name = name });
             else if (entry.Gradient is { } gradient) AppAssets.Store.SaveGradient(entry.Id, gradient with { Name = name });
+            else if (entry.ShapeSet is { } set)
+            {
+                var renamed = ShapeSetAssetFormat.Copy(set, set.Id);
+                renamed.Name = name;
+                AppAssets.Store.SaveShapeSet(entry.Id, renamed);
+            }
         });
     }
 
-    /// <summary>받은 에셋을 내 에셋으로 복사하고(원본은 그대로 — 고칠 때 쓰는 사본) 그 사본을 고른다.</summary>
+    /// <summary>
+    /// 받은 에셋을 내 에셋으로 복사하고(원본은 그대로 — 고칠 때 쓰는 사본) 그 사본을 고른다. 모양 펜 세트는 모양 펜의 내 세트로 복사하고 그 세트를 고른다
+    /// (내 세트는 에셋 저장소가 아니라 모양 펜 세트 모음에 있음).
+    /// </summary>
     private void CopyAsMine(AssetEntry entry)
     {
+        if (entry.ShapeSet is { } set)
+        {
+            if (MainForm.CopyShapeSetToMine(set) is { } copy) Ui.Info(this, UiStrings.FormatShapePen_Copied(name: copy.DisplayName), UiStrings.Assets_CopyToPersonal);
+            return;
+        }
         if (AppAssets.CopyAsMine(this, entry) is not { } saved) return;
         _selectKey = AssetKey(saved.Id);
         Refresh();

@@ -16,7 +16,7 @@ public sealed partial class AssetManagerWindow
 {
     private readonly ListBox _remoteList = NewList();
     private readonly StackPanel _remoteDetail = new() { Spacing = 6 };
-    private readonly TabStrip _remoteFilter = new(TabStripKind.Segmented, UiStrings.Assets_FilterEffects, UiStrings.Assets_FilterGradients);
+    private readonly TabStrip _remoteFilter = new(TabStripKind.Segmented, UiStrings.Assets_FilterEffects, UiStrings.Assets_FilterGradients, UiStrings.Assets_FilterShapeSets);
     private readonly TextBox _remoteSearch = new() { Width = 180, Watermark = UiStrings.Assets_Search };
     private readonly ComboBox _tagFilter = new() { MinWidth = 130 };
     private readonly TextBlock _remoteStatus = StatusText(), _updatesStatus = StatusText();
@@ -103,8 +103,13 @@ public sealed partial class AssetManagerWindow
         return panel;
     }
 
-    /// <summary>홈페이지의 에셋 목록 쪽(상점 종류 거르기의 탭 — 효과·그라데이션).</summary>
-    private Uri StoreWebsiteUrl() => AppCommunity.Client.PackagesPageUrl(_remoteFilter.SelectedIndex == 1 ? "gradient" : "effect");
+    /// <summary>홈페이지의 에셋 목록 쪽(상점 종류 거르기의 탭 — 효과·그라데이션·모양 펜 세트 <c>?kind=shape-set</c>).</summary>
+    private Uri StoreWebsiteUrl() => AppCommunity.Client.PackagesPageUrl(_remoteFilter.SelectedIndex switch
+    {
+        1 => "gradient",
+        2 => AssetKinds.ShapeSet,
+        _ => "effect",
+    });
 
     private Control UpdatesTab()
     {
@@ -286,6 +291,7 @@ public sealed partial class AssetManagerWindow
                 AssetKinds.EffectRecipe => F(UiStrings.Assets_ContentsRecipes, pair.Value),
                 AssetKinds.Gradient => F(UiStrings.Assets_ContentsGradients, pair.Value),
                 AssetKinds.EffectScript => F(UiStrings.Assets_ContentsScripts, pair.Value),
+                AssetKinds.ShapeSet => F(UiStrings.Assets_ContentsShapeSets, pair.Value),
                 _ => F(UiStrings.Assets_ContentsOther, pair.Key, pair.Value),
             }));
 

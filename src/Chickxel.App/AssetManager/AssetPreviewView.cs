@@ -6,7 +6,8 @@ namespace Chickxel.App;
 
 /// <summary>
 /// 에셋 상세의 미리보기: 패키지가 넣은 미리보기 PNG가 있으면 그 그림(보일 때 한 번 decode), 없으면 효과 레시피를 견본 그림에 입혀 그린다
-/// (움직이는 효과는 <see cref="AssetPreview.Steps"/>칸을 돌려 보임). 화면에서 떨어지면 타이머와 비트맵을 버린다.
+/// (움직이는 효과는 <see cref="AssetPreview.Steps"/>칸을 돌려 보임). 모양 펜 세트는 모양 격자(<see cref="AssetPreview.RenderShapeSet"/>).
+/// 화면에서 떨어지면 타이머와 비트맵을 버린다.
 /// </summary>
 public sealed class AssetPreviewView : Control
 {
@@ -32,6 +33,7 @@ public sealed class AssetPreviewView : Control
     {
         base.OnAttachedToVisualTree(e);
         if (_entry.PreviewPath is { } path && TryLoad(path) is { } image) _frames = [ImageUtil.ToBitmap(image)];
+        else if (_entry.ShapeSet is { } set) _frames = [ImageUtil.ToBitmap(AssetPreview.RenderShapeSet(set.Shapes))];
         else if (_entry.EffectTemplate is { } recipe)
         {
             bool animated = recipe.Effects.Any(effect => effect is AnimatedEffect || effect.ColorGradients.Values.Any(g => g.Animated));

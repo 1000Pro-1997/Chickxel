@@ -207,7 +207,7 @@ public sealed class AssetPublishDialog : DialogBase
         };
 
         // ── 오른쪽: 에셋·미리보기·검사 ──
-        var assetRow = Ui.Row(Ui.Icon(asset.Kind == AssetKinds.Gradient ? VectorIcon.SlidersHorizontal : VectorIcon.Code, 14),
+        var assetRow = Ui.Row(Ui.Icon(AssetManagerWindow.KindIcon(asset.Kind), 14),
             Ui.Label(asset.DisplayName, bold: true), Ui.Label("·  " + AssetManagerWindow.KindText(asset.Kind)));
         foreach (var child in assetRow.Children) child.VerticalAlignment = VerticalAlignment.Center;
         var replace = Ui.Button(VectorIcon.Image, UiStrings.Publish_PreviewReplace, (_, _) => ChoosePreview());

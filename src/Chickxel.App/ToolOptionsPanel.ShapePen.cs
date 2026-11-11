@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Avalonia.Controls.Templates;
+using Chickxel.Core.Assets;
 using Chickxel.Core.Edit;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
@@ -8,8 +9,10 @@ using Chickxel.App.Localization;
 namespace Chickxel.App;
 
 /// <summary>
-/// 도구 설정 "모양 펜" 묶음: 세트 고르기(첫 모양 썸네일 + 이름)·새 세트·이름 바꾸기·지우기·기본 세트 되돌리기, 세트의 모양 칸(누르면 다음에 찍을 모양,
-/// 우클릭 = 지우기)·모양 더하기(선택 영역·지금 셀·PNG)·지우기(지우기 단추는 늘 빨강), 순서(무작위·차례로·선택된 것 — 세트마다), 끌기 간격(1 이상)·최적화 간격, 지금 색으로 물들이기.
+/// 도구 설정 "모양 펜" 묶음: 세트 고르기(첫 모양 썸네일 + 이름 — 내 세트, 그다음 받은 세트)·새 세트·이름 바꾸기·지우기·기본 세트 되돌리기·내보내기·가져오기·
+/// 내 세트로 복사(받은 세트)·상점에 올리기(내 세트)·에셋 관리자, 세트의 모양 칸(누르면 다음에 찍을 모양, 우클릭 = 지우기)·모양 더하기(선택 영역·지금 셀·PNG)·지우기
+/// (지우기 단추는 늘 빨강), 순서(무작위·차례로·선택된 것 — 세트마다), 끌기 간격(1 이상)·최적화 간격, 지금 색으로 물들이기.
+/// 받은 세트(상점·패키지 파일)는 읽기 전용이라 고치는 단추가 꺼지고 복사 안내가 보인다.
 /// 세트를 고치면 <see cref="EditorContext.NotifyShapeSetsEdited"/>로 알리고 메인 창이 파일에 저장한다.
 /// </summary>
 public sealed partial class ToolOptionsPanel
@@ -22,12 +25,16 @@ public sealed partial class ToolOptionsPanel
         Width = 170,
         Margin = new Thickness(3),
         Focusable = false,
-        ItemTemplate = new FuncDataTemplate<StampSet>((set, _) => set is null ? null : SetItem(set)),
     };
-    /// <summary>새 세트·이름 바꾸기·세트 지우기·기본 세트 되돌리기·세트 내보내기·세트 가져오기 단추 줄.</summary>
-    private StackPanel _shapePenSetButtons = null!;
-    /// <summary>세트가 있어야 쓰는 단추(이름 바꾸기·지우기·내보내기).</summary>
+    /// <summary>새 세트·이름 바꾸기·세트 지우기·기본 세트 되돌리기·세트 내보내기·세트 가져오기·내 세트로 복사·상점에 올리기·에셋 관리자 단추 줄(좁으면 다음 줄로).</summary>
+    private WrapPanel _shapePenSetButtons = null!;
+    /// <summary>세트가 있어야 쓰는 단추(내보내기).</summary>
     private Button[] _shapePenSetOnly = [];
+    /// <summary>내 세트여야 쓰는 단추(이름 바꾸기·지우기 — 받은 세트는 읽기 전용).</summary>
+    private Button[] _shapePenMineOnly = [];
+    private Button _shapePenCopy = null!, _shapePenPublish = null!, _shapePenAddShape = null!;
+    /// <summary>받은 세트를 골랐을 때의 안내(고치려면 복사).</summary>
+    private TextBlock _shapePenReadOnly = null!;
     /// <summary>세트의 모양 칸(<see cref="ShapeTile"/> 단추 — 고른 것 = 다음에 찍을 모양).</summary>
     private readonly WrapPanel _shapePenShapes = new() { Orientation = Orientation.Horizontal };
     /// <summary>모양 더하기·지우기 단추 줄.</summary>
@@ -45,6 +52,7 @@ public sealed partial class ToolOptionsPanel
     /// <summary>모양 펜 묶음을 만든다(생성자에서 한 번).</summary>
     private Border BuildShapePen()
     {
+        _shapePenSets.ItemTemplate = new FuncDataTemplate<StampSet>((set, _) => set is null ? null : SetItem(set));
         _shapePenSets.Tip(UiStrings.ShapePen_SetTip);
         _shapePenSets.SelectionChanged += (_, _) =>
         {
@@ -56,11 +64,21 @@ public sealed partial class ToolOptionsPanel
         var restore = Ui.IconButton(VectorIcon.Undo2, UiStrings.ShapePen_RestoreDefaultsTip, (_, _) => RestoreShapeSets(), size: 13);
         var export = Ui.IconButton(VectorIcon.Upload, UiStrings.ShapePen_ExportSetTip, (_, _) => ExportShapeSet(), size: 13);
         var import = Ui.IconButton(VectorIcon.Download, UiStrings.ShapePen_ImportSetTip, (_, _) => PickShapeSetFiles(), size: 13);
-        foreach (var b in new[] { newSet, rename, deleteSet, restore, export, import }) b.Focusable = false;
-        _shapePenSetOnly = [rename, deleteSet, export];
-        _shapePenSetButtons = Ui.Row(newSet, rename, deleteSet, restore, export, import);
+        _shapePenCopy = Ui.IconButton(VectorIcon.Copy, UiStrings.ShapePen_CopySetTip, (_, _) => CopyShapeSet(), size: 13);
+        _shapePenPublish = Ui.IconButton(VectorIcon.Globe, UiStrings.ShapePen_PublishSetTip, (_, _) => PublishShapeSet(), size: 13);
+        var manager = Ui.IconButton(VectorIcon.Package, UiStrings.ShapePen_ManagerTip, (_, _) => OpenShapeSetManager(), size: 13);
+        foreach (var b in new[] { newSet, rename, deleteSet, restore, export, import, _shapePenCopy, _shapePenPublish, manager }) b.Focusable = false;
+        _shapePenSetOnly = [export];
+        _shapePenMineOnly = [rename, deleteSet];
+        _shapePenSetButtons = new WrapPanel { Orientation = Orientation.Horizontal, ItemSpacing = 2, LineSpacing = 2 };
+        _shapePenSetButtons.Children.AddRange([newSet, rename, deleteSet, restore, export, import, _shapePenCopy, _shapePenPublish, manager]);
+        _shapePenReadOnly = new TextBlock
+        {
+            Text = UiStrings.ShapePen_ReadOnlyNote, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize,
+            Margin = new Thickness(3, 0, 3, 2), MaxWidth = 300, HorizontalAlignment = HorizontalAlignment.Left,
+        };
 
-        var add = Ui.Button(VectorIcon.ChevronDown, UiStrings.ShapePen_AddShape, iconAfter: true).Tip(UiStrings.ShapePen_AddShapeTip);
+        var add = _shapePenAddShape = Ui.Button(VectorIcon.ChevronDown, UiStrings.ShapePen_AddShape, iconAfter: true).Tip(UiStrings.ShapePen_AddShapeTip);
         add.Focusable = false;
         add.Click += (_, _) => PopupMenus.Show(add, AddShapeMenu(), Avalonia.Controls.PlacementMode.BottomEdgeAlignedLeft);
         _shapePenDeleteShape = Danger(Ui.IconButton(VectorIcon.Trash, UiStrings.ShapePen_DeleteShapeTip, (_, _) => DeleteShape(_ctx.ShapePenIndex), size: 13));
@@ -72,7 +90,7 @@ public sealed partial class ToolOptionsPanel
         _shapePenOrder.Add(UiStrings.ShapePen_OrderSelected, tip: UiStrings.ShapePen_OrderSelectedTip);
         _shapePenOrder.SelectionChanged += (_, _) =>
         {
-            if (_updating || _shapePenOrder.SelectedIndex < 0 || _ctx.ShapePenSet is not { } set) return;
+            if (_updating || _shapePenOrder.SelectedIndex < 0 || _ctx.ShapePenSet is not { } set || _ctx.IsInstalledShapeSet(set)) return;
             var order = (StampOrder)_shapePenOrder.SelectedIndex;
             if (set.Order == order) return;
             set.Order = order;
@@ -86,11 +104,13 @@ public sealed partial class ToolOptionsPanel
         _shapePenTint = Check(UiStrings.ShapePen_Tint, UiStrings.ShapePen_TintTip, v => _ctx.ShapePenTint = v);
 
         _ctx.ShapeSetsChanged += (_, _) => RefreshShapeSetList();
+        _ctx.InstalledShapeSetsChanged += (_, _) => RefreshShapeSetList();
         _ctx.ShapePenChanged += (_, _) => RefreshShapePen();
         RefreshShapeSetList();
         return InfoGroup(UiStrings.ShapePen_Group, UiStrings.ShapePen_Info, Ui.Stack(
             Ui.Row(Ui.Label(UiStrings.ShapePen_Set), _shapePenSets),
             _shapePenSetButtons,
+            _shapePenReadOnly,
             _shapePenShapes,
             _shapePenShapeButtons,
             Ui.Row(Ui.Label(UiStrings.ShapePen_Order), _shapePenOrder),
@@ -108,16 +128,20 @@ public sealed partial class ToolOptionsPanel
         return button;
     }
 
-    /// <summary>세트 고르기 목록의 한 줄: 첫 모양 썸네일 + 이름.</summary>
-    private static Control SetItem(StampSet set)
-        => Ui.Row(new StampView { Image = set.Shapes.FirstOrDefault(), Width = 18, Height = 18 }, Ui.Label(set.DisplayName));
+    /// <summary>세트 고르기 목록의 한 줄: 첫 모양 썸네일 + 이름(받은 세트는 앞에 패키지 아이콘).</summary>
+    private Control SetItem(StampSet set)
+    {
+        var row = Ui.Row(new StampView { Image = set.Shapes.FirstOrDefault(), Width = 18, Height = 18 }, Ui.Label(set.DisplayName));
+        if (_ctx.IsInstalledShapeSet(set)) row.Children.Insert(1, Ui.Icon(VectorIcon.Package, 12));
+        return row;
+    }
 
-    /// <summary>세트 목록을 다시 채운다(세트 모음이 바뀌었을 때 — 이름·첫 모양도 다시 그림).</summary>
+    /// <summary>세트 목록을 다시 채운다(내 세트 모음·받은 세트가 바뀌었을 때 — 이름·첫 모양도 다시 그림).</summary>
     private void RefreshShapeSetList()
     {
         bool wasUpdating = _updating;
         _updating = true;
-        try { _shapePenSets.ItemsSource = _ctx.ShapeSets.Sets.ToList(); }
+        try { _shapePenSets.ItemsSource = _ctx.AllShapeSets.ToList(); }
         finally { _updating = wasUpdating; }
         _shapeTilesShown = (null, []);
         RefreshShapePen();
@@ -133,15 +157,21 @@ public sealed partial class ToolOptionsPanel
         {
             _shapePenSets.SelectedItem = set;
             _shapePenOrder.SelectedIndex = (int)(set?.Order ?? StampOrder.Random);
-            _shapePenOrder.IsEnabled = set is { Shapes.Count: > 1 };
+            _shapePenOrder.IsEnabled = set is { Shapes.Count: > 1 } && !_ctx.IsInstalledShapeSet(set);
             _shapePenSpacing.Value = _ctx.ShapePenSpacing;
             _shapePenOptimized.IsChecked = _ctx.ShapePenOptimizedSpacing;
             _shapePenSpacingRow.IsEnabled = !_ctx.ShapePenOptimizedSpacing;
             _shapePenTint.IsChecked = _ctx.ShapePenTint;
         }
         finally { _updating = wasUpdating; }
+        bool installed = _ctx.IsInstalledShapeSet(set);
         foreach (var b in _shapePenSetOnly) b.IsEnabled = set is not null;
-        _shapePenDeleteShape.IsEnabled = set is { Shapes.Count: > 0 };
+        foreach (var b in _shapePenMineOnly) b.IsEnabled = set is not null && !installed;
+        _shapePenCopy.IsVisible = installed;
+        _shapePenPublish.IsEnabled = set is not null && !installed && !StampBuiltIns.Ids.Contains(set.Id);
+        _shapePenReadOnly.IsVisible = installed;
+        _shapePenAddShape.IsEnabled = !installed;
+        _shapePenDeleteShape.IsEnabled = set is { Shapes.Count: > 0 } && !installed;
 
         var shapes = set?.Shapes.ToArray() ?? [];
         if (!ReferenceEquals(_shapeTilesShown.Set, set) || !_shapeTilesShown.Shapes.SequenceEqual(shapes))
@@ -169,7 +199,7 @@ public sealed partial class ToolOptionsPanel
         b.HorizontalContentAlignment = HorizontalAlignment.Center;
         b.VerticalContentAlignment = VerticalAlignment.Center;
         b.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture, "{0}×{1} · {2}", shape.Width, shape.Height, UiStrings.ShapePen_ShapeTip));
-        PopupMenus.Attach(b, () => [MenuItemFor(UiStrings.ShapePen_DeleteShape, () => DeleteShape(index))]);
+        PopupMenus.Attach(b, () => [MenuItemFor(UiStrings.ShapePen_DeleteShape, () => DeleteShape(index), enabled: !_ctx.IsInstalledShapeSet(_ctx.ShapePenSet))]);
         return b;
     }
 
@@ -226,7 +256,7 @@ public sealed partial class ToolOptionsPanel
         }
         if (shapes.Count > 0)
         {
-            if (_ctx.ShapePenSet is not { } set)
+            if (_ctx.ShapePenSet is not { } set || _ctx.IsInstalledShapeSet(set))
             {
                 set = new StampSet { Name = UiStrings.FormatShapePen_NewSetName(number: 1) };
                 _ctx.ShapeSets.Sets.Add(set);
@@ -244,7 +274,7 @@ public sealed partial class ToolOptionsPanel
     /// <summary>고른 세트의 <paramref name="index"/>번 모양을 지운다(기본 세트 모양은 '기본 세트 되돌리기'로 다시 넣을 수 있음).</summary>
     private void DeleteShape(int index)
     {
-        if (_ctx.ShapePenSet is not { } set || (uint)index >= (uint)set.Shapes.Count) return;
+        if (_ctx.ShapePenSet is not { } set || _ctx.IsInstalledShapeSet(set) || (uint)index >= (uint)set.Shapes.Count) return;
         set.Shapes.RemoveAt(index);
         _ctx.ShapePenIndex = Math.Min(index, Math.Max(0, set.Shapes.Count - 1));
         _ctx.NotifyShapeSetsEdited();
@@ -265,7 +295,7 @@ public sealed partial class ToolOptionsPanel
 
     private void RenameShapeSet()
     {
-        if (_ctx.ShapePenSet is not { } set) return;
+        if (_ctx.ShapePenSet is not { } set || _ctx.IsInstalledShapeSet(set)) return;
         if (InputDialog.Ask(this, UiStrings.ShapePen_RenameSetTip, UiStrings.ShapePen_SetNamePrompt, set.DisplayName) is not { } name || name == set.DisplayName) return;
         set.Name = name;
         _ctx.NotifyShapeSetsEdited();
@@ -273,7 +303,7 @@ public sealed partial class ToolOptionsPanel
 
     private void DeleteShapeSet()
     {
-        if (_ctx.ShapePenSet is not { } set) return;
+        if (_ctx.ShapePenSet is not { } set || _ctx.IsInstalledShapeSet(set)) return;
         if (Ui.Ask(this, UiStrings.FormatShapePen_DeleteSetConfirm(name: set.DisplayName, count: set.Shapes.Count), UiStrings.ShapePen_DeleteSetTip,
                 MessageButtons.OKCancel, MessageIcon.Warning, okText: UiStrings.ShapePen_DeleteSet) != DialogResult.OK) return;
         int at = _ctx.ShapeSets.Sets.IndexOf(set);
@@ -291,6 +321,47 @@ public sealed partial class ToolOptionsPanel
         _ctx.ShapeSets.RestoreDefaults();
         _ctx.ShapePenSetId = current;
         _ctx.NotifyShapeSetsEdited();
+    }
+
+    /// <summary>받은 세트를 고칠 수 있는 내 세트로 복사하고 그 사본을 고른다(받은 원본은 그대로).</summary>
+    private void CopyShapeSet()
+    {
+        if (_ctx.ShapePenSet is not { } set || !_ctx.IsInstalledShapeSet(set)) return;
+        if (MainForm.CopyShapeSetToMine(set) is { } copy)
+            StatusMessage?.Invoke(this, UiStrings.FormatShapePen_Copied(name: copy.DisplayName));
+    }
+
+    /// <summary>
+    /// 고른 내 세트를 상점에 올린다(게시 창, 로그인 필요): 세트의 지금 모습을 내 에셋(<c>shape-set</c>)으로 떠 두고 게시 창을 연다. 같은 이름으로 떠 둔 내 에셋이 있으면
+    /// 그 자리를 바꿔(상점 연결은 그대로) 다시 올리면 새 버전이 된다. 모양이 없거나 너무 많으면 먼저 알린다. 기본 세트·받은 세트는 올리지 않는다(단추가 꺼짐).
+    /// </summary>
+    private async void PublishShapeSet()
+    {
+        if (_ctx.ShapePenSet is not { } set || _ctx.IsInstalledShapeSet(set) || StampBuiltIns.Ids.Contains(set.Id)
+            || TopLevel.GetTopLevel(this) is not Window owner) return;
+        int max = AssetPackageLimits.Default.MaxShapesPerSet;
+        if (set.Shapes.Count == 0 || set.Shapes.Count > max)
+        {
+            Ui.Info(owner, set.Shapes.Count == 0 ? UiStrings.ShapePen_PublishEmpty : UiStrings.FormatShapePen_PublishTooMany(max: max, count: set.Shapes.Count),
+                UiStrings.Publish_Title);
+            return;
+        }
+        string? handle = AppAssets.MyHandle;
+        var existing = AppAssets.Catalog.ShapeSets.FirstOrDefault(entry => entry.Source == AssetSources.Local && entry.IsOwnedBy(handle)
+                                                                           && string.Equals(entry.Name, set.DisplayName, StringComparison.OrdinalIgnoreCase));
+        AssetEntry? saved = null;
+        if (!AppAssets.Try(owner, () => saved = existing is not null && existing.ContentHash == AssetContent.Hash(AssetKinds.ShapeSet, ShapeSetAsset.From(set))
+                ? existing
+                : AppAssets.Store.SaveShapeSet(existing?.Id, set), UiStrings.Assets_ActionError) || saved is null) return;
+        await AssetPublishDialog.RunAsync(owner, saved.Id);
+    }
+
+    /// <summary>에셋 관리자를 모양 펜 세트 칸으로 연다(받은 세트를 고르고 있으면 그 에셋을 고름).</summary>
+    private void OpenShapeSetManager()
+    {
+        if (TopLevel.GetTopLevel(this) is not Window owner) return;
+        var set = _ctx.ShapePenSet;
+        AssetManagerWindow.Open(owner, AssetKinds.ShapeSet, _ctx.IsInstalledShapeSet(set) ? set!.Id : null);
     }
 
     private static FileFilter ShapeSetFilter => new(UiStrings.ShapePen_SetFileType, "*" + StampLibrary.SetFileExtension);
@@ -368,7 +439,7 @@ public sealed partial class ToolOptionsPanel
         bool Is(Control control) => ReferenceEquals(c, control);
         bool InRow(Control control) => Is(control) || ReferenceEquals(c, control.Parent);
         static HelpTarget At(string anchor) => new(page, Anchor: anchor);
-        if (InRow(_shapePenSets) || Is(_shapePenSetButtons)) return At(UiStrings.ShapePen_Set);
+        if (InRow(_shapePenSets) || Is(_shapePenSetButtons) || Is(_shapePenReadOnly)) return At(UiStrings.ShapePen_Set);
         if (Is(_shapePenShapes) || c.Parent == _shapePenShapes || Is(_shapePenShapeButtons)) return At(UiStrings.ShapePen_AddShape);
         if (InRow(_shapePenOrder)) return At(UiStrings.ShapePen_Order);
         if (InRow(_shapePenSpacing)) return At(UiStrings.ShapePen_Spacing);

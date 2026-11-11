@@ -176,6 +176,9 @@ public sealed record AssetEntry(string Id, string Kind, IAssetData Data)
 
     /// <summary>그라데이션 값(<see cref="GradientPreset.Favorite"/>는 이 항목의 즐겨찾기).</summary>
     public GradientPreset? Gradient => Data is GradientAsset g ? g.Gradient with { Favorite = Favorite } : null;
+
+    /// <summary>모양 펜 세트 값(고치지 않는 사본 — 고칠 때는 <see cref="ShapeSetAssetFormat.Copy"/>).</summary>
+    public StampSet? ShapeSet => Data is ShapeSetAsset s ? s.Set : null;
 }
 
 /// <summary>
@@ -226,6 +229,8 @@ public sealed class AssetCatalog
             ? official : null;
 
     public IReadOnlyList<AssetEntry> Gradients => Available(AssetKinds.Gradient);
+
+    public IReadOnlyList<AssetEntry> ShapeSets => Available(AssetKinds.ShapeSet);
 
     public AssetEntry? Find(string id) => All.FirstOrDefault(entry => entry.Id == id);
 

@@ -32,8 +32,8 @@ public sealed class StampLibrary
     public const int MaxShapeSize = 256;
     /// <summary>세트 하나를 담는 파일(내보내기·가져오기)의 확장자.</summary>
     public const string SetFileExtension = ".chickxel-shapes";
-    /// <summary>세트 파일 머리의 형식 표시(다른 JSON을 세트로 잘못 읽지 않게).</summary>
-    private const string SetFileFormat = "chickxel-shapes";
+    /// <summary>세트 파일 머리의 형식 표시(다른 JSON을 세트로 잘못 읽지 않게). 상점 에셋 파일(<see cref="ShapeSetAssetFormat"/>)도 같다.</summary>
+    internal const string SetFileFormat = "chickxel-shapes";
 
     public List<StampSet> Sets { get; } = [];
 

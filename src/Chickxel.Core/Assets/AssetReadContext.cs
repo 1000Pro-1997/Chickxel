@@ -32,6 +32,8 @@ public sealed record AssetPackageLimits
     public int MaxParameterBindings { get; init; } = 64;
     /// <summary>그라데이션 색·알파 정지점 각각(효과 색 슬롯의 그라데이션도).</summary>
     public int MaxGradientStops { get; init; } = 64;
+    /// <summary>모양 펜 세트 하나의 모양 수(모양 하나는 <see cref="IO.StampLibrary.MaxShapeSize"/>px 안).</summary>
+    public int MaxShapesPerSet { get; init; } = 64;
     /// <summary>색 순환·팔레트 교체 같은 효과 설정 목록의 칸 수.</summary>
     public int MaxListItems { get; init; } = 256;
     public int MaxJsonDepth { get; init; } = 16;

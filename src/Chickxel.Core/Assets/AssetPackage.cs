@@ -54,13 +54,16 @@ public static class AssetPackageWriter
     public static string Hash(ReadOnlySpan<byte> data) => Convert.ToHexStringLower(SHA256.HashData(data));
 
     /// <summary>
-    /// <paramref name="manifest"/>(files는 무시하고 다시 계산)와 <paramref name="files"/>로 패키지를 쓴다.
-    /// 돌려주는 manifest는 실제로 쓴 것(files 포함)이다.
+    /// <paramref name="manifest"/>(files는 무시하고 다시 계산)와 <paramref name="files"/>로 패키지를 쓴다. 최소 앱 버전은 든 에셋 종류가 요구하는 버전보다
+    /// 낮지 않게 올린다(<see cref="AssetKinds.RequiredAppVersion"/>). 돌려주는 manifest는 실제로 쓴 것(files 포함)이다.
     /// </summary>
     public static AssetManifest Write(Stream output, AssetManifest manifest, IReadOnlyDictionary<string, byte[]> files)
     {
         var hashes = files.ToDictionary(pair => pair.Key, pair => Hash(pair.Value), StringComparer.Ordinal);
-        var written = manifest with { SchemaVersion = AssetManifest.CurrentSchemaVersion, Files = hashes };
+        var written = manifest with
+        {
+            SchemaVersion = AssetManifest.CurrentSchemaVersion, Files = hashes, MinAppVersion = AssetKinds.RequiredAppVersion(manifest),
+        };
         using var zip = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true, Encoding.UTF8);
         Add(zip, AssetManifest.FileName, Encoding.UTF8.GetBytes(written.Serialize()));
         foreach (var (path, data) in files.OrderBy(pair => pair.Key, StringComparer.Ordinal)) Add(zip, path, data);
@@ -128,6 +131,13 @@ public sealed class AssetPackageBuilder(AssetManifest header)
     public string Add(EffectRecipe recipe, PackagePreview? preview = null) => Add(AssetKinds.EffectRecipe, recipe, preview);
 
     public string Add(GradientPreset gradient, PackagePreview? preview = null) => Add(AssetKinds.Gradient, new GradientAsset("", gradient), preview);
+
+    /// <summary>모양 펜 세트 하나를 더한다(세트의 지금 모습 — <see cref="ShapeSetAsset.From"/>). <paramref name="preview"/>가 null이면 모양 격자(<see cref="AssetPreview.Package"/>).</summary>
+    public string Add(StampSet set, PackagePreview? preview = null, string? segment = null)
+    {
+        var asset = ShapeSetAsset.From(set);
+        return Add(AssetKinds.ShapeSet, asset, preview ?? AssetPreview.Package(asset), segment);
+    }
 
     /// <summary>미리보기 <c>previews/&lt;이름&gt;.png</c>의 효과 없는 원본 자리 <c>previews/&lt;이름&gt;.original.png</c>(서버가 이 이름으로 찾는다).</summary>
     public static string OriginalPreviewPath(string previewPath) => previewPath[..^".png".Length] + ".original.png";

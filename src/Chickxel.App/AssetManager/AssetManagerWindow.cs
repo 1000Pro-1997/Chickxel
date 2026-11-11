@@ -14,7 +14,7 @@ public enum AssetManagerTab
 /// <summary>
 /// 에셋 관리자(계획 8장): 설치됨·상점·업데이트 탭. 설치됨 탭은 왼쪽에 에셋 목록(내 에셋 — <see cref="AppAssets.IsMine"/> — 과 받은 에셋),
 /// 오른쪽에 고른 에셋의 상세(미리보기, 작성자, 라이선스, 상점 ID·버전, 출처)와 동작(즐겨찾기, 고치기, 복사, 내보내기, 올리기, 삭제 …)을 둔다.
-/// 종류 거르기(효과·그라데이션)와 이름 검색은 메모리 카탈로그에서 한다. 상점·업데이트는 온라인 카탈로그(<c>.Store</c>)를 쓴다.
+/// 종류 거르기(효과·그라데이션·모양 펜)와 이름 검색은 메모리 카탈로그에서 한다. 상점·업데이트는 온라인 카탈로그(<c>.Store</c>)를 쓴다.
 /// 모달이며, 효과 창·그라데이션 프리셋 창에서도 종류 거르기와 처음 탭을 정해 연다. 저장소가 바뀌면(<see cref="AppAssets.Changed"/>) 목록을 다시 만든다.
 /// </summary>
 public sealed partial class AssetManagerWindow : DialogBase
@@ -94,7 +94,7 @@ public sealed partial class AssetManagerWindow : DialogBase
         MinHeight = 460;
         _selectKey = selectAssetId is null ? null : AssetKey(selectAssetId);
 
-        _filter = new TabStrip(TabStripKind.Segmented, UiStrings.Assets_FilterEffects, UiStrings.Assets_FilterGradients)
+        _filter = new TabStrip(TabStripKind.Segmented, UiStrings.Assets_FilterEffects, UiStrings.Assets_FilterGradients, UiStrings.Assets_FilterShapeSets)
         {
             // 처음 종류: 준 종류, 없으면 고를 에셋의 종류, 그것도 없으면 효과.
             SelectedIndex = FilterIndex(kind ?? (selectAssetId is null ? null : AppAssets.Catalog.Find(selectAssetId)?.Kind)),
@@ -194,15 +194,25 @@ public sealed partial class AssetManagerWindow : DialogBase
 
     private AssetEntry? Selected => (_list.SelectedItem as ListBoxItem)?.Tag as AssetEntry;
 
-    /// <summary>종류 거르기 칸 번호의 에셋 종류: 0 = 효과(효과 레시피와 스크립트 효과), 1 = 그라데이션. 상점 탭도 같은 칸을 쓴다.</summary>
-    private static string[] FilterKinds(int index) => index == 1 ? [AssetKinds.Gradient] : [AssetKinds.EffectRecipe, AssetKinds.EffectScript];
+    /// <summary>종류 거르기 칸 번호의 에셋 종류: 0 = 효과(효과 레시피와 스크립트 효과), 1 = 그라데이션, 2 = 모양 펜 세트. 상점 탭도 같은 칸을 쓴다.</summary>
+    private static string[] FilterKinds(int index) => index switch
+    {
+        1 => [AssetKinds.Gradient],
+        2 => [AssetKinds.ShapeSet],
+        _ => [AssetKinds.EffectRecipe, AssetKinds.EffectScript],
+    };
 
     /// <summary>에셋 종류가 보이는 종류 거르기 칸 번호(모르는 종류는 효과 칸).</summary>
-    private static int FilterIndex(string? kind) => kind == AssetKinds.Gradient ? 1 : 0;
+    private static int FilterIndex(string? kind) => kind switch
+    {
+        AssetKinds.Gradient => 1,
+        AssetKinds.ShapeSet => 2,
+        _ => 0,
+    };
 
-    /// <summary>패키지가 보이는 종류 거르기 칸 번호(처음 나오는 효과·그라데이션 에셋 기준).</summary>
+    /// <summary>패키지가 보이는 종류 거르기 칸 번호(처음 나오는 효과·그라데이션·모양 펜 세트 에셋 기준).</summary>
     private static int FilterIndex(IEnumerable<string> kinds)
-        => FilterIndex(kinds.FirstOrDefault(k => k is AssetKinds.Gradient or AssetKinds.EffectRecipe or AssetKinds.EffectScript));
+        => FilterIndex(kinds.FirstOrDefault(k => k is AssetKinds.Gradient or AssetKinds.EffectRecipe or AssetKinds.EffectScript or AssetKinds.ShapeSet));
 
     private string[] KindFilter => FilterKinds(_filter.SelectedIndex);
 
@@ -298,11 +308,12 @@ public sealed partial class AssetManagerWindow : DialogBase
         return panel;
     }
 
-    /// <summary>에셋 종류 아이콘(그라데이션, 스크립트 효과, 효과 프리셋).</summary>
+    /// <summary>에셋 종류 아이콘(그라데이션, 스크립트 효과, 모양 펜 세트, 효과 프리셋).</summary>
     internal static VectorIcon KindIcon(string kind) => kind switch
     {
         AssetKinds.Gradient => VectorIcon.SlidersHorizontal,
         AssetKinds.EffectScript => VectorIcon.Code,
+        AssetKinds.ShapeSet => VectorIcon.Diamond,
         _ => VectorIcon.Sparkles,
     };
 }

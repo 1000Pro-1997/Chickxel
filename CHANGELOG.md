@@ -2,6 +2,18 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.120 (2026-11-11)
+### Shape pen sets in the store
+- Shape pen sets are a new store asset kind. The Asset Manager and the Assets page on chickxel.com have a **Shape pen** tab.
+- Publish one of your own sets with the new publish button in the shape pen set row (sign-in required; 1–64 shapes, up to 256 px per side).
+- Installed sets appear in the shape pen set picker after your own sets, marked with a package icon. They are read-only; **Copy to my sets** makes an editable copy. Updates replace them and deleting the asset removes them.
+- Older app versions show shape pen packages as needing a newer app.
+
+### Three official Christmas tree sets
+- **Christmas Lights**: bulbs in five colors, glowing bulbs and short light strings.
+- **Christmas Bells & Bows**: gold and silver bells, double bells with a bow, red and gold bows.
+- **Christmas Ornaments**: baubles, a tree-top star, a candy cane, gift boxes, a pine cone and a snowflake. Install them from the store's Shape pen tab.
+
 ## v1.14.119 (2026-11-11)
 ### Effects dialog: the canvas no longer grows by itself, new Expand canvas button
 - OK and Apply permanently no longer expand the canvas; effect results outside the canvas are cut off (the before/after preview dims the parts that will be cut for every effect).

@@ -544,6 +544,16 @@ public sealed partial class AssetStore
     }
 
     /// <summary>
+    /// 모양 펜 세트를 저장한다(<paramref name="id"/>가 모양 펜 세트 에셋이면 그 자리의 값을 바꾸고 — 작성자·상점 연결은 그대로 — 아니면 새로 더함).
+    /// 값은 세트의 지금 모습을 떠 둔 사본이다(<see cref="ShapeSetAsset.From"/>). 에셋으로 쓸 수 없는 세트(<see cref="ShapeSetAssetFormat.Validate"/>)면 <see cref="InvalidDataException"/>.
+    /// </summary>
+    public AssetEntry SaveShapeSet(string? id, StampSet set)
+    {
+        ShapeSetAssetFormat.Validate(set);
+        return SaveData(AssetKinds.ShapeSet, ShapeSetAsset.From(set, id ?? ""), favorite: null, scene: null, sceneChanges: false);
+    }
+
+    /// <summary>
     /// 스크립트 원문을 스크립트 에셋으로 저장한다(이름·작성자는 원문의 선언). 패키지 가져오기와 같은 검사(<see cref="ScriptAssetFormat.Check"/>)를
     /// 통과하지 못하면 <see cref="AssetPackageException"/>. <paramref name="id"/>가 스크립트 에셋이면 그 자리의 원문과 미리보기 장면을 바꾸고
     /// (<paramref name="scene"/>이 null이면 장면을 지움), 아니면 이 컴퓨터에서 만든(작성자·상점 연결 없는) 같은 원문의 스크립트가 있을 때 새로 더하지 않고
@@ -822,6 +832,7 @@ public sealed partial class AssetStore
         EffectRecipe recipe => recipe with { Id = id },
         GradientAsset gradient => gradient with { Id = id },
         ScriptAsset script => script with { Id = id },
+        ShapeSetAsset shapes => new ShapeSetAsset(id, ShapeSetAssetFormat.Copy(shapes.Set, id)),
         _ => data,
     };
 

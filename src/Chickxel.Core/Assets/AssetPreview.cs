@@ -219,6 +219,39 @@ public static class AssetPreview
         return img;
     }
 
+    /// <summary>모양 펜 세트 미리보기 격자의 긴 변 한도(px, 패키지 미리보기 한도 <see cref="AssetPackageLimits.MaxPreviewSize"/> 안).</summary>
+    public const int ShapeSetPreviewSize = 256;
+
+    /// <summary>
+    /// 모양 펜 세트 미리보기: 모양을 투명 바탕의 격자(가장 큰 모양 크기의 정사각 칸, 칸 가운데, 칸 사이 틈 = 칸의 1/8·최소 1px, 열 수 = ⌈√개수⌉)에 놓고
+    /// 긴 변이 <paramref name="max"/>에 맞도록 가장 가까운 칸으로 키운다(정수 배) — 넘으면 가장 가까운 칸으로 줄인다. 모양이 없으면 1×1 투명.
+    /// 게시 창·CatalogBuilder의 패키지 미리보기(<see cref="Package"/>)가 쓴다.
+    /// </summary>
+    public static PixelImage RenderShapeSet(IReadOnlyList<PixelImage> shapes, int max = ShapeSetPreviewSize)
+    {
+        if (shapes.Count == 0) return new PixelImage(1, 1);
+        int cell = shapes.Max(shape => Math.Max(shape.Width, shape.Height));
+        int gap = Math.Max(1, cell / 8);
+        int columns = (int)Math.Ceiling(Math.Sqrt(shapes.Count));
+        int rows = (shapes.Count + columns - 1) / columns;
+        var grid = new PixelImage(columns * cell + (columns - 1) * gap, rows * cell + (rows - 1) * gap);
+        for (int i = 0; i < shapes.Count; i++)
+        {
+            var shape = shapes[i];
+            int x = i % columns * (cell + gap) + (cell - shape.Width) / 2;
+            int y = i / columns * (cell + gap) + (cell - shape.Height) / 2;
+            grid.Blit(shape, x, y);
+        }
+        int longest = Math.Max(grid.Width, grid.Height);
+        if (longest <= max) return Upscale(grid, max);
+        int width = Math.Max(1, grid.Width * max / longest), height = Math.Max(1, grid.Height * max / longest);
+        var fitted = new PixelImage(width, height);
+        for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+                fitted[x, y] = grid[x * grid.Width / width, y * grid.Height / height];
+        return fitted;
+    }
+
     /// <summary>
     /// 패키지에 넣을 미리보기. 레시피·스크립트 에셋(기본 설정 효과 하나)은 고른 병아리(<see cref="PreviewChicks"/>)에 효과를
     /// 칸 수(레시피는 <see cref="PackageFrames"/>, 스크립트는 선언의 <see cref="ScriptAsset.PreviewFrames"/>)만큼 돌려 입힌 그림을 정수 배로 키운 APNG
@@ -238,6 +271,7 @@ public static class AssetPreview
         ScriptAsset script => EffectPreview(script.ToRecipe().Effects, PreviewChicks.Load(script.PreviewChick), script.PreviewFrames, EndChick(script.PreviewEndChick),
             script.PreviewMotion, script.PreviewPlacement),
         GradientAsset gradient => new PackagePreview(Encode([new PngFrame(RenderGradient(gradient.Gradient, PngMaxSize, 16), PackageFrameMs)]), null),
+        ShapeSetAsset shapes => new PackagePreview(Encode([new PngFrame(RenderShapeSet(shapes.Set.Shapes), PackageFrameMs)]), null),
         _ => null,
     };
 

@@ -4,7 +4,10 @@ using Chickxel.Core.Model;
 
 namespace Chickxel.App;
 
-/// <summary>모양 펜 상태: 세트 모음, 고른 세트, 다음에 찍을 모양, 지금 색으로 물들이기, 끌기 간격(도구 설정 — 실행취소 없음).</summary>
+/// <summary>
+/// 모양 펜 상태: 세트 모음(내 세트 — <see cref="ShapeSets"/>)과 받은 세트(<see cref="InstalledShapeSets"/>, 읽기 전용), 고른 세트, 다음에 찍을 모양,
+/// 지금 색으로 물들이기, 끌기 간격(도구 설정 — 실행취소 없음).
+/// </summary>
 public sealed partial class EditorContext
 {
     /// <summary>끌기 간격 최댓값(px, 최솟값은 1 — 1이면 모든 픽셀에 찍어 이어진 자국).</summary>
@@ -17,6 +20,7 @@ public sealed partial class EditorContext
     private int _shapePenSpacing = 1;
     private bool _shapePenOptimizedSpacing = true;
     private readonly StampPicker _shapePenPicker = new();
+    private IReadOnlyList<StampSet> _installedShapeSets = [];
 
     /// <summary>세트 모음이 바뀜(세트·모양 더하기·지우기, 이름·순서, 기본 세트 되돌리기) — 메인 창이 파일에 저장한다.</summary>
     public event EventHandler? ShapeSetsChanged;
@@ -34,8 +38,35 @@ public sealed partial class EditorContext
         }
     }
 
-    /// <summary>고른 세트(없거나 지워졌으면 첫 세트, 세트가 하나도 없으면 null).</summary>
-    public StampSet? ShapePenSet => _shapeSets.Find(_shapePenSetId) ?? (_shapeSets.Sets.Count > 0 ? _shapeSets.Sets[0] : null);
+    /// <summary>
+    /// 받은 모양 펜 세트: 에셋 저장소의 <c>shape-set</c> 에셋 중 상점·패키지 파일에서 온 것(이름표 = 에셋 ID, 저장소 순서). 읽기 전용이라 고치려면 내 세트로 복사한다.
+    /// 메인 창이 저장소가 바뀔 때마다 넣는다(업데이트는 바뀐 값으로, 지운 에셋은 빠짐). 넣으면 세트 목록을 다시 그리게 알린다(<see cref="ShapeSetsChanged"/>는 내지 않음 — 내 세트 파일은 그대로).
+    /// </summary>
+    public IReadOnlyList<StampSet> InstalledShapeSets
+    {
+        get => _installedShapeSets;
+        set
+        {
+            _installedShapeSets = value;
+            InstalledShapeSetsChanged?.Invoke(this, EventArgs.Empty);
+            ShapePenChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>받은 세트 목록이 바뀜(설치·업데이트·삭제).</summary>
+    public event EventHandler? InstalledShapeSetsChanged;
+
+    /// <summary>받은 세트인지(읽기 전용 — 모양·이름·순서를 고치지 않고, 지우기는 에셋 관리자에서).</summary>
+    public bool IsInstalledShapeSet(StampSet? set) => set is not null && _installedShapeSets.Contains(set);
+
+    /// <summary>고르는 목록의 세트: 내 세트, 그다음 받은 세트.</summary>
+    public IEnumerable<StampSet> AllShapeSets => _shapeSets.Sets.Concat(_installedShapeSets);
+
+    /// <summary>고른 세트(없거나 지워졌으면 첫 세트, 세트가 하나도 없으면 null). 받은 세트도 고를 수 있다.</summary>
+    public StampSet? ShapePenSet
+        => _shapeSets.Find(_shapePenSetId)
+           ?? (_shapePenSetId is null ? null : _installedShapeSets.FirstOrDefault(s => s.Id == _shapePenSetId))
+           ?? AllShapeSets.FirstOrDefault();
 
     /// <summary>고른 세트 id. 고르면 첫 모양(차례대로 = 처음, 무작위 = 아무거나)부터.</summary>
     public string? ShapePenSetId
