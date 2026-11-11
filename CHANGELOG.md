@@ -2,6 +2,23 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.122 (2026-11-11)
+### Shape pen sets in the Asset Manager
+- **Manage sets…** in the shape pen set row now opens Asset Manager › Installed › Shape pen with the selected set; the separate Manage sets window is gone.
+- The Shape pen list shows all your sets under My assets (sets you made and former built-in sets; the five built-in sets stay in the set picker) and store or package sets under Received assets. Changes show up in Tool options right away.
+- Your sets have a shape grid preview and **Edit on canvas**, **Rename…**, **Export** (set file or asset package), **Publish Online…** and **Delete**. Received sets add **Copy to my sets** and **Edit on canvas**, which edits a copy.
+- On the Shape pen filter the toolbar shows **New set from canvas…** and **Restore built-in sets** instead of Restore default effects, and **Import from File…** also takes .chickxel-shapes and PNG files.
+- Former built-in sets kept from an older sets file no longer get a "(2)" after their English name (for example "Flowers (2)").
+
+### Shape pen: new set from canvas
+- **New set from canvas…** turns the current document into a new shape pen set, one shape per frame: each frame's merged visible layers, with transparent edges trimmed.
+- Empty frames are skipped. Up to 64 shapes and 256 px per side; if a frame is too big or there are too many, it says which and creates nothing.
+
+### Shape pen: edit a set on the canvas
+- **Edit on canvas** opens a shape pen set as a temporary document tab: one frame per shape, centered on a canvas as big as the largest shape.
+- **Save to set** on the bar under the tabs (or the Save shortcut) writes the frames back to the set and keeps its name and order; undo works as usual.
+- Closing with unsaved edits asks whether to save them to the set, not whether to save a project file.
+
 ## v1.14.121 (2026-11-11)
 ### Shape pen: five built-in sets
 - The shape pen now comes with five built-in sets: Leaves, Autumn leaves, Grass, Stars and Bubbles. **Restore built-in sets** restores only these five.

@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using Avalonia.Controls.Templates;
-using Chickxel.Core.Assets;
 using Chickxel.Core.Edit;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
@@ -9,11 +8,11 @@ using Chickxel.App.Localization;
 namespace Chickxel.App;
 
 /// <summary>
-/// 도구 설정 "모양 펜" 묶음: 세트 고르기(첫 모양 썸네일 + 이름 — 내 세트, 그다음 받은 세트)·새 세트·이름 바꾸기·지우기·기본 세트 되돌리기·세트 관리(상점·설치된 세트·
-/// 상점에 올리기·내보내기·가져오기·내 세트로 복사 — <see cref="ShapeSetManageDialog"/>), 세트의 모양 칸(누르면 다음에 찍을 모양, 우클릭 = 지우기)·모양 더하기(선택 영역·지금 셀·PNG)·지우기
-/// (지우기 단추는 늘 빨강), 순서(무작위·차례로·선택된 것 — 세트마다), 끌기 간격(1 이상)·최적화 간격, 지금 색으로 물들이기.
-/// 받은 세트(상점·패키지 파일)는 읽기 전용이라 고치는 단추가 꺼지고 복사 안내가 보인다.
-/// 세트를 고치면 <see cref="EditorContext.NotifyShapeSetsEdited"/>로 알리고 메인 창이 파일에 저장한다.
+/// 도구 설정 "모양 펜" 묶음: 세트 고르기(첫 모양 썸네일 + 이름 — 내 세트, 그다음 받은 세트)·새 세트·이름 바꾸기·지우기·기본 세트 되돌리기·세트 관리
+/// (에셋 관리자 설치됨 › 모양 펜에서 고른 세트를 보임 — 상점에 올리기·내보내기·가져오기·내 세트로 복사·캔버스에서 편집), 세트의 모양 칸(누르면 다음에 찍을 모양,
+/// 우클릭 = 지우기)·모양 더하기(선택 영역·지금 셀·PNG)·지우기(지우기 단추는 늘 빨강), 순서(무작위·차례로·선택된 것 — 세트마다), 끌기 간격(1 이상)·최적화 간격,
+/// 지금 색으로 물들이기. 받은 세트(상점·패키지 파일)는 읽기 전용이라 고치는 단추가 꺼지고 에셋 관리자 안내가 보인다.
+/// 세트를 고치면 <see cref="EditorContext.NotifyShapeSetsEdited"/>로 알리고 메인 창이 파일에 저장한다(세트 모음 동작은 <see cref="ShapeSetActions"/>).
 /// </summary>
 public sealed partial class ToolOptionsPanel
 {
@@ -30,10 +29,10 @@ public sealed partial class ToolOptionsPanel
     private WrapPanel _shapePenSetButtons = null!;
     /// <summary>내 세트여야 쓰는 단추(이름 바꾸기·지우기 — 받은 세트는 읽기 전용).</summary>
     private Button[] _shapePenMineOnly = [];
-    /// <summary>세트 관리 창을 여는 단추.</summary>
+    /// <summary>에셋 관리자(설치됨 › 모양 펜)를 여는 단추.</summary>
     private Button _shapePenManage = null!;
     private Button _shapePenAddShape = null!;
-    /// <summary>받은 세트를 골랐을 때의 안내(고치려면 복사).</summary>
+    /// <summary>받은 세트를 골랐을 때의 안내(고치려면 에셋 관리자에서 복사).</summary>
     private TextBlock _shapePenReadOnly = null!;
     /// <summary>세트의 모양 칸(<see cref="ShapeTile"/> 단추 — 고른 것 = 다음에 찍을 모양).</summary>
     private readonly WrapPanel _shapePenShapes = new() { Orientation = Orientation.Horizontal };
@@ -61,7 +60,7 @@ public sealed partial class ToolOptionsPanel
         var newSet = Ui.IconButton(VectorIcon.Plus, UiStrings.ShapePen_NewSetTip, (_, _) => NewShapeSet(), size: 13);
         var rename = Ui.IconButton(VectorIcon.Pencil, UiStrings.ShapePen_RenameSetTip, (_, _) => RenameShapeSet(), size: 13);
         var deleteSet = Danger(Ui.IconButton(VectorIcon.Trash, UiStrings.ShapePen_DeleteSetTip, (_, _) => DeleteShapeSet(), size: 13));
-        var restore = Ui.IconButton(VectorIcon.Undo2, UiStrings.ShapePen_RestoreDefaultsTip, (_, _) => RestoreShapeSets(), size: 13);
+        var restore = Ui.IconButton(VectorIcon.Undo2, UiStrings.ShapePen_RestoreDefaultsTip, (_, _) => ShapeSetActions.RestoreDefaults(this, _ctx), size: 13);
         _shapePenManage = Ui.Button(VectorIcon.Package, UiStrings.ShapePen_ManageSets, (_, _) => ManageShapeSets()).Tip(UiStrings.ShapePen_ManageSetsTip);
         foreach (var b in new[] { newSet, rename, deleteSet, restore, _shapePenManage }) b.Focusable = false;
         _shapePenMineOnly = [rename, deleteSet];
@@ -274,166 +273,23 @@ public sealed partial class ToolOptionsPanel
 
     private void NewShapeSet()
     {
-        var names = _ctx.ShapeSets.Sets.Select(s => s.DisplayName).ToHashSet();
-        int n = 1;
-        while (names.Contains(UiStrings.FormatShapePen_NewSetName(number: n))) n++;
-        if (InputDialog.Ask(this, UiStrings.ShapePen_NewSetTip, UiStrings.ShapePen_SetNamePrompt, UiStrings.FormatShapePen_NewSetName(number: n)) is not { } name) return;
-        var set = new StampSet { Name = name };
-        _ctx.ShapeSets.Sets.Add(set);
-        _ctx.ShapePenSetId = set.Id;
-        _ctx.NotifyShapeSetsEdited();
-        StatusMessage?.Invoke(this, UiStrings.ShapePen_NewSetHint);
+        if (ShapeSetActions.New(this, _ctx) is not null) StatusMessage?.Invoke(this, UiStrings.ShapePen_NewSetHint);
     }
 
     private void RenameShapeSet()
     {
-        if (_ctx.ShapePenSet is not { } set || _ctx.IsInstalledShapeSet(set)) return;
-        if (InputDialog.Ask(this, UiStrings.ShapePen_RenameSetTip, UiStrings.ShapePen_SetNamePrompt, set.DisplayName) is not { } name || name == set.DisplayName) return;
-        set.Name = name;
-        _ctx.NotifyShapeSetsEdited();
+        if (_ctx.ShapePenSet is { } set) ShapeSetActions.Rename(this, _ctx, set);
     }
 
     private void DeleteShapeSet()
     {
-        if (_ctx.ShapePenSet is not { } set || _ctx.IsInstalledShapeSet(set)) return;
-        if (Ui.Ask(this, UiStrings.FormatShapePen_DeleteSetConfirm(name: set.DisplayName, count: set.Shapes.Count), UiStrings.ShapePen_DeleteSetTip,
-                MessageButtons.OKCancel, MessageIcon.Warning, okText: UiStrings.ShapePen_DeleteSet) != DialogResult.OK) return;
-        int at = _ctx.ShapeSets.Sets.IndexOf(set);
-        _ctx.ShapeSets.Sets.RemoveAt(at);
-        var sets = _ctx.ShapeSets.Sets;
-        _ctx.ShapePenSetId = sets.Count > 0 ? sets[Math.Min(at, sets.Count - 1)].Id : null;
-        _ctx.NotifyShapeSetsEdited();
+        if (_ctx.ShapePenSet is { } set && !_ctx.IsInstalledShapeSet(set)) ShapeSetActions.Delete(this, _ctx, set);
     }
 
-    private void RestoreShapeSets()
-    {
-        if (Ui.Ask(this, UiStrings.ShapePen_RestoreDefaultsConfirm, UiStrings.ShapePen_RestoreDefaultsTip,
-                MessageButtons.OKCancel, MessageIcon.Question, okText: UiStrings.ShapePen_RestoreDefaults) != DialogResult.OK) return;
-        string? current = _ctx.ShapePenSetId;
-        _ctx.ShapeSets.RestoreDefaults();
-        _ctx.ShapePenSetId = current;
-        _ctx.NotifyShapeSetsEdited();
-    }
-
-    /// <summary>받은 세트를 고칠 수 있는 내 세트로 복사하고 그 사본을 고른다(받은 원본은 그대로).</summary>
-    private void CopyShapeSet()
-    {
-        if (_ctx.ShapePenSet is not { } set || !_ctx.IsInstalledShapeSet(set)) return;
-        if (MainForm.CopyShapeSetToMine(set) is { } copy)
-            StatusMessage?.Invoke(this, UiStrings.FormatShapePen_Copied(name: copy.DisplayName));
-    }
-
-    /// <summary>
-    /// 고른 내 세트를 상점에 올린다(게시 창, 로그인 필요): 세트의 지금 모습을 내 에셋(<c>shape-set</c>)으로 떠 두고 게시 창을 연다. 같은 이름으로 떠 둔 내 에셋이 있으면
-    /// 그 자리를 바꿔(상점 연결은 그대로) 다시 올리면 새 버전이 된다. 모양이 없거나 너무 많으면 먼저 알린다. 기본 세트·받은 세트는 올리지 않는다(단추가 꺼짐).
-    /// </summary>
-    private async void PublishShapeSet()
-    {
-        if (_ctx.ShapePenSet is not { } set || _ctx.IsInstalledShapeSet(set) || StampBuiltIns.Ids.Contains(set.Id)
-            || TopLevel.GetTopLevel(this) is not Window owner) return;
-        int max = AssetPackageLimits.Default.MaxShapesPerSet;
-        if (set.Shapes.Count == 0 || set.Shapes.Count > max)
-        {
-            Ui.Info(owner, set.Shapes.Count == 0 ? UiStrings.ShapePen_PublishEmpty : UiStrings.FormatShapePen_PublishTooMany(max: max, count: set.Shapes.Count),
-                UiStrings.Publish_Title);
-            return;
-        }
-        string? handle = AppAssets.MyHandle;
-        var existing = AppAssets.Catalog.ShapeSets.FirstOrDefault(entry => entry.Source == AssetSources.Local && entry.IsOwnedBy(handle)
-                                                                           && string.Equals(entry.Name, set.DisplayName, StringComparison.OrdinalIgnoreCase));
-        AssetEntry? saved = null;
-        if (!AppAssets.Try(owner, () => saved = existing is not null && existing.ContentHash == AssetContent.Hash(AssetKinds.ShapeSet, ShapeSetAsset.From(set))
-                ? existing
-                : AppAssets.Store.SaveShapeSet(existing?.Id, set), UiStrings.Assets_ActionError) || saved is null) return;
-        await AssetPublishDialog.RunAsync(owner, saved.Id);
-    }
-
-    /// <summary>
-    /// 세트 관리 창을 띄우고, 고른 동작을 창이 닫힌 뒤에 한다: 상점 둘러보기·설치된 세트 = 에셋 관리자(모양 펜 거르기 — 받은 세트를 고르고 있으면 그 에셋을 고름),
-    /// 상점에 올리기·내보내기·가져오기·내 세트로 복사 = 같은 이름의 처리기.
-    /// </summary>
+    /// <summary>세트 관리: 에셋 관리자를 설치됨 탭의 모양 펜 거르기로 열고 고른 세트(내 세트·받은 세트)를 고른다.</summary>
     private void ManageShapeSets()
     {
-        if (TopLevel.GetTopLevel(this) is not Window owner) return;
-        var set = _ctx.ShapePenSet;
-        bool installed = _ctx.IsInstalledShapeSet(set);
-        switch (ShapeSetManageDialog.Ask(owner, set, installed))
-        {
-            case ShapeSetManageAction.BrowseStore: AssetManagerWindow.Open(owner, AssetKinds.ShapeSet, tab: AssetManagerTab.Store); break;
-            case ShapeSetManageAction.Installed: AssetManagerWindow.Open(owner, AssetKinds.ShapeSet, installed ? set!.Id : null); break;
-            case ShapeSetManageAction.Publish: PublishShapeSet(); break;
-            case ShapeSetManageAction.Export: ExportShapeSet(); break;
-            case ShapeSetManageAction.Import: PickShapeSetFiles(); break;
-            case ShapeSetManageAction.Copy: CopyShapeSet(); break;
-        }
-    }
-
-    private static FileFilter ShapeSetFilter => new(UiStrings.ShapePen_SetFileType, "*" + StampLibrary.SetFileExtension);
-
-    /// <summary>고른 세트를 세트 파일 하나(<see cref="StampLibrary.SetFileExtension"/>)로 내보낸다. 처음 파일 이름 = 보이는 이름(파일 이름에 못 쓰는 글자는 뺌).</summary>
-    private void ExportShapeSet()
-    {
-        if (_ctx.ShapePenSet is not { } set) return;
-        var suggested = ProjectFileName.BaseNameFor(set.DisplayName) + StampLibrary.SetFileExtension;
-        if (Ui.SaveFile(this, UiStrings.ShapePen_ExportSet, null, suggested, StampLibrary.SetFileExtension, ShapeSetFilter) is not { } path) return;
-        try
-        {
-            StampLibrary.SaveSet(set, path);
-            StatusMessage?.Invoke(this, UiStrings.FormatShapePen_Exported(name: set.DisplayName, path: path));
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            Ui.Error(this, UiStrings.FormatShapePen_ExportFailed(error: ex.Message));
-        }
-    }
-
-    /// <summary>세트 가져오기(세트 관리 창): 세트 파일·PNG를 여러 개 골라 가져온다.</summary>
-    private void PickShapeSetFiles()
-    {
-        var paths = Ui.OpenFiles(this, UiStrings.ShapePen_ImportSet, null,
-            new FileFilter(UiStrings.ShapePen_ImportFileType, "*" + StampLibrary.SetFileExtension, "*.png"), ShapeSetFilter);
-        if (paths.Count > 0) ImportShapeSets(paths);
-    }
-
-    /// <summary>
-    /// 파일마다 새 세트로 끝에 더하고(덮어쓰지 않음 — 이름이 겹치면 " (2)" …, 이름표는 늘 새것) 마지막 세트를 고른다.
-    /// 세트 파일은 그 세트, PNG는 투명한 둘레를 잘라 낸 모양 하나짜리 세트(이름 = 파일 이름). 읽을 수 없는 파일은 모아 오류 상자로 알린다.
-    /// 창에 끌어 놓은 세트 파일도 여기로 온다(<see cref="MainForm"/>).
-    /// </summary>
-    internal void ImportShapeSets(IReadOnlyList<string> paths)
-    {
-        var imported = new List<StampSet>();
-        var failed = new List<string>();
-        foreach (var path in paths)
-        {
-            if (ReadShapeSet(path) is { } set)
-            {
-                _ctx.ShapeSets.AddImported(set, Path.GetFileNameWithoutExtension(path));
-                imported.Add(set);
-            }
-            else failed.Add(Path.GetFileName(path));
-        }
-        if (imported.Count > 0)
-        {
-            _ctx.ShapePenSetId = imported[^1].Id;
-            _ctx.NotifyShapeSetsEdited();
-            StatusMessage?.Invoke(this, string.Join(" · ", imported.Select(s => UiStrings.FormatShapePen_Imported(name: s.DisplayName, count: s.Shapes.Count))));
-        }
-        if (failed.Count > 0) Ui.Error(this, UiStrings.FormatShapePen_ImportFailed(names: string.Join(", ", failed)));
-    }
-
-    /// <summary>파일 하나를 새 세트로 읽는다(세트 파일, 또는 PNG 한 장 = 모양 하나). 읽을 수 없거나 모양으로 쓸 수 없으면 null.</summary>
-    private static StampSet? ReadShapeSet(string path)
-    {
-        try
-        {
-            if (!path.EndsWith(".png", StringComparison.OrdinalIgnoreCase)) return StampLibrary.ParseSet(File.ReadAllText(path));
-            return StampLibrary.Trim(PngIO.Load(path)) is { } shape && !StampLibrary.TooBig(shape) ? new StampSet { Shapes = { shape } } : null;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException)
-        {
-            return null;
-        }
+        if (TopLevel.GetTopLevel(this) is Window owner) AssetManagerWindow.OpenShapeSets(owner, _ctx.ShapePenSet?.Id);
     }
 
     /// <summary>대상 도움말(F1): 모양 펜 묶음 안의 컨트롤이면 가이드 자리, 아니면 null.</summary>

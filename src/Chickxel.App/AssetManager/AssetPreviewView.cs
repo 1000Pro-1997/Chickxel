@@ -6,20 +6,26 @@ namespace Chickxel.App;
 
 /// <summary>
 /// 에셋 상세의 미리보기: 패키지가 넣은 미리보기 PNG가 있으면 그 그림(보일 때 한 번 decode), 없으면 효과 레시피를 견본 그림에 입혀 그린다
-/// (움직이는 효과는 <see cref="AssetPreview.Steps"/>칸을 돌려 보임). 모양 펜 세트는 모양 격자(<see cref="AssetPreview.RenderShapeSet"/>).
+/// (움직이는 효과는 <see cref="AssetPreview.Steps"/>칸을 돌려 보임). 모양 펜 세트(에셋이나 세트 모음의 내 세트)는 모양 격자(<see cref="AssetPreview.RenderShapeSet"/>).
 /// 화면에서 떨어지면 타이머와 비트맵을 버린다.
 /// </summary>
 public sealed class AssetPreviewView : Control
 {
-    private readonly AssetEntry _entry;
+    private readonly AssetEntry? _entry;
+    /// <summary>에셋이 아닌 내 모양 펜 세트(세트 모음)의 모양들.</summary>
+    private readonly IReadOnlyList<PixelImage>? _shapes;
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(100) };
     private WriteableBitmap?[] _frames = [];
     private int _shown;
     private int _tick;
 
-    public AssetPreviewView(AssetEntry entry)
+    public AssetPreviewView(AssetEntry entry) : this() => _entry = entry;
+
+    /// <summary>세트 모음의 내 세트 미리보기(모양 격자).</summary>
+    public AssetPreviewView(StampSet set) : this() => _shapes = set.Shapes.ToList();
+
+    private AssetPreviewView()
     {
-        _entry = entry;
         Height = 160;
         _timer.Tick += (_, _) =>
         {
@@ -32,9 +38,10 @@ public sealed class AssetPreviewView : Control
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        if (_entry.PreviewPath is { } path && TryLoad(path) is { } image) _frames = [ImageUtil.ToBitmap(image)];
-        else if (_entry.ShapeSet is { } set) _frames = [ImageUtil.ToBitmap(AssetPreview.RenderShapeSet(set.Shapes))];
-        else if (_entry.EffectTemplate is { } recipe)
+        if (_shapes is not null) _frames = [ImageUtil.ToBitmap(AssetPreview.RenderShapeSet(_shapes))];
+        else if (_entry?.PreviewPath is { } path && TryLoad(path) is { } image) _frames = [ImageUtil.ToBitmap(image)];
+        else if (_entry?.ShapeSet is { } set) _frames = [ImageUtil.ToBitmap(AssetPreview.RenderShapeSet(set.Shapes))];
+        else if (_entry?.EffectTemplate is { } recipe)
         {
             bool animated = recipe.Effects.Any(effect => effect is AnimatedEffect || effect.ColorGradients.Values.Any(g => g.Animated));
             _frames = new WriteableBitmap?[animated ? AssetPreview.Steps : 1];
@@ -66,7 +73,7 @@ public sealed class AssetPreviewView : Control
 
     private void Show(int step)
     {
-        if (_entry.EffectTemplate is not { } recipe || _frames.Length == 0) return;
+        if (_entry?.EffectTemplate is not { } recipe || _frames.Length == 0) return;
         step = Math.Clamp(step, 0, _frames.Length - 1);
         _frames[step] ??= ImageUtil.ToBitmap(AssetPreview.Render(recipe.Effects, AssetPreview.SampleSprite(), step));
         _shown = step;

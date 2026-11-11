@@ -9893,7 +9893,7 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="ShapePen_DeleteSetConfirm" xml:space="preserve"><value>'{name}' 세트와 모양 {count}개를 지울까요? 되돌릴 수 없습니다(기본 세트는 '기본 세트 되돌리기'로 다시 넣을 수 있음).</value></data>
   <data name="ShapePen_RestoreDefaultsTip" xml:space="preserve"><value>기본 세트 되돌리기</value><comment>단추 풍선이자 확인 창 제목</comment></data>
   <data name="ShapePen_RestoreDefaults" xml:space="preserve"><value>되돌리기</value><comment>기본 세트 되돌리기 확인 단추</comment></data>
-  <data name="ShapePen_RestoreDefaultsConfirm" xml:space="preserve"><value>기본 세트 스무 가지(나뭇잎·단풍잎·솔잎·풀·꽃·꽃잎·반짝이·별·점·거품·구름·돌멩이·벽돌·빗방울·눈송이·하트·연기·나뭇결·금·동전과 보석)를 처음 모양으로 되돌립니다. 지운 기본 세트는 다시 넣고, 기본 세트에서 더하거나 지운 모양·바꾼 이름·순서는 처음대로 돌아갑니다. 직접 만든 세트는 그대로입니다.</value></data>
+  <data name="ShapePen_RestoreDefaultsConfirm" xml:space="preserve"><value>기본 세트 다섯 가지(나뭇잎·단풍잎·풀·별·거품)를 처음 모양으로 되돌립니다. 지운 기본 세트는 다시 넣고, 기본 세트에서 더하거나 지운 모양·바꾼 이름·순서는 처음대로 돌아갑니다. 내 세트와 받은 세트는 그대로입니다.</value></data>
   <data name="ShapePen_AddShape" xml:space="preserve"><value>모양 더하기</value><comment>모양 더하기 메뉴 단추</comment></data>
   <data name="ShapePen_AddShapeTip" xml:space="preserve"><value>고른 세트에 모양을 더합니다: 선택 영역·지금 셀(투명한 둘레는 잘라 냄, 불투명도 그대로) 또는 PNG 파일</value></data>
   <data name="ShapePen_AddFromSelection" xml:space="preserve"><value>선택 영역에서</value></data>
@@ -9923,37 +9923,29 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="ShapePen_OptimizedSpacing" xml:space="preserve"><value>최적화 간격</value><comment>모양 펜: 겹치지 않고 붙게 찍는 간격</comment></data>
   <data name="ShapePen_OptimizedSpacingTip" xml:space="preserve"><value>끌 때 다음 모양이 앞 도장과 겹치지 않는 첫 자리마다 찍어, 도장이 끄는 방향으로 겹치지 않고 붙어 이어집니다. 모양의 불투명한 픽셀로 재고(투명한 둘레는 셈하지 않음), 다음 모양이 다르면 그 모양으로 잽니다. 켜면 간격 칸은 쓰지 않습니다.</value></data>
   <data name="ShapePen_ExportSet" xml:space="preserve"><value>세트 내보내기…</value><comment>저장 창 제목</comment></data>
-  <data name="ShapePen_ExportSetTip" xml:space="preserve"><value>세트 내보내기…: 고른 세트를 파일 하나(.chickxel-shapes)로 저장합니다(이름·순서·모양, 불투명도 그대로). 다른 컴퓨터나 사람에게 세트를 넘길 때.</value></data>
   <data name="ShapePen_ImportSet" xml:space="preserve"><value>세트 가져오기…</value><comment>열기 창 제목</comment></data>
-  <data name="ShapePen_ImportSetTip" xml:space="preserve"><value>세트 가져오기…: 세트 파일(.chickxel-shapes, 여러 개)을 새 세트로 더합니다 — 있는 세트는 덮어쓰지 않고 이름이 겹치면 번호를 붙입니다. PNG를 고르면 그 그림 하나짜리 세트가 됩니다. 세트 파일을 창에 끌어 놓아도 가져옵니다.</value></data>
   <data name="ShapePen_SetFileType" xml:space="preserve"><value>모양 펜 세트</value><comment>파일 대화상자 형식 이름</comment></data>
-  <data name="ShapePen_ImportFileType" xml:space="preserve"><value>모양 펜 세트·PNG</value><comment>파일 대화상자 형식 이름</comment></data>
-  <data name="ShapePen_Exported" xml:space="preserve"><value>'{name}' 세트를 내보냈습니다: {path}</value></data>
   <data name="ShapePen_ExportFailed" xml:space="preserve"><value>세트를 내보내지 못했습니다: {error}</value></data>
   <data name="ShapePen_Imported" xml:space="preserve"><value>'{name}' 세트를 가져왔습니다 (모양 {count}개)</value></data>
   <data name="ShapePen_ImportFailed" xml:space="preserve"><value>모양 펜 세트로 읽을 수 없는 파일입니다: {names}</value></data>
-  <data name="ShapePen_CopySetTip" xml:space="preserve"><value>내 세트로 복사: 받은 세트(상점·패키지 파일)는 고칠 수 없으므로 고칠 수 있는 내 사본을 만듭니다. 받은 원본은 그대로 둡니다.</value></data>
-  <data name="ShapePen_PublishSetTip" xml:space="preserve"><value>상점에 올리기…: 고른 내 세트를 Chickxel 상점의 모양 펜 탭에 공개합니다(로그인 필요, 모양 1~64개). 기본 세트와 받은 세트는 올릴 수 없습니다. 같은 이름으로 다시 올리면 새 버전이 됩니다.</value></data>
-  <data name="ShapePen_ManagerTip" xml:space="preserve"><value>에셋 관리자: 받은 모양 펜 세트를 보고 지우거나, 상점의 모양 펜 탭에서 새 세트를 받습니다.</value></data>
-  <data name="ShapePen_ReadOnlyNote" xml:space="preserve"><value>받은 세트입니다(읽기 전용). 고치려면 세트 관리…에서 내 세트로 복사하세요. 지우기는 세트 관리…의 설치된 세트에서 합니다.</value></data>
+  <data name="ShapePen_ReadOnlyNote" xml:space="preserve"><value>받은 세트입니다(읽기 전용). 고치려면 세트 관리…(에셋 관리자)에서 내 세트로 복사하세요. 지우기도 에셋 관리자에서 합니다.</value></data>
   <data name="ShapePen_ManageSets" xml:space="preserve"><value>세트 관리…</value><comment>모양 펜 세트 단추 줄의 단추</comment></data>
-  <data name="ShapePen_ManageSetsTip" xml:space="preserve"><value>세트 관리…: 상점 둘러보기, 설치된 세트, 상점에 올리기, 세트 내보내기·가져오기, 내 세트로 복사(받은 세트)를 한 창에서 합니다.</value></data>
-  <data name="ShapePen_ManageTitle" xml:space="preserve"><value>모양 펜 세트 관리</value><comment>창 제목</comment></data>
-  <data name="ShapePen_ManageNoSet" xml:space="preserve"><value>고른 세트 없음</value></data>
-  <data name="ShapePen_ManageMine" xml:space="preserve"><value>내 세트</value></data>
-  <data name="ShapePen_ManageBuiltIn" xml:space="preserve"><value>기본 세트</value></data>
-  <data name="ShapePen_ManageReceived" xml:space="preserve"><value>받은 세트(읽기 전용)</value></data>
-  <data name="ShapePen_ManageStore" xml:space="preserve"><value>상점 둘러보기…</value></data>
-  <data name="ShapePen_ManageStoreDesc" xml:space="preserve"><value>상점의 모양 펜 탭에서 새 세트를 찾아 받습니다</value></data>
-  <data name="ShapePen_ManageInstalled" xml:space="preserve"><value>설치된 세트…</value></data>
-  <data name="ShapePen_ManageInstalledDesc" xml:space="preserve"><value>상점·패키지에서 받은 세트를 보고 지웁니다(에셋 관리자)</value></data>
-  <data name="ShapePen_ManagePublish" xml:space="preserve"><value>상점에 올리기…</value></data>
-  <data name="ShapePen_ManagePublishDesc" xml:space="preserve"><value>이 세트를 상점에 공개합니다(기본 세트가 아닌 내 세트, 로그인 필요)</value></data>
-  <data name="ShapePen_ManageExportDesc" xml:space="preserve"><value>이 세트를 .chickxel-shapes 파일 하나로 저장합니다</value></data>
-  <data name="ShapePen_ManageImportDesc" xml:space="preserve"><value>세트 파일·PNG를 새 세트로 더합니다</value></data>
-  <data name="ShapePen_ManageCopy" xml:space="preserve"><value>내 세트로 복사</value></data>
-  <data name="ShapePen_ManageCopyDesc" xml:space="preserve"><value>받은 세트를 고칠 수 있는 내 사본으로 만듭니다</value></data>
-  <data name="ShapePen_Copied" xml:space="preserve"><value>내 세트로 복사했습니다: {name}</value></data>
+  <data name="ShapePen_ManageSetsTip" xml:space="preserve"><value>세트 관리…: 에셋 관리자의 설치됨 › 모양 펜을 열어 고른 세트를 보입니다. 내 세트와 받은 세트를 보고, 상점에 올리기·내보내기·가져오기·내 세트로 복사·캔버스에서 편집·캔버스에서 새 세트를 합니다.</value></data>
+  <data name="Assets_NewSetFromCanvas" xml:space="preserve"><value>캔버스에서 새 세트…</value><comment>에셋 관리자 모양 펜 거르기 도구 막대 단추</comment></data>
+  <data name="Assets_NewSetFromCanvasTip" xml:space="preserve"><value>지금 문서로 새 내 세트를 만듭니다: 프레임마다 보이는 레이어를 합친 그림이 모양 하나가 됩니다(투명한 둘레는 잘라 내고 빈 프레임은 건너뜀, 모양 64개·한 변 256px까지).</value></data>
+  <data name="Assets_RestoreSetsTip" xml:space="preserve"><value>모양 펜 기본 세트 다섯 가지(나뭇잎·단풍잎·풀·별·거품)를 처음 모양으로 되돌립니다. 지운 기본 세트는 다시 넣습니다. 기본 세트는 이 목록에 보이지 않고 도구 설정의 세트 목록에서 고릅니다. 내 세트와 받은 세트는 그대로입니다.</value></data>
+  <data name="Assets_RestoreSetsDone" xml:space="preserve"><value>기본 세트 다섯 가지를 되돌렸습니다. 도구 설정의 모양 펜 세트 목록에서 고를 수 있습니다.</value></data>
+  <data name="Assets_SourceMySets" xml:space="preserve"><value>내 세트(모양 펜)</value><comment>내 모양 펜 세트의 출처</comment></data>
+  <data name="Assets_ExportSetMenu" xml:space="preserve"><value>내보내기</value><comment>내 모양 펜 세트 상세의 메뉴 단추</comment></data>
+  <data name="Assets_ExportSetTip" xml:space="preserve"><value>세트를 세트 파일(.chickxel-shapes) 또는 에셋 패키지(.chickxel-asset)로 저장합니다(백업·전달용).</value></data>
+  <data name="Assets_ExportSetFile" xml:space="preserve"><value>세트 파일(.chickxel-shapes)…</value></data>
+  <data name="Assets_ExportSetPackage" xml:space="preserve"><value>에셋 패키지(.chickxel-asset)…</value></data>
+  <data name="Assets_EditOnCanvas" xml:space="preserve"><value>캔버스에서 편집</value></data>
+  <data name="Assets_EditOnCanvasTip" xml:space="preserve"><value>세트를 새 문서 탭으로 엽니다(모양마다 프레임 하나). 고친 뒤 탭 아래 막대의 '세트에 저장'을 누르면 세트에 씁니다.</value></data>
+  <data name="Assets_EditCopyOnCanvasTip" xml:space="preserve"><value>받은 세트는 고칠 수 없으므로 내 세트로 복사하고 그 사본을 새 문서 탭으로 엽니다. 받은 원본은 그대로입니다.</value></data>
+  <data name="Assets_CopyToMySets" xml:space="preserve"><value>내 세트로 복사</value></data>
+  <data name="Assets_CopyToMySetsTip" xml:space="preserve"><value>받은 원본은 그대로 두고 고칠 수 있는 내 세트로 복사해 모양 펜에서 고릅니다.</value></data>
+  <data name="Assets_ImportShapeFileType" xml:space="preserve"><value>에셋 패키지·모양 펜 세트·PNG</value><comment>파일 대화상자 형식 이름</comment></data>
   <data name="ShapePen_PublishEmpty" xml:space="preserve"><value>모양이 없는 세트는 올릴 수 없습니다. 모양을 하나 이상 더하세요.</value></data>
   <data name="ShapePen_PublishTooMany" xml:space="preserve"><value>모양이 {max}개를 넘는 세트는 올릴 수 없습니다(지금 {count}개).</value></data>
   <data name="FrameRange_Group" xml:space="preserve"><value>적용 프레임</value></data>
@@ -9977,4 +9969,28 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="FrameRange_Applied" xml:space="preserve"><value>다른 프레임 {0}개에도 같은 자리로 적용했습니다 — Ctrl+Z 한 번으로 모두 되돌립니다.</value><comment>0 = 함께 고친 프레임 수.</comment></data>
   <data name="EffectCanvas_Staged" xml:space="preserve"><value>확인하면 {0}×{1} → {2}×{3}</value><comment>효과 창 '캔버스 늘리기…' 옆: 정해 둔 확대(확인할 때 효과와 함께 늘림). 0·1 = 지금 캔버스 크기, 2·3 = 늘린 크기.</comment></data>
   <data name="EffectCanvas_Drop" xml:space="preserve"><value>늘리지 않기 — 캔버스는 그대로 두고, 밖으로 나간 효과는 잘립니다</value><comment>효과 창: 정해 둔 캔버스 확대를 지우는 아이콘 단추의 도움말</comment></data>
+  <data name="ShapeCanvas_NoDocument" xml:space="preserve"><value>열린 문서가 없습니다 — 모양으로 만들 그림을 먼저 여세요</value><comment>캔버스에서 새 모양 펜 세트: 지금 문서가 없을 때</comment></data>
+  <data name="ShapeCanvas_NewTitle" xml:space="preserve"><value>캔버스에서 새 세트</value><comment>지금 문서의 프레임마다 모양 하나로 새 모양 펜 세트를 만드는 동작 — 이름 묻는 창 제목</comment></data>
+  <data name="ShapeCanvas_Empty" xml:space="preserve"><value>모든 프레임이 비어 있어 만들 모양이 없습니다</value></data>
+  <data name="ShapeCanvas_Created" xml:space="preserve"><value>새 세트를 만들었습니다: {set} — 모양 {count}개</value></data>
+  <data name="ShapeCanvas_Skipped" xml:space="preserve"><value> (빈 프레임 {count}개 건너뜀)</value><comment>만들기·저장 알림 뒤에 붙음(앞 칸 띄움 포함)</comment></data>
+  <data name="ShapeCanvas_TooBigFrame" xml:space="preserve"><value>프레임 {frame}: 모양이 너무 큽니다({width}×{height})</value><comment>frame = 프레임 번호(1부터)</comment></data>
+  <data name="ShapeCanvas_TooBigMore" xml:space="preserve"><value>그 밖에 프레임 {count}개도 너무 큽니다</value></data>
+  <data name="ShapeCanvas_TooBigLimit" xml:space="preserve"><value>모양 한 변은 {max}px까지입니다. 그림을 줄이거나 여러 프레임으로 나누세요.</value></data>
+  <data name="ShapeCanvas_TooMany" xml:space="preserve"><value>그림이 있는 프레임이 {count}개입니다 — 세트 하나에는 모양을 {max}개까지 넣을 수 있습니다. 프레임을 줄이세요.</value></data>
+  <data name="ShapeCanvas_ProblemTitle" xml:space="preserve"><value>모양 펜 세트로 만들 수 없음</value></data>
+  <data name="ShapeCanvas_TabTitle" xml:space="preserve"><value>모양 세트: {name}</value><comment>캔버스에서 고치는 모양 펜 세트 문서의 탭 제목</comment></data>
+  <data name="ShapeCanvas_Bar" xml:space="preserve"><value>모양 펜 세트 고치기: {name} — 프레임마다 모양 하나(빈 프레임은 건너뜀). '세트에 저장'을 눌러야 세트가 바뀝니다.</value><comment>세트를 고치는 문서의 탭 아래 막대</comment></data>
+  <data name="ShapeCanvas_SaveToSet" xml:space="preserve"><value>세트에 저장</value></data>
+  <data name="ShapeCanvas_SaveToSetTip" xml:space="preserve"><value>프레임마다 보이는 레이어를 합친 그림을 투명한 둘레를 잘라 세트의 모양으로 바꿉니다(세트 이름·순서는 그대로)</value></data>
+  <data name="ShapeCanvas_CloseTip" xml:space="preserve"><value>이 문서를 닫습니다(저장하지 않고 고쳤으면 세트에 저장할지 묻습니다)</value></data>
+  <data name="ShapeCanvas_Saved" xml:space="preserve"><value>세트에 저장했습니다: {set} — 모양 {count}개</value></data>
+  <data name="ShapeCanvas_Recreated" xml:space="preserve"><value>고치는 동안 세트가 지워져 다시 만들었습니다. </value><comment>저장 알림 앞에 붙음(끝 칸 띄움 포함)</comment></data>
+  <data name="ShapeCanvas_ApplyConfirm" xml:space="preserve"><value>모양 펜 세트에 고친 내용을 저장할까요?
+{name}
+
+저장하지 않으면 세트는 그대로입니다.</value></data>
+  <data name="ShapeCanvas_DontSave" xml:space="preserve"><value>저장 안 함</value></data>
+  <data name="ShapeCanvas_EditHint" xml:space="preserve"><value>프레임마다 모양 하나 — 다 고치면 탭 아래 막대의 '세트에 저장'을 누르세요(저장 단축키도 같음)</value></data>
+  <data name="ShapeCanvas_NotFound" xml:space="preserve"><value>모양 펜 세트를 찾을 수 없습니다</value></data>
 </root>

@@ -1,5 +1,6 @@
 using Chickxel.App.Localization;
 using Chickxel.Core.Assets;
+using Chickxel.Core.IO;
 
 namespace Chickxel.App;
 
@@ -14,8 +15,10 @@ public enum AssetManagerTab
 /// <summary>
 /// 에셋 관리자(계획 8장): 설치됨·상점·업데이트 탭. 설치됨 탭은 왼쪽에 에셋 목록(내 에셋 — <see cref="AppAssets.IsMine"/> — 과 받은 에셋),
 /// 오른쪽에 고른 에셋의 상세(미리보기, 작성자, 라이선스, 상점 ID·버전, 출처)와 동작(즐겨찾기, 고치기, 복사, 내보내기, 올리기, 삭제 …)을 둔다.
-/// 종류 거르기(효과·그라데이션·모양 펜)와 이름 검색은 메모리 카탈로그에서 한다. 상점·업데이트는 온라인 카탈로그(<c>.Store</c>)를 쓴다.
-/// 모달이며, 효과 창·그라데이션 프리셋 창에서도 종류 거르기와 처음 탭을 정해 연다. 저장소가 바뀌면(<see cref="AppAssets.Changed"/>) 목록을 다시 만든다.
+/// 종류 거르기(효과·그라데이션·모양 펜)와 이름 검색은 메모리 카탈로그에서 한다. 모양 펜 거르기의 내 에셋은 모양 펜 세트 모음의 내 세트(<c>.ShapeSets</c>)다.
+/// 상점·업데이트는 온라인 카탈로그(<c>.Store</c>)를 쓴다.
+/// 모달이며, 효과 창·그라데이션 프리셋 창·모양 펜 세트 줄에서도 종류 거르기와 처음 탭을 정해 연다. 저장소가 바뀌면(<see cref="AppAssets.Changed"/>)
+/// 또는 세트 모음이 바뀌면(<see cref="EditorContext.ShapeSetsChanged"/>) 목록을 다시 만든다.
 /// </summary>
 public sealed partial class AssetManagerWindow : DialogBase
 {
@@ -42,7 +45,7 @@ public sealed partial class AssetManagerWindow : DialogBase
     public static void Open(Window owner, string? kind = null, string? selectAssetId = null, AssetManagerTab tab = AssetManagerTab.Installed)
     {
         AppAssets.ShowProblems(owner);
-        new AssetManagerWindow(kind, selectAssetId, tab).ShowDialog(owner);
+        new AssetManagerWindow(kind, selectAssetId, tab, MainOf(owner)).ShowDialog(owner);
     }
 
     /// <summary>
@@ -58,7 +61,7 @@ public sealed partial class AssetManagerWindow : DialogBase
             return;
         }
         AppAssets.ShowProblems(owner);
-        var window = new AssetManagerWindow(null, null, AssetManagerTab.Store);
+        var window = new AssetManagerWindow(null, null, AssetManagerTab.Store, MainOf(owner));
         window.ShowRemotePackage(packageId);
         window.ShowDialog(owner);
     }
@@ -76,15 +79,17 @@ public sealed partial class AssetManagerWindow : DialogBase
             return;
         }
         AppAssets.ShowProblems(owner);
-        var window = new AssetManagerWindow(null, null, AssetManagerTab.Installed);
+        var window = new AssetManagerWindow(null, null, AssetManagerTab.Installed, MainOf(owner));
         // 창이 뜬 뒤에 가져와 묻는 창·오류 상자가 에셋 관리자 위에 뜨게 한다.
         window.Opened += (_, _) => Dispatcher.UIThread.Post(() => window.InstallFile(path));
         window.ShowDialog(owner);
     }
 
-    private AssetManagerWindow(string? kind, string? selectAssetId, AssetManagerTab tab) : base(UiStrings.Assets_Title)
+    private AssetManagerWindow(string? kind, string? selectAssetId, AssetManagerTab tab, MainForm? main) : base(UiStrings.Assets_Title)
     {
         s_current = this;
+        _shapeCtx = main?.ShapeSetContext;
+        _main = main;
         CloseOnly();
         CanResize = true;
         SizeToContent = SizeToContent.Manual;
@@ -99,26 +104,34 @@ public sealed partial class AssetManagerWindow : DialogBase
             // 처음 종류: 준 종류, 없으면 고를 에셋의 종류, 그것도 없으면 효과.
             SelectedIndex = FilterIndex(kind ?? (selectAssetId is null ? null : AppAssets.Catalog.Find(selectAssetId)?.Kind)),
         };
-        _filter.SelectionChanged += (_, _) => Dispatcher.UIThread.Post(Refresh);
+        _filter.SelectionChanged += (_, _) =>
+        {
+            ShowToolbarFor();
+            Dispatcher.UIThread.Post(Refresh);
+        };
         _search = new TextBox { Width = 180, Watermark = UiStrings.Assets_Search };
         _search.TextChanged += (_, _) => Refresh();
         var import = Ui.Button(VectorIcon.Download, UiStrings.Assets_Import, (_, _) => Import()).Tip(UiStrings.Assets_ImportTip);
-        var export = Ui.Button(VectorIcon.Upload, UiStrings.Assets_ExportShown, (_, _) => Export(Shown())).Tip(UiStrings.Assets_ExportShownTip);
+        var export = Ui.Button(VectorIcon.Upload, UiStrings.Assets_ExportShown, (_, _) => ExportShown()).Tip(UiStrings.Assets_ExportShownTip);
         var publish = Ui.Button(VectorIcon.Globe, UiStrings.Assets_Publish, (_, _) => PublishSelected()).Tip(UiStrings.Assets_PublishTip);
-        var restore = Ui.Button(VectorIcon.Undo2, UiStrings.Assets_RestoreOfficial, (sender, _) => RestoreOfficialEffects((Control)sender!))
+        _restoreEffects = Ui.Button(VectorIcon.Undo2, UiStrings.Assets_RestoreOfficial, (sender, _) => RestoreOfficialEffects((Control)sender!))
             .Tip(UiStrings.Assets_RestoreOfficialTip);
+        _restoreSets = Ui.Button(VectorIcon.Undo2, UiStrings.ShapePen_RestoreDefaultsTip, (_, _) => RestoreShapeSets()).Tip(UiStrings.Assets_RestoreSetsTip);
+        _newSetFromCanvas = Ui.Button(VectorIcon.Film, UiStrings.Assets_NewSetFromCanvas, (_, _) => NewShapeSetFromCanvas()).Tip(UiStrings.Assets_NewSetFromCanvasTip);
         var toolbar = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 6) };
         toolbar.Children.AddRange([
             _filter.HelpAt(HelpPage, anchor: "Filter by Effects"), _search.HelpAt(HelpPage, anchor: "Filter by Effects"),
             import.HelpAt(HelpPage, anchor: "Import from File"), export.HelpAt(HelpPage, anchor: "Import from File"),
-            publish.HelpAt(HelpPage, anchor: "Import from File"), restore.HelpAt(HelpPage, anchor: "Import from File"),
+            publish.HelpAt(HelpPage, anchor: "Import from File"), _restoreEffects.HelpAt(HelpPage, anchor: "Import from File"),
+            _newSetFromCanvas.HelpAt(HelpPage, anchor: "Import from File"), _restoreSets.HelpAt(HelpPage, anchor: "Import from File"),
         ]);
+        ShowToolbarFor();
         foreach (var child in toolbar.Children) child.Margin = new Thickness(0, 0, 8, 0);
 
         _list.SelectionChanged += (_, _) =>
         {
             if (_refreshing) return;
-            _selectKey = Selected is { } entry ? AssetKey(entry.Id) : null;
+            _selectKey = Selected is { } entry ? AssetKey(entry.Id) : SelectedSet is { } set ? ShapeSetKey(set.Id) : null;
             ShowDetail();
         };
         _list.HelpAt(HelpPage, anchor: "The list shows My assets");
@@ -152,9 +165,12 @@ public sealed partial class AssetManagerWindow : DialogBase
             RefreshRemoteViews();
         });
         AppAssets.Changed += _onChanged;
+        EventHandler onShapeSetsChanged = (_, _) => Dispatcher.UIThread.Post(Refresh);
+        if (_shapeCtx is not null) _shapeCtx.ShapeSetsChanged += onShapeSetsChanged;
         Closed += (_, _) =>
         {
             AppAssets.Changed -= _onChanged;
+            if (_shapeCtx is not null) _shapeCtx.ShapeSetsChanged -= onShapeSetsChanged;
             _closing.Cancel();
             if (s_current == this) s_current = null;
         };
@@ -230,7 +246,10 @@ public sealed partial class AssetManagerWindow : DialogBase
     /// <summary>목록에 보이는 에셋(거르기·검색에 맞는 것, 저장소 순서).</summary>
     private List<AssetEntry> Shown() => AppAssets.Catalog.All.Where(Matches).ToList();
 
-    /// <summary>카탈로그에서 목록(내 에셋, 받은 에셋)을 다시 만들고 <see cref="_selectKey"/>를 고른다(없으면 첫 항목).</summary>
+    /// <summary>
+    /// 카탈로그에서 목록(내 에셋, 받은 에셋)을 다시 만들고 <see cref="_selectKey"/>를 고른다(없으면 첫 항목).
+    /// 모양 펜 거르기는 <see cref="AddShapeSetRows"/>(내 에셋 = 세트 모음의 내 세트).
+    /// </summary>
     private void Refresh()
     {
         string? handle = AppAssets.MyHandle;
@@ -239,30 +258,42 @@ public sealed partial class AssetManagerWindow : DialogBase
         {
             _list.Items.Clear();
             var shown = Shown();
-            var mine = shown.Where(entry => entry.IsOwnedBy(handle)).ToList();
-            var received = shown.Where(entry => !entry.IsOwnedBy(handle)).ToList();
-            if (mine.Count > 0)
+            if (IsShapeSetFilter) AddShapeSetRows(shown);
+            else
             {
-                AddHeader(UiStrings.Assets_PersonalHeader);
-                foreach (var entry in mine) AddRow(entry, AssetRow(entry, mine: true));
-            }
-            if (received.Count > 0)
-            {
-                AddHeader(UiStrings.Assets_ReceivedHeader);
-                foreach (var entry in received) AddRow(entry, AssetRow(entry, mine: false));
+                var mine = shown.Where(entry => entry.IsOwnedBy(handle)).ToList();
+                var received = shown.Where(entry => !entry.IsOwnedBy(handle)).ToList();
+                if (mine.Count > 0)
+                {
+                    AddHeader(UiStrings.Assets_PersonalHeader);
+                    foreach (var entry in mine) AddRow(entry, AssetRow(entry, mine: true));
+                }
+                if (received.Count > 0)
+                {
+                    AddHeader(UiStrings.Assets_ReceivedHeader);
+                    foreach (var entry in received) AddRow(entry, AssetRow(entry, mine: false));
+                }
             }
             if (_list.Items.Count == 0)
                 _list.Items.Add(new ListBoxItem { Content = Ui.Label(UiStrings.Assets_EmptyInstalled), IsEnabled = false });
 
-            var rows = _list.Items.OfType<ListBoxItem>().Where(item => item.Tag is AssetEntry).ToList();
-            var target = rows.FirstOrDefault(item => AssetKey(((AssetEntry)item.Tag!).Id) == _selectKey) ?? rows.FirstOrDefault();
+            var rows = _list.Items.OfType<ListBoxItem>().Where(item => item.Tag is AssetEntry or StampSet).ToList();
+            var target = rows.FirstOrDefault(item => RowKey(item) == _selectKey) ?? rows.FirstOrDefault();
             _list.SelectedItem = target;
-            _selectKey = target?.Tag is AssetEntry selected ? AssetKey(selected.Id) : null;
+            _selectKey = target is null ? null : RowKey(target);
         }
         finally { _refreshing = false; }
         ShowDetail();
         if (_list.SelectedItem is { } selectedItem) _list.ScrollIntoView(selectedItem);
     }
+
+    /// <summary>목록 줄의 고를 키(에셋 = <see cref="AssetKey"/>, 내 모양 펜 세트 = <see cref="ShapeSetKey"/>).</summary>
+    private static string? RowKey(ListBoxItem item) => item.Tag switch
+    {
+        AssetEntry entry => AssetKey(entry.Id),
+        StampSet set => ShapeSetKey(set.Id),
+        _ => null,
+    };
 
     private void AddHeader(string text)
     {

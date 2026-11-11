@@ -376,6 +376,26 @@ public class ShapeStampTests
     }
 
     [Fact]
+    public void Library_RetiredNameMatchingItsOwnId_GetsNoNumberSuffix()
+    {
+        // 영어 이름이 이름표와 대소문자만 다른 예전 기본 세트(flowers → "Flowers")는 자기 이름표와 겹친다고 보지 않는다. 다른 세트와 겹치면 번호를 붙인다
+        var shape = Convert.ToBase64String(PngBytes(Shape()));
+        var old = $$"""{"version":1,"sets":[{"id":"flowers","shapes":["{{shape}}"]},{"id":"hearts","shapes":["{{shape}}"]},{"id":"mine","name":"Hearts","shapes":[]}]}""";
+        var previous = System.Globalization.CultureInfo.CurrentUICulture;
+        try
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo("en");
+            var library = StampLibrary.Parse(old)!;
+            Assert.Equal("Flowers", library.Find("flowers")!.Name);
+            Assert.Equal("Hearts (2)", library.Find("hearts")!.Name);
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = previous;
+        }
+    }
+
+    [Fact]
     public void Library_NewInstallHasOnlyTheFiveBuiltIns()
     {
         string[] five = ["leaves", "autumn", "grass", "stars", "bubbles"];

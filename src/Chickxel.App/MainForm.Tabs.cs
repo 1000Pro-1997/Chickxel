@@ -354,6 +354,10 @@ public sealed partial class MainForm
         // 미리보기 탭이 고른 탭인 묶음 칸에는 미리보기 그림을 단다(하나뿐이라 그 칸으로 옮겨 단다).
         var previewView = _preview.TabView;
         Panel? previewHost = null;
+        // 문서 막대는 한 칸에만 달 수 있다 — 바뀌는 칸에서 먼저 떼고 고른 탭의 막대를 단다.
+        Control? BarOf(int g) => g < _tabs.GroupCount ? _tabs.Active(g)?.Doc?.Bar : null;
+        for (int g = 0; g < _panes.Length; g++)
+            if (!ReferenceEquals(_panes[g].Bar.Content, BarOf(g))) _panes[g].Bar.Content = null;
         for (int g = 0; g < _panes.Length; g++)
         {
             var pane = _panes[g];
@@ -368,6 +372,9 @@ public sealed partial class MainForm
             pane.Passive.AutoFit = _canvas.AutoFit;
             pane.Passive.Tab = focused || preview || !exists ? null : _tabs.Active(g);
             if (!focused && !preview) pane.Passive.Refresh();
+            var bar = BarOf(g);
+            pane.Bar.Content = bar;
+            pane.Bar.IsVisible = bar is not null;
         }
         if (!ReferenceEquals(previewView.Parent, previewHost))
         {
@@ -459,6 +466,7 @@ public sealed partial class MainForm
         }
         if (ReferenceEquals(tab, _activeTab)) _ctx.CommitFloating();
         if (doc.Project.IsDirty && !doc.IsDetached && !ConfirmCloseDocument(doc)) return false;
+        if (doc.IsDetached && doc.ConfirmClose is { } confirm && !confirm()) return false;
         if (ReferenceEquals(tab, _activeTab)) _activeTab = null;
         _tabs.Remove(tab);
         ForgetDocument(doc);

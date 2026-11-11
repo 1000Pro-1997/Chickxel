@@ -562,7 +562,7 @@ internal sealed class DocumentPaneView : Control
     }
 }
 
-/// <summary>편집기 묶음 하나의 칸: 위 탭 줄 + 아래 그림 칸(포커스된 묶음은 캔버스, 아니면 <see cref="DocumentPaneView"/>).</summary>
+/// <summary>편집기 묶음 하나의 칸: 위 탭 줄 + 고른 문서의 막대(<see cref="OpenDocument.Bar"/>, 있을 때만) + 아래 그림 칸(포커스된 묶음은 캔버스, 아니면 <see cref="DocumentPaneView"/>).</summary>
 internal sealed class DocumentPane : DockPanel
 {
     public DocumentPane()
@@ -570,11 +570,16 @@ internal sealed class DocumentPane : DockPanel
         LastChildFill = true;
         DockPanel.SetDock(Strip, Dock.Top);
         Children.Add(Strip);
+        DockPanel.SetDock(Bar, Dock.Top);
+        Children.Add(Bar);
         Content.Children.Add(Passive);
         Children.Add(Content);
     }
 
     public DocumentTabStrip Strip { get; } = new();
+
+    /// <summary>고른 탭 문서의 막대 자리(<see cref="OpenDocument.Bar"/>, 없으면 숨김).</summary>
+    public ContentControl Bar { get; } = new() { IsVisible = false };
 
     /// <summary>그림 칸(캔버스나 <see cref="Passive"/>를 담음).</summary>
     public Grid Content { get; } = new() { Background = AppTheme.BackBrush, ClipToBounds = true };

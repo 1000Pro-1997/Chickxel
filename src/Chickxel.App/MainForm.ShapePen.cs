@@ -47,21 +47,14 @@ public sealed partial class MainForm
         }
     }
 
-    /// <summary>
-    /// 받은 세트(상점·패키지 파일)를 고칠 수 있는 내 세트로 복사해 끝에 더하고 고른다(새 이름표, 이름이 겹치면 " (2)" … — 받은 원본은 그대로).
-    /// 도구 설정의 복사 단추와 에셋 관리자의 "내 에셋으로 복사"가 쓴다. 메인 창이 없으면 아무것도 하지 않고 null.
-    /// </summary>
-    internal static StampSet? CopyShapeSetToMine(StampSet set)
-    {
-        if (Application.Current?.ApplicationLifetime is not Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime { MainWindow: MainForm main })
-            return null;
-        var ctx = main._ctx;
-        var copy = ShapeSetAssetFormat.Copy(set, Guid.NewGuid().ToString("N"));
-        ctx.ShapeSets.AddImported(copy, set.DisplayName);
-        ctx.ShapePenSetId = copy.Id;
-        ctx.NotifyShapeSetsEdited();
-        return copy;
-    }
+    /// <summary>앱의 메인 창(없으면 null — 에셋 관리자·효과 만들기처럼 메인 창 밖에서 세트 모음에 닿을 때).</summary>
+    internal static MainForm? Current
+        => Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime { MainWindow: MainForm main }
+            ? main
+            : null;
+
+    /// <summary>모양 펜 세트 모음을 가진 편집 상태(에셋 관리자의 모양 펜 거르기가 내 세트를 보이고 고친다).</summary>
+    internal EditorContext ShapeSetContext => _ctx;
 
     /// <summary>끌어 온 파일 중 모양 펜 세트 파일(<see cref="StampLibrary.SetFileExtension"/>).</summary>
     private static List<string> ShapeSetFiles(IDataTransfer data)
@@ -73,6 +66,6 @@ public sealed partial class MainForm
     {
         _ctx.Tool = ToolKind.ShapePen;
         UpdateToolUi();
-        _toolOptions.ImportShapeSets(paths);
+        if (ShapeSetActions.Import(this, _ctx, paths) is { Count: > 0 } imported) ShowMessage(ShapeSetActions.ImportedText(imported));
     }
 }

@@ -59,10 +59,12 @@ public sealed class StampLibrary
         }
     }
 
-    /// <summary>보이는 이름이 겹치지 않는 이름: <paramref name="name"/>이 이미 있으면 " (2)", " (3)" …를 붙인다.</summary>
-    public string UniqueName(string name)
+    /// <summary>
+    /// 보이는 이름이 겹치지 않는 이름: <paramref name="name"/>이 이미 있으면 " (2)", " (3)" …를 붙인다. <paramref name="except"/>(이름을 붙일 세트 자신)의 이름은 셈하지 않는다.
+    /// </summary>
+    public string UniqueName(string name, StampSet? except = null)
     {
-        var taken = Sets.Select(s => s.DisplayName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var taken = Sets.Where(s => s != except).Select(s => s.DisplayName).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (!taken.Contains(name)) return name;
         int n = 2;
         while (taken.Contains($"{name} ({n})")) n++;
@@ -168,7 +170,7 @@ public sealed class StampLibrary
                 library.Sets.Add(FromDto(dto, dto.Id));
             }
             foreach (var set in library.Sets)
-                if (set.Name is null && StampBuiltIns.RetiredName(set.Id) is { } retired) set.Name = library.UniqueName(retired);
+                if (set.Name is null && StampBuiltIns.RetiredName(set.Id) is { } retired) set.Name = library.UniqueName(retired, except: set);
             library.AddNewBuiltIns(file.KnownBuiltIns ?? StampBuiltIns.FirstIds);
             return library;
         }

@@ -38,6 +38,14 @@ internal sealed class OpenDocument(SpriteProject project, string? sourcePath)
     /// <summary>탭을 닫아 문서를 놓을 때 부른다(저장하지 않는 문서의 주인에게 알림). 없으면 null.</summary>
     public Action? Closed { get; init; }
 
+    /// <summary>
+    /// 저장하지 않는 문서의 탭을 닫기 전(탭 닫기·모든 탭 닫기·앱 끝내기) 주인이 묻는다(예: 모양 펜 세트에 반영할지). false면 닫지 않는다. 없으면 묻지 않음.
+    /// </summary>
+    public Func<bool>? ConfirmClose { get; init; }
+
+    /// <summary>이 문서를 고른 묶음 칸의 탭 줄 바로 아래에 보일 막대(예: 모양 펜 세트에 저장). 없으면 null.</summary>
+    public Control? Bar { get; init; }
+
     /// <summary>문서의 디스크 파일: 프로젝트 파일이 있으면 그것, 아니면 연 PNG(둘 다 없으면 프로젝트 경로).</summary>
     public string? DiskPath => Project.Path is { } p && File.Exists(p) ? p : SourcePath ?? Project.Path;
 

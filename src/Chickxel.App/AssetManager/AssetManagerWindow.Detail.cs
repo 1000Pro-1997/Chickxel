@@ -15,6 +15,7 @@ public sealed partial class AssetManagerWindow
     {
         _detail.Children.Clear();
         if (Selected is { } entry) AssetDetail(entry);
+        else if (SelectedSet is { } set && _shapeCtx is not null) ShapeSetDetail(set);
         else _detail.Children.Add(Dim(UiStrings.Assets_SelectHint));
     }
 
@@ -89,13 +90,14 @@ public sealed partial class AssetManagerWindow
 
     /// <summary>
     /// 에셋 상세: 미리보기, 설명, 정보 표(종류·작성자·라이선스·상점 ID·버전·고침·출처·들어온 시각·필요한 앱 버전·스크립트), 스크립트 설정·레시피 효과 목록, 동작.
-    /// 내 에셋은 그 자리에서 고치고(이름, 매개변수, 효과 만들기) 올릴 수 있고, 받은 에셋은 내 에셋으로 복사해서 고친다.
+    /// 내 에셋은 그 자리에서 고치고(이름, 매개변수, 효과 만들기) 올릴 수 있고, 받은 에셋은 내 에셋으로 복사해서 고친다(받은 모양 펜 세트는 복사본을 캔버스에서 편집할 수도 있음).
+    /// 세트 모음의 내 모양 펜 세트는 <see cref="ShapeSetDetail"/>.
     /// </summary>
     private void AssetDetail(AssetEntry entry)
     {
         var culture = CultureInfo.CurrentUICulture;
         string? handle = AppAssets.MyHandle;
-        bool mine = entry.IsOwnedBy(handle);
+        bool mine = IsMineEntry(entry, handle);
         AddTitle(entry.DisplayName);
         if (entry.Gradient is { } gradient)
             _detail.Children.Add(new GradientSwatch { Preset = gradient, Height = 48 });
@@ -176,7 +178,11 @@ public sealed partial class AssetManagerWindow
         else
             Actions(
                 favorite,
-                Ui.Button(VectorIcon.Copy, UiStrings.Assets_CopyToPersonal, (_, _) => CopyAsMine(entry)).Tip(UiStrings.Assets_CopyToPersonalTip),
+                Ui.Button(VectorIcon.Copy, entry.ShapeSet is null ? UiStrings.Assets_CopyToPersonal : UiStrings.Assets_CopyToMySets, (_, _) => CopyAsMine(entry))
+                    .Tip(entry.ShapeSet is null ? UiStrings.Assets_CopyToPersonalTip : UiStrings.Assets_CopyToMySetsTip),
+                entry.ShapeSet is { } received && _shapeCtx is not null
+                    ? Ui.Button(VectorIcon.Image, UiStrings.Assets_EditOnCanvas, (_, _) => EditCopyOnCanvas(received)).Tip(UiStrings.Assets_EditCopyOnCanvasTip)
+                    : null,
                 export,
                 entry.Author?.Url is { } url ? Ui.Button(VectorIcon.ExternalLink, UiStrings.Assets_WebPage, (_, _) => Updater.OpenUrl(this, url)).Tip(url) : null,
                 entry.LicenseFilePath is { } license ? Ui.Button(VectorIcon.Info, UiStrings.Assets_ViewLicense, (_, _) => ShowLicense(entry, license)) : null,
@@ -192,8 +198,22 @@ public sealed partial class AssetManagerWindow
 
     private static FileFilter PackageFilter => new(UiStrings.Assets_FileType, "*" + AssetPackage.Extension);
 
+    /// <summary>
+    /// 패키지 파일을 골라 가져온다. 모양 펜 거르기면 모양 펜 세트 파일(.chickxel-shapes)·PNG도 골라 새 내 세트로 가져온다(여러 개).
+    /// </summary>
     private void Import()
     {
+        if (IsShapeSetFilter && _shapeCtx is not null)
+        {
+            var paths = Ui.OpenFiles(this, UiStrings.Assets_ImportTitle, null,
+                new FileFilter(UiStrings.Assets_ImportShapeFileType, "*" + AssetPackage.Extension, "*" + AssetPackage.LegacyExtension, "*" + StampLibrary.SetFileExtension, "*.png"),
+                new FileFilter(UiStrings.Assets_FileType, "*" + AssetPackage.Extension, "*" + AssetPackage.LegacyExtension),
+                ShapeSetActions.SetFileFilter);
+            var setFiles = paths.Where(ShapeSetActions.IsSetFile).ToList();
+            if (setFiles.Count > 0) ImportSetFiles(setFiles);
+            foreach (var package in paths.Where(p => !ShapeSetActions.IsSetFile(p))) InstallFile(package);
+            return;
+        }
         if (Ui.OpenFile(this, UiStrings.Assets_ImportTitle, null,
                 new FileFilter(UiStrings.Assets_FileType, "*" + AssetPackage.Extension, "*" + AssetPackage.LegacyExtension)) is not { } path) return;
         InstallFile(path);
@@ -275,17 +295,23 @@ public sealed partial class AssetManagerWindow
     }
 
     /// <summary>
-    /// 온라인에 올리기(게시 창, 로그인 필요): 목록에서 고른 내 에셋을(고른 것이 없고 목록에 보이는 올릴 수 있는 내 에셋이 하나뿐이면 그것을) 연다.
+    /// 온라인에 올리기(게시 창, 로그인 필요): 목록에서 고른 내 에셋이나 내 모양 펜 세트를(고른 것이 없고 목록에 보이는 올릴 수 있는 내 에셋이 하나뿐이면 그것을) 연다.
     /// 받은 에셋을 골랐으면 복사해서 올리라고, 그 밖에는 하나를 고르라고 알린다. 효과 프리셋은 올리지 않는다.
     /// </summary>
     private async void PublishSelected()
     {
-        if (Selected is { } selected && !AppAssets.IsMine(selected))
+        if (SelectedSet is { } set && _shapeCtx is not null)
+        {
+            await ShapeSetActions.PublishAsync(this, _shapeCtx, set);
+            return;
+        }
+        string? handle = AppAssets.MyHandle;
+        if (Selected is { } selected && !IsMineEntry(selected, handle))
         {
             Ui.Info(this, UiStrings.Publish_NotMine, UiStrings.Publish_Title);
             return;
         }
-        var shown = Shown().Where(e => AppAssets.IsMine(e) && e.Kind != AssetKinds.EffectRecipe).ToList();
+        var shown = Shown().Where(e => IsMineEntry(e, handle) && e.Kind != AssetKinds.EffectRecipe).ToList();
         var asset = Selected is { Kind: not AssetKinds.EffectRecipe } chosen ? chosen : shown.Count == 1 ? shown[0] : null;
         if (asset is null)
         {
@@ -353,7 +379,10 @@ public sealed partial class AssetManagerWindow
     {
         if (entry.ShapeSet is { } set)
         {
-            if (MainForm.CopyShapeSetToMine(set) is { } copy) Ui.Info(this, UiStrings.FormatShapePen_Copied(name: copy.DisplayName), UiStrings.Assets_CopyToPersonal);
+            if (_shapeCtx is null) return;
+            _selectKey = ShapeSetKey(ShapeSetActions.CopyToMine(_shapeCtx, set).Id);
+            _search.Text = "";
+            Refresh();
             return;
         }
         if (AppAssets.CopyAsMine(this, entry) is not { } saved) return;

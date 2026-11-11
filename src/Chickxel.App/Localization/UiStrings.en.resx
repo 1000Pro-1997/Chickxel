@@ -4097,7 +4097,7 @@ Transparent pixels compare alpha only; between visible pixels the alpha differen
   <data name="ShapePen_DeleteSetConfirm" xml:space="preserve"><value>Delete the set '{name}' and its {count} shapes? This can't be undone (built-in sets come back with Restore built-in sets).</value></data>
   <data name="ShapePen_RestoreDefaultsTip" xml:space="preserve"><value>Restore built-in sets</value></data>
   <data name="ShapePen_RestoreDefaults" xml:space="preserve"><value>Restore</value></data>
-  <data name="ShapePen_RestoreDefaultsConfirm" xml:space="preserve"><value>Restores the twenty built-in sets (leaves, autumn leaves, pine needles, grass, flowers, petals, sparkles, stars, dots, bubbles, clouds, pebbles, bricks, raindrops, snowflakes, hearts, smoke puffs, wood grain, cracks, coins and gems) to how they shipped. Deleted built-in sets come back, and shapes added to or removed from them, their names and order are reset. Your own sets are kept.</value></data>
+  <data name="ShapePen_RestoreDefaultsConfirm" xml:space="preserve"><value>Restores the five built-in sets (leaves, autumn leaves, grass, stars, bubbles) to how they shipped. Deleted built-in sets come back, and shapes added to or removed from them, their names and order are reset. Your own sets and received sets are kept.</value></data>
   <data name="ShapePen_AddShape" xml:space="preserve"><value>Add shape</value></data>
   <data name="ShapePen_AddShapeTip" xml:space="preserve"><value>Adds a shape to the selected set: from the selection or the current cel (transparent border trimmed, opacity kept) or from PNG files</value></data>
   <data name="ShapePen_AddFromSelection" xml:space="preserve"><value>From selection</value></data>
@@ -4127,37 +4127,29 @@ Transparent pixels compare alpha only; between visible pixels the alpha differen
   <data name="ShapePen_OptimizedSpacing" xml:space="preserve"><value>Optimized spacing</value></data>
   <data name="ShapePen_OptimizedSpacingTip" xml:space="preserve"><value>While dragging, stamps where the next shape no longer overlaps the previous stamp, so stamps touch along the drag without overlapping. Measured on the shapes' opaque pixels (transparent borders don't count), using the actual next shape. While on, the spacing box is not used.</value></data>
   <data name="ShapePen_ExportSet" xml:space="preserve"><value>Export set…</value></data>
-  <data name="ShapePen_ExportSetTip" xml:space="preserve"><value>Export set…: saves the selected set as one file (.chickxel-shapes — name, order and shapes with their opacity), to share it or move it to another computer.</value></data>
   <data name="ShapePen_ImportSet" xml:space="preserve"><value>Import sets…</value></data>
-  <data name="ShapePen_ImportSetTip" xml:space="preserve"><value>Import sets…: adds set files (.chickxel-shapes, several at once) as new sets — existing sets are never overwritten and a number is added when a name is taken. A PNG becomes a set with that one shape. Dropping a set file on the window imports it too.</value></data>
   <data name="ShapePen_SetFileType" xml:space="preserve"><value>Shape pen set</value></data>
-  <data name="ShapePen_ImportFileType" xml:space="preserve"><value>Shape pen sets and PNG</value></data>
-  <data name="ShapePen_Exported" xml:space="preserve"><value>Exported the set '{name}': {path}</value></data>
   <data name="ShapePen_ExportFailed" xml:space="preserve"><value>Couldn't export the set: {error}</value></data>
   <data name="ShapePen_Imported" xml:space="preserve"><value>Imported the set '{name}' ({count} shapes)</value></data>
   <data name="ShapePen_ImportFailed" xml:space="preserve"><value>These files couldn't be read as shape pen sets: {names}</value></data>
-  <data name="ShapePen_CopySetTip" xml:space="preserve"><value>Copy to my sets: received sets (from the store or a package file) can't be edited, so this makes an editable copy of your own. The received original stays as is.</value></data>
-  <data name="ShapePen_PublishSetTip" xml:space="preserve"><value>Publish to store…: publishes the selected set of yours to the Shape pen tab of the Chickxel store (sign-in required, 1–64 shapes). Default sets and received sets can't be published. Publishing again under the same name makes a new version.</value></data>
-  <data name="ShapePen_ManagerTip" xml:space="preserve"><value>Asset Manager: view or delete received shape pen sets, or get new ones from the store's Shape pen tab.</value></data>
-  <data name="ShapePen_ReadOnlyNote" xml:space="preserve"><value>Received set (read-only). To edit it, copy it to your sets with Manage sets…; delete it there under Installed sets.</value></data>
+  <data name="ShapePen_ReadOnlyNote" xml:space="preserve"><value>Received set (read-only). To edit it, copy it to your sets in Manage sets… (Asset Manager); delete it there too.</value></data>
   <data name="ShapePen_ManageSets" xml:space="preserve"><value>Manage sets…</value></data>
-  <data name="ShapePen_ManageSetsTip" xml:space="preserve"><value>Manage sets…: browse the store, see installed sets, publish to the store, export and import sets, and copy received sets to your sets — all in one window.</value></data>
-  <data name="ShapePen_ManageTitle" xml:space="preserve"><value>Manage shape pen sets</value></data>
-  <data name="ShapePen_ManageNoSet" xml:space="preserve"><value>No set selected</value></data>
-  <data name="ShapePen_ManageMine" xml:space="preserve"><value>Your set</value></data>
-  <data name="ShapePen_ManageBuiltIn" xml:space="preserve"><value>Built-in set</value></data>
-  <data name="ShapePen_ManageReceived" xml:space="preserve"><value>Received set (read-only)</value></data>
-  <data name="ShapePen_ManageStore" xml:space="preserve"><value>Browse store…</value></data>
-  <data name="ShapePen_ManageStoreDesc" xml:space="preserve"><value>Find and get new sets in the store's Shape pen tab</value></data>
-  <data name="ShapePen_ManageInstalled" xml:space="preserve"><value>Installed sets…</value></data>
-  <data name="ShapePen_ManageInstalledDesc" xml:space="preserve"><value>View or delete sets received from the store or packages (Asset Manager)</value></data>
-  <data name="ShapePen_ManagePublish" xml:space="preserve"><value>Publish to store…</value></data>
-  <data name="ShapePen_ManagePublishDesc" xml:space="preserve"><value>Share this set in the store (your own sets, not built-in; sign-in required)</value></data>
-  <data name="ShapePen_ManageExportDesc" xml:space="preserve"><value>Save this set as one .chickxel-shapes file</value></data>
-  <data name="ShapePen_ManageImportDesc" xml:space="preserve"><value>Add set files or PNGs as new sets</value></data>
-  <data name="ShapePen_ManageCopy" xml:space="preserve"><value>Copy to my sets</value></data>
-  <data name="ShapePen_ManageCopyDesc" xml:space="preserve"><value>Make an editable copy of this received set</value></data>
-  <data name="ShapePen_Copied" xml:space="preserve"><value>Copied to your sets: {name}</value></data>
+  <data name="ShapePen_ManageSetsTip" xml:space="preserve"><value>Manage sets…: opens Asset Manager › Installed › Shape pen with the selected set. See your sets and received sets; publish to the store, export, import, copy to my sets, edit on canvas or make a new set from the canvas.</value></data>
+  <data name="Assets_NewSetFromCanvas" xml:space="preserve"><value>New set from canvas…</value></data>
+  <data name="Assets_NewSetFromCanvasTip" xml:space="preserve"><value>Makes a new set from the current document: each frame's merged visible layers become one shape (transparent edges trimmed, empty frames skipped; up to 64 shapes, 256 px per side).</value></data>
+  <data name="Assets_RestoreSetsTip" xml:space="preserve"><value>Restores the five built-in shape pen sets (leaves, autumn leaves, grass, stars, bubbles) to how they shipped; deleted ones come back. Built-in sets are not listed here — pick them in the set list in Tool options. Your sets and received sets are kept.</value></data>
+  <data name="Assets_RestoreSetsDone" xml:space="preserve"><value>The five built-in sets were restored. Pick them from the shape pen set list in Tool options.</value></data>
+  <data name="Assets_SourceMySets" xml:space="preserve"><value>My sets (shape pen)</value></data>
+  <data name="Assets_ExportSetMenu" xml:space="preserve"><value>Export</value></data>
+  <data name="Assets_ExportSetTip" xml:space="preserve"><value>Saves the set as a set file (.chickxel-shapes) or an asset package (.chickxel-asset) — for backups or passing it on.</value></data>
+  <data name="Assets_ExportSetFile" xml:space="preserve"><value>Set file (.chickxel-shapes)…</value></data>
+  <data name="Assets_ExportSetPackage" xml:space="preserve"><value>Asset package (.chickxel-asset)…</value></data>
+  <data name="Assets_EditOnCanvas" xml:space="preserve"><value>Edit on canvas</value></data>
+  <data name="Assets_EditOnCanvasTip" xml:space="preserve"><value>Opens the set as a new document tab (one frame per shape). Press 'Save to set' on the bar under the tabs to write your changes back to the set.</value></data>
+  <data name="Assets_EditCopyOnCanvasTip" xml:space="preserve"><value>Received sets are read-only, so this copies the set to your sets and opens the copy as a new document tab. The received original is kept.</value></data>
+  <data name="Assets_CopyToMySets" xml:space="preserve"><value>Copy to my sets</value></data>
+  <data name="Assets_CopyToMySetsTip" xml:space="preserve"><value>Keeps the received original and makes an editable copy in your sets, selected in the shape pen.</value></data>
+  <data name="Assets_ImportShapeFileType" xml:space="preserve"><value>Asset packages, shape pen sets, PNG</value></data>
   <data name="ShapePen_PublishEmpty" xml:space="preserve"><value>A set without shapes can't be published. Add at least one shape.</value></data>
   <data name="ShapePen_PublishTooMany" xml:space="preserve"><value>A set with more than {max} shapes can't be published (it has {count}).</value></data>
   <data name="FrameRange_Group" xml:space="preserve"><value>Apply to frames</value></data>
@@ -4181,4 +4173,28 @@ Transparent pixels compare alpha only; between visible pixels the alpha differen
   <data name="FrameRange_Applied" xml:space="preserve"><value>Also applied at the same place on {0} other frames. One Ctrl+Z undoes all of it.</value></data>
   <data name="EffectCanvas_Staged" xml:space="preserve"><value>On OK: {0}×{1} → {2}×{3}</value></data>
   <data name="EffectCanvas_Drop" xml:space="preserve"><value>Don't expand — keep the canvas; effects past it are cut off</value></data>
+  <data name="ShapeCanvas_NoDocument" xml:space="preserve"><value>No document is open — open the picture to turn into shapes first</value></data>
+  <data name="ShapeCanvas_NewTitle" xml:space="preserve"><value>New set from canvas</value></data>
+  <data name="ShapeCanvas_Empty" xml:space="preserve"><value>Every frame is empty — there are no shapes to make</value></data>
+  <data name="ShapeCanvas_Created" xml:space="preserve"><value>Created a new set: {set} — {count} shape(s)</value></data>
+  <data name="ShapeCanvas_Skipped" xml:space="preserve"><value> (skipped {count} empty frame(s))</value></data>
+  <data name="ShapeCanvas_TooBigFrame" xml:space="preserve"><value>Frame {frame}: the shape is too big ({width}×{height})</value></data>
+  <data name="ShapeCanvas_TooBigMore" xml:space="preserve"><value>{count} more frame(s) are too big as well</value></data>
+  <data name="ShapeCanvas_TooBigLimit" xml:space="preserve"><value>Shapes can be up to {max}px per side. Make the picture smaller or split it into more frames.</value></data>
+  <data name="ShapeCanvas_TooMany" xml:space="preserve"><value>{count} frames have pixels — a set holds up to {max} shapes. Remove some frames.</value></data>
+  <data name="ShapeCanvas_ProblemTitle" xml:space="preserve"><value>Can't make a shape pen set</value></data>
+  <data name="ShapeCanvas_TabTitle" xml:space="preserve"><value>Shape set: {name}</value></data>
+  <data name="ShapeCanvas_Bar" xml:space="preserve"><value>Editing shape pen set: {name} — one shape per frame (empty frames are skipped). The set changes only when you press Save to set.</value></data>
+  <data name="ShapeCanvas_SaveToSet" xml:space="preserve"><value>Save to set</value></data>
+  <data name="ShapeCanvas_SaveToSetTip" xml:space="preserve"><value>Replaces the set's shapes with each frame's merged visible layers, transparent edges trimmed (the set's name and order stay)</value></data>
+  <data name="ShapeCanvas_CloseTip" xml:space="preserve"><value>Closes this document (asks whether to save to the set if you edited it without saving)</value></data>
+  <data name="ShapeCanvas_Saved" xml:space="preserve"><value>Saved to set: {set} — {count} shape(s)</value></data>
+  <data name="ShapeCanvas_Recreated" xml:space="preserve"><value>The set was deleted while you edited it, so it was created again. </value></data>
+  <data name="ShapeCanvas_ApplyConfirm" xml:space="preserve"><value>Save your changes to the shape pen set?
+{name}
+
+If you don't, the set stays as it was.</value></data>
+  <data name="ShapeCanvas_DontSave" xml:space="preserve"><value>Don't save</value></data>
+  <data name="ShapeCanvas_EditHint" xml:space="preserve"><value>One shape per frame — when you're done, press Save to set in the bar under the tab (the Save shortcut does the same)</value></data>
+  <data name="ShapeCanvas_NotFound" xml:space="preserve"><value>Couldn't find that shape pen set</value></data>
 </root>

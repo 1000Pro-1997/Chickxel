@@ -2258,11 +2258,14 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     /// <summary>
     /// 끝내기·모든 탭 닫기 전에: 저장 안 한 변경이 있는 열린 문서를 한 창에 모아 묻는다(<see cref="UnsavedChangesDialog"/>).
     /// "선택한 파일 저장"은 체크한 문서를 Ctrl+S와 같이 저장하고(저장한 적 없는 새 문서는 저장 위치를 물음), 하나라도 저장하지 못하면 알리고 멈춘다.
+    /// 저장하지 않는 문서 중 주인이 닫기 전에 묻는 것(<see cref="OpenDocument.ConfirmClose"/> — 모양 펜 세트 고치기)은 먼저 하나씩 묻는다.
     /// 계속해도 되면 true.
     /// </summary>
     private bool ConfirmCloseAll()
     {
         _ctx.CommitFloating();
+        foreach (var doc in OpenDocs)
+            if (doc.IsDetached && doc.ConfirmClose is { } confirm && !confirm()) return false;
         var files = OpenDocs.Where(d => d.Project.IsDirty && !d.IsDetached)
             .Select(d => DescribeUnsaved(d.Project, d.SourcePath, d.Thumbnail ?? d.Project.Flatten(0))).ToList();
         if (files.Count == 0) return true;
@@ -2512,8 +2515,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             if (p.Layers[i].IsPart) { _ctx.SetCurrentLayer(i); return; }
     }
 
-    /// <summary>Ctrl+S: 지금 문서 저장.</summary>
-    private bool Save() => _ctx.Project is { } p && Save(p);
+    /// <summary>Ctrl+S: 지금 문서 저장(모양 펜 세트를 고치는 문서면 세트에 저장 — <see cref="SaveShapeSetEdit"/>).</summary>
+    private bool Save() => _ctx.Project is { } p && (ShapeSetEditOf(p) is { } edit ? SaveShapeSetEdit(edit) : Save(p));
 
     /// <summary>
     /// .chickxel 저장 + (켜져 있으면) 시트·메타 내보내기. 저장한 적 없는 문서는 저장 위치를 묻는다. 저장했으면 true.
