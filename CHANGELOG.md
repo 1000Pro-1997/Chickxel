@@ -2,6 +2,26 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.123 (2026-11-11)
+### Built-in shape pen sets and default gradients are store assets
+- The shape pen's five built-in sets are now Flowers, Sparkles, Bubbles, Autumn Leaves and Leaves. They are official store assets (author Chickxel, with a version) that the app installs on first start, like the default effects.
+- The eight default gradients (Rainbow, Sunset, Fire and so on) are installed the same way from their official store packages. Unedited copies an older version put among your gradients are replaced (favorites carry over); edited ones stay yours.
+- Deleted defaults are not installed again. **Restore default effects**, the new **Restore default gradients** (Asset Manager and Preferences) and **Restore built-in sets** bring that kind back and update older versions; edited ones are kept.
+- Sets saved by an older version: unedited copies of today's built-in sets are dropped (the installed ones replace them); edited ones and Grass, Stars and the other former built-in sets stay as your own sets. A former built-in set picked in Tool options now picks the matching official set.
+
+### See where each asset came from
+- Asset Manager rows show the version and where the asset came from: From store, Default (store) or From file. The details say "Downloaded from the store" or "Store asset installed with the app".
+- In the shape pen set list, store and default sets have a globe icon and sets from package files a box icon, with the source in the tooltip. Default and store sets show their name in the app language.
+
+### Authors edit their own received sets in place
+- A received shape pen set whose author is your account (official sets for the Chickxel account) now counts as your asset in the Asset Manager.
+- **Edit on canvas** changes that asset itself, and **Rename…** and **Publish new version…** work as for your own assets.
+
+### More official shape pen sets in the store
+- 40 new themed sets that look natural scattered or lined up: Christmas Presents, Christmas Cookies & Candy, Snowmen, Holly & Wreaths, Stockings & Santa Hats, Mystery Boxes, Cardboard Boxes & Crates, Litter & Trash, Traffic Cones & Barriers, Barrels & Sacks, Gray Brick Wall, Red Brick Fence, Picket Fence, Hedge, Bunting Flags, Mushrooms, Forest Floor, Lily Pads, Seashells & Starfish, Footprints & Tracks, Puddles, Butterflies, Flying Birds, Fish, Coral & Seaweed, Cacti & Desert Plants, Pine Trees, Round Trees & Bushes, Bones & Skulls, Potions & Bottles, Crystals, Tombstones, Pumpkins, Books & Papers, Fruit, Candies & Sweets, Balloons, Confetti & Streamers, Paint Splatters, Logs & Stumps.
+- Brick walls, fences, hedges and bunting are drawn by dragging sideways: every piece has the same height and they join seamlessly with Optimized spacing.
+- The former built-in sets (Grass, Stars, Pine needles, Petals, Dots, Clouds, Pebbles, Bricks, Raindrops, Snowflakes, Hearts, Smoke puffs, Wood grain, Cracks, Coins & gems) and the three Christmas tree sets are in the store too.
+
 ## v1.14.122 (2026-11-11)
 ### Shape pen sets in the Asset Manager
 - **Manage sets…** in the shape pen set row now opens Asset Manager › Installed › Shape pen with the selected set; the separate Manage sets window is gone.

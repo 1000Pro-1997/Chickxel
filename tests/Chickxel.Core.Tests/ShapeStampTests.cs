@@ -1,4 +1,5 @@
 using System.Drawing;
+using Chickxel.Core.Assets;
 using Chickxel.Core.Edit;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
@@ -287,10 +288,12 @@ public class ShapeStampTests
     [Fact]
     public void Library_RoundTripsSetsShapesOrderAndAlpha()
     {
-        var library = StampLibrary.Defaults();
+        var library = new StampLibrary();
+        var first = new StampSet { Name = "First" };
+        first.Shapes.Add(Plus());
         var mine = new StampSet { Name = "Mine", Order = StampOrder.Sequential };
         mine.Shapes.Add(Shape());
-        library.Sets.Add(mine);
+        library.Sets.AddRange([first, mine]);
         library.Sets[0].Name = "Renamed";
 
         var back = StampLibrary.Parse(library.Serialize());
@@ -298,14 +301,12 @@ public class ShapeStampTests
         Assert.NotNull(back);
         Assert.Equal(library.Sets.Select(s => s.Id), back.Sets.Select(s => s.Id));
         Assert.Equal("Renamed", back.Sets[0].DisplayName);
-        Assert.Null(back.Sets[1].Name);
         var copy = back.Find(mine.Id)!;
         Assert.Equal("Mine", copy.Name);
         Assert.Equal(StampOrder.Sequential, copy.Order);
         Assert.True(copy.Shapes[0].ContentEquals(Shape()));
         Assert.Equal(HalfBlue, copy.Shapes[0].Get(2, 0));
-        for (int i = 0; i < library.Sets.Count; i++)
-            Assert.Equal(library.Sets[i].Shapes.Count, back.Sets[i].Shapes.Count);
+        Assert.True(back.Sets[0].Shapes[0].ContentEquals(Plus()));
     }
 
     [Fact]
@@ -317,24 +318,30 @@ public class ShapeStampTests
     }
 
     [Fact]
-    public void Library_OldFileGetsNewBuiltIns_DeletedOnesStayDeleted()
+    public void Library_OldBuiltIns_UnchangedOfficialCopiesDropped_OthersStayAsNamedUserSets()
     {
-        // 처음 판의 파일(알던 기본 세트를 적지 않음): 풀은 사용자가 지웠고 내 세트가 나뭇잎 뒤에 있다. 꽃·반짝이·점은 이제 기본 세트가 아니다
+        // 1.14.122에서 저장한 파일: 나뭇잎·꽃은 처음 그대로(이제 받은 세트로 설치되는 공식 세트), 단풍잎은 고쳤고, 풀은 공식 세트가 아니다
         var shape = Convert.ToBase64String(PngBytes(Shape()));
-        var old = $$"""{"version":1,"sets":[{"id":"leaves","shapes":["{{shape}}"]},{"id":"mine","name":"Mine","shapes":["{{shape}}"]},{"id":"flowers","shapes":["{{shape}}"]},{"id":"sparkles","shapes":[]},{"id":"dots","shapes":[]}]}""";
+        string Shapes(string packageId) => string.Join(",", OfficialShapeSets.Packages.Single(p => p.Id == packageId).Create().Shapes
+            .Select(s => $"\"{Convert.ToBase64String(PngBytes(s))}\""));
+        var old = $$"""
+            {"version":1,"knownBuiltIns":["leaves","autumn","grass","stars","bubbles"],"sets":[
+              {"id":"leaves","shapes":[{{Shapes("leaves")}}]},
+              {"id":"autumn","shapes":["{{shape}}"]},
+              {"id":"mine","name":"Mine","shapes":["{{shape}}"]},
+              {"id":"flowers","shapes":[{{Shapes("flowers")}}]},
+              {"id":"grass","shapes":["{{shape}}"]}]}
+            """;
 
         var library = StampLibrary.Parse(old)!;
 
-        Assert.Null(library.Find("grass"));
-        Assert.Equal(["leaves", "autumn", "stars", "bubbles", "mine", "flowers", "sparkles", "dots"], library.Sets.Select(s => s.Id));
-        Assert.Equal(StampBuiltIns.RetiredName("flowers"), library.Find("flowers")!.Name);
-
-        // 새 판에서 저장한 뒤 지운 새 기본 세트는 다시 읽어도 돌아오지 않는다
-        library.Sets.RemoveAll(s => s.Id == "stars");
+        Assert.Equal(["autumn", "mine", "grass"], library.Sets.Select(s => s.Id));
+        Assert.Equal(StampBuiltIns.RetiredName("autumn"), library.Find("autumn")!.Name);
+        Assert.Equal(StampBuiltIns.RetiredName("grass"), library.Find("grass")!.Name);
+        // 이름을 붙여 저장하면 다시 읽어도 그대로(이름 있는 세트는 공식 사본으로 보지 않음)
         var again = StampLibrary.Parse(library.Serialize())!;
-        Assert.Null(again.Find("stars"));
-        Assert.Null(again.Find("grass"));
-        Assert.Equal(library.Sets.Select(s => s.Id), again.Sets.Select(s => s.Id));
+        Assert.Equal(library.Sets.Select(s => (s.Id, s.Name)), again.Sets.Select(s => (s.Id, s.Name)));
+        Assert.DoesNotContain("knownBuiltIns", library.Serialize());
     }
 
     [Fact]
@@ -355,7 +362,7 @@ public class ShapeStampTests
 
         var library = StampLibrary.Parse(old)!;
 
-        // 지운 예전 기본 세트(구름 등)도, 사용자가 지운 지금 기본 세트(단풍잎·거품)도 돌아오지 않고, 남은 예전 기본 세트는 그대로 남는다
+        // 지운 예전 기본 세트(구름 등)는 돌아오지 않고, 남은 예전 기본 세트는 그대로 남는다(고친 나뭇잎도)
         Assert.Equal(["leaves", "pine", "rain", "grass", "stars"], library.Sets.Select(s => s.Id));
         var pine = library.Find("pine")!;
         Assert.Equal(StampBuiltIns.RetiredName("pine"), pine.Name);
@@ -364,10 +371,9 @@ public class ShapeStampTests
         var rain = library.Find("rain")!;
         Assert.Equal(("My rain", StampOrder.Sequential), (rain.Name, rain.Order));
 
-        // 사용자 세트처럼 고쳐 저장하면 고친 대로 남는다(기본 세트 되돌리기도 건드리지 않음)
+        // 사용자 세트처럼 고쳐 저장하면 고친 대로 남는다
         pine.Name = "Needles";
         pine.Shapes.RemoveAt(1);
-        library.RestoreDefaults();
         var again = StampLibrary.Parse(library.Serialize())!;
         var pineAgain = again.Find("pine")!;
         Assert.Equal(("Needles", 1), (pineAgain.Name, pineAgain.Shapes.Count));
@@ -396,13 +402,14 @@ public class ShapeStampTests
     }
 
     [Fact]
-    public void Library_NewInstallHasOnlyTheFiveBuiltIns()
+    public void Library_NewInstallIsEmpty_BuiltInSetsAreFiveOfficialPackages()
     {
-        string[] five = ["leaves", "autumn", "grass", "stars", "bubbles"];
-        Assert.Equal(five, StampBuiltIns.Ids);
-        Assert.Equal(five, StampLibrary.Defaults().Sets.Select(s => s.Id));
-        Assert.Equal(five, StampLibrary.Load(Path.Combine(Path.GetTempPath(), "chx-stamp-" + Guid.NewGuid().ToString("N"), StampLibrary.FileName)).Sets.Select(s => s.Id));
-        Assert.All(StampBuiltIns.RetiredIds, id => Assert.Null(StampBuiltIns.Name(id)));
+        Assert.Empty(StampLibrary.Load(Path.Combine(Path.GetTempPath(), "chx-stamp-" + Guid.NewGuid().ToString("N"), StampLibrary.FileName)).Sets);
+        Assert.Equal(["flowers", "sparkles", "bubbles", "autumn-leaves", "leaves"], OfficialShapeSets.Packages.Select(p => p.Id));
+        Assert.All(StampBuiltIns.RetiredIds, id => Assert.NotNull(StampBuiltIns.RetiredName(id)));
+        // 예전 기본 세트 이름표로 고른 설정은 같은 그림의 공식 세트로 잇는다
+        Assert.Equal(OfficialShapeSets.Packages[3].AssetId, OfficialShapeSets.AssetIdOfRetired("autumn"));
+        Assert.Null(OfficialShapeSets.AssetIdOfRetired("grass"));
     }
 
     private static byte[] PngBytes(PixelImage image)
@@ -413,13 +420,13 @@ public class ShapeStampTests
     }
 
     [Fact]
-    public void Library_LoadMissingGivesDefaults_BrokenIsKeptAside()
+    public void Library_LoadMissingGivesEmpty_BrokenIsKeptAside()
     {
         var dir = Path.Combine(Path.GetTempPath(), "chx-stamp-" + Guid.NewGuid().ToString("N"));
         try
         {
             var path = Path.Combine(dir, StampLibrary.FileName);
-            Assert.Equal(StampBuiltIns.Ids, StampLibrary.Load(path).Sets.Select(s => s.Id));
+            Assert.Empty(StampLibrary.Load(path).Sets);
 
             var library = new StampLibrary();
             library.Sets.Add(new StampSet { Name = "Only" });
@@ -427,7 +434,7 @@ public class ShapeStampTests
             Assert.Equal("Only", Assert.Single(StampLibrary.Load(path).Sets).Name);
 
             File.WriteAllText(path, "{ broken");
-            Assert.Equal(StampBuiltIns.Ids, StampLibrary.Load(path).Sets.Select(s => s.Id));
+            Assert.Empty(StampLibrary.Load(path).Sets);
             Assert.Equal("{ broken", File.ReadAllText(path + ".bad"));
         }
         finally
@@ -437,41 +444,15 @@ public class ShapeStampTests
     }
 
     [Fact]
-    public void Library_RestoreDefaults_ResetsBuiltInsAndKeepsUserSets()
+    public void OfficialSets_FiveSetsOfDistinctTrimmedShapes_SomeSemiTransparent_SameEveryTime()
     {
-        var shape = Convert.ToBase64String(PngBytes(Shape()));
-        var library = StampLibrary.Parse($$"""{"version":1,"sets":[{"id":"leaves","shapes":["{{shape}}"]},{"id":"dots","shapes":["{{shape}}"]}]}""")!;
-        var mine = new StampSet { Name = "Mine" };
-        library.Sets.Insert(1, mine);
-        library.Sets.RemoveAll(s => s.Id == "grass");
-        library.Find("leaves")!.Shapes.Clear();
-        library.Find("leaves")!.Name = "X";
-
-        library.RestoreDefaults();
-
-        // 기본 세트 다섯 가지가 다시 처음 모양으로, 내 세트와 예전 기본 세트(점)는 그대로
-        Assert.Equal(StampBuiltIns.Ids.Order(), library.Sets.Select(s => s.Id).Where(id => StampBuiltIns.Name(id) is not null).Order());
-        Assert.Contains(mine, library.Sets);
-        Assert.Equal(StampBuiltIns.Ids.Count + 2, library.Sets.Count);
-        var dots = library.Find("dots")!;
-        Assert.Equal((StampBuiltIns.RetiredName("dots"), 1), (dots.Name, dots.Shapes.Count));
-        var leaves = library.Find("leaves")!;
-        Assert.Null(leaves.Name);
-        Assert.Equal(StampBuiltIns.Sets()[0].Shapes.Count, leaves.Shapes.Count);
-        Assert.NotNull(library.Find("grass"));
-    }
-
-    [Fact]
-    public void BuiltIns_FiveSetsOfDistinctTrimmedShapes_SomeSemiTransparent()
-    {
-        var sets = StampBuiltIns.Sets();
-        Assert.Equal(StampBuiltIns.Ids, sets.Select(s => s.Id));
+        var sets = OfficialShapeSets.Packages.Select(p => p.Create()).ToList();
         foreach (var set in sets)
         {
             Assert.InRange(set.Shapes.Count, 6, 10);
             for (int i = 0; i < set.Shapes.Count; i++)
                 for (int j = i + 1; j < set.Shapes.Count; j++)
-                    Assert.False(set.Shapes[i].ContentEquals(set.Shapes[j]), $"{set.Id}: shapes {i} and {j} are the same");
+                    Assert.False(set.Shapes[i].ContentEquals(set.Shapes[j]), $"{set.Name}: shapes {i} and {j} are the same");
         }
         foreach (var shape in sets.SelectMany(s => s.Shapes))
         {
@@ -479,11 +460,26 @@ public class ShapeStampTests
             Assert.False(StampLibrary.TooBig(shape));
         }
         Assert.Contains(sets.SelectMany(s => s.Shapes).SelectMany(s => s.Pixels), c => c.A is > 0 and < 255);
-        Assert.All(sets, s => Assert.False(string.IsNullOrEmpty(s.DisplayName)));
-        // 씨앗 고정: 다시 만들어도 같은 그림
-        var again = StampBuiltIns.Sets();
-        for (int i = 0; i < sets.Count; i++)
-            Assert.True(sets[i].Shapes.Zip(again[i].Shapes).All(p => p.First.ContentEquals(p.Second)));
+        Assert.All(sets, s => Assert.False(string.IsNullOrEmpty(s.Name)));
+        // 씨앗 고정: 다시 만들어도 같은 그림, 같은 패키지 바이트(앱이 설치하는 것 = 상점에 올린 것)
+        Assert.All(OfficialShapeSets.Packages, p => Assert.Equal(p.Build(), p.Build()));
+    }
+
+    [Fact]
+    public void OfficialSets_UnchangedCopyIsOnlyAnUnnamedRetiredIdWithTheSameShapes()
+    {
+        var leaves = OfficialShapeSets.Packages[4].Create();
+        StampSet Copy(string id, string? name, IEnumerable<PixelImage> shapes)
+        {
+            var set = new StampSet { Id = id, Name = name };
+            set.Shapes.AddRange(shapes);
+            return set;
+        }
+        Assert.True(OfficialShapeSets.IsUnchangedCopy(Copy("leaves", null, leaves.Shapes)));
+        Assert.False(OfficialShapeSets.IsUnchangedCopy(Copy("leaves", "Leaves", leaves.Shapes)));
+        Assert.False(OfficialShapeSets.IsUnchangedCopy(Copy("leaves", null, leaves.Shapes.Skip(1))));
+        Assert.False(OfficialShapeSets.IsUnchangedCopy(Copy("grass", null, leaves.Shapes)));
+        Assert.False(OfficialShapeSets.IsUnchangedCopy(Copy("mine", null, leaves.Shapes)));
     }
 
     [Fact]
@@ -519,14 +515,14 @@ public class ShapeStampTests
     }
 
     [Fact]
-    public void SetFile_BuiltInExportsItsShownName_AndImportGetsAFreshId()
+    public void SetFile_OfficialSetExportsItsName_AndImportGetsAFreshId()
     {
-        var leaves = StampBuiltIns.Sets()[0];
+        var leaves = OfficialShapeSets.Packages[4].Create();
         var json = StampLibrary.SerializeSet(leaves);
         Assert.DoesNotContain("\"id\"", json);
         var back = StampLibrary.ParseSet(json)!;
         Assert.Equal(leaves.DisplayName, back.Name);
-        Assert.DoesNotContain(back.Id, StampBuiltIns.Ids);
+        Assert.NotEqual(leaves.Id, back.Id);
         Assert.Equal(leaves.Shapes.Count, back.Shapes.Count);
     }
 
@@ -540,19 +536,21 @@ public class ShapeStampTests
         Assert.Null(StampLibrary.ParseSet("""{"format":"chickxel-shapes","version":1,"set":{"name":"a","shapes":["AAAA"]}}"""));
         Assert.Null(StampLibrary.ParseSet("""{"format":"chickxel-shapes","version":1}"""));
         // 세트 모음 파일은 세트 파일이 아니다
-        Assert.Null(StampLibrary.ParseSet(StampLibrary.Defaults().Serialize()));
+        Assert.Null(StampLibrary.ParseSet(new StampLibrary().Serialize()));
     }
 
     [Fact]
     public void AddImported_AppendsAndNeverOverwrites_CollidingNamesGetANumber()
     {
-        var library = StampLibrary.Defaults();
+        var library = new StampLibrary();
+        library.Sets.Add(OfficialShapeSets.Packages[4].Create());
         int before = library.Sets.Count;
-        var leavesName = library.Find("leaves")!.DisplayName;
+        var leaves = library.Sets[0];
+        var leavesName = leaves.DisplayName;
 
-        var first = StampLibrary.ParseSet(StampLibrary.SerializeSet(library.Find("leaves")!))!;
+        var first = StampLibrary.ParseSet(StampLibrary.SerializeSet(leaves))!;
         library.AddImported(first, "file");
-        var second = StampLibrary.ParseSet(StampLibrary.SerializeSet(library.Find("leaves")!))!;
+        var second = StampLibrary.ParseSet(StampLibrary.SerializeSet(leaves))!;
         library.AddImported(second, "file");
         var unnamed = new StampSet();
         library.AddImported(unnamed, "my-file");
@@ -562,7 +560,7 @@ public class ShapeStampTests
         Assert.Equal($"{leavesName} (2)", first.Name);
         Assert.Equal($"{leavesName} (3)", second.Name);
         Assert.Equal("my-file", unnamed.Name);
-        Assert.Null(library.Find("leaves")!.Name);
+        Assert.Equal(leavesName, leaves.Name);
         Assert.Equal("Fresh", library.UniqueName("Fresh"));
     }
 }

@@ -71,10 +71,13 @@ dotnet run --project tools/CatalogBuilder -- --check # 검사만, docs/catalog/�
 
 공식 효과 패키지(`chickxel.effects.<효과 ID>`, 앱에 든 `src/Chickxel.Core/Scripting/Official/<ID>.js` 원문)는 CatalogBuilder가 지금 버전 파일이 없을 때 만듭니다. 원문을 고치면 `OfficialEffectPackages`의 버전을 올립니다(올리지 않으면 `--check`가 실패). CatalogBuilder는 지금 원문과 이 폴더·`docs/catalog/packages/`의 공식 효과 패키지(모든 버전) 원문의 해시를 `src/Chickxel.Core/Scripting/Official/hashes.txt`에 더하고, `--check`는 빠진 해시가 있으면 실패합니다. 앱은 이 목록의 원문을 묻지 않고 실행하므로, 예전 공식 원문을 담은 프로젝트·레시피도 원문이 바뀐 뒤에 그대로 열립니다. 목록의 줄은 지우지 않습니다.
 
-## 로컬 모양 펜 세트 파일
+## 공식 모양 펜 세트 패키지
 
 ```
 dotnet run --project tools/CatalogBuilder -- --shape-sets <폴더>
+node ../Chickxel-server/scripts/import-official.mjs --site https://chickxel.com --catalog <폴더>   # 올리기(키: CHICKXEL_TOKEN 또는 chick key)
 ```
 
-앱에 넣지 않는 모양 펜 세트(예전 기본 세트 열다섯 가지 — 그림은 `tools/CatalogBuilder/FormerBuiltInShapeSets.cs`, 크리스마스 세트 셋 — `ChristmasShapeSets.cs`)를 세트마다 상점에 올릴 수 있는 패키지(`chickxel.shapes.<ID>-1.0.0.chickxel-asset`, MIT, 영어·한국어 이름과 요약, 모양 격자 미리보기)와 앱에서 바로 가져올 세트 파일(`chickxel.shapes.<ID>.chickxel-shapes`)로 `<폴더>`에 씁니다. 목록·이름·설명은 `tools/CatalogBuilder/LocalShapeSets.cs`에 있습니다. 쓴 파일은 앱의 패키지 검사(엄격)와 세트 파일 읽기로 다시 읽어 확인합니다. 이 명령은 `catalog/`와 `docs/catalog/`를 건드리지 않으며, 올릴지는 사람이 정합니다.
+공식 모양 펜 세트(`chickxel.shapes.<ID>`, 작성자 `chickxel`, MIT, 영어·한국어 이름과 요약, 모양 격자 미리보기)를 세트마다 패키지(`chickxel.shapes.<ID>-<버전>.chickxel-asset`)와 앱에서 바로 가져올 세트 파일(`chickxel.shapes.<ID>.chickxel-shapes`)로 `<폴더>`에 쓰고, 서버의 공식 패키지 올리기가 읽는 목록 `index.json`(ID·버전·요약·꼬리표·패키지 파일)도 씁니다. 목록은 `tools/CatalogBuilder/LocalShapeSets.cs`: 앱이 기본으로 설치하는 다섯 가지(`src/Chickxel.Core/Assets/OfficialShapeSets.cs` — 꽃·반짝이·비눗방울·단풍잎·나뭇잎, 앱이 설치하는 것과 같은 바이트), 예전 기본 세트(`FormerBuiltInShapeSets.cs`), 크리스마스 트리 장식(`ChristmasShapeSets.cs`), 테마 세트(`ShapeSets/*.cs`, 목록은 `ShapeSets/ThemeShapeSets.cs`). 그림 도우미는 Core의 `ShapeArt` 하나입니다. 쓴 파일은 앱의 패키지 검사(엄격)와 세트 파일 읽기로 다시 읽어 확인합니다. 이 명령은 `catalog/`와 `docs/catalog/`(1.14.61까지의 정적 목록)를 건드리지 않습니다.
+
+세트를 고치면 그 세트의 버전을 올려 다시 올립니다(서버는 같은 버전을 다시 받지 않음). 기본 세트 다섯 가지는 `OfficialShapeSets.Packages`의 버전을 올리면 앱이 고치지 않은 설치본을 업데이트합니다. 기본 그라데이션 여덟 가지는 이 폴더의 `chickxel.gradients.*` 패키지 파일을 앱이 그대로 품어 설치하므로(`OfficialGradientPackages`), 고친 그라데이션은 새 버전 패키지로 파일을 바꿉니다.

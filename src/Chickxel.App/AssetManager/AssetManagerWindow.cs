@@ -114,15 +114,19 @@ public sealed partial class AssetManagerWindow : DialogBase
         var import = Ui.Button(VectorIcon.Download, UiStrings.Assets_Import, (_, _) => Import()).Tip(UiStrings.Assets_ImportTip);
         var export = Ui.Button(VectorIcon.Upload, UiStrings.Assets_ExportShown, (_, _) => ExportShown()).Tip(UiStrings.Assets_ExportShownTip);
         var publish = Ui.Button(VectorIcon.Globe, UiStrings.Assets_Publish, (_, _) => PublishSelected()).Tip(UiStrings.Assets_PublishTip);
-        _restoreEffects = Ui.Button(VectorIcon.Undo2, UiStrings.Assets_RestoreOfficial, (sender, _) => RestoreOfficialEffects((Control)sender!))
-            .Tip(UiStrings.Assets_RestoreOfficialTip);
-        _restoreSets = Ui.Button(VectorIcon.Undo2, UiStrings.ShapePen_RestoreDefaultsTip, (_, _) => RestoreShapeSets()).Tip(UiStrings.Assets_RestoreSetsTip);
+        _restoreEffects = Ui.Button(VectorIcon.Undo2, UiStrings.Assets_RestoreOfficial,
+            async (sender, _) => await RestoreDefaults((Control)sender!, AssetKinds.EffectScript, UiStrings.Assets_RestoreOfficial)).Tip(UiStrings.Assets_RestoreOfficialTip);
+        _restoreGradients = Ui.Button(VectorIcon.Undo2, UiStrings.Assets_RestoreGradients,
+            async (sender, _) => await RestoreDefaults((Control)sender!, AssetKinds.Gradient, UiStrings.Assets_RestoreGradients)).Tip(UiStrings.Assets_RestoreGradientsTip);
+        _restoreSets = Ui.Button(VectorIcon.Undo2, UiStrings.ShapePen_RestoreDefaultsTip,
+            async (sender, _) => await RestoreDefaults((Control)sender!, AssetKinds.ShapeSet, UiStrings.ShapePen_RestoreDefaultsTip)).Tip(UiStrings.Assets_RestoreSetsTip);
         _newSetFromCanvas = Ui.Button(VectorIcon.Film, UiStrings.Assets_NewSetFromCanvas, (_, _) => NewShapeSetFromCanvas()).Tip(UiStrings.Assets_NewSetFromCanvasTip);
         var toolbar = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 6) };
         toolbar.Children.AddRange([
             _filter.HelpAt(HelpPage, anchor: "Filter by Effects"), _search.HelpAt(HelpPage, anchor: "Filter by Effects"),
             import.HelpAt(HelpPage, anchor: "Import from File"), export.HelpAt(HelpPage, anchor: "Import from File"),
             publish.HelpAt(HelpPage, anchor: "Import from File"), _restoreEffects.HelpAt(HelpPage, anchor: "Import from File"),
+            _restoreGradients.HelpAt(HelpPage, anchor: "Import from File"),
             _newSetFromCanvas.HelpAt(HelpPage, anchor: "Import from File"), _restoreSets.HelpAt(HelpPage, anchor: "Import from File"),
         ]);
         ShowToolbarFor();
@@ -178,35 +182,11 @@ public sealed partial class AssetManagerWindow : DialogBase
     }
 
     /// <summary>
-    /// 기본 효과 되돌리기: 지운 공식 효과를 다시 넣고, 낮은 버전(고치지 않은 것)은 앱에 든 버전으로 올린다(<see cref="AppAssets.SyncBundledAsync"/> —
-    /// 패키지를 만들고 넣는 동안 단추를 끄고 백그라운드에서, 목록은 <see cref="AppAssets.Changed"/>로 다시 만들어진다).
+    /// 기본 효과·기본 그라데이션·기본 세트 되돌리기: 그 종류의 지운 공식 패키지를 다시 넣고, 낮은 버전(고치지 않은 것)은 앱에 든 버전으로 올린다
+    /// (<see cref="AppAssets.RestoreDefaultsAsync"/> — 목록은 <see cref="AppAssets.Changed"/>로 다시 만들어진다).
     /// </summary>
-    private async void RestoreOfficialEffects(Control button)
-    {
-        button.IsEnabled = false;
-        OfficialEffectPackages.SyncResult result;
-        try
-        {
-            result = await AppAssets.SyncBundledAsync(restore: true);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
-        {
-            if (!_closing.IsCancellationRequested) Ui.Error(this, F(UiStrings.Assets_RestoreOfficialError, ex.Message));
-            return;
-        }
-        finally
-        {
-            button.IsEnabled = true;
-        }
-        if (_closing.IsCancellationRequested) return;
-        if (result.Errors.Count > 0)
-            Ui.Warn(this, F(UiStrings.Assets_RestoreOfficialError, string.Join(Environment.NewLine, result.Errors.Select(e => $"{e.PackageId}: {e.Error}"))),
-                UiStrings.Assets_RestoreOfficial);
-        else
-            Ui.Info(this, result.Changed
-                ? F(UiStrings.Assets_RestoreOfficialDone, result.Installed.Count, result.Updated.Count)
-                : UiStrings.Assets_RestoreOfficialNothing, UiStrings.Assets_RestoreOfficial);
-    }
+    private Task RestoreDefaults(Control button, string kind, string title)
+        => AppAssets.RestoreDefaultsAsync(this, kind, title, button, () => _closing.IsCancellationRequested);
 
     private AssetEntry? Selected => (_list.SelectedItem as ListBoxItem)?.Tag as AssetEntry;
 
@@ -315,7 +295,7 @@ public sealed partial class AssetManagerWindow : DialogBase
 
     /// <summary>
     /// 에셋 줄: 즐겨찾기 별, 종류 아이콘, 이름(그라데이션은 띠). 아래에는 작성자 배지(받은 에셋만 프로필 그림)와
-    /// 받은 에셋의 상점 버전 또는 올린 내 에셋의 버전·고침 상태를 보인다.
+    /// 받은 에셋의 상점 버전 또는 올린 내 에셋의 버전·고침 상태, 들어온 길(상점·기본 설치·파일 — <see cref="AppAssets.SourceTag"/>)을 보인다.
     /// </summary>
     private static Control AssetRow(AssetEntry entry, bool mine)
     {
@@ -332,8 +312,9 @@ public sealed partial class AssetManagerWindow : DialogBase
             panel.Children.Add(new GradientSwatch { Preset = gradient, Height = 10, Margin = new Thickness(0, 3, 0, 1) });
         string authorName = entry.Author?.Name ?? (entry.Store is null ? UiStrings.Assets_SourceLocal : "");
         string?[] parts = mine
-            ? [entry.Store is { } store ? F(UiStrings.Assets_PublishedVersion, store.Version) : null, entry.Modified ? UiStrings.Assets_ModifiedNote : null]
-            : [entry.Store?.Version];
+            ? [entry.Store is { } store ? F(UiStrings.Assets_PublishedVersion, store.Version) : null, entry.Modified ? UiStrings.Assets_ModifiedNote : null,
+               AppAssets.SourceTag(entry.Source)]
+            : [entry.Store?.Version, AppAssets.SourceTag(entry.Source)];
         panel.Children.Add(IdentityBadge.Author(entry.Store is not null ? entry.Author : null, 16, fallback: authorName, dim: true,
             fontSize: AppTheme.SmallFontSize, caption: string.Join(" · ", parts.Where(s => !string.IsNullOrEmpty(s)))));
         return panel;

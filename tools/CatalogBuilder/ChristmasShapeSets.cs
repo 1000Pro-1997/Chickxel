@@ -1,6 +1,7 @@
 using Chickxel.Core.Edit;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
+using static Chickxel.Core.IO.ShapeArt;
 
 namespace CatalogBuilder;
 
@@ -88,39 +89,6 @@ internal static class ChristmasShapeSets
         for (int i = 0; i < at.Length; i++) parts.Add((Art(MiniBulb, Socket, BulbColors[colors[i]]), at[i].X, at[i].Y));
         return Compose(20, 12, parts);
     }
-
-    /// <summary>
-    /// 빛 번짐: 그림 둘레 2px에 <paramref name="glow"/> 색을 반투명으로(가까울수록 진하게). <paramref name="fromRow"/> 위 줄(전구 꼭지)은 빛나지 않는다.
-    /// </summary>
-    private static PixelImage Glow(PixelImage art, uint glow, int fromRow)
-    {
-        const int pad = 2;
-        int w = art.Width + pad * 2, h = art.Height + pad * 2;
-        var result = new PixelImage(w, h);
-        uint rgb = glow & 0xFFFFFF;
-        for (int y = 0; y < h; y++)
-            for (int x = 0; x < w; x++)
-            {
-                int sx = x - pad, sy = y - pad;
-                if (Inside(art, sx, sy) && art.Pixels[sy * art.Width + sx].A > 0)
-                {
-                    result.Pixels[y * w + x] = art.Pixels[sy * art.Width + sx];
-                    continue;
-                }
-                int nearest = int.MaxValue;
-                for (int dy = -pad; dy <= pad; dy++)
-                    for (int dx = -pad; dx <= pad; dx++)
-                    {
-                        int ny = sy + dy, nx = sx + dx;
-                        if (ny >= fromRow && Inside(art, nx, ny) && art.Pixels[ny * art.Width + nx].A > 0) nearest = Math.Min(nearest, dx * dx + dy * dy);
-                    }
-                uint alpha = nearest switch { <= 1 => 0x90, <= 2 => 0x60, <= 5 => 0x30, _ => 0 };
-                if (alpha > 0) result.Pixels[y * w + x] = new Color32(alpha << 24 | rgb);
-            }
-        return result;
-    }
-
-    private static bool Inside(PixelImage image, int x, int y) => x >= 0 && y >= 0 && x < image.Width && y < image.Height;
 
     // ───────────── 종·리본 ─────────────
 
@@ -367,44 +335,4 @@ internal static class ChristmasShapeSets
         Art(PineCone, ConeColors),
         Art(Snowflake, FlakeColors),
     ]);
-
-    // ───────────── 도우미 ─────────────
-
-    private static StampSet Set(string name, IEnumerable<PixelImage> shapes)
-    {
-        var set = new StampSet { Name = name, Order = StampOrder.Random };
-        foreach (var shape in shapes) set.Shapes.Add(StampLibrary.Trim(shape) ?? throw new InvalidOperationException(name));
-        return set;
-    }
-
-    /// <summary>글자 그림 → 모양(글자마다 한 픽셀, 앞 팔레트부터 찾음, 없는 글자 = 투명).</summary>
-    private static PixelImage Art(string[] rows, params Dictionary<char, uint>[] palettes)
-    {
-        int w = rows.Max(r => r.Length), h = rows.Length;
-        var image = new PixelImage(w, h);
-        for (int y = 0; y < h; y++)
-            for (int x = 0; x < rows[y].Length; x++)
-                foreach (var palette in palettes)
-                    if (palette.TryGetValue(rows[y][x], out var argb))
-                    {
-                        image.Pixels[y * w + x] = new Color32(argb);
-                        break;
-                    }
-        return image;
-    }
-
-    /// <summary>왼쪽 반(마지막 글자가 가운데 열)을 좌우로 펼친 줄들.</summary>
-    private static string[] Symmetric(string[] left)
-        => [.. left.Select(row => row + new string(row[..^1].Reverse().ToArray()))];
-
-    /// <summary><paramref name="width"/>×<paramref name="height"/> 판에 그림들을 차례로 겹쳐 놓는다(뒤 그림의 보이는 픽셀이 앞 그림을 덮음).</summary>
-    private static PixelImage Compose(int width, int height, IEnumerable<(PixelImage Image, int X, int Y)> parts)
-    {
-        var result = new PixelImage(width, height);
-        foreach (var (image, ox, oy) in parts)
-            for (int y = 0; y < image.Height; y++)
-                for (int x = 0; x < image.Width; x++)
-                    if (image.Pixels[y * image.Width + x] is { A: > 0 } pixel) result.Pixels[(oy + y) * width + ox + x] = pixel;
-        return result;
-    }
 }

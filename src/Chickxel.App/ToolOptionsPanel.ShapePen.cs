@@ -60,7 +60,12 @@ public sealed partial class ToolOptionsPanel
         var newSet = Ui.IconButton(VectorIcon.Plus, UiStrings.ShapePen_NewSetTip, (_, _) => NewShapeSet(), size: 13);
         var rename = Ui.IconButton(VectorIcon.Pencil, UiStrings.ShapePen_RenameSetTip, (_, _) => RenameShapeSet(), size: 13);
         var deleteSet = Danger(Ui.IconButton(VectorIcon.Trash, UiStrings.ShapePen_DeleteSetTip, (_, _) => DeleteShapeSet(), size: 13));
-        var restore = Ui.IconButton(VectorIcon.Undo2, UiStrings.ShapePen_RestoreDefaultsTip, (_, _) => ShapeSetActions.RestoreDefaults(this, _ctx), size: 13);
+        var restore = Ui.IconButton(VectorIcon.Undo2, UiStrings.ShapePen_RestoreDefaultsTip, size: 13);
+        restore.Click += async (_, _) =>
+        {
+            if (TopLevel.GetTopLevel(this) is Window owner)
+                await AppAssets.RestoreDefaultsAsync(owner, Chickxel.Core.Assets.AssetKinds.ShapeSet, UiStrings.ShapePen_RestoreDefaultsTip, restore);
+        };
         _shapePenManage = Ui.Button(VectorIcon.Package, UiStrings.ShapePen_ManageSets, (_, _) => ManageShapeSets()).Tip(UiStrings.ShapePen_ManageSetsTip);
         foreach (var b in new[] { newSet, rename, deleteSet, restore, _shapePenManage }) b.Focusable = false;
         _shapePenMineOnly = [rename, deleteSet];
@@ -122,11 +127,18 @@ public sealed partial class ToolOptionsPanel
         return button;
     }
 
-    /// <summary>세트 고르기 목록의 한 줄: 첫 모양 썸네일 + 이름(받은 세트는 앞에 패키지 아이콘).</summary>
+    /// <summary>
+    /// 세트 고르기 목록의 한 줄: 첫 모양 썸네일 + 이름. 받은 세트는 앞에 들어온 길 아이콘(상점에서 받았거나 앱이 기본으로 설치한 상점 에셋 = 지구, 패키지 파일 = 상자)과
+    /// 그 길을 적은 풍선.
+    /// </summary>
     private Control SetItem(StampSet set)
     {
         var row = Ui.Row(new StampView { Image = set.Shapes.FirstOrDefault(), Width = 18, Height = 18 }, Ui.Label(set.DisplayName));
-        if (_ctx.IsInstalledShapeSet(set)) row.Children.Insert(1, Ui.Icon(VectorIcon.Package, 12));
+        if (_ctx.IsInstalledShapeSet(set) && AppAssets.Catalog.Find(set.Id) is { } entry)
+        {
+            row.Children.Insert(1, Ui.Icon(entry.Source == Chickxel.Core.Assets.AssetSources.File ? VectorIcon.Package : VectorIcon.Globe, 12));
+            ToolTip.SetTip(row, AppAssets.SourceText(entry.Source));
+        }
         return row;
     }
 

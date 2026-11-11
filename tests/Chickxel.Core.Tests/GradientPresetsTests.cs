@@ -262,36 +262,35 @@ public class GradientPresetsTests
         Assert.Equal((4, "Evening", true), (kept.Cycles, kept.Name, kept.Favorite));
     }
 
-    /// <summary>기본값 되돌리기: 고친 기본 그라데이션은 처음 값(즐겨찾기는 유지), 지운 것은 다시 들어오고 직접 만든 것·받은 것은 남는다.</summary>
+    /// <summary>
+    /// 기본 그라데이션은 공식 패키지로 설치된다: 예전 판이 이 컴퓨터의 그라데이션으로 넣어 둔 고치지 않은 사본은 지우고(즐겨찾기는 공식 것으로), 고친 사본·직접 만든 것은 남는다.
+    /// 지운 공식 그라데이션은 그라데이션 되돌리기로만 다시 들어온다.
+    /// </summary>
     [Fact]
-    public void RestoreBuiltIns_ResetsEditedAndReaddsDeletedKeepingCustomAndReceived()
+    public void OfficialGradients_ReplaceUneditedLocalCopies_KeepEditedAndCustom_RestoreBringsDeletedBack()
     {
         using var dir = new TempDir();
         var store = SeededStore(dir);
-        var original = GradientPresets.BuiltIns();
-        Assert.Equal(original.Select(p => p.Name), store.Catalog.Gradients.Select(e => e.Name));
-
-        store.Remove(store.Catalog.Gradients.Single(e => e.Name == "Ocean").Id);
+        var builtIns = GradientPresets.BuiltIns();
+        foreach (var builtIn in builtIns) store.SaveGradient(null, builtIn with { Favorite = builtIn.Name == "Ocean" });
         var sunset = store.Catalog.Gradients.Single(e => e.Name == "Sunset");
-        store.SaveGradient(sunset.Id, sunset.Gradient! with
-        {
-            Name = "sunset", Stops = [new(0, Color32.Black), new(1, Color32.Black)], Favorite = true,
-        });
+        var edited = store.SaveGradient(sunset.Id, sunset.Gradient! with { Stops = [new(0, Color32.Black), new(1, Color32.Black)] });
         var mine = store.SaveGradient(null, Example("Mine"));
-        // 기본 그라데이션과 이름이 같은 받은 그라데이션은 기본 그라데이션이 아니다
-        var received = store.InstallFile(AssetSamples.Save(dir.Path, AssetSamples.Build(gradient: AssetSamples.Gradient("Ocean")))).Single(e => e.Gradient is not null);
 
-        store.RestoreBuiltInGradients();
-        var restored = store.Catalog.Gradients.Single(e => e.Id == sunset.Id);
-        Assert.Equal(original.Single(p => p.Name == "Sunset").Stops, restored.Gradient!.Stops);
-        Assert.True(restored.Favorite);
-        Assert.Equal(original.Single(p => p.Name == "Ocean").Stops, store.Catalog.Gradients.Single(e => e.Name == "Ocean" && e.Author is null).Gradient!.Stops);
-        Assert.Equal(AssetSamples.Gradient().Stops, store.Catalog.Find(received.Id)!.Gradient!.Stops);
-        Assert.Equal(Example("Mine").Stops, store.Catalog.Gradients.Single(e => e.Id == mine.Id).Gradient!.Stops);
-        Assert.Equal(original.Count + 2, store.Catalog.Gradients.Count);
+        Assert.Empty(BundledPackages.Sync(store).Errors);
 
-        // 되돌린 결과는 파일에 남는다
-        var reopened = AssetStore.Open(store.Root);
-        Assert.Equal(store.Catalog.Gradients.Select(e => (e.Id, e.Name, e.Favorite)), reopened.Catalog.Gradients.Select(e => (e.Id, e.Name, e.Favorite)));
+        var official = store.Catalog.Gradients.Where(e => e.Source == AssetSources.Bundled).ToList();
+        Assert.Equal(OfficialGradientPackages.Ids.Select(OfficialGradientPackages.PackageId), official.Select(e => e.Store!.PackageId));
+        Assert.All(official, e => Assert.Equal(("chickxel", false), (e.Author!.Id, e.Modified)));
+        Assert.Equal(builtIns.Select(p => p.Name), official.Select(e => e.Name));
+        Assert.True(official.Single(e => e.Name == "Ocean").Favorite);
+        // 남은 이 컴퓨터의 그라데이션: 고친 노을과 직접 만든 것뿐
+        Assert.Equal(new[] { edited.Id, mine.Id }.Order(), store.Catalog.Gradients.Where(e => e.Source == AssetSources.Local).Select(e => e.Id).Order());
+
+        store.Remove(official.Single(e => e.Name == "Fire").Id);
+        Assert.False(BundledPackages.Sync(store).Changed);
+        var restored = BundledPackages.Sync(store, AssetKinds.Gradient);
+        Assert.Equal([OfficialGradientPackages.PackageId("fire")], restored.Installed);
+        Assert.Equal(builtIns.Count + 2, store.Catalog.Gradients.Count);
     }
 }

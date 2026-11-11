@@ -7,8 +7,8 @@ namespace Chickxel.App;
 
 /// <summary>
 /// 앱이 쓰는 로컬 에셋 저장소 하나(<c>&lt;설정 폴더&gt;/Chickxel/Assets</c>). 처음 열 때 예전 프리셋 파일을 내 에셋으로 한 번 옮기고(예전 게시 기록은 그 에셋의
-/// 상점 연결로 한 번 잇는다), 앱에 든 공식 효과를 백그라운드에서 설치·업데이트한다(<see cref="SyncBundledAsync"/> — 처음 실행과 앱에 든 버전이 더 새로울 때만.
-/// 지운 공식 효과는 다시 넣지 않음 — 에셋 관리자의 "기본 효과 되돌리기"만 다시 넣는다).
+/// 상점 연결로 한 번 잇는다), 앱에 든 공식 패키지(효과·그라데이션·모양 펜 세트)를 백그라운드에서 설치·업데이트한다(<see cref="SyncBundledAsync"/> — 처음 실행과 앱에 든 버전이
+/// 더 새로울 때만. 지운 공식 패키지는 다시 넣지 않음 — 종류별 "기본값 되돌리기"만 다시 넣는다).
 /// 효과 창, 그라데이션 메뉴·프리셋 창, 에셋 관리자, AI 도구가 같은 저장소와 카탈로그를 쓰고, 저장소를 바꾸면 <see cref="Changed"/>로 목록을 다시 만든다.
 /// 저장소를 바꾸는 호출은 UI 스레드에서 한다. 온라인 카탈로그 client(<see cref="Remote"/>)는 저장소와 따로이고 cache만 저장소 폴더에 둔다.
 /// 내 에셋(<see cref="IsMine"/>)은 이 컴퓨터에서 만들었거나 작성자 ID가 내 계정 핸들(<see cref="MyHandle"/>)인 것이다.
@@ -24,7 +24,7 @@ public static class AppAssets
     private static AssetStore? _store;
     private static string? _notice;
     private static readonly Lock BundledGate = new();
-    private static Task<OfficialEffectPackages.SyncResult>? _bundled;
+    private static Task<BundledPackages.SyncResult>? _bundled;
 
     /// <summary>예전 프리셋 파일이 있던 앱 설정 폴더.</summary>
     public static string SettingsDirectory => Platform.AppFolder;
@@ -53,8 +53,8 @@ public static class AppAssets
                     _store = opened;
                     // 계정이 바뀌면 핸들을 기억한다(로그아웃한 뒤에도 내가 올린 에셋을 내 것으로 보게)
                     AppCommunity.Client.AccountsChanged += () => Dispatcher.UIThread.Post(() => _ = MyHandle);
-                    // 공식 효과: 할 일이 있을 때만(처음 실행·앱 업데이트) 백그라운드에서 — 끝나면 Changed로 효과 탭이 다시 그려진다
-                    if (OfficialEffectPackages.NeedsSync(opened)) StartBundledSync();
+                    // 공식 패키지: 할 일이 있을 때만(처음 실행·앱 업데이트) 백그라운드에서 — 끝나면 Changed로 효과 탭·그라데이션·모양 펜 세트가 다시 그려진다
+                    if (BundledPackages.NeedsSync(opened)) StartBundledSync();
                     // 설치하면 바로 믿기 전에 받아 둔 에셋의 스크립트도 믿는다(설정 파일을 쓰므로 UI 스레드에서)
                     Dispatcher.UIThread.Post(() => ScriptTrustStore.TrustStored(opened.Catalog.All));
                 }
@@ -156,7 +156,16 @@ public static class AppAssets
         _ => source,
     };
 
-    /// <summary>처음 열 때 시작한 공식 효과 패키지 맞추기(할 일이 없었으면 끝난 작업). 화면 그림 도구가 기다린다.</summary>
+    /// <summary>목록 줄에 붙이는 짧은 들어온 길(상점에서 받음·기본 설치·파일에서 가져옴). 이 컴퓨터에서 만든 것은 null(작성자 자리에 이미 적힘).</summary>
+    public static string? SourceTag(string source) => source switch
+    {
+        AssetSources.Remote => UiStrings.Assets_SourceTagRemote,
+        AssetSources.Bundled => UiStrings.Assets_SourceTagBundled,
+        AssetSources.File => UiStrings.Assets_SourceTagFile,
+        _ => null,
+    };
+
+    /// <summary>처음 열 때 시작한 공식 패키지 맞추기(할 일이 없었으면 끝난 작업). 화면 그림 도구가 기다린다.</summary>
     public static Task BundledReady
     {
         get
@@ -167,24 +176,24 @@ public static class AppAssets
     }
 
     /// <summary>
-    /// 공식 효과 패키지를 맞춘다(<see cref="OfficialEffectPackages.Sync"/>): 패키지를 만들고 설치하는 일(처음 실행에 수 초)은 백그라운드에서 같은 폴더의
-    /// 다른 저장소 객체로 하고, 끝나면 UI 스레드에서 앱 저장소를 다시 읽는다(<see cref="AssetStore.Refresh"/> → <see cref="Changed"/>).
+    /// 공식 패키지를 맞춘다(<see cref="BundledPackages.Sync"/> — <paramref name="restoreKind"/> 종류는 지운 것도 다시 넣음): 패키지를 만들고 설치하는 일(처음 실행에 수 초)은
+    /// 백그라운드에서 같은 폴더의 다른 저장소 객체로 하고, 끝나면 UI 스레드에서 앱 저장소를 다시 읽는다(<see cref="AssetStore.Refresh"/> → <see cref="Changed"/>).
     /// 앞서 시작한 맞추기가 끝난 뒤에 시작한다(설치 기록 파일을 함께 쓰지 않게).
     /// </summary>
-    public static Task<OfficialEffectPackages.SyncResult> SyncBundledAsync(bool restore)
+    public static Task<BundledPackages.SyncResult> SyncBundledAsync(string? restoreKind)
     {
         lock (BundledGate)
         {
-            var task = Run(_bundled, restore);
+            var task = Run(_bundled, restoreKind);
             _bundled = task;
             return task;
         }
 
-        static async Task<OfficialEffectPackages.SyncResult> Run(Task? previous, bool restore)
+        static async Task<BundledPackages.SyncResult> Run(Task? previous, string? restoreKind)
         {
             // 앞의 맞추기가 실패했어도 기다리기만 한다(실패는 그쪽에서 알림)
             if (previous is not null) await previous.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
-            var result = await Task.Run(() => OfficialEffectPackages.Sync(AssetStore.Open(Root, Options), restore)).ConfigureAwait(false);
+            var result = await Task.Run(() => BundledPackages.Sync(AssetStore.Open(Root, Options), restoreKind)).ConfigureAwait(false);
             await Dispatcher.UIThread.InvokeAsync(() => Store.Refresh());
             return result;
         }
@@ -192,7 +201,7 @@ public static class AppAssets
 
     // 처음 열 때의 맞추기: 실패는 다음 ShowProblems에서 알린다
     private static void StartBundledSync()
-        => SyncBundledAsync(restore: false).ContinueWith(task =>
+        => SyncBundledAsync(restoreKind: null).ContinueWith(task =>
         {
             string? errors = task.IsFaulted ? task.Exception!.GetBaseException().Message
                 : task.Result.Errors.Count > 0 ? string.Join(Environment.NewLine, task.Result.Errors.Select(e => $"{e.PackageId}: {e.Error}"))
@@ -203,6 +212,38 @@ public static class AppAssets
             do current = Volatile.Read(ref _notice);
             while (Interlocked.CompareExchange(ref _notice, current is null ? message : current + Environment.NewLine + message, current) != current);
         }, TaskScheduler.Default);
+
+    /// <summary>
+    /// 종류별 "기본값 되돌리기"(기본 효과·기본 그라데이션·기본 세트): 그 종류의 공식 패키지 중 지운 것을 다시 넣고 낮은 버전(고치지 않은 것)은 앱에 든 버전으로 올린다
+    /// (<see cref="SyncBundledAsync"/> — 백그라운드, 그동안 <paramref name="button"/>을 끔). 끝나면 <paramref name="owner"/> 위에 결과를 알린다(<paramref name="title"/>).
+    /// <paramref name="closed"/>가 true를 돌려주면(창이 닫힘) 알리지 않는다.
+    /// </summary>
+    public static async Task RestoreDefaultsAsync(Window owner, string kind, string title, Control? button = null, Func<bool>? closed = null)
+    {
+        if (button is not null) button.IsEnabled = false;
+        BundledPackages.SyncResult result;
+        try
+        {
+            result = await SyncBundledAsync(kind);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            if (closed?.Invoke() != true) Ui.Error(owner, string.Format(CultureInfo.CurrentCulture, UiStrings.Assets_RestoreDefaultsError, ex.Message));
+            return;
+        }
+        finally
+        {
+            if (button is not null) button.IsEnabled = true;
+        }
+        if (closed?.Invoke() == true) return;
+        if (result.Errors.Count > 0)
+            Ui.Warn(owner, string.Format(CultureInfo.CurrentCulture, UiStrings.Assets_RestoreDefaultsError,
+                string.Join(Environment.NewLine, result.Errors.Select(e => $"{e.PackageId}: {e.Error}"))), title);
+        else
+            Ui.Info(owner, result.Changed
+                ? string.Format(CultureInfo.CurrentCulture, UiStrings.Assets_RestoreDefaultsDone, result.Installed.Count, result.Updated.Count)
+                : UiStrings.Assets_RestoreDefaultsNothing, title);
+    }
 
     public static AssetCatalog Catalog => Store.Catalog;
 

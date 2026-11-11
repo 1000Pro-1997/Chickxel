@@ -301,12 +301,9 @@ public sealed class PreferencesDialog : DialogBase
                 App.Settings.Save();
                 presetsStatus.Text = UiStrings.Presets_Restored;
             }),
-            Ui.Button(VectorIcon.Undo2, UiStrings.Presets_RestoreGradients, (_, _) =>
-            {
-                if (Ui.Ask(this, UiStrings.Presets_RestoreGradientsQuestion, UiStrings.Presets_RestoreGradients,
-                        MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
-                if (GradientPresetUi.RestoreBuiltIns(this)) presetsStatus.Text = UiStrings.Presets_Restored;
-            }),
+            Ui.Button(VectorIcon.Undo2, UiStrings.Presets_RestoreGradients,
+                async (sender, _) => await AppAssets.RestoreDefaultsAsync(this, Chickxel.Core.Assets.AssetKinds.Gradient, UiStrings.Presets_RestoreGradients, (Control)sender!))
+                .Tip(UiStrings.Assets_RestoreGradientsTip),
             presetsStatus).HelpAt(page, anchor: "Presets");
 
         var tabs = new TabView();

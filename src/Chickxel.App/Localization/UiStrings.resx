@@ -8149,8 +8149,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Prefs_ResetSettings_DoneRestart" xml:space="preserve"><value>설정을 처음 값으로 되돌렸습니다. 화면 언어는 Chickxel을 다시 시작해야 바뀝니다.</value></data>
   <data name="Presets_RestoreOptimizer" xml:space="preserve"><value>자동 최적화 기본 프리셋 되돌리기</value></data>
   <data name="Presets_RestoreOptimizerQuestion" xml:space="preserve"><value>자동 최적화 기본 프리셋을 처음 상태로 되돌릴까요? 지운 기본 프리셋은 다시 들어가고, 직접 만든 프리셋은 그대로 남습니다.</value></data>
-  <data name="Presets_RestoreGradients" xml:space="preserve"><value>그라데이션 기본 프리셋 되돌리기</value></data>
-  <data name="Presets_RestoreGradientsQuestion" xml:space="preserve"><value>그라데이션 기본 프리셋을 처음 상태로 되돌릴까요? 지운 기본 프리셋은 다시 들어가고, 직접 만든 프리셋은 그대로 남습니다.</value></data>
+  <data name="Presets_RestoreGradients" xml:space="preserve"><value>기본 그라데이션 되돌리기</value></data>
   <data name="Presets_Restored" xml:space="preserve"><value>기본 프리셋을 되돌렸습니다.</value></data>
   <data name="EffectPreset_EffectsTab" xml:space="preserve"><value>효과</value><comment>효과 창 종류 칸의 탭: 하나씩 넣는 효과 모두.</comment></data>
   <data name="EffectPreset_PresetsTab" xml:space="preserve"><value>프리셋</value><comment>효과 창 종류 칸의 탭: 여러 효과와 값을 묶어 저장한 프리셋.</comment></data>
@@ -9181,15 +9180,20 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Assets_Downloading" xml:space="preserve"><value>내려받는 중 {0}%</value></data>
   <data name="Assets_InstallRemoteError" xml:space="preserve"><value>내려받은 패키지를 설치하지 못했습니다: {0}</value></data>
   <data name="Assets_DownloadError" xml:space="preserve"><value>패키지를 내려받지 못했습니다: {0}</value></data>
-  <data name="Assets_SourceRemote" xml:space="preserve"><value>온라인 카탈로그</value></data>
-  <data name="Assets_SourceBundled" xml:space="preserve"><value>앱 기본 설치</value><comment>에셋 관리자 출처: 앱이 기본으로 설치한 공식 효과 패키지</comment></data>
-  <data name="Assets_DeleteOfficialNote" xml:space="preserve"><value>앱이 기본으로 설치한 공식 효과입니다. 지우면 다시 설치하지 않으며, 설치됨 탭의 "기본 효과 되돌리기"로 다시 넣을 수 있습니다.</value></data>
+  <data name="Assets_SourceRemote" xml:space="preserve"><value>상점에서 받음</value></data>
+  <data name="Assets_SourceBundled" xml:space="preserve"><value>앱이 기본으로 설치한 상점 에셋</value><comment>에셋 관리자 출처: 앱이 기본으로 설치한 공식 패키지(효과·그라데이션·모양 펜 세트)</comment></data>
+  <data name="Assets_SourceTagRemote" xml:space="preserve"><value>상점</value><comment>에셋 관리자 목록 줄의 짧은 출처: 상점에서 받음</comment></data>
+  <data name="Assets_SourceTagBundled" xml:space="preserve"><value>기본(상점)</value><comment>에셋 관리자 목록 줄의 짧은 출처: 앱이 기본으로 설치한 상점 에셋</comment></data>
+  <data name="Assets_SourceTagFile" xml:space="preserve"><value>파일</value><comment>에셋 관리자 목록 줄의 짧은 출처: 패키지 파일에서 가져옴</comment></data>
+  <data name="Assets_DeleteOfficialNote" xml:space="preserve"><value>앱이 기본으로 설치한 공식 에셋입니다. 지우면 다시 설치하지 않으며, 설치됨 탭의 종류별 되돌리기(기본 효과·기본 그라데이션·기본 세트 되돌리기)로 다시 넣을 수 있습니다.</value></data>
   <data name="Assets_RestoreOfficial" xml:space="preserve"><value>기본 효과 되돌리기</value><comment>에셋 관리자 설치됨 탭 단추</comment></data>
   <data name="Assets_RestoreOfficialTip" xml:space="preserve"><value>앱에 든 공식 효과(외곽선·그림자 등) 중 지운 것을 다시 넣고, 예전 버전은 앱에 든 버전으로 올립니다(고친 것은 그대로). 내가 만든 효과와 받은 다른 에셋은 그대로입니다.</value></data>
-  <data name="Assets_RestoreOfficialDone" xml:space="preserve"><value>공식 효과 {0}개를 다시 설치하고 {1}개를 업데이트했습니다.</value><comment>0 = 다시 설치한 패키지 수, 1 = 켜거나 업데이트한 패키지 수</comment></data>
-  <data name="Assets_RestoreOfficialNothing" xml:space="preserve"><value>공식 효과가 모두 설치돼 있고 최신입니다.</value></data>
-  <data name="Assets_RestoreOfficialError" xml:space="preserve"><value>공식 효과를 되돌리지 못했습니다: {0}</value></data>
-  <data name="Assets_BundledError" xml:space="preserve"><value>앱에 든 공식 효과를 설치하지 못했습니다(다음 실행에 다시 시도): {0}</value></data>
+  <data name="Assets_RestoreGradients" xml:space="preserve"><value>기본 그라데이션 되돌리기</value><comment>에셋 관리자 설치됨 탭 단추(그라데이션 거르기)</comment></data>
+  <data name="Assets_RestoreGradientsTip" xml:space="preserve"><value>앱에 든 기본 그라데이션(무지개·노을·불 등) 중 지운 것을 다시 넣고, 예전 버전은 앱에 든 버전으로 올립니다(고친 것은 그대로). 내가 만든 그라데이션과 받은 다른 에셋은 그대로입니다.</value></data>
+  <data name="Assets_RestoreDefaultsDone" xml:space="preserve"><value>기본 에셋 {0}개를 다시 설치하고 {1}개를 업데이트했습니다.</value><comment>0 = 다시 설치한 패키지 수, 1 = 업데이트한 패키지 수</comment></data>
+  <data name="Assets_RestoreDefaultsNothing" xml:space="preserve"><value>이 종류의 기본 에셋이 모두 설치돼 있고 최신입니다.</value></data>
+  <data name="Assets_RestoreDefaultsError" xml:space="preserve"><value>기본 에셋을 되돌리지 못했습니다: {0}</value></data>
+  <data name="Assets_BundledError" xml:space="preserve"><value>앱에 든 공식 에셋을 설치하지 못했습니다(다음 실행에 다시 시도): {0}</value></data>
   <data name="Assets_ContentsRecipes" xml:space="preserve"><value>효과 프리셋 {0}개</value></data>
   <data name="Assets_ContentsGradients" xml:space="preserve"><value>그라데이션 {0}개</value></data>
   <data name="Assets_ContentsOther" xml:space="preserve"><value>{0} {1}개</value></data>
@@ -9890,10 +9894,8 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="ShapePen_RenameSetTip" xml:space="preserve"><value>세트 이름 바꾸기</value><comment>단추 풍선이자 이름 묻는 창 제목</comment></data>
   <data name="ShapePen_DeleteSetTip" xml:space="preserve"><value>세트 지우기</value><comment>단추 풍선이자 확인 창 제목</comment></data>
   <data name="ShapePen_DeleteSet" xml:space="preserve"><value>지우기</value><comment>세트 지우기 확인 단추</comment></data>
-  <data name="ShapePen_DeleteSetConfirm" xml:space="preserve"><value>'{name}' 세트와 모양 {count}개를 지울까요? 되돌릴 수 없습니다(기본 세트는 '기본 세트 되돌리기'로 다시 넣을 수 있음).</value></data>
-  <data name="ShapePen_RestoreDefaultsTip" xml:space="preserve"><value>기본 세트 되돌리기</value><comment>단추 풍선이자 확인 창 제목</comment></data>
-  <data name="ShapePen_RestoreDefaults" xml:space="preserve"><value>되돌리기</value><comment>기본 세트 되돌리기 확인 단추</comment></data>
-  <data name="ShapePen_RestoreDefaultsConfirm" xml:space="preserve"><value>기본 세트 다섯 가지(나뭇잎·단풍잎·풀·별·거품)를 처음 모양으로 되돌립니다. 지운 기본 세트는 다시 넣고, 기본 세트에서 더하거나 지운 모양·바꾼 이름·순서는 처음대로 돌아갑니다. 내 세트와 받은 세트는 그대로입니다.</value></data>
+  <data name="ShapePen_DeleteSetConfirm" xml:space="preserve"><value>'{name}' 세트와 모양 {count}개를 지울까요? 되돌릴 수 없습니다.</value></data>
+  <data name="ShapePen_RestoreDefaultsTip" xml:space="preserve"><value>기본 세트 되돌리기</value><comment>단추 풍선이자 결과 창 제목</comment></data>
   <data name="ShapePen_AddShape" xml:space="preserve"><value>모양 더하기</value><comment>모양 더하기 메뉴 단추</comment></data>
   <data name="ShapePen_AddShapeTip" xml:space="preserve"><value>고른 세트에 모양을 더합니다: 선택 영역·지금 셀(투명한 둘레는 잘라 냄, 불투명도 그대로) 또는 PNG 파일</value></data>
   <data name="ShapePen_AddFromSelection" xml:space="preserve"><value>선택 영역에서</value></data>
@@ -9933,8 +9935,8 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="ShapePen_ManageSetsTip" xml:space="preserve"><value>세트 관리…: 에셋 관리자의 설치됨 › 모양 펜을 열어 고른 세트를 보입니다. 내 세트와 받은 세트를 보고, 상점에 올리기·내보내기·가져오기·내 세트로 복사·캔버스에서 편집·캔버스에서 새 세트를 합니다.</value></data>
   <data name="Assets_NewSetFromCanvas" xml:space="preserve"><value>캔버스에서 새 세트…</value><comment>에셋 관리자 모양 펜 거르기 도구 막대 단추</comment></data>
   <data name="Assets_NewSetFromCanvasTip" xml:space="preserve"><value>지금 문서로 새 내 세트를 만듭니다: 프레임마다 보이는 레이어를 합친 그림이 모양 하나가 됩니다(투명한 둘레는 잘라 내고 빈 프레임은 건너뜀, 모양 64개·한 변 256px까지).</value></data>
-  <data name="Assets_RestoreSetsTip" xml:space="preserve"><value>모양 펜 기본 세트 다섯 가지(나뭇잎·단풍잎·풀·별·거품)를 처음 모양으로 되돌립니다. 지운 기본 세트는 다시 넣습니다. 기본 세트는 이 목록에 보이지 않고 도구 설정의 세트 목록에서 고릅니다. 내 세트와 받은 세트는 그대로입니다.</value></data>
-  <data name="Assets_RestoreSetsDone" xml:space="preserve"><value>기본 세트 다섯 가지를 되돌렸습니다. 도구 설정의 모양 펜 세트 목록에서 고를 수 있습니다.</value></data>
+  <data name="Assets_RestoreSetsTip" xml:space="preserve"><value>모양 펜 기본 세트 다섯 가지(꽃·반짝이·비눗방울·단풍잎·나뭇잎) 중 지운 것을 다시 넣고, 예전 버전은 앱에 든 버전으로 올립니다(고친 것은 그대로). 내 세트와 받은 다른 세트는 그대로입니다.</value></data>
+  <data name="Assets_EditOwnSetOnCanvasTip" xml:space="preserve"><value>이 세트를 임시 문서 탭(모양마다 프레임 하나)으로 열어 그 자리에서 고칩니다. 내가 작성자라 '세트에 저장'이 이 에셋을 바꾸며, 고친 뒤 새 버전으로 올립니다.</value></data>
   <data name="Assets_SourceMySets" xml:space="preserve"><value>내 세트(모양 펜)</value><comment>내 모양 펜 세트의 출처</comment></data>
   <data name="Assets_ExportSetMenu" xml:space="preserve"><value>내보내기</value><comment>내 모양 펜 세트 상세의 메뉴 단추</comment></data>
   <data name="Assets_ExportSetTip" xml:space="preserve"><value>세트를 세트 파일(.chickxel-shapes) 또는 에셋 패키지(.chickxel-asset)로 저장합니다(백업·전달용).</value></data>

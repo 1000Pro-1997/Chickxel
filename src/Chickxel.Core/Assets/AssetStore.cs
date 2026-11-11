@@ -668,29 +668,6 @@ public sealed partial class AssetStore
         SaveLibrary(_records.ToList(), favorites);
     }
 
-    /// <summary>
-    /// 기본 그라데이션(<see cref="GradientPresets.BuiltIns"/>)을 처음 값으로 되돌리고 지운 것은 끝에 다시 넣는다(이 컴퓨터에서 만든 그라데이션을 이름으로 찾음, 대소문자 무시).
-    /// 받은 그라데이션, 직접 만든 다른 그라데이션과 즐겨찾기는 그대로 둔다.
-    /// </summary>
-    public void RestoreBuiltInGradients()
-    {
-        using var change = BeginChange();
-        if (LibraryError is { } error) throw new InvalidOperationException(error);
-        var records = _records.ToList();
-        foreach (var builtIn in GradientPresets.BuiltIns())
-        {
-            int index = records.FindIndex(r => r is { Kind: AssetKinds.Gradient, Author: null, Store: null } && r.Data is GradientAsset g
-                                               && string.Equals(g.Gradient.Name, builtIn.Name, StringComparison.OrdinalIgnoreCase));
-            if (index >= 0) records[index] = records[index] with { Data = new GradientAsset(records[index].Id, builtIn) };
-            else
-            {
-                string id = NewId(records, null);
-                records.Add(new Record(id, AssetKinds.Gradient, DateTime.UtcNow, AssetSources.Local, new GradientAsset(id, builtIn), null, null, null, null, null));
-            }
-        }
-        SaveLibrary(records, new HashSet<string>(_favorites, StringComparer.Ordinal));
-    }
-
     /// <summary>예전 프리셋 파일을 이미 옮겼는지(옮기지 않았으면 <see cref="AssetMigration"/>이 다음 실행에 다시 시도).</summary>
     internal bool LegacyPresetsMigrated => _legacyPresetsDone;
 

@@ -28,8 +28,4 @@ public static class GradientPresetUi
 
     public static bool SetFavorite(Window owner, string id, bool favorite)
         => AppAssets.Try(owner, () => AppAssets.Store.SetFavorite(id, favorite), UiStrings.GradientPreset_SaveError);
-
-    /// <summary>기본 그라데이션을 처음 값으로 되돌리고 지운 것은 다시 넣는다(직접 만든 것과 즐겨찾기는 그대로).</summary>
-    public static bool RestoreBuiltIns(Window owner)
-        => AppAssets.Try(owner, AppAssets.Store.RestoreBuiltInGradients, UiStrings.GradientPreset_SaveError);
 }

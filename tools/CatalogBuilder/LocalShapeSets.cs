@@ -1,121 +1,123 @@
+using System.Text.Json.Nodes;
 using Chickxel.Core.Assets;
 using Chickxel.Core.IO;
 
 namespace CatalogBuilder;
 
 /// <summary>
-/// 앱에 넣지 않는 모양 펜 세트(예전 기본 세트 열다섯 가지 <see cref="FormerBuiltInShapeSets"/>와 크리스마스 세트 셋 <see cref="ChristmasShapeSets"/>)를
-/// 로컬 파일로 쓴다(<c>--shape-sets &lt;폴더&gt;</c>): 세트마다 상점에 올릴 수 있는 패키지(<c>chickxel.shapes.&lt;ID&gt;-&lt;버전&gt;.chickxel-asset</c>, MIT,
-/// 영어·한국어 이름과 요약, 모양 격자 미리보기, 최소 앱 버전은 모양 펜 세트 종류가 정함)와 바로 가져올 세트 파일(<c>chickxel.shapes.&lt;ID&gt;.chickxel-shapes</c>).
-/// 공식 카탈로그(<c>catalog/</c>)에는 넣지 않는다 — 올릴지는 사람이 정한다. 쓴 뒤 앱의 패키지 검사(엄격)와 세트 파일 읽기로 다시 읽어 같은지 본다.
+/// 상점에 올리는 공식 모양 펜 세트(<see cref="OfficialShapeSetPackage"/>)를 로컬 파일로 쓴다(<c>--shape-sets &lt;폴더&gt;</c>): 앱에 든 기본 세트 다섯 가지
+/// (<see cref="OfficialShapeSets"/>)와 앱에 넣지 않는 세트(예전 기본 세트 <see cref="FormerBuiltInShapeSets"/>, 크리스마스 트리 장식 <see cref="ChristmasShapeSets"/>,
+/// <c>ShapeSets/*.cs</c>의 테마 세트). 세트마다 패키지(<c>chickxel.shapes.&lt;ID&gt;-&lt;버전&gt;.chickxel-asset</c>)와 바로 가져올 세트 파일
+/// (<c>chickxel.shapes.&lt;ID&gt;.chickxel-shapes</c>), 그리고 서버의 공식 패키지 올리기(<c>Chickxel-server/scripts/import-official.mjs --catalog &lt;폴더&gt;</c>)가 읽는
+/// 목록 <c>index.json</c>(정적 카탈로그 쪽과 같은 모양 — ID·버전·요약·꼬리표·패키지 파일)을 쓴다. 공식 카탈로그(<c>catalog/</c>)에는 넣지 않는다.
+/// 쓴 뒤 앱의 패키지 검사(엄격)와 세트 파일 읽기로 다시 읽어 같은지 본다. 기본 세트 다섯 가지의 패키지는 앱이 설치하는 바이트와 같다.
 /// </summary>
 internal static class LocalShapeSets
 {
-    public const string PackagePrefix = "chickxel.shapes.";
-    public const string Version = "1.0.0";
+    private static OfficialShapeSetPackage P(string id, string description, string nameKo, string summaryKo, Func<StampSet> create, params string[] tags)
+        => new(id, "1.0.0", description, nameKo, summaryKo, create, [.. tags, "official"]);
 
-    /// <summary>세트 하나: ID(패키지 ID의 끝 조각, 에셋 조각), 영어 설명(목록 요약), 한국어 이름·요약, 세트 만들기(영어 이름 = 세트 이름).</summary>
-    private sealed record Package(string Id, string Description, string NameKo, string SummaryKo, Func<StampSet> Create)
-    {
-        public string PackageId => PackagePrefix + Id;
-
-        public AssetManifest Header(StampSet set) => new()
-        {
-            Id = PackageId, Version = Version, Name = set.DisplayName, Description = Description,
-            Translations = new Dictionary<string, AssetTranslation>(StringComparer.OrdinalIgnoreCase) { ["ko"] = new(NameKo, SummaryKo) },
-            Author = OfficialEffectPackages.Author, License = OfficialEffectPackages.License,
-        };
-    }
-
-    private static readonly Package[] Packages =
+    /// <summary>올리는 세트 모두(기본 세트 다섯 가지가 먼저).</summary>
+    public static IReadOnlyList<OfficialShapeSetPackage> Packages { get; } =
     [
-        new("pine-needles", "Pine needle sprigs and twigs in dark and light green, facing both ways.",
-            "솔잎", "진한 초록·초록 솔잎 가지와 잔가지(좌우로 뒤집은 것까지).", FormerBuiltInShapeSets.Pine),
-        new("flowers", "Small pink, blue and white flowers with yellow centers, some on a stem.",
-            "꽃", "노란 가운데의 분홍·파랑·흰색 작은 꽃(줄기 달린 것 포함).", FormerBuiltInShapeSets.Flowers),
-        new("petals", "Tiny pink petals with semi-transparent edges for falling blossoms.",
-            "꽃잎", "흩날리는 꽃잎을 그리는 작은 분홍 꽃잎(가장자리가 반투명).", FormerBuiltInShapeSets.Petals),
-        new("sparkles", "White and soft yellow twinkles and four-pointed glints with a semi-transparent glow.",
-            "반짝이", "흰색·옅은 노랑의 반짝임과 네 갈래 빛(반투명하게 번짐).", FormerBuiltInShapeSets.Sparkles),
-        new("dots", "Dark dots from 1 to 6 pixels, stamped in order from small to large.",
-            "점", "1~6px 어두운 점, 작은 것부터 차례로 찍습니다.", FormerBuiltInShapeSets.Dots),
-        new("clouds", "Fluffy white clouds with a blue-gray outline and a shaded bottom.",
-            "구름", "푸른 회색 테두리와 그늘진 밑면의 흰 구름.", FormerBuiltInShapeSets.Clouds),
-        new("pebbles", "Gray pebbles in eight sizes, lit from the top left.",
-            "돌멩이", "왼쪽 위에서 빛을 받은 여덟 가지 크기의 회색 돌멩이.", FormerBuiltInShapeSets.Pebbles),
-        new("bricks", "Red bricks in five sizes and a staggered pair.",
-            "벽돌", "다섯 가지 크기의 붉은 벽돌과 엇갈려 쌓은 두 장.", FormerBuiltInShapeSets.Bricks),
-        new("raindrops", "Semi-transparent light blue raindrops and slanted rain streaks.",
-            "빗방울", "반투명한 옅은 파랑 빗방울과 비스듬한 빗줄기.", FormerBuiltInShapeSets.Raindrops),
-        new("snowflakes", "White and pale blue snowflakes and soft snow specks.",
-            "눈송이", "흰색·옅은 파랑 눈송이와 작은 눈 알갱이.", FormerBuiltInShapeSets.Snowflakes),
-        new("hearts", "Red and pink hearts in four sizes.",
-            "하트", "네 가지 크기의 빨강·분홍 하트.", FormerBuiltInShapeSets.Hearts),
-        new("smoke-puffs", "Soft semi-transparent gray puffs of smoke and dust.",
-            "연기·먼지", "반투명한 회색 연기·먼지 뭉치.", FormerBuiltInShapeSets.SmokePuffs),
-        new("wood-grain", "Wavy dark and light wood grain lines and knots for planks.",
-            "나뭇결", "널빤지에 찍는 물결치는 나뭇결 줄과 옹이.", FormerBuiltInShapeSets.WoodGrain),
-        new("cracks", "Branching dark cracks with a light lip for walls and stone.",
-            "금", "벽·돌에 찍는 갈라지는 어두운 금(밝은 가장자리).", FormerBuiltInShapeSets.Cracks),
-        new("coins-and-gems", "Gold coins in three sizes and red, green and blue gems.",
-            "동전·보석", "세 가지 크기의 금화와 빨강·초록·파랑 보석.", FormerBuiltInShapeSets.CoinsAndGems),
-        new("christmas-lights", "String-light bulbs in five colors, glowing bulbs and short light strings for decorating a Christmas tree.",
-            "크리스마스 전구", "트리를 꾸미는 다섯 가지 색 전구, 빛나는 전구, 짧은 전구 줄.", ChristmasShapeSets.Lights),
-        new("christmas-bells", "Gold and silver bells, double bells with a bow, and red and gold ribbon bows for a Christmas tree.",
-            "크리스마스 종·리본", "트리에 다는 금색·은색 종, 리본을 단 쌍종, 빨간색·금색 리본.", ChristmasShapeSets.BellsAndBows),
-        new("christmas-ornaments", "Shiny baubles, a tree-top star, a candy cane, gift boxes, a pine cone and a snowflake for a Christmas tree.",
-            "크리스마스 장식", "트리에 다는 반짝이는 방울, 꼭대기 별, 지팡이 사탕, 선물 상자, 솔방울, 눈송이.", ChristmasShapeSets.Ornaments),
+        .. OfficialShapeSets.Packages,
+        P("pine-needles", "Pine needle sprigs and twigs in dark and light green, facing both ways.",
+            "솔잎", "진한 초록·초록 솔잎 가지와 잔가지(좌우로 뒤집은 것까지).", FormerBuiltInShapeSets.Pine, "nature", "forest", "leaves"),
+        P("grass", "Grass tufts with light blade tips, facing both ways, for meadows and ground edges.",
+            "풀", "끝이 밝은 풀 포기(좌우로 뒤집은 것까지) — 풀밭, 땅 가장자리.", FormerBuiltInShapeSets.Grass, "nature", "grass", "ground"),
+        P("petals", "Tiny pink petals with semi-transparent edges for falling blossoms.",
+            "꽃잎", "흩날리는 꽃잎을 그리는 작은 분홍 꽃잎(가장자리가 반투명).", FormerBuiltInShapeSets.Petals, "nature", "spring", "flowers"),
+        P("stars", "Gold and pale blue five-pointed stars and small twinkles in three sizes.",
+            "별", "세 가지 크기의 금색·옅은 파랑 오각 별과 작은 반짝임.", FormerBuiltInShapeSets.Stars, "sky", "night", "stars"),
+        P("dots", "Dark dots from 1 to 6 pixels, stamped in order from small to large.",
+            "점", "1~6px 어두운 점, 작은 것부터 차례로 찍습니다.", FormerBuiltInShapeSets.Dots, "texture", "dots"),
+        P("clouds", "Fluffy white clouds with a blue-gray outline and a shaded bottom.",
+            "구름", "푸른 회색 테두리와 그늘진 밑면의 흰 구름.", FormerBuiltInShapeSets.Clouds, "sky", "weather"),
+        P("pebbles", "Gray pebbles in eight sizes, lit from the top left.",
+            "돌멩이", "왼쪽 위에서 빛을 받은 여덟 가지 크기의 회색 돌멩이.", FormerBuiltInShapeSets.Pebbles, "nature", "ground", "rocks"),
+        P("bricks", "Red bricks in five sizes and a staggered pair.",
+            "벽돌", "다섯 가지 크기의 붉은 벽돌과 엇갈려 쌓은 두 장.", FormerBuiltInShapeSets.Bricks, "building", "bricks"),
+        P("raindrops", "Semi-transparent light blue raindrops and slanted rain streaks.",
+            "빗방울", "반투명한 옅은 파랑 빗방울과 비스듬한 빗줄기.", FormerBuiltInShapeSets.Raindrops, "weather", "rain", "water"),
+        P("snowflakes", "White and pale blue snowflakes and soft snow specks.",
+            "눈송이", "흰색·옅은 파랑 눈송이와 작은 눈 알갱이.", FormerBuiltInShapeSets.Snowflakes, "weather", "winter", "snow"),
+        P("hearts", "Red and pink hearts in four sizes.",
+            "하트", "네 가지 크기의 빨강·분홍 하트.", FormerBuiltInShapeSets.Hearts, "love", "decoration"),
+        P("smoke-puffs", "Soft semi-transparent gray puffs of smoke and dust.",
+            "연기·먼지", "반투명한 회색 연기·먼지 뭉치.", FormerBuiltInShapeSets.SmokePuffs, "smoke", "dust", "effects"),
+        P("wood-grain", "Wavy dark and light wood grain lines and knots for planks.",
+            "나뭇결", "널빤지에 찍는 물결치는 나뭇결 줄과 옹이.", FormerBuiltInShapeSets.WoodGrain, "texture", "wood"),
+        P("cracks", "Branching dark cracks with a light lip for walls and stone.",
+            "금", "벽·돌에 찍는 갈라지는 어두운 금(밝은 가장자리).", FormerBuiltInShapeSets.Cracks, "texture", "damage", "stone"),
+        P("coins-and-gems", "Gold coins in three sizes and red, green and blue gems.",
+            "동전·보석", "세 가지 크기의 금화와 빨강·초록·파랑 보석.", FormerBuiltInShapeSets.CoinsAndGems, "treasure", "items", "game"),
+        P("christmas-lights", "String-light bulbs in five colors, glowing bulbs and short light strings for decorating a Christmas tree.",
+            "크리스마스 전구", "트리를 꾸미는 다섯 가지 색 전구, 빛나는 전구, 짧은 전구 줄.", ChristmasShapeSets.Lights, "christmas", "decoration", "lights"),
+        P("christmas-bells", "Gold and silver bells, double bells with a bow, and red and gold ribbon bows for a Christmas tree.",
+            "크리스마스 종·리본", "트리에 다는 금색·은색 종, 리본을 단 쌍종, 빨간색·금색 리본.", ChristmasShapeSets.BellsAndBows, "christmas", "decoration"),
+        P("christmas-ornaments", "Shiny baubles, a tree-top star, a candy cane, gift boxes, a pine cone and a snowflake for a Christmas tree.",
+            "크리스마스 장식", "트리에 다는 반짝이는 방울, 꼭대기 별, 지팡이 사탕, 선물 상자, 솔방울, 눈송이.", ChristmasShapeSets.Ornaments, "christmas", "decoration"),
+        .. ThemeShapeSets.Packages,
     ];
 
-    /// <summary><paramref name="directory"/>에 세트마다 패키지와 세트 파일을 쓰고(있으면 덮어씀) 다시 읽어 본다. 문제가 있으면 문제마다 한 줄을 남기고 1.</summary>
+    /// <summary><paramref name="directory"/>에 세트마다 패키지와 세트 파일, 올리기 목록(<c>index.json</c>)을 쓰고(있으면 덮어씀) 다시 읽어 본다. 문제가 있으면 문제마다 한 줄을 남기고 1.</summary>
     public static int Write(string directory)
     {
         Directory.CreateDirectory(directory);
         int problems = 0;
+        var listed = new JsonArray();
+        foreach (var dup in Packages.GroupBy(p => p.Id).Where(g => g.Count() > 1))
+        {
+            Console.Error.WriteLine($"{dup.Key}: listed {dup.Count()} times");
+            problems++;
+        }
         foreach (var package in Packages)
         {
             var set = package.Create();
             ShapeSetAssetFormat.Validate(set);
-            string packagePath = Path.Combine(directory, $"{package.PackageId}-{Version}{AssetPackage.Extension}");
+            string packageFile = $"{package.PackageId}-{package.Version}{AssetPackage.Extension}";
+            string packagePath = Path.Combine(directory, packageFile);
             string setPath = Path.Combine(directory, package.PackageId + StampLibrary.SetFileExtension);
-            File.WriteAllBytes(packagePath, Build(package, set));
+            File.WriteAllBytes(packagePath, package.Build(set));
             StampLibrary.SaveSet(set, setPath);
             if (Check(package, set, packagePath, setPath) is { } problem)
             {
                 Console.Error.WriteLine($"{package.PackageId}: {problem}");
                 problems++;
+                continue;
             }
-            else Console.WriteLine($"wrote: {Path.GetFileName(packagePath)}, {Path.GetFileName(setPath)} ({set.Shapes.Count} shapes)");
+            listed.Add(new JsonObject
+            {
+                ["id"] = package.PackageId, ["version"] = package.Version, ["name"] = set.DisplayName, ["summary"] = package.Description,
+                ["tags"] = new JsonArray(package.Tags.Take(8).Select(tag => (JsonNode)JsonValue.Create(tag)!).ToArray()),
+                ["kinds"] = new JsonObject { [AssetKinds.ShapeSet] = 1 },
+                ["package"] = new JsonObject { ["url"] = packageFile },
+            });
+            Console.WriteLine($"wrote: {packageFile}, {Path.GetFileName(setPath)} ({set.Shapes.Count} shapes)");
         }
-        Console.WriteLine($"{Packages.Length - problems} of {Packages.Length} shape set(s) written to {directory}.");
+        var index = new JsonObject
+        {
+            ["schemaVersion"] = 1, ["page"] = 1, ["pageCount"] = 1, ["totalCount"] = listed.Count, ["next"] = null, ["packages"] = listed,
+        };
+        File.WriteAllText(Path.Combine(directory, "index.json"), index.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine($"{Packages.Count - problems} of {Packages.Count} shape set(s) written to {directory} (index.json lists them for upload).");
         return problems == 0 ? 0 : 1;
     }
 
-    // 패키지 바이트(미리보기는 모양 격자, 최소 앱 버전은 모양 펜 세트 종류가 올림)
-    private static byte[] Build(Package package, StampSet set)
-    {
-        var builder = new AssetPackageBuilder(package.Header(set));
-        builder.Add(set, segment: package.Id);
-        builder.AddDocument("LICENSE.txt", OfficialEffectPackages.LicenseText);
-        builder.AddDocument("README.md", $"# {set.DisplayName}\n\n{package.Description} Chickxel shape pen set.\n");
-        using var output = new MemoryStream();
-        builder.Write(output);
-        return output.ToArray();
-    }
-
     // 쓴 파일을 앱처럼 읽어 같은 세트인지(다르면 까닭)
-    private static string? Check(Package package, StampSet set, string packagePath, string setPath)
+    private static string? Check(OfficialShapeSetPackage package, StampSet set, string packagePath, string setPath)
     {
         AssetPackage read;
         try { read = AssetPackageValidator.Read(packagePath); }
         catch (AssetPackageException ex) { return "package rejected: " + string.Join("; ", ex.Issues.Select(issue => issue.Message)); }
         var manifest = read.Manifest;
-        if (manifest.Id != package.PackageId || manifest.Version != Version || manifest.MinAppVersion != AssetKinds.ShapeSetMinAppVersion
+        if (manifest.Id != package.PackageId || manifest.Version != package.Version || manifest.MinAppVersion != AssetKinds.ShapeSetMinAppVersion
             || !manifest.Translations.TryGetValue("ko", out var ko) || ko != new AssetTranslation(package.NameKo, package.SummaryKo))
             return "unexpected manifest";
-        if (read.Items is not [{ Data: ShapeSetAsset asset }] || asset.Id != $"{package.PackageId}.{package.Id}") return "unexpected assets";
+        if (read.Items is not [{ Data: ShapeSetAsset asset }] || asset.Id != package.AssetId) return "unexpected assets";
         if (!Same(set, asset.Set)) return "package shape set differs";
         if (StampLibrary.ParseSet(File.ReadAllText(setPath)) is not { } file || !Same(set, file)) return "set file differs";
+        if (package.Description.Length > 200 || package.SummaryKo.Length > 200) return "summary longer than 200 characters";
         return null;
     }
 

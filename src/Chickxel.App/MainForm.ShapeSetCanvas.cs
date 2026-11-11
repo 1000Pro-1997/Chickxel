@@ -9,14 +9,20 @@ namespace Chickxel.App;
 // "캔버스에서 새 세트": 지금 문서의 프레임마다 보이는 레이어를 합친 그림(내보내기와 같은 합성)을 잘라 모양 하나로 — 빈 프레임은 건너뛰고, 너무 크거나 많으면 알리고 만들지 않는다.
 // "캔버스에서 고치기": 세트를 프레임마다 모양 하나씩 가운데 둔 저장하지 않는 문서(탭)로 열고, 탭 아래 막대의 "세트에 저장"(또는 저장 단축키)으로 같은 규칙으로 되돌려 쓴다.
 // 세트 이름표·이름·순서는 그대로다. 저장하지 않고 고친 채 닫으면(탭 닫기·모든 탭 닫기·끝내기) 세트에 저장할지 묻는다.
+// 작성자가 내 계정인 받은 세트(개발자가 올린 세트)는 그 에셋에 그대로 저장한다(상점 연결은 그대로 — 고친 상태가 되어 새 버전으로 올림). 다른 받은 세트는 내 세트로 복사해 고친다.
 public sealed partial class MainForm
 {
-    /// <summary>캔버스에서 고치는 중인 세트 하나: 세트 이름표, 마지막으로 본 이름·순서(고치는 동안 세트가 지워지면 다시 만들 때 씀), 문서, 막대 글.</summary>
-    private sealed class ShapeSetEdit(string setId, string name, StampOrder order)
+    /// <summary>
+    /// 캔버스에서 고치는 중인 세트 하나: 세트 이름표(내 세트 이름표, 또는 <paramref name="asset"/>이면 받은 세트의 에셋 ID), 마지막으로 본 이름·순서
+    /// (고치는 동안 세트가 지워지면 다시 만들 때 씀), 문서, 막대 글.
+    /// </summary>
+    private sealed class ShapeSetEdit(string setId, string name, StampOrder order, bool asset = false)
     {
         public string SetId { get; } = setId;
         public string Name { get; set; } = name;
         public StampOrder Order { get; set; } = order;
+        /// <summary>작성자가 내 계정인 받은 세트를 그 에셋에 저장한다.</summary>
+        public bool Asset { get; } = asset;
         public OpenDocument Doc { get; set; } = null!;
         public TextBlock BarText { get; set; } = null!;
     }
@@ -64,12 +70,17 @@ public sealed partial class MainForm
 
     /// <summary>
     /// 세트를 캔버스에서 고친다: 모양마다 프레임 하나(<see cref="StampFrames.ToProject"/>)인 저장하지 않는 문서를 새 탭으로 열고 탭 아래에 "세트에 저장" 막대를 단다.
-    /// 그 세트를 이미 고치는 중이면 그 탭을 고른다. 받은 세트(읽기 전용)면 먼저 내 세트로 복사해 사본을 고친다.
+    /// 그 세트를 이미 고치는 중이면 그 탭을 고른다. 받은 세트는 작성자가 내 계정이면 그 에셋을 그대로 고치고, 아니면 먼저 내 세트로 복사해 사본을 고친다.
     /// </summary>
     internal void EditShapeSetOnCanvas(string setId)
     {
         var set = _ctx.ShapeSets.Find(setId);
-        if (set is null && _ctx.InstalledShapeSets.FirstOrDefault(s => s.Id == setId) is { } installed) set = ShapeSetActions.CopyToMine(_ctx, installed);
+        bool asset = false;
+        if (set is null && _ctx.InstalledShapeSets.FirstOrDefault(s => s.Id == setId) is { } installed)
+        {
+            asset = AppAssets.Catalog.Find(setId) is { } entry && AppAssets.IsMine(entry);
+            set = asset ? installed : ShapeSetActions.CopyToMine(_ctx, installed);
+        }
         if (set is null)
         {
             ShowMessage(UiStrings.ShapeCanvas_NotFound);
@@ -81,7 +92,7 @@ public sealed partial class MainForm
             Activate();
             return;
         }
-        var edit = new ShapeSetEdit(set.Id, set.DisplayName, set.Order);
+        var edit = new ShapeSetEdit(set.Id, set.DisplayName, set.Order, asset);
         var project = StampFrames.ToProject(set.Shapes);
         edit.Doc = new OpenDocument(project, null)
         {
@@ -166,6 +177,7 @@ public sealed partial class MainForm
     /// <summary>
     /// 고친 문서를 세트에 쓴다: 프레임마다 합성한 그림을 모양으로(새 세트와 같은 규칙 — 빈 프레임 건너뜀, 너무 크거나 많으면 알리고 쓰지 않음).
     /// 세트의 모양만 바꾸고 이름표·이름·순서는 그대로다. 고치는 동안 세트가 지워졌으면 같은 이름표로 다시 만들어 끝에 더한다. 썼으면 true(문서는 수정됨이 꺼짐).
+    /// 작성자가 내 계정인 받은 세트는 그 에셋에 저장한다(저장소가 바뀌어 받은 세트 목록이 다시 만들어짐 — 지워졌으면 내 세트로 다시 만듦).
     /// </summary>
     private bool SaveShapeSetEdit(ShapeSetEdit edit)
     {
@@ -178,6 +190,16 @@ public sealed partial class MainForm
             return false;
         }
         string prefix = "";
+        if (edit.Asset && AppAssets.Catalog.Find(edit.SetId) is { ShapeSet: { } stored } entry)
+        {
+            var updated = Chickxel.Core.IO.ShapeSetAssetFormat.Copy(stored, entry.Id);
+            updated.Shapes.Clear();
+            updated.Shapes.AddRange(result.Shapes);
+            if (!AppAssets.Try(this, () => AppAssets.Store.SaveShapeSet(entry.Id, updated), UiStrings.Assets_ActionError)) return false;
+            p.IsDirty = false;
+            ShowMessage(UiStrings.FormatShapeCanvas_Saved(set: entry.DisplayName, count: updated.Shapes.Count) + SkippedSuffix(result));
+            return true;
+        }
         if (_ctx.ShapeSets.Find(edit.SetId) is not { } set)
         {
             set = new StampSet { Id = edit.SetId, Name = _ctx.ShapeSets.UniqueName(edit.Name), Order = edit.Order };

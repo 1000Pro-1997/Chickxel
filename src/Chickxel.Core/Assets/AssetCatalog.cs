@@ -130,10 +130,10 @@ public sealed record AssetEntry(string Id, string Kind, IAssetData Data)
     public string Name => Data.Name;
 
     /// <summary>
-    /// 화면에 보일 이름: 스크립트 에셋은 화면 언어(<see cref="CultureInfo.CurrentUICulture"/>)의 번역(<see cref="ScriptAsset.NameFor"/>), 그 밖은 <see cref="Name"/>.
-    /// 정체·중복 판정·이름 바꾸기에는 <see cref="Name"/>을 쓴다.
+    /// 화면에 보일 이름: 스크립트 에셋은 화면 언어(<see cref="CultureInfo.CurrentUICulture"/>)의 번역(<see cref="ScriptAsset.NameFor"/>), 이름이 받은 패키지 이름 그대로인
+    /// 에셋은 그 목록 번역(<see cref="AssetStoreLink.DisplayName"/> — 공식 그라데이션·모양 펜 세트), 그 밖은 <see cref="Name"/>. 정체·중복 판정·이름 바꾸기에는 <see cref="Name"/>을 쓴다.
     /// </summary>
-    public string DisplayName => Script?.NameFor(CultureInfo.CurrentUICulture) ?? Name;
+    public string DisplayName => Script?.NameFor(CultureInfo.CurrentUICulture) ?? (Store is { } store && store.Name == Name ? store.DisplayName : Name);
 
     /// <summary>작성자(null = 이 컴퓨터에서 만듦).</summary>
     public AssetAuthor? Author { get; init; }

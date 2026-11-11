@@ -140,19 +140,16 @@ public class AssetMigrationTests
     }
 
     [Fact]
-    public void Run_WithoutLegacyFiles_SeedsBuiltInGradientsAndNoRecipes()
+    public void Run_WithoutLegacyFiles_AddsNothing_BuiltInGradientsComeAsOfficialPackages()
     {
         using var setup = new Setup();
         var store = setup.Open();
         var result = AssetMigration.Run(store, setup.Legacy, Now);
 
-        Assert.Equal((true, 0, GradientPresets.BuiltIns().Count, 0, (string?)null),
-            (result.Ran, result.Recipes, result.Gradients, result.Backups.Count, result.Error));
+        Assert.Equal((true, 0, 0, 0, (string?)null), (result.Ran, result.Recipes, result.Gradients, result.Backups.Count, result.Error));
         Assert.True(store.HasLibraryFile);
         var reopened = setup.Open();
-        Assert.Empty(reopened.Catalog.Recipes);
-        Assert.Equal(GradientPresets.BuiltIns().Select(p => p.Name), reopened.Catalog.Gradients.Select(e => e.Name));
-        Assert.All(reopened.Catalog.Gradients, e => Assert.False(e.Favorite));
+        Assert.Empty(reopened.Catalog.All);
         Assert.Empty(Directory.GetFiles(setup.Legacy));
     }
 

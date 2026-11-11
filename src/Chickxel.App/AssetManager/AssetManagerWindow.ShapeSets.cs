@@ -5,17 +5,18 @@ using Chickxel.Core.IO;
 namespace Chickxel.App;
 
 /// <summary>
-/// 에셋 관리자의 모양 펜 거르기: 내 에셋 = 모양 펜 세트 모음의 내 세트(<see cref="ShapeSetActions.Own"/> — 직접 만든 세트와 예전 기본 세트에서 남은 세트,
-/// 기본 세트 다섯 가지는 빼고)와 이름이 맞는 내 세트가 없는 떠 둔 사본(<see cref="ShapeSetActions.Snapshot"/>), 받은 에셋 = 상점·패키지 파일에서 온 세트(도구 설정의
-/// 받은 세트와 같음). 내 세트 상세는 모양 격자·이름 바꾸기·캔버스에서 편집·내보내기(세트 파일·에셋 패키지)·상점에 올리기·지우기, 도구 막대는 캔버스에서 새 세트와
-/// 기본 세트 되돌리기. 세트 모음을 고치면 <see cref="EditorContext.ShapeSetsChanged"/>로 목록과 도구 설정이 같이 바뀐다.
+/// 에셋 관리자의 모양 펜 거르기: 내 에셋 = 모양 펜 세트 모음의 내 세트(<see cref="ShapeSetActions.Own"/> — 직접 만든 세트와 예전 기본 세트에서 남은 세트)와
+/// 이름이 맞는 내 세트가 없는 떠 둔 사본(<see cref="ShapeSetActions.Snapshot"/>), 받은 에셋 = 상점·패키지 파일·앱 기본 설치에서 온 세트(도구 설정의 받은 세트와 같음 —
+/// 기본 세트 다섯 가지도 여기). 받은 세트의 작성자가 내 계정이면(개발자) 그 자리에서 고치고 새 버전으로 올린다. 내 세트 상세는 모양 격자·이름 바꾸기·캔버스에서 편집·
+/// 내보내기(세트 파일·에셋 패키지)·상점에 올리기·지우기, 도구 막대는 캔버스에서 새 세트와 기본 세트 되돌리기. 세트 모음을 고치면 <see cref="EditorContext.ShapeSetsChanged"/>로
+/// 목록과 도구 설정이 같이 바뀐다.
 /// </summary>
 public sealed partial class AssetManagerWindow
 {
     /// <summary>세트 모음을 가진 메인 창(모양 펜 거르기의 내 세트 — 없으면 받은 세트만 보임).</summary>
     private readonly MainForm? _main;
     private readonly EditorContext? _shapeCtx;
-    private readonly Button _restoreEffects, _restoreSets, _newSetFromCanvas;
+    private readonly Button _restoreEffects, _restoreGradients, _restoreSets, _newSetFromCanvas;
 
     /// <summary>목록 한 줄의 고를 키(내 모양 펜 세트).</summary>
     private static string ShapeSetKey(string id) => "shape:" + id;
@@ -30,7 +31,6 @@ public sealed partial class AssetManagerWindow
 
     /// <summary>
     /// 도구 설정의 "세트 관리…": 설치됨 탭의 모양 펜 거르기로 열고 <paramref name="setId"/>(내 세트 또는 받은 세트 — 받은 세트의 이름표 = 에셋 ID)를 고른다.
-    /// 기본 세트는 목록에 없어 첫 줄을 고른다.
     /// </summary>
     public static void OpenShapeSets(Window owner, string? setId)
     {
@@ -39,7 +39,7 @@ public sealed partial class AssetManagerWindow
         var window = new AssetManagerWindow(AssetKinds.ShapeSet, null, AssetManagerTab.Installed, main);
         if (setId is not null)
         {
-            window._selectKey = main?.ShapeSetContext.ShapeSets.Find(setId) is { } own && !ShapeSetActions.IsBuiltIn(own) ? ShapeSetKey(setId) : AssetKey(setId);
+            window._selectKey = main?.ShapeSetContext.ShapeSets.Find(setId) is not null ? ShapeSetKey(setId) : AssetKey(setId);
             window.Refresh();
         }
         window.ShowDialog(owner);
@@ -49,20 +49,18 @@ public sealed partial class AssetManagerWindow
 
     private StampSet? SelectedSet => (_list.SelectedItem as ListBoxItem)?.Tag as StampSet;
 
-    /// <summary>도구 막대: 모양 펜 거르기면 "기본 효과 되돌리기" 대신 "캔버스에서 새 세트"·"기본 세트 되돌리기".</summary>
+    /// <summary>도구 막대: 거르기 종류의 "기본값 되돌리기"(효과·그라데이션·세트), 모양 펜 거르기면 "캔버스에서 새 세트"도.</summary>
     private void ShowToolbarFor()
     {
-        bool shapes = IsShapeSetFilter;
-        _restoreEffects.IsVisible = !shapes;
-        _restoreSets.IsVisible = _newSetFromCanvas.IsVisible = shapes && _shapeCtx is not null;
+        bool shapes = IsShapeSetFilter, gradients = _filter.SelectedIndex == FilterIndex(AssetKinds.Gradient);
+        _restoreEffects.IsVisible = !shapes && !gradients;
+        _restoreGradients.IsVisible = gradients;
+        _restoreSets.IsVisible = shapes;
+        _newSetFromCanvas.IsVisible = shapes && _shapeCtx is not null;
     }
 
-    /// <summary>
-    /// 내 에셋으로 보이는 에셋인지: 내가 만든(<see cref="AssetEntry.IsOwnedBy"/>) 것. 단 상점·패키지 파일에서 온 모양 펜 세트는 내가 올린 것이라도
-    /// 받은 세트다(도구 설정에서 읽기 전용 — 고치려면 내 세트로 복사).
-    /// </summary>
-    private static bool IsMineEntry(AssetEntry entry, string? handle)
-        => entry.IsOwnedBy(handle) && !(entry.Kind == AssetKinds.ShapeSet && entry.Source != AssetSources.Local);
+    /// <summary>내 에셋인지: 내가 만든(<see cref="AssetEntry.IsOwnedBy"/>) 것 — 작성자가 내 계정인 받은 세트(개발자가 올린 세트)도 그 자리에서 고치고 새 버전으로 올린다.</summary>
+    private static bool IsMineEntry(AssetEntry entry, string? handle) => entry.IsOwnedBy(handle);
 
     /// <summary>검색어에 맞는 내 세트(세트 모음 차례).</summary>
     private List<StampSet> ShownOwnSets()
@@ -73,7 +71,7 @@ public sealed partial class AssetManagerWindow
     }
 
     /// <summary>
-    /// 모양 펜 거르기의 목록: 내 에셋(내 세트, 그다음 이름이 맞는 내 세트가 없는 떠 둔 사본), 받은 에셋(상점·패키지 파일에서 온 세트).
+    /// 모양 펜 거르기의 목록: 내 에셋(내 세트, 그다음 이름이 맞는 내 세트가 없는 떠 둔 사본), 받은 에셋(상점·패키지 파일·앱 기본 설치에서 온 세트).
     /// </summary>
     private void AddShapeSetRows(List<AssetEntry> shown)
     {
@@ -91,7 +89,7 @@ public sealed partial class AssetManagerWindow
         if (received.Count > 0)
         {
             AddHeader(UiStrings.Assets_ReceivedHeader);
-            foreach (var entry in received) AddRow(entry, AssetRow(entry, mine: false));
+            foreach (var entry in received) AddRow(entry, AssetRow(entry, mine: entry.IsOwnedBy(AppAssets.MyHandle)));
         }
     }
 
@@ -139,7 +137,7 @@ public sealed partial class AssetManagerWindow
         export.Click += (_, _) => PopupMenus.Show(export, ExportSetMenu(set), Avalonia.Controls.PlacementMode.BottomEdgeAlignedLeft);
         bool listed = store is not null;
         Actions(
-            Ui.Button(VectorIcon.Image, UiStrings.Assets_EditOnCanvas, (_, _) => EditOnCanvas(set)).Tip(UiStrings.Assets_EditOnCanvasTip),
+            Ui.Button(VectorIcon.Image, UiStrings.Assets_EditOnCanvas, (_, _) => EditOnCanvas(set.Id)).Tip(UiStrings.Assets_EditOnCanvasTip),
             Ui.Button(VectorIcon.Pencil, UiStrings.Assets_Rename, (_, _) => ShapeSetActions.Rename(this, ctx, set)),
             export,
             Ui.Button(VectorIcon.Globe, listed ? UiStrings.Assets_PublishNewVersion : UiStrings.Assets_Publish, async (_, _) => await ShapeSetActions.PublishAsync(this, ctx, set))
@@ -189,19 +187,22 @@ public sealed partial class AssetManagerWindow
         Export(entries);
     }
 
-    /// <summary>세트를 새 문서 탭으로 열어 고친다(에셋 관리자는 모달이라 닫고 넘어감 — 세트에 저장하면 목록·도구 설정이 바뀜).</summary>
-    private void EditOnCanvas(StampSet set)
+    /// <summary>
+    /// 세트(<paramref name="setId"/> — 내 세트, 또는 작성자가 내 계정인 받은 세트의 에셋 ID)를 새 문서 탭으로 열어 그 자리에서 고친다
+    /// (에셋 관리자는 모달이라 닫고 넘어감 — 세트에 저장하면 목록·도구 설정이 바뀜).
+    /// </summary>
+    private void EditOnCanvas(string setId)
     {
         if (_main is not { } main) return;
         Close();
-        main.EditShapeSetOnCanvas(set.Id);
+        main.EditShapeSetOnCanvas(setId);
     }
 
     /// <summary>받은 세트를 캔버스에서 편집: 먼저 내 세트로 복사하고 그 사본을 연다(받은 원본은 그대로).</summary>
     private void EditCopyOnCanvas(StampSet received)
     {
         if (_shapeCtx is null) return;
-        EditOnCanvas(ShapeSetActions.CopyToMine(_shapeCtx, received));
+        EditOnCanvas(ShapeSetActions.CopyToMine(_shapeCtx, received).Id);
     }
 
     /// <summary>캔버스에서 새 세트: 지금 문서의 프레임마다 모양 하나로 새 내 세트를 만들고(메인 창이 이름을 물음) 목록에서 고른다.</summary>
@@ -214,12 +215,6 @@ public sealed partial class AssetManagerWindow
         _selectKey = ShapeSetKey(ctx.ShapeSets.Sets[^1].Id);
         _search.Text = "";
         Refresh();
-    }
-
-    private void RestoreShapeSets()
-    {
-        if (_shapeCtx is not null && ShapeSetActions.RestoreDefaults(this, _shapeCtx))
-            Ui.Info(this, UiStrings.Assets_RestoreSetsDone, UiStrings.ShapePen_RestoreDefaultsTip);
     }
 
     /// <summary>모양 펜 세트 파일·PNG를 새 내 세트로 가져오고 마지막 세트를 고른다(<see cref="ShapeSetActions.Import"/>).</summary>

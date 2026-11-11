@@ -306,14 +306,15 @@ public sealed class LegacyEffectMigrationTests
     {
         using var dir = new TempDir();
         var store = AssetStore.Open(Path.Combine(dir.Path, "Assets"));
-        Assert.True(OfficialEffectPackages.NeedsSync(store));
-        var first = OfficialEffectPackages.Sync(store);
+        Assert.True(BundledPackages.NeedsSync(store));
+        var first = BundledPackages.Sync(store);
         Assert.Empty(first.Errors);
-        Assert.Equal(OfficialEffects.Ids.Count, first.Installed.Count);
+        Assert.Equal(BundledPackages.All.Count, first.Installed.Count);
+        Assert.Equal(OfficialEffects.Ids.Count, store.Catalog.EffectScripts.Count);
         Assert.All(store.Catalog.All, e =>
         {
-            Assert.Equal((OfficialEffectPackages.BundledSource, "chickxel", "MIT", false, true),
-                (e.Source, e.Author!.Id, e.License, e.Modified, OfficialEffectPackages.IsOfficial(e)));
+            Assert.Equal((AssetSources.Bundled, "chickxel", "MIT", false, true),
+                (e.Source, e.Author!.Id, e.License, e.Modified, BundledPackages.IsBundled(e)));
             Assert.Equal(e.Store!.AssetId, e.Id);
         });
         // 효과 탭 차례
@@ -321,21 +322,22 @@ public sealed class LegacyEffectMigrationTests
 
         // 다시 열어 맞춰도 아무것도 하지 않는다
         store = AssetStore.Open(store.Root);
-        Assert.False(OfficialEffectPackages.NeedsSync(store));
-        Assert.False(OfficialEffectPackages.Sync(store).Changed);
+        Assert.False(BundledPackages.NeedsSync(store));
+        Assert.False(BundledPackages.Sync(store).Changed);
 
         // 지운 것은 다시 넣지 않는다
         store.Remove(Assert.Single(store.Catalog.FromPackage(OfficialEffectPackages.PackageId("shadow"))).Id);
-        Assert.False(OfficialEffectPackages.Sync(AssetStore.Open(store.Root)).Changed);
+        Assert.False(BundledPackages.Sync(AssetStore.Open(store.Root)).Changed);
         store = AssetStore.Open(store.Root);
-        Assert.False(OfficialEffectPackages.NeedsSync(store));
-        Assert.True(OfficialEffectPackages.NeedsSync(store, restore: true));
+        Assert.False(BundledPackages.NeedsSync(store));
+        Assert.False(BundledPackages.NeedsSync(store, AssetKinds.Gradient));
+        Assert.True(BundledPackages.NeedsSync(store, AssetKinds.EffectScript));
         Assert.Empty(store.Catalog.FromPackage(OfficialEffectPackages.PackageId("shadow")));
         Assert.DoesNotContain(store.Catalog.EffectScripts, e => AssetCatalog.OfficialIdOf(e) == "shadow");
 
         // 더 낮은 버전: 고치지 않은 것(bob)만 업데이트하고, 그 자리에서 고친 것(outline)은 그대로 둔다
         foreach (var id in new[] { "bob", "outline" })
-            Assert.Single(store.Install(OldOfficialPackage(dir, id, "0.9.0"), OfficialEffectPackages.BundledSource, item =>
+            Assert.Single(store.Install(OldOfficialPackage(dir, id, "0.9.0"), AssetSources.Bundled, item =>
             {
                 Assert.True(item.SameStoreAsset);
                 return ImportChoice.Replace;
@@ -344,8 +346,8 @@ public sealed class LegacyEffectMigrationTests
         string edited = OfficialEffects.Source("outline") + "\n// 고침\n";
         var outline = store.SaveScript(edited, outlineId, null);
         Assert.Equal((outlineId, "chickxel", "0.9.0", true), (outline.Id, outline.Author!.Id, outline.Store!.Version, outline.Modified));
-        Assert.True(OfficialEffectPackages.NeedsSync(store));
-        var update = OfficialEffectPackages.Sync(store);
+        Assert.True(BundledPackages.NeedsSync(store));
+        var update = BundledPackages.Sync(store);
         Assert.Empty(update.Errors);
         Assert.Equal([OfficialEffectPackages.PackageId("bob")], update.Updated);
         Assert.Empty(update.Installed);
@@ -355,7 +357,7 @@ public sealed class LegacyEffectMigrationTests
         Assert.Equal(("0.9.0", true, ScriptEffectProgram.HashOf(edited)), (outline.Store!.Version, outline.Modified, outline.Script!.Hash));
 
         // 되돌리기: 지운 것만 다시 넣는다(고친 것은 그대로)
-        var restore = OfficialEffectPackages.Sync(store, restore: true);
+        var restore = BundledPackages.Sync(store, AssetKinds.EffectScript);
         Assert.Equal([OfficialEffectPackages.PackageId("shadow")], restore.Installed);
         Assert.Empty(restore.Updated);
         Assert.True(store.Catalog.Find(outlineId)!.Modified);
@@ -371,7 +373,7 @@ public sealed class LegacyEffectMigrationTests
     {
         using var dir = new TempDir();
         var store = AssetStore.Open(Path.Combine(dir.Path, "Assets"));
-        Assert.Empty(OfficialEffectPackages.Sync(store).Errors);
+        Assert.Empty(BundledPackages.Sync(store).Errors);
         string packageId = OfficialEffectPackages.PackageId("coloroverlay");
 
         // 앱의 상점 받기와 같은 규칙: 같은 상점 에셋이면 바꾸고, 아니면 하나 더 둠
@@ -383,8 +385,8 @@ public sealed class LegacyEffectMigrationTests
         Assert.Equal("coloroverlay", AssetCatalog.OfficialIdOf(only));
         Assert.Equal(OfficialEffects.Ordered, store.Catalog.EffectScripts.Select(e => AssetCatalog.OfficialIdOf(e)));
 
-        Assert.False(OfficialEffectPackages.NeedsSync(store, restore: true));
-        Assert.False(OfficialEffectPackages.Sync(store, restore: true).Changed);
+        Assert.False(BundledPackages.NeedsSync(store, AssetKinds.EffectScript));
+        Assert.False(BundledPackages.Sync(store, AssetKinds.EffectScript).Changed);
         Assert.Equal("9.0.0", Assert.Single(store.Catalog.FromPackage(packageId)).Store!.Version);
     }
 
@@ -400,20 +402,20 @@ public sealed class LegacyEffectMigrationTests
         var app = AssetStore.Open(root);
         int changed = 0;
         app.Changed += () => changed++;
-        var result = await Task.Run(() => OfficialEffectPackages.Sync(AssetStore.Open(root)));
-        Assert.Equal(OfficialEffects.Ids.Count, result.Installed.Count);
+        var result = await Task.Run(() => BundledPackages.Sync(AssetStore.Open(root)));
+        Assert.Equal(BundledPackages.All.Count, result.Installed.Count);
         Assert.Empty(app.Catalog.All);
         app.Refresh();
         Assert.Equal(1, changed);
         Assert.Equal(OfficialEffects.Ordered, app.Catalog.EffectScripts.Select(e => AssetCatalog.OfficialIdOf(e)));
-        Assert.False(OfficialEffectPackages.NeedsSync(app));
+        Assert.False(BundledPackages.NeedsSync(app));
         app.Refresh();
         Assert.Equal(1, changed);
 
         var staged = Path.Combine(app.StagingDirectory, "busy" + AssetPackage.Extension);
         File.WriteAllText(staged, "x");
         using (new FileStream(Path.Combine(root, AssetStore.LockFileName), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
-            Assert.Equal(OfficialEffects.Ids.Count, AssetStore.Open(root).Catalog.All.Count);
+            Assert.Equal(BundledPackages.All.Count, AssetStore.Open(root).Catalog.All.Count);
         Assert.True(File.Exists(staged));
         AssetStore.Open(root);
         Assert.False(File.Exists(staged));

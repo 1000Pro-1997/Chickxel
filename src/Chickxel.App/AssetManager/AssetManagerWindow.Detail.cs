@@ -166,6 +166,9 @@ public sealed partial class AssetManagerWindow
                     })
                     : null,
                 entry.Script is not null ? null : Ui.Button(VectorIcon.Pencil, UiStrings.Assets_Rename, (_, _) => Rename(entry)),
+                entry.ShapeSet is not null && _main is not null
+                    ? Ui.Button(VectorIcon.Image, UiStrings.Assets_EditOnCanvas, (_, _) => EditOnCanvas(entry.Id)).Tip(UiStrings.Assets_EditOwnSetOnCanvasTip)
+                    : null,
                 entry.Recipe is null ? null
                     : Ui.Button(VectorIcon.SlidersHorizontal, UiStrings.RecipeParams_Edit, (_, _) => RecipeParametersDialog.Edit(this, entry)).Tip(UiStrings.RecipeParams_EditTip),
                 export,
@@ -325,7 +328,7 @@ public sealed partial class AssetManagerWindow
     private void Delete(AssetEntry entry)
     {
         string question = F(UiStrings.Assets_DeleteAssetQuestion, entry.DisplayName);
-        if (OfficialEffectPackages.IsOfficial(entry)) question += "\n\n" + UiStrings.Assets_DeleteOfficialNote;
+        if (BundledPackages.IsBundled(entry)) question += "\n\n" + UiStrings.Assets_DeleteOfficialNote;
         if (Ui.Ask(this, question, UiStrings.Assets_Delete, MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
         Act(() => AppAssets.Store.Remove(entry.Id));
     }

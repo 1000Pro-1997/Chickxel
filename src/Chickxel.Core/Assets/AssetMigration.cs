@@ -17,8 +17,8 @@ public sealed record AssetMigrationResult(bool Ran, int Recipes, int Gradients, 
 
 /// <summary>
 /// 예전 사용자 데이터(<c>effect-presets.json</c>, <c>gradient-presets.json</c>)를 이 컴퓨터의 에셋으로 한 번 옮긴다(계획 14장 2단계).
-/// 저장소가 아직 옮기지 않았다고 할 때만 돈다(<see cref="AssetStore.LegacyPresetsMigrated"/>): 예전 두 파일을 모두 읽고(없는 그라데이션 파일 = 기본 그라데이션),
-/// 저장소 앞에 더한 뒤 예전 파일을 날짜가 붙은 backup(<c>effect-presets.backup-2026-10-28.json</c>)으로 이름을 바꾼다. 그 뒤 앱은 새 저장소만 읽고 쓴다.
+/// 저장소가 아직 옮기지 않았다고 할 때만 돈다(<see cref="AssetStore.LegacyPresetsMigrated"/>): 예전 두 파일을 모두 읽고(없는 파일 = 옮길 것 없음 — 기본 그라데이션은
+/// 공식 패키지로 설치됨, <see cref="OfficialGradientPackages"/>), 저장소 앞에 더한 뒤 예전 파일을 날짜가 붙은 backup(<c>effect-presets.backup-2026-10-28.json</c>)으로 이름을 바꾼다. 그 뒤 앱은 새 저장소만 읽고 쓴다.
 /// 예전 파일을 읽지 못하면 아무것도 쓰지 않고 까닭을 돌려준다 — 다음 실행에 다시 시도한다.
 /// 예전 형식 읽기는 이 파일에만 남는다.
 /// </summary>
@@ -39,7 +39,7 @@ public static class AssetMigration
         try
         {
             recipes = File.Exists(effectsPath) ? ReadLegacyEffects(File.ReadAllText(effectsPath)) : [];
-            gradients = File.Exists(gradientsPath) ? ReadLegacyGradients(File.ReadAllText(gradientsPath)) : GradientPresets.BuiltIns();
+            gradients = File.Exists(gradientsPath) ? ReadLegacyGradients(File.ReadAllText(gradientsPath)) : [];
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {

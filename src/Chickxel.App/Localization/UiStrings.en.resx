@@ -2353,8 +2353,7 @@ Unconfirmed changes made in this window are discarded and the window closes. If 
   <data name="Prefs_ResetSettings_DoneRestart" xml:space="preserve"><value>Settings were reset to their defaults. The display language changes after you restart Chickxel.</value></data>
   <data name="Presets_RestoreOptimizer" xml:space="preserve"><value>Restore auto optimize presets</value></data>
   <data name="Presets_RestoreOptimizerQuestion" xml:space="preserve"><value>Restore the built-in auto optimize presets? Deleted built-in presets come back, and presets you made stay.</value></data>
-  <data name="Presets_RestoreGradients" xml:space="preserve"><value>Restore gradient presets</value></data>
-  <data name="Presets_RestoreGradientsQuestion" xml:space="preserve"><value>Restore the built-in gradient presets? Deleted built-in presets come back, and presets you made stay.</value></data>
+  <data name="Presets_RestoreGradients" xml:space="preserve"><value>Restore default gradients</value></data>
   <data name="Presets_Restored" xml:space="preserve"><value>Built-in presets restored.</value></data>
   <data name="EffectPreset_EffectsTab" xml:space="preserve"><value>Effects</value></data>
   <data name="EffectPreset_PresetsTab" xml:space="preserve"><value>Presets</value></data>
@@ -3385,15 +3384,20 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_Downloading" xml:space="preserve"><value>Downloading {0}%</value></data>
   <data name="Assets_InstallRemoteError" xml:space="preserve"><value>Couldn't install the downloaded package: {0}</value></data>
   <data name="Assets_DownloadError" xml:space="preserve"><value>Couldn't download the package: {0}</value></data>
-  <data name="Assets_SourceRemote" xml:space="preserve"><value>Online catalog</value></data>
-  <data name="Assets_SourceBundled" xml:space="preserve"><value>Installed with the app</value></data>
-  <data name="Assets_DeleteOfficialNote" xml:space="preserve"><value>This is an official effect the app installs by default. Once deleted it is not installed again; bring it back with "Restore default effects" in the Installed tab.</value></data>
+  <data name="Assets_SourceRemote" xml:space="preserve"><value>Downloaded from the store</value></data>
+  <data name="Assets_SourceBundled" xml:space="preserve"><value>Store asset installed with the app</value></data>
+  <data name="Assets_SourceTagRemote" xml:space="preserve"><value>From store</value></data>
+  <data name="Assets_SourceTagBundled" xml:space="preserve"><value>Default (store)</value></data>
+  <data name="Assets_SourceTagFile" xml:space="preserve"><value>From file</value></data>
+  <data name="Assets_DeleteOfficialNote" xml:space="preserve"><value>This is an official asset the app installs by default. Once deleted it is not installed again; bring it back with the Restore button for its kind (default effects, default gradients or built-in sets) in the Installed tab.</value></data>
   <data name="Assets_RestoreOfficial" xml:space="preserve"><value>Restore default effects</value></data>
   <data name="Assets_RestoreOfficialTip" xml:space="preserve"><value>Reinstalls the official effects that come with the app (Outline, Shadow and so on) that you deleted and updates older versions to the app's version (changed ones are left as is). Your own effects and other received assets stay as they are.</value></data>
-  <data name="Assets_RestoreOfficialDone" xml:space="preserve"><value>Reinstalled {0} official effects and updated {1}.</value></data>
-  <data name="Assets_RestoreOfficialNothing" xml:space="preserve"><value>All official effects are installed and up to date.</value></data>
-  <data name="Assets_RestoreOfficialError" xml:space="preserve"><value>Couldn't restore the official effects: {0}</value></data>
-  <data name="Assets_BundledError" xml:space="preserve"><value>Couldn't install the official effects that come with the app (retried on the next start): {0}</value></data>
+  <data name="Assets_RestoreGradients" xml:space="preserve"><value>Restore default gradients</value></data>
+  <data name="Assets_RestoreGradientsTip" xml:space="preserve"><value>Reinstalls the default gradients that come with the app (Rainbow, Sunset, Fire and so on) that you deleted and updates older versions to the app's version (changed ones are left as is). Your own gradients and other received assets stay as they are.</value></data>
+  <data name="Assets_RestoreDefaultsDone" xml:space="preserve"><value>Reinstalled {0} default assets and updated {1}.</value></data>
+  <data name="Assets_RestoreDefaultsNothing" xml:space="preserve"><value>All default assets of this kind are installed and up to date.</value></data>
+  <data name="Assets_RestoreDefaultsError" xml:space="preserve"><value>Couldn't restore the default assets: {0}</value></data>
+  <data name="Assets_BundledError" xml:space="preserve"><value>Couldn't install the official assets that come with the app (retried on the next start): {0}</value></data>
   <data name="Assets_ContentsRecipes" xml:space="preserve"><value>Effect presets: {0}</value></data>
   <data name="Assets_ContentsGradients" xml:space="preserve"><value>Gradients: {0}</value></data>
   <data name="Assets_ContentsOther" xml:space="preserve"><value>{0}: {1}</value></data>
@@ -4094,10 +4098,8 @@ Transparent pixels compare alpha only; between visible pixels the alpha differen
   <data name="ShapePen_RenameSetTip" xml:space="preserve"><value>Rename set</value></data>
   <data name="ShapePen_DeleteSetTip" xml:space="preserve"><value>Delete set</value></data>
   <data name="ShapePen_DeleteSet" xml:space="preserve"><value>Delete</value></data>
-  <data name="ShapePen_DeleteSetConfirm" xml:space="preserve"><value>Delete the set '{name}' and its {count} shapes? This can't be undone (built-in sets come back with Restore built-in sets).</value></data>
+  <data name="ShapePen_DeleteSetConfirm" xml:space="preserve"><value>Delete the set '{name}' and its {count} shapes? This can't be undone.</value></data>
   <data name="ShapePen_RestoreDefaultsTip" xml:space="preserve"><value>Restore built-in sets</value></data>
-  <data name="ShapePen_RestoreDefaults" xml:space="preserve"><value>Restore</value></data>
-  <data name="ShapePen_RestoreDefaultsConfirm" xml:space="preserve"><value>Restores the five built-in sets (leaves, autumn leaves, grass, stars, bubbles) to how they shipped. Deleted built-in sets come back, and shapes added to or removed from them, their names and order are reset. Your own sets and received sets are kept.</value></data>
   <data name="ShapePen_AddShape" xml:space="preserve"><value>Add shape</value></data>
   <data name="ShapePen_AddShapeTip" xml:space="preserve"><value>Adds a shape to the selected set: from the selection or the current cel (transparent border trimmed, opacity kept) or from PNG files</value></data>
   <data name="ShapePen_AddFromSelection" xml:space="preserve"><value>From selection</value></data>
@@ -4137,8 +4139,8 @@ Transparent pixels compare alpha only; between visible pixels the alpha differen
   <data name="ShapePen_ManageSetsTip" xml:space="preserve"><value>Manage sets…: opens Asset Manager › Installed › Shape pen with the selected set. See your sets and received sets; publish to the store, export, import, copy to my sets, edit on canvas or make a new set from the canvas.</value></data>
   <data name="Assets_NewSetFromCanvas" xml:space="preserve"><value>New set from canvas…</value></data>
   <data name="Assets_NewSetFromCanvasTip" xml:space="preserve"><value>Makes a new set from the current document: each frame's merged visible layers become one shape (transparent edges trimmed, empty frames skipped; up to 64 shapes, 256 px per side).</value></data>
-  <data name="Assets_RestoreSetsTip" xml:space="preserve"><value>Restores the five built-in shape pen sets (leaves, autumn leaves, grass, stars, bubbles) to how they shipped; deleted ones come back. Built-in sets are not listed here — pick them in the set list in Tool options. Your sets and received sets are kept.</value></data>
-  <data name="Assets_RestoreSetsDone" xml:space="preserve"><value>The five built-in sets were restored. Pick them from the shape pen set list in Tool options.</value></data>
+  <data name="Assets_RestoreSetsTip" xml:space="preserve"><value>Reinstalls the five built-in shape pen sets (flowers, sparkles, bubbles, autumn leaves, leaves) that you deleted and updates older versions to the app's version (changed ones are left as is). Your sets and other received sets stay as they are.</value></data>
+  <data name="Assets_EditOwnSetOnCanvasTip" xml:space="preserve"><value>Edits this set in place as a temporary document tab (one frame per shape). You are its author, so Save to set changes this asset; publish it as a new version afterwards.</value></data>
   <data name="Assets_SourceMySets" xml:space="preserve"><value>My sets (shape pen)</value></data>
   <data name="Assets_ExportSetMenu" xml:space="preserve"><value>Export</value></data>
   <data name="Assets_ExportSetTip" xml:space="preserve"><value>Saves the set as a set file (.chickxel-shapes) or an asset package (.chickxel-asset) — for backups or passing it on.</value></data>

@@ -6,16 +6,14 @@ using Chickxel.Core.Model;
 namespace Chickxel.App;
 
 /// <summary>
-/// 모양 펜 세트 모음을 고치는 동작(도구 설정의 세트 줄과 에셋 관리자의 모양 펜 거르기가 같이 씀): 새 세트·이름 바꾸기·지우기·기본 세트 되돌리기·내 세트로 복사·
+/// 모양 펜 세트 모음을 고치는 동작(도구 설정의 세트 줄과 에셋 관리자의 모양 펜 거르기가 같이 씀): 새 세트·이름 바꾸기·지우기·내 세트로 복사·
 /// 세트 파일 내보내기·가져오기, 상점에 올리기(내 에셋으로 떠 둔 사본). 고치면 <see cref="EditorContext.NotifyShapeSetsEdited"/>로 알려 메인 창이 저장하고
 /// 도구 설정과 에셋 관리자가 목록을 다시 그린다. 묻는 창·오류 상자는 <c>owner</c> 위에 뜬다.
 /// </summary>
 internal static class ShapeSetActions
 {
-    /// <summary>내 세트: 세트 모음에서 기본 세트 다섯 가지(<see cref="StampBuiltIns.Ids"/>)를 뺀 것(직접 만든 세트와 예전 기본 세트에서 남은 세트).</summary>
-    public static IEnumerable<StampSet> Own(EditorContext ctx) => ctx.ShapeSets.Sets.Where(set => !IsBuiltIn(set));
-
-    public static bool IsBuiltIn(StampSet set) => StampBuiltIns.Ids.Contains(set.Id);
+    /// <summary>내 세트: 세트 모음의 세트 모두(직접 만든 세트와 예전 기본 세트에서 남은 세트 — 기본 세트는 받은 세트로 설치됨).</summary>
+    public static IEnumerable<StampSet> Own(EditorContext ctx) => ctx.ShapeSets.Sets;
 
     public static FileFilter SetFileFilter => new(UiStrings.ShapePen_SetFileType, "*" + StampLibrary.SetFileExtension);
 
@@ -58,18 +56,6 @@ internal static class ShapeSetActions
         ctx.ShapeSets.Sets.RemoveAt(at);
         var sets = ctx.ShapeSets.Sets;
         if (selected) ctx.ShapePenSetId = sets.Count > 0 ? sets[Math.Min(at, sets.Count - 1)].Id : null;
-        ctx.NotifyShapeSetsEdited();
-        return true;
-    }
-
-    /// <summary>묻고 기본 세트 다섯 가지를 처음 모양으로 되돌린다(<see cref="StampLibrary.RestoreDefaults"/> — 내 세트는 그대로). 되돌렸으면 true.</summary>
-    public static bool RestoreDefaults(Visual owner, EditorContext ctx)
-    {
-        if (Ui.Ask(owner, UiStrings.ShapePen_RestoreDefaultsConfirm, UiStrings.ShapePen_RestoreDefaultsTip,
-                MessageButtons.OKCancel, MessageIcon.Question, okText: UiStrings.ShapePen_RestoreDefaults) != DialogResult.OK) return false;
-        string? current = ctx.ShapePenSetId;
-        ctx.ShapeSets.RestoreDefaults();
-        ctx.ShapePenSetId = current;
         ctx.NotifyShapeSetsEdited();
         return true;
     }
@@ -185,10 +171,10 @@ internal static class ShapeSetActions
             UiStrings.Assets_ActionError) ? saved : null;
     }
 
-    /// <summary>내 세트를 상점에 올린다(게시 창, 로그인 필요 — <see cref="SaveSnapshot"/>으로 떠 둔 에셋을 연다). 기본 세트·받은 세트는 올리지 않는다.</summary>
+    /// <summary>내 세트를 상점에 올린다(게시 창, 로그인 필요 — <see cref="SaveSnapshot"/>으로 떠 둔 에셋을 연다). 받은 세트는 에셋 관리자에서 올린다(내 계정이 작성자일 때).</summary>
     public static async Task PublishAsync(Window owner, EditorContext ctx, StampSet set)
     {
-        if (ctx.IsInstalledShapeSet(set) || IsBuiltIn(set)) return;
+        if (ctx.IsInstalledShapeSet(set)) return;
         if (SaveSnapshot(owner, set, UiStrings.Publish_Title) is { } saved) await AssetPublishDialog.RunAsync(owner, saved.Id);
     }
 }

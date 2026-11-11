@@ -1,4 +1,5 @@
 using System.Drawing;
+using Chickxel.Core.Assets;
 using Chickxel.Core.Edit;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
@@ -312,11 +313,11 @@ internal static class GuidePaintToolsCompareShots
         Save(k, "tools-shape-pen-compare", 4, [[dense, optimized]]);
     }
 
-    /// <summary>모양 펜 기본 세트 다섯 가지: <see cref="StampBuiltIns.Ids"/> 차례로 왼쪽 위부터 한 줄에 두 세트(세트마다 모양을 나란히).</summary>
+    /// <summary>모양 펜 기본 세트 다섯 가지: <see cref="OfficialShapeSets.Packages"/> 차례로 왼쪽 위부터 한 줄에 두 세트(세트마다 모양을 나란히).</summary>
     [Shot("tools-shape-pen-sets")]
     public static void ShapePenSets(ShotKit k)
     {
-        var strips = StampBuiltIns.Sets().Select(set =>
+        var strips = OfficialShapeSets.Packages.Select(p => p.Create()).Select(set =>
         {
             const int gap = 3;
             int w = set.Shapes.Sum(s => s.Width) + gap * (set.Shapes.Count + 1);
@@ -347,7 +348,7 @@ internal static class GuidePaintToolsCompareShots
         Save(k, "tools-shape-pen-sets", 3, rows, gap: 9);
     }
 
-    /// <summary>모양 펜 예시: 연필 가지를 따라 나뭇잎(최적화 간격), 바닥에 풀(최적화 간격)과 떨어진 단풍잎, 하늘에 별을 찍은 그림.</summary>
+    /// <summary>모양 펜 예시: 연필 가지를 따라 나뭇잎(최적화 간격), 바닥에 꽃(최적화 간격)과 떨어진 단풍잎, 하늘에 반짝이를 찍은 그림.</summary>
     [Shot("tools-shape-pen-example")]
     public static void ShapePenExample(ShotKit k)
     {
@@ -356,8 +357,8 @@ internal static class GuidePaintToolsCompareShots
         var branch = WavePath(4, 100, 22, 4);
         foreach (var p in branch) { img.Set(p.X, p.Y, bark); img.Set(p.X, p.Y + 1, bark); }
         StampAlong(img, BuiltIn("leaves"), [.. branch.Where((_, i) => i % 2 == 0).Select(p => new System.Drawing.Point(p.X, p.Y - 2))], optimized: true, seed: 3);
-        StampAlong(img, BuiltIn("grass"), WavePath(2, 118, 58, 1), optimized: true, seed: 5);
-        var autumn = BuiltIn("autumn");
+        StampAlong(img, BuiltIn("flowers"), WavePath(2, 118, 58, 1), optimized: true, seed: 5);
+        var autumn = BuiltIn("autumn-leaves");
         var picker = new StampPicker(11);
         int f = picker.First(autumn.Shapes.Count, autumn.Order);
         foreach (var x in new[] { 14, 37, 61, 88, 109 })
@@ -365,7 +366,7 @@ internal static class GuidePaintToolsCompareShots
             ShapeStamp.Stamp(img, autumn.Shapes[f], new System.Drawing.Point(x, 53));
             f = picker.Next(f, autumn.Shapes.Count, autumn.Order);
         }
-        var stars = BuiltIn("stars");
+        var stars = BuiltIn("sparkles");
         int s = 0;
         foreach (var (x, y) in new[] { (20, 8), (52, 6), (78, 11), (104, 5), (36, 38), (96, 36) })
         {
@@ -375,7 +376,7 @@ internal static class GuidePaintToolsCompareShots
         Save(k, "tools-shape-pen-example", 4, [[img]]);
     }
 
-    private static StampSet BuiltIn(string id) => StampBuiltIns.Sets().First(s => s.Id == id);
+    private static StampSet BuiltIn(string id) => OfficialShapeSets.Packages.First(p => p.Id == id).Create();
 
     /// <summary>왼쪽 <paramref name="x0"/>에서 오른쪽 <paramref name="x1"/>까지 높이 <paramref name="y"/> 둘레로 <paramref name="amp"/>만큼 물결치는 마우스 점.</summary>
     private static List<System.Drawing.Point> WavePath(int x0, int x1, int y, double amp)

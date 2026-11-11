@@ -29,13 +29,20 @@ public sealed partial class MainForm
     }
 
     /// <summary>
-    /// 받은 세트 목록을 저장소에서 다시 만든다: 상점·패키지 파일에서 온 <c>shape-set</c> 에셋(이름표 = 에셋 ID). 이 컴퓨터에서 만든 것(<see cref="AssetSources.Local"/>)은
+    /// 받은 세트 목록을 저장소에서 다시 만든다: 상점·패키지 파일·앱 기본 설치에서 온 <c>shape-set</c> 에셋(이름표 = 에셋 ID, 이름 = 화면 언어의 이름 —
+    /// <see cref="AssetEntry.DisplayName"/>), 기본 세트 다섯 가지가 먼저(<see cref="OfficialShapeSets.OrderOf"/>). 이 컴퓨터에서 만든 것(<see cref="AssetSources.Local"/>)은
     /// 게시할 때 떠 둔 내 세트의 사본이라 넣지 않는다 — 내 세트가 이미 목록에 있다.
     /// </summary>
     private void LoadInstalledShapeSets()
         => _ctx.InstalledShapeSets = AppAssets.Catalog.ShapeSets
             .Where(entry => entry.Source != AssetSources.Local && entry.ShapeSet is not null)
-            .Select(entry => entry.ShapeSet!.Id == entry.Id ? entry.ShapeSet! : ShapeSetAssetFormat.Copy(entry.ShapeSet!, entry.Id))
+            .OrderBy(entry => OfficialShapeSets.OrderOf(entry.Id))
+            .Select(entry =>
+            {
+                var set = ShapeSetAssetFormat.Copy(entry.ShapeSet!, entry.Id);
+                set.Name = entry.DisplayName;
+                return set;
+            })
             .ToList();
 
     private void SaveShapeSets()

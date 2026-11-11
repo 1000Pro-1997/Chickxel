@@ -577,7 +577,6 @@ public class AssetStoreTests
         Assert.Throws<InvalidOperationException>(() => broken.SaveScript(ScriptSource, null, null));
         Assert.Throws<InvalidOperationException>(() => broken.SetFavorite(saved.Id, true));
         Assert.Throws<InvalidOperationException>(() => broken.Remove(saved.Id));
-        Assert.Throws<InvalidOperationException>(() => broken.RestoreBuiltInGradients());
         Assert.Throws<InvalidOperationException>(() => broken.MarkPublished(saved.Id, PixelCat, "CC0-1.0", new AssetStoreLink { PackageId = "pixel-cat.x", AssetId = "pixel-cat.x.y" }));
         // 마이그레이션도 덮어쓰지 않는다
         Assert.False(AssetMigration.Run(broken, dir.Path).Ran);

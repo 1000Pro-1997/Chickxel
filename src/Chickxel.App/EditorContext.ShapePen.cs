@@ -13,7 +13,7 @@ public sealed partial class EditorContext
     /// <summary>끌기 간격 최댓값(px, 최솟값은 1 — 1이면 모든 픽셀에 찍어 이어진 자국).</summary>
     public const int MaxShapePenSpacing = 256;
 
-    private StampLibrary _shapeSets = StampLibrary.Defaults();
+    private StampLibrary _shapeSets = new();
     private string? _shapePenSetId;
     private int _shapePenIndex;
     private bool _shapePenTint;
@@ -62,10 +62,14 @@ public sealed partial class EditorContext
     /// <summary>고르는 목록의 세트: 내 세트, 그다음 받은 세트.</summary>
     public IEnumerable<StampSet> AllShapeSets => _shapeSets.Sets.Concat(_installedShapeSets);
 
-    /// <summary>고른 세트(없거나 지워졌으면 첫 세트, 세트가 하나도 없으면 null). 받은 세트도 고를 수 있다.</summary>
+    /// <summary>
+    /// 고른 세트(없거나 지워졌으면 첫 세트, 세트가 하나도 없으면 null). 받은 세트도 고를 수 있다. 예전 판의 기본 세트 이름표(설정에 남은 것)는 같은 그림의
+    /// 공식 세트로 잇는다(<see cref="Chickxel.Core.Assets.OfficialShapeSets.AssetIdOfRetired"/>).
+    /// </summary>
     public StampSet? ShapePenSet
         => _shapeSets.Find(_shapePenSetId)
            ?? (_shapePenSetId is null ? null : _installedShapeSets.FirstOrDefault(s => s.Id == _shapePenSetId))
+           ?? (Chickxel.Core.Assets.OfficialShapeSets.AssetIdOfRetired(_shapePenSetId) is { } official ? _installedShapeSets.FirstOrDefault(s => s.Id == official) : null)
            ?? AllShapeSets.FirstOrDefault();
 
     /// <summary>고른 세트 id. 고르면 첫 모양(차례대로 = 처음, 무작위 = 아무거나)부터.</summary>
