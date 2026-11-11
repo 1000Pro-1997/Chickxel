@@ -73,6 +73,11 @@ public sealed class AppSettings
     /// <summary>채우기·스마트 선택 색 비교 방식(없던 설정은 기본 = 채널 차이 최댓값).</summary>
     public FillColorMode FillColorMode { get; set; }
     public bool FillDiagonal { get; set; }
+    /// <summary>스마트 선택이 고르는 범위(없던 설정은 기본 = 허용 오차 안의 칸만).</summary>
+    public WandMode WandMode { get; set; }
+    /// <summary>스마트 선택: 마우스를 올린 곳의 고를 칸 미리보기와 그 계산 한도(칸 수).</summary>
+    public bool WandPreview { get; set; } = true;
+    public int WandPreviewLimit { get; set; } = EditorContext.DefaultWandPreviewLimit;
     /// <summary>채우기 기준: 보이는 레이어 전체(false = 현재 레이어).</summary>
     public bool FillSampleVisible { get; set; }
     /// <summary>스포이드 기준: 보이는 레이어 전체(false = 현재 레이어).</summary>

@@ -2,6 +2,27 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.126 (2026-11-12)
+### Add to, subtract from and intersect the selection
+- Hold a key as you press with a selection tool to combine with the current selection: Shift adds, Alt subtracts, Shift+Alt keeps only the overlap. Works for rectangle, ellipse, lasso and magic wand.
+- With Shift or Alt held, dragging inside the selection starts a new area instead of moving the selection.
+- Rectangle and ellipse select still lock to a square or circle with Shift pressed while dragging; if Shift chose Add, release it once and press it again.
+- The selection tools have their own crosshair: gray normally, the whole cross yellow for add, only the horizontal bar for subtract, and a small yellow cross in the middle for intersect.
+
+### Magic wand: select mode and hover preview
+- New **Select** setting for the magic wand: Within tolerance (default), Plus 1-pixel border (adds the border around the area) or Plus touching colors (adds every other-colored area touching it, transparent excluded).
+- Clicking an already selected pixel measures from there again; Shift+click adds that result, so a growing mode can reach past the current selection.
+- **Preview** (on by default) tints what a click under the mouse would change: new pixels blue, pixels leaving the selection red, following Shift and Alt.
+- The preview stops at a pixel limit (default 300, editable) so large areas don't slow the mouse down; clicking still selects them in full.
+
+### Random Chickxel shape pen set
+- New built-in shape pen set **Random Chickxel**: the twenty Chickxel chick characters (the original chick, painter, wizard, knight, pirate, astronaut and more), one picked at random on each stamp.
+- Like the other built-in sets it is an official store asset installed on first start (and on the first start after this update); **Restore built-in sets** brings it back.
+
+### Redrawn store shape pen sets
+- Gold Coin Stacks and Coin Sacks are redrawn with coins seen slightly from above, bulging tied sacks and spilling coins.
+- Tombstones are flat front views without a thickness face and hold only gravestones; Crystals are faceted crystal clusters growing from rock.
+
 ## v1.14.125 (2026-11-12)
 ### Asset Manager: one list, shape thumbnails
 - The Installed tab no longer splits My assets and Received assets. Your assets come first, then received ones, in one list; defaults installed with the app are simply received assets.

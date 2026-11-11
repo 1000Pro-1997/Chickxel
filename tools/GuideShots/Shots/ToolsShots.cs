@@ -7,6 +7,8 @@ using Chickxel.App;
 using Chickxel.App.Localization;
 using Chickxel.Core.Model;
 using Chickxel.Core.Edit;
+using Chickxel.Core.Assets;
+using Chickxel.Core.IO;
 
 namespace GuideShots;
 
@@ -367,14 +369,25 @@ internal static class ToolsShots
         ]);
     }
 
-    /// <summary>모양 펜 설정: ① 세트 ② 세트 단추(새·이름·지우기·되돌리기·세트 관리) ③ 모양 칸 ④ 모양 더하기·지우기 ⑤ 순서 ⑥ 간격 ⑦ 최적화 간격 ⑧ 물들이기.</summary>
+    /// <summary>
+    /// 모양 펜 설정(내 세트 "My leaves" — 기본 나뭇잎 세트의 모양을 담은 직접 만든 세트를 고름): ① 세트 ② 세트 단추(새·이름·지우기·되돌리기·세트 관리)
+    /// ③ 모양 칸 ④ 모양 더하기·지우기 ⑤ 순서 ⑥ 간격 ⑦ 최적화 간격 ⑧ 물들이기.
+    /// 2 = 세트 목록을 펼친 모습(⑨ 내 세트 ⑩ 지구 아이콘이 붙은 기본 세트 여덟 가지), 3 = 기본 세트(나뭇잎)를 고른 모습(⑪ 받은 세트 안내 — 고치는 단추가 꺼짐).
+    /// </summary>
     [Shot("tools-shape-pen")]
     public static void ShapePenSettings(ShotKit k)
     {
         var m = Open(k, ToolFileHelp.Sample(k));
         ToolFileHelp.Tool(k, "모양 펜");
         var ctx = ToolFileHelp.Ctx(m);
-        ctx.ShapePenSetId = "leaves";
+        var official = ctx.InstalledShapeSets;
+        if (official.Count < 8) throw new InvalidOperationException($"expected the eight built-in shape sets, got {official.Count}");
+        var leaves = official.First(s => s.Id == OfficialShapeSets.Packages.First(p => p.Id == "leaves").AssetId);
+        var mine = new StampSet { Name = "My leaves", Order = StampOrder.Random };
+        mine.Shapes.AddRange(leaves.Shapes);
+        ctx.ShapeSets.Sets.Add(mine);
+        ctx.NotifyShapeSetsEdited();
+        ctx.ShapePenSetId = mine.Id;
         k.Settle(300);
         k.Save(m, crop: OptionsUpTo(m, Opt<Control>(m, "_shapePenBox")), marks:
         [
@@ -387,6 +400,66 @@ internal static class ToolsShots
             Lead(m, Opt<Control>(m, "_shapePenOptimized"), 4, 0),
             Lead(m, Opt<Control>(m, "_shapePenTint"), 4, 0),
         ]);
+
+        // 2: 세트 목록 — 내 세트, 그다음 지구 아이콘이 붙은 기본 세트(받은 세트)
+        var sets = Opt<ComboBox>(m, "_shapePenSets");
+        sets.IsDropDownOpen = true;
+        k.Settle(500);
+        Rect Item(int i) => ShotKit.Bounds((Control)sets.ContainerFromIndex(i)!, m);
+        int count = sets.ItemCount;
+        var crop = OptionsUpTo(m, Opt<Control>(m, "_shapePenShapes"));
+        if (ToolFileShotsMenus.OpenMenuRect(m) is { } list) crop = crop.Union(list.Inflate(8));
+        k.Save(m, "tools-shape-pen-2", crop: ToolFileHelp.Clamp(crop, m), marks:
+        [
+            Lead(Item(0), 4, 1),
+            Lead(Enumerable.Range(1, count - 1).Select(Item).Aggregate((a, b) => a.Union(b)), 4, 1),
+        ], firstNumber: 9);
+        sets.IsDropDownOpen = false;
+        k.Settle(300);
+
+        // 3: 기본 세트(받은 세트)를 고름 — 읽기 전용 안내, 이름 바꾸기·지우기·모양 더하기가 꺼짐
+        ctx.ShapePenSetId = leaves.Id;
+        k.Settle(400);
+        k.Save(m, "tools-shape-pen-3", crop: OptionsUpTo(m, Opt<Control>(m, "_shapePenShapeButtons")), marks:
+        [
+            Lead(m, Opt<Control>(m, "_shapePenReadOnly"), 4, 0),
+        ], firstNumber: 11);
+    }
+
+    /// <summary>
+    /// 세트를 캔버스에서 편집하는 임시 탭(에셋 관리자의 "캔버스에서 편집"과 같은 길 — 내 세트 "My leaves"): ⑫ 탭 이름 "Shape set: …"
+    /// ⑬ 탭 아래 막대의 안내 ⑭ 세트에 저장 ⑮ 닫기 ⑯ 모양마다 프레임 하나인 타임라인.
+    /// </summary>
+    [Shot("tools-shape-pen-canvas")]
+    public static void ShapePenCanvas(ShotKit k)
+    {
+        var m = Open(k, ToolFileHelp.Sample(k), timeline: 150);
+        ToolFileHelp.Tool(k, "모양 펜");
+        var ctx = ToolFileHelp.Ctx(m);
+        var leaves = ctx.InstalledShapeSets.First(s => s.Id == OfficialShapeSets.Packages.First(p => p.Id == "leaves").AssetId);
+        var mine = new StampSet { Name = "My leaves" };
+        mine.Shapes.AddRange(leaves.Shapes);
+        ctx.ShapeSets.Sets.Add(mine);
+        ctx.NotifyShapeSetsEdited();
+        ShotKit.Call(m, "EditShapeSetOnCanvas", mine.Id);
+        k.Settle(800);
+        var tabTitle = UiStrings.ShapeCanvas_TabTitle.Replace("{name}", mine.DisplayName, StringComparison.Ordinal);
+        var tab = ShotKit.All<TextBlock>(m).Last(t => t.Text == tabTitle && t.IsEffectivelyVisible);
+        var save = ShotKit.FindText(m, UiStrings.ShapeCanvas_SaveToSet, ancestorControl: true);
+        var bar = (Control)save.Parent!;
+        var close = ((Panel)bar).Children.OfType<Button>().First(b => !ReferenceEquals(b, save));
+        var barText = ((Panel)bar).Children.OfType<TextBlock>().First();
+        var timeline = ShotKit.Get<Control>(m, "_timeline");
+        var crop = R(m, (Control)bar.Parent!).Union(R(m, timeline)).Union(R(m, tab));
+        crop = new Rect(crop.X, crop.Y - 6, crop.Width, crop.Height + 6);
+        k.Save(m, "tools-shape-pen-canvas", crop: ToolFileHelp.Clamp(crop, m), marks:
+        [
+            Lead(R(m, tab), 16, 0),
+            Lead(R(m, barText), 6, 0),
+            R(m, save),
+            R(m, close),
+            R(m, timeline).Deflate(5),
+        ], firstNumber: 12);
     }
 
     /// <summary>밝게/어둡게 설정: ① 방식 ② 세기.</summary>

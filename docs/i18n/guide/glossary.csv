@@ -134,7 +134,7 @@ term.gradient-pencil.to,tools-gradient-pencil,
 term.gradient-pencil.def,획을 따라 그라데이션 색으로 칠하는 연필입니다.,A pencil that paints along the stroke in gradient colors.
 term.shape-pen,모양 펜|모양 세트,shape pen|shape set
 term.shape-pen.to,tools-shape-pen,
-term.shape-pen.def,"고른 세트의 작은 그림(나뭇잎·꽃·반짝이 등)을 도장처럼 찍는 그리기 도구입니다. 세트에 모양을 더하거나 파일로 나눌 수 있습니다.","A drawing tool that stamps small pictures (leaves, flowers, sparkles and more) from the chosen set. You can add shapes to a set or share it as a file."
+term.shape-pen.def,"고른 세트의 작은 그림(나뭇잎·꽃·반짝이·병아리 캐릭터 등)을 도장처럼 찍는 그리기 도구입니다. 기본 세트 여덟 가지가 있고, 내 세트를 만들거나 캔버스에서 고치고, 상점에서 받거나 올릴 수 있습니다.","A drawing tool that stamps small pictures (leaves, flowers, sparkles, chick characters and more) from the chosen set. Eight built-in sets come with it; you can make your own sets, edit them on the canvas, and get or publish sets in the Store."
 term.eraser,지우개,eraser
 term.eraser.to,tools-eraser,
 term.eraser.def,픽셀을 투명하게(또는 강도·채널만큼) 지우는 도구입니다.,A tool that erases pixels to transparent (or by a strength and channels).

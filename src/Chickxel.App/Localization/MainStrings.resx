@@ -61,25 +61,25 @@
     <value>사각 선택</value>
   </data>
   <data name="Tool_Select_Hint" xml:space="preserve">
-    <value>드래그로 선택(Shift: 정사각형), 안쪽을 끌어 이동 · Enter: 내려놓기 · M: 다음 선택 도구</value>
+    <value>드래그로 선택(끄는 중 Shift: 정사각형), 안쪽을 끌어 이동 · 누를 때 Shift: 더하기, Alt: 빼기, Shift+Alt: 겹친 곳만 · Enter: 내려놓기 · M: 다음 선택 도구</value>
   </data>
   <data name="Tool_EllipseSelect_Name" xml:space="preserve">
     <value>원 선택</value>
   </data>
   <data name="Tool_EllipseSelect_Hint" xml:space="preserve">
-    <value>드래그로 원 선택(Shift: 정원), 안쪽을 끌어 이동 · Enter: 내려놓기 · M: 다음 선택 도구</value>
+    <value>드래그로 원 선택(끄는 중 Shift: 정원), 안쪽을 끌어 이동 · 누를 때 Shift: 더하기, Alt: 빼기, Shift+Alt: 겹친 곳만 · Enter: 내려놓기 · M: 다음 선택 도구</value>
   </data>
   <data name="Tool_Lasso_Name" xml:space="preserve">
     <value>자유 선택</value>
   </data>
   <data name="Tool_Lasso_Hint" xml:space="preserve">
-    <value>끌어서 테두리를 그리면 놓을 때 닫아 선택, 안쪽을 끌어 이동 · Enter: 내려놓기</value>
+    <value>끌어서 테두리를 그리면 놓을 때 닫아 선택, 안쪽을 끌어 이동 · 누를 때 Shift: 더하기, Alt: 빼기, Shift+Alt: 겹친 곳만 · Enter: 내려놓기</value>
   </data>
   <data name="Tool_MagicWand_Name" xml:space="preserve">
     <value>스마트 선택</value>
   </data>
   <data name="Tool_MagicWand_Hint" xml:space="preserve">
-    <value>클릭한 곳과 비슷한 색 영역 선택(허용 오차·이어진 영역·기준은 채우기와 같은 설정) · 옮기기: V/방향키</value>
+    <value>클릭한 곳과 비슷한 색 영역 선택(허용 오차·이어진 영역·기준은 채우기와 같은 설정) · Shift: 더하기, Alt: 빼기, Shift+Alt: 겹친 곳만 · 옮기기: V/방향키</value>
   </data>
   <data name="Tool_Move_Name" xml:space="preserve">
     <value>이동</value>

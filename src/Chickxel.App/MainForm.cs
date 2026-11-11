@@ -1245,6 +1245,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _ctx.FillTolerance = s.FillTolerance;
         _ctx.FillColorMode = s.FillColorMode;
         _ctx.FillDiagonal = s.FillDiagonal;
+        _ctx.WandMode = s.WandMode;
+        _ctx.WandPreview = s.WandPreview;
+        _ctx.WandPreviewLimit = s.WandPreviewLimit;
         _ctx.FillSampleVisible = s.FillSampleVisible;
         _ctx.PickerSampleVisible = s.PickerSampleVisible;
         _ctx.DodgeStrength = s.DodgeStrength;
@@ -1459,6 +1462,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         s.FillTolerance = _ctx.FillTolerance;
         s.FillColorMode = _ctx.FillColorMode;
         s.FillDiagonal = _ctx.FillDiagonal;
+        s.WandMode = _ctx.WandMode;
+        s.WandPreview = _ctx.WandPreview;
+        s.WandPreviewLimit = _ctx.WandPreviewLimit;
         s.FillSampleVisible = _ctx.FillSampleVisible;
         s.PickerSampleVisible = _ctx.PickerSampleVisible;
         s.DodgeStrength = _ctx.DodgeStrength;

@@ -1266,7 +1266,7 @@
 <li><strong>확인</strong>이나 <strong>영구 적용</strong>을 누를 때 프로젝트에서 지웁니다. 효과 변경과 함께 실행취소 한 단계이고, 효과 범위와 <a class="term" href="#screen-tags">태그</a>는 타임라인에서 프레임을 지울 때처럼 줄어듭니다. <strong>취소</strong>하면 아무것도 지우지 않습니다.</li>
 </ul>
 <h3 id="screen-effect-list">기본 효과 목록</h3>
-<p><a class="term" href="#screen-effects-dialog">효과 창</a> 효과 탭에 처음부터 있는 효과는 공식 효과 23개와 글씨 효과입니다. 공식 효과는 앱이 기본으로 설치하는 <a href="#screen-script-effects">스크립트 효과</a>이고(<a class="term" href="#screen-asset-manager">에셋 관리자</a>에 출처 <strong>앱 기본 설치</strong>로 보임), 처음 실행할 때 뒤에서 설치되어 잠시 뒤 효과 창에 나타납니다. 앱에 더 새 버전이 들어 있으면 저절로 업데이트되고, 지운 공식 효과는 에셋 관리자의 <strong>기본 효과 되돌리기</strong>로 다시 넣습니다. 예전 프로젝트·프리셋의 기본 효과는 열 때 같은 모습의 공식 <a class="term" href="#screen-script-effects">스크립트 효과</a>로 바뀌고, 저장하면 스크립트 효과로 씁니다.</p>
+<p><a class="term" href="#screen-effects-dialog">효과 창</a> 효과 탭에 처음부터 있는 효과는 공식 효과 23개와 글씨 효과입니다. 공식 효과는 앱이 기본으로 설치하는 <a href="#screen-script-effects">스크립트 효과</a>이고(<a class="term" href="#screen-asset-manager">에셋 관리자</a>에 출처 <strong>앱이 기본으로 설치한 <a class="term" href="#screen-asset-manager">상점</a> 에셋</strong>로 보임), 처음 실행할 때 뒤에서 설치되어 잠시 뒤 효과 창에 나타납니다. 앱에 더 새 버전이 들어 있으면 저절로 업데이트되고, 지운 공식 효과는 에셋 관리자의 <strong>기본 효과 되돌리기</strong>로 다시 넣습니다. 예전 프로젝트·프리셋의 기본 효과는 열 때 같은 모습의 공식 <a class="term" href="#screen-script-effects">스크립트 효과</a>로 바뀌고, 저장하면 스크립트 효과로 씁니다.</p>
 <p>표의 설정 이름은 효과 창 설정 칸에 보이는 이름이고, 숫자 뒤 범위는 고를 수 있는 값입니다. 색 설정은 모두 단색이나 그라데이션으로 칠할 수 있습니다(<a href="#screen-effect-colors">효과 색과 클리핑</a>). 이름이 <strong>시드</strong>인 설정은 슬라이더 대신 <a class="term" href="#screen-common-controls">숫자 칸</a>과 주사위 단추이고, 누를 때마다 다른 무작위 모양이 나옵니다. 마음에 드는 모양은 그 시드 값으로 고정됩니다. 효과 창에서는 <a class="term" href="#screen-effect-timeline">효과 상자</a> 오른쪽 위 물음표를 눌러도 그 효과의 설명을 볼 수 있습니다.</p>
 <h4>모양·색을 바꾸는 효과</h4>
 <p><a class="term" href="#screen-timeline">프레임</a>마다 같은 모습으로 입혀지는 효과입니다.</p>
@@ -1720,55 +1720,72 @@
 <li>AI 칸은 열린 그림·레이어·효과·<a class="term" href="#ai-references">참고 자료</a>를 볼 수 있지만 고치지 못합니다(앱이 AI 칸 전용 접속 키로 막음). 효과 만들기 원문을 읽고·쓰고·검증하고, 내 다른 스크립트 효과의 원문을 참고합니다("내 X 효과처럼 …"이라고 하면 목록에서 찾아 읽음, 그 효과는 바뀌지 않음). "웹에서 찾아보고 만들어 줘"처럼 시키면 웹을 검색하고 읽습니다(Claude: 웹 검색·웹 읽기, Codex: 웹 검색, AI 칸에 <code>WebSearch</code>·<code>WebFetch</code>·<code>web_search</code> <a class="term" href="#ai-edits">도구 줄</a>로 보임). 시키지 않으면 찾지 않습니다. 웹 결과는 글이라 페이지의 그림·움직임은 보지 못하고 읽은 설명(움직임·타이밍·모양·색·기법)으로 효과를 만들며, 웹에서 본 코드는 그대로 붙이지 않고 앱의 효과 API로 새로 씁니다.</li>
 </ul>
 <h3 id="screen-asset-manager">에셋 관리자</h3>
-<p>에셋 관리자에서는 효과(<a class="term" href="#screen-script-effects">스크립트 효과</a>)·<a class="term" href="#screen-effect-recipes">효과 프리셋</a>·그라데이션 <strong>에셋</strong>을 하나씩 다룹니다. 이 컴퓨터에서 만든 내 에셋과 상점·파일에서 받은 에셋을 보고, 상점에서 받고, 파일로 주고받고, 내 에셋을 온라인에 올립니다. 에셋마다 작성자·라이선스·상점 정보(상점 ID·버전)를 따로 가집니다. <code>.chickxel-asset</code> 패키지 파일은 에셋을 옮길 때만 씁니다: 내보낼 때 묶고, 가져오거나 받을 때 안의 에셋을 하나씩 넣습니다(여러 에셋이 든 파일은 에셋마다 따로 들어가고 파일의 작성자·라이선스를 이어받음).</p>
-<p>이럴 때 씁니다: 다른 사람이 올린 효과·그라데이션을 상점에서 찾아 설치할 때, 받은 에셋의 새 버전을 받을 때, 내 효과·프리셋을 파일로 친구에게 줄 때, 내가 만든 효과를 공개할 때(<a href="#screen-asset-publish">온라인에 올리기</a>).</p>
+<p>에셋 관리자에서는 효과(<a class="term" href="#screen-script-effects">스크립트 효과</a>)·<a class="term" href="#screen-effect-recipes">효과 프리셋</a>·그라데이션·<a class="term" href="#tools-shape-pen">모양 펜</a> 세트 <strong>에셋</strong>을 하나씩 다룹니다. 이 컴퓨터에서 만든 내 에셋과 상점·파일에서 받은 에셋을 보고, 상점에서 받고, 파일로 주고받고, 내 에셋을 온라인에 올립니다. 에셋마다 작성자·라이선스·상점 정보(상점 ID·버전)를 따로 가집니다. <code>.chickxel-asset</code> 패키지 파일은 에셋을 옮길 때만 씁니다: 내보낼 때 묶고, 가져오거나 받을 때 안의 에셋을 하나씩 넣습니다(여러 에셋이 든 파일은 에셋마다 따로 들어가고 파일의 작성자·라이선스를 이어받음).</p>
+<p>이럴 때 씁니다: 다른 사람이 올린 효과·그라데이션·모양 펜 세트를 상점에서 찾아 설치할 때, 받은 에셋의 새 버전을 받을 때, 내 효과·프리셋·세트를 파일로 친구에게 줄 때, 내가 만든 효과·그라데이션·모양 펜 세트를 공개할 때(<a href="#screen-asset-publish">온라인에 올리기</a>), 모양 펜 세트를 만들고 고칠 때(<a href="#tools-shape-pen">모양 펜</a>).</p>
 <div class="table-wrap"><table>
 <thead><tr><th>에셋 종류</th><th>쓰는 곳</th></tr></thead>
 <tbody>
 <tr><td>스크립트 효과</td><td><a class="term" href="#screen-effects-dialog">효과 창</a> 효과 탭(<a href="#screen-script-effects">스크립트 효과</a>). 올릴 수 있습니다.</td></tr>
 <tr><td>효과 프리셋</td><td>효과 창 프리셋 탭(<a href="#screen-effect-recipes">효과 프리셋</a>). 파일로만 주고받고 올리지 않습니다.</td></tr>
 <tr><td>그라데이션</td><td>그라데이션 <strong>프리셋</strong> 창과 그라데이션을 고르는 모든 곳(<a href="#tools-gradient">그라데이션</a>). 올릴 수 있습니다.</td></tr>
+<tr><td>모양 펜 세트</td><td><a class="term" href="#screen-tool-settings">도구 설정</a> 모양 펜 묶음의 세트 고르기(<a href="#tools-shape-pen">모양 펜</a>). 올릴 수 있습니다. 모양 펜 세트가 든 패키지는 앱 1.14.120 이상이 필요합니다.</td></tr>
 </tbody>
 </table></div>
 <h4>여는 법</h4>
 <ul>
 <li><strong>도구 &gt; 에셋 관리자…</strong>로 엽니다.</li>
-<li>효과 창 효과 탭 맨 아래의 <strong>상점 보기</strong>는 상점 탭(효과)을, 그라데이션 <strong>프리셋</strong> 창 목록 밑의 <strong>에셋 관리자</strong> 단추는 그라데이션만 거른 채로 엽니다. 효과 창의 <a class="term" href="#screen-effect-timeline">효과 상자</a>와 <a class="term" href="#screen-effect-maker">효과 만들기</a> 목록의 우클릭 메뉴 <strong>에셋 관리자에서 보기</strong>는 그 에셋을 고른 채로 엽니다.</li>
+<li>효과 창 효과 탭 맨 아래의 <strong>상점 보기</strong>는 상점 탭(효과)을, 그라데이션 <strong>프리셋</strong> 창 목록 밑의 <strong>에셋 관리자</strong> 단추는 그라데이션만 거른 채로 엽니다. 효과 창의 <a class="term" href="#screen-effect-timeline">효과 상자</a>와 <a class="term" href="#screen-effect-maker">효과 만들기</a> 목록의 우클릭 메뉴 <strong>에셋 관리자에서 보기</strong>는 그 에셋을 고른 채로 엽니다. 도구 설정 모양 펜 묶음의 <strong>세트 관리…</strong>는 <strong>모양 펜</strong> 칸을 도구 설정에서 고른 세트를 고른 채로 엽니다.</li>
 <li>chickxel.com 패키지 쪽의 <strong>Chickxel에서 열기</strong>를 누르면(브라우저가 Chickxel을 열지 물으면 허용) Chickxel이 앞으로 나오고(꺼져 있으면 켜짐) 상점 탭이 온라인 목록을 새로 받아 그 패키지를 고른 채 열립니다. 거르기·검색은 비워지고, 상세의 <strong>설치</strong>을 눌러야 설치됩니다. 목록에 없는 패키지(숨김·삭제)면 상태 줄에 홈페이지에서 연 패키지가 온라인 목록에 없다고 알립니다. 내려받은 <code>.chickxel-asset</code> 파일을 더블클릭하면 설치됨 탭에서 가져오기처럼 넣고 그 에셋을 고릅니다. 이미 켜진 Chickxel이 있으면 그 창에서 열립니다. Windows에서는 Chickxel을 한 번 켜야 링크와 더블클릭이 동작합니다(<a href="#start-install">설치</a>).</li>
 </ul>
 <h4>설치됨 탭</h4>
-<figure class="shot"><img src="assets/guide/screen-asset-manager.png" alt="에셋 관리자의 설치됨 탭: 위쪽 효과·그라데이션 거르기, 검색, 가져오기·내보내기·온라인에 올리기·기본 효과 되돌리기 단추, 왼쪽 내 에셋과 받은 에셋 목록, 오른쪽 고른 에셋의 상세와 단추" width="980" height="692" loading="lazy"><figcaption>① 탭(설치됨·상점·업데이트) · ② 종류 거르기(효과·그라데이션)와 이름 검색 · ③ 파일에서 가져오기·내보내기·온라인에 올리기·기본 효과 되돌리기 · ④ 목록 · ⑤ 고른 에셋의 상세와 단추</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-asset-manager.png" alt="에셋 관리자의 설치됨 탭: 위쪽 효과·그라데이션·모양 펜 거르기, 검색, 가져오기·내보내기·온라인에 올리기·기본 효과 되돌리기 단추, 왼쪽 한 목록(내 효과 프리셋 Gold outline·Hurt 다음에 받은 효과), 오른쪽 받은 효과 프리셋 Shiny Pickup의 상세와 단추" width="1120" height="792" loading="lazy"><figcaption>① 탭(설치됨·상점·업데이트) · ② 종류 거르기(효과·그라데이션·모양 펜)와 이름 검색 · ③ 파일에서 가져오기·내보내기·온라인에 올리기·기본 효과 되돌리기 · ④ 목록 · ⑤ 고른 에셋의 상세와 단추</figcaption></figure>
 <ul class="marks">
 <li>① <strong>설치됨</strong>·<strong>상점</strong>·<strong>업데이트</strong> 탭이 있습니다.</li>
-<li>② <strong>효과</strong> / <strong>그라데이션</strong>로 종류를 거르고(처음에는 효과) 이름·작성자·상점 이름으로 찾습니다. <strong>효과</strong>에는 스크립트 효과와 효과 프리셋이 함께 보입니다.</li>
-<li>③ <strong>파일에서 가져오기…</strong>는 <code>.chickxel-asset</code> 파일을 검사해 안의 에셋을 하나씩 넣습니다. <strong>내보내기…</strong>는 목록에 보이는 에셋을 파일 하나로 묶습니다(에셋마다 작성자·상점 정보를 담고, 내가 만든 것은 내 계정을 작성자로 적음 — 상점에서 받은 그대로인 에셋 하나는 상점 패키지와 같은 정체로 나감). <strong><a class="term" href="#screen-asset-publish">온라인에 올리기</a>…</strong>는 아래 <strong>온라인에 올리기</strong> 창을 엽니다. <strong>기본 효과 되돌리기</strong>는 지운 <a class="term" href="#screen-effect-list">공식 효과</a>를 다시 넣고 예전 버전을 앱에 든 버전으로 올립니다(고친 것은 그대로, 끝날 때까지 단추가 꺼짐).</li>
-<li>④ 목록에는 <strong>내 에셋</strong>(이 컴퓨터에서 만들었거나 작성자 ID가 내 계정 핸들인 에셋)와 <strong>받은 에셋</strong>가 차례로 보입니다. 줄마다 이름 아래에 작성자 프로필 사진(상점에 연결된 에셋만, 그 밖에는 사람 아이콘)과 작성자 이름이 보이고, 받은 에셋은 버전, 올린 내 에셋은 '올림 1.0.2'와 올린 뒤 고쳤으면 '고침'이 이어집니다. 이 컴퓨터에서 만든 에셋은 작성자 이름 대신 '이 컴퓨터에서 만듦'입니다.</li>
-<li>⑤ 고른 에셋의 미리보기(패키지 미리보기 그림이 있으면 그 첫 칸, 없으면 효과를 견본 그림에 입혀 움직임, 그라데이션은 띠), 설명, 정보 표(종류·작성자·라이선스·상점 ID·버전·고친 내용·출처·들어온 시각·필요한 앱 버전·원문 해시·스크립트 실행)와 단추가 보입니다. 단추는 표와 같습니다. 에셋 관리자로 설치한 스크립트 효과(파일에서 가져오기·상점)는 설치가 곧 허락이라 묻지 않고 바로 그리며 <strong>스크립트 실행</strong>은 허용함입니다. 프로젝트를 열 때 실행하지 않기로 한 스크립트처럼 아직 허용하지 않은 스크립트가 있을 때만 주황 글씨로 스크립트 효과가 들어 있다는 안내가 보입니다(공식 효과 패키지에는 보이지 않음).</li>
+<li>② <strong>효과</strong> / <strong>그라데이션</strong> / <strong>모양 펜</strong>로 종류를 거르고(처음에는 효과) 이름·작성자·상점 이름으로 찾습니다. <strong>효과</strong>에는 스크립트 효과와 효과 프리셋이 함께 보이고 <strong>모양 펜</strong>는 아래 '모양 펜 세트'에서 설명합니다.</li>
+<li>③ <strong>파일에서 가져오기…</strong>는 <code>.chickxel-asset</code> 파일을 검사해 안의 에셋을 하나씩 넣습니다. <strong>내보내기…</strong>는 목록에 보이는 에셋을 파일 하나로 묶습니다(이름 검색으로 하나만 남기면 그것만 — 에셋마다 작성자·상점 정보를 담고, 내가 만든 것은 내 계정을 작성자로 적음, 상점에서 받은 그대로인 에셋 하나는 상점 패키지와 같은 정체로 나감). <strong><a class="term" href="#screen-asset-publish">온라인에 올리기</a>…</strong>는 아래 <strong>온라인에 올리기</strong> 창을 엽니다. 마지막 단추는 거르는 종류의 기본 에셋 되돌리기입니다: <strong>기본 효과 되돌리기</strong>(효과)·<strong>기본 그라데이션 되돌리기</strong>(그라데이션)·<strong>기본 세트 되돌리기</strong>(모양 펜)는 묻지 않고 그 종류의 지운 기본 에셋을 다시 넣고 예전 버전을 앱에 든 버전으로 올린 뒤 결과를 알립니다(고친 것은 그대로, 끝날 때까지 단추가 꺼짐).</li>
+<li>④ 목록은 내 에셋과 받은 에셋을 나누지 않은 한 목록입니다. 내 에셋(이 컴퓨터에서 만들었거나 작성자 ID가 내 계정 핸들인 에셋)이 먼저, 그다음 받은 에셋(앱이 기본으로 설치한 공식 에셋 포함)이 보입니다. 줄마다 이름 아래에 작성자 프로필 사진(상점에 연결된 에셋만, 그 밖에는 사람 아이콘)과 작성자 이름이 보이고, 버전(올린 내 에셋은 '올림 1.0.2'와 올린 뒤 고쳤으면 '고침')과 들어온 길(<strong>상점</strong> = 상점에서 받음, <strong>기본(상점)</strong> = 앱이 기본으로 설치한 상점 에셋, <strong>파일</strong> = 패키지 파일)이 이어집니다. 이 컴퓨터에서 만든 에셋은 작성자 이름 대신 '이 컴퓨터에서 만듦'입니다. 받은 에셋은 패키지에 번역이 있으면 <a class="term" href="#language-change">화면 언어</a>의 이름으로 보입니다.</li>
+<li>⑤ 고른 에셋의 미리보기(패키지 미리보기 그림이 있으면 그 첫 칸, 없으면 효과를 견본 그림에 입혀 움직임, 그라데이션은 띠, 모양 펜 세트는 모양을 격자로 늘어놓은 그림), 설명, 정보 표(종류·작성자·라이선스·상점 ID·버전·고친 내용·출처·들어온 시각·필요한 앱 버전·원문 해시·스크립트 실행)와 단추가 보입니다. 단추는 표와 같고, 상세에는 내보내기 단추가 없습니다(<a class="term" href="#screen-toolbar">도구 막대</a>의 <strong>내보내기…</strong>로 내보냄). 에셋 관리자로 설치한 스크립트 효과(파일에서 가져오기·상점)는 설치가 곧 허락이라 묻지 않고 바로 그리며 <strong>스크립트 실행</strong>은 허용함입니다. 프로젝트를 열 때 실행하지 않기로 한 스크립트처럼 아직 허용하지 않은 스크립트가 있을 때만 주황 글씨로 스크립트 효과가 들어 있다는 안내가 보입니다(<a class="term" href="#screen-effect-list">공식 효과</a> 패키지에는 보이지 않음).</li>
 </ul>
 <div class="table-wrap"><table>
 <thead><tr><th>고른 에셋</th><th>단추</th></tr></thead>
 <tbody>
-<tr><td>내 에셋</td><td>즐겨찾기(그라데이션), <strong>효과 만들기에서 편집</strong>(스크립트 효과), <strong>이름 바꾸기…</strong>, <strong>매개변수 편집</strong>(효과 프리셋), <strong>패키지 파일로 내보내기…</strong>, <strong>온라인에 올리기…</strong>(이미 올린 것은 <strong>새 버전 올리기…</strong>, 효과 프리셋은 없음), <strong>삭제</strong>. 그 자리에서 고칩니다.</td></tr>
-<tr><td>받은 에셋</td><td>즐겨찾기(그라데이션), <strong>내 에셋으로 복사</strong>, <strong>패키지 파일로 내보내기…</strong>, <strong>웹 페이지 열기</strong>(작성자 주소가 있을 때), <strong>라이선스 보기</strong>(라이선스 파일이 있을 때), <strong>삭제</strong>. 고치면 내 사본이 생기고 원본은 그대로 업데이트를 받습니다.</td></tr>
+<tr><td>내 에셋</td><td>즐겨찾기(그라데이션), <strong>효과 만들기에서 편집</strong>(스크립트 효과), <strong>이름 바꾸기…</strong>(스크립트 효과 빼고), <strong><a class="term" href="#screen-canvas">캔버스</a>에서 편집</strong>(작성자가 내 계정인 받은 모양 펜 세트), <strong>매개변수 편집</strong>(효과 프리셋), <strong>온라인에 올리기…</strong>(이미 올린 것은 <strong>새 버전 올리기…</strong>, 효과 프리셋은 없음), <strong>삭제</strong>. 그 자리에서 고칩니다. 모양 펜 세트 모음의 내 세트는 아래 '모양 펜 세트'의 단추를 씁니다.</td></tr>
+<tr><td>받은 에셋</td><td>즐겨찾기(그라데이션), <strong>내 에셋으로 복사</strong>(모양 펜 세트는 <strong>내 세트로 복사</strong>), <strong>캔버스에서 편집</strong>(모양 펜 세트 — 내 세트로 복사한 사본을 엶), <strong>웹 페이지 열기</strong>(작성자 주소가 있을 때), <strong>라이선스 보기</strong>(라이선스 파일이 있을 때), <strong>삭제</strong>. 고치면 내 사본이 생기고 원본은 그대로 업데이트를 받습니다.</td></tr>
 </tbody>
 </table></div>
 <ul>
-<li>삭제는 바로 지웁니다(되돌리기 보관 없음). 앱이 기본으로 설치한 공식 효과를 지우면 다시 설치하지 않으며 <strong>기본 효과 되돌리기</strong>로 다시 넣습니다. 이미 프로젝트에 넣은 효과와 그라데이션은 값을 복사해 넣으므로 에셋을 지워도 그대로입니다.</li>
+<li>삭제는 바로 지웁니다(되돌리기 보관 없음). 앱이 기본으로 설치한 공식 에셋(효과·그라데이션·모양 펜 세트)을 지우면 다시 설치하지 않으며, 그 종류의 되돌리기 단추(<strong>기본 효과 되돌리기</strong>·<strong>기본 그라데이션 되돌리기</strong>·<strong>기본 세트 되돌리기</strong>)로 다시 넣습니다. 이미 프로젝트에 넣은 효과와 그라데이션은 값을 복사해 넣으므로 에셋을 지워도 그대로입니다.</li>
 <li>파일에서 가져올 때는 넣기 전에 파일 목록·크기·체크섬·효과 설정·미리보기 그림을 검사합니다. 문제가 있으면 줄마다 알려 주고 아무것도 넣지 않으며, 이 앱보다 새 Chickxel이 필요한 에셋은 필요한 버전을 알려 줍니다. 같은 상점 에셋이나 같은 내용의 에셋이 이미 있으면 <strong>에셋 가져오기</strong> 창에서 <strong>바꾸기</strong> / <strong>둘 다 두기</strong> / <strong>건너뛰기</strong>를 고르고, <strong>남은 항목에도 적용</strong>로 남은 겹침에도 씁니다.</li>
 <li>처음 실행할 때 예전 효과 프리셋(예전 이름: 사용자 정의 효과)과 <a class="term" href="#tools-gradient">그라데이션 프리셋</a>을 내 에셋으로 옮깁니다. 예전 파일은 <a class="term" href="#files-settings">설정 폴더</a>에 <code>effect-presets.backup-날짜.json</code>·<code>gradient-presets.backup-날짜.json</code>으로 남습니다.</li>
-<li><strong>내보내기…</strong>와 <strong>패키지 파일로 내보내기…</strong>는 파일로 주고받는 패키지를 만듭니다. 내가 만든 에셋의 작성자 이름은 로그인한 계정의 표시 이름입니다.</li>
+<li><strong>내보내기…</strong>는 목록에 보이는 에셋을 파일로 주고받는 패키지 하나로 만듭니다. 에셋 상세에는 내보내기 단추가 없고, 내 모양 펜 세트만 상세의 <strong>내보내기</strong> 메뉴(세트 파일·에셋 패키지)로 하나씩 내보냅니다. 내가 만든 에셋의 작성자 이름은 로그인한 계정의 표시 이름입니다.</li>
 </ul>
 <h4>상점 탭</h4>
-<figure class="shot"><img src="assets/guide/screen-asset-manager-2.png" alt="상점 탭: 위쪽 효과·그라데이션 거르기, 검색, 태그, 새로 고침, 홈페이지에서 보기, 왼쪽 온라인 에셋 목록, 오른쪽 고른 에셋의 미리보기·정보와 설치 단추" width="980" height="692" loading="lazy"><figcaption>⑥ 거르기·검색·태그·새로 고침·홈페이지에서 보기 · ⑦ 온라인 목록 · ⑧ 고른 에셋의 상세와 설치</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-asset-manager-2.png" alt="상점 탭: 위쪽 효과·그라데이션·모양 펜 거르기, 검색, 태그, 새로 고침, 홈페이지에서 보기, 왼쪽 온라인 에셋 목록, 오른쪽 고른 에셋의 미리보기·정보와 설치 단추" width="1120" height="792" loading="lazy"><figcaption>⑥ 거르기(효과·그라데이션·모양 펜)·검색·태그·새로 고침·홈페이지에서 보기 · ⑦ 온라인 목록 · ⑧ 고른 에셋의 상세와 설치</figcaption></figure>
 <ul class="marks">
-<li>⑥ 탭을 처음 열 때 chickxel.com의 온라인 목록을 받습니다(받는 동안 "온라인 목록을 불러오는 중…", 받은 뒤 "에셋 N개 · 받은 시각"). <strong>효과</strong> / <strong>그라데이션</strong> 거르기, 검색(이름·설명·작성자·<a class="term" href="#screen-tags">태그</a>), <strong>모든 태그</strong> 목록, <strong>새로 고침</strong>, <strong>홈페이지에서 보기</strong>(chickxel.com 에셋 쪽을 지금 거르는 종류의 탭으로 엶)가 있습니다.</li>
-<li>⑦ 줄마다 이름 아래에 작성자 프로필 사진과 이름·버전·종류, 상태(설치한 버전, 새 버전, 이 버전에 설치할 수 없음)가 보입니다. 이름과 설명은 패키지에 번역이 있으면 <a class="term" href="#language-change">화면 언어</a>로 보입니다.</li>
+<li>⑥ 탭을 처음 열 때 chickxel.com의 온라인 목록을 받습니다(받는 동안 "온라인 목록을 불러오는 중…", 받은 뒤 "에셋 N개 · 받은 시각"). <strong>효과</strong> / <strong>그라데이션</strong> / <strong>모양 펜</strong> 거르기(설치됨 탭과 같은 칸), 검색(이름·설명·작성자·<a class="term" href="#screen-tags">태그</a>), <strong>모든 태그</strong> 목록, <strong>새로 고침</strong>, <strong>홈페이지에서 보기</strong>(chickxel.com 에셋 쪽을 지금 거르는 종류의 탭으로 엶)가 있습니다.</li>
+<li>⑦ 줄마다 이름 아래에 작성자 프로필 사진과 이름·버전·종류, 상태(설치한 버전, 새 버전, 이 버전에 설치할 수 없음)가 보입니다. 이름과 설명은 패키지에 번역이 있으면 화면 언어로 보입니다.</li>
 <li>⑧ 미리보기 그림, 짧은 설명, ID·버전·설치한 버전·작성자·라이선스·종류·필요한 앱 버전·크기·게시·수정·검토(Chickxel 공식 / 검토 완료 / 커뮤니티 — 사용자가 올린 것)·태그와 <strong>설치</strong>(또는 <strong>…(으)로 업데이트</strong>, <strong>설치됨 탭에서 보기</strong>)·<strong>웹 페이지 열기</strong> 단추가 있습니다.</li>
 </ul>
 <ul>
-<li><strong>설치</strong>를 누르면 그 자리에 진행 막대·퍼센트·<strong>취소</strong>가 보입니다. 받은 파일이 목록의 체크섬과 다르면 오류만 알리고 아무것도 바꾸지 않습니다. 이 버전에서 쓸 수 없는 에셋은 "설치할 수 없음: Chickxel 1.20.0 이상이 필요합니다"처럼 까닭을 보이고 설치 단추가 꺼집니다. 같은 상점 패키지에 연결된 에셋이 이미 있으면 더 높은 버전일 때만 묻지 않고 바꿉니다(아래 상점 버전과 고친 내용). 상점에서 받은 에셋의 출처는 <strong>온라인 카탈로그</strong>입니다.</li>
-<li>외곽선·그림자 등 공식 효과 23개는 앱이 처음 켤 때 설치합니다(출처 <strong>앱 기본 설치</strong>). 상점에는 공식 그라데이션 8개(Rainbow, Repeating Rainbow, Sunset, Ocean, Transparent Fade, Fire, Forest, Grayscale)와 효과 프리셋(Outlined Drop Shadow, Hit Reaction, Shiny Pickup)도 있습니다.</li>
+<li><strong>설치</strong>를 누르면 그 자리에 진행 막대·퍼센트·<strong>취소</strong>가 보입니다. 받은 파일이 목록의 체크섬과 다르면 오류만 알리고 아무것도 바꾸지 않습니다. 이 버전에서 쓸 수 없는 에셋은 "설치할 수 없음: Chickxel 1.20.0 이상이 필요합니다"처럼 까닭을 보이고 설치 단추가 꺼집니다. 같은 상점 패키지에 연결된 에셋이 이미 있으면 더 높은 버전일 때만 묻지 않고 바꿉니다(아래 상점 버전과 고친 내용). 상점에서 받은 에셋의 출처는 <strong>상점에서 받음</strong>입니다.</li>
+<li>외곽선·그림자 등 공식 효과 23개, 기본 그라데이션 8개(Rainbow, Repeating Rainbow, Sunset, Ocean, Transparent Fade, Fire, Forest, Grayscale), 모양 펜 기본 세트 8개(<a href="#tools-shape-pen">모양 펜</a>)는 앱이 처음 켤 때 상점의 공식 에셋으로 설치합니다(출처 <strong>앱이 기본으로 설치한 상점 에셋</strong>, 목록에는 <strong>기본(상점)</strong>). 공식 에셋은 <code>chickxel</code> 계정이 작성자입니다. 예전 판이 내 그라데이션으로 넣어 둔 처음 그대로인 기본 그라데이션 사본은 지우고(즐겨찾기는 옮김) 고친 것은 내 그라데이션으로 남깁니다. 상점에는 효과 프리셋(Outlined Drop Shadow, Hit Reaction, Shiny Pickup)과 모양 펜 세트(예전 기본 세트, 크리스마스, 테마 세트 등)도 있습니다.</li>
 <li>작성자 프로필 사진은 상점 목록에 chickxel.com 프로필 그림 주소가 있을 때만 받아 이 컴퓨터에 작게 저장해 두고 다시 씁니다(공식 효과는 Chickxel 그림). 사진이 없거나 받지 못하면 사람 아이콘이 보입니다.</li>
+</ul>
+<h4>모양 펜 세트</h4>
+<figure class="shot"><img src="assets/guide/screen-asset-manager-4.png" alt="설치됨 탭 모양 펜 칸: 도구 막대 끝의 캔버스에서 새 세트·기본 세트 되돌리기, 왼쪽 목록 맨 위 내 세트 My leaves와 그 아래 기본 세트 여덟 가지(줄마다 첫 모양 썸네일, Chickxel · 모양 수 · 버전 · Default (store)), 오른쪽 내 세트의 모양 격자·정보·단추와 펼친 내보내기 메뉴" width="1300" height="792" loading="lazy"><figcaption>⑨ 캔버스에서 새 세트·기본 세트 되돌리기 · ⑩ 내 세트 · ⑪ 받은 세트(기본 세트 여덟 가지) · ⑫ 내 세트의 미리보기와 정보 · ⑬ 내 세트 단추 · ⑭ 내보내기 메뉴</figcaption></figure>
+<p><strong>모양 펜</strong> 칸은 <a href="#tools-shape-pen">모양 펜</a> 세트를 다룹니다. 목록은 도구 설정의 세트 목록과 같은 차례이고, 도구 설정에서 세트를 고치면 목록이 바로 바뀌며 여기서 고치면 도구 설정도 바뀝니다.</p>
+<ul class="marks">
+<li>⑨ <strong>캔버스에서 새 세트…</strong>(필름 아이콘)는 지금 문서의 <a class="term" href="#screen-timeline">프레임</a>마다 모양 하나로 새 내 세트를 만들고, <strong>기본 세트 되돌리기</strong>는 지운 기본 세트를 묻지 않고 다시 설치하고 예전 버전을 앱에 든 버전으로 올립니다(내 세트·다른 받은 세트는 그대로, 끝나면 결과 알림). 이 칸에서 <strong>파일에서 가져오기…</strong>는 에셋 패키지와 함께 세트 파일(<code>.chickxel-shapes</code>)·PNG도 여러 개 골라 새 내 세트로 가져오고, <strong>내보내기…</strong>는 보이는 내 세트(모양 1~64개인 것)와 받은 세트를 패키지 하나로 묶고, <strong>온라인에 올리기…</strong>는 고른 내 세트를 올립니다.</li>
+<li>⑩ 내 세트: 모양 펜 세트 모음의 세트(직접 만든 세트와 예전 기본 세트에서 남은 세트)가 맨 앞에 보입니다. 줄마다 첫 모양 썸네일과 이름, 아래에 '모양 N개'와 올렸으면 올린 버전·'고침'이 보입니다. 이름이 맞는 내 세트가 없는, 예전에 올리거나 내보내며 떠 둔 사본도 내 에셋으로 보입니다.</li>
+<li>⑪ 받은 세트: 기본 세트 여덟 가지가 먼저, 그다음 상점·패키지 파일에서 받은 세트가 보입니다. 줄마다 첫 모양 썸네일과 이름, 아래에 작성자, 모양 수, 버전, 들어온 길(<strong>기본(상점)</strong> 등)이 보입니다. 내가 올린 세트를 상점에서 받으면 받은 세트이지만, 작성자가 내 계정이라 그 자리에서 고치고 새 버전으로 올립니다.</li>
+<li>⑫ 내 세트 상세: 모양 격자 미리보기, 정보(종류 '모양 펜 세트', 작성자, 올렸으면 상점 ID·버전·상태 '받거나 올린 뒤 고침', 출처 '내 세트(모양 펜)')와 '모양 N개'가 보입니다.</li>
+<li>⑬ <strong>캔버스에서 편집</strong>(그림 아이콘 — 세트를 임시 <a class="term" href="#screen-tabs">문서 탭</a>으로 열어 고침, <a href="#tools-shape-pen">모양 펜</a>의 '캔버스에서 새 세트·캔버스에서 편집'), <strong>이름 바꾸기…</strong>, <strong>내보내기</strong>(⑭ 메뉴), <strong>온라인에 올리기…</strong>(올린 적 있으면 <strong>새 버전 올리기…</strong> — 모양 1~64개, 한 변 256px 이하), <strong>삭제</strong>(묻고 세트 모음에서 지움 — 고른 세트였으면 그 자리의 세트를 고름).</li>
+<li>⑭ <strong>내보내기</strong> 메뉴: <strong>세트 파일(.chickxel-shapes)…</strong>는 세트를 세트 파일 하나로 저장하고, <strong>에셋 패키지(.chickxel-asset)…</strong>는 세트를 내 에셋으로 떠 두고 그것을 에셋 패키지로 저장합니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/screen-asset-manager-5.png" alt="모양 펜 칸에서 기본 세트 꽃 1을 고른 모습: 오른쪽에 모양 격자, 설명, 정보(작성자 Chickxel, 라이선스, 상점 ID chickxel.shapes.flowers, 버전 1.0.1, 출처 앱이 기본으로 설치한 상점 에셋, 필요한 앱 버전 1.14.120)와 내 세트로 복사·캔버스에서 편집·웹 페이지 열기·라이선스 보기·삭제 단추" width="1300" height="792" loading="lazy"><figcaption>⑮ 받은 세트(기본 세트 꽃 1)의 미리보기와 정보 · ⑯ 받은 세트 단추</figcaption></figure>
+<ul class="marks">
+<li>⑮ 받은 세트 상세: 모양 격자, 설명, 정보(작성자·라이선스·상점 ID·버전·출처·들어온 시각·필요한 앱 버전)와 '모양 N개'. 기본 세트의 출처는 '앱이 기본으로 설치한 상점 에셋'입니다.</li>
+<li>⑯ <strong>내 세트로 복사</strong>(사본이 내 세트 끝에 생기고 목록·모양 펜에서 골라짐 — 받은 원본은 그대로), <strong>캔버스에서 편집</strong>(먼저 내 세트로 복사하고 그 사본을 엶), <strong>웹 페이지 열기</strong>, <strong>라이선스 보기</strong>, <strong>삭제</strong>. 기본 세트를 지우면 다시 설치하지 않으며 <strong>기본 세트 되돌리기</strong>로 다시 넣습니다.</li>
 </ul>
 <h4>업데이트 탭</h4>
 <ul>
@@ -1789,10 +1806,10 @@
 <ul>
 <li>받은 효과는 효과 창 효과 탭에, 받은 효과 프리셋은 프리셋 탭에 내 것과 함께 보입니다. 풍선에는 상점 이름(없으면 작성자)이 보이고 이름 바꾸기·매개변수·삭제는 내 것에만 있습니다(<a href="#screen-effect-recipes">효과 프리셋</a>).</li>
 <li>그라데이션 <strong>프리셋</strong> 창에서 받은 그라데이션은 이름 옆에 상점 이름(작성자)이 보입니다. 고쳐서 <strong>내 에셋으로 저장</strong>을 누르면 원본은 두고 내 사본이 생깁니다(<a href="#tools-gradient">그라데이션</a>).</li>
-<li>받은 에셋을 고쳐 쓰려면 상세의 <strong>내 에셋으로 복사</strong>로 내 사본을 만듭니다.</li>
+<li>받은 에셋을 고쳐 쓰려면 상세의 <strong>내 에셋으로 복사</strong>(모양 펜 세트는 <strong>내 세트로 복사</strong>)로 내 사본을 만듭니다.</li>
 </ul>
 <h3 id="screen-asset-publish">온라인에 올리기</h3>
-<p><a class="term" href="#screen-asset-manager">내 에셋</a> 하나를 공개 패키지로 만들어 <a class="term" href="#start-account">Chickxel 계정</a>으로 올립니다(에셋 하나에 패키지 하나). 창을 열 때 로그인하지 않았으면 먼저 <a href="#start-account">계정 창</a>이 열립니다. <strong>설치됨</strong> 탭 위쪽의 <strong>온라인에 올리기…</strong>는 목록에서 고른 내 에셋(고른 것이 없고 보이는 것이 하나면 그것)을, 내 에셋 상세의 <strong>온라인에 올리기…</strong>·<strong>새 버전 올리기…</strong>와 <a class="term" href="#screen-effect-maker">효과 만들기</a>의 올리기는 그 에셋을 엽니다. <a class="term" href="#screen-asset-manager">받은 에셋</a>은 올릴 수 없어 내 에셋으로 복사한 뒤 사본을 올리라고 알립니다. <a class="term" href="#screen-effect-recipes">효과 프리셋</a>은 올리지 않습니다(chickxel.com도 받지 않음) — 효과는 <a class="term" href="#screen-script-effects">스크립트 효과</a>로 올립니다.</p>
+<p><a class="term" href="#screen-asset-manager">내 에셋</a> 하나를 공개 패키지로 만들어 <a class="term" href="#start-account">Chickxel 계정</a>으로 올립니다(에셋 하나에 패키지 하나). 창을 열 때 로그인하지 않았으면 먼저 <a href="#start-account">계정 창</a>이 열립니다. <strong>설치됨</strong> 탭 위쪽의 <strong>온라인에 올리기…</strong>는 목록에서 고른 내 에셋(고른 것이 없고 보이는 것이 하나면 그것)을, 내 에셋 상세의 <strong>온라인에 올리기…</strong>·<strong>새 버전 올리기…</strong>와 <a class="term" href="#screen-effect-maker">효과 만들기</a>의 올리기는 그 에셋을 엽니다. <a class="term" href="#tools-shape-pen">모양 펜</a> 세트는 <strong>모양 펜</strong> 칸에서 내 세트를 골라 올립니다(모양 1~64개, 한 변 256px 이하 — <a href="#tools-shape-pen">모양 펜</a>). <a class="term" href="#screen-asset-manager">받은 에셋</a>은 올릴 수 없어 내 에셋으로 복사한 뒤 사본을 올리라고 알립니다. <a class="term" href="#screen-effect-recipes">효과 프리셋</a>은 올리지 않습니다(chickxel.com도 받지 않음) — 효과는 <a class="term" href="#screen-script-effects">스크립트 효과</a>로 올립니다.</p>
 <figure class="shot"><img src="assets/guide/screen-asset-manager-3.png" alt="온라인에 올리기 창: 왼쪽 작성자(프로필 사진·표시 이름·@핸들 묶음), 패키지(모드 줄, 이름, 짧은 설명, 언어 설정, 패키지 ID, 버전, 태그 칩), 라이선스 CC0-1.0, 오른쪽 올릴 에셋, 목록 미리보기, 올리기 전 검사와 올리기 단추" width="980" height="772" loading="lazy"><figcaption>⑨ 작성자 · ⑩ 패키지 · ⑪ 라이선스 · ⑫ 올릴 에셋 · ⑬ 목록 미리보기 · ⑭ 올리기 전 검사</figcaption></figure>
 <ul class="marks">
 <li>⑨ <strong>작성자</strong>: 로그인한 계정의 프로필 사진·표시 이름·@핸들(작성자 ID)이 한 묶음으로 보이고 여기서는 고칠 수 없습니다. 바꾸려면 <strong>도움말 &gt; Chickxel 계정…</strong>에서 바꿉니다(핸들은 패키지를 한 번 올리면 못 바꿈).</li>
@@ -2036,7 +2053,7 @@
 <tbody>
 <tr><td>③ <a href="#tools-pencil">연필</a></td><td><span class="key" data-cmd="도구/연필"><kbd>B</kbd></span></td><td><a class="term" href="#tools-brush">브러시 모양</a>대로 픽셀을 칠합니다. 크기 1에서 <a class="term" href="#tools-pencil">픽셀 퍼펙트</a>(<span class="key" data-cmd="도구/픽셀 퍼펙트"><kbd>P</kbd></span>), <a class="term" href="#tools-brush">대칭 그리기</a>를 씁니다</td></tr>
 <tr><td>③ <a href="#tools-gradient-pencil">그라데이션 연필</a></td><td><span class="key" data-cmd="도구/그라데이션 연필"><kbd>Shift</kbd>+<kbd>B</kbd></span></td><td>획을 따라 그라데이션 색으로 칠합니다</td></tr>
-<tr><td>③ <a href="#tools-shape-pen">모양 펜</a></td><td>—</td><td>고른 세트의 모양(나뭇잎·꽃·반짝이 등)을 도장처럼 찍습니다</td></tr>
+<tr><td>③ <a href="#tools-shape-pen">모양 펜</a></td><td>—</td><td>고른 세트의 모양(나뭇잎·꽃·반짝이·병아리 캐릭터 등)을 도장처럼 찍습니다</td></tr>
 <tr><td>④ <a href="#tools-eraser">지우개</a></td><td><span class="key" data-cmd="도구/지우개"><kbd>E</kbd></span></td><td>픽셀을 투명하게 지웁니다. 강도·채널을 바꾸면 조금씩 또는 색 채널만 지웁니다</td></tr>
 <tr><td>⑤ <a href="#tools-fill">채우기</a></td><td><span class="key" data-cmd="도구/채우기"><kbd>G</kbd></span></td><td>같은(또는 비슷한) 색 영역을 칠합니다</td></tr>
 <tr><td>⑤ <a href="#tools-gradient">그라데이션</a></td><td><span class="key" data-cmd="도구/그라데이션"><kbd>F</kbd></span></td><td>끌어서 선형 그라데이션을 칠합니다</td></tr>
@@ -2216,33 +2233,41 @@
 <p>그린 길이는 마우스가 지난 길을 따라 잽니다(시작점과 끝점 사이의 곧은 거리가 아님). 불투명도 정지점은 섞지 않고 연필처럼 픽셀을 그 값으로 바꾸므로, 완전히 투명한 쪽은 아래 그림을 지웁니다.</p>
 
 <h3 id="tools-shape-pen">모양 펜</h3>
-<figure class="shot"><img src="assets/guide/tools-shape-pen-example.png" alt="모양 펜으로 연필 가지를 따라 나뭇잎을, 바닥에 풀과 꽃을, 하늘에 반짝이를 찍은 그림" width="504" height="280" loading="lazy"><figcaption>기본 세트로 찍은 예: 나뭇잎(가지를 따라 끌기, 최적화 간격) · 풀(바닥을 따라 끌기) · 꽃과 반짝이(클릭)</figcaption></figure>
-<p><strong>모양 펜</strong>은 고른 <strong>세트</strong>의 작은 그림(모양)을 도장처럼 찍습니다. 나뭇잎·풀·꽃·반짝이·돌멩이처럼 같은 종류를 조금씩 다르게 여러 번 그려야 할 때 씁니다. <a class="term" href="#tools-pencil">연필</a> 묶음 칸의 셋째 도구로, 칸을 길게 누르거나 우클릭해 펼친 목록이나 도구 메뉴에서 고릅니다(기본 <a class="term" href="#shortcuts-customize">단축키</a>는 없음).</p>
+<figure class="shot"><img src="assets/guide/tools-shape-pen-example.png" alt="모양 펜으로 연필 가지를 따라 나뭇잎을, 바닥에 꽃과 떨어진 단풍잎을, 하늘에 반짝이를 찍은 그림" width="504" height="280" loading="lazy"><figcaption>기본 세트로 찍은 예: 나뭇잎(가지를 따라 끌기, 최적화 간격) · 꽃 1(바닥을 따라 끌기, 최적화 간격) · 단풍잎과 반짝이(클릭)</figcaption></figure>
+<p><strong>모양 펜</strong>은 고른 <strong>세트</strong>의 작은 그림(모양)을 도장처럼 찍습니다. 나뭇잎·꽃·반짝이·비눗방울·병아리 캐릭터처럼 같은 종류를 조금씩 다르게 여러 번 그려야 할 때 씁니다. <a class="term" href="#tools-pencil">연필</a> 묶음 칸의 셋째 도구로, 칸을 길게 누르거나 우클릭해 펼친 목록이나 도구 메뉴에서 고릅니다(기본 <a class="term" href="#shortcuts-customize">단축키</a>는 없음).</p>
 <ul>
 <li><strong>클릭</strong>하면 다음 모양을 누른 곳 가운데에 찍습니다. 모양은 자기 색과 불투명도 그대로 겹쳐져, 투명한 칸은 아래를 덮지 않고 반투명한 칸은 아래와 섞입니다. 짝수 크기 모양은 브러시처럼 가운데의 오른쪽·아래로 한 칸 더 넓습니다.</li>
 <li><strong>끌면</strong> 간격마다(또는 최적화 간격으로) 이어서 찍습니다. 한 획이 실행취소 한 단계입니다. 커서 아래에는 다음에 찍힐 모양이 반투명하게 윤곽과 함께 보입니다.</li>
 <li><a class="term" href="#tools-brush">대칭 그리기</a>(대칭 자리에는 모양이 뒤집혀 찍힘), <a class="term" href="#screen-top-bar">타일 모드</a>, <a class="term" href="#tools-select">선택 영역</a>, <a class="term" href="#screen-timeline">잠긴 레이어</a>, <a class="term" href="#screen-cel-links">링크된 셀</a>, <a href="#tools-move">캔버스 밖에 그리기</a>는 <a href="#tools-pencil">연필</a>과 같습니다. <kbd>Alt</kbd>+클릭은 <a class="term" href="#tools-picker">스포이드</a>입니다.</li>
 </ul>
 <h4>모양 펜 설정</h4>
-<figure class="shot"><img src="assets/guide/tools-shape-pen.png" alt="모양 펜 도구 설정: 세트 고르기와 세트 단추, 모양 칸, 모양 더하기·지우기, 순서, 간격, 최적화 간격, 지금 색으로 물들이기" width="338" height="334" loading="lazy"><figcaption>① 세트(Set) · ② 세트 단추 · ③ 모양 칸 · ④ 모양 더하기·모양 지우기(Add shape) · ⑤ 순서(Order) · ⑥ 간격(Spacing) · ⑦ 최적화 간격(Optimized spacing) · ⑧ 지금 색으로 물들이기(Tint with current color)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/tools-shape-pen.png" alt="모양 펜 도구 설정: 세트 고르기(내 세트 My leaves를 고름)와 세트 단추(새 세트·이름 바꾸기·세트 지우기·기본 세트 되돌리기·세트 관리…), 모양 칸, 모양 더하기·지우기, 순서, 간격, 최적화 간격, 지금 색으로 물들이기" width="338" height="334" loading="lazy"><figcaption>① 세트(Set) · ② 세트 단추(새 세트·이름 바꾸기·세트 지우기·기본 세트 되돌리기·세트 관리…) · ③ 모양 칸 · ④ 모양 더하기·모양 지우기(Add shape) · ⑤ 순서(Order) · ⑥ 간격(Spacing) · ⑦ 최적화 간격(Optimized spacing) · ⑧ 지금 색으로 물들이기(Tint with current color)</figcaption></figure>
 <p><a class="term" href="#screen-tool-settings">도구 설정</a> <strong>모양 펜</strong> 묶음에서 찍을 세트와 찍는 방법을 정합니다.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>항목</th><th>하는 일</th></tr></thead>
 <tbody>
-<tr><td>① <strong>세트</strong></td><td>찍을 세트를 고릅니다. 목록의 각 줄은 세트의 첫 모양과 이름입니다.</td></tr>
-<tr><td>② 세트 단추</td><td>왼쪽부터 새 세트, 이름 바꾸기, 세트 지우기(빨간 단추, 확인을 받음 — 되돌릴 수 없음), 기본 세트 되돌리기, <strong>세트 내보내기…</strong>, <strong>세트 가져오기…</strong>입니다.</td></tr>
-<tr><td>③ 모양 칸</td><td>세트의 모양 칸입니다. 강조된 칸이 다음에 찍을 모양이고, 찍을 때마다 다음 모양으로 옮겨 갑니다. 칸을 누르면 그 모양을 다음에 찍습니다. 칸을 우클릭하거나 빨간 휴지통 단추를 누르면 모양을 지웁니다(기본 세트의 모양도 지울 수 있음).</td></tr>
+<tr><td>① <strong>세트</strong></td><td>찍을 세트를 고릅니다. 목록의 각 줄은 세트의 첫 모양과 이름이고, 내 세트 다음에 받은 세트(기본 세트 여덟 가지와 <a class="term" href="#screen-asset-manager">상점</a>·패키지 파일에서 받은 세트)가 보입니다(아래 '세트 목록과 기본 세트').</td></tr>
+<tr><td>② 세트 단추</td><td>왼쪽부터 새 세트, 이름 바꾸기, 세트 지우기(빨간 단추, 확인을 받음 — 되돌릴 수 없음), 기본 세트 되돌리기, <strong>세트 관리…</strong>(상자 아이콘)입니다. 이름 바꾸기·세트 지우기는 내 세트를 골랐을 때만 켜집니다. <strong>세트 관리…</strong>는 <a href="#screen-asset-manager">에셋 관리자</a>를 <strong>설치됨</strong> 탭 <strong>모양 펜</strong> 칸으로 열고 지금 고른 세트를 골라 둡니다. 세트 내보내기·가져오기, 상점에 올리기, 내 세트로 복사, <a class="term" href="#screen-canvas">캔버스</a>에서 새 세트·편집은 거기서 합니다.</td></tr>
+<tr><td>③ 모양 칸</td><td>세트의 모양 칸입니다. 강조된 칸이 다음에 찍을 모양이고, 찍을 때마다 다음 모양으로 옮겨 갑니다. 칸을 누르면 그 모양을 다음에 찍습니다. 칸을 우클릭하거나 빨간 휴지통 단추를 누르면 모양을 지웁니다(내 세트만 — 받은 세트는 읽기 전용).</td></tr>
 <tr><td>④ <strong>모양 더하기</strong></td><td>선택 영역·지금 <a class="term" href="#screen-timeline">셀</a>·PNG 파일에서 모양을 더합니다(아래 '모양 더하기').</td></tr>
-<tr><td>⑤ <strong>순서</strong></td><td>다음 모양을 고르는 방법입니다(아래 표). 세트마다 따로 기억하고, 모양이 하나뿐이면 흐려집니다.</td></tr>
+<tr><td>⑤ <strong>순서</strong></td><td>다음 모양을 고르는 방법입니다(아래 표). 세트마다 따로 기억하고, 모양이 하나뿐이거나 받은 세트이면 흐려집니다.</td></tr>
 <tr><td>⑥ <strong>간격</strong></td><td>끌 때 도장 사이 거리(px, 1 이상, 기본 1)입니다. 1이면 지나간 모든 픽셀에 찍어 겹치며 이어진 자국이 됩니다. 최적화 간격을 켜면 흐려집니다.</td></tr>
 <tr><td>⑦ <strong>최적화 간격</strong></td><td>켜면(기본) 다음 모양이 앞 도장과 겹치지 않는 첫 자리마다 찍어, 도장이 끄는 방향으로 겹치지 않고 붙어 이어집니다.</td></tr>
 <tr><td>⑧ <strong>지금 색으로 물들이기</strong></td><td>켜면 모양의 명암·불투명도는 두고 색만 <a class="term" href="#screen-palette">기본색</a>(오른쪽 버튼은 <a class="term" href="#screen-palette">보조색</a>)으로 바꿉니다(기본 끔).</td></tr>
 </tbody>
 </table></div>
-<h4>기본 세트</h4>
-<figure class="shot"><img src="assets/guide/tools-shape-pen-sets.png" alt="모양 펜 기본 세트 스무 가지의 모양을 세트마다 한 줄로 늘어놓은 그림" width="582" height="552" loading="lazy"><figcaption>왼쪽 위부터 한 줄에 두 세트씩: 나뭇잎 · 단풍잎 · 솔잎 · 풀 · 꽃 · 꽃잎 · 반짝이 · 별 · 점 · 거품 · 구름 · 돌멩이 · 벽돌 · 빗방울 · 눈송이 · 하트 · 연기 · 나뭇결 · 금 · 동전과 보석</figcaption></figure>
-<p>처음부터 기본 세트 스무 가지가 들어 있고, 세트마다 모양이 6~10개입니다. 단풍잎은 주황·빨강·노랑, 꽃은 분홍·파랑·흰색, 별은 금색·흰색, 하트는 빨강·분홍이 섞여 있고, 반짝이·거품·연기·빗방울·나뭇결·금·꽃잎은 반투명 픽셀을 담습니다. 점 세트만 순서가 차례로이고 나머지는 무작위입니다.</p>
-<p>기본 세트도 모양을 지우거나 이름을 바꾸거나 세트째 지울 수 있습니다. 기본 세트 되돌리기 단추는 확인을 받은 뒤 지운 기본 세트를 다시 넣고 기본 세트를 처음 모양·이름·순서로 되돌립니다(직접 만든 세트는 그대로). 새 판에서 늘어난 기본 세트는 예전 세트 파일에도 저절로 들어오고, 직접 지운 기본 세트는 되돌리기 전까지 돌아오지 않습니다.</p>
+<h4>세트 목록과 기본 세트</h4>
+<figure class="shot"><img src="assets/guide/tools-shape-pen-2.png" alt="모양 펜 세트 목록을 펼친 모습: 맨 위 내 세트 My leaves, 그 아래 지구 아이콘이 붙은 기본 세트 여덟 가지(랜덤 칙셀·꽃 1·꽃 2·꽃 3·반짝이·비눗방울·단풍잎·나뭇잎)" width="338" height="422" loading="lazy"><figcaption>⑨ 내 세트 · ⑩ 받은 세트(지구 아이콘 — 기본 세트 여덟 가지가 맨 앞)</figcaption></figure>
+<ul class="marks">
+<li>⑨ 내 세트: 직접 만든 세트, 캔버스에서 만든 세트, 가져온 세트 파일·PNG, 받은 세트를 복사한 것, 예전 판의 기본 세트에서 남은 세트입니다. 고칠 수 있습니다.</li>
+<li>⑩ 받은 세트: 기본 세트 여덟 가지가 맨 앞에, 그다음 상점·패키지 파일에서 받은 세트가 보입니다. 이름 앞 아이콘은 들어온 길입니다: 지구 = 상점에서 받았거나 앱이 기본으로 설치한 상점 에셋, 상자 = 패키지 파일(줄에 마우스를 올리면 풍선에 출처).</li>
+</ul>
+<figure class="shot"><img src="assets/guide/tools-shape-pen-3.png" alt="기본 세트 나뭇잎을 고른 모양 펜 설정: 세트 이름 앞 지구 아이콘, 꺼진 이름 바꾸기·세트 지우기·모양 더하기·모양 지우기 단추, 받은 세트 안내 글" width="338" height="241" loading="lazy"><figcaption>⑪ 받은 세트 안내(Received set — read-only)</figcaption></figure>
+<p>⑪ 받은 세트는 읽기 전용이라, 고르면 이름 바꾸기·세트 지우기·모양 더하기·모양 지우기·순서가 꺼지고 받은 세트라는 안내가 보입니다. 고쳐 쓰려면 <strong>세트 관리…</strong>로 <a class="term" href="#screen-asset-manager">에셋 관리자</a>를 열어 그 세트의 <strong>내 세트로 복사</strong>를 누르거나 <strong>캔버스에서 편집</strong>로 사본을 고칩니다. 받은 세트를 지우는 것도 에셋 관리자에서 합니다.</p>
+<figure class="shot"><img src="assets/guide/tools-shape-pen-sets.png" alt="모양 펜 기본 세트 여덟 가지의 모양: 맨 위에 랜덤 칙셀의 병아리 스무 가지, 그 아래 세트마다 한 띠" width="507" height="429" loading="lazy"><figcaption>맨 위: 랜덤 칙셀 · 그 아래 왼쪽부터 한 줄에 두 세트씩: 꽃 1 · 꽃 2 · 꽃 3 · 반짝이 · 비눗방울 · 단풍잎 · 나뭇잎</figcaption></figure>
+<p>기본 세트는 여덟 가지입니다: <strong>랜덤 칙셀</strong>(칙셀 병아리 캐릭터 스무 가지 — 찍을 때마다 하나가 무작위로 찍힘), <strong>꽃 1</strong>(줄기 달린 꽃), <strong>꽃 2</strong>(위에서 본 둥근 꽃), <strong>꽃 3</strong>(아주 작은 꽃), <strong>반짝이</strong>, <strong>비눗방울</strong>, <strong>단풍잎</strong>(주황·빨강·노랑), <strong>나뭇잎</strong>. 세트마다 비슷한 것끼리 모아 무작위로 찍어도 한 종류로 보이고, 모두 순서가 무작위입니다. 반짝이·비눗방울은 반투명 픽셀을 담습니다. 기본 세트는 상점의 공식 에셋(작성자 Chickxel, 상점 ID <code>chickxel.shapes.&lt;ID&gt;</code>, 버전 있음)이라 앱이 처음 실행할 때 받은 세트로 설치하고, <a class="term" href="#language-change">화면 언어</a>의 이름으로 보입니다. 에셋 관리자 <strong>모양 펜</strong> 칸의 목록에도 출처 <strong>기본(상점)</strong>로 보입니다.</p>
+<p>기본 세트는 에셋 관리자에서 지웁니다. 세트 단추 줄과 에셋 관리자 <strong>모양 펜</strong> 칸의 <strong>기본 세트 되돌리기</strong>는 묻지 않고 지운 기본 세트를 다시 설치하고 예전 버전을 앱에 든 버전으로 올린 뒤 결과를 알립니다(끝날 때까지 단추가 꺼짐). 고친 것과 내 세트·다른 받은 세트는 그대로입니다.</p>
+<p>예전 판의 기본 세트: 1.14.117~1.14.121의 다른 기본 세트(풀·별·솔잎·꽃잎·점·구름·돌멩이·벽돌·빗방울·눈송이·하트·연기·나뭇결·금·동전과 보석 등)는 앱에 없습니다. 예전 세트 파일에 남아 있으면 지우지 않고 이름을 붙여 내 세트로 남기므로(처음 그대로인 나뭇잎·단풍잎·거품·꽃·반짝이 사본은 같은 그림의 공식 세트가 있어 뺌) 직접 만든 세트처럼 고치고, 내보내고, 상점에 올릴 수 있습니다. 기본 세트 되돌리기는 이것들을 건드리지 않습니다. 예전 기본 세트를 고른 설정은 같은 그림의 공식 세트로 이어집니다. 풀·별 같은 예전 기본 세트와 크리스마스 세트, 테마 세트(가로로 끌어 잇는 벽돌 벽·울타리 등)는 상점에서 받습니다.</p>
 <h4>모양 더하기</h4>
 <p><strong>모양 더하기</strong> 단추의 메뉴로 고른 세트에 모양을 더합니다(세트가 하나도 없으면 새 세트를 만들어 넣음). 더한 모양이 다음에 찍을 모양이 됩니다.</p>
 <ul>
@@ -2267,15 +2292,31 @@
 <h4>물들이기와 오른쪽 버튼</h4>
 <p><strong>지금 색으로 물들이기</strong>을 켜면 모양에서 가장 많은 색이 기본색이 되고, 나머지 색은 그 색과의 채도·밝기 비를 지켜 명암(테두리·밝은 곳)이 남습니다. 초록 나뭇잎 세트로 가을 잎이나 다른 초록 잎을 찍을 때 씁니다. 오른쪽 버튼은 보조색으로 물들입니다. 끄면 왼쪽·오른쪽 버튼 모두 모양 색 그대로 찍습니다.</p>
 <p><strong><a class="term" href="#tools-basics">오른쪽 버튼 = 지우개</a></strong>를 켜면 오른쪽 버튼이 모양대로, 모양 픽셀의 불투명도만큼 지웁니다.</p>
+<h4>캔버스에서 새 세트·캔버스에서 편집</h4>
+<figure class="shot"><img src="assets/guide/tools-shape-pen-canvas.png" alt="세트를 캔버스에서 편집하는 임시 문서 탭: 탭 이름 Shape set: My leaves, 탭 아래 강조 막대의 안내 글·세트에 저장·닫기 단추, 모양마다 프레임 하나인 타임라인(프레임 6개)" width="771" height="813" loading="lazy"><figcaption>⑫ 세트 편집 탭 · ⑬ 고치는 세트 안내 · ⑭ 세트에 저장(Save to set) · ⑮ 닫기(Close) · ⑯ 모양마다 프레임 하나</figcaption></figure>
+<p><strong>캔버스에서 편집</strong>(에셋 관리자의 세트 상세)는 에셋 관리자를 닫고 세트를 임시 <a class="term" href="#screen-tabs">문서 탭</a>으로 엽니다. 캔버스는 가장 큰 모양의 너비 × 높이이고, 모양마다 <a class="term" href="#screen-timeline">프레임</a> 하나(가운데 놓음)와 <a class="term" href="#screen-timeline">레이어</a> 하나가 있습니다. 보통 문서처럼 그리고 실행취소할 수 있습니다. 이미 열린 세트를 다시 열면 그 탭으로 갑니다. 받은 세트는 먼저 내 세트로 복사하고 그 사본을 엽니다(작성자가 내 계정인 받은 세트는 그 에셋을 그대로 고침).</p>
+<ul class="marks">
+<li>⑫ 탭 이름은 '모양 세트: 세트 이름'입니다.</li>
+<li>⑬ 탭 아래 강조 막대에 고치는 세트 이름과, 프레임마다 모양 하나(빈 프레임은 건너뜀)이며 세트에 저장을 눌러야 세트가 바뀐다는 안내가 보입니다.</li>
+<li>⑭ <strong>세트에 저장</strong>(저장 단축키 <span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span>도 같음)은 프레임마다 보이는 레이어를 합친 그림을 투명한 둘레를 잘라 세트의 모양으로 다시 씁니다. 빈 프레임은 건너뛰고, 모양이 64개를 넘거나 한 변이 256px를 넘으면 알리고 쓰지 않습니다. 세트 이름·순서는 그대로이고, 고치는 동안 세트가 지워졌으면 다시 만듭니다. 세트를 고치면 도구 설정과 에셋 관리자 목록이 바로 바뀝니다.</li>
+<li>⑮ <strong>닫기</strong>는 탭을 닫습니다. 세트에 저장하지 않은 고침이 있는 채 닫으면(탭 닫기·모든 탭 닫기·앱 끄기) <strong>세트에 저장</strong> / <strong>저장 안 함</strong> / 취소를 묻습니다. 이 탭은 <a class="term" href="#files-roles">프로젝트 파일</a>로 저장할지 묻지 않습니다.</li>
+<li>⑯ 프레임 하나가 모양 하나입니다. 프레임을 더하면 모양이 늘고, 프레임을 지우거나 비우면 그 모양이 빠집니다. 프레임 순서가 세트의 모양 순서입니다.</li>
+</ul>
+<p><strong>캔버스에서 새 세트…</strong>(에셋 관리자 <strong>모양 펜</strong> 칸 <a class="term" href="#screen-toolbar">도구 막대</a>, 필름 아이콘)는 지금 문서로 새 세트를 만듭니다: 프레임마다 보이는 레이어를 합친 그림(내보내기와 같은 합성)을 투명한 둘레를 잘라 모양 하나로 만들고, 빈 프레임은 건너뜁니다. 세트 이름을 물은 뒤(처음 값 = 문서 이름) 새 내 세트로 끝에 더하고 에셋 관리자 목록과 모양 펜에서 고릅니다. 모양이 64개를 넘거나 모양 한 변이 256px를 넘으면 어떤 프레임이 문제인지 알리고 만들지 않으며, 모든 프레임이 비었으면 알립니다. 여러 모양을 한 문서의 프레임마다 그려 두고 한 번에 세트로 만들 때 씁니다.</p>
 <h4>세트 내보내기·가져오기</h4>
 <ul>
-<li><strong>세트 내보내기…</strong>: 고른 세트를 <code>.chickxel-shapes</code> 파일 하나로 저장합니다. 파일 이름은 세트 이름으로 제안되고, 기본 세트도 내보낼 수 있습니다.</li>
-<li><strong>세트 가져오기…</strong>: 파일을 하나 이상 고르면 파일마다 <strong>새 세트</strong>로 목록 끝에 더해지고 마지막 세트가 골라집니다. 있는 세트는 덮어쓰지 않고, 같은 이름이 있으면 이름 뒤에 (2), (3)…이 붙습니다. 그냥 PNG를 고르면 그 그림 하나를 모양으로 담은 세트(투명한 둘레는 잘라 냄, 이름 = 파일 이름)가 됩니다. 가져오면 상태 표시줄에 세트 이름과 모양 수가 나오고, 읽지 못한 파일은 한 창에 모아 알립니다.</li>
-<li><code>.chickxel-shapes</code> 파일을 메인 창에 끌어 놓아도(<a class="term" href="#screen-canvas">캔버스</a>가 받지 않는 자리) 모양 펜으로 바뀌며 세트를 가져옵니다.</li>
+<li>내보내기: 에셋 관리자 <strong>모양 펜</strong> 칸에서 내 세트를 고르고 상세의 <strong>내보내기</strong> 메뉴에서 <strong>세트 파일(.chickxel-shapes)…</strong>를 고르면 <strong>세트 내보내기…</strong> 저장 창이 열려 세트를 <code>.chickxel-shapes</code> 파일 하나로 저장합니다(파일 이름은 세트 이름으로 제안). <strong>에셋 패키지(.chickxel-asset)…</strong>는 세트를 <a class="term" href="#screen-asset-manager">내 에셋</a>으로 떠 두고 그것을 <code>.chickxel-asset</code> 패키지로 내보냅니다. 도구 막대의 <strong>내보내기…</strong>는 목록에 보이는 내 세트(모양 1~64개인 것)와 받은 세트를 패키지 하나로 묶습니다.</li>
+<li>가져오기: 에셋 관리자 <strong>모양 펜</strong> 칸 도구 막대의 <strong>파일에서 가져오기…</strong>에서는 에셋 패키지와 함께 세트 파일(<code>.chickxel-shapes</code>)·PNG도 여러 개 고를 수 있습니다. 세트 파일·PNG는 파일마다 <strong>새 내 세트</strong>로 목록 끝에 더해지고 마지막 세트가 골라집니다. 있는 세트는 덮어쓰지 않고, 같은 이름이 있으면 이름 뒤에 (2), (3)…이 붙습니다. PNG 하나는 그 그림 하나를 모양으로 담은 세트(투명한 둘레는 잘라 냄, 이름 = 파일 이름)가 됩니다. 읽지 못한 파일은 한 창에 모아 알립니다. 패키지 파일 안의 세트는 받은 세트로 들어갑니다(아래 '상점에서 받기·올리기').</li>
+<li><code>.chickxel-shapes</code> 파일을 메인 창에 끌어 놓아도(캔버스가 받지 않는 자리) 모양 펜으로 바뀌며 세트를 가져옵니다.</li>
 </ul>
 <p>세트 파일에는 세트 이름·순서와 모양(PNG, 투명도 그대로)이 들어 있어, 다른 사람과 나누거나 다른 컴퓨터로 옮길 때 씁니다.</p>
+<h4>상점에서 받기·올리기</h4>
+<p>받기: 에셋 관리자 <strong>상점</strong> 탭(또는 chickxel.com 에셋 목록 <code>/packages?kind=shape-set</code>)의 <strong>모양 펜</strong> 칸에서 세트를 설치하거나 패키지 파일(<code>.chickxel-asset</code>)을 가져오면, 그 세트가 세트 목록의 받은 세트에 보입니다(상점 = 지구, 패키지 파일 = 상자 아이콘). 업데이트를 받으면 새 내용으로 바뀌고, 에셋 관리자에서 지우면 목록에서도 빠집니다. 모양 펜 세트가 든 패키지는 앱 1.14.120 이상이 필요합니다.</p>
+<p>받은 세트를 고쳐 쓰려면 에셋 관리자의 그 세트 상세에서 <strong>내 세트로 복사</strong>를 누릅니다. 고칠 수 있는 내 세트가 끝에 생기고 목록과 모양 펜에서 골라집니다(받은 원본은 그대로 업데이트를 받음). 받은 세트의 <strong>캔버스에서 편집</strong>는 먼저 내 세트로 복사하고 그 사본을 엽니다.</p>
+<p>올리기: 에셋 관리자 <strong>모양 펜</strong> 칸에서 내 세트를 고르고 상세의 <strong><a class="term" href="#screen-asset-publish">온라인에 올리기</a>…</strong>(지구 아이콘, 올린 적 있으면 <strong>새 버전 올리기…</strong>)를 누르면 <a href="#screen-asset-publish">게시 창</a>이 열립니다(로그인 필요). 모양이 1~64개이고 모양 한 변이 256px 이하여야 합니다. 받은 세트(기본 세트 포함)는 올릴 수 없습니다. 같은 이름으로 다시 올리면 새 버전이 되고, 목록에는 올린 버전과 올린 뒤 고쳤는지가 보입니다. 상점 목록 미리보기는 세트의 모양을 격자로 늘어놓은 그림입니다.</p>
+<p>작성자가 내 계정인 받은 세트(내가 올린 세트를 상점에서 받은 것)는 내 세트처럼 다룹니다: <strong>캔버스에서 편집</strong>가 그 에셋을 그대로 고치고(상태 '받거나 올린 뒤 고침'), <strong>이름 바꾸기…</strong>, <strong>새 버전 올리기…</strong>로 새 버전을 올립니다. 공식 세트는 <code>chickxel</code> 계정이 작성자입니다.</p>
 <h4>세트가 저장되는 곳</h4>
-<p>세트는 고칠 때마다 <code>&lt;설정 폴더&gt;/Chickxel/ShapePen/shape-sets.json</code> 한 파일에 저장되고(세트마다 이름·순서와 모양), 고른 세트·간격·최적화 간격·물들이기는 설정에 기억됩니다. 파일이 깨졌으면 <code>shape-sets.json.bad</code>로 옮겨 두고 기본 세트로 시작합니다.</p>
+<p>내 세트는 고칠 때마다 <code>&lt;설정 폴더&gt;/Chickxel/ShapePen/shape-sets.json</code> 한 파일에 저장되고(세트마다 이름·순서와 모양), 고른 세트·간격·최적화 간격·물들이기는 설정에 기억됩니다. 받은 세트(기본 세트 포함)는 이 파일이 아니라 에셋 저장소에 에셋으로 들어 있습니다. 파일이 깨졌으면 <code>shape-sets.json.bad</code>로 옮겨 두고 내 세트 없이 시작합니다(받은 세트는 그대로).</p>
 
 <h3 id="tools-eraser">지우개</h3>
 <figure class="clip"><img src="assets/guide/tools-eraser.webp" alt="회색 그라데이션 위를 지우개로 문질러 지우고, Shift를 누른 채 클릭해 직선으로 지우는 모습" width="378" height="185" loading="lazy"></figure>
@@ -2512,7 +2553,7 @@
 <h4>편집 메뉴의 색 바꾸기와 다른 점</h4>
 <p>편집 메뉴의 <strong>색 바꾸기…</strong>(<span class="key" data-cmd="편집/색 바꾸기…"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>R</kbd></span>)는 현재 <a class="term" href="#screen-timeline">셀</a>(또는 선택 영역) 전체에서 한 색을 한 번에 바꿉니다. 이 브러시는 문지른 곳만 바꾸므로 같은 색의 일부만 바꿀 때 씁니다(<a href="#tools-basics">그리기 기본</a>의 편집 메뉴 명령).</p>
 <h3 id="tools-select">선택 도구</h3>
-<p>선택 도구 네 가지는 모두 같은 <strong>선택 영역</strong>을 만듭니다. 선택이 있으면 잘라내기·복사·지우기·뒤집기·회전·변형·외곽선 추가가 그 안에만 적용되고, <a class="term" href="#tools-pencil">연필</a>·채우기·도형 같은 그리기도 그 안으로 제한됩니다. 네 도구는 <a class="term" href="#screen-toolbar">도구 막대</a>의 선택 묶음 칸 하나에 들어 있고, <span class="key" data-cmd="도구/선택 칸(다음 선택 도구)"><kbd>M</kbd></span>을 반복해 누르면 사각 → 원 → 자유 → 스마트 순으로 바뀝니다.</p>
+<p>선택 도구 네 가지는 모두 같은 <strong>선택 영역</strong>을 만듭니다. 선택이 있으면 잘라내기·복사·지우기·뒤집기·회전·변형·외곽선 추가가 그 안에만 적용되고, <a class="term" href="#tools-pencil">연필</a>·채우기·도형 같은 그리기도 그 안으로 제한됩니다. 고를 때 <kbd>Shift</kbd>·<kbd>Alt</kbd>를 누르고 있으면 지금 선택에 더하거나, 빼거나, 겹친 곳만 남깁니다. 네 도구는 <a class="term" href="#screen-toolbar">도구 막대</a>의 선택 묶음 칸 하나에 들어 있고, <span class="key" data-cmd="도구/선택 칸(다음 선택 도구)"><kbd>M</kbd></span>을 반복해 누르면 사각 → 원 → 자유 → 스마트 순으로 바뀝니다.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>도구</th><th><a class="term" href="#shortcuts-customize">단축키</a></th><th>고르는 방법</th></tr></thead>
 <tbody>
@@ -2525,12 +2566,12 @@
 <h4>사각 선택과 원 선택</h4>
 <figure class="shot"><img src="assets/guide/tools-select.png" alt="사각 선택으로 캐릭터 머리를 고른 캔버스" width="374" height="668" loading="lazy"><figcaption>① 사각 선택으로 고른 영역(점선 테두리)</figcaption></figure>
 <ul class="marks">
-<li>① <a class="term" href="#screen-canvas">캔버스</a>를 끄는 동안 고를 영역이 점선 테두리로 따라옵니다. <kbd>Shift</kbd>를 누른 채 끌면 정사각형(원 선택은 정원)이 됩니다.</li>
+<li>① <a class="term" href="#screen-canvas">캔버스</a>를 끄는 동안 고를 영역이 점선 테두리로 따라옵니다. 끄는 중에 <kbd>Shift</kbd>를 누르면 정사각형(원 선택은 정원)이 됩니다. 누를 때부터 누르고 있던 <kbd>Shift</kbd>는 더하기이므로, 그때는 한 번 떼었다가 다시 누르면 정사각형으로 고정됩니다.</li>
 </ul>
 <ul>
-<li>끌지 않고 클릭만 하면 선택이 풀립니다.</li>
-<li>새로 끌면 이전 선택 대신 새 선택이 됩니다. 선택을 더하거나 빼는 조합 키는 없습니다.</li>
-<li>선택 안쪽을 끌면(커서가 네 방향 화살표로 바뀜) 선택한 내용을 떼어 옮깁니다. 자세한 조작은 아래 <strong>선택 다루기</strong>에 있습니다.</li>
+<li>키 없이 끌지 않고 클릭만 하면 선택이 풀립니다. <kbd>Shift</kbd>·<kbd>Alt</kbd>를 누른 채 클릭만 하면 선택은 그대로입니다.</li>
+<li>키 없이 새로 끌면 이전 선택 대신 새 선택이 됩니다. <kbd>Shift</kbd>·<kbd>Alt</kbd>로 지금 선택에 더하거나 빼는 방법은 아래 <strong>선택에 더하기·빼기·겹친 곳만</strong>에 있습니다.</li>
+<li>키 없이 선택 안쪽을 끌면(커서가 네 방향 화살표로 바뀜) 선택한 내용을 떼어 옮깁니다. 자세한 조작은 아래 <strong>선택 다루기</strong>에 있습니다.</li>
 </ul>
 <h4>자유 선택</h4>
 <figure class="shot"><img src="assets/guide/tools-select-2.png" alt="자유 선택으로 테두리를 그리는 중인 캔버스" width="374" height="668" loading="lazy"><figcaption>② 자유 선택을 끄는 중: 선택될 영역(파란 점선)</figcaption></figure>
@@ -2538,22 +2579,72 @@
 <li>② 마우스를 누른 채 테두리를 그리면 선택될 영역이 파란 점선으로 보입니다. 놓으면 마지막 점이 처음 점과 이어져 닫히고 그 안이 선택됩니다. 빠르게 끌어도 점 사이는 빈틈없이 이어집니다.</li>
 </ul>
 <ul>
-<li>끌지 않고 클릭만 하면 선택이 풀리고, 선택 안쪽을 끌면 내용을 옮깁니다.</li>
+<li>키 없이 끌지 않고 클릭만 하면 선택이 풀리고, 선택 안쪽을 끌면 내용을 옮깁니다. <kbd>Shift</kbd>·<kbd>Alt</kbd>로 지금 선택과 합치는 방법은 사각 선택과 같습니다(아래).</li>
 </ul>
+<h4>선택에 더하기·빼기·겹친 곳만</h4>
+<figure class="shot"><img src="assets/guide/tools-select-compare-combine.png" alt="머리 사각형을 고른 뒤 비스듬히 겹친 두 번째 사각형을 Shift·Alt·Shift+Alt를 누른 채 끈 세 가지 결과" width="1288" height="544" loading="lazy"><figcaption>왼쪽부터: <kbd>Shift</kbd> 더하기 · <kbd>Alt</kbd> 빼기 · <kbd>Shift</kbd>+<kbd>Alt</kbd> 겹친 곳만 — 사각 선택으로 머리를 고른 뒤 얼굴 오른쪽에서 가슴까지 두 번째 사각형을 끈 결과(점선 = 선택 테두리).</figcaption></figure>
+<p>사각·원·자유 선택은 마우스를 누를 때, 스마트 선택은 클릭할 때 누르고 있는 수정 키로 새로 고른 영역을 지금 선택과 어떻게 합칠지 정합니다. 선택을 여러 번에 나눠 모양을 다듬을 때 씁니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>누르고 있는 키</th><th>새 영역과 지금 선택</th></tr></thead>
+<tbody>
+<tr><td>없음</td><td>바꾸기: 새 영역만 남습니다(지금 선택은 없어짐).</td></tr>
+<tr><td><kbd>Shift</kbd></td><td>더하기: 지금 선택에 새 영역을 합칩니다.</td></tr>
+<tr><td><kbd>Alt</kbd></td><td>빼기: 지금 선택에서 새 영역을 뺍니다.</td></tr>
+<tr><td><kbd>Shift</kbd>+<kbd>Alt</kbd></td><td>겹친 곳만: 지금 선택과 새 영역이 겹친 곳만 남깁니다.</td></tr>
+</tbody>
+</table></div>
+<ul>
+<li>사각·원 선택은 끄는 동안 합친 결과가 바로 점선 테두리로 보입니다. 어떤 합치기인지는 누를 때 정해지므로, 누른 뒤에는 키를 떼도 됩니다.</li>
+<li>사각·원·자유 선택에서 키를 누른 채 끌지 않고 클릭만 하면 선택은 그대로입니다(키 없이 클릭하면 선택이 풀림).</li>
+<li><kbd>Shift</kbd>·<kbd>Alt</kbd>를 누른 채 선택 안쪽을 누르면 내용을 옮기지 않고 새 영역을 고르기 시작합니다. 예를 들어 <kbd>Alt</kbd>를 누른 채 선택 안쪽에서 끌면 선택에 구멍을 낼 수 있습니다.</li>
+<li>정사각형·정원으로 고정하려면 끄는 중에 <kbd>Shift</kbd>를 누릅니다. <kbd>Shift</kbd>로 더하기를 시작했다면 한 번 떼었다가 다시 누를 때부터 고정됩니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/tools-select-compare-cursor.png" alt="선택 도구 커서 네 가지를 8배로 늘어놓은 그림: 회색 심 · 노란 십자 · 노란 가로 막대 · 가운데 작은 노란 십자" width="1032" height="264" loading="lazy"><figcaption>왼쪽부터: 바꾸기(키 없음, 심이 회색) · 더하기(<kbd>Shift</kbd>, 십자 전체가 노랑) · 빼기(<kbd>Alt</kbd>, 가로 막대만 노랑) · 겹친 곳만(<kbd>Shift</kbd>+<kbd>Alt</kbd>, 가운데 작은 십자만 노랑) — 앱의 커서 그림을 8배로.</figcaption></figure>
+<p>선택 도구 네 가지의 커서는 은색 테두리(그 바깥은 어두운 테두리)를 두른 십자이고, 가운데 1px 심의 색이 지금 누르면 어떤 합치기가 될지 보여 줍니다. 가리키는 곳은 십자 한가운데입니다. 키를 누르거나 떼면 마우스를 움직이지 않아도 커서가 바로 바뀝니다. 사각·원·자유 선택으로 키 없이 선택 안쪽에 올리면 옮기기를 뜻하는 네 방향 화살표가 됩니다.</p>
 <h4>스마트 선택</h4>
-<figure class="shot"><img src="assets/guide/tools-select-3.png" alt="스마트 선택으로 머리카락 영역을 고른 캔버스와 도구 설정" width="906" height="668" loading="lazy"><figcaption>③ 스마트 선택으로 고른 머리카락 영역 · ④ 스마트 선택 설정(채우기와 같음)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/tools-select-3.png" alt="스마트 선택으로 머리카락 영역을 고른 캔버스와 도구 설정" width="906" height="668" loading="lazy"><figcaption>③ 스마트 선택으로 고른 머리카락 영역 · ④ 스마트 선택 설정(채우기와 같은 값과 선택 방식·미리보기)</figcaption></figure>
 <ul class="marks">
 <li>③ 클릭한 픽셀과 비슷한 색 영역을 한 번에 고릅니다. <a class="term" href="#screen-status-bar">상태 표시줄</a>에 고른 픽셀 수와 영역 크기가 나옵니다.</li>
-<li>④ 설정은 <a href="#tools-fill">채우기</a>와 같은 값을 함께 씁니다: <strong><a class="term" href="#tools-fill">허용 오차</a></strong>, <strong>비교 방식</strong>(허용 오차를 어떤 색 차이로 잴지), <strong><a class="term" href="#tools-fill">이어진 영역만</a></strong>(끄면 캔버스 전체에서 맞는 색), <strong>대각선으로도 잇기</strong>, <strong>기준</strong>(현재 <a class="term" href="#screen-timeline">레이어</a> / 보이는 레이어 전체). 한쪽에서 바꾼 값이 다른 쪽에도 그대로 쓰입니다.</li>
+<li>④ 설정은 <a href="#tools-fill">채우기</a>와 같은 값을 함께 씁니다: <strong><a class="term" href="#tools-fill">허용 오차</a></strong>, <strong>비교 방식</strong>(허용 오차를 어떤 색 차이로 잴지), <strong><a class="term" href="#tools-fill">이어진 영역만</a></strong>(끄면 캔버스 전체에서 맞는 색), <strong>대각선으로도 잇기</strong>, <strong>기준</strong>(현재 <a class="term" href="#screen-timeline">레이어</a> / 보이는 레이어 전체). 한쪽에서 바꾼 값이 다른 쪽에도 그대로 쓰입니다. 맨 위 <strong>선택 방식</strong> 줄과 맨 아래 <strong>미리보기</strong> 줄은 스마트 선택에만 있습니다(아래).</li>
 </ul>
 <ul>
+<li>클릭할 때 <kbd>Shift</kbd>(더하기)·<kbd>Alt</kbd>(빼기)·<kbd>Shift</kbd>+<kbd>Alt</kbd>(겹친 곳만)로 지금 선택과 합칩니다(위 <strong>선택에 더하기·빼기·겹친 곳만</strong>).</li>
+<li>이미 선택된 칸을 눌러도 그 칸에서 새로 잽니다(선택 안을 누른다고 옮기거나 그대로 두지 않음). <kbd>Shift</kbd>+클릭이면 그 결과를 지금 선택에 더하므로, 넓히는 방식(아래)에서는 선택 밖으로 넓어질 수 있습니다.</li>
 <li>스마트 선택은 안쪽을 끌어도 내용을 옮기지 않습니다. 옮기려면 <a class="term" href="#tools-move">이동 도구</a>(<span class="key" data-cmd="도구/이동"><kbd>V</kbd></span>)나 방향키 옮기기(<span class="key" data-cmd="편집/1px 왼쪽으로 옮기기"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Left</kbd></span> 등)를 씁니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/tools-select-4.png" alt="스마트 선택 도구 설정: 선택 방식 목록을 펼친 모습과 맨 아래 미리보기 줄" width="334" height="278" loading="lazy"><figcaption>⑤ 선택 방식(목록을 펼친 모습) · ⑥ 미리보기와 한도</figcaption></figure>
+<ul class="marks">
+<li>⑤ <strong>선택 방식</strong>: 클릭한 곳에서 무엇을 고를지 정합니다. 기본은 <strong>허용 오차 (기본)</strong>이고, 나머지 둘은 그 영역을 한 번 더 넓힙니다(아래 표).</li>
+<li>⑥ <strong>미리보기</strong>(기본 켬): 마우스를 올린 곳을 누르면 바뀔 칸을 미리 덮어 보입니다. 숫자는 미리보기가 찾을 칸 수의 한도입니다(아래 <strong>스마트 선택 미리보기</strong>).</li>
+</ul>
+<div class="table-wrap"><table>
+<thead><tr><th>선택 방식</th><th>고르는 곳</th></tr></thead>
+<tbody>
+<tr><td>허용 오차 (기본)</td><td>지금까지와 같이, 클릭한 색과 허용 오차 안의 칸만 고릅니다.</td></tr>
+<tr><td>바깥 1칸 더하기</td><td>그 영역에 바깥 테두리 1칸을 더합니다(외곽선·명암 테두리까지). <strong>대각선으로도 잇기</strong>를 켜면 대각선 이웃 칸도 더합니다.</td></tr>
+<tr><td>맞닿은 색까지</td><td>그 영역에 맞닿은 다른 색 영역을 통째로 더합니다. 맞닿은 칸마다 같은 허용 오차·비교 방식·대각선 설정으로 그 색의 영역을 고르고, 한 단계만 넓힙니다(더한 영역에 맞닿은 색은 더하지 않음). 투명한 칸에서는 넓히지 않습니다.</td></tr>
+</tbody>
+</table></div>
+<figure class="shot"><img src="assets/guide/tools-select-compare-wand.png" alt="같은 머리카락 칸에 마우스를 올린 스마트 선택 미리보기 세 가지: 머리카락만 · 머리카락과 바깥 1칸 · 머리카락과 맞닿은 피부·반짝임·그림자까지 파랗게" width="1288" height="544" loading="lazy"><figcaption>왼쪽부터: 허용 오차 (기본) · 바깥 1칸 더하기 · 맞닿은 색까지 — 선택이 없을 때 같은 머리카락 칸(허용 오차 10%)에 마우스를 올린 미리보기(파랑 = 누르면 고를 칸).</figcaption></figure>
+<ul>
+<li>넓히는 두 방식에서는 <strong>이어진 영역만</strong>을 꺼도 <strong>대각선으로도 잇기</strong>를 쓸 수 있습니다(바깥 1칸·맞닿은 칸을 대각선으로도 찾음).</li>
+</ul>
+<h4>스마트 선택 미리보기</h4>
+<figure class="shot"><img src="assets/guide/tools-select-5.png" alt="머리카락을 고른 채 Shift를 누르고 얼굴에 마우스를 올려 얼굴 피부가 파랗게 덮인 캔버스" width="408" height="512" loading="lazy"><figcaption>⑦ 지금 선택(머리카락) · ⑧ <kbd>Shift</kbd>+클릭하면 더해질 칸(파랑)</figcaption></figure>
+<ul class="marks">
+<li>⑦ 누른 뒤에도 그대로 남는 선택은 덮지 않아 점선 테두리만 보입니다.</li>
+<li>⑧ 스마트 선택으로 마우스를 올리면, 지금 누를 때 새로 선택될 칸은 파랗게, 선택에서 빠질 칸은 빨갛게 덮습니다. <kbd>Shift</kbd>·<kbd>Alt</kbd>를 누르거나 떼면 마우스를 움직이지 않아도 그 합치기대로 바로 바뀝니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/tools-select-compare-preview.png" alt="머리카락을 고른 채 마우스를 올린 세 가지: 키 없이 얼굴(얼굴 파랑·머리카락 빨강) · Shift로 얼굴(얼굴만 파랑) · Alt로 머리카락(머리카락 빨강)" width="1288" height="544" loading="lazy"><figcaption>왼쪽부터: 키 없이 얼굴에 올림(얼굴은 새로 선택되어 파랑, 바꾸기라 빠질 머리카락은 빨강) · <kbd>Shift</kbd>로 얼굴(더해질 얼굴만 파랑) · <kbd>Alt</kbd>로 머리카락(빠질 머리카락이 빨강) — 머리카락을 고른 채, 한도 1000칸.</figcaption></figure>
+<ul>
+<li><a class="term" href="#screen-common-controls">숫자 칸</a>(기본 300, 1~100000, 목록 100·300·1000·3000·10000)은 미리보기가 새로 찾을 칸 수의 한도입니다. 찾은 칸이 이보다 많으면 미리보기를 보이지 않지만, 누르면 한도 없이 모두 고릅니다. 크게 하면 큰 그림에서 마우스를 움직일 때 느려질 수 있습니다.</li>
+<li><strong>미리보기</strong>를 끄면 덮지 않습니다. 끌기·변형 중이거나 떠 있는 선택이 있을 때도 보이지 않습니다.</li>
 </ul>
 <h4>선택 다루기</h4>
 <div class="table-wrap"><table>
 <thead><tr><th>조작</th><th>결과</th></tr></thead>
 <tbody>
-<tr><td>선택 안쪽 끌기(사각·원·자유 선택), 이동 도구로 끌기</td><td>선택한 내용을 떼어 옮깁니다. 내려놓기 전의 이 상태를 <strong>떠 있는 선택</strong>이라고 합니다. <a class="term" href="#screen-timeline">잠긴 레이어</a>에서는 옮길 수 없습니다.</td></tr>
+<tr><td>키 없이 선택 안쪽 끌기(사각·원·자유 선택), 이동 도구로 끌기</td><td>선택한 내용을 떼어 옮깁니다. 내려놓기 전의 이 상태를 <strong>떠 있는 선택</strong>이라고 합니다. <a class="term" href="#screen-timeline">잠긴 레이어</a>에서는 옮길 수 없습니다.</td></tr>
 <tr><td><span class="key" data-cmd="편집/1px 왼쪽으로 옮기기"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Left</kbd></span> <span class="key" data-cmd="편집/1px 오른쪽으로 옮기기"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Right</kbd></span> <span class="key" data-cmd="편집/1px 위로 옮기기"><kbd>Up</kbd></span> <span class="key" data-cmd="편집/1px 아래로 옮기기"><kbd>Down</kbd></span> / <span class="key" data-cmd="편집/8px 왼쪽으로 옮기기"><kbd>Shift</kbd>+<kbd>Left</kbd></span> <span class="key" data-cmd="편집/8px 오른쪽으로 옮기기"><kbd>Shift</kbd>+<kbd>Right</kbd></span> <span class="key" data-cmd="편집/8px 위로 옮기기"><kbd>Shift</kbd>+<kbd>Up</kbd></span> <span class="key" data-cmd="편집/8px 아래로 옮기기"><kbd>Shift</kbd>+<kbd>Down</kbd></span></td><td>선택 도구나 이동 도구를 쓰는 동안 선택 내용을 1px / 8px 옮깁니다. 수정 키 없는 <kbd>←</kbd><kbd>→</kbd>는 이전·다음 <a class="term" href="#screen-timeline">프레임</a>으로 가므로 선택을 옮기지 않습니다(이동 도구로 캔버스에 포커스가 있을 때는 옮김).</td></tr>
 <tr><td><span class="key" data-cmd="편집/선택 내려놓기"><kbd>Enter</kbd></span></td><td>떠 있는 선택을 그 자리에 내려놓습니다.</td></tr>
 <tr><td>선택 도구로 캔버스 우클릭, <span class="key" data-cmd="편집/선택 해제"><kbd>Ctrl</kbd>+<kbd>D</kbd></span>, <span class="key" data-cmd="편집/선택 해제(캔버스)"><kbd>Esc</kbd></span></td><td>떠 있는 내용을 내려놓고 선택을 풉니다.</td></tr>
@@ -3109,7 +3200,7 @@
 <tbody>
 <tr><td>AI 상태</td><td>AI 상태 확인과 설정(<a href="#ai-setup">처음 한 번: 설치와 로그인</a>), 다른 AI 앱이 Chickxel의 도구를 쓰게 하는 <a class="term" href="#ai-external">외부 AI 연결</a>(<a href="#ai-external">다른 AI 앱에서 쓰기</a>).</td></tr>
 <tr><td><a class="term" href="#ai-references">AI 참고 자료</a></td><td>AI가 참고할 자료 폴더와 예시 보기(<a href="#ai-references">참고 자료로 그림 실력 높이기</a>).</td></tr>
-<tr><td>프리셋</td><td><strong>프리셋</strong>: <strong><a class="term" href="#pixelate-optimize">자동 최적화</a> 기본 프리셋 되돌리기</strong>·<strong>그라데이션 기본 프리셋 되돌리기</strong>는 지운 기본 프리셋을 다시 넣고 고친 기본 프리셋을 처음 값으로 되돌립니다. 직접 만든 프리셋과 즐겨찾기는 그대로입니다. <a class="term" href="#tools-gradient">그라데이션 프리셋</a> 자체는 그라데이션 편집기의 <strong>그라데이션 프리셋 관리…</strong>나 <strong>도구 &gt; <a class="term" href="#screen-asset-manager">에셋 관리자</a>…</strong>에서, 자동 최적화 프리셋은 <a href="#pixelate-optimize">자동 최적화 설정</a> 창에서 관리합니다.</td></tr>
+<tr><td>프리셋</td><td><strong>프리셋</strong>: <strong><a class="term" href="#pixelate-optimize">자동 최적화</a> 기본 프리셋 되돌리기</strong>는 확인을 받은 뒤 지운 기본 프리셋을 다시 넣고 고친 기본 프리셋을 처음 값으로 되돌립니다(직접 만든 프리셋은 그대로). <strong>기본 그라데이션 되돌리기</strong>는 묻지 않고 지운 기본 그라데이션(<a class="term" href="#screen-asset-manager">상점</a>의 공식 에셋)을 다시 설치하고 예전 버전을 앱에 든 버전으로 올린 뒤 결과를 알립니다. 고친 것과 내 그라데이션·즐겨찾기는 그대로이고, <a class="term" href="#screen-asset-manager">에셋 관리자</a> 그라데이션 칸의 <strong>기본 그라데이션 되돌리기</strong>와 같습니다. <a class="term" href="#tools-gradient">그라데이션 프리셋</a> 자체는 그라데이션 편집기의 <strong>그라데이션 프리셋 관리…</strong>나 <strong>도구 &gt; 에셋 관리자…</strong>에서, 자동 최적화 프리셋은 <a href="#pixelate-optimize">자동 최적화 설정</a> 창에서 관리합니다.</td></tr>
 <tr><td>영상(<a class="term" href="#files-open-media">ffmpeg</a>)</td><td>영상·AVIF·HEIC를 여는 ffmpeg 실행 파일 위치(<a href="#files-open-media">그림·움직이는 그림·영상 열기</a>).</td></tr>
 </tbody>
 </table></div>
@@ -5018,10 +5109,10 @@ args = ["--mcp"]</code></pre>
 <tr><td><a href="#tools-picker">스포이드</a></td><td><span class="key" data-cmd="도구/스포이드"><kbd>I</kbd></span></td><td>왼쪽: 기본색 · 오른쪽: 보조색으로 집기</td></tr>
 <tr><td><a href="#tools-shape">도형</a></td><td><span class="key" data-cmd="도구/도형"><kbd>R</kbd></span></td><td>Shift: 비율 고정 · U: 외곽/채움 · 모양은 도구 설정에서</td></tr>
 <tr><td><a href="#tools-text">글씨</a></td><td><span class="key" data-cmd="도구/글씨"><kbd>T</kbd></span></td><td>드래그: <a class="term" href="#tools-text">글상자</a> · 클릭: 한 줄 글씨 · 글씨 위 클릭: 고치기 · Enter: 줄 바꿈 · Esc / Ctrl+Enter / 바깥 클릭: 마침 · 크기·굵게·글꼴은 도구 설정에서</td></tr>
-<tr><td><a href="#tools-select">사각 선택</a></td><td><span class="key" data-cmd="도구/사각 선택">없음</span></td><td>드래그로 선택(Shift: 정사각형), 안쪽을 끌어 이동 · Enter: 내려놓기 · M: 다음 선택 도구</td></tr>
-<tr><td><a href="#tools-select">원 선택</a></td><td><span class="key" data-cmd="도구/원 선택">없음</span></td><td>드래그로 원 선택(Shift: 정원), 안쪽을 끌어 이동 · Enter: 내려놓기 · M: 다음 선택 도구</td></tr>
-<tr><td><a href="#tools-select">자유 선택</a></td><td><span class="key" data-cmd="도구/자유 선택"><kbd>Q</kbd></span></td><td>끌어서 테두리를 그리면 놓을 때 닫아 선택, 안쪽을 끌어 이동 · Enter: 내려놓기</td></tr>
-<tr><td><a href="#tools-select">스마트 선택</a></td><td><span class="key" data-cmd="도구/스마트 선택"><kbd>W</kbd></span></td><td>클릭한 곳과 비슷한 색 영역 선택(허용 오차·이어진 영역·기준은 채우기와 같은 설정) · 옮기기: V/방향키</td></tr>
+<tr><td><a href="#tools-select">사각 선택</a></td><td><span class="key" data-cmd="도구/사각 선택">없음</span></td><td>드래그로 선택(끄는 중 Shift: 정사각형), 안쪽을 끌어 이동 · 누를 때 Shift: 더하기, Alt: 빼기, Shift+Alt: 겹친 곳만 · Enter: 내려놓기 · M: 다음 선택 도구</td></tr>
+<tr><td><a href="#tools-select">원 선택</a></td><td><span class="key" data-cmd="도구/원 선택">없음</span></td><td>드래그로 원 선택(끄는 중 Shift: 정원), 안쪽을 끌어 이동 · 누를 때 Shift: 더하기, Alt: 빼기, Shift+Alt: 겹친 곳만 · Enter: 내려놓기 · M: 다음 선택 도구</td></tr>
+<tr><td><a href="#tools-select">자유 선택</a></td><td><span class="key" data-cmd="도구/자유 선택"><kbd>Q</kbd></span></td><td>끌어서 테두리를 그리면 놓을 때 닫아 선택, 안쪽을 끌어 이동 · 누를 때 Shift: 더하기, Alt: 빼기, Shift+Alt: 겹친 곳만 · Enter: 내려놓기</td></tr>
+<tr><td><a href="#tools-select">스마트 선택</a></td><td><span class="key" data-cmd="도구/스마트 선택"><kbd>W</kbd></span></td><td>클릭한 곳과 비슷한 색 영역 선택(허용 오차·이어진 영역·기준은 채우기와 같은 설정) · Shift: 더하기, Alt: 빼기, Shift+Alt: 겹친 곳만 · 옮기기: V/방향키</td></tr>
 <tr><td><a href="#tools-move">이동</a></td><td><span class="key" data-cmd="도구/이동"><kbd>V</kbd></span></td><td>선택이 있으면 선택 이동, 없으면 <a class="term" href="#screen-timeline">셀</a> 전체 밀기(<a class="term" href="#tools-move">순환</a> 옵션 — <a class="term" href="#tools-pivot">피벗</a>도 함께, 우클릭으로 끌면 피벗은 제자리) · 글씨 <a class="term" href="#screen-timeline">레이어</a>(빈 셀 + 글씨 효과)는 글씨 위치를 옮김 · 다른 도구에서도 Ctrl+드래그(누르는 동안 <a class="term" href="#tools-move">이동 도구</a>)</td></tr>
 <tr><td><a href="#tools-dodge">밝게/어둡게</a></td><td><span class="key" data-cmd="도구/밝게/어둡게"><kbd>D</kbd></span></td><td>왼쪽: 밝게 · 오른쪽: 어둡게(한 획에 한 번)</td></tr>
 <tr><td><a href="#tools-dither">디더링</a></td><td><span class="key" data-cmd="도구/디더링">없음</span></td><td>무늬(체커·25%·75%)대로 기본색·보조색을 섞어 칠합니다</td></tr>
@@ -5254,7 +5345,7 @@ args = ["--mcp"]</code></pre>
 <tr><td><a href="#screen-timeline-edit">링크째 복사</a></td><td>타임라인 <a class="term" href="#screen-timeline">셀</a>을 링크 묶음째 복사해 같은 행에 붙이면 원래 묶음에 들어가게 하는 복사입니다.</td></tr>
 <tr><td><a href="#files-save">메타 파일</a></td><td>내보낸 이미지 옆에 두는 Unity 설정 파일(<code>.meta</code>)로, 스프라이트 칸·피벗·guid를 담습니다.</td></tr>
 <tr><td><a href="#pixelate-palette">명암 계열 우선</a></td><td>칸 색과 같은 색상 계열의 팔레트 색이 있으면 밝기가 비슷한 다른 색상보다 그 계열을 먼저 고르는 설정입니다.</td></tr>
-<tr><td><a href="#tools-shape-pen">모양 펜</a> <span class="term-aka nolink">(모양 세트)</span></td><td>고른 세트의 작은 그림(나뭇잎·꽃·반짝이 등)을 도장처럼 찍는 그리기 도구입니다. 세트에 모양을 더하거나 파일로 나눌 수 있습니다.</td></tr>
+<tr><td><a href="#tools-shape-pen">모양 펜</a> <span class="term-aka nolink">(모양 세트)</span></td><td>고른 세트의 작은 그림(나뭇잎·꽃·반짝이·병아리 캐릭터 등)을 도장처럼 찍는 그리기 도구입니다. 기본 세트 여덟 가지가 있고, 내 세트를 만들거나 캔버스에서 고치고, <a class="term" href="#screen-asset-manager">상점</a>에서 받거나 올릴 수 있습니다.</td></tr>
 <tr><td><a href="#pixelate-score">목표 색 수</a></td><td>결과 색 수가 넘으면(강제면 모자라도) 점수를 깎는 기준 색 수입니다.</td></tr>
 <tr><td><a href="#screen-tabs">문서 탭</a></td><td>열린 문서마다 캔버스 위에 하나씩 생기는 탭입니다.</td></tr>
 <tr><td><a href="#screen-effect-maker">미리보기 병아리</a></td><td>효과·프리셋 미리보기에서 효과를 입혀 보이는 번호 붙은 병아리 그림 20가지입니다.</td></tr>
@@ -5262,7 +5353,7 @@ args = ["--mcp"]</code></pre>
 <tr><td><a href="#screen-effect-maker">미리보기 장면</a></td><td>다른 레이어를 읽는 효과를 미리 볼 때 병아리와 함께 쓰는 작은 그림입니다.</td></tr>
 <tr><td><a href="#screen-preview">미리보기 크게 보기</a></td><td>미리보기를 크기 조절 가능한 창에서 크게 재생하는 창입니다.</td></tr>
 <tr><td><a href="#screen-tabs">미리보기 탭</a></td><td>편집 중인 문서를 다른 칸에서 크게 재생하는 초록빛 탭입니다.</td></tr>
-<tr><td><a href="#screen-asset-manager">받은 에셋</a></td><td><a class="term" href="#screen-asset-manager">상점</a>이나 파일에서 받은 남의 에셋으로, 고치려면 <a class="term" href="#screen-asset-manager">내 에셋</a>으로 복사합니다.</td></tr>
+<tr><td><a href="#screen-asset-manager">받은 에셋</a></td><td>상점이나 파일에서 받은 남의 에셋으로, 고치려면 <a class="term" href="#screen-asset-manager">내 에셋</a>으로 복사합니다.</td></tr>
 <tr><td><a href="#tools-dodge">밝게/어둡게</a></td><td>이미 칠한 픽셀을 문질러 밝게(왼쪽 버튼)·어둡게(오른쪽 버튼) 하는 도구입니다.</td></tr>
 <tr><td><a href="#language-make">번역 CSV</a></td><td>모든 화면 문구를 키와 언어별 열로 담은 표 파일입니다. 열을 더해 새 언어를 만듭니다.</td></tr>
 <tr><td><a href="#tools-transform">변형 모드</a></td><td>선택한 그림을 손잡이로 돌리고 늘리고 옮기는 모드입니다.</td></tr>
@@ -5295,6 +5386,7 @@ args = ["--mcp"]</code></pre>
 <tr><td><a href="#tools-move">순환</a></td><td><a class="term" href="#tools-move">이동 도구</a>로 셀을 밀 때 밖으로 나간 픽셀이 반대편으로 돌아오게 하는 옵션입니다.</td></tr>
 <tr><td><a href="#screen-common-controls">숫자 칸</a></td><td>눌러서 입력하거나 오른쪽 끝 위/아래 단추로 바꾸거나 우클릭 목록에서 고르는 칸입니다.</td></tr>
 <tr><td><a href="#tools-select">스마트 선택</a></td><td>클릭한 곳과 비슷한 색 영역을 고르는 선택 도구입니다(채우기와 같은 설정).</td></tr>
+<tr><td><a href="#tools-select">스마트 선택 미리보기</a></td><td><a class="term" href="#tools-select">스마트 선택</a>으로 마우스를 올린 곳을 누르면 새로 선택될 칸을 파랗게, 빠질 칸을 빨갛게 미리 덮어 보이는 기능입니다.</td></tr>
 <tr><td><a href="#screen-script-api">스크립트 API</a></td><td>스크립트 효과 원문에서 쓰는 선언·설정·img·ctx 같은 이름과 규칙입니다.</td></tr>
 <tr><td><a href="#screen-script-effects">스크립트 실행 허락</a> <span class="term-aka nolink">(실행 허락)</span></td><td>처음 보는 스크립트 효과를 이 컴퓨터에서 돌려도 된다고 정하는 것입니다.</td></tr>
 <tr><td><a href="#screen-script-effects">스크립트 효과</a></td><td>JavaScript로 만든 효과입니다.</td></tr>
@@ -5326,7 +5418,7 @@ args = ["--mcp"]</code></pre>
 <tr><td><a href="#ai-undo">이 단계 되돌리기</a></td><td>AI 답 하나가 바꾼 것을 통째로 되돌리는 답 아래 단추입니다.</td></tr>
 <tr><td><a href="#tools-move">이동 도구</a></td><td>선택 내용이나 셀 전체를 옮기는 도구입니다. 다른 도구에서도 Ctrl을 누르는 동안 쓸 수 있습니다.</td></tr>
 <tr><td><a href="#screen-timeline-edit">이미지만 복사</a></td><td>타임라인 셀·프레임을 링크 묶음 없이 그림만 복사하는 명령입니다.</td></tr>
-<tr><td><a href="#tools-fill">이어진 영역만</a></td><td>채우기·<a class="term" href="#tools-select">스마트 선택</a>이 클릭한 칸과 <a class="term" href="#tools-fill">이어진 영역만</a> 고르게 하는 설정입니다.</td></tr>
+<tr><td><a href="#tools-fill">이어진 영역만</a></td><td>채우기·스마트 선택이 클릭한 칸과 <a class="term" href="#tools-fill">이어진 영역만</a> 고르게 하는 설정입니다.</td></tr>
 <tr><td><a href="#screen-canvas">이전 프레임 보기</a></td><td>키를 누르고 있는 동안 캔버스에 이전 프레임을 보여 주는 기능입니다.</td></tr>
 <tr><td><a href="#ai-how">임시 MCP 설정</a></td><td>Chickxel이 실행할 때마다 CLI에 직접 넘기는 MCP 서버 주소와 토큰입니다. 사용자 CLI 설정과 별개입니다.</td></tr>
 <tr><td><a href="#parts-auto-layout">자동 배치</a></td><td>그룹의 부위들을 크기대로 늘어놓고 부위가 바뀔 때마다 다시 늘어놓는 그룹 설정입니다.</td></tr>

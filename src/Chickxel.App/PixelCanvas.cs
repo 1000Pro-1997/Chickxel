@@ -109,6 +109,8 @@ public sealed partial class PixelCanvas : Control
     private static readonly Cursor SizeNeswCursor = new(StandardCursorType.TopRightCorner);
     private static readonly Cursor IbeamCursor = new(StandardCursorType.Ibeam);
     private static readonly Lazy<Cursor> RotateCursor = new(BuildRotateCursor);
+    /// <summary>선택 도구 십자 커서(<see cref="SelectionCombine"/> 순서, <see cref="BuildSelectCursor"/>).</summary>
+    private static readonly Lazy<Cursor>[] SelectCursors = [.. Enum.GetValues<SelectionCombine>().Select(m => new Lazy<Cursor>(() => BuildSelectCursor(m)))];
     /// <summary>스포이드 커서(<see cref="BuildPickerCursor"/>) — 픽셀로 정리 창의 "원본에서 색 추가"도 쓴다.</summary>
     internal static readonly Lazy<Cursor> PickerCursor = new(BuildPickerCursor);
 
@@ -188,6 +190,18 @@ public sealed partial class PixelCanvas : Control
     private readonly List<Point> _lassoPath = new();
     /// <summary>올가미를 지금 놓으면 선택될 영역의 테두리 선분(이미지 좌표). 점이 늘면 버리고 그릴 때 다시 만든다.</summary>
     private List<(Point A, Point B)>? _lassoPreview;
+    /// <summary>사각·원·자유 선택을 끄는 동안 새 영역을 합칠 방법(누를 때의 Shift·Alt로 정함).</summary>
+    private SelectionCombine _selCombine;
+    /// <summary>사각·원·자유 선택을 시작할 때의 선택 영역(끄는 동안 새 영역을 이것과 합침).</summary>
+    private PixelMask _selBase;
+    /// <summary>누를 때 Shift를 더하기·겹친 곳에 썼는지. 한 번 떼고 다시 눌러야 정사각형·정원 고정이 된다.</summary>
+    private bool _selShiftForMode;
+    /// <summary>스마트 선택 미리보기(마우스를 올린 칸·합치기마다): 누르면 새로 선택될 칸과 빠질 칸(이미지 좌표, 가로 구간). 선택·그림·설정이 바뀌면 버린다.</summary>
+    private (Point At, SelectionCombine Combine, List<Rectangle> Added, List<Rectangle> Removed)? _wandPreview;
+    /// <summary>스마트 선택 미리보기가 색을 재는 그림(보이는 레이어 기준이면 합성 사본을 한 번만 만든다).</summary>
+    private PixelImage? _wandSource;
+    private static readonly IBrush WandAddBrush = new SolidColorBrush(Color.FromArgb(110, 80, 170, 255));
+    private static readonly IBrush WandRemoveBrush = new SolidColorBrush(Color.FromArgb(110, 255, 80, 80));
     /// <summary>모양 선택의 테두리 선분(이미지 좌표, 픽셀 모서리). 선택이 바뀌면 다시 만든다.</summary>
     private List<(Point A, Point B)>? _selectionOutline;
     /// <summary>그라데이션 도구로 끄는 중인 끝점(이미지 좌표, Shift 각도 고정 반영).</summary>
@@ -254,9 +268,10 @@ public sealed partial class PixelCanvas : Control
         {
             if (_ctx.HasProject) SyncShownView();
             if (!_ctx.IsGroupSelected) _hoverPart = null;
+            ResetWandPreview();
             InvalidateVisual();
         };
-        ctx.Selection.Changed += (_, _) => { _selectionOutline = null; UpdateFloatingBitmap(); InvalidateVisual(); };
+        ctx.Selection.Changed += (_, _) => { _selectionOutline = null; ResetWandPreview(); UpdateFloatingBitmap(); InvalidateVisual(); };
         ctx.OnionSkinChanged += (_, _) => InvalidateVisual();
         // 모양 펜: 다음 모양·(물들이기면) 기본색이 바뀌면 커서 미리보기를 다시 그린다.
         ctx.ShapePenChanged += (_, _) => { if (_ctx.Tool == ToolKind.ShapePen) InvalidateVisual(); };
@@ -266,10 +281,11 @@ public sealed partial class PixelCanvas : Control
         {
             // 휘는 중에 다른 모양을 고르면 지금 곡선을 확정한다.
             if (_ctx.ShapeKind != ShapeKind.Curve) CommitCurve();
+            ResetWandPreview();
             InvalidateVisual();
         };
         // 다른 셀로 가면 휘던 곡선은 버린다(그릴 셀이 바뀜).
-        ctx.CurrentChanged += (_, _) => { if (_curve is null) return; _curve = null; InvalidateVisual(); };
+        ctx.CurrentChanged += (_, _) => { ResetWandPreview(); if (_curve is null) return; _curve = null; InvalidateVisual(); };
         ctx.TransformChanged += (_, _) =>
         {
             if (_drag == DragMode.None) UpdateCursor();
@@ -332,6 +348,14 @@ public sealed partial class PixelCanvas : Control
             SetCommandHeld(e.RoutedEvent == KeyDownEvent);
             if (e.RoutedEvent == KeyDownEvent) { if (IsPointerOver) BeginTempMove(); }
             else EndTempMove();
+        }
+        // 선택 도구: Shift·Alt를 누르거나 떼면 선택 안쪽 커서(옮기기 ↔ 새 선택 합치기)를 마우스를 움직이지 않아도 바꾼다.
+        if (e.Key is Key.LeftShift or Key.RightShift or Key.LeftAlt or Key.RightAlt && _drag == DragMode.None && IsPointerOver
+            && _ctx.HasProject && EditorContext.IsSelectionTool(_ctx.Tool) && ModifierOf(e.Key) is { } held)
+        {
+            _mods = e.RoutedEvent == KeyDownEvent ? _mods | held : _mods & ~held;
+            UpdateCursor(ScreenToPixel(_mouseScreen));
+            if (_ctx.Tool == ToolKind.MagicWand) InvalidateVisual();   // 미리보기가 합치기에 따라 바뀜
         }
         // 변형·캔버스 크기를 끄는 도중 Ctrl(⌘)·Alt·Shift를 누르거나 떼면 마우스를 움직이지 않아도 바로 다시 센다(처음부터 그 키를 누르고 끈 것처럼).
         if (ModifierOf(e.Key) is { } modifier && _drag is DragMode.TransformScale or DragMode.TransformMargin or DragMode.TransformRotate or DragMode.CanvasResizeEdge)
@@ -500,6 +524,51 @@ public sealed partial class PixelCanvas : Control
         foreach (var (dx, dy) in new[] { (-1, 0), (1, 0), (0, -1), (0, 1) }) img.Set((int)c + dx, (int)c + dy, outline);
         return new Cursor(ImageUtil.ToBitmap(img), new PixelPoint((int)c, (int)c));
     }
+
+    /// <summary>
+    /// 선택 도구 십자 커서: 은색 테두리 안의 1px 심이 합치기를 보인다 — 바꾸기 = 회색, 더하기 = 십자 전체 노랑,
+    /// 빼기 = 가로 막대만 노랑, 겹친 곳만 = 가운데 작은 십자만 노랑. 밝은 그림 위에서도 보이게 바깥에 어두운 테두리를 두른다. 가리키는 점 = 가운데.
+    /// </summary>
+    private static Cursor BuildSelectCursor(SelectionCombine mode)
+    {
+        var img = SelectCursorImage(mode);
+        return new Cursor(ImageUtil.ToBitmap(img), new PixelPoint(img.Width / 2, img.Height / 2));
+    }
+
+    /// <summary><see cref="BuildSelectCursor"/>의 그림(가운데 = 가리키는 점). 가이드 그림(GuideShots)도 이것으로 커서를 그린다.</summary>
+    private static PixelImage SelectCursorImage(SelectionCombine mode)
+    {
+        const int arm = 8, c = arm + 2, size = 2 * c + 1, small = 3;
+        var img = new PixelImage(size, size);
+        var dark = new Color32(20, 20, 24, 255);
+        var silver = new Color32(200, 202, 210, 255);
+        var gray = new Color32(118, 120, 128, 255);
+        var yellow = new Color32(255, 212, 40, 255);
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                int dx = Math.Abs(x - c), dy = Math.Abs(y - c);
+                // 가로·세로 심 선분까지의 칸 거리(체비쇼프): 0 = 심, 1 = 은색 테두리, 2 = 어두운 테두리
+                int toH = Math.Max(dy, Math.Max(0, dx - arm)), toV = Math.Max(dx, Math.Max(0, dy - arm));
+                int d = Math.Min(toH, toV);
+                if (d == 2) img.Set(x, y, dark);
+                else if (d == 1) img.Set(x, y, silver);
+                else if (d == 0)
+                {
+                    bool lit = mode switch
+                    {
+                        SelectionCombine.Add => true,
+                        SelectionCombine.Subtract => toH == 0,
+                        SelectionCombine.Intersect => Math.Max(dx, dy) <= small,
+                        _ => false,
+                    };
+                    img.Set(x, y, lit ? yellow : gray);
+                }
+            }
+        return img;
+    }
+
+    private static Cursor SelectCursor(SelectionCombine mode) => SelectCursors[(int)mode].Value;
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
@@ -948,6 +1017,7 @@ public sealed partial class PixelCanvas : Control
         if (_showPivot || _ctx.Tool == ToolKind.Pivot) DrawPivot(g);
         if (_ctx.IsTransforming) { if (!_peekPrevious) DrawTransform(g); }
         else if (_ctx.Selection.HasSelection) DrawSelection(g);
+        DrawWandPreview(g);
         if (_drag == DragMode.Lasso) DrawLasso(g);
         if (_drag == DragMode.Gradient) DrawGradientGuide(g);
         DrawStrokeLinePreview(g);
@@ -1894,10 +1964,10 @@ public sealed partial class PixelCanvas : Control
             case ToolKind.EllipseSelect:
                 if (button == MouseButton.Right) { DeselectByRightClick(); break; }
                 if (button != MouseButton.Left) break;
-                if (_ctx.Selection.IsInside(px)) BeginMoveSelection();
+                if (CombineOf(mods) == SelectionCombine.Replace && _ctx.Selection.IsInside(px)) BeginMoveSelection();
                 else
                 {
-                    _ctx.CommitFloating();
+                    BeginSelectionDrag(mods);
                     _strokeTool = tool;
                     _drag = DragMode.Marquee;
                 }
@@ -1905,10 +1975,10 @@ public sealed partial class PixelCanvas : Control
             case ToolKind.Lasso:
                 if (button == MouseButton.Right) { DeselectByRightClick(); break; }
                 if (button != MouseButton.Left) break;
-                if (_ctx.Selection.IsInside(px)) BeginMoveSelection();
+                if (CombineOf(mods) == SelectionCombine.Replace && _ctx.Selection.IsInside(px)) BeginMoveSelection();
                 else
                 {
-                    _ctx.CommitFloating();
+                    BeginSelectionDrag(mods);
                     _lassoPath.Clear();
                     _lassoPreview = null;
                     _lassoPath.Add(px);
@@ -1917,7 +1987,7 @@ public sealed partial class PixelCanvas : Control
                 break;
             case ToolKind.MagicWand:
                 if (button == MouseButton.Right) DeselectByRightClick();
-                else if (button == MouseButton.Left) WandAt(Wrap(px));
+                else if (button == MouseButton.Left) WandAt(Wrap(px), CombineOf(mods));
                 break;
             case ToolKind.Move:
                 // 우클릭 끌기 = 그림만 옮기기(레이어 피벗은 제자리), 왼쪽은 피벗도 함께.
@@ -2005,8 +2075,12 @@ public sealed partial class PixelCanvas : Control
             case DragMode.Marquee:
                 if (_dragMoved)
                 {
-                    var r = Raster.RectFromPoints(_startPx, px, (_mods & KeyModifiers.Shift) != 0);
-                    _ctx.Selection.Select(_ctx.EditImageOrEmpty, _strokeTool == ToolKind.EllipseSelect ? PixelMask.Ellipse(r) : r);
+                    // 누를 때 더하기·겹친 곳에 쓴 Shift는 한 번 뗀 뒤에야 정사각형·정원 고정이 된다.
+                    bool shift = (_mods & KeyModifiers.Shift) != 0;
+                    if (!shift) _selShiftForMode = false;
+                    var r = Raster.RectFromPoints(_startPx, px, shift && !_selShiftForMode);
+                    var shape = _strokeTool == ToolKind.EllipseSelect ? PixelMask.Ellipse(r) : r;
+                    _ctx.Selection.Select(_ctx.EditImageOrEmpty, _selBase.Combine(shape, _selCombine));
                 }
                 break;
             case DragMode.Lasso:
@@ -2148,15 +2222,16 @@ public sealed partial class PixelCanvas : Control
                 UpdateCursor(ScreenToPixel(location));
                 break;
             case DragMode.Marquee:
-                if (!_dragMoved)
+                // 끌지 않고 떼면: 보통은 선택 해제, 합치기(Shift·Alt)면 선택을 그대로 둔다.
+                if (!_dragMoved && _selCombine == SelectionCombine.Replace)
                 {
                     _ctx.Selection.Deselect(_ctx.EditImageOrEmpty);
                     Message?.Invoke(this, UiStrings.S_PixelCanvas_EndDrag_DB199DD98F);
                 }
                 break;
             case DragMode.Lasso:
-                if (_dragMoved && _lassoPath.Count > 1) _ctx.Selection.Select(_ctx.EditImageOrEmpty, PixelMask.Polygon(_lassoPath));
-                else
+                if (_dragMoved && _lassoPath.Count > 1) _ctx.Selection.Select(_ctx.EditImageOrEmpty, _selBase.Combine(PixelMask.Polygon(_lassoPath), _selCombine));
+                else if (_selCombine == SelectionCombine.Replace)
                 {
                     _ctx.Selection.Deselect(_ctx.EditImageOrEmpty);
                     Message?.Invoke(this, UiStrings.S_PixelCanvas_EndDrag_DB199DD98F);
@@ -2685,17 +2760,97 @@ public sealed partial class PixelCanvas : Control
         Message?.Invoke(this, UiStrings.S_PixelCanvas_DeselectByRightClick_1E4DB6CE1A);
     }
 
-    /// <summary>스마트 선택: 클릭한 곳과 맞는 색 영역을 선택한다(채우기의 허용 오차·이어진 영역·대각선·기준 설정). 맞는 곳이 없으면 선택 해제.</summary>
-    private void WandAt(Point p)
+    /// <summary>
+    /// 스마트 선택: 클릭한 곳과 맞는 색 영역을 선택한다(채우기의 허용 오차·이어진 영역·대각선·기준 설정, 선택 방식).
+    /// <paramref name="combine"/>대로 지금 선택과 합치고, 맞는 곳이 없으면(바꾸기일 때) 선택 해제.
+    /// </summary>
+    private void WandAt(Point p, SelectionCombine combine)
     {
         if (p.X < 0 || p.Y < 0 || p.X >= W || p.Y >= H) return;
         _ctx.CommitFloating();
-        var source = _ctx.FillSampleVisible ? _ctx.VisibleImage() : _ctx.EditImageOrEmpty;
+        if (combine is SelectionCombine.Subtract or SelectionCombine.Intersect) _altUsed = true;   // Alt를 떼도 메뉴가 열리지 않게
+        var source = WandSource();
         if (!source.Contains(p.X, p.Y)) return;
-        var region = Raster.FloodRegion(source, p.X, p.Y, _ctx.FillContiguous, null, _ctx.FillToleranceChannels, _ctx.FillDiagonal, _ctx.FillColorMode);
-        _ctx.Selection.Select(_ctx.EditImageOrEmpty, region);
+        var current = _ctx.Selection.Region;
+        var region = WandRegionAt(source, p) ?? default;
+        _ctx.Selection.Select(_ctx.EditImageOrEmpty, current.Combine(region, combine));
         var sel = _ctx.Selection;
         Message?.Invoke(this, sel.HasSelection ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_WandAt_2BA26AADD0,sel.Region.Count,sel.Bounds.Width,sel.Bounds.Height) : UiStrings.S_PixelCanvas_WandAt_7AF3F5F46E);
+    }
+
+    /// <summary>스마트 선택이 색을 재는 그림: 보이는 레이어 기준이면 합성 사본, 아니면 현재 셀.</summary>
+    private PixelImage WandSource() => _ctx.FillSampleVisible ? _ctx.VisibleImage() : _ctx.EditImageOrEmpty;
+
+    /// <summary>
+    /// 스마트 선택이 <paramref name="p"/>를 누르면 고를 영역(지금 선택과 합치기 전). 이미 선택된 칸을 눌러도 그 칸에서 새로 잰다
+    /// (Shift로 더하면 그 판정이 지금 선택 밖으로 넓어질 수 있음). 새로 찾은 칸이 <paramref name="maxCount"/>를 넘으면 null.
+    /// </summary>
+    private PixelMask? WandRegionAt(PixelImage source, Point p, int maxCount = int.MaxValue)
+        => Raster.WandRegion(source, p.X, p.Y, _ctx.WandMode, _ctx.FillContiguous, _ctx.FillToleranceChannels, _ctx.FillDiagonal,
+            _ctx.FillColorMode, maxCount);
+
+    private void ResetWandPreview()
+    {
+        _wandPreview = null;
+        _wandSource = null;
+    }
+
+    /// <summary>
+    /// 스마트 선택 미리보기: 마우스를 올린 곳을 지금 누르면(지금 Shift·Alt 그대로) 새로 선택될 칸을 파랗게, 선택에서 빠질 칸을 빨갛게 덮는다.
+    /// 이미 선택된 채 남는 칸은 덮지 않아 개미 줄과 겹치지 않는다. 새로 찾은 칸이 한도(<see cref="EditorContext.WandPreviewLimit"/>)를 넘으면 보이지 않는다.
+    /// </summary>
+    private void DrawWandPreview(DrawingContext g)
+    {
+        if (_ctx.Tool != ToolKind.MagicWand || !_ctx.WandPreview || _drag != DragMode.None || _hoverPx is not { } p || !_ctx.HasProject
+            || _ctx.IsTransforming || _ctx.IsCanvasResizing || _ctx.IsGroupSelected || _ctx.Selection.IsFloating || _peekPrevious) return;
+        var combine = CombineOf(_mods);
+        if (_wandPreview is not { } pv || pv.At != p || pv.Combine != combine) _wandPreview = pv = BuildWandPreview(p, combine);
+        foreach (var r in pv.Removed) g.FillRectangle(WandRemoveBrush, ToRect(ImageToScreen(r)));
+        foreach (var r in pv.Added) g.FillRectangle(WandAddBrush, ToRect(ImageToScreen(r)));
+    }
+
+    private (Point At, SelectionCombine Combine, List<Rectangle> Added, List<Rectangle> Removed) BuildWandPreview(Point p, SelectionCombine combine)
+    {
+        _wandSource ??= WandSource();
+        var current = _ctx.Selection.Region;
+        if (!_wandSource.Contains(p.X, p.Y) || WandRegionAt(_wandSource, p, _ctx.WandPreviewLimit) is not { } region)
+            return (p, combine, [], []);
+        var result = current.Combine(region, combine);
+        return (p, combine, Spans(result.Combine(current, SelectionCombine.Subtract)), Spans(current.Combine(result, SelectionCombine.Subtract)));
+
+        // 줄마다 이어진 칸을 사각형 하나로(칸마다 그리지 않게).
+        static List<Rectangle> Spans(PixelMask m)
+        {
+            var spans = new List<Rectangle>();
+            var b = m.Bounds;
+            for (int y = b.Top; y < b.Bottom; y++)
+                for (int x = b.Left; x < b.Right; x++)
+                {
+                    if (!m.Contains(x, y)) continue;
+                    int start = x;
+                    while (x + 1 < b.Right && m.Contains(x + 1, y)) x++;
+                    spans.Add(new Rectangle(start, y, x - start + 1, 1));
+                }
+            return spans;
+        }
+    }
+
+    /// <summary>선택 도구를 누를 때의 수정 키로 정하는 합치기: Shift = 더하기, Alt = 빼기, Shift+Alt = 겹친 곳만.</summary>
+    private static SelectionCombine CombineOf(KeyModifiers mods)
+    {
+        bool shift = (mods & KeyModifiers.Shift) != 0, alt = (mods & KeyModifiers.Alt) != 0;
+        return shift && alt ? SelectionCombine.Intersect : alt ? SelectionCombine.Subtract : shift ? SelectionCombine.Add : SelectionCombine.Replace;
+    }
+
+    /// <summary>사각·원·자유 선택 끌기 시작: 떠 있는 픽셀을 내려놓고 지금 선택을 합칠 바탕으로 기억한다.</summary>
+    private void BeginSelectionDrag(KeyModifiers mods)
+    {
+        _ctx.CommitFloating();
+        _selCombine = CombineOf(mods);
+        _selBase = _ctx.Selection.Region;
+        _selShiftForMode = (mods & KeyModifiers.Shift) != 0;
+        if ((mods & KeyModifiers.Alt) != 0) _altUsed = true;   // Alt를 떼도 메뉴가 열리지 않게
+        Cursor = SelectCursor(_selCombine);   // 끄는 동안 합치기가 그대로라 커서도 그대로
     }
 
     // ───────────── 선택 영역·이동 ─────────────
@@ -3777,7 +3932,8 @@ public sealed partial class PixelCanvas : Control
         {
             ToolKind.Move => SizeAllCursor,
             ToolKind.Text => IbeamCursor,
-            ToolKind.Select or ToolKind.EllipseSelect or ToolKind.Lasso when _ctx.Selection.IsInside(px) => SizeAllCursor,
+            ToolKind.Select or ToolKind.EllipseSelect or ToolKind.Lasso when CombineOf(_mods) == SelectionCombine.Replace && _ctx.Selection.IsInside(px) => SizeAllCursor,
+            ToolKind.Select or ToolKind.EllipseSelect or ToolKind.Lasso or ToolKind.MagicWand => SelectCursor(CombineOf(_mods)),
             ToolKind.Pivot => HandCursor,
             _ => CrossCursor,
         };

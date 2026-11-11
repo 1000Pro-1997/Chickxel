@@ -89,6 +89,36 @@ public readonly struct PixelMask
         return all ? new PixelMask(r) : new PixelMask(r, bits);
     }
 
+    /// <summary>
+    /// 이 영역과 <paramref name="other"/>를 <paramref name="op"/>대로 합친 영역(선택 더하기·빼기·겹친 곳만).
+    /// 결과는 들어간 칸을 꼭 맞게 감싸고, 모든 칸이 차면 비트 없는 사각형, 하나도 없으면 빈 영역이다.
+    /// </summary>
+    public PixelMask Combine(PixelMask other, SelectionCombine op)
+    {
+        if (op == SelectionCombine.Replace) return other;
+        bool hasThis = Bounds.Width > 0 && Bounds.Height > 0, hasOther = other.Bounds.Width > 0 && other.Bounds.Height > 0;
+        var area = op switch
+        {
+            SelectionCombine.Add => !hasThis ? other.Bounds : !hasOther ? Bounds : Rectangle.Union(Bounds, other.Bounds),
+            SelectionCombine.Subtract => Bounds,
+            _ => Rectangle.Intersect(Bounds, other.Bounds),
+        };
+        if (area.Width <= 0 || area.Height <= 0) return default;
+        var bits = new bool[area.Width * area.Height];
+        for (int y = 0; y < area.Height; y++)
+            for (int x = 0; x < area.Width; x++)
+            {
+                bool a = Contains(area.X + x, area.Y + y), b = other.Contains(area.X + x, area.Y + y);
+                bits[y * area.Width + x] = op switch
+                {
+                    SelectionCombine.Add => a || b,
+                    SelectionCombine.Subtract => a && !b,
+                    _ => a && b,
+                };
+            }
+        return new PixelMask(area, bits).Trim(area);
+    }
+
     /// <summary>점들이 들어간 영역(중복 무시). 점이 없으면 빈 영역.</summary>
     public static PixelMask FromPoints(IEnumerable<Point> points)
     {
@@ -220,4 +250,17 @@ public readonly struct PixelMask
     }
 
     public static implicit operator PixelMask(Rectangle r) => new(r);
+}
+
+/// <summary>새로 고른 영역을 지금 선택과 합치는 방법.</summary>
+public enum SelectionCombine
+{
+    /// <summary>새 영역이 지금 선택을 대신한다.</summary>
+    Replace,
+    /// <summary>지금 선택에 새 영역을 더한다(합집합).</summary>
+    Add,
+    /// <summary>지금 선택에서 새 영역을 뺀다.</summary>
+    Subtract,
+    /// <summary>지금 선택과 새 영역이 겹친 곳만 남긴다(교집합).</summary>
+    Intersect,
 }

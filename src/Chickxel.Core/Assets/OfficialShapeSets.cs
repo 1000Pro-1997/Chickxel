@@ -42,7 +42,8 @@ public sealed record OfficialShapeSetPackage(string Id, string Version, string D
 }
 
 /// <summary>
-/// 모양 펜 기본 세트 일곱 가지: 꽃 1·꽃 2·꽃 3·반짝이·비눗방울·단풍잎·나뭇잎. 세트마다 비슷한 것끼리만 담아(꽃은 모양마다 한 세트, 색만 다름) 무작위로 흩뿌려도 어울린다.
+/// 모양 펜 기본 세트 여덟 가지: 랜덤 칙셀(칙셀 병아리 캐릭터)·꽃 1·꽃 2·꽃 3·반짝이·비눗방울·단풍잎·나뭇잎. 세트마다 비슷한 것끼리만 담아(꽃은 모양마다 한 세트,
+/// 색만 다름) 무작위로 흩뿌려도 어울린다.
 /// 공식 패키지(<see cref="OfficialShapeSetPackage"/>)로 상점에도 있고, 앱은 처음 실행에 받은 세트로
 /// 넣는다(<see cref="BundledPackages"/> — 지우면 "기본 세트 되돌리기"로 다시 넣음). 세트 모음 파일(<see cref="StampLibrary"/>)에는 들지 않는다.
 /// 예전 판이 세트 모음에 넣어 둔 기본 세트(<see cref="StampBuiltIns.RetiredIds"/>)는 고치지 않았으면 이 세트와 같아 읽을 때 빼고(<see cref="IsUnchangedCopy"/>),
@@ -53,6 +54,9 @@ public static class OfficialShapeSets
     /// <summary>기본 세트(넣는 차례 = 받은 세트 목록 차례). 버전을 올리면 고치지 않은 설치본이 업데이트된다.</summary>
     public static IReadOnlyList<OfficialShapeSetPackage> Packages { get; } =
     [
+        new("chickxel-chicks", "1.0.0", "The Chickxel chick characters (the original chick, painter, wizard, knight, pirate, astronaut and more); each stamp picks one at random.",
+            "랜덤 칙셀", "칙셀 병아리 캐릭터들(기본 병아리, 화가, 마법사, 기사, 해적, 우주인 등) 중 하나가 무작위로 찍힙니다.", ChickxelChicks,
+            ["chickxel", "chick", "character", "mascot", "official"]),
         // 1.0.1: 1.0.0은 꽃 세 모양을 한 세트에 섞었다 — 이제 줄기 달린 꽃만(나머지는 꽃 2·꽃 3). 고치지 않은 1.0.0 설치본은 이 버전으로 업데이트된다
         new("flowers", "1.0.1", "Small flowers on a stem in pink, blue and white with yellow centers, facing both ways.",
             "꽃 1", "줄기 달린 작은 꽃(분홍·파랑·흰색, 노란 가운데)을 좌우로 뒤집은 것까지 담았습니다.", () => FlowerSet("Flowers 1", 0, mirrored: true),
@@ -88,13 +92,15 @@ public static class OfficialShapeSets
     // 예전 판의 기본 세트 이름표 → 같은(꽃은 비슷한) 그림의 공식 세트
     private static OfficialShapeSetPackage? OfRetired(string id) => id switch
     {
-        "flowers" => Packages[0],
-        "sparkles" => Packages[3],
-        "bubbles" => Packages[4],
-        "autumn" => Packages[5],
-        "leaves" => Packages[6],
+        "flowers" => ById("flowers"),
+        "sparkles" => ById("sparkles"),
+        "bubbles" => ById("bubbles"),
+        "autumn" => ById("autumn-leaves"),
+        "leaves" => ById("leaves"),
         _ => null,
     };
+
+    private static OfficialShapeSetPackage ById(string id) => Packages.First(p => p.Id == id);
 
     /// <summary>예전 판의 기본 세트 이름표(설정에 남은 고른 세트)를 같은 그림의 공식 세트 에셋 ID로(아니면 null).</summary>
     public static string? AssetIdOfRetired(string? id) => id is null ? null : OfRetired(id)?.AssetId;
@@ -109,6 +115,9 @@ public static class OfficialShapeSets
     }
 
     // ───────────── 그림 ─────────────
+
+    // 칙셀 병아리 캐릭터 모두(홈페이지 마스코트 그림 — 효과 미리보기 병아리와 같은 그림, PreviewChicks 차례)
+    private static StampSet ChickxelChicks() => Set("Random Chickxel", PreviewChicks.Ids.Select(PreviewChicks.Load));
 
     // 꽃 한 모양(FlowerShapes의 shape번째)을 세 가지 색으로 — 다른 모양의 꽃은 다른 세트
     private static StampSet FlowerSet(string name, int shape, bool mirrored)

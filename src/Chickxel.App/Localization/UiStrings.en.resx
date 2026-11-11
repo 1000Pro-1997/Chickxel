@@ -1703,15 +1703,15 @@ Unavailable items (skipped):
   <data name="S_TimelinePanel_TimelinePanel_7AE6DC18E2" xml:space="preserve"><value>Timeline</value></data>
   <data name="S_TimelinePanel_TurnOffGroupLayout_B5D4ABA3A0" xml:space="preserve"><value>Auto layout off for group "{0}" — parts stay where they are</value></data>
   <data name="S_ToolOptionsPanel_Refresh_00F0C73AC7" xml:space="preserve"><value>Moves the selection if any, otherwise the entire current cel.</value></data>
-  <data name="S_ToolOptionsPanel_Refresh_147A90B5B7" xml:space="preserve"><value>Drag to select a rectangle (Shift: square). Drag inside to move, Enter to drop. M: next selection tool.</value></data>
+  <data name="S_ToolOptionsPanel_Refresh_147A90B5B7" xml:space="preserve"><value>Drag to select a rectangle (Shift while dragging: square). Hold Shift as you press to add to the selection, Alt to subtract, Shift+Alt to keep only the overlap. Drag inside to move, Enter to drop. M: next selection tool.</value></data>
   <data name="S_ToolOptionsPanel_Refresh_2AA5BFEE57" xml:space="preserve"><value>Tool settings · {0}</value></data>
   <data name="S_ToolOptionsPanel_Refresh_5A8AEEEBD3" xml:space="preserve"><value>Brush</value></data>
   <data name="S_ToolOptionsPanel_Refresh_6281D2CC20" xml:space="preserve"><value>Tool settings · Canvas size</value></data>
-  <data name="S_ToolOptionsPanel_Refresh_84BF1C9645" xml:space="preserve"><value>Drag to draw an outline; on release it closes to the start point and selects the inside. Drag inside to move.</value></data>
+  <data name="S_ToolOptionsPanel_Refresh_84BF1C9645" xml:space="preserve"><value>Drag to draw an outline; on release it closes to the start point and selects the inside. Hold Shift as you press to add to the selection, Alt to subtract, Shift+Alt to keep only the overlap. Drag inside to move.</value></data>
   <data name="S_ToolOptionsPanel_Refresh_ADEB941184" xml:space="preserve"><value>Fill</value></data>
   <data name="S_ToolOptionsPanel_Refresh_DD7EA3035B" xml:space="preserve"><value>Tool settings · Transform</value></data>
-  <data name="S_ToolOptionsPanel_Refresh_E1081EA049" xml:space="preserve"><value>Drag to select an ellipse (Shift: circle). Drag inside to move, Enter to drop. M: next selection tool.</value></data>
-  <data name="S_ToolOptionsPanel_Refresh_E90544A4CC" xml:space="preserve"><value>Selects the area of similar color to where you click. To move it, use Move (V) or arrow keys.</value></data>
+  <data name="S_ToolOptionsPanel_Refresh_E1081EA049" xml:space="preserve"><value>Drag to select an ellipse (Shift while dragging: circle). Hold Shift as you press to add to the selection, Alt to subtract, Shift+Alt to keep only the overlap. Drag inside to move, Enter to drop. M: next selection tool.</value></data>
+  <data name="S_ToolOptionsPanel_Refresh_E90544A4CC" xml:space="preserve"><value>Selects the area of similar color to where you click. Shift+click adds to the selection, Alt+click subtracts, Shift+Alt+click keeps only the overlap. To move it, use Move (V) or arrow keys.</value></data>
   <data name="S_ToolOptionsPanel_Refresh_EA94B5AD1D" xml:space="preserve"><value>Smart selection (same settings as fill)</value></data>
   <data name="S_ToolOptionsPanel_Refresh_FB6D406AF9" xml:space="preserve"><value>Drag to paint from start point → end point. One undo step at a time.</value></data>
   <data name="S_ToolOptionsPanel_Refresh_FD736DAE6B" xml:space="preserve"><value>Line width · pen shape</value></data>
@@ -3335,7 +3335,6 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_EffectCount" xml:space="preserve"><value>{0} effects</value></data>
   <data name="Assets_FrameRangeAll" xml:space="preserve"><value>Inserted on: all frames</value></data>
   <data name="Assets_FrameRangeAdd" xml:space="preserve"><value>Inserted on: the effects window's add range</value></data>
-  <data name="Assets_Export" xml:space="preserve"><value>Export as Package File…</value></data>
   <data name="Assets_WebPage" xml:space="preserve"><value>Open Web Page</value></data>
   <data name="Assets_ViewLicense" xml:space="preserve"><value>View License</value></data>
   <data name="Assets_Delete" xml:space="preserve"><value>Delete</value></data>
@@ -4067,6 +4066,19 @@ OKLab: measures how different the colors look to the eye (black to white is 100%
 CIEDE2000: measures the perceptual color difference ΔE00 (100% ≈ ΔE 120). More precise but a little slower.
 Hue only: ignores lightness and saturation and compares the hue angle (100% = 180°). Nearly colorless colors (grays, white, black) count as the same hue as each other and as farthest from colored ones.
 Transparent pixels compare alpha only; between visible pixels the alpha difference must also be at most ratio × 255.</value></data>
+  <data name="WandMode_Label" xml:space="preserve"><value>Select</value></data>
+  <data name="WandMode_Tolerance" xml:space="preserve"><value>Within tolerance (default)</value></data>
+  <data name="WandMode_Grow" xml:space="preserve"><value>Plus 1-pixel border</value></data>
+  <data name="WandMode_Touching" xml:space="preserve"><value>Plus touching colors</value></data>
+  <data name="WandMode_Tip" xml:space="preserve"><value>What the magic wand selects.
+Within tolerance (default): only pixels within the tolerance of the clicked color.
+Plus 1-pixel border: that area plus a 1-pixel border around it (outlines and shading edges). With Connect diagonally on, diagonal neighbors are added too.
+Plus touching colors: that area plus every other-colored area touching it (transparent areas excluded, using the same tolerance and comparison).
+Clicking an already selected pixel measures from that pixel again; with Shift+click the result is added to the selection, so a growing mode can reach past it.</value></data>
+  <data name="WandPreview_Label" xml:space="preserve"><value>Preview</value></data>
+  <data name="WandPreview_Cells" xml:space="preserve"><value>px max</value></data>
+  <data name="WandPreview_Tip" xml:space="preserve"><value>Shows what clicking under the mouse would change: pixels that would be added are tinted blue, pixels that would leave the selection red, and the selection that stays is left as is. Holding Shift or Alt previews that combine mode.</value></data>
+  <data name="WandPreview_LimitTip" xml:space="preserve"><value>How many new pixels the preview may find (default 300). Larger areas stop early and are not previewed; clicking still selects them in full. Raising it can slow down mouse movement on large images.</value></data>
   <data name="ColorPick_FromImage" xml:space="preserve"><value>Pick from image</value></data>
   <data name="ColorPick_FromImageTip" xml:space="preserve"><value>Shows the current frame enlarged in a separate window; click a pixel to pick its color (transparent areas are not picked)</value></data>
   <data name="ColorPick_FromScreen" xml:space="preserve"><value>Pick from screen</value></data>
@@ -4137,7 +4149,7 @@ Transparent pixels compare alpha only; between visible pixels the alpha differen
   <data name="ShapePen_ManageSetsTip" xml:space="preserve"><value>Manage sets…: opens Asset Manager › Installed › Shape pen with the selected set. See your sets and received sets; publish to the store, export, import, copy to my sets, edit on canvas or make a new set from the canvas.</value></data>
   <data name="Assets_NewSetFromCanvas" xml:space="preserve"><value>New set from canvas…</value></data>
   <data name="Assets_NewSetFromCanvasTip" xml:space="preserve"><value>Makes a new set from the current document: each frame's merged visible layers become one shape (transparent edges trimmed, empty frames skipped; up to 64 shapes, 256 px per side).</value></data>
-  <data name="Assets_RestoreSetsTip" xml:space="preserve"><value>Reinstalls the seven built-in shape pen sets (Flowers 1, 2 and 3, sparkles, bubbles, autumn leaves, leaves) that you deleted and updates older versions to the app's version (changed ones are left as is). Your sets and other received sets stay as they are.</value></data>
+  <data name="Assets_RestoreSetsTip" xml:space="preserve"><value>Reinstalls the eight built-in shape pen sets (Random Chickxel, Flowers 1, 2 and 3, sparkles, bubbles, autumn leaves, leaves) that you deleted and updates older versions to the app's version (changed ones are left as is). Your sets and other received sets stay as they are.</value></data>
   <data name="Assets_EditOwnSetOnCanvasTip" xml:space="preserve"><value>Edits this set in place as a temporary document tab (one frame per shape). You are its author, so Save to set changes this asset; publish it as a new version afterwards.</value></data>
   <data name="Assets_SourceMySets" xml:space="preserve"><value>My sets (shape pen)</value></data>
   <data name="Assets_ExportSetMenu" xml:space="preserve"><value>Export</value></data>

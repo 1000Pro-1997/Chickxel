@@ -6196,7 +6196,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:489 · Refresh · "선택이 있으면 선택 내용을, 없으면 현재 셀 전체를 옮깁니다."</comment>
   </data>
   <data name="S_ToolOptionsPanel_Refresh_147A90B5B7" xml:space="preserve">
-    <value>드래그로 사각형을 선택합니다(Shift: 정사각형). 안쪽을 끌어 옮기고 Enter로 내려놓습니다. M: 다음 선택 도구.</value>
+    <value>드래그로 사각형을 선택합니다(끄는 중 Shift: 정사각형). 누를 때 Shift를 누르고 있으면 지금 선택에 더하고, Alt는 빼고, Shift+Alt는 겹친 곳만 남깁니다. 안쪽을 끌어 옮기고 Enter로 내려놓습니다. M: 다음 선택 도구.</value>
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:485 · Refresh · "드래그로 사각형을 선택합니다(Shift: 정사각형). 안쪽을 끌어 옮기고 Enter로 내려놓습니다. M: 다음 선택 도구."</comment>
   </data>
   <data name="S_ToolOptionsPanel_Refresh_2AA5BFEE57" xml:space="preserve">
@@ -6212,7 +6212,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:499 · Refresh · "도구 설정 · 캔버스 크기"</comment>
   </data>
   <data name="S_ToolOptionsPanel_Refresh_84BF1C9645" xml:space="preserve">
-    <value>끌어서 테두리를 그리면 놓을 때 처음 점과 이어 닫고 그 안을 선택합니다. 안쪽을 끌어 옮깁니다.</value>
+    <value>끌어서 테두리를 그리면 놓을 때 처음 점과 이어 닫고 그 안을 선택합니다. 누를 때 Shift를 누르고 있으면 지금 선택에 더하고, Alt는 빼고, Shift+Alt는 겹친 곳만 남깁니다. 안쪽을 끌어 옮깁니다.</value>
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:487 · Refresh · "끌어서 테두리를 그리면 놓을 때 처음 점과 이어 닫고 그 안을 선택합니다. 안쪽을 끌어 옮깁니다."</comment>
   </data>
   <data name="S_ToolOptionsPanel_Refresh_ADEB941184" xml:space="preserve">
@@ -6224,11 +6224,11 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:499 · Refresh · "도구 설정 · 변형"</comment>
   </data>
   <data name="S_ToolOptionsPanel_Refresh_E1081EA049" xml:space="preserve">
-    <value>드래그로 원을 선택합니다(Shift: 정원). 안쪽을 끌어 옮기고 Enter로 내려놓습니다. M: 다음 선택 도구.</value>
+    <value>드래그로 원을 선택합니다(끄는 중 Shift: 정원). 누를 때 Shift를 누르고 있으면 지금 선택에 더하고, Alt는 빼고, Shift+Alt는 겹친 곳만 남깁니다. 안쪽을 끌어 옮기고 Enter로 내려놓습니다. M: 다음 선택 도구.</value>
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:486 · Refresh · "드래그로 원을 선택합니다(Shift: 정원). 안쪽을 끌어 옮기고 Enter로 내려놓습니다. M: 다음 선택 도구."</comment>
   </data>
   <data name="S_ToolOptionsPanel_Refresh_E90544A4CC" xml:space="preserve">
-    <value>클릭한 곳과 비슷한 색 영역을 선택합니다. 옮기려면 이동(V)이나 방향키를 씁니다.</value>
+    <value>클릭한 곳과 비슷한 색 영역을 선택합니다. Shift+클릭은 지금 선택에 더하고, Alt+클릭은 빼고, Shift+Alt+클릭은 겹친 곳만 남깁니다. 옮기려면 이동(V)이나 방향키를 씁니다.</value>
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:488 · Refresh · "클릭한 곳과 비슷한 색 영역을 선택합니다. 옮기려면 이동(V)이나 방향키를 씁니다."</comment>
   </data>
   <data name="S_ToolOptionsPanel_Refresh_EA94B5AD1D" xml:space="preserve">
@@ -9131,7 +9131,6 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Assets_EffectCount" xml:space="preserve"><value>효과 {0}개</value></data>
   <data name="Assets_FrameRangeAll" xml:space="preserve"><value>넣을 범위: 모든 프레임</value></data>
   <data name="Assets_FrameRangeAdd" xml:space="preserve"><value>넣을 범위: 효과 창의 추가 범위</value></data>
-  <data name="Assets_Export" xml:space="preserve"><value>패키지 파일로 내보내기…</value></data>
   <data name="Assets_WebPage" xml:space="preserve"><value>웹 페이지 열기</value></data>
   <data name="Assets_ViewLicense" xml:space="preserve"><value>라이선스 보기</value></data>
   <data name="Assets_Delete" xml:space="preserve"><value>삭제</value></data>
@@ -9863,6 +9862,19 @@ OKLab: 사람 눈에 다르게 보이는 정도로 잽니다(검정–흰색 차
 CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 정밀하지만 조금 느립니다.
 색상만: 밝기·채도는 보지 않고 색상각 차이로 잽니다(100% = 180도). 회색·흰색·검정처럼 색이 거의 없는 색끼리는 같은 색상, 색 있는 색과는 가장 먼 색으로 봅니다.
 투명한 칸은 알파 차이만 재고, 보이는 칸끼리는 알파 차이도 비율 × 255 이하여야 합니다.</value></data>
+  <data name="WandMode_Label" xml:space="preserve"><value>선택 방식</value><comment>스마트 선택: 고르는 범위</comment></data>
+  <data name="WandMode_Tolerance" xml:space="preserve"><value>허용 오차 (기본)</value></data>
+  <data name="WandMode_Grow" xml:space="preserve"><value>바깥 1칸 더하기</value></data>
+  <data name="WandMode_Touching" xml:space="preserve"><value>맞닿은 색까지</value></data>
+  <data name="WandMode_Tip" xml:space="preserve"><value>스마트 선택이 고르는 범위입니다.
+허용 오차(기본): 클릭한 색과 허용 오차 안의 칸만 고릅니다.
+바깥 1칸 더하기: 그 영역에 바깥 테두리 1칸을 더합니다(외곽선·명암 테두리까지). 대각선으로도 잇기를 켜면 대각선 이웃도 더합니다.
+맞닿은 색까지: 그 영역에 맞닿은 다른 색 영역을 통째로 더합니다(투명한 곳은 빼고, 같은 허용 오차·비교 방식으로).
+이미 선택된 곳을 눌러도 그 칸에서 새로 잽니다. Shift+클릭이면 그 판정이 지금 선택에 더해져, 넓히는 방식에서는 선택 밖으로 넓어질 수 있습니다.</value></data>
+  <data name="WandPreview_Label" xml:space="preserve"><value>미리보기</value><comment>스마트 선택: 마우스를 올린 곳의 고를 칸 미리보기</comment></data>
+  <data name="WandPreview_Cells" xml:space="preserve"><value>칸까지</value></data>
+  <data name="WandPreview_Tip" xml:space="preserve"><value>마우스를 올린 곳을 지금 누르면 바뀔 칸을 미리 보입니다. 새로 선택될 칸은 파랗게, 선택에서 빠질 칸은 빨갛게 덮고, 그대로 남는 선택은 덮지 않습니다. Shift·Alt를 누르면 그 합치기대로 바뀝니다.</value></data>
+  <data name="WandPreview_LimitTip" xml:space="preserve"><value>미리보기가 새로 찾는 칸 수의 한도(기본 300). 이보다 넓은 영역은 계산을 그만두고 미리 보이지 않습니다. 누르면 한도 없이 선택합니다. 크게 하면 큰 그림에서 마우스를 움직일 때 느려질 수 있습니다.</value></data>
   <data name="ColorPick_FromImage" xml:space="preserve"><value>그림에서 집기</value></data>
   <data name="ColorPick_FromImageTip" xml:space="preserve"><value>현재 프레임 그림을 따로 창에 크게 띄워, 누른 픽셀의 색을 집습니다(투명한 곳은 집지 않음)</value></data>
   <data name="ColorPick_FromScreen" xml:space="preserve"><value>화면에서 집기</value></data>
@@ -9933,7 +9945,7 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="ShapePen_ManageSetsTip" xml:space="preserve"><value>세트 관리…: 에셋 관리자의 설치됨 › 모양 펜을 열어 고른 세트를 보입니다. 내 세트와 받은 세트를 보고, 상점에 올리기·내보내기·가져오기·내 세트로 복사·캔버스에서 편집·캔버스에서 새 세트를 합니다.</value></data>
   <data name="Assets_NewSetFromCanvas" xml:space="preserve"><value>캔버스에서 새 세트…</value><comment>에셋 관리자 모양 펜 거르기 도구 막대 단추</comment></data>
   <data name="Assets_NewSetFromCanvasTip" xml:space="preserve"><value>지금 문서로 새 내 세트를 만듭니다: 프레임마다 보이는 레이어를 합친 그림이 모양 하나가 됩니다(투명한 둘레는 잘라 내고 빈 프레임은 건너뜀, 모양 64개·한 변 256px까지).</value></data>
-  <data name="Assets_RestoreSetsTip" xml:space="preserve"><value>모양 펜 기본 세트 일곱 가지(꽃 1·꽃 2·꽃 3·반짝이·비눗방울·단풍잎·나뭇잎) 중 지운 것을 다시 넣고, 예전 버전은 앱에 든 버전으로 올립니다(고친 것은 그대로). 내 세트와 받은 다른 세트는 그대로입니다.</value></data>
+  <data name="Assets_RestoreSetsTip" xml:space="preserve"><value>모양 펜 기본 세트 여덟 가지(랜덤 칙셀·꽃 1·꽃 2·꽃 3·반짝이·비눗방울·단풍잎·나뭇잎) 중 지운 것을 다시 넣고, 예전 버전은 앱에 든 버전으로 올립니다(고친 것은 그대로). 내 세트와 받은 다른 세트는 그대로입니다.</value></data>
   <data name="Assets_EditOwnSetOnCanvasTip" xml:space="preserve"><value>이 세트를 임시 문서 탭(모양마다 프레임 하나)으로 열어 그 자리에서 고칩니다. 내가 작성자라 '세트에 저장'이 이 에셋을 바꾸며, 고친 뒤 새 버전으로 올립니다.</value></data>
   <data name="Assets_SourceMySets" xml:space="preserve"><value>내 세트(모양 펜)</value><comment>내 모양 펜 세트의 출처</comment></data>
   <data name="Assets_ExportSetMenu" xml:space="preserve"><value>내보내기</value><comment>내 모양 펜 세트 상세의 메뉴 단추</comment></data>

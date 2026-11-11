@@ -313,31 +313,56 @@ internal static class GuidePaintToolsCompareShots
         Save(k, "tools-shape-pen-compare", 4, [[dense, optimized]]);
     }
 
-    /// <summary>모양 펜 기본 세트 다섯 가지: <see cref="OfficialShapeSets.Packages"/> 차례로 왼쪽 위부터 한 줄에 두 세트(세트마다 모양을 나란히).</summary>
+    /// <summary>
+    /// 모양 펜 기본 세트 여덟 가지(<see cref="OfficialShapeSets.Packages"/> 차례): 맨 위 줄에 랜덤 칙셀(병아리 스무 가지를 그림 너비에서 줄을 넘겨),
+    /// 그 아래 왼쪽부터 한 줄에 두 세트씩(세트마다 모양을 나란히).
+    /// </summary>
     [Shot("tools-shape-pen-sets")]
     public static void ShapePenSets(ShotKit k)
     {
-        var strips = OfficialShapeSets.Packages.Select(p => p.Create()).Select(set =>
+        const int gap = 3, zoom = 3, sheetGap = 9;
+        PixelImage Strip(StampSet set, int maxWidth)
         {
-            const int gap = 3;
-            int w = set.Shapes.Sum(s => s.Width) + gap * (set.Shapes.Count + 1);
-            int h = set.Shapes.Max(s => s.Height) + gap * 2;
-            var strip = Blank(w, h, Paper);
-            int x = gap;
+            // 모양을 줄마다 나눈다(줄 너비 maxWidth 안).
+            var lines = new List<List<PixelImage>> { new() };
+            int lineWidth = gap;
             foreach (var s in set.Shapes)
             {
-                int y = (h - s.Height) / 2;
-                for (int sy = 0; sy < s.Height; sy++)
-                    for (int sx = 0; sx < s.Width; sx++)
-                        strip.Set(x + sx, y + sy, Color32.BlendOver(strip.Get(x + sx, y + sy), s.Get(sx, sy)));
-                x += s.Width + gap;
+                if (lines[^1].Count > 0 && lineWidth + s.Width + gap > maxWidth)
+                {
+                    lines.Add([]);
+                    lineWidth = gap;
+                }
+                lines[^1].Add(s);
+                lineWidth += s.Width + gap;
+            }
+            int w = lines.Max(l => l.Sum(s => s.Width) + gap * (l.Count + 1));
+            var heights = lines.Select(l => l.Max(s => s.Height)).ToList();
+            int h = heights.Sum() + gap * (lines.Count + 1);
+            var strip = Blank(w, h, Paper);
+            int y0 = gap;
+            for (int li = 0; li < lines.Count; li++)
+            {
+                int x = gap;
+                foreach (var s in lines[li])
+                {
+                    int y = y0 + (heights[li] - s.Height) / 2;
+                    for (int sy = 0; sy < s.Height; sy++)
+                        for (int sx = 0; sx < s.Width; sx++)
+                            strip.Set(x + sx, y + sy, Color32.BlendOver(strip.Get(x + sx, y + sy), s.Get(sx, sy)));
+                    x += s.Width + gap;
+                }
+                y0 += heights[li] + gap;
             }
             return strip;
-        }).ToList();
+        }
+        var sets = OfficialShapeSets.Packages.Select(p => p.Create()).ToList();
+        var strips = sets.Skip(1).Select(set => Strip(set, 100_000)).ToList();
         var rows = new List<List<PixelImage>>();
         for (int i = 0; i < strips.Count; i += 2) rows.Add([.. strips.Skip(i).Take(2)]);
         // 줄마다 왼쪽 띠를 같은 너비로 맞춰 오른쪽 세트가 한 세로줄에 서게.
         int leftWidth = rows.Max(r => r[0].Width);
+        int rightWidth = rows.Where(r => r.Count > 1).Max(r => r[1].Width);
         foreach (var r in rows)
         {
             var padded = Blank(leftWidth, r[0].Height, Back);
@@ -345,7 +370,9 @@ internal static class GuidePaintToolsCompareShots
                 for (int x = 0; x < r[0].Width; x++) padded.Set(x, y, r[0].Get(x, y));
             r[0] = padded;
         }
-        Save(k, "tools-shape-pen-sets", 3, rows, gap: 9);
+        // 랜덤 칙셀은 두 세로줄을 합친 너비 안에서 줄을 넘긴다.
+        rows.Insert(0, [Strip(sets[0], leftWidth + sheetGap / zoom + rightWidth)]);
+        Save(k, "tools-shape-pen-sets", zoom, rows, gap: sheetGap);
     }
 
     /// <summary>모양 펜 예시: 연필 가지를 따라 나뭇잎(최적화 간격), 바닥에 꽃(최적화 간격)과 떨어진 단풍잎, 하늘에 반짝이를 찍은 그림.</summary>

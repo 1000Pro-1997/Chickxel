@@ -413,194 +413,249 @@ internal static class BoxesAndStreetShapeSets
         return Set("Treasure Chests", shapes);
     }
 
-    // ───────────── 4. 금화 더미(옆에서 본) ─────────────
+    // ───────────── 4. 금화 더미(위·앞에서 본 3/4) ─────────────
 
-    // 금화: n 테두리, Y 가장 밝음, C 윗면, c 바탕, d 옆테, z 옆테 그늘, x 자루 안 어둠
+    // 금화: n 테두리(짙은 갈색), W 반짝임, Y 밝은 노랑, c 금색, O 진한 주황(그늘), z 옆테 어두운 줄
     private static readonly Dictionary<char, uint> Coins = new()
-        { ['n'] = 0xFF7A4A06, ['Y'] = 0xFFFFF8C8, ['C'] = 0xFFFFE070, ['c'] = 0xFFF6C430, ['d'] = 0xFFC88A10, ['z'] = 0xFFA06A08, ['x'] = 0xFF3A2410 };
+        { ['n'] = 0xFF4A2410, ['W'] = 0xFFFFFCE8, ['Y'] = 0xFFFFE27A, ['c'] = 0xFFF2B232, ['O'] = 0xFFD0701A, ['z'] = 0xFFA04A16 };
 
-    /// <summary>옆에서 본 금화 한 닢(테두리 포함 4줄, 위 금화와 테두리 한 줄을 나눔): 밝은 윗면 줄, 어두운 옆테 줄.</summary>
-    private static void CoinSlab(Grid g, int x, int y, int cw)
+    private const int CoinW = 9;
+
+    // 맨 위 금화의 윗면(타원): 옆테보다 밝고, 왼쪽 위 반짝임, 오른쪽 끝만 금색
+    private static readonly string[] CoinTop = ["..nnnnn..", ".nWWYYYn.", "nYYYYYYcn"];
+
+    // 바닥에 누운 금화 한 닢: 윗면 타원 아래로 둥글게 좁아지는 옆테
+    private static readonly string[] LooseCoin = ["..nnnnn..", ".nWWYYYn.", "nYYYYYYcn", ".nYcccOn.", "..nnnnn.."];
+
+    // 세워 둔 금화(앞면, 오른쪽에 옆테)
+    private static readonly string[] CoinEdge = ["..nnn..", ".nWYcn.", "nYYccOn", "nYcYcOn", "nYccOzn", ".nOOzn.", "..nnn.."];
+
+    /// <summary>
+    /// 금화 탑(<paramref name="n"/>닢): 아래 금화는 옆테 두 줄(밝은 줄·어두운 줄)만, 맨 위 금화만 윗면을 보인다.
+    /// <paramref name="bottom"/> = 맨 아래 테두리 줄. 씨앗에 따라 금화가 ±1칸 어긋난다.
+    /// </summary>
+    private static void CoinStack(Grid g, int x, int bottom, int n, uint seed = 0)
     {
-        // 모서리는 비워 둥근 테(아래 금화 위에 얹혀도 칸이 갈라져 보임)
-        g.Fill(x + 1, y, cw, 1, 'n');
-        g.Fill(x + 1, y + 3, cw, 1, 'n');
-        g.Fill(x, y + 1, 1, 2, 'n');
-        g.Fill(x + cw + 1, y + 1, 1, 2, 'n');
-        for (int i = 0; i < cw; i++)
+        var rng = new Lcg(seed + 1);
+        int off = 0;
+        for (int k = 0; k < n; k++)
         {
-            g[x + 1 + i, y + 1] = i < 2 ? 'Y' : i == cw - 1 ? 'c' : 'C';
-            g[x + 1 + i, y + 2] = i == 0 ? 'c' : i == cw - 1 || i % 3 == 2 ? 'z' : 'd';
+            if (k > 0) off = Math.Clamp(off + rng.Next(5) switch { 0 => -1, 1 => 1, _ => 0 }, -1, 1);
+            int cx = x + off, y = bottom - 1 - 2 * k;
+            g[cx, y] = 'n';
+            g[cx + 1, y] = 'Y';
+            for (int i = 2; i < CoinW - 2; i++) g[cx + i, y] = 'c';
+            g[cx + CoinW - 2, y] = 'O';
+            g[cx + CoinW - 1, y] = 'n';
+            if (k == 0)
+                for (int i = 1; i < CoinW - 1; i++) g[cx + i, y + 1] = 'n';
+            else
+            {
+                g[cx, y + 1] = 'n';
+                g[cx + 1, y + 1] = 'O';
+                for (int i = 2; i < CoinW - 1; i++) g[cx + i, y + 1] = 'z';
+                g[cx + CoinW - 1, y + 1] = 'n';
+            }
+            if (k == n - 1) g.Stamp(CoinTop, cx, y - 3);
         }
     }
 
-    /// <summary>금화 탑: <paramref name="n"/>닢을 아래부터 쌓으며 <paramref name="lean"/>만큼 기울고 씨앗에 따라 가끔 한 칸씩 어긋남. <paramref name="bottom"/> = 맨 아래 테두리 줄.</summary>
-    private static void CoinTower(Grid g, int x, int bottom, int n, int cw, double lean, uint seed)
+    /// <summary>바닥에 누운 금화들(<c>Bottom</c> = 아랫 테두리 줄, 아랫줄이 위인 것부터 그려 앞 금화가 뒤 금화를 덮음).</summary>
+    private static void LooseCoins(Grid g, params (int X, int Bottom)[] coins)
     {
-        var rng = new Lcg(seed);
-        for (int i = 0; i < n; i++)
-        {
-            int jitter = i == 0 ? 0 : rng.Next(6) switch { 0 => -1, 1 => 1, _ => 0 };
-            CoinSlab(g, x + (int)Math.Round(lean * i) + jitter, bottom - 3 - 3 * i, cw);
-        }
+        foreach (var (x, bottom) in coins.OrderBy(c => c.Bottom)) g.Stamp(LooseCoin, x, bottom - 4);
     }
 
-    // 세워 둔 금화(앞면)
-    private static readonly string[] CoinFace = ["..nnn..", ".nYCCn.", "nYcccdn", "nCcYcdn", "nCcccdn", ".nddzn.", "..nnn.."];
-
-    /// <summary>금화 탑들을 나란히(탑마다 닢 수·기울기·씨앗), 금화 폭 8.</summary>
-    private static string[] Towers(params (int N, double Lean, uint Seed)[] towers)
+    /// <summary>금화 그림 한 장(<paramref name="w"/>×<paramref name="h"/> 판, 단독 모양이면 Set이 둘레를 잘라 냄).</summary>
+    private static PixelImage CoinArt(Action<Grid> draw, int w = 64, int h = 48)
     {
-        var g = new Grid(10 * towers.Length + 8, 40);
-        for (int t = 0; t < towers.Length; t++) CoinTower(g, 3 + t * 10, 39, towers[t].N, 8, towers[t].Lean, towers[t].Seed);
-        return g.Rows();
+        var g = new Grid(w, h);
+        draw(g);
+        return Art(g.Rows(), Coins);
     }
 
-    /// <summary>낮은 금화 무더기: 층마다 금화를 반 닢쯤 엇갈려 쌓고, 세워 둔 금화를 앞에 기댐.</summary>
-    private static string[] CoinPile(int[] layers, int faces, uint seed)
-    {
-        var rng = new Lcg(seed);
-        var g = new Grid(48, 30);
-        const int bottom = 29;
-        for (int l = 0; l < layers.Length; l++)
-        {
-            int x0 = 2 + l * 4 + rng.Next(2);
-            for (int i = 0; i < layers[l]; i++) CoinSlab(g, x0 + i * 8 + rng.Next(2), bottom - 3 - 3 * l, 7);
-        }
-        for (int f = 0; f < faces; f++) g.Stamp(CoinFace, f == 0 ? 0 : layers[0] * 8 - 2, bottom - 6);
-        return g.Rows();
-    }
-
-    /// <summary>금화 더미: 옆에서 본 금화 탑(2~10닢, 기울거나 어긋난), 탑 두세 개 묶음, 낮은 무더기.</summary>
+    /// <summary>금화 더미: 누운 금화 하나·셋, 낮은·높은 탑, 높이가 다른 탑 두~네 개 묶음, 낮은 무더기, 탑이 솟은 큰 무더기, 세워 둔 금화.</summary>
     public static StampSet CoinStacks()
     {
         var shapes = new List<PixelImage>
         {
-            Art(Towers((2, 0, 1)), Coins),
-            Art(Towers((4, 0, 2)), Coins),
-            Art(Towers((6, 0.15, 3)), Coins),
-            Art(Towers((9, -0.2, 4)), Coins),
-            Art(Towers((10, 0, 5)), Coins),
-            Art(Towers((3, 0, 6), (6, 0.1, 7)), Coins),
-            Art(Towers((7, 0, 8), (4, 0, 9)), Coins),
-            Art(Towers((2, 0, 10), (5, -0.1, 11), (3, 0, 12)), Coins),
-            Art(Towers((5, 0, 13), (9, 0.1, 14), (6, 0, 15)), Coins),
-            Art(CoinPile([3, 2, 1], 1, 16), Coins),
-            Art(CoinPile([4, 3, 1], 2, 17), Coins),
+            CoinArt(g => LooseCoins(g, (0, 40))),
+            CoinArt(g => LooseCoins(g, (0, 38), (9, 39), (4, 42))),
+            CoinArt(g => CoinStack(g, 0, 40, 3, 1)),
+            CoinArt(g => CoinStack(g, 0, 40, 8, 2)),
+            CoinArt(g =>
+            {
+                CoinStack(g, 0, 38, 6, 3);
+                CoinStack(g, 6, 41, 3, 4);
+                LooseCoins(g, (13, 42));
+            }),
+            CoinArt(g =>
+            {
+                CoinStack(g, 9, 37, 9, 6);
+                CoinStack(g, 0, 38, 5, 5);
+                CoinStack(g, 4, 42, 3, 7);
+                LooseCoins(g, (16, 41), (13, 44));
+            }),
+            CoinArt(g =>
+            {
+                CoinStack(g, 8, 36, 10, 8);
+                CoinStack(g, 0, 38, 7, 9);
+                CoinStack(g, 16, 38, 6, 10);
+                CoinStack(g, 5, 42, 3, 11);
+                CoinStack(g, 13, 43, 2, 12);
+                LooseCoins(g, (21, 44));
+            }),
+            CoinArt(g => LooseCoins(g, (6, 36), (2, 38), (10, 38), (0, 41), (7, 41), (14, 41), (4, 44), (11, 44))),
+            CoinArt(g =>
+            {
+                CoinStack(g, 6, 36, 7, 13);
+                CoinStack(g, 14, 35, 5, 14);
+                LooseCoins(g, (0, 37), (21, 37), (2, 40), (10, 39), (18, 40), (25, 41), (6, 43), (13, 42), (20, 44), (0, 44), (27, 44));
+            }),
+            CoinArt(g =>
+            {
+                CoinStack(g, 0, 40, 5, 15);
+                g.Stamp(CoinEdge, 9, 34);
+                LooseCoins(g, (12, 42));
+            }),
+            CoinArt(g =>
+            {
+                CoinStack(g, 0, 40, 2, 16);
+                g.Stamp(CoinEdge, 10, 34);
+                LooseCoins(g, (5, 43));
+            }),
         };
         return Set("Gold Coin Stacks", shapes);
     }
 
     // ───────────── 5. 돈 자루 ─────────────
 
-    // 자루 몸통 글자는 통·자루 세트의 삼베(Burlap)와 같음(o·H·L·M·D, r·R 끈), 금화 글자는 Coins
+    // 자루: o 테두리, H·L·M·D 천(밝은 곳~그늘), r·R 끈(그늘·밝음). 삼베는 통·자루 세트의 Burlap.
     private static readonly Dictionary<char, uint> Leather = new()
     {
-        ['o'] = 0xFF2E160A, ['H'] = 0xFFC88250, ['L'] = 0xFFA45E32, ['M'] = 0xFF824624, ['D'] = 0xFF5C2E16,
+        ['o'] = 0xFF2E160A, ['H'] = 0xFFD08E5C, ['L'] = 0xFFAA6438, ['M'] = 0xFF864A26, ['D'] = 0xFF5E3018,
+        ['r'] = 0xFF3A1E0E, ['R'] = 0xFF6E3E1E,
+    };
+    private static readonly Dictionary<char, uint> Velvet = new()
+    {
+        ['o'] = 0xFF44081A, ['H'] = 0xFFF0707C, ['L'] = 0xFFD03848, ['M'] = 0xFFA82034, ['D'] = 0xFF761428,
         ['r'] = 0xFFC8901C, ['R'] = 0xFFFFE070,
     };
+    // 자루 입 안(어둠)
+    private static readonly Dictionary<char, uint> SackMouth = new() { ['x'] = 0xFF2A160A, ['X'] = 0xFF4A2A14 };
 
-    // 자루에 찍은 금화 무늬
-    private static readonly string[] CoinMark = [".nnn.", "nYCcn", "nCccn", "ncddn", ".nnn."];
+    /// <summary>자루 몸통 반폭(t = 목 0 ~ 바닥 1): 목에서 부풀어 아래쪽이 가장 넓고 바닥은 둥글다.</summary>
+    private static double SackHalf(double t, double neck, double wide)
+        => t < 0.58 ? neck + (wide - neck) * Math.Sqrt(1 - Math.Pow((0.58 - t) / 0.58, 2))
+                    : wide * Math.Sqrt(Math.Max(0, 1 - Math.Pow((t - 0.58) / 0.47, 2)));
 
-    private static readonly string[] MoneyBagLarge =
-    [
-        ".....o.o.o.....",
-        "....oLoMoDo....",
-        "....oLLMMDo....",
-        ".....oLMDo.....",
-        "....orRRrro....",
-        "....ooLMDoo....",
-        "...oHLMMMDDo...",
-        "..oHLMMMMMMDo..",
-        ".oHLMMMMMMMMDo.",
-        "oHLLMMMMMMMMDDo",
-        "oHLMMMMMMMMMDDo",
-        "oLLMMMMMMMMMDDo",
-        "oLMMMMMMMMMMDDo",
-        "oLMMMMMMMMMDDDo",
-        ".oMMMMMMMMMDDo.",
-        "..oDMMMMMMDDo..",
-        "...ooooooooo...",
-    ];
+    // 몸통 명암: 왼쪽 위 부푼 곳이 가장 밝고 오른쪽 아래가 그늘(u·v = 몸통 가운데에서 -1~1)
+    private static char SackTone(double u, double v)
+    {
+        if (Math.Pow(u + 0.42, 2) + Math.Pow(v + 0.35, 2) < 0.07) return 'H';
+        double s = 0.62 * u + 0.78 * v;
+        return s < -0.3 ? 'L' : s < 0.42 ? 'M' : 'D';
+    }
 
-    private static readonly string[] MoneyBagMedium =
-    [
-        "...o.o.o...",
-        "...oLMDo...",
-        "...orRro...",
-        "...oLMDo...",
-        "..oHLMMDo..",
-        ".oHLMMMMDo.",
-        "oHLMMMMMMDo",
-        "oLLMMMMMMDo",
-        "oLMMMMMMDDo",
-        "oLMMMMMMDDo",
-        ".oMMMMMMDo.",
-        "..ooooooo..",
-    ];
+    /// <summary>
+    /// 서 있는 자루(폭 <paramref name="w"/>, 몸통 높이 <paramref name="bodyH"/>): <paramref name="open"/>이 거짓이면 끈으로 묶은 목과 위로 퍼진 주름 끝,
+    /// 참이면 입을 벌린 자루(위에 어두운 입). 아래쪽에 세로 주름 몇 줄.
+    /// </summary>
+    private static string[] StandingSack(int w, int bodyH, bool open)
+    {
+        double cx = (w - 1) / 2.0, wide = (w - 1) / 2.0 + 0.6, neck = open ? wide * 0.62 : Math.Max(1.2, w * 0.12);
+        int rh = open ? 0 : Math.Max(2, bodyH / 5), b0 = open ? 1 : rh + 1, h = b0 + bodyH;
+        int Part(int x, int y)
+        {
+            if (x < 0 || x >= w || y < 0 || y >= h) return 0;
+            double d = Math.Abs(x - cx);
+            // 반폭에서 조금 덜어 가장 넓은 줄이 한 줄짜리 혹으로 튀어나오지 않게
+            if (y >= b0) return d <= SackHalf((y - b0) / (double)bodyH, neck, wide) - 0.25 ? 3 : 0;
+            if (open) return d <= neck + 0.6 && InEllipse(2 * (int)Math.Round(neck) + 1, 3, x - (int)Math.Round(cx - neck), y + 1) ? 4 : 0;
+            if (y == rh) return d <= neck + 0.6 ? 2 : 0;
+            double half = neck + 1.2 + (rh - 1 - y) * 1.0;
+            return d <= half + 0.01 ? 1 : 0;
+        }
+        bool In(int x, int y) => Part(x, y) != 0;
+        var g = new Grid(w, h);
+        double ycen = b0 + bodyH * 0.55, ry = bodyH / 2.0;
+        int[] creases = [(int)Math.Round(cx - wide * 0.35), (int)Math.Round(cx + wide * 0.2)];
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                int part = Part(x, y);
+                if (part == 0) continue;
+                if (Edge(In, x, y)) { g[x, y] = 'o'; continue; }
+                double u = (x - cx) / wide, v = (y - ycen) / ry;
+                g[x, y] = part switch
+                {
+                    1 => x < cx ? (x % 2 == 0 ? 'L' : 'M') : (x % 2 == 0 ? 'M' : 'D'),
+                    2 => x < cx ? 'R' : 'r',
+                    4 => y < 1 ? 'x' : 'X',
+                    _ => SackTone(u, v),
+                };
+                // 아래쪽 세로 주름: 한 단계 어둡게
+                if (part == 3 && y >= h - 1 - Math.Max(2, bodyH / 4) && creases.Contains(x))
+                    g[x, y] = g[x, y] switch { 'H' => 'L', 'L' => 'M', _ => 'D' };
+            }
+        return g.Rows();
+    }
 
-    private static readonly string[] MoneyBagSmall =
-    [
-        "..o.o.o..",
-        "..oLMDo..",
-        "..orRro..",
-        "..oLMDo..",
-        ".oHLMMDo.",
-        "oHLMMMMDo",
-        "oLMMMMMDo",
-        "oLMMMMDDo",
-        ".oMMMDDo.",
-        "..ooooo..",
-    ];
+    /// <summary>옆으로 쓰러진 자루: 불룩한 몸통(왼쪽)에서 목이 오른쪽으로 좁아지다 벌린 입으로 퍼짐.</summary>
+    private static string[] TippedSack(int len, int height)
+    {
+        double ry = (height - 1) / 2.0, cy = ry, ex = len * 0.4, rx = len * 0.42, neck = ry * 0.45, lip = ry * 0.62;
+        int mw = 3, mh = 2 * (int)Math.Round(lip) + 1, my = (int)Math.Round(cy - lip), mx = len - mw;
+        bool Body(int x, int y)
+        {
+            if (x < 0 || y < 0 || y >= height) return false;
+            double u = (x - ex) / rx, v = (y - cy) / ry;
+            if (u * u + v * v <= 1 - 0.5 / ry) return true;
+            if (x < ex || x > mx) return false;
+            double half = neck + (lip - neck) * Math.Pow((x - ex) / (mx - ex), 2);
+            return Math.Abs(y - cy) <= half + 0.01;
+        }
+        bool Mouth(int x, int y) => InEllipse(mw, mh, x - mx, y - my);
+        bool In(int x, int y) => Body(x, y) || Mouth(x, y);
+        var g = new Grid(len, height);
+        for (int y = 0; y < height; y++)
+            for (int x = 0; x < len; x++)
+            {
+                if (!In(x, y)) continue;
+                if (Mouth(x, y)) { g[x, y] = Edge(Mouth, x, y) ? 'o' : x == mx + 1 ? 'x' : 'X'; continue; }
+                g[x, y] = Edge(In, x, y) ? 'o' : SackTone((x - ex) / rx, (y - cy) / ry);
+            }
+        return g.Rows();
+    }
 
-    // 입을 벌린 자루 위로 소복한 금화
-    private static readonly string[] MoneyBagOpen =
-    [
-        "......nnn......",
-        "....nnYCcnn....",
-        "..nnCcCYcCcnn..",
-        ".oLnCcCcCcCnDo.",
-        ".oHLLLMMMMMDDo.",
-        "..oLMMMMMMMDo..",
-        ".oHLMMMMMMMMDo.",
-        "oHLMMMMMMMMMDDo",
-        "oLLMMMMMMMMMDDo",
-        "oLMMMMMMMMMMDDo",
-        "oLMMMMMMMMMDDDo",
-        ".oMMMMMMMMMDDo.",
-        "..ooooooooooo..",
-    ];
-
-    // 옆으로 쓰러져 입에서 금화가 쏟아지는 자루
-    private static readonly string[] MoneyBagTipped =
-    [
-        "...oooooooo...........",
-        ".ooHLLLLMMMoo.oo......",
-        "oHLLMMMMMMMMDooLo.....",
-        "oLLMMMMMMMMMDDoxLo....",
-        "oLMMMMMMMMMMDDoxxDo...",
-        "oLMMMMMMMMMMDDoxnnnn..",
-        "oLMMMMMMMMMDDDonCYCcnn",
-        ".oMMMMMMMMDDDnCcCcCcCn",
-        "..oooooooooonCcCcCcCcn",
-        ".........nnnnnnnnnnnn.",
-    ];
-
-    /// <summary>돈 자루: 삼베 자루(큰·중간·작은, 금화 무늬), 가죽 주머니 둘, 금화가 소복한 열린 자루, 주저앉은 자루, 쓰러져 금화를 쏟는 자루(좌우).</summary>
+    /// <summary>돈 자루: 묶은 삼베 자루(작은·중간·큰), 가죽 주머니 둘, 빨간 벨벳 주머니, 금화가 소복한 열린 자루, 옆에 금화 탑을 둔 자루, 쓰러져 금화를 쏟는 자루(좌우).</summary>
     public static StampSet CoinSacks()
     {
+        var tipped = Compose(50, 16,
+        [
+            (Art(TippedSack(20, 13), Burlap, SackMouth), 0, 1),
+            (CoinArt(g => { CoinStack(g, 0, 11, 2, 3); LooseCoins(g, (6, 9), (9, 12), (14, 11), (4, 15), (19, 14)); }, 32, 16), 20, 0),
+        ]);
         var shapes = new List<PixelImage>
         {
-            Compose(15, 17, [(Art(MoneyBagLarge, Burlap), 0, 0), (Art(CoinMark, Coins), 5, 9)]),
-            Compose(11, 12, [(Art(MoneyBagMedium, Burlap), 0, 0), (Art(CoinMark, Coins), 3, 5)]),
-            Art(MoneyBagSmall, Burlap),
-            Compose(11, 12, [(Art(MoneyBagMedium, Leather), 0, 0), (Art(CoinMark, Coins), 3, 5)]),
-            Art(MoneyBagSmall, Leather),
-            Compose(19, 15, [(Art(MoneyBagOpen, Burlap, Coins), 2, 0), (Art(FlatCoin, Treasure), 0, 11), (Art(FlatCoin, Treasure), 14, 11)]),
-            Compose(16, 12, [(Art(SackSlumped, Burlap), 0, 0), (Art(CoinMark, Coins), 5, 6)]),
+            Art(StandingSack(9, 9, open: false), Burlap),
+            Art(StandingSack(13, 12, open: false), Burlap),
+            Art(StandingSack(17, 15, open: false), Burlap),
+            Art(StandingSack(13, 12, open: false), Leather),
+            Art(StandingSack(9, 9, open: false), Leather),
+            Art(StandingSack(11, 10, open: false), Velvet),
+            Compose(24, 26,
+            [
+                (Art(StandingSack(19, 14, open: true), Burlap, SackMouth), 2, 9),
+                (CoinArt(g => LooseCoins(g, (8, 10), (5, 13), (12, 13), (0, 25), (16, 25)), 32, 26), 0, 0),
+            ]),
+            Compose(28, 22,
+            [
+                (Art(StandingSack(15, 14, open: false), Burlap), 0, 0),
+                (CoinArt(g => { CoinStack(g, 0, 17, 4, 5); LooseCoins(g, (5, 20)); }, 32, 22), 13, 0),
+            ]),
         };
-        shapes.AddRange(Mirrored([Art(MoneyBagTipped, Burlap, Coins)]));
+        shapes.AddRange(Mirrored([tipped]));
         return Set("Coin Sacks", shapes);
     }
 

@@ -405,7 +405,7 @@ public class ShapeStampTests
     public void Library_NewInstallIsEmpty_BuiltInSetsAreFiveOfficialPackages()
     {
         Assert.Empty(StampLibrary.Load(Path.Combine(Path.GetTempPath(), "chx-stamp-" + Guid.NewGuid().ToString("N"), StampLibrary.FileName)).Sets);
-        Assert.Equal(["flowers", "flowers-2", "flowers-3", "sparkles", "bubbles", "autumn-leaves", "leaves"], OfficialShapeSets.Packages.Select(p => p.Id));
+        Assert.Equal(["chickxel-chicks", "flowers", "flowers-2", "flowers-3", "sparkles", "bubbles", "autumn-leaves", "leaves"], OfficialShapeSets.Packages.Select(p => p.Id));
         Assert.All(StampBuiltIns.RetiredIds, id => Assert.NotNull(StampBuiltIns.RetiredName(id)));
         // 예전 기본 세트 이름표로 고른 설정은 같은 그림의 공식 세트로 잇는다
         Assert.Equal(Official("autumn-leaves").AssetId, OfficialShapeSets.AssetIdOfRetired("autumn"));
@@ -450,7 +450,7 @@ public class ShapeStampTests
         var sets = OfficialShapeSets.Packages.Select(p => p.Create()).ToList();
         foreach (var set in sets)
         {
-            Assert.InRange(set.Shapes.Count, 3, 10);
+            Assert.InRange(set.Shapes.Count, 3, PreviewChicks.Ids.Count);
             for (int i = 0; i < set.Shapes.Count; i++)
                 for (int j = i + 1; j < set.Shapes.Count; j++)
                     Assert.False(set.Shapes[i].ContentEquals(set.Shapes[j]), $"{set.Name}: shapes {i} and {j} are the same");

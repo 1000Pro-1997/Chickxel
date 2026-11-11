@@ -284,6 +284,14 @@ public static class Raster
     public static PixelMask FloodRegion(PixelImage source, int x, int y, bool contiguous = true, PixelMask? clip = null,
         int tolerance = 0, bool diagonal = false, FillColorMode mode = FillColorMode.ChannelMax)
     {
+        int budget = int.MaxValue;
+        return FloodRegion(source, x, y, contiguous, clip, tolerance, diagonal, mode, ref budget);
+    }
+
+    /// <summary><see cref="FloodRegion(PixelImage, int, int, bool, PixelMask?, int, bool, FillColorMode)"/>: 넣은 칸 수만큼 <paramref name="budget"/>을 줄이고, 0 밑으로 가면 거기서 멈춘다(영역은 덜 찬 채).</summary>
+    private static PixelMask FloodRegion(PixelImage source, int x, int y, bool contiguous, PixelMask? clip,
+        int tolerance, bool diagonal, FillColorMode mode, ref int budget)
+    {
         var area = Rectangle.Intersect(clip?.Bounds ?? source.Bounds, source.Bounds);
         if (!area.Contains(x, y) || clip is { } c0 && !c0.Contains(x, y)) return default;
         // 모양 제한이면 칸마다 확인한다(사각형은 area로 충분).
@@ -298,10 +306,24 @@ public static class Raster
         {
             for (int ry = area.Top; ry < area.Bottom; ry++)
                 for (int rx = area.Left; rx < area.Right; rx++)
-                    if (Ok(rx, ry)) bits[ry * w + rx] = true;
+                    if (Ok(rx, ry))
+                    {
+                        bits[ry * w + rx] = true;
+                        if (--budget < 0) return new PixelMask(source.Bounds, bits);
+                    }
             return new PixelMask(source.Bounds, bits);
         }
 
+        Spread(bits, w, area, x, y, diagonal, Ok, ref budget);
+        return new PixelMask(source.Bounds, bits);
+    }
+
+    /// <summary>
+    /// (x,y)에서 <paramref name="ok"/>인 칸을 <paramref name="area"/> 안에서 이어 <paramref name="bits"/>(그림 크기, 행 우선)에 켠다.
+    /// 이미 켜진 칸은 다시 보지 않고 넘어가지도 않는다. 켠 칸 수만큼 <paramref name="budget"/>을 줄이고, 0 밑으로 가면 멈춘다.
+    /// </summary>
+    private static void Spread(bool[] bits, int w, Rectangle area, int x, int y, bool diagonal, Func<int, int, bool> ok, ref int budget)
+    {
         // 가로 구간 단위로 넓힌다. bits가 이미 넣은 칸을 다시 보지 않게 막는다.
         var stack = new Stack<(int X, int Y)>();
         stack.Push((x, y));
@@ -309,17 +331,18 @@ public static class Raster
         {
             var (sx, sy) = stack.Pop();
             int row = sy * w;
-            if (bits[row + sx] || !Ok(sx, sy)) continue;
+            if (bits[row + sx] || !ok(sx, sy)) continue;
             int lx = sx, rx = sx;
-            while (lx > area.Left && !bits[row + lx - 1] && Ok(lx - 1, sy)) lx--;
-            while (rx < area.Right - 1 && !bits[row + rx + 1] && Ok(rx + 1, sy)) rx++;
+            while (lx > area.Left && !bits[row + lx - 1] && ok(lx - 1, sy)) lx--;
+            while (rx < area.Right - 1 && !bits[row + rx + 1] && ok(rx + 1, sy)) rx++;
             for (int cx = lx; cx <= rx; cx++) bits[row + cx] = true;
+            budget -= rx - lx + 1;
+            if (budget < 0) return;
             int from = diagonal ? Math.Max(area.Left, lx - 1) : lx;
             int to = diagonal ? Math.Min(area.Right - 1, rx + 1) : rx;
             if (sy > area.Top) ScanRow(sy - 1, from, to);
             if (sy < area.Bottom - 1) ScanRow(sy + 1, from, to);
         }
-        return new PixelMask(source.Bounds, bits);
 
         // 이웃 줄에서 맞는 구간마다 시작점 하나를 넣는다.
         void ScanRow(int ry, int from, int to)
@@ -327,11 +350,95 @@ public static class Raster
             bool inSpan = false;
             for (int cx = from; cx <= to; cx++)
             {
-                bool match = !bits[ry * w + cx] && Ok(cx, ry);
+                bool match = !bits[ry * w + cx] && ok(cx, ry);
                 if (match && !inSpan) stack.Push((cx, ry));
                 inSpan = match;
             }
         }
+    }
+
+    /// <summary>
+    /// 스마트 선택 방식대로 <paramref name="region"/>을 넓힌다(그림 밖은 버림). <see cref="WandMode.Tolerance"/>면 그대로.
+    /// <list type="bullet">
+    /// <item><see cref="WandMode.Grow"/>: 바깥 1칸 테두리를 더한다(<paramref name="diagonal"/>이면 대각선 이웃도).</item>
+    /// <item><see cref="WandMode.Touching"/>: 맞닿은 칸마다 그 칸 색의 이어진 영역(같은 허용 오차·비교 방식·대각선)을 더한다. 투명 칸에서는 시작하지 않는다.</item>
+    /// </list>
+    /// 돌려주는 영역은 그림 크기를 감싼다(필요하면 <see cref="PixelMask.Trim"/>).
+    /// </summary>
+    public static PixelMask ExpandRegion(PixelImage source, PixelMask region, WandMode wandMode, int tolerance = 0, bool diagonal = false,
+        FillColorMode mode = FillColorMode.ChannelMax)
+    {
+        int budget = int.MaxValue;
+        return ExpandRegion(source, region, wandMode, tolerance, diagonal, mode, ref budget);
+    }
+
+    /// <summary><see cref="ExpandRegion(PixelImage, PixelMask, WandMode, int, bool, FillColorMode)"/>: 더한 칸 수만큼 <paramref name="budget"/>을 줄이고, 0 밑으로 가면 멈춘다.</summary>
+    private static PixelMask ExpandRegion(PixelImage source, PixelMask region, WandMode wandMode, int tolerance, bool diagonal,
+        FillColorMode mode, ref int budget)
+    {
+        if (wandMode == WandMode.Tolerance) return region;
+        int w = source.Width, h = source.Height;
+        var src = source.Pixels;
+        var inside = new bool[src.Length];
+        var area = Rectangle.Intersect(region.Bounds, source.Bounds);
+        int minX = int.MaxValue, minY = int.MaxValue, maxX = int.MinValue, maxY = int.MinValue;
+        for (int y = area.Top; y < area.Bottom; y++)
+            for (int x = area.Left; x < area.Right; x++)
+                if (region.Contains(x, y))
+                {
+                    inside[y * w + x] = true;
+                    minX = Math.Min(minX, x); maxX = Math.Max(maxX, x);
+                    minY = Math.Min(minY, y); maxY = Math.Max(maxY, y);
+                }
+        if (maxX < minX) return default;
+        var result = (bool[])inside.Clone();
+        // 맞닿은 칸은 영역을 감싼 사각형의 한 칸 바깥까지만 있다.
+        for (int y = Math.Max(0, minY - 1); y <= Math.Min(h - 1, maxY + 1) && budget >= 0; y++)
+            for (int x = Math.Max(0, minX - 1); x <= Math.Min(w - 1, maxX + 1); x++)
+            {
+                int i = y * w + x;
+                if (inside[i] || result[i] && wandMode == WandMode.Touching || !Touches(x, y)) continue;
+                if (wandMode == WandMode.Grow)
+                {
+                    result[i] = true;
+                    budget--;
+                }
+                else if (src[i].A != 0)
+                {
+                    var match = new FillColorMatcher(src[i], tolerance, mode);
+                    Spread(result, w, source.Bounds, x, y, diagonal, (cx, cy) => match.Matches(src[cy * w + cx]), ref budget);
+                }
+                if (budget < 0) break;
+            }
+        return new PixelMask(source.Bounds, result);
+
+        bool Touches(int x, int y)
+        {
+            for (int dy = -1; dy <= 1; dy++)
+                for (int dx = -1; dx <= 1; dx++)
+                {
+                    // 상하좌우는 늘, 대각선은 대각선 잇기일 때만
+                    if (dx == 0 && dy == 0 || dx != 0 && dy != 0 && !diagonal) continue;
+                    int nx = x + dx, ny = y + dy;
+                    if (nx >= 0 && ny >= 0 && nx < w && ny < h && inside[ny * w + nx]) return true;
+                }
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 스마트 선택이 (x,y)를 누르면 고를 영역: <see cref="FloodRegion(PixelImage, int, int, bool, PixelMask?, int, bool, FillColorMode)"/>을
+    /// <see cref="ExpandRegion(PixelImage, PixelMask, WandMode, int, bool, FillColorMode)"/>로 넓힌 것.
+    /// 새로 찾은 칸이 <paramref name="maxCount"/>를 넘으면 거기서 그만두고 null(마우스를 올린 곳 미리보기의 계산 제한).
+    /// </summary>
+    public static PixelMask? WandRegion(PixelImage source, int x, int y, WandMode wandMode, bool contiguous,
+        int tolerance, bool diagonal, FillColorMode mode, int maxCount = int.MaxValue)
+    {
+        int budget = maxCount;
+        var region = FloodRegion(source, x, y, contiguous, null, tolerance, diagonal, mode, ref budget);
+        if (budget < 0) return null;
+        region = ExpandRegion(source, region, wandMode, tolerance, diagonal, mode, ref budget);
+        return budget < 0 ? null : region;
     }
 
     /// <summary>영역 안의 <paramref name="target"/>(투명은 모두 같은 색) 픽셀을 모두 바꾼다.</summary>
@@ -351,6 +458,17 @@ public static class Raster
             }
         return changed;
     }
+}
+
+/// <summary>스마트 선택이 고르는 범위.</summary>
+public enum WandMode
+{
+    /// <summary>클릭한 색과 허용 오차 안의 칸(기본).</summary>
+    Tolerance,
+    /// <summary>허용 오차로 고른 영역에 바깥 1칸 테두리를 더한다.</summary>
+    Grow,
+    /// <summary>허용 오차로 고른 영역에 맞닿은 다른 색 영역까지 더한다.</summary>
+    Touching,
 }
 
 /// <summary>디더링 브러시 무늬(기본색 비율).</summary>

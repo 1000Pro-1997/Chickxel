@@ -81,7 +81,11 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
     private readonly NumericUpDown _tolNum, _dodgeNum, _eraserNum;
     private readonly CheckBox _contiguous, _diagonal, _pixelPerfect, _shapeFilled, _rightErase, _wrap, _mirrorX, _mirrorY, _mirrorAtPivot;
     private readonly CheckBox _eraseRed, _eraseGreen, _eraseBlue;
-    private readonly ComboBox _fillSource, _fillMatch, _pickSource, _ditherPattern, _dodgeMode;
+    private readonly ComboBox _fillSource, _fillMatch, _wandMode, _pickSource, _ditherPattern, _dodgeMode;
+    /// <summary>스마트 선택일 때만 보이는 "선택 방식"·"미리보기" 줄.</summary>
+    private readonly Control _wandModeRow, _wandPreviewRow;
+    private readonly CheckBox _wandPreview;
+    private readonly NumericUpDown _wandPreviewLimit;
     /// <summary>제목 줄의 "i": 도구 쓰는 법(선택·이동·그라데이션 등, 없으면 숨김).</summary>
     private readonly Border _hint;
 
@@ -282,12 +286,29 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         _diagonal = Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_B062F4CFD2, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_1D5510BF06, v => _ctx.FillDiagonal = v);
         _fillSource = Combo(v => _ctx.FillSampleVisible = v == 1);
         _fillSource.Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_37EFFDFA5B);
+        // 순서 = WandMode 값
+        _wandMode = Ui.Combo(190, UiStrings.WandMode_Tolerance, UiStrings.WandMode_Grow, UiStrings.WandMode_Touching);
+        _wandMode.SelectionChanged += (_, _) =>
+        {
+            if (_updating || _wandMode.SelectedIndex < 0) return;
+            _ctx.WandMode = (WandMode)_wandMode.SelectedIndex;
+        };
+        _wandMode.Tip(UiStrings.WandMode_Tip);
+        _wandModeRow = Ui.Row(Ui.Label(UiStrings.WandMode_Label), _wandMode);
+        _wandPreview = Check(UiStrings.WandPreview_Label, UiStrings.WandPreview_Tip, v => _ctx.WandPreview = v);
+        _wandPreviewLimit = NumBox(1, EditorContext.MaxWandPreviewLimit, v => _ctx.WandPreviewLimit = v)
+            .Presets(100, 300, 1000, 3000, 10000).RecentKey("wand.previewLimit");
+        _wandPreviewLimit.Width = 64;
+        _wandPreviewLimit.Tip(UiStrings.WandPreview_LimitTip);
+        _wandPreviewRow = Ui.Row(_wandPreview, _wandPreviewLimit, Ui.Label(UiStrings.WandPreview_Cells));
         _fillBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_096C96B0A9, Ui.Stack(
+            _wandModeRow,
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A41D1B8B02), _tolNum, Ui.Label("%")),
             Ui.Row(Ui.Label(UiStrings.FillMatch_Label), _fillMatch),
             _contiguous,
             _diagonal,
-            Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_810B27E1C0), _fillSource)));
+            Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_810B27E1C0), _fillSource),
+            _wandPreviewRow));
         _fillTitle = GroupTitle(_fillBox);
 
         // ── 스포이드
@@ -937,6 +958,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         _brushBox.IsVisible = brush;
         _brushTitle.Text = shape ? UiStrings.S_ToolOptionsPanel_Refresh_FD736DAE6B : UiStrings.S_ToolOptionsPanel_Refresh_5A8AEEEBD3;
         _fillBox.IsVisible = tool is ToolKind.Fill or ToolKind.MagicWand;
+        _wandModeRow.IsVisible = _wandPreviewRow.IsVisible = tool == ToolKind.MagicWand;
         _fillTitle.Text = tool == ToolKind.MagicWand ? UiStrings.S_ToolOptionsPanel_Refresh_EA94B5AD1D : UiStrings.S_ToolOptionsPanel_Refresh_ADEB941184;
         _pickerBox.IsVisible = tool == ToolKind.Picker;
         _dodgeBox.IsVisible = tool == ToolKind.Dodge;
@@ -994,9 +1016,14 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
             _tolNum.Value = _ctx.FillTolerance;
             _contiguous.IsChecked = _ctx.FillContiguous;
             _diagonal.IsChecked = _ctx.FillDiagonal;
-            _diagonal.IsEnabled = _ctx.FillContiguous;
+            // 대각선은 이어진 영역과, 스마트 선택의 넓히는 방식(이웃 칸)에 쓴다.
+            _diagonal.IsEnabled = _ctx.FillContiguous || _ctx.Tool == ToolKind.MagicWand && _ctx.WandMode != WandMode.Tolerance;
             _fillSource.SelectedIndex = _ctx.FillSampleVisible ? 1 : 0;
             _fillMatch.SelectedIndex = (int)_ctx.FillColorMode;
+            _wandMode.SelectedIndex = (int)_ctx.WandMode;
+            _wandPreview.IsChecked = _ctx.WandPreview;
+            _wandPreviewLimit.Value = _ctx.WandPreviewLimit;
+            _wandPreviewLimit.IsEnabled = _ctx.WandPreview;
             _pickSource.SelectedIndex = _ctx.PickerSampleVisible ? 1 : 0;
             _dodgeNum.Value = _ctx.DodgeStrength;
             _dodgeMode.SelectedIndex = (int)_ctx.DodgeMode;

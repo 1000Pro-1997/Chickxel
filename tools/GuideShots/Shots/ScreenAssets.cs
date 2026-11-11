@@ -56,7 +56,9 @@ internal static class ScreenAssetShots
 
     /// <summary>
     /// 1 = 설치됨 탭(① 탭 ② 거르기·검색 ③ 가져오기·내보내기·올리기 ④ 목록 ⑤ 상세), 2 = 상점 탭(⑥ 거르기·검색·태그·새로 고침·홈페이지에서 보기 ⑦ 목록 ⑧ 상세),
-    /// 3 = 온라인에 올리기 창(⑨ 작성자 ⑩ 패키지 ⑪ 라이선스 ⑫ 올릴 에셋 ⑬ 목록 미리보기 ⑭ 올리기 전 검사).
+    /// 4 = 설치됨 탭 모양 펜 칸에서 내 세트를 고르고 내보내기 메뉴를 연 모습(⑨ 캔버스에서 새 세트·기본 세트 되돌리기 ⑩ 내 세트 줄 ⑪ 기본 세트 줄 ⑫ 상세 ⑬ 단추 ⑭ 내보내기 메뉴),
+    /// 5 = 기본 세트(꽃 1)를 고른 모습(⑮ 상세 ⑯ 단추),
+    /// 3 = 온라인에 올리기 창(⑨ 작성자 ⑩ 패키지 ⑪ 라이선스 ⑫ 올릴 에셋 ⑬ 목록 미리보기 ⑭ 올리기 전 검사 — 따로 된 쪽 screen-asset-publish).
     /// </summary>
     [Shot("screen-asset-manager")]
     public static void AssetManager(ShotKit k)
@@ -65,9 +67,20 @@ internal static class ScreenAssetShots
         UseLocalCatalog();
         var main = k.Main();
         k.Settle(300);
+        // 모양 펜 칸(그림 4)의 내 세트: 기본 나뭇잎 세트의 모양을 담은 직접 만든 세트
+        var shapeCtx = ToolFileHelp.Ctx(main);
+        var leaves = shapeCtx.InstalledShapeSets.First(s => s.Id == OfficialShapeSets.Packages.First(p => p.Id == "leaves").AssetId);
+        var mySet = new StampSet { Name = "My leaves" };
+        mySet.Shapes.AddRange(leaves.Shapes);
+        shapeCtx.ShapeSets.Sets.Add(mySet);
+        shapeCtx.NotifyShapeSetsEdited();
+        k.Settle(200);
 
         k.Dialog(() => AssetManagerWindow.Open(main), w =>
         {
+            // 종류 거르기가 세 칸(효과·그라데이션·모양 펜)이라 도구 막대가 한 줄에 들도록 넓히고, 상세의 단추 줄이 보이게 높인다.
+            w.Width = 1120;
+            w.Height = 760;
             ShotKit.Pump(500);
             var tabs = ShotKit.Get<TabControl>(w, "_tabs");
             ShotKit.Set(w, "_selectKey", "asset:" + AppAssets.Catalog.FromPackage("chickxel.effects.shiny-pickup")[0].Id);
@@ -76,7 +89,7 @@ internal static class ScreenAssetShots
             var filter = ShotKit.Get<Control>(w, "_filter");
             var search = ShotKit.Get<Control>(w, "_search");
             var toolbar = (Panel)filter.Parent!;
-            var buttons = toolbar.Children.Skip(2).ToArray();
+            var buttons = toolbar.Children.Skip(2).Where(c => c.IsVisible).ToArray();
             var list = ShotKit.Get<Control>(w, "_list");
             var detail = (Control)ShotKit.Get<Control>(w, "_detail").Parent!;
             var headers = tabs.Items.OfType<TabItem>().Select(t => ShotKit.Bounds(t, w)).Aggregate((a, b) => a.Union(b));
@@ -105,6 +118,51 @@ internal static class ScreenAssetShots
                 remoteList,
                 remoteDetail,
             ], firstNumber: 6);
+
+            // 4: 설치됨 탭 모양 펜 칸 — 내 세트를 고르고 내보내기 메뉴를 연다
+            // 모양 펜 칸은 도구 막대 단추가 둘 늘어 한 줄에 들도록 더 넓힌다.
+            w.Width = 1300;
+            tabs.SelectedIndex = 0;
+            ShotKit.Pump(300);
+            ShotKit.Get<TabStrip>(w, "_filter").SelectedIndex = 2;
+            ShotKit.Pump(400);
+            ShotKit.Set(w, "_selectKey", "shape:" + mySet.Id);
+            ShotKit.Call(w, "Refresh");
+            ShotKit.Pump(800);
+            var listBox = ShotKit.Get<ListBox>(w, "_list");
+            var listRect = ShotKit.Bounds(listBox, w);
+            var rows = listBox.Items.OfType<ListBoxItem>().ToList();
+            var builtInRows = rows.Skip(1).Where(r => r.IsEffectivelyVisible && r.Bounds.Height > 0)
+                .Select(r => ShotKit.Bounds(r, w)).Aggregate((a, b) => a.Union(b)).Intersect(listRect.Deflate(2));
+            var detailPanel = ShotKit.Get<StackPanel>(w, "_detail");
+            var actions = (Control)detailPanel.Children[^1];
+            var info = Union(w, [.. detailPanel.Children.Take(detailPanel.Children.Count - 1)]);
+            var export = ShotKit.FindText(actions, UiStrings.Assets_ExportSetMenu, ancestorControl: true);
+            export.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            ShotKit.Pump(600);
+            var menu = ToolFileShotsMenus.OpenMenuRect(w) ?? throw new InvalidOperationException("export menu did not open");
+            k.Save(w, "screen-asset-manager-4", marks:
+            [
+                Union(w, ShotKit.Get<Control>(w, "_newSetFromCanvas"), ShotKit.Get<Control>(w, "_restoreSets")),
+                PadLeft(ShotKit.Bounds(rows[0], w), 4),
+                PadLeft(builtInRows, 4),
+                info,
+                actions,
+                menu,
+            ], firstNumber: 9);
+            PopupMenus.CloseAll();
+            ShotKit.Pump(300);
+
+            // 5: 기본 세트(꽃 1) — 앱이 기본으로 설치한 상점 에셋의 상세와 단추
+            ShotKit.Set(w, "_selectKey", "asset:" + OfficialShapeSets.Packages.First(p => p.Id == "flowers").AssetId);
+            ShotKit.Call(w, "Refresh");
+            ShotKit.Pump(800);
+            var receivedActions = (Control)detailPanel.Children[^1];
+            k.Save(w, "screen-asset-manager-5", marks:
+            [
+                Union(w, [.. detailPanel.Children.Take(detailPanel.Children.Count - 1)]),
+                receivedActions,
+            ], firstNumber: 15);
         }, settleMs: 700);
 
         // 3: 온라인에 올리기 창 — 로그인한 계정(가짜 서버)으로 내 스크립트 효과 하나를 연다

@@ -117,7 +117,7 @@ internal static class GuideScreenUiCompareShots
     }
 
     /// <summary>그림마다 <c>area</c>를 잘라 <paramref name="scale"/>배(최근접)로 왼쪽부터 나란히 놓고 사이를 어두운 띠로 나눠 저장한다.</summary>
-    private static void Compose(ShotKit k, string name, IReadOnlyList<(Bitmap Image, Rect Area)> panels, int scale = 1)
+    internal static void Compose(ShotKit k, string name, IReadOnlyList<(Bitmap Image, Rect Area)> panels, int scale = 1)
     {
         var rects = panels.Select(p => new Rect(Math.Floor(p.Area.X), Math.Floor(p.Area.Y), Math.Round(p.Area.Width), Math.Round(p.Area.Height))).ToList();
         int width = (int)rects.Sum(r => r.Width * scale) + GapWidth * (panels.Count + 1);

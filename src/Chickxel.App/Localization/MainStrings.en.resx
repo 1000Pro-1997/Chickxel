@@ -20,13 +20,13 @@
   <data name="Tool_Picker_Name" xml:space="preserve"><value>Eyedropper</value></data>
   <data name="Tool_Picker_Hint" xml:space="preserve"><value>Left: pick as primary color · Right: pick as secondary color</value></data>
   <data name="Tool_Select_Name" xml:space="preserve"><value>Rectangle select</value></data>
-  <data name="Tool_Select_Hint" xml:space="preserve"><value>Drag to select (Shift: square), drag inside to move · Enter: drop · M: next selection tool</value></data>
+  <data name="Tool_Select_Hint" xml:space="preserve"><value>Drag to select (Shift while dragging: square), drag inside to move · Hold when pressing Shift: add, Alt: subtract, Shift+Alt: intersect · Enter: drop · M: next selection tool</value></data>
   <data name="Tool_EllipseSelect_Name" xml:space="preserve"><value>Ellipse select</value></data>
-  <data name="Tool_EllipseSelect_Hint" xml:space="preserve"><value>Drag to select an ellipse (Shift: circle), drag inside to move · Enter: drop · M: next selection tool</value></data>
+  <data name="Tool_EllipseSelect_Hint" xml:space="preserve"><value>Drag to select an ellipse (Shift while dragging: circle), drag inside to move · Hold when pressing Shift: add, Alt: subtract, Shift+Alt: intersect · Enter: drop · M: next selection tool</value></data>
   <data name="Tool_Lasso_Name" xml:space="preserve"><value>Lasso select</value></data>
-  <data name="Tool_Lasso_Hint" xml:space="preserve"><value>Drag to draw an outline; it closes into a selection on release. Drag inside to move · Enter: drop</value></data>
+  <data name="Tool_Lasso_Hint" xml:space="preserve"><value>Drag to draw an outline; it closes into a selection on release. Drag inside to move · Hold when pressing Shift: add, Alt: subtract, Shift+Alt: intersect · Enter: drop</value></data>
   <data name="Tool_MagicWand_Name" xml:space="preserve"><value>Magic wand</value></data>
-  <data name="Tool_MagicWand_Hint" xml:space="preserve"><value>Selects areas similar to the clicked color (tolerance, contiguous, and sampling use the same settings as Fill) · Move: V/arrow keys</value></data>
+  <data name="Tool_MagicWand_Hint" xml:space="preserve"><value>Selects areas similar to the clicked color (tolerance, contiguous, and sampling use the same settings as Fill) · Shift: add, Alt: subtract, Shift+Alt: intersect · Move: V/arrow keys</value></data>
   <data name="Tool_Move_Name" xml:space="preserve"><value>Move</value></data>
   <data name="Tool_Move_Hint" xml:space="preserve"><value>Moves the selection if there is one; otherwise shifts the whole cel (wrap option — the pivot moves too; right-drag keeps the pivot in place) · On text layers (empty cel + Text effect) moves the text · Ctrl+drag in other tools (move tool while held)</value></data>
   <data name="Tool_Dodge_Name" xml:space="preserve"><value>Dodge/burn</value></data>

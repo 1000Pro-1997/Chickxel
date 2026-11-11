@@ -384,124 +384,208 @@ internal static class FantasyPropsShapeSets
 
     // ───────────── 수정 ─────────────
 
-    private static readonly uint[] Amethyst = [0xFF3A1458, 0xFF6A2A9A, 0xFF9450CC, 0xFFBC86EE, 0xFFF0DCFF];
-    private static readonly uint[] Sapphire = [0xFF0E2A5E, 0xFF1E58A8, 0xFF3A8CDA, 0xFF78C4F6, 0xFFDCF4FF];
-    private static readonly uint[] Emerald = [0xFF0C4232, 0xFF178A5E, 0xFF2EBE82, 0xFF7AE8B2, 0xFFE0FFF0];
-    private static readonly uint[] RoseQuartz = [0xFF5E1440, 0xFFA8306E, 0xFFDA5A9C, 0xFFF89ACA, 0xFFFFE4F2];
-    private static readonly uint[] Quartz = [0xFF3E5468, 0xFF8AA4B8, 0xFFB8D0E0, 0xFFE2F0F8, 0xFFFFFFFF];
-    private static readonly uint[] RockT = [0xFF2A262C, 0xFF46404A, 0xFF625C66, 0xFF807A84, 0xFFA29CA6];
+    // 수정 톤: [0] 테두리, [1] 그늘 면, [2] 어두운 중간, [3] 앞면, [4] 빛 받는 면, [5] 거의 흰 빛
+    private static readonly uint[] Amethyst = [0xFF2A0F45, 0xFF4E1F7A, 0xFF6E34A8, 0xFF9056D0, 0xFFB98AEE, 0xFFF0E2FF];
+    private static readonly uint[] Sapphire = [0xFF0B1F4D, 0xFF153F8C, 0xFF2462C0, 0xFF3E8CE6, 0xFF86C2FA, 0xFFE4F4FF];
+    private static readonly uint[] Emerald = [0xFF07382A, 0xFF0F6648, 0xFF1B8E62, 0xFF2FB884, 0xFF7AE2B4, 0xFFE2FFF2];
+    private static readonly uint[] RoseQuartz = [0xFF4E1236, 0xFF8A2A5C, 0xFFBE4A84, 0xFFE07AAC, 0xFFF8B4D2, 0xFFFFEEF6];
+    private static readonly uint[] Quartz = [0xFF34485C, 0xFF6A8298, 0xFF94ACC0, 0xFFBED2E0, 0xFFE2EEF6, 0xFFFFFFFF];
+    private static readonly uint[] Citrine = [0xFF4E2E04, 0xFF8A5A0A, 0xFFBE8614, 0xFFE6B22C, 0xFFF8D86C, 0xFFFFF8D8];
+    private static readonly uint[] CaveRockT = [0xFF1C1A20, 0xFF2E2B33, 0xFF433F4A, 0xFF5A5562, 0xFF7A7484];
 
-    /// <summary>수정 기둥 하나: 밑동 가운데 X, 밑 줄 Base, 반폭 Half, 길이 Len, 한 줄 오를 때 옆으로 Lean.</summary>
-    private readonly record struct Shard(double X, int Base, double Half, int Len, double Lean);
+    /// <summary>
+    /// 육각 기둥 수정 하나: 밑동 (X, Y), 기울기 Angle(도, +면 오른쪽으로), 반폭 Half, 길이 Len,
+    /// 뾰족 끝 꼭짓점의 가로 치우침 Apex(-1 왼쪽 ~ 1 오른쪽: 큰 면 하나와 가는 면 하나), Back이면 뒤쪽이라 한 톤 어둡게.
+    /// </summary>
+    private readonly record struct Prism(double X, double Y, double Angle, double Half, double Len, double Apex = -0.25, bool Back = false);
 
-    private static PixelImage Crystal(int w, int h, Shard s, uint[] t)
+    /// <summary>
+    /// 수정 기둥 그림: 왼쪽 빛 받는 면(바깥 모서리에 또렷한 빛줄), 앞면(왼쪽 모서리 빛, 가는 가로 결, 큰 수정엔 속 그림자 줄),
+    /// 오른쪽 그늘 면(밑동 쪽은 빛이 비쳐 밝게), 끝은 같은 면들이 꼭짓점으로 모이는 깎인 면(한 단계 밝게).
+    /// </summary>
+    private static PixelImage PrismImage(int w, int h, Prism p, uint[] t)
     {
-        double tip = Math.Max(2, s.Half * 1.7);
-        (double Cx, double Hw) Row(int y)
+        double th = p.Angle * Math.PI / 180, ax = Math.Sin(th), ay = -Math.Cos(th), qx = Math.Cos(th), qy = Math.Sin(th);
+        double tip = p.Half * 1.7, shaft = p.Len - tip;
+        const double e1 = -0.42, e2 = 0.36;
+        (double S, double T) Local(int x, int y)
         {
-            int k = s.Base - y;
-            double hw = k > s.Len - tip ? s.Half * (s.Len - k + 0.6) / tip : s.Half;
-            return (s.X + s.Lean * k, hw);
+            double dx = x + 0.5 - p.X, dy = y + 0.5 - p.Y;
+            return (dx * ax + dy * ay, (dx * qx + dy * qy) / p.Half);
         }
-        bool Inside(int x, int y)
+        bool In(int x, int y)
         {
-            int k = s.Base - y;
-            if (k < 0 || k > s.Len) return false;
-            var (cx, hw) = Row(y);
-            return Math.Abs(x + 0.5 - cx) <= hw + 0.3;
+            var (s, tt) = Local(x, y);
+            if (s < 0 || s > p.Len) return false;
+            if (s <= shaft) return Math.Abs(tt) <= 1;
+            double k = (s - shaft) / tip;
+            return tt >= -1 + (1 + p.Apex) * k && tt <= 1 - (1 - p.Apex) * k;
         }
+        int Face(double s, double tt)
+        {
+            double k = s <= shaft ? 0 : (s - shaft) / tip;
+            double a = e1 + (p.Apex - e1) * k, b = e2 + (p.Apex - e2) * k;
+            return tt < a ? 0 : tt < b ? 1 : 2;
+        }
+        bool Phantom(double s, double tt)
+        {
+            if (p.Back || p.Len < 16) return false;
+            double top = shaft * 0.6, ptip = tip * 0.8, k = (s - (top - ptip)) / ptip;
+            if (k < 0 || k > 1) return false;
+            double l = -0.75 + (0.75 + p.Apex) * k, r = 0.75 - (0.75 - p.Apex) * k;
+            return Math.Abs(tt - l) * p.Half < 0.5 || Math.Abs(tt - r) * p.Half < 0.5;
+        }
+        int shift = p.Back ? 1 : 0;
         return Paint(w, h, (x, y) =>
         {
-            if (!Inside(x, y)) return Color32.Transparent;
-            if (Edge(Inside, x, y)) return C(t[0]);
-            var (cx, hw) = Row(y);
-            double rel = (x + 0.5 - cx) / Math.Max(hw, 0.8);
-            bool nearTip = s.Base - y > s.Len - tip - 1;
-            if (rel < -0.25) return C(!Inside(x - 2, y) && (nearTip || s.Base - y > s.Len / 2) ? t[4] : t[3]);
-            if (rel < 0.3) return C(nearTip && rel < 0 ? t[3] : t[2]);
-            return C(t[1]);
+            if (!In(x, y)) return Color32.Transparent;
+            if (Edge(In, x, y)) return C(t[0]);
+            var (s, tt) = Local(x, y);
+            bool tipZone = s > shaft;
+            int face = Face(s, tt), tone;
+            if (face == 0)
+            {
+                bool rim = In(x - 1, y) && Edge(In, x - 1, y) && s > p.Len * 0.2;
+                tone = tipZone || rim ? 5 : 4;
+            }
+            else if (face == 1)
+            {
+                var (ls, lt) = Local(x - 1, y);
+                tone = tipZone ? 4 : 3;
+                if (!tipZone && s > p.Len * 0.45 && Face(ls, lt) == 0) tone = 4;
+                else if (!tipZone && Phantom(s, tt)) tone = 4;
+            }
+            else
+            {
+                tone = tipZone ? 2 : s < p.Len * 0.35 ? 2 : 1;
+            }
+            return C(t[Math.Max(1, tone - shift)]);
         });
     }
 
-    /// <summary>바위 받침: 밑 줄에 중심을 둔 반타원 둔덕들(X, Y, 가로 반지름, 세로 반지름).</summary>
-    private static PixelImage Rock(int w, int h, (double X, double Y, double Rx, double Ry)[] domes)
-        => Shaded(w, h, (x, y) => y < h && domes.Any(d => Math.Pow((x + 0.5 - d.X) / d.Rx, 2) + Math.Pow((y + 0.5 - d.Y) / d.Ry, 2) <= 1), RockT);
-
-    private static PixelImage Cluster(int w, int h, uint[] t, Shard[] shards, (double X, double Y, double Rx, double Ry)[]? rock = null)
+    private static bool InPolygon((double X, double Y)[] poly, double x, double y)
     {
-        var parts = shards.Select(s => (Crystal(w, h, s, t), 0, 0)).ToList();
-        if (rock is not null) parts.Add((Rock(w, h, rock), 0, 0));
+        bool inside = false;
+        for (int i = 0, j = poly.Length - 1; i < poly.Length; j = i++)
+            if ((poly[i].Y > y) != (poly[j].Y > y) && x < (poly[j].X - poly[i].X) * (y - poly[i].Y) / (poly[j].Y - poly[i].Y) + poly[i].X)
+                inside = !inside;
+        return inside;
+    }
+
+    /// <summary>모난 동굴 바위 덩이(다각형, 왼쪽 위 빛): 가장 높은 꼭짓점에서 오른쪽 아래로 그은 선 오른쪽은 그늘 면, 군데군데 얼룩.</summary>
+    private static PixelImage RockChunk(int w, int h, (double X, double Y)[] poly, int seed)
+    {
+        bool In(int x, int y) => y < h && InPolygon(poly, x + 0.5, y + 0.5);
+        var peak = poly.MinBy(q => q.Y);
+        return Paint(w, h, (x, y) =>
+        {
+            var c = ShadeAt(In, x, y, CaveRockT);
+            if (c.A == 0 || Edge(In, x, y)) return c;
+            bool shaded = x + 0.5 > peak.X + (y + 0.5 - peak.Y) * 0.8;
+            if (shaded) c = c == C(CaveRockT[4]) || c == C(CaveRockT[3]) ? C(CaveRockT[2]) : C(CaveRockT[1]);
+            if (Hash(x, y, seed) % 9 == 0) return C(shaded ? CaveRockT[1] : CaveRockT[2]);
+            return c;
+        });
+    }
+
+    /// <summary>수정 무리: 뒤쪽 수정 → 큰 수정 → 앞쪽 수정 순서로 겹치고, 바위 덩이(뒤·앞)가 밑동을 덮는다.</summary>
+    private static PixelImage Cluster(int w, int h, uint[] t, Prism[] prisms, params (double X, double Y)[][] rocks)
+    {
+        var parts = prisms.Select(p => (PrismImage(w, h, p, t), 0, 0)).ToList();
+        for (int i = 0; i < rocks.Length; i++) parts.Add((RockChunk(w, h, rocks[i], i + 1), 0, 0));
         return Compose(w, h, parts);
     }
 
-    private static PixelImage LargeCluster(uint[] t) => Cluster(26, 26, t,
+    private static PixelImage LargeCluster(uint[] t) => Cluster(30, 30, t,
     [
-        new(6.5, 22, 2.2, 12, -0.34),
-        new(19.5, 22, 2.2, 11, 0.34),
-        new(13, 23, 2.8, 20, 0),
-        new(9.5, 23, 1.7, 8, -0.2),
-        new(17.5, 23, 1.7, 7, 0.25),
-    ], [(12.5, 26, 12, 7), (19, 26, 6, 8.5)]);
+        new(10, 26, -27, 2.2, 14, 0.2, true),
+        new(20, 26, 27, 2.4, 15, -0.3, true),
+        new(15.5, 25, 0, 1.8, 9, 0.3, true),
+        new(14.5, 28, 0, 3.8, 26, -0.3),
+        new(8, 28, -45, 2.2, 11, 0.1),
+        new(22, 28, 45, 2.6, 13, -0.2),
+        new(18, 29, 27, 1.6, 7, 0),
+    ],
+    [(2, 30), (3, 27), (6, 24), (10, 22), (14, 21), (19, 22), (23, 23.5), (26, 26), (27, 30)],
+    [(16, 30), (17, 27.5), (20, 26), (24, 26.5), (26, 28.5), (26, 30)]);
 
-    private static PixelImage MediumCluster(uint[] t) => Cluster(19, 18, t,
+    private static PixelImage LargeClusterB(uint[] t) => Cluster(30, 30, t,
     [
-        new(5, 15, 1.8, 8, -0.4),
-        new(13.5, 15, 1.8, 9, 0.3),
-        new(9, 16, 2.4, 14, -0.1),
-    ], [(9.5, 18, 9, 5), (5.5, 18, 4.5, 6)]);
+        new(19, 26, 27, 2.2, 15, -0.2, true),
+        new(11, 26, -18, 2.6, 17, 0.25, true),
+        new(15.5, 28, 0, 3.6, 24, 0.3),
+        new(7, 28, -45, 2.4, 13, 0.1),
+        new(23, 28, 45, 2.0, 10, 0),
+        new(11, 29, -27, 1.6, 8, 0.2),
+    ],
+    [(2, 30), (3, 26), (8, 23.5), (14, 22.5), (20, 23), (26, 25), (28, 30)],
+    [(3, 30), (4, 27.5), (8, 26.5), (11, 28), (11, 30)]);
 
-    private static PixelImage SmallCluster(uint[] t) => Cluster(12, 12, t,
+    private static PixelImage MediumCluster(uint[] t) => Cluster(22, 22, t,
     [
-        new(4, 10, 1.6, 6, -0.34),
-        new(7.5, 11, 1.9, 9, 0.2),
+        new(7, 18, -27, 1.8, 10, 0.2, true),
+        new(15, 18, 27, 1.9, 11, -0.2, true),
+        new(11, 20, 0, 3.0, 18, -0.25),
+        new(16, 20, 45, 1.8, 8, 0),
+        new(6, 20, -45, 1.6, 6, 0.1),
+    ],
+    [(1, 22), (2, 19), (6, 16.5), (11, 15.5), (16, 16.5), (20, 19), (21, 22)],
+    [(13, 22), (14, 20), (17, 19), (20, 20), (20, 22)]);
+
+    private static PixelImage MediumClusterB(uint[] t) => Cluster(22, 22, t,
+    [
+        new(14, 18, 27, 1.8, 11, -0.2, true),
+        new(8, 18, -18, 1.9, 12, 0.2, true),
+        new(10.5, 20, 0, 2.8, 17, 0.25),
+        new(5, 20, -45, 1.8, 8, 0.1),
+        new(15, 20, 27, 1.5, 6, 0),
+    ],
+    [(1, 22), (2, 18.5), (7, 16), (13, 15.5), (18, 17), (21, 22)],
+    [(2, 22), (3, 20), (6, 19), (8, 20.5), (8, 22)]);
+
+    private static PixelImage SmallCluster(uint[] t) => Cluster(15, 15, t,
+    [
+        new(10.5, 13, 27, 1.7, 9, -0.1, true),
+        new(7.5, 13, 0, 2.4, 12, -0.2),
+        new(4, 13, -45, 1.6, 9, 0.2),
+    ],
+    [(1, 15), (2, 12.5), (5, 10.5), (10, 10.5), (13, 12.5), (14, 15)]);
+
+    private static PixelImage SmallClusterB(uint[] t) => Cluster(15, 15, t,
+    [
+        new(4.5, 13, -27, 1.6, 10, 0.2, true),
+        new(8, 13, 0, 2.3, 11, 0.25),
+        new(11.5, 13, 45, 1.5, 8, 0),
+    ],
+    [(1, 15), (2, 12.5), (6, 11), (11, 10.5), (13.5, 12.5), (14, 15)]);
+
+    /// <summary>수정: 동굴 바위에서 부채꼴로 솟은 자수정·청수정·녹수정·장미 수정·맑은 수정·황수정 무리(작은·중간·큰), 몇은 은은하게 빛남.</summary>
+    public static StampSet Crystals() => Set("Crystals",
+    [
+        LargeCluster(Amethyst),
+        LargeClusterB(Quartz),
+        MediumCluster(Sapphire),
+        MediumClusterB(RoseQuartz),
+        MediumCluster(Emerald),
+        MediumClusterB(Citrine),
+        SmallCluster(Amethyst),
+        SmallClusterB(Citrine),
+        SmallCluster(RoseQuartz),
+        SmallClusterB(Quartz),
+        Glow(LargeClusterB(Emerald), Emerald[4]),
+        Glow(MediumCluster(Amethyst), Amethyst[4]),
     ]);
-
-    private static PixelImage GroundCluster(uint[] t) => Cluster(16, 15, t,
-    [
-        new(4, 14, 1.7, 7, -0.5),
-        new(11.5, 14, 1.7, 6, 0.5),
-        new(8, 14, 2.2, 13, 0),
-    ]);
-
-    private static PixelImage LyingShard(uint[] t) => Rotate(Crystal(7, 14, new Shard(3.5, 13, 2.2, 12, 0), t), 62, t[0]);
-
-    private static PixelImage LoneCrystal(uint[] t) => Cluster(11, 16, t, [new(5.5, 14, 2.4, 13, 0)], [(5.5, 16, 5, 3)]);
-
-    /// <summary>수정: 바위에서 자란 큰·중간 무리(자수정·청수정·녹수정·장미 수정·맑은 수정), 땅에서 솟은 무리, 작은 무리, 낱개 조각, 빛나는 수정.</summary>
-    public static StampSet Crystals()
-    {
-        var shapes = new List<PixelImage>
-        {
-            LargeCluster(Amethyst),
-            LargeCluster(Quartz),
-            MediumCluster(Sapphire),
-            MediumCluster(RoseQuartz),
-            MediumCluster(Emerald),
-            GroundCluster(Amethyst),
-            GroundCluster(Sapphire),
-            SmallCluster(Emerald),
-            SmallCluster(RoseQuartz),
-            SmallCluster(Quartz),
-            LoneCrystal(Amethyst),
-            LoneCrystal(Emerald),
-            Glow(LargeCluster(Sapphire), Sapphire[3]),
-            Glow(GroundCluster(Emerald), Emerald[3]),
-            Glow(SmallCluster(Amethyst), Amethyst[3]),
-        };
-        shapes.Add(LyingShard(RoseQuartz));
-        shapes.Add(FlipX(LyingShard(Sapphire)));
-        return Set("Crystals", shapes);
-    }
 
     // ───────────── 비석 ─────────────
 
+    // 돌 톤 세 가지: 푸른 회색, 따뜻한 회갈색, 어두운 점판암
     private static readonly uint[] StoneT = [0xFF34363F, 0xFF62646F, 0xFF878995, 0xFFAAACB6, 0xFFD2D4DC];
-    private static readonly uint[] StoneSideT = [0xFF34363F, 0xFF555864, 0xFF666975, 0xFF6E717D, 0xFF7A7D88];
+    private static readonly uint[] WarmStoneT = [0xFF3E3830, 0xFF6E665A, 0xFF948A7C, 0xFFB6AC9C, 0xFFDAD2C4];
+    private static readonly uint[] SlateT = [0xFF22252E, 0xFF40444F, 0xFF575C69, 0xFF707684, 0xFF9AA0AE];
     private static readonly uint[] MossT = [0xFF2E4A1C, 0xFF4A7228, 0xFF6E9A38, 0xFF9CC456];
     private static readonly uint[] DirtT = [0xFF2A1E14, 0xFF46321F, 0xFF5C4229, 0xFF725334, 0xFF8E6C46];
-    private static readonly uint[] StrawT = [0xFF5E4A2A, 0xFF8A7444, 0xFFB09A5C, 0xFFD2BE80];
 
-    private enum Head { Round, Arch, Flat, Cross }
+    private enum Head { Round, Arch, Flat, Cross, Celtic }
 
     private static bool HeadShape(Head head, double w, double h, double u, double v, bool chip)
     {
@@ -522,18 +606,33 @@ internal static class FantasyPropsShapeSets
             case Head.Flat:
                 if (Math.Abs(u) > hw) return false;
                 return !(v < -h + 1.5 && Math.Abs(u) > hw - 1.5);
-            default: // Cross
+            case Head.Cross:
                 double arm = -h + h * 0.3;
                 return Math.Abs(u) <= 2.1 || (v >= arm - 2 && v <= arm + 2 && Math.Abs(u) <= hw);
+            default: // Celtic: 굵기 3칸 십자 + 고리, 고리 안쪽은 움푹(Tombstone에서 어둡게)
+                for (int dy = -1; dy <= 1; dy++)
+                    for (int dx = -1; dx <= 1; dx++)
+                        if (Math.Abs(dx) + Math.Abs(dy) <= 1 && CelticBody(u + dx, v + dy, h)) return true;
+                double cu = Math.Round(u), cv = Math.Round(v) + h - 7;
+                return cu * cu + cv * cv <= 5.8 * 5.8;
         }
     }
 
-    /// <summary>
-    /// 비석: 앞면(빛 받는 돌) 뒤에 오른쪽 위로 두께, 새김(1 십자, 2 글줄), 금, 이끼, 밑에 흙 둔덕.
-    /// </summary>
-    private static PixelImage Tombstone(Head head, int w, int h, double tilt, int engrave = 0, bool crack = false, bool moss = false, bool chip = false, int seed = 1)
+    /// <summary>켈트 십자가의 돌 부분(테두리 안쪽): 가운데가 꼭대기에서 7칸 아래인 굵기 3칸 십자와 반지름 4.6~5.8 고리.</summary>
+    private static bool CelticBody(double u, double v, double h)
     {
-        int W = w + 14, H = h + 10;
+        double cu = Math.Round(u), cv = Math.Round(v) + h - 7, r = Math.Sqrt(cu * cu + cv * cv);
+        if (v > 0 || cv < -6) return false;
+        return Math.Abs(cu) <= 1 || (Math.Abs(cv) <= 1 && Math.Abs(cu) <= 6) || (r >= 4.6 && r <= 5.8);
+    }
+
+    /// <summary>
+    /// 비석(정면, 두께 없음): 돌 실루엣 앞면 명암(왼쪽 위 밝게), 새김(1 십자, 2 글줄, 3 움푹한 이름판), 금, 이 빠진 귀퉁이, 이끼,
+    /// 밑에는 납작한 흙 둔덕.
+    /// </summary>
+    private static PixelImage Tombstone(Head head, int w, int h, uint[] t, double tilt = 0, int engrave = 0, bool crack = false, bool moss = false, bool chip = false, int seed = 1)
+    {
+        int W = w + 10, H = h + 8;
         double px = W / 2.0, py = H - 3.5;
         double a = tilt * Math.PI / 180, cos = Math.Cos(a), sin = Math.Sin(a);
         (double U, double V) L(int x, int y)
@@ -546,107 +645,86 @@ internal static class FantasyPropsShapeSets
             var (u, v) = L(x, y);
             return HeadShape(head, w, h, u, v, chip);
         }
-        bool Back(int x, int y) => Front(x - 2, y + 1) && !Front(x, y);
-        double mw = (w + 6) / 2.0;
-        bool Mound(int x, int y)
-        {
-            double dx = (x + 0.5 - px) / mw;
-            return y <= H - 1 && Math.Abs(dx) < 1 && H - 1 - y + 0.5 < 4.2 * Math.Sqrt(1 - dx * dx);
-        }
+        double mw = (w + 4) / 2.0;
+        bool Mound(int x, int y) => y >= H - 4 && y <= H - 1 && Math.Abs(x + 0.5 - px) <= mw - (y == H - 4 ? 1.5 : 0);
         double topV = -h, crackU = w * 0.15;
         var stone = Paint(W, H, (x, y) =>
         {
-            if (Front(x, y))
+            if (!Front(x, y)) return Color32.Transparent;
+            var c = ShadeAt(Front, x, y, t);
+            if (Edge(Front, x, y)) return c;
+            var (u, v) = L(x, y);
+            double tv = v - topV;
+            if (head == Head.Celtic)
             {
-                var c = ShadeAt(Front, x, y, StoneT);
-                if (Edge(Front, x, y)) return c;
-                var (u, v) = L(x, y);
-                double tv = v - topV;
-                if (crack && tv < h * 0.6 && Math.Abs(u - crackU - Math.Sin(tv * 1.3) * 1.2 + tv * 0.15) < 0.55) return C(StoneT[0]);
-                if (moss)
-                {
-                    bool nearTop = !Front(x, y - 1) || !Front(x, y - 2) || (!Front(x, y - 3) && Hash(x, y, seed) % 2 == 0);
-                    bool nearBottom = v > -3 - Hash(x, 0, seed) % 3;
-                    if ((nearTop && Hash(x, y, seed + 7) % 5 != 0) || (nearBottom && Hash(x, y, seed + 3) % 3 != 0))
-                        return C(!Front(x, y - 1) ? MossT[3] : Hash(x, y, seed + 11) % 3 == 0 ? MossT[1] : MossT[2]);
-                }
-                if (engrave == 1 && head != Head.Cross)
-                {
-                    double cv = topV + Math.Min(w * 0.5, h * 0.35) + 1.5;
-                    if ((Math.Abs(u) < 0.5 && v >= cv - 2.5 && v <= cv + 3.5) || (Math.Abs(v - cv + 0.5) < 0.5 && Math.Abs(u) <= 2))
-                        return C(StoneT[1]);
-                }
-                if (engrave == 2)
-                {
-                    double first = topV + Math.Min(w * 0.5, h * 0.4) + 1;
-                    for (int i = 0; i < 3; i++)
-                    {
-                        double lv = first + i * 2, lw = (w / 2.0 - 2.5) - (i == 2 ? 1 : 0);
-                        if (Math.Abs(v - lv - 0.5) < 0.5 && Math.Abs(u) <= lw && Hash((int)Math.Floor(u + 10), i, seed) % 4 != 0) return C(StoneT[1]);
-                    }
-                }
-                return c;
+                bool Body(int bx, int by) { var (bu, bv) = L(bx, by); return CelticBody(bu, bv, h); }
+                if (!Body(x, y)) return C(Body(x - 1, y) || Body(x + 1, y) || Body(x, y - 1) || Body(x, y + 1) ? t[0] : t[1]);
+                if (!Body(x - 1, y) || !Body(x, y - 1)) return C(t[4]);
+                if (!Body(x + 1, y) || !Body(x, y + 1)) return C(t[2]);
+                return C(t[3]);
             }
-            if (Back(x, y))
-                return Edge((a2, b2) => Front(a2 - 2, b2 + 1) || Front(a2, b2), x, y) ? C(StoneSideT[0]) : C(StoneSideT[2]);
-            return Color32.Transparent;
+            if (crack && tv < h * 0.6 && Math.Abs(u - crackU - Math.Sin(tv * 1.3) * 1.2 + tv * 0.15) < 0.55) return C(t[0]);
+            if (moss)
+            {
+                bool nearTop = !Front(x, y - 1) || !Front(x, y - 2) || (!Front(x, y - 3) && Hash(x, y, seed) % 2 == 0);
+                bool nearBottom = v > -3 - Hash(x, 0, seed) % 3;
+                if ((nearTop && Hash(x, y, seed + 7) % 5 != 0) || (nearBottom && Hash(x, y, seed + 3) % 3 != 0))
+                    return C(!Front(x, y - 1) ? MossT[3] : Hash(x, y, seed + 11) % 3 == 0 ? MossT[1] : MossT[2]);
+            }
+            double headRoom = Math.Min(w * 0.5, h * 0.4);
+            if (engrave == 1)
+            {
+                double cv = topV + Math.Min(w * 0.5, h * 0.35) + 1.5;
+                if ((Math.Abs(u) < 0.5 && v >= cv - 2.5 && v <= cv + 3.5) || (Math.Abs(v - cv + 0.5) < 0.5 && Math.Abs(u) <= 2))
+                    return C(t[1]);
+            }
+            if (engrave == 2)
+            {
+                double first = topV + headRoom + 1;
+                for (int i = 0; i < 3; i++)
+                {
+                    double lv = first + i * 2, lw = (w / 2.0 - 2.5) - (i == 2 ? 1 : 0);
+                    if (Math.Abs(v - lv - 0.5) < 0.5 && Math.Abs(u) <= lw && Hash((int)Math.Floor(u + 10), i, seed) % 4 != 0) return C(t[1]);
+                }
+            }
+            if (engrave == 3)
+            {
+                // 움푹한 이름판: 위·왼쪽 안 테두리는 그늘, 아래·오른쪽은 밝게, 가운데 글줄
+                double lw = w / 2.0 - 2, pv = v - (topV + headRoom);
+                if (Math.Abs(u) <= lw && pv >= 0 && pv < 6)
+                {
+                    if (pv < 1 || u < -lw + 1) return C(t[1]);
+                    if (pv >= 5 || u > lw - 1) return C(t[4]);
+                    if ((pv >= 2 && pv < 3 || pv >= 3.99 && pv < 4) && Math.Abs(u) <= lw - 2 && Hash((int)Math.Floor(u + 10), (int)pv, seed) % 4 != 0) return C(t[1]);
+                    return C(t[2]);
+                }
+            }
+            return c;
         });
         var mound = Paint(W, H, (x, y) =>
         {
-            if (Mound(x, y))
-                return !Edge(Mound, x, y) && Hash(x, y, seed) % 6 == 0 ? C(DirtT[1]) : ShadeAt(Mound, x, y, DirtT);
-            // 둔덕 위로 삐죽 솟은 마른 풀
-            if (Mound(x, y + 1) && Hash(x, 0, seed + 5) % 4 == 0) return C(StrawT[2]);
-            if (Mound(x, y + 2) && !Mound(x, y + 1) && Hash(x, 0, seed + 5) % 8 == 0) return C(StrawT[3]);
-            return Color32.Transparent;
+            if (!Mound(x, y)) return Color32.Transparent;
+            return !Edge(Mound, x, y) && Hash(x, y, seed) % 5 == 0 ? C(DirtT[1]) : ShadeAt(Mound, x, y, DirtT);
         });
         return Compose(W, H, [(stone, 0, 0), (mound, 0, 0)]);
     }
 
-    private static readonly Dictionary<char, uint> StrawP = new() { ['a'] = StrawT[0], ['b'] = StrawT[1], ['c'] = StrawT[2], ['d'] = StrawT[3] };
-
-    private static readonly string[] DeadGrass =
+    /// <summary>비석: 정면에서 본 둥근·뾰족한·네모 비석, 돌 십자가, 켈트 십자가, 금 가고 이끼 낀 비석, 살짝 기운 비석, 작은 표석(회색 돌 세 가지 톤).</summary>
+    public static StampSet Tombstones() => Set("Tombstones",
     [
-        "....d.......",
-        ".d..c....c..",
-        "..c.c...c...",
-        "..b.cd..b..d",
-        "c.b.b.c.b.c.",
-        ".bb.b.cbb.b.",
-        "..bab.bab.b.",
-        "..aaabaaaba.",
-    ];
-
-    private static readonly string[] DeadGrassSmall =
-    [
-        "..d...",
-        "c.c..d",
-        ".bc.c.",
-        ".bbcb.",
-        "..aab.",
-    ];
-
-    /// <summary>비석: 둥근·뾰족한·네모 비석, 돌 십자가, 금 간·기운·이끼 낀 비석, 작은 표석, 마른 풀 포기. 묘지 바닥에.</summary>
-    public static StampSet Tombstones()
-    {
-        var shapes = new List<PixelImage>
-        {
-            Tombstone(Head.Round, 10, 14, 0, engrave: 1),
-            Tombstone(Head.Round, 11, 15, -9, engrave: 2, moss: true, seed: 3),
-            Tombstone(Head.Arch, 10, 16, 0, engrave: 2, seed: 5),
-            Tombstone(Head.Flat, 11, 12, 6, engrave: 2, crack: true, chip: true, seed: 2),
-            Tombstone(Head.Cross, 11, 17, 0),
-            Tombstone(Head.Cross, 9, 14, 12, moss: true, seed: 9),
-            Tombstone(Head.Round, 12, 15, 0, engrave: 1, moss: true, seed: 4),
-            Tombstone(Head.Round, 10, 13, 11, crack: true, seed: 6),
-            Tombstone(Head.Round, 6, 6, 0),
-            Tombstone(Head.Flat, 6, 5, -10, seed: 8),
-            Art(DeadGrass, StrawP),
-            Art(DeadGrassSmall, StrawP),
-            FlipX(Art(DeadGrass, StrawP)),
-        };
-        return Set("Tombstones", shapes);
-    }
+        Tombstone(Head.Round, 10, 14, StoneT, engrave: 1),
+        Tombstone(Head.Round, 11, 15, WarmStoneT, engrave: 3, moss: true, seed: 3),
+        Tombstone(Head.Arch, 10, 16, StoneT, engrave: 2, seed: 5),
+        Tombstone(Head.Flat, 11, 12, SlateT, engrave: 2, crack: true, chip: true, seed: 2),
+        Tombstone(Head.Cross, 11, 17, StoneT),
+        Tombstone(Head.Celtic, 15, 20, WarmStoneT, seed: 9),
+        Tombstone(Head.Round, 12, 15, SlateT, engrave: 1, moss: true, seed: 4),
+        Tombstone(Head.Round, 10, 13, StoneT, tilt: 7, crack: true, seed: 6),
+        Tombstone(Head.Arch, 9, 12, WarmStoneT, engrave: 3, seed: 7),
+        Tombstone(Head.Cross, 9, 13, SlateT, moss: true, seed: 10),
+        Tombstone(Head.Round, 6, 6, StoneT),
+        Tombstone(Head.Flat, 7, 5, WarmStoneT, seed: 8),
+    ]);
 
     // ───────────── 호박 ─────────────
 

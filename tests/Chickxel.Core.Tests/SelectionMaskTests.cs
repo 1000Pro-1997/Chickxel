@@ -167,4 +167,77 @@ public class SelectionMaskTests
         Assert.Equal(2, Raster.ReplaceColor(img, Red, Blue, clip));
         Assert.Equal(Red, img.Get(1, 0));
     }
+
+    [Fact]
+    public void Combine_AddSubtractIntersect()
+    {
+        var a = new PixelMask(new Rectangle(0, 0, 4, 4));
+        var b = new PixelMask(new Rectangle(6, 6, 2, 2));
+
+        // 떨어진 두 영역을 더하면 둘 다 들어가고 사이는 비어 있다.
+        var added = a.Combine(b, SelectionCombine.Add);
+        Assert.Equal(new Rectangle(0, 0, 8, 8), added.Bounds);
+        Assert.Equal(20, added.Count);
+        Assert.False(added.Contains(5, 5));
+        // 빈 선택에 더하면 새 영역 그대로(원점까지 늘지 않음).
+        Assert.Equal(b.Bounds, default(PixelMask).Combine(b, SelectionCombine.Add).Bounds);
+
+        // 가운데를 빼면 구멍, 한쪽 줄을 통째로 빼면 꼭 맞게 줄어 다시 사각형.
+        var holed = a.Combine(new Rectangle(1, 1, 2, 2), SelectionCombine.Subtract);
+        Assert.Equal(12, holed.Count);
+        Assert.False(holed.Contains(1, 1));
+        var cut = a.Combine(new Rectangle(0, 0, 4, 1), SelectionCombine.Subtract);
+        Assert.True(cut.IsRectangle);
+        Assert.Equal(new Rectangle(0, 1, 4, 3), cut.Bounds);
+        Assert.True(a.Combine(a, SelectionCombine.Subtract).IsEmpty);
+
+        // 겹친 곳만: 겹치면 그 사각형, 안 겹치면 빈 영역.
+        Assert.Equal(new Rectangle(2, 2, 2, 2), a.Combine(new Rectangle(2, 2, 5, 5), SelectionCombine.Intersect).Bounds);
+        Assert.True(a.Combine(b, SelectionCombine.Intersect).IsEmpty);
+    }
+
+    [Fact]
+    public void ExpandRegion_GrowAndTouching()
+    {
+        // 5×3, 가운데 줄: 빨강 빨강 파랑 초록 투명(나머지 투명)
+        var img = new PixelImage(5, 3);
+        img.Set(0, 1, Red);
+        img.Set(1, 1, Red);
+        img.Set(2, 1, Blue);
+        img.Set(3, 1, new Color32(0, 255, 0));
+        var red = Raster.FloodRegion(img, 0, 1);
+        Assert.Equal(2, red.Count);
+
+        // 바깥 1칸: 상하좌우만(대각선 끔), 그림 밖은 버림
+        var grown = Raster.ExpandRegion(img, red, WandMode.Grow);
+        Assert.Equal(7, grown.Count);
+        Assert.True(grown.Contains(2, 1));
+        Assert.False(grown.Contains(2, 0));
+        Assert.Equal(9, Raster.ExpandRegion(img, red, WandMode.Grow, diagonal: true).Count);
+
+        // 맞닿은 색: 파랑은 더하고, 맞닿은 투명은 시작하지 않으며, 한 단계만(초록은 다음 단계)
+        var touching = Raster.ExpandRegion(img, red, WandMode.Touching);
+        Assert.Equal(3, touching.Count);
+        Assert.True(touching.Contains(2, 1));
+        Assert.False(touching.Contains(3, 1));
+        Assert.True(Raster.ExpandRegion(img, touching, WandMode.Touching).Contains(3, 1));
+    }
+
+    [Fact]
+    public void WandRegion_StopsAtLimit()
+    {
+        var img = new PixelImage(10, 10);
+        img.FillRect(img.Bounds, Red);
+
+        // 한도를 넘으면(이어진 영역·전체 모두) null, 딱 맞으면 영역.
+        Assert.Null(Raster.WandRegion(img, 0, 0, WandMode.Tolerance, true, 0, false, FillColorMode.ChannelMax, maxCount: 99));
+        Assert.Equal(100, Raster.WandRegion(img, 0, 0, WandMode.Tolerance, true, 0, false, FillColorMode.ChannelMax, maxCount: 100)!.Value.Count);
+        Assert.Null(Raster.WandRegion(img, 0, 0, WandMode.Tolerance, false, 0, false, FillColorMode.ChannelMax, maxCount: 99));
+
+        // 넓힌 칸도 센다: 2×2 + 바깥 1칸(상하좌우) 8 = 12.
+        var block = new PixelImage(10, 10);
+        block.FillRect(new Rectangle(4, 4, 2, 2), Red);
+        Assert.Equal(12, Raster.WandRegion(block, 5, 5, WandMode.Grow, true, 0, false, FillColorMode.ChannelMax, maxCount: 12)!.Value.Count);
+        Assert.Null(Raster.WandRegion(block, 5, 5, WandMode.Grow, true, 0, false, FillColorMode.ChannelMax, maxCount: 11));
+    }
 }

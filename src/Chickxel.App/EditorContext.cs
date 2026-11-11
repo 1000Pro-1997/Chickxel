@@ -272,6 +272,24 @@ public sealed partial class EditorContext
     }
     /// <summary>채우기: 이어진 영역을 대각선으로도 잇는다(8방향).</summary>
     public bool FillDiagonal { get => _fillDiagonal; set { _fillDiagonal = value; OptionsChanged(); } }
+    private WandMode _wandMode;
+    /// <summary>스마트 선택이 고르는 범위(<see cref="Raster.ExpandRegion"/>, 기본 = 허용 오차 안의 칸만).</summary>
+    public WandMode WandMode
+    {
+        get => _wandMode;
+        set { if (!Enum.IsDefined(value)) value = WandMode.Tolerance; if (_wandMode == value) return; _wandMode = value; OptionsChanged(); }
+    }
+    private bool _wandPreview = true;
+    /// <summary>스마트 선택: 마우스를 올린 곳을 누르면 고를 칸을 미리 보인다(바뀔 칸만, <see cref="WandPreviewLimit"/>칸까지).</summary>
+    public bool WandPreview { get => _wandPreview; set { if (_wandPreview == value) return; _wandPreview = value; OptionsChanged(); } }
+    public const int DefaultWandPreviewLimit = 300, MaxWandPreviewLimit = 100000;
+    private int _wandPreviewLimit = DefaultWandPreviewLimit;
+    /// <summary>스마트 선택 미리보기가 셀 칸 수 한도. 새로 찾은 칸이 이보다 많으면 계산을 그만두고 보이지 않는다(마우스를 움직일 때 느려지지 않게).</summary>
+    public int WandPreviewLimit
+    {
+        get => _wandPreviewLimit;
+        set { value = Math.Clamp(value, 1, MaxWandPreviewLimit); if (_wandPreviewLimit == value) return; _wandPreviewLimit = value; OptionsChanged(); }
+    }
     /// <summary>채우기 영역을 보이는 레이어 합성으로 정한다(칠하기는 현재 레이어). false = 현재 레이어.</summary>
     public bool FillSampleVisible { get => _fillSampleVisible; set { _fillSampleVisible = value; OptionsChanged(); } }
     /// <summary>스포이드(임시 스포이드 포함): 보이는 레이어 합성에서 집는다. false = 현재 레이어에서.</summary>
