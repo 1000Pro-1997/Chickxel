@@ -320,7 +320,7 @@ public class ShapeStampTests
     [Fact]
     public void Library_OldBuiltIns_UnchangedOfficialCopiesDropped_OthersStayAsNamedUserSets()
     {
-        // 1.14.122에서 저장한 파일: 나뭇잎·꽃은 처음 그대로(이제 받은 세트로 설치되는 공식 세트), 단풍잎은 고쳤고, 풀은 공식 세트가 아니다
+        // 1.14.122에서 저장한 파일: 나뭇잎·반짝이는 처음 그대로(이제 받은 세트로 설치되는 공식 세트), 단풍잎은 고쳤고, 풀은 공식 세트가 아니다
         var shape = Convert.ToBase64String(PngBytes(Shape()));
         string Shapes(string packageId) => string.Join(",", OfficialShapeSets.Packages.Single(p => p.Id == packageId).Create().Shapes
             .Select(s => $"\"{Convert.ToBase64String(PngBytes(s))}\""));
@@ -329,7 +329,7 @@ public class ShapeStampTests
               {"id":"leaves","shapes":[{{Shapes("leaves")}}]},
               {"id":"autumn","shapes":["{{shape}}"]},
               {"id":"mine","name":"Mine","shapes":["{{shape}}"]},
-              {"id":"flowers","shapes":[{{Shapes("flowers")}}]},
+              {"id":"sparkles","shapes":[{{Shapes("sparkles")}}]},
               {"id":"grass","shapes":["{{shape}}"]}]}
             """;
 
@@ -405,10 +405,11 @@ public class ShapeStampTests
     public void Library_NewInstallIsEmpty_BuiltInSetsAreFiveOfficialPackages()
     {
         Assert.Empty(StampLibrary.Load(Path.Combine(Path.GetTempPath(), "chx-stamp-" + Guid.NewGuid().ToString("N"), StampLibrary.FileName)).Sets);
-        Assert.Equal(["flowers", "sparkles", "bubbles", "autumn-leaves", "leaves"], OfficialShapeSets.Packages.Select(p => p.Id));
+        Assert.Equal(["flowers", "flowers-2", "flowers-3", "sparkles", "bubbles", "autumn-leaves", "leaves"], OfficialShapeSets.Packages.Select(p => p.Id));
         Assert.All(StampBuiltIns.RetiredIds, id => Assert.NotNull(StampBuiltIns.RetiredName(id)));
         // 예전 기본 세트 이름표로 고른 설정은 같은 그림의 공식 세트로 잇는다
-        Assert.Equal(OfficialShapeSets.Packages[3].AssetId, OfficialShapeSets.AssetIdOfRetired("autumn"));
+        Assert.Equal(Official("autumn-leaves").AssetId, OfficialShapeSets.AssetIdOfRetired("autumn"));
+        Assert.Equal(Official("flowers").AssetId, OfficialShapeSets.AssetIdOfRetired("flowers"));
         Assert.Null(OfficialShapeSets.AssetIdOfRetired("grass"));
     }
 
@@ -449,7 +450,7 @@ public class ShapeStampTests
         var sets = OfficialShapeSets.Packages.Select(p => p.Create()).ToList();
         foreach (var set in sets)
         {
-            Assert.InRange(set.Shapes.Count, 6, 10);
+            Assert.InRange(set.Shapes.Count, 3, 10);
             for (int i = 0; i < set.Shapes.Count; i++)
                 for (int j = i + 1; j < set.Shapes.Count; j++)
                     Assert.False(set.Shapes[i].ContentEquals(set.Shapes[j]), $"{set.Name}: shapes {i} and {j} are the same");
@@ -468,7 +469,7 @@ public class ShapeStampTests
     [Fact]
     public void OfficialSets_UnchangedCopyIsOnlyAnUnnamedRetiredIdWithTheSameShapes()
     {
-        var leaves = OfficialShapeSets.Packages[4].Create();
+        var leaves = Official("leaves").Create();
         StampSet Copy(string id, string? name, IEnumerable<PixelImage> shapes)
         {
             var set = new StampSet { Id = id, Name = name };
@@ -517,7 +518,7 @@ public class ShapeStampTests
     [Fact]
     public void SetFile_OfficialSetExportsItsName_AndImportGetsAFreshId()
     {
-        var leaves = OfficialShapeSets.Packages[4].Create();
+        var leaves = Official("leaves").Create();
         var json = StampLibrary.SerializeSet(leaves);
         Assert.DoesNotContain("\"id\"", json);
         var back = StampLibrary.ParseSet(json)!;
@@ -543,7 +544,7 @@ public class ShapeStampTests
     public void AddImported_AppendsAndNeverOverwrites_CollidingNamesGetANumber()
     {
         var library = new StampLibrary();
-        library.Sets.Add(OfficialShapeSets.Packages[4].Create());
+        library.Sets.Add(Official("leaves").Create());
         int before = library.Sets.Count;
         var leaves = library.Sets[0];
         var leavesName = leaves.DisplayName;
@@ -562,5 +563,19 @@ public class ShapeStampTests
         Assert.Equal("my-file", unnamed.Name);
         Assert.Equal(leavesName, leaves.Name);
         Assert.Equal("Fresh", library.UniqueName("Fresh"));
+    }
+
+    private static OfficialShapeSetPackage Official(string id) => OfficialShapeSets.Packages.Single(p => p.Id == id);
+
+    [Fact]
+    public void OfficialSets_FlowersAreOneShapePerSet_OnlyColorsDiffer()
+    {
+        // 무작위로 흩뿌릴 때 비슷한 것끼리 나오게: 꽃 세트마다 모양(투명 칸 배치)이 하나뿐
+        foreach (var id in new[] { "flowers-2", "flowers-3" })
+        {
+            var masks = Official(id).Create().Shapes.Select(s => string.Concat(s.Pixels.Select(c => c.A > 0 ? '#' : '.'))).Distinct();
+            Assert.Single(masks);
+        }
+        Assert.Equal(6, Official("flowers").Create().Shapes.Count); // 세 색 × 좌우
     }
 }

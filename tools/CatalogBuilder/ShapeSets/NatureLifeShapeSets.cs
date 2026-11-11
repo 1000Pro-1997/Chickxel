@@ -191,11 +191,13 @@ internal static class NatureLifeShapeSets
         ".ooo.",
     ];
 
-    /// <summary>나비 다섯 색(편 날개 중·소, 옆모습), 꿀벌, 무당벌레.</summary>
-    public static StampSet Butterflies()
+    /// <summary>나비: 날개를 편 큰 나비 다섯 색(작은 나비·옆모습·벌·무당벌레는 <see cref="Insects"/> — 무작위로 섞여도 비슷한 것끼리).</summary>
+    public static StampSet Butterflies() => Set("Butterflies", WingColors.Select(c => Art(OpenWings, BugBody, c)));
+
+    /// <summary>곤충: 날개를 편 작은 나비 네 색, 날개를 접은 옆모습 나비, 꿀벌(좌우로 뒤집은 것도), 무당벌레 둘.</summary>
+    public static StampSet Insects()
     {
         var shapes = new List<PixelImage>();
-        foreach (var c in WingColors) shapes.Add(Art(OpenWings, BugBody, c));
         foreach (var c in new[] { WingColors[0], WingColors[1], WingColors[3], WingColors[4] }) shapes.Add(Art(SmallOpenWings, BugBody, c));
         var side = new List<PixelImage>();
         foreach (var c in new[] { WingColors[0], WingColors[2], WingColors[4] }) side.Add(Art(SideWings, BugBody, c));
@@ -203,7 +205,7 @@ internal static class NatureLifeShapeSets
         shapes.AddRange(Mirrored(side));
         shapes.Add(Art(Ladybug, LadybugColors));
         shapes.Add(Art(SmallLadybug, LadybugColors));
-        return Set("Butterflies", shapes);
+        return Set("Insects", shapes);
     }
 
     // ───────────── 나는 새 ─────────────

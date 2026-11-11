@@ -9935,7 +9935,7 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="ShapePen_ManageSetsTip" xml:space="preserve"><value>세트 관리…: 에셋 관리자의 설치됨 › 모양 펜을 열어 고른 세트를 보입니다. 내 세트와 받은 세트를 보고, 상점에 올리기·내보내기·가져오기·내 세트로 복사·캔버스에서 편집·캔버스에서 새 세트를 합니다.</value></data>
   <data name="Assets_NewSetFromCanvas" xml:space="preserve"><value>캔버스에서 새 세트…</value><comment>에셋 관리자 모양 펜 거르기 도구 막대 단추</comment></data>
   <data name="Assets_NewSetFromCanvasTip" xml:space="preserve"><value>지금 문서로 새 내 세트를 만듭니다: 프레임마다 보이는 레이어를 합친 그림이 모양 하나가 됩니다(투명한 둘레는 잘라 내고 빈 프레임은 건너뜀, 모양 64개·한 변 256px까지).</value></data>
-  <data name="Assets_RestoreSetsTip" xml:space="preserve"><value>모양 펜 기본 세트 다섯 가지(꽃·반짝이·비눗방울·단풍잎·나뭇잎) 중 지운 것을 다시 넣고, 예전 버전은 앱에 든 버전으로 올립니다(고친 것은 그대로). 내 세트와 받은 다른 세트는 그대로입니다.</value></data>
+  <data name="Assets_RestoreSetsTip" xml:space="preserve"><value>모양 펜 기본 세트 일곱 가지(꽃 1·꽃 2·꽃 3·반짝이·비눗방울·단풍잎·나뭇잎) 중 지운 것을 다시 넣고, 예전 버전은 앱에 든 버전으로 올립니다(고친 것은 그대로). 내 세트와 받은 다른 세트는 그대로입니다.</value></data>
   <data name="Assets_EditOwnSetOnCanvasTip" xml:space="preserve"><value>이 세트를 임시 문서 탭(모양마다 프레임 하나)으로 열어 그 자리에서 고칩니다. 내가 작성자라 '세트에 저장'이 이 에셋을 바꾸며, 고친 뒤 새 버전으로 올립니다.</value></data>
   <data name="Assets_SourceMySets" xml:space="preserve"><value>내 세트(모양 펜)</value><comment>내 모양 펜 세트의 출처</comment></data>
   <data name="Assets_ExportSetMenu" xml:space="preserve"><value>내보내기</value><comment>내 모양 펜 세트 상세의 메뉴 단추</comment></data>

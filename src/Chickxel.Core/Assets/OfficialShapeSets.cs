@@ -42,7 +42,8 @@ public sealed record OfficialShapeSetPackage(string Id, string Version, string D
 }
 
 /// <summary>
-/// 모양 펜 기본 세트 다섯 가지: 꽃·반짝이·비눗방울·단풍잎·나뭇잎. 공식 패키지(<see cref="OfficialShapeSetPackage"/>)로 상점에도 있고, 앱은 처음 실행에 받은 세트로
+/// 모양 펜 기본 세트 일곱 가지: 꽃 1·꽃 2·꽃 3·반짝이·비눗방울·단풍잎·나뭇잎. 세트마다 비슷한 것끼리만 담아(꽃은 모양마다 한 세트, 색만 다름) 무작위로 흩뿌려도 어울린다.
+/// 공식 패키지(<see cref="OfficialShapeSetPackage"/>)로 상점에도 있고, 앱은 처음 실행에 받은 세트로
 /// 넣는다(<see cref="BundledPackages"/> — 지우면 "기본 세트 되돌리기"로 다시 넣음). 세트 모음 파일(<see cref="StampLibrary"/>)에는 들지 않는다.
 /// 예전 판이 세트 모음에 넣어 둔 기본 세트(<see cref="StampBuiltIns.RetiredIds"/>)는 고치지 않았으면 이 세트와 같아 읽을 때 빼고(<see cref="IsUnchangedCopy"/>),
 /// 그 이름표를 고른 설정은 이 세트의 에셋 ID로 잇는다(<see cref="AssetIdOfRetired"/>).
@@ -52,8 +53,16 @@ public static class OfficialShapeSets
     /// <summary>기본 세트(넣는 차례 = 받은 세트 목록 차례). 버전을 올리면 고치지 않은 설치본이 업데이트된다.</summary>
     public static IReadOnlyList<OfficialShapeSetPackage> Packages { get; } =
     [
-        new("flowers", "1.0.0", "Small pink, blue and white flowers with yellow centers, some on a stem.",
-            "꽃", "노란 가운데의 분홍·파랑·흰색 작은 꽃(줄기 달린 것 포함).", Flowers, ["flowers", "nature", "spring", "official"]),
+        // 1.0.1: 1.0.0은 꽃 세 모양을 한 세트에 섞었다 — 이제 줄기 달린 꽃만(나머지는 꽃 2·꽃 3). 고치지 않은 1.0.0 설치본은 이 버전으로 업데이트된다
+        new("flowers", "1.0.1", "Small flowers on a stem in pink, blue and white with yellow centers, facing both ways.",
+            "꽃 1", "줄기 달린 작은 꽃(분홍·파랑·흰색, 노란 가운데)을 좌우로 뒤집은 것까지 담았습니다.", () => FlowerSet("Flowers 1", 0, mirrored: true),
+            ["flowers", "nature", "spring", "official"]),
+        new("flowers-2", "1.0.0", "Round flowers seen from above in pink, blue and white with yellow centers.",
+            "꽃 2", "위에서 본 둥근 꽃(분홍·파랑·흰색, 노란 가운데)입니다.", () => FlowerSet("Flowers 2", 1, mirrored: false),
+            ["flowers", "nature", "spring", "official"]),
+        new("flowers-3", "1.0.0", "Tiny four-petal blossoms in yellow and orange with pink, blue or white centers, for meadows and patterns.",
+            "꽃 3", "풀밭과 무늬에 흩뿌리는 아주 작은 네 잎 꽃(노랑·주황, 분홍·파랑·흰 가운데)입니다.", () => FlowerSet("Flowers 3", 2, mirrored: false),
+            ["flowers", "nature", "spring", "official"]),
         new("sparkles", "1.0.0", "White and soft yellow twinkles and four-pointed glints with a semi-transparent glow.",
             "반짝이", "흰색·옅은 노랑의 반짝임과 네 갈래 빛(반투명하게 번짐).", Sparkles, ["sparkles", "light", "magic", "official"]),
         new("bubbles", "1.0.0", "Soap bubbles in six sizes: a light blue rim, a clear inside and a white glint.",
@@ -76,14 +85,14 @@ public static class OfficialShapeSets
         return int.MaxValue;
     }
 
-    // 예전 판의 기본 세트 이름표 → 같은 그림의 공식 세트
+    // 예전 판의 기본 세트 이름표 → 같은(꽃은 비슷한) 그림의 공식 세트
     private static OfficialShapeSetPackage? OfRetired(string id) => id switch
     {
         "flowers" => Packages[0],
-        "sparkles" => Packages[1],
-        "bubbles" => Packages[2],
-        "autumn" => Packages[3],
-        "leaves" => Packages[4],
+        "sparkles" => Packages[3],
+        "bubbles" => Packages[4],
+        "autumn" => Packages[5],
+        "leaves" => Packages[6],
         _ => null,
     };
 
@@ -101,7 +110,12 @@ public static class OfficialShapeSets
 
     // ───────────── 그림 ─────────────
 
-    private static StampSet Flowers() => Set("Flowers", FlowerColors.SelectMany(palette => FlowerShapes.Select(rows => Art(rows, palette))));
+    // 꽃 한 모양(FlowerShapes의 shape번째)을 세 가지 색으로 — 다른 모양의 꽃은 다른 세트
+    private static StampSet FlowerSet(string name, int shape, bool mirrored)
+    {
+        var shapes = FlowerColors.Select(palette => Art(FlowerShapes[shape], palette));
+        return Set(name, mirrored ? Mirrored(shapes) : shapes);
+    }
 
     private static StampSet Sparkles() => Set("Sparkles", SparkleShapes());
 

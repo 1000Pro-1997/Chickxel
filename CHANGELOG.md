@@ -2,6 +2,11 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.124 (2026-11-12)
+### Shape pen sets keep similar things together
+- The Flowers set mixed three different flowers. It is now **Flowers 1** (flowers on a stem), and **Flowers 2** (round flowers seen from above) and **Flowers 3** (tiny four-petal blossoms) are new built-in sets, so random stamping keeps to one kind. Unedited installs of the old set update by themselves.
+- In the store, **Butterflies** now holds only the big open-wing butterflies; the small butterflies, folded-wing butterflies, bees and ladybugs moved to a new **Insects** set.
+
 ## v1.14.123 (2026-11-11)
 ### Built-in shape pen sets and default gradients are store assets
 - The shape pen's five built-in sets are now Flowers, Sparkles, Bubbles, Autumn Leaves and Leaves. They are official store assets (author Chickxel, with a version) that the app installs on first start, like the default effects.

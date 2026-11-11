@@ -86,9 +86,13 @@ internal static class ThemeShapeSets
             NatureGroundShapeSets.Puddles, "puddle", "rain", "water", "weather", "ground"),
 
         // 생물·나무
-        P("butterflies", "Butterflies in monarch, morpho blue, yellow, white and pink with open and folded wings, plus bees and ladybugs for gardens and meadows.",
-            "나비와 곤충", "여러 색 나비(편 날개·접은 옆모습)와 꿀벌, 무당벌레로 꽃밭과 풀밭을 꾸밉니다.",
-            NatureLifeShapeSets.Butterflies, "butterfly", "insect", "garden", "spring", "nature"),
+        // 1.0.1: 큰 나비만(작은 나비·옆모습·벌·무당벌레는 곤충 세트로 — 무작위로 흩뿌려도 비슷한 것끼리)
+        P("butterflies", "Big butterflies with open wings in monarch orange, morpho blue, yellow, white and pink for gardens and meadows.",
+            "나비", "날개를 편 큰 나비(주황·파랑·노랑·흰색·분홍)로 꽃밭과 풀밭을 꾸밉니다.",
+            NatureLifeShapeSets.Butterflies, "butterfly", "insect", "garden", "spring", "nature") with { Version = "1.0.1" },
+        P("insects", "Small garden bugs: little butterflies with open or folded wings, honeybees and ladybugs, facing both ways.",
+            "곤충", "작은 나비(편 날개·접은 옆모습), 꿀벌, 무당벌레를 좌우로 뒤집은 것까지 담은 꽃밭 곤충입니다.",
+            NatureLifeShapeSets.Insects, "insect", "bee", "ladybug", "garden", "nature"),
         P("flying-birds", "Birds in flight for skies: distant dark silhouettes in several sizes and wing poses, seagulls with wings up, flat or down, and small sparrows.",
             "나는 새", "하늘에 흩뿌리는 날아가는 새: 먼 새 실루엣, 갈매기, 참새를 여러 날갯짓으로 담았습니다.",
             NatureLifeShapeSets.Birds, "bird", "sky", "seagull", "flying", "nature"),
