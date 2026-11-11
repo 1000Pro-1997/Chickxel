@@ -7,7 +7,7 @@ shortcuts.4,쪽,Page
 shortcuts.5,담은 키,Keys covered
 shortcuts.p0,키 바꾸기·내보내기·불러오기,"Changing, exporting and importing keys"
 shortcuts.p1,파일 메뉴,File menu
-shortcuts.p2,"편집 메뉴의 실행취소~선택 해제, 선택 내려놓기, 방향키 옮기기","Edit menu from Undo to Deselect, drop selection, arrow-key nudging"
+shortcuts.p2,"편집 메뉴의 실행취소~선택 해제, 선택 내려놓기, 방향키로 선택 옮기기","Edit menu from Undo to Deselect, drop selection, nudging the selection with arrow keys"
 shortcuts.p3,"편집 메뉴의 뒤집기~환경 설정, 변형·크기 모드 적용과 취소","Edit menu from the flips to Preferences, applying and canceling transform and size modes"
 shortcuts.p4,"보기 메뉴, 확대·화면 이동 마우스 조작","View menu, mouse zoom and panning"
 shortcuts.p5,"프레임·레이어 메뉴, 타임라인 마우스 조작","Frame·Layer menu, timeline mouse actions"
@@ -72,15 +72,15 @@ shortcuts-edit.h-cmd.d8,선택을 풉니다.,Removes the selection.
 shortcuts-edit.h-extra,메뉴에 없는 키,Keys outside the menus
 shortcuts-edit.h-extra.d1,떠 있는 선택(붙여 넣거나 옮긴 그림)을 그 자리에 내려놓습니다. 변형 중이면 적용합니다.,"Drops a floating selection (pasted or moved pixels) in place. While transforming, applies the transform."
 shortcuts-edit.h-extra.d2,"변형·크기 모드를 취소하거나, 아니면 선택을 풉니다.","Cancels a transform or size mode, otherwise removes the selection."
-shortcuts-edit.h-extra.d3,선택(이동 도구면 셀 그림)을 1픽셀 옮깁니다. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+방향키도 됩니다.,Moves the selection (the cel's pixels with the Move tool) by 1 pixel. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+arrow keys work too.
+shortcuts-edit.h-extra.d3,"선택(이동 도구면 셀 그림)을 1픽셀 옮깁니다. 수정 키 없는 <kbd>←</kbd><kbd>→</kbd>는 <a href=""#shortcuts-timeline"">이전·다음 프레임</a>이라 가로는 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>를 함께 누릅니다. 이동 도구·변형·캔버스 크기·부위 배치처럼 옮기는 모드에서 캔버스에 포커스가 있으면 <kbd>←</kbd><kbd>→</kbd>만으로도 옮깁니다.","Moves the selection (the cel's pixels with the Move tool) by 1 pixel. Plain <kbd>←</kbd><kbd>→</kbd> go to the <a href=""#shortcuts-timeline"">previous and next frame</a>, so for sideways moves add <kbd>Ctrl</kbd>+<kbd>Shift</kbd>. In a moving mode (Move tool, transform, canvas size, part layout) with the canvas focused, plain <kbd>←</kbd><kbd>→</kbd> move too."
 shortcuts-edit.h-extra.d4,같은 대상을 8픽셀씩 옮깁니다.,Moves the same thing by 8 pixels.
 shortcuts-edit.h-menu,메뉴에서 키 확인,Keys in the menu
 shortcuts-edit.17.alt,편집 메뉴를 펼친 모습: 실행취소·다시 실행·잘라내기·복사·이미지만 복사·붙여넣기·지우기·모두 선택·선택 해제 오른쪽의 키,"The Edit menu open: the keys to the right of Undo, Redo, Cut, Copy, Copy images only, Paste, Delete, Select all and Deselect"
 shortcuts-edit.18,① 편집(Edit) 메뉴의 실행취소~선택 해제 키,"① Edit menu keys, Undo to Deselect"
 shortcuts-edit.15,"실행취소는 획 단위로 기본 1000단계이며, 환경 설정에서 최대 10000단계까지 늘릴 수 있습니다. 파일 목록에서 {{key:편집/실행취소}}를 누르면 마지막으로 삭제한 파일을 되살립니다.","Undo works per stroke with 1000 steps by default, which you can raise to up to 10000 in Preferences. Pressing {{key:편집/실행취소}} in the file list restores the last deleted file."
 shortcuts-edit.16,<strong>편집</strong> 메뉴를 펼치면 ① 실행취소부터 선택 해제까지의 키가 보입니다.,The <strong>Edit</strong> menu shows the keys from Undo to Deselect at ①.
-shortcuts-edit.nudge1,1px 옮기기(←→↑↓),Move 1px (←→↑↓)
-shortcuts-edit.nudge8,8px 옮기기(←→↑↓),Move 8px (←→↑↓)
+shortcuts-edit.nudge1,1px 옮기기,Move 1px
+shortcuts-edit.nudge8,8px 옮기기,Move 8px
 shortcuts-transform.1,변형과 이미지,Transform and image
 shortcuts-transform.overview,"<strong>편집</strong> 메뉴 아래쪽의 뒤집기·회전·변형·크기·팔레트 명령과, 변형·크기 모드를 끝내는 키입니다.","The flip, rotate, transform, size and palette commands in the lower part of the <strong>Edit</strong> menu, plus the keys that finish transform and size modes."
 shortcuts-transform.h-cmd,메뉴 명령,Menu commands
@@ -143,6 +143,7 @@ shortcuts-timeline.overview,프레임·레이어·그룹·스킨·태그를 다�
 shortcuts-timeline.h-cmd,메뉴 명령,Menu commands
 shortcuts-timeline.h-cmd.d1,미리보기 재생을 시작하거나 멈춥니다.,Starts or stops preview playback.
 shortcuts-timeline.h-cmd.d2,한 프레임 앞뒤로 갑니다.,Steps one frame back or forward.
+shortcuts-timeline.h-cmd.arrow,"수정 키 없는 방향키로 한 프레임 앞뒤로 갑니다. 끝에서는 반대쪽 끝으로 돕니다. 글자 입력 중이 아니면 어느 패널을 만진 뒤에도 됩니다. 타임라인 표에 포커스가 있으면 표의 셀 선택을 옮기고, 캔버스가 옮기는 모드이면 1px 옮깁니다.","Steps one frame back or forward with plain arrow keys, wrapping at the ends. Works after clicking any panel unless you are typing text. With the timeline grid focused they move the cel selection instead, and in a canvas moving mode they nudge by 1px."
 shortcuts-timeline.h-cmd.d3,처음·끝 프레임으로 갑니다(캔버스에 포커스가 있을 때).,Goes to the first or last frame (when the canvas has focus).
 shortcuts-timeline.h-cmd.d4,빈 프레임을 더합니다.,Adds an empty frame.
 shortcuts-timeline.h-cmd.d5,지금 프레임을 복사해 더합니다.,Adds a copy of the current frame.

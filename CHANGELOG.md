@@ -2,6 +2,36 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.119 (2026-11-11)
+### Effects dialog: the canvas no longer grows by itself, new Expand canvas button
+- OK and Apply permanently no longer expand the canvas; effect results outside the canvas are cut off (the before/after preview dims the parts that will be cut for every effect).
+- The common settings row **Expand canvas [mode]** and the per-effect **On OK: Expand canvas** checkbox are gone. An **Expand canvas…** button at the top of the common settings opens the same small window as the dock's button.
+- After you click **Expand**, the button shows `On OK: W×H → W'×H'` with an X to cancel; the canvas grows on OK or Apply permanently, in the same undo step as the effects. Cancelling the dialog changes nothing.
+- The Effect Maker's **On OK [Expand canvas]** preview row is gone and the declaration `expandCanvas` is ignored.
+
+### Tool settings: Apply to frames
+- Drawing tools (pencil, gradient pencil, shape pen, eraser, fill, gradient, shape, lighten/darken, dithering, color replace brush) have an **Apply to frames** group: current frame only, N frames before or after, both, up to the first or last frame, or all frames.
+- A stroke on the current frame is repeated at the same spot on the same layer of every frame in the range, all in one undo step; the status bar shows how many frames changed.
+- Linked cels change once, outside-canvas art is included, and the range resets to the current frame only each time the app starts.
+
+### Arrow keys ←→ go to the previous and next frame
+- ←→ without modifiers now move between frames wherever the focus is (except text fields and canvas text input), wrapping at the ends like `,` and `.`.
+- A selection no longer moves with ←→; use Ctrl+Shift+←→ for 1 px or Shift+←→ for 8 px. ↑↓ still move it by 1 px.
+- In move modes on the canvas (move tool, transform, canvas size, part layout) and in the timeline grid, ←→ work as before.
+
+### Paste lands where you copied
+- Pasting art copied or cut in the app with no selection puts it at the same frame position it was copied from, instead of the top left of the visible area.
+- With a selection it still goes to the selection's top left; images from other apps still go to the top left of the visible area.
+- Copying art on the canvas clears cels, frames or effects copied earlier from the timeline, so paste after clicking a timeline frame pastes that art.
+
+### Delete after clicking the timeline clears only the canvas selection
+- With a selection on the canvas, Delete clears the selection's contents even after you click a timeline frame or cel.
+- Without a selection it still deletes what is selected in the timeline.
+
+### Effect Maker: web search on request, orange names for effects that differ online
+- The Effect Maker's AI pane searches and reads the web when you explicitly ask (Claude: web search and fetch; Codex: web search) and writes the effect with the app's API from what it read.
+- In the My effects list, effects whose local version differs from the online list have an orange name; hover to see why (newer version online, local version not yet listed, or edited after download or upload).
+
 ## v1.14.118 (2026-11-11)
 ### AI chat: web search when you ask
 - When you explicitly ask in AI chat, for example "look it up on the web and draw it", the AI searches the web and uses what it reads (Claude: web search and web fetch; Codex: web search).

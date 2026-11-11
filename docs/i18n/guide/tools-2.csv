@@ -27,14 +27,14 @@ tools-select.12.alt,스마트 선택으로 머리카락 영역을 고른 캔버�
 tools-select.13,③ 스마트 선택으로 고른 머리카락 영역 · ④ 스마트 선택 설정(채우기와 같음),③ Hair area selected with the magic wand · ④ Magic wand settings (same as Fill)
 tools-select.5,③ 클릭한 픽셀과 비슷한 색 영역을 한 번에 고릅니다. 상태 표시줄에 고른 픽셀 수와 영역 크기가 나옵니다.,③ Selects the area of similar color around the clicked pixel in one click. The status bar shows the number of selected pixels and the size of the area.
 tools-select.wand-settings,"④ 설정은 <a href=""#tools-fill"">채우기</a>와 같은 값을 함께 씁니다: <strong>허용 오차</strong>, <strong>{{UiStrings.FillMatch_Label}}</strong>(허용 오차를 어떤 색 차이로 잴지), <strong>이어진 영역만</strong>(끄면 캔버스 전체에서 맞는 색), <strong>대각선으로도 잇기</strong>, <strong>기준</strong>(현재 레이어 / 보이는 레이어 전체). 한쪽에서 바꾼 값이 다른 쪽에도 그대로 쓰입니다.","④ The settings are shared with <a href=""#tools-fill"">Fill</a>: <strong>Tolerance</strong>, <strong>{{UiStrings.FillMatch_Label}}</strong> (which color difference the tolerance measures), <strong>Contiguous only</strong> (when off, matching colors anywhere on the canvas), <strong>Connect diagonally too</strong> and <strong>Source</strong> (current layer / all visible layers). A value changed in one tool is used by the other as well."
-tools-select.wand-move,스마트 선택은 안쪽을 끌어도 내용을 옮기지 않습니다. 옮기려면 이동 도구({{key:도구/이동}})나 방향키를 씁니다.,"Dragging inside a selection does not move it with the magic wand. To move the pixels, use the Move tool ({{key:도구/이동}}) or the arrow keys."
+tools-select.wand-move,스마트 선택은 안쪽을 끌어도 내용을 옮기지 않습니다. 옮기려면 이동 도구({{key:도구/이동}})나 방향키 옮기기({{key:편집/1px 왼쪽으로 옮기기}} 등)를 씁니다.,"Dragging inside a selection does not move it with the magic wand. To move the pixels, use the Move tool ({{key:도구/이동}}) or the nudge keys ({{key:편집/1px 왼쪽으로 옮기기}} and so on)."
 tools-select.h-work,선택 다루기,Working with a selection
 tools-select.th-action,조작,Action
 tools-select.th-result,결과,Result
 tools-select.work-drag,"선택 안쪽 끌기(사각·원·자유 선택), 이동 도구로 끌기","Drag inside the selection (rectangle, ellipse, lasso), or drag with the Move tool"
 tools-select.work-drag-r,선택한 내용을 떼어 옮깁니다. 내려놓기 전의 이 상태를 <strong>떠 있는 선택</strong>이라고 합니다. 잠긴 레이어에서는 옮길 수 없습니다.,"Lifts the selected pixels and moves them. Until it is dropped, this is called a <strong>floating selection</strong>. Pixels on a locked layer can't be moved."
-tools-select.work-arrows,방향키 / <kbd>Shift</kbd>+방향키,Arrow keys / <kbd>Shift</kbd>+arrow keys
-tools-select.work-arrows-r,선택 도구나 이동 도구를 쓰는 동안 선택 내용을 1px / 8px 옮깁니다.,Moves the selected pixels by 1px / 8px while a selection tool or the Move tool is active.
+tools-select.work-arrows,"{{key:편집/1px 왼쪽으로 옮기기}} {{key:편집/1px 오른쪽으로 옮기기}} {{key:편집/1px 위로 옮기기}} {{key:편집/1px 아래로 옮기기}} / {{key:편집/8px 왼쪽으로 옮기기}} {{key:편집/8px 오른쪽으로 옮기기}} {{key:편집/8px 위로 옮기기}} {{key:편집/8px 아래로 옮기기}}","{{key:편집/1px 왼쪽으로 옮기기}} {{key:편집/1px 오른쪽으로 옮기기}} {{key:편집/1px 위로 옮기기}} {{key:편집/1px 아래로 옮기기}} / {{key:편집/8px 왼쪽으로 옮기기}} {{key:편집/8px 오른쪽으로 옮기기}} {{key:편집/8px 위로 옮기기}} {{key:편집/8px 아래로 옮기기}}"
+tools-select.work-arrows-r,"선택 도구나 이동 도구를 쓰는 동안 선택 내용을 1px / 8px 옮깁니다. 수정 키 없는 <kbd>←</kbd><kbd>→</kbd>는 이전·다음 프레임으로 가므로 선택을 옮기지 않습니다(이동 도구로 캔버스에 포커스가 있을 때는 옮김).","Moves the selected pixels by 1px / 8px while a selection tool or the Move tool is active. Plain <kbd>←</kbd><kbd>→</kbd> go to the previous or next frame and don't move a selection (except with the Move tool while the canvas has focus)."
 tools-select.work-commit-r,떠 있는 선택을 그 자리에 내려놓습니다.,Drops the floating selection where it is.
 tools-select.work-deselect,"선택 도구로 캔버스 우클릭, {{key:편집/선택 해제}}, {{key:편집/선택 해제(캔버스)}}","Right-click the canvas with a selection tool, {{key:편집/선택 해제}}, {{key:편집/선택 해제(캔버스)}}"
 tools-select.work-deselect-r,떠 있는 내용을 내려놓고 선택을 풉니다.,Drops any floating pixels and removes the selection.
@@ -48,9 +48,9 @@ tools-select.cmd-cut-without,하지 않습니다(상태 표시줄에 안내).,Do
 tools-select.cmd-copy-with,선택 내용을 복사합니다.,Copies the selected pixels.
 tools-select.cmd-copy-without,"부위는 그 부위 칸, 그 밖에는 현재 프레임의 합성 그림 전체를 복사합니다.",Copies the part cel for a part; otherwise the whole composited image of the current frame.
 tools-select.cmd-paste-with,선택 자리의 왼쪽 위에 떠 있는 선택으로 붙여 넣습니다.,Pastes as a floating selection at the top left of the selection.
-tools-select.cmd-paste-without,캔버스에 보이는 영역의 왼쪽 위에 떠 있는 선택으로 붙여 넣습니다.,Pastes as a floating selection at the top left of the visible canvas area.
-tools-select.cmd-delete-with,선택 내용을 지웁니다(투명).,Clears the selected pixels (transparent).
-tools-select.cmd-delete-without,하지 않습니다.,Does nothing.
+tools-select.cmd-paste-without,"앱에서 복사·잘라낸 그림은 복사한 자리(프레임 기준 같은 위치)에 떠 있는 선택으로 붙습니다. 다른 프레임·크기가 다른 부위에서도 같은 자리이고, 캔버스 밖으로 나간 부분은 내려놓을 때 잘리거나 캔버스 밖 그림으로 남습니다. 프레임 화면 복사는 (0,0)에, 다른 프로그램에서 복사한 그림은 캔버스에 보이는 영역의 왼쪽 위에 붙습니다. 캔버스에서 복사하면 앞서 타임라인에서 복사한 셀·프레임·효과는 비워져, 타임라인을 누른 뒤 붙여 넣어도 이 그림이 붙습니다.","Pixels copied or cut in the app paste as a floating selection at the spot they were copied from (same position in the frame), even on another frame or a part of a different size; anything outside the canvas is clipped or kept as off-canvas pixels when dropped. A frame image copy pastes at (0,0), and images copied from other programs paste at the top left of the visible canvas area. Copying on the canvas clears cels, frames or effects copied earlier in the timeline, so pasting after clicking the timeline still pastes these pixels."
+tools-select.cmd-delete-with,선택 내용을 지웁니다(투명). 타임라인 프레임·셀을 누른 뒤에도 프레임·레이어·셀 대신 선택 내용만 지웁니다.,"Clears the selected pixels (transparent), even after clicking a timeline frame or cel: the selection is cleared instead of the frame, layer or cel."
+tools-select.cmd-delete-without,"캔버스에서는 하지 않습니다. 타임라인을 누른 뒤면 거기서 고른 프레임·레이어·셀을 지웁니다.","Does nothing on the canvas. After clicking the timeline, deletes the frames, layers or cels selected there."
 tools-select.cmd-flip-with,선택 내용을 뒤집습니다.,Flips the selected pixels.
 tools-select.cmd-flip-without,현재 셀을 뒤집습니다.,Flips the current cel.
 tools-select.cmd-rotate-with,선택 내용을 90° 돌립니다.,Rotates the selected pixels by 90°.
