@@ -6,7 +6,7 @@ using static Chickxel.Core.IO.ShapeArt;
 namespace CatalogBuilder;
 
 /// <summary>
-/// 판타지 소품 모양 펜 세트 여섯 가지: 뼈·해골, 물약병, 수정, 비석, 호박, 책·종이.
+/// 판타지 소품 모양 펜 세트: 뼈·해골, 물약병, 수정, 비석, 호박, 그리고 서재 소품(쌓은 책, 세운 책, 펼친 책, 종이·편지, 두루마리, 깃펜).
 /// 던전 바닥·연금술 탁자·동굴·묘지·추수 밭·서재에 흩어 찍는 소품들. 빛은 왼쪽 위에서, 테두리는 바탕색의 어두운 색.
 /// 같은 코드면 늘 같은 모양이다(난수는 씨앗 고정 해시만 씀).
 /// </summary>
@@ -797,7 +797,7 @@ internal static class FantasyPropsShapeSets
         return Set("Pumpkins", shapes);
     }
 
-    // ───────────── 책·종이 ─────────────
+    // ───────────── 책 공용 ─────────────
 
     private static readonly uint[][] Covers =
     [
@@ -807,142 +807,282 @@ internal static class FantasyPropsShapeSets
         [0xFF3A2414, 0xFF5E3A20, 0xFF7E5230, 0xFF9E6C40, 0xFFC89A68], // 갈색 가죽
         [0xFF2E1240, 0xFF4A1E66, 0xFF64308A, 0xFF8048AE, 0xFFB088DA], // 보라
         [0xFF0E3A3A, 0xFF16585A, 0xFF22787A, 0xFF34989A, 0xFF7ACCCC], // 청록
+        [0xFF5A3A08, 0xFF8E6410, 0xFFB88A1C, 0xFFDCAE34, 0xFFF6DC84], // 겨자
     ];
 
-    private const int Red = 0, Blue = 1, Green = 2, Brown = 3, Purple = 4, Teal = 5;
-    private const uint PageA = 0xFFF4ECD6, PageB = 0xFFD8CBA8, PageEdge = 0xFFBCAC88, GoldA = 0xFFE0B040, GoldB = 0xFFFFE89A, Ink = 0xFF8A8270;
+    private const int Red = 0, Blue = 1, Green = 2, Brown = 3, Purple = 4, Teal = 5, Mustard = 6;
+    private const uint PageA = 0xFFF4ECD6, PageM = 0xFFE6DCC2, PageB = 0xFFD8CBA8, PageEdge = 0xFFBCAC88, GoldA = 0xFFE0B040, GoldB = 0xFFFFE89A, Ink = 0xFF8A8270;
 
-    /// <summary>누운 책(살짝 위에서): 윗표지 두 줄, 앞으로 보이는 책장, 왼쪽 책등.</summary>
-    private static PixelImage LyingBook(int w, int pages, int cover)
+    // ───────────── 쌓은 책 ─────────────
+
+    /// <summary>
+    /// 옆(정면)에서 본 누운 책 한 권. <paramref name="spine"/>이면 책등 쪽(표지색 판에 금띠 둘과 제목 딱지),
+    /// 아니면 책장 쪽(위·아래 표지 줄 사이에 책장 줄무늬, 왼쪽은 책등을 감싼 표지, 책장은 표지보다 한 칸 들어감).
+    /// </summary>
+    private static PixelImage FlatBook(int w, int h, int cover, bool spine)
     {
         var c = Covers[cover];
-        int h = pages + 6;
         return Paint(w, h, (x, y) =>
         {
-            bool l = x == 0, r = x == w - 1, t = y == 0, b = y == h - 1;
-            if ((l || r) && (t || b)) return Color32.Transparent;
-            if (l || r || t || b) return C(c[0]);
-            if (y <= 2) return C(y == 1 && x <= 3 ? c[4] : x >= w - 3 ? c[2] : c[3]);
-            if (x <= 2) return C(y == 4 && x == 1 ? GoldA : x == 1 ? c[3] : c[2]);
-            if (y == 3 || y == h - 2) return C(c[1]);
-            return C(x == w - 2 ? PageEdge : (y - 4) % 2 == 0 ? PageA : PageB);
+            bool sideX = x == 0 || x == w - 1, sideY = y == 0 || y == h - 1;
+            if (sideX && sideY) return Color32.Transparent;
+            if (spine)
+            {
+                if (sideX || sideY) return C(c[0]);
+                if (x == 2 || x == w - 3) return C(y == 1 ? GoldB : GoldA);
+                if (h >= 6 && y >= 2 && y <= h - 3 && x >= w / 2 - 2 && x <= w / 2 + 1) return C(y == h - 3 ? PageB : PageA);
+                return C(y == 1 ? c[4] : y == h - 2 ? c[1] : x == 1 ? c[3] : c[3]);
+            }
+            bool pageRow = y >= 2 && y <= h - 3;
+            if (pageRow && x == w - 1) return Color32.Transparent;
+            if (pageRow && x == w - 2) return C(c[0]);
+            if (sideX || sideY) return C(c[0]);
+            if (y == 1) return C(x <= 3 ? c[4] : c[3]);
+            if (y == h - 2) return C(c[1]);
+            if (x <= 2) return C(x == 1 ? c[3] : c[2]);
+            return C(x == w - 3 ? PageEdge : (y - 2) % 2 == 0 ? PageA : PageB);
         });
     }
 
-    /// <summary>누운 책 더미(아래 책부터): 위 책의 밑 줄이 아래 책 윗면 둘째 줄에 얹힌다.</summary>
-    private static PixelImage BookStack(params (int W, int Pages, int Cover, int Dx)[] books)
+    /// <summary>누운 책 더미(아래 책부터, 책마다 가로 어긋남 Dx). 위 책의 밑 테두리가 아래 책의 윗 테두리와 겹친다.</summary>
+    private static PixelImage BookStack(params (int W, int H, int Cover, bool Spine, int Dx)[] books)
     {
         int width = books.Max(b => b.Dx + b.W);
-        int total = books.Sum(b => b.Pages + 6) - 3 * (books.Length - 1);
+        int total = books.Sum(b => b.H) - (books.Length - 1);
         var parts = new List<(PixelImage, int, int)>();
-        int y = total;
+        int bottom = total - 1;
         foreach (var b in books)
         {
-            y -= b.Pages + 6;
-            parts.Add((LyingBook(b.W, b.Pages, b.Cover), b.Dx, y));
-            y += 3;
+            int top = bottom - b.H + 1;
+            parts.Add((FlatBook(b.W, b.H, b.Cover, b.Spine), b.Dx, top));
+            bottom = top;
         }
         return Compose(width, total, parts);
     }
 
-    /// <summary>세운 책의 책등(앞에서): 금띠 둘, 가운데 제목 딱지(<paramref name="label"/>).</summary>
-    private static PixelImage Spine(int w, int h, int cover, bool label)
+    /// <summary>쌓은 책: 옆에서 본 누운 책 한 권부터 여섯 권 더미까지(책장 쪽·책등 쪽, 여러 색·두께·어긋남).</summary>
+    public static StampSet BookStacks() => Set("Book Stacks",
+    [
+        FlatBook(16, 6, Red, false),
+        FlatBook(14, 5, Blue, true),
+        FlatBook(18, 7, Brown, false),
+        BookStack((17, 6, Brown, false, 0), (14, 5, Green, true, 2)),
+        BookStack((15, 5, Purple, true, 1), (17, 6, Red, false, 0)),
+        BookStack((16, 5, Blue, false, 1), (18, 6, Mustard, true, 0), (13, 5, Purple, false, 3)),
+        BookStack((18, 7, Brown, false, 0), (15, 5, Teal, true, 2), (16, 5, Red, false, 1), (12, 5, Green, true, 4)),
+        BookStack((19, 6, Green, true, 0), (16, 6, Blue, false, 2), (17, 5, Red, true, 1), (14, 5, Mustard, false, 3), (13, 6, Purple, true, 2)),
+        BookStack((18, 6, Red, false, 1), (19, 5, Brown, true, 0), (15, 6, Teal, false, 2), (16, 5, Blue, true, 1), (13, 5, Green, false, 4), (12, 5, Purple, true, 3)),
+        BookStack((14, 5, Teal, false, 0), (12, 5, Red, true, 1)),
+    ]);
+
+    // ───────────── 세운 책 ─────────────
+
+    /// <summary>세운 책의 책등(앞에서). 꾸밈 0: 금띠 둘 + 제목 딱지, 1: 금띠 둘, 2: 금띠 셋, 3: 위쪽 어두운 가죽 띠 + 금띠.</summary>
+    private static PixelImage Spine(int w, int h, int cover, int style)
     {
         var c = Covers[cover];
         return Paint(w, h, (x, y) =>
         {
             if (x == 0 || x == w - 1 || y == 0 || y == h - 1) return C(c[0]);
-            if (y == 2 || y == h - 3) return C(x == 1 ? GoldB : GoldA);
-            if (label && y >= h / 2 - 2 && y <= h / 2 && x >= 1 && x <= w - 2 && w > 4) return C(x == w - 2 ? PageB : PageA);
+            bool band = style switch
+            {
+                2 => y == 2 || y == h / 2 || y == h - 3,
+                3 => y == 5 || y == h - 3,
+                _ => y == 2 || y == h - 3,
+            };
+            if (band) return C(x == 1 ? GoldB : GoldA);
+            if (style == 3 && y >= 2 && y <= 4) return C(x == 1 ? c[2] : c[1]);
+            if (style == 0 && w > 4 && y >= h / 2 - 2 && y <= h / 2 && x >= 2 && x <= w - 3) return C(y == h / 2 ? PageB : PageA);
             return C(x == 1 ? c[4] : x == w - 2 ? c[1] : c[3]);
         });
     }
 
-    private static PixelImage Shelf(params (int W, int H, int Cover, bool Label)[] books)
+    /// <summary>기울어 기댄 책: 책등을 줄마다 옆으로 밀어(1/<paramref name="every"/> 기울기) 그린다. <paramref name="left"/>면 위가 왼쪽으로.</summary>
+    private static PixelImage LeaningSpine(int w, int h, int cover, int style, int every, bool left)
     {
-        int width = books.Sum(b => b.W - 1) + 1, height = books.Max(b => b.H);
-        var parts = new List<(PixelImage, int, int)>();
-        int x = 0;
-        foreach (var b in books)
+        var spine = Spine(w, h, cover, style);
+        int shift = (h - 1) / every;
+        int Left(int y) => left ? y / every : shift - y / every;
+        return Paint(w + shift, h, (x, y) =>
         {
-            parts.Add((Spine(b.W, b.H, b.Cover, b.Label), x, height - b.H));
-            x += b.W - 1;
-        }
-        return Compose(width, height, parts);
-    }
-
-    private static PixelImage LeaningShelf()
-    {
-        var group = Shelf((5, 15, Red, true), (4, 13, Green, false), (5, 16, Blue, true));
-        var lean = Rotate(Spine(6, 14, Brown, true), -20, Covers[Brown][0]);
-        return Compose(group.Width + 12, group.Height + 1, [(lean, group.Width - 6, 0), (group, 0, 1)]);
-    }
-
-    private static PixelImage OpenBook(int cover)
-    {
-        var c = Covers[cover];
-        const int half = 9, w = half * 2 + 1, pageH = 8;
-        static int Top(int d) => d == 0 ? 2 : d == 1 ? 1 : d <= 7 ? 0 : 1;
-        bool Page(int x, int y) { int d = Math.Abs(x - half); return d <= 8 && y >= Top(d) + 1 && y <= Top(d) + pageH; }
-        bool Cover(int x, int y) { int d = Math.Abs(x - half); return d <= 9 && y >= Top(Math.Min(d, 8)) + 2 && y <= Top(Math.Min(d, 8)) + pageH + 1; }
-        bool In(int x, int y) => Page(x, y) || Cover(x, y);
-        return Paint(w, pageH + 6, (x, y) =>
-        {
-            if (!In(x, y)) return Color32.Transparent;
-            if (Edge(In, x, y)) return C(c[0]);
-            if (!Page(x, y)) return C(x < half ? c[3] : c[2]);
-            int d = Math.Abs(x - half), row = y - Top(d);
-            if (d == 0) return C(PageEdge);
-            if (row == pageH) return C(PageEdge);
-            if (row % 2 == 1 && row >= 3 && row <= pageH - 2 && d >= 2 && d <= 7 && Hash(x, row, cover) % 5 != 0) return C(Ink);
-            return C(x < half ? (d == 1 ? PageB : PageA) : PageB);
+            int u = x - Left(y);
+            return u >= 0 && u < w ? spine.Get(u, y) : Color32.Transparent;
         });
     }
 
-    private static readonly Dictionary<char, uint> ParchP = new()
+    /// <summary>세운 책 한 줄(밑 줄 맞춤, 이웃 책과 테두리 공유). <paramref name="lean"/>: 0 없음, 1 오른쪽 끝에 왼쪽으로 기댄 책, -1 왼쪽 끝에 오른쪽으로 기댄 책.</summary>
+    private static PixelImage BookRow(int lean, params (int W, int H, int Cover, int Style)[] books)
     {
-        ['o'] = 0xFF6A4A26, ['d'] = 0xFFB08A50, ['m'] = 0xFFD2AE70, ['l'] = 0xFFEED6A0, ['H'] = 0xFFFFF2D0,
-        ['q'] = 0xFF6E101C, ['r'] = 0xFFC0283A, ['R'] = 0xFFE85060, ['i'] = 0xFF8A6A48,
-    };
+        int rowW = books.Sum(b => b.W - 1) + 1, height = books.Max(b => b.H);
+        var parts = new List<(PixelImage, int, int)>();
+        int ox = 0;
+        PixelImage? leaner = null;
+        if (lean != 0)
+        {
+            var edge = lean > 0 ? books[^1] : books[0];
+            leaner = LeaningSpine(6, edge.H - 1, lean > 0 ? Mustard : Teal, 1, 4, lean > 0);
+            if (lean < 0) ox = leaner.Width - 1;
+        }
+        int x = ox;
+        foreach (var b in books)
+        {
+            parts.Add((Spine(b.W, b.H, b.Cover, b.Style), x, height - b.H));
+            x += b.W - 1;
+        }
+        int width = rowW + (leaner is null ? 0 : leaner.Width - 1);
+        if (leaner is not null) parts.Add((leaner, lean > 0 ? rowW - 1 : 0, height - leaner.Height));
+        return Compose(width, height, parts);
+    }
 
-    private static readonly string[] ScrollRolled =
+    /// <summary>세운 책: 책장에 꽂힌 듯 앞(책등)에서 본 책 한 권부터 여섯 권 줄까지, 끝에 기댄 책이 있는 줄.</summary>
+    public static StampSet StandingBooks() => Set("Standing Books",
     [
-        ".ooooooqqqoooooo.",
-        "omHHHHHqRqHHHHHlo",
-        "odlllllqrqlllllmo",
-        "odmmmmmqrqmmmmmdo",
-        "oodddddqqqddddddo",
-        ".ooooooooooooooo.",
-    ];
+        Spine(5, 16, Red, 0),
+        Spine(7, 13, Brown, 3),
+        BookRow(0, (5, 15, Blue, 0), (4, 13, Green, 1)),
+        BookRow(0, (4, 13, Purple, 1), (6, 16, Teal, 0), (4, 12, Red, 2)),
+        BookRow(0, (5, 14, Brown, 3), (4, 16, Red, 1), (5, 13, Blue, 0), (4, 15, Green, 2)),
+        BookRow(0, (4, 12, Mustard, 1), (5, 15, Purple, 0), (4, 14, Brown, 2), (6, 16, Red, 3), (4, 13, Teal, 1)),
+        BookRow(0, (5, 16, Green, 0), (4, 13, Red, 1), (4, 14, Blue, 2), (6, 15, Brown, 3), (4, 12, Purple, 1), (5, 16, Mustard, 0)),
+        BookRow(1, (5, 15, Red, 0), (4, 13, Green, 1), (5, 16, Blue, 0)),
+        BookRow(-1, (4, 14, Purple, 2), (6, 16, Brown, 3)),
+        BookRow(1, (4, 13, Teal, 1), (5, 15, Red, 2), (4, 16, Purple, 0), (5, 14, Green, 3)),
+    ]);
 
-    private static readonly string[] ScrollOpen =
+    // ───────────── 펼친 책 ─────────────
+
+    /// <summary>
+    /// 살짝 위에서 본 펼친 책(가운데 골로 책장이 휘어 내려감). 쪽 내용: 0 글줄, 1 그림, 2 붉은 머리글자 + 글줄, 3 글줄 위로 넘어가는 한 장.
+    /// </summary>
+    private static PixelImage OpenBook(int half, int pageH, int cover, int leftPage, int rightPage, int seed)
+    {
+        var c = Covers[cover];
+        const int lift = 4;
+        int w = half * 2 + 1;
+        int Top(int d) => lift + (d == 0 ? 2 : d == 1 ? 1 : d <= half - 2 ? 0 : 1);
+        bool Page(int x, int y) { int d = Math.Abs(x - half); return d <= half - 1 && y >= Top(d) + 1 && y <= Top(d) + pageH; }
+        bool Cover(int x, int y) { int d = Math.Abs(x - half), e = Math.Min(d, half - 1); return d <= half && y >= Top(e) + 2 && y <= Top(e) + pageH + 1; }
+        bool turning = rightPage == 3;
+        int Lift(int d) => (int)Math.Round(d * 0.5);
+        bool Turned(int x, int y)
+        {
+            int d = x - half;
+            return turning && d >= 1 && d <= half - 2 && y >= Top(d) + 1 - Lift(d) && y <= Top(d) + pageH - 1 - Lift(d);
+        }
+        bool In(int x, int y) => Page(x, y) || Cover(x, y) || Turned(x, y);
+        return Paint(w, lift + pageH + 3, (x, y) =>
+        {
+            if (!In(x, y)) return Color32.Transparent;
+            if (Edge(In, x, y)) return C(c[0]);
+            if (Turned(x, y)) return C(Edge(Turned, x, y) ? PageEdge : x - half <= 2 ? PageM : PageA);
+            if (!Page(x, y)) return C(x < half ? c[3] : c[2]);
+            int d = Math.Abs(x - half), row = y - Top(d), content = x < half ? leftPage : rightPage;
+            if (d == 0 || row == pageH) return C(PageEdge);
+            bool area = d >= 2 && d <= half - 2 && row >= 2 && row <= pageH - 2;
+            if (content == 1 && area && row <= pageH - 3)
+            {
+                if (d == 2 || d == half - 2 || row == 2 || row == pageH - 3) return C(Ink);
+                if (d == half - 3 && row == 3) return C(0xFFF8D040);
+                return C(row <= (pageH - 1) / 2 ? 0xFF9CC8E8 : 0xFF6EA850);
+            }
+            if (content == 2 && row >= 2 && row <= 3 && d >= half - 3 && d <= half - 2) return C(0xFFB0202E);
+            if (area && row % 2 == 1 && row >= 3 && content != 1 && !(content == 2 && row <= 3 && d >= half - 4) && Hash(x, row, seed) % 5 != 0) return C(Ink);
+            return C(x < half ? (d == 1 ? PageB : PageA) : d == 1 ? PageB : PageM);
+        });
+    }
+
+    /// <summary>펼친 책: 여러 표지 색·크기, 글줄·그림·머리글자 쪽, 넘어가는 책장.</summary>
+    public static StampSet OpenBooks() => Set("Open Books",
     [
-        ".ooooooooooo.",
-        "oHHlllllllmmo",
-        "oddmmmmmmmddo",
-        ".ooooooooooo.",
-        "..oHllllllo..",
-        "..oliiilili..",
-        "..olllllllo..",
-        "..oliiliiio..",
-        "..olllllllo..",
-        "..oliiiilmo..",
-        "..olllllllo..",
-        "..oliilllmo..",
-        "..olllllmmo..",
-        ".ooooooooooo.",
-        "oHHlllllllmmo",
-        "oddmmmmmmmddo",
-        ".ooooooooooo.",
-    ];
+        OpenBook(9, 9, Brown, 0, 0, 1),
+        OpenBook(9, 9, Red, 1, 0, 2),
+        OpenBook(9, 9, Blue, 0, 3, 3),
+        OpenBook(7, 8, Green, 0, 0, 4),
+        OpenBook(7, 8, Purple, 2, 3, 5),
+        OpenBook(11, 10, Teal, 2, 1, 6),
+        OpenBook(11, 10, Brown, 1, 3, 7),
+        OpenBook(7, 8, Red, 0, 1, 8),
+    ]);
+
+    // ───────────── 종이·편지 ─────────────
+
+    private static readonly uint[] PaperT = [0xFF6E6A60, 0xFFB8B2A2, 0xFFD8D3C6, 0xFFF0EDE4, 0xFFFFFFFF];
+
+    /// <summary>낱장 종이(오른쪽 위 귀퉁이 접힘). 종류 0: 글줄, 1: 제목 + 글줄, 2: 양피지 글줄, 3: 줄 공책(파란 줄·붉은 여백선).</summary>
+    private static PixelImage Sheet(int w, int h, int kind, int seed)
+    {
+        bool parch = kind == 2;
+        uint o = parch ? 0xFF6A4A26 : PaperT[0], b = parch ? 0xFFEED6A0 : 0xFFF6F3EA, s = parch ? 0xFFD2AE70 : PaperT[2], ink = parch ? 0xFF8A6A48 : 0xFF8A90A0;
+        bool fold = kind != 3;
+        bool In(int x, int y) => x >= 0 && y >= 0 && x < w && y < h && !(fold && x - (w - 4) > y);
+        return Paint(w, h, (x, y) =>
+        {
+            if (!In(x, y)) return Color32.Transparent;
+            if (Edge(In, x, y)) return C(o);
+            if (fold && x >= w - 4 && y <= 3 && x - (w - 4) >= y - 1) return C(s);
+            if (kind == 3)
+            {
+                if (x == 2) return C(0xFFE08080);
+                if (y % 2 == 0 && y >= 2 && y <= h - 2) return C(0xFFA8C4E8);
+                return C(b);
+            }
+            if (kind == 1 && y == 2 && x >= 2 && x <= w / 2 + 1) return C(0xFF5A6070);
+            int first = kind == 1 ? 4 : 3;
+            if ((y - first) % 2 == 0 && y >= first && y <= h - 3 && x >= 2 && x <= w - 3 && Hash(x, y, seed) % 6 != 0) return C(ink);
+            return C(x == w - 2 || y == h - 2 ? s : b);
+        });
+    }
+
+    /// <summary>구긴 종이 뭉치: 둘레가 울퉁불퉁한 공에 짧은 구김 선.</summary>
+    private static PixelImage Crumpled(int size, int seed)
+    {
+        double c = size / 2.0;
+        bool In(int x, int y)
+        {
+            double dx = x + 0.5 - c, dy = y + 0.5 - c, ang = Math.Atan2(dy, dx);
+            double r = c - 0.3 - Hash((int)((ang + Math.PI) * 1.6), 0, seed) % 2 * 0.7;
+            return dx * dx + dy * dy <= r * r;
+        }
+        var creases = new HashSet<(int X, int Y)>();
+        for (int i = 0; i < 4; i++)
+        {
+            int x0 = 2 + Hash(i, 1, seed) % (size - 4), y0 = 2 + Hash(i, 2, seed) % (size - 4);
+            Line(creases, x0, y0, x0 + Hash(i, 3, seed) % 5 - 2, y0 + Hash(i, 4, seed) % 5 - 2);
+        }
+        return Paint(size, size, (x, y) =>
+        {
+            if (!In(x, y)) return Color32.Transparent;
+            if (!Edge(In, x, y) && creases.Contains((x, y))) return C(PaperT[1]);
+            if (!Edge(In, x, y) && creases.Contains((x + 1, y + 1)) && !creases.Contains((x, y + 1))) return C(PaperT[4]);
+            return ShadeAt(In, x, y, PaperT);
+        });
+    }
+
+    // 반으로 접은 쪽지: 위 반은 밝고 아래 반은 그늘, 가운데 접힌 줄
+    private static PixelImage FoldedNote(int w, int h, int seed) => Paint(w, h, (x, y) =>
+    {
+        if (x == 0 || y == 0 || x == w - 1 || y == h - 1) return C(PaperT[0]);
+        int mid = h / 2;
+        if (y == mid) return C(PaperT[1]);
+        if (y < mid)
+        {
+            if (y % 2 == 0 && x >= 2 && x <= w - 3 && Hash(x, y, seed) % 5 != 0) return C(0xFF8A90A0);
+            return C(y == 1 ? PaperT[4] : x == w - 2 ? PaperT[2] : PaperT[3]);
+        }
+        return C(y == mid + 1 ? PaperT[3] : x == w - 2 || y == h - 2 ? PaperT[1] : PaperT[2]);
+    });
 
     private static readonly Dictionary<char, uint> EnvelopeP = new()
     {
         ['o'] = 0xFF6E6A60, ['d'] = 0xFFB8B0A0, ['m'] = 0xFFD6D0C0, ['l'] = 0xFFF4F0E4, ['H'] = 0xFFFFFFFF,
-        ['z'] = 0xFF6A1018, ['s'] = 0xFFB0202E, ['S'] = 0xFFE04A50,
+        ['i'] = 0xFF5A6070, ['w'] = 0xFFD86040, ['b'] = 0xFF3A6AB0,
     };
 
-    private static readonly string[] Envelope =
+    private static readonly Dictionary<char, uint> RedSeal = new() { ['z'] = 0xFF6A1018, ['s'] = 0xFFB0202E, ['S'] = 0xFFE04A50 };
+    private static readonly Dictionary<char, uint> GreenSeal = new() { ['z'] = 0xFF0E3A1E, ['s'] = 0xFF287A3A, ['S'] = 0xFF6AB864 };
+
+    // 뒷면: 덮개 V자와 밀랍 봉인
+    private static readonly string[] EnvelopeBack =
     [
         "ooooooooooooo",
         "odHHllllllldo",
@@ -955,68 +1095,185 @@ internal static class FantasyPropsShapeSets
         "ooooooooooooo",
     ];
 
-    private static PixelImage Paper(int w, int h, bool parchment, int seed)
+    // 앞면: 우표와 주소 글줄
+    private static readonly string[] EnvelopeFront =
+    [
+        "ooooooooooooo",
+        "oHllllllwwwmo",
+        "olllllllwbwmo",
+        "olllllllwwwmo",
+        "olliiiiiillmo",
+        "olliiilllllmo",
+        "olliiiiilllmo",
+        "odddddddddddo",
+        "ooooooooooooo",
+    ];
+
+    /// <summary>종이·편지: 살짝 돌아간 낱장 종이(글줄·제목·양피지·줄 공책), 구긴 종이, 접은 쪽지, 봉인한 편지 봉투와 우표 붙은 봉투.</summary>
+    public static StampSet Papers() => Set("Papers & Letters",
+    [
+        Rotate(Sheet(9, 12, 0, 1), 9, PaperT[0]),
+        Rotate(Sheet(10, 12, 1, 2), -12, PaperT[0]),
+        Rotate(Sheet(9, 11, 2, 3), -6, 0xFF6A4A26),
+        Sheet(10, 13, 3, 4),
+        Rotate(Sheet(10, 13, 0, 5), 4, PaperT[0]),
+        Crumpled(11, 1),
+        Crumpled(9, 2),
+        Rotate(FoldedNote(11, 9, 6), -10, PaperT[0]),
+        Art(EnvelopeBack, EnvelopeP, RedSeal),
+        Rotate(Art(EnvelopeBack, EnvelopeP, GreenSeal), 10, EnvelopeP['o']),
+        Art(EnvelopeFront, EnvelopeP),
+    ]);
+
+    // ───────────── 두루마리 ─────────────
+
+    // 양피지 톤: [0] 테두리, [1] 그늘, [2] 중간, [3] 바탕, [4] 밝은 곳, [5] 글씨
+    private static readonly uint[] ParchLight = [0xFF6A4A26, 0xFFB08A50, 0xFFD2AE70, 0xFFEED6A0, 0xFFFFF2D0, 0xFF8A6A48];
+    private static readonly uint[] ParchAged = [0xFF5A3A1C, 0xFF9A6E3A, 0xFFBE9058, 0xFFD8B47A, 0xFFF0D8A4, 0xFF6A4A2E];
+    // 끈 톤: [0] 테두리, [1] 바탕, [2] 밝은 곳
+    private static readonly uint[] RedTie = [0xFF6E101C, 0xFFC0283A, 0xFFE85060];
+    private static readonly uint[] BlueTie = [0xFF101E5A, 0xFF2A4AB0, 0xFF5A82E0];
+    private static readonly uint[] GreenTie = [0xFF0E3A1E, 0xFF287A3A, 0xFF6AB864];
+
+    /// <summary>말린 두루마리(가로 원통, 왼쪽 끝은 말린 단면), 가운데를 끈으로 묶음. <paramref name="seal"/>이면 끈 밑에 밀랍 봉인을 단다.</summary>
+    private static PixelImage RolledScroll(int len, uint[] p, uint[] tie, bool seal)
     {
-        uint o = parchment ? 0xFF6A4A26 : 0xFF6E6A60, b = parchment ? 0xFFEED6A0 : 0xFFF6F3EA, s = parchment ? 0xFFD2AE70 : 0xFFD8D3C6, ink = parchment ? 0xFF8A6A48 : 0xFF8A90A0;
-        bool In(int x, int y) => x >= 0 && y >= 0 && x < w && y < h && !(x - (w - 4) > y);
+        const int h = 6;
+        int mid = len / 2;
+        var roll = Paint(len, h, (x, y) =>
+        {
+            bool sx = x == 0 || x == len - 1, sy = y == 0 || y == h - 1;
+            if (sx && sy) return Color32.Transparent;
+            if (x >= mid - 1 && x <= mid + 1) return C(x == mid && !sy ? (y == 1 ? tie[2] : tie[1]) : tie[0]);
+            if (sx || sy) return C(p[0]);
+            if (x == 1) return C(y == 2 || y == 3 ? p[0] : p[2]);
+            if (x == 2 && (y == 2 || y == 3)) return C(p[1]);
+            return C(y == 1 ? p[4] : y == 2 ? p[3] : y == 3 ? p[2] : p[1]);
+        });
+        if (!seal) return roll;
+        var wax = Art(["..z..", ".zSz.", "zSssz", ".zsz.", "..z.."], RedSeal);
+        return Compose(len, h + 4, [(roll, 0, 0), (wax, mid - 2, 4)]);
+    }
+
+    /// <summary>세로 두루마리: 위·아래 말린 막대 사이의 양피지에 글줄. 막대 높이 4면 굵게 말림, 3이면 살짝 말린 끝.</summary>
+    private static PixelImage HangingScroll(int w, int sheetH, uint[] p, int topRoll, int bottomRoll, int seed)
+    {
+        int h = topRoll + sheetH + bottomRoll;
         return Paint(w, h, (x, y) =>
         {
-            if (!In(x, y)) return Color32.Transparent;
-            if (Edge(In, x, y)) return C(o);
-            if (x >= w - 4 && y <= 3 && x - (w - 4) >= y - 1) return C(s);
-            if (y % 2 == 0 && y >= 3 && y <= h - 3 && x >= 2 && x <= w - 3 && Hash(x, y, seed) % 6 != 0) return C(ink);
-            return C(x == w - 2 || y == h - 2 ? s : b);
+            bool inTop = y < topRoll, inBottom = y >= topRoll + sheetH;
+            if (inTop || inBottom)
+            {
+                int ry = inTop ? y : y - topRoll - sheetH, rh = inTop ? topRoll : bottomRoll;
+                bool sx = x == 0 || x == w - 1, sy = ry == 0 || ry == rh - 1;
+                if (sx && sy) return Color32.Transparent;
+                if (sx || sy) return C(p[0]);
+                return C(rh == 3 ? p[2] : ry == 1 ? (x <= 2 ? p[4] : x >= w - 3 ? p[2] : p[3]) : p[1]);
+            }
+            int sy2 = y - topRoll;
+            if (x < 2 || x > w - 3) return Color32.Transparent;
+            if (x == 2 || x == w - 3) return C(p[0]);
+            if (sy2 % 2 == 1 && sy2 >= 1 && sy2 <= sheetH - 2 && x >= 4 && x <= w - 5 && Hash(x, sy2, seed) % 5 != 0) return C(p[5]);
+            return C(x == w - 4 ? p[2] : x == 3 ? p[4] : p[3]);
         });
     }
 
-    /// <summary>깃펜: 오른쪽 위 깃 끝에서 왼쪽 아래 펜촉으로 45° 축, 줄마다 축 왼쪽(빛 받는 쪽)·오른쪽 깃 폭.</summary>
-    private static PixelImage Quill(uint[] t)
+    /// <summary>가로로 펼친 두루마리: 양쪽 세로 막대 사이의 양피지.</summary>
+    private static PixelImage WideScroll(int w, int h, uint[] p, int seed) => Paint(w, h, (x, y) =>
+    {
+        bool roll = x < 4 || x >= w - 4;
+        if (roll)
+        {
+            int rx = x < 4 ? x : x - (w - 4);
+            bool sx = rx == 0 || rx == 3, ey = y == 0 || y == h - 1;
+            if (sx && ey) return Color32.Transparent;
+            if (sx || ey) return C(p[0]);
+            return C(rx == 1 ? (y <= 2 ? p[4] : p[3]) : y >= h - 3 ? p[1] : p[2]);
+        }
+        if (y < 2 || y > h - 3) return Color32.Transparent;
+        if (y == 2 || y == h - 3) return C(p[0]);
+        int sy = y - 2;
+        if (sy % 2 == 0 && sy >= 2 && sy <= h - 7 && x >= 6 && x <= w - 7 && Hash(x, sy, seed) % 5 != 0) return C(p[5]);
+        return C(y == 3 ? p[4] : y == h - 4 ? p[2] : p[3]);
+    });
+
+    /// <summary>두루마리: 끈으로 묶거나 밀랍으로 봉인한 말린 두루마리, 반쯤 펼친 것, 세로·가로로 다 펼친 것(밝은·바랜 양피지).</summary>
+    public static StampSet Scrolls() => Set("Scrolls",
+    [
+        RolledScroll(17, ParchLight, RedTie, false),
+        RolledScroll(13, ParchAged, BlueTie, false),
+        RolledScroll(19, ParchLight, GreenTie, true),
+        Rotate(RolledScroll(15, ParchAged, RedTie, false), -25, ParchAged[0]),
+        HangingScroll(13, 9, ParchLight, 5, 3, 1),
+        HangingScroll(11, 7, ParchAged, 5, 3, 2),
+        HangingScroll(13, 13, ParchLight, 4, 4, 3),
+        HangingScroll(11, 11, ParchAged, 4, 4, 4),
+        WideScroll(21, 12, ParchLight, 5),
+    ]);
+
+    // ───────────── 깃펜 ─────────────
+
+    /// <summary>
+    /// 깃펜: 오른쪽 위 깃 끝에서 왼쪽 아래 펜촉으로 내려오는 축(줄마다 <paramref name="slope"/>칸씩 왼쪽), 줄마다 축 왼쪽(빛 받는 쪽)·오른쪽 깃 폭.
+    /// </summary>
+    private static PixelImage Quill(uint[] t, int rows = 14, double slope = 1)
     {
         int[] left = [0, 1, 2, 2, 3, 3, 1, 3, 2, 2, 1, 0, 0, 0];
         int[] right = [0, 0, 1, 1, 1, 2, 2, 2, 2, 0, 1, 0, 0, 0];
+        int x0 = (int)Math.Round((rows - 1) * slope) + 4;
         var px = new Dictionary<(int X, int Y), uint>();
-        for (int y = 0; y < left.Length; y++)
+        for (int y = 0; y < rows; y++)
         {
-            int s = 14 - y, row = y + 1;
-            px[(s, row)] = y >= 13 ? 0xFF2A2A34 : y >= 11 ? 0xFFE8DCC0 : t[4];
-            for (int k = 1; k <= left[y]; k++) px[(s - k, row)] = k == left[y] ? t[3] : t[4];
-            for (int k = 1; k <= right[y]; k++) px[(s + k, row)] = k == right[y] ? t[1] : t[2];
+            int i = (int)Math.Round(y * 13.0 / (rows - 1));
+            int s = x0 - (int)Math.Round(y * slope), row = y + 1;
+            px[(s, row)] = i >= 13 ? 0xFF2A2A34 : i >= 11 ? 0xFFE8DCC0 : t[4];
+            for (int k = 1; k <= left[i]; k++) px[(s - k, row)] = k == left[i] ? t[3] : t[4];
+            for (int k = 1; k <= right[i]; k++) px[(s + k, row)] = k == right[i] ? t[1] : t[2];
         }
-        return Paint(18, 17, (x, y) =>
+        return Paint(x0 + 5, rows + 2, (x, y) =>
         {
             if (px.TryGetValue((x, y), out var c)) return C(c);
             bool near = px.ContainsKey((x - 1, y)) || px.ContainsKey((x + 1, y)) || px.ContainsKey((x, y - 1)) || px.ContainsKey((x, y + 1));
-            return near ? C(y >= 11 ? 0xFF4A3E2E : t[0]) : Color32.Transparent;
+            return near ? C(y >= rows * 0.8 ? 0xFF4A3E2E : t[0]) : Color32.Transparent;
         });
     }
 
     private static readonly uint[] WhiteFeather = [0xFF4A4E60, 0xFF9CA0B2, 0xFFC4C8D4, 0xFFE8EAF0, 0xFFFFFFFF];
     private static readonly uint[] HawkFeather = [0xFF4A2E18, 0xFF8A5A2E, 0xFFB07A40, 0xFFD49A58, 0xFFF0C890];
+    private static readonly uint[] RavenFeather = [0xFF101218, 0xFF262A38, 0xFF3A4054, 0xFF525A74, 0xFF8A94B0];
+    private static readonly uint[] RedFeather = [0xFF4A0E14, 0xFF9E1A2A, 0xFFC8283A, 0xFFE8484E, 0xFFFF9A9A];
+    private static readonly uint[] BlueFeather = [0xFF0E2A4A, 0xFF1E5A8A, 0xFF2E86B8, 0xFF5AB4E0, 0xFFB0E4FF];
+    private static readonly uint[] GreenFeather = [0xFF0E3A1E, 0xFF1E7A2E, 0xFF2EA040, 0xFF56CC5A, 0xFFB4F2A0];
 
-    /// <summary>책·종이: 여러 색·두께의 누운 책, 쌓은 책, 세운 책 묶음, 펼친 책, 두루마리, 흩어진 종이, 편지 봉투, 깃펜. 서재·책상 위에.</summary>
-    public static StampSet BooksAndPapers()
+    private static readonly Dictionary<char, uint> InkwellP = new() { ['o'] = 0xFF10121A, ['k'] = 0xFF2A3046, ['d'] = 0xFF1C2030, ['H'] = 0xFF7A86A8, ['i'] = 0xFF0A0A10 };
+
+    private static readonly string[] Inkwell =
+    [
+        "..ooooo..",
+        "..oiiio..",
+        ".ooooooo.",
+        "oHHkkkkdo",
+        "oHkkkkkdo",
+        "okkkkkddo",
+        ".ooooooo.",
+    ];
+
+    // 잉크병에 꽂은 깃펜(펜촉이 병 입구 속으로)
+    private static PixelImage QuillInInkwell(uint[] t)
     {
-        var shapes = new List<PixelImage>
-        {
-            LyingBook(14, 2, Red),
-            LyingBook(12, 3, Blue),
-            LyingBook(16, 4, Brown),
-            BookStack((15, 3, Red, 0), (12, 2, Green, 2)),
-            BookStack((16, 4, Brown, 0), (14, 2, Blue, 1), (11, 2, Purple, 3)),
-            BookStack((16, 3, Purple, 0), (12, 3, Green, 3), (13, 2, Teal, 1), (10, 2, Red, 4)),
-            Shelf((4, 13, Purple, false), (5, 15, Teal, true), (4, 12, Red, false)),
-            LeaningShelf(),
-            OpenBook(Brown),
-            OpenBook(Red),
-            Art(ScrollRolled, ParchP),
-            Art(ScrollOpen, ParchP),
-            Rotate(Paper(9, 12, false, 1), 9, 0xFF6E6A60),
-            Rotate(Paper(10, 12, false, 2), -12, 0xFF6E6A60),
-            Rotate(Paper(9, 11, true, 3), -6, 0xFF6A4A26),
-            Art(Envelope, EnvelopeP),
-        };
-        shapes.AddRange(Mirrored([Quill(WhiteFeather)]));
-        shapes.Add(Quill(HawkFeather));
-        return Set("Books & Papers", shapes);
+        var quill = Quill(t);
+        return Compose(quill.Width + 2, 20, [(quill, 0, 0), (Art(Inkwell, InkwellP), 0, 13)]);
     }
+
+    /// <summary>깃펜: 흰·매·까마귀·빨강·파랑·초록 깃털 펜(두 가지 기울기, 좌우 뒤집기), 잉크병에 꽂은 깃펜.</summary>
+    public static StampSet Quills() => Set("Quill Pens", Mirrored(
+    [
+        Quill(WhiteFeather),
+        Quill(HawkFeather, 18, 0.6),
+        Quill(RavenFeather),
+        Quill(RedFeather, 18, 0.6),
+        Quill(BlueFeather, 12),
+        Quill(GreenFeather, 18, 0.6),
+        QuillInInkwell(WhiteFeather),
+    ]));
 }

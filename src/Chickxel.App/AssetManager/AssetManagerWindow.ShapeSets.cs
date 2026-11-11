@@ -71,26 +71,19 @@ public sealed partial class AssetManagerWindow
     }
 
     /// <summary>
-    /// 모양 펜 거르기의 목록: 내 에셋(내 세트, 그다음 이름이 맞는 내 세트가 없는 떠 둔 사본), 받은 에셋(상점·패키지 파일·앱 기본 설치에서 온 세트).
+    /// 모양 펜 거르기의 목록(도구 설정의 세트 목록과 같은 차례, 내 것·받은 것을 나누지 않음 — 기본 세트도 받아 둔 세트일 뿐): 내 세트, 이름이 맞는 내 세트가 없는
+    /// 떠 둔 사본, 상점·패키지 파일·앱 기본 설치에서 온 세트(기본 세트 먼저). 줄마다 첫 모양 썸네일.
     /// </summary>
     private void AddShapeSetRows(List<AssetEntry> shown)
     {
-        var own = ShownOwnSets();
         var ownNames = _shapeCtx is null ? [] : ShapeSetActions.Own(_shapeCtx).Select(s => s.DisplayName).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var snapshots = shown.Where(entry => entry.Source == AssetSources.Local && !ownNames.Contains(entry.Name)).ToList();
-        var received = shown.Where(entry => entry.Source != AssetSources.Local).ToList();
-        if (own.Count + snapshots.Count > 0)
-        {
-            AddHeader(UiStrings.Assets_PersonalHeader);
-            foreach (var set in own)
-                _list.Items.Add(new ListBoxItem { Content = ShapeSetRow(set), Tag = set, HorizontalContentAlignment = HorizontalAlignment.Stretch });
-            foreach (var entry in snapshots) AddRow(entry, AssetRow(entry, mine: true));
-        }
-        if (received.Count > 0)
-        {
-            AddHeader(UiStrings.Assets_ReceivedHeader);
-            foreach (var entry in received) AddRow(entry, AssetRow(entry, mine: entry.IsOwnedBy(AppAssets.MyHandle)));
-        }
+        foreach (var set in ShownOwnSets())
+            _list.Items.Add(new ListBoxItem { Content = ShapeSetRow(set), Tag = set, HorizontalContentAlignment = HorizontalAlignment.Stretch });
+        foreach (var entry in shown.Where(entry => entry.Source == AssetSources.Local && !ownNames.Contains(entry.Name)))
+            AddRow(entry, AssetRow(entry, mine: true));
+        string? handle = AppAssets.MyHandle;
+        foreach (var entry in shown.Where(entry => entry.Source != AssetSources.Local).OrderBy(entry => OfficialShapeSets.OrderOf(entry.Id)))
+            AddRow(entry, AssetRow(entry, mine: entry.IsOwnedBy(handle)));
     }
 
     /// <summary>내 세트 줄: 첫 모양 썸네일·이름, 아래에 모양 수와 올린 버전·고침 상태.</summary>

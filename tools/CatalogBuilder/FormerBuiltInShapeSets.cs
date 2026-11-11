@@ -7,7 +7,7 @@ namespace CatalogBuilder;
 
 /// <summary>
 /// 예전 판(1.14.117~1.14.122)에서 앱에 들어 있던 모양 펜 기본 세트 중 지금 기본 세트(<see cref="Chickxel.Core.Assets.OfficialShapeSets"/> — 꽃·반짝이·비눗방울·단풍잎·나뭇잎)가
-/// 아닌 열다섯 가지의 그림: 솔잎·꽃잎·점·구름·돌멩이·벽돌·빗방울·눈송이·하트·연기·나뭇결·금·동전과 보석·풀·별. 앱에 있던 코드 그대로라 예전 사용자의 세트와 같은 모양이다
+/// 아닌 열네 가지의 그림: 솔잎·꽃잎·점·구름·돌멩이·빗방울·눈송이·하트·연기·나뭇결·금·동전과 보석·풀·별(낱개 벽돌 세트는 상점에서 내림). 앱에 있던 코드 그대로라 예전 사용자의 세트와 같은 모양이다
 /// (상점 패키지는 <see cref="LocalShapeSets"/>). 손으로 그린 글자 그림과, 원·타원·무작위 걸음으로 만든 그림(씨앗 고정이라 늘 같은 모양)을 섞는다.
 /// </summary>
 internal static class FormerBuiltInShapeSets
@@ -19,7 +19,6 @@ internal static class FormerBuiltInShapeSets
     public static StampSet Dots() => Set("Dots", DotShapes(), StampOrder.Sequential);
     public static StampSet Clouds() => Set("Clouds", CloudShapes());
     public static StampSet Pebbles() => Set("Pebbles", RockShapes());
-    public static StampSet Bricks() => Set("Bricks", BrickShapes());
     public static StampSet Raindrops() => Set("Raindrops", RainShapes.Select(rows => Art(rows, RainBlue)));
     public static StampSet Snowflakes() => Set("Snowflakes", SnowShapes.Select(rows => Art(rows, SnowWhite)));
     public static StampSet Hearts() => Set("Hearts", HeartColors.SelectMany(palette => HeartShapes.Select(rows => Art(rows, palette))));
@@ -310,22 +309,6 @@ internal static class FormerBuiltInShapeSets
                 return lit > 0.45 ? light : lit < -0.35 ? dark : mid;
             });
         }
-    }
-
-    private static IEnumerable<PixelImage> BrickShapes()
-    {
-        var top = new Color32(0xD2, 0x74, 0x52);
-        var face = new Color32(0xB0, 0x50, 0x38);
-        var bottom = new Color32(0x7A, 0x34, 0x28);
-        PixelImage Brick(int w, int h) => Paint(w, h, (x, y) => y == 0 && x < w - 1 ? top : y == h - 1 || x == w - 1 ? bottom : face);
-        foreach (var (w, h) in new[] { (6, 3), (8, 3), (8, 4), (10, 4), (12, 5) })
-            yield return Brick(w, h);
-        // 엇갈려 쌓은 두 장(사이 줄눈은 투명)
-        var a = Brick(8, 4);
-        var pair = new PixelImage(13, 9);
-        pair.Blit(a, 0, 0);
-        pair.Blit(a, 5, 5);
-        yield return pair;
     }
 
     private static IEnumerable<PixelImage> PuffShapes()

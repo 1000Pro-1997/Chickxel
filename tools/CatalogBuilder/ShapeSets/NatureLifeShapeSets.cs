@@ -488,12 +488,217 @@ internal static class NatureLifeShapeSets
 
     private static readonly Dictionary<char, uint> BubbleColors = new() { ['q'] = 0xC0D8F4FF, ['Q'] = 0x60D8F4FF, ['h'] = 0xE0FFFFFF };
 
-    private static PixelImage School(int count)
+    // ───────────── 물고기 떼 ─────────────
+
+    // s 등, b 은빛 배, y 노란 줄
+    private static readonly Dictionary<char, Mat> BlueSilverMats = new()
     {
-        var one = Toon(Sardine, SilverMats, FishEye);
-        (int X, int Y)[] at = count == 2 ? [(0, 0), (7, 6)] : [(0, 4), (11, 0), (9, 8)];
-        return Compose(26, 14, at.Take(count).Select(p => (one, p.X, p.Y)));
+        ['s'] = new(0xFF142848, 0xFF1E4C80, 0xFF2C6CB0, 0xFF5C9CE0),
+        ['b'] = new(0xFF2A3A50, 0xFF98A8C0, 0xFFC8D4E4, 0xFFF4F8FF),
+    };
+
+    private static readonly Dictionary<char, Mat> AnchovyMats = new()
+    {
+        ['s'] = new(0xFF1E3A38, 0xFF2E6460, 0xFF428680, 0xFF6CB0A8),
+        ['b'] = new(0xFF2E3C50, 0xFF8EA0B4, 0xFFC0CCDA, 0xFFF0F6FF),
+    };
+
+    private static readonly Dictionary<char, Mat> StripedMats = new()
+    {
+        ['s'] = new(0xFF2E3C50, 0xFF5A7090, 0xFF7890B0, 0xFFA8BCD4),
+        ['b'] = new(0xFF2E3C50, 0xFF98A8BC, 0xFFC8D2DE, 0xFFF4F8FF),
+        ['y'] = new(0xFF5A4A08, 0xFFD8B018, 0xFFFFD83A, 0xFFFFF0A0),
+    };
+
+    private static readonly string[] StripedSardine =
+    [
+        "...ssssss.....",
+        ".sssssssssss.y",
+        "beEyyyyyyyyyyy",
+        ".bbbbbbbbbbb.y",
+        "...bbbbbb.....",
+    ];
+
+    private static readonly string[] Anchovy =
+    [
+        "..sssssss..s",
+        "beEbbbbbbbss",
+        ".bbbbbbbbb.s",
+    ];
+
+    // 떼 배치(14px 물고기 기준 왼쪽 위 좌표, 가로는 물고기 길이에 맞춰 늘이고 줄임): 2·3·4·5·6·7마리
+    private static readonly (int X, int Y)[][] SchoolLayouts =
+    [
+        [(0, 0), (8, 6)],
+        [(0, 4), (11, 0), (9, 8)],
+        [(0, 0), (12, 3), (3, 7), (15, 10)],
+        [(6, 0), (0, 5), (14, 4), (5, 10), (18, 9)],
+        [(0, 0), (14, 2), (4, 6), (19, 8), (1, 12), (13, 13)],
+        [(8, 0), (0, 4), (17, 3), (6, 8), (22, 8), (1, 13), (14, 13)],
+    ];
+
+    private static PixelImage School(PixelImage fish, int layout)
+    {
+        double sx = fish.Width / 14.0;
+        var at = SchoolLayouts[layout].Select(p => (X: (int)Math.Round(p.X * sx), p.Y)).ToArray();
+        return Compose(at.Max(p => p.X) + fish.Width, at.Max(p => p.Y) + fish.Height, at.Select(p => (fish, p.X, p.Y)));
     }
+
+    /// <summary>함께 헤엄치는 작은 물고기 떼(2~7마리): 정어리, 멸치, 청어, 노란 줄무늬. 모두 왼쪽을 본다(흩뿌려도 한 방향으로 헤엄).</summary>
+    public static StampSet FishSchools()
+    {
+        var sardine = Toon(Sardine, SilverMats, FishEye);
+        var anchovy = Toon(Anchovy, AnchovyMats, FishEye);
+        var herring = Toon(Sardine, BlueSilverMats, FishEye);
+        var striped = Toon(StripedSardine, StripedMats, FishEye);
+        var shapes = new List<PixelImage>
+        {
+            School(sardine, 1), School(sardine, 3), School(sardine, 5),
+            School(anchovy, 0), School(anchovy, 2), School(anchovy, 5),
+            School(herring, 1), School(herring, 4),
+            School(striped, 0), School(striped, 2), School(striped, 3),
+        };
+        return Set("Fish Schools", shapes);
+    }
+
+    // ───────────── 물고기(한 마리씩) ─────────────
+
+    private static readonly Dictionary<char, Mat> YellowTangMats = new()
+    {
+        ['b'] = new(0xFF6A5004, 0xFFE0B010, 0xFFFFDC2A, 0xFFFFF4A0),
+    };
+
+    private static readonly string[] YellowTang =
+    [
+        "......bbb.......",
+        "....bbbbbbb.....",
+        "...bbbbbbbbb....",
+        "..bbbbbbbbbbb.bb",
+        ".beEbbbbbbbbbbbb",
+        "bbeebbbbbbbbwbbb",
+        ".bbbbbbbbbbbbbbb",
+        "..bbbbbbbbbbb.bb",
+        "...bbbbbbbbb....",
+        "....bbbbbbb.....",
+        "......bbb.......",
+    ];
+
+    // w 흰 몸, y 노란 지느러미, k 눈 띠, n 회색 줄
+    private static readonly Dictionary<char, Mat> ButterflyfishMats = new()
+    {
+        ['w'] = new(0xFF4A4A40, 0xFFD8D8CC, 0xFFF8F8F0, 0xFFFFFFFF),
+        ['y'] = new(0xFF6A5004, 0xFFE0A810, 0xFFFFD030, 0xFFFFF0A0),
+    };
+
+    private static readonly Dictionary<char, uint> ButterflyfishBits = new() { ['k'] = 0xFF1E1E22, ['n'] = 0xFFB0B0A8, ['E'] = 0xFFFFFFFF };
+
+    private static readonly string[] Butterflyfish =
+    [
+        ".....yyyyy.......",
+        "...yywwwwwyy.....",
+        "..wkkwnwwnwyy....",
+        ".wwkkwwnwwnwy.yy.",
+        "wwEkkwnwwnwwwyyyy",
+        ".wwkkwwnwwnwy.yy.",
+        "..wkkwnwwnwyy....",
+        "...yywwwwwyy.....",
+        ".....yyyyy.......",
+    ];
+
+    // w 흰 바탕, r 주홍 무늬
+    private static readonly Dictionary<char, Mat> KoiMats = new()
+    {
+        ['w'] = new(0xFF5A5450, 0xFFDCD6D0, 0xFFFAF6F2, 0xFFFFFFFF),
+        ['r'] = new(0xFF6A1A08, 0xFFC83E14, 0xFFF0622A, 0xFFFFA070),
+    };
+
+    private static readonly string[] Koi =
+    [
+        "......ww............",
+        "...wwrrrww.....wwww.",
+        ".wwwrrrrwwwrr.wwwww.",
+        "wewwwrrwwwrrrwwww...",
+        "wwwwwwwwwwwwwwwww...",
+        ".wwwwwwwrrwwwwwwwww.",
+        "..wwwwwwwww...wwwww.",
+        "....ww..........www.",
+    ];
+
+    // 네온테트라: o 테두리, g 등, C·c 네온 줄, r 빨강, w 배, e 눈
+    private static readonly Dictionary<char, uint> NeonColors = new()
+    {
+        ['o'] = 0xFF14203A, ['g'] = 0xFF6A7A6A, ['C'] = 0xFFA8FFFF, ['c'] = 0xFF2AC8F0, ['r'] = 0xFFE8303A, ['R'] = 0xFFA81C28,
+        ['w'] = 0xFFE8ECF0, ['e'] = 0xFF101418,
+    };
+
+    private static readonly string[] NeonTetra =
+    [
+        "...oooooo....",
+        ".oogggggggo.o",
+        "oeCCccccccooo",
+        "owwwwrrrrrRro",
+        ".oowwrrrRooo.",
+        "...oooo......",
+    ];
+
+    // 고등어: s 푸른 등, b 은빛 배, k 등 물결무늬
+    private static readonly Dictionary<char, Mat> MackerelMats = new()
+    {
+        ['s'] = new(0xFF0E2A30, 0xFF1E5A5C, 0xFF2E7E7A, 0xFF5AACA2),
+        ['b'] = new(0xFF2A3A48, 0xFFA0B0BE, 0xFFD0DAE4, 0xFFF6FAFF),
+    };
+
+    private static readonly string[] Mackerel =
+    [
+        "....ssssssssss.......",
+        "..sskssksskssksss..ss",
+        ".eEsssssssssssssssss.",
+        "bbbbbbbbbbbbbbbbbbbs.",
+        ".bbbbbbbbbbbbbbbbb..s",
+        "...bbbbbbbbbbbb......",
+    ];
+
+    // 능성어: b 갈색 몸, c 밝은 배, p 짙은 점
+    private static readonly Dictionary<char, Mat> GrouperMats = new()
+    {
+        ['b'] = new(0xFF3A2010, 0xFF7A4A28, 0xFFA06A3C, 0xFFC89A64),
+        ['c'] = new(0xFF3A2010, 0xFFC0A07C, 0xFFE0C8A4, 0xFFF4E4C8),
+    };
+
+    private static readonly Dictionary<char, uint> GrouperSpots = new() { ['p'] = 0xFF5A341A };
+
+    private static readonly string[] Grouper =
+    [
+        ".....bbbbbb.......",
+        "...bbbpbbbbbb.....",
+        "..bbbbbbbpbbbb.bb.",
+        ".bbeEbbpbbbbpbbbbb",
+        "bbbeebbbbbbbbbbbbb",
+        "bbbbbbpbbpbbbbbbbb",
+        ".cccccccccccbb.bb.",
+        "..ccccccccccc.....",
+        "....cccccc........",
+    ];
+
+    // 작은 상어: g 회색 등, w 흰 배
+    private static readonly Dictionary<char, Mat> SharkMats = new()
+    {
+        ['g'] = new(0xFF1E2834, 0xFF4A5A6C, 0xFF6A7C90, 0xFF9AACC0),
+        ['w'] = new(0xFF1E2834, 0xFFC8D0D8, 0xFFEEF2F6, 0xFFFFFFFF),
+    };
+
+    private static readonly string[] Shark =
+    [
+        "...........g...........gg",
+        "..........gg..........ggg",
+        "......ggggggggg......ggg.",
+        "...gggggggggggggggg.ggg..",
+        ".ggegggggggggggggggggggg.",
+        "gggggggggggggggggggggg...",
+        ".wwwwwwwwwwwwwwwggggggg..",
+        "..wwwwwwwwwwwgg.g.....gg.",
+        "....wwwwwwww...........gg",
+    ];
 
     private static PixelImage WithBubbles(PixelImage fish)
     {
@@ -513,7 +718,10 @@ internal static class NatureLifeShapeSets
         return Compose(fish.Width + 2, fish.Height + 9, [(b, 0, 0), (fish, 2, 9)]);
     }
 
-    /// <summary>옆에서 본 물고기: 흰동가리, 블루탱, 금붕어, 정어리 떼(둘·셋), 복어, 엔젤피시. 양쪽을 보게 뒤집은 것도.</summary>
+    /// <summary>
+    /// 옆에서 본 물고기 한 마리씩: 흰동가리, 블루탱, 금붕어(물방울 있는 것도), 복어, 엔젤피시, 옐로탱, 나비고기, 비단잉어,
+    /// 네온테트라, 고등어, 능성어, 작은 상어. 양쪽을 보게 뒤집은 것도.
+    /// </summary>
     public static StampSet Fish()
     {
         var shapes = new List<PixelImage>
@@ -522,10 +730,15 @@ internal static class NatureLifeShapeSets
             Toon(BlueTang, TangMats, FishEye),
             Toon(Goldfish, GoldMats, FishEye),
             WithBubbles(Toon(Goldfish, GoldMats, FishEye)),
-            School(2),
-            School(3),
             Toon(Puffer, PufferMats, Merge(FishEye, PufferSpots)),
             Toon(Angelfish, AngelMats, FishEye),
+            Toon(YellowTang, YellowTangMats, Merge(FishEye, new() { ['w'] = 0xFFFFFFFF })),
+            Toon(Butterflyfish, ButterflyfishMats, ButterflyfishBits),
+            Toon(Koi, KoiMats, FishEye),
+            Art(NeonTetra, NeonColors),
+            Toon(Mackerel, MackerelMats, Merge(FishEye, new() { ['k'] = 0xFF0A1E22 })),
+            Toon(Grouper, GrouperMats, Merge(FishEye, GrouperSpots)),
+            Toon(Shark, SharkMats, FishEye),
         };
         return Set("Fish", Mirrored(shapes));
     }

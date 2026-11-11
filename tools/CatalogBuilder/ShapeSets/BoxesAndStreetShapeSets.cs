@@ -6,7 +6,7 @@ using static Chickxel.Core.IO.ShapeArt;
 namespace CatalogBuilder;
 
 /// <summary>
-/// 상자·거리 소품 모양 펜 세트 다섯 가지: 랜덤 박스, 종이 상자·나무 상자, 길에 버려진 쓰레기, 라바콘·바리케이드, 통·자루.
+/// 상자·거리 소품 모양 펜 세트: 물음표 블록, 물음표 선물 상자, 보물 상자, 금화 더미, 돈 자루, 종이 상자(옆모습·45도), 나무 상자(옆모습·45도), 길에 버려진 쓰레기, 라바콘·바리케이드, 통·자루.
 /// 손으로 그린 글자 그림과 글자 판(<see cref="Grid"/>)에 그린 상자·원통(<see cref="Lathe"/>)을 섞는다. 빛은 왼쪽 위에서, 테두리는 바탕보다 어둡게.
 /// </summary>
 internal static class BoxesAndStreetShapeSets
@@ -111,7 +111,7 @@ internal static class BoxesAndStreetShapeSets
     private static readonly string[] BigStar = ["..w..", "..w..", "wwWww", "..w..", "..w.."];
     private static readonly string[] SmallStar = [".w.", "wWw", ".w."];
 
-    // ───────────── 1. 랜덤 박스 ─────────────
+    // ───────────── 1. 물음표 블록 ─────────────
 
     // o 테두리, d 그늘, y 바탕, H 밝은 곳, r 리벳, q 물음표, Q 물음표 그림자
     private static readonly Dictionary<char, uint> GoldBlock = new()
@@ -122,6 +122,13 @@ internal static class BoxesAndStreetShapeSets
         { ['o'] = 0xFF0C2A66, ['d'] = 0xFF1C58BE, ['y'] = 0xFF3A8CF0, ['H'] = 0xFFAAD8FF, ['r'] = 0xFF143E8E, ['q'] = 0xFFF4FAFF, ['Q'] = 0xFF123A86 };
     private static readonly Dictionary<char, uint> RedBlock = new()
         { ['o'] = 0xFF560A12, ['d'] = 0xFFA81C26, ['y'] = 0xFFE23A3C, ['H'] = 0xFFFF9C8C, ['r'] = 0xFF7A1018, ['q'] = 0xFFFFF2E8, ['Q'] = 0xFF701018 };
+    private static readonly Dictionary<char, uint> GreenBlock = new()
+        { ['o'] = 0xFF0E3E1A, ['d'] = 0xFF1E8A3A, ['y'] = 0xFF3CC060, ['H'] = 0xFFA8F0B0, ['r'] = 0xFF145A28, ['q'] = 0xFFF4FFF4, ['Q'] = 0xFF125224 };
+    private static readonly Dictionary<char, uint> SilverBlock = new()
+        { ['o'] = 0xFF3A4250, ['d'] = 0xFF8A94A4, ['y'] = 0xFFBCC6D4, ['H'] = 0xFFF4F8FC, ['r'] = 0xFF5A6474, ['q'] = 0xFF2E3C58, ['Q'] = 0xFF8A94A4 };
+    // 다 쓴 빈 블록(물음표 없음)
+    private static readonly Dictionary<char, uint> UsedBlock = new()
+        { ['o'] = 0xFF3A1E0C, ['d'] = 0xFF6E4020, ['y'] = 0xFF9A6034, ['H'] = 0xFFC48A58, ['r'] = 0xFF4E2A12 };
 
     private static readonly string[] BigQ =
     [
@@ -147,8 +154,8 @@ internal static class BoxesAndStreetShapeSets
         "..qq.",
     ];
 
-    /// <summary>앞에서 본 물음표 블록(한 변 <paramref name="s"/>): 모서리 리벳, 오른쪽 아래로 그림자 진 물음표.</summary>
-    private static string[] QBlock(int s)
+    /// <summary>앞에서 본 물음표 블록(한 변 <paramref name="s"/>): 모서리 리벳, 오른쪽 아래로 그림자 진 물음표(<paramref name="mark"/>가 거짓이면 빈 블록).</summary>
+    private static string[] QBlock(int s, bool mark = true)
     {
         var g = new Grid(s, s);
         g.Fill(0, 0, s, s, 'o');
@@ -159,14 +166,15 @@ internal static class BoxesAndStreetShapeSets
         g.Fill(s - 2, 2, 1, s - 3, 'd');
         g[0, 0] = g[s - 1, 0] = g[0, s - 1] = g[s - 1, s - 1] = '.';
         if (s >= 14) g[2, 2] = g[s - 3, 2] = g[2, s - 3] = g[s - 3, s - 3] = 'r';
-        var mark = s >= 14 ? BigQ : SmallQ;
-        int mw = mark[0].Length, mh = mark.Length, x0 = (s - mw - 1) / 2, y0 = (s - mh - 1) / 2;
+        if (!mark) return g.Rows();
+        var glyph = s >= 14 ? BigQ : SmallQ;
+        int mw = glyph[0].Length, mh = glyph.Length, x0 = (s - mw - 1) / 2, y0 = (s - mh - 1) / 2;
         for (int j = 0; j < mh; j++)
             for (int i = 0; i < mw; i++)
-                if (mark[j][i] == 'q') g[x0 + i + 1, y0 + j + 1] = 'Q';
+                if (glyph[j][i] == 'q') g[x0 + i + 1, y0 + j + 1] = 'Q';
         for (int j = 0; j < mh; j++)
             for (int i = 0; i < mw; i++)
-                if (mark[j][i] == 'q') g[x0 + i, y0 + j] = 'q';
+                if (glyph[j][i] == 'q') g[x0 + i, y0 + j] = 'q';
         return g.Rows();
     }
 
@@ -174,13 +182,120 @@ internal static class BoxesAndStreetShapeSets
     private static Dictionary<char, uint> LitBlock(Dictionary<char, uint> p) => new()
         { ['o'] = p['d'], ['d'] = p['y'], ['y'] = p['H'], ['H'] = 0xFFFFFFFF, ['r'] = p['y'], ['q'] = 0xFFFFFFFF, ['Q'] = p['d'] };
 
-    // 보물 상자: o 테두리, W·w·v 나무(밝음·바탕·그늘), G·g·k 쇠띠(밝음·바탕·그늘), x 뚜껑 안쪽, C·c·n 금화, E·e 보석
+    /// <summary>물음표 블록: 금·보라·파랑·빨강·초록 큰 블록, 금·빨강·파랑·은 작은 블록, 빛나는 희귀 블록 둘, 다 쓴 빈 블록.</summary>
+    public static StampSet MysteryBoxes()
+    {
+        var shapes = new List<PixelImage>();
+        foreach (var p in new[] { GoldBlock, PurpleBlock, BlueBlock, RedBlock, GreenBlock }) shapes.Add(Art(QBlock(16), p));
+        foreach (var p in new[] { GoldBlock, RedBlock, BlueBlock, SilverBlock }) shapes.Add(Art(QBlock(12), p));
+        shapes.Add(Glow(Art(QBlock(16), LitBlock(GoldBlock)), 0xFFFFD040));
+        shapes.Add(Glow(Art(QBlock(14), LitBlock(PurpleBlock)), 0xFFC07CFF));
+        shapes.Add(Art(QBlock(14, mark: false), UsedBlock));
+        return Set("Mystery Boxes", shapes);
+    }
+
+    // ───────────── 2. 물음표 선물 상자 ─────────────
+
+    // 선물 상자: 3/4 상자(BoxGrid)의 o·U·T·e·F·f·s + G·g·k 리본, q 물음표 무늬
+    private static readonly Dictionary<char, uint> GiftPurple = new()
+        { ['o'] = 0xFF2E0E4E, ['U'] = 0xFFC898F4, ['T'] = 0xFFA870E4, ['e'] = 0xFF5A2290, ['F'] = 0xFF9A5AD8, ['f'] = 0xFF8244C4, ['s'] = 0xFF6430A0, ['q'] = 0xFFE8D0FF };
+    private static readonly Dictionary<char, uint> GiftTeal = new()
+        { ['o'] = 0xFF0A3A3A, ['U'] = 0xFF8AEAD8, ['T'] = 0xFF4CCCB8, ['e'] = 0xFF16706A, ['F'] = 0xFF38B4A2, ['f'] = 0xFF24A090, ['s'] = 0xFF187E72, ['q'] = 0xFFD0FFF4 };
+    private static readonly Dictionary<char, uint> GiftRed = new()
+        { ['o'] = 0xFF4E0810, ['U'] = 0xFFFF8A86, ['T'] = 0xFFF0545A, ['e'] = 0xFF8E1420, ['F'] = 0xFFE0444C, ['f'] = 0xFFC8303A, ['s'] = 0xFF9A1C28, ['q'] = 0xFFFFD8D0 };
+    private static readonly Dictionary<char, uint> GiftGold = new()
+        { ['o'] = 0xFF5A3A06, ['U'] = 0xFFFFE9A0, ['T'] = 0xFFFFD050, ['e'] = 0xFFA0700E, ['F'] = 0xFFF6C238, ['f'] = 0xFFE6A820, ['s'] = 0xFFB8800E, ['q'] = 0xFFFFF8E0 };
+    private static readonly Dictionary<char, uint> GiftBlue = new()
+        { ['o'] = 0xFF0C2458, ['U'] = 0xFF9ACCFF, ['T'] = 0xFF5A9CF0, ['e'] = 0xFF1A4A9A, ['F'] = 0xFF4A8AE6, ['f'] = 0xFF2E70D0, ['s'] = 0xFF1E56A8, ['q'] = 0xFFE0F0FF };
+    private static readonly Dictionary<char, uint> GiftPink = new()
+        { ['o'] = 0xFF5A1038, ['U'] = 0xFFFFC4E0, ['T'] = 0xFFFF8CC0, ['e'] = 0xFFA02A68, ['F'] = 0xFFF878B0, ['f'] = 0xFFE45A98, ['s'] = 0xFFB83C78, ['q'] = 0xFFFFF0F8 };
+    private static readonly Dictionary<char, uint> GiftGreen = new()
+        { ['o'] = 0xFF0E3A1A, ['U'] = 0xFFA8F0B0, ['T'] = 0xFF5CCC74, ['e'] = 0xFF1A6E30, ['F'] = 0xFF4AB862, ['f'] = 0xFF34A04E, ['s'] = 0xFF22783A, ['q'] = 0xFFF0FFF0 };
+    private static readonly Dictionary<char, uint> RibbonGold = new() { ['G'] = 0xFFFFE890, ['g'] = 0xFFF2BA30, ['k'] = 0xFFA0700E };
+    private static readonly Dictionary<char, uint> RibbonPink = new() { ['G'] = 0xFFFFD0E8, ['g'] = 0xFFFF7AB8, ['k'] = 0xFFB83A78 };
+    private static readonly Dictionary<char, uint> RibbonWhite = new() { ['G'] = 0xFFFFFFFF, ['g'] = 0xFFE4E8EE, ['k'] = 0xFFA8B0BC };
+    private static readonly Dictionary<char, uint> RibbonRed = new() { ['G'] = 0xFFFF8A86, ['g'] = 0xFFE0303A, ['k'] = 0xFF8E1420 };
+    private static readonly Dictionary<char, uint> RibbonPurple = new() { ['G'] = 0xFFE0C0FF, ['g'] = 0xFF9A50DE, ['k'] = 0xFF4E1C80 };
+
+    private static readonly string[] TinyQ = ["qq.", "..q", ".q.", "...", ".q."];
+
+    private static readonly string[] GiftBow =
+    [
+        ".ooo..ooo.",
+        "oGggoogGgo",
+        "oggkGgkggo",
+        ".oooooooo.",
+    ];
+
+    /// <summary>
+    /// 위·앞에서 본 선물 상자 판: o 테두리, U·T 윗면(밝은 곳·바탕), e 윗면과 앞면 사이 모서리, F·f·s 앞면(밝은 곳·바탕·그늘).
+    /// 높이 = 윗면 + 앞면 + 3.
+    /// </summary>
+    private static Grid BoxGrid(int w, int top, int front)
+    {
+        int h = top + front + 3;
+        var g = new Grid(w, h);
+        g.Fill(0, 0, w, h, 'o');
+        g.Fill(1, 1, w - 2, top, 'T');
+        g.Fill(1, 1, w - 2, 1, 'U');
+        g.Fill(1, 1, 1, top, 'U');
+        g.Fill(1, top + 1, w - 2, 1, 'e');
+        g.Fill(1, top + 2, w - 2, front, 'f');
+        g.Fill(1, top + 2, 1, front, 'F');
+        g.Fill(w - 2, top + 2, 1, front, 's');
+        g.Fill(1, h - 2, w - 2, 1, 's');
+        return g;
+    }
+
+    /// <summary>물음표 무늬 포장지에 리본을 두른 3/4 상자.</summary>
+    private static string[] MysteryGift(int w, int top, int front)
+    {
+        var box = BoxGrid(w, top, front);
+        int c = w / 2 - 1, h = box.H;
+        for (int y = 1; y <= top; y++) { box[c, y] = 'G'; box[c + 1, y] = 'g'; }
+        for (int x = 1; x < w - 1; x++) box[x, 1 + top / 2] = x == c ? 'G' : 'g';
+        box[c, top + 1] = box[c + 1, top + 1] = 'k';
+        for (int y = top + 2; y < h - 1; y++) { box[c, y] = 'g'; box[c + 1, y] = 'k'; }
+        int qy = top + 2 + (front - TinyQ.Length) / 2;
+        box.Stamp(TinyQ, (c - 3) / 2 + 1, qy);
+        box.Stamp(TinyQ, c + 2 + (w - 1 - (c + 2) - 3) / 2, qy);
+        var g = new Grid(w, h + 3);
+        g.Stamp(box.Rows(), 0, 3);
+        g.Stamp(GiftBow, c - 4, 0);
+        return g.Rows();
+    }
+
+    /// <summary>물음표 선물 상자: 일곱 색·크기의 물음표 무늬 포장 상자(리본·나비 매듭).</summary>
+    public static StampSet MysteryGifts()
+    {
+        var shapes = new List<PixelImage>
+        {
+            Art(MysteryGift(14, 4, 9), GiftPurple, RibbonGold),
+            Art(MysteryGift(12, 3, 8), GiftTeal, RibbonPink),
+            Art(MysteryGift(16, 4, 11), GiftRed, RibbonWhite),
+            Art(MysteryGift(12, 3, 9), GiftGold, RibbonRed),
+            Art(MysteryGift(18, 5, 12), GiftBlue, RibbonWhite),
+            Art(MysteryGift(10, 3, 7), GiftPink, RibbonPurple),
+            Art(MysteryGift(14, 4, 10), GiftGreen, RibbonGold),
+        };
+        return Set("Mystery Gifts", shapes);
+    }
+
+    // ───────────── 3. 보물 상자 ─────────────
+
+    // 보물 상자: o 테두리, W·w·v 나무(밝음·바탕·그늘), G·g·k 쇠띠(밝음·바탕·그늘), x 뚜껑 안쪽
     private static readonly Dictionary<char, uint> ChestWood = new()
         { ['o'] = 0xFF3A1E0C, ['W'] = 0xFFD08A48, ['w'] = 0xFFAA6630, ['v'] = 0xFF7A4420, ['x'] = 0xFF4E2A12 };
+    private static readonly Dictionary<char, uint> ChestDarkWood = new()
+        { ['o'] = 0xFF22120A, ['W'] = 0xFF9A6238, ['w'] = 0xFF7A4A28, ['v'] = 0xFF54301A, ['x'] = 0xFF2E180C };
     private static readonly Dictionary<char, uint> GoldTrim = new() { ['G'] = 0xFFFFE27A, ['g'] = 0xFFE0A42A, ['k'] = 0xFF8A5A10 };
     private static readonly Dictionary<char, uint> IronTrim = new() { ['G'] = 0xFFF0F4F8, ['g'] = 0xFFAEB6C2, ['k'] = 0xFF5A626E };
+    // 보물: Y·C·c·d·n 금화(가장 밝음~테두리), E·e 보석
     private static readonly Dictionary<char, uint> Treasure = new()
-        { ['C'] = 0xFFFFF4A8, ['c'] = 0xFFF6C430, ['n'] = 0xFFB07810, ['E'] = 0xFFFF9AB0, ['e'] = 0xFFE0204A };
+        { ['Y'] = 0xFFFFFFE0, ['C'] = 0xFFFFF0A0, ['c'] = 0xFFF6C430, ['d'] = 0xFFD09018, ['n'] = 0xFFA06A0C, ['E'] = 0xFFFF9AB0, ['e'] = 0xFFE0204A };
+    // 보석 상자: 사파이어 더미에 에메랄드
+    private static readonly Dictionary<char, uint> Gems = new()
+        { ['Y'] = 0xFFFFFFFF, ['C'] = 0xFFB8ECFF, ['c'] = 0xFF3AA8F0, ['d'] = 0xFF2A78C8, ['n'] = 0xFF16407E, ['E'] = 0xFFB0FFC0, ['e'] = 0xFF1EB050 };
 
     private static readonly string[] ChestClosed =
     [
@@ -198,6 +313,21 @@ internal static class BoxesAndStreetShapeSets
         "owGgwwwwwwwwGgvo",
         "ovGkvvvvvvvvGkvo",
         ".oooooooooooooo.",
+    ];
+
+    private static readonly string[] ChestSmall =
+    [
+        "..oooooooo..",
+        ".oGWWWWWWGo.",
+        "oWGwwwwwwgvo",
+        "ovgvvvvvvkvo",
+        "ooooGGgkoooo",
+        "oWGWGookWgvo",
+        "owGwgkkkwgvo",
+        "owGwwwwwwgvo",
+        "ovgvvvvvvkvo",
+        "owGwwwwwwgvo",
+        ".oooooooooo.",
     ];
 
     private static readonly string[] ChestOpen =
@@ -220,113 +350,392 @@ internal static class BoxesAndStreetShapeSets
         ".oooooooooooooo.",
     ];
 
-    // 선물 상자: 3/4 상자(BoxGrid)의 o·U·T·e·F·f·s + G·g·k 리본, q 물음표 무늬
-    private static readonly Dictionary<char, uint> GiftPurple = new()
-        { ['o'] = 0xFF2E0E4E, ['U'] = 0xFFC898F4, ['T'] = 0xFFA870E4, ['e'] = 0xFF5A2290, ['F'] = 0xFF9A5AD8, ['f'] = 0xFF8244C4, ['s'] = 0xFF6430A0, ['q'] = 0xFFE8D0FF };
-    private static readonly Dictionary<char, uint> GiftTeal = new()
-        { ['o'] = 0xFF0A3A3A, ['U'] = 0xFF8AEAD8, ['T'] = 0xFF4CCCB8, ['e'] = 0xFF16706A, ['F'] = 0xFF38B4A2, ['f'] = 0xFF24A090, ['s'] = 0xFF187E72, ['q'] = 0xFFD0FFF4 };
-    private static readonly Dictionary<char, uint> GiftRed = new()
-        { ['o'] = 0xFF4E0810, ['U'] = 0xFFFF8A86, ['T'] = 0xFFF0545A, ['e'] = 0xFF8E1420, ['F'] = 0xFFE0444C, ['f'] = 0xFFC8303A, ['s'] = 0xFF9A1C28, ['q'] = 0xFFFFD8D0 };
-    private static readonly Dictionary<char, uint> RibbonGold = new() { ['G'] = 0xFFFFE890, ['g'] = 0xFFF2BA30, ['k'] = 0xFFA0700E };
-    private static readonly Dictionary<char, uint> RibbonPink = new() { ['G'] = 0xFFFFD0E8, ['g'] = 0xFFFF7AB8, ['k'] = 0xFFB83A78 };
-    private static readonly Dictionary<char, uint> RibbonWhite = new() { ['G'] = 0xFFFFFFFF, ['g'] = 0xFFE4E8EE, ['k'] = 0xFFA8B0BC };
-
-    private static readonly string[] TinyQ = ["qq.", "..q", ".q.", "...", ".q."];
-
-    private static readonly string[] GiftBow =
+    // 상자 밖으로 넘치는 금화 더미(아래 두 줄은 앞면으로 흘러내림)
+    private static readonly string[] CoinHeap =
     [
-        ".ooo..ooo.",
-        "oGggoogGgo",
-        "oggkGgkggo",
-        ".oooooooo.",
+        ".......nnn........",
+        ".....nnYCcnn......",
+        "....nCCcCccCnn....",
+        "...nYCcCcCcccCn...",
+        "..nCcCCcCcEEcCcn..",
+        ".nCCcCcccCceeEcCn.",
+        "nYCcCcCCcCccccCcCn",
+        "nCcccCcCccCcCcccdn",
+        ".nnCcnnnCcdnnnCdn.",
+        "...nn...nn....nn..",
     ];
 
-    /// <summary>물음표 무늬 포장지에 리본을 두른 3/4 상자.</summary>
-    private static string[] MysteryGift(int w, int top, int front)
+    // 바닥에 누운 금화
+    private static readonly string[] FlatCoin = [".nnn.", "nYCcn", "ncddn", ".nnn."];
+
+    // 자물쇠: o 테두리, P·p 놋쇠, K 열쇠 구멍
+    private static readonly Dictionary<char, uint> Brass = new() { ['o'] = 0xFF3A2406, ['P'] = 0xFFFFE27A, ['p'] = 0xFFD8A030, ['K'] = 0xFF4A2E06 };
+    private static readonly string[] Padlock = [".oooo.", ".o..o.", "oooooo", "oPPppo", "oPKKpo", "oppppo", ".oooo."];
+
+    /// <summary>열린 상자 위로 반짝임 셋.</summary>
+    private static PixelImage OpenChest(Dictionary<char, uint> wood, Dictionary<char, uint> trim, Dictionary<char, uint> loot) => Compose(21, 21,
+    [
+        (Art(ChestOpen, wood, trim, loot), 2, 5),
+        (Art(BigStar, Sparkle), 0, 0),
+        (Art(SmallStar, Sparkle), 16, 0),
+        (Art(SmallStar, Sparkle), 9, 1),
+    ]);
+
+    /// <summary>금화가 넘쳐 앞면으로 흘러내리고 바닥에도 흩어진 열린 상자.</summary>
+    private static PixelImage OverflowingChest(Dictionary<char, uint> wood, Dictionary<char, uint> trim) => Compose(26, 24,
+    [
+        (Art(BigStar, Sparkle), 0, 1),
+        (Art(SmallStar, Sparkle), 21, 3),
+        (Art(ChestOpen, wood, trim, Treasure), 5, 8),
+        (Art(CoinHeap, Treasure), 4, 8),
+        (Art(FlatCoin, Treasure), 0, 20),
+        (Art(FlatCoin, Treasure), 2, 17),
+        (Art(FlatCoin, Treasure), 21, 20),
+        (Art(FlatCoin, Treasure), 9, 20),
+    ]);
+
+    /// <summary>보물 상자: 금띠·쇠띠·어두운 나무 상자, 작은 상자 둘, 자물쇠 채운 상자, 금화·보석이 든 열린 상자, 금화가 넘쳐 흘러내리는 상자 둘.</summary>
+    public static StampSet TreasureChests()
     {
-        var box = BoxGrid(w, top, front);
-        int c = w / 2 - 1, h = box.H;
-        for (int y = 1; y <= top; y++) { box[c, y] = 'G'; box[c + 1, y] = 'g'; }
-        for (int x = 1; x < w - 1; x++) box[x, 1 + top / 2] = x == c ? 'G' : 'g';
-        box[c, top + 1] = box[c + 1, top + 1] = 'k';
-        for (int y = top + 2; y < h - 1; y++) { box[c, y] = 'g'; box[c + 1, y] = 'k'; }
-        int qy = top + 2 + (front - TinyQ.Length) / 2;
-        box.Stamp(TinyQ, (c - 3) / 2 + 1, qy);
-        box.Stamp(TinyQ, c + 2 + (w - 1 - (c + 2) - 3) / 2, qy);
-        var g = new Grid(w, h + 3);
-        g.Stamp(box.Rows(), 0, 3);
-        g.Stamp(GiftBow, c - 4, 0);
+        var shapes = new List<PixelImage>
+        {
+            Art(ChestClosed, ChestWood, GoldTrim),
+            Art(ChestClosed, ChestWood, IronTrim),
+            Art(ChestClosed, ChestDarkWood, GoldTrim),
+            Art(ChestSmall, ChestWood, GoldTrim),
+            Art(ChestSmall, ChestDarkWood, IronTrim),
+            Compose(16, 14, [(Art(ChestClosed, ChestDarkWood, IronTrim), 0, 0), (Art(Padlock, Brass), 5, 3)]),
+            OpenChest(ChestWood, GoldTrim, Treasure),
+            OpenChest(ChestDarkWood, IronTrim, Gems),
+            OverflowingChest(ChestWood, GoldTrim),
+            OverflowingChest(ChestDarkWood, GoldTrim),
+        };
+        return Set("Treasure Chests", shapes);
+    }
+
+    // ───────────── 4. 금화 더미(옆에서 본) ─────────────
+
+    // 금화: n 테두리, Y 가장 밝음, C 윗면, c 바탕, d 옆테, z 옆테 그늘, x 자루 안 어둠
+    private static readonly Dictionary<char, uint> Coins = new()
+        { ['n'] = 0xFF7A4A06, ['Y'] = 0xFFFFF8C8, ['C'] = 0xFFFFE070, ['c'] = 0xFFF6C430, ['d'] = 0xFFC88A10, ['z'] = 0xFFA06A08, ['x'] = 0xFF3A2410 };
+
+    /// <summary>옆에서 본 금화 한 닢(테두리 포함 4줄, 위 금화와 테두리 한 줄을 나눔): 밝은 윗면 줄, 어두운 옆테 줄.</summary>
+    private static void CoinSlab(Grid g, int x, int y, int cw)
+    {
+        // 모서리는 비워 둥근 테(아래 금화 위에 얹혀도 칸이 갈라져 보임)
+        g.Fill(x + 1, y, cw, 1, 'n');
+        g.Fill(x + 1, y + 3, cw, 1, 'n');
+        g.Fill(x, y + 1, 1, 2, 'n');
+        g.Fill(x + cw + 1, y + 1, 1, 2, 'n');
+        for (int i = 0; i < cw; i++)
+        {
+            g[x + 1 + i, y + 1] = i < 2 ? 'Y' : i == cw - 1 ? 'c' : 'C';
+            g[x + 1 + i, y + 2] = i == 0 ? 'c' : i == cw - 1 || i % 3 == 2 ? 'z' : 'd';
+        }
+    }
+
+    /// <summary>금화 탑: <paramref name="n"/>닢을 아래부터 쌓으며 <paramref name="lean"/>만큼 기울고 씨앗에 따라 가끔 한 칸씩 어긋남. <paramref name="bottom"/> = 맨 아래 테두리 줄.</summary>
+    private static void CoinTower(Grid g, int x, int bottom, int n, int cw, double lean, uint seed)
+    {
+        var rng = new Lcg(seed);
+        for (int i = 0; i < n; i++)
+        {
+            int jitter = i == 0 ? 0 : rng.Next(6) switch { 0 => -1, 1 => 1, _ => 0 };
+            CoinSlab(g, x + (int)Math.Round(lean * i) + jitter, bottom - 3 - 3 * i, cw);
+        }
+    }
+
+    // 세워 둔 금화(앞면)
+    private static readonly string[] CoinFace = ["..nnn..", ".nYCCn.", "nYcccdn", "nCcYcdn", "nCcccdn", ".nddzn.", "..nnn.."];
+
+    /// <summary>금화 탑들을 나란히(탑마다 닢 수·기울기·씨앗), 금화 폭 8.</summary>
+    private static string[] Towers(params (int N, double Lean, uint Seed)[] towers)
+    {
+        var g = new Grid(10 * towers.Length + 8, 40);
+        for (int t = 0; t < towers.Length; t++) CoinTower(g, 3 + t * 10, 39, towers[t].N, 8, towers[t].Lean, towers[t].Seed);
         return g.Rows();
     }
 
-    /// <summary>랜덤 박스: 네 색 물음표 블록(큰·작은), 빛나는 희귀 블록 둘, 물음표 선물 상자 셋, 보물 상자(닫힘·쇠띠·열려 반짝임).</summary>
-    public static StampSet MysteryBoxes()
+    /// <summary>낮은 금화 무더기: 층마다 금화를 반 닢쯤 엇갈려 쌓고, 세워 둔 금화를 앞에 기댐.</summary>
+    private static string[] CoinPile(int[] layers, int faces, uint seed)
     {
-        var shapes = new List<PixelImage>();
-        foreach (var p in new[] { GoldBlock, PurpleBlock, BlueBlock, RedBlock }) shapes.Add(Art(QBlock(16), p));
-        foreach (var p in new[] { GoldBlock, BlueBlock, RedBlock }) shapes.Add(Art(QBlock(12), p));
-        shapes.Add(Glow(Art(QBlock(16), LitBlock(GoldBlock)), 0xFFFFD040));
-        shapes.Add(Glow(Art(QBlock(14), LitBlock(PurpleBlock)), 0xFFC07CFF));
-        shapes.Add(Art(MysteryGift(14, 4, 9), GiftPurple, RibbonGold));
-        shapes.Add(Art(MysteryGift(12, 3, 8), GiftTeal, RibbonPink));
-        shapes.Add(Art(MysteryGift(16, 4, 11), GiftRed, RibbonWhite));
-        shapes.Add(Art(ChestClosed, ChestWood, GoldTrim));
-        shapes.Add(Art(ChestClosed, ChestWood, IronTrim));
-        shapes.Add(Compose(21, 21,
-        [
-            (Art(ChestOpen, ChestWood, GoldTrim, Treasure), 2, 5),
-            (Art(BigStar, Sparkle), 0, 0),
-            (Art(SmallStar, Sparkle), 16, 0),
-            (Art(SmallStar, Sparkle), 9, 1),
-        ]));
-        return Set("Mystery Boxes", shapes);
+        var rng = new Lcg(seed);
+        var g = new Grid(48, 30);
+        const int bottom = 29;
+        for (int l = 0; l < layers.Length; l++)
+        {
+            int x0 = 2 + l * 4 + rng.Next(2);
+            for (int i = 0; i < layers[l]; i++) CoinSlab(g, x0 + i * 8 + rng.Next(2), bottom - 3 - 3 * l, 7);
+        }
+        for (int f = 0; f < faces; f++) g.Stamp(CoinFace, f == 0 ? 0 : layers[0] * 8 - 2, bottom - 6);
+        return g.Rows();
     }
 
-    // ───────────── 2. 종이 상자·나무 상자 ─────────────
+    /// <summary>금화 더미: 옆에서 본 금화 탑(2~10닢, 기울거나 어긋난), 탑 두세 개 묶음, 낮은 무더기.</summary>
+    public static StampSet CoinStacks()
+    {
+        var shapes = new List<PixelImage>
+        {
+            Art(Towers((2, 0, 1)), Coins),
+            Art(Towers((4, 0, 2)), Coins),
+            Art(Towers((6, 0.15, 3)), Coins),
+            Art(Towers((9, -0.2, 4)), Coins),
+            Art(Towers((10, 0, 5)), Coins),
+            Art(Towers((3, 0, 6), (6, 0.1, 7)), Coins),
+            Art(Towers((7, 0, 8), (4, 0, 9)), Coins),
+            Art(Towers((2, 0, 10), (5, -0.1, 11), (3, 0, 12)), Coins),
+            Art(Towers((5, 0, 13), (9, 0.1, 14), (6, 0, 15)), Coins),
+            Art(CoinPile([3, 2, 1], 1, 16), Coins),
+            Art(CoinPile([4, 3, 1], 2, 17), Coins),
+        };
+        return Set("Gold Coin Stacks", shapes);
+    }
+
+    // ───────────── 5. 돈 자루 ─────────────
+
+    // 자루 몸통 글자는 통·자루 세트의 삼베(Burlap)와 같음(o·H·L·M·D, r·R 끈), 금화 글자는 Coins
+    private static readonly Dictionary<char, uint> Leather = new()
+    {
+        ['o'] = 0xFF2E160A, ['H'] = 0xFFC88250, ['L'] = 0xFFA45E32, ['M'] = 0xFF824624, ['D'] = 0xFF5C2E16,
+        ['r'] = 0xFFC8901C, ['R'] = 0xFFFFE070,
+    };
+
+    // 자루에 찍은 금화 무늬
+    private static readonly string[] CoinMark = [".nnn.", "nYCcn", "nCccn", "ncddn", ".nnn."];
+
+    private static readonly string[] MoneyBagLarge =
+    [
+        ".....o.o.o.....",
+        "....oLoMoDo....",
+        "....oLLMMDo....",
+        ".....oLMDo.....",
+        "....orRRrro....",
+        "....ooLMDoo....",
+        "...oHLMMMDDo...",
+        "..oHLMMMMMMDo..",
+        ".oHLMMMMMMMMDo.",
+        "oHLLMMMMMMMMDDo",
+        "oHLMMMMMMMMMDDo",
+        "oLLMMMMMMMMMDDo",
+        "oLMMMMMMMMMMDDo",
+        "oLMMMMMMMMMDDDo",
+        ".oMMMMMMMMMDDo.",
+        "..oDMMMMMMDDo..",
+        "...ooooooooo...",
+    ];
+
+    private static readonly string[] MoneyBagMedium =
+    [
+        "...o.o.o...",
+        "...oLMDo...",
+        "...orRro...",
+        "...oLMDo...",
+        "..oHLMMDo..",
+        ".oHLMMMMDo.",
+        "oHLMMMMMMDo",
+        "oLLMMMMMMDo",
+        "oLMMMMMMDDo",
+        "oLMMMMMMDDo",
+        ".oMMMMMMDo.",
+        "..ooooooo..",
+    ];
+
+    private static readonly string[] MoneyBagSmall =
+    [
+        "..o.o.o..",
+        "..oLMDo..",
+        "..orRro..",
+        "..oLMDo..",
+        ".oHLMMDo.",
+        "oHLMMMMDo",
+        "oLMMMMMDo",
+        "oLMMMMDDo",
+        ".oMMMDDo.",
+        "..ooooo..",
+    ];
+
+    // 입을 벌린 자루 위로 소복한 금화
+    private static readonly string[] MoneyBagOpen =
+    [
+        "......nnn......",
+        "....nnYCcnn....",
+        "..nnCcCYcCcnn..",
+        ".oLnCcCcCcCnDo.",
+        ".oHLLLMMMMMDDo.",
+        "..oLMMMMMMMDo..",
+        ".oHLMMMMMMMMDo.",
+        "oHLMMMMMMMMMDDo",
+        "oLLMMMMMMMMMDDo",
+        "oLMMMMMMMMMMDDo",
+        "oLMMMMMMMMMDDDo",
+        ".oMMMMMMMMMDDo.",
+        "..ooooooooooo..",
+    ];
+
+    // 옆으로 쓰러져 입에서 금화가 쏟아지는 자루
+    private static readonly string[] MoneyBagTipped =
+    [
+        "...oooooooo...........",
+        ".ooHLLLLMMMoo.oo......",
+        "oHLLMMMMMMMMDooLo.....",
+        "oLLMMMMMMMMMDDoxLo....",
+        "oLMMMMMMMMMMDDoxxDo...",
+        "oLMMMMMMMMMMDDoxnnnn..",
+        "oLMMMMMMMMMDDDonCYCcnn",
+        ".oMMMMMMMMDDDnCcCcCcCn",
+        "..oooooooooonCcCcCcCcn",
+        ".........nnnnnnnnnnnn.",
+    ];
+
+    /// <summary>돈 자루: 삼베 자루(큰·중간·작은, 금화 무늬), 가죽 주머니 둘, 금화가 소복한 열린 자루, 주저앉은 자루, 쓰러져 금화를 쏟는 자루(좌우).</summary>
+    public static StampSet CoinSacks()
+    {
+        var shapes = new List<PixelImage>
+        {
+            Compose(15, 17, [(Art(MoneyBagLarge, Burlap), 0, 0), (Art(CoinMark, Coins), 5, 9)]),
+            Compose(11, 12, [(Art(MoneyBagMedium, Burlap), 0, 0), (Art(CoinMark, Coins), 3, 5)]),
+            Art(MoneyBagSmall, Burlap),
+            Compose(11, 12, [(Art(MoneyBagMedium, Leather), 0, 0), (Art(CoinMark, Coins), 3, 5)]),
+            Art(MoneyBagSmall, Leather),
+            Compose(19, 15, [(Art(MoneyBagOpen, Burlap, Coins), 2, 0), (Art(FlatCoin, Treasure), 0, 11), (Art(FlatCoin, Treasure), 14, 11)]),
+            Compose(16, 12, [(Art(SackSlumped, Burlap), 0, 0), (Art(CoinMark, Coins), 5, 6)]),
+        };
+        shapes.AddRange(Mirrored([Art(MoneyBagTipped, Burlap, Coins)]));
+        return Set("Coin Sacks", shapes);
+    }
+
+    // ───────────── 2. 종이 상자·나무 상자(옆모습·45도) ─────────────
+    // 시점마다 따로 세트: 옆모습은 앞면만, 45도는 2:1 아이소메트릭(윗면·왼쪽 면·오른쪽 면). 한 세트 안에서는 시점이 섞이지 않는다.
+
+    private enum Face { Top, Left, Right, Inner }
 
     /// <summary>
-    /// 위·앞에서 본 상자 판: o 테두리, U·T 윗면(밝은 곳·바탕), e 윗면과 앞면 사이 모서리, F·f·s 앞면(밝은 곳·바탕·그늘).
-    /// 높이 = 윗면 + 앞면 + 3.
+    /// 45도(2:1 아이소메트릭) 장면. X는 화면 오른쪽 아래, Y는 왼쪽 아래, Z는 위로: 화면 x = X − Y, y = (X + Y)/2 − Z.
+    /// 사각형(모서리 P, 변 U·V)을 넣은 차례로 칠하고(뒤 → 앞), 칸마다 면 좌표(s = U 쪽 거리, t = V 쪽 거리)로 글자를 고른다.
+    /// 다 칠한 뒤 바깥 둘레와 먼저 칠한 다른 물체(<c>part</c>)에 닿는 칸은 'o', 같은 물체의 먼저 칠한 면에 닿는 칸은 그 사각형의 모서리 글자(<c>rim</c>).
+    /// 꼭짓점을 정수로 두면 칸 가운데가 모서리에 걸리지 않아 비스듬한 모서리가 늘 두 칸씩 내려간다.
     /// </summary>
-    private static Grid BoxGrid(int w, int top, int front)
+    private sealed class Iso
     {
-        int h = top + front + 3;
-        var g = new Grid(w, h);
-        g.Fill(0, 0, w, h, 'o');
-        g.Fill(1, 1, w - 2, top, 'T');
-        g.Fill(1, 1, w - 2, 1, 'U');
-        g.Fill(1, 1, 1, top, 'U');
-        g.Fill(1, top + 1, w - 2, 1, 'e');
-        g.Fill(1, top + 2, w - 2, front, 'f');
-        g.Fill(1, top + 2, 1, front, 'F');
-        g.Fill(w - 2, top + 2, 1, front, 's');
-        g.Fill(1, h - 2, w - 2, 1, 's');
-        return g;
+        public readonly record struct V(double X, double Y, double Z);
+
+        private sealed record Quad(int Part, Face Face, V P, V U, V V, Func<double, double, char> Paint, Func<Face, char?>? Rim);
+
+        private readonly List<Quad> _quads = [];
+
+        public void Add(int part, Face face, V p, V u, V v, Func<double, double, char> paint, Func<Face, char?>? rim = null)
+            => _quads.Add(new(part, face, p, u, v, paint, rim));
+
+        /// <summary>상자 하나(바닥 모서리 <paramref name="o"/>, 크기 a×b×h): 오른쪽 면(s = 뒤에서 앞으로 Y) → 왼쪽 면(s = X) → 윗면(s = X, t = Y). 옆면의 t는 바닥에서 위로.</summary>
+        public void Box(int part, V o, double a, double b, double h, Func<Face, double, double, char> paint, char? sideRim, char? topRim)
+        {
+            Add(part, Face.Right, new(o.X + a, o.Y, o.Z), new(0, b, 0), new(0, 0, h), (s, t) => paint(Face.Right, s, t));
+            Add(part, Face.Left, new(o.X, o.Y + b, o.Z), new(a, 0, 0), new(0, 0, h), (s, t) => paint(Face.Left, s, t), f => f == Face.Right ? sideRim : topRim);
+            Add(part, Face.Top, new(o.X, o.Y, o.Z + h), new(a, 0, 0), new(0, b, 0), (s, t) => paint(Face.Top, s, t), _ => topRim);
+        }
+
+        private static (double X, double Y) Screen(V p) => (p.X - p.Y, (p.X + p.Y) / 2 - p.Z);
+
+        private static double Length(V v) => Math.Sqrt(v.X * v.X + v.Y * v.Y + v.Z * v.Z);
+
+        public string[] Rows()
+        {
+            var corners = _quads.SelectMany(q => new[] { q.P, Add3(q.P, q.U), Add3(q.P, q.V), Add3(Add3(q.P, q.U), q.V) }).Select(Screen).ToList();
+            int x0 = (int)Math.Floor(corners.Min(c => c.X)), y0 = (int)Math.Floor(corners.Min(c => c.Y));
+            int w = (int)Math.Ceiling(corners.Max(c => c.X)) - x0, h = (int)Math.Ceiling(corners.Max(c => c.Y)) - y0;
+            var owner = new int[w, h];
+            var cell = new char[w, h];
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    owner[x, y] = -1;
+                    double cx = x0 + x + 0.5, cy = y0 + y + 0.5;
+                    for (int i = 0; i < _quads.Count; i++)
+                    {
+                        var q = _quads[i];
+                        var (px, py) = Screen(q.P);
+                        var (ux, uy) = Screen(q.U);
+                        var (vx, vy) = Screen(q.V);
+                        double det = ux * vy - uy * vx;
+                        if (Math.Abs(det) < 1e-9) continue;
+                        double dx = cx - px, dy = cy - py, a = (dx * vy - dy * vx) / det, b = (ux * dy - uy * dx) / det;
+                        if (a < 0 || a >= 1 || b < 0 || b >= 1) continue;
+                        owner[x, y] = i;
+                        cell[x, y] = q.Paint(a * Length(q.U), b * Length(q.V));
+                    }
+                }
+
+            var g = new Grid(w, h);
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    int i = owner[x, y];
+                    if (i < 0) continue;
+                    var q = _quads[i];
+                    char c = cell[x, y];
+                    foreach (var (nx, ny) in new[] { (x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1) })
+                    {
+                        int n = nx >= 0 && ny >= 0 && nx < w && ny < h ? owner[nx, ny] : -1;
+                        if (n < 0 || _quads[n].Part < q.Part) { c = 'o'; break; }
+                        if (n < i && _quads[n].Part == q.Part && q.Rim?.Invoke(_quads[n].Face) is char rim) c = rim;
+                    }
+                    g[x, y] = c;
+                }
+            return g.Rows();
+        }
+
+        private static V Add3(V a, V b) => new(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
     }
 
-    // 종이 상자: t·u 테이프(밝음·그늘), L·l 라벨(종이·글줄), a 화살표 인쇄, k 상자 안 그늘
+    /// <summary>면 좌표 (s, t)에 놓은 글자 그림의 글자(그림 왼쪽 위 = (s0, tTop), t는 위로 갈수록 큼). 그림 밖이나 '.'이면 null.</summary>
+    private static char? Decal(string[] art, double s, double t, double s0, double tTop)
+    {
+        int i = (int)Math.Floor(s - s0), j = (int)Math.Floor(tTop - t);
+        return j >= 0 && j < art.Length && i >= 0 && i < art[j].Length && art[j][i] != '.' ? art[j][i] : null;
+    }
+
+    // 종이 상자: o 테두리, U·T 윗면(밝은 곳·바탕), F·f 왼쪽 면·옆모습 앞면(밝은 곳·바탕), s 오른쪽 면·그늘, S 오른쪽으로 열린 날개,
+    // t·u 테이프(밝음·그늘), L·l 라벨(종이·글줄), a 화살표 인쇄, k 손잡이 구멍·상자 안 그늘진 벽, m 상자 안 밝은 벽, K 상자 바닥
     private static readonly Dictionary<char, uint> Cardboard = new()
     {
-        ['o'] = 0xFF5A3816, ['U'] = 0xFFF2D29A, ['T'] = 0xFFE2B878, ['e'] = 0xFF9A6630, ['F'] = 0xFFD8A464, ['f'] = 0xFFC48C4C, ['s'] = 0xFFA06E36,
-        ['t'] = 0xFFEEE2C0, ['u'] = 0xFFC8B48A, ['L'] = 0xFFF8F6F0, ['l'] = 0xFF8A8E96, ['a'] = 0xFF7A4E22, ['k'] = 0xFF6A4220,
+        ['o'] = 0xFF5A3816, ['U'] = 0xFFF2D29A, ['T'] = 0xFFE2B878, ['F'] = 0xFFD8A464, ['f'] = 0xFFC48C4C, ['s'] = 0xFFA06E36, ['S'] = 0xFFB27C40,
+        ['t'] = 0xFFEEE2C0, ['u'] = 0xFFC8B48A, ['L'] = 0xFFF8F6F0, ['l'] = 0xFF8A8E96, ['a'] = 0xFF7A4E22,
+        ['k'] = 0xFF6A4220, ['m'] = 0xFF8A5A2C, ['K'] = 0xFF4E3014,
     };
     private static readonly Dictionary<char, uint> FragileTape = new() { ['t'] = 0xFFF04A3A, ['u'] = 0xFFB82A22 };
 
     private static readonly string[] UpArrow = ["..a..", ".aaa.", "a.a.a", "..a..", "..a.."];
+    // 45도 옆면용(면을 따라 비스듬히 밀려 그려지므로 좁게)
+    private static readonly string[] SmallUpArrow = [".a.", "aaa", ".a.", ".a."];
 
-    /// <summary>테이프로 봉한 상자(라벨·화살표는 고르기).</summary>
-    private static string[] TapedBox(int w, int top, int front, bool label = false, bool arrows = false)
+    /// <summary>옆에서 본 종이 상자 판(앞면만): 왼쪽·위 밝은 가장자리, 오른쪽·아래 그늘.</summary>
+    private static Grid SideBoxGrid(int w, int h)
     {
-        var g = BoxGrid(w, top, front);
-        int c = w / 2 - 1;
-        for (int y = 1; y <= top; y++) { g[c, y] = 't'; g[c + 1, y] = 'u'; }
-        g[c, top + 1] = g[c + 1, top + 1] = 'u';
-        int tape = Math.Max(2, front / 3);
-        for (int y = top + 2; y < top + 2 + tape; y++) { g[c, y] = 't'; g[c + 1, y] = 'u'; }
-        if (arrows) g.Stamp(UpArrow, 2, c >= 7 ? top + 3 : top + 3 + tape);
+        var g = new Grid(w, h);
+        g.Fill(0, 0, w, h, 'o');
+        g.Fill(1, 1, w - 2, h - 2, 'f');
+        g.Fill(1, 1, w - 2, 1, 'F');
+        g.Fill(1, 1, 1, h - 2, 'F');
+        g.Fill(w - 2, 1, 1, h - 2, 's');
+        g.Fill(1, h - 2, w - 2, 1, 's');
+        return g;
+    }
+
+    /// <summary>
+    /// 옆에서 본 종이 상자: 윗면 이음매를 덮은 테이프가 앞면 가운데로 내려옴(<paramref name="tape"/>가 거짓이면 이음매 없는 옆판 — 손잡이 구멍을 뚫기 좋음).
+    /// 라벨·화살표 인쇄·손잡이 구멍은 고르기.
+    /// </summary>
+    private static string[] SideBox(int w, int h, bool tape = true, bool label = false, bool arrows = false, bool handle = false)
+    {
+        var g = SideBoxGrid(w, h);
+        int c = w / 2 - 1, tapeH = Math.Max(3, (h - 2) / 3);
+        if (tape)
+            for (int y = 1; y <= tapeH; y++) { g[c, y] = 't'; g[c + 1, y] = 'u'; }
+        if (arrows) g.Stamp(UpArrow, 2, !tape || c >= 7 ? 3 : tapeH + 2);
+        if (handle) g.Fill(c - 1, 3, 4, 1, 'k');
         if (label)
         {
-            int lw = Math.Max(5, w / 3), lx = w - 2 - lw - 1, ly = g.H - 2 - 5;
+            int lw = Math.Max(5, w / 3), lx = w - 2 - lw - 1, ly = h - 2 - 5;
             g.Fill(lx, ly, lw, 4, 'L');
             g.Fill(lx + 1, ly + 1, lw - 2, 1, 'l');
             g.Fill(lx + 1, ly + 2, lw - 3, 1, 'l');
@@ -334,148 +743,278 @@ internal static class BoxesAndStreetShapeSets
         return g.Rows();
     }
 
-    // 옆 날개(경첩이 상자 옆 모서리, 바깥 아래로 처짐) — 윗면 5줄 상자용
-    private static readonly string[] LeftFlap = ["..oo", ".oUo", "oUTo", "oTTo", "oTTo", "oTTo", "oTo.", "oo.."];
-    private static readonly string[] RightFlap = ["oo..", "oUo.", "oTso", "oTso", "oTso", "oTso", ".oso", "..oo"];
-
-    /// <summary>날개를 펼친 빈 상자(뒤 날개는 세우고, 앞 날개는 앞면에 늘어뜨리고, 옆 날개는 바깥으로). 윗면은 5줄.</summary>
-    private static string[] OpenBox(int w, int front)
+    /// <summary>
+    /// 옆에서 본 열린 상자: 뒤 날개는 세워 안쪽 면이 보이고, 옆 날개 둘은 바깥 위로 비스듬히(옆에서 보여 얇은 판), 앞 날개는 앞으로 젖혀 앞면 위쪽에 늘어짐.
+    /// </summary>
+    private static string[] SideOpenBox(int w, int h)
     {
-        const int top = 5;
-        var body = BoxGrid(w, top, front);
-        for (int y = 1; y <= top; y++)
-            for (int x = 1; x < w - 1; x++) body[x, y] = y <= 3 ? 's' : 'k';
-        body.Fill(1, top + 2, w - 2, 3, 'T');
-        body.Fill(1, top + 2, w - 2, 1, 'U');
-        body.Fill(1, top + 2, 1, 3, 'U');
-        body.Fill(1, top + 5, w - 2, 1, 'o');
-        var back = new Grid(w - 4, 5);
-        back.Fill(0, 0, w - 4, 5, 'o');
-        back.Fill(1, 1, w - 6, 3, 'f');
-        back.Fill(1, 1, w - 6, 1, 'F');
-        var g = new Grid(w + 6, body.H + 4);
-        g.Stamp(back.Rows(), 5, 0);
-        g.Stamp(body.Rows(), 3, 4);
-        g.Stamp(LeftFlap, 0, 4);
-        g.Stamp(RightFlap, w + 2, 4);
-        return g.Rows();
-    }
-
-    /// <summary>접어서 납작하게 눕힌 상자 판(접힌 금 둘, 떼다 만 테이프).</summary>
-    private static string[] FlatCardboard()
-    {
-        const int w = 24, h = 8;
-        var g = new Grid(w, h);
-        for (int y = 0; y < h; y++)
+        const int pad = 4, rise = 7;
+        var g = new Grid(w + 2 * pad, h + rise);
+        var back = new Grid(w - 4, rise + 1);
+        back.Fill(0, 0, back.W, back.H, 'o');
+        back.Fill(1, 1, back.W - 2, rise - 1, 's');
+        back.Fill(1, 1, back.W - 2, 1, 'f');
+        g.Stamp(back.Rows(), pad + 2, 0);
+        // 옆 날개: 경첩(상자 위 모서리 끝)에서 두 줄 오를 때마다 한 칸 바깥으로
+        for (int k = 0; k < rise; k++)
         {
-            int x0 = (h - 1 - y) / 2, x1 = w - 1 - y / 2;
-            for (int x = x0; x <= x1; x++)
-            {
-                bool edge = y == 0 || y == h - 1 || x == x0 || x == x1;
-                g[x, y] = edge ? 'o' : y == h - 2 ? 'f' : y == 1 ? 'U' : 'T';
-            }
-            int fold1 = x0 + 8 - y / 3, fold2 = x0 + 16 - y / 3;
-            if (y > 0 && y < h - 2) { g[fold1, y] = 'e'; g[fold2, y] = 'e'; }
+            int y = rise - k, shift = (k + 1) / 2;
+            string left = k == rise - 1 ? "oooo" : "oFFo", right = k == rise - 1 ? "oooo" : "osso";
+            g.Stamp([left], pad - shift, y);
+            g.Stamp([right], pad + w - 4 + shift, y);
         }
-        g[12, 2] = g[13, 2] = g[12, 3] = 't';
-        g[13, 3] = g[12, 4] = 'u';
+        var body = SideBoxGrid(w, h);
+        body.Fill(1, 1, w - 2, 3, 'T');
+        body.Fill(1, 1, w - 2, 1, 'U');
+        body.Fill(1, 4, w - 2, 1, 'o');
+        g.Stamp(body.Rows(), pad, rise);
         return g.Rows();
     }
 
-    /// <summary>큰 상자 위에 작은 상자를 얹은 한 쌍(<paramref name="smallLeft"/>면 작은 상자가 왼쪽).</summary>
-    private static string[] StackedBoxes(bool smallLeft)
+    /// <summary>옆모습 그림을 아래부터 쌓는다(층마다 (그림, x) 여럿 — 한 층의 그림은 높이가 같고, 위층은 아래층 윗줄 테두리와 겹침).</summary>
+    private static string[] SideStack(params (string[] Art, int X)[][] layers)
     {
-        var big = TapedBox(18, 4, 11, label: true);
-        var small = TapedBox(11, 3, 7);
-        int bigH = big.Length, smallH = small.Length, overlap = 3;
-        var g = new Grid(18, bigH + smallH - overlap);
-        g.Stamp(big, 0, smallH - overlap);
-        g.Stamp(small, smallLeft ? 1 : 6, 0);
+        int w = layers.SelectMany(l => l).Max(p => p.X + p.Art[0].Length);
+        int h = layers.Sum(l => l[0].Art.Length) - (layers.Length - 1);
+        var g = new Grid(w, h);
+        int bottom = h;
+        foreach (var layer in layers)
+        {
+            int top = bottom - layer[0].Art.Length;
+            foreach (var (art, x) in layer) g.Stamp(art, x, top);
+            bottom = top + 1;
+        }
         return g.Rows();
     }
 
-    // 나무 상자: P·p·q 테두리 널(밝음·바탕·그늘), b 판자, g 판자 틈, n 못
+    /// <summary>
+    /// 45도로 본 테이프 상자(a: 오른쪽 아래로 가는 변, b: 왼쪽 아래로 가는 변, h: 높이). 윗면 이음매를 덮은 테이프가 <paramref name="seamAlongX"/>면 오른쪽 면으로,
+    /// 아니면 왼쪽 면으로 내려온다. 라벨·화살표는 왼쪽 면, 손잡이 구멍은 두 옆면.
+    /// </summary>
+    private static Func<Face, double, double, char> IsoCardboard(double a, double b, double h, bool seamAlongX = true, bool label = false, bool arrows = false, bool handles = false)
+    {
+        double tapeLow = h - Math.Max(3, Math.Round(h / 3));
+        return (face, s, t) =>
+        {
+            switch (face)
+            {
+                case Face.Top:
+                    return Math.Abs((seamAlongX ? t - b / 2 : s - a / 2)) < 1 ? 't' : 'T';
+                case Face.Left:
+                    if (!seamAlongX && Math.Abs(s - a / 2) < 1 && t >= tapeLow) return 't';
+                    if (handles && Math.Abs(s - a / 2) < 2 && t >= h - 4 && t < h - 3) return 'k';
+                    if (label && s >= a - 2 - Math.Max(6, Math.Round(a / 3)) && s < a - 2 && t >= 2 && t < 5)
+                        return t >= 3 && t < 4 && s >= a - 1 - Math.Max(6, Math.Round(a / 3)) && s < a - 3 ? 'l' : 'L';
+                    if (arrows && Decal(SmallUpArrow, s, t, 2, h - 2) is char arrow) return arrow;
+                    return 'f';
+                default:
+                    if (seamAlongX && Math.Abs(s - b / 2) < 1 && t >= tapeLow) return 'u';
+                    if (handles && Math.Abs(s - b / 2) < 2 && t >= h - 4 && t < h - 3) return 'k';
+                    return 's';
+            }
+        };
+    }
+
+    private static string[] IsoBox(double a, double b, double h, bool seamAlongX = true, bool label = false, bool arrows = false, bool handles = false)
+    {
+        var scene = new Iso();
+        scene.Box(0, new(0, 0, 0), a, b, h, IsoCardboard(a, b, h, seamAlongX, label, arrows, handles), 'F', 'U');
+        return scene.Rows();
+    }
+
+    /// <summary>45도로 본 열린 상자: 안쪽 벽과 바닥이 보이고, 뒤 날개 둘은 바깥으로 젖혀 세우고, 앞 날개 둘은 바깥으로 거의 눕혀 펼침.</summary>
+    private static string[] IsoOpenBox(int a, int b, int h)
+    {
+        var scene = new Iso();
+        scene.Add(0, Face.Inner, new(0, 0, h), new(a, 0, 0), new(0, -3, 5), (_, t) => t < 1 ? 'k' : 'F');
+        scene.Add(1, Face.Inner, new(0, 0, h), new(0, b, 0), new(-3, 0, 5), (_, t) => t < 1 ? 'k' : 's');
+        scene.Add(2, Face.Inner, new(0, 0, 0), new(a, 0, 0), new(0, 0, h), (_, _) => 'm');
+        scene.Add(2, Face.Inner, new(0, 0, 0), new(0, b, 0), new(0, 0, h), (_, _) => 'k');
+        scene.Add(2, Face.Inner, new(0, 0, 0), new(a, 0, 0), new(0, b, 0), (_, _) => 'K');
+        scene.Add(2, Face.Right, new(a, 0, 0), new(0, b, 0), new(0, 0, h), (_, _) => 's', _ => 'U');
+        scene.Add(2, Face.Left, new(0, b, 0), new(a, 0, 0), new(0, 0, h), (_, _) => 'f', f => f == Face.Right ? 'F' : 'U');
+        scene.Add(3, Face.Top, new(a, 0, h), new(0, b, 0), new(5, 0, -2), (_, _) => 'S');
+        scene.Add(4, Face.Top, new(0, b, h), new(a, 0, 0), new(0, 5, -2), (_, _) => 'T');
+        return scene.Rows();
+    }
+
+    /// <summary>45도로 쌓은 테이프 상자들(뒤에서 앞 차례로 (바닥 모서리, 크기)).</summary>
+    private static string[] IsoStack(params (Iso.V At, double A, double B, double H)[] boxes)
+    {
+        var scene = new Iso();
+        for (int i = 0; i < boxes.Length; i++)
+        {
+            var (at, a, b, h) = boxes[i];
+            scene.Box(i, at, a, b, h, IsoCardboard(a, b, h), 'F', 'U');
+        }
+        return scene.Rows();
+    }
+
+    /// <summary>종이 상자(옆모습): 테이프 상자(작은·중간·큰·세로), 손잡이 구멍 난 옆판, 깨짐 주의 상자, 열린 상자, 둘·셋 쌓은 더미.</summary>
+    public static StampSet CardboardBoxesSide()
+    {
+        var shapes = new List<PixelImage>
+        {
+            Art(SideBox(12, 10), Cardboard),
+            Art(SideBox(16, 13, arrows: true), Cardboard),
+            Art(SideBox(22, 17, label: true, arrows: true), Cardboard),
+            Art(SideBox(11, 17, label: true), Cardboard),
+            Art(SideBox(24, 11, tape: false, handle: true), Cardboard),
+            Art(SideBox(14, 12, arrows: true), FragileTape, Cardboard),
+            Art(SideOpenBox(16, 12), Cardboard),
+            Art(SideStack([(SideBox(18, 14, label: true), 0)], [(SideBox(11, 9), 1)]), Cardboard),
+            Art(SideStack([(SideBox(18, 14, label: true), 0)], [(SideBox(11, 9), 6)]), Cardboard),
+            Art(SideStack([(SideBox(13, 12), 0), (SideBox(13, 12, arrows: true), 12)], [(SideBox(14, 10, tape: false, handle: true), 5)]), Cardboard),
+        };
+        return Set("Cardboard Boxes (Side)", shapes);
+    }
+
+    /// <summary>종이 상자(45도): 테이프 상자(작은·중간·큰·세로·납작한, 테이프 방향 둘), 깨짐 주의 상자, 열린 상자, 둘·셋 쌓은 더미.</summary>
+    public static StampSet CardboardBoxesIsometric()
+    {
+        var fragile = new Iso();
+        fragile.Box(0, new(0, 0, 0), 12, 12, 10, IsoCardboard(12, 12, 10, arrows: true), 'F', 'U');
+        var shapes = new List<PixelImage>
+        {
+            Art(IsoBox(10, 8, 8), Cardboard),
+            Art(IsoBox(14, 10, 11, arrows: true), Cardboard),
+            Art(IsoBox(18, 14, 14, label: true, arrows: true), Cardboard),
+            Art(IsoBox(10, 10, 17, label: true), Cardboard),
+            Art(IsoBox(20, 12, 7, handles: true), Cardboard),
+            Art(IsoBox(10, 14, 10, seamAlongX: false), Cardboard),
+            Art(fragile.Rows(), FragileTape, Cardboard),
+            Art(IsoOpenBox(14, 12, 10), Cardboard),
+            Art(IsoStack((new(0, 0, 0), 16, 12, 11), (new(3, 2, 11), 9, 8, 8)), Cardboard),
+            Art(IsoStack((new(0, 0, 0), 12, 10, 10), (new(2, 2, 10), 8, 7, 7), (new(0, 11, 0), 11, 10, 9)), Cardboard),
+        };
+        return Set("Cardboard Boxes (Isometric)", shapes);
+    }
+
+    // 나무 상자: o 테두리, P·p·q 테두리 널(밝음·바탕·그늘 — 옆모습과 45도 왼쪽 면), b·g 판자·판자 틈(옆모습·왼쪽 면), n 못,
+    // U·T·G 45도 윗면(밝은 곳·판자·틈), r·c·h 45도 오른쪽 면(테두리 널·판자·틈)
     private static readonly Dictionary<char, uint> CrateLight = new()
     {
-        ['o'] = 0xFF3E2410, ['U'] = 0xFFEEC688, ['T'] = 0xFFD8A464, ['e'] = 0xFF7A4A20, ['F'] = 0xFFC08646, ['f'] = 0xFFAA7038, ['s'] = 0xFF8A5828,
-        ['P'] = 0xFFE8B472, ['p'] = 0xFFC8904E, ['q'] = 0xFF9A6430, ['b'] = 0xFFAE743A, ['g'] = 0xFF5A3418, ['n'] = 0xFF4A4A52,
+        ['o'] = 0xFF3E2410, ['P'] = 0xFFE8B472, ['p'] = 0xFFC8904E, ['q'] = 0xFF9A6430, ['b'] = 0xFFAE743A, ['g'] = 0xFF5A3418, ['n'] = 0xFF4A4A52,
+        ['U'] = 0xFFF2CE8E, ['T'] = 0xFFDCA866, ['G'] = 0xFF8A5628, ['r'] = 0xFFA87038, ['c'] = 0xFF8A5828, ['h'] = 0xFF5E3618,
     };
     private static readonly Dictionary<char, uint> CrateDark = new()
     {
-        ['o'] = 0xFF2A160A, ['U'] = 0xFFB88456, ['T'] = 0xFF9E6C40, ['e'] = 0xFF4E2C12, ['F'] = 0xFF8A5A30, ['f'] = 0xFF784C26, ['s'] = 0xFF5E3A1C,
-        ['P'] = 0xFFAE7A48, ['p'] = 0xFF8E6036, ['q'] = 0xFF6A4422, ['b'] = 0xFF7C5028, ['g'] = 0xFF3A2010, ['n'] = 0xFF2E2E34,
+        ['o'] = 0xFF2A160A, ['P'] = 0xFFAE7A48, ['p'] = 0xFF8E6036, ['q'] = 0xFF6A4422, ['b'] = 0xFF7C5028, ['g'] = 0xFF3A2010, ['n'] = 0xFF2E2E34,
+        ['U'] = 0xFFC49060, ['T'] = 0xFFA87548, ['G'] = 0xFF5A361A, ['r'] = 0xFF7A5030, ['c'] = 0xFF5E3A1C, ['h'] = 0xFF2E1A0A,
     };
 
-    /// <summary>테두리 널과 대각선 버팀목을 댄 나무 상자.</summary>
-    private static string[] Crate(int w, int top, int front)
+    /// <summary>옆에서 본 나무 상자(앞면만): 테두리 널, 가로 판자, 왼쪽 아래 → 오른쪽 위 버팀목, 네 귀 못.</summary>
+    private static string[] SideCrate(int w, int h)
     {
-        var g = BoxGrid(w, top, front);
-        for (int y = 1; y <= top; y++)
+        var g = new Grid(w, h);
+        g.Fill(0, 0, w, h, 'o');
+        for (int y = 1; y < h - 1; y++)
             for (int x = 1; x < w - 1; x++)
-                if (x % 4 == 0) g[x, y] = 'g';
-        int fy = top + 2, fh = front;
-        // 앞면 판자
-        for (int y = fy; y < fy + fh; y++)
-            for (int x = 1; x < w - 1; x++)
-                g[x, y] = (y - fy) % 3 == 2 ? 'g' : 'b';
-        // 테두리 널
-        for (int x = 1; x < w - 1; x++) { g[x, fy] = x < w - 2 ? 'P' : 'p'; g[x, fy + 1] = 'p'; g[x, fy + fh - 2] = 'p'; g[x, fy + fh - 1] = 'q'; }
-        for (int y = fy; y < fy + fh; y++) { g[1, y] = 'P'; g[2, y] = 'p'; g[w - 3, y] = 'p'; g[w - 2, y] = 'q'; }
-        // 대각선 버팀목(왼쪽 아래 → 오른쪽 위)
-        int iw = w - 6, ih = fh - 4;
+                g[x, y] = (y - 1) % 3 == 2 ? 'g' : 'b';
+        for (int x = 1; x < w - 1; x++) { g[x, 1] = x < w - 2 ? 'P' : 'p'; g[x, 2] = 'p'; g[x, h - 3] = 'p'; g[x, h - 2] = 'q'; }
+        for (int y = 1; y < h - 1; y++) { g[1, y] = 'P'; g[2, y] = 'p'; g[w - 3, y] = 'p'; g[w - 2, y] = 'q'; }
+        int iw = w - 6, ih = h - 6;
         for (int i = 0; i <= iw; i++)
         {
-            int x = 3 + i, y = fy + fh - 3 - (int)Math.Round(i * (ih - 1) / (double)iw);
+            int x = 3 + i, y = h - 4 - (int)Math.Round(i * (ih - 1) / (double)iw);
             g[x, y] = 'p';
             if (g[x, y - 1] != 'p') g[x, y - 1] = 'P';
             if (g[x, y + 1] != 'P') g[x, y + 1] = 'q';
         }
-        g[2, fy + 1] = g[w - 3, fy + 1] = g[2, fy + fh - 2] = g[w - 3, fy + fh - 2] = 'n';
+        g[2, 2] = g[w - 3, 2] = g[2, h - 3] = g[w - 3, h - 3] = 'n';
         return g.Rows();
     }
 
-    /// <summary>나무 팔레트: 윗판 틈, 앞에서 보이는 받침 토막 셋.</summary>
-    private static string[] Pallet()
+    /// <summary>옆에서 본 나무 팔레트: 윗판, 받침 토막 셋(사이는 비어 있음), 아랫판.</summary>
+    private static string[] SidePallet(int w)
     {
-        const int w = 26, h = 9;
-        var g = new Grid(w, h);
-        g.Fill(0, 0, w, 5, 'o');
-        for (int y = 1; y <= 2; y++)
-            for (int x = 1; x < w - 1; x++) g[x, y] = x % 5 == 0 ? 'g' : y == 1 ? 'U' : 'T';
-        g.Fill(1, 3, w - 2, 1, 'F');
-        int[] blocks = [0, (w - 5) / 2, w - 5];
-        foreach (int bx in blocks)
+        var g = new Grid(w, 9);
+        g.Fill(0, 0, w, 4, 'o');
+        g.Fill(1, 1, w - 2, 2, 'p');
+        g.Fill(1, 1, w - 2, 1, 'P');
+        foreach (int bx in new[] { 0, (w - 5) / 2, w - 5 })
         {
-            g.Fill(bx, 4, 5, 4, 'o');
-            g.Fill(bx + 1, 4, 3, 3, 'f');
-            g[bx + 1, 4] = 'F';
+            g.Fill(bx, 3, 5, 4, 'o');
+            g.Fill(bx + 1, 3, 3, 3, 'b');
+            g[bx + 1, 3] = 'p';
         }
-        g.Fill(0, 7, w, 2, 'o');
-        g.Fill(1, 7, w - 2, 1, 'f');
-        g[1, 7] = 'F';
+        g.Fill(0, 6, w, 3, 'o');
+        g.Fill(1, 7, w - 2, 1, 'q');
+        g[1, 7] = 'p';
         return g.Rows();
     }
 
-    /// <summary>종이 상자·나무 상자: 테이프 상자 넷(작은·중간·큰·세로), 깨짐 주의 상자, 펼친 상자, 납작한 판, 쌓은 한 쌍 둘, 나무 상자 셋, 팔레트.</summary>
-    public static StampSet CardboardBoxes()
+    /// <summary>45도 나무 상자의 면: 윗면은 X 쪽으로 놓은 판자, 옆면은 테두리 널·가로 판자·대각선 버팀목.</summary>
+    private static Func<Face, double, double, char> IsoCrate(double a, double b, double h) => (face, s, t) =>
+    {
+        if (face == Face.Top) return (int)Math.Floor(t) % 4 == 3 ? 'G' : 'T';
+        bool left = face == Face.Left;
+        double len = left ? a : b;
+        char frame = left ? 'P' : 'r', plank = left ? 'b' : 'c', gap = left ? 'g' : 'h';
+        int si = (int)Math.Floor(s), ti = (int)Math.Floor(t);
+        if ((si == 1 || si == (int)len - 2) && (ti == 1 || ti == (int)h - 2)) return 'n';
+        if (s < 2 || s >= len - 2 || t < 2 || t >= h - 2) return frame;
+        double brace = 2 + (s - 2) * (h - 4) / (len - 4);
+        if (Math.Abs(t - brace) < 1.1) return frame;
+        return (ti - 2) % 4 == 3 ? gap : plank;
+    };
+
+    /// <summary>45도 나무 팔레트의 면(높이 <paramref name="h"/>): 윗면은 Y 쪽 널 사이 틈, 옆면은 윗판 모서리 두 줄·받침 토막 셋(사이는 그늘진 빈 곳)·아랫판 한 줄.</summary>
+    private static Func<Face, double, double, char> IsoPallet(double a, double b, double h) => (face, s, t) =>
+    {
+        if (face == Face.Top) return (int)Math.Floor(s) % 4 == 3 ? 'G' : 'T';
+        bool left = face == Face.Left;
+        double len = left ? a : b;
+        char board = left ? 'P' : 'r', opening = left ? 'g' : 'o';
+        if (t >= h - 2 || t < 1) return board;
+        bool isBlock = s < 3 || s >= len - 3 || Math.Abs(s - len / 2) < 1.5;
+        return isBlock ? board : opening;
+    };
+
+    /// <summary>45도로 놓은 나무 상자·팔레트들(뒤에서 앞 차례로 (바닥 모서리, 크기, 팔레트인가)).</summary>
+    private static string[] IsoCrates(params (Iso.V At, double A, double B, double H, bool Pallet)[] items)
+    {
+        var scene = new Iso();
+        for (int i = 0; i < items.Length; i++)
+        {
+            var (at, a, b, h, pallet) = items[i];
+            scene.Box(i, at, a, b, h, pallet ? IsoPallet(a, b, h) : IsoCrate(a, b, h), null, 'U');
+        }
+        return scene.Rows();
+    }
+
+    /// <summary>나무 상자(옆모습): 크기가 다른 밝은·어두운 나무 상자, 쌓은 상자, 팔레트, 팔레트에 올린 상자.</summary>
+    public static StampSet WoodenCratesSide()
     {
         var shapes = new List<PixelImage>
         {
-            Art(TapedBox(12, 3, 8), Cardboard),
-            Art(TapedBox(16, 4, 11, arrows: true), Cardboard),
-            Art(TapedBox(22, 5, 14, label: true, arrows: true), Cardboard),
-            Art(TapedBox(11, 3, 15, label: true), Cardboard),
-            Art(TapedBox(14, 4, 10, arrows: true), FragileTape, Cardboard),
-            Art(OpenBox(16, 11), Cardboard),
-            Art(FlatCardboard(), Cardboard),
-            Art(StackedBoxes(true), Cardboard),
-            Art(StackedBoxes(false), Cardboard),
-            Art(Crate(12, 3, 10), CrateLight),
-            Art(Crate(18, 4, 14), CrateLight),
-            Art(Crate(15, 4, 12), CrateDark),
-            Art(Pallet(), CrateLight),
+            Art(SideCrate(12, 11), CrateLight),
+            Art(SideCrate(18, 15), CrateLight),
+            Art(SideCrate(22, 12), CrateLight),
+            Art(SideCrate(15, 13), CrateDark),
+            Art(SideCrate(12, 17), CrateDark),
+            Art(SideStack([(SideCrate(18, 15), 0)], [(SideCrate(12, 11), 3)]), CrateLight),
+            Art(SidePallet(26), CrateLight),
+            Art(SideStack([(SidePallet(26), 0)], [(SideCrate(18, 15), 4)]), CrateLight),
         };
-        return Set("Cardboard Boxes & Crates", shapes);
+        return Set("Wooden Crates (Side)", shapes);
+    }
+
+    /// <summary>나무 상자(45도): 크기가 다른 밝은·어두운 나무 상자, 쌓은 상자, 팔레트, 팔레트에 올린 상자.</summary>
+    public static StampSet WoodenCratesIsometric()
+    {
+        var shapes = new List<PixelImage>
+        {
+            Art(IsoCrates((new(0, 0, 0), 10, 10, 10, false)), CrateLight),
+            Art(IsoCrates((new(0, 0, 0), 16, 12, 13, false)), CrateLight),
+            Art(IsoCrates((new(0, 0, 0), 20, 10, 10, false)), CrateLight),
+            Art(IsoCrates((new(0, 0, 0), 12, 12, 12, false)), CrateDark),
+            Art(IsoCrates((new(0, 0, 0), 10, 10, 16, false)), CrateDark),
+            Art(IsoCrates((new(0, 0, 0), 16, 12, 13, false), (new(3, 2, 13), 10, 8, 9, false)), CrateLight),
+            Art(IsoCrates((new(0, 0, 0), 20, 16, 6, true)), CrateLight),
+            Art(IsoCrates((new(0, 0, 0), 20, 16, 6, true), (new(2, 2, 6), 16, 12, 13, false)), CrateLight),
+        };
+        return Set("Wooden Crates (Isometric)", shapes);
     }
 
     // ───────────── 3. 쓰레기 ─────────────

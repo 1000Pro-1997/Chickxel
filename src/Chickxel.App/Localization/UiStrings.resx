@@ -9112,7 +9112,6 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Publish_OpenPage" xml:space="preserve"><value>홈페이지 열기</value></data>
   <data name="Publish_ServerRejected" xml:space="preserve"><value>서버가 받지 않음: {0}</value></data>
   <data name="Publish_PreviewError" xml:space="preserve"><value>그림 파일을 읽지 못했습니다: {0}</value></data>
-  <data name="Assets_PersonalHeader" xml:space="preserve"><value>내 에셋</value></data>
   <data name="Assets_EmptyInstalled" xml:space="preserve"><value>보일 에셋이 없습니다.</value></data>
   <data name="Assets_SelectHint" xml:space="preserve"><value>왼쪽 목록에서 항목을 고르세요.</value></data>
   <data name="Assets_MoreIssues" xml:space="preserve"><value>- 외 {0}개</value></data>
@@ -9710,7 +9709,6 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="TextTool_MoveLabel" xml:space="preserve"><value>글씨 옮기기</value><comment>실행취소 기록 이름: 이동 도구로 글씨 레이어의 글씨를 옮김</comment></data>
   <data name="TextTool_DefaultLayerName" xml:space="preserve"><value>글씨</value><comment>새 글씨 레이어 이름(글 첫 줄이 비었을 때)</comment></data>
   <data name="Shortcuts_TextTool" xml:space="preserve"><value>글씨(누른 곳에 글씨 레이어)</value><comment>단축키 도움말 창: 글씨 도구</comment></data>
-  <data name="Assets_ReceivedHeader" xml:space="preserve"><value>받은 에셋</value></data>
   <data name="Assets_SourceLocal" xml:space="preserve"><value>이 컴퓨터에서 만듦</value></data>
   <data name="Assets_PublishedVersion" xml:space="preserve"><value>올림 {0}</value></data>
   <data name="Assets_ModifiedNote" xml:space="preserve"><value>고침</value></data>

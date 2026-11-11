@@ -35,8 +35,6 @@ internal static class LocalShapeSets
             "구름", "푸른 회색 테두리와 그늘진 밑면의 흰 구름.", FormerBuiltInShapeSets.Clouds, "sky", "weather"),
         P("pebbles", "Gray pebbles in eight sizes, lit from the top left.",
             "돌멩이", "왼쪽 위에서 빛을 받은 여덟 가지 크기의 회색 돌멩이.", FormerBuiltInShapeSets.Pebbles, "nature", "ground", "rocks"),
-        P("bricks", "Red bricks in five sizes and a staggered pair.",
-            "벽돌", "다섯 가지 크기의 붉은 벽돌과 엇갈려 쌓은 두 장.", FormerBuiltInShapeSets.Bricks, "building", "bricks"),
         P("raindrops", "Semi-transparent light blue raindrops and slanted rain streaks.",
             "빗방울", "반투명한 옅은 파랑 빗방울과 비스듬한 빗줄기.", FormerBuiltInShapeSets.Raindrops, "weather", "rain", "water"),
         P("snowflakes", "White and pale blue snowflakes and soft snow specks.",

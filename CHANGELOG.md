@@ -2,6 +2,16 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.125 (2026-11-12)
+### Asset Manager: one list, shape thumbnails
+- The Installed tab no longer splits My assets and Received assets. Your assets come first, then received ones, in one list; defaults installed with the app are simply received assets.
+- Shape pen set rows show the first shape and the number of shapes for every set, received ones included, instead of a kind icon.
+- The asset details no longer have their own Export button; **Export…** in the toolbar packs the assets shown in the list (search to narrow it to one).
+
+### More official shape pen sets, one kind each
+- Store sets were split so random stamping keeps to one kind: Fish and Fish Schools (one direction), Book Stacks, Standing Books, Open Books, Papers & Letters, Scrolls and Quill Pens, Mystery Boxes (question blocks), Mystery Gifts and Treasure Chests, and side-view and 45-degree cardboard boxes and wooden crates.
+- New sets: Gold Coin Stacks and Coin Sacks. Fish adds more species.
+
 ## v1.14.124 (2026-11-12)
 ### Shape pen sets keep similar things together
 - The Flowers set mixed three different flowers. It is now **Flowers 1** (flowers on a stem), and **Flowers 2** (round flowers seen from above) and **Flowers 3** (tiny four-petal blossoms) are new built-in sets, so random stamping keeps to one kind. Unedited installs of the old set update by themselves.

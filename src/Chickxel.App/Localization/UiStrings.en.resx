@@ -3316,7 +3316,6 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Publish_OpenPage" xml:space="preserve"><value>Open website</value></data>
   <data name="Publish_ServerRejected" xml:space="preserve"><value>Rejected by the server: {0}</value></data>
   <data name="Publish_PreviewError" xml:space="preserve"><value>Could not read the image file: {0}</value></data>
-  <data name="Assets_PersonalHeader" xml:space="preserve"><value>My assets</value></data>
   <data name="Assets_EmptyInstalled" xml:space="preserve"><value>No assets to show.</value></data>
   <data name="Assets_SelectHint" xml:space="preserve"><value>Select an item in the list on the left.</value></data>
   <data name="Assets_MoreIssues" xml:space="preserve"><value>- and {0} more</value></data>
@@ -3914,7 +3913,6 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="TextTool_MoveLabel" xml:space="preserve"><value>Move text</value></data>
   <data name="TextTool_DefaultLayerName" xml:space="preserve"><value>Text</value></data>
   <data name="Shortcuts_TextTool" xml:space="preserve"><value>Text (adds a text layer where you click)</value></data>
-  <data name="Assets_ReceivedHeader" xml:space="preserve"><value>Received assets</value></data>
   <data name="Assets_SourceLocal" xml:space="preserve"><value>Made on this computer</value></data>
   <data name="Assets_PublishedVersion" xml:space="preserve"><value>Published {0}</value></data>
   <data name="Assets_ModifiedNote" xml:space="preserve"><value>modified</value></data>

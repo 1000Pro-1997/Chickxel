@@ -240,20 +240,9 @@ public sealed partial class AssetManagerWindow : DialogBase
             var shown = Shown();
             if (IsShapeSetFilter) AddShapeSetRows(shown);
             else
-            {
-                var mine = shown.Where(entry => entry.IsOwnedBy(handle)).ToList();
-                var received = shown.Where(entry => !entry.IsOwnedBy(handle)).ToList();
-                if (mine.Count > 0)
-                {
-                    AddHeader(UiStrings.Assets_PersonalHeader);
-                    foreach (var entry in mine) AddRow(entry, AssetRow(entry, mine: true));
-                }
-                if (received.Count > 0)
-                {
-                    AddHeader(UiStrings.Assets_ReceivedHeader);
-                    foreach (var entry in received) AddRow(entry, AssetRow(entry, mine: false));
-                }
-            }
+                // 내 것·받은 것을 나누지 않는다(내 것이 먼저) — 기본으로 넣은 공식 에셋도 받아 둔 에셋일 뿐
+                foreach (var entry in shown.Where(entry => entry.IsOwnedBy(handle)).Concat(shown.Where(entry => !entry.IsOwnedBy(handle))))
+                    AddRow(entry, AssetRow(entry, mine: entry.IsOwnedBy(handle)));
             if (_list.Items.Count == 0)
                 _list.Items.Add(new ListBoxItem { Content = Ui.Label(UiStrings.Assets_EmptyInstalled), IsEnabled = false });
 
@@ -275,13 +264,6 @@ public sealed partial class AssetManagerWindow : DialogBase
         _ => null,
     };
 
-    private void AddHeader(string text)
-    {
-        var label = Ui.Label(text, bold: true);
-        label.Margin = new Thickness(0, 6, 0, 0);
-        _list.Items.Add(new ListBoxItem { Content = label, IsEnabled = false, Focusable = false });
-    }
-
     private void AddRow(AssetEntry entry, Control content)
         => _list.Items.Add(new ListBoxItem { Content = content, Tag = entry, HorizontalContentAlignment = HorizontalAlignment.Stretch });
 
@@ -301,7 +283,9 @@ public sealed partial class AssetManagerWindow : DialogBase
     {
         var icons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
         if (entry.Favorite) icons.Children.Add(Ui.Icon(VectorIcon.Star, 12, filled: true));
-        icons.Children.Add(Ui.Icon(KindIcon(entry.Kind), 13));
+        icons.Children.Add(entry.ShapeSet is { } shapeSet
+            ? new ToolOptionsPanel.StampView { Image = shapeSet.Shapes.FirstOrDefault(), Width = 16, Height = 16 }
+            : Ui.Icon(KindIcon(entry.Kind), 13));
         var name = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,6,*") };
         name.Children.Add(icons);
         var title = new TextBlock { Text = entry.DisplayName, Foreground = AppTheme.TextBrush, TextTrimming = TextTrimming.CharacterEllipsis };
@@ -311,10 +295,11 @@ public sealed partial class AssetManagerWindow : DialogBase
         if (entry.Gradient is { } gradient)
             panel.Children.Add(new GradientSwatch { Preset = gradient, Height = 10, Margin = new Thickness(0, 3, 0, 1) });
         string authorName = entry.Author?.Name ?? (entry.Store is null ? UiStrings.Assets_SourceLocal : "");
+        string? shapeCount = entry.ShapeSet is { } set ? F(UiStrings.Assets_ShapeCount, set.Shapes.Count) : null;
         string?[] parts = mine
-            ? [entry.Store is { } store ? F(UiStrings.Assets_PublishedVersion, store.Version) : null, entry.Modified ? UiStrings.Assets_ModifiedNote : null,
+            ? [shapeCount, entry.Store is { } store ? F(UiStrings.Assets_PublishedVersion, store.Version) : null, entry.Modified ? UiStrings.Assets_ModifiedNote : null,
                AppAssets.SourceTag(entry.Source)]
-            : [entry.Store?.Version, AppAssets.SourceTag(entry.Source)];
+            : [shapeCount, entry.Store?.Version, AppAssets.SourceTag(entry.Source)];
         panel.Children.Add(IdentityBadge.Author(entry.Store is not null ? entry.Author : null, 16, fallback: authorName, dim: true,
             fontSize: AppTheme.SmallFontSize, caption: string.Join(" · ", parts.Where(s => !string.IsNullOrEmpty(s)))));
         return panel;

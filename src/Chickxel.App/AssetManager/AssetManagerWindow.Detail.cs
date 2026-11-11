@@ -150,7 +150,6 @@ public sealed partial class AssetManagerWindow
             ? Ui.Button(VectorIcon.Star, entry.Favorite ? UiStrings.GradientPreset_RemoveFavorite : UiStrings.GradientPreset_AddFavorite,
                 (_, _) => Act(() => AppAssets.Store.SetFavorite(entry.Id, !entry.Favorite)))
             : null;
-        var export = Ui.Button(VectorIcon.Upload, UiStrings.Assets_Export, (_, _) => Export([entry]));
         var delete = Ui.Button(VectorIcon.Trash, UiStrings.Assets_Delete, (_, _) => Delete(entry));
         if (mine)
         {
@@ -171,7 +170,6 @@ public sealed partial class AssetManagerWindow
                     : null,
                 entry.Recipe is null ? null
                     : Ui.Button(VectorIcon.SlidersHorizontal, UiStrings.RecipeParams_Edit, (_, _) => RecipeParametersDialog.Edit(this, entry)).Tip(UiStrings.RecipeParams_EditTip),
-                export,
                 entry.Kind == AssetKinds.EffectRecipe ? null
                     : Ui.Button(VectorIcon.Globe, listed ? UiStrings.Assets_PublishNewVersion : UiStrings.Assets_Publish,
                         async (_, _) => await AssetPublishDialog.RunAsync(this, entry.Id))
@@ -186,7 +184,6 @@ public sealed partial class AssetManagerWindow
                 entry.ShapeSet is { } received && _shapeCtx is not null
                     ? Ui.Button(VectorIcon.Image, UiStrings.Assets_EditOnCanvas, (_, _) => EditCopyOnCanvas(received)).Tip(UiStrings.Assets_EditCopyOnCanvasTip)
                     : null,
-                export,
                 entry.Author?.Url is { } url ? Ui.Button(VectorIcon.ExternalLink, UiStrings.Assets_WebPage, (_, _) => Updater.OpenUrl(this, url)).Tip(url) : null,
                 entry.LicenseFilePath is { } license ? Ui.Button(VectorIcon.Info, UiStrings.Assets_ViewLicense, (_, _) => ShowLicense(entry, license)) : null,
                 delete);
