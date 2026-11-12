@@ -116,6 +116,7 @@ public sealed partial class EditorContext
         // 스크립트 효과: 실행 허락·멈춤 해제로 같은 효과 값의 결과가 달라지면 다시 그리고, 실패 표시만 바뀌면 화면만 다시 그린다(작업 스레드에서도 옴).
         ScriptLibrary.Changed += () => Dispatcher.UIThread.Post(RerenderScripts);
         ScriptEffectRuntime.StatusChanged += () => Dispatcher.UIThread.Post(() => ViewChanged?.Invoke(this, EventArgs.Empty));
+        InitTileClock();
     }
 
     /// <summary>다른 프로젝트가 열리거나 닫힘.</summary>
@@ -741,7 +742,7 @@ public sealed partial class EditorContext
 
     /// <summary>현재 레이어가 그룹이 아니고 잠기지 않았으면(그룹 포함) true. 숨긴 레이어에도 그릴 수 있다.</summary>
     public bool CanEdit
-        => Project is { } p && !p.Layers[_layer].IsGroup && !p.IsLayerLocked(_layer);
+        => Project is { } p && !p.Layers[_layer].IsGroup && !p.Layers[_layer].IsTilemap && !p.IsLayerLocked(_layer);
 
     /// <summary>현재 셀 이미지(스트로크 중이면 그 이미지, 부위면 부위 크기, 그룹·빈 셀이면 null).</summary>
     public PixelImage? EditImage => _strokeImage ?? Project?.GetCel(_layer, _frame);

@@ -4209,4 +4209,240 @@ If you don't, the set stays as it was.</value></data>
   <data name="ShapeCanvas_DontSave" xml:space="preserve"><value>Don't save</value></data>
   <data name="ShapeCanvas_EditHint" xml:space="preserve"><value>One shape per frame — when you're done, press Save to set in the bar under the tab (the Save shortcut does the same)</value></data>
   <data name="ShapeCanvas_NotFound" xml:space="preserve"><value>Couldn't find that shape pen set</value></data>
+  <data name="Tile_NotTilemap" xml:space="preserve"><value>Select a tilemap layer.</value></data>
+  <data name="Tile_NoTileset" xml:space="preserve"><value>This tilemap layer has no tileset — create or open one in the Tileset panel.</value></data>
+  <data name="Tile_EraseLabel" xml:space="preserve"><value>Erase tiles</value></data>
+  <data name="Tile_AutoTileLabel" xml:space="preserve"><value>Paint auto tiles</value></data>
+  <data name="Tile_PaintLabel" xml:space="preserve"><value>Place tiles</value></data>
+  <data name="Tile_RectLabel" xml:space="preserve"><value>Fill tile rectangle</value></data>
+  <data name="Tile_FillLabel" xml:space="preserve"><value>Fill tiles</value></data>
+  <data name="Tile_CutLabel" xml:space="preserve"><value>Cut tiles</value></data>
+  <data name="Tile_FloorLocked" xml:space="preserve"><value>Can't place tiles on a locked floor (unlock it in the Tileset panel).</value></data>
+  <data name="Tile_NothingToPick" xml:space="preserve"><value>There's no tile to pick here.</value></data>
+  <data name="Tile_PickTileFirst" xml:space="preserve"><value>Pick a tile in the Tileset panel first.</value></data>
+  <data name="Tile_PickAutoTileFirst" xml:space="preserve"><value>Pick an auto tile set in the Tileset panel first.</value></data>
+  <data name="TileOptions_Title" xml:space="preserve"><value>Tiles</value></data>
+  <data name="TileOptions_Floor" xml:space="preserve"><value>Floor</value></data>
+  <data name="TileOptions_FloorTip" xml:space="preserve"><value>Floor to place on: "Tile default" uses each tile's default floor; pick a floor to place every tile there (the same floor overwrites, different floors stack).</value></data>
+  <data name="TileOptions_FloorAuto" xml:space="preserve"><value>Tile default</value></data>
+  <data name="TileOptions_Transform" xml:space="preserve"><value>Flip/rotate</value></data>
+  <data name="TileOptions_FlipXTip" xml:space="preserve"><value>Flip horizontally (X)</value></data>
+  <data name="TileOptions_FlipYTip" xml:space="preserve"><value>Flip vertically (Y)</value></data>
+  <data name="TileOptions_RotateTip" xml:space="preserve"><value>Rotate 90° clockwise (Z) — square cells only</value></data>
+  <data name="TileOptions_ResetTip" xml:space="preserve"><value>Reset flip/rotation</value></data>
+  <data name="TileOptions_Random" xml:space="preserve"><value>Random</value></data>
+  <data name="TileOptions_RandomTip" xml:space="preserve"><value>When the brush holds several tiles, place one of them at random in each cell.</value></data>
+  <data name="TileOptions_Grid" xml:space="preserve"><value>Cell grid</value></data>
+  <data name="TileOptions_GridTip" xml:space="preserve"><value>Show the tile cell grid on the canvas (also outside it).</value></data>
+  <data name="TileTool_Brush" xml:space="preserve"><value>Tile brush</value></data>
+  <data name="TileTool_Eraser" xml:space="preserve"><value>Tile eraser</value></data>
+  <data name="TileTool_Rect" xml:space="preserve"><value>Tile rectangle</value></data>
+  <data name="TileTool_Fill" xml:space="preserve"><value>Tile fill</value></data>
+  <data name="TileTool_Picker" xml:space="preserve"><value>Tile picker</value></data>
+  <data name="TileTool_Select" xml:space="preserve"><value>Cell select</value></data>
+  <data name="TileTool_AutoTile" xml:space="preserve"><value>Auto tile brush</value></data>
+  <data name="TileTool_BrushHint" xml:space="preserve"><value>Places the tiles picked in the Tileset panel on the grid. Right button = erase, Alt = picker, X/Y/Z = flip/rotate.</value></data>
+  <data name="TileTool_EraserHint" xml:space="preserve"><value>Erases the tile covering a cell (big tiles as a whole). With a fixed floor, only that floor.</value></data>
+  <data name="TileTool_RectHint" xml:space="preserve"><value>Fills the dragged cell rectangle with the brush (or auto tile set). Drag with the right button to erase.</value></data>
+  <data name="TileTool_FillHint" xml:space="preserve"><value>Fills connected cells holding the same tile (or empty). Right button = erase them.</value></data>
+  <data name="TileTool_PickerHint" xml:space="preserve"><value>Picks a tile from the map into the brush (or the auto tile set it was painted with).</value></data>
+  <data name="TileTool_SelectHint" xml:space="preserve"><value>Selects a cell rectangle. Copy turns it into the brush, Delete erases it. Right button = deselect.</value></data>
+  <data name="TileTool_AutoTileHint" xml:space="preserve"><value>Paints with the chosen auto tile set; edge shapes follow the neighbors. Right button = erase.</value></data>
+  <data name="TilesetChoice_New" xml:space="preserve"><value>Create a new tileset</value></data>
+  <data name="TilesetChoice_DefaultName" xml:space="preserve"><value>Tileset</value></data>
+  <data name="TilesetChoice_Existing" xml:space="preserve"><value>Use a tileset in this project</value></data>
+  <data name="TilesetChoice_Unnamed" xml:space="preserve"><value>(unnamed)</value></data>
+  <data name="TilesetChoice_OpenFile" xml:space="preserve"><value>Open tileset file…</value></data>
+  <data name="TilesetChoice_Name" xml:space="preserve"><value>Name</value></data>
+  <data name="TilesetChoice_CellSize" xml:space="preserve"><value>Cell size</value></data>
+  <data name="TilesetChoice_CellSizeInfo" xml:space="preserve"><value>Size of one tile cell in px. Big tiles (2×1, 2×2 …) are sized in these cells. 90° rotation needs square cells.</value></data>
+  <data name="Tileset_FileFilter" xml:space="preserve"><value>Chickxel tileset</value></data>
+  <data name="TilesetSettings_Title" xml:space="preserve"><value>Tileset settings</value></data>
+  <data name="TilesetSettings_CellLocked" xml:space="preserve"><value>A tileset that already has tiles can't change its cell size (the tile images are cut to it).</value></data>
+  <data name="TileImport_Title" xml:space="preserve"><value>Import tiles</value></data>
+  <data name="TileImport_Ok" xml:space="preserve"><value>Import</value></data>
+  <data name="TileImport_Summary" xml:space="preserve"><value>Cuts the {0}×{1}px image into {2}×{3}px cells and adds them as 1-cell tiles.</value></data>
+  <data name="TileImport_Offset" xml:space="preserve"><value>Start offset (X, Y)</value></data>
+  <data name="TileImport_Gap" xml:space="preserve"><value>Gap between cells (X, Y)</value></data>
+  <data name="TileImport_SkipEmpty" xml:space="preserve"><value>Skip transparent cells</value></data>
+  <data name="TileImport_SkipDuplicates" xml:space="preserve"><value>Skip cells identical to existing tiles</value></data>
+  <data name="Tileset_Header" xml:space="preserve"><value>Tileset</value></data>
+  <data name="Tileset_MenuTip" xml:space="preserve"><value>Tileset menu (choose, save to file, settings, import)</value></data>
+  <data name="Tileset_ChooseOrCreate" xml:space="preserve"><value>Choose or create tileset…</value></data>
+  <data name="Tileset_NameLine" xml:space="preserve"><value>{0} · cell {1}×{2}</value></data>
+  <data name="Tileset_NotSaved" xml:space="preserve"><value>Not saved to a file (only in the project)</value></data>
+  <data name="Tileset_NotSavedTip" xml:space="preserve"><value>Save it with "Save tileset file…" in the menu to share it with other projects.</value></data>
+  <data name="Tileset_Floors" xml:space="preserve"><value>Floors</value></data>
+  <data name="Tileset_FloorsInfo" xml:space="preserve"><value>Floors higher in the list draw on top. Placing on the same floor overwrites, on another floor stacks. Eye = visibility, lock = no placing, double-click = rename.</value></data>
+  <data name="Tileset_AddFloor" xml:space="preserve"><value>Add floor</value></data>
+  <data name="Tileset_FloorName" xml:space="preserve"><value>Floor name</value></data>
+  <data name="Tileset_NewFloorName" xml:space="preserve"><value>Floor {0}</value></data>
+  <data name="Tileset_RenameFloor" xml:space="preserve"><value>Rename floor</value></data>
+  <data name="Tileset_UseFloor" xml:space="preserve"><value>Place on this floor</value></data>
+  <data name="Tileset_DeleteFloor" xml:space="preserve"><value>Delete floor</value></data>
+  <data name="Tileset_DeleteFloorAsk" xml:space="preserve"><value>All tiles placed on floor "{0}" will be removed too. Delete it?</value></data>
+  <data name="Tileset_FloorVisibleTip" xml:space="preserve"><value>Show/hide floor (hidden floors are left out of the composite and exports)</value></data>
+  <data name="Tileset_FloorLockTip" xml:space="preserve"><value>Lock floor (tile tools leave it alone)</value></data>
+  <data name="Tileset_FloorUpTip" xml:space="preserve"><value>Move up</value></data>
+  <data name="Tileset_FloorDownTip" xml:space="preserve"><value>Move down</value></data>
+  <data name="Tileset_MoveFloorLabel" xml:space="preserve"><value>Reorder floors</value></data>
+  <data name="Tileset_FloorRowTip" xml:space="preserve"><value>Double-click = rename, right-click = menu</value></data>
+  <data name="Tileset_Tiles" xml:space="preserve"><value>Tiles</value></data>
+  <data name="Tileset_ImportPng" xml:space="preserve"><value>Import from PNG…</value></data>
+  <data name="Tileset_ImportFrame" xml:space="preserve"><value>Import from current frame…</value></data>
+  <data name="Tileset_ImportFrameTip" xml:space="preserve"><value>Cuts the visible picture of the current frame (without tilemap layers) into cells and adds them as tiles — draw tiles on a normal layer, then bring them in.</value></data>
+  <data name="Tileset_Merge" xml:space="preserve"><value>Merge into big tile</value></data>
+  <data name="Tileset_MergeTip" xml:space="preserve"><value>Joins the selected cells into one new big tile (footprint = selection size). The original tiles stay.</value></data>
+  <data name="Tileset_MergedMessage" xml:space="preserve"><value>Big tile created. Shrink its footprint in the tile properties to let the image rise above it (trees etc.).</value></data>
+  <data name="Tileset_DeleteTiles" xml:space="preserve"><value>Delete tiles</value></data>
+  <data name="Tileset_DeleteUsedAsk" xml:space="preserve"><value>Some of the {0} selected tiles are used in maps. They'll be removed from the maps too. Delete?</value></data>
+  <data name="Tileset_DuplicateTile" xml:space="preserve"><value>Duplicate tile</value></data>
+  <data name="Tileset_TileProps" xml:space="preserve"><value>Selected tile</value></data>
+  <data name="Tileset_Footprint" xml:space="preserve"><value>Footprint</value></data>
+  <data name="Tileset_FootprintInfo" xml:space="preserve"><value>Number of cells this tile occupies (width×height). Tiles on the same floor that overlap these cells are replaced. A taller image rises above.</value></data>
+  <data name="Tileset_DrawOffset" xml:space="preserve"><value>Image offset</value></data>
+  <data name="Tileset_AlignBottom" xml:space="preserve"><value>Align image bottom</value></data>
+  <data name="Tileset_AlignBottomTip" xml:space="preserve"><value>Aligns the image bottom with the footprint bottom (it rises upward).</value></data>
+  <data name="Tileset_DefaultFloor" xml:space="preserve"><value>Default floor</value></data>
+  <data name="Tileset_TileInfo" xml:space="preserve"><value>Id {0} · image {1}×{2}px</value></data>
+  <data name="Tileset_TileEditLabel" xml:space="preserve"><value>Tile properties</value></data>
+  <data name="Tileset_AutoTiles" xml:space="preserve"><value>Auto tiles</value></data>
+  <data name="Tileset_AutoTilesInfo" xml:space="preserve"><value>Painting with an auto tile set picks edge tiles by looking at neighbors. Click a set to paint with the auto tile brush.</value></data>
+  <data name="Tileset_AddAutoTile" xml:space="preserve"><value>New auto tile set</value></data>
+  <data name="Tileset_EditAutoTile" xml:space="preserve"><value>Edit auto tile set</value></data>
+  <data name="Tileset_DeleteAutoTile" xml:space="preserve"><value>Delete auto tile set</value></data>
+  <data name="Tileset_DeleteAutoTileAsk" xml:space="preserve"><value>Delete set "{0}"? Tiles already placed stay.</value></data>
+  <data name="Tileset_AutoTileRowTip" xml:space="preserve"><value>Click to paint with this set (auto tile brush).</value></data>
+  <data name="Tileset_SaveFile" xml:space="preserve"><value>Save tileset file…</value></data>
+  <data name="Tileset_ReloadFile" xml:space="preserve"><value>Reload from tileset file</value></data>
+  <data name="Tileset_SavedMessage" xml:space="preserve"><value>Saved the tileset to {0}. Changes are also written to this file whenever the project is saved.</value></data>
+  <data name="Tileset_ImportNone" xml:space="preserve"><value>No new tiles to import (only empty or existing tiles).</value></data>
+  <data name="Tileset_ImportLabel" xml:space="preserve"><value>Import tiles</value></data>
+  <data name="Tileset_ImportedMessage" xml:space="preserve"><value>Added {0} tiles.</value></data>
+  <data name="AutoTile_DefaultName" xml:space="preserve"><value>Auto tile {0}</value></data>
+  <data name="AutoTile_FillInOrder" xml:space="preserve"><value>Fill picked tiles in order</value></data>
+  <data name="AutoTile_FillInOrderTip" xml:space="preserve"><value>Puts the picked tiles, top row first and left to right, into rules 1, 2, 3 … one each (for a sheet drawn in template order). Remaining rules are left as they are.</value></data>
+  <data name="Tile_CopiedMessage" xml:space="preserve"><value>Copied the selected cells into the brush.</value></data>
+  <data name="Tile_CutMessage" xml:space="preserve"><value>Cut the selected cells into the brush.</value></data>
+  <data name="Tile_PasteMessage" xml:space="preserve"><value>The copied tiles are ready in the tile brush.</value></data>
+  <data name="Tile_SelectFirst" xml:space="preserve"><value>Select cells with the cell select tool first.</value></data>
+  <data name="Tile_ShortcutFlipY" xml:space="preserve"><value>Flip tile brush vertically</value></data>
+  <data name="Tile_ShortcutRotate" xml:space="preserve"><value>Rotate tile brush</value></data>
+  <data name="Tile_PixelOnly" xml:space="preserve"><value>This command is for pixel layers only (not tilemap layers).</value></data>
+  <data name="Tile_ToolUnavailable" xml:space="preserve"><value>The {0} tool isn't available on tilemap layers.</value></data>
+  <data name="Tile_StampTurned" xml:space="preserve"><value>Flipped/rotated the tile brush.</value></data>
+  <data name="Tile_NewLayerTitle" xml:space="preserve"><value>New tilemap layer</value></data>
+  <data name="Tile_LayerAdded" xml:space="preserve"><value>Tilemap layer created. Pick tiles in the Tileset panel and place them.</value></data>
+  <data name="Tile_Converted" xml:space="preserve"><value>Converted the tilemap to a group (one part per floor).</value></data>
+  <data name="Tile_MenuAddLayer" xml:space="preserve"><value>New tilemap layer…</value></data>
+  <data name="Tile_MenuConvert" xml:space="preserve"><value>Convert tilemap to layers</value></data>
+  <data name="TilesetChoice_BuiltIn" xml:space="preserve"><value>Start from a built-in tileset</value></data>
+  <data name="TilesetChoice_BuiltInInfo" xml:space="preserve"><value>A copy of a tileset that comes with the app goes into this project. Edit it freely, and use "Save tileset file…" in the Tileset panel menu to share it with other projects. Sandbox surface &amp; caves: 16px side view — grassy dirt, dirt, stone, stone with ore, sand, snowy dirt, stone brick and wood plank blocks plus dirt and stone background walls (47-shape auto tiles), water and lava, wood platforms, ladders, vines and fences, trees, grass, flowers, mushrooms, stalactites, crystals, torches, chests, doors and more.</value></data>
+  <data name="TilePick_Title" xml:space="preserve"><value>Painting with</value></data>
+  <data name="TilePick_Nothing" xml:space="preserve"><value>Nothing picked</value></data>
+  <data name="TilePick_NothingHint" xml:space="preserve"><value>Click a tile in the list or pick an auto-tile set.</value></data>
+  <data name="TilePick_NoSetHint" xml:space="preserve"><value>Pick a set from the auto-tile list.</value></data>
+  <data name="TilePick_Eraser" xml:space="preserve"><value>Eraser</value></data>
+  <data name="TilePick_EraserKind" xml:space="preserve"><value>Erases the tile in the clicked cell</value></data>
+  <data name="TilePick_TileId" xml:space="preserve"><value>Tile {id}</value><comment>id: 타일 번호(이름 없는 타일)</comment></data>
+  <data name="TilePick_Tiles" xml:space="preserve"><value>{count} tiles</value><comment>count: 붓에 든 타일 수</comment></data>
+  <data name="TilePick_SingleKind" xml:space="preserve"><value>Tile · {w}×{h} cells</value><comment>w, h: 차지 칸 수</comment></data>
+  <data name="TilePick_StampKind" xml:space="preserve"><value>Stamp · {w}×{h} cells</value><comment>w, h: 붓 전체 크기(칸)</comment></data>
+  <data name="TilePick_RandomKind" xml:space="preserve"><value>One at random per cell</value></data>
+  <data name="TilePick_Turned" xml:space="preserve"><value>flipped/rotated</value></data>
+  <data name="TilePick_Frames" xml:space="preserve"><value>{count} frames</value><comment>count: 움직이는 타일 그림 수</comment></data>
+  <data name="TilePick_AutoKind" xml:space="preserve"><value>Auto-tile set · {count} rules</value><comment>count: 규칙 수</comment></data>
+  <data name="TilePick_Group" xml:space="preserve"><value>Group {name}</value><comment>name: 이어지는 무리 이름</comment></data>
+  <data name="TilePick_Floor" xml:space="preserve"><value>Floor: {name}</value><comment>name: 층 이름(여럿이면 쉼표로)</comment></data>
+  <data name="TilePick_FloorPerTile" xml:space="preserve"><value>Floor: each tile's default</value></data>
+  <data name="TilePick_FloorTopVisible" xml:space="preserve"><value>Floor: topmost visible first</value></data>
+  <data name="TilePick_Locked" xml:space="preserve"><value>locked</value></data>
+  <data name="TilePick_Hidden" xml:space="preserve"><value>hidden</value></data>
+  <data name="TilePick_TargetFloorTip" xml:space="preserve"><value>Floor the current pick goes to</value></data>
+  <data name="TilePalette_TipInfo" xml:space="preserve"><value>Id {id} · floor {floor} · {w}×{h} cells</value><comment>id: 타일 번호, floor: 기본 층 이름, w, h: 차지 칸</comment></data>
+  <data name="TilePalette_TipFrames" xml:space="preserve"><value>Animated · {count} frames · {ms} ms each</value><comment>count: 그림 수, ms: 한 장 시간</comment></data>
+  <data name="TilePalette_TipAuto" xml:space="preserve"><value>Used by the selected auto-tile set</value></data>
+  <data name="TileAuto_GroupTip" xml:space="preserve"><value>Group {name}: sets in the same group join each other</value><comment>name: 무리 이름</comment></data>
+  <data name="Tileset_AnimateTile" xml:space="preserve"><value>Animated tile…</value></data>
+  <data name="Tileset_AnimateTileLabel" xml:space="preserve"><value>Animated tile</value></data>
+  <data name="TileHud_Cell" xml:space="preserve"><value>Cell {x}, {y}</value><comment>x, y: 칸 좌표</comment></data>
+  <data name="TileHud_Empty" xml:space="preserve"><value>empty</value></data>
+  <data name="TileHud_Placed" xml:space="preserve"><value>{floor} · {tile}</value><comment>floor: 층 이름, tile: 타일 이름</comment></data>
+  <data name="TileHud_AutoOf" xml:space="preserve"><value>{tile} (auto-tile {set})</value><comment>tile: 타일 이름, set: 자동 타일 세트 이름</comment></data>
+  <data name="TileHud_FloorLocked" xml:space="preserve"><value>Floor '{floor}' is locked</value><comment>floor: 층 이름</comment></data>
+  <data name="TileHud_FloorHidden" xml:space="preserve"><value>Floor '{floor}' is hidden</value><comment>floor: 층 이름</comment></data>
+  <data name="AutoTile_Group" xml:space="preserve"><value>Joins with group</value></data>
+  <data name="AutoTile_GroupInfo" xml:space="preserve"><value>Auto tile sets with the same group name count each other as neighbors even on different floors, so they join without an edge (like dirt and mud, shallow and deep water). Pick a name from the list or type a new one. Leave it empty to join only with this set. Floors only decide drawing order; joining is separate.</value></data>
+  <data name="AutoTile_GroupPlaceholder" xml:space="preserve"><value>Empty = this set only</value></data>
+  <data name="AutoTile_GroupMembers" xml:space="preserve"><value>Joins with: {names}</value><comment>names = 같은 무리를 쓰는 다른 세트 이름들(쉼표로 이음)</comment></data>
+  <data name="AutoTile_GroupAlone" xml:space="preserve"><value>Does not join with other sets</value></data>
+  <data name="AutoTile_GroupNew" xml:space="preserve"><value>No other set uses this group yet</value></data>
+  <data name="AutoTile_Rules" xml:space="preserve"><value>Rules</value></data>
+  <data name="AutoTile_RulesInfo" xml:space="preserve"><value>Each cell looks at its 8 neighbors and tries the rules from the top; the first rule that matches places its tile. Earlier rules win, so put specific rules above broad ones. If nothing matches, the rule with the fewest mismatches is used; rules without tiles are skipped. 3×3 grid: green plus = a cell of the same group must be there, red minus = must not be there, blank = don't care. Several tiles in one rule are picked at random by weight.</value></data>
+  <data name="AutoTile_AddRule" xml:space="preserve"><value>Add rule</value></data>
+  <data name="AutoTile_ConditionTip" xml:space="preserve"><value>Click an outer cell = don't care → must be there → must not be there, right-click = backwards. Center = this cell</value></data>
+  <data name="AutoTile_RuleTilesTip" xml:space="preserve"><value>Click = replace with picked tiles, Ctrl+click = add (same tile adds weight), right-click a tile = change weight or remove</value></data>
+  <data name="AutoTile_RuleNoTiles" xml:space="preserve"><value>No tiles · skipped</value></data>
+  <data name="AutoTile_WeightUp" xml:space="preserve"><value>Increase weight</value></data>
+  <data name="AutoTile_WeightDown" xml:space="preserve"><value>Decrease weight</value></data>
+  <data name="AutoTile_RemoveTile" xml:space="preserve"><value>Remove this tile</value></data>
+  <data name="AutoTile_ClearRuleTiles" xml:space="preserve"><value>Remove all tiles</value></data>
+  <data name="AutoTile_FlipXTip" xml:space="preserve"><value>Also match the left-right mirrored shape (places the tile mirrored)</value></data>
+  <data name="AutoTile_FlipYTip" xml:space="preserve"><value>Also match the upside-down shape (places the tile flipped)</value></data>
+  <data name="AutoTile_RotateTip" xml:space="preserve"><value>Also match the shape turned by 90° steps (places the tile rotated)</value></data>
+  <data name="AutoTile_RotateNeedsSquare" xml:space="preserve"><value>Rotation needs a tileset with square cells</value></data>
+  <data name="AutoTile_MoveUp" xml:space="preserve"><value>Move up (tried earlier)</value></data>
+  <data name="AutoTile_MoveDown" xml:space="preserve"><value>Move down (tried later)</value></data>
+  <data name="AutoTile_DuplicateRule" xml:space="preserve"><value>Duplicate rule</value></data>
+  <data name="AutoTile_DeleteRule" xml:space="preserve"><value>Delete rule</value></data>
+  <data name="AutoTile_Preset" xml:space="preserve"><value>Template</value></data>
+  <data name="AutoTile_PresetRow" xml:space="preserve"><value>Row (4 rules)</value></data>
+  <data name="AutoTile_PresetColumn" xml:space="preserve"><value>Column (4 rules)</value></data>
+  <data name="AutoTile_PresetEdge4" xml:space="preserve"><value>4-way (16 rules)</value></data>
+  <data name="AutoTile_PresetBox13" xml:space="preserve"><value>3×3 (13 rules)</value></data>
+  <data name="AutoTile_PresetBlob47" xml:space="preserve"><value>8-way (47 rules)</value></data>
+  <data name="AutoTile_PresetInfo" xml:space="preserve"><value>Makes a whole rule list from a template. Row/column = things joined in one line (platforms, ladders), 4-way = up/down/left/right neighbors only, 3×3 = 8 edges + center + 4 inner corners (common terrain sheets), 8-way = 47 rules that also look at diagonals (water and ground join smoothly at corners). Then 'Fill picked tiles in order' puts a sheet drawn in template order in one go.</value></data>
+  <data name="AutoTile_MakeRules" xml:space="preserve"><value>Make rules</value></data>
+  <data name="AutoTile_MakeRulesAsk" xml:space="preserve"><value>Replace the current {count} rules with the template's rules? Tiles you put in are removed.</value><comment>count = 지금 규칙 수</comment></data>
+  <data name="AutoTile_PutPicked" xml:space="preserve"><value>Put picked tiles in rule {index}</value><comment>index = 선택한 규칙 번호(1부터)</comment></data>
+  <data name="AutoTile_PutPickedTip" xml:space="preserve"><value>Replaces the tiles of the selected rule (blue outline) with the tiles picked in the list</value></data>
+  <data name="AutoTile_Picked" xml:space="preserve"><value>{count} tiles picked</value><comment>count = 타일 목록에서 고른 타일 수</comment></data>
+  <data name="AutoTile_PickedOne" xml:space="preserve"><value>Picked tile: {name}</value><comment>name = 고른 타일 이름(없으면 번호)</comment></data>
+  <data name="AutoTile_PickedNone" xml:space="preserve"><value>No tiles picked — click or drag to pick</value></data>
+  <data name="AutoTile_Preview" xml:space="preserve"><value>Preview</value></data>
+  <data name="AutoTile_PreviewInfo" xml:space="preserve"><value>Try the set you are editing: left button = paint, right button = erase. Hover a cell to see the rule it uses (orange outline in the list). Animated tiles move here too. The board is not saved.</value></data>
+  <data name="AutoTile_PreviewHint" xml:space="preserve"><value>Left button = paint, right button = erase</value></data>
+  <data name="AutoTile_PreviewRule" xml:space="preserve"><value>Cell ({x}, {y}): rule {index}</value><comment>x, y = 미리보기 판의 칸(0부터), index = 쓰인 규칙 번호(1부터)</comment></data>
+  <data name="AutoTile_PreviewNearest" xml:space="preserve"><value>Cell ({x}, {y}): no rule matches — closest is rule {index}</value><comment>x, y = 미리보기 판의 칸(0부터), index = 대신 쓰인 규칙 번호(1부터)</comment></data>
+  <data name="AutoTile_PreviewNoTiles" xml:space="preserve"><value>No rule has tiles, so nothing is drawn</value></data>
+  <data name="AutoTile_PreviewClear" xml:space="preserve"><value>Clear board</value></data>
+  <data name="AutoTile_PreviewReset" xml:space="preserve"><value>Reset board</value></data>
+  <data name="AutoTile_Summary" xml:space="preserve"><value>{count} rules</value><comment>count = 세트의 규칙 수(타일 세트 목록에 보이는 짧은 설명)</comment></data>
+  <data name="AutoTile_SummaryGroup" xml:space="preserve"><value>{count} rules · group {group}</value><comment>count = 세트의 규칙 수, group = 이어지는 무리 이름</comment></data>
+  <data name="TileAnim_Title" xml:space="preserve"><value>Animated tile — {name}</value><comment>name = 타일 이름</comment></data>
+  <data name="TileAnim_TileNumber" xml:space="preserve"><value>Tile {id}</value><comment>id = 타일 번호(이름이 없을 때)</comment></data>
+  <data name="TileAnim_Frames" xml:space="preserve"><value>Frames</value></data>
+  <data name="TileAnim_Size" xml:space="preserve"><value>Image size {width}×{height}px</value><comment>width, height = 타일 그림 크기</comment></data>
+  <data name="TileAnim_FramesInfo" xml:space="preserve"><value>Frames play from left to right. Click a frame to select it, then use the buttons below to move it earlier or later, duplicate it, or remove it. The first frame is what the tile list and exports (time 0) show. With only one frame the tile is still. On the canvas and in the preview the tile keeps moving even if the document has a single frame.</value></data>
+  <data name="TileAnim_MoveEarlier" xml:space="preserve"><value>Move selected frame earlier</value></data>
+  <data name="TileAnim_MoveLater" xml:space="preserve"><value>Move selected frame later</value></data>
+  <data name="TileAnim_Duplicate" xml:space="preserve"><value>Duplicate</value></data>
+  <data name="TileAnim_Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="TileAnim_Selected" xml:space="preserve"><value>Frame {index} of {count} selected</value><comment>index = 고른 그림 번호(1부터), count = 그림 수</comment></data>
+  <data name="TileAnim_FrameMs" xml:space="preserve"><value>Time per frame</value></data>
+  <data name="TileAnim_Cycle" xml:space="preserve"><value>One loop {ms} ms</value><comment>ms = 그림 수 × 한 장 시간</comment></data>
+  <data name="TileAnim_Still" xml:space="preserve"><value>1 frame — still tile</value></data>
+  <data name="TileAnim_AddFromTileset" xml:space="preserve"><value>Add frames from the tileset</value></data>
+  <data name="TileAnim_AddInfo" xml:space="preserve"><value>Pick tiles in the list (drag for several) and press 'Add as frames', or double-click a tile. They go right after the selected frame. Picking an animated tile adds all its frames. Only tiles with the same image size can be added. For a slightly changed next frame, duplicate the current one and repaint it in the tileset.</value></data>
+  <data name="TileAnim_Add" xml:space="preserve"><value>Add as frames</value></data>
+  <data name="TileAnim_PickNone" xml:space="preserve"><value>Pick tiles to add in the list</value></data>
+  <data name="TileAnim_PickCount" xml:space="preserve"><value>Picked {count} tile(s) → adds {frames} frame(s)</value><comment>count = 더할 수 있는 타일 수, frames = 들어갈 그림 수</comment></data>
+  <data name="TileAnim_PickSkipped" xml:space="preserve"><value>{count} skipped (different size)</value><comment>count = 크기가 달라 빠지는 타일 수</comment></data>
+  <data name="TileAnim_PickWrongSize" xml:space="preserve"><value>Tiles of a different size can't be added ({width}×{height}px only)</value><comment>width, height = 이 타일 그림 크기</comment></data>
+  <data name="TileAnim_TooMany" xml:space="preserve"><value>Up to {max} frames</value><comment>max = 최대 장 수</comment></data>
+  <data name="TileAnim_Preview" xml:space="preserve"><value>Preview</value></data>
+  <data name="TileAnim_Play" xml:space="preserve"><value>Play</value></data>
+  <data name="TileAnim_Pause" xml:space="preserve"><value>Pause</value></data>
+  <data name="TileAnim_PreviewFrame" xml:space="preserve"><value>Frame {index} / {count}</value><comment>index = 보이는 그림 번호(1부터), count = 그림 수</comment></data>
+  <data name="TileAnim_Tiled" xml:space="preserve"><value>Tile 3×3</value></data>
 </root>

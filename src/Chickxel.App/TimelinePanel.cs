@@ -557,7 +557,7 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
     private static void ClearCells(SpriteProject p, IEnumerable<(int Layer, int Frame)> cels)
     {
         foreach (var (l, f) in cels)
-            if (!p.IsCelEmpty(l, f)) p.SetCel(l, f, null);
+            if (!p.Layers[l].IsTilemap && !p.IsCelEmpty(l, f)) p.SetCel(l, f, null);
     }
 
     /// <summary>칸들에 지울 그림이 있는지.</summary>
@@ -921,6 +921,33 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
         Layer? added = null;
         _ctx.Structural(() => added = p.AddLayer(at));
         if (added is not null) _ctx.SetCurrentLayer(p.IndexOf(added));
+    }
+
+    /// <summary>현재 레이어(그룹 안이면 그 그룹) 위에 새 타일맵 레이어(타일셋을 고르거나 새로 만듦).</summary>
+    public void AddTilemapLayer()
+    {
+        if (P is not { } p) return;
+        if (TilesetChoiceDialog.Run(this, p, UiStrings.Tile_NewLayerTitle) is not { } ts) return;
+        int at = SlotAboveCurrent(p);
+        Layer? added = null;
+        _ctx.Structural(() => added = p.AddTilemapLayer(ts, at));
+        if (added is null) return;
+        if (ts.SourcePath is not null) p.MarkTilesetSynced(ts);
+        _ctx.SetCurrentLayer(p.IndexOf(added));
+        _ctx.TileStamp = null;
+        _ctx.TileSelection = null;
+        Say(UiStrings.Tile_LayerAdded);
+    }
+
+    /// <summary>타일맵 레이어를 그룹(층마다 부위)으로 바꾼다.</summary>
+    public void ConvertTilemap(int index)
+    {
+        if (P is not { } p || index < 0 || index >= p.Layers.Count || !p.Layers[index].IsTilemap) { Say(UiStrings.Tile_NotTilemap); return; }
+        if (p.TilesetOf(p.Layers[index]) is null) { Say(UiStrings.Tile_NoTileset); return; }
+        Layer? group = null;
+        _ctx.Structural(() => group = p.ConvertTilemapToGroup(index));
+        if (group is not null) _ctx.SetCurrentLayer(p.IndexOf(group));
+        Say(UiStrings.Tile_Converted);
     }
 
     /// <summary>현재 레이어(그룹 안이면 그 그룹) 위에 새 그룹.</summary>
@@ -1477,6 +1504,7 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
     private void ShowEmptyMenu() => ShowMenu(
         Item(UiStrings.S_TimelinePanel_ShowEmptyMenu_BD6EAD0E34, AddLayer),
         Item(UiStrings.S_TimelinePanel_ShowEmptyMenu_3C96CCD165, AddGroup),
+        Item(UiStrings.Tile_MenuAddLayer, AddTilemapLayer),
         Item(UiStrings.S_TimelinePanel_ShowEmptyMenu_3E26686E9F, AddPart),
         new Separator(),
         Item(UiStrings.S_TimelinePanel_ShowEmptyMenu_43E7688224, () => AppendFrames(false, 1, _ctx.CurrentLayer)),
@@ -1531,6 +1559,11 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
             if (layer.AutoLayout is not null) items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_14ED4902E9, () => TurnOffGroupLayout(layer)));
             items.Add(new MenuItem { Header = Plain(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowLayerMenu_07F7E49A77,layer.ActiveSkin!.Name)), ItemsSource = SkinMenuItems(layer) });
         }
+        else if (layer.IsTilemap)
+        {
+            items.Add(new Separator());
+            items.Add(Item(UiStrings.Tile_MenuConvert, () => ConvertTilemap(index)));
+        }
         else if (P is { } np)
         {
             // 일반 레이어: 스킨을 달면 그 레이어가 같은 이름 그룹의 부위가 된다(그림·효과는 제자리)
@@ -1551,6 +1584,7 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
         items.Add(new Separator());
         items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_AA2FF06061, AddLayer));
         items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_13B10F0946, AddGroup));
+        items.Add(Item(UiStrings.Tile_MenuAddLayer, AddTilemapLayer));
         if (!layer.IsGroup) items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_804EB6B1D9, AddPart));
         items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_1524FC7BD9, DuplicateLayer));
         items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_9BA618B63B, () => MoveLayer(1)));

@@ -13,7 +13,11 @@ using Chickxel.Core.Scripting;
 namespace Chickxel.Core.IO;
 
 /// <summary>저장 결과: 프로젝트 파일 경로와 (켜져 있었으면) 내보내기 결과.</summary>
-public sealed record ProjectSaveResult(string ProjectPath, ProjectExportResult? Export);
+public sealed record ProjectSaveResult(string ProjectPath, ProjectExportResult? Export)
+{
+    /// <summary>타일셋 파일에 쓰지 못한 것(프로젝트 파일은 저장됨). 없으면 빈 목록.</summary>
+    public IReadOnlyList<string> TilesetWarnings { get; init; } = [];
+}
 
 /// <summary>
 /// <c>.chickxel</c> 프로젝트 파일 읽기/쓰기. 형식은 ZIP:
@@ -31,11 +35,12 @@ public sealed record ProjectSaveResult(string ProjectPath, ProjectExportResult? 
 public static partial class ProjectIO
 {
     /// <summary>
+    /// 6 = 타일맵 레이어(레이어의 <c>tilesetKey</c>·<c>tileOrigin</c>, 맵 <c>tilemaps/L{레이어}.bin</c>, 타일셋 <c>tilesets</c> + <c>tilesets/&lt;이름표&gt;.chickxel-tileset</c>)를 쓰는 판.
     /// 5 = 레이어마다 피벗(일반 레이어·그룹 포함 — 레이어의 <c>pivot</c>, 프레임의 <c>layerPivots</c>)과 캔버스 피벗의 대표 레이어(<c>pivotLayer</c>)를 쓰는 판.
     /// 4 이하 파일은 일반 레이어·그룹이 캔버스 피벗(기본 + 프레임마다)을 자기 피벗으로 갖도록 바꿔 읽는다(그림은 그대로, <see cref="SpriteProject.ConvertedFromVersion"/>).
     /// 4 = 레이어 효과를 안정된 종류 ID와 설정 객체로 쓰는 판(<see cref="EffectCodec"/>). 3 이하의 짧은 효과 ID는 읽을 때 바꾼다.
     /// </summary>
-    public const int CurrentVersion = 5;
+    public const int CurrentVersion = 6;
     public const string ProjectEntryName = "project.json";
     public const string ThumbnailEntryName = "thumbnail.png";
 
@@ -85,6 +90,7 @@ public static partial class ProjectIO
         WriteFile(project, full, null);
         project.Path = full;
         project.IsDirty = false;
+        WriteTilesetFiles(project);
     }
 
     /// <summary>
@@ -130,6 +136,7 @@ public static partial class ProjectIO
     private static void StripLocalPaths(ProjectDto dto)
     {
         dto.Exported = null;
+        foreach (var t in dto.Tilesets ?? []) t.Path = null;
         if (dto.Export is not { } export) return;
         export.Folder = null;
         export.FileName = NameOnly(export.FileName);
@@ -149,6 +156,7 @@ public static partial class ProjectIO
     /// </summary>
     private static void ProtectLocalPaths(ProjectDto dto)
     {
+        ProtectTilesetPaths(dto);
         if (dto.Export is not { } export) return;
         export.Folder = LocalPathCipher.ProtectCurrent(export.Folder);
         export.FileName = LocalPathCipher.ProtectCurrent(export.FileName);
@@ -165,6 +173,7 @@ public static partial class ProjectIO
         if (adjust is null) ProtectLocalPaths(dto);
         else adjust(dto);
         WriteProjectJson(zip, dto);
+        WriteTiles(zip, project);
 
         // 셀 PNG는 여러 코어에서 묶음씩 만들고 ZIP에는 정한 차례대로 쓴다(파일 내용은 차례대로 만든 것과 같다). 묶음만큼만 메모리에 둔다.
         // 링크된 셀(같은 그림)은 한 번만 만들고 같은 바이트를 셀마다 쓴다.
@@ -344,6 +353,10 @@ public static partial class ProjectIO
                     if (project.GetCelRaw(layer, frame, skins[si]) is { } skinCel) cels.Add((fileLayers[li], copy.Frames[fi], copySkins[si], skinCel));
             }
         }
+        // 타일셋·맵은 바뀌지 않는 값이라 같이 쓴다.
+        foreach (var tileset in project.UsedTilesets) copy.PutTilesetRaw(tileset);
+        for (int li = 0; li < project.Layers.Count; li++)
+            if (project.Layers[li].Tiles is { } tiles) fileLayers[li].Tiles = tiles;
         // 셀 복사는 새 메모리를 처음 건드리는 비용이 커서 여러 코어로 나눈다(부르는 쪽은 UI 스레드). 링크된 셀(같은 그림)은 사본도 하나를 같이 쓴다.
         var firstOf = new int[cels.Count];
         var seen = new Dictionary<PixelImage, int>(ReferenceEqualityComparer.Instance);
@@ -670,6 +683,7 @@ public static partial class ProjectIO
 
             var (project, fileLayers) = FromDto(dto, warnings);
             project.ExportedFiles = ResolveRecord(dto.Exported, fullPath);
+            ReadTiles(zip, dto, fileLayers, project, fullPath, warnings);
             // 링크된 셀은 같이 쓰는 앞 프레임 셀 그림을 쓰므로 그 셀의 PNG(예전 판이 읽도록 따로 든 것)는 풀지 않는다
             var links = ReadCelLinks(dto.CelLinks, fileLayers, project.Frames.Count, warnings);
             var linked = links.Select(l => (l.Layer, l.Frame, l.SkinIndex)).ToHashSet();
@@ -691,7 +705,7 @@ public static partial class ProjectIO
                 }
                 if (CelEntry().Match(name) is not { Success: true } m) continue;
                 if (!TryIndex(m, 1, fileLayers.Count, out var li) || !TryIndex(m, 2, project.Frames.Count, out var fi)
-                    || fileLayers[li].IsGroup || !TrySkin(m, fileLayers[li], out var skin))
+                    || fileLayers[li].IsGroup || fileLayers[li].IsTilemap || !TrySkin(m, fileLayers[li], out var skin))
                     slots.Add((e, null, 0, null, null));
                 else if (!linked.Contains((li, fi, m.Groups[3].Success ? int.Parse(m.Groups[3].Value, CultureInfo.InvariantCulture) : 0)))
                     slots.Add((e, fileLayers[li], fi, skin, null));
@@ -954,6 +968,10 @@ public static partial class ProjectIO
             Skin = l is { IsPart: true, SkinOverride: { } so, Parent: { } pg } ? pg.SkinList.IndexOf(so) : null,
             Effects = l.Effects.Count > 0 ? l.Effects.Select(e => (JsonObject?)EffectCodec.Write(e)).ToList() : null,
             AutoLayout = l is { IsGroup: true, AutoLayout: { } al } ? GroupLayoutDto.From(al) : null,
+            TilesetKey = l.Tiles?.TilesetKey,
+            TileOrigin = l.Tiles is { Origin: { IsEmpty: false } o } ? [o.X, o.Y] : null,
+            TileHidden = l.Tiles is { HiddenFloors.Length: > 0 } th ? [.. th.HiddenFloors] : null,
+            TileLocked = l.Tiles is { LockedFloors.Length: > 0 } tl ? [.. tl.LockedFloors] : null,
         }).ToList(),
         Frames = p.Frames.Select(f => new FrameDto
         {
@@ -982,6 +1000,7 @@ public static partial class ProjectIO
         Scripts = p.ScriptsInUse() is { Count: > 0 } scripts ? scripts : null,
         CelLinks = CelLinksOf(p, out var colors),
         CelLinkColors = colors,
+        Tilesets = p.UsedTilesets.Count == 0 ? null : p.UsedTilesets.Select(t => new TilesetRefDto { Key = t.Key, Path = TilesetPathFor(t.SourcePath, projectPath) }).ToList(),
     };
 
     /// <summary>
@@ -1150,6 +1169,7 @@ public static partial class ProjectIO
                 if (l.ActiveSkin is int ai && ai >= 0 && ai < skins.Count) layer.SetActiveSkinRaw(skins[ai]);
             }
             if (kind == LayerKind.Group && l.AutoLayout is { } layoutDto) layer.AutoLayout = layoutDto.ToLayout();
+            if (kind == LayerKind.Tilemap) layer.Tiles = TilemapOf(l);
             if (l.Effects is { Count: > 0 } effects)
             {
                 var list = new List<LayerEffect>(effects.Count);
@@ -1466,6 +1486,17 @@ public static partial class ProjectIO
         public List<int[]>? CelLinkColors { get; set; }
         /// <summary>캔버스 피벗의 대표 레이어 번호(없으면 캔버스 자신의 피벗, 버전 5부터).</summary>
         public int? PivotLayer { get; set; }
+        /// <summary>
+        /// 타일맵 레이어가 쓰는 타일셋(버전 6부터): 이름표와 타일셋 파일 경로(프로젝트 파일 기준 상대 경로, 안 되면 전체 경로 — 이 컴퓨터의 열쇠로 암호화).
+        /// 내용은 <c>tilesets/&lt;이름표&gt;.chickxel-tileset</c>.
+        /// </summary>
+        public List<TilesetRefDto>? Tilesets { get; set; }
+    }
+
+    private sealed class TilesetRefDto
+    {
+        public string Key { get; set; } = "";
+        public string? Path { get; set; }
     }
 
     /// <summary>착장 프리셋: 이름, 그룹마다 스킨(레이어 = 그룹 번호), 부위 재정의(레이어 = 부위 번호, 스킨 = 그 그룹의 스킨 번호).</summary>
@@ -1528,6 +1559,13 @@ public static partial class ProjectIO
         public List<JsonObject?>? Effects { get; set; }
         /// <summary>그룹: 자동 배치 설정. 없으면 끔.</summary>
         public GroupLayoutDto? AutoLayout { get; set; }
+        /// <summary>타일맵 레이어: 타일셋 이름표(맵은 <c>tilemaps/L{레이어}.bin</c>, 버전 6부터).</summary>
+        public string? TilesetKey { get; set; }
+        /// <summary>타일맵 레이어: 격자 원점 [X, Y](없으면 0, 0).</summary>
+        public int[]? TileOrigin { get; set; }
+        /// <summary>타일맵 레이어: 숨긴 층·잠근 층 Id(없으면 없음).</summary>
+        public int[]? TileHidden { get; set; }
+        public int[]? TileLocked { get; set; }
     }
 
     /// <summary>그룹 자동 배치(<see cref="GroupLayout"/>). 없는 값은 기본값.</summary>

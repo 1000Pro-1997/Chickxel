@@ -29,7 +29,7 @@ public sealed partial class PixelCanvas : Control
 
     private enum DragMode { None, Pan, Stroke, Shape, Gradient, Fill, Picker, Marquee, Lasso, MoveSelection, MoveLayer, MoveText, Pivot, Arrange, Slice,
         TransformMove, TransformScale, TransformMargin, TransformImageMove, TransformRotate, TransformPivot, CanvasResizeEdge, CanvasResizeMove,
-        TextCreate, TextSelect, TextResize, TextMoveBox }
+        TextCreate, TextSelect, TextResize, TextMoveBox, Tile }
 
     /// <summary>변형 모드에서 화면 위치가 가리키는 것.</summary>
     private enum TransformHit { None, Move, Scale, Rotate, Pivot }
@@ -296,6 +296,10 @@ public sealed partial class PixelCanvas : Control
             if (_drag == DragMode.None) UpdateCursor();
             InvalidateVisual();
         };
+        ctx.TileStateChanged += (_, _) => InvalidateVisual();
+        // 움직이는 타일: 보이는 그림이 바뀌면(합성은 이미 무효가 됨) 다시 그린다.
+        ctx.TileClockTick += InvalidateVisual;
+        ctx.TileMessage += (_, text) => Message?.Invoke(this, text);
         InitTextEditing();
     }
 
@@ -411,7 +415,7 @@ public sealed partial class PixelCanvas : Control
     /// </summary>
     private void BeginTempMove()
     {
-        if (_tempMoveFrom is not null || !_ctx.HasProject || _drag != DragMode.None || _ctx.IsGroupSelected || _ctx.IsTransforming || _ctx.IsCanvasResizing
+        if (_tempMoveFrom is not null || !_ctx.HasProject || _drag != DragMode.None || _ctx.IsGroupSelected || _ctx.IsTilemapSelected || _ctx.IsTransforming || _ctx.IsCanvasResizing
             || _ctx.Tool == ToolKind.Move || _text is not null || TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is TextBox)
             return;
         _tempMoveFrom = _ctx.Tool;
@@ -1004,6 +1008,7 @@ public sealed partial class PixelCanvas : Control
         var src = VisibleSourceRect(0, 0);
         if (_showPixelGrid && _zoom >= _pixelGridMinZoom) DrawPixelGrid(g, src);
         if (_showTileGrid) DrawTileGrid(g, src);
+        if (_ctx.IsTilemapSelected) DrawTileOverlay(g);
         var imgRect = ImageScreenRect;
         g.DrawRectangle(null, BorderPen, new Rect(imgRect.X - 0.5, imgRect.Y - 0.5, imgRect.Width + 1, imgRect.Height + 1));
         DrawSymmetryGuides(g);
@@ -1036,7 +1041,7 @@ public sealed partial class PixelCanvas : Control
             AppTheme.DrawText(g, _ctx.CurrentFrame > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_Render_28FC63DF57,_ctx.CurrentFrame) : UiStrings.S_PixelCanvas_Render_5D74D360AD,
                 new Avalonia.Point(8, 8), AppTheme.WarningBrush, bold: true);
         // 캔버스 아래 안내는 그릴 수 없을 때(잠금) 경고만 — 사용법 설명은 도움말·상태 표시줄에.
-        if (!_ctx.IsGroupSelected && !_ctx.IsTransforming && !_ctx.CanEdit)
+        if (!_ctx.IsGroupSelected && !_ctx.IsTransforming && !_ctx.CanEdit && !(_ctx.IsTilemapSelected && _ctx.TileEditBlocker() is null))
             AppTheme.DrawText(g, UiStrings.S_PixelCanvas_Render_77C8A3EDEF, new Avalonia.Point(8, Bounds.Height - 24), AppTheme.WarningBrush);
     }
 
@@ -1078,11 +1083,17 @@ public sealed partial class PixelCanvas : Control
     /// </summary>
     private void DrawCelOutside(DrawingContext g)
     {
-        if (_ctx.Project is not { } p || p.Layers[_ctx.CurrentLayer] is not { Kind: LayerKind.Normal } layer) return;
+        if (_ctx.Project is not { } p || p.Layers[_ctx.CurrentLayer] is not { Kind: LayerKind.Normal or LayerKind.Tilemap } layer) return;
         PixelImage? image = null;
         var at = Point.Empty;
         double opacity = OutsideOpacity;
-        if (_drag == DragMode.MoveLayer && _moveFull is { } full)
+        if (layer.IsTilemap)
+        {
+            // 타일맵: 캔버스 밖 칸에도 찍으므로 또렷이(레이어 불투명도로). 움직이는 타일은 화면 시계 그림으로.
+            if (_ctx.WithTileClock(() => p.GetCelOverflow(_ctx.CurrentLayer, _ctx.CurrentFrame)) is { } tiles) (image, at) = tiles;
+            opacity = layer.Opacity / 255.0 * (p.IsLayerVisible(_ctx.CurrentLayer) ? 1 : 0.6);
+        }
+        else if (_drag == DragMode.MoveLayer && _moveFull is { } full)
         {
             image = full.Image;
             at = new Point(full.Origin.X + _lastPx.X - _startPx.X, full.Origin.Y + _lastPx.Y - _startPx.Y);
@@ -1675,7 +1686,7 @@ public sealed partial class PixelCanvas : Control
 
     private void DrawBrushCursor(DrawingContext g)
     {
-        if (_cursorPx is not { } p || _drag == DragMode.Pan || !UsesBrush(_ctx.Tool) || _ctx.IsGroupSelected || _ctx.IsTransforming) return;
+        if (_cursorPx is not { } p || _drag == DragMode.Pan || !UsesBrush(_ctx.Tool) || _ctx.IsGroupSelected || _ctx.IsTilemapSelected || _ctx.IsTransforming) return;
         var brush = _ctx.Brush;
         var cells = new HashSet<Point>(brush.Offsets.Select(o => new Point(p.X + o.X, p.Y + o.Y)));
         DrawMirrorGhosts(g, cells);
@@ -1893,6 +1904,12 @@ public sealed partial class PixelCanvas : Control
             if (BeginTransformDrag(loc, e.ClickCount, button)) e.Pointer.Capture(this);
             return;
         }
+        if (_ctx.IsTilemapSelected)
+        {
+            // 타일맵 화면: 타일 도구(픽셀 도구는 쓰지 않음).
+            if (BeginTileDrag(button, px, e.KeyModifiers)) e.Pointer.Capture(this);
+            return;
+        }
         if (_ctx.IsGroupSelected)
         {
             // 그룹 화면: 9-slice 도구로 부위의 초록 선을 잡으면 그 선을, 아니면 어떤 도구든 부위 배치.
@@ -2047,8 +2064,12 @@ public sealed partial class PixelCanvas : Control
         {
             case DragMode.None:
                 if (_ctx.IsGroupSelected) UpdateHoverPart(px);
+                if (_ctx.IsTilemapSelected) UpdateTileHover(px);
                 UpdateCursor(px);
                 return;
+            case DragMode.Tile:
+                DragTile(px);
+                break;
             case DragMode.Pan:
                 _offset.Offset(loc.X - _lastScreen.X, loc.Y - _lastScreen.Y);
                 _lastScreen = loc;
@@ -2176,6 +2197,9 @@ public sealed partial class PixelCanvas : Control
         {
             case DragMode.Pan:
                 UpdateCursor(ScreenToPixel(location));
+                break;
+            case DragMode.Tile:
+                EndTileDrag();
                 break;
             case DragMode.Stroke:
                 _lastStrokeEnd = Wrap(_lastPx);
@@ -2378,12 +2402,13 @@ public sealed partial class PixelCanvas : Control
     /// <summary>도형(또는 브러시 획)을 그리는 중에 반대쪽 버튼을 누르면 그 획을 취소한다. 취소했으면 true.</summary>
     private bool TryCancelByOtherButton(PointerPoint pt, IPointer pointer)
     {
-        if (_drag is not (DragMode.Shape or DragMode.Stroke or DragMode.Gradient)) return false;
+        if (_drag is not (DragMode.Shape or DragMode.Stroke or DragMode.Gradient or DragMode.Tile)) return false;
         var kind = pt.Properties.PointerUpdateKind;
         bool other = (_dragButton == MouseButton.Left && kind == PointerUpdateKind.RightButtonPressed)
                      || (_dragButton == MouseButton.Right && kind == PointerUpdateKind.LeftButtonPressed);
         if (!other) return false;
-        CancelPixelStroke();
+        if (_drag == DragMode.Tile) CancelTileDrag();
+        else CancelPixelStroke();
         pointer.Capture(null);
         return true;
     }
@@ -2802,7 +2827,7 @@ public sealed partial class PixelCanvas : Control
     private void DrawWandPreview(DrawingContext g)
     {
         if (_ctx.Tool != ToolKind.MagicWand || !_ctx.WandPreview || _drag != DragMode.None || _hoverPx is not { } p || !_ctx.HasProject
-            || _ctx.IsTransforming || _ctx.IsCanvasResizing || _ctx.IsGroupSelected || _ctx.Selection.IsFloating || _peekPrevious) return;
+            || _ctx.IsTransforming || _ctx.IsCanvasResizing || _ctx.IsGroupSelected || _ctx.IsTilemapSelected || _ctx.Selection.IsFloating || _peekPrevious) return;
         var combine = CombineOf(_mods);
         if (_wandPreview is not { } pv || pv.At != p || pv.Combine != combine) _wandPreview = pv = BuildWandPreview(p, combine);
         foreach (var r in pv.Removed) g.FillRectangle(WandRemoveBrush, ToRect(ImageToScreen(r)));
@@ -3901,6 +3926,7 @@ public sealed partial class PixelCanvas : Control
         if (KeyState.IsDown(Key.Space)) { Cursor = HandCursor; return; }
         if (_ctx.IsCanvasResizing) { Cursor = CanvasResizeCursor(_mouseScreen); return; }
         if (_ctx.IsTransforming) { Cursor = TransformCursor(_mouseScreen); return; }
+        if (_ctx.IsTilemapSelected) { Cursor = CrossCursor; return; }
         if (_ctx.Tool == ToolKind.Slice && SliceHitAt(_mouseScreen) is { } hit)
         {
             Cursor = hit.Edge is SliceEdge.Left or SliceEdge.Right ? SizeWeCursor : SizeNsCursor;

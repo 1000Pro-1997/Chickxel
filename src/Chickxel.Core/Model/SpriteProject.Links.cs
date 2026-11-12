@@ -611,6 +611,8 @@ public sealed partial class SpriteProject
         var regroup = new Dictionary<(Layer, Skin?, PixelImage), List<CelKey>>();
         foreach (var (li, fi, cel) in cels)
         {
+            // 타일맵 레이어에는 셀이 없다(붙이지 않음)
+            if (_layers[li].IsTilemap) continue;
             var key = CelKeyFor(li, fi, cel?.Image);
             if (cel?.Link is { } link)
             {

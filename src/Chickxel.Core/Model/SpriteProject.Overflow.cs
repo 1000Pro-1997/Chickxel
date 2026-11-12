@@ -1,6 +1,7 @@
 using System.Drawing;
 using Chickxel.Core.Edit;
 using Chickxel.Core.Localization;
+using Chickxel.Core.Tiles;
 
 namespace Chickxel.Core.Model;
 
@@ -53,6 +54,7 @@ public sealed partial class SpriteProject
     public (PixelImage Image, Point Origin)? GetCelOverflow(int layerIndex, int frameIndex)
     {
         var layer = _layers[layerIndex];
+        if (layer.IsTilemap) return TilemapOutside(layer, frameIndex) is { } t ? (t.Image, t.Origin) : null;
         if (layer.Kind != LayerKind.Normal || !_overflow.TryGetValue(new(layer, _frames[frameIndex], null), out var o)) return null;
         return (o.Image, o.Origin);
     }
@@ -65,6 +67,12 @@ public sealed partial class SpriteProject
     {
         var layer = _layers[layerIndex];
         if (layer.IsGroup) throw new InvalidOperationException(GroupHasNoCelsMessage);
+        if (layer.IsTilemap)
+        {
+            var bounds = Rectangle.Union(Bounds, Rectangle.Intersect(TilemapBounds(layer), OverflowBounds));
+            var data = layer.Tiles!;
+            return TilesetOf(layer) is { } ts ? (TileMapRenderer.RenderArea(ts, data.Map, data.Origin, bounds), bounds.Location) : (new PixelImage(_width, _height), Point.Empty);
+        }
         if (layer.IsPart) return (GetCel(layerIndex, frameIndex) ?? new PixelImage(layer.PartSize.Width, layer.PartSize.Height), Point.Empty);
         var key = new CelKey(layer, _frames[frameIndex], null);
         return FullOf(key, _cels.GetValueOrDefault(key), Size);
@@ -165,7 +173,7 @@ public sealed partial class SpriteProject
     /// </summary>
     public int ShiftCels(string label, IEnumerable<(int Layer, int Frame)> cels, int dx, int dy, bool movePivots = true)
     {
-        if (_stroke is not null) CommitCelStroke(DomainStrings.Project_Edit);
+        CommitOpenStrokes();
         var changes = new List<(CelKey Key, PixelImage Cel, CelOverflow? Overflow)>();
         var linked = new HashSet<PixelImage>(ReferenceEqualityComparer.Instance);
         int count = 0;

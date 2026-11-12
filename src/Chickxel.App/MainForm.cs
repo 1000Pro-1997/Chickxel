@@ -4,6 +4,7 @@ using Chickxel.Core.Community;
 using Chickxel.Core.Edit;
 using Chickxel.App.Localization;
 using Chickxel.Core.IO;
+using Chickxel.Core.Tiles;
 using Chickxel.Core.Model;
 
 namespace Chickxel.App;
@@ -195,6 +196,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _start = new StartPanel();
         _browser = new FileBrowserPanel();
         _colors = new ColorPanel(_ctx);
+        _tilesetPanel = new TilesetPanel(_ctx) { IsVisible = false };
         _toolOptions = new ToolOptionsPanel(_ctx);
         _preview = new PreviewPanel(_ctx);
         _timeline = new TimelinePanel(_ctx, _preview);
@@ -210,7 +212,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         previewSplitter.BorderBrush = AppTheme.PanelBrush;
         (_splitTimeline, _rowBottom, _) = MakeRowSplit(canvasHost, _timeline, fixedFirst: false, s0.BottomHeight);
         (_splitRight, _colRight, _) = MakeColumnSplit(_splitTimeline, _splitRightDock, fixedFirst: false, s0.RightWidth);
-        (_splitPalette, _colPalette, _) = MakeColumnSplit(_colors, _splitRight, fixedFirst: true, s0.PaletteWidth);
+        // 왼쪽 패널 자리: 색 패널, 타일맵 레이어를 고르면 타일셋 패널(UpdateTileMode)
+        var palettePane = new Panel { Children = { _colors, _tilesetPanel } };
+        (_splitPalette, _colPalette, _) = MakeColumnSplit(palettePane, _splitRight, fixedFirst: true, s0.PaletteWidth);
         var work = new DockPanel { Background = AppTheme.BackBrush };
         var toolBar = BuildToolBar();
         DockPanel.SetDock(toolBar, Dock.Left);
@@ -418,6 +422,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             _toolSlots.Add(slot);
             stack.Children.Add(slot);
         }
+        stack.Children.Add(BuildTileToolBar());
         _tbSave = ToolBarAction(Icons.Save, MainStrings.Ui_037, () => Save());
         _tbRevert = ToolBarAction(Icons.Revert, MainStrings.Ui_038, RevertToSaved);
         var actions = new StackPanel { Orientation = Orientation.Vertical, Spacing = 1, Margin = new Thickness(0, 6, 0, 0) };
@@ -698,7 +703,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             new Separator(),
             DocCmd("잘라내기", MainStrings.Menu_Edit_Cut_093, Cut, "Ctrl+X", KeyScope.NotInText, (Key.X, Ctrl)),
             DocCmd("복사", MainStrings.Menu_Edit_Copy_095, Copy, "Ctrl+C", KeyScope.NotInText, (Key.C, Ctrl)),
-            DocCmd("이미지만 복사", MainStrings.Menu_Edit_CopyImagesOnly, CopyImagesOnly, "Ctrl+Shift+C", KeyScope.NotInText, (Key.C, Ctrl | Shift)),
+            PixelDocCmd("이미지만 복사", MainStrings.Menu_Edit_CopyImagesOnly, CopyImagesOnly, "Ctrl+Shift+C", KeyScope.NotInText, (Key.C, Ctrl | Shift)),
             DocCmd("붙여넣기", MainStrings.Menu_Edit_Paste_097, Paste, "Ctrl+V", KeyScope.NotInText, (Key.V, Ctrl)),
             DocKeyCmd("지우기", MainStrings.Menu_Edit_DeleteSelection_099, DeleteSelection, DeleteSelectionKey, "Delete", KeyScope.NotInText, deleteKeys),
             new Separator(),
@@ -709,18 +714,18 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             DocCmd("상하 뒤집기(선택/셀)", MainStrings.Menu_Edit_Flip_107, () => Flip(false), "Shift+V", KeyScope.NotInText, (Key.V, Shift)),
             DocCmd("90° 회전(선택/캔버스)", MainStrings.Menu_Edit_Rotate_109, () => Rotate(true), "Ctrl+R", KeyScope.NotInText, (Key.R, Ctrl)),
             DocCmd("-90° 회전(선택/캔버스)", MainStrings.Menu_Edit_Rotate_111, () => Rotate(false), "Ctrl+Shift+R", KeyScope.NotInText, (Key.R, Ctrl | Shift)),
-            DocCmd("변형(회전·크기)…", MainStrings.Menu_Edit_BeginTransform_113, BeginTransform, "Ctrl+T", KeyScope.NotInText, (Key.T, Ctrl)),
+            PixelDocCmd("변형(회전·크기)…", MainStrings.Menu_Edit_BeginTransform_113, BeginTransform, "Ctrl+T", KeyScope.NotInText, (Key.T, Ctrl)),
             new Separator(),
-            DocCmd("외곽선 추가(기본색)", MainStrings.Menu_Edit_AddOutline_115, () => AddOutline(false), "Ctrl+Alt+O", KeyScope.NotInText, (Key.O, Ctrl | Alt)),
-            DocCmd("외곽선 추가(대각 포함)", MainStrings.Menu_Edit_AddOutline_117, () => AddOutline(true)),
-            DocCmd("색 바꾸기…", MainStrings.Menu_Edit_ReplaceColor_119, ReplaceColor, "Ctrl+Alt+R", KeyScope.NotInText, (Key.R, Ctrl | Alt)),
+            PixelDocCmd("외곽선 추가(기본색)", MainStrings.Menu_Edit_AddOutline_115, () => AddOutline(false), "Ctrl+Alt+O", KeyScope.NotInText, (Key.O, Ctrl | Alt)),
+            PixelDocCmd("외곽선 추가(대각 포함)", MainStrings.Menu_Edit_AddOutline_117, () => AddOutline(true)),
+            PixelDocCmd("색 바꾸기…", MainStrings.Menu_Edit_ReplaceColor_119, ReplaceColor, "Ctrl+Alt+R", KeyScope.NotInText, (Key.R, Ctrl | Alt)),
             new Separator(),
             DocCmd("캔버스 크기…", MainStrings.Menu_Edit_BeginCanvasResize_121, BeginCanvasResize, "Ctrl+Alt+C", KeyScope.Global, (Key.C, Ctrl | Alt)),
-            DocCmd("레이어 크기…", MainStrings.Menu_Edit_BeginLayerResize, BeginLayerTransform, "Alt+Shift+C", KeyScope.NotInText, (Key.C, Alt | Shift)),
+            PixelDocCmd("레이어 크기…", MainStrings.Menu_Edit_BeginLayerResize, BeginLayerTransform, "Alt+Shift+C", KeyScope.NotInText, (Key.C, Alt | Shift)),
             DocCmd("캔버스 전체 좌우 뒤집기(모든 프레임)", MainStrings.Menu_Edit_Structural_123, () => _ctx.Structural(() => _ctx.Project!.FlipCanvasHorizontal())),
             DocCmd("캔버스 전체 상하 뒤집기(모든 프레임)", MainStrings.Menu_Edit_Structural_125, () => _ctx.Structural(() => _ctx.Project!.FlipCanvasVertical())),
-            DocCmd("이미지에서 팔레트 만들기", MainStrings.Menu_Edit_Command_127, _colors.PaletteFromImage),
-            DocCmd("팔레트 색으로 변환…", MainStrings.Menu_Edit_Command_129, _colors.ConvertImageToActivePalette),
+            PixelDocCmd("이미지에서 팔레트 만들기", MainStrings.Menu_Edit_Command_127, _colors.PaletteFromImage),
+            PixelDocCmd("팔레트 색으로 변환…", MainStrings.Menu_Edit_Command_129, _colors.ConvertImageToActivePalette),
             new Separator(),
             Cmd("환경 설정…", MainStrings.Menu_Edit_ShowPreferences_131, ShowPreferences, "Ctrl+,", KeyScope.Global, (Key.OemComma, Ctrl)));
         Bind("편집", "선택 내려놓기", MainStrings.ShortcutCategory_Edit, MainStrings.Shortcut_CommitSelection, KeyScope.Canvas, () =>
@@ -789,6 +794,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             DocCmd("새 레이어", MainStrings.Menu_FrameLayer_AddLayer_180, _timeline.AddLayer, "Shift+N", KeyScope.NotInText, (Key.N, Shift)),
             DocCmd("새 그룹", MainStrings.Menu_FrameLayer_AddGroup_182, _timeline.AddGroup, "Ctrl+Shift+N", KeyScope.Global, (Key.N, Ctrl | Shift)),
             DocCmd("새 부위…", MainStrings.Menu_FrameLayer_AddPart_184, _timeline.AddPart, "Shift+P", KeyScope.NotInText, (Key.P, Shift)),
+            WithIcon(DocCmd("새 타일맵 레이어…", UiStrings.Tile_MenuAddLayer, _timeline.AddTilemapLayer, "Alt+Shift+N", KeyScope.NotInText, (Key.N, Alt | Shift)), VectorIcon.Grid3x3),
+            DocCmd("타일맵을 레이어로 변환", UiStrings.Tile_MenuConvert, () => _timeline.ConvertTilemap(_ctx.CurrentLayer)),
             DocCmd("부위 크기…", MainStrings.Menu_FrameLayer_Command_186, _timeline.ResizePart),
             DocCmd("레이어 이름 바꾸기", MainStrings.Menu_FrameLayer_BeginRenameLayer_188, _timeline.BeginRenameLayer, "F2", KeyScope.NotInText, (Key.F2, NoMods)),
             DocCmd("이전 스킨(현재 그룹)", MainStrings.Menu_FrameLayer_StepSkin_190, () => StepSkin(-1), "Alt+[", KeyScope.NotInText, (Key.OemOpenBrackets, Alt)),
@@ -810,7 +817,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             var t = tool;
             // 이미 고른 도구를 다시 눌러도 메뉴 체크가 풀린 채로 남지 않게 UI를 다시 맞춘다.
             (Key, KeyModifiers)[] keys = Shortcuts.Parse(key) is { } chord ? [(chord.Key, chord.Mods)] : [];
-            var mi = Checkable(Cmd(id, name, () => { _ctx.Tool = t; UpdateToolUi(); }, null, KeyScope.NotInText, keys));
+            var mi = Checkable(Cmd(id, name, () => PickTool(t), null, KeyScope.NotInText, keys));
             mi.Icon = IconImage(Icons.For(tool), 16);
             _toolMenuItems[tool] = mi;
             if (!EditorContext.IsSelectionTool(tool)) tools.Items.Add(mi);
@@ -824,7 +831,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         Bind("도구", SelectCycleName, MainStrings.ShortcutCategory_Tools, MainStrings.Shortcut_CycleSelection, KeyScope.NotInText, () => { CycleSelectionTool(); return true; }, (Key.M, NoMods));
         // L = 도형 도구의 선(예전 선 도구 자리, 같은 명령 이름이라 바꾼 키도 이어짐).
         Bind("도구", "선", MainStrings.ShortcutCategory_Tools, MainStrings.Shortcut_ShapeLine, KeyScope.NotInText,
-            () => { _ctx.Tool = ToolKind.Shape; _ctx.ShapeKind = ShapeKind.Line; UpdateToolUi(); return true; }, (Key.L, NoMods));
+            () => { if (_ctx.IsTilemapSelected) { PickTool(ToolKind.Shape); return true; } _ctx.Tool = ToolKind.Shape; _ctx.ShapeKind = ShapeKind.Line; UpdateToolUi(); return true; }, (Key.L, NoMods));
         _miFilled = Checkable(Cmd("도형 채움", MainStrings.Menu_Tools_ShapeFilled_202, () => _ctx.ShapeFilled = !_ctx.ShapeFilled, "U", KeyScope.NotInText, (Key.U, NoMods)));
         _miGlobalFill = Checkable(Cmd("채우기: 같은 색 전체", MainStrings.Menu_Tools_FillContiguous_204, () => _ctx.FillContiguous = !_ctx.FillContiguous, "Shift+G", KeyScope.NotInText, (Key.G, Shift)));
         _miPixelPerfect = Checkable(Cmd("픽셀 퍼펙트", MainStrings.Menu_Tools_PixelPerfect_206, () => _ctx.PixelPerfect = !_ctx.PixelPerfect, "P", KeyScope.NotInText, (Key.P, NoMods)));
@@ -839,7 +846,11 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             new Separator(),
             Cmd("브러시 크게", MainStrings.Menu_Tools_BrushSize_216, () => _ctx.BrushSize++, "]", KeyScope.NotInText, (Key.OemCloseBrackets, NoMods)),
             Cmd("브러시 작게", MainStrings.Menu_Tools_BrushSize_218, () => _ctx.BrushSize--, "[", KeyScope.NotInText, (Key.OemOpenBrackets, NoMods)),
-            Cmd("기본색 ↔ 보조색", MainStrings.Menu_Tools_SwapColors_220, _ctx.SwapColors, "X", KeyScope.NotInText, (Key.X, NoMods)));
+            Cmd("기본색 ↔ 보조색", MainStrings.Menu_Tools_SwapColors_220, () => { if (_ctx.IsTilemapSelected) TurnTileStamp(TileTransform.FlipX); else _ctx.SwapColors(); }, "X", KeyScope.NotInText, (Key.X, NoMods)));
+        Bind("도구", "타일 붓 상하 뒤집기", MainStrings.ShortcutCategory_Tools, UiStrings.Tile_ShortcutFlipY, KeyScope.NotInText,
+            () => { if (!_ctx.IsTilemapSelected) return false; TurnTileStamp(TileTransform.FlipY); return true; }, (Key.Y, NoMods));
+        Bind("도구", "타일 붓 돌리기", MainStrings.ShortcutCategory_Tools, UiStrings.Tile_ShortcutRotate, KeyScope.NotInText,
+            () => { if (!_ctx.IsTilemapSelected) return false; TurnTileStamp(TileTransform.Rotate90); return true; }, (Key.Z, NoMods));
         AddItems(tools, new Separator(), drawOptions);
         // 그라데이션 프리셋은 에셋 관리자에서 보고 고친다(그라데이션 편집기의 관리 단추는 프리셋 창을 그대로 연다).
         AddItems(tools, new Separator(), WithIcon(Cmd("에셋 관리자", UiStrings.Assets_Menu, () => AssetManagerWindow.Open(this)), VectorIcon.Package));
@@ -1160,6 +1171,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _colors.PaletteEdited += (before, after) => _undoOrder.PushPalette(before, after);
         _undoOrder.Changed += (_, _) => UpdateUndoItems();
         _colors.Message += (_, m) => ShowMessage(m);
+        _tilesetPanel.Message += (_, m) => ShowMessage(m);
+        _ctx.ToolChanged += (_, _) => { if (_ctx.IsTilemapSelected) UpdateToolUi(); };
 
         // 모든 색 고르기 창: 팔레트·최근 색·스포이드(현재 프레임 합성).
         ColorPickerEditor.Sources = () => new ColorPickSources(
@@ -1733,6 +1746,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         if (!has) _start.SetRecent(_settings.RecentFolders, _settings.RecentFiles);
         _canvas.IsVisible = has;
         foreach (var item in _docItems) item.IsEnabled = has;
+        UpdateTileMode();
         _miPlayTest.IsEnabled = has;
         _galleryButton.IsEnabled = has;
         UpdateTitle();
@@ -1823,6 +1837,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     /// </summary>
     private void CycleSelectionTool()
     {
+        if (_ctx.IsTilemapSelected) { PickTool(ToolKind.Select); return; }
         var slot = _toolSlots.First(s => s.Contains(ToolKind.Select));
         var now = DateTime.UtcNow;
         bool recent = now - _lastSelectCycleKey <= SelectCycleWindow;
@@ -1835,6 +1850,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
 
     private void UpdateToolUi()
     {
+        UpdateTileMode();
         var tool = _ctx.Tool;
         // 단축키·메뉴로 고른 묶음 도구도 그 칸에 보이게 바꾼다.
         foreach (var slot in _toolSlots)
@@ -1863,6 +1879,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _cbEffects.IsChecked = _miEffects.IsChecked = _ctx.CanvasEffects;
         _cbFit.IsChecked = _canvas.AutoFit;
         _tbFiles.IsChecked = _miFiles.IsChecked = _filesShown;
+        UpdateTileToolUi();
     }
 
     private void ShowMessage(string text) => _stMessage.Text = text;
@@ -3002,6 +3019,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     {
         // 타임라인에 포커스가 있으면 셀/프레임 대상
         if (_timeline.IsGridFocused) { _timeline.CopySelection(false); ShowMessage(MainStrings.Message_312); return; }
+        if (_ctx.IsTilemapSelected) { ShowMessage(_ctx.CopyTileSelection(cut: false) ? UiStrings.Tile_CopiedMessage : UiStrings.Tile_SelectFirst); return; }
         PixelImage? clip;
         Point origin;
         if (_ctx.Selection.HasSelection)
@@ -3035,6 +3053,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     {
         // 타임라인에 포커스가 있으면 셀/프레임 대상
         if (_timeline.IsGridFocused) { _timeline.CopySelection(true); ShowMessage(MainStrings.Message_313); return; }
+        if (_ctx.IsTilemapSelected) { ShowMessage(_ctx.CopyTileSelection(cut: true) ? UiStrings.Tile_CutMessage : UiStrings.Tile_SelectFirst); return; }
         if (!_ctx.Selection.HasSelection)
         {
             ShowMessage(MainStrings.Message_314);
@@ -3114,6 +3133,15 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     {
         // 타임라인에 포커스가 있으면 셀/프레임 대상
         if (_timeline.IsGridFocused && _timeline.PasteSelection()) { ShowMessage(MainStrings.Message_316); return; }
+        if (_ctx.IsTilemapSelected)
+        {
+            // 타일맵: 복사한 칸 묶음이 붓에 들어 있으므로 붓으로 바꿔 찍게 한다.
+            if (_ctx.TileStamp is null) { ShowMessage(UiStrings.Tile_SelectFirst); return; }
+            _ctx.TileTool = TileTool.Brush;
+            UpdateToolUi();
+            ShowMessage(UiStrings.Tile_PasteMessage);
+            return;
+        }
         var clip = ReadClipboard();
         if (clip is null)
         {
@@ -3151,6 +3179,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
 
     private void DeleteSelection()
     {
+        if (_ctx.IsTilemapSelected) { _ctx.DeleteTileSelection(); return; }
         if (!_ctx.Selection.HasSelection || !_ctx.CanEdit) return;
         _ctx.BeginSelectionEdit();
         _ctx.Selection.Delete(_ctx.EditImage!);
@@ -3160,6 +3189,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
 
     private void SelectAll()
     {
+        if (_ctx.IsTilemapSelected) { SelectAllTiles(); return; }
         if (!EditorContext.IsSelectionTool(_ctx.Tool) && _ctx.Tool != ToolKind.Move) _ctx.Tool = ToolKind.Select;
         _ctx.CommitFloating();
         _ctx.Selection.SelectAll(_ctx.EditImageOrEmpty);
@@ -3168,6 +3198,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private void Deselect()
     {
         if (!_ctx.HasProject || _canvas.ClearPartSelection()) return;
+        if (_ctx.IsTilemapSelected) { _ctx.TileSelection = null; return; }
         _ctx.CommitFloating();
         _ctx.Selection.Deselect(_ctx.EditImageOrEmpty);
     }
@@ -3175,6 +3206,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     /// <summary>선택이 있으면 선택 내용, 없으면 현재 셀을 뒤집는다.</summary>
     private void Flip(bool horizontal)
     {
+        if (_ctx.IsTilemapSelected) { TurnTileStamp(horizontal ? TileTransform.FlipX : TileTransform.FlipY); return; }
         if (!_ctx.CanEdit) { ShowMessage(MainStrings.Message_319); return; }
         string displayLabel = horizontal ? MainStrings.Ui_320 : MainStrings.Ui_321;
         if (_ctx.Selection.HasSelection)
@@ -3198,6 +3230,12 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     /// <summary>선택이 있으면 선택 내용, 없으면 캔버스 전체(모든 프레임)를 90° 회전.</summary>
     private void Rotate(bool clockwise)
     {
+        if (_ctx.IsTilemapSelected)
+        {
+            // 붓 돌리기: 시계 방향 = 90°, 반대 = 270°(90° 세 번)
+            TurnTileStamp(clockwise ? TileTransform.Rotate90 : TileTransform.Rotate90.Then(TileTransform.Rotate90).Then(TileTransform.Rotate90));
+            return;
+        }
         if (_ctx.Selection.HasSelection)
         {
             if (!_ctx.CanEdit) { ShowMessage(MainStrings.Message_322); return; }

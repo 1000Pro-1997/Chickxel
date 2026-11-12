@@ -38,6 +38,9 @@ public static class Icons
 
     public static Bitmap For(ToolKind tool) => Load(Files[tool]);
 
+    /// <summary>타일 도구 막대 아이콘(<c>Assets/Tools/&lt;이름&gt;.png</c>).</summary>
+    public static Bitmap ForTile(string name) => Load(name);
+
     /// <summary>파일 브라우저 열고 닫기 아이콘.</summary>
     public static Bitmap Folder => Load("folder");
 

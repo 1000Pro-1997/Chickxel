@@ -111,6 +111,12 @@ internal sealed class RenderService
     /// </summary>
     public Layer? CheckpointLayer { get; set; }
 
+    /// <summary>
+    /// 순서표를 만들고(가벼우면 바로 계산하는 것까지) 그동안 둘 상태 — 움직이는 타일의 화면 시계(<see cref="EditorContext.TileClockMs"/>)를 프로젝트에 넣었다가 되돌린다.
+    /// 결과 열쇠를 받아 둘 것이 없으면 null.
+    /// </summary>
+    public Func<RenderKey, IDisposable?>? PlanScope { get; set; }
+
     private sealed class Entry(RenderKey key)
     {
         public RenderKey Key { get; } = key;
@@ -154,7 +160,9 @@ internal sealed class RenderService
         if (!entry.Fresh)
         {
             if (entry.Job is { } running) running.Raise(priority);
-            else Start(entry, plan(), priority, live);
+            else
+                using (PlanScope?.Invoke(key))
+                    Start(entry, plan(), priority, live);
         }
         return ViewOf(entry, live);
     }
@@ -168,6 +176,7 @@ internal sealed class RenderService
         var entry = EntryOf(key);
         if (entry.Fresh && entry.Image is not null) return entry.Image;
         CancelJob(entry);
+        using var scope = PlanScope?.Invoke(key);
         var built = plan();
         var sw = Stopwatch.StartNew();
         var image = built?.Render(new RenderPlanOptions { Cache = Effects });

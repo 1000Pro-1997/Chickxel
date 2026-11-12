@@ -23,12 +23,13 @@ namespace Chickxel.Core.IO;
 public static class UndoHistoryIO
 {
     /// <summary>
+    /// 5 = 타일맵 레이어(레이어의 <c>tilesetKey</c>·<c>tileMap</c>·<c>tileOrigin</c>, 상태의 <c>tilesets</c> — 맵·타일셋은 조각)를 담는 판.
     /// 4 = 레이어마다의 피벗(일반 레이어·그룹 포함, <c>pivot</c>·프레임의 <c>layerPivots</c>)과 캔버스 피벗의 대표 레이어(<c>pivotLayer</c>)를 담는 판.
     /// 3 = 기록의 상태들이 쓰는 스크립트 원문(<c>scripts</c>: 해시 → 원문)을 함께 담는 판. 2 = 레이어 효과를 프로젝트 형식 4와 같은 JSON
     /// (<see cref="Effects.EffectCodec"/>)으로 쓰는 판. 1~3판도 읽는다(원문 없음 — 프로젝트 표에 없는 원문의 효과는 원문 없음으로 남음; 3판 이하의 상태는
     /// 예전 프로젝트 파일을 읽을 때처럼 일반 레이어·그룹이 캔버스 피벗을 자기 피벗으로 갖는다).
     /// </summary>
-    public const int FormatVersion = 4;
+    public const int FormatVersion = 5;
     public const string ManifestName = "history.json.gz";
     public const string BlobFolder = "blobs";
 
@@ -349,6 +350,8 @@ internal sealed class HistorySnapshotDto
     public ProjectIO.ExportDto Export { get; set; } = new();
     public HistorySheetRefsDto? CommonRefs { get; set; }
     public HistorySheetRefsDto? PartsRefs { get; set; }
+    /// <summary>타일셋: [이름표, 조각 해시(타일셋 파일 내용)] (없으면 생략, 형식 5부터).</summary>
+    public List<string[]>? Tilesets { get; set; }
 }
 
 internal sealed class HistoryLayerDto
@@ -372,6 +375,12 @@ internal sealed class HistoryLayerDto
     public int ActiveSkin { get; set; }
     public List<JsonObject>? Effects { get; set; }
     public ProjectIO.GroupLayoutDto? AutoLayout { get; set; }
+    /// <summary>타일맵 레이어: 타일셋 이름표, 맵 조각 해시, 격자 원점 [X, Y](형식 5부터).</summary>
+    public string? TilesetKey { get; set; }
+    public string? TileMap { get; set; }
+    public int[]? TileOrigin { get; set; }
+    public int[]? TileHidden { get; set; }
+    public int[]? TileLocked { get; set; }
 }
 
 internal sealed class HistorySkinDto

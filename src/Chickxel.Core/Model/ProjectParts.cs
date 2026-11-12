@@ -1,4 +1,5 @@
 using System.Drawing;
+using Chickxel.Core.Tiles;
 
 namespace Chickxel.Core.Model;
 
@@ -37,6 +38,8 @@ public enum LayerKind
     Group,
     /// <summary>부위 레이어: 자기 크기의 셀을 프레임마다 갖고, 부위 위치(<see cref="Layer.PartOffset"/> + 그 프레임에서 옮긴 거리)에 그려진다.</summary>
     Part,
+    /// <summary>타일맵 레이어: 셀이 없고, 타일셋의 타일을 칸에 찍은 맵(<see cref="Layer.Tiles"/>)을 그린다. 모든 프레임이 같은 맵을 쓴다.</summary>
+    Tilemap,
 }
 
 /// <summary>
@@ -59,6 +62,9 @@ public sealed class Layer
     public Layer? Parent { get; internal set; }
     public bool IsGroup => Kind == LayerKind.Group;
     public bool IsPart => Kind == LayerKind.Part;
+    public bool IsTilemap => Kind == LayerKind.Tilemap;
+    /// <summary>타일맵 레이어: 쓰는 타일셋(이름표)·맵·격자 원점. 그 밖에는 null. 바꿀 때는 <see cref="SpriteProject"/>의 타일 메서드로(실행취소됨).</summary>
+    public TilemapData? Tiles { get; internal set; }
     /// <summary>그룹: 타임라인에서 접혀 있는지(파일에 저장, 실행취소·수정됨 표시 없음).</summary>
     public bool Collapsed { get; internal set; }
     /// <summary>타임라인에서 효과 줄(효과마다 한 줄)을 접어 두었는지(파일에 저장, 실행취소·수정됨 표시 없음).</summary>

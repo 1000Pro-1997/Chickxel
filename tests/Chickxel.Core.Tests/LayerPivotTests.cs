@@ -252,7 +252,6 @@ public class LayerPivotTests
         ProjectIO.Save(p, ms);
         ms.Position = 0;
         Assert.Equal(ProjectIO.CurrentVersion, ReadJson(ms)["version"]!.GetValue<int>());
-        Assert.Equal(5, ProjectIO.CurrentVersion);
         ms.Position = 0;
         var back = ProjectIO.Load(ms);
         Assert.Null(back.ConvertedFromVersion);

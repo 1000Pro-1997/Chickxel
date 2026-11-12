@@ -402,6 +402,7 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
     internal static (bool Ok, string? Why) CanBake(SpriteProject project, Layer layer)
     {
         if (layer.IsGroup) return (false, UiStrings.S_LayerEffectsDialog_CanBake_F0B223C43A);
+        if (layer.IsTilemap) return (false, UiStrings.Tile_PixelOnly);
         if (project.IsLayerLocked(project.IndexOf(layer))) return (false, UiStrings.S_LayerEffectsDialog_CanBake_235F1CD0DC);
         return (true, null);
     }

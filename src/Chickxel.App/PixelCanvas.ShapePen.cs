@@ -94,7 +94,7 @@ public sealed partial class PixelCanvas
     private void DrawShapePenGhost(DrawingContext g)
     {
         if (_ctx.Tool != ToolKind.ShapePen || _cursorPx is not { } p || _drag != DragMode.None
-            || _ctx.IsGroupSelected || _ctx.IsTransforming || _ctx.IsCanvasResizing || _ctx.ShapePenShape is not { } shape) return;
+            || _ctx.IsGroupSelected || _ctx.IsTilemapSelected || _ctx.IsTransforming || _ctx.IsCanvasResizing || _ctx.ShapePenShape is not { } shape) return;
         var look = StampLook(shape, _ctx.ShapePenTint ? _ctx.Primary : null);
         if (_stampGhost is not { } ghost || !ReferenceEquals(ghost.Look, look))
         {

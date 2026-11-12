@@ -10005,4 +10005,240 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="ShapeCanvas_DontSave" xml:space="preserve"><value>저장 안 함</value></data>
   <data name="ShapeCanvas_EditHint" xml:space="preserve"><value>프레임마다 모양 하나 — 다 고치면 탭 아래 막대의 '세트에 저장'을 누르세요(저장 단축키도 같음)</value></data>
   <data name="ShapeCanvas_NotFound" xml:space="preserve"><value>모양 펜 세트를 찾을 수 없습니다</value></data>
+  <data name="Tile_NotTilemap" xml:space="preserve"><value>타일맵 레이어를 고르세요.</value></data>
+  <data name="Tile_NoTileset" xml:space="preserve"><value>이 타일맵 레이어에는 타일셋이 없습니다 — 타일셋 패널에서 타일셋을 만들거나 여세요.</value></data>
+  <data name="Tile_EraseLabel" xml:space="preserve"><value>타일 지우기</value></data>
+  <data name="Tile_AutoTileLabel" xml:space="preserve"><value>자동 타일 칠하기</value></data>
+  <data name="Tile_PaintLabel" xml:space="preserve"><value>타일 찍기</value></data>
+  <data name="Tile_RectLabel" xml:space="preserve"><value>타일 사각형 채우기</value></data>
+  <data name="Tile_FillLabel" xml:space="preserve"><value>타일 채우기</value></data>
+  <data name="Tile_CutLabel" xml:space="preserve"><value>타일 잘라내기</value></data>
+  <data name="Tile_FloorLocked" xml:space="preserve"><value>잠긴 층에는 찍을 수 없습니다(타일셋 패널에서 층 잠금을 푸세요).</value></data>
+  <data name="Tile_NothingToPick" xml:space="preserve"><value>이 칸에는 집을 타일이 없습니다.</value></data>
+  <data name="Tile_PickTileFirst" xml:space="preserve"><value>먼저 타일셋 패널에서 찍을 타일을 고르세요.</value></data>
+  <data name="Tile_PickAutoTileFirst" xml:space="preserve"><value>먼저 타일셋 패널에서 자동 타일 세트를 고르세요.</value></data>
+  <data name="TileOptions_Title" xml:space="preserve"><value>타일</value></data>
+  <data name="TileOptions_Floor" xml:space="preserve"><value>층</value></data>
+  <data name="TileOptions_FloorTip" xml:space="preserve"><value>찍을 층: "타일 기본"이면 타일마다 정한 기본 층, 층을 고르면 모든 타일을 그 층에 찍습니다(같은 층은 덮어 그리고 다른 층은 겹쳐 그림).</value></data>
+  <data name="TileOptions_FloorAuto" xml:space="preserve"><value>타일 기본</value></data>
+  <data name="TileOptions_Transform" xml:space="preserve"><value>뒤집기·회전</value></data>
+  <data name="TileOptions_FlipXTip" xml:space="preserve"><value>좌우 뒤집어 찍기 (X)</value></data>
+  <data name="TileOptions_FlipYTip" xml:space="preserve"><value>상하 뒤집어 찍기 (Y)</value></data>
+  <data name="TileOptions_RotateTip" xml:space="preserve"><value>시계 방향 90° 돌려 찍기 (Z) — 칸이 정사각형일 때만</value></data>
+  <data name="TileOptions_ResetTip" xml:space="preserve"><value>뒤집기·회전 없애기</value></data>
+  <data name="TileOptions_Random" xml:space="preserve"><value>무작위 찍기</value></data>
+  <data name="TileOptions_RandomTip" xml:space="preserve"><value>붓에 타일이 여럿이면 칸마다 그중 하나를 무작위로 찍습니다.</value></data>
+  <data name="TileOptions_Grid" xml:space="preserve"><value>칸 격자</value></data>
+  <data name="TileOptions_GridTip" xml:space="preserve"><value>캔버스에 타일 칸 격자를 보입니다(캔버스 밖까지).</value></data>
+  <data name="TileTool_Brush" xml:space="preserve"><value>타일 붓</value></data>
+  <data name="TileTool_Eraser" xml:space="preserve"><value>타일 지우개</value></data>
+  <data name="TileTool_Rect" xml:space="preserve"><value>타일 사각형</value></data>
+  <data name="TileTool_Fill" xml:space="preserve"><value>타일 채우기</value></data>
+  <data name="TileTool_Picker" xml:space="preserve"><value>타일 스포이드</value></data>
+  <data name="TileTool_Select" xml:space="preserve"><value>칸 선택</value></data>
+  <data name="TileTool_AutoTile" xml:space="preserve"><value>자동 타일 붓</value></data>
+  <data name="TileTool_BrushHint" xml:space="preserve"><value>타일셋 패널에서 고른 타일을 칸에 맞춰 찍습니다. 오른쪽 버튼 = 지우기, Alt = 스포이드, X·Y·Z = 뒤집기·돌리기.</value></data>
+  <data name="TileTool_EraserHint" xml:space="preserve"><value>칸을 덮은 타일을 지웁니다(큰 타일은 통째로). 층을 고정하면 그 층만 지웁니다.</value></data>
+  <data name="TileTool_RectHint" xml:space="preserve"><value>끌어 그린 칸 사각형을 붓(또는 자동 타일 세트)으로 채웁니다. 오른쪽 버튼으로 끌면 지웁니다.</value></data>
+  <data name="TileTool_FillHint" xml:space="preserve"><value>같은 타일(또는 빈 칸)로 이어진 칸을 채웁니다. 오른쪽 버튼 = 그 칸들 지우기.</value></data>
+  <data name="TileTool_PickerHint" xml:space="preserve"><value>맵에서 타일을 집어 붓에 듭니다(자동 타일로 찍은 칸이면 그 세트).</value></data>
+  <data name="TileTool_SelectHint" xml:space="preserve"><value>칸 사각형을 고릅니다. 복사하면 그 칸들이 붓이 되고, Delete로 지웁니다. 오른쪽 버튼 = 선택 해제.</value></data>
+  <data name="TileTool_AutoTileHint" xml:space="preserve"><value>고른 자동 타일 세트로 칠하면 이웃을 보고 경계 모양을 고릅니다. 오른쪽 버튼 = 지우기.</value></data>
+  <data name="TilesetChoice_New" xml:space="preserve"><value>새 타일셋 만들기</value></data>
+  <data name="TilesetChoice_DefaultName" xml:space="preserve"><value>타일셋</value></data>
+  <data name="TilesetChoice_Existing" xml:space="preserve"><value>이 프로젝트에 있는 타일셋 쓰기</value></data>
+  <data name="TilesetChoice_Unnamed" xml:space="preserve"><value>(이름 없음)</value></data>
+  <data name="TilesetChoice_OpenFile" xml:space="preserve"><value>타일셋 파일 열기…</value></data>
+  <data name="TilesetChoice_Name" xml:space="preserve"><value>이름</value></data>
+  <data name="TilesetChoice_CellSize" xml:space="preserve"><value>칸 크기</value></data>
+  <data name="TilesetChoice_CellSizeInfo" xml:space="preserve"><value>타일 한 칸의 크기(px)입니다. 칸 수로 크기를 정하는 큰 타일(2×1, 2×2 …)도 이 칸 크기를 기준으로 합니다. 정사각형일 때만 90° 회전을 쓸 수 있습니다.</value></data>
+  <data name="Tileset_FileFilter" xml:space="preserve"><value>Chickxel 타일셋</value></data>
+  <data name="TilesetSettings_Title" xml:space="preserve"><value>타일셋 설정</value></data>
+  <data name="TilesetSettings_CellLocked" xml:space="preserve"><value>타일이 있는 타일셋은 칸 크기를 바꿀 수 없습니다(타일 그림이 칸에 맞춰져 있음).</value></data>
+  <data name="TileImport_Title" xml:space="preserve"><value>타일 가져오기</value></data>
+  <data name="TileImport_Ok" xml:space="preserve"><value>가져오기</value></data>
+  <data name="TileImport_Summary" xml:space="preserve"><value>그림 {0}×{1}px를 {2}×{3}px 칸으로 잘라 1칸 타일로 더합니다.</value></data>
+  <data name="TileImport_Offset" xml:space="preserve"><value>시작 여백(X, Y)</value></data>
+  <data name="TileImport_Gap" xml:space="preserve"><value>칸 사이 간격(X, Y)</value></data>
+  <data name="TileImport_SkipEmpty" xml:space="preserve"><value>투명한 칸은 빼기</value></data>
+  <data name="TileImport_SkipDuplicates" xml:space="preserve"><value>이미 있는 타일과 같은 칸은 빼기</value></data>
+  <data name="Tileset_Header" xml:space="preserve"><value>타일셋</value></data>
+  <data name="Tileset_MenuTip" xml:space="preserve"><value>타일셋 메뉴(고르기·파일로 저장·설정·가져오기)</value></data>
+  <data name="Tileset_ChooseOrCreate" xml:space="preserve"><value>타일셋 고르기·만들기…</value></data>
+  <data name="Tileset_NameLine" xml:space="preserve"><value>{0} · 칸 {1}×{2}</value></data>
+  <data name="Tileset_NotSaved" xml:space="preserve"><value>파일로 저장하지 않음(프로젝트에만 있음)</value></data>
+  <data name="Tileset_NotSavedTip" xml:space="preserve"><value>메뉴의 "타일셋 파일로 저장…"으로 따로 저장하면 다른 프로젝트에서도 같은 타일셋을 씁니다.</value></data>
+  <data name="Tileset_Floors" xml:space="preserve"><value>층</value></data>
+  <data name="Tileset_FloorsInfo" xml:space="preserve"><value>층은 위에 있을수록 위에 그려집니다. 같은 층에 찍으면 덮어 그리고, 다른 층에 찍으면 겹쳐 그립니다. 눈 = 보이기, 자물쇠 = 잠금(찍지 않음), 두 번 누르기 = 이름 바꾸기.</value></data>
+  <data name="Tileset_AddFloor" xml:space="preserve"><value>층 더하기</value></data>
+  <data name="Tileset_FloorName" xml:space="preserve"><value>층 이름</value></data>
+  <data name="Tileset_NewFloorName" xml:space="preserve"><value>층 {0}</value></data>
+  <data name="Tileset_RenameFloor" xml:space="preserve"><value>층 이름 바꾸기</value></data>
+  <data name="Tileset_UseFloor" xml:space="preserve"><value>이 층에 찍기</value></data>
+  <data name="Tileset_DeleteFloor" xml:space="preserve"><value>층 지우기</value></data>
+  <data name="Tileset_DeleteFloorAsk" xml:space="preserve"><value>"{0}" 층에 찍은 타일도 모두 지워집니다. 지울까요?</value></data>
+  <data name="Tileset_FloorVisibleTip" xml:space="preserve"><value>층 보이기·숨기기(숨긴 층은 합성·내보내기에서도 빠짐)</value></data>
+  <data name="Tileset_FloorLockTip" xml:space="preserve"><value>층 잠그기(타일 도구가 고치지 않음)</value></data>
+  <data name="Tileset_FloorUpTip" xml:space="preserve"><value>위로</value></data>
+  <data name="Tileset_FloorDownTip" xml:space="preserve"><value>아래로</value></data>
+  <data name="Tileset_MoveFloorLabel" xml:space="preserve"><value>층 차례 바꾸기</value></data>
+  <data name="Tileset_FloorRowTip" xml:space="preserve"><value>두 번 누르기 = 이름 바꾸기, 오른쪽 버튼 = 메뉴</value></data>
+  <data name="Tileset_Tiles" xml:space="preserve"><value>타일</value></data>
+  <data name="Tileset_ImportPng" xml:space="preserve"><value>PNG에서 가져오기…</value></data>
+  <data name="Tileset_ImportFrame" xml:space="preserve"><value>지금 프레임에서 가져오기…</value></data>
+  <data name="Tileset_ImportFrameTip" xml:space="preserve"><value>지금 프레임의 보이는 그림(타일맵 레이어 빼고)을 칸으로 잘라 타일로 더합니다 — 일반 레이어에 타일을 그려 두고 옮길 때 씁니다.</value></data>
+  <data name="Tileset_Merge" xml:space="preserve"><value>큰 타일로 합치기</value></data>
+  <data name="Tileset_MergeTip" xml:space="preserve"><value>고른 칸들을 붙여 큰 타일 하나(차지 칸 = 고른 칸 크기)를 새로 만듭니다. 원래 타일은 그대로 남습니다.</value></data>
+  <data name="Tileset_MergedMessage" xml:space="preserve"><value>큰 타일을 만들었습니다. 고른 타일 속성에서 차지 칸을 줄이면 그림이 위로 솟습니다(나무 등).</value></data>
+  <data name="Tileset_DeleteTiles" xml:space="preserve"><value>타일 지우기</value></data>
+  <data name="Tileset_DeleteUsedAsk" xml:space="preserve"><value>고른 타일 {0}개 중 맵에 쓰인 것이 있습니다. 맵에서도 지워집니다. 지울까요?</value></data>
+  <data name="Tileset_DuplicateTile" xml:space="preserve"><value>타일 복제</value></data>
+  <data name="Tileset_TileProps" xml:space="preserve"><value>고른 타일</value></data>
+  <data name="Tileset_Footprint" xml:space="preserve"><value>차지 칸</value></data>
+  <data name="Tileset_FootprintInfo" xml:space="preserve"><value>맵에서 이 타일이 차지하는 칸 수(가로×세로)입니다. 같은 층에서 이 칸과 겹치는 타일은 덮어 지워집니다. 그림이 더 크면 위로 솟아 그려집니다.</value></data>
+  <data name="Tileset_DrawOffset" xml:space="preserve"><value>그림 위치</value></data>
+  <data name="Tileset_AlignBottom" xml:space="preserve"><value>그림 아래 맞춤</value></data>
+  <data name="Tileset_AlignBottomTip" xml:space="preserve"><value>그림 아래를 차지 칸 아래에 맞춥니다(위로 솟게).</value></data>
+  <data name="Tileset_DefaultFloor" xml:space="preserve"><value>기본 층</value></data>
+  <data name="Tileset_TileInfo" xml:space="preserve"><value>Id {0} · 그림 {1}×{2}px</value></data>
+  <data name="Tileset_TileEditLabel" xml:space="preserve"><value>타일 속성</value></data>
+  <data name="Tileset_AutoTiles" xml:space="preserve"><value>자동 타일</value></data>
+  <data name="Tileset_AutoTilesInfo" xml:space="preserve"><value>자동 타일 세트로 칠하면 이웃 칸을 보고 경계 모양의 타일을 고릅니다. 세트를 누르면 자동 타일 붓으로 칠합니다.</value></data>
+  <data name="Tileset_AddAutoTile" xml:space="preserve"><value>자동 타일 세트 만들기</value></data>
+  <data name="Tileset_EditAutoTile" xml:space="preserve"><value>자동 타일 세트 고치기</value></data>
+  <data name="Tileset_DeleteAutoTile" xml:space="preserve"><value>자동 타일 세트 지우기</value></data>
+  <data name="Tileset_DeleteAutoTileAsk" xml:space="preserve"><value>"{0}" 세트를 지울까요? 이미 찍은 타일은 그대로 남습니다.</value></data>
+  <data name="Tileset_AutoTileRowTip" xml:space="preserve"><value>누르면 이 세트로 칠합니다(자동 타일 붓).</value></data>
+  <data name="Tileset_SaveFile" xml:space="preserve"><value>타일셋 파일로 저장…</value></data>
+  <data name="Tileset_ReloadFile" xml:space="preserve"><value>타일셋 파일에서 다시 읽기</value></data>
+  <data name="Tileset_SavedMessage" xml:space="preserve"><value>타일셋을 {0}에 저장했습니다. 이 프로젝트를 저장할 때 바뀐 내용도 이 파일에 씁니다.</value></data>
+  <data name="Tileset_ImportNone" xml:space="preserve"><value>가져올 새 타일이 없습니다(빈 칸이나 이미 있는 타일뿐).</value></data>
+  <data name="Tileset_ImportLabel" xml:space="preserve"><value>타일 가져오기</value></data>
+  <data name="Tileset_ImportedMessage" xml:space="preserve"><value>타일 {0}개를 더했습니다.</value></data>
+  <data name="AutoTile_DefaultName" xml:space="preserve"><value>자동 타일 {0}</value></data>
+  <data name="AutoTile_FillInOrder" xml:space="preserve"><value>고른 타일을 차례대로 채우기</value></data>
+  <data name="AutoTile_FillInOrderTip" xml:space="preserve"><value>목록에서 고른 타일을 위 줄부터 왼쪽부터 규칙 1, 2, 3 …에 한 장씩 넣습니다(틀 차례대로 그린 시트를 한 번에 넣을 때). 남는 규칙은 그대로 둡니다.</value></data>
+  <data name="Tile_CopiedMessage" xml:space="preserve"><value>고른 칸의 타일을 붓에 담았습니다.</value></data>
+  <data name="Tile_CutMessage" xml:space="preserve"><value>고른 칸의 타일을 붓에 담고 지웠습니다.</value></data>
+  <data name="Tile_PasteMessage" xml:space="preserve"><value>붓에 담긴 타일을 찍을 수 있습니다(타일 붓).</value></data>
+  <data name="Tile_SelectFirst" xml:space="preserve"><value>먼저 칸 선택 도구로 칸을 고르세요.</value></data>
+  <data name="Tile_ShortcutFlipY" xml:space="preserve"><value>타일 붓 상하 뒤집기</value></data>
+  <data name="Tile_ShortcutRotate" xml:space="preserve"><value>타일 붓 돌리기</value></data>
+  <data name="Tile_PixelOnly" xml:space="preserve"><value>픽셀 그림에만 쓰는 명령입니다(타일맵 레이어에서는 쓸 수 없음).</value></data>
+  <data name="Tile_ToolUnavailable" xml:space="preserve"><value>타일맵 레이어에서는 {0} 도구를 쓸 수 없습니다.</value></data>
+  <data name="Tile_StampTurned" xml:space="preserve"><value>타일 붓을 뒤집거나 돌렸습니다.</value></data>
+  <data name="Tile_NewLayerTitle" xml:space="preserve"><value>새 타일맵 레이어</value></data>
+  <data name="Tile_LayerAdded" xml:space="preserve"><value>타일맵 레이어를 만들었습니다. 타일셋 패널에서 타일을 고르고 찍으세요.</value></data>
+  <data name="Tile_Converted" xml:space="preserve"><value>타일맵을 그룹(층마다 부위)으로 바꿨습니다.</value></data>
+  <data name="Tile_MenuAddLayer" xml:space="preserve"><value>새 타일맵 레이어…</value></data>
+  <data name="Tile_MenuConvert" xml:space="preserve"><value>타일맵을 레이어로 변환</value></data>
+  <data name="TilesetChoice_BuiltIn" xml:space="preserve"><value>기본 타일셋으로 시작</value></data>
+  <data name="TilesetChoice_BuiltInInfo" xml:space="preserve"><value>앱에 들어 있는 타일셋의 사본을 이 프로젝트에 담습니다. 마음대로 고쳐도 되고, 타일셋 패널 메뉴의 "타일셋 파일로 저장…"으로 다른 프로젝트와 함께 쓸 수 있습니다. 샌드박스 지상·동굴: 16px 옆에서 본 시점 — 풀 흙·흙·돌·광석 섞인 돌·모래·눈 덮인 흙·돌 벽돌·나무 판자 블록과 흙·돌 배경 벽(47모양 자동 타일), 물·용암, 나무 발판·사다리·덩굴·울타리, 나무·풀·꽃·버섯·종유석·수정·횃불·상자·문 등.</value></data>
+  <data name="TilePick_Title" xml:space="preserve"><value>지금 찍을 것</value></data>
+  <data name="TilePick_Nothing" xml:space="preserve"><value>고른 것 없음</value></data>
+  <data name="TilePick_NothingHint" xml:space="preserve"><value>타일 목록에서 타일을 누르거나 자동 타일 세트를 고르세요.</value></data>
+  <data name="TilePick_NoSetHint" xml:space="preserve"><value>자동 타일 목록에서 세트를 고르세요.</value></data>
+  <data name="TilePick_Eraser" xml:space="preserve"><value>지우개</value></data>
+  <data name="TilePick_EraserKind" xml:space="preserve"><value>누른 칸의 타일을 지움</value></data>
+  <data name="TilePick_TileId" xml:space="preserve"><value>타일 {id}</value><comment>id: 타일 번호(이름 없는 타일)</comment></data>
+  <data name="TilePick_Tiles" xml:space="preserve"><value>타일 {count}개</value><comment>count: 붓에 든 타일 수</comment></data>
+  <data name="TilePick_SingleKind" xml:space="preserve"><value>타일 · {w}×{h}칸</value><comment>w, h: 차지 칸 수</comment></data>
+  <data name="TilePick_StampKind" xml:space="preserve"><value>스탬프 · {w}×{h}칸</value><comment>w, h: 붓 전체 크기(칸)</comment></data>
+  <data name="TilePick_RandomKind" xml:space="preserve"><value>칸마다 무작위 하나</value></data>
+  <data name="TilePick_Turned" xml:space="preserve"><value>뒤집기·회전 적용</value></data>
+  <data name="TilePick_Frames" xml:space="preserve"><value>움직임 {count}장</value><comment>count: 움직이는 타일 그림 수</comment></data>
+  <data name="TilePick_AutoKind" xml:space="preserve"><value>자동 타일 세트 · 규칙 {count}</value><comment>count: 규칙 수</comment></data>
+  <data name="TilePick_Group" xml:space="preserve"><value>무리 {name}</value><comment>name: 이어지는 무리 이름</comment></data>
+  <data name="TilePick_Floor" xml:space="preserve"><value>층: {name}</value><comment>name: 층 이름(여럿이면 쉼표로)</comment></data>
+  <data name="TilePick_FloorPerTile" xml:space="preserve"><value>층: 타일마다 기본 층</value></data>
+  <data name="TilePick_FloorTopVisible" xml:space="preserve"><value>층: 보이는 맨 위 층부터</value></data>
+  <data name="TilePick_Locked" xml:space="preserve"><value>잠김</value></data>
+  <data name="TilePick_Hidden" xml:space="preserve"><value>숨김</value></data>
+  <data name="TilePick_TargetFloorTip" xml:space="preserve"><value>지금 찍을 것이 들어갈 층</value></data>
+  <data name="TilePalette_TipInfo" xml:space="preserve"><value>Id {id} · 층 {floor} · 차지 {w}×{h}칸</value><comment>id: 타일 번호, floor: 기본 층 이름, w, h: 차지 칸</comment></data>
+  <data name="TilePalette_TipFrames" xml:space="preserve"><value>움직이는 타일 · {count}장 · 장당 {ms}ms</value><comment>count: 그림 수, ms: 한 장 시간</comment></data>
+  <data name="TilePalette_TipAuto" xml:space="preserve"><value>고른 자동 타일 세트에 쓰이는 타일</value></data>
+  <data name="TileAuto_GroupTip" xml:space="preserve"><value>무리 {name}: 같은 무리의 세트끼리 서로 이어짐</value><comment>name: 무리 이름</comment></data>
+  <data name="Tileset_AnimateTile" xml:space="preserve"><value>움직이는 타일…</value></data>
+  <data name="Tileset_AnimateTileLabel" xml:space="preserve"><value>움직이는 타일</value></data>
+  <data name="TileHud_Cell" xml:space="preserve"><value>칸 {x}, {y}</value><comment>x, y: 칸 좌표</comment></data>
+  <data name="TileHud_Empty" xml:space="preserve"><value>빈 칸</value></data>
+  <data name="TileHud_Placed" xml:space="preserve"><value>{floor} · {tile}</value><comment>floor: 층 이름, tile: 타일 이름</comment></data>
+  <data name="TileHud_AutoOf" xml:space="preserve"><value>{tile} (자동 타일 {set})</value><comment>tile: 타일 이름, set: 자동 타일 세트 이름</comment></data>
+  <data name="TileHud_FloorLocked" xml:space="preserve"><value>'{floor}' 층이 잠겨 찍을 수 없음</value><comment>floor: 층 이름</comment></data>
+  <data name="TileHud_FloorHidden" xml:space="preserve"><value>'{floor}' 층이 숨겨져 있음</value><comment>floor: 층 이름</comment></data>
+  <data name="AutoTile_Group" xml:space="preserve"><value>이어지는 무리</value></data>
+  <data name="AutoTile_GroupInfo" xml:space="preserve"><value>같은 무리 이름을 쓴 자동 타일 세트끼리는 층이 달라도 서로 이웃으로 쳐서 경계 없이 이어집니다(흙과 진흙, 얕은 물과 깊은 물처럼). 목록에서 고르거나 새 이름을 적으세요. 비우면 이 세트끼리만 이어집니다. 층은 그리는 높이일 뿐 이어짐과는 따로입니다.</value></data>
+  <data name="AutoTile_GroupPlaceholder" xml:space="preserve"><value>비우면 이 세트만</value></data>
+  <data name="AutoTile_GroupMembers" xml:space="preserve"><value>함께 이어지는 세트: {names}</value><comment>names = 같은 무리를 쓰는 다른 세트 이름들(쉼표로 이음)</comment></data>
+  <data name="AutoTile_GroupAlone" xml:space="preserve"><value>다른 세트와 이어지지 않습니다</value></data>
+  <data name="AutoTile_GroupNew" xml:space="preserve"><value>이 무리를 쓰는 다른 세트가 아직 없습니다</value></data>
+  <data name="AutoTile_Rules" xml:space="preserve"><value>규칙</value></data>
+  <data name="AutoTile_RulesInfo" xml:space="preserve"><value>칸마다 둘레 8칸을 보고 위에서부터 차례로 맞춰 보아 처음 맞는 규칙의 타일을 놓습니다. 앞의 규칙이 이기므로 자세한 규칙을 위에, 넓은 규칙을 아래에 두세요. 맞는 규칙이 없으면 조건이 가장 덜 어긋난 규칙을 쓰고, 타일이 없는 규칙은 건너뜁니다. 3×3 칸: 초록 더하기 = 같은 무리가 있어야 함, 빨강 빼기 = 없어야 함, 빈 칸 = 상관없음. 한 규칙에 타일을 여러 장 넣으면 비중대로 무작위로 고릅니다.</value></data>
+  <data name="AutoTile_AddRule" xml:space="preserve"><value>규칙 더하기</value></data>
+  <data name="AutoTile_ConditionTip" xml:space="preserve"><value>둘레 칸 누르기 = 상관없음 → 있어야 함 → 없어야 함, 오른쪽 버튼 = 거꾸로. 가운데 = 이 칸</value></data>
+  <data name="AutoTile_RuleTilesTip" xml:space="preserve"><value>누르기 = 고른 타일로 바꾸기, Ctrl+누르기 = 더하기(같은 타일이면 비중 +1), 타일 위 오른쪽 버튼 = 비중 바꾸기·빼기</value></data>
+  <data name="AutoTile_RuleNoTiles" xml:space="preserve"><value>타일 없음 · 건너뜀</value></data>
+  <data name="AutoTile_WeightUp" xml:space="preserve"><value>비중 늘리기</value></data>
+  <data name="AutoTile_WeightDown" xml:space="preserve"><value>비중 줄이기</value></data>
+  <data name="AutoTile_RemoveTile" xml:space="preserve"><value>이 타일 빼기</value></data>
+  <data name="AutoTile_ClearRuleTiles" xml:space="preserve"><value>타일 모두 빼기</value></data>
+  <data name="AutoTile_FlipXTip" xml:space="preserve"><value>좌우로 뒤집은 모양에도 맞춤(타일도 뒤집어 놓음)</value></data>
+  <data name="AutoTile_FlipYTip" xml:space="preserve"><value>상하로 뒤집은 모양에도 맞춤(타일도 뒤집어 놓음)</value></data>
+  <data name="AutoTile_RotateTip" xml:space="preserve"><value>90°씩 돌린 모양에도 맞춤(타일도 돌려 놓음)</value></data>
+  <data name="AutoTile_RotateNeedsSquare" xml:space="preserve"><value>회전은 칸이 정사각형인 타일셋에서만 쓸 수 있습니다</value></data>
+  <data name="AutoTile_MoveUp" xml:space="preserve"><value>위로(먼저 맞춰 봄)</value></data>
+  <data name="AutoTile_MoveDown" xml:space="preserve"><value>아래로(나중에 맞춰 봄)</value></data>
+  <data name="AutoTile_DuplicateRule" xml:space="preserve"><value>규칙 복제</value></data>
+  <data name="AutoTile_DeleteRule" xml:space="preserve"><value>규칙 지우기</value></data>
+  <data name="AutoTile_Preset" xml:space="preserve"><value>틀</value></data>
+  <data name="AutoTile_PresetRow" xml:space="preserve"><value>가로 줄 (4규칙)</value></data>
+  <data name="AutoTile_PresetColumn" xml:space="preserve"><value>세로 줄 (4규칙)</value></data>
+  <data name="AutoTile_PresetEdge4" xml:space="preserve"><value>4방향 (16규칙)</value></data>
+  <data name="AutoTile_PresetBox13" xml:space="preserve"><value>3×3 (13규칙)</value></data>
+  <data name="AutoTile_PresetBlob47" xml:space="preserve"><value>8방향 (47규칙)</value></data>
+  <data name="AutoTile_PresetInfo" xml:space="preserve"><value>틀로 규칙을 한 번에 만듭니다. 가로·세로 줄 = 발판·사다리처럼 한 줄로 이어지는 것, 4방향 = 상하좌우 이웃만, 3×3 = 가장자리 8 + 가운데 + 안쪽 모서리 4(흔한 지형 시트), 8방향 = 대각선까지 보는 47규칙(물·땅이 모서리까지 자연스럽게 이어짐). 만든 뒤 '고른 타일을 차례대로 채우기'로 틀 차례대로 그린 시트를 한 번에 넣을 수 있습니다.</value></data>
+  <data name="AutoTile_MakeRules" xml:space="preserve"><value>규칙 만들기</value></data>
+  <data name="AutoTile_MakeRulesAsk" xml:space="preserve"><value>지금 규칙 {count}개를 틀의 규칙으로 바꿀까요? 넣어 둔 타일은 빠집니다.</value><comment>count = 지금 규칙 수</comment></data>
+  <data name="AutoTile_PutPicked" xml:space="preserve"><value>고른 타일을 규칙 {index}에</value><comment>index = 선택한 규칙 번호(1부터)</comment></data>
+  <data name="AutoTile_PutPickedTip" xml:space="preserve"><value>선택한 규칙(파란 테두리)의 타일을 목록에서 고른 타일로 바꿉니다</value></data>
+  <data name="AutoTile_Picked" xml:space="preserve"><value>고른 타일 {count}장</value><comment>count = 타일 목록에서 고른 타일 수</comment></data>
+  <data name="AutoTile_PickedOne" xml:space="preserve"><value>고른 타일: {name}</value><comment>name = 고른 타일 이름(없으면 번호)</comment></data>
+  <data name="AutoTile_PickedNone" xml:space="preserve"><value>고른 타일 없음 — 누르거나 끌어 고르세요</value></data>
+  <data name="AutoTile_Preview" xml:space="preserve"><value>미리보기</value></data>
+  <data name="AutoTile_PreviewInfo" xml:space="preserve"><value>지금 고치는 세트로 칠해 봅니다: 왼쪽 버튼 = 칠하기, 오른쪽 버튼 = 지우기. 칸 위에 마우스를 올리면 그 칸에 쓰인 규칙이 목록에서 주황 테두리로 보입니다. 움직이는 타일은 여기서도 움직입니다. 판은 저장되지 않습니다.</value></data>
+  <data name="AutoTile_PreviewHint" xml:space="preserve"><value>왼쪽 버튼 = 칠하기, 오른쪽 버튼 = 지우기</value></data>
+  <data name="AutoTile_PreviewRule" xml:space="preserve"><value>칸 ({x}, {y}): 규칙 {index}</value><comment>x, y = 미리보기 판의 칸(0부터), index = 쓰인 규칙 번호(1부터)</comment></data>
+  <data name="AutoTile_PreviewNearest" xml:space="preserve"><value>칸 ({x}, {y}): 맞는 규칙 없음 — 가장 비슷한 규칙 {index}</value><comment>x, y = 미리보기 판의 칸(0부터), index = 대신 쓰인 규칙 번호(1부터)</comment></data>
+  <data name="AutoTile_PreviewNoTiles" xml:space="preserve"><value>타일을 넣은 규칙이 없어 아무것도 그려지지 않습니다</value></data>
+  <data name="AutoTile_PreviewClear" xml:space="preserve"><value>판 비우기</value></data>
+  <data name="AutoTile_PreviewReset" xml:space="preserve"><value>처음 모양으로</value></data>
+  <data name="AutoTile_Summary" xml:space="preserve"><value>규칙 {count}</value><comment>count = 세트의 규칙 수(타일 세트 목록에 보이는 짧은 설명)</comment></data>
+  <data name="AutoTile_SummaryGroup" xml:space="preserve"><value>규칙 {count} · 무리 {group}</value><comment>count = 세트의 규칙 수, group = 이어지는 무리 이름</comment></data>
+  <data name="TileAnim_Title" xml:space="preserve"><value>움직이는 타일 — {name}</value><comment>name = 타일 이름</comment></data>
+  <data name="TileAnim_TileNumber" xml:space="preserve"><value>타일 {id}</value><comment>id = 타일 번호(이름이 없을 때)</comment></data>
+  <data name="TileAnim_Frames" xml:space="preserve"><value>그림 차례</value></data>
+  <data name="TileAnim_Size" xml:space="preserve"><value>그림 크기 {width}×{height}px</value><comment>width, height = 타일 그림 크기</comment></data>
+  <data name="TileAnim_FramesInfo" xml:space="preserve"><value>왼쪽부터 차례로 돌아갑니다. 그림을 누르면 고르고, 아래 단추로 앞뒤로 옮기거나 복제하거나 뺍니다. 첫 그림이 타일 목록과 내보내기(시각 0)에 보이는 그림입니다. 그림이 1장뿐이면 멈춘 타일입니다. 캔버스와 미리보기에서는 문서가 한 프레임이어도 계속 움직입니다.</value></data>
+  <data name="TileAnim_MoveEarlier" xml:space="preserve"><value>고른 그림을 앞으로</value></data>
+  <data name="TileAnim_MoveLater" xml:space="preserve"><value>고른 그림을 뒤로</value></data>
+  <data name="TileAnim_Duplicate" xml:space="preserve"><value>복제</value></data>
+  <data name="TileAnim_Remove" xml:space="preserve"><value>빼기</value></data>
+  <data name="TileAnim_Selected" xml:space="preserve"><value>{index} / {count}번째 그림 고름</value><comment>index = 고른 그림 번호(1부터), count = 그림 수</comment></data>
+  <data name="TileAnim_FrameMs" xml:space="preserve"><value>한 장 시간</value></data>
+  <data name="TileAnim_Cycle" xml:space="preserve"><value>한 바퀴 {ms}ms</value><comment>ms = 그림 수 × 한 장 시간</comment></data>
+  <data name="TileAnim_Still" xml:space="preserve"><value>그림 1장 — 멈춘 타일</value></data>
+  <data name="TileAnim_AddFromTileset" xml:space="preserve"><value>타일셋에서 그림 더하기</value></data>
+  <data name="TileAnim_AddInfo" xml:space="preserve"><value>목록에서 타일을 고르고(끌면 여러 개) '그림으로 더하기'를 누르거나 타일을 두 번 누르세요. 고른 그림 바로 뒤에 들어갑니다. 움직이는 타일을 고르면 그 그림들이 모두 들어갑니다. 그림 크기가 같은 타일만 더할 수 있습니다. 지금 그림을 조금 바꾼 다음 장이 필요하면 '복제'로 만든 뒤 타일셋에서 고쳐 그리세요.</value></data>
+  <data name="TileAnim_Add" xml:space="preserve"><value>그림으로 더하기</value></data>
+  <data name="TileAnim_PickNone" xml:space="preserve"><value>더할 타일을 목록에서 고르세요</value></data>
+  <data name="TileAnim_PickCount" xml:space="preserve"><value>고른 타일 {count}개 → 그림 {frames}장 더함</value><comment>count = 더할 수 있는 타일 수, frames = 들어갈 그림 수</comment></data>
+  <data name="TileAnim_PickSkipped" xml:space="preserve"><value>크기가 다른 {count}개는 빠짐</value><comment>count = 크기가 달라 빠지는 타일 수</comment></data>
+  <data name="TileAnim_PickWrongSize" xml:space="preserve"><value>크기가 다른 타일은 더할 수 없습니다({width}×{height}px만)</value><comment>width, height = 이 타일 그림 크기</comment></data>
+  <data name="TileAnim_TooMany" xml:space="preserve"><value>그림은 {max}장까지입니다</value><comment>max = 최대 장 수</comment></data>
+  <data name="TileAnim_Preview" xml:space="preserve"><value>미리보기</value></data>
+  <data name="TileAnim_Play" xml:space="preserve"><value>재생</value></data>
+  <data name="TileAnim_Pause" xml:space="preserve"><value>멈춤</value></data>
+  <data name="TileAnim_PreviewFrame" xml:space="preserve"><value>그림 {index} / {count}</value><comment>index = 보이는 그림 번호(1부터), count = 그림 수</comment></data>
+  <data name="TileAnim_Tiled" xml:space="preserve"><value>3×3로 이어 보기</value></data>
 </root>

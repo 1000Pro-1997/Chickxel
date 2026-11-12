@@ -151,7 +151,7 @@ public class EffectCharacterizationTests
     };
 
     // 형식 5: 모든 레이어의 피벗(pivot)을 쓴다
-    private const string ExpectedProjectJson = "419EDCD5F8D91154";
+    private const string ExpectedProjectJson = "4813E3EB45BC0BC2";
 
     /// <summary>저장 형식 고정과 예전 형식 fixture에 쓰는 목록: 모든 종류 + 꺼진 효과 하나 + 프레임 범위·클리핑이 있는 효과 하나.</summary>
     internal static LayerEffect[] SavedKinds()

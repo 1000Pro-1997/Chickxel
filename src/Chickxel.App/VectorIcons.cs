@@ -175,6 +175,10 @@ public enum VectorIcon
     Monitor,
     /// <summary>플러그(외부 AI 연결 — Lucide plug).</summary>
     Plug,
+    /// <summary>시계 방향 회전 화살표(Lucide rotate-cw).</summary>
+    RotateCw,
+    /// <summary>엇갈린 두 화살표(무작위 — Lucide shuffle).</summary>
+    Shuffle,
 }
 
 public static class VectorIcons
@@ -188,6 +192,19 @@ public static class VectorIcons
 
     private static string[] Paths(VectorIcon icon) => icon switch
     {
+        VectorIcon.RotateCw =>
+        [
+            "M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8",
+            "M21 3v5h-5",
+        ],
+        VectorIcon.Shuffle =>
+        [
+            "M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22",
+            "M18 2l4 4-4 4",
+            "M2 6h1.9c1.5 0 2.9.9 3.6 2.2",
+            "M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8",
+            "M18 14l4 4-4 4",
+        ],
         VectorIcon.Eye =>
         [
             "M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0",

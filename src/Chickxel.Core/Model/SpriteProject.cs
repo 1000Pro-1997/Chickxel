@@ -1,6 +1,7 @@
 using System.Drawing;
 using Chickxel.Core.Edit;
 using Chickxel.Core.Localization;
+using Chickxel.Core.Tiles;
 
 namespace Chickxel.Core.Model;
 
@@ -300,7 +301,8 @@ public sealed partial class SpriteProject
         => _cels.GetValueOrDefault(new(layer, frame, skin is null ? ActiveKey(layer) : SkinKey(layer, skin)));
 
     /// <summary>보이는 셀(<see cref="GetCel(int, int)"/>)이 없거나 모두 투명이면 true.</summary>
-    public bool IsCelEmpty(int layerIndex, int frameIndex) => !HasContent(GetCel(layerIndex, frameIndex));
+    public bool IsCelEmpty(int layerIndex, int frameIndex)
+        => _layers[layerIndex].IsTilemap ? TilemapCel(_layers[layerIndex], frameIndex) is null : !HasContent(GetCel(layerIndex, frameIndex));
 
     /// <summary>
     /// 일반 레이어에 원본 없이 그림을 만드는 효과(<see cref="LayerEffects.GeneratesContent"/> — 글씨, <c>ctx.frameSource</c>를 읽는 스크립트)가 프레임 <paramref name="frameIndex"/>에 켜져 있는지
@@ -315,7 +317,7 @@ public sealed partial class SpriteProject
     /// 그릴 셀: 보이는 셀(<see cref="GetCel(Layer, Frame)"/>), 없으면 <see cref="HasContentEffect(Layer, int)"/>인 프레임의 빈 그림(함께 쓰는 사본 — 고치지 않는다).
     /// </summary>
     private PixelImage? RenderCel(Layer layer, int frameIndex)
-        => GetCel(layer, _frames[frameIndex]) ?? (HasContentEffect(layer, frameIndex) ? BlankCel() : null);
+        => layer.IsTilemap ? TilemapCel(layer, frameIndex) : GetCel(layer, _frames[frameIndex]) ?? (HasContentEffect(layer, frameIndex) ? BlankCel() : null);
 
     /// <summary>
     /// 레이어의 저장된 셀(<see cref="CelsOf(Layer)"/>)에, 일반 레이어면 셀이 없지만 <paramref name="effects"/> 중 원본 없이 그리는 효과가 켜진 프레임의 빈 그림을 더한 목록
@@ -363,6 +365,7 @@ public sealed partial class SpriteProject
     {
         var layer = _layers[layerIndex];
         if (layer.IsGroup) throw new InvalidOperationException(GroupHasNoCelsMessage);
+        if (layer.IsTilemap) throw new InvalidOperationException(DomainStrings.Tile_CannotDrawPixels);
         var size = CelSize(layer);
         if (image is not null && image.Size != size)
             throw new ArgumentException(layer.IsPart ? DomainStrings.Project_PartCelSizeMismatch : DomainStrings.Project_CanvasCelSizeMismatch, nameof(image));
@@ -381,7 +384,7 @@ public sealed partial class SpriteProject
     /// </summary>
     public int MapCels(string label, Func<Layer, Frame, bool> include, Func<PixelImage, PixelImage?> map)
     {
-        if (_stroke is not null) CommitCelStroke(DomainStrings.Project_Edit);
+        CommitOpenStrokes();
         var mapped = new Dictionary<PixelImage, PixelImage?>(ReferenceEqualityComparer.Instance);
         foreach (var (key, cel) in _cels)
         {
@@ -495,7 +498,8 @@ public sealed partial class SpriteProject
         var layer = _layers[layerIndex];
         var frame = _frames[frameIndex];
         if (layer.IsGroup) throw new InvalidOperationException(GroupHasNoCelsMessage);
-        if (_stroke is not null) CommitCelStroke(DomainStrings.Project_Edit);
+        if (layer.IsTilemap) throw new InvalidOperationException(DomainStrings.Tile_CannotDrawPixels);
+        CommitOpenStrokes();
         if (IsLayerLocked(layerIndex)) throw new InvalidOperationException(DomainStrings.Project_LockedLayerCannotDraw);
         var key = new CelKey(layer, frame, ActiveKey(layer));
         bool created = !_cels.TryGetValue(key, out var image);
@@ -554,14 +558,14 @@ public sealed partial class SpriteProject
     /// <summary>열린 스트로크를 확정한 뒤 실행취소.</summary>
     public bool Undo()
     {
-        if (_stroke is not null) CommitCelStroke(DomainStrings.Project_Edit);
+        CommitOpenStrokes();
         return History.Undo();
     }
 
     /// <summary>열린 스트로크를 확정한 뒤 다시 실행.</summary>
     public bool Redo()
     {
-        if (_stroke is not null) CommitCelStroke(DomainStrings.Project_Edit);
+        CommitOpenStrokes();
         return History.Redo();
     }
 
@@ -581,7 +585,7 @@ public sealed partial class SpriteProject
             action();
             return;
         }
-        if (_stroke is not null) CommitCelStroke(DomainStrings.Project_Edit);
+        CommitOpenStrokes();
         var before = Snapshot.Capture(this);
         _editDepth++;
         try
@@ -807,6 +811,7 @@ public sealed partial class SpriteProject
         var layer = _layers[layerIndex];
         if (layer.IsPart) return layer.PartRect;
         if (layer.IsGroup) return Rectangle.Empty;
+        if (layer.IsTilemap) return TilemapBounds(layer);
         var bounds = Rectangle.Empty;
         foreach (var key in LayerCelKeys(layer))
         {
@@ -978,6 +983,7 @@ public sealed partial class SpriteProject
             Pivot = src.Pivot,
             PartBorder = src.PartBorder,
             Effects = src.Effects,
+            Tiles = src.Tiles,
         };
         if (src.IsGroup)
         {
@@ -1591,7 +1597,7 @@ public sealed partial class SpriteProject
         RequireSkin(group, skin);
         if (skin.Owner is not null) throw new ArgumentException(DomainStrings.Project_PartSkinCannotApplyToGroup, nameof(skin));
         if (ReferenceEquals(group.ActiveSkin, skin)) return;
-        if (_stroke is not null) CommitCelStroke(DomainStrings.Project_Edit);
+        CommitOpenStrokes();
         group.SetActiveSkinRaw(skin);
         NotifyChanged(ProjectChange.Layers | ProjectChange.Pixels);
     }
@@ -1610,7 +1616,7 @@ public sealed partial class SpriteProject
                 throw new ArgumentException(DomainStrings.Project_OtherPartSkin, nameof(skin));
         }
         if (ReferenceEquals(part.SkinOverride, skin)) return;
-        if (_stroke is not null) CommitCelStroke(DomainStrings.Project_Edit);
+        CommitOpenStrokes();
         part.SetSkinOverrideRaw(skin);
         NotifyChanged(ProjectChange.Layers | ProjectChange.Pixels);
     }
@@ -1621,7 +1627,7 @@ public sealed partial class SpriteProject
         if (!group.IsGroup || !_layers.Contains(group)) throw new ArgumentException(DomainStrings.Project_GroupNotInProject, nameof(group));
         var parts = ChildrenOf(group).Where(p => p.SkinOverrideRaw is not null).ToList();
         if (parts.Count == 0) return false;
-        if (_stroke is not null) CommitCelStroke(DomainStrings.Project_Edit);
+        CommitOpenStrokes();
         bool visible = parts.Any(p => p.SkinOverride is not null);
         foreach (var p in parts) p.SetSkinOverrideRaw(null);
         if (visible) NotifyChanged(ProjectChange.Layers | ProjectChange.Pixels);
@@ -1761,7 +1767,7 @@ public sealed partial class SpriteProject
     public IReadOnlyList<string> ApplyOutfit(Outfit outfit)
     {
         RequireOutfit(outfit);
-        if (_stroke is not null) CommitCelStroke(DomainStrings.Project_Edit);
+        CommitOpenStrokes();
         bool changed = false;
         foreach (var (group, skin) in outfit.Slots)
         {
@@ -2216,6 +2222,7 @@ public sealed partial class SpriteProject
             _width = width;
             _height = height;
             MapCanvasPivots(Map);
+            ShiftTilemaps(image.X, image.Y);
             // 프레임 칸 테두리: 그림 가장자리에서 같은 픽셀 수(그림 바깥 여백만큼 더하고, 캔버스 밖으로 잘린 만큼 뺌).
             if (sliced)
                 Sprite.Border = new SpriteBorder(
@@ -2533,11 +2540,12 @@ public sealed partial class SpriteProject
     private readonly record struct LayerState(
         Layer Layer, string Name, bool Visible, bool Locked, byte Opacity, LayerKind Kind, Layer? Parent,
         Size PartSize, Point PartOffset, Pivot Pivot, SpriteBorder PartBorder, Rectangle? PartSourceRect,
-        (Skin Skin, string Name, Layer? Owner)[]? Skins, Skin? ActiveSkin, IReadOnlyList<LayerEffect> Effects, GroupLayout? AutoLayout)
+        (Skin Skin, string Name, Layer? Owner)[]? Skins, Skin? ActiveSkin, IReadOnlyList<LayerEffect> Effects, GroupLayout? AutoLayout,
+        TilemapData? Tiles)
     {
         public static LayerState Of(Layer l) => new(l, l.Name, l.Visible, l.Locked, l.Opacity, l.Kind, l.Parent,
             l.PartSize, l.PartOffset, l.Pivot, l.PartBorder, l.PartSourceRect,
-            l.IsGroup ? l.SkinList.Select(s => (s, s.Name, s.Owner)).ToArray() : null, l.IsGroup ? l.ActiveSkin : null, l.Effects, l.AutoLayout);
+            l.IsGroup ? l.SkinList.Select(s => (s, s.Name, s.Owner)).ToArray() : null, l.IsGroup ? l.ActiveSkin : null, l.Effects, l.AutoLayout, l.Tiles);
 
         /// <summary>
         /// 상태를 되돌린다. 지금 스킨(착장)은 실행취소 대상이 아니므로 스킨 목록 구성이 같으면 지금 고른 스킨을 그대로 두고,
@@ -2558,6 +2566,7 @@ public sealed partial class SpriteProject
             Layer.PartSourceRect = PartSourceRect;
             Layer.AutoLayout = AutoLayout;
             Layer.Effects = Effects;
+            Layer.Tiles = Tiles;
             if (Skins is not null)
             {
                 var current = Layer.ActiveSkinRaw;
@@ -2589,6 +2598,7 @@ public sealed partial class SpriteProject
         private KeyValuePair<CelKey, CelOverflow>[] _overflow = [];
         private SpriteSettings _sprite = new();
         private ExportSettings _export = new();
+        private KeyValuePair<string, Tileset>[] _tilesets = [];
 
         public static Snapshot Capture(SpriteProject p) => new()
         {
@@ -2605,6 +2615,7 @@ public sealed partial class SpriteProject
             _overflow = p._overflow.ToArray(),
             _sprite = p.Sprite.Clone(),
             _export = p.Export.Clone(),
+            _tilesets = p._tilesets.ToArray(),
         };
 
         public void Restore(SpriteProject p)
@@ -2651,6 +2662,8 @@ public sealed partial class SpriteProject
             foreach (var kv in _overflow) p._overflow[kv.Key] = kv.Value;
             p.Sprite.CopyFrom(_sprite);
             p.Export.CopyFrom(_export);
+            p._tilesets.Clear();
+            foreach (var kv in _tilesets) p._tilesets[kv.Key] = kv.Value;
         }
 
         public ProjectChange SizeChange(Snapshot other)

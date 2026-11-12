@@ -2,6 +2,40 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.127 (2026-11-12)
+### Tilemap layers
+- New layer kind **Tilemap**: place tiles from a tileset on a grid to build maps (**Frame·Layer > New tilemap layer…**, Alt+Shift+N). All frames share the map, and compositing and export work like a normal layer.
+- Selecting a tilemap layer swaps the toolbar to tile tools (brush, auto tile brush, eraser, rectangle, fill, picker, cell select), the color panel to the Tileset panel and the tool settings to tile settings. Shortcuts use the same letters as the pixel tools; X/Y/Z flip and rotate the brush.
+- Floors: placing on the same floor overwrites, on another floor stacks. Each tile has a default floor; you can pin a floor, hide it or lock it.
+- Big tiles (2×1, 2×2 …) replace whatever their footprint covers, and images taller than the footprint rise above it. Tiles can also go outside the canvas.
+
+### Built-in tileset: Sandbox surface & caves
+- Choose **Start from a built-in tileset** (selected by default) in the new tilemap layer window to start from a copy of **Sandbox surface & caves**, a 16px side-view tileset with 532 tiles, drawn in a clean style like Fantasy Tile Engine: black outlines and round stones.
+- Layers: background wall, ground, cover, decoration and front. Ground (dirt, mud, stone, stone with ore, sand, stone brick, wood planks) and background walls are 47-rule auto tiles; dirt and mud, and stone and stone with ore, are in the same group and join where they touch.
+- Covers (grass, snow, autumn leaves) painted on top of the ground drip down over it. Water and lava are animated and flow; water next to a taller column rises in a slanted surface.
+- Decorations: trees, bushes, grass, flowers, mushrooms, rocks, cactus, stalactites, crystals, torches (animated), coins (animated), gems, keys, chests, crates, barrels, pots, signs, a door and a workbench, plus wood platform, ladder, vine and fence auto tiles.
+
+### Auto tile rules and join groups
+- Auto tile sets are now a list of **rules**, like Unity's Rule Tile. Each rule sets a condition for each of the 8 neighbors (any, must be there, must not be there) by clicking a 3×3 grid, and has its own tiles and its own flip and rotation permissions.
+- The first matching rule wins; if none matches, the closest rule is used. Templates (row, column, 4-way, 3×3, 8-way 47) make a full rule list at once.
+- Give sets the same **group** name and they join each other even on different layers (for example dirt and mud).
+- A test board on the right of the editor lets you paint and see the result; hovering a cell highlights the rule it used.
+
+### Animated tiles
+- Right-click a tile in the tile list and choose **Animated tile…** to set several images and the time per image.
+- The canvas, preview and tile list keep them moving even in a one-frame project; exports use a fixed image based on each frame's start time.
+
+### See what is selected
+- The Tileset panel and tool settings show a **Painting now** card (picture, name, kind and target layer), and warn in orange when that layer is locked or hidden.
+- The tile list selection border is bolder, tiles used by the chosen auto tile set are tinted, and the auto tile list shows a representative tile and a group color dot.
+- The canvas shows a translucent preview of what will be placed (for auto tiles, including neighbors that will change) and the cell, layer and tile name.
+
+### Tileset files and auto tiles
+- Tilesets (cell size, floors, tiles, auto tile sets) live in their own `.chickxel-tileset` file. Projects keep a copy, and saving the project also writes a changed tileset back to its file.
+- Import tiles by cutting a PNG or the current frame into cells (skipping empty and duplicate cells), and merge several cells into one big tile.
+- Painting with an auto tile set looks at the neighboring cells and picks the matching tile (see "Auto tile rules and join groups" above).
+- **Convert tilemap to layers** turns a tilemap layer into a group with one part per floor.
+
 ## v1.14.126 (2026-11-12)
 ### Add to, subtract from and intersect the selection
 - Hold a key as you press with a selection tool to combine with the current selection: Shift adds, Alt subtracts, Shift+Alt keeps only the overlap. Works for rectangle, ellipse, lasso and magic wand.

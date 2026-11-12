@@ -453,4 +453,51 @@
   <data name="StampSet_WoodGrain" xml:space="preserve"><value>Wood grain</value></data>
   <data name="StampSet_Cracks" xml:space="preserve"><value>Cracks</value></data>
   <data name="StampSet_Treasure" xml:space="preserve"><value>Coins &amp; gems</value></data>
+  <data name="Tile_FloorGround" xml:space="preserve"><value>Ground</value></data>
+  <data name="Tile_FloorDecor" xml:space="preserve"><value>Decor</value></data>
+  <data name="Tile_FloorTop" xml:space="preserve"><value>Top</value></data>
+  <data name="Tile_CellSizeRange" xml:space="preserve"><value>Tile cell size must be 1–{max} px.</value><comment>max = 최대 px</comment></data>
+  <data name="Tile_FileInvalid" xml:space="preserve"><value>Not a tileset file, or the file is damaged.</value></data>
+  <data name="Tile_FileTooNew" xml:space="preserve"><value>This tileset was made with a newer version of Chickxel. Update Chickxel to open it.</value></data>
+  <data name="Tile_NotTilemapLayer" xml:space="preserve"><value>Not a tilemap layer.</value></data>
+  <data name="Tile_DefaultLayerName" xml:space="preserve"><value>Tilemap</value></data>
+  <data name="Tile_AddLayer" xml:space="preserve"><value>Add tilemap layer</value></data>
+  <data name="Tile_TilesetNotInProject" xml:space="preserve"><value>The tileset isn't in this project.</value></data>
+  <data name="Tile_ChangeTileset" xml:space="preserve"><value>Change tileset</value></data>
+  <data name="Tile_NoStroke" xml:space="preserve"><value>No tile stroke is open.</value></data>
+  <data name="Tile_Paint" xml:space="preserve"><value>Place tiles</value></data>
+  <data name="Tile_ConvertToGroup" xml:space="preserve"><value>Convert tilemap to layers</value></data>
+  <data name="Tile_CannotDrawPixels" xml:space="preserve"><value>Can't paint pixels on a tilemap layer — use the tile tools.</value></data>
+  <data name="Tile_MapInvalid" xml:space="preserve"><value>The tilemap data is damaged.</value></data>
+  <data name="Tile_EmbeddedUnreadable" xml:space="preserve"><value>Couldn't read a tileset stored in the project: {error}</value><comment>error = 오류 내용</comment></data>
+  <data name="Tile_FileUnreadable" xml:space="preserve"><value>Couldn't read the tileset file, so the copy stored in the project is used: {path} ({error})</value><comment>path = 파일 경로, error = 오류 내용</comment></data>
+  <data name="Tile_MissingTileset" xml:space="preserve"><value>Tilemap layer "{layer}" has no tileset, so it isn't drawn.</value><comment>layer = 레이어 이름</comment></data>
+  <data name="Tile_MapUnreadable" xml:space="preserve"><value>Couldn't read the map of tilemap layer "{layer}": {error}</value><comment>layer = 레이어 이름, error = 오류 내용</comment></data>
+  <data name="Tile_FileWriteFailed" xml:space="preserve"><value>Couldn't write the tileset file (it's saved in the project): {path} ({error})</value><comment>path = 파일 경로, error = 오류 내용</comment></data>
+  <data name="Tile_FloorState" xml:space="preserve"><value>Floor visibility/lock</value></data>
+  <data name="TileBuiltIn_Sandbox" xml:space="preserve"><value>Sandbox surface &amp; caves</value></data>
+  <data name="Tile_FloorWall" xml:space="preserve"><value>Background wall</value></data>
+  <data name="Tile_FloorFront" xml:space="preserve"><value>Front</value></data>
+  <data name="TileBuiltIn_Dirt" xml:space="preserve"><value>Dirt</value></data>
+  <data name="TileBuiltIn_Stone" xml:space="preserve"><value>Stone</value></data>
+  <data name="TileBuiltIn_OreStone" xml:space="preserve"><value>Stone with ore</value></data>
+  <data name="TileBuiltIn_Sand" xml:space="preserve"><value>Sand</value></data>
+  <data name="TileBuiltIn_Snow" xml:space="preserve"><value>Snow</value></data>
+  <data name="TileBuiltIn_Brick" xml:space="preserve"><value>Stone brick</value></data>
+  <data name="TileBuiltIn_Planks" xml:space="preserve"><value>Wood planks</value></data>
+  <data name="TileBuiltIn_DirtWall" xml:space="preserve"><value>Dirt wall</value></data>
+  <data name="TileBuiltIn_StoneWall" xml:space="preserve"><value>Stone wall</value></data>
+  <data name="TileBuiltIn_Water" xml:space="preserve"><value>Water</value></data>
+  <data name="TileBuiltIn_Lava" xml:space="preserve"><value>Lava</value></data>
+  <data name="TileBuiltIn_Platform" xml:space="preserve"><value>Wood platform</value></data>
+  <data name="TileBuiltIn_Ladder" xml:space="preserve"><value>Ladder</value></data>
+  <data name="TileBuiltIn_Vine" xml:space="preserve"><value>Vines</value></data>
+  <data name="TileBuiltIn_Fence" xml:space="preserve"><value>Fence</value></data>
+  <data name="Tile_TooManyFrames" xml:space="preserve"><value>An animated tile can have up to {max} images.</value><comment>max = 최대 장 수</comment></data>
+  <data name="Tile_FrameSizeMismatch" xml:space="preserve"><value>All images of an animated tile must be the same size.</value></data>
+  <data name="Tile_FloorCover" xml:space="preserve"><value>Cover</value></data>
+  <data name="TileBuiltIn_Mud" xml:space="preserve"><value>Mud</value></data>
+  <data name="TileBuiltIn_Grass" xml:space="preserve"><value>Grass</value></data>
+  <data name="TileBuiltIn_Autumn" xml:space="preserve"><value>Autumn leaves</value></data>
+  <data name="TileBuiltIn_BrickWall" xml:space="preserve"><value>Brick wall</value></data>
 </root>

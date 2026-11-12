@@ -167,6 +167,8 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
         };
         ctx.ViewChanged += (_, _) => Redraw();
         ctx.RenderUpdated += (_, _) => Redraw();
+        // 움직이는 타일: 한 프레임 문서도, 멈춰 있어도 화면 시계에 맞춰 다시 그린다(합성은 이미 무효가 됨).
+        ctx.TileClockTick += Redraw;
         _busyTimer.Tick += (_, _) => Redraw();
         // 재생 중에 태그를 만들거나 고르면 그 태그 안에서 반복하도록 순서를 바꾼다.
         ctx.CurrentChanged += (_, _) => RefreshOrder();

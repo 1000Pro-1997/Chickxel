@@ -552,7 +552,7 @@ public static class ProjectMerge
         private bool FramesFit(MergeSource s, Layer top, Layer target)
         {
             static bool SameEffects(Layer a, Layer b) => a.Effects.SequenceEqual(b.Effects) && a.Effects.All(e => e.Frames is null);
-            if (target.Parent is not null || top.Kind != target.Kind || top.Name != target.Name || top.Visible != target.Visible
+            if (target.Parent is not null || top.IsTilemap || top.Kind != target.Kind || top.Name != target.Name || top.Visible != target.Visible
                 || top.Opacity != target.Opacity || !SameEffects(top, target)) return false;
             if (!top.IsGroup) return true;
             if (top.AutoLayout != target.AutoLayout || top.BaseSkin!.Name != target.BaseSkin!.Name) return false;
@@ -606,6 +606,15 @@ public static class ProjectMerge
             var maps = MapsOf(s);
             var copy = CopyProps(s, top, null, frameShift);
             maps.Layers[top] = copy;
+            if (top.IsTilemap)
+            {
+                // 타일맵: 타일셋을 같이 담고 격자 원점을 기준점만큼 옮긴다(맵·타일셋은 바뀌지 않는 값이라 같이 씀).
+                if (src.TilesetOf(top) is { } tileset) _p.PutTilesetRaw(tileset);
+                var move = Shift(s);
+                if (top.Tiles is { } tiles) copy.Tiles = tiles with { Origin = new Point(tiles.Origin.X + move.X, tiles.Origin.Y + move.Y) };
+                CopyCanvasPivots(s, top, copy, frameMap);
+                return [copy];
+            }
             if (!top.IsGroup)
             {
                 CopyCanvasCels(s, top, copy, frameMap);

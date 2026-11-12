@@ -738,7 +738,8 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         // 캔버스 등 다른 곳을 고치러 나가면 묶음을 닫는다(다른 편집이 효과 변경과 한 단계로 묶이지 않게).
         PointerExited += (_, _) => EndEffectEdit();
 
-        Control[] boxes = [_canvasResizeBox, _transformBox, _shapeBox, _brushBox, _pencilGradientBox, _shapePenBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _frameRangeBox, _pivotBox, _sliceBox];
+        BuildTileOptions();
+        Control[] boxes = [_canvasResizeBox, _transformBox, _tileBox, _shapeBox, _brushBox, _pencilGradientBox, _shapePenBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _frameRangeBox, _pivotBox, _sliceBox];
         foreach (var box in boxes) Ui.Foldable((Border)box);
         Ui.Foldable(_effectBox);
         var header = Ui.Header(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E39101186F);
@@ -994,6 +995,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         _hint.IsVisible = hint.Length > 0;
         _transformBox.IsVisible = _ctx.IsTransforming;
         _canvasResizeBox.IsVisible = _ctx.IsCanvasResizing;
+        RefreshTileMode();
         _effectSection.IsVisible = _fxLayer is not null && !_ctx.IsTransforming && !_ctx.IsCanvasResizing;
         if (_ctx.IsTransforming || _ctx.IsCanvasResizing)
         {

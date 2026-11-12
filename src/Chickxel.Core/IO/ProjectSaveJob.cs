@@ -89,8 +89,10 @@ public sealed class ProjectSaveJob
         bool unchanged = _project.ChangeStamp == _stamp;
         _project.Path = ProjectPath;
         if (unchanged) _project.IsDirty = false;
+        // 바뀐 타일셋은 타일셋 파일에도(프로젝트 파일에는 사본이 이미 들어 있음)
+        var tilesetWarnings = ProjectIO.WriteTilesetFiles(_project);
         if (_planError is not null) ExceptionDispatchInfo.Throw(_planError);
         _exportError?.Throw();
-        return new ProjectSaveResult(ProjectPath, _export);
+        return new ProjectSaveResult(ProjectPath, _export) { TilesetWarnings = tilesetWarnings };
     }
 }

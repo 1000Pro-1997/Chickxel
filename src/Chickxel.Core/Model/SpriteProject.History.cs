@@ -4,6 +4,7 @@ using System.Text.Json;
 using Chickxel.Core.Edit;
 using Chickxel.Core.Effects;
 using Chickxel.Core.IO;
+using Chickxel.Core.Tiles;
 
 namespace Chickxel.Core.Model;
 
@@ -19,7 +20,7 @@ public sealed partial class SpriteProject
     /// </summary>
     internal UndoHistoryCapture? CaptureHistory(int maxSteps)
     {
-        if (_stroke is not null) return null;
+        if (_stroke is not null || _tileStroke is not null) return null;
         maxSteps = Math.Clamp(maxSteps, 1, UndoStack.MaxCapacity);
         var (undo, redo, open) = History.Contents();
         if (open is not null) undo.Add(open);
@@ -82,10 +83,25 @@ public sealed partial class SpriteProject
         lock (_historyLock)
         {
             var ids = _historyIds;
+            string Blob(object o, Func<byte[]> encode)
+            {
+                if (ids.HashOf(o) is { } known && blobs.TryUse(known)) return known;
+                var hash = blobs.Put(encode());
+                ids.SetHash(o, hash);
+                return hash;
+            }
+            string MapBlob(TileMap map) => Blob(map, () => TileMapCodec.Encode(map));
+            string TilesetBlob(Tileset tileset) => Blob(tileset, () => TilesetIO.ToBytes(tileset));
             string Snap(Snapshot s)
             {
-                if (ids.HashOf(s) is { } known && blobs.TryUse(known)) return known;
-                var hash = blobs.Put(JsonSerializer.SerializeToUtf8Bytes(s.ToDto(ids), UndoHistoryIO.Json));
+                if (ids.HashOf(s) is { } known && blobs.TryUse(known))
+                {
+                    // 상태 조각이 가리키는 맵·타일셋 조각도 이번 쓰기에 쓰인 것으로(지워지지 않게)
+                    foreach (var map in s.TileMaps) MapBlob(map);
+                    foreach (var tileset in s.TilesetValues) TilesetBlob(tileset);
+                    return known;
+                }
+                var hash = blobs.Put(JsonSerializer.SerializeToUtf8Bytes(s.ToDto(ids, MapBlob, TilesetBlob), UndoHistoryIO.Json));
                 ids.SetHash(s, hash);
                 return hash;
             }
@@ -137,7 +153,7 @@ public sealed partial class SpriteProject
     /// </summary>
     internal int LoadHistory(HistoryManifestDto m, HistoryBlobs blobs)
     {
-        if (_stroke is not null) throw new InvalidOperationException(Chickxel.Core.Localization.DomainStrings.History_CannotReadWhilePainting);
+        if (_stroke is not null || _tileStroke is not null) throw new InvalidOperationException(Chickxel.Core.Localization.DomainStrings.History_CannotReadWhilePainting);
         // 기록이 담은 스크립트 원문(형식 3부터): 해시가 맞는 것만. 상태를 읽기 전에 앱에 알려야 효과 설정을 지금 원문의 schema로 읽는다.
         var scripts = new List<string>();
         foreach (var (hash, source) in m.Scripts ?? new SortedDictionary<string, string>())
@@ -213,13 +229,30 @@ public sealed partial class SpriteProject
         r.LoadImage = id => sizes.TryGetValue(id, out var s) && s.Blob is { } blob
             ? UndoHistoryIO.DecodeImage(blobs.Get(blob), s.W, s.H)
             : throw Corrupt();
+        // 맵·타일셋 조각(해시 → 값). 기준 상태의 것은 지금 프로젝트의 것(같은 객체 — 다음 쓰기에서 같은 조각을 다시 씀).
+        var tileMaps = new Dictionary<string, TileMap>(StringComparer.Ordinal);
+        var tilesets = new Dictionary<string, Tileset>(StringComparer.Ordinal);
+        for (int i = 0; i < _layers.Count; i++)
+            if (anchor.Layers[i].TileMap is { } mapHash && _layers[i].Tiles is { } tiles) tileMaps.TryAdd(mapHash, tiles.Map);
+        foreach (var t in anchor.Tilesets ?? [])
+            if (t is [var key, var hash] && _tilesets.TryGetValue(key, out var current)) tilesets.TryAdd(hash, current);
+        TileMap LoadMap(string hash)
+        {
+            if (!tileMaps.TryGetValue(hash, out var map)) tileMaps[hash] = map = TileMapCodec.Decode(blobs.Get(hash));
+            return map;
+        }
+        Tileset LoadTileset(string hash)
+        {
+            if (!tilesets.TryGetValue(hash, out var tileset)) tilesets[hash] = tileset = TilesetIO.FromBytes(blobs.Get(hash));
+            return tileset;
+        }
 
         var snapshots = new Dictionary<string, Snapshot>(StringComparer.Ordinal);
         var patches = new Dictionary<string, PixelPatch>(StringComparer.Ordinal);
         Snapshot Snap(string? hash)
         {
             if (hash is not null && snapshots.TryGetValue(hash, out var known)) return known;
-            var s = Snapshot.FromDto(ReadSnap(hash), r, legacyPivots: m.Version < 4);
+            var s = Snapshot.FromDto(ReadSnap(hash), r, legacyPivots: m.Version < 4, LoadMap, LoadTileset);
             snapshots[hash!] = s;
             return s;
         }
@@ -263,6 +296,8 @@ public sealed partial class SpriteProject
             if (m.Version >= 4)
                 foreach (var (hash, s) in snapshots) ids.SetHash(s, hash);
             foreach (var (hash, p) in patches) ids.SetHash(p, hash);
+            foreach (var (hash, map) in tileMaps) ids.SetHash(map, hash);
+            foreach (var (hash, tileset) in tilesets) ids.SetHash(tileset, hash);
             _historyIds = ids;
         }
         return undo.Count + redo.Count;
@@ -281,7 +316,13 @@ public sealed partial class SpriteProject
         /// <summary>이 상태의 모든 레이어 효과.</summary>
         public IEnumerable<LayerEffect> Effects => _layers.SelectMany(s => s.Effects);
 
-        public HistorySnapshotDto ToDto(HistoryIdTable ids) => new()
+        /// <summary>이 상태의 타일맵 레이어 맵.</summary>
+        public IEnumerable<TileMap> TileMaps => _layers.Where(s => s.Tiles is not null).Select(s => s.Tiles!.Map);
+
+        /// <summary>이 상태가 담은 타일셋.</summary>
+        public IEnumerable<Tileset> TilesetValues => _tilesets.Select(kv => kv.Value);
+
+        public HistorySnapshotDto ToDto(HistoryIdTable ids, Func<TileMap, string> mapBlob, Func<Tileset, string> tilesetBlob) => new()
         {
             W = _w,
             H = _h,
@@ -302,6 +343,11 @@ public sealed partial class SpriteProject
                 ActiveSkin = s.ActiveSkin is { } active ? ids.Of(active) : 0,
                 Effects = s.Effects.Count > 0 ? s.Effects.Select(EffectCodec.Write).ToList() : null,
                 AutoLayout = s.AutoLayout is { } layout ? ProjectIO.GroupLayoutDto.From(layout) : null,
+                TilesetKey = s.Tiles?.TilesetKey,
+                TileMap = s.Tiles is { } tiles ? mapBlob(tiles.Map) : null,
+                TileOrigin = s.Tiles is { } t ? [t.Origin.X, t.Origin.Y] : null,
+                TileHidden = s.Tiles is { HiddenFloors.Length: > 0 } th ? [.. th.HiddenFloors] : null,
+                TileLocked = s.Tiles is { LockedFloors.Length: > 0 } tl ? [.. tl.LockedFloors] : null,
             }).ToList(),
             Frames = _frames.Select(f => new HistoryFrameDto
             {
@@ -335,6 +381,7 @@ public sealed partial class SpriteProject
             Export = ProjectIO.ExportDto.From(_export, null),
             CommonRefs = Refs(_export.Common, ids),
             PartsRefs = _export.PartsOverride is { } po ? Refs(po, ids) : null,
+            Tilesets = _tilesets.Length == 0 ? null : _tilesets.OrderBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => new[] { kv.Key, tilesetBlob(kv.Value) }).ToList(),
         };
 
         private static HistorySheetRefsDto Refs(SheetOptions o, HistoryIdTable ids) => new()
@@ -347,7 +394,7 @@ public sealed partial class SpriteProject
         /// <param name="legacyPivots">
         /// 형식 3 이하 기록의 상태: 부위만 피벗을 가졌으므로 예전 프로젝트 파일을 읽을 때처럼 일반 레이어·그룹은 캔버스 피벗(기본 + 프레임마다)을 자기 피벗으로 갖는다.
         /// </param>
-        public static Snapshot FromDto(HistorySnapshotDto d, HistoryResolver r, bool legacyPivots)
+        public static Snapshot FromDto(HistorySnapshotDto d, HistoryResolver r, bool legacyPivots, Func<string, TileMap> map, Func<string, Tileset> tileset)
         {
             var sprite = new SpriteSettings();
             d.Sprite.ApplyTo(sprite);
@@ -383,7 +430,14 @@ public sealed partial class SpriteProject
                     l.Skins?.Select(s => (r.Skin(s.Id), s.Name, s.Owner == 0 ? (Layer?)null : r.Layer(s.Owner))).ToArray(),
                     l.ActiveSkin == 0 ? null : r.Skin(l.ActiveSkin),
                     l.Effects?.Select(EffectCodec.Read).ToArray() ?? [],
-                    l.AutoLayout?.ToLayout())).ToArray(),
+                    l.AutoLayout?.ToLayout(),
+                    l.TilesetKey is { } key && l.TileMap is { } mapHash
+                        ? new TilemapData(key, map(mapHash), l.TileOrigin is [var ox, var oy] ? new Point(ox, oy) : Point.Empty)
+                        {
+                            HiddenFloors = [.. l.TileHidden ?? []],
+                            LockedFloors = [.. l.TileLocked ?? []],
+                        }
+                        : null)).ToArray(),
                 _frames = d.Frames.Select((f, i) => (r.Frame(f.Id), f.DurationMs, f.Pivot?.ToPivot(), f.Name, layerPivots[i].ToArray(),
                     (f.PartShifts ?? []).Select(s => s is [var l, var x, var y] ? KeyValuePair.Create(r.Layer(l), new Point(x, y)) : throw Corrupt()).ToArray())).ToArray(),
                 _pivotLayer = d.PivotLayer == 0 ? null : r.Layer(d.PivotLayer),
@@ -405,6 +459,7 @@ public sealed partial class SpriteProject
                     : throw Corrupt()).ToArray(),
                 _sprite = sprite,
                 _export = export,
+                _tilesets = (d.Tilesets ?? []).Select(t => t is [var key, var hash] ? KeyValuePair.Create(key, tileset(hash)) : throw Corrupt()).ToArray(),
             };
         }
 
