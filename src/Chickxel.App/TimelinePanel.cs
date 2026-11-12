@@ -82,6 +82,7 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
         {
             ExpandToCurrent();
             _grid.ClampRange();
+            _grid.DropLayerSelectionWithoutCurrent();
             RefreshUi();
             _grid.EnsureCurrentVisible();
         };
@@ -923,16 +924,19 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
         if (added is not null) _ctx.SetCurrentLayer(p.IndexOf(added));
     }
 
-    /// <summary>현재 레이어(그룹 안이면 그 그룹) 위에 새 타일맵 레이어(타일셋을 고르거나 새로 만듦).</summary>
+    /// <summary>
+    /// 현재 레이어(그룹 안이면 그 그룹) 위에 새 타일맵 레이어. 묻지 않고 지금 타일맵 레이어의 첫 타일셋(없으면 프로젝트가 쓰는 첫 타일셋, 그것도 없으면 기본 타일셋 사본)으로 만든다 —
+    /// 타일셋은 타일셋 패널에서 바꾸거나 고친다.
+    /// </summary>
     public void AddTilemapLayer()
     {
         if (P is not { } p) return;
-        if (TilesetChoiceDialog.Run(this, p, UiStrings.Tile_NewLayerTitle) is not { } ts) return;
+        // 지금 타일맵 레이어의 첫 타일셋(합친 것이 아니라 원래 타일셋), 없으면 프로젝트가 쓰는 첫 타일셋, 그것도 없으면 기본 타일셋 사본
+        var ts = _ctx.CurrentTilesetSources.FirstOrDefault() ?? p.UsedTilesets.FirstOrDefault() ?? Chickxel.Core.Tiles.BuiltInTilesets.All[0].Create();
         int at = SlotAboveCurrent(p);
         Layer? added = null;
         _ctx.Structural(() => added = p.AddTilemapLayer(ts, at));
         if (added is null) return;
-        if (ts.SourcePath is not null) p.MarkTilesetSynced(ts);
         _ctx.SetCurrentLayer(p.IndexOf(added));
         _ctx.TileStamp = null;
         _ctx.TileSelection = null;
@@ -2593,6 +2597,17 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
             if ((_kind == SelKind.Frames && _selFrames.Count == 0) || (_kind == SelKind.Layers && _selLayers.Count == 0)
                 || (_kind == SelKind.Effects && _selFx.Count == 0)) ClearSelection();
             _owner.QueueEffectFocus();
+        }
+
+        /// <summary>
+        /// 현재 레이어가 고른 레이어(이름 칸 선택) 밖으로 바뀌면(새 레이어·타일맵 레이어 만들기, 단축키로 레이어 옮겨 가기 등) 선택을 풀어
+        /// 현재 칸만 강조되게 한다 — 예전 레이어가 골라진 것처럼 남지 않게.
+        /// </summary>
+        public void DropLayerSelectionWithoutCurrent()
+        {
+            if (_kind != SelKind.Layers || Ctx.CurrentLayerObject is not { } current || _selLayers.Contains(current)) return;
+            ClearSelection();
+            InvalidateVisual();
         }
 
         /// <summary>보이는 행의 레이어 번호(맨 위 레이어부터, 접힌 그룹의 부위는 뺌).</summary>

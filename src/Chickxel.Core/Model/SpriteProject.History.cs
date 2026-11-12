@@ -343,7 +343,7 @@ public sealed partial class SpriteProject
                 ActiveSkin = s.ActiveSkin is { } active ? ids.Of(active) : 0,
                 Effects = s.Effects.Count > 0 ? s.Effects.Select(EffectCodec.Write).ToList() : null,
                 AutoLayout = s.AutoLayout is { } layout ? ProjectIO.GroupLayoutDto.From(layout) : null,
-                TilesetKey = s.Tiles?.TilesetKey,
+                TilesetKeys = s.Tiles is { } tk ? [.. tk.TilesetKeys] : null,
                 TileMap = s.Tiles is { } tiles ? mapBlob(tiles.Map) : null,
                 TileOrigin = s.Tiles is { } t ? [t.Origin.X, t.Origin.Y] : null,
                 TileHidden = s.Tiles is { HiddenFloors.Length: > 0 } th ? [.. th.HiddenFloors] : null,
@@ -431,8 +431,8 @@ public sealed partial class SpriteProject
                     l.ActiveSkin == 0 ? null : r.Skin(l.ActiveSkin),
                     l.Effects?.Select(EffectCodec.Read).ToArray() ?? [],
                     l.AutoLayout?.ToLayout(),
-                    l.TilesetKey is { } key && l.TileMap is { } mapHash
-                        ? new TilemapData(key, map(mapHash), l.TileOrigin is [var ox, var oy] ? new Point(ox, oy) : Point.Empty)
+                    l.TilesetKeys is { Count: > 0 } keys && l.TileMap is { } mapHash
+                        ? new TilemapData([.. keys], map(mapHash), l.TileOrigin is [var ox, var oy] ? new Point(ox, oy) : Point.Empty)
                         {
                             HiddenFloors = [.. l.TileHidden ?? []],
                             LockedFloors = [.. l.TileLocked ?? []],

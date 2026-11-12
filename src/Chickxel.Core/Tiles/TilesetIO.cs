@@ -58,6 +58,8 @@ public static class TilesetIO
         public string? Name { get; set; }
         public int Floor { get; set; }
         public string? Group { get; set; }
+        /// <summary>"뭐라도 있음" 조건이 볼 층 Id(없으면 모든 층).</summary>
+        public List<int>? FilledFloors { get; set; }
         public List<RuleDto>? Rules { get; set; }
     }
 
@@ -67,6 +69,8 @@ public static class TilesetIO
         public int Same { get; set; }
         /// <summary>같은 무리가 없어야 하는 이웃 비트.</summary>
         public int Other { get; set; }
+        /// <summary>뭐라도 있어야 하는 이웃 비트(없으면 0).</summary>
+        public int? Filled { get; set; }
         public bool FlipX { get; set; }
         public bool FlipY { get; set; }
         public bool Rotate { get; set; }
@@ -131,10 +135,12 @@ public static class TilesetIO
                 Name = a.Name.Length == 0 ? null : a.Name,
                 Floor = a.Floor,
                 Group = a.Group.Length == 0 ? null : a.Group,
+                FilledFloors = a.FilledFloors.IsDefaultOrEmpty ? null : [.. a.FilledFloors],
                 Rules = a.Rules.Select(r => new RuleDto
                 {
                     Same = r.Same,
                     Other = r.Other & ~r.Same,
+                    Filled = (r.Filled & ~(r.Same | r.Other)) is var filled and not 0 ? filled : null,
                     FlipX = r.AllowFlipX,
                     FlipY = r.AllowFlipY,
                     Rotate = r.AllowRotate,
@@ -271,10 +277,12 @@ public static class TilesetIO
             Name = a.Name ?? "",
             Floor = a.Floor,
             Group = a.Group?.Trim() ?? "",
+            FilledFloors = a.FilledFloors is { Count: > 0 } ff ? [.. ff.Distinct()] : [],
             Rules = [.. (a.Rules ?? []).Select(r => new AutoTileRule
             {
                 Same = (byte)r.Same,
                 Other = (byte)(r.Other & ~r.Same),
+                Filled = (byte)((r.Filled ?? 0) & ~(r.Same | r.Other)),
                 AllowFlipX = r.FlipX,
                 AllowFlipY = r.FlipY,
                 AllowRotate = r.Rotate,

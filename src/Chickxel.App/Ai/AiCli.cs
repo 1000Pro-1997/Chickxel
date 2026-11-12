@@ -69,7 +69,7 @@ public static class AiCli
         You are connected to Chickxel, a pixel-art and sprite editor running on this computer, through its MCP tools. The user sees the open image in the Chickxel window. You change it only through these tools.
 
         - Each tool call that changes the document is its own undo step in Chickxel ("AI: <tool>").
-        - Draw with the pixel tools. generate_pixel_art (the user's own Codex image generation) and open_file are available only when the user turned them on in Chickxel's Preferences > AI Status tab; a tool missing from the list or refused is off. With generate_pixel_art, pass `subject_image` as a base64 PNG when the user gave you an image of the character or item to turn into pixel art.
+        - Draw with the pixel tools. generate_pixel_art (the user's own Codex image generation) and open_file are available only when the user turned them on in Chickxel's AI > External AI Connection window; a tool missing from the list or refused is off. With generate_pixel_art, pass `subject_image` as a base64 PNG when the user gave you an image of the character or item to turn into pixel art.
         - There is no ask_user tool here: when a consequential choice is ambiguous, ask the user in your own conversation before changing the document.
         """
         + "\n" + DrawingRules + "\n" + DocumentRules + "\n" + LockRules;

@@ -21,8 +21,8 @@ internal static class ShortcutsShots
         });
     }
 
-    private const string GifId = "파일/GIF 애니메이션으로 내보내기…";
-    private const string GifName = "Export as animated GIF…";
+    private const string ExampleId = "파일/갤러리에 올리기…";
+    private const string ExampleName = "Upload to Gallery…";
 
     // 단축키 바꾸기: 단축키 탭 ①~⑩, 겹치는 키 물음 ⑪, 바뀐 키가 보이는 메뉴 ⑫, 도움말 > 단축키 목록 ⑬, 목록 창.
     [Shot("shortcuts-customize")]
@@ -33,12 +33,12 @@ internal static class ShortcutsShots
         Preferences(k, 1, w =>
         {
             var search = ShotKit.Get<TextBox>(w, "_search");
-            search.Text = "export";
+            search.Text = "gallery";
             ShotKit.Pump(300);
-            ShotKit.Call(w, "StartCapture", GifId, true);
+            ShotKit.Call(w, "StartCapture", ExampleId, true);
             ShotKit.Pump(400);
             var rows = ShotKit.Get<StackPanel>(w, "_rows");
-            var row = rows.Children.OfType<Grid>().First(g => g.Children.OfType<TextBlock>().Any(t => t.Text == GifName));
+            var row = rows.Children.OfType<Grid>().First(g => g.Children.OfType<TextBlock>().Any(t => t.Text == ExampleName));
             var buttons = ShotKit.All<Button>(row).ToList();
             k.Save(w, marks:
             [
@@ -60,13 +60,13 @@ internal static class ShortcutsShots
             });
         });
 
-        // 바꾼 키(GIF로 내보내기 = Ctrl+Alt+G)가 바로 보이는 파일 메뉴.
-        App.Settings.Shortcuts = new() { [GifId] = ["Ctrl+Alt+G"] };
+        // 바꾼 키(갤러리에 올리기 = Ctrl+Alt+G)가 바로 보이는 파일 메뉴.
+        App.Settings.Shortcuts = new() { [ExampleId] = ["Ctrl+Alt+G"] };
         ShotKit.Call(main, "ApplyShortcuts");
         k.Settle(200);
         var file = StartMenus.Open(k, main, 0);
-        var gif = StartMenus.Item(file, GifName.TrimEnd('…'));
-        var key = StartMenus.PopupRect(StartMenus.Key(gif)!, main);
+        var gallery = StartMenus.Item(file, ExampleName.TrimEnd('…'));
+        var key = StartMenus.PopupRect(StartMenus.Key(gallery)!, main);
         k.Save(main, "shortcuts-customize-3", crop: StartMenus.Crop(main, file), marks: [new Rect(key.X - 14, key.Y, key.Width + 14, key.Height)], firstNumber: 12);
         CloseMenu(k, main);
 

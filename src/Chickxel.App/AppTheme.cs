@@ -23,6 +23,8 @@ public static class AppTheme
     public static readonly Color SavedColor = Color.FromRgb(64, 170, 96);
     /// <summary>즐겨찾기 별(채운 별) 색.</summary>
     public static readonly Color FavoriteColor = Color.FromRgb(240, 196, 70);
+    /// <summary>잠김 표시(타일 층의 자물쇠·이름).</summary>
+    public static readonly Color LockedColor = Color.FromRgb(240, 200, 60);
     /// <summary>Discord 브랜드색(blurple) — Discord 로고·링크.</summary>
     public static readonly Color DiscordColor = Color.FromRgb(0x58, 0x65, 0xF2);
     public static readonly Color CheckerA = Color.FromRgb(68, 68, 72);
@@ -40,6 +42,7 @@ public static class AppTheme
     public static readonly IImmutableSolidColorBrush UnsavedBrush = new ImmutableSolidColorBrush(UnsavedColor);
     public static readonly IImmutableSolidColorBrush SavedBrush = new ImmutableSolidColorBrush(SavedColor);
     public static readonly IImmutableSolidColorBrush FavoriteBrush = new ImmutableSolidColorBrush(FavoriteColor);
+    public static readonly IImmutableSolidColorBrush LockedBrush = new ImmutableSolidColorBrush(LockedColor);
     public static readonly IImmutableSolidColorBrush DiscordBrush = new ImmutableSolidColorBrush(DiscordColor);
 
     /// <summary>한글이 고르게 보이는 OS 기본 글꼴(Windows: 맑은 고딕, macOS: Apple SD 산돌고딕 Neo).</summary>

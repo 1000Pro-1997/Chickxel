@@ -5,7 +5,7 @@ namespace Chickxel.App;
 
 /// <summary>
 /// GIF 재생 속도 고르기 한 줄: 방식(원래 속도 / 배속 / 같은 FPS) + 그 방식의 값 + 설명 정보박스.
-/// GIF 내보내기 창과 갤러리에 올리기 창이 같이 쓰고, 마지막 값은 앱 설정(<see cref="AppSettings.GifTimingMode"/>·<see cref="AppSettings.GifSpeed"/>·
+/// 내보내기 창(GIF·APNG)과 갤러리에 올리기 창이 같이 쓰고, 마지막 값은 앱 설정(<see cref="AppSettings.GifTimingMode"/>·<see cref="AppSettings.GifSpeed"/>·
 /// <see cref="AppSettings.GifFps"/>)에 기억한다.
 /// </summary>
 public sealed class GifTimingField : StackPanel

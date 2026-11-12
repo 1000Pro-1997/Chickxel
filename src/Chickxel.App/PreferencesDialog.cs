@@ -7,7 +7,8 @@ namespace Chickxel.App;
 
 /// <summary>
 /// 환경 설정: 일반(화면 언어·번역 CSV 내보내기/언어 추가, 실행취소 횟수, 실행취소 기록 남기기·보관 기간·용량, 자동 저장, 앱 휴지통 보관 기간·용량, 업데이트 자동 확인, 설정 초기화) + 단축키(명령마다 바꾸기·추가·없음·기본값, 모두 기본값, JSON 내보내기·불러오기)
-/// + AI(상태 창, 외부 AI 연결 허용·파일 열기·그림 생성 허락·연결 설정 복사) + AI 참고 자료(폴더 위치·열기, 기본 예시 보이기) + 프리셋(지운 기본 프리셋 되돌리기 — 자동 최적화·그라데이션) + 영상(ffmpeg 위치 — 영상·AVIF·HEIC 열기).
+/// + AI(상태 창 열기) + AI 참고 자료(폴더 위치·열기, 기본 예시 보이기) + 프리셋(지운 기본 프리셋 되돌리기 — 자동 최적화·그라데이션) + 영상(ffmpeg 위치 — 영상·AVIF·HEIC 열기).
+/// 외부 AI 연결은 AI 메뉴의 따로 창(<see cref="Ai.ExternalAiDialog"/>)에 있다.
 /// 단축키는 키 또는 마우스 4·5번 단추(+ 수정자)이고, 서로 겹치지 않게 한다(이미 쓰는 키를 지정하면 그 명령에서 빼도 되는지 묻는다).
 /// </summary>
 public sealed class PreferencesDialog : DialogBase
@@ -33,7 +34,6 @@ public sealed class PreferencesDialog : DialogBase
     /// <summary>고른 참고 자료 폴더(null = 기본 폴더).</summary>
     private string? _refsFolder;
     private readonly TextBox _ffmpegBox;
-    private readonly CheckBox _external, _externalOpenFile, _externalGenerate;
     /// <summary>키를 기다리는 명령과 방식(true = 바꾸기, false = 추가). 없으면 null.</summary>
     private (string Id, bool Replace)? _capture;
 
@@ -43,8 +43,7 @@ public sealed class PreferencesDialog : DialogBase
     public PreferencesDialog(string language, int undoSteps, bool historyEnabled, UndoHistoryPolicy historyPolicy, UndoHistoryKeeper history,
         bool autoSave, int autoSaveDelay, TrashPolicy trashPolicy, bool updateCheck, bool discordPresence,
         IReadOnlyList<ShortcutCommand> commands, IReadOnlyDictionary<string, List<KeyChord>> keys,
-        string? referencesFolder, bool showReferenceExamples, string? ffmpegPath, Action<Window> showAiStatus,
-        bool externalMcp, bool externalOpenFile, bool externalGenerate)
+        string? referencesFolder, bool showReferenceExamples, string? ffmpegPath, Action<Window> showAiStatus)
         : base(UiStrings.S_PreferencesDialog_PreferencesDialog_0B1C3F663F)
     {
         // 대상 도움말(F1): 창 = "환경 설정", 탭 머리글 = 그 탭을 설명하는 표 줄·소제목, 탭 안의 묶음 = 그 설정을 자세히 설명하는 쪽
@@ -252,33 +251,10 @@ public sealed class PreferencesDialog : DialogBase
         aiStatusNote.Foreground = AppTheme.DimTextBrush;
         aiStatusNote.MaxWidth = 640;
         aiStatusNote.HorizontalAlignment = HorizontalAlignment.Left;
-        // 외부 AI 연결: 다른 AI 앱이 "Chickxel --mcp"로 켜져 있는 이 앱의 도구를 쓴다(따로 허락하는 도구는 켰을 때만).
-        _external = Ui.Check(UiStrings.ExternalMcp_Allow, externalMcp);
-        _externalOpenFile = Ui.Check(UiStrings.ExternalMcp_OpenFile, externalOpenFile);
-        _externalGenerate = Ui.Check(UiStrings.ExternalMcp_Generate, externalGenerate);
-        _externalOpenFile.Margin = _externalGenerate.Margin = new Thickness(22, 0, 0, 0);
-        void SyncExternal() => _externalOpenFile.IsEnabled = _externalGenerate.IsEnabled = _external.On();
-        _external.IsCheckedChanged += (_, _) => SyncExternal();
-        SyncExternal();
-        var copied = Ui.Label("");
-        copied.Foreground = AppTheme.DimTextBrush;
-        var copyConfig = Ui.Button(VectorIcon.Copy, UiStrings.ExternalMcp_CopyConfig, async (_, _) =>
-        {
-            if (Clipboard is not { } clipboard) return;
-            await clipboard.SetTextAsync(Ai.McpBridge.ClientConfigJson());
-            copied.Text = UiStrings.ExternalMcp_Copied;
-        }).Tip(UiStrings.ExternalMcp_CopyConfigTip);
         var ai = Ui.Stack(
-            Ui.Stack(
-                Ui.Label(UiStrings.AiStatus_SettingsTitle, bold: true),
-                aiStatusNote,
-                Ui.Button(VectorIcon.Info, UiStrings.AiStatus_Open, (_, _) => showAiStatus(this))).HelpAt("ai-setup", anchor: "Open AI status and settings in Preferences"),
-            Ui.Stack(
-                Ui.Label(UiStrings.ExternalMcp_Title, bold: true),
-                Ui.Row(_external, Ui.InfoBadge(UiStrings.ExternalMcp_Info)),
-                _externalOpenFile,
-                _externalGenerate,
-                Ui.Row(copyConfig, copied)).HelpAt("ai-external", shot: "ai-external"));
+            Ui.Label(UiStrings.AiStatus_SettingsTitle, bold: true),
+            aiStatusNote,
+            Ui.Button(VectorIcon.Info, UiStrings.AiStatus_Open, (_, _) => showAiStatus(this))).HelpAt("ai-setup", anchor: "Open AI status and settings in Preferences");
 
         // 프리셋: 지운 기본 프리셋 되살리기(누르면 바로 저장 — 확인·취소와 무관).
         var presetsNote = Ui.Label(UiStrings.Presets_Prefs_Note);
@@ -351,15 +327,6 @@ public sealed class PreferencesDialog : DialogBase
 
     /// <summary>지금 쓰는 언어의 CSV를 새로 넣었는지(같은 언어를 계속 써도 다시 시작해야 바뀜).</summary>
     public bool CurrentLanguageImported { get; private set; }
-
-    /// <summary>외부 AI 연결을 허락할지(<see cref="AppSettings.AiExternalMcp"/>).</summary>
-    public bool ExternalMcp => _external.On();
-
-    /// <summary>외부 AI 연결에서 파일 열기를 허락할지.</summary>
-    public bool ExternalOpenFile => _externalOpenFile.On();
-
-    /// <summary>외부 AI 연결에서 그림 생성을 허락할지.</summary>
-    public bool ExternalGenerate => _externalGenerate.On();
 
     private void FillLanguages(string select)
     {

@@ -4,7 +4,7 @@ using Chickxel.App.Localization;
 namespace Chickxel.App;
 
 /// <summary>
-/// 내보낼 스킨 고르기(내보내기 설정 창의 "스킨 고르기…"): 시트 설정 한 벌(공통 또는 부위 아틀라스 따로)의
+/// 내보낼 스킨 고르기(내보내기 창 시트 설정의 "스킨 고르기…"): 시트 설정 한 벌(공통 또는 부위 아틀라스 따로)의
 /// 스킨 체크(끄면 <see cref="SheetOptions.ExcludedSkins"/>), 착장 프리셋(<see cref="SheetOptions.Outfits"/>, 프레임 시트만),
 /// 넣을 최상위 레이어(끄면 <see cref="SheetOptions.ExcludedLayers"/>).
 /// 창 안에서는 고르기만 하고, 확인을 누르면 호출한 쪽이 <see cref="ApplyTo"/>로 한 번에 반영한다(실행취소 1단계).

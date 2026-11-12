@@ -92,11 +92,14 @@ public enum AutoTilePreset
 /// <summary>자동 타일 규칙 하나에 넣은 타일과 무작위 비중(1 이상).</summary>
 public readonly record struct AutoTileChoice(int Tile, int Weight = 1);
 
-/// <summary>규칙의 이웃 칸 조건: 상관없음, 같은 무리가 있어야 함, 같은 무리가 없어야 함(비었거나 다른 것).</summary>
-public enum NeighborCondition : byte { Any, Same, Other }
+/// <summary>
+/// 규칙의 이웃 칸 조건: 상관없음, 같은 무리가 있어야 함, 같은 무리가 없어야 함(비었거나 다른 것),
+/// 뭐라도 있어야 함(같은 무리이거나 세트가 정한 층(<see cref="AutoTileSet.FilledFloors"/>)에 어떤 타일이든 있음 — 벽에 닿은 물처럼).
+/// </summary>
+public enum NeighborCondition : byte { Any, Same, Other, Filled }
 
 /// <summary>
-/// 자동 타일 규칙: 둘레 8칸 조건(<see cref="Same"/>·<see cref="Other"/> — 이웃 비트, 둘 다 아니면 상관없음)이 맞으면 <see cref="Tiles"/> 중 하나를 놓는다.
+/// 자동 타일 규칙: 둘레 8칸 조건(<see cref="Same"/>·<see cref="Other"/>·<see cref="Filled"/> — 이웃 비트, 셋 다 아니면 상관없음)이 맞으면 <see cref="Tiles"/> 중 하나를 놓는다.
 /// 뒤집기·회전을 허용하면 조건을 뒤집거나 돌린 모양에도 맞추고, 그때는 타일도 같은 만큼 돌려 놓는다.
 /// </summary>
 public sealed record AutoTileRule
@@ -105,6 +108,8 @@ public sealed record AutoTileRule
     public byte Same { get; init; }
     /// <summary>같은 무리가 없어야 하는 이웃(비트, <see cref="Same"/>과 겹치지 않음).</summary>
     public byte Other { get; init; }
+    /// <summary>뭐라도 있어야 하는 이웃(비트, 다른 둘과 겹치지 않음).</summary>
+    public byte Filled { get; init; }
     public bool AllowFlipX { get; init; }
     public bool AllowFlipY { get; init; }
     public bool AllowRotate { get; init; }
@@ -114,7 +119,10 @@ public sealed record AutoTileRule
 
     /// <summary>이웃 <paramref name="bit"/>(0~7, <see cref="AutoTileShapes.Directions"/> 차례)의 조건.</summary>
     public NeighborCondition Condition(int bit)
-        => (Same & (1 << bit)) != 0 ? NeighborCondition.Same : (Other & (1 << bit)) != 0 ? NeighborCondition.Other : NeighborCondition.Any;
+        => (Same & (1 << bit)) != 0 ? NeighborCondition.Same
+            : (Other & (1 << bit)) != 0 ? NeighborCondition.Other
+            : (Filled & (1 << bit)) != 0 ? NeighborCondition.Filled
+            : NeighborCondition.Any;
 
     /// <summary>이웃 <paramref name="bit"/>의 조건을 바꾼 사본.</summary>
     public AutoTileRule WithCondition(int bit, NeighborCondition condition)
@@ -124,18 +132,25 @@ public sealed record AutoTileRule
         {
             Same = condition == NeighborCondition.Same ? (byte)(Same | b) : (byte)(Same & ~b),
             Other = condition == NeighborCondition.Other ? (byte)(Other | b) : (byte)(Other & ~b),
+            Filled = condition == NeighborCondition.Filled ? (byte)(Filled | b) : (byte)(Filled & ~b),
         };
     }
 
-    /// <summary>이웃 모양(같은 무리 비트)이 조건에 맞는지.</summary>
-    public bool Matches(byte mask) => (mask & Same) == Same && (mask & Other) == 0;
+    /// <summary>이웃 모양(같은 무리 비트 <paramref name="mask"/>, 뭐라도 있는 비트 <paramref name="filled"/>)이 조건에 맞는지.</summary>
+    public bool Matches(byte mask, byte filled) => Misses(mask, filled) == 0;
 
     /// <summary>맞지 않는 조건 수(가장 비슷한 규칙 고르기).</summary>
-    public int Misses(byte mask) => System.Numerics.BitOperations.PopCount((uint)((Same & ~mask) | (Other & mask)) & 0xFF);
+    public int Misses(byte mask, byte filled)
+        => System.Numerics.BitOperations.PopCount((uint)((Same & ~mask) | (Other & mask) | (Filled & ~filled)) & 0xFF);
 
     /// <summary>조건을 뒤집고 돌린 사본(타일을 같은 만큼 돌리면 이 조건에 맞음).</summary>
     public AutoTileRule Transformed(TileTransform t)
-        => t == TileTransform.None ? this : this with { Same = AutoTileShapes.Transform(Same, t), Other = AutoTileShapes.Transform(Other, t) };
+        => t == TileTransform.None ? this : this with
+        {
+            Same = AutoTileShapes.Transform(Same, t),
+            Other = AutoTileShapes.Transform(Other, t),
+            Filled = AutoTileShapes.Transform(Filled, t),
+        };
 }
 
 /// <summary>
@@ -150,7 +165,15 @@ public sealed record AutoTileSet
     public int Floor { get; init; }
     /// <summary>이어지는 무리 이름: 같은 이름의 세트끼리 서로 이웃으로 친다(흙과 진흙처럼). 비면 이 세트만.</summary>
     public string Group { get; init; } = "";
+    /// <summary>"뭐라도 있음" 조건이 볼 층(이 층들에 어떤 타일이든 있으면 있음). 비면 모든 층. 이어지는 세트의 타일은 층과 상관없이 있음.</summary>
+    public ImmutableArray<int> FilledFloors { get; init; } = [];
     public ImmutableArray<AutoTileRule> Rules { get; init; } = [];
+
+    /// <summary>규칙 중 "뭐라도 있음" 조건을 쓰는 것이 있는지.</summary>
+    public bool UsesFilled => Rules.Any(r => r.Filled != 0);
+
+    /// <summary>"뭐라도 있음"이 층 <paramref name="floor"/>를 보는지.</summary>
+    public bool CountsFloor(int floor) => FilledFloors.IsDefaultOrEmpty || FilledFloors.Contains(floor);
 
     /// <summary>이 세트가 <paramref name="other"/>와 이어지는지(같은 세트이거나 같은 무리).</summary>
     public bool JoinsWith(AutoTileSet other)

@@ -908,18 +908,34 @@ internal static class AiShots
     public static void External(ShotKit k)
     {
         var main = k.Main(Sample(k));
-        // ①~④ 환경 설정 > AI 상태: 외부 AI 연결 허용(켬, 옆 정보박스까지)·파일 열기 허락·그림 생성 허락·연결 설정 복사.
-        ShortcutsShots.Preferences(k, 2, d =>
+        // ①~④ AI > 외부 AI 연결 창: 외부 AI 연결 허용(켬, 옆 정보박스까지)·파일 열기 허락·그림 생성 허락·연결 설정 칸과 복사 단추.
+        k.Dialog(() => k.Command("외부 AI 연결"), d =>
         {
             var allow = ShotKit.Get<CheckBox>(d, "_external");
             allow.IsChecked = true;
+            // 연결 설정 칸: 찍는 컴퓨터의 실행 파일 경로 대신 설치 스크립트의 기본 경로(가이드 본문의 예와 같음).
+            ShotKit.Find<TextBox>(d).Text = """
+                {
+                  "mcpServers": {
+                    "chickxel": {
+                      "command": "C:\\Users\\me\\AppData\\Local\\Programs\\Chickxel\\Chickxel.exe",
+                      "args": [
+                        "--mcp"
+                      ]
+                    }
+                  }
+                }
+                """;
+            // 번호 동그라미가 체크 상자를 가리지 않게 본문을 오른쪽으로 조금 민다(창 왼쪽 끝에 여백이 없음).
+            var body = (Control)((Control)allow.Parent!).Parent!;
+            body.Margin = new Thickness(body.Margin.Left + 16, body.Margin.Top, body.Margin.Right, body.Margin.Bottom);
             ShotKit.Pump(300);
             k.Save(d, "ai-external", marks:
             [
                 Room(ShotKit.Bounds(allow, d).Inflate(new Thickness(0, 0, 26, 0)), left: 14, up: 0),
                 Room(ShotKit.Get<CheckBox>(d, "_externalOpenFile"), d, left: 14, up: 0),
                 Room(ShotKit.Get<CheckBox>(d, "_externalGenerate"), d, left: 14, up: 0),
-                VisibleButton(d, UiStrings.ExternalMcp_CopyConfig),
+                Room((Control)ShotKit.Find<TextBox>(d).Parent!, d, left: 14, up: 0),
             ]);
         });
 

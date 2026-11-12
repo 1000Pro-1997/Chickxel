@@ -162,14 +162,17 @@ public sealed class TileMap
     }
 
     /// <summary>
-    /// 칸 <paramref name="start"/>에서 4방향으로 이어진, 층 <paramref name="floor"/>에서 같은 타일(같은 Id·뒤집기·회전, 또는 빈 칸)이 덮은 칸들.
+    /// 칸 <paramref name="start"/>에서 4방향으로 이어진, 층들 <paramref name="floors"/>에서 보이는 모습이 같은 칸들: 층마다 덮은 타일(같은 Id·뒤집기·회전,
+    /// 자동 타일로 찍은 칸은 모양과 상관없이 같은 세트) 또는 빈 칸이 모두 같아야 한다 — 다른 층의 벽이 채우기를 막는다.
     /// <paramref name="limit"/>(칸 사각형) 밖으로는 넓히지 않는다(빈 칸은 끝없이 이어지므로).
     /// </summary>
-    public HashSet<Point> FillRegion(Tileset tileset, int floor, Point start, Rectangle limit)
+    public HashSet<Point> FillRegion(Tileset tileset, IReadOnlyList<int> floors, Point start, Rectangle limit)
     {
         var region = new HashSet<Point>();
         if (!limit.Contains(start)) return region;
-        var key = KeyAt(tileset, floor, start);
+        var key = new (int, TileTransform)?[floors.Count];
+        var other = new (int, TileTransform)?[floors.Count];
+        StackAt(tileset, floors, start, key);
         var queue = new Queue<Point>();
         queue.Enqueue(start);
         region.Add(start);
@@ -178,7 +181,9 @@ public sealed class TileMap
             var p = queue.Dequeue();
             foreach (var n in (ReadOnlySpan<Point>)[new(p.X + 1, p.Y), new(p.X - 1, p.Y), new(p.X, p.Y + 1), new(p.X, p.Y - 1)])
             {
-                if (!limit.Contains(n) || region.Contains(n) || KeyAt(tileset, floor, n) != key) continue;
+                if (!limit.Contains(n) || region.Contains(n)) continue;
+                StackAt(tileset, floors, n, other);
+                if (!key.AsSpan().SequenceEqual(other)) continue;
                 region.Add(n);
                 queue.Enqueue(n);
             }
@@ -186,6 +191,12 @@ public sealed class TileMap
         return region;
     }
 
-    private (int Tile, TileTransform Transform)? KeyAt(Tileset tileset, int floor, Point cell)
-        => Covering(tileset, floor, cell) is { } p ? (p.Cell.Tile, p.Cell.Transform) : null;
+    /// <summary>칸의 층마다 모습(자동 타일 칸은 세트 Id를 음수로, 빈 칸은 null)을 <paramref name="into"/>에 적는다.</summary>
+    private void StackAt(Tileset tileset, IReadOnlyList<int> floors, Point cell, (int, TileTransform)?[] into)
+    {
+        for (int i = 0; i < floors.Count; i++)
+            into[i] = Covering(tileset, floors[i], cell) is { } p
+                ? p.Cell.AutoTile != 0 ? (-p.Cell.AutoTile, TileTransform.None) : (p.Cell.Tile, p.Cell.Transform)
+                : null;
+    }
 }

@@ -112,8 +112,8 @@ public class TilemapTests
         set = set with { Rules = [.. set.Rules.Select((r, i) => r with { Tiles = [new AutoTileChoice(100 + i)] })] };
         for (int m = 0; m < 256; m++)
         {
-            Assert.True(AutoTiler.HasExact(set, (byte)m));
-            Assert.Single(set.Rules, r => r.Matches((byte)m));
+            Assert.True(AutoTiler.HasExact(set, (byte)m, 0));
+            Assert.Single(set.Rules, r => r.Matches((byte)m, 0));
         }
     }
 
@@ -146,8 +146,8 @@ public class TilemapTests
         var top = new AutoTileRule { Other = AutoTileShapes.N, Tiles = [new(7)] };
         var rest = new AutoTileRule { Tiles = [new(8)] };
         var set = new AutoTileSet { Id = 1, Floor = 1, Rules = [top, rest] };
-        Assert.Equal(7, AutoTiler.Pick(set, AutoTileShapes.S | AutoTileShapes.E, Point.Empty)?.Tile);
-        Assert.Equal(8, AutoTiler.Pick(set, AutoTileShapes.N, Point.Empty)?.Tile);
+        Assert.Equal(7, AutoTiler.Pick(set, AutoTileShapes.S | AutoTileShapes.E, 0, Point.Empty)?.Tile);
+        Assert.Equal(8, AutoTiler.Pick(set, AutoTileShapes.N, 0, Point.Empty)?.Tile);
         Assert.Equal(NeighborCondition.Other, top.Condition(0));
         Assert.Equal(NeighborCondition.Same, top.WithCondition(0, NeighborCondition.Same).Condition(0));
         Assert.Equal(0, top.WithCondition(0, NeighborCondition.Any).Other);
@@ -182,8 +182,8 @@ public class TilemapTests
         var counts = new Dictionary<int, int>();
         for (int x = 0; x < 400; x++)
         {
-            var a = AutoTiler.Pick(set, 0, new Point(x, 5))!.Value.Tile;
-            Assert.Equal(a, AutoTiler.Pick(set, 0, new Point(x, 5))!.Value.Tile);
+            var a = AutoTiler.Pick(set, 0, 0, new Point(x, 5))!.Value.Tile;
+            Assert.Equal(a, AutoTiler.Pick(set, 0, 0, new Point(x, 5))!.Value.Tile);
             counts[a] = counts.GetValueOrDefault(a) + 1;
         }
         Assert.InRange(counts[3], 240, 360);
@@ -324,7 +324,7 @@ public class TilemapTests
         var ts = Sample();
         var (p, layer) = NewProject(ts);
         Paint(p, layer, m => m.Place(ts, 1, new Point(0, 0), new TileCell(1)).Place(ts, 2, new Point(0, 0), new TileCell(3)));
-        p.EditTileset("타일 지우기", ts with { Tiles = ts.Tiles.RemoveAt(0) }, m => m.WithoutTile(1));
+        p.EditTileset("타일 지우기", ts with { Tiles = ts.Tiles.RemoveAt(0) }, (m, offset) => m.WithoutTile(offset + 1));
         Assert.Equal([3], layer.Tiles!.Map.All.Select(t => t.Cell.Tile));
         p.Undo();
         Assert.Equal(2, layer.Tiles!.Map.Count);
@@ -348,6 +348,64 @@ public class TilemapTests
         Assert.Same(p.GetCel(p.IndexOf(parts[0]), 0), p.GetCel(p.IndexOf(parts[0]), 1));
         p.Undo();
         Assert.Same(layer, p.Layers.Single(l => l.IsTilemap));
+    }
+
+    /// <summary>
+    /// 움직이는 타일이 있는 맵을 한 프레임 문서에서 레이어로 바꾸면, 주기가 다른 타일(100ms×2장, 150ms×2장)이 모두 한 바퀴 도는 길이(600ms)를
+    /// 그림이 바뀌는 간격(50ms)마다 프레임으로 늘리고, 프레임마다 그 시각의 그림이 들어간다(같은 그림은 나눠 씀). 되돌리면 한 단계로 돌아온다.
+    /// </summary>
+    [Fact]
+    public void ConvertToGroup_ExpandsOneFrameDoc_ToFullCycleOfAnimatedTiles()
+    {
+        var ts = Sample();
+        ts = ts with
+        {
+            Tiles = ts.Tiles
+                .SetItem(0, ts.Tiles[0].WithFrames([Solid(4, 4, Red), Solid(4, 4, Green)], 100))
+                .SetItem(2, ts.Tiles[2].WithFrames([Solid(4, 4, Blue), Solid(4, 4, Red)], 150)),
+        };
+        var (p, layer) = NewProject(ts);
+        Paint(p, layer, m => m.Place(ts, 1, new Point(0, 0), new TileCell(1)).Place(ts, 2, new Point(1, 1), new TileCell(3)));
+        int undoBefore = p.History.UndoCount;
+        var group = p.ConvertTilemapToGroup(p.IndexOf(layer));
+        Assert.Equal(12, p.Frames.Count);
+        Assert.All(p.Frames, f => Assert.Equal(50, f.DurationMs));
+        var parts = p.ChildrenOf(group);
+        PixelImage Cel(int part, int frame) => p.GetCel(p.IndexOf(parts[part]), frame)!;
+        // 바닥(100ms마다 빨강↔초록): 0~1 빨강, 2~3 초록, 4~5 빨강 …; 장식(150ms마다 파랑↔빨강): 0~2 파랑, 3~5 빨강
+        Assert.Equal([Red, Red, Green, Green, Red], Enumerable.Range(0, 5).Select(f => Cel(0, f)[0, 0]));
+        Assert.Equal([Blue, Blue, Blue, Red, Red, Red, Blue], Enumerable.Range(0, 7).Select(f => Cel(1, f)[0, 0]));
+        Assert.Same(Cel(0, 0), Cel(0, 1));
+        Assert.Equal(undoBefore + 1, p.History.UndoCount);
+        p.Undo();
+        Assert.Single(p.Frames);
+        Assert.Same(layer, p.Layers.Single(l => l.IsTilemap));
+    }
+
+    /// <summary>"뭐라도 있음" 조건: 위에 다른 세트의 벽(보는 층)이 있으면 몸통 규칙, 보지 않는 층의 타일이나 빈 칸이면 수면 규칙. 벽을 손으로 지우면 다시 수면이 된다.</summary>
+    [Fact]
+    public void AutoTile_FilledCondition_SeesAnyTileOnChosenFloors()
+    {
+        var body = new AutoTileRule { Filled = AutoTileShapes.N, Tiles = [new(1)] };
+        var surface = new AutoTileRule { Tiles = [new(3)] };
+        var water = new AutoTileSet { Id = 1, Floor = 2, Rules = [body, surface], FilledFloors = [1] };
+        var ts = Sample() with { AutoTiles = [water] };
+        var map = AutoTiler.Paint(ts, TileMap.Empty, water, [new Point(0, 1), new Point(0, 2), new Point(1, 1)]);
+        Assert.Equal(3, map.Get(2, new Point(0, 1))?.Tile); // 위가 빔 → 수면
+        Assert.Equal(1, map.Get(2, new Point(0, 2))?.Tile); // 위가 같은 세트 → 몸통
+        // 층 1(보는 층)에 벽 → 몸통. 층 2(보지 않는 층)의 다른 타일은 빈 칸으로 본다.
+        map = map.Place(ts, 1, new Point(0, 0), new TileCell(1));
+        map = AutoTiler.RefreshAround(ts, map, [new Point(0, 0)]);
+        Assert.Equal(1, map.Get(2, new Point(0, 1))?.Tile);
+        map = map.Place(ts, 2, new Point(1, 0), new TileCell(3));
+        map = AutoTiler.RefreshAround(ts, map, [new Point(1, 0)]);
+        Assert.Equal(3, map.Get(2, new Point(1, 1))?.Tile);
+        map = AutoTiler.RefreshAround(ts, map.With(1, new Point(0, 0), null), [new Point(0, 0)]);
+        Assert.Equal(3, map.Get(2, new Point(0, 1))?.Tile);
+        // 파일로 저장해도 조건과 층이 남는다
+        var back = TilesetIO.FromBytes(TilesetIO.ToBytes(ts)).AutoTiles.Single();
+        Assert.Equal(AutoTileShapes.N, back.Rules[0].Filled);
+        Assert.Equal([1], back.FilledFloors.ToArray());
     }
 
     [Fact]
@@ -447,5 +505,161 @@ public class TilemapTests
             Assert.Equal(ts.Tiles.Length, back.Tiles.Length);
             Assert.Equal(ts.AutoTiles.Length, back.AutoTiles.Length);
         }
+    }
+
+    /// <summary>둘째 타일셋: 같은 4×4 칸, 층 7(장식)·8(기타)·9(끝) — 이름이 같은 층은 그 층으로, 아니면 같은 차례(넘으면 맨 위) 층으로.</summary>
+    private static Tileset Second() => Tileset.Create("u", 4, 4) with
+    {
+        Floors = [new TileFloor(7, "장식"), new TileFloor(8, "기타"), new TileFloor(9, "끝")],
+        Tiles = [new TileDef { Id = 1, Image = Solid(4, 4, Green), Floor = 7 }, new TileDef { Id = 2, Image = Solid(4, 4, Blue), Floor = 9 }],
+        AutoTiles = [new AutoTileSet { Id = 1, Floor = 8, FilledFloors = [7, 9], Rules = [new AutoTileRule { Tiles = [new(1), new(2, 3)] }] }],
+    };
+
+    [Fact]
+    public void CombineTilesets_OffsetsIdsAndMapsFloorsAndAutoTileRefs()
+    {
+        var primary = Sample();
+        var second = Second();
+        Assert.Same(primary, TileSources.Combine([primary]));
+        // 칸 크기가 다른 타일셋은 뺀다
+        var combined = TileSources.Combine([primary, second, Tileset.Create("큰", 8, 8) with { Tiles = [new TileDef { Id = 1, Image = Solid(8, 8, Red) }] }]);
+        Assert.Equal(primary.Floors.ToArray(), combined.Floors.ToArray());
+        Assert.Equal(primary.Key, combined.Key);
+        Assert.Equal(primary.Tiles.Length + 2, combined.Tiles.Length);
+        Assert.Same(primary.Find(1), combined.Find(1));
+        int a = TileSources.Global(1, 1), b = TileSources.Global(1, 2);
+        Assert.Equal((1, 1, TileSources.Stride + 1), (TileSources.Slot(a), TileSources.Local(a), a));
+        Assert.Equal(2, combined.Find(a)!.Floor); // "장식" 이름이 같음
+        Assert.Equal(2, combined.Find(b)!.Floor); // 차례 2 → 맨 위(차례 1)
+        Assert.Null(combined.Find(TileSources.Global(2, 1)));
+        var set = combined.FindAutoTile(TileSources.Global(1, 1))!;
+        Assert.Equal(2, set.Floor); // 차례 1 → 차례 1
+        Assert.Equal([2], set.FilledFloors.ToArray());
+        Assert.Equal([new AutoTileChoice(a), new AutoTileChoice(b, 3)], set.Rules[0].Tiles.ToArray());
+        Assert.Equal(1, TileSources.Slot(new TileCell(0, TileTransform.None, set.Id)));
+    }
+
+    private static AutoTileSet GroupRow(int id, int floor, string group, int alone, int left)
+    {
+        var s = AutoTileSet.FromPreset(id, "", floor, AutoTilePreset.Row);
+        return s with { Group = group, Rules = s.Rules.SetItem(0, s.Rules[0] with { Tiles = [new(alone)] }).SetItem(1, s.Rules[1] with { Tiles = [new(left)] }) };
+    }
+
+    /// <summary>다른 타일셋의 같은 무리 세트끼리도 이어진다(세트 Id가 같아도 자리로 나뉨).</summary>
+    [Fact]
+    public void AutoTile_SetsFromTwoTilesetsInSameGroupJoin()
+    {
+        var primary = Sample() with { AutoTiles = [GroupRow(1, 1, "땅", 20, 21)] };
+        var second = Sample() with { AutoTiles = [GroupRow(1, 1, "땅", 30, 31)] };
+        var (p, layer) = NewProject(primary);
+        Assert.True(p.AddLayerTileset(layer, second));
+        var ts = p.TilesetOf(layer)!;
+        Assert.Same(ts, p.TilesetOf(layer));
+        var dirt = ts.FindAutoTile(1)!;
+        var mud = ts.FindAutoTile(TileSources.Global(1, 1))!;
+        var map = AutoTiler.Paint(ts, TileMap.Empty, dirt, [new Point(0, 0)]);
+        Assert.Equal(20, map.Get(1, new Point(0, 0))?.Tile);
+        map = AutoTiler.Paint(ts, map, mud, [new Point(2, 0)]);
+        Assert.Equal(TileSources.Global(1, 30), map.Get(1, new Point(2, 0))?.Tile);
+        map = AutoTiler.Paint(ts, map, mud, [new Point(1, 0)]);
+        Assert.Equal(21, map.Get(1, new Point(0, 0))?.Tile);
+        Assert.Equal(mud.Id, map.Get(1, new Point(1, 0))?.AutoTile);
+        // 둘째 타일셋의 무리를 나누고 고치면 레이어의 새 합친 타일셋으로 다시 고른다
+        p.SetTileMap(layer, map, "t");
+        p.EditTileset("세트", second with { AutoTiles = [GroupRow(1, 1, "", 30, 31)] });
+        Assert.NotSame(ts, p.TilesetOf(layer));
+        Assert.Equal(20, layer.Tiles!.Map.Get(1, new Point(0, 0))?.Tile);
+    }
+
+    [Fact]
+    public void AddRemoveLayerTileset_ShiftsAndDropsCells_AndIsUndoable()
+    {
+        var primary = Sample();
+        var second = Sample() with { Floors = [new TileFloor(6, "바닥"), new TileFloor(5, "장식")] };
+        var third = Second();
+        var (p, layer) = NewProject(primary);
+        Assert.False(p.RemoveLayerTileset(layer, 0));
+        Assert.True(p.AddLayerTileset(layer, second));
+        Assert.False(p.AddLayerTileset(layer, second));
+        Assert.Throws<ArgumentException>(() => p.AddLayerTileset(layer, Tileset.Create("큰", 8, 8)));
+        Assert.True(p.AddLayerTileset(layer, third));
+        Assert.Equal([primary.Key, second.Key, third.Key], layer.Tiles!.TilesetKeys.ToArray());
+        Assert.Equal([primary, second, third], p.TilesetSources(layer));
+        Assert.Equal(3, p.UsedTilesets.Count);
+        var ts = p.TilesetOf(layer)!;
+        Paint(p, layer, m => m
+            .Place(ts, 1, new Point(0, 0), new TileCell(1))
+            .Place(ts, 2, new Point(1, 0), new TileCell(TileSources.Global(1, 3)))
+            .Place(ts, 2, new Point(2, 0), new TileCell(TileSources.Global(2, 1))));
+        var frame = p.Flatten(0);
+        Assert.Equal((Red, Blue), (frame[1, 1], frame[5, 1]));
+        // 둘째 타일셋을 고치면 그 자리의 Id만 맵에서 빠진다
+        int undo = p.History.UndoCount;
+        p.EditTileset("타일 지우기", TilesetEdit.RemoveTiles(second, [3]), (m, offset) => m.WithoutTile(offset + 3));
+        Assert.Null(layer.Tiles!.Map.Get(2, new Point(1, 0)));
+        p.Undo();
+
+        Assert.True(p.RemoveLayerTileset(layer, 1));
+        Assert.Equal(undo + 1, p.History.UndoCount);
+        Assert.Equal([primary.Key, third.Key], layer.Tiles!.TilesetKeys.ToArray());
+        Assert.Equal(
+            [new PlacedTile(1, new Point(0, 0), new TileCell(1)), new PlacedTile(2, new Point(2, 0), new TileCell(TileSources.Global(1, 1)))],
+            layer.Tiles.Map.All.OrderBy(t => t.At.X));
+        Assert.Equal(Green, p.TilesetOf(layer)!.Find(TileSources.Global(1, 1))!.Image[0, 0]);
+        p.Undo();
+        Assert.Equal(3, layer.Tiles!.TilesetKeys.Length);
+        Assert.Equal(TileSources.Global(1, 3), layer.Tiles.Map.Get(2, new Point(1, 0))?.Tile);
+
+        // 첫 타일셋을 빼면 다음 것이 첫 타일셋: 맵의 층과 숨긴 층은 그 타일셋의 같은 이름 층으로(장식 2 → 5)
+        p.SetTileFloorState(layer, 2, hidden: true);
+        Assert.True(p.RemoveLayerTileset(layer, 0));
+        Assert.Equal([second.Key, third.Key], layer.Tiles!.TilesetKeys.ToArray());
+        Assert.Equal(
+            [new PlacedTile(5, new Point(1, 0), new TileCell(3)), new PlacedTile(5, new Point(2, 0), new TileCell(TileSources.Global(1, 1)))],
+            layer.Tiles.Map.All.OrderBy(t => t.At.X));
+        Assert.Equal([5], layer.Tiles.HiddenFloors.ToArray());
+        p.Undo();
+        Assert.Equal(3, layer.Tiles!.TilesetKeys.Length);
+    }
+
+    [Fact]
+    public void Save_Load_RoundTrip_KeepsLayerTilesetList()
+    {
+        var primary = Sample();
+        var second = Second();
+        var (p, layer) = NewProject(primary);
+        p.AddLayerTileset(layer, second);
+        var ts = p.TilesetOf(layer)!;
+        Paint(p, layer, m => m.Place(ts, 1, new Point(0, 0), new TileCell(1)).Place(ts, 2, new Point(1, 0), new TileCell(TileSources.Global(1, 1))));
+        using var ms = new MemoryStream();
+        ProjectIO.Save(p, ms);
+        ms.Position = 0;
+        var q = ProjectIO.Load(ms);
+        var loaded = q.Layers.Single(l => l.IsTilemap);
+        Assert.Equal([primary.Key, second.Key], loaded.Tiles!.TilesetKeys.ToArray());
+        Assert.Equal(2, q.UsedTilesets.Count);
+        Assert.Equal(2, q.TilesetSources(loaded).Count);
+        Assert.True(p.Flatten(0).ContentEquals(q.Flatten(0)));
+        Assert.Equal(Green, q.Flatten(0)[5, 1]);
+    }
+
+    [Fact]
+    public void ClosedTileset_StaysInProjectAcrossSave_AndOnlyUnusedCanBeDeleted()
+    {
+        var primary = Sample();
+        var second = Second();
+        var (p, layer) = NewProject(primary);
+        p.AddLayerTileset(layer, second);
+        p.RemoveLayerTileset(layer, 1);
+        Assert.False(p.RemoveTileset(primary.Key));
+        using var ms = new MemoryStream();
+        ProjectIO.Save(p, ms);
+        ms.Position = 0;
+        var q = ProjectIO.Load(ms);
+        Assert.True(q.Tilesets.ContainsKey(second.Key));
+        Assert.True(q.RemoveTileset(second.Key));
+        Assert.False(q.Tilesets.ContainsKey(second.Key));
+        q.Undo();
+        Assert.True(q.Tilesets.ContainsKey(second.Key));
     }
 }

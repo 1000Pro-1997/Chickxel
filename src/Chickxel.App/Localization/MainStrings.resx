@@ -216,9 +216,6 @@
   <data name="Menu_File_OpenExportDialog_077" xml:space="preserve">
     <value>내보내기…</value>
   </data>
-  <data name="Menu_File_Command_079" xml:space="preserve">
-    <value>GIF 애니메이션으로 내보내기…</value>
-  </data>
   <data name="Menu_File_CloseProject_081" xml:space="preserve">
     <value>닫기</value>
   </data>

@@ -21,12 +21,87 @@ public sealed partial class SpriteProject
     /// <summary>프로젝트가 담은 타일셋(이름표 → 타일셋). 바꿀 때는 타일 메서드로(실행취소됨).</summary>
     public IReadOnlyDictionary<string, Tileset> Tilesets => _tilesets;
 
-    /// <summary>타일맵 레이어가 쓰는 타일셋(타일맵 레이어가 아니거나 없으면 null).</summary>
-    public Tileset? TilesetOf(Layer layer) => layer.Tiles is { } t && _tilesets.TryGetValue(t.TilesetKey, out var ts) ? ts : null;
+    /// <summary>
+    /// 타일맵 레이어가 쓰는 타일셋(타일맵 레이어가 아니거나 첫 타일셋이 없으면 null). 여러 타일셋을 쓰면 합친 것(<see cref="TileSources.Combine"/>) —
+    /// 쓰는 타일셋들이 그대로인 동안은 같은 객체.
+    /// </summary>
+    public Tileset? TilesetOf(Layer layer)
+    {
+        if (layer.Tiles is not { } t || t.TilesetKeys.IsDefaultOrEmpty || !_tilesets.TryGetValue(t.TilesetKeys[0], out var primary)) return null;
+        if (t.TilesetKeys.Length == 1) return primary;
+        if (_combinedTilesets.TryGetValue(layer, out var hit) && SameSources(hit.Sources, t.TilesetKeys)) return hit.Combined;
+        var sources = TilesetSources(layer);
+        if (sources.Count == 1) return primary;
+        var combined = new CombinedTileset([.. sources], TileSources.Combine(sources));
+        _combinedTilesets.AddOrUpdate(layer, combined);
+        return combined.Combined;
+    }
 
-    /// <summary>레이어들이 쓰는 타일셋(저장할 것, 이름표 차례).</summary>
+    /// <summary>
+    /// 타일맵 레이어가 쓰는 타일셋들(자리 차례, 타일맵 레이어가 아니면 빈 것). 프로젝트에 없는 이름표가 있으면 그 앞까지(뒤 자리의 Id가 어긋나지 않게).
+    /// </summary>
+    public IReadOnlyList<Tileset> TilesetSources(Layer layer)
+    {
+        if (layer.Tiles is not { } t || t.TilesetKeys.IsDefaultOrEmpty) return [];
+        var list = new List<Tileset>(t.TilesetKeys.Length);
+        foreach (var key in t.TilesetKeys)
+        {
+            if (!_tilesets.TryGetValue(key, out var ts)) break;
+            list.Add(ts);
+        }
+        return list;
+    }
+
+    /// <summary>레이어별 합친 타일셋과 그때의 타일셋들(같은 객체들이면 다시 씀).</summary>
+    private sealed class CombinedTileset(Tileset[] sources, Tileset combined)
+    {
+        public Tileset[] Sources { get; } = sources;
+        public Tileset Combined { get; } = combined;
+    }
+
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<Layer, CombinedTileset> _combinedTilesets = new();
+
+    /// <summary>이름표들이 가리키는 지금 타일셋(없는 이름표 앞까지)이 <paramref name="cached"/>와 같은 객체들인지.</summary>
+    private bool SameSources(Tileset[] cached, System.Collections.Immutable.ImmutableArray<string> keys)
+    {
+        int n = 0;
+        foreach (var key in keys)
+        {
+            if (!_tilesets.TryGetValue(key, out var ts)) break;
+            if (n >= cached.Length || !ReferenceEquals(cached[n], ts)) return false;
+            n++;
+        }
+        return n == cached.Length;
+    }
+
+    /// <summary>레이어들이 쓰는 타일셋(합치기 전 것, 이름표 차례).</summary>
     public IReadOnlyList<Tileset> UsedTilesets
-        => _layers.Where(l => l.IsTilemap).Select(TilesetOf).OfType<Tileset>().Distinct().OrderBy(t => t.Key, StringComparer.Ordinal).ToList();
+        => _layers.Where(l => l.IsTilemap).SelectMany(TilesetSources).Distinct().OrderBy(t => t.Key, StringComparer.Ordinal).ToList();
+
+    /// <summary>프로젝트가 담은 모든 타일셋(레이어에서 닫은 것도 — 저장할 것, 이름표 차례).</summary>
+    public IReadOnlyList<Tileset> AllTilesets => _tilesets.Values.OrderBy(t => t.Key, StringComparer.Ordinal).ToList();
+
+    /// <summary>타일맵 레이어 어디선가 쓰는 타일셋인지.</summary>
+    public bool IsTilesetUsed(string key) => _layers.Any(l => l.Tiles is { } d && d.SlotOf(key) >= 0);
+
+    /// <summary>타일셋을 프로젝트에 담는다(레이어에 열지 않음, 실행취소 한 단계 — 같은 이름표가 있으면 이것으로 바꿈).</summary>
+    public void AddTileset(Tileset tileset)
+    {
+        if (_tilesets.TryGetValue(tileset.Key, out var old) && ReferenceEquals(old, tileset)) return;
+        Edit(DomainStrings.Tile_AddProjectTileset, ProjectChange.Layers, () => _tilesets[tileset.Key] = tileset);
+    }
+
+    /// <summary>프로젝트에서 타일셋을 지운다(실행취소 한 단계). 타일맵 레이어가 쓰고 있거나 없는 이름표면 false.</summary>
+    public bool RemoveTileset(string key)
+    {
+        if (!_tilesets.ContainsKey(key) || IsTilesetUsed(key)) return false;
+        Edit(DomainStrings.Tile_RemoveProjectTileset, ProjectChange.Layers, () =>
+        {
+            _tilesets.Remove(key);
+            _tilesetSynced.Remove(key);
+        });
+        return true;
+    }
 
     private Layer RequireTilemap(Layer layer)
         => layer.IsTilemap && layer.Tiles is not null && _layers.Contains(layer) ? layer : throw new ArgumentException(DomainStrings.Tile_NotTilemapLayer, nameof(layer));
@@ -41,7 +116,7 @@ public sealed partial class SpriteProject
         {
             Kind = LayerKind.Tilemap,
             Pivot = Sprite.DefaultPivot,
-            Tiles = new TilemapData(tileset.Key, TileMap.Empty, Point.Empty),
+            Tiles = new TilemapData([tileset.Key], TileMap.Empty, Point.Empty),
         };
         Edit(DomainStrings.Tile_AddLayer, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
@@ -52,10 +127,11 @@ public sealed partial class SpriteProject
     }
 
     /// <summary>
-    /// 타일셋을 바꾼다(같은 이름표, 실행취소 한 단계). <paramref name="remap"/>이 있으면 그 타일셋을 쓰는 모든 맵을 같이 고친다(지운 타일 빼기 등).
-    /// 자동 타일 세트가 바뀌었으면(새 값·지움) 모든 자동 타일 칸을 다시 고른다(무리로 다른 세트와 이어지므로).
+    /// 타일셋을 바꾼다(같은 이름표, 실행취소 한 단계). <paramref name="remap"/>이 있으면 그 타일셋을 쓰는 모든 맵을 같이 고친다(지운 타일 빼기 등) —
+    /// 두 번째 값은 그 레이어에서 이 타일셋 자리의 Id 오프셋(<see cref="TileSources.Offset"/>, 맵 Id = 오프셋 + 타일셋 안 Id).
+    /// 자동 타일 세트가 바뀌었으면(새 값·지움) 그 맵의 모든 자동 타일 칸을 레이어의 새 합친 타일셋으로 다시 고른다(무리로 다른 세트와 이어지므로).
     /// </summary>
-    public void EditTileset(string label, Tileset tileset, Func<TileMap, TileMap>? remap = null)
+    public void EditTileset(string label, Tileset tileset, Func<TileMap, int, TileMap>? remap = null)
     {
         if (!_tilesets.TryGetValue(tileset.Key, out var old)) throw new ArgumentException(DomainStrings.Tile_TilesetNotInProject, nameof(tileset));
         if (ReferenceEquals(old, tileset) && remap is null) return;
@@ -65,9 +141,9 @@ public sealed partial class SpriteProject
             bool setsChanged = tileset.AutoTiles.Length != old.AutoTiles.Length || tileset.AutoTiles.Any(a => !ReferenceEquals(old.FindAutoTile(a.Id), a));
             foreach (var layer in _layers)
             {
-                if (!layer.IsTilemap || layer.Tiles is not { } data || data.TilesetKey != tileset.Key) continue;
-                var map = remap?.Invoke(data.Map) ?? data.Map;
-                if (setsChanged) map = AutoTiler.RefreshAll(tileset, map);
+                if (!layer.IsTilemap || layer.Tiles is not { } data || data.SlotOf(tileset.Key) is not (>= 0 and var slot)) continue;
+                var map = remap?.Invoke(data.Map, TileSources.Offset(slot)) ?? data.Map;
+                if (setsChanged && TilesetOf(layer) is { } combined) map = AutoTiler.RefreshAll(combined, map);
                 if (!ReferenceEquals(map, data.Map)) layer.Tiles = data with { Map = map };
             }
         });
@@ -81,16 +157,81 @@ public sealed partial class SpriteProject
         Edit(label, ProjectChange.Pixels, () => layer.Tiles = layer.Tiles! with { Map = map });
     }
 
-    /// <summary>타일맵 레이어가 쓸 타일셋을 바꾼다(프로젝트에 담은 이름표, 맵은 그대로 — 같은 Id의 타일로 보임).</summary>
-    public void SetLayerTileset(Layer layer, Tileset tileset)
+    /// <summary>
+    /// 타일맵 레이어의 자리 <paramref name="slot"/> 타일셋을 바꾼다(실행취소 한 단계, 프로젝트에 담음 — 같은 이름표가 있으면 이것으로 바꿈, 맵은 그대로 — 같은 Id의 타일로 보임).
+    /// 다른 자리에 이미 쓰는 타일셋이거나 칸 크기가 다른 자리의 타일셋과 다르면 <see cref="ArgumentException"/>.
+    /// </summary>
+    public void SetLayerTileset(Layer layer, int slot, Tileset tileset)
     {
         RequireTilemap(layer);
-        if (layer.Tiles!.TilesetKey == tileset.Key && ReferenceEquals(TilesetOf(layer), tileset)) return;
+        var keys = layer.Tiles!.TilesetKeys;
+        ArgumentOutOfRangeException.ThrowIfNegative(slot);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(slot, keys.Length);
+        if (keys[slot] == tileset.Key && _tilesets.TryGetValue(tileset.Key, out var current) && ReferenceEquals(current, tileset)) return;
+        if (keys.IndexOf(tileset.Key) is >= 0 and var other && other != slot) throw new ArgumentException(DomainStrings.Tile_TilesetAlreadyInLayer, nameof(tileset));
+        for (int i = 0; i < keys.Length; i++)
+            if (i != slot && _tilesets.TryGetValue(keys[i], out var ts) && ts.CellSize != tileset.CellSize)
+                throw new ArgumentException(DomainStrings.Tile_TilesetCellSizeMismatch, nameof(tileset));
         Edit(DomainStrings.Tile_ChangeTileset, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             _tilesets[tileset.Key] = tileset;
-            layer.Tiles = layer.Tiles! with { TilesetKey = tileset.Key };
+            layer.Tiles = layer.Tiles! with { TilesetKeys = keys.SetItem(slot, tileset.Key) };
         });
+    }
+
+    /// <summary>
+    /// 타일맵 레이어가 쓸 타일셋을 맨 뒤 자리에 더한다(실행취소 한 단계, 프로젝트에 담음 — 같은 이름표가 있으면 이것으로 바꿈). 이미 쓰는 타일셋이면 아무것도 하지 않고 false.
+    /// 칸 크기가 첫 타일셋과 다르면 <see cref="ArgumentException"/>.
+    /// </summary>
+    public bool AddLayerTileset(Layer layer, Tileset tileset)
+    {
+        RequireTilemap(layer);
+        var keys = layer.Tiles!.TilesetKeys;
+        if (keys.Contains(tileset.Key)) return false;
+        if (_tilesets.TryGetValue(keys[0], out var primary) && primary.CellSize != tileset.CellSize)
+            throw new ArgumentException(DomainStrings.Tile_TilesetCellSizeMismatch, nameof(tileset));
+        Edit(DomainStrings.Tile_AddLayerTileset, ProjectChange.Layers | ProjectChange.Pixels, () =>
+        {
+            _tilesets[tileset.Key] = tileset;
+            layer.Tiles = layer.Tiles! with { TilesetKeys = keys.Add(tileset.Key) };
+        });
+        return true;
+    }
+
+    /// <summary>
+    /// 타일맵 레이어에서 자리 <paramref name="slot"/>의 타일셋을 뺀다(실행취소 한 단계). 하나뿐이면 아무것도 하지 않고 false.
+    /// 그 자리의 칸(자동 타일 칸은 세트의 자리로 셈)은 모든 층에서 지우고 뒤 자리의 칸은 Id를 한 자리(<see cref="TileSources.Stride"/>) 당긴다.
+    /// 첫 타일셋을 빼면 다음 타일셋이 첫 타일셋이 되고, 맵의 층과 숨긴·잠근 층은 그 타일셋의 층(이름이 같은 층, 없으면 같은 차례)으로 옮긴다.
+    /// 남은 자동 타일 칸은 새 합친 타일셋으로 다시 고른다(빠진 세트와 무리로 이어졌을 수 있으므로).
+    /// </summary>
+    public bool RemoveLayerTileset(Layer layer, int slot)
+    {
+        RequireTilemap(layer);
+        int count = layer.Tiles!.TilesetKeys.Length;
+        ArgumentOutOfRangeException.ThrowIfNegative(slot);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(slot, count);
+        if (count == 1) return false;
+        Edit(DomainStrings.Tile_RemoveLayerTileset, ProjectChange.Layers | ProjectChange.Pixels, () =>
+        {
+            var data = layer.Tiles!;
+            var keys = data.TilesetKeys.RemoveAt(slot);
+            Func<int, int> floorOf = f => f;
+            if (slot == 0 && _tilesets.TryGetValue(data.TilesetKeys[0], out var oldPrimary) && _tilesets.TryGetValue(keys[0], out var newPrimary))
+                floorOf = f => TileSources.MapFloor(oldPrimary, newPrimary, f);
+            static int Shift(int id, int slot) => TileSources.Slot(id) > slot ? id - TileSources.Stride : id;
+            var map = TileMap.FromCells(data.Map.All
+                .Where(p => TileSources.Slot(p.Cell) != slot)
+                .Select(p => new PlacedTile(floorOf(p.Floor), p.At, p.Cell with { Tile = Shift(p.Cell.Tile, slot), AutoTile = Shift(p.Cell.AutoTile, slot) })));
+            layer.Tiles = data with
+            {
+                TilesetKeys = keys,
+                Map = map,
+                HiddenFloors = [.. data.HiddenFloors.Select(floorOf).Distinct()],
+                LockedFloors = [.. data.LockedFloors.Select(floorOf).Distinct()],
+            };
+            if (TilesetOf(layer) is { AutoTiles.Length: > 0 } combined) layer.Tiles = layer.Tiles with { Map = AutoTiler.RefreshAll(combined, map) };
+        });
+        return true;
     }
 
     // ───────────── 타일 스트로크 ─────────────
@@ -160,21 +301,35 @@ public sealed partial class SpriteProject
 
     // ───────────── 합성 ─────────────
 
-    /// <summary>타일맵 레이어의 그린 결과(바뀌지 않는 한 다시 쓰는 캔버스 크기 셀과 캔버스 밖 그림 — 움직이는 타일이 있으면 그림 묶음 번호마다).</summary>
-    private sealed class TilemapRender(Tileset tileset, TilemapData data, Size canvas)
+    /// <summary>타일맵 레이어의 그린 결과(바뀌지 않는 한 다시 쓰는 캔버스 크기 셀과 캔버스 밖 그림 — 움직이는 타일이 있으면 그림 묶음 번호마다). 층 보기를 입힌 것은 따로.</summary>
+    private sealed class TilemapRender(Tileset tileset, TilemapData data, Size canvas, TileFloorView? view)
     {
         public Tileset Tileset { get; } = tileset;
         public TilemapData Data { get; } = data;
         public Size Canvas { get; } = canvas;
+        public TileFloorView? View { get; } = view;
         public readonly Dictionary<long, PixelImage?> Cels = [];
         public readonly Dictionary<long, CelOverflow?> Outside = [];
         public Rectangle? Bounds;
+
+        /// <summary>그릴 층: 숨기지 않았고, "고른 층만" 보기면 고른 층.</summary>
+        public bool Shows(int floor) => Data.ShowsFloor(floor) && (View is not { Mode: TileFloorViewMode.Only } v || v.Floor == floor);
+
+        /// <summary>층 불투명도: "고른 층 강조" 보기면 다른 층을 흐리게(층 보기가 없으면 null).</summary>
+        public Func<int, byte>? Opacity => View is { Mode: TileFloorViewMode.Dim } v ? f => f == v.Floor ? (byte)255 : TileFloorView.DimOpacity : null;
     }
 
     // 그림 묶음마다 담아 두는 그림 수(넘으면 비움)
     private const int TileRenderCacheLimit = 64;
 
     private readonly System.Runtime.CompilerServices.ConditionalWeakTable<Layer, TilemapRender> _tileRenders = new();
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<Layer, TilemapRender> _tileViewRenders = new();
+
+    /// <summary>
+    /// 화면의 층 보기(저장하지 않음, 없으면 null): 앱이 캔버스 그림을 만드는 동안만 넣고 끝나면 null로 되돌린다 — 그 레이어만 고른 층을 강조하거나 고른 층만 그린다.
+    /// 미리보기·내보내기·저장은 늘 모든 층.
+    /// </summary>
+    public TileFloorView? TileFloorView { get; set; }
 
     /// <summary>
     /// 움직이는 타일을 화면에서 돌리는 시계(ms, 저장하지 않음): 프레임 <c>f</c>의 타일 시각 = 프레임 <c>f</c>가 시작하는 시각 + 이 값.
@@ -196,14 +351,16 @@ public sealed partial class SpriteProject
     private TilemapRender? TileRenderOf(Layer layer)
     {
         if (!layer.IsTilemap || layer.Tiles is not { } data || TilesetOf(layer) is not { } tileset) return null;
-        if (_tileRenders.TryGetValue(layer, out var r) && ReferenceEquals(r.Tileset, tileset) && ReferenceEquals(r.Data, data) && r.Canvas == Size) return r;
-        r = new TilemapRender(tileset, data, Size);
-        _tileRenders.AddOrUpdate(layer, r);
+        var view = TileFloorView is { } v && ReferenceEquals(v.Layer, layer) ? v : null;
+        var cache = view is null ? _tileRenders : _tileViewRenders;
+        if (cache.TryGetValue(layer, out var r) && ReferenceEquals(r.Tileset, tileset) && ReferenceEquals(r.Data, data) && r.Canvas == Size && r.View == view) return r;
+        r = new TilemapRender(tileset, data, Size, view);
+        cache.AddOrUpdate(layer, r);
         return r;
     }
 
     private static Rectangle MapBounds(TilemapRender r)
-        => r.Bounds ??= TileMapRenderer.PixelBounds(r.Tileset, r.Data.Map, r.Data.Origin, r.Data.ShowsFloor);
+        => r.Bounds ??= TileMapRenderer.PixelBounds(r.Tileset, r.Data.Map, r.Data.Origin, r.Shows);
 
     /// <summary>
     /// 타일맵 레이어의 셀: 맵을 캔버스 크기로 그린 그림(그릴 타일이 없으면 null, 움직이는 타일은 프레임 <paramref name="frameIndex"/>의 타일 시각).
@@ -216,7 +373,7 @@ public sealed partial class SpriteProject
         if (!r.Cels.TryGetValue(phase, out var cel))
         {
             var bounds = Rectangle.Intersect(MapBounds(r), Bounds);
-            cel = bounds.Width < 1 || bounds.Height < 1 ? null : TileMapRenderer.RenderArea(r.Tileset, r.Data.Map, r.Data.Origin, Bounds, r.Data.ShowsFloor, time);
+            cel = bounds.Width < 1 || bounds.Height < 1 ? null : TileMapRenderer.RenderArea(r.Tileset, r.Data.Map, r.Data.Origin, Bounds, r.Shows, time, r.Opacity);
             if (r.Cels.Count >= TileRenderCacheLimit) r.Cels.Clear();
             r.Cels[phase] = cel;
         }
@@ -237,7 +394,7 @@ public sealed partial class SpriteProject
                 var keep = Rectangle.Intersect(bounds, OverflowBounds);
                 if (keep.Width > 0 && keep.Height > 0)
                 {
-                    var image = TileMapRenderer.RenderArea(r.Tileset, r.Data.Map, r.Data.Origin, keep, r.Data.ShowsFloor, time);
+                    var image = TileMapRenderer.RenderArea(r.Tileset, r.Data.Map, r.Data.Origin, keep, r.Shows, time, r.Opacity);
                     image.FillRect(new Rectangle(-keep.X, -keep.Y, _width, _height), default);
                     outside = new CelOverflow(image, keep.Location);
                 }
@@ -264,7 +421,10 @@ public sealed partial class SpriteProject
     // ───────────── 레이어로 변환 ─────────────
 
     /// <summary>
-    /// 타일맵 레이어를 그룹으로 바꾼다(실행취소 한 단계): 층마다(아래 층부터) 그 층 그림을 감싼 크기의 부위 하나 — 모든 프레임이 같은 그림(링크).
+    /// 타일맵 레이어를 그룹으로 바꾼다(실행취소 한 단계): 층마다(아래 층부터) 그 층 그림을 감싼 크기의 부위 하나. 프레임마다 그 프레임의 타일 시각(내보내기와 같음 —
+    /// 프레임이 시작하는 시각)의 그림이라 움직이는 타일이 프레임을 따라 움직이고, 같은 그림이 되는 프레임끼리는 한 그림을 나눠 쓴다(링크).
+    /// 프레임이 하나뿐인데 맵에 움직이는 타일이 있으면 먼저 프레임을 맵의 움직이는 타일 모두가 한 바퀴 도는 길이(주기들의 최소공배수)만큼, 그림이 바뀌는 간격
+    /// (장당 시간들의 최대공약수)마다 늘린다(다른 레이어는 원래 프레임과 링크) — 주기가 다른 타일도 끊김 없이 되풀이된다.
     /// 그룹은 타일맵 레이어의 이름·보이기·잠금·불투명도·효과·피벗을 물려받는다. 그릴 것이 없는 층은 빠진다.
     /// </summary>
     public Layer ConvertTilemapToGroup(int index)
@@ -272,6 +432,59 @@ public sealed partial class SpriteProject
         var layer = RequireTilemap(_layers[index]);
         var tileset = TilesetOf(layer) ?? throw new InvalidOperationException(DomainStrings.Tile_TilesetNotInProject);
         var data = layer.Tiles!;
+        bool grouping = _frames.Count == 1 && MapAnimation(tileset, data.Map) is { Frames: > 1 } && !History.InGroup;
+        if (grouping) History.BeginGroup(DomainStrings.Tile_ConvertToGroup);
+        try
+        {
+            if (_frames.Count == 1 && MapAnimation(tileset, data.Map) is { Frames: > 1 } anim)
+            {
+                ExtendFrames(0, 0, anim.Frames, FrameExtendMode.Stretch);
+                for (int i = 0; i < _frames.Count; i++) SetFrameDuration(i, anim.StepMs);
+            }
+            return ConvertTilemapCore(layer, tileset, data);
+        }
+        finally
+        {
+            if (grouping) History.EndGroup();
+        }
+    }
+
+    /// <summary>프레임 수 상한(맵의 움직이는 타일 한 바퀴로 프레임을 늘릴 때 — 넘으면 간격을 넓힘).</summary>
+    private const int MaxConvertFrames = 240;
+
+    /// <summary>
+    /// 맵에 쓰인 움직이는 타일이 한 바퀴 도는 데 필요한 프레임: 그림이 바뀌는 간격(장당 시간들의 최대공약수, ms)과 한 바퀴(주기들의 최소공배수)를 그 간격으로 나눈 수
+    /// (<see cref="MaxConvertFrames"/>를 넘으면 간격을 넓혀 맞춤). 움직이는 타일이 없으면 null.
+    /// </summary>
+    private static (int StepMs, int Frames)? MapAnimation(Tileset tileset, TileMap map)
+    {
+        long step = 0, period = 0;
+        var seen = new HashSet<int>();
+        foreach (var p in map.All)
+        {
+            if (!seen.Add(p.Cell.Tile) || tileset.Find(p.Cell.Tile) is not { IsAnimated: true } def) continue;
+            long ms = Math.Max(TileDef.MinFrameMs, def.FrameMs), cycle = ms * def.FrameCount;
+            step = step == 0 ? ms : Gcd(step, ms);
+            period = period == 0 ? cycle : Math.Min(period / Gcd(period, cycle) * cycle, 600_000);
+        }
+        if (step == 0) return null;
+        long frames = period / step;
+        if (frames > MaxConvertFrames)
+        {
+            step = (period + MaxConvertFrames - 1) / MaxConvertFrames;
+            frames = (period + step - 1) / step;
+        }
+        return ((int)step, (int)frames);
+
+        static long Gcd(long a, long b)
+        {
+            while (b != 0) (a, b) = (b, a % b);
+            return a;
+        }
+    }
+
+    private Layer ConvertTilemapCore(Layer layer, Tileset tileset, TilemapData data)
+    {
         return Edit(DomainStrings.Tile_ConvertToGroup, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             int at = _layers.IndexOf(layer);
@@ -286,6 +499,7 @@ public sealed partial class SpriteProject
                 Pivot = layer.Pivot,
                 EffectsCollapsed = layer.EffectsCollapsed,
             };
+            int linkColor = 0;
             foreach (var floor in tileset.Floors)
             {
                 bool Only(int id) => id == floor.Id;
@@ -293,8 +507,24 @@ public sealed partial class SpriteProject
                 if (bounds.Width < 1 || bounds.Height < 1) continue;
                 bounds = Rectangle.Intersect(bounds, OverflowBounds);
                 if (bounds.Width < 1 || bounds.Height < 1 || bounds.Width > PixelImage.MaxSize || bounds.Height > PixelImage.MaxSize) continue;
-                var image = TileMapRenderer.RenderArea(tileset, data.Map, data.Origin, bounds, Only);
-                if (_frames.Count > 1) image = Tagged(image, 0);
+                // 프레임마다 그 프레임 시각의 그림: 이 층에 쓰인 움직이는 타일들이 보이는 그림 차례가 같은 프레임끼리는 한 장을 나눠 씀
+                var animated = data.Map.Floor(floor.Id).Select(c => c.Value.Tile).Distinct()
+                    .Select(tileset.Find).Where(d => d is { IsAnimated: true }).Select(d => d!).ToList();
+                var byPhase = new Dictionary<string, (PixelImage Image, int Frames)>();
+                var phases = new string[_frames.Count];
+                long start = 0;
+                for (int i = 0; i < _frames.Count; i++)
+                {
+                    long time = start;
+                    string phase = string.Join(',', animated.Select(d => d.FrameAt(time)));
+                    phases[i] = phase;
+                    byPhase[phase] = byPhase.TryGetValue(phase, out var hit)
+                        ? (hit.Image, hit.Frames + 1)
+                        : (TileMapRenderer.RenderArea(tileset, data.Map, data.Origin, bounds, Only, time), 1);
+                    start += _frames[i].DurationMs;
+                }
+                foreach (var (image, frames) in byPhase.Values)
+                    if (frames > 1) Tagged(image, linkColor++);
                 var part = new Layer(UniqueLayerName(floor.Name.Length > 0 ? floor.Name : DomainStrings.Project_DefaultPartName))
                 {
                     Kind = LayerKind.Part,
@@ -306,7 +536,7 @@ public sealed partial class SpriteProject
                     Locked = data.IsFloorLocked(floor.Id),
                 };
                 _layers.Insert(at++, part);
-                foreach (var f in _frames) _cels[new CelKey(part, f, null)] = image;
+                for (int i = 0; i < _frames.Count; i++) _cels[new CelKey(part, _frames[i], null)] = byPhase[phases[i]].Image;
             }
             _layers.Insert(at, group);
             foreach (var f in _frames)
@@ -319,10 +549,10 @@ public sealed partial class SpriteProject
     // ───────────── 타일셋 파일 ─────────────
 
     /// <summary>
-    /// 저장할 때 타일셋 파일에도 써야 하는 것: 레이어가 쓰고 파일 경로가 있으며, 파일에서 읽었거나 마지막으로 쓴 값과 다른 타일셋.
+    /// 저장할 때 타일셋 파일에도 써야 하는 것: 프로젝트가 담았고 파일 경로가 있으며, 파일에서 읽었거나 마지막으로 쓴 값과 다른 타일셋.
     /// </summary>
     public IReadOnlyList<Tileset> TilesetsToWrite
-        => UsedTilesets.Where(t => t.SourcePath is not null && !(_tilesetSynced.TryGetValue(t.Key, out var s) && ReferenceEquals(s, t))).ToList();
+        => AllTilesets.Where(t => t.SourcePath is not null && !(_tilesetSynced.TryGetValue(t.Key, out var s) && ReferenceEquals(s, t))).ToList();
 
     /// <summary>타일셋을 파일과 맞춘 것으로 적어 둔다(파일에서 읽었거나 썼을 때).</summary>
     public void MarkTilesetSynced(Tileset tileset) => _tilesetSynced[tileset.Key] = tileset;

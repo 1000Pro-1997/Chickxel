@@ -354,7 +354,7 @@ public static partial class ProjectIO
             }
         }
         // 타일셋·맵은 바뀌지 않는 값이라 같이 쓴다.
-        foreach (var tileset in project.UsedTilesets) copy.PutTilesetRaw(tileset);
+        foreach (var tileset in project.AllTilesets) copy.PutTilesetRaw(tileset);
         for (int li = 0; li < project.Layers.Count; li++)
             if (project.Layers[li].Tiles is { } tiles) fileLayers[li].Tiles = tiles;
         // 셀 복사는 새 메모리를 처음 건드리는 비용이 커서 여러 코어로 나눈다(부르는 쪽은 UI 스레드). 링크된 셀(같은 그림)은 사본도 하나를 같이 쓴다.
@@ -968,7 +968,7 @@ public static partial class ProjectIO
             Skin = l is { IsPart: true, SkinOverride: { } so, Parent: { } pg } ? pg.SkinList.IndexOf(so) : null,
             Effects = l.Effects.Count > 0 ? l.Effects.Select(e => (JsonObject?)EffectCodec.Write(e)).ToList() : null,
             AutoLayout = l is { IsGroup: true, AutoLayout: { } al } ? GroupLayoutDto.From(al) : null,
-            TilesetKey = l.Tiles?.TilesetKey,
+            TilesetKeys = l.Tiles is { } td ? [.. td.TilesetKeys] : null,
             TileOrigin = l.Tiles is { Origin: { IsEmpty: false } o } ? [o.X, o.Y] : null,
             TileHidden = l.Tiles is { HiddenFloors.Length: > 0 } th ? [.. th.HiddenFloors] : null,
             TileLocked = l.Tiles is { LockedFloors.Length: > 0 } tl ? [.. tl.LockedFloors] : null,
@@ -1000,7 +1000,7 @@ public static partial class ProjectIO
         Scripts = p.ScriptsInUse() is { Count: > 0 } scripts ? scripts : null,
         CelLinks = CelLinksOf(p, out var colors),
         CelLinkColors = colors,
-        Tilesets = p.UsedTilesets.Count == 0 ? null : p.UsedTilesets.Select(t => new TilesetRefDto { Key = t.Key, Path = TilesetPathFor(t.SourcePath, projectPath) }).ToList(),
+        Tilesets = p.AllTilesets.Count == 0 ? null : p.AllTilesets.Select(t => new TilesetRefDto { Key = t.Key, Path = TilesetPathFor(t.SourcePath, projectPath) }).ToList(),
     };
 
     /// <summary>
@@ -1559,8 +1559,8 @@ public static partial class ProjectIO
         public List<JsonObject?>? Effects { get; set; }
         /// <summary>그룹: 자동 배치 설정. 없으면 끔.</summary>
         public GroupLayoutDto? AutoLayout { get; set; }
-        /// <summary>타일맵 레이어: 타일셋 이름표(맵은 <c>tilemaps/L{레이어}.bin</c>, 버전 6부터).</summary>
-        public string? TilesetKey { get; set; }
+        /// <summary>타일맵 레이어: 쓰는 타일셋 이름표들(자리 차례, 첫 것이 칸 크기·층을 정함 — 맵은 <c>tilemaps/L{레이어}.bin</c>, 버전 6부터).</summary>
+        public List<string>? TilesetKeys { get; set; }
         /// <summary>타일맵 레이어: 격자 원점 [X, Y](없으면 0, 0).</summary>
         public int[]? TileOrigin { get; set; }
         /// <summary>타일맵 레이어: 숨긴 층·잠근 층 Id(없으면 없음).</summary>

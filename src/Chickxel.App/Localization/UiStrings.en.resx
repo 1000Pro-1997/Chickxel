@@ -650,14 +650,10 @@ Export: </value></data>
   <data name="S_GifExportDialog_DirectionText_FE009F0D02" xml:space="preserve"><value> · reverse</value></data>
   <data name="S_GifExportDialog_ExportTo_5A7D0115A3" xml:space="preserve"><value>GIF export: {0} ({1}×{2}, {3} frames, {4:0.##}s, {5}, {6})</value></data>
   <data name="S_GifExportDialog_ExportTo_721F431829" xml:space="preserve"><value>Play {0} times</value></data>
-  <data name="S_GifExportDialog_ExportTo_722DAE0C92" xml:space="preserve"><value>Close</value></data>
   <data name="S_GifExportDialog_ExportTo_9D8DE615C3" xml:space="preserve"><value>Saved: {0}
 {1} · {2}×{3}px · {4} frames · {5:0.##}s · {6}</value></data>
   <data name="S_GifExportDialog_ExportTo_BB910D7364" xml:space="preserve"><value> · {0} colors (lossless)</value></data>
-  <data name="S_GifExportDialog_ExportTo_D19C71FE4B" xml:space="preserve"><value>GIF export failed</value></data>
   <data name="S_GifExportDialog_ExportTo_D1F78B3F5D" xml:space="preserve"><value>Loop forever</value></data>
-  <data name="S_GifExportDialog_ExportTo_F498BE85D9" xml:space="preserve"><value>Couldn't write the GIF.
-{0}</value></data>
   <data name="S_GifExportDialog_ExportTo_F8D1B6ECFE" xml:space="preserve"><value> · up to {0} colors per frame</value></data>
   <data name="S_GifExportDialog_GifExportDialog_012E0A74BF" xml:space="preserve"><value>Zoom</value></data>
   <data name="S_GifExportDialog_GifExportDialog_463F80B168" xml:space="preserve"><value>Range</value></data>
@@ -1890,13 +1886,11 @@ Long press/right-click: {0}</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_0E4510EAD7" xml:space="preserve"><value>Also export images when saving the project (Ctrl+S). When off, export only with the Export button.</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_0FBC1AB03F" xml:space="preserve"><value>JPG quality</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_130FEEBB20" xml:space="preserve"><value>Single frame</value></data>
-  <data name="S_UnityExportDialog_BuildExportSections_23E8B015EA" xml:space="preserve"><value>Quality</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_2508675F56" xml:space="preserve"><value>Export on save</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_2653689DDE" xml:space="preserve"><value>PNG (lossless, transparent)</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_2816B7AEDB" xml:space="preserve"><value>Turn on to use different common sheet settings (skin, layout, order, columns, separate files, cell names, spacing, trimming, power of two) for the part atlas only. </value></data>
   <data name="S_UnityExportDialog_BuildExportSections_28B6043259" xml:space="preserve"><value>(project folder)</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_30370BD8DD" xml:space="preserve"><value>Configure the part atlas separately (starts from a copy of the common settings at the moment it's turned on — adds another set of settings below).</value></data>
-  <data name="S_UnityExportDialog_BuildExportSections_4425590C77" xml:space="preserve"><value>Writes Unity sprite settings (.meta) next to the image. Options are in the Import Settings tab.</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_44908E5316" xml:space="preserve"><value>Writes one Sprite Library Asset (Unity 2D Animation package) per group × skin next to the part atlas: {Part atlas}_{Group}@{Skin}.spriteLib (+ .meta). </value></data>
   <data name="S_UnityExportDialog_BuildExportSections_46BC96CB04" xml:space="preserve"><value> and {0} more</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_526698768E" xml:space="preserve"><value>Export folder</value></data>
@@ -1905,12 +1899,9 @@ Long press/right-click: {0}</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_59AD7EA467" xml:space="preserve"><value>JPG (no transparency)</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_5E17111839" xml:space="preserve"><value>If empty, the project file's folder (nearby folders are saved as paths relative to the project).</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_60EBD042A1" xml:space="preserve"><value>Write .meta</value></data>
-  <data name="S_UnityExportDialog_BuildExportSections_60ED6B1DA3" xml:space="preserve"><value>Writes only inside a Unity project's Assets or when a .meta already exists.</value></data>
-  <data name="S_UnityExportDialog_BuildExportSections_65BEF24266" xml:space="preserve"><value>Auto</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_6B06887D1E" xml:space="preserve"><value>Frame sheet export off</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_6C1F44F368" xml:space="preserve"><value>Libraries in the same group share Category/Label, so you can switch skins by swapping only the asset in the group's Sprite Library component, keeping Sprite Resolver keyframes as is. </value></data>
   <data name="S_UnityExportDialog_BuildExportSections_6D98D40F29" xml:space="preserve"><value>Folder</value></data>
-  <data name="S_UnityExportDialog_BuildExportSections_7981FFA3CA" xml:space="preserve"><value>Always writes .meta too.</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_7E8861FA23" xml:space="preserve"><value>The part atlas also uses the common sheet settings.</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_801EC51603" xml:space="preserve"><value>JPG quality 1–100. Higher is cleaner and makes larger files.</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_810DBA0E4E" xml:space="preserve"><value>On</value></data>
@@ -1923,7 +1914,6 @@ Long press/right-click: {0}</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_9119F759EB" xml:space="preserve"><value>Category/Label match the other libraries, so swapping it changes only that part ("base + hat"). </value></data>
   <data name="S_UnityExportDialog_BuildExportSections_924DFE7AE7" xml:space="preserve"><value>Part atlas name</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_987E11A4E7" xml:space="preserve"><value>Choose folder</value></data>
-  <data name="S_UnityExportDialog_BuildExportSections_A3E683A3EB" xml:space="preserve"><value>Shared by frame sheet and part atlas.</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_ADA96235D6" xml:space="preserve"><value>Per sheet</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_AE9A23DCD2" xml:space="preserve"><value>(project name)</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_B18FB8517E" xml:space="preserve"><value>If empty, {Frame sheet name}_parts. When split, this becomes the file name prefix.</value></data>
@@ -1933,10 +1923,8 @@ Long press/right-click: {0}</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_C0FA3B7B99" xml:space="preserve"><value>Part atlas export off</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_C5222F3E88" xml:space="preserve"><value>In this file the part atlas uses separate sheet settings — for older files, the part atlas was kept separate to preserve the output.</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_D05205E66E" xml:space="preserve"><value>Make the part atlas use the common sheet settings too (part atlas output may change; can be undone)</value></data>
-  <data name="S_UnityExportDialog_BuildExportSections_D424AEA3F1" xml:space="preserve"><value>Always</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_DB40109609" xml:space="preserve"><value>Exports sheets next to the project when saving.</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_DC750ED123" xml:space="preserve"><value> — checked skins only</value></data>
-  <data name="S_UnityExportDialog_BuildExportSections_E38FCCF1CA" xml:space="preserve"><value>Exports images only (when not using Unity). The part atlas always writes .meta when Sprite Library is used.</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_E3C647CE07" xml:space="preserve"><value>Match common</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_E5B4608A6B" xml:space="preserve"><value>→ (no groups with parts or skins to export)</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_EF4A7BEB35" xml:space="preserve"><value>With "Selected skins", only checked skins get a .spriteLib. Part-only (individual) skins also get one .spriteLib ({Group}@{Skin}): only that part's Category uses that skin's sprite, other Categories use the default skin's sprite — </value></data>
@@ -2076,7 +2064,6 @@ Long press/right-click: {0}</value></data>
   <data name="S_UnityExportDialog_UnityExportDialog_6A9E6CDC2F" xml:space="preserve"><value>Advanced — separate sheet settings for the part atlas</value></data>
   <data name="S_UnityExportDialog_UnityExportDialog_73AC3FD6C5" xml:space="preserve"><value>Export settings presets: save current settings · load · manage · reset to defaults</value></data>
   <data name="S_UnityExportDialog_UnityExportDialog_777398C2AE" xml:space="preserve"><value>Show settings</value></data>
-  <data name="S_UnityExportDialog_UnityExportDialog_91724FB578" xml:space="preserve"><value>Export settings</value></data>
   <data name="S_UnityExportDialog_UnityExportDialog_97F3AEFCEC" xml:space="preserve"><value>The part atlas uses its own settings (Advanced &gt; Per-sheet settings — the shared sheet settings apply to the frame sheet only).</value></data>
   <data name="S_UnityExportDialog_UnityExportDialog_A76A76E0B6" xml:space="preserve"><value>Go to part atlas settings in the Advanced section on the left</value></data>
   <data name="S_UnityExportDialog_UnityExportDialog_B18F4A0368" xml:space="preserve"><value>Part atlas (one cell per part × frame, always Multiple)</value></data>
@@ -2257,7 +2244,6 @@ Move Chickxel.app to the Applications folder or similar and relaunch it to use a
   <data name="S_Updater_PlanInstall_EE7CBEAB5D" xml:space="preserve"><value>This release has no file for this computer ({0}).</value></data>
   <data name="S_Updater_PlanInstall_FA52471F79" xml:space="preserve"><value>Test builds ({0}) can't be installed automatically.</value></data>
   <data name="S_Updater_ShowUpdateDialog_A63ECF4271" xml:space="preserve"><value>Chickxel {0} won't be shown again (you'll be notified of newer versions). You can always check via Help &gt; Check for updates.</value></data>
-  <data name="GifExport_Title" xml:space="preserve"><value>Export as animated GIF</value></data>
   <data name="Preview_Menu_CopyImage" xml:space="preserve"><value>Copy image</value></data>
   <data name="Preview_Menu_CopyEnlarged" xml:space="preserve"><value>Copy enlarged (×4)</value></data>
   <data name="Preview_Menu_SaveFrame" xml:space="preserve"><value>Save frame…</value></data>
@@ -3234,6 +3220,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Busy_Exporting" xml:space="preserve"><value>Exporting</value></data>
   <data name="Busy_GifFrames" xml:space="preserve"><value>Compositing frames</value></data>
   <data name="Busy_GifSaving" xml:space="preserve"><value>Creating GIF</value></data>
+  <data name="Busy_PngSaving" xml:space="preserve"><value>Creating PNG</value></data>
   <data name="Busy_Hint" xml:space="preserve"><value>Editing is paused until this finishes</value></data>
   <data name="Assets_Title" xml:space="preserve"><value>Asset Manager</value></data>
   <data name="Assets_Menu" xml:space="preserve"><value>Asset Manager…</value></data>
@@ -3825,16 +3812,61 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="McpBridge_Unavailable" xml:space="preserve"><value>Chickxel isn't running or its external AI connection is off. Start Chickxel and turn on "Allow external AI apps" in Preferences &gt; AI Status.</value></data>
   <data name="McpBridge_Failed" xml:space="preserve"><value>Couldn't reach Chickxel: {message}</value></data>
   <data name="ExternalMcp_Title" xml:space="preserve"><value>External AI connection</value></data>
+  <data name="ExternalMcp_OpenMenu" xml:space="preserve"><value>External AI Connection…</value></data>
   <data name="ExternalMcp_Allow" xml:space="preserve"><value>Allow external AI apps</value></data>
-  <data name="ExternalMcp_Info" xml:space="preserve"><value>Other AI apps on this computer (Claude Desktop, Cursor, Claude Code and others) look at and edit your drawings with the AI tools of the running Chickxel. Paste the settings from "Copy connection settings" into that app's MCP settings; it then starts "Chickxel --mcp", which connects to this window. The connection is open only on this computer (127.0.0.1) and ends as soon as you turn it off. Each change is one undo step, and the tool that asks you questions isn't offered.</value></data>
+  <data name="ExternalMcp_Info" xml:space="preserve"><value>Other AI apps on this computer (Claude Desktop, Cursor, Claude Code and others) look at and edit your drawings with the AI tools of the running Chickxel. Copy the connection settings below with the copy button on their right and paste them into that app's MCP settings; it then starts "Chickxel --mcp", which connects to this window. The connection is open only on this computer (127.0.0.1) and ends as soon as you turn it off. Each change is one undo step, and the tool that asks you questions isn't offered.</value></data>
   <data name="ExternalMcp_OpenFile" xml:space="preserve"><value>Allow opening files (opens images and projects by path)</value></data>
   <data name="ExternalMcp_Generate" xml:space="preserve"><value>Allow image generation (with your Codex, uses your Codex quota)</value></data>
   <data name="ExternalMcp_CopyConfig" xml:space="preserve"><value>Copy connection settings</value></data>
   <data name="ExternalMcp_CopyConfigTip" xml:space="preserve"><value>Copies the JSON to paste into another AI app's MCP settings. Copy and paste it again if you move Chickxel.</value></data>
   <data name="ExternalMcp_Copied" xml:space="preserve"><value>Copied</value></data>
+  <data name="ExternalMcp_ConfigLabel" xml:space="preserve"><value>Connection settings (JSON to paste into another AI app's MCP settings)</value></data>
+  <data name="ExternalMcp_GuideShow" xml:space="preserve"><value>How to connect</value></data>
+  <data name="ExternalMcp_GuideShowTip" xml:space="preserve"><value>Show how the connection works, the command to run and where to register it in each app.</value></data>
+  <data name="ExternalMcp_GuideCopy" xml:space="preserve"><value>Copy guide</value></data>
+  <data name="ExternalMcp_GuideCopyTip" xml:space="preserve"><value>Copy the whole guide below. Paste it into the AI app you use and ask it to "connect Chickxel like this"; that AI can register it for you or tell you how.</value></data>
+  <data name="ExternalMcp_Guide" xml:space="preserve"><value>Chickxel external AI connection (MCP) guide
+Paste this into an AI app and that AI can register Chickxel as an MCP server as described below, or tell you how.
+
+[How it works]
+- Chickxel (a pixel-art and sprite editor) opens an MCP server inside its running window on this computer: a Streamable HTTP server on a free port of 127.0.0.1 that answers only with the right Bearer token.
+- AI apps don't connect to that server directly. They start the stdio MCP server "Chickxel --mcp", a windowless bridge that relays JSON-RPC messages from standard input (one per line) to the running Chickxel and writes each answer to standard output on one line. The bridge handles the token, so the AI app needs no key or environment variable.
+- The address and token are in this file only while the external AI connection is on, and the bridge reads it again for every message: {lockFile}
+  So the AI app's settings stay the same when Chickxel restarts.
+- Chickxel must be running with "Allow external AI apps" on in Chickxel's AI &gt; External AI Connection…; otherwise requests come back as a JSON-RPC error (-32000).
+- It connects only on this computer. AI that runs only in the cloud (ChatGPT or Claude on the web and so on) can't start programs on this computer, so it can't connect this way.
+
+[Command]
+- Type: stdio MCP server (no working folder or environment variables needed)
+- command: {exe}
+- args: {args}
+- Server name: chickxel
+
+[Where to register it]
+- Claude Desktop: add the "chickxel" entry of the JSON below to "mcpServers" in claude_desktop_config.json (Settings &gt; Developer &gt; Edit Config), then quit and restart the app completely.
+- Claude Code: run claude mcp add --scope user chickxel -- "command" args in a terminal, or put the JSON below in .mcp.json in the project folder.
+- Cursor: put the JSON below in ~/.cursor/mcp.json (all projects) or in the project's .cursor/mcp.json.
+- Codex CLI and the ChatGPT desktop app: both use ~/.codex/config.toml. Add the TOML below, or in the desktop app use Settings &gt; MCP servers &gt; Add server, choose STDIO, enter the same command and args and Restart. In the ChatGPT desktop app it works only in Work (running on this computer) or Codex chats, not in Chat mode, on the web or on mobile.
+- Other MCP clients: register the command and args above as a stdio server.
+
+JSON (mcpServers format):
+{json}
+
+TOML (Codex CLI and the ChatGPT desktop app):
+{toml}
+
+[Tools]
+- Once connected, tools/list gives the tools and the initialize instructions give the drawing rules. There are tools to look at the open drawing (get_document, get_image, get_pixels), draw pixels (draw_pixels and more), work with frames, layers, groups, parts and skins, layer effects and script effects, and references.
+- open_file (open an image or project by path) and generate_pixel_art (generate a picture with the user's Codex login, then pixelate it) are listed only when allowed separately in the External AI Connection window. After changing them, the AI app must reconnect the MCP server to get the new list.
+- generate_pixel_art can take minutes. Apps with a short tool time limit need a longer one (Codex defaults to 60 seconds: tool_timeout_sec in the TOML above).
+- There is no tool that asks the user, so the AI asks in its own conversation when a choice is unclear. Each tool call that changes the document is one undo step in Chickxel.
+
+[Checking and troubleshooting]
+- When a tool is called, "External AI: tool name" shows briefly at the right end of Chickxel's status bar.
+- If it doesn't work, check that Chickxel is running, that "Allow external AI apps" is on, that the command path points to an existing executable (register again after moving Chickxel), and that the AI app was restarted.</value></data>
   <data name="ExternalMcp_Status" xml:space="preserve"><value>External AI</value></data>
   <data name="ExternalMcp_StatusTool" xml:space="preserve"><value>External AI: {tool}</value></data>
-  <data name="ExternalMcp_StatusTip" xml:space="preserve"><value>The external AI connection is on. When another AI app calls a tool, its name shows here briefly. Turn it off in Preferences &gt; AI Status.</value></data>
+  <data name="ExternalMcp_StatusTip" xml:space="preserve"><value>The external AI connection is on. When another AI app calls a tool, its name shows here briefly. Turn it off with AI &gt; External AI Connection… in the menu.</value></data>
   <data name="ExternalMcp_StartFailed" xml:space="preserve"><value>Couldn't turn on the external AI connection: {message}</value></data>
   <data name="Ai_Script_UnknownEffect" xml:space="preserve"><value>Couldn't find the script effect "{effect}". Check ids and names with list_script_effects.</value></data>
   <data name="EffectMakerAi_AttachCanvasTip" xml:space="preserve"><value>Attach the current frame of the open drawing (reference).</value></data>
@@ -4223,8 +4255,6 @@ If you don't, the set stays as it was.</value></data>
   <data name="Tile_PickAutoTileFirst" xml:space="preserve"><value>Pick an auto tile set in the Tileset panel first.</value></data>
   <data name="TileOptions_Title" xml:space="preserve"><value>Tiles</value></data>
   <data name="TileOptions_Floor" xml:space="preserve"><value>Floor</value></data>
-  <data name="TileOptions_FloorTip" xml:space="preserve"><value>Floor to place on: "Tile default" uses each tile's default floor; pick a floor to place every tile there (the same floor overwrites, different floors stack).</value></data>
-  <data name="TileOptions_FloorAuto" xml:space="preserve"><value>Tile default</value></data>
   <data name="TileOptions_Transform" xml:space="preserve"><value>Flip/rotate</value></data>
   <data name="TileOptions_FlipXTip" xml:space="preserve"><value>Flip horizontally (X)</value></data>
   <data name="TileOptions_FlipYTip" xml:space="preserve"><value>Flip vertically (Y)</value></data>
@@ -4234,6 +4264,16 @@ If you don't, the set stays as it was.</value></data>
   <data name="TileOptions_RandomTip" xml:space="preserve"><value>When the brush holds several tiles, place one of them at random in each cell.</value></data>
   <data name="TileOptions_Grid" xml:space="preserve"><value>Cell grid</value></data>
   <data name="TileOptions_GridTip" xml:space="preserve"><value>Show the tile cell grid on the canvas (also outside it).</value></data>
+  <data name="TileView_Animate" xml:space="preserve"><value>Tile motion</value></data>
+  <data name="TileView_AnimateTip" xml:space="preserve"><value>Plays animated tiles (water, torches…) on the canvas, preview and tile list. Off freezes them on the current image (exports are unaffected).</value></data>
+  <data name="TileView_MenuCells" xml:space="preserve"><value>Tilemap cell grid</value></data>
+  <data name="TileView_MenuAnimate" xml:space="preserve"><value>Play animated tiles</value></data>
+  <data name="TileView_FloorsAll" xml:space="preserve"><value>All floors</value></data>
+  <data name="TileView_FloorsAllTip" xml:space="preserve"><value>Show every floor as it is.</value></data>
+  <data name="TileView_FloorsDim" xml:space="preserve"><value>Focus floor</value></data>
+  <data name="TileView_FloorsDimTip" xml:space="preserve"><value>Show the floor you are placing on (the floor picked in tool settings, or the picked tile's floor in Auto) clearly and the other floors translucent. Canvas only — the preview and exports are unchanged.</value></data>
+  <data name="TileView_FloorsOnly" xml:space="preserve"><value>Floor only</value></data>
+  <data name="TileView_FloorsOnlyTip" xml:space="preserve"><value>Show only the floor you are placing on (the floor picked in tool settings, or the picked tile's floor in Auto) and hide the others. Canvas only — the preview and exports are unchanged.</value></data>
   <data name="TileTool_Brush" xml:space="preserve"><value>Tile brush</value></data>
   <data name="TileTool_Eraser" xml:space="preserve"><value>Tile eraser</value></data>
   <data name="TileTool_Rect" xml:space="preserve"><value>Tile rectangle</value></data>
@@ -4248,11 +4288,16 @@ If you don't, the set stays as it was.</value></data>
   <data name="TileTool_PickerHint" xml:space="preserve"><value>Picks a tile from the map into the brush (or the auto tile set it was painted with).</value></data>
   <data name="TileTool_SelectHint" xml:space="preserve"><value>Selects a cell rectangle. Copy turns it into the brush, Delete erases it. Right button = deselect.</value></data>
   <data name="TileTool_AutoTileHint" xml:space="preserve"><value>Paints with the chosen auto tile set; edge shapes follow the neighbors. Right button = erase.</value></data>
-  <data name="TilesetChoice_New" xml:space="preserve"><value>Create a new tileset</value></data>
+  <data name="TilesetChoice_New" xml:space="preserve"><value>New empty tileset</value></data>
   <data name="TilesetChoice_DefaultName" xml:space="preserve"><value>Tileset</value></data>
-  <data name="TilesetChoice_Existing" xml:space="preserve"><value>Use a tileset in this project</value></data>
+  <data name="TilesetChoice_Open" xml:space="preserve"><value>Open</value></data>
+  <data name="TilesetChoice_Create" xml:space="preserve"><value>Create</value></data>
+  <data name="TilesetChoice_Summary" xml:space="preserve"><value>{w}×{h} cells · {tiles} tiles · {sets} auto tiles</value><comment>w, h = 칸 크기(px), tiles = 타일 수, sets = 자동 타일 세트 수</comment></data>
+  <data name="TilesetChoice_BuiltInCopy" xml:space="preserve"><value>Built-in · picking makes a new copy</value></data>
+  <data name="TilesetChoice_Manage" xml:space="preserve"><value>Manage tilesets…</value></data>
+  <data name="TilesetChoice_CellMismatch" xml:space="preserve"><value>cell size differs from the layer ({w}×{h})</value><comment>w, h = 타일맵 레이어의 칸 크기(px)</comment></data>
   <data name="TilesetChoice_Unnamed" xml:space="preserve"><value>(unnamed)</value></data>
-  <data name="TilesetChoice_OpenFile" xml:space="preserve"><value>Open tileset file…</value></data>
+  <data name="TilesetChoice_ManageTip" xml:space="preserve"><value>Create an empty tileset, import a tileset file, rename, save to a file, or delete tilesets nothing uses</value></data>
   <data name="TilesetChoice_Name" xml:space="preserve"><value>Name</value></data>
   <data name="TilesetChoice_CellSize" xml:space="preserve"><value>Cell size</value></data>
   <data name="TilesetChoice_CellSizeInfo" xml:space="preserve"><value>Size of one tile cell in px. Big tiles (2×1, 2×2 …) are sized in these cells. 90° rotation needs square cells.</value></data>
@@ -4267,18 +4312,17 @@ If you don't, the set stays as it was.</value></data>
   <data name="TileImport_SkipEmpty" xml:space="preserve"><value>Skip transparent cells</value></data>
   <data name="TileImport_SkipDuplicates" xml:space="preserve"><value>Skip cells identical to existing tiles</value></data>
   <data name="Tileset_Header" xml:space="preserve"><value>Tileset</value></data>
-  <data name="Tileset_MenuTip" xml:space="preserve"><value>Tileset menu (choose, save to file, settings, import)</value></data>
   <data name="Tileset_ChooseOrCreate" xml:space="preserve"><value>Choose or create tileset…</value></data>
-  <data name="Tileset_NameLine" xml:space="preserve"><value>{0} · cell {1}×{2}</value></data>
   <data name="Tileset_NotSaved" xml:space="preserve"><value>Not saved to a file (only in the project)</value></data>
-  <data name="Tileset_NotSavedTip" xml:space="preserve"><value>Save it with "Save tileset file…" in the menu to share it with other projects.</value></data>
+  <data name="Tileset_NotSavedTip" xml:space="preserve"><value>Save it with "Save tileset file…" in the tileset settings or Manage tilesets to share it with other projects.</value></data>
   <data name="Tileset_Floors" xml:space="preserve"><value>Floors</value></data>
-  <data name="Tileset_FloorsInfo" xml:space="preserve"><value>Floors higher in the list draw on top. Placing on the same floor overwrites, on another floor stacks. Eye = visibility, lock = no placing, double-click = rename.</value></data>
+  <data name="Tileset_FloorsInfo" xml:space="preserve"><value>Floors higher in the list draw on top. Placing on the same floor overwrites, on another floor stacks. Click a floor to place only on it (manual); turn on "Auto" to use each tile's default floor (auto tiles use their set's floor). Left bar = floor being placed on, eye = visibility, lock = no placing (locked floors show in yellow), double-click = rename.</value></data>
+  <data name="TileFloors_Auto" xml:space="preserve"><value>Auto</value></data>
+  <data name="TileFloors_AutoTip" xml:space="preserve"><value>On: place each tile on its default floor (auto tiles on their set's floor). Clicking a floor turns this off and places only on that floor (manual).</value></data>
   <data name="Tileset_AddFloor" xml:space="preserve"><value>Add floor</value></data>
   <data name="Tileset_FloorName" xml:space="preserve"><value>Floor name</value></data>
   <data name="Tileset_NewFloorName" xml:space="preserve"><value>Floor {0}</value></data>
   <data name="Tileset_RenameFloor" xml:space="preserve"><value>Rename floor</value></data>
-  <data name="Tileset_UseFloor" xml:space="preserve"><value>Place on this floor</value></data>
   <data name="Tileset_DeleteFloor" xml:space="preserve"><value>Delete floor</value></data>
   <data name="Tileset_DeleteFloorAsk" xml:space="preserve"><value>All tiles placed on floor "{0}" will be removed too. Delete it?</value></data>
   <data name="Tileset_FloorVisibleTip" xml:space="preserve"><value>Show/hide floor (hidden floors are left out of the composite and exports)</value></data>
@@ -4286,18 +4330,64 @@ If you don't, the set stays as it was.</value></data>
   <data name="Tileset_FloorUpTip" xml:space="preserve"><value>Move up</value></data>
   <data name="Tileset_FloorDownTip" xml:space="preserve"><value>Move down</value></data>
   <data name="Tileset_MoveFloorLabel" xml:space="preserve"><value>Reorder floors</value></data>
-  <data name="Tileset_FloorRowTip" xml:space="preserve"><value>Double-click = rename, right-click = menu</value></data>
+  <data name="Tileset_FloorRowTip" xml:space="preserve"><value>Click = place only on this floor (manual), double-click = rename, right-click = menu</value></data>
   <data name="Tileset_Tiles" xml:space="preserve"><value>Tiles</value></data>
   <data name="Tileset_ImportPng" xml:space="preserve"><value>Import from PNG…</value></data>
   <data name="Tileset_ImportFrame" xml:space="preserve"><value>Import from current frame…</value></data>
-  <data name="Tileset_ImportFrameTip" xml:space="preserve"><value>Cuts the visible picture of the current frame (without tilemap layers) into cells and adds them as tiles — draw tiles on a normal layer, then bring them in.</value></data>
   <data name="Tileset_Merge" xml:space="preserve"><value>Merge into big tile</value></data>
   <data name="Tileset_MergeTip" xml:space="preserve"><value>Joins the selected cells into one new big tile (footprint = selection size). The original tiles stay.</value></data>
-  <data name="Tileset_MergedMessage" xml:space="preserve"><value>Big tile created. Shrink its footprint in the tile properties to let the image rise above it (trees etc.).</value></data>
+  <data name="Tileset_MergedMessage" xml:space="preserve"><value>Big tile created. Shrink its footprint in Tile settings to let the image rise above it (trees etc.).</value></data>
   <data name="Tileset_DeleteTiles" xml:space="preserve"><value>Delete tiles</value></data>
   <data name="Tileset_DeleteUsedAsk" xml:space="preserve"><value>Some of the {0} selected tiles are used in maps. They'll be removed from the maps too. Delete?</value></data>
   <data name="Tileset_DuplicateTile" xml:space="preserve"><value>Duplicate tile</value></data>
-  <data name="Tileset_TileProps" xml:space="preserve"><value>Selected tile</value></data>
+  <data name="Tileset_TileSettings" xml:space="preserve"><value>Settings…</value></data>
+  <data name="TilesetWin_RulesHead" xml:space="preserve"><value>Rules</value></data>
+  <data name="Tileset_FloorRowManageTip" xml:space="preserve"><value>Double-click = rename, right-click = menu</value></data>
+  <data name="TilesetWin_PageTiles" xml:space="preserve"><value>Tiles</value></data>
+  <data name="TilesetWin_PageFloors" xml:space="preserve"><value>Floors</value></data>
+  <data name="TilesetWin_PageAuto" xml:space="preserve"><value>Auto tiles &amp; groups</value></data>
+  <data name="TilesetWin_PageTileset" xml:space="preserve"><value>Tileset</value></data>
+  <data name="TilesetWin_PageView" xml:space="preserve"><value>View</value></data>
+  <data name="TilesetWin_PickHint" xml:space="preserve"><value>Pick a tile on the left. Pick several to change their default floor together.</value></data>
+  <data name="TilesetWin_Picked" xml:space="preserve"><value>{count} tiles picked — change their default floor or delete them together</value><comment>count = 고른 타일 수</comment></data>
+  <data name="TilesetWin_EditImage" xml:space="preserve"><value>Edit image…</value></data>
+  <data name="TilesetWin_EditImageTip" xml:space="preserve"><value>Opens the tile image in a new tab to edit with the pixel tools (animated tiles get one frame per image). Write it back with Save to tile below the tab.</value></data>
+  <data name="TilesetWin_Rules" xml:space="preserve"><value>{count} rules…</value><comment>count = 세트의 규칙 수(누르면 규칙 고치기 창)</comment></data>
+  <data name="TilesetWin_NoSets" xml:space="preserve"><value>No auto tile sets.</value></data>
+  <data name="TilesetWin_Groups" xml:space="preserve"><value>Groups</value></data>
+  <data name="TilesetWin_GroupsInfo" xml:space="preserve"><value>Sets with the same group name join each other even on different floors (for example dirt and mud). Pick each set's group in its row above; renaming a group here renames it in every set of that group.</value></data>
+  <data name="TilesetWin_NoGroups" xml:space="preserve"><value>No set uses a group.</value></data>
+  <data name="TilesetWin_GroupRename" xml:space="preserve"><value>Rename group</value></data>
+  <data name="TilesetWin_File" xml:space="preserve"><value>File</value></data>
+  <data name="TilesetWin_ByFloor" xml:space="preserve"><value>Split the tile list by floor</value></data>
+  <data name="TilesetWin_ByFloorTip" xml:space="preserve"><value>Groups the Tileset panel's tile list by default floor (top floor first) under each floor's name.</value></data>
+  <data name="TilesetWin_HideAuto" xml:space="preserve"><value>Hide tiles used by auto tile sets from the list</value></data>
+  <data name="TilesetWin_HideAutoTip" xml:space="preserve"><value>Leaves the tiles of auto tile sets out of the tile list and folds rows that end up empty. Pick those tiles from the set's parts instead.</value></data>
+  <data name="TilesetWin_ShowParts" xml:space="preserve"><value>Show parts when an auto tile set is picked</value></data>
+  <data name="TilesetWin_ShowPartsTip" xml:space="preserve"><value>Shows the tiles of the picked auto tile set under it, so you can click one to place that shape by hand.</value></data>
+  <data name="TilesetWin_SlotSize" xml:space="preserve"><value>Cell size</value></data>
+  <data name="TilesetWin_SlotAuto" xml:space="preserve"><value>Auto</value></data>
+  <data name="TilesetWin_SlotAutoTip" xml:space="preserve"><value>On: sizes cells so all tile list columns fit the Tileset panel. Off: the size you set (smaller when the panel is too narrow, so the list never scrolls sideways).</value></data>
+  <data name="TilesetWin_FloorsSecondary" xml:space="preserve"><value>Floors belong to the layer's first tileset. Tiles of this tileset go to the first tileset's floor with the same name (otherwise the floor at the same position). Edit floors from the first tileset's settings or the Floors list in the tool settings.</value></data>
+  <data name="Tileset_Close" xml:space="preserve"><value>Close on this layer</value></data>
+  <data name="Tileset_Replace" xml:space="preserve"><value>Replace with another tileset…</value></data>
+  <data name="Tileset_CloseAsk" xml:space="preserve"><value>{count} cells on this layer use this tileset and will be removed. Close the tileset? (It stays in the project.)</value><comment>count = 그 타일셋으로 찍은 칸 수</comment></data>
+  <data name="Tileset_AddTileset" xml:space="preserve"><value>Add tileset</value></data>
+  <data name="Tileset_AddTilesetTip" xml:space="preserve"><value>Stack another tileset on this tilemap layer, like palettes: its tiles and auto tiles can be placed on the same layer. Only tilesets with the same cell size.</value></data>
+  <data name="Tileset_HeaderTip" xml:space="preserve"><value>Double-click to rename · right-click = menu</value></data>
+  <data name="TileImage_TabTitle" xml:space="preserve"><value>Tile image: {name}</value><comment>name = 타일 이름</comment></data>
+  <data name="TileImage_Bar" xml:space="preserve"><value>Editing tile image: {name} — the canvas is the footprint (the anchor); what you draw outside the canvas is part of the image too (grow it up or sideways for glows and trees). One image per frame. The tile changes only when you press Save to tile.</value><comment>name = 타일 이름</comment></data>
+  <data name="TileImage_EditHint" xml:space="preserve"><value>Opened the tile image in a new tab. The canvas is the footprint; parts that rise above it show outside the canvas. Press Save to tile below the tab (Ctrl+S) when done.</value></data>
+  <data name="TileImage_Save" xml:space="preserve"><value>Save to tile</value></data>
+  <data name="TileImage_SaveTip" xml:space="preserve"><value>Merges each frame's visible layers including what's outside the canvas and saves the box around all frames as the tile's images, positioned relative to the canvas (footprint). One undo step; layer effects are left out.</value></data>
+  <data name="TileImage_Empty" xml:space="preserve"><value>The image is empty, so there is nothing to save.</value></data>
+  <data name="TileImage_CloseTip" xml:space="preserve"><value>Closes this document (asks whether to save to the tile if you edited it without saving)</value></data>
+  <data name="TileImage_TargetGone" xml:space="preserve"><value>Can't save: the document with the tileset was closed or the tile was deleted.</value></data>
+  <data name="TileImage_TooManyFrames" xml:space="preserve"><value>Animated tiles can have up to {max} images. Remove some frames.</value><comment>max = 최대 장 수</comment></data>
+  <data name="TileImage_Label" xml:space="preserve"><value>Edit tile image</value></data>
+  <data name="TileImage_Saved" xml:space="preserve"><value>Saved to tile: {name} — {count} image(s)</value><comment>name = 타일 이름, count = 그림 수</comment></data>
+  <data name="TileImage_ApplyConfirm" xml:space="preserve"><value>Save the edited image to the tile?</value></data>
+  <data name="Tileset_DefaultFloorInfo" xml:space="preserve"><value>The floor this tile goes to when floors are set to "Auto".</value></data>
   <data name="Tileset_Footprint" xml:space="preserve"><value>Footprint</value></data>
   <data name="Tileset_FootprintInfo" xml:space="preserve"><value>Number of cells this tile occupies (width×height). Tiles on the same floor that overlap these cells are replaced. A taller image rises above.</value></data>
   <data name="Tileset_DrawOffset" xml:space="preserve"><value>Image offset</value></data>
@@ -4305,14 +4395,17 @@ If you don't, the set stays as it was.</value></data>
   <data name="Tileset_AlignBottomTip" xml:space="preserve"><value>Aligns the image bottom with the footprint bottom (it rises upward).</value></data>
   <data name="Tileset_DefaultFloor" xml:space="preserve"><value>Default floor</value></data>
   <data name="Tileset_TileInfo" xml:space="preserve"><value>Id {0} · image {1}×{2}px</value></data>
-  <data name="Tileset_TileEditLabel" xml:space="preserve"><value>Tile properties</value></data>
+  <data name="Tileset_TileEditLabel" xml:space="preserve"><value>Tile settings</value></data>
   <data name="Tileset_AutoTiles" xml:space="preserve"><value>Auto tiles</value></data>
-  <data name="Tileset_AutoTilesInfo" xml:space="preserve"><value>Painting with an auto tile set picks edge tiles by looking at neighbors. Click a set to paint with the auto tile brush.</value></data>
+  <data name="Tileset_AutoTilesInfo" xml:space="preserve"><value>Painting with an auto tile set picks edge tiles by looking at neighbors. Click a set to paint with the auto tile brush, double-click to edit it. The last cell (plus) makes a new set; the color strip under a cell is its join group (same color = same group).</value></data>
+  <data name="Tileset_AutoParts" xml:space="preserve"><value>Parts ({count})</value><comment>count = 고른 자동 타일 세트에 든 타일 수</comment></data>
+  <data name="Tileset_AutoPartsInfo" xml:space="preserve"><value>The tiles in the selected auto tile set. Click one to place just that tile on the set's floor (manual — neighbors don't change it), to swap a shape the set picked by hand. Click the set in the Tileset panel again to go back to the auto tile brush.</value></data>
+  <data name="Tileset_AutoPartTip" xml:space="preserve"><value>Click to place only this tile (manual)</value></data>
   <data name="Tileset_AddAutoTile" xml:space="preserve"><value>New auto tile set</value></data>
   <data name="Tileset_EditAutoTile" xml:space="preserve"><value>Edit auto tile set</value></data>
   <data name="Tileset_DeleteAutoTile" xml:space="preserve"><value>Delete auto tile set</value></data>
   <data name="Tileset_DeleteAutoTileAsk" xml:space="preserve"><value>Delete set "{0}"? Tiles already placed stay.</value></data>
-  <data name="Tileset_AutoTileRowTip" xml:space="preserve"><value>Click to paint with this set (auto tile brush).</value></data>
+  <data name="Tileset_AutoTileRowTip" xml:space="preserve"><value>Click = paint with this set (auto tile brush), double-click = edit, right-click = menu</value></data>
   <data name="Tileset_SaveFile" xml:space="preserve"><value>Save tileset file…</value></data>
   <data name="Tileset_ReloadFile" xml:space="preserve"><value>Reload from tileset file</value></data>
   <data name="Tileset_SavedMessage" xml:space="preserve"><value>Saved the tileset to {0}. Changes are also written to this file whenever the project is saved.</value></data>
@@ -4331,31 +4424,28 @@ If you don't, the set stays as it was.</value></data>
   <data name="Tile_PixelOnly" xml:space="preserve"><value>This command is for pixel layers only (not tilemap layers).</value></data>
   <data name="Tile_ToolUnavailable" xml:space="preserve"><value>The {0} tool isn't available on tilemap layers.</value></data>
   <data name="Tile_StampTurned" xml:space="preserve"><value>Flipped/rotated the tile brush.</value></data>
-  <data name="Tile_NewLayerTitle" xml:space="preserve"><value>New tilemap layer</value></data>
-  <data name="Tile_LayerAdded" xml:space="preserve"><value>Tilemap layer created. Pick tiles in the Tileset panel and place them.</value></data>
+  <data name="Tile_LayerAdded" xml:space="preserve"><value>Tilemap layer created. Pick tiles in the Tileset panel and place them (click the tileset title to change it).</value></data>
   <data name="Tile_Converted" xml:space="preserve"><value>Converted the tilemap to a group (one part per floor).</value></data>
-  <data name="Tile_MenuAddLayer" xml:space="preserve"><value>New tilemap layer…</value></data>
+  <data name="Tile_MenuAddLayer" xml:space="preserve"><value>New tilemap layer</value></data>
   <data name="Tile_MenuConvert" xml:space="preserve"><value>Convert tilemap to layers</value></data>
-  <data name="TilesetChoice_BuiltIn" xml:space="preserve"><value>Start from a built-in tileset</value></data>
-  <data name="TilesetChoice_BuiltInInfo" xml:space="preserve"><value>A copy of a tileset that comes with the app goes into this project. Edit it freely, and use "Save tileset file…" in the Tileset panel menu to share it with other projects. Sandbox surface &amp; caves: 16px side view — grassy dirt, dirt, stone, stone with ore, sand, snowy dirt, stone brick and wood plank blocks plus dirt and stone background walls (47-shape auto tiles), water and lava, wood platforms, ladders, vines and fences, trees, grass, flowers, mushrooms, stalactites, crystals, torches, chests, doors and more.</value></data>
-  <data name="TilePick_Title" xml:space="preserve"><value>Painting with</value></data>
+  <data name="Tileset_Rename" xml:space="preserve"><value>Rename</value></data>
+  <data name="TilesetManager_Title" xml:space="preserve"><value>Manage tilesets</value></data>
+  <data name="TilesetManager_ImportFile" xml:space="preserve"><value>Import tileset file…</value></data>
+  <data name="TilesetManager_UsedElsewhere" xml:space="preserve"><value>used by another layer</value></data>
+  <data name="TilesetManager_Unused" xml:space="preserve"><value>not used</value></data>
+  <data name="TilesetManager_Delete" xml:space="preserve"><value>Delete from project</value></data>
+  <data name="TilesetManager_DeleteUsedTip" xml:space="preserve"><value>A tileset a tilemap layer uses can't be deleted. Close it on the layer first.</value></data>
+  <data name="TilesetManager_DeleteAsk" xml:space="preserve"><value>Delete the tileset "{name}" from the project?</value><comment>name = 타일셋 이름</comment></data>
+  <data name="TilesetManager_None" xml:space="preserve"><value>The project has no tilesets.</value></data>
   <data name="TilePick_Nothing" xml:space="preserve"><value>Nothing picked</value></data>
   <data name="TilePick_NothingHint" xml:space="preserve"><value>Click a tile in the list or pick an auto-tile set.</value></data>
   <data name="TilePick_NoSetHint" xml:space="preserve"><value>Pick a set from the auto-tile list.</value></data>
   <data name="TilePick_Eraser" xml:space="preserve"><value>Eraser</value></data>
-  <data name="TilePick_EraserKind" xml:space="preserve"><value>Erases the tile in the clicked cell</value></data>
   <data name="TilePick_TileId" xml:space="preserve"><value>Tile {id}</value><comment>id: 타일 번호(이름 없는 타일)</comment></data>
   <data name="TilePick_Tiles" xml:space="preserve"><value>{count} tiles</value><comment>count: 붓에 든 타일 수</comment></data>
-  <data name="TilePick_SingleKind" xml:space="preserve"><value>Tile · {w}×{h} cells</value><comment>w, h: 차지 칸 수</comment></data>
-  <data name="TilePick_StampKind" xml:space="preserve"><value>Stamp · {w}×{h} cells</value><comment>w, h: 붓 전체 크기(칸)</comment></data>
-  <data name="TilePick_RandomKind" xml:space="preserve"><value>One at random per cell</value></data>
-  <data name="TilePick_Turned" xml:space="preserve"><value>flipped/rotated</value></data>
-  <data name="TilePick_Frames" xml:space="preserve"><value>{count} frames</value><comment>count: 움직이는 타일 그림 수</comment></data>
-  <data name="TilePick_AutoKind" xml:space="preserve"><value>Auto-tile set · {count} rules</value><comment>count: 규칙 수</comment></data>
-  <data name="TilePick_Group" xml:space="preserve"><value>Group {name}</value><comment>name: 이어지는 무리 이름</comment></data>
+  <data name="TilePick_AutoName" xml:space="preserve"><value>{name} ({count})</value><comment>name: 자동 타일 세트 이름, count: 규칙 수</comment></data>
   <data name="TilePick_Floor" xml:space="preserve"><value>Floor: {name}</value><comment>name: 층 이름(여럿이면 쉼표로)</comment></data>
-  <data name="TilePick_FloorPerTile" xml:space="preserve"><value>Floor: each tile's default</value></data>
-  <data name="TilePick_FloorTopVisible" xml:space="preserve"><value>Floor: topmost visible first</value></data>
+  <data name="TilePick_FloorTopVisible" xml:space="preserve"><value>Topmost visible floor first</value></data>
   <data name="TilePick_Locked" xml:space="preserve"><value>locked</value></data>
   <data name="TilePick_Hidden" xml:space="preserve"><value>hidden</value></data>
   <data name="TilePick_TargetFloorTip" xml:space="preserve"><value>Floor the current pick goes to</value></data>
@@ -4378,9 +4468,11 @@ If you don't, the set stays as it was.</value></data>
   <data name="AutoTile_GroupAlone" xml:space="preserve"><value>Does not join with other sets</value></data>
   <data name="AutoTile_GroupNew" xml:space="preserve"><value>No other set uses this group yet</value></data>
   <data name="AutoTile_Rules" xml:space="preserve"><value>Rules</value></data>
-  <data name="AutoTile_RulesInfo" xml:space="preserve"><value>Each cell looks at its 8 neighbors and tries the rules from the top; the first rule that matches places its tile. Earlier rules win, so put specific rules above broad ones. If nothing matches, the rule with the fewest mismatches is used; rules without tiles are skipped. 3×3 grid: green plus = a cell of the same group must be there, red minus = must not be there, blank = don't care. Several tiles in one rule are picked at random by weight.</value></data>
+  <data name="AutoTile_RulesInfo" xml:space="preserve"><value>Each cell looks at its 8 neighbors and tries the rules from the top; the first rule that matches places its tile. Earlier rules win, so put specific rules above broad ones. If nothing matches, the rule with the fewest mismatches is used; rules without tiles are skipped. 3×3 grid: green plus = a cell of the same group must be there, red minus = must not be there, orange triangle = something must be there (the same group or any tile on the "Something on floors" — so water under a wall fills without a surface), blank = don't care. Several tiles in one rule are picked at random by weight.</value></data>
   <data name="AutoTile_AddRule" xml:space="preserve"><value>Add rule</value></data>
-  <data name="AutoTile_ConditionTip" xml:space="preserve"><value>Click an outer cell = don't care → must be there → must not be there, right-click = backwards. Center = this cell</value></data>
+  <data name="AutoTile_ConditionTip" xml:space="preserve"><value>Click an outer cell = don't care → must be there → must not be there → something there (triangle), right-click = backwards. Center = this cell</value></data>
+  <data name="AutoTile_FilledFloors" xml:space="preserve"><value>Something on floors</value></data>
+  <data name="AutoTile_FilledFloorsInfo" xml:space="preserve"><value>The floors the "something there" condition (orange triangle) looks at. Any tile on these floors (auto tiles, hand-placed tiles, cells covered by big tiles) counts. Neighbors of the same group always count, whatever the floor. All on = every floor; turn off background wall or decoration floors so they count as empty. Placing or erasing tiles by hand re-picks nearby sets that use this condition.</value></data>
   <data name="AutoTile_RuleTilesTip" xml:space="preserve"><value>Click = replace with picked tiles, Ctrl+click = add (same tile adds weight), right-click a tile = change weight or remove</value></data>
   <data name="AutoTile_RuleNoTiles" xml:space="preserve"><value>No tiles · skipped</value></data>
   <data name="AutoTile_WeightUp" xml:space="preserve"><value>Increase weight</value></data>
@@ -4410,13 +4502,15 @@ If you don't, the set stays as it was.</value></data>
   <data name="AutoTile_PickedOne" xml:space="preserve"><value>Picked tile: {name}</value><comment>name = 고른 타일 이름(없으면 번호)</comment></data>
   <data name="AutoTile_PickedNone" xml:space="preserve"><value>No tiles picked — click or drag to pick</value></data>
   <data name="AutoTile_Preview" xml:space="preserve"><value>Preview</value></data>
-  <data name="AutoTile_PreviewInfo" xml:space="preserve"><value>Try the set you are editing: left button = paint, right button = erase. Hover a cell to see the rule it uses (orange outline in the list). Animated tiles move here too. The board is not saved.</value></data>
-  <data name="AutoTile_PreviewHint" xml:space="preserve"><value>Left button = paint, right button = erase</value></data>
+  <data name="AutoTile_PreviewInfo" xml:space="preserve"><value>Try the set you are editing: left button = paint, right button = erase, Shift+left button (or the "Something" button) = a gray "something there" cell — another tile such as a wall, for testing the something-there condition. Hover a cell to see the rule it uses (orange outline in the list). Animated tiles move here too. The board is not saved.</value></data>
+  <data name="AutoTile_PreviewHint" xml:space="preserve"><value>Left button = paint, right button = erase, Shift+left button = something there (gray)</value></data>
   <data name="AutoTile_PreviewRule" xml:space="preserve"><value>Cell ({x}, {y}): rule {index}</value><comment>x, y = 미리보기 판의 칸(0부터), index = 쓰인 규칙 번호(1부터)</comment></data>
   <data name="AutoTile_PreviewNearest" xml:space="preserve"><value>Cell ({x}, {y}): no rule matches — closest is rule {index}</value><comment>x, y = 미리보기 판의 칸(0부터), index = 대신 쓰인 규칙 번호(1부터)</comment></data>
   <data name="AutoTile_PreviewNoTiles" xml:space="preserve"><value>No rule has tiles, so nothing is drawn</value></data>
   <data name="AutoTile_PreviewClear" xml:space="preserve"><value>Clear board</value></data>
   <data name="AutoTile_PreviewReset" xml:space="preserve"><value>Reset board</value></data>
+  <data name="AutoTile_PreviewBlock" xml:space="preserve"><value>Something</value></data>
+  <data name="AutoTile_PreviewBlockTip" xml:space="preserve"><value>On: the left button places gray "something there" cells (another tile such as a wall) instead of the set. Off: Shift+left button does it.</value></data>
   <data name="AutoTile_Summary" xml:space="preserve"><value>{count} rules</value><comment>count = 세트의 규칙 수(타일 세트 목록에 보이는 짧은 설명)</comment></data>
   <data name="AutoTile_SummaryGroup" xml:space="preserve"><value>{count} rules · group {group}</value><comment>count = 세트의 규칙 수, group = 이어지는 무리 이름</comment></data>
   <data name="TileAnim_Title" xml:space="preserve"><value>Animated tile — {name}</value><comment>name = 타일 이름</comment></data>
@@ -4445,4 +4539,29 @@ If you don't, the set stays as it was.</value></data>
   <data name="TileAnim_Pause" xml:space="preserve"><value>Pause</value></data>
   <data name="TileAnim_PreviewFrame" xml:space="preserve"><value>Frame {index} / {count}</value><comment>index = 보이는 그림 번호(1부터), count = 그림 수</comment></data>
   <data name="TileAnim_Tiled" xml:space="preserve"><value>Tile 3×3</value></data>
+  <data name="Export_Format" xml:space="preserve"><value>Format</value><comment>내보내기 창 왼쪽 맨 위 묶음 제목</comment></data>
+  <data name="Export_FormatApng" xml:space="preserve"><value>Animated PNG (APNG)</value></data>
+  <data name="Export_FormatFrames" xml:space="preserve"><value>PNG per frame (to a folder)</value></data>
+  <data name="Export_BgKeepAlpha" xml:space="preserve"><value>Transparent (alpha kept as is)</value><comment>내보내기 창 배경 묶음(APNG·프레임 PNG)</comment></data>
+  <data name="Export_ApngInfo" xml:space="preserve"><value>Result: {width}×{height}px · {count} frames · {seconds}s
+Same compositing as the frame sheet (layer effects, current outfit; hidden and export-excluded layers omitted). No color limit; semi-transparency is kept.</value><comment>width·height = 결과 크기, count = 프레임 수, seconds = 전체 길이(초)</comment></data>
+  <data name="Export_FramesInfo" xml:space="preserve"><value>Result: {count} PNGs, {width}×{height}px ({first} …)
+Same compositing as the frame sheet (layer effects, current outfit; hidden and export-excluded layers omitted). Numbered from 1 in playback order (tag direction applied).</value><comment>width·height = 결과 크기, count = 파일 수, first = 첫 파일 이름</comment></data>
+  <data name="Export_ApngDone" xml:space="preserve"><value>APNG export: {file} ({width}×{height}, {count} frames, {seconds}s, {loops}, {size})</value><comment>상태 표시줄. loops = "무한 반복"/"N번 재생", size = 파일 크기</comment></data>
+  <data name="Export_FramesDone" xml:space="preserve"><value>Frame PNG export: {folder} ({count} files, {width}×{height}, {size})</value><comment>상태 표시줄. size = 파일 크기 합</comment></data>
+  <data name="Export_FramesSaved" xml:space="preserve"><value>Saved: {folder}
+{first} … {last} · {count} files · {width}×{height}px · {size}</value><comment>내보내기 창 결과 줄. first·last = 첫·마지막 파일 이름, size = 파일 크기 합</comment></data>
+  <data name="Export_FramesFolder" xml:space="preserve"><value>Folder to save the frame PNGs</value></data>
+  <data name="Export_Overwrite" xml:space="preserve"><value>The folder already has {count} files with the same names ({first}, …). Overwrite them?</value></data>
+  <data name="Export_WriteFailed" xml:space="preserve"><value>Couldn't write the file.
+{message}</value></data>
+  <data name="Export_Failed" xml:space="preserve"><value>Export failed</value></data>
+  <data name="Export_Unity" xml:space="preserve"><value>Export for Unity (.meta)</value><comment>내보내기 창 형식 묶음의 체크(이미지 형식)</comment></data>
+  <data name="Export_UnityTip" xml:space="preserve"><value>Writes the Unity sprite settings (.meta) next to the image. The settings are in the Unity Import Settings group below. Off = image only (a part atlas using Sprite Library always writes .meta).</value></data>
+  <data name="Export_SaveCopy" xml:space="preserve"><value>Save as…</value><comment>내보내기 창 단추(이미지 형식)</comment></data>
+  <data name="Export_SaveCopyTip" xml:space="preserve"><value>Saves the sheet the current settings produce as standalone images, not tied to the project (no .meta; export records and settings unchanged). With several files, the chosen name becomes the prefix.</value></data>
+  <data name="Export_CopyNothing" xml:space="preserve"><value>The current settings produce no sheet (check Output).</value></data>
+  <data name="Export_CopyFiles" xml:space="preserve"><value>{first} and {more} more</value><comment>first = 첫 파일 이름, more = 나머지 파일 수</comment></data>
+  <data name="Export_CopySaved" xml:space="preserve"><value>Saved: {files} ({size})</value><comment>내보내기 창 결과 줄. files = 파일 이름(여럿이면 "… 외 N개"), size = 크기 합</comment></data>
+  <data name="Export_CopyDone" xml:space="preserve"><value>Saved as: {files} ({size}, {folder})</value><comment>상태 표시줄. files = 파일 이름(여럿이면 "… 외 N개"), size = 크기 합, folder = 폴더</comment></data>
 </root>

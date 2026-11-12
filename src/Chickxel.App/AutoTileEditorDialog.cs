@@ -25,6 +25,8 @@ public sealed partial class AutoTileEditorDialog : DialogBase
     private readonly Button _putPicked, _fillOrder;
     private readonly TilePaletteView _palette = new() { MinColumns = 6 };
     private readonly StackPanel _ruleList = new() { Spacing = 3 };
+    /// <summary>"뭐라도 있음" 조건이 볼 층 체크 상자(Tag = 층 Id).</summary>
+    private readonly List<CheckBox> _filledFloors = [];
     private readonly ScrollViewer _ruleScroll;
     private readonly PreviewBoard _preview;
     private readonly ConditionalWeakTable<PixelImage, WriteableBitmap> _bitmaps = new();
@@ -75,6 +77,17 @@ public sealed partial class AutoTileEditorDialog : DialogBase
         Body.Children.Add(Ui.Row(Ui.Label(UiStrings.TilesetChoice_Name), _name, Ui.Label(UiStrings.TileOptions_Floor), _floor,
             Ui.Label(UiStrings.AutoTile_Group), _group, Ui.InfoBadge(UiStrings.AutoTile_GroupInfo)));
         Body.Children.Add(_groupMembers);
+        // "뭐라도 있음" 조건이 볼 층(모두 켜면 모든 층)
+        var filledRow = Ui.Row(Ui.Label(UiStrings.AutoTile_FilledFloors));
+        foreach (var f in ts.Floors)
+        {
+            var check = Ui.Check(f.Name, set.FilledFloors.IsDefaultOrEmpty || set.FilledFloors.Contains(f.Id));
+            check.Tag = f.Id;
+            _filledFloors.Add(check);
+            filledRow.Children.Add(check);
+        }
+        filledRow.Children.Add(Ui.InfoBadge(UiStrings.AutoTile_FilledFloorsInfo));
+        Body.Children.Add(filledRow);
 
         // 왼쪽: 타일 목록과 고른 타일
         _palette.Tileset = ts;
@@ -86,7 +99,7 @@ public sealed partial class AutoTileEditorDialog : DialogBase
             Content = _palette,
             Width = 230,
             Height = 430,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
         };
         _picked = Dim("");
@@ -126,18 +139,29 @@ public sealed partial class AutoTileEditorDialog : DialogBase
         _previewStatus.TextWrapping = TextWrapping.Wrap;
         var clearBoard = Ui.IconButton(VectorIcon.Eraser, UiStrings.AutoTile_PreviewClear, (_, _) => _preview.Clear());
         var resetBoard = Ui.IconButton(VectorIcon.Refresh, UiStrings.AutoTile_PreviewReset, (_, _) => _preview.Reset());
+        // 왼쪽 버튼으로 "뭐라도 있음" 칸(회색) 놓기 — 끄면 Shift+왼쪽 버튼으로
+        var blockMode = new ToggleButton
+        {
+            Content = Ui.IconLabel(VectorIcon.Triangle, UiStrings.AutoTile_PreviewBlock),
+            Padding = new Thickness(6, 1),
+            Margin = new Thickness(2, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+        }.Tip(UiStrings.AutoTile_PreviewBlockTip);
+        blockMode.IsCheckedChanged += (_, _) => _preview.BlockMode = blockMode.IsChecked == true;
         var right = new StackPanel
         {
             Spacing = 2,
             Children =
             {
-                Ui.Row(Ui.Label(UiStrings.AutoTile_Preview, bold: true), Ui.InfoBadge(UiStrings.AutoTile_PreviewInfo), clearBoard, resetBoard),
+                Ui.Row(Ui.Label(UiStrings.AutoTile_Preview, bold: true), Ui.InfoBadge(UiStrings.AutoTile_PreviewInfo), clearBoard, resetBoard, blockMode),
                 new Border { BorderBrush = AppTheme.BorderBrush, BorderThickness = new Thickness(1), Child = _preview, HorizontalAlignment = HorizontalAlignment.Left },
                 _previewStatus,
             },
         };
 
-        var columns = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Children = { left, middle, right } };
+        // 창이 화면보다 넓어지면 옆으로 스크롤하지 않고 다음 열을 아래로 내린다
+        foreach (var column in new Control[] { left, middle, right }) column.Margin = new Thickness(0, 0, 12, 8);
+        var columns = new WrapPanel { Orientation = Orientation.Horizontal, Children = { left, middle, right } };
         Body.Children.Add(columns);
 
         UpdateGroupMembers();
@@ -159,7 +183,13 @@ public sealed partial class AutoTileEditorDialog : DialogBase
     {
         var name = string.IsNullOrWhiteSpace(_name.Text) ? _defaultName : _name.Text.Trim();
         int floor = _floor.SelectedIndex >= 0 && _floor.SelectedIndex < _ts.Floors.Length ? _ts.Floors[_floor.SelectedIndex].Id : _ts.ValidFloor(0);
-        return new AutoTileSet { Id = _id, Name = name, Floor = floor, Group = (_group.Text ?? "").Trim(), Rules = [.. _rules] };
+        var filled = _filledFloors.Where(c => c.IsChecked == true).Select(c => (int)c.Tag!).ToList();
+        return new AutoTileSet
+        {
+            Id = _id, Name = name, Floor = floor, Group = (_group.Text ?? "").Trim(), Rules = [.. _rules],
+            // 모두 = 모든 층(빈 목록), 하나도 안 고르면 세트의 층만
+            FilledFloors = filled.Count == _filledFloors.Count ? [] : filled.Count == 0 ? [floor] : [.. filled],
+        };
     }
 
     // ───────────── 무리 ─────────────

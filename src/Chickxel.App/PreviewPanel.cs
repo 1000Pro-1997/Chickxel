@@ -11,7 +11,7 @@ namespace Chickxel.App;
 /// Piskel식 미리보기(오른쪽 위): 현재 태그(없으면 전체 프레임)를 실시간으로 재생한다.
 /// 자체 FPS(0 = 프레임 길이 사용), 배율 1×/2×/4×/맞춤, 배경색을 고를 수 있고, 멈춰 있으면 현재 프레임을 보여 준다.
 /// 그룹(스킨 슬롯)이 있으면 아래쪽 "착장" 줄에서 그룹마다(타임라인처럼 위→아래) 보일 스킨을 고르고, "관리…"로 스킨 관리 창을 연다.
-/// 그림을 누르면 크기를 바꿀 수 있는 크게 보기 창(<see cref="ZoomWindow"/>)이 열리고, 우클릭하면 보이는 프레임을 복사(1×·×4)·PNG로 저장하거나 GIF 내보내기 창을 연다.
+/// 그림을 누르면 크기를 바꿀 수 있는 크게 보기 창(<see cref="ZoomWindow"/>)이 열리고, 우클릭하면 보이는 프레임을 복사(1×·×4)·PNG로 저장하거나 내보내기 창(GIF)을 연다.
 /// 제목 줄 오른쪽 끝 단추는 미리보기 탭(<see cref="TabView"/>를 메인 창이 나눈 칸에 닮)을 열어 달라고 알린다. 미리보기 탭이 열려 있으면 그림을 눌러도 그 탭을 보인다(큰 미리보기는 하나만).
 /// </summary>
 public sealed class PreviewPanel : UserControl, IHelpTargetSource
@@ -58,7 +58,7 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
     public event EventHandler<string>? Message;
     /// <summary>"이미지 복사": 보이는 프레임 그림을 클립보드(시스템·앱)에 올려 달라.</summary>
     public event EventHandler<PixelImage>? CopyRequested;
-    /// <summary>"GIF로 저장…": GIF 내보내기 창을 열어 달라.</summary>
+    /// <summary>"GIF로 저장…": 내보내기 창을 GIF 애니메이션 형식으로 열어 달라.</summary>
     public event EventHandler? GifExportRequested;
     /// <summary>파일을 저장함(파일 목록 새로 고침용).</summary>
     public event EventHandler<string>? FileSaved;

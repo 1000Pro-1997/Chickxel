@@ -98,9 +98,9 @@ public static class BuiltInTilesets
         b.Set(DomainStrings.TileBuiltIn_Snow, cover, "", CoverRules(b, cover, 7, SnowCover));
         b.Set(DomainStrings.TileBuiltIn_Autumn, cover, "", CoverRules(b, cover, 8, AutumnCover));
 
-        // 줄 9~12: 물·용암(움직이는 타일)
-        b.Set(DomainStrings.TileBuiltIn_Water, front, "", LiquidRules(b, front, 9, Water));
-        b.Set(DomainStrings.TileBuiltIn_Lava, front, "", LiquidRules(b, front, 11, Lava));
+        // 줄 9~12: 물·용암(움직이는 타일) — "뭐라도 있음"은 바닥·앞 층만 본다(배경 벽·장식 앞에서는 수면이 남게)
+        b.Set(DomainStrings.TileBuiltIn_Water, front, "", LiquidRules(b, front, 9, Water), [ground, front]);
+        b.Set(DomainStrings.TileBuiltIn_Lava, front, "", LiquidRules(b, front, 11, Lava), [ground, front]);
 
         // 줄 13~: 바닥·배경 벽(8방향 47규칙, 가득 찬 칸은 무늬 여러 장을 비중으로 무작위)
         int row = 13;
@@ -441,46 +441,45 @@ public static class BuiltInTilesets
     private enum LiquidSide { Open, Join, Slope }
 
     /// <summary>
-    /// 물·용암 세트 규칙(13가지): 위가 비면 수면 칸 — 좌우 각각 빔(옆 가장자리 + 비스듬히 깎인 모서리)·이어짐·비스듬히 이어짐(옆과 옆 위가 물이면 수면이 그쪽으로 비스듬히 올라감),
-    /// 위가 이어지면 몸통 칸 — 좌우 각각 빔(옆 가장자리)·이어짐. 아래쪽은 보지 않는다. 그림마다 <see cref="LiquidStyle.Frames"/>장.
+    /// 물·용암 세트 규칙(13가지, 그림 차례는 수면 9 → 몸통 4): 위에 뭐라도 있으면(물이든 바닥 블록이든 — "뭐라도 있음") 몸통 칸, 아니면 수면 칸.
+    /// 좌우는 각각 빔(옆 가장자리 + 수면이면 비스듬히 깎인 모서리)·막힘(옆에 뭐라도 있음 — 물이거나 벽, 가장자리 없음)·비스듬히 이어짐(수면 칸에서 옆과 옆 위가 물이면
+    /// 수면이 그쪽으로 비스듬히 올라감). 몸통 규칙을 앞에 두어 벽 아래 물은 수면 없이 꽉 찬다. 아래쪽은 보지 않는다. 그림마다 <see cref="LiquidStyle.Frames"/>장.
     /// </summary>
     private static ImmutableArray<AutoTileRule> LiquidRules(Builder b, int floor, int row, LiquidStyle st)
     {
-        var rules = new List<AutoTileRule>();
+        var top = new List<AutoTileRule>();
+        var body = new List<AutoTileRule>();
         int k = 0;
-        void Add(bool top, LiquidSide l, LiquidSide r)
+        int Tile(bool isTop, LiquidSide l, LiquidSide r)
         {
-            int same = top ? 0 : N, other = top ? N : 0;
-            (same, other) = Side(same, other, r, E, NE);
-            (same, other) = Side(same, other, l, W, NW);
-            var frames = Enumerable.Range(0, st.Frames).Select(f => LiquidTile(top, l, r, st, f)).ToArray();
+            var frames = Enumerable.Range(0, st.Frames).Select(f => LiquidTile(isTop, l, r, st, f)).ToArray();
             int id = b.Animated(frames, st.FrameMs, floor, k % 8, row + k / 8);
             k++;
-            rules.Add(new AutoTileRule { Same = (byte)same, Other = (byte)other, Tiles = [new(id)] });
+            return id;
         }
-        static (int, int) Side(int same, int other, LiquidSide s, int side, int corner) => s switch
+        // 한쪽 조건(같음, 다름, 뭐라도 있음): 빔 = 옆이 물이 아님, 막힘 = 옆에 뭐라도 있음(수면이면 옆 위는 물이 아님), 비스듬히 = 옆과 옆 위가 물
+        static (int, int, int) Side(int same, int other, int filled, LiquidSide s, int side, int corner, bool isTop) => s switch
         {
-            LiquidSide.Open => (same, other | side),
-            LiquidSide.Join => (same | side, other | corner),
-            _ => (same | side | corner, other),
+            LiquidSide.Open => (same, other | side, filled),
+            LiquidSide.Join => (same, other | (isTop ? corner : 0), filled | side),
+            _ => (same | side | corner, other, filled),
         };
         LiquidSide[] topSides = [LiquidSide.Join, LiquidSide.Open, LiquidSide.Slope];
         foreach (var r in topSides)
             foreach (var l in topSides)
-                Add(true, l, r);
+            {
+                var (same, other, filled) = Side(0, N, 0, r, E, NE, true);
+                (same, other, filled) = Side(same, other, filled, l, W, NW, true);
+                top.Add(new AutoTileRule { Same = (byte)same, Other = (byte)other, Filled = (byte)filled, Tiles = [new(Tile(true, l, r))] });
+            }
         foreach (var r in new[] { LiquidSide.Join, LiquidSide.Open })
             foreach (var l in new[] { LiquidSide.Join, LiquidSide.Open })
             {
-                // 위가 이어진 칸은 모서리를 보지 않음(Join = 옆만)
-                int same = N, other = 0;
-                same |= r == LiquidSide.Join ? E : 0; other |= r == LiquidSide.Open ? E : 0;
-                same |= l == LiquidSide.Join ? W : 0; other |= l == LiquidSide.Open ? W : 0;
-                var frames = Enumerable.Range(0, st.Frames).Select(f => LiquidTile(false, l, r, st, f)).ToArray();
-                int id = b.Animated(frames, st.FrameMs, floor, k % 8, row + k / 8);
-                k++;
-                rules.Add(new AutoTileRule { Same = (byte)same, Other = (byte)other, Tiles = [new(id)] });
+                var (same, other, filled) = Side(0, 0, N, r, E, NE, false);
+                (same, other, filled) = Side(same, other, filled, l, W, NW, false);
+                body.Add(new AutoTileRule { Same = (byte)same, Other = (byte)other, Filled = (byte)filled, Tiles = [new(Tile(false, l, r))] });
             }
-        return [.. rules];
+        return [.. body, .. top];
     }
 
     /// <summary>
@@ -901,20 +900,25 @@ public static class BuiltInTilesets
         return img;
     }
 
-    /// <summary>횃불(벽에 꽂힌 나무 자루, 그림 4장): 불꽃 모양·빛이 장마다 흔들림.</summary>
+    /// <summary>
+    /// 횃불(벽에 꽂힌 나무 자루, 그림 4장): 불꽃 모양·빛이 장마다 흔들림. 차지 칸은 1칸이고 그림은 1×2칸 —
+    /// 횃불은 아래 칸에, 빛은 위 칸까지 번진다(그림 아래 맞춤이라 위로 솟아 그려짐).
+    /// </summary>
     private static PixelImage Torch(int frame)
     {
-        var img = new PixelImage(Cell, Cell);
-        double glow = frame % 2 == 0 ? 6.8 : 7.6;
-        for (int y = 0; y < Cell; y++)
+        const int top = Cell; // 횃불이 놓이는 아래 칸의 위쪽 y
+        var img = new PixelImage(Cell, Cell * 2);
+        double rx = frame % 2 == 0 ? 6.8 : 7.6, ry = frame % 2 == 0 ? 10.5 : 11.5;
+        for (int y = 0; y < img.Height; y++)
             for (int x = 0; x < Cell; x++)
             {
-                double d = Math.Sqrt((x + 0.5 - 8) * (x + 0.5 - 8) + (y + 0.5 - 5) * (y + 0.5 - 5));
-                if (d < glow) Put(img, x, y, Fire[5].WithAlpha((byte)(d < 4 ? 54 : 28)));
+                double dx = (x + 0.5 - 8) / rx, dy = (y + 0.5 - (top + 4)) / ry;
+                double d = Math.Sqrt(dx * dx + dy * dy);
+                if (d < 1) Put(img, x, y, Fire[5].WithAlpha((byte)(d < 0.5 ? 54 : 28)));
             }
         var stick = Paint(Cell, Cell, (x, y) => y >= 9 && x is 7 or 8 ? (x == 7 ? Brown[4] : Brown[3]) : y == 8 && x is >= 6 and <= 9 ? Cool[4] : null);
         Outline(stick, Ink);
-        Stamp(img, stick, 0, 0);
+        Stamp(img, stick, 0, top);
         string[][] flames =
         [
             ["....r...", "...rfr..", "..rfyfr.", "..fywyf.", "..fyyyf.", "...fff.."],
@@ -923,7 +927,7 @@ public static class BuiltInTilesets
             ["...r.r..", "..rfrfr.", "..rfyfr.", "..fywyf.", "..fyyyf.", "...fff.."],
         ];
         var p = new Dictionary<char, Color32> { ['r'] = Fire[1], ['f'] = Fire[3], ['y'] = Fire[5], ['w'] = Fire[6] };
-        Stamp(img, Art(p, flames[frame % 4]), 4, 2);
+        Stamp(img, Art(p, flames[frame % 4]), 4, top + 2);
         return img;
     }
 
@@ -1166,9 +1170,13 @@ public static class BuiltInTilesets
             return id;
         }
 
-        /// <summary>자동 타일 세트(무리 <paramref name="group"/>, 빈 문자열 = 자기 세트만).</summary>
-        public void Set(string setName, int floor, string group, ImmutableArray<AutoTileRule> rules)
-            => _auto.Add(new AutoTileSet { Id = _auto.Count + 1, Name = setName, Floor = floor, Group = group, Rules = rules });
+        /// <summary>자동 타일 세트(무리 <paramref name="group"/>, 빈 문자열 = 자기 세트만; "뭐라도 있음"이 볼 층 <paramref name="filledFloors"/>, 비면 모든 층).</summary>
+        public void Set(string setName, int floor, string group, ImmutableArray<AutoTileRule> rules, ImmutableArray<int> filledFloors = default)
+            => _auto.Add(new AutoTileSet
+            {
+                Id = _auto.Count + 1, Name = setName, Floor = floor, Group = group, Rules = rules,
+                FilledFloors = filledFloors.IsDefault ? [] : filledFloors,
+            });
 
         public Tileset Build() => new()
         {

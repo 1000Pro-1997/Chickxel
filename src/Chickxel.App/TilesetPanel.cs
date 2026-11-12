@@ -1,147 +1,63 @@
 using Chickxel.App.Localization;
-using Chickxel.Core.IO;
 using Chickxel.Core.Model;
 using Chickxel.Core.Tiles;
 
 namespace Chickxel.App;
 
 /// <summary>
-/// 타일셋 패널: 타일맵 레이어를 고르면 왼쪽 색 패널 자리에 보인다. 타일셋(새로·열기·파일로 저장·설정·PNG/지금 프레임에서 가져오기),
-/// 층(차례·보이기·잠금·이름·더하기·지우기), 타일 목록(고르면 타일 붓에 듦), 고른 타일 속성(이름·차지 칸·그림 위치·기본 층), 자동 타일 세트.
+/// 타일셋 패널: 타일맵 레이어를 고르면 왼쪽 색 패널 자리에 보인다. 찍을 것을 고르는 곳이다 — 팔레트처럼 레이어에 연 타일셋마다 묶음 하나:
+/// 머리글(접기/펼치기 화살표·이름·타일 수·메뉴 — 설정·다른 타일셋으로 바꾸기·이름 바꾸기·이 레이어에서 닫기, 두 번 누르면 이름 바꾸기),
+/// 자동 타일 세트(칸 — 누르면 자동 타일 붓), 타일 목록(고르면 타일 붓에 듦 — 보기 설정에 따라 층별로 나누고 자동 타일에 쓴 타일은 감춤).
+/// 맨 아래 "타일셋 더하기"로 타일셋을 더 연다(칸 크기가 같은 것). 닫은 타일셋은 프로젝트에 남아 다시 열 수 있다(타일셋 관리 창에서 지움).
+/// 둘째 타일셋부터의 타일·세트는 붓에 들 때 자리만큼 밀린 Id(<see cref="TileSources"/>)가 된다. 고른 자동 타일 세트의 구성은 도구 설정에 있다.
 /// 타일셋을 고치는 것은 모두 실행취소 한 단계씩이고, 파일 경로가 있으면 프로젝트를 저장할 때 타일셋 파일에도 쓴다.
 /// </summary>
 public sealed class TilesetPanel : UserControl
 {
     private readonly EditorContext _ctx;
     private readonly StackPanel _empty;
-    private readonly StackPanel _content;
-    private readonly TextBlock _name, _path;
-    private readonly StackPanel _floors;
-    private readonly TilePaletteView _palette = new();
-    private readonly Border _tileProps;
-    private readonly TextBox _tileName;
-    private readonly NumericUpDown _tileW, _tileH, _tileOffX, _tileOffY;
-    private readonly ComboBox _tileFloor;
-    private readonly TextBlock _tileInfo;
-    private readonly StackPanel _autoList;
-    /// <summary>'지금 찍을 것' 카드(패널 맨 위).</summary>
-    private readonly TilePickCard _pickCard;
-    /// <summary>자동 타일 목록 줄의 대표 타일 그림(시계가 가면 다시 그림).</summary>
-    private readonly List<TileThumb> _autoThumbs = new();
-    /// <summary>타일 목록에서 고른 칸으로 만든 붓(지금 붓이 이것일 때만 고른 칸을 강조).</summary>
-    private TileStamp? _paletteStamp;
-    private static readonly IBrush CurrentRowBrush = AppTheme.Brush(Color.FromArgb(70, AppTheme.AccentColor.R, AppTheme.AccentColor.G, AppTheme.AccentColor.B));
-    private readonly Button _merge, _deleteTiles;
-    private bool _updating;
-    /// <summary>속성을 보이는 타일(하나만 골랐을 때).</summary>
-    private int? _propsTile;
+    private readonly StackPanel _sectionHost = new() { Spacing = 2 };
+    private readonly Button _addTileset;
+    private readonly List<Section> _sections = [];
+    /// <summary>타일 목록에서 고른 칸으로 만든 붓과 그 묶음(지금 붓이 이것일 때만 그 묶음의 고른 칸을 강조).</summary>
+    private (TileStamp Stamp, Section Section)? _paletteStamp;
+    /// <summary>접어 둔 타일셋(이름표, 화면에서만).</summary>
+    private readonly HashSet<string> _collapsed = new(StringComparer.Ordinal);
 
     /// <summary>상태 표시줄에 보일 알림.</summary>
     public event EventHandler<string>? Message;
 
+    /// <summary>타일 그림을 문서 탭에서 고치기(타일셋 이름표, 그 타일셋 안의 타일 Id) — 메인 창이 연다.</summary>
+    public event Action<string, int>? EditTileImageRequested;
+
     public TilesetPanel(EditorContext ctx)
     {
         _ctx = ctx;
-        var menu = Ui.IconButton(VectorIcon.Menu, UiStrings.Tileset_MenuTip, (s, _) => ShowMenu((Control)s!), size: 14);
-        menu.Focusable = false;
         var header = Ui.Header(UiStrings.Tileset_Header);
-        var headerTitle = (TextBlock)header.Child!;
-        header.Child = null;
-        var headerRow = new DockPanel();
-        DockPanel.SetDock(menu, Dock.Right);
-        headerRow.Children.Add(menu);
-        headerRow.Children.Add(headerTitle);
-        header.Child = headerRow;
 
-        // 타일셋이 없을 때
+        // 타일셋이 없을 때(이름표가 프로젝트에 없는 레이어)
         var note = Ui.Label(UiStrings.Tile_NoTileset);
         note.TextWrapping = TextWrapping.Wrap;
-        _empty = Ui.Stack(note, Ui.Button(VectorIcon.Plus, UiStrings.Tileset_ChooseOrCreate, (_, _) => ChooseTileset()));
+        _empty = Ui.Stack(note, Ui.Button(VectorIcon.Plus, UiStrings.Tileset_ChooseOrCreate, (_, _) => ChooseTileset(0)));
 
-        _name = Ui.Label("", bold: true);
-        _path = Ui.Label("");
-        _path.Foreground = AppTheme.DimTextBrush;
-        _path.FontSize = AppTheme.SmallFontSize;
-        _path.TextTrimming = TextTrimming.CharacterEllipsis;
+        _addTileset = Ui.Button(VectorIcon.Plus, UiStrings.Tileset_AddTileset, (_, _) => AddTileset()).Tip(UiStrings.Tileset_AddTilesetTip);
+        _addTileset.HorizontalAlignment = HorizontalAlignment.Stretch;
+        _addTileset.HorizontalContentAlignment = HorizontalAlignment.Center;
+        _addTileset.Margin = new Thickness(4, 6, 4, 8);
+        _addTileset.Focusable = false;
 
-        // 층
-        _floors = new StackPanel { Spacing = 1 };
-        var addFloor = Ui.Button(VectorIcon.Plus, UiStrings.Tileset_AddFloor, (_, _) => AddFloor());
-        var floorsBox = Ui.Group(UiStrings.Tileset_Floors, Ui.Stack(_floors, Ui.Row(addFloor, Ui.InfoBadge(UiStrings.Tileset_FloorsInfo))));
-
-        // 타일 목록
-        _palette.SelectionChanged += OnPaletteSelection;
-        _palette.TileActivated += id => _ctx.TileTool = TileTool.Brush;
-        _palette.TileMenuRequested += (id, e) => ShowTileMenu(id, e);
-        var paletteScroll = new ScrollViewer
-        {
-            Content = _palette,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            MaxHeight = 320,
-        };
-        var import = Ui.Button(VectorIcon.ImageDown, UiStrings.Tileset_ImportPng, (_, _) => ImportFromFile());
-        var fromFrame = Ui.Button(VectorIcon.Image, UiStrings.Tileset_ImportFrame, (_, _) => ImportFromFrame()).Tip(UiStrings.Tileset_ImportFrameTip);
-        _merge = Ui.Button(VectorIcon.Square, UiStrings.Tileset_Merge, (_, _) => MergeSelection()).Tip(UiStrings.Tileset_MergeTip);
-        _deleteTiles = Ui.Button(VectorIcon.Trash, UiStrings.Tileset_DeleteTiles, (_, _) => DeleteSelectedTiles());
-        var tilesBox = Ui.Group(UiStrings.Tileset_Tiles, Ui.Stack(paletteScroll, new WrapPanel { Children = { import, fromFrame, _merge, _deleteTiles } }));
-
-        // 고른 타일 속성
-        _tileName = Ui.Text("", 150);
-        _tileName.LostFocus += (_, _) => ApplyTile(t => t with { Name = _tileName.Text?.Trim() ?? "" });
-        _tileName.KeyDown += (_, e) => { if (e.Key == Key.Enter) ApplyTile(t => t with { Name = _tileName.Text?.Trim() ?? "" }); };
-        _tileW = Ui.Num(1, Tileset.MaxFootprint, 1, 50);
-        _tileH = Ui.Num(1, Tileset.MaxFootprint, 1, 50);
-        _tileW.ValueChanged += (_, _) => ApplyFootprint();
-        _tileH.ValueChanged += (_, _) => ApplyFootprint();
-        _tileOffX = Ui.Num(-4096, 4096, 0, 56).Unit("px");
-        _tileOffY = Ui.Num(-4096, 4096, 0, 56).Unit("px");
-        _tileOffX.ValueChanged += (_, _) => ApplyTile(t => t with { DrawOffset = new Point((int)_tileOffX.NumValue(), t.DrawOffset.Y) });
-        _tileOffY.ValueChanged += (_, _) => ApplyTile(t => t with { DrawOffset = new Point(t.DrawOffset.X, (int)_tileOffY.NumValue()) });
-        var bottom = Ui.Button(UiStrings.Tileset_AlignBottom, (_, _) => ApplyTile(t => t with { DrawOffset = TileDef.BottomAligned(t.Image.Height, t.Height, _ctx.CurrentTileset!.CellHeight) })).Tip(UiStrings.Tileset_AlignBottomTip);
-        _tileFloor = Ui.Combo(130);
-        _tileFloor.SelectionChanged += (_, _) =>
-        {
-            if (_updating || _ctx.CurrentTileset is not { } ts || _tileFloor.SelectedIndex < 0 || _tileFloor.SelectedIndex >= ts.Floors.Length) return;
-            int floor = ts.Floors[_tileFloor.SelectedIndex].Id;
-            ApplyTile(t => t with { Floor = floor });
-        };
-        _tileInfo = Ui.Label("");
-        _tileInfo.Foreground = AppTheme.DimTextBrush;
-        _tileInfo.FontSize = AppTheme.SmallFontSize;
-        _tileProps = Ui.Group(UiStrings.Tileset_TileProps, Ui.Stack(
-            Ui.Row(Ui.Label(UiStrings.TilesetChoice_Name), _tileName),
-            Ui.Row(Ui.Label(UiStrings.Tileset_Footprint), _tileW, Ui.Label("×"), _tileH, Ui.InfoBadge(UiStrings.Tileset_FootprintInfo)),
-            Ui.Row(Ui.Label(UiStrings.Tileset_DrawOffset), _tileOffX, _tileOffY),
-            Ui.Row(bottom),
-            Ui.Row(Ui.Label(UiStrings.Tileset_DefaultFloor), _tileFloor),
-            _tileInfo));
-
-        // 자동 타일
-        _autoList = new StackPanel { Spacing = 1 };
-        var addAuto = Ui.Button(VectorIcon.Plus, UiStrings.Tileset_AddAutoTile, (_, _) => EditAutoTile(null));
-        var autoBox = Ui.Group(UiStrings.Tileset_AutoTiles, Ui.Stack(_autoList, Ui.Row(addAuto, Ui.InfoBadge(UiStrings.Tileset_AutoTilesInfo))));
-
-        _pickCard = new TilePickCard(ctx);
-        _content = Ui.Stack(Ui.Stack(_name, _path), _pickCard, floorsBox, tilesBox, _tileProps, autoBox);
-        foreach (var box in new[] { floorsBox, tilesBox, _tileProps, autoBox }) Ui.Foldable(box);
         var root = new DockPanel();
         DockPanel.SetDock(header, Dock.Top);
         root.Children.Add(header);
-        root.Children.Add(Ui.ScrollHost(Ui.Stack(_empty, _content)));
+        root.Children.Add(Ui.ScrollHost(Ui.Stack(_empty, _sectionHost, _addTileset)));
         Content = root;
 
         ctx.ProjectReplaced += (_, _) => Refresh();
         ctx.ProjectChanged += (_, _) => Refresh();
         ctx.CurrentChanged += (_, _) => Refresh();
-        ctx.TileStateChanged += (_, _) =>
-        {
-            if (_ctx.CurrentTileset is { } t) RefreshFloors(t);
-            RefreshAutoList();
-            SyncPalette();
-        };
+        ctx.TileStateChanged += (_, _) => Refresh();
         ctx.TileClockTick += OnTileClock;
-        SizeChanged += (_, _) => FitPalette();
+        SizeChanged += (_, _) => { foreach (var s in _sections) s.FitSlots(Bounds.Width); };
         Refresh();
     }
 
@@ -152,493 +68,430 @@ public sealed class TilesetPanel : UserControl
     private void Refresh()
     {
         if (!IsVisible && !_ctx.IsTilemapSelected) return;
-        var ts = _ctx.CurrentTileset;
-        _empty.IsVisible = ts is null && _ctx.IsTilemapSelected;
-        _content.IsVisible = ts is not null;
-        if (ts is null) return;
-        _name.Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.Tileset_NameLine, ts.Name.Length > 0 ? ts.Name : UiStrings.TilesetChoice_Unnamed, ts.CellWidth, ts.CellHeight);
-        _path.Text = ts.SourcePath is { } path ? Path.GetFileName(path) : UiStrings.Tileset_NotSaved;
-        ToolTip.SetTip(_path, ts.SourcePath ?? UiStrings.Tileset_NotSavedTip);
-        RefreshFloors(ts);
-        if (!ReferenceEquals(_palette.Tileset, ts)) _palette.Tileset = ts;
-        FitPalette();
-        RefreshTileProps(ts);
-        RefreshAutoList();
-        SyncPalette();
+        var sources = _ctx.CurrentTilesetSources;
+        _empty.IsVisible = sources.Count == 0 && _ctx.IsTilemapSelected;
+        _addTileset.IsVisible = sources.Count > 0;
+        while (_sections.Count > sources.Count)
+        {
+            var last = _sections[^1];
+            _sections.RemoveAt(_sections.Count - 1);
+            _sectionHost.Children.Remove(last);
+        }
+        while (_sections.Count < sources.Count)
+        {
+            var s = new Section(this);
+            _sections.Add(s);
+            _sectionHost.Children.Add(s);
+        }
+        if (_paletteStamp is { } ps && (!ReferenceEquals(_ctx.TileStamp, ps.Stamp) || !_sections.Contains(ps.Section))) _paletteStamp = null;
+        for (int i = 0; i < sources.Count; i++) _sections[i].Update(i, sources[i]);
     }
 
-    /// <summary>팔레트 표시를 지금 찍을 것에 맞춘다: 자동 타일 세트를 쓰면 그 세트의 타일을 옅게, 고른 칸은 붓일 때만 강조.</summary>
-    private void SyncPalette()
-    {
-        bool auto = _ctx.TileTool != TileTool.Eraser && _ctx.UsesAutoTileSource && _ctx.CurrentAutoTileSet is not null;
-        _palette.HighlightTiles = auto ? TileVisuals.TilesOf(_ctx.CurrentAutoTileSet!) : null;
-        _palette.SelectionActive = !auto && _ctx.TileTool != TileTool.Eraser && _ctx.TileStamp is { } stamp && ReferenceEquals(stamp, _paletteStamp);
-        _palette.TimeMs = _ctx.TileClockMs;
-    }
-
-    /// <summary>화면 시계: 움직이는 타일이 있으면 팔레트·자동 타일 그림을 돌린다.</summary>
+    /// <summary>화면 시계: 움직이는 타일이 있으면 목록·자동 타일 그림을 돌린다.</summary>
     private void OnTileClock()
     {
         if (!IsEffectivelyVisible || _ctx.CurrentTileset is not { HasAnimation: true }) return;
-        long now = _ctx.TileClockMs;
-        _palette.TimeMs = now;
-        foreach (var thumb in _autoThumbs)
-        {
-            if (!thumb.IsAnimated) continue;
-            thumb.TimeMs = now;
-            thumb.InvalidateVisual();
-        }
+        foreach (var s in _sections) s.SetTime(_ctx.TileClockMs);
     }
 
-    /// <summary>타일 목록 칸 크기: 패널 폭에 목록 열이 다 들어가게(18~40px).</summary>
-    private void FitPalette()
-    {
-        if (_palette.Tileset is not { } ts) return;
-        int cols = Math.Max(_palette.MinColumns, ts.Tiles.Length == 0 ? 0 : ts.Tiles.Max(t => t.PaletteX) + 1);
-        double width = Bounds.Width - 40;
-        double size = width > 0 ? Math.Clamp(Math.Floor(width / cols), 18, 40) : 32;
-        if (Math.Abs(size - _palette.SlotSize) < 0.5) return;
-        _palette.SlotSize = size;
-        _palette.InvalidateMeasure();
-        _palette.InvalidateVisual();
-    }
+    // ───────────── 타일셋 고르기·더하기 ─────────────
 
-    private void RefreshFloors(Tileset ts)
-    {
-        _floors.Children.Clear();
-        var data = _ctx.CurrentTiles;
-        // 지금 찍을 것이 들어갈 층(왼쪽 막대 — 잠겼으면 경고 색)
-        var target = TilePick.Describe(_ctx, ts).Floors;
-        for (int i = ts.Floors.Length - 1; i >= 0; i--)
-        {
-            var floor = ts.Floors[i];
-            int id = floor.Id;
-            bool hidden = data?.IsFloorHidden(id) ?? false, locked = data?.IsFloorLocked(id) ?? false;
-            var eye = RowButton(hidden ? VectorIcon.EyeOff : VectorIcon.Eye, UiStrings.Tileset_FloorVisibleTip, () => _ctx.SetTileFloorState(id, hidden: !hidden));
-            var lockBtn = RowButton(locked ? VectorIcon.Lock : VectorIcon.LockOpen, UiStrings.Tileset_FloorLockTip, () => _ctx.SetTileFloorState(id, locked: !locked));
-            var up = RowButton(VectorIcon.ChevronUp, UiStrings.Tileset_FloorUpTip, () => _ctx.EditCurrentTileset(UiStrings.Tileset_MoveFloorLabel, t => TilesetEdit.MoveFloor(t, id, +1)));
-            var down = RowButton(VectorIcon.ChevronDown, UiStrings.Tileset_FloorDownTip, () => _ctx.EditCurrentTileset(UiStrings.Tileset_MoveFloorLabel, t => TilesetEdit.MoveFloor(t, id, -1)));
-            up.IsEnabled = i < ts.Floors.Length - 1;
-            down.IsEnabled = i > 0;
-            var name = Ui.Label(floor.Name);
-            name.Foreground = hidden ? AppTheme.DimTextBrush : AppTheme.TextBrush;
-            name.TextTrimming = TextTrimming.CharacterEllipsis;
-            int count = data?.Map.Floor(id).Count ?? 0;
-            var countText = Ui.Label(count.ToString(System.Globalization.CultureInfo.CurrentCulture));
-            countText.Foreground = AppTheme.DimTextBrush;
-            countText.FontSize = AppTheme.SmallFontSize;
-            bool isTarget = target.Contains(id);
-            var mark = new Border { Width = 3, Margin = new Thickness(0, 2), Background = !isTarget ? Brushes.Transparent : locked ? AppTheme.WarningBrush : AppTheme.AccentBrush };
-            if (isTarget) ToolTip.SetTip(mark, UiStrings.TilePick_TargetFloorTip);
-            var row = RowGrid(mark, eye, lockBtn, name, countText, up, down);
-            row.Background = _ctx.TileFloor == id ? AppTheme.HoverBrush : Brushes.Transparent;
-            row.ContextMenu = FloorMenu(floor, ts);
-            row.DoubleTapped += (_, _) => RenameFloor(floor);
-            ToolTip.SetTip(row, UiStrings.Tileset_FloorRowTip);
-            _floors.Children.Add(row);
-        }
-    }
-
-    /// <summary>목록 줄의 작은 아이콘 단추(포커스를 가져가지 않음).</summary>
-    private static Button RowButton(VectorIcon icon, string tip, Action onClick)
-    {
-        var b = new Button
-        {
-            Content = Ui.Icon(icon, 12),
-            Width = 22,
-            Height = 22,
-            MinWidth = 0,
-            MinHeight = 0,
-            Padding = new Thickness(0),
-            Margin = new Thickness(0),
-            Background = Brushes.Transparent,
-            BorderThickness = new Thickness(0),
-            Focusable = false,
-            HorizontalContentAlignment = HorizontalAlignment.Center,
-            VerticalContentAlignment = VerticalAlignment.Center,
-        }.Tip(tip);
-        b.Click += (_, _) => onClick();
-        return b;
-    }
-
-    /// <summary>한 줄: 첫 글자 칸(<see cref="TextBlock"/> 또는 글을 쌓은 <see cref="StackPanel"/>)만 남는 폭을 다 쓰고 나머지는 제 크기.</summary>
-    private static Grid RowGrid(params Control[] cells)
-    {
-        var g = new Grid { Background = Brushes.Transparent };
-        for (int i = 0; i < cells.Length; i++)
-        {
-            bool fill = cells[i] is TextBlock or StackPanel && !cells.Take(i).Any(c => c is TextBlock or StackPanel);
-            g.ColumnDefinitions.Add(new ColumnDefinition(fill ? new GridLength(1, GridUnitType.Star) : GridLength.Auto));
-            Grid.SetColumn(cells[i], i);
-            g.Children.Add(cells[i]);
-        }
-        return g;
-    }
-
-    private ContextMenu FloorMenu(TileFloor floor, Tileset ts)
-    {
-        var rename = new MenuItem { Header = UiStrings.Tileset_RenameFloor };
-        rename.Click += (_, _) => Dispatcher.UIThread.Post(() => RenameFloor(floor));
-        var fix = new MenuItem { Header = UiStrings.Tileset_UseFloor };
-        fix.Click += (_, _) => _ctx.TileFloor = floor.Id;
-        var delete = new MenuItem { Header = UiStrings.Tileset_DeleteFloor, IsEnabled = ts.Floors.Length > 1 };
-        delete.Click += (_, _) => Dispatcher.UIThread.Post(() => DeleteFloor(floor));
-        return new ContextMenu { Items = { rename, fix, new Separator(), delete } };
-    }
-
-    private void RefreshTileProps(Tileset ts)
-    {
-        var selected = _palette.SelectedTiles;
-        _merge.IsEnabled = _palette.Selection is { } sel && (sel.Width > 1 || sel.Height > 1) && selected.Count > 0;
-        _deleteTiles.IsEnabled = selected.Count > 0;
-        var tile = selected.Count == 1 ? selected[0] : null;
-        _propsTile = tile?.Id;
-        _tileProps.IsVisible = tile is not null;
-        if (tile is null) return;
-        _updating = true;
-        try
-        {
-            if (!_tileName.IsFocused) _tileName.Text = tile.Name;
-            _tileW.Value = tile.Width;
-            _tileH.Value = tile.Height;
-            _tileOffX.Value = tile.DrawOffset.X;
-            _tileOffY.Value = tile.DrawOffset.Y;
-            _tileFloor.ItemsSource = ts.Floors.Select(f => f.Name).ToList();
-            _tileFloor.SelectedIndex = Math.Max(0, ts.FloorOrder(tile.Floor));
-            _tileInfo.Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.Tileset_TileInfo, tile.Id, tile.Image.Width, tile.Image.Height);
-        }
-        finally
-        {
-            _updating = false;
-        }
-    }
-
-    private void RefreshAutoList()
-    {
-        _autoList.Children.Clear();
-        _autoThumbs.Clear();
-        if (_ctx.CurrentTileset is not { } ts) return;
-        // 무리 점은 무리를 쓴 세트가 하나라도 있을 때만(같은 무리는 같은 색)
-        bool anyGroup = ts.AutoTiles.Any(a => a.Group.Length > 0);
-        foreach (var set in ts.AutoTiles)
-        {
-            int id = set.Id;
-            bool current = _ctx.AutoTileSet == id && _ctx.UsesAutoTileSource && _ctx.TileTool != TileTool.Eraser;
-            var name = Ui.Label(set.Name.Length > 0 ? set.Name : UiStrings.TilesetChoice_Unnamed, bold: current);
-            var mode = Ui.Label(AutoTileEditorDialog.Summary(set));
-            mode.Foreground = AppTheme.DimTextBrush;
-            mode.FontSize = AppTheme.SmallFontSize;
-            name.TextTrimming = TextTrimming.CharacterEllipsis;
-            name.Margin = new Thickness(3, 1, 3, 0);
-            mode.Margin = new Thickness(0);
-            mode.TextTrimming = TextTrimming.CharacterEllipsis;
-            var thumb = new TileThumb(26)
-            {
-                Tileset = ts,
-                Cells = TileVisuals.Representative(ts, set) is { } rep ? [(default, rep)] : [],
-                Icon = VectorIcon.Grid3x3,
-                TimeMs = _ctx.TileClockMs,
-                Margin = new Thickness(3, 2, 2, 2),
-            };
-            _autoThumbs.Add(thumb);
-            var group = new IconView(VectorIcon.Circle, TileVisuals.GroupBrush(set.Group) ?? Brushes.Transparent)
-            {
-                Width = 9,
-                Height = 9,
-                Filled = true,
-                Margin = new Thickness(0, 0, 4, 0),
-                VerticalAlignment = VerticalAlignment.Center,
-                IsVisible = anyGroup,
-            };
-            if (set.Group.Length > 0) ToolTip.SetTip(group, UiStrings.FormatTileAuto_GroupTip(name: set.Group));
-            // 두 줄: 이름 / 무리 점 + 요약
-            var summary = new DockPanel { Margin = new Thickness(3, 0, 3, 1) };
-            DockPanel.SetDock(group, Dock.Left);
-            summary.Children.Add(group);
-            summary.Children.Add(mode);
-            var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { name, summary } };
-            var edit = RowButton(VectorIcon.Pencil, UiStrings.Tileset_EditAutoTile, () => EditAutoTile(set));
-            var delete = RowButton(VectorIcon.Trash, UiStrings.Tileset_DeleteAutoTile, () => DeleteAutoTile(set));
-            var mark = new Border { Width = 3, Background = current ? AppTheme.AccentBrush : Brushes.Transparent, Margin = new Thickness(0, 1) };
-            var row = RowGrid(mark, thumb, text, edit, delete);
-            row.Background = current ? CurrentRowBrush : Brushes.Transparent;
-            row.Cursor = new Cursor(StandardCursorType.Hand);
-            row.PointerPressed += (_, e) =>
-            {
-                if (!e.GetCurrentPoint(row).Properties.IsLeftButtonPressed) return;
-                _ctx.AutoTileSet = id;
-                _ctx.TileTool = TileTool.AutoTile;
-            };
-            ToolTip.SetTip(row, UiStrings.Tileset_AutoTileRowTip);
-            _autoList.Children.Add(row);
-        }
-    }
-
-    // ───────────── 타일 목록 ─────────────
-
-    /// <summary>목록에서 칸을 고르면 그 타일들(목록 자리대로)을 붓에 든다.</summary>
-    private void OnPaletteSelection(Rectangle? sel)
-    {
-        if (_ctx.CurrentTileset is not { } ts) return;
-        var tiles = _palette.SelectedTiles;
-        if (sel is { } r && tiles.Count > 0)
-        {
-            var cells = tiles.Select(t => new StampCell(t.PaletteX - r.X, t.PaletteY - r.Y, new TileCell(t.Id), null)).ToList();
-            _ctx.TileTransform = TileTransform.None;
-            _paletteStamp = new TileStamp(cells);
-            _ctx.TileStamp = _paletteStamp;
-            if (_ctx.TileTool is not (TileTool.Brush or TileTool.Rect or TileTool.Fill)) _ctx.TileTool = TileTool.Brush;
-        }
-        RefreshTileProps(ts);
-    }
-
-    private void ApplyTile(Func<TileDef, TileDef> change)
-    {
-        if (_updating || _propsTile is not { } id || _ctx.CurrentTileset?.Find(id) is not { } tile) return;
-        var next = change(tile);
-        if (next == tile) return;
-        _ctx.EditCurrentTileset(UiStrings.Tileset_TileEditLabel, ts => TilesetEdit.ReplaceTile(ts, next));
-    }
-
-    /// <summary>차지 칸을 바꾸면 그림을 차지 칸 아래에 다시 맞춘다(나무처럼 위로 솟게).</summary>
-    private void ApplyFootprint()
-    {
-        if (_updating || _ctx.CurrentTileset is not { } ts) return;
-        int w = (int)_tileW.NumValue(), h = (int)_tileH.NumValue();
-        ApplyTile(t => t with { Width = w, Height = h, DrawOffset = TileDef.BottomAligned(t.Image.Height, h, ts.CellHeight) });
-    }
-
-    /// <summary>타일 오른쪽 클릭 메뉴(<paramref name="clicked"/> = 누른 칸의 타일).</summary>
-    private void ShowTileMenu(int? clicked, PointerPressedEventArgs e)
-    {
-        var tiles = _palette.SelectedTiles;
-        int? animId = clicked ?? (tiles.Count == 1 ? tiles[0].Id : null);
-        var animate = new MenuItem { Header = UiStrings.Tileset_AnimateTile, IsEnabled = animId is not null, Icon = Ui.Icon(VectorIcon.Film, 14) };
-        animate.Click += (_, _) => Dispatcher.UIThread.Post(() => { if (animId is { } aid) AnimateTile(aid); });
-        var dup = new MenuItem { Header = UiStrings.Tileset_DuplicateTile, IsEnabled = tiles.Count == 1 };
-        dup.Click += (_, _) =>
-        {
-            if (tiles.Count != 1) return;
-            _ctx.EditCurrentTileset(UiStrings.Tileset_DuplicateTile, ts => TilesetEdit.DuplicateTile(ts, tiles[0].Id).Tileset);
-        };
-        var merge = new MenuItem { Header = UiStrings.Tileset_Merge, IsEnabled = _merge.IsEnabled };
-        merge.Click += (_, _) => MergeSelection();
-        var delete = new MenuItem { Header = UiStrings.Tileset_DeleteTiles, IsEnabled = tiles.Count > 0 };
-        delete.Click += (_, _) => Dispatcher.UIThread.Post(DeleteSelectedTiles);
-        var menu = new ContextMenu { Items = { animate, new Separator(), dup, merge, new Separator(), delete } };
-        menu.Open(_palette);
-    }
-
-    /// <summary>움직이는 타일 창: 타일의 그림들·장당 시간을 고친다(실행취소 한 단계).</summary>
-    private void AnimateTile(int id)
-    {
-        if (_ctx.CurrentTileset is not { } ts || ts.Find(id) is not { } def) return;
-        if (TileAnimationDialog.Run(this, ts, def) is not { } edited) return;
-        _ctx.EditCurrentTileset(UiStrings.Tileset_AnimateTileLabel, t => TilesetEdit.ReplaceTile(t, edited));
-    }
-
-    private void MergeSelection()
-    {
-        if (_palette.Selection is not { } sel) return;
-        int? made = null;
-        _ctx.EditCurrentTileset(UiStrings.Tileset_Merge, ts =>
-        {
-            if (TilesetEdit.MergeToBigTile(ts, sel) is not { } r) return ts;
-            made = r.Id;
-            return r.Tileset;
-        });
-        if (made is { } id && _ctx.CurrentTileset?.Find(id) is { } big)
-        {
-            _palette.Selection = new Rectangle(big.PaletteX, big.PaletteY, 1, 1);
-            OnPaletteSelection(_palette.Selection);
-            Say(UiStrings.Tileset_MergedMessage);
-        }
-    }
-
-    private void DeleteSelectedTiles()
-    {
-        var ids = _palette.SelectedTiles.Select(t => t.Id).ToList();
-        if (ids.Count == 0 || _ctx.Project is not { } p || _ctx.CurrentTileset is not { } ts) return;
-        // 맵에 쓰인 타일이면 묻는다(지우면 맵에서도 빠짐).
-        bool used = p.Layers.Any(l => l.Tiles is { } d && d.TilesetKey == ts.Key && d.Map.All.Any(c => ids.Contains(c.Cell.Tile)));
-        if (used && Ui.Ask(this, string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.Tileset_DeleteUsedAsk, ids.Count), UiStrings.Tileset_DeleteTiles,
-                MessageButtons.OKCancel, MessageIcon.Question) != DialogResult.OK) return;
-        _ctx.EditCurrentTileset(UiStrings.Tileset_DeleteTiles, t => TilesetEdit.RemoveTiles(t, ids), map =>
-        {
-            foreach (var id in ids) map = map.WithoutTile(id);
-            return map;
-        });
-        _palette.Selection = null;
-        _ctx.TileStamp = null;
-    }
-
-    // ───────────── 층 ─────────────
-
-    private void AddFloor()
-    {
-        if (_ctx.CurrentTileset is not { } ts) return;
-        var name = InputDialog.Ask(this, UiStrings.Tileset_AddFloor, UiStrings.Tileset_FloorName,
-            string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.Tileset_NewFloorName, ts.Floors.Length + 1));
-        if (name is null) return;
-        _ctx.EditCurrentTileset(UiStrings.Tileset_AddFloor, t => TilesetEdit.AddFloor(t, name).Tileset);
-    }
-
-    private void RenameFloor(TileFloor floor)
-    {
-        var name = InputDialog.Ask(this, UiStrings.Tileset_RenameFloor, UiStrings.Tileset_FloorName, floor.Name);
-        if (name is null || name == floor.Name) return;
-        _ctx.EditCurrentTileset(UiStrings.Tileset_RenameFloor, t => TilesetEdit.RenameFloor(t, floor.Id, name));
-    }
-
-    private void DeleteFloor(TileFloor floor)
-    {
-        if (_ctx.Project is not { } p || _ctx.CurrentTileset is not { } ts || ts.Floors.Length <= 1) return;
-        bool used = p.Layers.Any(l => l.Tiles is { } d && d.TilesetKey == ts.Key && d.Map.Floor(floor.Id).Count > 0);
-        if (used && Ui.Ask(this, string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.Tileset_DeleteFloorAsk, floor.Name), UiStrings.Tileset_DeleteFloor,
-                MessageButtons.OKCancel, MessageIcon.Question) != DialogResult.OK) return;
-        _ctx.EditCurrentTileset(UiStrings.Tileset_DeleteFloor, t => TilesetEdit.RemoveFloor(t, floor.Id), map => map.WithoutFloor(floor.Id));
-        if (_ctx.TileFloor == floor.Id) _ctx.TileFloor = null;
-    }
-
-    // ───────────── 자동 타일 ─────────────
-
-    private void EditAutoTile(AutoTileSet? set)
-    {
-        if (_ctx.CurrentTileset is not { } ts) return;
-        if (AutoTileEditorDialog.Run(this, ts, set) is not { } edited) return;
-        _ctx.EditCurrentTileset(set is null ? UiStrings.Tileset_AddAutoTile : UiStrings.Tileset_EditAutoTile, t => TilesetEdit.PutAutoTile(t, edited));
-        _ctx.AutoTileSet = edited.Id;
-        _ctx.TileTool = TileTool.AutoTile;
-    }
-
-    private void DeleteAutoTile(AutoTileSet set)
-    {
-        if (Ui.Ask(this, string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.Tileset_DeleteAutoTileAsk, set.Name), UiStrings.Tileset_DeleteAutoTile,
-                MessageButtons.OKCancel, MessageIcon.Question) != DialogResult.OK) return;
-        _ctx.EditCurrentTileset(UiStrings.Tileset_DeleteAutoTile, t => TilesetEdit.RemoveAutoTile(t, set.Id));
-        if (_ctx.AutoTileSet == set.Id) _ctx.AutoTileSet = 0;
-    }
-
-    // ───────────── 타일셋 ─────────────
-
-    private void ShowMenu(Control anchor)
-    {
-        bool has = _ctx.CurrentTileset is not null;
-        MenuItem Item(string text, Action action, bool enabled = true)
-        {
-            var mi = new MenuItem { Header = text, IsEnabled = enabled && _ctx.IsTilemapSelected };
-            mi.Click += (_, _) => Dispatcher.UIThread.Post(action);
-            return mi;
-        }
-        var menu = new ContextMenu
-        {
-            Items =
-            {
-                Item(UiStrings.Tileset_ChooseOrCreate, ChooseTileset),
-                Item(UiStrings.Tileset_SaveFile, SaveTilesetFile, has),
-                Item(UiStrings.Tileset_ReloadFile, ReloadTilesetFile, has && _ctx.CurrentTileset?.SourcePath is not null),
-                Item(UiStrings.TilesetSettings_Title, EditSettings, has),
-                new Separator(),
-                Item(UiStrings.Tileset_ImportPng, ImportFromFile, has),
-                Item(UiStrings.Tileset_ImportFrame, ImportFromFrame, has),
-            },
-        };
-        menu.Open(anchor);
-    }
-
-    /// <summary>이 타일맵 레이어가 쓸 타일셋을 고르거나 새로 만든다.</summary>
-    public void ChooseTileset()
+    /// <summary>자리 <paramref name="slot"/>의 타일셋을 다른 것으로 바꾼다(맵 칸은 그대로 — 같은 Id의 타일로 보임).</summary>
+    private void ChooseTileset(int slot)
     {
         if (_ctx.Project is not { } p || _ctx.CurrentTilemap is not { } layer) return;
-        if (TilesetChoiceDialog.Run(this, p, UiStrings.Tileset_ChooseOrCreate) is not { } ts) return;
-        _ctx.Structural(() => p.SetLayerTileset(layer, ts));
+        var sources = _ctx.CurrentTilesetSources;
+        // 타일셋이 여럿이면 어느 자리든 다른 타일셋과 칸 크기가 같아야 함
+        var other = sources.Count > 1 ? sources[slot == 0 ? 1 : 0] : null;
+        Size? cell = other is not null ? new Size(other.CellWidth, other.CellHeight) : null;
+        var open = sources.Select(t => t.Key).ToHashSet(StringComparer.Ordinal);
+        if (TilesetChoiceDialog.Run(this, _ctx, UiStrings.Tileset_Replace, open, cell) is not { } ts) return;
+        _ctx.Structural(() => p.SetLayerTileset(layer, slot, ts));
         if (ts.SourcePath is not null) p.MarkTilesetSynced(ts);
         _ctx.TileStamp = null;
-        Refresh();
     }
 
-    private void SaveTilesetFile()
+    /// <summary>타일셋을 하나 더 연다(칸 크기가 첫 타일셋과 같은 것만).</summary>
+    private void AddTileset()
     {
-        if (_ctx.Project is not { } p || _ctx.CurrentTileset is not { } ts) return;
-        var dir = ts.SourcePath is { } sp ? Path.GetDirectoryName(sp) : p.Path is { } pp ? Path.GetDirectoryName(pp) : null;
-        var path = Ui.SaveFile(this, UiStrings.Tileset_SaveFile, dir, (ts.Name.Length > 0 ? ts.Name : "tileset") + Tileset.FileExtension, Tileset.FileExtension,
-            new FileFilter(UiStrings.Tileset_FileFilter, "*" + Tileset.FileExtension));
-        if (path is null) return;
-        var full = Path.GetFullPath(path);
-        try
-        {
-            if (!string.Equals(ts.SourcePath, full, StringComparison.Ordinal))
-                _ctx.EditCurrentTileset(UiStrings.Tileset_SaveFile, t => t with { SourcePath = full });
-            var saved = _ctx.CurrentTileset!;
-            TilesetIO.Save(saved, full);
-            p.MarkTilesetSynced(saved);
-            Say(string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.Tileset_SavedMessage, Path.GetFileName(full)));
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            Ui.Error(this, ex.Message);
-        }
-        Refresh();
+        if (_ctx.Project is not { } p || _ctx.CurrentTilemap is not { } layer || _ctx.CurrentTilesetSources is not { Count: > 0 } sources) return;
+        var open = sources.Select(t => t.Key).ToHashSet(StringComparer.Ordinal);
+        if (TilesetChoiceDialog.Run(this, _ctx, UiStrings.Tileset_AddTileset, open, new Size(sources[0].CellWidth, sources[0].CellHeight)) is not { } ts) return;
+        _ctx.Structural(() => p.AddLayerTileset(layer, ts));
+        if (ts.SourcePath is not null) p.MarkTilesetSynced(ts);
     }
 
-    /// <summary>타일셋 파일 내용으로 다시 읽는다(다른 프로젝트에서 고친 것을 가져옴, 실행취소 한 단계).</summary>
-    private void ReloadTilesetFile()
+    /// <summary>자리 <paramref name="slot"/>의 타일셋을 이 레이어에서 닫는다(그 타일셋으로 찍은 칸도 빠짐 — 있으면 묻고, 타일셋은 프로젝트에 남음).</summary>
+    private void CloseTileset(int slot)
     {
-        if (_ctx.Project is not { } p || _ctx.CurrentTileset is not { SourcePath: { } path } ts) return;
-        try
-        {
-            var loaded = TilesetIO.Load(path) with { Key = ts.Key };
-            _ctx.EditCurrentTileset(UiStrings.Tileset_ReloadFile, _ => loaded);
-            p.MarkTilesetSynced(loaded);
-        }
-        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
-        {
-            Ui.Error(this, ex.Message);
-        }
+        if (_ctx.Project is not { } p || _ctx.CurrentTilemap is not { } layer || _ctx.CurrentTilesetSources.Count <= 1) return;
+        int used = layer.Tiles!.Map.All.Count(c => TileSources.Slot(c.Cell) == slot);
+        if (used > 0 && Ui.Ask(this, UiStrings.FormatTileset_CloseAsk(count: used), UiStrings.Tileset_Close,
+                MessageButtons.OKCancel, MessageIcon.Question) != DialogResult.OK) return;
+        _ctx.Structural(() => p.RemoveLayerTileset(layer, slot));
+        _ctx.TileStamp = null;
+        _ctx.AutoTileSet = 0;
     }
 
-    private void EditSettings()
+    /// <summary>타일셋 이름을 바꾼다(실행취소 한 단계).</summary>
+    private void RenameTileset(Tileset ts)
     {
-        if (_ctx.CurrentTileset is not { } ts || TilesetSettingsDialog.Run(this, ts) is not { } next) return;
-        _ctx.EditCurrentTileset(UiStrings.TilesetSettings_Title, _ => next);
+        var name = InputDialog.Ask(this, UiStrings.Tileset_Rename, UiStrings.TilesetChoice_Name, ts.Name);
+        if (string.IsNullOrWhiteSpace(name) || name.Trim() == ts.Name) return;
+        _ctx.EditTileset(ts.Key, UiStrings.Tileset_Rename, t => t with { Name = name.Trim() });
     }
 
-    private void ImportFromFile()
+    /// <summary>타일셋 <paramref name="key"/>의 설정 창(그림 고치기를 눌러 닫았으면 그 타일을 문서 탭으로).</summary>
+    private void OpenSettings(string key, TilesetSettingsWindow.Page page, int? tile = null)
     {
-        if (_ctx.CurrentTileset is null) return;
-        var path = Ui.OpenFile(this, UiStrings.Tileset_ImportPng, null, new FileFilter("PNG", "*.png"));
-        if (path is null) return;
-        PixelImage sheet;
-        try
-        {
-            sheet = PngIO.Load(path);
-        }
-        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
-        {
-            Ui.Error(this, ex.Message);
-            return;
-        }
-        Import(sheet);
+        if (TilesetSettingsWindow.Run(this, _ctx, key, page, tile) is { } edit) EditTileImageRequested?.Invoke(key, edit);
     }
 
-    /// <summary>지금 프레임의 보이는 그림(타일맵 레이어 빼고)을 시트로 가져온다 — 일반 레이어에 타일을 그려 두고 옮길 때.</summary>
-    private void ImportFromFrame()
+    /// <summary>
+    /// 레이어에 연 타일셋 하나의 묶음(팔레트 묶음처럼): 머리글(접기 화살표·이름·타일 수·메뉴), 자동 타일 세트 칸, 타일 목록.
+    /// 타일 Id·세트 Id는 이 타일셋 안의 것이고, 붓에 넣을 때 자리만큼 민다.
+    /// </summary>
+    private sealed class Section : StackPanel
     {
-        if (_ctx.Project is not { } p || _ctx.CurrentTileset is null) return;
-        var sheet = p.PlanFrame(_ctx.CurrentFrame, layerFilter: l => !l.IsTilemap).Render();
-        Import(sheet);
-    }
+        private readonly TilesetPanel _owner;
+        private readonly PaletteSection _head;
+        private readonly StackPanel _body;
+        private readonly TilePaletteView _palette = new();
+        private readonly TileSlotsView _autoView = new();
+        /// <summary>자동 타일 칸에 보이는 세트(칸 차례, 끝 칸은 '세트 만들기').</summary>
+        private readonly List<AutoTileSet> _autoSets = [];
+        // 자동 타일 세트에 쓴 타일(목록에서 감출 것)과 그 타일셋
+        private (Tileset Tileset, HashSet<int> Tiles)? _autoTiles;
+        private Tileset? _ts;
+        private int _slot;
 
-    private void Import(PixelImage sheet)
-    {
-        if (_ctx.CurrentTileset is not { } ts) return;
-        if (TileImportDialog.Run(this, ts, sheet) is not { } result) return;
-        if (result.Added == 0)
+        private EditorContext Ctx => _owner._ctx;
+
+        public Section(TilesetPanel owner)
         {
-            Say(UiStrings.Tileset_ImportNone);
-            return;
+            _owner = owner;
+            // 머리글은 팔레트 묶음과 같은 모양(색 칸 자리는 쓰지 않음)
+            _head = new PaletteSection("", [], false, editable: true);
+            _head.Grid.IsVisible = false;
+            _head.Children.Remove(_head.Grid);
+            _head.Margin = new Thickness(0);
+            ToolTip.SetTip(_head.Title, UiStrings.Tileset_HeaderTip);
+            _head.ArrowButton.PointerPressed += (_, e) =>
+            {
+                if (!e.GetCurrentPoint(_head.ArrowButton).Properties.IsLeftButtonPressed || _ts is not { } ts) return;
+                e.Handled = true;
+                if (!_owner._collapsed.Remove(ts.Key)) _owner._collapsed.Add(ts.Key);
+                ApplyCollapsed();
+            };
+            _head.Header.DoubleTapped += (_, e) =>
+            {
+                if (ReferenceEquals(e.Source, _head.ArrowButton) || _ts is not { } ts) return;
+                e.Handled = true;
+                Dispatcher.UIThread.Post(() => _owner.RenameTileset(ts));
+            };
+            PopupMenus.Attach(_head.Header, () => HeaderMenu());
+            _head.MenuButton.Click += (_, _) => PopupMenus.Show(_head.MenuButton, HeaderMenu(), PlacementMode.BottomEdgeAlignedLeft);
+
+            // 자동 타일 세트 칸(끝 칸 = 세트 만들기)
+            _autoView.Clicked += OnAutoClicked;
+            _autoView.Activated += i => { if (i < _autoSets.Count) EditAutoTile(_autoSets[i]); };
+            _autoView.MenuRequested += ShowAutoMenu;
+            var autoLabel = Ui.Label(UiStrings.Tileset_AutoTiles);
+            autoLabel.Foreground = AppTheme.DimTextBrush;
+            autoLabel.FontSize = AppTheme.SmallFontSize;
+
+            // 타일 목록(층 이름 줄이 목록 안에 있음)
+            _palette.SelectionChanged += OnPaletteSelection;
+            _palette.TileActivated += _ => Ctx.TileTool = TileTool.Brush;
+            _palette.TileMenuRequested += ShowTileMenu;
+            var paletteScroll = new ScrollViewer
+            {
+                Content = _palette,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                MaxHeight = 320,
+                Margin = new Thickness(0, 4, 0, 0),
+            };
+            _body = new StackPanel
+            {
+                Spacing = 2,
+                Margin = new Thickness(2, 4, 2, 6),
+                Children = { Ui.Row(autoLabel, Ui.InfoBadge(UiStrings.Tileset_AutoTilesInfo)), _autoView, paletteScroll },
+            };
+            Children.Add(_head);
+            Children.Add(_body);
         }
-        _ctx.EditCurrentTileset(UiStrings.Tileset_ImportLabel, _ => result.Tileset);
-        Say(string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.Tileset_ImportedMessage, result.Added));
+
+        /// <summary>머리글 메뉴: 설정, 다른 타일셋으로 바꾸기, 이름 바꾸기, 이 레이어에서 닫기(하나뿐이면 못 닫음).</summary>
+        private object[] HeaderMenu()
+        {
+            MenuItem Item(string text, VectorIcon? icon, Action action, bool enabled = true)
+            {
+                var mi = new MenuItem { Header = text, IsEnabled = enabled, Icon = icon is { } i ? Ui.Icon(i, 14) : null };
+                mi.Click += (_, _) => Dispatcher.UIThread.Post(action);
+                return mi;
+            }
+            if (_ts is not { } ts) return [];
+            int slot = _slot;
+            return
+            [
+                Item(UiStrings.Tileset_TileSettings, VectorIcon.Settings, () => _owner.OpenSettings(ts.Key, TilesetSettingsWindow.Page.Tiles, SingleSelected())),
+                Item(UiStrings.Tileset_Replace, VectorIcon.Refresh, () => _owner.ChooseTileset(slot)),
+                Item(UiStrings.Tileset_Rename, VectorIcon.Pencil, () => _owner.RenameTileset(ts)),
+                new Separator(),
+                Item(UiStrings.Tileset_Close, VectorIcon.X, () => _owner.CloseTileset(slot), Ctx.CurrentTilesetSources.Count > 1),
+            ];
+        }
+
+        private void ApplyCollapsed()
+        {
+            if (_ts is not { } ts) return;
+            bool collapsed = _owner._collapsed.Contains(ts.Key);
+            _head.Collapsed = collapsed;
+            _head.Refresh(IsActive);
+            _head.Count.Text = ts.Tiles.Length.ToString(System.Globalization.CultureInfo.CurrentCulture);
+            _body.IsVisible = !collapsed;
+        }
+
+        /// <summary>지금 붓이나 자동 타일 세트가 이 타일셋 것인지(머리글 아래 강조선).</summary>
+        private bool IsActive
+            => Ctx.UsesAutoTileSource ? TileSources.Slot(Ctx.AutoTileSet) == _slot
+               : Ctx.TileStamp is { Cells.Count: > 0 } s && s.Cells.All(c => TileSources.Slot(c.Cell.Tile) == _slot);
+
+        /// <summary>자리 <paramref name="slot"/>의 타일셋 <paramref name="ts"/>로 맞춘다(같은 타일셋이면 목록은 두고 고른 표시만).</summary>
+        public void Update(int slot, Tileset ts)
+        {
+            bool changed = !ReferenceEquals(_ts, ts) || _slot != slot;
+            _slot = slot;
+            _ts = ts;
+            if (changed)
+            {
+                _head.PaletteName = ts.Name.Length > 0 ? ts.Name : UiStrings.TilesetChoice_Unnamed;
+                if (!ReferenceEquals(_palette.Tileset, ts)) _palette.Tileset = ts;
+                RefreshAutoSlots(ts);
+            }
+            ApplyCollapsed();
+            ToolTip.SetTip(_head.Count, UiStrings.FormatTilesetChoice_Summary(w: ts.CellWidth, h: ts.CellHeight, tiles: ts.Tiles.Length, sets: ts.AutoTiles.Length));
+            ApplyListView(ts);
+            FitSlots(_owner.Bounds.Width);
+            SyncSelection();
+        }
+
+        public void SetTime(long now)
+        {
+            if (_ts is not { HasAnimation: true }) return;
+            _palette.TimeMs = now;
+            _autoView.TimeMs = now;
+        }
+
+        /// <summary>타일 목록 보기 설정(층별로 나누기, 자동 타일 세트에 쓴 타일 감추기)을 목록에 입힌다.</summary>
+        private void ApplyListView(Tileset ts)
+        {
+            _palette.GroupByFloor = Ctx.TileListByFloor;
+            if (!Ctx.TileListHideAutoTiles)
+            {
+                _palette.HiddenTiles = null;
+                return;
+            }
+            if (_autoTiles is not { } cached || !ReferenceEquals(cached.Tileset, ts))
+            {
+                var ids = new HashSet<int>();
+                foreach (var set in ts.AutoTiles) ids.UnionWith(TileVisuals.TilesOf(set));
+                _autoTiles = cached = (ts, ids);
+            }
+            _palette.HiddenTiles = cached.Tiles;
+        }
+
+        /// <summary>칸 크기: 보기 설정의 칸 크기, 자동이면 패널 폭에 타일 목록 열이 다 들어가게(18~40px). 자동 타일 칸도 같은 크기. 목록은 폭이 모자라면 더 줄여 그린다.</summary>
+        public void FitSlots(double panelWidth)
+        {
+            if (_ts is not { } ts) return;
+            double size = Ctx.TileSlotSize;
+            if (size <= 0)
+            {
+                int cols = Math.Max(_palette.MinColumns, ts.Tiles.Length == 0 ? 0 : ts.Tiles.Max(t => t.PaletteX) + 1);
+                double width = panelWidth - 40;
+                size = width > 0 ? Math.Clamp(Math.Floor(width / cols), 18, 40) : 32;
+            }
+            if (Math.Abs(size - _palette.SlotSize) < 0.5 && Math.Abs(size - _autoView.SlotSize) < 0.5) return;
+            _palette.SlotSize = size;
+            _autoView.SlotSize = size;
+            foreach (var view in new Control[] { _palette, _autoView })
+            {
+                view.InvalidateMeasure();
+                view.InvalidateVisual();
+            }
+        }
+
+        /// <summary>자동 타일 칸을 타일셋의 세트로 다시 만든다(끝 칸 = 세트 만들기).</summary>
+        private void RefreshAutoSlots(Tileset ts)
+        {
+            _autoSets.Clear();
+            _autoSets.AddRange(ts.AutoTiles);
+            var slots = new List<TileSlotsView.Slot>(_autoSets.Count + 1);
+            foreach (var set in _autoSets)
+            {
+                var name = set.Name.Length > 0 ? set.Name : UiStrings.TilesetChoice_Unnamed;
+                var floor = ts.FindFloor(set.Floor)?.Name ?? "?";
+                var tip = string.Join("\n", name, AutoTileEditorDialog.Summary(set), UiStrings.FormatTilePick_Floor(name: floor), UiStrings.Tileset_AutoTileRowTip);
+                slots.Add(new TileSlotsView.Slot(TileVisuals.Representative(ts, set) is { } rep ? [(default, rep)] : [], VectorIcon.Grid3x3, tip, TileVisuals.GroupBrush(set.Group)));
+            }
+            slots.Add(new TileSlotsView.Slot([], VectorIcon.Plus, UiStrings.Tileset_AddAutoTile));
+            _autoView.Tileset = ts;
+            _autoView.Slots = slots;
+            _autoView.TimeMs = Ctx.TileClockMs;
+        }
+
+        /// <summary>
+        /// 고른 표시를 지금 찍을 것에 맞춘다: 이 타일셋의 세트를 쓰면 그 칸을 고르고 목록에서 그 세트의 타일을 옅게, 목록의 고른 칸은 지금 붓이 이 목록에서 든 것일 때만 강조.
+        /// </summary>
+        private void SyncSelection()
+        {
+            int global = Ctx.AutoTileSet;
+            var set = TileSources.Slot(global) == _slot ? _ts?.FindAutoTile(TileSources.Local(global)) : null;
+            bool autoActive = Ctx.TileTool != TileTool.Eraser && Ctx.UsesAutoTileSource;
+            _autoView.Selected = set is null ? -1 : _autoSets.FindIndex(a => a.Id == set.Id);
+            _autoView.SelectionActive = autoActive;
+            _palette.HighlightTiles = autoActive && set is not null ? TileVisuals.TilesOf(set) : null;
+            bool mine = _owner._paletteStamp is { } ps && ReferenceEquals(ps.Section, this) && ReferenceEquals(Ctx.TileStamp, ps.Stamp);
+            if (!mine && _palette.Selection is not null && _owner._paletteStamp is { } other && !ReferenceEquals(other.Section, this)) _palette.Selection = null;
+            _palette.SelectionActive = mine && !autoActive && Ctx.TileTool != TileTool.Eraser;
+            _palette.TimeMs = Ctx.TileClockMs;
+        }
+
+        private int? SingleSelected() => _palette.SelectedTiles is { Count: 1 } t ? t[0].Id : null;
+
+        // ───────────── 자동 타일 ─────────────
+
+        private void OnAutoClicked(int index)
+        {
+            if (index >= _autoSets.Count)
+            {
+                EditAutoTile(null);
+                return;
+            }
+            Ctx.AutoTileSet = TileSources.Global(_slot, _autoSets[index].Id);
+            Ctx.TileTool = TileTool.AutoTile;
+        }
+
+        private void ShowAutoMenu(int index, PointerPressedEventArgs e)
+        {
+            if (index >= _autoSets.Count) return;
+            var set = _autoSets[index];
+            var edit = new MenuItem { Header = UiStrings.Tileset_EditAutoTile, Icon = Ui.Icon(VectorIcon.Pencil, 14) };
+            edit.Click += (_, _) => Dispatcher.UIThread.Post(() => EditAutoTile(set));
+            var delete = new MenuItem { Header = UiStrings.Tileset_DeleteAutoTile, Icon = Ui.Icon(VectorIcon.Trash, 14) };
+            delete.Click += (_, _) => Dispatcher.UIThread.Post(() => DeleteAutoTile(set));
+            new ContextMenu { Items = { edit, new Separator(), delete } }.Open(_autoView);
+        }
+
+        private void EditAutoTile(AutoTileSet? set)
+        {
+            if (_ts is not { } ts) return;
+            if (AutoTileEditorDialog.Run(_owner, ts, set) is not { } edited) return;
+            Ctx.EditTileset(ts.Key, set is null ? UiStrings.Tileset_AddAutoTile : UiStrings.Tileset_EditAutoTile, t => TilesetEdit.PutAutoTile(t, edited));
+            Ctx.AutoTileSet = TileSources.Global(_slot, edited.Id);
+            Ctx.TileTool = TileTool.AutoTile;
+        }
+
+        private void DeleteAutoTile(AutoTileSet set)
+        {
+            if (_ts is not { } ts) return;
+            if (Ui.Ask(_owner, string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.Tileset_DeleteAutoTileAsk, set.Name), UiStrings.Tileset_DeleteAutoTile,
+                    MessageButtons.OKCancel, MessageIcon.Question) != DialogResult.OK) return;
+            int global = TileSources.Global(_slot, set.Id);
+            Ctx.EditTileset(ts.Key, UiStrings.Tileset_DeleteAutoTile, t => TilesetEdit.RemoveAutoTile(t, set.Id));
+            if (Ctx.AutoTileSet == global) Ctx.AutoTileSet = 0;
+        }
+
+        // ───────────── 타일 목록 ─────────────
+
+        /// <summary>목록에서 칸을 고르면 그 타일들(화면 자리대로, 자리만큼 민 Id)을 붓에 든다.</summary>
+        private void OnPaletteSelection(Rectangle? sel)
+        {
+            var tiles = _palette.SelectedTiles;
+            if (sel is not { } r || tiles.Count == 0) return;
+            var cells = tiles.Select(t =>
+            {
+                var at = _palette.DisplayPos(t);
+                return new StampCell(at.X - r.X, at.Y - r.Y, new TileCell(TileSources.Global(_slot, t.Id)), null);
+            }).ToList();
+            var stamp = new TileStamp(cells);
+            _owner._paletteStamp = (stamp, this);
+            Ctx.TileTransform = TileTransform.None;
+            Ctx.TileStamp = stamp;
+            if (Ctx.TileTool is not (TileTool.Brush or TileTool.Rect or TileTool.Fill)) Ctx.TileTool = TileTool.Brush;
+        }
+
+        /// <summary>타일 오른쪽 클릭 메뉴(<paramref name="clicked"/> = 누른 칸의 타일).</summary>
+        private void ShowTileMenu(int? clicked, PointerPressedEventArgs e)
+        {
+            if (_ts is not { } ts) return;
+            var tiles = _palette.SelectedTiles;
+            int? one = clicked ?? (tiles.Count == 1 ? tiles[0].Id : null);
+            var settings = new MenuItem { Header = UiStrings.Tileset_TileSettings, Icon = Ui.Icon(VectorIcon.Settings, 14) };
+            settings.Click += (_, _) => Dispatcher.UIThread.Post(() => _owner.OpenSettings(ts.Key, TilesetSettingsWindow.Page.Tiles, one));
+            var image = new MenuItem { Header = UiStrings.TilesetWin_EditImage, IsEnabled = one is not null, Icon = Ui.Icon(VectorIcon.Pencil, 14) };
+            image.Click += (_, _) => Dispatcher.UIThread.Post(() => { if (one is { } id) _owner.EditTileImageRequested?.Invoke(ts.Key, id); });
+            var animate = new MenuItem { Header = UiStrings.Tileset_AnimateTile, IsEnabled = one is not null, Icon = Ui.Icon(VectorIcon.Film, 14) };
+            animate.Click += (_, _) => Dispatcher.UIThread.Post(() => { if (one is { } id) AnimateTile(id); });
+            var dup = new MenuItem { Header = UiStrings.Tileset_DuplicateTile, IsEnabled = tiles.Count == 1 };
+            dup.Click += (_, _) =>
+            {
+                if (tiles.Count != 1) return;
+                Ctx.EditTileset(ts.Key, UiStrings.Tileset_DuplicateTile, t => TilesetEdit.DuplicateTile(t, tiles[0].Id).Tileset);
+            };
+            bool canMerge = _palette.Selection is { } sel && (sel.Width > 1 || sel.Height > 1) && tiles.Count > 0 && _palette.PaletteRect(sel) is not null;
+            var merge = new MenuItem { Header = UiStrings.Tileset_Merge, IsEnabled = canMerge };
+            merge.Click += (_, _) => MergeSelection();
+            ToolTip.SetTip(merge, UiStrings.Tileset_MergeTip);
+            var delete = new MenuItem { Header = UiStrings.Tileset_DeleteTiles, IsEnabled = tiles.Count > 0, Icon = Ui.Icon(VectorIcon.Trash, 14) };
+            delete.Click += (_, _) => Dispatcher.UIThread.Post(DeleteSelectedTiles);
+            new ContextMenu { Items = { settings, image, animate, new Separator(), dup, merge, new Separator(), delete } }.Open(_palette);
+        }
+
+        /// <summary>움직이는 타일 창: 타일의 그림들·장당 시간을 고친다(실행취소 한 단계).</summary>
+        private void AnimateTile(int id)
+        {
+            if (_ts is not { } ts || ts.Find(id) is not { } def) return;
+            if (TileAnimationDialog.Run(_owner, ts, def) is not { } edited) return;
+            Ctx.EditTileset(ts.Key, UiStrings.Tileset_AnimateTileLabel, t => TilesetEdit.ReplaceTile(t, edited));
+        }
+
+        private void MergeSelection()
+        {
+            if (_ts is not { } ts || _palette.Selection is not { } display || _palette.PaletteRect(display) is not { } sel) return;
+            int? made = null;
+            Ctx.EditTileset(ts.Key, UiStrings.Tileset_Merge, t =>
+            {
+                if (TilesetEdit.MergeToBigTile(t, sel) is not { } r) return t;
+                made = r.Id;
+                return r.Tileset;
+            });
+            if (made is { } id && _ts?.Find(id) is { } big)
+            {
+                _palette.SelectTile(big.Id);
+                OnPaletteSelection(_palette.Selection);
+                _owner.Say(UiStrings.Tileset_MergedMessage);
+            }
+        }
+
+        private void DeleteSelectedTiles()
+        {
+            var ids = _palette.SelectedTiles.Select(t => t.Id).ToList();
+            if (ids.Count == 0 || Ctx.Project is not { } p || _ts is not { } ts) return;
+            // 맵에 쓰인 타일이면 묻는다(지우면 맵에서도 빠짐).
+            bool used = p.Layers.Any(l => l.Tiles is { } d && d.TilesetKeys.IndexOf(ts.Key) is >= 0 and var slot
+                && d.Map.All.Any(c => TileSources.Slot(c.Cell.Tile) == slot && ids.Contains(TileSources.Local(c.Cell.Tile))));
+            if (used && Ui.Ask(_owner, string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.Tileset_DeleteUsedAsk, ids.Count), UiStrings.Tileset_DeleteTiles,
+                    MessageButtons.OKCancel, MessageIcon.Question) != DialogResult.OK) return;
+            Ctx.EditTileset(ts.Key, UiStrings.Tileset_DeleteTiles, t => TilesetEdit.RemoveTiles(t, ids), (map, offset) =>
+            {
+                foreach (var id in ids) map = map.WithoutTile(offset + id);
+                return map;
+            });
+            _palette.Selection = null;
+            Ctx.TileStamp = null;
+        }
     }
 }

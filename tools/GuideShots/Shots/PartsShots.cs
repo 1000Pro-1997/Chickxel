@@ -205,7 +205,7 @@ internal static class PartsShots
     public static void Export(ShotKit k)
     {
         var main = Open(k);
-        k.Dialog(() => k.Command("파일/내보내기"), w =>
+        OpenSheetSettings(k, w =>
         {
             // 왼쪽 설정이 한눈에 다 보이게 창을 키운다.
             w.Height = 1520;
@@ -213,7 +213,7 @@ internal static class PartsShots
             ScrubPaths(k, w);
             var frames = SectionStarting(w, "Frame sheet");
             var parts = Section(w, UiStrings.S_UnityExportDialog_UnityExportDialog_B18F4A0368);
-            var output = (Control)ShotKit.All<TextBlock>(w).First(t => t.Text == UiStrings.S_UnityExportDialog_BuildCommonBlock_FE8EEAD4AB).GetVisualParent()!;
+            var output = (Control)ShotKit.All<TextBlock>(w).First(t => t.Text == UiStrings.S_UnityExportDialog_BuildCommonBlock_FE8EEAD4AB && t.IsEffectivelyVisible).GetVisualParent()!;
             var name = ShotKit.All<TextBox>(parts).First();
             var common = (Control)SectionStarting(w, "Common").Header!;
             // ① 프레임 시트 ② 부위 아틀라스 ③ 내보낼 결과 ④ 부위 아틀라스 이름 ⑤ 공통 설정
@@ -369,7 +369,7 @@ internal static class PartsShots
     public static void SkinExport(ShotKit k)
     {
         var main = Open(k, p => p.Edit("skins", ProjectChange.Settings, () => p.Export.Common.Skins = SkinSource.Selected));
-        k.Dialog(() => k.Command("파일/내보내기"), w =>
+        OpenSheetSettings(k, w =>
         {
             ShotKit.Pump(600);
             ScrubPaths(k, w);
@@ -403,7 +403,7 @@ internal static class PartsShots
     public static void SpriteLibrary(ShotKit k)
     {
         var main = Open(k, p => p.Edit("lib", ProjectChange.Settings, () => p.Export.WriteSpriteLibrary = true));
-        k.Dialog(() => k.Command("파일/내보내기"), w =>
+        OpenSheetSettings(k, w =>
         {
             ShotKit.Pump(600);
             var parts = Section(w, UiStrings.S_UnityExportDialog_UnityExportDialog_B18F4A0368);
@@ -456,11 +456,11 @@ internal static class PartsShots
         k.Save(main, crop: new Rect(canvas.X, canvas.Y, canvas.Width, tl.Bottom - canvas.Y),
             marks: [RowRect(main, g), RowRect(main, Math.Min(first, last)).Union(RowRect(main, Math.Max(first, last)))]);
         // ③ 프레임 시트는 꺼진 채(내보낼 결과 = 부위 아틀라스)
-        k.Dialog(() => k.Command("파일/내보내기"), w =>
+        OpenSheetSettings(k, w =>
         {
             ShotKit.Pump(600);
             ScrubPaths(k, w);
-            var output = (Control)ShotKit.All<TextBlock>(w).First(t => t.Text == UiStrings.S_UnityExportDialog_BuildCommonBlock_FE8EEAD4AB).GetVisualParent()!;
+            var output = (Control)ShotKit.All<TextBlock>(w).First(t => t.Text == UiStrings.S_UnityExportDialog_BuildCommonBlock_FE8EEAD4AB && t.IsEffectivelyVisible).GetVisualParent()!;
             var common = SectionStarting(w, "Common");
             k.SaveControl(common, "parts-import-2", pad: 4, marks: [output], firstNumber: 3);
         });
@@ -680,6 +680,13 @@ internal static class PartsShots
         if (impl?.GetType().GetProperty("Position", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)?.GetValue(impl) is PixelPoint pp)
             return new Vector(pp.X, pp.Y);
         return default;
+    }
+
+    /// <summary>파일 > 내보내기…를 이미지 형식(시트 설정이 보이는 배치)으로 연 뒤 <paramref name="withWindow"/>.</summary>
+    private static void OpenSheetSettings(ShotKit k, Action<Window> withWindow)
+    {
+        App.Settings.ExportFormat = ExportFormat.Image;
+        k.Dialog(() => k.Command("파일/내보내기"), withWindow);
     }
 
     /// <summary>내보내기 창 왼쪽 설정 묶음(제목 글자가 정확히 같은 것).</summary>

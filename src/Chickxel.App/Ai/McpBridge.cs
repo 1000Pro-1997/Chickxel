@@ -23,21 +23,53 @@ internal static class McpBridge
     private static Stream _stdout = Stream.Null;
     private static volatile string? _sessionId;
 
+    /// <summary>다른 AI 앱이 띄울 명령: 지금 실행 파일과 <c>--mcp</c>(빌드 출력을 <c>dotnet Chickxel.App.dll</c>로 돌렸으면 dll 다음에).</summary>
+    private static (string Command, string[] Args) LaunchCommand()
+    {
+        var exe = Environment.ProcessPath ?? "Chickxel";
+        return string.Equals(Path.GetFileNameWithoutExtension(exe), "dotnet", StringComparison.OrdinalIgnoreCase)
+            ? (exe, [typeof(McpBridge).Assembly.Location, "--mcp"])
+            : (exe, ["--mcp"]);
+    }
+
     /// <summary>
-    /// 다른 AI 앱에 붙여 넣을 MCP 설정(<c>{ "mcpServers": { "chickxel": { "command", "args" } } }</c> — Claude Desktop·Cursor·Claude Code의 <c>.mcp.json</c> 형식):
-    /// 지금 실행 파일에 <c>--mcp</c>(빌드 출력을 <c>dotnet Chickxel.App.dll</c>로 돌렸으면 dll 다음에).
+    /// 다른 AI 앱에 붙여 넣을 MCP 설정(<c>{ "mcpServers": { "chickxel": { "command", "args" } } }</c> — Claude Desktop·Cursor·Claude Code의 <c>.mcp.json</c> 형식).
     /// </summary>
     public static string ClientConfigJson()
     {
-        var exe = Environment.ProcessPath ?? "Chickxel";
-        var args = new JsonArray();
-        if (string.Equals(Path.GetFileNameWithoutExtension(exe), "dotnet", StringComparison.OrdinalIgnoreCase)) args.Add(typeof(McpBridge).Assembly.Location);
-        args.Add("--mcp");
+        var (command, args) = LaunchCommand();
         var config = new JsonObject
         {
-            ["mcpServers"] = new JsonObject { [McpServer.ServerName] = new JsonObject { ["command"] = exe, ["args"] = args } },
+            ["mcpServers"] = new JsonObject { [McpServer.ServerName] = new JsonObject { ["command"] = command, ["args"] = new JsonArray([.. args.Select(a => JsonValue.Create(a))]) } },
         };
         return config.ToJsonString(new JsonSerializerOptions(PixelTools.JsonOptions) { WriteIndented = true });
+    }
+
+    /// <summary>Codex CLI·ChatGPT 데스크톱 앱의 <c>~/.codex/config.toml</c>에 더할 항목(그림 생성이 기본 60초 도구 시간 제한에 걸리지 않게 늘림).</summary>
+    private static string CodexConfigToml()
+    {
+        var (command, args) = LaunchCommand();
+        return $"""
+            [mcp_servers.{McpServer.ServerName}]
+            command = {CodexSession.TomlString(command)}
+            args = [{string.Join(", ", args.Select(CodexSession.TomlString))}]
+            tool_timeout_sec = {CodexSession.ToolTimeoutSeconds}
+            """;
+    }
+
+    /// <summary>
+    /// 외부 AI 연결 창의 연결 안내(화면 언어): 구조, 실행 명령, 앱별 등록, 도구, 확인 방법. 지금 실행 파일 경로·잠금 파일 위치와 붙여 넣을 JSON·TOML을 채운다.
+    /// 사람이 읽고 따라 하거나 AI 앱에 그대로 붙여 넣어 등록을 맡길 수 있게 쓴다.
+    /// </summary>
+    public static string ConnectionGuide()
+    {
+        var (command, args) = LaunchCommand();
+        return UiStrings.FormatExternalMcp_Guide(
+            exe: command,
+            args: new JsonArray([.. args.Select(a => JsonValue.Create(a))]).ToJsonString(PixelTools.JsonOptions),
+            lockFile: McpServer.ExternalLockPath,
+            json: ClientConfigJson(),
+            toml: CodexConfigToml());
     }
 
     /// <summary>

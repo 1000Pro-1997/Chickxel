@@ -67,7 +67,7 @@ public sealed class TileAnimationDialog : DialogBase
         var paletteScroll = new ScrollViewer
         {
             Content = _palette,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             MaxHeight = 200,
             Width = 400,

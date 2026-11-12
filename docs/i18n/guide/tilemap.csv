@@ -1,0 +1,396 @@
+key,ko,en
+#name,한국어,English
+tilemap.1,타일맵 레이어,Tilemap layers
+tilemap.2,"<strong>타일맵 레이어</strong>는 <strong>타일셋</strong>의 타일을 칸에 맞춰 찍어 게임 맵을 만드는 레이어입니다. 일반 레이어·그룹과 같은 레이어 목록에 섞이고, 모든 프레임이 같은 맵을 씁니다. 합성·미리보기·내보내기·레이어 효과는 일반 레이어처럼 됩니다.","A <strong>tilemap layer</strong> builds a game map by placing the tiles of a <strong>tileset</strong> on a grid of cells. It sits in the same layer list as normal layers and groups, and every frame uses the same map. Compositing, the preview, exports and layer effects work just as they do for normal layers."
+tilemap.3,"처음 만드는 타일맵 레이어는 앱에 든 기본 타일셋으로 시작하므로 바로 찍어 볼 수 있습니다. 칸마다 둘레를 보고 경계 모양을 고르는 자동 타일, 여러 칸을 차지하는 큰 타일, 그림이 돌아가는 움직이는 타일을 쓸 수 있습니다. 아래 쪽에서 필요한 것을 찾아 읽으세요.","Your first tilemap layer starts with the app's built-in tileset, so you can start placing tiles right away. You can use auto tiles that pick edge shapes from their neighbors, big tiles that cover several cells, and animated tiles whose images cycle. Find what you need in the pages below."
+tilemap.h1,쪽,Page
+tilemap.h2,이럴 때 읽기,Read it when
+tilemap.p-create,타일맵 레이어를 새로 만들 때,You add a new tilemap layer
+tilemap.p-screen,타일맵 레이어를 골랐을 때 바뀌는 화면을 알고 싶을 때,You want to know how the screen changes when a tilemap layer is selected
+tilemap.p-tools,"타일을 찍고 지우고 채우거나, 칸을 복사할 때","You place, erase or fill tiles, or copy cells"
+tilemap.p-panel,찍을 타일이나 자동 타일 세트를 고를 때,You pick the tile or auto tile set to place
+tilemap.p-pick,지금 무엇을 어느 층에 찍는지 확인하거나 붓을 뒤집을 때,"You check what goes on which floor, or flip the brush"
+tilemap.p-floors,타일을 겹쳐 그리거나 층을 숨기고 잠글 때,"You stack tiles, or hide and lock floors"
+tilemap.p-choose,"다른 타일셋을 고르거나, 타일셋을 만들고 지울 때","You choose another tileset, or create and delete tilesets"
+tilemap.p-multi,한 레이어에 타일셋을 여러 개 열 때,You open several tilesets on one layer
+tilemap.p-settings,타일·층·자동 타일 세트를 한곳에서 고치거나 타일을 가져올 때,"You edit tiles, floors and auto tile sets in one place, or import tiles"
+tilemap.p-big-tiles,나무처럼 여러 칸이거나 위로 솟는 타일을 만들 때,"You make tiles that cover several cells or rise above them, like trees"
+tilemap.p-edit-image,타일 그림을 픽셀 도구로 고칠 때,You repaint a tile with the pixel tools
+tilemap.p-autotile,자동 타일 세트의 규칙을 만들거나 고칠 때,You create or edit the rules of an auto tile set
+tilemap.p-animated,물결·횃불처럼 움직이는 타일을 만들 때,"You make tiles that move, like waves or torches"
+tilemap.p-builtin,기본 타일셋에 무엇이 들어 있는지 알고 싶을 때,You want to know what's in the built-in tileset
+tilemap.p-convert,타일맵을 일반 그림 레이어로 바꿀 때,You turn a tilemap into normal image layers
+tilemap.p-files,타일셋을 파일로 저장해 여러 프로젝트에서 쓸 때,You save a tileset to a file to share it between projects
+tilemap-create.1,타일맵 레이어 만들기,Creating a tilemap layer
+tilemap-create.intro,"타일맵 레이어는 메뉴나 타임라인 우클릭 메뉴에서 만듭니다. 묻는 창 없이 지금 레이어 위에 빈 타일맵 레이어가 생기고, 타임라인에서 그 줄이 골라집니다.","Create a tilemap layer from the menu or the timeline's right-click menu. An empty tilemap layer appears above the current layer without any dialog, and its row is selected in the timeline."
+tilemap-create.h-menu,메뉴로 만들기,From the menu
+tilemap-create.alt,프레임·레이어 메뉴를 연 모습: 새 레이어·새 그룹·새 부위 아래의 새 타일맵 레이어(Alt+Shift+N) 항목,"Frame·Layer menu open, showing New tilemap layer (Alt+Shift+N) below New layer, New group and New part"
+tilemap-create.caption,① 새 타일맵 레이어(New tilemap layer),① New tilemap layer
+tilemap-create.menu,<strong>프레임·레이어 &gt; ① 새 타일맵 레이어</strong>({{key:프레임·레이어/새 타일맵 레이어…}})를 누릅니다.,Choose <strong>Frame·Layer &gt; ① New tilemap layer</strong> ({{key:프레임·레이어/새 타일맵 레이어…}}).
+tilemap-create.h-timeline,타임라인에서 만들기,From the timeline
+tilemap-create.alt2,타임라인의 Sky 레이어 줄을 우클릭한 메뉴: 새 레이어·새 그룹 아래의 새 타일맵 레이어 항목,"Right-click menu on the Sky layer row in the timeline, with New tilemap layer below New layer and New group"
+tilemap-create.caption2,② 레이어 우클릭 메뉴의 새 타일맵 레이어,② New tilemap layer in the layer's right-click menu
+tilemap-create.timeline,타임라인에서 레이어 줄(또는 빈 곳)을 우클릭하고 ② <strong>새 타일맵 레이어</strong>를 눌러도 됩니다.,You can also right-click a layer row (or an empty spot) in the timeline and choose ② <strong>New tilemap layer</strong>.
+tilemap-create.h-tileset,처음 쓰는 타일셋,Which tileset it starts with
+tilemap-create.tileset,새 레이어는 아래 차례로 처음 찾은 타일셋을 씁니다.,The new layer uses the first tileset found in this order:
+tilemap-create.ts1,지금 고른 레이어가 타일맵 레이어면 그 레이어의 첫 타일셋,"The first tileset of the selected layer, if it is a tilemap layer"
+tilemap-create.ts2,프로젝트의 타일맵 레이어가 쓰는 첫 타일셋,The first tileset used by a tilemap layer in the project
+tilemap-create.ts3,둘 다 없으면 기본 타일셋의 새 사본,"Otherwise, a new copy of the built-in tileset"
+tilemap-create.change,"다른 타일셋을 쓰려면 타일셋 패널 묶음 메뉴의 <strong>다른 타일셋으로 바꾸기…</strong>를 누릅니다(<a href=""#tilemap-choose"">타일셋 고르기와 관리</a>).","To use another tileset, choose <strong>Replace with another tileset…</strong> from the tileset's menu in the Tileset panel (<a href=""#tilemap-choose"">Choosing and managing tilesets</a>)."
+tilemap-screen.1,타일맵 레이어를 고르면,When a tilemap layer is selected
+tilemap-screen.alt,"타일맵 레이어를 고른 메인 창: 왼쪽 도구 막대의 타일 도구, 타일셋 패널, 위 막대의 도구 안내와 타일맵 보기 단추, 오른쪽 도구 설정의 타일·층 묶음, 캔버스 왼쪽 아래 칸 정보","Main window with a tilemap layer selected: tile tools in the left toolbar, the Tileset panel, the tool hint and tilemap view buttons in the top bar, the Tiles and Floors groups in the tool options, and cell info at the bottom left of the canvas"
+tilemap-screen.caption,① 타일 도구 · ② 타일셋 패널 · ③ 도구 쓰는 법 · ④ 타일맵 보기 단추 · ⑤ 타일 묶음 · ⑥ 층 묶음 · ⑦ 칸 정보,① Tile tools · ② Tileset panel · ③ How to use the tool · ④ Tilemap view buttons · ⑤ Tiles group · ⑥ Floors group · ⑦ Cell info
+tilemap-screen.intro,타임라인에서 타일맵 레이어를 고르면 화면이 타일 찍기에 맞게 바뀝니다. 다른 레이어를 고르면 원래대로 돌아옵니다.,"When you select a tilemap layer in the timeline, the screen switches to placing tiles. Selecting another layer switches it back."
+tilemap-screen.m1,"① 도구 막대가 타일 도구로 바뀝니다(<a href=""#tilemap-tools"">타일 도구</a>).","① The toolbar shows the tile tools (<a href=""#tilemap-tools"">Tile tools</a>)."
+tilemap-screen.m2,② 왼쪽 색 패널 자리에 타일셋 패널이 나옵니다. 찍을 타일과 자동 타일 세트를 여기서 고릅니다.,② The Tileset panel takes the place of the color panel on the left. Pick the tiles and auto tile sets to place here.
+tilemap-screen.m3,③ 위 막대 왼쪽에 지금 도구 이름과 쓰는 법이 보입니다.,③ The left of the top bar shows the current tool's name and how to use it.
+tilemap-screen.m4,④ 위 막대 오른쪽 보기 단추가 타일맵 보기로 바뀝니다(아래 표).,④ The view buttons on the right of the top bar switch to tilemap views (table below).
+tilemap-screen.m5,"⑤ 도구 설정에 타일 묶음이 나옵니다(<a href=""#tilemap-pick"">지금 찍을 것</a>).","⑤ The tool options show the Tiles group (<a href=""#tilemap-pick"">Current pick</a>)."
+tilemap-screen.m6,"⑥ 그 아래 층 묶음에서 찍을 층을 고릅니다(<a href=""#tilemap-floors"">층</a>).","⑥ The Floors group below it chooses the floor to place on (<a href=""#tilemap-floors"">Floors</a>)."
+tilemap-screen.m7,⑦ 캔버스 왼쪽 아래에 마우스가 있는 칸의 좌표·층·타일 이름이 보입니다.,"⑦ The bottom left of the canvas shows the coordinates, floor and tile name of the cell under the mouse."
+tilemap-screen.h-view,타일맵 보기 단추,Tilemap view buttons
+tilemap-screen.v.h1,단추,Button
+tilemap-screen.v.h2,하는 일,What it does
+tilemap-screen.v.1,칸 격자,Cell grid
+tilemap-screen.v.1d,캔버스에 타일 칸 격자를 캔버스 밖까지 보입니다. <strong>보기 &gt; 타일맵 칸 격자</strong>와 같습니다.,"Shows the tile cell grid on the canvas, also outside it. Same as <strong>View &gt; Tilemap cell grid</strong>."
+tilemap-screen.v.2,타일 움직임,Tile motion
+tilemap-screen.v.2d,끄면 움직이는 타일이 캔버스·미리보기·타일 목록에서 지금 그림에 멈춥니다. 내보내기는 그대로입니다. <strong>보기 &gt; 움직이는 타일 재생</strong>과 같습니다.,"When off, animated tiles stop on their current image on the canvas, in the preview and in the tile list. Exports are unaffected. Same as <strong>View &gt; Play animated tiles</strong>."
+tilemap-screen.v.3,모든 층 · 고른 층 강조 · 고른 층만,All floors · Focus floor · Floor only
+tilemap-screen.v.3d,"찍을 층만 또렷이 보거나 나머지 층을 감춥니다(<a href=""#tilemap-floors"">층</a>).","Shows only the floor you are placing on clearly, or hides the other floors (<a href=""#tilemap-floors"">Floors</a>)."
+tilemap-screen.h-pixel,쓸 수 없는 명령,Commands that don't apply
+tilemap-screen.pixel,외곽선 추가·색 바꾸기·변형·팔레트 색으로 변환처럼 픽셀 그림에만 쓰는 명령은 메뉴에서 흐려집니다. 단축키로 불러도 알림만 보입니다.,"Commands that only work on pixel images, such as adding an outline, replacing colors, transforming or converting to palette colors, are grayed out in the menus. Calling them with a shortcut only shows a notice."
+tilemap-tools.1,타일 도구,Tile tools
+tilemap-tools.alt,"흙 자동 타일 붓을 고르고 언덕 위 칸에 마우스를 올린 캔버스: 찍으면 붙을 흙 모양이 반투명하게 보이고 왼쪽 아래에 Cell 6, 6 · empty","Canvas with the Dirt auto tile brush hovering a cell above the hill: the dirt shape it would add shows translucent, and the bottom left reads Cell 6, 6 · empty"
+tilemap-tools.caption,① 찍으면 붙을 모양(반투명) · ② 칸 정보,① Shape that would be placed (translucent) · ② Cell info
+tilemap-tools.intro,"타일 도구는 픽셀 도구와 같은 단축키를 씁니다. 모두 칸 단위로 찍고, 끌어 찍기 한 번이 실행취소 한 단계입니다.","The tile tools use the same shortcuts as the pixel tools. They all work cell by cell, and one drag is one undo step."
+tilemap-tools.m1,① 캔버스에는 찍으면 붙을 모양이 반투명하게 미리 보입니다. 자동 타일 붓은 이웃 칸이 바뀌는 모양까지 보입니다. 찍을 층이 잠겨 있으면 그림 대신 주황 점선과 자물쇠가 보입니다.,"① The canvas previews what would be placed, translucent. The auto tile brush also shows how neighboring cells would change. If the target floor is locked, an orange dashed outline and a lock appear instead of the image."
+tilemap-tools.m2,"② 왼쪽 아래에 칸 좌표, 층, 그 칸의 타일 이름(자동 타일이면 세트 이름)이 보입니다. 찍을 층이 잠기거나 숨겨져 있으면 그 경고도 보입니다.","② The bottom left shows the cell coordinates, the floor and the name of the tile in that cell (the set name for auto tiles). If the target floor is locked or hidden, a warning appears there too."
+tilemap-tools.h-list,도구,Tools
+tilemap-tools.t.h1,도구,Tool
+tilemap-tools.t.h2,키,Key
+tilemap-tools.t.h3,하는 일,What it does
+tilemap-tools.t.1,타일 붓,Tile brush
+tilemap-tools.t.1d,타일셋 패널에서 고른 타일을 찍습니다. 여러 칸을 골랐으면 그 모양 그대로 찍습니다.,Places the tiles picked in the Tileset panel. Several picked cells are placed in the same arrangement.
+tilemap-tools.t.2,자동 타일 붓,Auto tile brush
+tilemap-tools.t.2d,"고른 자동 타일 세트로 칠합니다. 이웃을 보고 경계 모양이 저절로 골라집니다(<a href=""#tilemap-autotile"">자동 타일</a>).","Paints with the picked auto tile set; edge shapes follow the neighbors (<a href=""#tilemap-autotile"">Auto tiles</a>)."
+tilemap-tools.t.3,"<span class=""nolink"">타일 지우개</span>","<span class=""nolink"">Tile eraser</span>"
+tilemap-tools.t.3d,칸을 덮은 타일을 지웁니다. 큰 타일은 통째로 지웁니다. 층을 고정하면 그 층만 지웁니다.,"Erases the tile covering a cell; big tiles go as a whole. With a fixed floor, only that floor."
+tilemap-tools.t.4,타일 사각형,Tile rectangle
+tilemap-tools.t.4d,끌어 그린 칸 사각형을 붓이나 자동 타일 세트로 채웁니다. 오른쪽 버튼으로 끌면 지웁니다.,Fills the dragged cell rectangle with the brush or auto tile set. Drag with the right button to erase.
+tilemap-tools.t.5,타일 채우기,Tile fill
+tilemap-tools.t.5d,이어진 같은 모습의 칸을 채웁니다(아래 채우기).,Fills connected cells that look the same (see Fill below).
+tilemap-tools.t.6,"<span class=""nolink"">타일 스포이드</span>",Tile picker
+tilemap-tools.t.6d,맵의 타일을 붓에 집습니다. 자동 타일로 칠한 칸이면 그 세트를 집습니다.,"Picks a tile from the map into the brush, or the auto tile set the cell was painted with."
+tilemap-tools.t.7,칸 선택,Cell select
+tilemap-tools.t.7d,칸 사각형을 고릅니다(아래 칸 선택과 복사).,Selects a rectangle of cells (see Selecting and copying cells below).
+tilemap-tools.h-mouse,마우스와 키,Mouse and keys
+tilemap-tools.mouse.1,오른쪽 버튼으로 찍으면 지웁니다.,Using the right button erases.
+tilemap-tools.mouse.2,"<kbd>Alt</kbd>를 누르는 동안은 <span class=""nolink"">스포이드</span>처럼 맵에서 타일을 집습니다.","Hold <kbd>Alt</kbd> to pick a tile from the map, like the picker."
+tilemap-tools.mouse.3,{{key:도구/기본색 ↔ 보조색}}·{{key:도구/타일 붓 상하 뒤집기}}·{{key:도구/타일 붓 돌리기}}는 붓을 좌우·상하로 뒤집고 시계 방향 90° 돌립니다. 돌리기는 칸이 정사각형인 타일셋만 됩니다.,"{{key:도구/기본색 ↔ 보조색}}, {{key:도구/타일 붓 상하 뒤집기}} and {{key:도구/타일 붓 돌리기}} flip the brush horizontally and vertically and turn it 90° clockwise. Turning needs a tileset with square cells."
+tilemap-tools.h-fill,채우기,Fill
+tilemap-tools.fill,"타일 채우기는 보이는 층을 모두 겹친 모습이 같은 이어진 칸만 채우고, 찍을 층에 붓으로 찍습니다. 그래서 다른 층에 그린 벽의 안쪽만 채울 수 있습니다. 자동 타일로 칠한 곳은 모양이 달라도 한 영역으로 칩니다. 채우는 범위는 캔버스와 맵을 감싼 칸까지입니다.","Tile fill fills only connected cells where all visible floors together look the same, placing the brush on the target floor. That lets you fill just the inside of a wall drawn on another floor. Areas painted with an auto tile set count as one region whatever their shapes. Filling stays within the cells around the canvas and the map."
+tilemap-tools.h-select,칸 선택과 복사,Selecting and copying cells
+tilemap-tools.select,칸 선택으로 칸을 고르고 복사({{key:편집/복사}})하면 그 칸들이 붓이 됩니다. 잘라내기({{key:편집/잘라내기}})·지우기({{key:편집/지우기}})·모두 선택({{key:편집/모두 선택}})도 칸 단위로 됩니다. 붙여넣기({{key:편집/붙여넣기}})는 타일 붓으로 바꿔 복사한 칸을 찍게 합니다. 칸 선택 도구에서 오른쪽 버튼을 누르면 고른 것이 풀립니다.,"Select cells with Cell select and copy them ({{key:편집/복사}}) to turn them into the brush. Cut ({{key:편집/잘라내기}}), Delete ({{key:편집/지우기}}) and Select all ({{key:편집/모두 선택}}) also work on cells. Paste ({{key:편집/붙여넣기}}) switches to the tile brush so you can place the copied cells. With Cell select, the right button deselects."
+tilemap-tools.h-outside,캔버스 밖,Outside the canvas
+tilemap-tools.outside,"캔버스 밖 칸에도 찍을 수 있고 또렷이 보입니다. 캔버스 크기 모드에서 테두리를 끌어 키우거나 옮기는 동안 캔버스 밖 타일이 새로 들어올 자리에 바로 보이고, 적용하면 그대로 들어옵니다. 캔버스 크기를 바꾸면 칸 격자도 그림과 함께 옮겨 갑니다.","You can place tiles in cells outside the canvas, and they stay clearly visible. While you drag the border in canvas size mode, tiles outside the canvas show at once where they will come in, and applying keeps them. Changing the canvas size moves the cell grid along with the image."
+tilemap-panel.1,타일셋 패널,Tileset panel
+tilemap-panel.alt,"타일셋 패널: 샌드박스 지상·동굴 묶음의 머리글과 메뉴 단추, 흙 세트를 고른 자동 타일 칸과 끝의 더하기 칸, 장식·배경 벽 층으로 나뉜 타일 목록, 아래 타일셋 더하기 단추","Tileset panel: the Sandbox surface & caves group header with its menu button, the auto tile cells with Dirt picked and a plus cell at the end, the tile list split into Decor and Background wall, and the Add tileset button below"
+tilemap-panel.caption,① 머리글(이름·타일 수) · ② 메뉴 단추 · ③ 자동 타일 세트 · ④ 새 세트 · ⑤ 타일 목록 · ⑥ 타일셋 더하기,"① Header (name, tile count) · ② Menu button · ③ Auto tile sets · ④ New set · ⑤ Tile list · ⑥ Add tileset"
+tilemap-panel.intro,타일셋 패널은 찍을 것을 고르는 곳입니다. 팔레트 목록처럼 레이어에 연 타일셋마다 묶음이 하나씩 있습니다.,"The Tileset panel is where you pick what to place. Like the palette list, it has one group for each tileset open on the layer."
+tilemap-panel.m1,"① 머리글: 왼쪽 화살표로 묶음을 접고 펼칩니다. 이름 옆 숫자는 타일 수이고, 풍선에 칸 크기와 자동 타일 수가 보입니다. 이름을 두 번 누르면 이름을 바꿉니다. 지금 붓이 이 타일셋 것이면 머리글 아래에 강조선이 생깁니다.","① Header: the arrow on the left folds and unfolds the group. The number next to the name is the tile count; its tooltip adds the cell size and the number of auto tiles. Double-click the name to rename. When the current brush comes from this tileset, a highlight line appears under the header."
+tilemap-panel.m2,② 메뉴 단추: 머리글 메뉴를 엽니다. 머리글을 우클릭해도 됩니다.,② Menu button: opens the header menu. Right-clicking the header does the same.
+tilemap-panel.m3,"③ 자동 타일 세트: 세트마다 대표 그림과 아래 무리 색 띠(같은 색 = 같은 무리)가 있습니다. 누르면 그 세트로 자동 타일 붓을 쓰고, 두 번 누르면 세트를 고치고, 우클릭하면 고치기·지우기 메뉴가 나옵니다. 풍선에 이름·규칙 수·무리·층이 보입니다.","③ Auto tile sets: each set shows a representative image and a join group color strip below it (same color = same group). Click to paint with it using the auto tile brush, double-click to edit the set, right-click for Edit and Delete. The tooltip shows the name, rule count, group and floor."
+tilemap-panel.m4,"④ 마지막 더하기 칸은 새 자동 타일 세트를 만듭니다(<a href=""#tilemap-autotile"">자동 타일</a>).","④ The last plus cell creates a new auto tile set (<a href=""#tilemap-autotile"">Auto tiles</a>)."
+tilemap-panel.m5,"⑤ 타일 목록: 기본 층별로 층 이름 아래에 모여 있습니다. 자동 타일 세트에 쓴 타일은 감추고 다 빈 줄은 접습니다(<a href=""#tilemap-settings"">보기 설정</a>에서 바꿈). 누르거나 끌거나 Shift를 눌러 여러 칸을 고르면 화면 자리 그대로 타일 붓에 듭니다. 두 번 누르면 타일 붓으로 바뀝니다. 패널이 좁으면 옆으로 스크롤하지 않고 칸을 줄입니다.","⑤ Tile list: tiles are grouped under each default floor's name. Tiles used by auto tile sets are hidden and rows left empty are folded (change this in the <a href=""#tilemap-settings"">view settings</a>). Click, drag or Shift-click several cells to put them into the tile brush in the same arrangement. Double-click switches to the tile brush. In a narrow panel the cells shrink instead of scrolling sideways."
+tilemap-panel.m6,"⑥ 타일셋 더하기: 이 레이어에 타일셋을 하나 더 엽니다(<a href=""#tilemap-multi"">여러 타일셋 함께 쓰기</a>).","⑥ Add tileset: opens one more tileset on this layer (<a href=""#tilemap-multi"">Using several tilesets</a>)."
+tilemap-panel.h-marks,목록의 표시,What the list shows
+tilemap-panel.s.h1,표시,Mark
+tilemap-panel.s.h2,뜻,Meaning
+tilemap-panel.s.1,파란 굵은 테두리,Thick blue outline
+tilemap-panel.s.1d,"고른 칸(지금 붓). 자동 타일 붓이나 <span class=""nolink"">지우개</span>를 쓰는 동안은 옅은 점선이 됩니다. 자동 타일 칸에서는 고른 세트를 가리키고, 자동 타일 붓을 쓰지 않을 때는 점선입니다. 마우스를 올린 칸에는 옅은 테두리가 생깁니다.","The picked cells (the current brush). While the auto tile brush or the <span class=""nolink"">eraser</span> is in use it turns into a faint dashed line. In the auto tile cells it marks the picked set, dashed when the auto tile brush isn't in use. The cell under the mouse gets a light outline."
+tilemap-panel.s.2,옅은 파란색 칸,Light blue cells
+tilemap-panel.s.2d,고른 자동 타일 세트에 쓰인 타일,Tiles used by the picked auto tile set
+tilemap-panel.s.3,오른쪽 아래 재생 표시,Play mark at the bottom right
+tilemap-panel.s.3d,움직이는 타일입니다. 목록에서도 돌아갑니다.,An animated tile; it also plays in the list.
+tilemap-panel.s.4,오른쪽 위 노란 점,Yellow dot at the top right
+tilemap-panel.s.4d,1×1보다 큰 차지 칸을 가진 큰 타일,A big tile whose footprint is larger than 1×1
+tilemap-panel.s.5,풍선,Tooltip
+tilemap-panel.s.5d,"이름·Id·기본 층·차지 칸, 움직이는 타일이면 장수와 장당 시간","Name, Id, default floor and footprint, plus frame count and time per frame for animated tiles"
+tilemap-panel.h-menu,머리글 메뉴,Header menu
+tilemap-panel.alt2,"타일셋 묶음의 메뉴 단추를 누른 모습: 설정…, 다른 타일셋으로 바꾸기…, 이름 바꾸기, 흐린 이 레이어에서 닫기","The tileset group's menu button clicked: Settings…, Replace with another tileset…, Rename, and a grayed-out Close on this layer"
+tilemap-panel.caption2,⑦ 머리글 메뉴,⑦ Header menu
+tilemap-panel.menu,⑦ 머리글 메뉴에는 그 타일셋에 하는 일이 모여 있습니다.,⑦ The header menu holds what you can do with that tileset.
+tilemap-panel.hm.h1,항목,Item
+tilemap-panel.hm.h2,하는 일,What it does
+tilemap-panel.hm.1d,"타일셋 설정 창을 엽니다(<a href=""#tilemap-settings"">타일셋 설정 창</a>).","Opens the tileset settings window (<a href=""#tilemap-settings"">Tileset settings</a>)."
+tilemap-panel.hm.2d,타일셋 고르기 창에서 이 자리의 타일셋을 바꿉니다. 맵 칸은 그대로라 같은 Id의 타일로 보입니다.,Replaces this tileset from the tileset chooser. Map cells stay as they are and show the tiles with the same Id.
+tilemap-panel.hm.3d,타일셋 이름을 바꿉니다.,Renames the tileset.
+tilemap-panel.hm.4d,"이 레이어에서 타일셋을 닫습니다. 타일셋이 하나뿐이면 흐려집니다(<a href=""#tilemap-multi"">여러 타일셋 함께 쓰기</a>).","Closes the tileset on this layer; grayed out when it is the only one (<a href=""#tilemap-multi"">Using several tilesets</a>)."
+tilemap-panel.h-tile,타일 우클릭 메뉴,Tile right-click menu
+tilemap-panel.alt3,"타일 목록의 나무 타일을 우클릭한 메뉴: 설정…, 그림 고치기…, 움직이는 타일…, 타일 복제, 흐린 큰 타일로 합치기, 타일 지우기","Right-click menu on the tree tile in the tile list: Settings…, Edit image…, Animated tile…, Duplicate tile, a grayed-out Merge into big tile, and Delete tiles"
+tilemap-panel.caption3,⑧ 타일 우클릭 메뉴,⑧ Tile right-click menu
+tilemap-panel.tile,타일 목록에서 타일을 우클릭하면 ⑧ 메뉴가 나옵니다.,Right-click a tile in the tile list for the ⑧ menu.
+tilemap-panel.tm.1d,타일셋 설정 창의 타일 페이지에서 그 타일을 고른 채로 엽니다.,Opens the Tiles page of the tileset settings with that tile selected.
+tilemap-panel.tm.2d,"타일 그림을 새 탭에서 고칩니다(<a href=""#tilemap-edit-image"">타일 그림 고치기</a>).","Edits the tile image in a new tab (<a href=""#tilemap-edit-image"">Editing tile images</a>)."
+tilemap-panel.tm.3d,"움직이는 타일 창을 엽니다(<a href=""#tilemap-animated"">움직이는 타일</a>).","Opens the animated tile window (<a href=""#tilemap-animated"">Animated tiles</a>)."
+tilemap-panel.tm.4d,고른 타일 하나를 복제합니다.,Duplicates the picked tile.
+tilemap-panel.tm.5d,"고른 여러 칸으로 큰 타일 하나를 만듭니다(<a href=""#tilemap-big-tiles"">큰 타일</a>).","Makes one big tile from the picked cells (<a href=""#tilemap-big-tiles"">Big tiles</a>)."
+tilemap-panel.tm.6d,"고른 타일을 지웁니다. 맵에 쓰인 타일이면 묻고, 맵에서도 지웁니다.","Deletes the picked tiles. If the map uses them, it asks first and removes them from the map too."
+tilemap-pick.1,지금 찍을 것,Current pick
+tilemap-pick.alt,"도구 설정의 타일 묶음: 풀(4)과 덮개 층이 적힌 지금 찍을 것 카드, 그 아래 풀 타일 여섯 장이 든 구성(6)","Tiles group in the tool options: the pick card reading Grass (4) with the Cover floor, and Parts (6) with six grass tiles below it"
+tilemap-pick.caption,① 지금 찍을 것 카드 · ② 구성,① Pick card · ② Parts
+tilemap-pick.intro,도구 설정의 타일 묶음은 지금 무엇을 어느 층에 찍는지 보여 줍니다.,The Tiles group in the tool options shows what you are about to place and on which floor.
+tilemap-pick.m1,"① 지금 찍을 것 카드: 그림과 이름(자동 타일 세트는 ""이름 (규칙 수)""), 아래에 층 아이콘과 들어갈 층 이름이 보입니다. 들어갈 층이 잠기거나 숨겨져 있으면 주황색으로 바뀌고 자물쇠나 감은 눈이 붙습니다.","① Pick card: the image and name (""name (rule count)"" for an auto tile set), with a floor icon and the target floor's name below. If that floor is locked or hidden, it turns orange with a lock or a closed eye."
+tilemap-pick.m2,"② 구성: 자동 타일 세트를 쓰는 동안 그 세트에 든 타일이 보입니다. 하나를 누르면 그 타일 한 장을 세트의 층에 손으로 찍는 붓이 됩니다. 이웃을 보고 바뀌지 않으므로 자동으로 고른 모양을 바꿀 때 씁니다. 지금 붓인 타일에는 테두리가 생기고, 타일셋 패널에서 세트를 다시 누르면 자동 타일 붓으로 돌아갑니다.","② Parts: while you use an auto tile set, its tiles are listed here. Clicking one turns it into a brush that places just that tile on the set's floor by hand. It doesn't change with its neighbors, so use it to replace a shape the set picked. The tile in the brush gets an outline; click the set in the Tileset panel again to go back to the auto tile brush."
+tilemap-pick.alt2,타일 붓으로 소나무 타일을 고른 타일 묶음: 카드 아래 뒤집기·회전 단추 줄과 무작위 찍기 체크 상자,Tiles group with the pine tile picked for the tile brush: the flip/rotate buttons and the Random check box below the card
+tilemap-pick.caption2,③ 뒤집기·회전 · ④ 무작위 찍기,③ Flip/rotate · ④ Random
+tilemap-pick.m3,"③ 뒤집기·회전: 좌우 뒤집기·상하 뒤집기·시계 방향 90° 돌리기(칸이 정사각형인 타일셋만)와 되돌리기 단추입니다. 키로도 바꿉니다(<a href=""#tilemap-tools"">타일 도구</a>).","③ Flip/rotate: flip horizontally, flip vertically, turn 90° clockwise (square cells only) and a reset button. Keys do the same (<a href=""#tilemap-tools"">Tile tools</a>)."
+tilemap-pick.m4,④ 무작위 찍기: 붓에 타일이 여럿이면 칸마다 그중 하나를 무작위로 찍습니다.,"④ Random: when the brush holds several tiles, each cell gets one of them at random."
+tilemap-pick.stamping,뒤집기·회전과 무작위 찍기는 타일 붓·타일 사각형·타일 채우기를 쓸 때만 보입니다.,"Flip/rotate and Random only show with the tile brush, tile rectangle and tile fill."
+tilemap-floors.1,층,Floors
+tilemap-floors.alt,"도구 설정의 층 묶음: 자동이 꺼지고 Ground 줄이 파란 바탕·굵은 이름으로 골라져 있고, 잠긴 Background wall 줄은 자물쇠와 이름이 노랑, 줄마다 눈·자물쇠·칸 수·위아래 단추, 아래 층 더하기","Floors group in the tool options: Auto is off and the Ground row is picked with a blue background and bold name, the locked Background wall row has a yellow lock and name, each row has an eye, lock, cell count and up/down buttons, and Add floor is below"
+tilemap-floors.caption,① 자동 · ② 고른 층(왼쪽 막대 = 지금 찍을 층) · ③ 보이기 · ④ 잠금 · ⑤ 찍은 칸 수 · ⑥ 위로·아래로 · ⑦ 층 더하기,① Auto · ② Picked floor (left bar = floor being placed on) · ③ Visibility · ④ Lock · ⑤ Placed cells · ⑥ Up/down · ⑦ Add floor
+tilemap-floors.intro,"<strong>타일 층</strong>은 타일맵 레이어 안의 순서 있는 칸 묶음입니다. 같은 층에 찍으면 덮어 그리고, 다른 층에 찍으면 겹쳐 그립니다. 목록에서 위에 있는 층일수록 위에 그려집니다. 층은 타일셋에 정해져 있습니다(기본 타일셋은 배경 벽·바닥·덮개·장식·앞, 새 빈 타일셋은 바닥·장식·위).","<strong>Tile floors</strong> are ordered sets of cells inside a tilemap layer. Placing on the same floor overwrites; placing on another floor stacks. Floors higher in the list draw on top. Floors belong to the tileset (the built-in tileset has Background wall, Ground, Cover, Decor and Front; a new empty tileset has Ground, Decor and Top)."
+tilemap-floors.m1,"① 자동(기본): 타일마다 정한 기본 층에, 자동 타일은 세트의 층에 찍습니다.","① Auto (default): each tile goes to its default floor, and auto tiles to their set's floor."
+tilemap-floors.m2,"② 층 줄을 누르면 자동이 꺼지고 그 층에만 찍습니다. 자동 타일·<span class=""nolink"">지우개</span>·채우기도 그 층만 다룹니다. 이렇게 고른 줄은 파란 바탕과 굵은 이름입니다. 왼쪽 막대는 지금 찍을 층이고, 잠긴 층이면 주황입니다.","② Clicking a floor row turns Auto off and places only on that floor. Auto tiles, the <span class=""nolink"">eraser</span> and fill then work on that floor too. The picked row has a blue background and a bold name. The bar on the left marks the floor being placed on, orange if it is locked."
+tilemap-floors.m3,③ 눈: 숨긴 층은 캔버스뿐 아니라 합성·미리보기·내보내기에서도 빠집니다.,"③ Eye: a hidden floor is left out of the canvas, the composite, the preview and exports."
+tilemap-floors.m4,④ 자물쇠: 잠긴 층은 타일 도구가 고치지 않습니다. 자물쇠와 이름이 노랗게 보입니다.,④ Lock: tile tools leave a locked floor alone. Its lock and name turn yellow.
+tilemap-floors.m5,⑤ 그 층에 찍은 칸 수입니다.,⑤ The number of cells placed on that floor.
+tilemap-floors.m6,⑥ 층 차례를 위아래로 바꿉니다.,⑥ Moves the floor up or down.
+tilemap-floors.m7,⑦ 층을 하나 더합니다.,⑦ Adds a floor.
+tilemap-floors.edit,"줄을 두 번 누르면 이름을 바꾸고, 우클릭하면 이름 바꾸기·지우기 메뉴가 나옵니다. 층을 지우면 그 층에 찍은 타일도 지워지므로 먼저 묻습니다. 모두 실행취소됩니다. 층을 고치는 것은 레이어의 첫 타일셋에 쓰입니다.","Double-click a row to rename it; right-click for Rename and Delete. Deleting a floor also removes the tiles placed on it, so it asks first. Everything can be undone. Floor edits are stored in the layer's first tileset."
+tilemap-floors.h-view,층 보기,Floor view
+tilemap-floors.alt2,"같은 맵을 세 가지 층 보기로 나란히 놓은 그림: 모든 층은 그대로, 고른 층 강조는 바닥 층만 또렷하고 나머지는 반투명, 고른 층만은 바닥 층만 보임","The same map side by side in three floor views: All floors as is, Focus floor with only the Ground floor clear and the rest translucent, and Floor only showing only the Ground floor"
+tilemap-floors.caption2,왼쪽: 모든 층 · 가운데: 고른 층 강조 · 오른쪽: 고른 층만 (찍을 층 = 바닥),Left: All floors · Middle: Focus floor · Right: Floor only (target floor = Ground)
+tilemap-floors.view,"위 막대의 층 보기 단추는 캔버스에서만 층을 가려 봅니다. <strong>고른 층 강조</strong>는 지금 찍을 층(고정한 층, 자동이면 고른 것의 층)만 또렷이, 나머지 층은 반투명하게 보입니다. <strong>고른 층만</strong>은 나머지 층을 감춥니다. 미리보기와 내보내기는 그대로입니다.","The floor view buttons in the top bar change only how the canvas looks. <strong>Focus floor</strong> shows the floor you are placing on (the fixed floor, or the picked item's floor in Auto) clearly and the other floors translucent. <strong>Floor only</strong> hides the other floors. The preview and exports are unchanged."
+tilemap-choose.1,타일셋 고르기와 관리,Choosing and managing tilesets
+tilemap-choose.alt,"타일셋 더하기 창: Dungeon props 줄, 열려 있음이 붙은 흐린 샌드박스 지상·동굴 줄, 칸 크기가 달라 주황 글이 붙은 UI icons 줄, 기본 타일셋 줄, 아래 타일셋 관리… 단추","Add tileset window: the Dungeon props row, a grayed-out Sandbox surface & caves row marked Open, the UI icons row with an orange note about its cell size, the built-in tileset row, and the Manage tilesets… button"
+tilemap-choose.caption,① 열려 있음 · ② 칸 크기가 다른 타일셋 · ③ 기본 타일셋 · ④ 타일셋 관리…,① Open · ② Tileset with a different cell size · ③ Built-in tileset · ④ Manage tilesets…
+tilemap-choose.intro,"타일셋 고르기 창은 타일셋 패널의 <strong>타일셋 더하기</strong>와 <strong>다른 타일셋으로 바꾸기…</strong>에서 열립니다. 프로젝트에 담긴 타일셋과 기본 타일셋이 한 목록에 있고, 줄마다 앞 타일 그림, 이름, 칸 크기·타일 수·자동 타일 수가 보입니다. 줄을 누르면 바로 그 타일셋이 됩니다. 닫기나 <kbd>Esc</kbd>는 아무것도 바꾸지 않습니다.","The tileset chooser opens from <strong>Add tileset</strong> and <strong>Replace with another tileset…</strong> in the Tileset panel. It lists the tilesets stored in the project together with the built-in tileset; each row shows the first few tiles, the name, and the cell size, tile count and auto tile count. Clicking a row uses that tileset at once. Close or <kbd>Esc</kbd> changes nothing."
+tilemap-choose.m1,"① 지금 레이어에 열려 있는 타일셋은 파란 테두리와 ""열려 있음""이 붙고 누를 수 없습니다.","① A tileset already open on the current layer has a blue outline and ""Open"", and can't be clicked."
+tilemap-choose.m2,"② 다른 타일셋과 함께 쓰는 자리에서는 칸 크기가 다른 타일셋을 누를 수 없고, 까닭이 주황 글로 보입니다.","② Where the tileset has to work with others, a tileset with a different cell size can't be clicked, and an orange note says why."
+tilemap-choose.m3,"③ 기본 타일셋 줄은 누를 때마다 기본 타일셋의 새 사본을 프로젝트에 담습니다(<a href=""#tilemap-builtin"">기본 타일셋</a>).","③ The built-in tileset row adds a new copy of the built-in tileset to the project each time (<a href=""#tilemap-builtin"">Built-in tileset</a>)."
+tilemap-choose.m4,④ 타일셋 관리 창을 엽니다. 닫으면 목록이 새로 됩니다.,④ Opens the tileset manager; the list refreshes when you close it.
+tilemap-choose.h-manage,타일셋 관리 창,Tileset manager
+tilemap-choose.alt2,"타일셋 관리 창: 프로젝트의 타일셋 세 줄(이름 칸, 칸 크기·타일 수·쓰는 곳, 저장·휴지통 단추), 아래 새 빈 타일셋의 이름·칸 크기·만들기와 타일셋 파일 가져오기… 단추","Tileset manager: three project tileset rows (name field, cell size, tile count and usage, save and trash buttons), then the new empty tileset's name, cell size and Create, and the Import tileset file… button"
+tilemap-choose.caption2,⑤ 이름 · ⑥ 칸 크기·타일 수·쓰는 곳 · ⑦ 타일셋 파일로 저장 · ⑧ 프로젝트에서 지우기 · ⑨ 새 빈 타일셋 · ⑩ 타일셋 파일 가져오기…,"⑤ Name · ⑥ Cell size, tile count and usage · ⑦ Save tileset file · ⑧ Delete from project · ⑨ New empty tileset · ⑩ Import tileset file…"
+tilemap-choose.manage,"타일셋 관리 창은 프로젝트가 담은 타일셋을 모두 보이고, 만들고 지웁니다. 하는 일마다 실행취소 한 단계입니다.",The tileset manager lists every tileset stored in the project and lets you create and delete them. Each action is one undo step.
+tilemap-choose.m5,⑤ 이름을 고치면 바로 바뀝니다.,⑤ Editing the name renames the tileset right away.
+tilemap-choose.m6,⑥ 칸 크기·타일 수·자동 타일 수와 쓰는 곳(열려 있음 · 다른 레이어에서 씀 · 쓰지 않음)이 보입니다.,"⑥ Shows the cell size, tile count, auto tile count and usage (Open · used by another layer · not used)."
+tilemap-choose.m7,"⑦ 타일셋 파일(.chickxel-tileset)로 저장합니다(<a href=""#tilemap-files"">저장과 타일셋 파일</a>).","⑦ Saves a tileset file (.chickxel-tileset) (<a href=""#tilemap-files"">Saving and tileset files</a>)."
+tilemap-choose.m8,⑧ 어느 타일맵 레이어도 쓰지 않는 타일셋만 프로젝트에서 지울 수 있습니다.,⑧ Only a tileset no tilemap layer uses can be deleted from the project.
+tilemap-choose.m9,⑨ 이름과 칸 크기를 정하고 <strong>만들기</strong>를 누르면 빈 타일셋이 생깁니다. 층은 바닥·장식·위로 시작합니다.,"⑨ Set a name and cell size and press <strong>Create</strong> for an empty tileset. It starts with the floors Ground, Decor and Top."
+tilemap-choose.m10,⑩ 다른 프로젝트에서 저장한 타일셋 파일을 이 프로젝트로 가져옵니다.,⑩ Imports a tileset file saved from another project into this one.
+tilemap-multi.1,여러 타일셋 함께 쓰기,Using several tilesets
+tilemap-multi.alt,"타일셋 두 개를 연 타일셋 패널: 접은 샌드박스 지상·동굴 묶음, 펼친 Dungeon props 묶음(자동 타일 더하기 칸과 보라색 소품 타일), 아래 타일셋 더하기","Tileset panel with two tilesets open: the folded Sandbox surface & caves group, the unfolded Dungeon props group (an auto tile plus cell and purple prop tiles), and Add tileset below"
+tilemap-multi.caption,① 첫 타일셋 묶음(접음) · ② 둘째 타일셋 묶음 · ③ 타일셋 더하기,① First tileset group (folded) · ② Second tileset group · ③ Add tileset
+tilemap-multi.intro,"팔레트처럼 한 타일맵 레이어에 타일셋을 여러 개 열 수 있습니다. 어느 묶음의 타일·자동 타일이든 같은 레이어에 찍고, 맵 칸은 어느 타일셋의 타일인지 기억합니다.","Like palettes, one tilemap layer can have several tilesets open. Tiles and auto tiles from any group go onto the same layer, and each map cell remembers which tileset its tile came from."
+tilemap-multi.m1,① 첫 타일셋: 레이어의 층은 이 타일셋 것을 씁니다.,① First tileset: the layer uses this tileset's floors.
+tilemap-multi.m2,② 둘째부터의 타일셋도 묶음이 하나씩 생깁니다. 묶음마다 머리글 메뉴가 따로 있습니다.,② Each additional tileset gets its own group with its own header menu.
+tilemap-multi.m3,③ <strong>타일셋 더하기</strong>로 타일셋 고르기 창에서 더 엽니다. 칸 크기가 첫 타일셋과 같은 타일셋만 더할 수 있습니다.,③ <strong>Add tileset</strong> opens more from the tileset chooser. Only tilesets with the same cell size as the first one can be added.
+tilemap-multi.alt2,맵의 동굴 부분: 첫 타일셋의 사다리·횃불·수정 옆에 둘째 타일셋의 보라 상자와 보라 항아리가 놓인 모습,"The cave part of the map: a purple crate and a purple pot from the second tileset next to the ladder, torch and crystal from the first tileset"
+tilemap-multi.caption2,④ ⑤ 둘째 타일셋으로 찍은 타일,④ ⑤ Tiles placed from the second tileset
+tilemap-multi.map,"④ 보라 상자와 ⑤ 보라 항아리는 둘째 타일셋의 타일인데, 첫 타일셋의 사다리·횃불과 같은 레이어·같은 장식 층에 들어 있습니다.","The ④ purple crate and ⑤ purple pot come from the second tileset, yet they sit on the same layer and Decor floor as the first tileset's ladder and torch."
+tilemap-multi.h-floors,층과 무리,Floors and groups
+tilemap-multi.floors,"층은 레이어의 첫 타일셋 것입니다. 둘째부터의 타일·세트는 첫 타일셋에서 이름이 같은 층에, 없으면 같은 차례의 층에 들어갑니다. 무리 이름이 같은 자동 타일 세트는 타일셋이 달라도 이어집니다.","Floors belong to the layer's first tileset. Tiles and sets from the others go to the first tileset's floor with the same name, or else to the floor in the same position. Auto tile sets with the same join group name connect even across tilesets."
+tilemap-multi.h-close,레이어에서 닫기,Closing a tileset on the layer
+tilemap-multi.close,"묶음 메뉴의 <strong>이 레이어에서 닫기</strong>로 닫습니다. 그 타일셋으로 찍은 칸도 맵에서 빠지므로, 그런 칸이 있으면 먼저 묻습니다(실행취소 한 단계). 타일셋이 하나뿐이면 닫을 수 없습니다. 닫은 타일셋은 프로젝트에 남아(저장해도 남음) 타일셋 더하기로 다시 열 수 있고, 아주 지우려면 타일셋 관리 창에서 지웁니다.","Close one with <strong>Close on this layer</strong> in its group menu. Cells placed with that tileset are removed from the map too, so it asks first if there are any (one undo step). The only tileset can't be closed. A closed tileset stays in the project (also after saving), so Add tileset can open it again; delete it for good in the tileset manager."
+tilemap-settings.1,타일셋 설정 창,Tileset settings
+tilemap-settings.alt,"타일셋 설정 창의 타일 페이지: 위 페이지 탭, 왼쪽 층별 타일 목록에서 고른 나무 상자, 오른쪽 이름·차지 칸·그림 위치·그림 아래 맞춤·기본 층과 그림 고치기…·움직이는 타일…·타일 복제·타일 지우기 단추","Tiles page of the tileset settings: page tabs at the top, the tile list by floor on the left with the wooden crate picked, and on the right the name, footprint, image offset, Align image bottom, default floor and the Edit image…, Animated tile…, Duplicate tile and Delete tiles buttons"
+tilemap-settings.caption,① 페이지 · ② 타일 목록 · ③ 고른 타일 설정 · ④ 그림 고치기·움직이는 타일·복제·지우기,"① Pages · ② Tile list · ③ Settings of the picked tile · ④ Edit image, animated tile, duplicate, delete"
+tilemap-settings.intro,"타일셋 패널 묶음 메뉴의 <strong>설정…</strong>이나 타일 우클릭 <strong>설정…</strong>으로 엽니다. 그 묶음의 타일셋 하나만 고칩니다. 확인 단추 없이 고치는 대로 바로 쓰이고, 하나하나가 실행취소 한 단계입니다.",Open it with <strong>Settings…</strong> in a tileset group's menu or in a tile's right-click menu. It edits only that group's tileset. There is no OK button: every change applies right away and is one undo step.
+tilemap-settings.m1,① 페이지: 타일 · 층 · 자동 타일·무리 · 타일셋 · 보기.,① Pages: Tiles · Floors · Auto tiles & groups · Tileset · View.
+tilemap-settings.m2,② 타일 페이지의 목록은 모든 타일을 층별로 보입니다. 여러 개를 고르면 기본 층을 함께 바꾸거나 함께 지웁니다.,② The Tiles page lists every tile by floor. Pick several to change their default floor or delete them together.
+tilemap-settings.m3,"③ 고른 타일의 이름·차지 칸·그림 위치·그림 아래 맞춤(<a href=""#tilemap-big-tiles"">큰 타일</a>)과 기본 층(층이 자동일 때 들어갈 층)을 고칩니다.","③ Edit the picked tile's name, footprint, image offset, Align image bottom (<a href=""#tilemap-big-tiles"">Big tiles</a>) and default floor (where it goes when floors are on Auto)."
+tilemap-settings.m4,"④ <strong>그림 고치기…</strong>(<a href=""#tilemap-edit-image"">타일 그림 고치기</a>)·<strong>움직이는 타일…</strong>(<a href=""#tilemap-animated"">움직이는 타일</a>)·타일 복제·타일 지우기.","④ <strong>Edit image…</strong> (<a href=""#tilemap-edit-image"">Editing tile images</a>), <strong>Animated tile…</strong> (<a href=""#tilemap-animated"">Animated tiles</a>), Duplicate tile and Delete tiles."
+tilemap-settings.floors,"층 페이지는 도구 설정의 층 목록과 같습니다(보이기·잠금·차례·이름 바꾸기·지우기·더하기). 층은 레이어의 첫 타일셋에만 있으므로, 둘째부터의 타일셋에서는 층을 맞추는 법이 안내됩니다.","The Floors page matches the floor list in the tool options (visibility, lock, order, rename, delete, add). Floors exist only in the layer's first tileset, so for the other tilesets it explains how their floors are matched."
+tilemap-settings.h-auto,자동 타일·무리 페이지,Auto tiles & groups page
+tilemap-settings.alt2,"자동 타일·무리 페이지를 아래로 내린 모습: 세트마다 그림·이름·층·이어지는 무리·규칙 47개… 단추·휴지통 줄, 새 자동 타일 세트 단추, 무리 목록(배경 벽·흙·돌과 든 세트)","The Auto tiles & groups page scrolled down: per-set rows with image, name, floor, join group, a 47 rules… button and a trash button, the New auto tile set button, and the group list (Background wall, Dirt, Stone with their sets)"
+tilemap-settings.caption2,⑤ 세트 줄 · ⑥ 무리,⑤ Set row · ⑥ Groups
+tilemap-settings.m5,"⑤ 자동 타일 세트마다 이름·층·이어지는 무리를 바로 고치고, <strong>규칙 N개…</strong>로 세트 편집 창을 엽니다(<a href=""#tilemap-autotile"">자동 타일</a>). 휴지통은 세트를 지웁니다(찍은 타일은 남음). 목록 아래 <strong>자동 타일 세트 만들기</strong>로 새 세트를 만듭니다.","⑤ Edit each auto tile set's name, floor and join group right here, and open the set editor with <strong>N rules…</strong> (<a href=""#tilemap-autotile"">Auto tiles</a>). The trash button deletes the set (placed tiles stay). <strong>New auto tile set</strong> below the list makes a new one."
+tilemap-settings.m6,"⑥ 무리마다 색 점, 이름, 든 세트가 보입니다. 여기서 무리 이름을 바꾸면 그 무리의 세트가 모두 바뀝니다.","⑥ Each group shows its color dot, name and member sets. Renaming a group here renames it in every set of that group."
+tilemap-settings.h-tileset,타일셋 페이지,Tileset page
+tilemap-settings.alt3,"타일셋 페이지: 이름, 흐린 칸 크기와 타일이 있어 바꿀 수 없다는 안내, 파일로 저장하지 않음이라 적힌 파일 줄, 타일셋 파일로 저장…·흐린 다시 읽기 단추, PNG에서 가져오기…·지금 프레임에서 가져오기… 단추","Tileset page: name, a grayed-out cell size with a note that it can't change once there are tiles, a File line reading not saved to a file, Save tileset file… and a grayed-out reload button, and the Import from PNG… and Import from current frame… buttons"
+tilemap-settings.caption3,⑦ 파일 · ⑧ 저장·다시 읽기 · ⑨ 가져오기,⑦ File · ⑧ Save and reload · ⑨ Import
+tilemap-settings.tileset,타일셋 페이지에서는 이름과 칸 크기를 바꿉니다. 칸 크기는 타일이 없을 때만 바꿀 수 있습니다.,The Tileset page changes the name and cell size. The cell size can only change while the tileset has no tiles.
+tilemap-settings.m7,⑦ 타일셋 파일 경로입니다. 파일로 저장하지 않았으면 프로젝트에만 있다고 보입니다.,"⑦ The tileset file path, or a note that the tileset lives only in the project."
+tilemap-settings.m8,"⑧ <strong>타일셋 파일로 저장…</strong>과 <strong>타일셋 파일에서 다시 읽기</strong>입니다(<a href=""#tilemap-files"">저장과 타일셋 파일</a>).","⑧ <strong>Save tileset file…</strong> and <strong>Reload from tileset file</strong> (<a href=""#tilemap-files"">Saving and tileset files</a>)."
+tilemap-settings.m9,"⑨ PNG 시트나 지금 문서의 지금 프레임을 칸 크기로 잘라 1칸 타일로 더합니다. 가져오기 창에서 시작 여백·칸 사이 간격·넣을 층과, 투명한 칸·이미 있는 타일과 같은 칸을 뺄지 정합니다.","⑨ Cuts a PNG sheet or the current frame of the open document into cells of the cell size and adds them as 1-cell tiles. The import window sets the start offset, the gap between cells, the target floor, and whether to skip transparent cells and cells identical to existing tiles."
+tilemap-settings.h-view,보기 페이지,View page
+tilemap-settings.alt4,"보기 페이지: 타일 목록을 층별로 나누기, 자동 타일 세트에 쓴 타일은 목록에서 감추기, 자동 타일 세트를 고르면 구성 보기 체크 상자와 칸 크기·자동","View page: check boxes for splitting the tile list by floor, hiding tiles used by auto tile sets, and showing parts when an auto tile set is picked, plus cell size and Auto"
+tilemap-settings.caption4,⑩ 타일 목록 보기 설정,⑩ Tile list view settings
+tilemap-settings.view,"⑩ 타일셋 패널의 타일 목록을 층별로 나눌지, 자동 타일 세트에 쓴 타일을 감출지, 세트를 고르면 구성을 보일지(모두 기본 켬)와 칸 크기(자동 또는 16~64px)를 정합니다. 앱 설정에 저장되어 모든 프로젝트에 쓰입니다.","⑩ Choose whether the Tileset panel's tile list is split by floor, hides tiles used by auto tile sets, and shows parts when a set is picked (all on by default), and the cell size (Auto or 16–64 px). These are app settings and apply to every project."
+tilemap-big-tiles.1,큰 타일,Big tiles
+tilemap-big-tiles.alt,"타일셋 설정 창에서 나무 타일(그림 32×44px)을 고른 모습: 차지 칸 1×1, 그림 위치 -8, -28, 그림 아래 맞춤 단추","Tileset settings with the tree tile (32×44 px image) picked: footprint 1×1, image offset -8, -28, and the Align image bottom button"
+tilemap-big-tiles.caption,① 차지 칸 · ② 그림 위치 · ③ 그림 아래 맞춤,① Footprint · ② Image offset · ③ Align image bottom
+tilemap-big-tiles.intro,"타일마다 맵에서 차지하는 칸 수인 <strong>차지 칸</strong>이 있습니다. 1×1보다 큰 <strong>큰 타일</strong>은 같은 층에서 그 칸들과 겹치는 타일을 통째로 지우고 놓입니다. 그림은 차지 칸보다 클 수 있어서, 나무처럼 위로 솟거나 옆으로 넓은 타일을 만들 수 있습니다.","Each tile has a <strong>footprint</strong>: the number of cells it covers on the map. A <strong>big tile</strong> larger than 1×1 replaces every tile it overlaps on the same floor. The image may be larger than the footprint, so tiles can rise above it or spread sideways, like trees."
+tilemap-big-tiles.m1,"① 차지 칸(가로×세로 칸 수)입니다. 그림의 나무는 1칸을 차지하고, 그림은 32×44px입니다.",① Footprint (width × height in cells). The tree in the picture covers 1 cell while its image is 32×44 px.
+tilemap-big-tiles.m2,② 그림 위치: 차지 칸 왼쪽 위에서 그림 왼쪽 위까지의 거리(px)입니다.,② Image offset: the distance in px from the footprint's top-left corner to the image's top-left corner.
+tilemap-big-tiles.m3,③ 그림 아래 맞춤: 그림 아래를 차지 칸 아래에 맞춰 그림이 위로 솟게 합니다.,③ Align image bottom: lines the image bottom up with the footprint bottom so the image rises above it.
+tilemap-big-tiles.h-merge,여러 칸을 큰 타일로 합치기,Merging cells into a big tile
+tilemap-big-tiles.alt2,타일 목록에서 상자와 통 두 칸을 끌어 고르고 우클릭한 메뉴의 큰 타일로 합치기 항목,"Two cells, the crate and the barrel, dragged in the tile list and right-clicked, with Merge into big tile in the menu"
+tilemap-big-tiles.caption2,④ 큰 타일로 합치기,④ Merge into big tile
+tilemap-big-tiles.merge,"타일 목록에서 여러 칸을 끌어 고르고 우클릭 ④ <strong>큰 타일로 합치기</strong>를 누르면, 고른 칸들을 붙인 큰 타일이 새로 생깁니다(차지 칸 = 고른 칸 크기, 원래 타일은 그대로). 층별로 나누기나 감추기 때문에 화면 칸이 목록 자리와 다르면 흐려집니다. 합친 뒤 차지 칸을 줄이면 그림이 위로 솟습니다.","Drag over several cells in the tile list, right-click and choose ④ <strong>Merge into big tile</strong> to create a new big tile from them (footprint = the picked size; the original tiles stay). It is grayed out when splitting by floor or hiding tiles makes the shown cells differ from their places in the list. Shrink the footprint afterwards to let the image rise above it."
+tilemap-edit-image.1,타일 그림 고치기,Editing tile images
+tilemap-edit-image.alt,"나무 타일 그림을 연 새 탭: 탭 아래 강조색 막대(타일에 저장 단추), 16×16 캔버스에 나무 줄기가 있고 잎은 캔버스 위와 옆의 캔버스 밖에 보임","A new tab with the tree tile image: an accent bar under the tab with the Save to tile button, a 16×16 canvas holding the trunk, and the leaves showing outside the canvas above and to the sides"
+tilemap-edit-image.caption,① 타일 그림 탭 · ② 캔버스 = 차지 칸 · ③ 차지 칸 밖으로 솟은 그림 · ④ 타일에 저장,① Tile image tab · ② Canvas = footprint · ③ Image rising outside the footprint · ④ Save to tile
+tilemap-edit-image.intro,타일 그림은 픽셀 도구로 고칩니다. 타일 우클릭이나 타일셋 설정 창의 <strong>그림 고치기…</strong>를 누르면 타일 그림이 저장하지 않는 문서로 새 문서 탭에 열립니다.,Tile images are repainted with the pixel tools. <strong>Edit image…</strong> in a tile's right-click menu or the tileset settings opens the image in a new document tab as a document that isn't saved to disk.
+tilemap-edit-image.m1,"① 탭 이름은 ""타일 그림: 타일 이름""입니다.","① The tab is named ""Tile image: tile name""."
+tilemap-edit-image.m2,② 캔버스는 타일의 차지 칸(기준 자리)입니다.,② The canvas is the tile's footprint (its anchor).
+tilemap-edit-image.m3,"③ 차지 칸 밖으로 솟은 부분은 캔버스 밖 그림으로 보입니다. 캔버스 밖 위·옆·아래에 더 그려도 그림에 들어갑니다(횃불 불빛, 넓은 나무).","③ Parts that rise beyond the footprint show as pixels outside the canvas. Anything you add above, beside or below the canvas becomes part of the image too (a torch's glow, a wide tree)."
+tilemap-edit-image.m4,④ 탭 아래 막대의 <strong>타일에 저장</strong>({{key:파일/저장(+ 시트 내보내기)}})을 눌러야 타일이 바뀝니다.,④ The tile changes only when you press <strong>Save to tile</strong> in the bar under the tab ({{key:파일/저장(+ 시트 내보내기)}}).
+tilemap-edit-image.h-save,타일에 저장되는 것,What Save to tile writes
+tilemap-edit-image.save.1,"프레임마다 보이는 레이어를 캔버스 밖까지 합치고, 모든 프레임의 그림을 감싼 크기로 잘라 씁니다. 그림 위치는 캔버스 왼쪽 위 기준으로 맞춰지고, 레이어 효과는 빠집니다(레이어 불투명도는 들어감). 타일셋을 가진 문서에서 실행취소 한 단계입니다.","It merges each frame's visible layers, including what is outside the canvas, and saves the box around all frames' images. The image offset is set relative to the canvas's top-left corner; layer effects are left out (layer opacity is kept). It is one undo step in the document that owns the tileset."
+tilemap-edit-image.save.2,"움직이는 타일은 그림마다 프레임 하나로 열리고, 프레임 길이가 장당 시간입니다. 프레임이 여럿이면 저장할 때 움직이는 타일이 됩니다(최대 64장).","An animated tile opens with one frame per image, and the frame duration is its time per frame. Saving several frames makes an animated tile (up to 64)."
+tilemap-edit-image.save.3,저장하지 않고 고친 채 탭을 닫으면 타일에 저장할지 묻습니다.,Closing the tab with unsaved changes asks whether to save them to the tile.
+tilemap-autotile.1,자동 타일,Auto tiles
+tilemap-autotile.alt,"물 세트의 자동 타일 세트 고치기 창: 위 이름·층·이어지는 무리와 뭐라도 있음 층 체크 상자(바닥·앞), 왼쪽 타일 목록, 가운데 규칙 카드 목록(규칙 2가 주황 테두리)과 틀, 오른쪽 물을 칠한 미리보기 판에서 회색 칸 아래 칸에 마우스를 올려 Cell (7, 2): rule 2","Edit auto tile set window for Water: name, floor, join group and the Something on floors check boxes (Ground, Front) at the top, the tile list on the left, rule cards in the middle (rule 2 outlined in orange) and the template row, and on the right the preview board painted with water, the mouse over a cell under a gray block showing Cell (7, 2): rule 2"
+tilemap-autotile.caption,① 이름·층·이어지는 무리 · ② 뭐라도 있음 층 · ③ 타일 목록 · ④ 규칙 목록 · ⑤ 틀·고른 타일을 차례대로 채우기 · ⑥ 미리보기 판,"① Name, floor, join group · ② Something on floors · ③ Tile list · ④ Rule list · ⑤ Template and Fill picked tiles in order · ⑥ Preview board"
+tilemap-autotile.intro,<strong>자동 타일 세트</strong>로 칠하면 칸마다 둘레 8칸을 보고 경계 모양의 타일을 고릅니다(Unity Rule Tile과 같은 방식). 세트는 <strong>자동 타일 규칙</strong> 목록입니다. 타일셋 패널의 자동 타일 칸을 두 번 누르거나 마지막 더하기 칸을 누르면 이 창이 열립니다.,"Painting with an <strong>auto tile set</strong> looks at the 8 cells around each cell and picks a tile with the matching edge shape (the same idea as Unity's Rule Tile). A set is a list of <strong>auto tile rules</strong>. Double-click an auto tile cell in the Tileset panel, or click the last plus cell, to open this window."
+tilemap-autotile.m1,"① 이름, 세트가 찍힐 층, 이어지는 무리입니다. 아래 줄에 함께 이어지는 세트가 보입니다.","① The name, the floor the set is placed on, and its join group. The line below lists the sets it joins with."
+tilemap-autotile.m2,"② 뭐라도 있음 층: ""뭐라도 있음"" 조건이 볼 층입니다. 모두 켜면 모든 층을 봅니다.","② Something on floors: the floors the ""something there"" condition looks at. All on means every floor."
+tilemap-autotile.m3,③ 타일 목록: 규칙에 넣을 타일을 누르거나 끌어 고릅니다. 아래 <strong>고른 타일을 규칙 N에</strong> 단추나 목록에서 두 번 누르기로 선택한 규칙(파란 테두리)에 넣습니다.,"③ Tile list: click or drag to pick tiles for a rule. The <strong>Put picked tiles in rule N</strong> button below, or a double-click in the list, puts them into the selected rule (blue outline)."
+tilemap-autotile.m4,④ 규칙 목록: 위에서부터 맞춰 봅니다. 미리보기 판에서 마우스를 올린 칸에 쓰인 규칙은 주황 테두리로 보입니다. 위의 <strong>규칙 더하기</strong>로 규칙을 더합니다.,④ Rule list: rules are tried from the top. The rule used by the cell under the mouse on the preview board gets an orange outline. <strong>Add rule</strong> above adds one.
+tilemap-autotile.m5,"⑤ 틀로 규칙을 한 번에 만듭니다: 가로 줄(4) · 세로 줄(4) · 4방향(16) · 3×3(13) · 8방향(47). 틀 차례대로 그린 시트는 목록에서 고른 뒤 <strong>고른 타일을 차례대로 채우기</strong>로 한 번에 넣습니다. 새 세트는 8방향 47규칙 틀로, 뒤집기·회전을 끈 채 시작합니다.","⑤ Make a whole rule list from a template: Row (4) · Column (4) · 4-way (16) · 3×3 (13) · 8-way (47). For a sheet drawn in template order, pick its tiles and use <strong>Fill picked tiles in order</strong>. A new set starts from the 8-way 47-rule template with flips and rotation off."
+tilemap-autotile.m6,"⑥ 미리보기 판(12×9칸)에 지금 고치는 세트로 칠해 봅니다. 왼쪽 버튼 = 칠하기, 오른쪽 버튼 = 지우기, Shift+왼쪽 버튼(또는 <strong>뭐라도</strong> 단추를 켠 왼쪽 버튼) = 회색 ""뭐라도 있음"" 칸입니다. 칸에 마우스를 올리면 아래에 쓰인 규칙 번호가 보이고, 움직이는 타일도 움직입니다. 처음 판에는 넓은 땅·안쪽 구멍·가는 줄·외딴 칸·T자와 세트에 닿은 회색 칸이 있고, 판 비우기·처음 모양으로 단추가 있습니다. 판은 저장되지 않습니다.","⑥ Try the set on the preview board (12×9 cells). Left button = paint, right button = erase, Shift+left button (or the left button with <strong>Something</strong> on) = a gray ""something there"" cell. Hovering a cell shows the rule it uses below the board, and animated tiles move here too. The starting board has a wide area, an inner hole, thin lines, a lone cell, a T shape and gray cells touching the set; the Clear board and Reset board buttons are above it. The board isn't saved."
+tilemap-autotile.ok,창이 화면보다 넓어지면 타일·규칙·미리보기 열이 옆으로 스크롤하지 않고 아래로 내려갑니다. <strong>확인</strong>을 눌러야 세트가 바뀝니다(실행취소 한 단계).,"When the window is wider than the screen, the tile, rule and preview columns wrap downwards instead of scrolling sideways. The set changes only when you press <strong>OK</strong> (one undo step)."
+tilemap-autotile.h-rule,규칙 하나,One rule
+tilemap-autotile.alt2,"규칙 1 카드: 3×3 조건 칸(위·왼쪽·오른쪽이 주황 세모, 가운데는 이 칸), 물 타일 한 장이 든 칸, 좌우·상하 뒤집기·회전 토글과 위로·아래로·복제·지우기 단추","Rule 1 card: the 3×3 condition grid (orange triangles above, left and right; the center is this cell), a box holding one water tile, flip and rotate toggles, and up, down, duplicate and delete buttons"
+tilemap-autotile.caption2,⑦ 조건 칸 · ⑧ 넣을 타일 · ⑨ 뒤집기·회전 허용 · ⑩ 위로·아래로·복제·지우기,"⑦ Condition grid · ⑧ Tiles to place · ⑨ Allow flips and rotation · ⑩ Up, down, duplicate, delete"
+tilemap-autotile.m7,"⑦ 조건 칸: 가운데는 이 칸입니다. 둘레 8칸을 누를 때마다 상관없음 → 있어야 함 → 없어야 함 → 뭐라도 있음으로 바뀌고, 오른쪽 버튼은 거꾸로 바뀝니다.",⑦ Condition grid: the center is this cell. Each click on one of the 8 outer cells cycles don't care → must be there → must not be there → something there; the right button cycles backwards.
+tilemap-autotile.m8,"⑧ 넣을 타일: 누르기 = 고른 타일로 바꾸기, Ctrl+누르기 = 더하기(같은 타일이면 비중 +1), 타일 위 오른쪽 버튼 = 비중 늘리기·줄이기·이 타일 빼기·타일 모두 빼기. 타일이 여럿이면 비중대로 무작위로 고르는데, 칸 좌표로 정해져 다시 칠해도 같은 타일이 나옵니다. 타일이 없으면 ""타일 없음 · 건너뜀""이 보입니다.","⑧ Tiles to place: click = replace with the picked tiles, Ctrl+click = add (the same tile adds weight +1), right-click a tile = increase or decrease weight, remove it, or remove all. With several tiles one is chosen at random by weight; the choice follows the cell coordinates, so repainting gives the same tile. An empty rule shows ""No tiles · skipped""."
+tilemap-autotile.m9,"⑨ 좌우로 뒤집은 모양, 상하로 뒤집은 모양, 90°씩 돌린 모양에도 맞추고 타일도 그렇게 놓습니다. 회전은 칸이 정사각형인 타일셋만 됩니다.","⑨ Also match the left-right mirrored, upside-down or 90°-turned shape, placing the tile the same way. Rotation needs square cells."
+tilemap-autotile.m10,"⑩ 규칙 차례를 바꾸고(위가 먼저), 복제하고, 지웁니다.","⑩ Move the rule earlier or later (higher is tried first), duplicate it or delete it."
+tilemap-autotile.h-cond,조건,Conditions
+tilemap-autotile.c.h1,표시,Mark
+tilemap-autotile.c.h2,조건,Condition
+tilemap-autotile.c.h3,맞을 때,Matches when
+tilemap-autotile.c.1,빈 칸,Empty
+tilemap-autotile.c.1n,상관없음,Don't care
+tilemap-autotile.c.1d,늘 맞습니다.,Always.
+tilemap-autotile.c.2,초록 더하기,Green plus
+tilemap-autotile.c.2n,있어야 함,Must be there
+tilemap-autotile.c.2d,그 이웃에 이 세트나 같은 무리의 세트가 있을 때,That neighbor holds this set or a set of the same join group.
+tilemap-autotile.c.3,빨강 빼기,Red minus
+tilemap-autotile.c.3n,없어야 함,Must not be there
+tilemap-autotile.c.3d,그 이웃에 이 세트도 같은 무리의 세트도 없을 때,That neighbor holds neither this set nor a set of the same join group.
+tilemap-autotile.c.4,주황 세모,Orange triangle
+tilemap-autotile.c.4n,뭐라도 있음,Something there
+tilemap-autotile.c.4d,"같은 무리가 있거나, 뭐라도 있음 층에 어떤 타일이든(손으로 찍은 타일, 큰 타일이 덮은 칸 포함) 있을 때","That neighbor holds the same group, or any tile at all on the Something on floors (hand-placed tiles and cells covered by big tiles count)."
+tilemap-autotile.h-order,규칙을 고르는 차례,How a rule is chosen
+tilemap-autotile.order.1,"위 규칙부터 맞춰 보아 처음 맞는 규칙을 씁니다(허용한 뒤집기·회전 포함). 자세한 규칙을 위에, 넓은 규칙을 아래에 둡니다.",Rules are tried from the top and the first match wins (allowed flips and rotations included). Put specific rules above broad ones.
+tilemap-autotile.order.2,맞는 규칙이 없으면 조건이 가장 덜 어긋난 규칙을 씁니다.,"If nothing matches, the rule whose conditions miss the least is used."
+tilemap-autotile.order.3,타일을 넣지 않은 규칙은 건너뜁니다.,Rules without tiles are skipped.
+tilemap-autotile.order.4,손으로 타일을 찍거나 지우면 둘레에서 뭐라도 있음 조건을 쓰는 세트가 다시 골라집니다.,Placing or erasing tiles by hand re-picks nearby sets that use the something-there condition.
+tilemap-autotile.h-group,이어지는 무리,Join groups
+tilemap-autotile.group,같은 <strong>이어지는 무리</strong> 이름을 쓴 세트끼리는 층이 달라도 서로 이웃으로 쳐서 경계 없이 이어집니다(기본 타일셋의 흙과 진흙). 무리를 비우면 그 세트끼리만 이어집니다. 무리는 목록에서 고르거나 새 이름을 적습니다. 층은 그리는 높이일 뿐 이어짐과는 따로입니다.,"Sets with the same <strong>join group</strong> name count each other as neighbors even on different floors, so they connect without an edge (dirt and mud in the built-in tileset). Leave the group empty to join only with the same set. Pick a group from the list or type a new name. Floors only decide drawing order; joining is separate."
+tilemap-autotile.h-filled,뭐라도 있음 쓰기,Using something there
+tilemap-autotile.filled,"<strong>뭐라도 있음</strong>은 다른 타일에 닿는 모양을 정할 때 씁니다. 기본 타일셋의 물·용암은 뭐라도 있음 층을 바닥·앞으로 두어, 위에 돌이 있으면 수면 없이 꽉 차고 옆에 바닥이 있으면 가장자리가 없지만, 배경 벽이나 장식 앞에서는 수면이 남습니다. 그림의 미리보기 판에서 회색 칸 바로 아래 물이 수면 없이 그려진 것도 이 조건입니다.","Use <strong>something there</strong> for shapes that touch other tiles. In the built-in tileset, water and lava look only at the Ground and Front floors: under stone they fill up without a surface and next to ground they have no edge, but in front of background walls or decor the surface stays. In the picture, the water right under the gray cells on the preview board has no surface for the same reason."
+tilemap-autotile.h-paint,칠하기,Painting
+tilemap-autotile.paint,"타일셋 패널에서 세트를 누르면 자동 타일 붓으로 칠합니다. 타일 사각형과 타일 채우기도 고른 세트로 칠합니다. 자동으로 고른 모양을 바꾸려면 <a href=""#tilemap-pick"">구성</a>에서 타일 한 장을 골라 손으로 찍습니다.","Click a set in the Tileset panel to paint with the auto tile brush. The tile rectangle and tile fill also paint with the picked set. To replace a shape the set picked, choose one tile from its <a href=""#tilemap-pick"">parts</a> and place it by hand."
+tilemap-animated.1,움직이는 타일,Animated tiles
+tilemap-animated.alt,"횃불 타일의 움직이는 타일 창: 왼쪽 위 그림 차례 4장과 앞뒤로·복제·빼기 단추, 한 장 시간 150ms·한 바퀴 600ms, 아래 타일셋 목록에서 동전을 골라 크기가 달라 더할 수 없다는 주황 글, 오른쪽 3×3로 이어 본 재생 미리보기","Animated tile window for the torch: four frames with earlier, later, duplicate and remove buttons at the top left, 150 ms per frame and a 600 ms loop, the tileset list below with the coin picked and an orange note that a different size can't be added, and a 3×3 tiled playback preview on the right"
+tilemap-animated.caption,① 그림 차례 · ② 앞뒤로 옮기기·복제·빼기 · ③ 한 장 시간·한 바퀴 · ④ 타일셋 목록 · ⑤ 그림으로 더하기 · ⑥ 미리보기 · ⑦ 재생·멈춤 · ⑧ 3×3로 이어 보기,"① Frames · ② Move earlier/later, duplicate, remove · ③ Time per frame, one loop · ④ Tileset list · ⑤ Add as frames · ⑥ Preview · ⑦ Play/pause · ⑧ Tile 3×3"
+tilemap-animated.intro,<strong>움직이는 타일</strong>은 그림 여러 장을 차례로 돌리는 타일입니다(물결·횃불·동전). 타일 목록에서 타일을 우클릭하고 <strong>움직이는 타일…</strong>을 누르면 이 창이 열립니다. <strong>확인</strong>을 눌러야 타일이 바뀝니다(실행취소 한 단계).,"An <strong>animated tile</strong> cycles through several images (waves, torches, coins). Right-click a tile in the tile list and choose <strong>Animated tile…</strong> to open this window. The tile changes only when you press <strong>OK</strong> (one undo step)."
+tilemap-animated.m1,① 그림 차례: 왼쪽부터 돌아갑니다. 그림을 누르면 고릅니다. 첫 그림이 타일 목록과 내보내기의 시각 0에 보이는 그림입니다. 그림이 1장뿐이면 멈춘 타일입니다.,"① <span class=""nolink"">Frames</span>: they play from left to right; click one to select it. The first frame is what the tile list and exports at time 0 show. With only one frame the tile is still."
+tilemap-animated.m2,"② 고른 그림을 앞이나 뒤로 옮기고, 복제하고, 뺍니다.","② Move the selected frame earlier or later, duplicate it or remove it."
+tilemap-animated.m3,③ 한 장 시간(ms)과 한 바퀴 시간입니다.,③ Time per frame (ms) and the time of one loop.
+tilemap-animated.m4,④ 더할 타일을 고릅니다(끌면 여러 개). 움직이는 타일을 고르면 그 그림이 모두 들어갑니다.,④ Pick the tiles to add (drag for several). Picking an animated tile adds all its frames.
+tilemap-animated.m5,"⑤ <strong>그림으로 더하기</strong>(목록에서 두 번 눌러도 됨)는 고른 그림 바로 뒤에 넣습니다. 그림 크기가 같은 타일만 들어가고, 크기가 다른 것은 빠지며 까닭이 보입니다(그림에서는 동전). 그림은 64장까지입니다.",⑤ <strong>Add as frames</strong> (or a double-click in the list) inserts them right after the selected frame. Only tiles with the same image size go in; others are skipped and the reason is shown (the coin in the picture). Up to 64 frames.
+tilemap-animated.m6,⑥ 크게 키운 재생 미리보기입니다.,⑥ An enlarged playback preview.
+tilemap-animated.m7,"⑦ 재생과 멈춤, 지금 보이는 그림 번호입니다.","⑦ Play and pause, with the number of the frame shown."
+tilemap-animated.m8,⑧ 타일을 3×3으로 이어 붙여 봅니다.,⑧ Shows the tile repeated 3×3.
+tilemap-animated.h-time,화면과 내보내기에서,On screen and in exports
+tilemap-animated.time.1,"캔버스·미리보기·타일 목록에서는 문서가 한 프레임이어도, 재생하지 않아도 화면 시계로 계속 돕니다. 문서에 움직이는 타일이 없으면 시계가 멈춥니다. 위 막대의 <strong>타일 움직임</strong>을 끄면 멈춥니다.","On the canvas, in the preview and in the tile list they keep moving on a screen clock, even in a one-frame document and without playback. The clock stops when the document has no animated tiles. Turning off <strong>Tile motion</strong> in the top bar freezes them."
+tilemap-animated.time.2,프레임이 여럿인 문서는 프레임 시각에 화면 시계를 더해 보입니다.,"In a document with several frames, the frame's time plus the screen clock is shown."
+tilemap-animated.time.3,내보내기·저장·AI 도구 같은 다른 그리기는 화면 시계와 상관없이 그 프레임이 시작하는 시각의 그림을 씁니다(첫 프레임은 첫 그림). 그래서 늘 같은 결과가 나옵니다.,"Exports, saving, AI tools and other rendering ignore the screen clock and use the image at the time each frame starts (the first frame shows the first image), so the result is always the same."
+tilemap-animated.time.4,"한 프레임 문서에서 움직임까지 내보내려면 <a href=""#tilemap-convert"">레이어로 변환</a>을 씁니다.","To export the motion from a one-frame document, use <a href=""#tilemap-convert"">Converting to layers</a>."
+tilemap-builtin.1,기본 타일셋,Built-in tileset
+tilemap-builtin.alt,"기본 타일셋으로 만든 맵: 풀이 덮인 흙 언덕 속 진흙, 아래 광석 섞인 돌, 물웅덩이와 나무 발판·동전, 오른쪽 돌 속 동굴의 횃불·사다리·상자","A map made with the built-in tileset: mud inside a grassy dirt hill, stone with ore below, a pool with a wooden platform and coins, and a cave in the stone on the right with a torch, a ladder and a chest"
+tilemap-builtin.caption,① 흙과 진흙(같은 무리) · ② 흙과 광석 섞인 돌(다른 무리) · ③ 풀 덮개 · ④ 물 수면 · ⑤ 횃불,① Dirt and mud (same group) · ② Dirt and stone with ore (different groups) · ③ Grass cover · ④ Water surface · ⑤ Torch
+tilemap-builtin.intro,"타일셋이 없는 프로젝트에서 새 타일맵 레이어를 만들면 앱에 든 <strong>샌드박스 지상·동굴</strong> 타일셋의 사본으로 시작합니다. 타일셋 고르기 창의 기본 타일셋 줄로도 사본을 더할 수 있습니다. 옆에서 본 시점의 16px 타일 532개로, 검은 외곽선의 깔끔한 그림입니다.",A new tilemap layer in a project without tilesets starts with a copy of the app's <strong>Sandbox surface &amp; caves</strong> tileset. The built-in row of the tileset chooser adds a copy too. It has 532 side-view 16 px tiles drawn cleanly with black outlines.
+tilemap-builtin.m1,"① 흙과 진흙은 무리 ""흙""이라 맞닿으면 외곽선 없이 이어집니다. 돌과 광석 섞인 돌은 무리 ""돌""입니다.","① Dirt and mud share the group ""Dirt"", so they join without an outline where they touch. Stone and stone with ore share the group ""Stone""."
+tilemap-builtin.m2,② 무리가 다르면 사이에 외곽선이 생깁니다. 바닥은 가장자리에 외곽선이 있고 안쪽으로 갈수록 어두워집니다.,② Different groups get an outline between them. Ground tiles have an outline on their edges and darken toward the inside.
+tilemap-builtin.m3,"③ 덮개(풀·눈·낙엽)는 바닥 윗면 칸 위에 자동 타일로 덧칠하면 아래로 흘러내리듯 얹히고, 끝은 둥글게 닫힙니다.","③ Covers (grass, snow, autumn leaves) painted over the top cells of the ground drape downward, with rounded ends."
+tilemap-builtin.m4,"④ 물·용암은 위가 빈 칸에 물결 수면, 옆이 비면 옆 가장자리가 생기고, 더 높은 물 옆에서는 수면이 비스듬히 올라가 이어집니다. 물결이 옆으로 흐르는 움직이는 타일입니다.","④ Water and lava get a wavy surface where the cell above is empty and a side edge where the side is empty; next to higher water the surface slopes up to meet it. They are animated, with waves flowing sideways."
+tilemap-builtin.m5,⑤ 횃불은 차지 칸이 1칸이고 그림이 1×2칸이라 불빛이 위 칸까지 번집니다. 횃불·동전도 움직이는 타일입니다.,"⑤ The torch covers 1 cell but its image is 1×2 cells, so its glow spreads into the cell above. Torches and coins are animated too."
+tilemap-builtin.h-floors,층과 들어 있는 것,Floors and contents
+tilemap-builtin.f.h1,층(위에서부터),Floor (top first)
+tilemap-builtin.f.h2,들어 있는 것,Contents
+tilemap-builtin.f.1d,물·용암(뭐라도 있음 층 = 바닥·앞),Water and lava (something-there floors = Ground and Front)
+tilemap-builtin.f.2d,줄로 잇는 자동 타일(나무 발판·사다리·덩굴·울타리)과 나무·덤불·풀·꽃·버섯·바위·선인장·종유석·석순·수정·횃불·동전·보석·열쇠·상자·통·항아리·표지판·문·작업대,"Auto tiles that join in a line (wood platform, ladder, vines, fence) plus trees, bushes, grass, flowers, mushrooms, rocks, cacti, stalactites, stalagmites, crystals, torches, coins, gems, a key, chests, barrels, pots, a sign, a door and a workbench"
+tilemap-builtin.f.3d,풀·눈·낙엽,"Grass, snow, autumn leaves"
+tilemap-builtin.f.4d,"흙·진흙(무리 ""흙""), 돌·광석 섞인 돌(무리 ""돌""), 모래·돌 벽돌·나무 판자 — 모두 8방향 47규칙 자동 타일","Dirt and mud (group ""Dirt""), stone and stone with ore (group ""Stone""), sand, stone brick and wood planks, all 8-way 47-rule auto tiles"
+tilemap-builtin.f.5d,"흙 벽·돌 벽·벽돌 벽(무리 ""배경 벽""), 나무 벽","Dirt wall, stone wall and brick wall (group ""Background wall""), and wooden walls"
+tilemap-builtin.sheet,"바닥·배경 벽 세트의 타일은 목록 왼쪽 위 4×4에 3×3 상자·세로 줄·가로 줄·외딴 칸이 모여 있어, 사각형으로 집어 타일 붓으로 한 번에 찍을 수 있습니다. 보기 설정에서 자동 타일 세트에 쓴 타일 감추기를 끄면 목록에 보입니다.","In the ground and background wall sets, the top-left 4×4 of each set's tiles holds a 3×3 box, a column, a row and a lone cell, so you can grab them as a rectangle and place them at once with the tile brush. They show in the list when you turn off hiding tiles used by auto tile sets in the view settings."
+tilemap-builtin.copy,"프로젝트에 든 것은 사본이라 마음대로 고쳐도 되고, 타일셋 파일로 저장해 다른 프로젝트와 함께 쓸 수 있습니다.","The project holds a copy, so feel free to change it, and save it as a tileset file to share it with other projects."
+tilemap-convert.1,레이어로 변환,Converting to layers
+tilemap-convert.alt,타임라인의 Tilemap 레이어 줄을 우클릭한 메뉴의 타일맵을 레이어로 변환 항목,"Right-click menu on the Tilemap row in the timeline, with Convert tilemap to layers"
+tilemap-convert.caption,① 타일맵을 레이어로 변환,① Convert tilemap to layers
+tilemap-convert.intro,타일맵 레이어를 일반 그림 레이어로 바꿉니다. 타일맵 레이어를 우클릭하고 ① <strong>타일맵을 레이어로 변환</strong>을 누릅니다(프레임·레이어 메뉴에도 있음). 실행취소 한 단계입니다.,Turns a tilemap layer into normal image layers. Right-click the tilemap layer and choose ① <strong>Convert tilemap to layers</strong> (also in the Frame·Layer menu). It is one undo step.
+tilemap-convert.alt2,"변환한 뒤의 타임라인: Tilemap 그룹 아래 Front·Decor·Cover·Ground·Background wall 부위, 움직이는 타일 때문에 150ms 프레임 8개로 늘어난 모습","The timeline after converting: a Tilemap group with Front, Decor, Cover, Ground and Background wall parts, extended to eight 150 ms frames because of the animated tiles"
+tilemap-convert.caption2,② 그룹 · ③ 층마다 부위,② Group · ③ One part per floor
+tilemap-convert.m2,② 타일맵 레이어 자리에 같은 이름의 그룹 하나가 생깁니다.,② A group with the same name takes the tilemap layer's place.
+tilemap-convert.m3,③ 층마다 부위가 하나씩 생깁니다. 부위 크기는 그 층 그림을 감싼 크기입니다.,"③ Each floor becomes one part, sized to the box around that floor's image."
+tilemap-convert.h-anim,움직이는 타일,Animated tiles
+tilemap-convert.anim.1,프레임마다 그 프레임이 시작하는 시각의 그림이라 움직이는 타일이 계속 움직입니다. 보이는 그림이 같은 프레임끼리는 한 그림을 나눠 씁니다(셀 링크).,"Each frame gets the image at the time it starts, so animated tiles keep moving. Frames that look the same share one image (linked cels)."
+tilemap-convert.anim.2,"프레임이 하나뿐인 문서에 움직이는 타일이 있으면 먼저 프레임을 늘립니다. 길이는 맵에 쓰인 움직이는 타일이 모두 한 바퀴 도는 길이(주기가 달라도 최소공배수), 간격은 장당 시간들의 최대공약수이고, 240프레임까지입니다. 다른 레이어는 원래 프레임과 링크됩니다.","If a one-frame document has animated tiles, frames are added first: long enough for every animated tile on the map to finish a loop (the least common multiple of their cycles), at intervals of the greatest common divisor of their frame times, up to 240 frames. Other layers are linked to the original frame."
+tilemap-files.1,저장과 타일셋 파일,Saving and tileset files
+tilemap-files.intro,타일맵과 타일셋은 프로젝트 파일(.chickxel)에 함께 저장됩니다. 타일셋을 <strong>타일셋 파일</strong>(.chickxel-tileset)로 따로 저장하면 여러 프로젝트가 같은 타일셋을 씁니다.,Tilemaps and tilesets are saved inside the project file (.chickxel). Saving a tileset as a separate <strong>tileset file</strong> (.chickxel-tileset) lets several projects use the same tileset.
+tilemap-files.1a,"프로젝트에는 맵과 레이어에 연 타일셋 목록, 그리고 프로젝트가 담은 타일셋 모두(레이어에서 닫은 것도)의 사본과 타일셋 파일 경로가 들어갑니다.","The project stores the map, the list of tilesets open on each layer, and a copy of every tileset it holds (including closed ones) with its tileset file path."
+tilemap-files.2,타일셋 파일로 저장하는 곳은 타일셋 설정 창의 타일셋 페이지와 타일셋 관리 창입니다.,Save a tileset file from the Tileset page of the tileset settings or from the tileset manager.
+tilemap-files.3,타일셋 파일이 있으면 프로젝트를 저장할 때 바뀐 타일셋을 그 파일에도 씁니다.,"When a tileset has a file, saving the project also writes its changes to that file."
+tilemap-files.4,프로젝트를 열 때는 타일셋 파일 내용을 씁니다. 파일이 없거나 읽지 못하면 프로젝트 안 사본을 쓰고 알립니다. 타일셋 설정 창의 <strong>타일셋 파일에서 다시 읽기</strong>로 언제든 파일 내용을 다시 가져옵니다.,"Opening the project uses the tileset file's contents. If the file is missing or unreadable, the copy in the project is used and you are told. <strong>Reload from tileset file</strong> in the tileset settings reads the file again at any time."
+tilemap-files.5,다른 프로젝트에서는 타일셋 관리 창의 <strong>타일셋 파일 가져오기…</strong>로 가져옵니다.,"In another project, bring it in with <strong>Import tileset file…</strong> in the tileset manager."
+tilemap-files.6,"끌어 찍기 한 번, 타일셋 고치기 한 번이 각각 실행취소 한 단계입니다.","One drag of placing, or one tileset edit, is one undo step."
+term.tilemap-layer,타일맵 레이어,tilemap layer|tilemap layers
+term.tilemap-layer.to,tilemap,
+term.tilemap-layer.def,타일셋의 타일을 칸에 맞춰 찍어 맵을 만드는 레이어입니다. 모든 프레임이 같은 맵을 씁니다.,A layer that builds a map by placing tileset tiles on a grid of cells; every frame uses the same map.
+term.tileset,타일셋,tileset|tilesets
+term.tileset.to,tilemap,
+term.tileset.def,타일맵 레이어에 찍을 타일·층·자동 타일 세트를 담은 묶음입니다. 프로젝트에 사본으로 들어 있습니다.,"A collection of tiles, floors and auto tile sets for tilemap layers, stored as a copy in the project."
+term.tileset-panel,타일셋 패널,Tileset panel
+term.tileset-panel.to,tilemap-panel,
+term.tileset-panel.def,타일맵 레이어를 고르면 왼쪽에 나와 찍을 타일과 자동 타일 세트를 고르는 패널입니다.,"The panel on the left, shown for tilemap layers, where you pick tiles and auto tile sets to place."
+term.tile-tools,타일 도구|타일 붓|자동 타일 붓,tile tools|tile brush|auto tile brush
+term.tile-tools.to,tilemap-tools,
+term.tile-tools.def,타일맵 레이어에서 픽셀 도구 대신 쓰는 도구들입니다(타일 붓·자동 타일 붓·지우개·사각형·채우기·스포이드·칸 선택).,"The tools used on tilemap layers instead of the pixel tools: tile brush, auto tile brush, eraser, rectangle, fill, picker and cell select."
+term.tile-pick-card,지금 찍을 것,pick card
+term.tile-pick-card.to,tilemap-pick,
+term.tile-pick-card.def,도구 설정에서 지금 찍을 타일이나 자동 타일 세트와 그것이 들어갈 층을 보이는 카드입니다.,The card in the tool options showing the tile or auto tile set about to be placed and its target floor.
+term.tile-floor,타일 층,tile floor|tile floors
+term.tile-floor.to,tilemap-floors,
+term.tile-floor.def,타일맵 레이어 안의 순서 있는 칸 묶음입니다. 같은 층은 덮어 그리고 다른 층은 겹쳐 그립니다.,"An ordered set of cells inside a tilemap layer; the same floor overwrites, different floors stack."
+term.tileset-settings,타일셋 설정 창,Tileset settings window
+term.tileset-settings.to,tilemap-settings,
+term.tileset-settings.def,타일셋 하나의 타일·층·자동 타일 세트·파일·보기를 고치는 창입니다. 고치는 대로 바로 쓰입니다.,"The window that edits one tileset's tiles, floors, auto tile sets, file and view; changes apply right away."
+term.footprint,차지 칸,footprint|footprints
+term.footprint.to,tilemap-big-tiles,
+term.footprint.def,타일이 맵에서 차지하는 칸 수(가로×세로)입니다. 그림은 이보다 클 수 있습니다.,The number of cells (width × height) a tile covers on the map; its image may be larger.
+term.big-tile,큰 타일,big tile|big tiles
+term.big-tile.to,tilemap-big-tiles,
+term.big-tile.def,차지 칸이 1×1보다 큰 타일입니다. 같은 층에서 겹치는 타일을 통째로 지우고 놓입니다.,A tile whose footprint is larger than 1×1; it replaces every tile it overlaps on the same floor.
+term.auto-tile,자동 타일 세트|자동 타일,auto tile set|auto tile sets|auto tiles|auto tile
+term.auto-tile.to,tilemap-autotile,
+term.auto-tile.def,칸마다 둘레 8칸을 보고 경계 모양의 타일을 골라 놓는 규칙 묶음입니다.,A set of rules that places tiles with the right edge shape by looking at the 8 neighbors of each cell.
+term.autotile-rule,자동 타일 규칙,auto tile rule|auto tile rules
+term.autotile-rule.to,tilemap-autotile,
+term.autotile-rule.def,둘레 8칸의 조건과 넣을 타일로 이루어진 자동 타일 세트의 한 줄입니다. 위 규칙부터 맞춰 봅니다.,One entry of an auto tile set: conditions on the 8 neighbors plus the tiles to place. Rules are tried from the top.
+term.join-group,이어지는 무리,join group|join groups
+term.join-group.to,tilemap-autotile,
+term.join-group.def,같은 이름을 쓴 자동 타일 세트끼리 층이 달라도 경계 없이 이어지게 하는 이름입니다.,"A name that makes auto tile sets sharing it connect without an edge, even on different floors."
+term.something-there,뭐라도 있음,something there
+term.something-there.to,tilemap-autotile,
+term.something-there.def,같은 무리이거나 정한 층에 어떤 타일이든 있으면 맞는 자동 타일 조건입니다(주황 세모).,An auto tile condition (orange triangle) that matches when the neighbor holds the same group or any tile on the chosen floors.
+term.autotile-preview-board,미리보기 판,preview board
+term.autotile-preview-board.to,tilemap-autotile,
+term.autotile-preview-board.def,자동 타일 세트 편집 창에서 고치는 세트로 칠해 보는 12×9칸 판입니다. 저장되지 않습니다.,The 12×9 board in the auto tile set editor for trying the set you are editing; it isn't saved.
+term.animated-tile,움직이는 타일,animated tile|animated tiles
+term.animated-tile.to,tilemap-animated,
+term.animated-tile.def,그림 여러 장을 정한 시간마다 차례로 돌리는 타일입니다.,A tile that cycles through several images at a set time per image.
+term.builtin-tileset,기본 타일셋,built-in tileset
+term.builtin-tileset.to,tilemap-builtin,
+term.builtin-tileset.def,앱에 든 샌드박스 지상·동굴 타일셋입니다. 프로젝트에는 사본으로 들어갑니다.,The Sandbox surface & caves tileset that ships with the app; projects get a copy of it.
+term.tileset-file,타일셋 파일,tileset file|tileset files
+term.tileset-file.to,tilemap-files,
+term.tileset-file.def,타일셋을 따로 저장한 .chickxel-tileset 파일입니다. 여러 프로젝트가 같은 타일셋을 씁니다.,"A .chickxel-tileset file holding one tileset, so several projects can share it."

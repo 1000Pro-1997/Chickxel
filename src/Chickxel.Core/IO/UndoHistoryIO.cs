@@ -375,8 +375,8 @@ internal sealed class HistoryLayerDto
     public int ActiveSkin { get; set; }
     public List<JsonObject>? Effects { get; set; }
     public ProjectIO.GroupLayoutDto? AutoLayout { get; set; }
-    /// <summary>타일맵 레이어: 타일셋 이름표, 맵 조각 해시, 격자 원점 [X, Y](형식 5부터).</summary>
-    public string? TilesetKey { get; set; }
+    /// <summary>타일맵 레이어: 타일셋 이름표들(자리 차례), 맵 조각 해시, 격자 원점 [X, Y](형식 5부터).</summary>
+    public List<string>? TilesetKeys { get; set; }
     public string? TileMap { get; set; }
     public int[]? TileOrigin { get; set; }
     public int[]? TileHidden { get; set; }

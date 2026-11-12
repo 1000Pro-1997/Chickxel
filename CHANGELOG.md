@@ -2,39 +2,55 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
-## v1.14.127 (2026-11-12)
+## v1.14.127 (2026-11-13)
 ### Tilemap layers
-- New layer kind **Tilemap**: place tiles from a tileset on a grid to build maps (**Frame·Layer > New tilemap layer…**, Alt+Shift+N). All frames share the map, and compositing and export work like a normal layer.
-- Selecting a tilemap layer swaps the toolbar to tile tools (brush, auto tile brush, eraser, rectangle, fill, picker, cell select), the color panel to the Tileset panel and the tool settings to tile settings. Shortcuts use the same letters as the pixel tools; X/Y/Z flip and rotate the brush.
-- Floors: placing on the same floor overwrites, on another floor stacks. Each tile has a default floor; you can pin a floor, hide it or lock it.
+- New layer kind **Tilemap**: place tiles from a tileset on a grid to build maps (**Frame·Layer > New tilemap layer**, Alt+Shift+N). The layer is made right away with the current tileset (or a copy of the built-in one) and becomes the selected row in the timeline (a layer selection left on another row is cleared, also when adding normal layers); change or edit the tileset from the Tileset panel. All frames share the map, and compositing and export work like a normal layer.
+- Selecting a tilemap layer swaps the toolbar to tile tools (brush, auto tile brush, eraser, rectangle, fill, picker, cell select), the color panel to the Tileset panel, the tool settings to tile settings with the floor list, and the view buttons above the canvas to tilemap ones: **All floors / Focus floor / Floor only** (canvas only — the floor you are placing on stays clear and the others turn translucent or hide), **Cell grid** and **Tile motion** (pause animated tiles). Shortcuts use the same letters as the pixel tools; X/Y/Z flip and rotate the brush.
+- Floors: placing on the same floor overwrites, on another floor stacks. With **Auto** each tile goes to its default floor (auto tiles to their set's floor); click a floor in the tool settings to place only on it, auto tiles included. Floors can be hidden or locked, and locked floors show in yellow.
 - Big tiles (2×1, 2×2 …) replace whatever their footprint covers, and images taller than the footprint rise above it. Tiles can also go outside the canvas.
+- The Tileset panel is for picking what to paint and works like the palette list: each tileset open on the layer gets a section with a header (collapse arrow, name, tile count and a menu with Settings, Replace with another tileset, Rename and Close on this layer; double-click to rename), its auto tile sets as cells and its tile list split by floor (tiles used by auto tile sets hidden). The settings window covers every tile (name, footprint, image offset, default floor for several tiles at once, animation), floors, auto tile sets and their groups, the tileset (file save and reload, importing from a PNG or the current frame) and view options, including the cell size.
+- **Add tileset** at the bottom of the panel opens more tilesets on one tilemap layer: tiles and auto tiles from all of them go on the same layer. It shows one list of the project's tilesets and the built-in ones, with those already open marked **Open**; only tilesets with the same cell size can be added, and floors come from the first tileset, matched by name. A closed tileset stays in the project, and **Manage tilesets…** creates empty tilesets, imports tileset files, renames, saves to files and deletes tilesets nothing uses.
+- Tile lists shrink their cells to fit the width instead of scrolling sideways. While resizing or moving the canvas, tiles placed outside it show live in the area that will come in.
+- **Edit image…** opens a tile's image in a new tab: the canvas is the tile's footprint (the anchor) and anything drawn outside it, up or to the sides, becomes part of the image, like a torch's glow. **Save to tile** (Ctrl+S) writes it back as one undo step (one frame per image of an animated tile).
+- Fill stops at walls on other visible floors and treats a whole auto tile area as one region.
 
 ### Built-in tileset: Sandbox surface & caves
-- Choose **Start from a built-in tileset** (selected by default) in the new tilemap layer window to start from a copy of **Sandbox surface & caves**, a 16px side-view tileset with 532 tiles, drawn in a clean style like Fantasy Tile Engine: black outlines and round stones.
+- A new tilemap layer in a project without a tileset starts from a copy of **Sandbox surface & caves**, a 16px side-view tileset with 532 tiles, drawn in a clean style like Fantasy Tile Engine: black outlines and round stones. Other tilesets can be picked with **Replace with another tileset…** in the tileset's menu in the Tileset panel.
 - Layers: background wall, ground, cover, decoration and front. Ground (dirt, mud, stone, stone with ore, sand, stone brick, wood planks) and background walls are 47-rule auto tiles; dirt and mud, and stone and stone with ore, are in the same group and join where they touch.
 - Covers (grass, snow, autumn leaves) painted on top of the ground drip down over it. Water and lava are animated and flow; water next to a taller column rises in a slanted surface.
-- Decorations: trees, bushes, grass, flowers, mushrooms, rocks, cactus, stalactites, crystals, torches (animated), coins (animated), gems, keys, chests, crates, barrels, pots, signs, a door and a workbench, plus wood platform, ladder, vine and fence auto tiles.
+- Decorations: trees, bushes, grass, flowers, mushrooms, rocks, cactus, stalactites, crystals, torches (animated, their glow reaches into the cell above), coins (animated), gems, keys, chests, crates, barrels, pots, signs, a door and a workbench, plus wood platform, ladder, vine and fence auto tiles.
 
 ### Auto tile rules and join groups
-- Auto tile sets are now a list of **rules**, like Unity's Rule Tile. Each rule sets a condition for each of the 8 neighbors (any, must be there, must not be there) by clicking a 3×3 grid, and has its own tiles and its own flip and rotation permissions.
+- Auto tile sets are now a list of **rules**, like Unity's Rule Tile. Each rule sets a condition for each of the 8 neighbors (any, must be there, must not be there, **something there** — an orange triangle) by clicking a 3×3 grid, and has its own tiles and its own flip and rotation permissions.
+- "Something there" counts the same group or any tile on the floors the set chooses, so built-in water under or beside a stone block fills without a surface or edge, while background walls and decorations still count as open. Placing or erasing tiles by hand re-picks those sets nearby.
 - The first matching rule wins; if none matches, the closest rule is used. Templates (row, column, 4-way, 3×3, 8-way 47) make a full rule list at once.
 - Give sets the same **group** name and they join each other even on different layers (for example dirt and mud).
-- A test board on the right of the editor lets you paint and see the result; hovering a cell highlights the rule it used.
+- A large test board in the editor lets you paint and see the result, with gray "something there" cells (Shift+left button or the **Something** button) to try that condition; the starting board already shows holes, thin lines, single cells and blocks touching the set. Hovering a cell highlights the rule it used, and the editor's columns move below each other instead of scrolling sideways on narrow screens.
 
 ### Animated tiles
 - Right-click a tile in the tile list and choose **Animated tile…** to set several images and the time per image.
 - The canvas, preview and tile list keep them moving even in a one-frame project; exports use a fixed image based on each frame's start time.
 
 ### See what is selected
-- The Tileset panel and tool settings show a **Painting now** card (picture, name, kind and target layer), and warn in orange when that layer is locked or hidden.
-- The tile list selection border is bolder, tiles used by the chosen auto tile set are tinted, and the auto tile list shows a representative tile and a group color dot.
+- The tool settings show a **Painting now** card (picture, name — for auto tile sets with the rule count — and target floor), warning in orange when that floor is locked or hidden. While an auto tile set is in use, its parts are listed below the card; click one to place that shape by hand.
+- The tile list selection border is bolder, tiles used by the chosen auto tile set are tinted, and each auto tile set cell shows a representative tile and a group color strip.
 - The canvas shows a translucent preview of what will be placed (for auto tiles, including neighbors that will change) and the cell, layer and tile name.
 
 ### Tileset files and auto tiles
 - Tilesets (cell size, floors, tiles, auto tile sets) live in their own `.chickxel-tileset` file. Projects keep a copy, and saving the project also writes a changed tileset back to its file.
 - Import tiles by cutting a PNG or the current frame into cells (skipping empty and duplicate cells), and merge several cells into one big tile.
 - Painting with an auto tile set looks at the neighboring cells and picks the matching tile (see "Auto tile rules and join groups" above).
-- **Convert tilemap to layers** turns a tilemap layer into a group with one part per floor.
+- **Convert tilemap to layers** turns a tilemap layer into a group with one part per floor. Animated tiles keep moving: each frame gets the image of its time, and a one-frame document first gets enough frames for every animated tile to loop, even when their cycles differ.
+
+### External AI connection has its own window
+- **AI > External AI Connection…** opens a small window with the external AI switch, the open-files and image-generation permissions and the connection settings: the JSON to paste is shown in a read-only box with a copy button on its right. They are no longer in Preferences > AI Status.
+- Clicking OK applies the change right away and saves it; the status bar tooltip points to the new menu item.
+- **How to connect** below the connection settings unfolds a guide to how the connection works (the `Chickxel --mcp` stdio bridge to the editor's local server), the command with this computer's path, where to register it in Claude Desktop, Claude Code, Cursor, Codex CLI and the ChatGPT desktop app (JSON and TOML ready to paste) and what the tools do. **Copy guide** copies it all, so you can paste it into an AI app and let it set things up.
+
+### One export window
+- Ctrl+E (File > Export…) opens a single export window laid out like the old GIF window. Pick the format from a dropdown at the top left: GIF animation, animated PNG (APNG), PNG, JPG, TGA, BMP or one PNG per frame into a folder. The separate "Export as animated GIF…" command is gone, and the preview's Save as GIF opens this window with GIF picked.
+- For image formats, a **Unity export (.meta)** checkbox sits under the dropdown and the sheet settings are always shown below it, with the result files on the right; Unity Import Settings appear as one more foldable group while the checkbox is on. **Export** writes the project's linked export as before, and **Save as…** writes the same sheet images to a file you choose as independent images: no .meta, not recorded in the project.
+- GIF, APNG and one PNG per frame share range, zoom and background with a playing preview; GIF and APNG also have speed and loop. APNG keeps semi-transparent pixels with no color limit. The window stays open after exporting and remembers the last format, its size and position.
 
 ## v1.14.126 (2026-11-12)
 ### Add to, subtract from and intersect the selection

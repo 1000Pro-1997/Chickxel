@@ -1089,8 +1089,8 @@ public sealed partial class PixelCanvas : Control
         double opacity = OutsideOpacity;
         if (layer.IsTilemap)
         {
-            // 타일맵: 캔버스 밖 칸에도 찍으므로 또렷이(레이어 불투명도로). 움직이는 타일은 화면 시계 그림으로.
-            if (_ctx.WithTileClock(() => p.GetCelOverflow(_ctx.CurrentLayer, _ctx.CurrentFrame)) is { } tiles) (image, at) = tiles;
+            // 타일맵: 캔버스 밖 칸에도 찍으므로 또렷이(레이어 불투명도로). 움직이는 타일은 화면 시계 그림으로, 층 보기도 캔버스 안과 같게.
+            if (_ctx.WithTileClock(() => p.GetCelOverflow(_ctx.CurrentLayer, _ctx.CurrentFrame), layer) is { } tiles) (image, at) = tiles;
             opacity = layer.Opacity / 255.0 * (p.IsLayerVisible(_ctx.CurrentLayer) ? 1 : 0.6);
         }
         else if (_drag == DragMode.MoveLayer && _moveFull is { } full)

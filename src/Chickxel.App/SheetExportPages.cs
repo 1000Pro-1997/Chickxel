@@ -7,71 +7,63 @@ using Chickxel.App.Localization;
 namespace Chickxel.App;
 
 /// <summary>
-/// 내보내기 설정 창(Ctrl+E, 파일 > 내보내기…; 파란 "내보내기"는 OK로 닫혀 호출한 쪽이 내보냄). 바꾸면 바로 프로젝트에 적용된다(설정 하나마다 실행취소 1단계).
-/// 탭은 [내보내기 | Import Settings](Import Settings = Unity Texture Importer 인스펙터와 같은 항목·이름, .meta를 쓸 때만 보임).
-/// 내보내기 탭 = 왼쪽 설정 칸(세로 스크롤) | 끌어서 너비를 바꾸는 나눔줄 | 오른쪽 미리보기(세로 스크롤). 설정 칸은 한 곳에만 둔다 — 위에서 아래로 접을 수 있는 묶음:
-/// 탭 줄 오른쪽 "프리셋 ▾"(<see cref="ExportPresetBar"/>), 왼쪽 묶음: 공통(내보낼 결과 + 두 결과가 같이 쓰는 시트 설정 <see cref="ExportSettings.Common"/>) → 파일(저장 시 내보내기·폴더·형식·.meta)
-/// → 프레임 시트(이름·Single 프레임·경로) → 부위 아틀라스(이름·원래 위치 유지·Sprite Library·경로) → 고급("시트별 다르게" — <see cref="ExportSettings.PartsOverride"/>, 켜면 시트 설정 칸이 한 벌 더).
-/// 미리보기 = 만들어질 결과 파일(① 프레임 시트, ② 부위 아틀라스 — 파일마다 이름 + 칸 너비에 맞춘 시트 + 칸 목록).
-/// 창 크기·위치·나눔 비율·접은 묶음은 <see cref="AppSettings"/>에 기억한다.
+/// 내보내기 창(<see cref="ExportDialog"/>)의 이미지 형식(PNG·JPG 등) 부분. 바꾸면 바로 프로젝트에 적용된다(설정 하나마다 실행취소 1단계).
+/// <see cref="FormatOptions"/>(형식 묶음 안, 형식 콤보 아래) = "Unity용으로 내보내기(.meta)" 체크(<see cref="ExportSettings.WriteMeta"/>) + JPG면 품질.
+/// <see cref="SettingsColumn"/>(왼쪽, 형식 묶음 아래) = 위에서 아래로 접을 수 있는 묶음: 공통(내보낼 결과 + 두 결과가 같이 쓰는 시트 설정 <see cref="ExportSettings.Common"/>)
+/// → 파일(저장 시 내보내기·폴더) → 프레임 시트(이름·Single 프레임·경로) → 부위 아틀라스(이름·원래 위치 유지·Sprite Library·경로)
+/// → 고급("시트별 다르게" — <see cref="ExportSettings.PartsOverride"/>, 켜면 시트 설정 칸이 한 벌 더)
+/// → Unity Import Settings(Unity Texture Importer 인스펙터와 같은 항목·이름, Unity 체크가 켜졌을 때만, 처음엔 접힘).
+/// <see cref="Preview"/>(오른쪽) = 만들어질 결과 파일(① 프레임 시트, ② 부위 아틀라스 — 파일마다 이름 + 칸 너비에 맞춘 시트 + 칸 목록).
+/// <see cref="SaveCopy"/> = 다른 이름으로 저장: 같은 시트를 프로젝트와 상관없는 독립 파일로(.meta·기록 없음, <see cref="ProjectExport.PlanCopy"/>).
+/// 형식 묶음 제목 줄 오른쪽 "프리셋 ▾" = <see cref="PresetButton"/>(<see cref="ExportPresetBar"/>).
+/// 프로젝트 이벤트는 <see cref="Attach"/>~<see cref="Detach"/> 사이에만 듣고, 미리보기는 <see cref="PreviewShown"/>일 때만 만든다. 접은 묶음은 <see cref="AppSettings"/>에 기억한다.
 /// </summary>
-public sealed class UnityExportDialog : DialogBase
+public sealed class SheetExportPages
 {
     /// <summary>Import Settings 이름표 너비(Unity 항목 이름).</summary>
     private const int LabelWidth = 160;
     /// <summary>시트 설정·파일 묶음 이름표 너비.</summary>
     private const int SettingLabelWidth = 118;
-    private const int DefaultWidth = 1100, DefaultHeight = 760, MinW = 760, MinH = 480;
     /// <summary>대상 도움말(F1) 가이드 쪽("내보내기 창").</summary>
-    private const string GuidePage = "screen-export";
+    public const string GuidePage = "screen-export";
     private static readonly IImmutableSolidColorBrush CellPenColor = new ImmutableSolidColorBrush(Color.FromArgb(200, 230, 200, 90));
     private static readonly string[] PivotNames = ["Center", "Top Left", "Top", "Top Right", "Left", "Right", "Bottom Left", "Bottom", "Bottom Right", "Custom"];
 
     private readonly EditorContext _ctx;
     private readonly AppSettings _settings;
+    /// <summary>폴더·스킨 고르기 창과 진행 덮개를 띄울 창.</summary>
+    private readonly Window _owner;
     private readonly Action<float>? _ppuChanged;
+    /// <summary>파일을 썼음(경로들, 상태 표시줄 문구).</summary>
+    private readonly Action<IReadOnlyList<string>, string> _exported;
     /// <summary>프로젝트 → 화면 갱신(설정 칸마다 하나).</summary>
     private readonly List<Action<SpriteProject>> _refresh = new();
     /// <summary>창을 열 때(또는 프로젝트가 바뀔 때) 기억해 둘 값(칸 이름 규칙 경고·예전 설정 안내).</summary>
     private readonly List<Action<SpriteProject>> _atOpen = new();
     /// <summary>글자 칸의 아직 반영하지 않은 값을 반영(창을 닫을 때).</summary>
     private readonly List<Action> _commitTexts = new();
-    /// <summary>탭: [내보내기 | Import Settings].</summary>
-    private readonly TabView _tabs = new();
-    private const int MainPage = 0, ImportPage = 1;
-    private readonly Grid _columns;
-    private readonly Control _importPage;
-    private readonly Expander _advanced;
+    private readonly StackPanel _settingsColumn, _formatOptions;
+    private readonly Expander _advanced, _importSettings;
     private readonly PreviewSection _framesSection, _partsSection;
+    private readonly TextBlock _copyResult;
     private readonly UiDebouncer _rebuild;
     private readonly EventHandler _onReplaced, _onCurrent;
     private readonly EventHandler<ProjectChangedEventArgs> _onChanged;
-    private bool _updating, _previewDirty = true, _customPivot;
+    private bool _updating, _previewDirty = true, _customPivot, _attached, _previewShown;
 
     /// <param name="ctx">편집기 상태(현재 프로젝트).</param>
-    /// <param name="settings">창 크기·위치·나눔 비율·접은 묶음을 기억할 앱 설정.</param>
+    /// <param name="settings">접은 묶음·마지막 폴더를 기억할 앱 설정.</param>
+    /// <param name="owner">이 부분을 담은 창(저장·폴더·스킨 고르기 창, 진행 덮개, 프리셋 알림의 주인).</param>
+    /// <param name="exported">다른 이름으로 저장으로 파일을 썼음(경로들, 상태 표시줄 문구).</param>
     /// <param name="ppuChanged">사용자가 PPU를 바꿨을 때(마지막 PPU 기억용).</param>
-    public UnityExportDialog(EditorContext ctx, AppSettings settings, Action<float>? ppuChanged = null) : base(UiStrings.S_UnityExportDialog_UnityExportDialog_91724FB578)
+    public SheetExportPages(EditorContext ctx, AppSettings settings, Window owner, Action<IReadOnlyList<string>, string> exported, Action<float>? ppuChanged = null)
     {
         _rebuild = new UiDebouncer(TimeSpan.FromMilliseconds(300), RebuildPreview);
         _ctx = ctx;
         _settings = settings;
+        _owner = owner;
+        _exported = exported;
         _ppuChanged = ppuChanged;
-        CloseOnly();
-        // 닫기 옆 파란 "내보내기": 창을 닫고(입력 중인 값도 반영) 호출한 쪽이 내보낸다.
-        var export = AddButton(UiStrings.S_UnityExportDialog_UnityExportDialog_C53EAC78FD, DialogResult.OK);
-        export.Background = AppTheme.AccentBrush;
-        export.Foreground = Brushes.White;
-        export.FontWeight = FontWeight.Bold;
-        export.HorizontalContentAlignment = HorizontalAlignment.Center;
-        export.Tip(UiStrings.S_UnityExportDialog_UnityExportDialog_C7A33C7D9E).HelpAt(GuidePage, anchor: "①");
-        // 대상 도움말(F1): 창 = "내보내기 창" 쪽. 칸마다 그 칸을 설명하는 자리(묶음 = 묶음 설명, 줄 = 그 줄의 목록·표 항목)를 붙인다.
-        this.HelpAt(GuidePage);
-        CanResize = true;
-        SizeToContent = SizeToContent.Manual;
-        MinWidth = MinW;
-        MinHeight = MinH;
-        RestorePlacement();
 
         // ── 오른쪽: 미리보기 ──
         _framesSection = BuildSection("① ", null);
@@ -85,7 +77,13 @@ public sealed class UnityExportDialog : DialogBase
             Note(UiStrings.S_UnityExportDialog_UnityExportDialog_D06F53C998),
             Ui.InfoBadge(UiStrings.S_UnityExportDialog_UnityExportDialog_434197E825 +
                  UiStrings.S_UnityExportDialog_UnityExportDialog_68A441DB4C));
-        var preview = Ui.ScrollHost(Ui.Stack(previewHelp, _framesSection.Panel, _partsSection.Panel)).HelpAt(GuidePage, anchor: "The output preview lists each file");
+        Preview = Ui.ScrollHost(Ui.Stack(previewHelp, _framesSection.Panel, _partsSection.Panel)).HelpAt(GuidePage, anchor: "The output preview lists each file");
+
+        // ── 형식 묶음 안: Unity 체크 + JPG 품질 ──
+        var unity = Toggle(UiStrings.S_UnityExportDialog_BuildExportSections_60EBD042A1, p => p.Export.WriteMeta != false, (p, v) => p.Export.WriteMeta = v, UiStrings.Export_Unity)
+            .Tip(UiStrings.Export_UnityTip);
+        _formatOptions = Ui.Stack(unity, JpegQualityLine());
+        _formatOptions.Margin = new Thickness(0, 2, 0, 0);
 
         // ── 왼쪽: 설정(위에서 아래로) ──
         var commonTitle = SectionTitle();
@@ -93,54 +91,35 @@ public sealed class UnityExportDialog : DialogBase
         var framesBox = Section("frames", SectionTitle(UiStrings.S_UnityExportDialog_UnityExportDialog_D2793FD9C8), frames).HelpAt(GuidePage, anchor: "Frame sheet section");
         var partsBox = Section("parts", SectionTitle(UiStrings.S_UnityExportDialog_UnityExportDialog_B18F4A0368), parts).HelpAt(GuidePage, anchor: "Part atlas section");
         _advanced = Section("advanced", SectionTitle(UiStrings.S_UnityExportDialog_UnityExportDialog_6A9E6CDC2F), advanced).HelpAt(GuidePage, anchor: "Turning on Advanced > Per sheet");
+        // Unity Import Settings는 .meta를 쓸 때만 의미가 있다(처음엔 접힘).
+        _importSettings = Section("import", SectionTitle("Unity Import Settings"), BuildImportTab(), expandedByDefault: false).HelpAt(GuidePage, anchor: "Import Settings");
         _refresh.Add(p =>
         {
             // 고른 결과의 묶음만 보인다(둘 다 꺼진 예전 설정이면 프레임 시트 묶음).
             framesBox.IsVisible = FramesShown(p);
             partsBox.IsVisible = _advanced.IsVisible = PartsShown(p);
+            _importSettings.IsVisible = p.Export.WriteMeta != false;
         });
-        var settingsColumn = Ui.ScrollHost(Ui.Stack(
+        _settingsColumn = Ui.Stack(
             Section("common", commonTitle, BuildCommonBlock(commonTitle)).HelpAt(GuidePage, anchor: "Common section"),
             Section("files", SectionTitle(UiStrings.S_UnityExportDialog_UnityExportDialog_F066DF325B), files).HelpAt(GuidePage, anchor: "Files section"),
             framesBox,
             partsBox,
-            _advanced)).HelpAt(GuidePage, anchor: "Left = settings");
+            _advanced,
+            _importSettings);
+        _settingsColumn.HelpAt(GuidePage, anchor: "Left = settings");
 
-        double split = double.IsFinite(settings.ExportSplit) ? Math.Clamp(settings.ExportSplit, 0.2, 0.8) : 0.46;
-        _columns = new Grid
+        _copyResult = new TextBlock
         {
-            ColumnDefinitions =
-            {
-                new ColumnDefinition(split, GridUnitType.Star) { MinWidth = 340 },
-                new ColumnDefinition(6, GridUnitType.Pixel),
-                new ColumnDefinition(1 - split, GridUnitType.Star) { MinWidth = 260 },
-            },
+            Foreground = AppTheme.AccentBrush,
+            TextWrapping = TextWrapping.Wrap,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 12, 0),
+            IsVisible = false,
         };
-        var splitter = new GridSplitter
-        {
-            ResizeDirection = GridResizeDirection.Columns,
-            Background = AppTheme.BorderBrush,
-            Width = 6,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-        }.Tip(UiStrings.S_UnityExportDialog_UnityExportDialog_22A1711719).HelpAt(GuidePage, anchor: "Drag ⑥ the divider");
-        Grid.SetColumn(splitter, 1);
-        Grid.SetColumn(preview, 2);
-        _columns.Children.Add(settingsColumn);
-        _columns.Children.Add(splitter);
-        _columns.Children.Add(preview);
 
-        _tabs.AddPage(UiStrings.S_UnityExportDialog_UnityExportDialog_C53EAC78FD, _columns);
-        _importPage = Ui.ScrollHost(BuildImportTab()).HelpAt(GuidePage, anchor: "Import Settings");
-        _tabs.AddPage("Import Settings", _importPage);
-        _tabs.Strip.HelpAt(MainPage, GuidePage, anchor: "②").HelpAt(ImportPage, GuidePage, anchor: "Import Settings");
-        Opened += (_, _) => { if (_previewDirty) RebuildPreview(); };
-        // Unity Import Settings는 .meta를 쓸 때만 의미가 있다(숨기면 내보내기 탭으로).
-        _refresh.Add(p => _tabs.SetPageVisible(ImportPage, p.Export.WriteMeta != false));
-        _tabs.SelectionChanged += (_, _) => { if (_tabs.SelectedIndex == MainPage && _previewDirty) RebuildPreview(); };
-
-        // 대화상자 본문(StackPanel)은 높이를 주지 않으므로 탭을 바깥 DockPanel의 채우기 칸에 바로 둔다.
-        // 탭 줄 오른쪽 끝: 프리셋 단추(누르면 저장·불러오기·관리·기본 설정 창).
-        var presetBar = new ExportPresetBar(ctx, this);
+        // 형식 묶음 제목 줄 오른쪽: 프리셋 단추(누르면 저장·불러오기·관리·기본 설정 창).
+        var presetBar = new ExportPresetBar(ctx, owner);
         var presetFlyout = new Flyout
         {
             Placement = PlacementMode.BottomEdgeAlignedRight,
@@ -149,14 +128,10 @@ public sealed class UnityExportDialog : DialogBase
         var presetButton = new Button
         {
             Content = Ui.IconLabel(VectorIcon.ChevronDown, UiStrings.S_UnityExportDialog_UnityExportDialog_DF3C668D29, iconAfter: true),
-            Padding = new Thickness(10, 3),
-            Margin = new Thickness(8, 0, 2, 1),
-        }.Tip(UiStrings.S_UnityExportDialog_UnityExportDialog_73AC3FD6C5).HelpAt(GuidePage, anchor: "Preset (far right of the tab row)");
+            Padding = new Thickness(10, 1),
+        }.Tip(UiStrings.S_UnityExportDialog_UnityExportDialog_73AC3FD6C5).HelpAt(GuidePage, anchor: "Preset (right end of the Format title row");
         presetButton.Click += (_, _) => PopupMenus.Show(presetButton, presetFlyout);
-        _tabs.Strip.Trailing = presetButton;
-        var root = (DockPanel)Content!;
-        root.Children.Remove(Body);
-        root.Children.Add(_tabs);
+        PresetButton = presetButton;
 
         _onReplaced = (_, _) => { _customPivot = false; RememberAtOpen(); RefreshAll(); ScheduleRebuild(); };
         _onChanged = (_, e) =>
@@ -165,40 +140,71 @@ public sealed class UnityExportDialog : DialogBase
             if (!(e.Change == ProjectChange.Pixels && _ctx.Project?.IsStrokeActive == true)) ScheduleRebuild();
         };
         _onCurrent = (_, _) => { RefreshAll(); HighlightCurrent(); };
-        ctx.ProjectReplaced += _onReplaced;
-        ctx.ProjectChanged += _onChanged;
-        ctx.CurrentChanged += _onCurrent;
         RememberAtOpen();
         RefreshAll();
     }
 
-    /// <summary>기억한 창 크기·위치(지금 어느 화면에도 걸치지 않으면 주인 창 가운데, 크기는 화면 작업 영역 안으로).</summary>
-    private void RestorePlacement()
+    /// <summary>형식 묶음 안(형식 콤보 아래): Unity용으로 내보내기 체크 + JPG 품질.</summary>
+    public Control FormatOptions => _formatOptions;
+    /// <summary>왼쪽 설정 묶음들(형식 묶음 아래).</summary>
+    public Control SettingsColumn => _settingsColumn;
+    /// <summary>오른쪽: 만들어질 결과 파일 미리보기.</summary>
+    public Control Preview { get; }
+    /// <summary>형식 묶음 제목 줄 오른쪽 "프리셋 ▾" 단추.</summary>
+    public Control PresetButton { get; }
+    /// <summary>다른 이름으로 저장 결과 줄(단추 줄 왼쪽).</summary>
+    public Control CopyResult => _copyResult;
+
+    /// <summary>프로젝트의 내보내기 이미지 형식(프로젝트가 없으면 PNG).</summary>
+    public ExportImageFormat ImageFormat => _ctx.Project?.Export.ImageFormat ?? ExportImageFormat.Png;
+
+    /// <summary>프로젝트 값을 화면에 다시 채움(형식 콤보를 맞출 때).</summary>
+    public event Action? Refreshed;
+
+    /// <summary>프로젝트의 내보내기 이미지 형식을 바꾼다(실행취소 1단계, 같으면 아무것도 안 함).</summary>
+    public void SetImageFormat(ExportImageFormat format)
+        => EditSettings(UiStrings.S_UnityExportDialog_BuildExportSections_F80B388117, p => p.Export.ImageFormat != format, p => p.Export.ImageFormat = format);
+
+    /// <summary>미리보기가 보이는지. 보이게 되면 (설정이 바뀌었으면) 다시 만들고, 숨기면 그림을 버린다.</summary>
+    public bool PreviewShown
     {
-        var s = _settings;
-        var screen = Screens.Primary ?? Screens.All.FirstOrDefault();
-        double maxW = screen is null ? 3000 : screen.WorkingArea.Width / screen.Scaling;
-        double maxH = screen is null ? 3000 : screen.WorkingArea.Height / screen.Scaling;
-        Width = Math.Clamp(s.ExportWidth > 0 ? s.ExportWidth : DefaultWidth, MinW, Math.Max(MinW, maxW));
-        Height = Math.Clamp(s.ExportHeight > 0 ? s.ExportHeight : DefaultHeight, MinH, Math.Max(MinH, maxH));
-        var bounds = new PixelRect(s.ExportX, s.ExportY, (int)Width, (int)Height);
-        if (s.ExportX >= 0 && s.ExportY >= 0 && Screens.All.Any(sc => sc.WorkingArea.Intersects(bounds)))
+        get => _previewShown;
+        set
         {
-            WindowStartupLocation = WindowStartupLocation.Manual;
-            Position = new PixelPoint(s.ExportX, s.ExportY);
+            if (_previewShown == value) return;
+            _previewShown = value;
+            if (!value)
+            {
+                _rebuild.Cancel();
+                _previewDirty = true;
+                ClearPreviews();
+            }
+            else if (_attached && _previewDirty) RebuildPreview();
         }
     }
 
-    /// <summary>창 크기·위치·나눔 비율을 설정에 적는다(최대화·최소화 중이면 크기·위치는 그대로).</summary>
-    private void SavePlacement()
+    /// <summary>창이 열림: 프로젝트 이벤트를 듣고, 보이면 미리보기를 만든다.</summary>
+    public void Attach()
     {
-        double left = _columns.ColumnDefinitions[0].ActualWidth, right = _columns.ColumnDefinitions[2].ActualWidth;
-        if (left > 0 && right > 0) _settings.ExportSplit = Math.Round(left / (left + right), 3);
-        if (WindowState != WindowState.Normal) return;
-        _settings.ExportX = Math.Max(0, Position.X);
-        _settings.ExportY = Math.Max(0, Position.Y);
-        if (ClientSize.Width > 0) _settings.ExportWidth = (int)Math.Round(ClientSize.Width);
-        if (ClientSize.Height > 0) _settings.ExportHeight = (int)Math.Round(ClientSize.Height);
+        if (_attached) return;
+        _attached = true;
+        _ctx.ProjectReplaced += _onReplaced;
+        _ctx.ProjectChanged += _onChanged;
+        _ctx.CurrentChanged += _onCurrent;
+        if (_previewShown) RebuildPreview();
+    }
+
+    /// <summary>창이 닫힘: 입력 중이던 이름·폴더를 반영한 뒤, 이벤트를 끊고 미리보기 그림을 버린다.</summary>
+    public void Detach()
+    {
+        foreach (var commit in _commitTexts) commit();
+        if (!_attached) return;
+        _attached = false;
+        _ctx.ProjectReplaced -= _onReplaced;
+        _ctx.ProjectChanged -= _onChanged;
+        _ctx.CurrentChanged -= _onCurrent;
+        _rebuild.Cancel();
+        ClearPreviews();
     }
 
     private void RememberAtOpen()
@@ -210,30 +216,69 @@ public sealed class UnityExportDialog : DialogBase
     /// <summary>고급 묶음을 펼치고 그리로 스크롤한다.</summary>
     private void ShowAdvanced()
     {
-        _tabs.SelectedIndex = MainPage;
         _advanced.IsExpanded = true;
         Dispatcher.UIThread.Post(() => _advanced.BringIntoView(), DispatcherPriority.Background);
     }
 
-    protected override void OnClosing(WindowClosingEventArgs e)
+    // ───────────── 다른 이름으로 저장 ─────────────
+
+    /// <summary>
+    /// 다른 이름으로 저장…: 저장 창(지금 형식의 확장자, 기본 이름 = 시트 이름)에서 고른 이름으로 지금 설정이 만드는 시트를 독립 파일로 쓴다
+    /// (파일이 여럿이면 그 이름이 앞부분, 이미 있는 파일은 묻고 덮어씀). .meta·기록 없이, 프로젝트는 그대로. 창은 열린 채 결과를 보인다.
+    /// </summary>
+    public void SaveCopy()
     {
-        base.OnClosing(e);
-        if (e.Cancel) return;
-        // 닫기·Esc·창 닫기 단추로 닫아도 입력 중이던 이름·폴더가 반영되게.
+        if (_ctx.Project is not { } p) return;
         foreach (var commit in _commitTexts) commit();
-        SavePlacement();
+        var format = p.Export.ImageFormat;
+        var ext = format.Extension();
+        string name = p.Path is null ? p.BaseName
+            : Path.GetFileNameWithoutExtension(FramesShown(p) ? ProjectExport.GetExportImagePath(p) : ProjectExport.GetPartsImagePath(p));
+        var dir = p.Path is { } projectPath ? Path.GetDirectoryName(projectPath) : _settings.LastFolder;
+        if (Ui.SaveFile(_owner, UiStrings.Export_SaveCopy.TrimEnd('…'), dir, name + ext, ext, new FileFilter(FormatName(format), ["*" + ext])) is not { } path) return;
+        SaveCopyTo(p, Path.GetFullPath(Path.ChangeExtension(path, ext)));
     }
 
-    protected override void OnClosed(EventArgs e)
+    /// <summary>
+    /// 지금 설정이 만드는 시트를 <paramref name="target"/>(이름이 앞부분) 기준 독립 파일로 쓰고 결과 줄을 보인다.
+    /// <paramref name="target"/> 자체는 저장 창이 이미 덮어쓸지 물었으므로 함께 만들어지는 다른 파일만 묻는다.
+    /// </summary>
+    private void SaveCopyTo(SpriteProject p, string target)
     {
-        _ctx.ProjectReplaced -= _onReplaced;
-        _ctx.ProjectChanged -= _onChanged;
-        _ctx.CurrentChanged -= _onCurrent;
-        _rebuild.Cancel();
-        _framesSection.Clear();
-        _partsSection.Clear();
-        base.OnClosed(e);
+        var title = UiStrings.Export_SaveCopy.TrimEnd('…');
+        try
+        {
+            var plan = ProjectExport.PlanCopy(p, target);
+            var paths = plan.FramePaths.Concat(plan.PartPaths).ToList();
+            if (paths.Count == 0)
+            {
+                Ui.Warn(_owner, UiStrings.Export_CopyNothing, title);
+                return;
+            }
+            var existing = paths.Where(f => File.Exists(f) && !string.Equals(f, target, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (existing.Count > 0 && Ui.Ask(_owner, UiStrings.FormatExport_Overwrite(count: existing.Count, first: Path.GetFileName(existing[0])),
+                    title, MessageButtons.OKCancel, MessageIcon.Warning) != DialogResult.OK) return;
+            WorkOverlay.Run(_owner, UiStrings.Busy_Exporting, progress => ProjectExport.Write(p, plan, progress));
+            long bytes = paths.Sum(f => new FileInfo(f).Length);
+            var files = paths.Count == 1 ? Path.GetFileName(paths[0]) : UiStrings.FormatExport_CopyFiles(first: Path.GetFileName(paths[0]), more: paths.Count - 1);
+            var size = AppTrash.FormatSize(bytes);
+            _copyResult.Text = UiStrings.FormatExport_CopySaved(files: files, size: size);
+            _copyResult.IsVisible = true;
+            _exported(paths, UiStrings.FormatExport_CopyDone(files: files, size: size, folder: Path.GetDirectoryName(paths[0])));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
+        {
+            Ui.Error(_owner, UiStrings.FormatExport_WriteFailed(message: ex.Message), UiStrings.Export_Failed);
+        }
     }
+
+    /// <summary>형식 콤보·저장 창에 쓰는 이미지 형식 이름(PNG·JPG는 설명 포함).</summary>
+    public static string FormatName(ExportImageFormat format) => format switch
+    {
+        ExportImageFormat.Png => UiStrings.S_UnityExportDialog_BuildExportSections_2653689DDE,
+        ExportImageFormat.Jpg => UiStrings.S_UnityExportDialog_BuildExportSections_59AD7EA467,
+        _ => format.Extension().TrimStart('.').ToUpperInvariant(),
+    };
 
     // ───────────── Import Settings ─────────────
 
@@ -378,23 +423,10 @@ public sealed class UnityExportDialog : DialogBase
         // ── 파일(두 결과 공통) ──
         var folder = NameText(UiStrings.S_UnityExportDialog_BuildExportSections_526698768E, UiStrings.S_UnityExportDialog_BuildExportSections_28B6043259, 240, p => p.Export.Folder, (p, v) => p.Export.Folder = v);
         var browse = Ui.Button("…", (_, _) => BrowseFolder(folder), 26).Tip(UiStrings.S_UnityExportDialog_BuildExportSections_987E11A4E7);
-        var format = Choice(UiStrings.S_UnityExportDialog_BuildExportSections_F80B388117, [ExportImageFormat.Png, ExportImageFormat.Jpg, ExportImageFormat.Tga, ExportImageFormat.Bmp],
-            [UiStrings.S_UnityExportDialog_BuildExportSections_2653689DDE, UiStrings.S_UnityExportDialog_BuildExportSections_59AD7EA467, "TGA", "BMP"], p => p.Export.ImageFormat, (p, v) => p.Export.ImageFormat = v, 170);
-        var jpegLabel = Ui.Label(UiStrings.S_UnityExportDialog_BuildExportSections_23E8B015EA);
-        var jpegQuality = IntNum(UiStrings.S_UnityExportDialog_BuildExportSections_0FBC1AB03F, 1, 100, 54, p => p.Export.JpegQuality, (p, v) => p.Export.JpegQuality = v)
-            .Presets(50, 60, 70, 75, 80, 85, 90, 95, 100).Unit("%").RecentKey("export.jpeg");
-        jpegQuality.Tip(UiStrings.S_UnityExportDialog_BuildExportSections_801EC51603);
-        _refresh.Add(p => jpegLabel.IsVisible = jpegQuality.IsVisible = p.Export.ImageFormat == ExportImageFormat.Jpg);
-        var meta = Seg<bool?>(UiStrings.S_UnityExportDialog_BuildExportSections_60EBD042A1, [false, null, true], [UiStrings.S_UnityExportDialog_BuildExportSections_F059194EC7, UiStrings.S_UnityExportDialog_BuildExportSections_65BEF24266, UiStrings.S_UnityExportDialog_BuildExportSections_D424AEA3F1], p => p.Export.WriteMeta, (p, v) => p.Export.WriteMeta = v)
-            .SetTip(0, UiStrings.S_UnityExportDialog_BuildExportSections_E38FCCF1CA)
-            .SetTip(1, UiStrings.S_UnityExportDialog_BuildExportSections_60ED6B1DA3)
-            .SetTip(2, UiStrings.S_UnityExportDialog_BuildExportSections_7981FFA3CA);
         var fileBox = Ui.Stack(
             Setting(UiStrings.S_UnityExportDialog_BuildExportSections_2508675F56, UiStrings.S_UnityExportDialog_BuildExportSections_0E4510EAD7,
                 OnOff(UiStrings.S_UnityExportDialog_BuildExportSections_2508675F56, p => p.Export.ExportOnSave, (p, v) => p.Export.ExportOnSave = v)),
-            Setting(UiStrings.S_UnityExportDialog_BuildExportSections_6D98D40F29, UiStrings.S_UnityExportDialog_BuildExportSections_5E17111839, Line(folder, browse)),
-            Setting(UiStrings.S_UnityExportDialog_BuildExportSections_F80B388117, UiStrings.S_UnityExportDialog_BuildExportSections_A3E683A3EB, Line(format, jpegLabel, jpegQuality)),
-            Setting("Unity .meta", UiStrings.S_UnityExportDialog_BuildExportSections_4425590C77, meta));
+            Setting(UiStrings.S_UnityExportDialog_BuildExportSections_6D98D40F29, UiStrings.S_UnityExportDialog_BuildExportSections_5E17111839, Line(folder, browse)));
 
         // ── 프레임 시트 ──
         var singleFrame = Ui.Num(1, 9999, 1, 54).RecentKey("export.frame");
@@ -493,6 +525,17 @@ public sealed class UnityExportDialog : DialogBase
         return (fileBox, framesBox, partsBox, advancedBox);
     }
 
+    /// <summary>JPG 품질 줄(형식이 JPG일 때만 보임).</summary>
+    private WrapPanel JpegQualityLine()
+    {
+        var jpegQuality = IntNum(UiStrings.S_UnityExportDialog_BuildExportSections_0FBC1AB03F, 1, 100, 54, p => p.Export.JpegQuality, (p, v) => p.Export.JpegQuality = v)
+            .Presets(50, 60, 70, 75, 80, 85, 90, 95, 100).Unit("%").RecentKey("export.jpeg");
+        jpegQuality.Tip(UiStrings.S_UnityExportDialog_BuildExportSections_801EC51603);
+        var line = Line(Ui.Label(UiStrings.S_UnityExportDialog_BuildExportSections_0FBC1AB03F), jpegQuality, Ui.Label("%"));
+        _refresh.Add(p => line.IsVisible = p.Export.ImageFormat == ExportImageFormat.Jpg);
+        return line;
+    }
+
     /// <summary>
     /// "공통" 묶음 내용: 내보낼 결과 + 두 결과가 같이 쓰는 시트 설정(<see cref="ExportSettings.Common"/>).
     /// 제목 <paramref name="title"/>은 지금 이 설정을 어느 결과가 쓰는지 알려 준다(부위 아틀라스가 따로 설정을 쓰면 프레임 시트만).
@@ -561,7 +604,7 @@ public sealed class UnityExportDialog : DialogBase
             initial = p.Export.Folder is { } f ? Path.GetFullPath(Path.Combine(baseDir, f)) : baseDir;
             if (!Directory.Exists(initial)) initial = baseDir;
         }
-        if (Ui.PickFolder(this, UiStrings.S_UnityExportDialog_BrowseFolder_7E04D74D15, initial) is not { } folder) return;
+        if (Ui.PickFolder(_owner, UiStrings.S_UnityExportDialog_BrowseFolder_7E04D74D15, initial) is not { } folder) return;
         if (p.Path is { } path)
         {
             var rel = Path.GetRelativePath(Path.GetDirectoryName(path)!, folder);
@@ -710,7 +753,7 @@ public sealed class UnityExportDialog : DialogBase
     {
         if (_ctx.Project is not { } p || options(p) is not { } o) return;
         var picker = new SkinPickerWindow(p, o, partsOnly: overrideBlock, _ctx.CurrentFrame);
-        if (picker.ShowDialog(this) != DialogResult.OK) return;
+        if (picker.ShowDialog(_owner) != DialogResult.OK) return;
         EditSettings(overrideBlock ? UiStrings.S_UnityExportDialog_PickSkins_4F2869B2C4 : UiStrings.S_UnityExportDialog_PickSkins_3F9745EFAF,
             pr => options(pr) is { } x && picker.Differs(x), pr => picker.ApplyTo(options(pr)!));
     }
@@ -827,9 +870,9 @@ public sealed class UnityExportDialog : DialogBase
             pressed = false;
             Commit((int)Math.Round(slider.Value));
         }
-        slider.AddHandler(PointerPressedEvent, (_, _) => pressed = true, RoutingStrategies.Tunnel, handledEventsToo: true);
-        slider.AddHandler(PointerReleasedEvent, (_, _) => Release(), RoutingStrategies.Bubble, handledEventsToo: true);
-        slider.AddHandler(PointerCaptureLostEvent, (_, _) => Release(), RoutingStrategies.Direct | RoutingStrategies.Bubble, handledEventsToo: true);
+        slider.AddHandler(InputElement.PointerPressedEvent, (_, _) => pressed = true, RoutingStrategies.Tunnel, handledEventsToo: true);
+        slider.AddHandler(InputElement.PointerReleasedEvent, (_, _) => Release(), RoutingStrategies.Bubble, handledEventsToo: true);
+        slider.AddHandler(InputElement.PointerCaptureLostEvent, (_, _) => Release(), RoutingStrategies.Direct | RoutingStrategies.Bubble, handledEventsToo: true);
         _refresh.Add(p =>
         {
             int v = Math.Clamp(get(p), min, max);
@@ -865,7 +908,7 @@ public sealed class UnityExportDialog : DialogBase
 
     /// <summary>
     /// 왼쪽 이름표(고정 너비 <paramref name="labelWidth"/>, 길면 줄바꿈) + 오른쪽 편집 칸 한 줄(표처럼). <paramref name="tip"/>은 이름표·편집 칸 도움말.
-    /// 기본 너비는 Import Settings(Unity 항목 이름) — 시트 설정·내보내기 탭은 <see cref="Setting"/>.
+    /// 기본 너비는 Import Settings(Unity 항목 이름) — 시트 설정 묶음은 <see cref="Setting"/>.
     /// </summary>
     private static Grid Field(string label, string? tip, Control editor, int labelWidth = LabelWidth)
     {
@@ -886,7 +929,7 @@ public sealed class UnityExportDialog : DialogBase
         return g;
     }
 
-    /// <summary>시트 설정·내보내기 탭의 한 줄(이름표 너비 <see cref="SettingLabelWidth"/>).</summary>
+    /// <summary>시트 설정 묶음의 한 줄(이름표 너비 <see cref="SettingLabelWidth"/>).</summary>
     private static Grid Setting(string label, string? tip, Control editor) => Field(label, tip, editor, SettingLabelWidth);
 
     /// <summary><see cref="Field"/> 줄의 이름표.</summary>
@@ -970,16 +1013,17 @@ public sealed class UnityExportDialog : DialogBase
     }
 
     /// <summary>
-    /// 접을 수 있는 설정 묶음(제목 줄 + 내용). 접은 묶음은 <see cref="AppSettings.ExportCollapsed"/>에 <paramref name="id"/>로 기억한다.
+    /// 접을 수 있는 설정 묶음(제목 줄 + 내용). 처음 상태(<paramref name="expandedByDefault"/>)와 다르게 접거나 편 묶음은
+    /// <see cref="AppSettings.ExportCollapsed"/>에 <paramref name="id"/>로 기억한다.
     /// </summary>
-    private Expander Section(string id, TextBlock title, Control content)
+    private Expander Section(string id, TextBlock title, Control content, bool expandedByDefault = true)
     {
         content.Margin = new Thickness(0, 2, 0, 0);
         var e = new Expander
         {
             Header = title,
             Content = content,
-            IsExpanded = !_settings.ExportCollapsed.Contains(id),
+            IsExpanded = expandedByDefault != _settings.ExportCollapsed.Contains(id),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
             Margin = new Thickness(2, 3, 2, 3),
@@ -988,7 +1032,7 @@ public sealed class UnityExportDialog : DialogBase
         {
             if (change.Property != Expander.IsExpandedProperty) return;
             _settings.ExportCollapsed.Remove(id);
-            if (!e.IsExpanded) _settings.ExportCollapsed.Add(id);
+            if (e.IsExpanded != expandedByDefault) _settings.ExportCollapsed.Add(id);
         };
         return e;
     }
@@ -1000,8 +1044,8 @@ public sealed class UnityExportDialog : DialogBase
         _updating = true;
         try
         {
-            // 프로젝트가 없으면 페이지만 끈다(탭 줄 오른쪽 프리셋 단추의 "관리"는 프로젝트 없이도 쓴다).
-            _columns.IsEnabled = _importPage.IsEnabled = _ctx.HasProject;
+            // 프로젝트가 없으면 칸만 끈다(프리셋 단추의 "관리"는 프로젝트 없이도 쓴다).
+            _settingsColumn.IsEnabled = _formatOptions.IsEnabled = _ctx.HasProject;
             if (_ctx.Project is not { } p) return;
             foreach (var refresh in _refresh) refresh(p);
             _framesSection.Panel.IsVisible = FramesShown(p);
@@ -1011,6 +1055,7 @@ public sealed class UnityExportDialog : DialogBase
         {
             _updating = false;
         }
+        Refreshed?.Invoke();
     }
 
     // ───────────── 시트 미리보기 ─────────────
@@ -1061,6 +1106,9 @@ public sealed class UnityExportDialog : DialogBase
             name.Margin = new Thickness(3, 8, 3, 0);
             section.Files.Children.Add(name);
             var sheet = new SheetPreview { Margin = new Thickness(3), HorizontalAlignment = HorizontalAlignment.Stretch };
+            sheet.SetSheet(file.Sheet, showNames);
+            section.Files.Children.Add(sheet);
+            section.Sheets.Add(sheet);
             var header = EntryRow(UiStrings.S_UnityExportDialog_FillSection_A33ACD4239, numberHeader, UiStrings.S_UnityExportDialog_FillSection_9F6AD2B46B);
             foreach (var t in header.Children.OfType<TextBlock>()) t.Foreground = AppTheme.DimTextBrush;
             header.Margin = new Thickness(6, 3, 6, 0);
@@ -1082,11 +1130,9 @@ public sealed class UnityExportDialog : DialogBase
                     select(e);
                 }
             };
-            FillPreview(sheet, entries, file.Sheet, showNames);
-            section.Files.Children.Add(sheet);
+            FillEntries(entries, file.Sheet);
             section.Files.Children.Add(header);
             section.Files.Children.Add(entries);
-            section.Sheets.Add(sheet);
         }
     }
 
@@ -1133,32 +1179,30 @@ public sealed class UnityExportDialog : DialogBase
         return g;
     }
 
-    /// <summary>내보내기 탭(미리보기)을 보고 있으면 잠시 뒤 다시 만들고, 아니면 그 탭으로 돌아올 때 만든다.</summary>
+    /// <summary>미리보기가 보이면 잠시 뒤 다시 만들고, 아니면 다시 보일 때 만든다.</summary>
     private void ScheduleRebuild()
     {
         _previewDirty = true;
-        if (_tabs.SelectedIndex != MainPage) return;
+        if (!_attached || !_previewShown) return;
         _rebuild.Restart();
     }
 
+    /// <summary>만들어질 시트(파일 이름 줄 + 파일마다 시트·칸 목록)를 지금 설정으로 다시 만든다.</summary>
     private void RebuildPreview()
     {
         _rebuild.Cancel();
         _previewDirty = false;
         if (_ctx.Project is not { } p)
         {
-            _framesSection.Clear();
-            _partsSection.Clear();
+            ClearPreviews();
             return;
         }
         var baseName = p.Path is null ? p.BaseName : Path.GetFileNameWithoutExtension(ProjectExport.GetExportImagePath(p));
         // 제목: 결과 파일 이름 + 저장할 때 실제로 내보내는지.
-        string ext = Path.GetExtension(p.Path is null ? ".png" : ProjectExport.GetExportImagePath(p));
+        string ext = p.Export.ImageFormat.Extension();
         string Off(bool on) => !p.Export.ExportOnSave ? UiStrings.S_UnityExportDialog_RebuildPreview_B223C99C7E : on ? "" : UiStrings.S_UnityExportDialog_RebuildPreview_27C575FC02;
         // 최종 결과만 보인다: 고른 결과(프레임 시트 / 부위 아틀라스 / 둘 다)의 미리보기. 둘 다 꺼져 있으면 프레임 시트(꺼짐 표시).
-        bool hasParts = p.Layers.Any(l => l.IsPart);
-        bool showParts = hasParts && p.Export.ExportParts;
-        bool showFrames = p.Export.ExportFrames || !showParts;
+        bool showParts = PartsShown(p), showFrames = FramesShown(p);
         _framesSection.Panel.IsVisible = showFrames;
         _partsSection.Panel.IsVisible = showParts;
         if (showFrames)
@@ -1181,9 +1225,14 @@ public sealed class UnityExportDialog : DialogBase
         HighlightCurrent();
     }
 
-    private static void FillPreview(SheetPreview preview, ListBox list, SheetResult sheet, bool showNames)
+    private void ClearPreviews()
     {
-        preview.SetSheet(sheet, showNames);
+        _framesSection.Clear();
+        _partsSection.Clear();
+    }
+
+    private static void FillEntries(ListBox list, SheetResult sheet)
+    {
         list.Items.Clear();
         foreach (var e in sheet.Entries)
             list.Items.Add(new ListBoxItem

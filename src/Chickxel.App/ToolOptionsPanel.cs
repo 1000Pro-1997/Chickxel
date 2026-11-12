@@ -739,7 +739,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         PointerExited += (_, _) => EndEffectEdit();
 
         BuildTileOptions();
-        Control[] boxes = [_canvasResizeBox, _transformBox, _tileBox, _shapeBox, _brushBox, _pencilGradientBox, _shapePenBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _frameRangeBox, _pivotBox, _sliceBox];
+        Control[] boxes = [_canvasResizeBox, _transformBox, _tileBox, _tileFloorBox, _shapeBox, _brushBox, _pencilGradientBox, _shapePenBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _frameRangeBox, _pivotBox, _sliceBox];
         foreach (var box in boxes) Ui.Foldable((Border)box);
         Ui.Foldable(_effectBox);
         var header = Ui.Header(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E39101186F);

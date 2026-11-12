@@ -56,9 +56,12 @@ public sealed record ProjectExportResult(IReadOnlyList<ExportResult> Frames, IRe
 
 /// <summary>
 /// 내보내기 계획: 만들 파일 경로(프레임 시트·부위 아틀라스 이미지, Sprite Library), 새 기록(결과 파일 + 쓰거나 이미 있는 <c>.meta</c>), 정리할 옛 결과.
+/// <paramref name="FramesBaseName"/>·<paramref name="PartsBaseName"/>이 있으면 설정의 이름 대신 그 이름이 앞부분(칸 이름도 그 기준),
+/// <paramref name="UnityFiles"/>가 false면 <c>.meta</c>를 쓰지 않는다(다른 이름으로 저장 — <see cref="ProjectExport.PlanCopy"/>).
 /// </summary>
 public sealed record ExportPlan(string ProjectPath, IReadOnlyList<string> FramePaths, IReadOnlyList<string> PartPaths,
-    IReadOnlyList<string> LibraryPaths, IReadOnlyList<string> Record, IReadOnlyList<string> Stale);
+    IReadOnlyList<string> LibraryPaths, IReadOnlyList<string> Record, IReadOnlyList<string> Stale,
+    string? FramesBaseName = null, string? PartsBaseName = null, bool UnityFiles = true);
 
 /// <summary>
 /// 프로젝트 → 스프라이트 시트 이미지 + Unity 메타 내보내기. 편집 정보(칸·태그 애니메이션)는 <c>.chickxel</c>에만 있고 이미지 옆에 따로 쓰지 않는다.
@@ -136,25 +139,46 @@ public static class ProjectExport
     public static (IReadOnlyList<string> Frames, IReadOnlyList<string> Parts) GetOutputPaths(SpriteProject project, string projectPath, bool assumePartContent)
     {
         var export = project.Export;
+        return OutputPaths(project, GetExportFolder(export, projectPath),
+            Path.GetFileNameWithoutExtension(GetExportImagePath(export, projectPath)),
+            Path.GetFileNameWithoutExtension(GetPartsImagePath(export, projectPath)), assumePartContent);
+    }
+
+    /// <summary>켜진 결과 이미지 경로: <paramref name="folder"/> 안의 프레임 시트(<paramref name="framesBase"/>로 시작)·부위 아틀라스(<paramref name="partsBase"/>로 시작) 파일들.</summary>
+    private static (IReadOnlyList<string> Frames, IReadOnlyList<string> Parts) OutputPaths(SpriteProject project, string folder, string framesBase, string partsBase, bool assumePartContent)
+    {
+        var export = project.Export;
         var ext = export.ImageFormat.Extension();
-        var folder = GetExportFolder(export, projectPath);
         var frames = new List<string>();
         var parts = new List<string>();
         if (export.ExportFrames)
-        {
-            var baseName = Path.GetFileNameWithoutExtension(GetExportImagePath(export, projectPath));
-            frames.AddRange(FrameOutputs(project, baseName).Select(o => Path.Combine(folder, o.Name + ext)));
-        }
+            frames.AddRange(FrameOutputs(project, framesBase).Select(o => Path.Combine(folder, o.Name + ext)));
         if (export.ExportParts)
         {
             var keys = assumePartContent ? AllPartFileKeys(project) : PartCels(project).Select(c => FileKey(project, c)).ToList();
             if (keys.Count > 0)
-            {
-                var baseName = Path.GetFileNameWithoutExtension(GetPartsImagePath(export, projectPath));
-                parts.AddRange(PartsOutputs(project, baseName, keys).Select(o => Path.Combine(folder, o.Name + ext)));
-            }
+                parts.AddRange(PartsOutputs(project, partsBase, keys).Select(o => Path.Combine(folder, o.Name + ext)));
         }
         return (frames, parts);
+    }
+
+    /// <summary>
+    /// 다른 이름으로 저장 계획: 지금 설정이 만드는 시트 이미지(프레임 시트·부위 아틀라스, 나눈 파일 포함)를 <paramref name="path"/>의 폴더에
+    /// 그 파일 이름(확장자 뺀)을 앞부분으로 — 부위 아틀라스는 프레임 시트도 만들면 <c>{이름}_parts</c> — 설정의 이미지 형식으로 쓴다.
+    /// 독립 파일이라 <c>.meta</c>·Sprite Library를 쓰지 않고 기록(<see cref="SpriteProject.ExportedFiles"/>)·정리할 옛 결과도 없다.
+    /// <see cref="Write(SpriteProject, ExportPlan, WorkProgress?)"/>로 쓰며 프로젝트는 바꾸지 않는다. 결과 파일 이름이 겹치면 <see cref="InvalidOperationException"/>.
+    /// </summary>
+    public static ExportPlan PlanCopy(SpriteProject project, string path)
+    {
+        path = Path.GetFullPath(path);
+        var name = Path.GetFileNameWithoutExtension(path);
+        var partsBase = project.Export.ExportFrames ? name + "_parts" : name;
+        var (frames, parts) = OutputPaths(project, Path.GetDirectoryName(path)!, name, partsBase, assumePartContent: false);
+        var images = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var image in frames.Concat(parts))
+            if (!images.Add(image))
+                throw new InvalidOperationException(Chickxel.Core.Localization.DomainStrings.FormatExport_DuplicateFile(name: Path.GetFileName(image)));
+        return new ExportPlan(path, frames, parts, [], [], [], name, partsBase, UnityFiles: false);
     }
 
     /// <summary>
@@ -1072,19 +1096,19 @@ public static class ProjectExport
         if (plan.FramePaths.Count > 0)
         {
             bool multiple = project.Sprite.Mode == SpriteMode.Multiple;
-            var sheets = BuildFrameSheets(project, Path.GetFileNameWithoutExtension(GetExportImagePath(export, plan.ProjectPath)), stage, NewCache());
+            var sheets = BuildFrameSheets(project, plan.FramesBaseName ?? Path.GetFileNameWithoutExtension(GetExportImagePath(export, plan.ProjectPath)), stage, NewCache());
             for (int i = 0; i < sheets.Count; i++)
-                frames.Add(WriteDocument(plan.FramePaths[i], FrameDocument(project, sheets[i].Sheet, multiple), project, ShouldWriteMeta(project, plan.FramePaths[i]), stage));
+                frames.Add(WriteDocument(plan.FramePaths[i], FrameDocument(project, sheets[i].Sheet, multiple), project, plan.UnityFiles && ShouldWriteMeta(project, plan.FramePaths[i]), stage));
         }
         var parts = new List<ExportResult>();
         var sprites = new Dictionary<(Layer Part, int Frame, Skin? Skin), SpriteLibraryAssetWriter.SpriteRef>();
         if (plan.PartPaths.Count > 0)
         {
-            var sheets = BuildPartsSheets(project, Path.GetFileNameWithoutExtension(GetPartsImagePath(export, plan.ProjectPath)), stage);
+            var sheets = BuildPartsSheets(project, plan.PartsBaseName ?? Path.GetFileNameWithoutExtension(GetPartsImagePath(export, plan.ProjectPath)), stage);
             for (int i = 0; i < sheets.Count; i++)
             {
                 var path = plan.PartPaths[i];
-                var result = WriteDocument(path, PartsDocument(project, sheets[i].Sheet), project, ShouldWritePartsMeta(project, path), stage);
+                var result = WriteDocument(path, PartsDocument(project, sheets[i].Sheet), project, plan.UnityFiles && ShouldWritePartsMeta(project, path), stage);
                 parts.Add(result);
                 if (plan.LibraryPaths.Count == 0 || !result.MetaWritten || UnityMeta.TryRead(UnityMeta.GetMetaPath(path)) is not { Guid: { } guid } meta) continue;
                 var ids = meta.Sprites.GroupBy(s => s.Name).ToDictionary(g => g.Key, g => g.First().InternalId);
@@ -1096,7 +1120,7 @@ public static class ProjectExport
         var libraries = new List<ExportResult>();
         if (plan.LibraryPaths.Count > 0)
         {
-            var baseName = Path.GetFileNameWithoutExtension(GetPartsImagePath(export, plan.ProjectPath));
+            var baseName = plan.PartsBaseName ?? Path.GetFileNameWithoutExtension(GetPartsImagePath(export, plan.ProjectPath));
             var groups = PartCels(project).Select(c => c.Part.Parent!).Distinct();
             var outputs = LibraryOutputs(project, baseName, groups);
             for (int i = 0; i < outputs.Count && i < plan.LibraryPaths.Count; i++)

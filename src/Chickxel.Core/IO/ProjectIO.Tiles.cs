@@ -45,7 +45,7 @@ public static partial class ProjectIO
     /// <summary>타일셋 내용과 맵을 ZIP에 쓴다.</summary>
     private static void WriteTiles(ZipArchive zip, SpriteProject project)
     {
-        foreach (var tileset in project.UsedTilesets)
+        foreach (var tileset in project.AllTilesets)
         {
             // 안에 든 PNG가 이미 압축되어 있으므로 압축하지 않는다.
             var entry = zip.CreateEntry(TilesetEntryName(tileset.Key), CompressionLevel.NoCompression);
@@ -104,7 +104,7 @@ public static partial class ProjectIO
         {
             var layer = fileLayers[li];
             if (layer.Tiles is not { } data) continue;
-            if (!project.Tilesets.ContainsKey(data.TilesetKey)) warnings?.Add(DomainStrings.FormatTile_MissingTileset(layer: layer.Name));
+            if (data.TilesetKeys.Any(k => !project.Tilesets.ContainsKey(k))) warnings?.Add(DomainStrings.FormatTile_MissingTileset(layer: layer.Name));
             if (zip.GetEntry(TileMapEntryName(li)) is not { } entry) continue;
             try
             {
@@ -122,7 +122,7 @@ public static partial class ProjectIO
 
     /// <summary>레이어 DTO의 타일맵 내용(맵은 비어 있음 — <see cref="ReadTiles"/>가 채움).</summary>
     private static TilemapData TilemapOf(LayerDto l)
-        => new(l.TilesetKey ?? "", TileMap.Empty, l.TileOrigin is [var x, var y] ? new Point(x, y) : Point.Empty)
+        => new(l.TilesetKeys is { Count: > 0 } keys ? [.. keys] : [""], TileMap.Empty, l.TileOrigin is [var x, var y] ? new Point(x, y) : Point.Empty)
         {
             HiddenFloors = [.. (l.TileHidden ?? []).Distinct()],
             LockedFloors = [.. (l.TileLocked ?? []).Distinct()],

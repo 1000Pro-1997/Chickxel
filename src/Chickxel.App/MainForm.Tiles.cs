@@ -112,7 +112,8 @@ public sealed partial class MainForm
     }
 
     /// <summary>
-    /// 현재 레이어에 맞춰 화면을 바꾼다: 타일맵 레이어면 도구 막대 = 타일 도구, 왼쪽 패널 = 타일셋, 픽셀 전용 메뉴는 흐림. 그 밖은 원래대로.
+    /// 현재 레이어에 맞춰 화면을 바꾼다: 타일맵 레이어면 도구 막대 = 타일 도구, 왼쪽 패널 = 타일셋, 픽셀 전용 메뉴는 흐림,
+    /// 위 막대 보기 단추 = 타일맵 보기(층 보기·칸 격자·타일 움직임). 그 밖은 원래대로.
     /// </summary>
     private void UpdateTileMode()
     {
@@ -125,7 +126,17 @@ public sealed partial class MainForm
         _tileToolBar.IsVisible = tile;
         _colors.IsVisible = !tile;
         _tilesetPanel.IsVisible = tile;
+        foreach (var view in new Control[] { _cbGrid, _cbTiles, _cbTiled, _cbPivot, _cbOnion, _cbEffects }) BarSlot(view).IsVisible = !tile;
+        foreach (var view in new Control[] { _cbTileView, _cbTileCells, _cbTileAnim }) view.IsVisible = tile;
         if (tile) RefreshTileToolTips();
+    }
+
+    /// <summary>위 막대에서 보기 단추가 차지한 칸(설정 화살표와 묶였으면 그 묶음).</summary>
+    private Control BarSlot(Control button)
+    {
+        var c = button;
+        while (c.Parent is Control parent && !ReferenceEquals(parent, _cbRight)) c = parent;
+        return c;
     }
 
     /// <summary>도구 이름·안내 줄과 단추 눌림(타일맵 모드).</summary>

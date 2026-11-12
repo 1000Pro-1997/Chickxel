@@ -50,6 +50,11 @@ public sealed class AppSettings
     public string PixelGridColor { get; set; } = "#FFFFFF40";
     public string TileGridColor { get; set; } = "#5AC8FF96";
     public bool OnionSkin { get; set; }
+    // 타일셋 패널 보기: 층별로 나누기, 자동 타일에 쓴 타일 감추기, 자동 타일 구성 보기, 칸 크기(0 = 자동)
+    public bool TileListByFloor { get; set; } = true;
+    public bool TileListHideAutoTiles { get; set; } = true;
+    public bool TileShowAutoParts { get; set; } = true;
+    public int TileSlotSize { get; set; }
     /// <summary>픽셀 격자를 보이기 시작하는 배율.</summary>
     public int PixelGridMinZoom { get; set; } = 6;
     /// <summary>타일 모드 반복 겹 수(0 = 자동).</summary>
@@ -236,15 +241,17 @@ public sealed class AppSettings
     /// <summary>창 설정(후보 수·가중치·넣기·AI 다듬기 등).</summary>
     public PixelateOptions? Pixelate { get; set; }
 
-    // 내보내기 설정 창(Ctrl+E)
+    // 내보내기 창(Ctrl+E)
     public int ExportX { get; set; } = -1;
     public int ExportY { get; set; } = -1;
     public int ExportWidth { get; set; } = 1100;
     public int ExportHeight { get; set; } = 760;
     /// <summary>왼쪽 설정 칸 너비 비율(0~1, 나머지는 오른쪽 미리보기).</summary>
     public double ExportSplit { get; set; } = 0.46;
-    /// <summary>접어 둔 설정 묶음 이름(설정 프리셋·공통·파일·프레임 시트·부위 아틀라스·고급).</summary>
+    /// <summary>처음 상태와 다르게 둔 설정 묶음 이름(공통·파일·프레임 시트·부위 아틀라스·고급은 접은 것, Unity Import Settings는 편 것).</summary>
     public List<string> ExportCollapsed { get; set; } = new();
+    /// <summary>내보내기 창에서 마지막으로 고른 형식 종류(Ctrl+E가 이 형식으로 연다 — 이미지면 프로젝트의 이미지 형식).</summary>
+    public ExportFormat ExportFormat { get; set; } = ExportFormat.Image;
 
     // GIF 애니메이션 내보내기(마지막으로 쓴 값, 앱 전체 — 속도는 갤러리에 올리기도 같이 씀)
     /// <summary>재생 횟수(0 = 무한 반복).</summary>

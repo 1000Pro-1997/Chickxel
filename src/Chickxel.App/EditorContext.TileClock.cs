@@ -36,7 +36,8 @@ public sealed partial class EditorContext
     private void InitTileClock()
     {
         _tileClockScope = new TileClockScope(this);
-        ProjectReplaced += (_, _) => SyncTileClock();
+        ProjectReplaced += (_, _) => { SyncTileClock(); SyncFloorView(); };
+        CurrentChanged += (_, _) => SyncFloorView();
         ProjectChanged += (_, e) =>
         {
             // 그리는 중에는 픽셀만 바뀌므로 타일셋을 다시 셀 까닭이 없다
@@ -46,11 +47,28 @@ public sealed partial class EditorContext
         _renders.PlanScope = ScreenTileClock;
     }
 
-    /// <summary>움직이는 타일이 있으면 시계를 돌리고, 없으면 멈춘다(배터리 — 타이머도 끔).</summary>
+    /// <summary>
+    /// 움직이는 타일을 화면에서 돌릴지(위 막대 "타일 움직임", 기본 켬). 끄면 화면 시계가 그 자리에서 멈춰 그림이 그대로 서 있다 — 내보내기·저장은 원래부터 시계와 상관없음.
+    /// </summary>
+    public bool TileAnimationPlaying
+    {
+        get => _tileAnimationPlaying;
+        set
+        {
+            if (_tileAnimationPlaying == value) return;
+            _tileAnimationPlaying = value;
+            SyncTileClock();
+            ViewChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private bool _tileAnimationPlaying = true;
+
+    /// <summary>움직이는 타일이 있고 재생을 켰으면 시계를 돌리고, 아니면 멈춘다(배터리 — 타이머도 끔).</summary>
     private void SyncTileClock()
     {
         _clockTilesets = Project is { } p ? p.UsedTilesets.Where(t => t.HasAnimation).ToList() : [];
-        bool run = _clockTilesets.Count > 0;
+        bool run = _clockTilesets.Count > 0 && _tileAnimationPlaying;
         if (run == _tileClock.IsRunning) return;
         if (run)
         {
@@ -79,7 +97,7 @@ public sealed partial class EditorContext
         if (Project is not { } p || WorkOverlay.IsActive || _frame < 0 || _frame >= p.Frames.Count) return;
         int phase = TilePhase();
         if (phase == _shownTilePhase) return;
-        if (_renders.IsPending(new RenderKey(RenderKind.Composite, p.Frames[_frame], Raw: !_canvasEffects))) return;
+        if (_renders.IsPending(CanvasFrameKey(p, _frame))) return;
         _shownTilePhase = phase;
         _renders.Invalidate(k => k.Kind is RenderKind.Composite or RenderKind.Context
                                  || k.Kind is RenderKind.Cel or RenderKind.Part && k.Layer is { IsTilemap: true });
@@ -107,34 +125,48 @@ public sealed partial class EditorContext
     /// <summary>
     /// 화면 합성 순서표를 만드는 동안(<see cref="RenderService.PlanScope"/>) 프로젝트 시계를 화면 시계로 둔다. 썸네일, 움직이는 타일이 없을 때,
     /// 저장·내보내기가 작업 스레드에서 프로젝트를 읽는 동안에는 건드리지 않는다(그쪽 결과가 시계 0으로 정해지게).
+    /// 캔버스용 합성(타일맵 레이어를 단 <see cref="RenderKind.Composite"/> — <see cref="CanvasFrameView"/>)이면 층 보기도 넣는다.
     /// </summary>
-    private IDisposable? ScreenTileClock(RenderKey key) => key.Kind == RenderKind.Thumb ? null : BeginTileClock();
+    private IDisposable? ScreenTileClock(RenderKey key)
+        => key.Kind == RenderKind.Thumb ? null : BeginScreenTiles(key.Kind == RenderKind.Composite ? key.Layer : null);
 
-    private IDisposable? BeginTileClock()
+    /// <summary>
+    /// 화면 그림을 만드는 동안 프로젝트에 화면 시계와(<paramref name="viewLayer"/>가 있으면) 그 레이어의 층 보기를 넣는다. 넣을 것이 없으면 null.
+    /// 겹쳐 불리면 바깥 것을 그대로 쓴다.
+    /// </summary>
+    private IDisposable? BeginScreenTiles(Layer? viewLayer)
     {
-        if (_clockTilesets.Count == 0 || WorkOverlay.IsActive || Project is not { } p) return null;
+        if (WorkOverlay.IsActive || Project is not { } p) return null;
+        bool clock = _clockTilesets.Count > 0;
+        var view = viewLayer is not null ? FloorViewFor(viewLayer) : null;
+        if (!clock && view is null && _clockDepth == 0) return null;
         if (_clockDepth++ == 0)
         {
             _clockedProject = p;
-            p.TileClockMs = TileClockMs;
+            if (clock) p.TileClockMs = TileClockMs;
+            p.TileFloorView = view;
         }
         return _tileClockScope;
     }
 
-    /// <summary><paramref name="read"/>를 화면 시계로 부른다(캔버스가 직접 읽는 타일맵 캔버스 밖 그림처럼 합성 결과를 거치지 않는 화면 그리기).</summary>
-    internal T WithTileClock<T>(Func<T> read)
+    /// <summary><paramref name="read"/>를 화면 시계로 부른다(캔버스가 직접 읽는 타일맵 캔버스 밖 그림처럼 합성 결과를 거치지 않는 화면 그리기). <paramref name="viewLayer"/>면 층 보기도.</summary>
+    internal T WithTileClock<T>(Func<T> read, Layer? viewLayer = null)
     {
-        using (BeginTileClock())
+        using (BeginScreenTiles(viewLayer))
             return read();
     }
 
-    /// <summary>순서표를 다 만들면 프로젝트 시계를 0으로 되돌린다(겹쳐 불렸으면 마지막에).</summary>
+    /// <summary>순서표를 다 만들면 프로젝트 시계를 0으로, 층 보기를 null로 되돌린다(겹쳐 불렸으면 마지막에).</summary>
     private sealed class TileClockScope(EditorContext owner) : IDisposable
     {
         public void Dispose()
         {
             if (--owner._clockDepth > 0) return;
-            if (owner._clockedProject is { } p) p.TileClockMs = 0;
+            if (owner._clockedProject is { } p)
+            {
+                p.TileClockMs = 0;
+                p.TileFloorView = null;
+            }
             owner._clockedProject = null;
         }
     }

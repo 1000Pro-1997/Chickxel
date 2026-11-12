@@ -609,7 +609,7 @@ public static class ProjectMerge
             if (top.IsTilemap)
             {
                 // 타일맵: 타일셋을 같이 담고 격자 원점을 기준점만큼 옮긴다(맵·타일셋은 바뀌지 않는 값이라 같이 씀).
-                if (src.TilesetOf(top) is { } tileset) _p.PutTilesetRaw(tileset);
+                foreach (var tileset in src.TilesetSources(top)) _p.PutTilesetRaw(tileset);
                 var move = Shift(s);
                 if (top.Tiles is { } tiles) copy.Tiles = tiles with { Origin = new Point(tiles.Origin.X + move.X, tiles.Origin.Y + move.Y) };
                 CopyCanvasPivots(s, top, copy, frameMap);

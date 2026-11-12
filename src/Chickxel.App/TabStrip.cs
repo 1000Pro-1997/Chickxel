@@ -21,7 +21,6 @@ public delegate void TabIconPainter(DrawingContext g, Rect area, IImmutableSolid
 /// 앱 공통 탭 줄: 대화상자 페이지 탭·패널 머리글 탭·값 고르기 묶음이 모두 이것을 쓴다(<see cref="TabStripKind"/>로 크기·모양만 다름).
 /// 탭마다 글자 그리고/또는 그림(<see cref="Add"/>), 글자 바꾸기(<see cref="SetText"/>), 도움말(<see cref="SetTip"/>), 숨기기(<see cref="SetTabVisible"/>).
 /// 마우스 올리면 밝게, 클릭하면 고른다. 키보드: 포커스가 있으면 ←/→·Home/End, Ctrl+Tab / Ctrl+Shift+Tab(돌아가며).
-/// 줄 오른쪽 끝에 다른 컨트롤을 둘 수 있다(<see cref="Trailing"/>, 페이지·작은 탭).
 /// <see cref="SelectedIndex"/>가 바뀌면(코드로 바꿔도) <see cref="SelectionChanged"/> — 콤보 상자와 같다.
 /// </summary>
 public sealed class TabStrip : Border
@@ -51,8 +50,6 @@ public sealed class TabStrip : Border
 
     private readonly List<Tab> _tabs = new();
     private readonly StackPanel _row = new() { Orientation = Orientation.Horizontal };
-    private readonly DockPanel _dock = new() { LastChildFill = true };
-    private Control? _trailing;
     private int _selected = -1;
     private int _hover = -1;
     private bool _focusRing;
@@ -62,8 +59,7 @@ public sealed class TabStrip : Border
     public TabStrip(TabStripKind kind, params string[] labels)
     {
         Kind = kind;
-        _dock.Children.Add(_row);
-        Child = _dock;
+        Child = _row;
         Background = Clear;
         switch (kind)
         {
@@ -113,21 +109,6 @@ public sealed class TabStrip : Border
 
     /// <summary>고른 탭이 바뀜(사용자 조작이든 코드든).</summary>
     public event EventHandler? SelectionChanged;
-
-    /// <summary>탭 줄 오른쪽 끝에 붙는 컨트롤(예: 내보내기 설정 창의 "프리셋 ▾"). null = 없음.</summary>
-    public Control? Trailing
-    {
-        get => _trailing;
-        set
-        {
-            if (_trailing is not null) _dock.Children.Remove(_trailing);
-            _trailing = value;
-            if (value is null) return;
-            DockPanel.SetDock(value, Dock.Right);
-            value.VerticalAlignment = VerticalAlignment.Center;
-            _dock.Children.Insert(0, value);
-        }
-    }
 
     /// <summary>
     /// 탭 하나를 끝에 더한다(글자·그림 중 하나는 있어야 함). 돌려주는 값 = 탭 번호.
@@ -368,7 +349,7 @@ public sealed class TabView : DockPanel
         };
     }
 
-    /// <summary>탭 줄(오른쪽 끝 컨트롤은 <see cref="TabStrip.Trailing"/>).</summary>
+    /// <summary>탭 줄.</summary>
     public TabStrip Strip { get; } = new(TabStripKind.Page);
 
     /// <summary>페이지를 끝에 더한다. 첫 페이지는 바로 고른다. 돌려주는 값 = 페이지 번호.</summary>

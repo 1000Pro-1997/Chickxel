@@ -464,6 +464,12 @@
   <data name="Tile_AddLayer" xml:space="preserve"><value>Add tilemap layer</value></data>
   <data name="Tile_TilesetNotInProject" xml:space="preserve"><value>The tileset isn't in this project.</value></data>
   <data name="Tile_ChangeTileset" xml:space="preserve"><value>Change tileset</value></data>
+  <data name="Tile_AddLayerTileset" xml:space="preserve"><value>Add tileset to layer</value></data>
+  <data name="Tile_RemoveLayerTileset" xml:space="preserve"><value>Remove tileset from layer</value></data>
+  <data name="Tile_AddProjectTileset" xml:space="preserve"><value>Add tileset to project</value></data>
+  <data name="Tile_RemoveProjectTileset" xml:space="preserve"><value>Delete tileset from project</value></data>
+  <data name="Tile_TilesetCellSizeMismatch" xml:space="preserve"><value>The cell size must match the layer's other tilesets.</value></data>
+  <data name="Tile_TilesetAlreadyInLayer" xml:space="preserve"><value>This layer already uses that tileset.</value></data>
   <data name="Tile_NoStroke" xml:space="preserve"><value>No tile stroke is open.</value></data>
   <data name="Tile_Paint" xml:space="preserve"><value>Place tiles</value></data>
   <data name="Tile_ConvertToGroup" xml:space="preserve"><value>Convert tilemap to layers</value></data>

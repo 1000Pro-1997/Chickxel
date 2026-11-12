@@ -72,7 +72,6 @@
   <data name="Menu_File_SaveAs_073" xml:space="preserve"><value>Save as…</value></data>
   <data name="Menu_File_Command_075" xml:space="preserve"><value>Revert to saved</value></data>
   <data name="Menu_File_OpenExportDialog_077" xml:space="preserve"><value>Export…</value></data>
-  <data name="Menu_File_Command_079" xml:space="preserve"><value>Export as animated GIF…</value></data>
   <data name="Menu_File_CloseProject_081" xml:space="preserve"><value>Close</value></data>
   <data name="Menu_File_Command_083" xml:space="preserve"><value>Start screen</value></data>
   <data name="Menu_File_Close_085" xml:space="preserve"><value>Exit</value></data>

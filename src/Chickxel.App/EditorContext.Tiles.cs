@@ -86,7 +86,98 @@ public sealed partial class EditorContext
     /// <summary>타일 붓·뒤집기·층·무작위·자동 타일 세트·칸 선택이 바뀜(타일셋 패널·도구 설정·캔버스 미리보기).</summary>
     public event EventHandler? TileStateChanged;
 
-    private void TileChanged() => TileStateChanged?.Invoke(this, EventArgs.Empty);
+    private void TileChanged()
+    {
+        SyncFloorView();
+        TileStateChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private TileFloorViewMode _tileViewMode;
+    // 마지막으로 캔버스 그림에 넣은 층 보기(바뀌면 캔버스 합성을 무효로)
+    private TileFloorView? _shownFloorView;
+
+    /// <summary>캔버스의 층 보기(위 막대): 모든 층 그대로, 고른 층 강조(다른 층은 흐리게), 고른 층만. 미리보기·내보내기는 늘 모든 층.</summary>
+    public TileFloorViewMode TileViewMode
+    {
+        get => _tileViewMode;
+        set
+        {
+            if (_tileViewMode == value) return;
+            _tileViewMode = value;
+            SyncFloorView();
+            TileStateChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>층 보기가 맞출 층: 손으로 고른 층, 아니면 지금 찍을 것이 들어갈 첫 층(없으면 null — 지우개 자동 등).</summary>
+    public int? TileViewFloor
+    {
+        get
+        {
+            if (CurrentTileset is not { } ts) return null;
+            if (_tileFloor is { } f) return ts.ValidFloor(f);
+            var floors = Chickxel.App.TilePick.Describe(this, ts).Floors;
+            return floors.Count > 0 ? floors[0] : null;
+        }
+    }
+
+    /// <summary>캔버스 합성에 층 보기를 입힐 타일맵 레이어(층 보기가 꺼졌거나 맞출 층이 없으면 null).</summary>
+    private Layer? FloorViewLayer => _shownFloorView?.Layer;
+
+    /// <summary>레이어 <paramref name="layer"/>에 입힐 층 보기(지금 캔버스의 층 보기가 그 레이어 것일 때만).</summary>
+    private TileFloorView? FloorViewFor(Layer layer) => _shownFloorView is { } v && ReferenceEquals(v.Layer, layer) ? v : null;
+
+    /// <summary>층 보기(모드·레이어·맞출 층)를 다시 정하고, 바뀌었으면 층 보기를 입힌 캔버스 합성을 무효로 하고 화면을 다시 그린다.</summary>
+    private void SyncFloorView()
+    {
+        var view = _tileViewMode != TileFloorViewMode.All && CurrentTilemap is { } layer && TileViewFloor is { } floor
+            ? new TileFloorView(layer, floor, _tileViewMode) : null;
+        if (view == _shownFloorView) return;
+        _shownFloorView = view;
+        _renders.Invalidate(k => k.Kind == RenderKind.Composite && k.Layer is not null);
+        ViewChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    // ───────────── 타일셋 패널 보기(설정 창 "보기", 앱 설정에 저장) ─────────────
+
+    private bool _tileListByFloor = true, _tileListHideAuto = true, _tileShowAutoParts = true;
+    private int _tileSlotSize;
+
+    /// <summary>타일 목록을 기본 층별로 나눠 보인다(층 이름 줄 아래 그 층 타일).</summary>
+    public bool TileListByFloor
+    {
+        get => _tileListByFloor;
+        set { if (_tileListByFloor == value) return; _tileListByFloor = value; TileChanged(); }
+    }
+
+    /// <summary>자동 타일 세트에 쓴 타일을 타일 목록에서 감춘다(세트의 구성에서 고름).</summary>
+    public bool TileListHideAutoTiles
+    {
+        get => _tileListHideAuto;
+        set { if (_tileListHideAuto == value) return; _tileListHideAuto = value; TileChanged(); }
+    }
+
+    /// <summary>자동 타일 세트를 고르면 그 아래에 세트의 구성(든 타일)을 보인다.</summary>
+    public bool TileShowAutoParts
+    {
+        get => _tileShowAutoParts;
+        set { if (_tileShowAutoParts == value) return; _tileShowAutoParts = value; TileChanged(); }
+    }
+
+    /// <summary>타일셋 패널의 타일·자동 타일 칸 크기(px, 0 = 자동 — 패널 폭에 목록 열이 다 들어가게).</summary>
+    public int TileSlotSize
+    {
+        get => _tileSlotSize;
+        set
+        {
+            value = value <= 0 ? 0 : Math.Clamp(value, MinTileSlotSize, MaxTileSlotSize);
+            if (_tileSlotSize == value) return;
+            _tileSlotSize = value;
+            TileChanged();
+        }
+    }
+
+    public const int MinTileSlotSize = 16, MaxTileSlotSize = 64;
 
     /// <summary>현재 레이어가 타일맵 레이어인지(도구 막대·메뉴·캔버스가 타일 편집으로 바뀜).</summary>
     public bool IsTilemapSelected => CurrentLayerObject?.IsTilemap == true;
@@ -94,8 +185,17 @@ public sealed partial class EditorContext
     /// <summary>현재 타일맵 레이어(아니면 null).</summary>
     public Layer? CurrentTilemap => CurrentLayerObject is { IsTilemap: true } l ? l : null;
 
-    /// <summary>현재 타일맵 레이어의 타일셋(없으면 null).</summary>
+    /// <summary>
+    /// 현재 타일맵 레이어가 그리는 타일셋(없으면 null): 레이어에 쌓은 타일셋을 합친 것(<see cref="TileSources.Combine"/> — 둘째 타일셋부터의 타일·세트 Id는
+    /// 자리만큼 밀림). 칸 크기·층은 첫 타일셋 것. 찍기·그리기·이름 보이기는 이것으로, 타일셋 고치기는 <see cref="EditTileset"/>로 원래 타일셋에.
+    /// </summary>
     public Tileset? CurrentTileset => Project is { } p && CurrentTilemap is { } l ? p.TilesetOf(l) : null;
+
+    /// <summary>현재 타일맵 레이어에 쌓은 타일셋(자리 차례, 첫째 = 칸 크기·층을 정하는 타일셋). 타일맵 레이어가 아니면 빈 목록.</summary>
+    public IReadOnlyList<Tileset> CurrentTilesetSources => Project is { } p && CurrentTilemap is { } l ? p.TilesetSources(l) : [];
+
+    /// <summary>현재 타일맵 레이어의 첫 타일셋 이름표(층은 이 타일셋 것, 없으면 null).</summary>
+    public string? CurrentPrimaryTilesetKey => CurrentTiles?.PrimaryTilesetKey;
 
     /// <summary>현재 타일맵 레이어 내용(없으면 null).</summary>
     public TilemapData? CurrentTiles => CurrentTilemap?.Tiles;
@@ -128,7 +228,7 @@ public sealed partial class EditorContext
         set { if (_tileTransform == value) return; _tileTransform = value; TileChanged(); }
     }
 
-    /// <summary>찍을 층을 손으로 고정(null = 타일마다 기본 층).</summary>
+    /// <summary>찍을 층을 손으로 고정(수동, null = 자동 — 타일마다 기본 층, 자동 타일은 세트의 층).</summary>
     public int? TileFloor
     {
         get => _tileFloor;
@@ -169,8 +269,16 @@ public sealed partial class EditorContext
     /// <summary>사각형·채우기가 자동 타일 세트로 칠하는지(마지막으로 고른 것이 세트일 때).</summary>
     public bool UsesAutoTileSource => (_autoSource || _tileTool == TileTool.AutoTile) && CurrentAutoTileSet is not null;
 
-    /// <summary>지금 자동 타일 세트(없으면 null).</summary>
-    public AutoTileSet? CurrentAutoTileSet => CurrentTileset?.FindAutoTile(_autoTileSet);
+    /// <summary>지금 자동 타일 세트(없으면 null). 찍을 층을 손으로 고정했으면 그 층에 칠하는 세트(층만 바꾼 사본)다.</summary>
+    public AutoTileSet? CurrentAutoTileSet
+    {
+        get
+        {
+            if (CurrentTileset is not { } ts || ts.FindAutoTile(_autoTileSet) is not { } set) return null;
+            if (_tileFloor is not { } f || ts.ValidFloor(f) == set.Floor) return set;
+            return set with { Floor = ts.ValidFloor(f) };
+        }
+    }
 
     /// <summary>붓 뒤집기·회전을 하나 더 입힌다(X·Y·Z 키, 뒤집기·회전 메뉴).</summary>
     public void TurnStamp(TileTransform step)
@@ -258,7 +366,7 @@ public sealed partial class EditorContext
 
     private static int FloorDiv(int a, int b) => (int)Math.Floor((double)a / b);
 
-    /// <summary>붓을 칸 <paramref name="at"/>(붓 왼쪽 위)에 찍은 맵. 잠긴 층에 갈 칸은 건너뛴다.</summary>
+    /// <summary>붓을 칸 <paramref name="at"/>(붓 왼쪽 위)에 찍은 맵. 잠긴 층에 갈 칸은 건너뛴다. 둘레 자동 타일은 다시 고른다(덮어쓴 자동 타일·"뭐라도 있음" 이웃).</summary>
     private TileMap StampAt(Tileset ts, TilemapData data, TileMap map, TileStamp stamp, Point at, int salt)
     {
         IEnumerable<StampCell> cells = stamp.Cells;
@@ -267,16 +375,22 @@ public sealed partial class EditorContext
             var pick = stamp.Cells[(int)(AutoTiler.Hash(at.X, at.Y, salt) % (ulong)stamp.Cells.Count)];
             cells = [pick with { Dx = 0, Dy = 0 }];
         }
+        var touched = new List<Point>();
         foreach (var c in cells)
         {
             int floor = FloorFor(ts, _tileFloor, c);
             if (data.IsFloorLocked(floor)) { WarnLockedFloor(); continue; }
-            map = map.Place(ts, floor, new Point(at.X + c.Dx, at.Y + c.Dy), c.Cell with { AutoTile = 0 });
+            var p = new Point(at.X + c.Dx, at.Y + c.Dy);
+            map = map.Place(ts, floor, p, c.Cell with { AutoTile = 0 });
+            var size = ts.Footprint(c.Cell);
+            for (int y = 0; y < size.Height; y++)
+                for (int x = 0; x < size.Width; x++)
+                    touched.Add(new Point(p.X + x, p.Y + y));
         }
-        return map;
+        return touched.Count == 0 ? map : AutoTiler.RefreshAround(ts, map, touched);
     }
 
-    /// <summary>칸을 덮은 타일 하나를 지운 맵: 층을 고정했으면 그 층, 아니면 보이고 잠기지 않은 층 중 위층부터. 자동 타일이면 이웃 모양도 다시 고른다.</summary>
+    /// <summary>칸을 덮은 타일 하나를 지운 맵: 층을 고정했으면 그 층, 아니면 보이고 잠기지 않은 층 중 위층부터. 둘레 자동 타일은 다시 고른다.</summary>
     private TileMap EraseCell(Tileset ts, TilemapData data, TileMap map, Point cell)
     {
         IEnumerable<int> floors = _tileFloor is { } only ? [only] : map.FloorsTopDown(ts);
@@ -284,9 +398,9 @@ public sealed partial class EditorContext
         {
             if (data.IsFloorLocked(f) || !data.ShowsFloor(f) && _tileFloor is null) continue;
             if (map.Covering(ts, f, cell) is not { } hit) continue;
-            if (hit.Cell.AutoTile != 0 && ts.FindAutoTile(hit.Cell.AutoTile) is { } set && set.Floor == f)
-                return AutoTiler.Erase(ts, map, set, [hit.At]);
-            return map.With(f, hit.At, null);
+            if (hit.Cell.AutoTile != 0 && ts.FindAutoTile(hit.Cell.AutoTile) is { } set)
+                return AutoTiler.Erase(ts, map, set.Floor == f ? set : set with { Floor = f }, [hit.At]);
+            return AutoTiler.RefreshAround(ts, map.With(f, hit.At, null), [hit.At, cell]);
         }
         return map;
     }
@@ -356,8 +470,8 @@ public sealed partial class EditorContext
     }
 
     /// <summary>
-    /// 채우기: 찍을 층에서 칸 <paramref name="start"/>와 같은 타일(또는 빈 칸)로 이어진 칸을 붓으로 채운다(<paramref name="erase"/>면 지운다).
-    /// 빈 칸은 끝없이 이어지므로 캔버스와 지금 맵을 감싼 범위 안에서만.
+    /// 채우기: 칸 <paramref name="start"/>와 보이는 모습(보이는 층마다의 타일 — 자동 타일 칸은 세트, 또는 빈 칸)이 같은 이어진 칸을 붓으로 채운다
+    /// (<paramref name="erase"/>면 지운다). 그래서 다른 층의 벽 안쪽만 채운다. 빈 칸은 끝없이 이어지므로 캔버스와 지금 맵을 감싼 범위 안에서만.
     /// </summary>
     public void TileFill(Point start, bool erase)
     {
@@ -373,15 +487,21 @@ public sealed partial class EditorContext
             else return map;
             if (data.IsFloorLocked(floor)) { WarnLockedFloor(); return map; }
             var limit = TileLimit(ts, data);
-            var region = map.FillRegion(ts, floor, start, limit);
+            var floors = ts.Floors.Select(fl => fl.Id).Where(id => id == floor || data.ShowsFloor(id)).ToList();
+            var region = map.FillRegion(ts, floors, start, limit);
             if (region.Count == 0) return map;
             if (UsesAutoTileSource && CurrentAutoTileSet is { } auto)
                 return erase ? AutoTiler.Erase(ts, map, auto, region) : AutoTiler.Paint(ts, map, auto, region);
             if (erase)
             {
+                var erased = new List<Point>();
                 foreach (var cell in region)
-                    if (map.Covering(ts, floor, cell) is { } hit) map = map.With(floor, hit.At, null);
-                return map;
+                    if (map.Covering(ts, floor, cell) is { } hit)
+                    {
+                        map = map.With(floor, hit.At, null);
+                        erased.Add(hit.At);
+                    }
+                return AutoTiler.RefreshAround(ts, map, erased, onlyFilled: false);
             }
             if (stamp is null) return map;
             int salt = Environment.TickCount;
@@ -465,9 +585,14 @@ public sealed partial class EditorContext
             CommitTileMap((_, d) =>
             {
                 var map = d.Map;
+                var erased = new List<Point>();
                 foreach (var p in taken)
-                    if (!d.IsFloorLocked(p.Floor)) map = map.With(p.Floor, p.At, null);
-                return map;
+                    if (!d.IsFloorLocked(p.Floor))
+                    {
+                        map = map.With(p.Floor, p.At, null);
+                        erased.Add(p.At);
+                    }
+                return AutoTiler.RefreshAround(CurrentTileset!, map, erased, onlyFilled: false);
             }, UiStrings.Tile_CutLabel);
         return true;
     }
@@ -477,23 +602,32 @@ public sealed partial class EditorContext
     {
         if (_tileSelection is not { } sel || CurrentTiles is not { } data || CurrentTileset is not { } ts) return false;
         var map = data.Map;
+        var erased = new List<Point>();
         foreach (var floor in ts.Floors)
         {
             if (!data.ShowsFloor(floor.Id) || data.IsFloorLocked(floor.Id)) continue;
             foreach (var p in map.Overlapping(ts, floor.Id, sel).ToList())
-                if (sel.Contains(p.At)) map = map.With(floor.Id, p.At, null);
+                if (sel.Contains(p.At))
+                {
+                    map = map.With(floor.Id, p.At, null);
+                    erased.Add(p.At);
+                }
         }
         if (ReferenceEquals(map, data.Map)) return false;
+        map = AutoTiler.RefreshAround(ts, map, erased, onlyFilled: false);
         CommitTileMap((_, _) => map, UiStrings.Tile_EraseLabel);
         return true;
     }
 
     // ───────────── 타일셋 ─────────────
 
-    /// <summary>현재 타일맵 레이어의 타일셋을 바꾼다(실행취소 한 단계). <paramref name="remap"/>은 그 타일셋을 쓰는 모든 맵에 함께 입힌다.</summary>
-    public void EditCurrentTileset(string label, Func<Tileset, Tileset> change, Func<TileMap, TileMap>? remap = null)
+    /// <summary>
+    /// 프로젝트의 타일셋 <paramref name="key"/>를 바꾼다(실행취소 한 단계). <paramref name="remap"/>은 그 타일셋을 쓰는 모든 맵에 함께 입힌다 —
+    /// 둘째 인자는 그 맵에서 이 타일셋 타일 Id의 밀린 만큼(<see cref="TileSources.Offset"/>).
+    /// </summary>
+    public void EditTileset(string key, string label, Func<Tileset, Tileset> change, Func<TileMap, int, TileMap>? remap = null)
     {
-        if (Project is not { } p || CurrentTileset is not { } ts) return;
+        if (Project is not { } p || !p.Tilesets.TryGetValue(key, out var ts)) return;
         var next = change(ts);
         if (ReferenceEquals(next, ts) && remap is null) return;
         Structural(() => p.EditTileset(label, next, remap));
@@ -505,17 +639,5 @@ public sealed partial class EditorContext
     {
         if (Project is not { } p || CurrentTilemap is not { } layer) return;
         Structural(() => p.SetTileFloorState(layer, floor, hidden, locked));
-    }
-
-    /// <summary>타일맵 레이어를 넣고 고른다(타일셋은 프로젝트에 담김).</summary>
-    public Layer? AddTilemapLayer(Tileset tileset)
-    {
-        if (Project is not { } p) return null;
-        Layer? layer = null;
-        Structural(() => layer = p.AddTilemapLayer(tileset, CurrentLayerObject is { Parent: null } ? _layer + 1 : null));
-        if (layer is not null) SetCurrentLayer(p.IndexOf(layer));
-        TileStamp = null;
-        TileSelection = null;
-        return layer;
     }
 }

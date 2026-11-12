@@ -148,11 +148,33 @@ public static class PngIO
     }
 
     /// <summary>
-    /// 움직이는 PNG(APNG)로 저장한다: 같은 크기의 프레임을 통째로 바꿔 가며(겹치기·지우기 없음) 끝없이 되풀이한다.
-    /// 첫 프레임이 기본 그림(IDAT)이라 APNG를 모르는 읽기(<see cref="Load(Stream)"/> 포함)는 첫 프레임을 본다. 프레임이 하나면 보통 PNG로 쓴다.
-    /// 작은 그림(미리보기)용이라 나눠 압축하지 않는다.
+    /// 움직이는 PNG(APNG)로 <paramref name="path"/>에 저장한다(<see cref="SaveAnimated(IReadOnlyList{PngFrame}, Stream, int, WorkStage)"/>).
+    /// <see cref="Save(PixelImage, string)"/>처럼 임시 파일에 먼저 쓴 뒤 바꿔치기한다.
     /// </summary>
-    public static void SaveAnimated(IReadOnlyList<PngFrame> frames, Stream stream)
+    /// <param name="stage">진행(프레임마다 한 몫).</param>
+    public static void SaveAnimated(IReadOnlyList<PngFrame> frames, string path, int playCount = 0, WorkStage? stage = null)
+    {
+        var full = Path.GetFullPath(path);
+        var temp = full + ".chickxel-tmp";
+        try
+        {
+            using (var fs = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None))
+                SaveAnimated(frames, fs, playCount, stage);
+            FileReplace.Commit(temp, full);
+        }
+        finally
+        {
+            if (File.Exists(temp)) File.Delete(temp);
+        }
+    }
+
+    /// <summary>
+    /// 움직이는 PNG(APNG)로 저장한다: 같은 크기의 프레임을 통째로 바꿔 가며(겹치기·지우기 없음) <paramref name="playCount"/>번 재생한다(0 = 끝없이).
+    /// 첫 프레임이 기본 그림(IDAT)이라 APNG를 모르는 읽기(<see cref="Load(Stream)"/> 포함)는 첫 프레임을 본다. 프레임이 하나면 보통 PNG로 쓴다.
+    /// 나눠 압축하지 않는다(프레임 하나는 보통 작다).
+    /// </summary>
+    /// <param name="stage">진행(프레임마다 한 몫).</param>
+    public static void SaveAnimated(IReadOnlyList<PngFrame> frames, Stream stream, int playCount = 0, WorkStage? stage = null)
     {
         if (frames.Count == 0) throw new ArgumentException("No frames.", nameof(frames));
         int w = frames[0].Image.Width, h = frames[0].Image.Height;
@@ -161,13 +183,14 @@ public static class PngIO
         if (frames.Count == 1)
         {
             Save(frames[0].Image, stream, null);
+            stage?.Step(1);
             return;
         }
         stream.Write(Signature);
         WriteHeader(stream, w, h);
         Span<byte> actl = stackalloc byte[8];
         BinaryPrimitives.WriteInt32BigEndian(actl, frames.Count);
-        BinaryPrimitives.WriteInt32BigEndian(actl[4..], 0); // 끝없이
+        BinaryPrimitives.WriteInt32BigEndian(actl[4..], Math.Max(0, playCount)); // 0 = 끝없이
         WriteChunk(stream, "acTL", actl);
         Span<byte> fctl = stackalloc byte[26];
         int sequence = 0;
@@ -182,15 +205,15 @@ public static class PngIO
             WriteChunk(stream, "fcTL", fctl); // 오프셋 0, dispose_op 0(그대로), blend_op 0(덮어쓰기)
             using var compressed = Compress(frames[i].Image, null);
             var data = compressed.GetBuffer().AsSpan(0, (int)compressed.Length);
-            if (i == 0)
+            if (i == 0) WriteChunk(stream, "IDAT", data);
+            else
             {
-                WriteChunk(stream, "IDAT", data);
-                continue;
+                var fdat = new byte[4 + data.Length];
+                BinaryPrimitives.WriteInt32BigEndian(fdat, sequence++);
+                data.CopyTo(fdat.AsSpan(4));
+                WriteChunk(stream, "fdAT", fdat);
             }
-            var fdat = new byte[4 + data.Length];
-            BinaryPrimitives.WriteInt32BigEndian(fdat, sequence++);
-            data.CopyTo(fdat.AsSpan(4));
-            WriteChunk(stream, "fdAT", fdat);
+            stage?.Step(1);
         }
         WriteChunk(stream, "IEND", ReadOnlySpan<byte>.Empty);
     }

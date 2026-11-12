@@ -36,7 +36,7 @@ internal static class TileVisuals
 
     /// <summary>세트의 대표 칸: 사방이 이어진 안쪽 모양에 놓일 타일(타일 있는 규칙이 없으면 null).</summary>
     public static TileCell? Representative(Tileset ts, AutoTileSet set)
-        => AutoTiler.Pick(set, 255, default) is { } p && ts.Find(p.Tile) is not null ? new TileCell(p.Tile, ts.Allowed(p.Transform)) : null;
+        => AutoTiler.Pick(set, 255, 255, default) is { } p && ts.Find(p.Tile) is not null ? new TileCell(p.Tile, ts.Allowed(p.Transform)) : null;
 
     /// <summary>세트 규칙들에 넣은 타일 Id.</summary>
     public static HashSet<int> TilesOf(AutoTileSet set)
@@ -119,8 +119,8 @@ internal sealed class TileThumb : Control
 }
 
 /// <summary>
-/// '지금 찍을 것' 카드: 타일 도구가 다음에 찍을 것(타일·스탬프 묶음·자동 타일 세트·지우개)의 그림, 이름, 종류, 들어갈 층(잠김·숨김이면 경고 색).
-/// 타일셋 패널 위와 도구 설정의 타일 묶음에 놓는다. 타일 상태·프로젝트·레이어가 바뀌면 스스로 고친다.
+/// '지금 찍을 것' 카드: 타일 도구가 다음에 찍을 것(타일·스탬프 묶음·자동 타일 세트·지우개)의 그림, 이름(자동 타일 세트는 "이름 (규칙 수)"), 들어갈 층(잠김·숨김이면 경고 색).
+/// 고른 것이 없으면 이름 아래에 고르는 법을 보인다. 도구 설정의 타일 묶음에 놓는다. 타일 상태·프로젝트·레이어가 바뀌면 스스로 고친다.
 /// </summary>
 internal sealed class TilePickCard : Border
 {
@@ -128,7 +128,7 @@ internal sealed class TilePickCard : Border
 
     private readonly EditorContext _ctx;
     private readonly TileThumb _thumb;
-    private readonly TextBlock _name, _kind, _floor;
+    private readonly TextBlock _name, _hint, _floor;
     private readonly IconView _floorIcon;
     private readonly DockPanel _floorRow;
 
@@ -136,9 +136,8 @@ internal sealed class TilePickCard : Border
     {
         _ctx = ctx;
         _thumb = new TileThumb(thumbSize) { Margin = new Thickness(0, 0, 8, 0) };
-        var title = new TextBlock { Text = UiStrings.TilePick_Title, Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize };
         _name = new TextBlock { FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush, TextTrimming = TextTrimming.CharacterEllipsis };
-        _kind = new TextBlock { Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, TextTrimming = TextTrimming.CharacterEllipsis };
+        _hint = new TextBlock { Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, TextWrapping = TextWrapping.Wrap };
         _floor = new TextBlock { FontSize = AppTheme.SmallFontSize, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
         _floorIcon = new IconView(VectorIcon.Layers) { Width = 11, Height = 11, Margin = new Thickness(0, 0, 4, 0), VerticalAlignment = VerticalAlignment.Center };
         _floorRow = new DockPanel();
@@ -146,7 +145,7 @@ internal sealed class TilePickCard : Border
         _floorRow.Children.Add(_floorIcon);
         _floorRow.Children.Add(_floor);
         ToolTip.SetTip(_floorRow, UiStrings.TilePick_TargetFloorTip);
-        var text = new StackPanel { Spacing = 1, VerticalAlignment = VerticalAlignment.Center, Children = { title, _name, _kind, _floorRow } };
+        var text = new StackPanel { Spacing = 1, VerticalAlignment = VerticalAlignment.Center, Children = { _name, _hint, _floorRow } };
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*") };
         Grid.SetColumn(text, 1);
         grid.Children.Add(_thumb);
@@ -187,8 +186,8 @@ internal sealed class TilePickCard : Border
         _thumb.InvalidateVisual();
         _name.Text = pick.Name;
         _name.Foreground = pick.Chosen ? AppTheme.TextBrush : AppTheme.DimTextBrush;
-        _kind.Text = pick.Kind;
-        _kind.TextWrapping = pick.Chosen ? TextWrapping.NoWrap : TextWrapping.Wrap;
+        _hint.Text = pick.Hint;
+        _hint.IsVisible = pick.Hint.Length > 0;
         _floor.Text = pick.FloorState switch
         {
             TileFloorState.Locked => pick.Floor + " · " + UiStrings.TilePick_Locked,
@@ -212,9 +211,9 @@ internal sealed class TilePickCard : Border
 /// <summary>찍을 층의 상태(잠기면 찍히지 않고, 숨기면 찍어도 안 보임).</summary>
 internal enum TileFloorState { Normal, Hidden, Locked }
 
-/// <summary>지금 찍을 것 설명: 이름, 종류, 층 글, 층 상태, 들어갈 층 Id들, 그림(칸 묶음 또는 아이콘).</summary>
+/// <summary>지금 찍을 것 설명: 이름, 고른 것이 없을 때의 안내(고르면 빈 글), 층 이름들, 층 상태, 들어갈 층 Id들, 그림(칸 묶음 또는 아이콘).</summary>
 internal sealed record TilePick(
-    bool Chosen, string Name, string Kind, string Floor, TileFloorState FloorState, IReadOnlyList<int> Floors,
+    bool Chosen, string Name, string Hint, string Floor, TileFloorState FloorState, IReadOnlyList<int> Floors,
     IReadOnlyList<(Point At, TileCell Cell)> Cells, VectorIcon? Icon)
 {
     /// <summary>지금 도구·붓·자동 타일 세트·층 고정으로 다음에 찍을 것.</summary>
@@ -225,45 +224,32 @@ internal sealed record TilePick(
         if (tool == TileTool.Eraser)
         {
             int[] floors = ctx.TileFloor is { } f ? [ts.ValidFloor(f)] : [];
-            return new TilePick(true, UiStrings.TilePick_Eraser, UiStrings.TilePick_EraserKind,
+            return new TilePick(true, UiStrings.TilePick_Eraser, "",
                 floors.Length > 0 ? FloorText(ts, floors) : UiStrings.TilePick_FloorTopVisible, StateOf(data, floors), floors, [], VectorIcon.Eraser);
         }
         if (ctx.UsesAutoTileSource && ctx.CurrentAutoTileSet is { } set)
         {
             int[] floors = [set.Floor];
-            var kind = UiStrings.FormatTilePick_AutoKind(count: set.Rules.Length);
-            if (set.Group.Length > 0) kind += " · " + UiStrings.FormatTilePick_Group(name: set.Group);
             var rep = TileVisuals.Representative(ts, set);
-            return new TilePick(true, set.Name.Length > 0 ? set.Name : UiStrings.TilesetChoice_Unnamed, kind, FloorText(ts, floors), StateOf(data, floors), floors,
-                rep is { } c ? [(default, c)] : [], VectorIcon.Grid3x3);
+            var name = UiStrings.FormatTilePick_AutoName(name: set.Name.Length > 0 ? set.Name : UiStrings.TilesetChoice_Unnamed, count: set.Rules.Length);
+            return new TilePick(true, name, "", FloorText(ts, floors), StateOf(data, floors), floors, rep is { } c ? [(default, c)] : [], VectorIcon.Grid3x3);
         }
         if (tool == TileTool.AutoTile)
             return new TilePick(false, UiStrings.TilePick_Nothing, UiStrings.TilePick_NoSetHint, "", TileFloorState.Normal, [], [], VectorIcon.Grid3x3);
         if (ctx.EffectiveStamp is { Cells.Count: > 0 } stamp)
         {
             var cells = stamp.Cells.Select(c => (new Point(c.Dx, c.Dy), c.Cell)).ToList();
-            var box = stamp.Bounds(ts);
-            string name, kind;
-            if (stamp.Cells.Count == 1 && ts.Find(stamp.Cells[0].Cell.Tile) is { } def)
-            {
-                name = TileVisuals.TileName(def);
-                kind = UiStrings.FormatTilePick_SingleKind(w: box.Width, h: box.Height);
-                if (def.IsAnimated) kind += " · " + UiStrings.FormatTilePick_Frames(count: def.FrameCount);
-            }
-            else
-            {
-                name = UiStrings.FormatTilePick_Tiles(count: stamp.Cells.Count);
-                kind = ctx.TileRandom ? UiStrings.TilePick_RandomKind : UiStrings.FormatTilePick_StampKind(w: box.Width, h: box.Height);
-            }
-            if (ctx.TileTransform != TileTransform.None) kind += " · " + UiStrings.TilePick_Turned;
+            var name = stamp.Cells.Count == 1 && ts.Find(stamp.Cells[0].Cell.Tile) is { } def
+                ? TileVisuals.TileName(def)
+                : UiStrings.FormatTilePick_Tiles(count: stamp.Cells.Count);
             var floors = stamp.Cells.Select(c => ts.ValidFloor(ctx.TileFloor ?? c.Floor ?? ts.Find(c.Cell.Tile)?.Floor ?? 0)).Distinct().ToList();
-            return new TilePick(true, name, kind, FloorText(ts, floors), StateOf(data, floors), floors, cells, null);
+            return new TilePick(true, name, "", FloorText(ts, floors), StateOf(data, floors), floors, cells, null);
         }
         return new TilePick(false, UiStrings.TilePick_Nothing, UiStrings.TilePick_NothingHint, "", TileFloorState.Normal, [], [], VectorIcon.Square);
     }
 
     private static string FloorText(Tileset ts, IReadOnlyList<int> floors)
-        => UiStrings.FormatTilePick_Floor(name: string.Join(", ", floors.Select(f => ts.FindFloor(f)?.Name ?? "?")));
+        => string.Join(", ", floors.Select(f => ts.FindFloor(f)?.Name ?? "?"));
 
     private static TileFloorState StateOf(TilemapData? data, IReadOnlyList<int> floors)
     {

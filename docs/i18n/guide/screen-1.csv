@@ -33,9 +33,9 @@ screen.th-page,쪽,Page
 screen.page-controls,"<a href=""#screen-common-controls"">숫자 칸과 메뉴 다루기</a>","<a href=""#screen-common-controls"">Number fields and menus</a>"
 screen.page-controls.d,"끌어서 값 바꾸기, 계산식 입력, 우클릭 값 목록, 팝업 메뉴","Drag to change values, type expressions, right-click value lists, popup menus"
 screen.page-export,"<a href=""#screen-export"">내보내기 창</a>","<a href=""#screen-export"">Export dialog</a>"
-screen.page-export.d,프레임 시트·부위 아틀라스 PNG와 Unity 설정,Frame sheet and part atlas PNGs and Unity settings
-screen.page-gif,"<a href=""#screen-gif"">GIF 애니메이션으로 내보내기</a>","<a href=""#screen-gif"">Export as animated GIF</a>"
-screen.page-gif.d,공유용 GIF 한 파일 만들기,Make a single GIF for sharing
+screen.page-export.d,"형식 고르기, 프레임 시트·부위 아틀라스 이미지와 Unity 설정","Choosing the format, frame sheet and part atlas images, and Unity settings"
+screen.page-gif,"<a href=""#screen-gif"">GIF · APNG · 프레임 PNG로 내보내기</a>","<a href=""#screen-gif"">Exporting GIF, APNG and frame PNGs</a>"
+screen.page-gif.d,"공유용 GIF·APNG 한 파일이나 프레임마다 PNG 만들기","Make a single GIF or APNG for sharing, or one PNG per frame"
 screen.page-gallery,"<a href=""#screen-gallery"">갤러리에 올리기</a>","<a href=""#screen-gallery"">Upload to gallery</a>"
 screen.page-gallery.d,chickxel.com 갤러리에 그림 올리기,Upload a picture to the chickxel.com gallery
 screen.layout,"패널 사이의 경계선을 끌면 크기가 바뀌고, 바꾼 크기는 다음 실행에도 남습니다. 파일 브라우저는 {{key:보기/파일 브라우저}}로 접고 펼칩니다.",Drag the borders between panels to resize them; the sizes are kept for the next launch. Collapse or expand the file browser with {{key:보기/파일 브라우저}}.
@@ -48,7 +48,7 @@ screen-top-bar.menus-intro,"메뉴 줄에는 메뉴 7개가 있습니다. 메뉴
 screen-top-bar.th-menu,메뉴,Menu
 screen-top-bar.th-items,주요 항목,Main items
 screen-top-bar.menu-file,{{MainStrings.Menu_File}},{{MainStrings.Menu_File}}
-screen-top-bar.menu-file.d,"새 프로젝트, 열기, 폴더 열기, Unity 프로젝트 열기, 최근 폴더·최근 파일, 저장, 다른 이름으로 저장, 저장한 내용으로 되돌리기, <a href=""#screen-export"">내보내기</a>, <a href=""#screen-gif"">GIF 애니메이션으로 내보내기</a>, <a href=""#screen-gallery"">갤러리에 올리기</a>, 닫기, 시작 화면, 끝내기(<a href=""#files"">파일</a> 장)","New project, Open, Open folder, Open Unity project, recent folders and files, Save, Save as, Revert to saved, <a href=""#screen-export"">Export</a>, <a href=""#screen-gif"">Export as animated GIF</a>, <a href=""#screen-gallery"">Upload to gallery</a>, Close, Start screen, Exit (<a href=""#files"">Files</a> chapter)"
+screen-top-bar.menu-file.d,"새 프로젝트, 열기, 폴더 열기, Unity 프로젝트 열기, 최근 폴더·최근 파일, 저장, 다른 이름으로 저장, 저장한 내용으로 되돌리기, <a href=""#screen-export"">내보내기</a>(GIF·PNG 등 모든 형식), <a href=""#screen-gallery"">갤러리에 올리기</a>, 닫기, 시작 화면, 끝내기(<a href=""#files"">파일</a> 장)","New project, Open, Open folder, Open Unity project, recent folders and files, Save, Save as, Revert to saved, <a href=""#screen-export"">Export</a> (every format, GIF and PNG included), <a href=""#screen-gallery"">Upload to gallery</a>, Close, Start screen, Exit (<a href=""#files"">Files</a> chapter)"
 screen-top-bar.menu-edit,{{MainStrings.Menu_Edit}},{{MainStrings.Menu_Edit}}
 screen-top-bar.menu-edit.d,"실행취소·다시 실행, 잘라내기·복사·붙여넣기·지우기, 모두 선택·선택 해제, 뒤집기·회전·<a href=""#tools-transform"">변형</a>, 외곽선 추가, 색 바꾸기, <a href=""#tools-canvas-size"">캔버스 크기</a>·<a href=""#tools-layer-size"">레이어 전체 변형</a>, 캔버스 전체 뒤집기, 이미지에서 팔레트 만들기, <a href=""#screen-palette"">팔레트 색으로 변환</a>, 환경 설정","Undo and redo; cut, copy, paste, delete; select all and deselect; flip, rotate and <a href=""#tools-transform"">transform</a>; add outline; replace color; <a href=""#tools-canvas-size"">canvas size</a> and <a href=""#tools-layer-size"">transform whole layer</a>; flip the whole canvas; create palette from image; <a href=""#screen-palette"">convert to palette colors</a>; Preferences"
 screen-top-bar.menu-view,{{MainStrings.Menu_View}},{{MainStrings.Menu_View}}
@@ -58,7 +58,7 @@ screen-top-bar.menu-frame.d,"재생·정지, 이전·다음·첫·마지막 프�
 screen-top-bar.menu-tools,{{MainStrings.Menu_Tools}},{{MainStrings.Menu_Tools}}
 screen-top-bar.menu-tools.d,"도구마다 하나씩, 선택 도구 묶음, 그리기 옵션(도형 채움·같은 색 전체 채우기·픽셀 퍼펙트·대칭·오른쪽 버튼 = 지우개·이동 순환·브러시 크게/작게·기본색 ↔ 보조색), 에셋 관리자, 효과 만들기(<a href=""#tools"">도구</a> 장)","One item per tool, the selection tools, drawing options (fill shapes, fill all of the same color, pixel perfect, symmetry, right button = eraser, wrap when moving, larger/smaller brush, swap primary and secondary), Asset Manager and Effect Maker (<a href=""#tools"">Tools</a> chapter)"
 screen-top-bar.menu-ai,{{MainStrings.Menu_Category_Ai}},{{MainStrings.Menu_Category_Ai}}
-screen-top-bar.menu-ai.d,"AI 채팅, AI 상태 열기, 참고 자료, AI 그림 픽셀로 정리, 현재 레이어를 픽셀로 정리(<a href=""#ai"">AI</a>, <a href=""#pixelate"">픽셀로 정리</a> 장)","AI chat, Open AI status, References, Pixelate AI image, Pixelate current layer (<a href=""#ai"">AI</a> and <a href=""#pixelate"">Pixelate</a> chapters)"
+screen-top-bar.menu-ai.d,"AI 채팅, AI 상태 열기, <a href=""#ai-external"">외부 AI 연결</a>, 참고 자료, AI 그림 픽셀로 정리, 현재 레이어를 픽셀로 정리, 효과 만들기(<a href=""#ai"">AI</a>, <a href=""#pixelate"">픽셀로 정리</a> 장)","AI chat, Open AI status, <a href=""#ai-external"">External AI connection</a>, References, Pixelate AI image, Pixelate current layer, Effect Maker (<a href=""#ai"">AI</a> and <a href=""#pixelate"">Pixelate</a> chapters)"
 screen-top-bar.menu-help,{{MainStrings.Menu_Help}},{{MainStrings.Menu_Help}}
 screen-top-bar.menu-help.d,"화면에서 도움말 선택({{key:도움말/대상 도움말}}), 사용 가이드, 홈페이지, Chickxel 계정, 단축키 목록, 설정 파일 위치 열기, 오류 로그 폴더 열기, 제보·아이디어(Discord), 업데이트 확인, Chickxel 정보(<a href=""#start"">시작하기</a> 장)","Choose help on screen ({{key:도움말/대상 도움말}}), Guide, Website, Chickxel account, Shortcut list, Open settings file location, Open error log folder, Report a bug or idea (Discord), Check for updates, About Chickxel (<a href=""#start"">Getting started</a> chapter)"
 screen-top-bar.tool,도구 이름과 사용법,Tool name and hint

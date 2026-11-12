@@ -1617,14 +1617,17 @@ public sealed partial class EditorContext
     private static PixelMask? CanvasResizeKeep(CanvasResizeSession s)
         => s.Quad is { } quad && s.Warp is null ? PixelMask.CentersInside(quad.Select(c => (c.X - s.Canvas.X, c.Y - s.Canvas.Y)).ToArray()) : null;
 
-    /// <summary>현재 프레임 합성(캔버스 안)에 보이는 일반 레이어의 캔버스 밖 그림을 아래 레이어부터(레이어 불투명도) 겹친 그림과 왼쪽 위(캔버스 좌표).</summary>
+    /// <summary>
+    /// 현재 프레임 합성(캔버스 안)에 보이는 일반·타일맵 레이어의 캔버스 밖 그림을 아래 레이어부터(레이어 불투명도) 겹친 그림과 왼쪽 위(캔버스 좌표).
+    /// 타일맵은 캔버스 밖에 찍은 칸까지 보여, 캔버스를 키우거나 옮기면 새로 들어올 타일이 바로 보인다.
+    /// </summary>
     private (PixelImage Image, Point Origin) FrameWithOverflow(SpriteProject p, PixelImage source)
     {
         var outside = new List<(PixelImage Image, Point Origin, byte Opacity)>();
         var rect = new Rectangle(Point.Empty, source.Size);
         for (int l = 0; l < p.Layers.Count; l++)
         {
-            if (p.Layers[l].Kind != LayerKind.Normal || !p.IsLayerVisible(l) || p.GetCelOverflow(l, _frame) is not { } o) continue;
+            if (p.Layers[l].Kind is not (LayerKind.Normal or LayerKind.Tilemap) || !p.IsLayerVisible(l) || p.GetCelOverflow(l, _frame) is not { } o) continue;
             outside.Add((o.Image, o.Origin, p.Layers[l].Opacity));
             rect = Rectangle.Union(rect, new Rectangle(o.Origin, o.Image.Size));
         }
@@ -2065,13 +2068,21 @@ public sealed partial class EditorContext
     }
     private bool _canvasEffects = true;
 
-    /// <summary>캔버스에 보일 프레임 합성: 효과 보기면 <see cref="FrameView"/>, 끄면 효과 없는 합성.</summary>
+    /// <summary>
+    /// 캔버스에 보일 프레임 합성: 효과 보기면 <see cref="FrameView"/>, 끄면 효과 없는 합성. 타일맵 레이어의 층 보기(<see cref="TileFloorViewMode"/>)가 켜져 있으면
+    /// 그 레이어를 단 열쇠로 따로 담는다(미리보기의 합성과 섞이지 않게 — 층 보기는 <see cref="ScreenTileClock"/>이 넣음).
+    /// </summary>
     private RenderView CanvasFrameView(int frame, RenderPriority priority, bool live = false)
     {
-        if (_canvasEffects) return FrameView(frame, priority, live);
         if (Project is not { } p || frame < 0 || frame >= p.Frames.Count) return RenderView.None;
-        return _renders.Get(new RenderKey(RenderKind.Composite, p.Frames[frame], Raw: true), priority, () => p.PlanFrameRaw(frame), live);
+        var key = CanvasFrameKey(p, frame);
+        if (key.Layer is null && !key.Raw) return FrameView(frame, priority, live);
+        return _renders.Get(key, priority, () => key.Raw ? p.PlanFrameRaw(frame) : p.PlanFrame(frame), live);
     }
+
+    /// <summary>캔버스 프레임 합성의 열쇠: 효과 보기를 끄면 Raw, 층 보기가 켜져 있으면 지금 타일맵 레이어를 담는다.</summary>
+    private RenderKey CanvasFrameKey(SpriteProject p, int frame)
+        => new(RenderKind.Composite, p.Frames[frame], FloorViewLayer, Raw: !_canvasEffects);
 
     /// <summary>
     /// 캔버스에 보이는 그림: 부위를 골랐으면 그 부위(효과 보기면 <see cref="PartFrameView"/> — 프레임 크기, 끄면 부위 셀 그대로 — 부위 크기, 빈 셀이면 null),

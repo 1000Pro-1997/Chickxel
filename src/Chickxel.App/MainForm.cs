@@ -118,11 +118,18 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private NumericUpDown _cbZoom = null!;
     private bool _syncingZoom;
     private ToggleButton _cbGrid = null!, _cbTiles = null!, _cbTiled = null!, _cbPivot = null!, _cbOnion = null!, _cbEffects = null!, _cbFit = null!;
+    /// <summary>타일맵 레이어를 골랐을 때만 보이는 위 막대 보기 단추: 칸 격자, 타일 움직임 재생.</summary>
+    private ToggleButton _cbTileCells = null!, _cbTileAnim = null!;
+    /// <summary>타일맵 레이어를 골랐을 때만 보이는 층 보기 고르기(모든 층 · 고른 층 강조 · 고른 층만).</summary>
+    private TabStrip _cbTileView = null!;
+    /// <summary>위 막대 오른쪽 보기 단추 줄(타일맵 모드에서 단추를 바꿔 보일 때 그 칸을 찾음).</summary>
+    private StackPanel _cbRight = null!;
     /// <summary>새 버전이 있을 때만 보이는 위 막대 단추(누르면 업데이트 창).</summary>
     private Button _cbUpdate = null!;
 
     private MenuItem _miUndo = null!, _miRedo = null!, _miRecentFolders = null!, _miRecentFiles = null!;
     private MenuItem _miGrid = null!, _miTiles = null!, _miTiled = null!, _miPivot = null!, _miOnion = null!, _miEffects = null!, _miFiles = null!;
+    private MenuItem _miTileCells = null!, _miTileAnim = null!;
     private MenuItem _miPixelPerfect = null!, _miFilled = null!, _miGlobalFill = null!, _miMirrorX = null!, _miMirrorY = null!,
         _miMirrorAtPivot = null!, _miRightErase = null!, _miWrap = null!, _miSelectTools = null!;
     private readonly List<MenuItem> _docItems = new();
@@ -487,7 +494,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         var bar = new DockPanel { LastChildFill = true };
 
         // 오른쪽 정렬: (새 버전 알림) 보기·확대
-        var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 0 };
+        var right = _cbRight = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 0 };
         DockPanel.SetDock(right, Dock.Right);
         _cbUpdate = BarButton(right, MainStrings.Ui_039, MainStrings.Ui_040, () =>
         {
@@ -501,6 +508,24 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _cbGrid = Toggle(right, MainStrings.Ui_041, MainStrings.Ui_042, () => SetPixelGrid(!_canvas.ShowPixelGrid));
         _cbTiles = Toggle(right, MainStrings.Ui_043, MainStrings.Ui_044, () => SetTileGrid(!_canvas.ShowTileGrid));
         _cbTiled = Toggle(right, MainStrings.Ui_045, MainStrings.Ui_046, () => SetTiledMode(!_canvas.TiledMode));
+        _cbTileCells = Toggle(right, UiStrings.TileOptions_Grid, UiStrings.TileOptions_GridTip, () => _ctx.ShowTileCells = !_ctx.ShowTileCells);
+        _cbTileAnim = Toggle(right, UiStrings.TileView_Animate, UiStrings.TileView_AnimateTip, () => _ctx.TileAnimationPlaying = !_ctx.TileAnimationPlaying);
+        _cbTileView = new TabStrip(TabStripKind.Segmented, UiStrings.TileView_FloorsAll, UiStrings.TileView_FloorsDim, UiStrings.TileView_FloorsOnly)
+        {
+            SelectedIndex = (int)_ctx.TileViewMode,
+            Margin = new Thickness(4, 1, 1, 1),
+            VerticalAlignment = VerticalAlignment.Center,
+            Focusable = false,
+        };
+        _cbTileView.SetTip(0, UiStrings.TileView_FloorsAllTip);
+        _cbTileView.SetTip(1, UiStrings.TileView_FloorsDimTip);
+        _cbTileView.SetTip(2, UiStrings.TileView_FloorsOnlyTip);
+        _cbTileView.SelectionChanged += (_, _) =>
+        {
+            if (_cbTileView.SelectedIndex >= 0) _ctx.TileViewMode = (TileFloorViewMode)_cbTileView.SelectedIndex;
+        };
+        right.Children.Add(_cbTileView);
+        _cbTileCells.IsVisible = _cbTileAnim.IsVisible = _cbTileView.IsVisible = false;
         _cbPivot = Toggle(right, MainStrings.Ui_047, MainStrings.Ui_048, () => SetShowPivot(!_canvas.ShowPivot));
         _cbOnion = Toggle(right, MainStrings.Ui_049, MainStrings.Ui_050, () => _ctx.OnionSkin = !_ctx.OnionSkin);
         _cbEffects = Toggle(right, MainStrings.Ui_CanvasEffects, MainStrings.Ui_CanvasEffectsTip, ToggleCanvasEffects);
@@ -684,7 +709,6 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             DocCmd("다른 이름으로 저장…", MainStrings.Menu_File_SaveAs_073, () => SaveAs(), "Ctrl+Shift+S", KeyScope.Global, (Key.S, Ctrl | Shift)),
             _miRevert = Cmd("저장한 내용으로 되돌리기", MainStrings.Menu_File_Command_075, RevertToSaved),
             DocCmd("내보내기…", MainStrings.Menu_File_OpenExportDialog_077, OpenExportDialog, "Ctrl+E", KeyScope.Global, (Key.E, Ctrl)),
-            DocCmd("GIF 애니메이션으로 내보내기…", MainStrings.Menu_File_Command_079, ExportGif),
             WithIcon(DocCmd("갤러리에 올리기…", UiStrings.Gallery_Menu, UploadToGallery), VectorIcon.Upload),
             DocCmd("닫기", MainStrings.Menu_File_CloseProject_081, CloseActiveTab, "Ctrl+W", KeyScope.Global, (Key.W, Ctrl)),
             new Separator(),
@@ -758,6 +782,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _miPivot = Checkable(Cmd("피벗 표시", MainStrings.Menu_View_SetShowPivot_146, () => SetShowPivot(!_canvas.ShowPivot)));
         _miOnion = Checkable(DocCmd("양파 껍질", MainStrings.Menu_View_OnionSkin_148, () => _ctx.OnionSkin = !_ctx.OnionSkin, "Ctrl+J", KeyScope.Global, (Key.J, Ctrl)));
         _miEffects = Checkable(DocCmd("캔버스에 효과 보기", MainStrings.Menu_View_CanvasEffects, ToggleCanvasEffects, "Ctrl+Shift+E", KeyScope.NotInText, (Key.E, Ctrl | Shift)));
+        _miTileCells = Checkable(DocCmd("타일맵 칸 격자", UiStrings.TileView_MenuCells, () => { _ctx.ShowTileCells = !_ctx.ShowTileCells; UpdateToolUi(); }));
+        _miTileAnim = Checkable(DocCmd("움직이는 타일 재생", UiStrings.TileView_MenuAnimate, () => { _ctx.TileAnimationPlaying = !_ctx.TileAnimationPlaying; UpdateToolUi(); }));
         _miFiles = Checkable(Cmd("파일 브라우저", MainStrings.Menu_View_SetFilesVisible_150, () => SetFilesVisible(!_filesShown, animate: true), "F8", KeyScope.Global, (Key.F8, NoMods)));
         AddItems(view,
             Cmd("확대", MainStrings.Menu_View_ZoomStep_152, () => _canvas.ZoomStep(1), "Ctrl+=", KeyScope.NotInText, (Key.OemPlus, Ctrl), (Key.Add, Ctrl)),
@@ -765,7 +791,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             Cmd("화면에 맞추기", MainStrings.Menu_View_FitToWindow_156, _canvas.FitToWindow, "Ctrl+0", KeyScope.Global, (Key.D0, Ctrl), (Key.NumPad0, Ctrl)),
             Cmd("실제 크기(1배)", MainStrings.Menu_View_SetZoom_158, () => _canvas.SetZoom(1), "Ctrl+1", KeyScope.Global, (Key.D1, Ctrl), (Key.NumPad1, Ctrl)),
             new Separator(),
-            _miGrid, _miTiles, _miTiled, _miPivot, _miOnion, _miEffects,
+            _miGrid, _miTiles, _miTiled, _miPivot, _miOnion, _miEffects, _miTileCells, _miTileAnim,
             Cmd("격자 설정…", MainStrings.Menu_View_Command_160, GridSettings),
             new Separator(),
             DocCmd("다음 탭", MainStrings.Tabs_Next, () => CycleTab(1), "Ctrl+Tab", KeyScope.Global, (Key.Tab, Ctrl)),
@@ -863,6 +889,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         AddItems(ai,
             Cmd("AI 채팅", MainStrings.Menu_Ai_ToggleChat_226, ToggleChat, "Ctrl+L", KeyScope.Global, (Key.L, Ctrl)),
             WithIcon(Cmd("AI 상태 열기…", UiStrings.AiStatus_OpenMenu, () => ShowAiStatus(this)), VectorIcon.Info),
+            WithIcon(Cmd("외부 AI 연결…", UiStrings.ExternalMcp_OpenMenu, ShowExternalAi), VectorIcon.Plug),
             refs,
             new Separator(),
             WithIcon(Cmd("AI 그림 픽셀로 정리…", MainStrings.Menu_Ai_Pixelate, () => ShowPixelate(null)), VectorIcon.Grid3x3),
@@ -1137,7 +1164,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         // 프레임 화면 그림(캔버스 크기)은 프레임 (0,0)에 있던 그림으로 본다.
         _preview.CopyRequested += (_, img) => PutImageOnClipboard(img, FrameImageOrigin(img));
         _timeline.ImageCopyRequested += (_, img) => PutImageOnClipboard(img, FrameImageOrigin(img));
-        _preview.GifExportRequested += (_, _) => ExportGif();
+        _preview.GifExportRequested += (_, _) => OpenExportDialog(ExportFormat.Gif);
         _preview.FileSaved += (_, path) => _browser.RefreshFile(path);
         _preview.TabRequested += (_, _) => OpenPreviewTab();
 
@@ -1172,6 +1199,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _undoOrder.Changed += (_, _) => UpdateUndoItems();
         _colors.Message += (_, m) => ShowMessage(m);
         _tilesetPanel.Message += (_, m) => ShowMessage(m);
+        _tilesetPanel.EditTileImageRequested += EditTileImageOnCanvas;
         _ctx.ToolChanged += (_, _) => { if (_ctx.IsTilemapSelected) UpdateToolUi(); };
 
         // 모든 색 고르기 창: 팔레트·최근 색·스포이드(현재 프레임 합성).
@@ -1241,6 +1269,10 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _canvas.ShowPixelGrid = s.ShowPixelGrid;
         _canvas.ShowPivot = s.ShowPivot;
         _canvas.ShowTileGrid = s.ShowTileGrid;
+        _ctx.TileListByFloor = s.TileListByFloor;
+        _ctx.TileListHideAutoTiles = s.TileListHideAutoTiles;
+        _ctx.TileShowAutoParts = s.TileShowAutoParts;
+        _ctx.TileSlotSize = s.TileSlotSize;
         _canvas.TiledMode = s.TiledMode;
         _canvas.TileSize = new Size(s.TileWidth, s.TileHeight);
         _canvas.PixelGridColor = ColorParse.ParseOr(s.PixelGridColor, new Color32(255, 255, 255, 48)).ToColor();
@@ -1457,6 +1489,10 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         s.ShowPixelGrid = _canvas.ShowPixelGrid;
         s.ShowPivot = _canvas.ShowPivot;
         s.ShowTileGrid = _canvas.ShowTileGrid;
+        s.TileListByFloor = _ctx.TileListByFloor;
+        s.TileListHideAutoTiles = _ctx.TileListHideAutoTiles;
+        s.TileShowAutoParts = _ctx.TileShowAutoParts;
+        s.TileSlotSize = _ctx.TileSlotSize;
         s.TiledMode = _canvas.TiledMode;
         s.TileWidth = _canvas.TileSize.Width;
         s.TileHeight = _canvas.TileSize.Height;
@@ -1877,6 +1913,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _cbPivot.IsChecked = _miPivot.IsChecked = _canvas.ShowPivot;
         _cbOnion.IsChecked = _miOnion.IsChecked = _ctx.OnionSkin;
         _cbEffects.IsChecked = _miEffects.IsChecked = _ctx.CanvasEffects;
+        _cbTileCells.IsChecked = _miTileCells.IsChecked = _ctx.ShowTileCells;
+        _cbTileAnim.IsChecked = _miTileAnim.IsChecked = _ctx.TileAnimationPlaying;
+        _cbTileView.SelectedIndex = (int)_ctx.TileViewMode;
         _cbFit.IsChecked = _canvas.AutoFit;
         _tbFiles.IsChecked = _miFiles.IsChecked = _filesShown;
         UpdateTileToolUi();
@@ -2070,8 +2109,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         var dlg = new PreferencesDialog(_settings.Language ?? UiLanguage.Current, _settings.UndoSteps, _settings.UndoHistoryEnabled, _settings.UndoHistoryPolicy, _history,
             _settings.AutoSave, _settings.AutoSaveIdleSeconds, _settings.TrashPolicy, _settings.UpdateCheck, _settings.DiscordPresence,
             _commands.Select(c => c.Info).ToList(), _commands.ToDictionary(c => c.Info.Id, c => c.Keys.ToList()),
-            _settings.ReferencesFolder, _settings.ReferencesShowExamples, _settings.FfmpegPath, owner => ShowAiStatus(owner),
-            _settings.AiExternalMcp, _settings.AiExternalOpenFile, _settings.AiExternalGenerate);
+            _settings.ReferencesFolder, _settings.ReferencesShowExamples, _settings.FfmpegPath, owner => ShowAiStatus(owner));
         var result = dlg.ShowDialog(this);
         if (dlg.ResetRequested)
         {
@@ -2097,10 +2135,6 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _settings.DiscordPresence = dlg.DiscordPresence;
         UpdateDiscord();
         _settings.FfmpegPath = dlg.FfmpegPath;
-        _settings.AiExternalMcp = dlg.ExternalMcp;
-        _settings.AiExternalOpenFile = dlg.ExternalOpenFile;
-        _settings.AiExternalGenerate = dlg.ExternalGenerate;
-        ApplyExternalMcp();
         // 끄면 기다리던 자동 저장도 바로 멈춘다. 바꾼 시간은 다음 편집부터.
         _settings.AutoSave = dlg.AutoSave;
         _settings.AutoSaveIdleSeconds = dlg.AutoSaveIdleSeconds;
@@ -2538,8 +2572,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             if (p.Layers[i].IsPart) { _ctx.SetCurrentLayer(i); return; }
     }
 
-    /// <summary>Ctrl+S: 지금 문서 저장(모양 펜 세트를 고치는 문서면 세트에 저장 — <see cref="SaveShapeSetEdit"/>).</summary>
-    private bool Save() => _ctx.Project is { } p && (ShapeSetEditOf(p) is { } edit ? SaveShapeSetEdit(edit) : Save(p));
+    /// <summary>Ctrl+S: 지금 문서 저장(모양 펜 세트·타일 그림을 고치는 문서면 세트·타일에 저장 — <see cref="SaveShapeSetEdit"/>, <see cref="SaveTileImageEdit"/>).</summary>
+    private bool Save() => _ctx.Project is { } p && (ShapeSetEditOf(p) is { } edit ? SaveShapeSetEdit(edit)
+        : TileImageEditOf(p) is { } tile ? SaveTileImageEdit(tile) : Save(p));
 
     /// <summary>
     /// .chickxel 저장 + (켜져 있으면) 시트·메타 내보내기. 저장한 적 없는 문서는 저장 위치를 묻는다. 저장했으면 true.
@@ -2803,20 +2838,21 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         return text;
     }
 
-    /// <summary>Ctrl+E: 내보내기 설정 창. 파란 "내보내기"를 누르면 창을 닫고 지금 설정대로 내보낸다.</summary>
-    private void OpenExportDialog()
+    /// <summary>Ctrl+E: 내보내기 창(마지막으로 고른 형식).</summary>
+    private void OpenExportDialog() => OpenExportDialog(_settings.ExportFormat);
+
+    /// <summary>
+    /// 내보내기 창을 <paramref name="format"/>으로 연다. 이미지 시트에서 파란 "내보내기"를 누르면 창을 닫고 지금 설정대로 내보내고,
+    /// 애니메이션·프레임을 내보냈으면 그 결과를 상태 표시줄에 보이고 파일 목록을 새로 고친다.
+    /// </summary>
+    private void OpenExportDialog(ExportFormat format)
     {
         if (!_ctx.HasProject) return;
-        var dlg = new UnityExportDialog(_ctx, _settings, v => _settings.LastPpu = v);
-        if (dlg.ShowDialog(this) == DialogResult.OK) ExportNow();
-    }
-
-    /// <summary>파일 > GIF 애니메이션으로 내보내기: 범위·배율·반복·배경을 고르는 창(프로젝트는 바꾸지 않음).</summary>
-    private void ExportGif()
-    {
-        if (GifExportDialog.Run(_ctx, _settings, this) is not var (message, path)) return;
-        ShowMessage(message);
-        _browser.RefreshFile(path);
+        var dlg = new ExportDialog(_ctx, _settings, format, v => _settings.LastPpu = v);
+        var result = dlg.ShowDialog(this);
+        if (dlg.ResultMessage is { } message) ShowMessage(message);
+        foreach (var path in dlg.ExportedPaths) _browser.RefreshFile(path);
+        if (result == DialogResult.OK) ExportNow();
     }
 
     private void ExportNow()
@@ -3404,6 +3440,18 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         else _settings.AiExternalMcp = false;
         _stExternal.IsVisible = _mcp?.ExternalEnabled == true;
         ShowExternalActivity(null);
+    }
+
+    /// <summary>외부 AI 연결 창(AI 메뉴): 확인하면 허락·도구 설정을 넣고 바로 적용해 저장한다.</summary>
+    private void ShowExternalAi()
+    {
+        var dlg = new Ai.ExternalAiDialog(_settings.AiExternalMcp, _settings.AiExternalOpenFile, _settings.AiExternalGenerate);
+        if (dlg.ShowDialog(this) != DialogResult.OK) return;
+        _settings.AiExternalMcp = dlg.ExternalMcp;
+        _settings.AiExternalOpenFile = dlg.ExternalOpenFile;
+        _settings.AiExternalGenerate = dlg.ExternalGenerate;
+        ApplyExternalMcp();
+        SaveSettings();
     }
 
     /// <summary>상태 표시줄의 외부 AI 연결 표시: 도구 이름이 있으면 강조색으로 "외부 AI: 도구"를 잠깐 보이고, null이면 평소(흐린 "외부 AI").</summary>

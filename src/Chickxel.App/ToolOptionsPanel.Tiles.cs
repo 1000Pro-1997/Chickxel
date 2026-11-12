@@ -3,32 +3,19 @@ using Chickxel.Core.Tiles;
 
 namespace Chickxel.App;
 
-// 도구 설정의 타일 묶음: 타일맵 레이어를 고르면 픽셀 도구 묶음 대신 보인다('지금 찍을 것' 카드, 층, 뒤집기·회전, 무작위, 칸 격자).
+// 도구 설정의 타일 묶음: 타일맵 레이어를 고르면 픽셀 도구 묶음 대신 보인다('지금 찍을 것' 카드, 자동 타일 세트의 구성, 뒤집기·회전, 무작위)와 층 묶음(층 목록 — 누르면 그 층에 찍기).
+// 도구 쓰는 법은 위 막대 안내에, 칸 격자·층 보기·타일 움직임 같은 보기는 위 막대에 있다.
 public sealed partial class ToolOptionsPanel
 {
-    private Border _tileBox = null!;
-    private TextBlock _tileHint = null!;
+    private Border _tileBox = null!, _tileFloorBox = null!;
     private TilePickCard _tilePick = null!;
-    private ComboBox _tileFloor = null!;
+    private TileFloorList _tileFloors = null!;
     private ToggleButton _tileFlipX = null!, _tileFlipY = null!, _tileRotate = null!;
-    private CheckBox _tileRandom = null!, _tileCells = null!;
-    private Control _tileTransformRow = null!, _tileRandomRow = null!, _tileFloorRow = null!;
-    /// <summary>층 칸 차례(0 = 타일 기본, 그다음 타일셋 층 Id).</summary>
-    private readonly List<int?> _tileFloorIds = new();
+    private CheckBox _tileRandom = null!;
+    private Control _tileTransformRow = null!, _tileRandomRow = null!;
 
     private Border BuildTileOptions()
     {
-        _tileHint = Dim("");
-        _tileHint.TextWrapping = TextWrapping.Wrap;
-        _tileFloor = Ui.Combo(150);
-        _tileFloor.Focusable = false;
-        _tileFloor.SelectionChanged += (_, _) =>
-        {
-            if (_updating || _tileFloor.SelectedIndex < 0 || _tileFloor.SelectedIndex >= _tileFloorIds.Count) return;
-            _ctx.TileFloor = _tileFloorIds[_tileFloor.SelectedIndex];
-        };
-        _tileFloor.Tip(UiStrings.TileOptions_FloorTip);
-        _tileFloorRow = Ui.Row(Ui.Label(UiStrings.TileOptions_Floor), _tileFloor);
         _tileFlipX = TextToggle(VectorIcon.FlipLeftRight, UiStrings.TileOptions_FlipXTip, _ => _ctx.TileTransform ^= TileTransform.FlipX);
         _tileFlipY = TextToggle(VectorIcon.FlipUpDown, UiStrings.TileOptions_FlipYTip, _ => _ctx.TileTransform ^= TileTransform.FlipY);
         _tileRotate = TextToggle(VectorIcon.RotateCw, UiStrings.TileOptions_RotateTip, _ => _ctx.TileTransform ^= TileTransform.Rotate90);
@@ -38,9 +25,10 @@ public sealed partial class ToolOptionsPanel
         _tileRandom = Check(UiStrings.TileOptions_Random, UiStrings.TileOptions_RandomTip, v => _ctx.TileRandom = v);
         _tileRandom.Content = Ui.IconLabel(VectorIcon.Shuffle, UiStrings.TileOptions_Random, iconAfter: true);
         _tileRandomRow = _tileRandom;
-        _tileCells = Check(UiStrings.TileOptions_Grid, UiStrings.TileOptions_GridTip, v => _ctx.ShowTileCells = v);
         _tilePick = new TilePickCard(_ctx, 32);
-        _tileBox = Ui.Group(UiStrings.TileOptions_Title, Ui.Stack(_tilePick, _tileHint, _tileFloorRow, _tileTransformRow, _tileRandomRow, _tileCells));
+        _tileBox = Ui.Group(UiStrings.TileOptions_Title, Ui.Stack(_tilePick, new TileAutoPartsView(_ctx), _tileTransformRow, _tileRandomRow));
+        _tileFloors = new TileFloorList(_ctx);
+        _tileFloorBox = Ui.Group(UiStrings.Tileset_Floors, _tileFloors);
         _ctx.TileStateChanged += (_, _) => { if (_tileBox.IsVisible) RefreshTiles(); };
         _ctx.CurrentChanged += (_, _) => Refresh();
         return _tileBox;
@@ -75,6 +63,7 @@ public sealed partial class ToolOptionsPanel
     {
         bool tile = _ctx.IsTilemapSelected && !_ctx.IsTransforming && !_ctx.IsCanvasResizing;
         _tileBox.IsVisible = tile;
+        _tileFloorBox.IsVisible = tile;
         if (!tile) return false;
         foreach (var box in new Control[] { _shapeBox, _brushBox, _pencilGradientBox, _shapePenBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _frameRangeBox, _pivotBox, _sliceBox, _hint })
             box.IsVisible = false;
@@ -88,30 +77,17 @@ public sealed partial class ToolOptionsPanel
         var tool = _ctx.TileTool;
         var ts = _ctx.CurrentTileset;
         bool stamping = tool is TileTool.Brush or TileTool.Rect or TileTool.Fill;
-        _tileHint.Text = TileToolHint(tool);
-        _tileFloorRow.IsVisible = stamping || tool == TileTool.Eraser;
         _tileTransformRow.IsVisible = stamping;
         _tileRandomRow.IsVisible = stamping;
         _updating = true;
         try
         {
-            _tileFloorIds.Clear();
-            _tileFloorIds.Add(null);
-            var names = new List<string> { UiStrings.TileOptions_FloorAuto };
-            foreach (var f in ts?.Floors ?? [])
-            {
-                _tileFloorIds.Add(f.Id);
-                names.Add(f.Name);
-            }
-            _tileFloor.ItemsSource = names;
-            _tileFloor.SelectedIndex = Math.Max(0, _tileFloorIds.IndexOf(_ctx.TileFloor));
             var t = _ctx.TileTransform;
             _tileFlipX.IsChecked = (t & TileTransform.FlipX) != 0;
             _tileFlipY.IsChecked = (t & TileTransform.FlipY) != 0;
             _tileRotate.IsChecked = (t & TileTransform.Rotate90) != 0;
             _tileRotate.IsEnabled = ts?.CanRotate ?? false;
             _tileRandom.IsChecked = _ctx.TileRandom;
-            _tileCells.IsChecked = _ctx.ShowTileCells;
         }
         finally
         {

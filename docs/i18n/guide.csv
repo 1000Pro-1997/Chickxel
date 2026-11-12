@@ -64,6 +64,9 @@ manual.71,"<a href=""#pixelate"">AI 그림 픽셀로 정리</a>
 manual.80,"<a href=""#parts"">부위(그룹) 레이어 · 스킨</a>
 ","<a href=""#parts"">Part (group) layers · skins</a>
 "
+manual.tilemap,"<a href=""#tilemap"">타일맵 레이어</a>
+","<a href=""#tilemap"">Tilemap layers</a>
+"
 manual.94,"<a href=""#ai"">AI 채팅 (Claude · Codex)</a>
 ","<a href=""#ai"">AI chat (Claude · Codex)</a>
 "

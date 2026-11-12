@@ -132,6 +132,7 @@ public sealed partial class AutoTileEditorDialog
         private static readonly IBrush AnyBrush = new SolidColorBrush(Color.FromRgb(50, 50, 56));
         private static readonly IBrush SameBrush = new SolidColorBrush(Color.FromRgb(62, 158, 92));
         private static readonly IBrush OtherBrush = new SolidColorBrush(Color.FromRgb(196, 70, 70));
+        private static readonly IBrush FilledBrush = new SolidColorBrush(Color.FromRgb(190, 140, 40));
         private static readonly IBrush CenterBrush = new SolidColorBrush(Color.FromRgb(36, 36, 42));
         private static readonly IBrush HoverOverlay = new SolidColorBrush(Color.FromArgb(50, 255, 255, 255));
         private static readonly IPen CellPen = AppTheme.Pen(Color.FromArgb(70, 255, 255, 255));
@@ -171,9 +172,16 @@ public sealed partial class AutoTileEditorDialog
                         continue;
                     }
                     var cond = rule.Condition(bit);
-                    g.FillRectangle(cond switch { NeighborCondition.Same => SameBrush, NeighborCondition.Other => OtherBrush, _ => AnyBrush }, r);
+                    g.FillRectangle(cond switch
+                    {
+                        NeighborCondition.Same => SameBrush,
+                        NeighborCondition.Other => OtherBrush,
+                        NeighborCondition.Filled => FilledBrush,
+                        _ => AnyBrush,
+                    }, r);
                     if (cond == NeighborCondition.Same) VectorIcons.Draw(g, VectorIcon.Plus, r, 13, Brushes.White, 2.6);
                     else if (cond == NeighborCondition.Other) VectorIcons.Draw(g, VectorIcon.Minus, r, 13, Brushes.White, 2.6);
+                    else if (cond == NeighborCondition.Filled) VectorIcons.Draw(g, VectorIcon.Triangle, r, 11, Brushes.White, 2, filled: true);
                     g.DrawRectangle(null, CellPen, r);
                     if (_hover == (dx, dy)) g.FillRectangle(HoverOverlay, r);
                 }
@@ -209,12 +217,14 @@ public sealed partial class AutoTileEditorDialog
             int bit = BitAt(c.X, c.Y);
             var rule = _owner._rules[_index];
             bool back = pt.Properties.IsRightButtonPressed;
+            // 누르기: 상관없음 → 있어야 함 → 없어야 함 → 뭐라도 있음 → 상관없음, 오른쪽 버튼은 거꾸로
             var next = (rule.Condition(bit), back) switch
             {
                 (NeighborCondition.Any, false) => NeighborCondition.Same,
                 (NeighborCondition.Same, false) => NeighborCondition.Other,
-                (NeighborCondition.Other, false) => NeighborCondition.Any,
-                (NeighborCondition.Any, true) => NeighborCondition.Other,
+                (NeighborCondition.Other, false) => NeighborCondition.Filled,
+                (NeighborCondition.Any, true) => NeighborCondition.Filled,
+                (NeighborCondition.Filled, true) => NeighborCondition.Other,
                 (NeighborCondition.Other, true) => NeighborCondition.Same,
                 _ => NeighborCondition.Any,
             };
