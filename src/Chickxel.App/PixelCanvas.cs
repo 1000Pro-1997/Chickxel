@@ -3658,6 +3658,9 @@ public sealed partial class PixelCanvas : Control
         var visible = VisibleSourceRect(canvas.X, canvas.Y, canvas.Width, canvas.Height);
         if (_showPixelGrid && _zoom >= _pixelGridMinZoom && !visible.IsEmpty)
             DrawPixelGrid(g, new Rectangle(visible.X + canvas.X, visible.Y + canvas.Y, visible.Width, visible.Height));
+        // 타일맵에서 시작한 크기 조절은 칸 격자를 임시로 표시한다(평소 칸 격자 보기 설정은 바꾸지 않음).
+        if (_ctx.CanvasResizeTileGrid is { } tileGrid)
+            DrawTileCells(g, tileGrid.Data, tileGrid.Tileset);
         if (_ctx.CanvasResizeWarp is { } warp)
         {
             // 원근 변형 중: 그림 자리는 변형한 사각형(새 캔버스 좌표 → 보이는 좌표)
@@ -3822,11 +3825,11 @@ public sealed partial class PixelCanvas : Control
     }
 
     /// <summary>
-    /// 캔버스 크기 끌기(1px 단위, 늘 끌기 시작 때의 상태에서 다시 셈 — 끄는 도중에 Ctrl·Alt·Shift를 바꿔도 처음부터 누른 것처럼): 그림 안쪽이면 그림을 옮긴다.
-    /// 손잡이를 왼쪽으로 끌면 늘리기 — 그림 가장자리도 함께 움직여 여백은 그대로 두고 그림 크기를 바꾸고, 오른쪽(우클릭)으로 끌면 여백 — 그 캔버스 가장자리만 옮긴다
-    /// (그림은 제자리 → 여백이 늘거나 잘림). 둘 다 Alt = 가운데 기준(맞은편도 함께, 캔버스 중심 기준을 켠 것과 같음), Shift = 시작 때 비율 유지(늘리기는 그림, 여백은 캔버스 —
-    /// 변 손잡이면 다른 쪽도 같은 비율로 가운데 기준), Ctrl(⌘) = <see cref="DragCanvasResizeFree"/>. 크기는 1px 이상.
-    /// 9-slice로 늘리기가 켜져 있어도 조작은 같고(<see cref="EditorContext.CanvasResizeUsesSlice"/>는 그림을 늘리는 방법만 바꿈), 그때 그림은 테두리 두 쪽 + 1px보다 작아지지 않는다.
+    /// 캔버스 크기 끌기(늘 끌기 시작 때의 상태에서 다시 셈 — 도중에 Ctrl·Alt·Shift를 바꿔도 처음부터 누른 것처럼): 그림 안쪽이면 그림을 옮긴다.
+    /// 손잡이를 왼쪽으로 끌면 그림 크기도 바꾸고, 오른쪽(우클릭)으로 끌면 캔버스 가장자리만 옮긴다.
+    /// 타일맵에서 시작했으면 왼쪽 끌기도 캔버스 가장자리만 옮겨 타일·다른 레이어 그림은 늘이지 않고, 보통 끌기는 타일 격자에 맞춘다.
+    /// Alt = 가운데 기준, Shift = 시작 때 비율 유지(두 모드는 픽셀 단위), Ctrl(⌘) = <see cref="DragCanvasResizeFree"/>. 크기는 1px 이상.
+    /// 9-slice로 늘리기가 켜져 있어도 조작은 같고(<see cref="EditorContext.CanvasResizeUsesSlice"/>는 그림을 늘이는 방법만 바꿈), 그때 그림은 테두리 두 쪽 + 1px보다 작아지지 않는다.
     /// </summary>
     private void DragCanvasResize(Point screen)
     {
@@ -3841,7 +3844,7 @@ public sealed partial class PixelCanvas : Control
         }
         bool alt = (_mods & KeyModifiers.Alt) != 0, shift = (_mods & KeyModifiers.Shift) != 0;
         if (alt) _altUsed = true;   // Alt를 떼도 메뉴가 열리지 않게
-        bool scale = !_crMargin;
+        bool scale = !_crMargin && _ctx.CanvasResizeTileGrid is null;
         if (Ui.HasCommand(_mods))
         {
             DragCanvasResizeFree(dx, dy, alt, scale);
@@ -3872,7 +3875,28 @@ public sealed partial class PixelCanvas : Control
         var center = _ctx.CanvasResizeFromCenter ? _ctx.CanvasResizeCenter2 : new System.Drawing.Point(c.X * 2 + c.Width, c.Y * 2 + c.Height);
         var (cx, cw, ix, iw) = ResizeAxis(_crHx, gx, (fromCenter && _crHx != 0) || (sideShift && _crHx == 0), center.X, c.X, c.Width, i.X, i.Width, scale);
         var (cy, ch, iy, ih) = ResizeAxis(_crHy, gy, (fromCenter && _crHy != 0) || (sideShift && _crHy == 0), center.Y, c.Y, c.Height, i.Y, i.Height, scale);
+        if (!fromCenter && !shift && _ctx.CanvasResizeTileGrid is { } grid)
+        {
+            // 움직인 가장자리만 칸 경계에 맞춘다. 원래 크기가 칸 배수가 아니어도 반대쪽 가장자리와 그림 자리는 그대로 둔다.
+            int left = _crHx < 0 ? SnapTileEdge(cx, c.Left, grid.Data.Origin.X, grid.Tileset.CellWidth) : cx;
+            int right = _crHx > 0 ? SnapTileEdge(cx + cw, c.Right, grid.Data.Origin.X, grid.Tileset.CellWidth) : cx + cw;
+            int top = _crHy < 0 ? SnapTileEdge(cy, c.Top, grid.Data.Origin.Y, grid.Tileset.CellHeight) : cy;
+            int bottom = _crHy > 0 ? SnapTileEdge(cy + ch, c.Bottom, grid.Data.Origin.Y, grid.Tileset.CellHeight) : cy + ch;
+            if (right > left && right - left <= PixelImage.MaxSize) { ix += cx - left; cx = left; cw = right - left; }
+            if (bottom > top && bottom - top <= PixelImage.MaxSize) { iy += cy - top; cy = top; ch = bottom - top; }
+        }
         _ctx.SetCanvasResize(new Rectangle(cx, cy, cw, ch), new Rectangle(ix, iy, iw, ih));
+    }
+
+    /// <summary>움직인 가장자리를 원점 기준 격자에 맞춘다. 초기 가장자리가 칸 중간이면 끈 방향의 첫 경계부터 쓴다.</summary>
+    internal static int SnapTileEdge(int target, int start, int origin, int cell)
+    {
+        long lower = origin + (long)Math.Floor(((long)target - origin) / (double)cell) * cell;
+        long upper = lower + cell;
+        long snapped = target - lower <= upper - target ? lower : upper;
+        if (target > start && snapped < start) snapped = upper;
+        if (target < start && snapped > start) snapped = lower;
+        return (int)Math.Clamp(snapped, int.MinValue, int.MaxValue);
     }
 
     /// <summary>

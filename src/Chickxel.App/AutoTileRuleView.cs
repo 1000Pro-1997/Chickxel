@@ -347,7 +347,12 @@ public sealed partial class AutoTileEditorDialog
             if (chip >= 0)
             {
                 var c = tiles[chip];
-                menu.Items.Add(Item(UiStrings.AutoTile_WeightUp, VectorIcon.Plus, () => SetTiles(tiles.SetItem(chip, c with { Weight = c.Weight + 1 }))));
+                menu.Items.Add(Item(UiStrings.AutoTile_WeightSet, VectorIcon.Pencil, () =>
+                {
+                    if (WeightDialog.Ask(_owner, c.Weight) is { } weight && weight != c.Weight)
+                        SetTiles(tiles.SetItem(chip, c with { Weight = weight }));
+                }));
+                menu.Items.Add(Item(UiStrings.AutoTile_WeightUp, VectorIcon.Plus, () => SetTiles(tiles.SetItem(chip, c with { Weight = c.Weight + 1 })), c.Weight < int.MaxValue));
                 menu.Items.Add(Item(UiStrings.AutoTile_WeightDown, VectorIcon.Minus, () => SetTiles(tiles.SetItem(chip, c with { Weight = c.Weight - 1 })), c.Weight > 1));
                 menu.Items.Add(Item(UiStrings.AutoTile_RemoveTile, VectorIcon.X, () => SetTiles(tiles.RemoveAt(chip))));
                 menu.Items.Add(new Separator());
@@ -365,6 +370,24 @@ public sealed partial class AutoTileEditorDialog
 
         private void SetTiles(System.Collections.Immutable.ImmutableArray<AutoTileChoice> tiles)
             => _owner.SetRule(_index, Rule with { Tiles = tiles });
+    }
+
+    /// <summary>규칙에 넣은 타일 한 장의 비중을 숫자로 정한다(취소하면 변경 없음).</summary>
+    private sealed class WeightDialog : DialogBase
+    {
+        private readonly NumericUpDown _weight;
+
+        private WeightDialog(int current) : base(UiStrings.AutoTile_WeightSet)
+        {
+            _weight = Ui.Num(1, int.MaxValue, current, 100);
+            Body.Children.Add(Ui.Row(Ui.Label(UiStrings.AutoTile_WeightValue), _weight));
+        }
+
+        public static int? Ask(Visual owner, int current)
+        {
+            var dlg = new WeightDialog(current);
+            return dlg.ShowDialog(owner) == DialogResult.OK ? (int)dlg._weight.NumValue() : null;
+        }
     }
 
     /// <summary>그림을 칸 가운데에 비율을 지켜 맞춰 그린다(점 그대로 확대).</summary>

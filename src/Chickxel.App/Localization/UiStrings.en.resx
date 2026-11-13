@@ -4477,6 +4477,8 @@ If you don't, the set stays as it was.</value></data>
   <data name="AutoTile_RuleNoTiles" xml:space="preserve"><value>No tiles · skipped</value></data>
   <data name="AutoTile_WeightUp" xml:space="preserve"><value>Increase weight</value></data>
   <data name="AutoTile_WeightDown" xml:space="preserve"><value>Decrease weight</value></data>
+  <data name="AutoTile_WeightSet" xml:space="preserve"><value>Set weight…</value></data>
+  <data name="AutoTile_WeightValue" xml:space="preserve"><value>Weight (1 or more)</value></data>
   <data name="AutoTile_RemoveTile" xml:space="preserve"><value>Remove this tile</value></data>
   <data name="AutoTile_ClearRuleTiles" xml:space="preserve"><value>Remove all tiles</value></data>
   <data name="AutoTile_FlipXTip" xml:space="preserve"><value>Also match the left-right mirrored shape (places the tile mirrored)</value></data>

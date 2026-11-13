@@ -4,6 +4,7 @@ using Chickxel.Core.Model;
 using Chickxel.Core.Scripting;
 using Chickxel.App.Localization;
 using Chickxel.Core.Text;
+using Chickxel.Core.Tiles;
 
 namespace Chickxel.App;
 
@@ -1399,8 +1400,10 @@ public sealed partial class EditorContext
     /// <summary>
     /// 캔버스 크기 모드 상태: 원래 그림(현재 프레임 합성), 새 캔버스 자리, 원래 그림이 놓일 사각형, 미리보기.
     /// </summary>
-    private sealed class CanvasResizeSession(PixelImage source)
+    private sealed class CanvasResizeSession(PixelImage source, (TilemapData Data, Tileset Tileset)? tileGrid)
     {
+        /// <summary>타일맵 레이어에서 크기 조절을 시작했을 때의 칸 격자. 도중에 레이어 선택이 바뀌어도 유지한다.</summary>
+        public (TilemapData Data, Tileset Tileset)? TileGrid { get; } = tileGrid;
         /// <summary>현재 프레임 합성(미리보기 원본 — 늘 이것에서 다시 그려 누적되지 않음).</summary>
         public PixelImage Source { get; set; } = source;
         /// <summary>새 캔버스(원래 프레임 좌표: 가장자리를 끄는 동안 화면에서 제자리에 보이게).</summary>
@@ -1454,6 +1457,10 @@ public sealed partial class EditorContext
 
     /// <summary>원래 그림이 놓일 사각형(새 캔버스 좌표). 모드가 아니면 빈 사각형.</summary>
     public Rectangle CanvasResizeImage => _canvasResize?.Image ?? Rectangle.Empty;
+
+    /// <summary>타일맵 레이어에서 시작한 캔버스 크기 조절의 격자(일반 레이어에서 시작했으면 null).</summary>
+    internal (TilemapData Data, Tileset Tileset)? CanvasResizeTileGrid => _canvasResize?.TileGrid;
+
     /// <summary>크기 변경 시 캔버스 중심을 고정하고 양쪽 가장자리를 함께 움직이는지.</summary>
     public bool CanvasResizeFromCenter
     {
@@ -1648,7 +1655,8 @@ public sealed partial class EditorContext
         if (_canvasResize is not null) return null;
         CommitFloating();
         if (FrameImage(_frame) is not { } image) return UiStrings.S_EditorContext_BeginCanvasResize_1378D58776;
-        _canvasResize = new CanvasResizeSession(image);
+        var grid = CurrentTilemap is { Tiles: { } data } layer && Project.TilesetOf(layer) is { } ts ? (data, ts) : ((TilemapData, Tileset)?)null;
+        _canvasResize = new CanvasResizeSession(image, grid);
         CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
         return null;
     }

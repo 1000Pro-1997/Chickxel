@@ -89,6 +89,8 @@ public enum VectorIcon
     Coffee,
     /// <summary>3×3 칸 격자(AI 그림 픽셀로 정리).</summary>
     Grid3x3,
+    /// <summary>잔디가 덮인 흙 블록(타임라인 타일맵 레이어 — 직접 그린 경로).</summary>
+    GrassBlock,
     /// <summary>지우개(픽셀로 정리의 배경 지우기).</summary>
     Eraser,
     /// <summary>필름(GIF로 저장).</summary>
@@ -386,6 +388,12 @@ public static class VectorIcons
         [
             "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z",
             "M3 9h18", "M3 15h18", "M9 3v18", "M15 3v18",
+        ],
+        VectorIcon.GrassBlock =>
+        [
+            "M3 9h18v12H3z",
+            "M3 9l2-4 2 4 3-5 2 5 3-4 2 4 2-3 2 3",
+            "M7 13h2", "M15 14h2", "M11 18h2",
         ],
         VectorIcon.Eraser =>
         [

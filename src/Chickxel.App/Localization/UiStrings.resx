@@ -10237,6 +10237,8 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="AutoTile_RuleNoTiles" xml:space="preserve"><value>타일 없음 · 건너뜀</value></data>
   <data name="AutoTile_WeightUp" xml:space="preserve"><value>비중 늘리기</value></data>
   <data name="AutoTile_WeightDown" xml:space="preserve"><value>비중 줄이기</value></data>
+  <data name="AutoTile_WeightSet" xml:space="preserve"><value>비중 숫자로 설정…</value></data>
+  <data name="AutoTile_WeightValue" xml:space="preserve"><value>비중 (1 이상)</value></data>
   <data name="AutoTile_RemoveTile" xml:space="preserve"><value>이 타일 빼기</value></data>
   <data name="AutoTile_ClearRuleTiles" xml:space="preserve"><value>타일 모두 빼기</value></data>
   <data name="AutoTile_FlipXTip" xml:space="preserve"><value>좌우로 뒤집은 모양에도 맞춤(타일도 뒤집어 놓음)</value></data>

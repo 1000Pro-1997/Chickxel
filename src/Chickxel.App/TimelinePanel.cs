@@ -2855,8 +2855,8 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
             return (new HelpTarget(page), new Rect(Bounds.Size));
         }
 
-        /// <summary>레이어 이름이 시작하는 x(부위는 들여 씀).</summary>
-        private static int NameLeft(Layer layer) => layer.IsPart ? NameX + Indent : layer.IsGroup ? NameX : ToggleX;
+        /// <summary>레이어 이름이 시작하는 x(부위는 들여 쓰고 타일맵은 잔디 블록 아이콘 뒤에 씀).</summary>
+        private static int NameLeft(Layer layer) => layer.IsPart ? NameX + Indent : layer.IsGroup ? NameX : layer.IsTilemap ? ToggleX + 20 : ToggleX;
 
         /// <summary>이름 칸에 보이는 레이어 이름(불투명도가 255가 아니면 % 붙임).</summary>
         private static string LayerTitle(Layer layer) => layer.Name + (layer.Opacity < 255 ? $" ({layer.Opacity * 100 / 255}%)" : "");
@@ -3520,6 +3520,9 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
                     g.DrawLine(BorderPen, new Avalonia.Point(gx, y), new Avalonia.Point(gx, y + CellH));
                     g.DrawLine(BorderPen, new Avalonia.Point(gx, y + CellH / 2.0), new Avalonia.Point(NameX + Indent - 4, y + CellH / 2.0));
                 }
+                if (layer.IsTilemap)
+                    VectorIcons.Draw(g, VectorIcon.GrassBlock, new Rect(ToggleX, y, 18, CellH), 15,
+                        shown ? AppTheme.TextBrush : AppTheme.DimTextBrush);
                 int nameX = NameLeft(layer), right = NameW - 2;
                 // 스킨 칩은 그룹·부위 모두 이름 칸 오른쪽 끝(같은 열), 부위 크기 글자는 그 왼쪽.
                 if (SkinChip(layer, right - 2) is { W: > 0 } chip)

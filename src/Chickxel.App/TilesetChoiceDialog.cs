@@ -62,24 +62,38 @@ public sealed class TilesetChoiceDialog : DialogBase
     private string? Mismatch(Tileset ts)
         => _cell is { } c && (ts.CellWidth != c.Width || ts.CellHeight != c.Height) ? UiStrings.FormatTilesetChoice_CellMismatch(w: c.Width, h: c.Height) : null;
 
-    /// <summary>타일셋 한 줄: 앞 타일 몇 개의 그림, 이름, 칸 크기·타일 수·자동 타일 수(열려 있으면 "열려 있음"). 누르면 <paramref name="make"/>의 타일셋으로 닫힌다.</summary>
-    private Button Row(Tileset ts, bool builtIn, Func<Tileset> make)
+    /// <summary>타일셋 한 줄: 이름 옆에 현재 레이어의 열림 상태, 아래에 출처·칸 크기·타일 수를 보인다.</summary>
+    private Control Row(Tileset ts, bool builtIn, Func<Tileset> make)
     {
         bool open = !builtIn && _open.Contains(ts.Key);
         string? mismatch = open ? null : Mismatch(ts);
         var name = new TextBlock { Text = ts.Name.Length > 0 ? ts.Name : UiStrings.TilesetChoice_Unnamed, FontWeight = FontWeight.Bold, TextTrimming = TextTrimming.CharacterEllipsis };
+        var heading = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { name } };
+        if (open)
+            heading.Children.Add(new TextBlock { Text = UiStrings.TilesetChoice_Open, Foreground = AppTheme.AccentBrush, FontSize = AppTheme.SmallFontSize, VerticalAlignment = VerticalAlignment.Center });
         var info = UiStrings.FormatTilesetChoice_Summary(w: ts.CellWidth, h: ts.CellHeight, tiles: ts.Tiles.Length, sets: ts.AutoTiles.Length);
         if (builtIn) info = UiStrings.TilesetChoice_BuiltInCopy + " · " + info;
+        else if (!open) info = (_ctx.Project!.IsTilesetUsed(ts.Key) ? UiStrings.TilesetManager_UsedElsewhere : UiStrings.TilesetManager_Unused) + " · " + info;
         var detail = new TextBlock { Text = mismatch is null ? info : info + " · " + mismatch, FontSize = AppTheme.SmallFontSize, TextWrapping = TextWrapping.Wrap };
         detail.Foreground = mismatch is null ? AppTheme.DimTextBrush : AppTheme.WarningBrush;
-        var text = new StackPanel { Spacing = 1, VerticalAlignment = VerticalAlignment.Center, Children = { name, detail } };
-        if (open)
-            text.Children.Add(new TextBlock { Text = UiStrings.TilesetChoice_Open, Foreground = AppTheme.AccentBrush, FontSize = AppTheme.SmallFontSize });
+        var text = new StackPanel { Spacing = 1, VerticalAlignment = VerticalAlignment.Center, Children = { heading, detail } };
         var strip = new TilesetStrip(ts) { Margin = new Thickness(0, 0, 10, 0) };
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*") };
         Grid.SetColumn(text, 1);
         grid.Children.Add(strip);
         grid.Children.Add(text);
+        if (open)
+            return new Border
+            {
+                Child = grid,
+                Width = RowWidth,
+                Padding = new Thickness(8, 6),
+                Margin = new Thickness(3, 1),
+                Background = AppTheme.PanelBrush,
+                BorderBrush = AppTheme.AccentBrush,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(4),
+            };
         var b = new Button
         {
             Content = grid,
@@ -87,9 +101,9 @@ public sealed class TilesetChoiceDialog : DialogBase
             Padding = new Thickness(8, 6),
             Margin = new Thickness(3, 1),
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
-            IsEnabled = !open && mismatch is null,
-            BorderBrush = open ? AppTheme.AccentBrush : AppTheme.BorderBrush,
-            BorderThickness = new Thickness(open ? 2 : 1),
+            IsEnabled = mismatch is null,
+            BorderBrush = AppTheme.BorderBrush,
+            BorderThickness = new Thickness(1),
         };
         b.Click += (_, _) =>
         {
