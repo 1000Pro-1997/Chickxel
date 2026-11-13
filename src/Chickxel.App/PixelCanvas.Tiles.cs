@@ -18,11 +18,13 @@ public sealed partial class PixelCanvas
     private static readonly IPen TileWarnPen = AppTheme.Pen(AppTheme.WarningColor, 2, Dash);
     private static readonly IBrush TileHudBrush = new SolidColorBrush(Color.FromArgb(215, 22, 22, 26));
 
-    /// <summary>칸 정보 글과 지금 찍을 것을 다시 만들지 않게 담아 두는 열쇠(맵·타일셋·칸·붓 상태).</summary>
-    private readonly record struct TileHudKey(TilemapData Data, Tileset Tileset, Point Cell, TileTool Tool, TileStamp? Stamp, int AutoSet, bool Auto, int? Floor, TileTransform Transform, bool Random);
+    /// <summary>칸 정보 글과 지금 찍을 것을 다시 만들지 않게 담아 두는 열쇠(맵·타일셋·칸·가리키는 타일·붓 상태).</summary>
+    private readonly record struct TileHudKey(TilemapData Data, Tileset Tileset, Point Cell, PlacedTile? Under, TileTool Tool, TileStamp? Stamp, int AutoSet, bool Auto, int? Floor,
+        TileTransform Transform, bool Random);
 
-    /// <summary>마우스가 가리키는 칸(타일맵 화면).</summary>
+    /// <summary>마우스가 가리키는 칸과 그 점에 보이는 맨 위 타일(타일맵 화면).</summary>
     private Point? _tileHover;
+    private PlacedTile? _tileHoverTile;
     private Point _tileDragStart, _tileDragCell;
     private bool _tileErase;
     private TileTool _tileDragTool;
@@ -51,7 +53,7 @@ public sealed partial class PixelCanvas
         switch (tool)
         {
             case TileTool.Picker:
-                if (!_ctx.TilePick(cell)) Message?.Invoke(this, UiStrings.Tile_NothingToPick);
+                if (!_ctx.TilePick(px)) Message?.Invoke(this, UiStrings.Tile_NothingToPick);
                 return false;
             case TileTool.Fill:
                 if (!_tileErase && !_ctx.UsesAutoTileSource && _ctx.TileStamp is null) { Message?.Invoke(this, UiStrings.Tile_PickTileFirst); return false; }
@@ -63,7 +65,7 @@ public sealed partial class PixelCanvas
                 if (tool == TileTool.Brush && !_tileErase && _ctx.TileStamp is null) { Message?.Invoke(this, UiStrings.Tile_PickTileFirst); return false; }
                 if (tool == TileTool.AutoTile && _ctx.CurrentAutoTileSet is null) { Message?.Invoke(this, UiStrings.Tile_PickAutoTileFirst); return false; }
                 if (_ctx.BeginTileStroke(cell) is { } why) { Message?.Invoke(this, why); return false; }
-                _ctx.TileStrokeAt(cell, _tileErase);
+                _ctx.TileStrokeAt(cell, _tileErase, px);
                 _drag = DragMode.Tile;
                 return true;
             case TileTool.Rect:
@@ -84,9 +86,10 @@ public sealed partial class PixelCanvas
     {
         if (_ctx.TileCellAt(px) is not { } cell || cell == _tileDragCell) return;
         if (_tileDragTool is TileTool.Brush or TileTool.Eraser or TileTool.AutoTile)
-            foreach (var c in Raster.Line(_tileDragCell, cell).Skip(1)) _ctx.TileStrokeAt(c, _tileErase);
+            foreach (var c in Raster.Line(_tileDragCell, cell).Skip(1)) _ctx.TileStrokeAt(c, _tileErase, c == cell ? px : null);
         _tileDragCell = cell;
         _tileHover = cell;
+        _tileHoverTile = _ctx.TileUnder(px);
         InvalidateVisual();
     }
 
@@ -122,12 +125,14 @@ public sealed partial class PixelCanvas
         InvalidateVisual();
     }
 
-    /// <summary>마우스가 가리키는 칸이 바뀌면 다시 그린다(붓 미리보기).</summary>
+    /// <summary>마우스가 가리키는 칸이나 그 점에 보이는 타일이 바뀌면 다시 그린다(붓 미리보기·칸 정보).</summary>
     private void UpdateTileHover(Point px)
     {
         var cell = _ctx.TileCellAt(px);
-        if (cell == _tileHover) return;
+        var under = cell is null ? null : _ctx.TileUnder(px);
+        if (cell == _tileHover && under == _tileHoverTile) return;
         _tileHover = cell;
+        _tileHoverTile = under;
         InvalidateVisual();
     }
 
@@ -252,13 +257,14 @@ public sealed partial class PixelCanvas
         return changes;
     }
 
-    /// <summary>지금 찍을 것과 칸 정보 글(칸 좌표 · 그 칸의 보이는 맨 위 타일과 층), 찍을 층이 잠기거나 숨었으면 경고 글.</summary>
+    /// <summary>지금 찍을 것과 칸 정보 글(칸 좌표 · 가리키는 점에 보이는 맨 위 타일과 층), 찍을 층이 잠기거나 숨었으면 경고 글.</summary>
     private (TilePick Pick, string Text, string? Warning) TileHud(TilemapData data, Tileset ts, Point cell)
     {
-        var key = new TileHudKey(data, ts, cell, _ctx.TileTool, _ctx.TileStamp, _ctx.AutoTileSet, _ctx.UsesAutoTileSource, _ctx.TileFloor, _ctx.TileTransform, _ctx.TileRandom);
+        var key = new TileHudKey(data, ts, cell, _tileHoverTile, _ctx.TileTool, _ctx.TileStamp, _ctx.AutoTileSet, _ctx.UsesAutoTileSource, _ctx.TileFloor, _ctx.TileTransform,
+            _ctx.TileRandom);
         if (_tileHud is { } h && h.Key == key) return (h.Pick, h.Text, h.Warning);
         var pick = TilePick.Describe(_ctx, ts);
-        var text = UiStrings.FormatTileHud_Cell(x: cell.X, y: cell.Y) + " · " + (TileInfo(data, ts, cell) ?? UiStrings.TileHud_Empty);
+        var text = UiStrings.FormatTileHud_Cell(x: cell.X, y: cell.Y) + " · " + (TileInfo(ts, _tileHoverTile) ?? UiStrings.TileHud_Empty);
         string? warning = null;
         foreach (int f in pick.Floors)
         {
@@ -270,18 +276,14 @@ public sealed partial class PixelCanvas
         return (pick, text, warning);
     }
 
-    /// <summary>칸에 보이는 맨 위 타일: "층 · 타일 이름"(자동 타일이면 세트 이름도). 빈 칸이면 null.</summary>
-    private static string? TileInfo(TilemapData data, Tileset ts, Point cell)
+    /// <summary>타일 정보: "층 · 타일 이름"(자동 타일이면 세트 이름도). 타일이 없으면 null.</summary>
+    private static string? TileInfo(Tileset ts, PlacedTile? placed)
     {
-        foreach (int f in data.Map.FloorsTopDown(ts))
-        {
-            if (!data.ShowsFloor(f) || data.Map.Covering(ts, f, cell) is not { } hit) continue;
-            var tile = ts.Find(hit.Cell.Tile) is { } def ? TileVisuals.TileName(def) : UiStrings.FormatTilePick_TileId(id: hit.Cell.Tile);
-            if (hit.Cell.AutoTile != 0 && ts.FindAutoTile(hit.Cell.AutoTile) is { } set)
-                tile = UiStrings.FormatTileHud_AutoOf(tile: tile, set: set.Name.Length > 0 ? set.Name : UiStrings.TilesetChoice_Unnamed);
-            return UiStrings.FormatTileHud_Placed(floor: ts.FindFloor(f)?.Name ?? "?", tile: tile);
-        }
-        return null;
+        if (placed is not { } hit) return null;
+        var tile = ts.Find(hit.Cell.Tile) is { } def ? TileVisuals.TileName(def) : UiStrings.FormatTilePick_TileId(id: hit.Cell.Tile);
+        if (hit.Cell.AutoTile != 0 && ts.FindAutoTile(hit.Cell.AutoTile) is { } set)
+            tile = UiStrings.FormatTileHud_AutoOf(tile: tile, set: set.Name.Length > 0 ? set.Name : UiStrings.TilesetChoice_Unnamed);
+        return UiStrings.FormatTileHud_Placed(floor: ts.FindFloor(hit.Floor)?.Name ?? "?", tile: tile);
     }
 
     /// <summary>캔버스 왼쪽 아래 칸 정보 띠(경고가 있으면 그 줄을 경고 색으로 위에).</summary>
@@ -303,11 +305,11 @@ public sealed partial class PixelCanvas
         }
     }
 
-    /// <summary>캔버스 좌표 <paramref name="px"/> 칸의 정보 글("칸 x, y · 층 · 타일 이름") — 타일맵 레이어가 아니면 null(상태 표시줄용).</summary>
+    /// <summary>캔버스 좌표 <paramref name="px"/>의 정보 글("칸 x, y · 층 · 그 점에 보이는 타일 이름") — 타일맵 레이어가 아니면 null(상태 표시줄용).</summary>
     public string? TileInfoAt(Point px)
     {
-        if (_ctx.CurrentTiles is not { } data || _ctx.CurrentTileset is not { } ts || _ctx.TileCellAt(px) is not { } cell) return null;
-        return UiStrings.FormatTileHud_Cell(x: cell.X, y: cell.Y) + " · " + (TileInfo(data, ts, cell) ?? UiStrings.TileHud_Empty);
+        if (_ctx.CurrentTileset is not { } ts || _ctx.TileCellAt(px) is not { } cell) return null;
+        return UiStrings.FormatTileHud_Cell(x: cell.X, y: cell.Y) + " · " + (TileInfo(ts, _ctx.TileUnder(px)) ?? UiStrings.TileHud_Empty);
     }
 
     /// <summary>칸 격자(보이는 곳만, 너무 촘촘하면 그리지 않음).</summary>

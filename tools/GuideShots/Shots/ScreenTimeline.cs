@@ -12,6 +12,7 @@ using Chickxel.Core.Assets;
 using Chickxel.Core.Effects;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
+using Chickxel.Core.Tiles;
 using static GuideShots.ScreenDemo;
 
 namespace GuideShots;
@@ -223,6 +224,19 @@ internal static class ScreenTimelineShots
         var corner = GridRect(main, 0, TagH, NameW, HeadH);
         RightClick(k, main, corner, selectFirst: false);
         SaveMenu(k, main, "screen-timeline-6", corner, [corner], 18);
+    }
+
+    /// <summary>타일맵 레이어 이름 앞 잔디 블록 벡터 아이콘(기본 타임라인 그림의 번호와 별개).</summary>
+    [Shot("screen-timeline-tilemap")]
+    public static void TilemapIcon(ShotKit k)
+    {
+        var main = OpenTall(k);
+        Build(k, main);
+        var ctx = Ctx(main);
+        ctx.Structural(() => Project(main).AddTilemapLayer(BuiltInTilesets.Sandbox(), name: "Tilemap"));
+        k.Settle(400);
+        var row = GridRect(main, 0, RowY(0), NameW, CellH);
+        k.Save(main, crop: row.Inflate(new Thickness(8, 8, 8, 8)));
     }
 
     [Shot("screen-timeline-select")]

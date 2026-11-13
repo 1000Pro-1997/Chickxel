@@ -93,6 +93,49 @@ internal static class ScreenMainShots
         }
     }
 
+    /// <summary>캔버스 밖 그림 분할 단추의 실제 목록과 세 표시 상태의 실제 캔버스 렌더.</summary>
+    [Shot("screen-top-bar-outside")]
+    public static void Outside(ShotKit k)
+    {
+        var main = Open(k);
+        var selector = ShotKit.Get<Control>(main, "_cbOutside");
+        var arrow = ((Panel)selector).Children.OfType<Panel>().First().Children.OfType<Button>().Last();
+        k.Click(arrow, settleMs: 500);
+        var popup = PopupArea(k, main) ?? throw new InvalidOperationException("no outside view list");
+        var target = ShotKit.Bounds(selector, main);
+        Shot(k, main, null, target.Union(popup).Inflate(8), [Pop(popup)], 1, only: [target, popup]);
+        PopupMenus.CloseAll();
+        k.Settle(200);
+    }
+
+    [Shot("screen-top-bar-compare-outside")]
+    public static void OutsideCompare(ShotKit k)
+    {
+        var main = Open(k, height: 1100);
+        ShotKit.Call(main, "SetPixelGrid", false);
+        var canvas = ShotKit.Get<PixelCanvas>(main, "_canvas");
+        var ctx = Ctx(main);
+        ctx.BrushSize = 4;
+        ctx.Primary = new Color32(228, 59, 68);
+        k.Command("도구/연필");
+        k.Settle(200);
+        int w = ctx.CanvasWidth, h = ctx.CanvasHeight;
+        Point At(double x, double y) => ToolFileHelp.At(main, x, y);
+        k.Drag(main, At(w - 14, h * 0.35), At(w + 12, h * 0.48));
+        k.Drag(main, At(w + 12, h * 0.48), At(w - 9, h * 0.65));
+        var sprite = ToolFileHelp.SpriteRect(main);
+        var area = new Rect(sprite.X - 12, sprite.Y - 12, sprite.Width + 24 + 16 * canvas.Zoom, sprite.Height + 24);
+        var shots = new List<(Bitmap, Rect)>();
+        foreach (var mode in new[] { OutsideImageView.Opaque, OutsideImageView.Translucent, OutsideImageView.Hidden })
+        {
+            canvas.OutsideView = mode;
+            k.Hover(main, new Point(800, 5), 100);
+            k.Settle(350);
+            shots.Add((k.Capture(main), area));
+        }
+        GuideScreenUiCompareShots.Compose(k, k.Id, shots);
+    }
+
     /// <summary>
     /// 메뉴 줄 오른쪽 끝: ⑫ 갤러리 단추(손으로 저장한 뒤 반짝이는 모습 — 빛이 가장 밝고 별 둘이 뜬 3초째로 멈춰 둠),
     /// ⑬ 계정 단추(가짜 서버로 로그인한 계정, 이름 뒤 레벨 칩).

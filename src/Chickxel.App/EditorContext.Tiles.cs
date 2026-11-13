@@ -318,8 +318,11 @@ public sealed partial class EditorContext
         return null;
     }
 
-    /// <summary>끌어 찍기의 칸 하나: 지금 도구로(붓·자동 타일 — <paramref name="erase"/>면 지우기, 지우개는 늘 지우기).</summary>
-    public void TileStrokeAt(Point cell, bool erase)
+    /// <summary>
+    /// 끌어 찍기의 칸 하나: 지금 도구로(붓·자동 타일 — <paramref name="erase"/>면 지우기, 지우개는 늘 지우기). <paramref name="px"/> = 누른 캔버스 점
+    /// (지우개가 그림 기준으로 고름, 없으면 칸 가운데).
+    /// </summary>
+    public void TileStrokeAt(Point cell, bool erase, Point? px = null)
     {
         if (Project is not { IsTileStrokeActive: true } p || CurrentTilemap is not { } layer || CurrentTileset is not { } ts) return;
         var data = layer.Tiles!;
@@ -327,9 +330,9 @@ public sealed partial class EditorContext
         if (_tileTool == TileTool.AutoTile && CurrentAutoTileSet is { } set)
         {
             if (data.IsFloorLocked(set.Floor)) { WarnLockedFloor(); return; }
-            map = erase ? AutoTiler.Erase(ts, map, set, [cell]) : AutoTiler.Paint(ts, map, set, [cell]);
+            map = erase ? AutoTiler.Erase(ts, map, set, [cell]) : AutoTiler.Paint(ts, map, set, [cell], f => !data.IsFloorLocked(f));
         }
-        else if (erase || _tileTool == TileTool.Eraser) map = EraseCell(ts, data, map, cell);
+        else if (erase || _tileTool == TileTool.Eraser) map = EraseCell(ts, data, map, cell, px ?? CellCenter(ts, data, cell));
         else if (EffectiveStamp is { } stamp)
         {
             var size = stamp.Bounds(ts).Size;
@@ -390,19 +393,45 @@ public sealed partial class EditorContext
         return touched.Count == 0 ? map : AutoTiler.RefreshAround(ts, map, touched);
     }
 
-    /// <summary>칸을 덮은 타일 하나를 지운 맵: 층을 고정했으면 그 층, 아니면 보이고 잠기지 않은 층 중 위층부터. 둘레 자동 타일은 다시 고른다.</summary>
-    private TileMap EraseCell(Tileset ts, TilemapData data, TileMap map, Point cell)
+    /// <summary>
+    /// 점 <paramref name="px"/>(칸 <paramref name="cell"/>)의 타일 하나를 지운 맵: 층을 고정했으면 그 층, 아니면 보이고 잠기지 않은 층에서.
+    /// 위치로 그리는 타일셋은 점이 있으면 세운 것·머리 위 타일을 그림 기준으로 먼저 찾고(솟거나 내려온 그림을 눌러도 그 타일), 없으면 칸을 덮은 위층부터.
+    /// 둘레 자동 타일은 다시 고른다.
+    /// </summary>
+    private TileMap EraseCell(Tileset ts, TilemapData data, TileMap map, Point cell, Point? px)
     {
-        IEnumerable<int> floors = _tileFloor is { } only ? [only] : map.FloorsTopDown(ts);
-        foreach (int f in floors)
-        {
-            if (data.IsFloorLocked(f) || !data.ShowsFloor(f) && _tileFloor is null) continue;
-            if (map.Covering(ts, f, cell) is not { } hit) continue;
-            if (hit.Cell.AutoTile != 0 && ts.FindAutoTile(hit.Cell.AutoTile) is { } set)
-                return AutoTiler.Erase(ts, map, set.Floor == f ? set : set with { Floor = f }, [hit.At]);
-            return AutoTiler.RefreshAround(ts, map.With(f, hit.At, null), [hit.At, cell]);
-        }
-        return map;
+        bool FloorOk(int f) => !data.IsFloorLocked(f) && (_tileFloor is { } only ? f == only : data.ShowsFloor(f));
+        Func<TileDrawClass, bool>? byImage = px is not null && ts.SortMode == TileSortMode.ByPosition ? c => c != TileDrawClass.Ground : null;
+        if (TileUnder(ts, data, map, cell, px ?? default, FloorOk, byImage) is not { } hit) return map;
+        if (hit.Cell.AutoTile != 0 && ts.FindAutoTile(hit.Cell.AutoTile) is { } set)
+            return AutoTiler.Erase(ts, map, set.Floor == hit.Floor ? set : set with { Floor = hit.Floor }, [hit.At]);
+        return AutoTiler.RefreshAround(ts, map.With(hit.Floor, hit.At, null), [hit.At, cell]);
+    }
+
+    /// <summary>
+    /// 점 <paramref name="px"/>(칸 <paramref name="cell"/>)에서 잡을 타일: <paramref name="byImage"/> 묶음의 타일 중 그림이 투명하지 않은 맨 위(없으면 그림 기준을 쓰지 않음),
+    /// 없으면 칸을 덮은 타일을 위층부터. <paramref name="floorOk"/> 층만.
+    /// </summary>
+    private static PlacedTile? TileUnder(Tileset ts, TilemapData data, TileMap map, Point cell, Point px, Func<int, bool> floorOk, Func<TileDrawClass, bool>? byImage)
+    {
+        if (byImage is not null && TileMapRenderer.HitTest(ts, map, data.Origin, px, floorOk, classes: byImage) is { } hit) return hit;
+        foreach (int f in map.FloorsTopDown(ts))
+            if (floorOk(f) && map.Covering(ts, f, cell) is { } covering) return covering;
+        return null;
+    }
+
+    /// <summary>캔버스 점 <paramref name="px"/>에 보이는 맨 위 타일(보이는 층, 그림 기준 — 그림이 투명한 곳이면 그 칸을 덮은 위층부터). 없으면 null.</summary>
+    public PlacedTile? TileUnder(Point px)
+    {
+        if (CurrentTiles is not { } data || CurrentTileset is not { } ts) return null;
+        return TileUnder(ts, data, data.Map, data.CellAt(ts, px.X, px.Y), px, data.ShowsFloor, _ => true);
+    }
+
+    /// <summary>칸 가운데의 캔버스 점.</summary>
+    private static Point CellCenter(Tileset ts, TilemapData data, Point cell)
+    {
+        var r = data.PixelRect(ts, new Rectangle(cell, new Size(1, 1)));
+        return new Point(r.X + r.Width / 2, r.Y + r.Height / 2);
     }
 
     private void WarnLockedFloor()
@@ -438,11 +467,11 @@ public sealed partial class EditorContext
             {
                 if (CurrentAutoTileSet is not { } set || data.IsFloorLocked(set.Floor)) return map;
                 var all = CellsOf(cells);
-                return erase ? AutoTiler.Erase(ts, map, set, all) : AutoTiler.Paint(ts, map, set, all);
+                return erase ? AutoTiler.Erase(ts, map, set, all) : AutoTiler.Paint(ts, map, set, all, f => !data.IsFloorLocked(f));
             }
             if (erase)
             {
-                foreach (var cell in CellsOf(cells)) map = EraseCell(ts, data, map, cell);
+                foreach (var cell in CellsOf(cells)) map = EraseCell(ts, data, map, cell, null);
                 return map;
             }
             if (EffectiveStamp is not { } stamp) return map;
@@ -491,7 +520,7 @@ public sealed partial class EditorContext
             var region = map.FillRegion(ts, floors, start, limit);
             if (region.Count == 0) return map;
             if (UsesAutoTileSource && CurrentAutoTileSet is { } auto)
-                return erase ? AutoTiler.Erase(ts, map, auto, region) : AutoTiler.Paint(ts, map, auto, region);
+                return erase ? AutoTiler.Erase(ts, map, auto, region) : AutoTiler.Paint(ts, map, auto, region, f => !data.IsFloorLocked(f));
             if (erase)
             {
                 var erased = new List<Point>();
@@ -539,27 +568,22 @@ public sealed partial class EditorContext
     }
 
     /// <summary>
-    /// 스포이드: 칸에서 보이는 맨 위 타일을 붓에 든다(그 층·뒤집기 그대로). 자동 타일로 찍은 칸이면 그 세트를 고르고 자동 타일 붓으로,
-    /// 아니면 타일 붓으로 바꾼다. 집은 것이 없으면 false.
+    /// 스포이드: 점 <paramref name="px"/>에 보이는 맨 위 타일(그림 기준, <see cref="TileUnder(Point)"/>)을 붓에 든다(그 층·뒤집기 그대로). 자동 타일로 찍은 칸이면 그 세트를 고르고
+    /// 자동 타일 붓으로, 아니면 타일 붓으로 바꾼다. 집은 것이 없으면 false.
     /// </summary>
-    public bool TilePick(Point cell)
+    public bool TilePick(Point px)
     {
-        if (CurrentTiles is not { } data || CurrentTileset is not { } ts) return false;
-        foreach (int f in data.Map.FloorsTopDown(ts))
+        if (CurrentTileset is not { } ts || TileUnder(px) is not { } hit) return false;
+        if (hit.Cell.AutoTile != 0 && ts.FindAutoTile(hit.Cell.AutoTile) is not null)
         {
-            if (!data.ShowsFloor(f) || data.Map.Covering(ts, f, cell) is not { } hit) continue;
-            if (hit.Cell.AutoTile != 0 && ts.FindAutoTile(hit.Cell.AutoTile) is not null)
-            {
-                AutoTileSet = hit.Cell.AutoTile;
-                TileTool = TileTool.AutoTile;
-                return true;
-            }
-            _tileTransform = TileTransform.None;
-            TileStamp = new TileStamp([new StampCell(0, 0, hit.Cell, f)]);
-            TileTool = TileTool.Brush;
+            AutoTileSet = hit.Cell.AutoTile;
+            TileTool = TileTool.AutoTile;
             return true;
         }
-        return false;
+        _tileTransform = TileTransform.None;
+        TileStamp = new TileStamp([new StampCell(0, 0, hit.Cell, hit.Floor)]);
+        TileTool = TileTool.Brush;
+        return true;
     }
 
     /// <summary>고른 칸 사각형의 보이는 타일을 붓에 든다(<paramref name="cut"/>면 그 타일을 지움 — 한 단계). 담은 것이 없으면 false.</summary>

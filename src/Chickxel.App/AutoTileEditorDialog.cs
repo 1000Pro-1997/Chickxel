@@ -27,6 +27,8 @@ public sealed partial class AutoTileEditorDialog : DialogBase
     private readonly StackPanel _ruleList = new() { Spacing = 3 };
     /// <summary>"뭐라도 있음" 조건이 볼 층 체크 상자(Tag = 층 Id).</summary>
     private readonly List<CheckBox> _filledFloors = [];
+    /// <summary>찍으면 그 칸을 비울 층 체크 상자(Tag = 층 Id).</summary>
+    private readonly List<CheckBox> _clearFloors = [];
     private readonly ScrollViewer _ruleScroll;
     private readonly PreviewBoard _preview;
     private readonly ConditionalWeakTable<PixelImage, WriteableBitmap> _bitmaps = new();
@@ -88,6 +90,17 @@ public sealed partial class AutoTileEditorDialog : DialogBase
         }
         filledRow.Children.Add(Ui.InfoBadge(UiStrings.AutoTile_FilledFloorsInfo));
         Body.Children.Add(filledRow);
+        // 찍으면 그 칸을 비울 다른 층(땅끼리 바꿔 찍기)
+        var clearRow = Ui.Row(Ui.Label(UiStrings.AutoTile_ClearFloors));
+        foreach (var f in ts.Floors)
+        {
+            var check = Ui.Check(f.Name, !set.ClearFloors.IsDefaultOrEmpty && set.ClearFloors.Contains(f.Id));
+            check.Tag = f.Id;
+            _clearFloors.Add(check);
+            clearRow.Children.Add(check);
+        }
+        clearRow.Children.Add(Ui.InfoBadge(UiStrings.AutoTile_ClearFloorsInfo));
+        Body.Children.Add(clearRow);
 
         // 왼쪽: 타일 목록과 고른 타일
         _palette.Tileset = ts;
@@ -189,6 +202,7 @@ public sealed partial class AutoTileEditorDialog : DialogBase
             Id = _id, Name = name, Floor = floor, Group = (_group.Text ?? "").Trim(), Rules = [.. _rules],
             // 모두 = 모든 층(빈 목록), 하나도 안 고르면 세트의 층만
             FilledFloors = filled.Count == _filledFloors.Count ? [] : filled.Count == 0 ? [floor] : [.. filled],
+            ClearFloors = [.. _clearFloors.Where(c => c.IsChecked == true).Select(c => (int)c.Tag!).Where(f => f != floor)],
         };
     }
 

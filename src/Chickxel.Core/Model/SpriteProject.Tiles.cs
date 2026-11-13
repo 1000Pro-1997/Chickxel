@@ -500,15 +500,16 @@ public sealed partial class SpriteProject
                 EffectsCollapsed = layer.EffectsCollapsed,
             };
             int linkColor = 0;
-            foreach (var floor in tileset.Floors)
+            foreach (var part in ConvertParts(tileset, data))
             {
-                bool Only(int id) => id == floor.Id;
-                var bounds = TileMapRenderer.PixelBounds(tileset, data.Map, data.Origin, Only);
+                var bounds = TileMapRenderer.PixelBounds(tileset, data.Map, data.Origin, part.Floors, part.Classes);
                 if (bounds.Width < 1 || bounds.Height < 1) continue;
                 bounds = Rectangle.Intersect(bounds, OverflowBounds);
                 if (bounds.Width < 1 || bounds.Height < 1 || bounds.Width > PixelImage.MaxSize || bounds.Height > PixelImage.MaxSize) continue;
-                // 프레임마다 그 프레임 시각의 그림: 이 층에 쓰인 움직이는 타일들이 보이는 그림 차례가 같은 프레임끼리는 한 장을 나눠 씀
-                var animated = data.Map.Floor(floor.Id).Select(c => c.Value.Tile).Distinct()
+                // 프레임마다 그 프레임 시각의 그림: 이 부위에 쓰인 움직이는 타일들이 보이는 그림 차례가 같은 프레임끼리는 한 장을 나눠 씀
+                var animated = data.Map.All
+                    .Where(p => part.Floors(p.Floor) && (part.Classes is null || part.Classes(tileset.DrawClassOf(p.Cell))))
+                    .Select(p => p.Cell.Tile).Distinct()
                     .Select(tileset.Find).Where(d => d is { IsAnimated: true }).Select(d => d!).ToList();
                 var byPhase = new Dictionary<string, (PixelImage Image, int Frames)>();
                 var phases = new string[_frames.Count];
@@ -520,23 +521,23 @@ public sealed partial class SpriteProject
                     phases[i] = phase;
                     byPhase[phase] = byPhase.TryGetValue(phase, out var hit)
                         ? (hit.Image, hit.Frames + 1)
-                        : (TileMapRenderer.RenderArea(tileset, data.Map, data.Origin, bounds, Only, time), 1);
+                        : (TileMapRenderer.RenderArea(tileset, data.Map, data.Origin, bounds, part.Floors, time, classes: part.Classes), 1);
                     start += _frames[i].DurationMs;
                 }
                 foreach (var (image, frames) in byPhase.Values)
                     if (frames > 1) Tagged(image, linkColor++);
-                var part = new Layer(UniqueLayerName(floor.Name.Length > 0 ? floor.Name : DomainStrings.Project_DefaultPartName))
+                var layerPart = new Layer(UniqueLayerName(part.Name.Length > 0 ? part.Name : DomainStrings.Project_DefaultPartName))
                 {
                     Kind = LayerKind.Part,
                     Parent = group,
                     PartSize = bounds.Size,
                     PartOffset = bounds.Location,
                     Pivot = Pivot.Center,
-                    Visible = data.ShowsFloor(floor.Id),
-                    Locked = data.IsFloorLocked(floor.Id),
+                    Visible = part.Visible,
+                    Locked = part.Locked,
                 };
-                _layers.Insert(at++, part);
-                for (int i = 0; i < _frames.Count; i++) _cels[new CelKey(part, _frames[i], null)] = byPhase[phases[i]].Image;
+                _layers.Insert(at++, layerPart);
+                for (int i = 0; i < _frames.Count; i++) _cels[new CelKey(layerPart, _frames[i], null)] = byPhase[phases[i]].Image;
             }
             _layers.Insert(at, group);
             foreach (var f in _frames)
@@ -544,6 +545,34 @@ public sealed partial class SpriteProject
             if (ReferenceEquals(PivotLayer, layer)) PivotLayer = group;
             return group;
         });
+    }
+
+    /// <summary>레이어로 변환할 부위(아래 → 위): 이름, 담을 층·그리기 묶음(null이면 모두), 보이기·잠금.</summary>
+    private sealed record ConvertPart(string Name, Func<int, bool> Floors, Func<TileDrawClass, bool>? Classes, bool Visible, bool Locked);
+
+    /// <summary>
+    /// 변환 부위: 층 차례로 그리는 타일셋은 층마다 하나. 위치로 그리는 타일셋은 그리는 순서를 지키게 바닥 묶음을 층마다, 세운 것은 보이는 층을 모두 한 부위로
+    /// (숨긴 층의 세운 것은 층마다 숨긴 부위로), 머리 위 묶음을 층마다.
+    /// </summary>
+    private static List<ConvertPart> ConvertParts(Tileset tileset, TilemapData data)
+    {
+        var parts = new List<ConvertPart>();
+        if (tileset.SortMode != TileSortMode.ByPosition)
+        {
+            foreach (var floor in tileset.Floors)
+                parts.Add(new ConvertPart(floor.Name, id => id == floor.Id, null, data.ShowsFloor(floor.Id), data.IsFloorLocked(floor.Id)));
+            return parts;
+        }
+        foreach (var floor in tileset.Floors)
+            parts.Add(new ConvertPart(floor.Name, id => id == floor.Id, c => c == TileDrawClass.Ground, data.ShowsFloor(floor.Id), data.IsFloorLocked(floor.Id)));
+        parts.Add(new ConvertPart(DomainStrings.Tile_PartSorted, data.ShowsFloor, c => c == TileDrawClass.Sorted, true, false));
+        foreach (var floor in tileset.Floors)
+            if (!data.ShowsFloor(floor.Id))
+                parts.Add(new ConvertPart(DomainStrings.FormatTile_PartFloorSorted(floor: floor.Name), id => id == floor.Id, c => c == TileDrawClass.Sorted, false, data.IsFloorLocked(floor.Id)));
+        foreach (var floor in tileset.Floors)
+            parts.Add(new ConvertPart(DomainStrings.FormatTile_PartFloorOverhead(floor: floor.Name), id => id == floor.Id, c => c == TileDrawClass.Overhead,
+                data.ShowsFloor(floor.Id), data.IsFloorLocked(floor.Id)));
+        return parts;
     }
 
     // ───────────── 타일셋 파일 ─────────────

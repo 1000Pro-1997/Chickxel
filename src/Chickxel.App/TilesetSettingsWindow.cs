@@ -25,8 +25,9 @@ public sealed class TilesetSettingsWindow : DialogBase
     private readonly TileThumb _thumb = new(48) { Margin = new Thickness(0, 0, 8, 0) };
     private readonly TextBlock _tileInfo;
     private readonly TextBox _tileName;
-    private readonly NumericUpDown _tileW, _tileH, _offX, _offY;
-    private readonly ComboBox _tileFloor;
+    private readonly NumericUpDown _tileW, _tileH, _offX, _offY, _sortY;
+    private readonly ComboBox _tileFloor, _drawClass;
+    private readonly Control _drawClassRow, _sortYRow;
     private readonly Control _singleOnly;
     private readonly Button _editImage, _animate, _duplicate, _delete;
     // 자동 타일·무리 페이지
@@ -35,6 +36,7 @@ public sealed class TilesetSettingsWindow : DialogBase
     // 타일셋 페이지
     private readonly TextBox _tsName;
     private readonly NumericUpDown _cellW, _cellH;
+    private readonly ComboBox _sortMode;
     private readonly TextBlock _tsFile, _cellNote;
     private readonly Button _reload;
     // 보기 페이지
@@ -82,15 +84,25 @@ public sealed class TilesetSettingsWindow : DialogBase
             .Tip(UiStrings.Tileset_AlignBottomTip);
         _tileFloor = Ui.Combo(150);
         _tileFloor.SelectionChanged += (_, _) => ApplyFloor();
+        _drawClass = Ui.Combo(150, UiStrings.Tileset_DrawGround, UiStrings.Tileset_DrawSorted, UiStrings.Tileset_DrawOverhead);
+        _drawClass.SelectionChanged += (_, _) => ApplyDrawClass();
+        _drawClassRow = Ui.Row(Ui.Label(UiStrings.Tileset_DrawClass), _drawClass, Ui.InfoBadge(UiStrings.Tileset_DrawClassInfo));
+        _sortY = Ui.Num(-4096, 4096, 0, 60).Unit("px");
+        _sortY.ValueChanged += (_, _) => ApplyOne(t => t with { SortY = (int)_sortY.NumValue() });
         _editImage = Ui.Button(VectorIcon.Pencil, UiStrings.TilesetWin_EditImage, (_, _) => EditImage()).Tip(UiStrings.TilesetWin_EditImageTip);
         _animate = Ui.Button(VectorIcon.Film, UiStrings.Tileset_AnimateTile, (_, _) => Animate());
         _duplicate = Ui.Button(VectorIcon.Copy, UiStrings.Tileset_DuplicateTile, (_, _) => Duplicate());
         _delete = Ui.Button(VectorIcon.Trash, UiStrings.Tileset_DeleteTiles, (_, _) => DeleteTiles());
+        _sortYRow = Ui.Stack(
+            Ui.Row(Ui.Label(UiStrings.Tileset_SortY), _sortY, Ui.InfoBadge(UiStrings.Tileset_SortYInfo)),
+            Ui.Row(Ui.Button(UiStrings.Tileset_SortYFootprint, (_, _) => ApplyOne(t => t with { SortY = null })),
+                Ui.Button(UiStrings.Tileset_SortYImage, (_, _) => ApplyOne(t => t with { SortY = t.ImageCellBottom(Ts!.CellHeight) }))));
         _singleOnly = Ui.Stack(
             Ui.Row(Ui.Label(UiStrings.TilesetChoice_Name), _tileName),
             Ui.Row(Ui.Label(UiStrings.Tileset_Footprint), _tileW, Ui.Label("×"), _tileH, Ui.InfoBadge(UiStrings.Tileset_FootprintInfo)),
             Ui.Row(Ui.Label(UiStrings.Tileset_DrawOffset), _offX, _offY),
-            Ui.Row(bottom));
+            Ui.Row(bottom),
+            _sortYRow);
         var props = new StackPanel
         {
             Spacing = 4,
@@ -100,6 +112,7 @@ public sealed class TilesetSettingsWindow : DialogBase
                 Ui.Row(_thumb, _tileInfo),
                 _singleOnly,
                 Ui.Row(Ui.Label(UiStrings.Tileset_DefaultFloor), _tileFloor, Ui.InfoBadge(UiStrings.Tileset_DefaultFloorInfo)),
+                _drawClassRow,
                 new WrapPanel { Children = { _editImage, _animate, _duplicate, _delete } },
             },
         };
@@ -143,6 +156,8 @@ public sealed class TilesetSettingsWindow : DialogBase
         _cellW.ValueChanged += (_, _) => ApplyCellSize();
         _cellH.ValueChanged += (_, _) => ApplyCellSize();
         _cellNote = Ui.Label("");
+        _sortMode = Ui.Combo(170, UiStrings.Tileset_SortByFloor, UiStrings.Tileset_SortByPosition);
+        _sortMode.SelectionChanged += (_, _) => ApplySortMode();
         _cellNote.Foreground = AppTheme.DimTextBrush;
         _cellNote.TextWrapping = TextWrapping.Wrap;
         _cellNote.MaxWidth = 400;
@@ -155,6 +170,7 @@ public sealed class TilesetSettingsWindow : DialogBase
             Ui.Row(Ui.Label(UiStrings.TilesetChoice_Name), _tsName),
             Ui.Row(Ui.Label(UiStrings.TilesetChoice_CellSize), _cellW, Ui.Label("×"), _cellH),
             _cellNote,
+            Ui.Row(Ui.Label(UiStrings.Tileset_SortMode), _sortMode, Ui.InfoBadge(UiStrings.Tileset_SortModeInfo)),
             Ui.Row(Ui.Label(UiStrings.TilesetWin_File), _tsFile, Ui.InfoBadge(UiStrings.Tileset_NotSavedTip)),
             Ui.Row(Ui.Button(VectorIcon.Save, UiStrings.Tileset_SaveFile, (_, _) => SaveFile()), _reload),
             Ui.Row(Ui.Button(VectorIcon.Image, UiStrings.Tileset_ImportPng, (_, _) => ImportFromFile()),
@@ -238,6 +254,7 @@ public sealed class TilesetSettingsWindow : DialogBase
             _cellW.IsEnabled = _cellH.IsEnabled = ts.Tiles.Length == 0;
             _cellNote.Text = ts.Tiles.Length == 0 ? UiStrings.TilesetChoice_CellSizeInfo : UiStrings.TilesetSettings_CellLocked;
             _tsFile.Text = ts.SourcePath ?? UiStrings.Tileset_NotSaved;
+            _sortMode.SelectedIndex = ts.SortMode == TileSortMode.ByPosition ? 1 : 0;
             ToolTip.SetTip(_tsFile, ts.SourcePath);
             _reload.IsEnabled = ts.SourcePath is not null;
             _byFloor.IsChecked = _ctx.TileListByFloor;
@@ -276,12 +293,19 @@ public sealed class TilesetSettingsWindow : DialogBase
             _tileFloor.ItemsSource = ts.Floors.Select(f => f.Name).ToList();
             var floors = tiles.Select(t => ts.ValidFloor(t.Floor)).Distinct().ToList();
             _tileFloor.SelectedIndex = floors.Count == 1 ? ts.FloorOrder(floors[0]) : -1;
+            // 그리기 묶음·기준선은 위치로 그리는 타일셋에서만 쓰므로 그때만 보인다
+            bool byPosition = ts.SortMode == TileSortMode.ByPosition;
+            _drawClassRow.IsVisible = _sortYRow.IsVisible = byPosition;
+            _drawClass.IsEnabled = tiles.Count > 0;
+            var classes = tiles.Select(t => t.DrawClass).Distinct().ToList();
+            _drawClass.SelectedIndex = classes.Count == 1 ? (int)classes[0] : -1;
             if (one is null) return;
             if (!_tileName.IsFocused) _tileName.Text = one.Name;
             _tileW.Value = one.Width;
             _tileH.Value = one.Height;
             _offX.Value = one.DrawOffset.X;
             _offY.Value = one.DrawOffset.Y;
+            _sortY.Value = one.SortY ?? one.Height * ts.CellHeight;
         }
         finally
         {
@@ -322,6 +346,31 @@ public sealed class TilesetSettingsWindow : DialogBase
                 if (t.Find(id) is { } def) t = TilesetEdit.ReplaceTile(t, def with { Floor = floor });
             return t;
         });
+    }
+
+    /// <summary>고른 타일 모두의 그리기 묶음을 바꾼다(한 단계).</summary>
+    private void ApplyDrawClass()
+    {
+        if (_updating || _drawClass.SelectedIndex < 0) return;
+        var kind = (TileDrawClass)_drawClass.SelectedIndex;
+        var ids = _palette.SelectedTiles.Where(t => t.DrawClass != kind).Select(t => t.Id).ToList();
+        if (ids.Count == 0) return;
+        Edit(UiStrings.Tileset_TileEditLabel, t =>
+        {
+            foreach (int id in ids)
+                if (t.Find(id) is { } def) t = TilesetEdit.ReplaceTile(t, def with { DrawClass = kind });
+            return t;
+        });
+    }
+
+    /// <summary>타일셋의 그리는 순서를 바꾼다(한 단계).</summary>
+    private void ApplySortMode()
+    {
+        if (_updating || Ts is not { } ts || _sortMode.SelectedIndex < 0) return;
+        var mode = _sortMode.SelectedIndex == 1 ? TileSortMode.ByPosition : TileSortMode.ByFloor;
+        if (ts.SortMode == mode) return;
+        Edit(UiStrings.Tileset_SortMode, t => t with { SortMode = mode });
+        RefreshTile();
     }
 
     private void EditImage()

@@ -30,6 +30,8 @@ public static class TilesetIO
         public List<FloorDto>? Floors { get; set; }
         public List<TileDto>? Tiles { get; set; }
         public List<AutoTileDto>? AutoTiles { get; set; }
+        /// <summary>그리는 순서: 없으면 층 차례, <c>"position"</c>이면 위치(그리기 묶음·기준선).</summary>
+        public string? Sort { get; set; }
     }
 
     private sealed class FloorDto
@@ -50,6 +52,10 @@ public static class TilesetIO
         /// <summary>움직이는 타일의 그림 수(2 이상일 때만, 그림은 tiles/&lt;Id&gt;_&lt;차례&gt;.png).</summary>
         public int? Frames { get; set; }
         public int? FrameMs { get; set; }
+        /// <summary>그리기 묶음: 없으면 바닥, <c>"sorted"</c>·<c>"overhead"</c>.</summary>
+        public string? DrawClass { get; set; }
+        /// <summary>기준선(차지 칸 위 기준 px, 없으면 차지 칸 아래).</summary>
+        public int? SortY { get; set; }
     }
 
     private sealed class AutoTileDto
@@ -60,6 +66,8 @@ public static class TilesetIO
         public string? Group { get; set; }
         /// <summary>"뭐라도 있음" 조건이 볼 층 Id(없으면 모든 층).</summary>
         public List<int>? FilledFloors { get; set; }
+        /// <summary>찍으면 그 칸을 비울 다른 층 Id(없으면 세트의 층만).</summary>
+        public List<int>? ClearFloors { get; set; }
         public List<RuleDto>? Rules { get; set; }
     }
 
@@ -71,6 +79,9 @@ public static class TilesetIO
         public int Other { get; set; }
         /// <summary>뭐라도 있어야 하는 이웃 비트(없으면 0).</summary>
         public int? Filled { get; set; }
+        /// <summary>정한 무리(<see cref="TargetGroup"/>)가 있어야 하는 이웃 비트(없으면 0).</summary>
+        public int? Target { get; set; }
+        public string? TargetGroup { get; set; }
         public bool FlipX { get; set; }
         public bool FlipY { get; set; }
         public bool Rotate { get; set; }
@@ -128,6 +139,8 @@ public static class TilesetIO
                 Palette = [t.PaletteX, t.PaletteY],
                 Frames = t.IsAnimated ? t.Frames.Length : null,
                 FrameMs = t.IsAnimated ? t.FrameMs : null,
+                DrawClass = t.DrawClass switch { TileDrawClass.Sorted => "sorted", TileDrawClass.Overhead => "overhead", _ => null },
+                SortY = t.SortY,
             }).ToList(),
             AutoTiles = tileset.AutoTiles.Length == 0 ? null : tileset.AutoTiles.Select(a => new AutoTileDto
             {
@@ -136,17 +149,21 @@ public static class TilesetIO
                 Floor = a.Floor,
                 Group = a.Group.Length == 0 ? null : a.Group,
                 FilledFloors = a.FilledFloors.IsDefaultOrEmpty ? null : [.. a.FilledFloors],
+                ClearFloors = a.ClearFloors.IsDefaultOrEmpty ? null : [.. a.ClearFloors],
                 Rules = a.Rules.Select(r => new RuleDto
                 {
                     Same = r.Same,
                     Other = r.Other & ~r.Same,
                     Filled = (r.Filled & ~(r.Same | r.Other)) is var filled and not 0 ? filled : null,
+                    Target = (r.Target & ~(r.Same | r.Other | r.Filled)) is var target and not 0 ? target : null,
+                    TargetGroup = r.TargetGroup.Length == 0 ? null : r.TargetGroup,
                     FlipX = r.AllowFlipX,
                     FlipY = r.AllowFlipY,
                     Rotate = r.AllowRotate,
                     Tiles = r.Tiles.IsDefaultOrEmpty ? null : r.Tiles.Select(c => new[] { c.Tile, c.Weight }).ToList(),
                 }).ToList(),
             }).ToList(),
+            Sort = tileset.SortMode == TileSortMode.ByPosition ? "position" : null,
         };
         var json = JsonSerializer.Serialize(dto, ProjectIO.Options);
         var entry = zip.CreateEntry(JsonEntryName, CompressionLevel.Optimal);
@@ -269,6 +286,8 @@ public static class TilesetIO
                 PaletteY = t.Palette is [_, var py] ? py : 0,
                 Frames = frames > 1 ? [.. frameImages] : [],
                 FrameMs = Math.Max(TileDef.MinFrameMs, t.FrameMs ?? TileDef.DefaultFrameMs),
+                DrawClass = t.DrawClass switch { "sorted" => TileDrawClass.Sorted, "overhead" => TileDrawClass.Overhead, _ => TileDrawClass.Ground },
+                SortY = t.SortY,
             });
         }
         var autoTiles = (dto.AutoTiles ?? []).Select(a => new AutoTileSet
@@ -278,11 +297,14 @@ public static class TilesetIO
             Floor = a.Floor,
             Group = a.Group?.Trim() ?? "",
             FilledFloors = a.FilledFloors is { Count: > 0 } ff ? [.. ff.Distinct()] : [],
+            ClearFloors = a.ClearFloors is { Count: > 0 } cf ? [.. cf.Distinct()] : [],
             Rules = [.. (a.Rules ?? []).Select(r => new AutoTileRule
             {
                 Same = (byte)r.Same,
                 Other = (byte)(r.Other & ~r.Same),
                 Filled = (byte)((r.Filled ?? 0) & ~(r.Same | r.Other)),
+                Target = (byte)((r.Target ?? 0) & ~(r.Same | r.Other | (r.Filled ?? 0))),
+                TargetGroup = r.TargetGroup?.Trim() ?? "",
                 AllowFlipX = r.FlipX,
                 AllowFlipY = r.FlipY,
                 AllowRotate = r.Rotate,
@@ -298,6 +320,7 @@ public static class TilesetIO
             Floors = [.. floors],
             Tiles = [.. tiles],
             AutoTiles = [.. autoTiles],
+            SortMode = dto.Sort == "position" ? TileSortMode.ByPosition : TileSortMode.ByFloor,
         };
     }
 }

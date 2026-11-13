@@ -11,6 +11,9 @@ namespace Chickxel.App;
 /// </summary>
 public readonly record struct CanvasView(int Zoom, double CenterX, double CenterY, bool WholeVisible);
 
+/// <summary>캔버스 경계 밖 그림의 화면 표시. 저장된 픽셀이나 내보내기에는 영향이 없다.</summary>
+public enum OutsideImageView { Opaque, Translucent, Hidden }
+
 /// <summary>
 /// 픽셀 캔버스: 현재 프레임 한 장(보이는 레이어 합성)을 정수 배율(1~64)로 보여 주고, 현재 레이어의 셀에 그린다.
 /// 체커 배경, 픽셀/타일 격자, 타일 모드(5×5, 큰 그림은 3×3 반복), 대칭 안내선, 피벗, 9-slice 안내선(부위), 선택 영역, 양파 껍질,
@@ -591,6 +594,7 @@ public sealed partial class PixelCanvas : Control
     // ───────────── 보기 옵션 ─────────────
 
     private bool _showPixelGrid = true, _showPivot = true, _showTileGrid, _tiledMode, _peekPrevious;
+    private OutsideImageView _outsideView = OutsideImageView.Translucent;
     private Size _shownFrameSize;
     private Point _shownOrigin;
     private Size _tileSize = new(16, 16);
@@ -599,6 +603,8 @@ public sealed partial class PixelCanvas : Control
     public bool ShowPixelGrid { get => _showPixelGrid; set { _showPixelGrid = value; InvalidateVisual(); } }
     public bool ShowPivot { get => _showPivot; set { _showPivot = value; InvalidateVisual(); } }
     public bool ShowTileGrid { get => _showTileGrid; set { _showTileGrid = value; InvalidateVisual(); } }
+    /// <summary>캔버스 밖 그림 보기: 진하게, 반투명, 숨김. 편집 내용은 바꾸지 않는다.</summary>
+    public OutsideImageView OutsideView { get => _outsideView; set { _outsideView = value is OutsideImageView.Opaque or OutsideImageView.Hidden ? value : OutsideImageView.Translucent; InvalidateVisual(); } }
     /// <summary>프로젝트를 열 때마다 화면에 맞춘다(맞추기 토글).</summary>
     public bool AutoFit { get; set; } = true;
     /// <summary>타일 모드: 그림을 반복해 보여 주고(크지 않으면 5×5, 한 변이 <see cref="LargeTileSize"/>px 넘으면 3×3), 가장자리를 넘는 그리기는 반대편으로 이어진다.</summary>
@@ -991,8 +997,8 @@ public sealed partial class PixelCanvas : Control
             if (partView && partFrame) DrawPartFrame(g, bmp);
             else if (partView) DrawBitmapAt(g, bmp, 0, 0, W, H, checker: false);
             else DrawImageAt(g, bmp, 0, 0);
-            // 캔버스 밖 그림: 지금 레이어 셀이 캔버스 밖에 남긴 픽셀 — 이동 도구는 흐리게(끄는 중이면 옮긴 자리의 셀 전체), 그리기 도구·스포이드는 또렷이.
-            if (!peek && !partView && !_tiledMode) DrawCelOutside(g);
+            // 캔버스 밖 그림은 보기 설정에 따라 현재 레이어의 셀만 따로 표시한다.
+            if (!peek && !partView && !_tiledMode && _outsideView != OutsideImageView.Hidden) DrawCelOutside(g);
             // 계산 중(작업 스레드)이면 회색 덮개 아래 중간 결과를 보이고, 그리는 중인 셀은 효과 없이 덮개 위에 바로 보인다.
             if (view.Overlay && dragged is null) DrawPendingFrame(g);
             if (dragged is not null) DrawDraggedPart(g, dragged, frame);
@@ -1001,7 +1007,7 @@ public sealed partial class PixelCanvas : Control
                 && !hp.IsLayerVisible(_ctx.CurrentLayer) && _ctx.CelBitmap(_ctx.CurrentLayer, frame) is { } hiddenCel)
                 using (g.PushOpacity(0.6))
                     DrawBitmapAt(g, hiddenCel, 0, 0, W, H, checker: false);
-            if (_floatingBmp is not null && !_peekPrevious) DrawFloating(g, _floatingBmp, _ctx.Selection.Bounds, clipToCanvas: !partView && !_tiledMode);
+            if (_floatingBmp is not null && !_peekPrevious) DrawFloating(g, _floatingBmp, _ctx.Selection.Bounds, clipToCanvas: !_tiledMode);
             if (!_peekPrevious) DrawOnionSkin(g);
         }
 
@@ -1066,8 +1072,8 @@ public sealed partial class PixelCanvas : Control
             DrawBitmapAt(g, _strokeBmp, 0, 0, W, H, checker: false);
     }
 
-    /// <summary>캔버스 밖 픽셀을 그리는 불투명도(캔버스 안은 그대로).</summary>
-    private const double OutsideOpacity = 0.4;
+    /// <summary>캔버스 밖 그림의 화면 불투명도(레이어 불투명도는 별도로 곱한다).</summary>
+    private double OutsideOpacity => _outsideView switch { OutsideImageView.Opaque => 1, OutsideImageView.Hidden => 0, _ => 0.4 };
 
     /// <summary>
     /// 지금 레이어가 캔버스 밖까지 그리는 일반 레이어인지: 그리기 도구·스포이드이고 타일 모드·변형·캔버스 크기 모드가 아닐 때.
@@ -1078,20 +1084,18 @@ public sealed partial class PixelCanvas : Control
            && _ctx.Project is { } p && p.Layers[_ctx.CurrentLayer].Kind == LayerKind.Normal;
 
     /// <summary>
-    /// 지금 일반 레이어 셀의 캔버스 밖 그림을 그린다: 이동 도구면 흐리게(셀 전체를 끄는 중이면 옮긴 자리의 셀 전체 — 캔버스 안은 이미 셀로 보임),
-    /// 캔버스 밖까지 그리는 도구면(<see cref="EditsOutside"/>) 그리는 중인 픽셀까지 레이어 불투명도로.
+    /// 지금 일반 레이어 셀의 캔버스 밖 그림을 그린다. 보기 설정과 레이어 불투명도를 적용하며, 그리기 도구에서는 작업 중인 그림을 쓴다.
     /// </summary>
     private void DrawCelOutside(DrawingContext g)
     {
         if (_ctx.Project is not { } p || p.Layers[_ctx.CurrentLayer] is not { Kind: LayerKind.Normal or LayerKind.Tilemap } layer) return;
         PixelImage? image = null;
         var at = Point.Empty;
-        double opacity = OutsideOpacity;
+        double opacity = layer.Opacity / 255.0 * (p.IsLayerVisible(_ctx.CurrentLayer) ? 1 : 0.6);
         if (layer.IsTilemap)
         {
-            // 타일맵: 캔버스 밖 칸에도 찍으므로 또렷이(레이어 불투명도로). 움직이는 타일은 화면 시계 그림으로, 층 보기도 캔버스 안과 같게.
+            // 타일맵: 캔버스 밖 칸에도 찍으므로 화면 시계 그림으로 그린다. 층 보기도 캔버스 안과 같다.
             if (_ctx.WithTileClock(() => p.GetCelOverflow(_ctx.CurrentLayer, _ctx.CurrentFrame), layer) is { } tiles) (image, at) = tiles;
-            opacity = layer.Opacity / 255.0 * (p.IsLayerVisible(_ctx.CurrentLayer) ? 1 : 0.6);
         }
         else if (_drag == DragMode.MoveLayer && _moveFull is { } full)
         {
@@ -1101,11 +1105,7 @@ public sealed partial class PixelCanvas : Control
         else if (_ctx.Tool == ToolKind.Move && p.GetCelOverflow(_ctx.CurrentLayer, _ctx.CurrentFrame) is { } overflow)
             (image, at) = overflow;
         else if (EditsOutside && p.GetCelOverflowLive(_ctx.CurrentLayer, _ctx.CurrentFrame) is { } live)
-        {
             (image, at) = live;
-            // 캔버스 안처럼 레이어 불투명도로(숨긴 레이어는 캔버스 안 셀처럼 반투명)
-            opacity = layer.Opacity / 255.0 * (p.IsLayerVisible(_ctx.CurrentLayer) ? 1 : 0.6);
-        }
         if (image is null) return;
         // 칠하는 중인 작업 그림은 같은 그림이 바뀌므로 번호로 알아채고, 크기가 같으면 비트맵을 다시 만들지 않고 채운다.
         if (!ReferenceEquals(image, _outsideSource) || _outsideVersion != p.StrokeOutsideVersion || _outsideBmp is null)
@@ -1122,7 +1122,7 @@ public sealed partial class PixelCanvas : Control
         DrawOutsideCanvas(g, _outsideBmp, new Rectangle(at, image.Size), opacity);
     }
 
-    /// <summary>떠 있는 픽셀: 캔버스 안은 그대로, 캔버스 밖으로 나간 부분은 흐리게(<paramref name="clipToCanvas"/>가 아니면 모두 그대로).</summary>
+    /// <summary>떠 있는 픽셀: 캔버스 안은 그대로, 캔버스 밖으로 나간 부분은 보기 설정에 따름(<paramref name="clipToCanvas"/>가 아니면 모두 그대로).</summary>
     private void DrawFloating(DrawingContext g, Bitmap bmp, Rectangle bounds, bool clipToCanvas)
     {
         var src = new Rect(0, 0, bmp.PixelSize.Width, bmp.PixelSize.Height);
@@ -1136,9 +1136,11 @@ public sealed partial class PixelCanvas : Control
         DrawOutsideCanvas(g, bmp, bounds);
     }
 
-    /// <summary>그림을 이미지 좌표 <paramref name="at"/>에 그리되 캔버스 밖 부분만 <paramref name="opacity"/>로(기본은 흐리게) 그린다.</summary>
-    private void DrawOutsideCanvas(DrawingContext g, Bitmap bmp, Rectangle at, double opacity = OutsideOpacity)
+    /// <summary>그림을 이미지 좌표 <paramref name="at"/>에 그리되 캔버스 밖 부분만 보기 설정과 <paramref name="opacity"/>로 그린다.</summary>
+    private void DrawOutsideCanvas(DrawingContext g, Bitmap bmp, Rectangle at, double opacity = 1)
     {
+        opacity *= OutsideOpacity;
+        if (opacity <= 0) return;
         var dest = ToRect(ImageToScreen(at));
         var view = new Rect(Bounds.Size);
         var visible = dest.Intersect(view);
@@ -3219,7 +3221,7 @@ public sealed partial class PixelCanvas : Control
         using (ImageUtil.Pixelated(g))
         {
             DrawBitmapAt(g, preview, canvas.X, canvas.Y, canvas.Width, canvas.Height, checker: true);
-            if (_ctx.LayerTransformOutside is { } outside)
+            if (_outsideView != OutsideImageView.Hidden && _ctx.LayerTransformOutside is { } outside)
             {
                 var at = new Rectangle(outside.Rect.X + canvas.X, outside.Rect.Y + canvas.Y, outside.Rect.Width, outside.Rect.Height);
                 using (g.PushOpacity(OutsideOpacity))
@@ -3636,7 +3638,7 @@ public sealed partial class PixelCanvas : Control
     }
 
     /// <summary>
-    /// 캔버스 크기 모드: 적용하면 될 그림 전체(새 캔버스 밖으로 나가는 부분과 캔버스 밖 그림 포함 — 캔버스 안·밖이 같은 배율)는 흐리게,
+    /// 캔버스 크기 모드: 적용하면 될 그림 전체(새 캔버스 밖으로 나가는 부분과 캔버스 밖 그림 포함)는 선택한 보기 상태로,
     /// 새 캔버스 안은 체커 위에 적용될 모습 그대로. 그림 자리(흰 점선), 캔버스 테두리(하늘색 점선 — 꼭짓점을 마음대로 옮겨 두었으면 그 사각형)·손잡이 8개,
     /// 위에 크기 글. 손잡이를 우클릭으로 끄는 동안(여백)은 테두리·크기 글이 노랗고 손잡이가 바깥쪽 화살표(<see cref="CanvasResizeMarginLook"/>).
     /// </summary>
@@ -3646,8 +3648,8 @@ public sealed partial class PixelCanvas : Control
         var imageScreen = ImageToScreen(image);
         using (ImageUtil.Pixelated(g))
         {
-            // 새 캔버스 밖만 흐리게(안은 미리보기가 덮음)
-            if (_ctx.CanvasResizeOutside is { } outside)
+            // 새 캔버스 밖만 선택한 불투명도로 표시(안은 미리보기가 덮음).
+            if (_outsideView != OutsideImageView.Hidden && _ctx.CanvasResizeOutside is { } outside)
             {
                 var at = new Rectangle(outside.Rect.X + canvas.X, outside.Rect.Y + canvas.Y, outside.Rect.Width, outside.Rect.Height);
                 using (g.PushOpacity(OutsideOpacity))

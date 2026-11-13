@@ -9,6 +9,7 @@ using Chickxel.Core.Model;
 using Chickxel.Core.Edit;
 using Chickxel.Core.Assets;
 using Chickxel.Core.IO;
+using Chickxel.Core.Tiles;
 
 namespace GuideShots;
 
@@ -878,6 +879,24 @@ internal static class ToolsShots
                 Lead(In(ShotKit.Get<Control>(d, "_sizes")).Union(In(ShotKit.Get<Control>(d, "_imageSize"))), 12, 0),
             ], firstNumber: 16);
         });
+    }
+
+    /// <summary>타일맵 레이어를 고른 캔버스 크기 모드: 임시 칸 격자와 칸 경계에 맞춘 새 캔버스 테두리.</summary>
+    [Shot("tools-canvas-size-tilemap")]
+    public static void CanvasSizeTilemap(ShotKit k)
+    {
+        var m = Open(k, ToolFileHelp.Sample(k), timeline: 110);
+        ShotKit.Call(m, "SetPixelGrid", false);
+        var ctx = ToolFileHelp.Ctx(m);
+        ctx.Structural(() => ctx.Project!.AddTilemapLayer(BuiltInTilesets.Sandbox(), name: "Tilemap"));
+        ctx.SetCurrentLayer(ctx.Project!.IndexOf(ctx.Project.Layers.First(l => l.Kind == LayerKind.Tilemap)));
+        k.Command("편집/캔버스 크기…");
+        k.Settle(300);
+        int w = ctx.CanvasWidth, h = ctx.CanvasHeight;
+        ctx.SetCanvasResize(new System.Drawing.Rectangle(0, 0, ((w + 15) / 16 + 1) * 16, ((h + 15) / 16) * 16),
+            new System.Drawing.Rectangle(0, 0, w, h));
+        k.Settle(400);
+        k.Save(m, crop: ToolFileHelp.CanvasAndOptions(m, 100));
     }
 
     [Shot("tools-nine-slice")]

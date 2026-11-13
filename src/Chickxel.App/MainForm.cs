@@ -118,10 +118,10 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private NumericUpDown _cbZoom = null!;
     private bool _syncingZoom;
     private ToggleButton _cbGrid = null!, _cbTiles = null!, _cbTiled = null!, _cbPivot = null!, _cbOnion = null!, _cbEffects = null!, _cbFit = null!;
+    /// <summary>캔버스 밖 그림 표시와 타일맵 층 보기 선택.</summary>
+    private ViewModeButton _cbOutside = null!, _cbTileView = null!;
     /// <summary>타일맵 레이어를 골랐을 때만 보이는 위 막대 보기 단추: 칸 격자, 타일 움직임 재생.</summary>
     private ToggleButton _cbTileCells = null!, _cbTileAnim = null!;
-    /// <summary>타일맵 레이어를 골랐을 때만 보이는 층 보기 고르기(모든 층 · 고른 층 강조 · 고른 층만).</summary>
-    private TabStrip _cbTileView = null!;
     /// <summary>위 막대 오른쪽 보기 단추 줄(타일맵 모드에서 단추를 바꿔 보일 때 그 칸을 찾음).</summary>
     private StackPanel _cbRight = null!;
     /// <summary>새 버전이 있을 때만 보이는 위 막대 단추(누르면 업데이트 창).</summary>
@@ -510,25 +510,24 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _cbTiled = Toggle(right, MainStrings.Ui_045, MainStrings.Ui_046, () => SetTiledMode(!_canvas.TiledMode));
         _cbTileCells = Toggle(right, UiStrings.TileOptions_Grid, UiStrings.TileOptions_GridTip, () => _ctx.ShowTileCells = !_ctx.ShowTileCells);
         _cbTileAnim = Toggle(right, UiStrings.TileView_Animate, UiStrings.TileView_AnimateTip, () => _ctx.TileAnimationPlaying = !_ctx.TileAnimationPlaying);
-        _cbTileView = new TabStrip(TabStripKind.Segmented, UiStrings.TileView_FloorsAll, UiStrings.TileView_FloorsDim, UiStrings.TileView_FloorsOnly)
-        {
-            SelectedIndex = (int)_ctx.TileViewMode,
-            Margin = new Thickness(4, 1, 1, 1),
-            VerticalAlignment = VerticalAlignment.Center,
-            Focusable = false,
-        };
-        _cbTileView.SetTip(0, UiStrings.TileView_FloorsAllTip);
-        _cbTileView.SetTip(1, UiStrings.TileView_FloorsDimTip);
-        _cbTileView.SetTip(2, UiStrings.TileView_FloorsOnlyTip);
-        _cbTileView.SelectionChanged += (_, _) =>
-        {
-            if (_cbTileView.SelectedIndex >= 0) _ctx.TileViewMode = (TileFloorViewMode)_cbTileView.SelectedIndex;
-        };
+        _cbTileView = new ViewModeButton(
+            [UiStrings.TileView_FloorsAll, UiStrings.TileView_FloorsDim, UiStrings.TileView_FloorsOnly],
+            () => (int)_ctx.TileViewMode,
+            index => _ctx.TileViewMode = (TileFloorViewMode)index,
+            UiStrings.TileView_FloorsMenuTip,
+            descriptions: [UiStrings.TileView_FloorsAllTip, UiStrings.TileView_FloorsDimTip, UiStrings.TileView_FloorsOnlyTip])
+        { Margin = new Thickness(4, 1, 1, 1) };
         right.Children.Add(_cbTileView);
         _cbTileCells.IsVisible = _cbTileAnim.IsVisible = _cbTileView.IsVisible = false;
         _cbPivot = Toggle(right, MainStrings.Ui_047, MainStrings.Ui_048, () => SetShowPivot(!_canvas.ShowPivot));
         _cbOnion = Toggle(right, MainStrings.Ui_049, MainStrings.Ui_050, () => _ctx.OnionSkin = !_ctx.OnionSkin);
         _cbEffects = Toggle(right, MainStrings.Ui_CanvasEffects, MainStrings.Ui_CanvasEffectsTip, ToggleCanvasEffects);
+        string[] outsideLabels = [UiStrings.OutsideView_Opaque, UiStrings.OutsideView_Translucent, UiStrings.OutsideView_Hidden];
+        string[] outsideShort = [UiStrings.OutsideView_ShortOpaque, UiStrings.OutsideView_ShortTranslucent, UiStrings.OutsideView_ShortHidden];
+        _cbOutside = new ViewModeButton(outsideLabels, () => (int)_canvas.OutsideView,
+            index => _canvas.OutsideView = (OutsideImageView)index, UiStrings.OutsideView_Tip,
+            index => string.Format(UiStrings.OutsideView_Bar, outsideShort[index]));
+        right.Children.Add(_cbOutside);
         // 설정이 있는 보기: 단추 오른쪽에 붙인 아래 삼각형을 누르거나 단추를 우클릭하면 그 보기의 설정 팝업(바꾸면 바로 적용, 꺼져 있으면 켬)
         foreach (var (button, flyout) in new (ToggleButton, Func<Flyout>)[] { (_cbGrid, PixelGridFlyout), (_cbTiles, TileGridFlyout), (_cbTiled, TiledModeFlyout), (_cbOnion, OnionFlyout) })
             WithSettingsArrow(right, button, flyout);
@@ -1269,6 +1268,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _canvas.ShowPixelGrid = s.ShowPixelGrid;
         _canvas.ShowPivot = s.ShowPivot;
         _canvas.ShowTileGrid = s.ShowTileGrid;
+        _canvas.OutsideView = s.OutsideView;
         _ctx.TileListByFloor = s.TileListByFloor;
         _ctx.TileListHideAutoTiles = s.TileListHideAutoTiles;
         _ctx.TileShowAutoParts = s.TileShowAutoParts;
@@ -1489,6 +1489,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         s.ShowPixelGrid = _canvas.ShowPixelGrid;
         s.ShowPivot = _canvas.ShowPivot;
         s.ShowTileGrid = _canvas.ShowTileGrid;
+        s.OutsideView = _canvas.OutsideView;
         s.TileListByFloor = _ctx.TileListByFloor;
         s.TileListHideAutoTiles = _ctx.TileListHideAutoTiles;
         s.TileShowAutoParts = _ctx.TileShowAutoParts;
@@ -1910,12 +1911,13 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _cbGrid.IsChecked = _miGrid.IsChecked = _canvas.ShowPixelGrid;
         _cbTiles.IsChecked = _miTiles.IsChecked = _canvas.ShowTileGrid;
         _cbTiled.IsChecked = _miTiled.IsChecked = _canvas.TiledMode;
+        _cbOutside.Refresh();
         _cbPivot.IsChecked = _miPivot.IsChecked = _canvas.ShowPivot;
         _cbOnion.IsChecked = _miOnion.IsChecked = _ctx.OnionSkin;
         _cbEffects.IsChecked = _miEffects.IsChecked = _ctx.CanvasEffects;
         _cbTileCells.IsChecked = _miTileCells.IsChecked = _ctx.ShowTileCells;
         _cbTileAnim.IsChecked = _miTileAnim.IsChecked = _ctx.TileAnimationPlaying;
-        _cbTileView.SelectedIndex = (int)_ctx.TileViewMode;
+        _cbTileView.Refresh();
         _cbFit.IsChecked = _canvas.AutoFit;
         _tbFiles.IsChecked = _miFiles.IsChecked = _filesShown;
         UpdateTileToolUi();
@@ -2216,7 +2218,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         dlg.ShowDialog(this);
     }
 
-    /// <summary>움직임 테스트: 프로젝트의 태그를 시트 문서로 만들어 넘긴다(편집하면 잠시 뒤 다시 읽음).</summary>
+    /// <summary>움직임 테스트: 프로젝트의 태그를 시트 문서로 만들어 넘긴다(편집하면 잠시 뒤 다시 읽음). 탑뷰에 깔 수 있게 열린 문서의 타일맵 레이어도 넘긴다.</summary>
     private void ShowPlayTest()
     {
         if (_play is { IsClosed: false })
@@ -2225,10 +2227,32 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             _play.Activate();
             return;
         }
-        var play = new PlayTestForm(() => _ctx.Project is { } p ? ProjectExport.BuildDocument(p, p.BaseName, allFrames: true) : null);
+        var play = new PlayTestForm(() => _ctx.Project is { } p ? ProjectExport.BuildDocument(p, p.BaseName, allFrames: true) : null, PlayMapSources);
         play.Closed += (_, _) => { if (ReferenceEquals(_play, play)) _play = null; };
         _play = play;
         play.Show();
+    }
+
+    /// <summary>
+    /// 움직임 테스트에 깔 수 있는 타일맵: 열린 문서(저장하지 않는 장면 빼고)의 타일맵 레이어마다 "문서 · 레이어". 읽을 때 지금 내용을 쓰고,
+    /// 문서가 다시 읽혀 레이어 객체가 바뀌었으면 같은 이름의 타일맵 레이어를 찾는다.
+    /// </summary>
+    private IReadOnlyList<PlayTest.PlayMapSource> PlayMapSources()
+    {
+        var list = new List<PlayTest.PlayMapSource>();
+        foreach (var doc in OpenDocs.Where(d => !d.IsDetached))
+            foreach (var layer in doc.Project.Layers.Where(l => l.IsTilemap))
+            {
+                var d = doc;
+                var l = layer;
+                list.Add(new PlayTest.PlayMapSource(doc.Project.DisplayName + " · " + layer.Name, () =>
+                {
+                    var p = d.Project;
+                    var now = p.Layers.Contains(l) ? l : p.Layers.FirstOrDefault(x => x.IsTilemap && x.Name == l.Name);
+                    return now?.Tiles is { } data && p.TilesetOf(now) is { } ts ? new PlayTest.PlayMap(ts, data) : null;
+                }));
+            }
+        return list;
     }
 
     // ───────────── 파일 ─────────────

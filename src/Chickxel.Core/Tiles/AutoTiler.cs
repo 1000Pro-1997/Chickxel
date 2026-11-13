@@ -119,7 +119,7 @@ public static class AutoTiler
         public readonly (int Rule, TileTransform Transform)[] Best = new (int, TileTransform)[256];
         public readonly bool[] Exact = new bool[256];
         public bool Any;
-        // "뭐라도 있음"을 쓰는 세트: 후보(돌린 규칙)와 (이웃 모양, 뭐라도 있는 모양)마다 고른 것(처음 물을 때 셈)
+        // "뭐라도 있음"·"무리 있음"을 쓰는 세트: 후보(돌린 규칙)와 (이웃 모양, 뭐라도 있는 모양)마다 고른 것(처음 물을 때 셈 — "무리 있음"을 쓰면 담지 않음)
         public List<(AutoTileRule Rule, int Index, TileTransform T)>? Candidates;
         public System.Collections.Concurrent.ConcurrentDictionary<int, (int Rule, TileTransform Transform, bool Exact)>? Filled;
     }
@@ -141,29 +141,34 @@ public static class AutoTiler
         }
         if (candidates.Count == 0) return table;
         table.Any = true;
-        if (set.UsesFilled)
+        if (set.UsesFilled || set.UsesTarget)
         {
-            // 모양이 65536가지라 미리 다 세지 않고 물을 때 센다.
+            // 모양이 65536가지라 미리 다 세지 않고 물을 때 센다("무리 있음"은 무리마다 모양이 따로라 늘 센다).
             table.Candidates = candidates;
-            table.Filled = new();
+            if (!set.UsesTarget) table.Filled = new();
             return table;
         }
         for (int m = 0; m < 256; m++)
         {
-            var (rule, t, exact) = Choose(candidates, (byte)m, 0);
+            var (rule, t, exact) = Choose(candidates, (byte)m, 0, null);
             table.Best[m] = (rule, t);
             table.Exact[m] = exact;
         }
         return table;
     }
 
-    /// <summary>후보 중 앞에서부터 처음 그대로 맞는 것, 없으면 가장 덜 어긋난 것.</summary>
-    private static (int Rule, TileTransform T, bool Exact) Choose(List<(AutoTileRule Rule, int Index, TileTransform T)> candidates, byte mask, byte filled)
+    /// <summary>
+    /// 후보 중 앞에서부터 처음 그대로 맞는 것, 없으면 가장 덜 어긋난 것. <paramref name="targets"/> = 무리 이름 → 그 무리가 있는 이웃 비트(없으면 그런 이웃 없음).
+    /// </summary>
+    private static (int Rule, TileTransform T, bool Exact) Choose(List<(AutoTileRule Rule, int Index, TileTransform T)> candidates, byte mask, byte filled,
+        Func<string, byte>? targets)
     {
         int best = -1, bestMisses = int.MaxValue;
         for (int c = 0; c < candidates.Count; c++)
         {
-            int misses = candidates[c].Rule.Misses(mask, filled);
+            var rule = candidates[c].Rule;
+            byte target = rule.Target == 0 || targets is null ? (byte)0 : targets(rule.TargetGroup);
+            int misses = rule.Misses(mask, filled, target);
             if (misses < bestMisses)
             {
                 best = c;
@@ -175,25 +180,30 @@ public static class AutoTiler
     }
 
     /// <summary>이웃 모양에 쓰일 (규칙 번호, 뒤집기·회전, 그대로 맞는지). 세트에 타일 있는 규칙이 없으면 null.</summary>
-    private static (int Rule, TileTransform T, bool Exact)? Lookup(AutoTileSet set, byte mask, byte filled)
+    private static (int Rule, TileTransform T, bool Exact)? Lookup(AutoTileSet set, byte mask, byte filled, Func<string, byte>? targets)
     {
         var table = TableOf(set);
         if (!table.Any) return null;
-        if (table.Filled is { } cache)
-            return cache.GetOrAdd(mask | filled << 8, key => Choose(table.Candidates!, (byte)key, (byte)(key >> 8)));
+        if (table.Candidates is { } candidates)
+            return table.Filled is { } cache
+                ? cache.GetOrAdd(mask | filled << 8, key => Choose(candidates, (byte)key, (byte)(key >> 8), null))
+                : Choose(candidates, mask, filled, targets);
         var (rule, t) = table.Best[mask];
         return (rule, t, table.Exact[mask]);
     }
 
-    /// <summary>이웃 모양 <paramref name="mask"/>·뭐라도 있는 모양 <paramref name="filled"/>에 놓을 타일과 뒤집기·회전. 세트에 타일이 하나도 없으면 null.</summary>
-    public static (int Tile, TileTransform Transform)? Pick(AutoTileSet set, byte mask, byte filled, Point at)
-        => Lookup(set, mask, filled) is { } hit ? (Weighted(set.Rules[hit.Rule].Tiles, at, set.Id), hit.T) : null;
+    /// <summary>
+    /// 이웃 모양 <paramref name="mask"/>·뭐라도 있는 모양 <paramref name="filled"/>·무리마다 있는 모양 <paramref name="targets"/>에 놓을 타일과 뒤집기·회전.
+    /// 세트에 타일이 하나도 없으면 null.
+    /// </summary>
+    public static (int Tile, TileTransform Transform)? Pick(AutoTileSet set, byte mask, byte filled, Point at, Func<string, byte>? targets = null)
+        => Lookup(set, mask, filled, targets) is { } hit ? (Weighted(set.Rules[hit.Rule].Tiles, at, set.Id), hit.T) : null;
 
     /// <summary>이웃 모양에 조건이 그대로 맞는 규칙이 있는지(없으면 가장 비슷한 규칙으로 대신함).</summary>
-    public static bool HasExact(AutoTileSet set, byte mask, byte filled) => Lookup(set, mask, filled) is { Exact: true };
+    public static bool HasExact(AutoTileSet set, byte mask, byte filled, Func<string, byte>? targets = null) => Lookup(set, mask, filled, targets) is { Exact: true };
 
     /// <summary>이웃 모양에 쓰일 규칙 번호(타일 있는 규칙이 없으면 -1).</summary>
-    public static int RuleFor(AutoTileSet set, byte mask, byte filled) => Lookup(set, mask, filled) is { } hit ? hit.Rule : -1;
+    public static int RuleFor(AutoTileSet set, byte mask, byte filled, Func<string, byte>? targets = null) => Lookup(set, mask, filled, targets) is { } hit ? hit.Rule : -1;
 
     /// <summary>비중대로 하나(칸 좌표로 정해짐).</summary>
     private static int Weighted(ImmutableArray<AutoTileChoice> choices, Point at, int salt)
@@ -266,13 +276,42 @@ public static class AutoTiler
         return (byte)mask;
     }
 
+    /// <summary>
+    /// 칸 <paramref name="at"/>의 이웃 중 무리 <paramref name="group"/>(<see cref="AutoTileSet.JoinName"/>)의 세트로 찍은 타일이 어느 층에든 있는 것(8방향 비트).
+    /// </summary>
+    public static byte TargetMask(Tileset tileset, TileMap map, string group, Point at)
+    {
+        int mask = 0;
+        if (group.Length == 0) return 0;
+        for (int bit = 0; bit < 8; bit++)
+        {
+            var (dx, dy) = AutoTileShapes.Directions[bit];
+            var p = new Point(at.X + dx, at.Y + dy);
+            foreach (int floor in map.FloorIds)
+                if (map.Get(floor, p) is { AutoTile: not 0 } c && tileset.FindAutoTile(c.AutoTile) is { } s && string.Equals(s.JoinName, group, StringComparison.Ordinal))
+                {
+                    mask |= 1 << bit;
+                    break;
+                }
+        }
+        return (byte)mask;
+    }
+
     /// <summary>"뭐라도 있음"을 쓰지 않는 세트면 0(셀 필요 없음), 아니면 <see cref="FilledMask"/>.</summary>
     private static byte FilledFor(Tileset tileset, TileMap map, AutoTileSet set, Point at)
         => set.UsesFilled ? FilledMask(tileset, map, set, at) : (byte)0;
 
+    /// <summary>"무리 있음"을 쓰지 않는 세트면 null, 아니면 무리마다 <see cref="TargetMask"/>(한 칸에서 같은 무리는 한 번만 셈).</summary>
+    private static Func<string, byte>? TargetsFor(Tileset tileset, TileMap map, AutoTileSet set, Point at)
+    {
+        if (!set.UsesTarget) return null;
+        var seen = new Dictionary<string, byte>(StringComparer.Ordinal);
+        return group => seen.TryGetValue(group, out var m) ? m : seen[group] = TargetMask(tileset, map, group, at);
+    }
+
     /// <summary>칸 <paramref name="at"/>에 쓰일 규칙 번호와 조건이 그대로 맞는지(타일 있는 규칙이 없으면 null) — 시험 판·칸 정보용.</summary>
     public static (int Rule, bool Exact)? RuleAt(Tileset tileset, TileMap map, AutoTileSet set, Point at)
-        => Lookup(set, NeighborMask(tileset, map, set, at), FilledFor(tileset, map, set, at)) is { } hit ? (hit.Rule, hit.Exact) : null;
+        => Lookup(set, NeighborMask(tileset, map, set, at), FilledFor(tileset, map, set, at), TargetsFor(tileset, map, set, at)) is { } hit ? (hit.Rule, hit.Exact) : null;
 
     /// <summary>
     /// 칸들 둘레의 자동 타일을 다시 고른다. <paramref name="onlyFilled"/>(손으로 찍은 때)면 "뭐라도 있음"을 쓰는 세트만(벽을 세우면 물 수면이 바뀌는 것처럼) —
@@ -282,12 +321,22 @@ public static class AutoTiler
         => onlyFilled && !tileset.AutoTiles.Any(a => a.UsesFilled) || tileset.AutoTiles.Length == 0 ? map
             : Refresh(tileset, map, Around([.. cells]), onlyFilled);
 
-    /// <summary>칸들에 세트로 찍는다(같은 층의 다른 타일은 덮어씀) — 찍은 칸과 둘레의 자동 타일을 다시 고른다.</summary>
-    public static TileMap Paint(Tileset tileset, TileMap map, AutoTileSet set, IEnumerable<Point> cells)
+    /// <summary>
+    /// 칸들에 세트로 찍는다(같은 층의 다른 타일은 덮어쓰고, 세트가 정한 다른 층(<see cref="AutoTileSet.ClearFloors"/>)의 그 칸 타일은 지움 —
+    /// <paramref name="canClear"/>가 false인 층(잠긴 층)은 그대로) — 찍은 칸과 둘레의 자동 타일을 다시 고른다.
+    /// </summary>
+    public static TileMap Paint(Tileset tileset, TileMap map, AutoTileSet set, IEnumerable<Point> cells, Func<int, bool>? canClear = null)
     {
         var touched = new HashSet<Point>();
         foreach (var at in cells)
         {
+            foreach (int floor in set.ClearFloors)
+            {
+                if (floor == set.Floor || canClear?.Invoke(floor) == false || map.Covering(tileset, floor, at) is not { } hit) continue;
+                map = map.With(floor, hit.At, null);
+                touched.Add(hit.At);
+                touched.Add(at);
+            }
             if (map.Get(set.Floor, at) is { } old && old.AutoTile == set.Id) continue;
             // 타일은 아래에서 고르므로 우선 세트 표시만(덮어쓰기는 1×1로)
             map = map.Place(tileset, set.Floor, at, new TileCell(NoTile, TileTransform.None, set.Id));
@@ -319,7 +368,7 @@ public static class AutoTiler
             {
                 if (map.Get(floor, at) is not { AutoTile: not 0 } cell || tileset.FindAutoTile(cell.AutoTile) is not { } set) continue;
                 if (onlyFilled && !set.UsesFilled) continue;
-                var picked = Pick(set, NeighborMask(tileset, map, set, at), FilledFor(tileset, map, set, at), at);
+                var picked = Pick(set, NeighborMask(tileset, map, set, at), FilledFor(tileset, map, set, at), at, TargetsFor(tileset, map, set, at));
                 var next = picked is { } p ? new TileCell(p.Tile, tileset.Allowed(p.Transform), set.Id) : cell with { Tile = NoTile, Transform = TileTransform.None };
                 if (next != cell) updates.Add((floor, at, next));
             }

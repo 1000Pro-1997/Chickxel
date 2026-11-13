@@ -5,7 +5,7 @@ using Chickxel.App.Localization;
 namespace Chickxel.App.PlayTest;
 
 /// <summary>
-/// 움직임 테스트 창(기획 4.7): 탑뷰 8방향 이동 / 플랫포머 이동·점프로 문서의 애니메이션을 시험한다.
+/// 움직임 테스트 창(기획 4.7): 탑뷰 8방향 이동 / 플랫포머 이동·점프로 문서의 애니메이션을 시험한다. 탑뷰에는 열린 문서의 타일맵 레이어를 깔 수 있다.
 /// 메모리에 있는 문서 내용을 쓰며, 저장·애니메이션 편집 뒤 <see cref="DocumentChanged"/>로 다시 읽는다.
 /// </summary>
 public sealed class PlayTestForm : Window
@@ -14,6 +14,11 @@ public sealed class PlayTestForm : Window
     private const int RowWidth = SidePanelWidth - 40;
 
     private readonly Func<Document?> _currentDocument;
+    private readonly Func<IReadOnlyList<PlayMapSource>> _mapSources;
+    /// <summary>탑뷰에 깔 타일맵 목록(맨 앞은 "없음")과 지금 목록의 출처들.</summary>
+    private readonly ComboBox _map = Ui.Combo(170);
+    private IReadOnlyList<PlayMapSource> _maps = [];
+    private bool _mapsUpdating;
     private readonly PlaySimulation _sim = new();
     private readonly PlayView _view = new();
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(15) };
@@ -45,9 +50,10 @@ public sealed class PlayTestForm : Window
     private readonly TextBlock _hintLabel = InfoLabel();
     private readonly TextBlock _keysLabel = InfoLabel();
 
-    public PlayTestForm(Func<Document?> currentDocument)
+    internal PlayTestForm(Func<Document?> currentDocument, Func<IReadOnlyList<PlayMapSource>> mapSources)
     {
         _currentDocument = currentDocument ?? throw new ArgumentNullException(nameof(currentDocument));
+        _mapSources = mapSources;
 
         Title = UiStrings.S_PlayTestForm_PlayTestForm_B00519A8EF;
         // 대상 도움말(F1): 가이드에서 이 창을 설명하는 곳은 "보기와 캔버스" 단축키 표의 움직임 테스트 줄뿐
@@ -77,6 +83,14 @@ public sealed class PlayTestForm : Window
 
         _topDownGroup.Children.Add(Header(UiStrings.S_PlayTestForm_PlayTestForm_A24362C504));
         _topDownGroup.Children.Add(Row(UiStrings.S_PlayTestForm_PlayTestForm_BC9D1F57FB, _topDownSpeed));
+        _map.Width = RowWidth;
+        _topDownGroup.Children.Add(new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Margin = new Thickness(0, 4, 0, 0),
+            Children = { new TextBlock { Text = UiStrings.PlayTest_Map, Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center }, Ui.InfoBadge(UiStrings.PlayTest_MapInfo) },
+        });
+        _topDownGroup.Children.Add(_map);
 
         _platformerGroup.Children.Add(Header(UiStrings.S_PlayTestForm_PlayTestForm_50E363BD43));
         _platformerGroup.Children.Add(Row(UiStrings.S_PlayTestForm_PlayTestForm_BC9D1F57FB, _moveSpeed));
@@ -133,6 +147,13 @@ public sealed class PlayTestForm : Window
 
         _mode.SelectedIndex = 0;
         _mode.SelectionChanged += (_, _) => ApplyMode();
+        _map.DropDownOpened += (_, _) => RefreshMapList();
+        _map.SelectionChanged += (_, _) =>
+        {
+            if (_mapsUpdating) return;
+            _sim.SetMap(SelectedMap?.Read(), restart: true);
+            _view.InvalidateVisual();
+        };
         _plainFacesRight.IsCheckedChanged += (_, _) =>
         {
             _sim.PlainFacesRight = _plainFacesRight.On();
@@ -179,6 +200,28 @@ public sealed class PlayTestForm : Window
         ReloadDocument();
     }
 
+    /// <summary>고른 타일맵 출처(없음이면 null).</summary>
+    private PlayMapSource? SelectedMap => _map.SelectedIndex > 0 && _map.SelectedIndex <= _maps.Count ? _maps[_map.SelectedIndex - 1] : null;
+
+    /// <summary>타일맵 목록을 다시 채운다(고른 것은 이름으로 지킴, 없어졌으면 "없음").</summary>
+    private void RefreshMapList()
+    {
+        var keep = SelectedMap?.Name;
+        _maps = _mapSources();
+        _mapsUpdating = true;
+        try
+        {
+            _map.ItemsSource = new[] { UiStrings.PlayTest_MapNone }.Concat(_maps.Select(m => m.Name)).ToList();
+            int at = keep is null ? -1 : _maps.ToList().FindIndex(m => m.Name == keep);
+            _map.SelectedIndex = at + 1;
+        }
+        finally
+        {
+            _mapsUpdating = false;
+        }
+        if (keep is not null && SelectedMap is null) _sim.SetMap(null, restart: true);
+    }
+
     /// <summary>창이 닫혔는지(닫힌 창은 다시 보일 수 없다).</summary>
     public bool IsClosed { get; private set; }
 
@@ -196,6 +239,9 @@ public sealed class PlayTestForm : Window
         _sprites = PlaySprites.Load(doc);
         _sim.Load(_sprites);
         old.Dispose();
+        // 깐 타일맵도 지금 내용으로(자리는 지킴)
+        RefreshMapList();
+        if (SelectedMap is { } map) _sim.SetMap(map.Read(), restart: false);
 
         Title = _sprites.HasDocument ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PlayTestForm_ReloadDocument_2215BDB9EC,_sprites.DocumentName) : UiStrings.S_PlayTestForm_ReloadDocument_224FD48AD2;
         if (!_scaleChosen && _sprites.HasDocument)

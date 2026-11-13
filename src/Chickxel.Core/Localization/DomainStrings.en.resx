@@ -473,6 +473,9 @@
   <data name="Tile_NoStroke" xml:space="preserve"><value>No tile stroke is open.</value></data>
   <data name="Tile_Paint" xml:space="preserve"><value>Place tiles</value></data>
   <data name="Tile_ConvertToGroup" xml:space="preserve"><value>Convert tilemap to layers</value></data>
+  <data name="Tile_PartSorted" xml:space="preserve"><value>Standing</value></data>
+  <data name="Tile_PartFloorSorted" xml:space="preserve"><value>{floor} · standing</value><comment>floor = 층 이름</comment></data>
+  <data name="Tile_PartFloorOverhead" xml:space="preserve"><value>{floor} · overhead</value><comment>floor = 층 이름</comment></data>
   <data name="Tile_CannotDrawPixels" xml:space="preserve"><value>Can't paint pixels on a tilemap layer — use the tile tools.</value></data>
   <data name="Tile_MapInvalid" xml:space="preserve"><value>The tilemap data is damaged.</value></data>
   <data name="Tile_EmbeddedUnreadable" xml:space="preserve"><value>Couldn't read a tileset stored in the project: {error}</value><comment>error = 오류 내용</comment></data>
@@ -506,4 +509,12 @@
   <data name="TileBuiltIn_Grass" xml:space="preserve"><value>Grass</value></data>
   <data name="TileBuiltIn_Autumn" xml:space="preserve"><value>Autumn leaves</value></data>
   <data name="TileBuiltIn_BrickWall" xml:space="preserve"><value>Brick wall</value></data>
+  <data name="TileBuiltIn_Village" xml:space="preserve"><value>Top-down village &amp; water</value></data>
+  <data name="Tile_FloorWalls" xml:space="preserve"><value>Walls</value></data>
+  <data name="Tile_FloorObjects" xml:space="preserve"><value>Objects</value></data>
+  <data name="Tile_FloorPaved" xml:space="preserve"><value>Paving</value></data>
+  <data name="TileBuiltIn_StonePath" xml:space="preserve"><value>Stone path</value></data>
+  <data name="TileBuiltIn_WoodFloor" xml:space="preserve"><value>Wood floor</value></data>
+  <data name="TileBuiltIn_WoodWall" xml:space="preserve"><value>Wood wall</value></data>
+  <data name="TileBuiltIn_WoodDoor" xml:space="preserve"><value>Wood door</value></data>
 </root>

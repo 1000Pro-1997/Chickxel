@@ -10,7 +10,7 @@ namespace Chickxel.Core.Tiles;
 /// <summary>
 /// 앱에 들어 있는 기본 타일셋(코드로 그림 — 같은 코드면 늘 같은 그림). 고를 때마다 새 이름표의 사본을 만든다.
 /// </summary>
-public static class BuiltInTilesets
+public static partial class BuiltInTilesets
 {
     /// <summary>기본 타일셋 하나: 고정 Id, 화면 이름, 만들기.</summary>
     public sealed record Entry(string Id, string Name, Func<Tileset> Create);
@@ -18,6 +18,7 @@ public static class BuiltInTilesets
     public static IReadOnlyList<Entry> All { get; } =
     [
         new("sandbox", DomainStrings.TileBuiltIn_Sandbox, Sandbox),
+        new("village", DomainStrings.TileBuiltIn_Village, TopDownVillage),
     ];
 
     // ───────────── 색(Endesga 64, 어두움 → 밝음) ─────────────
@@ -1151,31 +1152,39 @@ public static class BuiltInTilesets
             return id;
         }
 
-        public int Tile(PixelImage image, int floor, int px, int py, int w = 1, int h = 1, Point? offset = null)
+        /// <summary>위치로 그리는 타일셋이면 <see cref="TileSortMode.ByPosition"/>(기본 = 층 차례).</summary>
+        public TileSortMode SortMode { get; init; }
+
+        /// <summary>타일 하나(그림 자리 <paramref name="offset"/>, 없으면 아래 맞춤; 그리기 묶음 <paramref name="drawClass"/>, 기준선 <paramref name="sortY"/> — 위치로 그리는 타일셋에서만 씀).</summary>
+        public int Tile(PixelImage image, int floor, int px, int py, int w = 1, int h = 1, Point? offset = null,
+            TileDrawClass drawClass = TileDrawClass.Ground, int? sortY = null)
         {
             int id = _tiles.Count + 1;
             _tiles.Add(new TileDef
             {
                 Id = id, Image = image, Floor = floor, PaletteX = px, PaletteY = py, Width = w, Height = h,
-                DrawOffset = offset ?? TileDef.BottomAligned(image.Height, h, Cell),
+                DrawOffset = offset ?? TileDef.BottomAligned(image.Height, h, Cell), DrawClass = drawClass, SortY = sortY,
             });
             return id;
         }
 
         /// <summary>움직이는 타일(그림 여러 장, 한 장 <paramref name="frameMs"/>).</summary>
-        public int Animated(PixelImage[] frames, int frameMs, int floor, int px, int py)
+        public int Animated(PixelImage[] frames, int frameMs, int floor, int px, int py, Point? offset = null,
+            TileDrawClass drawClass = TileDrawClass.Ground, int? sortY = null)
         {
-            int id = Tile(frames[0], floor, px, py);
+            int id = Tile(frames[0], floor, px, py, offset: offset, drawClass: drawClass, sortY: sortY);
             _tiles[^1] = _tiles[^1].WithFrames(frames, frameMs);
             return id;
         }
 
         /// <summary>자동 타일 세트(무리 <paramref name="group"/>, 빈 문자열 = 자기 세트만; "뭐라도 있음"이 볼 층 <paramref name="filledFloors"/>, 비면 모든 층).</summary>
-        public void Set(string setName, int floor, string group, ImmutableArray<AutoTileRule> rules, ImmutableArray<int> filledFloors = default)
+        public void Set(string setName, int floor, string group, ImmutableArray<AutoTileRule> rules, ImmutableArray<int> filledFloors = default,
+            ImmutableArray<int> clearFloors = default)
             => _auto.Add(new AutoTileSet
             {
                 Id = _auto.Count + 1, Name = setName, Floor = floor, Group = group, Rules = rules,
                 FilledFloors = filledFloors.IsDefault ? [] : filledFloors,
+                ClearFloors = clearFloors.IsDefault ? [] : clearFloors,
             });
 
         public Tileset Build() => new()
@@ -1187,6 +1196,7 @@ public static class BuiltInTilesets
             Floors = [.. _floors],
             Tiles = [.. _tiles],
             AutoTiles = [.. _auto],
+            SortMode = SortMode,
         };
     }
 }

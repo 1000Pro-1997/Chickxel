@@ -1,7 +1,9 @@
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Chickxel.Core.Model;
 using Chickxel.Core.Play;
+using Chickxel.Core.Tiles;
 using RectangleF = System.Drawing.RectangleF;
 using SizeF = System.Drawing.SizeF;
 using Chickxel.App.Localization;
@@ -34,7 +36,8 @@ internal readonly record struct PlayRenderOptions(int Scale, bool ShowGrid, bool
 
 /// <summary>
 /// 움직임 테스트의 상태: 탑뷰/플랫포머 컨트롤러, 맵, 애니메이션 재생기. 고정 간격으로 진행하고 화면에 그린다.
-/// 위치는 픽셀 단위(y 아래가 +)이며 캐릭터 위치에 칸의 피벗이 놓인다.
+/// 위치는 픽셀 단위(y 아래가 +)이며 캐릭터 위치에 칸의 피벗이 놓인다. 탑뷰에 타일맵(<see cref="Map"/>)을 깔면 위치는 그 타일맵 레이어의 캔버스 좌표이고,
+/// 캐릭터는 발(피벗) 높이를 기준선으로 세운 타일과 섞여 그려진다(위치로 그리는 타일셋 — 층 차례 타일셋이면 모든 타일 위).
 /// </summary>
 internal sealed class PlaySimulation
 {
@@ -58,6 +61,11 @@ internal sealed class PlaySimulation
     private PlaySprites _sprites = PlaySprites.Empty;
     private float _topDownAccumulator;
     private int _levelPpu = -1;
+    private PlayMap? _map;
+    // 깔린 타일맵의 움직이는 타일 시계(ms)
+    private long _mapClockMs;
+    // 타일 그림 → 화면 비트맵(그림은 만든 뒤 바뀌지 않으므로 그림마다 한 번)
+    private readonly ConditionalWeakTable<PixelImage, WriteableBitmap> _tileBitmaps = new();
 
     /// <summary>피벗 기준 캐릭터 상자(기준 프레임의 불투명 영역). 탑뷰 충돌 상자이자 플랫포머 충돌 상자 크기.</summary>
     private RectangleF _box;
@@ -65,6 +73,9 @@ internal sealed class PlaySimulation
     private RectangleF _room;
 
     public PlayMode Mode { get; private set; } = PlayMode.TopDown;
+
+    /// <summary>탑뷰에 깐 타일맵(없으면 빈 방).</summary>
+    public PlayMap? Map => _map;
     public TopDownController TopDown { get; } = new();
     public PlatformerController Platformer { get; } = new();
 
@@ -115,10 +126,22 @@ internal sealed class PlaySimulation
         UpdateAnimation(0);
     }
 
-    /// <summary>두 모드 모두 처음 위치로 돌린다.</summary>
+    /// <summary>
+    /// 탑뷰에 깔 타일맵을 바꾼다(null = 빈 방). <paramref name="restart"/>면 처음 위치(맵 가운데)로, 아니면 자리를 지키고 새 범위 안으로만 옮긴다(같은 맵을 다시 읽을 때).
+    /// </summary>
+    public void SetMap(PlayMap? map, bool restart)
+    {
+        _map = map;
+        BuildLevel();
+        if (restart) Reset();
+        else ClampTopDown();
+    }
+
+    /// <summary>두 모드 모두 처음 위치로 돌린다(탑뷰에 타일맵을 깔았으면 그 가운데).</summary>
     public void Reset()
     {
-        TopDown.Position = Vector2.Zero;
+        TopDown.Position = _map is null ? Vector2.Zero : new Vector2(_room.X + _room.Width / 2 - (_box.X + _box.Width / 2), _room.Y + _room.Height / 2 - (_box.Y + _box.Height / 2));
+        ClampTopDown();
         TopDown.Facing = Facing.Down;
         _topDownAccumulator = 0;
         Platformer.FacingRight = true;
@@ -131,6 +154,7 @@ internal sealed class PlaySimulation
     public void Tick(float dt, PlayInput input)
     {
         dt = Math.Clamp(dt, 0, MaxFrameTime);
+        _mapClockMs += (long)(dt * 1000);
         if (Mode == PlayMode.TopDown)
         {
             _topDownAccumulator += dt;
@@ -194,7 +218,9 @@ internal sealed class PlaySimulation
         int c = _sprites.PixelsPerUnit;
         _levelPpu = c;
 
-        _room = new RectangleF(-RoomCellsW / 2f * c, -RoomCellsH / 2f * c, RoomCellsW * c, RoomCellsH * c);
+        _room = _map?.Bounds is { Width: > 0, Height: > 0 } mapBounds
+            ? new RectangleF(mapBounds.X, mapBounds.Y, mapBounds.Width, mapBounds.Height)
+            : new RectangleF(-RoomCellsW / 2f * c, -RoomCellsH / 2f * c, RoomCellsW * c, RoomCellsH * c);
         // 캐릭터 상자가 방 안에 머물도록 피벗이 움직일 범위를 줄인다.
         float left = _room.Left - _box.Left, right = _room.Right - _box.Right;
         float top = _room.Top - _box.Top, bottom = _room.Bottom - _box.Bottom;
@@ -250,7 +276,17 @@ internal sealed class PlaySimulation
         Rect ToScreen(RectangleF r) => new(ox + r.X * scale, oy + r.Y * scale, r.Width * scale, r.Height * scale);
 
         int cellPx = _sprites.PixelsPerUnit * scale;
-        if (Mode == PlayMode.TopDown)
+        if (Mode == PlayMode.TopDown && _map is { } map)
+        {
+            var room = ToScreen(_room);
+            DrawMapWithCharacter(g, map, size, ox, oy, scale, pivot);
+            if (options.ShowGrid)
+            {
+                using (g.PushClip(room))
+                    DrawGrid(g, size, ox + map.Data.Origin.X * scale, oy + map.Data.Origin.Y * scale, map.Tileset.CellWidth * scale);
+            }
+        }
+        else if (Mode == PlayMode.TopDown)
         {
             var room = ToScreen(_room);
             g.FillRectangle(AppTheme.PanelBrush, room);
@@ -273,7 +309,7 @@ internal sealed class PlaySimulation
             }
         }
 
-        DrawCharacter(g, pivot, ox, oy, scale);
+        if (Mode != PlayMode.TopDown || _map is null) DrawCharacter(g, pivot, ox, oy, scale);
 
         if (options.ShowCollider)
         {
@@ -314,6 +350,42 @@ internal sealed class PlaySimulation
             g.DrawLine(GridPen, new Avalonia.Point(x + 0.5, 0), new Avalonia.Point(x + 0.5, size.Height));
         for (int y = ((oy % cellPx) + cellPx) % cellPx; y < size.Height; y += cellPx)
             g.DrawLine(GridPen, new Avalonia.Point(0, y + 0.5), new Avalonia.Point(size.Width, y + 0.5));
+    }
+
+    /// <summary>
+    /// 깔린 타일맵을 그리는 차례대로 그리고, 캐릭터를 그 사이에 끼운다: 위치로 그리는 타일셋이면 바닥 묶음과 기준선이 발(피벗) 높이 이하인 세운 것 다음,
+    /// 나머지 세운 것과 머리 위 묶음 앞(벽 뒤에선 가려지고 앞에선 덮음). 층 차례 타일셋이면 모든 타일 다음.
+    /// </summary>
+    private void DrawMapWithCharacter(DrawingContext g, PlayMap map, Size size, int ox, int oy, int scale, Vector2 pivot)
+    {
+        var ts = map.Tileset;
+        var data = map.Data;
+        int left = (int)Math.Floor(-ox / (double)scale) - 1, top = (int)Math.Floor(-oy / (double)scale) - 1;
+        var view = new Rectangle(left, top, size.Width / scale + 3, size.Height / scale + 3);
+        var draws = TileMapRenderer.DrawOrder(ts, data.Map, data.Origin, view, data.ShowsFloor, _mapClockMs);
+        int insert = draws.Count;
+        if (ts.SortMode == TileSortMode.ByPosition)
+        {
+            insert = 0;
+            for (int i = 0; i < draws.Count; i++)
+            {
+                var t = draws[i].Tile;
+                var kind = ts.DrawClassOf(t.Cell);
+                if (kind == TileDrawClass.Overhead || kind == TileDrawClass.Sorted && ts.SortLine(t.At, t.Cell) + data.Origin.Y > pivot.Y) break;
+                insert = i + 1;
+            }
+        }
+        using (ImageUtil.Pixelated(g))
+        {
+            for (int i = 0; i < draws.Count; i++)
+            {
+                if (i == insert) DrawCharacter(g, pivot, ox, oy, scale);
+                var d = draws[i];
+                g.DrawImage(_tileBitmaps.GetValue(d.Image, ImageUtil.ToBitmap), new Rect(0, 0, d.Image.Width, d.Image.Height),
+                    new Rect(ox + d.Rect.X * scale, oy + d.Rect.Y * scale, d.Rect.Width * scale, d.Rect.Height * scale));
+            }
+            if (insert == draws.Count) DrawCharacter(g, pivot, ox, oy, scale);
+        }
     }
 
     private void DrawCharacter(DrawingContext g, Vector2 pivot, int ox, int oy, int scale)

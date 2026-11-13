@@ -47,7 +47,7 @@ tilemap-screen.m3,③ 위 막대 왼쪽에 지금 도구 이름과 쓰는 법이
 tilemap-screen.m4,④ 위 막대 오른쪽 보기 단추가 타일맵 보기로 바뀝니다(아래 표).,④ The view buttons on the right of the top bar switch to tilemap views (table below).
 tilemap-screen.m5,"⑤ 도구 설정에 타일 묶음이 나옵니다(<a href=""#tilemap-pick"">지금 찍을 것</a>).","⑤ The tool options show the Tiles group (<a href=""#tilemap-pick"">Current pick</a>)."
 tilemap-screen.m6,"⑥ 그 아래 층 묶음에서 찍을 층을 고릅니다(<a href=""#tilemap-floors"">층</a>).","⑥ The Floors group below it chooses the floor to place on (<a href=""#tilemap-floors"">Floors</a>)."
-tilemap-screen.m7,⑦ 캔버스 왼쪽 아래에 마우스가 있는 칸의 좌표·층·타일 이름이 보입니다.,"⑦ The bottom left of the canvas shows the coordinates, floor and tile name of the cell under the mouse."
+tilemap-screen.m7,⑦ 캔버스 왼쪽 아래와 상태 표시줄에는 마우스 아래 보이는 그림의 칸 좌표·층·타일 이름이 보입니다.,"⑦ The bottom-left canvas strip and status bar show the coordinates, floor and tile name of the visible image beneath the pointer."
 tilemap-screen.h-view,타일맵 보기 단추,Tilemap view buttons
 tilemap-screen.v.h1,단추,Button
 tilemap-screen.v.h2,하는 일,What it does
@@ -64,7 +64,7 @@ tilemap-tools.alt,"흙 자동 타일 붓을 고르고 언덕 위 칸에 마우�
 tilemap-tools.caption,① 찍으면 붙을 모양(반투명) · ② 칸 정보,① Shape that would be placed (translucent) · ② Cell info
 tilemap-tools.intro,"타일 도구는 픽셀 도구와 같은 단축키를 씁니다. 모두 칸 단위로 찍고, 끌어 찍기 한 번이 실행취소 한 단계입니다.","The tile tools use the same shortcuts as the pixel tools. They all work cell by cell, and one drag is one undo step."
 tilemap-tools.m1,① 캔버스에는 찍으면 붙을 모양이 반투명하게 미리 보입니다. 자동 타일 붓은 이웃 칸이 바뀌는 모양까지 보입니다. 찍을 층이 잠겨 있으면 그림 대신 주황 점선과 자물쇠가 보입니다.,"① The canvas previews what would be placed, translucent. The auto tile brush also shows how neighboring cells would change. If the target floor is locked, an orange dashed outline and a lock appear instead of the image."
-tilemap-tools.m2,"② 왼쪽 아래에 칸 좌표, 층, 그 칸의 타일 이름(자동 타일이면 세트 이름)이 보입니다. 찍을 층이 잠기거나 숨겨져 있으면 그 경고도 보입니다.","② The bottom left shows the cell coordinates, the floor and the name of the tile in that cell (the set name for auto tiles). If the target floor is locked or hidden, a warning appears there too."
+tilemap-tools.m2,② 왼쪽 아래에는 칸 좌표·층·마우스 아래 보이는 타일 이름(자동 타일이면 세트 이름)이 보입니다. 찍을 층이 잠기거나 숨겨져 있으면 경고도 보입니다.,"② The bottom-left strip shows cell coordinates, floor and visible tile name beneath the pointer (the set name for auto tiles). A locked or hidden target floor also shows a warning."
 tilemap-tools.h-list,도구,Tools
 tilemap-tools.t.h1,도구,Tool
 tilemap-tools.t.h2,키,Key
@@ -74,13 +74,13 @@ tilemap-tools.t.1d,타일셋 패널에서 고른 타일을 찍습니다. 여러 
 tilemap-tools.t.2,자동 타일 붓,Auto tile brush
 tilemap-tools.t.2d,"고른 자동 타일 세트로 칠합니다. 이웃을 보고 경계 모양이 저절로 골라집니다(<a href=""#tilemap-autotile"">자동 타일</a>).","Paints with the picked auto tile set; edge shapes follow the neighbors (<a href=""#tilemap-autotile"">Auto tiles</a>)."
 tilemap-tools.t.3,"<span class=""nolink"">타일 지우개</span>","<span class=""nolink"">Tile eraser</span>"
-tilemap-tools.t.3d,칸을 덮은 타일을 지웁니다. 큰 타일은 통째로 지웁니다. 층을 고정하면 그 층만 지웁니다.,"Erases the tile covering a cell; big tiles go as a whole. With a fixed floor, only that floor."
+tilemap-tools.t.3d,끌면 마우스 아래 보이는 타일을 지웁니다. 큰 타일은 통째로 지웁니다. 층을 고정하면 그 층만 지웁니다.,"Dragging erases the visible tile beneath the pointer; big tiles go as a whole. With a fixed floor, only that floor."
 tilemap-tools.t.4,타일 사각형,Tile rectangle
 tilemap-tools.t.4d,끌어 그린 칸 사각형을 붓이나 자동 타일 세트로 채웁니다. 오른쪽 버튼으로 끌면 지웁니다.,Fills the dragged cell rectangle with the brush or auto tile set. Drag with the right button to erase.
 tilemap-tools.t.5,타일 채우기,Tile fill
 tilemap-tools.t.5d,이어진 같은 모습의 칸을 채웁니다(아래 채우기).,Fills connected cells that look the same (see Fill below).
 tilemap-tools.t.6,"<span class=""nolink"">타일 스포이드</span>",Tile picker
-tilemap-tools.t.6d,맵의 타일을 붓에 집습니다. 자동 타일로 칠한 칸이면 그 세트를 집습니다.,"Picks a tile from the map into the brush, or the auto tile set the cell was painted with."
+tilemap-tools.t.6d,마우스 아래 보이는 그림의 타일을 붓에 집습니다. 자동 타일이면 그 세트를 집습니다.,"Picks the tile visibly beneath the pointer, or its auto tile set, into the brush."
 tilemap-tools.t.7,칸 선택,Cell select
 tilemap-tools.t.7d,칸 사각형을 고릅니다(아래 칸 선택과 복사).,Selects a rectangle of cells (see Selecting and copying cells below).
 tilemap-tools.h-mouse,마우스와 키,Mouse and keys
@@ -245,10 +245,10 @@ tilemap-edit-image.save.2,"움직이는 타일은 그림마다 프레임 하나�
 tilemap-edit-image.save.3,저장하지 않고 고친 채 탭을 닫으면 타일에 저장할지 묻습니다.,Closing the tab with unsaved changes asks whether to save them to the tile.
 tilemap-autotile.1,자동 타일,Auto tiles
 tilemap-autotile.alt,"물 세트의 자동 타일 세트 고치기 창: 위 이름·층·이어지는 무리와 뭐라도 있음 층 체크 상자(바닥·앞), 왼쪽 타일 목록, 가운데 규칙 카드 목록(규칙 2가 주황 테두리)과 틀, 오른쪽 물을 칠한 미리보기 판에서 회색 칸 아래 칸에 마우스를 올려 Cell (7, 2): rule 2","Edit auto tile set window for Water: name, floor, join group and the Something on floors check boxes (Ground, Front) at the top, the tile list on the left, rule cards in the middle (rule 2 outlined in orange) and the template row, and on the right the preview board painted with water, the mouse over a cell under a gray block showing Cell (7, 2): rule 2"
-tilemap-autotile.caption,① 이름·층·이어지는 무리 · ② 뭐라도 있음 층 · ③ 타일 목록 · ④ 규칙 목록 · ⑤ 틀·고른 타일을 차례대로 채우기 · ⑥ 미리보기 판,"① Name, floor, join group · ② Something on floors · ③ Tile list · ④ Rule list · ⑤ Template and Fill picked tiles in order · ⑥ Preview board"
+tilemap-autotile.caption,① 이름·층·이어지는 무리 · ② 뭐라도 있음 층·찍으면 지울 층 · ③ 타일 목록 · ④ 규칙 목록 · ⑤ 틀·고른 타일을 차례대로 채우기 · ⑥ 미리보기 판,"① Name, floor, join group · ② Something on floors and Clear floors when painting · ③ Tile list · ④ Rules · ⑤ Template and fill in order · ⑥ Preview board"
 tilemap-autotile.intro,<strong>자동 타일 세트</strong>로 칠하면 칸마다 둘레 8칸을 보고 경계 모양의 타일을 고릅니다(Unity Rule Tile과 같은 방식). 세트는 <strong>자동 타일 규칙</strong> 목록입니다. 타일셋 패널의 자동 타일 칸을 두 번 누르거나 마지막 더하기 칸을 누르면 이 창이 열립니다.,"Painting with an <strong>auto tile set</strong> looks at the 8 cells around each cell and picks a tile with the matching edge shape (the same idea as Unity's Rule Tile). A set is a list of <strong>auto tile rules</strong>. Double-click an auto tile cell in the Tileset panel, or click the last plus cell, to open this window."
 tilemap-autotile.m1,"① 이름, 세트가 찍힐 층, 이어지는 무리입니다. 아래 줄에 함께 이어지는 세트가 보입니다.","① The name, the floor the set is placed on, and its join group. The line below lists the sets it joins with."
-tilemap-autotile.m2,"② 뭐라도 있음 층: ""뭐라도 있음"" 조건이 볼 층입니다. 모두 켜면 모든 층을 봅니다.","② Something on floors: the floors the ""something there"" condition looks at. All on means every floor."
+tilemap-autotile.m2,② 뭐라도 있음 층은 그 조건이 볼 층입니다. 찍으면 지울 층은 이 세트로 칠할 때 비울 다른 층입니다.,② Something on floors chooses floors checked by that condition; Clear floors when painting chooses other floors to empty when this set is painted.
 tilemap-autotile.m3,③ 타일 목록: 규칙에 넣을 타일을 누르거나 끌어 고릅니다. 아래 <strong>고른 타일을 규칙 N에</strong> 단추나 목록에서 두 번 누르기로 선택한 규칙(파란 테두리)에 넣습니다.,"③ Tile list: click or drag to pick tiles for a rule. The <strong>Put picked tiles in rule N</strong> button below, or a double-click in the list, puts them into the selected rule (blue outline)."
 tilemap-autotile.m4,④ 규칙 목록: 위에서부터 맞춰 봅니다. 미리보기 판에서 마우스를 올린 칸에 쓰인 규칙은 주황 테두리로 보입니다. 위의 <strong>규칙 더하기</strong>로 규칙을 더합니다.,④ Rule list: rules are tried from the top. The rule used by the cell under the mouse on the preview board gets an orange outline. <strong>Add rule</strong> above adds one.
 tilemap-autotile.m5,"⑤ 틀로 규칙을 한 번에 만듭니다: 가로 줄(4) · 세로 줄(4) · 4방향(16) · 3×3(13) · 8방향(47). 틀 차례대로 그린 시트는 목록에서 고른 뒤 <strong>고른 타일을 차례대로 채우기</strong>로 한 번에 넣습니다. 새 세트는 8방향 47규칙 틀로, 뒤집기·회전을 끈 채 시작합니다.","⑤ Make a whole rule list from a template: Row (4) · Column (4) · 4-way (16) · 3×3 (13) · 8-way (47). For a sheet drawn in template order, pick its tiles and use <strong>Fill picked tiles in order</strong>. A new set starts from the 8-way 47-rule template with flips and rotation off."
@@ -257,8 +257,8 @@ tilemap-autotile.ok,창이 화면보다 넓어지면 타일·규칙·미리보�
 tilemap-autotile.h-rule,규칙 하나,One rule
 tilemap-autotile.alt2,"규칙 1 카드: 3×3 조건 칸(위·왼쪽·오른쪽이 주황 세모, 가운데는 이 칸), 물 타일 한 장이 든 칸, 좌우·상하 뒤집기·회전 토글과 위로·아래로·복제·지우기 단추","Rule 1 card: the 3×3 condition grid (orange triangles above, left and right; the center is this cell), a box holding one water tile, flip and rotate toggles, and up, down, duplicate and delete buttons"
 tilemap-autotile.caption2,⑦ 조건 칸 · ⑧ 넣을 타일 · ⑨ 뒤집기·회전 허용 · ⑩ 위로·아래로·복제·지우기,"⑦ Condition grid · ⑧ Tiles to place · ⑨ Allow flips and rotation · ⑩ Up, down, duplicate, delete"
-tilemap-autotile.m7,"⑦ 조건 칸: 가운데는 이 칸입니다. 둘레 8칸을 누를 때마다 상관없음 → 있어야 함 → 없어야 함 → 뭐라도 있음으로 바뀌고, 오른쪽 버튼은 거꾸로 바뀝니다.",⑦ Condition grid: the center is this cell. Each click on one of the 8 outer cells cycles don't care → must be there → must not be there → something there; the right button cycles backwards.
-tilemap-autotile.m8,"⑧ 넣을 타일: 누르기 = 고른 타일로 바꾸기, Ctrl+누르기 = 더하기(같은 타일이면 비중 +1), 타일 위 오른쪽 버튼 = 비중 늘리기·줄이기·이 타일 빼기·타일 모두 빼기. 타일이 여럿이면 비중대로 무작위로 고르는데, 칸 좌표로 정해져 다시 칠해도 같은 타일이 나옵니다. 타일이 없으면 ""타일 없음 · 건너뜀""이 보입니다.","⑧ Tiles to place: click = replace with the picked tiles, Ctrl+click = add (the same tile adds weight +1), right-click a tile = increase or decrease weight, remove it, or remove all. With several tiles one is chosen at random by weight; the choice follows the cell coordinates, so repainting gives the same tile. An empty rule shows ""No tiles · skipped""."
+tilemap-autotile.m7,⑦ 둘레 조건은 누를 때마다 상관없음 → 있어야 함 → 없어야 함 → 뭐라도 있음 → 정한 무리 있음 순서로 바뀌고 우클릭하면 거꾸로 바뀝니다. 가운데는 이 칸입니다.,⑦ Each outer condition cycles don’t care → must be there → must not be there → something there → named group there; right-click cycles backwards. The center is this cell.
+tilemap-autotile.m8,"⑧ 넣을 타일: 누르기는 고른 타일로 바꾸기, Ctrl+누르기는 더하기(같은 타일이면 비중 +1). 우클릭 메뉴는 비중 늘리기·줄이기·숫자로 설정·이 타일 빼기·모두 빼기입니다. 여러 타일은 칸 좌표로 결정되는 무작위 비중대로 골라져 다시 칠해도 같습니다. 타일 없는 규칙은 건너뜁니다.","⑧ Click a rule tile slot to replace it with picked tiles; Ctrl+click adds (same tile: weight +1). Its right-click menu increases, decreases or directly sets weight, removes the tile or removes all. Multiple tiles are chosen by weighted randomness based on cell coordinates, reproducibly; empty rules are skipped."
 tilemap-autotile.m9,"⑨ 좌우로 뒤집은 모양, 상하로 뒤집은 모양, 90°씩 돌린 모양에도 맞추고 타일도 그렇게 놓습니다. 회전은 칸이 정사각형인 타일셋만 됩니다.","⑨ Also match the left-right mirrored, upside-down or 90°-turned shape, placing the tile the same way. Rotation needs square cells."
 tilemap-autotile.m10,"⑩ 규칙 차례를 바꾸고(위가 먼저), 복제하고, 지웁니다.","⑩ Move the rule earlier or later (higher is tried first), duplicate it or delete it."
 tilemap-autotile.h-cond,조건,Conditions
@@ -308,7 +308,7 @@ tilemap-animated.time.4,"한 프레임 문서에서 움직임까지 내보내려
 tilemap-builtin.1,기본 타일셋,Built-in tileset
 tilemap-builtin.alt,"기본 타일셋으로 만든 맵: 풀이 덮인 흙 언덕 속 진흙, 아래 광석 섞인 돌, 물웅덩이와 나무 발판·동전, 오른쪽 돌 속 동굴의 횃불·사다리·상자","A map made with the built-in tileset: mud inside a grassy dirt hill, stone with ore below, a pool with a wooden platform and coins, and a cave in the stone on the right with a torch, a ladder and a chest"
 tilemap-builtin.caption,① 흙과 진흙(같은 무리) · ② 흙과 광석 섞인 돌(다른 무리) · ③ 풀 덮개 · ④ 물 수면 · ⑤ 횃불,① Dirt and mud (same group) · ② Dirt and stone with ore (different groups) · ③ Grass cover · ④ Water surface · ⑤ Torch
-tilemap-builtin.intro,"타일셋이 없는 프로젝트에서 새 타일맵 레이어를 만들면 앱에 든 <strong>샌드박스 지상·동굴</strong> 타일셋의 사본으로 시작합니다. 타일셋 고르기 창의 기본 타일셋 줄로도 사본을 더할 수 있습니다. 옆에서 본 시점의 16px 타일 532개로, 검은 외곽선의 깔끔한 그림입니다.",A new tilemap layer in a project without tilesets starts with a copy of the app's <strong>Sandbox surface &amp; caves</strong> tileset. The built-in row of the tileset chooser adds a copy too. It has 532 side-view 16 px tiles drawn cleanly with black outlines.
+tilemap-builtin.intro,타일셋이 없는 프로젝트에서 새 타일맵 레이어를 만들면 앱에 든 샌드박스 지상·동굴 타일셋의 사본으로 시작합니다. 타일셋 고르기 창에서 탑뷰 마을·물가도 기본 타일셋으로 고를 수 있습니다. 샌드박스는 옆에서 본 16px 타일 532개입니다.,A new tilemap layer without existing tilesets starts with a copy of Sandbox surface &amp; caves. Top-down village &amp; water is another built-in choice in the tileset chooser. Sandbox contains 532 side-view 16 px tiles.
 tilemap-builtin.m1,"① 흙과 진흙은 무리 ""흙""이라 맞닿으면 외곽선 없이 이어집니다. 돌과 광석 섞인 돌은 무리 ""돌""입니다.","① Dirt and mud share the group ""Dirt"", so they join without an outline where they touch. Stone and stone with ore share the group ""Stone""."
 tilemap-builtin.m2,② 무리가 다르면 사이에 외곽선이 생깁니다. 바닥은 가장자리에 외곽선이 있고 안쪽으로 갈수록 어두워집니다.,② Different groups get an outline between them. Ground tiles have an outline on their edges and darken toward the inside.
 tilemap-builtin.m3,"③ 덮개(풀·눈·낙엽)는 바닥 윗면 칸 위에 자동 타일로 덧칠하면 아래로 흘러내리듯 얹히고, 끝은 둥글게 닫힙니다.","③ Covers (grass, snow, autumn leaves) painted over the top cells of the ground drape downward, with rounded ends."
@@ -390,7 +390,43 @@ term.animated-tile.to,tilemap-animated,
 term.animated-tile.def,그림 여러 장을 정한 시간마다 차례로 돌리는 타일입니다.,A tile that cycles through several images at a set time per image.
 term.builtin-tileset,기본 타일셋,built-in tileset
 term.builtin-tileset.to,tilemap-builtin,
-term.builtin-tileset.def,앱에 든 샌드박스 지상·동굴 타일셋입니다. 프로젝트에는 사본으로 들어갑니다.,The Sandbox surface & caves tileset that ships with the app; projects get a copy of it.
+term.builtin-tileset.def,앱에 든 샌드박스 지상·동굴과 탑뷰 마을·물가 타일셋입니다. 프로젝트에는 사본으로 들어갑니다.,The Sandbox surface &amp; caves and Top-down village &amp; water tilesets shipped with the app; projects receive copies.
 term.tileset-file,타일셋 파일,tileset file|tileset files
 term.tileset-file.to,tilemap-files,
 term.tileset-file.def,타일셋을 따로 저장한 .chickxel-tileset 파일입니다. 여러 프로젝트가 같은 타일셋을 씁니다.,"A .chickxel-tileset file holding one tileset, so several projects can share it."
+tilemap-create.icon,타임라인의 타일맵 레이어 이름 앞에는 잔디 블록 벡터 아이콘이 보입니다. 간단히 보기와 이름 바로 고치기에서도 유지됩니다.,"A grass-block vector icon appears before a tilemap layer name in the timeline, including compact view and inline renaming."
+tilemap-screen.view-alt,층 보기 분할 단추의 화살표를 눌러 현재 선택을 표시한 목록,Floor-view split button menu showing the marked current view
+tilemap-screen.view-caption,층 보기 분할 단추와 현재 선택,Floor-view split button and current selection
+tilemap-screen.view-menu,타일맵을 고르면 층 보기가 한 분할 단추로 나옵니다. 본문은 모든 층 → 고른 층 강조 → 고른 층만 순서로 넘깁니다. 화살표나 우클릭은 현재 선택을 표시한 목록을 엽니다.,"With a tilemap selected, floor view uses one split button. Its main area cycles All floors → Focus floor → Floor only; its arrow or a right-click opens a menu marking the current view."
+tilemap-floors.view-menu,위 막대의 분할 단추 본문은 다음 보기로 넘기고 화살표나 우클릭은 현재 선택을 표시한 목록을 엽니다.,The split button cycles views from its main area; its arrow or a right-click opens the menu marking the current view.
+tilemap-tools.h-visible,보이는 그림에서 집고 지우기,Picking and erasing visible images
+tilemap-tools.visible,스포이드와 칸 정보(캔버스 왼쪽 아래 띠·상태 표시줄)는 칸 자체가 아닌 마우스 아래 실제 보이는 그림에서 타일을 고릅니다. 솟은 나무 윗부분을 집으면 그 나무가 골라집니다. 위치로 그리는 타일셋에서 지우개를 끌면 세운 것·머리 위 타일의 솟거나 아래로 내려온 그림을 눌러도 지워집니다. 사각형·채우기 지우기는 여전히 칸을 기준으로 합니다.,"The picker and cell info (bottom-left canvas strip and status bar) use the image actually visible beneath the pointer, not just its cell: picking a tree canopy selects the tree. For position-sorted tilesets, dragging the eraser also removes upright and overhead tiles through their rising or descending images. Rectangle and fill erasing still use cells."
+tilemap-multi.position,첫 타일셋이 층 차례여도 열린 타일셋 중 하나라도 위치로 그리면 레이어 전체를 위치로 그립니다. 샌드박스 레이어에 탑뷰 타일셋을 더해도 벽이 바닥 위에 그려집니다.,"If any tileset open on the layer uses Position, the entire layer draws by position, even if the first tileset uses Floor order. Walls draw above ground even after adding a top-down tileset to a Sandbox layer."
+tilemap-settings.position-alt,위치 모드 타일 페이지의 그리기 묶음과 기준선 설정,Draw class and baseline settings on the Tiles page in Position mode
+tilemap-settings.position-caption,그리기 묶음 · 기준선,Draw class · Baseline
+tilemap-settings.position,"타일셋 페이지의 그리는 순서는 층 차례(옆 시점, 기존 방식) 또는 위치(탑뷰)입니다. 위치를 고르면 타일 페이지에 그리기 묶음(바닥·세운 것·머리 위, 여러 타일 함께 변경)과 기준선이 나타납니다. 기준선은 차지 칸 위에서부터 px이며 차지 칸 아래·그림이 닿는 칸 아래 단추로 맞출 수 있습니다.","The Tileset page offers Floor order (side view, original behavior) or Position (top-down). Position reveals Draw class (Ground, Upright or Overhead, editable for multiple selected tiles) and Baseline on the Tiles page. Baseline is measured in pixels from the footprint top; buttons set it to Footprint bottom or Bottom of image cell."
+tilemap-settings.sort,"위치 순서는 바닥(층 차례 → 기준선), 세운 것(층에 관계없이 기준선 → 층 차례), 머리 위(층 차례 → 기준선)로 그립니다. 기준선이 같으면 바닥·머리 위는 위 칸의 타일이, 세운 것은 아래 칸의 타일이 나중입니다. 뒤 상자는 벽에 가려지고 앞 상자는 벽을 덮으며 내려온 물가 절벽은 물에 덮이지 않습니다.","Position draws Ground (floor order, then baseline), Upright (baseline across floors, then floor order), then Overhead (floor order, then baseline). At equal baselines, an upper-cell Ground or Overhead tile draws later, but a lower-cell Upright tile draws later. A crate behind a wall is hidden, one in front covers it, and a descending bank stays above water."
+tilemap-autotile.clear,창 위쪽의 찍으면 지울 층은 이 세트로 찍은 칸에서 고른 다른 층 타일을 지웁니다(잠긴 층 제외). 층이 다른 땅을 덮어 바꿀 때 쓰며 기본 탑뷰 마을·물가의 물·땅 세트에 켜져 있습니다.,"Clear floors when painting at the top of the editor removes tiles on selected other floors in cells painted with this set, except locked floors. It replaces terrain on different floors and is enabled for the built-in top-down water and land sets."
+tilemap-autotile.weight-alt,규칙 타일 우클릭 메뉴의 비중 숫자로 설정 항목,Set weight item in an auto tile rule tile context menu
+tilemap-autotile.weight-caption,비중 숫자로 설정 메뉴,Set weight menu
+tilemap-autotile.weight,규칙 타일을 우클릭하여 비중 숫자로 설정…을 누르면 1 이상의 정수를 직접 적습니다. 비중 늘리기·줄이기도 그대로 쓸 수 있습니다.,Right-click a rule tile and choose Set weight… to enter an integer of 1 or greater. Increase weight and Decrease weight remain available.
+tilemap-autotile.c.5,파랑 동그라미,Blue circle
+tilemap-autotile.c.5n,정한 무리 있음,Named group there
+tilemap-autotile.c.5d,그 이웃의 어느 층에든 규칙의 무리 칸과 이름이 같은 무리(무리가 비면 세트 이름)로 찍은 자동 타일이 있을 때,The neighbor has an auto tile on any floor whose join group (or set name if no group is set) matches the rule’s Group field.
+tilemap-autotile.group-alt,정한 무리 있음 조건을 표시한 규칙과 나타난 무리 입력 칸,Rule showing the Named group there condition and the visible Group field
+tilemap-autotile.group-caption,정한 무리 있음과 무리 입력 칸,Named group there and Group field
+tilemap-autotile.target,정한 무리 있음 조건을 쓰는 규칙에는 무리 칸이 나타납니다. 이웃의 어느 층에든 그 이름과 무리 이름(무리가 비면 세트 이름)이 같은 세트로 찍은 자동 타일이 있으면 맞습니다. 예를 들어 아래가 물이면 물가 절벽을 고릅니다.,Rules using Named group there show a Group field. The condition matches an auto tile on any floor of the neighboring cell whose join group (or set name when unset) matches the field; water below can select a waterfront cliff.
+tilemap-builtin.village-alt,"탑뷰 마을·물가 기본 타일셋의 마을과 물가 맵: 땅, 물, 절벽, 벽과 문","Village and waterfront map built with the Top-down village & water tileset: land, water, cliff, walls and a door"
+tilemap-builtin.village-caption,탑뷰 마을·물가의 땅·둑·벽과 문,"Top-down village & water terrain, bank, walls and door"
+tilemap-builtin.village,타일셋 고르기 창의 또 다른 기본 타일셋 탑뷰 마을·물가는 위치로 그리는 16px 탑뷰 타일셋입니다. 땅은 물결진 가장자리로 이어지고 위층 땅이 아래층 땅을 덮습니다. 아래가 물이면 재질에 맞는 둑이 물 칸에 내려와 물이 낮아 보입니다. 물의 거품 줄은 움직입니다. 벽의 윗면과 앞면은 찍은 칸 안에 있고 문을 벽 줄에 넣으면 양옆 벽이 이어집니다.,"Another built-in choice in the tileset chooser, Top-down village &amp; water, is a 16 px position-sorted top-down tileset. Land joins with gently wavy edges and higher-floor terrain covers lower-floor terrain. Where water lies below, a bank matching the land extends into its cell, making water look lower; foam lines animate. Each wall holds its top and front within its placed cell, and a door joins the walls on either side."
+tilemap-builtin.compare-alt,동일한 벽·상자·물가 맵을 층 차례와 위치·기준선으로 나란히 그린 비교,"Actual side-by-side rendering of the same wall, crates and waterfront by floor order and by position and baselines"
+tilemap-builtin.compare-caption,왼쪽: 층 차례 · 오른쪽: 위치와 기준선,Left: Floor order · Right: Position and baselines
+tilemap-builtin.compare,같은 맵을 층 차례로 그린 왼쪽과 위치·기준선으로 그린 오른쪽을 비교하세요. 오른쪽에서 뒤 상자는 벽에 가려지고 앞 상자는 벽을 덮으며 물가 절벽은 물에 덮이지 않습니다.,"Compare the same map by floor order on the left and position with baselines on the right. On the right the rear crate is hidden by the wall, the front crate covers it, and the descending bank is not covered by water."
+tilemap-convert.position,"위치로 그리는 타일셋을 변환하면 부위는 바닥(층마다) → 세운 것(보이는 층을 모아 하나, 숨긴 층은 층마다 숨긴 부위) → 머리 위(층마다)의 차례로 생깁니다. 세운 것은 층을 넘어 기준선 순서로 합쳐집니다.","Converting a position-sorted tileset creates parts in Ground (one per floor) → Upright (visible floors merged into one, hidden floors each in a hidden part) → Overhead (one per floor) draw order. Upright tiles merge across floors in baseline order."
+term.named-group,정한 무리 있음,named group there
+term.named-group.to,tilemap-autotile,
+term.named-group.def,규칙의 무리 칸과 같은 이름의 자동 타일 무리가 이웃의 어느 층에든 있으면 맞는 조건입니다.,A condition matching a neighboring auto tile on any floor whose join group matches the rule’s Group field.
+tilemap-builtin.h-play,움직임 테스트에서 맵 위를 걷기,Walking the map in Movement test
+tilemap-builtin.play-alt,움직임 테스트 탑뷰 창에서 마을 타일맵 레이어를 맵으로 고르고 늑대 캐릭터가 벽 앞에 선 모습,Top-down Movement test with the village tilemap selected as Map and a wolf character in front of a wall
+tilemap-builtin.play-caption,탑뷰 맵과 벽 앞의 캐릭터,Top-down map and character in front of the wall
+tilemap-builtin.play,움직임 테스트(<kbd>F5</kbd>)의 탑뷰 설정에서 맵으로 열린 문서의 타일맵 레이어를 고르면 보이는 층을 깔고 걸어 봅니다. 충돌은 없고 처음 위치는 맵 가운데입니다. 위치로 그리는 타일셋이면 캐릭터가 발(피벗) 높이로 세운 타일과 섞여 벽 뒤에서는 가려지고 앞에서는 벽을 덮습니다. 머리 위 타일은 언제나 캐릭터 위에 보입니다.,"In the top-down settings of Movement test (<kbd>F5</kbd>), choose an open document’s tilemap layer as Map to walk across its visible floors. There is no collision; the starting position is the map center. With position sorting, the character mixes with Upright tiles by its feet (pivot), appearing behind a wall or covering it in front. Overhead tiles always appear above the character."

@@ -19,6 +19,8 @@ public sealed partial class AutoTileEditorDialog
         private readonly ConditionGrid _grid;
         private readonly RuleTilesView _tiles;
         private readonly ToggleButton _flipX, _flipY, _rotate;
+        private readonly TextBox _targetGroup;
+        private readonly Control _targetRow;
         private bool _updating;
 
         public int Index { get; }
@@ -61,16 +63,27 @@ public sealed partial class AutoTileEditorDialog
             };
             ((Button)actions.Children[0]).IsEnabled = index > 0;
             ((Button)actions.Children[1]).IsEnabled = index < owner._rules.Count - 1;
+            _targetGroup = Ui.Text("", 90).Tip(UiStrings.AutoTile_TargetGroupTip);
+            _targetGroup.LostFocus += (_, _) => ApplyTargetGroup();
+            _targetGroup.KeyDown += (_, e) => { if (e.Key == Key.Enter) ApplyTargetGroup(); };
+            _targetRow = Ui.Row(Ui.Label(UiStrings.AutoTile_TargetGroup), _targetGroup);
             var side = new StackPanel
             {
                 Spacing = 2,
                 VerticalAlignment = VerticalAlignment.Center,
-                Children = { new StackPanel { Orientation = Orientation.Horizontal, Children = { _flipX, _flipY, _rotate } }, actions },
+                Children = { new StackPanel { Orientation = Orientation.Horizontal, Children = { _flipX, _flipY, _rotate } }, actions, _targetRow },
             };
             Child = new StackPanel { Orientation = Orientation.Horizontal, Children = { _number, _grid, _tiles, side } };
             Refresh();
             // 단추·토글을 눌러도 먼저 이 규칙을 선택한다.
             AddHandler(PointerPressedEvent, (_, _) => owner.Select(Index), RoutingStrategies.Tunnel, handledEventsToo: true);
+        }
+
+        private void ApplyTargetGroup()
+        {
+            var rule = _owner._rules[Index];
+            var name = _targetGroup.Text?.Trim() ?? "";
+            if (name != rule.TargetGroup) _owner.SetRule(Index, rule with { TargetGroup = name });
         }
 
         private ToggleButton Toggle(VectorIcon icon, string tip)
@@ -103,6 +116,9 @@ public sealed partial class AutoTileEditorDialog
                 _flipX.IsChecked = rule.AllowFlipX;
                 _flipY.IsChecked = rule.AllowFlipY;
                 _rotate.IsChecked = rule.AllowRotate && _owner._ts.CanRotate;
+                // 무리 이름은 "정한 무리 있음" 조건을 쓸 때만
+                _targetRow.IsVisible = rule.Target != 0;
+                if (!_targetGroup.IsFocused) _targetGroup.Text = rule.TargetGroup;
             }
             finally
             {
@@ -123,8 +139,8 @@ public sealed partial class AutoTileEditorDialog
     }
 
     /// <summary>
-    /// 규칙의 둘레 조건 3×3: 가운데 = 이 칸(넣은 첫 타일), 둘레 8칸 = 상관없음(빈 칸)·있어야 함(초록 더하기)·없어야 함(빨강 빼기).
-    /// 누르면 상관없음 → 있어야 함 → 없어야 함 → 상관없음, 오른쪽 버튼은 거꾸로.
+    /// 규칙의 둘레 조건 3×3: 가운데 = 이 칸(넣은 첫 타일), 둘레 8칸 = 상관없음(빈 칸)·있어야 함(초록 더하기)·없어야 함(빨강 빼기)·뭐라도 있음(주황 세모)·
+    /// 정한 무리 있음(파랑 동그라미). 누르면 그 차례로 돌고, 오른쪽 버튼은 거꾸로.
     /// </summary>
     private sealed class ConditionGrid : Control
     {
@@ -133,6 +149,7 @@ public sealed partial class AutoTileEditorDialog
         private static readonly IBrush SameBrush = new SolidColorBrush(Color.FromRgb(62, 158, 92));
         private static readonly IBrush OtherBrush = new SolidColorBrush(Color.FromRgb(196, 70, 70));
         private static readonly IBrush FilledBrush = new SolidColorBrush(Color.FromRgb(190, 140, 40));
+        private static readonly IBrush TargetBrush = new SolidColorBrush(Color.FromRgb(70, 120, 200));
         private static readonly IBrush CenterBrush = new SolidColorBrush(Color.FromRgb(36, 36, 42));
         private static readonly IBrush HoverOverlay = new SolidColorBrush(Color.FromArgb(50, 255, 255, 255));
         private static readonly IPen CellPen = AppTheme.Pen(Color.FromArgb(70, 255, 255, 255));
@@ -177,11 +194,13 @@ public sealed partial class AutoTileEditorDialog
                         NeighborCondition.Same => SameBrush,
                         NeighborCondition.Other => OtherBrush,
                         NeighborCondition.Filled => FilledBrush,
+                        NeighborCondition.Target => TargetBrush,
                         _ => AnyBrush,
                     }, r);
                     if (cond == NeighborCondition.Same) VectorIcons.Draw(g, VectorIcon.Plus, r, 13, Brushes.White, 2.6);
                     else if (cond == NeighborCondition.Other) VectorIcons.Draw(g, VectorIcon.Minus, r, 13, Brushes.White, 2.6);
                     else if (cond == NeighborCondition.Filled) VectorIcons.Draw(g, VectorIcon.Triangle, r, 11, Brushes.White, 2, filled: true);
+                    else if (cond == NeighborCondition.Target) VectorIcons.Draw(g, VectorIcon.Circle, r, 11, Brushes.White, 2.4);
                     g.DrawRectangle(null, CellPen, r);
                     if (_hover == (dx, dy)) g.FillRectangle(HoverOverlay, r);
                 }
@@ -217,13 +236,15 @@ public sealed partial class AutoTileEditorDialog
             int bit = BitAt(c.X, c.Y);
             var rule = _owner._rules[_index];
             bool back = pt.Properties.IsRightButtonPressed;
-            // 누르기: 상관없음 → 있어야 함 → 없어야 함 → 뭐라도 있음 → 상관없음, 오른쪽 버튼은 거꾸로
+            // 누르기: 상관없음 → 있어야 함 → 없어야 함 → 뭐라도 있음 → 정한 무리 있음 → 상관없음, 오른쪽 버튼은 거꾸로
             var next = (rule.Condition(bit), back) switch
             {
                 (NeighborCondition.Any, false) => NeighborCondition.Same,
                 (NeighborCondition.Same, false) => NeighborCondition.Other,
                 (NeighborCondition.Other, false) => NeighborCondition.Filled,
-                (NeighborCondition.Any, true) => NeighborCondition.Filled,
+                (NeighborCondition.Filled, false) => NeighborCondition.Target,
+                (NeighborCondition.Any, true) => NeighborCondition.Target,
+                (NeighborCondition.Target, true) => NeighborCondition.Filled,
                 (NeighborCondition.Filled, true) => NeighborCondition.Other,
                 (NeighborCondition.Other, true) => NeighborCondition.Same,
                 _ => NeighborCondition.Any,

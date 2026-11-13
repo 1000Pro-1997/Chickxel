@@ -64,6 +64,17 @@ internal static class TilemapShots
         ]);
     }
 
+    [Shot("tilemap-screen-view")]
+    public static void ScreenView(ShotKit k)
+    {
+        var main = Open(k);
+        var view = ShotKit.Get<Control>(main, "_cbTileView");
+        var arrow = ((StackPanel)((StackPanel)view).Children[0]).Children[1];
+        k.Click(arrow, settleMs: 400);
+        var popup = OpenPopupsRect(main) ?? throw new InvalidOperationException("floor view menu not open");
+        k.Save(main, crop: ShotKit.Bounds(view, main).Union(popup).Inflate(12));
+    }
+
     [Shot("tilemap-tools")]
     public static void Tools(ShotKit k)
     {
@@ -171,8 +182,8 @@ internal static class TilemapShots
         // ① 열려 있음 ② 칸 크기가 달라 못 고름 ③ 기본 타일셋(새 사본) ④ 타일셋 관리…
         k.Dialog(() => TilesetChoiceDialog.Run(main, ctx, UiStrings.Tileset_AddTileset, open, new DSize(Cell, Cell)), w =>
         {
-            var rows = ShotKit.Get<StackPanel>(w, "_list").Children.OfType<Button>().ToList();
-            k.Save(w, marks: [rows.First(r => Has(r, Sandbox(main).Name) && !r.IsEnabled && Has(r, UiStrings.TilesetChoice_Open)), rows.First(r => Has(r, IconsName)), rows.Last(), FindButton(w, UiStrings.TilesetChoice_Manage)]);
+            var rows = ShotKit.Get<StackPanel>(w, "_list").Children.OfType<Control>().ToList();
+            k.Save(w, marks: [rows.First(r => Has(r, Sandbox(main).Name) && r is Border && Has(r, UiStrings.TilesetChoice_Open)), rows.First(r => Has(r, IconsName)), rows.Last(), FindButton(w, UiStrings.TilesetChoice_Manage)]);
         });
         // ⑤ 이름 ⑥ 쓰는 곳 ⑦ 파일로 저장 ⑧ 프로젝트에서 지우기 ⑨ 새 빈 타일셋 ⑩ 타일셋 파일 가져오기
         k.Dialog(() => TilesetManagerDialog.Run(main, ctx), w =>
@@ -254,6 +265,17 @@ internal static class TilemapShots
         k.Dialog(() => TilesetSettingsWindow.Run(main, ctx, ts.Key, TilesetSettingsWindow.Page.View), w =>
         {
             k.Save(w, "tilemap-settings-4", marks: [Union(w, ShotKit.Get<Control>(w, "_byFloor"), ShotKit.Get<Control>(w, "_slotSize").Parent as Control ?? ShotKit.Get<Control>(w, "_slotSize"))], firstNumber: 10);
+        });
+    }
+
+    [Shot("tilemap-settings-position")]
+    public static void PositionSettings(ShotKit k)
+    {
+        var main = Open(k, village: true);
+        var ts = Sandbox(main);
+        k.Dialog(() => TilesetSettingsWindow.Run(main, Ctx(main), ts.Key, TilesetSettingsWindow.Page.Tiles, TileAt(ts, 0, 0)), w =>
+        {
+            k.Save(w, marks: [ShotKit.Get<Control>(w, "_drawClassRow"), ShotKit.Get<Control>(w, "_sortYRow")]);
         });
     }
 
@@ -351,6 +373,36 @@ internal static class TilemapShots
         }, settleMs: 900);
     }
 
+    [Shot("tilemap-autotile-weight")]
+    public static void AutoWeight(ShotKit k)
+    {
+        var main = Open(k, village: true);
+        var ts = Sandbox(main);
+        k.Dialog(() => AutoTileEditorDialog.Run(main, ts, Set(ts, DomainStrings.TileBuiltIn_Water)), w =>
+        {
+            var card = ShotKit.Get<System.Collections.IList>(w, "_cards").Cast<Control>().First();
+            var tiles = ShotKit.Get<Control>(card, "_tiles");
+            var p = tiles.TranslatePoint(new Avalonia.Point(15, 15), w)!.Value;
+            k.Click(w, p, MouseButton.Right, settleMs: 400);
+            var popup = OpenPopupsRect(w) ?? throw new InvalidOperationException("weight menu not open");
+            k.Save(w, crop: ShotKit.Bounds(tiles, w).Union(popup).Inflate(10));
+        });
+    }
+
+    [Shot("tilemap-autotile-group")]
+    public static void AutoGroup(ShotKit k)
+    {
+        var main = Open(k, village: true);
+        var ts = Sandbox(main);
+        k.Dialog(() => AutoTileEditorDialog.Run(main, ts, Set(ts, DomainStrings.TileBuiltIn_Grass)), w =>
+        {
+            var card = ShotKit.Get<System.Collections.IList>(w, "_cards").Cast<Control>().First(c => ShotKit.Get<Control>(c, "_targetRow").IsVisible);
+            card.BringIntoView();
+            ShotKit.Pump(300);
+            k.Save(w, crop: ShotKit.Bounds(card, w).Inflate(8));
+        });
+    }
+
     [Shot("tilemap-animated")]
     public static void Animated(ShotKit k)
     {
@@ -395,6 +447,53 @@ internal static class TilemapShots
         ]);
     }
 
+    [Shot("tilemap-builtin-village")]
+    public static void Village(ShotKit k)
+    {
+        var main = Open(k, village: true);
+        k.Hover(main, new Avalonia.Point(5, 5));
+        k.Save(main, crop: MapRect(main, 0, 0, MapW - 1, MapH - 1).Inflate(10));
+    }
+
+    [Shot("tilemap-builtin-compare")]
+    public static void VillageCompare(ShotKit k)
+    {
+        var main = Open(k, village: true);
+        var ctx = Ctx(main);
+        var ts = Sandbox(main);
+        var crop = MapRect(main, 0, 0, MapW - 1, MapH - 1).Inflate(8);
+        // Same map and tile properties in both halves: the rear chest has a baseline above the wall.
+        int rearChest = TileAt(ts, 0, 0);
+        ctx.EditTileset(ts.Key, "Rear chest baseline", t => t with
+        {
+            Tiles = [.. t.Tiles.Select(tile => tile.Id == rearChest ? tile with { SortY = 0 } : tile)],
+        });
+        var shots = new List<(Avalonia.Media.Imaging.Bitmap, Rect)>();
+        ctx.EditTileset(ts.Key, "Floor order", t => t with { SortMode = TileSortMode.ByFloor });
+        k.Settle(350);
+        shots.Add((k.Capture(main), crop));
+        ctx.EditTileset(ts.Key, "Position order", t => t with { SortMode = TileSortMode.ByPosition });
+        k.Settle(350);
+        shots.Add((k.Capture(main), crop));
+        GuideScreenUiCompareShots.Compose(k, "tilemap-builtin-compare", shots);
+    }
+
+    [Shot("tilemap-builtin-play")]
+    public static void VillagePlay(ShotKit k)
+    {
+        var main = Open(k, village: true);
+        // The play-test sprite comes from the active document; keep the map document open as a separate tab.
+        ShotKit.Call(main, "OpenFile", PartsSample.Build(k));
+        k.Settle(300);
+        ShotKit.Call(main, "ShowPlayTest");
+        k.Settle(500);
+        var play = ShotKit.Get<Window>(main, "_play");
+        var map = ShotKit.Get<ComboBox>(play, "_map");
+        map.SelectedIndex = 1;
+        k.Settle(500);
+        k.Save(play);
+    }
+
     [Shot("tilemap-convert")]
     public static void Convert(ShotKit k)
     {
@@ -424,9 +523,9 @@ internal static class TilemapShots
     // ───────────── 예시 프로젝트 ─────────────
 
     /// <summary>예시 프로젝트를 만들어 저장하고 열어, 타일맵 레이어를 고른 메인 창을 돌려준다.</summary>
-    private static MainForm Open(ShotKit k, bool multi = false, int bottom = 250)
+    private static MainForm Open(ShotKit k, bool multi = false, int bottom = 250, bool village = false)
     {
-        var path = Build(k, multi);
+        var path = Build(k, multi, village);
         App.Settings.BottomHeight = bottom;
         App.Settings.FilesVisible = false;
         App.Settings.PaletteWidth = 290;
@@ -442,18 +541,18 @@ internal static class TilemapShots
         return main;
     }
 
-    private static string Build(ShotKit k, bool multi)
+    private static string Build(ShotKit k, bool multi, bool village = false)
     {
         var p = new SpriteProject(MapW * Cell, MapH * Cell);
         p.Layers[0].Name = "Sky";
         p.SetCel(0, 0, Sky(p.Width, p.Height));
-        var ts = BuiltInTilesets.Sandbox();
+        var ts = village ? BuiltInTilesets.TopDownVillage() : BuiltInTilesets.Sandbox();
         var layer = p.AddTilemapLayer(ts, name: MapLayer);
-        var props = Props(ts);
-        p.AddTileset(props);
-        p.AddTileset(Icons());
-        var map = Map(ts);
-        if (multi)
+        var props = village ? null : Props(ts);
+        if (props is not null) p.AddTileset(props);
+        if (!village) p.AddTileset(Icons());
+        var map = village ? VillageMap(ts) : Map(ts);
+        if (multi && props is not null)
         {
             p.AddLayerTileset(layer, props);
             var combined = p.TilesetOf(layer)!;
@@ -466,6 +565,25 @@ internal static class TilemapShots
         var path = Path.Combine(k.WorkDir, "Meadow" + SpriteProject.FileExtension);
         ProjectIO.Save(p, path);
         return path;
+    }
+
+    private static TileMap VillageMap(Tileset ts)
+    {
+        var map = TileMap.Empty;
+        TileMap Paint(TileMap m, string name, IEnumerable<DPoint> cells) => AutoTiler.Paint(ts, m, Set(ts, name), cells);
+        map = Paint(map, DomainStrings.TileBuiltIn_Sand, Box(0, 7, 15, 10));
+        map = Paint(map, DomainStrings.TileBuiltIn_Grass, Box(1, 1, 22, 8));
+        map = Paint(map, DomainStrings.TileBuiltIn_Water, Box(0, 11, 23, 13).Concat(Box(16, 9, 23, 10)));
+        map = Paint(map, DomainStrings.TileBuiltIn_StonePath, Box(6, 5, 19, 6));
+        map = Paint(map, DomainStrings.TileBuiltIn_WoodWall, Box(6, 4, 18, 4));
+        map = Paint(map, DomainStrings.TileBuiltIn_WoodWall, Box(9, 5, 13, 5));
+        int objects = FloorId(ts, DomainStrings.Tile_FloorObjects);
+        TileMap Put(TileMap m, int slotX, int slotY, int x, int y) => m.Place(ts, objects, new DPoint(x, y), new TileCell(TileAt(ts, slotX, slotY)));
+        map = Put(map, 0, 0, 10, 4);
+        map = Put(map, 2, 0, 11, 5);
+        map = Put(map, 4, 1, 3, 7);
+        map = Put(map, 3, 1, 19, 8);
+        return map;
     }
 
     /// <summary>하늘: 위는 짙은 파랑, 아래로 갈수록 옅어지는 띠.</summary>

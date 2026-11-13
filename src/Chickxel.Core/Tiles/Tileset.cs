@@ -10,6 +10,15 @@ namespace Chickxel.Core.Tiles;
 public sealed record TileFloor(int Id, string Name);
 
 /// <summary>
+/// 위치로 그리는 타일셋(<see cref="TileSortMode.ByPosition"/>)에서 타일이 그려지는 묶음: 바닥(먼저 — 층 차례, 같은 층은 기준선 차례),
+/// 세운 것(바닥 다음 — 층과 상관없이 기준선 차례, 같으면 층 차례), 머리 위(마지막 — 층 차례, 같은 층은 기준선 차례).
+/// </summary>
+public enum TileDrawClass : byte { Ground, Sorted, Overhead }
+
+/// <summary>타일셋의 그리는 순서: 층 차례(층 안은 차지 칸 아랫줄 차례 — 옆 시점), 위치(그리기 묶음과 기준선 — 탑뷰).</summary>
+public enum TileSortMode : byte { ByFloor, ByPosition }
+
+/// <summary>
 /// 타일 하나. <see cref="Id"/>는 바뀌지 않는다(맵은 이것으로 가리킴). 차지 칸 <see cref="Width"/>×<see cref="Height"/>(칸 수)이 같은 층에서 덮어쓰기를 정하고,
 /// 그림은 차지 칸보다 클 수 있다(<see cref="DrawOffset"/> — 차지 칸 왼쪽 위 기준 그림 왼쪽 위, px). 그림은 만든 뒤 고치지 않는다.
 /// </summary>
@@ -29,6 +38,13 @@ public sealed record TileDef
     /// <summary>타일 목록 화면의 자리(칸). 시트에서 가져오면 시트의 칸 자리.</summary>
     public int PaletteX { get; init; }
     public int PaletteY { get; init; }
+    /// <summary>위치로 그리는 타일셋에서 이 타일이 그려지는 묶음(<see cref="TileSortMode.ByPosition"/>일 때만 씀).</summary>
+    public TileDrawClass DrawClass { get; init; }
+    /// <summary>
+    /// 기준선(차지 칸 위 기준 px, 발이 닿는 높이): 위치로 그리는 타일셋에서 같은 묶음 안의 차례를 정한다. null이면 차지 칸 아래.
+    /// 그림과 따로 정하므로 아래로 내려온 그림(벽 앞면·물가 절벽)은 그림이 닿는 칸 아래(<see cref="ImageCellBottom"/>)를, 위로 솟은 그림은 밑동을 기준선으로 둘 수 있다.
+    /// </summary>
+    public int? SortY { get; init; }
     /// <summary>
     /// 움직이는 타일의 그림들(차례대로, 모두 <see cref="Image"/>와 같은 크기이고 첫 그림이 <see cref="Image"/>). 2장 미만이면 멈춘 타일.
     /// </summary>
@@ -72,6 +88,13 @@ public sealed record TileDef
 
     /// <summary>그림이 차지 칸 아래·왼쪽에 맞도록 한 <see cref="DrawOffset"/>(그림이 차지 칸보다 크면 위로 솟음).</summary>
     public static Point BottomAligned(int imageHeight, int footprintHeight, int cellHeight) => new(0, footprintHeight * cellHeight - imageHeight);
+
+    /// <summary>
+    /// 그림이 닿는 맨 아래 칸의 아래(차지 칸 위 기준 px, 차지 칸 아래보다 위면 차지 칸 아래): 아래 칸으로 내려온 그림의 기준선 — 그 칸에 놓인 것과 기준선이 같아
+    /// 바닥·머리 위 묶음에서는 이 타일이 그 칸의 것을 덮고, 세운 것 묶음에서는 그 칸에 선 것이 이 타일 앞에 보인다.
+    /// </summary>
+    public int ImageCellBottom(int cellHeight)
+        => Math.Max(Height * cellHeight, (int)Math.Ceiling((DrawOffset.Y + Image.Height) / (double)cellHeight) * cellHeight);
 }
 
 /// <summary>자동 타일 규칙 틀(새 세트나 "틀로 규칙 만들기"에서 규칙 목록을 만든다 — <see cref="AutoTileShapes"/>).</summary>
@@ -94,9 +117,10 @@ public readonly record struct AutoTileChoice(int Tile, int Weight = 1);
 
 /// <summary>
 /// 규칙의 이웃 칸 조건: 상관없음, 같은 무리가 있어야 함, 같은 무리가 없어야 함(비었거나 다른 것),
-/// 뭐라도 있어야 함(같은 무리이거나 세트가 정한 층(<see cref="AutoTileSet.FilledFloors"/>)에 어떤 타일이든 있음 — 벽에 닿은 물처럼).
+/// 뭐라도 있어야 함(같은 무리이거나 세트가 정한 층(<see cref="AutoTileSet.FilledFloors"/>)에 어떤 타일이든 있음 — 벽에 닿은 물처럼),
+/// 규칙이 정한 무리가 있어야 함(<see cref="AutoTileRule.TargetGroup"/> — 아래가 물이면 물가 절벽처럼).
 /// </summary>
-public enum NeighborCondition : byte { Any, Same, Other, Filled }
+public enum NeighborCondition : byte { Any, Same, Other, Filled, Target }
 
 /// <summary>
 /// 자동 타일 규칙: 둘레 8칸 조건(<see cref="Same"/>·<see cref="Other"/>·<see cref="Filled"/> — 이웃 비트, 셋 다 아니면 상관없음)이 맞으면 <see cref="Tiles"/> 중 하나를 놓는다.
@@ -110,6 +134,12 @@ public sealed record AutoTileRule
     public byte Other { get; init; }
     /// <summary>뭐라도 있어야 하는 이웃(비트, 다른 둘과 겹치지 않음).</summary>
     public byte Filled { get; init; }
+    /// <summary>
+    /// <see cref="TargetGroup"/> 무리가 있어야 하는 이웃(비트, 다른 셋과 겹치지 않음): 그 칸에 무리 이름(<see cref="AutoTileSet.JoinName"/>)이 같은 세트로 찍은 타일이 어느 층에든 있음.
+    /// </summary>
+    public byte Target { get; init; }
+    /// <summary><see cref="Target"/> 조건이 찾는 무리 이름(세트의 무리, 무리가 비면 세트 이름).</summary>
+    public string TargetGroup { get; init; } = "";
     public bool AllowFlipX { get; init; }
     public bool AllowFlipY { get; init; }
     public bool AllowRotate { get; init; }
@@ -122,6 +152,7 @@ public sealed record AutoTileRule
         => (Same & (1 << bit)) != 0 ? NeighborCondition.Same
             : (Other & (1 << bit)) != 0 ? NeighborCondition.Other
             : (Filled & (1 << bit)) != 0 ? NeighborCondition.Filled
+            : (Target & (1 << bit)) != 0 ? NeighborCondition.Target
             : NeighborCondition.Any;
 
     /// <summary>이웃 <paramref name="bit"/>의 조건을 바꾼 사본.</summary>
@@ -133,15 +164,16 @@ public sealed record AutoTileRule
             Same = condition == NeighborCondition.Same ? (byte)(Same | b) : (byte)(Same & ~b),
             Other = condition == NeighborCondition.Other ? (byte)(Other | b) : (byte)(Other & ~b),
             Filled = condition == NeighborCondition.Filled ? (byte)(Filled | b) : (byte)(Filled & ~b),
+            Target = condition == NeighborCondition.Target ? (byte)(Target | b) : (byte)(Target & ~b),
         };
     }
 
-    /// <summary>이웃 모양(같은 무리 비트 <paramref name="mask"/>, 뭐라도 있는 비트 <paramref name="filled"/>)이 조건에 맞는지.</summary>
-    public bool Matches(byte mask, byte filled) => Misses(mask, filled) == 0;
+    /// <summary>이웃 모양(같은 무리 비트 <paramref name="mask"/>, 뭐라도 있는 비트 <paramref name="filled"/>, <see cref="TargetGroup"/> 무리가 있는 비트 <paramref name="target"/>)이 조건에 맞는지.</summary>
+    public bool Matches(byte mask, byte filled, byte target = 0) => Misses(mask, filled, target) == 0;
 
     /// <summary>맞지 않는 조건 수(가장 비슷한 규칙 고르기).</summary>
-    public int Misses(byte mask, byte filled)
-        => System.Numerics.BitOperations.PopCount((uint)((Same & ~mask) | (Other & mask) | (Filled & ~filled)) & 0xFF);
+    public int Misses(byte mask, byte filled, byte target = 0)
+        => System.Numerics.BitOperations.PopCount((uint)((Same & ~mask) | (Other & mask) | (Filled & ~filled) | (Target & ~target)) & 0xFF);
 
     /// <summary>조건을 뒤집고 돌린 사본(타일을 같은 만큼 돌리면 이 조건에 맞음).</summary>
     public AutoTileRule Transformed(TileTransform t)
@@ -150,6 +182,7 @@ public sealed record AutoTileRule
             Same = AutoTileShapes.Transform(Same, t),
             Other = AutoTileShapes.Transform(Other, t),
             Filled = AutoTileShapes.Transform(Filled, t),
+            Target = AutoTileShapes.Transform(Target, t),
         };
 }
 
@@ -167,10 +200,20 @@ public sealed record AutoTileSet
     public string Group { get; init; } = "";
     /// <summary>"뭐라도 있음" 조건이 볼 층(이 층들에 어떤 타일이든 있으면 있음). 비면 모든 층. 이어지는 세트의 타일은 층과 상관없이 있음.</summary>
     public ImmutableArray<int> FilledFloors { get; init; } = [];
+    /// <summary>
+    /// 찍으면 그 칸을 비울 다른 층(땅끼리 바꿔 찍기 — 땅마다 층이 달라도 풀 위에 물을 찍으면 풀이 빠짐). 비면 세트의 층만 덮어쓴다. 세트의 층은 늘 덮어쓰므로 들어 있어도 상관없다.
+    /// </summary>
+    public ImmutableArray<int> ClearFloors { get; init; } = [];
     public ImmutableArray<AutoTileRule> Rules { get; init; } = [];
 
     /// <summary>규칙 중 "뭐라도 있음" 조건을 쓰는 것이 있는지.</summary>
     public bool UsesFilled => Rules.Any(r => r.Filled != 0);
+
+    /// <summary>규칙 중 "무리 있음" 조건을 쓰는 것이 있는지.</summary>
+    public bool UsesTarget => Rules.Any(r => r.Target != 0);
+
+    /// <summary>다른 세트의 "무리 있음" 조건이 찾는 이름: 무리, 무리가 비면 세트 이름.</summary>
+    public string JoinName => Group.Length > 0 ? Group : Name;
 
     /// <summary>"뭐라도 있음"이 층 <paramref name="floor"/>를 보는지.</summary>
     public bool CountsFloor(int floor) => FilledFloors.IsDefaultOrEmpty || FilledFloors.Contains(floor);
@@ -210,6 +253,8 @@ public sealed record Tileset
     public ImmutableArray<AutoTileSet> AutoTiles { get; init; } = [];
     /// <summary>타일셋 파일 경로(전체 경로). 없으면 프로젝트 안에만 있다.</summary>
     public string? SourcePath { get; init; }
+    /// <summary>그리는 순서(기본 = 층 차례).</summary>
+    public TileSortMode SortMode { get; init; }
 
     public Size CellSize => new(CellWidth, CellHeight);
 
@@ -256,6 +301,7 @@ public sealed record Tileset
         Tiles = other.Tiles;
         AutoTiles = other.AutoTiles;
         SourcePath = other.SourcePath;
+        SortMode = other.SortMode;
     }
 
     // 값 비교는 쓰지 않는다(찾기 표·그림 사본까지 비교하게 되므로): 같은 객체일 때만 같다.
@@ -305,6 +351,22 @@ public sealed record Tileset
     {
         if (Find(cell.Tile) is not { } def) return new Size(1, 1);
         return cell.Transform.SwapsAxes() ? new Size(def.Height, def.Width) : new Size(def.Width, def.Height);
+    }
+
+    /// <summary>칸에 놓인 타일의 그리기 묶음(없는 타일은 바닥).</summary>
+    public TileDrawClass DrawClassOf(TileCell cell) => Find(cell.Tile)?.DrawClass ?? TileDrawClass.Ground;
+
+    /// <summary>
+    /// 칸 <paramref name="at"/>에 놓인 타일의 기준선(격자 원점 기준 px y). 상하 뒤집기면 차지 칸 안에서 뒤집히고,
+    /// 90° 회전이나 기준선을 정하지 않은 타일은 차지 칸 아래.
+    /// </summary>
+    public int SortLine(Point at, TileCell cell)
+    {
+        int boxH = Footprint(cell).Height * CellHeight;
+        int local = boxH;
+        if (Find(cell.Tile) is { SortY: { } s } && !cell.Transform.SwapsAxes())
+            local = (cell.Transform & TileTransform.FlipY) != 0 ? boxH - s : s;
+        return at.Y * CellHeight + local;
     }
 
     /// <summary>

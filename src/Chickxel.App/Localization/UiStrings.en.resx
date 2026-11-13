@@ -1278,6 +1278,9 @@ Alpha is kept and fully transparent pixels are unchanged. One undo step.</value>
   <data name="S_PlayTestForm_PlayTestForm_B00519A8EF" xml:space="preserve"><value>Movement test</value></data>
   <data name="S_PlayTestForm_PlayTestForm_B566CF8EC7" xml:space="preserve"><value>Zoom (integer)</value></data>
   <data name="S_PlayTestForm_PlayTestForm_BC9D1F57FB" xml:space="preserve"><value>Move speed (px/s)</value></data>
+  <data name="PlayTest_Map" xml:space="preserve"><value>Map</value></data>
+  <data name="PlayTest_MapNone" xml:space="preserve"><value>None (empty room)</value></data>
+  <data name="PlayTest_MapInfo" xml:space="preserve"><value>Walk on a tilemap layer from an open document (visible floors only, no collision). With a tileset whose draw order is by position (top-down), the character is drawn among the standing tiles using its feet (pivot) as the base line, so it is hidden behind walls and covers them in front. Overhead tiles always show above the character.</value></data>
   <data name="S_PlayTestForm_PlayTestForm_BCE64AD0E9" xml:space="preserve"><value>Playing</value></data>
   <data name="S_PlayTestForm_PlayTestForm_C1DC7F8923" xml:space="preserve"><value>Gravity (px/s²)</value></data>
   <data name="S_PlayTestForm_PlayTestForm_CA9B701E99" xml:space="preserve"><value>Jump force (px/s)</value></data>
@@ -3392,6 +3395,15 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_ShapeCount" xml:space="preserve"><value>{0} shapes</value></data>
   <data name="EffectPreset_ShowInManager" xml:space="preserve"><value>Show in Asset Manager</value></data>
   <data name="ViewOption_SettingsTip" xml:space="preserve"><value>Settings (same as right-clicking the button)</value></data>
+  <data name="OutsideView_Bar" xml:space="preserve"><value>Outside: {0}</value></data>
+  <data name="OutsideView_Tip" xml:space="preserve"><value>Click to cycle how artwork outside the canvas is shown; use the arrow or right-click for the list. Pixels remain intact.</value></data>
+  <data name="OutsideView_Title" xml:space="preserve"><value>Artwork outside canvas</value></data>
+  <data name="OutsideView_Opaque" xml:space="preserve"><value>Opaque</value></data>
+  <data name="OutsideView_Translucent" xml:space="preserve"><value>Translucent</value></data>
+  <data name="OutsideView_Hidden" xml:space="preserve"><value>Hidden</value></data>
+  <data name="OutsideView_ShortOpaque" xml:space="preserve"><value>Opaque</value></data>
+  <data name="OutsideView_ShortTranslucent" xml:space="preserve"><value>Translucent</value></data>
+  <data name="OutsideView_ShortHidden" xml:space="preserve"><value>Hidden</value></data>
   <data name="GradientEditor_MenuTip" xml:space="preserve"><value>Gradient menu: save current, favorites, presets, manage (same as right-clicking the bar)</value></data>
   <data name="Preview_ScaleMenuTip" xml:space="preserve"><value>Zoom list (same as right-clicking the button)</value></data>
   <data name="Preview_BackgroundTip" xml:space="preserve"><value>Preview background: click for the next one (checker → black → white → gray → green → custom color); the arrow beside it or right-click opens the list</value></data>
@@ -4274,6 +4286,7 @@ If you don't, the set stays as it was.</value></data>
   <data name="TileView_FloorsDimTip" xml:space="preserve"><value>Show the floor you are placing on (the floor picked in tool settings, or the picked tile's floor in Auto) clearly and the other floors translucent. Canvas only — the preview and exports are unchanged.</value></data>
   <data name="TileView_FloorsOnly" xml:space="preserve"><value>Floor only</value></data>
   <data name="TileView_FloorsOnlyTip" xml:space="preserve"><value>Show only the floor you are placing on (the floor picked in tool settings, or the picked tile's floor in Auto) and hide the others. Canvas only — the preview and exports are unchanged.</value></data>
+  <data name="TileView_FloorsMenuTip" xml:space="preserve"><value>Click to cycle floor views; use the arrow or right-click for the list.</value></data>
   <data name="TileTool_Brush" xml:space="preserve"><value>Tile brush</value></data>
   <data name="TileTool_Eraser" xml:space="preserve"><value>Tile eraser</value></data>
   <data name="TileTool_Rect" xml:space="preserve"><value>Tile rectangle</value></data>
@@ -4393,6 +4406,19 @@ If you don't, the set stays as it was.</value></data>
   <data name="Tileset_DrawOffset" xml:space="preserve"><value>Image offset</value></data>
   <data name="Tileset_AlignBottom" xml:space="preserve"><value>Align image bottom</value></data>
   <data name="Tileset_AlignBottomTip" xml:space="preserve"><value>Aligns the image bottom with the footprint bottom (it rises upward).</value></data>
+  <data name="Tileset_SortMode" xml:space="preserve"><value>Draw order</value></data>
+  <data name="Tileset_SortByFloor" xml:space="preserve"><value>By floor (side view)</value></data>
+  <data name="Tileset_SortByPosition" xml:space="preserve"><value>By position (top-down)</value></data>
+  <data name="Tileset_SortModeInfo" xml:space="preserve"><value>By floor: floors are drawn in order, and within a floor from the lowest footprint row up. By position (top-down): each tile's draw group and base line decide the order — the ground group first (by floor, then base line), standing tiles by base line regardless of floor (a chest behind a wall is hidden, one in front covers the wall), and the overhead group last. A layer with several tilesets draws by position if any of them does.</value></data>
+  <data name="Tileset_DrawClass" xml:space="preserve"><value>Draw group</value></data>
+  <data name="Tileset_DrawGround" xml:space="preserve"><value>Ground</value></data>
+  <data name="Tileset_DrawSorted" xml:space="preserve"><value>Standing</value></data>
+  <data name="Tileset_DrawOverhead" xml:space="preserve"><value>Overhead</value></data>
+  <data name="Tileset_DrawClassInfo" xml:space="preserve"><value>When the draw order is by position (top-down), this decides when the tile is drawn. Ground: flat things like earth, water and shores (first). Standing: walls, trees and chests (they cover each other by base line). Overhead: roofs and bridge tops that always show on top (last).</value></data>
+  <data name="Tileset_SortY" xml:space="preserve"><value>Base line</value></data>
+  <data name="Tileset_SortYInfo" xml:space="preserve"><value>The height that orders tiles within a group (px from the footprint top, where the feet touch the ground). Tiles with a lower base line are drawn later and show in front. Use the footprint bottom for images rising up (trees, south walls) and the bottom of the image's lowest cell for images hanging into the cell below (north wall fronts, shore cliffs). On equal base lines, ground and overhead tiles placed in the upper cell cover the lower cell, while standing tiles placed in the lower cell show in front.</value></data>
+  <data name="Tileset_SortYFootprint" xml:space="preserve"><value>Footprint bottom</value></data>
+  <data name="Tileset_SortYImage" xml:space="preserve"><value>Bottom of image's cell</value></data>
   <data name="Tileset_DefaultFloor" xml:space="preserve"><value>Default floor</value></data>
   <data name="Tileset_TileInfo" xml:space="preserve"><value>Id {0} · image {1}×{2}px</value></data>
   <data name="Tileset_TileEditLabel" xml:space="preserve"><value>Tile settings</value></data>
@@ -4470,9 +4496,13 @@ If you don't, the set stays as it was.</value></data>
   <data name="AutoTile_Rules" xml:space="preserve"><value>Rules</value></data>
   <data name="AutoTile_RulesInfo" xml:space="preserve"><value>Each cell looks at its 8 neighbors and tries the rules from the top; the first rule that matches places its tile. Earlier rules win, so put specific rules above broad ones. If nothing matches, the rule with the fewest mismatches is used; rules without tiles are skipped. 3×3 grid: green plus = a cell of the same group must be there, red minus = must not be there, orange triangle = something must be there (the same group or any tile on the "Something on floors" — so water under a wall fills without a surface), blank = don't care. Several tiles in one rule are picked at random by weight.</value></data>
   <data name="AutoTile_AddRule" xml:space="preserve"><value>Add rule</value></data>
-  <data name="AutoTile_ConditionTip" xml:space="preserve"><value>Click an outer cell = don't care → must be there → must not be there → something there (triangle), right-click = backwards. Center = this cell</value></data>
+  <data name="AutoTile_ConditionTip" xml:space="preserve"><value>Click an outer cell = don't care → must be there → must not be there → something there (triangle) → named group there (circle), right-click = backwards. Center = this cell</value></data>
+  <data name="AutoTile_TargetGroup" xml:space="preserve"><value>Group</value></data>
+  <data name="AutoTile_TargetGroupTip" xml:space="preserve"><value>The group the circle cells look for. A cell matches when an auto tile painted with a set of this group (or this set name, for sets without a group) is there on any floor — for example a shore cliff when "Water" is below.</value></data>
   <data name="AutoTile_FilledFloors" xml:space="preserve"><value>Something on floors</value></data>
   <data name="AutoTile_FilledFloorsInfo" xml:space="preserve"><value>The floors the "something there" condition (orange triangle) looks at. Any tile on these floors (auto tiles, hand-placed tiles, cells covered by big tiles) counts. Neighbors of the same group always count, whatever the floor. All on = every floor; turn off background wall or decoration floors so they count as empty. Placing or erasing tiles by hand re-picks nearby sets that use this condition.</value></data>
+  <data name="AutoTile_ClearFloors" xml:space="preserve"><value>Clears floors</value></data>
+  <data name="AutoTile_ClearFloorsInfo" xml:space="preserve"><value>Painting with this set erases tiles on the checked floors in the painted cells. Use it in tilesets where each ground type has its own floor (higher ground covers lower ground), so painting water over grass removes the grass. The set's own floor is always overwritten, and locked floors are kept.</value></data>
   <data name="AutoTile_RuleTilesTip" xml:space="preserve"><value>Click = replace with picked tiles, Ctrl+click = add (same tile adds weight), right-click a tile = change weight or remove</value></data>
   <data name="AutoTile_RuleNoTiles" xml:space="preserve"><value>No tiles · skipped</value></data>
   <data name="AutoTile_WeightUp" xml:space="preserve"><value>Increase weight</value></data>

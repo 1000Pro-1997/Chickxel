@@ -4531,6 +4531,9 @@ echo __LOGIN_FAILED__
     <value>이동 속도 (px/s)</value>
     <comment>src/Chickxel.App\PlayTest\PlayTestForm.cs:76 · PlayTestForm · "이동 속도 (px/s)"</comment>
   </data>
+  <data name="PlayTest_Map" xml:space="preserve"><value>맵</value></data>
+  <data name="PlayTest_MapNone" xml:space="preserve"><value>없음(빈 방)</value></data>
+  <data name="PlayTest_MapInfo" xml:space="preserve"><value>열린 문서의 타일맵 레이어를 깔고 걸어 봅니다(보이는 층만, 충돌 없음). 그리는 순서가 위치(탑뷰)인 타일셋이면 캐릭터가 발(피벗) 높이를 기준선으로 세운 타일과 섞여 그려져, 벽 뒤에서는 가려지고 앞에서는 벽을 덮습니다. 머리 위 타일은 늘 캐릭터 위에 보입니다.</value></data>
   <data name="S_PlayTestForm_PlayTestForm_BCE64AD0E9" xml:space="preserve">
     <value>재생 중</value>
     <comment>src/Chickxel.App\PlayTest\PlayTestForm.cs:110 · PlayTestForm · "재생 중"</comment>
@@ -9152,6 +9155,15 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Assets_ShapeCount" xml:space="preserve"><value>모양 {0}개</value></data>
   <data name="EffectPreset_ShowInManager" xml:space="preserve"><value>에셋 관리자에서 보기</value></data>
   <data name="ViewOption_SettingsTip" xml:space="preserve"><value>설정(단추 우클릭과 같음)</value><comment>위 막대 보기 단추(격자·타일 격자·타일 모드·양파) 오른쪽 아래 삼각형 칸의 풍선.</comment></data>
+  <data name="OutsideView_Bar" xml:space="preserve"><value>밖: {0}</value><comment>위 막대: 캔버스 밖 그림 보기 상태</comment></data>
+  <data name="OutsideView_Tip" xml:space="preserve"><value>단추를 누르면 다음 캔버스 밖 그림 보기로 바뀝니다. 화살표나 우클릭으로 목록을 엽니다. 그림 데이터는 그대로입니다.</value></data>
+  <data name="OutsideView_Title" xml:space="preserve"><value>캔버스 밖 그림 보기</value></data>
+  <data name="OutsideView_Opaque" xml:space="preserve"><value>진하게 보기</value></data>
+  <data name="OutsideView_Translucent" xml:space="preserve"><value>반투명으로 보기</value></data>
+  <data name="OutsideView_Hidden" xml:space="preserve"><value>안 보기</value></data>
+  <data name="OutsideView_ShortOpaque" xml:space="preserve"><value>진하게</value></data>
+  <data name="OutsideView_ShortTranslucent" xml:space="preserve"><value>반투명</value></data>
+  <data name="OutsideView_ShortHidden" xml:space="preserve"><value>안 보기</value></data>
   <data name="GradientEditor_MenuTip" xml:space="preserve"><value>그라데이션 메뉴: 지금 것 저장·즐겨찾기·프리셋·관리(막대 우클릭과 같음)</value><comment>그라데이션 편집 막대 오른쪽 끝 메뉴 단추의 풍선.</comment></data>
   <data name="Preview_ScaleMenuTip" xml:space="preserve"><value>배율 목록(단추 우클릭과 같음)</value><comment>미리보기 배율 단추 옆 아래 화살표의 풍선.</comment></data>
   <data name="Preview_BackgroundTip" xml:space="preserve"><value>미리보기 배경: 누르면 다음 배경(체커 → 검정 → 흰색 → 회색 → 초록 → 사용자 색), 옆 화살표나 우클릭은 배경 목록</value><comment>미리보기 배경 단추 풍선.</comment></data>
@@ -10034,6 +10046,7 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="TileView_FloorsDimTip" xml:space="preserve"><value>지금 찍을 층(도구 설정에서 고른 층, 자동이면 고른 타일의 층)만 또렷이, 나머지 층은 반투명하게 봅니다. 캔버스에서만 — 미리보기·내보내기는 그대로.</value></data>
   <data name="TileView_FloorsOnly" xml:space="preserve"><value>고른 층만</value></data>
   <data name="TileView_FloorsOnlyTip" xml:space="preserve"><value>지금 찍을 층(도구 설정에서 고른 층, 자동이면 고른 타일의 층)만 보고 나머지 층은 감춥니다. 캔버스에서만 — 미리보기·내보내기는 그대로.</value></data>
+  <data name="TileView_FloorsMenuTip" xml:space="preserve"><value>단추를 누르면 다음 층 보기로 바뀝니다. 화살표나 우클릭으로 목록을 엽니다.</value></data>
   <data name="TileTool_Brush" xml:space="preserve"><value>타일 붓</value></data>
   <data name="TileTool_Eraser" xml:space="preserve"><value>타일 지우개</value></data>
   <data name="TileTool_Rect" xml:space="preserve"><value>타일 사각형</value></data>
@@ -10153,6 +10166,19 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="Tileset_DrawOffset" xml:space="preserve"><value>그림 위치</value></data>
   <data name="Tileset_AlignBottom" xml:space="preserve"><value>그림 아래 맞춤</value></data>
   <data name="Tileset_AlignBottomTip" xml:space="preserve"><value>그림 아래를 차지 칸 아래에 맞춥니다(위로 솟게).</value></data>
+  <data name="Tileset_SortMode" xml:space="preserve"><value>그리는 순서</value></data>
+  <data name="Tileset_SortByFloor" xml:space="preserve"><value>층 차례(옆 시점)</value></data>
+  <data name="Tileset_SortByPosition" xml:space="preserve"><value>위치(탑뷰)</value></data>
+  <data name="Tileset_SortModeInfo" xml:space="preserve"><value>층 차례: 층 차례대로 그리고, 층 안에서는 차지 칸 아랫줄부터 그립니다. 위치(탑뷰): 타일마다 정한 그리기 묶음과 기준선으로 그립니다 — 바닥 묶음이 먼저(층 차례, 같은 층은 기준선 차례), 세운 것은 층과 상관없이 기준선이 위인 것부터(벽 뒤의 상자는 가려지고 벽 앞의 상자는 벽을 덮음), 머리 위 묶음이 마지막. 여러 타일셋을 쌓은 레이어는 하나라도 위치로 그리면 위치로 그립니다.</value></data>
+  <data name="Tileset_DrawClass" xml:space="preserve"><value>그리기 묶음</value></data>
+  <data name="Tileset_DrawGround" xml:space="preserve"><value>바닥</value></data>
+  <data name="Tileset_DrawSorted" xml:space="preserve"><value>세운 것</value></data>
+  <data name="Tileset_DrawOverhead" xml:space="preserve"><value>머리 위</value></data>
+  <data name="Tileset_DrawClassInfo" xml:space="preserve"><value>그리는 순서가 위치(탑뷰)일 때 이 타일이 그려지는 차례입니다. 바닥: 땅·물·물가처럼 평평한 것(먼저). 세운 것: 벽·나무·상자처럼 서 있는 것(기준선 차례로 서로 가림). 머리 위: 지붕·다리 위처럼 늘 위에 보이는 것(마지막).</value></data>
+  <data name="Tileset_SortY" xml:space="preserve"><value>기준선</value></data>
+  <data name="Tileset_SortYInfo" xml:space="preserve"><value>같은 묶음 안에서 그리는 차례를 정하는 높이입니다(차지 칸 위에서 px, 발이 땅에 닿는 곳). 기준선이 아래인 것이 나중에 그려져 앞에 보입니다. 위로 솟은 그림(나무·남쪽 벽)은 차지 칸 아래로, 아래 칸으로 내려온 그림(북쪽 벽 앞면·물가 절벽)은 그림이 닿는 칸 아래로 둡니다 — 기준선이 같으면 바닥·머리 위 묶음에서는 위 칸에 놓인 타일이 아래 칸의 것을 덮고, 세운 것 묶음에서는 아래 칸에 선 것이 앞에 보입니다.</value></data>
+  <data name="Tileset_SortYFootprint" xml:space="preserve"><value>차지 칸 아래</value></data>
+  <data name="Tileset_SortYImage" xml:space="preserve"><value>그림이 닿는 칸 아래</value></data>
   <data name="Tileset_DefaultFloor" xml:space="preserve"><value>기본 층</value></data>
   <data name="Tileset_TileInfo" xml:space="preserve"><value>Id {0} · 그림 {1}×{2}px</value></data>
   <data name="Tileset_TileEditLabel" xml:space="preserve"><value>타일 설정</value></data>
@@ -10230,9 +10256,13 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="AutoTile_Rules" xml:space="preserve"><value>규칙</value></data>
   <data name="AutoTile_RulesInfo" xml:space="preserve"><value>칸마다 둘레 8칸을 보고 위에서부터 차례로 맞춰 보아 처음 맞는 규칙의 타일을 놓습니다. 앞의 규칙이 이기므로 자세한 규칙을 위에, 넓은 규칙을 아래에 두세요. 맞는 규칙이 없으면 조건이 가장 덜 어긋난 규칙을 쓰고, 타일이 없는 규칙은 건너뜁니다. 3×3 칸: 초록 더하기 = 같은 무리가 있어야 함, 빨강 빼기 = 없어야 함, 주황 세모 = 뭐라도 있어야 함(같은 무리이거나 "뭐라도 있음 층"에 어떤 타일이든 — 벽 아래 물은 수면 없이 꽉 차게), 빈 칸 = 상관없음. 한 규칙에 타일을 여러 장 넣으면 비중대로 무작위로 고릅니다.</value></data>
   <data name="AutoTile_AddRule" xml:space="preserve"><value>규칙 더하기</value></data>
-  <data name="AutoTile_ConditionTip" xml:space="preserve"><value>둘레 칸 누르기 = 상관없음 → 있어야 함 → 없어야 함 → 뭐라도 있음(세모), 오른쪽 버튼 = 거꾸로. 가운데 = 이 칸</value></data>
+  <data name="AutoTile_ConditionTip" xml:space="preserve"><value>둘레 칸 누르기 = 상관없음 → 있어야 함 → 없어야 함 → 뭐라도 있음(세모) → 정한 무리 있음(동그라미), 오른쪽 버튼 = 거꾸로. 가운데 = 이 칸</value></data>
+  <data name="AutoTile_TargetGroup" xml:space="preserve"><value>무리</value></data>
+  <data name="AutoTile_TargetGroupTip" xml:space="preserve"><value>동그라미 칸 조건이 찾는 무리 이름입니다. 그 칸에 이 이름의 무리(무리가 없는 세트는 세트 이름)로 찍은 자동 타일이 어느 층에든 있으면 맞습니다 — 예: 아래가 "물"이면 물가 절벽.</value></data>
   <data name="AutoTile_FilledFloors" xml:space="preserve"><value>뭐라도 있음 층</value></data>
   <data name="AutoTile_FilledFloorsInfo" xml:space="preserve"><value>"뭐라도 있음"(주황 세모) 조건이 볼 층입니다. 이 층들에 어떤 타일이든(자동 타일·손으로 찍은 타일·큰 타일이 덮은 칸) 있으면 있음으로 칩니다. 같은 무리 이웃은 층과 상관없이 있음입니다. 모두 켜면 모든 층, 배경 벽이나 장식 층을 끄면 그 앞에서는 없음으로 봅니다. 손으로 타일을 찍거나 지우면 둘레에서 이 조건을 쓰는 세트가 다시 골라집니다.</value></data>
+  <data name="AutoTile_ClearFloors" xml:space="preserve"><value>찍으면 지울 층</value></data>
+  <data name="AutoTile_ClearFloorsInfo" xml:space="preserve"><value>이 세트로 찍은 칸에서 고른 층의 타일을 지웁니다. 땅마다 층이 다른 타일셋(위층 땅이 아래층 땅을 덮음)에서 풀 위에 물을 찍으면 풀이 빠지게 할 때 씁니다. 세트의 층은 늘 덮어쓰고, 잠긴 층은 지우지 않습니다.</value></data>
   <data name="AutoTile_RuleTilesTip" xml:space="preserve"><value>누르기 = 고른 타일로 바꾸기, Ctrl+누르기 = 더하기(같은 타일이면 비중 +1), 타일 위 오른쪽 버튼 = 비중 바꾸기·빼기</value></data>
   <data name="AutoTile_RuleNoTiles" xml:space="preserve"><value>타일 없음 · 건너뜀</value></data>
   <data name="AutoTile_WeightUp" xml:space="preserve"><value>비중 늘리기</value></data>

@@ -44,6 +44,7 @@ public sealed class AppSettings
     public bool ShowPixelGrid { get; set; } = true;
     public bool ShowPivot { get; set; } = true;
     public bool ShowTileGrid { get; set; }
+    public OutsideImageView OutsideView { get; set; } = OutsideImageView.Translucent;
     public bool TiledMode { get; set; }
     public int TileWidth { get; set; } = 16;
     public int TileHeight { get; set; } = 16;
