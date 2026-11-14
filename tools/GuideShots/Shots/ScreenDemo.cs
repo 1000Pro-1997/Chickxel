@@ -118,8 +118,6 @@ internal static class ScreenDemo
                     p.SetCel(p.IndexOf(star), f, Sparkle(f % 2 == 0));
                     p.SetCel(p.IndexOf(gem), f, Gem());
                 }
-                // 기본 스킨 이름은 앱에 한국어("기본")로 고정되어 있어 영어 화면 그림에서는 영어 이름으로 바꿔 둔다.
-                foreach (var skin in g.Skins) if (skin.Name == "기본") p.RenameSkin(g, skin, "Default");
             }
 
             p.AddTag("idle", 0, 3);

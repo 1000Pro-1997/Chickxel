@@ -28,7 +28,6 @@
   <data name="Language_RestartNow" xml:space="preserve"><value>Restart now</value></data>
   <data name="Language_RestartLater" xml:space="preserve"><value>Later</value></data>
   <data name="Palette_UndoLabel" xml:space="preserve"><value>Palette change</value></data>
-  <data name="Ai_ModelRecommended" xml:space="preserve"><value>{0} (recommended)</value></data>
   <data name="S_AboutDialog_AboutDialog_1BCE018BCE" xml:space="preserve"><value>GitHub repository</value></data>
   <data name="S_AboutDialog_AboutDialog_2085099DF4" xml:space="preserve"><value>View open source notices</value></data>
   <data name="S_AboutDialog_AboutDialog_27606A6DB7" xml:space="preserve"><value> (development build)</value></data>
@@ -209,12 +208,9 @@ Run "{1}" in a terminal yourself, then click "Check again".</value></data>
   <data name="S_ChatWindow_UpdateProgress_ACBE1DF02D" xml:space="preserve"><value>{0}s</value></data>
   <data name="S_ChatWindow_UpdateProgress_B750FB67DF" xml:space="preserve"><value>Thinking… ({0})</value></data>
   <data name="S_ClaudeCli_AccountText_B2D662EB6E" xml:space="preserve"><value>Claude subscription (Pro, Max, etc.) account</value></data>
-  <data name="S_ClaudeCli_Aliases_32AA2E3322" xml:space="preserve"><value>Fastest</value></data>
   <data name="S_ClaudeCli_Aliases_42281164DA" xml:space="preserve"><value>Sonnet: balances capability and speed — suits most drawing tasks.</value></data>
-  <data name="S_ClaudeCli_Aliases_52F235016A" xml:space="preserve"><value>Balanced</value></data>
   <data name="S_ClaudeCli_Aliases_7FC8C1B69A" xml:space="preserve"><value>Haiku: fastest and uses the least — suits simple edits.</value></data>
   <data name="S_ClaudeCli_Aliases_E680EAD01B" xml:space="preserve"><value>Opus: the most capable model — strong at complex drawings and animation, but slower and uses more.</value></data>
-  <data name="S_ClaudeCli_Aliases_FB8E7B5244" xml:space="preserve"><value>Smartest</value></data>
   <data name="S_ClaudeCli_CheckMcpStatus_B9CFC13832" xml:space="preserve"><value>Not listed</value></data>
   <data name="S_ClaudeCli_InstallCommands_70BD2CD707" xml:space="preserve"><value>macOS · Linux (Terminal)</value></data>
   <data name="S_ClaudeCli_Models_24B7B5B99B" xml:space="preserve"><value>{0} · {1} alias</value></data>
@@ -224,7 +220,6 @@ Run "{1}" in a terminal yourself, then click "Check again".</value></data>
   <data name="S_ClaudeCli_Models_529BDF05AB" xml:space="preserve"><value>Model from settings file</value></data>
   <data name="S_ClaudeCli_Models_576D372047" xml:space="preserve"><value>Uses the model from Claude Code settings ({0}).</value></data>
   <data name="S_ClaudeCli_Models_A14F4A45A8" xml:space="preserve"><value>Uses the Claude Code default (varies by plan).</value></data>
-  <data name="S_ClaudeCli_Models_BAF4B07362" xml:space="preserve"><value>{0} · {1}</value></data>
   <data name="S_ClaudeCli_Models_C32F36E3D8" xml:space="preserve"><value>Default · {0}</value></data>
   <data name="S_ClaudeCli_PathExample_1B14AE488B" xml:space="preserve"><value>e.g. /opt/homebrew/bin/claude</value></data>
   <data name="S_ClaudeCli_RestartFresh_821977AA3D" xml:space="preserve"><value>Couldn't continue the previous conversation, so it was sent as a new one.</value></data>
@@ -1546,6 +1541,7 @@ Unavailable items (skipped):
   <data name="S_TimelinePanel_EditGroupLayout_5EF8040D39" xml:space="preserve"><value>Auto layout on for group "{0}" — parts are rearranged when added or resized</value></data>
   <data name="S_TimelinePanel_EditGroupLayout_6F86F3E62E" xml:space="preserve"><value>Changed auto layout settings for group "{0}"</value></data>
   <data name="S_TimelinePanel_FramesText_48424FAB15" xml:space="preserve"><value>Frames </value></data>
+  <data name="Timeline_FrameSpan" xml:space="preserve"><value>{0}–{1}</value></data>
   <data name="S_TimelinePanel_HintSelection_11CAA114DF" xml:space="preserve"><value>{0} — {1}: delete layers · drag a selected name to reorder</value></data>
   <data name="S_TimelinePanel_HintSelection_AA6C34F7A0" xml:space="preserve"><value>{0} — {1}: delete effects · drag an effect name to reorder (drop on another layer row to move it there)</value></data>
   <data name="S_TimelinePanel_HintSelection_C0C0B9A3F0" xml:space="preserve"><value>{0} — {1}: delete frames · drag a selected header to reorder</value></data>
@@ -2457,7 +2453,7 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Chat_Help_Example8" xml:space="preserve"><value>Enlarge the canvas to 32×32 and move the character to the center.</value></data>
   <data name="Chat_Help_Example9" xml:space="preserve"><value>Add a 1 px black outline to the character and a white hit flash on frames 3–4.</value></data>
   <data name="Chat_Help_TipsTitle" xml:space="preserve"><value>Tips</value></data>
-  <data name="Chat_Help_Tip1" xml:space="preserve"><value>Pick a model. In our tests Codex's GPT-6-Astra drew best, and Codex uses GPT-6-Astra (recommended) by default. Claude Opus is also good for complex, structural work.</value></data>
+  <data name="Chat_Help_Tip1" xml:space="preserve"><value>Models are loaded automatically from the list your CLI (Claude Code or Codex) keeps. The first entry (default) is the model set in that CLI; pick another to continue with it from the next message.</value></data>
   <data name="Chat_Help_Tip2" xml:space="preserve"><value>Turn on "Current file only" to keep the AI in the open file. It never touches locked layers, so lock the layers you want to protect.</value></data>
   <data name="Chat_Help_Tip3" xml:space="preserve"><value>Use "Attach canvas" or "Image…" to send a reference picture along.</value></data>
   <data name="Chat_Help_Tip4" xml:space="preserve"><value>Be specific about size, palette, and style. For example: "16×16, palette colors only, 1-pixel black outline, no anti-aliasing".</value></data>
@@ -3118,8 +3114,8 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="AiDraw_PaletteOnly" xml:space="preserve"><value>Use palette colors only</value></data>
   <data name="AiDraw_PaletteOnly_Text" xml:space="preserve"><value>Colors the AI paints directly (pixels, shapes, fills, color replacement) are changed to the nearest color in the active palette. Erasing (fully transparent) is allowed and semi-transparent colors become opaque. Generated images (the converter's palette settings) and layer effects are not affected.</value></data>
   <data name="AiDraw_PaletteSnapped" xml:space="preserve"><value>Snapped to palette colors: {changes}</value></data>
-  <data name="AiDraw_AutoPrompt" xml:space="preserve"><value>Automatic prompt</value></data>
-  <data name="AiDraw_AutoPrompt_Text" xml:space="preserve"><value>On (default): the subject the AI wrote is wrapped with pixel-art style, background, sprite-sheet layout and pose instructions. Off: your chat message is sent to image generation exactly as written (with attached images in order) to make one image, which is converted to pixel art without the size check, style reference or splitting into animation frames.</value></data>
+  <data name="AiDraw_AutoPrompt" xml:space="preserve"><value>Refine the generation request</value></data>
+  <data name="AiDraw_AutoPrompt_Text" xml:space="preserve"><value>On (default): your words are turned into a request suited to image generation — the subject the AI wrote is wrapped with pixel-art style, background, sprite-sheet layout and pose instructions, and the AI drawing tips you turned on are applied. Off: your chat message is sent to image generation exactly as written (with attached images in order) to make one image, which is converted to pixel art without the size check, style reference or splitting into animation frames.</value></data>
   <data name="AiDraw_ResizeResult" xml:space="preserve"><value>Result-size correction</value></data>
   <data name="AiDraw_ResizeResult_Text" xml:space="preserve"><value>Off (default): converts with the main preset's output size, and sizes in chat are only rough hints for generation. On: the converted result is fitted to the size below or the size from chat.</value></data>
   <data name="AiStatus_Title" xml:space="preserve"><value>AI Status and Settings</value></data>
@@ -3819,7 +3815,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Ai_Maker_CheckFailed" xml:space="preserve"><value>The check found {count} problem(s):</value></data>
   <data name="Ai_Script_GradientHints" xml:space="preserve"><value>Gradient hints (recommended, not problems; they don't change the check result. Unless the effect really needs one flat color, it is better to pick the color per pixel):</value></data>
   <data name="Ai_Scope_EffectMakerOnly" xml:space="preserve"><value>{tool}: not available in the Effect Maker AI. The Effect Maker AI can only look at the document and change the Effect Maker's source.</value></data>
-  <data name="Ai_Scope_ExternalOff" xml:space="preserve"><value>{tool}: not available over the external AI connection. Opening files and image generation work only after the user turns them on in Chickxel's Preferences &gt; AI Status; ask the user anything you need in your own conversation.</value></data>
+  <data name="Ai_Scope_ExternalOff" xml:space="preserve"><value>{tool}: the user turned this tool off for the external AI connection (it can be turned on in Chickxel's AI &gt; External AI Connection window). Asking the user isn't available here; ask in your own conversation.</value></data>
   <data name="AiDraw_Error_ExternalImage" xml:space="preserve"><value>Couldn't read subject_image as a PNG image. It must be a base64-encoded PNG without a data: prefix.</value></data>
   <data name="McpBridge_Unavailable" xml:space="preserve"><value>Chickxel isn't running or its external AI connection is off. Start Chickxel and turn on "Allow external AI apps" in Preferences &gt; AI Status.</value></data>
   <data name="McpBridge_Failed" xml:space="preserve"><value>Couldn't reach Chickxel: {message}</value></data>
@@ -3827,8 +3823,6 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="ExternalMcp_OpenMenu" xml:space="preserve"><value>External AI Connection…</value></data>
   <data name="ExternalMcp_Allow" xml:space="preserve"><value>Allow external AI apps</value></data>
   <data name="ExternalMcp_Info" xml:space="preserve"><value>Other AI apps on this computer (Claude Desktop, Cursor, Claude Code and others) look at and edit your drawings with the AI tools of the running Chickxel. Copy the connection settings below with the copy button on their right and paste them into that app's MCP settings; it then starts "Chickxel --mcp", which connects to this window. The connection is open only on this computer (127.0.0.1) and ends as soon as you turn it off. Each change is one undo step, and the tool that asks you questions isn't offered.</value></data>
-  <data name="ExternalMcp_OpenFile" xml:space="preserve"><value>Allow opening files (opens images and projects by path)</value></data>
-  <data name="ExternalMcp_Generate" xml:space="preserve"><value>Allow image generation (with your Codex, uses your Codex quota)</value></data>
   <data name="ExternalMcp_CopyConfig" xml:space="preserve"><value>Copy connection settings</value></data>
   <data name="ExternalMcp_CopyConfigTip" xml:space="preserve"><value>Copies the JSON to paste into another AI app's MCP settings. Copy and paste it again if you move Chickxel.</value></data>
   <data name="ExternalMcp_Copied" xml:space="preserve"><value>Copied</value></data>
@@ -4596,4 +4590,78 @@ Same compositing as the frame sheet (layer effects, current outfit; hidden and e
   <data name="Export_CopyFiles" xml:space="preserve"><value>{first} and {more} more</value><comment>first = 첫 파일 이름, more = 나머지 파일 수</comment></data>
   <data name="Export_CopySaved" xml:space="preserve"><value>Saved: {files} ({size})</value><comment>내보내기 창 결과 줄. files = 파일 이름(여럿이면 "… 외 N개"), size = 크기 합</comment></data>
   <data name="Export_CopyDone" xml:space="preserve"><value>Saved as: {files} ({size}, {folder})</value><comment>상태 표시줄. files = 파일 이름(여럿이면 "… 외 N개"), size = 크기 합, folder = 폴더</comment></data>
+  <data name="AiTools_Title" xml:space="preserve"><value>Tools the AI can use</value></data>
+  <data name="AiTools_Title_Tip" xml:space="preserve"><value>Groups of editor tools the AI may use. Tools in a group you turn off are removed from the AI's tool list and refused if called. Reading the document, viewing the image and drawing pixels are always available.</value></data>
+  <data name="AiTools_ToolList" xml:space="preserve"><value>Tools: {tools}</value></data>
+  <data name="AiTools_Frames" xml:space="preserve"><value>Frames, tags and linked cels</value></data>
+  <data name="AiTools_Frames_Tip" xml:space="preserve"><value>Add, delete and time frames, add animation tags and link cels.</value></data>
+  <data name="AiTools_Layers" xml:space="preserve"><value>Layers, groups and parts</value></data>
+  <data name="AiTools_Layers_Tip" xml:space="preserve"><value>Add layers, change their name, visibility, opacity and pivot, and build character part groups.</value></data>
+  <data name="AiTools_Skins" xml:space="preserve"><value>Skins and outfits</value></data>
+  <data name="AiTools_Skins_Tip" xml:space="preserve"><value>List, add and switch group skins (outfits) and outfit presets.</value></data>
+  <data name="AiTools_Effects" xml:space="preserve"><value>Use layer effects</value></data>
+  <data name="AiTools_Effects_Tip" xml:space="preserve"><value>Add, change, remove and bake layer effects such as outline, shadow, glow and shake. When off, the AI draws with pixels only.</value></data>
+  <data name="AiTools_ScriptEffects" xml:space="preserve"><value>Write script effects</value></data>
+  <data name="AiTools_ScriptEffects_Tip" xml:space="preserve"><value>Write and save new JavaScript layer effects, and read or change the Effect Maker source.</value></data>
+  <data name="AiTools_References" xml:space="preserve"><value>Reference library</value></data>
+  <data name="AiTools_References_Tip" xml:space="preserve"><value>Search the reference library for similar art and style rules, and save the current drawing as a reference.</value></data>
+  <data name="AiTools_FolderImages" xml:space="preserve"><value>Read drawings in the open folder</value></data>
+  <data name="AiTools_FolderImages_Tip" xml:space="preserve"><value>Find and look at projects and images under the top folder open in the file browser (including subfolders) without opening them. Files are never changed and nothing outside that folder is read.</value></data>
+  <data name="AiTools_Canvas" xml:space="preserve"><value>Canvas size and pivot</value></data>
+  <data name="AiTools_Canvas_Tip" xml:space="preserve"><value>Change the canvas size and the export pivot.</value></data>
+  <data name="AiTools_Palette" xml:space="preserve"><value>Change palette and drawing colors</value></data>
+  <data name="AiTools_Palette_Tip" xml:space="preserve"><value>Replace the active palette colors and set the primary and secondary colors.</value></data>
+  <data name="AiTools_Documents" xml:space="preserve"><value>New documents, saving and titles</value></data>
+  <data name="AiTools_Documents_Tip" xml:space="preserve"><value>Create new projects, save, and set the temporary title of unsaved documents.</value></data>
+  <data name="AiTools_OpenFile" xml:space="preserve"><value>Open files (opens images and projects by path)</value></data>
+  <data name="AiTools_OpenFile_Tip" xml:space="preserve"><value>Open an image, project or video by path in a new tab. Any file on this computer can be opened.</value></data>
+  <data name="AiTools_Generate" xml:space="preserve"><value>Image generation (with your Codex, uses your Codex quota)</value></data>
+  <data name="AiTools_Generate_Tip" xml:space="preserve"><value>Generate a picture with your own Codex login and convert it to pixel art. Uses your Codex quota.</value></data>
+  <data name="AiTools_Ask" xml:space="preserve"><value>Ask the user</value></data>
+  <data name="AiTools_Ask_Tip" xml:space="preserve"><value>Show choices above the chat input when a choice is ambiguous. When off, the AI decides or asks in its reply.</value></data>
+  <data name="AiGuide_Title" xml:space="preserve"><value>AI drawing tips</value></data>
+  <data name="AiGuide_Title_Tip" xml:space="preserve"><value>Task-specific know-how given to the AI in advance so pixel art comes out well even from short requests. Only the tips you turn on reach the AI (the system prompt in the chat, the connection instructions for external AI apps), and it follows the ones that match the request. With direct drawing they shape how it draws; with image generation they help write the generation request (not used when "Refine the generation request" in the generation options is off). Edit a tip or reset it with the pencil button; edited text is shared by the chat and the external AI connection. Changes apply from the next message.</value></data>
+  <data name="AiGuide_Basics" xml:space="preserve"><value>Drawing process (criteria, references, review)</value></data>
+  <data name="AiGuide_Basics_Tip" xml:space="preserve"><value>Turn the request and attachments into concrete criteria, fill in missing decisions, check references, then review the whole image with a score and fix it.</value></data>
+  <data name="AiGuide_Character" xml:space="preserve"><value>Characters and people</value></data>
+  <data name="AiGuide_Character_Tip" xml:space="preserve"><value>How to draw good character sprites: size and proportions (2-3 heads tall when small), silhouette, outline and shading order.</value></data>
+  <data name="AiGuide_Object" xml:space="preserve"><value>Objects and items</value></data>
+  <data name="AiGuide_Object_Tip" xml:space="preserve"><value>Icon sizes, readable silhouettes and shading per material (metal, wood, glass).</value></data>
+  <data name="AiGuide_Background" xml:space="preserve"><value>Backgrounds and tiles</value></data>
+  <data name="AiGuide_Background_Tip" xml:space="preserve"><value>Seamless tiles, lower contrast than characters, color by distance and texture as clusters.</value></data>
+  <data name="AiGuide_Motion" xml:space="preserve"><value>Drawing motions</value></data>
+  <data name="AiGuide_Motion_Tip" xml:space="preserve"><value>Frame counts per motion, key poses first, the same volume in every frame, durations and tags.</value></data>
+  <data name="AiGuide_Inbetween" xml:space="preserve"><value>In-betweening</value></data>
+  <data name="AiGuide_Inbetween_Tip" xml:space="preserve"><value>Add frames between two existing frames to smooth the motion (move along arcs, easing, redistribute durations).</value></data>
+  <data name="AiGuide_Cleanup" xml:space="preserve"><value>Clean up the current image as pixel art</value></data>
+  <data name="AiGuide_Cleanup_Tip" xml:space="preserve"><value>Make the current image cleaner pixel art without redrawing it: fewer colors, no blur or stray pixels, 1 px outline, even line steps.</value></data>
+  <data name="AiGuide_Folder" xml:space="preserve"><value>Match drawings in the open folder (consistency)</value></data>
+  <data name="AiGuide_Folder_Tip" xml:space="preserve"><value>Before drawing something new, look at related or recent drawings in the folder open in the file browser (including subfolders) and match their scale, outline, palette and shading. Needs the "Read drawings in the open folder" tool group.</value></data>
+  <data name="AiGuide_EditTip" xml:space="preserve"><value>Edit the tip text (reset to default here too)</value></data>
+  <data name="AiGuide_Edited" xml:space="preserve"><value>edited</value></data>
+  <data name="AiGuide_EditedTip" xml:space="preserve"><value>Using edited text. Reset it to the default from the pencil button.</value></data>
+  <data name="AiGuide_EditTitle" xml:space="preserve"><value>Edit tip — {name}</value></data>
+  <data name="AiGuide_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="AiGuide_EditNote" xml:space="preserve"><value>These are instructions the AI reads. English works best, but any language is fine. Empty or unchanged text uses the default.</value></data>
+  <data name="AiGuide_Reset" xml:space="preserve"><value>Reset to default</value></data>
+  <data name="AiGuide_ResetTip" xml:space="preserve"><value>Put the default prompt back into the box (kept when you save).</value></data>
+  <data name="AiFolder_NoRoot" xml:space="preserve"><value>No folder is open in the file browser. Ask the user to open one.</value></data>
+  <data name="AiFolder_Outside" xml:space="preserve"><value>{path}: paths outside the open folder can't be read.</value></data>
+  <data name="AiFolder_NotFound" xml:space="preserve"><value>{path}: no such drawing or folder in the open folder (use a path from list_folder_images).</value></data>
+  <data name="AiFolder_ReadFailed" xml:space="preserve"><value>{path}: couldn't read it — {message}</value></data>
+  <data name="AiFolder_Empty" xml:space="preserve"><value>{path}: the drawing has no frames.</value></data>
+  <data name="Ai_Scope_ChatOff" xml:space="preserve"><value>{tool}: the user turned this tool off in the AI chat's drawing settings. Do what you can without it, and ask the user to turn it on if it is needed.</value></data>
+  <data name="Chat_Update_Available" xml:space="preserve"><value>A new {product} version is available: {installed} → {latest}</value></data>
+  <data name="Chat_Update_Button" xml:space="preserve"><value>Update</value></data>
+  <data name="Chat_Update_ButtonTip" xml:space="preserve"><value>Update with the official install command in a terminal (you stay logged in). The new version is used from the next message.</value></data>
+  <data name="Chat_Update_Close" xml:space="preserve"><value>Dismiss</value></data>
+  <data name="Chat_Update_Busy" xml:space="preserve"><value>You can't update while a reply is running. Try again when the turn ends.</value></data>
+  <data name="Chat_Update_Opened" xml:space="preserve"><value>Opened a terminal to update {product}. When it finishes, the next message continues with the new version.</value></data>
+  <data name="AiGuide_UnusedByGenerate" xml:space="preserve"><value>"Refine the generation request" in the generation options is off, so your message goes to image generation as written and these tips aren't used for it.</value></data>
+  <data name="AiInstaller_Starting" xml:space="preserve"><value>Starting the {product} install/update. Nothing may show for a moment while it downloads.</value></data>
+  <data name="AiInstaller_UpdateComplete" xml:space="preserve"><value>Update complete. Close this window and return to Chickxel.</value></data>
+  <data name="AiInstaller_UpdateFailed" xml:space="preserve"><value>The update failed. Check the error above.</value></data>
+  <data name="Chat_Update_Confirm" xml:space="preserve"><value>Update {product} to the latest version in a terminal. You stay logged in.
+
+{steps}</value></data>
 </root>

@@ -160,6 +160,7 @@
   <data name="Project_DefaultGroupName" xml:space="preserve"><value>Group</value></data>
   <data name="Project_DefaultPartName" xml:space="preserve"><value>Part</value></data>
   <data name="Project_DefaultSkinName" xml:space="preserve"><value>Skin</value></data>
+  <data name="Project_BaseSkinName" xml:space="preserve"><value>Default</value></data>
   <data name="Project_DefaultOutfitName" xml:space="preserve"><value>Outfit</value></data>
   <data name="ExportPreset_ImportedSuffix" xml:space="preserve"><value> (imported)</value></data>
   <data name="Project_CopiedName" xml:space="preserve"><value>{name} copy</value></data>

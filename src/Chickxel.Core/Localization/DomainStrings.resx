@@ -168,6 +168,7 @@
   <data name="Project_DefaultGroupName" xml:space="preserve"><value>그룹</value></data>
   <data name="Project_DefaultPartName" xml:space="preserve"><value>부위</value></data>
   <data name="Project_DefaultSkinName" xml:space="preserve"><value>스킨</value></data>
+  <data name="Project_BaseSkinName" xml:space="preserve"><value>기본</value><comment>그룹의 첫 스킨 이름(새 그룹·스킨이 없던 예전 파일). 저장된 이름은 바꾸지 않음.</comment></data>
   <data name="Project_DefaultOutfitName" xml:space="preserve"><value>착장</value><comment>새 착장 이름이 비었을 때의 기본값. 저장된 착장 이름은 바꾸지 않음.</comment></data>
   <data name="ExportPreset_ImportedSuffix" xml:space="preserve"><value> (가져옴)</value><comment>기본 제공 프리셋과 이름이 겹치는 가져온 프리셋의 새 저장 이름.</comment></data>
   <data name="Project_CopiedName" xml:space="preserve"><value>{name} 복사</value><comment>name = 복제할 스킨의 이름.</comment></data>

@@ -1016,6 +1016,8 @@ public sealed partial class ChatWindow : Window
         private List<ChatItem> _items = new();
         /// <summary><see cref="_started"/>: 처음 보일 때 확인을 시작했음(다시 볼 때는 확인하지 않음). <see cref="_restored"/>: 마지막으로 보던 대화를 되살렸음.</summary>
         private bool _follow = true, _checking, _polling, _installChecking, _started, _restored;
+        /// <summary>지난번에 보낼 때의 시스템 프롬프트(그리기 프롬프트·끈 도구 포함) — 바뀌었으면 다음에 보낼 때 세션을 다시 띄운다.</summary>
+        private string? _sentPrompt;
 
         public ChatTab(ChatWindow w, AiProvider provider, int index)
         {
@@ -1085,13 +1087,14 @@ public sealed partial class ChatWindow : Window
             Grid.SetColumn(_stopButton, 5);
             buttons.Children.Add(_stopButton);
             _questionHost = new StackPanel();
+            _updateHost = new StackPanel();
             var inputArea = new Border
             {
                 Background = AppTheme.BackBrush,
                 BorderBrush = AppTheme.BorderBrush,
                 BorderThickness = new Thickness(0, 1, 0, 0),
                 Padding = new Thickness(8, 6),
-                Child = new StackPanel { Children = { _questionHost, _pending, _imageInput, buttons } },
+                Child = new StackPanel { Children = { _updateHost, _questionHost, _pending, _imageInput, buttons } },
             };
             DockPanel.SetDock(inputArea, Dock.Bottom);
             _list = new StackPanel { Spacing = 4, Margin = new Thickness(10, 8) };
@@ -1448,8 +1451,65 @@ public sealed partial class ChatWindow : Window
             if (_cliPath is not { } path) return;
             var who = status.Describe();
             SetHeader(who.Length > 0 ? who : UiStrings.S_ChatWindow_ShowChat_B46AD2AE0A, inChat: true);
-            if (_session is null) AttachSession(Provider.CreateSession(path, _w._mcp, AiCli.SystemPrompt, McpScope.Full));
+            if (_session is null) AttachSession(Provider.CreateSession(path, _w._mcp, () => AiCli.ChatSystemPrompt(_w._settings), McpScope.Full));
             EnterChat();
+            _ = ShowUpdateAsync(path);
+        }
+
+        /// <summary>CLI 업데이트 알림 칸(입력란 위 — 대화를 바꿔도 남음).</summary>
+        private readonly StackPanel _updateHost;
+
+        /// <summary>
+        /// 이 CLI에 새 버전이 있으면 입력란 위에 알림 칸(설치된·최신 버전, 업데이트 단추, 닫기)을 보인다. 실행 파일마다 앱을 켜 둔 동안 한 번 확인한다.
+        /// </summary>
+        private async Task ShowUpdateAsync(string path)
+        {
+            if (await AiUpdateCheck.CheckAsync(Provider, path) is not { } update || _w._shutdown || _cliPath != path || _updateHost.Children.Count > 0) return;
+            var text = new TextBlock
+            {
+                Text = UiStrings.FormatChat_Update_Available(product: Provider.ProductName, installed: update.Installed, latest: update.Latest),
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = AppTheme.TextBrush,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            var updateButton = Ui.Button(VectorIcon.Download, UiStrings.Chat_Update_Button, (_, _) => StartUpdate(path)).Tip(UiStrings.Chat_Update_ButtonTip);
+            var close = Ui.IconButton(VectorIcon.X, UiStrings.Chat_Update_Close, (_, _) => _updateHost.Children.Clear(), 24, 12);
+            updateButton.VerticalAlignment = close.VerticalAlignment = VerticalAlignment.Center;
+            DockPanel.SetDock(close, Dock.Right);
+            DockPanel.SetDock(updateButton, Dock.Right);
+            _updateHost.Children.Add(new Border
+            {
+                BorderBrush = AppTheme.AccentBrush,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(8, 4, 4, 4),
+                Margin = new Thickness(0, 0, 0, 6),
+                Child = new DockPanel { Children = { close, updateButton, text } },
+            });
+        }
+
+        /// <summary>
+        /// 업데이트 단추: 차례가 돌면 끝난 뒤 하라고 알린다. 아니면 확인을 받고 대화 프로세스를 끝낸 뒤(실행 중인 파일은 바꿀 수 없음) 업데이트만 하는 터미널을 연다(로그인은 건너뜀).
+        /// 다음 메시지부터 새 버전으로 다시 띄운다.
+        /// </summary>
+        private void StartUpdate(string path)
+        {
+            if (_turn is not null || _w.RunningTab is not null)
+            {
+                Ui.Info(_w, UiStrings.Chat_Update_Busy);
+                return;
+            }
+            if (Ui.Ask(_w, UiStrings.FormatChat_Update_Confirm(product: Provider.ProductName, steps: AiInstaller.Preview(Provider, login: false)), UiStrings.Chat_Update_Button,
+                    MessageButtons.OKCancel, MessageIcon.Question) != DialogResult.OK) return;
+            _session?.Restart();
+            if (!AiInstaller.OpenTerminal(Provider, out var error, login: false))
+            {
+                AddSystemLine(UiStrings.FormatAiStatus_ActionFailed(reason: error), error: true, record: false);
+                return;
+            }
+            AiUpdateCheck.Forget(path);
+            _updateHost.Children.Clear();
+            AddSystemLine(UiStrings.FormatChat_Update_Opened(product: Provider.ProductName), error: false, record: false);
         }
 
         /// <summary>시험용(<see cref="ChatWindow.ShowChatWithoutCli"/>): CLI 확인·로그인 없이 주어진 세션으로 채팅 화면을 연다.</summary>
@@ -1687,6 +1747,10 @@ public sealed partial class ChatWindow : Window
                 session.Reset();
                 if (ChatRecap.Build(_items) is { } recap) message = ChatRecap.Compose(recap, message);
             }
+            // 그리기 프롬프트·도구 설정을 바꿨으면 같은 대화를 이어 새 시스템 프롬프트·도구 목록으로 다시 띄운다(Claude는 프로세스를 띄울 때만 읽음).
+            var systemPrompt = AiCli.ChatSystemPrompt(_w._settings);
+            if (_sentPrompt is not null && _sentPrompt != systemPrompt) session.Restart();
+            _sentPrompt = systemPrompt;
             try
             {
                 _w._mcp.Tools.TurnImages = [.. attachments.Select(a => (a.Png, a.PixelArt))];

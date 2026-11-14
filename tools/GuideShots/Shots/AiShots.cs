@@ -908,7 +908,7 @@ internal static class AiShots
     public static void External(ShotKit k)
     {
         var main = k.Main(Sample(k));
-        // ①~④ AI > 외부 AI 연결 창: 외부 AI 연결 허용(켬, 옆 정보박스까지)·파일 열기 허락·그림 생성 허락·연결 설정 칸과 복사 단추.
+        // ①~④ AI > 외부 AI 연결 창: 외부 AI 연결 허용(켬, 옆 정보박스까지)·쓸 수 있는 도구·그리기 프롬프트·연결 설정 칸과 복사 단추.
         k.Dialog(() => k.Command("외부 AI 연결"), d =>
         {
             var allow = ShotKit.Get<CheckBox>(d, "_external");
@@ -933,8 +933,8 @@ internal static class AiShots
             k.Save(d, "ai-external", marks:
             [
                 Room(ShotKit.Bounds(allow, d).Inflate(new Thickness(0, 0, 26, 0)), left: 14, up: 0),
-                Room(ShotKit.Get<CheckBox>(d, "_externalOpenFile"), d, left: 14, up: 0),
-                Room(ShotKit.Get<CheckBox>(d, "_externalGenerate"), d, left: 14, up: 0),
+                Room(ShotKit.Get<Grid>(d, "_options").Children[0], d, left: 14, up: 0),
+                Room(ShotKit.Get<Grid>(d, "_options").Children[1], d, left: 14, up: 0),
                 Room((Control)ShotKit.Find<TextBox>(d).Parent!, d, left: 14, up: 0),
             ]);
         });

@@ -109,6 +109,8 @@ public abstract class AiProvider
     public abstract IReadOnlyList<(string Title, string Command)> InstallCommands { get; }
     /// <summary>경로 직접 지정 칸의 예.</summary>
     public abstract string PathExample { get; }
+    /// <summary>최신 버전을 확인할 npm 패키지(<see cref="AiUpdateCheck"/>).</summary>
+    public abstract string NpmPackage { get; }
 
     public abstract string? GetPathOverride(AppSettings settings);
     public abstract void SetPathOverride(AppSettings settings, string? path);
@@ -138,8 +140,8 @@ public abstract class AiProvider
     public virtual bool RememberResolved(AppSettings settings, string? requested, string actual) => false;
 
     /// <summary>
-    /// 대화를 만든다. <paramref name="systemPrompt"/>: 채팅 창은 <see cref="AiCli.SystemPrompt"/>, 효과 만들기 AI 칸은 <see cref="AiCli.EffectMakerSystemPrompt"/>.
+    /// 대화를 만든다. <paramref name="systemPrompt"/>: 프로세스를 띄울 때마다 부르는 시스템 프롬프트 — 채팅 창은 <see cref="AiCli.ChatSystemPrompt"/>(설정에 따라 바뀜), 효과 만들기 AI 칸은 <see cref="AiCli.EffectMakerSystemPrompt"/>.
     /// <paramref name="scope"/>: CLI에 넘길 MCP 토큰의 범위(효과 만들기 AI 칸 = <see cref="McpScope.EffectMaker"/> — 서버가 도구를 막음).
     /// </summary>
-    public abstract IChatSession CreateSession(string path, McpServer mcp, string systemPrompt, McpScope scope);
+    public abstract IChatSession CreateSession(string path, McpServer mcp, Func<string> systemPrompt, McpScope scope);
 }

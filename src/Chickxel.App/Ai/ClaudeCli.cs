@@ -20,11 +20,11 @@ public sealed partial class ClaudeProvider : AiProvider
     /// <summary>기본값(모델을 넘기지 않음)의 기억 열쇠 접두어. 뒤에 Claude Code 설정의 모델 값을 붙여, 설정을 바꾸면 따로 기억한다.</summary>
     private const string DefaultKeyPrefix = "default:";
 
-    private static readonly (string Alias, string Hint, string Tip)[] Aliases =
+    private static readonly (string Alias, string Tip)[] Aliases =
     [
-        ("opus", UiStrings.S_ClaudeCli_Aliases_FB8E7B5244, UiStrings.S_ClaudeCli_Aliases_E680EAD01B),
-        ("sonnet", UiStrings.S_ClaudeCli_Aliases_52F235016A, UiStrings.S_ClaudeCli_Aliases_42281164DA),
-        ("haiku", UiStrings.S_ClaudeCli_Aliases_32AA2E3322, UiStrings.S_ClaudeCli_Aliases_7FC8C1B69A),
+        ("opus", UiStrings.S_ClaudeCli_Aliases_E680EAD01B),
+        ("sonnet", UiStrings.S_ClaudeCli_Aliases_42281164DA),
+        ("haiku", UiStrings.S_ClaudeCli_Aliases_7FC8C1B69A),
     ];
 
     private static bool IsAlias(string model) => Aliases.Any(a => string.Equals(a.Alias, BaseModel(model), StringComparison.OrdinalIgnoreCase));
@@ -36,6 +36,7 @@ public sealed partial class ClaudeProvider : AiProvider
     public override string Name => "Claude";
     public override string ProductName => "Claude Code";
     public override string Command => "claude";
+    public override string NpmPackage => "@anthropic-ai/claude-code";
     public override string AccountText => UiStrings.S_ClaudeCli_AccountText_B2D662EB6E;
     public override IReadOnlyList<string> LoginArgs { get; } = ["auth", "login"];
     public override bool LoginTakesCode => true;
@@ -103,19 +104,19 @@ public sealed partial class ClaudeProvider : AiProvider
                     ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ClaudeCli_Models_576D372047,configured)
                     : UiStrings.S_ClaudeCli_Models_A14F4A45A8),
         };
+        // 목록은 Claude Code가 받아 둔 그대로(이름만) — 계열 설명은 풍선에만 둔다.
         if (catalog is { Main.Count: > 0 })
         {
             foreach (var m in catalog.Main)
             {
                 var alias = Aliases.FirstOrDefault(a => a.Alias == m.Family);
-                list.Add(new ModelChoice(m.Id, alias.Hint is { } hint ? $"{m.Name} · {hint}" : m.Name,
-                    alias.Tip is { } tip ? $"{tip} ({m.Id})" : $"{m.Description} ({m.Id})".Trim()));
+                list.Add(new ModelChoice(m.Id, m.Name, alias.Tip is { } tip ? $"{tip} ({m.Id})" : $"{m.Description} ({m.Id})".Trim()));
             }
         }
         else
         {
-            foreach (var (alias, hint, tip) in Aliases)
-                list.Add(new ModelChoice(alias, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ClaudeCli_Models_BAF4B07362,Learned(alias) ?? PrettyName(alias) + UiStrings.S_ClaudeCli_Models_4B9F38E324,hint), tip));
+            foreach (var (alias, tip) in Aliases)
+                list.Add(new ModelChoice(alias, Learned(alias) ?? PrettyName(alias) + UiStrings.S_ClaudeCli_Models_4B9F38E324, tip));
         }
         if (settings.AiModel is { Length: > 0 } custom && list.All(c => c.Value != custom))
         {
@@ -135,7 +136,7 @@ public sealed partial class ClaudeProvider : AiProvider
         return true;
     }
 
-    public override IChatSession CreateSession(string path, McpServer mcp, string systemPrompt, McpScope scope) => new ClaudeSession(path, mcp, systemPrompt, scope);
+    public override IChatSession CreateSession(string path, McpServer mcp, Func<string> systemPrompt, McpScope scope) => new ClaudeSession(path, mcp, systemPrompt, scope);
 
     /// <summary>Claude Code 설정 폴더(<c>$CLAUDE_CONFIG_DIR</c> 또는 <c>~/.claude</c>).</summary>
     private static string ConfigDir()
@@ -248,7 +249,7 @@ public sealed class ClaudeSession : IChatSession
 
     private readonly string _claudePath;
     private readonly McpServer _mcp;
-    private readonly string _systemPrompt;
+    private readonly Func<string> _systemPrompt;
     private readonly McpScope _scope;
     private Process? _process;
     private StreamWriter? _stdin;
@@ -268,7 +269,7 @@ public sealed class ClaudeSession : IChatSession
     /// </summary>
     private readonly HashSet<string> _rejectedToolIds = new(StringComparer.Ordinal);
 
-    public ClaudeSession(string claudePath, McpServer mcp, string systemPrompt, McpScope scope)
+    public ClaudeSession(string claudePath, McpServer mcp, Func<string> systemPrompt, McpScope scope)
     {
         _claudePath = claudePath;
         _mcp = mcp;
@@ -381,11 +382,11 @@ public sealed class ClaudeSession : IChatSession
             "--include-partial-messages",
             "--disable-slash-commands",
             "--setting-sources", "user",
-            "--system-prompt-file", WriteSystemPromptFile(_systemPrompt),
+            "--system-prompt-file", WriteSystemPromptFile(_systemPrompt()),
             "--strict-mcp-config",
             "--mcp-config", _mcp.WriteMcpConfigFile(_scope),
             "--allowedTools", AiCli.AllowsWebSearch(_scope) ? string.Join(",", ["mcp__" + McpServer.ServerName, .. AiCli.ClaudeWebTools]) : "mcp__" + McpServer.ServerName,
-            // 기본 도구는 끄되, 채팅·효과 만들기 AI 칸은 사용자가 시킬 때만 쓰는 웹 검색·웹 읽기를 남긴다(AiCli.SystemPrompt·EffectMakerSystemPrompt의 규칙).
+            // 기본 도구는 끄되, 채팅·효과 만들기 AI 칸은 사용자가 시킬 때만 쓰는 웹 검색·웹 읽기를 남긴다(AiCli.ChatSystemPrompt·EffectMakerSystemPrompt의 규칙).
             "--tools", AiCli.AllowsWebSearch(_scope) ? string.Join(",", AiCli.ClaudeWebTools) : "",
         };
         if (!string.IsNullOrEmpty(Model)) args.AddRange(["--model", Model]);

@@ -10,6 +10,9 @@ public interface IAiHost
     /// <summary>새 파일을 만들 폴더(파일 브라우저의 현재 폴더, 없으면 null).</summary>
     string? CurrentFolder { get; }
 
+    /// <summary>파일 브라우저에 연 맨 위 폴더(없으면 null) — 폴더 그림 도구(<c>list_folder_images</c>)가 이 아래만 읽는다.</summary>
+    string? RootFolder { get; }
+
     /// <summary>팔레트 열의 활성 팔레트(마지막으로 누르거나 고친 팔레트) 색. <see cref="SetPalette"/>도 활성 팔레트를 바꾼다.</summary>
     IReadOnlyList<Color32> Palette { get; }
 

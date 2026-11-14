@@ -2193,6 +2193,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         }
         ApplyEditorSettings();
         ApplyExternalMcp();
+        _mcp?.SetChatTools(Ai.McpToolAccess.From(_settings.AiChatAssist));
         ApplyShortcuts();
         _settings.Save();
         if (!string.Equals(_settings.Language, UiLanguage.Current, StringComparison.OrdinalIgnoreCase))
@@ -3436,6 +3437,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             return false;
         }
         server.ExternalToolCalled += name => ShowExternalActivity(name);
+        server.SetChatTools(Ai.McpToolAccess.From(_settings.AiChatAssist));
         _mcp = server;
         return true;
     }
@@ -3452,7 +3454,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         {
             try
             {
-                _mcp!.SetExternal(new Ai.McpExternalAccess(_settings.AiExternalOpenFile, _settings.AiExternalGenerate));
+                _mcp!.SetExternal(Ai.McpToolAccess.From(_settings.AiExternalAssist), Ai.AiCli.ExternalInstructions(_settings));
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
@@ -3466,14 +3468,14 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         ShowExternalActivity(null);
     }
 
-    /// <summary>외부 AI 연결 창(AI 메뉴): 확인하면 허락·도구 설정을 넣고 바로 적용해 저장한다.</summary>
+    /// <summary>외부 AI 연결 창(AI 메뉴): 확인하면 허락·도구·그리기 프롬프트 설정을 넣고 바로 적용해 저장한다.</summary>
     private void ShowExternalAi()
     {
-        var dlg = new Ai.ExternalAiDialog(_settings.AiExternalMcp, _settings.AiExternalOpenFile, _settings.AiExternalGenerate);
+        var dlg = new Ai.ExternalAiDialog(_settings);
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
         _settings.AiExternalMcp = dlg.ExternalMcp;
-        _settings.AiExternalOpenFile = dlg.ExternalOpenFile;
-        _settings.AiExternalGenerate = dlg.ExternalGenerate;
+        _settings.AiExternalAssist = dlg.Assist;
+        _settings.AiGuideTexts = dlg.GuideTexts;
         ApplyExternalMcp();
         SaveSettings();
     }
@@ -3568,6 +3570,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     EditorContext Ai.IAiHost.Context => _ctx;
 
     string? Ai.IAiHost.CurrentFolder => _browser.CurrentFolder ?? _browser.RootFolder;
+
+    string? Ai.IAiHost.RootFolder => _browser.RootFolder;
 
     IReadOnlyList<Color32> Ai.IAiHost.Palette => _colors.ActivePalette;
 

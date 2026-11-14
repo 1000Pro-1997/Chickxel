@@ -4,24 +4,43 @@ namespace Chickxel.App.Ai;
 
 /// <summary>
 /// 외부 AI 연결 창(AI 메뉴): 다른 AI 앱이 <c>Chickxel --mcp</c>로 켜져 있는 이 앱의 도구를 쓰게 할지(<see cref="AppSettings.AiExternalMcp"/>),
-/// 따로 허락하는 도구(파일 열기·그림 생성 — 켰을 때만), 그 앱에 붙여 넣을 연결 설정 복사. 확인을 누르면 부른 쪽이 설정에 넣고 바로 적용한다.
+/// 쓸 수 있는 도구 묶음과 그 앱에 줄 그리기 프롬프트(<see cref="AppSettings.AiExternalAssist"/> — 켰을 때만), 그 앱에 붙여 넣을 연결 설정 복사.
+/// 확인을 누르면 부른 쪽이 설정에 넣고 바로 적용한다(프롬프트 글 고침도 확인할 때 남음).
 /// "연결 방법"을 펼치면 연결 구조·실행 명령·앱별 등록 곳을 적은 안내(<see cref="McpBridge.ConnectionGuide"/>)가 보이고, 통째로 복사해 AI 앱에 붙여 넣을 수 있다.
 /// </summary>
 internal sealed class ExternalAiDialog : DialogBase
 {
-    private readonly CheckBox _external, _externalOpenFile, _externalGenerate;
+    private readonly CheckBox _external;
+    private readonly AiAssistSettings _assist;
+    private readonly Dictionary<string, string> _texts;
+    /// <summary>도구 묶음(왼쪽)·그리기 프롬프트(오른쪽) 칸 — 연결을 허락했을 때만 쓸 수 있음.</summary>
+    private readonly Grid _options;
 
     /// <summary>연결 설정 칸과 연결 안내의 폭(DIP).</summary>
     private const double PanelWidth = 560;
 
-    internal ExternalAiDialog(bool externalMcp, bool externalOpenFile, bool externalGenerate) : base(UiStrings.ExternalMcp_Title)
+    internal ExternalAiDialog(AppSettings settings) : base(UiStrings.ExternalMcp_Title)
     {
         this.HelpAt("ai-external", shot: "ai-external");
-        _external = Ui.Check(UiStrings.ExternalMcp_Allow, externalMcp);
-        _externalOpenFile = Ui.Check(UiStrings.ExternalMcp_OpenFile, externalOpenFile);
-        _externalGenerate = Ui.Check(UiStrings.ExternalMcp_Generate, externalGenerate);
-        _externalOpenFile.Margin = _externalGenerate.Margin = new Thickness(22, 0, 0, 0);
-        void SyncExternal() => _externalOpenFile.IsEnabled = _externalGenerate.IsEnabled = _external.On();
+        _external = Ui.Check(UiStrings.ExternalMcp_Allow, settings.AiExternalMcp);
+        _assist = settings.AiExternalAssist.Clone();
+        _texts = new Dictionary<string, string>(settings.AiGuideTexts);
+        var assist = new AiAssistView(() => _assist, () => _texts, McpScope.External, Ui.InfoBadge, () => { });
+        Control Column(string title, string tip, Control content) => new StackPanel
+        {
+            Children = { Ui.Row(Ui.Label(title, bold: true), Ui.InfoBadge(tip)), content },
+        };
+        var tools = Column(UiStrings.AiTools_Title, UiStrings.AiTools_Title_Tip, assist.Tools);
+        var guides = Column(UiStrings.AiGuide_Title, UiStrings.AiGuide_Title_Tip, assist.Guides);
+        guides.Margin = new Thickness(16, 0, 0, 0);
+        Grid.SetColumn(guides, 1);
+        var options = _options = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,Auto"),
+            Margin = new Thickness(22, 4, 0, 4),
+            Children = { tools, guides },
+        };
+        void SyncExternal() => options.IsEnabled = _external.On();
         _external.IsCheckedChanged += (_, _) => SyncExternal();
         SyncExternal();
         // 연결 설정: 고칠 수 없는 입력칸에 붙여 넣을 JSON을 보이고, 오른쪽 아이콘 단추로 복사한다(복사하면 잠깐 체크 표시).
@@ -93,8 +112,7 @@ internal sealed class ExternalAiDialog : DialogBase
             guideArrow.Icon = guide.IsVisible ? VectorIcon.ChevronDown : VectorIcon.ChevronRight;
         };
         Body.Children.Add(Ui.Row(_external, Ui.InfoBadge(UiStrings.ExternalMcp_Info)));
-        Body.Children.Add(_externalOpenFile);
-        Body.Children.Add(_externalGenerate);
+        Body.Children.Add(options);
         var configLabel = Ui.Label(UiStrings.ExternalMcp_ConfigLabel);
         configLabel.Margin = new Thickness(2, 8, 2, 0);
         Body.Children.Add(configLabel);
@@ -106,9 +124,9 @@ internal sealed class ExternalAiDialog : DialogBase
     /// <summary>외부 AI 연결을 허락할지(<see cref="AppSettings.AiExternalMcp"/>).</summary>
     public bool ExternalMcp => _external.On();
 
-    /// <summary>외부 AI 연결에서 파일 열기를 허락할지.</summary>
-    public bool ExternalOpenFile => _externalOpenFile.On();
+    /// <summary>외부 AI 연결에서 끈 도구 묶음·그리기 프롬프트.</summary>
+    public AiAssistSettings Assist => _assist;
 
-    /// <summary>외부 AI 연결에서 그림 생성을 허락할지.</summary>
-    public bool ExternalGenerate => _externalGenerate.On();
+    /// <summary>고친 그리기 프롬프트 글(채팅과 같이 씀).</summary>
+    public Dictionary<string, string> GuideTexts => _texts;
 }

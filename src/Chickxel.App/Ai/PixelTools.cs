@@ -73,6 +73,8 @@ public sealed partial class PixelTools
     private static readonly HashSet<string> LibraryTools = ["add_reference", "set_reference_info", "save_script_effect", "set_effect_maker_source"];
     /// <summary>다른 문서를 열거나 만드는 도구(범위가 있으면 거부).</summary>
     private static readonly HashSet<string> FileSwitchTools = ["open_file", "new_project"];
+    /// <summary>열린 폴더의 그림을 읽기만 하는 도구(문서를 고치지 않으므로 "지금 그림만"이어도 됨 — 효과 만들기 범위에는 넣지 않음).</summary>
+    private static readonly HashSet<string> FolderReadTools = [ListFolderTool, GetFolderImageTool];
     /// <summary>
     /// 효과 만들기 AI 칸(<see cref="McpScope.EffectMaker"/>)이 쓸 수 있는 도구: 읽기 도구(<see cref="ReadTools"/> — 문서·참고 자료를 보기만 함,
     /// 효과 만들기 원문 읽기·검증 포함)와 효과 만들기 편집기 원문 바꾸기. 문서·파일·팔레트·참고 자료·에셋을 바꾸는 도구는 MCP 서버가 막는다.
@@ -441,6 +443,7 @@ public sealed partial class PixelTools
         .. EffectMakerToolDefinitions(),
         .. ReferenceToolDefinitions(),
         .. GenerateToolDefinitions(),
+        .. FolderToolDefinitions(),
         .. PivotToolDefinitions()]);
 
     private static JsonObject Tool(string name, string description, JsonObject properties, params string[] required)
@@ -510,7 +513,7 @@ public sealed partial class PixelTools
         try
         {
             var a = arguments;
-            if (CallScope is { } scope && !ReadTools.Contains(name) && !LibraryTools.Contains(name))
+            if (CallScope is { } scope && !ReadTools.Contains(name) && !LibraryTools.Contains(name) && !FolderReadTools.Contains(name))
             {
                 if (FileSwitchTools.Contains(name)) throw new ToolError(UiStrings.Ai_Scope_FileOnly);
                 if (!ReferenceEquals(Ctx.Project, scope.Project)) throw new ToolError(UiStrings.Ai_Scope_OtherDocument);
@@ -574,6 +577,8 @@ public sealed partial class PixelTools
                 "get_style_rules" => GetStyleRules(),
                 "add_reference" => AddReference(a),
                 "set_reference_info" => SetReferenceInfo(a),
+                ListFolderTool => ListFolderImages(a),
+                GetFolderImageTool => GetFolderImage(a),
                 _ => TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_Call_A9A0750467,name), isError: true),
             };
         }

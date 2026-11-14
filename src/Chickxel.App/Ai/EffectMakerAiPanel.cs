@@ -215,7 +215,7 @@ internal sealed class EffectMakerAiPanel : Border
             _cliPath = path;
             var who = status.Describe();
             _status.Text = who.Length > 0 ? $"{provider.Name} · {who}" : provider.Name;
-            if (_session is null) AttachSession(provider.CreateSession(path, _mcp, AiCli.EffectMakerSystemPrompt, McpScope.EffectMaker));
+            if (_session is null) AttachSession(provider.CreateSession(path, _mcp, () => AiCli.EffectMakerSystemPrompt, McpScope.EffectMaker));
             _body.Child = _chatPanel;
             UpdateInputState();
             FocusInput();

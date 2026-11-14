@@ -508,9 +508,6 @@ internal static class TilemapShots
         k.Settle(500);
         var p = Project(main);
         var group = p.Layers.First(l => l.Kind == LayerKind.Group);
-        // 첫 스킨 이름은 앱 코드에 한국어로 고정돼 있어 영어 화면 그림에서만 바꾼다(가이드-이미지.md "찍으면서 발견한 앱 문제")
-        p.RenameSkin(group, group.Skins[0], "Default");
-        k.Settle(300);
         var parts = p.Layers.Where(l => l.Parent == group).ToList();
         var tl = Timeline(main);
         var b = ShotKit.Bounds(tl, main);

@@ -23,6 +23,7 @@ public sealed partial class CodexProvider : AiProvider
     public override string Name => "Codex";
     public override string ProductName => "Codex CLI";
     public override string Command => "codex";
+    public override string NpmPackage => "@openai/codex";
     public override string AccountText => UiStrings.S_CodexCli_AccountText_1E08625C6D;
     public override IReadOnlyList<string> LoginArgs { get; } = ["login"];
     public override bool LoginTakesCode => false;
@@ -92,18 +93,13 @@ public sealed partial class CodexProvider : AiProvider
             new(null, configured is not null ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_CodexCli_Models_7FE99F2479,Display(configured)) : UiStrings.S_CodexCli_Models_7DA9DF3E69,
                 configured is not null ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_CodexCli_Models_C805CAE060,configured) : UiStrings.S_CodexCli_Models_BB8E3AA96C),
         };
-        // 추천 모델은 이름 옆에 "추천"을 붙이고, 받아 둔 모델 목록에 없어도 고를 수 있게 넣는다.
-        string Name(string slug, string name) => slug == AppSettings.RecommendedCodexModel
-            ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.Ai_ModelRecommended, name) : name;
-        foreach (var (slug, name, description) in models) list.Add(new ModelChoice(slug, Name(slug, name), description));
-        if (list.All(c => c.Value != AppSettings.RecommendedCodexModel))
-            list.Insert(1, new ModelChoice(AppSettings.RecommendedCodexModel, Name(AppSettings.RecommendedCodexModel, "GPT-6-Astra"), null));
+        foreach (var (slug, name, description) in models) list.Add(new ModelChoice(slug, name, description));
         if (settings.CodexModel is { Length: > 0 } custom && list.All(c => c.Value != custom))
             list.Add(new ModelChoice(custom, custom, UiStrings.S_CodexCli_Models_58FF126F54));
         return list;
     }
 
-    public override IChatSession CreateSession(string path, McpServer mcp, string systemPrompt, McpScope scope) => new CodexSession(path, mcp, systemPrompt, scope);
+    public override IChatSession CreateSession(string path, McpServer mcp, Func<string> systemPrompt, McpScope scope) => new CodexSession(path, mcp, systemPrompt, scope);
 
     /// <summary>Codex 설정 폴더(<c>$CODEX_HOME</c> 또는 <c>~/.codex</c>).</summary>
     internal static string CodexHome
@@ -196,7 +192,7 @@ public sealed class CodexSession : IChatSession
 
     private readonly string _codexPath;
     private readonly McpServer _mcp;
-    private readonly string _systemPrompt;
+    private readonly Func<string> _systemPrompt;
     private readonly McpScope _scope;
     private readonly HashSet<string> _shownNotices = new(StringComparer.Ordinal);
     private Process? _process;
@@ -209,7 +205,7 @@ public sealed class CodexSession : IChatSession
     private McpCounters _mcpSince;
     private bool _mcpProblemShown;
 
-    public CodexSession(string codexPath, McpServer mcp, string systemPrompt, McpScope scope)
+    public CodexSession(string codexPath, McpServer mcp, Func<string> systemPrompt, McpScope scope)
     {
         _codexPath = codexPath;
         _mcp = mcp;
@@ -354,7 +350,7 @@ public sealed class CodexSession : IChatSession
         yield return AiCli.AllowsWebSearch(_scope) ? "web_search=\"live\"" : "web_search=\"disabled\"";
         yield return "notify=[]";
         yield return "project_doc_max_bytes=0";
-        yield return "developer_instructions=" + TomlString(_systemPrompt);
+        yield return "developer_instructions=" + TomlString(_systemPrompt());
         foreach (var feature in FeatureOverrides(_codexPath, imageGeneration: false)) yield return feature;
     }
 

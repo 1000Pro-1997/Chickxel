@@ -200,15 +200,8 @@ public sealed class AppSettings
     public Dictionary<string, string>? ClaudeResolvedModels { get; set; }
     /// <summary>ffmpeg 실행 파일 경로를 직접 정함(null = PATH·흔한 설치 위치에서 찾음). 영상·AVIF·HEIC 열기에 쓴다.</summary>
     public string? FfmpegPath { get; set; }
-    /// <summary>추천 Codex 모델(목록에 "추천"으로 표시, 새 설정의 기본값).</summary>
-    public const string RecommendedCodexModel = "gpt-6-astra";
-    /// <summary>Codex 모델(null = Codex 설정의 기본값). 처음엔 <see cref="RecommendedCodexModel"/>.</summary>
-    public string? CodexModel { get; set; } = RecommendedCodexModel;
-    /// <summary>
-    /// Codex 기본 모델을 추천 모델로 옮겼는지. 예전 설정에서 고르지 않은 채(null) 남은 Codex 모델을 한 번만 추천 모델로 바꾸고,
-    /// 그 뒤에 사용자가 "기본값(Codex 설정)"을 고르면 그대로 둔다.
-    /// </summary>
-    public bool CodexRecommendedApplied { get; set; }
+    /// <summary>Codex 모델(null = Codex 설정의 기본값). 목록은 Codex가 받아 둔 모델에서 불러온다.</summary>
+    public string? CodexModel { get; set; }
     /// <summary>codex 실행 파일 경로를 직접 정함(null = 자동으로 찾음).</summary>
     public string? CodexPath { get; set; }
     public int ChatX { get; set; } = -1;
@@ -220,6 +213,12 @@ public sealed class AppSettings
     public bool ChatCenterOnOpen { get; set; } = true;
     /// <summary>AI 그리기 설정(채팅의 설정 칸 — 그리는 방식, 생성·변환 옵션).</summary>
     public Chickxel.Core.AiDraw.AiDrawSettings AiDraw { get; set; } = new();
+    /// <summary>AI 채팅에서 끈 도구 묶음·그리기 프롬프트(채팅의 설정 칸).</summary>
+    public Ai.AiAssistSettings AiChatAssist { get; set; } = new();
+    /// <summary>외부 AI 연결에서 끈 도구 묶음·그리기 프롬프트(외부 AI 연결 창 — 처음엔 파일 열기·그림 생성이 꺼짐).</summary>
+    public Ai.AiAssistSettings AiExternalAssist { get; set; } = Ai.AiAssistSettings.ExternalDefault();
+    /// <summary>사용자가 고친 그리기 프롬프트 글(<see cref="Ai.AiGuide"/> 이름 → 글, 없으면 기본 글). 채팅과 외부 AI 연결이 같이 쓴다.</summary>
+    public Dictionary<string, string> AiGuideTexts { get; set; } = new();
     /// <summary>예전 기본 "그림 생성"을 새 기본 "자동"으로 한 번 옮겼는지(이후 사용자가 다시 그림 생성을 골라도 보존).</summary>
     public bool AiDrawAutoDefaultApplied { get; set; } = true;
     /// <summary>
@@ -231,10 +230,12 @@ public sealed class AppSettings
     /// (<see cref="Ai.McpScope.External"/>). 기본 끔.
     /// </summary>
     public bool AiExternalMcp { get; set; }
-    /// <summary>외부 AI 연결에서 <c>open_file</c>(경로를 받아 아무 그림·프로젝트나 엶)을 허락한다. 기본 끔.</summary>
-    public bool AiExternalOpenFile { get; set; }
-    /// <summary>외부 AI 연결에서 <c>generate_pixel_art</c>(내 Codex로 그림 생성 — Codex 사용량을 씀)를 허락한다. 기본 끔.</summary>
-    public bool AiExternalGenerate { get; set; }
+    /// <summary>예전 버전의 외부 AI 연결 파일 열기 허락(읽기만 — <see cref="Load"/>가 <see cref="AiExternalAssist"/>로 옮기고 다시 쓰지 않음).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? AiExternalOpenFile { get; set; }
+    /// <summary>예전 버전의 외부 AI 연결 그림 생성 허락(읽기만 — <see cref="Load"/>가 <see cref="AiExternalAssist"/>로 옮기고 다시 쓰지 않음).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? AiExternalGenerate { get; set; }
 
     // AI 그림 픽셀로 정리
     /// <summary>마지막 단계 설정(JSON — <see cref="Chickxel.Core.Pixelate.PixelatePresets.SerializeSettings"/>). null = 기본.</summary>
@@ -395,17 +396,18 @@ public sealed class AppSettings
             s.Palette = null;
         }
         if (s.Shortcuts is { } keys && keys.Remove("AI/Claude 채팅", out var chat)) keys.TryAdd("AI/AI 채팅", chat);
-        if (!s.CodexRecommendedApplied)
-        {
-            s.CodexModel ??= RecommendedCodexModel;
-            s.CodexRecommendedApplied = true;
-        }
         if (!s.ReferencesExamplesOffApplied)
         {
             s.ReferencesShowExamples = false;
             s.ReferencesExamplesOffApplied = true;
         }
         s.AiDraw ??= new();
+        s.AiChatAssist ??= new();
+        s.AiExternalAssist ??= Ai.AiAssistSettings.ExternalDefault();
+        s.AiGuideTexts ??= new();
+        if (s.AiExternalOpenFile is { } openFile) s.AiExternalAssist.SetTool(Ai.AiToolGroup.OpenFile, openFile);
+        if (s.AiExternalGenerate is { } generate) s.AiExternalAssist.SetTool(Ai.AiToolGroup.Generate, generate);
+        s.AiExternalOpenFile = s.AiExternalGenerate = null;
         if (!s.AiDrawAutoDefaultApplied)
         {
             if (s.AiDraw.Mode == Chickxel.Core.AiDraw.AiDrawMode.Generate) s.AiDraw.Mode = Chickxel.Core.AiDraw.AiDrawMode.Auto;

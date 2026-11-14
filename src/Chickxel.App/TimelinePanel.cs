@@ -233,7 +233,7 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
         {
             int j = i;
             while (j + 1 < frames.Count && frames[j + 1] == frames[j] + 1) j++;
-            parts.Add(i == j ? $"{frames[i] + 1}" : $"{frames[i] + 1}~{frames[j] + 1}");
+            parts.Add(i == j ? $"{frames[i] + 1}" : string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.Timeline_FrameSpan, frames[i] + 1, frames[j] + 1));
             i = j + 1;
         }
         return UiStrings.S_TimelinePanel_FramesText_48424FAB15 + (parts.Count > 4 ? string.Join(", ", parts.Take(4)) + ", …" : string.Join(", ", parts));

@@ -2,6 +2,24 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.129 (2026-11-14)
+### AI: drawing tips and tool switches
+- The AI chat's drawing settings panel and the **AI > External AI Connection** window have **AI drawing tips**: drawing process, characters and people, objects and items, backgrounds and tiles, drawing motions, in-betweening, cleaning up the current image as pixel art, and matching drawings in the open folder. Turn each on or off; short requests come out with sensible sizes, proportions and shading order.
+- The pencil button beside a tip edits its text or resets it with **Reset to default**. Edited text is shared by the chat and the external connection and applies from the next message.
+- The generation option **Automatic prompt** is now **Refine the generation request**. When it is off for Codex image generation, your message goes to generation as written, so the AI drawing tips section is dimmed with a note explaining why.
+- **Tools the AI can use** turns tool groups on or off separately (layer effects, script effects, reference library, skins, opening files and more). Turned-off tools are removed from the AI's tool list and refused if called. The external connection's open-file and image-generation permissions moved into this list and start off.
+- New tools `list_folder_images` and `get_folder_image` let the AI browse drawings in the folder open in the file browser (including subfolders) without opening them, to match their style. Nothing outside that folder is read.
+
+### AI: model list and CLI update notice
+- The model list shows exactly what Claude Code and Codex keep, without the "recommended" mark or the hints after names (smartest and so on). New settings use the Codex default model.
+- When the chat opens and a newer CLI version exists, a notice above the input shows the installed and latest versions with an **Update** button that runs the official install command in a terminal without logging in again; the next message uses the new version.
+- On Windows, the install/update terminal no longer inherits PowerShell 7's module path from a Chickxel started from pwsh, which made the Claude Code installer fail with `Get-FileHash` not found. It also prints a start message so the window isn't blank while downloading.
+
+### Fixes
+- A new group's first skin is named in the UI language (**Default** in English, **기본** in Korean) instead of always Korean. Names already saved in projects stay as they are.
+- Selecting a tilemap layer no longer leaves pivot marks and their labels on the canvas, since the pivot toggle and pivot tool are hidden in tilemap mode.
+- The timeline's selected-frame range uses the same range separator as its menu items in each language.
+
 ## v1.14.128 (2026-11-14)
 ### Tilemap editing
 - Tilemap rows in the timeline show a small grass-block vector icon immediately before the layer name, including in compact view; inline renaming starts after the icon.

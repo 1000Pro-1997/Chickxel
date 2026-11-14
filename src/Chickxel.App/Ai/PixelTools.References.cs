@@ -193,20 +193,30 @@ public sealed partial class PixelTools
         {
             throw new ToolError(UiStrings.FormatRefs_Tool_ReadFailed(id: item.Id, message: e.Message));
         }
-        int count = frames.Images.Count;
-        int? frame = OptIndex(a, "frame", count, UiStrings.S_PixelTools_Frame_CAED4A473B);
-        var mode = OptEnum(a, "as", "image", "pixels") ?? "image";
         var info = new JsonObject
         {
             ["id"] = item.Id, ["title"] = item.Title, ["description"] = item.Description, ["tags"] = Strings([.. item.Tags]), ["kind"] = item.Kind,
-            ["width"] = item.Width, ["height"] = item.Height, ["frames"] = count,
-            ["frameDurationsMs"] = new JsonArray([.. frames.DurationsMs.Select(d => (JsonNode?)d)]),
+            ["width"] = item.Width, ["height"] = item.Height,
         };
+        return FramesView(frames.Images, frames.DurationsMs, info, a);
+    }
+
+    /// <summary>
+    /// 그림 프레임 보기(get_reference·get_folder_image): as="image"(기본)는 키운 그림 — 프레임이 여럿이고 <c>frame</c>이 없으면 나란히 한 줄,
+    /// as="pixels"는 한 프레임의 정확한 픽셀 글(최대 128×128). <paramref name="info"/>에 프레임 수·길이·보인 것을 더해 결과 글로 쓴다.
+    /// </summary>
+    private static JsonObject FramesView(IReadOnlyList<PixelImage> images, IReadOnlyList<int> durationsMs, JsonObject info, JsonObject? a)
+    {
+        int count = images.Count;
+        int? frame = OptIndex(a, "frame", count, UiStrings.S_PixelTools_Frame_CAED4A473B);
+        var mode = OptEnum(a, "as", "image", "pixels") ?? "image";
+        info["frames"] = count;
+        info["frameDurationsMs"] = new JsonArray([.. durationsMs.Select(d => (JsonNode?)d)]);
 
         if (mode == "pixels")
         {
             int f = frame ?? 0;
-            var src = frames.Images[f];
+            var src = images[f];
             if (src.Width > MaxPixelRegion || src.Height > MaxPixelRegion)
                 throw new ToolError(UiStrings.FormatRefs_Tool_TooLargeForPixels(width: src.Width, height: src.Height, max: MaxPixelRegion));
             info["frame"] = f;
@@ -216,15 +226,15 @@ public sealed partial class PixelTools
         PixelImage image;
         if (frame is not null || count == 1)
         {
-            image = frames.Images[frame ?? 0];
+            image = images[frame ?? 0];
             info["frame"] = frame ?? 0;
         }
         else
         {
             int shown = Math.Min(count, MaxStripFrames);
-            int w = frames.Images[0].Width, h = frames.Images[0].Height;
+            int w = images[0].Width, h = images[0].Height;
             image = new PixelImage(w * shown, h);
-            for (int i = 0; i < shown; i++) image.Blit(frames.Images[i], i * w, 0);
+            for (int i = 0; i < shown; i++) image.Blit(images[i], i * w, 0);
             info["strip"] = $"frames 0-{shown - 1} side by side, each {w}x{h}";
         }
         var (png, zoom) = Enlarge(image, OptInt(a, "scale", 1, 16));

@@ -21,7 +21,7 @@ public sealed partial class ChatWindow
     private Control? _animWarning;
     private NumericUpDown? _sizeCustom;
     private CheckBox? _removeBackground, _autoOptimize, _paletteOnly, _resizeResult, _autoPrompt;
-    /// <summary>자동 프롬프트를 끄면 쓰이지 않는 칸(스타일 참고, 애니메이션 생성 방식, 기본 프레임 수).</summary>
+    /// <summary>"생성 요청 다듬기"(자동 프롬프트)를 끄면 쓰이지 않는 칸(스타일 참고, 애니메이션 생성 방식, 기본 프레임 수).</summary>
     private readonly List<Control> _autoPromptRows = [];
     /// <summary>결과 크기 칸(결과 크기 보정이 켜졌을 때만 쓸 수 있음).</summary>
     private Control? _sizeRow;
@@ -33,6 +33,10 @@ public sealed partial class ChatWindow
     /// <summary>설정 칸 값을 채우는 중(바뀜 이벤트로 설정을 고치지 않게).</summary>
     private bool _drawFilling;
     private bool _codexChecking;
+    /// <summary>그리기 프롬프트·도구 묶음 켜고 끄기(<see cref="AppSettings.AiChatAssist"/>).</summary>
+    private AiAssistView? _assistView;
+    /// <summary>"생성 요청 다듬기"를 끈 Codex 그림 생성이라 AI 그리기 요령이 쓰이지 않는다는 안내.</summary>
+    private TextBlock? _guidesUnused;
 
     /// <summary>그림 생성 진행·결과는 차례가 도는 탭에 붙인다(차례가 없으면 버림 — 멈춘 뒤 늦게 온 것).</summary>
     private void OnAiDrawProgress(string text) => RunningTab?.OnAiDrawProgress(text);
@@ -118,6 +122,14 @@ public sealed partial class ChatWindow
         _paletteRow = WithInfo(_paletteOnly, UiStrings.AiDraw_PaletteOnly_Text).HelpAt(page, anchor: "Use palette colors only");
         _paletteRow.Margin = new Thickness(22, 0, 0, 0);
         stack.Children.Add(_paletteRow);
+        // AI 그리기 요령: 대충 말해도 잘 나오게 시스템 프롬프트에 붙이는 작업별 지시(켜고 끄기·글 고치기). 모든 방식에 쓰되,
+        // Codex 그림 생성에서 "생성 요청 다듬기"를 끄면 내 말이 그대로 생성에 가서 쓰이지 않으므로 흐리게 하고 까닭을 보인다.
+        _assistView = new AiAssistView(() => _settings.AiChatAssist, () => _settings.AiGuideTexts, McpScope.Full, t => InfoIcon(t), OnAssistChanged);
+        stack.Children.Add(new Border { Height = 1, Background = AppTheme.BorderBrush, Margin = new Thickness(0, 4) });
+        stack.Children.Add(WithInfo(TitleText(UiStrings.AiGuide_Title), UiStrings.AiGuide_Title_Tip).HelpAt(page, anchor: "The drawing settings panel"));
+        _guidesUnused = WrapText(UiStrings.AiGuide_UnusedByGenerate, dim: true);
+        stack.Children.Add(_guidesUnused);
+        stack.Children.Add(_assistView.Guides.HelpAt(page, anchor: "The drawing settings panel"));
         _codexStatus = WrapText("", dim: true).HelpAt(page, anchor: "Drawing settings");
         // 그림 생성을 골랐을 때만: 생성 옵션.
         var options = new StackPanel { Spacing = 6 };
@@ -189,6 +201,10 @@ public sealed partial class ChatWindow
         _autoPromptRows.AddRange([styleRow, _styleRefCombo, framesHeader, animRow, frames]);
         _generateOptions = options;
         stack.Children.Add(options);
+        // 쓸 수 있는 도구: 끈 묶음은 MCP 서버가 목록에서 빼고 호출도 거부한다.
+        stack.Children.Add(new Border { Height = 1, Background = AppTheme.BorderBrush, Margin = new Thickness(0, 4) });
+        stack.Children.Add(WithInfo(TitleText(UiStrings.AiTools_Title), UiStrings.AiTools_Title_Tip).HelpAt(page, anchor: "The drawing settings panel"));
+        stack.Children.Add(_assistView.Tools.HelpAt(page, anchor: "The drawing settings panel"));
 
         var scroll = new ScrollViewer
         {
@@ -299,7 +315,15 @@ public sealed partial class ChatWindow
             _drawFilling = false;
         }
         UpdateDrawOptionsEnabled();
+        _assistView?.Refresh();
         if (checkCodex) _ = CheckCodexAsync();
+    }
+
+    /// <summary>그리기 프롬프트·도구 묶음을 바꿈: 채팅의 도구 허락을 바로 바꾸고, 같이 쓰는 프롬프트 글이 바뀌었을 수 있어 외부 연결 안내도 맞춘다(대화는 다음에 보낼 때 다시 띄움).</summary>
+    private void OnAssistChanged()
+    {
+        _mcp.SetChatTools(McpToolAccess.From(_settings.AiChatAssist));
+        _mcp.UpdateExternalInstructions(AiCli.ExternalInstructions(_settings));
     }
 
     /// <summary>"지정" 목록: 참고 자료 보관소의 그림(사용자 자료 다음 기본 예시). 보관소를 열 수 없으면 비움.</summary>
@@ -336,6 +360,9 @@ public sealed partial class ChatWindow
         _animWarning!.IsVisible = mode == AiDrawMode.Generate && _animCombo.SelectedIndex == 1;
         bool autoPrompt = _autoPrompt!.On();
         foreach (var row in _autoPromptRows) row.IsEnabled = autoPrompt;
+        bool guidesUnused = mode == AiDrawMode.Generate && !autoPrompt && _visible.Provider.Id == AiDrawSettings.GeneratingProvider;
+        _assistView!.Guides.IsEnabled = !guidesUnused;
+        _guidesUnused!.IsVisible = guidesUnused;
     }
 
     private void OnDrawModeChanged()

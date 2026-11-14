@@ -11,19 +11,16 @@ namespace Chickxel.App.Ai;
 /// <summary>MCP 접근 범위: 어느 토큰으로 들어왔는지에 따라 쓸 수 있는 도구가 다르다.</summary>
 public enum McpScope
 {
-    /// <summary>모든 도구(AI 채팅 창·상태 점검).</summary>
+    /// <summary>AI 채팅 창·상태 점검: 사용자가 채팅에서 끈 도구 묶음(<see cref="McpServer.SetChatTools"/>) 말고 모두.</summary>
     Full,
     /// <summary>효과 만들기 AI 칸: 읽기 도구와 효과 만들기 편집기 도구만(<see cref="PixelTools.EffectMakerScopeTools"/>).</summary>
     EffectMaker,
     /// <summary>
-    /// 외부 AI 연결(<c>Chickxel --mcp</c> 다리로 들어온 다른 AI 앱): 사용자에게 묻기를 뺀 도구, 파일 열기·그림 생성은 사용자가 켰을 때만
-    /// (<see cref="PixelTools.ExternalAllows"/>). 채팅 차례의 편집 범위·첨부 그림은 쓰지 않는다.
+    /// 외부 AI 연결(<c>Chickxel --mcp</c> 다리로 들어온 다른 AI 앱): 사용자에게 묻기를 뺀 도구 중 사용자가 외부 연결에 켠 묶음만
+    /// (<see cref="McpToolAccess"/> — 파일 열기·그림 생성은 처음엔 꺼짐). 채팅 차례의 편집 범위·첨부 그림은 쓰지 않는다.
     /// </summary>
     External,
 }
-
-/// <summary>외부 AI 연결에서 따로 허락하는 도구: 경로로 파일 열기(<c>open_file</c>), 내 Codex로 그림 생성(<c>generate_pixel_art</c>).</summary>
-public sealed record McpExternalAccess(bool OpenFile, bool Generate);
 
 /// <summary>
 /// 앱 안에서 도는 최소 MCP 서버(Streamable HTTP, <see cref="HttpListener"/>). 127.0.0.1의 빈 포트에서
@@ -60,7 +57,11 @@ public sealed class McpServer : IDisposable
     private const int MaxRecentRequests = 8;
     /// <summary>외부 AI 연결 토큰(꺼져 있으면 null).</summary>
     private volatile string? _externalToken;
-    private volatile McpExternalAccess _externalAccess = new(false, false);
+    private volatile McpToolAccess _externalAccess = McpToolAccess.AllOn;
+    /// <summary>외부 AI 연결의 <c>initialize</c> 안내(<see cref="AiCli.ExternalInstructions"/>).</summary>
+    private volatile string _externalInstructions = "";
+    /// <summary>채팅(<see cref="McpScope.Full"/>)에서 쓸 수 있는 도구.</summary>
+    private volatile McpToolAccess _chatAccess = McpToolAccess.AllOn;
 
 
     public McpServer(PixelTools tools)
@@ -80,10 +81,11 @@ public sealed class McpServer : IDisposable
     public static string ExternalLockPath => Path.Combine(Platform.AppFolder, "mcp-external.json");
 
     /// <summary>
-    /// 외부 AI 연결을 켜거나(<paramref name="access"/> = 따로 허락한 도구) 끈다(null). 켜면 서버를 시작하고 처음이면 새 토큰을 만들어 잠금 파일을 쓴다
-    /// (허락만 바뀌면 토큰은 그대로). 끄면 토큰을 버려 다리의 요청이 401이 되고 잠금 파일을 지운다. 서버를 시작하지 못하면 예외(<see cref="Start"/>).
+    /// 외부 AI 연결을 켜거나(<paramref name="access"/> = 켠 도구 묶음, <paramref name="instructions"/> = <c>initialize</c> 안내) 끈다(null). 켜면 서버를 시작하고
+    /// 처음이면 새 토큰을 만들어 잠금 파일을 쓴다(허락만 바뀌면 토큰은 그대로). 끄면 토큰을 버려 다리의 요청이 401이 되고 잠금 파일을 지운다.
+    /// 서버를 시작하지 못하면 예외(<see cref="Start"/>).
     /// </summary>
-    public void SetExternal(McpExternalAccess? access)
+    public void SetExternal(McpToolAccess? access, string instructions = "")
     {
         if (access is null)
         {
@@ -93,8 +95,18 @@ public sealed class McpServer : IDisposable
         }
         Start();
         _externalAccess = access;
+        _externalInstructions = instructions;
         _externalToken ??= NewToken();
         WriteExternalLock(_externalToken);
+    }
+
+    /// <summary>채팅에서 쓸 수 있는 도구를 바꾼다(다음 도구 목록·호출부터).</summary>
+    public void SetChatTools(McpToolAccess access) => _chatAccess = access;
+
+    /// <summary>외부 AI 연결이 켜져 있으면 <c>initialize</c> 안내만 바꾼다(채팅 창에서 그리기 프롬프트 글을 고쳤을 때 — 다음에 연결하는 앱부터).</summary>
+    public void UpdateExternalInstructions(string instructions)
+    {
+        if (ExternalEnabled) _externalInstructions = instructions;
     }
 
     /// <summary>외부 AI 연결이 켜져 있는지.</summary>
@@ -399,9 +411,9 @@ public sealed class McpServer : IDisposable
     /// <summary><paramref name="scope"/>에서 <paramref name="name"/> 도구를 쓸 수 있는지.</summary>
     private bool Allows(McpScope scope, string name) => scope switch
     {
-        McpScope.Full => true,
+        McpScope.Full => _chatAccess.Allows(name, scope),
         McpScope.EffectMaker => PixelTools.EffectMakerScopeTools.Contains(name),
-        _ => PixelTools.ExternalAllows(name, _externalAccess),
+        _ => _externalAccess.Allows(name, scope),
     };
 
     private async Task HandlePostAsync(HttpListenerRequest request, HttpListenerResponse response, McpScope scope, RequestTrace trace)
@@ -587,7 +599,7 @@ public sealed class McpServer : IDisposable
                         ["serverInfo"] = new JsonObject { ["name"] = ServerName, ["version"] = "1.0" },
                     };
                     // 외부 AI 앱은 채팅의 시스템 프롬프트를 받지 않으므로 같은 그리기 규칙을 여기서 준다.
-                    if (scope == McpScope.External) info["instructions"] = AiCli.ExternalInstructions;
+                    if (scope == McpScope.External) info["instructions"] = _externalInstructions;
                     return Result(id, info);
                 case "ping":
                     return Result(id, new JsonObject());
@@ -595,9 +607,8 @@ public sealed class McpServer : IDisposable
                     // 채팅의 연결 확인(ToolsListedSince)은 CLI가 받아 간 것만 센다.
                     if (scope != McpScope.External) Interlocked.Increment(ref _toolLists);
                     var tools = _tools.ListTools();
-                    if (scope != McpScope.Full)
-                        foreach (var tool in tools.ToList())
-                            if (AsString(tool?["name"]) is not { } listed || !Allows(scope, listed)) tools.Remove(tool);
+                    foreach (var tool in tools.ToList())
+                        if (AsString(tool?["name"]) is not { } listed || !Allows(scope, listed)) tools.Remove(tool);
                     if (scope == McpScope.External) PixelTools.AdaptForExternal(tools);
                     return Result(id, new JsonObject { ["tools"] = tools });
                 case "tools/call":
@@ -630,7 +641,12 @@ public sealed class McpServer : IDisposable
                 ["content"] = new JsonArray(new JsonObject
                 {
                     ["type"] = "text",
-                    ["text"] = scope == McpScope.External ? UiStrings.FormatAi_Scope_ExternalOff(tool: name) : UiStrings.FormatAi_Scope_EffectMakerOnly(tool: name),
+                    ["text"] = scope switch
+                    {
+                        McpScope.External => UiStrings.FormatAi_Scope_ExternalOff(tool: name),
+                        McpScope.Full => UiStrings.FormatAi_Scope_ChatOff(tool: name),
+                        _ => UiStrings.FormatAi_Scope_EffectMakerOnly(tool: name),
+                    },
                 }),
                 ["isError"] = true,
             };

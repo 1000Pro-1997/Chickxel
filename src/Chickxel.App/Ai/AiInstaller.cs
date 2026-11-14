@@ -5,21 +5,22 @@ using Chickxel.App.Localization;
 
 namespace Chickxel.App.Ai;
 
-/// <summary>사용자가 승인한 뒤 보이는 터미널에서 공식 설치 명령을 실행하고 로그인까지 이어 준다.</summary>
-internal static class AiInstaller
+/// <summary>
+/// 사용자가 승인한 뒤 보이는 터미널에서 공식 설치 명령을 실행한다. 설치(<c>login</c>)는 로그인까지 이어 주고, 업데이트는 로그인을 건너뛴다(로그인은 CLI가 그대로 기억함).
+/// </summary>
+internal static partial class AiInstaller
 {
-    internal static string Preview(AiProvider provider)
+    /// <summary>터미널에서 실행할 일(확인 창에 보임). <paramref name="login"/>이 아니면 마지막 "설치 성공 후: … login" 줄을 뺀다.</summary>
+    internal static string Preview(AiProvider provider, bool login = true)
     {
-        if (provider.Id == "claude")
-            return OperatingSystem.IsWindows()
-                ? UiStrings.S_AiInstaller_Preview_A6B5B3079B
-                : UiStrings.S_AiInstaller_Preview_91DCED206B;
-        if (OperatingSystem.IsWindows())
-            return UiStrings.S_AiInstaller_Preview_AD9D1D8075;
-        return UiStrings.S_AiInstaller_Preview_425F99142F;
+        var text = provider.Id == "claude"
+            ? OperatingSystem.IsWindows() ? UiStrings.S_AiInstaller_Preview_A6B5B3079B : UiStrings.S_AiInstaller_Preview_91DCED206B
+            : OperatingSystem.IsWindows() ? UiStrings.S_AiInstaller_Preview_AD9D1D8075 : UiStrings.S_AiInstaller_Preview_425F99142F;
+        return login ? text : text[..Math.Max(0, text.TrimEnd().LastIndexOf('\n'))].TrimEnd();
     }
 
-    internal static bool OpenTerminal(AiProvider provider, out string error)
+    /// <summary>설치·업데이트 터미널을 연다. <paramref name="login"/>이면 설치 뒤 로그인까지, 아니면 업데이트만 하고 끝낸다.</summary>
+    internal static bool OpenTerminal(AiProvider provider, out string error, bool login = true)
     {
         error = "";
         if (!OperatingSystem.IsWindows() && !OperatingSystem.IsMacOS())
@@ -38,7 +39,7 @@ internal static class AiInstaller
                     .Replace("__NODE_FOLDER_EXISTS__", PowerShellLiteral(UiStrings.AiInstaller_NodeFolderExists).Replace("{path}", "' + $target + '"))
                     .Replace("__NODE_LTS_MISSING__", PowerShellLiteral(UiStrings.AiInstaller_NodeLtsMissing))
                     .Replace("__NODE_HASH_FAILED__", PowerShellLiteral(UiStrings.AiInstaller_NodeHashFailed)), new UTF8Encoding(false));
-            File.WriteAllText(script, OperatingSystem.IsWindows() ? WindowsScript(provider).Replace("\n", "\r\n") : MacScript(provider), new UTF8Encoding(false));
+            File.WriteAllText(script, OperatingSystem.IsWindows() ? WindowsScript(provider, login).Replace("\n", "\r\n") : MacScript(provider, login), new UTF8Encoding(false));
             if (OperatingSystem.IsMacOS())
             {
                 File.SetUnixFileMode(script, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
@@ -78,14 +79,24 @@ internal static class AiInstaller
     }
 
     // 배치 명령은 번역하면 실행이 깨지므로 중립 리소스에서 읽고, 사용자 안내만 안전한 명령으로 바꾼다.
-    private static string WindowsScript(AiProvider provider)
+    // PSModulePath는 비운다: PowerShell 7(pwsh)에서 띄운 Chickxel이면 그 모듈 경로가 물려 와 Windows PowerShell 5.1이 Get-FileHash 같은
+    // 기본 명령을 못 찾고(Claude 설치 스크립트·Node 확인이 실패) — 비우면 5.1이 제 기본 경로를 쓴다.
+    // 내려받는 동안 창이 비어 보이지 않게 먼저 시작 안내를 보이고, 업데이트(login 아님)는 로그인 줄을 빼고 업데이트 안내로 끝낸다.
+    private static string WindowsScript(AiProvider provider, bool login)
     {
         var script = UiStrings.ResourceManager.GetString(
             provider.Id == "claude" ? "S_AiInstaller_WindowsScript_CF3206EDC2" : "S_AiInstaller_WindowsScript_60DF0BBF87",
             System.Globalization.CultureInfo.InvariantCulture)!;
-        return script.Replace("echo __LOGIN_COMPLETE__", BatchMessage(UiStrings.AiInstaller_LoginComplete))
-            .Replace("echo __LOGIN_FAILED__", BatchMessage(UiStrings.AiInstaller_LoginFailed));
+        if (!login) script = LoginLines().Replace(script, "");
+        var start = "chcp 65001 >nul\n";
+        script = script.Replace(start, start + "set \"PSModulePath=\"\n" + BatchMessage(UiStrings.FormatAiInstaller_Starting(product: provider.ProductName)) + "\n");
+        return script.Replace("echo __LOGIN_COMPLETE__", BatchMessage(login ? UiStrings.AiInstaller_LoginComplete : UiStrings.AiInstaller_UpdateComplete))
+            .Replace("echo __LOGIN_FAILED__", BatchMessage(login ? UiStrings.AiInstaller_LoginFailed : UiStrings.AiInstaller_UpdateFailed));
     }
+
+    /// <summary>Windows 설치 스크립트의 로그인 두 줄(로그인 명령과 실패 검사).</summary>
+    [System.Text.RegularExpressions.GeneratedRegex(@"^call (?:claude auth login|codex login)\r?\nif errorlevel 1 goto failed\r?\n", System.Text.RegularExpressions.RegexOptions.Multiline)]
+    private static partial System.Text.RegularExpressions.Regex LoginLines();
 
     /// <summary>winget이 없는 Windows에서도 관리자 권한 없이 공식 Node.js LTS와 npm을 설치한다.</summary>
     private const string WindowsNodeScript = """
@@ -117,7 +128,7 @@ internal static class AiInstaller
         }
         """;
 
-    private static string MacScript(AiProvider provider)
+    private static string MacScript(AiProvider provider, bool login)
     {
         var setup = provider.Id == "claude"
             ? """
@@ -143,8 +154,11 @@ internal static class AiInstaller
               command -v codex >/dev/null 2>&1 || fail
               codex login || fail
               """;
+        // 업데이트는 로그인 줄을 빼고 업데이트 안내로 끝낸다.
+        if (!login) setup = string.Join('\n', setup.Split('\n').Where(l => !l.TrimStart().StartsWith("claude auth login", StringComparison.Ordinal) && !l.TrimStart().StartsWith("codex login", StringComparison.Ordinal)));
         return "#!/bin/bash\nexport PATH=\"$HOME/.local/bin:$HOME/.npm-global/bin:/opt/homebrew/bin:/usr/local/bin:$PATH\"\n" +
-               "fail() { printf '%s\\n' " + ShellQuote(UiStrings.AiInstaller_LoginFailed) + "; exit 1; }\n" +
-               setup + "\nprintf '%s\\n' " + ShellQuote(UiStrings.AiInstaller_LoginComplete) + "\n";
+               "fail() { printf '%s\\n' " + ShellQuote(login ? UiStrings.AiInstaller_LoginFailed : UiStrings.AiInstaller_UpdateFailed) + "; exit 1; }\n" +
+               "printf '%s\\n' " + ShellQuote(UiStrings.FormatAiInstaller_Starting(product: provider.ProductName)) + "\n" +
+               setup + "\nprintf '%s\\n' " + ShellQuote(login ? UiStrings.AiInstaller_LoginComplete : UiStrings.AiInstaller_UpdateComplete) + "\n";
     }
 }

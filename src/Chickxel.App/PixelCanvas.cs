@@ -1023,9 +1023,11 @@ public sealed partial class PixelCanvas : Control
         if (_ctx.IsGroupSelected && !_peekPrevious) DrawPartOutlines(g);
         if (slicing) DrawSliceEditor(g);
         // 피벗 보기: 보이는 모든 레이어·캔버스 피벗(이름 붙임), 그 위에 피벗 대상을 크게. 보기를 끈 피벗 도구는 대상(+ 그룹 화면의 부위 피벗)만.
-        if (_showPivot && !_peekPrevious) DrawAllPivots(g);
+        // 타일맵 화면은 피벗 단추가 숨고 피벗 도구도 없으므로 그리지 않는다.
+        bool pivots = _showPivot && !_ctx.IsTilemapSelected;
+        if (pivots && !_peekPrevious) DrawAllPivots(g);
         else if (_ctx.Tool == ToolKind.Pivot && _ctx.IsGroupSelected && !_peekPrevious) DrawPartPivots(g);
-        if (_showPivot || _ctx.Tool == ToolKind.Pivot) DrawPivot(g);
+        if (pivots || _ctx.Tool == ToolKind.Pivot && !_ctx.IsTilemapSelected) DrawPivot(g);
         if (_ctx.IsTransforming) { if (!_peekPrevious) DrawTransform(g); }
         else if (_ctx.Selection.HasSelection) DrawSelection(g);
         DrawWandPreview(g);

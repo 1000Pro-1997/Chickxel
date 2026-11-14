@@ -39,7 +39,7 @@ public sealed partial class PixelTools
 
     /// <summary>지금 차례에 사용자가 붙인 그림(PNG, 픽셀 아트인지) — 보낸 순서. 채팅 창이 차례마다 넣고 끝나면 비운다.</summary>
     public IReadOnlyList<(byte[] Png, bool PixelArt)> TurnImages { get; set; } = [];
-    /// <summary>지금 차례에 사용자가 보낸 글(그림 칩은 <c>[Image #N]</c>) — 자동 프롬프트를 끄면 이 글을 그대로 이미지 생성에 보낸다. 채팅 창이 차례마다 넣고 끝나면 비운다.</summary>
+    /// <summary>지금 차례에 사용자가 보낸 글(그림 칩은 <c>[Image #N]</c>) — "생성 요청 다듬기"(자동 프롬프트)를 끄면 이 글을 그대로 이미지 생성에 보낸다. 채팅 창이 차례마다 넣고 끝나면 비운다.</summary>
     public string TurnMessage { get; set; } = "";
 
     /// <summary>그림 생성 진행(사용자에게 보일 짧은 글 — "프레임 2/6 생성 중"). UI 스레드.</summary>
@@ -161,15 +161,6 @@ public sealed partial class PixelTools
                     "(e.g. \"make this character as pixel art\"). A suitable pixel-art style reference is then added automatically.");
     }
 
-    /// <summary>외부 AI 연결에서 막지 않는 도구인지: 사용자에게 묻기는 채팅 창에서만, 파일 열기·그림 생성은 사용자가 켰을 때만.</summary>
-    public static bool ExternalAllows(string name, McpExternalAccess access) => name switch
-    {
-        AskTool => false,
-        "open_file" => access.OpenFile,
-        GenerateTool => access.Generate,
-        _ => true,
-    };
-
     /// <summary>외부 AI 연결이 <c>subject_image</c>로 보낸 base64 PNG(없으면 빈 목록). PNG로 읽을 수 없으면 도구 오류.</summary>
     private static IReadOnlyList<(byte[] Png, bool PixelArt)> ExternalSubject(JsonObject? a)
     {
@@ -210,7 +201,7 @@ public sealed partial class PixelTools
         var options = _host.Settings.AiDraw;
         var subject = ReqString(a, "subject").Trim();
         if (subject.Length == 0) throw new ToolError(UiStrings.AiDraw_Error_NoSubject);
-        // 자동 프롬프트를 끄면 사용자 글을 그대로 한 번 생성해 한 장으로 변환한다(애니메이션 계획·자세 없음).
+        // "생성 요청 다듬기"(자동 프롬프트)를 끄면 사용자 글을 그대로 한 번 생성해 한 장으로 변환한다(애니메이션 계획·자세 없음).
         bool autoPrompt = options.AutoPrompt;
         var kind = OptEnum(a, "kind", KindValues) ?? ReferenceKinds.Character;
         var animation = OptEnum(a, "animation", AnimationValues) is { } an && an != "none" && autoPrompt ? an : null;
@@ -247,7 +238,7 @@ public sealed partial class PixelTools
         var dir = _jobs.DirectoryOf(jobId);
 
         // 함께 보낼 그림: 사용자가 붙인 대상 그림, 픽셀 아트 스타일 참고.
-        // 자동 프롬프트를 끄면 사용자 글의 [Image #N]이 N번째 그림을 가리키게 붙인 그림을 모두 순서대로 보낸다.
+        // "생성 요청 다듬기"(자동 프롬프트)를 끄면 사용자 글의 [Image #N]이 N번째 그림을 가리키게 붙인 그림을 모두 순서대로 보낸다.
         var turnFiles = new List<string>();
         if (!autoPrompt)
             for (int i = 0; i < turnImages.Count; i++)
@@ -274,7 +265,7 @@ public sealed partial class PixelTools
             File.Copy(previous, subjectFile, overwrite: true);
             // 이미 픽셀 아트 그림이라 스타일 참고는 붙이지 않는다.
             subjectIsPixelArt = true;
-            // 자동 프롬프트를 끄면 붙인 그림 뒤에 함께 보낸다(사용자 글이 방금 그린 그림을 이어 그리라고 함).
+            // "생성 요청 다듬기"(자동 프롬프트)를 끄면 붙인 그림 뒤에 함께 보낸다(사용자 글이 방금 그린 그림을 이어 그리라고 함).
             if (!autoPrompt) turnFiles.Add(subjectFile);
         }
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);

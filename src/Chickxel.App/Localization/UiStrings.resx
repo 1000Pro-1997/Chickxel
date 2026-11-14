@@ -36,7 +36,6 @@
   <data name="Language_RestartNow" xml:space="preserve"><value>지금 다시 시작</value><comment>저장 안 한 문서가 있으면 닫을 때처럼 묻는다.</comment></data>
   <data name="Language_RestartLater" xml:space="preserve"><value>나중에</value></data>
   <data name="Palette_UndoLabel" xml:space="preserve"><value>팔레트 변경</value><comment>실행취소·다시 실행 메뉴와 알림에 보이는 팔레트 변경 단계 이름.</comment></data>
-  <data name="Ai_ModelRecommended" xml:space="preserve"><value>{0} (추천)</value><comment>AI 모델 목록에서 추천 모델 이름 뒤에 붙임. 0 = 모델 이름.</comment></data>
   <data name="S_AboutDialog_AboutDialog_1BCE018BCE" xml:space="preserve">
     <value>GitHub 저장소</value>
     <comment>src/Chickxel.App\AboutDialog.cs:28 · AboutDialog · "GitHub 저장소"</comment>
@@ -586,17 +585,9 @@ echo __LOGIN_FAILED__
     <value>Claude 구독(Pro·Max 등) 계정</value>
     <comment>src/Chickxel.App\Ai\ClaudeCli.cs:38 · AccountText · "Claude 구독(Pro·Max 등) 계정"</comment>
   </data>
-  <data name="S_ClaudeCli_Aliases_32AA2E3322" xml:space="preserve">
-    <value>가장 빠름</value>
-    <comment>src/Chickxel.App\Ai\ClaudeCli.cs:26 · Aliases · "가장 빠름"</comment>
-  </data>
   <data name="S_ClaudeCli_Aliases_42281164DA" xml:space="preserve">
     <value>Sonnet: 성능과 속도의 균형 — 대부분의 그림 작업에 알맞습니다.</value>
     <comment>src/Chickxel.App\Ai\ClaudeCli.cs:25 · Aliases · "Sonnet: 성능과 속도의 균형 — 대부분의 그림 작업에 알맞습니다."</comment>
-  </data>
-  <data name="S_ClaudeCli_Aliases_52F235016A" xml:space="preserve">
-    <value>균형</value>
-    <comment>src/Chickxel.App\Ai\ClaudeCli.cs:25 · Aliases · "균형"</comment>
   </data>
   <data name="S_ClaudeCli_Aliases_7FC8C1B69A" xml:space="preserve">
     <value>Haiku: 가장 빠르고 사용량이 적음 — 간단한 수정에 알맞습니다.</value>
@@ -605,10 +596,6 @@ echo __LOGIN_FAILED__
   <data name="S_ClaudeCli_Aliases_E680EAD01B" xml:space="preserve">
     <value>Opus: 가장 뛰어난 모델 — 복잡한 그림·애니메이션에 강하지만 느리고 사용량을 많이 씁니다.</value>
     <comment>src/Chickxel.App\Ai\ClaudeCli.cs:24 · Aliases · "Opus: 가장 뛰어난 모델 — 복잡한 그림·애니메이션에 강하지만 느리고 사용량을 많이 씁니다."</comment>
-  </data>
-  <data name="S_ClaudeCli_Aliases_FB8E7B5244" xml:space="preserve">
-    <value>가장 똑똑함</value>
-    <comment>src/Chickxel.App\Ai\ClaudeCli.cs:24 · Aliases · "가장 똑똑함"</comment>
   </data>
   <data name="S_ClaudeCli_CheckMcpStatus_B9CFC13832" xml:space="preserve">
     <value>목록에 없음</value>
@@ -645,10 +632,6 @@ echo __LOGIN_FAILED__
   <data name="S_ClaudeCli_Models_A14F4A45A8" xml:space="preserve">
     <value>Claude Code 기본값(요금제마다 다름)을 씁니다.</value>
     <comment>src/Chickxel.App\Ai\ClaudeCli.cs:103 · Models · "Claude Code 기본값(요금제마다 다름)을 씁니다."</comment>
-  </data>
-  <data name="S_ClaudeCli_Models_BAF4B07362" xml:space="preserve">
-    <value>{0} · {1}</value>
-    <comment>src/Chickxel.App\Ai\ClaudeCli.cs:117 · Models · $"{Learned(alias) ?? PrettyName(alias) + " (최신)"} · {hint}"</comment>
   </data>
   <data name="S_ClaudeCli_Models_C32F36E3D8" xml:space="preserve">
     <value>기본 · {0}</value>
@@ -5561,6 +5544,7 @@ echo __LOGIN_FAILED__
     <value>프레임 </value>
     <comment>src/Chickxel.App\TimelinePanel.cs:139 · FramesText · "프레임 "</comment>
   </data>
+  <data name="Timeline_FrameSpan" xml:space="preserve"><value>{0}~{1}</value><comment>프레임 번호 범위(타임라인 고른 프레임 표시). 0 = 첫 번호, 1 = 끝 번호. 같은 화면의 다른 범위 표시와 같은 구분자.</comment></data>
   <data name="S_TimelinePanel_HintSelection_11CAA114DF" xml:space="preserve">
     <value>{0} — {1}: 레이어 삭제 · 고른 이름을 끌면 순서 바꾸기</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:273 · HintSelection · $"{label} — {DeleteKeyName}: 레이어 삭제 · 고른 이름을 끌면 순서 바꾸기"</comment>
@@ -8217,7 +8201,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Chat_Help_Example8" xml:space="preserve"><value>캔버스를 32×32로 늘리고 캐릭터를 가운데로 옮겨 줘.</value></data>
   <data name="Chat_Help_Example9" xml:space="preserve"><value>캐릭터에 1px 검은 외곽선을 넣고, 프레임 3~4에 흰 피격 번쩍임 효과를 넣어 줘.</value></data>
   <data name="Chat_Help_TipsTitle" xml:space="preserve"><value>잘 쓰는 요령</value></data>
-  <data name="Chat_Help_Tip1" xml:space="preserve"><value>모델을 골라 보세요. 시험해 보니 Codex의 GPT-6-Astra가 가장 잘 그렸고, Codex는 기본으로 GPT-6-Astra(추천)를 씁니다. 구조가 복잡한 작업에는 Claude Opus도 좋습니다.</value></data>
+  <data name="Chat_Help_Tip1" xml:space="preserve"><value>모델은 쓰는 CLI(Claude Code·Codex)가 받아 둔 목록에서 자동으로 불러옵니다. 첫 칸(기본)은 그 CLI 설정의 모델이고, 다른 모델을 고르면 다음 메시지부터 그 모델로 이어 갑니다.</value></data>
   <data name="Chat_Help_Tip2" xml:space="preserve"><value>"지금 그림만"을 켜면 AI가 지금 열린 그림만 고칩니다. 잠긴 레이어는 언제나 건드리지 않으니, 지킬 레이어는 잠가 두세요.</value></data>
   <data name="Chat_Help_Tip3" xml:space="preserve"><value>"캔버스 첨부"나 "이미지…"로 참고할 그림을 함께 보내세요.</value></data>
   <data name="Chat_Help_Tip4" xml:space="preserve"><value>크기·팔레트·스타일을 분명히 적으세요. 예: "16×16, 팔레트 색만, 1픽셀 검은 외곽선, 안티에일리어싱 없이".</value></data>
@@ -8878,8 +8862,8 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="AiDraw_PaletteOnly" xml:space="preserve"><value>팔레트 색만 사용</value></data>
   <data name="AiDraw_PaletteOnly_Text" xml:space="preserve"><value>AI가 직접 칠하는 색(점·선·채우기·색 바꾸기)을 활성 팔레트에서 가장 가까운 색으로 바꿉니다. 지우기(완전 투명)는 되고 반투명은 불투명이 됩니다. 그림 생성 결과(변환기의 팔레트 설정)와 레이어 효과에는 영향이 없습니다.</value></data>
   <data name="AiDraw_PaletteSnapped" xml:space="preserve"><value>팔레트 색으로 맞춤: {changes}</value></data>
-  <data name="AiDraw_AutoPrompt" xml:space="preserve"><value>자동 프롬프트</value></data>
-  <data name="AiDraw_AutoPrompt_Text" xml:space="preserve"><value>켜면(기본) AI가 정리한 대상 설명에 픽셀 아트 스타일·배경·스프라이트 시트 배치·자세 지시를 붙여 생성합니다. 끄면 채팅에 쓴 글을 그대로(붙인 그림도 순서대로) 이미지 생성에 보내 한 장을 만들고, 생성 전 크기 판정·스타일 참고·애니메이션 프레임 나누기 없이 그 한 장을 픽셀 아트로 변환합니다.</value></data>
+  <data name="AiDraw_AutoPrompt" xml:space="preserve"><value>생성 요청 다듬기</value></data>
+  <data name="AiDraw_AutoPrompt_Text" xml:space="preserve"><value>켜면(기본) 내 말을 그림 생성에 알맞은 요청으로 다듬어 보냅니다: AI가 정리한 대상 설명에 픽셀 아트 스타일·배경·스프라이트 시트 배치·자세 지시를 붙이고, 켠 AI 그리기 요령도 반영합니다. 끄면 채팅에 쓴 글을 그대로(붙인 그림도 순서대로) 이미지 생성에 보내 한 장을 만들고, 생성 전 크기 판정·스타일 참고·애니메이션 프레임 나누기 없이 그 한 장을 픽셀 아트로 변환합니다.</value></data>
   <data name="AiDraw_ResizeResult" xml:space="preserve"><value>결과 크기 보정</value></data>
   <data name="AiDraw_ResizeResult_Text" xml:space="preserve"><value>끄면(기본) 대표 프리셋의 결과 크기 설정으로 변환하고, 채팅에서 말한 크기는 생성할 때의 대략적인 힌트로만 씁니다. 켜면 변환 결과를 아래 크기나 채팅에서 말한 크기에 맞춥니다.</value></data>
   <data name="AiStatus_Title" xml:space="preserve"><value>AI 상태 및 설정</value></data>
@@ -9579,7 +9563,7 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Ai_Maker_CheckFailed" xml:space="preserve"><value>검증에서 문제 {count}개를 찾았습니다:</value></data>
   <data name="Ai_Script_GradientHints" xml:space="preserve"><value>그라데이션 안내(권장 — 문제가 아니며 검증 결과에 영향 없음. 한 색이 꼭 필요한 효과가 아니면 픽셀마다 색을 고르도록 바꾸면 좋습니다):</value></data>
   <data name="Ai_Scope_EffectMakerOnly" xml:space="preserve"><value>{tool}: 효과 만들기 AI에서는 쓸 수 없는 도구입니다. 효과 만들기 AI는 문서를 보기만 하고 효과 만들기 편집기의 원문만 고칠 수 있습니다.</value></data>
-  <data name="Ai_Scope_ExternalOff" xml:space="preserve"><value>{tool}: 외부 AI 연결에서는 쓸 수 없는 도구입니다. 파일 열기와 그림 생성은 사용자가 Chickxel의 환경 설정 &gt; AI 상태에서 켜야 쓸 수 있고, 사용자에게 물을 것은 지금 대화에서 직접 물어보세요.</value><comment>tool = 도구 이름.</comment></data>
+  <data name="Ai_Scope_ExternalOff" xml:space="preserve"><value>{tool}: 사용자가 외부 AI 연결에서 끈 도구입니다(Chickxel의 AI &gt; 외부 AI 연결 창에서 켤 수 있음). 사용자에게 묻기는 여기서 쓸 수 없으니 지금 대화에서 직접 물어보세요.</value><comment>tool = 도구 이름.</comment></data>
   <data name="AiDraw_Error_ExternalImage" xml:space="preserve"><value>subject_image를 PNG 그림으로 읽지 못했습니다. data: 머리 없이 base64로 적은 PNG여야 합니다.</value></data>
   <data name="McpBridge_Unavailable" xml:space="preserve"><value>Chickxel이 켜져 있지 않거나 외부 AI 연결이 꺼져 있습니다. Chickxel을 켜고 환경 설정 &gt; AI 상태에서 "외부 AI 연결 허용"을 켜 주세요.</value></data>
   <data name="McpBridge_Failed" xml:space="preserve"><value>Chickxel에 연결하지 못했습니다: {message}</value><comment>message = 오류 내용.</comment></data>
@@ -9587,8 +9571,6 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="ExternalMcp_OpenMenu" xml:space="preserve"><value>외부 AI 연결…</value><comment>AI 메뉴: 외부 AI 연결 창 열기</comment></data>
   <data name="ExternalMcp_Allow" xml:space="preserve"><value>외부 AI 연결 허용</value></data>
   <data name="ExternalMcp_Info" xml:space="preserve"><value>이 컴퓨터의 다른 AI 앱(Claude Desktop, Cursor, Claude Code 등)이 켜져 있는 Chickxel의 AI 도구로 그림을 보고 고칩니다. 아래 연결 설정을 오른쪽 복사 단추로 복사해 그 앱의 MCP 설정에 붙여 넣으면, 그 앱이 "Chickxel --mcp"를 띄워 이 창에 연결합니다. 이 컴퓨터 안(127.0.0.1)에서만 열리고, 끄면 바로 끊깁니다. 고친 내용은 도구마다 실행취소 한 단계이고, 사용자에게 묻는 도구는 쓰지 않습니다.</value></data>
-  <data name="ExternalMcp_OpenFile" xml:space="preserve"><value>파일 열기 허락(경로를 받아 그림·프로젝트를 엶)</value></data>
-  <data name="ExternalMcp_Generate" xml:space="preserve"><value>그림 생성 허락(내 Codex로 생성 — Codex 사용량을 씀)</value></data>
   <data name="ExternalMcp_CopyConfig" xml:space="preserve"><value>연결 설정 복사</value></data>
   <data name="ExternalMcp_CopyConfigTip" xml:space="preserve"><value>다른 AI 앱의 MCP 설정(JSON)에 붙여 넣을 내용을 복사합니다. Chickxel을 다른 곳으로 옮기면 다시 복사해 붙여 넣으세요.</value></data>
   <data name="ExternalMcp_Copied" xml:space="preserve"><value>복사했습니다</value></data>
@@ -10356,4 +10338,78 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="Export_CopyFiles" xml:space="preserve"><value>{first} 외 {more}개</value><comment>first = 첫 파일 이름, more = 나머지 파일 수</comment></data>
   <data name="Export_CopySaved" xml:space="preserve"><value>저장함: {files} ({size})</value><comment>내보내기 창 결과 줄. files = 파일 이름(여럿이면 "… 외 N개"), size = 크기 합</comment></data>
   <data name="Export_CopyDone" xml:space="preserve"><value>다른 이름으로 저장: {files} ({size}, {folder})</value><comment>상태 표시줄. files = 파일 이름(여럿이면 "… 외 N개"), size = 크기 합, folder = 폴더</comment></data>
+  <data name="AiTools_Title" xml:space="preserve"><value>AI가 쓸 수 있는 도구</value></data>
+  <data name="AiTools_Title_Tip" xml:space="preserve"><value>AI가 쓸 수 있는 편집기 도구 묶음입니다. 끈 묶음의 도구는 AI의 도구 목록에서 빠지고, 불러도 실행하지 않고 거부합니다. 문서 읽기·그림 보기·픽셀 그리기는 늘 켜져 있습니다.</value></data>
+  <data name="AiTools_ToolList" xml:space="preserve"><value>도구: {tools}</value><comment>tools = 쉼표로 이은 MCP 도구 이름.</comment></data>
+  <data name="AiTools_Frames" xml:space="preserve"><value>프레임·태그·셀 연결</value></data>
+  <data name="AiTools_Frames_Tip" xml:space="preserve"><value>프레임 넣기·지우기·길이, 애니메이션 태그, 셀 연결을 바꿉니다.</value></data>
+  <data name="AiTools_Layers" xml:space="preserve"><value>레이어·그룹·부위</value></data>
+  <data name="AiTools_Layers_Tip" xml:space="preserve"><value>레이어를 더하거나 이름·보이기·불투명도·피벗을 바꾸고, 캐릭터 부위 그룹을 만듭니다.</value></data>
+  <data name="AiTools_Skins" xml:space="preserve"><value>스킨·의상</value></data>
+  <data name="AiTools_Skins_Tip" xml:space="preserve"><value>그룹의 스킨(옷)과 의상 프리셋을 보고 만들고 바꿉니다.</value></data>
+  <data name="AiTools_Effects" xml:space="preserve"><value>레이어 효과 사용</value></data>
+  <data name="AiTools_Effects_Tip" xml:space="preserve"><value>외곽선·그림자·빛남·흔들림 같은 레이어 효과를 넣고 고치고 지우고 굽습니다. 끄면 AI가 효과 대신 픽셀로만 그립니다.</value></data>
+  <data name="AiTools_ScriptEffects" xml:space="preserve"><value>스크립트 효과 만들기</value></data>
+  <data name="AiTools_ScriptEffects_Tip" xml:space="preserve"><value>JavaScript 레이어 효과를 새로 쓰고 저장하고, 효과 만들기 편집기의 원문을 읽고 바꿉니다.</value></data>
+  <data name="AiTools_References" xml:space="preserve"><value>참고 자료 보관소</value></data>
+  <data name="AiTools_References_Tip" xml:space="preserve"><value>참고 자료 보관소에서 비슷한 그림·그림 규칙을 찾아보고, 지금 그림을 자료로 넣습니다.</value></data>
+  <data name="AiTools_FolderImages" xml:space="preserve"><value>열린 폴더의 그림 읽기</value></data>
+  <data name="AiTools_FolderImages_Tip" xml:space="preserve"><value>파일 브라우저에 연 맨 위 폴더(하위 폴더 포함)의 프로젝트·그림을 찾아보고 열지 않은 채 봅니다. 파일은 바꾸지 않고, 그 폴더 밖은 읽지 않습니다.</value></data>
+  <data name="AiTools_Canvas" xml:space="preserve"><value>캔버스 크기·피벗</value></data>
+  <data name="AiTools_Canvas_Tip" xml:space="preserve"><value>캔버스 크기와 내보내기 피벗을 바꿉니다.</value></data>
+  <data name="AiTools_Palette" xml:space="preserve"><value>팔레트·그리기 색 바꾸기</value></data>
+  <data name="AiTools_Palette_Tip" xml:space="preserve"><value>활성 팔레트의 색과 주 색·보조 색을 바꿉니다.</value></data>
+  <data name="AiTools_Documents" xml:space="preserve"><value>새 문서·저장·제목</value></data>
+  <data name="AiTools_Documents_Tip" xml:space="preserve"><value>새 프로젝트를 만들고, 저장하고, 저장하지 않은 문서의 임시 제목을 정합니다.</value></data>
+  <data name="AiTools_OpenFile" xml:space="preserve"><value>파일 열기(경로를 받아 그림·프로젝트를 엶)</value></data>
+  <data name="AiTools_OpenFile_Tip" xml:space="preserve"><value>경로를 받아 그림·프로젝트·영상을 새 탭으로 엽니다. 이 컴퓨터의 아무 파일이나 열 수 있습니다.</value></data>
+  <data name="AiTools_Generate" xml:space="preserve"><value>그림 생성(내 Codex로 생성 — Codex 사용량을 씀)</value></data>
+  <data name="AiTools_Generate_Tip" xml:space="preserve"><value>내 Codex 로그인으로 그림을 생성해 픽셀 아트로 바꿔 넣습니다. Codex 사용량을 씁니다.</value></data>
+  <data name="AiTools_Ask" xml:space="preserve"><value>사용자에게 묻기</value></data>
+  <data name="AiTools_Ask_Tip" xml:space="preserve"><value>모호한 선택이 있으면 입력란 위에 선택지를 띄워 묻습니다. 끄면 AI가 알아서 고르거나 답 글로 묻습니다.</value></data>
+  <data name="AiGuide_Title" xml:space="preserve"><value>AI 그리기 요령</value></data>
+  <data name="AiGuide_Title_Tip" xml:space="preserve"><value>대충 말해도 도트가 잘 나오게 AI에게 미리 알려 주는 작업별 요령입니다. 켠 것만 AI에게 전해지고(채팅은 시스템 프롬프트, 외부 AI 연결은 연결할 때 받는 안내), AI는 요청에 맞는 것을 골라 따릅니다. 직접 찍기에서는 그리는 방법에, 그림 생성에서는 생성 요청을 쓰는 데 쓰입니다(생성 옵션의 "생성 요청 다듬기"를 끄면 그림 생성에는 쓰이지 않음). 연필 단추로 글을 고치거나 기본값으로 되돌릴 수 있고, 고친 글은 채팅과 외부 AI 연결이 같이 씁니다. 바꾸면 다음 메시지부터 적용됩니다.</value></data>
+  <data name="AiGuide_Basics" xml:space="preserve"><value>기본 그리기 순서(기준 정리·참고·검토)</value></data>
+  <data name="AiGuide_Basics_Tip" xml:space="preserve"><value>요청과 붙인 그림을 구체적인 기준으로 정리하고, 빠진 것은 알맞게 정한 뒤, 참고 자료를 보고 그리고, 전체 그림을 보며 점수를 매겨 고치게 합니다.</value></data>
+  <data name="AiGuide_Character" xml:space="preserve"><value>사람·캐릭터 그리기</value></data>
+  <data name="AiGuide_Character_Tip" xml:space="preserve"><value>크기·비율(작으면 2~3등신)·실루엣·외곽선·명암 순서처럼 캐릭터 스프라이트를 잘 그리는 방법입니다.</value></data>
+  <data name="AiGuide_Object" xml:space="preserve"><value>물체·아이템 그리기</value></data>
+  <data name="AiGuide_Object_Tip" xml:space="preserve"><value>아이콘 크기, 알아보기 쉬운 실루엣, 재질(금속·나무·유리)별 명암을 잡는 방법입니다.</value></data>
+  <data name="AiGuide_Background" xml:space="preserve"><value>배경·타일 그리기</value></data>
+  <data name="AiGuide_Background_Tip" xml:space="preserve"><value>이어지는 타일, 캐릭터보다 낮은 대비, 원근에 따른 색, 덩어리로 넣는 질감처럼 배경을 그리는 방법입니다.</value></data>
+  <data name="AiGuide_Motion" xml:space="preserve"><value>움직이는 동작 그리기</value></data>
+  <data name="AiGuide_Motion_Tip" xml:space="preserve"><value>동작별 프레임 수, 열쇠 자세 먼저, 프레임마다 같은 부피, 길이·태그 정하기처럼 애니메이션을 새로 그리는 방법입니다.</value></data>
+  <data name="AiGuide_Inbetween" xml:space="preserve"><value>프레임 사이 보강(중간 프레임)</value></data>
+  <data name="AiGuide_Inbetween_Tip" xml:space="preserve"><value>이미 있는 두 프레임 사이에 중간 프레임을 넣어 움직임을 부드럽게 하는 방법입니다(호를 따라 이동, 이징, 길이 다시 나누기).</value></data>
+  <data name="AiGuide_Cleanup" xml:space="preserve"><value>지금 그림 도트답게 다듬기</value></data>
+  <data name="AiGuide_Cleanup_Tip" xml:space="preserve"><value>지금 그림을 다시 그리지 않고 색 줄이기, 흐림·잡티 지우기, 1px 외곽선, 계단 고르기로 도트답게 다듬는 방법입니다.</value></data>
+  <data name="AiGuide_Folder" xml:space="preserve"><value>열린 폴더의 그림 참고(일관성)</value></data>
+  <data name="AiGuide_Folder_Tip" xml:space="preserve"><value>새로 그리기 전에 파일 브라우저에 연 폴더(하위 폴더 포함)의 비슷한 그림·최근 그림을 보고 크기·외곽선·팔레트·명암을 맞추게 합니다. 도구의 "열린 폴더의 그림 읽기"가 켜져 있어야 합니다.</value></data>
+  <data name="AiGuide_EditTip" xml:space="preserve"><value>요령 글 고치기(기본값으로 되돌리기도 여기서)</value></data>
+  <data name="AiGuide_Edited" xml:space="preserve"><value>수정됨</value></data>
+  <data name="AiGuide_EditedTip" xml:space="preserve"><value>기본 글을 고쳐 쓰고 있습니다. 연필 단추에서 기본값으로 되돌릴 수 있습니다.</value></data>
+  <data name="AiGuide_EditTitle" xml:space="preserve"><value>요령 고치기 — {name}</value><comment>name = 그리기 프롬프트 이름.</comment></data>
+  <data name="AiGuide_Save" xml:space="preserve"><value>저장</value></data>
+  <data name="AiGuide_EditNote" xml:space="preserve"><value>AI가 읽는 지시입니다. 영어로 쓰면 가장 잘 따르지만 한국어로 써도 됩니다. 비우거나 기본 글과 같으면 기본값을 씁니다.</value></data>
+  <data name="AiGuide_Reset" xml:space="preserve"><value>기본값으로</value></data>
+  <data name="AiGuide_ResetTip" xml:space="preserve"><value>칸의 글을 기본 프롬프트로 되돌립니다(저장해야 남음).</value></data>
+  <data name="AiFolder_NoRoot" xml:space="preserve"><value>파일 브라우저에 연 폴더가 없습니다. 사용자에게 폴더를 열어 달라고 하세요.</value></data>
+  <data name="AiFolder_Outside" xml:space="preserve"><value>{path}: 열린 폴더 밖의 경로는 읽을 수 없습니다.</value><comment>path = 받은 경로.</comment></data>
+  <data name="AiFolder_NotFound" xml:space="preserve"><value>{path}: 열린 폴더에 그런 그림·폴더가 없습니다(list_folder_images의 경로를 쓰세요).</value><comment>path = 받은 경로.</comment></data>
+  <data name="AiFolder_ReadFailed" xml:space="preserve"><value>{path}: 읽지 못했습니다 — {message}</value><comment>path = 경로, message = 오류.</comment></data>
+  <data name="AiFolder_Empty" xml:space="preserve"><value>{path}: 프레임이 없는 그림입니다.</value><comment>path = 경로.</comment></data>
+  <data name="Ai_Scope_ChatOff" xml:space="preserve"><value>{tool}: 사용자가 AI 채팅의 그리기 설정에서 끈 도구입니다. 이 도구 없이 할 수 있는 만큼 하고, 필요하면 사용자에게 켜 달라고 하세요.</value><comment>tool = 도구 이름.</comment></data>
+  <data name="Chat_Update_Available" xml:space="preserve"><value>{product} 새 버전이 있습니다: {installed} → {latest}</value><comment>product = CLI 이름, installed = 설치된 버전, latest = 최신 버전.</comment></data>
+  <data name="Chat_Update_Button" xml:space="preserve"><value>업데이트</value></data>
+  <data name="Chat_Update_ButtonTip" xml:space="preserve"><value>터미널에서 공식 설치 명령으로 업데이트합니다(로그인은 그대로). 끝나면 다음 메시지부터 새 버전을 씁니다.</value></data>
+  <data name="Chat_Update_Close" xml:space="preserve"><value>이 알림 닫기</value></data>
+  <data name="Chat_Update_Busy" xml:space="preserve"><value>답을 받는 중에는 업데이트할 수 없습니다. 차례가 끝난 뒤 다시 눌러 주세요.</value></data>
+  <data name="Chat_Update_Opened" xml:space="preserve"><value>{product} 업데이트 터미널을 열었습니다. 끝나면 다음 메시지부터 새 버전으로 이어 갑니다.</value><comment>product = CLI 이름.</comment></data>
+  <data name="AiGuide_UnusedByGenerate" xml:space="preserve"><value>생성 옵션의 "생성 요청 다듬기"가 꺼져 있어 내 말이 그대로 그림 생성에 갑니다. 그래서 그림 생성에는 이 요령이 쓰이지 않습니다.</value></data>
+  <data name="AiInstaller_Starting" xml:space="preserve"><value>{product} 설치·업데이트를 시작합니다. 내려받는 동안 잠시 아무것도 안 보일 수 있습니다.</value><comment>product = CLI 이름.</comment></data>
+  <data name="AiInstaller_UpdateComplete" xml:space="preserve"><value>업데이트 완료. 이 창을 닫고 Chickxel로 돌아가세요.</value></data>
+  <data name="AiInstaller_UpdateFailed" xml:space="preserve"><value>업데이트에 실패했습니다. 위 오류를 확인하세요.</value></data>
+  <data name="Chat_Update_Confirm" xml:space="preserve"><value>{product}를 터미널에서 최신 버전으로 업데이트합니다. 로그인은 그대로 남습니다.
+
+{steps}</value><comment>product = CLI 이름, steps = 실행할 명령.</comment></data>
 </root>
