@@ -644,27 +644,36 @@ public static partial class BuiltInTilesets
 
     // ───────────── 장식 ─────────────
 
-    /// <summary>둥근 잎 나무(32×44): 뿌리가 퍼진 줄기와 두 가지, 위에 둥근 잎 덩어리(색 <paramref name="leaf"/> 어두움 → 밝음 5단계), 뿌리께 풀.</summary>
+    /// <summary>
+    /// 둥근 잎 나무(32×44): 뿌리가 퍼진 줄기와 두 가지, 위에 둥근 잎 덩어리(색 <paramref name="leaf"/> 어두움 → 밝음 5단계), 뿌리께 풀.
+    /// 외곽선은 줄기·가지까지만 — 땅에 닿는 뿌리께(아래 6줄)는 외곽선 없이 바닥에 바로 놓인다.
+    /// </summary>
     private static PixelImage Tree(Color32[] leaf, int seed)
     {
+        const int rootTop = 38;
         var img = new PixelImage(32, 44);
-        for (int y = 22; y < 44; y++)
+        void Trunk(int fromY, int toY)
         {
-            double half = 2.5 + (y > 38 ? (y - 38) / 1.6 : 0);
-            for (int x = 0; x < 32; x++)
+            for (int y = fromY; y < toY; y++)
             {
-                double dx = x + 0.5 - 16;
-                if (Math.Abs(dx) >= half) continue;
-                double t = (dx + half) / (2 * half);
-                img.Set(x, y, t < 0.3 ? Brown[4] : t < 0.7 ? Brown[3] : Brown[2]);
+                double half = 2.5 + (y > 38 ? (y - 38) / 1.6 : 0);
+                for (int x = 0; x < 32; x++)
+                {
+                    double dx = x + 0.5 - 16;
+                    if (Math.Abs(dx) >= half) continue;
+                    double t = (dx + half) / (2 * half);
+                    img.Set(x, y, t < 0.3 ? Brown[4] : t < 0.7 ? Brown[3] : Brown[2]);
+                }
             }
         }
+        Trunk(22, rootTop);
         for (int i = 0; i < 6; i++)
         {
             img.Set(14 - i, 32 - i, Brown[3]); img.Set(14 - i, 33 - i, Brown[2]);
             img.Set(17 + i, 30 - i, Brown[3]); img.Set(17 + i, 31 - i, Brown[2]);
         }
         Outline(img, Ink);
+        Trunk(rootTop, 44);
         var crown = new PixelImage(32, 44);
         Clumps(crown,
         [

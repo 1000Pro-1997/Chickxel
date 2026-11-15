@@ -12,6 +12,10 @@ internal enum RenderKind
     Composite,
     /// <summary>프레임 합성에서 부위 하나(<see cref="RenderKey.Layer"/>)를 뺀 것.</summary>
     Context,
+    /// <summary>부위 화면: 프레임 합성에서 부위(<see cref="RenderKey.Layer"/>)보다 아래 레이어만.</summary>
+    ContextBelow,
+    /// <summary>부위 화면: 프레임 합성에서 부위(<see cref="RenderKey.Layer"/>)보다 위 레이어만.</summary>
+    ContextAbove,
     /// <summary>셀 하나(그룹이면 그룹 합성, 일반 레이어면 효과 입힌 셀, 부위면 셀 그대로) — 원본 크기.</summary>
     Cel,
     /// <summary><see cref="Cel"/>과 같은 그림을 타임라인 칸 크기로 줄인 것.</summary>

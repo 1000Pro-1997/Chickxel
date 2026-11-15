@@ -59,13 +59,14 @@ internal static class ScreenMainShots
         var tiled = ShotKit.Get<ToggleButton>(main, "_cbTiled");
         var pivot = ShotKit.Get<ToggleButton>(main, "_cbPivot");
         var onion = ShotKit.Get<ToggleButton>(main, "_cbOnion");
+        var focus = ShotKit.Get<ToggleButton>(main, "_cbFocus");
         var zoom = ShotKit.Get<Control>(main, "_cbZoom");
         var fit = ShotKit.Get<Control>(main, "_cbFit");
         var tool = ShotKit.Get<TextBlock>(main, "_cbToolName");
         var hint = ShotKit.Get<TextBlock>(main, "_cbHint");
         var ai = ((Panel)fit.Parent!).Children.OfType<Button>().Last(b => b.IsVisible);
         var bar = tool.GetVisualAncestors().OfType<Border>().First();
-        var views = U(main, grid, tiles, tiled, pivot, onion);
+        var views = U(main, grid, tiles, tiled, pivot, onion, (Control)focus.Parent!);
         var strip = ShotKit.Bounds(bar, main);
         // 1: 위 막대 — ① 도구 이름 ② 사용법 ③ 보기 옵션 ④ 확대율 상자 ⑤ 맞추기 ⑥ AI 채팅(번호는 막대 위 여백에)
         Shot(k, main, null, strip, [Above(TextRect(tool, main)), Above(TextRect(hint, main)), Above(views), Above(ShotKit.Bounds(zoom, main)), Above(ShotKit.Bounds(fit, main)), Above(ShotKit.Bounds(ai, main))],

@@ -189,6 +189,28 @@ public class CelOverflowTests
     }
 
     [Fact]
+    public void ContentBounds_CoversOutsideArtAndParts_AndFittingKeepsEverythingInside()
+    {
+        var p = new SpriteProject(4, 4);
+        Draw(p, 1, 1, Red);
+        Draw(p, 3, 2, Red);
+        Assert.Equal(1, p.ShiftCels("옮기기", [(0, 0)], 2, 0)); // 칠한 칸: (3,1), (5,2) — (5,2)는 캔버스 밖
+        var g = p.AddGroup("G");
+        p.AddPart(g, "A", 2, 2, new Point(-1, -1));
+        p.AddLayer(name: "빈 레이어");
+
+        var bounds = p.ContentBounds();
+        Assert.Equal(Rectangle.FromLTRB(-1, -1, 6, 3), bounds);
+
+        p.ResizeCanvasAndScale(bounds.Width, bounds.Height, new Rectangle(-bounds.X, -bounds.Y, 4, 4));
+        Assert.Equal((7, 4), (p.Width, p.Height));
+        Assert.Null(p.GetCelOverflow(0, 0));
+        Assert.Equal(Red, p.GetCel(0, 0)![4, 2]);
+        Assert.Equal(Red, p.GetCel(0, 0)![6, 3]);
+        Assert.Equal(new Rectangle(0, 0, p.Width, p.Height), p.ContentBounds());
+    }
+
+    [Fact]
     public void CanvasShrinkThenGrow_RestoresImage()
     {
         var p = new SpriteProject(4, 4);

@@ -69,6 +69,8 @@ public class ExportPresetTests
             JpegQuality = 55,
             WriteMeta = false,
             WriteSpriteLibrary = true,
+            WritePrefab = true,
+            WriteAnimations = true,
         };
         Customize(x.Common, 0);
         x.PartsOverride = new SheetOptions();
@@ -95,6 +97,7 @@ public class ExportPresetTests
         Assert.Equal((ExportImageFormat.Jpg, 55), (dst.ImageFormat, dst.JpegQuality));
         Assert.False(dst.WriteMeta);
         Assert.True(dst.WriteSpriteLibrary);
+        Assert.Equal((true, true), (dst.WritePrefab, dst.WriteAnimations));
         AssertSheetEqual(src.Common, dst.Common);
         Assert.NotNull(dst.PartsOverride);
         AssertSheetEqual(src.PartsOverride!, dst.PartsOverride!);

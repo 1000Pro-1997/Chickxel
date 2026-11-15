@@ -25,6 +25,8 @@ public sealed class ExportPreset
     public int JpegQuality { get; set; } = 90;
     public bool? WriteMeta { get; set; }
     public bool WriteSpriteLibrary { get; set; }
+    public bool WritePrefab { get; set; }
+    public bool WriteAnimations { get; set; }
     public PresetSheet Sheet { get; set; } = new();
     /// <summary>부위 아틀라스만 다른 시트 설정(없으면 공통).</summary>
     public PresetSheet? PartsSheet { get; set; }
@@ -40,6 +42,8 @@ public sealed class ExportPreset
         JpegQuality = x.JpegQuality,
         WriteMeta = x.WriteMeta,
         WriteSpriteLibrary = x.WriteSpriteLibrary,
+        WritePrefab = x.WritePrefab,
+        WriteAnimations = x.WriteAnimations,
         Sheet = PresetSheet.From(x.Common),
         PartsSheet = x.PartsOverride is { } po ? PresetSheet.From(po) : null,
     };
@@ -57,6 +61,8 @@ public sealed class ExportPreset
         x.JpegQuality = JpegQuality;
         x.WriteMeta = WriteMeta;
         x.WriteSpriteLibrary = WriteSpriteLibrary;
+        x.WritePrefab = WritePrefab;
+        x.WriteAnimations = WriteAnimations;
         Sheet.ApplyTo(x.Common);
         if (PartsSheet is null) x.PartsOverride = null;
         else
@@ -71,7 +77,7 @@ public sealed class ExportPreset
     {
         Name = name ?? Name, ExportOnSave = ExportOnSave, ExportFrames = ExportFrames, ExportParts = ExportParts,
         ImageFormat = ImageFormat, JpegQuality = JpegQuality, WriteMeta = WriteMeta, WriteSpriteLibrary = WriteSpriteLibrary,
-        Sheet = Sheet.Clone(), PartsSheet = PartsSheet?.Clone(),
+        WritePrefab = WritePrefab, WriteAnimations = WriteAnimations, Sheet = Sheet.Clone(), PartsSheet = PartsSheet?.Clone(),
     };
 }
 

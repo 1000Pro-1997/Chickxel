@@ -82,7 +82,23 @@ public sealed class SheetExportPages
         // ── 형식 묶음 안: Unity 체크 + JPG 품질 ──
         var unity = Toggle(UiStrings.S_UnityExportDialog_BuildExportSections_60EBD042A1, p => p.Export.WriteMeta != false, (p, v) => p.Export.WriteMeta = v, UiStrings.Export_Unity)
             .Tip(UiStrings.Export_UnityTip);
-        _formatOptions = Ui.Stack(unity, JpegQualityLine());
+        // Unity 체크 아래: 프리팹·애니메이션(Unity 파일을 쓸 때만 보임) + 만들어질 파일
+        var prefab = Toggle(UiStrings.Export_UnityPrefab, p => p.Export.WritePrefab, (p, v) => p.Export.WritePrefab = v, UiStrings.Export_UnityPrefab)
+            .Tip(UiStrings.Export_UnityPrefabTip);
+        var animations = Toggle(UiStrings.Export_UnityAnimations, p => p.Export.WriteAnimations, (p, v) => p.Export.WriteAnimations = v, UiStrings.Export_UnityAnimations)
+            .Tip(UiStrings.Export_UnityAnimationsTip);
+        var unityAssets = Note("");
+        var unityExtras = Ui.Stack(prefab, animations, unityAssets);
+        unityExtras.Margin = new Thickness(22, 0, 0, 0);
+        _refresh.Add(p =>
+        {
+            unityExtras.IsVisible = p.Export.WriteMeta != false;
+            unityAssets.IsVisible = p.Export.WritePrefab || p.Export.WriteAnimations;
+            if (!unityAssets.IsVisible || p.Path is null) { unityAssets.Text = ""; return; }
+            var paths = ProjectExport.GetUnityAssetPaths(p, p.Path, assumePartContent: true);
+            unityAssets.Text = paths.Count == 0 ? UiStrings.Export_UnityAssetsNone : "→ " + string.Join(", ", paths.Select(Path.GetFileName)) + " (+ .meta)";
+        });
+        _formatOptions = Ui.Stack(unity, unityExtras, JpegQualityLine());
         _formatOptions.Margin = new Thickness(0, 2, 0, 0);
 
         // ── 왼쪽: 설정(위에서 아래로) ──

@@ -87,6 +87,9 @@
 <figure class="shot"><img src="{{root}}assets/guide/ai-setup-4.png" alt="{{ai-setup.17.alt}}" width="520" height="200" loading="lazy"><figcaption>{{ai-setup.18}}</figcaption></figure>
 <figure class="shot"><img src="{{root}}assets/guide/ai-setup-5.png" alt="{{ai-setup.19.alt}}" width="760" height="37" loading="lazy"><figcaption>{{ai-setup.20}}</figcaption></figure>
 <p>{{ai-setup.13}}</p>
+<h4>{{ai-setup.h-update}}</h4>
+<p>{{ai-setup.update-1}}</p>
+<p>{{ai-setup.update-2}}</p>
 <h4>{{ai-setup.h-path}}</h4>
 <ul>
 <li>{{ai-setup.path-1}}</li>
@@ -231,7 +234,7 @@ tool_timeout_sec = 3600</code></pre>
 <h3 id="ai-chat">{{ai-chat.1}}</h3>
 <p>{{ai-chat.lead}}</p>
 <figure class="shot"><img src="{{root}}assets/guide/ai-chat.png" alt="{{ai-chat.20.alt}}" width="520" height="752" loading="lazy"><figcaption>{{ai-chat.21}}</figcaption></figure>
-<figure class="shot"><img src="{{root}}assets/guide/ai-chat-2.png" alt="{{ai-chat.22.alt}}" width="520" height="188" loading="lazy"><figcaption>{{ai-chat.23}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-chat-2.png" alt="{{ai-chat.22.alt}}" width="520" height="164" loading="lazy"><figcaption>{{ai-chat.23}}</figcaption></figure>
 <div class="table-wrap"><table>
 <thead><tr><th>{{ai-chat.2}}</th><th>{{ai-chat.3}}</th></tr></thead>
 <tbody>
@@ -246,7 +249,7 @@ tool_timeout_sec = 3600</code></pre>
 </tbody>
 </table></div>
 <h4>{{ai-chat.h-model}}</h4>
-<figure class="shot"><img src="{{root}}assets/guide/ai-chat-3.png" alt="{{ai-chat.25.alt}}" width="520" height="182" loading="lazy"><figcaption>{{ai-chat.26}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-chat-3.png" alt="{{ai-chat.25.alt}}" width="520" height="187" loading="lazy"><figcaption>{{ai-chat.26}}</figcaption></figure>
 <p>{{ai-chat.24}}</p>
 <h4>{{ai-chat.h-chips}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/ai-chat-4.png" alt="{{ai-chat.32.alt}}" width="520" height="256" loading="lazy"><figcaption>{{ai-chat.33}}</figcaption></figure>
@@ -254,11 +257,11 @@ tool_timeout_sec = 3600</code></pre>
 <ul>
 <li>{{ai-chat.28}}</li>
 </ul>
-<figure class="shot"><img src="{{root}}assets/guide/ai-chat-5.png" alt="{{ai-chat.34.alt}}" width="520" height="561" loading="lazy"><figcaption>{{ai-chat.35}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-chat-5.png" alt="{{ai-chat.34.alt}}" width="520" height="567" loading="lazy"><figcaption>{{ai-chat.35}}</figcaption></figure>
 <ul>
 <li>{{ai-chat.29}}</li>
 </ul>
-<figure class="shot"><img src="{{root}}assets/guide/ai-chat-6.png" alt="{{ai-chat.36.alt}}" width="322" height="121" loading="lazy"><figcaption>{{ai-chat.37}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-chat-6.png" alt="{{ai-chat.36.alt}}" width="350" height="120" loading="lazy"><figcaption>{{ai-chat.37}}</figcaption></figure>
 <ul>
 <li>{{ai-chat.30}}</li>
 <li>{{ai-chat.31}}</li>
@@ -354,9 +357,24 @@ tool_timeout_sec = 3600</code></pre>
 <tr><td><strong>{{UiStrings.Chat_Help_GroupCanvas}}</strong></td><td>{{UiStrings.Chat_Help_GroupCanvas_Text}}</td><td><code>resize_canvas</code> <code>set_canvas_pivot</code> <code>set_palette</code> <code>set_colors</code></td></tr>
 <tr><td><strong>{{UiStrings.Chat_Help_GroupFiles}}</strong></td><td>{{UiStrings.Chat_Help_GroupFiles_Text}}</td><td><code>new_project</code> <code>set_document_title</code> <code>save_project</code> <code>open_file</code></td></tr>
 <tr><td><strong><a href="#ai-references">{{UiStrings.Chat_Help_GroupReferences}}</a></strong></td><td>{{UiStrings.Chat_Help_GroupReferences_Text}}</td><td><code>search_references</code> <code>get_reference</code> <code>get_style_rules</code> <code>add_reference</code> <code>set_reference_info</code></td></tr>
+<tr><td><strong>{{UiStrings.AiTools_FolderImages}}</strong></td><td>{{ai-edits.folder}}</td><td><code>list_folder_images</code> <code>get_folder_image</code></td></tr>
 <tr><td><strong><a href="#ai-questions">{{UiStrings.Chat_Help_GroupOther}}</a></strong></td><td>{{ai-edits.other}}</td><td><code>ask_user</code></td></tr>
 </tbody>
 </table></div>
+<p>{{ai-edits.tools-off}}</p>
+<h4>{{ai-edits.h-pixels}}</h4>
+<p>{{ai-edits.pixels-1}}</p>
+<pre><code>legend:
+A = #2B2B3A
+B = #C0C0D0
+. = transparent
+rows:
+   001111111111
+   890123456789
+30|....AAAA....
+31|...ABBBBA...
+32|..ABBBBBBA..</code></pre>
+<p>{{ai-edits.pixels-2}}</p>
 <h4>{{ai-edits.h-lines}}</h4>
 <p>{{ai-edits.13}}</p>
 <h4>{{ai-edits.h-links}}</h4>
@@ -375,7 +393,7 @@ tool_timeout_sec = 3600</code></pre>
 <li>{{ai-generate.42}}</li>
 </ul>
 <h4>{{ai-generate.h-options}}</h4>
-<figure class="shot"><img src="{{root}}assets/guide/ai-generate-2.png" alt="{{ai-generate.29.alt}}" width="810" height="694" loading="lazy"><figcaption>{{ai-generate.30}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-generate-2.png" alt="{{ai-generate.29.alt}}" width="810" height="980" loading="lazy"><figcaption>{{ai-generate.30}}</figcaption></figure>
 <div class="table-wrap"><table>
 <thead><tr><th>{{ai-generate.11}}</th><th>{{ai-generate.12}}</th></tr></thead>
 <tbody>
@@ -413,6 +431,39 @@ tool_timeout_sec = 3600</code></pre>
 <figure class="shot"><img src="{{root}}assets/guide/ai-generate-6.png" alt="{{ai-generate.45.alt}}" width="468" height="516" loading="lazy"><figcaption>{{ai-generate.46}}</figcaption></figure>
 <ul class="marks">
 <li>{{ai-generate.43}}</li>
+</ul>
+<h4>{{UiStrings.AiGuide_Title}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/ai-generate-7.png" alt="{{ai-generate.tips.alt}}" width="347" height="667" loading="lazy"><figcaption>{{ai-generate.tips.cap}}</figcaption></figure>
+<p>{{ai-generate.tips-1}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-generate.tips-th1}}</th><th>{{ai-generate.tips-th2}}</th><th>{{ai-generate.tips-th3}}</th></tr></thead>
+<tbody>
+<tr><td><strong>{{UiStrings.AiGuide_Basics}}</strong></td><td>{{UiStrings.AiGuide_Basics_Tip}}</td><td>{{ai-generate.tips-off}}</td></tr>
+<tr><td><strong>{{UiStrings.AiGuide_Character}}</strong></td><td>{{UiStrings.AiGuide_Character_Tip}}</td><td>{{ai-generate.tips-off}}</td></tr>
+<tr><td><strong>{{UiStrings.AiGuide_Object}}</strong></td><td>{{UiStrings.AiGuide_Object_Tip}}</td><td>{{ai-generate.tips-off}}</td></tr>
+<tr><td><strong>{{UiStrings.AiGuide_Background}}</strong></td><td>{{UiStrings.AiGuide_Background_Tip}}</td><td>{{ai-generate.tips-off}}</td></tr>
+<tr><td><strong>{{UiStrings.AiGuide_Motion}}</strong></td><td>{{UiStrings.AiGuide_Motion_Tip}}</td><td>{{ai-generate.tips-on}}</td></tr>
+<tr><td><strong>{{UiStrings.AiGuide_Inbetween}}</strong></td><td>{{UiStrings.AiGuide_Inbetween_Tip}}</td><td>{{ai-generate.tips-on}}</td></tr>
+<tr><td><strong>{{UiStrings.AiGuide_Cleanup}}</strong></td><td>{{UiStrings.AiGuide_Cleanup_Tip}}</td><td>{{ai-generate.tips-on}}</td></tr>
+<tr><td><strong>{{UiStrings.AiGuide_Folder}}</strong></td><td>{{UiStrings.AiGuide_Folder_Tip}}</td><td>{{ai-generate.tips-on}}</td></tr>
+</tbody>
+</table></div>
+<ul>
+<li>{{ai-generate.tips-default}}</li>
+<li>{{ai-generate.tips-apply}}</li>
+<li>{{ai-generate.tips-unused}}</li>
+<li>{{ai-generate.tips-folder}}</li>
+<li>{{ai-generate.tips-edit}}</li>
+</ul>
+<h4>{{UiStrings.AiTools_Title}}</h4>
+<p>{{ai-generate.tools-1}}</p>
+<p>{{ai-generate.tools-2}}</p>
+<h4>{{ai-generate.h-tip-edit}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/ai-generate-8.png" alt="{{ai-generate.edit.alt}}" width="630" height="522" loading="lazy"><figcaption>{{ai-generate.edit.cap}}</figcaption></figure>
+<ul class="marks">
+<li>{{ai-generate.edit-1}}</li>
+<li>{{ai-generate.edit-2}}</li>
+<li>{{ai-generate.edit-3}}</li>
 </ul>
 <div class="note"><p>{{ai-generate.41}}</p></div>
 

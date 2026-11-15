@@ -169,6 +169,8 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
 
     // 캔버스 크기 모드
     private readonly Border _canvasResizeBox;
+    /// <summary>캔버스 크기 묶음 제목(부위 화면에서 시작하면 "부위 크기").</summary>
+    private readonly TextBlock _crTitle;
     private readonly NumericUpDown _crWidth, _crHeight, _crImageWidth, _crImageHeight, _crX, _crY;
     private readonly TextBlock _crWidthPercent, _crHeightPercent;
     private readonly CheckBox _crKeepRatio, _crFromCenter, _crSlice;
@@ -701,8 +703,15 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         _crFlipV = Ui.IconButton(VectorIcon.FlipUpDown, UiStrings.CanvasResize_FlipVerticalTip, (_, _) => FlipDuringResize(false), size: 16);
         _crFlipH.Focusable = _crFlipV.Focusable = false;
         _crSliceRow = Ui.Row(_crSlice, _crSliceFill);
+        // 모든 그림에 맞추기: 모든 레이어·프레임 그림(캔버스 밖 그림 포함)을 다 담는 가장 작은 캔버스로(그림은 늘이지 않음, 적용은 확인).
+        var crFit = Ui.Button(VectorIcon.Maximize2, UiStrings.CanvasResize_Fit, (_, _) =>
+        {
+            if (_ctx.FitCanvasResizeToContent() is { } message) StatusMessage?.Invoke(this, message);
+        }).Tip(UiStrings.CanvasResize_FitTip);
+        crFit.Focusable = false;
         _canvasResizeBox = InfoGroup(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_EDE86CE801, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8CE505E7D6, Ui.Stack(
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4ED6D3C2A9), _crWidth, Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A5A2849291), _crHeight),
+            crFit,
             _crFromCenter,
             _crSliceRow,
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_42E9812F72), _crImageWidth, _crWidthPercent),
@@ -712,6 +721,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_2B00AF339B), _crAnchor),
             Ui.Row(Ui.Label(UiStrings.CanvasResize_Flip), _crFlipH, _crFlipV),
             Ui.Row(_crApply, crCancel)));
+        _crTitle = (TextBlock)((StackPanel)((StackPanel)_canvasResizeBox.Child!).Children[0]).Children[0];
 
         // ── 효과(타임라인에서 효과 하나를 고르면): 효과 창과 같은 효과 고유 설정 + 나머지 설정은 효과 창에서
         _effectForm = new EffectForm(_effectSettings, this, stacked: true);
@@ -1193,6 +1203,10 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
             _crFromCenter.IsChecked = _ctx.CanvasResizeFromCenter;
             bool available = _ctx.CanvasResizeSliceAvailable;
             _crSlice.IsEnabled = available;
+            // 부위 화면에서 시작했으면 부위 크기(제목만 바꾸고, 캔버스 전체를 뒤집는 단추는 끔)
+            bool part = _ctx.CanvasResizeIsPart;
+            _crTitle.Text = part ? UiStrings.CanvasResize_PartTitle : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_EDE86CE801;
+            _crFlipH.IsEnabled = _crFlipV.IsEnabled = !part;
             _crSlice.IsChecked = available && _ctx.CanvasResizeNineSlice;
             _crSlice.Tip(available ? UiStrings.CanvasResize_NineSliceTip : UiStrings.CanvasResize_NineSliceNone);
             _crSliceFill.IsEnabled = _ctx.CanvasResizeUsesSlice;

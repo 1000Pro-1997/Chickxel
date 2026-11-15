@@ -541,7 +541,7 @@ internal static class AiShots
     public static void Generate(ShotKit k)
     {
         var main = k.Main(Sample(k));
-        var chat = AiChat.Open(k, main, Codex, 470, 900, before: s => s.AiDraw.Mode = AiDrawMode.Direct);
+        var chat = AiChat.Open(k, main, Codex, 470, 1200, before: s => s.AiDraw.Mode = AiDrawMode.Direct);
         var w = chat.Window;
         // Codex 상태 확인(CLI 실행)을 건너뛰고 "로그인됨"을 보인다.
         ShotKit.Set(w, "_codexChecking", true);
@@ -589,6 +589,9 @@ internal static class AiShots
         ], firstNumber: 8);
         settingsButton.IsChecked = false;
         FinishPanel(k, w);
+        // 생성 옵션이 다 보이게 키운 창을 대화 그림(⑰~⑳) 높이로 되돌린다.
+        w.Height = 900;
+        k.Settle(300);
 
         // ⑲⑳ 생성 결과 카드: 새 빈 그림에 "늑대귀 모험가"를 생성해 넣은 차례.
         var wolf = Wolf(chat);
@@ -679,6 +682,50 @@ internal static class AiShots
         var full = ShotKit.All<SelectableTextBlock>(expander).First(t => t.Text == instruction);
         var crop = Union(w, 10, LastUserRow(chat, Codex), card);
         k.Save(w, crop: crop.Intersect(new Rect(w.Bounds.Size)), marks: [Room(header, w, left: 14, up: 4), ShotKit.Bounds(full, w).Intersect(ShotKit.Bounds(card, w))], firstNumber: 22);
+    }
+
+    /// <summary>
+    /// ㉔~㉗ 그리기 설정 칸의 AI 그리기 요령·AI가 쓸 수 있는 도구(사람·캐릭터 요령은 글을 고친 채 — "수정됨" 표시),
+    /// ㉘~㉚ 그 요령의 연필 단추로 연 요령 고치기 창.
+    /// </summary>
+    [Shot("ai-generate-7")]
+    public static void GenerateTips(ShotKit k)
+    {
+        var main = k.Main(Sample(k));
+        var chat = AiChat.Open(k, main, Codex, 470, 1300, before: s =>
+        {
+            s.AiDraw.Mode = AiDrawMode.Direct;
+            s.AiGuideTexts[nameof(AiGuide.Character)] = AiGuides.DefaultText(AiGuide.Character) + "\n- Keep chibi proportions: 2-3 heads tall.";
+        });
+        var w = chat.Window;
+        ShotKit.Set(w, "_codexChecking", true);
+        ShotKit.Get<ToggleButton>(w, "_drawSettings").IsChecked = true;
+        FinishPanel(k, w);
+        ShotKit.Get<TextBlock>(w, "_codexStatus").Text = UiStrings.AiDraw_Codex_Ready;
+        k.Settle(300);
+        var assist = ShotKit.Get<object>(w, "_assistView");
+        var guides = ShotKit.Get<Panel>(assist, "Guides");
+        var tools = ShotKit.Get<Control>(assist, "Tools");
+        // 요령 줄: 오른쪽부터 연필·"수정됨"·정보 아이콘, 나머지는 체크 상자(AiAssistView가 더한 차례).
+        var character = (Panel)guides.Children[(int)AiGuide.Character];
+        var edit = (Button)character.Children[0];
+        var edited = character.Children[1];
+        var tipsTitle = (Control)ShotKit.FindText(w, UiStrings.AiGuide_Title).GetVisualParent()!;
+        var panel = ShotKit.Bounds(ShotKit.Get<Control>(w, "_drawPanel"), w);
+        double top = ShotKit.Bounds(tipsTitle, w).Y - 8, bottom = ShotKit.Bounds(tools, w).Bottom + 12;
+        k.Save(w, crop: new Rect(panel.X - 8, top, w.Bounds.Width - panel.X + 8, bottom - top), titleBar: false, marks:
+        [
+            Room(guides, w, left: 12, up: 0),
+            edit,
+            Room(edited, w, left: 0, up: 0).Inflate(2),
+            Room(tools, w, left: 12, up: 0),
+        ], firstNumber: 24);
+
+        k.Dialog(() => Raise(edit), d =>
+        {
+            var text = ShotKit.Find<TextBox>(d);
+            k.Save(d, "ai-generate-8", marks: [text, VisibleButton(d, UiStrings.AiGuide_Reset), VisibleButton(d, UiStrings.AiGuide_Save)], firstNumber: 28);
+        });
     }
 
     // ───────────── AI의 질문 ─────────────

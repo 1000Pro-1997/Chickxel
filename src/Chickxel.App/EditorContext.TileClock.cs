@@ -99,7 +99,7 @@ public sealed partial class EditorContext
         if (phase == _shownTilePhase) return;
         if (_renders.IsPending(CanvasFrameKey(p, _frame))) return;
         _shownTilePhase = phase;
-        _renders.Invalidate(k => k.Kind is RenderKind.Composite or RenderKind.Context
+        _renders.Invalidate(k => k.Kind is RenderKind.Composite or RenderKind.Context or RenderKind.ContextBelow or RenderKind.ContextAbove
                                  || k.Kind is RenderKind.Cel or RenderKind.Part && k.Layer is { IsTilemap: true });
         TileClockTick?.Invoke();
     }

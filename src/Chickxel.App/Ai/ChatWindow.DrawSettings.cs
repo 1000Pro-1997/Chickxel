@@ -122,15 +122,16 @@ public sealed partial class ChatWindow
         _paletteRow = WithInfo(_paletteOnly, UiStrings.AiDraw_PaletteOnly_Text).HelpAt(page, anchor: "Use palette colors only");
         _paletteRow.Margin = new Thickness(22, 0, 0, 0);
         stack.Children.Add(_paletteRow);
+        _codexStatus = WrapText("", dim: true).HelpAt(page, anchor: "Drawing settings");
+        stack.Children.Add(_codexStatus);
         // AI 그리기 요령: 대충 말해도 잘 나오게 시스템 프롬프트에 붙이는 작업별 지시(켜고 끄기·글 고치기). 모든 방식에 쓰되,
         // Codex 그림 생성에서 "생성 요청 다듬기"를 끄면 내 말이 그대로 생성에 가서 쓰이지 않으므로 흐리게 하고 까닭을 보인다.
         _assistView = new AiAssistView(() => _settings.AiChatAssist, () => _settings.AiGuideTexts, McpScope.Full, t => InfoIcon(t), OnAssistChanged);
         stack.Children.Add(new Border { Height = 1, Background = AppTheme.BorderBrush, Margin = new Thickness(0, 4) });
-        stack.Children.Add(WithInfo(TitleText(UiStrings.AiGuide_Title), UiStrings.AiGuide_Title_Tip).HelpAt(page, anchor: "The drawing settings panel"));
+        stack.Children.Add(WithInfo(TitleText(UiStrings.AiGuide_Title), UiStrings.AiGuide_Title_Tip).HelpAt(page, anchor: "AI drawing tips"));
         _guidesUnused = WrapText(UiStrings.AiGuide_UnusedByGenerate, dim: true);
         stack.Children.Add(_guidesUnused);
-        stack.Children.Add(_assistView.Guides.HelpAt(page, anchor: "The drawing settings panel"));
-        _codexStatus = WrapText("", dim: true).HelpAt(page, anchor: "Drawing settings");
+        stack.Children.Add(_assistView.Guides.HelpAt(page, anchor: "AI drawing tips"));
         // 그림 생성을 골랐을 때만: 생성 옵션.
         var options = new StackPanel { Spacing = 6 };
         options.Children.Add(new Border { Height = 1, Background = AppTheme.BorderBrush, Margin = new Thickness(0, 4) });
@@ -138,7 +139,7 @@ public sealed partial class ChatWindow
 
         _autoPrompt = Ui.Check(UiStrings.AiDraw_AutoPrompt);
         _autoPrompt.IsCheckedChanged += (_, _) => OnDrawOptionChanged();
-        options.Children.Add(WithInfo(_autoPrompt, UiStrings.AiDraw_AutoPrompt_Text).HelpAt(page, anchor: "Automatic prompt"));
+        options.Children.Add(WithInfo(_autoPrompt, UiStrings.AiDraw_AutoPrompt_Text).HelpAt(page, anchor: "Refine the generation request"));
 
         _resizeResult = Ui.Check(UiStrings.AiDraw_ResizeResult);
         _resizeResult.IsCheckedChanged += (_, _) => OnDrawOptionChanged();
@@ -203,8 +204,8 @@ public sealed partial class ChatWindow
         stack.Children.Add(options);
         // 쓸 수 있는 도구: 끈 묶음은 MCP 서버가 목록에서 빼고 호출도 거부한다.
         stack.Children.Add(new Border { Height = 1, Background = AppTheme.BorderBrush, Margin = new Thickness(0, 4) });
-        stack.Children.Add(WithInfo(TitleText(UiStrings.AiTools_Title), UiStrings.AiTools_Title_Tip).HelpAt(page, anchor: "The drawing settings panel"));
-        stack.Children.Add(_assistView.Tools.HelpAt(page, anchor: "The drawing settings panel"));
+        stack.Children.Add(WithInfo(TitleText(UiStrings.AiTools_Title), UiStrings.AiTools_Title_Tip).HelpAt(page, anchor: "Tools the AI can use"));
+        stack.Children.Add(_assistView.Tools.HelpAt(page, anchor: "Tools the AI can use"));
 
         var scroll = new ScrollViewer
         {

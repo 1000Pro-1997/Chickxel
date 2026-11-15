@@ -173,6 +173,11 @@ public static class AppTheme
         {
             Setters = { new Setter(TemplatedControl.PaddingProperty, new Thickness(8, 3)) },
         });
+        // 풍선 도움말: 단축키가 든 글은 단축키를 맨 위 초록 코드 칸으로(ShortcutTip)
+        app.Styles.Add(new Style(x => x.OfType<ToolTip>())
+        {
+            Setters = { new Setter(ContentControl.ContentTemplateProperty, ShortcutTip.Template) },
+        });
         // 메인 색 편집기와 팔레트를 나란히 넣는 공용 색 Flyout 폭.
         app.Styles.Add(new Style(x => x.OfType<FlyoutPresenter>().Class("color-picker"))
         {

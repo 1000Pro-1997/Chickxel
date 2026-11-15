@@ -568,7 +568,8 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
     /// <summary>
     /// 담아 둔 셀 묶음을 보이는 행 <paramref name="topRow"/>·프레임 <paramref name="start"/>부터 쓴다(빈 셀은 비움, 모자라는 프레임은 붙임).
     /// 놓는 칸은 그 셀만 갈아 끼우고, 링크째 담은 셀은 링크 묶음을 지킨다(<see cref="SpriteProject.PasteCels"/> — 같은 행에 묶음이 남아 있으면 그 묶음에 들어감,
-    /// 아니면 같은 묶음에서 온 칸끼리 새 묶음). 셀 크기가 다르거나 그룹/일반이 맞지 않는 칸은 건너뛴다. 쓴 칸 수를 돌려준다. <see cref="SpriteProject.Edit"/> 안에서 부른다.
+    /// 아니면 같은 묶음에서 온 칸끼리 새 묶음). 일반 레이어에는 크기가 다른 셀도 왼쪽 위를 맞춰 놓고(캔버스 밖으로 나간 픽셀은 캔버스 밖 그림),
+    /// 부위 크기가 다르거나 그룹/일반이 맞지 않는 칸은 건너뛴다. 쓴 칸 수를 돌려준다. <see cref="SpriteProject.Edit"/> 안에서 부른다.
     /// </summary>
     private static int WriteCells(SpriteProject p, IReadOnlyList<ClipRow> rows, int frameCount, IReadOnlyList<int> visibleRows, int topRow, int start)
     {
@@ -581,7 +582,7 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
             for (int k = 0; k < cels.Length; k++)
             {
                 var cel = cels[k];
-                if (cel is not null && cel.Image.Size != p.CelSize(target)) continue;
+                if (cel is not null && !FitsCel(p, target, cel)) continue;
                 written++;
                 if (cel is not null || !p.IsCelEmpty(index, start + k)) place.Add((index, start + k, cel));
             }
@@ -605,6 +606,10 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
         if (place.Count > 0) p.PasteCels(place);
         return written;
     }
+
+    /// <summary>셀 사본을 레이어에 놓을 수 있는지: 일반 레이어는 크기가 달라도(캔버스 밖 그림으로 남음), 그 밖은 셀 크기가 같아야 한다.</summary>
+    private static bool FitsCel(SpriteProject p, Layer target, CelCopy cel)
+        => target.Kind == LayerKind.Normal || cel.Image.Size == p.CelSize(target);
 
     /// <summary>
     /// 셀 묶음(행 × 연속 프레임)을 보이는 행 <paramref name="toRow"/>·프레임 <paramref name="toFrame"/>로 옮기거나 복사한다(실행취소 1단계). 둘 다 링크 묶음을 지킨다
@@ -815,7 +820,8 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
 
     /// <summary>
     /// 붙여넣기: 효과 복사였으면 현재 레이어 효과 목록 끝에 붙이고(실행취소 한 단계, 붙인 효과가 골라짐), 프레임 복사였으면 현재 프레임(범위 끝) 뒤에
-    /// 그 프레임들을 끼워 넣고, 셀 복사였으면 클릭한 셀을 왼쪽 위로 해서 같은 모양(행 × 프레임)으로 덮어쓴다(셀 크기가 다른 칸은 건너뜀). 모자라는 프레임은 붙인다.
+    /// 그 프레임들을 끼워 넣고, 셀 복사였으면 클릭한 셀을 왼쪽 위로 해서 같은 모양(행 × 프레임)으로 덮어쓴다(일반 레이어는 크기가 다른 셀도 왼쪽 위를 맞춰 넣고
+    /// 캔버스 밖으로 나간 픽셀은 캔버스 밖 그림으로 남김, 부위 크기가 다른 칸은 건너뜀). 모자라는 프레임은 붙인다.
     /// 링크째 복사한 셀은 링크 묶음을 지킨다(<see cref="SpriteProject.PasteCels"/>): 같은 행이면 원래 묶음(같은 색)에 들어가고, 다른 행·다른 문서면 같은 묶음에서 온 칸끼리 새 묶음.
     /// </summary>
     /// <returns>타임라인에 복사해 둔 셀/프레임/효과가 있어 붙여 넣었으면(또는 붙일 수 없다고 알렸으면) true, 없으면 false(그림 붙여넣기로 넘김).</returns>
@@ -859,7 +865,7 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
                     foreach (var (layer, cel) in clip.Frames[i])
                     {
                         int l = p.IndexOf(layer);
-                        if (l >= 0 && p.CelSize(layer) == cel.Image.Size) cels.Add((l, at + i, cel));
+                        if (l >= 0 && FitsCel(p, layer, cel)) cels.Add((l, at + i, cel));
                     }
                 }
                 // 링크째 복사한 셀은 같은 묶음(색)에 들어간다(묶음이 사라졌으면 붙인 프레임끼리 새 묶음)
@@ -970,7 +976,8 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
     private void AddPartTo(Layer? group)
     {
         if (P is not { } p) return;
-        var size = _ctx.CurrentPart?.PartSize ?? new Size(Math.Min(16, p.Width), Math.Min(16, p.Height));
+        // 부위도 레이어처럼 캔버스 크기로 시작한다(부위 크기 모드·창에서 줄일 수 있음)
+        var size = p.Size;
         var dlg = new NewPartDialog(p.UniqueLayerName(UiStrings.S_TimelinePanel_AddPartTo_3720B51812), size.Width, size.Height);
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
         string? name = dlg.PartName.Length > 0 ? dlg.PartName : null;
@@ -1192,14 +1199,9 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
     private void SetLayerOpacity(int index)
     {
         if (P is not { } p) return;
-        var text = InputDialog.Ask(this, UiStrings.S_TimelinePanel_SetLayerOpacity_CF46646372, UiStrings.S_TimelinePanel_SetLayerOpacity_D496BC50BE, p.Layers[index].Opacity.ToString(), ["255", "192", "128", "64"]);
-        if (text is null) return;
-        if (!byte.TryParse(text, out var v))
-        {
-            Ui.Error(this, UiStrings.S_TimelinePanel_SetLayerOpacity_367789B53A);
-            return;
-        }
-        _ctx.Structural(() => p.SetLayerProperties(index, opacity: v));
+        var dialog = new LayerOpacityDialog(p.Layers[index].Opacity);
+        if (dialog.ShowDialog(this) != DialogResult.OK || dialog.Opacity255 == p.Layers[index].Opacity) return;
+        _ctx.Structural(() => p.SetLayerProperties(index, opacity: dialog.Opacity255));
     }
 
     /// <summary>
@@ -1514,6 +1516,11 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
         Item(UiStrings.S_TimelinePanel_ShowEmptyMenu_43E7688224, () => AppendFrames(false, 1, _ctx.CurrentLayer)),
         Item(UiStrings.S_TimelinePanel_ShowEmptyMenu_A8038996C4, () => AppendFrames(true, 1, _ctx.CurrentLayer)));
 
+    /// <summary>
+    /// 레이어 우클릭 메뉴. 모든 종류가 같은 틀·같은 순서를 쓰고 종류별 항목만 가운데 칸에 더한다:
+    /// 선택 머리 → 이름·불투명도·효과·보이기·잠금 → (종류별: 부위 크기·위치·스킨 / 그룹 펼치기·자동 배치·스킨 / 타일맵 변환 / 일반 레이어 스킨 추가)
+    /// → 캔버스 피벗 대표 → 새로 만들기(레이어·그룹·타일맵 레이어, 그룹·부위면 그 그룹의 새 부위) → 복제·위로·아래로·아래와 병합·삭제.
+    /// </summary>
     private void ShowLayerMenu(int index)
     {
         if (P is not { } p) return;
@@ -1551,7 +1558,6 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
         else if (layer.IsGroup)
         {
             items.Add(new Separator());
-            items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_CC4093DC8F, () => AddPartTo(layer)));
             items.Add(Item(layer.Collapsed ? UiStrings.S_TimelinePanel_ShowLayerMenu_8BC8B2C00F : UiStrings.S_TimelinePanel_ShowLayerMenu_DF2CF41103, () => ToggleCollapsed(index)));
             var layoutItem = Item(layer.AutoLayout is null ? UiStrings.S_TimelinePanel_ShowLayerMenu_E476AEFAC3 : UiStrings.S_TimelinePanel_ShowLayerMenu_05537BB2FE, () => EditGroupLayout(index));
             if (layer.AutoLayout is not null)
@@ -1586,10 +1592,17 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
         items.Add(new Separator());
         items.Add(PivotLayerItem(p, layer));
         items.Add(new Separator());
-        items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_AA2FF06061, AddLayer));
-        items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_13B10F0946, AddGroup));
-        items.Add(Item(UiStrings.Tile_MenuAddLayer, AddTilemapLayer));
-        if (!layer.IsGroup) items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_804EB6B1D9, AddPart));
+        // 새로 만들기는 한 묶음으로. 부위는 그룹 안에만 만들므로 그룹·부위를 골랐을 때만(그 그룹에).
+        var create = new List<Control>
+        {
+            Item(UiStrings.S_TimelinePanel_ShowLayerMenu_AA2FF06061, AddLayer),
+            Item(UiStrings.S_TimelinePanel_ShowLayerMenu_13B10F0946, AddGroup),
+            Item(UiStrings.Tile_MenuAddLayer, AddTilemapLayer),
+        };
+        if ((layer.IsGroup ? layer : layer.IsPart ? layer.Parent : null) is { } partGroup)
+            create.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_804EB6B1D9, () => AddPartTo(partGroup)));
+        items.Add(new MenuItem { Header = Plain(UiStrings.Timeline_NewMenu), ItemsSource = create });
+        items.Add(new Separator());
         items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_1524FC7BD9, DuplicateLayer));
         items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_9BA618B63B, () => MoveLayer(1)));
         items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_51558AB208, () => MoveLayer(-1)));
@@ -3797,13 +3810,22 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
             }
             if (pos.X < NameW && l >= 0)
             {
-                // 레이어 이름 열: 눈/자물쇠/접기/이름. Alt+눈·자물쇠 = 이 레이어만 남기고 나머지 숨기기·잠그기(이미 그렇면 모두 보이기·풀기).
+                // 레이어 이름 열: 눈/자물쇠/접기/이름. Alt+눈·자물쇠 = 이 레이어만 남기고 나머지 숨기기·잠그기(이미 그렇면 모두 보이기·풀기) + 그 레이어 고르기.
                 var nameLayer = p.Layers[l];
                 bool alt = (e.KeyModifiers & KeyModifiers.Alt) != 0;
                 if (left && pos.X < ToggleX)
                 {
                     bool lockColumn = pos.X >= 24;
-                    if (alt) Ctx.Structural(() => p.IsolateLayer(l, lockColumn));
+                    if (alt)
+                    {
+                        // 이 레이어만 보이거나 고칠 수 있게 되므로 그 레이어를 고른다
+                        Ctx.Structural(() => p.IsolateLayer(l, lockColumn));
+                        Ctx.SetPivotCanvasTarget(false);
+                        Ctx.SetCurrentLayer(l);
+                        SelectLayers([nameLayer]);
+                        _layerAnchor = nameLayer;
+                        _owner.HintSelection();
+                    }
                     else if (lockColumn) Ctx.Structural(() => p.SetLayerProperties(l, locked: !nameLayer.Locked));
                     else Ctx.Structural(() => p.SetLayerProperties(l, visible: !nameLayer.Visible));
                     return;

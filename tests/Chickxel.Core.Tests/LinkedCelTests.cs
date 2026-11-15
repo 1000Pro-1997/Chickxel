@@ -645,4 +645,27 @@ public class LinkedCelTests
         Assert.Equal(default, At(p, 0, 3, 3));
         Assert.Equal(default, At(p, 5, 3, 3));
     }
+
+    [Fact]
+    public void PasteCels_DifferentCanvasSize_KeepsPixelsOutsideCanvas()
+    {
+        // 4×4 문서의 (3,3) 초록 → 2×2 문서: 캔버스 밖 그림으로 남고, 옮기면 보인다
+        var big = Frames(1);
+        Draw(big, 3, 3, Green);
+        var small = new SpriteProject(2, 2);
+        small.PasteCels([(0, 0, big.CopyCels(big.Layers[0], [0])[0])]);
+        Assert.Equal(Red, At(small, 0, 0, 0));
+        var (outside, origin) = small.GetCelOverflow(0, 0)!.Value;
+        Assert.Equal(Green, outside.Get(3 - origin.X, 3 - origin.Y));
+        small.ShiftCels("옮기기", [(0, 0)], -2, -2);
+        Assert.Equal(Green, At(small, 0, 1, 1));
+
+        // 2×2 문서 셀(캔버스 밖 그림 포함) → 4×4 문서: 같은 캔버스 좌표에 그대로
+        var back = Frames(1);
+        back.PasteCels([(0, 0, small.CopyCels(small.Layers[0], [0])[0])]);
+        Assert.Equal(Green, At(back, 0, 1, 1));
+        Assert.Equal(default, At(back, 0, 0, 0));
+        var (left, at) = back.GetCelOverflow(0, 0)!.Value; // 2×2에서 밖으로 밀린 빨강도 따라옴
+        Assert.Equal(Red, left.Get(-2 - at.X, -2 - at.Y));
+    }
 }

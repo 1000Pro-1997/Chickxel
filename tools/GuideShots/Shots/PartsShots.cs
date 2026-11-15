@@ -57,11 +57,13 @@ internal static class PartsShots
             var size = AfterLabel(w, (Panel)ShotKit.Get<Control>(w, "_w").Parent!);
             k.Save(w, "parts-create-3", marks: [name, size], firstNumber: 5);
         });
-        // ⑦ 새 그룹 ⑧ 부위 추가… (그룹 우클릭)
+        // ⑦ 새 그룹 ⑧ 새 부위… (그룹 우클릭 > 새로 만들기)
         int g = Index(main, GroupName);
         RightClickRow(k, main, g);
+        MenuItemByText(UiStrings.Timeline_NewMenu).IsSubMenuOpen = true;
+        k.Settle(300);
         SaveMenu(k, main, "parts-create-4", g,
-            [MenuItemByText(UiStrings.S_TimelinePanel_ShowLayerMenu_13B10F0946), MenuItemByText(UiStrings.S_TimelinePanel_ShowLayerMenu_CC4093DC8F)], 7);
+            [MenuItemByText(UiStrings.S_TimelinePanel_ShowLayerMenu_13B10F0946), MenuItemByText(UiStrings.S_TimelinePanel_ShowLayerMenu_804EB6B1D9)], 7);
     }
 
     [Shot("parts-timeline")]

@@ -28,9 +28,9 @@ tilemap-create.alt,프레임·레이어 메뉴를 연 모습: 새 레이어·새
 tilemap-create.caption,① 새 타일맵 레이어(New tilemap layer),① New tilemap layer
 tilemap-create.menu,<strong>프레임·레이어 &gt; ① 새 타일맵 레이어</strong>({{key:프레임·레이어/새 타일맵 레이어…}})를 누릅니다.,Choose <strong>Frame·Layer &gt; ① New tilemap layer</strong> ({{key:프레임·레이어/새 타일맵 레이어…}}).
 tilemap-create.h-timeline,타임라인에서 만들기,From the timeline
-tilemap-create.alt2,타임라인의 Sky 레이어 줄을 우클릭한 메뉴: 새 레이어·새 그룹 아래의 새 타일맵 레이어 항목,"Right-click menu on the Sky layer row in the timeline, with New tilemap layer below New layer and New group"
-tilemap-create.caption2,② 레이어 우클릭 메뉴의 새 타일맵 레이어,② New tilemap layer in the layer's right-click menu
-tilemap-create.timeline,타임라인에서 레이어 줄(또는 빈 곳)을 우클릭하고 ② <strong>새 타일맵 레이어</strong>를 눌러도 됩니다.,You can also right-click a layer row (or an empty spot) in the timeline and choose ② <strong>New tilemap layer</strong>.
+tilemap-create.alt2,"타임라인의 Sky 레이어 줄을 우클릭해 새로 만들기 하위 메뉴를 펼친 모습: 새 레이어·새 그룹 아래의 새 타일맵 레이어 항목","Right-click menu on the Sky layer row in the timeline with the New submenu open: New tilemap layer below New layer and New group"
+tilemap-create.caption2,"② 레이어 우클릭 메뉴의 새로 만들기 ▸ 새 타일맵 레이어","② New ▸ New tilemap layer in the layer's right-click menu"
+tilemap-create.timeline,"타임라인에서 레이어 줄(또는 빈 곳)을 우클릭하고 <strong>새로 만들기</strong> 하위 메뉴의 ② <strong>새 타일맵 레이어</strong>를 눌러도 됩니다.","You can also right-click a layer row (or an empty spot) in the timeline and choose ② <strong>New tilemap layer</strong> from the <strong>New</strong> submenu."
 tilemap-create.h-tileset,처음 쓰는 타일셋,Which tileset it starts with
 tilemap-create.tileset,새 레이어는 아래 차례로 처음 찾은 타일셋을 씁니다.,The new layer uses the first tileset found in this order:
 tilemap-create.ts1,지금 고른 레이어가 타일맵 레이어면 그 레이어의 첫 타일셋,"The first tileset of the selected layer, if it is a tilemap layer"

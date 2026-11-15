@@ -66,6 +66,10 @@ public sealed class AppSettings
     /// <summary>양파 껍질 불투명도(%).</summary>
     public int OnionOpacity { get; set; } = 30;
     public bool OnionTint { get; set; } = true;
+    /// <summary>다른 레이어 흐리게(지금 레이어만 또렷이 — 화면에만).</summary>
+    public bool FocusLayer { get; set; }
+    /// <summary>다른 레이어 흐리게의 다른 레이어 불투명도(%).</summary>
+    public int FocusLayerOpacity { get; set; } = 30;
 
     // 도구
     /// <summary>연필 쪽 브러시(지우개가 아닌 브러시 도구가 같이 씀).</summary>
@@ -217,6 +221,10 @@ public sealed class AppSettings
     public Ai.AiAssistSettings AiChatAssist { get; set; } = new();
     /// <summary>외부 AI 연결에서 끈 도구 묶음·그리기 프롬프트(외부 AI 연결 창 — 처음엔 파일 열기·그림 생성이 꺼짐).</summary>
     public Ai.AiAssistSettings AiExternalAssist { get; set; } = Ai.AiAssistSettings.ExternalDefault();
+    /// <summary>
+    /// 그리기 요령 기본값(정지 그림용 요령 끔 — <see cref="Ai.AiAssistSettings.DefaultGuidesOff"/>)을 예전(모두 켬) 설정에 한 번 옮겼는지. 이 값이 없는 설정 파일은 옮긴다.
+    /// </summary>
+    public bool AiGuideDefaultsApplied { get; set; } = true;
     /// <summary>사용자가 고친 그리기 프롬프트 글(<see cref="Ai.AiGuide"/> 이름 → 글, 없으면 기본 글). 채팅과 외부 AI 연결이 같이 쓴다.</summary>
     public Dictionary<string, string> AiGuideTexts { get; set; } = new();
     /// <summary>예전 기본 "그림 생성"을 새 기본 "자동"으로 한 번 옮겼는지(이후 사용자가 다시 그림 생성을 골라도 보존).</summary>
@@ -375,6 +383,9 @@ public sealed class AppSettings
                 if (document.RootElement.ValueKind == JsonValueKind.Object &&
                     !document.RootElement.TryGetProperty(nameof(MoveKeepOutsideApplied), out _))
                     settings.MoveKeepOutsideApplied = false;
+                if (document.RootElement.ValueKind == JsonValueKind.Object &&
+                    !document.RootElement.TryGetProperty(nameof(AiGuideDefaultsApplied), out _))
+                    settings.AiGuideDefaultsApplied = false;
                 return Migrate(settings);
             }
         }
@@ -408,6 +419,12 @@ public sealed class AppSettings
         if (s.AiExternalOpenFile is { } openFile) s.AiExternalAssist.SetTool(Ai.AiToolGroup.OpenFile, openFile);
         if (s.AiExternalGenerate is { } generate) s.AiExternalAssist.SetTool(Ai.AiToolGroup.Generate, generate);
         s.AiExternalOpenFile = s.AiExternalGenerate = null;
+        if (!s.AiGuideDefaultsApplied)
+        {
+            s.AiChatAssist.ApplyGuideDefaults();
+            s.AiExternalAssist.ApplyGuideDefaults();
+            s.AiGuideDefaultsApplied = true;
+        }
         if (!s.AiDrawAutoDefaultApplied)
         {
             if (s.AiDraw.Mode == Chickxel.Core.AiDraw.AiDrawMode.Generate) s.AiDraw.Mode = Chickxel.Core.AiDraw.AiDrawMode.Auto;

@@ -1404,6 +1404,8 @@ public sealed partial class EditorContext
     {
         /// <summary>타일맵 레이어에서 크기 조절을 시작했을 때의 칸 격자. 도중에 레이어 선택이 바뀌어도 유지한다.</summary>
         public (TilemapData Data, Tileset Tileset)? TileGrid { get; } = tileGrid;
+        /// <summary>부위 화면에서 시작했으면 그 부위(부위 크기를 바꿈 — 원래 그림·좌표는 부위 칸 기준). 아니면 null(캔버스 크기).</summary>
+        public Layer? Part { get; init; }
         /// <summary>현재 프레임 합성(미리보기 원본 — 늘 이것에서 다시 그려 누적되지 않음).</summary>
         public PixelImage Source { get; set; } = source;
         /// <summary>새 캔버스(원래 프레임 좌표: 가장자리를 끄는 동안 화면에서 제자리에 보이게).</summary>
@@ -1504,13 +1506,18 @@ public sealed partial class EditorContext
         }
     }
 
-    /// <summary>프레임 칸 9-slice 테두리(캔버스 크기 모드가 늘일 테두리 — 쓸 수 없으면 없음).</summary>
-    public SpriteBorder CanvasResizeBorder
-        => Project is { } p && NineSlice.Applies(p.Sprite.Border, p.Width, p.Height) ? p.Sprite.Border : SpriteBorder.None;
+    /// <summary>캔버스 크기 모드가 부위 화면에서 시작해 부위 크기를 바꾸는지.</summary>
+    public bool CanvasResizeIsPart => _canvasResize?.Part is not null;
 
-    /// <summary>9-slice로 늘릴 테두리가 있는지: 프레임 칸 테두리 또는 자기 테두리가 있는 부위.</summary>
+    /// <summary>늘일 9-slice 테두리: 부위 크기면 그 부위 테두리, 캔버스 크기면 프레임 칸 테두리(쓸 수 없으면 없음).</summary>
+    public SpriteBorder CanvasResizeBorder
+        => _canvasResize?.Part is { } part ? (NineSlice.Applies(part.PartBorder, part.PartSize.Width, part.PartSize.Height) ? part.PartBorder : SpriteBorder.None)
+            : Project is { } p && NineSlice.Applies(p.Sprite.Border, p.Width, p.Height) ? p.Sprite.Border : SpriteBorder.None;
+
+    /// <summary>9-slice로 늘릴 테두리가 있는지: 부위 크기면 그 부위 테두리, 캔버스 크기면 프레임 칸 테두리 또는 자기 테두리가 있는 부위.</summary>
     public bool CanvasResizeSliceAvailable
-        => Project is { } p && (!CanvasResizeBorder.IsNone || p.Layers.Any(l => l.IsPart && NineSlice.Applies(l.PartBorder, l.PartSize.Width, l.PartSize.Height)));
+        => _canvasResize?.Part is not null ? !CanvasResizeBorder.IsNone
+            : Project is { } p && (!CanvasResizeBorder.IsNone || p.Layers.Any(l => l.IsPart && NineSlice.Applies(l.PartBorder, l.PartSize.Width, l.PartSize.Height)));
 
     /// <summary>
     /// 캔버스 크기 모드가 그림 크기를 9-slice로 바꾸는지(켰고 쓸 테두리가 있음). 조작(Ctrl+끌기·그림 가로/세로)은 같고 늘리는 방법만 바뀐다.
@@ -1574,7 +1581,7 @@ public sealed partial class EditorContext
         get
         {
             if (_canvasResize is not { } s || Project is not { } p || _frame < 0 || _frame >= p.Frames.Count) return null;
-            var (fx, fy) = p.GetFramePivot(_frame).ToLocalPixel(s.Source.Width, s.Source.Height);
+            var (fx, fy) = (s.Part is { } part ? p.GetLayerPivot(part, _frame) : p.GetFramePivot(_frame)).ToLocalPixel(s.Source.Width, s.Source.Height);
             if (s.Warp is { } warp)
             {
                 var box = new TransformBox(new Rectangle(Point.Empty, s.Source.Size));
@@ -1593,7 +1600,7 @@ public sealed partial class EditorContext
     private void EnsureCanvasResizePreview(CanvasResizeSession s)
     {
         if (s.Preview is not null || Project is not { } p) return;
-        var (full, origin) = FrameWithOverflow(p, s.Source);
+        var (full, origin) = s.Part is null ? FrameWithOverflow(p, s.Source) : (s.Source, Point.Empty);
         var canvas = s.Canvas.Size;
         int m = SpriteProject.OverflowMargin;
         var clip = new Rectangle(-m, -m, canvas.Width + 2 * m, canvas.Height + 2 * m);
@@ -1646,7 +1653,8 @@ public sealed partial class EditorContext
     }
 
     /// <summary>
-    /// 캔버스 크기 모드에 들어간다: 떠 있는 선택·변형을 먼저 적용하고, 현재 프레임 합성 전체(부위를 골랐어도)를 미리보기로 보인다.
+    /// 캔버스 크기 모드에 들어간다: 떠 있는 선택·변형을 먼저 적용하고, 현재 프레임 합성 전체를 미리보기로 보인다. 부위 화면이면 그 부위 칸(지금 프레임 셀)을
+    /// 대상으로 부위 크기를 바꾼다(적용은 <see cref="SpriteProject.ResizePartScaled"/> — 모든 프레임·스킨).
     /// 못 들어가면 상태 표시줄에 보일 이유, 들어갔으면(이미 모드여도) null.
     /// </summary>
     public string? BeginCanvasResize()
@@ -1654,6 +1662,13 @@ public sealed partial class EditorContext
         if (Project is null) return UiStrings.S_EditorContext_BeginCanvasResize_9D67D0C8F0;
         if (_canvasResize is not null) return null;
         CommitFloating();
+        if (CurrentPart is { } part)
+        {
+            var cel = Project.GetCel(_layer, _frame)?.Clone() ?? new PixelImage(part.PartSize.Width, part.PartSize.Height);
+            _canvasResize = new CanvasResizeSession(cel, null) { Part = part };
+            CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
+            return null;
+        }
         if (FrameImage(_frame) is not { } image) return UiStrings.S_EditorContext_BeginCanvasResize_1378D58776;
         var grid = CurrentTilemap is { Tiles: { } data } layer && Project.TilesetOf(layer) is { } ts ? (data, ts) : ((TilemapData, Tileset)?)null;
         _canvasResize = new CanvasResizeSession(image, grid);
@@ -1676,6 +1691,8 @@ public sealed partial class EditorContext
     public void SetCanvasResize(Rectangle canvas, Rectangle image, (double X, double Y)[]? quad = null)
     {
         if (_canvasResize is not { } s) return;
+        // 부위 크기는 사각형만(여백 모양으로 지우기는 캔버스 크기에서만)
+        if (s.Part is not null) quad = null;
         static int Clamp(int v, int min = 1) => Math.Clamp(v, min, PixelImage.MaxSize);
         var min = CanvasResizeMinImage;
         canvas.Size = new Size(Clamp(canvas.Width), Clamp(canvas.Height));
@@ -1690,6 +1707,32 @@ public sealed partial class EditorContext
         CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>
+    /// 캔버스 크기 모드에서 새 캔버스를 모든 레이어 그림(모든 프레임, 캔버스 밖 그림·부위 영역 포함 — <see cref="SpriteProject.ContentBounds"/>)을 다 담는 가장 작은 크기로 맞춘다.
+    /// 그림은 늘이지 않고 자리만 옮긴다(적용은 확인에서). 상태 표시줄 글을 돌려준다(모드가 아니면 null).
+    /// </summary>
+    public string? FitCanvasResizeToContent()
+    {
+        if (_canvasResize is not { } s || Project is not { } p) return null;
+        var bounds = s.Part is { } part ? PartContentBounds(p, part) : p.ContentBounds();
+        if (bounds.IsEmpty) return UiStrings.CanvasResize_FitEmpty;
+        // 캔버스 밖 그림은 이 범위(최대 크기 이하) 안에만 남으므로 결과도 그 안이다.
+        bounds = Rectangle.Intersect(bounds, p.OverflowBounds);
+        SetCanvasResize(bounds, new Rectangle(-bounds.X, -bounds.Y, s.Source.Width, s.Source.Height));
+        return UiStrings.FormatCanvasResize_Fitted(width: bounds.Width, height: bounds.Height);
+    }
+
+    /// <summary>부위의 모든 프레임 셀(보이는 스킨)에 칠한 픽셀을 감싸는 사각형(부위 좌표). 없으면 빈 사각형.</summary>
+    private static Rectangle PartContentBounds(SpriteProject p, Layer part)
+    {
+        int index = p.IndexOf(part);
+        var bounds = Rectangle.Empty;
+        for (int f = 0; f < p.Frames.Count; f++)
+            if (p.GetCel(index, f)?.GetOpaqueBounds() is { IsEmpty: false } r)
+                bounds = bounds.IsEmpty ? r : Rectangle.Union(bounds, r);
+        return bounds;
+    }
+
     /// <summary>원근 변형 중이면 그 기준(시작할 때의 캔버스·그림 사각형, 그 뒤 그림만 옮긴 양). 아니면 null.</summary>
     public (Rectangle Canvas, Rectangle Image, Point Shift)? CanvasResizeWarpBase
         => _canvasResize is { Warp: not null } s ? (s.WarpBaseCanvas, s.WarpBaseImage, s.WarpShift) : null;
@@ -1701,7 +1744,8 @@ public sealed partial class EditorContext
     /// </summary>
     public bool SetCanvasResizeWarp((double X, double Y)[] quad, Rectangle baseCanvas, Rectangle baseImage, Point shift)
     {
-        if (_canvasResize is not { } s) return false;
+        // 부위 크기는 원근 변형을 쓰지 않는다.
+        if (_canvasResize is not { } s || s.Part is not null) return false;
         var box = new TransformBox(baseCanvas);
         if (box.WithCorners(box.Identity, quad) is not { } h) return false;
         int left = (int)Math.Floor(quad.Min(c => c.X)), top = (int)Math.Floor(quad.Min(c => c.Y));
@@ -1765,7 +1809,8 @@ public sealed partial class EditorContext
     /// </summary>
     public string? FlipDuringResize(bool horizontal)
     {
-        if (_canvasResize is null || Project is not { } p) return null;
+        if (_canvasResize is not { } s || Project is not { } p) return null;
+        if (s.Part is not null) return UiStrings.CanvasResize_PartNoFlip;
         string dir = horizontal ? UiStrings.Flip_DirHorizontal : UiStrings.Flip_DirVertical;
         if (horizontal) p.FlipCanvasHorizontal();
         else p.FlipCanvasVertical();
@@ -1777,6 +1822,15 @@ public sealed partial class EditorContext
         if (_canvasResize is not { } s || Project is not { } p) return;
         _canvasResize = null;
         DropCanvasResizePreview(s);
+        if (s.Part is { } part)
+        {
+            int index = p.IndexOf(part);
+            bool partChanged = index >= 0 && (s.Canvas != new Rectangle(Point.Empty, part.PartSize) || s.Image != new Rectangle(Point.Empty, part.PartSize));
+            if (partChanged) p.ResizePartScaled(index, s.Canvas, s.Image, CanvasResizeUsesSlice ? _canvasResizeSliceFill : null);
+            CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
+            if (partChanged) CanvasResized?.Invoke(this, UiStrings.FormatCanvasResize_PartResized(name: part.Name, width: s.Canvas.Width, height: s.Canvas.Height));
+            return;
+        }
         var (canvas, image) = (s.Canvas.Size, s.Image);
         var keep = CanvasResizeKeep(s);
         bool changed = canvas != p.Size || image != new Rectangle(Point.Empty, p.Size) || s.Warp is not null || keep is not null;
@@ -1797,6 +1851,19 @@ public sealed partial class EditorContext
     private void SyncCanvasResize()
     {
         if (_canvasResize is not { } s || Project is not { } p) return;
+        if (s.Part is { } part)
+        {
+            // 부위 크기: 다른 레이어로 가거나 부위 크기가 바뀌면 취소, 아니면 지금 프레임 셀로 미리보기
+            if (!ReferenceEquals(CurrentPart, part) || part.PartSize != s.Source.Size)
+            {
+                CancelCanvasResize();
+                return;
+            }
+            s.Source = p.GetCel(_layer, _frame)?.Clone() ?? new PixelImage(part.PartSize.Width, part.PartSize.Height);
+            DropCanvasResizePreview(s);
+            CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
+            return;
+        }
         if (p.Size != s.Source.Size || FrameImage(_frame) is not { } image)
         {
             CancelCanvasResize();
@@ -1990,7 +2057,7 @@ public sealed partial class EditorContext
         // 효과만 바뀐 레이어 하나(효과 창에서 값을 바꾸는 중): 지금 프레임 합성에서 효과 1~k 중간 결과를 담아 다음 변경 때 이어 그린다.
         _renders.CheckpointLayer = effectsOnly ? changed.FirstOrDefault(l => before.Any(s => ReferenceEquals(s.Layer, l) && !ReferenceEquals(s.Effects, l.Effects))) : null;
         // 부위 화면의 효과 그림(RenderKind.Part)은 그 그룹 효과도 입히므로 그룹이 바뀌어도 무효
-        _renders.Invalidate(k => layered || k.Kind is RenderKind.Composite or RenderKind.Context || k.Layer is { } l && changed.Contains(l)
+        _renders.Invalidate(k => layered || k.Kind is RenderKind.Composite or RenderKind.Context or RenderKind.ContextBelow or RenderKind.ContextAbove || k.Layer is { } l && changed.Contains(l)
                                  || k.Kind == RenderKind.Part && k.Layer?.Parent is { } g && changed.Contains(g));
     }
 
@@ -2028,7 +2095,7 @@ public sealed partial class EditorContext
         _renders.Invalidate(k => k.Kind switch
         {
             RenderKind.Composite => others || ReferenceEquals(k.Frame, frame),
-            RenderKind.Context => ReferenceEquals(k.Frame, frame) && (layered || !ReferenceEquals(k.Layer, layer)),
+            RenderKind.Context or RenderKind.ContextBelow or RenderKind.ContextAbove => ReferenceEquals(k.Frame, frame) && (layered || !ReferenceEquals(k.Layer, layer)),
             _ => ReferenceEquals(k.Frame, frame) && (layered || ReferenceEquals(k.Layer, layer) || group is not null && ReferenceEquals(k.Layer, group))
                  || others && (ReferenceEquals(k.Layer, layer) || group is not null && ReferenceEquals(k.Layer, group)),
         });
@@ -2088,6 +2155,9 @@ public sealed partial class EditorContext
         return _renders.Get(key, priority, () => key.Raw ? p.PlanFrameRaw(frame) : p.PlanFrame(frame), live);
     }
 
+    /// <summary>캔버스에 보일 프레임 합성(효과 보기·층 보기 반영, 그리는 중이면 중간 그림) — 그룹에 효과가 있는 부위 화면이 그대로 그린다.</summary>
+    public RenderView CanvasCompositeView(int frame) => CanvasFrameView(frame, RenderPriority.Current, live: true);
+
     /// <summary>캔버스 프레임 합성의 열쇠: 효과 보기를 끄면 Raw, 층 보기가 켜져 있으면 지금 타일맵 레이어를 담는다.</summary>
     private RenderKey CanvasFrameKey(SpriteProject p, int frame)
         => new(RenderKind.Composite, p.Frames[frame], FloorViewLayer, Raw: !_canvasEffects);
@@ -2103,7 +2173,7 @@ public sealed partial class EditorContext
 
     /// <summary>
     /// 부위 화면에서 효과까지 보이는지(<see cref="CanvasEffects"/> 켬): 그러면 <see cref="DisplayView"/>·<see cref="ViewBitmap"/>은 부위 셀 대신 프레임 크기의
-    /// <see cref="PartFrameView"/>이고, 캔버스는 그 그림을 부위 위치만큼 옮겨(부위 화면의 흐린 주변과 같은 자리) 그린다.
+    /// <see cref="PartFrameView"/>이고, 캔버스는 그 그림을 부위 위치만큼 옮겨(부위 화면의 주변 레이어와 같은 자리) 그린다.
     /// </summary>
     public bool PartEffectsShown => _canvasEffects && CurrentPart is not null;
 
@@ -2159,7 +2229,7 @@ public sealed partial class EditorContext
     }
 
     /// <summary>
-    /// 프레임 합성에서 부위 하나(<paramref name="exclude"/>)를 뺀 비트맵(프레임 크기). 부위 화면의 흐린 주변,
+    /// 프레임 합성에서 부위 하나(<paramref name="exclude"/>)를 뺀 비트맵(프레임 크기). 다른 레이어 흐리게의 흐린 배경,
     /// 그룹 화면에서 부위를 끄는 동안의 배경에 쓴다. 호출자는 Dispose하지 않는다.
     /// </summary>
     public WriteableBitmap? ContextBitmap(int frame, Layer exclude)
@@ -2168,6 +2238,21 @@ public sealed partial class EditorContext
         bool raw = !_canvasEffects;
         return _renders.Get(new RenderKey(RenderKind.Context, p.Frames[frame], exclude, raw), RenderPriority.Current,
             () => raw ? p.PlanFrameRaw(frame, l => !ReferenceEquals(l, exclude)) : p.PlanFrame(frame, layerFilter: l => !ReferenceEquals(l, exclude))).Bitmap;
+    }
+
+    /// <summary>
+    /// 부위 화면의 주변: 프레임 합성에서 부위 <paramref name="part"/>보다 아래(<paramref name="above"/>가 아니면) 또는 위 레이어만 그린 비트맵(프레임 크기).
+    /// 부위를 그 사이에 그려 레이어 순서 그대로 보이게 한다. 호출자는 Dispose하지 않는다.
+    /// </summary>
+    public WriteableBitmap? PartContextBitmap(int frame, Layer part, bool above)
+    {
+        if (Project is not { } p || frame < 0 || frame >= p.Frames.Count) return null;
+        bool raw = !_canvasEffects;
+        int index = p.IndexOf(part);
+        var keep = p.Layers.Where((l, i) => above ? i > index : i < index).ToHashSet(ReferenceEqualityComparer.Instance);
+        bool Filter(Layer l) => keep.Contains(l);
+        return _renders.Get(new RenderKey(above ? RenderKind.ContextAbove : RenderKind.ContextBelow, p.Frames[frame], part, raw), RenderPriority.Current,
+            () => raw ? p.PlanFrameRaw(frame, Filter) : p.PlanFrame(frame, layerFilter: Filter)).Bitmap;
     }
 
     /// <summary>

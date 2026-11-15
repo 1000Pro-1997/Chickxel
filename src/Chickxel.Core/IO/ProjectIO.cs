@@ -408,8 +408,10 @@ public static partial class ProjectIO
             paths.AddRange(frames);
             paths.AddRange(parts);
             paths.AddRange(ProjectExport.GetLibraryPaths(project, fullProjectPath, assumePartContent: true));
+            paths.AddRange(ProjectExport.GetUnityAssetPaths(project, fullProjectPath, assumePartContent: true));
         }
-        var outputs = Enum.GetValues<ExportImageFormat>().Select(f => f.Extension()).Append(ProjectExport.SpriteLibraryExtension).ToArray();
+        var outputs = Enum.GetValues<ExportImageFormat>().Select(f => f.Extension())
+            .Append(ProjectExport.SpriteLibraryExtension).Append(ProjectExport.PrefabExtension).Append(ProjectExport.ClipExtension).Append(ProjectExport.ControllerExtension).ToArray();
         foreach (var file in ResolveRecord(dto.Exported, fullProjectPath) ?? [])
             if (outputs.Contains(Path.GetExtension(file), StringComparer.OrdinalIgnoreCase) && !paths.Contains(file, StringComparer.OrdinalIgnoreCase))
                 paths.Add(file);
@@ -1316,6 +1318,8 @@ public static partial class ProjectIO
         x.SingleFrameIndex = e.SingleFrame;
         x.WriteMeta = e.WriteMeta;
         x.WriteSpriteLibrary = e.SpriteLibrary == true;
+        x.WritePrefab = e.Prefab == true;
+        x.WriteAnimations = e.Animations == true;
         x.KeepImportedRects = e.KeepImportedRects;
     }
 
@@ -1816,6 +1820,10 @@ public static partial class ProjectIO
         public bool? WriteMeta { get; set; }
         /// <summary>Sprite Library(.spriteLib) 같이 쓰기(없으면 꺼짐).</summary>
         public bool? SpriteLibrary { get; set; }
+        /// <summary>Unity 프리팹 같이 쓰기(없으면 꺼짐).</summary>
+        public bool? Prefab { get; set; }
+        /// <summary>Unity 애니메이션 클립·Animator Controller 같이 쓰기(없으면 꺼짐).</summary>
+        public bool? Animations { get; set; }
         public bool KeepImportedRects { get; set; } = true;
         /// <summary>두 결과가 같이 쓰는 시트 설정(없으면 예전 형식 — 아래 읽기 전용 값들에서 옮김).</summary>
         public SheetDto? Sheet { get; set; }
@@ -1861,6 +1869,8 @@ public static partial class ProjectIO
             SingleFrame = x.SingleFrameIndex,
             WriteMeta = x.WriteMeta,
             SpriteLibrary = x.WriteSpriteLibrary ? true : null,
+            Prefab = x.WritePrefab ? true : null,
+            Animations = x.WriteAnimations ? true : null,
             KeepImportedRects = x.KeepImportedRects,
             Sheet = SheetDto.From(p, x.Common),
             PartsSheet = x.PartsOverride is { } po ? SheetDto.From(p, po) : null,

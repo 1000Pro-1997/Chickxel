@@ -38,9 +38,11 @@ internal static class TilemapShots
         var item = OpenCommandMenu(k, main, "새 타일맵 레이어");
         SaveTopMenu(k, main, "tilemap-create", [item], 1);
         CloseMenus(k, main);
-        // ② 타임라인 레이어 우클릭 > 새 타일맵 레이어
+        // ② 타임라인 레이어 우클릭 > 새로 만들기 > 새 타일맵 레이어
         int row = Index(main, "Sky");
         RightClickRow(k, main, row);
+        MenuItemByText(UiStrings.Timeline_NewMenu).IsSubMenuOpen = true;
+        k.Settle(300);
         SaveRowMenu(k, main, "tilemap-create-2", row, [MenuItemByText(UiStrings.Tile_MenuAddLayer)], 2);
     }
 

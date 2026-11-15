@@ -15,16 +15,17 @@ public readonly record struct CelLinkMark(int Group, int Color)
 public readonly record struct UnlinkResult(int Unlinked, int Baked);
 
 /// <summary>
-/// 붙여넣기용 셀 사본(<see cref="SpriteProject.CopyCels"/> → <see cref="SpriteProject.PasteCels"/>): 복사할 때 그림의 사본과, 링크된 셀이었으면
-/// 그 링크 묶음(같이 쓰던 그림)과 보이던 색. 그림은 고치지 않는다(붙일 때 사본을 넣음).
+/// 붙여넣기용 셀 사본(<see cref="SpriteProject.CopyCels"/> → <see cref="SpriteProject.PasteCels"/>): 복사할 때 그림의 사본과 캔버스 밖 그림(일반 레이어),
+/// 링크된 셀이었으면 그 링크 묶음(같이 쓰던 그림)과 보이던 색. 그림은 고치지 않는다(붙일 때 사본을 넣음).
 /// </summary>
 public sealed class CelCopy
 {
-    internal CelCopy(PixelImage image, PixelImage? link, int linkColor)
+    internal CelCopy(PixelImage image, PixelImage? link, int linkColor, SpriteProject.CelOverflow? overflow)
     {
         Image = image;
         Link = link;
         LinkColor = linkColor;
+        Overflow = overflow;
     }
 
     /// <summary>복사할 때 그림(사본).</summary>
@@ -32,6 +33,9 @@ public sealed class CelCopy
 
     /// <summary>링크된 셀이었으면 그 묶음 그림(복사한 문서의 셀 그림 그대로), 아니면 null.</summary>
     internal PixelImage? Link { get; }
+
+    /// <summary>일반 레이어 셀이면 복사할 때의 캔버스 밖 그림(복사한 문서의 캔버스 좌표 — 그 그림은 고치지 않으므로 같이 씀), 없으면 null.</summary>
+    internal SpriteProject.CelOverflow? Overflow { get; }
 
     /// <summary>링크 묶음 색 번호(<see cref="SpriteProject.LinkColorNames"/>, 링크가 아니면 -1).</summary>
     public int LinkColor { get; }
@@ -561,7 +565,8 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 레이어 <paramref name="layer"/>의 프레임 <paramref name="frames"/> 셀(지금 스킨 자신의 셀, 빈 셀 = null)을 붙여넣기용으로 복사한다(<see cref="PasteCels"/>).
-    /// <paramref name="links"/>면 링크된 셀은 그 묶음·색도 담고, 아니면 그림만. 같은 그림을 쓰던 셀은 사본 하나를 같이 쓴다. 그룹이면 모두 null.
+    /// 일반 레이어면 캔버스 밖 그림도 담는다. <paramref name="links"/>면 링크된 셀은 그 묶음·색도 담고, 아니면 그림만. 같은 그림을 쓰던 셀은 사본 하나를 같이 쓴다.
+    /// 그룹이면 모두 null.
     /// </summary>
     public CelCopy?[] CopyCels(Layer layer, IReadOnlyList<int> frames, bool links = true)
     {
@@ -570,26 +575,33 @@ public sealed partial class SpriteProject
         var skin = ActiveKey(layer);
         var marks = links ? LinkMarks(_layers.IndexOf(layer)) : null;
         var clones = new Dictionary<PixelImage, PixelImage>(ReferenceEqualityComparer.Instance);
+        bool normal = layer.Kind == LayerKind.Normal;
         for (int i = 0; i < frames.Count; i++)
         {
             int f = frames[i];
-            if (!_cels.TryGetValue(new(layer, _frames[f], skin), out var image)) continue;
+            var key = new CelKey(layer, _frames[f], skin);
+            if (!_cels.TryGetValue(key, out var image)) continue;
             if (!clones.TryGetValue(image, out var clone)) clones[image] = clone = image.Clone();
             var mark = marks?[f] ?? CelLinkMark.None;
-            result[i] = new CelCopy(clone, mark.IsLinked ? image : null, mark.Color);
+            CelOverflow? outside = normal && _overflow.TryGetValue(key, out var o) ? o : null;
+            result[i] = new CelCopy(clone, mark.IsLinked ? image : null, mark.Color, outside);
         }
         return result;
     }
 
     /// <summary>
     /// 셀 사본(<see cref="CopyCels"/>)을 칸(레이어 번호, 프레임 번호 — 지금 스킨의 셀)에 놓는다(실행취소 한 단계, <see cref="Edit(string, ProjectChange, Action)"/> 안이면 그 단계에 든다).
-    /// <see cref="PlaceCel"/>처럼 그 셀만 갈아 끼우므로 링크된 칸이면 그 칸만 원래 묶음에서 빠진다. null = 비움.
+    /// <see cref="PlaceCel"/>처럼 그 셀만 갈아 끼우므로 링크된 칸이면 그 칸만 원래 묶음에서 빠진다. null = 비움. 일반 레이어면 캔버스 밖 그림도 사본의 것으로 바뀐다.
+    /// <para>
+    /// 일반 레이어에는 그림 크기가 캔버스와 달라도(다른 문서에서 복사, 복사한 뒤 캔버스 크기를 바꿈) 놓는다: 복사한 문서의 캔버스 좌표 그대로(왼쪽 위 맞춤)
+    /// 놓고, 캔버스 밖으로 나간 픽셀은 캔버스 밖 그림(남기는 범위 안)으로 남아 옮기거나 캔버스를 키우면 보인다.
+    /// </para>
     /// <para>
     /// 링크된 셀이었던 사본은 링크를 지킨다: 놓을 행(레이어·지금 스킨)에 그 묶음 그림이 (붙이기 전에) 있으면 그 묶음에 들어가고(같은 그림·색, 일반 레이어면
     /// 캔버스 밖 그림도 묶음과 같게), 없으면(다른 레이어·다른 문서, 묶음이 사라짐) 같은 묶음에서 온 사본이 한 행에 둘 이상일 때 그 칸들이 새 묶음 하나를
-    /// 같이 쓴다(복사할 때 그림, 색 = 원래 색 — 그 행의 다른 묶음이 쓰는 색이면 쓰지 않은 첫 색, 캔버스 밖 그림 없음). 하나뿐이면 따로 둔다.
+    /// 같이 쓴다(복사할 때 그림·캔버스 밖 그림, 색 = 원래 색 — 그 행의 다른 묶음이 쓰는 색이면 쓰지 않은 첫 색). 하나뿐이면 따로 둔다.
     /// </para>
-    /// 그룹이면 <see cref="InvalidOperationException"/>, 그림 크기가 셀 크기와 다르면 <see cref="ArgumentException"/>.
+    /// 그룹이면 <see cref="InvalidOperationException"/>, 부위에 놓을 그림 크기가 부위 크기와 다르면 <see cref="ArgumentException"/>.
     /// </summary>
     public void PasteCels(IReadOnlyList<(int Layer, int Frame, CelCopy? Cel)> cels, string? label = null)
     {
@@ -613,7 +625,8 @@ public sealed partial class SpriteProject
         {
             // 타일맵 레이어에는 셀이 없다(붙이지 않음)
             if (_layers[li].IsTilemap) continue;
-            var key = CelKeyFor(li, fi, cel?.Image);
+            // 일반 레이어는 크기가 달라도 놓는다(Place가 캔버스 안·밖으로 나눔)
+            var key = CelKeyFor(li, fi, _layers[li].Kind == LayerKind.Normal ? null : cel?.Image);
             if (cel?.Link is { } link)
             {
                 if (MemberOf(key, link) is { } member)
@@ -633,13 +646,18 @@ public sealed partial class SpriteProject
         {
             foreach (var (key, cel, join, overflow) in plan)
             {
+                bool normal = key.Layer.Kind == LayerKind.Normal;
                 // 새 묶음 칸은 아래에서 넣는다(색을 고를 때 그 칸의 예전 그림을 세지 않게 먼저 비움)
-                if (cel is null || grouped.Contains(key)) _cels.Remove(key);
-                else if (!join) _cels[key] = cel.Image.Clone();
+                if (cel is null || grouped.Contains(key))
+                {
+                    _cels.Remove(key);
+                    if (normal) SetOverflow(key, null);
+                }
+                else if (!join) Put(key, Place(key, cel));
                 else
                 {
                     _cels[key] = cel.Link!;
-                    if (key.Layer.Kind == LayerKind.Normal) SetOverflow(key, overflow);
+                    if (normal) SetOverflow(key, overflow);
                 }
             }
             foreach (var (row, keys) in regroup)
@@ -647,14 +665,33 @@ public sealed partial class SpriteProject
                 var (layer, skin, _) = row;
                 var copy = plan.First(s => s.Key == keys[0]).Cel!;
                 bool taken = LinkGroupsOf(layer, skin).Any(g => ColorOf(g.Image) == copy.LinkColor);
-                var image = Tagged(copy.Image.Clone(), copy.LinkColor >= 0 && !taken ? copy.LinkColor : NextLinkColor(layer, skin));
+                var (cel, overflow) = Place(keys[0], copy);
+                var image = Tagged(cel, copy.LinkColor >= 0 && !taken ? copy.LinkColor : NextLinkColor(layer, skin));
                 foreach (var key in keys)
                 {
                     _cels[key] = image;
-                    if (layer.Kind == LayerKind.Normal) SetOverflow(key, null);
+                    if (layer.Kind == LayerKind.Normal) SetOverflow(key, overflow);
                 }
             }
         });
+
+        // 칸에 놓을 새 그림(사본)과 캔버스 밖 그림: 일반 레이어는 사본을 복사한 문서의 캔버스 좌표 그대로 놓아 지금 캔버스 안·밖으로 나눈다.
+        (PixelImage Cel, CelOverflow? Overflow) Place(CelKey key, CelCopy copy)
+        {
+            if (key.Layer.Kind != LayerKind.Normal) return (copy.Image.Clone(), null);
+            if (copy.Image.Size == Size) return (copy.Image.Clone(), copy.Overflow);
+            var (full, origin) = Combine(copy.Image, copy.Image.Size, copy.Overflow);
+            return Split(full, origin, Size);
+        }
+
+        // 일반 레이어에서 캔버스 안이 비고 캔버스 밖 그림만 남으면 셀은 비운다(SetFullCel과 같음).
+        void Put(CelKey key, (PixelImage Cel, CelOverflow? Overflow) placed)
+        {
+            if (key.Layer.Kind != LayerKind.Normal) { _cels[key] = placed.Cel; return; }
+            if (placed.Overflow is not null && !HasContent(placed.Cel)) _cels.Remove(key);
+            else _cels[key] = placed.Cel;
+            SetOverflow(key, placed.Overflow);
+        }
     }
 
     // ───────────── 파일 읽기·쓰기 ─────────────

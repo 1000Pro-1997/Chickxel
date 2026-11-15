@@ -80,9 +80,16 @@ public sealed partial class SpriteProject
 
     /// <summary>셀 + 캔버스 밖 그림을 합친 그림과 왼쪽 위(캔버스 좌표).</summary>
     private (PixelImage Image, Point Origin) FullOf(CelKey key, PixelImage? cel, Size canvas)
+        => Combine(cel, canvas, _overflow.TryGetValue(key, out var o) ? o : null);
+
+    /// <summary>
+    /// (0,0)에 놓인 셀 그림(<paramref name="celSize"/>, null = 빈 칸)과 캔버스 밖 그림을 합친 그림과 왼쪽 위(캔버스 좌표).
+    /// 캔버스 밖 그림이 없으면 셀 그림 그대로(고치지 않는다).
+    /// </summary>
+    private static (PixelImage Image, Point Origin) Combine(PixelImage? cel, Size celSize, CelOverflow? overflow)
     {
-        if (!_overflow.TryGetValue(key, out var o)) return (cel ?? new PixelImage(canvas.Width, canvas.Height), Point.Empty);
-        var rect = Rectangle.Union(new Rectangle(Point.Empty, canvas), o.Rect);
+        if (overflow is not { } o) return (cel ?? new PixelImage(celSize.Width, celSize.Height), Point.Empty);
+        var rect = Rectangle.Union(new Rectangle(Point.Empty, celSize), o.Rect);
         var full = new PixelImage(rect.Width, rect.Height);
         if (cel is not null) full.Blit(cel, -rect.X, -rect.Y);
         full.Blit(o.Image, o.Origin.X - rect.X, o.Origin.Y - rect.Y, alphaBlend: true);

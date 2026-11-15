@@ -2,6 +2,50 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.130 (2026-11-15)
+
+### Unity prefab and animation export
+- With **Export for Unity (.meta)** on, the export window shows **Prefab (parts placed)** and **Animation (clips and Animator)** below it. They are written on save.
+- Prefab (`sheet.prefab`): with parts, each group is an empty object with a SpriteRenderer per part, placed and ordered like the canvas, so dropping it into a scene places everything at once. The top object sits at the canvas pivot. Without parts it is one frame sheet sprite.
+- Animation: a clip per tag (`sheet_tag.anim`) and an Animator Controller (`sheet.controller`) with those clips as states. Sprites and moved part positions change per frame, and frame durations, direction and looping follow the tags. The prefab gets this Animator.
+- Group effects (an outline around all parts and so on) and normal layers are not included. Re-exporting rewrites the prefab, so put your own changes in a Prefab Variant in Unity.
+
+### Fade other layers (Focus)
+- The **Focus** button next to **Onion** above the canvas (View > Fade other layers, toggled with `` ` ``) keeps only the current layer clear and fades the others; with a group selected its parts stay clear too.
+- Right-click or use the arrow to set the fade (5-90%, default 30%). Only the view changes.
+- Selecting a part no longer fades the rest of the frame: like a normal layer, the other layers show as they are in layer order (layers above the part draw over it). Turn on **Focus** to fade them.
+
+### Working with parts and groups
+- In the group view, clicking an already selected part again without dragging selects the overlapping part below it. A double-click opens the part you first clicked.
+- With a group selected, parts that stick out of the canvas follow the **Outside: Opaque/Translucent** view, as for a layer.
+- New parts start at the canvas size (New part window and the part fields of New project, which follow the canvas size until you edit them).
+- Opening canvas size (Ctrl+Alt+C) with a part selected resizes that part (**Part size**). The size and the artwork's position and size apply to every frame and skin, the artwork stays in place on the frame, and the other layers stay visible.
+
+### Timeline layers
+- The layer right-click menu shows the same items in the same order for every layer kind and only adds kind-specific ones. New layer, group, tilemap layer and part are gathered under **New**; New part appears only with a group or part selected (it goes into that group).
+- The layer opacity window now has a slider and a number field, in percent (0-100%) or 0-255 (plus 100/75/50/25% buttons).
+- Alt-clicking an eye or lock (hide or lock all but that layer) now also selects that layer.
+
+### Canvas size: fit all artwork
+- **Fit all artwork** in canvas size mode sets the smallest canvas that holds the artwork of every layer and frame (including artwork outside the canvas, part areas and hidden layers). The artwork is moved, not stretched; press OK to apply.
+- In part size mode it fits that part's artwork in every frame.
+
+### Shortcuts in tooltips
+- Tooltips show the shortcut of that button or setting at the top in a green code box instead of in parentheses in the text.
+
+### Fixes
+- The Codex CLI status line is back in the AI chat drawing settings panel (missing since v1.14.105).
+- Parts of a group with effects (outline and so on) no longer show the group effect on that part alone when selected; the canvas shows the effect on all parts together, like the preview.
+- The round-leaf trees in the built-in tilesets (sandbox ground and caves, village) no longer have a black outline where the roots meet the ground. This applies to tilesets added from now on.
+
+### AI: the palette stays hidden unless palette colors only is on
+- With **Use palette colors only** off, `get_document` no longer gives the AI the palette and the "prefer document palette colors" rule is gone, so it picks colors that suit the drawing. With it on, the AI uses only palette colors as before.
+
+### AI: pixel text format and drawing-tip defaults
+- We gave the same images to Claude Code and Codex in several text formats and compared reading and editing accuracy. Color arrays (JSON) were the least accurate and a character grid with rulers the most, so the pixel text of `get_pixels`, `get_reference` and `get_folder_image` now has x ruler lines and a `y|` prefix on every row. `draw_pixels` accepts rows that keep the `y|` prefix.
+- Scoring drawings made under each setup showed the still-image tips (drawing process, characters, objects, backgrounds) didn't improve results, so they now start off; the motion tips, which improved animations, and in-betweening, cleanup and folder matching stay on. Existing settings are moved once and every tip can be turned back on.
+- Details are in `측정/2026-11-14-AI-픽셀-표현.md` in the repository.
+
 ## v1.14.129 (2026-11-14)
 ### AI: drawing tips and tool switches
 - The AI chat's drawing settings panel and the **AI > External AI Connection** window have **AI drawing tips**: drawing process, characters and people, objects and items, backgrounds and tiles, drawing motions, in-betweening, cleaning up the current image as pixel art, and matching drawings in the open folder. Turn each on or off; short requests come out with sensible sizes, proportions and shading order.

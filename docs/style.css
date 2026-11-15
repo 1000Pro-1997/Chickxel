@@ -122,7 +122,7 @@ pre code { background: none; border: 0; padding: 0; }
 .facts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 22px; }
 .fact { font-size: 12px; font-weight: 650; color: var(--body); background: var(--soft); border: 1px solid var(--line-soft); border-radius: 999px; padding: 5px 11px; }
 .hero-board { background: var(--soft); border: 1px solid var(--line-soft); border-radius: 28px; padding: 18px; box-shadow: var(--shadow) 0 18px 48px -8px; }
-.hero-board img { display: block; width: 100%; height: auto; border-radius: 14px; border: 1px solid var(--line); }
+.hero-board img, .hero-board video { display: block; width: 100%; height: auto; border-radius: 14px; border: 1px solid var(--line); }
 
 /* 구역 */
 .section { padding: 72px 0; }

@@ -46,22 +46,26 @@ public sealed record ExportResult(string ImagePath, bool MetaWritten, int Sprite
 /// 옛 결과는 지우지 않고 돌려주기만 한다(앱이 앱 휴지통으로 옮김).
 /// </summary>
 public sealed record ProjectExportResult(IReadOnlyList<ExportResult> Frames, IReadOnlyList<ExportResult> Parts,
-    IReadOnlyList<ExportResult> Libraries, IReadOnlyList<string> Stale)
+    IReadOnlyList<ExportResult> Libraries, IReadOnlyList<string> Stale, IReadOnlyList<ExportResult>? UnityAssets = null)
 {
-    /// <summary>프레임 시트 → 부위 아틀라스 → Sprite Library 순서의 모든 결과 파일.</summary>
-    public IEnumerable<ExportResult> All => Frames.Concat(Parts).Concat(Libraries);
+    /// <summary>Unity 프리팹·클립·Controller(<see cref="ExportSettings.WritePrefab"/>·<see cref="ExportSettings.WriteAnimations"/>) — 프리팹이 있으면 맨 앞.</summary>
+    public IReadOnlyList<ExportResult> Unity => UnityAssets ?? [];
 
-    public bool IsEmpty => Frames.Count == 0 && Parts.Count == 0 && Libraries.Count == 0;
+    /// <summary>프레임 시트 → 부위 아틀라스 → Sprite Library → Unity 프리팹·애니메이션 순서의 모든 결과 파일.</summary>
+    public IEnumerable<ExportResult> All => Frames.Concat(Parts).Concat(Libraries).Concat(Unity);
+
+    public bool IsEmpty => Frames.Count == 0 && Parts.Count == 0 && Libraries.Count == 0 && Unity.Count == 0;
 }
 
 /// <summary>
 /// 내보내기 계획: 만들 파일 경로(프레임 시트·부위 아틀라스 이미지, Sprite Library), 새 기록(결과 파일 + 쓰거나 이미 있는 <c>.meta</c>), 정리할 옛 결과.
 /// <paramref name="FramesBaseName"/>·<paramref name="PartsBaseName"/>이 있으면 설정의 이름 대신 그 이름이 앞부분(칸 이름도 그 기준),
 /// <paramref name="UnityFiles"/>가 false면 <c>.meta</c>를 쓰지 않는다(다른 이름으로 저장 — <see cref="ProjectExport.PlanCopy"/>).
+/// <paramref name="UnityPaths"/> = Unity 프리팹·클립·Controller(<see cref="ProjectExport.GetUnityAssetPaths"/>).
 /// </summary>
 public sealed record ExportPlan(string ProjectPath, IReadOnlyList<string> FramePaths, IReadOnlyList<string> PartPaths,
     IReadOnlyList<string> LibraryPaths, IReadOnlyList<string> Record, IReadOnlyList<string> Stale,
-    string? FramesBaseName = null, string? PartsBaseName = null, bool UnityFiles = true);
+    string? FramesBaseName = null, string? PartsBaseName = null, bool UnityFiles = true, IReadOnlyList<string>? UnityPaths = null);
 
 /// <summary>
 /// 프로젝트 → 스프라이트 시트 이미지 + Unity 메타 내보내기. 편집 정보(칸·태그 애니메이션)는 <c>.chickxel</c>에만 있고 이미지 옆에 따로 쓰지 않는다.
@@ -80,7 +84,7 @@ public sealed record ExportPlan(string ProjectPath, IReadOnlyList<string> FrameP
 /// <see cref="SpriteLibraryAssetWriter"/> 참고.</item>
 /// </list>
 /// </summary>
-public static class ProjectExport
+public static partial class ProjectExport
 {
     /// <summary>나눈 파일 중 태그 없는 프레임 파일 이름 끝.</summary>
     public const string UntaggedSuffix = "untagged";
@@ -199,10 +203,12 @@ public static class ProjectExport
         return LibraryOutputs(project, baseName, groups).Select(o => Path.Combine(folder, o.Name + SpriteLibraryExtension)).ToList();
     }
 
-    /// <summary>메타를 쓸지: 설정값, 자동이면 Unity Assets 안이거나 이미 .meta가 있을 때.</summary>
+    /// <summary>
+    /// 메타를 쓸지: 설정값, 자동이면 프리팹·애니메이션을 쓰거나(스프라이트를 가리켜야 함) Unity Assets 안이거나 이미 .meta가 있을 때.
+    /// </summary>
     public static bool ShouldWriteMeta(SpriteProject project, string pngPath)
         => project.Export.WriteMeta
-           ?? (UnityProjectLocator.IsInUnityAssets(pngPath) || File.Exists(UnityMeta.GetMetaPath(pngPath)));
+           ?? (project.Export.WritesUnityAssets || UnityProjectLocator.IsInUnityAssets(pngPath) || File.Exists(UnityMeta.GetMetaPath(pngPath)));
 
     /// <summary>부위 아틀라스 메타를 쓸지: Sprite Library를 쓰면 스프라이트를 가리켜야 하므로 항상, 아니면 <see cref="ShouldWriteMeta"/>.</summary>
     public static bool ShouldWritePartsMeta(SpriteProject project, string pngPath)
@@ -1038,8 +1044,9 @@ public static class ProjectExport
         projectPath = Path.GetFullPath(projectPath);
         var (frames, parts) = GetOutputPaths(project, projectPath, assumePartContent: false);
         var libraries = GetLibraryPaths(project, projectPath, assumePartContent: false);
+        var unity = GetUnityAssetPaths(project, projectPath, assumePartContent: false);
         var images = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var path in frames.Concat(parts).Concat(libraries))
+        foreach (var path in frames.Concat(parts).Concat(libraries).Concat(unity))
             if (!images.Add(path))
                 throw new InvalidOperationException(Chickxel.Core.Localization.DomainStrings.FormatExport_DuplicateFile(name: Path.GetFileName(path)));
 
@@ -1056,10 +1063,10 @@ public static class ProjectExport
             var meta = UnityMeta.GetMetaPath(image);
             if (ShouldWritePartsMeta(project, image) || File.Exists(meta)) record.Add(meta);
         }
-        foreach (var library in libraries)
+        foreach (var asset in libraries.Concat(unity))
         {
-            record.Add(library);
-            record.Add(UnityMeta.GetMetaPath(library));
+            record.Add(asset);
+            record.Add(UnityMeta.GetMetaPath(asset));
         }
         var keep = new HashSet<string>(record, StringComparer.OrdinalIgnoreCase) { projectPath };
         var stale = new List<string>();
@@ -1075,7 +1082,7 @@ public static class ProjectExport
             if (!keep.Contains(full))
                 foreach (var companion in DocumentIO.GetCompanionPaths(full)) Add(companion);
         }
-        return new ExportPlan(projectPath, frames, parts, libraries, record, stale);
+        return new ExportPlan(projectPath, frames, parts, libraries, record, stale, UnityPaths: unity);
     }
 
     /// <summary>
@@ -1092,13 +1099,19 @@ public static class ProjectExport
     internal static ProjectExportResult Write(SpriteProject project, ExportPlan plan, WorkStage? stage)
     {
         var export = project.Export;
+        bool unityAssets = (plan.UnityPaths?.Count ?? 0) > 0;
         var frames = new List<ExportResult>();
+        var frameSprites = new Dictionary<int, SpriteLibraryAssetWriter.SpriteRef>();
         if (plan.FramePaths.Count > 0)
         {
             bool multiple = project.Sprite.Mode == SpriteMode.Multiple;
             var sheets = BuildFrameSheets(project, plan.FramesBaseName ?? Path.GetFileNameWithoutExtension(GetExportImagePath(export, plan.ProjectPath)), stage, NewCache());
             for (int i = 0; i < sheets.Count; i++)
-                frames.Add(WriteDocument(plan.FramePaths[i], FrameDocument(project, sheets[i].Sheet, multiple), project, plan.UnityFiles && ShouldWriteMeta(project, plan.FramePaths[i]), stage));
+            {
+                var result = WriteDocument(plan.FramePaths[i], FrameDocument(project, sheets[i].Sheet, multiple), project, plan.UnityFiles && ShouldWriteMeta(project, plan.FramePaths[i]), stage);
+                frames.Add(result);
+                if (unityAssets && result.MetaWritten) AddFrameSprites(frameSprites, plan.FramePaths[i], sheets[i].Sheet, !multiple);
+            }
         }
         var parts = new List<ExportResult>();
         var sprites = new Dictionary<(Layer Part, int Frame, Skin? Skin), SpriteLibraryAssetWriter.SpriteRef>();
@@ -1110,7 +1123,7 @@ public static class ProjectExport
                 var path = plan.PartPaths[i];
                 var result = WriteDocument(path, PartsDocument(project, sheets[i].Sheet), project, plan.UnityFiles && ShouldWritePartsMeta(project, path), stage);
                 parts.Add(result);
-                if (plan.LibraryPaths.Count == 0 || !result.MetaWritten || UnityMeta.TryRead(UnityMeta.GetMetaPath(path)) is not { Guid: { } guid } meta) continue;
+                if (plan.LibraryPaths.Count == 0 && !unityAssets || !result.MetaWritten || UnityMeta.TryRead(UnityMeta.GetMetaPath(path)) is not { Guid: { } guid } meta) continue;
                 var ids = meta.Sprites.GroupBy(s => s.Name).ToDictionary(g => g.Key, g => g.First().InternalId);
                 foreach (var e in sheets[i].Sheet.Entries)
                     if (e.Part is not null && ids.TryGetValue(e.Name, out var id))
@@ -1130,7 +1143,8 @@ public static class ProjectExport
                 libraries.Add(new ExportResult(plan.LibraryPaths[i], true, library.Sum(c => c.Labels.Count)));
             }
         }
-        return new ProjectExportResult(frames, parts, libraries, plan.Stale);
+        var unity = unityAssets ? WriteUnityAssets(project, plan, sprites, frameSprites) : [];
+        return new ProjectExportResult(frames, parts, libraries, plan.Stale, unity);
     }
 
     /// <summary>

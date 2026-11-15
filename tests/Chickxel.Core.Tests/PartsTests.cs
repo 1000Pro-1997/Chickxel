@@ -288,6 +288,32 @@ public class PartsTests
     }
 
     [Fact]
+    public void ResizePartScaled_GrowsAndScales_AllFrames_KeepingPlaceOnCanvas()
+    {
+        var p = new SpriteProject(10, 10);
+        var g = p.AddGroup();
+        var part = p.AddPart(g, "팔", 2, 2, new Point(4, 4));
+        int pi = p.IndexOf(part);
+        Paint(p, pi, 0, 0, 0, Red);   // 캔버스 (4,4)
+        Paint(p, pi, 0, 1, 1, Blue);  // 캔버스 (5,5)
+        p.AddFrame();
+        Paint(p, pi, 1, 1, 0, Blue);
+
+        // 새 칸: 부위 좌표 (-1,-1)부터 5×5, 그림은 새 칸의 (1,1)에 2배(4×4)로
+        p.ResizePartScaled(pi, new Rectangle(-1, -1, 5, 5), new Rectangle(1, 1, 4, 4));
+        Assert.Equal((new Size(5, 5), new Point(3, 3)), (part.PartSize, part.PartOffset));
+        Assert.Equal(Red, p.GetCel(pi, 0)!.Get(1, 1));
+        Assert.Equal(Red, p.GetCel(pi, 0)!.Get(2, 2));
+        Assert.Equal(Blue, p.GetCel(pi, 0)!.Get(4, 4));
+        Assert.Equal(Blue, p.GetCel(pi, 1)!.Get(4, 1));
+        Assert.Equal(Red, p.Flatten(0).Get(4, 4)); // 그림 왼쪽 위는 캔버스에서 그대로
+
+        p.Undo();
+        Assert.Equal((new Size(2, 2), new Point(4, 4)), (part.PartSize, part.PartOffset));
+        Assert.Equal(Blue, p.GetCel(pi, 0)!.Get(1, 1));
+    }
+
+    [Fact]
     public void PartFramePivot_OverridesOnlyThatFrame_AndFollowsUndoSaveDuplicateResize()
     {
         var p = new SpriteProject(10, 10);

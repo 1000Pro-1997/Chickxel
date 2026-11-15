@@ -32,8 +32,21 @@ public sealed class NewImageDialog : DialogBase
         _normal = new RadioButton { GroupName = "start", Content = UiStrings.S_Dialogs_NewImageDialog_6F947592B8, IsChecked = true, Foreground = AppTheme.TextBrush };
         _parts = new RadioButton { GroupName = "start", Content = UiStrings.S_Dialogs_NewImageDialog_0F2FF932AA, Foreground = AppTheme.TextBrush };
         _partName = Ui.Text(UiStrings.S_Dialogs_NewImageDialog_AB87E30975, 100);
-        _partW = Ui.Num(1, PixelImage.MaxSize, Math.Min(8, width), 70).Presets(Ui.PartSizes).Unit("px").RecentKey("part.size");
-        _partH = Ui.Num(1, PixelImage.MaxSize, Math.Min(8, height), 70).Presets(Ui.PartSizes).Unit("px").RecentKey("part.size");
+        // 부위도 레이어처럼 캔버스 크기로 시작: 부위 칸을 직접 고치기 전까지 캔버스 크기를 따라간다
+        _partW = Ui.Num(1, PixelImage.MaxSize, width, 70).Presets(Ui.PartSizes).Unit("px").RecentKey("part.size");
+        _partH = Ui.Num(1, PixelImage.MaxSize, height, 70).Presets(Ui.PartSizes).Unit("px").RecentKey("part.size");
+        bool partEdited = false, syncing = false;
+        void FollowCanvas(NumericUpDown part, NumericUpDown canvas)
+        {
+            if (partEdited) return;
+            syncing = true;
+            part.Value = canvas.Value;
+            syncing = false;
+        }
+        _w.ValueChanged += (_, _) => FollowCanvas(_partW, _w);
+        _h.ValueChanged += (_, _) => FollowCanvas(_partH, _h);
+        _partW.ValueChanged += (_, _) => partEdited |= !syncing;
+        _partH.ValueChanged += (_, _) => partEdited |= !syncing;
         _partRow = Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_7C07F3BD59), _partName, Ui.Label(UiStrings.S_Dialogs_NewImageDialog_D02D24EC7E), _partW, Ui.Label(UiStrings.S_Dialogs_NewImageDialog_03DEAAFD72), _partH, Ui.Label("px"))
             .HelpAt(page, anchor: "Start");
         _partRow.IsEnabled = false;
@@ -664,5 +677,73 @@ public sealed class ShortcutHelpDialog : DialogBase
         if (group == "AI" || group == UiStrings.S_Dialogs_Shortcuts_8FC1214E44) return new("shortcuts-ai-help");
         // 프레임·레이어·타임라인·부위
         return new("shortcuts-timeline");
+    }
+}
+
+/// <summary>
+/// 레이어 불투명도: 게이지(슬라이더)와 숫자 칸을 함께 쓰고, 단위를 퍼센트(0~100%)와 0~255 중에서 고른다(고른 단위는 앱을 끝낼 때까지 기억).
+/// 값은 늘 0~255로 담고, 퍼센트는 보일 때만 바꿔 쓴다.
+/// </summary>
+public sealed class LayerOpacityDialog : DialogBase
+{
+    private static bool s_percent = true;
+    private readonly Slider _slider;
+    private readonly NumericUpDown _number;
+    private bool _syncing;
+
+    public LayerOpacityDialog(byte opacity) : base(UiStrings.S_TimelinePanel_SetLayerOpacity_CF46646372)
+    {
+        Opacity255 = opacity;
+        _slider = new Slider { Width = 220, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(3, 0), IsSnapToTickEnabled = true, TickFrequency = 1 };
+        _number = Ui.Num(0, 255, 0, 72);
+        var unit = new TabStrip(TabStripKind.Segmented, "%", "0~255") { Focusable = false, IsTabStop = false, Margin = new Thickness(3, 0) };
+        unit.SetTip(0, UiStrings.LayerOpacity_PercentTip).SetTip(1, UiStrings.LayerOpacity_ByteTip);
+        unit.SelectedIndex = s_percent ? 0 : 1;
+        unit.SelectionChanged += (_, _) =>
+        {
+            if (unit.SelectedIndex < 0) return;
+            s_percent = unit.SelectedIndex == 0;
+            ShowUnit();
+        };
+        _slider.ValueChanged += (_, _) => FromShown(_slider.Value);
+        _number.ValueChanged += (_, _) => FromShown((double)_number.NumValue());
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.LayerOpacity_Label), _slider, _number, unit));
+        var presets = Ui.Row();
+        foreach (int percent in new[] { 100, 75, 50, 25 })
+            presets.Children.Add(Ui.Button($"{percent}%", (_, _) => { Opacity255 = (byte)Math.Round(percent * 255 / 100.0); ShowValue(); }));
+        Body.Children.Add(presets);
+        ShowUnit();
+        Opened += (_, _) => _slider.Focus();
+    }
+
+    /// <summary>고른 불투명도(0~255).</summary>
+    public byte Opacity255 { get; private set; }
+
+    /// <summary>단위를 바꿈: 게이지·숫자 칸의 범위를 그 단위로.</summary>
+    private void ShowUnit()
+    {
+        _syncing = true;
+        int max = s_percent ? 100 : 255;
+        _slider.Maximum = max;
+        _number.Maximum = max;
+        _syncing = false;
+        ShowValue();
+    }
+
+    private void ShowValue()
+    {
+        _syncing = true;
+        double shown = s_percent ? Math.Round(Opacity255 * 100 / 255.0) : Opacity255;
+        _slider.Value = shown;
+        _number.Value = (decimal)shown;
+        _syncing = false;
+    }
+
+    /// <summary>게이지나 숫자 칸에서 바꾼 값(지금 단위)을 0~255로 담고 다른 쪽에도 보인다.</summary>
+    private void FromShown(double shown)
+    {
+        if (_syncing) return;
+        Opacity255 = (byte)Math.Clamp(Math.Round(s_percent ? shown * 255 / 100.0 : shown), 0, 255);
+        ShowValue();
     }
 }

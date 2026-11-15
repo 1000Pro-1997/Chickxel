@@ -99,7 +99,7 @@ public sealed partial class PixelTools
             "(bottom to top; a group's parts are the layers directly below it), canvasPivot {pivot (the canvas's own base pivot), framePivots, representative ({layer,name} " +
             "whose pivot is the canvas pivot, or null), effective {x,y,frame,px} (the export pivot of the current frame)}, " +
             "tags, current {frame,layer}, editScope (only when the user limited this turn to the current file: change only this document, never open or create other files), " +
-            "primary/secondary color, palette, dirty flag, selection bounds, current folder. " +
+            "primary/secondary color, palette (only when the user limited drawing to palette colors), dirty flag, selection bounds, current folder. " +
             "Call this first. Works without an open project.",
             new JsonObject()),
         Tool("get_image",
@@ -114,8 +114,9 @@ public sealed partial class PixelTools
             }),
         Tool("get_pixels",
             "Read exact pixel colors of a rectangle (default: whole canvas or whole part; at most 128x128) as text: legend lines `A = #RRGGBB` " +
-            "('.' = transparent), then one string per row (one character per pixel). The format matches draw_pixels input. " +
-            "Omit `layer` to read the visible composite. With a part layer, coordinates are part-local (0,0 = the part's top-left).",
+            "('.' = transparent), then `rows:` with x ruler lines (the column's x in canvas coordinates: hundreds/tens/units digits, top to bottom) and one line per " +
+            "pixel row: its y, `|`, then one character per pixel. Use the rulers to locate pixels instead of counting characters. The characters after `|` are exactly " +
+            "what draw_pixels rows take. Omit `layer` to read the visible composite. With a part layer, coordinates are part-local (0,0 = the part's top-left).",
             new JsonObject
             {
                 ["x"] = Int("Left edge (default 0)."),
@@ -129,7 +130,8 @@ public sealed partial class PixelTools
             "Main drawing tool. Paints a block of pixels whose top-left corner is (x, y). Each string in `rows` is one " +
             "row of pixels; each character is looked up in `legend` (single character -> color). A space ' ' or a character that " +
             "is not in the legend leaves that pixel unchanged; map a character to \"transparent\" to erase " +
-            "(e.g. \".\": \"transparent\"). Pixels outside the canvas (or outside the part) are ignored. " +
+            "(e.g. \".\": \"transparent\"). Pixels outside the canvas (or outside the part) are ignored. Rows copied from get_pixels may keep their `y|` prefix " +
+            "(it is removed when every row has one). " +
             "Example: x=4, y=2, rows [\" KK \", \"KRRK\", \" KK \"], legend {\"K\": \"#000000\", \"R\": \"#FF0000\"}.",
             new JsonObject
             {
@@ -698,7 +700,8 @@ public sealed partial class PixelTools
         }
         doc["primary"] = ctx.Primary.ToHex();
         doc["secondary"] = ctx.Secondary.ToHex();
-        doc["palette"] = Strings(_host.Palette.Select(c => c.ToHex()).ToArray());
+        // 팔레트는 "팔레트 색만 사용"을 켰을 때만 보인다 — 끄면 AI가 팔레트에 끌려가지 않고 마음대로 색을 고른다.
+        if (_host.Settings.AiDraw.PaletteOnly) doc["palette"] = Strings(_host.Palette.Select(c => c.ToHex()).ToArray());
         doc["currentFolder"] = _host.CurrentFolder;
         return TextResult(doc.ToJsonString(JsonOptions));
     }
@@ -771,7 +774,10 @@ public sealed partial class PixelTools
         return TextResult(header + PixelRows(src, r));
     }
 
-    /// <summary>영역의 픽셀을 draw_pixels 모양 글로: "legend:" 줄들(<c>A = #RRGGBB</c>, 투명 = '.'), "rows:" 줄들. 색이 너무 많으면 도구 오류.</summary>
+    /// <summary>
+    /// 영역의 픽셀을 draw_pixels 모양 글로: "legend:" 줄들(<c>A = #RRGGBB</c>, 투명 = '.'), "rows:" 아래 x 눈금 줄(백·십·일의 자리, 캔버스 좌표)과
+    /// 줄마다 "y|" 머리 + 픽셀 글자. 색이 너무 많으면 도구 오류. 눈금은 AI가 넓은 그림에서 칸을 세다 틀리는 것을 줄인다(측정: 측정/2026-11-14-AI-픽셀-표현.md).
+    /// </summary>
     private static string PixelRows(PixelImage src, Rectangle r)
     {
         var codes = new Dictionary<Color32, char>();
@@ -808,7 +814,16 @@ public sealed partial class PixelTools
         foreach (var (code, color) in legend) sb.Append(code).Append(" = ").Append(color.ToHex()).Append('\n');
         if (anyTransparent) sb.Append(". = transparent\n");
         sb.Append("rows:\n");
-        foreach (var row in rows) sb.Append(row).Append('\n');
+        int lastX = r.X + r.Width - 1, lastY = r.Y + r.Height - 1;
+        int pad = lastY.ToString(CultureInfo.InvariantCulture).Length;
+        foreach (int place in lastX >= 100 ? new[] { 100, 10, 1 } : lastX >= 10 ? new[] { 10, 1 } : new[] { 1 })
+        {
+            sb.Append(' ', pad + 1);
+            for (int x = r.X; x <= lastX; x++) sb.Append((char)('0' + x / place % 10));
+            sb.Append('\n');
+        }
+        for (int y = 0; y < rows.Length; y++)
+            sb.Append((r.Y + y).ToString(CultureInfo.InvariantCulture).PadLeft(pad)).Append('|').Append(rows[y]).Append('\n');
         return sb.ToString().TrimEnd('\n');
     }
 
@@ -822,6 +837,7 @@ public sealed partial class PixelTools
         var rows = new string[rowNodes.Count];
         for (int i = 0; i < rows.Length; i++)
             rows[i] = AsString(rowNodes[i]) ?? throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_DrawPixels_F2344C45D2,i));
+        StripRowNumbers(rows, Arg(a, "legend") as JsonObject);
         if (Arg(a, "legend") is not JsonObject legendNode) throw new ToolError(UiStrings.S_PixelTools_DrawPixels_BF7428FA5E);
         var legend = new Dictionary<char, Color32>();
         foreach (var (key, value) in legendNode)
@@ -851,6 +867,25 @@ public sealed partial class PixelTools
             return n;
         });
         return Done(tool, changed, t, outside > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_DrawPixels_E040619801,outside) : "");
+    }
+
+    /// <summary>
+    /// get_pixels 글을 그대로 옮긴 줄("12|AAB.")이면 앞의 "y|"를 뗀다. 모든 줄이 그 모양이고 '|'가 범례 글자가 아닐 때만(그 밖에는 손대지 않음).
+    /// </summary>
+    private static void StripRowNumbers(string[] rows, JsonObject? legend)
+    {
+        if (rows.Length == 0 || legend?.ContainsKey("|") == true) return;
+        var bars = new int[rows.Length];
+        for (int i = 0; i < rows.Length; i++)
+        {
+            int j = 0;
+            while (j < rows[i].Length && rows[i][j] == ' ') j++;
+            int digits = j;
+            while (j < rows[i].Length && char.IsAsciiDigit(rows[i][j])) j++;
+            if (j == digits || j >= rows[i].Length || rows[i][j] != '|') return;
+            bars[i] = j;
+        }
+        for (int i = 0; i < rows.Length; i++) rows[i] = rows[i][(bars[i] + 1)..];
     }
 
     private JsonObject SetPixels(string tool, JsonObject? a)

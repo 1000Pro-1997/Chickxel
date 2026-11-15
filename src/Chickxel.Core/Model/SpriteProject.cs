@@ -803,6 +803,38 @@ public sealed partial class SpriteProject
     }
 
     /// <summary>
+    /// 부위 크기 바꾸기 + 그림 늘이기(부위 화면의 크기 모드): 새 부위 칸은 지금 부위 좌표 <paramref name="canvas"/> 자리(크기 = 새 부위 크기)이고,
+    /// 모든 프레임·스킨의 셀을 새 칸 좌표 <paramref name="image"/> 자리에 그 크기로 늘이거나 줄여 놓는다(최근접 — <paramref name="slice"/>를 주고
+    /// 부위 테두리를 쓸 수 있으면 9-slice로). 부위 위치는 그림이 프레임에서 같은 자리에 남도록 <paramref name="canvas"/> 왼쪽 위만큼 옮기고, 피벗은 그림을 따라간다.
+    /// </summary>
+    public void ResizePartScaled(int layerIndex, Rectangle canvas, Rectangle image, NineSliceFill? slice = null)
+    {
+        var part = RequirePart(layerIndex);
+        ValidatePartSize(canvas.Width, canvas.Height);
+        if (image.Width < 1 || image.Height < 1 || image.Width > PixelImage.MaxSize || image.Height > PixelImage.MaxSize)
+            throw new ArgumentOutOfRangeException(nameof(image), DomainStrings.FormatProject_InvalidImageSize(max: PixelImage.MaxSize, width: image.Width, height: image.Height));
+        var old = part.PartSize;
+        if (canvas == new Rectangle(Point.Empty, old) && image == new Rectangle(Point.Empty, old)) return;
+        var border = slice is not null && NineSlice.Applies(part.PartBorder, old.Width, old.Height) ? part.PartBorder : SpriteBorder.None;
+        var fill = slice ?? NineSliceFill.Stretch;
+        Pivot Moved(Pivot p)
+        {
+            var (px, py) = p.ToLocalPixel(old.Width, old.Height);
+            var at = MapResizedCanvasPoint(new PointF(px, py), old, image, border);
+            return new Pivot(at.X / canvas.Width, 1f - at.Y / canvas.Height);
+        }
+        var offset = new Point(part.PartOffset.X + canvas.X, part.PartOffset.Y + canvas.Y);
+        Edit(DomainStrings.Project_ResizePart, ProjectChange.Layers | ProjectChange.Pixels, () =>
+        {
+            var resize = OncePerImage(cel => ImageTransform.ResizeCanvasScaled(cel, canvas.Width, canvas.Height, image, border, fill));
+            foreach (var (key, cel) in CelsOf(part)) _cels[key] = resize(cel);
+            part.PartSize = canvas.Size;
+            part.PartOffset = offset;
+            MapLayerPivots(part, Moved);
+        });
+    }
+
+    /// <summary>
     /// 레이어 크기(타임라인 칸 썸네일 자리, 캔버스 좌표): 부위는 부위 영역, 일반 레이어는 모든 프레임 셀(캔버스 밖 그림 포함)의 칠한 픽셀을 감싸는 사각형.
     /// 칠한 픽셀이 없거나 그룹이면 <see cref="Rectangle.Empty"/>.
     /// </summary>
@@ -820,6 +852,33 @@ public sealed partial class SpriteProject
             if (r.IsEmpty) continue;
             r.Offset(origin);
             bounds = bounds.IsEmpty ? r : Rectangle.Union(bounds, r);
+        }
+        return bounds;
+    }
+
+    /// <summary>
+    /// 모든 레이어 그림을 감싸는 가장 작은 사각형(캔버스 좌표 — 캔버스 밖으로 나갈 수 있음): 일반·타일맵 레이어는 <see cref="LayerBounds"/>(모든 프레임, 캔버스 밖 그림 포함),
+    /// 부위는 부위 영역(프레임마다 옮긴 자리 모두). 숨긴 레이어도 넣는다. 그림이 하나도 없으면 <see cref="Rectangle.Empty"/>.
+    /// </summary>
+    public Rectangle ContentBounds()
+    {
+        var bounds = Rectangle.Empty;
+        void Add(Rectangle r)
+        {
+            if (r.Width > 0 && r.Height > 0) bounds = bounds.IsEmpty ? r : Rectangle.Union(bounds, r);
+        }
+        for (int i = 0; i < _layers.Count; i++)
+        {
+            var layer = _layers[i];
+            if (layer.IsGroup) continue;
+            if (!layer.IsPart)
+            {
+                Add(LayerBounds(i));
+                continue;
+            }
+            Add(layer.PartRect);
+            foreach (var f in _frames)
+                if (f.PartShifts.TryGetValue(layer, out var s)) Add(layer.PartRect with { X = layer.PartOffset.X + s.X, Y = layer.PartOffset.Y + s.Y });
         }
         return bounds;
     }

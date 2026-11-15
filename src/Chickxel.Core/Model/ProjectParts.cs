@@ -694,6 +694,21 @@ public sealed class ExportSettings
     /// </summary>
     public bool WriteSpriteLibrary { get; set; }
 
+    /// <summary>
+    /// Unity 프리팹(<c>{시트}.prefab</c>)을 같이 쓴다: 부위가 있으면 그룹마다 빈 오브젝트 아래 부위마다 SpriteRenderer(부위 아틀라스 스프라이트·자리·순서),
+    /// 없으면 프레임 시트 스프라이트 하나. Unity 파일(<see cref="WriteMeta"/>가 false가 아님)일 때만 — <see cref="WritesUnityAssets"/>.
+    /// </summary>
+    public bool WritePrefab { get; set; }
+
+    /// <summary>
+    /// Unity 애니메이션을 같이 쓴다: 태그마다 클립(<c>{시트}_{태그}.anim</c>, 태그가 없으면 <c>{시트}.anim</c> 하나 — 프레임마다 스프라이트·부위 자리)과
+    /// 그 클립들을 상태로 담은 Animator Controller(<c>{시트}.controller</c>). 프리팹도 쓰면 프리팹 맨 위에 그 Animator를 단다.
+    /// </summary>
+    public bool WriteAnimations { get; set; }
+
+    /// <summary>프리팹이나 애니메이션을 쓰는지(Unity 파일일 때만 — 스프라이트를 가리키려고 시트 <c>.meta</c>도 항상 씀).</summary>
+    public bool WritesUnityAssets => (WritePrefab || WriteAnimations) && WriteMeta != false;
+
     public ExportSettings Clone()
     {
         var copy = (ExportSettings)MemberwiseClone();
@@ -719,5 +734,7 @@ public sealed class ExportSettings
         WriteMeta = other.WriteMeta;
         KeepImportedRects = other.KeepImportedRects;
         WriteSpriteLibrary = other.WriteSpriteLibrary;
+        WritePrefab = other.WritePrefab;
+        WriteAnimations = other.WriteAnimations;
     }
 }

@@ -1565,7 +1565,7 @@ Unavailable items (skipped):
   <data name="S_TimelinePanel_PartSkinMenuItems_AD14B32035" xml:space="preserve"><value>Skin for this part…</value></data>
   <data name="S_TimelinePanel_PartSkinMenuItems_CF3C760D28" xml:space="preserve"><value>{0} (default)</value></data>
   <data name="S_TimelinePanel_PartSkinMenuItems_EB384BCB51" xml:space="preserve"><value>None (keep group skin {0})</value></data>
-  <data name="S_TimelinePanel_PasteSelection_1A8BE9258F" xml:space="preserve"><value>Nowhere to paste. Select a layer with the same cel size (group row for groups).</value></data>
+  <data name="S_TimelinePanel_PasteSelection_1A8BE9258F" xml:space="preserve"><value>Nowhere to paste. Select a normal layer or a part of the same size (group row for groups).</value></data>
   <data name="S_TimelinePanel_PasteSelection_7024507CB1" xml:space="preserve"><value>{0} new layers: {1} — press Ctrl+Z to undo.</value></data>
   <data name="S_TimelinePanel_PasteSelection_9BF1D96331" xml:space="preserve"><value>Paste layers</value></data>
   <data name="S_TimelinePanel_PasteSelection_BABB32C8AD" xml:space="preserve"><value>Paste cels</value></data>
@@ -1588,9 +1588,7 @@ Unavailable items (skipped):
   <data name="S_TimelinePanel_SetDuration_8569508DA9" xml:space="preserve"><value>Enter a number between 1 and 60000.</value></data>
   <data name="S_TimelinePanel_SetDuration_9A16EE4A6C" xml:space="preserve"><value>Frame duration (ms)</value></data>
   <data name="S_TimelinePanel_SetDuration_F54842A5D1" xml:space="preserve"><value>Duration of {0} frames (ms)</value></data>
-  <data name="S_TimelinePanel_SetLayerOpacity_367789B53A" xml:space="preserve"><value>Enter a number between 0 and 255.</value></data>
   <data name="S_TimelinePanel_SetLayerOpacity_CF46646372" xml:space="preserve"><value>Layer opacity</value></data>
-  <data name="S_TimelinePanel_SetLayerOpacity_D496BC50BE" xml:space="preserve"><value>Opacity (0–255)</value></data>
   <data name="S_TimelinePanel_SetLayoutBadgeHover_309A0A0649" xml:space="preserve"><value>Group "{0}": {1}</value></data>
   <data name="S_TimelinePanel_ShowCelMenu_1631708D81" xml:space="preserve"><value>All frames</value></data>
   <data name="S_TimelinePanel_ShowCelMenu_1AE424CCE8" xml:space="preserve"><value>Empty frame after (Alt+N)</value></data>
@@ -1664,7 +1662,6 @@ Unavailable items (skipped):
   <data name="S_TimelinePanel_ShowLayerMenu_AA2FF06061" xml:space="preserve"><value>New layer</value></data>
   <data name="S_TimelinePanel_ShowLayerMenu_BD012C50E0" xml:space="preserve"><value>Expand effect rows</value></data>
   <data name="S_TimelinePanel_ShowLayerMenu_C11C7262F2" xml:space="preserve"><value>Effects…</value></data>
-  <data name="S_TimelinePanel_ShowLayerMenu_CC4093DC8F" xml:space="preserve"><value>Add part…</value></data>
   <data name="S_TimelinePanel_ShowLayerMenu_D344F8CCE8" xml:space="preserve"><value>Opacity…</value></data>
   <data name="S_TimelinePanel_ShowLayerMenu_DF2CF41103" xml:space="preserve"><value>Collapse</value></data>
   <data name="S_TimelinePanel_ShowLayerMenu_E46DC4274C" xml:space="preserve"><value>Show/hide</value></data>
@@ -3112,7 +3109,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Ai_Error_CommandLineTooLong" xml:space="preserve"><value>The command line is too long ({length} characters, limit {limit}). The AI CLI was not started.</value></data>
   <data name="Move_OtherCels" xml:space="preserve"><value>Also moved {count} other cels selected in the timeline</value></data>
   <data name="AiDraw_PaletteOnly" xml:space="preserve"><value>Use palette colors only</value></data>
-  <data name="AiDraw_PaletteOnly_Text" xml:space="preserve"><value>Colors the AI paints directly (pixels, shapes, fills, color replacement) are changed to the nearest color in the active palette. Erasing (fully transparent) is allowed and semi-transparent colors become opaque. Generated images (the converter's palette settings) and layer effects are not affected.</value></data>
+  <data name="AiDraw_PaletteOnly_Text" xml:space="preserve"><value>Colors the AI paints directly (pixels, shapes, fills, color replacement) are changed to the nearest color in the active palette. Erasing (fully transparent) is allowed and semi-transparent colors become opaque. Generated images (the converter's palette settings) and layer effects are not affected. When off, the AI can't see the palette and picks whatever colors suit the drawing.</value></data>
   <data name="AiDraw_PaletteSnapped" xml:space="preserve"><value>Snapped to palette colors: {changes}</value></data>
   <data name="AiDraw_AutoPrompt" xml:space="preserve"><value>Refine the generation request</value></data>
   <data name="AiDraw_AutoPrompt_Text" xml:space="preserve"><value>On (default): your words are turned into a request suited to image generation — the subject the AI wrote is wrapped with pixel-art style, background, sprite-sheet layout and pose instructions, and the AI drawing tips you turned on are applied. Off: your chat message is sent to image generation exactly as written (with attached images in order) to make one image, which is converted to pixel art without the size check, style reference or splitting into animation frames.</value></data>
@@ -4620,7 +4617,7 @@ Same compositing as the frame sheet (layer effects, current outfit; hidden and e
   <data name="AiTools_Ask" xml:space="preserve"><value>Ask the user</value></data>
   <data name="AiTools_Ask_Tip" xml:space="preserve"><value>Show choices above the chat input when a choice is ambiguous. When off, the AI decides or asks in its reply.</value></data>
   <data name="AiGuide_Title" xml:space="preserve"><value>AI drawing tips</value></data>
-  <data name="AiGuide_Title_Tip" xml:space="preserve"><value>Task-specific know-how given to the AI in advance so pixel art comes out well even from short requests. Only the tips you turn on reach the AI (the system prompt in the chat, the connection instructions for external AI apps), and it follows the ones that match the request. With direct drawing they shape how it draws; with image generation they help write the generation request (not used when "Refine the generation request" in the generation options is off). Edit a tip or reset it with the pencil button; edited text is shared by the chat and the external AI connection. Changes apply from the next message.</value></data>
+  <data name="AiGuide_Title_Tip" xml:space="preserve"><value>Task-specific know-how given to the AI in advance so pixel art comes out well even from short requests. Only the tips you turn on reach the AI (the system prompt in the chat, the connection instructions for external AI apps), and it follows the ones that match the request. With direct drawing they shape how it draws; with image generation they help write the generation request (not used when "Refine the generation request" in the generation options is off). Edit a tip or reset it with the pencil button; edited text is shared by the chat and the external AI connection. Changes apply from the next message. The still-image tips (drawing process, characters, objects, backgrounds) start off because they didn't improve results when we compared real AI drawings; the motion tips start on because they improved animations.</value></data>
   <data name="AiGuide_Basics" xml:space="preserve"><value>Drawing process (criteria, references, review)</value></data>
   <data name="AiGuide_Basics_Tip" xml:space="preserve"><value>Turn the request and attachments into concrete criteria, fill in missing decisions, check references, then review the whole image with a score and fix it.</value></data>
   <data name="AiGuide_Character" xml:space="preserve"><value>Characters and people</value></data>
@@ -4664,4 +4661,27 @@ Same compositing as the frame sheet (layer effects, current outfit; hidden and e
   <data name="Chat_Update_Confirm" xml:space="preserve"><value>Update {product} to the latest version in a terminal. You stay logged in.
 
 {steps}</value></data>
+  <data name="CanvasResize_Fit" xml:space="preserve"><value>Fit all artwork</value></data>
+  <data name="CanvasResize_FitTip" xml:space="preserve"><value>Sets the canvas to the smallest size that holds the artwork of every layer and frame (including artwork outside the canvas, part areas and hidden layers). The artwork is moved, not stretched; press OK to apply.</value></data>
+  <data name="CanvasResize_FitEmpty" xml:space="preserve"><value>There is no artwork to fit.</value></data>
+  <data name="CanvasResize_Fitted" xml:space="preserve"><value>Canvas fitted to all artwork: {width}×{height} — press OK to apply.</value></data>
+  <data name="FocusLayer_Bar" xml:space="preserve"><value>Focus</value></data>
+  <data name="FocusLayer_Tip" xml:space="preserve"><value>Fade other layers (`): only the current layer (a group with its parts) stays clear and the other layers are faded. Only the view changes; the artwork and exports stay the same. Right-click or use the arrow to set how faded.</value></data>
+  <data name="FocusLayer_Menu" xml:space="preserve"><value>Fade other layers</value></data>
+  <data name="FocusLayer_Opacity" xml:space="preserve"><value>Other layers' opacity</value></data>
+  <data name="PartCycle_Selected" xml:space="preserve"><value>Selected the part below, "{name}" — click the same spot again for the next one down.</value></data>
+  <data name="CanvasResize_PartTitle" xml:space="preserve"><value>Part size</value></data>
+  <data name="CanvasResize_PartBegin" xml:space="preserve"><value>Part size: change this part's size and the artwork's position and size with the handles or numbers, then press Enter or OK to apply (all frames and skins). Esc cancels.</value></data>
+  <data name="CanvasResize_PartNoFlip" xml:space="preserve"><value>You can't flip while resizing a part. Flip it in layer size (Alt+Shift+C).</value></data>
+  <data name="CanvasResize_PartResized" xml:space="preserve"><value>Part "{name}" size: {width}×{height}</value></data>
+  <data name="Timeline_NewMenu" xml:space="preserve"><value>New</value></data>
+  <data name="LayerOpacity_Label" xml:space="preserve"><value>Opacity</value></data>
+  <data name="LayerOpacity_PercentTip" xml:space="preserve"><value>Show and enter as a percentage (0-100%).</value></data>
+  <data name="LayerOpacity_ByteTip" xml:space="preserve"><value>Show and enter as a 0-255 value (255 = opaque).</value></data>
+  <data name="Export_UnityPrefab" xml:space="preserve"><value>Prefab (parts placed)</value></data>
+  <data name="Export_UnityPrefabTip" xml:space="preserve"><value>Also writes a prefab (.prefab) named after the frame sheet. With parts, each group becomes an empty object with a SpriteRenderer per part, using the part atlas sprites, positions and drawing order (the top object sits at the canvas pivot). Without parts it is one frame sheet sprite. Group effects and normal layers are not included. It is rewritten on every export, so add your own changes in a Prefab Variant in Unity.</value></data>
+  <data name="Export_UnityAnimations" xml:space="preserve"><value>Animation (clips and Animator)</value></data>
+  <data name="Export_UnityAnimationsTip" xml:space="preserve"><value>Writes an animation clip per tag (sheet_tag.anim, or a single sheet.anim without tags) and an Animator Controller (sheet.controller) with those clips as states. Sprites and part positions change per frame, and frame durations, direction and looping follow the tags. If the prefab is written too, its top object gets this Animator.</value></data>
+  <data name="Export_UnityAssetsNone" xml:space="preserve"><value>Export the frame sheet or the part atlas to create these.</value></data>
+  <data name="Export_UnityAssetsSummary" xml:space="preserve"><value>{0} Unity prefab and animation files</value></data>
 </root>

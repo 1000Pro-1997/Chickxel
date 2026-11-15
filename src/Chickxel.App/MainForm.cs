@@ -117,7 +117,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     /// <summary>확대율 숫자 상자(%): 클릭 = 직접 입력, 좌우로 끌기 = 바꾸기, 우클릭 = 화면에 맞추기·대표 배율 목록.</summary>
     private NumericUpDown _cbZoom = null!;
     private bool _syncingZoom;
-    private ToggleButton _cbGrid = null!, _cbTiles = null!, _cbTiled = null!, _cbPivot = null!, _cbOnion = null!, _cbEffects = null!, _cbFit = null!;
+    private ToggleButton _cbGrid = null!, _cbTiles = null!, _cbTiled = null!, _cbPivot = null!, _cbOnion = null!, _cbFocus = null!, _cbEffects = null!, _cbFit = null!;
     /// <summary>캔버스 밖 그림 표시와 타일맵 층 보기 선택.</summary>
     private ViewModeButton _cbOutside = null!, _cbTileView = null!;
     /// <summary>타일맵 레이어를 골랐을 때만 보이는 위 막대 보기 단추: 칸 격자, 타일 움직임 재생.</summary>
@@ -128,7 +128,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private Button _cbUpdate = null!;
 
     private MenuItem _miUndo = null!, _miRedo = null!, _miRecentFolders = null!, _miRecentFiles = null!;
-    private MenuItem _miGrid = null!, _miTiles = null!, _miTiled = null!, _miPivot = null!, _miOnion = null!, _miEffects = null!, _miFiles = null!;
+    private MenuItem _miGrid = null!, _miTiles = null!, _miTiled = null!, _miPivot = null!, _miOnion = null!, _miFocus = null!, _miEffects = null!, _miFiles = null!;
     private MenuItem _miTileCells = null!, _miTileAnim = null!;
     private MenuItem _miPixelPerfect = null!, _miFilled = null!, _miGlobalFill = null!, _miMirrorX = null!, _miMirrorY = null!,
         _miMirrorAtPivot = null!, _miRightErase = null!, _miWrap = null!, _miSelectTools = null!;
@@ -521,6 +521,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _cbTileCells.IsVisible = _cbTileAnim.IsVisible = _cbTileView.IsVisible = false;
         _cbPivot = Toggle(right, MainStrings.Ui_047, MainStrings.Ui_048, () => SetShowPivot(!_canvas.ShowPivot));
         _cbOnion = Toggle(right, MainStrings.Ui_049, MainStrings.Ui_050, () => _ctx.OnionSkin = !_ctx.OnionSkin);
+        _cbFocus = Toggle(right, UiStrings.FocusLayer_Bar, UiStrings.FocusLayer_Tip, ToggleFocusLayer);
         _cbEffects = Toggle(right, MainStrings.Ui_CanvasEffects, MainStrings.Ui_CanvasEffectsTip, ToggleCanvasEffects);
         string[] outsideLabels = [UiStrings.OutsideView_Opaque, UiStrings.OutsideView_Translucent, UiStrings.OutsideView_Hidden];
         string[] outsideShort = [UiStrings.OutsideView_ShortOpaque, UiStrings.OutsideView_ShortTranslucent, UiStrings.OutsideView_ShortHidden];
@@ -529,7 +530,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             index => string.Format(UiStrings.OutsideView_Bar, outsideShort[index]));
         right.Children.Add(_cbOutside);
         // 설정이 있는 보기: 단추 오른쪽에 붙인 아래 삼각형을 누르거나 단추를 우클릭하면 그 보기의 설정 팝업(바꾸면 바로 적용, 꺼져 있으면 켬)
-        foreach (var (button, flyout) in new (ToggleButton, Func<Flyout>)[] { (_cbGrid, PixelGridFlyout), (_cbTiles, TileGridFlyout), (_cbTiled, TiledModeFlyout), (_cbOnion, OnionFlyout) })
+        foreach (var (button, flyout) in new (ToggleButton, Func<Flyout>)[] { (_cbGrid, PixelGridFlyout), (_cbTiles, TileGridFlyout), (_cbTiled, TiledModeFlyout), (_cbOnion, OnionFlyout), (_cbFocus, FocusLayerFlyout) })
             WithSettingsArrow(right, button, flyout);
         right.Children.Add(BarSeparator());
         BarButton(right, BarIcon(VectorIcon.Minus), MainStrings.Ui_051, () => _canvas.ZoomStep(-1));
@@ -780,6 +781,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _miTiled = Checkable(Cmd("타일 모드(반복해 보기)", MainStrings.Menu_View_SetTiledMode_144, () => SetTiledMode(!_canvas.TiledMode), "Ctrl+Shift+T", KeyScope.Global, (Key.T, Ctrl | Shift)));
         _miPivot = Checkable(Cmd("피벗 표시", MainStrings.Menu_View_SetShowPivot_146, () => SetShowPivot(!_canvas.ShowPivot)));
         _miOnion = Checkable(DocCmd("양파 껍질", MainStrings.Menu_View_OnionSkin_148, () => _ctx.OnionSkin = !_ctx.OnionSkin, "Ctrl+J", KeyScope.Global, (Key.J, Ctrl)));
+        _miFocus = Checkable(Cmd("다른 레이어 흐리게", UiStrings.FocusLayer_Menu, ToggleFocusLayer, "`", KeyScope.NotInText, (Key.OemTilde, NoMods)));
         _miEffects = Checkable(DocCmd("캔버스에 효과 보기", MainStrings.Menu_View_CanvasEffects, ToggleCanvasEffects, "Ctrl+Shift+E", KeyScope.NotInText, (Key.E, Ctrl | Shift)));
         _miTileCells = Checkable(DocCmd("타일맵 칸 격자", UiStrings.TileView_MenuCells, () => { _ctx.ShowTileCells = !_ctx.ShowTileCells; UpdateToolUi(); }));
         _miTileAnim = Checkable(DocCmd("움직이는 타일 재생", UiStrings.TileView_MenuAnimate, () => { _ctx.TileAnimationPlaying = !_ctx.TileAnimationPlaying; UpdateToolUi(); }));
@@ -790,7 +792,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             Cmd("화면에 맞추기", MainStrings.Menu_View_FitToWindow_156, _canvas.FitToWindow, "Ctrl+0", KeyScope.Global, (Key.D0, Ctrl), (Key.NumPad0, Ctrl)),
             Cmd("실제 크기(1배)", MainStrings.Menu_View_SetZoom_158, () => _canvas.SetZoom(1), "Ctrl+1", KeyScope.Global, (Key.D1, Ctrl), (Key.NumPad1, Ctrl)),
             new Separator(),
-            _miGrid, _miTiles, _miTiled, _miPivot, _miOnion, _miEffects, _miTileCells, _miTileAnim,
+            _miGrid, _miTiles, _miTiled, _miPivot, _miOnion, _miFocus, _miEffects, _miTileCells, _miTileAnim,
             Cmd("격자 설정…", MainStrings.Menu_View_Command_160, GridSettings),
             new Separator(),
             DocCmd("다음 탭", MainStrings.Tabs_Next, () => CycleTab(1), "Ctrl+Tab", KeyScope.Global, (Key.Tab, Ctrl)),
@@ -1285,6 +1287,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _canvas.OnionAfter = s.OnionAfter;
         _canvas.OnionOpacity = s.OnionOpacity;
         _canvas.OnionTint = s.OnionTint;
+        _canvas.FocusLayer = s.FocusLayer;
+        _canvas.FocusOpacity = s.FocusLayerOpacity;
         _ctx.PencilBrush = (s.BrushSize, s.BrushShape);
         _ctx.EraserBrush = (s.EraserBrushSize, s.EraserBrushShape);
         _ctx.FillTolerance = s.FillTolerance;
@@ -1507,6 +1511,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         s.OnionAfter = _canvas.OnionAfter;
         s.OnionOpacity = _canvas.OnionOpacity;
         s.OnionTint = _canvas.OnionTint;
+        s.FocusLayer = _canvas.FocusLayer;
+        s.FocusLayerOpacity = _canvas.FocusOpacity;
         (s.BrushSize, s.BrushShape) = _ctx.PencilBrush;
         (s.EraserBrushSize, s.EraserBrushShape) = _ctx.EraserBrush;
         s.FillTolerance = _ctx.FillTolerance;
@@ -1914,6 +1920,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _cbOutside.Refresh();
         _cbPivot.IsChecked = _miPivot.IsChecked = _canvas.ShowPivot;
         _cbOnion.IsChecked = _miOnion.IsChecked = _ctx.OnionSkin;
+        _cbFocus.IsChecked = _miFocus.IsChecked = _canvas.FocusLayer;
         _cbEffects.IsChecked = _miEffects.IsChecked = _ctx.CanvasEffects;
         _cbTileCells.IsChecked = _miTileCells.IsChecked = _ctx.ShowTileCells;
         _cbTileAnim.IsChecked = _miTileAnim.IsChecked = _ctx.TileAnimationPlaying;
@@ -2054,6 +2061,26 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     }
 
     /// <summary>"양파" 단추 우클릭 팝업: 앞·뒤 프레임 수, 진하기, 색 물들이기.</summary>
+    /// <summary>다른 레이어 흐리게를 켜고 끈다(화면에만 — 지금 레이어만 또렷이).</summary>
+    private void ToggleFocusLayer()
+    {
+        _canvas.FocusLayer = !_canvas.FocusLayer;
+        UpdateToolUi();
+    }
+
+    /// <summary>"강조" 단추 우클릭 팝업: 다른 레이어 불투명도(바꾸면 바로 적용, 꺼져 있으면 켬).</summary>
+    private Flyout FocusLayerFlyout()
+    {
+        var opacity = Ui.Num(5, 90, _canvas.FocusOpacity, 56).Presets(10, 15, 20, 25, 30, 40, 50, 66, 75, 90).Unit("%").RecentKey("focus.opacity");
+        opacity.ValueChanged += (_, _) =>
+        {
+            _canvas.FocusOpacity = (int)opacity.NumValue();
+            if (!_canvas.FocusLayer) _canvas.FocusLayer = true;
+            UpdateToolUi();
+        };
+        return SettingsFlyout(UiStrings.FocusLayer_Menu, Ui.Row(Ui.Label(UiStrings.FocusLayer_Opacity), opacity));
+    }
+
     private Flyout OnionFlyout()
     {
         var before = Ui.Num(0, 5, _canvas.OnionBefore, 56).Presets(0, 1, 2, 3, 4, 5).Unit(MainStrings.Message_265).RecentKey("onion.frames");
@@ -2837,6 +2864,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         if (e.Frames.Count > 0) parts.Add(One(MainStrings.Ui_301, e.Frames));
         if (e.Parts.Count > 0) parts.Add(One(MainStrings.Ui_302, e.Parts));
         if (e.Libraries.Count > 0) parts.Add(One("Sprite Library", e.Libraries, MainStrings.Ui_303));
+        if (e.Unity.Count > 0) parts.Add(string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.Export_UnityAssetsSummary, e.Unity.Count));
         return " → " + string.Join(" · ", parts);
     }
 
@@ -3394,7 +3422,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
 
     /// <summary>
     /// 캔버스 크기 모드(Ctrl+Alt+C): 캔버스 손잡이와 도구 설정 숫자로 새 크기, 그림 자리·크기를 정한다. Enter·확인 = 적용, Esc·Ctrl+Z = 취소.
-    /// 부위 크기는 "부위 크기…"로 바꾼다.
+    /// 부위 화면이면 그 부위 크기를 바꾼다(같은 손잡이·숫자, 모든 프레임·스킨).
     /// </summary>
     private void BeginCanvasResize()
     {
@@ -3403,7 +3431,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             ShowMessage(error);
             return;
         }
-        ShowMessage(MainStrings.Message_332);
+        ShowMessage(_ctx.CanvasResizeIsPart ? UiStrings.CanvasResize_PartBegin : MainStrings.Message_332);
         _canvas.Focus();
     }
 

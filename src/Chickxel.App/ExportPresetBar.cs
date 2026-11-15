@@ -83,6 +83,8 @@ public sealed class ExportPresetBar : StackPanel
         var parts = new List<string> { output, p.Sheet.Layout == SheetLayout.Packed ? UiStrings.S_ExportPresetBar_Describe_447C8E9BD3 : UiStrings.S_ExportPresetBar_Describe_12A18F746C, p.Sheet.Skins == SkinSource.Selected ? UiStrings.S_ExportPresetBar_Describe_DB36FF4EB4 : UiStrings.S_ExportPresetBar_Describe_3967EC3179 };
         if (p.Sheet.SplitSkins) parts.Add(UiStrings.S_ExportPresetBar_Describe_4D11265826);
         if (p.WriteSpriteLibrary) parts.Add("Sprite Library");
+        if (p.WritePrefab && p.WriteMeta != false) parts.Add(UiStrings.Export_UnityPrefab);
+        if (p.WriteAnimations && p.WriteMeta != false) parts.Add(UiStrings.Export_UnityAnimations);
         if (p.PartsSheet is not null) parts.Add(UiStrings.S_ExportPresetBar_Describe_01183ED0E2);
         parts.Add(p.ImageFormat.ToString().ToUpperInvariant());
         return string.Join(" · ", parts);

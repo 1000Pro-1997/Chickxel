@@ -238,7 +238,7 @@ public static class AiGuides
         AiGuide.Cleanup =>
             """
             - For "make it more pixel-art", "clean it up" or "도트답게": inspect the image first (get_image, then get_pixels per region). Keep the subject, pose, size and composition; do not redraw from scratch.
-            - Reduce the colors to a coherent palette: merge near-duplicate colors with replace_color (prefer the document palette), 2-4 shades per hue.
+            - Reduce the colors to a coherent palette: merge near-duplicate colors with replace_color, 2-4 shades per hue.
             - Remove anti-aliasing blur, gradients, dithering noise and stray single pixels; replace them with 2-3 flat shade bands lit from one direction.
             - Make the outline 1 px and continuous, remove doubled corners, and fix jaggies so line steps are consistent. Sharpen the silhouette. Work one region at a time and verify the whole composite after each pass.
             """,
@@ -278,14 +278,27 @@ public static class AiGuides
 /// <summary>AI 도구 묶음·그리기 프롬프트 켜고 끄기(채팅과 외부 AI 연결이 따로 가짐). 끈 것만 이름으로 남겨 새로 생긴 것은 켜진 채로 시작한다.</summary>
 public sealed class AiAssistSettings
 {
+    /// <summary>
+    /// 처음에 끄는 그리기 요령: 정지 그림용(기본 그리기 순서·사람·물체·배경). 실제 CLI로 그려 보게 한 측정에서 이것들은 정지 그림의 평균 점수를 높이지 않았고
+    /// 기사 캐릭터는 오히려 낮췄다. 움직임·프레임 보강·다듬기·폴더 참고는 켠다(움직임 요령은 애니메이션 점수를 높임 — 측정/2026-11-14-AI-픽셀-표현.md).
+    /// </summary>
+    public static readonly IReadOnlyList<string> DefaultGuidesOff = [nameof(AiGuide.Basics), nameof(AiGuide.Character), nameof(AiGuide.Object), nameof(AiGuide.Background)];
+
     /// <summary>끈 도구 묶음(<see cref="AiToolGroup"/> 이름).</summary>
     public List<string> ToolsOff { get; set; } = [];
 
-    /// <summary>끈 그리기 프롬프트(<see cref="AiGuide"/> 이름).</summary>
-    public List<string> GuidesOff { get; set; } = [];
+    /// <summary>끈 그리기 프롬프트(<see cref="AiGuide"/> 이름). 처음엔 <see cref="DefaultGuidesOff"/>.</summary>
+    public List<string> GuidesOff { get; set; } = [.. DefaultGuidesOff];
 
     /// <summary>외부 AI 연결의 기본값: 파일 열기·그림 생성은 사용자가 켜야 한다.</summary>
     public static AiAssistSettings ExternalDefault() => new() { ToolsOff = [nameof(AiToolGroup.OpenFile), nameof(AiToolGroup.Generate)] };
+
+    /// <summary>예전 기본값(모두 켬)으로 저장된 설정을 지금 기본값으로 옮긴다(<see cref="AppSettings.AiGuideDefaultsApplied"/> — 한 번만).</summary>
+    public void ApplyGuideDefaults()
+    {
+        foreach (var name in DefaultGuidesOff)
+            if (!GuidesOff.Contains(name)) GuidesOff.Add(name);
+    }
 
     public bool ToolOn(AiToolGroup g) => !ToolsOff.Contains(g.ToString());
 

@@ -11,9 +11,9 @@ namespace GuideShots;
 internal static class ScreenDialogShots
 {
     /// <summary>
-    /// 내보내기 창(이미지 형식): 1 = ① 내보내기 단추 ② 다른 이름으로 저장 단추 ③ 형식 콤보 ④ Unity용으로 내보내기 체크 ⑤ 왼쪽 설정 ⑥ 오른쪽 미리보기 ⑦ 나눔줄,
-    /// 2 = 묶음(⑧ 공통 ⑨ 파일 ⑩ 프레임 시트 ⑪ 부위 아틀라스 ⑫ 고급 ⑬ Unity Import Settings), 3 = 공통 묶음(⑭ 칸 수 ⑮ 정렬 ⑯ 따로 파일 ⑰ 칸 이름 ⑱ 스킨 고르기),
-    /// 4 = ⑲ 프리셋 팝업, 5 = ⑳ Unity Import Settings 묶음.
+    /// 내보내기 창(이미지 형식): 1 = ① 내보내기 단추 ② 다른 이름으로 저장 단추 ③ 형식 콤보 ④ Unity용으로 내보내기 체크 ⑤ 왼쪽 설정 ⑥ 오른쪽 미리보기 ⑦ 나눔줄
+    /// ⑧ 프리팹 체크 ⑨ 애니메이션 체크 ⑩ 만들어질 파일 줄, 2 = 묶음(⑪ 공통 ⑫ 파일 ⑬ 프레임 시트 ⑭ 부위 아틀라스 ⑮ 고급 ⑯ Unity Import Settings),
+    /// 3 = 공통 묶음(⑰ 칸 수 ⑱ 정렬 ⑲ 따로 파일 ⑳ 칸 이름 ㉑ 스킨 고르기), 4 = ㉒ 프리셋 팝업, 5 = ㉓ Unity Import Settings 묶음.
     /// </summary>
     [Shot("screen-export")]
     public static void Export(ShotKit k)
@@ -31,11 +31,18 @@ internal static class ScreenDialogShots
             var columns = ShotKit.Get<Grid>(w, "_columns");
             Control Column(int i) => columns.Children.First(c => Grid.GetColumn(c) == i);
             var exportButton = ShotKit.All<Button>(w).Last(b => b.IsEffectivelyVisible && b.Content is "Export");
-            var unity = ShotKit.All<CheckBox>(ShotKit.Get<Control>(sheet, "_formatOptions")).First();
+            var formatOptions = ShotKit.Get<Control>(sheet, "_formatOptions");
+            var checks = ShotKit.All<CheckBox>(formatOptions).ToList();
+            var unity = checks[0];
+            // Unity 체크 아래 프리팹·애니메이션을 켜서 만들어질 파일 줄까지 보이게.
+            foreach (var c in checks.Skip(1).Take(2).Where(c => c.IsChecked != true)) k.Click(c);
+            ShotKit.Pump(500);
+            var assets = ShotKit.All<TextBlock>(formatOptions).First(t => t.IsEffectivelyVisible && t.Text?.StartsWith("→ ") == true);
             k.Save(w, marks:
             [
                 exportButton, ShotKit.Get<Button>(w, "_saveCopy"), ShotKit.Get<ComboBox>(w, "_formatCombo"), unity,
                 ShotKit.Bounds(Column(0), w).Deflate(4), ShotKit.Bounds(Column(2), w).Deflate(4), ShotKit.Bounds(Column(1), w).Inflate(new Thickness(2, -40, 2, -40)),
+                checks[1], checks[2], assets,
             ]);
 
             // 2: 묶음을 모두 접은 왼쪽 칸
@@ -45,7 +52,7 @@ internal static class ScreenDialogShots
             var left = ShotKit.Bounds(Column(0), w);
             var stack = sections.Select(e => ShotKit.Bounds(e, w)).Aggregate((a, b) => a.Union(b));
             var crop = new Rect(left.X, left.Y, left.Width, stack.Bottom + 10 - left.Y);
-            Shot(k, w, "screen-export-2", crop, [.. sections.Select(e => (Mark)Room(ShotKit.Bounds(e, w).Deflate(6)))], 8, only: [crop]);
+            Shot(k, w, "screen-export-2", crop, [.. sections.Select(e => (Mark)Room(ShotKit.Bounds(e, w).Deflate(6)))], 11, only: [crop]);
 
             // 3: 공통 묶음
             sections[0].IsExpanded = true;
@@ -57,10 +64,10 @@ internal static class ScreenDialogShots
                 return ShotKit.Bounds(row, w).Inflate(new Thickness(12, -2, -4, -2));
             }
             var common = ShotKit.Bounds(sections[0], w);
-            // ⑱ 스킨 고르기 단추는 스킨 줄 끝에 있어 번호가 단추 위 칸을 가리지 않게 스킨 줄 전체를 감싼다.
+            // ㉑ 스킨 고르기 단추는 스킨 줄 끝에 있어 번호가 단추 위 칸을 가리지 않게 스킨 줄 전체를 감싼다.
             Shot(k, w, "screen-export-3", common,
                 [Row("Cell count"), Row("Order"), Row("Separate files"), Row("Cell names"), Row("Skin")],
-                14, only: [common]);
+                17, only: [common]);
 
             // 4: 프리셋 팝업(형식 묶음 제목 줄 오른쪽 끝 단추)
             var presetButton = sheet.PresetButton;
@@ -68,7 +75,7 @@ internal static class ScreenDialogShots
             ShotKit.Pump(600);
             var pop = PopupArea(k, w) ?? throw new InvalidOperationException("no preset popup");
             var head = ShotKit.Bounds(presetButton, w).Inflate(new Thickness(120, 6, 6, 6));
-            Shot(k, w, "screen-export-4", head.Union(pop).Inflate(6), [Pop(pop)], 19, only: [head, pop]);
+            Shot(k, w, "screen-export-4", head.Union(pop).Inflate(6), [Pop(pop)], 22, only: [head, pop]);
             PopupMenus.CloseAll();
             ShotKit.Pump(300);
 
@@ -79,7 +86,7 @@ internal static class ScreenDialogShots
             ShotKit.Pump(400);
             import.BringIntoView();
             ShotKit.Pump(500);
-            k.Save(w, "screen-export-5", marks: [ShotKit.Bounds(import, w).Deflate(4)], firstNumber: 20);
+            k.Save(w, "screen-export-5", marks: [ShotKit.Bounds(import, w).Deflate(4)], firstNumber: 23);
         }, settleMs: 900);
     }
 

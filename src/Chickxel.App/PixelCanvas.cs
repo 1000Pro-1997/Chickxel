@@ -270,6 +270,7 @@ public sealed partial class PixelCanvas : Control
         ctx.ViewChanged += (_, _) =>
         {
             if (_ctx.HasProject) SyncShownView();
+            _groupOutsideKey = null;
             if (!_ctx.IsGroupSelected) _hoverPart = null;
             ResetWandPreview();
             InvalidateVisual();
@@ -630,6 +631,15 @@ public sealed partial class PixelCanvas : Control
     public int OnionOpacity { get => _onionOpacity; set { _onionOpacity = Math.Clamp(value, 5, 90); InvalidateVisual(); } }
     /// <summary>양파 껍질 색 물들이기(앞 = 빨강, 뒤 = 파랑). 끄면 원래 색.</summary>
     public bool OnionTint { get => _onionTint; set { _onionTint = value; InvalidateVisual(); } }
+    private bool _focusLayer;
+    private int _focusOpacity = 30;
+    /// <summary>
+    /// 다른 레이어 흐리게: 지금 레이어(그룹이면 그 부위들까지)만 또렷이, 나머지 레이어는 <see cref="FocusOpacity"/>로 흐리게 보인다(지금 레이어를 맨 위에).
+    /// 화면에만 쓰고 그림·내보내기는 그대로. 부위 화면(부위 크기 모드 포함)도 같게 — 다른 레이어를 흐리게, 부위를 맨 위에(<see cref="DrawPartContext"/>).
+    /// </summary>
+    public bool FocusLayer { get => _focusLayer; set { _focusLayer = value; InvalidateVisual(); } }
+    /// <summary>다른 레이어 흐리게의 다른 레이어 불투명도(%, 5~90).</summary>
+    public int FocusOpacity { get => _focusOpacity; set { _focusOpacity = Math.Clamp(value, 5, 90); InvalidateVisual(); } }
 
     /// <summary>"이전 프레임 보기"에 쓰는 키(누르고 있는 동안 보임, 사용자 단축키). 없으면 null.</summary>
     public Key? PeekKey { get; set; } = Key.H;
@@ -957,7 +967,7 @@ public sealed partial class PixelCanvas : Control
         // 그룹 화면에서 부위를 끄는 중: 그 부위를 뺀 합성 위에 옮긴 자리로 그린다.
         var dragged = _drag == DragMode.Arrange && !peek ? _arrangePart : null;
         if (dragged is not null) bmp = _ctx.ContextBitmap(frame, dragged);
-        // 부위 화면에서 효과 보기: 그림은 그 부위만 효과까지 입힌 프레임 크기 그림이라 부위 위치만큼 옮겨 그린다(흐린 주변과 같은 자리).
+        // 부위 화면에서 효과 보기: 그림은 그 부위만 효과까지 입힌 프레임 크기 그림이라 부위 위치만큼 옮겨 그린다(주변 레이어와 같은 자리).
         // 바둑판 보기는 부위 칸을 되풀이하므로 효과 없이 부위 셀 그대로
         bool partFrame = _ctx.PartEffectsShown;
         if (partFrame && _tiledMode)
@@ -967,12 +977,24 @@ public sealed partial class PixelCanvas : Control
         }
         using (ImageUtil.Pixelated(g))
         {
-            // 부위 화면: 부위 칸 체커 → 프레임의 나머지(다른 부위·그룹·레이어)를 흐리게 → 부위 그림. 부위 칸 안에서도 주변이 비쳐 맞춰 그릴 수 있다.
+            // 부위 화면: 일반 레이어처럼 프레임 전체를 레이어 순서대로 — 체커 → 부위보다 아래 레이어 → 부위 그림 → 부위보다 위 레이어
+            // (다른 레이어 흐리게면 위 레이어도 부위 앞에 그려 부위가 맨 위).
+            // 그룹에 효과가 있으면 그 효과는 부위를 모두 합친 그림에 들므로 나눠 그리지 않고 프레임 합성을 그대로 그린다(흐리게 보기는 빼고).
             bool partView = _ctx.CurrentPart is not null && !_tiledMode;
+            int partFrameIndex = peek ? frame - 1 : frame;
+            bool partComposite = partView && partFrame && !_focusLayer && dragged is null && _ctx.CurrentPart is { Visible: true, Parent: { Visible: true } partGroup }
+                                 && partGroup.HasActiveEffectsAt(partFrameIndex);
+            if (partComposite)
+            {
+                var composite = _ctx.CanvasCompositeView(partFrameIndex);
+                bmp = composite.Bitmap;
+                view = peek ? RenderView.None : composite;
+            }
             if (partView)
             {
                 DrawBitmapAt(g, null, 0, 0, W, H, checker: true);
-                DrawPartSurroundings(g, _ctx.CurrentPart!, peek ? frame - 1 : frame);
+                if (!partComposite) DrawPartContext(g, _ctx.CurrentPart!, partFrameIndex, above: false);
+                if (_focusLayer) DrawPartContext(g, _ctx.CurrentPart!, partFrameIndex, above: true);
             }
             if (_tiledMode)
             {
@@ -994,9 +1016,12 @@ public sealed partial class PixelCanvas : Control
                     g.FillRectangle(DimBrush, new Rect(c.Right, c.Y, all.Right - c.Right, c.Height));
                 }
             }
-            if (partView && partFrame) DrawPartFrame(g, bmp);
+            if (partComposite) DrawPartComposite(g, bmp, partFrameIndex);
+            else if (partView && partFrame) DrawPartFrame(g, bmp);
             else if (partView) DrawBitmapAt(g, bmp, 0, 0, W, H, checker: false);
+            else if (_focusLayer && !peek && dragged is null && _ctx.Project is { Layers.Count: > 1 }) DrawFocused(g, bmp, frame);
             else DrawImageAt(g, bmp, 0, 0);
+            if (partView && !partComposite && !_focusLayer) DrawPartContext(g, _ctx.CurrentPart!, partFrameIndex, above: true);
             // 캔버스 밖 그림은 보기 설정에 따라 현재 레이어의 셀만 따로 표시한다.
             if (!peek && !partView && !_tiledMode && _outsideView != OutsideImageView.Hidden) DrawCelOutside(g);
             // 계산 중(작업 스레드)이면 회색 덮개 아래 중간 결과를 보이고, 그리는 중인 셀은 효과 없이 덮개 위에 바로 보인다.
@@ -1087,9 +1112,15 @@ public sealed partial class PixelCanvas : Control
 
     /// <summary>
     /// 지금 일반 레이어 셀의 캔버스 밖 그림을 그린다. 보기 설정과 레이어 불투명도를 적용하며, 그리기 도구에서는 작업 중인 그림을 쓴다.
+    /// 그룹이면 그 부위들이 캔버스 밖으로 나간 부분(<see cref="DrawGroupOutside"/>).
     /// </summary>
     private void DrawCelOutside(DrawingContext g)
     {
+        if (_ctx.Project is { } gp && gp.Layers[_ctx.CurrentLayer] is { IsGroup: true } group)
+        {
+            DrawGroupOutside(g, gp, group);
+            return;
+        }
         if (_ctx.Project is not { } p || p.Layers[_ctx.CurrentLayer] is not { Kind: LayerKind.Normal or LayerKind.Tilemap } layer) return;
         PixelImage? image = null;
         var at = Point.Empty;
@@ -1122,6 +1153,75 @@ public sealed partial class PixelCanvas : Control
             _outsideVersion = p.StrokeOutsideVersion;
         }
         DrawOutsideCanvas(g, _outsideBmp, new Rectangle(at, image.Size), opacity);
+    }
+
+    private WriteableBitmap? _groupOutsideBmp;
+    /// <summary>그룹 밖 그림 비트맵이 무엇을 그렸는지(그룹·프레임·자리). 화면이 바뀌면(<see cref="EditorContext.ViewChanged"/>) 비운다.</summary>
+    private (Layer Group, int Frame, Rectangle Bounds)? _groupOutsideKey;
+
+    /// <summary>
+    /// 그룹 화면: 보이는 부위들이 캔버스 밖으로 나간 부분을 보기 설정대로 그린다(그룹을 한 레이어처럼 — 캔버스 안은 이미 합성에 있음).
+    /// 부위 자리를 모두 감싸는 곳의 그룹 합성을 그리며, 스크립트 효과가 있으면(계산이 길 수 있음) 그리지 않는다.
+    /// </summary>
+    private void DrawGroupOutside(DrawingContext g, SpriteProject p, Layer group)
+    {
+        int frame = _ctx.CurrentFrame;
+        var bounds = Rectangle.Empty;
+        foreach (var part in p.ChildrenOf(group))
+        {
+            if (!p.IsLayerVisible(p.IndexOf(part)) || part.PartSize.Width < 1 || part.PartSize.Height < 1) continue;
+            var r = FrameRectOf(part);
+            bounds = bounds.IsEmpty ? r : Rectangle.Union(bounds, r);
+        }
+        if (bounds.IsEmpty || new Rectangle(0, 0, W, H).Contains(bounds)) return;
+        var key = (group, frame, bounds);
+        if (_groupOutsideKey != key || _groupOutsideBmp is null)
+        {
+            var plan = p.PlanGroup(group, frame);
+            if (plan.RunsScripts) return;
+            var image = plan.Cropped(bounds).Render();
+            if (_groupOutsideBmp is null || _groupOutsideBmp.PixelSize.Width != image.Width || _groupOutsideBmp.PixelSize.Height != image.Height)
+            {
+                _groupOutsideBmp?.Dispose();
+                _groupOutsideBmp = ImageUtil.NewBitmap(image.Width, image.Height);
+            }
+            ImageUtil.CopyToBitmap(image, _groupOutsideBmp);
+            _groupOutsideKey = key;
+        }
+        DrawOutsideCanvas(g, _groupOutsideBmp, bounds, p.IsLayerVisible(_ctx.CurrentLayer) ? 1 : 0.6);
+    }
+
+    /// <summary>
+    /// 다른 레이어 흐리게(<see cref="FocusLayer"/>): 지금 레이어(그룹이면 그 부위들)를 뺀 합성을 흐리게 그리고, 그 위에 지금 레이어를 또렷이 얹는다.
+    /// 칠하는 중이면 지금 셀은 작업 그림 그대로(효과 없이). 다른 레이어 합성이 아직 계산 중이면 평소 합성을 그린다. 숨긴 지금 레이어는 뒤에서 반투명으로 얹는다.
+    /// </summary>
+    private void DrawFocused(DrawingContext g, Bitmap? bmp, int frame)
+    {
+        var p = _ctx.Project!;
+        int index = _ctx.CurrentLayer;
+        var layer = p.Layers[index];
+        if (_ctx.ContextBitmap(frame, layer) is not { } others)
+        {
+            DrawImageAt(g, bmp, 0, 0);
+            return;
+        }
+        DrawBitmapAt(g, null, 0, 0, W, H, checker: true);
+        using (g.PushOpacity(_focusOpacity / 100.0)) DrawBitmapAt(g, others, 0, 0, W, H, checker: false);
+        if (!p.IsLayerVisible(index)) return;
+        Bitmap? mine;
+        if (!layer.IsGroup && p.IsStrokeActive && _ctx.EditImage is { } cel && cel.Width == W && cel.Height == H)
+        {
+            if (_strokeBmp is null || _strokeBmp.PixelSize.Width != W || _strokeBmp.PixelSize.Height != H)
+            {
+                _strokeBmp?.Dispose();
+                _strokeBmp = ImageUtil.NewBitmap(W, H);
+            }
+            ImageUtil.CopyToBitmap(cel, _strokeBmp);
+            mine = _strokeBmp;
+        }
+        else mine = _ctx.CelBitmap(index, frame);
+        if (mine is null) return;
+        using (g.PushOpacity(layer.IsGroup ? 1 : layer.Opacity / 255.0)) DrawBitmapAt(g, mine, 0, 0, W, H, checker: false);
     }
 
     /// <summary>떠 있는 픽셀: 캔버스 안은 그대로, 캔버스 밖으로 나간 부분은 보기 설정에 따름(<paramref name="clipToCanvas"/>가 아니면 모두 그대로).</summary>
@@ -1177,13 +1277,20 @@ public sealed partial class PixelCanvas : Control
         return Rectangle.Intersect(Rectangle.FromLTRB(tl.X - ox, tl.Y - oy, br.X + 1 - ox, br.Y + 1 - oy), new Rectangle(0, 0, w, h));
     }
 
-    /// <summary>부위 화면: 프레임의 나머지(이 부위를 뺀 합성)를 부위 위치만큼 옮겨 흐리게, 프레임 경계는 점선으로.</summary>
-    private void DrawPartSurroundings(DrawingContext g, Layer part, int frame)
+    /// <summary>
+    /// 부위 화면(부위 크기 모드 포함): 프레임의 다른 레이어를 부위 위치만큼 옮겨 레이어 순서대로 그린다 — 부위보다 아래 레이어(<paramref name="above"/> 아님)는
+    /// 프레임 칸 체커와 함께 부위 앞에, 위 레이어는 부위 뒤에 그리고 프레임 경계를 점선으로. 다른 레이어 흐리게가 켜져 있으면 그 불투명도로.
+    /// </summary>
+    private void DrawPartContext(DrawingContext g, Layer part, int frame, bool above)
     {
-        if (_ctx.Project is not { } p || _ctx.ContextBitmap(frame, part) is not { } around) return;
+        if (_ctx.Project is not { } p) return;
         var at = p.GetPartOffset(part, frame);
         int ox = -at.X, oy = -at.Y;
-        using (g.PushOpacity(0.35)) DrawBitmapAt(g, around, ox, oy, p.Width, p.Height, checker: false);
+        if (!above) DrawBitmapAt(g, null, ox, oy, p.Width, p.Height, checker: true);
+        if (_ctx.PartContextBitmap(frame, part, above) is { } layers)
+            using (g.PushOpacity(_focusLayer ? _focusOpacity / 100.0 : 1))
+                DrawBitmapAt(g, layers, ox, oy, p.Width, p.Height, checker: false);
+        if (!above) return;
         var r = ImageToScreen(new Rectangle(ox, oy, p.Width, p.Height));
         g.DrawRectangle(null, FrameBoundsPen, new Rect(r.X - 0.5, r.Y - 0.5, r.Width + 1, r.Height + 1));
     }
@@ -1194,6 +1301,20 @@ public sealed partial class PixelCanvas : Control
         if (_ctx.Project is not { } p || _ctx.CurrentPart is not { } part) return;
         var at = FrameOffsetOf(part);
         DrawBitmapAt(g, bmp, -at.X, -at.Y, p.Width, p.Height, checker: false);
+    }
+
+    /// <summary>
+    /// 그룹에 효과가 있는 부위 화면: 프레임 합성(<paramref name="composite"/> — 그룹 효과가 부위를 모두 합친 그림에 든 모습)을 부위 위치만큼 옮겨
+    /// 프레임 칸 체커 위에 그리고 프레임 경계를 점선으로.
+    /// </summary>
+    private void DrawPartComposite(DrawingContext g, Bitmap? composite, int frame)
+    {
+        if (_ctx.Project is not { } p || _ctx.CurrentPart is not { } part) return;
+        var at = p.GetPartOffset(part, frame);
+        DrawBitmapAt(g, null, -at.X, -at.Y, p.Width, p.Height, checker: true);
+        DrawBitmapAt(g, composite, -at.X, -at.Y, p.Width, p.Height, checker: false);
+        var r = ImageToScreen(new Rectangle(-at.X, -at.Y, p.Width, p.Height));
+        g.DrawRectangle(null, FrameBoundsPen, new Rect(r.X - 0.5, r.Y - 0.5, r.Width + 1, r.Height + 1));
     }
 
     /// <summary>그룹 화면에서 끄는 부위를 옮긴 자리에 그린다(그룹·부위 불투명도 반영).</summary>
@@ -3005,21 +3126,29 @@ public sealed partial class PixelCanvas : Control
     /// 프레임 좌표 <paramref name="px"/> 아래의 맨 위 보이는 부위(현재 그룹). 그 자리에 칠한 픽셀이 있는 부위를 먼저,
     /// 없으면 사각형만 겹치는 부위를 고른다.
     /// </summary>
-    private Layer? PartAt(Point px)
+    private Layer? PartAt(Point px) => PartsAt(px).FirstOrDefault();
+
+    /// <summary>
+    /// 프레임 좌표 <paramref name="px"/> 아래의 보이는 부위들(현재 그룹): 그 자리에 칠한 픽셀이 있는 부위를 위에서부터, 그다음 사각형만 겹치는 부위를 위에서부터.
+    /// 같은 자리를 다시 눌러 아래 부위로 넘어가는 차례다.
+    /// </summary>
+    private List<Layer> PartsAt(Point px)
     {
-        if (_ctx.Project is not { } p || _ctx.CurrentGroup is not { } group) return null;
+        var painted = new List<Layer>();
+        var byRect = new List<Layer>();
+        if (_ctx.Project is not { } p || _ctx.CurrentGroup is not { } group) return painted;
         var parts = p.ChildrenOf(group);
-        Layer? byRect = null;
         for (int i = parts.Count - 1; i >= 0; i--)
         {
             var part = parts[i];
             int index = p.IndexOf(part);
             var rect = FrameRectOf(part);
             if (!p.IsLayerVisible(index) || !rect.Contains(px)) continue;
-            if (p.GetCel(index, _ctx.CurrentFrame) is { } cel && cel.Get(px.X - rect.X, px.Y - rect.Y).A != 0) return part;
-            byRect ??= part;
+            if (p.GetCel(index, _ctx.CurrentFrame) is { } cel && cel.Get(px.X - rect.X, px.Y - rect.Y).A != 0) painted.Add(part);
+            else byRect.Add(part);
         }
-        return byRect;
+        painted.AddRange(byRect);
+        return painted;
     }
 
     /// <summary>고른 부위가 아직 이 그룹의 부위이면 그것, 아니면 null.</summary>
@@ -3035,21 +3164,32 @@ public sealed partial class PixelCanvas : Control
         return true;
     }
 
+    /// <summary>마우스 아래 부위를 강조한다. 고른 부위가 그 자리에 겹쳐 있으면 그것(누르면 끌거나 아래로 넘어갈 부위)을 보인다.</summary>
     private void UpdateHoverPart(Point px)
     {
-        var part = PartAt(px);
+        var under = PartsAt(px);
+        var part = _selectedPart is { } s && under.Contains(s) ? s : under.FirstOrDefault();
         if (ReferenceEquals(part, _hoverPart)) return;
         _hoverPart = part;
         InvalidateVisual();
     }
 
-    /// <summary>그룹 화면 누르기: 더블클릭이면 그 부위 레이어를 고르고, 아니면 부위 끌기를 시작한다.</summary>
+    /// <summary>같은 자리를 끌지 않고 다시 눌렀다 떼면 넘어갈 아래 부위(누를 때 정하고, 끌면 쓰지 않음).</summary>
+    private Layer? _cycleTo;
+    /// <summary>방금 아래 부위로 넘어가기 전에 골라 있던 부위(바로 이어지는 더블클릭은 이것을 연다).</summary>
+    private Layer? _cycledFrom;
+
+    /// <summary>
+    /// 그룹 화면 누르기: 더블클릭이면 그 부위 레이어를 고르고, 아니면 부위 끌기를 시작한다. 이미 고른 부위를 다시 누르면 그 부위를 끌고,
+    /// 끌지 않고 떼면 그 자리의 아래 부위로 넘어간다(겹친 부위를 차례로 고름 — <see cref="EndArrange"/>).
+    /// </summary>
     private void BeginArrange(Point px, int clickCount)
     {
         if (_ctx.Project is not { } p) return;
-        var part = PartAt(px);
-        if (part is null)
+        var candidates = PartsAt(px);
+        if (candidates.Count == 0)
         {
+            _cycleTo = _cycledFrom = null;
             if (_selectedPart is not null)
             {
                 _selectedPart = null;
@@ -3058,6 +3198,10 @@ public sealed partial class PixelCanvas : Control
             }
             return;
         }
+        var selected = _selectedPart is { } s && candidates.Contains(s) ? s : null;
+        var part = clickCount >= 2 && _cycledFrom is { } from && candidates.Contains(from) ? from : selected ?? candidates[0];
+        _cycledFrom = null;
+        _cycleTo = clickCount < 2 && selected is not null && candidates.Count > 1 ? candidates[(candidates.IndexOf(selected) + 1) % candidates.Count] : null;
         _selectedPart = part;
         InvalidateVisual();
         int index = p.IndexOf(part);
@@ -3066,6 +3210,15 @@ public sealed partial class PixelCanvas : Control
             _hoverPart = null;
             _ctx.SetCurrentLayer(index);
             Message?.Invoke(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_BeginArrange_914451A106,part.Name));
+            return;
+        }
+        // 옮길 수 없는 부위(잠김·자동 배치)라도 다시 누른 것이면 떼어서 아래 부위로 넘어갈 수 있게 놓기만 받는다.
+        bool fixedPart = p.IsLayerLocked(index) || part.IsAutoLaidOut;
+        if (fixedPart && _cycleTo is not null)
+        {
+            _arrangePart = null;
+            _arrangeStart = _arrangeOffset = FrameOffsetOf(part);
+            _drag = DragMode.Arrange;
             return;
         }
         if (p.IsLayerLocked(index))
@@ -3096,12 +3249,25 @@ public sealed partial class PixelCanvas : Control
         Cursor = SizeAllCursor;
     }
 
-    /// <summary>부위 끌기를 마친다: 위치가 바뀌었으면 실행취소 한 단계로 기록한다.</summary>
+    /// <summary>
+    /// 부위 끌기를 마친다: 위치가 바뀌었으면 실행취소 한 단계로 기록한다. 이미 고른 부위를 끌지 않고 다시 눌렀다 뗐으면 그 자리의 아래 부위를 고른다.
+    /// </summary>
     private void EndArrange()
     {
         var part = _arrangePart;
         _arrangePart = null;
-        if (part is null || _ctx.Project is not { } p || _arrangeOffset == _arrangeStart || p.IndexOf(part) < 0) return;
+        var cycleTo = _cycleTo;
+        _cycleTo = null;
+        if (_ctx.Project is not { } p) return;
+        if (_arrangeOffset == _arrangeStart && cycleTo is not null && p.IndexOf(cycleTo) >= 0)
+        {
+            _cycledFrom = _selectedPart;
+            _selectedPart = _hoverPart = cycleTo;
+            InvalidateVisual();
+            Message?.Invoke(this, UiStrings.FormatPartCycle_Selected(name: cycleTo.Name));
+            return;
+        }
+        if (part is null || _arrangeOffset == _arrangeStart || p.IndexOf(part) < 0) return;
         var offset = _arrangeOffset;
         _ctx.MovePart(part, offset);
         Message?.Invoke(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_EndArrange_A643730044,part.Name,offset.X,offset.Y));
@@ -3615,7 +3781,8 @@ public sealed partial class PixelCanvas : Control
     /// <summary>새 캔버스·그림 사각형(보이는 좌표 — 부위 화면이면 부위 위치만큼 옮긴 프레임 좌표).</summary>
     private (Rectangle Canvas, Rectangle Image) CanvasResizeViewRects()
     {
-        var o = ShownOrigin;
+        // 부위 크기 모드는 이미 부위 좌표(보이는 좌표와 같음)
+        var o = _ctx.CanvasResizeIsPart ? Point.Empty : ShownOrigin;
         var canvas = _ctx.CanvasResizeCanvas;
         canvas.Offset(-o.X, -o.Y);
         var image = _ctx.CanvasResizeImage;
@@ -3657,7 +3824,15 @@ public sealed partial class PixelCanvas : Control
                 using (g.PushOpacity(OutsideOpacity))
                     g.DrawImage(outside.Bitmap, new Rect(0, 0, outside.Bitmap.PixelSize.Width, outside.Bitmap.PixelSize.Height), ToRect(ImageToScreen(at)));
             }
+            // 부위 크기: 프레임의 다른 레이어를 부위 아래·위로(부위 화면과 같게)
+            var resizedPart = _ctx.CanvasResizeIsPart ? _ctx.CurrentPart : null;
+            if (resizedPart is not null)
+            {
+                DrawPartContext(g, resizedPart, _ctx.CurrentFrame, above: false);
+                if (_focusLayer) DrawPartContext(g, resizedPart, _ctx.CurrentFrame, above: true);
+            }
             DrawBitmapAt(g, _ctx.CanvasResizeBitmap, canvas.X, canvas.Y, canvas.Width, canvas.Height, checker: true);
+            if (resizedPart is not null && !_focusLayer) DrawPartContext(g, resizedPart, _ctx.CurrentFrame, above: true);
         }
         var visible = VisibleSourceRect(canvas.X, canvas.Y, canvas.Width, canvas.Height);
         if (_showPixelGrid && _zoom >= _pixelGridMinZoom && !visible.IsEmpty)
