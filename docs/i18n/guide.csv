@@ -91,10 +91,10 @@ guide-home.12,"<a href=""#featured-skins""><strong>스킨 바꿔 끼우기</stro
 guide-home.13,"<a href=""#featured-export""><strong>스프라이트 시트 내보내기</strong></a>","<a href=""#featured-export""><strong>Export a sprite sheet</strong></a>"
 guide-home.14,기능 이름을 알고 있다면 왼쪽 검색에 입력하세요. 목차는 자주 하는 작업과 기능별 설명을 나눠 놓았습니다.,"If you know the feature name, enter it in the search box on the left. The table of contents separates common tasks from feature reference."
 language-fix.6,"
-<span><strong>Chickxel</strong> · <a href=""https://github.com/1000Pro-1997/Chickxel/blob/main/LICENSE"">소스 공개 라이선스</a> · © 2026 천성훈 (1000Pro-1997)</span>
+<span><strong>Chickxel</strong> · <a href=""https://github.com/1000Pro-1997/Chickxel/blob/main/LICENSE"">소스 공개 라이선스</a> · © 2026 천성훈 (1000Pro-1997) · 문의 <a href=""mailto:chickxel@chickxel.com"">chickxel@chickxel.com</a></span>
 <span><a href=""https://github.com/1000Pro-1997/Chickxel"">GitHub</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/releases"">릴리스</a> · <a href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">Discord</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/issues"">문제 신고</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/blob/main/THIRD-PARTY-NOTICES.md"">오픈 소스 고지</a></span>
 ","
-<span><strong>Chickxel</strong> · <a href=""https://github.com/1000Pro-1997/Chickxel/blob/main/LICENSE"">Source-available license</a> · © 2026 천성훈 (1000Pro-1997)</span>
+<span><strong>Chickxel</strong> · <a href=""https://github.com/1000Pro-1997/Chickxel/blob/main/LICENSE"">Source-available license</a> · © 2026 천성훈 (1000Pro-1997) · Contact <a href=""mailto:chickxel@chickxel.com"">chickxel@chickxel.com</a></span>
 <span><a href=""https://github.com/1000Pro-1997/Chickxel"">GitHub</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/releases"">Releases</a> · <a href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">Discord</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/issues"">Report an issue</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/blob/main/THIRD-PARTY-NOTICES.md"">Open source notices</a></span>
 "
 manual.glossary,"<a href=""#glossary"">용어 모음</a>","<a href=""#glossary"">Glossary</a>"
