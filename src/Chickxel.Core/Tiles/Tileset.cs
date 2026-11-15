@@ -35,6 +35,12 @@ public sealed record TileDef
     public Point DrawOffset { get; init; }
     /// <summary>찍으면 들어갈 층(<see cref="TileFloor.Id"/>).</summary>
     public int Floor { get; init; }
+
+    /// <summary>
+    /// 같은 층 안에서 먼저 그리는 차례(작을수록 먼저, 기본 0). 합친 타일셋(<see cref="TileSources.Combine"/>)이 다른 타일셋의 땅 층 여럿을 첫 타일셋의 바닥 층 하나로
+    /// 모을 때 원래 층 차례를 담는다(위층 땅의 가장자리가 아래층 땅을 덮도록). 파일에는 쓰지 않는다.
+    /// </summary>
+    public int FloorRank { get; init; }
     /// <summary>타일 목록 화면의 자리(칸). 시트에서 가져오면 시트의 칸 자리.</summary>
     public int PaletteX { get; init; }
     public int PaletteY { get; init; }
@@ -355,6 +361,9 @@ public sealed record Tileset
 
     /// <summary>칸에 놓인 타일의 그리기 묶음(없는 타일은 바닥).</summary>
     public TileDrawClass DrawClassOf(TileCell cell) => Find(cell.Tile)?.DrawClass ?? TileDrawClass.Ground;
+
+    /// <summary>칸에 놓인 타일의 층 안 그리는 차례(<see cref="TileDef.FloorRank"/>).</summary>
+    public int FloorRankOf(TileCell cell) => Find(cell.Tile)?.FloorRank ?? 0;
 
     /// <summary>
     /// 칸 <paramref name="at"/>에 놓인 타일의 기준선(격자 원점 기준 px y). 상하 뒤집기면 차지 칸 안에서 뒤집히고,

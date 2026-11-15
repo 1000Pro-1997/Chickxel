@@ -15,7 +15,7 @@ public static partial class ProjectExport
 
     private static UnityRig RigOf(SpriteProject project, bool assumePartContent)
     {
-        var x = project.Export;
+        var x = Sheet(project);
         if (!x.WritesUnityAssets) return UnityRig.None;
         if (x.ExportParts && (assumePartContent ? PartLayers(project).Count > 0 : PartCels(project).Count > 0)) return UnityRig.Parts;
         return x.ExportFrames ? UnityRig.Frames : UnityRig.None;
@@ -36,7 +36,7 @@ public static partial class ProjectExport
     /// <param name="assumePartContent">true면 셀 내용을 보지 않는다(화면 표시용).</param>
     public static IReadOnlyList<string> GetUnityAssetPaths(SpriteProject project, string projectPath, bool assumePartContent)
     {
-        var export = project.Export;
+        var export = Sheet(project);
         if (RigOf(project, assumePartContent) == UnityRig.None) return [];
         var folder = GetExportFolder(export, projectPath);
         var baseName = Path.GetFileNameWithoutExtension(GetExportImagePath(export, projectPath));
@@ -110,7 +110,7 @@ public static partial class ProjectExport
         var results = new List<ExportResult>();
         var paths = plan.UnityPaths ?? [];
         if (paths.Count == 0) return results;
-        var export = project.Export;
+        var export = Sheet(project);
         var rig = RigOf(project, assumePartContent: false);
         if (rig == UnityRig.None) return results;
         var baseName = Path.GetFileNameWithoutExtension(GetExportImagePath(export, plan.ProjectPath));

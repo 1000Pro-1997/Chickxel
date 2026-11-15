@@ -401,7 +401,7 @@ public class ProjectTests
             p.Export.Common.Spacing = 1;
             p.Export.Common.Trim = true;
             p.Export.Folder = "out";
-            p.Export.WriteMeta = true;
+            p.Export.Engine = ExportEngine.Unity;
             p.Export.Common.Order = GridOrder.ByPartTag;
         });
         Assert.NotNull(top);
@@ -448,8 +448,8 @@ public class ProjectTests
         Assert.Equal(32f, back.Sprite.PixelsPerUnit);
         Assert.Equal(Pivot.BottomCenter, back.Sprite.DefaultPivot);
         var c = back.Export.Common;
-        Assert.Equal((SheetGrid.Columns, 2, 1, true, "out", (bool?)true, GridOrder.ByPartTag),
-            (c.Grid, c.GridCount, c.Spacing, c.Trim, back.Export.Folder, back.Export.WriteMeta, c.Order));
+        Assert.Equal((SheetGrid.Columns, 2, 1, true, "out", ExportEngine.Unity, GridOrder.ByPartTag),
+            (c.Grid, c.GridCount, c.Spacing, c.Trim, back.Export.Folder, back.Export.Engine, c.Order));
         for (int l = 0; l < 2; l++)
             for (int f = 0; f < 3; f++)
                 Assert.Equal(p.GetCel(l, f) is null, back.GetCel(l, f) is null);
@@ -663,6 +663,7 @@ public class ProjectTests
         Directory.CreateDirectory(Path.Combine(dir.Path, "ProjectSettings"));
         var projectPath = Path.Combine(dir.Path, "Assets", "Art", "hero.chickxel");
         var p = MakeWalkProject();
+        p.Export.Engine = ExportEngine.Unity;
 
         var saved = ProjectIO.SaveWithExport(p, projectPath);
         var export = Assert.Single(saved.Export!.Frames);
@@ -740,6 +741,7 @@ public class ProjectTests
         Directory.CreateDirectory(Path.Combine(dir.Path, "ProjectSettings"));
         var projectPath = Path.Combine(dir.Path, "Assets", "hero.chickxel");
         var p = MakeWalkProject();
+        p.Export.Engine = ExportEngine.Unity;
         p.Edit("형식", ProjectChange.Settings, () => { p.Export.ImageFormat = ExportImageFormat.Jpg; p.Export.JpegQuality = 75; });
 
         var jpg = Assert.Single(ProjectIO.SaveWithExport(p, projectPath).Export!.Frames);
@@ -823,6 +825,7 @@ public class ProjectTests
         var oldPath = Path.Combine(dir.Path, "Assets", "hero.chickxel");
         var newPath = Path.Combine(dir.Path, "Assets", "renamed.chickxel");
         var project = MakeWalkProject();
+        project.Export.Engine = ExportEngine.Unity;
         ProjectIO.SaveWithExport(project, oldPath);
         var oldPng = Path.ChangeExtension(oldPath, ".png");
         var newPng = Path.ChangeExtension(newPath, ".png");
@@ -875,7 +878,7 @@ public class ProjectTests
         var newPath = dir.File("renamed.chickxel");
         var project = new SpriteProject(2, 2);
         project.Edit("경로", ProjectChange.Settings,
-            () => { project.Export.Folder = folder; project.Export.FileName = fileName; project.Export.WriteMeta = true; });
+            () => { project.Export.Folder = folder; project.Export.FileName = fileName; project.Export.Engine = ExportEngine.Unity; });
         ProjectIO.SaveWithExport(project, oldPath);
         var custom = ProjectExport.GetExportImagePath(project);
         var meta = File.ReadAllBytes(custom + ".meta");
@@ -914,7 +917,7 @@ public class ProjectTests
         var oldPath = dir.File("Hero.chickxel");
         var newPath = dir.File("hero.chickxel");
         var project = new SpriteProject(2, 2);
-        project.Edit("메타", ProjectChange.Settings, () => project.Export.WriteMeta = true);
+        project.Edit("메타", ProjectChange.Settings, () => project.Export.Engine = ExportEngine.Unity);
         ProjectIO.SaveWithExport(project, oldPath);
         var guid = UnityMeta.Read(dir.File("Hero.png.meta")).Guid;
 

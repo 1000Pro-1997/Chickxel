@@ -5,7 +5,8 @@ using Chickxel.App.Localization;
 namespace Chickxel.App.PlayTest;
 
 /// <summary>
-/// 움직임 테스트 창(기획 4.7): 탑뷰 8방향 이동 / 플랫포머 이동·점프로 문서의 애니메이션을 시험한다. 탑뷰에는 열린 문서의 타일맵 레이어를 깔 수 있다.
+/// 움직임 테스트 창(기획 4.7): 탑뷰 8방향 이동 / 플랫포머 이동·점프·사다리·벽타기로 문서의 애니메이션을 시험한다.
+/// 열린 문서의 타일맵 레이어를 깔고 지형·사다리로 쓸 층을 고를 수 있다.
 /// 메모리에 있는 문서 내용을 쓰며, 저장·애니메이션 편집 뒤 <see cref="DocumentChanged"/>로 다시 읽는다.
 /// </summary>
 public sealed class PlayTestForm : Window
@@ -13,12 +14,26 @@ public sealed class PlayTestForm : Window
     private const int SidePanelWidth = 290;
     private const int RowWidth = SidePanelWidth - 40;
 
-    private readonly Func<Document?> _currentDocument;
+    private readonly Func<IReadOnlyList<PlayCharacterSource>> _characterSources;
+    /// <summary>캐릭터로 쓸 탭 목록과 지금 목록의 출처들, 고른 탭의 열쇠(창을 연 때의 탭으로 시작).</summary>
+    private readonly ComboBox _character = Ui.Combo(170);
+    private IReadOnlyList<PlayCharacterSource> _characters = [];
+    private object? _characterKey;
+    private bool _charactersUpdating;
     private readonly Func<IReadOnlyList<PlayMapSource>> _mapSources;
-    /// <summary>탑뷰에 깔 타일맵 목록(맨 앞은 "없음")과 지금 목록의 출처들.</summary>
+    /// <summary>깔 타일맵 목록(맨 앞은 "없음")과 지금 목록의 출처들.</summary>
     private readonly ComboBox _map = Ui.Combo(170);
     private IReadOnlyList<PlayMapSource> _maps = [];
     private bool _mapsUpdating;
+    /// <summary>타일맵(출처 이름)·모드마다 지형·사다리로 고른 층 Id(창이 열려 있는 동안 기억, 처음에는 층 이름으로 고름).</summary>
+    private readonly Dictionary<(string Map, PlayMode Mode), (HashSet<int> Terrain, HashSet<int> Ladder)> _floorChoices = new();
+    /// <summary>지금 층 체크 상자를 만든 맵·모드의 층 목록 서명(같으면 다시 만들지 않음).</summary>
+    private string? _floorsShown;
+    private readonly StackPanel _floorsGroup = Group();
+    private readonly WrapPanel _terrainList = FloorList();
+    private readonly WrapPanel _ladderList = FloorList();
+    private readonly Control _ladderHeader;
+    private readonly TextBlock _noTerrainLabel = InfoLabel();
     private readonly PlaySimulation _sim = new();
     private readonly PlayView _view = new();
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(15) };
@@ -33,13 +48,15 @@ public sealed class PlayTestForm : Window
     private readonly NumericUpDown _scale = Number(1, 16, 4, 1).Presets(1, 2, 3, 4, 5, 6, 8, 10, 12, 16).Unit("×").RecentKey("playtest.scale");
     private readonly CheckBox _showGrid = Check(UiStrings.S_PlayTestForm__showGrid_8744E58387, true);
     private readonly CheckBox _showPivot = Check(UiStrings.S_PlayTestForm__showPivot_C16F3DE272, true);
-    private readonly CheckBox _showCollider = Check(UiStrings.S_PlayTestForm__showCollider_96996CCC00, false);
+    private readonly CheckBox _showCollider = Check(UiStrings.PlayTest_ShowColliders, false);
     private readonly CheckBox _plainFacesRight = Check(UiStrings.S_PlayTestForm__plainFacesRight_D2362E1EE6, true);
     private readonly NumericUpDown _topDownSpeed;
     private readonly NumericUpDown _moveSpeed;
     private readonly NumericUpDown _gravity;
     private readonly NumericUpDown _jumpPower;
     private readonly NumericUpDown _maxFall;
+    private readonly NumericUpDown _climbSpeed;
+    private readonly CheckBox _wallClimb = Check(UiStrings.PlayTest_WallClimb, false);
     private readonly StackPanel _topDownGroup = Group();
     private readonly StackPanel _platformerGroup = Group();
     private readonly TextBlock _playingLabel = InfoLabel();
@@ -50,14 +67,15 @@ public sealed class PlayTestForm : Window
     private readonly TextBlock _hintLabel = InfoLabel();
     private readonly TextBlock _keysLabel = InfoLabel();
 
-    internal PlayTestForm(Func<Document?> currentDocument, Func<IReadOnlyList<PlayMapSource>> mapSources)
+    internal PlayTestForm(Func<IReadOnlyList<PlayCharacterSource>> characterSources, object? initialCharacter, Func<IReadOnlyList<PlayMapSource>> mapSources)
     {
-        _currentDocument = currentDocument ?? throw new ArgumentNullException(nameof(currentDocument));
+        _characterSources = characterSources;
+        _characterKey = initialCharacter;
         _mapSources = mapSources;
 
         Title = UiStrings.S_PlayTestForm_PlayTestForm_B00519A8EF;
-        // 대상 도움말(F1): 가이드에서 이 창을 설명하는 곳은 "보기와 캔버스" 단축키 표의 움직임 테스트 줄뿐
-        this.HelpAt("shortcuts-view", anchor: "Movement test");
+        // 대상 도움말(F1): 사용 가이드의 움직임 테스트 쪽
+        this.HelpAt("screen-play-test");
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         Width = 1060;
         Height = 680;
@@ -80,23 +98,49 @@ public sealed class PlayTestForm : Window
             .Presets(150, 200, 250, 300, 350, 400, 500, 600).Unit("px/s").RecentKey("playtest.jump");
         _maxFall = Number(10, 10000, (decimal)ps.MaxFallSpeed, 10)
             .Presets(200, 300, 400, 500, 600, 800, 1000).Unit("px/s").RecentKey("playtest.fall");
+        _climbSpeed = Number(0, 2000, (decimal)ps.ClimbSpeed, 10).Presets(speeds).Unit("px/s").RecentKey("playtest.climb");
 
         _topDownGroup.Children.Add(Header(UiStrings.S_PlayTestForm_PlayTestForm_A24362C504));
         _topDownGroup.Children.Add(Row(UiStrings.S_PlayTestForm_PlayTestForm_BC9D1F57FB, _topDownSpeed));
+
+        // 캐릭터: 그릴 탭 고르기(창을 연 때의 탭으로 시작 — 다른 탭으로 옮겨 가도 바뀌지 않음)
+        _character.Width = RowWidth;
+        // 맵(두 모드 함께): 깔 타일맵 고르기, 그 아래 지형·사다리로 쓸 층
         _map.Width = RowWidth;
-        _topDownGroup.Children.Add(new StackPanel
+        _ladderHeader = LabelWithInfo(UiStrings.PlayTest_LadderFloors, UiStrings.PlayTest_LadderFloorsInfo);
+        _noTerrainLabel.Foreground = AppTheme.WarningBrush;
+        _noTerrainLabel.Text = UiStrings.PlayTest_NoTerrain;
+        _floorsGroup.Children.Add(LabelWithInfo(UiStrings.PlayTest_TerrainFloors, UiStrings.PlayTest_TerrainFloorsInfo));
+        _floorsGroup.Children.Add(_terrainList);
+        _floorsGroup.Children.Add(_ladderHeader);
+        _floorsGroup.Children.Add(_ladderList);
+        _floorsGroup.Children.Add(_noTerrainLabel);
+        _floorsGroup.IsVisible = false;
+        var mapGroup = Group();
+        mapGroup.Children.Add(new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Margin = new Thickness(0, 4, 0, 0),
-            Children = { new TextBlock { Text = UiStrings.PlayTest_Map, Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center }, Ui.InfoBadge(UiStrings.PlayTest_MapInfo) },
+            Margin = new Thickness(0, 10, 0, 4),
+            Children =
+            {
+                new TextBlock { Text = UiStrings.PlayTest_Map, FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center },
+                Ui.InfoBadge(UiStrings.PlayTest_MapInfo),
+            },
         });
-        _topDownGroup.Children.Add(_map);
+        mapGroup.Children.Add(_map);
+        mapGroup.Children.Add(_floorsGroup);
 
         _platformerGroup.Children.Add(Header(UiStrings.S_PlayTestForm_PlayTestForm_50E363BD43));
         _platformerGroup.Children.Add(Row(UiStrings.S_PlayTestForm_PlayTestForm_BC9D1F57FB, _moveSpeed));
         _platformerGroup.Children.Add(Row(UiStrings.S_PlayTestForm_PlayTestForm_C1DC7F8923, _gravity));
         _platformerGroup.Children.Add(Row(UiStrings.S_PlayTestForm_PlayTestForm_CA9B701E99, _jumpPower));
         _platformerGroup.Children.Add(Row(UiStrings.S_PlayTestForm_PlayTestForm_CEDC62ED3F, _maxFall));
+        _platformerGroup.Children.Add(Row(UiStrings.PlayTest_ClimbSpeed, _climbSpeed));
+        _platformerGroup.Children.Add(new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Children = { _wallClimb, Ui.InfoBadge(UiStrings.PlayTest_WallClimbInfo) },
+        });
 
         var resetButton = new Button
         {
@@ -121,9 +165,12 @@ public sealed class PlayTestForm : Window
         sideStack.Children.AddRange(new Control[]
         {
             Header(UiStrings.S_PlayTestForm_PlayTestForm_EB62D0B4C6), _mode,
+            Header(UiStrings.PlayTest_Character), _character,
             Header(UiStrings.S_PlayTestForm_PlayTestForm_21F5816FA3), Row(UiStrings.S_PlayTestForm_PlayTestForm_B566CF8EC7, _scale),
-            _showGrid, _showPivot, _showCollider, _plainFacesRight,
-            _topDownGroup, _platformerGroup, resetButton,
+            _showGrid, _showPivot,
+            new StackPanel { Orientation = Orientation.Horizontal, Children = { _showCollider, Ui.InfoBadge(UiStrings.PlayTest_ShowCollidersInfo) } },
+            _plainFacesRight,
+            mapGroup, _topDownGroup, _platformerGroup, resetButton,
             Header(UiStrings.S_PlayTestForm_PlayTestForm_BCE64AD0E9), _playingLabel, _candidateList,
             Header(UiStrings.S_PlayTestForm_PlayTestForm_2086878572), _expectedList, _hintLabel, _keysLabel,
         });
@@ -147,12 +194,25 @@ public sealed class PlayTestForm : Window
 
         _mode.SelectedIndex = 0;
         _mode.SelectionChanged += (_, _) => ApplyMode();
+        _character.DropDownOpened += (_, _) => RefreshCharacterList();
+        _character.SelectionChanged += (_, _) =>
+        {
+            if (_charactersUpdating || _character.SelectedIndex < 0 || _character.SelectedIndex >= _characters.Count) return;
+            _characterKey = _characters[_character.SelectedIndex].Key;
+            ReloadDocument();
+            _view.Focus();
+        };
         _map.DropDownOpened += (_, _) => RefreshMapList();
         _map.SelectionChanged += (_, _) =>
         {
             if (_mapsUpdating) return;
-            _sim.SetMap(SelectedMap?.Read(), restart: true);
-            _view.InvalidateVisual();
+            ApplyMap(SelectedMap?.Read(), restart: true);
+        };
+        _wallClimb.IsCheckedChanged += (_, _) =>
+        {
+            ps.WallClimb = _wallClimb.On();
+            RefreshExpected();
+            _view.Focus();
         };
         _plainFacesRight.IsCheckedChanged += (_, _) =>
         {
@@ -164,12 +224,13 @@ public sealed class PlayTestForm : Window
         _gravity.ValueChanged += (_, _) => ps.Gravity = (float)_gravity.NumValue();
         _jumpPower.ValueChanged += (_, _) => ps.JumpVelocity = (float)_jumpPower.NumValue();
         _maxFall.ValueChanged += (_, _) => ps.MaxFallSpeed = (float)_maxFall.NumValue();
+        _climbSpeed.ValueChanged += (_, _) => ps.ClimbSpeed = (float)_climbSpeed.NumValue();
         _scale.ValueChanged += (_, _) =>
         {
             _scaleChosen = true;
             _view.InvalidateVisual();
         };
-        foreach (var number in new[] { _scale, _topDownSpeed, _moveSpeed, _gravity, _jumpPower, _maxFall })
+        foreach (var number in new[] { _scale, _topDownSpeed, _moveSpeed, _gravity, _jumpPower, _maxFall, _climbSpeed })
             number.AddHandler(KeyDownEvent, ReturnFocusToView, RoutingStrategies.Tunnel);
         foreach (var check in new[] { _showGrid, _showPivot, _showCollider, _plainFacesRight })
             check.IsCheckedChanged += (_, _) => _view.InvalidateVisual();
@@ -219,7 +280,74 @@ public sealed class PlayTestForm : Window
         {
             _mapsUpdating = false;
         }
-        if (keep is not null && SelectedMap is null) _sim.SetMap(null, restart: true);
+        if (keep is not null && SelectedMap is null) ApplyMap(null, restart: true);
+    }
+
+    /// <summary>
+    /// 고른 타일맵의 지금 모드 층 선택. 처음이면 층 이름으로 고른다(탑뷰 = 벽·물건·물, 플랫포머 = 바닥 — <see cref="PlayMap.DefaultTerrain"/>).
+    /// </summary>
+    private (HashSet<int> Terrain, HashSet<int> Ladder) FloorChoice(PlayMap? map)
+    {
+        if (SelectedMap is not { } source || map is null) return ([], []);
+        var key = (source.Name, _sim.Mode);
+        if (!_floorChoices.TryGetValue(key, out var choice))
+            _floorChoices[key] = choice = (map.DefaultTerrain(_sim.Mode == PlayMode.TopDown), []);
+        return choice;
+    }
+
+    /// <summary>타일맵을 깔고(null = 없음) 층 체크 상자를 맞춘다.</summary>
+    private void ApplyMap(PlayMap? map, bool restart)
+    {
+        var choice = FloorChoice(map);
+        ShowFloors(map, choice);
+        _sim.SetMap(map, choice.Terrain, choice.Ladder, restart);
+        RefreshFloorHints();
+        RefreshExpected();
+        _view.InvalidateVisual();
+    }
+
+    /// <summary>맵 층마다 지형·사다리 체크 상자를 만든다(층 목록이 그대로면 두고, 숨긴 층은 이름 뒤에 표시).</summary>
+    private void ShowFloors(PlayMap? map, (HashSet<int> Terrain, HashSet<int> Ladder) choice)
+    {
+        var floors = map?.Tileset.Floors ?? [];
+        string signature = SelectedMap?.Name + "\n" + _sim.Mode + "\n" + string.Join("\n", floors.Select(f => $"{f.Id}:{f.Name}:{map!.Data.IsFloorHidden(f.Id)}"));
+        _floorsGroup.IsVisible = floors.Length > 0;
+        if (signature == _floorsShown) return;
+        _floorsShown = signature;
+        _terrainList.Children.Clear();
+        _ladderList.Children.Clear();
+        foreach (var floor in floors)
+        {
+            string name = map!.Data.IsFloorHidden(floor.Id)
+                ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.PlayTest_HiddenFloor, floor.Name)
+                : floor.Name;
+            _terrainList.Children.Add(FloorCheck(name, choice.Terrain, floor.Id));
+            _ladderList.Children.Add(FloorCheck(name, choice.Ladder, floor.Id));
+        }
+    }
+
+    /// <summary>층 하나의 체크 상자: 바꾸면 그 층을 넣거나 빼고 맵을 다시 만든다(처음 위치로).</summary>
+    private CheckBox FloorCheck(string text, HashSet<int> set, int floor)
+    {
+        var check = Check(text, set.Contains(floor));
+        check.Margin = new Thickness(0, 0, 8, 0);
+        check.IsCheckedChanged += (_, _) =>
+        {
+            if (check.On()) set.Add(floor);
+            else set.Remove(floor);
+            ApplyMap(_sim.Map, restart: true);
+            _view.Focus();
+        };
+        return check;
+    }
+
+    /// <summary>사다리 층은 플랫포머에서만, 지형이 없다는 안내는 플랫포머에 맵을 깔고 지형 층이 없을 때만.</summary>
+    private void RefreshFloorHints()
+    {
+        bool platformer = _sim.Mode == PlayMode.Platformer;
+        _ladderHeader.IsVisible = platformer;
+        _ladderList.IsVisible = platformer;
+        _noTerrainLabel.IsVisible = platformer && _sim.Map is { } map && FloorChoice(map).Terrain.Count == 0;
     }
 
     /// <summary>창이 닫혔는지(닫힌 창은 다시 보일 수 없다).</summary>
@@ -232,16 +360,36 @@ public sealed class PlayTestForm : Window
         ReloadDocument();
     }
 
+    /// <summary>캐릭터 목록을 다시 채운다(고른 탭은 열쇠로 지킴, 닫혔으면 첫 탭).</summary>
+    private void RefreshCharacterList()
+    {
+        _characters = _characterSources();
+        int at = _characters.ToList().FindIndex(c => Equals(c.Key, _characterKey));
+        if (at < 0 && _characters.Count > 0) at = 0;
+        _characterKey = at >= 0 ? _characters[at].Key : null;
+        _charactersUpdating = true;
+        try
+        {
+            _character.ItemsSource = _characters.Select(c => c.Name).ToList();
+            _character.SelectedIndex = at;
+        }
+        finally
+        {
+            _charactersUpdating = false;
+        }
+    }
+
     private void ReloadDocument()
     {
-        var doc = _currentDocument();
+        RefreshCharacterList();
+        var doc = _characterKey is null ? null : _characters.First(c => Equals(c.Key, _characterKey)).Build();
         var old = _sprites;
         _sprites = PlaySprites.Load(doc);
         _sim.Load(_sprites);
         old.Dispose();
         // 깐 타일맵도 지금 내용으로(자리는 지킴)
         RefreshMapList();
-        if (SelectedMap is { } map) _sim.SetMap(map.Read(), restart: false);
+        if (SelectedMap is { } map) ApplyMap(map.Read(), restart: false);
 
         Title = _sprites.HasDocument ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PlayTestForm_ReloadDocument_2215BDB9EC,_sprites.DocumentName) : UiStrings.S_PlayTestForm_ReloadDocument_224FD48AD2;
         if (!_scaleChosen && _sprites.HasDocument)
@@ -259,11 +407,13 @@ public sealed class PlayTestForm : Window
     {
         var mode = _mode.SelectedIndex == 1 ? PlayMode.Platformer : PlayMode.TopDown;
         _sim.SetMode(mode);
+        if (_sim.Map is { } map) ApplyMap(map, restart: true);
         _topDownGroup.IsVisible = mode == PlayMode.TopDown;
         _platformerGroup.IsVisible = mode == PlayMode.Platformer;
         _keysLabel.Text = mode == PlayMode.TopDown
             ? UiStrings.S_PlayTestForm_ApplyMode_47A35B1C1A
-            : UiStrings.S_PlayTestForm_ApplyMode_85EA432E50;
+            : UiStrings.PlayTest_KeysPlatformer;
+        RefreshFloorHints();
         RefreshExpected();
         RefreshPlaying();
         _view.InvalidateVisual();
@@ -329,9 +479,8 @@ public sealed class PlayTestForm : Window
 
         bool left = IsHeld(Key.A, Key.Left), right = IsHeld(Key.D, Key.Right);
         bool up = IsHeld(Key.W, Key.Up), down = IsHeld(Key.S, Key.Down);
-        // 플랫포머에서는 위쪽 키도 점프로 받는다.
-        bool jumpHeld = _held.Contains(Key.Space) || (_sim.Mode == PlayMode.Platformer && up);
-        _sim.Tick(dt, new PlayInput(left, right, up, down, jumpHeld, _jumpPressed));
+        // 플랫포머의 위 키는 컨트롤러가 사다리·벽에서는 오르기로, 그 밖에서는 점프로 받는다.
+        _sim.Tick(dt, new PlayInput(left, right, up, down, _held.Contains(Key.Space), _jumpPressed));
         _jumpPressed = false;
 
         RefreshPlaying();
@@ -348,7 +497,7 @@ public sealed class PlayTestForm : Window
             case Key.R:
                 _sim.Reset();
                 break;
-            case Key.Space or Key.W or Key.Up:
+            case Key.Space:
                 if (!_held.Contains(key)) _jumpPressed = true;
                 break;
         }
@@ -395,6 +544,20 @@ public sealed class PlayTestForm : Window
     private static CheckBox Check(string text, bool value) => Ui.Check(text, value);
 
     private static StackPanel Group() => new() { Orientation = Orientation.Vertical };
+
+    private static WrapPanel FloorList() => new() { Orientation = Orientation.Horizontal, MaxWidth = RowWidth, Margin = new Thickness(6, 0, 0, 2) };
+
+    /// <summary>작은 제목(보통 굵기) + 정보박스.</summary>
+    private static Control LabelWithInfo(string text, string info) => new StackPanel
+    {
+        Orientation = Orientation.Horizontal,
+        Margin = new Thickness(0, 6, 0, 2),
+        Children =
+        {
+            new TextBlock { Text = text, Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center },
+            Ui.InfoBadge(info),
+        },
+    };
 
     private static TextBlock Header(string text) => new()
     {

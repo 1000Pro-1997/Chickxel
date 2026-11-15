@@ -28,7 +28,7 @@ internal enum NameMark
 /// <summary>표시(<see cref="NameMark"/>)가 붙은 이름 한 줄.</summary>
 internal readonly record struct MarkedName(NameMark Mark, string Text);
 
-/// <summary>한 번의 갱신에 쓰는 키 입력. <see cref="JumpPressed"/>는 이번에 새로 눌렸을 때만 true.</summary>
+/// <summary>한 번의 갱신에 쓰는 키 입력. <see cref="JumpPressed"/>는 이번에 점프 키(스페이스)가 새로 눌렸을 때만 true.</summary>
 internal readonly record struct PlayInput(bool Left, bool Right, bool Up, bool Down, bool JumpHeld, bool JumpPressed);
 
 /// <summary>그리기 옵션.</summary>
@@ -36,8 +36,10 @@ internal readonly record struct PlayRenderOptions(int Scale, bool ShowGrid, bool
 
 /// <summary>
 /// 움직임 테스트의 상태: 탑뷰/플랫포머 컨트롤러, 맵, 애니메이션 재생기. 고정 간격으로 진행하고 화면에 그린다.
-/// 위치는 픽셀 단위(y 아래가 +)이며 캐릭터 위치에 칸의 피벗이 놓인다. 탑뷰에 타일맵(<see cref="Map"/>)을 깔면 위치는 그 타일맵 레이어의 캔버스 좌표이고,
-/// 캐릭터는 발(피벗) 높이를 기준선으로 세운 타일과 섞여 그려진다(위치로 그리는 타일셋 — 층 차례 타일셋이면 모든 타일 위).
+/// 위치는 픽셀 단위(y 아래가 +)이고 컨트롤러 위치는 몸 상자(기준 프레임의 불투명 영역)의 발밑 가운데다. 피벗은 거기서 몸 상자만큼 떨어진 곳이며,
+/// 좌우 반전하면 몸 상자도 피벗을 기준으로 뒤집히므로 그림은 제자리에서 뒤집히고 피벗이 옮겨진다(피벗이 그림 가운데에서 멀어도 그림이 사라지지 않음).
+/// 타일맵(<see cref="Map"/>)을 깔면 위치는 그 타일맵 레이어의 캔버스 좌표이고, 고른 지형 층의 칸은 벽·땅, 사다리 층의 칸은 사다리(플랫포머)가 된다.
+/// 캐릭터는 피벗 높이를 기준선으로 세운 타일과 섞여 그려진다(위치로 그리는 타일셋 — 층 차례 타일셋이면 모든 타일 위).
 /// </summary>
 internal sealed class PlaySimulation
 {
@@ -49,10 +51,15 @@ internal sealed class PlaySimulation
     private static readonly Color ColliderColor = Color.FromRgb(120, 220, 120);
     private static readonly IBrush ColliderFill = AppTheme.Brush(Color.FromArgb(40, 120, 220, 120));
     private static readonly IPen ColliderPen = AppTheme.Pen(ColliderColor);
+    private static readonly IBrush TerrainFill = AppTheme.Brush(Color.FromArgb(50, 230, 120, 90));
+    private static readonly IPen TerrainPen = AppTheme.Pen(Color.FromArgb(160, 230, 120, 90));
+    private static readonly IBrush LadderFill = AppTheme.Brush(Color.FromArgb(50, 90, 160, 240));
+    private static readonly IPen LadderPen = AppTheme.Pen(Color.FromArgb(180, 90, 160, 240));
     private static readonly IPen GridPen = AppTheme.Pen(Color.FromArgb(70, AppTheme.DimTextColor.R, AppTheme.DimTextColor.G, AppTheme.DimTextColor.B));
     private static readonly IPen RoomBorderPen = AppTheme.Pen(AppTheme.BorderColor, 2);
     private static readonly IPen PlatformEdgePen = AppTheme.Pen(AppTheme.BorderColor);
     private static readonly IPen OneWayTopPen = AppTheme.Pen(AppTheme.DimTextColor, 2);
+    private static readonly IPen LadderRailPen = AppTheme.Pen(AppTheme.DimTextColor, 2);
     private static readonly IPen PivotShadowPen = AppTheme.Pen(Colors.Black, 3);
     private static readonly IPen PivotPen = AppTheme.Pen(AppTheme.AccentColor);
     private static readonly IPen MissingPen = AppTheme.Pen(AppTheme.WarningColor, 2);
@@ -62,19 +69,24 @@ internal sealed class PlaySimulation
     private float _topDownAccumulator;
     private int _levelPpu = -1;
     private PlayMap? _map;
+    private IReadOnlySet<int> _terrainFloors = new HashSet<int>();
+    private IReadOnlySet<int> _ladderFloors = new HashSet<int>();
+    // 깔린 타일맵의 지형·사다리 칸(시작 자리 찾기에 씀)
+    private HashSet<Point> _solidCells = new();
+    private HashSet<Point> _ladderCells = new();
     // 깔린 타일맵의 움직이는 타일 시계(ms)
     private long _mapClockMs;
     // 타일 그림 → 화면 비트맵(그림은 만든 뒤 바뀌지 않으므로 그림마다 한 번)
     private readonly ConditionalWeakTable<PixelImage, WriteableBitmap> _tileBitmaps = new();
 
-    /// <summary>피벗 기준 캐릭터 상자(기준 프레임의 불투명 영역). 탑뷰 충돌 상자이자 플랫포머 충돌 상자 크기.</summary>
+    /// <summary>피벗 기준 몸 상자(기준 프레임의 불투명 영역, 반전하지 않은 그림). 카메라·충돌 상자 크기의 기준.</summary>
     private RectangleF _box;
 
     private RectangleF _room;
 
     public PlayMode Mode { get; private set; } = PlayMode.TopDown;
 
-    /// <summary>탑뷰에 깐 타일맵(없으면 빈 방).</summary>
+    /// <summary>깐 타일맵(없으면 빈 방·연습용 발판).</summary>
     public PlayMap? Map => _map;
     public TopDownController TopDown { get; } = new();
     public PlatformerController Platformer { get; } = new();
@@ -94,13 +106,27 @@ internal sealed class PlaySimulation
     /// <summary>기준 프레임 높이(픽셀). 기본 배율을 정할 때 쓴다.</summary>
     public int ReferenceHeight { get; private set; }
 
+    /// <summary>플랫포머에 사다리가 있는지(고른 사다리 층에 칸이 있거나 연습용 발판).</summary>
+    public bool HasLadders => Platformer.Ladders.Count > 0;
+
     private bool FacingLeft => Mode == PlayMode.TopDown ? TopDown.Facing == Facing.Left : !Platformer.FacingRight;
     private bool FacingRight => Mode == PlayMode.TopDown ? TopDown.Facing == Facing.Right : Platformer.FacingRight;
 
+    /// <summary>지금 그림의 몸 상자(피벗 기준): 반전해 그리면 피벗을 기준으로 뒤집은 것.</summary>
+    private RectangleF Body => FlipX ? new RectangleF(-_box.Right, _box.Y, _box.Width, _box.Height) : _box;
+
+    /// <summary>컨트롤러 위치(몸 상자 발밑 가운데).</summary>
+    private Vector2 Feet => Mode == PlayMode.TopDown ? TopDown.Position : Platformer.Position;
+
     /// <summary>피벗이 놓이는 캐릭터 위치(픽셀).</summary>
-    public Vector2 PivotPosition => Mode == PlayMode.TopDown
-        ? TopDown.Position
-        : Platformer.Position - new Vector2(0, _box.Bottom);
+    public Vector2 PivotPosition
+    {
+        get
+        {
+            var b = Body;
+            return Feet - new Vector2(b.X + b.Width / 2, b.Bottom);
+        }
+    }
 
     /// <summary>지금 그릴 칸 이름(정지 프레임 포함). 없으면 null.</summary>
     public string? CurrentSliceName => _player.Clip is null ? _sprites.StillFrame : _player.CurrentFrame?.Slice;
@@ -127,20 +153,23 @@ internal sealed class PlaySimulation
     }
 
     /// <summary>
-    /// 탑뷰에 깔 타일맵을 바꾼다(null = 빈 방). <paramref name="restart"/>면 처음 위치(맵 가운데)로, 아니면 자리를 지키고 새 범위 안으로만 옮긴다(같은 맵을 다시 읽을 때).
+    /// 깔 타일맵과 지형·사다리로 쓸 층을 바꾼다(맵이 null이면 빈 방·연습용 발판). <paramref name="restart"/>면 처음 위치로,
+    /// 아니면 자리를 지키고 새 범위 안으로만 옮긴다(같은 맵을 다시 읽을 때).
     /// </summary>
-    public void SetMap(PlayMap? map, bool restart)
+    public void SetMap(PlayMap? map, IReadOnlySet<int> terrainFloors, IReadOnlySet<int> ladderFloors, bool restart)
     {
         _map = map;
+        _terrainFloors = terrainFloors;
+        _ladderFloors = ladderFloors;
         BuildLevel();
         if (restart) Reset();
         else ClampTopDown();
     }
 
-    /// <summary>두 모드 모두 처음 위치로 돌린다(탑뷰에 타일맵을 깔았으면 그 가운데).</summary>
+    /// <summary>두 모드 모두 처음 위치로 돌린다(타일맵을 깔았으면 탑뷰는 가운데 가까운 빈 곳, 플랫포머는 가운데 가까운 땅 위).</summary>
     public void Reset()
     {
-        TopDown.Position = _map is null ? Vector2.Zero : new Vector2(_room.X + _room.Width / 2 - (_box.X + _box.Width / 2), _room.Y + _room.Height / 2 - (_box.Y + _box.Height / 2));
+        TopDown.Position = TopDownSpawn();
         ClampTopDown();
         TopDown.Facing = Facing.Down;
         _topDownAccumulator = 0;
@@ -167,7 +196,7 @@ internal sealed class PlaySimulation
         }
         else
         {
-            Platformer.Update(dt, new PlatformerInput(input.Left, input.Right, input.JumpHeld, input.JumpPressed));
+            Platformer.Update(dt, new PlatformerInput(input.Left, input.Right, input.JumpHeld, input.JumpPressed, input.Up, input.Down));
         }
         UpdateAnimation(dt * 1000.0);
     }
@@ -183,6 +212,10 @@ internal sealed class PlaySimulation
         {
             clip = _sprites.GetClip(choice.Name);
             FlipX = choice.FlipX;
+            // 매달려 멈추면 오르는 애니메이션으로 대신할 때 그 프레임에서 멈춘다.
+            if (Mode == PlayMode.Platformer && Platformer.State is PlatformerState.Hang or PlatformerState.WallHang
+                && !choice.Name.Contains("hang", StringComparison.Ordinal) && !choice.Name.StartsWith("idle", StringComparison.Ordinal))
+                deltaMs = 0;
         }
         else
         {
@@ -213,36 +246,178 @@ internal sealed class PlaySimulation
         ReferenceHeight = frame.Height;
     }
 
+    /// <summary>플랫포머 충돌 상자(발밑 가운데 기준): 몸 상자 크기.</summary>
+    private RectangleF PlatformerBody => new(-Platformer.ColliderSize.Width / 2, -Platformer.ColliderSize.Height, Platformer.ColliderSize.Width, Platformer.ColliderSize.Height);
+
     private void BuildLevel()
     {
         int c = _sprites.PixelsPerUnit;
         _levelPpu = c;
+        float w = Math.Max(1, _box.Width), h = Math.Max(1, _box.Height);
+        Platformer.ColliderSize = new SizeF(w, h);
+        // 탑뷰는 발 부분만 부딪친다(세운 벽 앞을 지나갈 때 머리가 걸리지 않게).
+        float feet = Math.Min(h, Math.Max(2, (_map?.Tileset.CellHeight ?? c) / 2f));
+        TopDown.Collider = new RectangleF(-w / 2, -feet, w, feet);
 
-        _room = _map?.Bounds is { Width: > 0, Height: > 0 } mapBounds
-            ? new RectangleF(mapBounds.X, mapBounds.Y, mapBounds.Width, mapBounds.Height)
-            : new RectangleF(-RoomCellsW / 2f * c, -RoomCellsH / 2f * c, RoomCellsW * c, RoomCellsH * c);
-        // 캐릭터 상자가 방 안에 머물도록 피벗이 움직일 범위를 줄인다.
-        float left = _room.Left - _box.Left, right = _room.Right - _box.Right;
-        float top = _room.Top - _box.Top, bottom = _room.Bottom - _box.Bottom;
+        var walls = TopDown.Walls;
+        var platforms = Platformer.Platforms;
+        var ladders = Platformer.Ladders;
+        walls.Clear();
+        platforms.Clear();
+        ladders.Clear();
+        _solidCells = new HashSet<Point>();
+        _ladderCells = new HashSet<Point>();
+
+        if (_map is { } map)
+        {
+            _solidCells = map.CellsOn(_terrainFloors);
+            _ladderCells = map.CellsOn(_ladderFloors);
+            _ladderCells.ExceptWith(_solidCells);
+            // 지형은 가로로 이어진 칸을, 사다리는 세로로 이어진 칸을 한 상자로 묶는다.
+            foreach (var r in Runs(_solidCells, horizontal: true))
+            {
+                var px = map.CellRect(r.X, r.Y, r.Width, r.Height);
+                walls.Add(px);
+                platforms.Add(new PlatformBox(px));
+            }
+            foreach (var r in Runs(_ladderCells, horizontal: false))
+                ladders.Add(map.CellRect(r.X, r.Y, r.Width, r.Height));
+
+            var bounds = map.Bounds is { Width: > 0, Height: > 0 } mb ? new RectangleF(mb.X, mb.Y, mb.Width, mb.Height) : RectangleF.Empty;
+            foreach (var cells in new[] { _solidCells, _ladderCells })
+                if (CellBounds(cells) is { Width: > 0 } cb)
+                {
+                    var px = map.CellRect(cb.X, cb.Y, cb.Width, cb.Height);
+                    bounds = bounds.IsEmpty ? px : RectangleF.Union(bounds, px);
+                }
+            _room = bounds.IsEmpty ? DefaultRoom(c) : bounds;
+            Platformer.SpawnPoint = PlatformerSpawn(map);
+            Platformer.KillY = _room.Bottom + 10 * map.Tileset.CellHeight;
+        }
+        else
+        {
+            _room = DefaultRoom(c);
+            void Add(float x, float y, float bw, float bh, bool oneWay = false)
+                => platforms.Add(new PlatformBox(new RectangleF(x * c, y * c, bw * c, bh * c), oneWay));
+            Add(-24, 0, 48, 3);              // 바닥
+            Add(-25, -16, 1, 19);            // 왼쪽 벽
+            Add(24, -16, 1, 19);             // 오른쪽 벽
+            Add(-16, -2, 3, 2);              // 바닥 위 상자
+            Add(-9, -4, 5, 0.5f, true);      // 위에서만 밟히는 발판
+            Add(3, -3, 5, 0.5f, true);
+            Add(10, -6, 4, 1);               // 단단한 발판
+            Add(16, -9, 4, 0.5f, true);
+            ladders.Add(new RectangleF(9 * c, -6 * c, c, 6 * c)); // 단단한 발판 옆 사다리
+            Platformer.SpawnPoint = Vector2.Zero;
+            Platformer.KillY = 40 * c;
+        }
+
+        // 몸 상자가 방 안에 머물도록 발밑 가운데가 움직일 범위를 줄인다.
+        float left = _room.Left + w / 2, right = _room.Right - w / 2;
+        float top = _room.Top + h, bottom = _room.Bottom;
         if (right < left) left = right = (left + right) / 2;
         if (bottom < top) top = bottom = (top + bottom) / 2;
         TopDown.Bounds = RectangleF.FromLTRB(left, top, right, bottom);
+    }
 
-        var p = Platformer.Platforms;
-        p.Clear();
-        void Add(float x, float y, float w, float h, bool oneWay = false)
-            => p.Add(new PlatformBox(new RectangleF(x * c, y * c, w * c, h * c), oneWay));
-        Add(-24, 0, 48, 3);              // 바닥
-        Add(-25, -16, 1, 19);            // 왼쪽 벽
-        Add(24, -16, 1, 19);             // 오른쪽 벽
-        Add(-16, -2, 3, 2);              // 바닥 위 상자
-        Add(-9, -4, 5, 0.5f, true);      // 위에서만 밟히는 발판
-        Add(3, -3, 5, 0.5f, true);
-        Add(10, -6, 4, 1);               // 단단한 발판
-        Add(16, -9, 4, 0.5f, true);
-        Platformer.ColliderSize = new SizeF(Math.Max(1, _box.Width), Math.Max(1, _box.Height));
-        Platformer.SpawnPoint = Vector2.Zero;
-        Platformer.KillY = 40 * c;
+    private static RectangleF DefaultRoom(int c) => new(-RoomCellsW / 2f * c, -RoomCellsH / 2f * c, RoomCellsW * c, RoomCellsH * c);
+
+    /// <summary>칸들을 가로(또는 세로)로 이어진 줄 사각형(칸 단위)으로 묶는다.</summary>
+    private static List<Rectangle> Runs(HashSet<Point> cells, bool horizontal)
+    {
+        var sorted = cells.OrderBy(p => horizontal ? p.Y : p.X).ThenBy(p => horizontal ? p.X : p.Y).ToList();
+        var runs = new List<Rectangle>();
+        int i = 0;
+        while (i < sorted.Count)
+        {
+            var start = sorted[i];
+            int len = 1;
+            while (i + len < sorted.Count && sorted[i + len] == (horizontal ? new Point(start.X + len, start.Y) : new Point(start.X, start.Y + len))) len++;
+            runs.Add(horizontal ? new Rectangle(start.X, start.Y, len, 1) : new Rectangle(start.X, start.Y, 1, len));
+            i += len;
+        }
+        return runs;
+    }
+
+    private static Rectangle CellBounds(HashSet<Point> cells)
+    {
+        if (cells.Count == 0) return Rectangle.Empty;
+        int l = int.MaxValue, t = int.MaxValue, r = int.MinValue, b = int.MinValue;
+        foreach (var p in cells)
+        {
+            l = Math.Min(l, p.X);
+            t = Math.Min(t, p.Y);
+            r = Math.Max(r, p.X);
+            b = Math.Max(b, p.Y);
+        }
+        return Rectangle.FromLTRB(l, t, r + 1, b + 1);
+    }
+
+    /// <summary>탑뷰 처음 위치(발밑 가운데): 방 가운데, 지형에 걸리면 가운데에서 가까운 빈 칸.</summary>
+    private Vector2 TopDownSpawn()
+    {
+        if (_map is not { } map) return new Vector2(_box.X + _box.Width / 2, _box.Bottom);
+        var center = new Vector2(_room.X + _room.Width / 2, _room.Y + _room.Height / 2 + _box.Height / 2);
+        if (IsFree(map, center, TopDown.Collider)) return center;
+        foreach (var cell in CellsByDistance(map, center))
+        {
+            var at = CellFeet(map, cell);
+            if (IsFree(map, at, TopDown.Collider)) return at;
+        }
+        return center;
+    }
+
+    /// <summary>플랫포머 처음 위치(발밑 가운데): 방 가운데에서 가까운, 몸이 들어가는 빈 칸 중 바로 아래가 지형(또는 사다리)인 곳. 없으면 빈 칸, 그것도 없으면 가운데.</summary>
+    private Vector2 PlatformerSpawn(PlayMap map)
+    {
+        var center = new Vector2(_room.X + _room.Width / 2, _room.Y + _room.Height / 2);
+        if (_solidCells.Count == 0 && _ladderCells.Count == 0) return center;
+        Vector2? free = null;
+        foreach (var cell in CellsByDistance(map, center))
+        {
+            var at = CellFeet(map, cell);
+            if (!IsFree(map, at, PlatformerBody)) continue;
+            var below = new Point(cell.X, cell.Y + 1);
+            if (_solidCells.Contains(below) || _ladderCells.Contains(below) && !_ladderCells.Contains(cell)) return at;
+            free ??= at;
+        }
+        return free ?? center;
+    }
+
+    /// <summary>칸의 아래 가운데(발을 둘 곳).</summary>
+    private static Vector2 CellFeet(PlayMap map, Point cell)
+    {
+        var r = map.CellRect(cell.X, cell.Y);
+        return new Vector2(r.X + r.Width / 2, r.Bottom);
+    }
+
+    /// <summary>방(한 칸 여유) 안의 칸들을 <paramref name="center"/>에서 가까운 차례로.</summary>
+    private IEnumerable<Point> CellsByDistance(PlayMap map, Vector2 center)
+    {
+        int cw = map.Tileset.CellWidth, ch = map.Tileset.CellHeight;
+        var o = map.Data.Origin;
+        int x0 = (int)MathF.Floor((_room.Left - o.X) / cw), x1 = (int)MathF.Ceiling((_room.Right - o.X) / cw);
+        int y0 = (int)MathF.Floor((_room.Top - o.Y) / ch) - 1, y1 = (int)MathF.Ceiling((_room.Bottom - o.Y) / ch);
+        if ((long)(x1 - x0) * (y1 - y0) > 1_000_000) return [];
+        var list = new List<Point>((x1 - x0) * (y1 - y0));
+        for (int y = y0; y < y1; y++)
+            for (int x = x0; x < x1; x++)
+                list.Add(new Point(x, y));
+        return list.OrderBy(p => Vector2.DistanceSquared(CellFeet(map, p) - new Vector2(0, ch / 2f), center));
+    }
+
+    /// <summary>발밑 가운데 <paramref name="feet"/>에 상자 <paramref name="box"/>(발 기준)를 두었을 때 지형 칸에 걸리지 않는지.</summary>
+    private bool IsFree(PlayMap map, Vector2 feet, RectangleF box)
+    {
+        int cw = map.Tileset.CellWidth, ch = map.Tileset.CellHeight;
+        var o = map.Data.Origin;
+        float l = feet.X + box.Left - o.X, r = feet.X + box.Right - o.X, t = feet.Y + box.Top - o.Y, b = feet.Y + box.Bottom - o.Y;
+        int x0 = (int)MathF.Floor(l / cw), x1 = (int)MathF.Floor((r - 0.001f) / cw);
+        int y0 = (int)MathF.Floor(t / ch), y1 = (int)MathF.Floor((b - 0.001f) / ch);
+        for (int y = y0; y <= y1; y++)
+            for (int x = x0; x <= x1; x++)
+                if (_solidCells.Contains(new Point(x, y))) return false;
+        return true;
     }
 
     private void ClampTopDown()
@@ -268,15 +443,16 @@ internal sealed class PlaySimulation
         var size = new Size((int)viewSize.Width, (int)viewSize.Height);
         int scale = Math.Max(1, options.Scale);
         var pivot = PivotPosition;
-        // 카메라는 캐릭터 상자 가운데를 정수 픽셀로 따라간다(격자·발판이 화면 픽셀에 딱 맞도록).
-        int camX = (int)MathF.Floor(pivot.X + _box.X + _box.Width / 2 + 0.5f);
-        int camY = (int)MathF.Floor(pivot.Y + _box.Y + _box.Height / 2 + 0.5f);
+        var feet = Feet;
+        // 카메라는 몸 상자 가운데를 정수 픽셀로 따라간다(격자·발판이 화면 픽셀에 딱 맞도록).
+        int camX = (int)MathF.Floor(feet.X + 0.5f);
+        int camY = (int)MathF.Floor(feet.Y - _box.Height / 2 + 0.5f);
         int ox = size.Width / 2 - camX * scale;
         int oy = size.Height / 2 - camY * scale;
         Rect ToScreen(RectangleF r) => new(ox + r.X * scale, oy + r.Y * scale, r.Width * scale, r.Height * scale);
 
         int cellPx = _sprites.PixelsPerUnit * scale;
-        if (Mode == PlayMode.TopDown && _map is { } map)
+        if (_map is { } map)
         {
             var room = ToScreen(_room);
             DrawMapWithCharacter(g, map, size, ox, oy, scale, pivot);
@@ -284,6 +460,23 @@ internal sealed class PlaySimulation
             {
                 using (g.PushClip(room))
                     DrawGrid(g, size, ox + map.Data.Origin.X * scale, oy + map.Data.Origin.Y * scale, map.Tileset.CellWidth * scale);
+            }
+            if (options.ShowCollider)
+            {
+                // 지형 칸과 (플랫포머) 사다리 칸
+                foreach (var wall in TopDown.Walls)
+                {
+                    var r = ToScreen(wall);
+                    g.FillRectangle(TerrainFill, r);
+                    g.DrawRectangle(null, TerrainPen, Crisp(r));
+                }
+                if (Mode == PlayMode.Platformer)
+                    foreach (var ladder in Platformer.Ladders)
+                    {
+                        var r = ToScreen(ladder);
+                        g.FillRectangle(LadderFill, r);
+                        g.DrawRectangle(null, LadderPen, Crisp(r));
+                    }
             }
         }
         else if (Mode == PlayMode.TopDown)
@@ -307,15 +500,15 @@ internal sealed class PlaySimulation
                 if (platform.OneWay) g.DrawLine(OneWayTopPen, new Avalonia.Point(r.Left, r.Top + 1), new Avalonia.Point(r.Right, r.Top + 1));
                 else g.DrawRectangle(null, PlatformEdgePen, Crisp(r));
             }
+            foreach (var ladder in Platformer.Ladders) DrawLadder(g, ToScreen(ladder), cellPx);
         }
 
-        if (Mode != PlayMode.TopDown || _map is null) DrawCharacter(g, pivot, ox, oy, scale);
+        if (_map is null) DrawCharacter(g, pivot, ox, oy, scale);
 
         if (options.ShowCollider)
         {
-            var box = Mode == PlayMode.TopDown
-                ? ToScreen(new RectangleF(pivot.X + _box.X, pivot.Y + _box.Y, _box.Width, _box.Height))
-                : ToScreen(Platformer.Collider);
+            var c = Mode == PlayMode.TopDown ? TopDown.Collider : PlatformerBody;
+            var box = ToScreen(new RectangleF(feet.X + c.X, feet.Y + c.Y, c.Width, c.Height));
             g.FillRectangle(ColliderFill, box);
             g.DrawRectangle(null, ColliderPen, Crisp(box));
         }
@@ -342,6 +535,18 @@ internal sealed class PlaySimulation
 
     /// <summary>1픽셀 테두리가 화면 픽셀에 맞도록 반 픽셀 안쪽으로 줄인 사각형.</summary>
     private static Rect Crisp(Rect r) => r.Width > 1 && r.Height > 1 ? r.Deflate(0.5) : r;
+
+    /// <summary>연습용 사다리: 양옆 기둥과 한 칸에 세 개씩 가로대.</summary>
+    private static void DrawLadder(DrawingContext g, Rect r, int cellPx)
+    {
+        double inset = r.Width * 0.2;
+        double l = r.Left + inset, rr = r.Right - inset;
+        g.DrawLine(LadderRailPen, new Avalonia.Point(l, r.Top), new Avalonia.Point(l, r.Bottom));
+        g.DrawLine(LadderRailPen, new Avalonia.Point(rr, r.Top), new Avalonia.Point(rr, r.Bottom));
+        double step = Math.Max(4, cellPx / 3.0);
+        for (double y = r.Top + step / 2; y < r.Bottom; y += step)
+            g.DrawLine(LadderRailPen, new Avalonia.Point(l, y), new Avalonia.Point(rr, y));
+    }
 
     private static void DrawGrid(DrawingContext g, Size size, int ox, int oy, int cellPx)
     {
@@ -427,9 +632,16 @@ internal sealed class PlaySimulation
                 PlatformerState.Run => UiStrings.S_PlaySimulation_DescribePlaying_1F7AD1E3B5,
                 PlatformerState.Jump => UiStrings.S_PlaySimulation_DescribePlaying_ED1785452A,
                 PlatformerState.Fall => UiStrings.S_PlaySimulation_DescribePlaying_C6084A0A78,
+                PlatformerState.Climb or PlatformerState.WallClimb => UiStrings.PlayTest_StateClimb,
+                PlatformerState.Hang or PlatformerState.WallHang => UiStrings.PlayTest_StateHang,
                 _ => UiStrings.S_PlaySimulation_DescribePlaying_D0769141F5,
             }).Append(" · ").Append(Platformer.FacingRight ? UiStrings.S_PlaySimulation_DescribePlaying_A5C08EDCE8 : UiStrings.S_PlaySimulation_DescribePlaying_D8DF5DEA2F)
-              .Append(" · ").Append(Platformer.IsGrounded ? UiStrings.S_PlaySimulation_DescribePlaying_CB2F37F752 : UiStrings.S_PlaySimulation_DescribePlaying_7D9FF03FF6).AppendLine();
+              .Append(" · ").Append(Platformer.Climbing switch
+              {
+                  ClimbKind.Ladder => UiStrings.PlayTest_OnLadder,
+                  ClimbKind.Wall => UiStrings.PlayTest_OnWall,
+                  _ => Platformer.IsGrounded ? UiStrings.S_PlaySimulation_DescribePlaying_CB2F37F752 : UiStrings.S_PlaySimulation_DescribePlaying_7D9FF03FF6,
+              }).AppendLine();
         }
 
         var pos = PivotPosition;
@@ -485,7 +697,7 @@ internal sealed class PlaySimulation
             if (facing != Facing.Down) list.AddRange(Candidates(["idle"], Facing.Down));
             return list;
         }
-        return Candidates(PlatformerNames(Platformer.State), Platformer.FacingRight ? Facing.Right : Facing.Left);
+        return Candidates(PlatformerController.AnimationNames(Platformer.State), Platformer.FacingRight ? Facing.Right : Facing.Left);
     }
 
     private IEnumerable<(string Name, bool Flip)> Candidates(string[] baseNames, Facing facing)
@@ -503,14 +715,6 @@ internal sealed class PlaySimulation
             });
         }
     }
-
-    private static string[] PlatformerNames(PlatformerState state) => state switch
-    {
-        PlatformerState.Run => ["run", "walk", "idle"],
-        PlatformerState.Jump => ["jump", "fall", "idle"],
-        PlatformerState.Fall => ["fall", "jump", "idle"],
-        _ => ["idle"],
-    };
 
     /// <summary>
     /// 이 모드가 기대하는 애니메이션 이름마다 실제로 쓰일 애니메이션: 그대로 있음(<see cref="NameMark.Found"/>),
@@ -557,14 +761,15 @@ internal sealed class PlaySimulation
         }
         else
         {
-            foreach (var (expected, state) in new[]
-                     {
-                         ("idle", PlatformerState.Idle), ("run", PlatformerState.Run),
-                         ("jump", PlatformerState.Jump), ("fall", PlatformerState.Fall),
-                     })
+            var expected = new List<(string, PlatformerState)>
             {
-                Line(expected, AnimationSelector.Resolve(PlatformerNames(state), Facing.Right, has, PlainFacesRight));
-            }
+                ("idle", PlatformerState.Idle), ("run", PlatformerState.Run),
+                ("jump", PlatformerState.Jump), ("fall", PlatformerState.Fall),
+            };
+            if (HasLadders) expected.AddRange([("climb", PlatformerState.Climb), ("hang", PlatformerState.Hang)]);
+            if (Platformer.Settings.WallClimb) expected.AddRange([("wall_climb", PlatformerState.WallClimb), ("wall_hang", PlatformerState.WallHang)]);
+            foreach (var (name, state) in expected)
+                Line(name, AnimationSelector.Resolve(PlatformerController.AnimationNames(state), Facing.Right, has, PlainFacesRight));
         }
 
         string? hint = null;

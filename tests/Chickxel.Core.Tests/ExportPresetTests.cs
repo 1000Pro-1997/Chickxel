@@ -67,7 +67,8 @@ public class ExportPresetTests
             ExportParts = true,
             ImageFormat = ExportImageFormat.Jpg,
             JpegQuality = 55,
-            WriteMeta = false,
+            Engine = ExportEngine.Godot,
+            GodotScene = true,
             WriteSpriteLibrary = true,
             WritePrefab = true,
             WriteAnimations = true,
@@ -95,7 +96,7 @@ public class ExportPresetTests
         preset.ApplyTo(dst);
         Assert.Equal((false, false, true), (dst.ExportOnSave, dst.ExportFrames, dst.ExportParts));
         Assert.Equal((ExportImageFormat.Jpg, 55), (dst.ImageFormat, dst.JpegQuality));
-        Assert.False(dst.WriteMeta);
+        Assert.Equal((ExportEngine.Godot, true), (dst.Engine, dst.GodotScene));
         Assert.True(dst.WriteSpriteLibrary);
         Assert.Equal((true, true), (dst.WritePrefab, dst.WriteAnimations));
         AssertSheetEqual(src.Common, dst.Common);
@@ -107,10 +108,12 @@ public class ExportPresetTests
         var again = ExportPreset.Capture(dst, "x");
         Assert.Equal(ExportPresets.Serialize([preset.Clone("x")]), ExportPresets.Serialize([again]));
 
-        // WriteMeta 자동(null)도 그대로
-        src.WriteMeta = null;
-        ExportPreset.Capture(src, "a").ApplyTo(dst);
-        Assert.Null(dst.WriteMeta);
+        // 엔진이 없는 프리셋(예전 .meta 자동)은 프로젝트의 엔진을 그대로 둔다
+        var keep = ExportPreset.Capture(src, "a");
+        keep.Engine = null;
+        dst.Engine = ExportEngine.Json;
+        keep.ApplyTo(dst);
+        Assert.Equal(ExportEngine.Json, dst.Engine);
 
         // Clone은 깊은 사본
         var clone = preset.Clone();
@@ -205,7 +208,7 @@ public class ExportPresetTests
         Assert.Null(x.PartsOverride);
         Assert.Equal((true, true, false, false), (x.ExportOnSave, x.ExportFrames, x.ExportParts, x.WriteSpriteLibrary));
         Assert.Equal((ExportImageFormat.Png, 90), (x.ImageFormat, x.JpegQuality));
-        Assert.Null(x.WriteMeta);
+        Assert.Equal(ExportEngine.Godot, x.Engine);
 
         x = Custom();
         ExportPresets.BuiltIns[1].ApplyTo(x);

@@ -121,7 +121,7 @@ shortcuts-view.h-cmd.d9,픽셀 격자·타일 격자의 색과 타일 크기를 
 shortcuts-view.h-cmd.d10,다음·이전 문서 탭으로 갑니다. 환경 설정·내보내기 창에서는 그 창의 탭을 바꿉니다.,Goes to the next or previous document tab. In Preferences and the export dialog it switches that dialog's tabs.
 shortcuts-view.h-cmd.d11,"지금 탭을 나눈 화면의 다른 쪽으로 옮깁니다(<a href=""#screen-tabs"">문서 탭과 나누기</a>).","Moves the current tab to the other pane of the split view (see <a href=""#screen-tabs"">Document tabs and split view</a>)."
 shortcuts-view.h-cmd.d12,왼쪽 파일 브라우저를 보이거나 숨깁니다.,Shows or hides the file browser on the left.
-shortcuts-view.h-cmd.d13,태그 애니메이션으로 캐릭터를 움직여 보는 창을 엽니다.,Opens the window where you move a character around with its tag animations.
+shortcuts-view.h-cmd.d13,"태그 애니메이션으로 캐릭터를 움직여 보는 <a href=""#screen-play-test"">움직임 테스트</a> 창을 엽니다.","Opens the <a href=""#screen-play-test"">Movement test</a> window, where you move a character around with its tag animations."
 shortcuts-view.h-extra,메뉴에 없는 키와 마우스,Keys outside the menus and the mouse
 shortcuts-view.h-extra.d1,누르고 있는 동안 캔버스에 이전 프레임을 보입니다.,Shows the previous frame on the canvas while held.
 shortcuts-view.h-extra.d2,1배부터 64배까지 확대·축소합니다.,Zooms between 1× and 64×.

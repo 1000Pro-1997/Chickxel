@@ -260,8 +260,6 @@ public sealed class AppSettings
     public double ExportSplit { get; set; } = 0.46;
     /// <summary>처음 상태와 다르게 둔 설정 묶음 이름(공통·파일·프레임 시트·부위 아틀라스·고급은 접은 것, Unity Import Settings는 편 것).</summary>
     public List<string> ExportCollapsed { get; set; } = new();
-    /// <summary>내보내기 창에서 마지막으로 고른 형식 종류(Ctrl+E가 이 형식으로 연다 — 이미지면 프로젝트의 이미지 형식).</summary>
-    public ExportFormat ExportFormat { get; set; } = ExportFormat.Image;
 
     // GIF 애니메이션 내보내기(마지막으로 쓴 값, 앱 전체 — 속도는 갤러리에 올리기도 같이 씀)
     /// <summary>재생 횟수(0 = 무한 반복).</summary>

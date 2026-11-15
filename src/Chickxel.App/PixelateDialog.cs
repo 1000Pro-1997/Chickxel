@@ -581,7 +581,8 @@ public sealed record PixelateOutcome(
 /// </summary>
 public sealed class PixelateDialog : DialogBase
 {
-    private static readonly string[] ImageExtensions = [".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp"];
+    /// <summary>원본으로 넣을 수 있는 파일: 그림(움직이는 것 포함)과 영상(ffmpeg로 프레임을 뽑음 — 주 창 열기와 같은 길).</summary>
+    private static readonly string[] SourceExtensions = [.. MediaFormats.ImageExtensions, .. MediaFormats.VideoExtensions];
 
     private readonly AppSettings _settings;
     private readonly PixelateOptions _opt;
@@ -661,6 +662,8 @@ public sealed class PixelateDialog : DialogBase
     private readonly ToggleButton _quickAspect;
     /// <summary>간편 설정의 '모든 프레임이 한 팔레트' — 6단계 <see cref="_palShared"/>와 같은 설정.</summary>
     private readonly CheckBox _quickShared;
+    /// <summary>간편 설정의 배경 지우기(원본 아래 막대의 배경 지우기 단추와 같은 값).</summary>
+    private readonly CheckBox _quickBg;
     /// <summary>간편 설정의 목표 색 수·자동·강제 — 0. 최적화 기준 <see cref="_crTargetColors"/>·<see cref="_crTargetAuto"/>·<see cref="_crTargetStrict"/>와 같은 설정.</summary>
     private readonly NumericUpDown _quickTargetColors;
     private readonly CheckBox _quickTargetAuto, _quickTargetStrict;
@@ -1378,6 +1381,8 @@ public sealed class PixelateDialog : DialogBase
         _quickW.ValueChanged += (_, _) => QuickSizeChanged(width: true);
         _quickH.ValueChanged += (_, _) => QuickSizeChanged(width: false);
         _quickAspect.IsCheckedChanged += (_, _) => { if (!_barSyncing) _szAspect.IsChecked = _quickAspect.On(); };
+        _quickBg = Ui.Check(UiStrings.Pixelate_Quick_RemoveBg, true).Tip(UiStrings.Pixelate_RemoveBgTip);
+        _quickBg.IsCheckedChanged += (_, _) => { if (!_barSyncing) _bgRemove!.IsChecked = _quickBg.On(); };
         _quickShared = Ui.Check(UiStrings.Pixelate_Pal_Shared).Tip(UiStrings.Pixelate_Quick_SharedTip);
         _quickShared.IsCheckedChanged += (_, _) => { if (!_barSyncing) _palShared.IsChecked = _quickShared.On(); };
         _quickTargetColors = Ui.Num(2, 256, 16, 64, 0, 1).Presets(4, 8, 12, 16, 24, 32, 48, 64).Tip(UiStrings.Pixelate_Opt_TargetColorsTip);
@@ -1392,11 +1397,13 @@ public sealed class PixelateDialog : DialogBase
         var quickBody = Ui.Stack(
             Ui.Row(quickSizeLabel, _quickAuto, _quickW, quickByLabel, _quickH, _quickAspect),
             Ui.Row(quickTargetLabel, _quickTargetColors, _quickTargetAuto, _quickTargetStrict),
+            _quickBg,
             _quickShared);
         // 대상 도움말(F1): 간편 설정 목록의 항목.
         HelpTargets.HelpGroup("pixelate-settings", "In the output size row", quickSizeLabel, _quickAuto, _quickW, quickByLabel, _quickH);
         _quickAspect.HelpAt("pixelate-settings", anchor: "With the link button");
         _quickShared.HelpAt("pixelate-settings", anchor: "One palette for all frames");
+        _quickBg.HelpAt("pixelate-view", anchor: "Remove background");
         HelpTargets.HelpGroup("pixelate-settings", "In the target colors row", quickTargetLabel, _quickTargetColors, _quickTargetAuto, _quickTargetStrict);
 
         var left = new StackPanel { Spacing = 2, Margin = new Thickness(0, 0, 8, 0) };
@@ -1868,13 +1875,13 @@ public sealed class PixelateDialog : DialogBase
 
     /// <summary>여러 프레임을 이은 원본(<see cref="PixelateInput.FromFrames"/>)의 프레임 나누기: 그 격자의 칸마다 한 프레임.</summary>
     private static FrameSettings SourceGrid(FrameSettings frames, PixelateInput input)
-        => frames with { Mode = FrameSplitMode.Grid, Columns = input.Columns, Rows = input.Rows, ManualRegions = null };
+        => frames with { Mode = FrameSplitMode.Grid, Columns = input.Columns, Rows = input.Rows, ManualRegions = null, SourceFrames = input.Frames };
 
     /// <summary>파일 찾기(처음 폴더 = 주 창 파일 브라우저의 폴더).</summary>
     private void BrowseSource()
     {
         if (Ui.OpenFile(this, UiStrings.Pixelate_OpenTitle, _browseFolder(),
-                new FileFilter(UiStrings.Pixelate_ImageFilter, [.. ImageExtensions.Select(e => "*" + e)])) is { } path)
+                new FileFilter(UiStrings.Pixelate_ImageFilter, MediaFormats.Patterns(SourceExtensions))) is { } path)
             LoadSourceFile(path);
     }
 
@@ -1893,8 +1900,8 @@ public sealed class PixelateDialog : DialogBase
         {
             if (Ui.Wait(cb.TryGetFilesAsync()) is { } files)
                 foreach (var f in files)
-                    if (f.TryGetLocalPath() is { } p && IsImageFile(p)) return p;
-            if (Ui.Wait(cb.TryGetTextAsync())?.Trim().Trim('"') is { Length: > 0 } text && IsImageFile(text) && File.Exists(text)) return text;
+                    if (f.TryGetLocalPath() is { } p && IsSourceFile(p)) return p;
+            if (Ui.Wait(cb.TryGetTextAsync())?.Trim().Trim('"') is { Length: > 0 } text && IsSourceFile(text) && File.Exists(text)) return text;
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
@@ -1905,7 +1912,7 @@ public sealed class PixelateDialog : DialogBase
 
     /// <summary>끌어 오는 내용의 첫 그림 파일(없으면 null).</summary>
     private static string? DraggedImage(IDataTransfer data)
-        => data.TryGetFiles()?.Select(f => f.TryGetLocalPath()).OfType<string>().FirstOrDefault(IsImageFile);
+        => data.TryGetFiles()?.Select(f => f.TryGetLocalPath()).OfType<string>().FirstOrDefault(IsSourceFile);
 
     private void OnSourceDragOver(object? sender, DragEventArgs e)
     {
@@ -1960,8 +1967,8 @@ public sealed class PixelateDialog : DialogBase
         _settingsHost.IsVisible = _settingsExpanded;
     }
 
-    /// <summary>파일 확장자가 넣을 수 있는 그림(PNG·JPG·BMP·GIF·WebP)인지.</summary>
-    public static bool IsImageFile(string path) => ImageExtensions.Any(e => path.EndsWith(e, StringComparison.OrdinalIgnoreCase));
+    /// <summary>파일 확장자가 원본으로 넣을 수 있는 그림·영상인지.</summary>
+    public static bool IsSourceFile(string path) => SourceExtensions.Any(e => path.EndsWith(e, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>쓸 수 있는 팔레트: 팔레트 열의 팔레트와 Lospec 즐겨찾기(이름 앞에 "Lospec:").</summary>
     private static List<(string Name, IReadOnlyList<Color32> Colors)> BuildPalettes(IEnumerable<NamedPalette> palettes)
@@ -2182,6 +2189,9 @@ public sealed class PixelateDialog : DialogBase
                 Align = At<FrameAlign>(_frAlign),
                 CommonCanvas = _frCommon.On(),
                 ManualRegions = _manualRegions,
+                // 원본 격자(움직이는 그림·영상의 프레임) 그대로 나누면 프레임마다 칸 그대로·같은 칸 크기
+                SourceFrames = _input is { Frames: > 1 } source && _manualRegions is null && At<FrameSplitMode>(_frMode) == FrameSplitMode.Grid
+                               && I(_frCols) == source.Columns && I(_frRows) == source.Rows ? source.Frames : 0,
             },
             Grid = new PixelGridSettings
             {
@@ -2363,6 +2373,7 @@ public sealed class PixelateDialog : DialogBase
         try
         {
             _bgRemove.IsChecked = on;
+            _quickBg.IsChecked = on;
         }
         finally
         {
@@ -2371,7 +2382,7 @@ public sealed class PixelateDialog : DialogBase
         _sourceView.ShowAlt = on;
     }
 
-    /// <summary>막대의 배경 지우기를 바꿈: 켜면 마지막으로 쓴 지우는 방식(처음은 자동), 끄면 지우지 않음 — 1단계 배경 방식에 적는다.</summary>
+    /// <summary>막대의 배경 지우기를 바꿈: 켜면 마지막으로 쓴 지우는 방식(처음은 자동), 끄면 지우지 않음 — 1단계 배경 방식에 적는다(정리하기를 눌러야 결과에 반영).</summary>
     private void BarBackgroundChanged()
     {
         if (_barSyncing) return;

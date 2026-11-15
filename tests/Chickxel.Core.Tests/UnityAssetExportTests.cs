@@ -43,6 +43,7 @@ public class UnityAssetExportTests
         p.SetFrameDuration(3, 150);
         p.Export.ExportParts = true;
         p.Export.WritePrefab = true;
+        p.Export.Engine = ExportEngine.Unity;
         p.Export.WriteAnimations = true;
         return (p, head);
     }
@@ -68,8 +69,8 @@ public class UnityAssetExportTests
         using var dir = new TempDir();
         var (p, _) = Hero();
         var result = ProjectIO.SaveWithExport(p, dir.File("hero.chickxel")).Export!;
-        Assert.Equal(["hero.prefab", "hero_idle.anim", "hero_walk.anim", "hero.controller"], result.Unity.Select(r => Path.GetFileName(r.ImagePath)));
-        foreach (var r in result.Unity)
+        Assert.Equal(["hero.prefab", "hero_idle.anim", "hero_walk.anim", "hero.controller"], result.Engine.Select(r => Path.GetFileName(r.ImagePath)));
+        foreach (var r in result.Engine)
         {
             Assert.Contains(r.ImagePath, p.ExportedFiles!);
             Assert.Contains(UnityMeta.GetMetaPath(r.ImagePath), p.ExportedFiles!);
@@ -141,9 +142,10 @@ public class UnityAssetExportTests
             Assert.True(p.CommitCelStroke("점"));
         }
         p.Export.WritePrefab = true;
+        p.Export.Engine = ExportEngine.Unity;
         p.Export.WriteAnimations = true;
         var result = ProjectIO.SaveWithExport(p, dir.File("solo.chickxel")).Export!;
-        Assert.Equal(["solo.prefab", "solo.anim", "solo.controller"], result.Unity.Select(r => Path.GetFileName(r.ImagePath)));
+        Assert.Equal(["solo.prefab", "solo.anim", "solo.controller"], result.Engine.Select(r => Path.GetFileName(r.ImagePath)));
         var sheet = dir.File("solo.png");
         var clip = File.ReadAllText(dir.File("solo.anim"));
         Assert.Equal("", After(clip, "m_PPtrCurves", "path:").Trim('\''));
@@ -151,7 +153,7 @@ public class UnityAssetExportTests
         Assert.Equal($"{{fileID: {SpriteId(sheet, "solo_0")}, guid: {Guid(sheet)}, type: 3}}", After(File.ReadAllText(dir.File("solo.prefab")), "SpriteRenderer:", "m_Sprite:"));
 
         // Unity 파일을 끄면(이미지만) 프리팹·애니메이션도 쓰지 않는다
-        p.Export.WriteMeta = false;
+        p.Export.Engine = ExportEngine.None;
         Assert.Empty(ProjectExport.GetUnityAssetPaths(p, dir.File("solo.chickxel"), assumePartContent: false));
     }
 }

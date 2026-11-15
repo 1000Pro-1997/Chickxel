@@ -217,6 +217,7 @@ public static class BackgroundRemoval
             if (y < h - 1) Seed(x, y + 1);
         }
         RemoveFringe(image, fg, bg);
+        RemoveHalo(image, fg, bg, tol);
         return new BackgroundResult(fg, bg, tol, false);
     }
 
@@ -244,6 +245,64 @@ public static class BackgroundRemoval
             }
         foreach (int i in drop) fg[i] = false;
     }
+
+    /// <summary>배경 부스러기로 볼 덩어리의 최대 픽셀 수.</summary>
+    private const int HaloMaxPixels = 24;
+
+    /// <summary>
+    /// 남은 배경 부스러기(영상·GIF 압축·확대로 배경색에서 조금 벗어난 작은 점이 외곽선 바깥에 붙어 남은 것): 배경색에 가까운(허용 거리의 3배, 24~72) 전경 픽셀이
+    /// 4방향으로 이은 덩어리 중 지운 배경에 닿고 <see cref="HaloMaxPixels"/> 이하이며, 덩어리에 붙은 그림 쪽(배경 근처가 아닌) 픽셀 중 가장 먼 색(외곽선)보다
+    /// 배경색에 두 배 넘게 가까운 것을 배경으로. 흰 머리처럼 넓은 밝은 부분, 배경과 외곽선이 섞인 긴 가장자리, 그림 색과 비슷한 작은 부분은 남는다.
+    /// </summary>
+    private static void RemoveHalo(PixelImage image, bool[] fg, Color32 bg, double tol)
+    {
+        int w = image.Width, h = image.Height;
+        var px = image.Pixels;
+        double near = Math.Min(72, Math.Max(24, tol * 3));
+        double near2 = near * near;
+        static int D2(Color32 a, Color32 b) { int dr = a.R - b.R, dg = a.G - b.G, db = a.B - b.B; return dr * dr + dg * dg + db * db; }
+        bool Near(int i) => fg[i] && D2(px[i], bg) <= near2;
+        var seen = new bool[px.Length];
+        var piece = new List<int>();
+        var stack = new Stack<int>();
+        for (int start = 0; start < px.Length; start++)
+        {
+            if (seen[start] || !Near(start)) continue;
+            piece.Clear();
+            seen[start] = true;
+            stack.Push(start);
+            bool touchesBg = false, tooBig = false;
+            long toBg = 0;
+            int toSolid = -1;
+            while (stack.Count > 0)
+            {
+                int i = stack.Pop();
+                piece.Add(i);
+                if (piece.Count > HaloMaxPixels) tooBig = true;
+                toBg += D2(px[i], bg);
+                int x = i % w, y = i / w;
+                foreach (var (dx, dy) in Dirs4)
+                {
+                    int nx = x + dx, ny = y + dy;
+                    if ((uint)nx >= (uint)w || (uint)ny >= (uint)h) { touchesBg = true; continue; }
+                    int j = ny * w + nx;
+                    if (!fg[j]) { touchesBg = true; continue; }
+                    if (Near(j))
+                    {
+                        if (!seen[j]) { seen[j] = true; stack.Push(j); }
+                        continue;
+                    }
+                    toSolid = Math.Max(toSolid, D2(px[i], px[j]));
+                }
+            }
+            if (tooBig || !touchesBg) continue;
+            // 붙은 그림 쪽 색 중 가장 먼 것(외곽선)보다 배경에 두 배 넘게 가까울 때만 — 그림 색과 비슷한 작은 밝은 부분은 남는다
+            if (toSolid >= 0 && toBg / piece.Count * 4 > toSolid) continue;
+            foreach (int i in piece) fg[i] = false;
+        }
+    }
+
+    private static readonly (int Dx, int Dy)[] Dirs4 = [(-1, 0), (1, 0), (0, -1), (0, 1)];
 
     /// <summary>배경을 지운 사본(배경 픽셀은 완전 투명, 나머지는 불투명).</summary>
     public static PixelImage Apply(PixelImage image, bool[] foreground)
@@ -284,19 +343,49 @@ public static class BackgroundRemoval
         return list;
     }
 
-    /// <summary>가장 많은 색: 채널마다 16단계로 묶어 가장 큰 묶음의 평균(잡음이 있어도 한 색).</summary>
+    /// <summary>비슷한 색으로 묶을 거리(RGB): 가장 많은 묶음의 중심에서 이 안의 색을 같은 배경색으로 본다.</summary>
+    private const int SimilarColor = 28;
+
+    /// <summary>
+    /// 가장 많은 색(비슷한 색끼리 묶어서): 채널마다 16단계로 나눈 칸마다 이웃 칸(±1)까지 더한 수가 가장 많은 칸을 고르고,
+    /// 그 칸 평균에서 <see cref="SimilarColor"/> 안의 색을 모두 평균한다 — 잡음·압축으로 흩어진 한 배경색이 칸 경계에 갈려도 한 묶음이 된다.
+    /// </summary>
     internal static Color32 DominantColor(IEnumerable<Color32> colors)
     {
+        var list = colors as IReadOnlyList<Color32> ?? colors.ToList();
         var bins = new Dictionary<int, (int N, long R, long G, long B)>();
-        foreach (var c in colors)
+        static int Key(int r, int g, int b) => r << 8 | g << 4 | b;
+        foreach (var c in list)
         {
-            int key = (c.R >> 4) << 8 | (c.G >> 4) << 4 | c.B >> 4;
+            int key = Key(c.R >> 4, c.G >> 4, c.B >> 4);
             var b = bins.GetValueOrDefault(key);
             bins[key] = (b.N + 1, b.R + c.R, b.G + c.G, b.B + c.B);
         }
         if (bins.Count == 0) return Color32.Black;
-        var best = bins.Values.MaxBy(b => b.N);
-        return new Color32((byte)(best.R / best.N), (byte)(best.G / best.N), (byte)(best.B / best.N));
+        int bestKey = 0, bestCount = -1;
+        foreach (var (key, own) in bins)
+        {
+            int r = key >> 8, g = key >> 4 & 15, b = key & 15, sum = 0;
+            for (int dr = -1; dr <= 1; dr++)
+                for (int dg = -1; dg <= 1; dg++)
+                    for (int db = -1; db <= 1; db++)
+                    {
+                        int nr = r + dr, ng = g + dg, nb = b + db;
+                        if ((uint)nr < 16 && (uint)ng < 16 && (uint)nb < 16 && bins.TryGetValue(Key(nr, ng, nb), out var n)) sum += n.N;
+                    }
+            // 같은 수면 자기 칸이 더 많은 쪽
+            if (sum > bestCount || sum == bestCount && own.N > bins[bestKey].N) (bestKey, bestCount) = (key, sum);
+        }
+        var peak = bins[bestKey];
+        int pr = (int)(peak.R / peak.N), pg = (int)(peak.G / peak.N), pb = (int)(peak.B / peak.N);
+        long cr = 0, cg = 0, cb = 0, cn = 0;
+        foreach (var c in list)
+        {
+            int dr = c.R - pr, dg = c.G - pg, db = c.B - pb;
+            if (dr * dr + dg * dg + db * db > SimilarColor * SimilarColor) continue;
+            cr += c.R; cg += c.G; cb += c.B; cn++;
+        }
+        return cn == 0 ? new Color32((byte)pr, (byte)pg, (byte)pb) : new Color32((byte)(cr / cn), (byte)(cg / cn), (byte)(cb / cn));
     }
 
     /// <summary>테두리 픽셀 중 배경색에 가까운 것(거리 80 미만 — 테두리에 닿은 스프라이트는 뺌)의 90% 거리 × 1.5 + 8 (8~64).</summary>

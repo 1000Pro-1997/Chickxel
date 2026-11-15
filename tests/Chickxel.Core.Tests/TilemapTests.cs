@@ -507,7 +507,7 @@ public class TilemapTests
         }
     }
 
-    /// <summary>둘째 타일셋: 같은 4×4 칸, 층 7(장식)·8(기타)·9(끝) — 이름이 같은 층은 그 층으로, 아니면 같은 차례(넘으면 맨 위) 층으로.</summary>
+    /// <summary>둘째 타일셋: 같은 4×4 칸, 층 7(장식)·8(기타)·9(끝) — 이름이 같은 층은 그 층을 같이 쓰고, 아니면 합친 타일셋에 그 층을 더한다.</summary>
     private static Tileset Second() => Tileset.Create("u", 4, 4) with
     {
         Floors = [new TileFloor(7, "장식"), new TileFloor(8, "기타"), new TileFloor(9, "끝")],
@@ -523,18 +523,20 @@ public class TilemapTests
         Assert.Same(primary, TileSources.Combine([primary]));
         // 칸 크기가 다른 타일셋은 뺀다
         var combined = TileSources.Combine([primary, second, Tileset.Create("큰", 8, 8) with { Tiles = [new TileDef { Id = 1, Image = Solid(8, 8, Red) }] }]);
-        Assert.Equal(primary.Floors.ToArray(), combined.Floors.ToArray());
+        // 이름이 같은 층(장식)은 같이 쓰고, 없는 층(기타·끝)은 그 타일셋의 차례대로 같이 쓰는 층 뒤에 더한다 — 첫 타일셋 층으로 뭉치지 않음
+        int other = TileSources.Offset(1) + 8, end = TileSources.Offset(1) + 9;
+        Assert.Equal([new TileFloor(1, "바닥"), new TileFloor(2, "장식"), new TileFloor(other, "기타"), new TileFloor(end, "끝")], combined.Floors.ToArray());
         Assert.Equal(primary.Key, combined.Key);
         Assert.Equal(primary.Tiles.Length + 2, combined.Tiles.Length);
         Assert.Same(primary.Find(1), combined.Find(1));
         int a = TileSources.Global(1, 1), b = TileSources.Global(1, 2);
         Assert.Equal((1, 1, TileSources.Stride + 1), (TileSources.Slot(a), TileSources.Local(a), a));
         Assert.Equal(2, combined.Find(a)!.Floor); // "장식" 이름이 같음
-        Assert.Equal(2, combined.Find(b)!.Floor); // 차례 2 → 맨 위(차례 1)
+        Assert.Equal(end, combined.Find(b)!.Floor);
         Assert.Null(combined.Find(TileSources.Global(2, 1)));
         var set = combined.FindAutoTile(TileSources.Global(1, 1))!;
-        Assert.Equal(2, set.Floor); // 차례 1 → 차례 1
-        Assert.Equal([2], set.FilledFloors.ToArray());
+        Assert.Equal(other, set.Floor);
+        Assert.Equal([2, end], set.FilledFloors.ToArray());
         Assert.Equal([new AutoTileChoice(a), new AutoTileChoice(b, 3)], set.Rules[0].Tiles.ToArray());
         Assert.Equal(1, TileSources.Slot(new TileCell(0, TileTransform.None, set.Id)));
     }
@@ -620,6 +622,44 @@ public class TilemapTests
         Assert.Equal([5], layer.Tiles.HiddenFloors.ToArray());
         p.Undo();
         Assert.Equal(3, layer.Tiles!.TilesetKeys.Length);
+    }
+
+    /// <summary>
+    /// 기본 샌드박스(층 차례) 레이어에 탑뷰 마을을 더하면 마을의 층(물·풀·장식·벽·물건 …)이 뭉치지 않아 풀 위에 꽃을 찍어도 풀이 남고,
+    /// 예전 합치기로 첫 타일셋 층에 뭉쳐 저장한 칸은 읽을 때 제 층으로 옮긴다.
+    /// </summary>
+    [Fact]
+    public void SandboxPlusVillage_KeepsVillageFloorsApart_AndUpgradesOldMaps()
+    {
+        var sandbox = BuiltInTilesets.Sandbox();
+        var village = BuiltInTilesets.TopDownVillage();
+        var p = new SpriteProject(64, 64);
+        var layer = p.AddTilemapLayer(sandbox);
+        Assert.True(p.AddLayerTileset(layer, village));
+        var ts = p.TilesetOf(layer)!;
+        // 땅(물·모래·흙·풀·바닥재)은 샌드박스의 바닥 층 하나로, 장식은 같은 이름 층으로, 벽·물건·위만 더한다
+        int ground = sandbox.Floors.Single(f => f.Name == Chickxel.Core.Localization.DomainStrings.Tile_FloorGround).Id;
+        Assert.Equal(sandbox.Floors.Length + 3, ts.Floors.Length);
+        var grass = ts.AutoTiles.Single(a => TileSources.Slot(a.Id) == 1 && a.Name == Chickxel.Core.Localization.DomainStrings.TileBuiltIn_Grass);
+        var water = ts.AutoTiles.Single(a => TileSources.Slot(a.Id) == 1 && a.Name == Chickxel.Core.Localization.DomainStrings.TileBuiltIn_Water);
+        var flower = ts.Tiles.First(t => TileSources.Slot(t.Id) == 1 && t.PaletteX == 0 && t.PaletteY == 2);
+        Assert.Equal((ground, ground), (grass.Floor, water.Floor));
+        Assert.NotEqual(grass.Floor, flower.Floor);
+        // 바닥 층 안에서는 원래 층 차례대로(풀 가장자리가 물 위에)
+        Assert.True(ts.Find(grass.Rules.Last().Tiles[0].Tile)!.FloorRank > ts.Find(water.Rules.Last().Tiles[0].Tile)!.FloorRank);
+        var map = AutoTiler.Paint(ts, TileMap.Empty, grass, [new Point(1, 1)]).Place(ts, flower.Floor, new Point(1, 1), new TileCell(flower.Id));
+        Assert.NotNull(map.Get(grass.Floor, new Point(1, 1)));
+        Assert.NotNull(map.Get(flower.Floor, new Point(1, 1)));
+
+        // 예전 파일: 마을의 꽃이 예전 규칙의 층(첫 타일셋 층)에 들어 있음
+        int localFlowerFloor = village.Find(TileSources.Local(flower.Id))!.Floor;
+        int oldFloor = TileSources.MapFloor(village, sandbox, localFlowerFloor);
+        p.SetTileMap(layer, TileMap.Empty.With(oldFloor, new Point(2, 2), new TileCell(flower.Id)), "예전");
+        using var ms = new MemoryStream();
+        ProjectIO.Save(p, ms);
+        ms.Position = 0;
+        var loaded = ProjectIO.Load(ms).Layers.Single(l => l.IsTilemap).Tiles!.Map;
+        Assert.Equal([new PlacedTile(flower.Floor, new Point(2, 2), new TileCell(flower.Id))], loaded.All.ToArray());
     }
 
     [Fact]

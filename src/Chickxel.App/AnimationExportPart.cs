@@ -44,6 +44,9 @@ public sealed class AnimationExportPart
     private int _index;
     private ExportFormat _format = ExportFormat.Gif;
     private bool _shown;
+    /// <summary>지금 고친 내보내기 목록의 줄(설정을 바꾸면 그 줄에 바로 들어감). 없으면 null.</summary>
+    private AnimationExport? _entry;
+    private bool _loading;
 
     /// <param name="owner">이 부분을 담은 창(저장·폴더 고르기 창과 진행 덮개의 주인).</param>
     /// <param name="canExportChanged">내보낼 프레임이 있는지가 정해짐(내보내기 단추 켜고 끄기).</param>
@@ -114,7 +117,14 @@ public sealed class AnimationExportPart
         PreviewColumn = new DockPanel { Margin = new Thickness(10, 0, 0, 0), LastChildFill = true, Children = { _result, _info, _preview } };
 
         foreach (var r in new[] { _rangeCurrent, _rangeAll, _rangeTag })
-            r.IsCheckedChanged += (_, _) => { if (r.On()) Dispatcher.UIThread.Post(RebuildFrames); };
+            r.IsCheckedChanged += (_, _) => { if (r.On()) { Store(); Dispatcher.UIThread.Post(RebuildFrames); } };
+        foreach (var r in new[] { _loopForever, _loopCount }) r.IsCheckedChanged += (_, _) => Store();
+        _plays.ValueChanged += (_, _) => Store();
+        _scale.ValueChanged += (_, _) => Store();
+        foreach (var r in new[] { _bgTransparent, _bgColor }) r.IsCheckedChanged += (_, _) => Store();
+        _color.ColorChanged += (_, _) => Store();
+        _timing.Changed += Store;
+        _tagCombo.SelectionChanged += (_, _) => Store();
         _tagCombo.SelectionChanged += (_, _) =>
         {
             if (_tagCombo.SelectedIndex < 0) return;
@@ -141,12 +151,76 @@ public sealed class AnimationExportPart
 
     /// <summary>왼쪽 설정 묶음들(범위·배율·속도·반복·배경).</summary>
     public Control Groups { get; }
+
+    /// <summary>지금 고친 내보내기 목록의 줄.</summary>
+    public AnimationExport? Entry => _entry;
+
+    /// <summary>
+    /// 내보내기 목록의 줄 <paramref name="entry"/>를 고친다: 그 줄의 범위·배율·반복·배경·속도를 칸에 넣고, 이후 바꾸는 값은 그 줄에 바로 들어간다
+    /// (프로젝트는 수정됨 — 저장하면 파일에 들어감).
+    /// </summary>
+    public void Load(AnimationExport entry)
+    {
+        _entry = entry;
+        _loading = true;
+        var tag = entry.TagName is { } name ? _project.Tags.FirstOrDefault(t => t.Name == name) : null;
+        if (tag is null) _rangeAll.IsChecked = true;
+        else if (ReferenceEquals(tag, _currentTag)) _rangeCurrent.IsChecked = true;
+        else
+        {
+            _tagCombo.SelectedIndex = _project.Tags.ToList().IndexOf(tag);
+            _rangeTag.IsChecked = true;
+        }
+        _scale.Value = entry.Scale;
+        _plays.Value = Math.Max(1, entry.PlayCount);
+        (entry.PlayCount <= 0 ? _loopForever : _loopCount).IsChecked = true;
+        if (entry.Background is { } bg) _color.Color = bg.WithAlpha(255);
+        (entry.Background is null ? _bgTransparent : _bgColor).IsChecked = true;
+        _timing.Set(entry.Timing);
+        _loading = false;
+        _frames = null;
+    }
+
+    /// <summary>칸의 값을 고친 줄에 넣는다(줄을 넣는 중이 아니면).</summary>
+    private void Store()
+    {
+        if (_loading || _entry is not { } e) return;
+        e.TagName = RangeTag?.Name;
+        e.Scale = Scale;
+        e.PlayCount = PlayCount;
+        e.Background = BackgroundColor;
+        e.Timing = _timing.Timing;
+        _project.IsDirty = true;
+        EntryChanged?.Invoke();
+    }
+
+    /// <summary>고친 줄의 설정이 바뀜(목록 줄 이름을 다시 그릴 때).</summary>
+    public event Action? EntryChanged;
+
+    /// <summary>위치 바꾸기: 형식에 맞는 저장 창(프레임마다 PNG는 폴더 고르기)으로 고친 줄의 대상을 바꾼다.</summary>
+    public void ChooseTarget()
+    {
+        if (_entry is not { } e) return;
+        var current = _project.Path is { } pp ? AnimationExportWriter.ResolvePath(e, pp) : e.Path;
+        string? chosen = e.Format switch
+        {
+            AnimationExportFormat.Gif => Ui.SaveFile(_owner, UiStrings.S_GifExportDialog_ChooseAndExport_AC2A7BE712, Path.GetDirectoryName(current), Path.GetFileName(current), ".gif",
+                new FileFilter(UiStrings.S_GifExportDialog_ChooseAndExport_AC2A7BE712, ["*.gif"])),
+            AnimationExportFormat.Apng => Ui.SaveFile(_owner, UiStrings.Export_FormatApng, Path.GetDirectoryName(current), Path.GetFileName(current), ".png",
+                new FileFilter(UiStrings.Export_FormatApng, ["*.png"])),
+            _ => Ui.PickFolder(_owner, UiStrings.Export_FramesFolder, current),
+        };
+        if (chosen is null) return;
+        var stored = AnimationExportWriter.StoredPath(Path.GetFullPath(chosen), _project.Path);
+        if (stored != e.Path) _project.Edit(UiStrings.ExportList_Undo, ProjectChange.Settings, () => e.Path = stored);
+    }
     /// <summary>오른쪽: 재생 미리보기 + 결과 정보 + 내보낸 결과.</summary>
     public Control PreviewColumn { get; }
 
     public int Scale => (int)_scale.NumValue();
     public int PlayCount => _loopForever.On() ? 0 : (int)_plays.NumValue();
     public Color32? BackgroundColor => _bgColor.On() ? _color.Color.WithAlpha(255) : null;
+    public GifTiming Timing => _timing.Timing;
 
     /// <summary>고른 범위의 태그(모든 프레임이면 null).</summary>
     public AnimationTag? RangeTag
@@ -306,33 +380,23 @@ public sealed class AnimationExportPart
     /// <summary>프레임마다 PNG의 파일 이름: <c>{이름}_{번호:000}.png</c>(번호는 재생 순서로 1부터).</summary>
     private static string FrameFileName(string baseName, int index) => $"{baseName}_{index + 1:000}.png";
 
-    /// <summary>내보내기…: 형식에 맞는 저장 창(프레임마다 PNG는 폴더 고르기)을 띄워 지금 설정으로 쓰고 결과를 보인다.</summary>
+    /// <summary>내보내기: 고른 목록 줄의 대상에 지금 설정으로 쓰고 결과를 보인다.</summary>
     public void Export()
     {
-        if (_frames is not { Count: > 0 } frames) return;
-        var dir = _project.Path is { } p ? Path.GetDirectoryName(p) : _settings.LastFolder;
+        if (_frames is not { Count: > 0 } frames || _entry is not { } e) return;
+        var target = _project.Path is { } pp ? AnimationExportWriter.ResolvePath(e, pp) : e.Path;
         switch (_format)
         {
-            case ExportFormat.Gif:
-            {
-                var title = UiStrings.S_GifExportDialog_ChooseAndExport_AC2A7BE712;
-                if (Ui.SaveFile(_owner, title, dir, BaseName + ".gif", ".gif", new FileFilter(title, ["*.gif"])) is { } path) ExportGif(frames, path);
-                break;
-            }
-            case ExportFormat.Apng:
-            {
-                var title = UiStrings.Export_FormatApng;
-                if (Ui.SaveFile(_owner, title, dir, BaseName + ".png", ".png", new FileFilter(title, ["*.png"])) is { } path) ExportApng(frames, path);
-                break;
-            }
-            default:
-                if (Ui.PickFolder(_owner, UiStrings.Export_FramesFolder, dir) is { } folder) ExportFrames(frames, folder);
-                break;
+            case ExportFormat.Gif: ExportGif(frames, target); break;
+            case ExportFormat.Apng: ExportApng(frames, target); break;
+            default: ExportFrames(frames, target); break;
         }
     }
 
     private void ExportGif(List<GifFrame> frames, string path)
     {
+        var folder = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(folder)) Directory.CreateDirectory(folder);
         var options = new GifOptions { Scale = Scale, PlayCount = PlayCount, Background = BackgroundColor, Timing = _timing.Timing };
         GifInfo? written = null;
         if (!TryWrite(() => written = WorkOverlay.Run(_owner, UiStrings.Busy_GifSaving, progress => GifWriter.Save(frames, path, options, progress))) || written is not { } info) return;
@@ -345,6 +409,8 @@ public sealed class AnimationExportPart
 
     private void ExportApng(List<GifFrame> frames, string path)
     {
+        var folder = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(folder)) Directory.CreateDirectory(folder);
         var images = FinalImages(frames);
         var pngFrames = frames.Select(f => new PngFrame(images[f.Image], FrameMs(f))).ToList();
         int plays = PlayCount;
@@ -363,6 +429,7 @@ public sealed class AnimationExportPart
 
     private void ExportFrames(List<GifFrame> frames, string folder)
     {
+        Directory.CreateDirectory(folder);
         var baseName = BaseName;
         var paths = Enumerable.Range(0, frames.Count).Select(i => Path.Combine(folder, FrameFileName(baseName, i))).ToList();
         var existing = paths.Where(File.Exists).ToList();

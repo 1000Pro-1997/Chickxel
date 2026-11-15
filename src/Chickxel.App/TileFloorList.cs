@@ -87,32 +87,39 @@ internal sealed class TileFloorList : UserControl
         {
             var floor = ts.Floors[i];
             int id = floor.Id;
+            // 다른 타일셋에서 더한 층(첫 타일셋에 없는 층)은 그 타일셋 것이라 순서·이름·지우기를 여기서 바꾸지 않고, 비어 있으면(지금 찍을 층이 아니면) 숨긴다
+            bool added = TileSources.Slot(id) > 0;
+            int count = data?.Map.Floor(id).Count ?? 0;
+            if (added && count == 0 && !target.Contains(id) && _ctx.TileFloor != id) continue;
             bool hidden = data?.IsFloorHidden(id) ?? false, locked = data?.IsFloorLocked(id) ?? false;
             var eye = RowButton(hidden ? VectorIcon.EyeOff : VectorIcon.Eye, UiStrings.Tileset_FloorVisibleTip, () => _ctx.SetTileFloorState(id, hidden: !hidden));
             var lockBtn = RowButton(locked ? VectorIcon.Lock : VectorIcon.LockOpen, UiStrings.Tileset_FloorLockTip, () => _ctx.SetTileFloorState(id, locked: !locked));
             if (locked) ((IconView)lockBtn.Content!).Foreground = AppTheme.LockedBrush;
             var up = RowButton(VectorIcon.ChevronUp, UiStrings.Tileset_FloorUpTip, () => EditFloors(UiStrings.Tileset_MoveFloorLabel, t => TilesetEdit.MoveFloor(t, id, +1)));
             var down = RowButton(VectorIcon.ChevronDown, UiStrings.Tileset_FloorDownTip, () => EditFloors(UiStrings.Tileset_MoveFloorLabel, t => TilesetEdit.MoveFloor(t, id, -1)));
-            up.IsEnabled = i < ts.Floors.Length - 1;
-            down.IsEnabled = i > 0;
+            up.IsEnabled = !added && i < ts.Floors.Length - 1;
+            down.IsEnabled = !added && i > 0;
             bool isManual = manual == id;
             var name = Ui.Label(floor.Name, bold: isManual);
             name.Foreground = locked ? AppTheme.LockedBrush : hidden ? AppTheme.DimTextBrush : AppTheme.TextBrush;
             name.TextTrimming = TextTrimming.CharacterEllipsis;
-            int count = data?.Map.Floor(id).Count ?? 0;
             var countText = Ui.Label(count.ToString(System.Globalization.CultureInfo.CurrentCulture));
             countText.Foreground = AppTheme.DimTextBrush;
             countText.FontSize = AppTheme.SmallFontSize;
             bool isTarget = target.Contains(id);
             var mark = new Border { Width = 3, Margin = new Thickness(0, 2), Background = !isTarget ? Brushes.Transparent : locked ? AppTheme.WarningBrush : AppTheme.AccentBrush };
             if (isTarget) ToolTip.SetTip(mark, UiStrings.TilePick_TargetFloorTip);
-            var row = _manage
-                ? RowGrid(mark, eye, lockBtn, name, countText, up, down,
-                    RowButton(VectorIcon.Pencil, UiStrings.Tileset_RenameFloor, () => RenameFloor(floor)),
-                    RowButton(VectorIcon.Trash, UiStrings.Tileset_DeleteFloor, () => DeleteFloor(floor)))
-                : RowGrid(mark, eye, lockBtn, name, countText, up, down);
+            Grid row;
+            if (_manage)
+            {
+                var rename = RowButton(VectorIcon.Pencil, UiStrings.Tileset_RenameFloor, () => RenameFloor(floor));
+                var delete = RowButton(VectorIcon.Trash, UiStrings.Tileset_DeleteFloor, () => DeleteFloor(floor));
+                rename.IsEnabled = delete.IsEnabled = !added;
+                row = RowGrid(mark, eye, lockBtn, name, countText, up, down, rename, delete);
+            }
+            else row = RowGrid(mark, eye, lockBtn, name, countText, up, down);
             row.Background = isManual && !_manage ? ManualRowBrush : Brushes.Transparent;
-            row.ContextMenu = FloorMenu(floor, ts);
+            if (!added) row.ContextMenu = FloorMenu(floor, ts);
             if (!_manage)
             {
                 row.Cursor = new Cursor(StandardCursorType.Hand);
@@ -121,7 +128,7 @@ internal sealed class TileFloorList : UserControl
                     if (e.GetCurrentPoint(row).Properties.IsLeftButtonPressed) _ctx.TileFloor = id;
                 };
             }
-            row.DoubleTapped += (_, _) => RenameFloor(floor);
+            if (!added) row.DoubleTapped += (_, _) => RenameFloor(floor);
             ToolTip.SetTip(row, _manage ? UiStrings.Tileset_FloorRowManageTip : UiStrings.Tileset_FloorRowTip);
             _rows.Children.Add(row);
         }

@@ -1783,7 +1783,7 @@ public sealed partial class SpriteProject
         Edit(DomainStrings.Project_DeleteOutfit, ProjectChange.Layers | ProjectChange.Settings, () =>
         {
             _outfits.Remove(outfit);
-            foreach (var o in (SheetOptions?[])[Export.Common, Export.PartsOverride])
+            foreach (var o in Export.AllSheets.SelectMany(s => (SheetOptions?[])[s.Common, s.PartsOverride]))
                 if (o is not null && o.Outfits.Contains(outfit)) o.Outfits = o.Outfits.Where(x => !ReferenceEquals(x, outfit)).ToArray();
         });
     }
@@ -1945,9 +1945,9 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 프레임을 셀까지 복사해 바로 뒤에 넣는다. 원래 셀이 다른 프레임과 링크되어 있으면 사본 칸도 그 링크에 들어가고(그림을 같이 씀), 아니면 그림 사본이다.
-    /// 원래 프레임을 포함한 태그·효과 범위는 늘어난다.
+    /// 원래 프레임을 포함한 태그·효과 범위는 늘어난다(<paramref name="extendTags"/>가 false면 태그는 늘지 않음 — 맨 끝에 복사로 붙일 때).
     /// </summary>
-    public Frame DuplicateFrame(int index)
+    public Frame DuplicateFrame(int index, bool extendTags = true)
     {
         var src = _frames[index];
         var copy = CopyFrame(src);
@@ -1960,7 +1960,7 @@ public sealed partial class SpriteProject
             foreach (var t in _tags)
             {
                 if (t.From > index) { t.From++; t.To++; }
-                else if (t.To >= index) t.To++;
+                else if (t.To > index || t.To == index && extendTags) t.To++;
             }
             MapEffectRanges(r => r.From > index ? new FrameRange(r.From + 1, r.To + 1) : r.To >= index ? new FrameRange(r.From, r.To + 1) : r);
         });

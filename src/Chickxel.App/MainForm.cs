@@ -1185,6 +1185,10 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         };
         _browser.NewImageRequested += (_, folder) => NewProject(folder);
         _browser.PixelateRequested += (_, path) => PixelateFile(path);
+        _browser.ExportSettingsRequested += (_, r) =>
+        {
+            if (OpenFile(r.Path)) OpenExportDialog(r.Entry < 0 ? ExportFormat.Image : ExportFormat.Gif, r.Entry);
+        };
         _browser.FileRenamed += (_, r) => OnFileRenamed(r.OldPath, r.NewPath);
         _browser.FileDeleted += (_, path) => OnFileDeleted(path);
         // 저장·열기 중(자동 저장 포함)에 온 파일 감시 알림은 끝난 뒤(문서의 디스크 시각을 갱신한 뒤)에 본다 — 자기 저장을 "밖에서 바뀜"으로 묻지 않게.
@@ -2246,7 +2250,10 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         dlg.ShowDialog(this);
     }
 
-    /// <summary>움직임 테스트: 프로젝트의 태그를 시트 문서로 만들어 넘긴다(편집하면 잠시 뒤 다시 읽음). 탑뷰에 깔 수 있게 열린 문서의 타일맵 레이어도 넘긴다.</summary>
+    /// <summary>
+    /// 움직임 테스트: 캐릭터는 연 때의 탭으로 고정하고(창에서 다른 탭으로 바꿀 수 있음), 그 프로젝트의 태그를 시트 문서로 만들어 넘긴다(편집하면 잠시 뒤 다시 읽음).
+    /// 깔 수 있게 열린 문서의 타일맵 레이어도 넘긴다.
+    /// </summary>
     private void ShowPlayTest()
     {
         if (_play is { IsClosed: false })
@@ -2255,11 +2262,16 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             _play.Activate();
             return;
         }
-        var play = new PlayTestForm(() => _ctx.Project is { } p ? ProjectExport.BuildDocument(p, p.BaseName, allFrames: true) : null, PlayMapSources);
+        var play = new PlayTestForm(PlayCharacterSources, CurrentDoc, PlayMapSources);
         play.Closed += (_, _) => { if (ReferenceEquals(_play, play)) _play = null; };
         _play = play;
         play.Show();
     }
+
+    /// <summary>움직임 테스트의 캐릭터로 고를 수 있는 열린 문서(탭)마다 이름과 지금 내용으로 만든 시트 문서.</summary>
+    private IReadOnlyList<PlayTest.PlayCharacterSource> PlayCharacterSources()
+        => OpenDocs.Select(d => new PlayTest.PlayCharacterSource(d, d.Project.DisplayName,
+            () => ProjectExport.BuildDocument(d.Project, d.Project.BaseName, allFrames: true))).ToList();
 
     /// <summary>
     /// 움직임 테스트에 깔 수 있는 타일맵: 열린 문서(저장하지 않는 장면 빼고)의 타일맵 레이어마다 "문서 · 레이어". 읽을 때 지금 내용을 쓰고,
@@ -2864,7 +2876,10 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         if (e.Frames.Count > 0) parts.Add(One(MainStrings.Ui_301, e.Frames));
         if (e.Parts.Count > 0) parts.Add(One(MainStrings.Ui_302, e.Parts));
         if (e.Libraries.Count > 0) parts.Add(One("Sprite Library", e.Libraries, MainStrings.Ui_303));
-        if (e.Unity.Count > 0) parts.Add(string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.Export_UnityAssetsSummary, e.Unity.Count));
+        if (e.Engine.Count > 0) parts.Add(UiStrings.FormatExport_EngineFilesSummary(count: e.Engine.Count));
+        // 저장할 때 만든 애니메이션 줄: 파일 이름(프레임마다 PNG는 첫 파일 + 개수)
+        foreach (var a in e.Animations)
+            parts.Add(a.SpriteCount == 1 ? Path.GetFileName(a.ImagePath) : UiStrings.FormatFileInfo_ExportMany(first: Path.GetFileName(a.ImagePath), count: a.SpriteCount - 1));
         return " → " + string.Join(" · ", parts);
     }
 
@@ -2891,31 +2906,32 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         return text;
     }
 
-    /// <summary>Ctrl+E: 내보내기 창(마지막으로 고른 형식).</summary>
-    private void OpenExportDialog() => OpenExportDialog(_settings.ExportFormat);
+    /// <summary>Ctrl+E: 내보내기 창(목록의 첫 줄을 고름).</summary>
+    private void OpenExportDialog() => OpenExportDialog(ExportFormat.Image);
 
     /// <summary>
     /// 내보내기 창을 <paramref name="format"/>으로 연다. 이미지 시트에서 파란 "내보내기"를 누르면 창을 닫고 지금 설정대로 내보내고,
     /// 애니메이션·프레임을 내보냈으면 그 결과를 상태 표시줄에 보이고 파일 목록을 새로 고친다.
     /// </summary>
-    private void OpenExportDialog(ExportFormat format)
+    private void OpenExportDialog(ExportFormat format, int? entry = null)
     {
         if (!_ctx.HasProject) return;
-        var dlg = new ExportDialog(_ctx, _settings, format, v => _settings.LastPpu = v);
+        var dlg = new ExportDialog(_ctx, _settings, format, v => _settings.LastPpu = v, entry);
         var result = dlg.ShowDialog(this);
         if (dlg.ResultMessage is { } message) ShowMessage(message);
         foreach (var path in dlg.ExportedPaths) _browser.RefreshFile(path);
-        if (result == DialogResult.OK) ExportNow();
+        if (result == DialogResult.OK) ExportNow(dlg.SheetEntry);
     }
 
-    private void ExportNow()
+    /// <param name="entry">내보내기 목록의 그 시트 줄만(null = 프로젝트의 시트).</param>
+    private void ExportNow(int? entry = null)
     {
         FinishAutoSave(); // 자동 저장이 같은 내보내기 파일을 쓰는 중이면 끝난 뒤에
         var p = _ctx.Project!;
         if (p.Path is null && !SaveAs()) return;
         try
         {
-            var plan = ProjectExport.BeginExport(p);
+            var plan = ProjectExport.BeginExport(p, entry);
             var e = WorkOverlay.Run(this, UiStrings.Busy_Exporting, progress => ProjectExport.Write(p, plan, progress));
             ShowMessage(MainStrings.Message_304 + ExportSummary(e).TrimStart(' ', '→') + TrashStale(e));
             foreach (var r in e.All) _browser.RefreshFile(r.ImagePath);

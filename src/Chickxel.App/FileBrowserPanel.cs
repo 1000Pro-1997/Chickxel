@@ -844,10 +844,10 @@ public sealed partial class FileBrowserPanel : UserControl
             ToolTip.SetTip(projectsOnlyItem, UiStrings.S_FileBrowserPanel_ListMenu_F72A938B51
                                              + UiStrings.S_FileBrowserPanel_ListMenu_1BFD2CD3AE);
         }
-        bool image = count == 1 && PixelateDialog.IsImageFile(paths[0]);
+        bool image = count == 1 && PixelateDialog.IsSourceFile(paths[0]);
         // 상세 정보: 고른 항목 하나, 빈 곳을 우클릭했으면(고른 것 없음) 트리에서 고른 폴더 — 탐색기에서 열기와 같은 대상.
         string? detailsPath = count == 1 ? paths[0] : count == 0 ? CurrentFolder : null;
-        var details = Item(UiStrings.FileInfo_MenuItem, () => { if (detailsPath is not null) new FileInfoDialog(detailsPath).ShowDialog(this); }, detailsPath is not null);
+        var details = Item(UiStrings.FileInfo_MenuItem, () => { if (detailsPath is not null) new FileInfoDialog(detailsPath, InfoHost()).ShowDialog(this); }, detailsPath is not null);
         details.Icon = Ui.Icon(VectorIcon.Info, 14);
         return
         [
@@ -1099,6 +1099,20 @@ public sealed partial class FileBrowserPanel : UserControl
             SelectFile(newPath);
         });
     }
+
+    /// <summary>상세 정보 창의 프로젝트 내보내기 칸이 맡기는 일: 열린 프로젝트 찾기, 결과 파일 휴지통(Ctrl+Z로 되살림), 내보내기 설정 창.</summary>
+    private FileInfoHost InfoHost() => new(
+        path => FindOpenDocument?.Invoke(path),
+        (files, name) =>
+        {
+            bool ok = TrashFiles(files, [], string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_FileBrowserPanel_DeleteSelected_A43604BD66, name));
+            RefreshList();
+            return ok;
+        },
+        (path, entry) => ExportSettingsRequested?.Invoke(this, (path, entry)));
+
+    /// <summary>상세 정보 창의 목록 줄 "설정…": 그 프로젝트를 열고 내보내기 창에서 그 줄(−1 = 이미지 시트)을 골라 달라는 요청.</summary>
+    public event EventHandler<(string Path, int Entry)>? ExportSettingsRequested;
 
     private void ShowInExplorer()
     {

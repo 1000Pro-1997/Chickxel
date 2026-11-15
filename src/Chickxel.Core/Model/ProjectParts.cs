@@ -624,8 +624,98 @@ public sealed class SheetOptions
     }
 }
 
+/// <summary>애니메이션 내보내기 형식(<see cref="AnimationExport"/>).</summary>
+public enum AnimationExportFormat
+{
+    /// <summary>GIF 애니메이션.</summary>
+    Gif,
+    /// <summary>움직이는 PNG(APNG).</summary>
+    Apng,
+    /// <summary>프레임마다 PNG(폴더에 <c>{이름}_001.png</c> …).</summary>
+    FramePngs,
+}
+
 /// <summary>
-/// 저장 시 이미지 시트(프레임 시트·부위 아틀라스) + Unity 메타 내보내기 설정. 시트 설정은 <see cref="Common"/> 한 벌을 두 결과가 같이 쓰고,
+/// 내보내기 목록의 애니메이션 한 줄: 내보내기 창에서 GIF·APNG·프레임마다 PNG로 내보낸 설정과 대상. <see cref="OnSave"/>면 저장할 때도 다시 만든다
+/// (<see cref="IO.AnimationExportWriter"/>). 내보내기 목록(<see cref="ExportSettings.Entries"/>)에 들어 실행취소·저장된다.
+/// </summary>
+public sealed class AnimationExport
+{
+    public AnimationExportFormat Format { get; set; }
+
+    /// <summary>GIF·APNG = 파일, 프레임마다 PNG = 폴더. 프로젝트 파일 폴더 기준 상대 경로 또는 전체 경로.</summary>
+    public string Path { get; set; } = "";
+
+    /// <summary>범위 태그 이름(null = 모든 프레임). 그 태그가 없어지면 내보내지 않는다.</summary>
+    public string? TagName { get; set; }
+
+    /// <summary>배율(1~10, 최근접).</summary>
+    public int Scale { get => _scale; set => _scale = Math.Clamp(value, 1, MaxScale); }
+    private int _scale = 1;
+    public const int MaxScale = 10;
+
+    /// <summary>반복 횟수(0 = 무한). 프레임마다 PNG는 쓰지 않음.</summary>
+    public int PlayCount { get; set; }
+
+    /// <summary>배경색(null = 투명 — GIF는 알파 문턱, APNG·PNG는 알파 그대로).</summary>
+    public Color32? Background { get; set; }
+
+    /// <summary>재생 속도. 프레임마다 PNG는 쓰지 않음.</summary>
+    public IO.GifTiming Timing { get; set; } = IO.GifTiming.Original;
+
+    /// <summary>저장할 때도 이 내보내기를 다시 만든다.</summary>
+    public bool OnSave { get; set; }
+
+    public AnimationExport Clone() => (AnimationExport)MemberwiseClone();
+}
+
+/// <summary>
+/// 내보내기 목록(<see cref="ExportSettings.Entries"/>)의 한 줄: 이미지 시트(<see cref="Sheet"/> — 프로젝트의 시트 설정과 같은 한 벌, 그 안의 목록은 쓰지 않음)
+/// 또는 애니메이션(<see cref="Animation"/>) 중 하나. 같은 종류를 여러 줄(다른 이름·위치) 둘 수 있다.
+/// </summary>
+public sealed class ExportEntry
+{
+    private ExportEntry(ExportSettings? sheet, AnimationExport? animation)
+    {
+        Sheet = sheet;
+        Animation = animation;
+    }
+
+    public static ExportEntry ForSheet(ExportSettings sheet) => new(sheet, null);
+    public static ExportEntry ForAnimation(AnimationExport animation) => new(null, animation);
+
+    public ExportSettings? Sheet { get; }
+    public AnimationExport? Animation { get; }
+
+    /// <summary>저장할 때도 이 줄을 다시 만든다(시트 = <see cref="ExportSettings.ExportOnSave"/>).</summary>
+    public bool OnSave
+    {
+        get => Sheet?.ExportOnSave ?? Animation!.OnSave;
+        set
+        {
+            if (Sheet is { } s) s.ExportOnSave = value;
+            else Animation!.OnSave = value;
+        }
+    }
+
+    public ExportEntry Clone() => new(Sheet?.Clone(), Animation?.Clone());
+}
+
+/// <summary>시트와 함께 쓸 게임 엔진 파일(<see cref="ExportSettings.Engine"/>).</summary>
+public enum ExportEngine
+{
+    /// <summary>이미지만.</summary>
+    None,
+    /// <summary>Unity: 시트 <c>.meta</c>(스프라이트 자르기), 프리팹·애니메이션·Sprite Library.</summary>
+    Unity,
+    /// <summary>Godot 4: 프레임 시트로 SpriteFrames(<c>.tres</c>, 태그마다 애니메이션)와 AnimatedSprite2D 씬(<c>.tscn</c>).</summary>
+    Godot,
+    /// <summary>JSON 데이터(Aseprite 형식 — Phaser·PixiJS 등): 프레임 시트 파일마다 칸·태그를 적은 <c>.json</c>.</summary>
+    Json,
+}
+
+/// <summary>
+/// 저장 시 이미지 시트(프레임 시트·부위 아틀라스) + 게임 엔진 파일 내보내기 설정. 시트 설정은 <see cref="Common"/> 한 벌을 두 결과가 같이 쓰고,
 /// <see cref="PartsOverride"/>가 있으면 부위 아틀라스만 그것을 쓴다("시트별 다르게" — 예전 파일을 같은 결과로 옮길 때 등).
 /// </summary>
 public sealed class ExportSettings
@@ -680,8 +770,11 @@ public sealed class ExportSettings
         set => _singleFrameIndex = Math.Max(0, value);
     }
 
-    /// <summary>Unity 메타를 쓸지. null이면 자동(Unity 프로젝트 Assets 안이거나 이미 .meta가 있으면 씀).</summary>
-    public bool? WriteMeta { get; set; }
+    /// <summary>시트와 함께 쓸 게임 엔진 파일(기본 없음 — 이미지만).</summary>
+    public ExportEngine Engine { get; set; }
+
+    /// <summary>Godot: SpriteFrames(<c>{시트}.tres</c>)와 함께 그것을 쓰는 AnimatedSprite2D 씬(<c>{시트}.tscn</c>)도 쓴다.</summary>
+    public bool GodotScene { get; set; }
 
     /// <summary>
     /// 원래 위치 유지(부위 아틀라스 자동 배치): 가져온 칸 안에 아직 들어가는 부위는 원래 위치(왼쪽 위)에 두고, 새로 생겼거나 커진 것만 빈 곳에 배치.
@@ -696,7 +789,7 @@ public sealed class ExportSettings
 
     /// <summary>
     /// Unity 프리팹(<c>{시트}.prefab</c>)을 같이 쓴다: 부위가 있으면 그룹마다 빈 오브젝트 아래 부위마다 SpriteRenderer(부위 아틀라스 스프라이트·자리·순서),
-    /// 없으면 프레임 시트 스프라이트 하나. Unity 파일(<see cref="WriteMeta"/>가 false가 아님)일 때만 — <see cref="WritesUnityAssets"/>.
+    /// 없으면 프레임 시트 스프라이트 하나. Unity(<see cref="Engine"/>)일 때만 — <see cref="WritesUnityAssets"/>.
     /// </summary>
     public bool WritePrefab { get; set; }
 
@@ -706,14 +799,30 @@ public sealed class ExportSettings
     /// </summary>
     public bool WriteAnimations { get; set; }
 
+    /// <summary>
+    /// 내보내기 목록의 나머지 줄들(이미지 시트·GIF·APNG·프레임마다 PNG — 같은 종류 여러 줄 가능). 이 설정 자체(프로젝트의 시트)는 목록의 첫 줄이고
+    /// <see cref="ExportFrames"/>·<see cref="ExportParts"/>가 모두 꺼져 있으면 목록에 없다. 줄의 시트 설정 안의 목록은 쓰지 않는다.
+    /// </summary>
+    public List<ExportEntry> Entries { get; private set; } = new();
+
+    /// <summary>목록의 첫 줄(이 설정의 시트)이 있는지.</summary>
+    public bool SheetListed => ExportFrames || ExportParts;
+
+    /// <summary>목록의 애니메이션 줄들(차례대로).</summary>
+    public IEnumerable<AnimationExport> Animations => Entries.Where(e => e.Animation is not null).Select(e => e.Animation!);
+
+    /// <summary>이 설정과 목록의 다른 시트 줄들(시트 설정이 가리키는 레이어·착장을 정리할 때 등).</summary>
+    public IEnumerable<ExportSettings> AllSheets => Entries.Where(e => e.Sheet is not null).Select(e => e.Sheet!).Prepend(this);
+
     /// <summary>프리팹이나 애니메이션을 쓰는지(Unity 파일일 때만 — 스프라이트를 가리키려고 시트 <c>.meta</c>도 항상 씀).</summary>
-    public bool WritesUnityAssets => (WritePrefab || WriteAnimations) && WriteMeta != false;
+    public bool WritesUnityAssets => (WritePrefab || WriteAnimations) && Engine == ExportEngine.Unity;
 
     public ExportSettings Clone()
     {
         var copy = (ExportSettings)MemberwiseClone();
         copy.Common = Common.Clone();
         copy.PartsOverride = PartsOverride?.Clone();
+        copy.Entries = Entries.Select(e => e.Clone()).ToList();
         return copy;
     }
 
@@ -731,10 +840,20 @@ public sealed class ExportSettings
         Common.CopyFrom(other.Common);
         PartsOverride = other.PartsOverride?.Clone();
         SingleFrameIndex = other.SingleFrameIndex;
-        WriteMeta = other.WriteMeta;
+        Engine = other.Engine;
+        GodotScene = other.GodotScene;
         KeepImportedRects = other.KeepImportedRects;
         WriteSpriteLibrary = other.WriteSpriteLibrary;
         WritePrefab = other.WritePrefab;
         WriteAnimations = other.WriteAnimations;
+        Entries = other.Entries.Select(e => e.Clone()).ToList();
+    }
+
+    /// <summary>목록의 다른 시트 줄로 쓸 사본: 값은 같고 목록은 비움.</summary>
+    public ExportSettings CloneSheet()
+    {
+        var copy = Clone();
+        copy.Entries = new();
+        return copy;
     }
 }

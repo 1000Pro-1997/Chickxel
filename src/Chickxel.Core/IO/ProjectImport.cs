@@ -156,6 +156,15 @@ public static class ProjectImport
     /// <summary>문서(시트 이미지 + 칸 + 애니메이션)를 프로젝트로 바꾼다. 규칙은 <see cref="ProjectImport"/> 참고.</summary>
     public static SpriteProject FromDocument(Document doc, ImportMode mode = ImportMode.Frames)
     {
+        var project = FromDocumentCore(doc, mode);
+        // Unity에서 쓰던 그림(.meta가 있거나 Unity 프로젝트 Assets 안)이면 다시 내보낼 때도 Unity 파일을 쓴다.
+        if (doc.Path is { } path && (File.Exists(UnityMeta.GetMetaPath(path)) || UnityProjectLocator.IsInUnityAssets(path)))
+            project.Export.Engine = ExportEngine.Unity;
+        return project;
+    }
+
+    private static SpriteProject FromDocumentCore(Document doc, ImportMode mode)
+    {
         var slices = ValidSlices(doc);
         if (mode == ImportMode.Parts) return PartsFromDocument(doc, slices);
 

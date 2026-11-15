@@ -23,7 +23,7 @@ public class ExportCopyTests
         p.AddTag("walk", 1, 1);
         p.Export.ExportFrames = true;
         p.Export.ExportParts = true;
-        p.Export.WriteMeta = true;
+        p.Export.Engine = ExportEngine.Unity;
         p.Export.FileName = "configured";
         return p;
     }

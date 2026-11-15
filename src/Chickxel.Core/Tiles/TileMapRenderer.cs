@@ -80,7 +80,7 @@ public static class TileMapRenderer
             return all;
         }
         // 같은 기준선이면 세운 것은 아래 칸에 놓인 것(앞에 선 것)을, 바닥·머리 위는 위 칸에 놓인 것(아래 칸으로 내려와 덮는 것)을 나중에 그린다.
-        var list = new List<(int Group, int Major, int Minor, int Row, int X, TileDraw Draw)>();
+        var list = new List<(int Group, int Major, int Rank, int Minor, int Row, int X, TileDraw Draw)>();
         foreach (var floor in map.FloorIds)
         {
             int order = tileset.FloorOrder(floor);
@@ -94,11 +94,13 @@ public static class TileMapRenderer
                 if (!rect.IntersectsWith(area)) continue;
                 int line = tileset.SortLine(at, cell);
                 var draw = new TileDraw(new PlacedTile(floor, at, cell), rect, p.Image);
-                list.Add(kind == TileDrawClass.Sorted ? ((int)kind, line, order, at.Y, at.X, draw) : ((int)kind, order, line, -at.Y, at.X, draw));
+                int rank = tileset.FloorRankOf(cell);
+                list.Add(kind == TileDrawClass.Sorted ? ((int)kind, line, order, rank, at.Y, at.X, draw) : ((int)kind, order, rank, line, -at.Y, at.X, draw));
             }
         }
         list.Sort((a, b) => a.Group != b.Group ? a.Group.CompareTo(b.Group)
             : a.Major != b.Major ? a.Major.CompareTo(b.Major)
+            : a.Rank != b.Rank ? a.Rank.CompareTo(b.Rank)
             : a.Minor != b.Minor ? a.Minor.CompareTo(b.Minor)
             : a.Row != b.Row ? a.Row.CompareTo(b.Row)
             : a.X.CompareTo(b.X));
@@ -108,7 +110,7 @@ public static class TileMapRenderer
     /// <summary>층 차례로 그리는 타일셋: 층 하나에서 <paramref name="area"/>와 겹치는 타일을 차지 칸 아래 줄 → 왼쪽 차례로.</summary>
     private static List<TileDraw> FloorOrder(Tileset tileset, TileMap map, int floor, Point gridOrigin, Rectangle area, long timeMs)
     {
-        var list = new List<(int Bottom, int X, TileDraw Draw)>();
+        var list = new List<(int Rank, int Bottom, int X, TileDraw Draw)>();
         foreach (var (at, cell) in map.Floor(floor))
         {
             if (tileset.Placement(at, cell, timeMs) is not { } p) continue;
@@ -116,9 +118,9 @@ public static class TileMapRenderer
             rect.Offset(gridOrigin);
             if (!rect.IntersectsWith(area)) continue;
             var size = tileset.Footprint(cell);
-            list.Add((at.Y + size.Height, at.X, new TileDraw(new PlacedTile(floor, at, cell), rect, p.Image)));
+            list.Add((tileset.FloorRankOf(cell), at.Y + size.Height, at.X, new TileDraw(new PlacedTile(floor, at, cell), rect, p.Image)));
         }
-        list.Sort((a, b) => a.Bottom != b.Bottom ? a.Bottom.CompareTo(b.Bottom) : a.X.CompareTo(b.X));
+        list.Sort((a, b) => a.Rank != b.Rank ? a.Rank.CompareTo(b.Rank) : a.Bottom != b.Bottom ? a.Bottom.CompareTo(b.Bottom) : a.X.CompareTo(b.X));
         return list.ConvertAll(e => e.Draw);
     }
 

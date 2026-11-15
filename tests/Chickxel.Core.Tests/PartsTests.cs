@@ -945,6 +945,7 @@ public class PartsTests
         p.AddPart(g, "Body", 6, 8, new Point(5, 8));
         p.AddPart(g, "Head", 8, 5, new Point(4, 3));
         p.Export.ExportParts = true; // 새 프로젝트 기본은 프레임 시트만 — 둘 다 내보내기
+        p.Export.Engine = ExportEngine.Unity;
         p.AddFrame();
         p.BeginCelStroke(1, 0).Clear(Red);
         p.CommitCelStroke("몸");
@@ -1024,7 +1025,7 @@ public class PartsTests
         p.AddPart(g, "Head", 4, 3, new Point(2, 1));
         p.BeginCelStroke(1, 0).Clear(Red);
         p.CommitCelStroke("머리");
-        p.Edit("메타", ProjectChange.Settings, () => { p.Export.WriteMeta = true; p.Export.ExportParts = true; });
+        p.Edit("메타", ProjectChange.Settings, () => { p.Export.Engine = ExportEngine.Unity; p.Export.ExportParts = true; });
         var parts = Assert.Single(ProjectIO.SaveWithExport(p, dir.File("hero.chickxel")).Export!.Parts);
         var before = UnityMeta.Read(parts.ImagePath + ".meta").Sprites.Single();
         Assert.Equal("Head", before.Name);
@@ -1182,7 +1183,7 @@ public class PartsTests
         var g = p.AddGroup();
         p.AddPart(g, "Head", 2, 2);
         Paint(p, 1, 0, 0, 0, Red);
-        p.Edit("메타", ProjectChange.Settings, () => { p.Export.WriteMeta = true; p.Export.ExportParts = true; });
+        p.Edit("메타", ProjectChange.Settings, () => { p.Export.Engine = ExportEngine.Unity; p.Export.ExportParts = true; });
         ProjectIO.SaveWithExport(p, oldPath);
         var oldPng = dir.File("hero.png");
         var oldParts = dir.File("hero_parts.png");

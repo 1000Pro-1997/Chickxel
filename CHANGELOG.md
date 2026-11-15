@@ -2,6 +2,51 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.131 (2026-11-16)
+
+### Export list
+- The export window (Ctrl+E) has an **Export list** on the far left. The same format can appear in several rows with different names or folders (for example two PNG sheets at different zoom in different folders).
+- **Add** copies the selected row under a different name; change its format in the Format box as before. **Name** and **Folder** under the Format box set the files the row makes.
+- Check the box at the start of a row to make it again every time you save. Each row's settings and target are saved with the project, so it exports the same way next time.
+- The blue **Export** writes only the selected row. GIF, animated PNG and PNG per frame go straight to the row's folder without a save dialog.
+- **Details…** on a project in the file list shows each row with its on-save checkbox, output files (size, show in folder, trash) and **Settings…**. For a closed project, changing a checkbox saves that file right away.
+
+### Export for other game engines
+- The "Export for Unity (.meta)" checkbox in the export window's Format box is now a **Game engine** choice: None (default, images only), Unity, Godot 4 or JSON. The chosen engine's options appear right below it.
+- **Godot 4** writes a SpriteFrames resource (.tres) from the frame sheet. Each tag becomes an animation with the same frame durations and looping, and trimmed cells keep their original size. Inside a Godot project it uses res:// paths, and it can also write an AnimatedSprite2D scene (.tscn).
+- **JSON** writes an Aseprite-format .json (cell positions, frame durations, tags) for each frame sheet file, ready for Phaser, PixiJS and others.
+- Existing projects export as before. Projects with .meta turned on, inside a Unity project, with existing .meta files, or using Sprite Library, prefabs or animations open with Unity selected.
+
+### Export window touches
+- **List presets** above the export list save the whole list under a name and load it in other projects. The project-name part of file names becomes the name of the project you load it into.
+- A note under the list says saving exports the checked rows automatically, and the long note above the preview is gone.
+- Clicking any info box (i) shows its explanation right away instead of waiting for the hover, and clicking again closes it. The info icons in the AI chat drawing settings now use the same info box.
+
+### Background removal in Pixelate
+- **Quick settings** in **Pixelate AI image** has a **Remove background** checkbox, the same setting as the remove-background button under the source.
+- The automatic background color groups similar border colors and picks the largest group, so a noisy background is still one color.
+- Dots left just outside the outline by video or GIF compression, slightly off the background color, are removed too.
+
+### Movement test on tilemaps with terrain
+- The **Map** picker in the Movement test (F5) now works in both Top-down and Platformer and lists the tilemap layers of every open tab. Under it, check the **Terrain floors** (several allowed, hidden floors too) whose tiles become solid walls and ground. They start picked by floor name (top-down: Walls, Objects, Water; platformer: Ground, in Korean or English names) and each mode remembers its own choice.
+- The character stays the tab that was open when you pressed F5, even when you switch to the map tab. Pick another open tab under **Character**.
+- **Show colliders** (with an info box) draws the character collider and, with a map, the terrain and ladder cells.
+- Top-down collides with a box around the feet and slides along walls. Platformer stands on the terrain and starts on the ground nearest the map center.
+
+### Movement test: ladders and wall climbing
+- In Platformer, **Ladder floors** turn their tiles into ladders: W/↑ grabs and climbs, S/↓ climbs down, letting go hangs still, and you can stand on top and climb back down. The practice room without a map has a ladder too.
+- **Allow wall climbing** lets you cling to walls by pushing toward them, climb and hang, drop by pushing away, kick off with Space, and pull up over the top. **Climb speed** sets the speed on ladders and walls, and climb/hang/wall_climb/wall_hang animations are picked when they exist.
+
+### Videos and animations in Pixelate
+- **Pixelate AI image** no longer shrinks some frames of a GIF or other animation and leaves extra margins, which happened because the cell size was estimated separately for each frame. Source frames are now split exactly as they are, and every frame uses the same cell size.
+- **Pixelate AI image** also accepts videos such as MP4 (Browse, drag and drop, or right-click in the file list). As with opening, you choose the range and frame rate, then each frame is split out (needs ffmpeg).
+
+### Fixes
+- Korean (and other IME) input works again in windows that focus a text field as they open, such as the small name prompts (Duplicate part skin and so on). The input method is reattached to the window's text field when the window becomes active.
+- In the Movement test, sprites flipped to face the other way no longer vanish when the pivot is far from the drawing. The character now flips in place and the pivot mark moves instead.
+- Adding a tileset to a tilemap layer (for example the top-down village on a sandbox layer) no longer squeezes its floors into the first tileset's floors, which made a flower erase the grass under it and mixed up walls, objects and decorations. Terrain (water, sand, dirt, grass, paving) goes into the first tileset's **Ground** floor while keeping its own drawing order, floors with the same name such as Decor are shared, and only the other floors (walls, objects, overhead) are added. Added floors stay out of the floor list while empty. Maps saved before are moved to the right floors when opened (cells already overwritten cannot be restored).
+- Copying the last frame with the copy icon at the end of the timeline no longer extends a tag that ends at the last frame. The new frame goes outside the tag, the same as adding an empty frame.
+
 ## v1.14.130 (2026-11-15)
 
 ### Unity prefab and animation export

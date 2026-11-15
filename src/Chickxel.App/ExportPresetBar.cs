@@ -13,6 +13,7 @@ public sealed class ExportPresetBar : StackPanel
 {
     private readonly EditorContext _ctx;
     private readonly Window _owner;
+    private readonly Func<SpriteProject, ExportSettings> _sheet;
     private readonly TextBlock _status;
     private List<ExportPreset> _user = new();
     /// <summary>창을 열 때 프리셋 파일을 읽지 못한 이유(창이 열리면 한 번 알림).</summary>
@@ -21,10 +22,12 @@ public sealed class ExportPresetBar : StackPanel
     /// <summary>사용자 프리셋 파일 경로(설정 파일과 같은 폴더).</summary>
     public static string FilePath => Path.Combine(Path.GetDirectoryName(AppSettings.FilePath)!, ExportPresets.FileName);
 
-    public ExportPresetBar(EditorContext ctx, Window owner)
+    /// <param name="sheet">프리셋을 적용·저장할 시트 설정(내보내기 창에서 고친 목록 줄).</param>
+    public ExportPresetBar(EditorContext ctx, Window owner, Func<SpriteProject, ExportSettings> sheet)
     {
         _ctx = ctx;
         _owner = owner;
+        _sheet = sheet;
         Spacing = 2;
         var save = Ui.Button(UiStrings.S_ExportPresetBar_ExportPresetBar_9E8DD13E00, (_, _) => Dispatcher.UIThread.Post(SaveCurrent))
             .Tip(UiStrings.S_ExportPresetBar_ExportPresetBar_72F5D68487);
@@ -82,9 +85,15 @@ public sealed class ExportPresetBar : StackPanel
         string output = p.ExportFrames && p.ExportParts ? UiStrings.S_ExportPresetBar_Describe_70797FAAFD : p.ExportParts ? UiStrings.S_ExportPresetBar_Describe_D33CCA9022 : UiStrings.S_ExportPresetBar_Describe_CFA916E467;
         var parts = new List<string> { output, p.Sheet.Layout == SheetLayout.Packed ? UiStrings.S_ExportPresetBar_Describe_447C8E9BD3 : UiStrings.S_ExportPresetBar_Describe_12A18F746C, p.Sheet.Skins == SkinSource.Selected ? UiStrings.S_ExportPresetBar_Describe_DB36FF4EB4 : UiStrings.S_ExportPresetBar_Describe_3967EC3179 };
         if (p.Sheet.SplitSkins) parts.Add(UiStrings.S_ExportPresetBar_Describe_4D11265826);
-        if (p.WriteSpriteLibrary) parts.Add("Sprite Library");
-        if (p.WritePrefab && p.WriteMeta != false) parts.Add(UiStrings.Export_UnityPrefab);
-        if (p.WriteAnimations && p.WriteMeta != false) parts.Add(UiStrings.Export_UnityAnimations);
+        var engine = p.Engine ?? (p.WriteMeta == true ? ExportEngine.Unity : null);
+        if (engine is { } e && e != ExportEngine.None) parts.Add(SheetExportPages.EngineSuffix(e).TrimStart(' ', '+'));
+        if (engine == ExportEngine.Unity)
+        {
+            if (p.WriteSpriteLibrary) parts.Add("Sprite Library");
+            if (p.WritePrefab) parts.Add(UiStrings.Export_UnityPrefab);
+            if (p.WriteAnimations) parts.Add(UiStrings.Export_UnityAnimations);
+        }
+        if (engine == ExportEngine.Godot && p.GodotScene) parts.Add(UiStrings.Export_GodotScene);
         if (p.PartsSheet is not null) parts.Add(UiStrings.S_ExportPresetBar_Describe_01183ED0E2);
         parts.Add(p.ImageFormat.ToString().ToUpperInvariant());
         return string.Join(" · ", parts);
@@ -116,7 +125,7 @@ public sealed class ExportPresetBar : StackPanel
     {
         if (_ctx.Project is not { } p) return;
         string displayName = DisplayName(preset);
-        _ctx.Structural(() => p.Edit(string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_ExportPresetBar_Apply_48C0CBCB6F, displayName), ProjectChange.Settings, () => preset.ApplyTo(p.Export)));
+        _ctx.Structural(() => p.Edit(string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_ExportPresetBar_Apply_48C0CBCB6F, displayName), ProjectChange.Settings, () => preset.ApplyTo(_sheet(p))));
         _status.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_ExportPresetBar_Apply_4F08B4EC31, displayName);
     }
 
@@ -133,7 +142,7 @@ public sealed class ExportPresetBar : StackPanel
             Ui.Warn(_owner, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ExportPresetBar_SaveCurrent_34724D1873,name), UiStrings.S_ExportPresetBar_SaveCurrent_41CDF33021);
             return;
         }
-        var preset = ExportPreset.Capture(p.Export, name);
+        var preset = ExportPreset.Capture(_sheet(p), name);
         int at = _user.FindIndex(x => x.Name == name);
         if (at >= 0)
         {
@@ -205,7 +214,7 @@ public sealed class ExportPresetBar : StackPanel
             return;
         int at = _user.IndexOf(preset);
         if (at < 0) return;
-        _user[at] = ExportPreset.Capture(p.Export, preset.Name);
+        _user[at] = ExportPreset.Capture(_sheet(p), preset.Name);
         if (Persist()) _status.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ExportPresetBar_Overwrite_97D7EA03EC,preset.Name);
     }
 

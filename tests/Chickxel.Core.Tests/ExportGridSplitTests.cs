@@ -256,7 +256,7 @@ public class ExportGridSplitTests
         using var dir = new TempDir();
         var path = dir.File("hero.chickxel");
         var p = Rig();
-        p.Export.WriteMeta = true;
+        p.Export.Engine = ExportEngine.Unity;
         p.Export.Common.SplitTags = true;
         p.Export.Common.SplitParts = true;
         PartsOnly(p, o => o.SplitTags = false); // 부위 아틀라스는 부위마다만
@@ -302,7 +302,7 @@ public class ExportGridSplitTests
         using var dir = new TempDir();
         var path = dir.File("hero.chickxel");
         var p = Rig();
-        p.Export.WriteMeta = true;
+        p.Export.Engine = ExportEngine.Unity;
         p.Export.Common.Grid = SheetGrid.Columns;
         p.Export.Common.GridCount = 10; // 프레임 시트 한 줄
         var head = p.Layers.Single(l => l.Name == "Head");
@@ -355,7 +355,7 @@ public class ExportGridSplitTests
         var p = Frames(1, 4, 3);
         p.Sprite.Mode = SpriteMode.Single;
         p.Sprite.Border = new SpriteBorder(1, 1, 1, 1);
-        p.Export.WriteMeta = true;
+        p.Export.Engine = ExportEngine.Unity;
         p.Export.Common.Scale = 2;
         var file = Assert.Single(ProjectIO.SaveWithExport(p, dir.File("one.chickxel")).Export!.Frames);
         Assert.Equal(new Size(8, 6), PngIO.Load(file.ImagePath).Size);
@@ -381,7 +381,7 @@ public class ExportGridSplitTests
         using var dir = new TempDir();
         var path = dir.File("hero.chickxel");
         var p = Rig();
-        p.Export.WriteMeta = true;
+        p.Export.Engine = ExportEngine.Unity;
         p.Export.Common.SplitTags = true;
         PartsOnly(p, o => o.SplitTags = false);
         ProjectIO.SaveWithExport(p, path);

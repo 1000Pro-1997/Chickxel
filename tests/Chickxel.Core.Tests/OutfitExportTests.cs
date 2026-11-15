@@ -231,6 +231,7 @@ public class OutfitExportTests
         var path = dir.File("hero.chickxel");
         var (p, body, armor, _, _, zombie, iron) = Rig();
         p.Export.WriteSpriteLibrary = true;
+        p.Export.Engine = ExportEngine.Unity;
         var o = p.Export.Common;
         o.Skins = SkinSource.Selected;
         o.ExcludedSkins = [zombie, armor.BaseSkin!];

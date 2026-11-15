@@ -29,7 +29,7 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
     [
         "idle_down", "idle_up", "idle_left", "idle_right",
         "walk_down", "walk_up", "walk_left", "walk_right",
-        "idle", "run", "jump", "fall",
+        "idle", "run", "jump", "fall", "climb", "hang", "wall_climb", "wall_hang",
     ];
 
     private readonly EditorContext _ctx;
@@ -448,7 +448,7 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
 
     /// <summary>
     /// 마지막 프레임 뒤에 프레임을 <paramref name="count"/>개 붙인다(실행취소 한 단계). <paramref name="copy"/>면 그때그때의 마지막 프레임을 그림까지 복사한다
-    /// (한 번씩 누른 것과 같음 — 링크된 셀은 링크에 들어감). 마지막으로 붙인 프레임의 <paramref name="layer"/>를 고른다.
+    /// (한 번씩 누른 것과 같음 — 링크된 셀은 링크에 들어감). 붙인 프레임은 태그에 들어가지 않는다. 마지막으로 붙인 프레임의 <paramref name="layer"/>를 고른다.
     /// </summary>
     private void AppendFrames(bool copy, int count, int layer)
     {
@@ -459,7 +459,7 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
         {
             for (int k = 0; k < count; k++)
             {
-                if (copy) p.DuplicateFrame(p.Frames.Count - 1);
+                if (copy) p.DuplicateFrame(p.Frames.Count - 1, extendTags: false); // 끝에 붙인 프레임은 태그 밖
                 else p.AddFrame(p.Frames.Count);
             }
         }));

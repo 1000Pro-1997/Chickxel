@@ -236,17 +236,8 @@ public sealed partial class ChatWindow
         return row;
     }
 
-    /// <summary>설명 풍선을 띄우는 흐린 정보 아이콘(Lucide info).</summary>
-    private static Border InfoIcon(string tip) => new Border
-    {
-        Width = 18,
-        Height = 18,
-        Margin = new Thickness(4, 0, 0, 0),
-        VerticalAlignment = VerticalAlignment.Center,
-        Cursor = new Cursor(StandardCursorType.Help),
-        Background = Brushes.Transparent,
-        Child = new IconView(VectorIcon.Info, AppTheme.DimTextBrush, 2) { Width = 14, Height = 14 },
-    }.Tip(tip).HelpAt("ai-generate", anchor: "Hover over an option");
+    /// <summary>설명 풍선을 띄우는 정보박스(<see cref="InfoBadge"/>).</summary>
+    private static InfoBadge InfoIcon(string tip) => Ui.InfoBadge(tip).HelpAt("ai-generate", anchor: "Hover over an option");
 
     /// <summary>경고 풍선을 띄우는 빨간 경고 아이콘(Lucide circle-alert).</summary>
     private static Border AlertIcon(string tip) => new Border

@@ -11,7 +11,8 @@ namespace Chickxel.App;
 /// 파일 목록 우클릭 "상세 정보 보기…": 파일·폴더 하나의 이름·위치·종류·파일 크기·만든 날짜·수정한 날짜(읽기 전용, 닫기 단추만).
 /// 그 아래 종류별 정보 — 그림 = 픽셀 크기·프레임 수(움직이는 그림), 영상·AVIF·HEIC = ffmpeg로 읽은 픽셀 크기·길이·초당 프레임,
 /// <c>.chickxel</c> = 캔버스 크기·프레임·레이어·부위 수, 폴더 = 바로 안의 파일·폴더 수와 파일 크기 합 — 는 창을 띄운 뒤 백그라운드에서 읽어 채운다.
-/// 읽지 못한 것은 "읽을 수 없음"으로 두고 나머지는 보인다.
+/// 읽지 못한 것은 "읽을 수 없음"으로 두고 나머지는 보인다. 프로젝트는 그 아래 내보내기 칸(<see cref="FileInfoExports"/> — 결과마다 저장 때 내보내기 체크,
+/// 결과 파일 위치 보기·휴지통, 내보내기 설정 단추)이 붙는다(<paramref name="host"/>가 있을 때).
 /// </summary>
 public sealed class FileInfoDialog : DialogBase
 {
@@ -19,7 +20,9 @@ public sealed class FileInfoDialog : DialogBase
     private const string LabelGroup = "FileInfoLabel";
     private readonly CancellationTokenSource _cts = new();
 
-    public FileInfoDialog(string path) : base(UiStrings.FileInfo_Title)
+    private readonly FileInfoExports? _exports;
+
+    public FileInfoDialog(string path, FileInfoHost? host = null) : base(UiStrings.FileInfo_Title)
     {
         // 대상 도움말(F1): 창 = "파일 브라우저" 쪽 우클릭 메뉴 표의 상세 정보 보기 줄
         this.HelpAt("screen-file-browser", anchor: "Details");
@@ -56,6 +59,11 @@ public sealed class FileInfoDialog : DialogBase
             };
         if (firstLabel is null) return;
         AddRow(more, firstLabel, UiStrings.FileInfo_Loading);
+        if (kind == MediaKind.Project && host is not null)
+        {
+            _exports = new FileInfoExports(path, host);
+            Body.Children.Add(_exports.View);
+        }
         Closed += (_, _) => _cts.Cancel();
         _ = FillDetailsAsync(more, path, folder, kind, _cts.Token);
     }
@@ -63,9 +71,10 @@ public sealed class FileInfoDialog : DialogBase
     private async Task FillDetailsAsync(Grid more, string path, bool folder, MediaKind kind, CancellationToken token)
     {
         List<(string Label, string Value)> rows;
+        Chickxel.Core.Model.SpriteProject? project = null;
         try
         {
-            rows = await Task.Run(() => ReadDetails(path, folder, kind, token), token);
+            rows = await Task.Run(() => kind == MediaKind.Project && !folder ? ReadProject(path, out project) : ReadDetails(path, folder, kind, token), token);
         }
         catch (OperationCanceledException)
         {
@@ -74,13 +83,14 @@ public sealed class FileInfoDialog : DialogBase
         more.Children.Clear();
         more.RowDefinitions.Clear();
         foreach (var (label, value) in rows) AddRow(more, label, value);
+        if (project is not null) _exports?.Show(project);
     }
 
     /// <summary>종류별 정보(백그라운드). 읽지 못하면 그 줄 값이 "읽을 수 없음".</summary>
     private static List<(string Label, string Value)> ReadDetails(string path, bool folder, MediaKind kind, CancellationToken token)
     {
         if (folder) return ReadFolder(path, token);
-        if (kind == MediaKind.Project) return ReadProject(path);
+        if (kind == MediaKind.Project) return ReadProject(path, out _);
         // ffmpeg가 있어야 푸는 그림(AVIF·HEIC)은 직접 읽기가 못 세면 영상처럼 ffmpeg로 읽는다(썸네일과 같은 길).
         if (kind == MediaKind.Video || (MediaFormats.NeedsFfmpeg(path) && ImageUtil.CountFrames(path) == 0)) return ReadVideo(path, token);
         return ReadImage(path);
@@ -115,11 +125,13 @@ public sealed class FileInfoDialog : DialogBase
     }
 
     /// <summary>프로젝트를 읽어(파일 목록 썸네일과 같은 <see cref="ProjectIO"/> 읽기 — 백그라운드라 화면은 멈추지 않음) 크기·프레임·레이어·부위 수.</summary>
-    private static List<(string, string)> ReadProject(string path)
+    private static List<(string, string)> ReadProject(string path, out Chickxel.Core.Model.SpriteProject? project)
     {
+        project = null;
         try
         {
             var p = ProjectIO.Load(path);
+            project = p;
             int parts = p.Layers.Count(l => l.IsPart);
             var rows = new List<(string, string)>
             {

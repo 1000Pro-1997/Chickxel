@@ -350,6 +350,8 @@ internal sealed class HistorySnapshotDto
     public ProjectIO.ExportDto Export { get; set; } = new();
     public HistorySheetRefsDto? CommonRefs { get; set; }
     public HistorySheetRefsDto? PartsRefs { get; set; }
+    /// <summary>내보내기 목록의 시트 줄마다(차례대로) 시트의 스킨·착장·레이어 목록. 없으면 시트 줄 없음.</summary>
+    public List<HistoryEntryRefsDto>? EntryRefs { get; set; }
     /// <summary>타일셋: [이름표, 조각 해시(타일셋 파일 내용)] (없으면 생략, 형식 5부터).</summary>
     public List<string[]>? Tilesets { get; set; }
 }
@@ -430,6 +432,13 @@ internal sealed class HistoryOutfitDto
     public List<int[]> Slots { get; set; } = [];
     /// <summary>[부위, 스킨].</summary>
     public List<int[]> Parts { get; set; } = [];
+}
+
+/// <summary>내보내기 목록의 시트 줄 하나의 시트 설정 참조(공통, 부위 아틀라스 따로).</summary>
+internal sealed class HistoryEntryRefsDto
+{
+    public HistorySheetRefsDto? Common { get; set; }
+    public HistorySheetRefsDto? Parts { get; set; }
 }
 
 internal sealed class HistorySheetRefsDto

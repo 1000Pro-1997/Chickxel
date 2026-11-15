@@ -445,6 +445,7 @@ public class SkinTests
         var (p, _, _) = Rig();
         p.Export.ExportFrames = false;
         p.Export.WriteSpriteLibrary = true;
+        p.Export.Engine = ExportEngine.Unity;
         var result = ProjectIO.SaveWithExport(p, path).Export!;
 
         var atlas = Assert.Single(result.Parts);
@@ -523,6 +524,7 @@ public class SkinTests
         Paint(p, plate, 1, 0, 0, Green);
         p.Export.ExportParts = true;
         p.Export.WriteSpriteLibrary = true;
+        p.Export.Engine = ExportEngine.Unity;
         p.Export.Common.Naming = SpriteNaming.ByTag;
         p.Export.Common.Skins = SkinSource.Selected;
         var libs = ProjectIO.SaveWithExport(p, dir.File("a.chickxel")).Export!.Libraries;

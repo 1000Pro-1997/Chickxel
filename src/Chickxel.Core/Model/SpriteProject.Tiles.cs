@@ -214,24 +214,69 @@ public sealed partial class SpriteProject
         Edit(DomainStrings.Tile_RemoveLayerTileset, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             var data = layer.Tiles!;
+            var oldSources = TilesetSources(layer);
             var keys = data.TilesetKeys.RemoveAt(slot);
-            Func<int, int> floorOf = f => f;
-            if (slot == 0 && _tilesets.TryGetValue(data.TilesetKeys[0], out var oldPrimary) && _tilesets.TryGetValue(keys[0], out var newPrimary))
-                floorOf = f => TileSources.MapFloor(oldPrimary, newPrimary, f);
+            // 층 옮기기: 다른 타일셋에서 더한 층(자리 오프셋 + 원래 Id)은 새 자리의 층으로, 첫 타일셋을 뺐으면 그 층은 새 첫 타일셋의 같은 이름(없으면 같은 차례) 층으로.
+            // 뺀 타일셋이 더한 층은 null(그 칸은 어차피 지워짐).
+            var newPrimary = slot == 0 ? (oldSources.Count > 1 ? oldSources[1] : null) : oldSources.Count > 0 ? oldSources[0] : null;
+            int? FloorOf(int f)
+            {
+                int k = TileSources.Slot(f);
+                if (k == 0)
+                    return slot == 0 && oldSources.Count > 0 && newPrimary is not null ? TileSources.MapFloor(oldSources[0], newPrimary, f) : f;
+                if (k == slot || k >= oldSources.Count || newPrimary is null) return null;
+                int newSlot = k > slot ? k - 1 : k;
+                return TileSources.CombinedFloor(newSlot, oldSources[k], newPrimary, TileSources.Local(f));
+            }
             static int Shift(int id, int slot) => TileSources.Slot(id) > slot ? id - TileSources.Stride : id;
             var map = TileMap.FromCells(data.Map.All
-                .Where(p => TileSources.Slot(p.Cell) != slot)
-                .Select(p => new PlacedTile(floorOf(p.Floor), p.At, p.Cell with { Tile = Shift(p.Cell.Tile, slot), AutoTile = Shift(p.Cell.AutoTile, slot) })));
+                .Where(p => TileSources.Slot(p.Cell) != slot && FloorOf(p.Floor) is not null)
+                .Select(p => new PlacedTile(FloorOf(p.Floor)!.Value, p.At, p.Cell with { Tile = Shift(p.Cell.Tile, slot), AutoTile = Shift(p.Cell.AutoTile, slot) })));
             layer.Tiles = data with
             {
                 TilesetKeys = keys,
                 Map = map,
-                HiddenFloors = [.. data.HiddenFloors.Select(floorOf).Distinct()],
-                LockedFloors = [.. data.LockedFloors.Select(floorOf).Distinct()],
+                HiddenFloors = [.. data.HiddenFloors.Select(FloorOf).OfType<int>().Distinct()],
+                LockedFloors = [.. data.LockedFloors.Select(FloorOf).OfType<int>().Distinct()],
             };
             if (TilesetOf(layer) is { AutoTiles.Length: > 0 } combined) layer.Tiles = layer.Tiles with { Map = AutoTiler.RefreshAll(combined, map) };
         });
         return true;
+    }
+
+    /// <summary>
+    /// 예전 파일 읽기(실행취소 없음): 여러 타일셋을 쓰는 타일맵 레이어에서 둘째 뒤 타일셋의 칸이 예전 합치기 규칙으로 첫 타일셋의 층에 뭉쳐 들어가 있으면
+    /// (<see cref="TileSources.MapFloor"/>) 지금 층(<see cref="TileSources.CombinedFloor"/> — 없던 층은 더한 층)으로 옮긴다. 옮길 자리에 이미 칸이 있으면 그대로 둔다.
+    /// 옮긴 칸이 있으면 자동 타일을 다시 고른다. 옮긴 칸 수.
+    /// </summary>
+    internal int UpgradeCombinedTileFloors()
+    {
+        int moved = 0;
+        foreach (var layer in _layers)
+        {
+            if (layer.Tiles is not { } data || data.TilesetKeys.Length < 2) continue;
+            var sources = TilesetSources(layer);
+            if (sources.Count < 2 || TilesetOf(layer) is not { } combined) continue;
+            var primary = sources[0];
+            var map = data.Map;
+            foreach (var p in data.Map.All)
+            {
+                int slot = TileSources.Slot(p.Cell);
+                if (slot < 1 || slot >= sources.Count || TileSources.Slot(p.Floor) != 0) continue;
+                var source = sources[slot];
+                int? local = p.Cell.AutoTile != 0
+                    ? source.FindAutoTile(TileSources.Local(p.Cell.AutoTile))?.Floor
+                    : source.Find(TileSources.Local(p.Cell.Tile))?.Floor;
+                if (local is not { } floor) continue;
+                int now = TileSources.CombinedFloor(slot, source, primary, floor);
+                if (now == p.Floor || p.Floor != TileSources.MapFloor(source, primary, floor) || map.Get(now, p.At) is not null) continue;
+                map = map.With(p.Floor, p.At, null).With(now, p.At, p.Cell);
+                moved++;
+            }
+            if (ReferenceEquals(map, data.Map)) continue;
+            layer.Tiles = data with { Map = combined.AutoTiles.Length > 0 ? AutoTiler.RefreshAll(combined, map) : map };
+        }
+        return moved;
     }
 
     // ───────────── 타일 스트로크 ─────────────

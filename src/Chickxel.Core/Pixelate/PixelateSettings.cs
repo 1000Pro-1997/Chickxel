@@ -184,6 +184,13 @@ public sealed record FrameSettings
     public FrameAlign Align { get; init; } = FrameAlign.BottomCenter;
     /// <summary>모든 프레임을 같은 캔버스 크기(가장 큰 프레임 + 여백)로.</summary>
     public bool CommonCanvas { get; init; } = true;
+    /// <summary>
+    /// 원본이 같은 크기 프레임들(움직이는 그림·영상·레이어의 프레임)을 이은 격자일 때 그 프레임 수(0 = 아님). 그러면 격자(또는 수동 자리)의 앞 이만큼 칸을
+    /// 그림이 비어 있어도 칸 그대로(내용에 맞춰 자르지 않고) 한 프레임씩 쓰고, 자동 칸 크기는 모든 프레임에 하나(프레임마다 어림한 크기의 중앙값)를 쓴다 —
+    /// 프레임마다 크기·자리가 흔들리지 않게. 넣은 원본에서 정해지므로 프리셋·설정 파일에는 쓰지 않는다.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public int SourceFrames { get; init; }
 }
 
 public sealed record PixelGridSettings

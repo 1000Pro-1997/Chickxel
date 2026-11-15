@@ -621,6 +621,13 @@ public static class Pixelator
         }
         else
         {
+            // 원본이 같은 크기 프레임들이면 자동 칸 크기를 모든 프레임에 하나로(프레임마다 어림한 크기의 중앙값) — 프레임마다 결과 크기가 흔들리지 않게
+            if (estimate is null && forced <= 0 && s.Grid.Mode == GridMode.Auto && s.Frames.SourceFrames > 0)
+            {
+                var all = Enumerable.Range(0, nf).Select(f => src.EstimatedScale(f, s.Grid.Jitter, ScaleSourceFor(s), s.Palette.OutlineDarkness))
+                    .Where(e => e.Scale > 0).OrderBy(e => e.Scale).ToList();
+                if (all.Count > 0) estimate = all[all.Count / 2];
+            }
             for (int f = 0; f < nf; f++)
             {
                 var b = split.Frames[f].Bounds;

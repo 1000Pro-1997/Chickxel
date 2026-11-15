@@ -141,6 +141,16 @@ public static partial class ProjectIO
         export.Folder = null;
         export.FileName = NameOnly(export.FileName);
         export.PartsFileName = NameOnly(export.PartsFileName);
+        foreach (var entry in export.Entries ?? [])
+        {
+            if (entry.Sheet is { } sheet)
+            {
+                sheet.Folder = null;
+                sheet.FileName = NameOnly(sheet.FileName);
+                sheet.PartsFileName = NameOnly(sheet.PartsFileName);
+            }
+            if (entry.Animation is { } a) a.Path = a.Name;
+        }
     }
 
     /// <summary>경로처럼 적은 이름의 마지막 조각(<c>/</c>·<c>\</c>·<c>:</c> 뒤). 남는 게 없으면 null(기본 이름).</summary>
@@ -161,6 +171,16 @@ public static partial class ProjectIO
         export.Folder = LocalPathCipher.ProtectCurrent(export.Folder);
         export.FileName = LocalPathCipher.ProtectCurrent(export.FileName);
         export.PartsFileName = LocalPathCipher.ProtectCurrent(export.PartsFileName);
+        foreach (var entry in export.Entries ?? [])
+        {
+            if (entry.Sheet is { } sheet)
+            {
+                sheet.Folder = LocalPathCipher.ProtectCurrent(sheet.Folder);
+                sheet.FileName = LocalPathCipher.ProtectCurrent(sheet.FileName);
+                sheet.PartsFileName = LocalPathCipher.ProtectCurrent(sheet.PartsFileName);
+            }
+            if (entry.Animation is { } a) a.Path = LocalPathCipher.ProtectCurrent(a.Path);
+        }
     }
 
     /// <param name="projectPath">저장할 프로젝트 전체 경로(내보내기 기록을 이 파일 기준 상대 경로로 씀). null이면 기록을 쓰지 않는다.</param>
@@ -309,11 +329,11 @@ public static partial class ProjectIO
             project.ExportedFiles = null;
         ExportPlan? plan = null;
         Exception? planError = null;
-        if (project.Export.ExportOnSave)
+        if (project.Export.ExportOnSave || project.Export.Entries.Any(a => a.OnSave))
         {
             try
             {
-                plan = ProjectExport.Plan(project, full);
+                plan = ProjectExport.Plan(project, full, sheets: project.Export.ExportOnSave);
                 project.ExportedFiles = plan.Record;
             }
             catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or IOException or NotSupportedException)
@@ -409,9 +429,22 @@ public static partial class ProjectIO
             paths.AddRange(parts);
             paths.AddRange(ProjectExport.GetLibraryPaths(project, fullProjectPath, assumePartContent: true));
             paths.AddRange(ProjectExport.GetUnityAssetPaths(project, fullProjectPath, assumePartContent: true));
+            paths.AddRange(ProjectExport.GetEngineDataPaths(project, fullProjectPath));
+            paths.AddRange(project.Export.Animations.SelectMany(a => AnimationExportWriter.OutputPaths(project, a, fullProjectPath)));
+            foreach (var sheet in project.Export.Entries.Where(e => e.Sheet is not null).Select(e => e.Sheet!))
+            {
+                using var _ = ProjectExport.UseSheet(sheet);
+                var (sf, sp) = ProjectExport.GetOutputPaths(project, fullProjectPath, assumePartContent: true);
+                paths.AddRange(sf);
+                paths.AddRange(sp);
+                paths.AddRange(ProjectExport.GetLibraryPaths(project, fullProjectPath, assumePartContent: true));
+                paths.AddRange(ProjectExport.GetUnityAssetPaths(project, fullProjectPath, assumePartContent: true));
+                paths.AddRange(ProjectExport.GetEngineDataPaths(project, fullProjectPath));
+            }
         }
         var outputs = Enum.GetValues<ExportImageFormat>().Select(f => f.Extension())
-            .Append(ProjectExport.SpriteLibraryExtension).Append(ProjectExport.PrefabExtension).Append(ProjectExport.ClipExtension).Append(ProjectExport.ControllerExtension).ToArray();
+            .Append(ProjectExport.SpriteLibraryExtension).Append(".gif").Append(ProjectExport.PrefabExtension).Append(ProjectExport.ClipExtension).Append(ProjectExport.ControllerExtension)
+            .Append(ProjectExport.GodotResourceExtension).Append(ProjectExport.GodotSceneExtension).Append(ProjectExport.JsonDataExtension).ToArray();
         foreach (var file in ResolveRecord(dto.Exported, fullProjectPath) ?? [])
             if (outputs.Contains(Path.GetExtension(file), StringComparer.OrdinalIgnoreCase) && !paths.Contains(file, StringComparer.OrdinalIgnoreCase))
                 paths.Add(file);
@@ -623,6 +656,21 @@ public static partial class ProjectIO
         }
     }
 
+    /// <summary>
+    /// 엔진이 없고 Unity .meta가 "자동"이던 예전 파일: 그때처럼 Unity 파일(Sprite Library·프리팹·애니메이션)을 쓰거나 Unity 프로젝트 Assets 안이거나
+    /// 시트 .meta가 이미 있으면 Unity, 아니면 없음.
+    /// </summary>
+    private static void LegacyAutoEngine(SpriteProject project, ProjectDto dto, string fullPath)
+    {
+        if (dto.Export is not { Engine: null, WriteMeta: null }) return;
+        var x = project.Export;
+        var image = ProjectExport.GetExportImagePath(x, fullPath);
+        var parts = ProjectExport.GetPartsImagePath(x, fullPath);
+        if (x.WriteSpriteLibrary || x.WritePrefab || x.WriteAnimations || UnityProjectLocator.IsInUnityAssets(image)
+            || File.Exists(UnityMeta.GetMetaPath(image)) || File.Exists(UnityMeta.GetMetaPath(parts)))
+            x.Engine = ExportEngine.Unity;
+    }
+
     private static void MoveWithoutReplacing(string source, string destination)
     {
         if (string.Equals(source, destination, StringComparison.Ordinal)) return;
@@ -684,8 +732,11 @@ public static partial class ProjectIO
             if (dto.Kind == V1Kind.Atlas) return ConvertV1Atlas(zip, dto, warnings, baseName ?? "sprite");
 
             var (project, fileLayers) = FromDto(dto, warnings);
+            if (fullPath is not null) LegacyAutoEngine(project, dto, fullPath);
             project.ExportedFiles = ResolveRecord(dto.Exported, fullPath);
             ReadTiles(zip, dto, fileLayers, project, fullPath, warnings);
+            // 예전 합치기로 첫 타일셋 층에 뭉친 다른 타일셋의 칸을 제 층으로(읽고 바로 — 실행취소 기록 없음)
+            project.UpgradeCombinedTileFloors();
             // 링크된 셀은 같이 쓰는 앞 프레임 셀 그림을 쓰므로 그 셀의 PNG(예전 판이 읽도록 따로 든 것)는 풀지 않는다
             var links = ReadCelLinks(dto.CelLinks, fileLayers, project.Frames.Count, warnings);
             var linked = links.Select(l => (l.Layer, l.Frame, l.SkinIndex)).ToHashSet();
@@ -1316,10 +1367,41 @@ public static partial class ProjectIO
         x.ImageFormat = Enum.IsDefined(e.ImageFormat) ? e.ImageFormat : ExportImageFormat.Png;
         x.JpegQuality = e.JpegQuality;
         x.SingleFrameIndex = e.SingleFrame;
-        x.WriteMeta = e.WriteMeta;
+        // 엔진이 없던 파일: Unity .meta 켬 = Unity, 끔·자동 = 없음(자동은 경로를 아는 Load가 다시 정함 — LegacyAutoEngine)
+        x.Engine = e.Engine is { } engine && Enum.IsDefined(engine) ? engine : e.WriteMeta == true ? ExportEngine.Unity : ExportEngine.None;
+        x.GodotScene = e.GodotScene == true;
         x.WriteSpriteLibrary = e.SpriteLibrary == true;
         x.WritePrefab = e.Prefab == true;
         x.WriteAnimations = e.Animations == true;
+        x.Entries.Clear();
+        foreach (var entry in e.Entries ?? [])
+        {
+            // 시트 줄은 건너뛰지 않는다(시트 설정은 줄 차례대로 따로 적용 — ApplySheets·편집 기록)
+            if (entry.Sheet is { } sheetDto)
+            {
+                var sheet = new ExportSettings();
+                ApplyExport(sheet, sheetDto);
+                sheet.Entries.Clear();
+                x.Entries.Add(ExportEntry.ForSheet(sheet));
+                continue;
+            }
+            if (entry.Animation is not { } a) continue;
+            var path = LocalPathCipher.UnprotectCurrent(a.Path);
+            // 다른 컴퓨터에서 저장해 풀지 못한 경로는 이름만(프로젝트 폴더에 둠)
+            if (string.IsNullOrWhiteSpace(path) || LocalPathCipher.IsProtected(path)) path = a.Name;
+            if (string.IsNullOrWhiteSpace(path) || !Enum.IsDefined(a.Format)) continue;
+            x.Entries.Add(ExportEntry.ForAnimation(new AnimationExport
+            {
+                Format = a.Format,
+                Path = path,
+                TagName = a.Tag,
+                Scale = a.Scale,
+                PlayCount = Math.Max(0, a.Plays),
+                Background = a.Background is { } bg && Color32.TryParseHex(bg, out var c) ? c : null,
+                Timing = new GifTiming { Mode = Enum.IsDefined(a.TimingMode) ? a.TimingMode : GifTimingMode.Original, Speed = a.Speed > 0 ? a.Speed : 1, Fps = a.Fps > 0 ? a.Fps : GifTiming.DefaultFps },
+                OnSave = a.OnSave,
+            }));
+        }
         x.KeepImportedRects = e.KeepImportedRects;
     }
 
@@ -1331,6 +1413,20 @@ public static partial class ProjectIO
     private static void ApplySheets(SpriteProject p, ExportDto e, List<Layer> fileLayers, ICollection<string>? warnings)
     {
         var x = p.Export;
+        // 목록의 시트 줄: 줄 차례대로(새 형식만 있음)
+        var sheetDtos = (e.Entries ?? []).Where(d => d.Sheet is not null).Select(d => d.Sheet!).ToList();
+        var sheets = x.Entries.Where(d => d.Sheet is not null).Select(d => d.Sheet!).ToList();
+        for (int i = 0; i < sheets.Count && i < sheetDtos.Count; i++)
+            if (sheetDtos[i].Sheet is { } entrySheet)
+            {
+                entrySheet.ApplyTo(sheets[i].Common, p, fileLayers);
+                if (sheetDtos[i].PartsSheet is { } eps)
+                {
+                    var o = new SheetOptions();
+                    eps.ApplyTo(o, p, fileLayers);
+                    sheets[i].PartsOverride = o;
+                }
+            }
         if (e.Sheet is { } sheet)
         {
             sheet.ApplyTo(x.Common, p, fileLayers);
@@ -1806,6 +1902,29 @@ public static partial class ProjectIO
         }
     }
 
+    /// <summary>내보내기 목록의 애니메이션 줄(<see cref="AnimationExport"/>). 경로는 이 설치의 열쇠로 암호화, 이름은 다른 컴퓨터에서 열 때 쓸 파일·폴더 이름.</summary>
+    /// <summary>내보내기 목록 한 줄: 이미지 시트(그 시트 설정, 안의 목록은 비움) 또는 애니메이션.</summary>
+    internal sealed class ExportEntryDto
+    {
+        public ExportDto? Sheet { get; set; }
+        public AnimationExportDto? Animation { get; set; }
+    }
+
+    internal sealed class AnimationExportDto
+    {
+        public AnimationExportFormat Format { get; set; }
+        public string? Path { get; set; }
+        public string? Name { get; set; }
+        public string? Tag { get; set; }
+        public int Scale { get; set; } = 1;
+        public int Plays { get; set; }
+        public string? Background { get; set; }
+        public GifTimingMode TimingMode { get; set; }
+        public double Speed { get; set; } = 1;
+        public int Fps { get; set; } = GifTiming.DefaultFps;
+        public bool OnSave { get; set; }
+    }
+
     internal sealed class ExportDto
     {
         public bool OnSave { get; set; } = true;
@@ -1817,13 +1936,20 @@ public static partial class ProjectIO
         public int JpegQuality { get; set; } = 90;
         public string? PartsFileName { get; set; }
         public int SingleFrame { get; set; }
+        /// <summary>예전 Unity .meta 설정(null = 자동). 새 파일은 <see cref="Engine"/>을 쓰고 이 값은 예전 버전이 읽도록 Unity면 true, 아니면 false.</summary>
         public bool? WriteMeta { get; set; }
+        /// <summary>게임 엔진(없으면 예전 파일 — <see cref="WriteMeta"/>로 정함).</summary>
+        public ExportEngine? Engine { get; set; }
+        /// <summary>Godot 씬(.tscn) 같이 쓰기(없으면 꺼짐).</summary>
+        public bool? GodotScene { get; set; }
         /// <summary>Sprite Library(.spriteLib) 같이 쓰기(없으면 꺼짐).</summary>
         public bool? SpriteLibrary { get; set; }
         /// <summary>Unity 프리팹 같이 쓰기(없으면 꺼짐).</summary>
         public bool? Prefab { get; set; }
         /// <summary>Unity 애니메이션 클립·Animator Controller 같이 쓰기(없으면 꺼짐).</summary>
         public bool? Animations { get; set; }
+        /// <summary>내보내기 목록의 나머지 줄(이미지 시트 또는 GIF·APNG·프레임마다 PNG). 없으면 없음.</summary>
+        public List<ExportEntryDto>? Entries { get; set; }
         public bool KeepImportedRects { get; set; } = true;
         /// <summary>두 결과가 같이 쓰는 시트 설정(없으면 예전 형식 — 아래 읽기 전용 값들에서 옮김).</summary>
         public SheetDto? Sheet { get; set; }
@@ -1867,10 +1993,28 @@ public static partial class ProjectIO
             ImageFormat = x.ImageFormat,
             JpegQuality = x.JpegQuality,
             SingleFrame = x.SingleFrameIndex,
-            WriteMeta = x.WriteMeta,
+            WriteMeta = x.Engine == ExportEngine.Unity,
+            Engine = x.Engine,
+            GodotScene = x.GodotScene ? true : null,
             SpriteLibrary = x.WriteSpriteLibrary ? true : null,
             Prefab = x.WritePrefab ? true : null,
             Animations = x.WriteAnimations ? true : null,
+            Entries = x.Entries.Count == 0 ? null : x.Entries.Select(entry => entry.Sheet is { } sheet
+                ? new ExportEntryDto { Sheet = From(sheet, p) }
+                : new ExportEntryDto { Animation = entry.Animation is not { } a ? null : new AnimationExportDto
+            {
+                Format = a.Format,
+                Path = a.Path,
+                Name = System.IO.Path.GetFileName(a.Path.TrimEnd('/', '\\')),
+                Tag = a.TagName,
+                Scale = a.Scale,
+                Plays = a.PlayCount,
+                Background = a.Background?.ToHex(),
+                TimingMode = a.Timing.Mode,
+                Speed = a.Timing.Speed,
+                Fps = a.Timing.Fps,
+                OnSave = a.OnSave,
+            } }).ToList(),
             KeepImportedRects = x.KeepImportedRects,
             Sheet = SheetDto.From(p, x.Common),
             PartsSheet = x.PartsOverride is { } po ? SheetDto.From(p, po) : null,

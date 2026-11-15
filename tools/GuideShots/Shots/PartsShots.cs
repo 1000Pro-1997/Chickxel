@@ -213,6 +213,13 @@ internal static class PartsShots
             w.Height = 1520;
             ShotKit.Pump(800);
             ScrubPaths(k, w);
+            // 형식 묶음(게임 엔진 등)이 길어 아래 묶음이 창 밖으로 밀리므로, 파일 묶음을 접고 공통 묶음이 칸 맨 위에 오게 스크롤한다.
+            SectionStarting(w, "Files").IsExpanded = false;
+            ShotKit.Pump(400);
+            var commonBox = SectionStarting(w, "Common");
+            var sv = commonBox.GetVisualAncestors().OfType<ScrollViewer>().First();
+            if (commonBox.TranslatePoint(default, sv) is { } at) sv.Offset = new Vector(sv.Offset.X, Math.Max(0, sv.Offset.Y + at.Y - 4));
+            ShotKit.Pump(500);
             var frames = SectionStarting(w, "Frame sheet");
             var parts = Section(w, UiStrings.S_UnityExportDialog_UnityExportDialog_B18F4A0368);
             var output = (Control)ShotKit.All<TextBlock>(w).First(t => t.Text == UiStrings.S_UnityExportDialog_BuildCommonBlock_FE8EEAD4AB && t.IsEffectivelyVisible).GetVisualParent()!;
@@ -404,7 +411,12 @@ internal static class PartsShots
     [Shot("parts-sprite-library")]
     public static void SpriteLibrary(ShotKit k)
     {
-        var main = Open(k, p => p.Edit("lib", ProjectChange.Settings, () => p.Export.WriteSpriteLibrary = true));
+        // Sprite Library 줄은 게임 엔진이 Unity일 때만 보인다.
+        var main = Open(k, p => p.Edit("lib", ProjectChange.Settings, () =>
+        {
+            p.Export.Engine = ExportEngine.Unity;
+            p.Export.WriteSpriteLibrary = true;
+        }));
         OpenSheetSettings(k, w =>
         {
             ShotKit.Pump(600);
@@ -436,7 +448,7 @@ internal static class PartsShots
             {
                 p.Export.ExportFrames = false;
                 p.Export.ExportParts = true;
-                p.Export.WriteMeta = true;
+                p.Export.Engine = ExportEngine.Unity;
                 p.Export.Folder = outDir;
                 p.Export.PartsFileName = "wolf_parts";
                 p.Export.Common.Naming = SpriteNaming.FrameNumber;
@@ -687,7 +699,6 @@ internal static class PartsShots
     /// <summary>파일 > 내보내기…를 이미지 형식(시트 설정이 보이는 배치)으로 연 뒤 <paramref name="withWindow"/>.</summary>
     private static void OpenSheetSettings(ShotKit k, Action<Window> withWindow)
     {
-        App.Settings.ExportFormat = ExportFormat.Image;
         k.Dialog(() => k.Command("파일/내보내기"), withWindow);
     }
 

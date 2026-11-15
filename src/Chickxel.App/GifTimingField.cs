@@ -37,10 +37,10 @@ public sealed class GifTimingField : StackPanel
         _mode.SelectionChanged += (_, _) =>
         {
             ShowValue();
-            Changed?.Invoke();
+            if (!_setting) Changed?.Invoke();
         };
-        _speed.ValueChanged += (_, _) => Changed?.Invoke();
-        _fps.ValueChanged += (_, _) => Changed?.Invoke();
+        _speed.ValueChanged += (_, _) => { if (!_setting) Changed?.Invoke(); };
+        _fps.ValueChanged += (_, _) => { if (!_setting) Changed?.Invoke(); };
         ShowValue();
     }
 
@@ -57,6 +57,19 @@ public sealed class GifTimingField : StackPanel
         _speed.IsVisible = _speedUnit.IsVisible = Mode == GifTimingMode.Speed;
         _fps.IsVisible = _fpsUnit.IsVisible = Mode == GifTimingMode.Fps;
     }
+
+    /// <summary>값을 넣는다(내보내기 목록의 줄을 고를 때). <see cref="Changed"/>는 부르지 않는다.</summary>
+    public void Set(GifTiming timing)
+    {
+        _setting = true;
+        _mode.SelectedIndex = Enum.IsDefined(timing.Mode) ? (int)timing.Mode : 0;
+        _speed.Value = (decimal)Math.Clamp(timing.Speed, GifTiming.MinSpeed, GifTiming.MaxSpeed);
+        _fps.Value = Math.Clamp(timing.Fps, GifTiming.MinFps, GifTiming.MaxFps);
+        _setting = false;
+        ShowValue();
+    }
+
+    private bool _setting;
 
     /// <summary>지금 값을 앱 설정에 적는다(다음에 여는 GIF 내보내기·갤러리에 올리기 창이 이어 씀).</summary>
     public void Save(AppSettings settings)

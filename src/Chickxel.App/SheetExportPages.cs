@@ -71,34 +71,45 @@ public sealed class SheetExportPages
         var overrideLine = Beside(Note(UiStrings.S_UnityExportDialog_UnityExportDialog_97F3AEFCEC),
             Ui.Button(UiStrings.S_UnityExportDialog_UnityExportDialog_777398C2AE, (_, _) => ShowAdvanced()).Tip(UiStrings.S_UnityExportDialog_UnityExportDialog_A76A76E0B6))
             .HelpAt(GuidePage, anchor: "Turning on Advanced > Per sheet");
-        _refresh.Add(p => overrideLine.IsVisible = p.Export.PartsOverride is not null);
+        _refresh.Add(p => overrideLine.IsVisible = X(p).PartsOverride is not null);
         _partsSection = BuildSection("② ", overrideLine);
-        var previewHelp = Beside(
-            Note(UiStrings.S_UnityExportDialog_UnityExportDialog_D06F53C998),
-            Ui.InfoBadge(UiStrings.S_UnityExportDialog_UnityExportDialog_434197E825 +
-                 UiStrings.S_UnityExportDialog_UnityExportDialog_68A441DB4C));
-        Preview = Ui.ScrollHost(Ui.Stack(previewHelp, _framesSection.Panel, _partsSection.Panel)).HelpAt(GuidePage, anchor: "The output preview lists each file");
+        Preview = Ui.ScrollHost(Ui.Stack(_framesSection.Panel, _partsSection.Panel)).HelpAt(GuidePage, anchor: "The output preview lists each file");
 
-        // ── 형식 묶음 안: Unity 체크 + JPG 품질 ──
-        var unity = Toggle(UiStrings.S_UnityExportDialog_BuildExportSections_60EBD042A1, p => p.Export.WriteMeta != false, (p, v) => p.Export.WriteMeta = v, UiStrings.Export_Unity)
-            .Tip(UiStrings.Export_UnityTip);
-        // Unity 체크 아래: 프리팹·애니메이션(Unity 파일을 쓸 때만 보임) + 만들어질 파일
-        var prefab = Toggle(UiStrings.Export_UnityPrefab, p => p.Export.WritePrefab, (p, v) => p.Export.WritePrefab = v, UiStrings.Export_UnityPrefab)
+        // ── 형식 묶음 안: 게임 엔진(없음 / Unity / Godot / JSON) — 고른 엔진의 옵션이 그 아래에 + JPG 품질 ──
+        var prefab = Toggle(UiStrings.Export_UnityPrefab, p => X(p).WritePrefab, (p, v) => X(p).WritePrefab = v, UiStrings.Export_UnityPrefab)
             .Tip(UiStrings.Export_UnityPrefabTip);
-        var animations = Toggle(UiStrings.Export_UnityAnimations, p => p.Export.WriteAnimations, (p, v) => p.Export.WriteAnimations = v, UiStrings.Export_UnityAnimations)
+        var animations = Toggle(UiStrings.Export_UnityAnimations, p => X(p).WriteAnimations, (p, v) => X(p).WriteAnimations = v, UiStrings.Export_UnityAnimations)
             .Tip(UiStrings.Export_UnityAnimationsTip);
         var unityAssets = Note("");
-        var unityExtras = Ui.Stack(prefab, animations, unityAssets);
-        unityExtras.Margin = new Thickness(22, 0, 0, 0);
+        var unityOptions = Ui.Stack(prefab, animations, unityAssets);
         _refresh.Add(p =>
         {
-            unityExtras.IsVisible = p.Export.WriteMeta != false;
-            unityAssets.IsVisible = p.Export.WritePrefab || p.Export.WriteAnimations;
+            unityAssets.IsVisible = X(p).WritePrefab || X(p).WriteAnimations;
             if (!unityAssets.IsVisible || p.Path is null) { unityAssets.Text = ""; return; }
             var paths = ProjectExport.GetUnityAssetPaths(p, p.Path, assumePartContent: true);
             unityAssets.Text = paths.Count == 0 ? UiStrings.Export_UnityAssetsNone : "→ " + string.Join(", ", paths.Select(Path.GetFileName)) + " (+ .meta)";
         });
-        _formatOptions = Ui.Stack(unity, unityExtras, JpegQualityLine());
+        var godotScene = Toggle(UiStrings.Export_GodotScene, p => X(p).GodotScene, (p, v) => X(p).GodotScene = v, UiStrings.Export_GodotScene)
+            .Tip(UiStrings.Export_GodotSceneTip);
+        var godotFiles = Note("");
+        var godotOptions = Ui.Stack(godotScene, godotFiles);
+        var jsonFiles = Note("");
+        var jsonOptions = Ui.Stack(jsonFiles);
+        _refresh.Add(p =>
+        {
+            var files = p.Path is null ? [] : ProjectExport.GetEngineDataPaths(p, p.Path);
+            var text = !X(p).ExportFrames ? UiStrings.Export_EngineNeedsFrames
+                : files.Count == 0 ? "" : "→ " + string.Join(", ", files.Take(4).Select(Path.GetFileName)) + (files.Count > 4 ? ", …" : "");
+            godotFiles.Text = jsonFiles.Text = text;
+            godotFiles.IsVisible = jsonFiles.IsVisible = text.Length > 0;
+        });
+        var engineTitle = new TextBlock { Text = UiStrings.Export_Engine, Foreground = AppTheme.TextBrush, Margin = new Thickness(0, 6, 0, 2) };
+        var engines = Ui.Stack(engineTitle,
+            EngineChoice(ExportEngine.None, UiStrings.Export_EngineNone, UiStrings.Export_EngineNoneTip, null),
+            EngineChoice(ExportEngine.Unity, UiStrings.Export_EngineUnity, UiStrings.Export_EngineUnityTip, unityOptions),
+            EngineChoice(ExportEngine.Godot, UiStrings.Export_EngineGodot, UiStrings.Export_EngineGodotTip, godotOptions),
+            EngineChoice(ExportEngine.Json, UiStrings.Export_EngineJson, UiStrings.Export_EngineJsonTip, jsonOptions));
+        _formatOptions = Ui.Stack(engines, JpegQualityLine());
         _formatOptions.Margin = new Thickness(0, 2, 0, 0);
 
         // ── 왼쪽: 설정(위에서 아래로) ──
@@ -114,7 +125,7 @@ public sealed class SheetExportPages
             // 고른 결과의 묶음만 보인다(둘 다 꺼진 예전 설정이면 프레임 시트 묶음).
             framesBox.IsVisible = FramesShown(p);
             partsBox.IsVisible = _advanced.IsVisible = PartsShown(p);
-            _importSettings.IsVisible = p.Export.WriteMeta != false;
+            _importSettings.IsVisible = X(p).Engine == ExportEngine.Unity;
         });
         _settingsColumn = Ui.Stack(
             Section("common", commonTitle, BuildCommonBlock(commonTitle)).HelpAt(GuidePage, anchor: "Common section"),
@@ -123,7 +134,7 @@ public sealed class SheetExportPages
             partsBox,
             _advanced,
             _importSettings);
-        _settingsColumn.HelpAt(GuidePage, anchor: "Left = settings");
+        _settingsColumn.HelpAt(GuidePage, anchor: "Middle = settings");
 
         _copyResult = new TextBlock
         {
@@ -135,7 +146,7 @@ public sealed class SheetExportPages
         };
 
         // 형식 묶음 제목 줄 오른쪽: 프리셋 단추(누르면 저장·불러오기·관리·기본 설정 창).
-        var presetBar = new ExportPresetBar(ctx, owner);
+        var presetBar = new ExportPresetBar(ctx, owner, X);
         var presetFlyout = new Flyout
         {
             Placement = PlacementMode.BottomEdgeAlignedRight,
@@ -171,15 +182,32 @@ public sealed class SheetExportPages
     /// <summary>다른 이름으로 저장 결과 줄(단추 줄 왼쪽).</summary>
     public Control CopyResult => _copyResult;
 
-    /// <summary>프로젝트의 내보내기 이미지 형식(프로젝트가 없으면 PNG).</summary>
-    public ExportImageFormat ImageFormat => _ctx.Project?.Export.ImageFormat ?? ExportImageFormat.Png;
+    /// <summary>고친 시트의 내보내기 이미지 형식(프로젝트가 없으면 PNG).</summary>
+    public ExportImageFormat ImageFormat => _ctx.Project is { } project ? X(project).ImageFormat : ExportImageFormat.Png;
 
     /// <summary>프로젝트 값을 화면에 다시 채움(형식 콤보를 맞출 때).</summary>
     public event Action? Refreshed;
 
+    /// <summary>고치는 시트: 내보내기 목록의 다른 시트 줄이면 그 설정, null이면 프로젝트의 시트(목록 첫 줄).</summary>
+    public ExportSettings? Sheet { get; private set; }
+
+    /// <summary>고칠 시트를 바꾸고 칸·미리보기를 다시 채운다.</summary>
+    public void SetSheet(ExportSettings? sheet)
+    {
+        Sheet = sheet;
+        RefreshAll();
+        if (_previewShown) RebuildPreview();
+        else ScheduleRebuild();
+    }
+
+    private ExportSettings X(SpriteProject p) => Sheet ?? p.Export;
+
+    /// <summary>시트 계산(<see cref="ProjectExport"/>)이 고친 시트를 쓰게 하는 범위(이 스레드만).</summary>
+    private IDisposable? Scope() => Sheet is { } s ? ProjectExport.UseSheet(s) : null;
+
     /// <summary>프로젝트의 내보내기 이미지 형식을 바꾼다(실행취소 1단계, 같으면 아무것도 안 함).</summary>
     public void SetImageFormat(ExportImageFormat format)
-        => EditSettings(UiStrings.S_UnityExportDialog_BuildExportSections_F80B388117, p => p.Export.ImageFormat != format, p => p.Export.ImageFormat = format);
+        => EditSettings(UiStrings.S_UnityExportDialog_BuildExportSections_F80B388117, p => X(p).ImageFormat != format, p => X(p).ImageFormat = format);
 
     /// <summary>미리보기가 보이는지. 보이게 되면 (설정이 바뀌었으면) 다시 만들고, 숨기면 그림을 버린다.</summary>
     public bool PreviewShown
@@ -246,7 +274,8 @@ public sealed class SheetExportPages
     {
         if (_ctx.Project is not { } p) return;
         foreach (var commit in _commitTexts) commit();
-        var format = p.Export.ImageFormat;
+        using var scope = Scope();
+        var format = X(p).ImageFormat;
         var ext = format.Extension();
         string name = p.Path is null ? p.BaseName
             : Path.GetFileNameWithoutExtension(FramesShown(p) ? ProjectExport.GetExportImagePath(p) : ProjectExport.GetPartsImagePath(p));
@@ -264,7 +293,9 @@ public sealed class SheetExportPages
         var title = UiStrings.Export_SaveCopy.TrimEnd('…');
         try
         {
-            var plan = ProjectExport.PlanCopy(p, target);
+            ExportPlan plan;
+            using (Scope()) plan = ProjectExport.PlanCopy(p, target);
+            var sheet = Sheet;
             var paths = plan.FramePaths.Concat(plan.PartPaths).ToList();
             if (paths.Count == 0)
             {
@@ -274,7 +305,12 @@ public sealed class SheetExportPages
             var existing = paths.Where(f => File.Exists(f) && !string.Equals(f, target, StringComparison.OrdinalIgnoreCase)).ToList();
             if (existing.Count > 0 && Ui.Ask(_owner, UiStrings.FormatExport_Overwrite(count: existing.Count, first: Path.GetFileName(existing[0])),
                     title, MessageButtons.OKCancel, MessageIcon.Warning) != DialogResult.OK) return;
-            WorkOverlay.Run(_owner, UiStrings.Busy_Exporting, progress => ProjectExport.Write(p, plan, progress));
+            // 작업 스레드에서 쓰므로 그 안에서 고친 시트를 쓰게 한다
+            WorkOverlay.Run(_owner, UiStrings.Busy_Exporting, progress =>
+            {
+                using var _ = sheet is null ? null : ProjectExport.UseSheet(sheet);
+                return ProjectExport.Write(p, plan, progress);
+            });
             long bytes = paths.Sum(f => new FileInfo(f).Length);
             var files = paths.Count == 1 ? Path.GetFileName(paths[0]) : UiStrings.FormatExport_CopyFiles(first: Path.GetFileName(paths[0]), more: paths.Count - 1);
             var size = AppTrash.FormatSize(bytes);
@@ -287,6 +323,15 @@ public sealed class SheetExportPages
             Ui.Error(_owner, UiStrings.FormatExport_WriteFailed(message: ex.Message), UiStrings.Export_Failed);
         }
     }
+
+    /// <summary>목록 줄 이름 뒤에 붙이는 게임 엔진(" + Unity" 등, 없음이면 빈 글자).</summary>
+    public static string EngineSuffix(ExportEngine engine) => engine switch
+    {
+        ExportEngine.Unity => " + Unity",
+        ExportEngine.Godot => " + Godot",
+        ExportEngine.Json => " + JSON",
+        _ => "",
+    };
 
     /// <summary>형식 콤보·저장 창에 쓰는 이미지 형식 이름(PNG·JPG는 설명 포함).</summary>
     public static string FormatName(ExportImageFormat format) => format switch
@@ -437,11 +482,11 @@ public sealed class SheetExportPages
     private (Control Files, Control Frames, Control Parts, Control Advanced) BuildExportSections()
     {
         // ── 파일(두 결과 공통) ──
-        var folder = NameText(UiStrings.S_UnityExportDialog_BuildExportSections_526698768E, UiStrings.S_UnityExportDialog_BuildExportSections_28B6043259, 240, p => p.Export.Folder, (p, v) => p.Export.Folder = v);
+        var folder = NameText(UiStrings.S_UnityExportDialog_BuildExportSections_526698768E, UiStrings.S_UnityExportDialog_BuildExportSections_28B6043259, 240, p => X(p).Folder, (p, v) => X(p).Folder = v);
         var browse = Ui.Button("…", (_, _) => BrowseFolder(folder), 26).Tip(UiStrings.S_UnityExportDialog_BuildExportSections_987E11A4E7);
         var fileBox = Ui.Stack(
             Setting(UiStrings.S_UnityExportDialog_BuildExportSections_2508675F56, UiStrings.S_UnityExportDialog_BuildExportSections_0E4510EAD7,
-                OnOff(UiStrings.S_UnityExportDialog_BuildExportSections_2508675F56, p => p.Export.ExportOnSave, (p, v) => p.Export.ExportOnSave = v)),
+                OnOff(UiStrings.S_UnityExportDialog_BuildExportSections_2508675F56, p => X(p).ExportOnSave, (p, v) => X(p).ExportOnSave = v)),
             Setting(UiStrings.S_UnityExportDialog_BuildExportSections_6D98D40F29, UiStrings.S_UnityExportDialog_BuildExportSections_5E17111839, Line(folder, browse)));
 
         // ── 프레임 시트 ──
@@ -449,29 +494,29 @@ public sealed class SheetExportPages
         singleFrame.ValueChanged += (_, _) =>
         {
             int v = (int)singleFrame.NumValue() - 1;
-            EditSettings(UiStrings.S_UnityExportDialog_BuildExportSections_130FEEBB20, p => p.Export.SingleFrameIndex != v, p => p.Export.SingleFrameIndex = v);
+            EditSettings(UiStrings.S_UnityExportDialog_BuildExportSections_130FEEBB20, p => X(p).SingleFrameIndex != v, p => X(p).SingleFrameIndex = v);
         };
         var singleRow = Setting(UiStrings.S_UnityExportDialog_BuildExportSections_130FEEBB20, UiStrings.S_UnityExportDialog_BuildExportSections_8F1FF0667F, singleFrame).HelpAt(GuidePage, anchor: "Frame sheet section");
         _refresh.Add(p =>
         {
             singleFrame.Maximum = Math.Max(1, p.Frames.Count);
             singleFrame.Presets(Ui.FrameNumbers(p.Frames.Count));
-            singleFrame.Value = Math.Clamp(p.Export.SingleFrameIndex + 1, 1, Math.Max(1, p.Frames.Count));
+            singleFrame.Value = Math.Clamp(X(p).SingleFrameIndex + 1, 1, Math.Max(1, p.Frames.Count));
             singleRow.IsVisible = p.Sprite.Mode == SpriteMode.Single;
         });
         var exportPath = PathLabel();
         var framesBox = Ui.Stack(
             Setting(UiStrings.S_UnityExportDialog_BuildExportSections_BE408B1AB8, UiStrings.S_UnityExportDialog_BuildExportSections_BCF7ED2A02,
-                NameText(UiStrings.S_UnityExportDialog_BuildExportSections_83949D2A49, UiStrings.S_UnityExportDialog_BuildExportSections_AE9A23DCD2, 220, p => p.Export.FileName, (p, v) => p.Export.FileName = v)),
+                NameText(UiStrings.S_UnityExportDialog_BuildExportSections_83949D2A49, UiStrings.S_UnityExportDialog_BuildExportSections_AE9A23DCD2, 220, p => X(p).FileName, (p, v) => X(p).FileName = v)),
             singleRow,
             exportPath);
 
         // ── 부위 아틀라스 ──
         var keepRow = Setting(UiStrings.S_UnityExportDialog_BuildExportSections_90263CB3CF, UiStrings.S_UnityExportDialog_BuildExportSections_543B1162BD,
-            OnOff(UiStrings.S_UnityExportDialog_BuildExportSections_90263CB3CF, p => p.Export.KeepImportedRects, (p, v) => p.Export.KeepImportedRects = v));
+            OnOff(UiStrings.S_UnityExportDialog_BuildExportSections_90263CB3CF, p => X(p).KeepImportedRects, (p, v) => X(p).KeepImportedRects = v));
         // Sprite Library 줄·안내·결과 경로 = "Unity Sprite Library" 쪽 그림(① 켜기 · ② 만들어지는 .spriteLib)
         var libraryRow = Setting("Sprite Library", null, Line(
-            OnOff("Sprite Library", p => p.Export.WriteSpriteLibrary, (p, v) => p.Export.WriteSpriteLibrary = v),
+            OnOff("Sprite Library", p => X(p).WriteSpriteLibrary, (p, v) => X(p).WriteSpriteLibrary = v),
             Ui.InfoBadge(UiStrings.S_UnityExportDialog_BuildExportSections_44908E5316 +
                  UiStrings.S_UnityExportDialog_BuildExportSections_87AC546C92 +
                  UiStrings.S_UnityExportDialog_BuildExportSections_EF4A7BEB35 +
@@ -483,29 +528,29 @@ public sealed class SheetExportPages
         var libraryPath = PathLabel().HelpAt("parts-sprite-library", shot: "parts-sprite-library");
 
         var overrideRow = Setting(UiStrings.S_UnityExportDialog_BuildExportSections_ADA96235D6, null, Line(
-            Seg(UiStrings.S_UnityExportDialog_BuildExportSections_ADA96235D6, [false, true], [UiStrings.S_UnityExportDialog_BuildExportSections_F059194EC7, UiStrings.S_UnityExportDialog_BuildExportSections_810DBA0E4E], p => p.Export.PartsOverride is not null,
-                    (p, v) => p.Export.PartsOverride = v ? p.Export.Common.Clone() : null)
+            Seg(UiStrings.S_UnityExportDialog_BuildExportSections_ADA96235D6, [false, true], [UiStrings.S_UnityExportDialog_BuildExportSections_F059194EC7, UiStrings.S_UnityExportDialog_BuildExportSections_810DBA0E4E], p => X(p).PartsOverride is not null,
+                    (p, v) => X(p).PartsOverride = v ? X(p).Common.Clone() : null)
                 .SetTip(0, UiStrings.S_UnityExportDialog_BuildExportSections_7E8861FA23)
                 .SetTip(1, UiStrings.S_UnityExportDialog_BuildExportSections_30370BD8DD),
             Ui.InfoBadge(UiStrings.S_UnityExportDialog_BuildExportSections_2816B7AEDB +
                  UiStrings.S_UnityExportDialog_BuildExportSections_56D4255A96)));
         // 파일을 열 때부터 따로 설정이 있었으면(예전 파일을 옮긴 경우 등) 그 까닭과 되돌리는 단추.
         bool overrideAtOpen = false;
-        _atOpen.Add(p => overrideAtOpen = p.Export.PartsOverride is not null);
+        _atOpen.Add(p => overrideAtOpen = X(p).PartsOverride is not null);
         var migrated = Beside(
             Note(UiStrings.S_UnityExportDialog_BuildExportSections_C5222F3E88),
-            Ui.Button(UiStrings.S_UnityExportDialog_BuildExportSections_E3C647CE07, (_, _) => EditSettings(UiStrings.S_UnityExportDialog_BuildExportSections_E3C647CE07, p => p.Export.PartsOverride is not null, p => p.Export.PartsOverride = null))
+            Ui.Button(UiStrings.S_UnityExportDialog_BuildExportSections_E3C647CE07, (_, _) => EditSettings(UiStrings.S_UnityExportDialog_BuildExportSections_E3C647CE07, p => X(p).PartsOverride is not null, p => X(p).PartsOverride = null))
                 .Tip(UiStrings.S_UnityExportDialog_BuildExportSections_D05205E66E));
-        var overrideRows = SheetRows(p => p.Export.PartsOverride, overrideBlock: true);
+        var overrideRows = SheetRows(p => X(p).PartsOverride, overrideBlock: true);
         overrideRows.Margin = new Thickness(10, 2, 0, 0);
         _refresh.Add(p =>
         {
-            migrated.IsVisible = overrideAtOpen && p.Export.PartsOverride is not null;
-            overrideRows.IsVisible = p.Export.PartsOverride is not null;
+            migrated.IsVisible = overrideAtOpen && X(p).PartsOverride is not null;
+            overrideRows.IsVisible = X(p).PartsOverride is not null;
         });
         var partsBox = Ui.Stack(
             Setting(UiStrings.S_UnityExportDialog_BuildExportSections_BE408B1AB8, UiStrings.S_UnityExportDialog_BuildExportSections_B18FB8517E,
-                NameText(UiStrings.S_UnityExportDialog_BuildExportSections_924DFE7AE7, UiStrings.S_UnityExportDialog_BuildExportSections_8C3B4A4899, 220, p => p.Export.PartsFileName, (p, v) => p.Export.PartsFileName = v))
+                NameText(UiStrings.S_UnityExportDialog_BuildExportSections_924DFE7AE7, UiStrings.S_UnityExportDialog_BuildExportSections_8C3B4A4899, 220, p => X(p).PartsFileName, (p, v) => X(p).PartsFileName = v))
                 .HelpAt("parts-export", anchor: "If ④ the name is empty"),
             keepRow,
             libraryRow,
@@ -516,10 +561,13 @@ public sealed class SheetExportPages
 
         _refresh.Add(p =>
         {
-            var parts = p.Export.Parts;
+            var parts = X(p).Parts;
             keepRow.IsVisible = parts.Layout == SheetLayout.Packed;
             SetEnabled(keepRow, !parts.SplitParts);
-            libraryNote.IsVisible = p.Export.WriteSpriteLibrary;
+            // Sprite Library는 Unity 파일이라 엔진이 Unity일 때만
+            bool unity = X(p).Engine == ExportEngine.Unity;
+            libraryRow.IsVisible = unity;
+            libraryNote.IsVisible = unity && X(p).WriteSpriteLibrary;
             if (p.Path is null)
             {
                 exportPath.Text = UiStrings.S_UnityExportDialog_BuildExportSections_DB40109609;
@@ -530,9 +578,9 @@ public sealed class SheetExportPages
             // 셀 내용은 보지 않는다(설정을 바꿀 때마다 불리므로 가볍게) — 그린 것이 없는 부위도 셈.
             var (frames, partPaths) = ProjectExport.GetOutputPaths(p, p.Path, assumePartContent: true);
             exportPath.Text = OutputText(p, frames, UiStrings.S_UnityExportDialog_BuildExportSections_6B06887D1E);
-            partsPath.Text = OutputText(p, partPaths, UiStrings.S_UnityExportDialog_BuildExportSections_C0FA3B7B99, partsAtlas: true);
+            partsPath.Text = OutputText(p, partPaths, UiStrings.S_UnityExportDialog_BuildExportSections_C0FA3B7B99);
             var libraries = ProjectExport.GetLibraryPaths(p, p.Path, assumePartContent: true);
-            libraryPath.IsVisible = p.Export.WriteSpriteLibrary;
+            libraryPath.IsVisible = unity && X(p).WriteSpriteLibrary;
             libraryPath.Text = libraries.Count == 0 ? UiStrings.S_UnityExportDialog_BuildExportSections_E5B4608A6B
                 : $"→ {libraries[0]}" + (libraries.Count > 1 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UnityExportDialog_BuildExportSections_46BC96CB04,libraries.Count - 1) : "") + " (+ .meta)" +
                   (parts.Skins == SkinSource.Selected ? UiStrings.S_UnityExportDialog_BuildExportSections_DC750ED123 : "");
@@ -544,11 +592,11 @@ public sealed class SheetExportPages
     /// <summary>JPG 품질 줄(형식이 JPG일 때만 보임).</summary>
     private WrapPanel JpegQualityLine()
     {
-        var jpegQuality = IntNum(UiStrings.S_UnityExportDialog_BuildExportSections_0FBC1AB03F, 1, 100, 54, p => p.Export.JpegQuality, (p, v) => p.Export.JpegQuality = v)
+        var jpegQuality = IntNum(UiStrings.S_UnityExportDialog_BuildExportSections_0FBC1AB03F, 1, 100, 54, p => X(p).JpegQuality, (p, v) => X(p).JpegQuality = v)
             .Presets(50, 60, 70, 75, 80, 85, 90, 95, 100).Unit("%").RecentKey("export.jpeg");
         jpegQuality.Tip(UiStrings.S_UnityExportDialog_BuildExportSections_801EC51603);
         var line = Line(Ui.Label(UiStrings.S_UnityExportDialog_BuildExportSections_0FBC1AB03F), jpegQuality, Ui.Label("%"));
-        _refresh.Add(p => line.IsVisible = p.Export.ImageFormat == ExportImageFormat.Jpg);
+        _refresh.Add(p => line.IsVisible = X(p).ImageFormat == ExportImageFormat.Jpg);
         return line;
     }
 
@@ -561,14 +609,14 @@ public sealed class SheetExportPages
         var output = Setting(UiStrings.S_UnityExportDialog_BuildCommonBlock_FE8EEAD4AB, null, OutputChoice()).HelpAt("parts-export", anchor: "turn each on or off in ③ Output");
         _refresh.Add(p =>
         {
-            output.IsVisible = HasParts(p) || !p.Export.ExportFrames;
-            bool parts = PartsShown(p), frames = FramesShown(p), partsCommon = parts && p.Export.PartsOverride is null;
+            output.IsVisible = HasParts(p) || !X(p).ExportFrames;
+            bool parts = PartsShown(p), frames = FramesShown(p), partsCommon = parts && X(p).PartsOverride is null;
             title.Text = frames && partsCommon ? UiStrings.S_UnityExportDialog_BuildCommonBlock_2AD6FF8A7C
                 : frames ? (parts ? UiStrings.S_UnityExportDialog_BuildCommonBlock_273B7FFE21 : UiStrings.S_UnityExportDialog_BuildCommonBlock_C139B30E27)
                 : partsCommon ? UiStrings.S_UnityExportDialog_BuildCommonBlock_AB2884C1DF
                 : UiStrings.S_UnityExportDialog_BuildCommonBlock_D98FB679E2;
         });
-        return Ui.Stack(output, SheetRows(p => p.Export.Common, overrideBlock: false));
+        return Ui.Stack(output, SheetRows(p => X(p).Common, overrideBlock: false));
     }
 
     /// <summary>
@@ -576,11 +624,11 @@ public sealed class SheetExportPages
     /// (둘 다 꺼진 예전 설정이면 아무것도 고르지 않은 모양).
     /// </summary>
     private TabStrip OutputChoice() => Seg(UiStrings.S_UnityExportDialog_OutputChoice_AB62772949, [0, 1, 2], [UiStrings.S_UnityExportDialog_OutputChoice_F37E64C73E, UiStrings.S_UnityExportDialog_OutputChoice_93F369B5AE, UiStrings.S_UnityExportDialog_OutputChoice_88366455B1],
-            p => p.Export.ExportFrames && p.Export.ExportParts ? 2 : p.Export.ExportParts ? 1 : p.Export.ExportFrames ? 0 : -1,
+            p => X(p).ExportFrames && X(p).ExportParts ? 2 : X(p).ExportParts ? 1 : X(p).ExportFrames ? 0 : -1,
             (p, v) =>
             {
-                p.Export.ExportFrames = v != 1;
-                p.Export.ExportParts = v != 0;
+                X(p).ExportFrames = v != 1;
+                X(p).ExportParts = v != 0;
             })
         .SetTip(0, UiStrings.S_UnityExportDialog_OutputChoice_C4EC679FE3)
         .SetTip(1, UiStrings.S_UnityExportDialog_OutputChoice_08EC141D30)
@@ -590,24 +638,19 @@ public sealed class SheetExportPages
     private static bool HasParts(SpriteProject p) => p.Layers.Any(l => l.IsPart);
 
     /// <summary>부위 아틀라스를 만드는지(부위가 있고 켜짐).</summary>
-    private static bool PartsShown(SpriteProject p) => HasParts(p) && p.Export.ExportParts;
+    private bool PartsShown(SpriteProject p) => HasParts(p) && X(p).ExportParts;
 
     /// <summary>프레임 시트를 보이는지(켜짐, 또는 부위 아틀라스도 만들지 않는 예전 설정).</summary>
-    private static bool FramesShown(SpriteProject p) => p.Export.ExportFrames || !PartsShown(p);
+    private bool FramesShown(SpriteProject p) => X(p).ExportFrames || !PartsShown(p);
 
-    /// <summary>
-    /// 내보낼 경로 줄(파일이 여러 개면 첫 파일 + 개수): .meta를 쓰기로 했으면 이번에 쓰는지도.
-    /// <paramref name="partsAtlas"/>면 Sprite Library를 쓸 때 메타를 항상 쓴다(<see cref="ProjectExport.ShouldWritePartsMeta"/>).
-    /// </summary>
-    private static string OutputText(SpriteProject p, IReadOnlyList<string> paths, string none, bool partsAtlas = false)
+    /// <summary>내보낼 경로 줄(파일이 여러 개면 첫 파일 + 개수), Unity면 .meta도.</summary>
+    private static string OutputText(SpriteProject p, IReadOnlyList<string> paths, string none)
     {
         if (paths.Count == 0) return $"→ ({none})";
         var shown = paths.Count == 1
             ? paths[0]
             : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UnityExportDialog_OutputText_D443DAA729,paths[0],paths.Count - 1,string.Join(", ", paths.Skip(1).Take(3).Select(Path.GetFileName)),(paths.Count > 4 ? ", …" : ""));
-        bool writes = partsAtlas ? ProjectExport.ShouldWritePartsMeta(p, paths[0]) : ProjectExport.ShouldWriteMeta(p, paths[0]);
-        if (p.Export.WriteMeta == false && !writes) return $"→ {shown}";
-        return $"→ {shown}" + (writes ? " (+ .meta)" : UiStrings.S_UnityExportDialog_OutputText_CD47DD0773);
+        return $"→ {shown}" + (ProjectExport.ShouldWriteMeta(p, paths[0]) ? " (+ .meta)" : "");
     }
 
     private void BrowseFolder(TextBox box)
@@ -617,7 +660,7 @@ public sealed class SheetExportPages
         if (p.Path is { } projectPath)
         {
             var baseDir = Path.GetDirectoryName(projectPath)!;
-            initial = p.Export.Folder is { } f ? Path.GetFullPath(Path.Combine(baseDir, f)) : baseDir;
+            initial = X(p).Folder is { } f ? Path.GetFullPath(Path.Combine(baseDir, f)) : baseDir;
             if (!Directory.Exists(initial)) initial = baseDir;
         }
         if (Ui.PickFolder(_owner, UiStrings.S_UnityExportDialog_BrowseFolder_7E04D74D15, initial) is not { } folder) return;
@@ -628,7 +671,7 @@ public sealed class SheetExportPages
         }
         box.Text = folder == "." ? "" : folder;
         var v = NullIfEmpty(box.Text);
-        EditSettings(UiStrings.S_UnityExportDialog_BrowseFolder_4ED7A7A3C1, pr => pr.Export.Folder != v, pr => pr.Export.Folder = v);
+        EditSettings(UiStrings.S_UnityExportDialog_BrowseFolder_4ED7A7A3C1, pr => X(pr).Folder != v, pr => X(pr).Folder = v);
     }
 
     // ───────────── 설정 칸 만들기(바꾸면 실행취소 단위 편집, 프로젝트가 바뀌면 다시 읽음) ─────────────
@@ -651,8 +694,8 @@ public sealed class SheetExportPages
     /// </summary>
     private StackPanel SheetRows(Func<SpriteProject, SheetOptions?> options, bool overrideBlock)
     {
-        SheetOptions O(SpriteProject p) => options(p) ?? p.Export.Common;
-        bool PartsUse(SpriteProject p) => overrideBlock || (PartsShown(p) && p.Export.PartsOverride is null);
+        SheetOptions O(SpriteProject p) => options(p) ?? X(p).Common;
+        bool PartsUse(SpriteProject p) => overrideBlock || (PartsShown(p) && X(p).PartsOverride is null);
         bool FramesUse(SpriteProject p) => !overrideBlock && FramesShown(p);
         string u = overrideBlock ? UiStrings.S_UnityExportDialog_SheetRows_6930EA0067 : "";
 
@@ -827,6 +870,21 @@ public sealed class SheetExportPages
     }
 
     /// <summary>켜고 끄는 체크 상자(<paramref name="text"/>가 비면 왼쪽 이름표만 씀).</summary>
+    /// <summary>게임 엔진 고르기 한 줄: 라디오(고르면 실행취소 1단계), 고른 동안만 그 아래 옵션(<paramref name="options"/>, 들여 씀).</summary>
+    private Control EngineChoice(ExportEngine engine, string text, string tip, Control? options)
+    {
+        var radio = new RadioButton { Content = text, GroupName = "engine" + System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this), Margin = new Thickness(0, 1) }.Tip(tip);
+        radio.IsCheckedChanged += (_, _) =>
+        {
+            if (radio.On()) EditSettings(UiStrings.Export_Engine, p => X(p).Engine != engine, p => X(p).Engine = engine);
+        };
+        _refresh.Add(p => radio.IsChecked = X(p).Engine == engine);
+        if (options is null) return radio;
+        options.Margin = new Thickness(22, 0, 0, 2);
+        _refresh.Add(p => options.IsVisible = X(p).Engine == engine);
+        return new StackPanel { Children = { radio, options } };
+    }
+
     private CheckBox Toggle(string undo, Func<SpriteProject, bool> get, Action<SpriteProject, bool> set, string text = "")
     {
         var c = Ui.Check(text);
@@ -990,7 +1048,7 @@ public sealed class SheetExportPages
         return w;
     }
 
-    /// <summary>줄바꿈되는 글(왼쪽, 남은 너비) + 오른쪽에 붙는 단추·ⓘ.</summary>
+    /// <summary>줄바꿈되는 글(왼쪽, 남은 너비) + 오른쪽에 붙는 단추·정보박스.</summary>
     private static Grid Beside(Control main, params Control[] right)
     {
         var g = new Grid { ColumnDefinitions = new ColumnDefinitions("*" + string.Concat(right.Select(_ => ",Auto"))) };
@@ -1063,6 +1121,7 @@ public sealed class SheetExportPages
             // 프로젝트가 없으면 칸만 끈다(프리셋 단추의 "관리"는 프로젝트 없이도 쓴다).
             _settingsColumn.IsEnabled = _formatOptions.IsEnabled = _ctx.HasProject;
             if (_ctx.Project is not { } p) return;
+            using var scope = Scope();
             foreach (var refresh in _refresh) refresh(p);
             _framesSection.Panel.IsVisible = FramesShown(p);
             _partsSection.Panel.IsVisible = PartsShown(p);
@@ -1213,10 +1272,11 @@ public sealed class SheetExportPages
             ClearPreviews();
             return;
         }
+        using var scope = Scope();
         var baseName = p.Path is null ? p.BaseName : Path.GetFileNameWithoutExtension(ProjectExport.GetExportImagePath(p));
         // 제목: 결과 파일 이름 + 저장할 때 실제로 내보내는지.
-        string ext = p.Export.ImageFormat.Extension();
-        string Off(bool on) => !p.Export.ExportOnSave ? UiStrings.S_UnityExportDialog_RebuildPreview_B223C99C7E : on ? "" : UiStrings.S_UnityExportDialog_RebuildPreview_27C575FC02;
+        string ext = X(p).ImageFormat.Extension();
+        string Off(bool on) => !X(p).ExportOnSave ? UiStrings.S_UnityExportDialog_RebuildPreview_B223C99C7E : on ? "" : UiStrings.S_UnityExportDialog_RebuildPreview_27C575FC02;
         // 최종 결과만 보인다: 고른 결과(프레임 시트 / 부위 아틀라스 / 둘 다)의 미리보기. 둘 다 꺼져 있으면 프레임 시트(꺼짐 표시).
         bool showParts = PartsShown(p), showFrames = FramesShown(p);
         _framesSection.Panel.IsVisible = showFrames;
@@ -1224,17 +1284,17 @@ public sealed class SheetExportPages
         if (showFrames)
         {
             var frameFiles = ProjectExport.BuildFrameSheets(p, baseName);
-            string splitNote = !p.Export.Frames.SplitTags || frameFiles.Count > 1 ? ""
+            string splitNote = !X(p).Frames.SplitTags || frameFiles.Count > 1 ? ""
                 : p.Sprite.Mode == SpriteMode.Single ? UiStrings.S_UnityExportDialog_RebuildPreview_B622FBC7F1 : p.Tags.Count == 0 ? UiStrings.S_UnityExportDialog_RebuildPreview_DEE196AED0 : "";
-            _framesSection.Title.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UnityExportDialog_RebuildPreview_9735FBD681,_framesSection.Number,FileNames(frameFiles, ext),splitNote,Off(p.Export.ExportFrames));
+            _framesSection.Title.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UnityExportDialog_RebuildPreview_9735FBD681,_framesSection.Number,FileNames(frameFiles, ext),splitNote,Off(X(p).ExportFrames));
             FillSection(_framesSection, frameFiles, ext, showNames: false, UiStrings.S_UnityExportDialog_RebuildPreview_49980BDB2F, e => _ctx.SetCurrentFrame(e.FrameIndex));
         }
         else _framesSection.Clear();
         if (showParts)
         {
-            var partsName = p.Path is null ? p.Export.PartsFileName ?? baseName + "_parts" : Path.GetFileNameWithoutExtension(ProjectExport.GetPartsImagePath(p));
+            var partsName = p.Path is null ? X(p).PartsFileName ?? baseName + "_parts" : Path.GetFileNameWithoutExtension(ProjectExport.GetPartsImagePath(p));
             var partFiles = ProjectExport.BuildPartsSheets(p, partsName);
-            _partsSection.Title.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UnityExportDialog_RebuildPreview_FFABCA970A,_partsSection.Number,FileNames(partFiles, ext),Off(p.Export.ExportParts));
+            _partsSection.Title.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UnityExportDialog_RebuildPreview_FFABCA970A,_partsSection.Number,FileNames(partFiles, ext),Off(X(p).ExportParts));
             FillSection(_partsSection, partFiles, ext, showNames: true, UiStrings.S_UnityExportDialog_RebuildPreview_84CC456F81, SelectPartEntry);
         }
         else _partsSection.Clear();

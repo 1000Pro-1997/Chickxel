@@ -53,6 +53,13 @@ public static class FrameSplitter
     {
         var labels = new int[fg.Length];
         Array.Fill(labels, -1);
+        if (s.SourceFrames > 0)
+        {
+            var slots = s.ManualRegions is { } regions
+                ? regions.Select(r => Rectangle.Intersect(new Rectangle(r.X, r.Y, Math.Max(1, r.Width), Math.Max(1, r.Height)), new Rectangle(0, 0, width, height))).ToList()
+                : GridSlots(width, height, Math.Max(1, s.Columns), Math.Max(1, s.Rows));
+            return SplitSlots(fg, width, slots.Take(s.SourceFrames).Where(r => !r.IsEmpty).ToList(), labels);
+        }
         if (s.ManualRegions is { } manual) return SplitManual(fg, width, height, manual, labels);
         return s.Mode switch
         {
@@ -69,6 +76,34 @@ public static class FrameSplitter
         if (b.IsEmpty) return new FrameSplit([], labels);
         Label(fg, w, b, labels, 0);
         return new FrameSplit([new FrameRegion(all, b)], labels);
+    }
+
+    /// <summary>격자 칸(행 우선).</summary>
+    private static List<Rectangle> GridSlots(int w, int h, int cols, int rows)
+    {
+        var slots = new List<Rectangle>(cols * rows);
+        for (int r = 0; r < rows; r++)
+            for (int c = 0; c < cols; c++)
+                slots.Add(Rectangle.FromLTRB(c * w / cols, r * h / rows, (c + 1) * w / cols, (r + 1) * h / rows));
+        return slots;
+    }
+
+    /// <summary>원본 프레임 칸(<see cref="FrameSettings.SourceFrames"/>): 칸마다 한 프레임, 범위 = 칸 그대로(비어 있어도). 겹치면 앞 칸.</summary>
+    private static FrameSplit SplitSlots(bool[] fg, int w, IReadOnlyList<Rectangle> slots, int[] labels)
+    {
+        var frames = new List<FrameRegion>(slots.Count);
+        for (int k = 0; k < slots.Count; k++)
+        {
+            var slot = slots[k];
+            for (int y = slot.Top; y < slot.Bottom; y++)
+                for (int x = slot.Left; x < slot.Right; x++)
+                {
+                    int i = y * w + x;
+                    if (fg[i] && labels[i] < 0) labels[i] = k;
+                }
+            frames.Add(new FrameRegion(slot, slot));
+        }
+        return new FrameSplit(frames, labels);
     }
 
     private static FrameSplit SplitGrid(bool[] fg, int w, int h, int cols, int rows, int[] labels)

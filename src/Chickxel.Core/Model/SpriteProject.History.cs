@@ -381,6 +381,13 @@ public sealed partial class SpriteProject
             Export = ProjectIO.ExportDto.From(_export, null),
             CommonRefs = Refs(_export.Common, ids),
             PartsRefs = _export.PartsOverride is { } po ? Refs(po, ids) : null,
+            EntryRefs = _export.Entries.Any(e => e.Sheet is not null)
+                ? _export.Entries.Where(e => e.Sheet is not null).Select(e => new HistoryEntryRefsDto
+                {
+                    Common = Refs(e.Sheet!.Common, ids),
+                    Parts = e.Sheet.PartsOverride is { } epo ? Refs(epo, ids) : null,
+                }).ToList()
+                : null,
             Tilesets = _tilesets.Length == 0 ? null : _tilesets.OrderBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => new[] { kv.Key, tilesetBlob(kv.Value) }).ToList(),
         };
 
@@ -405,6 +412,19 @@ public sealed partial class SpriteProject
             {
                 export.PartsOverride = new SheetOptions();
                 ApplySheet(export.PartsOverride, partsSheet, d.PartsRefs, r);
+            }
+            // 목록의 시트 줄: 줄 차례대로 값과 참조
+            var sheetDtos = (d.Export.Entries ?? []).Where(e => e.Sheet is not null).Select(e => e.Sheet!).ToList();
+            var sheets = export.Entries.Where(e => e.Sheet is not null).Select(e => e.Sheet!).ToList();
+            for (int i = 0; i < sheets.Count && i < sheetDtos.Count; i++)
+            {
+                var refs = d.EntryRefs is { } er && i < er.Count ? er[i] : null;
+                ApplySheet(sheets[i].Common, sheetDtos[i].Sheet, refs?.Common, r);
+                if (sheetDtos[i].PartsSheet is { } eps)
+                {
+                    sheets[i].PartsOverride = new SheetOptions();
+                    ApplySheet(sheets[i].PartsOverride!, eps, refs?.Parts, r);
+                }
             }
             var layerPivots = d.Frames.Select(f => (f.LayerPivots ?? []).Select(pp => KeyValuePair.Create(r.Layer(pp.Layer), pp.Pivot.ToPivot())).ToList()).ToList();
             if (legacyPivots)

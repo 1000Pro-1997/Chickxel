@@ -266,4 +266,107 @@ public class PlayAndHubTests
         for (int i = 0; i < 300; i++) c.Update(1f / 60, default);
         Assert.True(c.Position.Y <= 300);
     }
+
+    [Fact]
+    public void Platformer_LadderClimbsHangsStandsOnTopAndClimbsBackDown()
+    {
+        var c = MakePlatformer();
+        for (int i = 0; i < 120; i++) c.Update(1f / 60, default);
+        Assert.True(c.IsGrounded);
+        c.Ladders.Add(new RectangleF(40, 40, 20, 60)); // 바닥(100)에서 40까지(위에서 떨어지면 맨 위에 서므로 내린 뒤에 둠)
+
+        // 위 키: 점프하지 않고 사다리에 붙어 오른다.
+        c.Update(1f / 60, new PlatformerInput(false, false, false, false, Up: true));
+        Assert.Equal(ClimbKind.Ladder, c.Climbing);
+        for (int i = 0; i < 30; i++) c.Update(1f / 60, new PlatformerInput(false, false, false, false, Up: true));
+        Assert.Equal(PlatformerState.Climb, c.State);
+        float y = c.Position.Y;
+        Assert.InRange(y, 65f, 75f); // 0.5초 × 60px/s
+
+        // 키를 떼면 매달려 멈춘다.
+        for (int i = 0; i < 30; i++) c.Update(1f / 60, default);
+        Assert.Equal(PlatformerState.Hang, c.State);
+        Assert.Equal(y, c.Position.Y, 3);
+
+        // 맨 위까지 오르면 사다리 위에 선다.
+        for (int i = 0; i < 120; i++) c.Update(1f / 60, new PlatformerInput(false, false, false, false, Up: true));
+        Assert.Equal(ClimbKind.None, c.Climbing);
+        Assert.True(c.IsGrounded);
+        Assert.Equal(40f, c.Position.Y, 3);
+        for (int i = 0; i < 30; i++) c.Update(1f / 60, default);
+        Assert.Equal(40f, c.Position.Y, 3);
+
+        // 위에서 아래 키: 다시 붙어 내려가고, 바닥에 닿으면 놓는다.
+        for (int i = 0; i < 180; i++) c.Update(1f / 60, new PlatformerInput(false, false, false, false, Down: true));
+        Assert.Equal(ClimbKind.None, c.Climbing);
+        Assert.True(c.IsGrounded);
+        Assert.Equal(100f, c.Position.Y, 3);
+    }
+
+    [Fact]
+    public void Platformer_UpJumpsAwayFromLadders()
+    {
+        var c = MakePlatformer();
+        for (int i = 0; i < 120; i++) c.Update(1f / 60, default);
+        c.Update(1f / 60, new PlatformerInput(false, false, false, false, Up: true));
+        Assert.Equal(PlatformerState.Jump, c.State);
+    }
+
+    [Fact]
+    public void Platformer_WallClimbHangsAndPullsUpOverTheTop()
+    {
+        var c = MakePlatformer();
+        c.Settings.WallClimb = true;
+        c.Platforms.Add(new PlatformBox(new RectangleF(80, 60, 40, 40))); // 높이 40 벽(위 끝 60)
+        for (int i = 0; i < 120; i++) c.Update(1f / 60, default);
+        for (int i = 0; i < 60; i++) c.Update(1f / 60, new PlatformerInput(false, true, false, false));
+        Assert.Equal(ClimbKind.None, c.Climbing); // 바닥에서는 벽 쪽만 눌러서는 붙지 않음
+
+        c.Update(1f / 60, new PlatformerInput(false, true, false, false, Up: true));
+        Assert.Equal(ClimbKind.Wall, c.Climbing);
+        for (int i = 0; i < 20; i++) c.Update(1f / 60, new PlatformerInput(false, true, false, false, Up: true));
+        float y = c.Position.Y;
+        Assert.True(y < 100);
+        // 키를 모두 떼도 매달려 있다.
+        for (int i = 0; i < 30; i++) c.Update(1f / 60, default);
+        Assert.Equal(PlatformerState.WallHang, c.State);
+        Assert.Equal(y, c.Position.Y, 3);
+
+        // 위 끝까지 오르면 벽 위로 올라선다.
+        for (int i = 0; i < 120; i++) c.Update(1f / 60, new PlatformerInput(false, false, false, false, Up: true));
+        Assert.Equal(ClimbKind.None, c.Climbing);
+        for (int i = 0; i < 30; i++) c.Update(1f / 60, default);
+        Assert.True(c.IsGrounded);
+        Assert.Equal(60f, c.Position.Y, 3);
+        Assert.True(c.Position.X > 80);
+    }
+
+    [Fact]
+    public void Platformer_WallJumpKicksAwayFromTheWall()
+    {
+        var c = MakePlatformer();
+        c.Settings.WallClimb = true;
+        c.Platforms.Add(new PlatformBox(new RectangleF(80, 0, 40, 100)));
+        for (int i = 0; i < 120; i++) c.Update(1f / 60, default);
+        c.Update(1f / 60, new PlatformerInput(false, true, false, false, Up: true));
+        for (int i = 0; i < 30; i++) c.Update(1f / 60, new PlatformerInput(false, true, false, false, Up: true));
+        Assert.Equal(ClimbKind.Wall, c.Climbing);
+        float x = c.Position.X;
+        c.Update(1f / 60, new PlatformerInput(false, true, true, true));
+        for (int i = 0; i < 5; i++) c.Update(1f / 60, new PlatformerInput(false, true, true, false));
+        Assert.Equal(ClimbKind.None, c.Climbing);
+        Assert.True(c.Position.X < x - 3);
+        Assert.Equal(PlatformerState.Jump, c.State);
+    }
+
+    [Fact]
+    public void TopDown_WallsBlockAndSlide()
+    {
+        var c = new TopDownController { Speed = 100, Collider = new RectangleF(-4, -4, 8, 4) };
+        c.Walls.Add(new RectangleF(10, -50, 10, 300));
+        // 오른쪽 아래로 가면 벽에 막히고 아래로는 미끄러진다.
+        for (int i = 0; i < 60; i++) c.Update(1f / 60, new DirectionalInput(false, true, false, true));
+        Assert.Equal(6f, c.Position.X, 3);
+        Assert.True(c.Position.Y > 60);
+    }
 }

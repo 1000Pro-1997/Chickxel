@@ -658,7 +658,6 @@ Export: </value></data>
   <data name="S_GifExportDialog_GifExportDialog_7934F88ACA" xml:space="preserve"><value>Background</value></data>
   <data name="S_GifExportDialog_GifExportDialog_9970DF5446" xml:space="preserve"><value>Current tag "{0}"{1}</value></data>
   <data name="S_GifExportDialog_GifExportDialog_99C0D7A91D" xml:space="preserve"><value>Choose tag</value></data>
-  <data name="S_GifExportDialog_GifExportDialog_AEA1CD8AEB" xml:space="preserve"><value>Export…</value></data>
   <data name="S_GifExportDialog_GifExportDialog_B4BA578A27" xml:space="preserve"><value>All frames ({0})</value></data>
   <data name="S_GifExportDialog_GifExportDialog_C51C583CC7" xml:space="preserve"><value>Loop</value></data>
   <data name="S_GifExportDialog_GifExportDialog_D4D8F12988" xml:space="preserve"><value>Transparent (alpha below 50% transparent, rest opaque)</value></data>
@@ -1261,11 +1260,9 @@ Alpha is kept and fully transparent pixels are unchanged. One undo step.</value>
   <data name="S_PlayTestForm__mode_C301A9DEA7" xml:space="preserve"><value>Platformer</value></data>
   <data name="S_PlayTestForm__mode_E6FD209C5A" xml:space="preserve"><value>Top-down</value></data>
   <data name="S_PlayTestForm__plainFacesRight_D2362E1EE6" xml:space="preserve"><value>Undirected sprites face right</value></data>
-  <data name="S_PlayTestForm__showCollider_96996CCC00" xml:space="preserve"><value>Show collider</value></data>
   <data name="S_PlayTestForm__showGrid_8744E58387" xml:space="preserve"><value>Show grid (1 cell = PPU)</value></data>
   <data name="S_PlayTestForm__showPivot_C16F3DE272" xml:space="preserve"><value>Show pivot</value></data>
   <data name="S_PlayTestForm_ApplyMode_47A35B1C1A" xml:space="preserve"><value>Controls: WASD / arrow keys to move in 8 directions, R to reset position</value></data>
-  <data name="S_PlayTestForm_ApplyMode_85EA432E50" xml:space="preserve"><value>Controls: A·D / ←·→ to move, Space (or W·↑) to jump, R to reset position</value></data>
   <data name="S_PlayTestForm_PlayTestForm_2086878572" xml:space="preserve"><value>Check animation names</value></data>
   <data name="S_PlayTestForm_PlayTestForm_21F5816FA3" xml:space="preserve"><value>View</value></data>
   <data name="S_PlayTestForm_PlayTestForm_50E363BD43" xml:space="preserve"><value>Platformer</value></data>
@@ -1273,9 +1270,26 @@ Alpha is kept and fully transparent pixels are unchanged. One undo step.</value>
   <data name="S_PlayTestForm_PlayTestForm_B00519A8EF" xml:space="preserve"><value>Movement test</value></data>
   <data name="S_PlayTestForm_PlayTestForm_B566CF8EC7" xml:space="preserve"><value>Zoom (integer)</value></data>
   <data name="S_PlayTestForm_PlayTestForm_BC9D1F57FB" xml:space="preserve"><value>Move speed (px/s)</value></data>
+  <data name="PlayTest_ShowColliders" xml:space="preserve"><value>Show colliders</value></data>
+  <data name="PlayTest_ShowCollidersInfo" xml:space="preserve"><value>Draws the boxes that collide: the character collider (green) and, with a map, the terrain cells (red) and platformer ladder cells (blue). A top-down character collides only around its feet, a platformer character with its whole body.</value></data>
+  <data name="PlayTest_Character" xml:space="preserve"><value>Character</value></data>
   <data name="PlayTest_Map" xml:space="preserve"><value>Map</value></data>
   <data name="PlayTest_MapNone" xml:space="preserve"><value>None (empty room)</value></data>
-  <data name="PlayTest_MapInfo" xml:space="preserve"><value>Walk on a tilemap layer from an open document (visible floors only, no collision). With a tileset whose draw order is by position (top-down), the character is drawn among the standing tiles using its feet (pivot) as the base line, so it is hidden behind walls and covers them in front. Overhead tiles always show above the character.</value></data>
+  <data name="PlayTest_MapInfo" xml:space="preserve"><value>Move around on a tilemap layer from an open document (top-down or platformer). Below, pick the floors to use as terrain (walls and ground) and ladders. With a tileset whose draw order is by position (top-down), the character is drawn among the standing tiles using its pivot as the base line, so it is hidden behind walls and covers them in front. Overhead tiles always show above the character.</value></data>
+  <data name="PlayTest_TerrainFloors" xml:space="preserve"><value>Terrain floors</value></data>
+  <data name="PlayTest_TerrainFloorsInfo" xml:space="preserve"><value>Cells covered by tiles on the chosen floors (several allowed, hidden floors too) become solid walls and ground. At first they are picked by floor name (top-down: Walls, Objects, Water; platformer: Ground), and each mode remembers its own choice. Top-down collides with a box around the feet, platformer with the whole body box. Turn on Show colliders to see the terrain cells.</value></data>
+  <data name="PlayTest_LadderFloors" xml:space="preserve"><value>Ladder floors</value></data>
+  <data name="PlayTest_LadderFloorsInfo" xml:space="preserve"><value>Tiles on the chosen floors are ladders. In front of a ladder, press W/↑ to grab and climb, S/↓ to climb down; let go of the keys to hang still. Climb past the top to stand on it, and press S/↓ on top to climb back down. Press Space to jump off.</value></data>
+  <data name="PlayTest_NoTerrain" xml:space="preserve"><value>No terrain floor is chosen, so there is nothing to stand on.</value></data>
+  <data name="PlayTest_HiddenFloor" xml:space="preserve"><value>{0} (hidden)</value></data>
+  <data name="PlayTest_ClimbSpeed" xml:space="preserve"><value>Climb speed (px/s)</value></data>
+  <data name="PlayTest_WallClimb" xml:space="preserve"><value>Allow wall climbing</value></data>
+  <data name="PlayTest_WallClimbInfo" xml:space="preserve"><value>In the air, hold the arrow toward a wall to cling to it (on the ground, together with W/↑). Climb up and down with W·S / ↑·↓ and let go of the keys to hang. Press away from the wall to drop, or Space to kick off and jump. Climb past the top edge to pull up onto it.</value></data>
+  <data name="PlayTest_StateClimb" xml:space="preserve"><value>Climbing</value></data>
+  <data name="PlayTest_StateHang" xml:space="preserve"><value>Hanging</value></data>
+  <data name="PlayTest_OnLadder" xml:space="preserve"><value>Ladder</value></data>
+  <data name="PlayTest_OnWall" xml:space="preserve"><value>Wall</value></data>
+  <data name="PlayTest_KeysPlatformer" xml:space="preserve"><value>Controls: A·D / ←·→ to move, Space (or W·↑) to jump, W·S / ↑·↓ to climb on ladders and walls, R to reset position</value></data>
   <data name="S_PlayTestForm_PlayTestForm_BCE64AD0E9" xml:space="preserve"><value>Playing</value></data>
   <data name="S_PlayTestForm_PlayTestForm_C1DC7F8923" xml:space="preserve"><value>Gravity (px/s²)</value></data>
   <data name="S_PlayTestForm_PlayTestForm_CA9B701E99" xml:space="preserve"><value>Jump force (px/s)</value></data>
@@ -1894,7 +1908,6 @@ Long press/right-click: {0}</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_56D4255A96" xml:space="preserve"><value>When off, discards the separate settings and uses the common settings (can be undone).</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_59AD7EA467" xml:space="preserve"><value>JPG (no transparency)</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_5E17111839" xml:space="preserve"><value>If empty, the project file's folder (nearby folders are saved as paths relative to the project).</value></data>
-  <data name="S_UnityExportDialog_BuildExportSections_60EBD042A1" xml:space="preserve"><value>Write .meta</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_6B06887D1E" xml:space="preserve"><value>Frame sheet export off</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_6C1F44F368" xml:space="preserve"><value>Libraries in the same group share Category/Label, so you can switch skins by swapping only the asset in the group's Sprite Library component, keeping Sprite Resolver keyframes as is. </value></data>
   <data name="S_UnityExportDialog_BuildExportSections_6D98D40F29" xml:space="preserve"><value>Folder</value></data>
@@ -1971,7 +1984,6 @@ Long press/right-click: {0}</value></data>
   <data name="S_UnityExportDialog_OutputChoice_AB62772949" xml:space="preserve"><value>Output</value></data>
   <data name="S_UnityExportDialog_OutputChoice_C4EC679FE3" xml:space="preserve"><value>One cell per frame compositing groups/parts (for animation)</value></data>
   <data name="S_UnityExportDialog_OutputChoice_F37E64C73E" xml:space="preserve"><value>Frame sheet</value></data>
-  <data name="S_UnityExportDialog_OutputText_CD47DD0773" xml:space="preserve"><value> (no meta: outside Unity Assets)</value></data>
   <data name="S_UnityExportDialog_OutputText_D443DAA729" xml:space="preserve"><value>{0} and {1} more ({2}{3})</value></data>
   <data name="S_UnityExportDialog_PickSkins_3F9745EFAF" xml:space="preserve"><value>Choose skins to export</value></data>
   <data name="S_UnityExportDialog_PickSkins_4F2869B2C4" xml:space="preserve"><value>Choose part atlas skins</value></data>
@@ -2055,8 +2067,6 @@ Long press/right-click: {0}</value></data>
   <data name="S_UnityExportDialog_SheetRows_FAA35616D9" xml:space="preserve"><value>Grid</value></data>
   <data name="S_UnityExportDialog_SheetRows_FDB5482E0D" xml:space="preserve"><value>One image</value></data>
   <data name="S_UnityExportDialog_UnityExportDialog_22A1711719" xml:space="preserve"><value>Drag to resize settings/preview width</value></data>
-  <data name="S_UnityExportDialog_UnityExportDialog_434197E825" xml:space="preserve"><value>Frame sheet: one cell per frame compositing groups and parts (for animation). Part atlas: one cell per part × frame (per-part sprites, only when parts exist). </value></data>
-  <data name="S_UnityExportDialog_UnityExportDialog_68A441DB4C" xml:space="preserve"><value>Selecting a cell jumps to that frame in the editor (for the part atlas, that part and skin).</value></data>
   <data name="S_UnityExportDialog_UnityExportDialog_6A9E6CDC2F" xml:space="preserve"><value>Advanced — separate sheet settings for the part atlas</value></data>
   <data name="S_UnityExportDialog_UnityExportDialog_73AC3FD6C5" xml:space="preserve"><value>Export settings presets: save current settings · load · manage · reset to defaults</value></data>
   <data name="S_UnityExportDialog_UnityExportDialog_777398C2AE" xml:space="preserve"><value>Show settings</value></data>
@@ -2065,7 +2075,6 @@ Long press/right-click: {0}</value></data>
   <data name="S_UnityExportDialog_UnityExportDialog_B18F4A0368" xml:space="preserve"><value>Part atlas (one cell per part × frame, always Multiple)</value></data>
   <data name="S_UnityExportDialog_UnityExportDialog_C53EAC78FD" xml:space="preserve"><value>Export</value></data>
   <data name="S_UnityExportDialog_UnityExportDialog_C7A33C7D9E" xml:space="preserve"><value>Export images (+ .meta) with the current settings</value></data>
-  <data name="S_UnityExportDialog_UnityExportDialog_D06F53C998" xml:space="preserve"><value>Saving (Ctrl+S) or exporting creates the output files below. Names in the cell list are the sprite names in Unity .meta.</value></data>
   <data name="S_UnityExportDialog_UnityExportDialog_D2793FD9C8" xml:space="preserve"><value>Frame sheet (animation)</value></data>
   <data name="S_UnityExportDialog_UnityExportDialog_DF3C668D29" xml:space="preserve"><value>Preset</value></data>
   <data name="S_UnityExportDialog_UnityExportDialog_F066DF325B" xml:space="preserve"><value>Files (shared by both outputs)</value></data>
@@ -2547,10 +2556,10 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Title" xml:space="preserve"><value>Pixelate AI image</value></data>
   <data name="Pixelate_MenuItem" xml:space="preserve"><value>Pixelate AI image…</value></data>
   <data name="Pixelate_Apply" xml:space="preserve"><value>Apply</value></data>
-  <data name="Pixelate_OpenTitle" xml:space="preserve"><value>Choose an image to pixelate</value></data>
-  <data name="Pixelate_ImageFilter" xml:space="preserve"><value>Images</value></data>
+  <data name="Pixelate_OpenTitle" xml:space="preserve"><value>Choose an image or video to pixelate</value></data>
+  <data name="Pixelate_ImageFilter" xml:space="preserve"><value>Images and videos</value></data>
   <data name="Pixelate_FramesTrimmed" xml:space="preserve"><value>Too many frames: only the first {used} of {total} frames were used as the source.</value></data>
-  <data name="Pixelate_Empty" xml:space="preserve"><value>Drop an image, paste with Ctrl+V, or browse for a file</value></data>
+  <data name="Pixelate_Empty" xml:space="preserve"><value>Drop an image or video, paste with Ctrl+V, or browse for a file</value></data>
   <data name="Pixelate_Browse" xml:space="preserve"><value>Browse…</value></data>
   <data name="Pixelate_ReplaceSource" xml:space="preserve"><value>Replace source</value></data>
   <data name="Pixelate_ReplaceSourceTip" xml:space="preserve"><value>Pick another image file (dropping an image on the window or pasting with Ctrl+V also replaces it).</value></data>
@@ -4372,7 +4381,7 @@ If you don't, the set stays as it was.</value></data>
   <data name="TilesetWin_SlotSize" xml:space="preserve"><value>Cell size</value></data>
   <data name="TilesetWin_SlotAuto" xml:space="preserve"><value>Auto</value></data>
   <data name="TilesetWin_SlotAutoTip" xml:space="preserve"><value>On: sizes cells so all tile list columns fit the Tileset panel. Off: the size you set (smaller when the panel is too narrow, so the list never scrolls sideways).</value></data>
-  <data name="TilesetWin_FloorsSecondary" xml:space="preserve"><value>Floors belong to the layer's first tileset. Tiles of this tileset go to the first tileset's floor with the same name (otherwise the floor at the same position). Edit floors from the first tileset's settings or the Floors list in the tool settings.</value></data>
+  <data name="TilesetWin_FloorsSecondary" xml:space="preserve"><value>A floor of this tileset with the same name as one in the first tileset shares that floor, terrain (ground that replaces each other, such as water, sand and grass) goes into the first tileset's Ground floor, and other floors are added to the layer separately (hidden from the Floors list while empty). Edit the first tileset's floors from its settings or the Floors list in the tool settings.</value></data>
   <data name="Tileset_Close" xml:space="preserve"><value>Close on this layer</value></data>
   <data name="Tileset_Replace" xml:space="preserve"><value>Replace with another tileset…</value></data>
   <data name="Tileset_CloseAsk" xml:space="preserve"><value>{count} cells on this layer use this tileset and will be removed. Close the tileset? (It stays in the project.)</value><comment>count = 그 타일셋으로 찍은 칸 수</comment></data>
@@ -4579,8 +4588,6 @@ Same compositing as the frame sheet (layer effects, current outfit; hidden and e
   <data name="Export_WriteFailed" xml:space="preserve"><value>Couldn't write the file.
 {message}</value></data>
   <data name="Export_Failed" xml:space="preserve"><value>Export failed</value></data>
-  <data name="Export_Unity" xml:space="preserve"><value>Export for Unity (.meta)</value><comment>내보내기 창 형식 묶음의 체크(이미지 형식)</comment></data>
-  <data name="Export_UnityTip" xml:space="preserve"><value>Writes the Unity sprite settings (.meta) next to the image. The settings are in the Unity Import Settings group below. Off = image only (a part atlas using Sprite Library always writes .meta).</value></data>
   <data name="Export_SaveCopy" xml:space="preserve"><value>Save as…</value><comment>내보내기 창 단추(이미지 형식)</comment></data>
   <data name="Export_SaveCopyTip" xml:space="preserve"><value>Saves the sheet the current settings produce as standalone images, not tied to the project (no .meta; export records and settings unchanged). With several files, the chosen name becomes the prefix.</value></data>
   <data name="Export_CopyNothing" xml:space="preserve"><value>The current settings produce no sheet (check Output).</value></data>
@@ -4683,5 +4690,52 @@ Same compositing as the frame sheet (layer effects, current outfit; hidden and e
   <data name="Export_UnityAnimations" xml:space="preserve"><value>Animation (clips and Animator)</value></data>
   <data name="Export_UnityAnimationsTip" xml:space="preserve"><value>Writes an animation clip per tag (sheet_tag.anim, or a single sheet.anim without tags) and an Animator Controller (sheet.controller) with those clips as states. Sprites and part positions change per frame, and frame durations, direction and looping follow the tags. If the prefab is written too, its top object gets this Animator.</value></data>
   <data name="Export_UnityAssetsNone" xml:space="preserve"><value>Export the frame sheet or the part atlas to create these.</value></data>
-  <data name="Export_UnityAssetsSummary" xml:space="preserve"><value>{0} Unity prefab and animation files</value></data>
+  <data name="FileInfo_ExportLeftovers" xml:space="preserve"><value>Exported before but not made with the current settings</value></data>
+  <data name="FileInfo_ExportNotYet" xml:space="preserve"><value>None yet — made when you save</value></data>
+  <data name="FileInfo_ExportReveal" xml:space="preserve"><value>Show in folder</value></data>
+  <data name="FileInfo_ExportTrash" xml:space="preserve"><value>Move to the trash (restore with Ctrl+Z in the file list). Outputs that are on are made again on the next save.</value></data>
+  <data name="FileInfo_ExportTrashed" xml:space="preserve"><value>Moved {name} to the trash.</value></data>
+  <data name="FileInfo_ExportChangedOpen" xml:space="preserve"><value>Changed in the open tab. Save to write it to the file.</value></data>
+  <data name="FileInfo_ExportChangedSaved" xml:space="preserve"><value>Saved to the project file. Applies from the next save.</value></data>
+  <data name="FileInfo_ExportNeedsOpen" xml:space="preserve"><value>Not changed here because the file uses an older format. Open the project and change it in the export settings.</value></data>
+  <data name="ExportList_Title" xml:space="preserve"><value>Export list</value></data>
+  <data name="ExportList_Add" xml:space="preserve"><value>Add</value></data>
+  <data name="ExportList_Sheet" xml:space="preserve"><value>Image sheet</value></data>
+  <data name="ExportList_AllFrames" xml:space="preserve"><value>All frames</value></data>
+  <data name="ExportList_Empty" xml:space="preserve"><value>Nothing to export. Use Add.</value></data>
+  <data name="ExportList_OnSaveTip" xml:space="preserve"><value>Also make it when saving</value></data>
+  <data name="ExportList_Remove" xml:space="preserve"><value>Remove from the list (files already made stay)</value></data>
+  <data name="ExportList_Undo" xml:space="preserve"><value>Export list</value></data>
+  <data name="ExportList_ChangeTarget" xml:space="preserve"><value>Change location…</value></data>
+  <data name="ExportList_Settings" xml:space="preserve"><value>Settings…</value></data>
+  <data name="FileInfo_ExportMany" xml:space="preserve"><value>{first} and {count} more</value></data>
+  <data name="FileInfo_ExportNone" xml:space="preserve"><value>None yet</value></data>
+  <data name="ExportList_Name" xml:space="preserve"><value>Name</value></data>
+  <data name="ExportList_Folder" xml:space="preserve"><value>Folder</value></data>
+  <data name="ExportList_AddTip" xml:space="preserve"><value>Copy the selected row to the list under a different name. Change its format in the Format box.</value></data>
+  <data name="ExportList_Info" xml:space="preserve"><value>What this project exports. The same format can appear in several rows with different names or folders. Click a row to edit its format, name, folder and settings on the right. Check a row to make it again on every save. The blue button exports the selected row now. Removing a row keeps the files already made; they are cleaned up as old outputs on the next save.</value></data>
+  <data name="ExportList_SaveHint" xml:space="preserve"><value>Saving (Ctrl+S) exports the checked rows automatically.</value></data>
+  <data name="Export_Engine" xml:space="preserve"><value>Game engine</value></data>
+  <data name="Export_EngineNone" xml:space="preserve"><value>None (images only)</value></data>
+  <data name="Export_EngineNoneTip" xml:space="preserve"><value>Writes images only, without engine files such as .meta.</value></data>
+  <data name="Export_EngineUnity" xml:space="preserve"><value>Unity (.meta)</value></data>
+  <data name="Export_EngineUnityTip" xml:space="preserve"><value>Writes Unity sprite settings (.meta) next to the image. Its options are in the Unity Import Settings section below. Prefabs, animations and the part atlas Sprite Library are also available.</value></data>
+  <data name="Export_EngineGodot" xml:space="preserve"><value>Godot 4 (SpriteFrames)</value></data>
+  <data name="Export_EngineGodotTip" xml:space="preserve"><value>Writes a Godot 4 SpriteFrames resource (.tres) from the frame sheet. Each tag becomes an animation with the same frame durations and looping. Inside a Godot project the image is referenced with a res:// path. The part atlas is not used.</value></data>
+  <data name="Export_GodotScene" xml:space="preserve"><value>Scene (.tscn, AnimatedSprite2D)</value></data>
+  <data name="Export_GodotSceneTip" xml:space="preserve"><value>Also writes an AnimatedSprite2D scene that uses the SpriteFrames. It draws pixels as they are (Nearest), puts the canvas pivot at the node origin and autoplays the first animation.</value></data>
+  <data name="Export_EngineJson" xml:space="preserve"><value>JSON (Aseprite format, Phaser, PixiJS and more)</value></data>
+  <data name="Export_EngineJsonTip" xml:space="preserve"><value>Writes a .json with the same name for each frame sheet file: cell positions, original size, frame durations, tags (frameTags) and the cell names of each tag (animations). Phaser's load.aseprite, PixiJS Spritesheet and others read it.</value></data>
+  <data name="Export_EngineNeedsFrames" xml:space="preserve"><value>Made only when the frame sheet is exported.</value></data>
+  <data name="Export_EngineFilesSummary" xml:space="preserve"><value>{count} engine files</value></data>
+  <data name="ExportList_Presets" xml:space="preserve"><value>List presets</value></data>
+  <data name="ExportList_PresetsTip" xml:space="preserve"><value>Save the whole export list under a name and load it in other projects. The project-name part of file names becomes the name of the project you load it into.</value></data>
+  <data name="ExportList_PresetSave" xml:space="preserve"><value>Save current list…</value></data>
+  <data name="ExportList_PresetName" xml:space="preserve"><value>List preset name</value></data>
+  <data name="ExportList_PresetDelete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Export_ListPresetRows" xml:space="preserve"><value>{count} rows</value></data>
+  <data name="Export_ListPresetOverwrite" xml:space="preserve"><value>The list preset "{name}" already exists. Overwrite it?</value></data>
+  <data name="Export_ListPresetApplied" xml:space="preserve"><value>Load list preset "{name}"</value></data>
+  <data name="Export_ListPresetDeleteAsk" xml:space="preserve"><value>Delete the list preset "{name}"?</value></data>
+  <data name="Pixelate_Quick_RemoveBg" xml:space="preserve"><value>Remove background</value></data>
 </root>

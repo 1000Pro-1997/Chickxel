@@ -467,6 +467,7 @@ public class PartSkinTests
         var (p, _, _, _, knight, hat) = Rig();
         p.Export.ExportFrames = false;
         p.Export.WriteSpriteLibrary = true;
+        p.Export.Engine = ExportEngine.Unity;
         var result = ProjectIO.SaveWithExport(p, path).Export!;
         Assert.Equal(["hero_parts_body@기본.spriteLib", "hero_parts_body@knight.spriteLib", "hero_parts_body@모자.spriteLib"],
             result.Libraries.Select(r => Path.GetFileName(r.ImagePath)));

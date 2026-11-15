@@ -23,6 +23,21 @@ public class FrameExtendTests
         return p;
     }
 
+    /// <summary>끝에 복사로 붙이면(태그를 늘리지 않음) 마지막 프레임까지인 태그는 그대로, 보통 복사는 늘어난다.</summary>
+    [Fact]
+    public void DuplicateLastFrame_WithoutTagExtension_KeepsTag()
+    {
+        var p = FourFrames();
+        var tag = p.AddTag("walk", 1, 3);
+        p.DuplicateFrame(3, extendTags: false);
+        Assert.Equal((5, 1, 3), (p.Frames.Count, tag.From, tag.To));
+        Assert.Equal(Mark(0, 3), p.GetCel(0, 4)![0, 0]);
+        p.DuplicateFrame(4);
+        Assert.Equal(3, tag.To); // 태그 밖 프레임을 복사하면 그대로
+        p.DuplicateFrame(3);
+        Assert.Equal(4, tag.To);
+    }
+
     private static Color32 Mark(int layer, int frame) => new((byte)(layer * 10 + frame + 1), 0, 0);
 
     /// <summary>프레임마다 어느 원래 프레임의 그림인지(레이어 0 표시 색 기준, 두 레이어·길이가 같은 원래 프레임인지도 확인).</summary>

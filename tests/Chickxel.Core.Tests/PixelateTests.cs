@@ -878,6 +878,55 @@ public class PixelateTests
         return stray;
     }
 
+    /// <summary>테두리 배경색: 칸 경계(239 | 241)에 갈린 흰색 잡음이 한 색(30개)보다 많으면 묶어서 흰색을 고른다.</summary>
+    [Fact]
+    public void DominantColorGroupsSimilarColors()
+    {
+        var colors = Enumerable.Repeat(new Color32(100, 100, 100), 30)
+            .Concat(Enumerable.Repeat(new Color32(239, 239, 239), 25))
+            .Concat(Enumerable.Repeat(new Color32(241, 241, 241), 25)).ToList();
+        var bg = BackgroundRemoval.DominantColor(colors);
+        Assert.Equal(new Color32(240, 240, 240), bg);
+    }
+
+    /// <summary>압축 잡음으로 배경색에서 조금 벗어난 점이 외곽선 바깥에 붙어 있어도 지운다(외곽선·안쪽 흰색은 남김).</summary>
+    [Fact]
+    public void BackgroundRemovalDropsNoisyHaloOutsideOutline()
+    {
+        var img = new PixelImage(20, 20);
+        for (int i = 0; i < img.Pixels.Length; i++) img.Pixels[i] = new Color32(254, 254, 254);
+        for (int y = 5; y < 15; y++)
+            for (int x = 5; x < 15; x++)
+                img[x, y] = x is 5 or 14 || y is 5 or 14 ? new Color32(20, 20, 30) : new Color32(235, 235, 245); // 외곽선 + 흰 머리색
+        img[4, 8] = new Color32(243, 242, 248); // 외곽선에 붙은 잡음
+        img[15, 10] = new Color32(244, 243, 249);
+        var r = BackgroundRemoval.Run(img, new BackgroundSettings { Mode = BackgroundMode.Auto, RemoveStickerBorder = false });
+        Assert.False(r.Foreground[8 * 20 + 4]);
+        Assert.False(r.Foreground[10 * 20 + 15]);
+        Assert.True(r.Foreground[5 * 20 + 5]);
+        Assert.True(r.Foreground[10 * 20 + 10]);
+    }
+
+    /// <summary>
+    /// 원본 프레임 격자(움직이는 그림·영상): 앞 N칸이 그림이 작거나 비어 있어도 칸 그대로 한 프레임씩, 남는 칸은 빼고, 칸 밖 픽셀은 섞이지 않는다.
+    /// </summary>
+    [Fact]
+    public void SourceFramesKeepWholeSlotsInOrder()
+    {
+        const int w = 30, h = 20;
+        var mask = new bool[w * h];
+        mask[5 * w + 4] = true; // 0번 칸: 점 하나
+        // 1번 칸은 비어 있음, 2번 칸(아래 줄 왼쪽): 넓은 덩어리
+        for (int y = 12; y < 18; y++)
+            for (int x = 2; x < 12; x++) mask[y * w + x] = true;
+        var split = FrameSplitter.Run(mask, w, h, new FrameSettings { Mode = FrameSplitMode.Grid, Columns = 2, Rows = 2, SourceFrames = 3 });
+        Assert.Equal(3, split.Frames.Count);
+        Assert.Equal([new Rectangle(0, 0, 15, 10), new Rectangle(15, 0, 15, 10), new Rectangle(0, 10, 15, 10)], split.Frames.Select(f => f.Bounds));
+        Assert.All(split.Frames, f => Assert.Equal(f.Slot, f.Bounds));
+        Assert.Equal(0, split.Labels[5 * w + 4]);
+        Assert.Equal(2, split.Labels[15 * w + 5]);
+    }
+
     /// <summary>
     /// 격자 나누기는 덩어리째: 칸 선을 넘은 팔·떨어진 발끝은 제 스프라이트(0번)에, 손끝으로 맞닿은 2·3번은 가장 얇은 열(손끝)에서 갈린다.
     /// 자리는 칸 그대로, 범위는 칸 밖으로 나갈 수 있다.

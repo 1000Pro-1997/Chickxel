@@ -68,6 +68,7 @@ public sealed class App : Application
         AppTheme.Install(this);
         PopupMenus.Install();
         TextFocusRelease.Install();
+        ImeRefresh.Install();
         HelpPicker.Install();
     }
 

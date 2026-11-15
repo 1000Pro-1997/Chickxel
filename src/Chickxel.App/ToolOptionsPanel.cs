@@ -87,7 +87,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
     private readonly CheckBox _wandPreview;
     private readonly NumericUpDown _wandPreviewLimit;
     /// <summary>제목 줄의 "i": 도구 쓰는 법(선택·이동·그라데이션 등, 없으면 숨김).</summary>
-    private readonly Border _hint;
+    private readonly InfoBadge _hint;
 
     // 적용 프레임(그리기 도구의 획을 다른 프레임에도 같은 자리로)
     private readonly Border _frameRangeBox;
@@ -1001,7 +1001,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
             ToolKind.Text => UiStrings.TextTool_Info,
             _ => "",
         };
-        ToolTip.SetTip(_hint, hint);
+        _hint.Tip = hint;
         _hint.IsVisible = hint.Length > 0;
         _transformBox.IsVisible = _ctx.IsTransforming;
         _canvasResizeBox.IsVisible = _ctx.IsCanvasResizing;

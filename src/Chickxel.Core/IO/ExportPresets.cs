@@ -23,7 +23,11 @@ public sealed class ExportPreset
     public bool ExportParts { get; set; }
     public ExportImageFormat ImageFormat { get; set; } = ExportImageFormat.Png;
     public int JpegQuality { get; set; } = 90;
+    /// <summary>예전 프리셋의 Unity .meta 설정(읽기만 — <see cref="Engine"/>이 없을 때 true = Unity, false = 없음, null = 그대로).</summary>
     public bool? WriteMeta { get; set; }
+    /// <summary>게임 엔진(null = 적용할 때 프로젝트의 엔진을 그대로).</summary>
+    public ExportEngine? Engine { get; set; }
+    public bool GodotScene { get; set; }
     public bool WriteSpriteLibrary { get; set; }
     public bool WritePrefab { get; set; }
     public bool WriteAnimations { get; set; }
@@ -40,7 +44,8 @@ public sealed class ExportPreset
         ExportParts = x.ExportParts,
         ImageFormat = x.ImageFormat,
         JpegQuality = x.JpegQuality,
-        WriteMeta = x.WriteMeta,
+        Engine = x.Engine,
+        GodotScene = x.GodotScene,
         WriteSpriteLibrary = x.WriteSpriteLibrary,
         WritePrefab = x.WritePrefab,
         WriteAnimations = x.WriteAnimations,
@@ -59,7 +64,8 @@ public sealed class ExportPreset
         x.ExportParts = ExportParts;
         x.ImageFormat = ImageFormat;
         x.JpegQuality = JpegQuality;
-        x.WriteMeta = WriteMeta;
+        if ((Engine ?? WriteMeta switch { true => ExportEngine.Unity, false => ExportEngine.None, null => (ExportEngine?)null }) is { } engine) x.Engine = engine;
+        x.GodotScene = GodotScene;
         x.WriteSpriteLibrary = WriteSpriteLibrary;
         x.WritePrefab = WritePrefab;
         x.WriteAnimations = WriteAnimations;
@@ -76,7 +82,7 @@ public sealed class ExportPreset
     public ExportPreset Clone(string? name = null) => new()
     {
         Name = name ?? Name, ExportOnSave = ExportOnSave, ExportFrames = ExportFrames, ExportParts = ExportParts,
-        ImageFormat = ImageFormat, JpegQuality = JpegQuality, WriteMeta = WriteMeta, WriteSpriteLibrary = WriteSpriteLibrary,
+        ImageFormat = ImageFormat, JpegQuality = JpegQuality, WriteMeta = WriteMeta, Engine = Engine, GodotScene = GodotScene, WriteSpriteLibrary = WriteSpriteLibrary,
         WritePrefab = WritePrefab, WriteAnimations = WriteAnimations, Sheet = Sheet.Clone(), PartsSheet = PartsSheet?.Clone(),
     };
 }
@@ -181,7 +187,7 @@ public static class ExportPresets
         new ExportPreset { Name = "프레임 시트 기본", BuiltIn = true },
         new ExportPreset
         {
-            Name = "부위 아틀라스 + Sprite Library", BuiltIn = true, ExportFrames = false, ExportParts = true, WriteSpriteLibrary = true,
+            Name = "부위 아틀라스 + Sprite Library", BuiltIn = true, ExportFrames = false, ExportParts = true, WriteSpriteLibrary = true, Engine = ExportEngine.Unity,
             Sheet = new PresetSheet { Layout = SheetLayout.Packed, Skins = SkinSource.Selected },
         },
         new ExportPreset
