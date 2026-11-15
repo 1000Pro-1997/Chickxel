@@ -81,11 +81,21 @@ jobs:
               if label:
                   downloads.append("[" + label + "](" + asset["browser_download_url"] + ")")
 
+          # Generic fix sections ("### Fixes" / "### 고친 것") say nothing as a heading alone: list their items under it instead.
+          FIX_TITLES = ("fixes", "fixed", "bug fixes", "고친 것", "고친 점", "버그 수정", "수정")
+
+          def first_sentence(text):
+              text = re.sub(r"\*\*|__", "", text).strip()
+              sentence = re.split(r"(?<=[.!?])\s", text, maxsplit=1)[0].rstrip(".")
+              return sentence if len(sentence) <= 110 else sentence[:107].rstrip() + "…"
+
           def section_headings(korean):
               # Release notes: English section first, then "## 한국어" section (see release.yml).
               headings = []
+              fixes = []  # fix sections go last, after the feature headings
               fence = None
               english_section = True
+              in_fixes = False
               for line in (release.get("body") or "").splitlines():
                   marker = re.match(r"^ {0,3}(`{3,}|~{3,})", line)
                   if marker:
@@ -99,7 +109,11 @@ jobs:
                       continue
                   heading = re.match(r"^ {0,3}(#{2,6})\s+(.+?)\s*$", line)
                   if not heading:
+                      item = re.match(r"^\s{0,3}[-*]\s+(.+)$", line)
+                      if in_fixes and item:
+                          fixes.append("  - " + first_sentence(item.group(1)))
                       continue
+                  in_fixes = False
                   title = re.sub(r"\s+#+\s*$", "", heading.group(2)).strip()
                   if title.lower() == "english":
                       english_section = True
@@ -111,10 +125,12 @@ jobs:
                       continue
                   if korean:
                       if not english_section:
-                          headings.append("- " + title)
+                          in_fixes = title.lower() in FIX_TITLES
+                          (fixes if in_fixes else headings).append("- " + title)
                   elif english_section and not re.search(r"[가-힣]", title) and re.search(r"[A-Za-z]", title):
-                      headings.append("- " + title)
-              return headings
+                      in_fixes = title.lower() in FIX_TITLES
+                      (fixes if in_fixes else headings).append("- " + title)
+              return headings + fixes
 
           TEXT = {
               "en": {"title": "Chickxel {tag} Update", "empty": "See the full release notes for details.",
