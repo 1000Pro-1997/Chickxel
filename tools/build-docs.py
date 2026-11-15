@@ -413,6 +413,16 @@ def lint_guide(html_text: str, page: str) -> list[str]:
     return list(dict.fromkeys(problems))
 
 
+# style.css 주소의 ?v= 값 = 파일 내용 해시: CSS를 고치면 모든 쪽의 주소가 바뀌어 브라우저가 옛 CSS를 캐시에서 쓰지 않는다
+# (템플릿에 적힌 값과 상관없이 덮어씀, 템플릿이 아닌 404.html도 같이).
+STYLE_REF = re.compile(r'(style\.css\?v=)[^"\']*')
+
+
+def style_version() -> str:
+    import hashlib
+    return hashlib.sha256((DOCS / "style.css").read_bytes()).hexdigest()[:10]
+
+
 def output_path(page: str, lang: str) -> Path:
     return DOCS / f"{page}.html" if lang == BASE_LANG else DOCS / lang / f"{page}.html"
 
@@ -420,13 +430,14 @@ def output_path(page: str, lang: str) -> Path:
 def main() -> int:
     check = "--check" in sys.argv[1:]
     stale: list[str] = []
+    version = style_version()
     for template_path in sorted(SRC.glob("*.html")):
         page = template_path.stem
         langs, strings = page_strings(page)
         template = load_template(template_path)
         used: set[str] = set()
         for lang in langs:
-            text = render(template, strings, lang, page, used)
+            text = STYLE_REF.sub(lambda m: m.group(1) + version, render(template, strings, lang, page, used))
             if lang == BASE_LANG and (problems := lint_guide(text, page)):
                 print("\n".join(problems), file=sys.stderr)
                 return 1
@@ -443,6 +454,16 @@ def main() -> int:
         if unused:
             print(f"{page}.csv: unused keys: {', '.join(unused)}", file=sys.stderr)
             return 1
+    not_found = DOCS / "404.html"
+    if not_found.exists():
+        text = not_found.read_text(encoding="utf-8")
+        fixed = STYLE_REF.sub(lambda m: m.group(1) + version, text)
+        if fixed != text:
+            if check:
+                stale.append(str(not_found.relative_to(ROOT)))
+            else:
+                not_found.write_text(fixed, encoding="utf-8")
+                print(f"wrote {not_found.relative_to(ROOT)}")
     if check:
         if stale:
             print("out of date (run python tools/build-docs.py): " + ", ".join(stale), file=sys.stderr)

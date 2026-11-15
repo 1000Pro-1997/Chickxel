@@ -122,7 +122,7 @@ pre code { background: none; border: 0; padding: 0; }
 .facts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 22px; }
 .fact { font-size: 12px; font-weight: 650; color: var(--body); background: var(--soft); border: 1px solid var(--line-soft); border-radius: 999px; padding: 5px 11px; }
 .hero-board { background: var(--soft); border: 1px solid var(--line-soft); border-radius: 28px; padding: 18px; box-shadow: var(--shadow) 0 18px 48px -8px; }
-.hero-board img, .hero-board video { display: block; width: 100%; height: auto; border-radius: 14px; border: 1px solid var(--line); }
+.hero-board img, .hero-board video { display: block; width: 100%; max-width: 100%; height: auto; border-radius: 14px; border: 1px solid var(--line); }
 
 /* 구역 */
 .section { padding: 72px 0; }
@@ -307,7 +307,7 @@ td { color: var(--body); }
 .mark { display: inline-grid; place-items: center; width: 22px; height: 22px; margin: 0 6px; border-radius: 50%; background: #e5484d; box-shadow: 0 0 0 2px #fff; color: #fff; font: 800 12px/1 Inter, system-ui, sans-serif; vertical-align: 1px; }
 
 @media (max-width: 960px) {
-  .hero-grid { grid-template-columns: 1fr; gap: 40px; }
+  .hero-grid { grid-template-columns: minmax(0, 1fr); gap: 40px; }
   .features, .downloads { grid-template-columns: 1fr 1fr; }
   .core-media { width: min(300px, 100%); }
   .guide-paths { grid-template-columns: 1fr; }
