@@ -42,7 +42,7 @@ public static partial class BuiltInTilesets
     /// 샌드박스 지상·동굴(16px, 옆에서 본 시점, 검은 외곽선의 깔끔한 그림): 층은 배경 벽 → 바닥 → 덮개 → 장식 → 앞.
     /// 바닥(흙·진흙 = 무리 "흙", 돌·광석 섞인 돌 = 무리 "돌", 모래·돌 벽돌·나무 판자 — 8방향 47규칙), 배경 벽(흙·돌·벽돌 — 무리 "배경 벽"),
     /// 덮개(풀·눈·낙엽 — 바닥 윗면 칸에 덧칠하면 아래로 흘러내림), 장식(나무·풀·꽃·버섯·바위·종유석·수정·횃불·보석·동전·상자·통·문 등, 발판·사다리·덩굴·울타리 줄 자동 타일),
-    /// 앞(물·용암 — 위가 비면 물결 수면, 옆이 비면 옆 가장자리, 더 높은 물 옆은 비스듬히 이어짐, 흐르는 움직임).
+    /// 앞(물·용암 — 위가 비면 물결 수면, 옆이 비면 옆 가장자리, 한 칸씩 높아지는 물은 45° 비탈로 이어짐, 흐르는 움직임).
     /// </summary>
     public static Tileset Sandbox()
     {
@@ -99,12 +99,12 @@ public static partial class BuiltInTilesets
         b.Set(DomainStrings.TileBuiltIn_Snow, cover, "", CoverRules(b, cover, 7, SnowCover));
         b.Set(DomainStrings.TileBuiltIn_Autumn, cover, "", CoverRules(b, cover, 8, AutumnCover));
 
-        // 줄 9~12: 물·용암(움직이는 타일) — "뭐라도 있음"은 바닥·앞 층만 본다(배경 벽·장식 앞에서는 수면이 남게)
+        // 줄 9~16: 물·용암(움직이는 타일) — "뭐라도 있음"은 바닥·앞 층만 본다(배경 벽·장식 앞에서는 수면이 남게)
         b.Set(DomainStrings.TileBuiltIn_Water, front, "", LiquidRules(b, front, 9, Water), [ground, front]);
-        b.Set(DomainStrings.TileBuiltIn_Lava, front, "", LiquidRules(b, front, 11, Lava), [ground, front]);
+        b.Set(DomainStrings.TileBuiltIn_Lava, front, "", LiquidRules(b, front, 13, Lava), [ground, front]);
 
-        // 줄 13~: 바닥·배경 벽(8방향 47규칙, 가득 찬 칸은 무늬 여러 장을 비중으로 무작위)
-        int row = 13;
+        // 줄 17~: 바닥·배경 벽(8방향 47규칙, 가득 찬 칸은 무늬 여러 장을 비중으로 무작위)
+        int row = 17;
         b.Set(DomainStrings.TileBuiltIn_Dirt, ground, dirtGroup, Terrain(b, ground, row, DirtGround, [6, 3, 3]));
         b.Set(DomainStrings.TileBuiltIn_Mud, ground, dirtGroup, Terrain(b, ground, row += 7, MudGround, [6, 3, 3]));
         var stone = Terrain(b, ground, row += 7, StoneGround, [6, 3, 3]);
@@ -438,46 +438,62 @@ public static partial class BuiltInTilesets
     // 용암 껍질 조각 무늬의 씨앗
     private static readonly (double X, double Y)[] LavaPlates = Seeds(2, 51, 0.5);
 
-    // 물 둘레 한쪽(왼쪽·오른쪽): 빔, 이어짐(옆 칸도 수면), 비스듬히 이어짐(위가 빈 칸에서 옆 칸 위까지 물 — 더 높은 물 옆)
-    private enum LiquidSide { Open, Join, Slope }
+    // 물 둘레 한쪽(왼쪽·오른쪽): 빔, 이어짐(옆 칸도 수면이거나 벽), 올라감(옆이 물이고 옆 위에 뭐라도 있음 — 더 높은 물이나 블록 아래 꽉 찬 물 옆),
+    // 내려감(옆은 비고 옆 아래가 물 — 더 낮은 물 옆), 비탈 밑(몸통 칸: 위 칸이 그쪽으로 내려가는 수면 — 비탈 아래 띠를 이어 그림),
+    // 덮임(몸통 칸 조건만: 옆과 옆 위에 뭐라도 있음 — 이어짐과 같은 그림, 비탈 밑보다 먼저 맞추려고 따로 둠)
+    private enum LiquidSide { Open, Join, Rise, Fall, Under, Covered }
 
     /// <summary>
-    /// 물·용암 세트 규칙(13가지, 그림 차례는 수면 9 → 몸통 4): 위에 뭐라도 있으면(물이든 바닥 블록이든 — "뭐라도 있음") 몸통 칸, 아니면 수면 칸.
-    /// 좌우는 각각 빔(옆 가장자리 + 수면이면 비스듬히 깎인 모서리)·막힘(옆에 뭐라도 있음 — 물이거나 벽, 가장자리 없음)·비스듬히 이어짐(수면 칸에서 옆과 옆 위가 물이면
-    /// 수면이 그쪽으로 비스듬히 올라감). 몸통 규칙을 앞에 두어 벽 아래 물은 수면 없이 꽉 찬다. 아래쪽은 보지 않는다. 그림마다 <see cref="LiquidStyle.Frames"/>장.
+    /// 물·용암 세트 규칙(수면 16 + 몸통 16, 그림은 수면 16 → 몸통 9장): 위에 뭐라도 있으면(물이든 바닥 블록이든 — "뭐라도 있음") 몸통 칸, 아니면 수면 칸.
+    /// 수면 칸의 좌우는 각각 빔(옆 가장자리 + 비스듬히 깎인 모서리)·막힘(옆에 뭐라도 있음 — 물이거나 벽, 가장자리 없음)·올라감(옆이 물이고 옆 위에 뭐라도 있으면
+    /// 수면이 그쪽 칸 위 끝까지 45°로 올라감 — 더 높은 물이나 블록 아래 꽉 찬 물에 닿음)·내려감(옆은 비고 옆 아래가 물이면 수면이 그쪽 칸 아래 끝까지 45°로 내려감).
+    /// 올라감과 내려감은 늘 짝으로 맞아 한 칸씩 높아지는 물은 계단 없이 곧은 비탈이 된다. 같은 칸에 여러 쪽이 맞으면 올라감 → 막힘 → 내려감 → 빔 차례로 고른다(벽 옆은 막힘).
+    /// 몸통 칸의 좌우는 덮임 → 비탈 밑(위가 물, 옆이 물, 옆 위가 물이 아님 — 위 칸의 내려가는 비탈이 칸 밖으로 잘라 먹은 수면 띠를 위 모서리에 이어 그림) → 막힘 → 빔.
+    /// 몸통 규칙을 앞에 두어 벽 아래 물은 수면 없이 꽉 찬다. 아래쪽은 보지 않는다. 그림마다 <see cref="LiquidStyle.Frames"/>장.
     /// </summary>
     private static ImmutableArray<AutoTileRule> LiquidRules(Builder b, int floor, int row, LiquidStyle st)
     {
         var top = new List<AutoTileRule>();
         var body = new List<AutoTileRule>();
-        int k = 0;
+        var tiles = new Dictionary<(bool, LiquidSide, LiquidSide), int>();
         int Tile(bool isTop, LiquidSide l, LiquidSide r)
         {
+            if (l == LiquidSide.Covered) l = LiquidSide.Join;
+            if (r == LiquidSide.Covered) r = LiquidSide.Join;
+            if (tiles.TryGetValue((isTop, l, r), out int known)) return known;
             var frames = Enumerable.Range(0, st.Frames).Select(f => LiquidTile(isTop, l, r, st, f)).ToArray();
-            int id = b.Animated(frames, st.FrameMs, floor, k % 8, row + k / 8);
-            k++;
-            return id;
+            int k = tiles.Count;
+            return tiles[(isTop, l, r)] = b.Animated(frames, st.FrameMs, floor, k % 8, row + k / 8);
         }
-        // 한쪽 조건(같음, 다름, 뭐라도 있음): 빔 = 옆이 물이 아님, 막힘 = 옆에 뭐라도 있음(수면이면 옆 위는 물이 아님), 비스듬히 = 옆과 옆 위가 물
-        static (int, int, int) Side(int same, int other, int filled, LiquidSide s, int side, int corner, bool isTop) => s switch
+        // 한쪽 조건(같음, 다름, 뭐라도 있음): 빔 = 옆이 물이 아님, 막힘 = 옆에 뭐라도 있음(수면이면 옆 위는 물이 아님), 올라감 = 옆이 물이고 옆 위에 뭐라도 있음,
+        // 내려감 = 옆이 물이 아니고 옆 아래가 물(벽 옆이면 앞의 막힘이 먼저 맞음), 비탈 밑 = 옆이 물이고 옆 위가 물이 아님(위가 물인 것은 규칙에서),
+        // 덮임 = 옆과 옆 위에 뭐라도 있음
+        static (int, int, int) Side(int same, int other, int filled, LiquidSide s, int side, int corner, int below, bool isTop) => s switch
         {
             LiquidSide.Open => (same, other | side, filled),
             LiquidSide.Join => (same, other | (isTop ? corner : 0), filled | side),
-            _ => (same | side | corner, other, filled),
+            LiquidSide.Fall => (same | below, other | side, filled),
+            LiquidSide.Under => (same | side, other | corner, filled),
+            LiquidSide.Covered => (same, other, filled | side | corner),
+            _ => (same | side, other, filled | corner),
         };
-        LiquidSide[] topSides = [LiquidSide.Join, LiquidSide.Open, LiquidSide.Slope];
+        // 규칙은 앞에서부터 맞추므로 쪽마다 겹치는 조건은 앞의 것이 이긴다(쪽마다 맞는 것 중 가장 앞 — 두 쪽 모두 그 차례)
+        LiquidSide[] topSides = [LiquidSide.Rise, LiquidSide.Join, LiquidSide.Fall, LiquidSide.Open];
         foreach (var r in topSides)
             foreach (var l in topSides)
             {
-                var (same, other, filled) = Side(0, N, 0, r, E, NE, true);
-                (same, other, filled) = Side(same, other, filled, l, W, NW, true);
+                var (same, other, filled) = Side(0, N, 0, r, E, NE, SE, true);
+                (same, other, filled) = Side(same, other, filled, l, W, NW, SW, true);
                 top.Add(new AutoTileRule { Same = (byte)same, Other = (byte)other, Filled = (byte)filled, Tiles = [new(Tile(true, l, r))] });
             }
-        foreach (var r in new[] { LiquidSide.Join, LiquidSide.Open })
-            foreach (var l in new[] { LiquidSide.Join, LiquidSide.Open })
+        LiquidSide[] bodySides = [LiquidSide.Covered, LiquidSide.Under, LiquidSide.Join, LiquidSide.Open];
+        foreach (var r in bodySides)
+            foreach (var l in bodySides)
             {
-                var (same, other, filled) = Side(0, 0, N, r, E, NE, false);
-                (same, other, filled) = Side(same, other, filled, l, W, NW, false);
+                var (same, other, filled) = Side(0, 0, N, r, E, NE, SE, false);
+                (same, other, filled) = Side(same, other, filled, l, W, NW, SW, false);
+                // 비탈 밑은 위가 물일 때만(위가 블록이면 그 위 칸에 비탈이 없음)
+                if (l == LiquidSide.Under || r == LiquidSide.Under) (same, filled) = (same | N, filled & ~N);
                 body.Add(new AutoTileRule { Same = (byte)same, Other = (byte)other, Filled = (byte)filled, Tiles = [new(Tile(false, l, r))] });
             }
         return [.. body, .. top];
@@ -485,7 +501,8 @@ public static partial class BuiltInTilesets
 
     /// <summary>
     /// 물·용암 한 칸의 그림 <paramref name="frame"/>: 수면(위가 빈 칸)은 칸 주기 물결이 한 장마다 <see cref="LiquidStyle.Step"/>px씩 옆으로 흐르고,
-    /// 빈 옆쪽은 밝은 가장자리 선과 비스듬히 깎인 위 모서리, 더 높은 물 옆(<see cref="LiquidSide.Slope"/>)은 수면이 2:1로 비스듬히 올라가 이어진다.
+    /// 빈 옆쪽은 밝은 가장자리 선과 비스듬히 깎인 위 모서리다. 올라감(<see cref="LiquidSide.Rise"/>)은 수면이 칸 위 끝까지, 내려감(<see cref="LiquidSide.Fall"/>)은
+    /// 칸 아래 끝까지 45°로 기울어 두 칸의 비탈이 한 줄로 이어진다(비탈에는 물결 반짝임 없이 수면 줄만).
     /// 몸통은 반짝이는 줄이 흐르고(물), 용암은 어두운 껍질 무늬가 천천히 바뀌며 수면에 거품이 터진다. 모든 무늬가 x 방향 칸 주기라 어느 순간에도 이음매가 맞는다.
     /// </summary>
     private static PixelImage LiquidTile(bool top, LiquidSide left, LiquidSide right, LiquidStyle st, int frame)
@@ -499,21 +516,28 @@ public static partial class BuiltInTilesets
                 double px = x + 0.5, py = y + 0.5;
                 // 빈 곳까지 거리: 수면(아래로 잼)과 빈 옆
                 double surf = 99, side = 99;
+                // 비탈 밑: 위 칸의 45° 수면(위 칸 좌표로 px 또는 Cell - px)에서 잰 깊이 — 칸 위 모서리에 띠만 들어옴
+                if (right == LiquidSide.Under) surf = Math.Min(surf, py + Cell - px);
+                if (left == LiquidSide.Under) surf = Math.Min(surf, py + px);
+                bool crest = false;
                 if (top)
                 {
-                    double s = Surf(px);
-                    if (right == LiquidSide.Slope) s = Math.Min(s, st.Level * (Cell - px) / (st.Level * 2));
-                    if (left == LiquidSide.Slope) s = Math.Min(s, st.Level * px / (st.Level * 2));
+                    double wave = Surf(px), s = wave;
+                    if (right == LiquidSide.Rise) s = Math.Min(s, Cell - px);
+                    if (left == LiquidSide.Rise) s = Math.Min(s, px);
+                    if (right == LiquidSide.Fall) s = Math.Max(s, px);
+                    if (left == LiquidSide.Fall) s = Math.Max(s, Cell - px);
                     // 빈 옆으로 비스듬히 깎인 모서리
                     if (right == LiquidSide.Open) s = Math.Max(s, st.Level + 3 - (Cell - px));
                     if (left == LiquidSide.Open) s = Math.Max(s, st.Level + 3 - px);
                     surf = py - s;
+                    crest = s == wave && wave < st.Level;
                 }
                 if (right == LiquidSide.Open) side = Math.Min(side, Cell - px);
                 if (left == LiquidSide.Open) side = Math.Min(side, px);
                 if (surf < 0) continue;
                 Color32 c;
-                if (surf < 1) c = st.Lava || Surf(px) >= st.Level ? st.Line : White;
+                if (surf < 1) c = st.Lava || !crest ? st.Line : White;
                 else if (side < 1) c = st.Band1;
                 else if (surf < 2) c = st.Band1;
                 else if (surf < 3.5 || side < 2) c = st.Band2;

@@ -2,6 +2,15 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.132 (2026-11-16)
+
+### Water and lava slopes in the sandbox tileset
+- Water or lava that rises one cell at a time now forms one straight 45° slope instead of steps with a vertical wall on each step.
+- A single cell sticking up comes to a pointed peak, and valleys between slopes meet cleanly; jumps of two or more cells keep a vertical edge.
+- The light band under the surface now continues across cell corners at the foot of a slope instead of thinning to a 1-pixel line.
+- An open surface next to water sitting under a block rises to meet the bottom of the block instead of leaving a step.
+- Add the built-in Sandbox tileset again to get the new tiles; tilesets already in a project keep the old ones.
+
 ## v1.14.131 (2026-11-16)
 
 ### Export list
