@@ -638,6 +638,7 @@ public sealed class SwatchGrid : Control
     public SwatchGrid()
     {
         Margin = new Thickness(3);
+        TipPlacement.FollowPointer(this);
     }
 
     public ColorList Colors { get; } = new();

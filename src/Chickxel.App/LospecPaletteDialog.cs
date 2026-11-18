@@ -758,6 +758,8 @@ public sealed class LospecPaletteDialog : DialogBase
 
         public event EventHandler<Color32?>? HoverChanged;
 
+        public BigSwatches() => TipPlacement.FollowPointer(this);
+
         public void SetColors(IReadOnlyList<Color32> colors)
         {
             _colors = colors;
@@ -840,6 +842,7 @@ public sealed class LospecPaletteDialog : DialogBase
         {
             ClipToBounds = true;
             _timer.Tick += (_, _) => Step();
+            TipPlacement.FollowPointer(this);
         }
 
         public void Clear()

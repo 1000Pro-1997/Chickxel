@@ -148,6 +148,7 @@ public sealed partial class LayerEffectsDialog
             VerticalAlignment = VerticalAlignment.Top; // 줄이 늘어도(끌어 늘리기) 앞 칸 자리가 그대로
             Cursor = new Cursor(StandardCursorType.Hand);
             ToolTip.SetTip(this, UiStrings.S_LayerEffectsDialog_Frames_FrameStrip_2E9C335D70);
+            TipPlacement.FollowPointer(this);
         }
 
         /// <summary>

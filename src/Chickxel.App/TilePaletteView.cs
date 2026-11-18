@@ -50,6 +50,8 @@ public sealed class TilePaletteView : Control
     /// <summary>보이는 열 수 최소(타일이 적어도 이만큼은 칸을 그림).</summary>
     public int MinColumns { get; set; } = 8;
 
+    public TilePaletteView() => TipPlacement.FollowPointer(this);
+
     /// <summary>고른 칸 사각형이 바뀜.</summary>
     public event Action<Rectangle?>? SelectionChanged;
     /// <summary>타일을 두 번 누름(타일 Id).</summary>

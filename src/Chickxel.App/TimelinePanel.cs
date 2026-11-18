@@ -2340,6 +2340,7 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
             Background = AppTheme.InputBrush;
             ClipToBounds = true;
             Focusable = true;
+            TipPlacement.FollowPointer(this);
             ColumnDefinitions = new ColumnDefinitions("*,Auto");
             SetColumn(_v, 1);
             Children.Add(_v);

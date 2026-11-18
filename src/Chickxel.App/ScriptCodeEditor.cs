@@ -57,6 +57,7 @@ internal sealed class ScriptCodeEditor : UserControl
         _editor.AddHandler(KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel);
         _editor.PointerHover += OnHover;
         _editor.PointerHoverStopped += (_, _) => ToolTip.SetIsOpen(_editor, false);
+        TipPlacement.FollowPointer(_editor);
         Content = new Border { BorderBrush = AppTheme.BorderBrush, BorderThickness = new Thickness(1), Child = _editor };
     }
 

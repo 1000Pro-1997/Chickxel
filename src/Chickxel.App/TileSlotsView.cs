@@ -32,6 +32,8 @@ internal sealed class TileSlotsView : Control
     /// <summary>칸 한 변(화면 px).</summary>
     public double SlotSize { get; set; } = 32;
 
+    public TileSlotsView() => TipPlacement.FollowPointer(this);
+
     /// <summary>칸을 누름(칸 번호).</summary>
     public event Action<int>? Clicked;
     /// <summary>칸을 두 번 누름(칸 번호).</summary>

@@ -126,6 +126,7 @@ internal sealed class HoneycombPicker : PickerPaint.DragControl
     {
         Height = ContentHeight + 2;
         HorizontalAlignment = HorizontalAlignment.Stretch;
+        TipPlacement.FollowPointer(this);
     }
 
     public event EventHandler<Color32>? ColorPicked;

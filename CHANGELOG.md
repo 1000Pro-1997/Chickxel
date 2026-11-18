@@ -2,6 +2,14 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.133 (2026-11-18)
+
+### Tooltips appear next to their control
+- Tooltips now attach to the edge of the control they describe instead of following the mouse, so the same control always shows its tooltip in the same place.
+- Controls stacked in a column (the tool bar, settings rows) show tooltips beside them; controls in a row (button bars) show them below or above, so moving along the row or column does not hide the next item.
+- The side is chosen toward the middle of the window: controls in the right half open to the left, controls in the lower half open upward.
+- Grids where each cell has its own tooltip (swatches, tiles, the timeline, the script editor) and very large areas still show tooltips at the mouse.
+
 ## v1.14.132 (2026-11-16)
 
 ### Water and lava slopes in the sandbox tileset
