@@ -2,6 +2,27 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.134 (2026-11-20)
+
+### Pixelate results keep only the set padding
+- The result canvas is never larger than the sprite plus its padding, so a result has at most the Padding (px) value of empty space around it (1 px by default).
+- A fixed size is now an upper limit: when the source is too small to fill it (cells cannot be smaller than 1 source pixel) or Keep aspect leaves one side short, the canvas shrinks instead of filling with empty space.
+- Keep original positions keeps how frames are placed relative to each other, but no longer keeps the empty space around each cell.
+
+### Runs with edited values add numbered tiles
+- Clean up with unsaved edits now adds a new tile at the front every time, named "Name_1", "Name_2" and so on, instead of replacing one "Name (modified)" tile.
+- The same goes for an unsaved new preset and for Current settings; running a saved preset unchanged still replaces its own tile.
+- A new Reset presets button at the bottom of the window resets the candidate row to how it was when the window opened. The source image stays, while candidate tiles, optimize history, removed colors and pinned colors are cleared.
+
+### Cancelling optimization stops quickly
+- Cancelling auto-optimize on many-frame sources (such as a 120-frame animation) now stops within about a second instead of waiting 6 to 12 seconds for the running trials to finish.
+- Each cleanup step (grid fitting, palette, cleanup, scoring) now checks for cancel after every frame.
+
+### Pixelate settings hide what the chosen mode does not use
+- Boxes that do not apply to the mode picked in a drop-down are now hidden, with their label and row, instead of shown greyed out.
+- Sub-options switched by a checkbox (Auto next to Colors, the boxes under Keep distinct hues, the value next to One outline color) stay visible and are only disabled.
+- Options disabled by a setting in another step (cell-size source when Outline fit shrinks) and the Quick settings boxes are still disabled, not hidden.
+
 ## v1.14.133 (2026-11-18)
 
 ### Tooltips appear next to their control

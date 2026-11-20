@@ -2580,7 +2580,7 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Preset_New" xml:space="preserve"><value>New preset</value></data>
   <data name="Pixelate_Preset_UnsavedQuestion" xml:space="preserve"><value>The preset '{name}' has unsaved changes. Save them?</value></data>
   <data name="Pixelate_Run" xml:space="preserve"><value>Clean up</value></data>
-  <data name="Pixelate_RunTip" xml:space="preserve"><value>Runs the selected preset once with the current values on the left and replaces only its tile in the candidate row below (other candidates stay; if no tile has that name, a new one is added at the front). A short yellow line circles the running tile's border. If any step has Optimize on, only those steps are auto-optimized (starting from the values shown, with the budget and scoring of '0. Optimize criteria'); otherwise it cleans up once with the settings as they are. Unchanged saved presets behave like 'Rerun only this preset'; unsaved edits run as a 'Name (modified)' tile and leave the preset unchanged. Changing settings alone does not clean up again.</value></data>
+  <data name="Pixelate_RunTip" xml:space="preserve"><value>Runs the selected preset once with the current values on the left and replaces only its tile in the candidate row below (other candidates stay; if no tile has that name, a new one is added at the front). A short yellow line circles the running tile's border. If any step has Optimize on, only those steps are auto-optimized (starting from the values shown, with the budget and scoring of '0. Optimize criteria'); otherwise it cleans up once with the settings as they are. Unchanged saved presets behave like 'Rerun only this preset'; unsaved edits add a new 'Name_1', 'Name_2'… tile at the front on every run and leave the preset unchanged. Changing settings alone does not clean up again.</value></data>
   <data name="Pixelate_RunNoSourceTip" xml:space="preserve"><value>Add a source image first.</value></data>
   <data name="Pixelate_CurrentSettings" xml:space="preserve"><value>Current settings</value></data>
   <data name="Pixelate_Section_Criteria" xml:space="preserve"><value>0. Optimize criteria</value></data>
@@ -2926,7 +2926,7 @@ Press Clean up to apply the change.</value></data>
   <data name="Pixelate_Opt_Marker_Trials" xml:space="preserve"><value>Trial limit ({score})</value></data>
   <data name="Pixelate_Opt_Marker_Cancelled" xml:space="preserve"><value>Cancelled ({score})</value></data>
   <data name="Pixelate_Opt_Marker_AsIs" xml:space="preserve"><value>As set ({score})</value></data>
-  <data name="Pixelate_Opt_ModifiedPreset" xml:space="preserve"><value>{name} (modified)</value></data>
+  <data name="Pixelate_Opt_ModifiedPreset" xml:space="preserve"><value>{name}_{number}</value></data>
   <data name="Pixelate_Opt_Marker_Waiting" xml:space="preserve"><value>Waiting</value></data>
   <data name="Pixelate_Opt_Marker_Running" xml:space="preserve"><value>Optimizing…</value></data>
   <data name="Pixelate_Opt_Marker_RunningScore" xml:space="preserve"><value>Optimizing ({score})</value></data>
@@ -3076,6 +3076,8 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Pixelate_AddToNewTabTip" xml:space="preserve"><value>Create a new document exactly the size of the selected result and open it in a new tab (frames and durations kept, regardless of the output setting)</value></data>
   <data name="Pixelate_GrowCanvas" xml:space="preserve"><value>Grow to image size</value></data>
   <data name="Pixelate_GrowCanvasTip" xml:space="preserve"><value>When on, applying first grows the current canvas from the center to the result size if it is smaller (never shrinks; same undo step as the insert). When off, the canvas stays as is and pixels outside it are kept as off-canvas pixels that show when you enlarge the canvas. Add to new tab always makes a new document of the result size.</value></data>
+  <data name="Pixelate_ResetCandidates" xml:space="preserve"><value>Reset presets</value></data>
+  <data name="Pixelate_ResetCandidatesTip" xml:space="preserve"><value>Resets the candidate row to how it was when the window first opened: the source image stays, while the candidate tiles (including 'Name_1', 'Name_2'… tiles run with edited values), optimize history, removed colors and pinned colors are cleared and the checked preset tiles are made again (optimized again if 'Auto optimize on load' is on). The values on the left and saved presets do not change.</value></data>
   <data name="Ffmpeg_StartFailed" xml:space="preserve"><value>Can't start ffmpeg.</value></data>
   <data name="Ffmpeg_NoFrames" xml:space="preserve"><value>ffmpeg produced no frames (the range is outside the video, or the video can't be read).</value></data>
   <data name="Ffmpeg_MissingTitle" xml:space="preserve"><value>ffmpeg needed</value></data>

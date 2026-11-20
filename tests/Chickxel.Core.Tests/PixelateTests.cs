@@ -1118,9 +1118,29 @@ public class PixelateTests
         var s = new PixelateSettings { Size = new SizeSettings { Mode = OutputSizeMode.FixedSize, Width = 16, Height = 16 } };
         var r = Pixelator.Run(source, s);
         var frame = Assert.Single(r.Frames);
-        Assert.Equal(new Size(16, 16), frame.Size);
+        Assert.True(frame.Width <= 16 && frame.Height <= 16);
         var b = frame.GetOpaqueBounds();
         Assert.True(b.Width <= 14 && b.Height <= 14 && b.Width >= 10);
+        // 여백은 둘레 1px(Padding)을 넘지 않는다(비율 유지로 남는 쪽도 캔버스를 줄임).
+        Assert.Equal(new Size(b.Width + 2, b.Height + 2), frame.Size);
+    }
+
+    /// <summary>고정 크기가 원본보다 커서 칸을 1px보다 잘게 못 나누면 남는 자리를 여백으로 채우지 않고 캔버스를 스프라이트 + 여백으로 줄인다.</summary>
+    [Fact]
+    public void FixedSizeLargerThanSourceKeepsOnePixelMargin()
+    {
+        var image = new PixelImage(40, 60);
+        image.FillRect(Rectangle.FromLTRB(5, 5, 35, 55), new Color32(200, 40, 40));
+        image.FillRect(Rectangle.FromLTRB(12, 12, 28, 30), new Color32(40, 40, 200));
+        var s = new PixelateSettings
+        {
+            Grid = new PixelGridSettings { Mode = GridMode.Manual, Scale = 1, LocalCorrection = false },
+            Size = new SizeSettings { Mode = OutputSizeMode.FixedSize, Width = 256, Height = 416, Padding = 1 },
+            Cleanup = new CleanupSettings { OutlineFit = OutlineFit.Off },
+        };
+        var frame = Assert.Single(Pixelator.Run(image, s).Frames);
+        var b = frame.GetOpaqueBounds();
+        Assert.Equal(new Rectangle(1, 1, frame.Width - 2, frame.Height - 2), b);
     }
 
     [Fact]

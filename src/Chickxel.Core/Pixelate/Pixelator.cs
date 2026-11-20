@@ -386,7 +386,7 @@ public static class Pixelator
         var rec = trace is { } target && target.Frame >= 0 && target.Frame < src.Split.Frames.Count ? new PixelTraceRecorder(target) : null;
         var split = src.Split;
         int nf = split.Frames.Count;
-        var grids = FitGrids(src, s, forced);
+        var grids = FitGrids(src, s, forced, ct);
         ct.ThrowIfCancellationRequested();
 
         // 1) 칸마다 색(지역 보정이면 띠마다 다시 고른 칸 경계 안에서).
@@ -409,7 +409,7 @@ public static class Pixelator
         var raw = cells.Select(c => c.Clone()).ToArray();
 
         // 2) 팔레트.
-        int resolved = ApplyPalette(cells, s.Palette, rec);
+        int resolved = ApplyPalette(cells, s.Palette, rec, ct);
         // 정리 전 팔레트 색: 정리가 바꾼 픽셀을 알아 고정 색·색 빼기가 되돌리지 않게(PixelateResult.PaletteEditSources).
         var paletted = cells.Select(c => c.Clone()).ToArray();
         ct.ThrowIfCancellationRequested();
@@ -432,6 +432,7 @@ public static class Pixelator
                 if (traced) rec!.Cells(PixelTraceStep.VectorOutline, img);
             }
             PixelCleanup.Run(img, s.Cleanup, outline, s.Palette.OutlineDarkness, traced ? step => rec!.Cells(step, img) : null);
+            ct.ThrowIfCancellationRequested();
         }
         ct.ThrowIfCancellationRequested();
 
@@ -470,7 +471,7 @@ public static class Pixelator
             outlineEdge += edge;
             outlineThick += thick;
         }
-        var metrics = Measure(src, frames, maps, grids, s.Palette.OutlineDarkness, palette.Count, scoreMetric ?? ColorMetric.For(s.Palette), judge ?? FidelityJudge.Default)
+        var metrics = Measure(src, frames, maps, grids, s.Palette.OutlineDarkness, palette.Count, scoreMetric ?? ColorMetric.For(s.Palette), judge ?? FidelityJudge.Default, ct)
             with { OutlineThin = outlineEdge == 0 ? 1 : 1 - outlineThick / (double)outlineEdge };
         var result = new PixelateResult
         {
@@ -597,7 +598,7 @@ public static class Pixelator
     }
 
     /// <param name="estimate">자동 격자에서 프레임마다·그림 전체 어림 대신 쓸 어림(<see cref="Retry"/>), null이면 보통대로.</param>
-    private static GridFit[] FitGrids(PixelateSource src, PixelateSettings s, ScaleEstimate? estimate = null)
+    private static GridFit[] FitGrids(PixelateSource src, PixelateSettings s, ScaleEstimate? estimate, CancellationToken ct)
     {
         var split = src.Split;
         int nf = split.Frames.Count;
@@ -630,6 +631,7 @@ public static class Pixelator
             }
             for (int f = 0; f < nf; f++)
             {
+                ct.ThrowIfCancellationRequested();
                 var b = split.Frames[f].Bounds;
                 var (ex, ey) = src.FrameProfiles(f);
                 if (forced > 0)
@@ -663,6 +665,7 @@ public static class Pixelator
             {
                 for (int f = 0; f < nf; f++)
                 {
+                    ct.ThrowIfCancellationRequested();
                     var b = split.Frames[f].Bounds;
                     var (ex, ey) = src.FrameProfiles(f);
                     var xc = GridDetector.FitCuts(ex, b.Left, b.Right, sx, 0);
@@ -875,7 +878,7 @@ public static class Pixelator
     /// 팔레트를 만들고 그 색으로 바꾼다. 고른(자동이면 찾은) 색 수를 돌려준다. 고정 색은 여기서 다루지 않는다 — 다 만든 결과의 뒤처리(<see cref="WithPaletteEdits"/>).
     /// <paramref name="rec"/>가 있으면 그 프레임이 쓴 팔레트·색 거리와 바꾼 색을 적는다.
     /// </summary>
-    private static int ApplyPalette(PixelImage[] cells, PaletteSettings s, PixelTraceRecorder? rec = null)
+    private static int ApplyPalette(PixelImage[] cells, PaletteSettings s, PixelTraceRecorder? rec, CancellationToken ct)
     {
         var existing = s.ExistingColors.Select(h => PixelateSettings.ParseColor(h, Color32.Transparent)).Where(c => c.A != 0).ToList();
         if (s.Method == PaletteMethod.KeepOriginal || (s.Method == PaletteMethod.Existing && existing.Count == 0))
@@ -901,6 +904,7 @@ public static class Pixelator
                     ? PaletteBuilder.WeightedHistogram(images, s.EdgeWeight, s.OutlineDarkness)
                     : (PaletteBuilder.Histogram(images), null);
                 if (hist.Count == 0) continue;
+                ct.ThrowIfCancellationRequested();
                 if (s.Method is PaletteMethod.OkLch or PaletteMethod.DistanceGroups)
                 {
                     // 문턱 묶기(OKLCh 범위·색 거리 반경): 색 수는 문턱이 정한다(색 수·넓게 쓰인 색 지키기는 쓰지 않음).
@@ -922,10 +926,11 @@ public static class Pixelator
                     resolved = Math.Max(resolved, Math.Max(k, palette.Count));
                 }
             }
+            ct.ThrowIfCancellationRequested();
             // 디더 없음: 고른 색 거리로 가장 가까운 색(명암 계열 우선이면 같은 계열 먼저 — ColorMetric.Nearest).
             // 디더(Bayer): RGB 거리(PaletteRemap)의 두 색 섞기 — 명암 계열 우선이면 섞을 바탕 색도 고른 색 거리(같은 계열 먼저)로 고르고, 색상이 다른 유채색과는
             // 섞지 않는다(ColorDistance.CanDither — 살구색 그늘에 금색 점이 찍히지 않게).
-            if (s.Dither == PaletteDither.None) MapNearest(images, palette, metric);
+            if (s.Dither == PaletteDither.None) MapNearest(images, palette, metric, ct);
             else
             {
                 PaletteRemap remap;
@@ -936,7 +941,11 @@ public static class Pixelator
                         (a, b) => ColorDistance.CanDither(OkLab.FromColor(a), OkLab.FromColor(b)));
                 }
                 else remap = new PaletteRemap(palette);
-                foreach (var img in images) remap.Apply(img, s.Dither);
+                foreach (var img in images)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    remap.Apply(img, s.Dither);
+                }
             }
             if (rec is not null && group.Contains(rec.Target.Frame))
             {
@@ -954,12 +963,13 @@ public static class Pixelator
             PixelateRanges.DistinctMinArea.Clamp(s.DistinctMinArea));
 
     /// <summary>칸마다 <paramref name="metric"/>로 가장 가까운 팔레트 색(알파는 그대로, 같은 색은 한 번만 계산).</summary>
-    private static void MapNearest(PixelImage[] images, List<Color32> palette, ColorMetric metric)
+    private static void MapNearest(PixelImage[] images, List<Color32> palette, ColorMetric metric, CancellationToken ct)
     {
         var pal = palette.Select(metric.Point).ToArray();
         var cache = new Dictionary<uint, uint>();
         foreach (var img in images)
         {
+            ct.ThrowIfCancellationRequested();
             var px = img.Pixels;
             for (int i = 0; i < px.Length; i++)
             {
@@ -1015,7 +1025,10 @@ public static class Pixelator
         }
     }
 
-    /// <summary>프레임을 캔버스에 놓는다(맞추기 기준·같은 캔버스·고정 크기).</summary>
+    /// <summary>
+    /// 프레임을 캔버스에 놓는다(맞추기 기준·같은 캔버스·고정 크기). 캔버스는 스프라이트(같은 캔버스면 가장 큰 프레임, 원래 위치 유지면 프레임들을 제자리에 겹친 범위) +
+    /// 둘레 여백을 넘지 않는다 — 고정 크기도 그 크기가 상한이라, 원본이 작아 칸을 1px보다 잘게 못 나누거나 비율 유지로 한쪽이 남아도 여백이 늘지 않는다.
+    /// </summary>
     private static (List<PixelImage> Frames, List<PixelateFrameMap> Maps) Arrange(
         PixelateSource src, PixelateSettings s, PixelImage[] cells, CellLayout[] layouts, GridFit[] grids)
     {
@@ -1028,38 +1041,32 @@ public static class Pixelator
             if (trims[f].IsEmpty) trims[f] = new Rectangle(0, 0, 1, 1);
         }
         var align = s.Frames.Align;
-        // 원래 위치 유지: 자리(띠·칸)의 왼쪽 위에서 몇 칸 떨어졌는지.
+        // 원래 위치 유지: 자리(띠·칸)의 왼쪽 위에서 몇 칸 떨어졌는지 — 프레임끼리의 위치 차이만 쓴다(자리 둘레의 빈 곳은 여백으로 남기지 않음).
         var slotOffset = new Point[nf];
-        var slotSize = new Size[nf];
         for (int f = 0; f < nf; f++)
         {
             var slot = src.Split.Frames[f].Slot;
             double sc = Math.Max(1, grids[f].Scale);
             int left = layouts[f].XCuts[trims[f].Left], top = layouts[f].YCuts[trims[f].Top];
             slotOffset[f] = new Point((int)Math.Round((left - slot.Left) / sc), (int)Math.Round((top - slot.Top) / sc));
-            slotSize[f] = new Size((int)Math.Ceiling(slot.Width / sc), (int)Math.Ceiling(slot.Height / sc));
         }
-        // 범위가 자리 왼쪽·위로 나간 프레임(격자 칸 선을 넘은 손끝 — FrameRegion): 자리째 그만큼 밀어(공통 캔버스면 모든 프레임을 함께) 잘리지 않게.
-        var common = nf == 0 ? Point.Empty : new Point(Math.Max(0, -slotOffset.Min(o => o.X)), Math.Max(0, -slotOffset.Min(o => o.Y)));
-        for (int f = 0; f < nf; f++)
+        // 원래 위치 유지로 겹친 범위(자리 기준 칸 — 같은 캔버스면 모든 프레임을, 아니면 그 프레임만).
+        var placed = new Rectangle[nf];
+        if (align == FrameAlign.KeepOffsets)
         {
-            var d = s.Frames.CommonCanvas ? common : new Point(Math.Max(0, -slotOffset[f].X), Math.Max(0, -slotOffset[f].Y));
-            slotOffset[f].Offset(d);
-            slotSize[f] += new Size(d);
+            var all = nf == 0 ? Rectangle.Empty : Enumerable.Range(0, nf).Select(i => new Rectangle(slotOffset[i], trims[i].Size)).Aggregate(Rectangle.Union);
+            for (int f = 0; f < nf; f++) placed[f] = s.Frames.CommonCanvas ? all : new Rectangle(slotOffset[f], trims[f].Size);
         }
 
         Size Canvas(int f)
         {
-            if (s.Size.Mode == OutputSizeMode.FixedSize) return new Size(Math.Max(1, s.Size.Width), Math.Max(1, s.Size.Height));
-            if (align == FrameAlign.KeepOffsets)
-            {
-                var all = s.Frames.CommonCanvas ? Enumerable.Range(0, nf) : [f];
-                return new Size(
-                    all.Max(i => Math.Max(slotSize[i].Width, slotOffset[i].X + trims[i].Width)) + 2 * pad,
-                    all.Max(i => Math.Max(slotSize[i].Height, slotOffset[i].Y + trims[i].Height)) + 2 * pad);
-            }
-            if (!s.Frames.CommonCanvas) return new Size(trims[f].Width + 2 * pad, trims[f].Height + 2 * pad);
-            return new Size(trims.Max(t => t.Width) + 2 * pad, trims.Max(t => t.Height) + 2 * pad);
+            var content = align == FrameAlign.KeepOffsets ? placed[f].Size
+                : s.Frames.CommonCanvas ? new Size(trims.Max(t => t.Width), trims.Max(t => t.Height))
+                : trims[f].Size;
+            var fit = new Size(content.Width + 2 * pad, content.Height + 2 * pad);
+            return s.Size.Mode == OutputSizeMode.FixedSize
+                ? new Size(Math.Min(Math.Max(1, s.Size.Width), fit.Width), Math.Min(Math.Max(1, s.Size.Height), fit.Height))
+                : fit;
         }
 
         var frames = new List<PixelImage>(nf);
@@ -1072,8 +1079,8 @@ public static class Pixelator
             switch (align)
             {
                 case FrameAlign.KeepOffsets:
-                    x = pad + slotOffset[f].X;
-                    y = pad + slotOffset[f].Y;
+                    x = pad + slotOffset[f].X - placed[f].Left;
+                    y = pad + slotOffset[f].Y - placed[f].Top;
                     break;
                 case FrameAlign.Center:
                     x = (size.Width - t.Width) / 2;
@@ -1102,7 +1109,7 @@ public static class Pixelator
     }
 
     private static PixelateMetrics Measure(PixelateSource src, List<PixelImage> frames, List<PixelateFrameMap> maps, GridFit[] grids, double darkness, int colors,
-        ColorMetric metric, FidelityJudge judge)
+        ColorMetric metric, FidelityJudge judge, CancellationToken ct)
     {
         // 충실도 = (투명/불투명이 어긋난 표본 수 + 칸 안 구조 손실 + 색 차이) / 표본 수.
         // 구조 손실: 칸 안쪽 표본이 그 칸 평균에서 흩어진 정도(OKLab 표준편차 × 표본 수) — 검정·살색 경계를 반으로 가른 칸은 크고, 결과 색과는 상관없다.
@@ -1127,6 +1134,7 @@ public static class Pixelator
         var samples = cellMode ? new Dictionary<long, (Lab Out, List<(Lab Color, double Weight)> List)>() : null;
         for (int f = 0; f < frames.Count; f++)
         {
+            ct.ThrowIfCancellationRequested();
             var m = maps[f];
             var frame = frames[f];
             var b = m.SourceBounds;
@@ -1183,7 +1191,8 @@ public static class Pixelator
                 }
             if (!cellMode) perceivedSum += PerceivedError(srcLinear, outLinear, counts, cols, rows);
         }
-        if (samples is not null) perceivedSum = CellError(samples.Values, metric, judge);
+        if (samples is not null) perceivedSum = CellError(samples.Values, metric, judge, ct);
+        ct.ThrowIfCancellationRequested();
         double structureSum = 0;
         foreach (var c in cells.Values)
         {
@@ -1204,6 +1213,7 @@ public static class Pixelator
         var darkCache = new Dictionary<uint, bool>();
         foreach (var frame in frames)
         {
+            ct.ThrowIfCancellationRequested();
             orphans += PixelCleanup.CountOrphans(frame);
             for (int y = 0; y < frame.Height; y++)
                 for (int x = 0; x < frame.Width; x++)
@@ -1244,12 +1254,16 @@ public static class Pixelator
     /// <summary>
     /// 칸끼리 색 차이의 합(칸마다 표본 수만큼 셈 — <see cref="PerceivedError"/>와 같은 크기): 칸마다 원본 대표 색(<see cref="ReferenceColor"/>)과 결과 색의 점수용 색 거리(<paramref name="metric"/>).
     /// </summary>
-    private static double CellError(IEnumerable<(Lab Out, List<(Lab Color, double Weight)> List)> cells, ColorMetric metric, FidelityJudge judge)
+    private static double CellError(IEnumerable<(Lab Out, List<(Lab Color, double Weight)> List)> cells, ColorMetric metric, FidelityJudge judge, CancellationToken ct)
     {
         var groups = new List<(Lab Seed, double W, double L, double A, double B, int N)>();
         double sum = 0;
+        int n = 0;
         foreach (var (output, list) in cells)
+        {
+            if ((++n & 1023) == 0) ct.ThrowIfCancellationRequested();
             sum += list.Count * metric.Distance(metric.Point(ReferenceColor(list, judge, groups)), metric.Point(output));
+        }
         return sum;
     }
 

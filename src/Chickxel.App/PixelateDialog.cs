@@ -601,6 +601,8 @@ public sealed class PixelateDialog : DialogBase
     private readonly Button _newTab;
     /// <summary>"이미지 크기만큼 늘리기": 적용할 때 지금 캔버스를 결과 그림 크기까지 늘린다(새 탭은 늘 결과 크기).</summary>
     private readonly CheckBox _growCanvas;
+    /// <summary>"프리셋 정리": 넣은 원본은 두고 후보 줄을 처음 열었을 때처럼 되돌린다(<see cref="ResetCandidates"/>).</summary>
+    private readonly Button _resetCandidates;
     private readonly Action<string, string, IReadOnlyList<PixelImage>> _askAi;
     /// <summary>파일 찾기의 처음 폴더(주 창 파일 브라우저의 폴더, 없으면 마지막 폴더).</summary>
     private readonly Func<string?> _browseFolder;
@@ -1718,6 +1720,10 @@ public sealed class PixelateDialog : DialogBase
         _growCanvas.VerticalAlignment = VerticalAlignment.Center;
         _growCanvas.Margin = new Thickness(0, 0, 8, 0);
         AddFooter(_growCanvas, _newTab);
+        _resetCandidates = Ui.Button(UiStrings.Pixelate_ResetCandidates, (_, _) => ResetCandidates()).Tip(UiStrings.Pixelate_ResetCandidatesTip);
+        _resetCandidates.Width = double.NaN;
+        _resetCandidates.Margin = new Thickness(0, 0, 8, 0);
+        AddFooter(_resetCandidates, _growCanvas);
         // 대상 도움말(F1): 창 아래 단추 — 넣기 쪽의 ⑤~⑦ 그림·목록, 취소는 창 닫기 문단.
         _growCanvas.HelpAt("pixelate-output", anchor: "Grow to image size");
         _newTab.HelpAt("pixelate-output", anchor: "Add to new tab");
@@ -1786,7 +1792,7 @@ public sealed class PixelateDialog : DialogBase
         _emptyState.IsVisible = !has;
         _replaceSource.IsVisible = has;
         OkButton.IsEnabled = has;
-        _newTab.IsEnabled = has;
+        _newTab.IsEnabled = _resetCandidates.IsEnabled = has;
         _frApply.IsEnabled = has;
         UpdateOptimizeButtons();
     }
@@ -1833,6 +1839,12 @@ public sealed class PixelateDialog : DialogBase
         UpdateSourceState();
         _autoOptimizePending = _optAuto.On();
         Rerun(lineup: _autoOptimizePending);
+    }
+
+    /// <summary>'프리셋 정리': 넣은 원본을 다시 넣은 것과 같게 — 후보·최적화 기록·뺀 색·고정 색을 비우고 처음 후보 줄을 다시 만든다(왼쪽 값은 그대로).</summary>
+    private void ResetCandidates()
+    {
+        if (_input is { } input) SetSource(input);
     }
 
     /// <summary>후보·고른 후보의 미리보기·단계 안내 글을 비운다(원본을 바꿀 때).</summary>
@@ -2264,58 +2276,74 @@ public sealed class PixelateDialog : DialogBase
         };
     }
 
-    /// <summary>방식에 따라 쓰지 않는 칸을 끈다.</summary>
+    /// <summary>
+    /// 방식(고르기 상자)에 해당하지 않는 칸은 숨기고, 체크로 켜고 끄는 하위 칸은 보인 채 끈다(<see cref="Applies"/>).
+    /// </summary>
     private void UpdateEnabled()
     {
         var bg = At<BackgroundMode>(_bgMode);
-        _bgColor.IsEnabled = bg == BackgroundMode.PickColor;
-        _bgTol.IsEnabled = bg != BackgroundMode.None && !_bgAutoTol.On();
-        _bgAutoTol.IsEnabled = _bgConnected.IsEnabled = bg != BackgroundMode.None;
-        _bgKeepAlpha.IsEnabled = bg == BackgroundMode.Auto;
-        _bgSticker.IsEnabled = _bgKeep.IsEnabled = bg != BackgroundMode.None;
+        Applies(bg == BackgroundMode.PickColor, _bgColor);
+        Applies(bg != BackgroundMode.None, _bgTol, _bgAutoTol, _bgConnected, _bgSticker, _bgKeep);
+        Applies(bg == BackgroundMode.Auto, _bgKeepAlpha);
+        _bgTol.IsEnabled = !_bgAutoTol.On();
         var fr = At<FrameSplitMode>(_frMode);
-        _frCols.IsEnabled = _frRows.IsEnabled = fr == FrameSplitMode.Grid;
-        _frMerge.IsEnabled = _frMergeDist.IsEnabled = fr == FrameSplitMode.Auto;
+        Applies(fr == FrameSplitMode.Grid, _frCols, _frRows);
+        Applies(fr == FrameSplitMode.Auto, _frMerge, _frMergeDist);
         bool manual = At<GridMode>(_grMode) == GridMode.Manual;
-        _grScale.IsEnabled = _grOffX.IsEnabled = _grOffY.IsEnabled = manual;
-        _grJitter.IsEnabled = _grAdjust.IsEnabled = !manual;
+        Applies(manual, _grScale, _grOffX, _grOffY);
+        Applies(!manual, _grJitter, _grAdjust, _grSource);
         _grLocalShift.IsEnabled = _grLocalBand.IsEnabled = _grLocalMinCell.IsEnabled = _grLocal.On();
-        // 외곽선 맞추기가 "크기를 줄여서"면 칸 크기 기준은 외곽선 두께로 정해진다.
-        _grSource.IsEnabled = !manual && At<OutlineFit>(_clFit) != OutlineFit.Shrink;
+        // 외곽선 맞추기(7. 정리)가 "크기를 줄여서"면 칸 크기 기준은 외곽선 두께로 정해진다 — 다른 칸의 설정이라 숨기지 않고 끈다.
+        _grSource.IsEnabled = At<OutlineFit>(_clFit) != OutlineFit.Shrink;
         var sz = At<OutputSizeMode>(_szMode);
-        _szW.IsEnabled = _szH.IsEnabled = _szAspect.IsEnabled = sz == OutputSizeMode.FixedSize;
-        _szFactor.IsEnabled = sz == OutputSizeMode.ScaleFactor;
+        Applies(sz == OutputSizeMode.FixedSize, _szW, _szH, _szAspect);
+        Applies(sz == OutputSizeMode.ScaleFactor, _szFactor);
         var pm = At<PaletteMethod>(_palMethod);
-        _palAuto.IsEnabled = pm is PaletteMethod.KMeans or PaletteMethod.MedianCut;
-        _palColors.IsEnabled = _palAuto.IsEnabled && !_palAuto.On();
-        _palWhich.IsEnabled = pm == PaletteMethod.Existing && _palettes.Count > 0;
-        _palShared.IsEnabled = pm is PaletteMethod.KMeans or PaletteMethod.MedianCut or PaletteMethod.OkLch or PaletteMethod.DistanceGroups;
-        _palOkL.IsEnabled = _palOkC.IsEnabled = _palOkH.IsEnabled = pm == PaletteMethod.OkLch;
-        _palRadius.IsEnabled = pm == PaletteMethod.DistanceGroups;
-        _palSource.IsEnabled = _palShared.IsEnabled;
-        _palEdge.IsEnabled = _palSource.IsEnabled && At<PaletteColorSource>(_palSource) == PaletteColorSource.Original;
-        _palDither.IsEnabled = pm != PaletteMethod.KeepOriginal;
+        Applies(pm is PaletteMethod.KMeans or PaletteMethod.MedianCut, _palColors, _palAuto);
+        _palColors.IsEnabled = !_palAuto.On();
+        Applies(pm == PaletteMethod.Existing, _palWhich);
+        _palWhich.IsEnabled = _palettes.Count > 0;
+        bool extracts = pm is PaletteMethod.KMeans or PaletteMethod.MedianCut or PaletteMethod.OkLch or PaletteMethod.DistanceGroups;
+        Applies(extracts, _palShared, _palSource, _palDistinct, _palHueChroma, _palHueMin, _palHueArea);
+        Applies(pm == PaletteMethod.OkLch, _palOkL, _palOkC, _palOkH);
+        Applies(pm == PaletteMethod.DistanceGroups, _palRadius);
+        Applies(extracts && At<PaletteColorSource>(_palSource) == PaletteColorSource.Original, _palEdge);
+        bool reduces = pm != PaletteMethod.KeepOriginal;
+        Applies(reduces, _palDither, _palDitherKeep, _palDistance, _palShade);
+        Applies(reduces && At<ColorDistanceMode>(_palDistance) == ColorDistanceMode.OkLchHue, _palHueWeight);
         _palDark.IsEnabled = _palSnap.On();
-        _palDistance.IsEnabled = pm != PaletteMethod.KeepOriginal;
-        _palHueWeight.IsEnabled = _palDistance.IsEnabled && At<ColorDistanceMode>(_palDistance) == ColorDistanceMode.OkLchHue;
-        _palShade.IsEnabled = _palDistance.IsEnabled;
-        _palDistinct.IsEnabled = _palShared.IsEnabled;
-        _palHueChroma.IsEnabled = _palHueMin.IsEnabled = _palHueArea.IsEnabled = _palDistinct.IsEnabled && _palDistinct.On();
+        _palHueChroma.IsEnabled = _palHueMin.IsEnabled = _palHueArea.IsEnabled = _palDistinct.On();
         _clContrast.IsEnabled = _clOrphans.On();
-        _clVecTol.IsEnabled = _clVecBlob.IsEnabled = At<OutlineFit>(_clFit) == OutlineFit.Vector;
+        Applies(At<OutlineFit>(_clFit) == OutlineFit.Vector, _clVecTol, _clVecBlob);
         _coContrast.IsEnabled = _coTemporal.On();
-        _crLightWeight.IsEnabled = _crChromaWeight.IsEnabled = _crHueWeight.IsEnabled = At<ColorDistanceMode>(_crDistance) == ColorDistanceMode.OkLchHue;
+        Applies(At<ColorDistanceMode>(_crDistance) == ColorDistanceMode.OkLchHue, _crLightWeight, _crChromaWeight, _crHueWeight);
         _crTargetColors.IsEnabled = _crTargetStrict.IsEnabled = !_crTargetAuto.On(); // 자동이면 색 수를 점수에서 보지 않는다.
         // 대표 색·묶음 범위·가운데 가중은 칸끼리일 때만, 묶음 범위는 우세 색 묶음일 때만.
         bool cellJudge = _crFidelity.SelectedIndex != 1;
-        _crCellRef.IsEnabled = _crCenter.IsEnabled = cellJudge;
-        _crGroupRadius.IsEnabled = cellJudge && _crCellRef.SelectedIndex != 1;
+        Applies(cellJudge, _crCellRef, _crCenter);
+        Applies(cellJudge && _crCellRef.SelectedIndex != 1, _crGroupRadius);
         // 팔레트 칸을 최적화할 때만 뜻이 있다.
         _palMethodKeep.IsEnabled = _palDitherKeep.IsEnabled = _sectionToggles.TryGetValue(OptimizeSection.Palette, out var palToggle) && palToggle.On();
         // 칸 맞추기 따로 최적화면 격자 칸은 그 체크로 최적화하므로 칸 머리의 '최적화'는 쓰지 않는다.
         if (_sectionToggles.TryGetValue(OptimizeSection.Grid, out var gridToggle)) gridToggle.IsEnabled = !_grFirst.On();
         SyncQuickSettings();
         SyncBarBackground();
+    }
+
+    /// <summary>
+    /// 지금 방식에 해당하는 칸만 보인다(해당하지 않는 칸이 설정 칸을 채우지 않게). 칸 바로 앞 이름표도 함께 숨기고,
+    /// 줄(<see cref="Ui.Row"/>)에 이름표 말고 보이는 칸이 없으면 줄도 숨긴다.
+    /// </summary>
+    private static void Applies(bool applies, params Control[] controls)
+    {
+        foreach (var c in controls)
+        {
+            c.IsVisible = applies;
+            if (c.Parent is not StackPanel { Orientation: Orientation.Horizontal } row) continue;
+            int i = row.Children.IndexOf(c);
+            if (i > 0 && row.Children[i - 1] is TextBlock label) label.IsVisible = applies;
+            row.IsVisible = row.Children.Any(x => x.IsVisible && x is not TextBlock);
+        }
     }
 
     /// <summary>간편 설정을 4단계·6단계 칸(설정)과 고른 결과에 맞춘다(간편 설정 이벤트는 무시).</summary>
@@ -2349,7 +2377,7 @@ public sealed class PixelateDialog : DialogBase
             }
             // 6단계와 같은 값·켜짐(팔레트 방식에 따라 꺼짐).
             _quickShared.IsChecked = _palShared.On();
-            _quickShared.IsEnabled = _palShared.IsEnabled;
+            _quickShared.IsEnabled = _palShared.IsVisible;
             // 0. 최적화 기준과 같은 목표 색 수·자동·강제(자동이면 숫자·강제는 꺼짐).
             _quickTargetColors.Value = _crTargetColors.Value;
             _quickTargetAuto.IsChecked = _crTargetAuto.On();
@@ -3821,8 +3849,8 @@ public sealed class PixelateDialog : DialogBase
 
     /// <summary>
     /// '정리하기': 왼쪽 값으로 지금 고른 프리셋 하나를 돌려 후보 줄의 그 칸만 바꾼다(다른 후보는 그대로, 칸이 없으면 맨 앞에 새로 — 최적화를 켠 칸이 없으면 설정 그대로 한 번).
-    /// 저장한 프리셋 그대로면 '이 설정만 다시 돌리기'와 같다(칸 이름 = 프리셋 이름, 찾은 설정을 프리셋에 써 넣음). 저장하지 않고 고쳤으면 "이름(변경)" 칸으로
-    /// 돌리고 프리셋은 그대로 둔다(저장하지 않은 새 프리셋은 그 이름, 프리셋을 고르지 않았으면 "지금 설정"). 첫 준비가 끝나기 전에는 하지 않는다.
+    /// 저장한 프리셋 그대로면 '이 설정만 다시 돌리기'와 같다(칸 이름 = 프리셋 이름, 찾은 설정을 프리셋에 써 넣음). 저장하지 않고 고쳤으면 돌릴 때마다 "이름_1", "이름_2"…
+    /// 새 칸으로 돌리고 프리셋은 그대로 둔다(저장하지 않은 새 프리셋은 그 이름, 프리셋을 고르지 않았으면 "지금 설정"에 번호). 첫 준비가 끝나기 전에는 하지 않는다.
     /// </summary>
     private void RunCurrent()
     {
@@ -3835,10 +3863,18 @@ public sealed class PixelateDialog : DialogBase
             StartOptimize([new PresetRun(saved.Clone(saved.Name), saved.Name, saved, saved, settings, Modified: false)], single: true);
             return;
         }
-        panel.Name = _current is null ? UiStrings.Pixelate_CurrentSettings
-            : ReferenceEquals(_current, _draft) ? _current.Name
-            : UiStrings.FormatPixelate_Opt_ModifiedPreset(name: _current.Name);
+        panel.Name = NextRunName(_current?.Name ?? UiStrings.Pixelate_CurrentSettings);
         StartOptimize([new PresetRun(panel, panel.Name, _current, null, settings, Modified: true)], single: true);
+    }
+
+    /// <summary>고친 값으로 돌린 칸 이름 "이름_N": N = 후보 줄의 그 이름 칸 번호 중 가장 큰 것 + 1(프리셋 정리하면 다시 1부터).</summary>
+    private string NextRunName(string name)
+    {
+        var names = _optimized.Values.Select(o => o.Name).ToHashSet();
+        int last = 0;
+        for (int n = 1; n <= names.Count; n++)
+            if (names.Contains(UiStrings.FormatPixelate_Opt_ModifiedPreset(name: name, number: n))) last = n;
+        return UiStrings.FormatPixelate_Opt_ModifiedPreset(name: name, number: last + 1);
     }
 
     /// <summary>

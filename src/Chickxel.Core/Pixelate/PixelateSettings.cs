@@ -30,7 +30,7 @@ public enum FrameAlign
 {
     BottomCenter,
     Center,
-    /// <summary>나눈 칸(자동이면 조각 띠, 격자면 칸) 안의 원래 위치를 그대로.</summary>
+    /// <summary>나눈 칸(자동이면 조각 띠, 격자면 칸) 안의 원래 위치를 프레임끼리 그대로(캔버스는 겹친 범위 + 여백 — 칸 둘레 빈 곳은 남기지 않음).</summary>
     KeepOffsets,
 }
 
@@ -48,7 +48,7 @@ public enum OutputSizeMode
 {
     /// <summary>찾은(또는 고른) 칸 크기 그대로 — 칸 하나가 결과 픽셀 하나.</summary>
     FromScale,
-    /// <summary>고정 크기(W×H) 안에 스프라이트를 여백을 두고 맞춘다(필요하면 더 크게 묶음).</summary>
+    /// <summary>고정 크기(W×H) 안에 스프라이트를 여백을 두고 맞춘다(필요하면 더 크게 묶음). W×H는 상한 — 스프라이트 + 여백보다 크면 그만큼 줄인다.</summary>
     FixedSize,
     /// <summary>원본 크기 × 배율(예: 0.125).</summary>
     ScaleFactor,
