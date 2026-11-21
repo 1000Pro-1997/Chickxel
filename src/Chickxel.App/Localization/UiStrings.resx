@@ -8516,6 +8516,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Pixelate_Grid_ChosenExact" xml:space="preserve"><value>깨끗한 그림의 정확한 배수 {scale}px</value></data>
   <data name="Pixelate_Grid_ChosenNoisyExact" xml:space="preserve"><value>잡음 섞인 도트 그림의 칸 {scale}px(비슷한 색을 같은 색으로 봄)</value></data>
   <data name="Pixelate_Score_OutlineThin" xml:space="preserve"><value>외곽선 1px</value></data>
+  <data name="Pixelate_Score_LineRegularity" xml:space="preserve"><value>선의 깔끔함</value></data>
   <data name="Pixelate_Score_ColorShift" xml:space="preserve"><value>큰 면 색 바뀜</value></data>
   <data name="Pixelate_Bg_Sticker" xml:space="preserve"><value>스티커 테두리 지우기</value></data>
   <data name="Pixelate_Bg_Sticker_Tip" xml:space="preserve"><value>외곽선 바깥을 두른 흰 띠(스티커 테두리)를 저절로 찾아 배경과 함께 지웁니다. 가장자리 대부분이 밝은 무채색일 때만 지우고, 지운 뒤 가장자리가 어둡지 않으면 되돌립니다.</value></data>
@@ -8568,6 +8569,9 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Pixelate_Clean_VectorTolerance_Tip" xml:space="preserve"><value>벡터로 다시 그릴 때 외곽선을 곧게 펼 허용 오차(결과 픽셀). 크면 매끈하지만 모양이 덜 따라가고, 0이면 원본 외곽선 가운데 선을 그대로 따라갑니다.</value></data>
   <data name="Pixelate_Clean_VectorBlob" xml:space="preserve"><value>남길 작은 덩어리(칸)</value></data>
   <data name="Pixelate_Clean_VectorBlob_Tip" xml:space="preserve"><value>바깥 외곽선과 닿지 않은 어두운 덩어리는 넓이가 이 칸 수보다 작으면(눈 등) 다시 그리지 않고 그대로 둡니다.</value></data>
+  <data name="Pixelate_Clean_VectorClean" xml:space="preserve"><value>선과 곡선 깔끔하게</value></data>
+  <data name="Pixelate_Clean_VectorCorner" xml:space="preserve"><value>모서리 각도(°)</value></data>
+  <data name="Pixelate_Clean_VectorCorner_Tip" xml:space="preserve"><value>따낸 선이 이 각도 이상 꺾이면 나누어 모서리를 남기고, 나머지는 반듯한 선과 원호로 다시 그립니다. 기본 40°.</value></data>
   <data name="Pixelate_Opt_Toggle" xml:space="preserve"><value>자동 최적화</value></data>
   <data name="Pixelate_Opt_ToggleTip" xml:space="preserve"><value>누르면 바로 시작합니다: 체크한 프리셋마다 그 프리셋의 설정에서 시작해 최적화를 켠 칸의 값을 바꿔 가며 점수가 가장 높은 설정을 찾고, 프리셋마다 1위 하나를 후보로 보입니다. 돌릴 프리셋은 옆의 설정 단추에서 체크합니다.</value></data>
   <data name="Pixelate_Opt_Downsample" xml:space="preserve"><value>칸 색 방식</value></data>
@@ -9207,6 +9211,7 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="RecipeParams_KindInt" xml:space="preserve"><value>정수 {0}~{1}</value></data>
   <data name="RecipeParams_KindBool" xml:space="preserve"><value>켜고 끄기</value></data>
   <data name="RecipeParams_KindChoice" xml:space="preserve"><value>고르기</value></data>
+  <data name="RecipeParams_KindText" xml:space="preserve"><value>글</value></data>
   <data name="RecipeParams_SaveError" xml:space="preserve"><value>프리셋 매개변수를 저장하지 못했습니다: {0}</value></data>
   <data name="RecipeParams_Count" xml:space="preserve"><value>매개변수 {0}개</value></data>
   <data name="Assets_ContentsScripts" xml:space="preserve"><value>스크립트 효과 {0}개</value></data>
@@ -9307,7 +9312,7 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Gallery_Menu" xml:space="preserve"><value>갤러리에 올리기…</value></data>
   <data name="Gallery_Upload" xml:space="preserve"><value>올리기</value></data>
   <data name="Gallery_What" xml:space="preserve"><value>올릴 그림</value></data>
-  <data name="Gallery_KindPng" xml:space="preserve"><value>지금 프레임(PNG)</value></data>
+  <data name="Gallery_KindPng" xml:space="preserve"><value>프레임 한 장(PNG)</value></data>
   <data name="Gallery_KindGif" xml:space="preserve"><value>애니메이션(GIF)</value></data>
   <data name="Gallery_Scale" xml:space="preserve"><value>배율</value></data>
   <data name="Gallery_InfoPng" xml:space="preserve"><value>{0}×{1} · 프레임 {2}</value></data>
@@ -9357,6 +9362,26 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Gallery_LevelUp" xml:space="preserve"><value>레벨이 올랐습니다! Lv {0}</value><comment>0 = 새 레벨.</comment></data>
   <data name="Gallery_ButtonTip" xml:space="preserve"><value>갤러리에 올리기 — 그린 그림을 chickxel.com 갤러리에 자랑해 보세요</value></data>
   <data name="Gallery_ButtonSparkleTip" xml:space="preserve"><value>저장했어요! 이 그림을 chickxel.com 갤러리에 올려 자랑해 보세요</value></data>
+  <data name="Gallery_Item" xml:space="preserve"><value>고른 그림</value><comment>갤러리에 올리기: 왼쪽 목록에서 고른 줄의 설정 묶음 제목.</comment></data>
+  <data name="Gallery_Options" xml:space="preserve"><value>모든 그림</value><comment>갤러리에 올리기: 목록의 모든 그림이 같이 쓰는 설정(배율·속도·공유) 묶음 제목.</comment></data>
+  <data name="Gallery_ItemsTip" xml:space="preserve"><value>목록의 그림을 이 순서대로 한 글에 올립니다({0}장까지). 첫 그림이 갤러리의 대표 그림이 되고, 그림 쪽에서 차례로 넘겨 볼 수 있습니다. 배율과 GIF 속도는 모든 그림이 같이 씁니다. 같은 그림이 되는 줄(같은 프레임의 PNG, 프레임 순서가 똑같은 GIF)은 한 번만 올립니다.</value><comment>0 = 그림 수 한도.</comment></data>
+  <data name="Gallery_Add" xml:space="preserve"><value>더하기</value></data>
+  <data name="Gallery_AddTip" xml:space="preserve"><value>목록 끝에 그림을 더합니다(PNG 한 장 또는 GIF 애니메이션).</value></data>
+  <data name="Gallery_AddPng" xml:space="preserve"><value>PNG 한 장(지금 프레임)</value></data>
+  <data name="Gallery_AddGif" xml:space="preserve"><value>GIF 애니메이션</value></data>
+  <data name="Gallery_MoveUp" xml:space="preserve"><value>위로(앞에 보임)</value></data>
+  <data name="Gallery_MoveDown" xml:space="preserve"><value>아래로(뒤에 보임)</value></data>
+  <data name="Gallery_Remove" xml:space="preserve"><value>목록에서 빼기</value></data>
+  <data name="Gallery_ItemPng" xml:space="preserve"><value>PNG · 프레임 {0}</value><comment>0 = 프레임 번호(1부터).</comment></data>
+  <data name="Gallery_ItemGif" xml:space="preserve"><value>GIF · {0}</value><comment>0 = 범위(모든 프레임 / 태그 이름 / 프레임 범위 …).</comment></data>
+  <data name="Gallery_ItemTag" xml:space="preserve"><value>태그 {0}</value><comment>0 = 태그 이름.</comment></data>
+  <data name="Gallery_ItemRange" xml:space="preserve"><value>프레임 {0}–{1}</value><comment>0 = 시작 번호, 1 = 끝 번호(1부터).</comment></data>
+  <data name="Gallery_Duplicate" xml:space="preserve"><value>{0}번은 {1}번과 같은 그림이라 올리지 않습니다.</value><comment>0 = 뺄 줄 번호, 1 = 같은 앞 줄 번호.</comment></data>
+  <data name="Gallery_ItemProblem" xml:space="preserve"><value>{0}번: {1}</value><comment>0 = 줄 번호, 1 = 올릴 수 없는 까닭.</comment></data>
+  <data name="Gallery_TooManyImages" xml:space="preserve"><value>그림은 {0}장까지 올릴 수 있습니다(같은 그림은 한 장으로 셈). 줄을 빼세요.</value><comment>0 = 그림 수 한도.</comment></data>
+  <data name="Gallery_ImageTooLarge" xml:space="preserve"><value>{0}번 그림 파일이 {1:0.##}MB로 {2}MB 한도를 넘습니다. 배율을 줄이거나 프레임을 줄이세요.</value><comment>0 = 줄 번호, 1 = 파일 크기(MB), 2 = 한도(MB).</comment></data>
+  <data name="Gallery_TotalTooLarge" xml:space="preserve"><value>그림 파일을 합쳐 {0:0.##}MB로 {1}MB 한도를 넘습니다. 그림 수나 배율을 줄이세요.</value><comment>0 = 합친 크기(MB), 1 = 한도(MB).</comment></data>
+  <data name="Gallery_Skipped" xml:space="preserve"><value>같은 그림 {0}장은 빼고 올렸습니다.</value><comment>0 = 뺀 줄 수.</comment></data>
   <data name="Level_ChipTip" xml:space="preserve"><value>레벨 {0} — 갤러리에 그림을 올리고 에셋을 공유하고 좋아요를 받고, 로그인한 채 앱을 켜 두면 경험치가 쌓입니다.</value><comment>0 = 레벨.</comment></data>
   <data name="Level_Title" xml:space="preserve"><value>레벨 {0}</value><comment>0 = 레벨.</comment></data>
   <data name="Level_Progress" xml:space="preserve"><value>{0:N0} XP · 다음 레벨까지 {1:N0} XP</value><comment>0 = 지금 경험치, 1 = 다음 레벨까지 남은 경험치.</comment></data>
@@ -10424,7 +10449,14 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="ExportList_AllFrames" xml:space="preserve"><value>모든 프레임</value></data>
   <data name="ExportList_Empty" xml:space="preserve"><value>내보낼 것이 없습니다. 더하기로 넣으세요.</value></data>
   <data name="ExportList_OnSaveTip" xml:space="preserve"><value>저장할 때 같이 만들기</value></data>
-  <data name="ExportList_Remove" xml:space="preserve"><value>목록에서 빼기(이미 만든 파일은 그대로)</value></data>
+  <data name="ExportList_Remove" xml:space="preserve"><value>목록에서 빼기</value></data>
+  <data name="ExportList_RemoveFilesAsk" xml:space="preserve"><value>이 줄로 만든 그림도 삭제할까요?
+
+{files}
+
+확인: 앱 휴지통으로 옮깁니다(되살릴 수 있음).
+취소: 파일은 그대로 두고 줄만 뺍니다.</value><comment>files = 지울 파일 이름들(한 줄에 하나).</comment></data>
+  <data name="ExportList_RemoveFilesMore" xml:space="preserve"><value>… 외 {count}개</value><comment>count = 목록에 보이지 않은 나머지 파일 수.</comment></data>
   <data name="ExportList_Undo" xml:space="preserve"><value>내보내기 목록</value></data>
   <data name="ExportList_ChangeTarget" xml:space="preserve"><value>위치 바꾸기…</value></data>
   <data name="ExportList_Settings" xml:space="preserve"><value>설정…</value></data>
@@ -10433,7 +10465,7 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="ExportList_Name" xml:space="preserve"><value>이름</value></data>
   <data name="ExportList_Folder" xml:space="preserve"><value>위치</value></data>
   <data name="ExportList_AddTip" xml:space="preserve"><value>고른 줄을 복사해 다른 이름으로 목록에 더합니다. 형식은 위 형식 칸에서 바꿉니다.</value></data>
-  <data name="ExportList_Info" xml:space="preserve"><value>이 프로젝트에서 내보내는 것들입니다. 같은 형식도 이름이나 위치를 달리해 여러 줄 둘 수 있습니다. 줄을 누르면 오른쪽에서 그 줄의 형식, 이름, 위치, 설정을 고칩니다. 줄 앞 체크를 켜면 저장할 때마다 그 줄도 다시 만듭니다. 파란 단추는 고른 줄을 지금 내보냅니다. 목록에서 빼도 이미 만든 파일은 남고, 다음 저장 때 지난 결과로 정리됩니다.</value></data>
+  <data name="ExportList_Info" xml:space="preserve"><value>이 프로젝트에서 내보내는 것들입니다. 같은 형식도 이름이나 위치를 달리해 여러 줄 둘 수 있습니다. 줄을 누르면 오른쪽에서 그 줄의 형식, 이름, 위치, 설정을 고칩니다. 줄 앞 체크를 켜면 저장할 때마다 그 줄도 다시 만듭니다. 파란 단추는 고른 줄을 지금 내보냅니다. 휴지통 단추로 줄을 빼면 그 줄로 만든 파일도 지울지 묻습니다. 확인하면 앱 휴지통으로 옮기고, 취소하면 파일을 그대로 둡니다.</value></data>
   <data name="ExportList_SaveHint" xml:space="preserve"><value>저장(Ctrl+S)하면 체크한 줄이 자동으로 내보내집니다.</value></data>
   <data name="Export_Engine" xml:space="preserve"><value>게임 엔진</value></data>
   <data name="Export_EngineNone" xml:space="preserve"><value>없음(이미지만)</value></data>
@@ -10464,6 +10496,7 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="Model_Angle" xml:space="preserve"><value>보는 각도</value></data>
   <data name="Model_Yaw" xml:space="preserve"><value>가로</value></data>
   <data name="Model_Pitch" xml:space="preserve"><value>세로</value></data>
+  <data name="Model_Roll" xml:space="preserve"><value>화면 회전</value></data>
   <data name="Model_Projection" xml:space="preserve"><value>보기 방식</value></data>
   <data name="Model_Orthographic" xml:space="preserve"><value>정사영</value></data>
   <data name="Model_Perspective" xml:space="preserve"><value>원근</value></data>
@@ -10473,6 +10506,8 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="Model_ZoomTip" xml:space="preserve"><value>100% = 모델이 그림의 짧은 변에 꼭 맞음(애니메이션·돌려 보기는 모든 프레임을 합친 크기). 미리보기에서 휠로도 바꿉니다.</value></data>
   <data name="Model_Fit" xml:space="preserve"><value>맞춤</value></data>
   <data name="Model_Light" xml:space="preserve"><value>빛 방향</value></data>
+  <data name="Model_LightBack" xml:space="preserve"><value>뒤쪽 빛</value></data>
+  <data name="Model_LightBackTip" xml:space="preserve"><value>빛 방향을 카메라의 뒤쪽 반구로 옮깁니다. 미리보기의 해를 두 번 눌러도 앞·뒤를 바꿀 수 있습니다.</value></data>
   <data name="Model_Brightness" xml:space="preserve"><value>밝기</value></data>
   <data name="Model_Ambient" xml:space="preserve"><value>주변광</value></data>
   <data name="Model_LightStrength" xml:space="preserve"><value>빛 세기</value></data>
@@ -10494,7 +10529,9 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="Model_Fps" xml:space="preserve"><value>초당 프레임</value></data>
   <data name="Model_MaxFrames" xml:space="preserve"><value>최대</value></data>
   <data name="Model_PlayTip" xml:space="preserve"><value>미리보기 재생/멈춤</value></data>
-  <data name="Model_PreviewHint" xml:space="preserve"><value>끌기: 돌리기 · 휠: 확대·축소</value></data>
+  <data name="Model_PreviewHint" xml:space="preserve"><value>모델을 끌어 돌리기 · 고리를 끌어 각도/화면 회전 · 축을 눌러 정면 보기 · 해를 끌어 빛 이동(두 번 눌러 앞/뒤) · 휠로 확대</value></data>
+  <data name="Model_Original" xml:space="preserve"><value>원본 모델</value></data>
+  <data name="Model_PixelResult" xml:space="preserve"><value>픽셀 결과</value></data>
   <data name="Model_Summary" xml:space="preserve"><value>{name}: 삼각형 {triangles}개 · 재질 {materials}개 · 애니메이션 {animations}개</value></data>
   <data name="Model_Warnings" xml:space="preserve"><value>그리지 않는 부분: {list}</value><comment>list = 모델에서 읽었지만 그리지 못하는 것들(· 로 이음).</comment></data>
   <data name="Model_Estimate" xml:space="preserve"><value>프레임 {frames}장 · {width}×{height}px · 프레임마다 {ms}ms</value></data>

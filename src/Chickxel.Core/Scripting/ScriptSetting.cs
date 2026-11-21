@@ -3,7 +3,7 @@ using Chickxel.Core.Model;
 namespace Chickxel.Core.Scripting;
 
 /// <summary>
-/// 스크립트 설정 값의 종류. 선언의 <c>type</c> 문자열 <c>int</c>, <c>number</c>, <c>bool</c>, <c>color</c>, <c>choice</c>, <c>colorList</c>, <c>colorPairs</c>, <c>layer</c>.
+/// 스크립트 설정 값의 종류. 선언의 <c>type</c> 문자열 <c>int</c>, <c>number</c>, <c>bool</c>, <c>color</c>, <c>choice</c>, <c>colorList</c>, <c>colorPairs</c>, <c>layer</c>, <c>text</c>.
 /// </summary>
 public enum ScriptSettingType
 {
@@ -33,6 +33,8 @@ public enum ScriptSettingType
     /// <c>ctx.layer("키")</c>·<c>ctx.layerWithEffects("키")</c>·<c>ctx.layerEffects("키")</c>로 그 레이어를 읽는다(<see cref="Model.ScriptLayerContext"/>).
     /// </summary>
     Layer,
+    /// <summary>여러 줄 글. C# 값과 JS 값 모두 문자열, 선언의 <c>max</c>는 최대 글자 수.</summary>
+    Text,
 }
 
 /// <summary>설정 칸을 그리는 모양(선언의 <c>widget</c>). 저장 값은 바꾸지 않고 효과 창의 편집기만 바꾼다.</summary>
@@ -71,8 +73,8 @@ public readonly record struct ScriptColorPair(Color32 From, Color32 To);
 /// <summary>
 /// 스크립트가 선언한 설정 하나(5.4 명시적 설정 schema와 같은 정보). 효과 창의 범용 편집기, 저장과 검증이 이것을 쓴다.
 /// <para>
-/// <see cref="Key"/>는 영구 저장 키(영문자나 _로 시작). <see cref="Min"/>, <see cref="Max"/>, <see cref="Step"/>은 <see cref="ScriptSettingType.Int"/>,
-/// <see cref="ScriptSettingType.Number"/>에만 있고 없으면 null이다. 색 목록·색 쌍 목록은 <see cref="Min"/>·<see cref="Max"/>가 항목 수 범위(정수, 늘 있음)다.
+/// <see cref="Key"/>는 영구 저장 키(영문자나 _로 시작). <see cref="Min"/>, <see cref="Max"/>, <see cref="Step"/>은 숫자 설정의 범위이며,
+/// 색 목록·색 쌍 목록은 <see cref="Min"/>·<see cref="Max"/>가 항목 수 범위, 글 설정은 <see cref="Max"/>가 최대 글자 수다.
 /// <see cref="Default"/>는 <see cref="Type"/>에 맞는 C# 값이다(<see cref="ScriptSettingType"/> 설명 참고). <see cref="Choices"/>는
 /// <see cref="ScriptSettingType.Choice"/>에만 있고 나머지는 빈 목록이다.
 /// </para>
@@ -95,6 +97,8 @@ public sealed record ScriptSetting(
 
     /// <summary>레이어 고르기 설정(<see cref="ScriptSettingType.Layer"/>) 값의 최대 글자 수.</summary>
     public const int MaxLayerNameLength = 64;
+    /// <summary>글 설정의 선언에 <c>max</c>가 없을 때의 최대 글자 수 및 선언 허용 최대.</summary>
+    public const int MaxTextLength = TextEffect.MaxLength;
 
     /// <summary>레이어 고르기 설정 값을 맞춘다: 문자열이면 앞뒤 공백을 지운 이름(빈 문자열 = 고르지 않음), 너무 길거나 문자열이 아니면 null.</summary>
     public static string? LayerName(object? value)

@@ -46,8 +46,18 @@ public sealed class ShotKit
     {
         Id = id;
         // 예시 파일 폴더는 그림에 보이므로 짧고 사용자 이름 없는 경로. GUIDESHOTS_ROOT로 바꿀 수 있다(여러 프로세스를 같이 돌릴 때 — 샷마다 지우고 다시 만들므로).
-        var shotRoot = Environment.GetEnvironmentVariable("GUIDESHOTS_ROOT") is { Length: > 0 } env ? env
-            : OperatingSystem.IsWindows() ? @"C:\ChickxelGuide" : "/tmp/ChickxelGuide";
+        var shotRoot = Path.GetFullPath(Environment.GetEnvironmentVariable("GUIDESHOTS_ROOT") is { Length: > 0 } env ? env
+            : OperatingSystem.IsWindows() ? @"C:\ChickxelGuide" : "/tmp/ChickxelGuide");
+        // 이 폴더는 매 샷마다 통째로 지운다. 저장소 자체나 그 안/상위 폴더를 지정하면 원본까지 없어지므로 거부한다.
+        static bool Contains(string parent, string child)
+        {
+            var relative = Path.GetRelativePath(parent, child);
+            return relative == "." || (!Path.IsPathRooted(relative)
+                && relative != ".."
+                && !relative.StartsWith($"..{Path.DirectorySeparatorChar}", StringComparison.Ordinal));
+        }
+        if (Contains(shotRoot, Root) || Contains(Root, shotRoot))
+            throw new InvalidOperationException("GUIDESHOTS_ROOT must not overlap the source repository.");
         if (Directory.Exists(shotRoot)) Directory.Delete(shotRoot, recursive: true);
         WorkDir = Path.Combine(shotRoot, "MyGame");
         Directory.CreateDirectory(WorkDir);

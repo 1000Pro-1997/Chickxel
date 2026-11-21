@@ -140,7 +140,7 @@ public static class ScriptApiCatalog
 
         M(Setting, "key", ScriptApiKind.Key, "key: \"strength\""),
         M(Setting, "label", ScriptApiKind.Key, "label: \"…\""),
-        M(Setting, "type", ScriptApiKind.Key, "type: \"int\" | \"number\" | \"bool\" | \"color\" | \"choice\" | \"colorList\" | \"colorPairs\" | \"layer\"", SettingType),
+        M(Setting, "type", ScriptApiKind.Key, "type: \"int\" | \"number\" | \"bool\" | \"color\" | \"choice\" | \"colorList\" | \"colorPairs\" | \"layer\" | \"text\"", SettingType),
         M(Setting, "min", ScriptApiKind.Key, "min: 0"),
         M(Setting, "max", ScriptApiKind.Key, "max: 100"),
         M(Setting, "step", ScriptApiKind.Key, "step: 0.1"),
@@ -162,6 +162,7 @@ public static class ScriptApiCatalog
         M(SettingType, "colorList", ScriptApiKind.Literal, "\"colorList\""),
         M(SettingType, "colorPairs", ScriptApiKind.Literal, "\"colorPairs\""),
         M(SettingType, "layer", ScriptApiKind.Literal, "\"layer\""),
+        M(SettingType, "text", ScriptApiKind.Literal, "\"text\""),
 
         M(Image, "width", ScriptApiKind.Value, "img.width"),
         M(Image, "height", ScriptApiKind.Value, "img.height"),
@@ -182,6 +183,7 @@ public static class ScriptApiCatalog
         M(Context, "pivot", ScriptApiKind.Object, "ctx.pivot", Pivot),
         M(Context, "center", ScriptApiKind.Object, "ctx.center", Center),
         M(Context, "slice", ScriptApiKind.Object, "ctx.slice → { left, top, right, bottom } | null", Slice),
+        M(Context, "text", ScriptApiKind.Function, "ctx.text(text, { font?, size?, color?, bold?, italic?, smooth?, align?, letterSpacing?, lineSpacing?, width? }?) → img", Image),
         M(Context, "color", ScriptApiKind.Function, "ctx.color(key, x, y, bounds?) → { r, g, b, a }", Color),
         M(Context, "colorAt", ScriptApiKind.Function, "ctx.colorAt(key, index, x, y, bounds?) → { r, g, b, a }", Color),
         M(Context, "pairColor", ScriptApiKind.Function, "ctx.pairColor(key, index, \"from\" | \"to\", x, y, bounds?) → { r, g, b, a }", Color),

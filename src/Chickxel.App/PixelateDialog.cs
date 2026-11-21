@@ -207,6 +207,7 @@ public sealed class PixelateOptions
             Consistency = Real("WeightConsistency", w.Consistency),
             Grid = Real("WeightGrid", w.Grid),
             OutlineThin = Real("WeightOutlineThin", w.OutlineThin),
+            LineRegularity = Real("WeightLineRegularity", w.LineRegularity),
             ColorShift = Real("WeightColorShift", w.ColorShift),
             BlockRepetition = Real("WeightBlockRepetition", w.BlockRepetition),
         };
@@ -255,7 +256,7 @@ public static class OptimizeSections
         (OptimizeSection.Downsample, OptimizeParam.DownsampleMode | OptimizeParam.BorderFraction | OptimizeParam.AlphaThreshold | OptimizeParam.SnapStep),
         (OptimizeSection.Palette, OptimizeParam.Colors | OptimizeParam.PaletteColorSource | OptimizeParam.PaletteMethod | OptimizeParam.EdgeWeight | OptimizeParam.ColorDistance
             | OptimizeParam.DistinctHues | OptimizeParam.ShadeFamily | OptimizeParam.Dither | OptimizeParam.SnapOutline | OptimizeParam.OutlineDarkness | OptimizeParam.GroupRange),
-        (OptimizeSection.Cleanup, OptimizeParam.Cleanup | OptimizeParam.OutlineFit | OptimizeParam.VectorTolerance | OptimizeParam.VectorBlob),
+        (OptimizeSection.Cleanup, OptimizeParam.Cleanup | OptimizeParam.OutlineFit | OptimizeParam.VectorTolerance | OptimizeParam.VectorBlob | OptimizeParam.VectorCornerAngle),
     ];
 
     public static OptimizeParam Params(OptimizeSection sections)
@@ -771,9 +772,9 @@ public sealed class PixelateDialog : DialogBase
     private readonly CheckBox _palMethodKeep, _palDitherKeep;
     private readonly TextBlock _palInfo;
     // 7. 정리
-    private readonly CheckBox _clOrphans, _clHoles, _clJaggies;
+    private readonly CheckBox _clOrphans, _clHoles, _clJaggies, _clVecClean;
     private readonly ComboBox _clFit;
-    private readonly NumericUpDown _clContrast, _clVecTol, _clVecBlob;
+    private readonly NumericUpDown _clContrast, _clVecTol, _clVecBlob, _clVecCorner;
     private readonly ComboBox _clOutline;
     // 8. 프레임 맞추기
     private readonly CheckBox _coTemporal;
@@ -1301,16 +1302,20 @@ public sealed class PixelateDialog : DialogBase
         _clFit = Ui.Combo(170, UiStrings.Pixelate_Fit_Shrink, UiStrings.Pixelate_Fit_Thin, UiStrings.Pixelate_Fit_Off, UiStrings.Pixelate_Fit_Vector).Tip(UiStrings.Pixelate_Fit_Tip);
         _clVecTol = Num(PixelateRanges.VectorTolerance, 0.6m, 2, 0.05m).Tip(UiStrings.Pixelate_Clean_VectorTolerance_Tip);
         _clVecBlob = Num(PixelateRanges.VectorBlobCells, 6m, 0, 1m).Tip(UiStrings.Pixelate_Clean_VectorBlob_Tip);
+        _clVecClean = Ui.Check(UiStrings.Pixelate_Clean_VectorClean);
+        _clVecCorner = Num(PixelateRanges.VectorCornerAngle, 40m, 0, 1m).Tip(UiStrings.Pixelate_Clean_VectorCorner_Tip);
         var clContrastLabel = Ui.Label(UiStrings.Pixelate_Clean_Contrast);
         var clFitLabel = Ui.Label(UiStrings.Pixelate_Fit);
         var clVecTolLabel = Ui.Label(UiStrings.Pixelate_Clean_VectorTolerance);
         var clVecBlobLabel = Ui.Label(UiStrings.Pixelate_Clean_VectorBlob);
+        var clVecCornerLabel = Ui.Label(UiStrings.Pixelate_Clean_VectorCorner);
         var clOutlineLabel = Ui.Label(UiStrings.Pixelate_Clean_Outline);
         var clBody = Ui.Stack(
             Ui.Row(_clOrphans, clContrastLabel, _clContrast),
             _clHoles,
             Ui.Row(clFitLabel, _clFit),
             Ui.Row(clVecTolLabel, _clVecTol, clVecBlobLabel, _clVecBlob),
+            Ui.Row(_clVecClean, clVecCornerLabel, _clVecCorner),
             Ui.Row(clOutlineLabel, _clOutline),
             _clJaggies);
         // 대상 도움말(F1): 7. 정리 표의 줄, 고르기 상자 → 외곽선·외곽선 1px 맞추기 표의 고른 값.
@@ -1320,6 +1325,8 @@ public sealed class PixelateDialog : DialogBase
         _clFit.HelpOptions("pixelate-cleanup", "By shrinking", "Thin outline only", "Off", "Redraw as vector");
         HelpTargets.HelpGroup("pixelate-cleanup", "Vector simplify", clVecTolLabel, _clVecTol);
         HelpTargets.HelpGroup("pixelate-cleanup", "Vector simplify", clVecBlobLabel, _clVecBlob);
+        _clVecClean.HelpAt("pixelate-cleanup", anchor: "Clean lines and curves");
+        HelpTargets.HelpGroup("pixelate-cleanup", "Corner angle", clVecCornerLabel, _clVecCorner);
         HelpTargets.HelpGroup("pixelate-cleanup", "Outline", clOutlineLabel, _clOutline);
         _clOutline.HelpOptions("pixelate-cleanup", "As is", "Unify to the darkest color", "Ensure a closed 1-px outline");
         _clJaggies.HelpAt("pixelate-cleanup", anchor: "Reduce L-corner doubles");
@@ -1707,14 +1714,14 @@ public sealed class PixelateDialog : DialogBase
             ((ComboBox)c).SelectionChanged += (_, _) => Changed();
         foreach (var n in new[] { _bgTol, _bgAlpha, _bgSpecks, _frCols, _frRows, _frMerge, _frMergeDist, _grScale, _grOffX, _grOffY, _grJitter, _grAdjust, _grLocalShift, _grLocalBand, _grLocalMinCell,
                      _szW, _szH, _szPad, _szFactor, _dsBorder, _dsAlpha, _dsSnap, _palColors, _palEdge, _palDark, _palHueWeight, _palHueChroma, _palHueMin, _palHueArea, _palOkL, _palOkC, _palOkH, _palRadius,
-                     _clContrast, _clVecTol, _clVecBlob, _coContrast, _crTrials, _crSeconds, _crSampleFrames, _crLightWeight, _crChromaWeight, _crHueWeight, _crTargetColors, _crGroupRadius }.Concat(_crWeights))
+                     _clContrast, _clVecTol, _clVecBlob, _clVecCorner, _coContrast, _crTrials, _crSeconds, _crSampleFrames, _crLightWeight, _crChromaWeight, _crHueWeight, _crTargetColors, _crGroupRadius }.Concat(_crWeights))
             n.ValueChanged += (_, _) => Changed();
         // 나누기 조건이 바뀌면 이전 조건에서 편집한 슬롯은 버린다.
         _frMode.SelectionChanged += (_, _) => ResetManualFrames();
         foreach (var n in new[] { _frCols, _frRows, _frMerge, _frMergeDist })
             n.ValueChanged += (_, _) => ResetManualFrames();
         foreach (var c in new[] { _bgAutoTol, _bgConnected, _bgKeepAlpha, _bgSticker, _bgKeep, _frCommon, _grFirst, _grLocal, _szAspect, _palAuto, _palShared, _palSnap, _palDistinct, _palShade, _palMethodKeep, _palDitherKeep,
-                     _clOrphans, _clHoles, _clJaggies, _coTemporal, _crTargetAuto, _crTargetStrict })
+                     _clOrphans, _clHoles, _clJaggies, _clVecClean, _coTemporal, _crTargetAuto, _crTargetStrict })
             c.IsCheckedChanged += (_, _) => Changed();
         foreach (var c in new[] { _crDistance, _crFidelity, _crCellRef }) c.SelectionChanged += (_, _) => Changed();
         _crCenter.IsCheckedChanged += (_, _) => Changed();
@@ -2171,6 +2178,8 @@ public sealed class PixelateDialog : DialogBase
             _clFit.SelectedIndex = Index(cl.OutlineFit);
             _clVecTol.Value = In(PixelateRanges.VectorTolerance, cl.VectorTolerance, decimals: 2);
             _clVecBlob.Value = In(PixelateRanges.VectorBlobCells, cl.VectorBlobCells, decimals: 0);
+            _clVecClean.IsChecked = cl.VectorCleanLines;
+            _clVecCorner.Value = In(PixelateRanges.VectorCornerAngle, cl.VectorCornerAngle, decimals: 0);
 
             _coTemporal.IsChecked = s.Consistency.TemporalMajority;
             _coContrast.Value = (decimal)Math.Clamp(s.Consistency.MaxContrast, 0, 1);
@@ -2287,6 +2296,8 @@ public sealed class PixelateDialog : DialogBase
                 OutlineFit = At<OutlineFit>(_clFit),
                 VectorTolerance = D(_clVecTol),
                 VectorBlobCells = D(_clVecBlob),
+                VectorCleanLines = _clVecClean.On(),
+                VectorCornerAngle = D(_clVecCorner),
             },
             Consistency = new ConsistencySettings { TemporalMajority = _coTemporal.On(), MaxContrast = D(_coContrast) },
         };
@@ -2330,7 +2341,8 @@ public sealed class PixelateDialog : DialogBase
         _palDark.IsEnabled = _palSnap.On();
         _palHueChroma.IsEnabled = _palHueMin.IsEnabled = _palHueArea.IsEnabled = _palDistinct.On();
         _clContrast.IsEnabled = _clOrphans.On();
-        Applies(At<OutlineFit>(_clFit) == OutlineFit.Vector, _clVecTol, _clVecBlob);
+        Applies(At<OutlineFit>(_clFit) == OutlineFit.Vector, _clVecTol, _clVecBlob, _clVecClean, _clVecCorner);
+        _clVecCorner.IsEnabled = _clVecClean.On();
         _coContrast.IsEnabled = _coTemporal.On();
         Applies(At<ColorDistanceMode>(_crDistance) == ColorDistanceMode.OkLchHue, _crLightWeight, _crChromaWeight, _crHueWeight);
         _crTargetColors.IsEnabled = _crTargetStrict.IsEnabled = !_crTargetAuto.On(); // 자동이면 색 수를 점수에서 보지 않는다.
@@ -3185,6 +3197,7 @@ public sealed class PixelateDialog : DialogBase
         ScoreTerm.Colors => UiStrings.Pixelate_Score_Colors,
         ScoreTerm.Consistency => UiStrings.Pixelate_Score_Consistency,
         ScoreTerm.OutlineThin => UiStrings.Pixelate_Score_OutlineThin,
+        ScoreTerm.LineRegularity => UiStrings.Pixelate_Score_LineRegularity,
         ScoreTerm.ColorShift => UiStrings.Pixelate_Score_ColorShift,
         ScoreTerm.BlockRepetition => UiStrings.Pixelate_Score_BlockRepetition,
         ScoreTerm.GridEdges => UiStrings.Pixelate_Score_GridEdges,
@@ -4530,6 +4543,8 @@ public sealed class PixelateDialog : DialogBase
         {
             if (p.HasFlag(OptimizeParam.VectorTolerance)) parts.Add($"{UiStrings.Pixelate_Clean_VectorTolerance} {s.Cleanup.VectorTolerance.ToString("0.00", ci)}");
             if (p.HasFlag(OptimizeParam.VectorBlob)) parts.Add($"{UiStrings.Pixelate_Clean_VectorBlob} {s.Cleanup.VectorBlobCells.ToString("0", ci)}");
+            if (p.HasFlag(OptimizeParam.VectorCornerAngle) && s.Cleanup.VectorCleanLines)
+                parts.Add($"{UiStrings.Pixelate_Clean_VectorCorner} {s.Cleanup.VectorCornerAngle.ToString("0", ci)}°");
         }
         return string.Join(" · ", parts);
     }
@@ -4607,6 +4622,7 @@ public sealed class PixelateDialog : DialogBase
         (() => UiStrings.Pixelate_Score_Consistency, () => null, w => w.Consistency, (w, v) => w with { Consistency = v }),
         (() => UiStrings.Pixelate_Score_Grid, () => null, w => w.Grid, (w, v) => w with { Grid = v }),
         (() => UiStrings.Pixelate_Score_OutlineThin, () => null, w => w.OutlineThin, (w, v) => w with { OutlineThin = v }),
+        (() => UiStrings.Pixelate_Score_LineRegularity, () => null, w => w.LineRegularity, (w, v) => w with { LineRegularity = v }),
         (() => UiStrings.Pixelate_Score_ColorShift, () => UiStrings.Pixelate_Score_ColorShift_Tip, w => w.ColorShift, (w, v) => w with { ColorShift = v }),
         (() => UiStrings.Pixelate_Score_BlockRepetition, () => UiStrings.Pixelate_Score_BlockRepetition_Tip, w => w.BlockRepetition, (w, v) => w with { BlockRepetition = v }),
     ];

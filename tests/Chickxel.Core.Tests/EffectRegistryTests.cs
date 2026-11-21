@@ -108,7 +108,8 @@ public class EffectRegistryTests
                 case EffectParameterKind.Text:
                     Assert.NotNull(p.MaxLength);
                     Assert.InRange(p.DefaultValue.GetValue<string>().Length, 0, p.MaxLength!.Value);
-                    Assert.False(p.Exposed);
+                    // 글은 레시피 글 상자로 내보내고, 글꼴 이름만 뺀다(글꼴 고르기가 필요함)
+                    Assert.Equal(p.Key != "font", p.Exposed);
                     break;
             }
     }

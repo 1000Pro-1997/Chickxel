@@ -74,8 +74,8 @@ internal static class CommunityShots
     }
 
     /// <summary>
-    /// 갤러리에 올리기 창(타임라인에서 프레임 셋을 고르고 연 것, GIF·태그 idle): ① 올릴 그림·배율·속도 ② GIF 범위 ③ 제목·설명·태그 ④ 계정
-    /// ⑤ 미리보기와 공개 안내 ⑥ 갤러리 보기.
+    /// 갤러리에 올리기 창(타임라인에서 프레임 셋을 고르고 연 것, GIF·태그 idle): ① 올릴 그림 목록 ② GIF 범위 ③ 제목·설명·태그 ④ 계정
+    /// ⑤ 미리보기와 공개 안내 ⑥ 갤러리 보기. 이어서 ⑦ 올릴 그림의 순서 ⑧ 더하기 ⑨ 같은 그림 경고.
     /// </summary>
     [Shot("screen-gallery")]
     public static void Gallery(ShotKit k)
@@ -89,16 +89,27 @@ internal static class CommunityShots
             ShotKit.Get<RadioButton>(w, "_gif").IsChecked = true;
             ShotKit.Get<RadioButton>(w, "_rangeTag").IsChecked = true;
             ShotKit.Pump(400);
-            var settings = ShotKit.Get<Control>(w, "_form");
-            var groups = ((StackPanel)settings).Children.ToList();
+            var form = ShotKit.Get<StackPanel>(w, "_form");
+            var listPane = (Control)form.Children[0];
+            var settings = (StackPanel)form.Children[1];
+            var groups = settings.Children.ToList();
             var range = ShotKit.Get<Control>(w, "_rangePanel");
             var preview = (Control)ShotKit.Get<Control>(w, "_preview").Parent!;
             var openGallery = ShotKit.FindText(w, UiStrings.Gallery_OpenGallery, ancestorControl: true);
-            // ② 범위 목록: 번호가 위 "애니메이션(GIF)" 단추를 가리지 않게 묶음 왼쪽 여백까지 넓히고 위는 조금 줄인다
+            // GIF 범위의 번호가 위 단추를 가리지 않도록 묶음 왼쪽 여백까지 포함한다.
             var r = ShotKit.Bounds(range, w);
             var g = ShotKit.Bounds(groups[0], w);
             var rangeMark = new Rect(g.X + 6, r.Y + 4, r.Right + 2 - (g.X + 6), r.Height - 2);
-            k.Save(w, "screen-gallery", marks: [groups[0], rangeMark, groups[1], groups[2], preview, openGallery]);
+            k.Save(w, "screen-gallery", marks: [listPane, rangeMark, groups[2], groups[3], preview, openGallery]);
+
+            ShotKit.Call(w, "AddItem", CommunityArtType.Png);
+            ShotKit.Call(w, "AddItem", CommunityArtType.Gif);
+            ShotKit.Get<RadioButton>(w, "_rangeTag").IsChecked = true;
+            ShotKit.Pump(400);
+            var add = ShotKit.FindText(w, UiStrings.Gallery_Add, ancestorControl: true);
+            var warning = ShotKit.Get<Control>(w, "_listWarning");
+            k.Save(w, "screen-gallery-2", crop: ShotKit.Bounds(listPane, w).Inflate(8), marks:
+                [ShotKit.Get<Control>(w, "_list"), add, warning], firstNumber: 7);
         }, settleMs: 700);
     }
 }

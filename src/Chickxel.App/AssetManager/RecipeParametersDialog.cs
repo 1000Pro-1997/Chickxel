@@ -109,6 +109,7 @@ public sealed class RecipeParametersDialog : DialogBase
         RecipeParameterKind.Color => UiStrings.RecipeParams_KindColor,
         RecipeParameterKind.Int => string.Format(CultureInfo.CurrentCulture, UiStrings.RecipeParams_KindInt, parameter.Min, parameter.Max),
         RecipeParameterKind.Bool => UiStrings.RecipeParams_KindBool,
+        RecipeParameterKind.Text => UiStrings.RecipeParams_KindText,
         _ => UiStrings.RecipeParams_KindChoice,
     };
 
@@ -117,6 +118,7 @@ public sealed class RecipeParametersDialog : DialogBase
         EffectParameterKind.Color => UiStrings.RecipeParams_KindColor,
         EffectParameterKind.Int => string.Format(CultureInfo.CurrentCulture, UiStrings.RecipeParams_KindInt, setting.Min, setting.Max),
         EffectParameterKind.Bool => UiStrings.RecipeParams_KindBool,
+        EffectParameterKind.Text => UiStrings.RecipeParams_KindText,
         _ => UiStrings.RecipeParams_KindChoice,
     };
 
@@ -175,7 +177,7 @@ public sealed class RecipeParametersDialog : DialogBase
 
     /// <summary>
     /// 설정 연결을 더하거나 뺀다. 첫 연결이 매개변수 종류와 기본값(그 설정의 지금 값)·범위·고를 수 있는 값을 정하고,
-    /// 더 잇는 설정은 범위·고를 수 있는 값을 겹침으로 좁힌다.
+    /// 더 잇는 설정은 범위·고를 수 있는 값·글 최대 길이를 겹침으로 좁힌다.
     /// </summary>
     private void Link(int k, RecipeBinding binding, EffectParameter setting, bool on)
     {
@@ -208,6 +210,9 @@ public sealed class RecipeParametersDialog : DialogBase
                     Default = choices.Contains(parameter.Default.Choice, StringComparer.Ordinal) || choices.Length == 0 ? parameter.Default : RecipeValue.OfChoice(choices[0]),
                 };
             }
+            if (parameter.Kind == RecipeParameterKind.Text && RecipeParameters.TextMaxLength(_effects, parameter.Bindings) is { } maxLength
+                && parameter.Default.Text.Length > maxLength)
+                parameter = parameter with { Default = RecipeValue.OfText(parameter.Default.Text[..maxLength]) };
         }
         _parameters[k] = parameter;
         ShowEditor();
@@ -287,6 +292,24 @@ public sealed class RecipeParametersDialog : DialogBase
                     };
                     _editor.Children.Add(Ui.Row(Ui.Label(UiStrings.RecipeParams_Default), selected));
                 }
+                break;
+            case RecipeParameterKind.Text:
+                // 여러 줄 글(연결된 글 설정이 모두 받는 길이까지)
+                var text = new TextBox
+                {
+                    Text = parameter.Default.Text,
+                    AcceptsReturn = true,
+                    TextWrapping = TextWrapping.NoWrap,
+                    Width = 300,
+                    Height = 76,
+                    Margin = new Thickness(3),
+                };
+                if (RecipeParameters.TextMaxLength(_effects, parameter.Bindings) is { } limit) text.MaxLength = limit;
+                ScrollViewer.SetHorizontalScrollBarVisibility(text, ScrollBarVisibility.Auto);
+                ScrollViewer.SetVerticalScrollBarVisibility(text, ScrollBarVisibility.Auto);
+                text.TextChanged += (_, _) => Set(p => p with { Default = RecipeValue.OfText(text.Text ?? "") });
+                _editor.Children.Add(Ui.Label(UiStrings.RecipeParams_Default));
+                _editor.Children.Add(text);
                 break;
         }
         foreach (var row in _editor.Children.Skip(first)) row.HelpAt(HelpPage, anchor: "Depending on the kind, set ⑨");

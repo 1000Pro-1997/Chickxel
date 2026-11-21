@@ -337,6 +337,10 @@ public sealed record CleanupSettings
     public double VectorTolerance { get; init; } = 0.6;
     /// <summary>벡터로 다시 그리기: 바깥과 닿지 않은 어두운 덩어리는 넓이가 이 칸 수보다 작으면(눈 등) 다시 그리지 않고 그대로 둔다.</summary>
     public double VectorBlobCells { get; init; } = 6;
+    /// <summary>벡터로 다시 그리기: 직선과 원호를 알아보고 일정한 계단으로 정돈한다.</summary>
+    public bool VectorCleanLines { get; init; } = true;
+    /// <summary>벡터 선을 나눌 최소 꺾임 각도(도).</summary>
+    public double VectorCornerAngle { get; init; } = 40;
 }
 
 public sealed record ConsistencySettings

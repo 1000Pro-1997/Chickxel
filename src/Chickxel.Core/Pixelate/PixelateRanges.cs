@@ -71,4 +71,6 @@ public static class PixelateRanges
     public static readonly PixelateRange VectorTolerance = new(0, 3);
     /// <summary>벡터로 다시 그리기에서 그대로 둘 작은 안쪽 덩어리 넓이(칸).</summary>
     public static readonly PixelateRange VectorBlobCells = new(0, 100);
+    /// <summary>벡터 선의 모서리로 인식할 꺾임 각도(도).</summary>
+    public static readonly PixelateRange VectorCornerAngle = new(5, 180);
 }

@@ -76,7 +76,7 @@ public static class Program
         catch (Exception ex)
         {
             var inner = ex is TargetInvocationException { InnerException: { } i } ? i : ex;
-            Console.WriteLine($"FAIL {id}: {inner.GetType().Name}: {inner.Message}\n{inner.StackTrace}");
+            Console.WriteLine($"FAIL {id}: {inner}");
             return false;
         }
         finally

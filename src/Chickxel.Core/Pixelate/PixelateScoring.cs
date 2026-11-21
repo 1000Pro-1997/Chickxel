@@ -25,6 +25,8 @@ public enum ScoreTerm
     GridEdges,
     /// <summary>칸 나누기 점수의 색 고름: 칸마다 비슷한 색만 든 정도(<see cref="GridQuality.Purity"/> — 칸 맞추기 먼저의 격자 단계만).</summary>
     GridPurity,
+    /// <summary>1px 바깥 외곽선 계단에서 앞뒤 단위에 비해 길이가 갑자기 튀거나 꺼진 비율(직선·단조로운 원호는 감점하지 않음).</summary>
+    LineRegularity,
 }
 
 /// <summary>점수 가중치(0 = 그 항목은 보지 않음).</summary>
@@ -39,6 +41,7 @@ public sealed record ScoreWeights
     public double OutlineThin { get; init; } = 4;
     public double ColorShift { get; init; } = 2;
     public double BlockRepetition { get; init; } = 2;
+    public double LineRegularity { get; init; } = 1;
 
     public double Of(ScoreTerm t) => t switch
     {
@@ -50,6 +53,7 @@ public sealed record ScoreWeights
         ScoreTerm.OutlineThin => OutlineThin,
         ScoreTerm.ColorShift => ColorShift,
         ScoreTerm.BlockRepetition => BlockRepetition,
+        ScoreTerm.LineRegularity => LineRegularity,
         ScoreTerm.Grid => Grid,
         _ => 0,
     };
@@ -99,9 +103,9 @@ public sealed record ScorePart(ScoreTerm Term, double Value, double Badness, dou
 public sealed record PixelateScore(double Total, IReadOnlyList<ScorePart> Parts);
 
 /// <summary>
-/// AI 없이 후보를 매기는 점수: 항목마다 나쁨(0~1)을 가중 평균해 100 × (1 − 평균). 충실도는 OKLab 평균 차 0.12에서,
-/// 외톨이는 불투명 픽셀의 5%에서 가장 나쁨. 색 수는 평균에 넣지 않고 목표가 있을 때만 점수 전체에 곱해 깎는다(아래). 색 바뀜은 팔레트 단계의 색 거리(<see cref="PaletteSettings.ColorDistance"/> — OKLab와 같은 크기,
-/// CIEDE2000은 ΔE00/200 — <see cref="ColorMetric.CiedeScale"/>)로 0.02(겨우 보이는 차이)까지는 0, 0.10에서 가장 나쁨.
+/// AI 없이 후보를 매기는 점수: 기존 항목마다 나쁨(0~1)을 가중 평균해 100 × (1 − 평균).
+/// 선의 깔끔함은 그 평균에 감점만 더한다 — 새 항목의 1점짜리 비중이 매끈한 모든 결과의 기존 점수 차이를 희석하지 않도록.
+/// 주요 색 변화는 팔레트 색 거리(<see cref="PaletteSettings.ColorDistance"/>; CIEDE2000이면 ΔE00/200) 0.02까지는 0, 0.10에서 가장 나쁨.
 /// 블록 반복도는 0.65(제대로 줄인 표본 결과 0.17~0.34, 두 칸 두께 외곽선·눈인 걷기 표본의 맞는 크기 0.64)까지는 0, 0.95에서 가장 나쁨(칸을 진짜 칸의
 /// ½~⅓로 고른 표본 결과 0.52~1.0, 깨끗한 그림을 키운 것은 1.0) — 칸이 작을수록 충실도는 늘 좋아지므로 이것이 없으면 점수가 그림을 덜 줄이는 쪽으로 끌린다.
 /// 실패한 결과(<see cref="PixelateResult.Failed"/> — 비었거나 거의 비었음·한 색·너무 작음, <see cref="Pixelator.CheckFailure"/>)는 항목과 상관없이 0점: 항목은 결과에 있는
@@ -132,10 +136,14 @@ public static class PixelateScoring
             new(ScoreTerm.OutlineThin, m.OutlineThin, Math.Clamp((1 - m.OutlineThin) / 0.5, 0, 1), w.OutlineThin),
             new(ScoreTerm.ColorShift, m.ColorShift, Math.Clamp((m.ColorShift - 0.02) / 0.08, 0, 1), w.ColorShift),
             new(ScoreTerm.BlockRepetition, m.BlockRepetition, Math.Clamp((m.BlockRepetition - 0.65) / 0.3, 0, 1), w.BlockRepetition),
+            new(ScoreTerm.LineRegularity, m.LineRegularity, Math.Clamp(1 - m.LineRegularity, 0, 1), w.LineRegularity),
         };
+        // 선의 깔끔함은 기존 항목의 점수 폭을 희석하지 않는 감점: 매끈한 결과는 원래 점수 그대로, 불규칙한 계단만 깎는다.
         // 색 수는 평균에 넣지 않고 전체에 곱한다(위).
-        double tw = parts.Where(p => p.Term != ScoreTerm.Colors).Sum(p => Math.Max(0, p.Weight));
-        double bad = tw <= 0 ? 0 : parts.Where(p => p.Term != ScoreTerm.Colors).Sum(p => Math.Max(0, p.Weight) * p.Badness) / tw;
+        double tw = parts.Where(p => p.Term is not (ScoreTerm.Colors or ScoreTerm.LineRegularity)).Sum(p => Math.Max(0, p.Weight));
+        double baseBad = tw <= 0 ? 0 : parts.Where(p => p.Term is not (ScoreTerm.Colors or ScoreTerm.LineRegularity))
+            .Sum(p => Math.Max(0, p.Weight) * p.Badness) / tw;
+        double bad = Math.Clamp(baseBad + Math.Max(0, w.LineRegularity) * (1 - m.LineRegularity) / Math.Max(1, tw), 0, 1);
         return new PixelateScore(r.Failed ? 0 : 100 * (1 - bad) * (1 - colorBad), parts);
     }
 

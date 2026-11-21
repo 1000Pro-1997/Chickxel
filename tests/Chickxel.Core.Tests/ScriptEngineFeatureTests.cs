@@ -560,4 +560,100 @@ public class ScriptEngineFeatureTests
                 ], render() {} });
                 """.Replace("WHEN", bad)).Errors, e => e.Kind == ScriptErrorKind.Declaration);
     }
+
+    [Fact]
+    public void Text_settings_keep_newlines_and_use_the_declared_length_in_the_schema_and_json()
+    {
+        var program = Parse(Unique("""
+            effect({ name: "letters", settings: [
+              { key: "caption", type: "text", max: 12, default: " A\nB " },
+              { key: "empty", type: "text" },
+            ], render(img, ctx, s) { img.data[0] = s.caption.length; img.data[1] = s.caption.indexOf("\n"); } });
+            """));
+        Assert.Equal((ScriptSettingType.Text, 12.0, " A\nB "), (program.Settings[0].Type, program.Settings[0].Max, program.Settings[0].Default));
+        Assert.Equal(("", (double)ScriptSetting.MaxTextLength), (program.Settings[1].Default, program.Settings[1].Max));
+        Assert.Equal(" A\nB ", program.NormalizeSettings(null)["caption"]);
+        Assert.Equal(" A\nB ", program.NormalizeSettings(new Dictionary<string, object> { ["caption"] = 123 })["caption"]);
+        Assert.Equal("abc\ndefghijk", program.NormalizeSettings(new Dictionary<string, object> { ["caption"] = "abc\ndefghijklmnopqrstuvwxyz" })["caption"]);
+
+        var effect = program.CreateEffect(new Dictionary<string, object> { ["caption"] = "line1\r\nline2" });
+        var parameter = EffectRegistry.ParametersOf(effect, _ => program).Single(p => p.Key == "caption");
+        Assert.Equal(EffectParameterKind.Text, parameter.Kind);
+        Assert.Equal(12, parameter.MaxLength);
+        Assert.True(parameter.Exposed);
+        var json = EffectCodec.Write(effect);
+        Assert.Equal("line1\nline2", ((JsonObject)json[EffectCodec.SettingsKey]!)["caption"]!.GetValue<string>());
+        var hash = ScriptLibrary.Add(program.Source);
+        ScriptLibrary.SetTrust(hash, true);
+        var decoded = (ScriptEffect)EffectCodec.Read((JsonObject)JsonNode.Parse(json.ToJsonString())!);
+        Assert.Equal("line1\nline2", decoded.Settings["caption"]);
+
+        var image = new PixelImage(1, 1);
+        program.Render(image, image.Bounds, ScriptFrameContext.Still);
+        Assert.Equal(new Color32(5, 2, 0, 0), image[0, 0]);
+    }
+
+    [Theory]
+    [InlineData("max: 0", "max")]
+    [InlineData("max: 1001", "max")]
+    [InlineData("max: 3.5", "max")]
+    [InlineData("max: '8'", "max")]
+    [InlineData("max: 2, default: 'long'", "default")]
+    [InlineData("default: false", "default")]
+    [InlineData("min: 1", "min")]
+    [InlineData("step: 1", "step")]
+    [InlineData("choices: ['a']", "choices")]
+    public void Invalid_text_setting_declarations_are_rejected(string fields, string field)
+    {
+        var result = ScriptEffectProgram.Parse($"effect({{ name: 'x', settings: [{{ key: 'caption', type: 'text', {fields} }}], render() {{}} }});");
+        Assert.False(result.Success);
+        Assert.Contains(result.Errors, error => error.Kind == ScriptErrorKind.Declaration && error.Message.Contains(field, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Context_text_defaults_to_a_bounded_transparent_image_and_rejects_oversized_text()
+    {
+        var program = Parse(Unique("""
+            effect({ name: "default text", render(img, ctx, s) {
+              const letters = ctx.text("A");
+              img.data[0] = letters.width > 0 && letters.width <= 16384 ? 1 : 0;
+              img.data[1] = letters.height > 0 && letters.height <= 16384 ? 1 : 0;
+              img.data[2] = letters.data.length === letters.width * letters.height * 4 ? 1 : 0;
+              img.data[3] = letters.data.some((_, i) => i % 4 === 3 && letters.data[i] !== 0) ? 255 : 0;
+            } });
+            """));
+        var image = new PixelImage(1, 1);
+        program.Render(image, image.Bounds, ScriptFrameContext.Still);
+        Assert.Equal(new Color32(1, 1, 1, 255), image[0, 0]);
+
+        var oversized = Parse(Unique("""
+            effect({ name: "oversized", render(img, ctx, s) { ctx.text("x".repeat(1001)); } });
+            """));
+        Assert.Throws<ScriptEffectException>(() => oversized.Render(new PixelImage(1, 1), new Rectangle(0, 0, 1, 1), ScriptFrameContext.Still));
+    }
+
+    [Fact]
+    public void Context_text_images_blend_like_the_builtin_text_effect()
+    {
+        var program = Parse(Unique("""
+            effect({ name: "print", settings: [{ key: "caption", type: "text", default: "Hi\nYou" }],
+              render(img, ctx, s) {
+                const letters = ctx.text(s.caption, { size: 12, color: { r: 245, g: 65, b: 35, a: 160 },
+                  bold: true, italic: false, smooth: true, align: "left", letterSpacing: 1, lineSpacing: 2, width: 32 });
+                img.blendOver(letters, 2, 3);
+              } });
+            """));
+        var actual = new PixelImage(64, 48);
+        actual[5, 8] = new Color32(25, 70, 180, 255);
+        var expected = actual.Clone();
+        TextRender.Apply(expected, new TextEffect
+        {
+            Text = "Hi\nYou", Size = 12, Color = new Color32(245, 65, 35, 160),
+            Bold = true, Smooth = true, Align = TextAlign.Left, LetterSpacing = 1, LineSpacing = 2,
+            BoxWidth = 32, X = 2, Y = 3,
+        }, expected.Bounds);
+        program.Render(actual, actual.Bounds, ScriptFrameContext.Still);
+        Assert.True(expected.ContentEquals(actual), "ctx.text differs from TextEffect");
+        Assert.Contains(actual.Pixels, pixel => pixel.A > 0 && pixel != new Color32(25, 70, 180, 255));
+    }
 }

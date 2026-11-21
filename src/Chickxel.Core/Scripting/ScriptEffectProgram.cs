@@ -422,6 +422,11 @@ public sealed class ScriptEffectProgram
                 return CoerceList(setting, ReadColors(value));
             case ScriptSettingType.ColorPairs:
                 return CoerceList(setting, ReadPairs(value)?.Select(p => new ScriptColorPair(Opaque(setting, p.From), Opaque(setting, p.To))).ToArray());
+            case ScriptSettingType.Text:
+                // 줄바꿈을 "\n"으로 맞춘 뒤 선언한 max까지 자른다(Windows 글 칸의 "\r\n"도 한 글자로 셈).
+                if (value is not string text) return null;
+                text = text.Replace("\r\n", "\n").Replace('\r', '\n');
+                return text[..Math.Min(text.Length, (int)(setting.Max ?? ScriptSetting.MaxTextLength))];
             case ScriptSettingType.Layer:
                 // 레이어 이름: 문서에 없는 이름도 그대로 둔다(고르기 상자가 없는 이름으로 보이고, 스크립트는 null을 받음)
                 return ScriptSetting.LayerName(value);

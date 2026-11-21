@@ -51,6 +51,8 @@ public enum OptimizeParam
     VectorTolerance = 131072,
     /// <summary>벡터로 다시 그리기에서 그대로 둘 작은 안쪽 덩어리 넓이 1~24칸(외곽선 맞추기가 벡터로 다시 그리기인 시도에서만).</summary>
     VectorBlob = 262144,
+    /// <summary>벡터 선의 모서리 인식 각도 15~100°(벡터일 때만).</summary>
+    VectorCornerAngle = 67108864,
     /// <summary>칸 경계 지역 보정 켜기·끄기와, 켠 시도에서 최대 이동·띠 너비·최소 평균 칸 크기.</summary>
     LocalGrid = 524288,
     /// <summary>색 거리(OKLab·CIEDE2000·OKLCh 색상 가중)와, OKLCh 색상 가중인 시도에서 색상 무게 0~1000(작은 값 쪽 후보도 꼭 시험). 점수의 '주요 색 변화'는 모든 시도를 <see cref="PixelateOptimizeOptions.ScoreMetric"/> 또는 시작 팔레트의 거리로 잰다.</summary>
@@ -74,7 +76,7 @@ public enum OptimizeParam
     Grid = Scale | OffsetX | OffsetY | LocalGrid | GridJitter | GridSource,
     Default = Scale | Colors | DownsampleMode | Cleanup | PaletteColorSource,
     All = Scale | OffsetX | OffsetY | Colors | DownsampleMode | BorderFraction | AlphaThreshold | SnapStep | OutlineDarkness | Cleanup | Dither | OutlineFit
-        | PaletteColorSource | SnapOutline | PaletteMethod | EdgeWeight | StickerBorder | VectorTolerance | VectorBlob | LocalGrid | ColorDistance | DistinctHues
+        | PaletteColorSource | SnapOutline | PaletteMethod | EdgeWeight | StickerBorder | VectorTolerance | VectorBlob | VectorCornerAngle | LocalGrid | ColorDistance | DistinctHues
         | ShadeFamily | GroupRange | GridJitter | GridSource,
     /// <summary>대화상자의 '모두 선택'이 켜는 항목: 외곽선 맞추기 방식만 빼고 모두(벡터 설정은 외곽선 맞추기가 벡터로 다시 그리기일 때만 쓰임 — <see cref="PixelateOptimizer.Applicable"/>).</summary>
     SelectAll = All & ~OutlineFit,
@@ -422,7 +424,10 @@ public static class PixelateOptimizer
         if (s.Downsample.Mode is not (DownsampleMode.Mode or DownsampleMode.ClusterWeighted)
             && !chosen.HasFlag(OptimizeParam.DownsampleMode)) p &= ~OptimizeParam.SnapStep;
         if (s.Background.Mode == BackgroundMode.None) p &= ~OptimizeParam.StickerBorder;
-        if (s.Cleanup.OutlineFit != OutlineFit.Vector && !chosen.HasFlag(OptimizeParam.OutlineFit)) p &= ~(OptimizeParam.VectorTolerance | OptimizeParam.VectorBlob);
+        if (s.Cleanup.OutlineFit != OutlineFit.Vector && !chosen.HasFlag(OptimizeParam.OutlineFit))
+            p &= ~(OptimizeParam.VectorTolerance | OptimizeParam.VectorBlob | OptimizeParam.VectorCornerAngle);
+        if (!s.Cleanup.VectorCleanLines && !chosen.HasFlag(OptimizeParam.OutlineFit))
+            p &= ~OptimizeParam.VectorCornerAngle;
         return p;
     }
 
@@ -1063,6 +1068,10 @@ public static class PixelateOptimizer
             if (p.HasFlag(OptimizeParam.VectorBlob))
                 axes.Add(Num(OptimizeParam.VectorBlob, PixelateRanges.VectorBlobCells, 1, 24, 1, 0,
                     s => s.Cleanup.VectorBlobCells, (s, v) => s with { Cleanup = s.Cleanup with { VectorBlobCells = v } }) with { Active = IsVector });
+            if (p.HasFlag(OptimizeParam.VectorCornerAngle))
+                axes.Add(Num(OptimizeParam.VectorCornerAngle, PixelateRanges.VectorCornerAngle, 15, 100, 5, 0,
+                    s => s.Cleanup.VectorCornerAngle, (s, v) => s with { Cleanup = s.Cleanup with { VectorCornerAngle = v } })
+                    with { Active = s => IsVector(s) && s.Cleanup.VectorCleanLines });
             return axes;
         }
 
@@ -1157,6 +1166,8 @@ public static class PixelateOptimizer
         {
             if (p.HasFlag(OptimizeParam.VectorTolerance)) parts.Add("vector tolerance " + s.Cleanup.VectorTolerance.ToString("0.##", ci));
             if (p.HasFlag(OptimizeParam.VectorBlob)) parts.Add("vector blob " + s.Cleanup.VectorBlobCells.ToString("0", ci));
+            if (p.HasFlag(OptimizeParam.VectorCornerAngle) && s.Cleanup.VectorCleanLines)
+                parts.Add("corner angle " + s.Cleanup.VectorCornerAngle.ToString("0", ci) + "°");
         }
         return string.Join(" · ", parts);
     }

@@ -122,6 +122,44 @@ public class ModelRendererTests(ITestOutputHelper output)
     }
 
     [Theory]
+    [InlineData(ModelProjection.Orthographic)]
+    [InlineData(ModelProjection.Perspective)]
+    public void Roll_RotatesProjectionAroundImageCenter_WithoutChangingCameraOrLight(ModelProjection projection)
+    {
+        var lit = new ModelMaterial { BaseColor = new Vector4(0.8f, 0.5f, 0.2f, 1) };
+        var mesh = new PosedMesh([Quad(new Vector3(0.4f, 0.2f, 0), Vector3.UnitX * 0.15f,
+            Vector3.UnitY * 0.15f, lit)]);
+        var fit = new ModelBounds(new Vector3(-1), new Vector3(1));
+        var settings = Front(64, 1) with
+        {
+            Projection = projection, LightYaw = 45, LightPitch = 35, Ambient = 0.2f, LightStrength = 0.8f,
+        };
+        var normal = ModelRenderer.Render(mesh, settings, fit);
+        var rolled = ModelRenderer.Render(mesh, settings with { Roll = 90 }, fit);
+        // 90° clockwise maps (x, y) to (width - 1 - y, x). Interior colors stay identical,
+        // including their lighting: roll changes the screen axes, not the model/light relative orientation.
+        for (int y = 2; y < 62; y++)
+            for (int x = 2; x < 62; x++)
+                if (normal[x, y].A != 0 && normal[x + 1, y].A != 0 && normal[x, y + 1].A != 0)
+                    Assert.Equal(normal[x, y], rolled[63 - y, x]);
+        Assert.True(normal.GetOpaqueBounds().Left > normal.GetOpaqueBounds().Top);
+        Assert.True(rolled.GetOpaqueBounds().Top > rolled.GetOpaqueBounds().Left);
+    }
+
+    [Fact]
+    public void LightBack_FlipsDepthComponent_KeepingScreenDirection()
+    {
+        var mesh = Sphere(24, 32, new ModelMaterial { BaseColor = new Vector4(0.8f, 0.8f, 0.8f, 1) });
+        var settings = Front(64) with { LightYaw = 0, LightPitch = 0, Ambient = 0.2f, LightStrength = 0.8f };
+        var front = Draw(mesh, settings);
+        var back = Draw(mesh, settings with { LightBack = true });
+        Assert.True(front[32, 32].R > back[32, 32].R);
+        var sideFront = Draw(mesh, settings with { LightYaw = 55, LightPitch = 20 });
+        var sideBack = Draw(mesh, settings with { LightYaw = 55, LightPitch = 20, LightBack = true });
+        Assert.True(sideFront[42, 27].R > sideBack[42, 27].R);
+    }
+
+    [Theory]
     [InlineData(ModelProjection.Orthographic, false)]
     [InlineData(ModelProjection.Orthographic, true)]
     [InlineData(ModelProjection.Perspective, false)]

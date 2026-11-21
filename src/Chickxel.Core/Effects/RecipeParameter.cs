@@ -6,7 +6,7 @@ using Chickxel.Core.Model;
 namespace Chickxel.Core.Effects;
 
 /// <summary>
-/// 효과 레시피 매개변수의 값 종류(계획 14장 3단계: 색·정수·켜고 끄기·고르기부터). 연결된 기본 효과 설정(<see cref="EffectParameter"/>)의 종류와 같아야 한다.
+/// 효과 레시피 매개변수의 값 종류(계획 14장 3단계: 색·정수·켜고 끄기·고르기부터, 글 상자). 연결된 기본 효과 설정(<see cref="EffectParameter"/>)의 종류와 같아야 한다.
 /// </summary>
 public enum RecipeParameterKind
 {
@@ -14,19 +14,22 @@ public enum RecipeParameterKind
     Int,
     Bool,
     Choice,
+    /// <summary>글(연결된 글 설정의 <see cref="EffectParameter.MaxLength"/> 중 가장 작은 값까지).</summary>
+    Text,
 }
 
 /// <summary>레시피 매개변수 값 하나(종류에 맞는 칸만 씀). 저장 JSON 모양은 연결된 효과 설정과 같다.</summary>
 public readonly record struct RecipeValue
 {
-    private readonly string? _choice;
+    /// <summary>고르기의 저장 ID 또는 글(종류에 따라).</summary>
+    private readonly string? _text;
 
-    private RecipeValue(RecipeParameterKind kind, int number, Color32 color, string? choice)
+    private RecipeValue(RecipeParameterKind kind, int number, Color32 color, string? text)
     {
         Kind = kind;
         Int = number;
         Color = color;
-        _choice = choice;
+        _text = text;
     }
 
     public RecipeParameterKind Kind { get; }
@@ -39,7 +42,10 @@ public readonly record struct RecipeValue
     public Color32 Color { get; }
 
     /// <summary>고른 저장 ID(효과 설정의 <see cref="EffectParameter.Choices"/> 중 하나).</summary>
-    public string Choice => _choice ?? "";
+    public string Choice => Kind == RecipeParameterKind.Choice ? _text ?? "" : "";
+
+    /// <summary>글 값(글 매개변수만, 줄바꿈 포함).</summary>
+    public string Text => Kind == RecipeParameterKind.Text ? _text ?? "" : "";
 
     public static RecipeValue Of(int value) => new(RecipeParameterKind.Int, value, default, null);
 
@@ -49,12 +55,15 @@ public readonly record struct RecipeValue
 
     public static RecipeValue OfChoice(string value) => new(RecipeParameterKind.Choice, 0, default, value);
 
-    /// <summary>저장 JSON 값(효과 설정 JSON과 같은 모양: 색 "#RRGGBB(AA)", 정수, true/false, 저장 ID 글자).</summary>
+    public static RecipeValue OfText(string value) => new(RecipeParameterKind.Text, 0, default, value);
+
+    /// <summary>저장 JSON 값(효과 설정 JSON과 같은 모양: 색 "#RRGGBB(AA)", 정수, true/false, 저장 ID 글자, 글).</summary>
     public JsonNode ToJson() => Kind switch
     {
         RecipeParameterKind.Color => JsonValue.Create(Color.ToHex()),
         RecipeParameterKind.Int => JsonValue.Create(Int),
         RecipeParameterKind.Bool => JsonValue.Create(Bool),
+        RecipeParameterKind.Text => JsonValue.Create(Text),
         _ => JsonValue.Create(Choice),
     };
 
@@ -76,6 +85,9 @@ public readonly record struct RecipeValue
             case RecipeParameterKind.Choice when AssetJson.String(node) is { Length: > 0 } choice:
                 value = OfChoice(choice);
                 return true;
+            case RecipeParameterKind.Text when AssetJson.String(node) is { } text:
+                value = OfText(text);
+                return true;
             default:
                 return false;
         }
@@ -86,6 +98,7 @@ public readonly record struct RecipeValue
         RecipeParameterKind.Color => Color.ToHex(),
         RecipeParameterKind.Int => Int.ToString(CultureInfo.InvariantCulture),
         RecipeParameterKind.Bool => Bool ? "true" : "false",
+        RecipeParameterKind.Text => Text,
         _ => Choice,
     };
 }

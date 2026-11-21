@@ -6,6 +6,7 @@ namespace Chickxel.Core.Effects;
 /// <summary>
 /// 글씨 효과 정의: 설정 schema, 렌더러 연결. 원본 없이 그리므로 빈 셀에도 그린다(<see cref="EffectDefinition.GeneratesContent"/>), 여백은 없다(원본 영역 밖은 잘림).
 /// "font"는 글꼴 이름(글 — 예전 파일의 글꼴 열거 이름이 그대로 기본 글꼴 이름), 크기·굵게 등 뒤에 생긴 키가 없는 예전 파일은 기본값.
+/// 레시피 매개변수로는 "text"(글 상자)를 내보내고, 글꼴 이름은 글꼴 고르기가 필요해 내보내지 않는다.
 /// </summary>
 public static class TextDefinition
 {
@@ -14,7 +15,7 @@ public static class TextDefinition
     public static EffectDefinition Definition { get; } = EffectDefinition.Create<TextEffect>(Id, "text", TextRender.Apply, s =>
     [
         s.Text("text", e => e.Text, (e, v) => e with { Text = v }, TextEffect.MaxLength),
-        s.Text("font", e => e.FontName, (e, v) => e with { FontName = v }, TextEffect.MaxFontNameLength),
+        s.Text("font", e => e.FontName, (e, v) => e with { FontName = v }, TextEffect.MaxFontNameLength, exposable: false),
         s.Int("size", 0, TextEffect.MaxSize, e => e.Size, (e, v) => e with { Size = v }),
         s.Bool("bold", e => e.Bold, (e, v) => e with { Bold = v }),
         s.Bool("italic", e => e.Italic, (e, v) => e with { Italic = v }),

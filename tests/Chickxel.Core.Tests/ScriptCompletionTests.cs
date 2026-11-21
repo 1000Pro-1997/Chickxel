@@ -30,7 +30,7 @@ public class ScriptCompletionTests
     }
 
     [Theory]
-    [InlineData("ctx.|", new[] { "t", "phase", "progress", "frame", "step", "span", "rangeStart", "rangeEnd", "frameTag", "source", "pivot", "center", "slice", "color",
+    [InlineData("ctx.|", new[] { "t", "phase", "progress", "frame", "step", "span", "rangeStart", "rangeEnd", "frameTag", "source", "pivot", "center", "slice", "text", "color",
         "colorAt", "pairColor", "hasGradient", "hash", "random", "bayer2", "bayer4", "frameSource", "renderedFrameSource", "matchPixels",
         "layer", "layerWithEffects", "layerEffects", "movePivot" })]
     [InlineData("ctx.slice.|", new[] { "left", "top", "right", "bottom" })]
@@ -72,7 +72,7 @@ public class ScriptCompletionTests
     [InlineData("effect({\n  name: \"x\",\n  pre|", new[] { "previewChick", "previewEndChick", "previewFrames", "previewMotion", "previewEndOffset", "previewPivot", "previewEndPivot" })]
     [InlineData("effect({ name: 'x', settings: [{ key: 'a', ty|", new[] { "type" })]
     [InlineData("effect({ name: 'x', settings: [{ key: 'a', type: \"co|", new[] { "color", "colorList", "colorPairs" })]
-    [InlineData("effect({ name: 'x', settings: [{ key: 'a', type: \"|", new[] { "int", "number", "bool", "color", "choice", "colorList", "colorPairs", "layer" })]
+    [InlineData("effect({ name: 'x', settings: [{ key: 'a', type: \"|", new[] { "int", "number", "bool", "color", "choice", "colorList", "colorPairs", "layer", "text" })]
     [InlineData("effect({ name: 'x', easing: \"Ease|", new[] { "EaseIn", "EaseOut", "EaseInOut" })]
     [InlineData("effect({ name: 'x', settings: [{ key: 'a', widget: \"|", new[] { "angle", "point" })]
     [InlineData("effect({ name: 'x', area: \"lo|", new[] { "local" })]

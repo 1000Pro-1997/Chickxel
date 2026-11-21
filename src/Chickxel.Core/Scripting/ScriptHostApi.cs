@@ -181,6 +181,9 @@ internal static class ScriptHostApi
         Define(ctx, "rangeStart", frame.RangeStart);
         Define(ctx, "rangeEnd", frame.RangeEnd);
         ctx.DefineOwnProperty("frameTag", new PropertyDescriptor(new JsString(frame.FrameTag), Fixed));
+        // 글씨 효과와 같은 글꼴·줄바꿈·색 합성으로 독립적인 투명 그림을 만든다.
+        Method(ctx, engine, "text", 2, args =>
+            CreateImage(sandbox, ScriptText.Render(engine, Arg(args, 0), Arg(args, 1), sandbox.Limits.MaxArrayLength)).Image);
 
         // 다른 프레임 원본: 부를 때마다 새 사본이라 고쳐도 원본과 다음 호출에 닿지 않는다
         var frameSource = frame.FrameSource;

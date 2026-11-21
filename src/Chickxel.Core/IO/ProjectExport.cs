@@ -1367,6 +1367,50 @@ public static partial class ProjectExport
     private static bool SameRecord(IReadOnlyList<string>? a, IReadOnlyList<string> b)
         => a is not null && a.Count == b.Count && a.Zip(b).All(p => string.Equals(p.First, p.Second, StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>
+    /// 내보내기 목록을 고치는 <paramref name="change"/>(줄 빼기 등)를 하고, 그 때문에 다음 저장의 옛 결과 정리 대상이 된 파일을 돌려준다
+    /// (기록에 있고 지금 있으며, 남은 줄 어디서도 만들지 않는 파일 + 딸린 <c>.meta</c>·사이드카). 앞뒤의 정리 대상을 견주므로 이미 뺀 다른 줄의 결과는 들지 않는다.
+    /// 저장 전·기록 없음(예전 파일)·경로를 셀 수 없으면 빈 목록. 파일은 건드리지 않는다 — 지울지 남길지는 부르는 쪽이 정하고
+    /// 어느 쪽이든 <see cref="ForgetOutputs"/>로 기록에서 지운다.
+    /// </summary>
+    public static IReadOnlyList<string> OutputsDroppedBy(SpriteProject project, Action change)
+    {
+        var before = PendingStale(project);
+        change();
+        var after = before is null ? null : PendingStale(project);
+        if (after is null) return [];
+        var old = new HashSet<string>(before!, StringComparer.OrdinalIgnoreCase);
+        return after.Where(p => !old.Contains(p)).ToList();
+    }
+
+    /// <summary>지금 저장하면 옛 결과로 정리될 파일. 아무 줄도 쓰지 않는다고 보고 세므로 이름이 겹쳐도 예외가 없다(정리 대상은 있는 파일뿐이라 같다). 셀 수 없으면 null.</summary>
+    private static IReadOnlyList<string>? PendingStale(SpriteProject project)
+    {
+        if (project.Path is not { } path || project.ExportedFiles is null) return null;
+        try
+        {
+            return Plan(project, path, sheets: false, writeEntry: _ => false).Stale;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or IOException or NotSupportedException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 파일들을 기록(<see cref="SpriteProject.ExportedFiles"/>)에서 지운다: 다음 저장의 옛 결과 정리가 건드리지 않는다(남기기로 했거나 이미 휴지통으로 옮긴 파일).
+    /// 기록이 바뀌면 수정됨(다음 저장 때 <c>.chickxel</c>에 들어감).
+    /// </summary>
+    public static void ForgetOutputs(SpriteProject project, IEnumerable<string> files)
+    {
+        if (project.ExportedFiles is not { } record) return;
+        var drop = new HashSet<string>(files.Select(Path.GetFullPath), StringComparer.OrdinalIgnoreCase);
+        var kept = record.Where(f => !drop.Contains(Path.GetFullPath(f))).ToList();
+        if (kept.Count == record.Count) return;
+        project.ExportedFiles = kept;
+        project.IsDirty = true;
+    }
+
     private static ExportResult WriteDocument(string path, Document doc, SpriteProject project, bool writeMeta, WorkStage? stage)
     {
         var dir = Path.GetDirectoryName(path);

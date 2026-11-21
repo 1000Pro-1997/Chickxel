@@ -8,8 +8,9 @@ namespace Chickxel.Core.IO;
 /// 레시피 매개변수 JSON — 레시피 에셋의 <c>parameters</c>와 프로젝트 효과의 묶음 정보(<c>recipe</c>)가 같이 쓴다:
 /// <code>{ "id": "glow", "name": "빛 색", "kind": "color", "default": "#00FFC8", "bindings": [ { "effect": 0, "key": "color" }, { "effect": 2, "key": "color" } ] }
 /// { "id": "width", "name": "두께", "kind": "int", "default": 2, "min": 1, "max": 3, "bindings": [ … ] }
-/// { "id": "mode", "name": "섞기", "kind": "choice", "default": "Screen", "choices": [ "Normal", "Screen" ], "bindings": [ … ] }</code>
-/// <c>kind</c> = <c>color</c>·<c>int</c>·<c>bool</c>·<c>choice</c>, 값 모양은 효과 설정 JSON과 같다. <c>min</c>·<c>max</c>는 정수만, <c>choices</c>는 고르기만 쓴다.
+/// { "id": "mode", "name": "섞기", "kind": "choice", "default": "Screen", "choices": [ "Normal", "Screen" ], "bindings": [ … ] }
+/// { "id": "title", "name": "글", "kind": "text", "default": "HIT!", "bindings": [ … ] }</code>
+/// <c>kind</c> = <c>color</c>·<c>int</c>·<c>bool</c>·<c>choice</c>·<c>text</c>, 값 모양은 효과 설정 JSON과 같다(글은 JSON 문자열). <c>min</c>·<c>max</c>는 정수만, <c>choices</c>는 고르기만 쓴다.
 /// 여기서는 모양만 읽고, 연결·범위 검사는 <see cref="RecipeParameters.Check"/>가 한다.
 /// <para>
 /// 프로젝트 효과 JSON의 묶음 정보(구성 효과마다 한 벌, 원본 패키지 없이 편집되게):
@@ -28,6 +29,7 @@ public static class RecipeParameterFormat
         RecipeParameterKind.Color => "color",
         RecipeParameterKind.Int => "int",
         RecipeParameterKind.Bool => "bool",
+        RecipeParameterKind.Text => "text",
         _ => "choice",
     };
 
@@ -37,6 +39,7 @@ public static class RecipeParameterFormat
         "int" => RecipeParameterKind.Int,
         "bool" => RecipeParameterKind.Bool,
         "choice" => RecipeParameterKind.Choice,
+        "text" => RecipeParameterKind.Text,
         _ => null,
     };
 

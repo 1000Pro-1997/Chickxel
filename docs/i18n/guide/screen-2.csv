@@ -802,3 +802,41 @@ term.asset-received.def,"상점이나 파일에서 받은 남의 에셋으로, �
 term.asset-publish,온라인에 올리기,publish online
 term.asset-publish.to,screen-asset-publish,
 term.asset-publish.def,내 에셋 하나를 Chickxel 계정으로 상점과 chickxel.com에 공개하는 창입니다.,The window that publishes one of your assets to the Store and chickxel.com with your Chickxel account.
+screen-script-effects.text-title,글 입력 설정,Text input setting
+screen-script-effects.text-alt,"스크립트 효과의 글 설정: 여러 줄 글 칸과 미리보기","Script effect text setting: a multiline input and preview"
+screen-script-effects.text-caption,⑲ 스크립트가 선언한 글 입력 칸,⑲ Text input declared by a script
+screen-script-effects.text-setting,"<code>settings</code>에 <code>{ key: ""message"", label: ""보일 글"", type: ""text"", default: ""안녕"", max: 100 }</code>처럼 선언하면 ⑲ 효과 창·독·효과 만들기에 여러 줄 글 칸이 생깁니다. <code>max</code>는 최대 글자 수(1~1000, 없으면 기본 한도), <code>default</code>는 처음 글입니다. 줄바꿈을 넣을 수 있고, 그린 때는 <code>s.message</code> 문자열로 읽습니다.","Declare <code>{ key: ""message"", label: ""Label"", type: ""text"", default: ""Hello"", max: 100 }</code> in <code>settings</code> to show a multiline text field ⑲ in the effects dialog, dock and Effect Maker. <code>max</code> limits its length (1–1000, or the default limit when omitted); <code>default</code> is the initial text. Newlines are allowed; render reads the string as <code>s.message</code>."
+screen-script-effects.text-field,"여러 줄 글: <code>type: ""text""</code>, <code>default</code>, 선택 <code>max</code>","Multiline text: <code>type: ""text""</code>, <code>default</code>, optional <code>max</code>"
+screen-script-effects.text-value,<code>s.키</code>로 입력한 글을 읽음. 최대 글자 수는 1~1000,"Read the typed text through <code>s.key</code>. Length limit: 1–1000"
+screen-script-effects.text-api,"글을 Text 효과와 같은 글꼴·배치로 투명한 그림에 그려 돌려줍니다. <code>options</code>: <code>font</code>, <code>size</code>, <code>color</code>, <code>bold</code>, <code>italic</code>, <code>smooth</code>, <code>align</code>, <code>letterSpacing</code>, <code>lineSpacing</code>, <code>width</code>. <code>img.blendOver</code>로 원본에 얹습니다.","Draws text into a transparent image with the Text effect's fonts and layout. <code>options</code>: <code>font</code>, <code>size</code>, <code>color</code>, <code>bold</code>, <code>italic</code>, <code>smooth</code>, <code>align</code>, <code>letterSpacing</code>, <code>lineSpacing</code>, <code>width</code>. Place it with <code>img.blendOver</code>."
+screen-script-effects.text-example-title,떠오르는 피해 숫자,One floating damage number
+screen-script-effects.text-example-intro,"사용자가 글 설정에 넣은 글을 <code>ctx.text</code>로 그려 현재 그림 위에 얹는 예시입니다. 프레임 진행률이 커질수록 위로 움직입니다. 글꼴 이름은 앱의 글씨 효과와 같습니다.","This example draws what the user typed in a text setting with <code>ctx.text</code> and places it over the current picture. It moves upward as the frame progresses. Font names work like those of the Text effect."
+screen-script-effects.text-example,"effect({
+  name: ""피해 숫자"",
+  animated: true,
+  settings: [
+    { key: ""message"", label: ""보일 글"", type: ""text"", default: ""42"", max: 32 },
+  ],
+  render(img, ctx, s) {
+    const label = ctx.text(s.message, { size: 12, color: ""#ff6666"", bold: true });
+    const x = Math.floor((img.width - label.width) / 2);
+    const y = Math.floor(img.height / 2 - ctx.progress * 12);
+    img.blendOver(label, x, y);
+  },
+});","effect({
+  name: ""Damage number"",
+  animated: true,
+  settings: [
+    { key: ""message"", label: ""Shown text"", type: ""text"", default: ""42"", max: 32 },
+  ],
+  render(img, ctx, s) {
+    const label = ctx.text(s.message, { size: 12, color: ""#ff6666"", bold: true });
+    const x = Math.floor((img.width - label.width) / 2);
+    const y = Math.floor(img.height / 2 - ctx.progress * 12);
+    img.blendOver(label, x, y);
+  },
+});"
+screen-effect-recipes.text-title,글 매개변수,Text parameters
+screen-effect-recipes.text-alt,"프리셋 매개변수 창: 글씨 효과의 글 설정을 연결한 매개변수와 여러 줄 기본값 입력 칸","Preset parameters window: a text parameter linked to a Text effect and its multiline default field"
+screen-effect-recipes.text-caption,⑬ 글 설정 연결 · ⑭ 여러 줄 기본값,⑬ Linked text setting · ⑭ Multiline default
+screen-effect-recipes.text-body,"글씨 효과의 <code>text</code>나 스크립트의 <code>type: ""text""</code> 설정을 ⑬에 연결하면 글 매개변수가 됩니다. ⑭ 여러 줄 칸에서 기본 글을 고치고, 프리셋을 넣은 뒤에도 효과 창의 같은 칸에서 바꿀 수 있습니다. 연결한 설정 중 가장 작은 최대 글자 수를 따릅니다. 글꼴 이름과 레이어 고르기 설정은 글 매개변수로 내보내지 않습니다.","Link a Text effect's <code>text</code> or a script <code>type: ""text""</code> setting at ⑬ to create a text parameter. Edit its default in the multiline field ⑭ and change the text in the effects dialog after inserting the preset. The shortest length limit among linked settings applies. Font names and layer pickers cannot be exposed as text parameters."

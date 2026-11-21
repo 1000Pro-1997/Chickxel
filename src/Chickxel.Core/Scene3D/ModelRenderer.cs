@@ -129,6 +129,7 @@ public static class ModelRenderer
         public int Supersample { get; init; }
         public float Yaw { get; init; }
         public float Pitch { get; init; }
+        public float Roll { get; init; }
         public bool Perspective { get; init; }
         public float FieldOfView { get; init; }
         public float Zoom { get; init; }
@@ -136,6 +137,7 @@ public static class ModelRenderer
         public float PanY { get; init; }
         public float LightYaw { get; init; }
         public float LightPitch { get; init; }
+        public bool LightBack { get; init; }
         public float Ambient { get; init; }
         public float LightStrength { get; init; }
         public int ShadeSteps { get; init; }
@@ -159,6 +161,7 @@ public static class ModelRenderer
                 Supersample = ss,
                 Yaw = Finite(s.Yaw, 0),
                 Pitch = Math.Clamp(Finite(s.Pitch, 0), -90, 90),
+                Roll = Finite(s.Roll, 0),
                 Perspective = s.Projection == ModelProjection.Perspective,
                 FieldOfView = Math.Clamp(Finite(s.FieldOfView, 35), 5, 120),
                 Zoom = zoom > 0 ? Math.Clamp(zoom, 1e-3f, 1e4f) : 1,
@@ -166,6 +169,7 @@ public static class ModelRenderer
                 PanY = Finite(s.PanY, 0),
                 LightYaw = Finite(s.LightYaw, 0),
                 LightPitch = Finite(s.LightPitch, 0),
+                LightBack = s.LightBack,
                 Ambient = Math.Clamp(Finite(s.Ambient, 0.4f), 0, 1),
                 LightStrength = Math.Clamp(Finite(s.LightStrength, 0.8f), 0, 2),
                 ShadeSteps = steps,
@@ -258,12 +262,16 @@ public static class ModelRenderer
             _bh = s.Height * _ss;
             _persp = s.Perspective;
             float yaw = s.Yaw * (MathF.PI / 180), pitch = s.Pitch * (MathF.PI / 180);
-            // 카메라 쪽을 향하는 방향(뒤), 오른쪽, 위 — 오른쪽은 가로 각도만으로 정해 바로 위·아래에서 볼 때도 흔들리지 않는다.
+            // 카메라의 시선은 그대로 두고 화면의 수평·수직 축만 돌린다. 양수 roll은 그림을 시계 방향으로 돌린다.
             _back = new Vector3(MathF.Sin(yaw) * MathF.Cos(pitch), MathF.Sin(pitch), MathF.Cos(yaw) * MathF.Cos(pitch));
-            _right = new Vector3(MathF.Cos(yaw), 0, -MathF.Sin(yaw));
-            _up = Vector3.Normalize(Vector3.Cross(_back, _right));
+            var right = new Vector3(MathF.Cos(yaw), 0, -MathF.Sin(yaw));
+            var up = Vector3.Normalize(Vector3.Cross(_back, right));
+            float roll = s.Roll * (MathF.PI / 180);
+            _right = right * MathF.Cos(roll) + up * MathF.Sin(roll);
+            _up = up * MathF.Cos(roll) - right * MathF.Sin(roll);
             float ly = s.LightYaw * (MathF.PI / 180), lp = s.LightPitch * (MathF.PI / 180);
-            _light = Vector3.Normalize(_right * (MathF.Sin(ly) * MathF.Cos(lp)) + _up * MathF.Sin(lp) + _back * (MathF.Cos(ly) * MathF.Cos(lp)));
+            _light = Vector3.Normalize(_right * (MathF.Sin(ly) * MathF.Cos(lp)) + _up * MathF.Sin(lp)
+                + _back * ((s.LightBack ? -1 : 1) * MathF.Cos(ly) * MathF.Cos(lp)));
             _center = fit.Center;
             float radius = fit.Radius;
             _invRadius = 1 / radius;

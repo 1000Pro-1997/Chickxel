@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Nodes;
 using Chickxel.Core.Assets;
 using Chickxel.Core.Effects;
 using Chickxel.Core.IO;
@@ -213,6 +214,103 @@ public class RecipeParameterTests
             },
         ], (code, _) => Assert.Equal(AssetIssueCode.RecipeBindingKindMismatch, code));
         Assert.Equal([0], bad.ToArray());
+    }
+
+    // ───────────── 글 매개변수 ─────────────
+
+    /// <summary>글씨 효과 하나, 글 매개변수 하나(글 설정에 연결).</summary>
+    private static EffectRecipe TextRecipe() => EffectRecipe.Capture("", "Title", [new TextEffect { Text = "A" }]).WithParameters(
+    [
+        new RecipeParameter
+        {
+            Id = "title", Name = "글", Kind = RecipeParameterKind.Text, Default = RecipeValue.OfText("HIT!\n두 줄"),
+            Bindings = [new RecipeBinding(0, "text")],
+        },
+    ]);
+
+    [Fact]
+    public void TextParameter_RoundTripsThroughFormatAndPackage()
+    {
+        var parameter = TextRecipe().Parameters[0];
+        var json = RecipeParameterFormat.Write(parameter);
+        Assert.Equal(("text", "HIT!\n두 줄"), (json["kind"]!.GetValue<string>(), json["default"]!.GetValue<string>()));
+        var bad = new List<string>();
+        var read = RecipeParameterFormat.Read(RecipeParameterFormat.Write([parameter]), strict: true, bad.Add);
+        Assert.Empty(bad);
+        Assert.Equal(parameter, Assert.Single(read));
+        Assert.Equal(RecipeValue.OfText(""), RecipeParameterFormat.Read(JsonNode.Parse("""
+            [ { "id": "t", "name": "T", "kind": "text", "default": "", "bindings": [ { "effect": 0, "key": "text" } ] } ]
+            """), strict: true, bad.Add)[0].Default);
+        // 글이 아닌 기본값은 모양이 틀림
+        RecipeParameterFormat.Read(JsonNode.Parse("""
+            [ { "id": "t", "name": "T", "kind": "text", "default": 3, "bindings": [ { "effect": 0, "key": "text" } ] } ]
+            """), strict: true, bad.Add);
+        Assert.Equal(["parameters[0].default"], bad);
+
+        var recipe = TextRecipe();
+        var package = AssetPackageValidator.Read(new MemoryStream(AssetSamples.Build(recipe: recipe)));
+        var fromPackage = Assert.IsType<EffectRecipe>(package.Items[0].Data);
+        Assert.Equal(recipe.Parameters, fromPackage.Parameters);
+        // 넣으면 기본값이 글씨 효과의 글이 된다
+        var effect = Assert.IsType<TextEffect>(Assert.Single(fromPackage.Instantiate(new SpriteProject(4, 4), null)));
+        Assert.Equal("HIT!\n두 줄", effect.Text);
+    }
+
+    [Fact]
+    public void TextParameter_ChangesTextEffectText_AndSurvivesProjectSave()
+    {
+        var project = new SpriteProject(24, 24);
+        project.SetLayerEffects(0, TextRecipe().Instantiate(project, null));
+        var effects = project.Layers[0].Effects;
+        var instance = effects[0].Recipe!.Instance;
+        var parameter = instance.Parameters[0];
+        Assert.Equal(RecipeValue.OfText("HIT!\n두 줄"), RecipeInstances.ValueOf(effects, instance, parameter));
+        Assert.Equal(TextEffect.MaxLength, RecipeInstances.TextMaxLength(effects, instance, parameter));
+
+        var changed = RecipeInstances.WithValue(effects, instance.Id, "title", RecipeValue.OfText("Bye\r\nnow"));
+        // 줄바꿈 맞추기는 모델이 한다
+        Assert.Equal("Bye\nnow", Assert.IsType<TextEffect>(changed[0]).Text);
+        Assert.Equal(RecipeValue.OfText("Bye\nnow"), RecipeInstances.ValueOf(changed, instance, parameter));
+        // 종류가 다른 값은 받지 않는다
+        Assert.Same(changed, RecipeInstances.WithValue(changed, instance.Id, "title", RecipeValue.OfChoice("x")));
+
+        using var dir = new TempDir();
+        string file = dir.File("title.chickxel");
+        project.SetLayerEffects(0, changed);
+        ProjectIO.Save(project, file);
+        var reloaded = ProjectIO.Load(file).Layers[0].Effects;
+        Assert.Equal(parameter, reloaded[0].Recipe!.Instance.Parameters[0]);
+        Assert.Equal("Bye\nnow", Assert.IsType<TextEffect>(reloaded[0]).Text);
+    }
+
+    [Fact]
+    public void TextParameter_ExposesTextButNotFont_AndChecksKindAndLength()
+    {
+        var effect = new TextEffect();
+        Assert.True(RecipeParameters.CanExpose(RecipeParameters.SettingOf(effect, "text")!));
+        Assert.False(RecipeParameters.CanExpose(RecipeParameters.SettingOf(effect, "font")!));
+        Assert.Equal(RecipeValue.OfText(TextEffect.DefaultText), RecipeParameters.ValueOf(effect, "text"));
+        Assert.Equal("Z", ((TextEffect)RecipeParameters.With(effect, "text", RecipeValue.OfText("Z"))).Text);
+
+        List<(AssetIssueCode, string)> Issues(RecipeParameter parameter)
+        {
+            var issues = new List<(AssetIssueCode, string)>();
+            RecipeParameters.Check([effect], [parameter], (code, detail) => issues.Add((code, detail)));
+            return issues;
+        }
+        var text = TextRecipe().Parameters[0];
+        Assert.Empty(Issues(text));
+        // 글꼴 이름은 글이어도 내보내지 않고, 글 매개변수를 정수 설정에 이을 수 없다
+        Assert.Equal([(AssetIssueCode.RecipeBindingKindMismatch, "parameters[0].bindings[0]: effects[0].font text / text")],
+            Issues(text with { Bindings = [new RecipeBinding(0, "font")] }));
+        Assert.Equal([(AssetIssueCode.RecipeBindingKindMismatch, "parameters[0].bindings[0]: effects[0].size int / text")],
+            Issues(text with { Bindings = [new RecipeBinding(0, "size")] }));
+        Assert.Equal([(AssetIssueCode.RecipeBindingKindMismatch, "parameters[0].bindings[0]: effects[0].text text / color")],
+            Issues(text with { Kind = RecipeParameterKind.Color, Default = RecipeValue.Of(Red) }));
+        // 기본값은 연결된 글 설정의 최대 글자 수 안
+        Assert.Equal(TextEffect.MaxLength, RecipeParameters.TextMaxLength([effect], text.Bindings));
+        Assert.Equal([(AssetIssueCode.RecipeParameterOutOfRange, $"parameters[0].default: {TextEffect.MaxLength + 1} > {TextEffect.MaxLength}")],
+            Issues(text with { Default = RecipeValue.OfText(new string('a', TextEffect.MaxLength + 1)) }));
     }
 
     // ───────────── 값 바꾸기 ─────────────

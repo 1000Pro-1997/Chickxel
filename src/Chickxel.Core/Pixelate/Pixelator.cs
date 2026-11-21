@@ -186,7 +186,8 @@ public sealed record PixelateMetrics(
     double GridConfidence,
     double OutlineThin = 1,
     double ColorShift = 0,
-    double BlockRepetition = 0);
+    double BlockRepetition = 0,
+    double LineRegularity = 1);
 
 /// <summary>
 /// 실패한 결과(칸 크기 감지가 잘못됨 — <see cref="Pixelator.CheckFailure"/>): 점수 0(<see cref="PixelateScoring.Score"/>), 후보·최적화가 스스로 고르지 않고,
@@ -470,16 +471,22 @@ public static class Pixelator
         var palette = UsedColors(frames);
         double scale = grids.Length == 0 ? 0 : grids.Average(g => g.Scale);
         // 외곽선 1px 점수: 맞춘(캔버스에 놓고 떨림까지 줄인) 마지막 결과 픽셀에서, 외곽선 밝기를 낮춰도 검은 외곽선은 세도록(PaletteSettings.MeasureDarkness).
-        int outlineEdge = 0, outlineThick = 0;
+        int outlineEdge = 0, outlineThick = 0, lineRuns = 0, irregularRuns = 0;
         double measureDark = PaletteSettings.MeasureDarkness(s.Palette.OutlineDarkness);
         foreach (var f in frames)
         {
-            var (edge, thick) = PixelCleanup.OutlineThickness(f, measureDark);
+            var (edge, thick, runs, irregular) = PixelCleanup.OutlineQuality(f, measureDark);
             outlineEdge += edge;
             outlineThick += thick;
+            lineRuns += runs;
+            irregularRuns += irregular;
         }
         var metrics = Measure(src, frames, maps, grids, s.Palette.OutlineDarkness, palette.Count, scoreMetric ?? ColorMetric.For(s.Palette), judge ?? FidelityJudge.Default, ct)
-            with { OutlineThin = outlineEdge == 0 ? 1 : 1 - outlineThick / (double)outlineEdge };
+            with
+            {
+                OutlineThin = outlineEdge == 0 ? 1 : 1 - outlineThick / (double)outlineEdge,
+                LineRegularity = lineRuns == 0 ? 1 : 1 - irregularRuns / (double)lineRuns,
+            };
         var result = new PixelateResult
         {
             Settings = s,

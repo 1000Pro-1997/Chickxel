@@ -311,21 +311,26 @@ public sealed class CommunityClient
     // ───────────── 올리기 ─────────────
 
     /// <summary>
-    /// 갤러리에 그림을 올린다(<c>POST /api/art</c> multipart: <c>file</c>, <c>title</c>, <c>description</c>, <c>tags</c> 쉼표 목록,
-    /// <c>allowDownload</c> <c>1</c>/<c>0</c>, 편집용 파일이 있으면 <c>project</c>(<c>project.chickxel</c>, <c>application/zip</c>)).
+    /// 갤러리에 그림을 올린다(<c>POST /api/art</c> multipart: 그림마다 <c>file</c> 칸 하나씩 보일 순서대로(첫 그림 = 대표, <c>art.png</c>, <c>art-1.gif</c> …),
+    /// <c>title</c>, <c>description</c>, <c>tags</c> 쉼표 목록, <c>allowDownload</c> <c>1</c>/<c>0</c>, 편집용 파일이 있으면 <c>project</c>
+    /// (<c>project.chickxel</c>, <c>application/zip</c>)). 그림이 한 장이면 예전 서버도 받는 모양 그대로다.
     /// <paramref name="progress"/>는 보낸 비율 0~1(본문 전체).
     /// </summary>
+    /// <exception cref="ArgumentException">그림이 없음.</exception>
     public async Task<CommunityArt> UploadArtAsync(ArtUpload upload, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
     {
-        string extension = upload.Type == CommunityArtType.Gif ? "gif" : "png";
-        var parts = new List<HttpContent>
+        if (upload.Images.Count == 0) throw new ArgumentException("No images to upload.", nameof(upload));
+        var parts = new List<HttpContent>(upload.Images.Count + 5);
+        for (int i = 0; i < upload.Images.Count; i++)
         {
-            FilePart("file", "art." + extension, "image/" + extension, upload.Data),
-            TextPart("title", upload.Title.Trim()),
-            TextPart("description", upload.Description.Trim()),
-            TextPart("tags", string.Join(",", upload.Tags)),
-            TextPart("allowDownload", upload.AllowDownload ? "1" : "0"),
-        };
+            var image = upload.Images[i];
+            string extension = image.Type == CommunityArtType.Gif ? "gif" : "png";
+            parts.Add(FilePart("file", (i == 0 ? "art." : $"art-{i}.") + extension, "image/" + extension, image.Data));
+        }
+        parts.Add(TextPart("title", upload.Title.Trim()));
+        parts.Add(TextPart("description", upload.Description.Trim()));
+        parts.Add(TextPart("tags", string.Join(",", upload.Tags)));
+        parts.Add(TextPart("allowDownload", upload.AllowDownload ? "1" : "0"));
         if (upload.Project is { } project) parts.Add(FilePart("project", "project.chickxel", "application/zip", project));
         var form = Form([.. parts]);
         var json = await SendAsync(HttpMethod.Post, "api/art", new ProgressContent(form, progress), auth: true, _options.UploadTimeout, cancellationToken).ConfigureAwait(false);

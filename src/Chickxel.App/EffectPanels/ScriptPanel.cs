@@ -17,7 +17,7 @@ public sealed partial class LayerEffectsDialog
 
     /// <summary>
     /// 스크립트 효과 설정: 이름·작성자·해시, 실행 상태(오류 줄·프레임당 시간, 허용·다시 실행 단추), 편집·파일 열기 단추,
-    /// 스크립트 schema로 만든 설정 칸(<see cref="AddScriptSettingRows"/> — 숫자·각도·점, 켜고 끔, 색·색 목록·색 쌍 목록과 그라데이션, 고르기, 레이어 고르기),
+    /// 스크립트 schema로 만든 설정 칸(<see cref="AddScriptSettingRows"/> — 숫자·각도·점, 켜고 끔, 여러 줄 글, 색·색 목록·색 쌍 목록과 그라데이션, 고르기, 레이어 고르기),
     /// 움직이는 스크립트면 빠르기 곡선·반복.
     /// </summary>
     private void ScriptPanel(ScriptEffect s, Action<Func<LayerEffect, LayerEffect>> set)

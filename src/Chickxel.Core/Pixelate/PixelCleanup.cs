@@ -10,8 +10,8 @@ public static class PixelCleanup
 
     /// <summary>
     /// 설정대로 모두(순서: 외톨이 → 구멍 → 얇게 → 외곽선 → L자). <paramref name="outline"/>은 외곽선 색(가장 어두운 색).
-    /// 얇게: 외곽선만 얇게는 최대 3겹, 크기를 줄여서·벡터로 다시 그리기는 남은 한 겹만(벡터 선은 정리 전에 <see cref="VectorOutline.Apply"/>가 그림 —
-    /// 새 선 안쪽에 붙은 어두운 그늘 칸을 밝은 이웃 색으로). 벡터로 다시 그리기는 끝에 바깥 둘레의 L자 겹 픽셀도 뺀다(<see cref="RemoveRingCorners"/>).
+    /// 외곽선만 얇게는 최대 세 겹을 벗기고, 크기를 줄여서·벡터로 다시 그리기는 안쪽에 남은 한 겹만(벡터는 먼저 <see cref="VectorOutline.Apply"/>가 다시 그림).
+    /// 벗기는 칸은 실제 안쪽 색으로 채우고, 벡터로 다시 그리기는 끝에 바깥 둘레의 L자 겹 픽셀도 뺀다(<see cref="RemoveRingCorners"/>).
     /// </summary>
     /// <param name="onStep">켠 단계가 끝날 때마다 그 단계(판정 과정 기록 — <see cref="Pixelator.TracePixel"/>). 보통은 null.</param>
     public static void Run(PixelImage img, CleanupSettings s, Color32 outline, double outlineDarkness, Action<PixelTraceStep>? onStep = null)
@@ -93,6 +93,119 @@ public static class PixelCleanup
             }
         return (outline, thick);
     }
+    /// <summary>외곽선 두께와 1px 계단의 국소 길이 불규칙성을 잰다. 굵기 판정은 <see cref="OutlineThickness"/>와 같다.</summary>
+    public static (int Outline, int Thick, int Runs, int Irregular) OutlineQuality(PixelImage img, double darkness)
+    {
+        int w = img.Width, h = img.Height;
+        var dark = DarkTest(darkness);
+        var single = new bool[w * h];
+        int outline = 0, thick = 0;
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                if (!dark(img[x, y]) || !IsEdge(img, x, y)) continue;
+                outline++;
+                bool doubled = false;
+                foreach (var (dx, dy) in N4)
+                {
+                    if (img.Get(x + dx, y + dy).A != 0) continue;
+                    int ix = x - dx, iy = y - dy;
+                    if (!dark(img.Get(ix, iy)) || IsEdge(img, ix, iy)) continue;
+                    if (dark(img.Get(ix + dy, iy + dx)) || dark(img.Get(ix - dy, iy - dx))) { thick++; doubled = true; break; }
+                }
+                if (!doubled) single[y * w + x] = true;
+            }
+        int runs = 0, irregular = 0;
+        CountStairs(single, w, h, ref runs, ref irregular);
+        CountStairs(single, h, w, ref runs, ref irregular, vertical: true);
+        return (outline, thick, runs, irregular);
+    }
+
+    /// <summary>각 방향의 짧은 계단 단위마다 앞뒤 단위 길이를 비교한다. 직선과 단조롭게 굽는 원호는 감점하지 않는다.</summary>
+    private static void CountStairs(bool[] edge, int length, int rows, ref int runs, ref int irregular, bool vertical = false)
+    {
+        int w = vertical ? rows : length;
+        bool At(int x, int y) => edge[vertical ? x * w + y : y * w + x];
+        // 인접한 행에서 현재 단위와 대각선으로 이어지는 단위 하나만 고른다. 교차·갈림점은 애매하므로 제외.
+        int NeighborLength(int row, int lo, int hi)
+        {
+            int found = 0;
+            for (int x = Math.Max(0, lo - 2); x <= Math.Min(length - 1, hi + 2);)
+            {
+                if (!At(x, row)) { x++; continue; }
+                int start = x;
+                while (start > 0 && At(start - 1, row)) start--;
+                int end = x;
+                while (end + 1 < length && At(end + 1, row)) end++;
+                if (end >= lo - 1 && start <= hi + 1)
+                {
+                    if (found != 0) return 0;
+                    found = end - start + 1;
+                }
+                x = end + 1;
+            }
+            return found is > 0 and <= 6 ? found : 0;
+        }
+        for (int row = 1; row < rows - 1; row++)
+            for (int x = 0; x < length;)
+            {
+                if (!At(x, row)) { x++; continue; }
+                int start = x;
+                while (x + 1 < length && At(x + 1, row)) x++;
+                int end = x++;
+                int middle = end - start + 1;
+                if (middle > 6) continue; // 긴 수평·수직 직선은 계단 단위가 아니다.
+                int before = NeighborLength(row - 1, start, end);
+                int after = NeighborLength(row + 1, start, end);
+                if (before == 0 || after == 0) continue;
+                runs++;
+                int low = Math.Min(before, after), high = Math.Max(before, after);
+                if ((middle < low && high - middle >= 2) || (middle > high && middle - low >= 2))
+                    irregular++;
+            }
+    }
+
+    /// <summary>이웃 계단 길이가 국소 추세에서 튀는 비율의 분자·분모.</summary>
+    public static (int Steps, int Irregular) LineRegularity(PixelImage img, double darkness)
+    {
+        var (_, _, runs, irregular) = OutlineQuality(img, darkness);
+        return (runs, irregular);
+    }
+
+    /// <summary>투명 경계를 넘지 않고 각 칸에서 가장 가까운 실제 안쪽 색. 어두운 넓은 면도 자신을 채울 색이 없으면 그대로 남는다.</summary>
+    internal static Color32[] InnerFillColors(PixelImage img, double darkness)
+    {
+        int w = img.Width, h = img.Height;
+        var fill = new Color32[w * h];
+        var seen = new bool[w * h];
+        var queue = new Queue<int>();
+        var dark = DarkTest(darkness);
+        for (int i = 0; i < fill.Length; i++)
+        {
+            var color = img.Pixels[i];
+            if (color.A == 0 || dark(color)) continue;
+            fill[i] = color;
+            seen[i] = true;
+            queue.Enqueue(i);
+        }
+        while (queue.Count > 0)
+        {
+            int i = queue.Dequeue();
+            int x = i % w, y = i / w;
+            void Add(int j)
+            {
+                if (seen[j] || img.Pixels[j].A == 0) return;
+                seen[j] = true;
+                fill[j] = fill[i];
+                queue.Enqueue(j);
+            }
+            if (x > 0) Add(i - 1);
+            if (x + 1 < w) Add(i + 1);
+            if (y > 0) Add(i - w);
+            if (y + 1 < h) Add(i + w);
+        }
+        return fill;
+    }
 
     /// <summary>
     /// 바깥 외곽선을 1px로: 바깥 외곽선(투명과 맞닿은 어두운 픽셀)에 상하좌우로 붙은 안쪽 어두운 픽셀을 둘레의 밝은(어둡지 않은) 색 중 가장 많은 색으로 바꾼다
@@ -113,6 +226,7 @@ public static class PixelCleanup
         bool At(bool[] a, int x, int y) => img.Contains(x, y) && a[y * w + x];
         int changed = 0;
         var counts = new Dictionary<Color32, int>();
+        Color32[]? innerFill = null;
         var ring = new List<(int X, int Y)>(8);
         var outerRing = new List<(int X, int Y)>(8);
         for (int layer = 0; layer < maxLayers; layer++)
@@ -158,6 +272,11 @@ public static class PixelCleanup
                                 var n = img.Get(x + dx, y + dy);
                                 if (n.A != 0 && !dark(n)) counts[n] = counts.GetValueOrDefault(n) + 1;
                             }
+                    if (counts.Count == 0)
+                    {
+                        innerFill ??= InnerFillColors(img, darkness);
+                        if (innerFill[y * w + x].A != 0) counts[innerFill[y * w + x]] = 1;
+                    }
                     if (counts.Count == 0) continue;
                     img[x, y] = counts.MaxBy(kv => kv.Value).Key;
                     peeled[y * w + x] = next[y * w + x] = true;
@@ -177,18 +296,24 @@ public static class PixelCleanup
     {
         if (inner.Count == 0) return false;
         static bool Adjacent((int X, int Y) a, (int X, int Y) b) => Math.Max(Math.Abs(a.X - b.X), Math.Abs(a.Y - b.Y)) == 1;
-        var seen = new bool[inner.Count];
-        var group = new List<int>();
+        Span<bool> seen = stackalloc bool[8];
+        seen.Clear();
+        Span<int> group = stackalloc int[8];
         for (int s = 0; s < inner.Count; s++)
         {
             if (seen[s]) continue;
-            group.Clear();
-            group.Add(s);
+            int count = 1;
+            group[0] = s;
             seen[s] = true;
-            for (int g = 0; g < group.Count; g++)
+            for (int g = 0; g < count; g++)
                 for (int b = 0; b < inner.Count; b++)
-                    if (!seen[b] && Adjacent(inner[group[g]], inner[b])) { seen[b] = true; group.Add(b); }
-            if (group.Count <= 2 && !group.Any(i => outer.Any(o => Adjacent(inner[i], o)))) return true;
+                    if (!seen[b] && Adjacent(inner[group[g]], inner[b])) { seen[b] = true; group[count++] = b; }
+            if (count > 2) continue;
+            bool linked = false;
+            for (int g = 0; g < count && !linked; g++)
+                foreach (var o in outer)
+                    if (Adjacent(inner[group[g]], o)) { linked = true; break; }
+            if (!linked) return true;
         }
         return false;
     }

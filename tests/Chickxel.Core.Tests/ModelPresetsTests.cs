@@ -11,7 +11,8 @@ public class ModelPresetsTests
     {
         var render = new ModelRenderSettings
         {
-            Width = 40, Height = 24, Yaw = 45, Pitch = 30, Projection = ModelProjection.Perspective, Colors = 12, HardAlpha = true,
+            Width = 40, Height = 24, Yaw = 45, Pitch = 30, Roll = 75, Projection = ModelProjection.Perspective,
+            LightYaw = 35, LightPitch = -25, LightBack = true, Colors = 12, HardAlpha = true,
             OutlineOuter = true, OutlineOutside = false, OutlineInner = true, OutlineCrease = 50, OutlineWidth = 2,
             OutlineColorMode = ModelOutlineColor.Darken, OutlineColor = new Color32(10, 20, 30), OutlineDarken = 0.3f,
         };

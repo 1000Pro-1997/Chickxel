@@ -2801,6 +2801,7 @@ Press Clean up to apply the change.</value></data>
   <data name="Pixelate_Grid_ChosenExact" xml:space="preserve"><value>exact multiple of a clean image {scale}px</value></data>
   <data name="Pixelate_Grid_ChosenNoisyExact" xml:space="preserve"><value>{scale}px cells of noisy pixel art (similar colors treated as one)</value></data>
   <data name="Pixelate_Score_OutlineThin" xml:space="preserve"><value>1-px outline</value></data>
+  <data name="Pixelate_Score_LineRegularity" xml:space="preserve"><value>Line cleanness</value></data>
   <data name="Pixelate_Score_ColorShift" xml:space="preserve"><value>Major color shift</value></data>
   <data name="Pixelate_Bg_Sticker" xml:space="preserve"><value>Remove sticker border</value></data>
   <data name="Pixelate_Bg_Sticker_Tip" xml:space="preserve"><value>Finds the white band around the outline (a sticker border) and removes it with the background. It only acts when most of the edge is light and colorless, and undoes itself if the new edge isn't dark.</value></data>
@@ -2853,6 +2854,9 @@ Press Clean up to apply the change.</value></data>
   <data name="Pixelate_Clean_VectorTolerance_Tip" xml:space="preserve"><value>How far (in result pixels) the redrawn outline may be straightened. Larger is smoother but follows the shape less; 0 follows the center line of the source outline exactly.</value></data>
   <data name="Pixelate_Clean_VectorBlob" xml:space="preserve"><value>Keep small blobs (cells)</value></data>
   <data name="Pixelate_Clean_VectorBlob_Tip" xml:space="preserve"><value>Dark shapes that don't touch the outer outline are left as they are (not redrawn) when smaller than this many cells, such as eyes.</value></data>
+  <data name="Pixelate_Clean_VectorClean" xml:space="preserve"><value>Clean lines and curves</value></data>
+  <data name="Pixelate_Clean_VectorCorner" xml:space="preserve"><value>Corner angle (°)</value></data>
+  <data name="Pixelate_Clean_VectorCorner_Tip" xml:space="preserve"><value>Split the traced line where it turns by at least this angle, preserving corners while fitting smooth lines and circular arcs. Default 40°.</value></data>
   <data name="Pixelate_Opt_Toggle" xml:space="preserve"><value>Auto optimize</value></data>
   <data name="Pixelate_Opt_ToggleTip" xml:space="preserve"><value>Starts right away: each checked preset starts from its own settings, tries values for the steps that have Optimize on, and keeps its highest-scoring result, shown as one candidate per preset. Check which presets run under the settings button next to it.</value></data>
   <data name="Pixelate_Opt_Downsample" xml:space="preserve"><value>Cell color method</value></data>
@@ -3492,6 +3496,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="RecipeParams_KindInt" xml:space="preserve"><value>integer {0} to {1}</value></data>
   <data name="RecipeParams_KindBool" xml:space="preserve"><value>on/off</value></data>
   <data name="RecipeParams_KindChoice" xml:space="preserve"><value>choice</value></data>
+  <data name="RecipeParams_KindText" xml:space="preserve"><value>text</value></data>
   <data name="RecipeParams_SaveError" xml:space="preserve"><value>Couldn't save the preset parameters: {0}</value></data>
   <data name="RecipeParams_Count" xml:space="preserve"><value>{0} parameters</value></data>
   <data name="Assets_ContentsScripts" xml:space="preserve"><value>Script effects: {0}</value></data>
@@ -3592,7 +3597,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Gallery_Menu" xml:space="preserve"><value>Upload to Gallery…</value></data>
   <data name="Gallery_Upload" xml:space="preserve"><value>Upload</value></data>
   <data name="Gallery_What" xml:space="preserve"><value>Picture</value></data>
-  <data name="Gallery_KindPng" xml:space="preserve"><value>Current frame (PNG)</value></data>
+  <data name="Gallery_KindPng" xml:space="preserve"><value>One frame (PNG)</value></data>
   <data name="Gallery_KindGif" xml:space="preserve"><value>Animation (GIF)</value></data>
   <data name="Gallery_Scale" xml:space="preserve"><value>Scale</value></data>
   <data name="Gallery_InfoPng" xml:space="preserve"><value>{0}×{1} · frame {2}</value></data>
@@ -3642,6 +3647,26 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Gallery_LevelUp" xml:space="preserve"><value>Level up! Lv {0}</value></data>
   <data name="Gallery_ButtonTip" xml:space="preserve"><value>Upload to Gallery — show off your art in the chickxel.com gallery</value></data>
   <data name="Gallery_ButtonSparkleTip" xml:space="preserve"><value>Saved! Share this drawing in the chickxel.com gallery</value></data>
+  <data name="Gallery_Item" xml:space="preserve"><value>Selected picture</value></data>
+  <data name="Gallery_Options" xml:space="preserve"><value>All pictures</value></data>
+  <data name="Gallery_ItemsTip" xml:space="preserve"><value>The pictures in this list are uploaded as one post, in this order (up to {0}). The first picture is the cover in the gallery, and visitors can flip through them on the picture's page. Scale and GIF speed apply to every picture. Rows that make the same picture (PNGs of the same frame, GIFs with exactly the same frame order) are uploaded only once.</value></data>
+  <data name="Gallery_Add" xml:space="preserve"><value>Add</value></data>
+  <data name="Gallery_AddTip" xml:space="preserve"><value>Adds a picture to the end of the list (one PNG or a GIF animation).</value></data>
+  <data name="Gallery_AddPng" xml:space="preserve"><value>One PNG (current frame)</value></data>
+  <data name="Gallery_AddGif" xml:space="preserve"><value>GIF animation</value></data>
+  <data name="Gallery_MoveUp" xml:space="preserve"><value>Move up (shown earlier)</value></data>
+  <data name="Gallery_MoveDown" xml:space="preserve"><value>Move down (shown later)</value></data>
+  <data name="Gallery_Remove" xml:space="preserve"><value>Remove from the list</value></data>
+  <data name="Gallery_ItemPng" xml:space="preserve"><value>PNG · frame {0}</value></data>
+  <data name="Gallery_ItemGif" xml:space="preserve"><value>GIF · {0}</value></data>
+  <data name="Gallery_ItemTag" xml:space="preserve"><value>tag {0}</value></data>
+  <data name="Gallery_ItemRange" xml:space="preserve"><value>frames {0}–{1}</value></data>
+  <data name="Gallery_Duplicate" xml:space="preserve"><value>#{0} is the same picture as #{1} and won't be uploaded.</value></data>
+  <data name="Gallery_ItemProblem" xml:space="preserve"><value>#{0}: {1}</value></data>
+  <data name="Gallery_TooManyImages" xml:space="preserve"><value>You can upload up to {0} pictures (identical ones count once). Remove some rows.</value></data>
+  <data name="Gallery_ImageTooLarge" xml:space="preserve"><value>Picture #{0} is {1:0.##} MB, over the {2} MB limit. Lower the scale or use fewer frames.</value></data>
+  <data name="Gallery_TotalTooLarge" xml:space="preserve"><value>The pictures add up to {0:0.##} MB, over the {1} MB limit. Use fewer pictures or a lower scale.</value></data>
+  <data name="Gallery_Skipped" xml:space="preserve"><value>{0} identical picture(s) were left out.</value></data>
   <data name="Level_ChipTip" xml:space="preserve"><value>Level {0} — earn XP by uploading art to the gallery, sharing assets, getting likes, and keeping the app open while signed in.</value></data>
   <data name="Level_Title" xml:space="preserve"><value>Level {0}</value></data>
   <data name="Level_Progress" xml:space="preserve"><value>{0:N0} XP · {1:N0} XP to the next level</value></data>
@@ -4709,7 +4734,14 @@ Same compositing as the frame sheet (layer effects, current outfit; hidden and e
   <data name="ExportList_AllFrames" xml:space="preserve"><value>All frames</value></data>
   <data name="ExportList_Empty" xml:space="preserve"><value>Nothing to export. Use Add.</value></data>
   <data name="ExportList_OnSaveTip" xml:space="preserve"><value>Also make it when saving</value></data>
-  <data name="ExportList_Remove" xml:space="preserve"><value>Remove from the list (files already made stay)</value></data>
+  <data name="ExportList_Remove" xml:space="preserve"><value>Remove from the list</value></data>
+  <data name="ExportList_RemoveFilesAsk" xml:space="preserve"><value>Also delete the images made by this row?
+
+{files}
+
+OK: move them to the app trash (they can be restored).
+Cancel: keep the files and only remove the row.</value></data>
+  <data name="ExportList_RemoveFilesMore" xml:space="preserve"><value>… and {count} more</value></data>
   <data name="ExportList_Undo" xml:space="preserve"><value>Export list</value></data>
   <data name="ExportList_ChangeTarget" xml:space="preserve"><value>Change location…</value></data>
   <data name="ExportList_Settings" xml:space="preserve"><value>Settings…</value></data>
@@ -4718,7 +4750,7 @@ Same compositing as the frame sheet (layer effects, current outfit; hidden and e
   <data name="ExportList_Name" xml:space="preserve"><value>Name</value></data>
   <data name="ExportList_Folder" xml:space="preserve"><value>Folder</value></data>
   <data name="ExportList_AddTip" xml:space="preserve"><value>Copy the selected row to the list under a different name. Change its format in the Format box.</value></data>
-  <data name="ExportList_Info" xml:space="preserve"><value>What this project exports. The same format can appear in several rows with different names or folders. Click a row to edit its format, name, folder and settings on the right. Check a row to make it again on every save. The blue button exports the selected row now. Removing a row keeps the files already made; they are cleaned up as old outputs on the next save.</value></data>
+  <data name="ExportList_Info" xml:space="preserve"><value>What this project exports. The same format can appear in several rows with different names or folders. Click a row to edit its format, name, folder and settings on the right. Check a row to make it again on every save. The blue button exports the selected row now. Removing a row with the trash button asks whether to delete the files it made too: OK moves them to the app trash, Cancel keeps them.</value></data>
   <data name="ExportList_SaveHint" xml:space="preserve"><value>Saving (Ctrl+S) exports the checked rows automatically.</value></data>
   <data name="Export_Engine" xml:space="preserve"><value>Game engine</value></data>
   <data name="Export_EngineNone" xml:space="preserve"><value>None (images only)</value></data>
@@ -4749,6 +4781,7 @@ Same compositing as the frame sheet (layer effects, current outfit; hidden and e
   <data name="Model_Angle" xml:space="preserve"><value>View angle</value></data>
   <data name="Model_Yaw" xml:space="preserve"><value>Horizontal</value></data>
   <data name="Model_Pitch" xml:space="preserve"><value>Vertical</value></data>
+  <data name="Model_Roll" xml:space="preserve"><value>Roll</value></data>
   <data name="Model_Projection" xml:space="preserve"><value>Projection</value></data>
   <data name="Model_Orthographic" xml:space="preserve"><value>Orthographic</value></data>
   <data name="Model_Perspective" xml:space="preserve"><value>Perspective</value></data>
@@ -4758,6 +4791,8 @@ Same compositing as the frame sheet (layer effects, current outfit; hidden and e
   <data name="Model_ZoomTip" xml:space="preserve"><value>100% = the model just fits the shorter side of the image (for animations and turntables, all frames together). The mouse wheel over the preview changes it too.</value></data>
   <data name="Model_Fit" xml:space="preserve"><value>Fit</value></data>
   <data name="Model_Light" xml:space="preserve"><value>Light direction</value></data>
+  <data name="Model_LightBack" xml:space="preserve"><value>Light behind</value></data>
+  <data name="Model_LightBackTip" xml:space="preserve"><value>Move the light to the hemisphere behind the camera. Double-click the sun in the preview to flip front/back.</value></data>
   <data name="Model_Brightness" xml:space="preserve"><value>Brightness</value></data>
   <data name="Model_Ambient" xml:space="preserve"><value>Ambient</value></data>
   <data name="Model_LightStrength" xml:space="preserve"><value>Light strength</value></data>
@@ -4779,7 +4814,9 @@ Same compositing as the frame sheet (layer effects, current outfit; hidden and e
   <data name="Model_Fps" xml:space="preserve"><value>Frames per second</value></data>
   <data name="Model_MaxFrames" xml:space="preserve"><value>Max</value></data>
   <data name="Model_PlayTip" xml:space="preserve"><value>Play/pause the preview</value></data>
-  <data name="Model_PreviewHint" xml:space="preserve"><value>Drag: rotate · Wheel: zoom</value></data>
+  <data name="Model_PreviewHint" xml:space="preserve"><value>Drag model: orbit · Drag rings: angle/roll · Click an axis: face it · Drag sun: light (double-click: front/back) · Wheel: zoom</value></data>
+  <data name="Model_Original" xml:space="preserve"><value>Original model</value></data>
+  <data name="Model_PixelResult" xml:space="preserve"><value>Pixel result</value></data>
   <data name="Model_Summary" xml:space="preserve"><value>{name}: triangles {triangles} · materials {materials} · animations {animations}</value></data>
   <data name="Model_Warnings" xml:space="preserve"><value>Not drawn: {list}</value></data>
   <data name="Model_Estimate" xml:space="preserve"><value>Frames: {frames} · {width}×{height} px · {ms} ms each</value></data>

@@ -398,6 +398,7 @@ internal static partial class ScriptDeclarationReader
             "colorList" => ScriptSettingType.ColorList,
             "colorPairs" => ScriptSettingType.ColorPairs,
             "layer" => ScriptSettingType.Layer,
+            "text" => ScriptSettingType.Text,
             _ => null,
         } : null;
         if (type is null)
@@ -505,6 +506,29 @@ internal static partial class ScriptDeclarationReader
                     return null;
                 }
                 return Done(new(key, label, type.Value, null, null, null, alpha ? color : color.WithAlpha(255), []));
+            }
+            case ScriptSettingType.Text:
+            {
+                foreach (string field in (string[])["min", "step", "choices"])
+                    if (!setting.Get(field).IsUndefined())
+                    {
+                        fail(DomainStrings.FormatScript_InvalidTextSettingField(key: key, field: field), ["settings", index, field]);
+                        return null;
+                    }
+                var maxValue = setting.Get("max");
+                if (!maxValue.IsUndefined() && Whole(maxValue) is not (>= 1 and <= ScriptSetting.MaxTextLength))
+                {
+                    fail(DomainStrings.FormatScript_InvalidTextSettingMax(key: key, max: ScriptSetting.MaxTextLength), ["settings", index, "max"]);
+                    return null;
+                }
+                int maxLength = maxValue.IsUndefined() ? ScriptSetting.MaxTextLength : (int)maxValue.AsNumber();
+                if (!defaultValue.IsUndefined() && (defaultValue is not JsString text || text.AsString().Length > maxLength))
+                {
+                    BadDefault();
+                    return null;
+                }
+                return Done(new(key, label, type.Value, null, maxLength, null,
+                    defaultValue.IsUndefined() ? "" : defaultValue.AsString(), []));
             }
             case ScriptSettingType.Layer:
             {

@@ -20,7 +20,7 @@ public enum EffectParameterKind
     ColorPairList,
     /// <summary>실수(스크립트 효과의 <c>number</c> 설정만). 범위는 스크립트가 자른다. 레시피 매개변수로 내보낼 수 없다.</summary>
     Number,
-    /// <summary>글(JSON 문자열, 최대 <see cref="EffectParameter.MaxLength"/>자 — 글씨 효과의 글). 레시피 매개변수로 내보낼 수 없다.</summary>
+    /// <summary>글(JSON 문자열, 최대 <see cref="EffectParameter.MaxLength"/>자 — 글씨 효과의 글). 레시피 매개변수로는 글 상자로 내보낸다.</summary>
     Text,
 }
 
@@ -69,8 +69,14 @@ public abstract class EffectParameter
         ? char.ToUpperInvariant(Key[0]) + Key[1..]
         : null;
 
-    /// <summary>레시피 매개변수로 사용자에게 내보낼 수 있는지(값 하나짜리 정수·켜고 끄기·색·고르기 설정만).</summary>
-    public bool Exposed => Kind is not (EffectParameterKind.ColorList or EffectParameterKind.ColorPairList or EffectParameterKind.Number or EffectParameterKind.Text);
+    /// <summary>
+    /// 레시피 매개변수로 사용자에게 내보낼 수 있는지(값 하나짜리 정수·켜고 끄기·색·고르기·글 설정만, schema에서 뺀 설정은 제외 — <see cref="Exposable"/>).
+    /// 스크립트 설정은 종류에 따라 다시 정한다(<see cref="ScriptEffectParameter"/> — 레이어 고르기는 글이지만 문서마다 레이어가 달라 내보내지 않음).
+    /// </summary>
+    public virtual bool Exposed => Exposable && Kind is not (EffectParameterKind.ColorList or EffectParameterKind.ColorPairList or EffectParameterKind.Number);
+
+    /// <summary>schema가 레시피 매개변수에서 뺀 설정이면 false(예: 글꼴 이름 — 글 상자가 아니라 글꼴 고르기가 필요함).</summary>
+    internal bool Exposable { get; init; } = true;
 
     /// <summary>그 종류 기본 효과의 값(저장 JSON 모양, 부를 때마다 새 사본).</summary>
     public JsonNode DefaultValue => _default!.DeepClone();
@@ -139,11 +145,15 @@ internal sealed class EffectSchema<TEffect> where TEffect : LayerEffect
             v => new JsonArray(v.Select(p => (JsonNode)new JsonArray(JsonValue.Create(p.From.ToHex()), JsonValue.Create(p.To.ToHex()))).ToArray()),
             EffectJson.TryColorPairs, legacyKeys: legacy);
 
-    /// <summary>글 설정. 저장은 JSON 문자열 그대로, 길이 자르기·줄바꿈 맞추기는 모델이 한다(<paramref name="maxLength"/>는 검사·AI 도구용).</summary>
-    public EffectParameter Text(string key, Func<TEffect, string> get, Func<TEffect, string, TEffect> set, int maxLength, string[]? legacy = null)
+    /// <summary>
+    /// 글 설정. 저장은 JSON 문자열 그대로, 길이 자르기·줄바꿈 맞추기는 모델이 한다(<paramref name="maxLength"/>는 검사·AI 도구·레시피 글 상자용).
+    /// <paramref name="exposable"/>이 false면 레시피 매개변수로 내보내지 않는다(자유 글 상자로 고치면 안 되는 글).
+    /// </summary>
+    public EffectParameter Text(string key, Func<TEffect, string> get, Func<TEffect, string, TEffect> set, int maxLength, string[]? legacy = null, bool exposable = true)
         => new EffectParameter<TEffect, string>(key, EffectParameterKind.Text, get, set, v => JsonValue.Create(v), EffectJson.TryString, legacyKeys: legacy)
         {
             MaxLength = maxLength,
+            Exposable = exposable,
         };
 }
 

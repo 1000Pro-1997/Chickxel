@@ -61,9 +61,17 @@ public class CommunityClientTests
     /// <summary>multipart 본문을 이름 → (파일 이름, 형식, 바이트)로 나눈다.</summary>
     private static Dictionary<string, (string? FileName, string? Type, byte[] Data)> Parts(Sent sent)
     {
+        var parts = new Dictionary<string, (string?, string?, byte[])>(StringComparer.Ordinal);
+        foreach (var (name, file, type, data) in PartList(sent)) parts[name] = (file, type, data);
+        return parts;
+    }
+
+    /// <summary>multipart 칸들을 보낸 순서대로(같은 이름이 여러 번 와도 모두).</summary>
+    private static List<(string Name, string? FileName, string? Type, byte[] Data)> PartList(Sent sent)
+    {
         string boundary = sent.ContentType!.Split("boundary=")[1].Trim('"');
         string text = Encoding.Latin1.GetString(sent.Body);
-        var parts = new Dictionary<string, (string?, string?, byte[])>(StringComparer.Ordinal);
+        var parts = new List<(string, string?, string?, byte[])>();
         foreach (string raw in text.Split("--" + boundary).Skip(1))
         {
             if (raw.StartsWith("--", StringComparison.Ordinal)) break;
@@ -76,7 +84,7 @@ public class CommunityClientTests
             string? file = disposition.Contains("filename=\"", StringComparison.Ordinal) ? disposition.Split("filename=\"")[1].Split('"')[0] : null;
             Assert.DoesNotContain("filename*", disposition);
             string type = Header("Content-Type:");
-            parts[name] = (file, type.Length > 0 ? type["Content-Type:".Length..].Trim() : null, Encoding.Latin1.GetBytes(data));
+            parts.Add((name, file, type.Length > 0 ? type["Content-Type:".Length..].Trim() : null, Encoding.Latin1.GetBytes(data)));
         }
         return parts;
     }
@@ -217,7 +225,7 @@ public class CommunityClientTests
 
         // 로그인하지 않았으면 보내지 않는다.
         Assert.Null(await client.GetMeAsync());
-        var upload = await Assert.ThrowsAsync<CommunityException>(() => client.UploadArtAsync(new ArtUpload([1], CommunityArtType.Png, "t", "", [])));
+        var upload = await Assert.ThrowsAsync<CommunityException>(() => client.UploadArtAsync(new ArtUpload([new ArtUploadImage([1], CommunityArtType.Png)], "t", "", [])));
         Assert.Equal(CommunityErrorCode.Unauthorized, upload.Code);
         Assert.Equal(2, handler.Requests.Count);
     }
@@ -304,9 +312,11 @@ public class CommunityClientTests
             """);
         byte[] gif = Enumerable.Range(0, 200_000).Select(i => (byte)i).ToArray();
         var reports = new List<double>();
-        var art = await client.UploadArtAsync(new ArtUpload(gif, CommunityArtType.Gif, " Idle ", "첫 줄\n둘째 줄", ["idle", "cat"]), new SyncProgress(reports.Add));
+        var art = await client.UploadArtAsync(new ArtUpload([new ArtUploadImage(gif, CommunityArtType.Gif)], " Idle ", "첫 줄\n둘째 줄", ["idle", "cat"]), new SyncProgress(reports.Add));
 
-        Assert.Equal(new CommunityArt("art2345art2345ab", "Idle", "/files/art/art2345art2345ab.gif", 32, 16, 4, "gif"), art);
+        Assert.Equal(("art2345art2345ab", "Idle", "/files/art/art2345art2345ab.gif", 32, 16, 4, "gif"), (art.Id, art.Title, art.ImageUrl, art.Width, art.Height, art.Frames, art.Type));
+        // 예전 서버: images 칸이 없으면 대표 그림 하나
+        Assert.Equal(new CommunityArtImage("/files/art/art2345art2345ab.gif", "gif", 32, 16, 4, 300, 0), Assert.Single(art.Images));
         Assert.Null(art.Project); // 예전 서버: project 칸 없음
         Assert.Equal("https://chickxel.com/gallery/art2345art2345ab", client.ArtPageUrl(art.Id).AbsoluteUri);
         var sent = Assert.Single(handler.Requests);
@@ -337,7 +347,7 @@ public class CommunityClientTests
         byte[] png = [1, 2, 3];
         byte[] project = Enumerable.Range(0, 300_000).Select(i => (byte)(i * 7)).ToArray();
         var reports = new List<double>();
-        var art = await client.UploadArtAsync(new ArtUpload(png, CommunityArtType.Png, "Idle", "", [], project), new SyncProgress(reports.Add));
+        var art = await client.UploadArtAsync(new ArtUpload([new ArtUploadImage(png, CommunityArtType.Png)], "Idle", "", [], project), new SyncProgress(reports.Add));
 
         Assert.Equal(new CommunityArtProject("/files/projects/art2345art2345ab.chickxel", 300_000), art.Project);
         var parts = Parts(Assert.Single(handler.Requests));
@@ -352,10 +362,10 @@ public class CommunityClientTests
         // project가 null이거나 주소가 없으면 없음
         handler.Routes["POST /api/art"] = _ => Json(HttpStatusCode.Created,
             """{ "id": "art2345art2345ab", "title": "Idle", "image": { "url": "/a.png" }, "project": null }""");
-        Assert.Null((await client.UploadArtAsync(new ArtUpload(png, CommunityArtType.Png, "Idle", "", []))).Project);
+        Assert.Null((await client.UploadArtAsync(new ArtUpload([new ArtUploadImage(png, CommunityArtType.Png)], "Idle", "", []))).Project);
         handler.Routes["POST /api/art"] = _ => Json(HttpStatusCode.Created,
             """{ "id": "art2345art2345ab", "title": "Idle", "image": { "url": "/a.png" }, "project": { "bytes": 5 } }""");
-        Assert.Null((await client.UploadArtAsync(new ArtUpload(png, CommunityArtType.Png, "Idle", "", []))).Project);
+        Assert.Null((await client.UploadArtAsync(new ArtUpload([new ArtUploadImage(png, CommunityArtType.Png)], "Idle", "", []))).Project);
     }
 
     [Fact]
@@ -364,11 +374,42 @@ public class CommunityClientTests
         var (client, handler, _) = Make();
         handler.Routes["POST /api/art"] = _ => Json(HttpStatusCode.Created,
             """{ "id": "art2345art2345ab", "title": "Idle", "image": { "url": "/a.png" } }""");
-        await client.UploadArtAsync(new ArtUpload([1, 2, 3], CommunityArtType.Png, "Idle", "", [], AllowDownload: false));
+        await client.UploadArtAsync(new ArtUpload([new ArtUploadImage([1, 2, 3], CommunityArtType.Png)], "Idle", "", [], AllowDownload: false));
 
         var parts = Parts(Assert.Single(handler.Requests));
         Assert.Equal("0", Encoding.UTF8.GetString(parts["allowDownload"].Data));
         Assert.False(parts.ContainsKey("project"));
+    }
+
+    [Fact]
+    public async Task UploadArt_SeveralImages_SendsOneFilePartEachInOrder_AndReadsTheImagesList()
+    {
+        var (client, handler, _) = Make();
+        handler.Routes["POST /api/art"] = _ => Json(HttpStatusCode.Created,
+            """
+            { "id": "art2345art2345ab", "title": "Walk",
+              "image": { "url": "/files/art/art2345art2345ab.png", "width": 8, "height": 8, "frames": 1, "bytes": 3, "type": "png" },
+              "images": [
+                { "url": "/files/art/art2345art2345ab.png", "type": "png", "width": 8, "height": 8, "frames": 1, "bytes": 3, "durationMs": 0 },
+                { "url": "/files/art/art2345art2345ab-1.gif", "type": "gif", "width": 8, "height": 8, "frames": 4, "bytes": 5, "durationMs": 400 },
+                { "url": "/files/art/art2345art2345ab-2.png", "type": "png", "width": 8, "height": 8, "frames": 1, "bytes": 2, "durationMs": 0 } ] }
+            """);
+        byte[] first = [1, 2, 3], second = [4, 5, 6, 7, 8], third = [9, 10];
+        var art = await client.UploadArtAsync(new ArtUpload(
+            [new ArtUploadImage(first, CommunityArtType.Png), new ArtUploadImage(second, CommunityArtType.Gif), new ArtUploadImage(third, CommunityArtType.Png)],
+            "Walk", "", []));
+
+        var files = PartList(Assert.Single(handler.Requests)).Where(p => p.Name == "file").ToList();
+        Assert.Equal([("art.png", "image/png"), ("art-1.gif", "image/gif"), ("art-2.png", "image/png")], files.Select(f => (f.FileName, f.Type)));
+        Assert.Equal([first, second, third], files.Select(f => f.Data));
+        Assert.Equal("/files/art/art2345art2345ab.png", art.ImageUrl);
+        Assert.Equal(
+            [
+                new CommunityArtImage("/files/art/art2345art2345ab.png", "png", 8, 8, 1, 3, 0),
+                new CommunityArtImage("/files/art/art2345art2345ab-1.gif", "gif", 8, 8, 4, 5, 400),
+                new CommunityArtImage("/files/art/art2345art2345ab-2.png", "png", 8, 8, 1, 2, 0),
+            ], art.Images);
+        await Assert.ThrowsAsync<ArgumentException>(() => client.UploadArtAsync(new ArtUpload([], "Walk", "", [])));
     }
 
     [Fact]
@@ -444,7 +485,7 @@ public class CommunityClientTests
         Assert.Equal("token-a", Assert.Single(client.Saved.List).Token);
         Assert.Equal(-1, client.Saved.Active);
         Assert.False(client.IsSignedIn);
-        var upload = await Assert.ThrowsAsync<CommunityException>(() => client.UploadArtAsync(new ArtUpload([1], CommunityArtType.Png, "t", "", [])));
+        var upload = await Assert.ThrowsAsync<CommunityException>(() => client.UploadArtAsync(new ArtUpload([new ArtUploadImage([1], CommunityArtType.Png)], "t", "", [])));
         Assert.Equal(CommunityErrorCode.Unauthorized, upload.Code);
         Assert.Equal(3, changes);
 
@@ -478,7 +519,7 @@ public class CommunityClientTests
     public async Task Errors_MapCodeMessageDetailAndRetryAfter()
     {
         var (client, handler, tokens) = Make();
-        var upload = new ArtUpload([1, 2, 3], CommunityArtType.Png, "t", "", []);
+        var upload = new ArtUpload([new ArtUploadImage([1, 2, 3], CommunityArtType.Png)], "t", "", []);
 
         handler.Routes["POST /api/art"] = _ => Json(HttpStatusCode.BadRequest,
             """{ "error": "invalid", "message": "Invalid input", "detail": [{ "field": "title", "code": "too_long" }, { "path": "previews/a.png", "message": "bad PNG" }, "plain issue"] }""");

@@ -87,18 +87,35 @@ public sealed record CommunityCheckIn(bool Granted, int Level, int Xp)
 }
 
 /// <summary>
-/// 올린 그림 하나(<c>Art</c> JSON 중 앱이 쓰는 것): ID, 제목, 그림 주소(사이트 기준 경로), 크기, 프레임 수, 형식(png·gif),
-/// 같이 올린 <c>.chickxel</c> 파일(없거나 예전 서버면 null).
+/// 올린 그림 하나(<c>Art</c> JSON 중 앱이 쓰는 것): ID, 제목, 대표 그림(첫 그림, <c>image</c>)의 주소(사이트 기준 경로)·크기·프레임 수·형식(png·gif),
+/// 올린 순서의 모든 그림(<c>images</c>, 첫 그림 = 대표 — 예전 서버면 대표 그림 하나), 같이 올린 <c>.chickxel</c> 파일(없거나 예전 서버면 null).
 /// </summary>
-public sealed record CommunityArt(string Id, string Title, string ImageUrl, int Width, int Height, int Frames, string Type, CommunityArtProject? Project = null)
+public sealed record CommunityArt(string Id, string Title, string ImageUrl, int Width, int Height, int Frames, string Type,
+    IReadOnlyList<CommunityArtImage> Images, CommunityArtProject? Project = null)
 {
     internal static CommunityArt Read(JsonNode? node)
     {
         if (node is not JsonObject o) throw CommunityJson.Bad("art");
-        var image = o["image"] as JsonObject;
+        var cover = CommunityArtImage.Read(o["image"]);
+        var images = o["images"] is JsonArray list ? list.Select(CommunityArtImage.Read).Where(i => i.Url.Length > 0).ToList() : [];
+        if (images.Count == 0) images.Add(cover);
         return new CommunityArt(CommunityJson.Required(o, "id"), CommunityJson.String(o["title"]) ?? "",
-            CommunityJson.String(image?["url"]) ?? "", CommunityJson.Int(image?["width"]), CommunityJson.Int(image?["height"]),
-            CommunityJson.Int(image?["frames"]), CommunityJson.String(image?["type"]) ?? "", CommunityArtProject.Read(o["project"]));
+            cover.Url, cover.Width, cover.Height, cover.Frames, cover.Type, images, CommunityArtProject.Read(o["project"]));
+    }
+}
+
+/// <summary>
+/// 올린 그림 속 그림 한 장(<c>Art.images[]</c>·<c>Art.image</c> JSON): 주소(사이트 기준 경로), 형식(png·gif), 크기, 프레임 수, 바이트 수,
+/// GIF 한 바퀴 길이(ms, PNG·예전 서버면 0).
+/// </summary>
+public sealed record CommunityArtImage(string Url, string Type, int Width, int Height, int Frames, int Bytes, int DurationMs)
+{
+    /// <summary>없거나 객체가 아니면 빈 칸(주소 "").</summary>
+    internal static CommunityArtImage Read(JsonNode? node)
+    {
+        var o = node as JsonObject;
+        return new CommunityArtImage(CommunityJson.String(o?["url"]) ?? "", CommunityJson.String(o?["type"]) ?? "", CommunityJson.Int(o?["width"]),
+            CommunityJson.Int(o?["height"]), CommunityJson.Int(o?["frames"]), CommunityJson.Int(o?["bytes"]), CommunityJson.Int(o?["durationMs"]));
     }
 }
 
@@ -122,12 +139,15 @@ public sealed record CommunityPackage(string Id, string Version, string Name, st
 }
 
 /// <summary>
-/// 갤러리에 올릴 그림: 파일 바이트(PNG나 GIF), 형식, 제목, 설명, 태그, 같이 올릴 편집용 <c>.chickxel</c> 바이트
-/// (<see cref="Chickxel.Core.IO.ProjectIO.SaveForSharing"/>, 없으면 null), 그림 페이지에서 방문자에게 PNG/GIF 받기 버튼을 보일지
-/// (<c>AllowDownload</c>, 끄면 올린 사람과 관리자에게만 보임 — 편집용 파일 받기와는 별개).
+/// 갤러리에 올릴 그림: 보일 순서의 그림들(<see cref="Images"/>, 첫 그림 = 대표, <see cref="CommunityRules.MaxArtImages"/>장까지), 제목, 설명, 태그,
+/// 같이 올릴 편집용 <c>.chickxel</c> 바이트(<see cref="Chickxel.Core.IO.ProjectIO.SaveForSharing"/>, 없으면 null), 그림 페이지에서 방문자에게
+/// PNG/GIF 받기 버튼을 보일지(<c>AllowDownload</c>, 끄면 올린 사람과 관리자에게만 보임 — 편집용 파일 받기와는 별개).
 /// </summary>
-public sealed record ArtUpload(byte[] Data, CommunityArtType Type, string Title, string Description, IReadOnlyList<string> Tags, byte[]? Project = null,
+public sealed record ArtUpload(IReadOnlyList<ArtUploadImage> Images, string Title, string Description, IReadOnlyList<string> Tags, byte[]? Project = null,
     bool AllowDownload = true);
+
+/// <summary>올릴 그림 한 장: 파일 바이트(PNG나 GIF)와 형식.</summary>
+public sealed record ArtUploadImage(byte[] Data, CommunityArtType Type);
 
 public enum CommunityArtType
 {
@@ -141,6 +161,8 @@ public static partial class CommunityRules
     public const int MinHandleLength = 3, MaxHandleLength = 32, MaxNameLength = 100;
     public const int MaxTitleLength = 100, MaxDescriptionLength = 2000, MaxTags = 8;
     public const int MaxArtBytes = 4 << 20, MaxArtSide = 2048, MaxArtFrames = 1000;
+    /// <summary>그림 하나(글 하나)에 넣을 수 있는 그림 수와 그 파일을 합친 한도(서버와 같음, 한 장마다는 <see cref="MaxArtBytes"/>).</summary>
+    public const int MaxArtImages = 10, MaxArtTotalBytes = 16 << 20;
     public const int MaxPackageBytes = 8 << 20;
     /// <summary>그림과 같이 올리는 <c>.chickxel</c> 파일 한도(서버와 같음).</summary>
     public const int MaxProjectBytes = 8 * 1024 * 1024;

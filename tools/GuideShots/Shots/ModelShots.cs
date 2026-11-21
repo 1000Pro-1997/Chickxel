@@ -154,8 +154,9 @@ internal static class ModelShots
     // ───────────── 가져오기 창 ─────────────
 
     /// <summary>
-    /// 창 전체(① 미리보기·조작 안내 ② 재생·프레임 막대 ③ 모델 요약 ④ 프리셋 줄 ⑤ 설정 칸 ⑥ 나올 프레임 예상 ⑦ 가져오기),
-    /// 프리셋 목록을 펼친 모습(⑧ 목록 ⑨ 저장… ⑩ 지우기).
+    /// 창 전체(① 원본 ② 픽셀 결과 ③ 재생 ④ 요약 ⑤ 프리셋 ⑥ 설정 ⑦ 예상 ⑧ 가져오기),
+    /// 원본 손잡이(⑨ 축 표시 ⑩ 회전 고리 ⑪ 바깥 기울이기 고리 ⑫ 해),
+    /// 프리셋 목록(⑬ 목록 ⑭ 저장 ⑮ 지우기).
     /// </summary>
     [Shot("model-import")]
     public static void Import(ShotKit k)
@@ -176,12 +177,14 @@ internal static class ModelShots
             UsePreset(w, 0);
             F<Slider>(w, "_frame").Value = 1;
             WaitPreview();
-            var preview = (Control)F<Control>(w, "_preview").Parent!;
+            var preview = F<Control>(w, "_preview");
+            var panes = ShotKit.Bounds(preview, w);
             var play = F<Control>(w, "_play");
             var bar = F<Control>(w, "_frame");
             k.Save(w, "model-import", marks:
             [
-                Union(w, preview, ShotKit.FindText(w, UiStrings.Model_PreviewHint)).Inflate(2),
+                new Rect(panes.X, panes.Y, 330, 330).Inflate(2),
+                new Rect(panes.X + 334, panes.Y, 330, 330).Inflate(2),
                 Union(w, play, bar).Inflate(new Thickness(3, -2, 3, 3)),
                 ShotKit.Bounds(F<Control>(w, "_summary"), w).Inflate(new Thickness(14, 3, 3, 3)),
                 GridRow(w, RowPreset),
@@ -189,6 +192,18 @@ internal static class ModelShots
                 ShotKit.Bounds(F<Control>(w, "_estimate"), w).Inflate(new Thickness(14, 3, 3, 3)),
                 Box(F<Button>(w, "OkButton"), w, 2),
             ]);
+
+            // 실제 ModelPreview 왼쪽 원본 칸에 그려진 축·회전 고리·기울이기 고리·해를 자른다.
+            var o = new Rect(panes.X, panes.Y, 330, 330);
+            k.Hover(w, new Point(o.Center.X, o.Center.Y), 200);
+            k.Save(w, "model-import-controls", crop: o.Inflate(18), marks:
+            [
+                new Rect(o.X + 6, o.Bottom - 88, 78, 78),
+                // 회전 고리는 미리보기 가운데(165, 165) 둘레: 가로 고리 반지름 112×39, 바깥 기울이기 고리 137, 해 손잡이 (287, 44).
+                new Rect(o.X + 165 - 116, o.Y + 165 - 43, 232, 86),
+                new Rect(o.X + 165 + 137 - 12, o.Y + 165 - 55, 24, 110),
+                new Rect(o.X + 287 - 32, o.Y + 44 - 32, 64, 64),
+            ], firstNumber: 9);
 
             var preset = F<ComboBox>(w, "_preset");
             var row = GridRow(w, RowPreset);
@@ -200,7 +215,7 @@ internal static class ModelShots
             ShotKit.Pump(600);
             var list = PixelateKit.DropDownBounds(preset, w);
             k.Save(w, "model-import-2", crop: new Rect(row.X - 20, row.Y - 24, Math.Max(list.Right, row.Right) - row.X + 40, list.Bottom - row.Y + 40),
-                marks: [list.Inflate(2), Box(save, w, 2), Box(delete, w, 2)], firstNumber: 8);
+                marks: [list.Inflate(2), Box(save, w, 2), Box(delete, w, 2)], firstNumber: 13);
             preset.IsDropDownOpen = false;
             ShotKit.Pump(200);
         });

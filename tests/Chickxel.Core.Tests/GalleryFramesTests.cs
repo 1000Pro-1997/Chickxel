@@ -77,4 +77,36 @@ public class GalleryFramesTests
         Assert.Equal([60, 40, 20], frames.Select(f => (int)f.Image[0, 0].R));
         Assert.Equal([130, 120, 110], frames.Select(f => f.DurationMs));
     }
+
+    [Fact]
+    public void Plan_DropsLaterRowsThatMakeTheSamePicture_KeepingTheFirst()
+    {
+        var p = Project(6);
+        var idle = p.AddTag("idle", 0, 3, TagDirection.Forward);
+        var tag = GalleryFrames.Select(p, GalleryFrameMode.Tag, idle);
+        var range = GalleryFrames.Select(p, GalleryFrameMode.Range, from: 1, to: 4);
+        var reversed = GalleryFrames.Select(p, GalleryFrameMode.Range, from: 4, to: 1);
+        var plan = GalleryUploadPlan.Create(
+        [
+            GalleryImageSource.Png(2), // 0
+            GalleryImageSource.Gif(tag), // 1: 태그 idle = 프레임 1–4
+            GalleryImageSource.Png(2), // 2: 0과 같음
+            GalleryImageSource.Gif(range), // 3: 1과 같음
+            GalleryImageSource.Gif(reversed), // 4: 거꾸로라 다름
+            GalleryImageSource.Gif([2]), // 5: PNG 2와 형식이 달라 다름
+            GalleryImageSource.Png(3), // 6
+        ]);
+        Assert.Equal([0, 1, 4, 5, 6], plan.Unique);
+        Assert.Equal([null, null, 0, 1, null, null, null], plan.SameAs);
+        Assert.Equal(2, plan.DuplicateCount);
+    }
+
+    [Fact]
+    public void Plan_NeverMatchesEmptyGifs_AndAnEmptyListIsEmpty()
+    {
+        var plan = GalleryUploadPlan.Create([GalleryImageSource.Gif([]), GalleryImageSource.Gif([])]);
+        Assert.Equal([0, 1], plan.Unique);
+        Assert.Equal(0, plan.DuplicateCount);
+        Assert.Empty(GalleryUploadPlan.Create([]).Unique);
+    }
 }

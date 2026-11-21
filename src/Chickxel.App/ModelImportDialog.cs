@@ -27,10 +27,10 @@ public sealed class ModelImportDialog : DialogBase
     private readonly string? _folder;
     private readonly TextBlock _summary;
     private readonly Button _importAnim;
-    private readonly NumericUpDown _width, _height, _yaw, _pitch, _zoom, _fov, _lightYaw, _lightPitch, _ambient, _light, _steps, _turnFrames, _fps, _maxFrames;
+    private readonly NumericUpDown _width, _height, _yaw, _pitch, _roll, _zoom, _fov, _lightYaw, _lightPitch, _ambient, _light, _steps, _turnFrames, _fps, _maxFrames;
     private readonly NumericUpDown _colors, _crease, _outlineWidth, _darken;
     private readonly ComboBox _projection, _smooth, _mode, _clip, _outlineColorMode, _preset;
-    private readonly CheckBox _textures, _hardAlpha, _outer, _outside, _inner, _creaseOn;
+    private readonly CheckBox _textures, _hardAlpha, _outer, _outside, _inner, _creaseOn, _lightBack;
     private readonly Button _outlineColor, _deletePreset;
     private Color32 _outlineColorValue;
     private List<ModelPreset> _userPresets = [];
@@ -59,11 +59,13 @@ public sealed class ModelImportDialog : DialogBase
         _height = Ui.Num(1, 2048, 128, 70).Presets(Ui.SpriteSizes).Unit("px").RecentKey("model.height");
         _yaw = Ui.Num(-360, 360, 0, 70, decimals: 1, increment: 15).Unit("°");
         _pitch = Ui.Num(-90, 90, 0, 70, decimals: 1, increment: 5).Unit("°");
+        _roll = Ui.Num(-180, 180, 0, 70, decimals: 1, increment: 15).Unit("°");
         _projection = Ui.Combo(120, UiStrings.Model_Orthographic, UiStrings.Model_Perspective);
         _fov = Ui.Num(5, 120, 35, 60, increment: 5).Unit("°").Tip(UiStrings.Model_FovTip);
         _zoom = Ui.Num(10, 1000, 100, 70, increment: 10).Unit("%").Tip(UiStrings.Model_ZoomTip);
-        _lightYaw = Ui.Num(-180, 180, 0, 70, increment: 15).Unit("°");
+        _lightYaw = Ui.Num(-90, 90, 0, 70, increment: 15).Unit("°");
         _lightPitch = Ui.Num(-90, 90, 0, 70, increment: 15).Unit("°");
+        _lightBack = Ui.Check(UiStrings.Model_LightBack).Tip(UiStrings.Model_LightBackTip);
         _ambient = Ui.Num(0, 100, 40, 60, increment: 5).Unit("%");
         _light = Ui.Num(0, 200, 80, 60, increment: 10).Unit("%");
         _steps = Ui.Num(0, 16, 0, 60).Tip(UiStrings.Model_StepsTip);
@@ -96,22 +98,49 @@ public sealed class ModelImportDialog : DialogBase
         var savePreset = Ui.Button(UiStrings.Model_PresetSave, (_, _) => Dispatcher.UIThread.Post(SavePreset)).Tip(UiStrings.Model_PresetSaveTip);
         _deletePreset = Ui.Button(UiStrings.Model_PresetDelete, (_, _) => DeletePreset()).Tip(UiStrings.Model_PresetDeleteTip);
 
-        _preview = new ModelPreview { Width = 360, Height = 360 };
+        _preview = new ModelPreview { Width = 664, Height = 330 };
         _preview.Rotated += (dx, dy) =>
         {
             _yaw.Value = Wrap((double)_yaw.NumValue() + dx * 0.5);
             _pitch.Value = (decimal)Math.Clamp((double)_pitch.NumValue() + dy * 0.5, -90, 90);
         };
+        _preview.Rolled += degrees => _roll.Value = Wrap((double)_roll.NumValue() + degrees);
+        _preview.Faced += (yaw, pitch) =>
+        {
+            _yaw.Value = (decimal)yaw;
+            _pitch.Value = (decimal)pitch;
+            _roll.Value = 0;
+        };
+        _preview.LightMoved += (yaw, pitch) =>
+        {
+            _lightYaw.Value = (decimal)Math.Round(yaw, 1);
+            _lightPitch.Value = (decimal)Math.Round(pitch, 1);
+        };
+        _preview.LightFlipped += () => _lightBack.IsChecked = !_lightBack.On();
         _preview.Zoomed += factor => _zoom.Value = Math.Clamp(Math.Round(_zoom.NumValue() * (decimal)factor), _zoom.Minimum, _zoom.Maximum);
         _frame = new Slider { Minimum = 0, Maximum = 0, Width = 300, IsSnapToTickEnabled = true, TickFrequency = 1, VerticalAlignment = VerticalAlignment.Center };
         _play = Ui.IconButton(VectorIcon.Play, UiStrings.Model_PlayTip, (_, _) => TogglePlay());
+        var previewHint = Dim(Ui.Label(UiStrings.Model_PreviewHint));
+        previewHint.TextWrapping = TextWrapping.Wrap;
+        previewHint.MaxWidth = 664;
+        var pixelLabel = Ui.Label(UiStrings.Model_PixelResult);
+        Grid.SetColumn(pixelLabel, 1);
         var previewBox = new StackPanel
         {
             Spacing = 4,
             Children =
             {
+                new Grid
+                {
+                    ColumnDefinitions = new ColumnDefinitions("332,332"),
+                    Children =
+                    {
+                        Ui.Label(UiStrings.Model_Original),
+                        pixelLabel,
+                    },
+                },
                 new Border { BorderBrush = AppTheme.BorderBrush, BorderThickness = new Thickness(1), Child = _preview },
-                Dim(Ui.Label(UiStrings.Model_PreviewHint)),
+                previewHint,
                 Ui.Row(_play, _frame),
             },
         };
@@ -132,10 +161,10 @@ public sealed class ModelImportDialog : DialogBase
         }
         AddRow(UiStrings.Model_Preset, Ui.Row(_preset, savePreset, _deletePreset));
         AddRow(UiStrings.Model_Size, Ui.Row(_width, Ui.Label("×"), _height));
-        AddRow(UiStrings.Model_Angle, Ui.Row(Ui.Label(UiStrings.Model_Yaw), _yaw, Ui.Label(UiStrings.Model_Pitch), _pitch));
+        AddRow(UiStrings.Model_Angle, Ui.Row(Ui.Label(UiStrings.Model_Yaw), _yaw, Ui.Label(UiStrings.Model_Pitch), _pitch, Ui.Label(UiStrings.Model_Roll), _roll));
         AddRow(UiStrings.Model_Projection, Ui.Row(_projection, Ui.Label(UiStrings.Model_Fov), _fov));
         AddRow(UiStrings.Model_Zoom, Ui.Row(_zoom, Ui.Button(UiStrings.Model_Fit, (_, _) => _zoom.Value = 100)));
-        AddRow(UiStrings.Model_Light, Ui.Row(Ui.Label(UiStrings.Model_Yaw), _lightYaw, Ui.Label(UiStrings.Model_Pitch), _lightPitch));
+        AddRow(UiStrings.Model_Light, Ui.Row(Ui.Label(UiStrings.Model_Yaw), _lightYaw, Ui.Label(UiStrings.Model_Pitch), _lightPitch, _lightBack));
         AddRow(UiStrings.Model_Brightness, Ui.Row(Ui.Label(UiStrings.Model_Ambient), _ambient, Ui.Label(UiStrings.Model_LightStrength), _light));
         AddRow(UiStrings.Model_Steps, _steps);
         AddRow(UiStrings.Model_Smooth, Ui.Row(_smooth, _textures));
@@ -190,11 +219,11 @@ public sealed class ModelImportDialog : DialogBase
             _deletePreset.IsEnabled = !p.BuiltIn;
         };
 
-        foreach (var n in new[] { _width, _height, _yaw, _pitch, _zoom, _fov, _lightYaw, _lightPitch, _ambient, _light, _steps, _turnFrames, _fps, _maxFrames,
+        foreach (var n in new[] { _width, _height, _yaw, _pitch, _roll, _zoom, _fov, _lightYaw, _lightPitch, _ambient, _light, _steps, _turnFrames, _fps, _maxFrames,
                      _colors, _crease, _outlineWidth, _darken })
             n.ValueChanged += (_, _) => Sync();
         foreach (var c in new[] { _projection, _smooth, _mode, _clip, _outlineColorMode }) c.SelectionChanged += (_, _) => Sync();
-        foreach (var c in new[] { _textures, _hardAlpha, _outer, _outside, _inner, _creaseOn }) c.IsCheckedChanged += (_, _) => Sync();
+        foreach (var c in new[] { _textures, _hardAlpha, _outer, _outside, _inner, _creaseOn, _lightBack }) c.IsCheckedChanged += (_, _) => Sync();
         _frame.PropertyChanged += (_, e) =>
         {
             if (e.Property == RangeBase.ValueProperty) Schedule();
@@ -215,11 +244,13 @@ public sealed class ModelImportDialog : DialogBase
         Height = (int)_height.NumValue(),
         Yaw = (float)_yaw.NumValue(),
         Pitch = (float)_pitch.NumValue(),
+        Roll = (float)_roll.NumValue(),
         Projection = _projection.SelectedIndex == 1 ? ModelProjection.Perspective : ModelProjection.Orthographic,
         FieldOfView = (float)_fov.NumValue(),
         Zoom = (float)_zoom.NumValue() / 100f,
         LightYaw = (float)_lightYaw.NumValue(),
         LightPitch = (float)_lightPitch.NumValue(),
+        LightBack = _lightBack.On(),
         Ambient = (float)_ambient.NumValue() / 100f,
         LightStrength = (float)_light.NumValue() / 100f,
         ShadeSteps = (int)_steps.NumValue() == 1 ? 0 : (int)_steps.NumValue(),
@@ -332,11 +363,17 @@ public sealed class ModelImportDialog : DialogBase
         _height.Value = Clamp(_height, r.Height);
         _yaw.Value = Clamp(_yaw, r.Yaw);
         _pitch.Value = Clamp(_pitch, r.Pitch);
+        _roll.Value = Clamp(_roll, r.Roll);
         _projection.SelectedIndex = r.Projection == ModelProjection.Perspective ? 1 : 0;
         _fov.Value = Clamp(_fov, r.FieldOfView);
         _zoom.Value = Clamp(_zoom, Math.Round(r.Zoom * 100));
-        _lightYaw.Value = Clamp(_lightYaw, r.LightYaw);
+        double lightYaw = r.LightYaw;
+        bool lightBack = r.LightBack;
+        if (lightYaw > 90) { lightYaw = 180 - lightYaw; lightBack = !lightBack; }
+        if (lightYaw < -90) { lightYaw = -180 - lightYaw; lightBack = !lightBack; }
+        _lightYaw.Value = Clamp(_lightYaw, lightYaw);
         _lightPitch.Value = Clamp(_lightPitch, r.LightPitch);
+        _lightBack.IsChecked = lightBack;
         _ambient.Value = Clamp(_ambient, Math.Round(r.Ambient * 100));
         _light.Value = Clamp(_light, Math.Round(r.LightStrength * 100));
         _steps.Value = Clamp(_steps, r.ShadeSteps);
@@ -483,6 +520,7 @@ public sealed class ModelImportDialog : DialogBase
         if (frames.Count <= 1) StopPlay();
         _player.Interval = TimeSpan.FromMilliseconds(ModelFrames.DurationMs(o));
         var r = RenderSettings;
+        _preview.SetOrientation(r);
         _estimate.Text = UiStrings.FormatModel_Estimate(frames: frames.Count, width: r.Width, height: r.Height, ms: ModelFrames.DurationMs(o));
         _syncing = false;
         Schedule();
@@ -510,12 +548,24 @@ public sealed class ModelImportDialog : DialogBase
             {
                 var (o, frames, poses, fit) = posed ?? Pose(scene, options, cts.Token);
                 int i = Math.Clamp(index, 0, frames.Count - 1);
-                var image = ModelRenderer.Render(poses[i], settings with { Yaw = settings.Yaw + frames[i].YawOffset }, fit, cts.Token);
+                var view = settings with { Yaw = settings.Yaw + frames[i].YawOffset };
+                var image = ModelRenderer.Render(poses[i], view, fit, cts.Token);
+                // 원본은 같은 자세·카메라·빛으로 출력 픽셀 다듬기 전에 독립적으로 부드럽게 그린다.
+                // 긴 변을 제한해 큰 내보내기 크기에서도 미리보기 비용은 일정하다.
+                double scale = 330d / Math.Max(settings.Width, settings.Height);
+                int smoothWidth = Math.Max(1, (int)Math.Round(settings.Width * scale));
+                int smoothHeight = Math.Max(1, (int)Math.Round(settings.Height * scale));
+                var original = ModelRenderer.RenderLayers(poses[i], view with
+                {
+                    Width = smoothWidth, Height = smoothHeight, Supersample = 4, ShadeSteps = 0,
+                    HardAlpha = false, Colors = 0, OutlineOuter = false, OutlineInner = false, OutlineCrease = 0,
+                }, fit, cts.Token).Image;
                 Dispatcher.UIThread.Post(() =>
                 {
                     if (cts.IsCancellationRequested) return;
                     _posed = (o, frames, poses, fit);
-                    _preview.Show(image);
+                    _preview.SetOrientation(view);
+                    _preview.Show(original, image);
                 });
             }
             catch (OperationCanceledException)
@@ -564,72 +614,278 @@ public sealed class ModelImportDialog : DialogBase
         return label;
     }
 
-    /// <summary>미리보기: 그린 그림을 칸에 맞는 가장 큰 배율로(최근접) 바둑판 바탕 위에. 끌면 돌리고, 휠로 확대한다.</summary>
+    /// <summary>두 결과가 같은 프레임을 보며, 왼쪽에 카메라 고리·축·빛 핸들을 겹쳐 그린다.</summary>
     private sealed class ModelPreview : Control
     {
-        private WriteableBitmap? _bitmap;
+        private const double Pane = 330;
+        private static readonly Avalonia.Point Center = new(Pane / 2, Pane / 2);
+        private static readonly Avalonia.Point AxisCenter = new(43, Pane - 44);
+        private static readonly Avalonia.Point SunCenter = new(Pane - 43, 44);
+        private static readonly Pen RingPen = new(new SolidColorBrush(Color.FromArgb(105, 210, 220, 230)), 1.5);
+        private static readonly Pen HoverPen = new(new SolidColorBrush(Color.FromArgb(240, 112, 189, 255)), 3);
+        private static readonly Pen AxisPen = new(new SolidColorBrush(Color.FromArgb(210, 220, 230, 240)), 1.5);
+        private static readonly Pen SunPen = new(new SolidColorBrush(Color.FromRgb(255, 211, 91)), 2);
+        private static readonly IBrush SunBrush = new SolidColorBrush(Color.FromRgb(255, 211, 91));
+        private static readonly Cursor OrbitCursor = new(StandardCursorType.SizeAll);
+        private static readonly Cursor HandleCursor = new(StandardCursorType.Hand);
+        private static readonly System.Numerics.Vector3[] Axes =
+            [System.Numerics.Vector3.UnitX, System.Numerics.Vector3.UnitY, System.Numerics.Vector3.UnitZ];
+        private static readonly string[] AxisLabels = ["X", "Y", "Z"];
+        private static readonly string[,] AxisHits =
+        {
+            { "axis:0:-1", "axis:1:-1", "axis:2:-1" },
+            { "axis:0:1", "axis:1:1", "axis:2:1" },
+        };
+        private static readonly IBrush[] FrontAxisBrushes =
+        [
+            new SolidColorBrush(Color.FromRgb(251, 113, 110)),
+            new SolidColorBrush(Color.FromRgb(117, 214, 139)),
+            new SolidColorBrush(Color.FromRgb(104, 165, 255)),
+        ];
+        private static readonly IBrush[] BackAxisBrushes =
+        [
+            new SolidColorBrush(Color.FromArgb(140, 251, 113, 110)),
+            new SolidColorBrush(Color.FromArgb(140, 117, 214, 139)),
+            new SolidColorBrush(Color.FromArgb(140, 104, 165, 255)),
+        ];
+        private WriteableBitmap? _original, _pixel;
         private Avalonia.Point? _drag;
+        private string _active = "", _hover = "";
+        private double _lastRollAngle;
+        private ModelRenderSettings _orientation = new();
+        private System.Numerics.Vector3 _right, _up, _back;
 
-        /// <summary>끌어서 돌림(가로·세로 화면 px).</summary>
         public event Action<double, double>? Rotated;
-        /// <summary>휠 확대 배율(1보다 크면 크게).</summary>
+        public event Action<double>? Rolled;
+        public event Action<double, double>? Faced;
+        public event Action<double, double>? LightMoved;
+        public event Action? LightFlipped;
         public event Action<double>? Zoomed;
 
         public ModelPreview()
         {
             ClipToBounds = true;
-            Cursor = new Cursor(StandardCursorType.SizeAll);
+            Cursor = OrbitCursor;
+            SetOrientation(_orientation);
         }
 
-        public void Show(PixelImage image)
+        public void SetOrientation(ModelRenderSettings settings)
         {
-            if (_bitmap is { } old && old.PixelSize.Width == image.Width && old.PixelSize.Height == image.Height) ImageUtil.CopyToBitmap(image, old);
-            else
-            {
-                _bitmap?.Dispose();
-                _bitmap = ImageUtil.ToBitmap(image);
-            }
+            _orientation = settings;
+            float yaw = settings.Yaw * MathF.PI / 180, pitch = settings.Pitch * MathF.PI / 180;
+            _back = new System.Numerics.Vector3(MathF.Sin(yaw) * MathF.Cos(pitch), MathF.Sin(pitch), MathF.Cos(yaw) * MathF.Cos(pitch));
+            var right = new System.Numerics.Vector3(MathF.Cos(yaw), 0, -MathF.Sin(yaw));
+            var up = System.Numerics.Vector3.Normalize(System.Numerics.Vector3.Cross(_back, right));
+            float roll = settings.Roll * MathF.PI / 180;
+            _right = right * MathF.Cos(roll) + up * MathF.Sin(roll);
+            _up = up * MathF.Cos(roll) - right * MathF.Sin(roll);
             InvalidateVisual();
+        }
+
+        private static WriteableBitmap Copy(PixelImage image, WriteableBitmap? bitmap)
+        {
+            if (bitmap is { } old && old.PixelSize.Width == image.Width && old.PixelSize.Height == image.Height)
+            {
+                ImageUtil.CopyToBitmap(image, old);
+                return old;
+            }
+            bitmap?.Dispose();
+            return ImageUtil.ToBitmap(image);
+        }
+
+        public void Show(PixelImage original, PixelImage pixel)
+        {
+            _original = Copy(original, _original);
+            _pixel = Copy(pixel, _pixel);
+            InvalidateVisual();
+        }
+
+        private static void DrawImage(DrawingContext g, WriteableBitmap? bmp, double left, bool pixel)
+        {
+            if (bmp is null) return;
+            var size = bmp.PixelSize;
+            double scale = Math.Min(Pane / size.Width, Pane / size.Height);
+            var dest = new Rect(left + (Pane - size.Width * scale) / 2, (Pane - size.Height * scale) / 2,
+                size.Width * scale, size.Height * scale);
+            AppTheme.DrawChecker(g, dest, 8);
+            if (pixel)
+            {
+                using (ImageUtil.Pixelated(g))
+                    g.DrawImage(bmp, new Rect(0, 0, size.Width, size.Height), dest);
+            }
+            else g.DrawImage(bmp, new Rect(0, 0, size.Width, size.Height), dest);
         }
 
         public override void Render(DrawingContext g)
         {
-            var bounds = new Rect(Bounds.Size);
-            g.FillRectangle(AppTheme.BackBrush, bounds);
-            if (_bitmap is not { } bmp) return;
-            var size = bmp.PixelSize;
-            double scale = Math.Min(bounds.Width / size.Width, bounds.Height / size.Height);
-            // 1배보다 크면 정수 배로(픽셀이 고르게 보이게).
-            if (scale >= 1) scale = Math.Floor(scale);
-            var dest = new Rect((bounds.Width - size.Width * scale) / 2, (bounds.Height - size.Height * scale) / 2, size.Width * scale, size.Height * scale);
-            AppTheme.DrawChecker(g, dest, 8);
-            using (ImageUtil.Pixelated(g))
-                g.DrawImage(bmp, new Rect(0, 0, size.Width, size.Height), dest);
+            g.FillRectangle(AppTheme.BackBrush, new Rect(Bounds.Size));
+            DrawImage(g, _original, 0, false);
+            DrawImage(g, _pixel, Pane + 4, true);
+            g.DrawLine(AxisPen, new Avalonia.Point(Pane + 2, 0), new Avalonia.Point(Pane + 2, Pane));
+            if (_hover.Length != 0 || _active.Length != 0)
+            {
+                // X = pitch, Y = yaw, Z = roll. The outer ring stays independent of orbit.
+                g.DrawEllipse(null, _hover == "roll" || _active == "roll" ? HoverPen : RingPen, Center, 137, 137);
+                g.DrawEllipse(null, _hover == "yaw" || _active == "yaw" ? HoverPen : RingPen, Center, 112, 39);
+                g.DrawEllipse(null, _hover == "pitch" || _active == "pitch" ? HoverPen : RingPen, Center, 39, 112);
+                AppTheme.DrawText(g, "Z", new Avalonia.Point(Center.X - 4, Center.Y - 148), Brushes.White, 11, bold: true);
+                AppTheme.DrawText(g, "X", new Avalonia.Point(Center.X - 4, Center.Y - 123), Brushes.White, 11, bold: true);
+                AppTheme.DrawText(g, "Y", new Avalonia.Point(Center.X + 115, Center.Y - 8), Brushes.White, 11, bold: true);
+            }
+            DrawAxes(g);
+            DrawSun(g);
+        }
+
+        private Avalonia.Point AxisPoint(System.Numerics.Vector3 axis, double length)
+        {
+            return new Avalonia.Point(AxisCenter.X + length * System.Numerics.Vector3.Dot(axis, _right),
+                AxisCenter.Y - length * System.Numerics.Vector3.Dot(axis, _up));
+        }
+
+        private void DrawAxes(DrawingContext g)
+        {
+            var axes = Axes;
+            var back = _back;
+            // 뒤쪽 끝을 먼저 칠해 앞쪽 끝이 눌러 보기에도 앞에 오게 한다.
+            for (int side = -1; side <= 1; side += 2)
+                for (int i = 0; i < axes.Length; i++)
+                {
+                    var axis = axes[i] * side;
+                    var tip = AxisPoint(axis, side > 0 ? 27 : 18);
+                    if (System.Numerics.Vector3.Dot(axis, back) > 0)
+                        g.DrawLine(AxisPen, AxisCenter, tip);
+                    bool rear = System.Numerics.Vector3.Dot(axis, back) < 0;
+                    var brush = rear ? null : side > 0 ? FrontAxisBrushes[i] : BackAxisBrushes[i];
+                    g.DrawEllipse(brush, _hover == AxisHits[side > 0 ? 1 : 0, i] ? HoverPen : AxisPen,
+                        tip, side > 0 ? 9 : 6, side > 0 ? 9 : 6);
+                    if (side > 0) AppTheme.DrawText(g, AxisLabels[i], new Avalonia.Point(tip.X - 4, tip.Y - 8), Brushes.White, 11, bold: true);
+                }
+        }
+
+        private Avalonia.Point SunPoint()
+        {
+            double yaw = _orientation.LightYaw * Math.PI / 180, pitch = _orientation.LightPitch * Math.PI / 180;
+            return new Avalonia.Point(SunCenter.X + 24 * Math.Sin(yaw) * Math.Cos(pitch), SunCenter.Y - 24 * Math.Sin(pitch));
+        }
+
+        private void DrawSun(DrawingContext g)
+        {
+            g.DrawEllipse(null, AxisPen, SunCenter, 27, 27);
+            var p = SunPoint();
+            g.DrawLine(SunPen, SunCenter, p);
+            for (int n = 0; n < 8; n++)
+            {
+                double a = n * Math.PI / 4;
+                g.DrawLine(SunPen, new Avalonia.Point(p.X + 10 * Math.Cos(a), p.Y + 10 * Math.Sin(a)),
+                    new Avalonia.Point(p.X + 14 * Math.Cos(a), p.Y + 14 * Math.Sin(a)));
+            }
+            g.DrawEllipse(_orientation.LightBack ? AppTheme.BackBrush : SunBrush,
+                _hover == "sun" || _active == "sun" ? HoverPen : SunPen, p, 8, 8);
+        }
+
+        private static double Distance(Avalonia.Point a, Avalonia.Point b) => Math.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
+
+        private string Hit(Avalonia.Point p)
+        {
+            if (p.X < 0 || p.X >= Pane || p.Y < 0 || p.Y >= Pane) return "";
+            if (Distance(p, SunPoint()) <= 17) return "sun";
+            var axes = Axes;
+            var back = _back;
+            // When opposite endpoints overlap, the one toward the camera wins.
+            for (int facing = 1; facing >= -1; facing -= 2)
+                for (int side = 1; side >= -1; side -= 2)
+                    for (int i = 0; i < axes.Length; i++)
+                        if ((System.Numerics.Vector3.Dot(axes[i] * side, back) >= 0 ? 1 : -1) == facing
+                            && Distance(p, AxisPoint(axes[i] * side, side > 0 ? 27 : 18)) < 11)
+                            return AxisHits[side > 0 ? 1 : 0, i];
+            double dx = p.X - Center.X, dy = p.Y - Center.Y;
+            if (Math.Abs(Math.Sqrt(dx * dx + dy * dy) - 137) <= 8) return "roll";
+            if (Math.Abs(Math.Sqrt(dx * dx / (112 * 112) + dy * dy / (39 * 39)) - 1) < 0.09) return "yaw";
+            if (Math.Abs(Math.Sqrt(dx * dx / (39 * 39) + dy * dy / (112 * 112)) - 1) < 0.09) return "pitch";
+            return "orbit";
+        }
+
+        private void MoveSun(Avalonia.Point p)
+        {
+            double x = (p.X - SunCenter.X) / 24, y = (SunCenter.Y - p.Y) / 24;
+            double radius = Math.Sqrt(x * x + y * y);
+            if (radius > 0.999) { x *= 0.999 / radius; y *= 0.999 / radius; }
+            double pitch = Math.Asin(y), yaw = Math.Atan2(x, Math.Sqrt(Math.Max(0, 1 - x * x - y * y)));
+            LightMoved?.Invoke(yaw * 180 / Math.PI, pitch * 180 / Math.PI);
         }
 
         protected override void OnPointerPressed(PointerPressedEventArgs e)
         {
             base.OnPointerPressed(e);
             if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
-            _drag = e.GetPosition(this);
-            e.Pointer.Capture(this);
+            var p = e.GetPosition(this);
+            var hit = Hit(p);
+            if (hit.Length == 0) return;
+            if (hit == "sun" && e.ClickCount == 2)
+            {
+                LightFlipped?.Invoke();
+                e.Handled = true;
+                return;
+            }
+            if (hit.StartsWith("axis:", StringComparison.Ordinal))
+            {
+                int axis = hit[5] - '0', side = hit[7] == '-' ? -1 : 1;
+                Faced?.Invoke(axis == 0 ? 90 * side : axis == 2 && side < 0 ? 180 : 0,
+                    axis == 1 ? 90 * side : 0);
+            }
+            else
+            {
+                _active = hit;
+                _drag = p;
+                _lastRollAngle = Math.Atan2(p.Y - Center.Y, p.X - Center.X);
+                if (hit == "sun") MoveSun(p);
+                e.Pointer.Capture(this);
+            }
             e.Handled = true;
+            InvalidateVisual();
         }
 
         protected override void OnPointerMoved(PointerEventArgs e)
         {
             base.OnPointerMoved(e);
-            if (_drag is not { } last) return;
             var p = e.GetPosition(this);
-            _drag = p;
-            Rotated?.Invoke(p.X - last.X, p.Y - last.Y);
+            if (_drag is { } last)
+            {
+                if (_active == "sun") MoveSun(p);
+                else if (_active == "roll")
+                {
+                    double angle = Math.Atan2(p.Y - Center.Y, p.X - Center.X);
+                    double delta = (angle - _lastRollAngle) * 180 / Math.PI;
+                    if (delta > 180) delta -= 360;
+                    if (delta < -180) delta += 360;
+                    Rolled?.Invoke(delta);
+                    _lastRollAngle = angle;
+                }
+                else if (_active == "yaw") Rotated?.Invoke(p.X - last.X, 0);
+                else if (_active == "pitch") Rotated?.Invoke(0, p.Y - last.Y);
+                else Rotated?.Invoke(p.X - last.X, p.Y - last.Y);
+                _drag = p;
+            }
+            else
+            {
+                string hover = Hit(p);
+                if (_hover != hover)
+                {
+                    _hover = hover;
+                    Cursor = hover is "roll" or "yaw" or "pitch" or "sun" || hover.StartsWith("axis:", StringComparison.Ordinal)
+                        ? HandleCursor : OrbitCursor;
+                    InvalidateVisual();
+                }
+            }
         }
 
         protected override void OnPointerReleased(PointerReleasedEventArgs e)
         {
             base.OnPointerReleased(e);
             _drag = null;
+            _active = "";
             e.Pointer.Capture(null);
+            InvalidateVisual();
         }
 
         protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
@@ -642,8 +898,9 @@ public sealed class ModelImportDialog : DialogBase
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
         {
             base.OnDetachedFromVisualTree(e);
-            _bitmap?.Dispose();
-            _bitmap = null;
+            _original?.Dispose();
+            _pixel?.Dispose();
+            _original = _pixel = null;
         }
     }
 }

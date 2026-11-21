@@ -716,6 +716,135 @@ public class PixelateTests
     }
 
     [Fact]
+    public void VectorCleanPathKeepsCornerAndEvenStraightStairs()
+    {
+        var source = Enumerable.Range(0, 17)
+            .Select(i => ((double)i + 2.5, 3.5 + i / 3.0 + (i % 2 == 0 ? 0.08 : -0.08)))
+            .ToList();
+        source.AddRange(Enumerable.Range(1, 11).Select(i => (18.5, 8.5 + i)));
+        var path = VectorOutline.CleanPath(source, 0.6, 40);
+        Assert.Contains(new Point(18, 8), path);
+        Assert.Contains(new Point(18, 19), path);
+        for (int i = 1; i < path.Count; i++)
+            Assert.InRange(Math.Max(Math.Abs(path[i].X - path[i - 1].X), Math.Abs(path[i].Y - path[i - 1].Y)), 0, 1);
+        var stairs = path.TakeWhile(p => p.X < 18).Where(p => p.Y != path[0].Y).ToList();
+        Assert.True(stairs.Count >= 9, $"short line: {path.Count}");
+    }
+
+    [Fact]
+    public void VectorCleanPathFitsCircularArcWithoutGaps()
+    {
+        var source = Enumerable.Range(0, 49).Select(i =>
+        {
+            double angle = Math.PI * i / 48;
+            double radius = 10.2 + (i % 3 == 0 ? 0.08 : -0.08);
+            return (X: 20.5 + radius * Math.Cos(angle), Y: 20.5 + radius * Math.Sin(angle));
+        }).ToArray();
+        var path = VectorOutline.CleanPath(source, 0.6, 40);
+        Assert.True(path.Count >= 22);
+        for (int i = 1; i < path.Count; i++)
+            Assert.InRange(Math.Max(Math.Abs(path[i].X - path[i - 1].X), Math.Abs(path[i].Y - path[i - 1].Y)), 0, 1);
+        foreach (var p in path)
+            Assert.InRange(Math.Abs(Math.Sqrt(Math.Pow(p.X + 0.5 - 20.5, 2) + Math.Pow(p.Y + 0.5 - 20.5, 2)) - 10.2), 0, 1.5);
+    }
+
+    [Theory]
+    [InlineData(OutlineFit.Shrink)]
+    [InlineData(OutlineFit.Thin)]
+    [InlineData(OutlineFit.Vector)]
+    public void FitOutlineUsesActualFillBehindDarkInterior(OutlineFit fit)
+    {
+        var fill = new Color32(164, 170, 112);
+        var shade = new Color32(27, 25, 24);
+        var img = new PixelImage(22, 22);
+        img.FillRect(new Rectangle(2, 2, 18, 18), Outline);
+        img.FillRect(new Rectangle(4, 4, 14, 14), shade);
+        img.FillRect(new Rectangle(7, 7, 8, 8), fill);
+        PixelCleanup.Run(img, new CleanupSettings
+        {
+            OutlineFit = fit,
+            RemoveOrphans = false,
+            FillHoles = false,
+        }, Outline, 0.24);
+        Assert.Equal(Outline, img[2, 10]);
+        Assert.Equal(fill, img[3, 10]);
+        if (fit == OutlineFit.Thin)
+        {
+            Assert.Equal(fill, img[4, 10]);
+            Assert.Equal(fill, img[5, 10]);
+        }
+        Assert.NotEqual(Color32.Transparent, img[3, 10]);
+    }
+
+    [Fact]
+    public void VectorRedrawReplacesOldDarkBandWithInsideFill()
+    {
+        var fill = new Color32(180, 130, 60);
+        var shade = new Color32(27, 25, 24);
+        var img = new PixelImage(12, 12);
+        img.FillRect(new Rectangle(2, 2, 8, 8), Outline);
+        img.FillRect(new Rectangle(3, 3, 6, 6), shade);
+        img.FillRect(new Rectangle(5, 5, 2, 2), fill);
+        var band = new List<int>();
+        for (int y = 2; y < 10; y++)
+            for (int x = 2; x < 10; x++)
+                if (img[x, y] != fill) band.Add(y * 12 + x);
+        var ring = new List<int>();
+        for (int x = 2; x < 10; x++) ring.Add(2 * 12 + x);
+        for (int y = 3; y < 10; y++) ring.Add(y * 12 + 9);
+        for (int x = 8; x >= 2; x--) ring.Add(9 * 12 + x);
+        for (int y = 8; y >= 2; y--) ring.Add(y * 12 + 2);
+        var trace = new VectorOutline.Tracing(
+            [new VectorOutline.Blob(band.Count, true, 2, [.. band], [new VectorOutline.Chain([.. ring], false)])], 2);
+        var cuts = Enumerable.Range(0, 13).ToArray();
+        var changed = VectorOutline.Apply(img, trace, new Rectangle(0, 0, 12, 12), 12,
+            new CellLayout(cuts, cuts), Outline, 0.24,
+            new CleanupSettings { VectorCleanLines = false, VectorTolerance = 0 });
+        Assert.True(changed > 0);
+        Assert.Equal(Outline, img[2, 6]);
+        Assert.Equal(fill, img[3, 6]);
+        Assert.Equal(fill, img[4, 6]);
+        Assert.Equal(fill, img[5, 6]);
+    }
+
+    [Fact]
+    public void LineRegularityFlagsStairRunOutliersNotNormalCorners()
+    {
+        static PixelImage Stair(params (int X, int Y, int Length)[] runs)
+        {
+            var image = new PixelImage(24, 24);
+            foreach (var (x, y, length) in runs)
+                image.FillRect(new Rectangle(x, y, length, 1), Outline);
+            return image;
+        }
+        // 두 길이 모두 한 칸씩 늘어나는 매끈한 곡선. 1px 대각선과 직각 모서리도 감점하지 않는다.
+        var smooth = Stair((3, 4, 2), (5, 5, 3), (8, 6, 4), (12, 7, 5));
+        var diagonal = Stair((3, 4, 1), (4, 5, 1), (5, 6, 1), (6, 7, 1));
+        var corner = Stair((3, 4, 5), (7, 5, 1), (7, 6, 1), (7, 7, 1));
+        var dip = Stair((3, 4, 3), (6, 5, 1), (7, 6, 3), (10, 7, 3));
+        var peak = Stair((3, 4, 1), (4, 5, 3), (7, 6, 1), (8, 7, 2));
+        var (smoothSteps, smoothBad) = PixelCleanup.LineRegularity(smooth, 0.24);
+        var (diagonalSteps, diagonalBad) = PixelCleanup.LineRegularity(diagonal, 0.24);
+        var (_, cornerBad) = PixelCleanup.LineRegularity(corner, 0.24);
+        var (dipSteps, dipBad) = PixelCleanup.LineRegularity(dip, 0.24);
+        var (peakSteps, peakBad) = PixelCleanup.LineRegularity(peak, 0.24);
+        Assert.True(smoothSteps > 0 && diagonalSteps > 0 && dipSteps > 0 && peakSteps > 0);
+        Assert.Equal(0, smoothBad);
+        Assert.Equal(0, diagonalBad);
+        Assert.Equal(0, cornerBad);
+        Assert.True(dipBad > 0 && peakBad > 0);
+        var result = Pixelator.Run(Sprite(), SixColors);
+        var part = Assert.Single(PixelateScoring.Score(result, new ScoreWeights(), null, false).Parts,
+            p => p.Term == ScoreTerm.LineRegularity);
+        Assert.Equal(result.Metrics.LineRegularity, part.Value);
+        Assert.Equal(1, part.Weight);
+        Assert.Equal(1, new ScoreWeights().Of(ScoreTerm.LineRegularity));
+        var defaultScore = PixelateScoring.Score(result, new ScoreWeights(), null, false).Total;
+        var withoutLine = PixelateScoring.Score(result, new ScoreWeights { LineRegularity = 0 }, null, false).Total;
+        Assert.True(defaultScore <= withoutLine);
+    }
+
+    [Fact]
     public void ThinOutlineMakesTwoPixelOutlineOnePixelWithoutBreaks()
     {
         var fill = new Color32(60, 160, 70);
@@ -2299,6 +2428,7 @@ public class PixelateTests
             Assert.True(PixelateRanges.EdgeWeight.Contains(s.Palette.EdgeWeight), $"edge {s.Palette.EdgeWeight}");
             Assert.True(PixelateRanges.VectorTolerance.Contains(s.Cleanup.VectorTolerance), $"vector tolerance {s.Cleanup.VectorTolerance}");
             Assert.True(PixelateRanges.VectorBlobCells.Contains(s.Cleanup.VectorBlobCells), $"vector blob {s.Cleanup.VectorBlobCells}");
+            Assert.True(PixelateRanges.VectorCornerAngle.Contains(s.Cleanup.VectorCornerAngle), $"corner angle {s.Cleanup.VectorCornerAngle}");
         }
         // 깨끗한 1배 그림(찾은 칸 크기 1 — 예전에는 칸 크기 찾기 범위가 [1.5, 1.25]가 되어 "'0.5' cannot be greater than 0.25"로 멈춤)과 끝 값들.
         var clean = Sprite(detailed: true);
@@ -2346,6 +2476,8 @@ public class PixelateTests
         Assert.False(PixelateOptimizer.Applicable(d).HasFlag(OptimizeParam.VectorTolerance));
         Assert.True(PixelateOptimizer.Applicable(d, OptimizeParam.OutlineFit).HasFlag(OptimizeParam.VectorBlob));
         Assert.True(PixelateOptimizer.Applicable(d with { Cleanup = d.Cleanup with { OutlineFit = OutlineFit.Vector } }).HasFlag(OptimizeParam.VectorTolerance));
+        Assert.True(PixelateOptimizer.Applicable(d with { Cleanup = d.Cleanup with { OutlineFit = OutlineFit.Vector } }).HasFlag(OptimizeParam.VectorCornerAngle));
+        Assert.False(PixelateOptimizer.Applicable(d with { Cleanup = d.Cleanup with { OutlineFit = OutlineFit.Vector, VectorCleanLines = false } }).HasFlag(OptimizeParam.VectorCornerAngle));
     }
 
     /// <summary>결과에서 원본 픽셀 (x, y)가 들어간 칸의 색.</summary>
@@ -2629,7 +2761,7 @@ public class PixelateTests
         Assert.All(hr.Maps, m => Assert.Null(m.Local));
         var w = new ScoreWeights();
         double full = PixelateScoring.Score(r, w, r.ResolvedColors, strictTarget: true).Total, small = PixelateScoring.Score(hr, w, hr.ResolvedColors, strictTarget: true).Total;
-        Assert.True(full > small + 5, $"half {small:0.0} → full {full:0.0}");
+        Assert.True(full > small + 5, $"half {small:0.000} (line {hr.Metrics.LineRegularity:0.000000}) → full {full:0.000} (line {r.Metrics.LineRegularity:0.000000})");
     }
 
     /// <summary>

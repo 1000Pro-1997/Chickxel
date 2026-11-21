@@ -17,7 +17,7 @@ public sealed partial class LayerEffectsDialog
     /// <summary>
     /// 스크립트 설정 칸들(효과 창의 설정 칸과 효과 만들기 창의 미리보기 설정 칸이 함께 씀): 선언 순서대로 설정마다 <paramref name="row"/>(이름, 편집기,
     /// 여러 줄 덩어리인지)를 부른다. 정수·실수는 슬라이더·숫자 칸(<c>widget: "angle"</c>이면 각도 다이얼도, <c>"point"</c>면 짝 Y 설정과 함께 X·Y 칸과
-    /// 점 고르기 — Y 설정은 따로 줄이 없음), 켜고 끔, 색(단색·그라데이션 — 기본 효과 색 칸과 같고 슬롯은 설정 키), 고르기,
+    /// 점 고르기 — Y 설정은 따로 줄이 없음), 켜고 끔, 여러 줄 글, 색(단색·그라데이션 — 기본 효과 색 칸과 같고 슬롯은 설정 키), 고르기,
     /// 색 목록·색 쌍 목록(항목마다 단색·그라데이션, 더하기·빼기·순서 바꾸기 — 그라데이션은 항목을 따라 옮김),
     /// 레이어 고르기(<paramref name="layers"/>의 이름 — <see cref="ScriptLayerEditor"/>).
     /// 값과 그라데이션은 <paramref name="set"/>으로 효과를 바꿔 고치고, 항목 수·순서가 바뀌면 <paramref name="rebuild"/>로 칸을 다시 만든다.
@@ -72,6 +72,22 @@ public sealed partial class LayerEffectsDialog
                 case ScriptSettingType.Bool:
                     // 체크 상자 글로 이름을 보인다(이름 열에 두면 긴 이름이 모든 줄의 이름 열을 넓혀 색·그라데이션 줄이 잘림 — 예전 기본 효과 칸과 같은 모양)
                     row("", CheckEditor(label, (bool)values[key], v => SetValue(key, v)), false);
+                    break;
+                case ScriptSettingType.Text:
+                    var text = new TextBox
+                    {
+                        Text = (string)values[key],
+                        AcceptsReturn = true,
+                        TextWrapping = TextWrapping.NoWrap,
+                        MaxLength = (int)(setting.Max ?? ScriptSetting.MaxTextLength),
+                        Width = 260,
+                        Height = 76,
+                        Margin = new Thickness(3),
+                    };
+                    ScrollViewer.SetHorizontalScrollBarVisibility(text, ScrollBarVisibility.Auto);
+                    ScrollViewer.SetVerticalScrollBarVisibility(text, ScrollBarVisibility.Auto);
+                    text.TextChanged += (_, _) => SetValue(key, text.Text ?? "");
+                    row(label, text.HelpAt(page, anchor: "Text input setting"), true);
                     break;
                 case ScriptSettingType.Color:
                     var field = new ColorField((Color32)values[key]) { Opaque = !setting.Alpha };

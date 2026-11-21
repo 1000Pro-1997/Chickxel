@@ -399,6 +399,42 @@ public class ScriptRecipeParameterTests
         Assert.Equal(("target", EffectSettingError.WrongType), (number.Key, number.Error));
     }
 
+    private const string TextSource = """
+        effect({
+          name: "Titled",
+          settings: [
+            { key: "title", type: "text", default: "Hi", max: 20 },
+            { key: "target", type: "layer", default: "ground" },
+          ],
+          render(img, ctx, s) {},
+        });
+        """;
+
+    [Fact]
+    public void Text_settings_are_exposed_as_text_parameters_but_layer_settings_are_not()
+    {
+        var program = TrustedProgram(Unique(TextSource));
+        var effect = program.CreateEffect();
+
+        var title = RecipeParameters.SettingOf(effect, "title")!;
+        Assert.Equal((EffectParameterKind.Text, 20), (title.Kind, title.MaxLength));
+        Assert.True(RecipeParameters.CanExpose(title));
+        Assert.False(RecipeParameters.CanExpose(RecipeParameters.SettingOf(effect, "target")!));
+        Assert.Equal(RecipeValue.OfText("Hi"), RecipeParameters.ValueOf(effect, "title"));
+
+        // 넣을 때 스크립트 schema가 줄바꿈을 맞춘다
+        var changed = RecipeParameters.With(effect, "title", RecipeValue.OfText("A\r\nB"));
+        Assert.Equal(RecipeValue.OfText("A\nB"), RecipeParameters.ValueOf(changed, "title"));
+
+        // 글 매개변수는 글 설정에만, 레이어 설정에는 이을 수 없다
+        Assert.Empty(Issues([effect], Parameter(RecipeParameterKind.Text, RecipeValue.OfText("Go"), new RecipeBinding(0, "title"))));
+        Assert.Equal([(AssetIssueCode.RecipeBindingKindMismatch, "parameters[0].bindings[0]: effects[0].target text / text")],
+            Issues([effect], Parameter(RecipeParameterKind.Text, RecipeValue.OfText("Go"), new RecipeBinding(0, "target"))));
+        // 기본값은 선언한 max(20자) 안
+        Assert.Equal([(AssetIssueCode.RecipeParameterOutOfRange, "parameters[0].default: 21 > 20")],
+            Issues([effect], Parameter(RecipeParameterKind.Text, RecipeValue.OfText(new string('a', 21)), new RecipeBinding(0, "title"))));
+    }
+
     [Theory]
     [InlineData("\"sky\"", true)]
     [InlineData("\"\"", true)]

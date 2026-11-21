@@ -378,7 +378,7 @@ internal static class PixelateShots
         Pair("pixelate-palette-2", 6, UiStrings.Pixelate_Section_Palette, null, (_, _) =>
             [PixelateKit.LeftBox((Control)ShotKit.Get<Control>(dlg, "_palOkL").Parent!, dlg, 10)]);
 
-        // 정리와 외곽선 쪽: 정리 단계 + 외곽선 1px 맞추기 목록을 펼친 모습(①②), 프레임 맞추기(③).
+        // 정리: 목록(①②), 벡터 다시 그리기의 직선·곡선과 모서리 각도(③④⑤), 프레임 맞추기(⑥).
         PixelateKit.OnlyExpand(k, dlg, UiStrings.Pixelate_Section_Cleanup);
         var cleanup = PixelateKit.Section(dlg, UiStrings.Pixelate_Section_Cleanup);
         PixelateKit.ScrollToTop(k, cleanup);
@@ -393,7 +393,17 @@ internal static class PixelateShots
         fit.IsDropDownOpen = false;
         k.Settle(300);
 
-        Pair("pixelate-cleanup-2", 3, UiStrings.Pixelate_Section_Consistency, null, (a, _) => [a]);
+        fit.SelectedIndex = 3; // 벡터로 다시 그리기에서만 보이는 두 칸을 실제 UI에서 연다.
+        k.Settle(300);
+        var cleanLines = ShotKit.Get<CheckBox>(dlg, "_clVecClean");
+        var cornerAngle = ShotKit.Get<NumericUpDown>(dlg, "_clVecCorner");
+        var vectorRow = (Control)cleanLines.Parent!;
+        var vectorArea = PixelateKit.Union(dlg, fit, vectorRow);
+        k.Save(dlg, "pixelate-cleanup-vector", crop: vectorArea.Inflate(new Thickness(24, 20, 24, 20)),
+            marks: [PixelateKit.LeftBox(fit, dlg), PixelateKit.LeftBox(cleanLines, dlg), PixelateKit.LeftBox(cornerAngle, dlg)],
+            firstNumber: 3);
+
+        Pair("pixelate-cleanup-2", 6, UiStrings.Pixelate_Section_Consistency, null, (a, _) => [a]);
     }
 
     // 후보와 점수: 후보 칸·방식 이름·프리셋 이름(고친 값으로 돌린 "이름_1" 칸)·점수 내역(①~④)과 체크했지만 돌리지 않은 프리셋 칸(⑤), 후보 풍선의 점수 내역(⑥).
@@ -535,6 +545,34 @@ internal static class PixelateShots
         var view = ShotKit.Bounds(criteria.FindAncestorOfType<ScrollViewer>()!, dlg);
         k.Save(dlg, "pixelate-score", crop: new Rect(view.X - 8, sections.Y - 14, view.Width + 16, Math.Min(sections.Bottom, view.Bottom) - sections.Y + 24),
             marks: [criteria, PixelateKit.Box(toggle, dlg, 2)]);
+
+        // 점수 가중치 표에서 선 깔끔함 줄(기본 비중 1)을 실제 설정으로 보인다.
+        var weights = ShotKit.Get<NumericUpDown[]>(dlg, "_crWeights")[0].FindAncestorOfType<Grid>()!;
+        PixelateKit.ScrollToTop(k, weights);
+        var lineLabel = weights.Children.OfType<Control>()
+            .First(c => ShotKit.All<TextBlock>(c).Prepend(c as TextBlock).Any(t => t?.Text == UiStrings.Pixelate_Score_LineRegularity));
+        var lineWeight = weights.Children.OfType<NumericUpDown>()
+            .First(n => Grid.GetRow(n) == Grid.GetRow(lineLabel) && Grid.GetColumn(n) == Grid.GetColumn(lineLabel) + 1);
+        var weightsArea = ShotKit.Bounds(weights, dlg).Union(ShotKit.Bounds(lineWeight, dlg)).Inflate(new Thickness(10, 12, 16, 14));
+        k.Save(dlg, "pixelate-score-line", crop: weightsArea,
+            marks: [PixelateKit.LeftBox(lineLabel, dlg), PixelateKit.Box(lineWeight, dlg)], firstNumber: 3);
+
+        // 7. 정리의 최적화 체크가 벡터 모서리 각도에 적용되는 조건을 같은 그림에 표시한다.
+        PixelateKit.OnlyExpand(k, dlg, UiStrings.Pixelate_Section_Cleanup);
+        var cleanupSection = PixelateKit.Section(dlg, UiStrings.Pixelate_Section_Cleanup);
+        var cleanupToggle = ShotKit.Get<System.Collections.IDictionary>(dlg, "_sectionToggles").Values.OfType<CheckBox>()
+            .First(c => ReferenceEquals(c.FindAncestorOfType<Expander>(), cleanupSection));
+        cleanupToggle.IsChecked = true;
+        PixelateKit.ScrollToTop(k, cleanupSection);
+        var vectorFit = ShotKit.Get<ComboBox>(dlg, "_clFit");
+        vectorFit.SelectedIndex = 3;
+        var vectorCorner = ShotKit.Get<NumericUpDown>(dlg, "_clVecCorner");
+        k.Settle(300);
+        var optimizeArea = PixelateKit.Union(dlg, cleanupSection, vectorFit, (Control)vectorCorner.Parent!)
+            .Inflate(new Thickness(12, 10, 12, 12));
+        k.Save(dlg, "pixelate-optimize-vector", crop: optimizeArea,
+            marks: [PixelateKit.Box(cleanupToggle, dlg), PixelateKit.LeftBox(vectorFit, dlg), PixelateKit.LeftBox(vectorCorner, dlg)],
+            firstNumber: 12);
     }
 
     // 원본과 미리보기 쪽: 전체 창(①~⑤), 원본 아래 막대(⑥⑦). 색 빼기와 고정 색 쪽(①~③), 크게 보기와 색 판정 쪽(①~⑥),

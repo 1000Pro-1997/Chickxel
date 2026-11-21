@@ -538,6 +538,23 @@ internal static class ScreenTimelineShots
         });
         """;
 
+    /// <summary>여러 줄 글 설정과 ctx.text를 쓰는 떠오르는 피해 숫자.</summary>
+    private const string FloatingDamageScript = """
+        effect({
+          name: "Damage number",
+          author: "pixel-cat",
+          animated: true,
+          settings: [
+            { key: "message", label: "Shown text", type: "text", default: "42", max: 32 },
+          ],
+          render(img, ctx, s) {
+            const label = ctx.text(s.message, { size: 12, color: "#ff6666", bold: true });
+            img.blendOver(label, Math.floor((img.width - label.width) / 2),
+              Math.floor(img.height / 2 - ctx.progress * 12));
+          },
+        });
+        """;
+
     /// <summary>
     /// 설정 칸 예시(-5): 색(단색·그라데이션), 색 목록, 각도 다이얼, 점 고르기(X·Y 짝), 시드(주사위), 레이어 고르기(맨 아래 — 목록을 펼쳐도 다른 줄을 가리지 않게). 영어 이름.
     /// </summary>
@@ -606,6 +623,20 @@ internal static class ScreenTimelineShots
                 InWindow(w, rows[4]).Union(InWindow(w, rows[^1])),
             ], firstNumber: 6);
         }, settleMs: 700);
+
+        var textRecipe = EffectRecipe.Capture("", "Speech", [new TextEffect { Text = "Hello\nworld" }]).WithParameters(
+        [
+            new RecipeParameter
+            {
+                Id = "text", Name = "Greeting", Kind = RecipeParameterKind.Text, Default = RecipeValue.OfText("Hello\nworld"),
+                Bindings = [new RecipeBinding(0, "text")],
+            },
+        ]);
+        k.Dialog(() => new RecipeParametersDialog(textRecipe).ShowDialog(main), w =>
+        {
+            var editor = ShotKit.Get<StackPanel>(w, "_editor");
+            k.Save(w, "screen-effect-recipes-5", marks: [editor.Children[3], editor.Children[^1]], firstNumber: 13);
+        }, settleMs: 500);
 
         k.Dialog(() => ShotKit.Call(Timeline(main), "EditLayerEffects", body, -1, null, null), w =>
         {
@@ -794,6 +825,17 @@ internal static class ScreenTimelineShots
             ], firstNumber: 6);
             layerBox.IsDropDownOpen = false;
             ShotKit.Pump(200);
+
+            string floating = project.AddScript(FloatingDamageScript);
+            trust.GetMethod("TrustLocal", Any)!.Invoke(null, [floating]);
+            ShotKit.Call(w, "AddScriptEffect", floating);
+            ShotKit.Pump(700);
+            ScrollToSettings(w);
+            var textLabel = ShotKit.All<TextBlock>(settings).First(t => t.Text == "Shown text" && t.IsEffectivelyVisible);
+            var textRow = textLabel.GetVisualAncestors().OfType<Control>().First(c => settings.Children.Contains(c));
+            var textArea = InWindow(w, textRow);
+            k.Save(w, "screen-script-effects-6", crop: PadLeft(textArea, 14).Inflate(new Thickness(12, 6, 12, 6)).Intersect(new Rect(w.ClientSize)),
+                marks: [PadLeft(textArea, 10)], firstNumber: 19);
         }, settleMs: 900);
 
         // 3: 실행 확인 창(처음 보는 스크립트가 든 프로젝트를 열 때)

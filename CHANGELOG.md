@@ -2,6 +2,32 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## Unreleased
+
+### Clean straight lines and curves for vector-redrawn outlines
+- Pixelate's Cleanup adds Clean lines and curves (on by default) and Corner angle (40° by default) for Redraw as vector.
+- Vector-redrawn outlines split at corners and fit straight segments or circular arcs for even pixel steps; a Line cleanness score lets auto optimize prefer tidy results.
+- Fit outline to 1 px fills a second dark outline layer with the neighboring inner color rather than alternating between one and two pixels wide.
+
+### Import 3D model: original view, rotation rings, light handle and roll
+- The import preview shows the smooth Original alongside the Pixel result, sharing camera and lighting; dragging either view rotates and the wheel zooms.
+- An X/Y/Z axis gizmo shows orientation and offers axis views, with X/Y/Z rotation rings around the model while rotating.
+- Drag the outer ring to roll (also a Roll setting), and drag the sun handle to adjust light direction; double-click to flip front and back.
+
+### Text boxes for effects: text settings and ctx.text
+- Script effects can declare a text setting (`type: "text"`, `default`, optional `max` of 1–1000 characters), shown as a multiline field and read from `s.key`.
+- `ctx.text(text, { font, size, color, bold, italic, smooth, align, letterSpacing, lineSpacing, width })` draws text into an image that scripts can place with `img.blendOver`.
+- Effect recipes can expose the Text effect's text and script text settings as editable text parameters, but not font names or layer pickers.
+
+### Upload multiple PNGs and GIFs in one gallery post
+- Add up to 10 pictures to an ordered upload list, choose each PNG frame or GIF range, reorder rows, and preview them in sequence.
+- Identical PNG frames or GIF frame sequences are warned about and uploaded only once; the first remaining picture is the cover.
+- Gallery cards advance after two seconds for a PNG or one playthrough for a GIF; the lightbox offers thumbnails, navigation, and per-picture downloads when allowed.
+
+### Remove exported pictures from the export list
+- The red trash button removes an export setting and asks whether to delete its already-created output files.
+- Confirming moves those files to the app trash; cancelling the deletion keeps them, including when a later project save cleans up obsolete outputs.
+
 ## v1.14.135 (2026-11-21)
 
 ### Open 3D models as pixel art

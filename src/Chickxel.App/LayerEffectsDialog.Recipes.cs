@@ -289,6 +289,23 @@ public sealed partial class LayerEffectsDialog
                     var choices = parameter.Choices.ToArray();
                     _form.Row(parameter.Name, ChoiceEditor(choices, Array.IndexOf(choices, value.Choice), k => Set(RecipeValue.OfChoice(choices[k]))));
                     break;
+                case RecipeParameterKind.Text:
+                    // 글자마다 바로 반영한다(글씨 효과 칸과 같음 — 확인하면 창 전체가 실행취소 한 단계)
+                    var text = new TextBox
+                    {
+                        Text = value.Text,
+                        AcceptsReturn = true,
+                        TextWrapping = TextWrapping.NoWrap,
+                        Width = 260,
+                        Height = 76,
+                        Margin = new Thickness(3),
+                    };
+                    if (RecipeInstances.TextMaxLength(_effects, recipe, parameter) is { } limit) text.MaxLength = limit;
+                    ScrollViewer.SetHorizontalScrollBarVisibility(text, ScrollBarVisibility.Auto);
+                    ScrollViewer.SetVerticalScrollBarVisibility(text, ScrollBarVisibility.Auto);
+                    text.TextChanged += (_, _) => Set(RecipeValue.OfText(text.Text ?? ""));
+                    _form.Block(parameter.Name, text);
+                    break;
             }
         }
 

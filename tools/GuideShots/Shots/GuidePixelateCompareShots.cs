@@ -43,6 +43,12 @@ internal static class GuidePixelateCompareShots
         Save(k, Row(Scale(Run(thick, b with { Cleanup = b.Cleanup with { OutlineFit = OutlineFit.Off } }), 4),
                 Scale(Run(thick, b with { Cleanup = b.Cleanup with { OutlineFit = OutlineFit.Thin } }), 4)),
             "pixelate-cleanup-compare");
+
+        // 외곽선이 두 칸 두께인 같은 원본을 벡터로 다시 그리고 직선·곡선 정리만 바꾼다(얼굴·머리 외곽선 8배).
+        var vector = b with { Cleanup = b.Cleanup with { OutlineFit = OutlineFit.Vector, VectorCornerAngle = 40 } };
+        var rough = Run(thick, vector with { Cleanup = vector.Cleanup with { VectorCleanLines = false } });
+        var clean = Run(thick, vector with { Cleanup = vector.Cleanup with { VectorCleanLines = true } });
+        Save(k, Row(Scale(Crop(rough, Face), 8), Scale(Crop(clean, Face), 8)), "pixelate-cleanup-compare-vector");
     }
 
     /// <summary>합성 칸 그림(<see cref="MixedCells"/>)의 칸 크기·열·행.</summary>

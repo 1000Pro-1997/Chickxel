@@ -637,11 +637,11 @@ public sealed class ExportDialog : DialogBase
             _list.Children.Add(Row(SheetLabel(x), x.ExportOnSave, _selected < 0,
                 v => _project.Edit(UiStrings.ExportList_Undo, ProjectChange.Settings, () => x.ExportOnSave = v),
                 () => Select(-1),
-                () =>
+                () => RemoveRow(() =>
                 {
                     _project.Edit(UiStrings.ExportList_Undo, ProjectChange.Settings, () => x.ExportFrames = x.ExportParts = false);
                     Select(_selected < 0 ? 0 : _selected);
-                }));
+                })));
         for (int i = 0; i < x.Entries.Count; i++)
         {
             int index = i;
@@ -652,14 +652,56 @@ public sealed class ExportDialog : DialogBase
             _list.Children.Add(Row(label, e.OnSave, _selected == index,
                 v => _project.Edit(UiStrings.ExportList_Undo, ProjectChange.Settings, () => e.OnSave = v),
                 () => Select(index),
-                () =>
+                () => RemoveRow(() =>
                 {
                     _project.Edit(UiStrings.ExportList_Undo, ProjectChange.Settings, () => x.Entries.RemoveAt(index));
                     Select(_selected > index ? _selected - 1 : _selected == index ? Math.Min(index, x.Entries.Count - 1) : _selected);
-                }));
+                })));
         }
         if (_list.Children.Count == 0)
             _list.Children.Add(new TextBlock { Text = UiStrings.ExportList_Empty, Foreground = AppTheme.DimTextBrush, TextWrapping = TextWrapping.Wrap });
+    }
+
+    /// <summary>
+    /// 목록 줄을 뺀다(<paramref name="remove"/> = 실행취소 한 단계로 빼고 다시 고르기). 그 줄로 만든 파일(지난 저장·내보내기 기록에 있고 지금 있으며
+    /// 남은 줄이 만들지 않는 것)이 있으면 같이 지울지 묻는다: 확인 = 지금 앱 휴지통으로(되살릴 수 있음), 취소·닫기 = 그대로 둠.
+    /// 어느 쪽이든 기록에서 지워 다음 저장의 옛 결과 정리가 건드리지 않는다(옮기다 실패하면 기록에 남겨 다음 저장 때 정리).
+    /// </summary>
+    private void RemoveRow(Action remove)
+    {
+        var files = ProjectExport.OutputsDroppedBy(_project, remove);
+        if (files.Count == 0) return;
+        // 이미지 먼저, 딸린 .meta는 뒤에
+        var ordered = files.OrderBy(f => f.EndsWith(".meta", StringComparison.OrdinalIgnoreCase)).ToList();
+        if (Ui.Ask(this, UiStrings.FormatExportList_RemoveFilesAsk(files: FileList(ordered)), UiStrings.ExportList_Remove,
+                MessageButtons.OKCancel, MessageIcon.Question) == DialogResult.OK)
+        {
+            var first = Path.GetFileName(ordered[0]);
+            var label = ordered.Count == 1 ? MainStrings.FormatExport_TrashOne(name: first) : MainStrings.FormatExport_TrashMany(name: first, count: ordered.Count - 1);
+            try
+            {
+                new AppTrash(AppTrash.DefaultRoot).Add(ordered, label);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                Ui.Error(this, ex.Message);
+                return;
+            }
+            finally
+            {
+                _exported.AddRange(ordered); // 파일 목록 새로 고침
+            }
+            ResultMessage = UiStrings.FormatFileInfo_ExportTrashed(name: ordered.Count == 1 ? first : UiStrings.FormatFileInfo_ExportMany(first: first, count: ordered.Count - 1));
+        }
+        ProjectExport.ForgetOutputs(_project, ordered);
+    }
+
+    /// <summary>묻는 상자에 보일 파일 이름들(몇 개까지, 나머지는 "… 외 N개").</summary>
+    private static string FileList(IReadOnlyList<string> files)
+    {
+        const int Shown = 5;
+        var text = string.Join("\n", files.Take(Shown).Select(Path.GetFileName));
+        return files.Count > Shown ? text + "\n" + UiStrings.FormatExportList_RemoveFilesMore(count: files.Count - Shown) : text;
     }
 
     /// <summary>시트 줄 이름: "hero.png — 이미지 시트" (+ Unity).</summary>
@@ -673,7 +715,8 @@ public sealed class ExportDialog : DialogBase
         check.IsCheckedChanged += (_, _) => setOnSave(check.On());
         var text = new TextBlock { Text = label, Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
         ToolTip.SetTip(text, label);
-        var del = Ui.IconButton(VectorIcon.X, UiStrings.ExportList_Remove, (_, _) => Dispatcher.UIThread.Post(remove));
+        var del = Ui.IconButton(VectorIcon.Trash, UiStrings.ExportList_Remove, (_, _) => Dispatcher.UIThread.Post(remove));
+        ((IconView)del.Content!).Foreground = AppTheme.UnsavedBrush;
         DockPanel.SetDock(check, Dock.Left);
         DockPanel.SetDock(del, Dock.Right);
         var row = new Border

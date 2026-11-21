@@ -21,6 +21,8 @@ public sealed record ModelRenderSettings
     public int Height { get; init; } = 128;
     public float Yaw { get; init; } = 30;
     public float Pitch { get; init; } = 20;
+    /// <summary>카메라의 시선 축 주위 회전(도, 양수 = 그림이 시계 방향으로 회전).</summary>
+    public float Roll { get; init; }
     public ModelProjection Projection { get; init; } = ModelProjection.Orthographic;
     /// <summary>원근일 때 세로 시야각.</summary>
     public float FieldOfView { get; init; } = 35;
@@ -32,6 +34,8 @@ public sealed record ModelRenderSettings
     /// <summary>빛이 오는 방향: 카메라 기준 가로(양수 = 오른쪽에서)·세로(양수 = 위에서) 각도.</summary>
     public float LightYaw { get; init; } = -40;
     public float LightPitch { get; init; } = 45;
+    /// <summary>빛을 카메라 뒤쪽 반구로 옮긴다(화면상의 위치는 그대로, 깊이 방향만 뒤집음).</summary>
+    public bool LightBack { get; init; }
     /// <summary>주변광(0~1): 빛을 받지 않는 면의 밝기.</summary>
     public float Ambient { get; init; } = 0.4f;
     /// <summary>빛 세기(0~2).</summary>

@@ -60,7 +60,8 @@ public class ScriptApiCatalogTests
               settings: [{ key: "k", label: "K", type: "number", min: 0, max: 1, step: 0.5, default: 0 },
                          { key: "c", label: "C", type: "choice", choices: [{ value: "a", label: "A" }], default: "a" },
                          { key: "l", type: "colorList", min: 1, max: 3, alpha: false, default: ["#ff8800"] },
-                         { key: "x", type: "int", widget: "point", pair: "y" }, { key: "y", type: "int" }],
+                         { key: "x", type: "int", widget: "point", pair: "y" }, { key: "y", type: "int" },
+                         { key: "text", type: "text", max: 80, default: "two\nlines" }],
               padding: [1, 1, 1, 1], render(img, ctx, s) {} });
             """);
         Assert.True(parsed.Success, string.Join("\n", parsed.Errors));
@@ -68,6 +69,8 @@ public class ScriptApiCatalogTests
         Assert.Equal(("a", true, true, EffectEasing.EaseOut, ScriptEffectArea.Local, 2, "knight", "wizard", 16),
             (program.Author, program.Animated, program.Deferred, program.Easing, program.Area, program.Radius, program.PreviewChick, program.PreviewEndChick, program.PreviewFrames));
         Assert.Equal((false, ScriptSettingWidget.Point, "y"), (program.Settings[2].Alpha, program.Settings[3].Widget, program.Settings[3].Pair));
+        Assert.Equal((ScriptSettingType.Text, 80.0, "two\nlines"), (program.Settings[5].Type, program.Settings[5].Max, program.Settings[5].Default));
+        Assert.Contains(ScriptApiCatalog.In(ScriptApiCatalog.Context), member => member.Name == "text" && member.Members == ScriptApiCatalog.Image);
         Assert.Equal("left", program.PreviewMotion.Preset);
         var en = program.Translations["en"];
         Assert.Equal(("X", "D", "Kay", "Ay"), (en.Name, en.Description, en.Labels["k"], en.Labels["c.a"]));

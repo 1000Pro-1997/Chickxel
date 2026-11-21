@@ -19,10 +19,11 @@ public static class RecipeParameters
         EffectParameterKind.Int => RecipeParameterKind.Int,
         EffectParameterKind.Bool => RecipeParameterKind.Bool,
         EffectParameterKind.Choice => RecipeParameterKind.Choice,
+        EffectParameterKind.Text => RecipeParameterKind.Text,
         _ => null,
     };
 
-    /// <summary>매개변수로 내보낼 수 있는 설정인지(값 하나짜리 색·정수·켜고 끄기·고르기).</summary>
+    /// <summary>매개변수로 내보낼 수 있는 설정인지(값 하나짜리 색·정수·켜고 끄기·고르기·글, <see cref="EffectParameter.Exposed"/>).</summary>
     public static bool CanExpose(EffectParameter setting) => setting.Exposed && KindOf(setting.Kind) is not null;
 
     /// <summary>
@@ -34,13 +35,16 @@ public static class RecipeParameters
 
     /// <summary>효과의 설정 <paramref name="key"/> 지금 값(내보낼 수 없는 설정이면 null).</summary>
     public static RecipeValue? ValueOf(LayerEffect effect, string key, Func<string, ScriptEffectProgram?>? programs = null)
-        => SettingOf(effect, key, programs) is { } setting && KindOf(setting.Kind) is { } kind && RecipeValue.TryRead(kind, setting.Write(effect), out var value)
+        => SettingOf(effect, key, programs) is { } setting && CanExpose(setting) && RecipeValue.TryRead(KindOf(setting.Kind)!.Value, setting.Write(effect), out var value)
             ? value
             : null;
 
-    /// <summary>설정 <paramref name="key"/>에 <paramref name="value"/>를 넣은 새 효과(종류가 맞지 않으면 효과 그대로). 범위 밖 정수는 모델(스크립트는 그 schema)이 자른다.</summary>
+    /// <summary>
+    /// 설정 <paramref name="key"/>에 <paramref name="value"/>를 넣은 새 효과(내보낼 수 없는 설정이거나 종류가 맞지 않으면 효과 그대로).
+    /// 범위 밖 정수·긴 글은 모델(스크립트는 그 schema)이 자른다.
+    /// </summary>
     public static LayerEffect With(LayerEffect effect, string key, RecipeValue value, Func<string, ScriptEffectProgram?>? programs = null)
-        => SettingOf(effect, key, programs) is { } setting && KindOf(setting.Kind) == value.Kind && setting.TryRead(effect, value.ToJson(), out var result)
+        => SettingOf(effect, key, programs) is { } setting && CanExpose(setting) && KindOf(setting.Kind) == value.Kind && setting.TryRead(effect, value.ToJson(), out var result)
             ? result
             : effect;
 
@@ -77,6 +81,21 @@ public static class RecipeParameters
         return common ?? [];
     }
 
+    /// <summary>연결된 글 설정이 모두 받는 최대 글자 수(<see cref="EffectParameter.MaxLength"/> 중 가장 작은 값). 글 설정이 없으면 null.</summary>
+    public static int? TextMaxLength(IReadOnlyList<LayerEffect> effects, IEnumerable<RecipeBinding> bindings,
+        Func<string, ScriptEffectProgram?>? programs = null)
+        => TextMaxLength(bindings.Select(binding => SettingOf(effects, binding, programs)));
+
+    /// <summary><paramref name="settings"/> 중 글 설정의 가장 작은 최대 글자 수(없으면 null).</summary>
+    internal static int? TextMaxLength(IEnumerable<EffectParameter?> settings)
+    {
+        int? max = null;
+        foreach (var setting in settings)
+            if (setting is { Kind: EffectParameterKind.Text, MaxLength: { } length })
+                max = max is { } m ? Math.Min(m, length) : length;
+        return max;
+    }
+
     /// <summary>레시피 효과 목록에 매개변수 값을 넣은 새 목록(값은 <see cref="RecipeParameter.Clamp"/>로 맞춤, 없는 연결은 건너뜀).</summary>
     public static IReadOnlyList<LayerEffect> Apply(IReadOnlyList<LayerEffect> effects, RecipeParameter parameter, RecipeValue value,
         Func<string, ScriptEffectProgram?>? programs = null)
@@ -105,7 +124,8 @@ public static class RecipeParameters
     /// <summary>
     /// 매개변수를 레시피 효과 목록(<paramref name="effects"/>)의 schema로 검사한다. 문제마다 <paramref name="add"/>(종류, 필드 경로와 기술 값)를 부르고,
     /// 문제가 있는 매개변수 번호를 돌려준다. 규칙: ID 모양·중복, 이름, 연결이 하나 이상, 연결마다 있는 효과 번호·schema 키·같은 종류의 내보낼 수 있는 설정,
-    /// 같은 설정을 두 번 잇지 않음, 정수 범위·기본값이 연결된 모든 설정의 schema 범위 안, 고를 수 있는 값이 연결된 모든 설정에서 고를 수 있고 기본값이 그중 하나.
+    /// 같은 설정을 두 번 잇지 않음, 정수 범위·기본값이 연결된 모든 설정의 schema 범위 안, 고를 수 있는 값이 연결된 모든 설정에서 고를 수 있고 기본값이 그중 하나,
+    /// 글 기본값이 연결된 모든 글 설정의 최대 글자 수 안.
     /// 스크립트 효과는 <paramref name="programs"/>(해시 → 해석 결과, 없으면 실행을 허락한 원문)가 선언한 설정으로 본다. 원문을 찾지 못한 스크립트 효과의
     /// 스크립트 설정 연결은 맞는지 알 수 없어 문제로 치지 않는다(중복만 본다).
     /// </summary>
@@ -192,6 +212,11 @@ public static class RecipeParameters
                     if (parameter.Default.Kind == RecipeParameterKind.Choice && !parameter.Choices.Contains(parameter.Default.Choice, StringComparer.Ordinal))
                         Report(AssetIssueCode.RecipeParameterOutOfRange, $"{field}.default: {parameter.Default.Choice}");
                     break;
+                case RecipeParameterKind.Text:
+                    if (parameter.Default.Kind == RecipeParameterKind.Text && TextMaxLength(settings.Select(s => (EffectParameter?)s.Setting)) is { } maxLength
+                        && parameter.Default.Text.Length > maxLength)
+                        Report(AssetIssueCode.RecipeParameterOutOfRange, $"{field}.default: {parameter.Default.Text.Length} > {maxLength}");
+                    break;
             }
         }
         return bad;
@@ -222,6 +247,13 @@ public static class RecipeInstances
                     return parameter.Clamp(value);
         return parameter.Default;
     }
+
+    /// <summary>
+    /// 글 매개변수가 받는 최대 글자 수: 목록에 남아 있는 연결된 글 설정의 <see cref="EffectParameter.MaxLength"/> 중 가장 작은 값(연결된 효과가 모두 없어졌으면 null).
+    /// </summary>
+    public static int? TextMaxLength(IReadOnlyList<LayerEffect> effects, EffectRecipeInstance instance, RecipeParameter parameter)
+        => RecipeParameters.TextMaxLength(Members(effects, instance.Id)
+            .SelectMany(i => parameter.Bindings.Where(b => b.Effect == effects[i].Recipe!.Slot).Select(b => RecipeParameters.SettingOf(effects[i], b.Key))));
 
     /// <summary>
     /// 묶음 <paramref name="instanceId"/>의 매개변수 <paramref name="parameterId"/>를 <paramref name="value"/>로 바꾼 새 목록: 연결된 모든 구성 효과의 설정을 한 번에 바꾼다.

@@ -134,6 +134,86 @@ public class ExportListTests
         Assert.Empty(ProjectExport.BeginExport(p).Stale);
     }
 
+    /// <summary>GIF 줄 + 프레임마다 PNG 줄(둘 다 저장할 때)로 한 번 저장한 프로젝트.</summary>
+    private static SpriteProject SavedWithTwoRows(TempDir dir)
+    {
+        var p = TwoFrames();
+        p.Edit("목록", ProjectChange.Settings, () =>
+        {
+            p.Export.Entries.Add(Anim(AnimationExportFormat.Gif, "hero.gif", true));
+            p.Export.Entries.Add(Anim(AnimationExportFormat.FramePngs, "hero_frames", true));
+        });
+        ProjectIO.SaveWithExport(p, dir.File("hero.chickxel"));
+        return p;
+    }
+
+    [Fact]
+    public void RemovedRow_ReportsOnlyItsOwnFiles()
+    {
+        using var dir = new TempDir();
+        var p = SavedWithTwoRows(dir);
+        var gif = Path.GetFullPath(dir.File("hero.gif"));
+
+        var dropped = ProjectExport.OutputsDroppedBy(p, () => p.Edit("빼기", ProjectChange.Settings, () => p.Export.Entries.RemoveAt(0)));
+        Assert.Equal([gif], dropped);
+        Assert.True(File.Exists(gif)); // 파일은 건드리지 않는다
+
+        // 이미 뺀 줄(GIF)의 결과는 다음 줄을 뺄 때 다시 들지 않는다
+        var frames = ProjectExport.OutputsDroppedBy(p, () => p.Edit("빼기", ProjectChange.Settings, () => p.Export.Entries.RemoveAt(0)));
+        Assert.Equal(["hero_001.png", "hero_002.png"], frames.Select(Path.GetFileName).Order());
+    }
+
+    [Fact]
+    public void RemovedRow_WithoutRecord_ReportsNothing()
+    {
+        var p = TwoFrames();
+        p.Edit("목록", ProjectChange.Settings, () => p.Export.Entries.Add(Anim(AnimationExportFormat.Gif, "hero.gif", true)));
+        Assert.Empty(ProjectExport.OutputsDroppedBy(p, () => p.Edit("빼기", ProjectChange.Settings, () => p.Export.Entries.Clear())));
+        Assert.Empty(p.Export.Entries);
+    }
+
+    [Fact]
+    public void RemovedRow_KeptFiles_AreNotCleanedUpOnSave()
+    {
+        using var dir = new TempDir();
+        var p = SavedWithTwoRows(dir);
+        var gif = Path.GetFullPath(dir.File("hero.gif"));
+
+        var dropped = ProjectExport.OutputsDroppedBy(p, () => p.Edit("빼기", ProjectChange.Settings, () => p.Export.Entries.RemoveAt(0)));
+        ProjectExport.ForgetOutputs(p, dropped); // 취소: 파일은 남기고 기록에서만 지움
+        Assert.DoesNotContain(gif, p.ExportedFiles!, StringComparer.OrdinalIgnoreCase);
+
+        var saved = ProjectIO.SaveWithExport(p);
+        Assert.DoesNotContain(gif, saved.Export!.Stale, StringComparer.OrdinalIgnoreCase);
+        Assert.True(File.Exists(gif));
+        Assert.DoesNotContain(gif, ProjectIO.Load(dir.File("hero.chickxel")).ExportedFiles!, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void RemovedRow_TrashedFiles_AreForgotten()
+    {
+        using var dir = new TempDir();
+        var p = SavedWithTwoRows(dir);
+        var gif = Path.GetFullPath(dir.File("hero.gif"));
+
+        var dropped = ProjectExport.OutputsDroppedBy(p, () => p.Edit("빼기", ProjectChange.Settings, () => p.Export.Entries.RemoveAt(0)));
+        foreach (var f in dropped) File.Delete(f); // 확인: 앱이 앱 휴지통으로 옮김
+        ProjectExport.ForgetOutputs(p, dropped);
+
+        Assert.DoesNotContain(gif, p.ExportedFiles!, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains(p.ExportedFiles!, f => Path.GetFileName(f) == "hero_001.png"); // 남은 줄의 기록은 그대로
+        Assert.Empty(ProjectIO.SaveWithExport(p).Export!.Stale);
+    }
+
+    [Fact]
+    public void RemovedRow_NotForgotten_IsStillCleanedUpOnSave()
+    {
+        using var dir = new TempDir();
+        var p = SavedWithTwoRows(dir);
+        var dropped = ProjectExport.OutputsDroppedBy(p, () => p.Edit("빼기", ProjectChange.Settings, () => p.Export.Entries.RemoveAt(0)));
+        Assert.Equal(dropped, ProjectIO.SaveWithExport(p).Export!.Stale);
+    }
+
     [Fact]
     public void ListPreset_CarriesRowsToAnotherProject_WithItsName()
     {
