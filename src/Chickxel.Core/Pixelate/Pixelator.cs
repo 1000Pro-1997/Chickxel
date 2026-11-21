@@ -145,6 +145,13 @@ public sealed class PixelateSource
         return new PixelateSource(image, cleaned, bg, split, s.Background, s.Frames);
     }
 
+    /// <summary>
+    /// 배경 지운 결과는 그대로 두고 프레임만 <paramref name="frames"/>로 다시 나눈 준비 결과(뽑아서 최적화 — <see cref="PixelateOptimizeOptions.SampleFrames"/>).
+    /// 배경 남기기(한 장)면 다시 나눌 것이 없으므로 쓰지 않는다.
+    /// </summary>
+    public PixelateSource WithFrames(FrameSettings frames)
+        => new(Original, Cleaned, Background, FrameSplitter.Run(Background.Foreground, Original.Width, Original.Height, frames), BackgroundSettings, frames);
+
     /// <summary>이 준비 결과를 <paramref name="s"/>에도 쓸 수 있는지(배경·나누기 설정이 같음 — 맞추기·캔버스는 상관없음).</summary>
     public bool Matches(PixelateSettings s)
         => BackgroundSettings == s.Background && SplitKey(FrameSettings) == SplitKey(s.Frames);

@@ -34,4 +34,45 @@
   <data name="Refs_Example_grass_Tags" xml:space="preserve"><value>grass, dirt, ground, tile, repeat, 16px</value></data>
   <data name="Gif_InvalidFile" xml:space="preserve"><value>Not a GIF file, or its header is damaged.</value></data>
   <data name="Gif_NoFrames" xml:space="preserve"><value>The GIF has no readable frames.</value></data>
+  <data name="Model_UnsupportedFormat" xml:space="preserve"><value>Unsupported 3D model format: {extension}</value></data>
+  <data name="Model_NoTriangles" xml:space="preserve"><value>The model has no triangles to draw.</value></data>
+  <data name="Model_TooManyTriangles" xml:space="preserve"><value>The model has too many triangles: {count} (max {max}).</value></data>
+  <data name="Model_TextureTooLarge" xml:space="preserve"><value>A model texture is too large: {width}x{height} (max {max}px).</value></data>
+  <data name="Model_Warning_TextureUnreadable" xml:space="preserve"><value>Could not read a texture; using the base color only: {name}</value></data>
+  <data name="Model_Warning_TextureMissing" xml:space="preserve"><value>Texture file not found; using the base color only: {file}</value></data>
+  <data name="Gltf_InvalidGlb" xml:space="preserve"><value>Not a GLB file, or its header is damaged.</value></data>
+  <data name="Gltf_InvalidJson" xml:space="preserve"><value>Could not read the glTF JSON: {message}</value></data>
+  <data name="Gltf_UnsupportedVersion" xml:space="preserve"><value>Only glTF 2.0 is supported (this file: {version}).</value></data>
+  <data name="Gltf_CompressedMesh" xml:space="preserve"><value>Compressed meshes ({extension}) are not supported. Export the glTF again without compression.</value></data>
+  <data name="Gltf_UnsupportedExtension" xml:space="preserve"><value>This model requires a glTF extension that is not supported: {extension}</value></data>
+  <data name="Gltf_Malformed" xml:space="preserve"><value>Invalid glTF data: {where}</value></data>
+  <data name="Gltf_Warning_MorphTargets" xml:space="preserve"><value>Morph targets (shape keys) are not drawn; only the base shape is.</value></data>
+  <data name="Gltf_Warning_PrimitiveMode" xml:space="preserve"><value>Point and line primitives are not drawn (mode {mode}).</value></data>
+  <data name="Gltf_Warning_WeightsAnimation" xml:space="preserve"><value>Morph weight animations are not played.</value></data>
+  <data name="Obj_Malformed" xml:space="preserve"><value>Line {line} of the OBJ file is invalid.</value></data>
+  <data name="Obj_Warning_MtlMissing" xml:space="preserve"><value>Material file (.mtl) not found; drawing with the default material: {file}</value></data>
+  <data name="ModelPreset_ReadFailed" xml:space="preserve"><value>Could not read the 3D model preset file: {error}</value></data>
+  <data name="ModelPreset_NewerVersion" xml:space="preserve"><value>This 3D model preset file is from a newer Chickxel (format version {version}).</value></data>
+  <data name="ModelPreset_TopDown8" xml:space="preserve"><value>Top-down 8 directions (angled)</value></data>
+  <data name="ModelPreset_Overhead8" xml:space="preserve"><value>Straight overhead 8 directions</value></data>
+  <data name="ModelPreset_Isometric4" xml:space="preserve"><value>Isometric 4 directions (2:1)</value></data>
+  <data name="ModelPreset_Side" xml:space="preserve"><value>Side view (side-scroller)</value></data>
+  <data name="ModelPreset_Icon32" xml:space="preserve"><value>Item icon 32 px</value></data>
+  <data name="ModelPreset_Character" xml:space="preserve"><value>Character animation 64 px</value></data>
+  <data name="ModelPreset_LargeForPixelate" xml:space="preserve"><value>Large and smooth (for Pixelate)</value></data>
+  <data name="AnimImport_NoAnimations" xml:space="preserve"><value>The selected file contains no animation.</value></data>
+  <data name="AnimImport_NoMatchingBones" xml:space="preserve"><value>None of the animation's bone names match the character's bones. The character and the animation must use the same skeleton (for example, both downloaded from Mixamo).</value></data>
+  <data name="AnimImport_Warning_DuplicateBone" xml:space="preserve"><value>Several bones share the same name; the animation is attached to only one of them: {bone}</value></data>
+  <data name="AnimImport_Warning_UnmatchedBones" xml:space="preserve"><value>Motion of {count} bones not found in the character is discarded: {bones}</value></data>
+  <data name="AnimImport_Warning_MatrixNode" xml:space="preserve"><value>This node has a fixed matrix and cannot be animated: {bone}</value></data>
+  <data name="AnimImport_Warning_EmptyClip" xml:space="preserve"><value>Skipped because no bone motion matches the character: {clip}</value></data>
+  <data name="Model_NoAnimations" xml:space="preserve"><value>This file contains no animation.</value></data>
+  <data name="Fbx_AsciiNotSupported" xml:space="preserve"><value>ASCII FBX files can't be read. Export the file again as 'FBX Binary' (Mixamo's default format).</value></data>
+  <data name="Fbx_InvalidFile" xml:space="preserve"><value>Not an FBX file, or the header is invalid.</value></data>
+  <data name="Fbx_UnsupportedVersion" xml:space="preserve"><value>FBX {version} files can't be read. Export the file again as FBX 7.x 'FBX Binary' (Mixamo's default format).</value></data>
+  <data name="Fbx_Malformed" xml:space="preserve"><value>Invalid FBX data: {where}</value></data>
+  <data name="Fbx_Warning_UnsupportedGeometry" xml:space="preserve"><value>FBX geometry that isn't a mesh is not drawn: {type}</value></data>
+  <data name="Fbx_Warning_BlendShapes" xml:space="preserve"><value>Blend shapes (morphs) are not drawn; only the base shape is drawn.</value></data>
+  <data name="Fbx_Warning_AnimationLayers" xml:space="preserve"><value>The animation has several layers; only the first layer is used: {name}</value></data>
+  <data name="Fbx_Warning_LayerMapping" xml:space="preserve"><value>Unsupported FBX layer mapping, ignored: {element} ({mapping})</value></data>
 </root>

@@ -55,6 +55,7 @@ public sealed class FileInfoDialog : DialogBase
             {
                 MediaKind.Project => UiStrings.FileInfo_Canvas,
                 MediaKind.Image or MediaKind.Video => UiStrings.FileInfo_Pixels,
+                MediaKind.Model => UiStrings.FileInfo_Triangles,
                 _ => null,
             };
         if (firstLabel is null) return;
@@ -91,6 +92,7 @@ public sealed class FileInfoDialog : DialogBase
     {
         if (folder) return ReadFolder(path, token);
         if (kind == MediaKind.Project) return ReadProject(path, out _);
+        if (kind == MediaKind.Model) return ReadModel(path);
         // ffmpeg가 있어야 푸는 그림(AVIF·HEIC)은 직접 읽기가 못 세면 영상처럼 ffmpeg로 읽는다(썸네일과 같은 길).
         if (kind == MediaKind.Video || (MediaFormats.NeedsFfmpeg(path) && ImageUtil.CountFrames(path) == 0)) return ReadVideo(path, token);
         return ReadImage(path);
@@ -163,6 +165,31 @@ public sealed class FileInfoDialog : DialogBase
         return rows;
     }
 
+    /// <summary>3D 모델: 그릴 삼각형 수·재질 수·애니메이션 수(애니메이션이 있을 때만).</summary>
+    private static List<(string, string)> ReadModel(string path)
+    {
+        Chickxel.Core.Scene3D.ModelScene scene;
+        try
+        {
+            scene = Chickxel.Core.Scene3D.ModelLoader.Load(path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            return [(UiStrings.FileInfo_Triangles, UiStrings.FileInfo_Unreadable)];
+        }
+        long triangles = 0;
+        foreach (var node in scene.Nodes)
+            if (node.Mesh >= 0 && node.Mesh < scene.Meshes.Count)
+                foreach (var p in scene.Meshes[node.Mesh].Primitives) triangles += p.Indices.Length / 3;
+        var rows = new List<(string, string)>
+        {
+            (UiStrings.FileInfo_Triangles, Count((int)Math.Min(triangles, int.MaxValue))),
+            (UiStrings.FileInfo_Materials, Count(scene.Materials.Count)),
+        };
+        if (scene.Animations.Count > 0) rows.Add((UiStrings.FileInfo_Animations, Count(scene.Animations.Count)));
+        return rows;
+    }
+
     /// <summary>영상(과 ffmpeg로만 푸는 그림): ffmpeg로 읽은 가장 큰 비디오 스트림의 크기, 길이·초당 프레임(정지 그림이면 뺌).</summary>
     private static List<(string, string)> ReadVideo(string path, CancellationToken token)
     {
@@ -197,6 +224,7 @@ public sealed class FileInfoDialog : DialogBase
             MediaKind.Project => UiStrings.FileInfo_KindProject,
             MediaKind.Image => UiStrings.FormatFileInfo_KindImage(format: format),
             MediaKind.Video => UiStrings.FormatFileInfo_KindVideo(format: format),
+            MediaKind.Model => UiStrings.FormatFileInfo_KindModel(format: format),
             _ => UiStrings.FormatFileInfo_KindFile(format: format),
         };
     }

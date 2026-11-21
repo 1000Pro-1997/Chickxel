@@ -101,6 +101,9 @@
 <li><a href="#files">Files · saving · export</a>
 <ol><li><a href="#files-roles">File types and where they go</a></li><li><a href="#files-open">Opening files</a></li><li><a href="#files-png-import">Opening (importing) PNGs</a></li><li><a href="#files-open-media">Opening images, animations and videos</a></li><li><a href="#files-drop-layer">Dropping images onto the canvas</a></li><li><a href="#files-save">Saving</a></li><li><a href="#files-autosave">Autosave</a></li><li><a href="#files-revert">Revert to saved</a></li><li><a href="#files-history">Undo history that survives closing</a></li><li><a href="#files-cell-names">Export cell names</a></li><li><a href="#files-cleanup">Cleaning up old outputs and renaming files</a></li><li><a href="#files-quit">Save prompt when closing</a></li><li><a href="#files-settings">Preferences</a></li><li><a href="#files-crash-log">When errors occur</a></li></ol>
 </li>
+<li><a href="#model">Importing 3D models</a>
+<ol><li><a href="#model-open">Opening 3D models</a></li><li><a href="#model-import">The import window</a></li><li><a href="#model-view">Size, angle, light and shading</a></li><li><a href="#model-pixel">Pixel cleanup and outlines</a></li><li><a href="#model-frames">Frames: single image, turntable, animation</a></li><li><a href="#model-animation">Attaching animations from other files</a></li></ol>
+</li>
 <li><a href="#pixelate">Pixelate AI images</a>
 <ol><li><a href="#pixelate-open">Opening the window and loading a source</a></li><li><a href="#pixelate-view">Source and preview</a></li><li><a href="#pixelate-candidates">Candidates and scores</a></li><li><a href="#pixelate-zoom">Enlarged view and color decision</a></li><li><a href="#pixelate-color-edit">Excluding and pinning colors</a></li><li><a href="#pixelate-presets">Presets and Clean up</a></li><li><a href="#pixelate-settings">Pipeline settings</a></li><li><a href="#pixelate-grid">Pixel grid and output size</a></li><li><a href="#pixelate-palette">Cell color and palette</a></li><li><a href="#pixelate-cleanup">Cleanup and outlines</a></li><li><a href="#pixelate-optimize">Auto optimize</a></li><li><a href="#pixelate-optimize-settings">Auto Optimize Settings window</a></li><li><a href="#pixelate-score">Score and optimize criteria</a></li><li><a href="#pixelate-output">Output</a></li><li><a href="#pixelate-ai">Refining with AI (experimental)</a></li></ol>
 </li>
@@ -773,7 +776,7 @@
 <h4>List and search</h4>
 <ul>
 <li>The list is sorted by path and the thumbnail size is fixed. It shows <code>.chickxel</code> (including older <code>.gpixel</code>) and PNG files.</li>
-<li>JPG, BMP, GIF, WebP, APNG, ICO, AVIF and HEIC images and videos (MP4, WebM, MOV, MKV, AVI, …) are listed too (thumbnail = first <a class="term" href="#screen-timeline">frame</a>). Videos get a film badge, with a first-frame thumbnail when <a class="term" href="#files-open-media">ffmpeg</a> is available. Clicking one opens it in a new tab as in <a href="#files-open-media">Opening images, animations and videos</a>.</li>
+<li>JPG, BMP, GIF, WebP, APNG, ICO, AVIF and HEIC images, videos (MP4, WebM, MOV, MKV, AVI, …) and 3D models (GLB, glTF, OBJ, FBX) are listed too (thumbnail = first <a class="term" href="#screen-timeline">frame</a>). Videos get a film badge, with a first-frame thumbnail when <a class="term" href="#files-open-media">ffmpeg</a> is available. 3D models get a cube badge and a thumbnail drawn at the default angle. Clicking one opens it in a new tab as in <a href="#files-open-media">Opening images, animations and videos</a> and <a href="#model-open">Opening 3D models</a>.</li>
 </ul>
 <figure class="shot"><img src="../assets/guide/screen-file-browser-5.png" alt="The file list with the Wolf Adventurer.chickxel bundle expanded: the arrow at the right of the project tile marked 8, and the black outline band around the project and its three exported images marked 9" width="254" height="303" loading="lazy"><figcaption>⑧ Bundle expand/collapse arrow · ⑨ Expanded bundle (black outline band)</figcaption></figure>
 <ul>
@@ -3068,9 +3071,9 @@
 <h2>Files · saving · export</h2>
 <p>This chapter covers the whole path of a file: opening it, keeping your work safe while you edit, saving, and exporting outputs. Everything you edit lives in a single <a class="term" href="#files-roles">project file</a> (<code>.chickxel</code>); outputs for game engines or other programs, such as PNG and <code>.meta</code> files, are rebuilt from it every time you save.</p>
 <ol>
-<li><strong>Open</strong>: a <code>.chickxel</code> opens as is; PNGs, other images, animations and videos are imported as new projects (<a href="#files-open">Opening files</a>). Images dropped on the <a class="term" href="#screen-canvas">canvas</a> become <a class="term" href="#screen-timeline">layers</a> (<a href="#files-drop-layer">Dropping images onto the canvas</a>).</li>
+<li><strong>Open</strong>: a <code>.chickxel</code> opens as is; PNGs, other images, animations and videos are imported as new projects (<a href="#files-open">Opening files</a>). 3D models are drawn at an angle and light you choose and imported as <a class="term" href="#screen-timeline">frames</a> (<a href="#model">Importing 3D models</a>). Images dropped on the <a class="term" href="#screen-canvas">canvas</a> become <a class="term" href="#screen-timeline">layers</a> (<a href="#files-drop-layer">Dropping images onto the canvas</a>).</li>
 <li><strong>While you edit</strong>: files that were saved before are saved automatically when you pause (<a href="#files-autosave">Autosave</a>), and <a class="term" href="#files-history">undo history</a> survives closing the file (<a href="#files-history">Undo history that survives closing</a>). To throw all edits away, use <a href="#files-revert">Revert to saved</a>.</li>
-<li><strong>Save</strong>: <span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span> writes the <code>.chickxel</code> and also makes the outputs of the rows checked for saving in the export list (images, game engine files, animations) (<a href="#files-save">Saving</a>). <a class="term" href="#screen-export">Cell names</a> are covered in <a href="#files-cell-names">Export cell names</a>, and old outputs that are no longer produced in <a href="#files-cleanup">Cleaning up old outputs</a>. For the export list and its settings see <a href="#screen-export">Export dialog</a>; for GIF, APNG and <a class="term" href="#screen-timeline">frame</a> PNGs see <a href="#screen-gif">Exporting GIF, APNG and frame PNGs</a>.</li>
+<li><strong>Save</strong>: <span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span> writes the <code>.chickxel</code> and also makes the outputs of the rows checked for saving in the export list (images, game engine files, animations) (<a href="#files-save">Saving</a>). <a class="term" href="#screen-export">Cell names</a> are covered in <a href="#files-cell-names">Export cell names</a>, and old outputs that are no longer produced in <a href="#files-cleanup">Cleaning up old outputs</a>. For the export list and its settings see <a href="#screen-export">Export dialog</a>; for GIF, APNG and frame PNGs see <a href="#screen-gif">Exporting GIF, APNG and frame PNGs</a>.</li>
 <li><strong>Close</strong>: closing unsaved documents or quitting gathers them in one dialog that asks whether to save (<a href="#files-quit">Save prompt when closing</a>).</li>
 </ol>
 <p>Preferences and the <a class="term" href="#files-settings">settings folder</a> are in <a href="#files-settings">Preferences</a>; unexpected errors, logs and <a class="term" href="#files-crash-log">recovery files</a> are in <a href="#files-crash-log">When errors occur</a>.</p>
@@ -3136,6 +3139,7 @@
 <tr><td>PNG</td><td>The project that made the PNG if there is one; otherwise the PNG is imported as a new project (<a href="#files-png-import">Opening (importing) PNGs</a>).</td></tr>
 <tr><td>JPG, BMP, GIF, WebP, ICO, <a class="term" href="#screen-gif">animated PNG</a></td><td>A new document with one <a class="term" href="#screen-timeline">frame</a> per image frame (<a href="#files-open-media">Opening images, animations and videos</a>).</td></tr>
 <tr><td>Videos (MP4, WebM, MOV, …), AVIF, HEIC</td><td>Read with <a class="term" href="#files-open-media">ffmpeg</a> into a new document. Videos first show the <strong><a class="term" href="#files-open-media">Import video</a></strong> window (<a href="#files-open-media">Opening images, animations and videos</a>).</td></tr>
+<tr><td>3D models (GLB, glTF, OBJ, FBX)</td><td>The <strong><a class="term" href="#model-import">Import 3D model</a></strong> window comes first to set the size, angle, light and frames; the drawn frames become a new document (<a href="#model-open">Opening 3D models</a>).</td></tr>
 </tbody>
 </table></div>
 <h4>Opening by double-clicking in Explorer or Finder</h4>
@@ -3432,6 +3436,176 @@
 <p>If the error forces the app to quit, each document with unsaved edits is saved separately as a recovery file in <code>Chickxel/Recovery/</code> in the settings folder (<code>&lt;document name&gt;-&lt;date time&gt;-&lt;number&gt;.chickxel</code>). The original files aren't changed. Recovery files aren't opened automatically at the next start: open the settings folder with <strong>Help &gt; Open settings file location</strong> and open the file in <code>Recovery</code> yourself.</p>
 </section>
 
+<section class="doc" id="model">
+<h2>Importing 3D models</h2>
+<p>Opening a GLB, glTF, OBJ or FBX 3D model draws it at the size, angle and light you choose and imports the result as pixel-art <a class="term" href="#screen-timeline">frames</a>. Use it to turn characters and props made in 3D into game sprites: top-down 8-direction sprites, isometric props, side-view walk cycles and so on. The imported frames are ordinary images you can edit like any other.</p>
+<p>Opening a model shows the <strong><a class="term" href="#model-import">Import 3D model</a></strong> window. Pick a preset or adjust the values, then click <strong>Import</strong> to get a new tab with one image per frame. You can also draw it large and smooth and hand it to <a href="#pixelate">Pixelate AI images</a> as a source, leaving grid fitting and the <a class="term" href="#screen-palette">palette</a> to that window.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Page</th><th>Read it when</th></tr></thead>
+<tbody>
+<tr><td><a href="#model-open">Opening 3D models</a></td><td>You open a 3D model file or look for one in the <a class="term" href="#screen-file-browser">file browser</a></td></tr>
+<tr><td><a href="#model-import">The import window</a></td><td>You want to know the import window and its presets</td></tr>
+<tr><td><a href="#model-view">Size, angle, light and shading</a></td><td>You set the size, view angle, light and shading</td></tr>
+<tr><td><a href="#model-pixel">Pixel cleanup and outlines</a></td><td>You clean up semi-transparency, colors and outlines for pixel art</td></tr>
+<tr><td><a href="#model-frames">Frames: single image, turntable, animation</a></td><td>You choose between a single image, several directions or an animation</td></tr>
+<tr><td><a href="#model-animation">Attaching animations from other files</a></td><td>You attach animations downloaded from <a class="term" href="#model-animation">Mixamo</a> or elsewhere to a character</td></tr>
+</tbody>
+</table></div>
+
+<h3 id="model-open">Opening 3D models</h3>
+<p>Like images and videos, opening a 3D model creates a new document. It doesn't open right away: the <strong><a class="term" href="#model-import">Import 3D model</a></strong> window comes up first so you can decide how to draw it (<a href="#model-import">The import window</a>).</p>
+<h4>Ways to open</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>Method</th><th>How</th></tr></thead>
+<tbody>
+<tr><td>File menu</td><td><strong>File &gt; Open (.chickxel · image · GIF · video)…</strong> (<span class="key" data-cmd="파일/열기(.chickxel / PNG 가져오기)…"><kbd>Ctrl</kbd>+<kbd>O</kbd></span>). Choose <strong>3D models (GLB, glTF, FBX, OBJ)</strong> in the file type list to see only 3D models.</td></tr>
+<tr><td>Dropping on the window</td><td>Drop the file on the window from Explorer or Finder. Unlike images, a model dropped on the <a class="term" href="#screen-canvas">canvas</a> doesn't become a <a class="term" href="#screen-timeline">layer</a>; it opens in a new tab.</td></tr>
+<tr><td><a class="term" href="#screen-file-browser">File browser</a></td><td>Click its thumbnail (see the figure below).</td></tr>
+<tr><td>As a <a class="term" href="#pixelate">Pixelate</a> source</td><td>Drop it on the Pixelate window, pick it with <strong>Browse…</strong> or add it from the file browser's right-click menu; the images drawn in the same import window become the source (<a href="#pixelate-open">Opening the window and adding a source</a>).</td></tr>
+</tbody>
+</table></div>
+<h4>Supported formats</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>Format</th><th>What is drawn</th><th>Not supported</th></tr></thead>
+<tbody>
+<tr><td>glTF 2.0 (<code>.glb</code>, <code>.gltf</code>)</td><td>Meshes, material colors, textures and vertex colors, alpha cut-off (mask and blend), unlit materials, skeletal (<a class="term" href="#parts-skins">skin</a>) and node animations</td><td>Meshes compressed with Draco or meshopt don't open; a message asks you to export again without compression. Morph targets (shape keys) are drawn in their base shape.</td></tr>
+<tr><td>OBJ (<code>.obj</code> + <code>.mtl</code>)</td><td>Meshes, material colors (<code>Kd</code>) and textures (<code>map_Kd</code>); keep the <code>.mtl</code> and textures next to the OBJ.</td><td>The format has no animation. Without the <code>.mtl</code>, the model is drawn with a default material and a notice.</td></tr>
+<tr><td>FBX (<code>.fbx</code>)</td><td>Binary FBX 7.x (the format <a class="term" href="#model-animation">Mixamo</a> gives you): meshes, textures (including embedded ones), skeleton and skin, animations</td><td>ASCII FBX and version 6.x or older don't open; a message asks you to export again as <strong>FBX Binary</strong>. Blend shapes are drawn in their base shape.</td></tr>
+</tbody>
+</table></div>
+<p>A <strong>Reading 3D model</strong> progress window shows while the file is read. Anything read but not drawn (morph targets and so on) is listed in orange at the bottom of the import window. Models with no triangles or more than 5 million are not opened.</p>
+<h4>File browser and Details</h4>
+<figure class="shot"><img src="../assets/guide/model-open.png" alt="The file browser showing chick.glb and crate.obj with drawn thumbnails, with the chick.glb thumbnail, its cube badge and crate.obj marked 1 to 3" width="230" height="579" loading="lazy"><figcaption>① chick.glb thumbnail (drawn at the default angle) · ② 3D model badge · ③ OBJ model (crate.obj)</figcaption></figure>
+<p>The file browser lists 3D models too. ① The thumbnail is the model drawn at the default angle (30° horizontal, 20° vertical), and ② the cube badge at the bottom right marks it as a 3D model (hover for a description). ③ OBJ files look the same. Before drawing, or for files with nothing to draw (animation-only files such as chick_walk.glb), a cube icon is shown.</p>
+<figure class="shot"><img src="../assets/guide/model-open-2.png" alt="The Details window of chick.glb, with the type GLB 3D model and the triangle, material and animation counts marked 4 and 5" width="329" height="278" loading="lazy"><figcaption>Details: ④ Type (GLB 3D model) · ⑤ Triangle, material and animation counts</figcaption></figure>
+<p>Right-click a file and open <strong>Details</strong>: ④ the type shows the format (GLB, glTF, OBJ or FBX 3D model), and ⑤ the number of triangles to draw, materials and, if there are any, animations.</p>
+
+<h3 id="model-import">The import window</h3>
+<p>The <strong>Import 3D model</strong> window shows the result on the left while you set values on the right. The preview redraws as soon as a value changes.</p>
+<figure class="shot"><img src="../assets/guide/model-import.png" alt="The Import 3D model window with the Top-down 8 directions preset, with the preview, play bar, summary, preset, settings, estimate and Import button marked 1 to 7" width="888" height="632" loading="lazy"><figcaption>chick.glb with the Top-down 8 directions preset: ① Preview and controls hint · ② Play and frame slider · ③ Model summary · ④ Preset · ⑤ Settings · ⑥ Output estimate · ⑦ Import</figcaption></figure>
+<ul class="marks">
+<li>① The preview draws the image at its output size and enlarges it to fit (by whole multiples above 1×, so pixels stay even; the checkerboard is transparency). Drag it to change the view angle (horizontal and vertical) and turn the wheel to zoom; the values on the right change with it.</li>
+<li>② With several <a class="term" href="#screen-timeline">frames</a> (<a class="term" href="#model-frames">turntable</a> or animation), the play button runs them at their frame length and the slider picks the frame to show. Both are off for a single image.</li>
+<li>③ The file name and the numbers of triangles, materials and animations.</li>
+<li>④ Choosing a preset sets every value below to the preset's values (you can adjust them afterwards; see below).</li>
+<li>⑤ The settings are explained row by row in <a href="#model-view">Size, angle, light and shading</a>, <a href="#model-pixel">Pixel cleanup and outlines</a> and <a href="#model-frames">Frames</a>.</li>
+<li>⑥ The number of frames, their size and the length of each frame (ms).</li>
+<li>⑦ <strong>Import</strong> shows a <strong>Drawing 3D model</strong> progress window (you can cancel), then opens a new tab (<a href="#model-frames">Frames</a>). <strong>Cancel</strong> or <kbd>Esc</kbd> opens nothing.</li>
+</ul>
+<p>The values you set are remembered until you quit the app and become the starting values for the next model (except the chosen animation, which differs per model).</p>
+<h4>Presets</h4>
+<figure class="shot"><img src="../assets/guide/model-import-2.png" alt="The preset list opened, showing the seven built-in presets and the saved My RPG 8-dir 40px, with Save and Delete marked 8 to 10" width="517" height="298" loading="lazy"><figcaption>⑧ Preset list (the seven built-in presets, then saved ones) · ⑨ Save… · ⑩ Delete</figcaption></figure>
+<p>⑧ The list holds seven built-in presets for common game views, followed by your saved presets.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Preset</th><th>Values</th><th>Use</th></tr></thead>
+<tbody>
+<tr><td>Top-down 8 directions (angled)</td><td>48 px, 0° horizontal and 55° vertical, 8-frame turntable, 16 colors, darkened outer outline</td><td>Top-down RPG characters and vehicles seen from an angle above</td></tr>
+<tr><td>Straight overhead 8 directions</td><td>32 px, 90° vertical (straight down), 8-frame turntable, 12 colors, single-color outline</td><td>Vehicles and buildings in top-down shooters and strategy games</td></tr>
+<tr><td>Isometric 4 directions (2:1)</td><td>64 px, orthographic at 45° horizontal and 30° vertical (45° floor lines land at 2 across : 1 down), 4-frame turntable, 20 colors</td><td>Four directions of props and characters for isometric maps</td></tr>
+<tr><td>Side view (side-scroller)</td><td>64 px, 90° horizontal and 0° vertical, animation at 12 frames per second, 24 colors, overlap lines</td><td>Walk, run and attack animations for side-scrollers</td></tr>
+<tr><td>Item icon 32 px</td><td>32 px, 30° horizontal and 25° vertical, 115% zoom, single image, 12 colors, single-color outline</td><td>Item icons for inventories and shops</td></tr>
+<tr><td>Character animation 64 px</td><td>64 px, 25° horizontal and 12° vertical, animation at 12 frames per second, 24 colors, overlap lines</td><td>Character animations seen from slightly to the front</td></tr>
+<tr><td>Large and smooth (for <a class="term" href="#pixelate">Pixelate</a>)</td><td>256 px, 4×4 edge smoothing, no pixel cleanup or outline, single image</td><td>A source for <a href="#pixelate">Pixelate</a> (grid, <a class="term" href="#screen-palette">palette</a> and outline are done there)</td></tr>
+</tbody>
+</table></div>
+<p>All but the last share 4×4 edge smoothing with no semi-transparency, 3 shading steps, light at −40° horizontal and 50° vertical (side view −30° and 40°), 45% ambient and 55% darkening.</p>
+<p>⑨ <strong>Save…</strong> saves the current values under a name. A saved preset with the same name is replaced, built-in names can't be used, and the chosen animation isn't saved. ⑩ <strong>Delete</strong> deletes the selected saved preset after asking (disabled for built-in presets). Saved presets live in <code>model-presets.json</code> in the <a class="term" href="#files-settings">settings folder</a>.</p>
+
+<h3 id="model-view">Size, angle, light and shading</h3>
+<p>These rows set how large the model is drawn, from which side and under which light. The defaults are 128×128 px, 30° horizontal, 20° vertical, orthographic.</p>
+<figure class="shot"><img src="../assets/guide/model-view.png" alt="The eight rows of the import window from Size to Edge smoothing, marked 1 to 8" width="550" height="462" loading="lazy"><figcaption>① Size · ② View angle · ③ Projection and field of view · ④ Zoom and Fit · ⑤ Light direction · ⑥ Brightness · ⑦ Shading steps · ⑧ Edge smoothing and Textures</figcaption></figure>
+<div class="table-wrap"><table>
+<thead><tr><th>Row</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td>① <strong>Size</strong></td><td>The width × height of the output (1–2048 px). The model is centered and fitted to the shorter side.</td></tr>
+<tr><td>② <strong>View angle</strong></td><td><strong>Horizontal</strong> (−360 to 360°) circles the model (positive shows its right side) and <strong>Vertical</strong> (−90 to 90°) looks down from above (90° = straight down). 0 and 0 is the front.</td></tr>
+<tr><td>③ <strong>Projection</strong></td><td><strong>Orthographic</strong> keeps sizes equal at any distance, as most game sprites do; <strong>Perspective</strong> makes near parts larger. <strong>Field of view</strong> (5–120°) applies to perspective only; smaller values look less distorted, like zooming in from farther away.</td></tr>
+<tr><td>④ <strong>Zoom</strong></td><td>At 100% the model (all <a class="term" href="#screen-timeline">frames</a> together for <a class="term" href="#model-frames">turntables</a> and animations) just fits the shorter side (10–1000%). <strong>Fit</strong> goes back to 100%.</td></tr>
+<tr><td>⑤ <strong>Light direction</strong></td><td>Where the light comes from, relative to the camera: horizontal (positive = from the right) and vertical (positive = from above). In a turntable the light follows the camera, so the same side is lit in every frame.</td></tr>
+<tr><td>⑥ <strong>Brightness</strong></td><td><strong>Ambient</strong> (0–100%) is the brightness of faces the light doesn't reach; <strong>Light strength</strong> (0–200%) is what the light adds to lit faces.</td></tr>
+<tr><td>⑦ <strong>Shading steps</strong></td><td>0 shades smoothly; 2 to 16 cut the shading into that many brightness bands, like cel shading (1 is the same as 0).</td></tr>
+<tr><td>⑧ <strong>Edge smoothing</strong></td><td><strong>Off (crisp)</strong> samples one point per pixel, so edges are crisp steps; 2×2, 4×4 and 8×8 average that many samples for smooth edges. Turning off <strong>Textures</strong> uses only the material base colors.</td></tr>
+</tbody>
+</table></div>
+<h4>Shading steps</h4>
+<figure class="shot"><img src="../assets/guide/model-view-compare.png" alt="The same yellow ball drawn with shading steps 0 (left) and 3 (right). The left changes brightness smoothly; the right is cut into three bands" width="568" height="288" loading="lazy"><figcaption>Left: shading steps 0 (smooth) · Right: shading steps 3 — a ball (ball.glb) at 64 px, enlarged 4×</figcaption></figure>
+<p>With steps, round surfaces split into a few brightness bands, so the shading has fewer, crisper colors like hand-made pixel art. Models with only flat faces, such as boxes, have one brightness per face and change little.</p>
+<h4>Edge smoothing</h4>
+<figure class="shot"><img src="../assets/guide/model-view-compare-2.png" alt="The chick drawn with edge smoothing off (left) and 4×4 (right). The left has crisp stepped eyes and edges; the right has semi-transparent edges and blended colors" width="568" height="288" loading="lazy"><figcaption>Left: edge smoothing off · Right: 4×4 — 64 px, no-semi-transparency off, enlarged 4×</figcaption></figure>
+<p>Off keeps only the original colors, but thin parts (eyes, beak) can break up or look ragged. On gives even shapes but adds semi-transparent edges and blended colors, so for pixel art combine it with <a href="#model-pixel">no semi-transparency and a color count</a>, or draw large and send it to <a class="term" href="#pixelate">Pixelate</a>.</p>
+<h4>Orthographic and perspective</h4>
+<figure class="shot"><img src="../assets/guide/model-view-compare-3.png" alt="A wooden crate drawn orthographic (left) and in perspective with a 70° field of view (right). On the left parallel edges stay parallel; on the right near edges spread wide" width="568" height="288" loading="lazy"><figcaption>Left: orthographic · Right: perspective (70° field of view) — a wooden crate (crate.obj) at 64 px, enlarged 4×</figcaption></figure>
+<p>Use orthographic for sprites placed on a <a class="term" href="#screen-top-bar">tile grid</a>. Perspective doesn't suit game art that must look the same wherever it's placed, but works for single illustrations or dramatic icons.</p>
+
+<h3 id="model-pixel">Pixel cleanup and outlines</h3>
+<p>These rows tidy the rendered pixels into game-ready pixel art. Outlines are drawn in output pixels (1 px units).</p>
+<figure class="shot"><img src="../assets/guide/model-pixel.png" alt="The Pixel cleanup, Outline and Line style rows spaced apart, with each box marked 1 to 9" width="550" height="178" loading="lazy"><figcaption>① No semi-transparency · ② Colors · ③ Outer and Outside · ④ Overlaps · ⑤ Creases and angle · ⑥ Width · ⑦ Color mode · ⑧ Line color · ⑨ Darken amount — rows spaced apart to make room for the numbers</figcaption></figure>
+<div class="table-wrap"><table>
+<thead><tr><th>Box</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td>① <strong>No semi-transparency</strong></td><td>Pixels covered at least halfway become opaque (255); the rest become transparent (0). With edge smoothing, colors are picked smoothly while alpha stays crisp.</td></tr>
+<tr><td>② <strong>Colors</strong></td><td>0 keeps the colors; 2 to 64 reduce them to that many. With several <a class="term" href="#screen-timeline">frames</a>, all frames share one <a class="term" href="#screen-palette">palette</a> so colors don't flicker, and outline colors come on top. The preview builds its palette from the visible frame only, so it can differ slightly from the result.</td></tr>
+<tr><td>③ <strong>Outer</strong> · <strong>Outside</strong></td><td>Outer draws a line only between the model and empty space (the silhouette). With Outside on, the line goes on the empty pixels around the model, so it looks larger by the line width (the model is fitted that much smaller so nothing is cut at 100% zoom); off turns the model's edge pixels into the line. Outside applies only when Outer is on.</td></tr>
+<tr><td>④ <strong>Overlaps</strong></td><td>Draws a 1 px line where a nearer part meets what's behind it (a wing or arm in front of the body, where depth changes a lot). It goes on the farther pixels, so the near part keeps its shape.</td></tr>
+<tr><td>⑤ <strong>Creases</strong></td><td>Draws a 1 px line where the surface bends more than the angle next to it (1–179°, default 60°). A box corner is 90°; smaller angles give more lines.</td></tr>
+<tr><td>⑥ <strong>Width</strong></td><td>The outer line width (1–3 px). Overlap and crease lines are always 1 px.</td></tr>
+<tr><td>⑦ Color mode</td><td><strong>Single color</strong> draws with the chosen color; <strong>Darkened (sel-out)</strong> darkens the model color under the line (lighter lines on light areas, darker on dark ones).</td></tr>
+<tr><td>⑧ Line color</td><td>The color used in Single color mode; click it to pick a color (default: a near-black purple).</td></tr>
+<tr><td>⑨ Darken amount</td><td>How much Darkened mode lowers the brightness (0–100%, 50% = half).</td></tr>
+</tbody>
+</table></div>
+<p>Cleanup runs in this order: no semi-transparency, then color reduction, then outlines. With no outline turned on, ⑥ to ⑨ are disabled; ⑧ is on only for Single color and ⑨ only for Darkened.</p>
+<h4>Outline types</h4>
+<figure class="shot"><img src="../assets/guide/model-pixel-compare.png" alt="The chick drawn with no outline, outer only, and outer plus overlaps and creases. The right one also has lines between the head and body and on box corners" width="848" height="288" loading="lazy"><figcaption>Left: no outline · Middle: Outer · Right: Outer + Overlaps + Creases (60°) — Top-down 8 directions values, single color, 64 px, enlarged 4×</figcaption></figure>
+<p>Outer alone sharpens the silhouette so the sprite reads well on any background. Adding Overlaps separates overlapping parts such as the head and body, and adding Creases puts lines on box edges too, closer to a hand-drawn outline. If crease lines crowd a small sprite, raise the angle.</p>
+<h4>Single color and Darkened</h4>
+<figure class="shot"><img src="../assets/guide/model-pixel-compare-2.png" alt="Outer and overlap lines drawn in single color (left) and Darkened (right). On the right the line around the yellow body is dark brown" width="568" height="288" loading="lazy"><figcaption>Left: Single color · Right: Darkened (55%) — Outer + Overlaps, 64 px, enlarged 4×</figcaption></figure>
+<p>Darkened (sel-out) lines follow the neighboring colors, so they look softer and blend into the art. A single color keeps the outline clear on any background.</p>
+<h4>No semi-transparency and colors</h4>
+<figure class="shot"><img src="../assets/guide/model-pixel-compare-3.png" alt="The chick drawn with 4×4 edge smoothing, without cleanup (left) and with no semi-transparency and 8 colors (right)" width="568" height="288" loading="lazy"><figcaption>Left: no cleanup · Right: no semi-transparency + 8 colors — 4×4 edge smoothing, 64 px, enlarged 4×</figcaption></figure>
+<p>Edges become only opaque or transparent and the colors drop to 8, giving pixel art you can use in a game as is. Too few colors can turn small details such as eyes into a neighboring color, so check the result as you adjust.</p>
+
+<h3 id="model-frames">Frames: single image, turntable, animation</h3>
+<p>Choose what to extract as <a class="term" href="#screen-timeline">frames</a>. Each frame becomes one image on a single <a class="term" href="#screen-timeline">layer</a>.</p>
+<figure class="shot"><img src="../assets/guide/model-frames.png" alt="The Frames, Turntable frames, Animation and Frames per second rows spaced apart and marked 1 to 4" width="550" height="224" loading="lazy"><figcaption>① Frame mode · ② Turntable frames · ③ Animation and Import · ④ Frames per second and Max</figcaption></figure>
+<div class="table-wrap"><table>
+<thead><tr><th>① Mode</th><th>Frames made</th></tr></thead>
+<tbody>
+<tr><td>Single image</td><td>One image of the rest pose (no animation), 100 ms</td></tr>
+<tr><td>Turntable (full turn)</td><td>Splits one full turn (360°) into ② the frame count (1–64), adding to the horizontal angle each frame: 8 gives 8 directions 45° apart, 4 gives 4 directions 90° apart. 100 ms per frame.</td></tr>
+<tr><td>Animation</td><td>Extracts ③ the chosen animation at ④ frames per second (1–60), up to Max (1–1000, default 120). The end time isn't included, since looping animations repeat the first pose there. Models without animations don't list this mode.</td></tr>
+</tbody>
+</table></div>
+<p>② Turntable frames is on only for Turntable; ③ Animation and ④ Frames per second and Max are on only for Animation. <strong>Import…</strong> next to ③ is covered in <a href="#model-animation">Attaching animations from other files</a>.</p>
+<p>Turntables and animations fit the camera to the combined range of all frames' poses, so the model's size and position don't jump between frames.</p>
+<figure class="shot"><img src="../assets/guide/model-frames-2.png" alt="Eight images of the chick drawn with the Top-down 8 directions preset, turning 45° each from left to right through front, right side, back and left side" width="1268" height="176" loading="lazy"><figcaption>8 frames drawn with the Top-down 8 directions preset (48 px, enlarged 3×) — from the left, horizontal 0°, 45°, 90° … 315°</figcaption></figure>
+<p>In a turntable the light follows the camera, so the same side is lit in every direction, and all frames share one <a class="term" href="#screen-palette">palette</a>, so colors match across directions. In the game, show the frame for the direction the character faces.</p>
+<h4>The imported result</h4>
+<figure class="shot"><img src="../assets/guide/model-frames-3.png" alt="The new chick.glb tab and eight frames in the timeline, with the tab and the frame headers marked 5 and 6" width="803" height="837" loading="lazy"><figcaption>⑤ New tab (chick.glb) · ⑥ 8 frames (one per direction, 100 ms)</figcaption></figure>
+<p>When the import finishes, ⑤ a new tab named after the file opens: the <a class="term" href="#screen-canvas">canvas</a> is the image size, with one layer holding ⑥ one image per frame. There's no <code>.chickxel</code> yet, so the first save asks where to put it. If you added the model as a <a class="term" href="#pixelate">Pixelate</a> source, the frames become that window's source instead of a new tab.</p>
+
+<h3 id="model-animation">Attaching animations from other files</h3>
+<p>When the character and its animations come as separate files, as with Mixamo, open the character model, then load the animation files and attach them before drawing. Files that use the same skeleton (for example, both from Mixamo) can be combined.</p>
+<figure class="shot"><img src="../assets/guide/model-animation.png" alt="The import window after loading two animations, with the Import button, animation list, summary, frame mode and play bar marked 1 to 5" width="888" height="632" loading="lazy"><figcaption>After attaching two animations with the Side view preset: ① Import… · ② Animation list (Idle from the model, attached chick_walk and chick_jump) · ③ Summary (3 animations) · ④ Frames = Animation · ⑤ Play and frame slider</figcaption></figure>
+<p>Use ① <strong>Import…</strong> next to the Animation row to pick FBX or glTF files (several at once). Attached animations appear in ② the list under the file name ("file name: animation name" when a file holds several), ③ the summary's animation count goes up, and ④ <a class="term" href="#screen-timeline">Frames</a> switches to Animation with the first attached one selected. Check the motion right away with ⑤ play.</p>
+<ul>
+<li>Bones are matched by name, ignoring case and everything up to the last <code>:</code> or <code>|</code> (as in <code>mixamorig:Hips</code> or <code>Armature|Hips</code>), so a different prefix such as <code>mixamorig1:</code> still matches.</li>
+<li>Rotations are copied as they are; movement is copied only for the top bone (Mixamo's Hips), scaled to the character's height (hip height). Scale keys are dropped.</li>
+<li>Motion of bones the character doesn't have is dropped. Files that couldn't be attached (no animation, no matching bone, unreadable) and warnings (several bones with the same name and so on) are reported together once everything is attached.</li>
+<li>Attached animations are only used for drawing in this window; the model file isn't changed. They're gone when the window closes, so to import each animation, open the model again and load them again.</li>
+</ul>
+<figure class="shot"><img src="../assets/guide/model-animation-2.png" alt="Eight walk frames of the attached chick_walk drawn with the Side view preset" width="1652" height="224" loading="lazy"><figcaption>The attached chick_walk (0.8 s) drawn with the Side view preset at 10 frames per second: 8 frames (64 px, enlarged 3×)</figcaption></figure>
+<p>The character file (chick.glb) had only Idle; the walk was attached from an animation file whose bone names start with <code>mixamorig:</code>. Its 0.8 s at 10 frames per second gave 8 frames.</p>
+<h4>Using Mixamo step by step</h4>
+<ol>
+<li>On <a href="https://www.mixamo.com/">mixamo.com</a>, pick or upload a character and use <strong>Download</strong> with Format <strong>FBX Binary (.fbx)</strong> and <a class="term" href="#parts-skins">Skin</a> <strong>With Skin</strong>.</li>
+<li>For each animation you want, download it with Skin <strong>Without Skin</strong> (just the skeleton and motion, so the file is small). Turn on <strong>In Place</strong> for loops such as walking and running; otherwise the character walks off and its position moves every frame.</li>
+<li>Open the character FBX in Chickxel and pick all the animation FBX files at once with <strong>Import…</strong> in the import window.</li>
+<li>Choose one in the animation list, set it up with a preset (Side view, Character animation and so on) and import.</li>
+</ol>
+<p>If you see "ASCII FBX files can't be read", download again from Mixamo with Format <strong>FBX Binary</strong>. Mixamo animations don't attach to characters from elsewhere, because the bone names don't match.</p>
+</section>
+
 <section class="doc" id="pixelate">
 <h2>Pixelate AI images</h2>
 <p>AI-generated "pixel-look" images have uneven pixel sizes (e.g. 7–9 px), blurred edges, JPEG noise and hundreds of colors. The <strong>Pixelate AI image</strong> window turns such an image into clean pixel art in which each source cell becomes one result pixel. The source can have a solid or transparent background, and can be a sprite sheet with several <a class="term" href="#screen-timeline">frames</a>, an animated GIF or a video.</p>
@@ -3468,7 +3642,7 @@
 <div class="table-wrap"><table>
 <thead><tr><th>Where</th><th>Source</th><th>Use it when</th></tr></thead>
 <tbody>
-<tr><td>① <strong>AI &gt; <a class="term" href="#pixelate">Pixelate AI image</a>…</strong></td><td>None — an empty window opens with ② a message in the middle; ④ <strong>Apply</strong> and ⑤ <strong><a class="term" href="#pixelate-optimize">Auto optimize</a></strong> stay off until a source comes in. Drop an image or video, paste one with <kbd>Ctrl</kbd>+<kbd>V</kbd>, or use ③ <strong>Browse…</strong>.</td><td>The image is in another app or on the clipboard</td></tr>
+<tr><td>① <strong>AI &gt; <a class="term" href="#pixelate">Pixelate AI image</a>…</strong></td><td>None — an empty window opens with ② a message in the middle; ④ <strong>Apply</strong> and ⑤ <strong><a class="term" href="#pixelate-optimize">Auto optimize</a></strong> stay off until a source comes in. Drop an image, video or 3D model, paste one with <kbd>Ctrl</kbd>+<kbd>V</kbd>, or use ③ <strong>Browse…</strong>.</td><td>The image is in another app or on the clipboard</td></tr>
 <tr><td>⑥ <strong>AI &gt; Pixelate current layer…</strong></td><td>The current layer (not a group) — if several <a class="term" href="#screen-timeline">frames</a> have content, they are joined into a grid, one cell per frame. If the layer is empty, a message says so and the window doesn't open.</td><td>You already placed the AI image in a document</td></tr>
 <tr><td>In the <a class="term" href="#screen-file-browser">file browser</a>, right-click ⑦ an image file &gt; ⑧ <strong>Pixelate AI image…</strong></td><td>That file</td><td>The image file is in your project folder</td></tr>
 </tbody>
@@ -3479,9 +3653,9 @@
 <div class="table-wrap"><table>
 <thead><tr><th>Method</th><th>Details</th></tr></thead>
 <tbody>
-<tr><td>Drop</td><td>Drop an image or video file anywhere on the window. With several files, the first one that can be loaded is used.</td></tr>
+<tr><td>Drop</td><td>Drop an image, video or 3D model file anywhere on the window. With several files, the first one that can be loaded is used.</td></tr>
 <tr><td>Paste</td><td><kbd>Ctrl</kbd>+<kbd>V</kbd> outside text boxes. An image or video file copied in Explorer, or its path as text, comes first; otherwise the clipboard image is used.</td></tr>
-<tr><td>Browse</td><td><strong>Browse…</strong> starts in the folder selected in the main window's file browser. It opens images such as PNG, JPG, BMP, GIF and WebP, and videos such as MP4, WebM and MOV (videos, AVIF and HEIC need <a class="term" href="#files-open-media">ffmpeg</a>).</td></tr>
+<tr><td>Browse</td><td><strong>Browse…</strong> starts in the folder selected in the main window's file browser. It opens images such as PNG, JPG, BMP, GIF and WebP, videos such as MP4, WebM and MOV, and GLB, glTF, OBJ and FBX 3D models (videos, AVIF and HEIC need <a class="term" href="#files-open-media">ffmpeg</a>).</td></tr>
 <tr><td>⑨ <strong>Replace source</strong></td><td>The open-folder icon button in the bar under the source, once a source is loaded. Dropping or pasting again also replaces it.</td></tr>
 </tbody>
 </table></div>
@@ -3489,6 +3663,7 @@
 <h4>Animated images and several frames</h4>
 <p>When a GIF, <a class="term" href="#screen-gif">animated PNG</a> or WebP comes in by drop, Browse, pasting a file or the file browser's right-click menu, it is split into frames just like dropping it on the <a class="term" href="#screen-canvas">canvas</a>. The frames are joined into a grid of roughly equal width and height, one cell per frame, and <a href="#pixelate-settings">2. Frames</a> is set to that grid (one frame per cell). <strong>Pixelate current layer</strong> joins frames into the same kind of grid.</p>
 <p>When a video (MP4, WebM and so on) comes in, the same range and frame rate window as opening a video in the main window appears first, and the frames taken from the chosen range are joined into the same kind of grid. Videos need ffmpeg.</p>
+<p>When a 3D model (.glb, .gltf, .obj, .fbx) comes in by drop, Browse or the file browser's right-click menu, the <a href="#model-import">Import 3D model</a> window appears first, and the frames drawn with the angles and frames set there are joined into the same kind of grid. To hand over a large, smooth render, pick that window's <strong>Large and smooth (for Pixelate)</strong> preset.</p>
 <p>When a source made from an animated image, a video or layer frames is split on that grid as is, each frame uses its whole cell without trimming to the content, and all frames use one shared cell size, so the result frames don't jump in size.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>Case</th><th>Behavior</th></tr></thead>
@@ -3526,6 +3701,9 @@
 <li>Drag inside a frame to move it, or drag its edges and corners to resize it (in source pixels, kept inside the source). On release the frames are split with those boundaries and the candidates are rebuilt; the edited boundaries are saved with the settings and preset. Changing split conditions such as the mode or frame count discards the edits, but the boundaries on screen stay until you press <strong>Apply <a class="term" href="#pixelate-settings">frame split</a></strong>.</li>
 <li>Right-click the source for <strong>Copy image</strong> and <strong>Save as PNG…</strong> (the background-removed source if that view is on, with "nobg" at the end of the file name). Right-clicking inside a frame adds items at the top that copy or save just that frame.</li>
 </ul>
+<h4>Frames picked for sampling</h4>
+<figure class="shot"><img src="../assets/guide/pixelate-view-sampled.png" alt="Source view of a 12-frame source where only frames 1, 4, 7, 9 and 12 have a yellow border and the rest are blue" width="689" height="500" loading="lazy"><figcaption>Frames to sample 5: frames 1, 4, 7, 9 and 12 of 12 have a yellow border (the rest blue)</figcaption></figure>
+<p>Frames picked by <a href="#pixelate-score"><strong>Frames to sample</strong></a> for optimizing have a yellow border instead of blue. Changing the value or applying a new frame split recolors them at once; with no more frames than the sample count, all stay blue.</p>
 <h4>The bar under the source</h4>
 <figure class="shot"><img src="../assets/guide/pixelate-view-2.png" alt="The bar under the source" width="124" height="74" loading="lazy"><figcaption>⑥ Remove background (<span class="nolink">eraser</span> icon) · ⑦ Show grid (grid icon)</figcaption></figure>
 <div class="table-wrap"><table>
@@ -3544,20 +3722,20 @@
 
 <h3 id="pixelate-candidates">Candidates and scores</h3>
 <p>The candidate row holds one tile per preset. Loading a source lays out <strong>Not run yet</strong> tiles for the checked presets; Clean up, <a class="term" href="#pixelate-optimize">Auto optimize</a> and a tile's right-click <strong>Run only this preset</strong> put their results in (applying the <a class="term" href="#pixelate-settings">frame split</a> runs the checked presets as set). Every tile has a score, so you can compare which result is closest to the source and cleanest.</p>
-<figure class="shot"><img src="../assets/guide/pixelate-candidates-2.png" alt="The selected-candidate line and score breakdown, one tile per preset, and a not-run preset tile at the end" width="1396" height="290" loading="lazy"><figcaption>① Candidate tiles · ② Outline fit mode · ③ Preset name · ④ Score breakdown · ⑤ Preset tile not run yet</figcaption></figure>
+<figure class="shot"><img src="../assets/guide/pixelate-candidates-2.png" alt="The selected-candidate line and score breakdown, one tile per preset, and a not-run preset tile at the end" width="1396" height="294" loading="lazy"><figcaption>① Candidate tiles · ② Outline fit mode · ③ Preset name · ④ Score breakdown · ⑤ Preset tile not run yet</figcaption></figure>
 <h4>Reading a candidate tile</h4>
 <div class="table-wrap"><table>
 <thead><tr><th>Part</th><th>Meaning</th></tr></thead>
 <tbody>
 <tr><td>① Candidate tile thumbnail</td><td>The result's first <a class="term" href="#screen-timeline">frame</a>.</td></tr>
-<tr><td>③ Preset name</td><td>The preset that made the tile; <strong>name (modified)</strong> if it ran with unsaved edits, <strong>Current settings</strong> if no preset was chosen.</td></tr>
+<tr><td>③ Preset name</td><td>The preset that made the tile; <strong>name_1</strong>, <strong>name_2</strong>… (a new tile each run) if it ran with unsaved edits, <strong>Current settings</strong> if no preset was chosen (<strong>Current settings_1</strong>… with edits). The first tile in the picture is a <strong>name_1</strong> tile run after editing one value.</td></tr>
 <tr><td>Colors · size · frames</td><td>Number of colors used, output size in pixels, number of frames.</td></tr>
 <tr><td>② Outline fit mode</td><td>The result's <a href="#pixelate-cleanup">Fit outline to 1 px</a> mode.</td></tr>
 <tr><td>Blue line at the bottom</td><td>Why the tile was made and its score: <strong>As set (73.4)</strong>, or for an optimized result, why it stopped (<strong>Optimized</strong>, <strong>Time limit</strong>, <strong>Trial limit</strong>, <strong>Cancelled</strong> — see <a href="#pixelate-optimize">Auto optimize</a>).</td></tr>
 </tbody>
 </table></div>
 <p>The line under the preview shows the selected candidate as preset name · score · cell size · colors · size · frames, and ④ the <a class="term" href="#pixelate-score">score breakdown</a> below it lists each term's value, badness % and weight. The terms are explained in <a href="#pixelate-score">Score and optimize criteria</a>.</p>
-<figure class="shot"><img src="../assets/guide/pixelate-candidates-3.png" alt="Tooltip shown when hovering a candidate tile" width="329" height="284" loading="lazy"><figcaption>⑥ Score breakdown in the tooltip</figcaption></figure>
+<figure class="shot"><img src="../assets/guide/pixelate-candidates-3.png" alt="Tooltip shown when hovering a candidate tile" width="252" height="459" loading="lazy"><figcaption>⑥ Score breakdown in the tooltip</figcaption></figure>
 <p>⑥ Hovering a candidate tile shows a tooltip with the preset name in bold (in full, even if cut off on the tile), the reason and score, colors and size, cell size, and the per-term breakdown below.</p>
 <h4>Selecting and applying a candidate</h4>
 <ul>
@@ -3576,7 +3754,7 @@
 <tbody>
 <tr><td><strong>Copy image</strong> · <strong>Copy enlarged (×4)</strong></td><td>Puts the result on both Chickxel's clipboard and the system clipboard, so you can paste it on the <a class="term" href="#screen-canvas">canvas</a> or into another app. For a multi-frame result, the first frame.</td></tr>
 <tr><td><strong>Save as PNG…</strong></td><td>Saves the first frame as PNG, named <code>source name_preset name</code>.</td></tr>
-<tr><td><strong>Rerun only this preset</strong></td><td>Reruns just that tile in place: a tile from a saved preset uses that preset's current saved values; a <strong>(modified)</strong> tile uses the values it ran with (disabled while running or if the preset was deleted).</td></tr>
+<tr><td><strong>Rerun only this preset</strong></td><td>Reruns just that tile in place: a tile from a saved preset uses that preset's current saved values; a numbered tile such as <strong>name_1</strong> uses the values it ran with and keeps its number instead of adding a new tile (disabled while running or if the preset was deleted).</td></tr>
 </tbody>
 </table></div>
 <h4>Failed results</h4>
@@ -3689,7 +3867,7 @@
 <tr><td>Some steps have Optimize on</td><td>Only those steps are <a href="#pixelate-optimize">auto-optimized</a>, starting from the values shown, with the budget and scoring of <strong class="nolink">0. Optimize criteria</strong>.</td></tr>
 <tr><td>No step has Optimize on</td><td>Cleans up once as set (the tile shows <strong>As set (score)</strong>).</td></tr>
 <tr><td>A saved preset as is</td><td>The values found are written straight into that preset; if it's open, the values on the left follow while it runs, and Revert reverts the preset too.</td></tr>
-<tr><td>Unsaved edits</td><td>Runs as a <strong>preset name (modified)</strong> tile and leaves the preset unchanged. An unsaved new preset uses its name; with no preset chosen it's <strong>Current settings</strong>.</td></tr>
+<tr><td>Unsaved edits</td><td>Each run adds a new <strong>preset name_1</strong>, <strong>preset name_2</strong>… tile at the front of the candidate row and leaves the preset unchanged. The number is the highest number among the row's tiles with that name, plus 1. An unsaved new preset uses its name; with no preset chosen the number goes after <strong>Current settings</strong>.</td></tr>
 </tbody>
 </table></div>
 <h4>Built-in presets</h4>
@@ -3719,7 +3897,7 @@
 <figure class="shot"><img src="../assets/guide/pixelate-settings.png" alt="Left side of the window with the settings column collapsed" width="640" height="560" loading="lazy"><figcaption>① Settings column bar</figcaption></figure>
 <ul>
 <li>Click ① the bar (settings icon and arrow) to slide the column open, and again to collapse it; the state is remembered.</li>
-<li>The <a href="#pixelate-presets">preset bar</a> stays at the top while you scroll, followed by the steps in order. Each step can be collapsed or expanded.</li>
+<li>The <a href="#pixelate-presets">preset bar</a> stays at the top while you scroll, followed by the steps in order. Each step can be collapsed or expanded. Inside a step, boxes the chosen mode doesn't use are hidden along with their labels. Boxes switched by a checkbox (such as Auto next to the color count) and boxes that depend on another step's setting stay visible but disabled.</li>
 <li>Steps with an <strong>Optimize</strong> check in their header (1, 3, 5, 6, 7) decide whether Clean up and <a class="term" href="#pixelate-optimize">Auto optimize</a> may vary that step's values (<a href="#pixelate-score">Score and optimize criteria</a>).</li>
 </ul>
 <h4>Steps at a glance</h4>
@@ -3747,12 +3925,14 @@
 <li>② In the output size row, with <strong>Auto</strong> on (default) the output size follows the cell size (or the factor in <a href="#pixelate-grid">4. Output size</a>) and the width × height boxes show the selected result's size in grey. Turning it off switches to a fixed size, starting from the current result size, and the result is fitted to the width × height you enter.</li>
 <li>With the link button (keep aspect) on, changing the width updates the height (and vice versa) by the current result's ratio, and the sprite keeps its ratio when fitted.</li>
 <li>In the target colors row, the values are the same as <strong>Target colors</strong>, <strong>Auto</strong> and <strong>Strict</strong> in <a href="#pixelate-score">0. Optimize criteria</a>. A result with more colors than this loses score, so Clean up and Auto optimize favor results around this color count. With <strong>Strict</strong> on, a result with fewer colors also loses score by how far it is from the target, so the count lands closer to the target. With <strong>Auto</strong> on (default) the color count isn't scored (the number and Strict are disabled). It doesn't set the palette size itself; if you need exactly that many colors, set the color count in <a href="#pixelate-palette">6. Palette</a>.</li>
+<li><strong>Frames to sample</strong> is the same value as the box in <a href="#pixelate-score">0. Optimize criteria</a> (default 5). With more frames than this, Clean up and Auto optimize run their trials on that many frames picked evenly, first and last included, then apply the settings found to every frame once. The sampled frames have a yellow border in the source view. 0 searches with every frame.</li>
 <li>The <strong>Remove background</strong> check is the same setting as the <span class="nolink">eraser</span> button under the source (<a href="#pixelate-view">Source and preview</a>), so they change together. Off sets 1. Background to <strong>Keep background</strong>; on uses the last removal method (Auto at first).</li>
 <li>③ <strong>One palette for all frames</strong>: on converts all frames with one palette so they share colors; off picks a palette per frame. Like the same check in <a href="#pixelate-palette">6. Palette</a>, it applies only to palette methods that extract colors from the image and is disabled otherwise.</li>
 </ul>
 <h4>1. Background</h4>
-<figure class="shot"><img src="../assets/guide/pixelate-settings-2.png" alt="Settings column with 1. Background and 2. Frames expanded" width="396" height="648" loading="lazy"><figcaption>④ 1. Background · ⑤ 2. Frames</figcaption></figure>
+<figure class="shot"><img src="../assets/guide/pixelate-settings-2.png" alt="Settings column with 1. Background and 2. Frames expanded" width="396" height="616" loading="lazy"><figcaption>④ 1. Background · ⑤ 2. Frames · ⑥ Background mode (Auto) · ⑦ Frame split mode (Auto)</figcaption></figure>
 <p>④ <strong class="nolink">1. Background</strong> starts at <strong>Keep background</strong>, as do all built-in presets. To remove the background, turn on the <span class="nolink">eraser</span> button under the source or choose a mode.</p>
+<p>⑥ Only the boxes the background <strong>Mode</strong> uses are shown; the picture has <strong>Auto (border color)</strong> chosen. <strong class="nolink">Pick color</strong> adds a color button next to the mode and hides <strong>Use existing transparency</strong>. <strong>Keep background</strong> hides everything from <a class="term" href="#tools-fill">Tolerance</a> to <strong>Keep background (one color)</strong>, leaving only the alpha threshold and specks row. With Auto next to Tolerance on, the Tolerance box stays visible but disabled. ⑦ The frame split mode works the same way: <strong>Auto (split by empty space)</strong> shows the merge small pieces and distance row, <strong>Grid</strong> shows the columns and rows row, and <strong>Single image</strong> hides both.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>Setting</th><th>Details</th></tr></thead>
 <tbody>
@@ -3772,10 +3952,10 @@
 <tr><td><strong class="nolink">Pick color</strong></td><td>Takes the color chosen with the color button next to it as the background color and removes colors within <strong class="nolink">Tolerance</strong> of it.</td><td>The sprite touches the border so Auto picks the wrong color, or you know exactly what the backdrop color is.</td></tr>
 </tbody>
 </table></div>
-<figure class="shot"><img src="../assets/guide/pixelate-settings-3.png" alt="The 1. Background step" width="398" height="352" loading="lazy"><figcaption>⑥ Remove sticker border · ⑦ Keep background (one color)</figcaption></figure>
+<figure class="shot"><img src="../assets/guide/pixelate-settings-3.png" alt="The 1. Background step" width="398" height="352" loading="lazy"><figcaption>⑧ Remove sticker border · ⑨ Keep background (one color)</figcaption></figure>
 <ul>
-<li>⑥ <strong>Remove sticker border</strong> (on by default): finds the white band around the outline (a sticker border) and removes it with the background. It acts only when most of the edge is light and colorless, and undoes itself if the new edge isn't dark. Optimizing the Background step tries it on and off.</li>
-<li>⑦ <strong>Keep background (one color)</strong>: keeps the detected background, flattened to the single background color (the result has that background too, and the whole image is one frame). Only matters for a background found by color.</li>
+<li>⑧ <strong>Remove sticker border</strong> (on by default): finds the white band around the outline (a sticker border) and removes it with the background. It acts only when most of the edge is light and colorless, and undoes itself if the new edge isn't dark. Optimizing the Background step tries it on and off.</li>
+<li>⑨ <strong>Keep background (one color)</strong>: keeps the detected background, flattened to the single background color (the result has that background too, and the whole image is one frame). Only matters for a background found by color. ⑧ and ⑨ are hidden when the background mode is <strong>Keep background</strong>.</li>
 <li>The one-pixel blended fringe between a solid background and the sprite is removed too, as are small compression specks stuck just outside the outline (clumps of at most 24 pixels that are close to the background color and far from the outline color). Large light areas such as white hair stay.</li>
 </ul>
 <h4>2. Frames</h4>
@@ -3796,7 +3976,7 @@
 <tbody>
 <tr><td><strong>Bottom center</strong></td><td>Puts the bottom of each frame's sprite on the bottom of the canvas, centered horizontally (default).</td><td>Character animations with feet on the ground, such as walking or running. Even when frames differ in height the feet stay at the same level, so playback doesn't bob up and down.</td></tr>
 <tr><td><strong>Center</strong></td><td>Puts each frame's sprite in the middle of the canvas.</td><td>Effects such as explosions or spells, or icons: art with no ground line that grows or spins around its center.</td></tr>
-<tr><td><strong>Keep offsets</strong></td><td>Keeps each sprite's original position inside its split area (the strip for Auto, the grid cell for Grid).</td><td>Animations where the position inside the sheet is the motion itself, such as a jump or a throw; bottom center would flatten that height change.</td></tr>
+<tr><td><strong>Keep offsets</strong></td><td>Keeps the position differences between frames inside their split areas (the strip for Auto, the grid cell for Grid). The empty space around the split areas isn't kept: the canvas is the area all frames cover when stacked in place, plus <strong>Padding (px)</strong>.</td><td>Animations where the position inside the sheet is the motion itself, such as a jump or a throw; bottom center would flatten that height change.</td></tr>
 </tbody>
 </table></div>
 <ul>
@@ -3806,9 +3986,9 @@
 
 <h3 id="pixelate-grid"><span class="nolink">Pixel grid</span> and output size</h3>
 <p><strong class="nolink">3. Pixel grid</strong> finds how many source pixels make one "pixel" (the cell size) and where the cell boundaries lie; <strong class="nolink">4. Output size</strong> decides how many pixels the result has. Look at these two steps when the result is far too large or small, or when the cell lines in the source view miss the color blocks.</p>
-<figure class="shot"><img src="../assets/guide/pixelate-grid.png" alt="Settings column with 3. Pixel grid and 4. Output size expanded" width="396" height="683" loading="lazy"><figcaption>① 3. <span class="nolink">Pixel grid</span> · ② 4. Output size</figcaption></figure>
+<figure class="shot"><img src="../assets/guide/pixelate-grid.png" alt="Settings column with 3. Pixel grid and 4. Output size expanded" width="396" height="651" loading="lazy"><figcaption>① 3. <span class="nolink">Pixel grid</span> · ② 4. Output size · ③ Grid mode · ④ Output size mode (Fit a fixed size) · ⑤ Width×Height, Keep aspect · ⑥ Padding</figcaption></figure>
 <h4>Grid detection</h4>
-<p>With <strong>Mode</strong> set to <strong>Auto (edge analysis)</strong> in ① <strong class="nolink">3. Pixel grid</strong>, the source is analyzed to find the cell size. Sizes from 3 to 256 px are measured, so blocks enlarged past 100 px are found at their real size too. Cell size and boundaries are always found per <a class="term" href="#screen-timeline">frame</a>.</p>
+<p>With ③ <strong>Mode</strong> set to <strong>Auto (edge analysis)</strong> in ① <strong class="nolink">3. Pixel grid</strong>, the source is analyzed to find the cell size. Sizes from 3 to 256 px are measured, so blocks enlarged past 100 px are found at their real size too. Cell size and boundaries are always found per <a class="term" href="#screen-timeline">frame</a>. <strong>Manual</strong> hides <strong>Allowed size jitter (%)</strong>, <strong>Add to auto pixel size (px)</strong> and <strong>Pixel size from</strong> and shows <strong>Pixel size (px)</strong> and the start X and Y boxes.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>Mode</th><th>What it does</th></tr></thead>
 <tbody>
@@ -3843,8 +4023,8 @@
 </table></div>
 <p>The cell split score looks only at the source and the cell lines: the average of <strong>Cell edge fit</strong> (higher when the lines miss none of the source's strong edges and lie on them — cells smaller or larger than the real ones both score low) and <strong>Cell color purity</strong> (higher when each cell holds only similar colors). <strong>Add to auto pixel size (px)</strong> and the manual grid's start X/Y depend on the image, so Clean up uses them but they aren't saved in presets or for the next session (changing only them doesn't turn the save button red).</p>
 <h4>Local cell correction</h4>
-<figure class="shot"><img src="../assets/guide/pixelate-grid-2.png" alt="Local cell correction in the 3. Pixel grid step" width="398" height="479" loading="lazy"><figcaption>③ Local cell correction, Max shift, Band, Minimum cell size</figcaption></figure>
-<p>③ <strong>Local cell correction</strong> (on by default) re-fits the image-wide cell lines per band to that band's strong block edges. It follows art that is drawn half a cell off in places; within a band the lines stay straight so cells are rectangles, and the lines bend where bands change.</p>
+<figure class="shot"><img src="../assets/guide/pixelate-grid-2.png" alt="Local cell correction in the 3. Pixel grid step" width="398" height="447" loading="lazy"><figcaption>⑦ Local cell correction, Max shift, Band, Minimum cell size</figcaption></figure>
+<p>⑦ <strong>Local cell correction</strong> (on by default) re-fits the image-wide cell lines per band to that band's strong block edges. It follows art that is drawn half a cell off in places; within a band the lines stay straight so cells are rectangles, and the lines bend where bands change.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>Setting</th><th>Range · default</th><th>Meaning</th></tr></thead>
 <tbody>
@@ -3858,19 +4038,19 @@
 <li>Even when on, the grid stays straight if the average cell is below the minimum or no line moved. The selected-result line shows whether it applied, such as "Local correction applied to n/m frames". With step 3's <strong>Optimize</strong> on, Clean up and Auto optimize also try it on and off with different max shift and band values.</li>
 </ul>
 <h4>4. Output size</h4>
-<p>② <strong class="nolink">4. Output size</strong> decides how many pixels the result has. <strong>Auto</strong> next to the mode is the same setting as the output size Auto in <a href="#pixelate-settings">Quick settings</a> (off = fit a fixed size, on = the last automatic mode).</p>
+<p>② <strong class="nolink">4. Output size</strong> decides how many pixels the result has. <strong>Auto</strong> next to the mode is the same setting as the output size Auto in <a href="#pixelate-settings">Quick settings</a> (off = fit a fixed size, on = the last automatic mode). ④ Only the boxes the mode uses are shown: <strong>Fit a fixed size</strong> shows the ⑤ width×height and <strong>Keep aspect</strong> row, <strong>Scale factor</strong> shows the factor box, and <strong>From pixel size</strong> hides both. ⑥ <strong>Padding (px)</strong> is the empty border left around the result (default 1 px) and is shown in every mode; the result never has more empty border than this.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>Mode</th><th>Output size</th></tr></thead>
 <tbody>
 <tr><td><strong>From pixel size</strong></td><td>Each detected cell becomes one result pixel (default). It keeps the pixel count the source art was drawn at, so it is the most faithful choice when no size is required.</td></tr>
-<tr><td><strong>Fit a fixed size</strong></td><td>Fits <strong>Width×Height</strong> (e.g. 32, 48, 64), with <strong>Keep aspect</strong> and <strong>Padding (px)</strong>. The source sprite is divided into the cell count left after padding: at 64×64 with padding 1, the cell size is chosen so the long side has 62 cells, splitting or merging cells. If the detected cell size is within 2% of that, the detected lines are kept; cells are never smaller than one source pixel. Use it when the game needs a set size, such as a 32×32 character.</td></tr>
+<tr><td><strong>Fit a fixed size</strong></td><td>Fits <strong>Width×Height</strong> (e.g. 32, 48, 64), with <strong>Keep aspect</strong> and <strong>Padding (px)</strong>. The source sprite is divided into the cell count left after padding: at 64×64 with padding 1, the cell size is chosen so the long side has 62 cells, splitting or merging cells. If the detected cell size is within 2% of that, the detected lines are kept. Width×height is an upper limit: cells are never smaller than one source pixel, so when the source is too small to fill it (e.g. a 144×256 source at 256×416) or Keep aspect leaves one side short, the <a class="term" href="#screen-canvas">canvas</a> shrinks to the sprite plus padding instead of filling the space. The border never gets wider than the padding. Use it when the game needs a set size, such as a 32×32 character; with a different aspect ratio, one side can end up smaller than that size.</td></tr>
 <tr><td><strong>Scale factor</strong></td><td>Multiplies the source size by a factor (e.g. 0.125), using the cell lines found per frame. Use it when you know the enlargement (0.125 for 8×) or want several images reduced by the same ratio.</td></tr>
 </tbody>
 </table></div>
 
 <h3 id="pixelate-palette">Cell color and palette</h3>
 <p><strong class="nolink">5. Cell color</strong> picks one representative color per source cell, and <strong class="nolink">6. Palette</strong> groups those colors into a few and maps each cell to a <a class="term" href="#screen-palette">palette</a> color. Look at these steps when the result has too many or too few colors, when shading turns into an odd hue, or when you must use a given palette.</p>
-<figure class="shot"><img src="../assets/guide/pixelate-palette.png" alt="Settings column with 5. Cell color and 6. Palette expanded" width="396" height="825" loading="lazy"><figcaption>① 5. Cell color · ② 6. Palette · ③ Color distance · ④ Prefer shade family</figcaption></figure>
+<figure class="shot"><img src="../assets/guide/pixelate-palette.png" alt="Settings column with 5. Cell color and 6. Palette expanded" width="396" height="697" loading="lazy"><figcaption>① 5. Cell color · ② 6. Palette · ③ Palette method (k-means) · ④ Color distance · ⑤ Prefer shade family</figcaption></figure>
 <h4>5. Cell color</h4>
 <p>The <strong>Mode</strong> of ① <strong class="nolink">5. Cell color</strong> is how one color is taken from the source pixels in a cell. Cell edges carry blur from neighbors, so <strong>Ignore cell border (%)</strong> (default 20%) is left out.</p>
 <div class="table-wrap"><table>
@@ -3895,7 +4075,7 @@
 <figure class="shot"><img src="../assets/guide/pixelate-palette-compare-cellmode.png" alt="Six source cells that mix colors next to the cell colors picked by the six cell color methods" width="1520" height="160" loading="lazy"><figcaption>From left: source cells · Most frequent color (default) · Median · Center pixel · Mean · Center-weighted mean · Dominant-color weighted mean — cell colors only, without palette or cleanup.</figcaption></figure>
 <p>Most frequent color and Dominant-color weighted mean pick the fill that covers most of each cell (<a class="term" href="#parts-skins">skin</a>, hair, iris blue) in all six. Center pixel grabs the hair strand and eye highlight that pass through the center, giving a dark and a white cell; Mean and Center-weighted mean turn cells that straddle two colors into muddy in-between colors that aren't in the source, and Median muddies only the cell with outline bled in.</p>
 <h4>6. Palette method</h4>
-<p>The <strong>Mode</strong> of ② <strong class="nolink">6. Palette</strong> is how the colors are reduced. New settings start with <strong>OKLCH grouping</strong>; each built-in preset uses its own method (<a href="#pixelate-presets">Built-in presets</a>).</p>
+<p>The ③ <strong>Mode</strong> of ② <strong class="nolink">6. Palette</strong> is how the colors are reduced. New settings start with <strong>OKLCH grouping</strong>; each built-in preset uses its own method (<a href="#pixelate-presets">Built-in presets</a>). Boxes the chosen method doesn't use are hidden (see the picture after the table below).</p>
 <figure class="shot"><img src="../assets/guide/pixelate-palette-compare-method.png" alt="The same face area reduced to about 11 colors with five palette methods, enlarged side by side" width="1248" height="242" loading="lazy"><figcaption>From left: k-means (OKLab) · Median cut · Keep original colors · OKLCH grouping · Distance grouping — all 11 colors except Keep original colors (699) (k-means and median cut set to 12 colors, OKLCH range L 0.15 · C 0.15 · H 30°, group radius 0.09).</figcaption></figure>
 <p>At the same 11 colors, k-means keeps the hair's white highlight as its own color, while Median cut, OKLCH grouping and Distance grouping merge the highlight with pale skin. Keep original colors keeps every cell color, highlight included, but leaves hundreds of colors.</p>
 <div class="table-wrap"><table>
@@ -3909,10 +4089,11 @@
 <tr><td><strong>Keep original colors</strong></td><td>Keeps the cell colors without reducing. Use it to see the cell colors alone; slightly different colors remain per cell, so there can be hundreds of colors.</td><td>As many as cells have</td></tr>
 </tbody>
 </table></div>
+<figure class="shot"><img src="../assets/guide/pixelate-palette-2.png" alt="The 6. Palette step with OKLCH grouping chosen" width="396" height="478" loading="lazy"><figcaption>⑥ OKLCH grouping — the Group within row instead of Colors</figcaption></figure>
 <ul>
-<li>Automatic color count picks the elbow of the error curve, then adds colors until small but noticeable ones (such as a red scarf) survive. The two grouping methods get their count from the range or radius, so <strong>Colors</strong> and Auto are disabled.</li>
+<li>⑥ Only the boxes the chosen method uses are shown. With <strong>k-means (OKLab)</strong> in the picture above, the <strong>Colors</strong> and Auto row is shown; with <strong>OKLCH grouping</strong> in this picture, the <strong>Group within</strong> row takes its place. The two grouping methods get their count from the range or radius, so the color count and Auto are hidden. <strong>Group radius</strong> appears only for <strong>Distance grouping</strong> and <strong>Palette</strong> only for <strong>Existing palette</strong>. <strong>Palette colors</strong>, <strong>One palette for all <a class="term" href="#screen-timeline">frames</a></strong> and <strong>Keep distinct hues</strong> appear only for the four methods that take colors from the image, and <strong>Edge cell weight</strong> only when the palette colors are original colors. <strong>Keep original colors</strong> also hides <strong>Dither</strong>, <strong>Color distance</strong> and <strong>Prefer shade family</strong>. Automatic color count picks the elbow of the error curve, then adds colors until small but noticeable ones (such as a red scarf) survive. With Auto on, the color count box stays visible but disabled.</li>
 <li><strong>Don&#x27;t optimize</strong> next to the method (only when the Palette step's Optimize is on; saved with the preset) makes optimization keep the method and vary only its other values (color count, grouping range and so on).</li>
-<li>With <strong>One palette for all <a class="term" href="#screen-timeline">frames</a></strong> (on by default), all frames use the same palette. The same check is also in <a href="#pixelate-settings">Quick settings</a>.</li>
+<li>With <strong>One palette for all frames</strong> (on by default), all frames use the same palette. The same check is also in <a href="#pixelate-settings">Quick settings</a>.</li>
 </ul>
 <h4>Palette colors and edge cells</h4>
 <div class="table-wrap"><table>
@@ -3932,7 +4113,7 @@
 </tbody>
 </table></div>
 <h4>Color distance</h4>
-<p>③ <strong>Color distance</strong> is how closeness between two colors is measured. It is used when cells take a palette color (without <a class="term" href="#tools-dither">dithering</a>), for <a class="term" href="#pixelate-color-edit">pinned colors</a>, for the replacement of <a class="term" href="#pixelate-color-edit">excluded colors</a>, for picking original colors and by <strong>Distance grouping</strong>. The score uses a separate <a href="#pixelate-score">scoring color distance</a>.</p>
+<p>④ <strong>Color distance</strong> is how closeness between two colors is measured. It is used when cells take a palette color (without <a class="term" href="#tools-dither">dithering</a>), for <a class="term" href="#pixelate-color-edit">pinned colors</a>, for the replacement of <a class="term" href="#pixelate-color-edit">excluded colors</a>, for picking original colors and by <strong>Distance grouping</strong>. The score uses a separate <a href="#pixelate-score">scoring color distance</a>.</p>
 <figure class="shot"><img src="../assets/guide/pixelate-palette-compare-distance.png" alt="Apricot, gold, red, blue, grey and green gradients next to the same gradients mapped to one 10-color palette with three color distances" width="1256" height="320" loading="lazy"><figcaption>From left: source gradients (top to bottom apricot, gold, red, blue, grey, green; lighter on the left) · OKLab · CIEDE2000 · OKLCh hue-weighted (default) — same 10-color palette, Prefer shade family off.</figcaption></figure>
 <p>OKLab weighs lightness, chroma and hue equally, so the middle of the grey strip turns skin and apricot, dark gold turns green and red, and dark ends go navy instead of black. CIEDE2000 keeps the greys cleanly grey, navy and black and holds gold almost to the dark end; OKLCh hue-weighted counts hue differences double, so greys stay in the grey family and gold shading stays among warm colors (apricot, red). Pictures with many greys, metals or dark shading do better with CIEDE2000 or OKLCh hue-weighted; for evenly spread colors OKLab is enough.</p>
 <div class="table-wrap"><table>
@@ -3941,13 +4122,13 @@
 <tr><td><strong>OKLCh hue-weighted</strong></td><td>Default. Splits the OKLab difference into lightness (L), chroma (C, how intense a color is) and hue (H, which color it is: red, yellow, blue and so on), and counts only the hue part more, by the hue weight next to it (default 2). A palette color of the same hue therefore wins even if its lightness is a bit off, so deep apricot hand shading doesn't turn into a gold or red-cloth color of similar lightness. The hue difference is scaled by chroma, so greys, whites and blacks are barely affected. Suits characters where different hues of similar lightness sit side by side, such as skin, hair and clothes.</td></tr>
 <tr><td><strong>CIEDE2000</strong></td><td>The industry-standard color difference formula (ΔE00) used in print and displays, measured in CIELAB (divided by 200 to match the OKLab scale). Differences the eye is dull to (chroma between very saturated colors) count less, sensitive ones (between near-grey colors) count more, and a correction for hue shifts around blue and purple is built in. It separates the fine steps of silver armor or white clothes and the shading of blue clothes well, and doesn't treat a hue change (apricot → gold) as close. It is heavier to compute, so cleanup gets a little slower.</td></tr>
 <tr><td><strong>OKLab</strong></td><td>OKLab is a <a class="term" href="#tools-gradient">color space</a> built so that colors the same number apart look about equally different (perceptually uniform: around 0.02 is a barely visible difference whether the colors are dark or light, red or blue). This takes the straight (Euclidean) distance between two colors in it, weighing lightness, chroma and hue equally (the old behavior). Fastest and most predictable, but at the same distance it can't tell one shading step from a neighboring hue, so shading can slip into the next hue. Suits images with few, clearly different colors.</td></tr>
-<tr><td>Hue weight (number box next to it)</td><td>The factor on hue differences for <strong>OKLCh hue-weighted</strong> (0–1000, default 2). 0 ignores hue, 1 equals OKLab, 2–5 prefer the same hue family, and a very large value picks the closest hue regardless of lightness and chroma. Other distances don't use it.</td></tr>
+<tr><td>Hue weight (number box next to it)</td><td>The factor on hue differences for <strong>OKLCh hue-weighted</strong> (0–1000, default 2). 0 ignores hue, 1 equals OKLab, 2–5 prefer the same hue family, and a very large value picks the closest hue regardless of lightness and chroma. Hidden for the other distances.</td></tr>
 </tbody>
 </table></div>
 <p>k-means and OKLCH grouping always use OKLab, and Bayer dithering compares the light-linear mix of two palette colors with the source in OKLab.</p>
 <h4>Keeping shades and hues</h4>
 <ul>
-<li>④ <strong>Prefer shade family</strong> (on by default): if a palette color has a similar hue and chroma to the cell color (a lighter or darker shade of the same color), the cell takes the family member with the nearest lightness instead of a different-hue color of similar lightness. Dithering never mixes in a chromatic color of a different hue either, so deep apricot hand shading doesn't turn gold or get gold dots.</li>
+<li>⑤ <strong>Prefer shade family</strong> (on by default): if a palette color has a similar hue and chroma to the cell color (a lighter or darker shade of the same color), the cell takes the family member with the nearest lightness instead of a different-hue color of similar lightness. Dithering never mixes in a chromatic color of a different hue either, so deep apricot hand shading doesn't turn gold or get gold dots.</li>
 <li><strong>Keep distinct hues</strong> (on by default): if a source color group with enough chroma (<strong>Min chroma</strong>, default 0.04) and area (<strong>Min area</strong>, default 4 cells) would turn into a palette color whose hue differs by at least <strong>Hue diff (°)</strong> (default 20°) — e.g. small apricot ear shading → gold — that color is put in the palette: added with an automatic count, or swapped for the least important color with a fixed count (up to ¼ of the palette; pinned colors stay). Blurred in-between colors between two palette colors aren't added.</li>
 <li>Optimizing the Palette step tries both on and off.</li>
 </ul>
@@ -3976,7 +4157,7 @@
 <tr><td><strong>Remove orphan pixels</strong> · <strong>Max contrast</strong></td><td>On · 0.18</td><td>A pixel with no same-colored pixel among its 8 neighbors takes the most common neighbor color. Dots that contrast more than Max contrast (OKLab distance) with their neighbors, such as pupils, are kept; 1 removes them all.</td></tr>
 <tr><td><strong>Fill 1-px holes</strong></td><td>On</td><td>Fills a transparent pixel painted on all four sides with the most common of those four colors.</td></tr>
 <tr><td><strong>Fit outline to 1 px</strong></td><td>By shrinking</td><td>How the outer outline is made 1 px; see the table below.</td></tr>
-<tr><td><strong>Vector simplify (px)</strong> · <strong>Keep small blobs (cells)</strong></td><td>0.6 · 6</td><td>Used only by Redraw as vector. Simplify is how far (in result pixels) the outline may be straightened — larger is smoother but follows the shape less, 0 follows the center line exactly; dark shapes not touching the outer outline that are smaller than this many cells (such as eyes) are left as they are.</td></tr>
+<tr><td><strong>Vector simplify (px)</strong> · <strong>Keep small blobs (cells)</strong></td><td>0.6 · 6</td><td>Used only by Redraw as vector and hidden for the other modes. Simplify is how far (in result pixels) the outline may be straightened — larger is smoother but follows the shape less, 0 follows the center line exactly; dark shapes not touching the outer outline that are smaller than this many cells (such as eyes) are left as they are.</td></tr>
 <tr><td><strong>Outline</strong></td><td>As is</td><td>How the dark pixels on the edge (touching transparency) are tidied. What each value does is in the table below.</td></tr>
 <tr><td><strong>Reduce L-corner doubles on outlines</strong></td><td>Off</td><td>Replaces doubled pixels at L-shaped outline corners with the inner color.</td></tr>
 </tbody>
@@ -4044,6 +4225,7 @@
 <ul>
 <li>Settings already tried aren't rerun, and background removal and <a class="term" href="#screen-timeline">frame</a> splitting run only once, so trials run fast on several threads. The same image and settings always give the same result when the run ends by trial count rather than time.</li>
 <li>Each preset stops at whichever of <strong>Trials</strong> and <strong>Seconds</strong> in its <a href="#pixelate-score">0. Optimize criteria</a> comes first (a budget for all its passes together). 0 means no limit; with both at 0 it runs until it stops improving, and you can stop it with the cancel button.</li>
+<li>With more frames than <strong>Frames to sample</strong>, trials run on the sampled frames only, and when the preset ends (even by cancelling) the best settings are applied once to every frame for its tile. The result line gets "searched with 5/120 frames, all frames N" (the arrow scores compare the sampled frames). While you watch a running tile, the large preview applies each new best to every frame.</li>
 <li>Which values the optimizer varies is set by the <strong>Optimize</strong> checks in the step headers (<a href="#pixelate-score">Score and optimize criteria</a>).</li>
 </ul>
 <div class="note"><p>On the bundled sample (default settings with the former default items and budget — pixel size, color count, cell color method, cleanup and <a class="term" href="#screen-palette">palette</a> colors; 200 trials, 60 s) it took about 3 s and 162 trials to go from 70.3 to 80.8 (cell about 16.1 → 14.9 px, 26 colors, hole filling off, palette colors kept original, 99% of the outline 1 px).</p></div>
@@ -4089,6 +4271,7 @@
 <tbody>
 <tr><td><strong>Trials</strong></td><td>The most settings Clean up and Auto optimize try (0–10000). <strong>0 means no trial limit</strong>; whichever of trials and seconds is reached first stops the run. More trials make better settings more likely but take longer. Type a value or choose one from the right-click presets list. Settings without a preset start at 2000 trials.</td></tr>
 <tr><td><strong>Seconds</strong></td><td>The most time Clean up and Auto optimize spend on one preset (0–600 seconds). <strong>0 means no time limit</strong>; with both trials and seconds at 0 it runs until it stops improving, and the cancel button stops it. Built-in presets start at 300 seconds (Quick check: 30), settings without a preset at 120 seconds.</td></tr>
+<tr><td><strong>Frames to sample</strong></td><td>Sources with more frames than this run their trials on that many frames picked evenly, first and last included (for example 5 of 120 → frames 1, 31, 61, 90, 120), and the best settings are then applied once to every frame (default 5, 0 = every frame). A trial takes time in proportion to the frames, so long videos and GIFs get much faster. The same box is in <a href="#pixelate-settings">Quick settings</a>.</td></tr>
 <tr><td><strong>Target colors</strong> · <strong>Auto</strong> · <strong>Strict</strong></td><td>If the result has more colors than the target, the whole score is multiplied by (1 − Color count weight × colors over ÷ target): with weight 0.5 and target 16, 20 colors lose 12.5% and 24 colors 25%. <strong>Auto</strong> (default) ignores the color count; <strong>Strict</strong> also penalizes fewer colors than the target by the difference.</td></tr>
 <tr><td><strong>Fidelity</strong> · <strong>Center weighted</strong></td><td>How Fidelity, the largest score term, measures the color difference between the result and the source, and how pixels inside a cell are weighted. Each value is explained in the <strong>How Fidelity compares</strong> table below.</td></tr>
 <tr><td><strong>Cell color</strong> · <strong>Group range</strong></td><td>Which color a source cell counts as when comparing cell by cell, and how close colors must be to form one group. Each value is explained in the <strong>Representative cell color</strong> table below.</td></tr>
@@ -4107,7 +4290,7 @@
 </tbody>
 </table></div>
 <h4>Representative cell color</h4>
-<p>The <strong>Cell color</strong> box decides which single color a source cell counts as when comparing cell by cell. Source cells mix in blur, noise and neighboring fills, so the same result scores differently depending on what is taken as the cell's color. Used only with <strong>Cell by cell</strong>.</p>
+<p>The <strong>Cell color</strong> box decides which single color a source cell counts as when comparing cell by cell. Source cells mix in blur, noise and neighboring fills, so the same result scores differently depending on what is taken as the cell's color. Used only with <strong>Cell by cell</strong>; hidden together with center weighting for the other mode.</p>
 <figure class="shot"><img src="../assets/guide/pixelate-score-compare-cellref.png" alt="Six source cells that mix colors next to the same cells filled with their dominant-group and cell-average reference colors" width="944" height="224" loading="lazy"><figcaption>From left: source cells (white lines = cell borders) · Dominant group (default) · Cell average — Cell average treats a cell that straddles two colors as a muddy in-between color that isn't in the source.</figcaption></figure>
 <p>The cell split between outline and <a class="term" href="#parts-skins">skin</a> and the cell with outline bled into a corner become skin with Dominant group but a muddy brown with Cell average. So Dominant group accepts a result that paints that cell plain skin, while Cell average rewards a result that paints the muddy brown that isn't in the source. The plain skin cell is the same in both, so the choice only changes the score on cells that mix colors.</p>
 <div class="table-wrap"><table>
@@ -4115,7 +4298,7 @@
 <tbody>
 <tr><td><strong>Dominant group</strong></td><td>Groups similar colors in the cell (within the group range) and takes the heaviest group's average (default). A few black outline pixels in the corner of a <span class="nolink">skin</span> cell, or blurred edge colors, form small groups and drop out, so a result that paints the cell clean skin color counts as a match.</td><td>Most AI pixel art with distinct outlines and fills.</td></tr>
 <tr><td><strong>Cell average</strong></td><td>Takes the average of every pixel in the cell. A cell an outline crosses gets a muddy mix of skin and black as its reference, so the result loses a little whether it paints that cell skin or black.</td><td>Soft painting where colors really blend inside each cell (gradients, watercolor style), so no single group stands out.</td></tr>
-<tr><td><strong>Group range</strong></td><td>How different two colors can be and still form one group in Dominant group (OKLab distance, default 0.06). Smaller values split a single skin tone with JPEG noise into several groups, so the cell color wavers; larger values merge different fills such as skin and light shading. Optimize grid fit first's cell purity uses this value too.</td><td>Raise it a little for noisy JPEGs; lower it a little for art with closely spaced shading steps.</td></tr>
+<tr><td><strong>Group range</strong></td><td>How different two colors can be and still form one group in Dominant group (OKLab distance, default 0.06). Smaller values split a single skin tone with JPEG noise into several groups, so the cell color wavers; larger values merge different fills such as skin and light shading. Optimize grid fit first's cell purity uses this value too. Hidden unless Dominant group is chosen.</td><td>Raise it a little for noisy JPEGs; lower it a little for art with closely spaced shading steps.</td></tr>
 </tbody>
 </table></div>
 <h4>Choosing the scoring color distance</h4>
@@ -4130,7 +4313,7 @@
 <tr><td><strong>OKLab</strong></td><td>OKLab is a <a class="term" href="#tools-gradient">color space</a> built so that colors the same number apart look about equally different (perceptually uniform: around 0.02 is a barely visible difference whether the colors are dark or light, red or blue). This takes the straight (Euclidean) distance in it, weighing lightness, chroma and hue equally. Fastest and simplest.</td><td>Images with few, clearly different colors, or when you want a neutral ruler that weighs no difference specially.</td></tr>
 <tr><td><strong>CIEDE2000</strong></td><td>The industry-standard color difference formula (ΔE00) used in print and displays, measured in CIELAB (divided by 200 to match the OKLab scale). Differences the eye is dull to (chroma between very saturated colors) count less, sensitive ones (between near-grey colors) count more, and a correction for hue shifts around blue and purple is built in. Heavier to compute, so scoring gets a little slower.</td><td>Art with many grey steps such as silver armor, grey stone or white clothes, or with lots of blue such as blue clothes or a night sky.</td></tr>
 <tr><td><strong>OKLCh hue-weighted</strong></td><td>Splits the OKLab difference into lightness (L), chroma (C, intensity) and hue (H, which color: red, yellow, blue and so on) and adds them with the L, C and H weights below (default 1 · 1 · 2, so hue counts double). The hue difference is scaled by chroma, so greys barely change and only a saturated color turning into another hue is penalized heavily. For example, a skin-colored hand turning red-cloth colored counts as a big mistake even at similar lightness.</td><td>Characters where different hues of similar lightness touch, such as skin, a red shirt and orange hair; for weeding out results whose shading slips into a neighboring hue.</td></tr>
-<tr><td><strong>L</strong> weight</td><td>The factor on lightness differences (0–1000, default 1). Raising it penalizes shading that became a step lighter or darker more; 0 ignores lightness. Used only with <strong>OKLCh hue-weighted</strong>; dimmed for the other distances.</td><td>Raise it when the shading steps must stay exact.</td></tr>
+<tr><td><strong>L</strong> weight</td><td>The factor on lightness differences (0–1000, default 1). Raising it penalizes shading that became a step lighter or darker more; 0 ignores lightness. Used only with <strong>OKLCh hue-weighted</strong>; all three L, C and H rows are hidden for the other distances.</td><td>Raise it when the shading steps must stay exact.</td></tr>
 <tr><td><strong>C</strong> weight</td><td>The factor on chroma differences (default 1). Raising it penalizes colors that faded (vivid red → dull red) or grew more intense; 0 ignores chroma.</td><td>Raise it to weed out results whose colors turn dull.</td></tr>
 <tr><td><strong>H</strong> weight</td><td>The factor on hue differences (default 2). 1 equals OKLab; higher values penalize a change to another hue (skin → orange, blue → purple) more. 0 ignores hue.</td><td>Raise it to stop fills told apart only by hue (such as skin and red cloth) from merging.</td></tr>
 </tbody>
@@ -4165,11 +4348,12 @@
 <tr><td>④ <strong>Also save the colors as a new <a class="term" href="#screen-palette">palette</a></strong></td><td>Also saves the colors used as a new palette named <strong>source name palette</strong>.</td></tr>
 </tbody>
 </table></div>
-<figure class="shot"><img src="../assets/guide/pixelate-output-2.png" alt="Buttons at the bottom of the window" width="503" height="80" loading="lazy"><figcaption>⑤ Grow to image size · ⑥ Add to new tab · ⑦ Apply</figcaption></figure>
+<figure class="shot"><img src="../assets/guide/pixelate-output-2.png" alt="Buttons at the bottom of the window" width="606" height="80" loading="lazy"><figcaption>⑤ Reset presets · ⑥ Grow to image size · ⑦ Add to new tab · ⑧ Apply</figcaption></figure>
 <ul>
-<li>⑤ <strong>Grow to image size</strong> (off by default, remembered): when on, ⑦ <strong>Apply</strong> into the current document first grows the canvas from the center to the result size if it is smaller (never shrinks; same undo step as the insert). When off, the canvas stays as is and pixels past it are kept as pixels outside the canvas.</li>
-<li>⑥ <strong>Add to new tab</strong> (the button before ⑦ <strong>Apply</strong>): creates a new document exactly the size of the selected result in a new tab regardless of the output setting (frames and durations kept), and closes the window. It is always a new document of the result size, so ⑤ doesn't affect it.</li>
-<li><kbd>Enter</kbd> doesn't apply; click <strong>Apply</strong> or <strong>Add to new tab</strong> yourself. Double-clicking a <a class="term" href="#pixelate-candidates">candidate tile</a> also applies it.</li>
+<li>⑤ <strong>Reset presets</strong> (far left of the button row): keeps the source and resets the <a class="term" href="#pixelate-candidates">candidate row</a> to how it was when the window first opened. It clears the candidate tiles (including <strong>name_1</strong>… tiles run with edits), the optimization history, <a class="term" href="#pixelate-color-edit">excluded colors</a> and pinned colors, and rebuilds a tile for each checked preset (optimizing again if <strong><a class="term" href="#pixelate-optimize">Auto optimize</a> on load</strong> is on). The values on the left and saved presets stay as they are. Disabled while there is no source.</li>
+<li>⑥ <strong>Grow to image size</strong> (off by default, remembered): when on, ⑧ <strong>Apply</strong> into the current document first grows the canvas from the center to the result size if it is smaller (never shrinks; same undo step as the insert). When off, the canvas stays as is and pixels past it are kept as pixels outside the canvas.</li>
+<li>⑦ <strong>Add to new tab</strong> (the button before ⑧ <strong>Apply</strong>): creates a new document exactly the size of the selected result in a new tab regardless of the output setting (frames and durations kept), and closes the window. It is always a new document of the result size, so ⑥ doesn't affect it.</li>
+<li><kbd>Enter</kbd> doesn't apply; click <strong>Apply</strong> or <strong>Add to new tab</strong> yourself. Double-clicking a candidate tile also applies it.</li>
 <li>If options in the <a href="#pixelate-ai">AI (experimental)</a> step are on, the chat opens after inserting.</li>
 </ul>
 
@@ -4937,9 +5121,11 @@
 <li>① Dirt and mud share the group "Dirt", so they join without an outline where they touch. Stone and stone with ore share the group "Stone".</li>
 <li>② Different groups get an outline between them. Ground tiles have an outline on their edges and darken toward the inside.</li>
 <li>③ Covers (grass, snow, autumn leaves) painted over the top cells of the ground drape downward, with rounded ends.</li>
-<li>④ Water and lava get a wavy surface where the cell above is empty and a side edge where the side is empty; next to higher water the surface slopes up to meet it. They are animated, with waves flowing sideways.</li>
+<li>④ Water and lava get a wavy surface where the cell above is empty and a side edge where the side is empty. Where water of different heights meets, the surface continues as a slope (see the figure below). They are animated, with waves flowing sideways.</li>
 <li>⑤ The torch covers 1 cell but its image is 1×2 cells, so its glow spreads into the cell above. Torches and coins are animated too.</li>
 </ul>
+<figure class="shot"><img src="../assets/guide/tilemap-builtin-water.png" alt="Water stacked like stairs on a stone floor, with the one-cell-step slope, the one-cell-wide peak, the two-cell height difference and the water under a dirt block marked 6 to 9" width="788" height="372" loading="lazy"><figcaption>⑥ Straight slope of water rising one cell at a time · ⑦ Peak one cell wide · ⑧ Two or more cells of difference (vertical edge) · ⑨ Surface next to water under a block</figcaption></figure>
+<p>⑥ Where water rises one cell at a time (water stacked like stairs), the surface on the higher cell runs down at 45° to the cell's bottom edge and the surface on the lower cell rises to its top edge, joining into one straight slope without steps. ⑦ Water one cell wide that rises above its neighbors forms a pointed peak. ⑧ Next to a difference of two cells or more there is no slope, just a vertical edge. ⑨ The surface next to water that fills the space under a block also rises at 45° to meet the block's underside.</p>
 <figure class="shot"><img src="../assets/guide/tilemap-builtin-village.png" alt="Village and waterfront map built with the Top-down village & water tileset: land, water, cliff, walls and a door" width="788" height="468" loading="lazy"><figcaption>Top-down village & water terrain, bank, walls and door</figcaption></figure>
 <p>Another built-in choice in the tileset chooser, Top-down village &amp; water, is a 16 px position-sorted top-down tileset. Land joins with gently wavy edges and higher-floor terrain covers lower-floor terrain. Where water lies below, a bank matching the land extends into its cell, making water look lower; foam lines animate. Each wall holds its top and front within its placed cell, and a door joins the walls on either side.</p>
 <figure class="shot"><img src="../assets/guide/tilemap-builtin-compare.png" alt="Actual side-by-side rendering of the same wall, crates and waterfront by floor order and by position and baselines" width="1616" height="496" loading="lazy"><figcaption>Left: Floor order · Right: Position and baselines</figcaption></figure>
@@ -5988,6 +6174,7 @@ rows:
 <tr><td><a href="#tools-pivot">canvas pivot</a></td><td>The <a class="term" href="#screen-canvas">canvas</a>'s own <a class="term" href="#tools-pivot">pivot</a> used for sheet and Unity exports; with a <a class="term" href="#tools-pivot">representative layer</a> it follows that <a class="term" href="#screen-timeline">layer</a>'s pivot.</td></tr>
 <tr><td><a href="#tools-canvas-size">canvas size mode</a></td><td>A mode for setting the new canvas size and image position directly on the canvas.</td></tr>
 <tr><td><a href="#screen-timeline">cel</a> <span class="term-aka nolink">(cels)</span></td><td>The drawing of one layer in one frame — a single <a class="term" href="#screen-timeline">timeline</a> cell.</td></tr>
+<tr><td><a href="#model-view">cel shading</a></td><td>Shading that cuts brightness into a few flat bands.</td></tr>
 <tr><td><a href="#screen-export">cell name</a> <span class="term-aka nolink">(cell names)</span></td><td>The sprite name of each sheet cell (by frame number or by <a class="term" href="#screen-tags">tag</a>).</td></tr>
 <tr><td><a href="#start-account">Chickxel account</a></td><td>The chickxel.com account used for gallery and asset uploads (sign in with Google, GitHub or Discord).</td></tr>
 <tr><td><a href="#start-help">Choose help on screen</a> <span class="term-aka nolink">(help picker)</span></td><td>Press F1, then click a button or panel on screen to open its guide page.</td></tr>
@@ -6055,6 +6242,7 @@ rows:
 <tr><td><a href="#start-help">guide window</a></td><td>The in-app window for searching and browsing this guide (Help &gt; Guide…).</td></tr>
 <tr><td><a href="#tools-dodge">hue shift</a></td><td>A shading method that turns the hue toward yellow when lightening and toward blue/purple when darkening (the default <a class="term" href="#tools-dodge">lighten/darken</a> mode).</td></tr>
 <tr><td><a href="#ai-chat">image chip</a> <span class="term-aka nolink">(image chips)</span></td><td>The marker for an attached image inside the message text: a thumbnail and a #number.</td></tr>
+<tr><td><a href="#model-import">Import 3D model</a></td><td>The window that draws a 3D model into pixel-art frames after you set its size, angle, light, outlines and frames.</td></tr>
 <tr><td><a href="#screen-export">Import Settings</a></td><td>The Unity Texture Importer settings written to the .<a class="term" href="#files-save">meta file</a>.</td></tr>
 <tr><td><a href="#files-open-media">Import video</a></td><td>The window that extracts a video into frames after you set the range, frame rate and size.</td></tr>
 <tr><td><a href="#screen-common-controls">info box</a> <span class="term-aka nolink">(info boxes, info badge, info badges)</span></td><td>The small rounded square with an i. Hover or click it to show a longer explanation; click again to close it.</td></tr>
@@ -6078,6 +6266,7 @@ rows:
 <tr><td><a href="#screen-file-browser">merge files</a></td><td>Combines several images selected in the <a class="term" href="#screen-file-browser">file browser</a> into one .chickxel.</td></tr>
 <tr><td><a href="#files-save">meta file</a> <span class="term-aka nolink">(meta files)</span></td><td>The Unity settings file (<code>.meta</code>) next to an exported image, holding sprite cells, pivots and the guid.</td></tr>
 <tr><td><a href="#tools-canvas-size">middle fill</a></td><td>Chooses whether the middle is stretched (Stretch) or its pattern repeated (Tile) when stretching with <a class="term" href="#tools-nine-slice">9-slice</a>.</td></tr>
+<tr><td><a href="#model-animation">Mixamo</a></td><td>Adobe's free web service that rigs humanoid 3D characters and lets you download animations for them.</td></tr>
 <tr><td><a href="#screen-effect-settings">move pivot along</a></td><td>Moves the center (pivot) of later effects by as much as a moving effect moved the image.</td></tr>
 <tr><td><a href="#tools-move">Move tool</a></td><td>The tool that moves the selection or the whole cel; Ctrl turns any tool into it while held.</td></tr>
 <tr><td><a href="#screen-play-test">Movement test</a></td><td>A window (F5) where you move a character as in a top-down or platformer game using its tag animations.</td></tr>
@@ -6142,6 +6331,7 @@ rows:
 <tr><td><a href="#screen-script-effects">script effect</a> <span class="term-aka nolink">(script effects)</span></td><td>An effect written in JavaScript.</td></tr>
 <tr><td><a href="#screen-palette">secondary color</a> <span class="term-aka nolink">(Secondary)</span></td><td>The color painted with the right mouse button (it erases when <a class="term" href="#tools-basics">Right button = eraser</a> is on).</td></tr>
 <tr><td><a href="#screen-effect-list">seed</a></td><td>A number that fixes the look of a random effect; the same <a class="term" href="#screen-effect-list">seed</a> always gives the same look.</td></tr>
+<tr><td><a href="#model-pixel">sel-out</a></td><td>Drawing an outline with darkened versions of the colors beneath it instead of one color.</td></tr>
 <tr><td><a href="#tools-select">selection</a></td><td>The area chosen with a selection tool; painting, erasing and moving stay inside it.</td></tr>
 <tr><td><a href="#files-settings">settings folder</a> <span class="term-aka nolink">(app settings folder)</span></td><td>The Chickxel folder holding preferences, <a class="term" href="#files-history">undo history</a>, the <a class="term" href="#screen-file-browser">app trash</a> and logs (<code>%AppData%\Chickxel</code> on Windows).</td></tr>
 <tr><td><a href="#tools-shape-pen">shape pen</a> <span class="term-aka nolink">(shape set)</span></td><td>A drawing tool that stamps small pictures (leaves, flowers, sparkles, chick characters and more) from the chosen set. Eight built-in sets come with it; you can make your own sets, edit them on the canvas, and get or publish sets in the Store.</td></tr>
@@ -6181,6 +6371,7 @@ rows:
 <tr><td><a href="#tools-transform">transform mode</a></td><td>A mode for rotating, scaling and moving the selected pixels with handles.</td></tr>
 <tr><td><a href="#tools-layer-size">transform whole layer</a></td><td>A mode that rotates, scales, moves and distorts every frame of one layer (every skin of a part) together with one orange box.</td></tr>
 <tr><td><a href="#language-make">translation CSV</a></td><td>A spreadsheet file with every UI string as a key and one column per language; add a column to make a new language.</td></tr>
+<tr><td><a href="#model-frames">turntable</a> <span class="term-aka nolink">(turntables)</span></td><td>A frame mode that turns a 3D model one full circle and draws one image per evenly spaced direction, used for 8-direction sprites.</td></tr>
 <tr><td><a href="#files-history">undo history</a></td><td>Undo steps that survive closing and reopening a file.</td></tr>
 <tr><td><a href="#ai-undo">Undo this step</a></td><td>The button under an AI reply that undoes everything that reply changed.</td></tr>
 <tr><td><a href="#start-update">update dialog</a> <span class="term-aka nolink">(automatic update)</span></td><td>The dialog that shows a new version and its changes, then downloads, installs and restarts.</td></tr>

@@ -118,6 +118,11 @@ public sealed record PixelateOptimizeOptions
     /// 경계·칸 안 색 고름)로 찾아(<see cref="PixelateOptimizer.RunGrid"/>) 격자를 정한 뒤, 그 격자 그대로 나머지 항목을 보통 점수로 찾는다. 끄면 모든 항목을 보통 점수로 함께 찾는다.
     /// </summary>
     public bool GridFirst { get; init; }
+    /// <summary>
+    /// 뽑아서 찾을 프레임 수(0 = 모든 프레임): 프레임이 이보다 많으면(나눈 자리 <see cref="FrameSettings.ManualRegions"/>가 있을 때) 처음·끝을 넣어 고르게 이만큼만
+    /// 뽑아 시도를 돌리고, 찾은 1위 설정을 모든 프레임에 한 번 적용해 1위로 돌려준다(<see cref="PixelateOptimizeResult.SampledFrames"/>). 프레임이 많은 영상·GIF의 비용을 줄인다.
+    /// </summary>
+    public int SampleFrames { get; init; }
 }
 
 /// <summary>
@@ -157,6 +162,12 @@ public sealed class PixelateOptimizeResult
     public required int CacheHits { get; init; }
     public required TimeSpan Elapsed { get; init; }
     public required OptimizeStop StoppedReason { get; init; }
+    /// <summary>뽑은 프레임으로 찾았으면 그 수(0 = 모든 프레임으로 찾음 — <see cref="PixelateOptimizeOptions.SampleFrames"/>). 그때 <see cref="Best"/>는 모든 프레임에 적용한 결과·점수이고 시도·시작은 뽑은 프레임 것.</summary>
+    public int SampledFrames { get; init; }
+    /// <summary>뽑은 프레임으로 찾은 1위의 그 프레임들 점수(<see cref="SampledFrames"/>가 0이면 <see cref="Best"/>의 점수와 같음).</summary>
+    public double SampledBestScore { get; init; }
+    /// <summary>모든 프레임 수(뽑아서 찾았을 때만, 아니면 0).</summary>
+    public int TotalFrames { get; init; }
 
     /// <summary>
     /// 점수 순 상위 <paramref name="n"/>개(설정이 다른 것만). <paramref name="distinctOutput"/>면 결과 그림까지 같은 시도(예: 더할 값이 조금 달라도
@@ -235,6 +246,8 @@ public static class PixelateOptimizer
         ArgumentNullException.ThrowIfNull(src);
         ArgumentNullException.ThrowIfNull(start);
         ArgumentNullException.ThrowIfNull(options);
+        if (Sample(src, start, options.SampleFrames) is { } sub)
+            return Finish(Run(sub.Source, sub.Start, options with { SampleFrames = 0 }, onProgress, ct), src, start, options, gridScore: false);
         if (!options.GridFirst) return new Session(src, start, options, onProgress, ct).Run();
 
         var clock = Stopwatch.StartNew();
@@ -292,6 +305,8 @@ public static class PixelateOptimizer
         ArgumentNullException.ThrowIfNull(src);
         ArgumentNullException.ThrowIfNull(start);
         ArgumentNullException.ThrowIfNull(options);
+        if (Sample(src, start, options.SampleFrames) is { } sub)
+            return Finish(RunGrid(sub.Source, sub.Start, options with { SampleFrames = 0 }, onProgress, ct), src, start, options, gridScore: true);
         bool shared = RestParams(start, options) != OptimizeParam.None;
         var stage = options with
         {
@@ -309,6 +324,68 @@ public static class PixelateOptimizer
     {
         var rest = options.Params & ~OptimizeParam.Grid;
         return rest & Applicable(start, rest);
+    }
+
+    /// <summary>
+    /// <paramref name="count"/>개 프레임에서 고르게 <paramref name="samples"/>개(처음·끝 포함, 오름차순·겹침 없음). samples가 count 이상이거나 0 이하면 모두, 1이면 처음 하나.
+    /// </summary>
+    public static int[] SampleIndices(int count, int samples)
+    {
+        if (count <= 0) return [];
+        if (samples <= 0 || samples >= count) return [.. Enumerable.Range(0, count)];
+        if (samples == 1) return [0];
+        var picked = new List<int>(samples);
+        for (int i = 0; i < samples; i++)
+        {
+            int f = (int)Math.Round(i * (count - 1) / (double)(samples - 1), MidpointRounding.AwayFromZero);
+            if (picked.Count == 0 || picked[^1] != f) picked.Add(f);
+        }
+        return [.. picked];
+    }
+
+    /// <summary>
+    /// 뽑아서 찾을 준비(<see cref="PixelateOptimizeOptions.SampleFrames"/>): 나눈 자리가 있고 프레임이 뽑을 수보다 많으면 그 자리만 남긴 시작 설정과 준비 결과
+    /// (배경은 다시 지우지 않고 그대로 — <see cref="PixelateSource.WithFrames"/>). 아니면(뽑을 것 없음·배경 남기기 한 장) null.
+    /// </summary>
+    private static (PixelateSource Source, PixelateSettings Start)? Sample(PixelateSource src, PixelateSettings start, int samples)
+    {
+        if (samples <= 0 || start.Background.KeepBackground || start.Frames.ManualRegions is not { } regions) return null;
+        int count = start.Frames.SourceFrames > 0 ? Math.Min(start.Frames.SourceFrames, regions.Count) : regions.Count;
+        if (count <= samples) return null;
+        var picked = SampleIndices(count, samples).Select(i => regions[i]).ToArray();
+        var frames = start.Frames with { ManualRegions = picked, SourceFrames = start.Frames.SourceFrames > 0 ? picked.Length : 0 };
+        var s = start with { Frames = frames };
+        var sub = src.Matches(start) ? src.WithFrames(frames) : PixelateSource.Prepare(src.Original, s);
+        return (sub, s);
+    }
+
+    /// <summary>
+    /// 뽑은 프레임으로 찾은 결과의 1위 설정을 모든 프레임(시작 설정의 나눈 자리)에 한 번 적용해 1위로 바꾼다 — 취소로 끝났어도 적용한다(그때까지의 1위가 결과이므로,
+    /// 프레임 수만큼 정리 한 번이 더 걸림). 점수는 시도와 같은 기준(<paramref name="gridScore"/>면 칸 나누기 점수). 시도·시작은 뽑은 프레임 것 그대로.
+    /// </summary>
+    private static PixelateOptimizeResult Finish(PixelateOptimizeResult sampled, PixelateSource src, PixelateSettings start, PixelateOptimizeOptions options, bool gridScore)
+    {
+        var best = sampled.Best.Settings;
+        var full = best with { Frames = best.Frames with { ManualRegions = start.Frames.ManualRegions, SourceFrames = start.Frames.SourceFrames } };
+        var fullSrc = src.Matches(full) ? src : PixelateSource.Prepare(src.Original, full);
+        var clock = Stopwatch.StartNew();
+        var r = Pixelator.Run(fullSrc, full, options.ScoreMetric ?? ColorMetric.For(start.Palette), options.Fidelity, CancellationToken.None);
+        var score = gridScore
+            ? PixelateScoring.GridScore(GridQuality.Measure(fullSrc, r, PixelateRanges.FidelityGroupRadius.Clamp(options.Fidelity.GroupRadius)), r.Failed)
+            : PixelateScoring.Score(r, options.Weights, options.TargetColors > 0 ? options.TargetColors : null, options.StrictTargetColors);
+        return new PixelateOptimizeResult
+        {
+            Start = sampled.Start,
+            Best = new PixelateCandidate(sampled.Best.Index, full, r, score),
+            Trials = sampled.Trials,
+            Passes = sampled.Passes,
+            CacheHits = sampled.CacheHits,
+            Elapsed = sampled.Elapsed + clock.Elapsed,
+            StoppedReason = sampled.StoppedReason,
+            SampledFrames = sampled.Best.Result.Frames.Count,
+            SampledBestScore = sampled.Best.Score.Total,
+            TotalFrames = r.Frames.Count,
+        };
     }
 
     /// <summary>시간 예산이 있는지(0 이하·하루 이상은 제한 없음).</summary>

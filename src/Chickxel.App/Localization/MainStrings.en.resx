@@ -389,6 +389,7 @@ Reloading will discard your current edits. Reload?</value></data>
   <data name="Open_FilterImages" xml:space="preserve"><value>Images (PNG, JPG, BMP, GIF, WebP, ICO, AVIF, HEIC)</value></data>
   <data name="Open_FilterAnimations" xml:space="preserve"><value>Animations (GIF, WebP, APNG)</value></data>
   <data name="Open_FilterVideos" xml:space="preserve"><value>Videos (MP4, WebM, MOV, MKV, AVI)</value></data>
+  <data name="Open_FilterModels" xml:space="preserve"><value>3D models (GLB, glTF, FBX, OBJ)</value></data>
   <data name="Open_FilterAllFiles" xml:space="preserve"><value>All files</value></data>
   <data name="Open_ManyFiles" xml:space="preserve"><value>Open {count} files, each in its own tab?</value></data>
   <data name="Open_ManyFrames" xml:space="preserve"><value>{name} has {count} frames. Opening all of them can use a lot of memory and take a while.

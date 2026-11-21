@@ -2,6 +2,7 @@ using Avalonia.Platform.Storage;
 using Chickxel.App.Localization;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
+using Chickxel.Core.Scene3D;
 
 namespace Chickxel.App;
 
@@ -27,6 +28,7 @@ public sealed partial class MainForm
             new FileFilter(MainStrings.Open_FilterImages, MediaFormats.Patterns(MediaFormats.ImageExtensions)),
             new FileFilter(MainStrings.Open_FilterAnimations, MediaFormats.Patterns(MediaFormats.AnimationExtensions)),
             new FileFilter(MainStrings.Open_FilterVideos, MediaFormats.Patterns(MediaFormats.VideoExtensions)),
+            new FileFilter(MainStrings.Open_FilterModels, MediaFormats.Patterns(MediaFormats.ModelExtensions)),
             new FileFilter(MainStrings.Open_FilterAllFiles, "*.*"));
         OpenFiles(paths);
     }
@@ -84,7 +86,7 @@ public sealed partial class MainForm
     {
         switch (MediaFormats.KindOf(full))
         {
-            case MediaKind.Video:
+            case MediaKind.Video or MediaKind.Model:
                 return true;
             case MediaKind.Project:
                 return false;
@@ -141,6 +143,7 @@ public sealed partial class MainForm
         var name = Path.GetFileName(path);
         try
         {
+            if (MediaFormats.KindOf(path) == MediaKind.Model) return DecodeModel(owner, path, interactive, out message, out cancelled);
             if (MediaFormats.NeedsFfmpeg(path) && !(MediaFormats.KindOf(path) == MediaKind.Image && ImageUtil.CountFrames(path) > 0))
                 return DecodeVideo(owner, path, interactive, out message, out cancelled);
             int count = ImageUtil.CountFrames(path);
@@ -216,6 +219,45 @@ public sealed partial class MainForm
         else options = VideoImportPlan.Defaults(info);
         var anim = ProgressDialog<DecodedAnimation>.Run(owner, UiStrings.Video_DecodingTitle, MainStrings.FormatOpen_Decoding(name: name),
             VideoImportPlan.EstimateFrames(info, options), (progress, token) => FfmpegTool.Decode(ffmpeg, path, info, options, progress, token));
+        if (anim is null) cancelled = true;
+        return anim;
+    }
+
+    /// <summary>
+    /// 3D 모델을 그려 프레임으로: 읽기(진행 창) → 가져오기 설정(각도·빛·프레임 — <see cref="ModelImportDialog"/>) → 그리기(진행 창). 그만두면 null과 <paramref name="cancelled"/>.
+    /// <paramref name="interactive"/>가 false면(AI 도구) 묻지 않고 기본 설정으로 한 장.
+    /// </summary>
+    private static DecodedAnimation? DecodeModel(Visual owner, string path, bool interactive, out string message, out bool cancelled)
+    {
+        message = "";
+        cancelled = false;
+        var name = Path.GetFileName(path);
+        var scene = interactive
+            ? ProgressDialog<ModelScene>.Run(owner, UiStrings.Model_LoadingTitle, UiStrings.FormatModel_Loading(name: name), 0, (_, _) => ModelLoader.Load(path))
+            : ModelLoader.Load(path);
+        if (scene is null)
+        {
+            cancelled = true;
+            return null;
+        }
+        var render = new ModelRenderSettings();
+        var frames = new ModelFrameOptions();
+        if (interactive)
+        {
+            var dlg = new ModelImportDialog(name, scene, Path.GetDirectoryName(path));
+            if (dlg.ShowDialog(owner) != DialogResult.OK)
+            {
+                cancelled = true;
+                return null;
+            }
+            dlg.Remember();
+            render = dlg.RenderSettings;
+            frames = dlg.FrameOptions;
+            scene = dlg.Scene;
+        }
+        if (!interactive) return ModelFrames.Render(scene, render, frames);
+        var anim = ProgressDialog<DecodedAnimation>.Run(owner, UiStrings.Model_RenderingTitle, UiStrings.FormatModel_Rendering(name: name),
+            ModelFrames.Plan(scene, frames).Count, (progress, token) => ModelFrames.Render(scene, render, frames, progress, token));
         if (anim is null) cancelled = true;
         return anim;
     }

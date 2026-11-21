@@ -3,6 +3,7 @@ using Avalonia.Platform.Storage;
 using Avalonia.VisualTree;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
+using Chickxel.Core.Scene3D;
 using Chickxel.App.Localization;
 
 namespace Chickxel.App;
@@ -482,7 +483,7 @@ public sealed partial class FileBrowserPanel : UserControl
                 AttributesToSkip = FileAttributes.Hidden | FileAttributes.System,
             };
             projects = SpriteProject.FileExtensions.SelectMany(e => Directory.EnumerateFiles(folder, "*" + e, options)).ToList();
-            media = Directory.EnumerateFiles(folder, "*", options).Where(p => MediaFormats.KindOf(p) is MediaKind.Image or MediaKind.Video).ToList();
+            media = Directory.EnumerateFiles(folder, "*", options).Where(p => MediaFormats.KindOf(p) is MediaKind.Image or MediaKind.Video or MediaKind.Model).ToList();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -603,11 +604,12 @@ public sealed partial class FileBrowserPanel : UserControl
         var dot = UnsavedDot();
         var tile = new Grid { Width = ThumbSize, Height = ThumbSize, HorizontalAlignment = HorizontalAlignment.Center, Children = { thumb } };
         if (IsProject(path)) tile.Children.Add(ProjectBadge());
-        else if (MediaFormats.KindOf(path) == MediaKind.Video)
+        else if (MediaFormats.KindOf(path) is MediaKind.Video or MediaKind.Model)
         {
-            // 썸네일(ffmpeg로 뽑은 첫 프레임)이 오기 전·ffmpeg가 없을 때 보이는 필름 그림 + 오른쪽 아래 배지.
-            tile.Children.Insert(0, new IconView(VectorIcon.Film, AppTheme.DimTextBrush, 1.6) { Width = 30, Height = 30, IsHitTestVisible = false });
-            tile.Children.Add(VideoBadge());
+            // 썸네일(영상은 ffmpeg로 뽑은 첫 프레임, 3D 모델은 그린 그림)이 오기 전·못 만들 때 보이는 그림 + 오른쪽 아래 배지.
+            bool model = MediaFormats.KindOf(path) == MediaKind.Model;
+            tile.Children.Insert(0, new IconView(model ? VectorIcon.Cube : VectorIcon.Film, AppTheme.DimTextBrush, 1.6) { Width = 30, Height = 30, IsHitTestVisible = false });
+            tile.Children.Add(model ? MediaBadge(VectorIcon.Cube, UiStrings.FileBrowser_ModelBadge) : MediaBadge(VectorIcon.Film, UiStrings.FileBrowser_VideoBadge));
         }
         tile.Children.Add(dot);
         content.Children.Add(tile);
@@ -685,18 +687,24 @@ public sealed partial class FileBrowserPanel : UserControl
     }
 
     /// <summary>
-    /// 그림·영상 썸네일 원본: 그림은 첫 프레임(PNG·GIF는 직접, 나머지는 SkiaSharp), 영상·AVIF·HEIC는 ffmpeg가 있으면 뽑은 첫 프레임.
-    /// 못 만들면 null(영상은 필름 그림이 남음).
+    /// 그림·영상·3D 모델 썸네일 원본: 그림은 첫 프레임(PNG·GIF는 직접, 나머지는 SkiaSharp), 영상·AVIF·HEIC는 ffmpeg가 있으면 뽑은 첫 프레임,
+    /// 3D 모델은 기본 각도로 그린 그림. 못 만들면 null(영상·모델은 필름·상자 그림이 남음).
     /// </summary>
     private static PixelImage? LoadPreview(string path, Lazy<string?> ffmpeg, CancellationToken token)
     {
+        if (MediaFormats.KindOf(path) == MediaKind.Model)
+        {
+            var scene = ModelLoader.Load(path);
+            var pose = ModelPose.Pose(scene);
+            return ModelRenderer.Render(pose, new ModelRenderSettings { Width = ThumbSize * 2, Height = ThumbSize * 2 }, ModelRenderer.Bounds(pose), token);
+        }
         if (!MediaFormats.NeedsFfmpeg(path) || ImageUtil.CountFrames(path) > 0)
             return ImageUtil.DecodeAnimation(path, maxFrames: 1)?.Images[0];
         return ffmpeg.Value is { } exe ? FfmpegTool.FirstFrame(exe, path, ThumbSize * 2, token) : null;
     }
 
-    /// <summary>영상 표시: 썸네일 오른쪽 아래 필름 배지.</summary>
-    private static Border VideoBadge()
+    /// <summary>영상·3D 모델 표시: 썸네일 오른쪽 아래 배지(필름·상자 그림, 풍선 = <paramref name="tip"/>).</summary>
+    private static Border MediaBadge(VectorIcon icon, string tip)
     {
         var badge = new Border
         {
@@ -710,9 +718,9 @@ public sealed partial class FileBrowserPanel : UserControl
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Bottom,
             Margin = new Thickness(0, 0, -4, -2),
-            Child = new IconView(VectorIcon.Film, AppTheme.TextBrush, 2.0),
+            Child = new IconView(icon, AppTheme.TextBrush, 2.0),
         };
-        ToolTip.SetTip(badge, UiStrings.FileBrowser_VideoBadge);
+        ToolTip.SetTip(badge, tip);
         return badge;
     }
 

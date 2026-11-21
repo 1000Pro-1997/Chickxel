@@ -101,6 +101,9 @@
 <li><a href="#files">파일 · 저장 · 내보내기</a>
 <ol><li><a href="#files-roles">파일의 종류와 저장 위치</a></li><li><a href="#files-open">파일 열기</a></li><li><a href="#files-png-import">PNG 열기(가져오기)</a></li><li><a href="#files-open-media">그림·움직이는 그림·영상 열기</a></li><li><a href="#files-drop-layer">캔버스에 그림 끌어 놓기</a></li><li><a href="#files-save">저장하기</a></li><li><a href="#files-autosave">자동 저장</a></li><li><a href="#files-revert">저장한 내용으로 되돌리기</a></li><li><a href="#files-history">닫아도 남는 실행취소 기록</a></li><li><a href="#files-cell-names">내보낼 칸 이름</a></li><li><a href="#files-cleanup">옛 결과 정리와 파일 이름 바꾸기</a></li><li><a href="#files-quit">닫을 때 저장 묻기</a></li><li><a href="#files-settings">환경 설정</a></li><li><a href="#files-crash-log">오류가 생겼을 때</a></li></ol>
 </li>
+<li><a href="#model">3D 모델 가져오기</a>
+<ol><li><a href="#model-open">3D 모델 열기</a></li><li><a href="#model-import">가져오기 창</a></li><li><a href="#model-view">크기·각도·빛·명암</a></li><li><a href="#model-pixel">픽셀 다듬기·외곽선</a></li><li><a href="#model-frames">프레임: 한 장·돌려 보기·애니메이션</a></li><li><a href="#model-animation">다른 파일의 애니메이션 붙이기</a></li></ol>
+</li>
 <li><a href="#pixelate">AI 그림 픽셀로 정리</a>
 <ol><li><a href="#pixelate-open">창 열기와 원본 넣기</a></li><li><a href="#pixelate-view">원본과 미리보기</a></li><li><a href="#pixelate-candidates">후보와 점수</a></li><li><a href="#pixelate-zoom">크게 보기와 색 판정</a></li><li><a href="#pixelate-color-edit">색 빼기와 고정 색</a></li><li><a href="#pixelate-presets">프리셋과 정리하기</a></li><li><a href="#pixelate-settings">설정 단계</a></li><li><a href="#pixelate-grid">픽셀 격자와 결과 크기</a></li><li><a href="#pixelate-palette">칸 색과 팔레트</a></li><li><a href="#pixelate-cleanup">정리와 외곽선</a></li><li><a href="#pixelate-optimize">자동 최적화</a></li><li><a href="#pixelate-optimize-settings">자동 최적화 설정 창</a></li><li><a href="#pixelate-score">점수와 최적화 기준</a></li><li><a href="#pixelate-output">넣기</a></li><li><a href="#pixelate-ai">AI로 다듬기 (실험)</a></li></ol>
 </li>
@@ -773,7 +776,7 @@
 <h4>목록과 검색</h4>
 <ul>
 <li>목록은 경로 이름순이고 썸네일 크기는 정해져 있습니다. <code>.chickxel</code>(예전 <code>.gpixel</code> 포함)와 PNG를 보여 줍니다.</li>
-<li>JPG·BMP·GIF·WebP·APNG·ICO·AVIF·HEIC 그림과 영상(MP4·WebM·MOV·MKV·AVI 등)도 나열합니다(썸네일 = 첫 <a class="term" href="#screen-timeline">프레임</a>). 영상은 필름 배지가 붙고 <a class="term" href="#files-open-media">ffmpeg</a>가 있으면 첫 프레임 썸네일을 만듭니다. 누르면 <a href="#files-open-media">그림·영상 열기</a>와 같이 새 탭으로 엽니다.</li>
+<li>JPG·BMP·GIF·WebP·APNG·ICO·AVIF·HEIC 그림과 영상(MP4·WebM·MOV·MKV·AVI 등), 3D 모델(GLB·glTF·OBJ·FBX)도 나열합니다(썸네일 = 첫 <a class="term" href="#screen-timeline">프레임</a>). 영상은 필름 배지가 붙고 <a class="term" href="#files-open-media">ffmpeg</a>가 있으면 첫 프레임 썸네일을 만듭니다. 3D 모델은 상자 배지가 붙고 기본 각도로 그린 썸네일이 보입니다. 누르면 <a href="#files-open-media">그림·영상 열기</a>·<a href="#model-open">3D 모델 열기</a>와 같이 새 탭으로 엽니다.</li>
 </ul>
 <figure class="shot"><img src="assets/guide/screen-file-browser-5.png" alt="파일 목록에서 Wolf Adventurer.chickxel 묶음을 펼친 모습: 프로젝트 칸 오른쪽 화살표에 8번, 프로젝트와 내보낸 그림 셋을 두른 검은 테두리 띠에 9번 표시" width="254" height="303" loading="lazy"><figcaption>⑧ 묶음 펼치기/접기 화살표 · ⑨ 펼친 묶음(검은 테두리 띠)</figcaption></figure>
 <ul>
@@ -3068,9 +3071,9 @@
 <h2>파일 · 저장 · 내보내기</h2>
 <p>이 장은 파일을 열고, 고치는 동안 지키고, 저장하며 결과물을 내보내는 흐름을 다룹니다. 편집한 내용은 모두 <a class="term" href="#files-roles">프로젝트 파일</a>(<code>.chickxel</code>) 하나에 들어가고, 게임 엔진이나 다른 프로그램에서 쓸 PNG·<code>.meta</code> 같은 결과물은 저장할 때 그 파일에서 다시 만들어집니다.</p>
 <ol>
-<li><strong>열기</strong>: <code>.chickxel</code>은 그대로 열고, PNG·다른 그림·움직이는 그림·영상은 새 프로젝트로 가져옵니다(<a href="#files-open">파일 열기</a>). <a class="term" href="#screen-canvas">캔버스</a>에 끌어 놓은 그림은 <a class="term" href="#screen-timeline">레이어</a>가 됩니다(<a href="#files-drop-layer">캔버스에 그림 끌어 놓기</a>).</li>
+<li><strong>열기</strong>: <code>.chickxel</code>은 그대로 열고, PNG·다른 그림·움직이는 그림·영상은 새 프로젝트로 가져옵니다(<a href="#files-open">파일 열기</a>). 3D 모델은 각도·빛을 정해 그린 <a class="term" href="#screen-timeline">프레임</a>으로 가져옵니다(<a href="#model">3D 모델 가져오기</a>). <a class="term" href="#screen-canvas">캔버스</a>에 끌어 놓은 그림은 <a class="term" href="#screen-timeline">레이어</a>가 됩니다(<a href="#files-drop-layer">캔버스에 그림 끌어 놓기</a>).</li>
 <li><strong>편집하는 동안</strong>: 저장한 적 있는 파일은 잠시 손을 멈추면 <a class="term" href="#files-autosave">자동 저장</a>되고(<a href="#files-autosave">자동 저장</a>), <a class="term" href="#files-history">실행취소 기록</a>은 파일을 닫아도 남습니다(<a href="#files-history">닫아도 남는 실행취소 기록</a>). 고친 것을 모두 버리려면 <a href="#files-revert">저장한 내용으로 되돌리기</a>를 씁니다.</li>
-<li><strong>저장</strong>: <span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span>는 <code>.chickxel</code>을 쓰고, 내보내기 목록에서 저장할 때 체크한 줄의 결과물(이미지, 게임 엔진 파일, 움직이는 그림)도 함께 만듭니다(<a href="#files-save">저장하기</a>). <a class="term" href="#screen-export">칸 이름</a>은 <a href="#files-cell-names">내보낼 칸 이름</a>, 더는 만들지 않는 옛 결과는 <a href="#files-cleanup">옛 결과 정리</a>에서 다룹니다. 내보내기 목록과 설정 자체는 <a href="#screen-export">내보내기 창</a>, GIF·APNG·<a class="term" href="#screen-timeline">프레임</a> PNG는 <a href="#screen-gif">GIF · APNG · 프레임 PNG로 내보내기</a>를 봅니다.</li>
+<li><strong>저장</strong>: <span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span>는 <code>.chickxel</code>을 쓰고, 내보내기 목록에서 저장할 때 체크한 줄의 결과물(이미지, 게임 엔진 파일, 움직이는 그림)도 함께 만듭니다(<a href="#files-save">저장하기</a>). <a class="term" href="#screen-export">칸 이름</a>은 <a href="#files-cell-names">내보낼 칸 이름</a>, 더는 만들지 않는 옛 결과는 <a href="#files-cleanup">옛 결과 정리</a>에서 다룹니다. 내보내기 목록과 설정 자체는 <a href="#screen-export">내보내기 창</a>, GIF·APNG·프레임 PNG는 <a href="#screen-gif">GIF · APNG · 프레임 PNG로 내보내기</a>를 봅니다.</li>
 <li><strong>닫기</strong>: 저장하지 않은 문서를 닫거나 앱을 끝내면 한 창에 모아 저장할지 묻습니다(<a href="#files-quit">닫을 때 저장 묻기</a>).</li>
 </ol>
 <p>환경 설정과 <a class="term" href="#files-settings">설정 폴더</a>는 <a href="#files-settings">환경 설정</a>, 예상하지 못한 오류와 로그·<a class="term" href="#files-crash-log">복구 파일</a>은 <a href="#files-crash-log">오류가 생겼을 때</a>에 있습니다.</p>
@@ -3136,6 +3139,7 @@
 <tr><td>PNG</td><td>그 PNG를 만든 프로젝트가 있으면 그 프로젝트를, 없으면 PNG를 새 프로젝트로 가져옵니다(<a href="#files-png-import">PNG 열기(가져오기)</a>).</td></tr>
 <tr><td>JPG·BMP·GIF·WebP·ICO·<a class="term" href="#screen-gif">움직이는 PNG</a></td><td>그림 <a class="term" href="#screen-timeline">프레임</a>마다 프레임 하나인 새 문서(<a href="#files-open-media">그림·움직이는 그림·영상 열기</a>).</td></tr>
 <tr><td>영상(MP4·WebM·MOV 등)·AVIF·HEIC</td><td><a class="term" href="#files-open-media">ffmpeg</a>로 읽어 새 문서를 만듭니다. 영상은 먼저 <strong><a class="term" href="#files-open-media">영상 가져오기</a></strong> 창이 뜹니다(<a href="#files-open-media">그림·움직이는 그림·영상 열기</a>).</td></tr>
+<tr><td>3D 모델(GLB·glTF·OBJ·FBX)</td><td>먼저 <strong><a class="term" href="#model-import">3D 모델 가져오기</a></strong> 창에서 크기·각도·빛·프레임을 정하고, 그린 프레임으로 새 문서를 만듭니다(<a href="#model-open">3D 모델 열기</a>).</td></tr>
 </tbody>
 </table></div>
 <h4>탐색기·Finder에서 더블클릭해 열기</h4>
@@ -3432,6 +3436,176 @@
 <p>앱이 끝날 수밖에 없는 오류라면 저장하지 않은 수정이 있는 문서를 하나씩 설정 폴더의 <code>Chickxel/Recovery/</code>에 복구 파일(<code>&lt;문서 이름&gt;-&lt;날짜시각&gt;-&lt;번호&gt;.chickxel</code>)로 따로 저장합니다. 원래 파일은 바꾸지 않습니다. 다음에 켤 때 복구 파일을 저절로 열지는 않으므로, <strong>도움말 &gt; 설정 파일 위치 열기</strong>로 설정 폴더를 열어 <code>Recovery</code> 안의 파일을 직접 엽니다.</p>
 </section>
 
+<section class="doc" id="model">
+<h2>3D 모델 가져오기</h2>
+<p>GLB·glTF·OBJ·FBX 3D 모델을 열면 정한 크기·각도·빛으로 그려 픽셀 그림 <a class="term" href="#screen-timeline">프레임</a>으로 가져옵니다. 3D로 만든 캐릭터·소품을 탑다운 8방향 스프라이트, 아이소메트릭 소품, 옆모습 걷기 애니메이션 같은 게임 스프라이트로 바꿀 때 씁니다. 가져온 프레임은 보통 그림이라 다른 그림처럼 고칠 수 있습니다.</p>
+<p>모델을 열면 <strong><a class="term" href="#model-import">3D 모델 가져오기</a></strong> 창이 뜹니다. 프리셋을 고르거나 값을 고친 뒤 <strong>가져오기</strong>를 누르면 프레임마다 한 장인 새 탭이 열립니다. 크게 부드럽게 그려 <a href="#pixelate">AI 그림 픽셀로 정리</a>의 원본으로 넘기면 칸 맞추기·<a class="term" href="#screen-palette">팔레트</a>를 그 창에 맡길 수도 있습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>쪽</th><th>이럴 때 읽기</th></tr></thead>
+<tbody>
+<tr><td><a href="#model-open">3D 모델 열기</a></td><td>3D 모델 파일을 열거나 <a class="term" href="#screen-file-browser">파일 브라우저</a>에서 찾을 때</td></tr>
+<tr><td><a href="#model-import">가져오기 창</a></td><td>가져오기 창의 생김새와 프리셋을 알고 싶을 때</td></tr>
+<tr><td><a href="#model-view">크기·각도·빛·명암</a></td><td>크기·보는 각도·빛·명암을 정할 때</td></tr>
+<tr><td><a href="#model-pixel">픽셀 다듬기·외곽선</a></td><td>반투명·색 수·외곽선을 픽셀 그림답게 다듬을 때</td></tr>
+<tr><td><a href="#model-frames">프레임: 한 장·돌려 보기·애니메이션</a></td><td>한 장, 여러 방향, 애니메이션 중 무엇으로 뽑을지 정할 때</td></tr>
+<tr><td><a href="#model-animation">다른 파일의 애니메이션 붙이기</a></td><td><a class="term" href="#model-animation">믹사모</a> 등에서 받은 애니메이션을 캐릭터에 붙일 때</td></tr>
+</tbody>
+</table></div>
+
+<h3 id="model-open">3D 모델 열기</h3>
+<p>3D 모델은 그림·영상처럼 열면 새 문서가 됩니다. 바로 열리지 않고 먼저 <strong><a class="term" href="#model-import">3D 모델 가져오기</a></strong> 창이 떠서 어떻게 그릴지 정합니다(<a href="#model-import">가져오기 창</a>).</p>
+<h4>여는 방법</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>방법</th><th>하는 법</th></tr></thead>
+<tbody>
+<tr><td>파일 메뉴</td><td><strong>파일 &gt; 열기(.chickxel · 이미지 · GIF · 영상)…</strong>(<span class="key" data-cmd="파일/열기(.chickxel / PNG 가져오기)…"><kbd>Ctrl</kbd>+<kbd>O</kbd></span>). 파일 종류 목록에서 <strong>3D 모델(GLB·glTF·FBX·OBJ)</strong>를 고르면 3D 모델만 보입니다.</td></tr>
+<tr><td>창에 끌어 놓기</td><td>탐색기·Finder에서 창에 놓습니다. 그림과 달리 <a class="term" href="#screen-canvas">캔버스</a> 위에 놓아도 <a class="term" href="#screen-timeline">레이어</a>가 되지 않고 새 탭으로 엽니다.</td></tr>
+<tr><td><a class="term" href="#screen-file-browser">파일 브라우저</a></td><td>썸네일을 누릅니다(아래 그림).</td></tr>
+<tr><td><a class="term" href="#pixelate">픽셀로 정리</a>의 원본</td><td>픽셀로 정리 창에 끌어 놓거나 <strong>파일 찾기…</strong>로 고르거나 파일 브라우저에서 우클릭해 넣으면, 같은 가져오기 창에서 그린 그림이 원본이 됩니다(<a href="#pixelate-open">창 열기와 원본 넣기</a>).</td></tr>
+</tbody>
+</table></div>
+<h4>읽는 형식</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>형식</th><th>그리는 것</th><th>안 되는 것</th></tr></thead>
+<tbody>
+<tr><td>glTF 2.0 (<code>.glb</code>, <code>.gltf</code>)</td><td>메시, 재질 색·텍스처·꼭짓점 색, 알파 자르기(mask·blend), 빛을 받지 않는 재질(unlit), 뼈대(<a class="term" href="#parts-skins">스킨</a>) 애니메이션과 노드 애니메이션</td><td>Draco·meshopt로 압축한 메시는 열지 않고 알립니다(압축하지 않고 다시 내보내기). 모프 타깃(셰이프 키)은 기본 모양으로 그립니다.</td></tr>
+<tr><td>OBJ (<code>.obj</code> + <code>.mtl</code>)</td><td>메시, 재질 색(<code>Kd</code>)과 텍스처(<code>map_Kd</code>) — <code>.mtl</code>과 텍스처는 OBJ 옆에 둡니다.</td><td>애니메이션이 없는 형식입니다. <code>.mtl</code>이 없으면 기본 재질로 그리고 알립니다.</td></tr>
+<tr><td>FBX (<code>.fbx</code>)</td><td>바이너리 FBX 7.x(<a class="term" href="#model-animation">믹사모</a>가 주는 형식): 메시, 텍스처(파일 안에 든 것 포함), 뼈대·스킨, 애니메이션</td><td>글자(ASCII) FBX와 6.x 이하는 열지 않고 <strong>FBX Binary</strong>로 다시 내보내라고 알립니다. 블렌드 셰이프는 기본 모양으로 그립니다.</td></tr>
+</tbody>
+</table></div>
+<p>여는 동안 <strong>3D 모델 읽기</strong> 진행 창이 뜹니다. 읽었지만 그리지 못하는 것(모프 타깃 등)은 가져오기 창 아래에 주황 글자로 알립니다. 삼각형이 없거나 500만 개를 넘는 모델은 열지 않습니다.</p>
+<h4>파일 브라우저와 상세 정보</h4>
+<figure class="shot"><img src="assets/guide/model-open.png" alt="파일 브라우저에 chick.glb와 crate.obj가 그린 썸네일로 보이고, chick.glb 썸네일·상자 배지·crate.obj에 1~3번 표시" width="230" height="579" loading="lazy"><figcaption>① chick.glb 썸네일(기본 각도로 그린 그림) · ② 3D 모델 배지 · ③ OBJ 모델(crate.obj)</figcaption></figure>
+<p>파일 브라우저는 3D 모델도 나열합니다. ① 썸네일은 모델을 기본 각도(가로 30°·세로 20°)로 그린 그림이고, ② 오른쪽 아래 상자 배지가 3D 모델임을 알립니다(마우스를 올리면 설명). ③ OBJ도 같습니다. 그리기 전이나 그릴 삼각형이 없는 파일(애니메이션만 든 chick_walk.glb 등)은 상자 그림으로 보입니다.</p>
+<figure class="shot"><img src="assets/guide/model-open-2.png" alt="chick.glb의 상세 정보 창. 종류 GLB 3D model, 삼각형·재질·애니메이션 수에 4·5번 표시" width="329" height="278" loading="lazy"><figcaption>상세 정보 창: ④ 종류(GLB 3D 모델) · ⑤ 삼각형·재질·애니메이션 수</figcaption></figure>
+<p>파일을 우클릭해 <strong>상세 정보</strong>을 열면 ④ 종류가 형식과 함께(GLB·glTF·OBJ·FBX 3D 모델) 보이고, ⑤ 그릴 삼각형 수·재질 수와 애니메이션이 있으면 애니메이션 수가 보입니다.</p>
+
+<h3 id="model-import">가져오기 창</h3>
+<p><strong>3D 모델 가져오기</strong> 창은 왼쪽에서 결과를 보며 오른쪽에서 값을 정합니다. 값을 바꾸면 미리보기를 바로 다시 그립니다.</p>
+<figure class="shot"><img src="assets/guide/model-import.png" alt="3D 모델 가져오기 창에서 탑다운 8방향 프리셋을 고른 모습. 미리보기, 재생 막대, 요약, 프리셋, 설정 칸, 예상, 가져오기 단추에 1~7번 표시" width="888" height="632" loading="lazy"><figcaption>chick.glb, 프리셋 탑다운 8방향: ① 미리보기·조작 안내 · ② 재생·프레임 막대 · ③ 모델 요약 · ④ 프리셋 · ⑤ 설정 칸 · ⑥ 나올 프레임 예상 · ⑦ 가져오기(Import)</figcaption></figure>
+<ul class="marks">
+<li>① 미리보기는 나올 크기 그대로 그린 그림을 칸에 맞게 키워 보입니다(1배보다 크면 정수 배라 픽셀이 고르고, 바둑판은 투명). 끌면 보는 각도(가로·세로)가, 휠을 돌리면 확대가 바뀌고 오른쪽 칸 값도 같이 바뀝니다.</li>
+<li>② <a class="term" href="#screen-timeline">프레임</a>이 여럿이면(<a class="term" href="#model-frames">돌려 보기</a>·애니메이션) 재생 단추로 <a class="term" href="#screen-timeline">프레임 길이</a>대로 돌려 보고, 막대로 볼 프레임을 고릅니다. 한 장이면 꺼집니다.</li>
+<li>③ 파일 이름과 삼각형·재질·애니메이션 수입니다.</li>
+<li>④ 프리셋을 고르면 아래 값이 모두 그 프리셋 값으로 바뀝니다(그다음 고쳐도 됨, 아래 참고).</li>
+<li>⑤ 설정은 <a href="#model-view">크기·각도·빛·명암</a>, <a href="#model-pixel">픽셀 다듬기·외곽선</a>, <a href="#model-frames">프레임</a> 쪽에서 줄마다 설명합니다.</li>
+<li>⑥ 나올 프레임 수·크기·프레임마다 길이(ms)입니다.</li>
+<li>⑦ <strong>가져오기</strong>를 누르면 <strong>3D 모델 그리기</strong> 진행 창(취소 가능)이 뜨고 끝나면 새 탭이 열립니다(<a href="#model-frames">프레임</a>). <strong>취소</strong>나 <kbd>Esc</kbd>는 아무것도 열지 않습니다.</li>
+</ul>
+<p>고친 값은 앱을 끌 때까지 기억해 다음에 여는 모델의 처음 값이 됩니다(고른 애니메이션은 모델마다 달라 빼고).</p>
+<h4>프리셋</h4>
+<figure class="shot"><img src="assets/guide/model-import-2.png" alt="프리셋 목록을 펼친 모습. 기본 제공 일곱 개와 저장한 My RPG 8-dir 40px, 저장·지우기 단추에 8~10번 표시" width="517" height="298" loading="lazy"><figcaption>⑧ 프리셋 목록(기본 제공 일곱 개 뒤에 저장한 것) · ⑨ 저장…(Save…) · ⑩ 지우기(Delete)</figcaption></figure>
+<p>⑧ 목록에는 흔한 게임 시점에 맞춘 기본 제공 프리셋 일곱 개가 있고, 그 뒤에 저장한 프리셋이 붙습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>프리셋</th><th>값</th><th>쓰임</th></tr></thead>
+<tbody>
+<tr><td>탑다운 8방향(비스듬히 위)</td><td>48px, 가로 0°·세로 55°, 한 바퀴 8프레임, 16색, 겉 외곽선 어둡게</td><td>비스듬히 위에서 보는 탑다운 RPG 캐릭터·탈것</td></tr>
+<tr><td>바로 위에서 8방향</td><td>32px, 세로 90°(바로 위), 한 바퀴 8프레임, 12색, 한 가지 색 외곽선</td><td>위에서 내려다보는 슈팅·전략 게임의 탈것·건물</td></tr>
+<tr><td>아이소메트릭 4방향(2:1)</td><td>64px, 가로 45°·세로 30° 정사영(바닥의 45° 선이 가로 2 : 세로 1로 놓임), 한 바퀴 4프레임, 20색</td><td>아이소메트릭 맵의 소품·캐릭터 4방향</td></tr>
+<tr><td>옆모습(횡스크롤)</td><td>64px, 가로 90°·세로 0°, 애니메이션 초당 12프레임, 24색, 안쪽 겹침선</td><td>횡스크롤 게임의 걷기·달리기·공격 애니메이션</td></tr>
+<tr><td>아이템 아이콘 32px</td><td>32px, 가로 30°·세로 25°, 확대 115%, 한 장, 12색, 한 가지 색 외곽선</td><td>인벤토리·<a class="term" href="#screen-asset-manager">상점</a>의 아이템 아이콘</td></tr>
+<tr><td>캐릭터 애니메이션 64px</td><td>64px, 가로 25°·세로 12°, 애니메이션 초당 12프레임, 24색, 안쪽 겹침선</td><td>비스듬한 정면에서 본 캐릭터 애니메이션</td></tr>
+<tr><td>크게 부드럽게(<a class="term" href="#pixelate">픽셀로 정리</a>용)</td><td>256px, 가장자리 다듬기 4×4, 픽셀 다듬기·외곽선 없음, 한 장</td><td><a href="#pixelate">픽셀로 정리</a>에 넘길 원본(칸 맞추기·<a class="term" href="#screen-palette">팔레트</a>·외곽선은 그 창에서)</td></tr>
+</tbody>
+</table></div>
+<p>마지막 것을 빼면 모두 가장자리 다듬기 4×4 + 반투명 없애기, 명암 3단계, 빛 가로 −40°·세로 50°(옆모습은 −30°·40°), 주변광 45%, 어둡게 55%를 함께 씁니다.</p>
+<p>⑨ <strong>저장…</strong>는 지금 값을 이름 붙여 저장합니다. 같은 이름의 저장한 프리셋은 덮어쓰고, 기본 제공 이름은 쓸 수 없으며, 고른 애니메이션은 저장하지 않습니다. ⑩ <strong>지우기</strong>는 고른 저장한 프리셋을 물은 뒤 지웁니다(기본 제공을 고르면 꺼짐). 저장한 프리셋은 <a class="term" href="#files-settings">설정 폴더</a>의 <code>model-presets.json</code>에 있습니다.</p>
+
+<h3 id="model-view">크기·각도·빛·명암</h3>
+<p>모델을 어느 크기로, 어느 쪽에서, 어떤 빛으로 그릴지 정하는 줄입니다. 기본은 128×128px, 가로 30°·세로 20°, 정사영입니다.</p>
+<figure class="shot"><img src="assets/guide/model-view.png" alt="가져오기 창의 크기부터 가장자리 다듬기까지 여덟 줄에 1~8번 표시" width="550" height="462" loading="lazy"><figcaption>① 크기 · ② 보는 각도 · ③ 보기 방식·시야각 · ④ 확대·맞춤 · ⑤ 빛 방향 · ⑥ 밝기 · ⑦ 명암 단계 · ⑧ 가장자리 다듬기·텍스처</figcaption></figure>
+<div class="table-wrap"><table>
+<thead><tr><th>줄</th><th>하는 일</th></tr></thead>
+<tbody>
+<tr><td>① <strong>크기</strong></td><td>나올 그림의 가로×세로(1~2048px)입니다. 모델은 짧은 변에 맞춰 가운데에 그립니다.</td></tr>
+<tr><td>② <strong>보는 각도</strong></td><td><strong>가로</strong>(−360~360°)는 모델 둘레를 돌고(양수 = 모델 오른쪽 면이 보이게), <strong>세로</strong>(−90~90°)는 위에서 내려다봅니다(90° = 바로 위). 0·0은 정면입니다.</td></tr>
+<tr><td>③ <strong>보기 방식</strong></td><td><strong>정사영</strong>은 멀어도 크기가 같아 게임 스프라이트에 흔하고, <strong>원근</strong>은 가까운 곳이 크게 보입니다. <strong>시야각</strong>(5~120°)은 원근일 때만 쓰며, 작을수록 멀리서 당겨 본 듯 덜 일그러집니다.</td></tr>
+<tr><td>④ <strong>확대</strong></td><td>100%면 모델(<a class="term" href="#model-frames">돌려 보기</a>·애니메이션은 모든 <a class="term" href="#screen-timeline">프레임</a>을 합친 범위)이 짧은 변에 꼭 맞습니다(10~1000%). <strong>맞춤</strong>은 100%로 되돌립니다.</td></tr>
+<tr><td>⑤ <strong>빛 방향</strong></td><td>빛이 오는 쪽을 카메라 기준으로 정합니다: 가로(양수 = 오른쪽에서)·세로(양수 = 위에서). 돌려 보기에서도 빛은 카메라를 따라가 프레임마다 같은 쪽이 밝습니다.</td></tr>
+<tr><td>⑥ <strong>밝기</strong></td><td><strong>주변광</strong>(0~100%)은 빛을 받지 않는 면의 밝기, <strong>빛 세기</strong>(0~200%)는 빛을 받는 면에 더하는 밝기입니다.</td></tr>
+<tr><td>⑦ <strong>명암 단계</strong></td><td>0이면 부드럽게 칠하고, 2~16이면 그 수의 밝기 단계로 끊어 셀 셰이딩처럼 칠합니다(1은 0과 같음).</td></tr>
+<tr><td>⑧ <strong>가장자리 다듬기</strong></td><td><strong>끔(또렷하게)</strong>는 픽셀마다 한 점만 보아 가장자리가 계단처럼 또렷하고, 2×2·4×4·8×8은 그만큼 나눠 그린 평균이라 부드럽습니다. <strong>텍스처</strong>를 끄면 재질 바탕 색만 씁니다.</td></tr>
+</tbody>
+</table></div>
+<h4>명암 단계</h4>
+<figure class="shot"><img src="assets/guide/model-view-compare.png" alt="같은 노란 공을 명암 단계 0(왼쪽)과 3(오른쪽)으로 그린 결과. 왼쪽은 밝기가 매끄럽게 바뀌고 오른쪽은 세 띠로 끊김" width="568" height="288" loading="lazy"><figcaption>왼쪽: 명암 단계 0(부드럽게) · 오른쪽: 명암 단계 3 — 공(ball.glb) 64px, 4배로 키움</figcaption></figure>
+<p>단계를 두면 둥근 면이 밝기 띠 몇 개로 나뉘어, 손으로 찍은 픽셀 그림의 명암처럼 색 수가 적고 또렷해집니다. 상자처럼 평평한 면만 있는 모델은 면마다 한 밝기라 차이가 작습니다.</p>
+<h4>가장자리 다듬기</h4>
+<figure class="shot"><img src="assets/guide/model-view-compare-2.png" alt="병아리를 가장자리 다듬기 끔(왼쪽)과 4×4(오른쪽)로 그린 결과. 왼쪽은 눈·가장자리가 또렷한 계단, 오른쪽은 반투명 가장자리와 섞인 색" width="568" height="288" loading="lazy"><figcaption>왼쪽: 가장자리 다듬기 끔 · 오른쪽: 4×4 — 64px, 반투명 없애기 끔, 4배</figcaption></figure>
+<p>끄면 원래 색만 남지만 가는 곳(눈·부리)이 끊기거나 들쭉날쭉해질 수 있습니다. 켜면 모양은 고르지만 가장자리에 반투명과 섞인 색이 생기므로, 픽셀 그림으로 쓰려면 <a href="#model-pixel">반투명 없애기·색 수</a>를 같이 쓰거나 크게 그려 <a class="term" href="#pixelate">픽셀로 정리</a>에 넘깁니다.</p>
+<h4>정사영과 원근</h4>
+<figure class="shot"><img src="assets/guide/model-view-compare-3.png" alt="나무 상자를 정사영(왼쪽)과 원근 시야각 70°(오른쪽)로 그린 결과. 왼쪽은 평행한 모서리가 평행하고 오른쪽은 가까운 모서리가 크게 벌어짐" width="568" height="288" loading="lazy"><figcaption>왼쪽: 정사영 · 오른쪽: 원근(시야각 70°) — 나무 상자(crate.obj) 64px, 4배</figcaption></figure>
+<p>타일에 맞춰 놓을 스프라이트는 정사영이 맞습니다. 원근은 어느 자리에 놓아도 같은 모양이어야 하는 게임 그림에는 어울리지 않지만, 한 장짜리 일러스트나 극적인 아이콘에 씁니다.</p>
+
+<h3 id="model-pixel">픽셀 다듬기·외곽선</h3>
+<p>그린 결과 픽셀을 바로 게임용 픽셀 그림답게 다듬는 줄입니다. 외곽선은 결과 1px 단위로 그립니다.</p>
+<figure class="shot"><img src="assets/guide/model-pixel.png" alt="픽셀 다듬기·외곽선·선 모양 세 줄을 줄마다 띄워 놓고 칸마다 1~9번 표시" width="550" height="178" loading="lazy"><figcaption>① 반투명 없애기 · ② 색 수 · ③ 겉·바깥에 · ④ 안쪽 겹침(Overlaps) · ⑤ 각진 곳·각도(Creases) · ⑥ 두께 · ⑦ 선 색 방식 · ⑧ 선 색 · ⑨ 어둡게 할 정도 — 줄 사이를 띄워 번호 자리를 둠</figcaption></figure>
+<div class="table-wrap"><table>
+<thead><tr><th>칸</th><th>하는 일</th></tr></thead>
+<tbody>
+<tr><td>① <strong>반투명 없애기</strong></td><td>절반 이상 덮인 픽셀만 불투명(255)으로, 나머지는 투명(0)으로 합니다. 가장자리 다듬기와 함께 쓰면 색은 부드럽게 고르고 알파는 또렷합니다.</td></tr>
+<tr><td>② <strong>색 수</strong></td><td>0이면 그대로, 2~64면 그 수로 줄입니다. <a class="term" href="#screen-timeline">프레임</a>이 여럿이면 모든 프레임이 <a class="term" href="#screen-palette">팔레트</a> 하나를 써서 프레임마다 색이 흔들리지 않고, 외곽선 색은 따로 더해집니다. 미리보기는 보이는 프레임만으로 팔레트를 만들어 결과와 조금 다를 수 있습니다.</td></tr>
+<tr><td>③ <strong>겉</strong>·<strong>바깥에</strong></td><td>겉은 모델과 빈 곳 사이(실루엣)에만 선을 긋습니다. 바깥에를 켜면 모델 바깥 빈 픽셀에 그려 모델이 선 두께만큼 커 보이고(확대 100%에서도 잘리지 않게 그만큼 작게 맞춤), 끄면 모델 가장자리 픽셀을 선으로 바꿉니다. 바깥에는 겉을 켰을 때만 씁니다.</td></tr>
+<tr><td>④ <strong>안쪽 겹침</strong></td><td>앞 부분과 그 뒤 부분이 만나는 곳(몸 앞의 날개·팔처럼 깊이가 크게 다른 곳)에 1px 선을 긋습니다. 뒤쪽 픽셀에 그려 앞 부분 윤곽은 그대로입니다.</td></tr>
+<tr><td>⑤ <strong>각진 곳</strong></td><td>면이 옆 칸의 각도(1~179°, 기본 60°)보다 크게 꺾인 곳에 1px 선을 긋습니다. 상자 모서리는 90°이고, 각도가 작을수록 선이 많아집니다.</td></tr>
+<tr><td>⑥ <strong>두께</strong></td><td>겉 외곽선 두께(1~3px)입니다. 안쪽 겹침선·각진 곳 선은 늘 1px입니다.</td></tr>
+<tr><td>⑦ 선 색 방식</td><td><strong>한 가지 색</strong>은 고른 색으로, <strong>어둡게(셀아웃)</strong>는 선 자리의 모델 색을 어둡게 해서 긋습니다(밝은 면은 옅은 선, 어두운 면은 짙은 선).</td></tr>
+<tr><td>⑧ 선 색</td><td>한 가지 색일 때 쓰는 색입니다. 누르면 <a class="term" href="#screen-color-picker">색 고르기</a> 창이 뜹니다(기본 거의 검은 보라).</td></tr>
+<tr><td>⑨ 어둡게 할 정도</td><td>어둡게일 때 밝기를 줄이는 비율(0~100%, 50% = 밝기 절반)입니다.</td></tr>
+</tbody>
+</table></div>
+<p>다듬기 차례는 반투명 없애기 → 색 줄이기 → 외곽선입니다. 외곽선을 하나도 켜지 않으면 ⑥~⑨가 꺼지고, ⑧은 한 가지 색일 때만, ⑨는 어둡게일 때만 켜집니다.</p>
+<h4>외곽선 종류</h4>
+<figure class="shot"><img src="assets/guide/model-pixel-compare.png" alt="병아리를 외곽선 없이, 겉만, 겉과 안쪽 겹침과 각진 곳으로 그린 세 결과. 오른쪽은 머리와 몸 사이, 상자 모서리에도 선이 있음" width="848" height="288" loading="lazy"><figcaption>왼쪽: 외곽선 없음 · 가운데: 겉 · 오른쪽: 겉 + 안쪽 겹침 + 각진 곳(60°) — 탑다운 8방향 값, 한 가지 색, 64px, 4배</figcaption></figure>
+<p>겉만 그으면 실루엣이 또렷해져 배경 위에서 잘 보입니다. 안쪽 겹침을 더하면 머리와 몸처럼 겹친 부분이 나뉘고, 각진 곳까지 더하면 상자 모서리에도 선이 생겨 손으로 그린 외곽선에 가까워집니다. 작은 스프라이트에서 각진 곳 선이 너무 많으면 각도를 올립니다.</p>
+<h4>한 가지 색과 어둡게</h4>
+<figure class="shot"><img src="assets/guide/model-pixel-compare-2.png" alt="겉과 안쪽 겹침 외곽선을 한 가지 색(왼쪽)과 어둡게(오른쪽)로 그린 결과. 오른쪽 선은 노란 몸 둘레가 짙은 갈색" width="568" height="288" loading="lazy"><figcaption>왼쪽: 한 가지 색 · 오른쪽: 어둡게(55%) — 겉 + 안쪽 겹침, 64px, 4배</figcaption></figure>
+<p>어둡게(셀아웃)는 선이 옆 색을 따라가 부드럽고 그림 속에 녹아듭니다. 한 가지 색은 어떤 배경에서도 윤곽이 분명합니다.</p>
+<h4>반투명 없애기와 색 수</h4>
+<figure class="shot"><img src="assets/guide/model-pixel-compare-3.png" alt="가장자리 다듬기 4×4로 그린 병아리를 다듬기 없이(왼쪽), 반투명 없애기와 8색으로(오른쪽) 그린 결과" width="568" height="288" loading="lazy"><figcaption>왼쪽: 다듬기 없음 · 오른쪽: 반투명 없애기 + 8색 — 가장자리 다듬기 4×4, 64px, 4배</figcaption></figure>
+<p>가장자리가 불투명·투명 둘로만 나뉘고 색이 8개로 줄어, 그대로 게임에 넣을 수 있는 픽셀 그림이 됩니다. 색을 너무 줄이면 눈처럼 작은 곳의 색이 이웃 색으로 바뀌므로 결과를 보며 정합니다.</p>
+
+<h3 id="model-frames">프레임: 한 장·돌려 보기·애니메이션</h3>
+<p>무엇을 <a class="term" href="#screen-timeline">프레임</a>으로 뽑을지 정합니다. 프레임마다 <a class="term" href="#screen-timeline">레이어</a> 하나의 그림 한 장이 됩니다.</p>
+<figure class="shot"><img src="assets/guide/model-frames.png" alt="프레임, 돌려 보기 프레임 수, 애니메이션, 초당 프레임 네 줄을 줄마다 띄워 놓고 1~4번 표시" width="550" height="224" loading="lazy"><figcaption>① 프레임 방식 · ② 돌려 보기 프레임 수 · ③ 애니메이션·불러오기 · ④ 초당 프레임·최대</figcaption></figure>
+<div class="table-wrap"><table>
+<thead><tr><th>① 방식</th><th>만드는 프레임</th></tr></thead>
+<tbody>
+<tr><td>한 장</td><td>지금 자세(애니메이션을 쓰지 않은 쉬는 자세) 한 장, 길이 100ms</td></tr>
+<tr><td>한 바퀴 돌려 보기</td><td>한 바퀴(360°)를 ② 프레임 수(1~64)로 나눠 프레임마다 가로 각도를 더합니다. 8이면 45°씩 8방향, 4면 90°씩 4방향입니다. 프레임마다 100ms입니다.</td></tr>
+<tr><td>애니메이션</td><td>③ 고른 애니메이션을 ④ 초당 프레임(1~60)으로 최대(1~1000, 기본 120)까지 뽑습니다. 되풀이 애니메이션은 끝 시각이 첫 프레임과 같은 자세라 넣지 않습니다. 애니메이션이 없는 모델은 목록에 이 방식이 없습니다.</td></tr>
+</tbody>
+</table></div>
+<p>② 돌려 보기 프레임 수는 돌려 보기일 때만, ③ 애니메이션과 ④ 초당 프레임·최대는 애니메이션일 때만 켜집니다. ③ 옆 <strong>불러오기…</strong>는 <a href="#model-animation">다른 파일의 애니메이션 붙이기</a>에서 다룹니다.</p>
+<p>돌려 보기·애니메이션은 모든 프레임의 자세를 합친 범위에 카메라를 맞춰 그려, 프레임마다 모델 크기·자리가 흔들리지 않습니다.</p>
+<figure class="shot"><img src="assets/guide/model-frames-2.png" alt="탑다운 8방향 프리셋으로 그린 병아리 여덟 장. 왼쪽부터 45°씩 돌아 정면, 오른쪽, 뒤, 왼쪽이 보임" width="1268" height="176" loading="lazy"><figcaption>탑다운 8방향 프리셋으로 그린 8프레임(48px, 3배로 키움) — 왼쪽부터 가로 0°·45°·90°…315°</figcaption></figure>
+<p>돌려 보기는 빛이 카메라를 따라가므로 어느 방향에서나 같은 쪽이 밝고, <a class="term" href="#screen-palette">팔레트</a>도 모든 프레임이 함께 써서 방향마다 색이 같습니다. 게임에서는 캐릭터가 향하는 방향의 프레임을 골라 보입니다.</p>
+<h4>가져온 결과</h4>
+<figure class="shot"><img src="assets/guide/model-frames-3.png" alt="가져온 chick.glb 새 탭과 타임라인의 프레임 여덟 개. 탭과 프레임 머리에 5·6번 표시" width="803" height="837" loading="lazy"><figcaption>⑤ 새 탭(chick.glb) · ⑥ 프레임 8개(방향마다 한 장, 100ms)</figcaption></figure>
+<p>가져오기가 끝나면 ⑤ 파일 이름의 새 탭이 열리고, <a class="term" href="#screen-canvas">캔버스</a>는 그림 크기, 레이어 하나에 ⑥ 프레임마다 한 장이 들어갑니다. 아직 <code>.chickxel</code>이 없으므로 처음 저장할 때 위치를 묻습니다. <a class="term" href="#pixelate">픽셀로 정리</a>의 원본으로 넣었으면 새 탭 대신 그 창의 원본이 됩니다.</p>
+
+<h3 id="model-animation">다른 파일의 애니메이션 붙이기</h3>
+<p>믹사모처럼 캐릭터와 애니메이션을 따로 받는 경우, 캐릭터 모델을 열고 애니메이션 파일을 불러와 붙인 뒤 그립니다. 같은 뼈대(예: 둘 다 믹사모에서 받은 것)를 쓰는 파일끼리 붙습니다.</p>
+<figure class="shot"><img src="assets/guide/model-animation.png" alt="애니메이션 두 개를 불러온 뒤의 가져오기 창. 불러오기 단추, 애니메이션 목록, 요약, 프레임 방식, 재생 막대에 1~5번 표시" width="888" height="632" loading="lazy"><figcaption>옆모습 프리셋에 애니메이션 두 개를 붙인 뒤: ① 불러오기…(Import…) · ② 애니메이션 목록(모델에 든 Idle, 붙인 chick_walk·chick_jump) · ③ 요약(애니메이션 3개) · ④ 프레임 = 애니메이션 · ⑤ 재생·프레임 막대</figcaption></figure>
+<p>애니메이션 줄 옆 ① <strong>불러오기…</strong>로 FBX·glTF 파일을 고릅니다(여러 개를 한 번에). 붙으면 ② 목록에 파일 이름으로 뜨고(파일 하나에 애니메이션이 여럿이면 "파일 이름: 애니메이션 이름"), ③ 요약의 애니메이션 수가 늘며, ④ <a class="term" href="#screen-timeline">프레임</a>이 애니메이션으로 바뀌어 처음 붙인 것이 골라집니다. ⑤ 재생으로 바로 움직임을 확인합니다.</p>
+<ul>
+<li>뼈는 이름으로 맞춥니다. <code>mixamorig:Hips</code>·<code>Armature|Hips</code>처럼 마지막 <code>:</code>·<code>|</code> 앞 이름과 대소문자는 빼고 비교하므로 <code>mixamorig1:</code>처럼 앞 이름이 달라도 붙습니다.</li>
+<li>회전은 그대로 옮기고, 이동은 맨 위 뼈(믹사모의 Hips) 하나만 캐릭터 키(골반 높이)에 맞춰 줄이거나 늘려 옮깁니다. 크기 키는 버립니다.</li>
+<li>캐릭터에 없는 뼈의 움직임은 버립니다. 못 붙인 파일(애니메이션이 없음, 맞는 뼈가 하나도 없음, 읽을 수 없음)과 주의(같은 이름 뼈가 여럿 등)는 모두 붙인 뒤 한 번에 알립니다.</li>
+<li>붙인 애니메이션은 이 창에서 그리는 데만 쓰고 모델 파일은 바꾸지 않습니다. 창을 닫으면 사라지므로 애니메이션마다 가져오려면 모델을 다시 열어 다시 불러옵니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/model-animation-2.png" alt="불러온 chick_walk를 옆모습 프리셋으로 그린 걷기 여덟 장" width="1652" height="224" loading="lazy"><figcaption>붙인 chick_walk(0.8초)를 옆모습 프리셋·초당 10프레임으로 그린 8프레임(64px, 3배)</figcaption></figure>
+<p>캐릭터 파일(chick.glb)에는 Idle만 있었지만, 뼈 이름이 <code>mixamorig:</code>로 시작하는 애니메이션 파일의 걷기를 붙여 그렸습니다. 길이 0.8초를 초당 10프레임으로 뽑아 8프레임이 되었습니다.</p>
+<h4>믹사모에서 받아 쓰는 순서</h4>
+<ol>
+<li><a href="https://www.mixamo.com/">mixamo.com</a>에서 캐릭터를 고르거나 올린 뒤 <strong>Download</strong>에서 Format <strong>FBX Binary(.fbx)</strong>, Skin <strong>With Skin</strong>으로 받습니다.</li>
+<li>쓸 애니메이션마다 고른 뒤 Skin <strong>Without Skin</strong>으로 받습니다(뼈대와 움직임만이라 파일이 작음). 걷기·달리기처럼 제자리에서 되풀이할 것은 <strong>In Place</strong>를 켭니다. 끄면 캐릭터가 걸어 나가 프레임마다 자리가 옮겨집니다.</li>
+<li>Chickxel에서 캐릭터 FBX를 열고, 가져오기 창의 <strong>불러오기…</strong>로 애니메이션 FBX들을 한 번에 고릅니다.</li>
+<li>애니메이션 목록에서 하나를 고르고 프리셋(옆모습·캐릭터 애니메이션 등)으로 맞춘 뒤 가져옵니다.</li>
+</ol>
+<p>"글자(ASCII) FBX는 읽지 못합니다"가 뜨면 믹사모에서 Format을 <strong>FBX Binary</strong>로 다시 받습니다. 믹사모가 아닌 캐릭터에 믹사모 애니메이션을 붙이면 뼈 이름이 맞지 않아 붙지 않습니다.</p>
+</section>
+
 <section class="doc" id="pixelate">
 <h2>AI 그림 픽셀로 정리</h2>
 <p>AI가 만든 "픽셀 느낌" 그림은 픽셀 크기가 들쭉날쭉하고(예: 7~9px), 가장자리가 번지고, JPEG 잡티가 있고, 색이 수백 개입니다. <strong>AI 그림 픽셀로 정리</strong> 창은 그런 그림을 원본 픽셀 한 칸이 결과 픽셀 하나가 되는 깨끗한 픽셀 아트로 바꿉니다. 배경이 단색이든 투명이든, 여러 <a class="term" href="#screen-timeline">프레임</a>이 든 스프라이트 시트나 움직이는 GIF, 영상이든 넣을 수 있습니다.</p>
@@ -3468,7 +3642,7 @@
 <div class="table-wrap"><table>
 <thead><tr><th>여는 곳</th><th>원본</th><th>쓸 때</th></tr></thead>
 <tbody>
-<tr><td>① <strong>AI &gt; <a class="term" href="#pixelate">AI 그림 픽셀로 정리</a>…</strong></td><td>없음 — ② 가운데 안내가 보이는 빈 창이 열리고, 원본이 들어오기 전에는 ④ <strong>적용</strong>과 ⑤ <strong><a class="term" href="#pixelate-optimize">자동 최적화</a></strong>가 꺼져 있습니다. 그림·영상을 끌어 놓거나 <kbd>Ctrl</kbd>+<kbd>V</kbd>로 붙여 넣거나 ③ <strong>파일 찾기…</strong>로 엽니다.</td><td>그림이 다른 프로그램이나 클립보드에 있을 때</td></tr>
+<tr><td>① <strong>AI &gt; <a class="term" href="#pixelate">AI 그림 픽셀로 정리</a>…</strong></td><td>없음 — ② 가운데 안내가 보이는 빈 창이 열리고, 원본이 들어오기 전에는 ④ <strong>적용</strong>과 ⑤ <strong><a class="term" href="#pixelate-optimize">자동 최적화</a></strong>가 꺼져 있습니다. 그림·영상·3D 모델을 끌어 놓거나 <kbd>Ctrl</kbd>+<kbd>V</kbd>로 붙여 넣거나 ③ <strong>파일 찾기…</strong>로 엽니다.</td><td>그림이 다른 프로그램이나 클립보드에 있을 때</td></tr>
 <tr><td>⑥ <strong>AI &gt; 현재 레이어를 픽셀로 정리…</strong></td><td>현재 레이어(<a class="term" href="#parts-concept">그룹</a>이 아닌 레이어) — 그림이 있는 <a class="term" href="#screen-timeline">프레임</a>이 여럿이면 프레임마다 한 칸씩 격자로 이어 붙여 원본으로 씁니다. 레이어가 비어 있으면 알리고 열지 않습니다.</td><td>이미 문서에 넣은 AI 그림을 다시 정리할 때</td></tr>
 <tr><td><a class="term" href="#screen-file-browser">파일 브라우저</a>에서 ⑦ 그림 파일을 우클릭 &gt; ⑧ <strong>AI 그림 픽셀로 정리…</strong></td><td>그 파일</td><td>그림 파일이 프로젝트 폴더에 있을 때</td></tr>
 </tbody>
@@ -3479,9 +3653,9 @@
 <div class="table-wrap"><table>
 <thead><tr><th>방법</th><th>설명</th></tr></thead>
 <tbody>
-<tr><td>끌어 놓기</td><td>창 어디에나 그림·영상 파일을 끌어 놓습니다. 여러 파일이면 넣을 수 있는 첫 파일을 씁니다.</td></tr>
+<tr><td>끌어 놓기</td><td>창 어디에나 그림·영상·3D 모델 파일을 끌어 놓습니다. 여러 파일이면 넣을 수 있는 첫 파일을 씁니다.</td></tr>
 <tr><td>붙여 넣기</td><td>글 입력 칸 밖에서 <kbd>Ctrl</kbd>+<kbd>V</kbd>. 탐색기에서 복사한 그림·영상 파일이나 그 파일 경로 글을 먼저 보고, 없으면 클립보드 그림을 씁니다.</td></tr>
-<tr><td>파일 찾기</td><td><strong>파일 찾기…</strong>는 주 창 파일 브라우저에서 고른 폴더에서 시작합니다. PNG·JPG·BMP·GIF·WebP 같은 그림과 MP4·WebM·MOV 같은 영상을 열 수 있습니다(영상과 AVIF·HEIC는 <a class="term" href="#files-open-media">ffmpeg</a>가 있어야 함).</td></tr>
+<tr><td>파일 찾기</td><td><strong>파일 찾기…</strong>는 주 창 파일 브라우저에서 고른 폴더에서 시작합니다. PNG·JPG·BMP·GIF·WebP 같은 그림과 MP4·WebM·MOV 같은 영상, GLB·glTF·OBJ·FBX 3D 모델을 열 수 있습니다(영상과 AVIF·HEIC는 <a class="term" href="#files-open-media">ffmpeg</a>가 있어야 함).</td></tr>
 <tr><td>⑨ <strong>원본 바꾸기</strong></td><td>원본이 있을 때 원본 아래 막대의 열린 폴더 아이콘 단추입니다. 다시 끌어 놓거나 붙여 넣어도 바뀝니다.</td></tr>
 </tbody>
 </table></div>
@@ -3489,6 +3663,7 @@
 <h4>움직이는 그림과 여러 프레임</h4>
 <p>GIF·<a class="term" href="#screen-gif">움직이는 PNG</a>·WebP를 끌어 놓기·파일 찾기·파일 붙여 넣기·파일 브라우저 우클릭으로 넣으면, <a class="term" href="#screen-canvas">캔버스</a>에 끌어 놓을 때와 같이 프레임으로 풉니다. 프레임마다 한 칸씩 가로세로 길이가 비슷한 격자로 이어 붙인 그림이 원본이 되고, <a href="#pixelate-settings">2. 프레임 나누기</a>가 그 격자(칸마다 한 프레임)로 맞춰집니다. <strong>현재 레이어를 픽셀로 정리</strong>도 같은 격자로 잇습니다.</p>
 <p>영상(MP4·WebM 등)을 넣으면 주 창에서 영상을 열 때와 같은 구간·초당 프레임 창이 먼저 뜨고, 고른 구간에서 뽑은 프레임을 같은 격자로 잇습니다. 영상은 ffmpeg가 있어야 넣을 수 있습니다.</p>
+<p>3D 모델(.glb·.gltf·.obj·.fbx)을 끌어 놓기·파일 찾기·파일 브라우저 우클릭으로 넣으면 <a href="#model-import">3D 모델 가져오기</a> 창이 먼저 뜨고, 거기서 정한 각도·프레임으로 그린 그림을 같은 격자로 잇습니다. 크게 부드럽게 그려 넘기려면 그 창의 프리셋 <strong>크게 부드럽게(픽셀로 정리용)</strong>를 고릅니다.</p>
 <p>움직이는 그림·영상·레이어 프레임으로 만든 원본을 그 격자 그대로 나누면, 프레임마다 칸 전체를 내용에 맞춰 자르지 않고 쓰고, 모든 프레임에 같은 칸 크기를 씁니다. 그래서 결과 프레임의 크기가 들쭉날쭉하지 않습니다.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>경우</th><th>동작</th></tr></thead>
@@ -3526,6 +3701,9 @@
 <li>프레임 안을 끌면 그 프레임을 옮기고, 테두리·모서리를 끌면 크기를 바꿉니다(원본 픽셀 단위, 원본 밖으로는 나가지 않음). 놓으면 그 경계로 프레임을 나눠 후보를 다시 만들고, 고친 경계는 설정·프리셋에 저장됩니다. 나누기 방식·프레임 수 같은 조건을 바꾸면 고친 경계는 지워지지만, 화면의 경계는 <strong><a class="term" href="#pixelate-settings">프레임 나누기</a> 적용</strong>를 누를 때까지 그대로입니다.</li>
 <li>원본을 우클릭하면 <strong>이미지 복사</strong>·<strong>PNG로 저장…</strong>이 있습니다(배경 지운 모습을 켰으면 배경을 지운 원본, 파일 이름 끝에 "배경지움"). 프레임 안에서 우클릭하면 그 프레임만 잘라 복사·저장하는 항목이 맨 위에 더해집니다.</li>
 </ul>
+<h4>뽑아서 찾을 프레임 표시</h4>
+<figure class="shot"><img src="assets/guide/pixelate-view-sampled.png" alt="같은 그림 12프레임을 이은 원본 보기에서 1·4·7·9·12번 프레임만 노란 테두리이고 나머지는 파란 테두리인 모습" width="689" height="500" loading="lazy"><figcaption>뽑아서 찾을 프레임 5: 12프레임 중 1·4·7·9·12번이 노란 테두리(나머지 파랑)</figcaption></figure>
+<p><a href="#pixelate-score"><strong>뽑아서 찾을 프레임</strong></a>로 최적화할 때 뽑히는 프레임은 파란 테두리 대신 노란 테두리입니다. 값을 바꾸거나 프레임 나누기를 다시 적용하면 바로 다시 칠하고, 프레임이 뽑을 수보다 많지 않으면 모두 파랑입니다.</p>
 <h4>원본 아래 막대</h4>
 <figure class="shot"><img src="assets/guide/pixelate-view-2.png" alt="원본 아래 막대" width="124" height="74" loading="lazy"><figcaption>⑥ 배경 지우기(<span class="nolink">지우개</span> 아이콘) · ⑦ 격자 보기(격자 아이콘)</figcaption></figure>
 <div class="table-wrap"><table>
@@ -3544,20 +3722,20 @@
 
 <h3 id="pixelate-candidates">후보와 점수</h3>
 <p>후보 줄에는 프리셋마다 칸 하나가 놓입니다. 원본을 넣으면 체크한 프리셋의 <strong>돌리지 않음</strong> 칸이 놓이고, 정리하기·<a class="term" href="#pixelate-optimize">자동 최적화</a>·칸 우클릭 <strong>이 프리셋만 돌리기</strong>를 하면 그 결과 칸이 들어옵니다(<a class="term" href="#pixelate-settings">프레임 나누기</a>를 적용하면 체크한 프리셋을 설정 그대로 돌린 칸). 칸마다 점수가 붙어 있어 어느 결과가 원본에 가깝고 깨끗한지 견줄 수 있습니다.</p>
-<figure class="shot"><img src="assets/guide/pixelate-candidates-2.png" alt="고른 후보 줄·점수 내역, 프리셋마다의 후보 칸과 끝의 돌리지 않은 프리셋 칸" width="1396" height="290" loading="lazy"><figcaption>① 후보 칸 · ② 외곽선 맞추기 방식 · ③ 프리셋 이름 · ④ 점수 내역 · ⑤ 아직 돌리지 않은 프리셋 칸(Not run yet)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/pixelate-candidates-2.png" alt="고른 후보 줄·점수 내역, 프리셋마다의 후보 칸과 끝의 돌리지 않은 프리셋 칸" width="1396" height="294" loading="lazy"><figcaption>① 후보 칸 · ② 외곽선 맞추기 방식 · ③ 프리셋 이름 · ④ 점수 내역 · ⑤ 아직 돌리지 않은 프리셋 칸(Not run yet)</figcaption></figure>
 <h4>후보 칸 읽기</h4>
 <div class="table-wrap"><table>
 <thead><tr><th>부분</th><th>뜻</th></tr></thead>
 <tbody>
 <tr><td>① 후보 칸의 썸네일</td><td>결과 첫 <a class="term" href="#screen-timeline">프레임</a>.</td></tr>
-<tr><td>③ 프리셋 이름</td><td>그 칸을 만든 프리셋. 저장하지 않고 고친 값으로 돌렸으면 <strong>이름(변경)</strong>, 프리셋을 고르지 않았으면 <strong>지금 설정</strong>.</td></tr>
+<tr><td>③ 프리셋 이름</td><td>그 칸을 만든 프리셋. 저장하지 않고 고친 값으로 돌렸으면 <strong>이름_1</strong>, <strong>이름_2</strong>…(돌릴 때마다 새 칸), 프리셋을 고르지 않았으면 <strong>지금 설정</strong>(고친 값이면 <strong>지금 설정_1</strong>…). 그림의 맨 앞 칸은 값 하나를 고쳐 돌린 <strong>이름_1</strong> 칸입니다.</td></tr>
 <tr><td>색 수 · 크기 · 프레임 수</td><td>결과에 쓴 색 개수, 결과 크기(px), 프레임 개수.</td></tr>
 <tr><td>② 외곽선 맞추기 방식</td><td>그 결과의 <a href="#pixelate-cleanup">외곽선 1px 맞추기</a> 방식.</td></tr>
 <tr><td>맨 아래 파란 글</td><td>칸을 만든 까닭과 점수: <strong>설정 그대로(73.4)</strong>, 최적화 결과면 멈춘 까닭(<strong>최적화</strong>·<strong>시간초과</strong>·<strong>횟수초과</strong>·<strong>취소</strong> — <a href="#pixelate-optimize">자동 최적화</a>).</td></tr>
 </tbody>
 </table></div>
 <p>미리보기 아래 줄에는 고른 후보가 프리셋 이름 · 점수 · 칸 크기 · 색 수 · 크기 · 프레임 수로 보이고, 그 아래 ④ <a class="term" href="#pixelate-score">점수 내역</a>이 항목마다 값, 나쁨 %, 가중치로 보입니다. 항목의 뜻은 <a href="#pixelate-score">점수와 최적화 기준</a>에 있습니다.</p>
-<figure class="shot"><img src="assets/guide/pixelate-candidates-3.png" alt="후보 칸에 마우스를 올린 툴팁" width="329" height="284" loading="lazy"><figcaption>⑥ 풍선의 점수 내역</figcaption></figure>
+<figure class="shot"><img src="assets/guide/pixelate-candidates-3.png" alt="후보 칸에 마우스를 올린 툴팁" width="252" height="459" loading="lazy"><figcaption>⑥ 풍선의 점수 내역</figcaption></figure>
 <p>⑥ 후보 칸에 마우스를 올리면 풍선에 굵은 프리셋 이름(칸에서 잘려도 전체), 까닭과 점수·색 수와 크기·칸 크기, 그 아래 점수 항목별 내역이 보입니다.</p>
 <h4>후보 고르기와 넣기</h4>
 <ul>
@@ -3576,7 +3754,7 @@
 <tbody>
 <tr><td><strong>이미지 복사</strong> · <strong>크게 복사 (×4)</strong></td><td>결과를 Chickxel 안 클립보드와 시스템 클립보드에 함께 올려, <a class="term" href="#screen-canvas">캔버스</a>나 다른 프로그램에 붙여 넣을 수 있습니다. 여러 프레임 결과는 첫 프레임입니다.</td></tr>
 <tr><td><strong>PNG로 저장…</strong></td><td>첫 프레임을 PNG로 저장합니다. 파일 이름은 <code>원본 이름_프리셋 이름</code>입니다.</td></tr>
-<tr><td><strong>이 설정만 다시 돌리기</strong></td><td>그 칸 하나만 다시 돌려 같은 자리에서 바꿉니다. 저장한 프리셋 그대로 돌린 칸은 지금 저장된 그 프리셋 값으로, <strong>(변경)</strong>이 붙은 칸은 그 칸을 돌릴 때의 값으로 돌립니다(도는 중이거나 프리셋을 지웠으면 꺼짐).</td></tr>
+<tr><td><strong>이 설정만 다시 돌리기</strong></td><td>그 칸 하나만 다시 돌려 같은 자리에서 바꿉니다. 저장한 프리셋 그대로 돌린 칸은 지금 저장된 그 프리셋 값으로, <strong>이름_1</strong>처럼 번호가 붙은 칸은 그 칸을 돌릴 때의 값으로 돌리고 새 번호 칸을 만들지 않습니다(도는 중이거나 프리셋을 지웠으면 꺼짐).</td></tr>
 </tbody>
 </table></div>
 <h4>실패한 결과</h4>
@@ -3689,7 +3867,7 @@
 <tr><td>최적화를 켠 단계가 있음</td><td>그 단계만 <a href="#pixelate-optimize">자동 최적화</a>합니다(적힌 값에서 시작, <strong class="nolink">0. 최적화 기준</strong>의 예산·점수).</td></tr>
 <tr><td>최적화를 켠 단계가 없음</td><td>설정 그대로 한 번 정리합니다(칸 아래 <strong>설정 그대로(점수)</strong>).</td></tr>
 <tr><td>저장한 프리셋 그대로</td><td>최적화가 찾은 값을 그 프리셋에 바로 써 넣습니다. 열려 있으면 도는 동안 왼쪽 값도 따라 바뀌고, 되돌리기는 프리셋도 되돌립니다.</td></tr>
-<tr><td>저장하지 않고 고친 값</td><td><strong>프리셋 이름(변경)</strong> 칸으로 돌리고 프리셋은 바꾸지 않습니다. 저장하지 않은 새 프리셋은 그 이름, 프리셋을 고르지 않았으면 <strong>지금 설정</strong>입니다.</td></tr>
+<tr><td>저장하지 않고 고친 값</td><td>돌릴 때마다 <strong>프리셋 이름_1</strong>, <strong>프리셋 이름_2</strong>… 새 칸을 후보 줄 맨 앞에 더하고 프리셋은 바꾸지 않습니다. 번호는 후보 줄에 있는 같은 이름 칸 번호 중 가장 큰 것 + 1입니다. 저장하지 않은 새 프리셋은 그 이름, 프리셋을 고르지 않았으면 <strong>지금 설정</strong>에 번호가 붙습니다.</td></tr>
 </tbody>
 </table></div>
 <h4>기본 제공 프리셋</h4>
@@ -3719,7 +3897,7 @@
 <figure class="shot"><img src="assets/guide/pixelate-settings.png" alt="설정 칸이 접힌 정리 창의 왼쪽" width="640" height="560" loading="lazy"><figcaption>① 설정 칸 접기 막대</figcaption></figure>
 <ul>
 <li>① 막대(설정 아이콘·화살표)를 누르면 부드럽게 펼쳐지고 다시 누르면 접히며, 펼친 상태는 기억합니다.</li>
-<li>칸 맨 위에는 설정을 굴려도 그대로 있는 <a href="#pixelate-presets">프리셋 줄</a>이 있고, 그 아래 단계들이 차례로 이어집니다. 단계마다 접고 펼 수 있습니다.</li>
+<li>칸 맨 위에는 설정을 굴려도 그대로 있는 <a href="#pixelate-presets">프리셋 줄</a>이 있고, 그 아래 단계들이 차례로 이어집니다. 단계마다 접고 펼 수 있습니다. 단계 안에서는 고른 방식에 쓰지 않는 칸이 이름표와 함께 숨습니다. 체크로 켜고 끄는 칸(색 수 옆 자동 등)과 다른 단계 설정에 따라 쓰지 않는 칸은 보인 채 꺼집니다.</li>
 <li>머리에 <strong>최적화</strong> 체크가 있는 단계(1·3·5·6·7)는 정리하기·<a class="term" href="#pixelate-optimize">자동 최적화</a>가 그 단계의 값을 바꿔 볼지 정합니다(<a href="#pixelate-score">점수와 최적화 기준</a>).</li>
 </ul>
 <h4>단계 한눈에 보기</h4>
@@ -3747,12 +3925,14 @@
 <li>② 결과 크기 줄에서 <strong>자동</strong>를 켜면(기본) 결과 크기가 칸 크기대로(또는 <a href="#pixelate-grid">4. 결과 크기</a>의 배율대로) 정해지고 가로×세로 칸에 고른 결과의 크기가 회색으로 보입니다. 끄면 지금 결과 크기에서 시작하는 고정 크기가 되어 적은 가로×세로에 맞춥니다.</li>
 <li>사슬 단추(비율 유지)를 켜면 가로를 바꿀 때 세로가(세로를 바꿀 때 가로가) 지금 결과 비율대로 따라 바뀌고, 그림은 비율을 지킨 채 크기에 맞춰집니다.</li>
 <li>목표 색 수 줄은 <a href="#pixelate-score">0. 최적화 기준</a>의 <strong>목표 색 수</strong>·<strong>자동</strong>·<strong>강제</strong>와 같은 값입니다. 결과 색이 이 수보다 많으면 점수를 깎아, 정리하기·자동 최적화가 이 색 수 안팎의 결과를 고르게 합니다. <strong>강제</strong>를 켜면 목표보다 적은 색도 그 차이만큼 깎아 목표에 더 가까운 색 수를 고릅니다. <strong>자동</strong>(기본)를 켜면 색 수를 점수에서 보지 않습니다(이때 숫자와 강제는 꺼짐). 팔레트 색 수를 직접 정하지는 않으므로, 꼭 그 수여야 하면 <a href="#pixelate-palette">6. 팔레트</a>의 색 수를 정합니다.</li>
+<li><strong>뽑아서 찾을 프레임</strong>은 <a href="#pixelate-score">0. 최적화 기준</a>의 같은 칸과 같은 값입니다(기본 5). 프레임이 이보다 많으면 정리하기·자동 최적화가 처음·끝을 넣어 고르게 이만큼만 뽑아 시도를 돌리고, 찾은 설정을 모든 프레임에 한 번 적용합니다. 뽑히는 프레임은 원본 보기에서 노란 테두리로 보입니다. 0이면 모든 프레임으로 찾습니다.</li>
 <li><strong>배경 지우기</strong> 체크는 원본 아래 막대의 <span class="nolink">지우개</span> 단추(<a href="#pixelate-view">원본과 미리보기</a>)와 같은 설정이라 함께 바뀝니다. 끄면 1. 배경 지우기가 <strong>지우지 않음</strong>이 되고, 켜면 마지막으로 쓴 지우는 방식(처음은 자동)이 됩니다.</li>
 <li>③ <strong>모든 프레임이 한 팔레트</strong>: 켜면 모든 프레임을 팔레트 하나로 변환해 프레임끼리 색이 같고, 끄면 프레임마다 팔레트를 따로 정합니다. <a href="#pixelate-palette">6. 팔레트</a>의 같은 체크처럼 그림에서 색을 뽑는 팔레트 방식에서만 쓰고, 다른 방식이면 꺼집니다.</li>
 </ul>
 <h4>1. 배경 지우기</h4>
-<figure class="shot"><img src="assets/guide/pixelate-settings-2.png" alt="1. 배경 지우기·2. 프레임 나누기 단계를 펼친 설정 칸" width="396" height="648" loading="lazy"><figcaption>④ 1. 배경 지우기(Background) · ⑤ 2. 프레임 나누기(Frames)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/pixelate-settings-2.png" alt="1. 배경 지우기·2. 프레임 나누기 단계를 펼친 설정 칸" width="396" height="616" loading="lazy"><figcaption>④ 1. 배경 지우기(Background) · ⑤ 2. 프레임 나누기(Frames) · ⑥ 배경 방식(Mode: 자동) · ⑦ 프레임 나누기 방식(Mode: 자동)</figcaption></figure>
 <p>④ <strong class="nolink">1. 배경 지우기</strong>의 처음 값은 <strong>지우지 않음</strong>이며 기본 제공 프리셋도 모두 같습니다. 지우려면 원본 아래 막대의 <span class="nolink">지우개</span> 단추를 켜거나 방식을 고릅니다.</p>
+<p>⑥ 배경 <strong>방식</strong>에 따라 쓰는 칸만 보입니다. 그림은 <strong>자동(테두리 색)</strong>를 고른 모습입니다. <strong class="nolink">색 고르기</strong>이면 방식 옆에 색 단추가 나오고 <strong>이미 투명하면 그 투명도 쓰기</strong>가 숨습니다. <strong>지우지 않음</strong>이면 <a class="term" href="#tools-fill">허용 오차</a>부터 <strong>배경 남기기(한 색으로)</strong>까지 숨고 알파 기준·잡티 줄만 남습니다. 허용 오차 옆 자동을 켜면 허용 오차 칸은 보인 채 꺼집니다. ⑦ 프레임 나누기 방식도 같습니다. <strong>자동(빈 줄로 나눔)</strong>이면 작은 조각 합치기·거리 줄이, <strong>격자</strong>이면 열·행 줄이 보이고, <strong>한 장</strong>이면 둘 다 숨습니다.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>설정</th><th>설명</th></tr></thead>
 <tbody>
@@ -3772,10 +3952,10 @@
 <tr><td><strong class="nolink">색 고르기</strong></td><td>옆 색 단추로 고른 색을 배경색으로 보고, 그 색에서 <strong class="nolink">허용 거리</strong> 안인 색을 지웁니다.</td><td>그림이 테두리에 닿아 자동이 엉뚱한 색을 배경으로 잡을 때, 바탕색이 정확히 무엇인지 알 때.</td></tr>
 </tbody>
 </table></div>
-<figure class="shot"><img src="assets/guide/pixelate-settings-3.png" alt="1. 배경 지우기 단계" width="398" height="352" loading="lazy"><figcaption>⑥ 스티커 테두리 지우기(Remove sticker border) · ⑦ 배경 남기기(한 색으로)(Keep background (one color))</figcaption></figure>
+<figure class="shot"><img src="assets/guide/pixelate-settings-3.png" alt="1. 배경 지우기 단계" width="398" height="352" loading="lazy"><figcaption>⑧ 스티커 테두리 지우기(Remove sticker border) · ⑨ 배경 남기기(한 색으로)(Keep background (one color))</figcaption></figure>
 <ul>
-<li>⑥ <strong>스티커 테두리 지우기</strong>(기본 켬): 외곽선 바깥을 두른 흰 띠(스티커 테두리)를 저절로 찾아 배경과 함께 지웁니다. 가장자리 대부분이 밝은 무채색일 때만 지우고, 지운 뒤 가장자리가 어둡지 않으면 되돌립니다. 배경 단계를 최적화하면 켜고 꺼 봅니다.</li>
-<li>⑦ <strong>배경 남기기(한 색으로)</strong>: 찾은 배경을 지우지 않고 배경색 한 색으로 고르게 남깁니다(결과도 그 색 바탕, 그림 전체가 한 프레임). 색으로 찾은 배경일 때만 뜻이 있습니다.</li>
+<li>⑧ <strong>스티커 테두리 지우기</strong>(기본 켬): 외곽선 바깥을 두른 흰 띠(스티커 테두리)를 저절로 찾아 배경과 함께 지웁니다. 가장자리 대부분이 밝은 무채색일 때만 지우고, 지운 뒤 가장자리가 어둡지 않으면 되돌립니다. 배경 단계를 최적화하면 켜고 꺼 봅니다.</li>
+<li>⑨ <strong>배경 남기기(한 색으로)</strong>: 찾은 배경을 지우지 않고 배경색 한 색으로 고르게 남깁니다(결과도 그 색 바탕, 그림 전체가 한 프레임). 색으로 찾은 배경일 때만 뜻이 있습니다. ⑧·⑨는 배경 방식이 <strong>지우지 않음</strong>이면 숨습니다.</li>
 <li>단색 배경과 그림 사이에 번진 한 겹도 함께 지웁니다. 외곽선 바깥에 붙은 작은 압축 잡음(배경색에 가깝고 외곽선 색과는 먼 24픽셀 이하 덩어리)도 지웁니다. 흰 머리처럼 넓은 밝은 부분은 남습니다.</li>
 </ul>
 <h4>2. 프레임 나누기</h4>
@@ -3796,7 +3976,7 @@
 <tbody>
 <tr><td><strong>아래 가운데</strong></td><td>프레임 그림의 아래 끝을 캔버스 아래에, 가로는 가운데에 맞춥니다(기본).</td><td>걷기·뛰기처럼 발이 바닥에 닿는 캐릭터 애니메이션. 키가 다른 프레임이 섞여도 발이 같은 높이에 남아 재생할 때 위아래로 흔들리지 않습니다.</td></tr>
 <tr><td><strong>가운데</strong></td><td>프레임 그림을 캔버스 한가운데에 놓습니다.</td><td>폭발·마법 같은 이펙트, 아이콘처럼 바닥이 없고 가운데를 중심으로 커지거나 도는 그림.</td></tr>
-<tr><td><strong>원래 위치</strong></td><td>나눈 칸(자동이면 조각 띠, 격자면 격자 칸) 안의 원래 자리를 그대로 지킵니다.</td><td>뛰어오르기·던지기처럼 시트 안의 위치 차이가 곧 움직임인 애니메이션. 아래 가운데로 맞추면 사라질 높낮이가 남습니다.</td></tr>
+<tr><td><strong>원래 위치</strong></td><td>나눈 칸(자동이면 조각 띠, 격자면 격자 칸) 안의 위치 차이를 프레임끼리 그대로 지킵니다. 나눈 칸 둘레의 빈 곳은 남기지 않아, 캔버스는 모든 프레임을 제자리에 겹친 범위에 <strong>여백(px)</strong>를 더한 크기입니다.</td><td>뛰어오르기·던지기처럼 시트 안의 위치 차이가 곧 움직임인 애니메이션. 아래 가운데로 맞추면 사라질 높낮이가 남습니다.</td></tr>
 </tbody>
 </table></div>
 <ul>
@@ -3806,9 +3986,9 @@
 
 <h3 id="pixelate-grid"><span class="nolink">픽셀 격자와</span> 결과 크기</h3>
 <p><strong class="nolink">3. 픽셀 격자</strong>는 원본에서 "한 픽셀"이 몇 px인지(칸 크기)와 칸 경계가 어디인지 찾고, <strong class="nolink">4. 결과 크기</strong>는 결과를 몇 픽셀로 만들지 정합니다. 결과가 지나치게 크거나 작으면, 또는 원본 보기의 칸 경계가 색 덩어리와 어긋나면 이 두 단계를 봅니다.</p>
-<figure class="shot"><img src="assets/guide/pixelate-grid.png" alt="3. 픽셀 격자·4. 결과 크기 단계를 펼친 설정 칸" width="396" height="683" loading="lazy"><figcaption>① <span class="nolink">3. 픽셀 격자</span>(Pixel grid) · ② 4. 결과 크기(Output size)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/pixelate-grid.png" alt="3. 픽셀 격자·4. 결과 크기 단계를 펼친 설정 칸" width="396" height="651" loading="lazy"><figcaption>① <span class="nolink">3. 픽셀 격자</span>(Pixel grid) · ② 4. 결과 크기(Output size) · ③ 격자 방식(Mode) · ④ 결과 크기 방식(Mode: 고정 크기에 맞추기) · ⑤ 가로×세로(Width×Height)·비율 유지 · ⑥ 여백(Padding)</figcaption></figure>
 <h4>칸 크기 감지</h4>
-<p>① <strong class="nolink">3. 픽셀 격자</strong>의 <strong>방식</strong>가 <strong>자동(경계 분석)</strong>이면 원본을 분석해 칸 크기를 찾습니다. 칸 크기는 3~256px까지 재므로 100px 넘게 키운 큰 덩어리도 그 크기로 잡습니다. 칸 크기와 경계는 늘 <a class="term" href="#screen-timeline">프레임</a>마다 따로 찾습니다.</p>
+<p>① <strong class="nolink">3. 픽셀 격자</strong>의 ③ <strong>방식</strong>가 <strong>자동(경계 분석)</strong>이면 원본을 분석해 칸 크기를 찾습니다. 칸 크기는 3~256px까지 재므로 100px 넘게 키운 큰 덩어리도 그 크기로 잡습니다. 칸 크기와 경계는 늘 <a class="term" href="#screen-timeline">프레임</a>마다 따로 찾습니다. <strong>수동</strong>이면 <strong>칸 크기 흔들림 허용(%)</strong>·<strong>자동 칸 크기에 더하기(px)</strong>·<strong>칸 크기 기준</strong> 칸이 숨고 <strong>칸 크기(px)</strong>·시작 X·Y 칸이 보입니다.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>방식</th><th>하는 일</th></tr></thead>
 <tbody>
@@ -3843,8 +4023,8 @@
 </table></div>
 <p>칸 나누기 점수는 원본과 칸 경계만 보며 <strong>칸 경계 맞음</strong>(칸 경계가 원본의 뚜렷한 경계를 놓치지 않고 그 위에 놓일수록 높음 — 진짜보다 작은 칸도 큰 칸도 낮음)와 <strong>칸 색 고름</strong>(칸 안쪽에 비슷한 색만 들수록 높음)의 평균입니다. <strong>자동 칸 크기에 더하기(px)</strong>와 수동 격자의 시작 X·Y는 그림마다 다른 값이라 정리하기에는 쓰지만 프리셋과 다음에 열 때의 설정에는 저장하지 않습니다(이 값만 바꿔서는 저장 단추가 빨개지지 않음).</p>
 <h4>칸 경계 지역 보정</h4>
-<figure class="shot"><img src="assets/guide/pixelate-grid-2.png" alt="3. 픽셀 격자 단계의 칸 경계 지역 보정" width="398" height="479" loading="lazy"><figcaption>③ 칸 경계 지역 보정(Local cell correction)·최대 이동·띠·최소 칸 크기</figcaption></figure>
-<p>③ <strong>칸 경계 지역 보정</strong>(기본 켬)은 그림 전체에 한 줄로 고른 칸 경계를 띠마다 그 띠의 뚜렷한 덩어리 경계에 맞춰 다시 고릅니다. 군데군데 반 칸쯤 어긋나 그려진 그림도 따라가며, 띠 안에서는 곧은 경계라 칸은 사각형이고 띠가 바뀌는 자리에서 경계가 꺾입니다.</p>
+<figure class="shot"><img src="assets/guide/pixelate-grid-2.png" alt="3. 픽셀 격자 단계의 칸 경계 지역 보정" width="398" height="447" loading="lazy"><figcaption>⑦ 칸 경계 지역 보정(Local cell correction)·최대 이동·띠·최소 칸 크기</figcaption></figure>
+<p>⑦ <strong>칸 경계 지역 보정</strong>(기본 켬)은 그림 전체에 한 줄로 고른 칸 경계를 띠마다 그 띠의 뚜렷한 덩어리 경계에 맞춰 다시 고릅니다. 군데군데 반 칸쯤 어긋나 그려진 그림도 따라가며, 띠 안에서는 곧은 경계라 칸은 사각형이고 띠가 바뀌는 자리에서 경계가 꺾입니다.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>설정</th><th>범위·기본</th><th>뜻</th></tr></thead>
 <tbody>
@@ -3858,19 +4038,19 @@
 <li>켜도 평균 칸이 최소 칸 크기보다 작거나 움직인 경계가 없으면 격자는 곧게 보입니다. 고른 결과 줄에 "지역 보정 적용 n/m프레임"처럼 적용 여부가 표시됩니다. 3단계의 <strong>최적화</strong>를 켜면 정리하기·자동 최적화가 보정 켬·끔과 최대 이동·띠도 함께 바꿔 봅니다.</li>
 </ul>
 <h4>4. 결과 크기</h4>
-<p>② <strong class="nolink">4. 결과 크기</strong>는 결과를 몇 픽셀로 만들지 정합니다. 방식 옆 <strong>자동</strong>는 <a href="#pixelate-settings">간편 설정</a>의 결과 크기 자동과 같은 값입니다(끄면 고정 크기에 맞추기, 켜면 마지막 자동 방식).</p>
+<p>② <strong class="nolink">4. 결과 크기</strong>는 결과를 몇 픽셀로 만들지 정합니다. 방식 옆 <strong>자동</strong>는 <a href="#pixelate-settings">간편 설정</a>의 결과 크기 자동과 같은 값입니다(끄면 고정 크기에 맞추기, 켜면 마지막 자동 방식). ④ 방식에 따라 쓰는 칸만 보입니다. <strong>고정 크기에 맞추기</strong>이면 ⑤ 가로×세로·<strong>비율 유지</strong> 줄이, <strong>배율</strong>이면 배율 칸이 보이고, <strong>칸 크기대로</strong>면 둘 다 숨습니다. ⑥ <strong>여백(px)</strong>는 결과 둘레에 남길 빈 칸(기본 1px)으로 어느 방식에서나 보입니다. 결과 둘레의 빈 곳은 이 값까지만 생깁니다.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>방식</th><th>결과 크기</th></tr></thead>
 <tbody>
 <tr><td><strong>칸 크기대로</strong></td><td>찾은 칸 하나가 결과 픽셀 하나가 됩니다(기본). 원본 도트가 원래 몇 칸짜리였는지 그대로 살리므로, 크기가 정해져 있지 않을 때 원본에 가장 가깝습니다.</td></tr>
-<tr><td><strong>고정 크기에 맞추기</strong></td><td><strong>가로×세로</strong>(예: 32·48·64)에 맞춥니다. <strong>비율 유지</strong>와 <strong>여백(px)</strong>를 정할 수 있습니다. 원본 스프라이트를 여백을 뺀 칸 수로 나눕니다: 64×64·여백 1이면 긴 쪽이 62칸이 되게 칸 크기를 정해 쪼개거나 합칩니다. 찾은 칸 크기가 그 값과 2% 안이면 찾은 경계를 그대로 쓰고, 칸은 원본 1px보다 작게 나누지 않습니다. 게임에 넣을 크기(예: 32×32 캐릭터)가 정해져 있을 때 씁니다.</td></tr>
+<tr><td><strong>고정 크기에 맞추기</strong></td><td><strong>가로×세로</strong>(예: 32·48·64)에 맞춥니다. <strong>비율 유지</strong>와 <strong>여백(px)</strong>를 정할 수 있습니다. 원본 스프라이트를 여백을 뺀 칸 수로 나눕니다: 64×64·여백 1이면 긴 쪽이 62칸이 되게 칸 크기를 정해 쪼개거나 합칩니다. 찾은 칸 크기가 그 값과 2% 안이면 찾은 경계를 그대로 씁니다. 가로×세로는 상한입니다. 칸은 원본 1px보다 작게 나누지 않으므로, 원본이 작아 다 채울 수 없을 때(예: 144×256 원본을 256×416으로)나 비율 유지로 한쪽이 남을 때는 빈 곳을 채우지 않고 <a class="term" href="#screen-canvas">캔버스</a>를 스프라이트 + 여백 크기로 줄입니다. 그래서 둘레 여백은 여백 값을 넘지 않습니다. 게임에 넣을 크기(예: 32×32 캐릭터)가 정해져 있을 때 씁니다. 비율이 다르면 한쪽이 그 크기보다 작아질 수 있습니다.</td></tr>
 <tr><td><strong>배율</strong></td><td>원본 크기에 배율(예: 0.125)을 곱합니다. 프레임마다 찾은 칸 경계를 씁니다. 원본을 몇 배로 키웠는지 알 때(8배면 0.125), 여러 그림을 같은 비율로 줄일 때 씁니다.</td></tr>
 </tbody>
 </table></div>
 
 <h3 id="pixelate-palette">칸 색과 팔레트</h3>
 <p><strong class="nolink">5. 칸 색 고르기</strong>는 원본 칸마다 대표 색 하나를 뽑고, <strong class="nolink">6. 팔레트</strong>는 그 색들을 비슷한 것끼리 묶어 몇 가지 색으로 줄인 뒤 칸마다 <a class="term" href="#screen-palette">팔레트</a> 색을 고릅니다. 결과 색이 너무 많거나 적을 때, 그늘 색이 엉뚱한 색상으로 바뀔 때, 정해진 팔레트를 써야 할 때 이 두 단계를 봅니다.</p>
-<figure class="shot"><img src="assets/guide/pixelate-palette.png" alt="5. 칸 색 고르기·6. 팔레트 단계를 펼친 설정 칸" width="396" height="825" loading="lazy"><figcaption>① 5. 칸 <span class="nolink">색 고르기</span>(Cell color) · ② 6. 팔레트(Palette) · ③ 색 거리(Color distance) · ④ 명암 계열 우선(Prefer shade family)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/pixelate-palette.png" alt="5. 칸 색 고르기·6. 팔레트 단계를 펼친 설정 칸" width="396" height="697" loading="lazy"><figcaption>① 5. 칸 <span class="nolink">색 고르기</span>(Cell color) · ② 6. 팔레트(Palette) · ③ 팔레트 방식(Mode: k-평균) · ④ 색 거리(Color distance) · ⑤ 명암 계열 우선(Prefer shade family)</figcaption></figure>
 <h4>5. 칸 <span class="nolink">색 고르기</span></h4>
 <p>① <strong class="nolink">5. 칸 색 고르기</strong>의 <strong>방식</strong>는 칸 안의 원본 픽셀에서 색 하나를 뽑는 법입니다. 칸 가장자리는 이웃 칸 색이 번져 있으므로 <strong>칸 가장자리 무시(%)</strong>(기본 20%)만큼 빼고 봅니다.</p>
 <div class="table-wrap"><table>
@@ -3895,7 +4075,7 @@
 <figure class="shot"><img src="assets/guide/pixelate-palette-compare-cellmode.png" alt="여러 색이 걸친 원본 칸 여섯과 여섯 가지 칸 색 방식으로 고른 칸 색을 나란히 놓은 그림" width="1520" height="160" loading="lazy"><figcaption>왼쪽부터: 원본 칸 · 가장 많은 색(기본) · 중앙값 · 가운데 픽셀 · 평균 · 중심 가중 평균 · 우세 색 묶음 가중 평균 — 팔레트·정리 없이 칸 색만 비교.</figcaption></figure>
 <p>가장 많은 색과 우세 색 묶음 가중 평균은 여섯 칸 모두 칸을 가장 많이 차지한 칠(살색·머리칼·눈동자 파랑)을 고릅니다. 가운데 픽셀은 가운데를 지나는 머리칼 가닥과 눈 하이라이트를 그대로 집어 어둡거나 흰 칸이 되고, 평균·중심 가중 평균은 두 색이 걸친 칸을 원본에 없는 탁한 중간색으로, 중앙값은 외곽선이 번진 칸만 조금 탁하게 만듭니다.</p>
 <h4>6. 팔레트 방식</h4>
-<p>② <strong class="nolink">6. 팔레트</strong>의 <strong>방식</strong>는 색을 몇 가지로 줄이는 법입니다. 새 설정의 처음 값은 <strong>OKLCH 묶기</strong>이고, 기본 제공 프리셋마다 다른 방식을 씁니다(<a href="#pixelate-presets">기본 제공 프리셋</a>).</p>
+<p>② <strong class="nolink">6. 팔레트</strong>의 ③ <strong>방식</strong>는 색을 몇 가지로 줄이는 법입니다. 새 설정의 처음 값은 <strong>OKLCH 묶기</strong>이고, 기본 제공 프리셋마다 다른 방식을 씁니다(<a href="#pixelate-presets">기본 제공 프리셋</a>). 고른 방식에 쓰지 않는 칸은 숨습니다(아래 표 다음 그림).</p>
 <figure class="shot"><img src="assets/guide/pixelate-palette-compare-method.png" alt="같은 얼굴 부분을 다섯 가지 팔레트 방식으로 11색 안팎으로 줄여 나란히 확대한 그림" width="1248" height="242" loading="lazy"><figcaption>왼쪽부터: k-평균(OKLab) · 중앙 분할 · 원래 색 유지 · OKLCH 묶기 · 색 거리로 묶기 — 원래 색 유지(699색) 말고는 모두 11색(k-평균·중앙 분할 색 수 12, OKLCH 묶기 범위 L 0.15·C 0.15·H 30°, 묶을 반경 0.09).</figcaption></figure>
 <p>같은 11색이라도 k-평균은 머리칼의 흰 하이라이트를 따로 한 색으로 남기고, 중앙 분할·OKLCH 묶기·색 거리로 묶기는 하이라이트를 연한 살색과 한 색으로 묶습니다. 원래 색 유지는 칸 색이 그대로라 하이라이트도 그대로지만 색이 수백 개 남습니다.</p>
 <div class="table-wrap"><table>
@@ -3909,10 +4089,11 @@
 <tr><td><strong>원래 색 유지</strong></td><td>줄이지 않고 칸 색을 그대로 씁니다. 칸 색만 깔끔히 뽑아 보고 싶을 때 씁니다 — 칸마다 조금씩 다른 색이 남아 색이 수백 개가 될 수 있습니다.</td><td>칸 색 그대로</td></tr>
 </tbody>
 </table></div>
+<figure class="shot"><img src="assets/guide/pixelate-palette-2.png" alt="OKLCH 묶기를 고른 6. 팔레트 단계" width="396" height="478" loading="lazy"><figcaption>⑥ OKLCH 묶기 — 색 수(Colors) 줄 대신 묶음 범위(Group within) 줄</figcaption></figure>
 <ul>
-<li>색 수 <strong>자동</strong>는 오차 곡선의 꺾이는 곳에서 고르되, 빨간 목도리처럼 작지만 눈에 띄는 색이 남을 때까지 늘립니다. 두 묶기 방식은 범위·반경이 색 수를 정하므로 <strong>색 수</strong>·자동이 꺼집니다.</li>
+<li>⑥ 고른 방식에 쓰는 칸만 보입니다. 위 그림의 <strong>k-평균(OKLab)</strong>에서는 <strong>색 수</strong>·자동 줄이 보이고, 이 그림의 <strong>OKLCH 묶기</strong>에서는 그 줄 대신 <strong>묶을 범위</strong> 줄이 보입니다. 두 묶기 방식은 범위·반경이 색 수를 정하므로 색 수·자동이 숨습니다. <strong>묶을 반경</strong>는 <strong>색 거리로 묶기</strong>에서만, <strong>팔레트</strong>는 <strong>기존 팔레트</strong>에서만 보입니다. <strong>팔레트 색</strong>·<strong>모든 <a class="term" href="#screen-timeline">프레임</a>이 한 팔레트</strong>·<strong>다른 색상 지키기</strong>는 그림에서 색을 뽑는 네 방식에서만, <strong>가장자리 칸 가중</strong>는 팔레트 색이 원본 색일 때만 보입니다. <strong>원래 색 유지</strong>이면 <strong><a class="term" href="#tools-dither">디더링</a></strong>·<strong>색 거리</strong>·<strong>명암 계열 우선</strong>도 숨습니다. 색 수 자동은 오차 곡선의 꺾이는 곳에서 고르되, 빨간 목도리처럼 작지만 눈에 띄는 색이 남을 때까지 늘립니다. 자동을 켜면 색 수 칸은 보인 채 꺼집니다.</li>
 <li>방식 옆 <strong>최적화 제외</strong>(팔레트 단계의 최적화가 켜졌을 때만, 프리셋에 저장)를 켜면 최적화가 팔레트 방식은 그대로 두고 그 방식의 다른 값(색 수·묶을 범위 등)만 바꿔 봅니다.</li>
-<li><strong>모든 <a class="term" href="#screen-timeline">프레임</a>이 한 팔레트</strong>(기본 켬)이면 모든 프레임이 같은 팔레트를 씁니다. <a href="#pixelate-settings">간편 설정</a>에도 같은 체크가 있습니다.</li>
+<li><strong>모든 프레임이 한 팔레트</strong>(기본 켬)이면 모든 프레임이 같은 팔레트를 씁니다. <a href="#pixelate-settings">간편 설정</a>에도 같은 체크가 있습니다.</li>
 </ul>
 <h4>팔레트 색과 가장자리 칸</h4>
 <div class="table-wrap"><table>
@@ -3932,7 +4113,7 @@
 </tbody>
 </table></div>
 <h4>색 거리</h4>
-<p>③ <strong>색 거리</strong>는 두 색이 얼마나 가까운지 재는 법입니다. 칸이 팔레트 색을 고를 때(디더 없음), <a class="term" href="#pixelate-color-edit">고정 색</a> 맞추기, <a class="term" href="#pixelate-color-edit">색 빼기</a>의 바꿀 색, 원본 <span class="nolink">색 고르기</span>, <strong>색 거리로 묶기</strong>에 씁니다. 점수는 이것과 따로 <a href="#pixelate-score">점수용 색 거리</a>로 잽니다.</p>
+<p>④ <strong>색 거리</strong>는 두 색이 얼마나 가까운지 재는 법입니다. 칸이 팔레트 색을 고를 때(디더 없음), <a class="term" href="#pixelate-color-edit">고정 색</a> 맞추기, <a class="term" href="#pixelate-color-edit">색 빼기</a>의 바꿀 색, 원본 <span class="nolink">색 고르기</span>, <strong>색 거리로 묶기</strong>에 씁니다. 점수는 이것과 따로 <a href="#pixelate-score">점수용 색 거리</a>로 잽니다.</p>
 <figure class="shot"><img src="assets/guide/pixelate-palette-compare-distance.png" alt="살구색·금색·빨강·파랑·회색·풀색 그러데이션과 그것을 같은 10색 팔레트로 세 가지 색 거리로 바꾼 결과를 나란히 놓은 그림" width="1256" height="320" loading="lazy"><figcaption>왼쪽부터: 원본 그러데이션(위부터 살구색·금색·빨강·파랑·회색·풀색, 왼쪽이 밝음) · OKLab · CIEDE2000 · OKLCh 색상 가중(기본) — 같은 10색 팔레트, 명암 계열 우선 끔.</figcaption></figure>
 <p>OKLab는 밝기·채도·색상 차를 똑같이 봐서 회색 띠 가운데를 살색·살구색으로, 어두운 금색을 풀색·빨강으로 보내고, 어두운 끝을 검정 대신 남색으로 보냅니다. CIEDE2000은 회색을 회색·남색·검정으로 깔끔히 두고 금색을 거의 끝까지 금색으로 지키며, OKLCh 색상 가중은 색상 차를 두 배로 봐 회색은 회색 계열에, 금색 그늘은 살구색·빨강 같은 따뜻한 색 안에 머뭅니다. 회색·금속·어두운 그늘이 많은 그림은 CIEDE2000이나 OKLCh 색상 가중이, 색이 고르게 퍼진 그림은 OKLab도 충분합니다.</p>
 <div class="table-wrap"><table>
@@ -3941,13 +4122,13 @@
 <tr><td><strong>OKLCh 색상 가중</strong></td><td>기본. OKLab의 차이를 밝기(L)·채도(C, 색이 얼마나 진한지)·색상(H, 빨강·노랑·파랑 같은 색의 종류) 세 갈래로 나눠, 색상 차만 옆 색상 무게(기본 2)만큼 크게 봅니다. 그래서 밝기가 조금 달라도 색상이 같은 팔레트 색을 먼저 골라, 진한 살구색 손 그늘이 밝기만 비슷한 금색이나 빨간 천 색으로 바뀌지 않습니다. 색상 차는 채도를 곱해 재므로 회색·흰색·검정끼리는 거의 영향이 없습니다. 피부·머리카락·옷처럼 밝기가 비슷한 다른 색상이 붙어 있는 캐릭터에 맞습니다.</td></tr>
 <tr><td><strong>CIEDE2000</strong></td><td>인쇄·디스플레이 업계가 쓰는 표준 색차 공식(ΔE00)으로 CIELAB에서 잽니다(÷200으로 OKLab와 같은 크기에 맞춤). 사람 눈이 둔한 차이(아주 진한 색끼리의 채도 차)는 작게, 예민한 차이(회색에 가까운 색끼리의 차)는 크게 보고, 파랑·보라 근처의 색상 어긋남을 바로잡는 보정도 들어 있습니다. 그래서 은색 갑옷·흰 옷의 미세한 단계와 파란 옷의 그늘을 잘 가르고, 색상이 바뀌는 것(살구색 → 금색)도 가깝다고 보지 않습니다. 계산이 무거워 정리가 조금 느려집니다.</td></tr>
 <tr><td><strong>OKLab</strong></td><td>OKLab은 숫자로 같은 만큼 떨어진 두 색이 눈에도 비슷한 만큼 달라 보이도록 만든 <a class="term" href="#tools-gradient">색 공간</a>입니다(지각적으로 고름 — 어두운 색이든 밝은 색이든, 빨강이든 파랑이든 거리 0.02 안팎이 겨우 알아볼 차이). 그 안에서 두 색 사이 곧은 거리(유클리드 거리)를 재며 밝기·채도·색상 차를 같은 무게로 봅니다(예전 방식). 가장 빠르고 예측하기 쉽지만, 같은 거리면 그늘 한 단계와 옆 색상을 가리지 않아 그늘이 옆 색상으로 넘어갈 수 있습니다. 색 종류가 적고 서로 뚜렷이 다른 그림에 맞습니다.</td></tr>
-<tr><td>색상 무게(옆 <a class="term" href="#screen-common-controls">숫자 칸</a>)</td><td><strong>OKLCh 색상 가중</strong>에서 색상 차에 곱하는 무게(0~1000, 기본 2)입니다. 0이면 색상 차를 보지 않고, 1이면 OKLab와 같고, 2~5면 같은 색상 계열을 먼저 고르며, 아주 크게 하면 밝기·채도와 상관없이 색상이 가장 가까운 색을 고릅니다. 다른 거리에서는 쓰지 않습니다.</td></tr>
+<tr><td>색상 무게(옆 <a class="term" href="#screen-common-controls">숫자 칸</a>)</td><td><strong>OKLCh 색상 가중</strong>에서 색상 차에 곱하는 무게(0~1000, 기본 2)입니다. 0이면 색상 차를 보지 않고, 1이면 OKLab와 같고, 2~5면 같은 색상 계열을 먼저 고르며, 아주 크게 하면 밝기·채도와 상관없이 색상이 가장 가까운 색을 고릅니다. 다른 거리에서는 숨습니다.</td></tr>
 </tbody>
 </table></div>
 <p>k-평균·OKLCH 묶기는 OKLab 그대로이고, 디더(Bayer)는 두 팔레트 색을 빛의 세기(선형광)로 섞은 색을 OKLab으로 원본과 견줍니다.</p>
 <h4>명암과 색상 지키기</h4>
 <ul>
-<li>④ <strong>명암 계열 우선</strong>(기본 켬): 칸 색과 색상·채도가 비슷한 팔레트 색(같은 색의 밝고 어두운 칠)이 있으면, 밝기가 비슷한 다른 색상의 색보다 그 계열에서 밝기가 가장 가까운 색으로 바꿉니다. <a class="term" href="#tools-dither">디더링</a>도 색상이 다른 유채색과는 섞지 않아, 진한 살구색 손 그늘이 금색이나 금색 점 무늬가 되지 않습니다.</li>
+<li>⑤ <strong>명암 계열 우선</strong>(기본 켬): 칸 색과 색상·채도가 비슷한 팔레트 색(같은 색의 밝고 어두운 칠)이 있으면, 밝기가 비슷한 다른 색상의 색보다 그 계열에서 밝기가 가장 가까운 색으로 바꿉니다. 디더링도 색상이 다른 유채색과는 섞지 않아, 진한 살구색 손 그늘이 금색이나 금색 점 무늬가 되지 않습니다.</li>
 <li><strong>다른 색상 지키기</strong>(기본 켬): 채도(<strong>최소 채도</strong>, 기본 0.04)와 넓이(<strong>최소 넓이</strong>, 기본 4칸)가 충분한 원본 색 무리가 색상이 <strong>색상 차(°)</strong>(기본 20°) 이상 다른 팔레트 색으로 바뀌게 되면(예: 작은 살구색 귀 그늘 → 금색) 그 색을 팔레트에 넣습니다. 색 수 자동이면 더하고, 고른 색 수면 가장 덜 중요한 색(팔레트의 ¼까지, 고정 색은 그대로)과 바꿉니다. 두 팔레트 색 사이에 번진 중간 색은 넣지 않습니다.</li>
 <li>둘 다 팔레트 단계를 최적화하면 켜고 꺼 봅니다.</li>
 </ul>
@@ -3976,7 +4157,7 @@
 <tr><td><strong>외톨이 픽셀 지우기</strong> · <strong>최대 대비</strong></td><td>켬 · 0.18</td><td>둘레 8칸에 같은 색이 없는 픽셀을 이웃에 가장 많은 색으로 바꿉니다. 이웃과 대비가 최대 대비(OKLab 거리)보다 큰 점(눈동자 등)은 남기고, 1이면 모두 지웁니다.</td></tr>
 <tr><td><strong>1px 구멍 메우기</strong></td><td>켬</td><td>상하좌우가 모두 칠해진 투명 픽셀을 그 넷 중 가장 많은 색으로 메웁니다.</td></tr>
 <tr><td><strong>외곽선 1px 맞추기</strong></td><td>크기를 줄여서</td><td>바깥 외곽선을 1px로 맞추는 방법. 아래 표를 봅니다.</td></tr>
-<tr><td><strong>벡터 단순화(px)</strong> · <strong>남길 작은 덩어리(칸)</strong></td><td>0.6 · 6</td><td>벡터로 다시 그리기에서만 씁니다. 단순화는 외곽선을 곧게 펼 <span class="nolink">허용 오차</span>(결과 픽셀, 크면 매끈하지만 모양을 덜 따라감, 0이면 가운데 선 그대로)이고, 바깥 외곽선과 닿지 않은 어두운 덩어리가 이 칸 수보다 작으면(눈 등) 다시 그리지 않고 둡니다.</td></tr>
+<tr><td><strong>벡터 단순화(px)</strong> · <strong>남길 작은 덩어리(칸)</strong></td><td>0.6 · 6</td><td>벡터로 다시 그리기에서만 쓰고, 다른 방식이면 숨습니다. 단순화는 외곽선을 곧게 펼 <span class="nolink">허용 오차</span>(결과 픽셀, 크면 매끈하지만 모양을 덜 따라감, 0이면 가운데 선 그대로)이고, 바깥 외곽선과 닿지 않은 어두운 덩어리가 이 칸 수보다 작으면(눈 등) 다시 그리지 않고 둡니다.</td></tr>
 <tr><td><strong>외곽선</strong></td><td>그대로</td><td>투명과 맞닿은 가장자리의 어두운 픽셀을 어떻게 정리할지 고릅니다. 값마다의 결과는 아래 표에 있습니다.</td></tr>
 <tr><td><strong>외곽선 L자 겹 픽셀 줄이기</strong></td><td>끔</td><td>외곽선의 L자 모서리에 겹친 픽셀을 안쪽 색으로 바꿉니다.</td></tr>
 </tbody>
@@ -4044,6 +4225,7 @@
 <ul>
 <li>같은 설정은 다시 돌리지 않고, 배경 지우기·프레임 나누기는 한 번만 해 여러 스레드로 빠르게 돕니다. 같은 그림·설정은 시간이 아닌 시도 수로 끝나면 늘 같은 결과입니다.</li>
 <li>프리셋마다 <a href="#pixelate-score">0. 최적화 기준</a>의 <strong>시도</strong>와 <strong>초</strong> 중 먼저 닿는 쪽에서 멈춥니다(그 프리셋의 모든 돌림을 합친 예산). 0은 그 제한이 없다는 뜻이고, 둘 다 0이면 더 나아지지 않을 때까지 돌며 취소 단추로 멈출 수 있습니다.</li>
+<li><a class="term" href="#screen-timeline">프레임</a>이 <strong>뽑아서 찾을 프레임</strong>보다 많으면 시도는 뽑은 프레임으로만 돌고, 프리셋이 끝나면(취소해도) 1위 설정을 모든 프레임에 한 번 적용해 그 칸에 넣습니다. 결과 한 줄 뒤에 "프레임 5/120개로 찾음, 모든 프레임 N점"이 붙습니다(화살표 점수는 뽑은 프레임끼리). 도는 칸을 눌러 보는 동안 큰 미리보기는 1위가 바뀔 때마다 그 설정을 모든 프레임에 적용해 보입니다.</li>
 <li>최적화가 바꿔 보는 값은 단계 머리의 <strong>최적화</strong> 체크로 정합니다(<a href="#pixelate-score">점수와 최적화 기준</a>).</li>
 </ul>
 <div class="note"><p>함께 든 예시(기본 설정, 예전 기본 항목·예산 — 칸 크기·색 수·칸 색 방식·정리·<a class="term" href="#screen-palette">팔레트</a> 색, 200번·60초)는 약 3초, 시도 162번에 70.3점 → 80.8점(칸 약 16.1 → 14.9px, 26색, 구멍 메우기 끔, 팔레트 색은 원본 색 그대로, 외곽선 1px 비율 99%)입니다.</p></div>
@@ -4089,6 +4271,7 @@
 <tbody>
 <tr><td><strong>시도</strong></td><td>정리하기·자동 최적화가 설정을 바꿔 시도할 최대 횟수(0~10000번)입니다. <strong>0은 횟수 제한이 없다는 뜻</strong>이고, 초와 둘 중 먼저 닿는 쪽에서 멈춥니다. 많을수록 더 좋은 설정을 찾을 가능성이 크지만 오래 걸립니다. 칸에 0을 직접 쓰거나 우클릭 예시값 목록에서 고릅니다. 프리셋 없이 시작한 설정은 2000번으로 시작합니다.</td></tr>
 <tr><td><strong>초</strong></td><td>정리하기·자동 최적화가 프리셋 하나에 쓸 최대 시간(0~600초)입니다. <strong>0은 시간 제한이 없다는 뜻</strong>이며, 시도와 초가 모두 0이면 더 나아지지 않을 때까지 돌고 취소 단추로 멈출 수 있습니다. 기본 제공 프리셋은 300초(빠른 확인 30초), 프리셋 없이 시작한 설정은 120초로 시작합니다.</td></tr>
+<tr><td><strong>뽑아서 찾을 프레임</strong></td><td>프레임이 이보다 많은 원본은 처음·끝을 넣어 고르게 이만큼만 뽑아 시도를 돌리고(예: 120프레임에 5 → 1·31·61·90·120번), 찾은 1위 설정을 모든 프레임에 한 번 적용합니다(기본 5, 0 = 모든 프레임). 시도 하나가 프레임 수만큼 걸리므로 프레임이 많은 영상·GIF가 빨라집니다. <a href="#pixelate-settings">간편 설정</a>에도 같은 칸이 있습니다.</td></tr>
 <tr><td><strong>목표 색 수</strong> · <strong>자동</strong> · <strong>강제</strong></td><td>결과 색이 목표보다 많으면 점수 전체에 (1 − 색 수 비중 × 넘은 색 수 ÷ 목표)를 곱해 깎습니다(비중 0.5·목표 16이면 20색 −12.5%, 24색 −25%). <strong>자동</strong>(기본)이면 색 수를 보지 않고, <strong>강제</strong>를 켜면 목표보다 적어도 그 차이만큼 깎습니다.</td></tr>
 <tr><td><strong>원본과 닮음</strong> · <strong>가운데 가중</strong></td><td>가장 큰 점수 항목인 원본과 닮음이 결과와 원본의 색 차이를 재는 법과, 칸 안 픽셀에 줄 무게입니다. 값마다의 뜻은 아래 <strong>원본과 닮음 견주는 법</strong> 표에 있습니다.</td></tr>
 <tr><td><strong>칸 대표 색</strong> · <strong>묶음 범위</strong></td><td>칸끼리 견줄 때 원본 칸 하나를 어떤 색으로 볼지와, 비슷한 색을 한 묶음으로 볼 범위입니다. 값마다의 뜻은 아래 <strong>칸 대표 색</strong> 표에 있습니다.</td></tr>
@@ -4107,7 +4290,7 @@
 </tbody>
 </table></div>
 <h4>칸 대표 색</h4>
-<p><strong>칸 대표 색</strong> 상자는 칸끼리 견줄 때 원본 칸 하나를 어떤 색 하나로 볼지 정합니다. 원본 칸에는 번짐·잡티·이웃 칠이 섞여 있어, 무엇을 대표로 보느냐에 따라 같은 결과라도 점수가 달라집니다. <strong>칸끼리</strong>일 때만 씁니다.</p>
+<p><strong>칸 대표 색</strong> 상자는 칸끼리 견줄 때 원본 칸 하나를 어떤 색 하나로 볼지 정합니다. 원본 칸에는 번짐·잡티·이웃 칠이 섞여 있어, 무엇을 대표로 보느냐에 따라 같은 결과라도 점수가 달라집니다. <strong>칸끼리</strong>일 때만 쓰고, 다른 방식이면 가운데 가중과 함께 숨습니다.</p>
 <figure class="shot"><img src="assets/guide/pixelate-score-compare-cellref.png" alt="여러 색이 걸친 원본 칸 여섯과 그 칸들의 대표 색을 우세 색 묶음과 칸 평균으로 칠한 그림을 나란히 놓은 그림" width="944" height="224" loading="lazy"><figcaption>왼쪽부터: 원본 칸(흰 선 = 칸 경계) · 우세 색 묶음(기본) · 칸 평균 — 칸 평균은 두 색이 걸친 칸을 원본에 없는 탁한 중간색으로 봅니다.</figcaption></figure>
 <p>외곽선과 살색이 반반인 칸, 외곽선이 모서리에 번진 칸이 우세 색 묶음에서는 살색으로, 칸 평균에서는 갈색 흙빛으로 바뀝니다. 그래서 우세 색 묶음은 결과가 그 칸을 살색 한 색으로 칠해도 맞다고 보고, 칸 평균은 원본에 없는 흙빛을 칠한 결과를 더 높게 칩니다. 고른 살색 칸은 둘이 같아, 대표 색 방식은 여러 색이 걸친 칸에서만 점수를 다르게 매깁니다.</p>
 <div class="table-wrap"><table>
@@ -4115,7 +4298,7 @@
 <tbody>
 <tr><td><strong>우세 색 묶음</strong></td><td>칸 안의 비슷한 색(묶음 범위 안)끼리 묶고, 무게가 가장 큰 묶음의 평균을 대표로 봅니다(기본). 살색 칸 귀퉁이에 걸친 검은 외곽선 몇 픽셀이나 번진 경계 색은 작은 묶음이라 빠지므로, 결과가 그 칸을 깨끗한 살색으로 칠하면 맞는 것으로 셉니다.</td><td>외곽선과 칠이 또렷한 AI 도트 그림 대부분.</td></tr>
 <tr><td><strong>칸 평균</strong></td><td>칸 안 모든 픽셀의 평균을 대표로 봅니다. 외곽선이 걸친 칸은 살색과 검정이 섞인 탁한 색이 기준이 되어, 결과가 그 칸을 살색이나 검정 어느 쪽으로 칠해도 조금씩 감점됩니다.</td><td>칸 안이 원래 고르게 섞인 부드러운 칠(그라데이션·수채화풍)이라 한 묶음을 고르기 어려울 때.</td></tr>
-<tr><td><strong>묶음 범위</strong></td><td>우세 색 묶음에서 한 묶음으로 볼 색 차이(OKLab 거리, 기본 0.06)입니다. 작게 하면 JPEG 잡음 섞인 같은 살색도 여러 묶음으로 갈려 대표 색이 흔들리고, 크게 하면 살색과 옅은 그늘처럼 다른 칠까지 한 묶음으로 섞입니다. 칸 맞추기 따로 최적화의 칸 색 고름도 이 값으로 잽니다.</td><td>잡음이 많은 JPEG면 조금 올리고, 그늘 단계가 촘촘한 그림이면 조금 내립니다.</td></tr>
+<tr><td><strong>묶음 범위</strong></td><td>우세 색 묶음에서 한 묶음으로 볼 색 차이(OKLab 거리, 기본 0.06)입니다. 작게 하면 JPEG 잡음 섞인 같은 살색도 여러 묶음으로 갈려 대표 색이 흔들리고, 크게 하면 살색과 옅은 그늘처럼 다른 칠까지 한 묶음으로 섞입니다. 칸 맞추기 따로 최적화의 칸 색 고름도 이 값으로 잽니다. 우세 색 묶음이 아니면 숨습니다.</td><td>잡음이 많은 JPEG면 조금 올리고, 그늘 단계가 촘촘한 그림이면 조금 내립니다.</td></tr>
 </tbody>
 </table></div>
 <h4>점수용 색 거리 고르기</h4>
@@ -4130,7 +4313,7 @@
 <tr><td><strong>OKLab</strong></td><td>OKLab은 숫자로 같은 만큼 떨어진 두 색이 눈에도 비슷한 만큼 달라 보이도록 만든 색 공간입니다(지각적으로 고름 — 어두운 색이든 밝은 색이든, 빨강이든 파랑이든 거리 0.02 안팎이 겨우 알아볼 차이). 그 안의 곧은 거리(유클리드 거리)를 재며 밝기·채도·색상 차를 같은 무게로 봅니다. 가장 빠르고 단순합니다.</td><td>색 종류가 적고 서로 뚜렷이 다른 그림. 어느 차이도 특별히 무겁게 보지 않는 중립 기준이 필요할 때.</td></tr>
 <tr><td><strong>CIEDE2000</strong></td><td>인쇄·디스플레이 업계가 쓰는 표준 색차 공식(ΔE00)으로 CIELAB에서 잽니다(÷200으로 OKLab 크기에 맞춤). 사람 눈이 둔한 차이(아주 진한 색끼리의 채도 차)는 작게, 예민한 차이(회색에 가까운 색끼리의 차)는 크게 보고, 파랑·보라 근처의 색상 어긋남을 바로잡는 보정도 들어 있습니다. 계산이 무거워 점수 매기기가 조금 느려집니다.</td><td>은색 갑옷·회색 돌·흰 옷처럼 무채색 단계가 많은 그림, 파란 옷·밤하늘처럼 파랑이 많은 그림.</td></tr>
 <tr><td><strong>OKLCh 색상 가중</strong></td><td>OKLab의 차이를 밝기(L)·채도(C, 진하기)·색상(H, 빨강·노랑·파랑 같은 색의 종류) 차로 나눠, 아래 L·C·H 가중치를 곱해 더합니다(기본 1·1·2 — 색상 차를 두 배로 셈). 색상 차는 채도를 곱한 값이라 회색끼리는 거의 늘지 않고, 진한 색이 다른 색상으로 바뀐 것만 크게 감점됩니다. 예: 살색 손이 빨간 천 색이 되면 밝기가 비슷해도 큰 잘못으로 셉니다.</td><td>살색·빨간 옷·주황 머리처럼 밝기가 비슷한 다른 색상이 붙어 있는 캐릭터. 그늘이 옆 색상으로 넘어가는 결과를 걸러 낼 때.</td></tr>
-<tr><td><strong>L</strong> 가중치</td><td>밝기 차에 곱하는 무게(0~1000, 기본 1)입니다. 올리면 그늘이 한 단계 밝아지거나 어두워진 것을 더 크게 감점하고, 0이면 밝기 차를 보지 않습니다. <strong>OKLCh 색상 가중</strong>일 때만 쓰고, 다른 거리에서는 흐리게 꺼집니다.</td><td>명암 단계를 정확히 지켜야 하는 그림에서 올립니다.</td></tr>
+<tr><td><strong>L</strong> 가중치</td><td>밝기 차에 곱하는 무게(0~1000, 기본 1)입니다. 올리면 그늘이 한 단계 밝아지거나 어두워진 것을 더 크게 감점하고, 0이면 밝기 차를 보지 않습니다. <strong>OKLCh 색상 가중</strong>일 때만 쓰고, 다른 거리에서는 L·C·H 세 줄 모두 숨습니다.</td><td>명암 단계를 정확히 지켜야 하는 그림에서 올립니다.</td></tr>
 <tr><td><strong>C</strong> 가중치</td><td>채도 차에 곱하는 무게(기본 1)입니다. 올리면 색이 바래거나(진한 빨강 → 탁한 빨강) 더 진해진 것을 크게 감점하고, 0이면 채도 차를 보지 않습니다.</td><td>색이 탁해지는 결과를 걸러 내고 싶을 때 올립니다.</td></tr>
 <tr><td><strong>H</strong> 가중치</td><td>색상 차에 곱하는 무게(기본 2)입니다. 1이면 OKLab와 같고, 클수록 다른 색상으로 바뀐 것(살색 → 주황, 파랑 → 보라)을 크게 감점합니다. 0이면 색상 차를 보지 않습니다.</td><td>피부와 빨간 천처럼 색상으로만 구별되는 칠이 섞이는 결과를 막을 때 올립니다.</td></tr>
 </tbody>
@@ -4165,11 +4348,12 @@
 <tr><td>④ <strong>쓴 색을 새 <a class="term" href="#screen-palette">팔레트</a>로도 저장</strong></td><td>결과에 쓴 색을 <strong>원본 이름 팔레트</strong>라는 새 팔레트로도 저장합니다.</td></tr>
 </tbody>
 </table></div>
-<figure class="shot"><img src="assets/guide/pixelate-output-2.png" alt="창 아래 단추" width="503" height="80" loading="lazy"><figcaption>⑤ 이미지 크기만큼 늘리기(Grow to image size) · ⑥ 새 탭에 추가(Add to new tab) · ⑦ 적용(Apply)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/pixelate-output-2.png" alt="창 아래 단추" width="606" height="80" loading="lazy"><figcaption>⑤ 프리셋 정리(Reset presets) · ⑥ 이미지 크기만큼 늘리기(Grow to image size) · ⑦ 새 탭에 추가(Add to new tab) · ⑧ 적용(Apply)</figcaption></figure>
 <ul>
-<li>⑤ <strong>이미지 크기만큼 늘리기</strong>(기본 끔, 다음에도 기억): 켜면 ⑦ <strong>적용</strong>으로 현재 문서에 넣을 때 캔버스가 결과 그림보다 작으면 결과 크기까지 가운데 기준으로 늘린 뒤 넣습니다(줄이지는 않음, 넣기와 같은 실행취소 한 단계). 끄면 캔버스는 그대로이고 나간 픽셀은 캔버스 밖 그림으로 남습니다.</li>
-<li>⑥ <strong>새 탭에 추가</strong>(⑦ <strong>적용</strong> 앞 단추): 넣기 설정과 관계없이 고른 결과 크기 그대로 새 문서를 새 탭에 만들고 창을 닫습니다(프레임·길이 그대로). 늘 결과 크기의 새 문서라 ⑤와 상관없습니다.</li>
-<li><kbd>Enter</kbd>는 적용 <a class="term" href="#shortcuts-customize">단축키</a>가 아니므로 <strong>적용</strong>이나 <strong>새 탭에 추가</strong>을 직접 누릅니다. <a class="term" href="#pixelate-candidates">후보 칸</a>을 두 번 눌러도 넣습니다.</li>
+<li>⑤ <strong>프리셋 정리</strong>(단추 줄 맨 왼쪽): 넣은 원본은 두고 <a class="term" href="#pixelate-candidates">후보 줄</a>을 창을 처음 열었을 때처럼 되돌립니다. 후보 칸(고친 값으로 돌린 <strong>이름_1</strong>… 칸 포함)·최적화 기록·뺀 색·고정 색을 비우고, 체크한 프리셋 칸을 다시 만듭니다(<strong>불러오면 <a class="term" href="#pixelate-optimize">자동 최적화</a></strong>가 켜져 있으면 다시 최적화). 왼쪽 값과 저장한 프리셋은 그대로입니다. 원본이 없으면 꺼져 있습니다.</li>
+<li>⑥ <strong>이미지 크기만큼 늘리기</strong>(기본 끔, 다음에도 기억): 켜면 ⑧ <strong>적용</strong>으로 현재 문서에 넣을 때 캔버스가 결과 그림보다 작으면 결과 크기까지 가운데 기준으로 늘린 뒤 넣습니다(줄이지는 않음, 넣기와 같은 실행취소 한 단계). 끄면 캔버스는 그대로이고 나간 픽셀은 캔버스 밖 그림으로 남습니다.</li>
+<li>⑦ <strong>새 탭에 추가</strong>(⑧ <strong>적용</strong> 앞 단추): 넣기 설정과 관계없이 고른 결과 크기 그대로 새 문서를 새 탭에 만들고 창을 닫습니다(프레임·길이 그대로). 늘 결과 크기의 새 문서라 ⑥과 상관없습니다.</li>
+<li><kbd>Enter</kbd>는 적용 <a class="term" href="#shortcuts-customize">단축키</a>가 아니므로 <strong>적용</strong>이나 <strong>새 탭에 추가</strong>을 직접 누릅니다. 후보 칸을 두 번 눌러도 넣습니다.</li>
 <li><a href="#pixelate-ai">AI(실험)</a> 단계의 선택을 켰으면 넣은 뒤 채팅이 열립니다.</li>
 </ul>
 
@@ -4937,9 +5121,11 @@
 <li>① 흙과 진흙은 무리 "흙"이라 맞닿으면 외곽선 없이 이어집니다. 돌과 광석 섞인 돌은 무리 "돌"입니다.</li>
 <li>② 무리가 다르면 사이에 외곽선이 생깁니다. 바닥은 가장자리에 외곽선이 있고 안쪽으로 갈수록 어두워집니다.</li>
 <li>③ 덮개(풀·눈·낙엽)는 바닥 윗면 칸 위에 <a class="term" href="#tilemap-autotile">자동 타일</a>로 덧칠하면 아래로 흘러내리듯 얹히고, 끝은 둥글게 닫힙니다.</li>
-<li>④ 물·용암은 위가 빈 칸에 물결 수면, 옆이 비면 옆 가장자리가 생기고, 더 높은 물 옆에서는 수면이 비스듬히 올라가 이어집니다. 물결이 옆으로 흐르는 <a class="term" href="#tilemap-animated">움직이는 타일</a>입니다.</li>
+<li>④ 물·용암은 위가 빈 칸에 물결 수면, 옆이 비면 옆 가장자리가 생깁니다. 높이가 다른 물이 이웃하면 수면이 비탈로 이어집니다(아래 그림). 물결이 옆으로 흐르는 <a class="term" href="#tilemap-animated">움직이는 타일</a>입니다.</li>
 <li>⑤ 횃불은 <a class="term" href="#tilemap-big-tiles">차지 칸</a>이 1칸이고 그림이 1×2칸이라 불빛이 위 칸까지 번집니다. 횃불·동전도 움직이는 타일입니다.</li>
 </ul>
+<figure class="shot"><img src="assets/guide/tilemap-builtin-water.png" alt="돌 바닥 위에 계단처럼 쌓은 물. 한 칸씩 높아지는 비탈, 한 칸 폭 봉우리, 두 칸 차이 나는 옆, 흙 블록 밑 물에 6~9번 표시" width="788" height="372" loading="lazy"><figcaption>⑥ 한 칸씩 높아지는 물의 곧은 비탈 · ⑦ 한 칸 폭으로 솟은 봉우리 · ⑧ 두 칸 이상 차이 나는 옆(세로 가장자리) · ⑨ 블록 밑 물 옆의 수면</figcaption></figure>
+<p>⑥ 한 칸씩 높아지는 물(계단처럼 쌓은 물)은 높은 칸 쪽 수면이 칸 아래 끝까지 45°로 내려가고, 낮은 칸 쪽 수면이 칸 위 끝까지 올라가 계단 없이 곧은 비탈로 이어집니다. ⑦ 한 칸 폭으로 솟은 물은 뾰족한 봉우리가 됩니다. ⑧ 두 칸 이상 높이 차이가 나는 옆은 비탈 없이 세로 가장자리입니다. ⑨ 블록 아래를 꽉 채운 물 옆의 수면도 블록 밑까지 45°로 올라가 이어집니다.</p>
 <figure class="shot"><img src="assets/guide/tilemap-builtin-village.png" alt="탑뷰 마을·물가 기본 타일셋의 마을과 물가 맵: 땅, 물, 절벽, 벽과 문" width="788" height="468" loading="lazy"><figcaption>탑뷰 마을·물가의 땅·둑·벽과 문</figcaption></figure>
 <p>타일셋 고르기 창의 또 다른 기본 타일셋 탑뷰 마을·물가는 위치로 그리는 16px 탑뷰 타일셋입니다. 땅은 물결진 가장자리로 이어지고 위층 땅이 아래층 땅을 덮습니다. 아래가 물이면 재질에 맞는 둑이 물 칸에 내려와 물이 낮아 보입니다. 물의 거품 줄은 움직입니다. 벽의 윗면과 앞면은 찍은 칸 안에 있고 문을 벽 줄에 넣으면 양옆 벽이 이어집니다.</p>
 <figure class="shot"><img src="assets/guide/tilemap-builtin-compare.png" alt="동일한 벽·상자·물가 맵을 층 차례와 위치·기준선으로 나란히 그린 비교" width="1616" height="496" loading="lazy"><figcaption>왼쪽: 층 차례 · 오른쪽: 위치와 기준선</figcaption></figure>
@@ -5958,6 +6144,7 @@ rows:
 <div class="table-wrap"><table class="glossary">
 <thead><tr><th>용어</th><th>뜻</th></tr></thead>
 <tbody>
+<tr><td><a href="#model-import">3D 모델 가져오기</a></td><td>3D 모델을 열 때 크기·각도·빛·외곽선·<a class="term" href="#screen-timeline">프레임</a>을 정해 픽셀 그림 프레임으로 그리는 창입니다.</td></tr>
 <tr><td><a href="#tools-nine-slice">9-slice</a></td><td>늘려도 모서리가 깨지지 않게 그림을 9칸으로 나누는 Unity 스프라이트 테두리입니다.</td></tr>
 <tr><td><a href="#ai-generate">AI 그리기 요령</a> <span class="term-aka nolink">(그리기 요령)</span></td><td>대충 말해도 도트가 잘 나오게 AI에게 미리 알려 주는 작업별 요령입니다. 켜고 끄고 글을 고칠 수 있습니다.</td></tr>
 <tr><td><a href="#pixelate">AI 그림 픽셀로 정리</a> <span class="term-aka nolink">(픽셀로 정리)</span></td><td>AI가 만든 그림이나 큰 그림을 깔끔한 픽셀 아트로 바꾸는 창입니다.</td></tr>
@@ -5984,7 +6171,7 @@ rows:
 <tr><td><a href="#tools-gradient-pencil">그라데이션 연필</a></td><td>획을 따라 그라데이션 색으로 칠하는 <a class="term" href="#tools-pencil">연필</a>입니다.</td></tr>
 <tr><td><a href="#tools-gradient">그라데이션 프리셋</a></td><td><a class="term" href="#tools-gradient">정지점</a>·보간·<a class="term" href="#tools-gradient">색 공간</a>·<a class="term" href="#tools-dither">디더링</a>을 이름 붙여 저장한 그라데이션입니다.</td></tr>
 <tr><td><a href="#parts-concept">그룹</a></td><td><a class="term" href="#parts-concept">부위</a> <a class="term" href="#screen-timeline">레이어</a>를 묶어 한 캐릭터로 다루는 레이어입니다.</td></tr>
-<tr><td><a href="#parts-arrange">그룹 화면</a></td><td><a class="term" href="#parts-concept">그룹</a>을 골랐을 때 <a class="term" href="#screen-timeline">프레임</a> 합성을 보며 부위를 끌어 배치하는 <a class="term" href="#screen-canvas">캔버스</a> 상태입니다.</td></tr>
+<tr><td><a href="#parts-arrange">그룹 화면</a></td><td><a class="term" href="#parts-concept">그룹</a>을 골랐을 때 프레임 합성을 보며 부위를 끌어 배치하는 <a class="term" href="#screen-canvas">캔버스</a> 상태입니다.</td></tr>
 <tr><td><a href="#ai-generate">그리기 설정</a></td><td>채팅 창에서 그리는 방식과 생성 옵션을 정하는 칸입니다.</td></tr>
 <tr><td><a href="#ai-generate">그림 생성 → 픽셀 변환</a></td><td>Codex 이미지 생성으로 그림을 만든 뒤 픽셀 아트로 바꿔 넣는 그리기 방식입니다.</td></tr>
 <tr><td><a href="#ai-chat">그림 칩</a></td><td>입력란과 메시지 글 사이에 들어가는 첨부 그림 표시(썸네일과 #번호)입니다.</td></tr>
@@ -6030,6 +6217,7 @@ rows:
 <tr><td><a href="#screen-preview">미리보기 크게 보기</a></td><td>미리보기를 크기 조절 가능한 창에서 크게 재생하는 창입니다.</td></tr>
 <tr><td><a href="#screen-tabs">미리보기 탭</a></td><td>편집 중인 문서를 다른 칸에서 크게 재생하는 초록빛 탭입니다.</td></tr>
 <tr><td><a href="#tilemap-autotile">미리보기 판</a></td><td>자동 타일 세트 편집 창에서 고치는 세트로 칠해 보는 12×9칸 판입니다. 저장되지 않습니다.</td></tr>
+<tr><td><a href="#model-animation">믹사모</a></td><td>사람형 3D 캐릭터에 뼈대를 달고 애니메이션을 내려받게 해 주는 Adobe의 무료 웹 서비스입니다.</td></tr>
 <tr><td><a href="#screen-asset-manager">받은 에셋</a></td><td>상점이나 파일에서 받은 남의 에셋으로, 고치려면 <a class="term" href="#screen-asset-manager">내 에셋</a>으로 복사합니다.</td></tr>
 <tr><td><a href="#tools-dodge">밝게/어둡게</a></td><td>이미 칠한 픽셀을 문질러 밝게(왼쪽 버튼)·어둡게(오른쪽 버튼) 하는 도구입니다.</td></tr>
 <tr><td><a href="#language-make">번역 CSV</a></td><td>모든 화면 문구를 키와 언어별 열로 담은 표 파일입니다. 열을 더해 새 언어를 만듭니다.</td></tr>
@@ -6060,6 +6248,8 @@ rows:
 <tr><td><a href="#files-settings">설정 폴더</a> <span class="term-aka nolink">(앱 설정 폴더)</span></td><td>환경 설정·<a class="term" href="#files-history">실행취소 기록</a>·<a class="term" href="#screen-file-browser">앱 휴지통</a>·로그가 있는 Chickxel 폴더입니다(Windows <code>%AppData%\Chickxel</code>).</td></tr>
 <tr><td><a href="#screen-timeline">셀</a></td><td>한 레이어의 한 프레임 그림, 곧 타임라인의 칸 하나입니다.</td></tr>
 <tr><td><a href="#screen-cel-links">셀 링크</a> <span class="term-aka nolink">(링크된 셀)</span></td><td>여러 칸이 그림 하나를 함께 쓰게 하는 연결입니다. 한 칸을 고치면 모두 바뀝니다.</td></tr>
+<tr><td><a href="#model-view">셀 셰이딩</a></td><td>밝기를 몇 단계의 띠로 끊어 칠하는 명암 방식입니다.</td></tr>
+<tr><td><a href="#model-pixel">셀아웃</a></td><td>외곽선을 한 가지 색 대신 선 자리의 그림 색을 어둡게 한 색으로 긋는 방식입니다.</td></tr>
 <tr><td><a href="#tools-move">순환</a></td><td><a class="term" href="#tools-move">이동 도구</a>로 셀을 밀 때 밖으로 나간 픽셀이 반대편으로 돌아오게 하는 옵션입니다.</td></tr>
 <tr><td><a href="#screen-common-controls">숫자 칸</a></td><td>눌러서 입력하거나 오른쪽 끝 위/아래 단추로 바꾸거나 우클릭 목록에서 고르는 칸입니다.</td></tr>
 <tr><td><a href="#tools-select">스마트 선택</a></td><td>클릭한 곳과 비슷한 색 영역을 고르는 선택 도구입니다(채우기와 같은 설정).</td></tr>
@@ -6173,6 +6363,7 @@ rows:
 <tr><td><a href="#screen-top-bar">픽셀 격자</a></td><td>확대했을 때 픽셀마다 경계선을 보이는 보기 옵션입니다.</td></tr>
 <tr><td><a href="#tools-shape">픽셀 잇기</a></td><td>도형의 선·곡선, 연필·그라데이션 연필·지우개 획의 픽셀을 대각선으로도 이을지(대각선), 가로·세로로만 이을지(ㄱ자) 정하는 설정입니다(도형과 연필은 따로 기억).</td></tr>
 <tr><td><a href="#tools-pencil">픽셀 퍼펙트</a></td><td>크기 1로 그릴 때 계단 모서리의 ㄱ자 겹 픽셀을 빼서 한 픽셀 두께의 선을 남기는 옵션입니다.</td></tr>
+<tr><td><a href="#model-frames">한 바퀴 돌려 보기</a> <span class="term-aka nolink">(돌려 보기)</span></td><td>3D 모델을 한 바퀴 돌리며 같은 간격의 방향마다 한 장씩 그리는 프레임 방식으로, 8방향 스프라이트를 만들 때 씁니다.</td></tr>
 <tr><td><a href="#tools-fill">허용 오차</a></td><td>채우기·스마트 선택이 같은 색으로 볼 색 차이의 한도입니다.</td></tr>
 <tr><td><a href="#language-change">화면 언어</a></td><td>메뉴·창·안내 글에 쓰는 언어입니다. 바꾸면 다시 시작해야 적용됩니다.</td></tr>
 <tr><td><a href="#screen-top-bar">화면에 맞추기</a></td><td>그림 전체가 캔버스 영역에 들어가는 가장 큰 배율로 바꾸는 명령입니다.</td></tr>

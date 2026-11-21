@@ -1109,6 +1109,7 @@
   <data name="Open_FilterImages" xml:space="preserve"><value>그림(PNG·JPG·BMP·GIF·WebP·ICO·AVIF·HEIC)</value></data>
   <data name="Open_FilterAnimations" xml:space="preserve"><value>움직이는 그림(GIF·WebP·APNG)</value></data>
   <data name="Open_FilterVideos" xml:space="preserve"><value>영상(MP4·WebM·MOV·MKV·AVI)</value></data>
+  <data name="Open_FilterModels" xml:space="preserve"><value>3D 모델(GLB·glTF·FBX·OBJ)</value></data>
   <data name="Open_FilterAllFiles" xml:space="preserve"><value>모든 파일</value></data>
   <data name="Open_ManyFiles" xml:space="preserve"><value>파일 {count}개를 각각 새 탭으로 열까요?</value><comment>count = 고른·끌어 놓은 파일 수.</comment></data>
   <data name="Open_ManyFrames" xml:space="preserve"><value>{name}에는 프레임이 {count}개 있습니다. 모두 열면 메모리를 많이 쓰고 시간이 걸릴 수 있습니다.

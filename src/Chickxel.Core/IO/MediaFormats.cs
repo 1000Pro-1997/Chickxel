@@ -13,6 +13,8 @@ public enum MediaKind
     Image,
     /// <summary>영상(ffmpeg로 프레임을 뽑음).</summary>
     Video,
+    /// <summary>3D 모델(glTF·GLB·OBJ — 그려서 프레임으로, <see cref="Scene3D.ModelFrames"/>).</summary>
+    Model,
 }
 
 /// <summary>열 수 있는 파일 확장자(소문자, 점 포함)와 종류 판단.</summary>
@@ -30,17 +32,21 @@ public static class MediaFormats
     /// <summary>영상.</summary>
     public static readonly IReadOnlyList<string> VideoExtensions = [".mp4", ".m4v", ".webm", ".mov", ".mkv", ".avi", ".wmv", ".flv", ".mpg", ".mpeg", ".ts"];
 
+    /// <summary>3D 모델(FBX는 바이너리 7.x — 믹사모가 주는 형식).</summary>
+    public static readonly IReadOnlyList<string> ModelExtensions = [".glb", ".gltf", ".fbx", ".obj"];
+
     /// <summary>모든 그림 확장자.</summary>
     public static IEnumerable<string> ImageExtensions => RasterExtensions.Concat(FfmpegImageExtensions);
 
-    /// <summary>열 수 있는 모든 확장자(프로젝트·그림·영상).</summary>
-    public static IEnumerable<string> AllExtensions => SpriteProject.FileExtensions.Concat(ImageExtensions).Concat(VideoExtensions);
+    /// <summary>열 수 있는 모든 확장자(프로젝트·그림·영상·3D 모델).</summary>
+    public static IEnumerable<string> AllExtensions => SpriteProject.FileExtensions.Concat(ImageExtensions).Concat(VideoExtensions).Concat(ModelExtensions);
 
     public static MediaKind KindOf(string path)
     {
         if (SpriteProject.IsProjectFile(path)) return MediaKind.Project;
         var ext = Path.GetExtension(path).ToLowerInvariant();
         if (RasterExtensions.Contains(ext) || FfmpegImageExtensions.Contains(ext)) return MediaKind.Image;
+        if (ModelExtensions.Contains(ext)) return MediaKind.Model;
         return VideoExtensions.Contains(ext) ? MediaKind.Video : MediaKind.None;
     }
 

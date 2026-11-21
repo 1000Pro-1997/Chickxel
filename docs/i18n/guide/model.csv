@@ -1,0 +1,201 @@
+key,ko,en
+#name,한국어,English
+model.1,3D 모델 가져오기,Importing 3D models
+model.2,"GLB·glTF·OBJ·FBX 3D 모델을 열면 정한 크기·각도·빛으로 그려 픽셀 그림 프레임으로 가져옵니다. 3D로 만든 캐릭터·소품을 탑다운 8방향 스프라이트, 아이소메트릭 소품, 옆모습 걷기 애니메이션 같은 게임 스프라이트로 바꿀 때 씁니다. 가져온 프레임은 보통 그림이라 다른 그림처럼 고칠 수 있습니다.","Opening a GLB, glTF, OBJ or FBX 3D model draws it at the size, angle and light you choose and imports the result as pixel-art frames. Use it to turn characters and props made in 3D into game sprites: top-down 8-direction sprites, isometric props, side-view walk cycles and so on. The imported frames are ordinary images you can edit like any other."
+model.3,"모델을 열면 <strong>{{UiStrings.Model_Title}}</strong> 창이 뜹니다. 프리셋을 고르거나 값을 고친 뒤 <strong>{{UiStrings.Model_Import}}</strong>를 누르면 프레임마다 한 장인 새 탭이 열립니다. 크게 부드럽게 그려 <a href=""#pixelate"">AI 그림 픽셀로 정리</a>의 원본으로 넘기면 칸 맞추기·팔레트를 그 창에 맡길 수도 있습니다.","Opening a model shows the <strong>{{UiStrings.Model_Title}}</strong> window. Pick a preset or adjust the values, then click <strong>{{UiStrings.Model_Import}}</strong> to get a new tab with one image per frame. You can also draw it large and smooth and hand it to <a href=""#pixelate"">Pixelate AI images</a> as a source, leaving grid fitting and the palette to that window."
+model.h1,쪽,Page
+model.h2,이럴 때 읽기,Read it when
+model.p-open,3D 모델 파일을 열거나 파일 브라우저에서 찾을 때,You open a 3D model file or look for one in the file browser
+model.p-import,가져오기 창의 생김새와 프리셋을 알고 싶을 때,You want to know the import window and its presets
+model.p-view,"크기·보는 각도·빛·명암을 정할 때","You set the size, view angle, light and shading"
+model.p-pixel,"반투명·색 수·외곽선을 픽셀 그림답게 다듬을 때","You clean up semi-transparency, colors and outlines for pixel art"
+model.p-frames,"한 장, 여러 방향, 애니메이션 중 무엇으로 뽑을지 정할 때","You choose between a single image, several directions or an animation"
+model.p-animation,믹사모 등에서 받은 애니메이션을 캐릭터에 붙일 때,You attach animations downloaded from Mixamo or elsewhere to a character
+model-open.1,3D 모델 열기,Opening 3D models
+model-open.intro,"3D 모델은 그림·영상처럼 열면 새 문서가 됩니다. 바로 열리지 않고 먼저 <strong>{{UiStrings.Model_Title}}</strong> 창이 떠서 어떻게 그릴지 정합니다(<a href=""#model-import"">가져오기 창</a>).","Like images and videos, opening a 3D model creates a new document. It doesn't open right away: the <strong>{{UiStrings.Model_Title}}</strong> window comes up first so you can decide how to draw it (<a href=""#model-import"">The import window</a>)."
+model-open.ways-title,여는 방법,Ways to open
+model-open.h-way,방법,Method
+model-open.h-how,하는 법,How
+model-open.menu,파일 메뉴,File menu
+model-open.menu-how,"<strong>파일 &gt; {{MainStrings.Menu_File_OpenFileDialogCmd_065}}</strong>({{key:파일/열기(.chickxel / PNG 가져오기)…}}). 파일 종류 목록에서 <strong>{{MainStrings.Open_FilterModels}}</strong>를 고르면 3D 모델만 보입니다.","<strong>File &gt; {{MainStrings.Menu_File_OpenFileDialogCmd_065}}</strong> ({{key:파일/열기(.chickxel / PNG 가져오기)…}}). Choose <strong>{{MainStrings.Open_FilterModels}}</strong> in the file type list to see only 3D models."
+model-open.drop,창에 끌어 놓기,Dropping on the window
+model-open.drop-how,"탐색기·Finder에서 창에 놓습니다. 그림과 달리 캔버스 위에 놓아도 레이어가 되지 않고 새 탭으로 엽니다.","Drop the file on the window from Explorer or Finder. Unlike images, a model dropped on the canvas doesn't become a layer; it opens in a new tab."
+model-open.browser,파일 브라우저,File browser
+model-open.browser-how,"썸네일을 누릅니다(아래 그림).",Click its thumbnail (see the figure below).
+model-open.pixelate,픽셀로 정리의 원본,As a Pixelate source
+model-open.pixelate-how,"픽셀로 정리 창에 끌어 놓거나 <strong>{{UiStrings.Pixelate_Browse}}</strong>로 고르거나 파일 브라우저에서 우클릭해 넣으면, 같은 가져오기 창에서 그린 그림이 원본이 됩니다(<a href=""#pixelate-open"">창 열기와 원본 넣기</a>).","Drop it on the Pixelate window, pick it with <strong>{{UiStrings.Pixelate_Browse}}</strong> or add it from the file browser's right-click menu; the images drawn in the same import window become the source (<a href=""#pixelate-open"">Opening the window and adding a source</a>)."
+model-open.formats-title,읽는 형식,Supported formats
+model-open.h-format,형식,Format
+model-open.h-reads,그리는 것,What is drawn
+model-open.h-not,안 되는 것,Not supported
+model-open.gltf,"메시, 재질 색·텍스처·꼭짓점 색, 알파 자르기(mask·blend), 빛을 받지 않는 재질(unlit), 뼈대(스킨) 애니메이션과 노드 애니메이션","Meshes, material colors, textures and vertex colors, alpha cut-off (mask and blend), unlit materials, skeletal (skin) and node animations"
+model-open.gltf-not,"Draco·meshopt로 압축한 메시는 열지 않고 알립니다(압축하지 않고 다시 내보내기). 모프 타깃(셰이프 키)은 기본 모양으로 그립니다.","Meshes compressed with Draco or meshopt don't open; a message asks you to export again without compression. Morph targets (shape keys) are drawn in their base shape."
+model-open.obj,"메시, 재질 색(<code>Kd</code>)과 텍스처(<code>map_Kd</code>) — <code>.mtl</code>과 텍스처는 OBJ 옆에 둡니다.","Meshes, material colors (<code>Kd</code>) and textures (<code>map_Kd</code>); keep the <code>.mtl</code> and textures next to the OBJ."
+model-open.obj-not,애니메이션이 없는 형식입니다. <code>.mtl</code>이 없으면 기본 재질로 그리고 알립니다.,"The format has no animation. Without the <code>.mtl</code>, the model is drawn with a default material and a notice."
+model-open.fbx,"바이너리 FBX 7.x(믹사모가 주는 형식): 메시, 텍스처(파일 안에 든 것 포함), 뼈대·스킨, 애니메이션","Binary FBX 7.x (the format Mixamo gives you): meshes, textures (including embedded ones), skeleton and skin, animations"
+model-open.fbx-not,"글자(ASCII) FBX와 6.x 이하는 열지 않고 <strong>FBX Binary</strong>로 다시 내보내라고 알립니다. 블렌드 셰이프는 기본 모양으로 그립니다.","ASCII FBX and version 6.x or older don't open; a message asks you to export again as <strong>FBX Binary</strong>. Blend shapes are drawn in their base shape."
+model-open.read,"여는 동안 <strong>{{UiStrings.Model_LoadingTitle}}</strong> 진행 창이 뜹니다. 읽었지만 그리지 못하는 것(모프 타깃 등)은 가져오기 창 아래에 주황 글자로 알립니다. 삼각형이 없거나 500만 개를 넘는 모델은 열지 않습니다.","A <strong>{{UiStrings.Model_LoadingTitle}}</strong> progress window shows while the file is read. Anything read but not drawn (morph targets and so on) is listed in orange at the bottom of the import window. Models with no triangles or more than 5 million are not opened."
+model-open.browser-title,파일 브라우저와 상세 정보,File browser and Details
+model-open.alt,"파일 브라우저에 chick.glb와 crate.obj가 그린 썸네일로 보이고, chick.glb 썸네일·상자 배지·crate.obj에 1~3번 표시","The file browser showing chick.glb and crate.obj with drawn thumbnails, with the chick.glb thumbnail, its cube badge and crate.obj marked 1 to 3"
+model-open.caption,"① chick.glb 썸네일(기본 각도로 그린 그림) · ② 3D 모델 배지 · ③ OBJ 모델(crate.obj)","① chick.glb thumbnail (drawn at the default angle) · ② 3D model badge · ③ OBJ model (crate.obj)"
+model-open.thumb,"파일 브라우저는 3D 모델도 나열합니다. ① 썸네일은 모델을 기본 각도(가로 30°·세로 20°)로 그린 그림이고, ② 오른쪽 아래 상자 배지가 3D 모델임을 알립니다(마우스를 올리면 설명). ③ OBJ도 같습니다. 그리기 전이나 그릴 삼각형이 없는 파일(애니메이션만 든 chick_walk.glb 등)은 상자 그림으로 보입니다.","The file browser lists 3D models too. ① The thumbnail is the model drawn at the default angle (30° horizontal, 20° vertical), and ② the cube badge at the bottom right marks it as a 3D model (hover for a description). ③ OBJ files look the same. Before drawing, or for files with nothing to draw (animation-only files such as chick_walk.glb), a cube icon is shown."
+model-open.alt2,"chick.glb의 상세 정보 창. 종류 GLB 3D model, 삼각형·재질·애니메이션 수에 4·5번 표시","The Details window of chick.glb, with the type GLB 3D model and the triangle, material and animation counts marked 4 and 5"
+model-open.caption2,"상세 정보 창: ④ 종류(GLB 3D 모델) · ⑤ 삼각형·재질·애니메이션 수","Details: ④ Type (GLB 3D model) · ⑤ Triangle, material and animation counts"
+model-open.info,"파일을 우클릭해 <strong>{{UiStrings.FileInfo_Title}}</strong>을 열면 ④ 종류가 형식과 함께(GLB·glTF·OBJ·FBX 3D 모델) 보이고, ⑤ 그릴 삼각형 수·재질 수와 애니메이션이 있으면 애니메이션 수가 보입니다.","Right-click a file and open <strong>{{UiStrings.FileInfo_Title}}</strong>: ④ the type shows the format (GLB, glTF, OBJ or FBX 3D model), and ⑤ the number of triangles to draw, materials and, if there are any, animations."
+model-import.1,가져오기 창,The import window
+model-import.intro,"<strong>{{UiStrings.Model_Title}}</strong> 창은 왼쪽에서 결과를 보며 오른쪽에서 값을 정합니다. 값을 바꾸면 미리보기를 바로 다시 그립니다.","The <strong>{{UiStrings.Model_Title}}</strong> window shows the result on the left while you set values on the right. The preview redraws as soon as a value changes."
+model-import.alt,"3D 모델 가져오기 창에서 탑다운 8방향 프리셋을 고른 모습. 미리보기, 재생 막대, 요약, 프리셋, 설정 칸, 예상, 가져오기 단추에 1~7번 표시","The Import 3D model window with the Top-down 8 directions preset, with the preview, play bar, summary, preset, settings, estimate and Import button marked 1 to 7"
+model-import.caption,"chick.glb, 프리셋 탑다운 8방향: ① 미리보기·조작 안내 · ② 재생·프레임 막대 · ③ 모델 요약 · ④ 프리셋 · ⑤ 설정 칸 · ⑥ 나올 프레임 예상 · ⑦ 가져오기(Import)","chick.glb with the Top-down 8 directions preset: ① Preview and controls hint · ② Play and frame slider · ③ Model summary · ④ Preset · ⑤ Settings · ⑥ Output estimate · ⑦ Import"
+model-import.m1,"① 미리보기는 나올 크기 그대로 그린 그림을 칸에 맞게 키워 보입니다(1배보다 크면 정수 배라 픽셀이 고르고, 바둑판은 투명). 끌면 보는 각도(가로·세로)가, 휠을 돌리면 확대가 바뀌고 오른쪽 칸 값도 같이 바뀝니다.","① The preview draws the image at its output size and enlarges it to fit (by whole multiples above 1×, so pixels stay even; the checkerboard is transparency). Drag it to change the view angle (horizontal and vertical) and turn the wheel to zoom; the values on the right change with it."
+model-import.m2,"② 프레임이 여럿이면(돌려 보기·애니메이션) 재생 단추로 프레임 길이대로 돌려 보고, 막대로 볼 프레임을 고릅니다. 한 장이면 꺼집니다.","② With several frames (turntable or animation), the play button runs them at their frame length and the slider picks the frame to show. Both are off for a single image."
+model-import.m3,"③ 파일 이름과 삼각형·재질·애니메이션 수입니다.","③ The file name and the numbers of triangles, materials and animations."
+model-import.m4,"④ 프리셋을 고르면 아래 값이 모두 그 프리셋 값으로 바뀝니다(그다음 고쳐도 됨, 아래 참고).","④ Choosing a preset sets every value below to the preset's values (you can adjust them afterwards; see below)."
+model-import.m5,"⑤ 설정은 <a href=""#model-view"">크기·각도·빛·명암</a>, <a href=""#model-pixel"">픽셀 다듬기·외곽선</a>, <a href=""#model-frames"">프레임</a> 쪽에서 줄마다 설명합니다.","⑤ The settings are explained row by row in <a href=""#model-view"">Size, angle, light and shading</a>, <a href=""#model-pixel"">Pixel cleanup and outlines</a> and <a href=""#model-frames"">Frames</a>."
+model-import.m6,"⑥ 나올 프레임 수·크기·프레임마다 길이(ms)입니다.","⑥ The number of frames, their size and the length of each frame (ms)."
+model-import.m7,"⑦ <strong>{{UiStrings.Model_Import}}</strong>를 누르면 <strong>{{UiStrings.Model_RenderingTitle}}</strong> 진행 창(취소 가능)이 뜨고 끝나면 새 탭이 열립니다(<a href=""#model-frames"">프레임</a>). <strong>취소</strong>나 <kbd>Esc</kbd>는 아무것도 열지 않습니다.","⑦ <strong>{{UiStrings.Model_Import}}</strong> shows a <strong>{{UiStrings.Model_RenderingTitle}}</strong> progress window (you can cancel), then opens a new tab (<a href=""#model-frames"">Frames</a>). <strong>Cancel</strong> or <kbd>Esc</kbd> opens nothing."
+model-import.remember,"고친 값은 앱을 끌 때까지 기억해 다음에 여는 모델의 처음 값이 됩니다(고른 애니메이션은 모델마다 달라 빼고).","The values you set are remembered until you quit the app and become the starting values for the next model (except the chosen animation, which differs per model)."
+model-import.presets-title,프리셋,Presets
+model-import.alt2,"프리셋 목록을 펼친 모습. 기본 제공 일곱 개와 저장한 My RPG 8-dir 40px, 저장·지우기 단추에 8~10번 표시","The preset list opened, showing the seven built-in presets and the saved My RPG 8-dir 40px, with Save and Delete marked 8 to 10"
+model-import.caption2,"⑧ 프리셋 목록(기본 제공 일곱 개 뒤에 저장한 것) · ⑨ 저장…(Save…) · ⑩ 지우기(Delete)","⑧ Preset list (the seven built-in presets, then saved ones) · ⑨ Save… · ⑩ Delete"
+model-import.presets,"⑧ 목록에는 흔한 게임 시점에 맞춘 기본 제공 프리셋 일곱 개가 있고, 그 뒤에 저장한 프리셋이 붙습니다.","⑧ The list holds seven built-in presets for common game views, followed by your saved presets."
+model-import.h-preset,프리셋,Preset
+model-import.h-values,값,Values
+model-import.h-use,쓰임,Use
+model-import.top,"48px, 가로 0°·세로 55°, 한 바퀴 8프레임, 16색, 겉 외곽선 어둡게","48 px, 0° horizontal and 55° vertical, 8-frame turntable, 16 colors, darkened outer outline"
+model-import.top-use,"비스듬히 위에서 보는 탑다운 RPG 캐릭터·탈것","Top-down RPG characters and vehicles seen from an angle above"
+model-import.over,"32px, 세로 90°(바로 위), 한 바퀴 8프레임, 12색, 한 가지 색 외곽선","32 px, 90° vertical (straight down), 8-frame turntable, 12 colors, single-color outline"
+model-import.over-use,"위에서 내려다보는 슈팅·전략 게임의 탈것·건물","Vehicles and buildings in top-down shooters and strategy games"
+model-import.iso,"64px, 가로 45°·세로 30° 정사영(바닥의 45° 선이 가로 2 : 세로 1로 놓임), 한 바퀴 4프레임, 20색","64 px, orthographic at 45° horizontal and 30° vertical (45° floor lines land at 2 across : 1 down), 4-frame turntable, 20 colors"
+model-import.iso-use,아이소메트릭 맵의 소품·캐릭터 4방향,Four directions of props and characters for isometric maps
+model-import.side,"64px, 가로 90°·세로 0°, 애니메이션 초당 12프레임, 24색, 안쪽 겹침선","64 px, 90° horizontal and 0° vertical, animation at 12 frames per second, 24 colors, overlap lines"
+model-import.side-use,"횡스크롤 게임의 걷기·달리기·공격 애니메이션","Walk, run and attack animations for side-scrollers"
+model-import.icon,"32px, 가로 30°·세로 25°, 확대 115%, 한 장, 12색, 한 가지 색 외곽선","32 px, 30° horizontal and 25° vertical, 115% zoom, single image, 12 colors, single-color outline"
+model-import.icon-use,인벤토리·상점의 아이템 아이콘,Item icons for inventories and shops
+model-import.char,"64px, 가로 25°·세로 12°, 애니메이션 초당 12프레임, 24색, 안쪽 겹침선","64 px, 25° horizontal and 12° vertical, animation at 12 frames per second, 24 colors, overlap lines"
+model-import.char-use,"비스듬한 정면에서 본 캐릭터 애니메이션","Character animations seen from slightly to the front"
+model-import.large,"256px, 가장자리 다듬기 4×4, 픽셀 다듬기·외곽선 없음, 한 장","256 px, 4×4 edge smoothing, no pixel cleanup or outline, single image"
+model-import.large-use,"<a href=""#pixelate"">픽셀로 정리</a>에 넘길 원본(칸 맞추기·팔레트·외곽선은 그 창에서)","A source for <a href=""#pixelate"">Pixelate</a> (grid, palette and outline are done there)"
+model-import.pixel-common,"마지막 것을 빼면 모두 가장자리 다듬기 4×4 + 반투명 없애기, 명암 3단계, 빛 가로 −40°·세로 50°(옆모습은 −30°·40°), 주변광 45%, 어둡게 55%를 함께 씁니다.","All but the last share 4×4 edge smoothing with no semi-transparency, 3 shading steps, light at −40° horizontal and 50° vertical (side view −30° and 40°), 45% ambient and 55% darkening."
+model-import.save,"⑨ <strong>{{UiStrings.Model_PresetSave}}</strong>는 지금 값을 이름 붙여 저장합니다. 같은 이름의 저장한 프리셋은 덮어쓰고, 기본 제공 이름은 쓸 수 없으며, 고른 애니메이션은 저장하지 않습니다. ⑩ <strong>{{UiStrings.Model_PresetDelete}}</strong>는 고른 저장한 프리셋을 물은 뒤 지웁니다(기본 제공을 고르면 꺼짐). 저장한 프리셋은 설정 폴더의 <code>model-presets.json</code>에 있습니다.","⑨ <strong>{{UiStrings.Model_PresetSave}}</strong> saves the current values under a name. A saved preset with the same name is replaced, built-in names can't be used, and the chosen animation isn't saved. ⑩ <strong>{{UiStrings.Model_PresetDelete}}</strong> deletes the selected saved preset after asking (disabled for built-in presets). Saved presets live in <code>model-presets.json</code> in the settings folder."
+model-view.1,"크기·각도·빛·명암","Size, angle, light and shading"
+model-view.intro,"모델을 어느 크기로, 어느 쪽에서, 어떤 빛으로 그릴지 정하는 줄입니다. 기본은 128×128px, 가로 30°·세로 20°, 정사영입니다.","These rows set how large the model is drawn, from which side and under which light. The defaults are 128×128 px, 30° horizontal, 20° vertical, orthographic."
+model-view.alt,"가져오기 창의 크기부터 가장자리 다듬기까지 여덟 줄에 1~8번 표시","The eight rows of the import window from Size to Edge smoothing, marked 1 to 8"
+model-view.caption,"① 크기 · ② 보는 각도 · ③ 보기 방식·시야각 · ④ 확대·맞춤 · ⑤ 빛 방향 · ⑥ 밝기 · ⑦ 명암 단계 · ⑧ 가장자리 다듬기·텍스처","① Size · ② View angle · ③ Projection and field of view · ④ Zoom and Fit · ⑤ Light direction · ⑥ Brightness · ⑦ Shading steps · ⑧ Edge smoothing and Textures"
+model-view.h-row,줄,Row
+model-view.h-does,하는 일,What it does
+model-view.size,① <strong>{{UiStrings.Model_Size}}</strong>,① <strong>{{UiStrings.Model_Size}}</strong>
+model-view.size-does,"나올 그림의 가로×세로(1~2048px)입니다. 모델은 짧은 변에 맞춰 가운데에 그립니다.","The width × height of the output (1–2048 px). The model is centered and fitted to the shorter side."
+model-view.angle,② <strong>{{UiStrings.Model_Angle}}</strong>,② <strong>{{UiStrings.Model_Angle}}</strong>
+model-view.angle-does,"<strong>{{UiStrings.Model_Yaw}}</strong>(−360~360°)는 모델 둘레를 돌고(양수 = 모델 오른쪽 면이 보이게), <strong>{{UiStrings.Model_Pitch}}</strong>(−90~90°)는 위에서 내려다봅니다(90° = 바로 위). 0·0은 정면입니다.","<strong>{{UiStrings.Model_Yaw}}</strong> (−360 to 360°) circles the model (positive shows its right side) and <strong>{{UiStrings.Model_Pitch}}</strong> (−90 to 90°) looks down from above (90° = straight down). 0 and 0 is the front."
+model-view.proj,③ <strong>{{UiStrings.Model_Projection}}</strong>,③ <strong>{{UiStrings.Model_Projection}}</strong>
+model-view.proj-does,"<strong>{{UiStrings.Model_Orthographic}}</strong>은 멀어도 크기가 같아 게임 스프라이트에 흔하고, <strong>{{UiStrings.Model_Perspective}}</strong>은 가까운 곳이 크게 보입니다. <strong>{{UiStrings.Model_Fov}}</strong>(5~120°)은 원근일 때만 쓰며, 작을수록 멀리서 당겨 본 듯 덜 일그러집니다.","<strong>{{UiStrings.Model_Orthographic}}</strong> keeps sizes equal at any distance, as most game sprites do; <strong>{{UiStrings.Model_Perspective}}</strong> makes near parts larger. <strong>{{UiStrings.Model_Fov}}</strong> (5–120°) applies to perspective only; smaller values look less distorted, like zooming in from farther away."
+model-view.zoom,④ <strong>{{UiStrings.Model_Zoom}}</strong>,④ <strong>{{UiStrings.Model_Zoom}}</strong>
+model-view.zoom-does,"100%면 모델(돌려 보기·애니메이션은 모든 프레임을 합친 범위)이 짧은 변에 꼭 맞습니다(10~1000%). <strong>{{UiStrings.Model_Fit}}</strong>은 100%로 되돌립니다.","At 100% the model (all frames together for turntables and animations) just fits the shorter side (10–1000%). <strong>{{UiStrings.Model_Fit}}</strong> goes back to 100%."
+model-view.light,⑤ <strong>{{UiStrings.Model_Light}}</strong>,⑤ <strong>{{UiStrings.Model_Light}}</strong>
+model-view.light-does,"빛이 오는 쪽을 카메라 기준으로 정합니다: 가로(양수 = 오른쪽에서)·세로(양수 = 위에서). 돌려 보기에서도 빛은 카메라를 따라가 프레임마다 같은 쪽이 밝습니다.","Where the light comes from, relative to the camera: horizontal (positive = from the right) and vertical (positive = from above). In a turntable the light follows the camera, so the same side is lit in every frame."
+model-view.bright,⑥ <strong>{{UiStrings.Model_Brightness}}</strong>,⑥ <strong>{{UiStrings.Model_Brightness}}</strong>
+model-view.bright-does,"<strong>{{UiStrings.Model_Ambient}}</strong>(0~100%)은 빛을 받지 않는 면의 밝기, <strong>{{UiStrings.Model_LightStrength}}</strong>(0~200%)는 빛을 받는 면에 더하는 밝기입니다.","<strong>{{UiStrings.Model_Ambient}}</strong> (0–100%) is the brightness of faces the light doesn't reach; <strong>{{UiStrings.Model_LightStrength}}</strong> (0–200%) is what the light adds to lit faces."
+model-view.steps,⑦ <strong>{{UiStrings.Model_Steps}}</strong>,⑦ <strong>{{UiStrings.Model_Steps}}</strong>
+model-view.steps-does,"0이면 부드럽게 칠하고, 2~16이면 그 수의 밝기 단계로 끊어 셀 셰이딩처럼 칠합니다(1은 0과 같음).","0 shades smoothly; 2 to 16 cut the shading into that many brightness bands, like cel shading (1 is the same as 0)."
+model-view.smooth,⑧ <strong>{{UiStrings.Model_Smooth}}</strong>,⑧ <strong>{{UiStrings.Model_Smooth}}</strong>
+model-view.smooth-does,"<strong>{{UiStrings.Model_SmoothOff}}</strong>는 픽셀마다 한 점만 보아 가장자리가 계단처럼 또렷하고, 2×2·4×4·8×8은 그만큼 나눠 그린 평균이라 부드럽습니다. <strong>{{UiStrings.Model_Textures}}</strong>를 끄면 재질 바탕 색만 씁니다.","<strong>{{UiStrings.Model_SmoothOff}}</strong> samples one point per pixel, so edges are crisp steps; 2×2, 4×4 and 8×8 average that many samples for smooth edges. Turning off <strong>{{UiStrings.Model_Textures}}</strong> uses only the material base colors."
+model-view.steps-title,명암 단계,Shading steps
+model-view.compare-alt,"같은 노란 공을 명암 단계 0(왼쪽)과 3(오른쪽)으로 그린 결과. 왼쪽은 밝기가 매끄럽게 바뀌고 오른쪽은 세 띠로 끊김","The same yellow ball drawn with shading steps 0 (left) and 3 (right). The left changes brightness smoothly; the right is cut into three bands"
+model-view.compare-caption,"왼쪽: 명암 단계 0(부드럽게) · 오른쪽: 명암 단계 3 — 공(ball.glb) 64px, 4배로 키움","Left: shading steps 0 (smooth) · Right: shading steps 3 — a ball (ball.glb) at 64 px, enlarged 4×"
+model-view.compare,"단계를 두면 둥근 면이 밝기 띠 몇 개로 나뉘어, 손으로 찍은 픽셀 그림의 명암처럼 색 수가 적고 또렷해집니다. 상자처럼 평평한 면만 있는 모델은 면마다 한 밝기라 차이가 작습니다.","With steps, round surfaces split into a few brightness bands, so the shading has fewer, crisper colors like hand-made pixel art. Models with only flat faces, such as boxes, have one brightness per face and change little."
+model-view.smooth-title,가장자리 다듬기,Edge smoothing
+model-view.compare2-alt,"병아리를 가장자리 다듬기 끔(왼쪽)과 4×4(오른쪽)로 그린 결과. 왼쪽은 눈·가장자리가 또렷한 계단, 오른쪽은 반투명 가장자리와 섞인 색","The chick drawn with edge smoothing off (left) and 4×4 (right). The left has crisp stepped eyes and edges; the right has semi-transparent edges and blended colors"
+model-view.compare2-caption,"왼쪽: 가장자리 다듬기 끔 · 오른쪽: 4×4 — 64px, 반투명 없애기 끔, 4배","Left: edge smoothing off · Right: 4×4 — 64 px, no-semi-transparency off, enlarged 4×"
+model-view.compare2,"끄면 원래 색만 남지만 가는 곳(눈·부리)이 끊기거나 들쭉날쭉해질 수 있습니다. 켜면 모양은 고르지만 가장자리에 반투명과 섞인 색이 생기므로, 픽셀 그림으로 쓰려면 <a href=""#model-pixel"">반투명 없애기·색 수</a>를 같이 쓰거나 크게 그려 픽셀로 정리에 넘깁니다.","Off keeps only the original colors, but thin parts (eyes, beak) can break up or look ragged. On gives even shapes but adds semi-transparent edges and blended colors, so for pixel art combine it with <a href=""#model-pixel"">no semi-transparency and a color count</a>, or draw large and send it to Pixelate."
+model-view.proj-title,정사영과 원근,Orthographic and perspective
+model-view.compare3-alt,"나무 상자를 정사영(왼쪽)과 원근 시야각 70°(오른쪽)로 그린 결과. 왼쪽은 평행한 모서리가 평행하고 오른쪽은 가까운 모서리가 크게 벌어짐","A wooden crate drawn orthographic (left) and in perspective with a 70° field of view (right). On the left parallel edges stay parallel; on the right near edges spread wide"
+model-view.compare3-caption,"왼쪽: 정사영 · 오른쪽: 원근(시야각 70°) — 나무 상자(crate.obj) 64px, 4배","Left: orthographic · Right: perspective (70° field of view) — a wooden crate (crate.obj) at 64 px, enlarged 4×"
+model-view.compare3,"타일에 맞춰 놓을 스프라이트는 정사영이 맞습니다. 원근은 어느 자리에 놓아도 같은 모양이어야 하는 게임 그림에는 어울리지 않지만, 한 장짜리 일러스트나 극적인 아이콘에 씁니다.","Use orthographic for sprites placed on a tile grid. Perspective doesn't suit game art that must look the same wherever it's placed, but works for single illustrations or dramatic icons."
+model-pixel.1,픽셀 다듬기·외곽선,Pixel cleanup and outlines
+model-pixel.intro,"그린 결과 픽셀을 바로 게임용 픽셀 그림답게 다듬는 줄입니다. 외곽선은 결과 1px 단위로 그립니다.","These rows tidy the rendered pixels into game-ready pixel art. Outlines are drawn in output pixels (1 px units)."
+model-pixel.alt,"픽셀 다듬기·외곽선·선 모양 세 줄을 줄마다 띄워 놓고 칸마다 1~9번 표시","The Pixel cleanup, Outline and Line style rows spaced apart, with each box marked 1 to 9"
+model-pixel.caption,"① 반투명 없애기 · ② 색 수 · ③ 겉·바깥에 · ④ 안쪽 겹침(Overlaps) · ⑤ 각진 곳·각도(Creases) · ⑥ 두께 · ⑦ 선 색 방식 · ⑧ 선 색 · ⑨ 어둡게 할 정도 — 줄 사이를 띄워 번호 자리를 둠","① No semi-transparency · ② Colors · ③ Outer and Outside · ④ Overlaps · ⑤ Creases and angle · ⑥ Width · ⑦ Color mode · ⑧ Line color · ⑨ Darken amount — rows spaced apart to make room for the numbers"
+model-pixel.h-box,칸,Box
+model-pixel.h-does,하는 일,What it does
+model-pixel.hard,① <strong>{{UiStrings.Model_HardAlpha}}</strong>,① <strong>{{UiStrings.Model_HardAlpha}}</strong>
+model-pixel.hard-does,"절반 이상 덮인 픽셀만 불투명(255)으로, 나머지는 투명(0)으로 합니다. 가장자리 다듬기와 함께 쓰면 색은 부드럽게 고르고 알파는 또렷합니다.","Pixels covered at least halfway become opaque (255); the rest become transparent (0). With edge smoothing, colors are picked smoothly while alpha stays crisp."
+model-pixel.colors,② <strong>{{UiStrings.Model_Colors}}</strong>,② <strong>{{UiStrings.Model_Colors}}</strong>
+model-pixel.colors-does,"0이면 그대로, 2~64면 그 수로 줄입니다. 프레임이 여럿이면 모든 프레임이 팔레트 하나를 써서 프레임마다 색이 흔들리지 않고, 외곽선 색은 따로 더해집니다. 미리보기는 보이는 프레임만으로 팔레트를 만들어 결과와 조금 다를 수 있습니다.","0 keeps the colors; 2 to 64 reduce them to that many. With several frames, all frames share one palette so colors don't flicker, and outline colors come on top. The preview builds its palette from the visible frame only, so it can differ slightly from the result."
+model-pixel.outer,③ <strong>{{UiStrings.Model_OutlineOuter}}</strong>·<strong>{{UiStrings.Model_OutlineOutside}}</strong>,③ <strong>{{UiStrings.Model_OutlineOuter}}</strong> · <strong>{{UiStrings.Model_OutlineOutside}}</strong>
+model-pixel.outer-does,"겉은 모델과 빈 곳 사이(실루엣)에만 선을 긋습니다. 바깥에를 켜면 모델 바깥 빈 픽셀에 그려 모델이 선 두께만큼 커 보이고(확대 100%에서도 잘리지 않게 그만큼 작게 맞춤), 끄면 모델 가장자리 픽셀을 선으로 바꿉니다. 바깥에는 겉을 켰을 때만 씁니다.","Outer draws a line only between the model and empty space (the silhouette). With Outside on, the line goes on the empty pixels around the model, so it looks larger by the line width (the model is fitted that much smaller so nothing is cut at 100% zoom); off turns the model's edge pixels into the line. Outside applies only when Outer is on."
+model-pixel.inner,④ <strong>{{UiStrings.Model_OutlineInner}}</strong>,④ <strong>{{UiStrings.Model_OutlineInner}}</strong>
+model-pixel.inner-does,"앞 부분과 그 뒤 부분이 만나는 곳(몸 앞의 날개·팔처럼 깊이가 크게 다른 곳)에 1px 선을 긋습니다. 뒤쪽 픽셀에 그려 앞 부분 윤곽은 그대로입니다.","Draws a 1 px line where a nearer part meets what's behind it (a wing or arm in front of the body, where depth changes a lot). It goes on the farther pixels, so the near part keeps its shape."
+model-pixel.crease,⑤ <strong>{{UiStrings.Model_OutlineCrease}}</strong>,⑤ <strong>{{UiStrings.Model_OutlineCrease}}</strong>
+model-pixel.crease-does,"면이 옆 칸의 각도(1~179°, 기본 60°)보다 크게 꺾인 곳에 1px 선을 긋습니다. 상자 모서리는 90°이고, 각도가 작을수록 선이 많아집니다.","Draws a 1 px line where the surface bends more than the angle next to it (1–179°, default 60°). A box corner is 90°; smaller angles give more lines."
+model-pixel.width,⑥ <strong>{{UiStrings.Model_OutlineWidth}}</strong>,⑥ <strong>{{UiStrings.Model_OutlineWidth}}</strong>
+model-pixel.width-does,겉 외곽선 두께(1~3px)입니다. 안쪽 겹침선·각진 곳 선은 늘 1px입니다.,The outer line width (1–3 px). Overlap and crease lines are always 1 px.
+model-pixel.mode,⑦ 선 색 방식,⑦ Color mode
+model-pixel.mode-does,"<strong>{{UiStrings.Model_OutlineFixed}}</strong>은 고른 색으로, <strong>{{UiStrings.Model_OutlineDarken}}</strong>는 선 자리의 모델 색을 어둡게 해서 긋습니다(밝은 면은 옅은 선, 어두운 면은 짙은 선).","<strong>{{UiStrings.Model_OutlineFixed}}</strong> draws with the chosen color; <strong>{{UiStrings.Model_OutlineDarken}}</strong> darkens the model color under the line (lighter lines on light areas, darker on dark ones)."
+model-pixel.color,⑧ 선 색,⑧ Line color
+model-pixel.color-does,"한 가지 색일 때 쓰는 색입니다. 누르면 색 고르기 창이 뜹니다(기본 거의 검은 보라).","The color used in Single color mode; click it to pick a color (default: a near-black purple)."
+model-pixel.darken,⑨ 어둡게 할 정도,⑨ Darken amount
+model-pixel.darken-does,"어둡게일 때 밝기를 줄이는 비율(0~100%, 50% = 밝기 절반)입니다.","How much Darkened mode lowers the brightness (0–100%, 50% = half)."
+model-pixel.order,"다듬기 차례는 반투명 없애기 → 색 줄이기 → 외곽선입니다. 외곽선을 하나도 켜지 않으면 ⑥~⑨가 꺼지고, ⑧은 한 가지 색일 때만, ⑨는 어둡게일 때만 켜집니다.","Cleanup runs in this order: no semi-transparency, then color reduction, then outlines. With no outline turned on, ⑥ to ⑨ are disabled; ⑧ is on only for Single color and ⑨ only for Darkened."
+model-pixel.outline-title,외곽선 종류,Outline types
+model-pixel.compare-alt,"병아리를 외곽선 없이, 겉만, 겉과 안쪽 겹침과 각진 곳으로 그린 세 결과. 오른쪽은 머리와 몸 사이, 상자 모서리에도 선이 있음","The chick drawn with no outline, outer only, and outer plus overlaps and creases. The right one also has lines between the head and body and on box corners"
+model-pixel.compare-caption,"왼쪽: 외곽선 없음 · 가운데: 겉 · 오른쪽: 겉 + 안쪽 겹침 + 각진 곳(60°) — 탑다운 8방향 값, 한 가지 색, 64px, 4배","Left: no outline · Middle: Outer · Right: Outer + Overlaps + Creases (60°) — Top-down 8 directions values, single color, 64 px, enlarged 4×"
+model-pixel.compare,"겉만 그으면 실루엣이 또렷해져 배경 위에서 잘 보입니다. 안쪽 겹침을 더하면 머리와 몸처럼 겹친 부분이 나뉘고, 각진 곳까지 더하면 상자 모서리에도 선이 생겨 손으로 그린 외곽선에 가까워집니다. 작은 스프라이트에서 각진 곳 선이 너무 많으면 각도를 올립니다.","Outer alone sharpens the silhouette so the sprite reads well on any background. Adding Overlaps separates overlapping parts such as the head and body, and adding Creases puts lines on box edges too, closer to a hand-drawn outline. If crease lines crowd a small sprite, raise the angle."
+model-pixel.color-title,한 가지 색과 어둡게,Single color and Darkened
+model-pixel.compare2-alt,"겉과 안쪽 겹침 외곽선을 한 가지 색(왼쪽)과 어둡게(오른쪽)로 그린 결과. 오른쪽 선은 노란 몸 둘레가 짙은 갈색","Outer and overlap lines drawn in single color (left) and Darkened (right). On the right the line around the yellow body is dark brown"
+model-pixel.compare2-caption,"왼쪽: 한 가지 색 · 오른쪽: 어둡게(55%) — 겉 + 안쪽 겹침, 64px, 4배","Left: Single color · Right: Darkened (55%) — Outer + Overlaps, 64 px, enlarged 4×"
+model-pixel.compare2,"어둡게(셀아웃)는 선이 옆 색을 따라가 부드럽고 그림 속에 녹아듭니다. 한 가지 색은 어떤 배경에서도 윤곽이 분명합니다.","Darkened (sel-out) lines follow the neighboring colors, so they look softer and blend into the art. A single color keeps the outline clear on any background."
+model-pixel.tidy-title,반투명 없애기와 색 수,No semi-transparency and colors
+model-pixel.compare3-alt,"가장자리 다듬기 4×4로 그린 병아리를 다듬기 없이(왼쪽), 반투명 없애기와 8색으로(오른쪽) 그린 결과","The chick drawn with 4×4 edge smoothing, without cleanup (left) and with no semi-transparency and 8 colors (right)"
+model-pixel.compare3-caption,"왼쪽: 다듬기 없음 · 오른쪽: 반투명 없애기 + 8색 — 가장자리 다듬기 4×4, 64px, 4배","Left: no cleanup · Right: no semi-transparency + 8 colors — 4×4 edge smoothing, 64 px, enlarged 4×"
+model-pixel.compare3,"가장자리가 불투명·투명 둘로만 나뉘고 색이 8개로 줄어, 그대로 게임에 넣을 수 있는 픽셀 그림이 됩니다. 색을 너무 줄이면 눈처럼 작은 곳의 색이 이웃 색으로 바뀌므로 결과를 보며 정합니다.","Edges become only opaque or transparent and the colors drop to 8, giving pixel art you can use in a game as is. Too few colors can turn small details such as eyes into a neighboring color, so check the result as you adjust."
+model-frames.1,프레임: 한 장·돌려 보기·애니메이션,"Frames: single image, turntable, animation"
+model-frames.intro,"무엇을 프레임으로 뽑을지 정합니다. 프레임마다 레이어 하나의 그림 한 장이 됩니다.","Choose what to extract as frames. Each frame becomes one image on a single layer."
+model-frames.alt,"프레임, 돌려 보기 프레임 수, 애니메이션, 초당 프레임 네 줄을 줄마다 띄워 놓고 1~4번 표시","The Frames, Turntable frames, Animation and Frames per second rows spaced apart and marked 1 to 4"
+model-frames.caption,"① 프레임 방식 · ② 돌려 보기 프레임 수 · ③ 애니메이션·불러오기 · ④ 초당 프레임·최대","① Frame mode · ② Turntable frames · ③ Animation and Import · ④ Frames per second and Max"
+model-frames.h-mode,① 방식,① Mode
+model-frames.h-makes,만드는 프레임,Frames made
+model-frames.still,"지금 자세(애니메이션을 쓰지 않은 쉬는 자세) 한 장, 길이 100ms","One image of the rest pose (no animation), 100 ms"
+model-frames.turn,"한 바퀴(360°)를 ② 프레임 수(1~64)로 나눠 프레임마다 가로 각도를 더합니다. 8이면 45°씩 8방향, 4면 90°씩 4방향입니다. 프레임마다 100ms입니다.","Splits one full turn (360°) into ② the frame count (1–64), adding to the horizontal angle each frame: 8 gives 8 directions 45° apart, 4 gives 4 directions 90° apart. 100 ms per frame."
+model-frames.anim,"③ 고른 애니메이션을 ④ 초당 프레임(1~60)으로 최대(1~1000, 기본 120)까지 뽑습니다. 되풀이 애니메이션은 끝 시각이 첫 프레임과 같은 자세라 넣지 않습니다. 애니메이션이 없는 모델은 목록에 이 방식이 없습니다.","Extracts ③ the chosen animation at ④ frames per second (1–60), up to Max (1–1000, default 120). The end time isn't included, since looping animations repeat the first pose there. Models without animations don't list this mode."
+model-frames.marks,"② 돌려 보기 프레임 수는 돌려 보기일 때만, ③ 애니메이션과 ④ 초당 프레임·최대는 애니메이션일 때만 켜집니다. ③ 옆 <strong>{{UiStrings.Model_ImportAnimation}}</strong>는 <a href=""#model-animation"">다른 파일의 애니메이션 붙이기</a>에서 다룹니다.","② Turntable frames is on only for Turntable; ③ Animation and ④ Frames per second and Max are on only for Animation. <strong>{{UiStrings.Model_ImportAnimation}}</strong> next to ③ is covered in <a href=""#model-animation"">Attaching animations from other files</a>."
+model-frames.steady,"돌려 보기·애니메이션은 모든 프레임의 자세를 합친 범위에 카메라를 맞춰 그려, 프레임마다 모델 크기·자리가 흔들리지 않습니다.","Turntables and animations fit the camera to the combined range of all frames' poses, so the model's size and position don't jump between frames."
+model-frames.alt2,"탑다운 8방향 프리셋으로 그린 병아리 여덟 장. 왼쪽부터 45°씩 돌아 정면, 오른쪽, 뒤, 왼쪽이 보임","Eight images of the chick drawn with the Top-down 8 directions preset, turning 45° each from left to right through front, right side, back and left side"
+model-frames.caption2,"탑다운 8방향 프리셋으로 그린 8프레임(48px, 3배로 키움) — 왼쪽부터 가로 0°·45°·90°…315°","8 frames drawn with the Top-down 8 directions preset (48 px, enlarged 3×) — from the left, horizontal 0°, 45°, 90° … 315°"
+model-frames.turn-result,"돌려 보기는 빛이 카메라를 따라가므로 어느 방향에서나 같은 쪽이 밝고, 팔레트도 모든 프레임이 함께 써서 방향마다 색이 같습니다. 게임에서는 캐릭터가 향하는 방향의 프레임을 골라 보입니다.","In a turntable the light follows the camera, so the same side is lit in every direction, and all frames share one palette, so colors match across directions. In the game, show the frame for the direction the character faces."
+model-frames.result-title,가져온 결과,The imported result
+model-frames.alt3,"가져온 chick.glb 새 탭과 타임라인의 프레임 여덟 개. 탭과 프레임 머리에 5·6번 표시","The new chick.glb tab and eight frames in the timeline, with the tab and the frame headers marked 5 and 6"
+model-frames.caption3,"⑤ 새 탭(chick.glb) · ⑥ 프레임 8개(방향마다 한 장, 100ms)","⑤ New tab (chick.glb) · ⑥ 8 frames (one per direction, 100 ms)"
+model-frames.result,"가져오기가 끝나면 ⑤ 파일 이름의 새 탭이 열리고, 캔버스는 그림 크기, 레이어 하나에 ⑥ 프레임마다 한 장이 들어갑니다. 아직 <code>.chickxel</code>이 없으므로 처음 저장할 때 위치를 묻습니다. 픽셀로 정리의 원본으로 넣었으면 새 탭 대신 그 창의 원본이 됩니다.","When the import finishes, ⑤ a new tab named after the file opens: the canvas is the image size, with one layer holding ⑥ one image per frame. There's no <code>.chickxel</code> yet, so the first save asks where to put it. If you added the model as a Pixelate source, the frames become that window's source instead of a new tab."
+model-animation.1,다른 파일의 애니메이션 붙이기,Attaching animations from other files
+model-animation.intro,"믹사모처럼 캐릭터와 애니메이션을 따로 받는 경우, 캐릭터 모델을 열고 애니메이션 파일을 불러와 붙인 뒤 그립니다. 같은 뼈대(예: 둘 다 믹사모에서 받은 것)를 쓰는 파일끼리 붙습니다.","When the character and its animations come as separate files, as with Mixamo, open the character model, then load the animation files and attach them before drawing. Files that use the same skeleton (for example, both from Mixamo) can be combined."
+model-animation.alt,"애니메이션 두 개를 불러온 뒤의 가져오기 창. 불러오기 단추, 애니메이션 목록, 요약, 프레임 방식, 재생 막대에 1~5번 표시","The import window after loading two animations, with the Import button, animation list, summary, frame mode and play bar marked 1 to 5"
+model-animation.caption,"옆모습 프리셋에 애니메이션 두 개를 붙인 뒤: ① 불러오기…(Import…) · ② 애니메이션 목록(모델에 든 Idle, 붙인 chick_walk·chick_jump) · ③ 요약(애니메이션 3개) · ④ 프레임 = 애니메이션 · ⑤ 재생·프레임 막대","After attaching two animations with the Side view preset: ① Import… · ② Animation list (Idle from the model, attached chick_walk and chick_jump) · ③ Summary (3 animations) · ④ Frames = Animation · ⑤ Play and frame slider"
+model-animation.how,"애니메이션 줄 옆 ① <strong>{{UiStrings.Model_ImportAnimation}}</strong>로 FBX·glTF 파일을 고릅니다(여러 개를 한 번에). 붙으면 ② 목록에 파일 이름으로 뜨고(파일 하나에 애니메이션이 여럿이면 ""파일 이름: 애니메이션 이름""), ③ 요약의 애니메이션 수가 늘며, ④ 프레임이 애니메이션으로 바뀌어 처음 붙인 것이 골라집니다. ⑤ 재생으로 바로 움직임을 확인합니다.","Use ① <strong>{{UiStrings.Model_ImportAnimation}}</strong> next to the Animation row to pick FBX or glTF files (several at once). Attached animations appear in ② the list under the file name (""file name: animation name"" when a file holds several), ③ the summary's animation count goes up, and ④ Frames switches to Animation with the first attached one selected. Check the motion right away with ⑤ play."
+model-animation.match,"뼈는 이름으로 맞춥니다. <code>mixamorig:Hips</code>·<code>Armature|Hips</code>처럼 마지막 <code>:</code>·<code>|</code> 앞 이름과 대소문자는 빼고 비교하므로 <code>mixamorig1:</code>처럼 앞 이름이 달라도 붙습니다.","Bones are matched by name, ignoring case and everything up to the last <code>:</code> or <code>|</code> (as in <code>mixamorig:Hips</code> or <code>Armature|Hips</code>), so a different prefix such as <code>mixamorig1:</code> still matches."
+model-animation.move,"회전은 그대로 옮기고, 이동은 맨 위 뼈(믹사모의 Hips) 하나만 캐릭터 키(골반 높이)에 맞춰 줄이거나 늘려 옮깁니다. 크기 키는 버립니다.","Rotations are copied as they are; movement is copied only for the top bone (Mixamo's Hips), scaled to the character's height (hip height). Scale keys are dropped."
+model-animation.notes,"캐릭터에 없는 뼈의 움직임은 버립니다. 못 붙인 파일(애니메이션이 없음, 맞는 뼈가 하나도 없음, 읽을 수 없음)과 주의(같은 이름 뼈가 여럿 등)는 모두 붙인 뒤 한 번에 알립니다.","Motion of bones the character doesn't have is dropped. Files that couldn't be attached (no animation, no matching bone, unreadable) and warnings (several bones with the same name and so on) are reported together once everything is attached."
+model-animation.keep,"붙인 애니메이션은 이 창에서 그리는 데만 쓰고 모델 파일은 바꾸지 않습니다. 창을 닫으면 사라지므로 애니메이션마다 가져오려면 모델을 다시 열어 다시 불러옵니다.","Attached animations are only used for drawing in this window; the model file isn't changed. They're gone when the window closes, so to import each animation, open the model again and load them again."
+model-animation.alt2,"불러온 chick_walk를 옆모습 프리셋으로 그린 걷기 여덟 장","Eight walk frames of the attached chick_walk drawn with the Side view preset"
+model-animation.caption2,"붙인 chick_walk(0.8초)를 옆모습 프리셋·초당 10프레임으로 그린 8프레임(64px, 3배)","The attached chick_walk (0.8 s) drawn with the Side view preset at 10 frames per second: 8 frames (64 px, enlarged 3×)"
+model-animation.result,"캐릭터 파일(chick.glb)에는 Idle만 있었지만, 뼈 이름이 <code>mixamorig:</code>로 시작하는 애니메이션 파일의 걷기를 붙여 그렸습니다. 길이 0.8초를 초당 10프레임으로 뽑아 8프레임이 되었습니다.","The character file (chick.glb) had only Idle; the walk was attached from an animation file whose bone names start with <code>mixamorig:</code>. Its 0.8 s at 10 frames per second gave 8 frames."
+model-animation.mixamo-title,믹사모에서 받아 쓰는 순서,Using Mixamo step by step
+model-animation.mx1,"<a href=""https://www.mixamo.com/"">mixamo.com</a>에서 캐릭터를 고르거나 올린 뒤 <strong>Download</strong>에서 Format <strong>FBX Binary(.fbx)</strong>, Skin <strong>With Skin</strong>으로 받습니다.","On <a href=""https://www.mixamo.com/"">mixamo.com</a>, pick or upload a character and use <strong>Download</strong> with Format <strong>FBX Binary (.fbx)</strong> and Skin <strong>With Skin</strong>."
+model-animation.mx2,"쓸 애니메이션마다 고른 뒤 Skin <strong>Without Skin</strong>으로 받습니다(뼈대와 움직임만이라 파일이 작음). 걷기·달리기처럼 제자리에서 되풀이할 것은 <strong>In Place</strong>를 켭니다. 끄면 캐릭터가 걸어 나가 프레임마다 자리가 옮겨집니다.","For each animation you want, download it with Skin <strong>Without Skin</strong> (just the skeleton and motion, so the file is small). Turn on <strong>In Place</strong> for loops such as walking and running; otherwise the character walks off and its position moves every frame."
+model-animation.mx3,"Chickxel에서 캐릭터 FBX를 열고, 가져오기 창의 <strong>{{UiStrings.Model_ImportAnimation}}</strong>로 애니메이션 FBX들을 한 번에 고릅니다.","Open the character FBX in Chickxel and pick all the animation FBX files at once with <strong>{{UiStrings.Model_ImportAnimation}}</strong> in the import window."
+model-animation.mx4,"애니메이션 목록에서 하나를 고르고 프리셋(옆모습·캐릭터 애니메이션 등)으로 맞춘 뒤 가져옵니다.","Choose one in the animation list, set it up with a preset (Side view, Character animation and so on) and import."
+model-animation.mx-error,"""글자(ASCII) FBX는 읽지 못합니다""가 뜨면 믹사모에서 Format을 <strong>FBX Binary</strong>로 다시 받습니다. 믹사모가 아닌 캐릭터에 믹사모 애니메이션을 붙이면 뼈 이름이 맞지 않아 붙지 않습니다.","If you see ""ASCII FBX files can't be read"", download again from Mixamo with Format <strong>FBX Binary</strong>. Mixamo animations don't attach to characters from elsewhere, because the bone names don't match."
+term.model-import,3D 모델 가져오기,Import 3D model
+term.model-import.to,model-import,
+term.model-import.def,"3D 모델을 열 때 크기·각도·빛·외곽선·프레임을 정해 픽셀 그림 프레임으로 그리는 창입니다.","The window that draws a 3D model into pixel-art frames after you set its size, angle, light, outlines and frames."
+term.turntable,한 바퀴 돌려 보기|돌려 보기,turntable|turntables
+term.turntable.to,model-frames,
+term.turntable.def,"3D 모델을 한 바퀴 돌리며 같은 간격의 방향마다 한 장씩 그리는 프레임 방식으로, 8방향 스프라이트를 만들 때 씁니다.","A frame mode that turns a 3D model one full circle and draws one image per evenly spaced direction, used for 8-direction sprites."
+term.cel-shading,셀 셰이딩,cel shading
+term.cel-shading.to,model-view,
+term.cel-shading.def,"밝기를 몇 단계의 띠로 끊어 칠하는 명암 방식입니다.",Shading that cuts brightness into a few flat bands.
+term.sel-out,셀아웃,sel-out
+term.sel-out.to,model-pixel,
+term.sel-out.def,"외곽선을 한 가지 색 대신 선 자리의 그림 색을 어둡게 한 색으로 긋는 방식입니다.","Drawing an outline with darkened versions of the colors beneath it instead of one color."
+term.mixamo,믹사모,Mixamo
+term.mixamo.to,model-animation,
+term.mixamo.def,"사람형 3D 캐릭터에 뼈대를 달고 애니메이션을 내려받게 해 주는 Adobe의 무료 웹 서비스입니다.","Adobe's free web service that rigs humanoid 3D characters and lets you download animations for them."

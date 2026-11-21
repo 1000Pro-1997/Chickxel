@@ -2866,6 +2866,9 @@ Press Clean up to apply the change.</value></data>
   <data name="Pixelate_Opt_Seconds" xml:space="preserve"><value>Seconds</value></data>
   <data name="Pixelate_Opt_Unlimited" xml:space="preserve"><value>unlimited</value></data>
   <data name="Pixelate_Opt_UnlimitedTip" xml:space="preserve"><value>Set to 0 to remove this limit. With both trials and seconds at 0, optimization runs until it stops improving.</value></data>
+  <data name="Pixelate_Opt_SampleFrames" xml:space="preserve"><value>Frames to sample</value></data>
+  <data name="Pixelate_Opt_SampleFramesTip" xml:space="preserve"><value>Default 5. 0 = search with every frame. 2 or more: when there are more frames than this, that many are picked evenly (first and last included) for the trials, and the best settings are then applied once to every frame (much faster for long videos and GIFs). The sampled frames have a yellow border in the source view. When you watch the running tile, each new best is applied to every frame for the large preview. Cancelling still takes a moment to apply the best so far to every frame.</value></data>
+  <data name="Pixelate_Opt_Sampled" xml:space="preserve"><value>searched with {sampled}/{total} frames, all frames {score}</value></data>
   <data name="Pixelate_Opt_Settings" xml:space="preserve"><value>Choose presets for Auto optimize, history</value></data>
   <data name="Pixelate_Opt_Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Pixelate_Opt_CancelTip" xml:space="preserve"><value>Stops only the preset that is running (its best result so far stays in its tile) and moves on to the next preset. To stop the remaining presets too, right-click → Cancel all.</value></data>
@@ -4740,4 +4743,87 @@ Same compositing as the frame sheet (layer effects, current outfit; hidden and e
   <data name="Export_ListPresetApplied" xml:space="preserve"><value>Load list preset "{name}"</value></data>
   <data name="Export_ListPresetDeleteAsk" xml:space="preserve"><value>Delete the list preset "{name}"?</value></data>
   <data name="Pixelate_Quick_RemoveBg" xml:space="preserve"><value>Remove background</value></data>
+  <data name="Model_Title" xml:space="preserve"><value>Import 3D model</value></data>
+  <data name="Model_Import" xml:space="preserve"><value>Import</value></data>
+  <data name="Model_Size" xml:space="preserve"><value>Size</value></data>
+  <data name="Model_Angle" xml:space="preserve"><value>View angle</value></data>
+  <data name="Model_Yaw" xml:space="preserve"><value>Horizontal</value></data>
+  <data name="Model_Pitch" xml:space="preserve"><value>Vertical</value></data>
+  <data name="Model_Projection" xml:space="preserve"><value>Projection</value></data>
+  <data name="Model_Orthographic" xml:space="preserve"><value>Orthographic</value></data>
+  <data name="Model_Perspective" xml:space="preserve"><value>Perspective</value></data>
+  <data name="Model_Fov" xml:space="preserve"><value>Field of view</value></data>
+  <data name="Model_FovTip" xml:space="preserve"><value>Vertical field of view for perspective. Smaller values look less distorted, like zooming in from farther away.</value></data>
+  <data name="Model_Zoom" xml:space="preserve"><value>Zoom</value></data>
+  <data name="Model_ZoomTip" xml:space="preserve"><value>100% = the model just fits the shorter side of the image (for animations and turntables, all frames together). The mouse wheel over the preview changes it too.</value></data>
+  <data name="Model_Fit" xml:space="preserve"><value>Fit</value></data>
+  <data name="Model_Light" xml:space="preserve"><value>Light direction</value></data>
+  <data name="Model_Brightness" xml:space="preserve"><value>Brightness</value></data>
+  <data name="Model_Ambient" xml:space="preserve"><value>Ambient</value></data>
+  <data name="Model_LightStrength" xml:space="preserve"><value>Light strength</value></data>
+  <data name="Model_Steps" xml:space="preserve"><value>Shading steps</value></data>
+  <data name="Model_StepsTip" xml:space="preserve"><value>0 = smooth shading. 2 to 16 = shade in that many brightness bands (cel shading, suits pixel art).</value></data>
+  <data name="Model_Smooth" xml:space="preserve"><value>Edge smoothing</value></data>
+  <data name="Model_SmoothOff" xml:space="preserve"><value>Off (crisp)</value></data>
+  <data name="Model_SmoothTip" xml:space="preserve"><value>Off: each pixel looks at one point, so edges are crisp steps. On: each pixel is the average of that many samples, so edges are smooth (good for a large render you then send to Pixelate).</value></data>
+  <data name="Model_Textures" xml:space="preserve"><value>Textures</value></data>
+  <data name="Model_Frames" xml:space="preserve"><value>Frames</value></data>
+  <data name="Model_ModeStill" xml:space="preserve"><value>Single image</value></data>
+  <data name="Model_ModeTurntable" xml:space="preserve"><value>Turntable (full turn)</value></data>
+  <data name="Model_ModeAnimation" xml:space="preserve"><value>Animation</value></data>
+  <data name="Model_Turntable" xml:space="preserve"><value>Turntable frames</value></data>
+  <data name="Model_TurntableTip" xml:space="preserve"><value>Splits one full turn (360°) into this many frames, turning the horizontal angle each frame (8 = an 8-direction sprite).</value></data>
+  <data name="Model_Clip" xml:space="preserve"><value>Animation</value></data>
+  <data name="Model_ClipNamed" xml:space="preserve"><value>{name} ({seconds} s)</value></data>
+  <data name="Model_ClipUnnamed" xml:space="preserve"><value>Animation {number} ({seconds} s)</value></data>
+  <data name="Model_Fps" xml:space="preserve"><value>Frames per second</value></data>
+  <data name="Model_MaxFrames" xml:space="preserve"><value>Max</value></data>
+  <data name="Model_PlayTip" xml:space="preserve"><value>Play/pause the preview</value></data>
+  <data name="Model_PreviewHint" xml:space="preserve"><value>Drag: rotate · Wheel: zoom</value></data>
+  <data name="Model_Summary" xml:space="preserve"><value>{name}: triangles {triangles} · materials {materials} · animations {animations}</value></data>
+  <data name="Model_Warnings" xml:space="preserve"><value>Not drawn: {list}</value></data>
+  <data name="Model_Estimate" xml:space="preserve"><value>Frames: {frames} · {width}×{height} px · {ms} ms each</value></data>
+  <data name="Model_LoadingTitle" xml:space="preserve"><value>Reading 3D model</value></data>
+  <data name="Model_Loading" xml:space="preserve"><value>Reading {name}…</value></data>
+  <data name="Model_RenderingTitle" xml:space="preserve"><value>Drawing 3D model</value></data>
+  <data name="Model_Rendering" xml:space="preserve"><value>Drawing {name}…</value></data>
+  <data name="FileBrowser_ModelBadge" xml:space="preserve"><value>3D model — opening lets you pick the angle, light and frames and imports it as images</value></data>
+  <data name="FileInfo_KindModel" xml:space="preserve"><value>{format} 3D model</value></data>
+  <data name="FileInfo_Triangles" xml:space="preserve"><value>Triangles</value></data>
+  <data name="FileInfo_Materials" xml:space="preserve"><value>Materials</value></data>
+  <data name="FileInfo_Animations" xml:space="preserve"><value>Animations</value></data>
+  <data name="Model_PixelTidy" xml:space="preserve"><value>Pixel cleanup</value></data>
+  <data name="Model_HardAlpha" xml:space="preserve"><value>No semi-transparency</value></data>
+  <data name="Model_HardAlphaTip" xml:space="preserve"><value>Makes half-covered edge pixels either opaque or transparent. With edge smoothing on, colors are chosen smoothly while alpha stays crisp like pixel art.</value></data>
+  <data name="Model_Colors" xml:space="preserve"><value>Colors</value></data>
+  <data name="Model_ColorsTip" xml:space="preserve"><value>0 = keep. 2 to 64 = reduce to that many (one palette for all frames; outline colors are extra). The preview builds its palette from the visible frame only, so it can differ slightly from the import.</value></data>
+  <data name="Model_Outline" xml:space="preserve"><value>Outline</value></data>
+  <data name="Model_OutlineOuter" xml:space="preserve"><value>Outer</value></data>
+  <data name="Model_OutlineOuterTip" xml:space="preserve"><value>Draws a line only between the model and empty space (the silhouette).</value></data>
+  <data name="Model_OutlineOutside" xml:space="preserve"><value>Outside</value></data>
+  <data name="Model_OutlineOutsideTip" xml:space="preserve"><value>On: the outer line goes on the empty pixels around the model, so the model looks larger by the line width. Off: the model's edge pixels become the line.</value></data>
+  <data name="Model_OutlineInner" xml:space="preserve"><value>Overlaps</value></data>
+  <data name="Model_OutlineInnerTip" xml:space="preserve"><value>Draws a line where a nearer part meets what is behind it (an arm in front of the body, where depth changes a lot).</value></data>
+  <data name="Model_OutlineCrease" xml:space="preserve"><value>Creases</value></data>
+  <data name="Model_OutlineCreaseTip" xml:space="preserve"><value>Draws a line where the surface bends more than this angle (a box corner is 90°). Smaller angles give more lines.</value></data>
+  <data name="Model_OutlineLook" xml:space="preserve"><value>Line style</value></data>
+  <data name="Model_OutlineWidth" xml:space="preserve"><value>Width</value></data>
+  <data name="Model_OutlineFixed" xml:space="preserve"><value>Single color</value></data>
+  <data name="Model_OutlineDarken" xml:space="preserve"><value>Darkened (sel-out)</value></data>
+  <data name="Model_OutlineColorTip" xml:space="preserve"><value>Single color: draws with the chosen color. Darkened: darkens the model color under the line, so light areas get lighter lines and dark areas darker ones.</value></data>
+  <data name="Model_OutlineColorPick" xml:space="preserve"><value>Outline color</value></data>
+  <data name="Model_OutlineDarkenTip" xml:space="preserve"><value>How much to darken (50% = half the brightness).</value></data>
+  <data name="Model_Preset" xml:space="preserve"><value>Preset</value></data>
+  <data name="Model_PresetPick" xml:space="preserve"><value>Choose a preset</value></data>
+  <data name="Model_PresetTip" xml:space="preserve"><value>Choosing one sets every value below to that preset (you can adjust them afterwards). Built in: top-down 8 directions, straight overhead 8 directions, isometric 4 directions, side view, item icon, character animation, large and smooth (for Pixelate).</value></data>
+  <data name="Model_PresetSave" xml:space="preserve"><value>Save…</value></data>
+  <data name="Model_PresetSaveTip" xml:space="preserve"><value>Saves the current values as a named preset (a saved preset with the same name is replaced). The chosen animation is not saved because it differs per model.</value></data>
+  <data name="Model_PresetDelete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Model_PresetDeleteTip" xml:space="preserve"><value>Deletes the selected saved preset (built-in presets cannot be deleted).</value></data>
+  <data name="Model_PresetName" xml:space="preserve"><value>Preset name</value></data>
+  <data name="Model_PresetBuiltInName" xml:space="preserve"><value>A built-in preset already uses this name.</value></data>
+  <data name="Model_PresetDeleteAsk" xml:space="preserve"><value>Delete the preset "{name}"?</value></data>
+  <data name="Model_ImportAnimation" xml:space="preserve"><value>Import…</value></data>
+  <data name="Model_ImportAnimationTip" xml:space="preserve"><value>Attaches the animations of other files (FBX, glTF) to this model's bones with the same names. Mixamo: open the character as FBX (With Skin), download animations as FBX (Without Skin) and pick them here (several at once). Animations made for another Mixamo character are scaled to this one's height.</value></data>
+  <data name="Model_ImportAnimationResult" xml:space="preserve"><value>Attached {added} animation(s) from {files} file(s).</value></data>
 </root>

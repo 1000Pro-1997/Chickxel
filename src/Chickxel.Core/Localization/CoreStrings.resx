@@ -46,4 +46,45 @@
   <data name="Refs_Example_grass_Tags" xml:space="preserve"><value>풀, 흙, 지면, 타일, 반복, 16px</value></data>
   <data name="Gif_InvalidFile" xml:space="preserve"><value>GIF 파일이 아니거나 머리글이 잘못되었습니다.</value></data>
   <data name="Gif_NoFrames" xml:space="preserve"><value>GIF에 읽을 수 있는 프레임이 없습니다.</value></data>
+  <data name="Model_UnsupportedFormat" xml:space="preserve"><value>지원하지 않는 3D 모델 형식입니다: {extension}</value><comment>extension = 파일 확장자(예: .fbx).</comment></data>
+  <data name="Model_NoTriangles" xml:space="preserve"><value>모델에 그릴 삼각형이 없습니다.</value></data>
+  <data name="Model_TooManyTriangles" xml:space="preserve"><value>모델의 삼각형이 너무 많습니다: {count}개(최대 {max}개)</value><comment>count = 모델의 삼각형 수, max = 허용하는 최대 수.</comment></data>
+  <data name="Model_TextureTooLarge" xml:space="preserve"><value>모델의 텍스처가 너무 큽니다: {width}x{height}(최대 {max}px)</value><comment>width, height = 텍스처 픽셀 크기, max = 한 변 최대 픽셀.</comment></data>
+  <data name="Model_Warning_TextureUnreadable" xml:space="preserve"><value>텍스처를 읽을 수 없어 바탕 색만 씁니다: {name}</value><comment>name = 텍스처 이름이나 파일 이름.</comment></data>
+  <data name="Model_Warning_TextureMissing" xml:space="preserve"><value>텍스처 파일을 찾을 수 없어 바탕 색만 씁니다: {file}</value><comment>file = 모델 파일에 적힌 텍스처 경로.</comment></data>
+  <data name="Gltf_InvalidGlb" xml:space="preserve"><value>GLB 파일이 아니거나 머리글이 잘못되었습니다.</value></data>
+  <data name="Gltf_InvalidJson" xml:space="preserve"><value>glTF JSON을 읽을 수 없습니다: {message}</value><comment>message = JSON 파서의 오류 설명(영어).</comment></data>
+  <data name="Gltf_UnsupportedVersion" xml:space="preserve"><value>glTF 2.0만 지원합니다(이 파일: {version}).</value><comment>version = 파일에 적힌 glTF 판.</comment></data>
+  <data name="Gltf_CompressedMesh" xml:space="preserve"><value>압축된 메시({extension})는 지원하지 않습니다. 압축하지 않은 glTF로 다시 내보내 주세요.</value><comment>extension = glTF 압축 확장 이름(예: KHR_draco_mesh_compression).</comment></data>
+  <data name="Gltf_UnsupportedExtension" xml:space="preserve"><value>이 모델에 꼭 필요한 glTF 확장을 지원하지 않습니다: {extension}</value><comment>extension = extensionsRequired에 적힌 확장 이름.</comment></data>
+  <data name="Gltf_Malformed" xml:space="preserve"><value>glTF 데이터가 잘못되었습니다: {where}</value><comment>where = 잘못된 곳의 JSON 경로(예: accessors[3]).</comment></data>
+  <data name="Gltf_Warning_MorphTargets" xml:space="preserve"><value>모프 타깃(셰이프 키)은 그리지 않고 기본 모양만 그립니다.</value></data>
+  <data name="Gltf_Warning_PrimitiveMode" xml:space="preserve"><value>점·선 프리미티브는 그리지 않습니다(mode {mode}).</value><comment>mode = glTF 프리미티브 mode 번호.</comment></data>
+  <data name="Gltf_Warning_WeightsAnimation" xml:space="preserve"><value>모프 무게 애니메이션은 재생하지 않습니다.</value></data>
+  <data name="Obj_Malformed" xml:space="preserve"><value>OBJ 파일 {line}번째 줄이 잘못되었습니다.</value><comment>line = 1부터 센 줄 번호.</comment></data>
+  <data name="Obj_Warning_MtlMissing" xml:space="preserve"><value>재질 파일(.mtl)을 찾을 수 없어 기본 재질로 그립니다: {file}</value><comment>file = OBJ에 적힌 mtllib 경로.</comment></data>
+  <data name="ModelPreset_ReadFailed" xml:space="preserve"><value>3D 모델 프리셋 파일을 읽지 못했습니다: {error}</value><comment>error = JSON을 읽을 때 난 오류 메시지.</comment></data>
+  <data name="ModelPreset_NewerVersion" xml:space="preserve"><value>더 새로운 Chickxel의 3D 모델 프리셋 파일입니다(형식 버전 {version}).</value></data>
+  <data name="ModelPreset_TopDown8" xml:space="preserve"><value>탑다운 8방향(비스듬히 위)</value></data>
+  <data name="ModelPreset_Overhead8" xml:space="preserve"><value>바로 위에서 8방향</value></data>
+  <data name="ModelPreset_Isometric4" xml:space="preserve"><value>아이소메트릭 4방향(2:1)</value></data>
+  <data name="ModelPreset_Side" xml:space="preserve"><value>옆모습(횡스크롤)</value></data>
+  <data name="ModelPreset_Icon32" xml:space="preserve"><value>아이템 아이콘 32px</value></data>
+  <data name="ModelPreset_Character" xml:space="preserve"><value>캐릭터 애니메이션 64px</value></data>
+  <data name="ModelPreset_LargeForPixelate" xml:space="preserve"><value>크게 부드럽게(픽셀로 정리용)</value></data>
+  <data name="AnimImport_NoAnimations" xml:space="preserve"><value>고른 파일에 애니메이션이 없습니다.</value></data>
+  <data name="AnimImport_NoMatchingBones" xml:space="preserve"><value>애니메이션의 뼈 이름이 캐릭터의 뼈와 하나도 맞지 않습니다. 캐릭터와 애니메이션은 같은 뼈대를 써야 합니다(예: 둘 다 Mixamo에서 받은 것).</value></data>
+  <data name="AnimImport_Warning_DuplicateBone" xml:space="preserve"><value>같은 이름의 뼈가 여럿이라 하나에만 애니메이션을 붙입니다: {bone}</value><comment>bone = 무시한 노드 이름.</comment></data>
+  <data name="AnimImport_Warning_UnmatchedBones" xml:space="preserve"><value>캐릭터에 없는 뼈 {count}개의 움직임은 버립니다: {bones}</value><comment>count = 뼈 수, bones = 뼈 이름 몇 개(쉼표로 구분).</comment></data>
+  <data name="AnimImport_Warning_MatrixNode" xml:space="preserve"><value>행렬로 고정된 노드라 움직일 수 없습니다: {bone}</value><comment>bone = 캐릭터 노드 이름.</comment></data>
+  <data name="AnimImport_Warning_EmptyClip" xml:space="preserve"><value>캐릭터에 맞는 뼈 움직임이 없어 건너뜁니다: {clip}</value><comment>clip = 애니메이션 이름.</comment></data>
+  <data name="Model_NoAnimations" xml:space="preserve"><value>이 파일에는 애니메이션이 없습니다.</value></data>
+  <data name="Fbx_AsciiNotSupported" xml:space="preserve"><value>글자(ASCII) FBX는 읽지 못합니다. 'FBX Binary'로 다시 내보내 주세요(Mixamo의 기본 형식).</value></data>
+  <data name="Fbx_InvalidFile" xml:space="preserve"><value>FBX 파일이 아니거나 머리글이 잘못되었습니다.</value></data>
+  <data name="Fbx_UnsupportedVersion" xml:space="preserve"><value>FBX {version} 파일은 읽지 못합니다. FBX 7.x 'FBX Binary'로 다시 내보내 주세요(Mixamo의 기본 형식).</value><comment>version = 파일의 FBX 판(예: 6.1).</comment></data>
+  <data name="Fbx_Malformed" xml:space="preserve"><value>FBX 데이터가 잘못되었습니다: {where}</value><comment>where = 잘못된 곳(파일 안 바이트 위치 0x… 또는 FBX 객체 이름).</comment></data>
+  <data name="Fbx_Warning_UnsupportedGeometry" xml:space="preserve"><value>메시가 아닌 FBX 도형은 그리지 않습니다: {type}</value><comment>type = FBX Geometry 종류(예: NurbsCurve).</comment></data>
+  <data name="Fbx_Warning_BlendShapes" xml:space="preserve"><value>블렌드 셰이프(모프)는 그리지 않고 기본 모양만 그립니다.</value></data>
+  <data name="Fbx_Warning_AnimationLayers" xml:space="preserve"><value>애니메이션 층이 여럿이라 첫 층만 씁니다: {name}</value><comment>name = 애니메이션 이름.</comment></data>
+  <data name="Fbx_Warning_LayerMapping" xml:space="preserve"><value>지원하지 않는 FBX 층 매핑이라 무시합니다: {element} ({mapping})</value><comment>element = FBX 층 이름(예: LayerElementNormal), mapping = MappingInformationType 값.</comment></data>
 </root>

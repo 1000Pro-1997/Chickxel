@@ -2,6 +2,38 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.135 (2026-11-21)
+
+### Open 3D models as pixel art
+- File > Open, dropping on the window, the file browser and the Pixelate source now accept 3D models: glTF 2.0 (.glb, .gltf) and Wavefront OBJ (.obj with .mtl and textures).
+- The new Import 3D model window shows a live preview at the output size (drag to rotate, wheel to zoom) and sets the size, view angle, orthographic or perspective view, light direction and strength, shading steps for cel-style banding, edge smoothing and textures.
+- Frames: a single image, a full turntable split into any number of directions (8 for an 8-direction sprite), or one of the model's animations (skeletal and node animation) at a chosen frame rate; every frame shares one framing so nothing jitters.
+- The result opens as a new document or goes straight into Pixelate. The file browser draws model thumbnails and File details lists triangle, material and animation counts.
+- Draco or meshopt compressed glTF files are not supported and say so; morph targets are drawn in their base shape.
+
+### 3D import outlines, pixel cleanup and presets
+- Outlines in the Import 3D model window: outer silhouette only (on the empty pixels outside or on the model's edge pixels), overlap lines where a nearer part meets what is behind it, and crease lines where the surface bends more than a chosen angle.
+- Line width 1 to 3 px, in a single color or darkened from the model color underneath (sel-out).
+- Pixel cleanup: remove semi-transparent edge pixels, and reduce to a color count with one palette shared by every frame.
+- Presets: seven built-in setups (top-down 8 directions, straight overhead 8 directions, 2:1 isometric 4 directions, side view, item icon 32 px, character animation 64 px, large and smooth for Pixelate), and your own saved presets.
+
+### FBX models and Mixamo animations
+- FBX files (binary 7.x, the format Mixamo downloads) open as 3D models with their textures, skeleton, skinning and animation.
+- Import… next to Animation attaches the animations of other FBX or glTF files to the model's bones by name, several files at once; Mixamo prefixes such as "mixamorig:" are ignored.
+- Rotations are copied as they are, and hip movement is scaled to the character's height, so animations downloaded for another Mixamo character fit too.
+- ASCII FBX and FBX 6 or older are not supported and say so.
+
+### Optimize long animations from a few sampled frames
+- New "Frames to sample" in Quick settings and 0. Optimize criteria (saved with presets, default 5; 0 = all frames as before).
+- With a count set, sources with more frames than that are optimized on that many frames picked evenly, first and last included, and the best settings are then applied once to every frame.
+- The result line shows how many frames were searched and the score with all frames; cancelling still applies the best so far to every frame.
+- The frames that will be sampled get a yellow border in the source view instead of the usual blue.
+- While you watch a running tile, the large preview applies each new best to every frame, so it always shows the whole animation.
+
+### Guide updated
+- New chapter on importing 3D models: opening, the import window, view and light, pixel cleanup and outlines, frames, and attaching Mixamo animations.
+- Pixelate pages describe Frames to sample and the yellow sampled-frame borders, and their screenshots were retaken.
+
 ## v1.14.134 (2026-11-20)
 
 ### Pixelate results keep only the set padding

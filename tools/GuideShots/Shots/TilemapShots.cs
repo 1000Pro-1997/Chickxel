@@ -449,6 +449,36 @@ internal static class TilemapShots
         ]);
     }
 
+    /// <summary>물 비탈(같은 쪽 ⑥~⑨): ⑥ 한 칸씩 높아지는 물의 곧은 45° 비탈 ⑦ 한 칸 폭으로 솟은 봉우리 ⑧ 두 칸 이상 차이 나는 옆의 세로 가장자리 ⑨ 블록 밑까지 올라가는 수면.</summary>
+    [Shot("tilemap-builtin-water")]
+    public static void BuiltInWater(ShotKit k)
+    {
+        var main = Open(k, custom: WaterMap);
+        k.Hover(main, new Avalonia.Point(5, 5));
+        k.Save(main, "tilemap-builtin-water", crop: MapRect(main, 0, 3, MapW - 1, MapH - 1).Inflate(10), marks:
+        [
+            MapRect(main, 1, 7, 5, 11), MapRect(main, 14, 10, 16, 11), MapRect(main, 18, 9, 19, 11), MapRect(main, 20, 8, 22, 9),
+        ], firstNumber: 6);
+    }
+
+    /// <summary>
+    /// 물 비탈 맵: 돌 바닥 위에 한 칸씩 높아졌다 낮아지는 물 언덕(1~5칸), 한 칸 폭 봉우리(1·2·1칸), 높이 1칸 옆 3칸(두 칸 차이),
+    /// 흙 블록 밑을 꽉 채운 물과 그 옆 물.
+    /// </summary>
+    private static TileMap WaterMap(Tileset ts)
+    {
+        var map = TileMap.Empty;
+        TileMap Paint(TileMap m, string set, IEnumerable<DPoint> cells) => AutoTiler.Paint(ts, m, Set(ts, set), cells);
+        int[] heights = [0, 1, 2, 3, 4, 5, 5, 5, 4, 3, 2, 1, 0, 0, 1, 2, 1, 0, 1, 3, 3, 3, 3, 0];
+        var water = new List<DPoint>();
+        for (int x = 0; x < heights.Length; x++)
+            for (int h = 0; h < heights[x]; h++) water.Add(new DPoint(x, 11 - h));
+        map = Paint(map, DomainStrings.TileBuiltIn_Stone, Box(0, 12, MapW - 1, 13).Concat(Box(23, 6, 23, 11)));
+        map = Paint(map, DomainStrings.TileBuiltIn_Dirt, Box(21, 8, 22, 8));
+        map = Paint(map, DomainStrings.TileBuiltIn_Water, water);
+        return map;
+    }
+
     [Shot("tilemap-builtin-village")]
     public static void Village(ShotKit k)
     {
@@ -522,9 +552,9 @@ internal static class TilemapShots
     // ───────────── 예시 프로젝트 ─────────────
 
     /// <summary>예시 프로젝트를 만들어 저장하고 열어, 타일맵 레이어를 고른 메인 창을 돌려준다.</summary>
-    private static MainForm Open(ShotKit k, bool multi = false, int bottom = 250, bool village = false)
+    private static MainForm Open(ShotKit k, bool multi = false, int bottom = 250, bool village = false, Func<Tileset, TileMap>? custom = null)
     {
-        var path = Build(k, multi, village);
+        var path = Build(k, multi, village, custom);
         App.Settings.BottomHeight = bottom;
         App.Settings.FilesVisible = false;
         App.Settings.PaletteWidth = 290;
@@ -540,7 +570,7 @@ internal static class TilemapShots
         return main;
     }
 
-    private static string Build(ShotKit k, bool multi, bool village = false)
+    private static string Build(ShotKit k, bool multi, bool village = false, Func<Tileset, TileMap>? custom = null)
     {
         var p = new SpriteProject(MapW * Cell, MapH * Cell);
         p.Layers[0].Name = "Sky";
@@ -550,7 +580,7 @@ internal static class TilemapShots
         var props = village ? null : Props(ts);
         if (props is not null) p.AddTileset(props);
         if (!village) p.AddTileset(Icons());
-        var map = village ? VillageMap(ts) : Map(ts);
+        var map = custom is not null ? custom(ts) : village ? VillageMap(ts) : Map(ts);
         if (multi && props is not null)
         {
             p.AddLayerTileset(layer, props);

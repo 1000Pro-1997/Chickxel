@@ -325,6 +325,13 @@ public sealed class OptimizePreset
     /// 그 격자 그대로 켠 칸의 항목을 찾는다.
     /// </summary>
     public bool GridFirst { get; set; }
+    /// <summary>
+    /// 뽑아서 찾을 프레임 수(0 = 모든 프레임 — <see cref="PixelateOptimizeOptions.SampleFrames"/>): 프레임이 많은 원본은 처음·끝을 넣어 고르게 이만큼만 뽑아 찾고,
+    /// 찾은 설정을 모든 프레임에 적용한다.
+    /// </summary>
+    public int SampleFrames { get; set; } = DefaultSampleFrames;
+    public const int DefaultSampleFrames = 5;
+    public const int MaxSampleFrames = 64;
 
     /// <summary>최적화가 팔레트 색 거리를 바꿔도 모든 후보를 재는 '주요 색 변화'의 고정 기준.</summary>
     [JsonIgnore]
@@ -375,6 +382,7 @@ public sealed class OptimizePreset
         TargetColors = Math.Max(0, ScoreTargetColors),
         StrictTargetColors = ScoreTargetStrict,
         GridFirst = GridFirst,
+        SampleFrames = Math.Clamp(SampleFrames, 0, MaxSampleFrames),
     };
 
     /// <summary>이름만 <paramref name="name"/>인 사본(사용자 프리셋 — 기본 프리셋 id 없음, 체크 없음).</summary>
@@ -392,7 +400,7 @@ public sealed class OptimizePreset
     public bool SameValues(OptimizePreset other)
         => Canonical(StartSettings()).Key() == Canonical(other.StartSettings()).Key()
            && Sections == other.Sections && KeepPaletteMethod == other.KeepPaletteMethod && KeepDither == other.KeepDither && GridFirst == other.GridFirst
-           && Trials == other.Trials && Seconds == other.Seconds
+           && Trials == other.Trials && Seconds == other.Seconds && SampleFrames == other.SampleFrames
            && ScoreColorDistance == other.ScoreColorDistance && ScoreHueWeight.Equals(other.ScoreHueWeight) && ScoreLightWeight.Equals(other.ScoreLightWeight)
            && ScoreChromaWeight.Equals(other.ScoreChromaWeight) && ScoreTargetColors == other.ScoreTargetColors && ScoreTargetStrict == other.ScoreTargetStrict
            && Weights == other.Weights && Fidelity == other.Fidelity;
@@ -407,6 +415,7 @@ public sealed class OptimizePreset
         GridFirst = from.GridFirst;
         Trials = from.Trials;
         Seconds = from.Seconds;
+        SampleFrames = from.SampleFrames;
         ScoreColorDistance = from.ScoreColorDistance;
         ScoreHueWeight = from.ScoreHueWeight;
         ScoreLightWeight = from.ScoreLightWeight;
@@ -581,8 +590,8 @@ public sealed record PixelateOutcome(
 /// </summary>
 public sealed class PixelateDialog : DialogBase
 {
-    /// <summary>원본으로 넣을 수 있는 파일: 그림(움직이는 것 포함)과 영상(ffmpeg로 프레임을 뽑음 — 주 창 열기와 같은 길).</summary>
-    private static readonly string[] SourceExtensions = [.. MediaFormats.ImageExtensions, .. MediaFormats.VideoExtensions];
+    /// <summary>원본으로 넣을 수 있는 파일: 그림(움직이는 것 포함), 영상(ffmpeg로 프레임을 뽑음), 3D 모델(각도·프레임을 정해 그림) — 주 창 열기와 같은 길.</summary>
+    private static readonly string[] SourceExtensions = [.. MediaFormats.ImageExtensions, .. MediaFormats.VideoExtensions, .. MediaFormats.ModelExtensions];
 
     private readonly AppSettings _settings;
     private readonly PixelateOptions _opt;
@@ -669,6 +678,8 @@ public sealed class PixelateDialog : DialogBase
     /// <summary>간편 설정의 목표 색 수·자동·강제 — 0. 최적화 기준 <see cref="_crTargetColors"/>·<see cref="_crTargetAuto"/>·<see cref="_crTargetStrict"/>와 같은 설정.</summary>
     private readonly NumericUpDown _quickTargetColors;
     private readonly CheckBox _quickTargetAuto, _quickTargetStrict;
+    /// <summary>간편 설정의 뽑아서 찾을 프레임(0. 최적화 기준의 <see cref="_crSampleFrames"/>와 같은 값).</summary>
+    private readonly NumericUpDown _quickSampleFrames;
     /// <summary>원본 아래 막대·간편 설정을 설정에 맞추는 중(그쪽 이벤트 무시).</summary>
     private bool _barSyncing;
     /// <summary>자동을 다시 켤 때 돌아갈 방식(마지막으로 쓴, 고정 크기가 아닌 방식).</summary>
@@ -707,7 +718,7 @@ public sealed class PixelateDialog : DialogBase
     /// <summary>칸 머리의 '최적화' 켜기(<see cref="OptimizeSection"/>마다).</summary>
     private readonly Dictionary<OptimizeSection, CheckBox> _sectionToggles = new();
     // 0. 최적화 기준
-    private readonly NumericUpDown _crTrials, _crSeconds, _crLightWeight, _crChromaWeight, _crHueWeight, _crTargetColors;
+    private readonly NumericUpDown _crTrials, _crSeconds, _crSampleFrames, _crLightWeight, _crChromaWeight, _crHueWeight, _crTargetColors;
     /// <summary>목표 색 수 '자동'(팔레트 크기를 따름)·'강제'(목표보다 적어도 감점).</summary>
     private readonly CheckBox _crTargetAuto, _crTargetStrict;
     /// <summary>'원본과 닮음' 판정(<see cref="FidelityJudge"/>): 칸끼리·주변과 섞어 보기, 칸 대표 색, 묶음 범위, 가운데 가중.</summary>
@@ -941,6 +952,7 @@ public sealed class PixelateDialog : DialogBase
         // ── 0. 최적화 기준(프리셋에 함께 저장): 예산·점수용 색 거리·점수 항목별 비중
         _crTrials = Ui.Num(OptimizePreset.MinBudget, OptimizePreset.MaxTrials, OptimizePreset.DefaultTrials, 64, 0, 10).Presets(0, 100, 200, 500, 1000, 2000, 5000, 10000).Tip(UiStrings.Pixelate_Opt_UnlimitedTip);
         _crSeconds = Ui.Num(OptimizePreset.MinBudget, OptimizePreset.MaxSeconds, OptimizePreset.DefaultSeconds, 64, 0, 5).Presets(0, 15, 30, 60, 120, 300, 600).Tip(UiStrings.Pixelate_Opt_UnlimitedTip);
+        _crSampleFrames = Ui.Num(0, OptimizePreset.MaxSampleFrames, OptimizePreset.DefaultSampleFrames, 64).Presets(0, 3, 5, 8, 12, 16).Tip(UiStrings.Pixelate_Opt_SampleFramesTip);
         _crDistance = Ui.Combo(170, UiStrings.Pixelate_Pal_Distance_OkLab, UiStrings.Pixelate_Pal_Distance_Ciede2000, UiStrings.Pixelate_Pal_Distance_OkLchHue);
         // OKLCh 색상 가중일 때 밝기·채도·색상 차마다 가중치(나머지 거리 방식에서는 흐리게).
         NumericUpDown LchWeight(decimal value, string tip) => Ui.Num((decimal)PixelateRanges.HueWeight.Min, (decimal)PixelateRanges.HueWeight.Max, value, 64, 2, 0.25m).Tip(tip);
@@ -988,6 +1000,7 @@ public sealed class PixelateDialog : DialogBase
         var weightsLabel = Ui.Label(UiStrings.Pixelate_Opt_ScoreWeights, bold: true);
         var crBody = Ui.Stack(
             Ui.Row(trialsLabel, _crTrials, secondsLabel, _crSeconds),
+            Ui.Row(Ui.Label(UiStrings.Pixelate_Opt_SampleFrames), _crSampleFrames),
             Ui.Row(targetLabel, _crTargetColors, _crTargetAuto, _crTargetStrict),
             Ui.Row(fidelityLabel, _crFidelity, _crCenter),
             Ui.Row(cellRefLabel, _crCellRef, groupRadiusLabel, _crGroupRadius),
@@ -1393,12 +1406,15 @@ public sealed class PixelateDialog : DialogBase
         _quickTargetAuto.IsCheckedChanged += (_, _) => { if (!_barSyncing) _crTargetAuto.IsChecked = _quickTargetAuto.On(); };
         _quickTargetStrict = Ui.Check(UiStrings.Pixelate_Opt_TargetStrict).Tip(UiStrings.Pixelate_Opt_TargetStrictTip);
         _quickTargetStrict.IsCheckedChanged += (_, _) => { if (!_barSyncing) _crTargetStrict.IsChecked = _quickTargetStrict.On(); };
+        _quickSampleFrames = Ui.Num(0, OptimizePreset.MaxSampleFrames, OptimizePreset.DefaultSampleFrames, 64).Presets(0, 3, 5, 8, 12, 16).Tip(UiStrings.Pixelate_Opt_SampleFramesTip);
+        _quickSampleFrames.ValueChanged += (_, _) => { if (!_barSyncing && _quickSampleFrames.Value is { } v) _crSampleFrames.Value = v; };
         var quickTargetLabel = Ui.Label(UiStrings.Pixelate_Opt_TargetColors);
         var quickSizeLabel = Ui.Label(UiStrings.Pixelate_Quick_Size);
         var quickByLabel = Ui.Label(UiStrings.Pixelate_Size_By);
         var quickBody = Ui.Stack(
             Ui.Row(quickSizeLabel, _quickAuto, _quickW, quickByLabel, _quickH, _quickAspect),
             Ui.Row(quickTargetLabel, _quickTargetColors, _quickTargetAuto, _quickTargetStrict),
+            Ui.Row(Ui.Label(UiStrings.Pixelate_Opt_SampleFrames), _quickSampleFrames),
             _quickBg,
             _quickShared);
         // 대상 도움말(F1): 간편 설정 목록의 항목.
@@ -1691,7 +1707,7 @@ public sealed class PixelateDialog : DialogBase
             ((ComboBox)c).SelectionChanged += (_, _) => Changed();
         foreach (var n in new[] { _bgTol, _bgAlpha, _bgSpecks, _frCols, _frRows, _frMerge, _frMergeDist, _grScale, _grOffX, _grOffY, _grJitter, _grAdjust, _grLocalShift, _grLocalBand, _grLocalMinCell,
                      _szW, _szH, _szPad, _szFactor, _dsBorder, _dsAlpha, _dsSnap, _palColors, _palEdge, _palDark, _palHueWeight, _palHueChroma, _palHueMin, _palHueArea, _palOkL, _palOkC, _palOkH, _palRadius,
-                     _clContrast, _clVecTol, _clVecBlob, _coContrast, _crTrials, _crSeconds, _crLightWeight, _crChromaWeight, _crHueWeight, _crTargetColors, _crGroupRadius }.Concat(_crWeights))
+                     _clContrast, _clVecTol, _clVecBlob, _coContrast, _crTrials, _crSeconds, _crSampleFrames, _crLightWeight, _crChromaWeight, _crHueWeight, _crTargetColors, _crGroupRadius }.Concat(_crWeights))
             n.ValueChanged += (_, _) => Changed();
         // 나누기 조건이 바뀌면 이전 조건에서 편집한 슬롯은 버린다.
         _frMode.SelectionChanged += (_, _) => ResetManualFrames();
@@ -2327,6 +2343,7 @@ public sealed class PixelateDialog : DialogBase
         // 칸 맞추기 따로 최적화면 격자 칸은 그 체크로 최적화하므로 칸 머리의 '최적화'는 쓰지 않는다.
         if (_sectionToggles.TryGetValue(OptimizeSection.Grid, out var gridToggle)) gridToggle.IsEnabled = !_grFirst.On();
         SyncQuickSettings();
+        ShowSampledFrames();
         SyncBarBackground();
     }
 
@@ -2384,11 +2401,25 @@ public sealed class PixelateDialog : DialogBase
             _quickTargetStrict.IsChecked = _crTargetStrict.On();
             _quickTargetColors.IsEnabled = _crTargetColors.IsEnabled;
             _quickTargetStrict.IsEnabled = _crTargetStrict.IsEnabled;
+            _quickSampleFrames.Value = _crSampleFrames.Value;
         }
         finally
         {
             _barSyncing = false;
         }
+    }
+
+    /// <summary>
+    /// 원본 보기에서 자동 최적화가 뽑아서 찾을 프레임(<see cref="PixelateOptimizer.SampleIndices"/> — 적용한 나누기 자리 기준, 엔진과 같은 규칙)의 테두리를 노랗게.
+    /// 뽑을 수가 0이거나 프레임이 그보다 많지 않으면 모두 파랑.
+    /// </summary>
+    private void ShowSampledFrames()
+    {
+        int samples = (int)_crSampleFrames.NumValue();
+        int count = 0;
+        if (_appliedFrames?.ManualRegions is { } regions)
+            count = _appliedFrames.SourceFrames > 0 ? Math.Min(_appliedFrames.SourceFrames, regions.Count) : regions.Count;
+        _sourceView.SetSampled(samples > 0 && count > samples ? PixelateOptimizer.SampleIndices(count, samples) : []);
     }
 
     /// <summary>원본 아래 막대의 배경 지우기를 1단계 배경 방식에 맞추고(막대 이벤트는 무시), 켜져 있으면 원본 보기에 배경을 지운 모습을 보인다.</summary>
@@ -2598,6 +2629,7 @@ public sealed class PixelateDialog : DialogBase
         _detected = detected;
         _sourceView.SetImage(_input!.Image, src.Cleaned);
         _sourceView.SetFrames(_appliedFrames.ManualRegions!.Select(r => new Rectangle(r.X, r.Y, r.Width, r.Height)).ToArray());
+        ShowSampledFrames();
         _bgInfo.Text = src.Background.UsedAlpha
             ? UiStrings.Pixelate_Bg_InfoAlpha
             : UiStrings.FormatPixelate_Bg_InfoColor(color: src.Background.Color?.ToHex() ?? "", tolerance: src.Background.Tolerance.ToString("0.#", CultureInfo.CurrentCulture));
@@ -2859,7 +2891,59 @@ public sealed class PixelateDialog : DialogBase
         var frame = shown.Result.Frames[0];
         foreach (var tile in _tiles.Children.OfType<TileBase>())
             if (tile.IsRunning) tile.ShowPreview(frame);
-        if (_watchingLive) Select(shown);
+        if (!_watchingLive) return;
+        // 뽑아서 찾는 중이면 1위는 뽑은 프레임 것뿐이라, 큰 미리보기에는 그 설정을 모든 프레임에 적용해 보인다(다 될 때까지는 앞서 보인 모든 프레임 그림 그대로).
+        if (_optRunningFull is { } full && best.Result.Frames.Count < full.Source.Split.Frames.Count)
+        {
+            RequestFullLivePreview(best);
+            if (!_fullLiveShown) Select(shown);
+        }
+        else Select(shown);
+    }
+
+    /// <summary>뽑아서 찾는 중 큰 미리보기에 모든 프레임으로 보일 1위(그리는 중이면 다 그린 뒤 이것을 다시 그림), 그리는 중인지.</summary>
+    private PixelateCandidate? _fullLiveWanted;
+    private bool _fullLiveBusy;
+    /// <summary>보고 있는 도는 칸의 큰 미리보기에 이미 모든 프레임 그림을 보였는지(그 뒤로는 뽑은 프레임 그림으로 되돌리지 않음).</summary>
+    private bool _fullLiveShown;
+    /// <summary>지금 도는 프리셋의 모든 프레임 준비 결과와 시작 설정(뽑아서 찾을 때 미리보기를 모든 프레임으로 — <see cref="RequestFullLivePreview"/>).</summary>
+    private (PixelateSource Source, PixelateSettings Settings)? _optRunningFull;
+
+    /// <summary>
+    /// 뽑은 프레임으로 찾은 1위 <paramref name="best"/>의 설정을 모든 프레임에 적용해 다른 스레드에서 그리고, 아직 그 칸을 보고 있으면 큰 미리보기에 보인다.
+    /// 한 번에 하나만 그리고, 그리는 동안 1위가 바뀌면 끝난 뒤 마지막 1위를 다시 그린다.
+    /// </summary>
+    private void RequestFullLivePreview(PixelateCandidate best)
+    {
+        _fullLiveWanted = best;
+        if (_fullLiveBusy || _optRunningFull is not { } full) return;
+        _fullLiveBusy = true;
+        int gen = _optGeneration;
+        var s = best.Settings;
+        var settings = s with { Frames = s.Frames with { ManualRegions = full.Settings.Frames.ManualRegions, SourceFrames = full.Settings.Frames.SourceFrames } };
+        var src = full.Source;
+        Task.Run(() =>
+        {
+            PixelateResult? r = null;
+            try
+            {
+                r = Pixelator.Run(src.Matches(settings) ? src : PixelateSource.Prepare(src.Original, settings), settings);
+            }
+            catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or IndexOutOfRangeException)
+            {
+            }
+            Dispatcher.UIThread.Post(() =>
+            {
+                _fullLiveBusy = false;
+                if (gen != _optGeneration || _optCts is null || !_watchingLive || !ReferenceEquals(_optRunningFull?.Source, src)) return;
+                if (r is not null)
+                {
+                    Select(WithColorEdits(best with { Settings = settings, Result = r }));
+                    _fullLiveShown = true;
+                }
+                if (_fullLiveWanted is { } next && !ReferenceEquals(next, best)) RequestFullLivePreview(next);
+            });
+        });
     }
 
     /// <summary>
@@ -2874,7 +2958,8 @@ public sealed class PixelateDialog : DialogBase
         _userPicked = true;
         SetPicking(false);
         MarkSelectedTiles();
-        if (_livePreview is { } best) Select(WithColorEdits(best));
+        _fullLiveShown = false;
+        if (_livePreview is not null) ShowLivePreview();
         else _selectedInfo.Text = UiStrings.FormatPixelate_Live_Selected(name: _runningName ?? "") + " · " + UiStrings.Pixelate_Opt_Marker_Running;
         UpdateZoomOptInfo();
     }
@@ -3992,6 +4077,8 @@ public sealed class PixelateDialog : DialogBase
                     {
                         src = SourceFor(image, run.Settings);
                         token.ThrowIfCancellationRequested();
+                        var full = (src, run.Settings);
+                        Dispatcher.UIThread.Post(() => { if (gen == _optGeneration) _optRunningFull = full; });
                         if (src.Split.Frames.Count == 0)
                         {
                             Dispatcher.UIThread.Post(() => { if (gen == _optGeneration) EndOptimize(UiStrings.Pixelate_Status_NoSprite); });
@@ -4044,6 +4131,9 @@ public sealed class PixelateDialog : DialogBase
     {
         _optCts?.Dispose();
         _optCts = null;
+        _optRunningFull = null;
+        _fullLiveWanted = null;
+        _fullLiveShown = false;
         if (_optRunCts is { } runCts)
             foreach (var c in runCts) c.Dispose();
         _optRunCts = null;
@@ -4143,6 +4233,8 @@ public sealed class PixelateDialog : DialogBase
         // 새 프리셋은 빈 칸에서 시작(앞 프리셋의 1위 그림이 남지 않게).
         _livePreview = null;
         _livePreviewDirty = false;
+        _fullLiveShown = false;
+        _fullLiveWanted = null;
         if (_runningName != running.Name)
         {
             _runningName = running.Name;
@@ -4264,6 +4356,7 @@ public sealed class PixelateDialog : DialogBase
             _prepared = src;
             _sourceView.SetImage(_input!.Image, src.Cleaned);
             _sourceView.SetFrames(_appliedFrames!.ManualRegions!.Select(r => new Rectangle(r.X, r.Y, r.Width, r.Height)).ToArray());
+            ShowSampledFrames();
         }
         // 왼쪽 값: 돌리는 동안 손으로 고친 값이 없으면 고른 후보의 프리셋·칸별 최적화·기준·설정을 불러온다(고친 값은 덮지 않음).
         if (!_panelEdited) LoadCandidatePanel(best);
@@ -4294,13 +4387,19 @@ public sealed class PixelateDialog : DialogBase
             OptimizeStop.Cancelled => UiStrings.Pixelate_Opt_Stop_Cancelled,
             _ => UiStrings.Pixelate_Opt_Stop_Done,
         };
-        return UiStrings.FormatPixelate_Opt_Done(
+        var ci = CultureInfo.CurrentCulture;
+        bool sampled = result.SampledFrames > 0;
+        var line = UiStrings.FormatPixelate_Opt_Done(
             passes: result.Passes.Count,
-            start: result.Start.Score.Total.ToString("0.0", CultureInfo.CurrentCulture),
-            best: result.Best.Score.Total.ToString("0.0", CultureInfo.CurrentCulture),
+            start: result.Start.Score.Total.ToString("0.0", ci),
+            // 뽑아서 찾았으면 화살표는 같은 프레임끼리(뽑은 프레임 점수), 모든 프레임에 적용한 점수는 뒤에 따로.
+            best: (sampled ? result.SampledBestScore : result.Best.Score.Total).ToString("0.0", ci),
             trials: result.Trials.Count,
-            seconds: result.Elapsed.TotalSeconds.ToString("0.0", CultureInfo.CurrentCulture),
+            seconds: result.Elapsed.TotalSeconds.ToString("0.0", ci),
             reason: reason);
+        return sampled
+            ? line + " · " + UiStrings.FormatPixelate_Opt_Sampled(sampled: result.SampledFrames, total: result.TotalFrames, score: result.Best.Score.Total.ToString("0.0", ci))
+            : line;
     }
 
     /// <summary>
@@ -4526,6 +4625,7 @@ public sealed class PixelateDialog : DialogBase
             Sections = (int)sections,
             Trials = (int)_crTrials.NumValue(),
             Seconds = (int)_crSeconds.NumValue(),
+            SampleFrames = (int)_crSampleFrames.NumValue(),
             ScoreColorDistance = values[Math.Clamp(_crDistance.SelectedIndex, 0, values.Length - 1)],
             ScoreHueWeight = (double)_crHueWeight.NumValue(),
             ScoreLightWeight = (double)_crLightWeight.NumValue(),
@@ -4559,6 +4659,7 @@ public sealed class PixelateDialog : DialogBase
             foreach (var (section, toggle) in _sectionToggles) toggle.IsChecked = ((OptimizeSection)p.Sections).HasFlag(section);
             _crTrials.Value = Math.Clamp(p.Trials, OptimizePreset.MinBudget, OptimizePreset.MaxTrials);
             _crSeconds.Value = Math.Clamp(p.Seconds, OptimizePreset.MinBudget, OptimizePreset.MaxSeconds);
+            _crSampleFrames.Value = Math.Clamp(p.SampleFrames, 0, OptimizePreset.MaxSampleFrames);
             _crDistance.SelectedIndex = Math.Max(0, Array.IndexOf(Enum.GetValues<ColorDistanceMode>(), p.ScoreColorDistance));
             _crHueWeight.Value = (decimal)Math.Round(PixelateRanges.HueWeight.Clamp(p.ScoreHueWeight), 2);
             _crLightWeight.Value = (decimal)Math.Round(PixelateRanges.HueWeight.Clamp(p.ScoreLightWeight), 2);
@@ -5027,6 +5128,9 @@ public sealed class PixelateDialog : DialogBase
         private static readonly IPen FrameUnder = AppTheme.Pen(Color.FromArgb(230, 24, 24, 28), 4);
         private static readonly IPen FrameOver = AppTheme.Pen(Color.FromArgb(255, 110, 226, 255), 2);
         private static readonly IBrush FrameLabel = AppTheme.Brush(Color.FromArgb(230, 24, 24, 28));
+        /// <summary>자동 최적화가 뽑아서 찾을 프레임(<see cref="SetSampled"/>)의 테두리 — 다른 프레임의 파란 테두리 대신 노란색.</summary>
+        private static readonly IPen FrameSampled = AppTheme.Pen(Color.FromArgb(255, 255, 210, 60), 2);
+        private bool[] _sampled = [];
         private static readonly Cursor MoveCursor = new(StandardCursorType.SizeAll);
         private static readonly Cursor HorizontalCursor = new(StandardCursorType.SizeWestEast);
         private static readonly Cursor VerticalCursor = new(StandardCursorType.SizeNorthSouth);
@@ -5110,6 +5214,15 @@ public sealed class PixelateDialog : DialogBase
                 _frameLabels[i] = (i + 1).ToString(CultureInfo.CurrentCulture);
             _frameDrag = -1;
             Cursor = Picking ? CutOverlay.PickerCursor : null;
+            InvalidateVisual();
+        }
+
+        /// <summary>뽑아서 찾을 프레임 번호(0부터 — 그 테두리를 노랗게, 비우면 모두 파랑).</summary>
+        public void SetSampled(IReadOnlyCollection<int> frames)
+        {
+            _sampled = new bool[_frames.Length];
+            foreach (int i in frames)
+                if ((uint)i < (uint)_sampled.Length) _sampled[i] = true;
             InvalidateVisual();
         }
 
@@ -5297,13 +5410,12 @@ public sealed class PixelateDialog : DialogBase
 
         private void DrawFrames(DrawingContext g, Rect bounds)
         {
+            Rect Box(Rectangle r) => new(_offset.X + r.Left * _zoom, _offset.Y + r.Top * _zoom, r.Width * _zoom, r.Height * _zoom);
             using (g.PushClip(bounds))
             {
                 for (int i = 0; i < _frames.Length; i++)
                 {
-                    var r = _frames[i];
-                    var box = new Rect(_offset.X + r.Left * _zoom, _offset.Y + r.Top * _zoom,
-                        r.Width * _zoom, r.Height * _zoom);
+                    var box = Box(_frames[i]);
                     g.DrawRectangle(null, FrameUnder, box);
                     g.DrawRectangle(null, FrameOver, box);
                     var label = new Rect(box.X + 2, box.Y + 2, 26, 18);
@@ -5313,6 +5425,14 @@ public sealed class PixelateDialog : DialogBase
                         AppTheme.DrawTextIn(g, _frameLabels[i], label,
                             AppTheme.TextBrush, AppTheme.SmallFontSize);
                     }
+                }
+                // 뽑을 프레임은 다 그린 뒤 위에 다시 — 붙어 있는 이웃 칸의 파란 테두리가 노란 테두리를 덮지 않게.
+                for (int i = 0; i < _frames.Length && i < _sampled.Length; i++)
+                {
+                    if (!_sampled[i]) continue;
+                    var box = Box(_frames[i]);
+                    g.DrawRectangle(null, FrameUnder, box);
+                    g.DrawRectangle(null, FrameSampled, box);
                 }
             }
         }
