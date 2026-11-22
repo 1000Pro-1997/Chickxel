@@ -1,8 +1,8 @@
 key,ko,en
 #name,한국어,English
 screen-preview.1,미리보기,Preview
-screen-preview.7.alt,"미리보기 패널: 재생 화면, FPS, 배율 단추, 배경","Preview panel: playback, FPS, zoom button, background"
-screen-preview.8,① 재생 화면 · ② FPS · ③ 배율 단추(Fit) · ④ 배경,① Playback · ② FPS · ③ Zoom button (Fit) · ④ Background
+screen-preview.7.alt,"미리보기 패널: 재생 화면, FPS, 배율 단추, 배경, 제목 줄의 접기 단추","Preview panel: playback, FPS, zoom button, background, collapse button in the header"
+screen-preview.8,① 재생 화면 · ② FPS · ③ 배율 단추(Fit) · ④ 배경 · ⑤ 접기 단추,① Playback · ② FPS · ③ Zoom button (Fit) · ④ Background · ⑤ Collapse button
 screen-preview.overview,오른쪽 위의 미리보기는 효과까지 입힌 애니메이션을 실제 속도로 재생합니다. 편집하는 프레임과 따로 움직이므로 그리면서 움직임을 확인할 수 있습니다.,"The preview at the top right plays the animation, effects included, at real speed. It runs separately from the frame you're editing, so you can check the motion while drawing."
 screen-preview.14,번호,Number
 screen-preview.15,항목과 사용법,Item and use
@@ -16,11 +16,11 @@ guide-new.preview-space,메인 창에서 <kbd>Space</kbd>를 0.4초 안에 눌�
 screen-preview.23,"효과 계산이 밀리면 재생은 다음 프레임이 준비될 때까지 지금 프레임을 그대로 보여 주며 기다리고(빈 프레임을 끼우지 않음), 기다리는 동안 로딩 아이콘이 보입니다.","If effect computing falls behind, playback keeps showing the current frame until the next one is ready (it never inserts blank frames), with a loading icon while it waits."
 screen-preview.persist,FPS·배율·배경은 프로젝트가 아니라 앱 설정이라 다음 실행과 다른 문서에도 그대로입니다.,"FPS, zoom and background are app settings, not project settings, so they carry over to other documents and the next launch."
 screen-preview.fold,미리보기 접기,Collapsing the preview
-screen-preview.fold-body,"미리보기 제목 줄 오른쪽 끝의 화살표 단추(<strong>{{UiStrings.Preview_CollapseTip}}</strong>)를 누르면 제목 줄만 남기고 재생 화면·재생 설정·착장 줄을 접어, 아래 도구 설정 칸이 남은 높이를 씁니다. 다시 누르면(<strong>{{UiStrings.Preview_ExpandTip}}</strong>) 접기 전 높이로 펼쳐집니다. 접힌 동안에도 재생 중이던 상태는 그대로이고, 접혔는지와 펼쳤을 때 높이는 앱 설정에 남아 다음 실행에도 그대로입니다.","Click the arrow button at the right end of the preview header (<strong>{{UiStrings.Preview_CollapseTip}}</strong>) to fold the playback view, playback settings and outfit row away, leaving only the header; Tool options below takes the freed height. Click it again (<strong>{{UiStrings.Preview_ExpandTip}}</strong>) to expand back to the height it had before. Playback keeps its state while collapsed, and whether it is collapsed and its expanded height are app settings kept for the next launch."
+screen-preview.fold-body,"⑤ 미리보기 제목 줄 오른쪽 끝의 화살표 단추(<strong>{{UiStrings.Preview_CollapseTip}}</strong>)를 누르면 제목 줄만 남기고 재생 화면·재생 설정·착장 줄을 접어, 아래 도구 설정 칸이 남은 높이를 씁니다. 다시 누르면(<strong>{{UiStrings.Preview_ExpandTip}}</strong>) 접기 전 높이로 펼쳐집니다. 접힌 동안에도 재생 중이던 상태는 그대로이고, 접혔는지와 펼쳤을 때 높이는 앱 설정에 남아 다음 실행에도 그대로입니다.","⑤ Click the arrow button at the right end of the preview header (<strong>{{UiStrings.Preview_CollapseTip}}</strong>) to fold the playback view, playback settings and outfit row away, leaving only the header; Tool options below takes the freed height. Click it again (<strong>{{UiStrings.Preview_ExpandTip}}</strong>) to expand back to the height it had before. Playback keeps its state while collapsed, and whether it is collapsed and its expanded height are app settings kept for the next launch."
 screen-preview.copy,복사와 저장,Copying and saving
 screen-preview.9.alt,"미리보기 그림 위 우클릭 메뉴: 이미지 복사, 크게 복사, 프레임 저장, GIF로 저장","Preview right-click menu: Copy image, Copy enlarged, Save frame, Save as GIF"
-screen-preview.10,⑤ 우클릭 메뉴,⑤ Right-click menu
-screen-preview.6,⑤ 미리보기 그림을 우클릭하면 복사와 저장 명령이 열립니다.,⑤ Right-click the preview image to open copy and save commands.
+screen-preview.10,⑥ 우클릭 메뉴,⑥ Right-click menu
+screen-preview.6,⑥ 미리보기 그림을 우클릭하면 복사와 저장 명령이 열립니다.,⑥ Right-click the preview image to open copy and save commands.
 screen-preview.16,명령,Command
 screen-preview.17,하는 일,What it does
 screen-preview.18,보이는 프레임을 미리보기 배경 없이 투명한 PNG 그대로 클립보드에 올립니다.,Copies the shown frame to the clipboard as a transparent PNG without the preview background.
@@ -30,15 +30,15 @@ screen-preview.21,"<a href=""#screen-export"">내보내기 창</a>을 목록의 
 screen-preview.22,재생 중이면 우클릭할 때 보이던 프레임을 복사하거나 저장하므로 재생을 멈출 필요가 없습니다.,During playback it copies or saves the frame that was visible when you right-clicked; you do not need to stop playback.
 screen-preview.bg,배경,Background
 screen-preview.11.alt,"미리보기 배경 목록: 체커, 검정, 흰색, 회색, 초록, 사용자 색","Preview background list: checker, black, white, gray, green, custom color"
-screen-preview.12,⑥ 배경 목록,⑥ Background list
-screen-preview.5,"⑥ 배경 목록에서 체커·검정·흰색·회색·초록·사용자 색을 고릅니다. 목록에서 사용자 색을 고르면 색 고르기 창이 열리고, 단추를 눌러 차례로 넘길 때는 마지막으로 고른 사용자 색을 그대로 씁니다.","⑥ Choose checkerboard, black, white, gray, green, or a custom color from the background list. Picking the custom color from the list opens the color picker; cycling with the button uses the last custom color as is."
+screen-preview.12,⑦ 배경 목록,⑦ Background list
+screen-preview.5,"⑦ 배경 목록에서 체커·검정·흰색·회색·초록·사용자 색을 고릅니다. 목록에서 사용자 색을 고르면 색 고르기 창이 열리고, 단추를 눌러 차례로 넘길 때는 마지막으로 고른 사용자 색을 그대로 씁니다.","⑦ Choose checkerboard, black, white, gray, green, or a custom color from the background list. Picking the custom color from the list opens the color picker; cycling with the button uses the last custom color as is."
 screen-preview.bg-note,배경은 미리보기에만 쓰이고 그림이나 내보내기에는 들어가지 않습니다. 이미지 복사·프레임 저장도 배경 없이 투명한 그대로입니다.,The background is for the preview only and never goes into the image or exports. Copy image and Save frame also stay transparent without it.
 screen-preview.outfit,착장,Outfit
 screen-preview.outfit-body,"<a href=""#parts-concept"">그룹</a>이 있는 프로젝트에서는 미리보기 아래에 <strong>{{UiStrings.S_PreviewPanel_RebuildOutfit_E5D30D48F5}}</strong> 줄이 생깁니다. 그룹마다 보일 스킨을 고르는 목록이 있고(스킨이 하나면 꺼짐, 첫 스킨에는 ""(기본)""), 고르면 그 그룹의 스킨이 바뀌며 부위마다 따로 고른 스킨은 그대로입니다. 그룹 이름 뒤 <code>*</code>는 따로 고른 스킨이 있는 부위가 있다는 표시입니다. 그룹 이름이나 <strong>{{UiStrings.S_PreviewPanel_RebuildOutfit_090268890B}}</strong>을 누르면 <a href=""#parts-skin-manager"">스킨 관리</a> 창이 열립니다.","In projects with <a href=""#parts-concept"">groups</a>, an <strong>{{UiStrings.S_PreviewPanel_RebuildOutfit_E5D30D48F5}}</strong> row appears below the preview. Each group has a list to choose the skin to show (disabled if it has one skin; the first skin is marked ""(default)""). Choosing one changes that group's skin while skins chosen for individual parts stay. A <code>*</code> after a group name means some parts use individually chosen skins. Click a group name or <strong>{{UiStrings.S_PreviewPanel_RebuildOutfit_090268890B}}</strong> to open the <a href=""#parts-skin-manager"">skin manager</a>."
 screen-preview.large,크게 보기와 미리보기 탭,Enlarged view and preview tab
 guide-shot.preview-large.alt,늑대귀 모험가를 크게 보여 주는 미리보기 크게 보기 창,Enlarged preview window showing the wolf-eared adventurer
-guide-shot.preview-large.caption,⑦ 미리보기 크게 보기 창,⑦ Enlarged preview window
-guide-shot.preview-large.body,⑦ 크게 보기 창은 미리보기의 재생 중인 그림과 착장·배경을 창에 맞는 정수 배율로 보여 줍니다.,"⑦ The enlarged preview shows the playing image, outfit and background at a whole-number zoom fitted to its window."
+guide-shot.preview-large.caption,⑧ 미리보기 크게 보기 창,⑧ Enlarged preview window
+guide-shot.preview-large.body,⑧ 크게 보기 창은 미리보기의 재생 중인 그림과 착장·배경을 창에 맞는 정수 배율로 보여 줍니다.,"⑧ The enlarged preview shows the playing image, outfit and background at a whole-number zoom fitted to its window."
 guide-new.preview-large,"미리보기 그림 위 손 모양 커서로 누르면 크기 조절 가능한 '미리보기 크게 보기' 창이 열리고 같은 재생·배경·착장을 창에 들어가는 가장 큰 정수 배율로 보여 줍니다. 한 창만 열리며 다시 누르면 앞으로 옵니다. 창 크기는 앱을 켜 둔 동안 기억하고 창 안에서 Space는 재생/정지, Esc는 닫기, 우클릭은 미리보기 메뉴입니다. 미리보기 탭이 열린 동안에는 그림을 누르면 크게 보기 대신 그 탭으로 갑니다.","Click the hand-cursor preview image to open a resizable Enlarged preview window showing the same playback, background and outfit at the largest integer zoom that fits. Only one opens and clicking again brings it forward. Its size is remembered for the current app session. Inside, Space plays/pauses, Esc closes and right-click opens the preview menu. With a preview tab open, clicking the image focuses that tab instead."
 screen-preview.large-zoom,"크게 보기 창과 미리보기 탭에서는 휠로 커서 아래를 중심으로 확대하고(1~2배는 0.25배씩, 2~4배는 0.5배씩, 그 위로는 두 배 구간마다 간격이 두 배, 최대 64배) 끌어서 옮깁니다. 더블클릭하면 다시 창에 맞추고, 크게 보기 창에서는 <kbd>0</kbd>으로도 맞춥니다.","In the enlarged window and the preview tab, the wheel zooms around the cursor (0.25× steps from 1 to 2×, 0.5× steps from 2 to 4×, and the step doubles with every doubling above that, up to 64×), and dragging pans. Double-click to fit to the window again; in the enlarged window <kbd>0</kbd> also fits."
 guide-new.preview-tab-link,"미리보기 제목 줄의 '탭으로 열기'를 누르면 편집 문서를 <a href=""#screen-tabs"">나눈 화면의 미리보기 탭</a>으로 크게 볼 수 있습니다. 탭이 열린 동안 미리보기 그림을 누르면 그 탭을 앞으로 가져옵니다.","Use Open as tab in the preview header to show the editing document larger in a <a href=""#screen-tabs"">split-view preview tab</a>. While that tab is open, clicking the preview image brings the tab forward."

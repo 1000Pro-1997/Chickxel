@@ -310,7 +310,7 @@ internal static class PixelateShots
         k.Save(dlg, "pixelate-open-5", crop: new Rect(rb.X - 8, rb.Y - 90, 640, rb.Height + 104), marks: [PixelateKit.Box(replace, dlg)], firstNumber: 9);
     }
 
-    // 설정 단계: 접힌 막대(①), 간편 설정의 결과 크기 줄·모든 프레임이 한 팔레트(②③), 펼친 단계를 두 개씩(④⑤ + 방식 줄 ⑥⑦ …), 외곽선 1px 맞추기 목록, 프레임 맞추기.
+    // 설정 단계: 접힌 막대(①), 간편 설정의 결과 크기 줄·줄마다 칸 맞추기·모든 프레임이 한 팔레트(②③④), 펼친 단계를 두 개씩(⑤⑥ + 방식 줄 ⑦⑧ …), 7. 정리, 프레임 맞추기.
     [Shot("pixelate-settings")]
     public static void Settings(ShotKit k)
     {
@@ -340,13 +340,14 @@ internal static class PixelateShots
         Pair("pixelate-settings-4", 2, UiStrings.Pixelate_Section_Quick, null, (_, _) =>
         [
             PixelateKit.LeftBox((Control)ShotKit.Get<CheckBox>(dlg, "_quickAuto").Parent!, dlg, 10),
+            PixelateKit.LeftBox(ShotKit.Get<CheckBox>(dlg, "_grLock"), dlg, 10),
             PixelateKit.LeftBox(ShotKit.Get<CheckBox>(dlg, "_quickShared"), dlg, 10),
         ]);
         // 배경은 '자동'으로 두어 방식에 따라 보이는 칸(허용 오차·테두리와 이어진 배경만 …)을 보인다(배경 남기기 방식이면 숨음).
         ShotKit.Get<ComboBox>(dlg, "_bgMode").SelectedIndex = 1;
         k.Settle(300);
         Control ModeRow(string field) => (Control)ShotKit.Get<ComboBox>(dlg, field).Parent!;
-        Pair("pixelate-settings-2", 4, UiStrings.Pixelate_Section_Background, UiStrings.Pixelate_Section_Frames, (a, b) =>
+        Pair("pixelate-settings-2", 5, UiStrings.Pixelate_Section_Background, UiStrings.Pixelate_Section_Frames, (a, b) =>
             [a, b!, PixelateKit.LeftBox(ModeRow("_bgMode"), dlg, 10), PixelateKit.LeftBox(ModeRow("_frMode"), dlg, 10)]);
         // 픽셀 격자 쪽: 두 단계(①②), 두 방식 줄(③④), 고정 크기에 맞추기의 가로×세로 줄·여백(⑤⑥). 칸 색과 팔레트 쪽(①~⑤), 다른 팔레트 방식(⑥).
         ShotKit.Get<ComboBox>(dlg, "_szMode").SelectedIndex = 1;
@@ -378,20 +379,16 @@ internal static class PixelateShots
         Pair("pixelate-palette-2", 6, UiStrings.Pixelate_Section_Palette, null, (_, _) =>
             [PixelateKit.LeftBox((Control)ShotKit.Get<Control>(dlg, "_palOkL").Parent!, dlg, 10)]);
 
-        // 정리: 목록(①②), 벡터 다시 그리기의 직선·곡선과 모서리 각도(③④⑤), 프레임 맞추기(⑥).
+        // 정리: 7. 정리 단계·외곽선 1px 맞추기 줄·원본 외곽선 기준으로 정리(①②③), 벡터 다시 그리기의 직선·곡선과 모서리 각도(④⑤⑥), 프레임 맞추기(⑦).
         PixelateKit.OnlyExpand(k, dlg, UiStrings.Pixelate_Section_Cleanup);
         var cleanup = PixelateKit.Section(dlg, UiStrings.Pixelate_Section_Cleanup);
         PixelateKit.ScrollToTop(k, cleanup);
         var fit = ShotKit.Get<ComboBox>(dlg, "_clFit");
-        fit.IsDropDownOpen = true;
-        k.Settle(500);
-        var list = PixelateKit.DropDownBounds(fit, dlg);
+        var sourceOutline = ShotKit.Get<CheckBox>(dlg, "_clSourceOutline");
         var cb = ShotKit.Bounds(cleanup, dlg);
         var view = ShotKit.Bounds(cleanup.FindAncestorOfType<ScrollViewer>()!, dlg);
-        k.Save(dlg, "pixelate-cleanup", crop: new Rect(view.X - 8, cb.Y - 14, view.Width + 16, Math.Max(cb.Bottom, list.Bottom) - cb.Y + 24),
-            marks: [cleanup, list]);
-        fit.IsDropDownOpen = false;
-        k.Settle(300);
+        k.Save(dlg, "pixelate-cleanup", crop: new Rect(view.X - 8, cb.Y - 14, view.Width + 16, cb.Height + 28),
+            marks: [cleanup, PixelateKit.LeftBox((Control)fit.Parent!, dlg, 10), PixelateKit.LeftBox(sourceOutline, dlg, 10)]);
 
         fit.SelectedIndex = 3; // 벡터로 다시 그리기에서만 보이는 두 칸을 실제 UI에서 연다.
         k.Settle(300);
@@ -401,9 +398,9 @@ internal static class PixelateShots
         var vectorArea = PixelateKit.Union(dlg, fit, vectorRow);
         k.Save(dlg, "pixelate-cleanup-vector", crop: vectorArea.Inflate(new Thickness(24, 20, 24, 20)),
             marks: [PixelateKit.LeftBox(fit, dlg), PixelateKit.LeftBox(cleanLines, dlg), PixelateKit.LeftBox(cornerAngle, dlg)],
-            firstNumber: 3);
+            firstNumber: 4);
 
-        Pair("pixelate-cleanup-2", 6, UiStrings.Pixelate_Section_Consistency, null, (a, _) => [a]);
+        Pair("pixelate-cleanup-2", 7, UiStrings.Pixelate_Section_Consistency, null, (a, _) => [a]);
     }
 
     // 후보와 점수: 후보 칸·방식 이름·프리셋 이름(고친 값으로 돌린 "이름_1" 칸)·점수 내역(①~④)과 체크했지만 돌리지 않은 프리셋 칸(⑤), 후보 풍선의 점수 내역(⑥).
@@ -575,8 +572,8 @@ internal static class PixelateShots
             firstNumber: 12);
     }
 
-    // 원본과 미리보기 쪽: 전체 창(①~⑤), 원본 아래 막대(⑥⑦). 색 빼기와 고정 색 쪽(①~③), 크게 보기와 색 판정 쪽(①~⑥),
-    // 픽셀 격자 쪽의 칸 경계 지역 보정(③), 설정 단계 쪽의 스티커 테두리 지우기·배경 남기기(⑥⑦).
+    // 원본과 미리보기 쪽: 전체 창(①~⑤), 원본 아래 막대(⑥). 색 빼기와 고정 색 쪽(①~③), 크게 보기와 색 판정 쪽(①~⑥),
+    // 픽셀 격자 쪽의 칸 경계 지역 보정(⑦), 설정 단계 쪽의 스티커 테두리 지우기·배경 남기기(⑨⑩).
     [Shot("pixelate-view")]
     public static void View(ShotKit k)
     {
@@ -659,7 +656,7 @@ internal static class PixelateShots
         ShotKit.Call(dlg, "CloseZoom");
         k.Settle(300);
 
-        // 왼쪽 설정: 픽셀 격자의 칸 경계 지역 보정(⑦), 배경의 스티커 테두리 지우기·배경 남기기(⑧⑨ — 배경 방식 '자동'일 때 보임).
+        // 왼쪽 설정: 픽셀 격자의 칸 경계 지역 보정(⑦), 배경의 스티커 테두리 지우기·배경 남기기(⑨⑩ — 배경 방식 '자동'일 때 보임).
         ShotKit.Call(dlg, "SetSettingsExpanded", true, false);
         k.Settle(800);
         PixelateKit.OnlyExpand(k, dlg, UiStrings.Pixelate_Section_Grid);
@@ -674,7 +671,7 @@ internal static class PixelateShots
         PixelateKit.OnlyExpand(k, dlg, UiStrings.Pixelate_Section_Background);
         var bg = PixelateKit.Section(dlg, UiStrings.Pixelate_Section_Background);
         PixelateKit.ScrollToTop(k, bg);
-        k.SaveControl(bg, "pixelate-settings-3", pad: 14, marks: [PixelateKit.LeftBox(ShotKit.Get<CheckBox>(dlg, "_bgSticker"), dlg, 10, 0), PixelateKit.LeftBox(ShotKit.Get<CheckBox>(dlg, "_bgKeep"), dlg, 10, 0)], firstNumber: 8);
+        k.SaveControl(bg, "pixelate-settings-3", pad: 14, marks: [PixelateKit.LeftBox(ShotKit.Get<CheckBox>(dlg, "_bgSticker"), dlg, 10, 0), PixelateKit.LeftBox(ShotKit.Get<CheckBox>(dlg, "_bgKeep"), dlg, 10, 0)], firstNumber: 9);
     }
 
     // 넣기: 넣기 단계(①~④) + 창 아래 단추(⑤ 프리셋 정리 ⑥ 이미지 크기만큼 늘리기 ⑦ 새 탭에 추가 ⑧ 적용).

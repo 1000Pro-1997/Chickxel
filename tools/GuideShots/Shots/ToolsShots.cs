@@ -270,7 +270,7 @@ internal static class ToolsShots
         var crop = new Rect(0, 0, m.ClientSize.Width, Math.Max(options.Bottom, R(m, secondary).Bottom) + 8);
         k.Save(m, crop: crop, marks: [primary, secondary, Lead(m, erase), Lead(TextRect(m, hint), 14, 0)]);
 
-        // 2: 편집 메뉴의 외곽선·색 바꾸기·뒤집기/회전·캔버스 크기.
+        // 2: 편집 메뉴의 외곽선·색 바꾸기·선 정리·뒤집기/회전·캔버스 크기.
         var edit = ShotKit.Find<Menu>(m).Items.OfType<MenuItem>().ElementAt(1);
         k.Click(edit, settleMs: 400);
         Rect Item(string id) => Lead(ToolFileShotsMenus.InWindow(m, CommandItem(m, id)), 12, 4);
@@ -279,11 +279,13 @@ internal static class ToolsShots
         [
             Item("편집/외곽선 추가(기본색)").Union(Item("편집/외곽선 추가(대각 포함)")),
             Item("편집/색 바꾸기…"),
+            Item("편집/선 정리…"),
             Union(Item("편집/좌우 뒤집기(선택/셀)"), Item("편집/상하 뒤집기(선택/셀)"), Item("편집/90° 회전(선택/캔버스)"), Item("편집/-90° 회전(선택/캔버스)")),
             Item("편집/캔버스 크기…"),
         ], firstNumber: 5);
     }
 
+    /// <summary>도구 묶음: ① 채우기 묶음 칸 ② 선택 묶음 칸 ③ 펼친 묶음 목록 ④ 목록의 도구(자유 선택)에 마우스를 올렸을 때 뜨는 사용 안내 풍선.</summary>
     [Shot("tools-groups")]
     public static void Groups(ShotKit k)
     {
@@ -295,11 +297,24 @@ internal static class ToolsShots
         ShotKit.Call(select, "ShowGroup");
         k.Settle(400);
         var list = ToolFileShotsMenus.OpenMenuRect(m) ?? throw new InvalidOperationException("group list did not open");
+        // 화면 없는 실행엔 마우스 자리가 없어 풍선 자리를 항목 오른쪽으로 정해 띄운다.
+        var lasso = ToolFileShotsMenus.InOpenPopups<Button>()
+            .First(b => ShotKit.All<TextBlock>(b).Any(t => t.Text == MainStrings.Tool_Lasso_Name));
+        ToolTip.SetPlacement(lasso, Avalonia.Controls.PlacementMode.Right);
+        ToolTip.SetHorizontalOffset(lasso, 6);
+        ToolTip.SetVerticalOffset(lasso, 0);
+        ToolTip.SetIsOpen(lasso, true);
+        k.Settle(500);
+        var tip = ToolFileShotsMenus.InOpenPopups<ToolTip>().FirstOrDefault() ?? throw new InvalidOperationException("tool tip did not open");
+        var tipRect = ToolFileShotsMenus.InWindow(m, tip);
         var f = R(m, fill);
         var s = R(m, select);
         double left = f.X - 44, top = f.Y - 22;
-        var crop = new Rect(left, top, list.Right + 14 - left, Math.Max(s.Bottom, list.Bottom) + 14 - top);
-        k.Save(m, crop: crop, marks: [Lead(m, fill, 16, 3), Lead(m, select, 16, 3), list]);
+        double right = Math.Max(list.Right, tipRect.Right) + 14;
+        double bottom = Math.Max(s.Bottom, Math.Max(list.Bottom, tipRect.Bottom)) + 14;
+        var crop = new Rect(left, top, right - left, bottom - top);
+        k.Save(m, crop: ToolFileHelp.Clamp(crop, m), marks: [Lead(m, fill, 16, 3), Lead(m, select, 16, 3), list, tipRect.Inflate(3)]);
+        ToolTip.SetIsOpen(lasso, false);
     }
 
     [Shot("tools-brush")]
@@ -461,6 +476,107 @@ internal static class ToolsShots
             R(m, close),
             R(m, timeline).Deflate(5),
         ], firstNumber: 12);
+    }
+
+    /// <summary>
+    /// 곡선 펜: 1 = 고정점 방식으로 만든 경로(모서리 점 → 손잡이를 뽑은 매끈한 점 → 모서리 점)를 칠하기 전 미리 보는 캔버스(빈 41×25 그림, 14배):
+    /// ① 칠할 픽셀 ② 경로를 따라가는 가는 선 ③ 고정점(네모) ④ 손잡이(동그라미). 2 = 손으로 그리기를 고른 곡선 펜 설정:
+    /// ⑤ 그리기 방식 ⑥ 맞춤 허용치 ⑦ 모서리 각도 ⑧ 픽셀 퍼펙트.
+    /// </summary>
+    [Shot("tools-curve-pen")]
+    public static void CurvePen(ShotKit k)
+    {
+        var png = ToolFileHelp.MakePng(Path.Combine(k.WorkDir, "curve.png"), Enumerable.Repeat(new string('.', 41), 25).ToArray(),
+            new Dictionary<char, uint>());
+        var m = Open(k, png, timeline: 110);
+        ShotKit.Call(m, "SetShowPivot", false);
+        ToolFileHelp.Canvas(m).SetZoom(14);
+        ToolFileHelp.Tool(k, "곡선 펜");
+        var ctx = ToolFileHelp.Ctx(m);
+        ctx.Primary = new Color32(29, 43, 83);
+        ctx.CurvePenMode = CurvePenMode.Points;
+        ctx.CurvePenPixelPerfect = true;
+        k.Settle(400);
+
+        // 1: 누르기(모서리 점) → 누른 채 끌기(매끈한 점, 끈 쪽으로 나가는 손잡이) → 누르기(모서리 점).
+        (double X, double Y) p0 = (3.5, 20.5), p1 = (20.5, 4.5), out1 = (28.5, 4.5), in1 = (12.5, 4.5), p2 = (37.5, 20.5);
+        k.Click(m, ToolFileHelp.At(m, p0.X, p0.Y), settleMs: 200);
+        k.Drag(m, ToolFileHelp.At(m, p1.X, p1.Y), ToolFileHelp.At(m, out1.X, out1.Y));
+        k.Settle(200);
+        k.Click(m, ToolFileHelp.At(m, p2.X, p2.Y), settleMs: 200);
+        // 마우스를 그림 밖으로 옮겨 마지막 점이 마우스를 올린 모습(채운 네모)으로 남지 않게.
+        m.MouseMove(ToolFileHelp.At(m, 20, 40));
+        k.Settle(400);
+        static (double X, double Y) Cubic((double X, double Y) a, (double X, double Y) b, (double X, double Y) c, (double X, double Y) d, double t)
+        {
+            double u = 1 - t;
+            return (u * u * u * a.X + 3 * u * u * t * b.X + 3 * u * t * t * c.X + t * t * t * d.X,
+                u * u * u * a.Y + 3 * u * u * t * b.Y + 3 * u * t * t * c.Y + t * t * t * d.Y);
+        }
+        var pixels = Cubic(p0, p0, in1, p1, 0.35);
+        var line = Cubic(p1, out1, p2, p2, 0.7);
+        Point At((double X, double Y) p) => ToolFileHelp.At(m, p.X, p.Y);
+        var sprite = ToolFileHelp.SpriteRect(m);
+        k.Save(m, "tools-curve-pen", crop: ToolFileHelp.Clamp(sprite.Inflate(24), m), marks:
+        [
+            Around(At(pixels), 22),
+            Around(At(line), 12),
+            Around(At(p0), 12),
+            Around(At(out1), 12),
+        ]);
+        ShotKit.Call(ToolFileHelp.Canvas(m), "CancelCurvePen");
+        k.Settle(200);
+
+        // 2: 손으로 그리기 — 맞춤 허용치·모서리 각도 줄이 보인다.
+        ctx.CurvePenMode = CurvePenMode.Freehand;
+        k.Settle(300);
+        var box = Opt<Control>(m, "_curvePenBox");
+        k.Save(m, "tools-curve-pen-2", crop: OptionsUpTo(m, box), marks:
+        [
+            Lead(Row(m, Opt<Control>(m, "_curvePenMode")), 4, 0),
+            Lead(m, Opt<Control>(m, "_curvePenToleranceRow"), 4, 0),
+            Lead(m, Opt<Control>(m, "_curvePenCornerAngleRow"), 4, 0),
+            Lead(m, Opt<Control>(m, "_curvePenPixelPerfect"), 14, 0),
+        ], firstNumber: 5);
+    }
+
+    /// <summary>
+    /// 지우개 설정(레이어 셋 중 가운데를 고르고 적용 레이어 = 위·아래 1개씩): ① 강도 ② 채널 ③ 적용 레이어 범위 ④ 위·아래 레이어 수 ⑤ 범위에 든 레이어 수.
+    /// 2 = 범위를 선택한 레이어로 고른 적용 레이어 묶음(⑥ 선택한 레이어 안내).
+    /// </summary>
+    [Shot("tools-eraser-settings")]
+    public static void EraserSettings(ShotKit k)
+    {
+        App.Settings.RightWidth = 330;
+        var m = k.Main(ToolFileHelp.Sample(k), height: 1200);
+        var ctx = ToolFileHelp.Ctx(m);
+        ctx.Structural(() => ctx.Project!.AddLayer(null, "Color"));
+        ctx.Structural(() => ctx.Project!.AddLayer(null, "Shadow"));
+        ctx.SetCurrentLayer(1);
+        ToolFileHelp.Tool(k, "지우개");
+        ctx.StrokeLayers = StrokeLayerRange.AboveAndBelow;
+        ctx.StrokeLayersAbove = 1;
+        ctx.StrokeLayersBelow = 1;
+        k.Settle(400);
+        var eraser = Opt<Control>(m, "_eraserBox");
+        var layers = Opt<Control>(m, "_layerRangeBox");
+        var span = Opt<TextBlock>(m, "_layerRangeSpan");
+        var o = ToolFileHelp.OptionsRect(m);
+        double top = R(m, eraser).Y - 8;
+        k.Save(m, "tools-eraser-settings", crop: new Rect(o.X, top, o.Width, R(m, layers).Bottom + 10 - top), marks:
+        [
+            Lead(Row(m, Opt<Control>(m, "_eraserNum")), 4, 0),
+            Lead(Row(m, Opt<Control>(m, "_eraseRed")), 4, 0),
+            Lead(Row(m, Opt<Control>(m, "_layerRange")), 4, 0),
+            Lead(R(m, Opt<Control>(m, "_layersAboveRow")).Union(R(m, Opt<Control>(m, "_layersBelowRow"))), 4, 0),
+            Lead(TextRect(m, span), 14, 0),
+        ]);
+
+        // 2: 선택한 레이어 — 위·아래 숫자 대신 안내.
+        ctx.StrokeLayers = StrokeLayerRange.Selected;
+        k.Settle(300);
+        k.Save(m, "tools-eraser-settings-2", crop: R(m, layers).Inflate(new Thickness(30, 8, 8, 8)),
+            marks: [Lead(TextRect(m, span), 14, 0)], firstNumber: 6);
     }
 
     /// <summary>밝게/어둡게 설정: ① 방식 ② 세기.</summary>

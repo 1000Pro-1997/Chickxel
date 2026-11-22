@@ -119,6 +119,8 @@ public sealed partial class PixelTools
     private const string DeclarationNote =
         "Always declare language (the language code of the declared name, description and labels, e.g. \"ko\" or \"en\"), description (one short sentence) " +
         "and tags (3-6 lowercase English tags, e.g. tags: [\"neon\", \"glow\"]), and keep them, translations.en and other translations in sync whenever the effect changes. " +
+        "img is only the source size plus the declared padding: whenever the effect can draw outside the source (glow, shadow, shake, explosion, smoke, particles, settings that reach past it), " +
+        "declare padding ([l, t, r, b] or padding(s, width, height) computed from the settings) or what it draws there is cut off; with padding, source-relative positions start at ctx.source.x/y. " +
         "For an effect that turns one image into another over frames, also declare previewEndChick (a chick id other than previewChick): the preview's last frame shows that chick " +
         "and ctx.frameSource(ctx.rangeEnd) reads it. When the two images should sit in different places or have different centers (pivots), also declare previewEndOffset: [x, y] " +
         "(moves the end chick, px) and previewPivot / previewEndPivot: [x, y] (moves the pivot of the other frames / the last frame from the chick's center, px; each -64 to 64). " +

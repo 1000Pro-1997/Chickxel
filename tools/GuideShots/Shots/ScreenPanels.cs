@@ -268,7 +268,7 @@ internal static class ScreenPanelShots
         }, settleMs: 600);
     }
 
-    /// <summary>미리보기: 1 = ① 재생 화면 ② FPS ③ 배율 단추 ④ 배경, 2 = ⑤ 그림 위 우클릭 메뉴, 3 = ⑥ 배경 목록.</summary>
+    /// <summary>미리보기: 1 = ① 재생 화면 ② FPS ③ 배율 단추 ④ 배경 ⑤ 접기 단추(제목 줄 오른쪽 끝), 2 = ⑥ 그림 위 우클릭 메뉴, 3 = ⑦ 배경 목록.</summary>
     [Shot("screen-preview")]
     public static void Preview(ShotKit k)
     {
@@ -279,15 +279,16 @@ internal static class ScreenPanelShots
         var view = ShotKit.Get<Control>(preview, "_view");
         var fps = U(main, ShotKit.FindText(preview, "FPS"), ShotKit.Get<Control>(preview, "_fps"));
         var p = ShotKit.Bounds(preview, main);
+        var collapse = ShotKit.Bounds(ShotKit.Get<Control>(preview, "_collapseButton"), main).Inflate(2);
         Shot(k, main, null, p,
-            [Left(ShotKit.Bounds(view, main)), Above(fps), Above(ShotKit.Bounds(ShotKit.Get<Control>(preview, "_scaleGroup"), main)), Above(ShotKit.Bounds(ShotKit.Get<Control>(preview, "_backgroundGroup"), main))],
+            [Left(ShotKit.Bounds(view, main)), Above(fps), Above(ShotKit.Bounds(ShotKit.Get<Control>(preview, "_scaleGroup"), main)), Above(ShotKit.Bounds(ShotKit.Get<Control>(preview, "_backgroundGroup"), main)), collapse],
             only: [p]);
 
         // 2: 그림 위 우클릭 메뉴
         var v = ShotKit.Bounds(view, main);
         k.Click(main, new Point(v.X + 40, v.Y + 30), MouseButton.Right, settleMs: 500);
         var menu = PopupArea(k, main) ?? throw new InvalidOperationException("no preview menu");
-        Shot(k, main, "screen-preview-2", p.Union(menu).Inflate(4), [Pop(menu)], 5, only: [p, menu]);
+        Shot(k, main, "screen-preview-2", p.Union(menu).Inflate(4), [Pop(menu)], 6, only: [p, menu]);
         PopupMenus.CloseAll();
         k.Settle(200);
 
@@ -295,7 +296,7 @@ internal static class ScreenPanelShots
         ShotKit.Call(preview, "ShowBackgroundMenu", ShotKit.Get<Control>(preview, "_backgroundGroup"));
         k.Settle(500);
         var list = PopupArea(k, main) ?? throw new InvalidOperationException("no background list");
-        Shot(k, main, "screen-preview-3", p.Union(list).Inflate(4), [Pop(list)], 6, only: [p, list]);
+        Shot(k, main, "screen-preview-3", p.Union(list).Inflate(4), [Pop(list)], 7, only: [p, list]);
         PopupMenus.CloseAll();
     }
 

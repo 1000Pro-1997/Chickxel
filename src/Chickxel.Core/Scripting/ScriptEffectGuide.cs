@@ -47,6 +47,7 @@ public static class ScriptEffectGuide
         Rule(md, ScriptGuideStrings.Guide_RuleUsefulSettings);
         Rule(md, ScriptGuideStrings.Guide_RuleGradient);
         Rule(md, ScriptGuideStrings.Guide_RuleAnimated);
+        Rule(md, ScriptGuideStrings.Guide_RulePadding);
         Rule(md, ScriptGuideStrings.Guide_RuleMovePivot);
         Rule(md, ScriptGuideStrings.Guide_RuleFast);
         Rule(md, ScriptGuideStrings.Guide_RuleClipping);

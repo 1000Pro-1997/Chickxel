@@ -250,6 +250,66 @@ internal static class GuidePixelateCompareShots
     /// <summary>치마 아래부터 발까지(결과 칸 기준) — 외곽선 정리 차이를 볼 곳.</summary>
     private static readonly (int X, int Y, int W, int H) Legs = (4, 60, 42, 38);
 
+    /// <summary>
+    /// 원본 외곽선 기준으로 정리(<see cref="CleanupSettings.SourceOutline"/>): 외곽선만 얇게로 정리할 때 끔 ↔ 켬(기본). 검은 반바지(<see cref="BlackShortsSource"/>)가 바깥과
+    /// 다리 사이 투명 틈에 닿아, 끄면 결과 픽셀만 보고 두꺼운 외곽선의 안쪽 겹으로 여겨 둘레 색으로 벗겨지고 켜면 원본에서 외곽선 띠가 아니라 그대로 남는다.
+    /// </summary>
+    [Shot("pixelate-compare-source-outline")]
+    public static void SourceOutlineCompare(ShotKit k)
+    {
+        var src = BlackShortsSource(k, out double scale, out int margin);
+        var b = Base();
+        // 원본을 만든 칸 크기·여백 그대로 수동 격자(자동 격자 찾기와 상관없이 그린 칸 그대로).
+        var thin = b with
+        {
+            Grid = b.Grid with { Mode = GridMode.Manual, Scale = scale, OffsetX = margin, OffsetY = margin },
+            Cleanup = b.Cleanup with { OutlineFit = OutlineFit.Thin },
+        };
+        PixelImage Run(bool sourceOutline) => Pixelator.Run(src, thin with { Cleanup = thin.Cleanup with { SourceOutline = sourceOutline } }).CommonFrames()[0];
+        var (off, on) = (Run(false), Run(true));
+        int diff = 0;
+        for (int y = 0; y < Math.Min(off.Height, on.Height); y++)
+            for (int x = 0; x < Math.Min(off.Width, on.Width); x++)
+                if (off[x, y] != on[x, y]) diff++;
+        if (diff == 0) throw new InvalidOperationException("source outline on/off gave the same result");
+        Save(k, Row(Scale(off, 6), Scale(on, 6)), "pixelate-cleanup-compare-source-outline");
+    }
+
+    /// <summary>
+    /// 머리·흰 윗옷·넓은 검은 반바지·다리를 그리고 둘레에 짙은 1px 외곽선을 두른 그림을 AI 그림처럼 키운 원본. 반바지는 양옆 외곽선과 다리 사이 투명 틈에 바로 닿는다
+    /// (원본 외곽선 기준이 막으려는 경우 — 넓은 검은 면이 작은 투명 틈에 닿음). <paramref name="scale"/>·<paramref name="margin"/>은 키운 칸 크기·여백.
+    /// </summary>
+    private static PixelImage BlackShortsSource(ShotKit k, out double scale, out int margin)
+    {
+        Color32 outline = new(32, 26, 36), skin = new(255, 216, 184), hair = new(212, 212, 234), eye = new(42, 60, 136),
+            shirt = new(232, 236, 244), shirtShade = new(184, 192, 214), shorts = new(22, 20, 26), shoe = new(110, 70, 48);
+        const int w = 30, h = 46;
+        var art = new PixelImage(w, h);
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                double dx = (x - 14.5) / 7.0, dy = (y - 8.5) / 7.0;
+                if (dx * dx + dy * dy <= 1) art[x, y] = y < 6 ? hair : skin;
+                else if (y >= 16 && y <= 25 && x >= 8 && x <= 21) art[x, y] = x >= 18 ? shirtShade : shirt;
+                else if (y >= 16 && y <= 23 && (x is >= 5 and <= 7 || x is >= 22 and <= 24)) art[x, y] = skin;
+                else if (y >= 26 && y <= 32 && x >= 8 && x <= 21 && !(y >= 30 && x is 14 or 15)) art[x, y] = shorts;
+                else if (y >= 33 && y <= 40 && (x is >= 9 and <= 13 || x is >= 16 and <= 20)) art[x, y] = skin;
+                else if (y >= 41 && y <= 43 && (x is >= 9 and <= 13 || x is >= 16 and <= 20)) art[x, y] = shoe;
+            }
+        art[12, 9] = art[17, 9] = eye;
+        // 바깥 1px 외곽선(불투명 칸에 상하좌우로 닿은 투명 칸).
+        var lined = art.Clone();
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                if (art[x, y].A != 0) continue;
+                foreach (var (ox, oy) in new[] { (-1, 0), (1, 0), (0, -1), (0, 1) })
+                    if (art.Contains(x + ox, y + oy) && art[x + ox, y + oy].A != 0) { lined[x, y] = outline; break; }
+            }
+        (scale, margin) = (7.4, 44);
+        return Decode(PixelateKit.MakeAiImage(k, lined, scale, "Black shorts AI"));
+    }
+
     /// <summary>설정 하나씩 바꾼 비교: 칸 색 방식 6가지(합성 칸), 팔레트 방식 5가지, 디더 3가지, 외곽선 정리 3가지.</summary>
     [Shot("pixelate-compare-options")]
     public static void OptionsCompare(ShotKit k)

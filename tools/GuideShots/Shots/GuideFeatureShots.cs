@@ -147,7 +147,7 @@ internal static class GuideFeatureShots
         window.Width = 750;
         window.Height = 750;
         k.Settle(400);
-        k.Save(window, marks: [ShotKit.Bounds((Control)window.Content!, window).Deflate(20)], firstNumber: 7);
+        k.Save(window, marks: [ShotKit.Bounds((Control)window.Content!, window).Deflate(20)], firstNumber: 8);
     }
 
     [Shot("screen-preview-tab")]

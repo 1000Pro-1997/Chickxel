@@ -2,6 +2,7 @@ using System.Drawing;
 using Chickxel.Core.Assets;
 using Chickxel.Core.Edit;
 using Chickxel.Core.IO;
+using Chickxel.Core.Pixelate;
 using Chickxel.Core.Model;
 
 namespace GuideShots;
@@ -293,6 +294,37 @@ internal static class GuidePaintToolsCompareShots
             return img;
         }
         Save(k, "tools-shape-compare", 8, [[Draw(false), Draw(true)]]);
+    }
+
+    /// <summary>
+    /// 곡선 펜의 픽셀 퍼펙트: 같은 경로(S자 곡선 + 닫힌 동그라미)를 <see cref="BezierLines.Rasterize"/>로 왼쪽 = 끔(지나간 칸 그대로 — L자 겹 칸이 남음),
+    /// 오른쪽 = 켬(기본 — L자 겹 칸을 빼고 계단을 고르게) 칠한다.
+    /// </summary>
+    [Shot("tools-curve-pen-compare")]
+    public static void CurvePenPixelPerfect(ShotKit k)
+    {
+        List<BezierNode> wave =
+        [
+            new((2.5, 18.5), (2.5, 18.5), (8.5, 2.5), true),
+            new((15.5, 11.5), (10.5, 19.5), (20.5, 3.5), false),
+            new((28.5, 5.5), (22.5, 21.5), (28.5, 5.5), true),
+        ];
+        const double cx = 39.5, cy = 12, r = 7.5, h = r * 0.5523;
+        List<BezierNode> ring =
+        [
+            new((cx, cy - r), (cx - h, cy - r), (cx + h, cy - r), false),
+            new((cx + r, cy), (cx + r, cy - h), (cx + r, cy + h), false),
+            new((cx, cy + r), (cx + h, cy + r), (cx - h, cy + r), false),
+            new((cx - r, cy), (cx - r, cy + h), (cx - r, cy - h), false),
+        ];
+        PixelImage Draw(bool pixelPerfect)
+        {
+            var img = Blank(49, 23, Paper);
+            foreach (var p in BezierLines.Rasterize(wave, closed: false, pixelPerfect: pixelPerfect)) img.Set(p.X, p.Y, Ink);
+            foreach (var p in BezierLines.Rasterize(ring, closed: true, pixelPerfect: pixelPerfect)) img.Set(p.X, p.Y, Ink);
+            return img;
+        }
+        Save(k, "tools-curve-pen-compare", 8, [[Draw(false), Draw(true)]]);
     }
 
     // ───────────── 도움 ─────────────

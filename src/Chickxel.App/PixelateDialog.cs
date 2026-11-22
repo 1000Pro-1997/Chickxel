@@ -1475,7 +1475,7 @@ public sealed class PixelateDialog : DialogBase
         HelpTargets.HelpGroup("pixelate-settings", "In the output size row", quickSizeLabel, _quickAuto, _quickW, quickByLabel, _quickH);
         _quickAspect.HelpAt("pixelate-settings", anchor: "With the link button");
         _quickShared.HelpAt("pixelate-settings", anchor: "One palette for all frames");
-        _quickBg.HelpAt("pixelate-view", anchor: "Remove background");
+        _quickBg.HelpAt("pixelate-settings", anchor: "The Remove background check");
         HelpTargets.HelpGroup("pixelate-settings", "In the target colors row", quickTargetLabel, _quickTargetColors, _quickTargetAuto, _quickTargetStrict);
 
         var left = new StackPanel { Spacing = 2, Margin = new Thickness(0, 0, 8, 0) };

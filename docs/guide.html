@@ -1715,6 +1715,7 @@
 <li>⑮ 지금 계정으로 올렸지만 이 컴퓨터에 없는 효과는 목록 맨 아래 회색 줄로 보입니다. 오른쪽 내려받기 단추를 누르면 온라인 목록에서 크기·SHA-256을 확인해 받아 설치하고 엽니다. 회색 줄 자체는 눌러도 열리지 않습니다. 로그인해 있으면 창을 열 때와 계정이 바뀔 때 온라인 목록을 받아 찾습니다.</li>
 </ul>
 <p>내 효과 목록에서 온라인 목록(상점)에 올라간 것과 이 컴퓨터의 효과가 다르면 이름(아이콘 포함)이 주황색입니다. 마우스를 올리면 까닭이 보입니다: 온라인에 새 버전이 있음(온라인·이 컴퓨터 버전, 에셋 관리자의 상점에서 업데이트할 수 있음) / 이 컴퓨터의 버전이 아직 온라인 목록에 없음(올린 새 버전이 검토 중일 수 있음) / 받거나 올린 뒤 고침. 온라인 목록에 없는 효과(올리지 않음)와 목록을 받지 못했을 때는 표시하지 않습니다. 창을 열 때 온라인 목록을 새로 받습니다(로그인하지 않아도).</p>
+<figure class="shot"><img src="assets/guide/screen-effect-maker-11.png" alt="내 효과 목록에서 받은 뒤 고친 효과(주황색 이름)를 우클릭한 메뉴: 삭제, 원본으로 되돌리기, 에셋 관리자에서 보기" width="383" height="425" loading="lazy"><figcaption>상점 최신 버전과 다른 효과의 목록 우클릭 메뉴(<strong>원본으로 되돌리기</strong>)</figcaption></figure>
 <p>상점에서 받거나 올린 효과가 상점의 최신 버전과 다르면(받거나 올린 뒤 고쳤거나 상점에 더 새 버전이 있음 — 이름이 주황색인 것과 같은 기준) 목록 우클릭 메뉴의 삭제와 에셋 관리자에서 보기 사이에 <strong>원본으로 되돌리기</strong>가 생깁니다. 누르면 효과 이름과 상점 최신 버전을 적어 되돌릴지 묻고(열어 둔 효과에 저장하지 않은 고침이 있으면 다른 효과로 바꿀 때처럼 저장·버리기도 물음), 상점의 최신 패키지를 내려받아 그 원문과 미리보기 장면으로 덮어씁니다. 고친 내용은 사라지고, 상점에 새 버전이 있으면 업데이트처럼 그 버전으로 바뀝니다. 되돌린 뒤에는 주황색 표시가 사라지고 열어 둔 효과는 원본 원문으로 다시 열리며, 받지 못하면 오류 상자로 알립니다. 직접 만든 효과·복사본, 상점 최신본 그대로인 효과, 온라인 목록을 받지 못했거나 이 컴퓨터의 버전이 목록보다 새로울 때는 메뉴에 보이지 않습니다.</p>
 <h4>받은 효과는 읽기 전용</h4>
 <p>남이 만든 효과(받은 스크립트 효과)는 효과 만들기에서 읽기 전용으로 열립니다. 원문·정보·미리보기 병아리·프레임 수·움직임·자리·피벗·장면을 고칠 수 없고 <strong>저장</strong>·<strong>올리기…</strong>·AI 칸이 꺼집니다. 미리보기 설정 값을 바꿔 미리 보기, <strong>검증</strong>, <strong>지금 레이어에 넣기</strong>는 됩니다.</p>
@@ -1772,12 +1773,13 @@
 <figure class="shot"><img src="assets/guide/screen-effect-maker-9.png" alt="AI 칸이 열린 효과 만들기: 대화, 입력란 아래 첨부 단추 셋, 모델 목록과 보내기" width="732" height="740" loading="lazy"><figcaption>㉖ 대화와 입력란 · ㉗ 첨부 단추 · ㉘ 모델 목록·보내기</figcaption></figure>
 <ul>
 <li>⑦ AI 단추를 누르면 창이 칸 너비만큼 넓어지며 오른쪽에 AI 칸이 열립니다(최대화면 원문 칸이 좁아짐). ㉖ 만들고 싶은 효과나 고칠 점을 적어 보내면 AI(<a class="term" href="#ai">AI 채팅</a>과 같은 <a class="term" href="#ai-setup">Claude Code</a>·Codex 로그인)가 규칙에 맞게 원문을 읽고 → 전체 원문을 편집기에 쓰고(편집기 실행취소 한 단계, 그림·레이어는 그대로) → 미리보기·검증으로 확인합니다. AI는 묻지 않아도 쓸모 있는 설정을 스스로 더하고 답에 더한 설정을 짧게 알리며, 다른 레이어를 읽는 효과는 레이어 고르기 설정으로 만들고, 색은 기본으로 픽셀마다 골라 그라데이션을 따르게 짭니다. 저장·지금 레이어에 넣기·올리기는 아래 단추로 직접 합니다. 대화는 AI 채팅처럼 차례가 끝날 때마다 AI(Claude·Codex)별로 저장되고, 칸을 열면 그 AI에서 마지막으로 보던 대화를 다시 그려 같은 CLI 세션으로 이어 갑니다.</li>
-<li>머리줄에 Claude/Codex 전환, <strong>새 대화</strong>, 닫기가 있습니다. 새 대화는 지금 대화를 저장해 두고(편집기 원문은 그대로) 새로 시작하며, 안내 아래에 <strong>지난 대화</strong> 목록을 보입니다. 줄을 누르면 그 대화를 열어 이어 가고, 별은 즐겨찾기(맨 위에 고정, 자동으로 지우지 않음), 휴지통은 지우기입니다. 이 대화는 AI 채팅의 대화(<a href="#ai-history">지난 대화 이어 하기</a>)와 따로 <code>&lt;설정 폴더&gt;/Chickxel/EffectMakerChats/</code> 아래 AI마다 20개까지 남습니다(넘으면 즐겨찾기가 아닌 오래된 것부터 지움). CLI가 없거나 로그인이 필요하면 <strong>AI 채팅 열기</strong>로 설치·로그인한 뒤 <strong>다시 확인</strong>을 누릅니다.</li>
 <li>㉗ 입력란 아래 세 단추로 그림 파일, 지금 캔버스, 지금 미리보기 칸을 붙이고, <kbd>Ctrl</kbd>+<kbd>V</kbd> 붙여넣기와 끌어 놓기도 됩니다. 칩을 누르면 크게 보기·빼기(AI 채팅과 같음).</li>
 <li>㉘ 보내기 왼쪽 모델 목록은 AI 채팅 머리줄의 모델 칸과 같은 목록입니다. 바꾸면 "모델: … — 다음 메시지부터 적용됩니다." 줄이 나오고 대화는 이어집니다. 고른 AI와 모델은 바로 설정에 저장되어 다음에 열 때 그대로이고, AI 채팅과 같은 설정을 씁니다(마지막으로 고른 쪽).</li>
 <li>AI 차례가 도는 동안 <kbd>Enter</kbd>·보내기를 누르면 입력란 위 <strong>대기 중</strong> 줄(글 첫 줄·그림 수·빼기 단추)에 들어가고, 지금 차례가 끝나면(멈춤으로 끝나도) 차례대로 보냅니다(이때 보내기 단추는 화살표 아이콘만). 빼기는 입력란이 비어 있으면 그 메시지를 입력란으로 되돌리고, 새 대화는 대기 줄을 비웁니다.</li>
 <li>AI 칸은 열린 그림·레이어·효과·<a class="term" href="#ai-references">참고 자료</a>를 볼 수 있지만 고치지 못합니다(앱이 AI 칸 전용 접속 키로 막음). 효과 만들기 원문을 읽고·쓰고·검증하고, 내 다른 스크립트 효과의 원문을 참고합니다("내 X 효과처럼 …"이라고 하면 목록에서 찾아 읽음, 그 효과는 바뀌지 않음). "웹에서 찾아보고 만들어 줘"처럼 시키면 웹을 검색하고 읽습니다(Claude: 웹 검색·웹 읽기, Codex: 웹 검색, AI 칸에 <code>WebSearch</code>·<code>WebFetch</code>·<code>web_search</code> <a class="term" href="#ai-edits">도구 줄</a>로 보임). 시키지 않으면 찾지 않습니다. 웹 결과는 글이라 페이지의 그림·움직임은 보지 못하고 읽은 설명(움직임·타이밍·모양·색·기법)으로 효과를 만들며, 웹에서 본 코드는 그대로 붙이지 않고 앱의 효과 API로 새로 씁니다.</li>
 </ul>
+<figure class="shot"><img src="assets/guide/screen-effect-maker-12.png" alt="AI 칸의 새 대화 화면: 안내 글 아래 지난 대화 목록(즐겨찾기 별이 켜진 대화가 맨 위, 줄마다 제목·날짜·모델·휴지통)" width="732" height="740" loading="lazy"><figcaption>㉙ 새 대화 · ㉚ 지난 대화 목록</figcaption></figure>
+<p>머리줄에 Claude/Codex 전환, ㉙ <strong>새 대화</strong>, 닫기가 있습니다. 새 대화는 지금 대화를 저장해 두고(편집기 원문은 그대로) 새로 시작하며, 안내 아래에 ㉚ <strong>지난 대화</strong> 목록을 보입니다. 줄을 누르면 그 대화를 열어 이어 가고, 별은 즐겨찾기(맨 위에 고정, 자동으로 지우지 않음), 휴지통은 지우기입니다. 이 대화는 AI 채팅의 대화(<a href="#ai-history">지난 대화 이어 하기</a>)와 따로 <code>&lt;설정 폴더&gt;/Chickxel/EffectMakerChats/</code> 아래 AI마다 20개까지 남습니다(넘으면 즐겨찾기가 아닌 오래된 것부터 지움). CLI가 없거나 로그인이 필요하면 <strong>AI 채팅 열기</strong>로 설치·로그인한 뒤 <strong>다시 확인</strong>을 누릅니다.</p>
 <h3 id="screen-asset-manager">에셋 관리자</h3>
 <p>에셋 관리자에서는 효과(<a class="term" href="#screen-script-effects">스크립트 효과</a>)·<a class="term" href="#screen-effect-recipes">효과 프리셋</a>·그라데이션·<a class="term" href="#tools-shape-pen">모양 펜</a> 세트 <strong>에셋</strong>을 하나씩 다룹니다. 이 컴퓨터에서 만든 내 에셋과 상점·파일에서 받은 에셋을 보고, 상점에서 받고, 파일로 주고받고, 내 에셋을 온라인에 올립니다. 에셋마다 작성자·라이선스·상점 정보(상점 ID·버전)를 따로 가집니다. <code>.chickxel-asset</code> 패키지 파일은 에셋을 옮길 때만 씁니다: 내보낼 때 묶고, 가져오거나 받을 때 안의 에셋을 하나씩 넣습니다(여러 에셋이 든 파일은 에셋마다 따로 들어가고 파일의 작성자·라이선스를 이어받음).</p>
 <p>이럴 때 씁니다: 다른 사람이 올린 효과·그라데이션·모양 펜 세트를 상점에서 찾아 설치할 때, 받은 에셋의 새 버전을 받을 때, 내 효과·프리셋·세트를 파일로 친구에게 줄 때, 내가 만든 효과·그라데이션·모양 펜 세트를 공개할 때(<a href="#screen-asset-publish">온라인에 올리기</a>), 모양 펜 세트를 만들고 고칠 때(<a href="#tools-shape-pen">모양 펜</a>).</p>
@@ -1893,7 +1895,7 @@
 <h4>올린 패키지 지우기</h4>
 <p>chickxel.com에서 올린 패키지를 지우면(본인이 지우거나 관리자가 지우거나 신고 처리로 지워져도) 사이트·상점 목록·프로필에서 사라지고, 그 패키지로 받은 <a class="term" href="#start-account">경험치</a>가 빠지며 저장 공간 한도도 바로 돌아옵니다. 다만 서버에는 남아 있어 관리자가 되살리거나 영구 삭제할 수 있습니다. 그래서 지운 패키지의 ID는 관리자가 되살리거나 영구 삭제하기 전까지 다시 쓸 수 없고, 같은 ID로 올리면 서버가 받지 않습니다.</p>
 <h3 id="screen-preview">미리보기</h3>
-<figure class="shot"><img src="assets/guide/screen-preview.png" alt="미리보기 패널: 재생 화면, FPS, 배율 단추, 배경" width="339" height="234" loading="lazy"><figcaption>① 재생 화면 · ② FPS · ③ 배율 단추(Fit) · ④ 배경</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-preview.png" alt="미리보기 패널: 재생 화면, FPS, 배율 단추, 배경, 제목 줄의 접기 단추" width="339" height="251" loading="lazy"><figcaption>① 재생 화면 · ② FPS · ③ 배율 단추(Fit) · ④ 배경 · ⑤ 접기 단추</figcaption></figure>
 <p>오른쪽 위의 미리보기는 효과까지 입힌 애니메이션을 실제 속도로 재생합니다. 편집하는 <a class="term" href="#screen-timeline">프레임</a>과 따로 움직이므로 그리면서 움직임을 확인할 수 있습니다.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>번호</th><th>항목과 사용법</th></tr></thead>
@@ -1912,10 +1914,10 @@
 <li>FPS·배율·배경은 프로젝트가 아니라 앱 설정이라 다음 실행과 다른 문서에도 그대로입니다.</li>
 </ul>
 <h4>미리보기 접기</h4>
-<p>미리보기 제목 줄 오른쪽 끝의 화살표 단추(<strong>미리보기 접기</strong>)를 누르면 제목 줄만 남기고 재생 화면·재생 설정·<a class="term" href="#parts-outfits">착장 줄</a>을 접어, 아래 <a class="term" href="#screen-tool-settings">도구 설정</a> 칸이 남은 높이를 씁니다. 다시 누르면(<strong>미리보기 펼치기</strong>) 접기 전 높이로 펼쳐집니다. 접힌 동안에도 재생 중이던 상태는 그대로이고, 접혔는지와 펼쳤을 때 높이는 앱 설정에 남아 다음 실행에도 그대로입니다.</p>
+<p>⑤ 미리보기 제목 줄 오른쪽 끝의 화살표 단추(<strong>미리보기 접기</strong>)를 누르면 제목 줄만 남기고 재생 화면·재생 설정·<a class="term" href="#parts-outfits">착장 줄</a>을 접어, 아래 <a class="term" href="#screen-tool-settings">도구 설정</a> 칸이 남은 높이를 씁니다. 다시 누르면(<strong>미리보기 펼치기</strong>) 접기 전 높이로 펼쳐집니다. 접힌 동안에도 재생 중이던 상태는 그대로이고, 접혔는지와 펼쳤을 때 높이는 앱 설정에 남아 다음 실행에도 그대로입니다.</p>
 <h4>복사와 저장</h4>
-<figure class="shot"><img src="assets/guide/screen-preview-2.png" alt="미리보기 그림 위 우클릭 메뉴: 이미지 복사, 크게 복사, 프레임 저장, GIF로 저장" width="308" height="238" loading="lazy"><figcaption>⑤ 우클릭 메뉴</figcaption></figure>
-<p>⑤ 미리보기 그림을 우클릭하면 복사와 저장 명령이 열립니다.</p>
+<figure class="shot"><img src="assets/guide/screen-preview-2.png" alt="미리보기 그림 위 우클릭 메뉴: 이미지 복사, 크게 복사, 프레임 저장, GIF로 저장" width="308" height="238" loading="lazy"><figcaption>⑥ 우클릭 메뉴</figcaption></figure>
+<p>⑥ 미리보기 그림을 우클릭하면 복사와 저장 명령이 열립니다.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>명령</th><th>하는 일</th></tr></thead>
 <tbody>
@@ -1927,14 +1929,14 @@
 </table></div>
 <p>재생 중이면 우클릭할 때 보이던 프레임을 복사하거나 저장하므로 재생을 멈출 필요가 없습니다.</p>
 <h4>배경</h4>
-<figure class="shot"><img src="assets/guide/screen-preview-3.png" alt="미리보기 배경 목록: 체커, 검정, 흰색, 회색, 초록, 사용자 색" width="308" height="396" loading="lazy"><figcaption>⑥ 배경 목록</figcaption></figure>
-<p>⑥ 배경 목록에서 체커·검정·흰색·회색·초록·사용자 색을 고릅니다. 목록에서 사용자 색을 고르면 <a class="term" href="#screen-color-picker">색 고르기</a> 창이 열리고, 단추를 눌러 차례로 넘길 때는 마지막으로 고른 사용자 색을 그대로 씁니다.</p>
+<figure class="shot"><img src="assets/guide/screen-preview-3.png" alt="미리보기 배경 목록: 체커, 검정, 흰색, 회색, 초록, 사용자 색" width="308" height="396" loading="lazy"><figcaption>⑦ 배경 목록</figcaption></figure>
+<p>⑦ 배경 목록에서 체커·검정·흰색·회색·초록·사용자 색을 고릅니다. 목록에서 사용자 색을 고르면 <a class="term" href="#screen-color-picker">색 고르기</a> 창이 열리고, 단추를 눌러 차례로 넘길 때는 마지막으로 고른 사용자 색을 그대로 씁니다.</p>
 <p>배경은 미리보기에만 쓰이고 그림이나 내보내기에는 들어가지 않습니다. 이미지 복사·프레임 저장도 배경 없이 투명한 그대로입니다.</p>
 <h4>착장</h4>
 <p><a href="#parts-concept">그룹</a>이 있는 프로젝트에서는 미리보기 아래에 <strong><a class="term" href="#parts-outfits">착장</a></strong> 줄이 생깁니다. <a class="term" href="#parts-concept">그룹</a>마다 보일 <a class="term" href="#parts-skins">스킨</a>을 고르는 목록이 있고(스킨이 하나면 꺼짐, <a class="term" href="#parts-skins">첫 스킨</a>에는 "(기본)"), 고르면 그 그룹의 스킨이 바뀌며 <a class="term" href="#parts-concept">부위</a>마다 따로 고른 스킨은 그대로입니다. 그룹 이름 뒤 <code>*</code>는 따로 고른 스킨이 있는 부위가 있다는 표시입니다. 그룹 이름이나 <strong>관리…</strong>을 누르면 <a href="#parts-skin-manager">스킨 관리</a> 창이 열립니다.</p>
 <h4>크게 보기와 미리보기 탭</h4>
-<figure class="shot"><img src="assets/guide/screen-preview-large.png" alt="늑대귀 모험가를 크게 보여 주는 미리보기 크게 보기 창" width="750" height="782" loading="lazy"><figcaption>⑦ 미리보기 크게 보기 창</figcaption></figure>
-<p>⑦ 크게 보기 창은 미리보기의 재생 중인 그림과 착장·배경을 창에 맞는 정수 배율로 보여 줍니다.</p>
+<figure class="shot"><img src="assets/guide/screen-preview-large.png" alt="늑대귀 모험가를 크게 보여 주는 미리보기 크게 보기 창" width="750" height="782" loading="lazy"><figcaption>⑧ 미리보기 크게 보기 창</figcaption></figure>
+<p>⑧ 크게 보기 창은 미리보기의 재생 중인 그림과 착장·배경을 창에 맞는 정수 배율로 보여 줍니다.</p>
 <p>미리보기 그림 위 손 모양 커서로 누르면 크기 조절 가능한 '미리보기 크게 보기' 창이 열리고 같은 재생·배경·착장을 창에 들어가는 가장 큰 정수 배율로 보여 줍니다. 한 창만 열리며 다시 누르면 앞으로 옵니다. 창 크기는 앱을 켜 둔 동안 기억하고 창 안에서 Space는 재생/정지, Esc는 닫기, 우클릭은 미리보기 메뉴입니다. <a class="term" href="#screen-tabs">미리보기 탭</a>이 열린 동안에는 그림을 누르면 크게 보기 대신 그 탭으로 갑니다.</p>
 <p>크게 보기 창과 미리보기 탭에서는 휠로 커서 아래를 중심으로 확대하고(1~2배는 0.25배씩, 2~4배는 0.5배씩, 그 위로는 두 배 구간마다 간격이 두 배, 최대 64배) 끌어서 옮깁니다. 더블클릭하면 다시 창에 맞추고, 크게 보기 창에서는 <kbd>0</kbd>으로도 맞춥니다.</p>
 <p>미리보기 제목 줄의 '탭으로 열기'를 누르면 편집 문서를 <a href="#screen-tabs">나눈 화면의 미리보기 탭</a>으로 크게 볼 수 있습니다. 탭이 열린 동안 미리보기 그림을 누르면 그 탭을 앞으로 가져옵니다.</p>
@@ -2209,7 +2211,7 @@
 <p>올린 그림은 계정의 <a class="term" href="#start-account">경험치</a>가 됩니다(<a href="#start-account">계정 레벨</a>). 다 올린 뒤 내 정보를 다시 받아 경험치가 늘었으면 완료 알림 아래에 <code>+10 XP · Lv 3</code>처럼 늘어난 경험치와 지금 레벨이, 레벨이 올랐으면 "레벨이 올랐습니다! Lv 3"이 함께 보입니다(서버가 레벨을 알려 주지 않으면 없음). 올린 문서는 다시 손으로 저장할 때 메뉴 줄 갤러리 단추가 또 반짝여 공유를 권합니다.</p>
 
 <h3 id="screen-tool-settings">도구 설정</h3>
-<figure class="shot"><img src="assets/guide/screen-tool-settings.png" alt="도구 설정 패널: 연필" width="321" height="437" loading="lazy"><figcaption>① 제목 줄 · ② 그 도구의 설정</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-tool-settings.png" alt="도구 설정 패널: 연필" width="321" height="538" loading="lazy"><figcaption>① 제목 줄 · ② 그 도구의 설정</figcaption></figure>
 <p>오른쪽 미리보기 아래에 있습니다. ① 제목 줄에 고른 도구 이름(예: <code>도구 설정 · 연필</code>)이 보이고 ② 그 도구의 세부 설정만 나옵니다. 도구별 내용은 <a href="#tools">도구</a> 장에 있습니다. 미리보기와 도구 설정 사이 경계선을 끌어 높이를 나누면 다음 실행에도 남습니다.</p>
 <p>도구 설정은 실행취소 대상이 아니며 다음 실행 때도 그대로입니다. 다만 좌우·<a class="term" href="#tools-brush">상하 대칭</a> 그리기를 켰는지는 저장하지 않습니다(대칭: <a class="term" href="#tools-pivot">피벗</a> 기준은 저장).</p>
 <p><a class="term" href="#tools-pivot">피벗 도구</a>(<span class="key" data-cmd="도구/피벗"><kbd>K</kbd></span>)의 설정(5×5 단추, X·Y, <strong>현재 <a class="term" href="#screen-timeline">프레임</a>부터</strong>)은 <a href="#tools-pivot">피벗</a>을 보세요.</p>
@@ -2325,27 +2327,27 @@
 <li>현재 <a class="term" href="#screen-timeline">레이어</a>가 잠겨 있으면 그리지 않고 상태 표시줄에 <strong>현재 레이어가 잠겨 있어 그릴 수 없습니다.</strong>가 보입니다.</li>
 </ul>
 <h4>편집 메뉴의 그리기 명령</h4>
-<figure class="shot"><img src="assets/guide/tools-basics-2.png" alt="펼친 편집 메뉴" width="331" height="570" loading="lazy"><figcaption>⑤ 외곽선 추가(Add outline) · ⑥ 색 바꾸기(Replace color) · ⑦ 뒤집기·회전(Flip·Rotate) · ⑧ 캔버스 크기(Canvas size)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/tools-basics-2.png" alt="펼친 편집 메뉴" width="376" height="658" loading="lazy"><figcaption>⑤ 외곽선 추가(Add outline) · ⑥ 색 바꾸기(Replace color) · ⑦ 선 정리(Clean up lines) · ⑧ 뒤집기·회전(Flip·Rotate) · ⑨ 캔버스 크기(Canvas size)</figcaption></figure>
 <p>편집 메뉴에는 그림 전체(또는 선택 영역)를 한 번에 고치는 명령이 있습니다. 모두 실행취소 한 단계입니다.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>명령</th><th>하는 일</th></tr></thead>
 <tbody>
 <tr><td>⑤ 외곽선 추가(기본색) (<span class="key" data-cmd="편집/외곽선 추가(기본색)"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd></span>)<br>외곽선 추가(대각 포함)</td><td>선택 영역(없으면 현재 <a class="term" href="#screen-timeline">셀</a> 전체)에서 불투명한 픽셀에 위·아래·왼쪽·오른쪽으로 붙은 투명한 칸을 기본색으로 칠해 1픽셀 외곽선을 더합니다. <strong>외곽선 추가(대각 포함)</strong>는 대각선으로 붙은 칸까지 칠합니다.</td></tr>
 <tr><td>⑥ 색 바꾸기… (<span class="key" data-cmd="편집/색 바꾸기…"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>R</kbd></span>)</td><td><strong>바꿀 색</strong>(처음엔 기본색)과 <strong>새 색  </strong>(처음엔 보조색)을 정하면 현재 레이어의 현재 <a class="term" href="#screen-timeline">프레임</a>에서 그 색 픽셀을 모두 바꿉니다. 투명(알파 0)은 모두 같은 색으로 봅니다. 선택 영역이 있으면 <strong>선택 영역 안만</strong>로 범위를 좁힙니다. 문지른 곳만 바꾸려면 <a href="#tools-replace-brush">색 바꾸기 브러시</a>를 씁니다.</td></tr>
-<tr><td><a class="term" href="#tools-line-cleanup">선 정리</a>…</td><td>지금 레이어의 외곽선과 안쪽 선을 찾아 고른 계단의 1px 직선과 원호로 다시 그립니다. 창에서 정리 전·후를 나란히 보며 설정을 고릅니다.</td></tr>
-<tr><td>⑦ 좌우 뒤집기(선택/셀) (<span class="key" data-cmd="편집/좌우 뒤집기(선택/셀)"><kbd>Shift</kbd>+<kbd>H</kbd></span>)<br>상하 뒤집기(선택/셀) (<span class="key" data-cmd="편집/상하 뒤집기(선택/셀)"><kbd>Shift</kbd>+<kbd>V</kbd></span>)</td><td>선택 영역이 있으면 선택한 그림을, 없으면 현재 셀을 좌우 또는 상하로 뒤집습니다.</td></tr>
-<tr><td>⑦ 90° 회전(선택/캔버스) (<span class="key" data-cmd="편집/90° 회전(선택/캔버스)"><kbd>Ctrl</kbd>+<kbd>R</kbd></span>)<br>-90° 회전(선택/캔버스) (<span class="key" data-cmd="편집/-90° 회전(선택/캔버스)"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd></span>)</td><td>선택 영역이 있으면 선택한 그림을 90° 돌리고(<kbd>Enter</kbd>로 내려놓음), 없으면 캔버스 전체를 모든 프레임과 함께 돌립니다.</td></tr>
-<tr><td>⑧ 캔버스 크기… (<span class="key" data-cmd="편집/캔버스 크기…"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd></span>)</td><td>캔버스 위에서 새 크기와 그림 자리를 정합니다(<a href="#tools-canvas-size">캔버스 크기 모드</a>).</td></tr>
+<tr><td>⑦ <a class="term" href="#tools-line-cleanup">선 정리</a>…</td><td>지금 레이어의 외곽선과 안쪽 선을 찾아 고른 계단의 1px 직선과 원호로 다시 그립니다. 창에서 정리 전·후를 나란히 보며 설정을 고릅니다.</td></tr>
+<tr><td>⑧ 좌우 뒤집기(선택/셀) (<span class="key" data-cmd="편집/좌우 뒤집기(선택/셀)"><kbd>Shift</kbd>+<kbd>H</kbd></span>)<br>상하 뒤집기(선택/셀) (<span class="key" data-cmd="편집/상하 뒤집기(선택/셀)"><kbd>Shift</kbd>+<kbd>V</kbd></span>)</td><td>선택 영역이 있으면 선택한 그림을, 없으면 현재 셀을 좌우 또는 상하로 뒤집습니다.</td></tr>
+<tr><td>⑧ 90° 회전(선택/캔버스) (<span class="key" data-cmd="편집/90° 회전(선택/캔버스)"><kbd>Ctrl</kbd>+<kbd>R</kbd></span>)<br>-90° 회전(선택/캔버스) (<span class="key" data-cmd="편집/-90° 회전(선택/캔버스)"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd></span>)</td><td>선택 영역이 있으면 선택한 그림을 90° 돌리고(<kbd>Enter</kbd>로 내려놓음), 없으면 캔버스 전체를 모든 프레임과 함께 돌립니다.</td></tr>
+<tr><td>⑨ 캔버스 크기… (<span class="key" data-cmd="편집/캔버스 크기…"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd></span>)</td><td>캔버스 위에서 새 크기와 그림 자리를 정합니다(<a href="#tools-canvas-size">캔버스 크기 모드</a>).</td></tr>
 </tbody>
 </table></div>
 
 <h3 id="tools-groups">도구 묶음</h3>
-<figure class="shot"><img src="assets/guide/tools-groups.png" alt="선택 묶음 칸을 오른쪽 클릭해 펼친 도구 목록" width="316" height="374" loading="lazy"><figcaption>① 채우기 묶음 · ② 선택 묶음(오른쪽 아래 작은 삼각형) · ③ 펼친 묶음 도구 목록(이름·단축키)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/tools-groups.png" alt="선택 묶음 칸을 오른쪽 클릭해 펼친 도구 목록과 자유 선택에 뜬 사용 안내 풍선" width="625" height="374" loading="lazy"><figcaption>① 채우기 묶음 · ② 선택 묶음(오른쪽 아래 작은 삼각형) · ③ 펼친 묶음 도구 목록(이름·단축키) · ④ 도구 사용 안내 풍선</figcaption></figure>
 <p>비슷한 도구는 <a class="term" href="#screen-toolbar">도구 막대</a>의 한 칸에 묶여 있습니다: <a class="term" href="#tools-pencil">연필</a>(연필·<a class="term" href="#tools-gradient-pencil">그라데이션 연필</a>·<a class="term" href="#tools-shape-pen">모양 펜</a>·<a class="term" href="#tools-curve-pen">곡선 펜</a>), ① 채우기(채우기·그라데이션), ② 선택(사각·원·자유·스마트). 묶음 칸은 오른쪽 아래에 작은 삼각형이 있습니다.</p>
 <ul>
 <li>그냥 누르면 칸에 보이는 도구를 고릅니다.</li>
 <li><strong>길게 누르거나 오른쪽 클릭</strong>하면 ③ 묶음 도구 목록이 펼쳐집니다.</li>
-<li>③ 펼친 목록에서 도구에 마우스를 올리면 그 도구의 사용 안내가 풍선으로 뜹니다.</li>
+<li>③ 펼친 목록에서 도구에 마우스를 올리면 ④ 그 도구의 사용 안내가 풍선으로 뜹니다.</li>
 </ul>
 <p>묶음 칸은 마지막으로 고른 도구를 보입니다. <a class="term" href="#shortcuts-customize">단축키</a>로 도구를 고르면 그 도구가 든 칸이 바뀝니다.</p>
 
@@ -2537,22 +2539,26 @@
 <p>내 세트는 고칠 때마다 <code>&lt;설정 폴더&gt;/Chickxel/ShapePen/shape-sets.json</code> 한 파일에 저장되고(세트마다 이름·순서와 모양), 고른 세트·간격·최적화 간격·물들이기는 설정에 기억됩니다. 받은 세트(기본 세트 포함)는 이 파일이 아니라 에셋 저장소에 에셋으로 들어 있습니다. 파일이 깨졌으면 <code>shape-sets.json.bad</code>로 옮겨 두고 내 세트 없이 시작합니다(받은 세트는 그대로).</p>
 
 <h3 id="tools-curve-pen">곡선 펜</h3>
+<figure class="shot"><img src="assets/guide/tools-curve-pen.png" alt="곡선 펜으로 모서리 점, 손잡이를 뽑은 매끈한 점, 모서리 점을 찍어 만든 경로를 칠하기 전에 미리 보는 캔버스(14배 확대)" width="622" height="398" loading="lazy"><figcaption>① 칠할 픽셀 · ② 경로를 따라가는 가는 선 · ③ 고정점(네모) · ④ 손잡이(동그라미)</figcaption></figure>
 <p><strong>곡선 펜</strong>(<span class="key" data-cmd="도구/곡선 펜"><kbd>Shift</kbd>+<kbd>L</kbd></span>)은 포토샵 펜처럼 고정점과 손잡이로 곡선(베지어) 경로를 만들고, 다 고친 뒤 1px 굵기의 깨끗한 선으로 칠합니다. 손으로 긋기 어려운 매끈한 곡선이나 계단이 고른 외곽선을 그릴 때 씁니다. <a class="term" href="#tools-pencil">연필</a> 묶음 칸의 넷째 도구로, <a class="term" href="#shortcuts-customize">단축키</a>나 칸을 길게 누르거나 우클릭해 펼친 목록에서 고릅니다.</p>
 <ul>
 <li>곧은 조각은 고른 계단(1:1, 1:2 …)의 직선, 휜 조각은 계단 길이가 고르게 늘거나 주는 곡선이 되고, 꺾인 모서리 칸은 그대로 남습니다. 브러시 설정은 쓰지 않고 늘 1px로 칠합니다.</li>
-<li>칠하기 전까지 경로는 <a class="term" href="#screen-canvas">캔버스</a>에 미리 보입니다: 칠해질 픽셀, 경로를 따라가는 가는 선, 고정점(네모 — 고른 점과 마우스를 올린 점은 채워짐), 손잡이(동그라미, 고정점까지 선으로 이어짐).</li>
+<li>칠하기 전까지 경로는 <a class="term" href="#screen-canvas">캔버스</a>에 미리 보입니다: ① 칠해질 픽셀, ② 경로를 따라가는 가는 선, ③ 고정점(네모 — 고른 점과 마우스를 올린 점은 채워짐), ④ 손잡이(동그라미, 고정점까지 선으로 이어짐).</li>
 </ul>
 <h4>곡선 펜 설정</h4>
+<figure class="shot"><img src="assets/guide/tools-curve-pen-2.png" alt="곡선 펜 도구 설정: 그리기 방식 손으로 그리기, 맞춤 허용치 0.6px, 모서리 각도 40°, 픽셀 퍼펙트 켬" width="338" height="214" loading="lazy"><figcaption>⑤ 그리기 방식(Drawing mode) · ⑥ 맞춤 허용치(Fit tolerance) · ⑦ 모서리 각도(Corner angle) · ⑧ 픽셀 퍼펙트(Pixel perfect)</figcaption></figure>
 <p><a class="term" href="#screen-tool-settings">도구 설정</a> <strong>곡선 펜</strong> 묶음에서 경로를 만드는 방식과 칠할 선을 정합니다. 묶음 제목 옆 정보 표시에 조작 방법이 모두 나옵니다.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>항목</th><th>하는 일</th></tr></thead>
 <tbody>
-<tr><td><strong class="nolink">그리기 방식</strong></td><td><strong>점 찍기</strong>(기본): 눌러 고정점을 하나씩 찍습니다. <strong>손으로 그리기</strong>: 끌어 그린 획을 적은 고정점의 곡선으로 맞춥니다. 어느 쪽이든 만든 경로는 점과 손잡이를 끌어 고칠 수 있습니다.</td></tr>
-<tr><td><strong class="nolink">맞춤 허용치</strong></td><td>손으로 그리기에서만 보입니다. 그린 획이 맞춘 곡선에서 이만큼(0.1~4px, 기본 0.6px)까지 벗어나도 됩니다. 크면 점이 적고 떨림을 더 펴며, 작으면 그린 모양을 더 따라갑니다.</td></tr>
-<tr><td><strong class="nolink">모서리 각도</strong></td><td>손으로 그리기에서만 보입니다. 그린 획이 이 각도(5~180°, 기본 40°) 이상 꺾인 자리는 모서리 점(두 손잡이가 따로 움직임)으로 남기고 앞뒤를 따로 맞춥니다. 180°면 모서리로 나누지 않습니다.</td></tr>
-<tr><td><strong class="nolink">픽셀 퍼펙트</strong></td><td>기본으로 켜져 있습니다. 켜면 칠할 1px 선에서 L자로 겹친 칸을 빼고 곡선 계단을 고르게 합니다. 끄면 L자 겹 칸을 빼지 않고 경로가 지나간 칸을 그대로 칠해, 모서리마다 칸이 겹칩니다. 연필의 <a class="term" href="#tools-pencil">픽셀 퍼펙트</a>와는 따로 기억합니다.</td></tr>
+<tr><td>⑤ <strong class="nolink">그리기 방식</strong></td><td><strong>점 찍기</strong>(기본): 눌러 고정점을 하나씩 찍습니다. <strong>손으로 그리기</strong>: 끌어 그린 획을 적은 고정점의 곡선으로 맞춥니다. 어느 쪽이든 만든 경로는 점과 손잡이를 끌어 고칠 수 있습니다.</td></tr>
+<tr><td>⑥ <strong class="nolink">맞춤 허용치</strong></td><td>손으로 그리기에서만 보입니다. 그린 획이 맞춘 곡선에서 이만큼(0.1~4px, 기본 0.6px)까지 벗어나도 됩니다. 크면 점이 적고 떨림을 더 펴며, 작으면 그린 모양을 더 따라갑니다.</td></tr>
+<tr><td>⑦ <strong class="nolink">모서리 각도</strong></td><td>손으로 그리기에서만 보입니다. 그린 획이 이 각도(5~180°, 기본 40°) 이상 꺾인 자리는 모서리 점(두 손잡이가 따로 움직임)으로 남기고 앞뒤를 따로 맞춥니다. 180°면 모서리로 나누지 않습니다.</td></tr>
+<tr><td>⑧ <strong class="nolink">픽셀 퍼펙트</strong></td><td>기본으로 켜져 있습니다. 켜면 칠할 1px 선에서 L자로 겹친 칸을 빼고 곡선 계단을 고르게 합니다. 끄면 L자 겹 칸을 빼지 않고 경로가 지나간 칸을 그대로 칠해, 모서리마다 칸이 겹칩니다. 연필의 <a class="term" href="#tools-pencil">픽셀 퍼펙트</a>와는 따로 기억합니다.</td></tr>
 </tbody>
 </table></div>
+<figure class="shot"><img src="assets/guide/tools-curve-pen-compare.png" alt="같은 S자 곡선과 동그라미 경로를 픽셀 퍼펙트를 끄고 켜서 칠한 결과" width="828" height="208" loading="lazy"><figcaption>왼쪽: 픽셀 퍼펙트 끔 · 오른쪽: 픽셀 퍼펙트 켬(기본)</figcaption></figure>
+<p>끄면 경로가 지나간 칸을 모두 칠해 곡선이 꺾이는 자리마다 L자로 겹친 칸이 생겨 선이 군데군데 두꺼워 보입니다. 켜면 겹친 칸이 빠지고 계단이 고르게 줄 서서 한 칸 굵기의 선으로 이어집니다.</p>
 <p>손으로 그린 뒤 아직 고치지 않은 경로는 맞춤 허용치나 모서리 각도를 바꾸면 바로 새 값으로 다시 맞춥니다. 픽셀 퍼펙트를 바꾸면 미리 보는 픽셀이 바로 바뀝니다.</p>
 <h4>점 찍기</h4>
 <div class="table-wrap"><table>
@@ -2605,10 +2611,10 @@
 <li>브러시 모양과 크기는 <a class="term" href="#tools-pencil">연필</a>과 따로 기억합니다(<a href="#tools-brush">브러시 설정</a>). <a class="term" href="#screen-tool-settings">도구 설정</a> 옵션의 <strong><a class="term" href="#tools-pencil">픽셀 퍼펙트</a></strong>와 <strong><a class="term" href="#tools-shape">픽셀 잇기</a></strong>는 <a href="#tools-pencil">연필</a>과 같은 설정이라, 기본으로 가로·세로로만 이어 지우고 픽셀 퍼펙트를 켜면 대각선으로 잇습니다(크기 1이면 겹 픽셀도 뺌). <a class="term" href="#tools-select">선택 영역</a>과 <a class="term" href="#tools-brush">대칭 그리기</a>도 연필과 같습니다.</li>
 </ul>
 <h4>지우기 강도와 채널</h4>
-<figure class="shot"><img src="assets/guide/tools-eraser-settings.png" alt="지우개 도구 설정의 지우기 묶음: 강도 100%, 채널 R·G·B 모두 켬" width="328" height="111" loading="lazy"><figcaption>도구 설정 · 지우개의 지우기 묶음: 강도(Strength)와 채널(Channels)</figcaption></figure>
-<ul>
-<li><strong>강도</strong> 1~100%(기본 100% = 완전히 지움): 낮추면 한 획마다 알파를 그 비율만큼 줄입니다. 한 획 안에서는 픽셀마다 한 번만 줄고, 손을 뗐다가 다시 문지르면 또 줄어 결국 투명해집니다.</li>
-<li><strong>채널</strong> R·G·B: 모두 켜면 투명하게 지우고, 일부만 켜면 알파는 두고 고른 색 채널만 강도만큼 줄입니다. 하나도 켜지 않으면 아무것도 지우지 않습니다.</li>
+<figure class="shot"><img src="assets/guide/tools-eraser-settings.png" alt="지우개 도구 설정: 지우기 묶음(강도 100%, 채널 R·G·B 모두 켬)과 적용 레이어 묶음(범위 위·아래, 위 1개·아래 1개, 범위에 레이어 3개)" width="338" height="635" loading="lazy"><figcaption>① 강도(Strength) · ② 채널(Channels) · ③ 적용 레이어 범위(Range) · ④ 위·아래 레이어 수(Above·Below) · ⑤ 범위에 든 레이어 수</figcaption></figure>
+<ul class="marks">
+<li>① <strong>강도</strong> 1~100%(기본 100% = 완전히 지움): 낮추면 한 획마다 알파를 그 비율만큼 줄입니다. 한 획 안에서는 픽셀마다 한 번만 줄고, 손을 뗐다가 다시 문지르면 또 줄어 결국 투명해집니다.</li>
+<li>② <strong>채널</strong> R·G·B: 모두 켜면 투명하게 지우고, 일부만 켜면 알파는 두고 고른 색 채널만 강도만큼 줄입니다. 하나도 켜지 않으면 아무것도 지우지 않습니다.</li>
 </ul>
 <figure class="shot"><img src="assets/guide/tools-eraser-compare.png" alt="빨강·초록·파랑·흰 띠의 가운데 줄을 강도 100%, 50% 한 번, 50% 두 번, 채널 R만으로 지운 결과" width="596" height="152" loading="lazy"><figcaption>왼쪽부터 강도 100% · 50% 한 번 · 50% 두 번 · 100%에 채널 R만</figcaption></figure>
 <p>강도 50%로 한 번 문지르면 알파가 절반이 되고, 손을 뗐다가 다시 문지르면 남은 알파의 절반이 됩니다(바둑판이 비쳐 보이는 정도). R만 켜면 투명해지지 않고 빨강 성분만 빠져 빨강 띠는 거의 검게, 흰 띠는 청록이 되고 초록·파랑 띠는 조금만 바뀝니다.</p>
@@ -2617,7 +2623,7 @@
 <h4>적용 레이어</h4>
 <p><strong>적용 레이어</strong>는 지우개 획을 현재 레이어에 그린 뒤, 같은 <a class="term" href="#screen-timeline">프레임</a>의 다른 레이어에도 같은 자리로 똑같이 적용하는 설정입니다. 선·색·그림자처럼 여러 레이어에 나눠 그린 부분을 한 번에 지울 때 씁니다. 지우개 도구 설정에만 있고(다른 도구의 오른쪽 버튼 지우기에는 쓰이지 않음), 묶음 제목 옆 정보 표시에 쓰는 법이 나옵니다.</p>
 <div class="table-wrap"><table>
-<thead><tr><th>범위</th><th>함께 지우는 레이어</th></tr></thead>
+<thead><tr><th>③ 범위</th><th>함께 지우는 레이어</th></tr></thead>
 <tbody>
 <tr><td>현재 레이어만</td><td>현재 레이어만 지웁니다(기본).</td></tr>
 <tr><td>위 레이어 N개까지</td><td>현재 레이어와 그 위 N개 레이어.</td></tr>
@@ -2628,7 +2634,8 @@
 <tr><td>모든 레이어</td><td>모든 레이어.</td></tr>
 <tr><td>선택 레이어</td><td>현재 레이어와 <a class="term" href="#screen-timeline">타임라인</a>의 레이어 이름 칸에서 고른 레이어(<kbd>Shift</kbd>·<kbd>Ctrl</kbd>+클릭으로 여러 개 — <a href="#screen-timeline-select">타임라인에서 고르기</a>). 타임라인에서 레이어를 고르지 않았으면 현재 레이어만 지웁니다.</td></tr>
 </tbody></table></div>
-<p>위·아래 레이어 수는 범위 아래 <strong>위</strong>·<strong>아래</strong> <a class="term" href="#screen-common-controls">숫자 칸</a>(1~999)에 넣고, 맨 위·맨 아래 레이어에 닿으면 거기서 멈춥니다. 위아래는 레이어가 쌓인 순서입니다. 그 아래에 "범위에 레이어 3개 (<a class="term" href="#screen-timeline">잠긴 레이어</a>·<a class="term" href="#parts-concept">그룹</a>·타일맵은 건너뜀)"처럼 범위에 든 레이어 수가 보이고, 둘 이상이면 주황색으로 바뀝니다. <strong>선택 레이어</strong>를 고르면 대신 "현재 레이어와 타임라인에서 선택한 레이어에 적용"라는 안내가 주황색으로 보입니다.</p>
+<figure class="shot"><img src="assets/guide/tools-eraser-settings-2.png" alt="범위를 선택한 레이어로 고른 적용 레이어 묶음: 위·아래 숫자 칸 대신 주황색 안내" width="354" height="109" loading="lazy"><figcaption>⑥ 범위를 선택한 레이어(Selected layers)로 고르면 보이는 안내</figcaption></figure>
+<p>④ 위·아래 레이어 수는 범위 아래 <strong>위</strong>·<strong>아래</strong> <a class="term" href="#screen-common-controls">숫자 칸</a>(1~999)에 넣고, 맨 위·맨 아래 레이어에 닿으면 거기서 멈춥니다. 위아래는 레이어가 쌓인 순서입니다. 그 아래에 ⑤ "범위에 레이어 3개 (<a class="term" href="#screen-timeline">잠긴 레이어</a>·<a class="term" href="#parts-concept">그룹</a>·타일맵은 건너뜀)"처럼 범위에 든 레이어 수가 보이고, 둘 이상이면 주황색으로 바뀝니다. <strong>선택 레이어</strong>를 고르면 대신 ⑥ "현재 레이어와 타임라인에서 선택한 레이어에 적용"라는 안내가 주황색으로 보입니다.</p>
 <p>다른 레이어에는 지우개 획이 지운 픽셀 자리에 같은 강도·채널 지우기를 다시 합니다. <a href="#tools-brush">적용 프레임</a>을 함께 고르면 고른 레이어마다 고른 프레임의 <a class="term" href="#screen-timeline">셀</a>에도 적용합니다. 잠긴 레이어·그룹·타일맵은 건너뛰고, 현재 레이어와 함께 모두 실행취소 한 단계입니다.</p>
 <p>적용 레이어는 저장하지 않아, 앱을 켜면 늘 <strong>현재 레이어만</strong>으로 시작합니다. 모르는 사이 여러 레이어를 지우지 않게 하기 위해서입니다.</p>
 <h4>다른 도구의 오른쪽 버튼 지우기</h4>
@@ -3136,13 +3143,15 @@
 
 <h3 id="tools-line-cleanup">선 정리</h3>
 <p>편집 메뉴의 <strong>선 정리…</strong>는 지금 <a class="term" href="#screen-timeline">레이어</a>·지금 <a class="term" href="#screen-timeline">프레임</a> <a class="term" href="#screen-timeline">셀</a>에서 외곽선과 안쪽 선을 찾아, 곧은 조각은 고른 계단(1:1, 1:2 …)의 1px 직선으로, 굽은 조각은 원호로 다시 그립니다. 날카로운 모서리는 그대로 남깁니다. 손으로 그어 흔들리거나 두꺼워진 선, <a class="term" href="#pixelate">픽셀로 정리</a>한 그림의 고르지 않은 선을 한 번에 다듬을 때 씁니다. 창에서 결과를 미리 보며 설정을 고르고, <strong>적용</strong>을 누르면 실행취소 한 단계로 바뀝니다.</p>
+<figure class="shot"><img src="assets/guide/tools-line-cleanup-compare.png" alt="손으로 그어 흔들리고 굵기가 들쭉날쭉한 검은 선으로 그린 집·해·덤불 낙서와, 그것을 기본 설정으로 정리한 결과를 나란히 놓은 그림" width="824" height="320" loading="lazy"><figcaption>왼쪽: 정리 전(손으로 그어 흔들리고 1~2px로 두꺼워진 선) · 오른쪽: 기본 설정으로 정리한 뒤(고른 계단의 1px 직선과 원호, 지붕 꼭대기·처마 끝은 날카로운 모서리 그대로)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/tools-line-cleanup.png" alt="선 정리 창: 왼쪽에 지금 그림(찾은 획을 파란 직선·분홍 원호·노란 모서리 점으로 겹침)과 정리한 그림이 나란히, 오른쪽에 선 찾기·곧게 펴기·새 선 색 설정" width="1154" height="530" loading="lazy"><figcaption>① 지금 그림(찾은 획 겹침) · ② 정리한 그림 · ③ 범례 · ④ 찾은 획 수·바뀔 픽셀 수 · ⑤ 어두운 선 자동 · 어둡기 · ⑥ 선 색(스포이트·색 칩) · ⑦ <span class="nolink">색 허용치</span> · ⑧ 최대 굵기 · ⑨ 최소 길이 · ⑩ <span class="nolink">곧게 펴기 허용치</span> · ⑪ 모서리 각도 · ⑫ 그대로·안쪽 색을 진하게 목록 · ⑬ 진하게 · ⑭ 모든 프레임(N장) · ⑮ 적용 · ⑯ 기본값</figcaption></figure>
 <ul>
 <li><a class="term" href="#tools-select">선택 영역</a>이 있으면 그 안의 선만 정리하고, 창의 그림 아래에 "선택 영역 안의 선만 정리합니다."가 보입니다.</li>
 <li><a class="term" href="#parts-concept">그룹</a>·타일맵·<a class="term" href="#screen-timeline">잠긴 레이어</a>이거나 지금 프레임 셀에 그림이 없으면 메뉴 항목이 꺼지고, 마우스를 올리면 까닭이 풍선으로 나옵니다.</li>
-<li>이 레이어에 그림이 있는 프레임이 둘 이상이면 창 아래에 <strong>모든 프레임(N장)</strong> 체크가 보입니다. 켜면 이 레이어의 모든 프레임(<a class="term" href="#parts-concept">부위</a>면 모든 <a class="term" href="#parts-skins">스킨</a>의 셀)을 같은 설정으로 정리하고, 모두 실행취소 한 단계입니다. 정리에서 뺀 획은 지금 프레임에만 해당합니다.</li>
+<li>이 레이어에 그림이 있는 프레임이 둘 이상이면 창 아래에 ⑭ <strong>모든 프레임(N장)</strong> 체크가 보입니다. 켜면 이 레이어의 모든 프레임(<a class="term" href="#parts-concept">부위</a>면 모든 <a class="term" href="#parts-skins">스킨</a>의 셀)을 같은 설정으로 정리하고, 모두 실행취소 한 단계입니다. 정리에서 뺀 획은 지금 프레임에만 해당합니다.</li>
 </ul>
 <h4>미리 보기</h4>
-<p>창 왼쪽에 <strong>지금 그림</strong>과 <strong>정리한 그림</strong>을 같은 배율·자리로 나란히 보이고, 지금 그림 위에 찾은 획을 벡터 선으로 겹칩니다: 파란 선은 곧은 조각(<strong>직선</strong>), 분홍 선은 원호(<strong>원호</strong>), 노란 점은 남길 모서리(<strong>모서리</strong>)입니다. 그림 아래에 "획 12개 · 바뀐 픽셀 340개"처럼 찾은 획 수와 바뀔 픽셀 수가 나옵니다. 설정을 바꾸면 잠시 뒤 다시 계산합니다.</p>
+<p>창 왼쪽에 ① <strong>지금 그림</strong>과 ② <strong>정리한 그림</strong>을 같은 배율·자리로 나란히 보이고, 지금 그림 위에 찾은 획을 벡터 선으로 겹칩니다. ③ 범례대로 파란 선은 곧은 조각(<strong>직선</strong>), 분홍 선은 원호(<strong>원호</strong>), 노란 점은 남길 모서리(<strong>모서리</strong>)입니다. 그 아래 ④에 "획 12개 · 바뀐 픽셀 340개"처럼 찾은 획 수와 바뀔 픽셀 수가 나옵니다. 설정을 바꾸면 잠시 뒤 다시 계산합니다.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>조작</th><th>결과</th></tr></thead>
 <tbody>
@@ -3158,34 +3167,35 @@
 <div class="table-wrap"><table>
 <thead><tr><th>항목</th><th>하는 일</th></tr></thead>
 <tbody>
-<tr><td><strong>어두운 선 자동</strong> · <strong>어둡기</strong></td><td>켜면(기본) 밝기(OKLab L)가 <strong>어둡기</strong> 값(기본 35%) 이하인 색을 모두 선 색으로 봅니다. 검은·짙은 외곽선이면 켜 두고, 밝은 색 선만 고르려면 끄고 아래 선 색에 더합니다.</td></tr>
-<tr><td><strong>선 색</strong></td><td>어둡지 않아도 선으로 볼 색입니다. 스포이트 단추를 켠 뒤 두 그림 중 아무 픽셀이나 누르면 그 색을 더하고 스포이트는 꺼집니다. 색 칩의 빼기 단추로 지웁니다.</td></tr>
-<tr><td><strong class="nolink">색 허용치</strong></td><td>고른 선 색과 이만큼(OKLab 거리, 기본 6%) 가까운 색까지 같은 선으로 봅니다. 선 가장자리에 비슷한 색이 섞여 있으면 올립니다.</td></tr>
-<tr><td><strong>최대 굵기</strong></td><td>선 색 덩어리의 평균 굵기(넓이 ÷ 뼈대 길이)가 이 값(기본 2.5px) 이하일 때만 선으로 봅니다. 넓게 칠한 어두운 면(그림자·머리카락)은 그대로 둡니다.</td></tr>
-<tr><td><strong>최소 길이</strong></td><td>뼈대 길이가 이보다(기본 3px) 짧은 조각(눈·점·작은 무늬)은 건드리지 않습니다.</td></tr>
+<tr><td>⑤ <strong>어두운 선 자동</strong> · <strong>어둡기</strong></td><td>켜면(기본) 밝기(OKLab L)가 <strong>어둡기</strong> 값(기본 35%) 이하인 색을 모두 선 색으로 봅니다. 검은·짙은 외곽선이면 켜 두고, 밝은 색 선만 고르려면 끄고 아래 선 색에 더합니다.</td></tr>
+<tr><td>⑥ <strong>선 색</strong></td><td>어둡지 않아도 선으로 볼 색입니다. 스포이트 단추를 켠 뒤 두 그림 중 아무 픽셀이나 누르면 그 색을 더하고 스포이트는 꺼집니다. 색 칩의 빼기 단추로 지웁니다.</td></tr>
+<tr><td>⑦ <strong class="nolink">색 허용치</strong></td><td>고른 선 색과 이만큼(OKLab 거리, 기본 6%) 가까운 색까지 같은 선으로 봅니다. 선 가장자리에 비슷한 색이 섞여 있으면 올립니다.</td></tr>
+<tr><td>⑧ <strong>최대 굵기</strong></td><td>선 색 덩어리의 평균 굵기(넓이 ÷ 뼈대 길이)가 이 값(기본 2.5px) 이하일 때만 선으로 봅니다. 넓게 칠한 어두운 면(그림자·머리카락)은 그대로 둡니다.</td></tr>
+<tr><td>⑨ <strong>최소 길이</strong></td><td>뼈대 길이가 이보다(기본 3px) 짧은 조각(눈·점·작은 무늬)은 건드리지 않습니다.</td></tr>
 </tbody>
 </table></div>
 <h4>다듬기</h4>
 <div class="table-wrap"><table>
 <thead><tr><th>항목</th><th>하는 일</th></tr></thead>
 <tbody>
-<tr><td><strong class="nolink">곧게 펴기 허용치</strong></td><td>선이 이 거리(기본 0.6px) 안에서 흔들리면 곧은 선이나 원호 하나로 펴서 고른 계단으로 다시 그립니다. 올리면 더 많이 펴고, 내리면 원래 모양에 가깝게 둡니다.</td></tr>
-<tr><td><strong>모서리 각도</strong></td><td>선이 이 각도(기본 40°)보다 크게 꺾이는 자리는 날카로운 모서리로 남기고 그 앞뒤를 따로 폅니다. 내리면 모서리가 더 많이 남습니다.</td></tr>
+<tr><td>⑩ <strong class="nolink">곧게 펴기 허용치</strong></td><td>선이 이 거리(기본 0.6px) 안에서 흔들리면 곧은 선이나 원호 하나로 펴서 고른 계단으로 다시 그립니다. 올리면 더 많이 펴고, 내리면 원래 모양에 가깝게 둡니다.</td></tr>
+<tr><td>⑪ <strong>모서리 각도</strong></td><td>선이 이 각도(기본 40°)보다 크게 꺾이는 자리는 날카로운 모서리로 남기고 그 앞뒤를 따로 폅니다. 내리면 모서리가 더 많이 남습니다.</td></tr>
 </tbody>
 </table></div>
 <h4>새 선 색</h4>
+<figure class="shot"><img src="assets/guide/tools-line-cleanup-compare-2.png" alt="같은 낙서를 새 선 색 그대로와 안쪽 색을 진하게로 정리한 결과를 나란히 놓은 그림" width="824" height="320" loading="lazy"><figcaption>왼쪽: 그대로(모든 선이 획 색인 검정) · 오른쪽: 안쪽 색을 진하게(기본 50% — 지붕은 짙은 빨강, 벽·문은 짙은 갈색, 해는 짙은 노랑, 덤불은 짙은 초록 선. 안쪽 이웃이 없는 땅 선은 획 색 그대로)</figcaption></figure>
 <div class="table-wrap"><table>
 <thead><tr><th>항목</th><th>하는 일</th></tr></thead>
 <tbody>
-<tr><td><strong>그대로</strong></td><td>기본입니다. 새 선을 그 획의 선 색(획에서 가장 많은 색)으로 그립니다. 색이 다른 선은 제 색을 지킵니다.</td></tr>
-<tr><td><strong>안쪽 색을 진하게</strong> · <strong>진하게</strong></td><td>새 선 칸마다 안쪽 이웃 색 중 가장 많은 색을 <strong>진하게</strong> 값(기본 50%)만큼 어둡게 칠합니다. 안쪽 이웃이 없으면 획 색입니다. 검은 외곽선을 면 색의 짙은 색 외곽선으로 바꿀 때 씁니다.</td></tr>
+<tr><td>⑫ <strong>그대로</strong></td><td>기본입니다. 새 선을 그 획의 선 색(획에서 가장 많은 색)으로 그립니다. 색이 다른 선은 제 색을 지킵니다.</td></tr>
+<tr><td>⑫ <strong>안쪽 색을 진하게</strong> · ⑬ <strong>진하게</strong></td><td>새 선 칸마다 안쪽 이웃 색 중 가장 많은 색을 <strong>진하게</strong> 값(기본 50%)만큼 어둡게 칠합니다. 안쪽 이웃이 없으면 획 색입니다. 검은 외곽선을 면 색의 짙은 색 외곽선으로 바꿀 때 씁니다.</td></tr>
 </tbody>
 </table></div>
 <p>어느 방식이든 옛 두꺼운 선을 걷어 낸 자리는 그림 바깥이면 투명, 안쪽이면 둘레 색으로 채웁니다.</p>
 <h4>적용과 기본값</h4>
-<ul>
-<li><strong>적용</strong>을 누르면 지금 그림을 정리한 그림으로 바꾸고, <a class="term" href="#screen-status-bar">상태 표시줄</a>에 바뀐 픽셀 수(모든 프레임이면 바뀐 셀 수)가 나옵니다. 실행취소 한 단계로 되돌립니다.</li>
-<li><strong>기본값</strong> 단추는 모든 설정을 처음 값으로 되돌립니다. 적용한 설정(모든 프레임 체크 포함)은 앱을 끌 때까지 기억해, 다음에 창을 열면 그대로 나옵니다.</li>
+<ul class="marks">
+<li>⑮ <strong>적용</strong>을 누르면 지금 그림을 정리한 그림으로 바꾸고, <a class="term" href="#screen-status-bar">상태 표시줄</a>에 바뀐 픽셀 수(모든 프레임이면 바뀐 셀 수)가 나옵니다. 실행취소 한 단계로 되돌립니다.</li>
+<li>⑯ <strong>기본값</strong> 단추는 모든 설정을 처음 값으로 되돌립니다. 적용한 설정(모든 프레임 체크 포함)은 앱을 끌 때까지 기억해, 다음에 창을 열면 그대로 나옵니다.</li>
 </ul>
 <p>새 선을 하나씩 이런 고른 선으로 그리려면 <a href="#tools-curve-pen">곡선 펜</a>을 씁니다.</p>
 
@@ -3817,7 +3827,7 @@
 <figure class="shot"><img src="assets/guide/pixelate-open.png" alt="AI 메뉴를 연 모습" width="560" height="296" loading="lazy"><figcaption>① AI 그림 픽셀로 정리…(Pixelate AI image…)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/pixelate-open-2.png" alt="원본 없이 연 빈 픽셀로 정리 창" width="1000" height="672" loading="lazy"><figcaption>② 가운데 안내 · ③ 파일 찾기…(Browse…) · ④ 적용(Apply, 꺼짐) · ⑤ 자동 최적화(Auto optimize, 꺼짐)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/pixelate-open-3.png" alt="현재 레이어를 픽셀로 정리…가 보이는 AI 메뉴" width="304" height="226" loading="lazy"><figcaption>⑥ 현재 레이어를 픽셀로 정리…(Pixelate current layer…)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/pixelate-open-4.png" alt="파일 브라우저에서 그림 파일을 우클릭한 메뉴" width="294" height="397" loading="lazy"><figcaption>⑦ 그림 파일 · ⑧ AI 그림 픽셀로 정리…(Pixelate AI image…)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/pixelate-open-4.png" alt="파일 브라우저에서 그림 파일을 우클릭한 메뉴" width="322" height="431" loading="lazy"><figcaption>⑦ 그림 파일 · ⑧ AI 그림 픽셀로 정리…(Pixelate AI image…)</figcaption></figure>
 <div class="table-wrap"><table>
 <thead><tr><th>여는 곳</th><th>원본</th><th>쓸 때</th></tr></thead>
 <tbody>
@@ -3884,15 +3894,14 @@
 <figure class="shot"><img src="assets/guide/pixelate-view-sampled.png" alt="같은 그림 12프레임을 이은 원본 보기에서 1·4·7·9·12번 프레임만 노란 테두리이고 나머지는 파란 테두리인 모습" width="689" height="500" loading="lazy"><figcaption>뽑아서 찾을 프레임 5: 12프레임 중 1·4·7·9·12번이 노란 테두리(나머지 파랑)</figcaption></figure>
 <p><a href="#pixelate-score"><strong>뽑아서 찾을 프레임</strong></a>로 최적화할 때 뽑히는 프레임은 파란 테두리 대신 노란 테두리입니다. 값을 바꾸거나 프레임 나누기를 다시 적용하면 바로 다시 칠하고, 프레임이 뽑을 수보다 많지 않으면 모두 파랑입니다.</p>
 <h4>원본 아래 막대</h4>
-<figure class="shot"><img src="assets/guide/pixelate-view-2.png" alt="원본 아래 막대" width="124" height="74" loading="lazy"><figcaption>⑥ 배경 지우기(<span class="nolink">지우개</span> 아이콘) · ⑦ 격자 보기(격자 아이콘)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/pixelate-view-2.png" alt="원본 아래 막대" width="90" height="74" loading="lazy"><figcaption>⑥ 격자 보기(격자 아이콘)</figcaption></figure>
 <div class="table-wrap"><table>
 <thead><tr><th>단추</th><th>하는 일</th></tr></thead>
 <tbody>
-<tr><td>⑥ <strong>배경 지우기</strong></td><td><span class="nolink">지우개</span> 아이콘, 눌림 = 켬. <a href="#pixelate-settings">1. 배경 지우기</a>, 간편 설정의 <strong>배경 지우기</strong> 체크와 같은 설정입니다. 끄면 배경을 지우지 않고 변환하고, 켜면 마지막으로 쓴 지우는 방식(처음은 자동)을 쓰며 원본 보기에 배경을 지운 모습이 보입니다. 바꾼 뒤 <strong>정리하기</strong>를 눌러야 적용됩니다.</td></tr>
-<tr><td>⑦ <strong>격자 보기</strong></td><td>격자 아이콘, 눌림 = 켬(기본 켬). 고른 후보가 실제로 쓴 칸 경계를 원본 보기에 그립니다 — 프레임마다 들쭉날쭉한 경계 그대로라 선이 색 덩어리와 맞고, <a href="#pixelate-grid">칸 경계 지역 보정</a>을 쓰면 띠마다 꺾인 경계가 보입니다. 큰 미리보기의 <strong>원본</strong> 그림에는 그리지 않고 크게 보기의 원본 칸에는 그립니다. 칸이 화면에서 약 3px보다 작으면 흐려지거나 숨습니다.</td></tr>
+<tr><td>⑥ <strong>격자 보기</strong></td><td>격자 아이콘, 눌림 = 켬(기본 켬). 고른 후보가 실제로 쓴 칸 경계를 원본 보기에 그립니다 — 프레임마다 들쭉날쭉한 경계 그대로라 선이 색 덩어리와 맞고, <a href="#pixelate-grid">칸 경계 지역 보정</a>을 쓰면 띠마다 꺾인 경계가 보입니다. 큰 미리보기의 <strong>원본</strong> 그림에는 그리지 않고 크게 보기의 원본 칸에는 그립니다. 칸이 화면에서 약 3px보다 작으면 흐려지거나 숨습니다.</td></tr>
 </tbody>
 </table></div>
-<p>막대에는 이 두 단추 앞에 원본 바꾸기 단추(<a href="#pixelate-open">창 열기와 원본 넣기</a>), 뒤에 상태 글이 있습니다. 결과 크기는 설정 칸의 <a href="#pixelate-settings"><strong>간편 설정</strong></a>에서 정합니다. 상태 글이 잘리면 마우스를 올려 풍선으로 전체 글을 봅니다.</p>
+<p>막대에는 이 단추 앞에 원본 바꾸기 단추(<a href="#pixelate-open">창 열기와 원본 넣기</a>), 뒤에 상태 글이 있습니다. 배경 지우기는 설정 칸의 <a href="#pixelate-settings"><strong>간편 설정</strong></a>에 있는 <strong>배경 지우기</strong> 체크로 켜고 끄며, 결과 크기도 그 칸에서 정합니다. 상태 글이 잘리면 마우스를 올려 풍선으로 전체 글을 봅니다.</p>
 <h4>재생과 색 견본</h4>
 <ul>
 <li>미리보기에 포커스가 있으면 <kbd>Space</kbd>로 재생·정지, <kbd>←</kbd>/<kbd>→</kbd>로 프레임을 옮깁니다. 그림을 눌러도 포커스는 미리보기에 남습니다.</li>
@@ -4021,7 +4030,7 @@
 
 <h3 id="pixelate-presets">프리셋과 정리하기</h3>
 <p>프리셋은 단계 설정 한 벌에 이름을 붙여 저장한 것입니다. 설정 칸 맨 위의 프리셋 줄에서 고르고 저장하며, 초록 <strong>정리하기</strong> 단추로 지금 왼쪽 값을 돌려 후보를 만듭니다. 설정 값을 바꾸거나 프리셋을 고른 것만으로는 다시 정리하지 않습니다.</p>
-<figure class="shot"><img src="assets/guide/pixelate-presets.png" alt="프리셋 줄과 펼친 프리셋 목록" width="424" height="347" loading="lazy"><figcaption>① 프리셋 목록 · ② 저장(Save preset) · ③ 이름 바꾸기 · ④ 복사 · ⑤ 지우기 · ⑥ 정리하기(Clean up)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/pixelate-presets.png" alt="프리셋 줄과 펼친 프리셋 목록" width="424" height="357" loading="lazy"><figcaption>① 프리셋 목록 · ② 저장(Save preset) · ③ 이름 바꾸기 · ④ 복사 · ⑤ 지우기 · ⑥ 정리하기(Clean up)</figcaption></figure>
 <h4>프리셋에 드는 것</h4>
 <p>프리셋 하나에는 1~8단계 설정(<a href="#pixelate-color-edit">고정 색·뺀 색</a> 빼고), 단계마다의 <strong>최적화</strong> 체크, <strong class="nolink">0. 최적화 기준</strong>이 함께 듭니다. 프리셋 줄은 설정 칸을 굴려도 맨 위에 그대로 있습니다. 프리셋은 앱 설정에 저장되고, 마지막 설정과 고른 프리셋은 기억합니다.</p>
 <h4>프리셋 줄</h4>
@@ -4036,7 +4045,7 @@
 <tr><td>⑥ <strong>정리하기</strong></td><td>초록 재생 아이콘. 아래 <strong>정리하기</strong> 절을 봅니다.</td></tr>
 </tbody>
 </table></div>
-<figure class="shot"><img src="assets/guide/pixelate-presets-2.png" alt="고른 프리셋 이름 바꾸기 창" width="304" height="143" loading="lazy"><figcaption>⑦ 프리셋 이름(Preset name)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/pixelate-presets-2.png" alt="고른 프리셋 이름 바꾸기 창" width="304" height="144" loading="lazy"><figcaption>⑦ 프리셋 이름(Preset name)</figcaption></figure>
 <p>이름 바꾸기는 ⑦ 프리셋 이름을 묻습니다. 다른 프리셋과 같은 이름(대소문자 무시)이면 알리고 다시 묻습니다.</p>
 <h4>정리하기</h4>
 <p>⑥ <strong>정리하기</strong>는 지금 왼쪽 값으로 고른 프리셋 하나를 돌려 <a class="term" href="#pixelate-candidates">후보 줄</a>의 그 칸만 바꿉니다. 다른 후보는 그대로이고, 같은 이름 칸이 없으면 맨 앞에 새 칸이 생깁니다. 도는 칸은 테두리를 따라 짧은 노란 선이 돕니다.</p>
@@ -4099,21 +4108,21 @@
 </tbody>
 </table></div>
 <h4>간편 설정</h4>
-<figure class="shot"><img src="assets/guide/pixelate-settings-4.png" alt="설정 칸의 간편 설정" width="396" height="235" loading="lazy"><figcaption>② 결과 크기(Output size: 자동 · 가로×세로 · 사슬 단추) · ③ 모든 프레임이 한 팔레트(One palette for all frames)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/pixelate-settings-4.png" alt="설정 칸의 간편 설정" width="396" height="297" loading="lazy"><figcaption>② 결과 크기(Output size: 자동 · 가로×세로 · 사슬 단추) · ③ 줄마다 칸 맞추기(Fit cells by row) · ④ 모든 프레임이 한 팔레트(One palette for all frames)</figcaption></figure>
 <p><strong class="nolink">간편 설정</strong>은 <strong class="nolink">0. 최적화 기준</strong> 바로 아래 칸으로, 처음에 펼쳐져 있습니다. 여기 값은 아래 단계의 같은 설정과 늘 함께 바뀌고, 다른 설정처럼 <strong>정리하기</strong>를 눌러야 결과에 들어갑니다.</p>
 <ul>
 <li>② 결과 크기 줄에서 <strong>자동</strong>를 켜면(기본) 결과 크기가 칸 크기대로(또는 <a href="#pixelate-grid">4. 결과 크기</a>의 배율대로) 정해지고 가로×세로 칸에 고른 결과의 크기가 회색으로 보입니다. 끄면 지금 결과 크기에서 시작하는 고정 크기가 되어 적은 가로×세로에 맞춥니다.</li>
 <li>사슬 단추(비율 유지)를 켜면 가로를 바꿀 때 세로가(세로를 바꿀 때 가로가) 지금 결과 비율대로 따라 바뀌고, 그림은 비율을 지킨 채 크기에 맞춰집니다.</li>
-<li><strong>줄마다 칸 맞추기(최대 30%)</strong>: 켜면 그림 전체에 고른 간격의 격자를 정한 뒤, 원본의 색 경계를 따라 세로 칸 경계는 줄마다, 가로 칸 경계는 열마다 따로 맞춥니다. 경계 이동과 칸 너비·높이는 원래 칸에서 최대 30%까지만 달라지고, 작은 칸(<a href="#pixelate-grid">칸 경계 지역 보정</a>의 최소 칸 크기 미만)은 그대로입니다. 켜 둔 동안 정리하기·자동 최적화는 격자를 그대로 두고 색·정리 같은 다른 항목만 찾습니다. 끄면 줄별 보정을 끕니다. 프리셋에 저장됩니다.</li>
+<li>③ <strong>줄마다 칸 맞추기(최대 30%)</strong>: 켜면 그림 전체에 고른 간격의 격자를 정한 뒤, 원본의 색 경계를 따라 세로 칸 경계는 줄마다, 가로 칸 경계는 열마다 따로 맞춥니다. 경계 이동과 칸 너비·높이는 원래 칸에서 최대 30%까지만 달라지고, 작은 칸(<a href="#pixelate-grid">칸 경계 지역 보정</a>의 최소 칸 크기 미만)은 그대로입니다. 켜 둔 동안 정리하기·자동 최적화는 격자를 그대로 두고 색·정리 같은 다른 항목만 찾습니다. 끄면 줄별 보정을 끕니다. 프리셋에 저장됩니다.</li>
 <li>목표 색 수 줄은 <a href="#pixelate-score">0. 최적화 기준</a>의 <strong>목표 색 수</strong>·<strong>자동</strong>·<strong>강제</strong>와 같은 값입니다. 결과 색이 이 수보다 많으면 점수를 깎아, 정리하기·자동 최적화가 이 색 수 안팎의 결과를 고르게 합니다. <strong>강제</strong>를 켜면 목표보다 적은 색도 그 차이만큼 깎아 목표에 더 가까운 색 수를 고릅니다. <strong>자동</strong>(기본)를 켜면 색 수를 점수에서 보지 않습니다(이때 숫자와 강제는 꺼짐). 팔레트 색 수를 직접 정하지는 않으므로, 꼭 그 수여야 하면 <a href="#pixelate-palette">6. 팔레트</a>의 색 수를 정합니다.</li>
 <li><strong>뽑아서 찾을 프레임</strong>은 <a href="#pixelate-score">0. 최적화 기준</a>의 같은 칸과 같은 값입니다(기본 5). 프레임이 이보다 많으면 정리하기·자동 최적화가 처음·끝을 넣어 고르게 이만큼만 뽑아 시도를 돌리고, 찾은 설정을 모든 프레임에 한 번 적용합니다. 뽑히는 프레임은 원본 보기에서 노란 테두리로 보입니다. 0이면 모든 프레임으로 찾습니다.</li>
 <li><strong>배경 지우기</strong> 체크는 1. 배경 지우기의 방식과 같은 설정입니다. 끄면 1. 배경 지우기가 <strong>지우지 않음</strong>이 되고, 켜면 마지막으로 쓴 지우는 방식(처음은 자동)이 되며 원본 보기에 배경을 지운 모습이 보입니다.</li>
-<li>③ <strong>모든 프레임이 한 팔레트</strong>: 켜면 모든 프레임을 팔레트 하나로 변환해 프레임끼리 색이 같고, 끄면 프레임마다 팔레트를 따로 정합니다. <a href="#pixelate-palette">6. 팔레트</a>의 같은 체크처럼 그림에서 색을 뽑는 팔레트 방식에서만 쓰고, 다른 방식이면 꺼집니다.</li>
+<li>④ <strong>모든 프레임이 한 팔레트</strong>: 켜면 모든 프레임을 팔레트 하나로 변환해 프레임끼리 색이 같고, 끄면 프레임마다 팔레트를 따로 정합니다. <a href="#pixelate-palette">6. 팔레트</a>의 같은 체크처럼 그림에서 색을 뽑는 팔레트 방식에서만 쓰고, 다른 방식이면 꺼집니다.</li>
 </ul>
 <h4>1. 배경 지우기</h4>
-<figure class="shot"><img src="assets/guide/pixelate-settings-2.png" alt="1. 배경 지우기·2. 프레임 나누기 단계를 펼친 설정 칸" width="396" height="616" loading="lazy"><figcaption>④ 1. 배경 지우기(Background) · ⑤ 2. 프레임 나누기(Frames) · ⑥ 배경 방식(Mode: 자동) · ⑦ 프레임 나누기 방식(Mode: 자동)</figcaption></figure>
-<p>④ <strong class="nolink">1. 배경 지우기</strong>의 처음 값은 <strong>지우지 않음</strong>이며 기본 제공 프리셋도 모두 같습니다. 지우려면 원본 아래 막대의 <span class="nolink">지우개</span> 단추를 켜거나 방식을 고릅니다.</p>
-<p>⑥ 배경 <strong>방식</strong>에 따라 쓰는 칸만 보입니다. 그림은 <strong>자동(테두리 색)</strong>를 고른 모습입니다. <strong class="nolink">색 고르기</strong>이면 방식 옆에 색 단추가 나오고 <strong>이미 투명하면 그 투명도 쓰기</strong>가 숨습니다. <strong>지우지 않음</strong>이면 <a class="term" href="#tools-fill">허용 오차</a>부터 <strong>배경 남기기(한 색으로)</strong>까지 숨고 알파 기준·잡티 줄만 남습니다. 허용 오차 옆 자동을 켜면 허용 오차 칸은 보인 채 꺼집니다. ⑦ 프레임 나누기 방식도 같습니다. <strong>자동(빈 줄로 나눔)</strong>이면 작은 조각 합치기·거리 줄이, <strong>격자</strong>이면 열·행 줄이 보이고, <strong>한 장</strong>이면 둘 다 숨습니다.</p>
+<figure class="shot"><img src="assets/guide/pixelate-settings-2.png" alt="1. 배경 지우기·2. 프레임 나누기 단계를 펼친 설정 칸" width="396" height="616" loading="lazy"><figcaption>⑤ 1. 배경 지우기(Background) · ⑥ 2. 프레임 나누기(Frames) · ⑦ 배경 방식(Mode: 자동) · ⑧ 프레임 나누기 방식(Mode: 자동)</figcaption></figure>
+<p>⑤ <strong class="nolink">1. 배경 지우기</strong>의 처음 값은 <strong>지우지 않음</strong>이며 기본 제공 프리셋도 모두 같습니다. 지우려면 간편 설정의 <strong>배경 지우기</strong> 체크를 켜거나 방식을 고릅니다.</p>
+<p>⑦ 배경 <strong>방식</strong>에 따라 쓰는 칸만 보입니다. 그림은 <strong>자동(테두리 색)</strong>를 고른 모습입니다. <strong class="nolink">색 고르기</strong>이면 방식 옆에 색 단추가 나오고 <strong>이미 투명하면 그 투명도 쓰기</strong>가 숨습니다. <strong>지우지 않음</strong>이면 <a class="term" href="#tools-fill">허용 오차</a>부터 <strong>배경 남기기(한 색으로)</strong>까지 숨고 알파 기준·잡티 줄만 남습니다. 허용 오차 옆 자동을 켜면 허용 오차 칸은 보인 채 꺼집니다. ⑧ 프레임 나누기 방식도 같습니다. <strong>자동(빈 줄로 나눔)</strong>이면 작은 조각 합치기·거리 줄이, <strong>격자</strong>이면 열·행 줄이 보이고, <strong>한 장</strong>이면 둘 다 숨습니다.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>설정</th><th>설명</th></tr></thead>
 <tbody>
@@ -4133,14 +4142,14 @@
 <tr><td><strong class="nolink">색 고르기</strong></td><td>옆 색 단추로 고른 색을 배경색으로 보고, 그 색에서 <strong class="nolink">허용 거리</strong> 안인 색을 지웁니다.</td><td>그림이 테두리에 닿아 자동이 엉뚱한 색을 배경으로 잡을 때, 바탕색이 정확히 무엇인지 알 때.</td></tr>
 </tbody>
 </table></div>
-<figure class="shot"><img src="assets/guide/pixelate-settings-3.png" alt="1. 배경 지우기 단계" width="398" height="352" loading="lazy"><figcaption>⑧ 스티커 테두리 지우기(Remove sticker border) · ⑨ 배경 남기기(한 색으로)(Keep background (one color))</figcaption></figure>
+<figure class="shot"><img src="assets/guide/pixelate-settings-3.png" alt="1. 배경 지우기 단계" width="398" height="352" loading="lazy"><figcaption>⑨ 스티커 테두리 지우기(Remove sticker border) · ⑩ 배경 남기기(한 색으로)(Keep background (one color))</figcaption></figure>
 <ul>
-<li>⑧ <strong>스티커 테두리 지우기</strong>(기본 켬): 외곽선 바깥을 두른 흰 띠(스티커 테두리)를 저절로 찾아 배경과 함께 지웁니다. 가장자리 대부분이 밝은 무채색일 때만 지우고, 지운 뒤 가장자리가 어둡지 않으면 되돌립니다. 배경 단계를 최적화하면 켜고 꺼 봅니다.</li>
-<li>⑨ <strong>배경 남기기(한 색으로)</strong>: 찾은 배경을 지우지 않고 배경색 한 색으로 고르게 남깁니다(결과도 그 색 바탕, 그림 전체가 한 프레임). 색으로 찾은 배경일 때만 뜻이 있습니다. ⑧·⑨는 배경 방식이 <strong>지우지 않음</strong>이면 숨습니다.</li>
+<li>⑨ <strong>스티커 테두리 지우기</strong>(기본 켬): 외곽선 바깥을 두른 흰 띠(스티커 테두리)를 저절로 찾아 배경과 함께 지웁니다. 가장자리 대부분이 밝은 무채색일 때만 지우고, 지운 뒤 가장자리가 어둡지 않으면 되돌립니다. 배경 단계를 최적화하면 켜고 꺼 봅니다.</li>
+<li>⑩ <strong>배경 남기기(한 색으로)</strong>: 찾은 배경을 지우지 않고 배경색 한 색으로 고르게 남깁니다(결과도 그 색 바탕, 그림 전체가 한 프레임). 색으로 찾은 배경일 때만 뜻이 있습니다. ⑨·⑩은 배경 방식이 <strong>지우지 않음</strong>이면 숨습니다.</li>
 <li>단색 배경과 그림 사이에 번진 한 겹도 함께 지웁니다. 외곽선 바깥에 붙은 작은 압축 잡음(배경색에 가깝고 외곽선 색과는 먼 24픽셀 이하 덩어리)도 지웁니다. 흰 머리처럼 넓은 밝은 부분은 남습니다.</li>
 </ul>
 <h4>2. 프레임 나누기</h4>
-<p>⑤ <strong class="nolink">2. 프레임 나누기</strong>는 한 장에 여러 프레임이 든 시트를 프레임마다 나눕니다. 모든 프레임은 같은 <a class="term" href="#screen-canvas">캔버스</a> 크기가 됩니다(<strong>모든 프레임 같은 캔버스 크기</strong>).</p>
+<p>⑥ <strong class="nolink">2. 프레임 나누기</strong>는 한 장에 여러 프레임이 든 시트를 프레임마다 나눕니다. 모든 프레임은 같은 <a class="term" href="#screen-canvas">캔버스</a> 크기가 됩니다(<strong>모든 프레임 같은 캔버스 크기</strong>).</p>
 <div class="table-wrap"><table>
 <thead><tr><th>방식</th><th>나누는 법</th></tr></thead>
 <tbody>
@@ -4330,7 +4339,7 @@
 
 <h3 id="pixelate-cleanup">정리와 외곽선</h3>
 <p><strong class="nolink">7. 정리</strong>는 <a class="term" href="#screen-palette">팔레트</a> 색으로 바꾼 결과에서 외톨이 픽셀·구멍을 고치고 외곽선을 1px로 맞춥니다. <strong class="nolink">8. 프레임 맞추기</strong>는 애니메이션의 <a class="term" href="#screen-timeline">프레임</a> 사이 떨림을 줄입니다.</p>
-<figure class="shot"><img src="assets/guide/pixelate-cleanup.png" alt="7. 정리 단계와 외곽선 1px 맞추기 목록" width="396" height="303" loading="lazy"><figcaption>① 7. 정리(Cleanup) · ② 외곽선 1px 맞추기 목록(Fit outline to 1 px)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/pixelate-cleanup.png" alt="7. 정리 단계: 외곽선 1px 맞추기 줄과 원본 외곽선 기준으로 정리 체크" width="396" height="301" loading="lazy"><figcaption>① 7. 정리(Cleanup) · ② 외곽선 1px 맞추기(Fit outline to 1 px) · ③ 원본 외곽선 기준으로 정리(Use the source outline)</figcaption></figure>
 <h4>7. 정리</h4>
 <p>① <strong class="nolink">7. 정리</strong>에서 켠 항목은 아래 표의 차례(외톨이 → 구멍 → 외곽선 얇게 → 외곽선 → L자)로 적용되고, 벡터로 다시 그리기의 새 선은 그보다 먼저 그려집니다.</p>
 <div class="table-wrap"><table>
@@ -4339,15 +4348,17 @@
 <tr><td><strong>외톨이 픽셀 지우기</strong> · <strong>최대 대비</strong></td><td>켬 · 0.18</td><td>둘레 8칸에 같은 색이 없는 픽셀을 이웃에 가장 많은 색으로 바꿉니다. 이웃과 대비가 최대 대비(OKLab 거리)보다 큰 점(눈동자 등)은 남기고, 1이면 모두 지웁니다.</td></tr>
 <tr><td><strong>1px 구멍 메우기</strong></td><td>켬</td><td>상하좌우가 모두 칠해진 투명 픽셀을 그 넷 중 가장 많은 색으로 메웁니다.</td></tr>
 <tr><td><strong>외곽선 1px 맞추기</strong></td><td>크기를 줄여서</td><td>바깥 외곽선을 1px로 맞추는 방법. 아래 표를 봅니다.</td></tr>
-<tr><td><strong>원본 외곽선 기준으로 정리</strong></td><td>켬</td><td>켜면 외곽선 1px 맞추기가 결과 그림만 보지 않고 배경을 지운 원본에서 한 번 판정한 외곽선을 기준으로, 원본에서 외곽선인 칸만 벗깁니다. 외곽선 두께쯤의 어두운 띠만 외곽선으로 보고, 투명 틈에 닿은 넓은 검은 면(옷·머리 등)은 외곽선으로 보지 않아 피부색 같은 다른 색으로 깎이지 않습니다. 점수의 <strong>외곽선 1px</strong> 항목이 겹 외곽선을 <a class="term" href="#screen-timeline">셀</a> 때도 같은 기준을 씁니다. 끄면 예전처럼 결과 픽셀만 보고 정합니다.</td></tr>
+<tr><td><strong>원본 외곽선 기준으로 정리</strong></td><td>켬</td><td>③ 켜면 외곽선 1px 맞추기가 결과 그림만 보지 않고 배경을 지운 원본에서 한 번 판정한 외곽선을 기준으로, 원본에서 외곽선인 칸만 벗깁니다. 외곽선 두께쯤의 어두운 띠만 외곽선으로 보고, 투명 틈에 닿은 넓은 검은 면(옷·머리 등)은 외곽선으로 보지 않아 피부색 같은 다른 색으로 깎이지 않습니다. 점수의 <strong>외곽선 1px</strong> 항목이 겹 외곽선을 <a class="term" href="#screen-timeline">셀</a> 때도 같은 기준을 씁니다. 끄면 예전처럼 결과 픽셀만 보고 정합니다.</td></tr>
 <tr><td><strong>벡터 단순화(px)</strong> · <strong>남길 작은 덩어리(칸)</strong></td><td>0.6 · 6</td><td>벡터로 다시 그리기에서만 쓰고, 다른 방식이면 숨습니다. 단순화는 외곽선을 곧게 펼 <span class="nolink">허용 오차</span>(결과 픽셀, 크면 매끈하지만 모양을 덜 따라감, 0이면 가운데 선 그대로)이고, 바깥 외곽선과 닿지 않은 어두운 덩어리가 이 칸 수보다 작으면(눈 등) 다시 그리지 않고 둡니다.</td></tr>
 <tr><td><strong>선과 곡선 깔끔하게</strong> · <strong>모서리 각도(°)</strong></td><td>켬 · 40°(10~170°)</td><td>벡터로 다시 그리기에서만 보입니다. 켜면 모서리 각도보다 크게 꺾인 곳에서 외곽선을 나누고 조각마다 직선 또는 원호로 다시 그립니다. 1:1·1:2·1:3처럼 깨끗한 기울기에 가까운 직선은 계단 길이가 고르고, 원호의 계단 길이는 한쪽으로만 늘거나 줄어듭니다. 끄면 단순화한 꺾은선을 그대로 그립니다. 각도를 낮추면 날카로운 모서리가 많아지고 높이면 조각이 부드러운 곡선으로 이어집니다.</td></tr>
 <tr><td><strong>외곽선</strong></td><td>그대로</td><td>투명과 맞닿은 가장자리의 어두운 픽셀을 어떻게 정리할지 고릅니다. 값마다의 결과는 아래 표에 있습니다.</td></tr>
 <tr><td><strong>외곽선 L자 겹 픽셀 줄이기</strong></td><td>끔</td><td>외곽선의 L자 모서리에 겹친 픽셀을 안쪽 색으로 바꿉니다.</td></tr>
 </tbody>
 </table></div>
-<figure class="shot"><img src="assets/guide/pixelate-cleanup-vector.png" alt="벡터로 다시 그리기를 고른 정리 설정의 직선·곡선 깔끔하게와 모서리 각도 40°" width="378" height="131" loading="lazy"><figcaption>③ 벡터로 다시 그리기 · ④ 직선·곡선 깔끔하게 · ⑤ 모서리 각도 40°</figcaption></figure>
-<p>③ <strong>벡터로 다시 그리기</strong>를 고르면 ④ <strong>선과 곡선 깔끔하게</strong>(기본 켬)과 ⑤ <strong>모서리 각도(°)</strong>(기본 40°, 10~170°)가 나타납니다. 두 값을 바꾼 뒤 <strong>정리하기</strong>를 눌러 결과를 확인합니다.</p>
+<figure class="shot"><img src="assets/guide/pixelate-cleanup-compare-source-outline.png" alt="외곽선만 얇게로 정리한 결과 두 장: 원본 외곽선 기준을 끈 왼쪽은 검은 반바지가 옆구리와 다리 사이에서 윗옷·살색으로 깎이고, 켠 오른쪽은 반바지가 그대로" width="344" height="308" loading="lazy"><figcaption>왼쪽: 원본 외곽선 기준으로 정리 끔 · 오른쪽: 켬(기본) — 외곽선 1px 맞추기는 둘 다 외곽선만 얇게</figcaption></figure>
+<p>검은 반바지는 양옆 외곽선과 다리 사이 투명 틈에 바로 닿습니다. 끄면 결과 픽셀만 보고 바깥에 닿은 어두운 픽셀 안쪽을 두꺼운 외곽선의 안쪽 겹으로 여겨 둘레 색으로 벗겨, 반바지가 옆구리와 다리 사이에서 깎입니다. 켜면 원본에서 외곽선 두께쯤의 띠만 외곽선으로 보므로 넓은 반바지는 그대로 남습니다.</p>
+<figure class="shot"><img src="assets/guide/pixelate-cleanup-vector.png" alt="벡터로 다시 그리기를 고른 정리 설정의 직선·곡선 깔끔하게와 모서리 각도 40°" width="378" height="161" loading="lazy"><figcaption>④ 벡터로 다시 그리기 · ⑤ 직선·곡선 깔끔하게 · ⑥ 모서리 각도 40°</figcaption></figure>
+<p>④ <strong>벡터로 다시 그리기</strong>를 고르면 ⑤ <strong>선과 곡선 깔끔하게</strong>(기본 켬)과 ⑥ <strong>모서리 각도(°)</strong>(기본 40°, 10~170°)가 나타납니다. 두 값을 바꾼 뒤 <strong>정리하기</strong>를 눌러 결과를 확인합니다.</p>
 <figure class="shot"><img src="assets/guide/pixelate-cleanup-compare-outline.png" alt="외곽선 색이 들쭉날쭉하고 오른쪽 다리는 외곽선이 빠진 그림의 다리 부분을 외곽선 그대로·가장 어두운 색으로 통일·닫힌 1px 외곽선으로 정리해 나란히 확대한 그림" width="836" height="260" loading="lazy"><figcaption>왼쪽부터: 그대로(기본) · 가장 어두운 색으로 통일 · 닫힌 1px 외곽선 만들기 — 외곽선이 칠 색마다 다른 어두운 색이고 오른쪽 다리는 외곽선이 빠진 원본.</figcaption></figure>
 <p>그대로는 왼쪽 다리의 갈색 외곽선과 빠진 오른쪽 다리 외곽선이 원본대로 남습니다. 통일은 가장자리의 어두운 픽셀만 가장 어두운 색 하나로 바꿔 빠진 곳은 그대로 열려 있고, 닫힌 외곽선은 거기에 더해 외곽선이 없던 가장자리 바깥에 가장 어두운 색 1px을 둘러 모두 닫습니다.</p>
 <div class="table-wrap"><table>
@@ -4373,8 +4384,8 @@
 <p>같은 원본을 실제 정리 파이프라인으로 두 번 돌린 결과입니다. 왼쪽은 단순화한 꺾은선의 계단이 남고 오른쪽은 직선의 계단 길이가 고르며 곡선의 계단 길이가 부드럽게 변합니다. 모서리를 더 날카롭게 남기려면 <strong>모서리 각도(°)</strong>를 낮춥니다.</p>
 <figure class="shot"><img src="assets/guide/pixelate-cleanup-compare.png" alt="외곽선이 두 칸 두께인 원본을 외곽선 1px 맞추기 끔과 외곽선만 얇게로 정리한 결과를 나란히 확대한 그림" width="472" height="432" loading="lazy"><figcaption>왼쪽: 외곽선 1px 맞추기 끔 · 오른쪽: 외곽선만 얇게 — 같은 칸 크기에서 두 겹이던 바깥 외곽선이 1px가 됩니다.</figcaption></figure>
 <h4>8. 프레임 맞추기</h4>
-<figure class="shot"><img src="assets/guide/pixelate-cleanup-2.png" alt="8. 프레임 맞추기 단계" width="396" height="143" loading="lazy"><figcaption>⑥ 8. 프레임 맞추기(Frame consistency)</figcaption></figure>
-<p>⑥ <strong class="nolink">8. 프레임 맞추기</strong>의 <strong>앞뒤 프레임과 같게(떨림 줄이기)</strong>(기본 끔)를 켜면, 앞뒤 프레임이 같은 색인데 이 프레임만 조금 다른 픽셀을 앞뒤 색으로 맞춥니다. 옆 <strong>최대 대비</strong>(기본 0.12)보다 크게 다른 픽셀은 일부러 바꾼 것으로 보고 둡니다.</p>
+<figure class="shot"><img src="assets/guide/pixelate-cleanup-2.png" alt="8. 프레임 맞추기 단계" width="396" height="143" loading="lazy"><figcaption>⑦ 8. 프레임 맞추기(Frame consistency)</figcaption></figure>
+<p>⑦ <strong class="nolink">8. 프레임 맞추기</strong>의 <strong>앞뒤 프레임과 같게(떨림 줄이기)</strong>(기본 끔)를 켜면, 앞뒤 프레임이 같은 색인데 이 프레임만 조금 다른 픽셀을 앞뒤 색으로 맞춥니다. 옆 <strong>최대 대비</strong>(기본 0.12)보다 크게 다른 픽셀은 일부러 바꾼 것으로 보고 둡니다.</p>
 
 <h3 id="pixelate-optimize">자동 최적화</h3>
 <p>자동 최적화는 체크한 프리셋마다 그 프리셋의 설정에서 시작해 최적화를 켠 단계의 값을 바꿔 가며 점수가 가장 높은 설정을 찾고, 프리셋마다 1위 하나를 후보로 보입니다. 설정을 하나하나 고치지 않고 더 나은 결과를 찾을 때 씁니다.</p>

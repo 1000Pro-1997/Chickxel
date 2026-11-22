@@ -6,8 +6,10 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Threading;
 using Chickxel.App;
+using Chickxel.App.Ai;
 using Chickxel.App.Localization;
 using Chickxel.Core.Assets;
+using Chickxel.Core.IO;
 using Chickxel.Core.Model;
 using static GuideShots.ScreenDemo;
 using static GuideShots.ScreenTimelineShots;
@@ -202,7 +204,8 @@ internal static class EffectMakerShots
     /// 효과 만들기: 1 = 창 전체(①~⑬), 2 = 올린 효과가 보이는 목록(⑭ 올림 표시 ⑮ 이 컴퓨터에 없는 올린 효과), 3 = 미리보기 움직임 창(⑯ 움직임 ⑰ 칸마다 자리),
     /// 4 = 변신(⑱ 끝 그림 병아리 ⑲ 칸 띠), 5 = 레이어 설정과 미리보기 장면(⑳ 레이어 설정 ㉑ 장면 줄), 6 = 장면을 메인 편집기에서 고치는 동안의 작은 창(㉒),
     /// 7 = 상태 창(㉓ 상태 단추 ㉔ 자세한 상태), 8 = 규칙 창(㉕ 원문 포함·복사), 9 = AI 칸(㉖ 대화·입력 ㉗ 첨부 단추 ㉘ 모델·보내기),
-    /// 10 = 미리보기 자리·피벗 창(번호 없음 — 가이드에서 4와 5 사이에 놓이고 세 줄은 표로 설명).
+    /// 10 = 미리보기 자리·피벗 창(번호 없음 — 가이드에서 4와 5 사이에 놓이고 세 줄은 표로 설명),
+    /// 11 = 고친 상점 효과의 목록 우클릭 메뉴(원본으로 되돌리기 — 번호 없음, 2와 3 사이), 12 = AI 칸 새 대화 화면(㉙ 새 대화 ㉚ 지난 대화 목록).
     /// </summary>
     [Shot("screen-effect-maker")]
     public static void EffectMaker(ShotKit k)
@@ -291,16 +294,15 @@ internal static class EffectMakerShots
             PackageId = Handle + ".jelly-wobble", AssetId = "jelly-wobble", Version = "1.0.0", ContentHash = "0000000000000000", Name = "Jelly wobble",
         });
         k.Settle(300);
-        ShotKit.Set(maker, "_uploadsHandle", Handle);
-        ShotKit.Set(maker, "_uploads", new List<RemoteCatalogEntry>
+        // 온라인 목록(계정 핸들의 올린 효과 줄은 이 목록에서 고른다)
+        RemoteCatalogEntry Online(string id, string displayName) => new()
         {
-            new()
-            {
-                Id = Handle + ".pixel-rain", Version = "1.0.0", Name = "Pixel rain", Author = author, License = AssetPublishCheck.License,
-                Kinds = new Dictionary<string, int> { [AssetKinds.EffectScript] = 1 },
-            },
-        });
-        ShotKit.Call(maker, "RebuildList");
+            Id = Handle + "." + id, Version = "1.0.0", Name = displayName, Author = author, License = AssetPublishCheck.License,
+            Kinds = new Dictionary<string, int> { [AssetKinds.EffectScript] = 1 },
+        };
+        var pixelRain = Online("pixel-rain", "Pixel rain");
+        void ShowOnline(params RemoteCatalogEntry[] packages) => ShotKit.Call(maker, "ShowRemote", new RemoteCatalogSnapshot(packages, DateTime.UtcNow, false, null));
+        ShowOnline(pixelRain);
         k.Settle(800);
         var items = list.Items.OfType<ListBoxItem>().ToList();
         // 올린 내 효과: 이름 옆 작성자 묶음(프로필 사진·이름, 작성자가 없으면 "올린 효과" 글)
@@ -316,6 +318,25 @@ internal static class EffectMakerShots
         var download = new Rect(from, row.Y, row.Right - from, row.Height);
         k.Save(maker, "screen-effect-maker-2", crop: new Rect(left.X, left.Y, left.Width, left.Height + 40).Inflate(8),
             marks: [Union(maker, published), download], firstNumber: 14);
+
+        // 11: 받거나 올린 뒤 고친 상점 효과(Jelly wobble — 내용 해시가 다름)의 우클릭 메뉴에 원본으로 되돌리기. 온라인 목록에 같은 버전이 있는 것으로 둔다
+        ShowOnline(pixelRain, Online("jelly-wobble", "Jelly wobble"));
+        k.Settle(500);
+        // 열지 않고 고르기만 한다(우클릭 메뉴는 고른 줄을 본다)
+        ShotKit.Call(maker, "SelectInList", wobble.Id);
+        k.Settle(200);
+        var wobbleRow = InWindow(maker, list.Items.OfType<ListBoxItem>().First(i => i.Tag is string t && t == wobble.Id));
+        k.Click(maker, new Point(wobbleRow.X + wobbleRow.Width * 0.6, wobbleRow.Center.Y), Avalonia.Input.MouseButton.Right, settleMs: 500);
+        var revertMenu = PopupArea(maker) ?? throw new InvalidOperationException("no list menu");
+        if (!ShotKit.OpenPopups.Where(p => p.Child is Visual).SelectMany(p => ShotKit.All<MenuItem>((Visual)p.Child!))
+                .Any(m => m.IsEffectivelyVisible && m.Header as string == UiStrings.EffectMaker_RevertToOriginal))
+            throw new InvalidOperationException("revert item not shown");
+        k.Save(maker, "screen-effect-maker-11", crop: Union(maker, header, list).Union(revertMenu).Inflate(8).Intersect(new Rect(maker.ClientSize)));
+        PopupMenus.CloseAll();
+        k.Settle(200);
+        ShowOnline(pixelRain);
+        ShotKit.Call(maker, "SelectInList", ShotKit.Get<string>(maker, "_shownId"));
+        k.Settle(300);
 
         // 4: 변신 — 첫 병아리가 끝 그림 병아리(마법사)로 바뀐다. 가운데 칸에서 멈춰 둔다
         OpenSource(k, maker, MorphScript);
@@ -424,7 +445,7 @@ internal static class EffectMakerShots
             [new PreviewSceneLayer("sky", [sky]), new PreviewSceneLayer(PreviewScene.DefaultGroundName, [ground])], 2, basic.ChickAnchor);
     }
 
-    /// <summary>9: AI 칸을 대본 세션(CLI 없음)으로 열고 짧은 대화 한 차례를 돌려 찍는다.</summary>
+    /// <summary>9: AI 칸을 대본 세션(CLI 없음)으로 열고 짧은 대화 한 차례를 돌려 찍는다. 12: 새 대화를 눌러 지난 대화 목록이 보이는 새 대화 화면.</summary>
     private static void AiPanel(ShotKit k, MainForm main, EffectMakerWindow maker)
     {
         var mcp = (Chickxel.App.Ai.McpServer)ShotKit.Call(main, "EnsureAiServer", maker)!;
@@ -434,6 +455,29 @@ internal static class EffectMakerShots
         var aiToggle = ShotKit.Get<ToggleButton>(maker, "_aiToggle");
         var panel = (Control)Activator.CreateInstance(panelType, Any, null,
             [mcp, App.Settings, (Action)(() => { }), (Action)(() => aiToggle.IsChecked = false), Source("CanvasImage"), Source("PreviewFrame")], null)!;
+        // 12에 보일 지난 대화: 이 AI(지금 고른 쪽)의 효과 만들기 대화 보관소에 미리 저장해 둔다(마지막으로 보던 대화 기억은 비움 — 새 대화 화면)
+        App.Settings.EffectMakerChatLastOpen = null;
+        var provider = ShotKit.Get<AiProvider>(panel, "_provider");
+        var chats = new ChatHistoryStore(Path.Combine(Platform.AppFolder, "EffectMakerChats"));
+        var now = DateTime.UtcNow;
+        (string Title, double HoursAgo, bool Fav)[] rows =
+        [
+            ("Pixel rain falling from the top edge", 50, true),
+            ("Make the wobble slower near the feet", 2, false),
+            ("Fire outline that flickers every frame", 26, false),
+        ];
+        foreach (var (chatTitle, ago, fav) in rows)
+        {
+            var saved = new SavedChat
+            {
+                Id = ChatHistoryStore.NewId(), Provider = provider.Id, Title = chatTitle,
+                CreatedUtc = now.AddHours(-ago - 1), UpdatedUtc = now.AddHours(-ago), SessionId = Guid.NewGuid().ToString("N"),
+                Items = [new ChatItem { Kind = ChatItemKind.User, Text = chatTitle }],
+            };
+            chats.Save(saved);
+            if (fav) chats.SetFavorite(provider.Id, saved.Id, true);
+        }
+        ShotKit.Call(panel, "RefreshHistory");
         var session = new ScriptSession(mcp.Tools)
         {
             // 도구 줄 끝의 걸린 시간을 그럴듯하게(칸이 도구 시작 시각을 적어 둠)
@@ -442,7 +486,7 @@ internal static class EffectMakerShots
                 var tools = ShotKit.Get<System.Collections.IDictionary>(panel, "_tools");
                 if (!tools.Contains(id)) return;
                 object entry = tools[id]!;
-                entry.GetType().GetField("Item2")!.SetValue(entry, Stopwatch.GetTimestamp() - (long)(elapsed.TotalSeconds * Stopwatch.Frequency));
+                entry.GetType().GetField("Item3")!.SetValue(entry, Stopwatch.GetTimestamp() - (long)(elapsed.TotalSeconds * Stopwatch.Frequency));
                 tools[id] = entry;
             },
         };
@@ -494,5 +538,23 @@ internal static class EffectMakerShots
             attachRow,
             Union(maker, model, send),
         ], firstNumber: 26);
+
+        // 12: 새 대화 — 방금 대화를 저장하고 안내 아래 지난 대화 목록(즐겨찾기 먼저, 그다음 최근 순). 줄의 날짜·시각은 영어 화면에 맞춰 en-US로
+        var culture = System.Globalization.CultureInfo.CurrentCulture;
+        System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("en-US");
+        try
+        {
+            ShotKit.Call(panel, "NewConversation");
+            k.Settle(500);
+            k.Save(maker, "screen-effect-maker-12", crop: Union(maker, previewTop, right).Inflate(8).Intersect(new Rect(maker.ClientSize)), marks:
+            [
+                ShotKit.Get<Control>(panel, "_newChat"),
+                ShotKit.Get<Control>(panel, "_history"),
+            ], firstNumber: 29);
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentCulture = culture;
+        }
     }
 }
