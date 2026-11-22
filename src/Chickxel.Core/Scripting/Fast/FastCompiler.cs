@@ -185,8 +185,9 @@ internal sealed class FastCompiler
                 case ScriptSettingType.ColorPairs:
                     fields[setting.Key] = Record(("length", Slot(_sv, slot++)));
                     break;
-                // 레이어 고르기(이름 글)는 칸이 없다: s.키를 읽으면 이름 오류 → Jint(그 레이어를 읽는 ctx.layer 등도 Jint에만 있음)
+                // 레이어·글꼴 고르기(이름 글)는 칸이 없다: s.키를 읽으면 이름 오류 → Jint(그 레이어를 읽는 ctx.layer, 글꼴로 그리는 ctx.text도 Jint에만 있음)
                 case ScriptSettingType.Layer:
+                case ScriptSettingType.Font:
                     break;
             }
         }
@@ -212,9 +213,9 @@ internal sealed class FastCompiler
         };
     }
 
-    /// <summary>설정 칸 배치(선언 순서): 숫자·참거짓·고르기(값의 번호)·색 목록과 색 쌍 목록(항목 수) = 1칸, 색 = r, g, b, a 4칸, 레이어 고르기 = 0칸.</summary>
+    /// <summary>설정 칸 배치(선언 순서): 숫자·참거짓·고르기(값의 번호)·색 목록과 색 쌍 목록(항목 수) = 1칸, 색 = r, g, b, a 4칸, 레이어·글꼴 고르기 = 0칸.</summary>
     public static int SlotCount(IReadOnlyList<ScriptSetting> settings)
-        => settings.Sum(s => s.Type switch { ScriptSettingType.Color => 4, ScriptSettingType.Layer => 0, _ => 1 });
+        => settings.Sum(s => s.Type switch { ScriptSettingType.Color => 4, ScriptSettingType.Layer or ScriptSettingType.Font => 0, _ => 1 });
 
     /// <summary>
     /// <paramref name="script"/>(해석한 원문)의 render를 컴파일한다. 부분집합 밖이면 <see cref="FastUnsupportedException"/>.

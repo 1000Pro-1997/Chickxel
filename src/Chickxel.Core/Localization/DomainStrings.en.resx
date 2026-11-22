@@ -288,11 +288,12 @@
   <data name="Script_InvalidSettingKey" xml:space="preserve"><value>settings[{index}].key must start with a letter or _ and use only letters, digits and _.</value></data>
   <data name="Script_DuplicateSettingKey" xml:space="preserve"><value>Duplicate setting key: {key}</value></data>
   <data name="Script_InvalidSettingLabel" xml:space="preserve"><value>label of setting {key} must be a string.</value></data>
-  <data name="Script_InvalidSettingType" xml:space="preserve"><value>type of setting {key} must be int, number, bool, color, choice, colorList, colorPairs, layer or text.</value></data>
+  <data name="Script_InvalidSettingType" xml:space="preserve"><value>type of setting {key} must be int, number, bool, color, choice, colorList, colorPairs, layer, text or font.</value></data>
   <data name="Script_InvalidSettingRange" xml:space="preserve"><value>min, max or step of setting {key} is invalid (numbers, min ≤ max, step &gt; 0, whole numbers for int).</value></data>
   <data name="Script_InvalidSettingDefault" xml:space="preserve"><value>default of setting {key} doesn't match its type or range.</value></data>
   <data name="Script_InvalidSettingChoices" xml:space="preserve"><value>choices of setting {key} must list unique strings or objects with value and label.</value></data>
   <data name="Script_InvalidLayerSettingField" xml:space="preserve"><value>layer setting {key} can't have {field} (only key, label and default, a layer name). The effects window lists the document's layers to choose from.</value></data>
+  <data name="Script_InvalidFontSettingField" xml:space="preserve"><value>font setting {key} can't have {field} (only key, label and default, a font name such as "Galmuri11"). The effects window lists the app's fonts and the fonts you added to choose from.</value></data>
   <data name="Script_InvalidTextSettingField" xml:space="preserve"><value>text setting {key} can't have {field} (only key, label, default and max).</value></data>
   <data name="Script_InvalidTextSettingMax" xml:space="preserve"><value>max of text setting {key} must be a whole number from 1 to {max}.</value></data>
   <data name="Script_InvalidTextOptions" xml:space="preserve"><value>ctx.text requires text (up to 1000 characters) and valid font, size, color, bold, italic, smooth, align, letterSpacing, lineSpacing or width options.</value></data>

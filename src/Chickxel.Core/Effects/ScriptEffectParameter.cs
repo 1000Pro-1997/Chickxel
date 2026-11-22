@@ -29,6 +29,7 @@ internal sealed class ScriptEffectParameter : EffectParameter
         _setting = setting;
         if (setting.Type == ScriptSettingType.Layer) MaxLength = ScriptSetting.MaxLayerNameLength;
         if (setting.Type == ScriptSettingType.Text) MaxLength = (int)(setting.Max ?? ScriptSetting.MaxTextLength);
+        if (setting.Type == ScriptSettingType.Font) MaxLength = TextEffect.MaxFontNameLength;
         SetDefault(program.CreateEffect());
     }
 
@@ -88,6 +89,8 @@ internal sealed class ScriptEffectParameter : EffectParameter
                 return ScriptSetting.LayerName(EffectJson.String(node));
             case ScriptSettingType.Text:
                 return EffectJson.String(node);
+            case ScriptSettingType.Font:
+                return ScriptSetting.FontName(EffectJson.String(node));
             default:
                 // 고르기: 저장 ID 그대로, 없으면 대소문자만 다른 ID(기본 효과의 열거 이름 읽기와 같게)
                 if (EffectJson.String(node) is not { } name) return null;
@@ -105,7 +108,7 @@ internal sealed class ScriptEffectParameter : EffectParameter
         ScriptSettingType.ColorList => EffectParameterKind.ColorList,
         ScriptSettingType.ColorPairs => EffectParameterKind.ColorPairList,
         // 레이어 고르기는 글(레이어 이름) — 레시피 매개변수로는 내보내지 않는다(고를 레이어가 문서마다 다름)
-        ScriptSettingType.Text => EffectParameterKind.Text,
+        ScriptSettingType.Text or ScriptSettingType.Font => EffectParameterKind.Text,
         ScriptSettingType.Layer => EffectParameterKind.Text,
         _ => EffectParameterKind.Choice,
     };

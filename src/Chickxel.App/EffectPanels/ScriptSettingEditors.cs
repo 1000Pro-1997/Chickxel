@@ -19,7 +19,7 @@ public sealed partial class LayerEffectsDialog
     /// 여러 줄 덩어리인지)를 부른다. 정수·실수는 슬라이더·숫자 칸(<c>widget: "angle"</c>이면 각도 다이얼도, <c>"point"</c>면 짝 Y 설정과 함께 X·Y 칸과
     /// 점 고르기 — Y 설정은 따로 줄이 없음), 켜고 끔, 여러 줄 글, 색(단색·그라데이션 — 기본 효과 색 칸과 같고 슬롯은 설정 키), 고르기,
     /// 색 목록·색 쌍 목록(항목마다 단색·그라데이션, 더하기·빼기·순서 바꾸기 — 그라데이션은 항목을 따라 옮김),
-    /// 레이어 고르기(<paramref name="layers"/>의 이름 — <see cref="ScriptLayerEditor"/>).
+    /// 레이어 고르기(<paramref name="layers"/>의 이름 — <see cref="ScriptLayerEditor"/>), 글꼴 고르기(글씨 효과와 같은 칸 — <see cref="FontPicker.EffectField"/>).
     /// 값과 그라데이션은 <paramref name="set"/>으로 효과를 바꿔 고치고, 항목 수·순서가 바뀌면 <paramref name="rebuild"/>로 칸을 다시 만든다.
     /// </summary>
     internal static void AddScriptSettingRows(ScriptEffectProgram program, ScriptEffect effect, Action<Func<LayerEffect, LayerEffect>> set,
@@ -102,6 +102,9 @@ public sealed partial class LayerEffectsDialog
                     break;
                 case ScriptSettingType.Layer:
                     row(label, ScriptLayerEditor(layers, (string)values[key], v => SetValue(key, v)).HelpAt(page, anchor: "A layer picker (layer)"), false);
+                    break;
+                case ScriptSettingType.Font:
+                    row(label, FontPicker.EffectField((string)values[key], v => SetValue(key, v)), true);
                     break;
                 default:
                     var choices = setting.Choices;

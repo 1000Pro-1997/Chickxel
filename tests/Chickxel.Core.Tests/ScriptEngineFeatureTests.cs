@@ -734,6 +734,51 @@ public class ScriptEngineFeatureTests
     }
 
     [Fact]
+    public void Font_settings_keep_the_font_name_and_ctx_text_draws_with_it()
+    {
+        var program = Parse(Unique("""
+            effect({ name: "fonts", settings: [
+              { key: "font", type: "font", default: "Galmuri7" },
+              { key: "plain", type: "font" },
+            ], render(img, ctx, s) { img.data[0] = ctx.text("A", { font: s.font }).height; img.data[1] = ctx.text("A", { font: s.plain }).height; } });
+            """));
+        Assert.Equal((ScriptSettingType.Font, "Galmuri7"), (program.Settings[0].Type, program.Settings[0].Default));
+        Assert.Equal(Chickxel.Core.Text.FontLibrary.DefaultName, program.Settings[1].Default);
+        // 앞뒤 공백은 지우고, 이 컴퓨터에 없는 이름은 그대로 두며, 빈 이름·글이 아닌 값은 기본값
+        Assert.Equal("Galmuri14", program.NormalizeSettings(new Dictionary<string, object> { ["font"] = " Galmuri14 " })["font"]);
+        Assert.Equal("NotInstalled", program.NormalizeSettings(new Dictionary<string, object> { ["font"] = "NotInstalled" })["font"]);
+        Assert.Equal("Galmuri7", program.NormalizeSettings(new Dictionary<string, object> { ["font"] = "  " })["font"]);
+        Assert.Equal("Galmuri7", program.NormalizeSettings(new Dictionary<string, object> { ["font"] = 3 })["font"]);
+
+        var effect = program.CreateEffect(new Dictionary<string, object> { ["font"] = "Galmuri14" });
+        var parameter = EffectRegistry.ParametersOf(effect, _ => program).Single(p => p.Key == "font");
+        Assert.Equal(EffectParameterKind.Text, parameter.Kind);
+        var json = EffectCodec.Write(effect);
+        Assert.Equal("Galmuri14", ((JsonObject)json[EffectCodec.SettingsKey]!)["font"]!.GetValue<string>());
+        var hash = ScriptLibrary.Add(program.Source);
+        ScriptLibrary.SetTrust(hash, true);
+        Assert.Equal("Galmuri14", ((ScriptEffect)EffectCodec.Read((JsonObject)JsonNode.Parse(json.ToJsonString())!)).Settings["font"]);
+
+        // 고른 글꼴로 그린다: Galmuri7은 기본 글꼴(Galmuri11)보다 낮다
+        var image = new PixelImage(1, 1);
+        program.Render(image, image.Bounds, ScriptFrameContext.Still);
+        Assert.True(image[0, 0].R < image[0, 0].G, $"Galmuri7 {image[0, 0].R}px, default {image[0, 0].G}px");
+    }
+
+    [Theory]
+    [InlineData("max: 10", "max")]
+    [InlineData("min: 1", "min")]
+    [InlineData("choices: ['a']", "choices")]
+    [InlineData("default: ''", "default")]
+    [InlineData("default: 3", "default")]
+    public void Invalid_font_setting_declarations_are_rejected(string fields, string field)
+    {
+        var result = ScriptEffectProgram.Parse($"effect({{ name: 'x', settings: [{{ key: 'font', type: 'font', {fields} }}], render() {{}} }});");
+        Assert.False(result.Success);
+        Assert.Contains(result.Errors, error => error.Kind == ScriptErrorKind.Declaration && error.Message.Contains(field, StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Context_text_defaults_to_a_bounded_transparent_image_and_rejects_oversized_text()
     {
         var program = Parse(Unique("""

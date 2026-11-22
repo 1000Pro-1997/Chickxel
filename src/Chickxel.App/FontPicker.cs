@@ -4,7 +4,7 @@ using Chickxel.App.Localization;
 namespace Chickxel.App;
 
 /// <summary>
-/// 글꼴 고르기 목록(글씨 도구 설정·효과 창 글씨 설정): 내장 글꼴 다음 사용자 글꼴(<see cref="FontLibrary.List"/> 순서).
+/// 글꼴 고르기 목록(글씨 도구 설정·효과 창 글씨 설정·스크립트 효과 글꼴 설정): 내장 글꼴 다음 사용자 글꼴(<see cref="FontLibrary.List"/> 순서).
 /// 고른 이름이 이 컴퓨터에 없으면 맨 끝에 "이름 (없음)"으로 보인다(그 글씨는 기본 글꼴로 그려짐).
 /// 화면에 붙어 있는 동안 글꼴 폴더가 바뀌면(<see cref="FontLibrary.Changed"/>, 아무 스레드) UI 스레드에서 목록을 다시 채운다.
 /// </summary>
@@ -107,6 +107,42 @@ internal sealed class FontPicker
 
     private static string MissingLabel(string name)
         => string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.TextEffect_FontMissing, name);
+
+    /// <summary>
+    /// 효과 창의 글꼴 칸(글씨 효과·스크립트 효과의 <c>type: "font"</c> 설정이 함께 씀): 목록 + 폰트 추가·폰트 폴더 열기 아이콘 단추, 그 아래
+    /// 없는 글꼴 경고(고른 글꼴이 이 컴퓨터에 없을 때만). 목록에서 고르거나 글꼴을 더하면 <paramref name="changed"/>(글꼴 이름).
+    /// 고른 글꼴의 상태(없음·벡터)가 바뀔 수 있을 때마다(만들 때·고름·더함·글꼴 폴더 바뀜) <paramref name="state"/>.
+    /// </summary>
+    public static Control EffectField(string name, Action<string> changed, Action<FontPicker>? state = null)
+    {
+        var font = new FontPicker(170) { Name = name };
+        var missing = Ui.Label(UiStrings.TextEffect_FontMissingTip);
+        missing.Foreground = AppTheme.WarningBrush;
+        missing.TextWrapping = TextWrapping.Wrap;
+        missing.MaxWidth = 290;
+        void State()
+        {
+            missing.IsVisible = font.IsMissing;
+            state?.Invoke(font);
+        }
+        font.Picked += picked =>
+        {
+            changed(picked);
+            State();
+        };
+        font.ListChanged += State;
+        Button add = null!;
+        add = Ui.IconButton(VectorIcon.Plus, UiStrings.TextTool_AddFontTip, (_, _) =>
+        {
+            if (AddFont(add) is not { } added) return;
+            font.Name = added;
+            changed(added);
+            State();
+        }, 26);
+        var open = Ui.IconButton(VectorIcon.FolderOpen, UiStrings.TextTool_OpenFontFolder, (_, _) => OpenFolder(), 26);
+        State();
+        return new StackPanel { Spacing = 2, Children = { Ui.Row(font.Combo, add, open), missing } };
+    }
 
     /// <summary>글꼴 파일(.ttf .otf .ttc .bdf)을 골라 앱 글꼴 폴더에 더한다. 더한 글꼴 이름(취소·실패하면 null, 실패는 알림 창).</summary>
     public static string? AddFont(Visual? owner)

@@ -443,6 +443,9 @@ public sealed class ScriptEffectProgram
             case ScriptSettingType.Layer:
                 // 레이어 이름: 문서에 없는 이름도 그대로 둔다(고르기 상자가 없는 이름으로 보이고, 스크립트는 null을 받음)
                 return ScriptSetting.LayerName(value);
+            case ScriptSettingType.Font:
+                // 글꼴 이름: 이 컴퓨터에 없는 이름도 그대로 둔다(고르기 상자가 "이름 (없음)"으로 보이고, ctx.text는 기본 글꼴로 그림)
+                return ScriptSetting.FontName(value);
             default:
                 return value is string choice && setting.Choices.Any(c => c.Value == choice) ? choice : null;
         }

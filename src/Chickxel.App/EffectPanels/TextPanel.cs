@@ -62,35 +62,9 @@ public sealed partial class LayerEffectsDialog
         text.TextChanged += (_, _) => set(o => T(o) with { Text = text.Text ?? "" });
         form.Block(UiStrings.TextEffect_Text, text);
 
-        var font = new FontPicker(170) { Name = e.FontName };
-        var missing = Ui.Label(UiStrings.TextEffect_FontMissingTip);
-        missing.Foreground = AppTheme.WarningBrush;
-        missing.TextWrapping = TextWrapping.Wrap;
-        missing.MaxWidth = 290;
         var smooth = CheckEditor(UiStrings.TextEffect_Smooth, e.Smooth, v => set(o => T(o) with { Smooth = v })).Tip(UiStrings.TextEffect_SmoothTip);
-        // 매끄럽게는 벡터 글꼴(TTF·OTF)일 때만, 없는 글꼴은 경고(기본 글꼴로 그림).
-        void FontState()
-        {
-            missing.IsVisible = font.IsMissing;
-            smooth.IsEnabled = font.IsVector;
-        }
-        font.Picked += name =>
-        {
-            set(o => T(o) with { FontName = name });
-            FontState();
-        };
-        font.ListChanged += FontState;
-        var addFont = Ui.IconButton(VectorIcon.Plus, UiStrings.TextTool_AddFontTip, (_, _) =>
-        {
-            if (FontPicker.AddFont(form.Owner) is not { } name) return;
-            font.Name = name;
-            set(o => T(o) with { FontName = name });
-            FontState();
-        }, 26);
-        var openFonts = Ui.IconButton(VectorIcon.FolderOpen, UiStrings.TextTool_OpenFontFolder, (_, _) => FontPicker.OpenFolder(), 26);
-        form.Row(UiStrings.TextEffect_Font, font.Combo, addFont, openFonts);
-        form.Row("", missing);
-        FontState();
+        // 매끄럽게는 벡터 글꼴(TTF·OTF)일 때만
+        form.Block(UiStrings.TextEffect_Font, FontPicker.EffectField(e.FontName, name => set(o => T(o) with { FontName = name }), font => smooth.IsEnabled = font.IsVector));
 
         var bold = CheckEditor(UiStrings.TextEffect_Bold, e.Bold, v => set(o => T(o) with { Bold = v }));
         var italic = CheckEditor(UiStrings.TextEffect_Italic, e.Italic, v => set(o => T(o) with { Italic = v }));

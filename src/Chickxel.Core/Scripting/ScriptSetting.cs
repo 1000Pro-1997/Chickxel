@@ -3,7 +3,7 @@ using Chickxel.Core.Model;
 namespace Chickxel.Core.Scripting;
 
 /// <summary>
-/// 스크립트 설정 값의 종류. 선언의 <c>type</c> 문자열 <c>int</c>, <c>number</c>, <c>bool</c>, <c>color</c>, <c>choice</c>, <c>colorList</c>, <c>colorPairs</c>, <c>layer</c>, <c>text</c>.
+/// 스크립트 설정 값의 종류. 선언의 <c>type</c> 문자열 <c>int</c>, <c>number</c>, <c>bool</c>, <c>color</c>, <c>choice</c>, <c>colorList</c>, <c>colorPairs</c>, <c>layer</c>, <c>text</c>, <c>font</c>.
 /// </summary>
 public enum ScriptSettingType
 {
@@ -35,6 +35,12 @@ public enum ScriptSettingType
     Layer,
     /// <summary>여러 줄 글. C# 값과 JS 값 모두 문자열, 선언의 <c>max</c>는 최대 글자 수.</summary>
     Text,
+    /// <summary>
+    /// 글꼴 고르기. C# 값과 JS 값 모두 글꼴 이름 문자열(<see cref="Chickxel.Core.Text.FontLibrary"/>의 저장 이름, 앞뒤 공백 없이 <see cref="TextEffect.MaxFontNameLength"/>자까지,
+    /// 기본 <see cref="Chickxel.Core.Text.FontLibrary.DefaultName"/>). 효과 창은 글씨 효과와 같은 글꼴 목록(앱 글꼴 + 더한 글꼴)을 보이고, 스크립트는
+    /// <c>ctx.text(글, { font: s.키 })</c>로 그린다. 이 컴퓨터에 없는 이름도 그대로 두며 그리기는 기본 글꼴로 한다.
+    /// </summary>
+    Font,
 }
 
 /// <summary>설정 칸을 그리는 모양(선언의 <c>widget</c>). 저장 값은 바꾸지 않고 효과 창의 편집기만 바꾼다.</summary>
@@ -103,6 +109,10 @@ public sealed record ScriptSetting(
     /// <summary>레이어 고르기 설정 값을 맞춘다: 문자열이면 앞뒤 공백을 지운 이름(빈 문자열 = 고르지 않음), 너무 길거나 문자열이 아니면 null.</summary>
     public static string? LayerName(object? value)
         => value is string text && text.Trim() is { Length: <= MaxLayerNameLength } name ? name : null;
+
+    /// <summary>글꼴 설정 값을 맞춘다: 문자열이면 앞뒤 공백을 지운 이름, 비었거나 너무 길거나 문자열이 아니면 null(기본값으로).</summary>
+    public static string? FontName(object? value)
+        => value is string text && text.Trim() is { Length: > 0 and <= TextEffect.MaxFontNameLength } name ? name : null;
 
     /// <summary>
     /// 색의 알파를 고를 수 있는지(선언의 <c>alpha</c>, 기본 true). false면 색·색 목록·색 쌍 목록의 모든 색이 불투명(알파 255)으로 맞춰진다.

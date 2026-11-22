@@ -524,6 +524,7 @@ internal static partial class ScriptDeclarationReader
             "colorPairs" => ScriptSettingType.ColorPairs,
             "layer" => ScriptSettingType.Layer,
             "text" => ScriptSettingType.Text,
+            "font" => ScriptSettingType.Font,
             _ => null,
         } : null;
         if (type is null)
@@ -671,6 +672,23 @@ internal static partial class ScriptDeclarationReader
                     return null;
                 }
                 return Done(new(key, label, type.Value, null, null, null, layerName, []));
+            }
+            case ScriptSettingType.Font:
+            {
+                // 글꼴 고르기: key·label·default(글꼴 이름, 없으면 기본 글꼴)만. 이 컴퓨터에 없는 이름도 받는다(더한 글꼴은 컴퓨터마다 다름)
+                foreach (string field in (string[])["min", "max", "step", "choices"])
+                    if (!setting.Get(field).IsUndefined())
+                    {
+                        fail(DomainStrings.FormatScript_InvalidFontSettingField(key: key, field: field), ["settings", index, field]);
+                        return null;
+                    }
+                string? fontName = defaultValue.IsUndefined() ? Chickxel.Core.Text.FontLibrary.DefaultName : defaultValue is JsString ? ScriptSetting.FontName(defaultValue.AsString()) : null;
+                if (fontName is null)
+                {
+                    BadDefault();
+                    return null;
+                }
+                return Done(new(key, label, type.Value, null, null, null, fontName, []));
             }
             case ScriptSettingType.ColorList:
             case ScriptSettingType.ColorPairs:

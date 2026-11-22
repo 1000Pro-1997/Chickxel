@@ -480,6 +480,8 @@ public static class EffectRecipeFormat
                 return AssetJson.String(value) is { } choice && setting.Choices.Any(c => c.Value == choice);
             case ScriptSettingType.Layer:
                 return AssetJson.String(value) is { } layer && ScriptSetting.LayerName(layer) == layer;
+            case ScriptSettingType.Font:
+                return AssetJson.String(value) is { } font && ScriptSetting.FontName(font) == font;
             default:
                 return false;
         }

@@ -296,11 +296,12 @@
   <data name="Script_InvalidSettingKey" xml:space="preserve"><value>settings[{index}]의 key는 영문자나 _로 시작하고 영문자, 숫자, _만 쓴 이름이어야 합니다.</value><comment>index = 설정 목록 안 번호(0부터).</comment></data>
   <data name="Script_DuplicateSettingKey" xml:space="preserve"><value>설정 key가 겹칩니다: {key}</value><comment>key = 겹친 설정 키.</comment></data>
   <data name="Script_InvalidSettingLabel" xml:space="preserve"><value>설정 {key}의 label은 문자열이어야 합니다.</value><comment>key = 설정 키.</comment></data>
-  <data name="Script_InvalidSettingType" xml:space="preserve"><value>설정 {key}의 type은 int, number, bool, color, choice, colorList, colorPairs, layer, text 중 하나여야 합니다.</value><comment>key = 설정 키.</comment></data>
+  <data name="Script_InvalidSettingType" xml:space="preserve"><value>설정 {key}의 type은 int, number, bool, color, choice, colorList, colorPairs, layer, text, font 중 하나여야 합니다.</value><comment>key = 설정 키.</comment></data>
   <data name="Script_InvalidSettingRange" xml:space="preserve"><value>설정 {key}의 min, max, step이 잘못되었습니다(숫자, min ≤ max, step &gt; 0, int는 정수).</value><comment>key = 설정 키.</comment></data>
   <data name="Script_InvalidSettingDefault" xml:space="preserve"><value>설정 {key}의 default가 type에 맞지 않거나 범위를 벗어납니다.</value><comment>key = 설정 키.</comment></data>
   <data name="Script_InvalidSettingChoices" xml:space="preserve"><value>설정 {key}의 choices는 값이 겹치지 않는 문자열이나 value, label을 가진 객체 목록이어야 합니다.</value><comment>key = 설정 키.</comment></data>
   <data name="Script_InvalidLayerSettingField" xml:space="preserve"><value>레이어 설정 {key}에는 {field}를 쓸 수 없습니다(key, label, default만 — default는 레이어 이름). 고를 레이어 목록은 효과 창이 문서의 레이어로 보여 줍니다.</value><comment>key = 설정 키; field = 쓸 수 없는 칸 이름.</comment></data>
+  <data name="Script_InvalidFontSettingField" xml:space="preserve"><value>글꼴 설정 {key}에는 {field}를 쓸 수 없습니다(key, label, default만 — default는 "Galmuri11" 같은 글꼴 이름). 고를 글꼴 목록은 효과 창이 앱 글꼴과 더한 글꼴로 보여 줍니다.</value><comment>key = 설정 키; field = 쓸 수 없는 칸 이름.</comment></data>
   <data name="Script_InvalidTextSettingField" xml:space="preserve"><value>글 설정 {key}에는 {field}를 쓸 수 없습니다(key, label, default, max만).</value><comment>key = 설정 키; field = 쓸 수 없는 칸 이름.</comment></data>
   <data name="Script_InvalidTextSettingMax" xml:space="preserve"><value>글 설정 {key}의 max는 1~{max} 정수여야 합니다.</value><comment>key = 설정 키; max = 최대 글자 수.</comment></data>
   <data name="Script_InvalidTextOptions" xml:space="preserve"><value>ctx.text에는 글(1000자까지)과 올바른 font, size, color, bold, italic, smooth, align, letterSpacing, lineSpacing, width 옵션이 필요합니다.</value></data>

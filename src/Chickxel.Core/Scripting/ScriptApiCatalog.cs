@@ -141,7 +141,7 @@ public static class ScriptApiCatalog
 
         M(Setting, "key", ScriptApiKind.Key, "key: \"strength\""),
         M(Setting, "label", ScriptApiKind.Key, "label: \"…\""),
-        M(Setting, "type", ScriptApiKind.Key, "type: \"int\" | \"number\" | \"bool\" | \"color\" | \"choice\" | \"colorList\" | \"colorPairs\" | \"layer\" | \"text\"", SettingType),
+        M(Setting, "type", ScriptApiKind.Key, "type: \"int\" | \"number\" | \"bool\" | \"color\" | \"choice\" | \"colorList\" | \"colorPairs\" | \"layer\" | \"text\" | \"font\"", SettingType),
         M(Setting, "min", ScriptApiKind.Key, "min: 0"),
         M(Setting, "max", ScriptApiKind.Key, "max: 100"),
         M(Setting, "step", ScriptApiKind.Key, "step: 0.1"),
@@ -164,6 +164,7 @@ public static class ScriptApiCatalog
         M(SettingType, "colorPairs", ScriptApiKind.Literal, "\"colorPairs\""),
         M(SettingType, "layer", ScriptApiKind.Literal, "\"layer\""),
         M(SettingType, "text", ScriptApiKind.Literal, "\"text\""),
+        M(SettingType, "font", ScriptApiKind.Literal, "\"font\""),
 
         M(Image, "width", ScriptApiKind.Value, "img.width"),
         M(Image, "height", ScriptApiKind.Value, "img.height"),
