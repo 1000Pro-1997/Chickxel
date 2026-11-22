@@ -35,8 +35,13 @@ public sealed class EffectMakerWindow : Window
     private const int BaseMinWidth = 980;
     /// <summary>작게 보기의 미리보기 크기(메인 편집기에서 장면을 고치는 동안).</summary>
     private const int CompactPreviewBox = 200;
-    /// <summary>저장하지 않은 변경이 있을 때 저장 단추에 붙이는 클래스(빨간 바탕을 마우스를 올려도 유지).</summary>
+    /// <summary>저장하지 않은 변경이 있을 때 저장 단추에 붙이는 클래스(반짝이는 바탕을 마우스를 올려도 유지).</summary>
     private const string UnsavedClass = "unsaved";
+    /// <summary>저장할 것이 있을 때 저장 단추 바탕이 오가는 색: 보통 단추 바탕에 강조색을 반쯤 섞은 것.</summary>
+    private static readonly IBrush SavePulseBrush = AppTheme.Brush(Color.FromRgb(
+        (byte)((AppTheme.InputColor.R + AppTheme.AccentColor.R) / 2),
+        (byte)((AppTheme.InputColor.G + AppTheme.AccentColor.G) / 2),
+        (byte)((AppTheme.InputColor.B + AppTheme.AccentColor.B) / 2)));
     private static EffectMakerWindow? s_window;
 
     private readonly EditorContext _ctx;
@@ -96,6 +101,8 @@ public sealed class EffectMakerWindow : Window
     private readonly Action _onAssetsChanged, _onAccountsChanged;
     /// <summary>창을 닫으면 취소(올린 효과 목록 받기·내려받기).</summary>
     private readonly CancellationTokenSource _closing = new();
+    /// <summary>저장 단추 반짝임을 멈출 토큰(null = 멈춤, <see cref="UpdateButtons"/>가 맞춤).</summary>
+    private CancellationTokenSource? _savePulse;
     /// <summary>이 계정으로 올렸지만 이 컴퓨터에 설치하지 않은 스크립트 효과(온라인 목록에서, 목록 아래 회색 줄).</summary>
     private IReadOnlyList<RemoteCatalogEntry> _uploads = [];
     /// <summary>마지막으로 읽은 온라인 목록(패키지 ID → 최신 버전 줄). 웹과 다른 효과 표시(<see cref="WebDifference"/>)와 <see cref="_uploads"/>에 쓴다.</summary>
@@ -129,8 +136,12 @@ public sealed class EffectMakerWindow : Window
     private string _source = "";
     private ScriptEffectProgram? _program;
     private readonly Dictionary<string, object> _previewValues = new(StringComparer.Ordinal);
-    /// <summary>미리보기 효과의 색 그라데이션(슬롯 = <see cref="ScriptColorSlots"/>). 미리보기·지금 레이어에 넣기에만 쓰고 원문에는 쓰지 않는다.</summary>
-    private readonly Dictionary<string, EffectColorGradient> _previewGradients = new(StringComparer.Ordinal);
+    /// <summary>
+    /// 미리보기 효과의 색 그라데이션 중 원문 선언의 <c>gradients</c>(<see cref="ScriptEffectProgram.DefaultGradients"/>)와 다르게 고른 슬롯(슬롯 = <see cref="ScriptColorSlots"/>,
+    /// null = 선언에 있는 그라데이션을 빼고 단색). 고르지 않은 슬롯은 선언을 따른다(<see cref="PreviewGradients"/>). 미리보기·지금 레이어에 넣기에 쓰고,
+    /// 원문에는 "기본값으로"를 눌러야 쓴다(<see cref="ScriptDeclarationEdit.SetGradients"/>).
+    /// </summary>
+    private readonly Dictionary<string, EffectColorGradient?> _previewGradients = new(StringComparer.Ordinal);
     /// <summary>
     /// 미리보기 효과의 공통 값(빠르기 곡선·반복·반복 횟수·피벗 같이 옮기기) 중 원문 선언과 다르게 고른 것(null = 선언 값을 따름).
     /// 미리보기·지금 레이어에 넣기에 쓰고, 원문에는 "기본값으로"를 눌러야 쓴다(<see cref="ScriptDeclarationEdit.SetEffectDefaults"/>).
@@ -670,10 +681,65 @@ public sealed class EffectMakerWindow : Window
         {
             if (_list.SelectedItem is ListBoxItem { Tag: string id }) AssetManagerWindow.Open(this, null, id);
         };
-        var menu = new ContextMenu { Items = { delete, manager } };
-        // 받은 에셋은 여기서 지우지 않는다(에셋 관리자에서)
-        menu.Opening += (_, _) => delete.IsEnabled = _list.SelectedItem is ListBoxItem { Tag: string id } && AppAssets.Catalog.Find(id) is { } entry && AppAssets.IsMine(entry);
+        var revert = new MenuItem { Header = UiStrings.EffectMaker_RevertToOriginal, Icon = Ui.Icon(VectorIcon.Undo2, 14) };
+        revert.Click += (_, _) => RevertSelected();
+        var menu = new ContextMenu { Items = { delete, revert, manager } };
+        menu.Opening += (_, _) =>
+        {
+            var entry = _list.SelectedItem is ListBoxItem { Tag: string id } ? AppAssets.Catalog.Find(id) : null;
+            // 받은 에셋은 여기서 지우지 않는다(에셋 관리자에서)
+            delete.IsEnabled = entry is not null && AppAssets.IsMine(entry);
+            // 원본으로 되돌리기는 상점 최신 버전과 다른 상점 효과에만(직접 만든 것·원본 그대로인 것은 숨김), 무언가 내려받는 동안은 끔
+            revert.IsVisible = entry is not null && RevertTarget(entry) is not null;
+            revert.IsEnabled = _downloadingId is null;
+        };
         return menu;
+    }
+
+    /// <summary>
+    /// <paramref name="entry"/>를 되돌릴 원본(온라인 목록의 최신 버전 줄). 원본과 같은지는 목록 표시(<see cref="WebDifference"/>)와 같은 기준이다:
+    /// 최신 버전이 받은(올린) 버전보다 새것이거나, 같은 버전인데 받거나 올린 뒤 고쳤으면(<see cref="AssetEntry.Modified"/>) 다르다.
+    /// 스크립트가 아니거나 상점 연결이 없거나(직접 만든 것·복사본), 온라인 목록에 없거나(목록을 못 받음), 이 컴퓨터가 더 새 버전이면(올린 새 버전이 아직 목록에 없음 — 원본을 모름) null.
+    /// </summary>
+    private RemoteCatalogEntry? RevertTarget(AssetEntry entry)
+    {
+        if (entry.Script is null || entry.Store is not { } store || !_remoteById.TryGetValue(store.PackageId, out var web)) return null;
+        int order = web.SemanticVersion.CompareTo(store.SemanticVersion);
+        return order > 0 || (order == 0 && entry.Modified) ? web : null;
+    }
+
+    /// <summary>
+    /// 고른 상점 효과를 원본(온라인 목록의 최신 버전)으로 되돌린다(이름을 넣어 묻고, 열어 둔 효과면 저장하지 않은 고침도 물음 — 전환과 같이).
+    /// 받는 동안 다른 내려받기는 끄고, 끝나면 목록을 다시 그리며 열어 둔 효과면 저장소의 지금 원문으로 다시 연다. 받기·설치 실패는 <see cref="AppAssets.RevertScriptToRemoteAsync"/>가 알린다.
+    /// </summary>
+    private async void RevertSelected()
+    {
+        if (_downloadingId is not null || _list.SelectedItem is not ListBoxItem { Tag: string id } || AppAssets.Catalog.Find(id) is not { } entry
+            || RevertTarget(entry) is not { } web) return;
+        if (web.IncompatibleReason(AppAssets.Options.AppVersion) is { } reason)
+        {
+            Ui.Warn(this, reason, UiStrings.EffectMaker_Title);
+            return;
+        }
+        if (Ui.Ask(this, string.Format(CultureInfo.CurrentCulture, UiStrings.EffectMaker_RevertQuestion, entry.DisplayName, web.Version), UiStrings.EffectMaker_Title,
+                MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
+        if (id == _shownId && !ConfirmDiscard()) return;
+        _downloadingId = web.Id;
+        RebuildList();
+        AssetEntry? reverted;
+        try
+        {
+            reverted = await AppAssets.RevertScriptToRemoteAsync(this, entry, web, _closing.Token);
+        }
+        finally
+        {
+            _downloadingId = null;
+        }
+        if (_closing.IsCancellationRequested) return;
+        RebuildList();
+        // 받는 동안 다시 고쳤으면 그대로 둔다(버리지 않음). 실패했어도 다시 연다 — 저장하지 않은 고침을 버렸으면 편집기를 저장된 원문으로.
+        if (id == _shownId && !Dirty) TryOpen(reverted?.Id ?? id);
+        UpdateButtons();
     }
 
     private void DeleteSelected()
@@ -803,19 +869,22 @@ public sealed class EffectMakerWindow : Window
     {
         bool editable = _open && !Foreign;
         _code.IsReadOnly = !editable;
-        // 저장은 고친 것이 있을 때만 — 그때는 빨간 바탕으로 눈에 띄게(픽셀로 정리 프리셋의 저장 단추와 같은 색)
+        // 저장 단추는 늘 보통 단추 색 — 고친 것이 있으면 바탕이 강조색 쪽으로 천천히 반짝인다(Ui.PulseBackground)
         bool unsaved = editable && Dirty;
-        _save.IsEnabled = unsaved;
+        _save.IsEnabled = editable;
         _save.Classes.Set(UnsavedClass, unsaved);
-        if (unsaved)
+        if (unsaved != (_savePulse is not null))
         {
-            _save.Background = AppTheme.UnsavedBrush;
-            _save.Foreground = Brushes.White;
-        }
-        else
-        {
-            _save.ClearValue(BackgroundProperty);
-            _save.ClearValue(ForegroundProperty);
+            if (unsaved)
+            {
+                _savePulse = CancellationTokenSource.CreateLinkedTokenSource(_closing.Token);
+                Ui.PulseBackground(_save, AppTheme.InputBrush, SavePulseBrush, _savePulse.Token);
+            }
+            else
+            {
+                _savePulse!.Cancel();
+                _savePulse = null;
+            }
         }
         _copy.IsVisible = Foreign;
         _insert.IsEnabled = _open && _ctx.Project is not null;
@@ -839,13 +908,14 @@ public sealed class EffectMakerWindow : Window
         Title = _open ? string.Format(CultureInfo.CurrentCulture, UiStrings.EffectMaker_TitleWith, CurrentName() + (Dirty ? " *" : "")) : UiStrings.EffectMaker_Title;
     }
 
-    /// <summary>"초기화"는 미리보기 설정 값·공통 값이 원문의 기본값과 하나라도 다르거나 그라데이션이 있을 때, "기본값으로"는 값이 다를 때만 켠다.</summary>
+    /// <summary>"초기화"·"기본값으로"는 미리보기 설정 값·공통 값·그라데이션이 원문의 기본값과 하나라도 다를 때만 켠다("기본값으로"는 받은 효과에서 끔).</summary>
     private void UpdateValueButtons()
     {
         bool differs = _open && _program is { } program && program.NormalizeSettings(_previewValues) is var values
-                       && (program.Settings.Any(s => !ScriptSetting.SameValue(values[s.Key], s.Default)) || CommonDiffers(program, PreviewEffect(program)));
+                       && (program.Settings.Any(s => !ScriptSetting.SameValue(values[s.Key], s.Default)) || CommonDiffers(program, PreviewEffect(program))
+                           || _previewGradients.Count > 0);
         _setDefaults.IsEnabled = differs && !Foreign;
-        _resetValues.IsEnabled = differs || (_open && _previewGradients.Count > 0);
+        _resetValues.IsEnabled = differs;
     }
 
     /// <summary>미리보기 효과의 공통 값이 원문 선언의 처음 값과 다른지.</summary>
@@ -975,18 +1045,31 @@ public sealed class EffectMakerWindow : Window
         return hash;
     }
 
-    /// <summary><paramref name="program"/>으로 만든 미리보기 설정 값·그라데이션·공통 값의 새 효과(고르지 않은 공통 값은 선언의 처음 값).</summary>
+    /// <summary><paramref name="program"/>으로 만든 미리보기 설정 값·그라데이션·공통 값의 새 효과(고르지 않은 값은 선언의 처음 값).</summary>
     private ScriptEffect PreviewEffect(ScriptEffectProgram program)
     {
         var effect = program.CreateEffect(_previewValues);
         return effect with
         {
-            ColorGradients = new Dictionary<string, EffectColorGradient>(_previewGradients, StringComparer.Ordinal),
+            ColorGradients = PreviewGradients(program),
             Easing = _previewCommon.Easing ?? effect.Easing,
             Repeat = _previewCommon.Repeat ?? effect.Repeat,
             RepeatCount = _previewCommon.RepeatCount ?? effect.RepeatCount,
             MovePivot = _previewCommon.MovePivot ?? effect.MovePivot,
         };
+    }
+
+    /// <summary>미리보기 그라데이션: 선언의 <c>gradients</c>에 고른 슬롯(<see cref="_previewGradients"/>)을 덮은 것.</summary>
+    private IReadOnlyDictionary<string, EffectColorGradient> PreviewGradients(ScriptEffectProgram program)
+    {
+        if (_previewGradients.Count == 0) return program.DefaultGradients;
+        var gradients = new Dictionary<string, EffectColorGradient>(program.DefaultGradients, StringComparer.Ordinal);
+        foreach (var (slot, gradient) in _previewGradients)
+        {
+            if (gradient is null) gradients.Remove(slot);
+            else gradients[slot] = gradient;
+        }
+        return gradients;
     }
 
     /// <summary>
@@ -1001,8 +1084,12 @@ public sealed class EffectMakerWindow : Window
         // 고친 키만 넣는다(나머지는 원문 기본값을 그대로 따름)
         foreach (var setting in program.Settings)
             if (!ScriptSetting.SameValue(before[setting.Key], now[setting.Key])) _previewValues[setting.Key] = now[setting.Key];
+        // 선언과 다른 슬롯만 넣는다(선언에 있는데 빠진 슬롯 = 단색으로 고름)
         _previewGradients.Clear();
-        foreach (var (slot, gradient) in after.ColorGradients) _previewGradients[slot] = gradient;
+        foreach (var (slot, gradient) in after.ColorGradients)
+            if (!program.DefaultGradients.TryGetValue(slot, out var declared) || !declared.Equals(gradient)) _previewGradients[slot] = gradient;
+        foreach (var slot in program.DefaultGradients.Keys)
+            if (!after.ColorGradients.ContainsKey(slot)) _previewGradients[slot] = null;
         _previewCommon = (Unless(after.Easing, program.Easing), Unless(after.Repeat, program.Repeat), Unless(after.RepeatCount, program.RepeatCount),
             Unless(after.MovePivot, program.MovePivot));
         UpdateValueButtons();
@@ -1162,18 +1249,21 @@ public sealed class EffectMakerWindow : Window
             UpdateButtons();
             return;
         }
-        // 설정이나 번역(설정 이름)이 바뀌면 칸을 다시 만든다
+        // 설정이나 번역(설정 이름)이나 선언의 그라데이션이 바뀌면 칸을 다시 만든다
         bool schemaChanged = _program is null || !_program.Settings.SequenceEqual(parsed.Program.Settings)
                              || _program.Translations.Count != parsed.Program.Translations.Count
-                             || _program.Translations.Any(t => !parsed.Program.Translations.TryGetValue(t.Key, out var other) || !t.Value.SameAs(other));
+                             || _program.Translations.Any(t => !parsed.Program.Translations.TryGetValue(t.Key, out var other) || !t.Value.SameAs(other))
+                             || !SameGradients(_program.DefaultGradients, parsed.Program.DefaultGradients);
         // 공통 줄(빠르기 곡선·반복·피벗 같이 옮기기)이 생기거나 없어지거나 선언의 처음 값이 바뀌어도
         var rows = CommonRows(parsed.Program);
         schemaChanged |= rows != _commonRows;
         _commonRows = rows;
         _program = parsed.Program;
-        // 선언에 없는 색 슬롯(지운 설정·줄어든 최대 항목 수)의 그라데이션은 버린다
-        foreach (var slot in _previewGradients.Keys.ToList())
-            if (!ScriptColorSlots.TryParse(_program.Settings, slot, out _, out _, out _)) _previewGradients.Remove(slot);
+        // 선언에 없는 색 슬롯(지운 설정·줄어든 최대 항목 수)의 그라데이션과 새 선언과 같아진 고른 그라데이션은 버린다
+        foreach (var (slot, gradient) in _previewGradients.ToList())
+            if (!ScriptColorSlots.TryParse(_program.Settings, slot, out _, out _, out _)
+                || (_program.DefaultGradients.TryGetValue(slot, out var declared) ? declared.Equals(gradient) : gradient is null))
+                _previewGradients.Remove(slot);
         SetInfo(_program);
         _loading = true;
         _chick.SelectedIndex = ChickIndex(_program.PreviewChick);
@@ -1234,8 +1324,9 @@ public sealed class EffectMakerWindow : Window
     }
 
     /// <summary>
-    /// 지금 미리보기 설정 값 중 기본값과 다른 것을 원문 선언의 각 설정 <c>default</c>로, 다른 공통 값은 선언의 <c>easing</c>·<c>repeat</c>·<c>repeatCount</c>·<c>movePivot</c>으로
-    /// 쓴다(편집기 실행취소 한 단계). 쓴 뒤 미리보기 값은 새 기본값과 같으므로 칸은 그대로 보인다. 선언을 고칠 수 없는 원문이면 원문 오류를 안내한다.
+    /// 지금 미리보기 설정 값 중 기본값과 다른 것을 원문 선언의 각 설정 <c>default</c>로, 다른 공통 값은 선언의 <c>easing</c>·<c>repeat</c>·<c>repeatCount</c>·<c>movePivot</c>으로,
+    /// 고른 그라데이션이 있으면 미리보기 그라데이션 전체를 선언의 <c>gradients</c>로 쓴다(편집기 실행취소 한 단계). 쓴 뒤 미리보기 값은 새 기본값과 같으므로 칸은 그대로 보인다.
+    /// 선언을 고칠 수 없는 원문이면 원문 오류를 안내한다.
     /// </summary>
     private void SetDefaults()
     {
@@ -1245,20 +1336,27 @@ public sealed class EffectMakerWindow : Window
             .Select(s => new KeyValuePair<string, object>(s.Key, values[s.Key])).ToList();
         var effect = PreviewEffect(program);
         bool common = CommonDiffers(program, effect);
-        if (changed.Count == 0 && !common) return;
+        bool gradients = _previewGradients.Count > 0;
+        if (changed.Count == 0 && !common && !gradients) return;
         string? edited = changed.Count == 0 ? _source : ScriptDeclarationEdit.SetSettingDefaults(_source, changed);
         if (edited is not null && common)
             edited = ScriptDeclarationEdit.SetEffectDefaults(edited, Unless(effect.Easing, program.Easing), Unless(effect.Repeat, program.Repeat),
                 Unless(effect.RepeatCount, program.RepeatCount), Unless(effect.MovePivot, program.MovePivot));
+        if (edited is not null && gradients) edited = ScriptDeclarationEdit.SetGradients(edited, effect.ColorGradients);
         if (edited is null)
         {
             SetStatus(UiStrings.EffectMaker_FixSourceFirst, problem: true);
             return;
         }
         _previewValues.Clear(); // 새 기본값 = 지금 값
+        _previewGradients.Clear();
         _previewCommon = default;
         ApplyDeclarationEdit(edited);
     }
+
+    /// <summary>두 그라데이션 표가 같은 슬롯에 같은 그라데이션을 두는지.</summary>
+    private static bool SameGradients(IReadOnlyDictionary<string, EffectColorGradient> a, IReadOnlyDictionary<string, EffectColorGradient> b)
+        => a.Count == b.Count && a.All(e => b.TryGetValue(e.Key, out var other) && e.Value.Equals(other));
 
     /// <summary>프레임 수 칸을 바꾸면 선언의 <c>previewFrames</c>를 고치고 곧바로 다시 그린다(원문 오류면 칸을 되돌리고 안내).</summary>
     private void FrameCountChanged()
@@ -2054,8 +2152,17 @@ public sealed class EffectMakerWindow : Window
     /// <summary>열린 스크립트의 미리보기 장면(없으면 null) — AI 미리보기·실행 오류 확인이 장면 위에서 돌린다.</summary>
     internal PreviewScene? Scene => _open ? _scene : null;
 
-    /// <summary><paramref name="program"/>의 선언에 맞춘 미리보기 설정 값(빠진 키는 기본값).</summary>
-    internal IReadOnlyDictionary<string, object> PreviewValues(ScriptEffectProgram program) => program.NormalizeSettings(_previewValues);
+    /// <summary>
+    /// AI가 고친 미리보기 효과(<see cref="PreviewEffects"/>의 효과에 설정·그라데이션·공통 값을 덮은 것)를 미리보기 설정 값으로 옮긴다(설정 칸을 손으로 고친 것과 같음 —
+    /// 원문·문서는 그대로 — 받은 효과도 손으로처럼 고칠 수 있음). 설정 칸을 다시 만들고 입력 기다림 없이 곧바로 다시 그린다.
+    /// </summary>
+    internal void SetPreviewFromAi(ScriptEffect effect)
+    {
+        ChangePreview(_ => effect);
+        BuildScriptSettings();
+        _debounce.Cancel();
+        Rerender();
+    }
 
     /// <summary>
     /// AI가 쓴 원문을 편집기에 넣는다: 열린 스크립트가 있으면 달라진 곳만 바꾸고(편집기 실행취소 한 단계, 커서·스크롤 유지 — 저장 전 상태가 됨),

@@ -126,8 +126,19 @@ public sealed partial class PixelTools
     {
         ["type"] = "object",
         ["description"] = "Partial effect settings: keys and value formats as listed by list_effect_types (e.g. {\"color\": \"#FFFFFF\", \"count\": 2}). " +
-                          "Colors are \"#RRGGBB\" or \"#RRGGBBAA\"; choice settings take one of the listed names.",
+                          "Colors are \"#RRGGBB\" or \"#RRGGBBAA\"; choice settings take one of the listed names. " + GradientFormatNote,
     };
+
+    /// <summary>설정 JSON의 <c>colorGradients</c> 모양(모델이 읽음 — 저장 형식 <see cref="EffectCodec.ReadGradients"/>와 같음).</summary>
+    private const string GradientFormatNote =
+        "Any color setting can be a gradient instead of its solid color: pass colorGradients = { \"<slot>\": gradient, ... }. It replaces all of the effect's gradients " +
+        "(send every slot to keep; {} or null removes them all; a slot without a gradient draws its solid color). Slot = the color setting key; a colorList item \"key[0]\"; " +
+        "a colorPairs side \"key[0].from\" or \"key[0].to\". gradient = { \"stops\": [{ \"position\": 0-1, \"color\": \"#RRGGBB\" }, ...] (color stops, at least one; add, move or " +
+        "recolor stops here), \"alphaStops\": [{ \"position\": 0-1, \"alpha\": 0-255 }, ...] (optional opacity stops, separate from the color stops and multiplied with them; [] = opaque), " +
+        "\"interpolation\": \"Smooth\" | \"Steps\", \"colorSpace\": \"OkLch\" | \"OkLab\" | \"Rgb\" | \"Hsl\" (the editor's default is OkLch; omitted = Rgb), \"dither\": \"None\" | \"Bayer2\" | \"Bayer4\", " +
+        "\"shape\": \"Linear\" | \"Radial\" | \"Square\" | \"Angular\" | \"Uniform\", \"angle\": degrees (0 right, 90 up), \"reverse\": bool, \"cycles\": 1-16, \"animated\": bool (moves over the frame range), " +
+        "\"easing\" and \"pingPong\" (animated only) }; shape, angle, cycles and animation decide how pixels pick from the gradient (ctx.color), ctx.gradientAt only reads stops, " +
+        "interpolation, color space and reverse. To change one stop, read the current colorGradients (get_effects settings or get_effect_maker_source), edit it and send the whole object back.";
 
     // ───────────── 읽기 ─────────────
 
@@ -257,8 +268,8 @@ public sealed partial class PixelTools
             ["types"] = types,
             ["presets"] = presets,
             ["notes"] = "Effects render in stack order (index 0 first) and never change pixels. Pass only the settings you want to change (null resets one). " +
-                        "Color list settings = [\"#RRGGBB\", ...]; color pair settings = [[\"#from\", \"#to\"], ...]; script layer settings (declared type: \"layer\") = the name of a layer in this document (\"\" = none). Every effect also accepts colorGradients " +
-                        "(advanced: per color key gradient objects in the .chickxel format). Animated effects run once over their frame range; easing, repeat and repeatCount change that. " +
+                        "Color list settings = [\"#RRGGBB\", ...]; color pair settings = [[\"#from\", \"#to\"], ...]; script layer settings (declared type: \"layer\") = the name of a layer in this document (\"\" = none). " +
+                        "Every effect also accepts colorGradients (see the settings of add_effect / set_effect). Animated effects run once over their frame range; easing, repeat and repeatCount change that. " +
                         "Effects with \"allowed\": false are scripts the user has not allowed to run yet: they can be added but are not drawn until the user allows them " +
                         "in the effects window, and only their declared default settings are known.",
         };
@@ -554,12 +565,16 @@ public sealed partial class PixelTools
         return FrameRange.Of(from, to, frameCount);
     }
 
-    /// <summary>설정 덮기(<see cref="EffectSettings.Merge"/>) — 잘못된 키·값은 화면 언어 도구 오류로.</summary>
+    /// <summary>
+    /// 설정 덮기(<see cref="EffectSettings.Merge"/>) — 잘못된 키·값은 화면 언어 도구 오류로. 스크립트 효과의 그라데이션은 선언에 있는 색 슬롯만 받는다
+    /// (원문을 실행할 수 없으면 슬롯을 모르므로 그대로).
+    /// </summary>
     private static (LayerEffect Effect, IReadOnlyList<string> Clamped) MergeSettings(LayerEffect effect, JsonObject? settings)
     {
+        (LayerEffect Effect, IReadOnlyList<string> Clamped) merged;
         try
         {
-            return EffectSettings.Merge(effect, settings);
+            merged = EffectSettings.Merge(effect, settings);
         }
         catch (EffectSettingException e)
         {
@@ -575,6 +590,17 @@ public sealed partial class PixelTools
                 _ => UiStrings.FormatAi_Effect_SettingInvalid(key: key, reason: e.Detail),
             });
         }
+        if (merged.Effect is ScriptEffect script && ScriptLibrary.Runnable(script.ScriptHash) is { } program)
+            foreach (var slot in script.ColorGradients.Keys)
+                if (!ScriptColorSlots.TryParse(program.Settings, slot, out _, out _, out _))
+                    throw new ToolError(UiStrings.FormatAi_Effect_GradientSlotUnknown(slot: slot,
+                        slots: string.Join(", ", program.Settings.Where(s => s.IsColor).Select(s => s.Type switch
+                        {
+                            ScriptSettingType.ColorList => ScriptColorSlots.Item(s.Key, 0),
+                            ScriptSettingType.ColorPairs => ScriptColorSlots.PairItem(s.Key, 0, to: true),
+                            _ => s.Key,
+                        }))));
+        return merged;
     }
 
     /// <summary>오류 문구에 보일 설정 값 예(그 종류의 기본값).</summary>

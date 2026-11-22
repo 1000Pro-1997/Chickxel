@@ -48,7 +48,7 @@ public static class AiToolGroups
         AiToolGroup.Skins => ["list_skins", "add_skin", "set_skin", "edit_skin", "list_outfits", "save_outfit", "apply_outfit"],
         AiToolGroup.Effects => ["list_effect_types", "get_effects", "add_effect", "set_effect", "remove_effect", "apply_effects", "expand_canvas_for_effects", "preview_effects"],
         AiToolGroup.ScriptEffects => ["get_script_api", "write_script_effect", "save_script_effect", "list_script_effects", "get_script_effect_source",
-            "get_effect_maker_source", "set_effect_maker_source", "check_effect_maker"],
+            "get_effect_maker_source", "set_effect_maker_source", "set_effect_maker_preview", "check_effect_maker"],
         AiToolGroup.References => ["search_references", "get_reference", "get_style_rules", "add_reference", "set_reference_info"],
         AiToolGroup.FolderImages => ["list_folder_images", "get_folder_image"],
         AiToolGroup.Canvas => ["resize_canvas", "set_canvas_pivot"],

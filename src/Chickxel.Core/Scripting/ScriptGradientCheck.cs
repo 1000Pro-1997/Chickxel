@@ -113,6 +113,13 @@ public static class ScriptGradientCheck
                     if (call.Arguments.Count > 0 && call.Arguments[0] is StringLiteral literal) sampled.Add(literal.Value);
                     else dynamic.Add(type);
                     break;
+                case CallExpression { Callee: MemberExpression { Computed: false, Property: Identifier { Name: "gradientAt" } } } call:
+                    // 슬롯 이름("키", "키[0]", "키[0].to")으로 고른다: 글자가 아니면 모든 색 종류를 모른다고 본다
+                    if (call.Arguments.Count > 0 && call.Arguments[0] is StringLiteral slot
+                        && ScriptColorSlots.TryParse(program.Settings, slot.Value, out var setting, out _, out _))
+                        sampled.Add(setting.Key);
+                    else dynamic.UnionWith([ScriptSettingType.Color, ScriptSettingType.ColorList, ScriptSettingType.ColorPairs]);
+                    break;
             }
             foreach (var child in node.ChildNodes) pending.Push(child);
         }

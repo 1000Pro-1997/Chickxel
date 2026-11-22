@@ -70,16 +70,16 @@ public sealed partial class PixelTools
         "search_references", "get_reference", "get_style_rules",
     ];
     /// <summary>문서 밖(참고 자료 보관소·개인 에셋·효과 만들기 편집기)에만 쓰는 도구(문서를 고치지 않으므로 "지금 그림만"이어도 됨).</summary>
-    private static readonly HashSet<string> LibraryTools = ["add_reference", "set_reference_info", "save_script_effect", "set_effect_maker_source"];
+    private static readonly HashSet<string> LibraryTools = ["add_reference", "set_reference_info", "save_script_effect", "set_effect_maker_source", "set_effect_maker_preview"];
     /// <summary>다른 문서를 열거나 만드는 도구(범위가 있으면 거부).</summary>
     private static readonly HashSet<string> FileSwitchTools = ["open_file", "new_project"];
     /// <summary>열린 폴더의 그림을 읽기만 하는 도구(문서를 고치지 않으므로 "지금 그림만"이어도 됨 — 효과 만들기 범위에는 넣지 않음).</summary>
     private static readonly HashSet<string> FolderReadTools = [ListFolderTool, GetFolderImageTool];
     /// <summary>
     /// 효과 만들기 AI 칸(<see cref="McpScope.EffectMaker"/>)이 쓸 수 있는 도구: 읽기 도구(<see cref="ReadTools"/> — 문서·참고 자료를 보기만 함,
-    /// 효과 만들기 원문 읽기·검증 포함)와 효과 만들기 편집기 원문 바꾸기. 문서·파일·팔레트·참고 자료·에셋을 바꾸는 도구는 MCP 서버가 막는다.
+    /// 효과 만들기 원문 읽기·검증 포함)와 효과 만들기 편집기 원문·미리보기 설정 값 바꾸기. 문서·파일·팔레트·참고 자료·에셋을 바꾸는 도구는 MCP 서버가 막는다.
     /// </summary>
-    public static readonly IReadOnlySet<string> EffectMakerScopeTools = new HashSet<string>([.. ReadTools, "set_effect_maker_source"], StringComparer.Ordinal);
+    public static readonly IReadOnlySet<string> EffectMakerScopeTools = new HashSet<string>([.. ReadTools, "set_effect_maker_source", "set_effect_maker_preview"], StringComparer.Ordinal);
 
     private EditorContext Ctx => _host.Context;
 
@@ -564,6 +564,7 @@ public sealed partial class PixelTools
                 "save_script_effect" => SaveScriptEffect(a),
                 "get_effect_maker_source" => GetEffectMakerSource(),
                 "set_effect_maker_source" => SetEffectMakerSource(a),
+                "set_effect_maker_preview" => SetEffectMakerPreview(a),
                 "list_script_effects" => ListScriptEffects(),
                 "get_script_effect_source" => GetScriptEffectSource(a),
                 "resize_canvas" => ResizeCanvas(name, a),

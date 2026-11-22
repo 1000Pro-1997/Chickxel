@@ -157,6 +157,129 @@ public class ScriptEngineFeatureTests
         }
     }
 
+    [Fact]
+    public void GradientAt_picks_by_position_regardless_of_shape_and_falls_back_to_the_solid_color()
+    {
+        // 칸 x = 위치 x/(w-1). 줄 0: 색 "c", 줄 1: 목록 항목 "list[1]", 줄 2: 쌍 "pairs[0].to"(그라데이션 없음 → 단색, 디더 자리 생략)
+        var program = Parse(Unique("""
+            effect({
+              name: "ga",
+              settings: [
+                { key: "c", type: "color", default: "#336699" },
+                { key: "list", type: "colorList", default: ["#ff0000", "#00ff00"] },
+                { key: "pairs", type: "colorPairs", default: [{ from: "#101010", to: "#20202080" }] },
+              ],
+              render(img, ctx, s) {
+                const w = img.width, d = img.data;
+                for (let x = 0; x < w; x++) {
+                  const t = x / (w - 1);
+                  const a = ctx.gradientAt("c", t, x, 0), i = x * 4;
+                  d[i] = a.r; d[i + 1] = a.g; d[i + 2] = a.b; d[i + 3] = a.a;
+                  const b = ctx.gradientAt("list[1]", t, x, 1), j = (w + x) * 4;
+                  d[j] = b.r; d[j + 1] = b.g; d[j + 2] = b.b; d[j + 3] = b.a;
+                  const c = ctx.gradientAt("pairs[0].to", t), k = (2 * w + x) * 4;
+                  d[k] = c.r; d[k + 1] = c.g; d[k + 2] = c.b; d[k + 3] = c.a;
+                }
+              },
+            });
+            """));
+        const int w = 9;
+        var source = new Rectangle(0, 0, w, 3);
+        Color32 red = new(255, 0, 0), blue = new(0, 0, 255);
+        var radial = new EffectColorGradient
+        {
+            Stops = [new GradientStop(0, red), new GradientStop(1, blue)],
+            Shape = EffectGradientShape.Radial, Angle = 90, Cycles = 3,
+        };
+        var reversed = radial with { Reverse = true };
+        foreach (var gradient in EffectParity.Gradients.Append(radial).Append(reversed))
+        {
+            var frame = new ScriptFrameContext
+            {
+                GradientTime = 0.37,
+                Gradients = new Dictionary<string, EffectColorGradient> { ["c"] = gradient, ["list[1]"] = gradient },
+            };
+            var result = RenderBoth(program, new PixelImage(w, 3), source, frame);
+            for (int x = 0; x < w; x++)
+            {
+                double t = x / (double)(w - 1);
+                Assert.Equal(EffectGradientSampler.SampleAt(gradient, t, x, 0), result[x, 0]);
+                Assert.Equal(EffectGradientSampler.SampleAt(gradient, t, x, 1), result[x, 1]);
+                Assert.Equal(new Color32(0x20, 0x20, 0x20, 0x80), result[x, 2]);
+            }
+            // 모양·각도·반복과 상관없이 위치 0은 첫 멈춤점, 1은 끝 멈춤점(뒤집으면 반대)
+            if (ReferenceEquals(gradient, radial)) Assert.Equal((red, blue), (result[0, 0], result[w - 1, 0]));
+            if (ReferenceEquals(gradient, reversed)) Assert.Equal((blue, red), (result[0, 0], result[w - 1, 0]));
+        }
+
+        // 그라데이션이 없으면 설정 단색, 목록에 없는 항목·모르는 슬롯은 오류
+        var plain = RenderBoth(program, new PixelImage(w, 3), source, ScriptFrameContext.Still);
+        Assert.Equal(new Color32(0x33, 0x66, 0x99), plain[4, 0]);
+        Assert.Equal(new Color32(0, 255, 0), plain[4, 1]);
+        foreach (var bad in new[] { "ctx.gradientAt('nope', 0)", "ctx.gradientAt('list', 0)", "ctx.gradientAt('list[2]', 0)", "ctx.gradientAt('pairs[0]', 0)" })
+        {
+            var broken = Parse(Unique($$"""
+                effect({ name: "b", settings: [{ key: "c", type: "color" }, { key: "list", type: "colorList", default: ["#ff0000", "#00ff00"] },
+                  { key: "pairs", type: "colorPairs", default: [{ from: "#101010", to: "#202020" }] }],
+                  render(img, ctx, s) { img.data[0] = {{bad}}.r; } });
+                """, bad));
+            Assert.Throws<ScriptEffectException>(() => broken.Render(new PixelImage(1, 1), new Rectangle(0, 0, 1, 1), ScriptFrameContext.Still));
+        }
+    }
+
+    [Fact]
+    public void Declared_gradients_start_new_effects_and_round_trip_through_SetGradients()
+    {
+        const string Source = """
+            effect({
+              name: "dg",
+              settings: [
+                { key: "c", type: "color", default: "#336699" },
+                { key: "list", type: "colorList", max: 4, default: ["#ff0000", "#00ff00"] },
+              ],
+              render(img, ctx, s) { const c = ctx.gradientAt("c", 0.5); img.data[0] = c.r; },
+            });
+            """;
+        var plain = Parse(Unique(Source));
+        Assert.Empty(plain.DefaultGradients);
+        Assert.Empty(plain.CreateEffect().ColorGradients);
+
+        var fire = new EffectColorGradient
+        {
+            Stops = [new(0, new Color32(255, 248, 224)), new(0.5, new Color32(249, 138, 42, 128)), new(1, new Color32(192, 32, 32))],
+            AlphaStops = [new(0, 255), new(1, 0)],
+            Shape = EffectGradientShape.Radial, Angle = 90, Reverse = true, Cycles = 2,
+            Interpolation = GradientInterpolation.Steps, ColorSpace = GradientColorSpace.Rgb, Dither = GradientDither.Bayer4,
+        };
+        var item = new EffectColorGradient { Stops = [new(0, Color32.White)], Shape = EffectGradientShape.Uniform, Easing = EffectEasing.EaseIn };
+        var edited = ScriptDeclarationEdit.SetGradients(plain.Source, new Dictionary<string, EffectColorGradient> { ["c"] = fire, ["list[1]"] = item })!;
+        var program = Parse(edited);
+        Assert.Equal(fire, program.DefaultGradients["c"]);
+        Assert.Equal(item, program.DefaultGradients["list[1]"]);
+        // 새 효과·에셋 레시피(효과 창·패키지 미리보기가 쓰는 것)가 선언의 그라데이션으로 시작한다
+        Assert.Equal(fire, program.CreateEffect().ColorGradients["c"]);
+        Assert.Equal(item, Chickxel.Core.IO.ScriptAsset.From("x", program).ToRecipe().Effects[0].ColorGradients["list[1]"]);
+        Assert.Empty(Parse(ScriptDeclarationEdit.SetGradients(edited, new Dictionary<string, EffectColorGradient>())!).DefaultGradients);
+
+        foreach (var bad in new[]
+                 {
+                     "gradients: 5",
+                     "gradients: { nope: { stops: [{ position: 0, color: '#ffffff' }] } }",
+                     "gradients: { 'list[4]': { stops: [{ position: 0, color: '#ffffff' }] } }",
+                     "gradients: { c: { stops: [] } }",
+                     "gradients: { c: { alphaStops: [] } }",
+                     "gradients: { c: { stops: [{ position: 2, color: '#ffffff' }] } }",
+                     "gradients: { c: { stops: [{ position: 0, color: '#ffffff' }], shape: 'radial' } }",
+                     "gradients: { c: { stops: [{ position: 0, color: '#ffffff' }], alphaStops: [{ position: 0, alpha: 300 }] } }",
+                     "gradients: { c: { stops: [{ position: 0, color: '#ffffff' }], extra: 1 } }",
+                 })
+        {
+            var result = ScriptEffectProgram.Parse(Source.Replace("  render(", "  " + bad + ",\n  render("));
+            Assert.False(result.Success, bad);
+            Assert.Contains(result.Errors, e => e.Kind == ScriptErrorKind.Declaration);
+        }
+    }
+
     // ───────────── 해시·Bayer ─────────────
 
     [Fact]

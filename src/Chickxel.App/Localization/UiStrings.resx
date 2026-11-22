@@ -3930,6 +3930,7 @@ echo __LOGIN_FAILED__
   <data name="Ai_Effect_RangeConflict" xml:space="preserve"><value>all_frames와 from_frame/to_frame 중 하나만 주세요</value><comment>AI 도구 오류.</comment></data>
   <data name="Ai_Effect_FrameOrder" xml:space="preserve"><value>from_frame {from}이(가) to_frame {to}보다 뒤입니다</value><comment>AI 도구 오류. from·to = 받은 프레임 번호.</comment></data>
   <data name="Ai_Effect_SettingUnknown" xml:space="preserve"><value>settings.{key}: {type}에 없는 설정입니다 — 설정: {keys}</value><comment>AI 도구 오류. key = 받은 키, type = 효과 종류 이름, keys = 그 종류의 설정 키 목록.</comment></data>
+  <data name="Ai_Effect_GradientSlotUnknown" xml:space="preserve"><value>settings.colorGradients.{slot}: 이 효과의 색 슬롯이 아닙니다 — 슬롯: {slots}(목록 항목은 "키[번호]", 쌍은 "키[번호].from"·"키[번호].to")</value><comment>AI 도구 오류. slot = 받은 슬롯 이름, slots = 색 설정 슬롯 예(쉼표로 구분).</comment></data>
   <data name="Ai_Effect_SettingReserved" xml:space="preserve"><value>settings.{key}: 이 값은 settings가 아니라 도구 인자(type, enabled, from_frame/to_frame, clip_to_above)로 정하세요</value><comment>AI 도구 오류. key = 받은 키.</comment></data>
   <data name="Ai_Effect_SettingWrongType" xml:space="preserve"><value>settings.{key}: 값 종류가 맞지 않습니다 — {example} 같은 값을 쓰세요</value><comment>AI 도구 오류. key = 설정 키, example = 그 설정의 기본값(JSON).</comment></data>
   <data name="Ai_Effect_SettingChoice" xml:space="preserve"><value>settings.{key}: {choices} 중 하나여야 합니다</value><comment>AI 도구 오류. key = 설정 키, choices = 고를 수 있는 이름 목록.</comment></data>
@@ -8585,7 +8586,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Pixelate_Clean_VectorBlob_Tip" xml:space="preserve"><value>바깥 외곽선과 닿지 않은 어두운 덩어리는 넓이가 이 칸 수보다 작으면(눈 등) 다시 그리지 않고 그대로 둡니다.</value></data>
   <data name="Pixelate_Clean_VectorClean" xml:space="preserve"><value>선과 곡선 깔끔하게</value></data>
   <data name="Pixelate_Clean_SourceOutline" xml:space="preserve"><value>원본 외곽선 기준으로 정리</value></data>
-  <data name="Pixelate_Clean_SourceOutlineTip" xml:space="preserve"><value>켜면 '외곽선 1px 맞추기'가 결과 그림만 보지 않고 원본에서 찾은 외곽선(원본 아래 막대의 붓 단추로 보고 고침)을 기준으로 외곽선을 고릅니다 — 큰 검은 면이 작은 투명 틈에 닿아도 다른 색으로 깎이지 않습니다.
+  <data name="Pixelate_Clean_SourceOutlineTip" xml:space="preserve"><value>켜면 '외곽선 1px 맞추기'가 결과 그림만 보지 않고 원본에서 찾은 외곽선을 기준으로 외곽선을 고릅니다 — 큰 검은 면이 작은 투명 틈에 닿아도 다른 색으로 깎이지 않습니다.
 끄면 예전처럼 결과 그림만 보고 정합니다.</value></data>
   <data name="Pixelate_Clean_VectorCorner" xml:space="preserve"><value>모서리 각도(°)</value></data>
   <data name="Pixelate_Clean_VectorCorner_Tip" xml:space="preserve"><value>따낸 선이 이 각도 이상 꺾이면 나누어 모서리를 남기고, 나머지는 반듯한 선과 원호로 다시 그립니다. 기본 40°.</value></data>
@@ -9114,6 +9115,7 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Assets_CancelDownload" xml:space="preserve"><value>취소</value></data>
   <data name="Assets_Downloading" xml:space="preserve"><value>내려받는 중 {0}%</value></data>
   <data name="Assets_InstallRemoteError" xml:space="preserve"><value>내려받은 패키지를 설치하지 못했습니다: {0}</value></data>
+  <data name="Assets_RevertScriptMissing" xml:space="preserve"><value>에셋 상점의 최신 패키지에 이 효과가 없습니다.</value></data>
   <data name="Assets_DownloadError" xml:space="preserve"><value>패키지를 내려받지 못했습니다: {0}</value></data>
   <data name="Assets_SourceRemote" xml:space="preserve"><value>상점에서 받음</value></data>
   <data name="Assets_SourceBundled" xml:space="preserve"><value>앱이 기본으로 설치한 상점 에셋</value><comment>에셋 관리자 출처: 앱이 기본으로 설치한 공식 패키지(효과·그라데이션·모양 펜 세트)</comment></data>
@@ -9416,7 +9418,7 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="EffectMaker_ResetValues" xml:space="preserve"><value>초기화</value></data>
   <data name="EffectMaker_ResetValuesTip" xml:space="preserve"><value>미리보기 설정 값을 원문에 적힌 기본값으로 되돌립니다(원문은 그대로).</value></data>
   <data name="EffectMaker_SetDefaults" xml:space="preserve"><value>기본값으로</value></data>
-  <data name="EffectMaker_SetDefaultsTip" xml:space="preserve"><value>지금 미리보기 설정 값을 원문 선언의 각 설정 기본값(default)으로 씁니다. 편집기에서 실행 취소할 수 있습니다.</value></data>
+  <data name="EffectMaker_SetDefaultsTip" xml:space="preserve"><value>지금 미리보기 설정 값을 원문 선언의 각 설정 기본값(default)으로, 고른 그라데이션을 선언의 gradients로 씁니다 — 효과를 넣으면 이 값과 그라데이션으로 시작합니다. 편집기에서 실행 취소할 수 있습니다.</value></data>
   <data name="EffectMaker_Preview" xml:space="preserve"><value>미리보기</value></data>
   <data name="EffectMaker_PreviewHint" xml:space="preserve"><value>올릴 때 만들어지는 미리보기와 같은 그림입니다(고른 병아리, 프레임 수만큼의 칸).</value></data>
   <data name="EffectMaker_FrameCount" xml:space="preserve"><value>프레임 수</value></data>
@@ -9504,6 +9506,8 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="EffectMaker_ValidateFirst" xml:space="preserve"><value>검증을 통과해야 올릴 수 있습니다. 상태 단추를 눌러 문제를 보고 고친 뒤 다시 누르세요.</value></data>
   <data name="EffectMaker_Delete" xml:space="preserve"><value>삭제</value></data>
   <data name="EffectMaker_DeleteQuestion" xml:space="preserve"><value>'{0}'을(를) 개인 에셋에서 지울까요?</value><comment>0 = 효과 이름.</comment></data>
+  <data name="EffectMaker_RevertToOriginal" xml:space="preserve"><value>원본으로 되돌리기</value><comment>효과 만들기 목록 우클릭 메뉴: 상점에서 받거나 올린 효과를 에셋 상점의 최신 버전 원문으로 되돌림.</comment></data>
+  <data name="EffectMaker_RevertQuestion" xml:space="preserve"><value>'{0}'을(를) 에셋 상점의 최신 원본(버전 {1})으로 되돌릴까요? 고친 내용은 사라집니다.</value><comment>0 = 효과 이름, 1 = 상점 최신 버전.</comment></data>
   <data name="EffectMaker_EditIn" xml:space="preserve"><value>효과 만들기에서 편집</value></data>
   <data name="EffectMaker_CloseEffectsFirst" xml:space="preserve"><value>효과 창을 닫은 뒤에 넣으세요(효과 창이 레이어 효과를 고치는 중입니다).</value></data>
   <data name="EffectMaker_PathFast" xml:space="preserve"><value>빠른 경로로 계산합니다(원문을 앱 안에서 변환해 컴파일).</value></data>
@@ -9563,8 +9567,9 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="EffectMakerAi_Button" xml:space="preserve"><value>AI</value></data>
   <data name="EffectMakerAi_ButtonTip" xml:space="preserve"><value>창 오른쪽에 AI 칸을 열고 닫습니다. 만들고 싶은 효과를 말로 부탁하면 AI가 규칙에 맞는 원문을 편집기에 써 줍니다(AI 채팅과 같은 Claude Code·Codex 로그인).</value></data>
   <data name="EffectMakerAi_Title" xml:space="preserve"><value>효과 만들기 AI</value></data>
-  <data name="EffectMakerAi_CloseTip" xml:space="preserve"><value>AI 칸 닫기(대화는 창을 닫을 때까지 남음)</value></data>
-  <data name="EffectMakerAi_NewChatTip" xml:space="preserve"><value>대화를 잊고 새로 시작합니다(편집기 원문은 그대로).</value></data>
+  <data name="EffectMakerAi_CloseTip" xml:space="preserve"><value>AI 칸 닫기(대화는 저장되어 다음에 열면 이어 감)</value></data>
+  <data name="EffectMakerAi_NewChatTip" xml:space="preserve"><value>새 대화를 시작합니다. 지금 대화는 저장되어 지난 대화 목록에서 다시 열 수 있습니다(편집기 원문은 그대로).</value></data>
+  <data name="EffectMakerAi_HistoryOpened" xml:space="preserve"><value>지난 대화를 열었습니다. 이어서 보내면 같은 대화로 이어 갑니다.</value></data>
   <data name="EffectMakerAi_Intro" xml:space="preserve"><value>만들고 싶은 효과나 고칠 점을 적어 보내세요. AI가 효과 규칙에 맞게 편집기의 원문을 쓰고, 미리보기와 검증으로 확인합니다. 그림(파일·붙여넣기·캔버스·지금 미리보기)을 붙여 보여 주거나 "내 X 효과처럼"이라고 다른 효과를 가리킬 수 있습니다. AI는 열린 그림을 보기만 하고 고치지 않습니다. 바뀐 원문은 편집기에서 실행취소(Ctrl+Z)로 되돌릴 수 있고, 저장·넣기·올리기는 아래 단추로 직접 합니다.</value></data>
   <data name="EffectMakerAi_Watermark" xml:space="preserve"><value>예: 테두리를 따라 빛이 한 바퀴 도는 효과 (Enter 보내기, Shift+Enter 줄바꿈)</value></data>
   <data name="EffectMakerAi_NoCli" xml:space="preserve"><value>{product}를 찾지 못했습니다. AI 채팅 창에서 설치 방법을 안내합니다. 설치한 뒤 다시 확인을 누르세요.</value></data>
@@ -9576,6 +9581,7 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Ai_Maker_NoScript" xml:space="preserve"><value>효과 만들기에 열린 스크립트가 없습니다. 목록에서 효과를 고르거나 새로 만들어 달라고 하거나, set_effect_maker_source로 새 원문을 넣으세요.</value></data>
   <data name="Ai_Maker_SetErrors" xml:space="preserve"><value>편집기에 원문을 넣었지만 해석 오류가 있어 미리보기가 없습니다. 고쳐서 다시 넣으세요:</value></data>
   <data name="Ai_Maker_Set" xml:space="preserve"><value>효과 만들기 편집기에 원문을 넣었습니다(편집기 실행취소 한 단계, 문서는 그대로): {name}</value></data>
+  <data name="Ai_Maker_PreviewSet" xml:space="preserve"><value>효과 만들기의 미리보기 설정 값을 바꿨습니다(원문·문서는 그대로): {name}</value><comment>AI 도구 결과. name = 효과 이름.</comment></data>
   <data name="Ai_Maker_CheckInterrupted" xml:space="preserve"><value>검증이 끝나기 전에 원문이 바뀌어 멈췄습니다. 다시 부르세요.</value></data>
   <data name="Ai_Maker_CheckOk" xml:space="preserve"><value>검증 통과: {runs}번 실행, 가장 느린 칸 {ms}ms(병아리 {chick}).</value></data>
   <data name="Ai_Maker_CheckFailed" xml:space="preserve"><value>검증에서 문제 {count}개를 찾았습니다:</value></data>

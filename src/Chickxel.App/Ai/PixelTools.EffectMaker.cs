@@ -13,7 +13,7 @@ namespace Chickxel.App.Ai;
 /// 효과 만들기 도구(설계 7장): 스크립트 효과 안내(규칙·API), 스크립트 효과 쓰기(해석 오류는 줄·칸으로 돌려주고 아무것도 바꾸지 않음), 효과 미리보기 그림,
 /// 레이어의 스크립트 효과를 개인 스크립트 에셋으로 저장. 올리기 도구는 두지 않는다 — 올리기는 사람이 효과 만들기 창에서 누른다(설계 원칙 4).
 /// 기본 효과를 합친 레시피는 저장·올리기 대상이 아니다(효과 만들기는 스크립트만).
-/// 효과 만들기 창이 열려 있으면 그 편집기의 원문을 읽고(<c>get_effect_maker_source</c>) 바꾸고(<c>set_effect_maker_source</c>) 검증한다(<c>check_effect_maker</c>) —
+/// 효과 만들기 창이 열려 있으면 그 편집기의 원문을 읽고(<c>get_effect_maker_source</c>) 바꾸고(<c>set_effect_maker_source</c>) 미리보기 설정 값·그라데이션을 바꾸고(<c>set_effect_maker_preview</c>) 검증한다(<c>check_effect_maker</c>) —
 /// 문서는 건드리지 않으므로 "지금 그림만" 범위와 상관없이 쓸 수 있다(효과 만들기 AI 칸이 주로 쓰고, 채팅 창도 쓸 수 있음).
 /// AI가 쓴 원문은 이 컴퓨터에서 쓴 원문으로 보고 실행을 허락한다(실행은 다른 스크립트처럼 Jint 샌드박스·한도 안).
 /// </summary>
@@ -40,7 +40,7 @@ public sealed partial class PixelTools
                 ["source"] = Str("Full JavaScript source."),
                 ["layer"] = Int("Layer index (normal, part or group). Default: current.", 0),
                 ["effect"] = Int("Index of an existing script effect on that layer to replace (keeps its frame range and matching setting values). Omit to add a new effect.", 0),
-                ["settings"] = new JsonObject { ["type"] = "object", ["description"] = "Setting values by key (as declared in settings; colors \"#RRGGBB\"). Omitted keys use the declared defaults." },
+                ["settings"] = new JsonObject { ["type"] = "object", ["description"] = "Setting values by key (as declared in settings; colors \"#RRGGBB\"). Omitted keys use the declared defaults. To make a color setting a gradient, call set_effect with settings.colorGradients afterwards." },
                 ["from_frame"] = Int("First frame of a new effect (0-based).", 0),
                 ["to_frame"] = Int("Last frame of a new effect (inclusive).", 0),
             },
@@ -67,7 +67,7 @@ public sealed partial class PixelTools
         yield return Tool("get_effect_maker_source",
             "Read the script open in the Effect Maker window: its full source, unsaved flag, parse errors (line and column), the declared name, language, description, tags, previewChick, previewEndChick (null if none), previewFrames, previewMotion (preset name, list of [x, y] offsets, or null if none), " +
             "previewEndOffset, previewPivot and previewEndPivot ([x, y] or null if none) and animated, " +
-            "the execution path (fast path, or Jint with the reason and line), the preview setting values and the preview scene: the layers drawn around the preview chick (names bottom to top and which layers the chick sits between), " +
+            "the execution path (fast path, or Jint with the reason and line), the preview setting values (preview_settings: the settings JSON of set_effect_maker_preview, with colorGradients when any) and the preview scene: the layers drawn around the preview chick (names bottom to top and which layers the chick sits between), " +
             "which the user can pick in the effect's layer settings (type: \"layer\") and ctx.layer/layerWithEffects/layerEffects read in the preview, Check and the upload preview. Fails if the Effect Maker is closed or has no script open.",
             new JsonObject());
         yield return Tool("set_effect_maker_source",
@@ -77,6 +77,23 @@ public sealed partial class PixelTools
             DeclarationNote + GradientNote,
             new JsonObject { ["source"] = Str("Full JavaScript source calling effect({...}) once.") },
             "source");
+        yield return Tool("set_effect_maker_preview",
+            "Change the Effect Maker's preview setting values (the settings panel under the editor) of the open script: setting values, color gradients and the movement settings " +
+            "(easing, repeat, repeatCount, movePivot when shown). They only change the preview and the effect added with \"Insert into current layer\"; the source's declared defaults " +
+            "and the user's document stay as they are (the user writes them into the source as defaults with the panel's \"Set as default\" button, gradients into the declaration's gradients; " +
+            "to make a default yourself, edit the source with set_effect_maker_source). Returns the preview strip like set_effect_maker_source. " +
+            "Fails if the Effect Maker is closed, has no script open or the source has errors. Current values: preview_settings of get_effect_maker_source.",
+            new JsonObject
+            {
+                ["settings"] = new JsonObject
+                {
+                    ["type"] = "object",
+                    ["description"] = "Partial preview settings: keys as declared in settings (int/number = number, bool, color = \"#RRGGBB\" or \"#RRGGBBAA\", choice = a declared value, " +
+                                      "colorList = [\"#RRGGBB\", ...], colorPairs = [[\"#from\", \"#to\"], ...], layer = a scene layer name); null resets a key to its declared default. " +
+                                      GradientFormatNote,
+                },
+            },
+            "settings");
         yield return Tool(CheckMakerTool,
             "Run the Effect Maker's Validate check on its current source (same as the Validate button): the install/source check, the name, and every preview chick at every " +
             $"preview frame (the declared previewFrames, default {AssetPreview.PackageFrames}; with previewEndChick the last frame shows that chick; with previewMotion the chick moves by that offset each frame; " +
@@ -113,6 +130,7 @@ public sealed partial class PixelTools
     private const string GradientNote =
         "The user can switch any color setting to a gradient, so by default draw each color by sampling it at the pixel you write with ctx.color(\"key\", x, y) " +
         "(lists: ctx.colorAt, pairs: ctx.pairColor; pass bounds like a beam's own rectangle when the source's opaque bounds don't fit the shape) instead of reading s.key once; " +
+        "when the color follows a value instead of the pixel position (particle age, heat, progress), pick it at position t (0-1) of the gradient with ctx.gradientAt(\"key\", t, x, y); " +
         "keep a flat s.key color only when the effect really needs one solid color. ";
 
     private static JsonObject GetScriptApi() => TextResult(ScriptEffectGuide.ToMarkdown(null));
@@ -204,9 +222,8 @@ public sealed partial class PixelTools
         o["preview_end_pivot"] = OffsetJson(program.PreviewPlacement.EndPivot);
         o["animated"] = program.Animated;
         o["execution_path"] = PathText(program.ExecutionPath);
-        var values = new JsonObject();
-        foreach (var (key, value) in maker.PreviewValues(program)) values[key] = SettingJson(value);
-        o["preview_settings"] = values;
+        // 미리보기 효과의 설정(저장 형식 — set_effect_maker_preview·set_effect의 settings와 같은 모양, 그라데이션은 colorGradients)
+        if (maker.PreviewEffects() is [var preview]) o["preview_settings"] = EffectSettings.ToJson(preview);
         if (maker.Scene is { } scene) o["preview_scene"] = SceneJson(scene);
         else if (ScriptLibrary.InfoOf(ScriptLibrary.Add(maker.Source)) is { ReadsOtherLayers: true })
             o["preview_scene"] = "none: the preview chick is drawn alone, so ctx.layer, ctx.layerWithEffects and ctx.layerEffects return null / [] in the preview. The user can add a scene with \"Edit in main editor\" in the Effect Maker.";
@@ -254,6 +271,26 @@ public sealed partial class PixelTools
         string text = UiStrings.FormatAi_Maker_Set(name: program.Name) + "\n" + PathText(program.ExecutionPath);
         if (RunError(program, effect, program.PreviewChick, scene) is { } error) text += "\n" + UiStrings.FormatAi_Script_RunError(error: ErrorLine(error));
         text += GradientHintText(ScriptGradientCheck.Static(program).Select(h => h.Message));
+        return ImageResult(PreviewStrip([effect], PreviewChicks.Load(program.PreviewChick), program.PreviewFrames, scene, AssetPreview.EndChick(program.PreviewEndChick),
+            program.PreviewMotion, program.PreviewPlacement), text);
+    }
+
+    /// <summary>효과 만들기의 미리보기 설정 값·그라데이션·공통 값을 바꾼다(<see cref="MergeSettings"/> — 레이어 효과의 set_effect와 같은 settings 모양). 원문·문서는 그대로.</summary>
+    private static JsonObject SetEffectMakerPreview(JsonObject? a)
+    {
+        var settings = SettingsArg(a) ?? throw new ToolError(string.Format(CultureInfo.CurrentCulture, UiStrings.S_PixelTools_ReqIndex_6802669E97, "settings"));
+        var maker = RequireMaker(script: true);
+        var parsed = ScriptEffectProgram.Parse(maker.Source);
+        if (!parsed.Success || maker.PreviewEffects() is not [ScriptEffect current])
+            return TextResult(UiStrings.Ai_Maker_SetErrors + "\n" + string.Join("\n", parsed.Errors.Select(ErrorLine)), isError: true);
+        var program = parsed.Program;
+        var (merged, clamped) = MergeSettings(current, settings);
+        maker.SetPreviewFromAi((ScriptEffect)merged);
+        if (maker.PreviewEffects() is not [ScriptEffect effect]) throw new ToolError(UiStrings.Ai_Maker_SetErrors);
+        var scene = maker.Scene;
+        string text = UiStrings.FormatAi_Maker_PreviewSet(name: program.Name) + ClampedNote(clamped)
+                      + "\npreview_settings: " + EffectSettings.ToJson(effect).ToJsonString(JsonOptions);
+        if (RunError(program, effect, program.PreviewChick, scene) is { } error) text += "\n" + UiStrings.FormatAi_Script_RunError(error: ErrorLine(error));
         return ImageResult(PreviewStrip([effect], PreviewChicks.Load(program.PreviewChick), program.PreviewFrames, scene, AssetPreview.EndChick(program.PreviewEndChick),
             program.PreviewMotion, program.PreviewPlacement), text);
     }

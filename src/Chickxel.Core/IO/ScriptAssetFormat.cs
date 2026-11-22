@@ -58,6 +58,8 @@ public sealed record ScriptAsset : IAssetData
     public PreviewPlacement PreviewPlacement { get; init; } = PreviewPlacement.None;
     /// <summary>선언의 설정 schema(선언 순서).</summary>
     public IReadOnlyList<ScriptSetting> Settings { get; init; } = [];
+    /// <summary>선언의 <c>gradients</c>(<see cref="ScriptEffectProgram.DefaultGradients"/>): 넣는 효과의 색 슬롯별 처음 그라데이션.</summary>
+    public IReadOnlyDictionary<string, EffectColorGradient> DefaultGradients { get; init; } = ScriptEffectProgram.NoGradients;
     /// <summary>선언의 <c>translations</c>(<see cref="ScriptEffectProgram.Translations"/>). 화면에는 <see cref="NameFor"/>·<see cref="DescriptionFor"/>로 보인다.</summary>
     public IReadOnlyDictionary<string, ScriptTranslation> Translations { get; init; } = ScriptTranslations.Empty;
     /// <summary>선언의 <c>language</c>(<see cref="ScriptEffectProgram.Language"/>, 없으면 null): 선언 값의 언어.</summary>
@@ -90,25 +92,29 @@ public sealed record ScriptAsset : IAssetData
             Source = program.Source, Hash = program.ContentHash, Animated = program.Animated, Easing = program.Easing,
             PreviewChick = program.PreviewChick,
             PreviewEndChick = program.PreviewEndChick, PreviewFrames = program.PreviewFrames, PreviewMotion = program.PreviewMotion,
-            PreviewPlacement = program.PreviewPlacement, Settings = program.Settings,
+            PreviewPlacement = program.PreviewPlacement, Settings = program.Settings, DefaultGradients = program.DefaultGradients,
             Translations = program.Translations, Language = program.Language,
         };
     }
 
     /// <summary>
-    /// 프로젝트에 넣을 레시피: 선언의 기본값으로 둔 스크립트 효과 하나와 그 원문. 기본값은 해석해 둔 schema에서 바로 만들므로
+    /// 프로젝트에 넣을 레시피: 선언의 기본값(설정·빠르기 곡선·그라데이션)으로 둔 스크립트 효과 하나와 그 원문. 기본값은 해석해 둔 schema에서 바로 만들므로
     /// 실행을 허락하지 않은 원문도 허락한 뒤와 같은 효과 값이 된다.
     /// </summary>
-    public EffectRecipe ToRecipe() => new()
+    public EffectRecipe ToRecipe()
     {
-        Id = Id,
-        Name = Name,
-        Effects = [new ScriptEffect
+        var effect = new ScriptEffect
         {
             ScriptHash = Hash, Settings = ScriptSettingValues.From(Settings.Select(s => new KeyValuePair<string, object>(s.Key, s.Default))), Easing = Easing,
-        }],
-        Scripts = new SortedDictionary<string, string>(StringComparer.Ordinal) { [Hash] = Source },
-    };
+        };
+        return new()
+        {
+            Id = Id,
+            Name = Name,
+            Effects = [DefaultGradients.Count == 0 ? effect : effect with { ColorGradients = DefaultGradients }],
+            Scripts = new SortedDictionary<string, string>(StringComparer.Ordinal) { [Hash] = Source },
+        };
+    }
 }
 
 /// <summary>

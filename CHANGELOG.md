@@ -2,6 +2,34 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.139 (2026-11-22)
+
+### Pick effect colors by gradient position (ctx.gradientAt)
+- Script effects gain `ctx.gradientAt("slot", t, x, y)`, which picks a gradient's color by a value t (0-1) such as a particle's age, heat or progress instead of a pixel position.
+- It ignores the gradient's shape and angle and follows only its stops, interpolation, color space and reverse; without a gradient it is the solid color. It runs on the fast path.
+
+### Gradient defaults (declared gradients)
+- Declaring `gradients: { key: { stops: [...], ... } }` makes a color setting start as a gradient when the effect is added (also color list items `"key[0]"` and color pair sides `"key[0].to"`).
+- The Effect Maker's **Set as default** also writes the gradients chosen in the preview into the source, and **Reset** goes back to the declared gradients.
+
+### AI can edit gradients
+- The Effect Maker AI can change the preview setting values and gradients (color and opacity stops, interpolation, shape and more) with a new tool.
+- The AI is told the full gradient format of layer effects, so it can also change them with `set_effect`; a color slot a script effect doesn't declare is reported as an error.
+
+### Effect Maker: revert to original, pulsing Save
+- The My effects list's right-click menu gains **Revert to original**. It shows only for effects received from or published to the store that differ from the store's latest version, and overwrites the effect with that latest source.
+- The Save button always has the normal button color and slowly pulses while there are unsaved changes.
+
+### Effect Maker AI conversations are saved
+- The Effect Maker AI panel saves its conversations like the AI chat (kept separately from the AI chat) and continues the last one when reopened.
+- The **New chat** screen lists past conversations to reopen, star or delete.
+
+### App trash from the File menu
+- File > **Show app trash…** opens the same trash window as the file browser.
+
+### User guide
+- The user guide and F1 help now cover recent features such as the curve pen and line cleanup window, eraser target layers, collapsing the preview panel and pixelate's per-row cell fitting.
+
 ## v1.14.138 (2026-11-22)
 
 ### Curve pen pixel perfect toggle

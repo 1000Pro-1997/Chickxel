@@ -188,6 +188,27 @@ public static class Ui
     }
 
     /// <summary>
+    /// 단추 바탕을 <paramref name="from"/>에서 <paramref name="to"/>로 천천히(0.9초씩, 끝없이) 오가게 해 눌러야 할 것이 있음을 알린다(정리하기·저장 단추).
+    /// <paramref name="token"/>을 취소하면 멈추고 원래 바탕으로 돌아간다. 마우스를 올려도 반짝임이 보이려면 <see cref="KeepFillOnHover"/>를 함께 쓴다.
+    /// </summary>
+    public static void PulseBackground(Button button, IBrush from, IBrush to, CancellationToken token)
+    {
+        var pulse = new Avalonia.Animation.Animation
+        {
+            Duration = TimeSpan.FromSeconds(0.9),
+            IterationCount = Avalonia.Animation.IterationCount.Infinite,
+            PlaybackDirection = Avalonia.Animation.PlaybackDirection.Alternate,
+            Easing = new Avalonia.Animation.Easings.SineEaseInOut(),
+            Children =
+            {
+                new Avalonia.Animation.KeyFrame { Cue = new Avalonia.Animation.Cue(0), Setters = { new Setter(TemplatedControl.BackgroundProperty, from) } },
+                new Avalonia.Animation.KeyFrame { Cue = new Avalonia.Animation.Cue(1), Setters = { new Setter(TemplatedControl.BackgroundProperty, to) } },
+            },
+        };
+        _ = pulse.RunAsync(button, token);
+    }
+
+    /// <summary>
     /// 단추 <paramref name="button"/> 오른쪽 끝에 작은 아래 화살표 칸을 붙여 한 단추처럼 보이는 묶음을 만든다(사이는 가는 나눔선만). 화살표를 누르면
     /// <paramref name="open"/>(묶음을 받아 그 아래에 메뉴·팝업을 엶). 켜고 끄는 단추면 켜졌을 때 화살표 칸도 같은 색으로 칠한다. 단추의 바깥 여백은 묶음으로 옮긴다.
     /// 우클릭으로도 같은 것이 열린다는 것을 화살표로 보이기 위한 모양 — 우클릭 연결은 부르는 쪽이 한다.

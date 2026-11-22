@@ -152,6 +152,53 @@ public static class ScriptDeclarationEdit
     }
 
     /// <summary>
+    /// 선언의 <c>gradients</c>(색 슬롯별 처음 그라데이션 — <see cref="ScriptEffectProgram.DefaultGradients"/>)를 <paramref name="gradients"/>로 바꾼다(효과 만들기의 "기본값으로").
+    /// 비었으면 그 속성을 지우고, 없으면 <c>settings</c> 다음에(없으면 <c>name</c> 다음에) 더한다. 값은 <see cref="GradientLiteral"/>(처음 값과 같은 키는 뺌).
+    /// 원문을 해석하지 못하면 null.
+    /// </summary>
+    public static string? SetGradients(string source, IReadOnlyDictionary<string, EffectColorGradient> gradients)
+        => SetLiteral(source, "gradients", gradients.Count == 0 ? null
+            : "{ " + string.Join(", ", gradients.OrderBy(e => e.Key, StringComparer.Ordinal).Select(e => KeyLiteral(e.Key) + ": " + GradientLiteral(e.Value))) + " }",
+            ["settings", "name"]);
+
+    /// <summary>
+    /// 그라데이션 하나의 선언 리터럴(<c>{ stops: [{ position: 0, color: "#ffffff" }, …], … }</c> — <see cref="ScriptDeclarationReader.ReadGradient"/>가 읽는 모양).
+    /// 색 멈춤점은 늘 쓰고, 나머지는 <see cref="EffectColorGradient"/>의 처음 값과 다를 때만 쓴다. 예전 파일 호환 값(<see cref="EffectColorGradient.StraightRgba"/>)은 쓰지 않는다.
+    /// </summary>
+    public static string GradientLiteral(EffectColorGradient gradient)
+    {
+        var initial = new EffectColorGradient();
+        var parts = new List<string>
+        {
+            "stops: [" + string.Join(", ", gradient.Stops.Select(s => "{ position: " + NumberLiteral(s.Position) + ", color: " + ColorLiteral(s.Color, null) + " }")) + "]",
+        };
+        if (gradient.AlphaStops.Count > 0)
+            parts.Add("alphaStops: [" + string.Join(", ", gradient.AlphaStops.Select(s =>
+                "{ position: " + NumberLiteral(s.Position) + ", alpha: " + s.Alpha.ToString(CultureInfo.InvariantCulture) + " }")) + "]");
+        void Name<T>(string key, T value, T initialValue) where T : struct, Enum
+        {
+            if (!value.Equals(initialValue)) parts.Add(key + ": \"" + value + "\"");
+        }
+        Name("interpolation", gradient.Interpolation, initial.Interpolation);
+        Name("colorSpace", gradient.ColorSpace, initial.ColorSpace);
+        Name("dither", gradient.Dither, initial.Dither);
+        Name("shape", gradient.Shape, initial.Shape);
+        if (gradient.Angle != initial.Angle) parts.Add("angle: " + gradient.Angle.ToString(CultureInfo.InvariantCulture));
+        if (gradient.Reverse) parts.Add("reverse: true");
+        if (gradient.Cycles != initial.Cycles) parts.Add("cycles: " + gradient.Cycles.ToString(CultureInfo.InvariantCulture));
+        // 한 색(Uniform) 모양은 늘 움직이므로 animated를 따로 쓰지 않는다
+        if (gradient.Animated && gradient.Shape != EffectGradientShape.Uniform) parts.Add("animated: true");
+        Name("easing", gradient.Easing, initial.Easing);
+        if (gradient.PingPong) parts.Add("pingPong: true");
+        return "{ " + string.Join(", ", parts) + " }";
+    }
+
+    /// <summary>객체 리터럴의 키: 이름으로 쓸 수 있으면 그대로(<c>fire</c>), 아니면 문자열(<c>"list[0]"</c>).</summary>
+    private static string KeyLiteral(string key)
+        => key.Length > 0 && (char.IsAsciiLetter(key[0]) || key[0] is '_' or '$') && key.All(c => char.IsAsciiLetterOrDigit(c) || c is '_' or '$')
+            ? key : JsonSerializer.Serialize(key, LiteralOptions);
+
+    /// <summary>
     /// 선언의 <paramref name="key"/> 값을 리터럴 <paramref name="literal"/>로 바꾼다(null이면 지움). 없으면 <paramref name="after"/> 중 먼저 있는 키 다음에,
     /// 그런 키가 없으면 선언 맨 앞에 더한다.
     /// </summary>

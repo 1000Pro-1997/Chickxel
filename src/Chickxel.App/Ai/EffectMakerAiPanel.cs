@@ -15,13 +15,16 @@ namespace Chickxel.App.Ai;
 /// AI는 MCP 서버의 효과 만들기 범위(<see cref="McpScope.EffectMaker"/> — 읽기 도구와 효과 만들기 도구만, 서버가 나머지를 막음)로 열린 문서를 보기만 하고
 /// 편집기 원문만 고친다 — 문서를 고치지 않으므로 실행취소 묶음·캔버스 모습은 없고, 바뀐 원문은 편집기의 실행취소로 되돌린다.
 /// 입력란은 AI 채팅 창과 같은 그림 칩 입력란(<see cref="ChatImageInput"/>): 그림 파일·붙여넣기·끌어 놓기·캔버스·지금 미리보기 칸을 첨부한다.
-/// 가벼운 칸이라 대화를 저장하지 않고, CLI 설치·로그인은 AI 채팅 창에 맡긴다(이 칸은 안내와 "AI 채팅 열기"·"다시 확인"만).
+/// 대화는 차례가 끝날 때마다 AI별로 저장되고(<see cref="ChatHistoryStore"/> — AI 채팅과 따로 <c>EffectMakerChats</c> 폴더), 칸을 열면 마지막으로 보던 대화를 이어 가며,
+/// "새 대화" 화면은 안내 아래에 지난 대화 목록(누르면 이어 감)을 보인다. CLI 설치·로그인은 AI 채팅 창에 맡긴다(이 칸은 안내와 "AI 채팅 열기"·"다시 확인"만).
 /// </summary>
 internal sealed class EffectMakerAiPanel : Border
 {
     private static readonly IBrush ErrorBrush = AppTheme.Brush(Color.FromRgb(240, 110, 110));
     private static readonly IBrush UserBubbleBrush = AppTheme.Brush(Color.FromRgb(50, 66, 88));
     private static readonly FontFamily MonoFont = new("Menlo, Consolas, DejaVu Sans Mono, monospace");
+    /// <summary>이 칸의 대화 보관소(AI 채팅의 <c>Chats</c>와 따로).</summary>
+    private static readonly ChatHistoryStore s_store = new(Path.Combine(Platform.AppFolder, "EffectMakerChats"));
 
     private readonly McpServer _mcp;
     private readonly AppSettings _settings;
@@ -38,6 +41,8 @@ internal sealed class EffectMakerAiPanel : Border
     private readonly DockPanel _chatPanel;
     private readonly ScrollViewer _scroll;
     private readonly StackPanel _messages = new() { Spacing = 6, Margin = new Thickness(8, 8) };
+    /// <summary>새 대화 화면의 지난 대화 목록(안내 바로 아래, 대화를 시작하거나 열면 뺌).</summary>
+    private readonly StackPanel _history = new() { Spacing = 4, Margin = new Thickness(0, 4, 0, 0) };
     private readonly TextBlock _thinking;
     private readonly ChatImageInput _imageInput;
     /// <summary>차례가 도는 동안 보낸 메시지(입력란 위 대기 줄) — 차례가 끝나면 차례로 보낸다.</summary>
@@ -55,8 +60,11 @@ internal sealed class EffectMakerAiPanel : Border
     /// <summary>스트리밍 중인 답 글 보기와 그 글(Claude만 조각으로 옴).</summary>
     private MarkdownView? _stream;
     private readonly StringBuilder _streamText = new();
-    /// <summary>도는 도구 호출 id → 도구 줄·시작 시각.</summary>
-    private readonly Dictionary<string, (TextBlock Line, long Started)> _tools = new();
+    /// <summary>도는 도구 호출 id → 도구 줄·저장할 줄·시작 시각.</summary>
+    private readonly Dictionary<string, (TextBlock Line, ChatItem Item, long Started)> _tools = new();
+    /// <summary>지금 대화(저장 전 새 대화면 null — 첫 메시지를 보낼 때 만든다)와 저장할 줄.</summary>
+    private SavedChat? _chat;
+    private List<ChatItem> _items = new();
 
     /// <param name="openChat">AI 채팅 창을 연다(CLI 설치·로그인 안내).</param>
     /// <param name="close">칸을 닫는다(머리줄의 닫기 단추).</param>
@@ -215,7 +223,13 @@ internal sealed class EffectMakerAiPanel : Border
             _cliPath = path;
             var who = status.Describe();
             _status.Text = who.Length > 0 ? $"{provider.Name} · {who}" : provider.Name;
-            if (_session is null) AttachSession(provider.CreateSession(path, _mcp, () => AiCli.EffectMakerSystemPrompt, McpScope.EffectMaker));
+            if (_session is null)
+            {
+                AttachSession(provider.CreateSession(path, _mcp, () => AiCli.EffectMakerSystemPrompt, McpScope.EffectMaker));
+                // 열어 둔 대화가 있으면 그 CLI 세션을 이어 가고, 없으면 이 AI에서 마지막으로 보던 대화를 연다
+                if (_chat is not null) ResumeChat(_chat);
+                else if (_settings.EffectMakerChatLastOpen?.GetValueOrDefault(provider.Id) is { } last && s_store.Load(provider.Id, last) is { } saved) OpenChat(saved);
+            }
             _body.Child = _chatPanel;
             UpdateInputState();
             FocusInput();
@@ -266,6 +280,8 @@ internal sealed class EffectMakerAiPanel : Border
         _settings.ChatProvider = provider.Id;
         _settings.Save();
         _models.Fill();
+        _chat = null;
+        _items = new List<ChatItem>();
         ClearTranscript();
         _started = true;
         _ = CheckAsync();
@@ -278,7 +294,7 @@ internal sealed class EffectMakerAiPanel : Border
         StopTurn();
         _session.Model = model;
         _session.Restart();
-        AddLine(notice, error: false);
+        AddLine(notice, error: false, record: false);
     }
 
     private void DropSession()
@@ -316,14 +332,17 @@ internal sealed class EffectMakerAiPanel : Border
                 _streamText.Clear();
             }
             else AddItem(Answer(text));
+            Record(new ChatItem { Kind = ChatItemKind.Assistant, Text = text });
         };
         s.ToolUse += info =>
         {
             if (!_running || !ReferenceEquals(s, _session)) return;
             FinishStream();
             var line = new TextBlock { Text = $"{info.Name}", Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, TextWrapping = TextWrapping.Wrap };
-            if (info.Id.Length > 0) _tools[info.Id] = (line, Stopwatch.GetTimestamp());
-            AddItem(Ui.Row(Ui.Icon(VectorIcon.Code, 11), line));
+            var item = new ChatItem { Kind = ChatItemKind.Tool, Text = info.Name };
+            Record(item);
+            if (info.Id.Length > 0) _tools[info.Id] = (line, item, Stopwatch.GetTimestamp());
+            AddItem(ToolRow(line));
         };
         s.ToolResult += info =>
         {
@@ -334,6 +353,8 @@ internal sealed class EffectMakerAiPanel : Border
                 if (info.Text.Length > 0) tool.Line.Text += $" - {info.Text}";
             }
             tool.Line.Text += $" ({ChatTurnFooter.Seconds(Stopwatch.GetElapsedTime(tool.Started).TotalSeconds)})";
+            tool.Item.Text = tool.Line.Text;
+            tool.Item.Error = info.IsError;
         };
         s.TurnCompleted += r =>
         {
@@ -444,7 +465,29 @@ internal sealed class EffectMakerAiPanel : Border
             return false;
         }
         _primed = true;
-        AddItem(UserBubble(text, attachments));
+        if (_chat is null)
+        {
+            var now = DateTime.UtcNow;
+            _chat = new SavedChat
+            {
+                Id = ChatHistoryStore.NewId(),
+                Provider = _provider.Id,
+                Title = ChatImageTokens.WithoutTokens(text).Length > 0 ? ChatHistoryStore.MakeTitle(ChatImageTokens.WithoutTokens(text)) : UiStrings.Chat_History_ImageTitle,
+                CreatedUtc = now,
+                UpdatedUtc = now,
+            };
+            RememberOpen(_chat.Id);
+        }
+        _messages.Children.Remove(_history);
+        AddItem(UserBubble(text, [.. attachments.Select(a => (Bitmap?)a.Thumb)]));
+        Record(new ChatItem
+        {
+            Kind = ChatItemKind.User,
+            Text = text,
+            ImageCount = attachments.Count,
+            // 칩 번호와 맞도록 미리보기를 만들지 못한 그림은 빈 글로 자리를 지킨다
+            Images = attachments.Count == 0 ? null : [.. attachments.Select(a => ChatHistoryViews.SavedThumb(a) ?? "")],
+        });
         _running = true;
         _tools.Clear();
         _turnClock.Restart();
@@ -471,22 +514,176 @@ internal sealed class EffectMakerAiPanel : Border
         FinishStream();
         _messages.Children.Remove(_thinking);
         if (error is not null) AddLine(error, error: true);
-        AddItem(new TextBlock { Text = ChatTurnFooter.Text(cancelled, result?.CostUsd ?? 0, _turnClock.Elapsed.TotalSeconds), Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, HorizontalAlignment = HorizontalAlignment.Right });
+        var footer = ChatTurnFooter.Text(cancelled, result?.CostUsd ?? 0, _turnClock.Elapsed.TotalSeconds);
+        AddItem(FooterLine(footer));
+        Record(new ChatItem { Kind = ChatItemKind.Footer, Text = footer });
+        SaveChat();
         UpdateInputState();
         // 기다리던 메시지는 이 차례를 다 그린 뒤에 보낸다(멈춤으로 끝났어도 — 방향을 바꾸려고 멈춘 경우가 많음).
         if (_pending.Count > 0) Dispatcher.UIThread.Post(SendQueued);
     }
 
-    /// <summary>새 대화: 도는 차례를 멈추고 세션의 대화를 잊는다(다음 메시지에 규칙·API를 다시 붙임). 편집기 원문은 그대로.</summary>
+    /// <summary>
+    /// 새 대화: 도는 차례를 멈추고 세션의 대화를 잊는다(다음 메시지에 규칙·API를 다시 붙임). 지금 대화는 저장된 채로 두고 지난 대화 목록을 보인다. 편집기 원문은 그대로.
+    /// </summary>
     private void NewConversation()
     {
         _pending.ClearAll();
         StopTurn();
         _session?.Reset();
         _primed = false;
+        _chat = null;
+        _items = new List<ChatItem>();
+        RememberOpen(null);
         ClearTranscript();
         FocusInput();
     }
+
+    // ───────────── 저장한 대화 ─────────────
+
+    private void Record(ChatItem item) => _items.Add(item);
+
+    /// <summary>지금 대화를 저장한다(세션 ID·작업 폴더·모델·고친 시각 포함). 넘친 옛 대화는 보관소가 지운다.</summary>
+    private void SaveChat()
+    {
+        if (_chat is not { } chat) return;
+        if (_session is { } s)
+        {
+            chat.Model = s.Model;
+            chat.SessionId = s.SessionId;
+            chat.SessionDirectory = s.SessionDirectory;
+        }
+        chat.UpdatedUtc = DateTime.UtcNow;
+        chat.Items = _items;
+        try
+        {
+            s_store.Save(chat);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            AddLine(UiStrings.FormatChat_History_SaveFailed(message: ex.Message), error: true, record: false);
+        }
+    }
+
+    /// <summary>이 AI에서 마지막으로 보던 대화를 설정에 적는다(null = 새 대화).</summary>
+    private void RememberOpen(string? id)
+    {
+        var map = _settings.EffectMakerChatLastOpen ??= new Dictionary<string, string>();
+        if (id is null) map.Remove(_provider.Id);
+        else map[_provider.Id] = id;
+        _settings.Save();
+    }
+
+    /// <summary>
+    /// 저장한 대화를 연다: 줄을 다시 그리고, 모델을 그 대화 것으로 고르고, 세션이 있으면 그 CLI 세션을 같은 작업 폴더에서 이어 가게 한다
+    /// (세션 ID가 없으면 다음 메시지는 규칙·API를 붙인 새 대화).
+    /// </summary>
+    private void OpenChat(SavedChat chat)
+    {
+        _pending.ClearAll();
+        StopTurn();
+        _chat = chat;
+        _items = chat.Items;
+        _stream = null;
+        _streamText.Clear();
+        _tools.Clear();
+        _messages.Children.Clear();
+        AddIntro(history: false);
+        foreach (var item in chat.Items) RenderSaved(item);
+        _models.Select(chat.Model);
+        ResumeChat(chat);
+        AddLine(chat.SessionId is null ? UiStrings.Chat_History_NoSession : UiStrings.EffectMakerAi_HistoryOpened, error: false, record: false);
+        RememberOpen(chat.Id);
+        FocusInput();
+    }
+
+    /// <summary>세션이 <paramref name="chat"/>의 CLI 세션을 이어 가게 한다(세션 ID가 없으면 새 대화 — 다음 메시지에 규칙·API를 붙임).</summary>
+    private void ResumeChat(SavedChat chat)
+    {
+        if (_session is not { } s) return;
+        s.Model = _models.Current;
+        if (chat.SessionId is { } id) s.Resume(id, chat.SessionDirectory);
+        else s.Reset();
+        _primed = chat.SessionId is not null;
+    }
+
+    /// <summary>저장한 줄 하나를 그린다(이 칸이 남기는 종류만).</summary>
+    private void RenderSaved(ChatItem item)
+    {
+        switch (item.Kind)
+        {
+            case ChatItemKind.User:
+                AddItem(UserBubble(item.Text, [.. (item.Images ?? []).Select(data => data.Length > 0 ? ChatHistoryViews.DecodeImage(data) : null)]));
+                break;
+            case ChatItemKind.Assistant:
+                AddItem(Answer(item.Text));
+                break;
+            case ChatItemKind.Tool:
+                AddItem(ToolRow(new TextBlock
+                {
+                    Text = item.Text, Foreground = item.Error ? ErrorBrush : AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, TextWrapping = TextWrapping.Wrap,
+                }));
+                break;
+            case ChatItemKind.Notice:
+            case ChatItemKind.Error:
+                AddLine(item.Text, item.Kind == ChatItemKind.Error, record: false);
+                break;
+            case ChatItemKind.Footer:
+                AddItem(FooterLine(item.Text));
+                break;
+        }
+    }
+
+    /// <summary>새 대화 화면의 지난 대화 목록을 다시 그린다(즐겨찾기 먼저, 그다음 최근에 고친 순 — 없으면 비움).</summary>
+    private void RefreshHistory()
+    {
+        _history.Children.Clear();
+        List<ChatSummary> chats;
+        try
+        {
+            chats = s_store.List(_provider.Id);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            chats = [];
+        }
+        if (chats.Count == 0) return;
+        _history.Children.Add(new TextBlock { Text = UiStrings.Chat_History_Title, FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush, Margin = new Thickness(2, 0, 0, 2) });
+        foreach (var c in chats)
+            _history.Children.Add(ChatHistoryViews.Row(c, ModelLabel(c.Model), () => OpenSaved(c.Id), () => ToggleFavorite(c), () => DeleteSaved(c), helpPage: null));
+    }
+
+    private void OpenSaved(string id)
+    {
+        if (s_store.Load(_provider.Id, id) is { } chat) OpenChat(chat);
+        else RefreshHistory();
+    }
+
+    private void ToggleFavorite(ChatSummary c)
+    {
+        try
+        {
+            s_store.SetFavorite(_provider.Id, c.Id, !c.Favorite);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Ui.Error(this, UiStrings.FormatChat_History_SaveFailed(message: ex.Message));
+        }
+        RefreshHistory();
+    }
+
+    private void DeleteSaved(ChatSummary c)
+    {
+        var title = c.Title.Length > 0 ? c.Title : UiStrings.Chat_History_ImageTitle;
+        if (Ui.Ask(this, UiStrings.FormatChat_History_DeleteAsk(title: title), UiStrings.Chat_History_DeleteTitle, MessageButtons.YesNo, MessageIcon.Question)
+            != DialogResult.Yes) return;
+        s_store.Delete(_provider.Id, c.Id);
+        RefreshHistory();
+    }
+
+    /// <summary>모델 값(null = 기본값)의 목록 이름.</summary>
+    private string ModelLabel(string? model)
+        => _models.Choices.FirstOrDefault(m => m.Value == model)?.Label ?? model ?? _models.Choices.FirstOrDefault()?.Label ?? "";
 
     private void UpdateInputState()
     {
@@ -506,14 +703,22 @@ internal sealed class EffectMakerAiPanel : Border
 
     // ───────────── 대화 그리기 ─────────────
 
-    private void AddIntro() => _messages.Children.Add(new TextBlock
+    /// <summary>머리 안내 글. <paramref name="history"/>면 그 아래에 지난 대화 목록(새 대화 화면).</summary>
+    private void AddIntro(bool history = true)
     {
-        Text = UiStrings.EffectMakerAi_Intro,
-        TextWrapping = TextWrapping.Wrap,
-        Foreground = AppTheme.DimTextBrush,
-        Margin = new Thickness(2, 0, 2, 4),
-    });
+        _messages.Children.Add(new TextBlock
+        {
+            Text = UiStrings.EffectMakerAi_Intro,
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = AppTheme.DimTextBrush,
+            Margin = new Thickness(2, 0, 2, 4),
+        });
+        if (!history) return;
+        RefreshHistory();
+        _messages.Children.Add(_history);
+    }
 
+    /// <summary>대화 화면을 새 대화 화면(안내 + 지난 대화 목록)으로 비운다(지금 대화·세션은 부르는 쪽이 정함).</summary>
     private void ClearTranscript()
     {
         _stream = null;
@@ -532,22 +737,31 @@ internal sealed class EffectMakerAiPanel : Border
         Dispatcher.UIThread.Post(() => _scroll.ScrollToEnd(), DispatcherPriority.Background);
     }
 
-    private void AddLine(string text, bool error) => AddItem(new SelectableTextBlock
+    private void AddLine(string text, bool error, bool record = true)
     {
-        Text = text,
-        TextWrapping = TextWrapping.Wrap,
-        Foreground = error ? ErrorBrush : AppTheme.DimTextBrush,
-        FontSize = AppTheme.SmallFontSize,
-    });
+        AddItem(new SelectableTextBlock
+        {
+            Text = text,
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = error ? ErrorBrush : AppTheme.DimTextBrush,
+            FontSize = AppTheme.SmallFontSize,
+        });
+        if (record) Record(new ChatItem { Kind = error ? ChatItemKind.Error : ChatItemKind.Notice, Text = text });
+    }
 
-    /// <summary>사용자 말풍선: 글 사이 그림 칩(작은 미리보기 + 번호, 누르면 크게 보기)은 AI 채팅 창과 같은 모양.</summary>
-    private static Control UserBubble(string text, IReadOnlyList<ChatAttachment> attachments) => new Border
+    private static Control ToolRow(TextBlock line) => Ui.Row(Ui.Icon(VectorIcon.Code, 11), line);
+
+    private static TextBlock FooterLine(string text)
+        => new() { Text = text, Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, HorizontalAlignment = HorizontalAlignment.Right };
+
+    /// <summary>사용자 말풍선: 글 사이 그림 칩(작은 미리보기 + 번호, 누르면 크게 보기)은 AI 채팅 창과 같은 모양(저장한 대화는 미리보기를 못 읽은 그림이 null).</summary>
+    private static Control UserBubble(string text, IReadOnlyList<Bitmap?> images) => new Border
     {
         Background = UserBubbleBrush,
         CornerRadius = new CornerRadius(6),
         Margin = new Thickness(24, 2, 0, 2),
         HorizontalAlignment = HorizontalAlignment.Right,
-        Child = ChatImages.BubbleText(text, [.. attachments.Select(a => (Bitmap?)a.Thumb)]),
+        Child = ChatImages.BubbleText(text, images),
     };
 
     private static MarkdownView Answer(string text)

@@ -365,6 +365,9 @@
   <data name="Script_InvalidTags" xml:space="preserve"><value>tags는 문자열 {max}개 이하의 배열이어야 합니다(예: ["neon", "glow"]).</value><comment>max = 태그 수 한도.</comment></data>
   <data name="Script_InvalidTag" xml:space="preserve"><value>태그 '{tag}'는 영어 소문자·숫자와 가운데 하이픈(-)만 쓴 {max}자 이하여야 합니다(예: "neon", "pixel-art").</value><comment>tag = 적은 태그; max = 태그 최대 글자 수.</comment></data>
   <data name="Script_DuplicateTag" xml:space="preserve"><value>태그 '{tag}'가 겹칩니다(대소문자와 앞의 #은 가리지 않습니다).</value><comment>tag = 정리한(소문자) 태그.</comment></data>
+  <data name="Script_InvalidGradients" xml:space="preserve"><value>gradients는 색 슬롯별 그라데이션 객체여야 합니다(예: gradients: { fire: { stops: [{ position: 0, color: "#ffffff" }, { position: 1, color: "#ff0000" }] } }).</value></data>
+  <data name="Script_InvalidGradientSlot" xml:space="preserve"><value>gradients의 '{slot}'은 선언한 색 설정의 슬롯이 아닙니다(색은 "키", 색 목록 항목은 "키[0]", 색 쌍은 "키[0].from"·"키[0].to", 번호는 max 안).</value><comment>slot = 적은 슬롯 이름.</comment></data>
+  <data name="Script_InvalidGradient" xml:space="preserve"><value>gradients의 '{slot}' 그라데이션이 틀렸습니다: stops는 {{ position: 0~1, color: "#RRGGBB" }} 1~{max}개, alphaStops는 {{ position: 0~1, alpha: 0~255 }} {max}개까지, interpolation "Smooth"|"Steps", colorSpace "OkLch"|"OkLab"|"Rgb"|"Hsl", dither "None"|"Bayer2"|"Bayer4", shape "Linear"|"Radial"|"Square"|"Angular"|"Uniform", angle -360~360 정수, cycles 1~16 정수, reverse·animated·pingPong 참거짓, easing 빠르기 곡선 이름만 쓸 수 있습니다.</value><comment>slot = 슬롯 이름; max = 멈춤점 최대 수.</comment></data>
   <data name="Script_InvalidLanguage" xml:space="preserve"><value>language는 선언에 적은 이름·설명의 언어 코드(예: "ko", "en", "zh-Hans")여야 합니다.</value></data>
   <data name="Script_StarterName" xml:space="preserve"><value>새 효과</value><comment>효과 만들기 "새 스크립트" 원문의 효과 이름.</comment></data>
   <data name="Script_StarterStrength" xml:space="preserve"><value>세기</value><comment>"새 스크립트" 원문의 설정 이름(효과의 세기).</comment></data>

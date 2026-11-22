@@ -308,6 +308,19 @@ internal static class ScriptHostApi
             int index = colors.IndexOf(setting.Key, setting.Type);
             return colors.Has(index, item) && colors.HasGradient(index, item, to) ? JsBoolean.True : JsBoolean.False;
         });
+        // ctx.gradientAt("슬롯", 위치[, x, y]): 그라데이션의 위치(0~1) 색 — 모양·각도와 상관없이. 그라데이션이 없으면 단색, (x, y)는 디더 무늬 자리
+        Method(ctx, engine, "gradientAt", 2, args =>
+        {
+            var slot = TypeConverter.ToString(Arg(args, 0));
+            if (!ScriptColorSlots.TryParse(schema, slot, out var setting, out int item, out bool to))
+                throw new JavaScriptException(engine.Intrinsics.TypeError, DomainStrings.FormatScript_UnknownColorSlot(slot: slot));
+            int index = colors.IndexOf(setting.Key, setting.Type);
+            if (!colors.Has(index, item))
+                throw new JavaScriptException(engine.Intrinsics.TypeError,
+                    DomainStrings.FormatScript_InvalidColorIndex(key: setting.Key, index: item.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+            var color = colors.SampleAt(index, item, to, TypeConverter.ToNumber(Arg(args, 1)), TypeConverter.ToInt32(Arg(args, 2)), TypeConverter.ToInt32(Arg(args, 3)));
+            return ColorObject(engine, color, frozen: true);
+        });
 
         // 무작위: 위치·시드·용도(salt, 기본 0) 해시(프레임과 무관)와 프레임·시드 값. 계산 순서에 따라 바뀌는 생성기는 두지 않는다(12.4)
         Method(ctx, engine, "hash", 3, args => LayerEffects.Random(

@@ -29,7 +29,7 @@ internal delegate void FastRenderFn(double[] data, double[] ctx, double[] settin
 /// <c>hsvToRgb</c>, <c>rgbToHsv</c>.</item>
 /// <item>host: <c>img.width/height/data</c>, <c>d[i]</c> 읽기·쓰기, <c>d.length</c>, <c>s.키</c>(int·number·bool·color, choice는 문자열 리터럴과 같음 비교만,
 /// 색 목록·색 쌍 목록은 <c>s.키.length</c>만), <c>ctx.t/progress/frame/step/span/rangeStart/rangeEnd/source/pivot/center</c>, <c>ctx.color</c>·<c>ctx.colorAt</c>·<c>ctx.pairColor</c>
-/// (키·쌍 칸은 문자열 리터럴, 범위는 <c>{ x, y, w, h }</c> 리터럴이나 숫자 객체), <c>ctx.hasGradient("슬롯")</c>, <c>ctx.hash</c>, <c>ctx.random</c>,
+/// (키·쌍 칸은 문자열 리터럴, 범위는 <c>{ x, y, w, h }</c> 리터럴이나 숫자 객체), <c>ctx.gradientAt("슬롯", 위치[, x, y])</c>, <c>ctx.hasGradient("슬롯")</c>, <c>ctx.hash</c>, <c>ctx.random</c>,
 /// <c>ctx.bayer2</c>, <c>ctx.bayer4</c>, <c>ctx.frameSource</c>, <c>ctx.matchPixels</c>(모드는 문자열 리터럴).</item>
 /// <item>함수: <c>const</c>에 묶은 화살표·<c>function</c>과 <c>function</c> 선언을 부르는 자리에 펼친다(재귀 불가, 함수를 돌려주기 불가).</item>
 /// </list>
@@ -1211,6 +1211,8 @@ internal sealed class FastCompiler
                 return ColorCall(c, callee, ScriptSettingType.ColorList, hasIndex: true, hasPart: false);
             case "pairColor":
                 return ColorCall(c, callee, ScriptSettingType.ColorPairs, hasIndex: true, hasPart: true);
+            case "gradientAt":
+                return GradientCall(c, callee);
             case "hasGradient":
             {
                 // 슬롯 이름은 문자열 리터럴만(컴파일할 때 설정·항목을 정한다). 잘못된 이름은 Jint가 오류를 낸다
@@ -1358,14 +1360,7 @@ internal sealed class FastCompiler
         bool to = false;
         var temps = new List<ParameterExpression>();
         var parts = new List<E>();
-        E NumberArg(int index, string name)
-        {
-            if (index >= args.Count) return NaN;
-            var t = E.Variable(typeof(double), name);
-            temps.Add(t);
-            parts.Add(E.Assign(t, Number(Expr(args[index]), args[index])));
-            return t;
-        }
+        E NumberArg(int index, string name) => index < args.Count ? NumberTemp(args[index], name, temps, parts) : NaN;
         E item = hasIndex ? NumberArg(at++, "item") : E.Constant(-1.0);
         if (hasPart)
         {
@@ -1414,12 +1409,48 @@ internal sealed class FastCompiler
         }
         for (int i = at; i < args.Count; i++) parts.Add(Effect(Expr(args[i]), args[i]));
 
-        var color = E.Variable(typeof(Color32), "color");
-        _hoisted.Add(color);
-        _hoisted.AddRange(temps);
         E call = bounds is null
             ? E.Call(Op(nameof(JsOps.SampleColor)), _colors, E.Constant(setting), item, E.Constant(to), x, y)
             : E.Call(Op(nameof(JsOps.SampleColorIn)), [_colors, E.Constant(setting), item, E.Constant(to), x, y, .. bounds]);
+        return ColorResult(call, temps, parts);
+    }
+
+    /// <summary>
+    /// <c>ctx.gradientAt("슬롯", 위치[, x, y])</c>: 슬롯(<see cref="ScriptColorSlots"/>)은 문자열 리터럴(컴파일할 때 설정·항목을 정함 — 잘못된 이름은 Jint가 오류를 낸다).
+    /// 인자는 JS처럼 왼쪽부터 계산한다.
+    /// </summary>
+    private Val GradientCall(CallExpression c, MemberExpression callee)
+    {
+        var args = c.Arguments;
+        if (args.Count < 1 || args[0] is not StringLiteral slot) throw ValueError(c);
+        if (!ScriptColorSlots.TryParse(_schema, slot.Value, out var setting, out int item, out bool to))
+            throw NameError(Describe(callee) + "(\"" + slot.Value + "\")", c);
+        var temps = new List<ParameterExpression>();
+        var parts = new List<E>();
+        E NumberArg(int index, string name) => index < args.Count ? NumberTemp(args[index], name, temps, parts) : NaN;
+        var position = NumberArg(1, "position");
+        var x = NumberArg(2, "x");
+        var y = NumberArg(3, "y");
+        for (int i = 4; i < args.Count; i++) parts.Add(Effect(Expr(args[i]), args[i]));
+        return ColorResult(E.Call(Op(nameof(JsOps.GradientAt)), _colors, E.Constant(SchemaIndex(setting.Key)), E.Constant(item), E.Constant(to), position, x, y),
+            temps, parts);
+    }
+
+    /// <summary>숫자 인자 하나를 계산해 임시 변수에 담는다(<paramref name="parts"/>에 대입을 더함).</summary>
+    private ParameterExpression NumberTemp(Expression arg, string name, List<ParameterExpression> temps, List<E> parts)
+    {
+        var t = E.Variable(typeof(double), name);
+        temps.Add(t);
+        parts.Add(E.Assign(t, Number(Expr(arg), arg)));
+        return t;
+    }
+
+    /// <summary>색을 고르는 호출 결과: <paramref name="parts"/> 뒤에 <paramref name="call"/>을 결과 변수에 담고, 그 채널을 필드로 가진 색 객체.</summary>
+    private Val ColorResult(E call, List<ParameterExpression> temps, List<E> parts)
+    {
+        var color = E.Variable(typeof(Color32), "color");
+        _hoisted.Add(color);
+        _hoisted.AddRange(temps);
         parts.Add(E.Assign(color, call));
         parts.Add(Empty);
         E Channel(string property) => E.Convert(E.Property(color, property), typeof(double));

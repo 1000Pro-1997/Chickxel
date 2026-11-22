@@ -5,7 +5,7 @@ using Chickxel.Core.Model;
 namespace Chickxel.Core.Scripting;
 
 /// <summary>
-/// render 한 번이 쓰는 색 설정 읽기(<c>ctx.color</c>·<c>ctx.colorAt</c>·<c>ctx.pairColor</c>·<c>ctx.hasGradient</c>). Jint와 빠른 경로가 같은 것을 쓴다.
+/// render 한 번이 쓰는 색 설정 읽기(<c>ctx.color</c>·<c>ctx.colorAt</c>·<c>ctx.pairColor</c>·<c>ctx.gradientAt</c>·<c>ctx.hasGradient</c>). Jint와 빠른 경로가 같은 것을 쓴다.
 /// <para>
 /// 그라데이션이 없는 슬롯은 설정의 단색 그대로다. 있으면 기본 효과와 같은 <see cref="EffectGradientSampler"/>로 (x, y)에서 고른다:
 /// 범위는 따로 주지 않으면 효과를 입히기 전 그림의 불투명 범위(기본 효과의 색 설정과 같음 — 처음 쓸 때 한 번 잰다), 디더 무늬는 효과 원본 왼쪽 위 기준,
@@ -181,6 +181,16 @@ internal sealed class ScriptColors
             slot.HasLast = true;
         }
         return slot.Last.Sample(x, y);
+    }
+
+    /// <summary>
+    /// <c>ctx.gradientAt</c>: 슬롯의 그라데이션 위치 <paramref name="position"/>(0~1) 색(<see cref="EffectGradientSampler.SampleAt"/>), 그라데이션이 없으면 단색.
+    /// 디더 무늬는 <see cref="Sample(int, int, bool, int, int)"/>처럼 효과 원본 왼쪽 위 기준의 (<paramref name="x"/>, <paramref name="y"/>).
+    /// </summary>
+    public Color32 SampleAt(int setting, int item, bool to, double position, int x, int y)
+    {
+        var slot = SlotOf(setting, item, to);
+        return slot.Gradient is null ? slot.Solid : EffectGradientSampler.SampleAt(slot.Gradient, position, x - _sourceX, y - _sourceY);
     }
 
     private Slot SlotOf(int setting, int item, bool to)

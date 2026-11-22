@@ -171,15 +171,28 @@ public sealed class ScriptEffectProgram
     public bool Motion { get; init; } = true;
 
     /// <summary>
+    /// 선언의 <c>gradients</c>(없으면 빈 표): 색 슬롯(<see cref="ScriptColorSlots"/>)별 처음 그라데이션. 새로 넣는 효과(<see cref="CreateEffect"/>)·에셋 레시피
+    /// (<see cref="IO.ScriptAsset.ToRecipe"/>)·패키지 미리보기·검증이 이 그라데이션으로 시작하고, 사용자는 효과 창에서 바꾸거나 단색으로 되돌릴 수 있다.
+    /// </summary>
+    public IReadOnlyDictionary<string, EffectColorGradient> DefaultGradients { get; init; } = NoGradients;
+
+    /// <summary>그라데이션이 없는 빈 표(<see cref="LayerEffect.ColorGradients"/>의 처음 값과 같은 것).</summary>
+    internal static readonly IReadOnlyDictionary<string, EffectColorGradient> NoGradients = System.Collections.Immutable.ImmutableDictionary<string, EffectColorGradient>.Empty;
+
+    /// <summary>
     /// 이 스크립트를 쓰는 새 효과: 설정은 <paramref name="values"/>를 schema에 맞춘 값(null이면 기본값), 빠르기 곡선·반복·반복 횟수·피벗 같이 옮기기는
-    /// 선언의 <c>easing</c>·<c>repeat</c>·<c>repeatCount</c>·<c>movePivot</c>. 원문은 부르는 쪽이 프로젝트 스크립트 표에 넣는다.
+    /// 선언의 <c>easing</c>·<c>repeat</c>·<c>repeatCount</c>·<c>movePivot</c>, 그라데이션은 선언의 <c>gradients</c>(<see cref="DefaultGradients"/>).
+    /// 원문은 부르는 쪽이 프로젝트 스크립트 표에 넣는다.
     /// </summary>
     public ScriptEffect CreateEffect(IReadOnlyDictionary<string, object>? values = null)
-        => new()
+    {
+        var effect = new ScriptEffect
         {
             ScriptHash = ContentHash, Settings = ScriptSettingValues.Normalized(this, values), Easing = Easing, Repeat = Repeat, RepeatCount = RepeatCount,
             MovePivot = MovePivot,
         };
+        return DefaultGradients.Count == 0 ? effect : effect with { ColorGradients = DefaultGradients };
+    }
 
     /// <summary>선언의 <c>previewChick</c>(기본 <see cref="Assets.PreviewChicks.Default"/>, <see cref="Assets.PreviewChicks.None"/>이면 빈 캔버스): 패키지 미리보기에서 효과를 입힐 병아리.</summary>
     public string PreviewChick { get; }

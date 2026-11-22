@@ -1121,6 +1121,7 @@ Alpha is kept and fully transparent pixels are unchanged. One undo step.</value>
   <data name="Ai_Effect_RangeConflict" xml:space="preserve"><value>Pass either all_frames or from_frame/to_frame, not both</value></data>
   <data name="Ai_Effect_FrameOrder" xml:space="preserve"><value>from_frame {from} is after to_frame {to}</value></data>
   <data name="Ai_Effect_SettingUnknown" xml:space="preserve"><value>settings.{key}: not a setting of {type} — settings: {keys}</value></data>
+  <data name="Ai_Effect_GradientSlotUnknown" xml:space="preserve"><value>settings.colorGradients.{slot}: not a color slot of this effect — slots: {slots} (list items "key[index]", pair sides "key[index].from" / "key[index].to")</value></data>
   <data name="Ai_Effect_SettingReserved" xml:space="preserve"><value>settings.{key}: set this with the tool's own parameters (type, enabled, from_frame/to_frame, clip_to_above), not in settings</value></data>
   <data name="Ai_Effect_SettingWrongType" xml:space="preserve"><value>settings.{key}: wrong value type — use a value like {example}</value></data>
   <data name="Ai_Effect_SettingChoice" xml:space="preserve"><value>settings.{key}: must be one of {choices}</value></data>
@@ -2870,7 +2871,7 @@ Removes everything added or removed with the brush and returns to the automatica
   <data name="Pixelate_Clean_VectorBlob_Tip" xml:space="preserve"><value>Dark shapes that don't touch the outer outline are left as they are (not redrawn) when smaller than this many cells, such as eyes.</value></data>
   <data name="Pixelate_Clean_VectorClean" xml:space="preserve"><value>Clean lines and curves</value></data>
   <data name="Pixelate_Clean_SourceOutline" xml:space="preserve"><value>Use the source outline</value></data>
-  <data name="Pixelate_Clean_SourceOutlineTip" xml:space="preserve"><value>On: Fit outline to 1 px picks outline pixels by the outline found on the source (view and fix it with the brush button under the source), not only by the small result — a large black area touching a small transparent gap is no longer peeled into another color.
+  <data name="Pixelate_Clean_SourceOutlineTip" xml:space="preserve"><value>On: Fit outline to 1 px picks outline pixels by the outline found on the source, not only by the small result — a large black area touching a small transparent gap is no longer peeled into another color.
 Off: decides from the result alone, as before.</value></data>
   <data name="Pixelate_Clean_VectorCorner" xml:space="preserve"><value>Corner angle (°)</value></data>
   <data name="Pixelate_Clean_VectorCorner_Tip" xml:space="preserve"><value>Split the traced line where it turns by at least this angle, preserving corners while fitting smooth lines and circular arcs. Default 40°.</value></data>
@@ -3399,6 +3400,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_CancelDownload" xml:space="preserve"><value>Cancel</value></data>
   <data name="Assets_Downloading" xml:space="preserve"><value>Downloading {0}%</value></data>
   <data name="Assets_InstallRemoteError" xml:space="preserve"><value>Couldn't install the downloaded package: {0}</value></data>
+  <data name="Assets_RevertScriptMissing" xml:space="preserve"><value>The latest package in the asset store doesn't contain this effect.</value></data>
   <data name="Assets_DownloadError" xml:space="preserve"><value>Couldn't download the package: {0}</value></data>
   <data name="Assets_SourceRemote" xml:space="preserve"><value>Downloaded from the store</value></data>
   <data name="Assets_SourceBundled" xml:space="preserve"><value>Store asset installed with the app</value></data>
@@ -3701,7 +3703,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="EffectMaker_ResetValues" xml:space="preserve"><value>Reset</value></data>
   <data name="EffectMaker_ResetValuesTip" xml:space="preserve"><value>Sets the preview values back to the defaults written in the source (the source is unchanged).</value></data>
   <data name="EffectMaker_SetDefaults" xml:space="preserve"><value>Set as default</value></data>
-  <data name="EffectMaker_SetDefaultsTip" xml:space="preserve"><value>Writes the current preview values into the source as each setting's default. You can undo it in the editor.</value></data>
+  <data name="EffectMaker_SetDefaultsTip" xml:space="preserve"><value>Writes the current preview values into the source as each setting's default, and the chosen gradients as the declaration's gradients, so the effect starts with them when added. You can undo it in the editor.</value></data>
   <data name="EffectMaker_Preview" xml:space="preserve"><value>Preview</value></data>
   <data name="EffectMaker_PreviewHint" xml:space="preserve"><value>Same image as the preview made when you upload (chosen chick, as many steps as the frame count).</value></data>
   <data name="EffectMaker_FrameCount" xml:space="preserve"><value>Frames</value></data>
@@ -3789,6 +3791,8 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="EffectMaker_ValidateFirst" xml:space="preserve"><value>The check must pass before uploading. Click the status button to see the problems, fix them and try again.</value></data>
   <data name="EffectMaker_Delete" xml:space="preserve"><value>Delete</value></data>
   <data name="EffectMaker_DeleteQuestion" xml:space="preserve"><value>Delete '{0}' from your personal assets?</value></data>
+  <data name="EffectMaker_RevertToOriginal" xml:space="preserve"><value>Revert to original</value></data>
+  <data name="EffectMaker_RevertQuestion" xml:space="preserve"><value>Revert '{0}' to the latest original in the asset store (version {1})? Your edits will be lost.</value></data>
   <data name="EffectMaker_EditIn" xml:space="preserve"><value>Edit in Effect Maker</value></data>
   <data name="EffectMaker_CloseEffectsFirst" xml:space="preserve"><value>Close the effects window first (it's editing layer effects).</value></data>
   <data name="EffectMaker_PathFast" xml:space="preserve"><value>Runs on the fast path (the app converts and compiles the source).</value></data>
@@ -3848,8 +3852,9 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="EffectMakerAi_Button" xml:space="preserve"><value>AI</value></data>
   <data name="EffectMakerAi_ButtonTip" xml:space="preserve"><value>Opens or closes the AI panel on the right. Describe the effect you want and the AI writes source that follows the rules into the editor (same Claude Code or Codex login as the AI chat).</value></data>
   <data name="EffectMakerAi_Title" xml:space="preserve"><value>Effect Maker AI</value></data>
-  <data name="EffectMakerAi_CloseTip" xml:space="preserve"><value>Close the AI panel (the conversation stays until you close the window)</value></data>
-  <data name="EffectMakerAi_NewChatTip" xml:space="preserve"><value>Forget the conversation and start a new one (the editor source stays).</value></data>
+  <data name="EffectMakerAi_CloseTip" xml:space="preserve"><value>Close the AI panel (the conversation is saved and continues next time)</value></data>
+  <data name="EffectMakerAi_NewChatTip" xml:space="preserve"><value>Start a new conversation. The current one is saved and can be reopened from the list of past conversations (the editor source stays).</value></data>
+  <data name="EffectMakerAi_HistoryOpened" xml:space="preserve"><value>Opened a past conversation. Sending continues the same conversation.</value></data>
   <data name="EffectMakerAi_Intro" xml:space="preserve"><value>Describe the effect you want or what to change. The AI writes the editor source following the effect rules and checks it with the preview and Check. You can attach images (file, paste, canvas, current preview) or point to another of your effects ("like my X effect"). The AI only looks at the open drawing and never changes it. Undo (Ctrl+Z) in the editor reverts its changes; you save, insert and upload with the buttons below yourself.</value></data>
   <data name="EffectMakerAi_Watermark" xml:space="preserve"><value>For example: a light that runs once around the outline (Enter to send, Shift+Enter for a new line)</value></data>
   <data name="EffectMakerAi_NoCli" xml:space="preserve"><value>Couldn't find {product}. The AI chat window shows how to install it. Press Check again after installing.</value></data>
@@ -3861,6 +3866,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Ai_Maker_NoScript" xml:space="preserve"><value>No script is open in the Effect Maker. Ask the user to pick or create one, or put a new source in with set_effect_maker_source.</value></data>
   <data name="Ai_Maker_SetErrors" xml:space="preserve"><value>The source is in the editor but it has errors, so there is no preview. Fix them and set it again:</value></data>
   <data name="Ai_Maker_Set" xml:space="preserve"><value>Put the source in the Effect Maker editor (one undo step in the editor; the document is unchanged): {name}</value></data>
+  <data name="Ai_Maker_PreviewSet" xml:space="preserve"><value>Changed the Effect Maker's preview setting values (the source and the document are unchanged): {name}</value></data>
   <data name="Ai_Maker_CheckInterrupted" xml:space="preserve"><value>The check stopped because the source changed before it finished. Call it again.</value></data>
   <data name="Ai_Maker_CheckOk" xml:space="preserve"><value>Check passed: {runs} runs, slowest frame {ms} ms (chick {chick}).</value></data>
   <data name="Ai_Maker_CheckFailed" xml:space="preserve"><value>The check found {count} problem(s):</value></data>

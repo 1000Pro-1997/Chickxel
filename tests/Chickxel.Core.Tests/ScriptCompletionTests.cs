@@ -31,7 +31,7 @@ public class ScriptCompletionTests
 
     [Theory]
     [InlineData("ctx.|", new[] { "t", "phase", "progress", "frame", "step", "span", "rangeStart", "rangeEnd", "frameTag", "source", "pivot", "center", "slice", "text", "color",
-        "colorAt", "pairColor", "hasGradient", "hash", "random", "bayer2", "bayer4", "frameSource", "renderedFrameSource", "matchPixels",
+        "colorAt", "pairColor", "gradientAt", "hasGradient", "hash", "random", "bayer2", "bayer4", "frameSource", "renderedFrameSource", "matchPixels",
         "layer", "layerWithEffects", "layerEffects", "movePivot" })]
     [InlineData("ctx.slice.|", new[] { "left", "top", "right", "bottom" })]
     [InlineData("ctx.pr|", new[] { "progress" })]

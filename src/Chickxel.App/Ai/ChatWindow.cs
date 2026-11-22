@@ -33,8 +33,6 @@ public sealed partial class ChatWindow : Window
     private static readonly IBrush UserBubbleBrush = AppTheme.Brush(Color.FromRgb(50, 66, 88));
     private static readonly FontFamily MonoFont = new("Menlo, Consolas, DejaVu Sans Mono, monospace");
     private const int SnapshotMax = 240;
-    /// <summary>저장하는 첨부 미리보기의 긴 변 최대.</summary>
-    private const int SavedThumbSide = 64;
     /// <summary>저장하는 캔버스 모습의 긴 변 최대(이보다 큰 그림은 모습을 남기지 않음 — 큰 그림을 저장하지 않도록).</summary>
     private const int SavedSnapshotSide = 256;
     /// <summary>저장하는 AI 그리기 결과 그림(프레임을 나란히)의 긴 변 최대.</summary>
@@ -458,47 +456,6 @@ public sealed partial class ChatWindow : Window
         return ChatImages.WithImageActions(new ChatImages.CheckerBackground { Child = image, Margin = new Thickness(2), HorizontalAlignment = HorizontalAlignment.Left }, bmp);
     }
 
-    /// <summary>저장할 첨부 미리보기(긴 변 <see cref="SavedThumbSide"/> 이하 PNG, base64). 만들지 못하면 null.</summary>
-    private static string? SavedThumb(ChatAttachment a)
-    {
-        try
-        {
-            var px = a.Thumb.PixelSize;
-            int longSide = Math.Max(px.Width, px.Height);
-            Bitmap src = a.Thumb;
-            if (longSide > SavedThumbSide)
-            {
-                double k = (double)SavedThumbSide / longSide;
-                src = a.Thumb.CreateScaledBitmap(new PixelSize(Math.Max(1, (int)(px.Width * k)), Math.Max(1, (int)(px.Height * k))),
-                    a.PixelArt ? BitmapInterpolationMode.None : BitmapInterpolationMode.HighQuality);
-            }
-            using var ms = new MemoryStream();
-            src.Save(ms);
-            if (!ReferenceEquals(src, a.Thumb)) src.Dispose();
-            return Convert.ToBase64String(ms.ToArray());
-        }
-        catch (Exception)
-        {
-            // 플랫폼 그림 인코더가 던지는 예외 형식은 정해져 있지 않다 — 미리보기 없이 저장한다.
-            return null;
-        }
-    }
-
-    /// <summary>저장한 PNG(base64)를 비트맵으로. 깨졌으면 null.</summary>
-    private static Bitmap? DecodeImage(string base64)
-    {
-        try
-        {
-            using var ms = new MemoryStream(Convert.FromBase64String(base64));
-            return new Bitmap(ms);
-        }
-        catch (Exception)
-        {
-            // 깨진 base64·PNG(디코더 예외 형식은 플랫폼마다 다름)
-            return null;
-        }
-    }
-
     /// <summary>차례가 끝난 뒤의 캔버스 모습(작으면 정수 배로 키우고, 크면 <see cref="SnapshotMax"/>에 맞춰 줄임).</summary>
     private static Control SnapshotView(Bitmap bmp)
     {
@@ -804,7 +761,7 @@ public sealed partial class ChatWindow : Window
             ["list_effect_types", "get_effects", "add_effect", "set_effect", "remove_effect", "apply_effects", "expand_canvas_for_effects"]),
         (UiStrings.Chat_Help_GroupEffectMaker, UiStrings.Chat_Help_GroupEffectMaker_Text,
             ["get_script_api", "write_script_effect", "preview_effects", "save_script_effect", "list_script_effects", "get_script_effect_source",
-             "get_effect_maker_source", "set_effect_maker_source", "check_effect_maker"]),
+             "get_effect_maker_source", "set_effect_maker_source", "set_effect_maker_preview", "check_effect_maker"]),
         (UiStrings.Chat_Help_GroupCanvas, UiStrings.Chat_Help_GroupCanvas_Text, ["resize_canvas", "set_canvas_pivot", "set_palette", "set_colors"]),
         (UiStrings.Chat_Help_GroupFiles, UiStrings.Chat_Help_GroupFiles_Text, ["new_project", "set_document_title", "save_project", "open_file"]),
         (UiStrings.Chat_Help_GroupReferences, UiStrings.Chat_Help_GroupReferences_Text,
@@ -1787,7 +1744,7 @@ public sealed partial class ChatWindow : Window
                 Text = text,
                 ImageCount = attachments.Count,
                 // 칩 번호와 맞도록 미리보기를 만들지 못한 그림은 빈 글로 자리를 지킨다.
-                Images = attachments.Count == 0 ? null : [.. attachments.Select(a => SavedThumb(a) ?? "")],
+                Images = attachments.Count == 0 ? null : [.. attachments.Select(a => ChatHistoryViews.SavedThumb(a) ?? "")],
             };
             AddUserBubble(userItem, [.. attachments.Select(a => (Bitmap?)a.Thumb)], attachments);
             Record(userItem);
@@ -1964,7 +1921,7 @@ public sealed partial class ChatWindow : Window
             {
                 case ChatItemKind.User:
                     var images = new List<Bitmap?>();
-                    foreach (var data in item.Images ?? []) images.Add(data.Length > 0 ? DecodeImage(data) : null);
+                    foreach (var data in item.Images ?? []) images.Add(data.Length > 0 ? ChatHistoryViews.DecodeImage(data) : null);
                     AddUserBubble(item, images, []);
                     break;
                 case ChatItemKind.Assistant:
@@ -1981,11 +1938,11 @@ public sealed partial class ChatWindow : Window
                     AddItem(SystemLine(item.Text, item.Kind == ChatItemKind.Error));
                     break;
                 case ChatItemKind.Snapshot:
-                    if (item.Images is [var png, ..] && DecodeImage(png) is { } shot)
+                    if (item.Images is [var png, ..] && ChatHistoryViews.DecodeImage(png) is { } shot)
                         AddItem(new StackPanel { Spacing = 4, Margin = new Thickness(2, 2, 0, 0), Children = { SnapshotView(shot), _w.InsertImageButton(shot) } }.HelpAt("ai-undo"));
                     break;
                 case ChatItemKind.AiDraw:
-                    AddItem(_w.AiDrawCard(item.Images is [var drawn, ..] ? DecodeImage(drawn) : null, item.Text,
+                    AddItem(_w.AiDrawCard(item.Images is [var drawn, ..] ? ChatHistoryViews.DecodeImage(drawn) : null, item.Text,
                         item.Job is { } job && _w._mcp.Tools.Jobs.Exists(job) ? job : null));
                     break;
                 case ChatItemKind.Footer:
@@ -2021,75 +1978,19 @@ public sealed partial class ChatWindow : Window
             foreach (var c in chats) _list.Children.Add(ListRow(c));
         }
 
-        /// <summary>목록 한 줄: 즐겨찾기 별 · 제목(누르면 열기)과 날짜·모델 · 지우기.</summary>
-        private Control ListRow(ChatSummary c)
+        /// <summary>목록 한 줄(<see cref="ChatHistoryViews.Row"/>): 즐겨찾기 별 · 제목(누르면 열기)과 날짜·모델 · 지우기.</summary>
+        private Control ListRow(ChatSummary c) => ChatHistoryViews.Row(c, ModelLabel(c.Model), () => OpenSaved(c.Id), () =>
         {
-            var star = new Button
+            try
             {
-                Content = new IconView(VectorIcon.Star, c.Favorite ? AppTheme.FavoriteBrush : AppTheme.DimTextBrush, 1.8) { Filled = c.Favorite, Width = 15, Height = 15 },
-                Background = Brushes.Transparent,
-                BorderThickness = new Thickness(0),
-                Padding = new Thickness(5),
-                VerticalAlignment = VerticalAlignment.Center,
-                Focusable = false,
-            }.Tip(c.Favorite ? UiStrings.Chat_History_Unfavorite : UiStrings.Chat_History_Favorite).HelpAt("ai-history", anchor: "The ③ star icon");
-            star.Click += (_, _) =>
+                _w._store.SetFavorite(Provider.Id, c.Id, !c.Favorite);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                try
-                {
-                    _w._store.SetFavorite(Provider.Id, c.Id, !c.Favorite);
-                }
-                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-                {
-                    Ui.Error(_w, UiStrings.FormatChat_History_SaveFailed(message: ex.Message));
-                }
-                RefreshList();
-            };
-            var title = new TextBlock
-            {
-                Text = c.Title.Length > 0 ? c.Title : UiStrings.Chat_History_ImageTitle,
-                Foreground = AppTheme.TextBrush,
-                TextTrimming = TextTrimming.CharacterEllipsis,
-            };
-            var meta = new TextBlock
-            {
-                Text = UiStrings.FormatChat_History_Meta(date: When(c.UpdatedUtc), model: ModelLabel(c.Model)),
-                Foreground = AppTheme.DimTextBrush,
-                FontSize = AppTheme.SmallFontSize,
-                TextTrimming = TextTrimming.CharacterEllipsis,
-            };
-            var open = new Button
-            {
-                Content = new StackPanel { Spacing = 1, Children = { title, meta } },
-                Background = Brushes.Transparent,
-                BorderThickness = new Thickness(0),
-                Padding = new Thickness(6, 4),
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                HorizontalContentAlignment = HorizontalAlignment.Left,
-                Cursor = new Cursor(StandardCursorType.Hand),
-            }.Tip(UiStrings.Chat_History_Open).HelpAt("ai-history", anchor: "Click a row");
-            open.Click += (_, _) => OpenSaved(c.Id);
-            var delete = Ui.IconButton(VectorIcon.Trash, UiStrings.Chat_History_Delete, (_, _) => DeleteSaved(c), size: 13).HelpAt("ai-history", anchor: "The ③ star icon");
-            delete.Background = Brushes.Transparent;
-            delete.BorderThickness = new Thickness(0);
-            delete.Padding = new Thickness(5);
-            delete.VerticalAlignment = VerticalAlignment.Center;
-            delete.Focusable = false;
-            var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto") };
-            grid.Children.Add(star);
-            Grid.SetColumn(open, 1);
-            grid.Children.Add(open);
-            Grid.SetColumn(delete, 2);
-            grid.Children.Add(delete);
-            return new Border
-            {
-                Background = AppTheme.BackBrush,
-                BorderBrush = AppTheme.BorderBrush,
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(4),
-                Child = grid,
-            };
-        }
+                Ui.Error(_w, UiStrings.FormatChat_History_SaveFailed(message: ex.Message));
+            }
+            RefreshList();
+        }, () => DeleteSaved(c), "ai-history");
 
         private void DeleteSaved(ChatSummary c)
         {
@@ -2098,15 +1999,6 @@ public sealed partial class ChatWindow : Window
                 != DialogResult.Yes) return;
             _w._store.Delete(Provider.Id, c.Id);
             RefreshList();
-        }
-
-        /// <summary>목록의 날짜: 오늘이면 시각, 올해면 월·일, 아니면 짧은 날짜.</summary>
-        private static string When(DateTime utc)
-        {
-            var local = utc.ToLocalTime();
-            var now = DateTime.Now;
-            var culture = CultureInfo.CurrentCulture;
-            return local.Date == now.Date ? local.ToString("t", culture) : local.Year == now.Year ? local.ToString("M", culture) : local.ToString("d", culture);
         }
 
         /// <summary>모델 값(null = 기본값)의 목록 이름.</summary>

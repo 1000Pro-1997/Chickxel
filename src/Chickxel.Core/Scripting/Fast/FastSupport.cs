@@ -520,6 +520,10 @@ internal static class JsOps
     /// <summary><c>ctx.hasGradient("슬롯")</c>(슬롯은 컴파일할 때 정함 — 지금 목록에 없는 항목이면 false).</summary>
     public static bool HasGradient(ScriptColors colors, int setting, int item, bool to) => colors.Has(setting, item) && colors.HasGradient(setting, item, to);
 
+    /// <summary><c>ctx.gradientAt("슬롯", 위치[, x, y])</c>(슬롯은 컴파일할 때 정함 — 지금 목록에 없는 항목이면 Jint로, Jint가 오류를 낸다).</summary>
+    public static Color32 GradientAt(ScriptColors colors, int setting, int item, bool to, double position, double x, double y)
+        => colors.Has(setting, item) ? colors.SampleAt(setting, item, to, position, ToInt32(x), ToInt32(y)) : throw new FastDeoptException();
+
     /// <summary><c>rgbToOklab(r, g, b)</c>: 채널은 <see cref="ScriptHostApi.ToByte"/>로, 결과는 <see cref="Pixelate.OkLab.FromRgb"/>의 float를 double로.</summary>
     public static (double L, double A, double B) RgbToOklab(double r, double g, double b)
     {

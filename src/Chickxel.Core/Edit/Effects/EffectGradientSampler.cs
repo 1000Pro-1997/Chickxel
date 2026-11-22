@@ -123,10 +123,26 @@ internal readonly struct EffectGradientSampler
                 position = repeated == gradient.Cycles && _phase == 0 ? 1 : Wrap(repeated);
             }
         }
+        return Color(gradient, position, x - _sourceX, y - _sourceY);
+    }
+
+    /// <summary>
+    /// 그라데이션 위치 <paramref name="position"/>(0~1, 밖은 끝 색, NaN은 0)의 색 — 스크립트의 <c>ctx.gradientAt</c>. 모양·각도·반복·움직임은 보지 않고
+    /// 멈춤점·알파 멈춤점·보간·색 공간과 뒤집기만 따른다. 디더 무늬는 (<paramref name="ditherX"/>, <paramref name="ditherY"/>) 자리.
+    /// </summary>
+    public static Color32 SampleAt(EffectColorGradient gradient, double position, int ditherX, int ditherY)
+    {
+        position = double.IsNaN(position) ? 0 : Math.Clamp(position, 0, 1);
+        if (gradient.Reverse) position = 1 - position;
+        return Color(gradient, position, ditherX, ditherY);
+    }
+
+    private static Color32 Color(EffectColorGradient gradient, double position, int ditherX, int ditherY)
+    {
         if (gradient.StraightRgba && gradient.Interpolation == GradientInterpolation.Smooth && gradient.Dither == GradientDither.None)
             return SampleStraight(gradient, position);
         return Gradient.Sample(gradient.Stops, gradient.AlphaStops, position,
-            gradient.Interpolation, gradient.Dither, x - _sourceX, y - _sourceY, gradient.ColorSpace);
+            gradient.Interpolation, gradient.Dither, ditherX, ditherY, gradient.ColorSpace);
     }
 
     private static double Wrap(double value) => value - Math.Floor(value);

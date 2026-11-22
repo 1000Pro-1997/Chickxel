@@ -308,17 +308,54 @@ public static class AppAssets
     /// </summary>
     public static async Task<IReadOnlyList<AssetEntry>?> InstallRemoteAsync(Visual owner, RemoteCatalogEntry entry, IProgress<double>? progress, CancellationToken cancellationToken)
     {
+        var ask = Prompter(owner);
+        var installed = await InstallDownloadedAsync(owner, entry, progress,
+            path => Store.InstallRemote(path, entry.Id, entry.Version, ask, cancellationToken), cancellationToken);
+        if (installed is not null) ScriptTrustStore.TrustInstalled(installed);
+        return installed;
+    }
+
+    /// <summary>
+    /// 상점에서 받거나 올린 스크립트 효과 <paramref name="entry"/>를 원본 — 온라인 목록의 최신 버전 <paramref name="latest"/>(같은 패키지) — 으로 되돌린다.
+    /// 최신 버전이 더 새것이면 업데이트와 같이 설치하고(<see cref="InstallRemoteAsync"/> — 고친 내용도 교체), 같은 버전이면(같은 버전은 다시 설치하지 않음)
+    /// 패키지를 내려받아(크기·SHA-256 확인) 그 에셋의 원문·미리보기 장면만 패키지 것으로 바꾼다(작성자·라이선스·상점 연결은 그대로 — 고치지 않은 것으로 보임).
+    /// 되돌린 에셋을 돌려주고, 실패하면 <paramref name="owner"/>에 알리고 null, 취소하면 아무것도 바꾸지 않고 null.
+    /// </summary>
+    public static async Task<AssetEntry?> RevertScriptToRemoteAsync(Visual owner, AssetEntry entry, RemoteCatalogEntry latest, CancellationToken cancellationToken)
+    {
+        if (entry is not { Script: not null, Store: { } store } || store.PackageId != latest.Id) return null;
+        if (latest.SemanticVersion > store.SemanticVersion)
+            return await InstallRemoteAsync(owner, latest, null, cancellationToken) is { } installed
+                ? Catalog.Find(entry.Id) ?? installed.FirstOrDefault(e => e.Kind == AssetKinds.EffectScript)
+                : null;
+        var reverted = await InstallDownloadedAsync(owner, latest, null, path =>
+        {
+            var package = AssetPackageValidator.Read(path, Options);
+            var scripts = package.Items.Where(item => item.Data is ScriptAsset).ToArray();
+            var original = package.Manifest.Id != latest.Id || package.Manifest.Version != latest.Version ? null
+                : (scripts.FirstOrDefault(item => item.Entry.Id == store.AssetId) ?? (scripts.Length == 1 ? scripts[0] : null))?.Data as ScriptAsset;
+            if (original is null) throw new InvalidDataException(UiStrings.Assets_RevertScriptMissing);
+            return Store.SaveScript(original.Source, entry.Id, original.Scene);
+        }, cancellationToken);
+        if (reverted is not null) ScriptTrustStore.TrustInstalled([reverted]);
+        return reverted;
+    }
+
+    /// <summary>
+    /// 온라인 목록의 패키지를 내려받아(크기·SHA-256 확인) 받은 파일 경로로 <paramref name="install"/>을 부른다(UI 스레드). 받기 실패는 <see cref="UiStrings.Assets_DownloadError"/>로,
+    /// 설치 실패는 <see cref="UiStrings.Assets_InstallRemoteError"/>로 <paramref name="owner"/>에 알리고 null, 취소하면 null. 받은 임시 파일은 지운다.
+    /// </summary>
+    private static async Task<T?> InstallDownloadedAsync<T>(Visual owner, RemoteCatalogEntry entry, IProgress<double>? progress, Func<string, T> install,
+        CancellationToken cancellationToken) where T : class
+    {
         string? file = null;
         try
         {
             file = await Remote.DownloadPackageAsync(entry, progress, cancellationToken);
             if (cancellationToken.IsCancellationRequested) return null;
-            var ask = Prompter(owner);
-            IReadOnlyList<AssetEntry>? installed = null;
+            T? result = null;
             string path = file;
-            if (!Try(owner, () => installed = Store.InstallRemote(path, entry.Id, entry.Version, ask, cancellationToken), UiStrings.Assets_InstallRemoteError) || installed is null) return null;
-            ScriptTrustStore.TrustInstalled(installed);
-            return installed;
+            return Try(owner, () => result = install(path), UiStrings.Assets_InstallRemoteError) ? result : null;
         }
         catch (OperationCanceledException)
         {

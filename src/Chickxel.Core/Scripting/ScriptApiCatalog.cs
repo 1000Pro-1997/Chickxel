@@ -71,7 +71,7 @@ public static class ScriptApiCatalog
     public const string Rendered = "rendered";
     /// <summary><c>ctx.matchPixels</c>가 돌려주는 객체.</summary>
     public const string Matched = "matched";
-    /// <summary>색 객체(<c>ctx.color</c>, <c>hsvToRgb</c>, 색 설정 <c>s.키</c>).</summary>
+    /// <summary>색 객체(<c>ctx.color</c>, <c>ctx.gradientAt</c>, <c>hsvToRgb</c>, 색 설정 <c>s.키</c>).</summary>
     public const string Color = "color";
     /// <summary><c>rgbToHsv</c>가 돌려주는 객체.</summary>
     public const string Hsv = "hsv";
@@ -117,6 +117,7 @@ public static class ScriptApiCatalog
         M(Declaration, "previewPivot", ScriptApiKind.Key, "previewPivot: [x, y]"),
         M(Declaration, "previewEndPivot", ScriptApiKind.Key, "previewEndPivot: [x, y]"),
         M(Declaration, "settings", ScriptApiKind.Key, "settings: [{ key, label, type, min, max, step, default, choices, alpha, widget, pair }]", Setting),
+        M(Declaration, "gradients", ScriptApiKind.Key, "gradients: { key: { stops: [{ position: 0, color: \"#ffffff\" }, ...], alphaStops?, interpolation?, colorSpace?, shape?, angle?, ... }, \"list[0]\": { ... } }"),
         M(Declaration, "padding", ScriptApiKind.Key, "padding: [left, top, right, bottom] | padding(s, width, height) { ... }"),
         M(Declaration, "render", ScriptApiKind.Function, "render(img, ctx, s) { ... }"),
 
@@ -187,6 +188,7 @@ public static class ScriptApiCatalog
         M(Context, "color", ScriptApiKind.Function, "ctx.color(key, x, y, bounds?) → { r, g, b, a }", Color),
         M(Context, "colorAt", ScriptApiKind.Function, "ctx.colorAt(key, index, x, y, bounds?) → { r, g, b, a }", Color),
         M(Context, "pairColor", ScriptApiKind.Function, "ctx.pairColor(key, index, \"from\" | \"to\", x, y, bounds?) → { r, g, b, a }", Color),
+        M(Context, "gradientAt", ScriptApiKind.Function, "ctx.gradientAt(\"key\" | \"key[i]\" | \"key[i].from\", position, x?, y?) → { r, g, b, a }", Color),
         M(Context, "hasGradient", ScriptApiKind.Function, "ctx.hasGradient(\"key\" | \"key[i]\" | \"key[i].from\") | ctx.hasGradient(listKey, index, \"from\" | \"to\"?) → true | false"),
         M(Context, "hash", ScriptApiKind.Function, "ctx.hash(x, y, seed, salt?) → 0~1"),
         M(Context, "random", ScriptApiKind.Function, "ctx.random(seed) → 0~1"),

@@ -204,6 +204,8 @@ public sealed class AppSettings
     public bool ReferencesExamplesOffApplied { get; set; }
     /// <summary>탭마다 마지막으로 보던 저장된 대화: AI id("claude"/"codex") → 대화 id. 없으면 대화 목록을 보던 것.</summary>
     public Dictionary<string, string>? ChatLastOpen { get; set; }
+    /// <summary>효과 만들기 AI 칸에서 마지막으로 보던 저장된 대화: AI id → 대화 id(AI 채팅과 따로 — <c>EffectMakerChats</c> 보관소). 없으면 새 대화.</summary>
+    public Dictionary<string, string>? EffectMakerChatLastOpen { get; set; }
     /// <summary>Claude 모델 별칭(null = Claude Code 기본값, "opus"/"sonnet"/"haiku").</summary>
     public string? AiModel { get; set; }
     /// <summary>claude 실행 파일 경로를 직접 정함(null = 자동으로 찾음).</summary>
@@ -489,7 +491,7 @@ public sealed class AppSettings
         nameof(ChatX), nameof(ChatY), nameof(ChatWidth), nameof(ChatHeight), nameof(ChatOpen),
         nameof(ExportX), nameof(ExportY), nameof(ExportWidth), nameof(ExportHeight), nameof(ExportSplit), nameof(ExportCollapsed),
         nameof(Palettes), nameof(RecentColors), nameof(Pixelate), nameof(PixelateSettings), nameof(AssetPublish), nameof(ScriptTrust),
-        nameof(ChatLastOpen), nameof(ClaudeResolvedModels),
+        nameof(ChatLastOpen), nameof(EffectMakerChatLastOpen), nameof(ClaudeResolvedModels),
     ];
 
     /// <summary>

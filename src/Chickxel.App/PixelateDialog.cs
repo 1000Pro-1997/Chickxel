@@ -4101,19 +4101,7 @@ public sealed class PixelateDialog : DialogBase
             (byte)(AppTheme.SavedColor.R + (255 - AppTheme.SavedColor.R) * 0.45),
             (byte)(AppTheme.SavedColor.G + (255 - AppTheme.SavedColor.G) * 0.45),
             (byte)(AppTheme.SavedColor.B + (255 - AppTheme.SavedColor.B) * 0.45)));
-        var pulse = new Avalonia.Animation.Animation
-        {
-            Duration = TimeSpan.FromSeconds(0.9),
-            IterationCount = Avalonia.Animation.IterationCount.Infinite,
-            PlaybackDirection = Avalonia.Animation.PlaybackDirection.Alternate,
-            Easing = new Avalonia.Animation.Easings.SineEaseInOut(),
-            Children =
-            {
-                new Avalonia.Animation.KeyFrame { Cue = new Avalonia.Animation.Cue(0), Setters = { new Setter(TemplatedControl.BackgroundProperty, AppTheme.SavedBrush) } },
-                new Avalonia.Animation.KeyFrame { Cue = new Avalonia.Animation.Cue(1), Setters = { new Setter(TemplatedControl.BackgroundProperty, bright) } },
-            },
-        };
-        _ = pulse.RunAsync(_runButton, _runPulse.Token);
+        Ui.PulseBackground(_runButton, AppTheme.SavedBrush, bright, _runPulse.Token);
     }
 
     /// <summary>빨간 '취소' 단추에 붙이는 클래스(그때만 마우스를 올려도 빨강 유지 — <see cref="KeepFillOnHover"/>).</summary>

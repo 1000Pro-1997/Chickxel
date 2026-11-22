@@ -195,6 +195,7 @@ internal static partial class ScriptDeclarationReader
 
         var translations = ReadTranslations(declaration.Get("translations"), settings, Fail);
         var tags = ReadTags(declaration.Get("tags"), Fail);
+        var gradients = ReadGradients(declaration.Get("gradients"), settings, Fail);
 
         // language: 선언에 적은 이름·설명·설정 이름의 언어(번역 키와 같은 언어 코드 모양)
         var languageValue = declaration.Get("language");
@@ -208,9 +209,133 @@ internal static partial class ScriptDeclarationReader
             {
                 Motion = motion, Tags = tags, Language = language, PreviewEndChick = previewEndChick, PreviewMotion = previewMotion,
                 PreviewPlacement = previewPlacement.IsNone ? PreviewPlacement.None : previewPlacement,
-                Repeat = repeat, RepeatCount = repeatCount, MovePivot = movePivot,
+                Repeat = repeat, RepeatCount = repeatCount, MovePivot = movePivot, DefaultGradients = gradients,
             }, []);
     }
+
+    /// <summary>선언 <c>gradients</c> 한 슬롯의 색 멈춤점 최대 수.</summary>
+    public const int MaxGradientStops = 64;
+
+    /// <summary>
+    /// <c>gradients: { 슬롯: 그라데이션, … }</c>: 색 슬롯(<see cref="ScriptColorSlots"/> — 선언한 색 설정 키, 목록 항목 <c>"키[0]"</c>, 쌍 <c>"키[0].to"</c>)별 처음 그라데이션
+    /// (<see cref="ReadGradient"/>). 모르는 슬롯·틀린 그라데이션은 오류. 없으면 빈 표.
+    /// </summary>
+    private static IReadOnlyDictionary<string, EffectColorGradient> ReadGradients(JsValue value, IReadOnlyList<ScriptSetting> settings, Action<string, object[]> fail)
+    {
+        if (value.IsUndefined()) return ScriptEffectProgram.NoGradients;
+        if (value is not ObjectInstance all || value.IsCallable() || value is ArrayInstance)
+        {
+            fail(DomainStrings.Script_InvalidGradients, ["gradients"]);
+            return ScriptEffectProgram.NoGradients;
+        }
+        var result = new Dictionary<string, EffectColorGradient>(StringComparer.Ordinal);
+        foreach (var slotKey in all.GetOwnPropertyKeys(Types.String))
+        {
+            string slot = slotKey.AsString();
+            if (!ScriptColorSlots.TryParse(settings, slot, out _, out _, out _))
+                fail(DomainStrings.FormatScript_InvalidGradientSlot(slot: slot), ["gradients", slot]);
+            else if (ReadGradient(all.Get(slotKey)) is { } gradient) result[slot] = gradient;
+            else fail(DomainStrings.FormatScript_InvalidGradient(slot: slot, max: MaxGradientStops), ["gradients", slot]);
+        }
+        return result.Count == 0 ? ScriptEffectProgram.NoGradients : result;
+    }
+
+    /// <summary>
+    /// 그라데이션 하나: <c>{ stops: [{ position, color }, …], alphaStops?, interpolation?, colorSpace?, dither?, shape?, angle?, reverse?, cycles?, animated?, easing?, pingPong? }</c>.
+    /// 키 이름·값 모양은 효과 설정 JSON의 <c>colorGradients</c>와 같고, 빠진 키는 <see cref="EffectColorGradient"/>의 처음 값(색 공간 OkLch 등)이다.
+    /// 색 멈춤점은 1~<see cref="MaxGradientStops"/>개(위치 0~1, 색 "#RRGGBB[AA]"), 불투명도 멈춤점은 0~<see cref="MaxGradientStops"/>개(위치 0~1, 불투명도 0~255 정수),
+    /// 이름 값은 열거형 이름 그대로(대소문자 구분), 각도는 -360~360 정수, 반복은 1~16 정수. 모르는 키나 틀린 값이 있으면 null.
+    /// </summary>
+    internal static EffectColorGradient? ReadGradient(JsValue value)
+    {
+        if (value is not ObjectInstance o || value.IsCallable() || value is ArrayInstance) return null;
+        var gradient = new EffectColorGradient();
+        bool hasStops = false;
+        foreach (var keyValue in o.GetOwnPropertyKeys(Types.String))
+        {
+            var v = o.Get(keyValue);
+            switch (keyValue.AsString())
+            {
+                case "stops" when ReadStops(v) is { } stops:
+                    gradient = gradient with { Stops = stops };
+                    hasStops = true;
+                    break;
+                case "alphaStops" when ReadAlphaStops(v) is { } alphaStops:
+                    gradient = gradient with { AlphaStops = alphaStops };
+                    break;
+                case "interpolation" when Name<GradientInterpolation>(v) is { } interpolation:
+                    gradient = gradient with { Interpolation = interpolation };
+                    break;
+                case "colorSpace" when Name<GradientColorSpace>(v) is { } colorSpace:
+                    gradient = gradient with { ColorSpace = colorSpace };
+                    break;
+                case "dither" when Name<GradientDither>(v) is { } dither:
+                    gradient = gradient with { Dither = dither };
+                    break;
+                case "shape" when Name<EffectGradientShape>(v) is { } shape:
+                    gradient = gradient with { Shape = shape };
+                    break;
+                case "easing" when Name<EffectEasing>(v) is { } easing:
+                    gradient = gradient with { Easing = easing };
+                    break;
+                case "angle" when Whole(v) is { } angle and >= -360 and <= 360:
+                    gradient = gradient with { Angle = (int)angle };
+                    break;
+                case "cycles" when Whole(v) is { } cycles and >= 1 and <= 16:
+                    gradient = gradient with { Cycles = (int)cycles };
+                    break;
+                case "reverse" when v.IsBoolean():
+                    gradient = gradient with { Reverse = v.AsBoolean() };
+                    break;
+                case "animated" when v.IsBoolean():
+                    gradient = gradient with { Animated = v.AsBoolean() };
+                    break;
+                case "pingPong" when v.IsBoolean():
+                    gradient = gradient with { PingPong = v.AsBoolean() };
+                    break;
+                default:
+                    return null;
+            }
+        }
+        return hasStops ? gradient : null;
+    }
+
+    private static GradientStop[]? ReadStops(JsValue value)
+    {
+        if (value is not ArrayInstance list || ScriptHostApi.Length(list) is < 1 or > MaxGradientStops) return null;
+        var stops = new GradientStop[ScriptHostApi.Length(list)];
+        for (uint i = 0; i < stops.Length; i++)
+        {
+            if (list[i] is not ObjectInstance stop || Position(stop.Get("position")) is not { } position
+                || stop.Get("color") is not JsString hex || !Color32.TryParseHex(hex.AsString(), out var color)
+                || stop.GetOwnPropertyKeys(Types.String).Count != 2) return null;
+            stops[i] = new GradientStop(position, color);
+        }
+        return stops;
+    }
+
+    private static GradientAlphaStop[]? ReadAlphaStops(JsValue value)
+    {
+        if (value is not ArrayInstance list || ScriptHostApi.Length(list) > MaxGradientStops) return null;
+        var stops = new GradientAlphaStop[ScriptHostApi.Length(list)];
+        for (uint i = 0; i < stops.Length; i++)
+        {
+            if (list[i] is not ObjectInstance stop || Position(stop.Get("position")) is not { } position
+                || Whole(stop.Get("alpha")) is not { } alpha || alpha is < 0 or > 255
+                || stop.GetOwnPropertyKeys(Types.String).Count != 2) return null;
+            stops[i] = new GradientAlphaStop(position, (byte)alpha);
+        }
+        return stops;
+    }
+
+    /// <summary>멈춤점 위치: 0~1의 유한한 수. 아니면 null.</summary>
+    private static double? Position(JsValue value)
+        => value is JsNumber && value.AsNumber() is var p && double.IsFinite(p) && p is >= 0 and <= 1 ? p : null;
+
+    /// <summary>열거형 <typeparamref name="T"/>의 이름 그대로인 문자열(대소문자 구분). 아니면 null.</summary>
+    private static T? Name<T>(JsValue value) where T : struct, Enum
+        => value is JsString && Enum.TryParse<T>(value.AsString(), ignoreCase: false, out var parsed) && Enum.IsDefined(parsed)
+           && value.AsString() == parsed.ToString() ? parsed : null;
 
     /// <summary><c>previewMotion</c>: 이름 문자열(<see cref="PreviewMotion.Presets"/>) 또는 정수 <c>[x, y]</c> 쌍의 배열(<see cref="PreviewMotion.FromOffsets"/>). 아니면 null.</summary>
     private static PreviewMotion? ReadPreviewMotion(JsValue value)
