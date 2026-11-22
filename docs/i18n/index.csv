@@ -54,9 +54,6 @@ core.22.aria-label,팔레트 웹 창에서 Lospec 팔레트를 둘러보고 예�
 core.23,"<span class=""core-tag"">팔레트 사용</span>","<span class=""core-tag"">Using palettes</span>"
 core.24,팔레트로 색 바꾸기,Recoloring with a palette
 core.25.aria-label,"팔레트 메뉴에서 연 팔레트 색으로 변환 창에서 대상, 색 고르는 규칙(가장 가까운 색의 색 거리 OKLab, 밝기 순서, 색상 먼저)과 디더링을 바꿔 가며 전·후 미리보기를 보고, 캐릭터 그림을 차가운 색 팔레트로 바꾸는 모습","In the Convert to palette colors window opened from the palette menu, switching the target, the color matching rule (Nearest color with OKLab color distance, Brightness order, Hue first) and dithering while watching the before/after preview, then converting the character to a cool-toned palette"
-core.26,"<span class=""core-tag"">스킨 설정</span>","<span class=""core-tag"">Skins</span>"
-core.27,스킨 관리,Managing skins
-core.28.aria-label,캐릭터의 머리카락 스킨을 스킨 칩과 스킨 관리 창에서 바꿔 끼우는 모습,Swapping a character's hair skin with the skin chip and the Skin manager
 core.29,"<span class=""core-tag"">스킨 설정</span>","<span class=""core-tag"">Skins</span>"
 core.30,타일·아이템 스킨,Tile and item skins
 core.31.aria-label,블록 타일과 아이템 부위를 한 그룹에 두고 나무판·흙·광석 스킨으로 바꿔 보는 모습,"Keeping a block tile and its item parts in one group and switching between plank, dirt and ore skins"
