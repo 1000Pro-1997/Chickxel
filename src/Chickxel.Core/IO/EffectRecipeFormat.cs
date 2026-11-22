@@ -457,7 +457,8 @@ public static class EffectRecipeFormat
 
     /// <summary>
     /// 스크립트 설정 값이 선언한 schema에 맞는지(정수는 소수 없는 수, 숫자는 min~max 안, 색은 16진수, 고르기는 선언한 값,
-    /// 색 목록·색 쌍 목록은 모든 칸이 맞고 항목 수가 선언의 min~max 안, 레이어는 앞뒤 공백 없는 이름 글).
+    /// 색 목록·색 쌍 목록은 모든 칸이 맞고 항목 수가 선언의 min~max 안, 레이어는 앞뒤 공백 없는 이름 글, 글은 줄바꿈이 "\n"이고 선언의 max 안,
+    /// 글꼴은 앞뒤 공백 없는 빈칸 아닌 이름 글).
     /// </summary>
     private static bool ValidScriptSetting(ScriptSetting setting, JsonNode? value)
     {
@@ -480,6 +481,9 @@ public static class EffectRecipeFormat
                 return AssetJson.String(value) is { } choice && setting.Choices.Any(c => c.Value == choice);
             case ScriptSettingType.Layer:
                 return AssetJson.String(value) is { } layer && ScriptSetting.LayerName(layer) == layer;
+            case ScriptSettingType.Text:
+                // 저장 JSON과 같은 모양만("\r"은 넣을 때 "\n"으로 맞춰져 저장에 남지 않음)
+                return AssetJson.String(value) is { } text && !text.Contains('\r') && text.Length <= (setting.Max ?? ScriptSetting.MaxTextLength);
             case ScriptSettingType.Font:
                 return AssetJson.String(value) is { } font && ScriptSetting.FontName(font) == font;
             default:

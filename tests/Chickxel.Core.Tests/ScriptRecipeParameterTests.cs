@@ -454,4 +454,40 @@ public class ScriptRecipeParameterTests
         Assert.Equal([(AssetIssueCode.InvalidEffectSetting, "effects[0].settings.target")],
             issues.Where(i => i.Code != AssetIssueCode.InvalidField).Select(i => (i.Code, i.Detail)));
     }
+
+    private const string TextFontSource = """
+        effect({
+          name: "Lettered",
+          settings: [
+            { key: "title", type: "text", default: "Hi", max: 5 },
+            { key: "font", type: "font", default: "Galmuri7" },
+          ],
+          render(img, ctx, s) {},
+        });
+        """;
+
+    [Theory]
+    [InlineData("title", "\"A\\nB\"", true)]
+    [InlineData("title", "\"\"", true)]
+    [InlineData("title", "\"abcdef\"", false)]
+    [InlineData("title", "\"A\\r\\nB\"", false)]
+    [InlineData("title", "3", false)]
+    [InlineData("font", "\"Galmuri14\"", true)]
+    [InlineData("font", "\"NotInstalled\"", true)]
+    [InlineData("font", "\" Galmuri14\"", false)]
+    [InlineData("font", "\"\"", false)]
+    [InlineData("font", "3", false)]
+    public void Strict_recipe_accepts_text_and_font_values_in_the_saved_shape(string key, string value, bool ok)
+    {
+        var (recipe, issues) = ReadStrict(RecipeNode(Unique(TextFontSource) + "// " + key + value, new JsonObject { [key] = JsonNode.Parse(value) }));
+        if (ok)
+        {
+            Assert.Empty(issues);
+            Assert.Equal(JsonNode.Parse(value)!.GetValue<string>(), Assert.IsType<ScriptEffect>(Assert.Single(recipe!.Effects)).Settings[key]);
+            return;
+        }
+        Assert.Null(recipe);
+        Assert.Equal([(AssetIssueCode.InvalidEffectSetting, $"effects[0].settings.{key}")],
+            issues.Where(i => i.Code != AssetIssueCode.InvalidField).Select(i => (i.Code, i.Detail)));
+    }
 }
