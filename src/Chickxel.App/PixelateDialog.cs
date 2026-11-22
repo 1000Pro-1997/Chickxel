@@ -48,6 +48,8 @@ public sealed class PixelateOptions
     /// <summary>옵션 판(<see cref="Migrate"/>): 0 = 옛 설정 또는 새 옵션.</summary>
     public int Version { get; set; }
     public bool ShowGrid { get; set; } = true;
+    /// <summary>원본 외곽선 붓의 반지름(원본 px, 0~64 — 원본 아래 막대).</summary>
+    public int OutlineBrush { get; set; } = 4;
     public int Width { get; set; } = 1320;
     public int Height { get; set; } = 860;
 
@@ -666,6 +668,20 @@ public sealed class PixelateDialog : DialogBase
     /// <summary>배경 지우기를 다시 켤 때 돌아갈 방식(마지막으로 쓴, 지우지 않음이 아닌 방식).</summary>
     private BackgroundMode _barBgMode = BackgroundMode.Auto;
     /// <summary>
+    /// 원본 아래 막대의 원본 외곽선: 보기·붓 켜기(<see cref="ZoomImageView.OutlineMode"/>), 붓 반지름(원본 px, <see cref="PixelateOptions.OutlineBrush"/>),
+    /// 고친 것 모두 지우기(고친 것이 있을 때만).
+    /// </summary>
+    private readonly ToggleButton _outlineEdit;
+    private readonly NumericUpDown _outlineBrush;
+    private readonly Button _outlineReset;
+    /// <summary>
+    /// 지금 원본에서 붓으로 고친 외곽선(원본 px, null = 없음). 준비한 모든 <see cref="PixelateSource"/>에 붙이고(<see cref="SourceFor"/>·<see cref="ApplyOutlineEdits"/>),
+    /// 원본을 바꾸면 비운다. 작업 스레드는 참조만 읽는다.
+    /// </summary>
+    private volatile OutlineEdits? _outlineEdits;
+    /// <summary>원본 보기의 외곽선을 뒤에서 구하는 차례(늦게 끝난 옛 계산은 버림).</summary>
+    private int _outlineGen;
+    /// <summary>
     /// 설정 칸 '간편 설정'(0번 다음)의 결과 크기: 자동(= 4단계 방식이 고정 크기가 아님) · 가로×세로 · 비율 묶기.
     /// 4단계 칸과 같은 설정을 함께 쓴다 — 간편 설정을 바꾸면 4단계 칸에 적고, 4단계 칸(불러오기 포함)이 바뀌면 <see cref="SyncQuickSettings"/>가 간편 설정을 맞춘다.
     /// </summary>
@@ -772,7 +788,7 @@ public sealed class PixelateDialog : DialogBase
     private readonly CheckBox _palMethodKeep, _palDitherKeep;
     private readonly TextBlock _palInfo;
     // 7. 정리
-    private readonly CheckBox _clOrphans, _clHoles, _clJaggies, _clVecClean;
+    private readonly CheckBox _clOrphans, _clHoles, _clJaggies, _clVecClean, _clSourceOutline;
     private readonly ComboBox _clFit;
     private readonly NumericUpDown _clContrast, _clVecTol, _clVecBlob, _clVecCorner;
     private readonly ComboBox _clOutline;
@@ -1304,6 +1320,7 @@ public sealed class PixelateDialog : DialogBase
         _clVecBlob = Num(PixelateRanges.VectorBlobCells, 6m, 0, 1m).Tip(UiStrings.Pixelate_Clean_VectorBlob_Tip);
         _clVecClean = Ui.Check(UiStrings.Pixelate_Clean_VectorClean);
         _clVecCorner = Num(PixelateRanges.VectorCornerAngle, 40m, 0, 1m).Tip(UiStrings.Pixelate_Clean_VectorCorner_Tip);
+        _clSourceOutline = Ui.Check(UiStrings.Pixelate_Clean_SourceOutline).Tip(UiStrings.Pixelate_Clean_SourceOutlineTip);
         var clContrastLabel = Ui.Label(UiStrings.Pixelate_Clean_Contrast);
         var clFitLabel = Ui.Label(UiStrings.Pixelate_Fit);
         var clVecTolLabel = Ui.Label(UiStrings.Pixelate_Clean_VectorTolerance);
@@ -1314,6 +1331,7 @@ public sealed class PixelateDialog : DialogBase
             Ui.Row(_clOrphans, clContrastLabel, _clContrast),
             _clHoles,
             Ui.Row(clFitLabel, _clFit),
+            _clSourceOutline,
             Ui.Row(clVecTolLabel, _clVecTol, clVecBlobLabel, _clVecBlob),
             Ui.Row(_clVecClean, clVecCornerLabel, _clVecCorner),
             Ui.Row(clOutlineLabel, _clOutline),
@@ -1322,6 +1340,7 @@ public sealed class PixelateDialog : DialogBase
         HelpTargets.HelpGroup("pixelate-cleanup", "Remove orphan pixels", _clOrphans, clContrastLabel, _clContrast);
         _clHoles.HelpAt("pixelate-cleanup", anchor: "Fill 1-px holes");
         HelpTargets.HelpGroup("pixelate-cleanup", "Fit outline to 1 px", clFitLabel, _clFit);
+        _clSourceOutline.HelpAt("pixelate-cleanup", anchor: "Fit outline to 1 px");
         _clFit.HelpOptions("pixelate-cleanup", "By shrinking", "Thin outline only", "Off", "Redraw as vector");
         HelpTargets.HelpGroup("pixelate-cleanup", "Vector simplify", clVecTolLabel, _clVecTol);
         HelpTargets.HelpGroup("pixelate-cleanup", "Vector simplify", clVecBlobLabel, _clVecBlob);
@@ -1489,6 +1508,23 @@ public sealed class PixelateDialog : DialogBase
         _sourceView.ShowGrid = _showGrid.On();
         _sourceView.HoverChanged += h => _preview.SetHover(h);
         _sourceView.FrameEdited += OnFrameEdited;
+        // 원본 외곽선 보기·붓: 켜면 원본 보기에 외곽선을 겹쳐 그리고 붓으로 고친다(스포이드는 끔). 붓질이 끝나면 고친 것에 담고 결과는 정리하기를 눌러야 바뀐다.
+        _outlineEdit = IconToggle(VectorIcon.Brush, UiStrings.Pixelate_OutlineTip, false);
+        _outlineBrush = Ui.Num(0, 64, Math.Clamp(_opt.OutlineBrush, 0, 64), 56).Tip(UiStrings.Pixelate_OutlineBrushTip);
+        _outlineBrush.IsEnabled = false;
+        _outlineReset = Ui.IconButton(VectorIcon.Undo2, UiStrings.Pixelate_OutlineResetTip, (_, _) => ResetOutlineEdits());
+        _outlineReset.IsEnabled = false;
+        _sourceView.BrushRadius = (int)_outlineBrush.NumValue();
+        _outlineBrush.ValueChanged += (_, _) => _sourceView.BrushRadius = (int)_outlineBrush.NumValue();
+        _outlineEdit.IsCheckedChanged += (_, _) =>
+        {
+            bool on = _outlineEdit.On();
+            if (on) SetPicking(false);
+            _outlineBrush.IsEnabled = on;
+            _sourceView.OutlineMode = on;
+            RefreshOutline();
+        };
+        _sourceView.OutlinePainted += OnOutlinePainted;
         // 크게 보기: 큰 미리보기의 결과·원본 그림을 누르면 열림(대화상자를 덮는 겹판 — 같은 프레임 번호·재생·후보·격자 보기·뺀 색을 함께 씀).
         _zoomColors = new ColorsBlock(this) { Margin = new Thickness(0, 4, 0, 0), Fraction = _opt.ZoomColorsHeight };
         _zoomColors.FractionChanged += f => _opt.ZoomColorsHeight = f;
@@ -1574,7 +1610,7 @@ public sealed class PixelateDialog : DialogBase
 
         // 원본 바꾸기(원본이 있을 때): 파일 찾기 — 창에 끌어 놓거나 Ctrl+V로 붙여 넣어도 바뀐다.
         _replaceSource = Ui.IconButton(VectorIcon.FolderOpen, UiStrings.Pixelate_ReplaceSource + "\n" + UiStrings.Pixelate_ReplaceSourceTip, (_, _) => BrowseSource());
-        var toolbar = Ui.Row(_replaceSource, _showGrid, _bgRemove);
+        var toolbar = Ui.Row(_replaceSource, _showGrid, _bgRemove, _outlineEdit, _outlineBrush, _outlineReset);
         // 막대 빈 곳·상태 글도 "원본 아래 막대"로(투명 바탕 = 누를 수 있음).
         var statusRow = new DockPanel { Margin = new Thickness(0, 2), Background = Brushes.Transparent }.HelpAt("pixelate-view", anchor: "The bar under the source");
         DockPanel.SetDock(toolbar, Dock.Left);
@@ -1583,6 +1619,7 @@ public sealed class PixelateDialog : DialogBase
         _replaceSource.HelpAt("pixelate-open", anchor: "Replace source");
         _showGrid.HelpAt("pixelate-view", anchor: "Show grid");
         _bgRemove.HelpAt("pixelate-view", anchor: "Remove background");
+        foreach (var c in new Control[] { _outlineEdit, _outlineBrush, _outlineReset }) c.HelpAt("pixelate-view", anchor: "The bar under the source");
 
         // 원본이 없을 때 가운데 안내: 끌어 놓기·붙여 넣기·파일 찾기.
         var browse = Ui.Button(VectorIcon.FolderOpen, UiStrings.Pixelate_Browse, (_, _) => BrowseSource()).HelpAt("pixelate-open", anchor: "Browse");
@@ -1721,7 +1758,7 @@ public sealed class PixelateDialog : DialogBase
         foreach (var n in new[] { _frCols, _frRows, _frMerge, _frMergeDist })
             n.ValueChanged += (_, _) => ResetManualFrames();
         foreach (var c in new[] { _bgAutoTol, _bgConnected, _bgKeepAlpha, _bgSticker, _bgKeep, _frCommon, _grFirst, _grLocal, _szAspect, _palAuto, _palShared, _palSnap, _palDistinct, _palShade, _palMethodKeep, _palDitherKeep,
-                     _clOrphans, _clHoles, _clJaggies, _clVecClean, _coTemporal, _crTargetAuto, _crTargetStrict })
+                     _clOrphans, _clHoles, _clJaggies, _clVecClean, _clSourceOutline, _coTemporal, _crTargetAuto, _crTargetStrict })
             c.IsCheckedChanged += (_, _) => Changed();
         foreach (var c in new[] { _crDistance, _crFidelity, _crCellRef }) c.SelectionChanged += (_, _) => Changed();
         _crCenter.IsCheckedChanged += (_, _) => Changed();
@@ -1846,6 +1883,9 @@ public sealed class PixelateDialog : DialogBase
         _input = input;
         _prepared = null;
         lock (_sources) _sources.Clear();
+        // 고친 외곽선은 그 원본의 것 — 원본을 바꾸면 비운다.
+        _outlineEdits = null;
+        _outlineReset.IsEnabled = false;
         _previewSourcePending = null;
         _detected = null;
         _excluded = [];
@@ -1859,6 +1899,7 @@ public sealed class PixelateDialog : DialogBase
         ClearResults();
         Title = TitleFor(input);
         _sourceView.SetImage(input.Image, null);
+        RefreshOutline();
         UpdateSourceState();
         _autoOptimizePending = _optAuto.On();
         Rerun(lineup: _autoOptimizePending);
@@ -2179,6 +2220,7 @@ public sealed class PixelateDialog : DialogBase
             _clVecTol.Value = In(PixelateRanges.VectorTolerance, cl.VectorTolerance, decimals: 2);
             _clVecBlob.Value = In(PixelateRanges.VectorBlobCells, cl.VectorBlobCells, decimals: 0);
             _clVecClean.IsChecked = cl.VectorCleanLines;
+            _clSourceOutline.IsChecked = cl.SourceOutline;
             _clVecCorner.Value = In(PixelateRanges.VectorCornerAngle, cl.VectorCornerAngle, decimals: 0);
 
             _coTemporal.IsChecked = s.Consistency.TemporalMajority;
@@ -2297,6 +2339,7 @@ public sealed class PixelateDialog : DialogBase
                 VectorTolerance = D(_clVecTol),
                 VectorBlobCells = D(_clVecBlob),
                 VectorCleanLines = _clVecClean.On(),
+                SourceOutline = _clSourceOutline.On(),
                 VectorCornerAngle = D(_clVecCorner),
             },
             Consistency = new ConsistencySettings { TemporalMajority = _coTemporal.On(), MaxContrast = D(_coContrast) },
@@ -2525,6 +2568,7 @@ public sealed class PixelateDialog : DialogBase
         _manualRegions = null;
         _appliedFrames = null;
         _prepared = null;
+        RefreshOutline();
         UpdateSaveState();
         Rerun();
     }
@@ -2546,6 +2590,72 @@ public sealed class PixelateDialog : DialogBase
         _appliedFrames = _appliedFrames with { ManualRegions = slots };
         UpdateSaveState();
         Rerun();
+    }
+
+    /// <summary>고친 외곽선을 <paramref name="src"/>에 붙인다(크기가 다른 준비 결과면 뗀다). 작업 스레드에서도 부른다.</summary>
+    private PixelateSource WithOutlineEdits(PixelateSource src)
+    {
+        var edits = _outlineEdits;
+        src.OutlineEdits = edits is not null && edits.Width == src.Cleaned.Width && edits.Height == src.Cleaned.Height ? edits : null;
+        return src;
+    }
+
+    /// <summary>고친 외곽선을 준비한 모든 원본에 붙이고 지우기 단추·원본 보기의 외곽선을 맞춘다.</summary>
+    private void ApplyOutlineEdits()
+    {
+        lock (_sources)
+            foreach (var s in _sources) WithOutlineEdits(s);
+        _outlineReset.IsEnabled = _outlineEdits is not null;
+        RefreshOutline();
+    }
+
+    /// <summary>
+    /// 원본 보기의 붓질 하나(<see cref="ZoomImageView.OutlinePainted"/>): 보이는 준비 결과 크기의 고친 외곽선에 칠해 담고 모든 준비 결과에 붙인다.
+    /// 결과는 바로 다시 돌리지 않는다 — 정리하기를 눌러야 바뀐다(상태 글로 알림).
+    /// </summary>
+    private void OnOutlinePainted(IReadOnlyList<(int X, int Y)> centers, int radius, sbyte value)
+    {
+        if (_prepared is not { } src) return;
+        int width = src.Cleaned.Width, height = src.Cleaned.Height;
+        var basis = _outlineEdits is { } old && old.Width == width && old.Height == height ? old : OutlineEdits.Empty(width, height);
+        var edits = basis.Paint(centers, radius, value);
+        _outlineEdits = edits.IsEmpty ? null : edits;
+        ApplyOutlineEdits();
+        _status.Text = UiStrings.Pixelate_OutlineEdited;
+    }
+
+    /// <summary>'외곽선 고친 것 모두 지우기': 자동으로 찾은 외곽선으로 되돌린다(정리하기를 눌러야 결과에 반영).</summary>
+    private void ResetOutlineEdits()
+    {
+        if (_outlineEdits is null) return;
+        _outlineEdits = null;
+        ApplyOutlineEdits();
+        _status.Text = UiStrings.Pixelate_OutlineEdited;
+    }
+
+    /// <summary>
+    /// 원본 보기의 외곽선(붓이 켜 있을 때): 보이는 준비 결과에서 자동 외곽선과 고친 것까지의 외곽선(원본에서 잰 외곽선 밝기 — <see cref="PixelateSource.OutlineLightness"/>,
+    /// 설정의 외곽선 밝기와 상관없음)을 뒤에서 구해(준비 결과가 기억해 둠) 겹쳐 그린다. 붓이 꺼져 있거나 준비 결과가 없으면 지운다. 늦게 끝난 옛 계산은 버린다.
+    /// </summary>
+    private void RefreshOutline()
+    {
+        int gen = ++_outlineGen;
+        if (!_outlineEdit.On() || _prepared is not { } src)
+        {
+            _sourceView.SetOutline(null, null, 0, 0);
+            return;
+        }
+        WithOutlineEdits(src);
+        Task.Run(() =>
+        {
+            var auto = src.AutoOutline();
+            var mask = src.Outline();
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (gen == _outlineGen && ReferenceEquals(_prepared, src))
+                    _sourceView.SetOutline(auto, mask, src.Cleaned.Width, src.Cleaned.Height);
+            });
+        });
     }
 
     // ───────────── 후보 만들기 ─────────────
@@ -2640,6 +2750,7 @@ public sealed class PixelateDialog : DialogBase
         }).ToArray() };
         _detected = detected;
         _sourceView.SetImage(_input!.Image, src.Cleaned);
+        RefreshOutline();
         _sourceView.SetFrames(_appliedFrames.ManualRegions!.Select(r => new Rectangle(r.X, r.Y, r.Width, r.Height)).ToArray());
         ShowSampledFrames();
         _bgInfo.Text = src.Background.UsedAlpha
@@ -2939,7 +3050,7 @@ public sealed class PixelateDialog : DialogBase
             PixelateResult? r = null;
             try
             {
-                r = Pixelator.Run(src.Matches(settings) ? src : PixelateSource.Prepare(src.Original, settings), settings);
+                r = Pixelator.Run(src.Matches(settings) ? src : WithOutlineEdits(PixelateSource.Prepare(src.Original, settings)), settings);
             }
             catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or IndexOutOfRangeException)
             {
@@ -3037,11 +3148,11 @@ public sealed class PixelateDialog : DialogBase
 
     /// <summary>
     /// 원본 우클릭 메뉴: 보이는 모습(배경 지우기를 켰으면 배경을 지운 원본) 복사·PNG로 저장. 프레임 안을 오른쪽 클릭했으면 맨 위에 그 프레임만
-    /// 잘라 복사·저장(파일 이름 끝에 프레임 번호)을 더한다. 원본이 없거나 스포이드 중이면 없음.
+    /// 잘라 복사·저장(파일 이름 끝에 프레임 번호)을 더한다. 원본이 없거나 스포이드 중이거나 외곽선 붓이 켜 있으면(오른쪽 끌기 = 외곽선 빼기) 없음.
     /// </summary>
     private IEnumerable<object>? SourceMenu()
     {
-        if (_input is not { } input || _picking) return null;
+        if (_input is not { } input || _picking || _outlineEdit.On()) return null;
         bool cleaned = _sourceView.ShowAlt && _prepared?.Cleaned is not null;
         var image = cleaned ? _prepared!.Cleaned! : input.Image;
         var baseName = cleaned ? $"{SaveBaseName()}_{UiStrings.Pixelate_Save_CleanedSuffix}" : SaveBaseName();
@@ -3376,6 +3487,8 @@ public sealed class PixelateDialog : DialogBase
     private void SetPicking(bool on)
     {
         if (on && (_selected is null || LiveEditBlocked())) on = false;
+        // 스포이드와 외곽선 붓은 같은 원본 보기 누르기를 쓰므로 하나만 켠다.
+        if (on) _outlineEdit.IsChecked = false;
         if (_picking == on) return;
         _picking = on;
         _sourceView.Picking = _preview.Picking = _zoom.View.Picking = on;
@@ -3524,7 +3637,7 @@ public sealed class PixelateDialog : DialogBase
 
     /// <summary>
     /// <paramref name="s"/>에 쓸 준비 결과: 이미 준비한 것이 있으면 그것, 없으면 준비해 <see cref="_sources"/>에 더한다(작업 스레드에서 불러도 됨 — 준비는 잠그지 않고 하므로
-    /// 같은 설정을 동시에 준비했으면 먼저 더한 쪽을 돌려준다).
+    /// 같은 설정을 동시에 준비했으면 먼저 더한 쪽을 돌려준다). 새로 더할 때 고친 외곽선(<see cref="_outlineEdits"/>)을 붙인다 — 이미 더한 것은 <see cref="ApplyOutlineEdits"/>가 맞춘다.
     /// </summary>
     private PixelateSource SourceFor(PixelImage image, PixelateSettings s)
     {
@@ -3533,6 +3646,7 @@ public sealed class PixelateDialog : DialogBase
         lock (_sources)
         {
             if (_sources.FirstOrDefault(x => ReferenceEquals(x.Original, image) && x.Matches(s)) is { } raced) return raced;
+            WithOutlineEdits(made);
             _sources.Add(made);
         }
         return made;
@@ -4368,6 +4482,7 @@ public sealed class PixelateDialog : DialogBase
         {
             _prepared = src;
             _sourceView.SetImage(_input!.Image, src.Cleaned);
+            RefreshOutline();
             _sourceView.SetFrames(_appliedFrames!.ManualRegions!.Select(r => new Rectangle(r.X, r.Y, r.Width, r.Height)).ToArray());
             ShowSampledFrames();
         }
@@ -4933,6 +5048,7 @@ public sealed class PixelateDialog : DialogBase
         _opt.AiRankCount = (int)_aiRankCount.NumValue();
         _opt.AutoOptimizeOnLoad = _optAuto.On();
         _opt.ShowGrid = _showGrid.On();
+        _opt.OutlineBrush = (int)_outlineBrush.NumValue();
         _opt.SettingsExpanded = _settingsExpanded;
         _opt.SelectedPreset = _current is { } chosen && !ReferenceEquals(chosen, _draft) ? chosen.Name : null;
         if (WindowState == WindowState.Normal)
@@ -5152,6 +5268,22 @@ public sealed class PixelateDialog : DialogBase
         private static readonly Cursor VerticalCursor = new(StandardCursorType.SizeNorthSouth);
         private static readonly Cursor DiagonalCursor = new(StandardCursorType.TopLeftCorner);
         private static readonly Cursor OtherDiagonalCursor = new(StandardCursorType.TopRightCorner);
+        private static readonly Cursor BrushCursor = new(StandardCursorType.Cross);
+        // 원본 외곽선 겹쳐 그리기·붓(<see cref="OutlineMode"/>): 겹칠 그림(원본 px 크기), 자동 외곽선, 지금 보이는 외곽선(붓질 중에는 미리 칠한 모습).
+        private WriteableBitmap? _outline;
+        private bool[] _outlineAuto = [], _outlineMask = [];
+        private int _outlineWidth, _outlineHeight;
+        /// <summary>외곽선 겹침 색(BGRA 직선 알파 한 칸 = A·R·G·B 순 32비트): 밝은 분홍, 알파 140(약 55%).</summary>
+        private const uint OutlineColor = 0x8CFF28DC;
+        private static readonly IPen BrushUnder = AppTheme.Pen(Color.FromArgb(200, 20, 20, 24), 3);
+        private static readonly IPen BrushOver = AppTheme.Pen(Color.FromArgb(255, 255, 255, 255), 1);
+        private bool _painting;
+        private sbyte _paintValue;
+        private MouseButton _paintButton;
+        private readonly List<(int X, int Y)> _stroke = [];
+        private (int X, int Y) _paintLast;
+        /// <summary>붓 동그라미를 그릴 포인터 자리(화면 좌표, 보기 밖이면 null).</summary>
+        private Avalonia.Point? _brushAt;
 
         [Flags]
         private enum FrameEdge { None = 0, Left = 1, Right = 2, Top = 4, Bottom = 8 }
@@ -5175,7 +5307,7 @@ public sealed class PixelateDialog : DialogBase
             set
             {
                 field = value;
-                Cursor = value ? CutOverlay.PickerCursor : null;
+                Cursor = RestCursor;
                 if (!value && !ShowGrid) SetHover(null);
                 InvalidateVisual();
             }
@@ -5185,6 +5317,36 @@ public sealed class PixelateDialog : DialogBase
         public bool ShowAlt { get => field; set { field = value; InvalidateVisual(); } }
         /// <summary>스포이드 중 원본 둘레 강조 밝기(0~1, null = 그리지 않음 — <see cref="CutOverlay.DrawPickPulse"/>).</summary>
         public double? PickPulse { get => field; set { field = value; InvalidateVisual(); } }
+
+        /// <summary>
+        /// 원본 외곽선 보기·붓: 켜면 외곽선(<see cref="SetOutline"/>)을 원본 위에 겹쳐 그리고, 왼쪽 끌기 = 외곽선 더하기, 오른쪽 끌기 = 빼기, Shift+끌기 = 자동으로
+        /// (<see cref="OutlinePainted"/>). 켜 있는 동안 프레임 끌기와 스포이드는 쉬고, 가운데 끌기(화면 이동)·휠(확대)은 그대로.
+        /// </summary>
+        public bool OutlineMode
+        {
+            get => field;
+            set
+            {
+                if (field == value) return;
+                field = value;
+                if (!value)
+                {
+                    EndStroke();
+                    _brushAt = null;
+                }
+                Cursor = RestCursor;
+                InvalidateVisual();
+            }
+        }
+
+        /// <summary>붓 반지름(원본 px, 0 = 한 점).</summary>
+        public int BrushRadius { get => field; set { field = Math.Max(0, value); InvalidateVisual(); } }
+
+        /// <summary>붓질 하나가 끝남: 칠한 중심들(원본 px, 빠른 끌기도 끊기지 않게 사이를 채움), 반지름, 값(1 = 외곽선, −1 = 외곽선 아님, 0 = 자동으로).</summary>
+        public event Action<IReadOnlyList<(int X, int Y)>, int, sbyte>? OutlinePainted;
+
+        /// <summary>누르지 않을 때의 커서: 붓이면 십자, 스포이드면 스포이드, 아니면 기본.</summary>
+        private Cursor? RestCursor => OutlineMode ? BrushCursor : Picking ? CutOverlay.PickerCursor : null;
 
         /// <summary>지금 보이는 그림(배경 지우기를 켜 배경 지운 모습이 있으면 그것, 아니면 원본). 비었으면 null.</summary>
         public PixelImage? ShownImage => ShowAlt && _altData is not null ? _altData : _imageData;
@@ -5229,7 +5391,7 @@ public sealed class PixelateDialog : DialogBase
             for (int i = 0; i < _frameLabels.Length; i++)
                 _frameLabels[i] = (i + 1).ToString(CultureInfo.CurrentCulture);
             _frameDrag = -1;
-            Cursor = Picking ? CutOverlay.PickerCursor : null;
+            Cursor = RestCursor;
             InvalidateVisual();
         }
 
@@ -5240,6 +5402,114 @@ public sealed class PixelateDialog : DialogBase
             foreach (int i in frames)
                 if ((uint)i < (uint)_sampled.Length) _sampled[i] = true;
             InvalidateVisual();
+        }
+
+        /// <summary>
+        /// 겹쳐 그릴 원본 외곽선: <paramref name="auto"/> = 자동으로 찾은 것(Shift 붓 미리보기용), <paramref name="mask"/> = 고친 것까지(원본 px, 줄 순서 — 둘 다 읽기만 함).
+        /// 그림은 외곽선이 바뀔 때만 다시 만든다. 하나라도 null이거나 크기가 맞지 않으면 지운다.
+        /// </summary>
+        public void SetOutline(bool[]? auto, bool[]? mask, int width, int height)
+        {
+            if (auto is null || mask is null || width <= 0 || height <= 0 || mask.Length != width * height || auto.Length != mask.Length)
+            {
+                _outline?.Dispose();
+                _outline = null;
+                _outlineAuto = _outlineMask = [];
+                _outlineWidth = _outlineHeight = 0;
+                InvalidateVisual();
+                return;
+            }
+            if (_outline is null || _outlineWidth != width || _outlineHeight != height)
+            {
+                _outline?.Dispose();
+                _outline = ImageUtil.NewBitmap(width, height);
+                _outlineWidth = width;
+                _outlineHeight = height;
+            }
+            _outlineAuto = auto;
+            _outlineMask = (bool[])mask.Clone();
+            // 붓질 중에 새 외곽선이 오면 지금까지 칠한 것을 다시 얹는다(끝나면 고친 결과가 다시 옴).
+            if (_painting)
+                foreach (var c in _stroke) PaintDisc(c);
+            WriteOutline(0, 0, width, height);
+            InvalidateVisual();
+        }
+
+        /// <summary>보이는 외곽선(<see cref="_outlineMask"/>)의 사각형 [x0, x1)×[y0, y1)을 겹칠 그림에 옮긴다.</summary>
+        private unsafe void WriteOutline(int x0, int y0, int x1, int y1)
+        {
+            if (_outline is null) return;
+            using var fb = _outline.Lock();
+            for (int y = y0; y < y1; y++)
+            {
+                var row = (uint*)((byte*)fb.Address + (long)y * fb.RowBytes);
+                int i = y * _outlineWidth;
+                for (int x = x0; x < x1; x++) row[x] = _outlineMask[i + x] ? OutlineColor : 0u;
+            }
+        }
+
+        /// <summary>화면 좌표 → 원본 px.</summary>
+        private (int X, int Y) SourcePixel(Avalonia.Point p)
+            => ((int)Math.Floor((p.X - _offset.X) / _zoom), (int)Math.Floor((p.Y - _offset.Y) / _zoom));
+
+        /// <summary>붓 동그라미 하나를 보이는 외곽선에 미리 칠하고 칠한 사각형을 돌려준다(겹칠 그림이 없거나 그림 밖이면 빈 사각형).</summary>
+        private (int X0, int Y0, int X1, int Y1) PaintDisc((int X, int Y) c)
+        {
+            if (_outline is null) return default;
+            int r = BrushRadius, w = _outlineWidth;
+            int x0 = Math.Max(0, c.X - r), x1 = Math.Min(w, c.X + r + 1);
+            int y0 = Math.Max(0, c.Y - r), y1 = Math.Min(_outlineHeight, c.Y + r + 1);
+            var opaque = _altData is { } alt && alt.Width == w && alt.Height == _outlineHeight ? alt.Pixels : null;
+            for (int y = y0; y < y1; y++)
+                for (int x = x0; x < x1; x++)
+                {
+                    int dx = x - c.X, dy = y - c.Y;
+                    if (dx * dx + dy * dy > r * r + r) continue;
+                    int i = y * w + x;
+                    // 외곽선은 배경을 지운 원본의 불투명 픽셀에만 붙는다(엔진과 같게) — 투명한 곳에는 더하지 않는다.
+                    if (_paintValue > 0 && opaque is not null && opaque[i].A == 0) continue;
+                    _outlineMask[i] = _paintValue switch { > 0 => true, < 0 => false, _ => _outlineAuto[i] };
+                }
+            return x0 < x1 && y0 < y1 ? (x0, y0, x1, y1) : default;
+        }
+
+        /// <summary>
+        /// 붓을 <paramref name="to"/>까지: 마지막 자리에서 반지름 절반(최소 1px) 간격으로 중심을 채워 빠르게 끌어도 끊기지 않게 하고, 그림에 닿는 중심만 붓질에 담는다.
+        /// <paramref name="first"/>면 그 자리 하나만.
+        /// </summary>
+        private void PaintTo((int X, int Y) to, bool first)
+        {
+            var from = _paintLast;
+            int dx = to.X - from.X, dy = to.Y - from.Y;
+            int n = first ? 0 : (int)Math.Ceiling(Math.Sqrt((double)dx * dx + (double)dy * dy) / Math.Max(1, BrushRadius * 0.5));
+            if (!first && n == 0) return;
+            _paintLast = to;
+            int r = BrushRadius, width = (int)_size.Width, height = (int)_size.Height;
+            int bx0 = int.MaxValue, by0 = int.MaxValue, bx1 = int.MinValue, by1 = int.MinValue;
+            for (int k = first ? 0 : 1; k <= n; k++)
+            {
+                (int X, int Y) c = n == 0 ? to : (from.X + (int)Math.Round(dx * (double)k / n), from.Y + (int)Math.Round(dy * (double)k / n));
+                if (c.X + r < 0 || c.Y + r < 0 || c.X - r >= width || c.Y - r >= height) continue;
+                if (_stroke.Count > 0 && _stroke[^1] == c) continue;
+                _stroke.Add(c);
+                var (x0, y0, x1, y1) = PaintDisc(c);
+                if (x0 >= x1) continue;
+                bx0 = Math.Min(bx0, x0);
+                by0 = Math.Min(by0, y0);
+                bx1 = Math.Max(bx1, x1);
+                by1 = Math.Max(by1, y1);
+            }
+            if (bx0 < bx1) WriteOutline(bx0, by0, bx1, by1);
+            InvalidateVisual();
+        }
+
+        /// <summary>붓질을 마치고 칠한 것이 있으면 알린다(<see cref="OutlinePainted"/>).</summary>
+        private void EndStroke()
+        {
+            if (!_painting) return;
+            _painting = false;
+            if (_stroke.Count > 0) OutlinePainted?.Invoke([.. _stroke], BrushRadius, _paintValue);
+            _stroke.Clear();
         }
 
         private void SetHover(CellHover? h)
@@ -5299,7 +5569,7 @@ public sealed class PixelateDialog : DialogBase
 
         private void UpdateFrameCursor(Avalonia.Point p)
         {
-            if (Picking) { Cursor = CutOverlay.PickerCursor; return; }
+            if (OutlineMode || Picking) { Cursor = RestCursor; return; }
             if (FrameAt(p) is not { } hit) { Cursor = null; return; }
             bool h = (hit.Edges & (FrameEdge.Left | FrameEdge.Right)) != 0;
             bool v = (hit.Edges & (FrameEdge.Top | FrameEdge.Bottom)) != 0;
@@ -5328,6 +5598,20 @@ public sealed class PixelateDialog : DialogBase
         protected override void OnPointerPressed(PointerPressedEventArgs e)
         {
             var point = e.GetCurrentPoint(this);
+            // 붓: 왼쪽 = 외곽선 더하기, 오른쪽 = 빼기, Shift = 자동으로(스포이드·프레임 끌기보다 먼저 — 가운데 끌기는 아래 화면 이동 그대로).
+            if (OutlineMode && (point.Properties.IsLeftButtonPressed || point.Properties.IsRightButtonPressed))
+            {
+                e.Handled = true;
+                if (_painting || _image is null) return;
+                _painting = true;
+                _paintButton = point.Properties.IsLeftButtonPressed ? MouseButton.Left : MouseButton.Right;
+                _paintValue = e.KeyModifiers.HasFlag(KeyModifiers.Shift) ? (sbyte)0 : _paintButton == MouseButton.Left ? (sbyte)1 : (sbyte)-1;
+                _stroke.Clear();
+                _brushAt = point.Position;
+                PaintTo(SourcePixel(point.Position), first: true);
+                e.Pointer.Capture(this);
+                return;
+            }
             if (Picking && (point.Properties.IsLeftButtonPressed || point.Properties.IsRightButtonPressed))
             {
                 e.Handled = true;
@@ -5359,6 +5643,16 @@ public sealed class PixelateDialog : DialogBase
         protected override void OnPointerMoved(PointerEventArgs e)
         {
             var p = e.GetPosition(this);
+            if (OutlineMode)
+            {
+                _brushAt = p;
+                InvalidateVisual();
+                if (_painting)
+                {
+                    PaintTo(SourcePixel(p), first: false);
+                    return;
+                }
+            }
             if (_frameDrag >= 0)
             {
                 var frame = DraggedFrame(p);
@@ -5383,13 +5677,31 @@ public sealed class PixelateDialog : DialogBase
         protected override void OnPointerExited(PointerEventArgs e)
         {
             SetHover(null);
-            if (_frameDrag < 0 && !Picking) Cursor = null;
+            if (_frameDrag < 0 && !Picking && !OutlineMode) Cursor = null;
+            if (OutlineMode && !_painting)
+            {
+                _brushAt = null;
+                InvalidateVisual();
+            }
+        }
+
+        protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+        {
+            base.OnPointerCaptureLost(e);
+            // 창이 비활성이 되는 등으로 붙잡기를 잃으면 거기까지 칠한 붓질을 마친다.
+            EndStroke();
         }
 
         protected override void OnPointerReleased(PointerReleasedEventArgs e)
         {
             // 기본 처리가 오른쪽 버튼을 놓을 때 우클릭 메뉴(ContextRequested)를 띄운다 — 빼먹으면 원본 우클릭 메뉴가 열리지 않았다.
             base.OnPointerReleased(e);
+            if (_painting && e.InitialPressMouseButton == _paintButton)
+            {
+                EndStroke();
+                e.Pointer.Capture(null);
+                return;
+            }
             if (_frameDrag >= 0)
             {
                 int index = _frameDrag;
@@ -5397,7 +5709,7 @@ public sealed class PixelateDialog : DialogBase
                 if (_frames[index] != _frameStart) FrameEdited?.Invoke(index, _frames[index]);
             }
             _drag = null;
-            e.Pointer.Capture(null);
+            if (!_painting) e.Pointer.Capture(null);
             UpdateFrameCursor(e.GetPosition(this));
         }
 
@@ -5412,16 +5724,34 @@ public sealed class PixelateDialog : DialogBase
                 var dest = new Rect(_offset.X, _offset.Y, _size.Width * _zoom, _size.Height * _zoom);
                 AppTheme.DrawChecker(g, dest.Intersect(bounds), 8);
                 using (ImageUtil.Pixelated(g))
+                {
                     g.DrawImage(bmp, new Rect(0, 0, _size.Width, _size.Height), dest);
+                    if (OutlineMode && _outline is not null)
+                        g.DrawImage(_outline, new Rect(0, 0, _outlineWidth, _outlineHeight),
+                            new Rect(_offset.X, _offset.Y, _outlineWidth * _zoom, _outlineHeight * _zoom));
+                }
                 if (ShowGrid) DrawGrid(g, bounds);
                 DrawFrames(g, bounds);
                 DrawHover(g);
+                if (OutlineMode) DrawBrush(g);
                 if (PickPulse is { } level) CutOverlay.DrawPickPulse(g, dest.Intersect(new Rect(0, 18, bounds.Width, Math.Max(0, bounds.Height - 18))), level);
             }
             var caption = new Rect(0, 0, bounds.Width, 18);
             g.FillRectangle(AppTheme.BackBrush, caption);
-            var text = UiStrings.FormatPixelate_Source(size: _image is null ? "" : SizeText(_size.Width, _size.Height));
+            string size = _image is null ? "" : SizeText(_size.Width, _size.Height);
+            var text = OutlineMode ? UiStrings.FormatPixelate_OutlineHint(size: size) : UiStrings.FormatPixelate_Source(size: size);
             AppTheme.DrawTextIn(g, text, new Rect(4, 0, bounds.Width - 8, 18), AppTheme.DimTextBrush, AppTheme.SmallFontSize);
+        }
+
+        /// <summary>붓 동그라미(포인터가 가리킨 원본 px 가운데, 반지름 + ½px — 너무 작으면 2px).</summary>
+        private void DrawBrush(DrawingContext g)
+        {
+            if (_brushAt is not { } at || _image is null) return;
+            var (x, y) = SourcePixel(at);
+            var center = new Avalonia.Point(_offset.X + (x + 0.5) * _zoom, _offset.Y + (y + 0.5) * _zoom);
+            double radius = Math.Max(2, (BrushRadius + 0.5) * _zoom);
+            g.DrawEllipse(null, BrushUnder, center, radius, radius);
+            g.DrawEllipse(null, BrushOver, center, radius, radius);
         }
 
         private void DrawFrames(DrawingContext g, Rect bounds)

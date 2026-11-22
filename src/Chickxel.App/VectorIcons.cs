@@ -181,6 +181,8 @@ public enum VectorIcon
     RotateCw,
     /// <summary>엇갈린 두 화살표(무작위 — Lucide shuffle).</summary>
     Shuffle,
+    /// <summary>붓(원본 외곽선 칠하기 — Lucide brush).</summary>
+    Brush,
 }
 
 public static class VectorIcons
@@ -198,6 +200,12 @@ public static class VectorIcons
         [
             "M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8",
             "M21 3v5h-5",
+        ],
+        VectorIcon.Brush =>
+        [
+            "m11 10 3 3",
+            "M6.5 21A3.5 3.5 0 1 0 3 17.5a2.62 2.62 0 0 1-.708 1.792A1 1 0 0 0 3 21z",
+            "M9.969 17.031 21.378 5.624a1 1 0 0 0-3.002-3.002L6.967 14.031",
         ],
         VectorIcon.Shuffle =>
         [

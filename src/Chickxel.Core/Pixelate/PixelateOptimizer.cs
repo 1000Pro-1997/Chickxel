@@ -357,7 +357,7 @@ public static class PixelateOptimizer
         var picked = SampleIndices(count, samples).Select(i => regions[i]).ToArray();
         var frames = start.Frames with { ManualRegions = picked, SourceFrames = start.Frames.SourceFrames > 0 ? picked.Length : 0 };
         var s = start with { Frames = frames };
-        var sub = src.Matches(start) ? src.WithFrames(frames) : PixelateSource.Prepare(src.Original, s);
+        var sub = src.Matches(start) ? src.WithFrames(frames) : src.Reprepare(s);
         return (sub, s);
     }
 
@@ -369,7 +369,7 @@ public static class PixelateOptimizer
     {
         var best = sampled.Best.Settings;
         var full = best with { Frames = best.Frames with { ManualRegions = start.Frames.ManualRegions, SourceFrames = start.Frames.SourceFrames } };
-        var fullSrc = src.Matches(full) ? src : PixelateSource.Prepare(src.Original, full);
+        var fullSrc = src.Matches(full) ? src : src.Reprepare(full);
         var clock = Stopwatch.StartNew();
         var r = Pixelator.Run(fullSrc, full, options.ScoreMetric ?? ColorMetric.For(start.Palette), options.Fidelity, CancellationToken.None);
         var score = gridScore
@@ -910,7 +910,7 @@ public static class PixelateOptimizer
         /// <summary>시도의 준비 결과: 배경·나누기 설정이 시작과 같으면 그대로, 다르면(스티커 테두리·배경 남기기) 배경 설정마다 한 번 다시 준비.</summary>
         private PixelateSource SourceFor(PixelateSettings s)
             => _src.Matches(s) ? _src
-                : _sources.GetOrAdd(s.Background, _ => new Lazy<PixelateSource>(() => PixelateSource.Prepare(_src.Original, s))).Value;
+                : _sources.GetOrAdd(s.Background, _ => new Lazy<PixelateSource>(() => _src.Reprepare(s))).Value;
 
         private List<Axis> BuildAxes(PixelateResult first)
         {

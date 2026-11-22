@@ -9,6 +9,11 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 - Vector-redrawn outlines split at corners and fit straight segments or circular arcs for even pixel steps; a Line cleanness score lets auto optimize prefer tidy results.
 - Fit outline to 1 px fills a second dark outline layer with the neighboring inner color rather than alternating between one and two pixels wide.
 
+### Pixelate: outline found on the source and editable with a brush
+- The outline is found once on the background-removed source: only dark bands about as thick as the source outline count, so wide black areas (clothes, hair) touching a transparent gap are not outline. The darkness threshold is measured from the source's outer edge.
+- With Source outline (Cleanup, on by default), Fit outline to 1 px peels only cells that are outline on the source. Black shorts next to the gap between the legs no longer turn skin-colored. The 1-px outline score uses the same rule.
+- The brush button under the source shows the source outline as a pink overlay: left-drag adds, right-drag removes, Shift+drag returns to automatic. A brush size field and a reset button sit beside it; edits apply when you run Clean up.
+
 ### Import 3D model: original view, rotation rings, light handle and roll
 - The import preview shows the smooth Original alongside the Pixel result, sharing camera and lighting; dragging either view rotates and the wheel zooms.
 - An X/Y/Z axis gizmo shows orientation and offers axis views, with X/Y/Z rotation rings around the model while rotating.

@@ -1602,7 +1602,10 @@ public class PixelateTests
     [Fact]
     public void OptimizerEscapesHalfScaleEstimate()
     {
-        var result = Assert.Single(Pixelator.Run(PngIO.Load(TestUtil.Fixture("ai-girl-bg.png")), new PixelateSettings()).Frames);
+        // 입력 그림(16배로 키울 픽셀 아트)은 예전 정리 그대로 만든다 — 원본 외곽선 따르기는 이 그림의 4px을 바꿔 12.85px·16px 점수가 거의 같은 자리(79.5 대 78.9)를
+        // 뒤집지만, 키운 그림에서의 최적화는 원본 외곽선을 켜든 끄든 같은 시도·점수다.
+        var art = new PixelateSettings { Cleanup = new CleanupSettings { SourceOutline = false } };
+        var result = Assert.Single(Pixelator.Run(PngIO.Load(TestUtil.Fixture("ai-girl-bg.png")), art).Frames);
         var image = BlurNoise(Upscale(result, 16));
         var start = new PixelateSettings
         {

@@ -14,11 +14,12 @@ public static class PixelCleanup
     /// 벗기는 칸은 실제 안쪽 색으로 채우고, 벡터로 다시 그리기는 끝에 바깥 둘레의 L자 겹 픽셀도 뺀다(<see cref="RemoveRingCorners"/>).
     /// </summary>
     /// <param name="onStep">켠 단계가 끝날 때마다 그 단계(판정 과정 기록 — <see cref="Pixelator.TracePixel"/>). 보통은 null.</param>
-    public static void Run(PixelImage img, CleanupSettings s, Color32 outline, double outlineDarkness, Action<PixelTraceStep>? onStep = null)
+    /// <param name="sourceOutline">픽셀마다 원본 외곽선 칸인지(<see cref="SourceOutline.Cells"/> — <see cref="ThinOutline"/>는 이 칸만 벗김), null이면 줄인 그림만 보고.</param>
+    public static void Run(PixelImage img, CleanupSettings s, Color32 outline, double outlineDarkness, Action<PixelTraceStep>? onStep = null, bool[]? sourceOutline = null)
     {
         if (s.RemoveOrphans) { RemoveOrphans(img, s.OrphanMaxContrast); onStep?.Invoke(PixelTraceStep.Orphans); }
         if (s.FillHoles) { FillHoles(img); onStep?.Invoke(PixelTraceStep.Holes); }
-        if (s.OutlineFit != OutlineFit.Off) { ThinOutline(img, outlineDarkness, s.OutlineFit == OutlineFit.Thin ? 3 : 1); onStep?.Invoke(PixelTraceStep.ThinOutline); }
+        if (s.OutlineFit != OutlineFit.Off) { ThinOutline(img, outlineDarkness, s.OutlineFit == OutlineFit.Thin ? 3 : 1, sourceOutline); onStep?.Invoke(PixelTraceStep.ThinOutline); }
         if (s.Outline != OutlineMode.None) { Outline(img, s.Outline, outline, outlineDarkness); onStep?.Invoke(PixelTraceStep.Outline); }
         if (s.ReduceJaggies) { ReduceJaggies(img, outline); onStep?.Invoke(PixelTraceStep.Jaggies); }
         if (s.OutlineFit == OutlineFit.Vector) { RemoveRingCorners(img, outlineDarkness); onStep?.Invoke(PixelTraceStep.RingCorners); }
@@ -93,8 +94,11 @@ public static class PixelCleanup
             }
         return (outline, thick);
     }
-    /// <summary>외곽선 두께와 1px 계단의 국소 길이 불규칙성을 잰다. 굵기 판정은 <see cref="OutlineThickness"/>와 같다.</summary>
-    public static (int Outline, int Thick, int Runs, int Irregular) OutlineQuality(PixelImage img, double darkness)
+    /// <summary>
+    /// 외곽선 두께와 1px 계단의 국소 길이 불규칙성을 잰다. 굵기 판정은 <see cref="OutlineThickness"/>와 같고, <paramref name="peelable"/>(픽셀마다 원본 외곽선 칸 —
+    /// <see cref="ThinOutline"/>의 원본 외곽선과 같은 표)를 주면 안쪽 겹 픽셀이 원본 외곽선 칸일 때만 두껍다고 센다(벗기지 않을 넓은 검은 면은 두꺼움이 아님).
+    /// </summary>
+    public static (int Outline, int Thick, int Runs, int Irregular) OutlineQuality(PixelImage img, double darkness, bool[]? peelable = null)
     {
         int w = img.Width, h = img.Height;
         var dark = DarkTest(darkness);
@@ -111,6 +115,7 @@ public static class PixelCleanup
                     if (img.Get(x + dx, y + dy).A != 0) continue;
                     int ix = x - dx, iy = y - dy;
                     if (!dark(img.Get(ix, iy)) || IsEdge(img, ix, iy)) continue;
+                    if (peelable is not null && !peelable[iy * w + ix]) continue;
                     if (dark(img.Get(ix + dy, iy + dx)) || dark(img.Get(ix - dy, iy - dx))) { thick++; doubled = true; break; }
                 }
                 if (!doubled) single[y * w + x] = true;
@@ -211,9 +216,10 @@ public static class PixelCleanup
     /// 바깥 외곽선을 1px로: 바깥 외곽선(투명과 맞닿은 어두운 픽셀)에 상하좌우로 붙은 안쪽 어두운 픽셀을 둘레의 밝은(어둡지 않은) 색 중 가장 많은 색으로 바꾼다
     /// (3×3에 밝은 색이 없으면 5×5에서). 바꾼 픽셀 안쪽으로 다시 붙은 어두운 픽셀도 최대 <paramref name="maxLayers"/>겹까지 벗겨 낸다(두꺼운 외곽선).
     /// 바깥 외곽선은 건드리지 않아 끊기지 않고, 외곽선에서 안쪽으로 뻗은 가는 선(둘레에서 2px 이하로 이어진 어두운 픽셀)은 잇는 자리를 남겨 떨어지지 않는다.
-    /// 외곽선에 닿지 않은 안쪽 어두운 덩어리(눈 등)는 건드리지 않는다. 바꾼 수를 돌려준다.
+    /// 외곽선에 닿지 않은 안쪽 어두운 덩어리(눈 등)는 건드리지 않는다. <paramref name="sourceOutline"/>(픽셀마다 원본 외곽선 칸 — <see cref="SourceOutline.Cells"/>)을 주면
+    /// 안쪽 겹은 원본 외곽선 칸만 벗긴다 — 원본에서 넓은 검은 면(반바지)인 칸은 작은 투명 틈에 닿아도 그대로. 바꾼 수를 돌려준다.
     /// </summary>
-    public static int ThinOutline(PixelImage img, double darkness, int maxLayers = 3)
+    public static int ThinOutline(PixelImage img, double darkness, int maxLayers = 3, bool[]? sourceOutline = null)
     {
         var dark = DarkTest(darkness);
         int w = img.Width, h = img.Height;
@@ -237,7 +243,7 @@ public static class PixelCleanup
             for (int y = 0; y < h; y++)
                 for (int x = 0; x < w; x++)
                 {
-                    if (outer[y * w + x] || !dark(img[x, y])) continue;
+                    if (outer[y * w + x] || !dark(img[x, y]) || (sourceOutline is not null && !sourceOutline[y * w + x])) continue;
                     if (!(At(front, x - 1, y) || At(front, x + 1, y) || At(front, x, y - 1) || At(front, x, y + 1))) continue;
                     candidate[y * w + x] = true;
                     any++;

@@ -22,6 +22,8 @@ public sealed class PixelateSource
         ContentBounds = split.Frames.Count == 0 ? Rectangle.Empty : split.Frames.Select(f => f.Bounds).Aggregate(Rectangle.Union);
         (ProfileX, ProfileY) = GridDetector.Profiles(cleaned, ContentBounds.IsEmpty ? cleaned.Bounds : ContentBounds);
         _lab = new Lazy<Lab[]>(() => GridDetector.LabOf(cleaned), LazyThreadSafetyMode.ExecutionAndPublication);
+        _outlineLightness = new Lazy<double>(() => SourceOutline.MeasureLightness(Cleaned, Lab, Split), LazyThreadSafetyMode.ExecutionAndPublication);
+        _autoOutline = new Lazy<bool[]>(() => SourceOutline.Detect(Cleaned, Lab, Split, OutlineLightness), LazyThreadSafetyMode.ExecutionAndPublication);
     }
 
     public PixelImage Original { get; }
@@ -64,6 +66,60 @@ public sealed class PixelateSource
     public VectorOutline.Tracing VectorTrace(int frame, double darkness)
         => _vectors.GetOrAdd((frame, darkness), k => new Lazy<VectorOutline.Tracing>(
             () => VectorOutline.Trace(Cleaned, Lab, Split.Frames[k.Frame].Bounds, Split.Labels, k.Frame, k.Darkness))).Value;
+
+    private readonly Lazy<double> _outlineLightness;
+    private readonly Lazy<bool[]> _autoOutline;
+    private EditedOutline? _editedOutline;
+    private volatile OutlineEdits? _outlineEdits;
+
+    /// <summary>고침을 덧씌운 외곽선 하나(어떤 고침 묶음으로 만들었는지 — 묶음이 바뀌면 다시 만든다).</summary>
+    private sealed class EditedOutline(OutlineEdits edits, Lazy<bool[]> mask)
+    {
+        public OutlineEdits Edits { get; } = edits;
+        public Lazy<bool[]> Mask { get; } = mask;
+    }
+
+    /// <summary>
+    /// 사용자가 붓으로 고친 원본 외곽선(<see cref="Pixelate.OutlineEdits"/> — <see cref="Cleaned"/>와 같은 크기, null = 없음). 묶음은 바뀌지 않으므로 통째로 바꿔 끼우면 되고
+    /// 여러 스레드에서 읽어도 된다(돌리는 중에 바꾸면 그 뒤 시도부터). 크기가 다르면 <see cref="ArgumentException"/>.
+    /// </summary>
+    public OutlineEdits? OutlineEdits
+    {
+        get => _outlineEdits;
+        set
+        {
+            if (value is not null && (value.Width != Cleaned.Width || value.Height != Cleaned.Height))
+                throw new ArgumentException($"외곽선 고침 크기 {value.Width}×{value.Height}가 원본 {Cleaned.Width}×{Cleaned.Height}와 다르다.", nameof(value));
+            _outlineEdits = value;
+        }
+    }
+
+    /// <summary>
+    /// 원본 외곽선으로 볼 밝기(OKLab L 상한, <see cref="SourceOutline.MeasureLightness"/> — 원본 둘레에서 한 번 잼, 설정의 외곽선 밝기와 상관없음).
+    /// <see cref="AutoOutline"/>와 결과 칸 옮기기(<see cref="SourceOutline.Cells"/>)가 이 값으로 어두운 픽셀을 가른다.
+    /// </summary>
+    public double OutlineLightness => _outlineLightness.Value;
+
+    /// <summary>
+    /// 자동 원본 외곽선(<see cref="SourceOutline.Detect"/>를 <see cref="OutlineLightness"/>로 — 길이 = <see cref="Cleaned"/> 폭 × 높이, 행 우선, 한 번만 구해 둠).
+    /// 고치지 말 것(함께 쓰는 배열).
+    /// </summary>
+    public bool[] AutoOutline() => _autoOutline.Value;
+
+    /// <summary>
+    /// 원본 외곽선: <see cref="AutoOutline"/>에 <see cref="OutlineEdits"/>를 덧씌운 것(1 = 외곽선 — 프레임 안 불투명 픽셀만, −1 = 아님). 고침이 없으면 자동 외곽선 배열 그대로,
+    /// 있으면 마지막 고침 묶음의 것을 기억해 둔다. 고치지 말 것(함께 쓰는 배열).
+    /// </summary>
+    public bool[] Outline()
+    {
+        var edits = _outlineEdits;
+        if (edits is null || edits.IsEmpty) return AutoOutline();
+        var cached = Volatile.Read(ref _editedOutline);
+        if (cached is not null && ReferenceEquals(cached.Edits, edits)) return cached.Mask.Value;
+        var made = new EditedOutline(edits, new Lazy<bool[]>(() => SourceOutline.Apply(AutoOutline(), edits, Cleaned, Split.Labels)));
+        var prior = Interlocked.CompareExchange(ref _editedOutline, made, cached);
+        return (prior != cached && prior is not null && ReferenceEquals(prior.Edits, edits) ? prior : made).Mask.Value;
+    }
 
     /// <summary>
     /// 자동 칸 크기(<paramref name="frame"/> = −1이면 그림 전체, 기억해 둠 — 후보마다 다시 재지 않음). 외곽선 두께는 <see cref="PaletteSettings.MeasureDarkness"/>로 잰다
@@ -145,12 +201,23 @@ public sealed class PixelateSource
         return new PixelateSource(image, cleaned, bg, split, s.Background, s.Frames);
     }
 
+    /// <summary>같은 원본을 <paramref name="s"/>로 다시 준비한다(<see cref="Prepare"/>) — 외곽선 고침(<see cref="OutlineEdits"/> — 원본 좌표)은 그대로 넘긴다.</summary>
+    public PixelateSource Reprepare(PixelateSettings s)
+    {
+        var again = Prepare(Original, s);
+        again.OutlineEdits = OutlineEdits;
+        return again;
+    }
+
     /// <summary>
     /// 배경 지운 결과는 그대로 두고 프레임만 <paramref name="frames"/>로 다시 나눈 준비 결과(뽑아서 최적화 — <see cref="PixelateOptimizeOptions.SampleFrames"/>).
-    /// 배경 남기기(한 장)면 다시 나눌 것이 없으므로 쓰지 않는다.
+    /// 배경 남기기(한 장)면 다시 나눌 것이 없으므로 쓰지 않는다. 외곽선 고침(<see cref="OutlineEdits"/> — 원본 좌표)은 그대로 넘긴다.
     /// </summary>
     public PixelateSource WithFrames(FrameSettings frames)
-        => new(Original, Cleaned, Background, FrameSplitter.Run(Background.Foreground, Original.Width, Original.Height, frames), BackgroundSettings, frames);
+        => new(Original, Cleaned, Background, FrameSplitter.Run(Background.Foreground, Original.Width, Original.Height, frames), BackgroundSettings, frames)
+        {
+            OutlineEdits = OutlineEdits,
+        };
 
     /// <summary>이 준비 결과를 <paramref name="s"/>에도 쓸 수 있는지(배경·나누기 설정이 같음 — 맞추기·캔버스는 상관없음).</summary>
     public bool Matches(PixelateSettings s)
@@ -422,8 +489,16 @@ public static class Pixelator
         var paletted = cells.Select(c => c.Clone()).ToArray();
         ct.ThrowIfCancellationRequested();
 
-        // 3) 정리.
+        // 3) 정리. 원본 외곽선을 따르면(CleanupSettings.SourceOutline) 칸마다 원본 외곽선인지 — 외곽선 1px로 얇게는 그런 칸만 벗긴다.
         var outline = OutlineColor(cells, s.Palette.OutlineDarkness);
+        double measureDark = PaletteSettings.MeasureDarkness(s.Palette.OutlineDarkness);
+        bool[][]? sourceCells = null;
+        if (s.Cleanup.SourceOutline)
+        {
+            var sourceOutline = src.Outline();
+            sourceCells = new bool[nf][];
+            for (int f = 0; f < nf; f++) sourceCells[f] = SourceOutline.Cells(sourceOutline, src, f, layouts[f], s.Downsample);
+        }
         for (int f = 0; f < nf; f++)
         {
             var img = cells[f];
@@ -439,7 +514,7 @@ public static class Pixelator
                     layouts[f], outline, s.Palette.OutlineDarkness, s.Cleanup);
                 if (traced) rec!.Cells(PixelTraceStep.VectorOutline, img);
             }
-            PixelCleanup.Run(img, s.Cleanup, outline, s.Palette.OutlineDarkness, traced ? step => rec!.Cells(step, img) : null);
+            PixelCleanup.Run(img, s.Cleanup, outline, s.Palette.OutlineDarkness, traced ? step => rec!.Cells(step, img) : null, sourceCells?[f]);
             ct.ThrowIfCancellationRequested();
         }
         ct.ThrowIfCancellationRequested();
@@ -471,11 +546,13 @@ public static class Pixelator
         var palette = UsedColors(frames);
         double scale = grids.Length == 0 ? 0 : grids.Average(g => g.Scale);
         // 외곽선 1px 점수: 맞춘(캔버스에 놓고 떨림까지 줄인) 마지막 결과 픽셀에서, 외곽선 밝기를 낮춰도 검은 외곽선은 세도록(PaletteSettings.MeasureDarkness).
+        // 원본 외곽선을 따르면 두꺼움도 원본 외곽선 칸만 센다(넓은 검은 면을 벗겨야 점수가 오르지 않게 — 얇게와 같은 기준).
         int outlineEdge = 0, outlineThick = 0, lineRuns = 0, irregularRuns = 0;
-        double measureDark = PaletteSettings.MeasureDarkness(s.Palette.OutlineDarkness);
-        foreach (var f in frames)
+        for (int f = 0; f < nf; f++)
         {
-            var (edge, thick, runs, irregular) = PixelCleanup.OutlineQuality(f, measureDark);
+            var peelable = sourceCells is null ? null
+                : SourceOutline.ToCanvas(sourceCells[f], layouts[f].Columns, layouts[f].Rows, frames[f], maps[f].OffsetX, maps[f].OffsetY);
+            var (edge, thick, runs, irregular) = PixelCleanup.OutlineQuality(frames[f], measureDark, peelable);
             outlineEdge += edge;
             outlineThick += thick;
             lineRuns += runs;
@@ -733,6 +810,23 @@ public static class Pixelator
             ? Color32.Transparent
             : new CellSampler(src, frame, s).Sample(layout, column, row);
 
+    /// <summary>
+    /// 칸 (<paramref name="cx"/>, <paramref name="cy"/>)에서 칸 색을 고르는 안쪽 범위 [Xa, Xb) × [Ya, Yb)(원본 px, 그림 <paramref name="w"/> × <paramref name="h"/> 안으로 자름):
+    /// 칸 사각형에서 둘레 <paramref name="border"/>(<see cref="DownsampleSettings.BorderFraction"/>, 맞춘 값)를 뺀 것 — 남는 폭이 1px 미만이면 그 축은 빼지 않는다. 비면 Xa ≥ Xb 또는 Ya ≥ Yb.
+    /// </summary>
+    internal static (int Xa, int Ya, int Xb, int Yb) SampleArea(CellLayout layout, int cx, int cy, double border, int w, int h)
+        => SampleArea(layout.Cell(cx, cy), border, w, h);
+
+    private static (int Xa, int Ya, int Xb, int Yb) SampleArea((int X0, int Y0, int X1, int Y1) cell, double border, int w, int h)
+    {
+        var (x0, y0, x1, y1) = cell;
+        int iy = (int)((y1 - y0) * border);
+        if (y1 - y0 - 2 * iy < 1) iy = 0;
+        int ix = (int)((x1 - x0) * border);
+        if (x1 - x0 - 2 * ix < 1) ix = 0;
+        return (Math.Max(0, x0 + ix), Math.Max(0, y0 + iy), Math.Min(w, x1 - ix), Math.Min(h, y1 - iy));
+    }
+
     /// <summary>칸 색 고르기(한 프레임, 설정 값을 한 번만 맞추고 칸 픽셀 목록을 다시 씀).</summary>
     private sealed class CellSampler(PixelateSource src, int frame, DownsampleSettings s)
     {
@@ -758,12 +852,7 @@ public static class Pixelator
             var labels = src.Split.Labels;
             var px = cleaned.Pixels;
             var (x0, y0, x1, y1) = layout.Cell(cx, cy);
-            int iy = (int)((y1 - y0) * _border);
-            if (y1 - y0 - 2 * iy < 1) iy = 0;
-            int ya = Math.Max(0, y0 + iy), yb = Math.Min(h, y1 - iy);
-            int ix = (int)((x1 - x0) * _border);
-            if (x1 - x0 - 2 * ix < 1) ix = 0;
-            int xa = Math.Max(0, x0 + ix), xb = Math.Min(w, x1 - ix);
+            var (xa, ya, xb, yb) = SampleArea((x0, y0, x1, y1), _border, w, h);
             if (xa >= xb || ya >= yb) return Color32.Transparent;
             var members = _members;
             bool weighted = s.Mode is DownsampleMode.CenterWeighted or DownsampleMode.ClusterWeighted;

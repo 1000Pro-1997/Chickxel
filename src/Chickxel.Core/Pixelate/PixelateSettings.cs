@@ -331,6 +331,12 @@ public sealed record CleanupSettings
     public OutlineMode Outline { get; init; } = OutlineMode.None;
     /// <summary>외곽선 1px 맞추기(기본: 크기를 줄여서 — 격자가 자동이면 칸 크기를 외곽선 두께로 정함, 수동 칸 크기가 이김).</summary>
     public OutlineFit OutlineFit { get; init; } = OutlineFit.Shrink;
+    /// <summary>
+    /// 원본 외곽선 따르기(기본 켬): '외곽선 1px로 얇게'(<see cref="PixelCleanup.ThinOutline"/>)와 '외곽선 1px' 점수가 안쪽 겹을 원본에서 가른 외곽선
+    /// (<see cref="PixelateSource.Outline"/> — 자동 + 사용자 고침) 칸에서만 벗기고 센다. 끄면 줄인 그림만 보고 가른다(예전과 같음 — 넓은 검은 면이 작은 투명 틈에
+    /// 닿으면 두꺼운 외곽선으로 보고 둘레 밝은 색으로 벗길 수 있음).
+    /// </summary>
+    public bool SourceOutline { get; init; } = true;
     /// <summary>외곽선의 L자 겹 픽셀(계단 모서리)을 줄인다.</summary>
     public bool ReduceJaggies { get; init; }
     /// <summary>벡터로 다시 그리기: 선을 단순하게 할 허용 오차(결과 px, 더글러스–포이커 — 0이면 뼈대를 그대로 따라감).</summary>

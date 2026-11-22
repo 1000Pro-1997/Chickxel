@@ -8486,6 +8486,16 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
 켜면 1. 배경 지우기의 방식(자동·색 고르기)대로 배경을 지우고 변환하며, 원본에 배경을 지운 모습을 보입니다.
 끄면 배경을 지우지 않고 그대로 변환합니다(1. 배경 지우기의 '지우지 않음'과 같은 설정).
 바꾼 뒤 정리하기를 누르면 적용됩니다.</value></data>
+  <data name="Pixelate_OutlineTip" xml:space="preserve"><value>원본 외곽선 보기·고치기
+켜면 원본(배경을 지운 모습)에서 찾은 외곽선을 원본 위에 분홍색으로 보이고, 원본 보기에서 붓으로 고칩니다.
+왼쪽 끌기: 외곽선 더하기 · 오른쪽 끌기: 외곽선 빼기 · Shift+끌기: 자동으로 되돌리기 · 가운데 끌기: 화면 이동 · 휠: 확대.
+켜 있는 동안은 프레임 끌기와 원본에서 색 추가를 쓰지 않습니다.
+7. 정리의 '원본 외곽선 기준으로 정리'가 켜져 있으면 정리하기를 누를 때 반영됩니다.</value></data>
+  <data name="Pixelate_OutlineBrushTip" xml:space="preserve"><value>붓 크기: 반지름(원본 px, 0이면 1px 점)</value></data>
+  <data name="Pixelate_OutlineResetTip" xml:space="preserve"><value>외곽선 고친 것 모두 지우기
+붓으로 더하고 뺀 것을 지우고 자동으로 찾은 외곽선으로 되돌립니다(정리하기를 누르면 반영).</value></data>
+  <data name="Pixelate_OutlineHint" xml:space="preserve"><value>원본 {size}(왼쪽: 외곽선 더하기, 오른쪽: 빼기, Shift: 자동으로, 가운데: 화면 이동, 휠: 확대)</value><comment>원본 외곽선 붓이 켜졌을 때 원본 보기 위 제목</comment></data>
+  <data name="Pixelate_OutlineEdited" xml:space="preserve"><value>원본 외곽선을 고쳤습니다 — 정리하기를 누르면 결과에 반영됩니다.</value><comment>원본 외곽선을 붓으로 고치거나 지운 뒤 상태 글</comment></data>
   <data name="Pixelate_Section_Quick" xml:space="preserve"><value>간편 설정</value><comment>픽셀로 정리 창 설정 칸의 0번 다음 칸: 자주 바꾸는 설정(결과 크기, 모든 프레임이 한 팔레트)을 모은 곳.</comment></data>
   <data name="Pixelate_Quick_Size" xml:space="preserve"><value>결과 크기</value></data>
   <data name="Pixelate_Quick_AutoTip" xml:space="preserve"><value>켜면 결과 크기가 칸 크기대로(또는 4. 결과 크기의 배율대로) 정해집니다 — 회색 숫자는 지금 고른 결과 크기. 끄면 적은 가로×세로에 맞춥니다(4. 결과 크기와 같은 설정).</value></data>
@@ -8570,6 +8580,9 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Pixelate_Clean_VectorBlob" xml:space="preserve"><value>남길 작은 덩어리(칸)</value></data>
   <data name="Pixelate_Clean_VectorBlob_Tip" xml:space="preserve"><value>바깥 외곽선과 닿지 않은 어두운 덩어리는 넓이가 이 칸 수보다 작으면(눈 등) 다시 그리지 않고 그대로 둡니다.</value></data>
   <data name="Pixelate_Clean_VectorClean" xml:space="preserve"><value>선과 곡선 깔끔하게</value></data>
+  <data name="Pixelate_Clean_SourceOutline" xml:space="preserve"><value>원본 외곽선 기준으로 정리</value></data>
+  <data name="Pixelate_Clean_SourceOutlineTip" xml:space="preserve"><value>켜면 '외곽선 1px 맞추기'가 결과 그림만 보지 않고 원본에서 찾은 외곽선(원본 아래 막대의 붓 단추로 보고 고침)을 기준으로 외곽선을 고릅니다 — 큰 검은 면이 작은 투명 틈에 닿아도 다른 색으로 깎이지 않습니다.
+끄면 예전처럼 결과 그림만 보고 정합니다.</value></data>
   <data name="Pixelate_Clean_VectorCorner" xml:space="preserve"><value>모서리 각도(°)</value></data>
   <data name="Pixelate_Clean_VectorCorner_Tip" xml:space="preserve"><value>따낸 선이 이 각도 이상 꺾이면 나누어 모서리를 남기고, 나머지는 반듯한 선과 원호로 다시 그립니다. 기본 40°.</value></data>
   <data name="Pixelate_Opt_Toggle" xml:space="preserve"><value>자동 최적화</value></data>

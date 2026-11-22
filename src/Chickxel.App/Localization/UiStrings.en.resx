@@ -2771,6 +2771,16 @@ Draws the cell borders the selected candidate actually used over the source (als
 On: removes the background with the method in 1. Background (Auto or Pick color) before converting, and shows the source with the background removed.
 Off: converts without removing the background (the same as Keep background in 1. Background).
 Press Clean up to apply the change.</value></data>
+  <data name="Pixelate_OutlineTip" xml:space="preserve"><value>Show and edit the source outline
+On: shows the outline found on the source (with the background removed) in pink over the source, and lets you fix it with a brush in the source view.
+Left drag: add outline · Right drag: remove outline · Shift+drag: back to automatic · Middle drag: pan · Wheel: zoom.
+While on, frame dragging and adding colors from the source are off.
+Applied when you press Clean up if Use the source outline in 7. Cleanup is on.</value></data>
+  <data name="Pixelate_OutlineBrushTip" xml:space="preserve"><value>Brush size: radius in source pixels (0 = a single pixel)</value></data>
+  <data name="Pixelate_OutlineResetTip" xml:space="preserve"><value>Clear all outline edits
+Removes everything added or removed with the brush and returns to the automatically found outline (applied when you press Clean up).</value></data>
+  <data name="Pixelate_OutlineHint" xml:space="preserve"><value>Source {size} (left: add outline, right: remove, Shift: automatic, middle: pan, wheel: zoom)</value></data>
+  <data name="Pixelate_OutlineEdited" xml:space="preserve"><value>Source outline edited — press Clean up to apply it to the results.</value></data>
   <data name="Pixelate_Section_Quick" xml:space="preserve"><value>Quick settings</value></data>
   <data name="Pixelate_Quick_Size" xml:space="preserve"><value>Output size</value></data>
   <data name="Pixelate_Quick_AutoTip" xml:space="preserve"><value>On: the output size follows the pixel size (or the factor set in 4. Output size) — the grey numbers are the selected result's size. Off: fit to the width×height you enter (same setting as 4. Output size).</value></data>
@@ -2855,6 +2865,9 @@ Press Clean up to apply the change.</value></data>
   <data name="Pixelate_Clean_VectorBlob" xml:space="preserve"><value>Keep small blobs (cells)</value></data>
   <data name="Pixelate_Clean_VectorBlob_Tip" xml:space="preserve"><value>Dark shapes that don't touch the outer outline are left as they are (not redrawn) when smaller than this many cells, such as eyes.</value></data>
   <data name="Pixelate_Clean_VectorClean" xml:space="preserve"><value>Clean lines and curves</value></data>
+  <data name="Pixelate_Clean_SourceOutline" xml:space="preserve"><value>Use the source outline</value></data>
+  <data name="Pixelate_Clean_SourceOutlineTip" xml:space="preserve"><value>On: Fit outline to 1 px picks outline pixels by the outline found on the source (view and fix it with the brush button under the source), not only by the small result — a large black area touching a small transparent gap is no longer peeled into another color.
+Off: decides from the result alone, as before.</value></data>
   <data name="Pixelate_Clean_VectorCorner" xml:space="preserve"><value>Corner angle (°)</value></data>
   <data name="Pixelate_Clean_VectorCorner_Tip" xml:space="preserve"><value>Split the traced line where it turns by at least this angle, preserving corners while fitting smooth lines and circular arcs. Default 40°.</value></data>
   <data name="Pixelate_Opt_Toggle" xml:space="preserve"><value>Auto optimize</value></data>
