@@ -8,7 +8,7 @@ namespace Chickxel.App;
 
 /// <summary>
 /// 파일 > 갤러리에 올리기: 그림 여러 장(<see cref="CommunityRules.MaxArtImages"/>장까지)을 한 글로 Chickxel 갤러리에 올린다.
-/// 왼쪽 "올릴 그림" 목록(내보내기 목록과 같은 줄 모양: 번호·이름(누르면 고름) [위로] [아래로] [빼기], 제목 아래 [더하기 ▾] = PNG 한 장 / GIF 애니메이션)의
+/// 왼쪽 "올릴 그림" 목록(내보내기 목록과 같은 줄 모양: 번호·이름(누르면 고름) [위로] [아래로] [빼기], 제목 아래 [더하기] = 줄을 바로 더하고 종류는 가운데 칸에서 고름)의
 /// 줄마다 프레임 한 장의 PNG(기본 지금 프레임, 번호를 고름)나 GIF(모든 프레임, 태그 하나(그 재생 방향대로), 프레임 번호 범위, 창을 열 때 타임라인에서 고른 프레임 —
 /// <see cref="GalleryFrames"/>)다. 첫 줄이 대표 그림. 가운데 칸은 고른 줄의 설정과 목록 전체가 같이 쓰는 배율·GIF 속도(<see cref="GifTimingField"/>)·
 /// 편집용 파일 공유·받기 허용, 제목·설명·태그, 계정. 같은 그림이 되는 줄(<see cref="GalleryUploadPlan"/>)은 막지 않고 목록 아래에 경고만 하며 올릴 때 뺀다.
@@ -278,7 +278,7 @@ public sealed class GalleryUploadDialog : DialogBase
 
     // ───────────── 올릴 목록 ─────────────
 
-    /// <summary>왼쪽 칸 "올릴 그림": 제목 줄 + [더하기 ▾](PNG 한 장 / GIF 애니메이션) + 줄들 + 아래에 같은 그림 경고·오류.</summary>
+    /// <summary>왼쪽 칸 "올릴 그림": 제목 줄 + [더하기] + 줄들 + 아래에 같은 그림 경고·오류.</summary>
     private Control ListPane(int frameCount)
     {
         var title = new TextBlock { Text = UiStrings.Gallery_What, FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(2, 0, 0, 0) };
@@ -287,21 +287,12 @@ public sealed class GalleryUploadDialog : DialogBase
             Content = new StackPanel
             {
                 Orientation = Orientation.Horizontal, Spacing = 5,
-                Children = { Ui.Icon(VectorIcon.Plus), new TextBlock { Text = UiStrings.Gallery_Add, VerticalAlignment = VerticalAlignment.Center }, Ui.Icon(VectorIcon.ChevronDown, 11) },
+                Children = { Ui.Icon(VectorIcon.Plus), new TextBlock { Text = UiStrings.Gallery_Add, VerticalAlignment = VerticalAlignment.Center } },
             },
             Padding = new Thickness(8, 1),
         }.Tip(UiStrings.Gallery_AddTip);
-        add.Click += (_, _) =>
-        {
-            MenuItem Item(string text, bool enabled, CommunityArtType type)
-            {
-                var m = new MenuItem { Header = new TextBlock { Text = text }, IsEnabled = enabled };
-                m.Click += (_, _) => Dispatcher.UIThread.Post(() => AddItem(type));
-                return m;
-            }
-            PopupMenus.Show(add, [Item(UiStrings.Gallery_AddPng, true, CommunityArtType.Png), Item(UiStrings.Gallery_AddGif, frameCount > 1, CommunityArtType.Gif)],
-                PlacementMode.BottomEdgeAlignedLeft);
-        };
+        // 종류(PNG·GIF)와 프레임은 더한 뒤 가운데 칸에서 고른다. 프레임이 여럿이면 첫 줄(지금 프레임 PNG)과 겹치지 않게 GIF로 더한다.
+        add.Click += (_, _) => AddItem(frameCount > 1 ? CommunityArtType.Gif : CommunityArtType.Png);
         var header = new StackPanel
         {
             Spacing = 4,

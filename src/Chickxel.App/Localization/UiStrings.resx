@@ -9366,9 +9366,7 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Gallery_Options" xml:space="preserve"><value>모든 그림</value><comment>갤러리에 올리기: 목록의 모든 그림이 같이 쓰는 설정(배율·속도·공유) 묶음 제목.</comment></data>
   <data name="Gallery_ItemsTip" xml:space="preserve"><value>목록의 그림을 이 순서대로 한 글에 올립니다({0}장까지). 첫 그림이 갤러리의 대표 그림이 되고, 그림 쪽에서 차례로 넘겨 볼 수 있습니다. 배율과 GIF 속도는 모든 그림이 같이 씁니다. 같은 그림이 되는 줄(같은 프레임의 PNG, 프레임 순서가 똑같은 GIF)은 한 번만 올립니다.</value><comment>0 = 그림 수 한도.</comment></data>
   <data name="Gallery_Add" xml:space="preserve"><value>더하기</value></data>
-  <data name="Gallery_AddTip" xml:space="preserve"><value>목록 끝에 그림을 더합니다(PNG 한 장 또는 GIF 애니메이션).</value></data>
-  <data name="Gallery_AddPng" xml:space="preserve"><value>PNG 한 장(지금 프레임)</value></data>
-  <data name="Gallery_AddGif" xml:space="preserve"><value>GIF 애니메이션</value></data>
+  <data name="Gallery_AddTip" xml:space="preserve"><value>목록 끝에 그림을 더합니다. PNG·GIF와 프레임은 옆 고른 그림 칸에서 고릅니다.</value></data>
   <data name="Gallery_MoveUp" xml:space="preserve"><value>위로(앞에 보임)</value></data>
   <data name="Gallery_MoveDown" xml:space="preserve"><value>아래로(뒤에 보임)</value></data>
   <data name="Gallery_Remove" xml:space="preserve"><value>목록에서 빼기</value></data>

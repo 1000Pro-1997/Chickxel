@@ -3651,9 +3651,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Gallery_Options" xml:space="preserve"><value>All pictures</value></data>
   <data name="Gallery_ItemsTip" xml:space="preserve"><value>The pictures in this list are uploaded as one post, in this order (up to {0}). The first picture is the cover in the gallery, and visitors can flip through them on the picture's page. Scale and GIF speed apply to every picture. Rows that make the same picture (PNGs of the same frame, GIFs with exactly the same frame order) are uploaded only once.</value></data>
   <data name="Gallery_Add" xml:space="preserve"><value>Add</value></data>
-  <data name="Gallery_AddTip" xml:space="preserve"><value>Adds a picture to the end of the list (one PNG or a GIF animation).</value></data>
-  <data name="Gallery_AddPng" xml:space="preserve"><value>One PNG (current frame)</value></data>
-  <data name="Gallery_AddGif" xml:space="preserve"><value>GIF animation</value></data>
+  <data name="Gallery_AddTip" xml:space="preserve"><value>Adds a picture to the end of the list. Choose PNG or GIF and its frames under Selected picture next to it.</value></data>
   <data name="Gallery_MoveUp" xml:space="preserve"><value>Move up (shown earlier)</value></data>
   <data name="Gallery_MoveDown" xml:space="preserve"><value>Move down (shown later)</value></data>
   <data name="Gallery_Remove" xml:space="preserve"><value>Remove from the list</value></data>
