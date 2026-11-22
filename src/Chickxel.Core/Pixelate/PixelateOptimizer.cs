@@ -120,6 +120,8 @@ public sealed record PixelateOptimizeOptions
     /// 경계·칸 안 색 고름)로 찾아(<see cref="PixelateOptimizer.RunGrid"/>) 격자를 정한 뒤, 그 격자 그대로 나머지 항목을 보통 점수로 찾는다. 끄면 모든 항목을 보통 점수로 함께 찾는다.
     /// </summary>
     public bool GridFirst { get; init; }
+    /// <summary>시작 설정의 격자를 유지하고 다른 항목만 찾는다. 격자에 간접으로 영향을 주는 외곽선 밝기·맞추기 방식·스티커 테두리 지우기도 바꿔 보지 않는다.</summary>
+    public bool LockGrid { get; init; }
     /// <summary>
     /// 뽑아서 찾을 프레임 수(0 = 모든 프레임): 프레임이 이보다 많으면(나눈 자리 <see cref="FrameSettings.ManualRegions"/>가 있을 때) 처음·끝을 넣어 고르게 이만큼만
     /// 뽑아 시도를 돌리고, 찾은 1위 설정을 모든 프레임에 한 번 적용해 1위로 돌려준다(<see cref="PixelateOptimizeResult.SampledFrames"/>). 프레임이 많은 영상·GIF의 비용을 줄인다.
@@ -248,6 +250,12 @@ public static class PixelateOptimizer
         ArgumentNullException.ThrowIfNull(src);
         ArgumentNullException.ThrowIfNull(start);
         ArgumentNullException.ThrowIfNull(options);
+        if (options.LockGrid)
+            options = options with
+            {
+                Params = options.Params & ~(OptimizeParam.Grid | OptimizeParam.OutlineDarkness | OptimizeParam.OutlineFit | OptimizeParam.StickerBorder),
+                GridFirst = false,
+            };
         if (Sample(src, start, options.SampleFrames) is { } sub)
             return Finish(Run(sub.Source, sub.Start, options with { SampleFrames = 0 }, onProgress, ct), src, start, options, gridScore: false);
         if (!options.GridFirst) return new Session(src, start, options, onProgress, ct).Run();

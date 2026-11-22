@@ -1909,6 +1909,39 @@ public class PixelateTests
         Assert.Equal(Normal(grid.Best.Result), r.Passes[grid.Passes.Count].StartScore);
     }
 
+    [Fact]
+    public void OptimizerLockGridKeepsCellBoundariesWhileOptimizingColors()
+    {
+        var source = Render([Sprite()]);
+        var src = PixelateSource.Prepare(source, WrongStart);
+        var options = new PixelateOptimizeOptions
+        {
+            Params = OptimizeParam.Grid | OptimizeParam.OutlineDarkness | OptimizeParam.OutlineFit
+                | OptimizeParam.StickerBorder | OptimizeParam.Colors | OptimizeParam.DownsampleMode,
+            GridFirst = true,
+            LockGrid = true,
+            MaxTrials = 50,
+            MaxPasses = 1,
+            MaxTime = TimeSpan.FromMinutes(1),
+        };
+
+        var result = PixelateOptimizer.Run(src, WrongStart, options);
+        Assert.True(result.Trials.Count > 1);
+        Assert.Contains(result.Trials, t => t.Settings.Palette.Colors != WrongStart.Palette.Colors
+            || t.Settings.Downsample.Mode != WrongStart.Downsample.Mode);
+        Assert.All(result.Trials, t =>
+        {
+            Assert.False(t.GridScored);
+            Assert.Equal(WrongStart.Grid, t.Settings.Grid);
+            Assert.Equal(WrongStart.Cleanup.OutlineFit, t.Settings.Cleanup.OutlineFit);
+            Assert.Equal(WrongStart.Palette.OutlineDarkness, t.Settings.Palette.OutlineDarkness);
+            Assert.Equal(WrongStart.Background.RemoveStickerBorder, t.Settings.Background.RemoveStickerBorder);
+            Assert.Equal(result.Start.Result.Scale, t.Result.Scale);
+            Assert.Equal(result.Start.Result.Maps.Select(m => (string.Join(",", m.XCuts), string.Join(",", m.YCuts))),
+                t.Result.Maps.Select(m => (string.Join(",", m.XCuts), string.Join(",", m.YCuts))));
+        });
+    }
+
     /// <summary>
     /// 칸 나누기 점수: 8배로 키운 도트 그림에서 맞는 8px 칸이 반 칸(4px — 빈 자리를 잘라 우연 수준을 뺀 경계 놓임이 낮음)과 두 칸(16px — 원본 경계를 놓치고 칸에
     /// 여러 색이 듦)보다 높다.

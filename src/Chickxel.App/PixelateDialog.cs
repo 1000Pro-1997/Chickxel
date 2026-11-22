@@ -328,6 +328,8 @@ public sealed class OptimizePreset
     /// 그 격자 그대로 켠 칸의 항목을 찾는다.
     /// </summary>
     public bool GridFirst { get; set; }
+    /// <summary>시작 설정의 격자를 최적화에서 고정(<see cref="PixelateOptimizeOptions.LockGrid"/>). 다른 단계는 계속 찾는다.</summary>
+    public bool LockGrid { get; set; }
     /// <summary>
     /// 뽑아서 찾을 프레임 수(0 = 모든 프레임 — <see cref="PixelateOptimizeOptions.SampleFrames"/>): 프레임이 많은 원본은 처음·끝을 넣어 고르게 이만큼만 뽑아 찾고,
     /// 찾은 설정을 모든 프레임에 적용한다.
@@ -340,9 +342,10 @@ public sealed class OptimizePreset
     [JsonIgnore]
     public ColorMetric ScoreMetric => new(ScoreColorDistance, ScoreHueWeight, lightWeight: ScoreLightWeight, chromaWeight: ScoreChromaWeight);
 
-    /// <summary>켠 칸에서 바꿔 볼 항목(<see cref="GridFirst"/>면 격자 칸도, <see cref="KeepPaletteMethod"/>면 팔레트 방식, <see cref="KeepDither"/>면 디더링은 빼고).</summary>
+    /// <summary>켠 칸에서 바꿔 볼 항목(격자 고정·팔레트 방식·디더링 제외를 적용).</summary>
     [JsonIgnore]
-    public OptimizeParam OptimizeParams => OptimizeSections.Params((OptimizeSection)Sections | (GridFirst ? OptimizeSection.Grid : OptimizeSection.None))
+    public OptimizeParam OptimizeParams => OptimizeSections.Params((OptimizeSection)Sections | (GridFirst && !LockGrid ? OptimizeSection.Grid : OptimizeSection.None))
+        & ~(LockGrid ? OptimizeParam.Grid | OptimizeParam.OutlineDarkness | OptimizeParam.OutlineFit | OptimizeParam.StickerBorder : OptimizeParam.None)
         & ~(KeepPaletteMethod ? OptimizeParam.PaletteMethod : OptimizeParam.None)
         & ~(KeepDither ? OptimizeParam.Dither : OptimizeParam.None);
 
@@ -384,7 +387,8 @@ public sealed class OptimizePreset
         Fidelity = Fidelity,
         TargetColors = Math.Max(0, ScoreTargetColors),
         StrictTargetColors = ScoreTargetStrict,
-        GridFirst = GridFirst,
+        GridFirst = GridFirst && !LockGrid,
+        LockGrid = LockGrid,
         SampleFrames = Math.Clamp(SampleFrames, 0, MaxSampleFrames),
     };
 
@@ -402,7 +406,7 @@ public sealed class OptimizePreset
     /// <summary>저장하는 값(설정·칸별 최적화·예산·점수 기준)이 같은지 — 이름·체크·즐겨찾기는 보지 않는다.</summary>
     public bool SameValues(OptimizePreset other)
         => Canonical(StartSettings()).Key() == Canonical(other.StartSettings()).Key()
-           && Sections == other.Sections && KeepPaletteMethod == other.KeepPaletteMethod && KeepDither == other.KeepDither && GridFirst == other.GridFirst
+           && Sections == other.Sections && KeepPaletteMethod == other.KeepPaletteMethod && KeepDither == other.KeepDither && GridFirst == other.GridFirst && LockGrid == other.LockGrid
            && Trials == other.Trials && Seconds == other.Seconds && SampleFrames == other.SampleFrames
            && ScoreColorDistance == other.ScoreColorDistance && ScoreHueWeight.Equals(other.ScoreHueWeight) && ScoreLightWeight.Equals(other.ScoreLightWeight)
            && ScoreChromaWeight.Equals(other.ScoreChromaWeight) && ScoreTargetColors == other.ScoreTargetColors && ScoreTargetStrict == other.ScoreTargetStrict
@@ -416,6 +420,7 @@ public sealed class OptimizePreset
         KeepPaletteMethod = from.KeepPaletteMethod;
         KeepDither = from.KeepDither;
         GridFirst = from.GridFirst;
+        LockGrid = from.LockGrid;
         Trials = from.Trials;
         Seconds = from.Seconds;
         SampleFrames = from.SampleFrames;
@@ -765,8 +770,8 @@ public sealed class PixelateDialog : DialogBase
     /// <summary>칸 경계 지역 보정: 최대 이동(칸 %)·띠 너비(칸)·최소 평균 칸 크기(px).</summary>
     private readonly NumericUpDown _grLocalShift, _grLocalBand, _grLocalMinCell;
     private readonly ComboBox _grSource;
-    /// <summary>칸 맞추기 따로 최적화(<see cref="OptimizePreset.GridFirst"/> — 프리셋에 저장)와 그 옆 '칸 나눠보기'(<see cref="PreviewGrid"/>).</summary>
-    private readonly CheckBox _grFirst;
+    /// <summary>격자 고정(<see cref="OptimizePreset.LockGrid"/>)·칸 맞추기 따로 최적화(<see cref="OptimizePreset.GridFirst"/>)와 '칸 나눠보기'.</summary>
+    private readonly CheckBox _grLock, _grFirst;
     private readonly Button _grPreview;
     private readonly TextBlock _grInfo;
     private GridFit? _detected;
@@ -1132,6 +1137,7 @@ public sealed class PixelateDialog : DialogBase
             .Tip(UiStrings.Pixelate_Grid_Source_Tip);
         _grInfo = Info();
         var useDetected = Ui.Button(UiStrings.Pixelate_Grid_UseDetected, (_, _) => UseDetectedGrid());
+        _grLock = Ui.Check(UiStrings.Pixelate_Grid_Lock).Tip(UiStrings.Pixelate_Grid_Lock_Tip);
         _grFirst = Ui.Check(UiStrings.Pixelate_Grid_First).Tip(UiStrings.Pixelate_Grid_First_Tip);
         _grPreview = Ui.Button(UiStrings.Pixelate_Grid_Preview, (_, _) => PreviewGrid()).Tip(UiStrings.Pixelate_Grid_Preview_Tip);
         var grModeLabel = Ui.Label(UiStrings.Pixelate_Mode);
@@ -1144,6 +1150,7 @@ public sealed class PixelateDialog : DialogBase
         var grLocalBandLabel = Ui.Label(UiStrings.Pixelate_Grid_LocalBand);
         var grLocalMinCellLabel = Ui.Label(UiStrings.Pixelate_Grid_LocalMinCell);
         var grBody = Ui.Stack(
+            _grLock,
             Ui.Row(_grFirst, _grPreview),
             Ui.Row(grModeLabel, _grMode, useDetected),
             Ui.Row(grScaleLabel, _grScale, grOffsetLabel, _grOffX, _grOffY),
@@ -1757,7 +1764,7 @@ public sealed class PixelateDialog : DialogBase
         _frMode.SelectionChanged += (_, _) => ResetManualFrames();
         foreach (var n in new[] { _frCols, _frRows, _frMerge, _frMergeDist })
             n.ValueChanged += (_, _) => ResetManualFrames();
-        foreach (var c in new[] { _bgAutoTol, _bgConnected, _bgKeepAlpha, _bgSticker, _bgKeep, _frCommon, _grFirst, _grLocal, _szAspect, _palAuto, _palShared, _palSnap, _palDistinct, _palShade, _palMethodKeep, _palDitherKeep,
+        foreach (var c in new[] { _bgAutoTol, _bgConnected, _bgKeepAlpha, _bgSticker, _bgKeep, _frCommon, _grLock, _grFirst, _grLocal, _szAspect, _palAuto, _palShared, _palSnap, _palDistinct, _palShade, _palMethodKeep, _palDitherKeep,
                      _clOrphans, _clHoles, _clJaggies, _clVecClean, _clSourceOutline, _coTemporal, _crTargetAuto, _crTargetStrict })
             c.IsCheckedChanged += (_, _) => Changed();
         foreach (var c in new[] { _crDistance, _crFidelity, _crCellRef }) c.SelectionChanged += (_, _) => Changed();
@@ -2395,8 +2402,9 @@ public sealed class PixelateDialog : DialogBase
         Applies(cellJudge && _crCellRef.SelectedIndex != 1, _crGroupRadius);
         // 팔레트 칸을 최적화할 때만 뜻이 있다.
         _palMethodKeep.IsEnabled = _palDitherKeep.IsEnabled = _sectionToggles.TryGetValue(OptimizeSection.Palette, out var palToggle) && palToggle.On();
-        // 칸 맞추기 따로 최적화면 격자 칸은 그 체크로 최적화하므로 칸 머리의 '최적화'는 쓰지 않는다.
-        if (_sectionToggles.TryGetValue(OptimizeSection.Grid, out var gridToggle)) gridToggle.IsEnabled = !_grFirst.On();
+        // 고정 중에는 격자 단계와 격자 칸 전체를 건너뛰되, 체크 상태는 나중에 다시 켤 수 있도록 남긴다.
+        _grFirst.IsEnabled = !_grLock.On();
+        if (_sectionToggles.TryGetValue(OptimizeSection.Grid, out var gridToggle)) gridToggle.IsEnabled = !_grFirst.On() && !_grLock.On();
         SyncQuickSettings();
         ShowSampledFrames();
         SyncBarBackground();
@@ -4100,7 +4108,8 @@ public sealed class PixelateDialog : DialogBase
         panel.Name = UiStrings.Pixelate_Grid_Preview;
         _panelEdited = false;
         _showGrid.IsChecked = true;
-        StartOptimize([new PresetRun(panel, panel.Name, _current, null, WithAppliedFrames(ReadSettings()), Modified: true, AsIs: !panel.GridFirst, GridOnly: panel.GridFirst)],
+        bool gridFirst = panel.GridFirst && !panel.LockGrid;
+        StartOptimize([new PresetRun(panel, panel.Name, _current, null, WithAppliedFrames(ReadSettings()), Modified: true, AsIs: !gridFirst, GridOnly: gridFirst)],
             single: true);
     }
 
@@ -4766,6 +4775,7 @@ public sealed class PixelateDialog : DialogBase
             KeepPaletteMethod = _palMethodKeep.On(),
             KeepDither = _palDitherKeep.On(),
             GridFirst = _grFirst.On(),
+            LockGrid = _grLock.On(),
             Weights = w,
             Fidelity = new FidelityJudge
             {
@@ -4804,6 +4814,7 @@ public sealed class PixelateDialog : DialogBase
             _palMethodKeep.IsChecked = p.KeepPaletteMethod;
             _palDitherKeep.IsChecked = p.KeepDither;
             _grFirst.IsChecked = p.GridFirst;
+            _grLock.IsChecked = p.LockGrid;
             if (p.ScoreTargetColors > 0) _crTargetColors.Value = Math.Clamp(p.ScoreTargetColors, 2, 256);
             for (int i = 0; i < _crWeights.Length; i++) _crWeights[i].Value = (decimal)Math.Clamp(WeightFields[i].Get(p.Weights), 0, 10);
         }
