@@ -55,7 +55,7 @@ public sealed class ExportDialog : DialogBase
     private readonly EventHandler<ProjectChangedEventArgs> _onProjectChanged;
     private readonly TextBox _nameBox = new() { MinWidth = 120 };
     private readonly TextBlock _extLabel = new() { Foreground = AppTheme.DimTextBrush, VerticalAlignment = VerticalAlignment.Center };
-    private readonly TextBlock _folderLabel = new() { Foreground = AppTheme.DimTextBrush, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.LeadingCharacterEllipsis };
+    private readonly LeadingTrimText _folderLabel = new() { Foreground = AppTheme.DimTextBrush, VerticalAlignment = VerticalAlignment.Center };
 
     /// <param name="ctx">편집기 상태(현재 프로젝트가 있어야 함).</param>
     /// <param name="settings">형식·창 크기·위치·나눔 비율·접은 묶음·애니메이션 설정을 기억할 앱 설정.</param>

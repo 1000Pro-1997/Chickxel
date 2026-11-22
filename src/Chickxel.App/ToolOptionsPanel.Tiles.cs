@@ -65,7 +65,7 @@ public sealed partial class ToolOptionsPanel
         _tileBox.IsVisible = tile;
         _tileFloorBox.IsVisible = tile;
         if (!tile) return false;
-        foreach (var box in new Control[] { _shapeBox, _brushBox, _pencilGradientBox, _shapePenBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _frameRangeBox, _pivotBox, _sliceBox, _hint })
+        foreach (var box in new Control[] { _shapeBox, _brushBox, _pencilGradientBox, _shapePenBox, _curvePenBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _frameRangeBox, _pivotBox, _sliceBox, _hint })
             box.IsVisible = false;
         _title.Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_ToolOptionsPanel_Refresh_2AA5BFEE57, TileToolName(_ctx.TileTool));
         RefreshTiles();

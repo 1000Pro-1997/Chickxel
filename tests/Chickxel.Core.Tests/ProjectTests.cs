@@ -867,6 +867,37 @@ public class ProjectTests
         Assert.False(File.Exists(newPath));
     }
 
+    /// <summary>내보낼 폴더가 없으면(몇 단계든) 만들어 쓴다.</summary>
+    [Fact]
+    public void Export_CreatesMissingFolders()
+    {
+        using var dir = new TempDir();
+        var project = new SpriteProject(2, 2);
+        project.Edit("경로", ProjectChange.Settings, () => project.Export.Folder = Path.Combine("없는 폴더", "a", "b"));
+        ProjectIO.SaveWithExport(project, dir.File("hero.chickxel"));
+        Assert.True(File.Exists(Path.Combine(dir.Path, "없는 폴더", "a", "b", "hero.png")));
+    }
+
+    /// <summary>
+    /// 내보낼 폴더를 쓸 수 없으면(같은 이름의 파일이 막음, 윈도에서 쓸 수 없는 글자) 앱이 오류 창으로 보이는 예외(입출력·권한·인수)로 끝난다 —
+    /// 처리하지 못한 다른 예외로 앱이 멈추지 않게.
+    /// </summary>
+    [Fact]
+    public void Export_BadFolderFailsWithHandledException()
+    {
+        using var dir = new TempDir();
+        File.WriteAllText(dir.File("blocked"), "file in the way");
+        var folders = new List<string> { "blocked", Path.Combine("blocked", "inner") };
+        if (OperatingSystem.IsWindows()) folders.Add("bad<>|?");
+        foreach (var folder in folders)
+        {
+            var project = new SpriteProject(2, 2);
+            project.Edit("경로", ProjectChange.Settings, () => project.Export.Folder = folder);
+            var ex = Record.Exception(() => ProjectIO.SaveWithExport(project, dir.File("hero.chickxel")));
+            Assert.True(ex is IOException or UnauthorizedAccessException or ArgumentException, $"{folder}: {ex?.GetType().Name}");
+        }
+    }
+
     [Theory]
     [InlineData(null, "custom")]
     [InlineData("sheets", null)]

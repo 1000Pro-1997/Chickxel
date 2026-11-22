@@ -35,6 +35,8 @@ public enum ToolKind
     GradientPencil,
     /// <summary>모양 펜: 고른 세트의 모양(알파 포함 픽셀)을 누른 곳 가운데에 찍고, 끌면 간격마다 찍는다(무작위·차례대로, 도구 설정).</summary>
     ShapePen,
+    /// <summary>곡선 펜: 끌어 그린 획을 1px 깨끗한 선(고른 계단 직선·원호, 날카로운 모서리 유지)으로 다듬어 미리 보이고, 손잡이로 고친 뒤 Enter·다른 획으로 확정.</summary>
+    CurvePen,
     Eraser,
     Fill,
     /// <summary>선형 그라데이션: 끌어서 시작점 → 끝점(색 정지점·보간·디더링은 도구 설정).</summary>

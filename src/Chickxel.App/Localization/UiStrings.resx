@@ -10591,4 +10591,72 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="Model_ImportAnimation" xml:space="preserve"><value>불러오기…</value></data>
   <data name="Model_ImportAnimationTip" xml:space="preserve"><value>다른 파일(FBX·glTF)의 애니메이션을 이 모델의 같은 이름 뼈에 붙입니다. 믹사모: 캐릭터는 FBX(With Skin)로 열고, 애니메이션은 FBX(Without Skin)로 받아 여기서 고르세요(여러 개 한 번에). 다른 믹사모 캐릭터용 애니메이션도 키에 맞춰 붙습니다.</value></data>
   <data name="Model_ImportAnimationResult" xml:space="preserve"><value>파일 {files}개에서 애니메이션 {added}개를 붙였습니다.</value></data>
+  <data name="CurvePen_Group" xml:space="preserve"><value>곡선 펜</value><comment>도구 설정 묶음 제목</comment></data>
+  <data name="CurvePen_Info" xml:space="preserve"><value>포토샵 펜처럼 고정점과 손잡이로 곡선(베지어)을 만들고 1px 굵기의 깨끗한 선으로 칠합니다. 곧은 조각은 고른 계단(1:1, 1:2 …)의 직선, 휜 조각은 계단 길이가 고르게 늘거나 주는 곡선이 되고, 꺾인 모서리 칸은 그대로 남습니다.
+
+점 찍기: 누르면 경로 끝에 모서리 점을 찍고, 누른 채 끌면 매끈한 점을 찍으며 마주 보는 두 손잡이를 뽑습니다. 첫 점을 누르면 경로가 닫힙니다. 경로에서 멀리 눌러도 이어 찍으므로 새 경로는 Enter로 칠한 뒤 시작합니다.
+손으로 그리기: 끌어 그린 획을 놓으면 맞춤 허용치 안에서 되도록 적은 점의 곡선으로 맞춥니다. 모서리 각도 이상 꺾인 자리는 모서리 점이 되고, 끝을 시작점 가까이에서 놓으면 닫힌 모양이 됩니다. 끄는 중에 Shift를 누르고 있으면 시작점과 끝점을 잇는 직선 하나, Alt를 누르고 있으면 모서리로 나누지 않습니다. 경로 밖에서 누르면 지금 경로를 칠하고 새 획을 시작합니다.
+
+고치기: 고정점(네모)을 끌면 그 점과 제 손잡이만 움직이고 이웃 점은 그대로입니다. 손잡이(동그라미)를 끌면 매끈한 점은 반대 손잡이가 제 길이 그대로 한 줄을 지키고, Alt를 누른 채 끌면 모서리로 끊어 따로 움직입니다. Alt+클릭 고정점 = 모서리 ↔ 매끈한 점, 경로를 두 번 누르기 = 점 더하기, 고정점을 두 번 누르거나 마우스를 올리고 Delete·Backspace = 점 빼기.
+
+Enter나 다른 도구·레이어·프레임으로 바꾸면 기본색(오른쪽 버튼은 보조색)으로 칠합니다(실행취소 한 단계, 선택 영역 안만, 대칭 그리기 따름). Esc·Ctrl+Z는 버립니다.</value><comment>곡선 펜 도구 설정 정보박스</comment></data>
+  <data name="CurvePen_Mode" xml:space="preserve"><value>그리기 방식</value><comment>곡선 펜 설정 줄 이름</comment></data>
+  <data name="CurvePen_ModePoints" xml:space="preserve"><value>점 찍기</value><comment>곡선 펜 그리기 방식: 눌러 고정점을 찍음</comment></data>
+  <data name="CurvePen_ModeFreehand" xml:space="preserve"><value>손으로 그리기</value><comment>곡선 펜 그리기 방식: 끌어 그린 획을 곡선으로 맞춤</comment></data>
+  <data name="CurvePen_ModeTip" xml:space="preserve"><value>점 찍기: 눌러 고정점을 찍고, 누른 채 끌어 손잡이를 뽑습니다(포토샵 펜). 손으로 그리기: 끌어 그린 획을 적은 고정점의 곡선으로 맞춥니다. 어느 쪽이든 점과 손잡이를 끌어 고칠 수 있습니다.</value></data>
+  <data name="CurvePen_Tolerance" xml:space="preserve"><value>맞춤 허용치</value><comment>곡선 펜 설정 줄 이름</comment></data>
+  <data name="CurvePen_ToleranceTip" xml:space="preserve"><value>손으로 그린 획이 맞춘 곡선에서 이만큼(px)까지 벗어나도 됩니다. 크면 점이 적고 떨림을 더 펴며, 작으면 그린 모양을 더 따라갑니다.</value></data>
+  <data name="CurvePen_CornerAngle" xml:space="preserve"><value>모서리 각도</value><comment>곡선 펜 설정 줄 이름</comment></data>
+  <data name="CurvePen_CornerAngleTip" xml:space="preserve"><value>손으로 그린 획이 이 각도 이상 꺾인 자리는 모서리 점(두 손잡이가 따로 움직임)으로 남기고 앞뒤를 따로 맞춥니다. 180°면 모서리로 나누지 않습니다.</value></data>
+  <data name="CurvePen_Pending" xml:space="preserve"><value>곡선 펜: 점·손잡이를 끌어 고치기 · 경로 두 번 누르기 = 점 더하기 · Enter = 확정 · Esc = 취소</value><comment>상태 줄: 손으로 그린 획을 맞춘 경로를 미리 보이는 중</comment></data>
+  <data name="CurvePen_PendingPoints" xml:space="preserve"><value>곡선 펜: 누르기 = 모서리 점 · 끌기 = 매끈한 점 · 첫 점 누르기 = 닫기 · Enter = 확정 · Esc = 취소</value><comment>상태 줄: 점 찍기로 경로를 만드는 중</comment></data>
+  <data name="LineArt_Menu" xml:space="preserve"><value>선 정리…</value><comment>편집 메뉴 항목</comment></data>
+  <data name="LineArt_Title" xml:space="preserve"><value>선 정리</value><comment>창 제목·실행취소 이름</comment></data>
+  <data name="LineArt_Apply" xml:space="preserve"><value>적용</value></data>
+  <data name="LineArt_Before" xml:space="preserve"><value>지금 그림</value></data>
+  <data name="LineArt_After" xml:space="preserve"><value>정리한 그림</value></data>
+  <data name="LineArt_ViewTip" xml:space="preserve"><value>왼쪽 그림 위에 찾은 획을 선으로 겹쳐 보입니다(파란 선 = 곧은 조각, 분홍 선 = 원호, 노란 점 = 남길 모서리). 획에 마우스를 올리면 밝아지고, 누르면 그 획을 정리에서 빼서(점선) 그대로 둡니다 — 다시 누르면 넣습니다. 휠 = 확대·축소, 끌기 = 옮기기(두 그림이 함께 움직임), 두 번 누르기 = 맞추기.</value></data>
+  <data name="LineArt_LegendStraight" xml:space="preserve"><value>직선</value></data>
+  <data name="LineArt_LegendArc" xml:space="preserve"><value>원호</value></data>
+  <data name="LineArt_LegendCorner" xml:space="preserve"><value>모서리</value></data>
+  <data name="LineArt_LegendExcluded" xml:space="preserve"><value>뺀 획</value></data>
+  <data name="LineArt_Count" xml:space="preserve"><value>획 {strokes}개 · 바뀐 픽셀 {pixels}개</value></data>
+  <data name="LineArt_CountExcluded" xml:space="preserve"><value>획 {strokes}개(뺀 것 {excluded}개) · 바뀐 픽셀 {pixels}개</value></data>
+  <data name="LineArt_Working" xml:space="preserve"><value>계산하는 중…</value></data>
+  <data name="LineArt_Error" xml:space="preserve"><value>계산하지 못했습니다: {message}</value></data>
+  <data name="LineArt_SelectionOnly" xml:space="preserve"><value>선택 영역 안의 선만 정리합니다.</value></data>
+  <data name="LineArt_DetectGroup" xml:space="preserve"><value>선 찾기</value></data>
+  <data name="LineArt_AutoDark" xml:space="preserve"><value>어두운 선 자동</value></data>
+  <data name="LineArt_Darkness" xml:space="preserve"><value>어둡기</value></data>
+  <data name="LineArt_AutoDarkTip" xml:space="preserve"><value>밝기(OKLab L)가 이 값 이하인 색을 모두 선 색으로 봅니다. 검은·짙은 외곽선이면 켜 두고, 밝은 색 선만 고르려면 끈 뒤 아래 선 색에 스포이트로 더하세요.</value></data>
+  <data name="LineArt_Colors" xml:space="preserve"><value>선 색</value></data>
+  <data name="LineArt_PickTip" xml:space="preserve"><value>스포이트: 켠 뒤 두 그림 중 아무 픽셀이나 누르면 그 색을 선 색에 더합니다.</value></data>
+  <data name="LineArt_ColorsTip" xml:space="preserve"><value>어둡지 않아도 선으로 볼 색입니다(스포이트로 더함). 색마다 색 허용치만큼 가까운 색도 같은 선 색으로 봅니다. 칩의 빼기 단추로 지웁니다.</value></data>
+  <data name="LineArt_NoColors" xml:space="preserve"><value>더한 색 없음</value></data>
+  <data name="LineArt_RemoveColor" xml:space="preserve"><value>이 색 빼기</value></data>
+  <data name="LineArt_ColorTolerance" xml:space="preserve"><value>색 허용치</value></data>
+  <data name="LineArt_ColorToleranceTip" xml:space="preserve"><value>고른 선 색과 이만큼(OKLab 거리, %) 가까운 색까지 같은 선으로 봅니다. 선 가장자리에 비슷한 색이 섞여 있으면 올리세요.</value></data>
+  <data name="LineArt_MaxWidth" xml:space="preserve"><value>최대 굵기</value></data>
+  <data name="LineArt_MaxWidthTip" xml:space="preserve"><value>선 색 덩어리의 평균 굵기(넓이 ÷ 뼈대 길이)가 이 값 이하일 때만 선으로 봅니다. 넓게 칠한 어두운 면(그림자·머리카락)은 그대로 둡니다.</value></data>
+  <data name="LineArt_MinLength" xml:space="preserve"><value>최소 길이</value></data>
+  <data name="LineArt_MinLengthTip" xml:space="preserve"><value>뼈대 길이가 이보다 짧은 조각(눈·점·작은 무늬)은 건드리지 않습니다.</value></data>
+  <data name="LineArt_ShapeGroup" xml:space="preserve"><value>다듬기</value></data>
+  <data name="LineArt_Tolerance" xml:space="preserve"><value>곧게 펴기 허용치</value></data>
+  <data name="LineArt_ToleranceTip" xml:space="preserve"><value>선이 이 거리(px) 안에서 흔들리면 곧은 선이나 원호 하나로 펴서 고른 계단(1:1, 1:2 …)으로 다시 그립니다. 올리면 더 많이 펴고, 내리면 원래 모양에 가깝게 둡니다.</value></data>
+  <data name="LineArt_CornerAngle" xml:space="preserve"><value>모서리 각도</value></data>
+  <data name="LineArt_CornerAngleTip" xml:space="preserve"><value>선이 이 각도보다 크게 꺾이는 자리는 날카로운 모서리로 남기고 그 앞뒤를 따로 폅니다. 내리면 모서리가 더 많이 남습니다.</value></data>
+  <data name="LineArt_ColorModeGroup" xml:space="preserve"><value>새 선 색</value></data>
+  <data name="LineArt_ModeKeep" xml:space="preserve"><value>그대로</value></data>
+  <data name="LineArt_ModeDarken" xml:space="preserve"><value>안쪽 색을 진하게</value></data>
+  <data name="LineArt_Darken" xml:space="preserve"><value>진하게</value></data>
+  <data name="LineArt_ColorModeTip" xml:space="preserve"><value>그대로: 새 선을 그 획의 선 색으로 그립니다(색이 다른 선은 제 색을 지킴). 안쪽 색을 진하게: 새 선 칸마다 안쪽 이웃 색 중 가장 많은 색을 이 비율만큼 어둡게 칠합니다(안쪽 이웃이 없으면 획 색). 선을 걷어 낸 자리는 바깥이면 투명, 안쪽이면 둘레 색으로 채웁니다.</value></data>
+  <data name="LineArt_AllFrames" xml:space="preserve"><value>모든 프레임({count}장)</value></data>
+  <data name="LineArt_AllFramesTip" xml:space="preserve"><value>이 레이어의 모든 프레임을 같은 설정으로 정리합니다(실행취소 한 번). 뺀 획은 지금 프레임에만 해당합니다.</value></data>
+  <data name="LineArt_Reset" xml:space="preserve"><value>기본값</value></data>
+  <data name="LineArt_Busy" xml:space="preserve"><value>선 정리하는 중</value></data>
+  <data name="LineArt_Empty" xml:space="preserve"><value>지금 프레임의 이 레이어에 정리할 그림이 없습니다.</value></data>
+  <data name="LineArt_CannotEdit" xml:space="preserve"><value>이 레이어에는 선 정리를 쓸 수 없습니다(그룹·타일맵·잠긴 레이어).</value></data>
+  <data name="LineArt_Done" xml:space="preserve"><value>선 정리: 픽셀 {pixels}개를 바꿨습니다.</value></data>
+  <data name="LineArt_DoneFrames" xml:space="preserve"><value>선 정리: 셀 {cels}개를 바꿨습니다.</value></data>
+  <data name="LineArt_NoChange" xml:space="preserve"><value>선 정리: 바뀐 것이 없습니다.</value></data>
 </root>

@@ -117,8 +117,11 @@ public static class VectorOutline
         return new Tracing(blobs, thickness);
     }
 
-    /// <summary>덩어리 픽셀들을 Zhang–Suen 세선화로 1px 뼈대로 줄이고 선들로 딴다(뼈대 픽셀 수도).</summary>
-    private static (List<Chain> Chains, int Length) Skeleton(int[] pixels, int imageWidth)
+    /// <summary>
+    /// 덩어리 픽셀들을 Zhang–Suen 세선화로 1px 뼈대로 줄이고 선들로 딴다(뼈대 픽셀 수도). <paramref name="mixedLinks"/>면 대각선 이웃은 둘 사이
+    /// 상하좌우 칸이 비었을 때만 잇는다 — 계단·L자 모서리 칸이 갈림점으로 잡혀 선이 잘게 나뉘지 않게(<see cref="LineArt"/>).
+    /// </summary>
+    internal static (List<Chain> Chains, int Length) Skeleton(int[] pixels, int imageWidth, bool mixedLinks = false)
     {
         int minX = int.MaxValue, minY = int.MaxValue, maxX = int.MinValue, maxY = int.MinValue;
         foreach (int i in pixels)
@@ -165,11 +168,12 @@ public static class VectorOutline
             }
             live.RemoveAll(k => g[k] == 0);
         }
-
+        bool Link(int k, int n) => g[k + off[n]] == 1
+            && (!mixedLinks || n % 2 == 0 || (g[k + off[n - 1]] == 0 && g[k + off[(n + 1) % 8]] == 0));
         int Degree(int k)
         {
             int d = 0;
-            foreach (int o in off) d += g[k + o];
+            for (int n = 0; n < 8; n++) if (Link(k, n)) d++;
             return d;
         }
         int ToImage(int k) => (k / gw - 1 + minY) * imageWidth + (k % gw - 1 + minX);
@@ -183,10 +187,10 @@ public static class VectorOutline
             int deg = Degree(node);
             if (deg == 2) continue;
             if (deg == 0) { chains.Add(new Chain([ToImage(node)], false)); continue; }
-            foreach (int o in off)
+            for (int n = 0; n < 8; n++)
             {
-                int q = node + o;
-                if (g[q] == 0 || usedEdges.Contains(Edge(node, q)) || (Degree(q) == 2 && visited.Contains(q))) continue;
+                int q = node + off[n];
+                if (!Link(node, n) || usedEdges.Contains(Edge(node, q)) || (Degree(q) == 2 && visited.Contains(q))) continue;
                 usedEdges.Add(Edge(node, q));
                 path.Clear();
                 path.Add(ToImage(node));
@@ -195,8 +199,8 @@ public static class VectorOutline
                 {
                     path.Add(ToImage(cur));
                     int next = -1;
-                    foreach (int o2 in off)
-                        if (g[cur + o2] == 1 && cur + o2 != prev && (Degree(cur + o2) != 2 || !visited.Contains(cur + o2))) { next = cur + o2; break; }
+                    for (int n2 = 0; n2 < 8; n2++)
+                        if (Link(cur, n2) && cur + off[n2] != prev && (Degree(cur + off[n2]) != 2 || !visited.Contains(cur + off[n2]))) { next = cur + off[n2]; break; }
                     if (next < 0) { cur = -1; break; }
                     prev = cur;
                     cur = next;
@@ -220,8 +224,8 @@ public static class VectorOutline
             {
                 path.Add(ToImage(cur));
                 int next = -1;
-                foreach (int o in off)
-                    if (g[cur + o] == 1 && cur + o != prev && !visited.Contains(cur + o)) { next = cur + o; break; }
+                for (int n = 0; n < 8; n++)
+                    if (Link(cur, n) && cur + off[n] != prev && !visited.Contains(cur + off[n])) { next = cur + off[n]; break; }
                 prev = cur;
                 cur = next;
             }
@@ -282,8 +286,8 @@ public static class VectorOutline
                 pts.Clear();
                 foreach (int i in chain.Points)
                     pts.Add(layout.ToCell(i % imageWidth + 0.5, i / imageWidth + 0.5));
-                var path = s.VectorCleanLines ? CleanPath(pts, tolerance, PixelateRanges.VectorCornerAngle.Clamp(s.VectorCornerAngle))
-                    : RasterPath(Simplify(pts, tolerance));
+                var path = s.VectorCleanLines ? CleanLines.VectorPath(pts, tolerance, PixelateRanges.VectorCornerAngle.Clamp(s.VectorCornerAngle))
+                    : CleanLines.RasterPath(Simplify(pts, tolerance));
                 foreach (var p in PixelPerfect.Filter(path))
                     if (p.X >= 0 && p.Y >= 0 && p.X < w && p.Y < h) line[p.Y * w + p.X] = true;
             }
@@ -302,25 +306,7 @@ public static class VectorOutline
         for (int i = 0; i < w * h; i++) old[i] = !line[i] && kept[i] > keep[i] && IsDark(img.Pixels[i]);
 
         // 바깥: 둘레에서 투명·옛 외곽선 칸을 따라(상하좌우 — 8방향으로 이어진 새 선은 넘지 못함) 닿는 칸.
-        var outside = new bool[w * h];
-        var queue = new Queue<int>();
-        void Seed(int i)
-        {
-            if (outside[i] || line[i] || !(img.Pixels[i].A == 0 || old[i])) return;
-            outside[i] = true;
-            queue.Enqueue(i);
-        }
-        for (int x = 0; x < w; x++) { Seed(x); Seed((h - 1) * w + x); }
-        for (int y = 0; y < h; y++) { Seed(y * w); Seed(y * w + w - 1); }
-        while (queue.Count > 0)
-        {
-            int i = queue.Dequeue();
-            int x = i % w, y = i / w;
-            if (x > 0) Seed(i - 1);
-            if (x < w - 1) Seed(i + 1);
-            if (y > 0) Seed(i - w);
-            if (y < h - 1) Seed(i + w);
-        }
+        var outside = LineArt.Outside(img, line, old, fromTransparent: false);
 
         bool fillNeeded = false;
         for (int i = 0; i < old.Length; i++)
@@ -340,141 +326,6 @@ public static class VectorOutline
             if (px[i] != color) { px[i] = color; changed++; }
         }
         return changed;
-    }
-
-    private static List<Point> RasterPath(IReadOnlyList<(double X, double Y)> pts)
-    {
-        var path = new List<Point>();
-        foreach (var (x, y) in pts) AppendLine(path, new Point((int)Math.Floor(x), (int)Math.Floor(y)));
-        return path;
-    }
-
-    private static void AppendLine(List<Point> path, Point to)
-    {
-        if (path.Count == 0) { path.Add(to); return; }
-        int x = path[^1].X, y = path[^1].Y;
-        int dx = Math.Abs(to.X - x), sx = x < to.X ? 1 : -1;
-        int dy = -Math.Abs(to.Y - y), sy = y < to.Y ? 1 : -1;
-        int error = dx + dy;
-        while (x != to.X || y != to.Y)
-        {
-            int twice = 2 * error;
-            if (twice >= dy) { error += dy; x += sx; }
-            if (twice <= dx) { error += dx; y += sy; }
-            path.Add(new Point(x, y));
-        }
-    }
-
-    /// <summary>결과 칸 길이로 뼈대를 표본화하고 모서리에서 나눈 후 원호 또는 일정한 직선 계단으로 잇는다.</summary>
-    public static List<Point> CleanPath(IReadOnlyList<(double X, double Y)> source, double tolerance, double cornerAngle)
-    {
-        if (source.Count == 0) return [];
-        var pts = new List<(double X, double Y)> { source[0] };
-        for (int i = 1; i < source.Count - 1; i++)
-        {
-            double dx = source[i].X - pts[^1].X, dy = source[i].Y - pts[^1].Y;
-            if (dx * dx + dy * dy >= 0.64) pts.Add(source[i]);
-        }
-        if (source.Count > 1 && pts[^1] != source[^1]) pts.Add(source[^1]);
-        if (pts.Count < 3) return RasterPath(pts);
-
-        var breaks = new List<int> { 0 };
-        double limit = PixelateRanges.VectorCornerAngle.Clamp(cornerAngle) * Math.PI / 180;
-        for (int i = 1; i < pts.Count - 1; i++)
-        {
-            var a = pts[i - 1]; var b = pts[i]; var c = pts[i + 1];
-            double ux = b.X - a.X, uy = b.Y - a.Y, vx = c.X - b.X, vy = c.Y - b.Y;
-            if (ux * ux + uy * uy < 0.25 || vx * vx + vy * vy < 0.25) continue;
-            if (i - breaks[^1] >= 2 && pts.Count - i >= 2
-                && Math.Abs(Math.Atan2(ux * vy - uy * vx, ux * vx + uy * vy)) >= limit)
-                breaks.Add(i);
-        }
-        breaks.Add(pts.Count - 1);
-        var output = new List<Point>();
-        for (int k = 1; k < breaks.Count; k++)
-            for (int from = breaks[k - 1], end = breaks[k]; from < end;)
-            {
-                Arc best = default;
-                int arcEnd = -1;
-                for (int to = from + 4; to <= Math.Min(end, from + 64); to++)
-                    if (TryArc(pts, from, to, Math.Max(0.25, tolerance), out var candidate))
-                    {
-                        best = candidate;
-                        arcEnd = to;
-                    }
-                if (arcEnd > from)
-                {
-                    int count = Math.Max(1, (int)Math.Ceiling(Math.Abs(best.Sweep) * best.Radius / 0.35));
-                    var arc = new List<(double X, double Y)>(count + 1) { pts[from] };
-                    for (int n = 1; n < count; n++)
-                    {
-                        double angle = best.Start + best.Sweep * n / count;
-                        arc.Add((best.X + best.Radius * Math.Cos(angle), best.Y + best.Radius * Math.Sin(angle)));
-                    }
-                    arc.Add(pts[arcEnd]);
-                    Append(output, RasterPath(arc));
-                    from = arcEnd;
-                }
-                else
-                {
-                    int lineEnd = Math.Min(end, from + 1);
-                    while (lineEnd < end && LineError(pts, from, lineEnd + 1) <= Math.Max(0.25, tolerance)) lineEnd++;
-                    Append(output, RasterPath([pts[from], pts[lineEnd]]));
-                    from = lineEnd;
-                }
-            }
-        return output;
-    }
-
-    private static void Append(List<Point> output, List<Point> next)
-    {
-        if (output.Count > 0 && next.Count > 0 && output[^1] != next[0])
-            AppendLine(output, next[0]);
-        for (int i = output.Count > 0 && next.Count > 0 && output[^1] == next[0] ? 1 : 0; i < next.Count; i++)
-            output.Add(next[i]);
-    }
-
-    private static double LineError(IReadOnlyList<(double X, double Y)> pts, int from, int to)
-    {
-        var a = pts[from]; var b = pts[to];
-        double dx = b.X - a.X, dy = b.Y - a.Y, length = Math.Sqrt(dx * dx + dy * dy);
-        if (length < 1e-8) return double.PositiveInfinity;
-        double worst = 0;
-        for (int i = from + 1; i < to; i++)
-            worst = Math.Max(worst, Math.Abs(dx * (pts[i].Y - a.Y) - dy * (pts[i].X - a.X)) / length);
-        return worst;
-    }
-
-    private readonly record struct Arc(double X, double Y, double Radius, double Start, double Sweep);
-
-    private static bool TryArc(IReadOnlyList<(double X, double Y)> pts, int from, int to, double tolerance, out Arc arc)
-    {
-        arc = default;
-        if (to - from < 4 || LineError(pts, from, to) < 0.35) return false;
-        var a = pts[from]; var b = pts[(from + to) / 2]; var c = pts[to];
-        double abx = b.X - a.X, aby = b.Y - a.Y, acx = c.X - a.X, acy = c.Y - a.Y;
-        double d = 2 * (abx * acy - aby * acx);
-        if (Math.Abs(d) < 1e-6) return false;
-        double ab = abx * abx + aby * aby, ac = acx * acx + acy * acy;
-        double cx = a.X + (ab * acy - ac * aby) / d;
-        double cy = a.Y + (ac * abx - ab * acx) / d;
-        double radius = Math.Sqrt((a.X - cx) * (a.X - cx) + (a.Y - cy) * (a.Y - cy));
-        if (radius < 1.2 || radius > 10000) return false;
-        double start = Math.Atan2(a.Y - cy, a.X - cx), previous = start, sweep = 0;
-        for (int i = from + 1; i <= to; i++)
-        {
-            double x = pts[i].X - cx, y = pts[i].Y - cy;
-            if (Math.Abs(Math.Sqrt(x * x + y * y) - radius) > tolerance) return false;
-            double angle = Math.Atan2(y, x);
-            double step = Math.Atan2(Math.Sin(angle - previous), Math.Cos(angle - previous));
-            if (sweep != 0 && step * sweep < -0.01) return false;
-            sweep += step;
-            if (Math.Abs(sweep) > Math.PI + 0.2) return false;
-            previous = angle;
-        }
-        if (Math.Abs(sweep) < 0.4) return false;
-        arc = new Arc(cx, cy, radius, start, sweep);
-        return true;
     }
 
     /// <summary>선 칸 중 가로 이웃 하나·세로 이웃 하나만 선이고 그 둘이 대각선으로 이어지는(L자 모서리) 칸을 뺀다 — 이어짐은 그대로.</summary>

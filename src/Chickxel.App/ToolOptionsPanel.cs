@@ -8,7 +8,7 @@ namespace Chickxel.App;
 
 /// <summary>
 /// 오른쪽 독 "도구 설정": 고른 도구의 세부 설정만 보인다. 브러시(모양·크기·미리보기), 채우기(허용 오차·이어진 영역·대각선·기준),
-/// 스포이드(기준), 밝게/어둡게(세기), 디더링(무늬), 글씨(글꼴), 그라데이션(색 정지점 바·보간·디더링), 그라데이션 연필(방식·반복 간격·프리셋·정지점 바), 모양 펜(세트·모양·순서·간격·물들이기 — <c>ToolOptionsPanel.ShapePen.cs</c>), 도형(모양·꼭짓점/뿔/감은 수·채움), 이동(순환), 대칭(피벗 기준 포함), 피벗 도구(K)의 피벗(픽셀 단위), 9-slice 도구(S)의 테두리(L·T·R·B).
+/// 스포이드(기준), 밝게/어둡게(세기), 디더링(무늬), 글씨(글꼴), 그라데이션(색 정지점 바·보간·디더링), 그라데이션 연필(방식·반복 간격·프리셋·정지점 바), 모양 펜(세트·모양·순서·간격·물들이기 — <c>ToolOptionsPanel.ShapePen.cs</c>), 곡선 펜(곧게 펴기 허용치·모서리 각도 — <c>ToolOptionsPanel.CurvePen.cs</c>), 도형(모양·꼭짓점/뿔/감은 수·채움), 이동(순환), 대칭(피벗 기준 포함), 피벗 도구(K)의 피벗(픽셀 단위), 9-slice 도구(S)의 테두리(L·T·R·B).
 /// 변형 모드(Ctrl+T) 중에는 변형 값(각도·가로·세로 %·중심 X/Y)·리샘플링·적용/취소만 보인다(캔버스 손잡이와 함께 움직임).
 /// 캔버스 크기 모드(Ctrl+Alt+C) 중에는 캔버스 가로·세로와 중심 기준, 그림 가로·세로(%)·위치, 그림 기준점 9방향, 비율 유지·특수 비율(작은 창), 확인/취소를 보인다(캔버스 손잡이와 함께 움직임).
 /// 레이어 크기 모드(Alt+Shift+C)는 같은 묶음에서 캔버스 가로·세로·중심 기준·9-slice 줄·특수 비율 단추를 숨기고 제목·설명만 바꾼다.
@@ -140,6 +140,9 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
 
     // 모양 펜(ToolOptionsPanel.ShapePen.cs)
     private readonly Border _shapePenBox;
+
+    // 곡선 펜(ToolOptionsPanel.CurvePen.cs)
+    private readonly Border _curvePenBox;
 
     // 피벗
     private readonly Border _pivotBox;
@@ -459,6 +462,9 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         // ── 모양 펜: 세트·모양 칸·더하기/지우기·순서·간격·물들이기
         _shapePenBox = BuildShapePen();
 
+        // ── 곡선 펜: 곧게 펴기 허용치·모서리 각도
+        _curvePenBox = BuildCurvePen();
+
         // ── 옵션(도구마다 보이는 것만)
         _pixelPerfect = Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_B655203628, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4DC4117198, v => _ctx.PixelPerfect = v);
         _shapeFilled = Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_FCE800703F, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A43E20CBEA, v => _ctx.ShapeFilled = v);
@@ -749,7 +755,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         PointerExited += (_, _) => EndEffectEdit();
 
         BuildTileOptions();
-        Control[] boxes = [_canvasResizeBox, _transformBox, _tileBox, _tileFloorBox, _shapeBox, _brushBox, _pencilGradientBox, _shapePenBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _frameRangeBox, _pivotBox, _sliceBox];
+        Control[] boxes = [_canvasResizeBox, _transformBox, _tileBox, _tileFloorBox, _shapeBox, _brushBox, _pencilGradientBox, _shapePenBox, _curvePenBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _frameRangeBox, _pivotBox, _sliceBox];
         foreach (var box in boxes) Ui.Foldable((Border)box);
         Ui.Foldable(_effectBox);
         var header = Ui.Header(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E39101186F);
@@ -962,7 +968,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         var tool = _ctx.Tool;
         bool shape = tool == ToolKind.Shape;
         bool brush = shape || tool is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.Eraser or ToolKind.Dodge or ToolKind.Dither or ToolKind.ReplaceBrush;
-        bool paint = brush || tool is ToolKind.Fill or ToolKind.ShapePen;
+        bool paint = brush || tool is ToolKind.Fill or ToolKind.ShapePen or ToolKind.CurvePen;
 
         _title.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ToolOptionsPanel_Refresh_2AA5BFEE57,MainForm.ToolName(tool));
         _shapeBox.IsVisible = tool == ToolKind.Shape;
@@ -979,10 +985,11 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         _gradientBox.IsVisible = tool == ToolKind.Gradient;
         _pencilGradientBox.IsVisible = tool == ToolKind.GradientPencil;
         _shapePenBox.IsVisible = tool == ToolKind.ShapePen;
+        _curvePenBox.IsVisible = tool == ToolKind.CurvePen;
         _pixelPerfect.IsVisible = tool is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.Eraser;
         _pencilStepsRow.IsVisible = _pixelPerfect.IsVisible;
         _shapeFilled.IsVisible = tool == ToolKind.Shape && Shapes.CanFill(_ctx.ShapeKind);
-        _rightErase.IsVisible = tool is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.ShapePen or ToolKind.Shape or ToolKind.Fill;
+        _rightErase.IsVisible = tool is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.ShapePen or ToolKind.CurvePen or ToolKind.Shape or ToolKind.Fill;
         _wrap.IsVisible = tool == ToolKind.Move;
         _optionsBox.IsVisible = _pixelPerfect.IsVisible || _shapeFilled.IsVisible || _rightErase.IsVisible || _wrap.IsVisible;
         _mirrorBox.IsVisible = paint;
@@ -1015,7 +1022,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
                 : layer ? UiStrings.LayerTransform_PanelTitle : UiStrings.S_ToolOptionsPanel_Refresh_DD7EA3035B;
             _tfTitle.Text = layer ? UiStrings.LayerTransform_GroupTitle : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E4C9B1697C;
             ToolTip.SetTip(_tfHelp, layer ? UiStrings.LayerTransform_Info : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_BFD255FFEA);
-            foreach (var box in new Control[] { _shapeBox, _brushBox, _pencilGradientBox, _shapePenBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _frameRangeBox, _pivotBox, _sliceBox, _hint })
+            foreach (var box in new Control[] { _shapeBox, _brushBox, _pencilGradientBox, _shapePenBox, _curvePenBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _frameRangeBox, _pivotBox, _sliceBox, _hint })
                 box.IsVisible = false;
         }
 
@@ -1065,6 +1072,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
             if (!_pencilGradientSyncing) _pencilGradientEditor.LoadPreset(_ctx.PencilGradient);
             RefreshShape();
             RefreshShapePen();
+            RefreshCurvePen();
             if (!_gradientSyncing)
                 _gradientEditor.Load(_ctx.GradientStops, _ctx.GradientAlphaStops,
                     _ctx.GradientInterpolation, _ctx.GradientDither, colorSpace: _ctx.GradientColorSpace);
@@ -1466,6 +1474,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
 
         // 모양 펜
         if (ShapePenHelpTarget(c) is { } shapePen) return shapePen;
+        if (CurvePenHelpTarget(c) is { } curvePen) return curvePen;
 
         // 피벗·9-slice
         if (Array.IndexOf(_presetButtons, c) >= 0 || ReferenceEquals(c, _presetButtons[0].Parent)) return At("tools-pivot", "The 5×5 buttons");

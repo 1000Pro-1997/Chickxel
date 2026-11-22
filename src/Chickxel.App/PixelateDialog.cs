@@ -678,12 +678,12 @@ public sealed class PixelateDialog : DialogBase
     private readonly ZoomOverlay _zoom;
     private readonly WrapPanel _tiles;
     private readonly TextBlock _status, _selectedInfo, _breakdown, _largeWarning;
+    /// <summary>원본 아래 막대의 격자 보기 토글.</summary>
+    private readonly ToggleButton _showGrid;
     /// <summary>
-    /// 원본 아래 막대의 아이콘 토글: 격자 보기, 배경 지우기(1단계 배경 방식과 같은 설정 — 끄면 '지우지 않음', 켜면 마지막으로 쓴 지우는 방식,
-    /// 켜져 있으면 원본 보기에 배경을 지운 모습). 1단계 칸(불러오기 포함)이 바뀌면 <see cref="SyncBarBackground"/>가 맞춘다.
+    /// 간편 설정의 배경 지우기(1단계 배경 방식과 같은 설정 — 끄면 '지우지 않음', 켜면 마지막으로 쓴 지우는 방식, 켜져 있으면 원본 보기에 배경을 지운 모습)를
+    /// 다시 켤 때 돌아갈 방식(마지막으로 쓴, 지우지 않음이 아닌 방식). 1단계 칸(불러오기 포함)이 바뀌면 <see cref="SyncBarBackground"/>가 맞춘다.
     /// </summary>
-    private readonly ToggleButton _showGrid, _bgRemove;
-    /// <summary>배경 지우기를 다시 켤 때 돌아갈 방식(마지막으로 쓴, 지우지 않음이 아닌 방식).</summary>
     private BackgroundMode _barBgMode = BackgroundMode.Auto;
     /// <summary>
     /// 원본 아래 막대의 원본 외곽선: 보기·붓 켜기(<see cref="ZoomImageView.OutlineMode"/>), 붓 반지름(원본 px, <see cref="PixelateOptions.OutlineBrush"/>),
@@ -1441,7 +1441,7 @@ public sealed class PixelateDialog : DialogBase
         _quickH.ValueChanged += (_, _) => QuickSizeChanged(width: false);
         _quickAspect.IsCheckedChanged += (_, _) => { if (!_barSyncing) _szAspect.IsChecked = _quickAspect.On(); };
         _quickBg = Ui.Check(UiStrings.Pixelate_Quick_RemoveBg, true).Tip(UiStrings.Pixelate_RemoveBgTip);
-        _quickBg.IsCheckedChanged += (_, _) => { if (!_barSyncing) _bgRemove!.IsChecked = _quickBg.On(); };
+        _quickBg.IsCheckedChanged += (_, _) => BarBackgroundChanged();
         _quickShared = Ui.Check(UiStrings.Pixelate_Pal_Shared).Tip(UiStrings.Pixelate_Quick_SharedTip);
         _quickShared.IsCheckedChanged += (_, _) => { if (!_barSyncing) _palShared.IsChecked = _quickShared.On(); };
         _grLock = Ui.Check(UiStrings.Pixelate_Grid_Lock).Tip(UiStrings.Pixelate_Grid_Lock_Tip);
@@ -1523,9 +1523,7 @@ public sealed class PixelateDialog : DialogBase
         _strip = new FrameStrip();
         _zoomStrip = new FrameStrip();
         _showGrid = IconToggle(VectorIcon.Grid3x3, UiStrings.Pixelate_ShowGridTip, _opt.ShowGrid);
-        _bgRemove = IconToggle(VectorIcon.Eraser, UiStrings.Pixelate_RemoveBgTip, true);
         _showGrid.IsCheckedChanged += (_, _) => { _sourceView.ShowGrid = _showGrid.On(); };
-        _bgRemove.IsCheckedChanged += (_, _) => BarBackgroundChanged();
         _sourceView.ShowGrid = _showGrid.On();
         _sourceView.HoverChanged += h => _preview.SetHover(h);
         _sourceView.FrameEdited += OnFrameEdited;
@@ -1631,7 +1629,7 @@ public sealed class PixelateDialog : DialogBase
 
         // 원본 바꾸기(원본이 있을 때): 파일 찾기 — 창에 끌어 놓거나 Ctrl+V로 붙여 넣어도 바뀐다.
         _replaceSource = Ui.IconButton(VectorIcon.FolderOpen, UiStrings.Pixelate_ReplaceSource + "\n" + UiStrings.Pixelate_ReplaceSourceTip, (_, _) => BrowseSource());
-        var toolbar = Ui.Row(_replaceSource, _showGrid, _bgRemove, _outlineEdit, _outlineBrush, _outlineReset);
+        var toolbar = Ui.Row(_replaceSource, _showGrid, _outlineEdit, _outlineBrush, _outlineReset);
         // 막대 빈 곳·상태 글도 "원본 아래 막대"로(투명 바탕 = 누를 수 있음).
         var statusRow = new DockPanel { Margin = new Thickness(0, 2), Background = Brushes.Transparent }.HelpAt("pixelate-view", anchor: "The bar under the source");
         DockPanel.SetDock(toolbar, Dock.Left);
@@ -1639,7 +1637,6 @@ public sealed class PixelateDialog : DialogBase
         statusRow.Children.Add(_status);
         _replaceSource.HelpAt("pixelate-open", anchor: "Replace source");
         _showGrid.HelpAt("pixelate-view", anchor: "Show grid");
-        _bgRemove.HelpAt("pixelate-view", anchor: "Remove background");
         foreach (var c in new Control[] { _outlineEdit, _outlineBrush, _outlineReset }) c.HelpAt("pixelate-view", anchor: "The bar under the source");
 
         // 원본이 없을 때 가운데 안내: 끌어 놓기·붙여 넣기·파일 찾기.
@@ -2500,7 +2497,7 @@ public sealed class PixelateDialog : DialogBase
         _sourceView.SetSampled(samples > 0 && count > samples ? PixelateOptimizer.SampleIndices(count, samples) : []);
     }
 
-    /// <summary>원본 아래 막대의 배경 지우기를 1단계 배경 방식에 맞추고(막대 이벤트는 무시), 켜져 있으면 원본 보기에 배경을 지운 모습을 보인다.</summary>
+    /// <summary>간편 설정의 배경 지우기를 1단계 배경 방식에 맞추고(그 이벤트는 무시), 켜져 있으면 원본 보기에 배경을 지운 모습을 보인다.</summary>
     private void SyncBarBackground()
     {
         var mode = At<BackgroundMode>(_bgMode);
@@ -2509,7 +2506,6 @@ public sealed class PixelateDialog : DialogBase
         _barSyncing = true;
         try
         {
-            _bgRemove.IsChecked = on;
             _quickBg.IsChecked = on;
         }
         finally
@@ -2540,11 +2536,11 @@ public sealed class PixelateDialog : DialogBase
         Changed();
     }
 
-    /// <summary>막대의 배경 지우기를 바꿈: 켜면 마지막으로 쓴 지우는 방식(처음은 자동), 끄면 지우지 않음 — 1단계 배경 방식에 적는다(정리하기를 눌러야 결과에 반영).</summary>
+    /// <summary>간편 설정의 배경 지우기를 바꿈: 켜면 마지막으로 쓴 지우는 방식(처음은 자동), 끄면 지우지 않음 — 1단계 배경 방식에 적는다(정리하기를 눌러야 결과에 반영).</summary>
     private void BarBackgroundChanged()
     {
         if (_barSyncing) return;
-        _bgMode.SelectedIndex = Index(_bgRemove.On() ? _barBgMode : BackgroundMode.None);
+        _bgMode.SelectedIndex = Index(_quickBg.On() ? _barBgMode : BackgroundMode.None);
     }
 
     /// <summary>간편 설정의 "자동"을 바꿈: 켜면 마지막 자동 방식(칸 크기대로·배율), 끄면 지금 보이는 결과 크기에서 시작하는 고정 크기.</summary>

@@ -21,7 +21,7 @@ public sealed partial class MainForm
     /// <summary>타일맵 모드에서 픽셀 도구 명령(단축키)이 고를 타일 도구. 없으면 그 도구는 쓸 수 없다.</summary>
     private static TileTool? TileToolFor(ToolKind tool) => tool switch
     {
-        ToolKind.Pencil or ToolKind.ShapePen => TileTool.Brush,
+        ToolKind.Pencil or ToolKind.ShapePen or ToolKind.CurvePen => TileTool.Brush,
         ToolKind.GradientPencil => TileTool.AutoTile,
         ToolKind.Eraser => TileTool.Eraser,
         ToolKind.Shape => TileTool.Rect,

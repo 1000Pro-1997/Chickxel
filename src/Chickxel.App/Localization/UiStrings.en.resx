@@ -4876,4 +4876,72 @@ Cancel: keep the files and only remove the row.</value></data>
   <data name="Model_ImportAnimation" xml:space="preserve"><value>Import…</value></data>
   <data name="Model_ImportAnimationTip" xml:space="preserve"><value>Attaches the animations of other files (FBX, glTF) to this model's bones with the same names. Mixamo: open the character as FBX (With Skin), download animations as FBX (Without Skin) and pick them here (several at once). Animations made for another Mixamo character are scaled to this one's height.</value></data>
   <data name="Model_ImportAnimationResult" xml:space="preserve"><value>Attached {added} animation(s) from {files} file(s).</value></data>
+  <data name="CurvePen_Group" xml:space="preserve"><value>Curve pen</value></data>
+  <data name="CurvePen_Info" xml:space="preserve"><value>Builds a curve (Bézier) from anchor points and handles like the Photoshop pen and paints it as a clean 1 px line. Straight segments become lines with even steps (1:1, 1:2 …), curved segments get steps that grow or shrink evenly, and sharp corner cells are kept.
+
+Points: click to add a corner point at the end of the path, or click and drag to add a smooth point and pull out its two opposite handles. Clicking the first point closes the path. Clicking far from the path keeps adding to it, so press Enter to paint it before starting a new path.
+Freehand: release a dragged stroke and it is fitted with as few points as the fit tolerance allows. Places that turn by the corner angle or more become corner points, and releasing near the starting point makes a closed shape. Hold Shift while dragging for one straight line from start to end, or Alt to skip corner splitting. Pressing outside the path paints the current path and starts a new stroke.
+
+Editing: dragging an anchor (square) moves only that point and its own handles; neighbouring points stay put. Dragging a handle (circle) of a smooth point keeps the opposite handle in line at its own length; Alt+drag breaks it into a corner so the handles move separately. Alt+click an anchor toggles corner ↔ smooth, double-click the path to add a point, double-click an anchor or hover it and press Delete or Backspace to remove it.
+
+Enter, or switching tool, layer or frame, paints it in the primary color (secondary with the right button) — one undo step, only inside the selection, follows mirror drawing. Esc or Ctrl+Z discards it.</value></data>
+  <data name="CurvePen_Mode" xml:space="preserve"><value>Drawing mode</value></data>
+  <data name="CurvePen_ModePoints" xml:space="preserve"><value>Points</value></data>
+  <data name="CurvePen_ModeFreehand" xml:space="preserve"><value>Freehand</value></data>
+  <data name="CurvePen_ModeTip" xml:space="preserve"><value>Points: click to place anchor points and drag to pull out handles (Photoshop pen). Freehand: a dragged stroke is fitted into a curve with few anchor points. Either way you can drag the points and handles to adjust.</value></data>
+  <data name="CurvePen_Tolerance" xml:space="preserve"><value>Fit tolerance</value></data>
+  <data name="CurvePen_ToleranceTip" xml:space="preserve"><value>How far (px) the freehand stroke may stray from the fitted curve. Larger uses fewer points and smooths out more wobble, smaller follows your drawing more closely.</value></data>
+  <data name="CurvePen_CornerAngle" xml:space="preserve"><value>Corner angle</value></data>
+  <data name="CurvePen_CornerAngleTip" xml:space="preserve"><value>Places where the freehand stroke turns by this angle or more become corner points (their two handles move separately), and the parts on either side are fitted separately. At 180° nothing is split.</value></data>
+  <data name="CurvePen_Pending" xml:space="preserve"><value>Curve pen: drag points and handles to adjust · double-click the path to add a point · Enter confirms · Esc cancels</value></data>
+  <data name="CurvePen_PendingPoints" xml:space="preserve"><value>Curve pen: click = corner point · drag = smooth point · click the first point = close · Enter confirms · Esc cancels</value></data>
+  <data name="LineArt_Menu" xml:space="preserve"><value>Clean up lines…</value></data>
+  <data name="LineArt_Title" xml:space="preserve"><value>Clean up lines</value></data>
+  <data name="LineArt_Apply" xml:space="preserve"><value>Apply</value></data>
+  <data name="LineArt_Before" xml:space="preserve"><value>Current</value></data>
+  <data name="LineArt_After" xml:space="preserve"><value>Cleaned</value></data>
+  <data name="LineArt_ViewTip" xml:space="preserve"><value>The strokes found are drawn over the left picture (blue = straight pieces, pink = arcs, yellow dots = corners that are kept). Hover a stroke to highlight it; click it to leave it out of the cleanup (dashed, left as it is) and click again to put it back. Wheel = zoom, drag = pan (both pictures move together), double-click = fit.</value></data>
+  <data name="LineArt_LegendStraight" xml:space="preserve"><value>Straight</value></data>
+  <data name="LineArt_LegendArc" xml:space="preserve"><value>Arc</value></data>
+  <data name="LineArt_LegendCorner" xml:space="preserve"><value>Corner</value></data>
+  <data name="LineArt_LegendExcluded" xml:space="preserve"><value>Left out</value></data>
+  <data name="LineArt_Count" xml:space="preserve"><value>{strokes} stroke(s) · {pixels} pixel(s) changed</value></data>
+  <data name="LineArt_CountExcluded" xml:space="preserve"><value>{strokes} stroke(s) ({excluded} left out) · {pixels} pixel(s) changed</value></data>
+  <data name="LineArt_Working" xml:space="preserve"><value>Working…</value></data>
+  <data name="LineArt_Error" xml:space="preserve"><value>Could not compute: {message}</value></data>
+  <data name="LineArt_SelectionOnly" xml:space="preserve"><value>Only lines inside the selection are cleaned up.</value></data>
+  <data name="LineArt_DetectGroup" xml:space="preserve"><value>Find lines</value></data>
+  <data name="LineArt_AutoDark" xml:space="preserve"><value>Dark lines automatically</value></data>
+  <data name="LineArt_Darkness" xml:space="preserve"><value>Darkness</value></data>
+  <data name="LineArt_AutoDarkTip" xml:space="preserve"><value>Every color whose lightness (OKLab L) is at or below this value counts as a line color. Keep it on for black or dark outlines; to pick only light-colored lines, turn it off and add their colors below with the eyedropper.</value></data>
+  <data name="LineArt_Colors" xml:space="preserve"><value>Line colors</value></data>
+  <data name="LineArt_PickTip" xml:space="preserve"><value>Eyedropper: turn it on, then click any pixel in either picture to add its color to the line colors.</value></data>
+  <data name="LineArt_ColorsTip" xml:space="preserve"><value>Colors that count as lines even if they are not dark (added with the eyedropper). Colors within the color tolerance of each one count too. Remove one with the button on its chip.</value></data>
+  <data name="LineArt_NoColors" xml:space="preserve"><value>No colors added</value></data>
+  <data name="LineArt_RemoveColor" xml:space="preserve"><value>Remove this color</value></data>
+  <data name="LineArt_ColorTolerance" xml:space="preserve"><value>Color tolerance</value></data>
+  <data name="LineArt_ColorToleranceTip" xml:space="preserve"><value>Colors this close (OKLab distance, %) to a picked line color count as the same line. Raise it if the edges of a line mix in similar colors.</value></data>
+  <data name="LineArt_MaxWidth" xml:space="preserve"><value>Max thickness</value></data>
+  <data name="LineArt_MaxWidthTip" xml:space="preserve"><value>A patch of line color only counts as a line when its average thickness (area ÷ skeleton length) is at most this. Wide dark areas (shadows, hair) are left alone.</value></data>
+  <data name="LineArt_MinLength" xml:space="preserve"><value>Min length</value></data>
+  <data name="LineArt_MinLengthTip" xml:space="preserve"><value>Pieces with a shorter skeleton (eyes, dots, small patterns) are not touched.</value></data>
+  <data name="LineArt_ShapeGroup" xml:space="preserve"><value>Smoothing</value></data>
+  <data name="LineArt_Tolerance" xml:space="preserve"><value>Straightening tolerance</value></data>
+  <data name="LineArt_ToleranceTip" xml:space="preserve"><value>When a line wobbles within this distance (px), it is straightened into a line or a single arc and redrawn with even steps (1:1, 1:2 …). Higher straightens more, lower stays closer to the original shape.</value></data>
+  <data name="LineArt_CornerAngle" xml:space="preserve"><value>Corner angle</value></data>
+  <data name="LineArt_CornerAngleTip" xml:space="preserve"><value>Where a line turns by more than this angle it keeps a sharp corner, and the parts on either side are straightened separately. Lower keeps more corners.</value></data>
+  <data name="LineArt_ColorModeGroup" xml:space="preserve"><value>New line color</value></data>
+  <data name="LineArt_ModeKeep" xml:space="preserve"><value>Keep</value></data>
+  <data name="LineArt_ModeDarken" xml:space="preserve"><value>Darken inner color</value></data>
+  <data name="LineArt_Darken" xml:space="preserve"><value>Darken</value></data>
+  <data name="LineArt_ColorModeTip" xml:space="preserve"><value>Keep: each new line is drawn in its stroke's line color (lines of different colors keep their own). Darken inner color: each new line pixel gets the most common inner neighbor color, darkened by this amount (the stroke color if there is no inner neighbor). Where old line pixels are removed, the outside becomes transparent and the inside is filled with the surrounding color.</value></data>
+  <data name="LineArt_AllFrames" xml:space="preserve"><value>All frames ({count})</value></data>
+  <data name="LineArt_AllFramesTip" xml:space="preserve"><value>Cleans up every frame of this layer with the same settings (one undo step). Strokes you left out only apply to the current frame.</value></data>
+  <data name="LineArt_Reset" xml:space="preserve"><value>Defaults</value></data>
+  <data name="LineArt_Busy" xml:space="preserve"><value>Cleaning up lines</value></data>
+  <data name="LineArt_Empty" xml:space="preserve"><value>This layer has nothing to clean up in the current frame.</value></data>
+  <data name="LineArt_CannotEdit" xml:space="preserve"><value>Line cleanup can't be used on this layer (group, tilemap or locked layer).</value></data>
+  <data name="LineArt_Done" xml:space="preserve"><value>Line cleanup: changed {pixels} pixel(s).</value></data>
+  <data name="LineArt_DoneFrames" xml:space="preserve"><value>Line cleanup: changed {cels} cel(s).</value></data>
+  <data name="LineArt_NoChange" xml:space="preserve"><value>Line cleanup: nothing changed.</value></data>
 </root>

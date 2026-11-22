@@ -31,6 +31,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         (ToolKind.Pencil, "연필", MainStrings.Tool_Pencil_Name, "B", MainStrings.Tool_Pencil_Hint),
         (ToolKind.GradientPencil, "그라데이션 연필", MainStrings.Tool_GradientPencil_Name, "Shift+B", MainStrings.Tool_GradientPencil_Hint),
         (ToolKind.ShapePen, "모양 펜", MainStrings.Tool_ShapePen_Name, "", MainStrings.Tool_ShapePen_Hint),
+        (ToolKind.CurvePen, "곡선 펜", MainStrings.Tool_CurvePen_Name, "Shift+L", MainStrings.Tool_CurvePen_Hint),
         (ToolKind.Eraser, "지우개", MainStrings.Tool_Eraser_Name, "E", MainStrings.Tool_Eraser_Hint),
         (ToolKind.Fill, "채우기", MainStrings.Tool_Fill_Name, "G", MainStrings.Tool_Fill_Hint),
         (ToolKind.Gradient, "그라데이션", MainStrings.Tool_Gradient_Name, "F", MainStrings.Tool_Gradient_Hint),
@@ -50,12 +51,12 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     ];
 
     /// <summary>
-    /// 도구 막대 칸(위에서부터). 한 칸의 도구는 서로 바꿔 쓰는 변형이다: 연필(연필·그라데이션 연필·모양 펜), 채우기(채우기·그라데이션), 선택(사각·원·자유·스마트).
+    /// 도구 막대 칸(위에서부터). 한 칸의 도구는 서로 바꿔 쓰는 변형이다: 연필(연필·그라데이션 연필·모양 펜·곡선 펜), 채우기(채우기·그라데이션), 선택(사각·원·자유·스마트).
     /// 칸은 마지막으로 고른 도구를 보이고, 길게 누르거나 오른쪽 클릭하면 옆에 펼쳐 바꾼다(<see cref="ToolSlotButton"/>).
     /// </summary>
     private static readonly ToolKind[][] ToolSlots =
     [
-        [ToolKind.Pencil, ToolKind.GradientPencil, ToolKind.ShapePen], [ToolKind.Eraser], [ToolKind.Fill, ToolKind.Gradient], [ToolKind.Picker],
+        [ToolKind.Pencil, ToolKind.GradientPencil, ToolKind.ShapePen, ToolKind.CurvePen], [ToolKind.Eraser], [ToolKind.Fill, ToolKind.Gradient], [ToolKind.Picker],
         [ToolKind.Shape], [ToolKind.Text],
         [ToolKind.Select, ToolKind.EllipseSelect, ToolKind.Lasso, ToolKind.MagicWand],
         [ToolKind.Move], [ToolKind.Dodge], [ToolKind.Dither], [ToolKind.ReplaceBrush], [ToolKind.Pivot], [ToolKind.Slice],
@@ -743,6 +744,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             PixelDocCmd("외곽선 추가(기본색)", MainStrings.Menu_Edit_AddOutline_115, () => AddOutline(false), "Ctrl+Alt+O", KeyScope.NotInText, (Key.O, Ctrl | Alt)),
             PixelDocCmd("외곽선 추가(대각 포함)", MainStrings.Menu_Edit_AddOutline_117, () => AddOutline(true)),
             PixelDocCmd("색 바꾸기…", MainStrings.Menu_Edit_ReplaceColor_119, ReplaceColor, "Ctrl+Alt+R", KeyScope.NotInText, (Key.R, Ctrl | Alt)),
+            _miLineArt = WithIcon(PixelDocCmd("선 정리…", UiStrings.LineArt_Menu, CleanUpLines), VectorIcon.Curve),
             new Separator(),
             DocCmd("캔버스 크기…", MainStrings.Menu_Edit_BeginCanvasResize_121, BeginCanvasResize, "Ctrl+Alt+C", KeyScope.Global, (Key.C, Ctrl | Alt)),
             PixelDocCmd("레이어 크기…", MainStrings.Menu_Edit_BeginLayerResize, BeginLayerTransform, "Alt+Shift+C", KeyScope.NotInText, (Key.C, Alt | Shift)),
@@ -752,6 +754,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             PixelDocCmd("팔레트 색으로 변환…", MainStrings.Menu_Edit_Command_129, _colors.ConvertImageToActivePalette),
             new Separator(),
             Cmd("환경 설정…", MainStrings.Menu_Edit_ShowPreferences_131, ShowPreferences, "Ctrl+,", KeyScope.Global, (Key.OemComma, Ctrl)));
+        // 선 정리는 지금 셀에 그림이 있을 때만 — 메뉴를 열 때 맞추고, 못 쓰면 까닭을 풍선으로.
+        edit.SubmenuOpened += (_, _) => UpdateLineArtItem();
         Bind("편집", "선택 내려놓기", MainStrings.ShortcutCategory_Edit, MainStrings.Shortcut_CommitSelection, KeyScope.Canvas, () =>
         {
             bool transforming = _ctx.IsTransforming;
@@ -1341,6 +1345,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _ctx.ShapePenTint = s.ShapePenTint;
         _ctx.ShapePenSpacing = s.ShapePenSpacing;
         _ctx.ShapePenOptimizedSpacing = s.ShapePenOptimizedSpacing;
+        _ctx.CurvePenMode = s.CurvePenMode;
+        _ctx.CurvePenTolerance = s.CurvePenTolerance;
+        _ctx.CurvePenCornerAngle = s.CurvePenCornerAngle;
         _ctx.MirrorAtPivot = s.MirrorAtPivot;
         _ctx.Primary = ColorParse.ParseOr(s.PrimaryColor, Color32.Black);
         _ctx.Secondary = ColorParse.ParseOr(s.SecondaryColor, Color32.Transparent);
@@ -1563,6 +1570,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         s.ShapePenTint = _ctx.ShapePenTint;
         s.ShapePenSpacing = _ctx.ShapePenSpacing;
         s.ShapePenOptimizedSpacing = _ctx.ShapePenOptimizedSpacing;
+        s.CurvePenMode = _ctx.CurvePenMode;
+        s.CurvePenTolerance = _ctx.CurvePenTolerance;
+        s.CurvePenCornerAngle = _ctx.CurvePenCornerAngle;
         s.MirrorAtPivot = _ctx.MirrorAtPivot;
         s.PrimaryColor = _ctx.Primary.ToHex();
         s.SecondaryColor = _ctx.Secondary.ToHex();
@@ -2936,7 +2946,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             ShowMessage(MainStrings.Message_304 + ExportSummary(e).TrimStart(' ', '→') + TrashStale(e));
             foreach (var r in e.All) _browser.RefreshFile(r.ImagePath);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException
+                                       or InvalidOperationException or System.Security.SecurityException)
         {
             Ui.Error(this, MainStrings.FormatMessage_374(message: ex.Message), MainStrings.Export_FailureTitle);
         }
@@ -3274,7 +3285,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     {
         if (ReferenceEquals(FocusManager?.GetFocusedElement(), _canvas))
         {
-            DeleteSelection();
+            // 곡선 펜: 마우스가 올라간 고정점이 있으면 그 점을 뺀다.
+            if (!_canvas.DeleteCurvePenAnchor()) DeleteSelection();
             return true;
         }
         if (!_timeline.IsGridFocused || !_ctx.Selection.HasSelection) return false;
@@ -3395,6 +3407,25 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _ctx.NotifyPixels();
         _ctx.CommitStroke(MainStrings.Edit_ReplaceColor);
         ShowMessage(MainStrings.FormatMessage_389(n: n));
+    }
+
+    /// <summary>편집 메뉴의 선 정리 항목(<see cref="UpdateLineArtItem"/>이 메뉴를 열 때 켜고 끔).</summary>
+    private MenuItem _miLineArt = null!;
+
+    /// <summary>선 정리 항목: 프로젝트가 있고 타일맵이 아니면, 지금 셀에 정리할 그림이 있을 때만 켜고 아니면 까닭을 풍선으로 보인다.</summary>
+    private void UpdateLineArtItem()
+    {
+        if (!_ctx.HasProject || _ctx.IsTilemapSelected) return;
+        var why = LineArtDialog.Blocker(_ctx);
+        _miLineArt.IsEnabled = why is null;
+        ToolTip.SetTip(_miLineArt, why);
+        ToolTip.SetShowOnDisabled(_miLineArt, true);
+    }
+
+    /// <summary>선 정리(<see cref="LineArtDialog"/>): 지금 레이어의 지금 셀(선택 영역이 있으면 그 안, 창에서 고르면 모든 프레임)의 선을 1px로 다듬는다.</summary>
+    private void CleanUpLines()
+    {
+        if (LineArtDialog.Run(_ctx, this) is { } message) ShowMessage(message);
     }
 
     /// <summary>현재 그룹(부위면 그 그룹)의 스킨을 앞뒤로 바꾼다(착장 전환, 실행취소 기록 없음).</summary>

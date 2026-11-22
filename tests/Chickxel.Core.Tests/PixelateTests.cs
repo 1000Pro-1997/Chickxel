@@ -722,7 +722,7 @@ public class PixelateTests
             .Select(i => ((double)i + 2.5, 3.5 + i / 3.0 + (i % 2 == 0 ? 0.08 : -0.08)))
             .ToList();
         source.AddRange(Enumerable.Range(1, 11).Select(i => (18.5, 8.5 + i)));
-        var path = VectorOutline.CleanPath(source, 0.6, 40);
+        var path = CleanLines.VectorPath(source, 0.6, 40);
         Assert.Contains(new Point(18, 8), path);
         Assert.Contains(new Point(18, 19), path);
         for (int i = 1; i < path.Count; i++)
@@ -740,7 +740,7 @@ public class PixelateTests
             double radius = 10.2 + (i % 3 == 0 ? 0.08 : -0.08);
             return (X: 20.5 + radius * Math.Cos(angle), Y: 20.5 + radius * Math.Sin(angle));
         }).ToArray();
-        var path = VectorOutline.CleanPath(source, 0.6, 40);
+        var path = CleanLines.VectorPath(source, 0.6, 40);
         Assert.True(path.Count >= 22);
         for (int i = 1; i < path.Count; i++)
             Assert.InRange(Math.Max(Math.Abs(path[i].X - path[i - 1].X), Math.Abs(path[i].Y - path[i - 1].Y)), 0, 1);

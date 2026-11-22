@@ -2,11 +2,12 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
-## Unreleased
+## v1.14.136 (2026-11-22)
 
 ### Pixelate: fit cells by row within 30%
 - Fit cells by row in Quick settings starts with a uniform grid and follows source color edges separately for each row and column, with cell size and boundary shifts limited to 30% of the base cell.
 - With this on, optimization keeps the grid while trying colors, cleanup, and other steps; presets save the choice. Turning it off removes per-row correction.
+- The Remove background button under the source is gone; turn background removal on or off with **Remove background** in Quick settings or in 1. Background.
 
 ### Clean straight lines and curves for vector-redrawn outlines
 - Pixelate's Cleanup adds Clean lines and curves (on by default) and Corner angle (40° by default) for Redraw as vector.
@@ -22,6 +23,17 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 - The import preview shows the smooth Original alongside the Pixel result, sharing camera and lighting; dragging either view rotates and the wheel zooms.
 - An X/Y/Z axis gizmo shows orientation and offers axis views, with X/Y/Z rotation rings around the model while rotating.
 - Drag the outer ring to roll (also a Roll setting), and drag the sun handle to adjust light direction; double-click to flip front and back.
+
+### Line cleanup window and curve pen
+- The new **Line cleanup…** window finds the current layer's outlines and inner lines (light-colored lines such as ribbons, collars and folds too, picked with an eyedropper), redraws them as clean 1-px straight lines and arcs, and fills the old line pixels with the colors beside them.
+- Found lines are overlaid as vector paths; click one to leave it out. The current and cleaned images are shown side by side.
+- With line color set to **Darken inner color**, each line takes a darker shade of the area it borders (selective outlining) for a high-quality pixel-art look.
+- The new **Curve pen** tool (Shift+L) draws Bézier paths like Photoshop's pen: click for a corner point, drag for a smooth point with handles (or use **Freehand** to fit a rough stroke), and moving a point moves only it and its handles. Enter paints the path as a clean 1-px line. Line cleanup is in the Edit menu.
+- Fixed the Shape tool's bendable curve painting nothing on a cel that had never been drawn on.
+
+### Export window error from the folder path
+- Fixed the export window's folder field throwing "length must be greater than zero" at some widths when shortening a path that mixes Korean and Latin letters (such as `Desktop\#GPT#DOT#열로`).
+- The folder field now draws the path itself, cutting the start with an ellipsis so the end stays visible.
 
 ### Text boxes for effects: text settings and ctx.text
 - Script effects can declare a text setting (`type: "text"`, `default`, optional `max` of 1–1000 characters), shown as a multiline field and read from `s.key`.

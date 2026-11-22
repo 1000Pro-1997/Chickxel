@@ -558,7 +558,14 @@ public sealed partial class PixelCanvas
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
-        if (e.Handled || _text is not { } s) return;
+        if (e.Handled) return;
+        // 곡선 펜: Backspace·Delete(창 단축키가 받지 않은 경우)로 마우스가 올라간 고정점을 뺀다.
+        if (_text is null && e.Key is Key.Back or Key.Delete && e.KeyModifiers == KeyModifiers.None && DeleteCurvePenAnchor())
+        {
+            e.Handled = true;
+            return;
+        }
+        if (_text is not { } s) return;
         if (HandleTextKey(s, e.Key, e.KeyModifiers)) e.Handled = true;
     }
 

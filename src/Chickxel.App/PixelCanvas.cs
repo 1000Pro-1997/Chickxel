@@ -32,7 +32,7 @@ public sealed partial class PixelCanvas : Control
 
     private enum DragMode { None, Pan, Stroke, Shape, Gradient, Fill, Picker, Marquee, Lasso, MoveSelection, MoveLayer, MoveText, Pivot, Arrange, Slice,
         TransformMove, TransformScale, TransformMargin, TransformImageMove, TransformRotate, TransformPivot, CanvasResizeEdge, CanvasResizeMove,
-        TextCreate, TextSelect, TextResize, TextMoveBox, Tile }
+        TextCreate, TextSelect, TextResize, TextMoveBox, Tile, CurvePen, CurvePenHandle }
 
     /// <summary>변형 모드에서 화면 위치가 가리키는 것.</summary>
     private enum TransformHit { None, Move, Scale, Rotate, Pivot }
@@ -262,6 +262,7 @@ public sealed partial class PixelCanvas : Control
             UpdateFloatingBitmap();
             _lastStrokeEnd = null;
             _curve = null;
+            DropCurvePen();
             // 프로젝트가 열리며 캔버스가 막 보이게 된 경우 배치가 끝난 뒤 가운데 놓는다.
             CenterImage();
             PostCenterImage();
@@ -279,17 +280,21 @@ public sealed partial class PixelCanvas : Control
         ctx.OnionSkinChanged += (_, _) => InvalidateVisual();
         // 모양 펜: 다음 모양·(물들이기면) 기본색이 바뀌면 커서 미리보기를 다시 그린다.
         ctx.ShapePenChanged += (_, _) => { if (_ctx.Tool == ToolKind.ShapePen) InvalidateVisual(); };
-        ctx.ColorsChanged += (_, _) => { if (_ctx.Tool == ToolKind.ShapePen && _ctx.ShapePenTint) InvalidateVisual(); };
+        ctx.ColorsChanged += (_, _) => { if (_ctx.Tool == ToolKind.ShapePen && _ctx.ShapePenTint || _curvePen is not null) InvalidateVisual(); };
         ctx.ToolChanged += (_, _) => { CommitCurve(); UpdateCursor(); InvalidateVisual(); };
+        // 곡선 펜: 레이어·프레임 바꾸기·저장·실행취소 같은 편집 확정 앞에 미리 보던 선을 지금 셀에 칠한다.
+        ctx.CommittingEdits += (_, _) => CommitCurvePen();
         ctx.ToolOptionsChanged += (_, _) =>
         {
             // 휘는 중에 다른 모양을 고르면 지금 곡선을 확정한다.
-            if (_ctx.ShapeKind != ShapeKind.Curve) CommitCurve();
+            if (_ctx.ShapeKind != ShapeKind.Curve) CommitShapeCurve();
+            // 곡선 펜: 손잡이로 고치지 않은 미리 보기는 새 허용치·모서리 각도로 다시 맞춘다.
+            RefitCurvePen();
             ResetWandPreview();
             InvalidateVisual();
         };
-        // 다른 셀로 가면 휘던 곡선은 버린다(그릴 셀이 바뀜).
-        ctx.CurrentChanged += (_, _) => { ResetWandPreview(); if (_curve is null) return; _curve = null; InvalidateVisual(); };
+        // 다른 셀로 가면 휘던 곡선은 버린다(그릴 셀이 바뀜). 곡선 펜의 미리 보기는 바꾸기 앞(CommittingEdits)에 칠하므로, 그 길을 거치지 않고 셀이 바뀐 경우만 버린다.
+        ctx.CurrentChanged += (_, _) => { ResetWandPreview(); DropMovedCurvePen(); if (_curve is null) return; _curve = null; InvalidateVisual(); };
         ctx.TransformChanged += (_, _) =>
         {
             if (_drag == DragMode.None) UpdateCursor();
@@ -350,6 +355,9 @@ public sealed partial class PixelCanvas : Control
         }
         // Shift+클릭 직선 미리보기·곡선의 원호(Shift)를 켜고 끈다.
         if (e.Key is Key.LeftShift or Key.RightShift && IsPointerOver && _drag == DragMode.None && (_lastStrokeEnd is not null || _curve is not null))
+            Dispatcher.UIThread.Post(InvalidateVisual);
+        // 곡선 펜: 끄는 중 Shift(시작–끝 직선)를 누르거나 떼면 자국을 다시 그린다.
+        if (e.Key is Key.LeftShift or Key.RightShift && _drag == DragMode.CurvePen)
             Dispatcher.UIThread.Post(InvalidateVisual);
         if (IsCommandKey(e.Key))
         {
@@ -1061,6 +1069,7 @@ public sealed partial class PixelCanvas : Control
         DrawStrokeLinePreview(g);
         DrawTextEditing(g);
         DrawCurvePreview(g);
+        DrawCurvePen(g);
         DrawBrushCursor(g);
         DrawShapePenGhost(g);
         DrawDropHint(g);
@@ -1784,14 +1793,23 @@ public sealed partial class PixelCanvas : Control
     private List<Point> CurvePoints((Point A, Point B, MouseButton Button) curve)
         => Shapes.Curve(curve.A, curve.B, _curveThrough, arc: ShiftDown, orthogonal: _ctx.ShapeOrthogonal);
 
+    /// <summary>버튼으로 칠할 색: 왼쪽 = 기본색, 오른쪽 = 보조색(오른쪽 버튼 = 지우개면 투명).</summary>
+    private Color32 StrokePreviewColor(MouseButton button)
+        => button == MouseButton.Right ? _ctx.RightButtonErases ? Color32.Transparent : _ctx.Secondary : _ctx.Primary;
+
+    /// <summary>미리보기 칸을 칠할 붓: 칠할 색, 지우는 색이면 반투명 흰색.</summary>
+    private IBrush StrokePreviewBrush(MouseButton button)
+    {
+        var c = StrokePreviewColor(button);
+        return new SolidColorBrush(c.A == 0 ? Color.FromArgb(150, 255, 255, 255) : Color.FromArgb(c.A, c.R, c.G, c.B));
+    }
+
     /// <summary>휘는 중인 곡선을 칠할 색으로 미리 보인다(지우는 색이면 반투명 흰색). 브러시 두께·대칭·선택 영역 포함.</summary>
     private void DrawCurvePreview(DrawingContext g)
     {
         if (_curve is not { } curve) return;
-        var c = curve.Button == MouseButton.Right ? _ctx.RightButtonErases ? Color32.Transparent : _ctx.Secondary : _ctx.Primary;
-        var brush = new SolidColorBrush(c.A == 0 ? Color.FromArgb(150, 255, 255, 255) : Color.FromArgb(c.A, c.R, c.G, c.B));
         var clip = _ctx.Selection.Clip;
-        FillCells(g, Targets(WithBrush(CurvePoints(curve))).Where(m => clip is null || clip.Value.Contains(m)), brush);
+        FillCells(g, Targets(WithBrush(CurvePoints(curve))).Where(m => clip is null || clip.Value.Contains(m)), StrokePreviewBrush(curve.Button));
     }
 
     /// <summary>칠할 수 있는 픽셀 칸들(<see cref="PaintArea"/> 안)을 한 색으로 칠한다(미리보기).</summary>
@@ -1968,7 +1986,7 @@ public sealed partial class PixelCanvas : Control
     }
 
     private static bool IsPaintTool(ToolKind t)
-        => t is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.ShapePen or ToolKind.Eraser or ToolKind.Fill or ToolKind.Gradient or ToolKind.Shape
+        => t is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.ShapePen or ToolKind.CurvePen or ToolKind.Eraser or ToolKind.Fill or ToolKind.Gradient or ToolKind.Shape
             or ToolKind.Dodge or ToolKind.Dither or ToolKind.ReplaceBrush;
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
@@ -1987,8 +2005,8 @@ public sealed partial class PixelCanvas : Control
             && !(pt.Properties.PointerUpdateKind == PointerUpdateKind.LeftButtonPressed && KeyState.IsDown(Key.Space)))
         {
             bool same = (curve.Button == MouseButton.Left) == (pt.Properties.PointerUpdateKind == PointerUpdateKind.LeftButtonPressed);
-            if (same) CommitCurve();
-            else CancelCurve();
+            if (same) CommitShapeCurve();
+            else CancelShapeCurve();
             e.Handled = true;
             return;
         }
@@ -2049,9 +2067,9 @@ public sealed partial class PixelCanvas : Control
         if (Ui.HasCommand(mods)) BeginTempMove();
         var tool = _ctx.Tool;
         bool alt = (mods & KeyModifiers.Alt) != 0;
-        if (IsPaintTool(tool) && alt)
+        // Alt+클릭: 임시 스포이드(곡선 펜의 고정점·손잡이 위면 곡선 펜이 받음 — 모서리 바꾸기·손잡이 끊기)
+        if (IsPaintTool(tool) && alt && !(button == MouseButton.Left && CurvePenTakesAlt(loc)))
         {
-            // Alt+클릭: 임시 스포이드
             tool = ToolKind.Picker;
             _altUsed = true;
         }
@@ -2076,6 +2094,9 @@ public sealed partial class PixelCanvas : Control
                 else foreach (var p in StrokeLine(strokeFrom, px, _strokeOrthogonal)) StampAt(p);
                 _ctx.NotifyPixels();
                 _drag = DragMode.Stroke;
+                break;
+            case ToolKind.CurvePen:
+                BeginCurvePen(button, loc, e.ClickCount);
                 break;
             case ToolKind.ShapePen:
                 if (!BeginShapeStamps(button, px)) break;
@@ -2190,8 +2211,15 @@ public sealed partial class PixelCanvas : Control
             case DragMode.None:
                 if (_ctx.IsGroupSelected) UpdateHoverPart(px);
                 if (_ctx.IsTilemapSelected) UpdateTileHover(px);
+                UpdateCurvePenHover(loc);
                 UpdateCursor(px);
                 return;
+            case DragMode.CurvePen:
+                ContinueCurvePen(loc);
+                break;
+            case DragMode.CurvePenHandle:
+                DragCurvePenHandle(loc);
+                break;
             case DragMode.Tile:
                 DragTile(px);
                 break;
@@ -2342,6 +2370,14 @@ public sealed partial class PixelCanvas : Control
             case DragMode.Fill:
                 EndPixelStroke();
                 break;
+            case DragMode.CurvePen:
+                FinishCurvePen();
+                break;
+            case DragMode.CurvePenHandle:
+                FinishCurvePenHandle();
+                UpdateCurvePenHover(location);
+                UpdateCursor(ScreenToPixel(location));
+                break;
             case DragMode.Gradient:
                 if (_gradientEnd == _startPx)
                 {
@@ -2473,7 +2509,7 @@ public sealed partial class PixelCanvas : Control
         _strokeColor = tool switch
         {
             ToolKind.Eraser => Color32.Transparent,
-            _ when right && _ctx.RightButtonErases && tool is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.Shape or ToolKind.Fill
+            _ when right && _ctx.RightButtonErases && tool is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.CurvePen or ToolKind.Shape or ToolKind.Fill
                 => Color32.Transparent,
             _ => right ? _ctx.Secondary : _ctx.Primary,
         };
@@ -2504,6 +2540,7 @@ public sealed partial class PixelCanvas : Control
             ToolKind.Pencil => UiStrings.S_PixelCanvas_EndPixelStroke_CF98AEC3ED,
             ToolKind.GradientPencil => UiStrings.GradientPencil_UndoLabel,
             ToolKind.ShapePen => UiStrings.ShapePen_UndoLabel,
+            ToolKind.CurvePen => MainStrings.Tool_CurvePen_Name,
             ToolKind.Eraser => UiStrings.S_PixelCanvas_EndPixelStroke_8EFE7C05AE,
             ToolKind.Fill => UiStrings.S_PixelCanvas_EndPixelStroke_94045434EF,
             ToolKind.Gradient => UiStrings.S_PixelCanvas_EndPixelStroke_45906D38E1,
@@ -2527,13 +2564,13 @@ public sealed partial class PixelCanvas : Control
     /// <summary>도형(또는 브러시 획)을 그리는 중에 반대쪽 버튼을 누르면 그 획을 취소한다. 취소했으면 true.</summary>
     private bool TryCancelByOtherButton(PointerPoint pt, IPointer pointer)
     {
-        if (_drag is not (DragMode.Shape or DragMode.Stroke or DragMode.Gradient or DragMode.Tile)) return false;
+        if (_drag is not (DragMode.Shape or DragMode.Stroke or DragMode.Gradient or DragMode.Tile or DragMode.CurvePen or DragMode.CurvePenHandle)) return false;
         var kind = pt.Properties.PointerUpdateKind;
         bool other = (_dragButton == MouseButton.Left && kind == PointerUpdateKind.RightButtonPressed)
                      || (_dragButton == MouseButton.Right && kind == PointerUpdateKind.LeftButtonPressed);
         if (!other) return false;
         if (_drag == DragMode.Tile) CancelTileDrag();
-        else CancelPixelStroke();
+        else if (!CancelCurvePenDrag()) CancelPixelStroke();
         pointer.Capture(null);
         return true;
     }
@@ -2752,12 +2789,19 @@ public sealed partial class PixelCanvas : Control
         InvalidateVisual();
     }
 
+    /// <summary>캔버스에서 확정을 기다리는 그림(도형의 휘던 곡선, 곡선 펜의 미리 보던 선)을 칠한다(Enter·도구 바꾸기). 없었으면 false.</summary>
+    public bool CommitCurve() => CommitShapeCurve() | CommitCurvePen();
+
+    /// <summary>캔버스에서 확정을 기다리는 그림을 버린다(Esc·Ctrl+Z). 없었으면 false.</summary>
+    public bool CancelCurve() => CancelShapeCurve() | CancelCurvePen();
+
     /// <summary>휘던 곡선을 칠한다(실행취소 한 단계). 휘는 중이 아니었으면 false.</summary>
-    public bool CommitCurve()
+    private bool CommitShapeCurve()
     {
         if (_curve is not { } curve) return false;
         _curve = null;
-        if (_ctx.CanEdit && _ctx.EditImage is not null)
+        // 빈 셀은 EditImage가 null이지만 획을 시작하면(BeginPixelStroke) 셀이 생긴다.
+        if (_ctx.CanEdit && !_ctx.IsGroupSelected && !_ctx.IsTilemapSelected)
         {
             BeginPixelStroke(ToolKind.Shape, curve.Button, curve.A);
             _strokeShape = _strokeShape with { Kind = ShapeKind.Curve };
@@ -2770,7 +2814,7 @@ public sealed partial class PixelCanvas : Control
     }
 
     /// <summary>휘던 곡선을 버린다(Esc·Ctrl+Z·반대 버튼). 휘는 중이 아니었으면 false.</summary>
-    public bool CancelCurve()
+    private bool CancelShapeCurve()
     {
         if (_curve is null) return false;
         _curve = null;
@@ -4143,6 +4187,11 @@ public sealed partial class PixelCanvas : Control
         if (_ctx.Tool == ToolKind.Slice)
         {
             Cursor = ArrowCursor;
+            return;
+        }
+        if (_ctx.Tool == ToolKind.CurvePen && CurvePenHitAt(_mouseScreen) is not null)
+        {
+            Cursor = SizeAllCursor;
             return;
         }
         if (_ctx.Tool == ToolKind.Picker

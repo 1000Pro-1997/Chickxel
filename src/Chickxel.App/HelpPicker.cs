@@ -17,6 +17,7 @@ internal readonly record struct HelpTarget(string PageId, string? Shot = null, s
         ToolKind.Pencil => "tools-pencil",
         ToolKind.GradientPencil => "tools-gradient-pencil",
         ToolKind.ShapePen => "tools-shape-pen",
+        ToolKind.CurvePen => "tools-curve-pen",
         ToolKind.Eraser => "tools-eraser",
         ToolKind.Fill => "tools-fill",
         ToolKind.Gradient => "tools-gradient",

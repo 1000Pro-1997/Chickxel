@@ -603,12 +603,10 @@ internal static class PixelateShots
 
         // 원본 아래 막대(결과 크기는 설정 칸 '간편 설정'으로 옮김).
         var showGrid = ShotKit.Get<ToggleButton>(dlg, "_showGrid");
-        var bgRemove = ShotKit.Get<ToggleButton>(dlg, "_bgRemove");
         var toolbar = (Control)showGrid.Parent!;
         var tb = ShotKit.Bounds(toolbar, dlg);
         k.Save(dlg, "pixelate-view-2", crop: new Rect(tb.X - 8, tb.Y - 36, tb.Width + 20, tb.Height + 46), marks:
         [
-            PixelateKit.UpBox(bgRemove, dlg),
             PixelateKit.UpBox(showGrid, dlg),
         ], firstNumber: 6);
 

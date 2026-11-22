@@ -151,6 +151,10 @@ public sealed class AppSettings
     public bool ShapePenTint { get; set; }
     public int ShapePenSpacing { get; set; } = 1;
     public bool ShapePenOptimizedSpacing { get; set; } = true;
+    /// <summary>곡선 펜: 그리기 방식, 맞춤 허용치(px)와 모서리 각도(도 — 손으로 그리기).</summary>
+    public CurvePenMode CurvePenMode { get; set; }
+    public double CurvePenTolerance { get; set; } = EditorContext.DefaultCurvePenTolerance;
+    public double CurvePenCornerAngle { get; set; } = EditorContext.DefaultCurvePenCornerAngle;
     /// <summary>대칭 그리기 축을 피벗에 둔다(좌우·상하 대칭 켜기 자체는 저장하지 않음).</summary>
     public bool MirrorAtPivot { get; set; }
     public string PrimaryColor { get; set; } = "#000000";
