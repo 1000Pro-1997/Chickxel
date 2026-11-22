@@ -87,11 +87,19 @@
   <data name="Tool_Move_Hint" xml:space="preserve">
     <value>선택이 있으면 선택 이동, 없으면 셀 전체 밀기(순환 옵션 — 피벗도 함께, 우클릭으로 끌면 피벗은 제자리) · 글씨 레이어(빈 셀 + 글씨 효과)는 글씨 위치를 옮김 · 다른 도구에서도 Ctrl+드래그(누르는 동안 이동 도구)</value>
   </data>
+  <data name="Tool_Move_Tip" xml:space="preserve">
+    <value>다른 도구에서 Ctrl을 누르고 끄는 것과 같음</value>
+    <comment>도구 막대 풍선의 도구 이름 아래 한 줄</comment>
+  </data>
   <data name="Tool_Dodge_Name" xml:space="preserve">
     <value>밝게/어둡게</value>
   </data>
   <data name="Tool_Dodge_Hint" xml:space="preserve">
     <value>왼쪽: 밝게 · 오른쪽: 어둡게(한 획에 한 번)</value>
+  </data>
+  <data name="Tool_Dodge_Tip" xml:space="preserve">
+    <value>좌클릭: 밝게 · 우클릭: 어둡게</value>
+    <comment>도구 막대 풍선의 도구 이름 아래 한 줄</comment>
   </data>
   <data name="Tool_Dither_Name" xml:space="preserve">
     <value>디더링</value>

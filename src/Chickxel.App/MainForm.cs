@@ -66,6 +66,13 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     internal static string ToolName(ToolKind tool) => ToolDefs.First(d => d.Tool == tool).Name;
     /// <summary>도구 설명(도구 막대 묶음 목록의 풍선).</summary>
     internal static string ToolHint(ToolKind tool) => ToolDefs.First(d => d.Tool == tool).Hint;
+    /// <summary>도구 막대 풍선에서 도구 이름 아래 보일 짧은 한 줄(없으면 null).</summary>
+    internal static string? ToolTipNote(ToolKind tool) => tool switch
+    {
+        ToolKind.Move => MainStrings.Tool_Move_Tip,
+        ToolKind.Dodge => MainStrings.Tool_Dodge_Tip,
+        _ => null,
+    };
 
     /// <summary>단축키를 바꿀 수 있는 명령들(메뉴를 만들 때 등록, <see cref="ApplyShortcuts"/>가 키 표를 만든다).</summary>
     private readonly List<CommandEntry> _commands = new();

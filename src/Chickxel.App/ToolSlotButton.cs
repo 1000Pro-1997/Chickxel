@@ -96,6 +96,7 @@ public sealed class ToolSlotButton : ToggleButton
     public void RefreshTip()
     {
         string tip = Label(Current);
+        if (MainForm.ToolTipNote(Current) is { } note) tip += "\n" + note;
         if (IsGroup)
             tip += string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ToolSlotButton_RefreshTip_0CDC077422,string.Join(" · ", _tools.Select(t => Label(t.Tool))));
         this.Tip(tip);
