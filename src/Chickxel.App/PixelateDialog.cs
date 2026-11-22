@@ -687,8 +687,9 @@ public sealed class PixelateDialog : DialogBase
     private BackgroundMode _barBgMode = BackgroundMode.Auto;
     /// <summary>
     /// 원본 아래 막대의 원본 외곽선: 보기·붓 켜기(<see cref="ZoomImageView.OutlineMode"/>), 붓 반지름(원본 px, <see cref="PixelateOptions.OutlineBrush"/>),
-    /// 고친 것 모두 지우기(고친 것이 있을 때만).
+    /// 고친 것 모두 지우기(고친 것이 있을 때만). 시험 기능이라 <see cref="OutlineEditing"/>가 false인 동안 막대에 보이지 않는다(켤 수 없으니 고친 것도 생기지 않음).
     /// </summary>
+    private const bool OutlineEditing = false;
     private readonly ToggleButton _outlineEdit;
     private readonly NumericUpDown _outlineBrush;
     private readonly Button _outlineReset;
@@ -863,6 +864,12 @@ public sealed class PixelateDialog : DialogBase
     private bool _optGridStage;
     /// <summary>왼쪽 값을 마지막으로 불러오거나(프리셋·후보 고르기) 정리하기로 돌린 뒤 손으로 고쳤는지(후보를 고를 때 저장할지 묻고, 최적화가 끝나도 덮지 않음).</summary>
     private bool _panelEdited;
+    /// <summary>
+    /// 손으로 고친 값이 아직 결과에 없음(고친 뒤 정리하기·최적화·격자 미리보기를 돌리지 않았고 후보·프리셋도 다시 불러오지 않음) — 정리하기 단추를 반짝인다
+    /// (<see cref="SetRunPending"/>, 누를 수 있을 때만). <see cref="_runPulse"/>는 반짝임을 멈출 토큰(null = 멈춤).
+    /// </summary>
+    private bool _runPending;
+    private CancellationTokenSource? _runPulse;
     /// <summary>
     /// 프리셋을 돌려 넣은 후보와 그 돌림(칸 제목 = 프리셋 이름, 저장하지 않고 고친 값이면 "이름(변경)", 아래에 "최적화(점수)"·"시간초과(점수)" 같은 표시,
     /// 고르면 그 프리셋·값을 왼쪽에 불러옴, 우클릭 = 이 설정만 다시 돌리기).
@@ -1533,6 +1540,7 @@ public sealed class PixelateDialog : DialogBase
         _outlineBrush.IsEnabled = false;
         _outlineReset = Ui.IconButton(VectorIcon.Undo2, UiStrings.Pixelate_OutlineResetTip, (_, _) => ResetOutlineEdits());
         _outlineReset.IsEnabled = false;
+        _outlineEdit.IsVisible = _outlineBrush.IsVisible = _outlineReset.IsVisible = OutlineEditing;
         _sourceView.BrushRadius = (int)_outlineBrush.NumValue();
         _outlineBrush.ValueChanged += (_, _) => _sourceView.BrushRadius = (int)_outlineBrush.NumValue();
         _outlineEdit.IsCheckedChanged += (_, _) =>
@@ -2592,6 +2600,7 @@ public sealed class PixelateDialog : DialogBase
     {
         if (_loading) return;
         _panelEdited = true;
+        SetRunPending(true);
         UpdateEnabled();
         UpdateSaveState();
     }
@@ -4024,6 +4033,7 @@ public sealed class PixelateDialog : DialogBase
         {
             LoadPresetValues(_current, settingsToo: true);
             _panelEdited = false;
+            SetRunPending(false);
         }
         _settings.Save();
         FillPresets();
@@ -4061,8 +4071,49 @@ public sealed class PixelateDialog : DialogBase
         if (_optPresetList is not null) _optPresetList.IsEnabled = !running;
         if (_optResetButton is not null) _optResetButton.IsEnabled = !running;
         _runButton.IsEnabled = _grPreview.IsEnabled = _input is not null && !running;
+        UpdateRunPulse();
         _runButton.Tip(UiStrings.Pixelate_Run + "\n" + (_input is null ? UiStrings.Pixelate_RunNoSourceTip : UiStrings.Pixelate_RunTip));
         _optAuto.IsEnabled = !running;
+    }
+
+    private void SetRunPending(bool pending)
+    {
+        _runPending = pending;
+        UpdateRunPulse();
+    }
+
+    /// <summary>
+    /// 정리하기 단추 반짝임을 맞춘다: 고친 값이 아직 결과에 없고(<see cref="_runPending"/>) 누를 수 있으면 초록 바탕을 밝은 초록으로 천천히 오가게(0.9초씩, 끝없이),
+    /// 아니면 멈춰 원래 초록으로.
+    /// </summary>
+    private void UpdateRunPulse()
+    {
+        bool want = _runPending && _runButton.IsEnabled;
+        if (want == (_runPulse is not null)) return;
+        if (!want)
+        {
+            _runPulse!.Cancel();
+            _runPulse = null;
+            return;
+        }
+        _runPulse = new CancellationTokenSource();
+        var bright = AppTheme.Brush(Color.FromRgb(
+            (byte)(AppTheme.SavedColor.R + (255 - AppTheme.SavedColor.R) * 0.45),
+            (byte)(AppTheme.SavedColor.G + (255 - AppTheme.SavedColor.G) * 0.45),
+            (byte)(AppTheme.SavedColor.B + (255 - AppTheme.SavedColor.B) * 0.45)));
+        var pulse = new Avalonia.Animation.Animation
+        {
+            Duration = TimeSpan.FromSeconds(0.9),
+            IterationCount = Avalonia.Animation.IterationCount.Infinite,
+            PlaybackDirection = Avalonia.Animation.PlaybackDirection.Alternate,
+            Easing = new Avalonia.Animation.Easings.SineEaseInOut(),
+            Children =
+            {
+                new Avalonia.Animation.KeyFrame { Cue = new Avalonia.Animation.Cue(0), Setters = { new Setter(TemplatedControl.BackgroundProperty, AppTheme.SavedBrush) } },
+                new Avalonia.Animation.KeyFrame { Cue = new Avalonia.Animation.Cue(1), Setters = { new Setter(TemplatedControl.BackgroundProperty, bright) } },
+            },
+        };
+        _ = pulse.RunAsync(_runButton, _runPulse.Token);
     }
 
     /// <summary>빨간 '취소' 단추에 붙이는 클래스(그때만 마우스를 올려도 빨강 유지 — <see cref="KeepFillOnHover"/>).</summary>
@@ -4178,6 +4229,7 @@ public sealed class PixelateDialog : DialogBase
     private void StartOptimize(List<PresetRun> runs, bool single)
     {
         if (_optCts is not null || _input is not { } input) return;
+        SetRunPending(false);
         // 첫 준비가 아직 끝나지 않았다면 그 결과의 슬롯을 기다린다. 프리셋마다 독립적으로 최초 분할하지 않는다.
         if (_appliedFrames is null)
         {
@@ -4878,6 +4930,7 @@ public sealed class PixelateDialog : DialogBase
             FillPresets();
         }
         _panelEdited = false;
+        SetRunPending(false);
         UpdateSaveState();
     }
 
@@ -4922,6 +4975,7 @@ public sealed class PixelateDialog : DialogBase
             _current = chosen;
             LoadPresetValues(chosen!, settingsToo: true);
             _panelEdited = false;
+            SetRunPending(false);
             // 다른 프리셋을 불러왔으면 누른 '돌리지 않음' 칸 고름은 풀린다(그 칸을 누른 경우는 누른 쪽이 다시 고름).
             if (_idlePicked is not null && _idlePicked != chosen!.Name)
             {
@@ -5113,6 +5167,7 @@ public sealed class PixelateDialog : DialogBase
         _cts?.Cancel();
         StopOptimize();
         _pickPulse.Stop();
+        _runPulse?.Cancel();
         _play.Stop();
         SaveOptions();
     }

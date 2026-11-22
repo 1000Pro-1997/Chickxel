@@ -414,13 +414,13 @@ def lint_guide(html_text: str, page: str) -> list[str]:
 
 
 # style.css 주소의 ?v= 값 = 파일 내용 해시: CSS를 고치면 모든 쪽의 주소가 바뀌어 브라우저가 옛 CSS를 캐시에서 쓰지 않는다
-# (템플릿에 적힌 값과 상관없이 덮어씀, 템플릿이 아닌 404.html도 같이).
+# (템플릿에 적힌 값과 상관없이 덮어씀, 템플릿이 아닌 404.html도 같이). 줄 끝은 LF로 맞춰 잰다 — Windows 체크아웃(CRLF)과 CI(LF)가 같은 값을 내게.
 STYLE_REF = re.compile(r'(style\.css\?v=)[^"\']*')
 
 
 def style_version() -> str:
     import hashlib
-    return hashlib.sha256((DOCS / "style.css").read_bytes()).hexdigest()[:10]
+    return hashlib.sha256((DOCS / "style.css").read_bytes().replace(b"\r\n", b"\n")).hexdigest()[:10]
 
 
 def output_path(page: str, lang: str) -> Path:

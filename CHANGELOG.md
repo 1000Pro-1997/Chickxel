@@ -2,6 +2,14 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.137 (2026-11-22)
+
+### Pixelate: the Clean up button glows when edits are waiting
+- After you change values on the left without running Clean up or optimizing, the green Clean up button slowly brightens and dims until you do.
+- It stops when a run starts or when a candidate or preset is loaded again.
+- The experimental source-outline brush (brush, size and reset under the source) is hidden.
+- Fixed CI failing because the homepage's style.css cache value differed between Windows and CI (line endings are normalized before hashing).
+
 ## v1.14.136 (2026-11-22)
 
 ### Pixelate: fit cells by row within 30%
