@@ -50,6 +50,8 @@ public sealed partial class PixelCanvas
         public bool Straight { get; init; }
         public bool NoCorners { get; init; }
         public List<Point>? Pixels { get; set; }
+        /// <summary><see cref="Pixels"/>를 만들 때의 픽셀 퍼펙트 설정(바뀌면 다시 셈).</summary>
+        public bool PixelsPerfect { get; set; }
 
         /// <summary>손으로 고친 경로로 바꾼다(다시 맞추지 않음).</summary>
         public void Edit(List<BezierNode> nodes)
@@ -249,9 +251,17 @@ public sealed partial class PixelCanvas
         InvalidateVisual();
     }
 
-    /// <summary>미리 보는 경로가 칠할 픽셀(타일 감기·대칭 전).</summary>
-    private static List<Point> CurvePenPixels(CurvePenDraft draft)
-        => draft.Pixels ??= BezierLines.Rasterize(draft.Nodes, draft.Closed);
+    /// <summary>미리 보는 경로가 칠할 픽셀(타일 감기·대칭 전, 곡선 펜 픽셀 퍼펙트 설정대로).</summary>
+    private List<Point> CurvePenPixels(CurvePenDraft draft)
+    {
+        bool perfect = _ctx.CurvePenPixelPerfect;
+        if (draft.Pixels is null || draft.PixelsPerfect != perfect)
+        {
+            draft.Pixels = BezierLines.Rasterize(draft.Nodes, draft.Closed, pixelPerfect: perfect);
+            draft.PixelsPerfect = perfect;
+        }
+        return draft.Pixels;
+    }
 
     /// <summary>미리 보던 경로를 칠한다(실행취소 한 단계). 미리 보던 경로가 없었으면 false.</summary>
     private bool CommitCurvePen()

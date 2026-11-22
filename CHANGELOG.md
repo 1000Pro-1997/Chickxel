@@ -2,6 +2,15 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.138 (2026-11-22)
+
+### Curve pen pixel perfect toggle
+- Curve pen options gain **Pixel perfect** (on by default). Turning it off paints every pixel the path passes through instead of removing L-shaped doubled pixels.
+- The choice is remembered across restarts.
+
+### Tool descriptions in tool group lists
+- Hovering a tool in an expanded tool group on the toolbar shows a tooltip explaining how to use it.
+
 ## v1.14.137 (2026-11-22)
 
 ### Pixelate: the Clean up button glows when edits are waiting

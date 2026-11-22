@@ -10627,6 +10627,7 @@ Enter나 다른 도구·레이어·프레임으로 바꾸면 기본색(오른쪽
   <data name="CurvePen_ToleranceTip" xml:space="preserve"><value>손으로 그린 획이 맞춘 곡선에서 이만큼(px)까지 벗어나도 됩니다. 크면 점이 적고 떨림을 더 펴며, 작으면 그린 모양을 더 따라갑니다.</value></data>
   <data name="CurvePen_CornerAngle" xml:space="preserve"><value>모서리 각도</value><comment>곡선 펜 설정 줄 이름</comment></data>
   <data name="CurvePen_CornerAngleTip" xml:space="preserve"><value>손으로 그린 획이 이 각도 이상 꺾인 자리는 모서리 점(두 손잡이가 따로 움직임)으로 남기고 앞뒤를 따로 맞춥니다. 180°면 모서리로 나누지 않습니다.</value></data>
+  <data name="CurvePen_PixelPerfectTip" xml:space="preserve"><value>켜면(기본) 칠할 1px 선에서 L자로 겹친 칸을 빼고 곡선 계단을 고르게 합니다. 끄면 경로가 지나간 칸을 그대로 칠해 모서리마다 칸이 겹칩니다.</value></data>
   <data name="CurvePen_Pending" xml:space="preserve"><value>곡선 펜: 점·손잡이를 끌어 고치기 · 경로 두 번 누르기 = 점 더하기 · Enter = 확정 · Esc = 취소</value><comment>상태 줄: 손으로 그린 획을 맞춘 경로를 미리 보이는 중</comment></data>
   <data name="CurvePen_PendingPoints" xml:space="preserve"><value>곡선 펜: 누르기 = 모서리 점 · 끌기 = 매끈한 점 · 첫 점 누르기 = 닫기 · Enter = 확정 · Esc = 취소</value><comment>상태 줄: 점 찍기로 경로를 만드는 중</comment></data>
   <data name="LineArt_Menu" xml:space="preserve"><value>선 정리…</value><comment>편집 메뉴 항목</comment></data>

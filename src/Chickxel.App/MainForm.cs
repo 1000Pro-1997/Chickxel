@@ -64,6 +64,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
 
     /// <summary>도구 이름(예: "연필").</summary>
     internal static string ToolName(ToolKind tool) => ToolDefs.First(d => d.Tool == tool).Name;
+    /// <summary>도구 설명(도구 막대 묶음 목록의 풍선).</summary>
+    internal static string ToolHint(ToolKind tool) => ToolDefs.First(d => d.Tool == tool).Hint;
 
     /// <summary>단축키를 바꿀 수 있는 명령들(메뉴를 만들 때 등록, <see cref="ApplyShortcuts"/>가 키 표를 만든다).</summary>
     private readonly List<CommandEntry> _commands = new();
@@ -1369,6 +1371,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _ctx.CurvePenMode = s.CurvePenMode;
         _ctx.CurvePenTolerance = s.CurvePenTolerance;
         _ctx.CurvePenCornerAngle = s.CurvePenCornerAngle;
+        _ctx.CurvePenPixelPerfect = s.CurvePenPixelPerfect;
         _ctx.MirrorAtPivot = s.MirrorAtPivot;
         _ctx.Primary = ColorParse.ParseOr(s.PrimaryColor, Color32.Black);
         _ctx.Secondary = ColorParse.ParseOr(s.SecondaryColor, Color32.Transparent);
@@ -1596,6 +1599,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         s.CurvePenMode = _ctx.CurvePenMode;
         s.CurvePenTolerance = _ctx.CurvePenTolerance;
         s.CurvePenCornerAngle = _ctx.CurvePenCornerAngle;
+        s.CurvePenPixelPerfect = _ctx.CurvePenPixelPerfect;
         s.MirrorAtPivot = _ctx.MirrorAtPivot;
         s.PrimaryColor = _ctx.Primary.ToHex();
         s.SecondaryColor = _ctx.Secondary.ToHex();

@@ -407,8 +407,9 @@ public static class BezierLines
     /// 휜 조각은 0.2칸보다 촘촘한 표본이 든 칸을 잇고(빈틈은 브레즌햄으로) 변곡점마다 나눈 덩어리마다 L자 겹 칸을 뺀 뒤 계단 길이를 한쪽으로만 바뀌게 줄 세운다
     /// (한 칸 튀어나옴은 곧게 폄 — 조각마다 따로라 점 하나를 고쳐도 다른 조각의 칸은 그대로). 마지막에 L자 겹 칸을 뺀다 — 30° 이상 꺾인 조각 이음 칸(모서리)은
     /// 빼지 않고 <paramref name="corners"/>에 담는다. <paramref name="closed"/>면 마지막 점에서 첫 점으로 한 조각 더 잇고 첫 칸을 되풀이하지 않는다.
+    /// <paramref name="pixelPerfect"/>가 false면 L자 겹 칸 빼기와 계단 줄 세우기를 하지 않는다(지나간 칸을 그대로, 같은 칸 겹침만 뺌).
     /// </summary>
-    public static List<Point> Rasterize(IReadOnlyList<BezierNode> nodes, bool closed, List<Point>? corners = null)
+    public static List<Point> Rasterize(IReadOnlyList<BezierNode> nodes, bool closed, List<Point>? corners = null, bool pixelPerfect = true)
     {
         var output = new List<Point>();
         if (nodes.Count == 0) return output;
@@ -441,6 +442,17 @@ public static class BezierLines
             if ((k > 0 || closed) && IsCorner(Cubic.Of(nodes, (k - 1 + count) % count), c)) keep.Add(output[joint]);
         }
         if (closed && output.Count > 1 && output[^1] != output[0]) CleanLines.AppendLine(output, output[0]);
+        if (!pixelPerfect)
+        {
+            var plain = new List<Point>(output.Count);
+            foreach (var p in output)
+                if (plain.Count == 0 || plain[^1] != p) plain.Add(p);
+            if (closed && plain.Count > 1 && plain[^1] == plain[0]) plain.RemoveAt(plain.Count - 1);
+            if (corners is not null)
+                foreach (var p in plain)
+                    if (keep.Contains(p)) corners.Add(p);
+            return plain;
+        }
         for (int r = curves.Count - 1; r >= 0; r--)
         {
             var (from, to) = curves[r];

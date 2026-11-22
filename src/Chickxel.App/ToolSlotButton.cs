@@ -181,7 +181,7 @@ public sealed class ToolSlotButton : ToggleButton
                 BorderThickness = new Thickness(current ? 1 : 0),
                 BorderBrush = AppTheme.AccentBrush,
                 Focusable = false,
-            };
+            }.Tip(MainForm.ToolHint(tool));
             item.Click += (_, _) =>
             {
                 flyout.Hide();

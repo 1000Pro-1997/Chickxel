@@ -59,6 +59,21 @@ public class BezierLinesTests
         Assert.True(MaxDeviation(nodes, false, ideal) <= 0.6, $"벗어남 {MaxDeviation(nodes, false, ideal):0.###}");
     }
 
+    /// <summary>곡선 펜 픽셀 퍼펙트를 끄면 L자 겹 칸이 남고(끊기지 않음), 켜면 없다.</summary>
+    [Fact]
+    public void RasterizeWithoutPixelPerfectKeepsLCorners()
+    {
+        var ideal = Enumerable.Range(0, 401).Select(i => i / 400.0 * Math.PI / 2).Select(a => (X: 5 + 30 * Math.Cos(a), Y: 5 + 18 * Math.Sin(a))).ToList();
+        var nodes = BezierLines.Fit(ideal, 0.6, 40, false);
+        var on = BezierLines.Rasterize(nodes, false);
+        var off = BezierLines.Rasterize(nodes, false, pixelPerfect: false);
+        static int Ls(List<Point> c) => Enumerable.Range(1, Math.Max(0, c.Count - 2)).Count(i => IsL(c[i - 1], c[i], c[i + 1]));
+        AssertConnected(off, false);
+        Assert.Equal(0, Ls(on));
+        Assert.True(Ls(off) > 0, "끈 결과에 L자 칸이 없음");
+        Assert.True(off.Count > on.Count);
+    }
+
     [Fact]
     public void StraightStrokeBecomesOneStraightSegment()
     {

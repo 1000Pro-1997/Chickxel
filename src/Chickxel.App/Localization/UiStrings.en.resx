@@ -4912,6 +4912,7 @@ Enter, or switching tool, layer or frame, paints it in the primary color (second
   <data name="CurvePen_ToleranceTip" xml:space="preserve"><value>How far (px) the freehand stroke may stray from the fitted curve. Larger uses fewer points and smooths out more wobble, smaller follows your drawing more closely.</value></data>
   <data name="CurvePen_CornerAngle" xml:space="preserve"><value>Corner angle</value></data>
   <data name="CurvePen_CornerAngleTip" xml:space="preserve"><value>Places where the freehand stroke turns by this angle or more become corner points (their two handles move separately), and the parts on either side are fitted separately. At 180° nothing is split.</value></data>
+  <data name="CurvePen_PixelPerfectTip" xml:space="preserve"><value>When on (default), L-shaped doubled pixels are removed from the 1 px line and curve steps are evened out. When off, every pixel the path passes through is painted, so corners get doubled pixels.</value></data>
   <data name="CurvePen_Pending" xml:space="preserve"><value>Curve pen: drag points and handles to adjust · double-click the path to add a point · Enter confirms · Esc cancels</value></data>
   <data name="CurvePen_PendingPoints" xml:space="preserve"><value>Curve pen: click = corner point · drag = smooth point · click the first point = close · Enter confirms · Esc cancels</value></data>
   <data name="LineArt_Menu" xml:space="preserve"><value>Clean up lines…</value></data>

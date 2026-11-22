@@ -55,4 +55,18 @@ public sealed partial class EditorContext
             OptionsChanged();
         }
     }
+
+    private bool _curvePenPixelPerfect = true;
+
+    /// <summary>픽셀 퍼펙트(기본 켬): 칠할 선에서 L자 겹 칸을 빼고 곡선 계단을 고르게 한다. 끄면 경로가 지나간 칸을 그대로 칠한다.</summary>
+    public bool CurvePenPixelPerfect
+    {
+        get => _curvePenPixelPerfect;
+        set
+        {
+            if (_curvePenPixelPerfect == value) return;
+            _curvePenPixelPerfect = value;
+            OptionsChanged();
+        }
+    }
 }

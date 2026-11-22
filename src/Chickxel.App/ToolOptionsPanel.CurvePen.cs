@@ -7,6 +7,7 @@ public sealed partial class ToolOptionsPanel
 {
     private ComboBox _curvePenMode = null!;
     private NumericUpDown _curvePenTolerance = null!, _curvePenCornerAngle = null!;
+    private CheckBox _curvePenPixelPerfect = null!;
     private Control _curvePenToleranceRow = null!, _curvePenCornerAngleRow = null!;
 
     /// <summary>곡선 펜 묶음을 만든다(생성자에서 한 번).</summary>
@@ -32,10 +33,12 @@ public sealed partial class ToolOptionsPanel
         _curvePenCornerAngle.ValueChanged += (_, _) => { if (!_updating && _curvePenCornerAngle.Value is { } v) _ctx.CurvePenCornerAngle = (double)v; };
         _curvePenToleranceRow = Ui.Row(Ui.Label(UiStrings.CurvePen_Tolerance), _curvePenTolerance, Ui.Label("px"));
         _curvePenCornerAngleRow = Ui.Row(Ui.Label(UiStrings.CurvePen_CornerAngle), _curvePenCornerAngle, Ui.Label("°"));
+        _curvePenPixelPerfect = Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_B655203628, UiStrings.CurvePen_PixelPerfectTip, v => _ctx.CurvePenPixelPerfect = v);
         return InfoGroup(UiStrings.CurvePen_Group, UiStrings.CurvePen_Info, Ui.Stack(
             Ui.Row(Ui.Label(UiStrings.CurvePen_Mode), _curvePenMode),
             _curvePenToleranceRow,
-            _curvePenCornerAngleRow));
+            _curvePenCornerAngleRow,
+            _curvePenPixelPerfect));
     }
 
     /// <summary>곡선 펜 값을 지금 설정으로 맞춘다(<see cref="_updating"/> 안에서). 맞춤 허용치·모서리 각도는 손으로 그리기에서만 보인다.</summary>
@@ -45,6 +48,7 @@ public sealed partial class ToolOptionsPanel
         _curvePenTolerance.Value = (decimal)Math.Round(_ctx.CurvePenTolerance, 1);
         _curvePenCornerAngle.Value = (decimal)Math.Round(_ctx.CurvePenCornerAngle);
         _curvePenToleranceRow.IsVisible = _curvePenCornerAngleRow.IsVisible = _ctx.CurvePenMode == CurvePenMode.Freehand;
+        _curvePenPixelPerfect.IsChecked = _ctx.CurvePenPixelPerfect;
     }
 
     /// <summary>곡선 펜 묶음 안 컨트롤의 가이드 자리(아니면 null).</summary>
@@ -55,6 +59,7 @@ public sealed partial class ToolOptionsPanel
         if (InRow(_curvePenMode)) return new(page, Anchor: UiStrings.CurvePen_Mode);
         if (InRow(_curvePenTolerance)) return new(page, Anchor: UiStrings.CurvePen_Tolerance);
         if (InRow(_curvePenCornerAngle)) return new(page, Anchor: UiStrings.CurvePen_CornerAngle);
+        if (ReferenceEquals(c, _curvePenPixelPerfect)) return new(page);
         if (ReferenceEquals(c, _curvePenBox)) return new(page);
         return null;
     }

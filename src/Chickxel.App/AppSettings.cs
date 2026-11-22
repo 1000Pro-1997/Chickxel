@@ -155,6 +155,8 @@ public sealed class AppSettings
     public CurvePenMode CurvePenMode { get; set; }
     public double CurvePenTolerance { get; set; } = EditorContext.DefaultCurvePenTolerance;
     public double CurvePenCornerAngle { get; set; } = EditorContext.DefaultCurvePenCornerAngle;
+    /// <summary>곡선 펜 픽셀 퍼펙트(L자 겹 칸 빼기, 기본 켬).</summary>
+    public bool CurvePenPixelPerfect { get; set; } = true;
     /// <summary>대칭 그리기 축을 피벗에 둔다(좌우·상하 대칭 켜기 자체는 저장하지 않음).</summary>
     public bool MirrorAtPivot { get; set; }
     public string PrimaryColor { get; set; } = "#000000";
