@@ -98,7 +98,7 @@ term.sprite-library.to,parts-sprite-library,
 term.sprite-library.def,Unity에서 스킨을 바꿔 끼우는 데 쓰는 .spriteLib 에셋입니다.,The .spriteLib asset Unity uses to swap skins.
 term.app-trash,앱 휴지통,app trash
 term.app-trash.to,screen-file-browser,
-term.app-trash.def,지운 파일과 옛 내보내기 결과를 잠시 보관하는 Chickxel 자체 휴지통입니다.,Chickxel's own trash that keeps deleted files and old export outputs for a while.
+term.app-trash.def,"지운 파일과 옛 내보내기 결과를 잠시 보관하는 Chickxel 자체 휴지통입니다(Windows·macOS 휴지통과 따로, 파일 &gt; 앱 휴지통 보기…).","Chickxel's own trash that keeps deleted files and old export outputs for a while (separate from the Windows or macOS trash; File &gt; View app trash…)."
 term.undo-history,실행취소 기록,undo history
 term.undo-history.to,files-history,
 term.undo-history.def,닫았다 열어도 남는 실행취소 단계 기록입니다.,Undo steps that survive closing and reopening a file.

@@ -736,6 +736,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             WithIcon(DocCmd("갤러리에 올리기…", UiStrings.Gallery_Menu, UploadToGallery), VectorIcon.Upload),
             DocCmd("닫기", MainStrings.Menu_File_CloseProject_081, CloseActiveTab, "Ctrl+W", KeyScope.Global, (Key.W, Ctrl)),
             new Separator(),
+            WithIcon(Cmd("앱 휴지통 보기…", UiStrings.S_FileBrowserPanel_ListMenu_5FC61831E6, () => _browser.ShowTrash()), VectorIcon.Trash),
             Cmd("시작 화면", MainStrings.Menu_File_Command_083, ShowStart),
             // 끝내기 단축키는 OS가 처리한다(Windows Alt+F4, macOS 앱 메뉴의 ⌘Q).
             Cmd("끝내기", MainStrings.Menu_File_Close_085, Close, Platform.IsMac ? "Ctrl+Q" : "Alt+F4"));

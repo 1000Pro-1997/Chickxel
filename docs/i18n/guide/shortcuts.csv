@@ -51,6 +51,7 @@ shortcuts-file.h-cmd.d8,"내보내기 창을 엽니다. 형식(GIF·APNG·PNG·J
 shortcuts-file.h-cmd.d10,"chickxel.com 갤러리에 올립니다(<a href=""#screen-gallery"">갤러리에 올리기</a>).","Uploads to the chickxel.com gallery (see <a href=""#screen-gallery"">Upload to gallery</a>)."
 shortcuts-file.h-cmd.d11,지금 문서 탭을 닫습니다. 저장하지 않았으면 먼저 묻습니다.,"Closes the current document tab, asking first if it has unsaved changes."
 shortcuts-file.h-cmd.d12,"<a href=""#start-first-run"">시작 화면</a>을 다시 보입니다.","Shows the <a href=""#start-first-run"">start screen</a> again."
+shortcuts-file.h-cmd.trash,"지운 파일과 옛 내보내기 결과를 보관하는 <a href=""#screen-file-browser"">앱 휴지통</a> 창을 엽니다(Windows·macOS 휴지통과 따로).","Opens the <a href=""#screen-file-browser"">app trash</a> window, which keeps deleted files and old export outputs (separate from the Windows or macOS trash)."
 shortcuts-file.h-cmd.d13,앱을 끝냅니다. 이 키는 운영체제가 처리하므로 단축키 탭에서 바꾸지 않습니다.,"Quits the app. The operating system handles this key, so it isn't changed in the Shortcuts tab."
 shortcuts-file.h-menu,메뉴에서 키 확인,Keys in the menu
 shortcuts-file.20.alt,파일 메뉴를 펼친 모습: 새 프로젝트…부터 닫기까지 명령 오른쪽에 Ctrl+N·Ctrl+O·Ctrl+Shift+O·Ctrl+Shift+U·Ctrl+S·Ctrl+Shift+S·Ctrl+E·Ctrl+W 키,"The File menu open: Ctrl+N, Ctrl+O, Ctrl+Shift+O, Ctrl+Shift+U, Ctrl+S, Ctrl+Shift+S, Ctrl+E and Ctrl+W to the right of New project… through Close"

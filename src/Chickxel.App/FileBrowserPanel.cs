@@ -1240,8 +1240,8 @@ public sealed partial class FileBrowserPanel : UserControl
         return true;
     }
 
-    /// <summary>휴지통 보기 창.</summary>
-    private void ShowTrash()
+    /// <summary>앱 휴지통 보기 창(파일 목록 우클릭 메뉴·파일 메뉴).</summary>
+    public void ShowTrash()
     {
         var dlg = new TrashDialog(Trash, TrashPolicy(), p => TrashPolicyChanged?.Invoke(p), OnRestored);
         dlg.ShowDialog(this);
