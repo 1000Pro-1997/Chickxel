@@ -99,7 +99,7 @@ public static class ScriptApiCatalog
         M(Declaration, "language", ScriptApiKind.Key, "language: \"en\""),
         M(Declaration, "description", ScriptApiKind.Key, "description: \"…\""),
         M(Declaration, "tags", ScriptApiKind.Key, "tags: [\"neon\", \"glow\"]"),
-        M(Declaration, "translations", ScriptApiKind.Key, "translations: { en: { name, description, labels: { key: \"…\", \"key.choiceValue\": \"…\" } } }", Translation),
+        M(Declaration, "translations", ScriptApiKind.Key, "translations: { en: { name, description, labels: { key: \"…\", \"key.choiceValue\": \"…\", \"group:Group title\": \"…\" } } }", Translation),
         M(Declaration, "animated", ScriptApiKind.Key, "animated: true"),
         M(Declaration, "deferred", ScriptApiKind.Key, "deferred: true"),
         M(Declaration, "motion", ScriptApiKind.Key, "motion: false"),
@@ -116,14 +116,14 @@ public static class ScriptApiCatalog
         M(Declaration, "previewEndOffset", ScriptApiKind.Key, "previewEndOffset: [x, y]"),
         M(Declaration, "previewPivot", ScriptApiKind.Key, "previewPivot: [x, y]"),
         M(Declaration, "previewEndPivot", ScriptApiKind.Key, "previewEndPivot: [x, y]"),
-        M(Declaration, "settings", ScriptApiKind.Key, "settings: [{ key, label, type, min, max, step, default, choices, alpha, widget, pair }]", Setting),
+        M(Declaration, "settings", ScriptApiKind.Key, "settings: [{ key, label, type, min, max, step, default, choices, alpha, widget, pair, when, group }]", Setting),
         M(Declaration, "gradients", ScriptApiKind.Key, "gradients: { key: { stops: [{ position: 0, color: \"#ffffff\" }, ...], alphaStops?, interpolation?, colorSpace?, shape?, angle?, ... }, \"list[0]\": { ... } }"),
         M(Declaration, "padding", ScriptApiKind.Key, "padding: [left, top, right, bottom] | padding(s, width, height) { ... }"),
         M(Declaration, "render", ScriptApiKind.Function, "render(img, ctx, s) { ... }"),
 
         M(Translation, "name", ScriptApiKind.Key, "name: \"…\""),
         M(Translation, "description", ScriptApiKind.Key, "description: \"…\""),
-        M(Translation, "labels", ScriptApiKind.Key, "labels: { key: \"…\", \"key.choiceValue\": \"…\" }"),
+        M(Translation, "labels", ScriptApiKind.Key, "labels: { key: \"…\", \"key.choiceValue\": \"…\", \"group:Group title\": \"…\" }"),
 
         M(Area, "global", ScriptApiKind.Literal, "\"global\""),
         M(Area, "local", ScriptApiKind.Literal, "\"local\""),
@@ -141,7 +141,7 @@ public static class ScriptApiCatalog
 
         M(Setting, "key", ScriptApiKind.Key, "key: \"strength\""),
         M(Setting, "label", ScriptApiKind.Key, "label: \"…\""),
-        M(Setting, "type", ScriptApiKind.Key, "type: \"int\" | \"number\" | \"bool\" | \"color\" | \"choice\" | \"colorList\" | \"colorPairs\" | \"layer\" | \"text\" | \"font\"", SettingType),
+        M(Setting, "type", ScriptApiKind.Key, "type: \"int\" | \"number\" | \"bool\" | \"color\" | \"choice\" | \"colorList\" | \"colorPairs\" | \"layer\" | \"text\" | \"font\" | \"position\"", SettingType),
         M(Setting, "min", ScriptApiKind.Key, "min: 0"),
         M(Setting, "max", ScriptApiKind.Key, "max: 100"),
         M(Setting, "step", ScriptApiKind.Key, "step: 0.1"),
@@ -151,6 +151,7 @@ public static class ScriptApiCatalog
         M(Setting, "widget", ScriptApiKind.Key, "widget: \"angle\" | \"point\"", Widget),
         M(Setting, "pair", ScriptApiKind.Key, "pair: \"centerY\""),
         M(Setting, "when", ScriptApiKind.Key, "when: { choiceKey: \"value\" | [\"a\", \"b\"], boolKey: true }"),
+        M(Setting, "group", ScriptApiKind.Key, "group: \"Position\""),
 
         M(Widget, "angle", ScriptApiKind.Literal, "\"angle\""),
         M(Widget, "point", ScriptApiKind.Literal, "\"point\""),
@@ -165,6 +166,7 @@ public static class ScriptApiCatalog
         M(SettingType, "layer", ScriptApiKind.Literal, "\"layer\""),
         M(SettingType, "text", ScriptApiKind.Literal, "\"text\""),
         M(SettingType, "font", ScriptApiKind.Literal, "\"font\""),
+        M(SettingType, "position", ScriptApiKind.Literal, "\"position\""),
 
         M(Image, "width", ScriptApiKind.Value, "img.width"),
         M(Image, "height", ScriptApiKind.Value, "img.height"),
@@ -191,6 +193,7 @@ public static class ScriptApiCatalog
         M(Context, "pairColor", ScriptApiKind.Function, "ctx.pairColor(key, index, \"from\" | \"to\", x, y, bounds?) → { r, g, b, a }", Color),
         M(Context, "gradientAt", ScriptApiKind.Function, "ctx.gradientAt(\"key\" | \"key[i]\" | \"key[i].from\", position, x?, y?) → { r, g, b, a }", Color),
         M(Context, "hasGradient", ScriptApiKind.Function, "ctx.hasGradient(\"key\" | \"key[i]\" | \"key[i].from\") | ctx.hasGradient(listKey, index, \"from\" | \"to\"?) → true | false"),
+        M(Context, "position", ScriptApiKind.Function, "ctx.position(key) → { x, y }"),
         M(Context, "hash", ScriptApiKind.Function, "ctx.hash(x, y, seed, salt?) → 0~1"),
         M(Context, "random", ScriptApiKind.Function, "ctx.random(seed) → 0~1"),
         M(Context, "bayer2", ScriptApiKind.Function, "ctx.bayer2(x, y) → 0~3"),

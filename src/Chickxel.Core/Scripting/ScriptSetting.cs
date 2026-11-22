@@ -3,7 +3,7 @@ using Chickxel.Core.Model;
 namespace Chickxel.Core.Scripting;
 
 /// <summary>
-/// 스크립트 설정 값의 종류. 선언의 <c>type</c> 문자열 <c>int</c>, <c>number</c>, <c>bool</c>, <c>color</c>, <c>choice</c>, <c>colorList</c>, <c>colorPairs</c>, <c>layer</c>, <c>text</c>, <c>font</c>.
+/// 스크립트 설정 값의 종류. 선언의 <c>type</c> 문자열 <c>int</c>, <c>number</c>, <c>bool</c>, <c>color</c>, <c>choice</c>, <c>colorList</c>, <c>colorPairs</c>, <c>layer</c>, <c>text</c>, <c>font</c>, <c>position</c>.
 /// </summary>
 public enum ScriptSettingType
 {
@@ -41,6 +41,12 @@ public enum ScriptSettingType
     /// <c>ctx.text(글, { font: s.키 })</c>로 그린다. 이 컴퓨터에 없는 이름도 그대로 두며 그리기는 기본 글꼴로 한다.
     /// </summary>
     Font,
+    /// <summary>
+    /// 위치(기준 + 직접 자리). C# 값은 <see cref="ScriptPosition"/>, JS 값은 고정된 <c>{ anchor, x, y }</c>, 저장 JSON은 <c>{ "anchor": "pivot", "x": 0, "y": 0 }</c>.
+    /// 효과 창은 위치 기준 고르기(직접 지정·캔버스 중심·피벗·그림 중심)와, 직접 지정일 때 X·Y 칸(범위가 있으면 점 고르기 판)을 보인다.
+    /// 스크립트는 <c>ctx.position("키")</c>로 그림 좌표 <c>{ x, y }</c>를 받는다(<see cref="ScriptPosition"/>). <see cref="ScriptSetting.Min"/>·<see cref="ScriptSetting.Max"/>는 X·Y 범위.
+    /// </summary>
+    Position,
 }
 
 /// <summary>설정 칸을 그리는 모양(선언의 <c>widget</c>). 저장 값은 바꾸지 않고 효과 창의 편집기만 바꾼다.</summary>
@@ -75,6 +81,54 @@ public sealed record ScriptChoice(string Value, string Label);
 
 /// <summary>색 쌍 목록 설정(<see cref="ScriptSettingType.ColorPairs"/>)의 항목 하나: <see cref="From"/>을 <see cref="To"/>로.</summary>
 public readonly record struct ScriptColorPair(Color32 From, Color32 To);
+
+/// <summary>
+/// 위치 설정(<see cref="ScriptSettingType.Position"/>) 값: 기준 <see cref="Anchor"/>와, 기준이 <see cref="Custom"/>일 때 쓰는 자리(<see cref="X"/>, <see cref="Y"/> — 효과 원본 왼쪽 위에서 잰 px).
+/// 다른 기준이면 자리는 저장만 하고 쓰지 않는다(직접 지정으로 돌아오면 그 자리).
+/// </summary>
+public readonly record struct ScriptPosition(string Anchor, int X, int Y)
+{
+    /// <summary>직접 지정: 효과 원본 왼쪽 위(<c>ctx.source</c>) + (X, Y).</summary>
+    public const string Custom = "custom";
+    /// <summary>캔버스 중심: <c>ctx.center</c>(효과 원본 — 캔버스, 부위면 부위 칸 — 가운데).</summary>
+    public const string Center = "center";
+    /// <summary>피벗: <c>ctx.pivot</c>.</summary>
+    public const string Pivot = "pivot";
+    /// <summary>그림 중심: 효과를 입히기 전 그림의 불투명 범위 가운데(비었으면 캔버스 중심).</summary>
+    public const string Content = "content";
+
+    /// <summary>고를 수 있는 기준(효과 창 차례).</summary>
+    public static IReadOnlyList<string> Anchors { get; } = [Custom, Center, Pivot, Content];
+
+    /// <summary>선언에 <c>default</c>가 없을 때: 캔버스 중심.</summary>
+    public static ScriptPosition Default { get; } = new(Center, 0, 0);
+
+    /// <summary>저장 JSON <c>{ "anchor": …, "x": …, "y": … }</c>.</summary>
+    public System.Text.Json.Nodes.JsonObject ToJson() => new() { ["anchor"] = Anchor, ["x"] = X, ["y"] = Y };
+
+    /// <summary>
+    /// 저장·선언 모양 <c>{ anchor?, x?, y? }</c>을 읽는다: 빠진 칸은 <paramref name="fallback"/>의 값, 수는 반올림해 [<paramref name="min"/>, <paramref name="max"/>]로 자른다.
+    /// 객체가 아니거나, 모르는 기준이거나, 칸의 모양이 틀리면 null.
+    /// </summary>
+    public static ScriptPosition? Read(System.Text.Json.Nodes.JsonNode? node, ScriptPosition fallback, double? min, double? max)
+    {
+        if (node is not System.Text.Json.Nodes.JsonObject obj) return null;
+        string anchor = fallback.Anchor;
+        if (obj["anchor"] is { } anchorNode)
+        {
+            if (anchorNode is not System.Text.Json.Nodes.JsonValue v || !v.TryGetValue(out string? name) || !Anchors.Contains(name)) return null;
+            anchor = name;
+        }
+        int? Coordinate(string field, int keep)
+        {
+            if (obj[field] is not { } value) return keep;
+            if (!Effects.EffectJson.TryNumber(value, out double d) || !double.IsFinite(d)) return null;
+            return (int)Math.Clamp(Math.Round(Math.Clamp(d, min ?? int.MinValue, max ?? int.MaxValue)), int.MinValue, int.MaxValue);
+        }
+        if (Coordinate("x", fallback.X) is not { } x || Coordinate("y", fallback.Y) is not { } y) return null;
+        return new ScriptPosition(anchor, x, y);
+    }
+}
 
 /// <summary>
 /// 스크립트가 선언한 설정 하나(5.4 명시적 설정 schema와 같은 정보). 효과 창의 범용 편집기, 저장과 검증이 이것을 쓴다.
@@ -131,6 +185,12 @@ public sealed record ScriptSetting(
     /// </summary>
     public IReadOnlyList<ScriptSettingCondition> When { get; init; } = [];
 
+    /// <summary>
+    /// 묶음 제목(선언의 <c>group</c>, 없으면 null): 이어서 선언한 같은 제목의 설정을 설정 칸에서 제목 달린 테두리 상자 하나로 둘러싼다.
+    /// 값과 저장에는 상관없다. 번역은 <c>translations.언어.labels["group:제목"]</c>(<see cref="ScriptTranslation.GroupKey"/>).
+    /// </summary>
+    public string? Group { get; init; }
+
     /// <summary>색이 들어 있는 설정(색·색 목록·색 쌍 목록) — 그라데이션 슬롯을 가진다(<see cref="ScriptColorSlots"/>).</summary>
     public bool IsColor => Type is ScriptSettingType.Color or ScriptSettingType.ColorList or ScriptSettingType.ColorPairs;
 
@@ -141,9 +201,9 @@ public sealed record ScriptSetting(
     public bool Equals(ScriptSetting? other)
         => other is not null && Key == other.Key && Label == other.Label && Type == other.Type && Min == other.Min && Max == other.Max
             && Step == other.Step && SameValue(Default, other.Default) && Choices.SequenceEqual(other.Choices)
-            && Alpha == other.Alpha && Widget == other.Widget && Pair == other.Pair && When.SequenceEqual(other.When);
+            && Alpha == other.Alpha && Widget == other.Widget && Pair == other.Pair && When.SequenceEqual(other.When) && Group == other.Group;
 
-    public override int GetHashCode() => HashCode.Combine(Key, Label, Type, Min, Max, Step, Choices.Count, HashCode.Combine(Alpha, Widget, Pair));
+    public override int GetHashCode() => HashCode.Combine(Key, Label, Type, Min, Max, Step, Choices.Count, HashCode.Combine(Alpha, Widget, Pair, Group));
 
     /// <summary>두 설정 값(C# 값)이 같은지: 색 목록·색 쌍 목록은 항목으로 비교한다.</summary>
     public static bool SameValue(object a, object b) => (a, b) switch

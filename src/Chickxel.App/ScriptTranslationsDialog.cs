@@ -162,8 +162,12 @@ public sealed class ScriptTranslationsDialog : DialogBase
             if (program.Settings.Count > 0)
             {
                 body.Children.Add(Ui.Label(UiStrings.ScriptLanguages_Labels, bold: true));
+                var groups = new HashSet<string>(StringComparer.Ordinal);
                 foreach (var setting in program.Settings)
                 {
+                    // 묶음 제목은 처음 나오는 자리에 한 번(같은 제목은 번역 키가 하나)
+                    if (setting.Group is { } group && groups.Add(group))
+                        body.Children.Add(Row(group, Label(ScriptTranslation.GroupKey(group), group, translation)));
                     body.Children.Add(Row(setting.Label, Label(setting.Key, setting.Label, translation)));
                     foreach (var choice in setting.Choices)
                     {

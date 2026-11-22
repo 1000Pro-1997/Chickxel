@@ -22,6 +22,8 @@ public enum EffectParameterKind
     Number,
     /// <summary>글(JSON 문자열, 최대 <see cref="EffectParameter.MaxLength"/>자 — 글씨 효과의 글). 레시피 매개변수로는 글 상자로 내보낸다.</summary>
     Text,
+    /// <summary>스크립트 위치 설정 값 <c>{ "anchor": "custom"|"center"|"pivot"|"content", "x": 정수, "y": 정수 }</c>. 레시피 매개변수로 내보낼 수 없다.</summary>
+    Position,
 }
 
 /// <summary>
@@ -73,7 +75,7 @@ public abstract class EffectParameter
     /// 레시피 매개변수로 사용자에게 내보낼 수 있는지(값 하나짜리 정수·켜고 끄기·색·고르기·글 설정만, schema에서 뺀 설정은 제외 — <see cref="Exposable"/>).
     /// 스크립트 설정은 종류에 따라 다시 정한다(<see cref="ScriptEffectParameter"/> — 레이어 고르기는 글이지만 문서마다 레이어가 달라 내보내지 않음).
     /// </summary>
-    public virtual bool Exposed => Exposable && Kind is not (EffectParameterKind.ColorList or EffectParameterKind.ColorPairList or EffectParameterKind.Number);
+    public virtual bool Exposed => Exposable && Kind is not (EffectParameterKind.ColorList or EffectParameterKind.ColorPairList or EffectParameterKind.Number or EffectParameterKind.Position);
 
     /// <summary>schema가 레시피 매개변수에서 뺀 설정이면 false(예: 글꼴 이름 — 글 상자가 아니라 글꼴 고르기가 필요함).</summary>
     internal bool Exposable { get; init; } = true;

@@ -17,10 +17,10 @@
   <data name="Api_effect_description" xml:space="preserve"><value>짧은 설명(선택, 200자까지). 효과 만들기의 설명 칸과 올릴 때 짧은 설명에 쓰입니다.</value></data>
   <data name="Api_effect_language" xml:space="preserve"><value>선언에 적은 name·description·설정 이름의 언어 코드(선택, 예: "ko", "en", "zh-Hans"). 화면 언어가 이 언어면 번역 대신 선언 값이 보입니다.</value></data>
   <data name="Api_effect_tags" xml:space="preserve"><value>목록 태그(선택, 영어 소문자 낱말 8개까지, 예: ["neon", "glow"]). 올릴 때 태그로 쓰입니다.</value></data>
-  <data name="Api_effect_translations" xml:space="preserve"><value>다른 언어의 제목·설명·설정 이름(언어 코드 → { name, description, labels }). 화면 언어에 맞는 것이 보이고, 없으면 선언에 적은 값.</value></data>
+  <data name="Api_effect_translations" xml:space="preserve"><value>다른 언어의 제목·설명·설정 이름·묶음 제목(언어 코드 → { name, description, labels }). 화면 언어에 맞는 것이 보이고, 없으면 선언에 적은 값.</value></data>
   <data name="Api_translation_name" xml:space="preserve"><value>그 언어의 효과 이름(1~100자).</value></data>
   <data name="Api_translation_description" xml:space="preserve"><value>그 언어의 짧은 설명(200자까지).</value></data>
-  <data name="Api_translation_labels" xml:space="preserve"><value>그 언어의 설정 이름: 설정 키 → 이름, 고르기 항목은 "키.항목값" → 이름(각 100자까지).</value></data>
+  <data name="Api_translation_labels" xml:space="preserve"><value>그 언어의 설정 이름: 설정 키 → 이름, 고르기 항목은 "키.항목값" → 이름, 설정 묶음은 "group:묶음 제목" → 이름(각 100자까지).</value></data>
   <data name="Api_effect_animated" xml:space="preserve"><value>프레임 진행(ctx.progress)에 따라 모습이 바뀌면 true. 빠르기 곡선·반복 설정이 생깁니다.</value></data>
   <data name="Api_effect_area" xml:space="preserve"><value>계산 범위: "global"(기본, 프레임마다 한 번) 또는 "local"(조각마다, radius만큼 여유).</value></data>
   <data name="Api_effect_radius" xml:space="preserve"><value>area가 "local"일 때 조각 둘레에 붙일 여유 px.</value></data>
@@ -54,16 +54,17 @@
   <data name="Api_effect_previewMotion_down" xml:space="preserve"><value>미리보기 칸마다 아래로 1px 갑니다.</value></data>
   <data name="Api_setting_key" xml:space="preserve"><value>저장 키(영문자나 _로 시작). render에서 s.키로 읽습니다.</value></data>
   <data name="Api_setting_label" xml:space="preserve"><value>설정 칸 이름.</value></data>
-  <data name="Api_setting_type" xml:space="preserve"><value>값 종류: "int", "number", "bool", "color", "choice", "colorList", "colorPairs", "layer", "text", "font".</value></data>
-  <data name="Api_setting_min" xml:space="preserve"><value>가장 작은 값(int·number). colorList·colorPairs는 가장 적은 항목 수(기본 0).</value></data>
-  <data name="Api_setting_max" xml:space="preserve"><value>가장 큰 값(int·number), 가장 많은 항목 수(colorList·colorPairs: 기본 16, 64까지), 글자 수 제한(text: 기본 1000, 1~1000).</value></data>
+  <data name="Api_setting_type" xml:space="preserve"><value>값 종류: "int", "number", "bool", "color", "choice", "colorList", "colorPairs", "layer", "text", "font", "position".</value></data>
+  <data name="Api_setting_min" xml:space="preserve"><value>가장 작은 값(int·number, position은 X·Y). colorList·colorPairs는 가장 적은 항목 수(기본 0).</value></data>
+  <data name="Api_setting_max" xml:space="preserve"><value>가장 큰 값(int·number, position은 X·Y), 가장 많은 항목 수(colorList·colorPairs: 기본 16, 64까지), 글자 수 제한(text: 기본 1000, 1~1000).</value></data>
   <data name="Api_setting_step" xml:space="preserve"><value>슬라이더 간격(number).</value></data>
-  <data name="Api_setting_default" xml:space="preserve"><value>처음 값(종류에 맞게, text는 문자열이며 기본 "", 색은 "#ff8800", colorList는 ["#ff8800", …], colorPairs는 [{ from: "#000000", to: "#ffffff" }, …], layer는 레이어 이름 "ground" — 없으면 고르지 않음, font는 글꼴 이름 "Galmuri11" — 없으면 Galmuri11).</value></data>
+  <data name="Api_setting_default" xml:space="preserve"><value>처음 값(종류에 맞게, text는 문자열이며 기본 "", 색은 "#ff8800", colorList는 ["#ff8800", …], colorPairs는 [{ from: "#000000", to: "#ffffff" }, …], layer는 레이어 이름 "ground" — 없으면 고르지 않음, font는 글꼴 이름 "Galmuri11" — 없으면 Galmuri11, position은 { anchor: "pivot", x: 0, y: 0 } — 없으면 캔버스 중심).</value></data>
   <data name="Api_setting_choices" xml:space="preserve"><value>choice의 항목: [{ value, label }].</value></data>
   <data name="Api_setting_alpha" xml:space="preserve"><value>false면 색·색 목록·색 쌍 목록의 알파를 고르지 않고 늘 불투명(255)입니다(기본 true).</value></data>
   <data name="Api_setting_widget" xml:space="preserve"><value>효과 창 편집기 모양(int만): "angle"은 각도 다이얼, "point"는 pair의 설정과 함께 X·Y 점 고르기.</value></data>
   <data name="Api_setting_pair" xml:space="preserve"><value>widget "point"의 Y 설정 키(다른 int 설정). 이 설정이 X이고 Y 설정은 같은 칸에서 고칩니다.</value></data>
   <data name="Api_setting_when" xml:space="preserve"><value>이 설정이 보이는 조건: 앞에 선언한 choice 설정이 그 값일 때({ facing: "rotate" }, 여러 값은 ["rotate", "flip"]), bool 설정이 그 값일 때({ closePath: true }). 조건이 여럿이면 모두 맞아야 보입니다. 숨겨도 값은 그대로 저장되고 s.키로 읽힙니다.</value></data>
+  <data name="Api_setting_group" xml:space="preserve"><value>묶음 제목(선택, 100자까지): 이어서 선언한 같은 제목의 설정을 효과 창에서 제목 달린 테두리 상자로 둘러쌉니다. 설정이 4개를 넘으면 위치·크기·색처럼 비슷한 것끼리 묶습니다. 번역은 translations.언어.labels["group:제목"].</value></data>
   <data name="Api_setting_widget_angle" xml:space="preserve"><value>각도 다이얼(0 = 오른쪽, 90 = 위).</value></data>
   <data name="Api_setting_widget_point" xml:space="preserve"><value>X·Y 점 고르기(pair에 Y 설정 키).</value></data>
   <data name="Api_setting_type_int" xml:space="preserve"><value>정수: 슬라이더와 숫자 칸.</value></data>
@@ -76,6 +77,7 @@
   <data name="Api_setting_type_layer" xml:space="preserve"><value>레이어 고르기: 효과 창이 문서의 레이어(효과 만들기는 미리보기 장면의 레이어)를 고르기 상자로 보입니다. s.키는 고른 레이어 이름(고르지 않으면 ""). 그 레이어는 ctx.layer(키)·ctx.layerWithEffects(키)·ctx.layerEffects(키)로 읽습니다.</value></data>
   <data name="Api_setting_type_text" xml:space="preserve"><value>여러 줄 글 칸: s.키는 줄바꿈을 포함한 문자열. max는 글자 수 제한 1~1000(기본 1000).</value></data>
   <data name="Api_setting_type_font" xml:space="preserve"><value>글꼴 고르기: 효과 창이 글씨 효과와 같은 글꼴 목록(앱 글꼴과 더한 글꼴, 폰트 추가·폰트 폴더 열기 단추)을 보입니다. s.키는 고른 글꼴 이름이고 ctx.text(글, { font: s.키 })로 그립니다. 이 컴퓨터에 없는 글꼴은 기본 글꼴로 그립니다.</value></data>
+  <data name="Api_setting_type_position" xml:space="preserve"><value>위치: 효과 창이 위치 기준 고르기(직접 지정·캔버스 중심·피벗·그림 중심)와 직접 지정일 때 X·Y 칸(min·max가 있으면 점 고르기 판)을 보입니다. s.키는 { anchor: "custom"|"center"|"pivot"|"content", x, y }이고, 그림 좌표는 ctx.position(키)로 받습니다.</value></data>
   <data name="Api_img_width" xml:space="preserve"><value>그림 너비(px, 여백 포함).</value></data>
   <data name="Api_img_height" xml:space="preserve"><value>그림 높이(px, 여백 포함).</value></data>
   <data name="Api_img_data" xml:space="preserve"><value>RGBA 숫자 배열(길이 = 너비 × 높이 × 4). 바꾸면 그림이 바뀝니다.</value></data>
@@ -96,6 +98,7 @@
   <data name="Api_ctx_colorAt" xml:space="preserve"><value>색 목록 설정 key의 index번 항목의 (x, y) 색(ctx.color와 같은 그라데이션 규칙).</value></data>
   <data name="Api_ctx_pairColor" xml:space="preserve"><value>색 쌍 목록 설정 key의 index번 쌍의 "from"(바꿀 색)이나 "to"(바뀐 색)의 (x, y) 색(ctx.color와 같은 그라데이션 규칙).</value></data>
   <data name="Api_ctx_gradientAt" xml:space="preserve"><value>색 슬롯("키", 목록 항목 "키[0]", 쌍 "키[0].from"·"키[0].to")의 그라데이션에서 위치 position(0~1, 밖은 끝 색)의 색 { r, g, b, a }. 픽셀 자리가 아닌 값(나이·세기·진행 등)으로 고를 때 씁니다. 그라데이션의 모양·각도·반복·움직임은 보지 않고 멈춤점·보간·색 공간과 뒤집기만 따르며, 그라데이션이 없으면 단색 그대로입니다. x, y는 디더 무늬 자리(생략하면 0).</value></data>
+  <data name="Api_ctx_position" xml:space="preserve"><value>위치 설정(type: "position", 키는 문자열 리터럴)이 가리키는 그림 좌표 { x, y }: 직접 지정은 원본 왼쪽 위 + (x, y), 캔버스 중심은 ctx.center, 피벗은 ctx.pivot, 그림 중심은 효과 전 그림의 불투명 범위 가운데(비었으면 캔버스 중심). 빠른 경로에서도 돕니다.</value></data>
   <data name="Api_ctx_hasGradient" xml:space="preserve"><value>색 슬롯에 그라데이션이 있는지: "키", 목록 항목 "키[0]", 쌍 "키[0].from"·"키[0].to". 목록 항목은 번호로도 고릅니다: ctx.hasGradient("목록 키", 번호, "from"|"to"(쌍만)) — 항목이 없으면 false.</value></data>
   <data name="Api_ctx_hash" xml:space="preserve"><value>위치·시드·용도(salt, 기본 0)로 정해지는 0 이상 1 미만의 수(프레임과 무관, 늘 같음). salt가 다르면 서로 다른 값이 나옵니다.</value></data>
   <data name="Api_ctx_bayer2" xml:space="preserve"><value>2×2 순서 디더 문턱값 0~3(좌표가 음수여도 무늬가 이어짐).</value></data>

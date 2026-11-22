@@ -52,7 +52,7 @@ public sealed partial class LayerEffectsDialog
             return;
         }
         if (program.Settings.Count == 0) _settings.Children.Add(Hint(UiStrings.ScriptEffect_NoSettings));
-        AddScriptSettingRows(program, s, set, ShowSettings, LayerChoices(_project, _layer), _form.ScriptRow);
+        AddScriptSettingRows(program, s, set, ShowSettings, LayerChoices(_project, _layer), _form);
         if (program.Animated && program.Motion) AddMotionEditors(Selected, set);
         _settings.Children.Add(Hint(UiStrings.ScriptEffect_Hint));
     }

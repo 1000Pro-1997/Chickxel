@@ -30,8 +30,27 @@ internal sealed class EffectForm
 
     public Visual Owner { get; }
 
+    /// <summary>열린 묶음 상자 안 칸(<see cref="BeginGroup"/>~<see cref="EndGroup"/>), 아니면 null.</summary>
+    private StackPanel? _group;
+
+    /// <summary>줄을 넣을 칸: 열린 묶음 상자 안, 아니면 <see cref="Panel"/>.</summary>
+    private StackPanel Target => _group ?? Panel;
+
+    /// <summary>
+    /// 제목 달린 테두리 상자(<see cref="Ui.Group"/>)를 열어 <see cref="EndGroup"/>까지 넣는 줄을 그 안에 둔다(열린 상자가 있으면 먼저 닫음).
+    /// 이름 열 폭은 상자 밖 줄과 함께 맞춘다.
+    /// </summary>
+    public void BeginGroup(string title)
+    {
+        _group = new StackPanel { Spacing = Panel.Spacing };
+        Panel.Children.Add(Ui.Group(title, _group));
+    }
+
+    /// <summary>묶음 상자를 닫는다(다음 줄은 상자 밖에). 열린 상자가 없으면 아무것도 안 함.</summary>
+    public void EndGroup() => _group = null;
+
     /// <summary>이름 열 없이 칸 전체 폭으로 넣는다.</summary>
-    public void Add(Control control) => Panel.Children.Add(control);
+    public void Add(Control control) => Target.Children.Add(control);
 
     /// <summary>
     /// 한 줄: 이름 열에 <paramref name="label"/>, 값 열에 컨트롤들(모든 줄이 같은 x에서 시작). 이름이 ""면 값 열만. 값 열 줄을 돌려준다.
@@ -94,10 +113,10 @@ internal sealed class EffectForm
                 head.Margin = new Thickness(3, 4, 3, 0);
                 head.TextWrapping = TextWrapping.Wrap;
                 head.HorizontalAlignment = HorizontalAlignment.Left;
-                Panel.Children.Add(head);
+                Target.Children.Add(head);
             }
             body.Margin = new Thickness(body.Margin.Left + 6, body.Margin.Top, body.Margin.Right, body.Margin.Bottom);
-            Panel.Children.Add(body);
+            Target.Children.Add(body);
             return;
         }
         var grid = new Grid();
@@ -112,6 +131,6 @@ internal sealed class EffectForm
         }
         Grid.SetColumn(body, 1);
         grid.Children.Add(body);
-        Panel.Children.Add(grid);
+        Target.Children.Add(grid);
     }
 }

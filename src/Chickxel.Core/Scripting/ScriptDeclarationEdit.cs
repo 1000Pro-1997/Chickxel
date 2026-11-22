@@ -262,6 +262,10 @@ public static class ScriptDeclarationEdit
                 return "[" + string.Join(", ", colors.Select(c => ColorLiteral(c, old))) + "]";
             case IReadOnlyList<ScriptColorPair> pairs:
                 return "[" + string.Join(", ", pairs.Select(p => "{ from: " + ColorLiteral(p.From, old) + ", to: " + ColorLiteral(p.To, old) + " }")) + "]";
+            // 위치 { anchor: "…", x: 0, y: 0 }: 따옴표는 있던 값을 따른다
+            case ScriptPosition position:
+                return "{ anchor: " + StringLiteral(position.Anchor, old?.Contains('\'') == true && !old.Contains('"') ? "'" : null)
+                       + ", x: " + position.X.ToString(CultureInfo.InvariantCulture) + ", y: " + position.Y.ToString(CultureInfo.InvariantCulture) + " }";
             default:
                 return null;
         }

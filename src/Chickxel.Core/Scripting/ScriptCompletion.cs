@@ -96,6 +96,7 @@ public static partial class ScriptCompletion
                         "pairColor" => names.Settings.Where(s => s.Type == "colorPairs").Select(SettingItem),
                         "hasGradient" or "gradientAt" => names.Settings.Where(s => s.Type is "color" or "colorList" or "colorPairs").Select(SettingItem),
                         "layer" or "layerWithEffects" or "layerEffects" => names.Settings.Where(s => s.Type == "layer").Select(SettingItem),
+                        "position" => names.Settings.Where(s => s.Type == "position").Select(SettingItem),
                         _ => [],
                     }
                 : [];

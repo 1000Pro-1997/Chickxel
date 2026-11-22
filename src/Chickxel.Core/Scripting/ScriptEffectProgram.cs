@@ -105,6 +105,9 @@ public sealed class ScriptEffectProgram
     public string ChoiceLabelFor(ScriptSetting setting, ScriptChoice choice, CultureInfo culture)
         => ScriptTranslations.ChoiceLabelFor(Translations, setting, choice, culture, Language);
 
+    /// <summary><paramref name="culture"/>의 설정 묶음 제목: 번역의 <c>labels["group:제목"]</c> → 선언의 <c>group</c>.</summary>
+    public string GroupLabelFor(string group, CultureInfo culture) => ScriptTranslations.GroupLabelFor(Translations, group, culture, Language);
+
     /// <summary>render가 도는 길: 빠른 경로인지, 아니면 Jint로 도는 까닭과 위치. 처음 읽을 때 한 번 바꿔 보고 그 결과를 계속 쓴다.</summary>
     public ScriptExecutionPath ExecutionPath => _fast.Value.Path;
 
@@ -446,6 +449,18 @@ public sealed class ScriptEffectProgram
             case ScriptSettingType.Font:
                 // 글꼴 이름: 이 컴퓨터에 없는 이름도 그대로 둔다(고르기 상자가 "이름 (없음)"으로 보이고, ctx.text는 기본 글꼴로 그림)
                 return ScriptSetting.FontName(value);
+            case ScriptSettingType.Position:
+            {
+                // 기준·자리: 빠진 칸은 선언의 기본값, 자리는 반올림해 선언 범위로. 모르는 기준·틀린 모양은 기본값
+                var node = value switch
+                {
+                    ScriptPosition p => p.ToJson(),
+                    ScriptRawValue raw => ParseJson(raw.Json),
+                    System.Text.Json.Nodes.JsonNode json => json,
+                    _ => null,
+                };
+                return ScriptPosition.Read(node, (ScriptPosition)setting.Default, setting.Min, setting.Max);
+            }
             default:
                 return value is string choice && setting.Choices.Any(c => c.Value == choice) ? choice : null;
         }

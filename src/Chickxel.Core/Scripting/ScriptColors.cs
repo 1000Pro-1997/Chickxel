@@ -5,7 +5,7 @@ using Chickxel.Core.Model;
 namespace Chickxel.Core.Scripting;
 
 /// <summary>
-/// render 한 번이 쓰는 색 설정 읽기(<c>ctx.color</c>·<c>ctx.colorAt</c>·<c>ctx.pairColor</c>·<c>ctx.gradientAt</c>·<c>ctx.hasGradient</c>). Jint와 빠른 경로가 같은 것을 쓴다.
+/// render 한 번이 쓰는 색 설정 읽기(<c>ctx.color</c>·<c>ctx.colorAt</c>·<c>ctx.pairColor</c>·<c>ctx.gradientAt</c>·<c>ctx.hasGradient</c>)와 위치 설정 읽기(<c>ctx.position</c>). Jint와 빠른 경로가 같은 것을 쓴다.
 /// <para>
 /// 그라데이션이 없는 슬롯은 설정의 단색 그대로다. 있으면 기본 효과와 같은 <see cref="EffectGradientSampler"/>로 (x, y)에서 고른다:
 /// 범위는 따로 주지 않으면 효과를 입히기 전 그림의 불투명 범위(기본 효과의 색 설정과 같음 — 처음 쓸 때 한 번 잰다), 디더 무늬는 효과 원본 왼쪽 위 기준,
@@ -134,6 +134,28 @@ internal sealed class ScriptColors
     /// </summary>
     public PixelImage? Layer(string key, bool withEffects)
         => Frame.Layers is { } layers && _image is { } image && ChosenLayer(key) is { } name ? layers.Named(name, withEffects, image.Width, image.Height, Source) : null;
+
+    /// <summary>
+    /// <c>ctx.position("키")</c>: 위치 설정 <paramref name="setting"/>(schema 번호, <see cref="ScriptSettingType.Position"/>)이 가리키는 그림 좌표.
+    /// 직접 지정 = 효과 원본 왼쪽 위 + (X, Y), 캔버스 중심 = <c>ctx.center</c>, 피벗 = <c>ctx.pivot</c>, 그림 중심 = 효과를 입히기 전 그림의 불투명 범위 가운데
+    /// (그 범위는 처음 쓸 때 한 번 잰다 — 비었으면 캔버스 중심). Jint와 빠른 경로가 같은 것을 쓴다.
+    /// </summary>
+    public (double X, double Y) Position(int setting)
+    {
+        var position = (ScriptPosition)_values[_schema[setting].Key];
+        switch (position.Anchor)
+        {
+            case ScriptPosition.Custom:
+                return (Source.X + position.X, Source.Y + position.Y);
+            case ScriptPosition.Pivot:
+                return LayerEffects.PivotIn(Frame.Pivot, Source);
+            case ScriptPosition.Content:
+                _bounds ??= _image?.GetOpaqueBounds() ?? Rectangle.Empty;
+                return LayerEffects.PivotIn(null, _bounds.Value.IsEmpty ? Source : _bounds.Value);
+            default:
+                return LayerEffects.PivotIn(null, Source);
+        }
+    }
 
     /// <summary>설정 <paramref name="key"/>의 schema 번호(그 종류가 아니면 -1).</summary>
     public int IndexOf(string key, ScriptSettingType type)

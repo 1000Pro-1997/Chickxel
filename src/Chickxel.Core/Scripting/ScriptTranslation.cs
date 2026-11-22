@@ -4,13 +4,17 @@ using System.Text.RegularExpressions;
 namespace Chickxel.Core.Scripting;
 
 /// <summary>
-/// 선언 <c>translations</c>의 언어 하나: 그 언어의 제목·설명과 설정 이름(<see cref="Labels"/> — 키는 설정 키, 고르기 항목은 <c>"설정키.항목값"</c>).
+/// 선언 <c>translations</c>의 언어 하나: 그 언어의 제목·설명과 설정 이름(<see cref="Labels"/> — 키는 설정 키, 고르기 항목은 <c>"설정키.항목값"</c>,
+/// 설정 묶음 제목은 <c>"group:제목"</c>).
 /// 빠진 것은 다음 언어(중립 언어)나 선언에 적은 값으로 보인다(<see cref="ScriptTranslations"/>).
 /// </summary>
 public sealed record ScriptTranslation(string? Name, string? Description, IReadOnlyDictionary<string, string> Labels)
 {
     /// <summary>고르기 항목 이름의 <see cref="Labels"/> 키.</summary>
     public static string ChoiceKey(string settingKey, string choiceValue) => settingKey + "." + choiceValue;
+
+    /// <summary>설정 묶음 제목(<see cref="ScriptSetting.Group"/>)의 <see cref="Labels"/> 키. 설정 키에는 쌍점이 없어 설정·항목 키와 겹치지 않는다.</summary>
+    public static string GroupKey(string group) => "group:" + group;
 
     /// <summary>값이 같은지(이름·설명·설정 이름 모두 — 설정 이름은 차례와 상관없음).</summary>
     public bool SameAs(ScriptTranslation other)
@@ -128,4 +132,8 @@ public static partial class ScriptTranslations
     public static string ChoiceLabelFor(IReadOnlyDictionary<string, ScriptTranslation> translations, ScriptSetting setting, ScriptChoice choice, CultureInfo culture,
         string? baseLanguage = null)
         => Find(translations, culture, t => t.Labels.GetValueOrDefault(ScriptTranslation.ChoiceKey(setting.Key, choice.Value)), baseLanguage) ?? choice.Label;
+
+    /// <summary>설정 묶음 제목(<see cref="ScriptSetting.Group"/>)의 번역: <c>labels["group:제목"]</c>, 없으면 선언의 제목.</summary>
+    public static string GroupLabelFor(IReadOnlyDictionary<string, ScriptTranslation> translations, string group, CultureInfo culture, string? baseLanguage = null)
+        => Find(translations, culture, t => t.Labels.GetValueOrDefault(ScriptTranslation.GroupKey(group)), baseLanguage) ?? group;
 }

@@ -3462,6 +3462,10 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="ScriptEffect_ErrorAtLine" xml:space="preserve"><value>Line {line}: {message}</value></data>
   <data name="ScriptEffect_NoSettings" xml:space="preserve"><value>This script has no settings.</value></data>
   <data name="ScriptEffect_LayerNone" xml:space="preserve"><value>(none)</value></data>
+  <data name="ScriptPosition_Custom" xml:space="preserve"><value>Custom</value></data>
+  <data name="ScriptPosition_Center" xml:space="preserve"><value>Canvas center</value></data>
+  <data name="ScriptPosition_Pivot" xml:space="preserve"><value>Pivot</value></data>
+  <data name="ScriptPosition_Content" xml:space="preserve"><value>Image center</value></data>
   <data name="ScriptEffect_LayerMissing" xml:space="preserve"><value>{name} (missing)</value></data>
   <data name="ScriptSetting_AddColor" xml:space="preserve"><value>Add color</value></data>
   <data name="ScriptSetting_AddPair" xml:space="preserve"><value>Add pair</value></data>

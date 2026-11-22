@@ -89,7 +89,8 @@ public sealed partial class PixelTools
                 {
                     ["type"] = "object",
                     ["description"] = "Partial preview settings: keys as declared in settings (int/number = number, bool, color = \"#RRGGBB\" or \"#RRGGBBAA\", choice = a declared value, text = a string, " +
-                                      "colorList = [\"#RRGGBB\", ...], colorPairs = [[\"#from\", \"#to\"], ...], layer = a scene layer name, font = a font name); null resets a key to its declared default. " +
+                                      "colorList = [\"#RRGGBB\", ...], colorPairs = [[\"#from\", \"#to\"], ...], layer = a scene layer name, font = a font name, " +
+                                      "position = { \"anchor\": \"custom\"|\"center\"|\"pivot\"|\"content\", \"x\": int, \"y\": int }); null resets a key to its declared default. " +
                                       GradientFormatNote,
                 },
             },
@@ -403,6 +404,7 @@ public sealed partial class PixelTools
                 ScriptSettingType.Font => node is JsonValue v && v.TryGetValue(out string? font) ? ScriptSetting.FontName(font) : null,
                 // 글: 줄바꿈 맞추기와 선언의 max까지 자르기는 schema가 한다
                 ScriptSettingType.Text => node is JsonValue v && v.TryGetValue(out string? text) ? text : null,
+                ScriptSettingType.Position => ScriptPosition.Read(node, (ScriptPosition)setting.Default, setting.Min, setting.Max) is { } position ? position : null,
                 _ => node is JsonValue v && v.TryGetValue(out string? choice) && setting.Choices.Any(x => x.Value == choice) ? choice : null,
             };
             values[key] = value ?? throw new ToolError(UiStrings.FormatAi_Script_BadSetting(key: key, type: setting.Type.ToString().ToLowerInvariant()));

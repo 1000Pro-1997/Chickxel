@@ -28,9 +28,9 @@ internal delegate void FastRenderFn(double[] data, double[] ctx, double[] settin
 /// max, min, pow, round, sign, sin, sinh, sqrt, tan, tanh, trunc(모두 Jint 구현 그대로 <see cref="JsOps"/>), <c>NaN</c>, <c>Infinity</c>, <c>lerp</c>,
 /// <c>hsvToRgb</c>, <c>rgbToHsv</c>.</item>
 /// <item>host: <c>img.width/height/data</c>, <c>d[i]</c> 읽기·쓰기, <c>d.length</c>, <c>s.키</c>(int·number·bool·color, choice는 문자열 리터럴과 같음 비교만,
-/// 색 목록·색 쌍 목록은 <c>s.키.length</c>만), <c>ctx.t/progress/frame/step/span/rangeStart/rangeEnd/source/pivot/center</c>, <c>ctx.color</c>·<c>ctx.colorAt</c>·<c>ctx.pairColor</c>
-/// (키·쌍 칸은 문자열 리터럴, 범위는 <c>{ x, y, w, h }</c> 리터럴이나 숫자 객체), <c>ctx.gradientAt("슬롯", 위치[, x, y])</c>, <c>ctx.hasGradient("슬롯")</c>, <c>ctx.hash</c>, <c>ctx.random</c>,
-/// <c>ctx.bayer2</c>, <c>ctx.bayer4</c>, <c>ctx.frameSource</c>, <c>ctx.matchPixels</c>(모드는 문자열 리터럴).</item>
+/// 색 목록·색 쌍 목록은 <c>s.키.length</c>만, 위치는 <c>s.키.anchor</c>(문자열 리터럴과 비교)·<c>s.키.x/y</c>), <c>ctx.t/progress/frame/step/span/rangeStart/rangeEnd/source/pivot/center</c>,
+/// <c>ctx.color</c>·<c>ctx.colorAt</c>·<c>ctx.pairColor</c> (키·쌍 칸은 문자열 리터럴, 범위는 <c>{ x, y, w, h }</c> 리터럴이나 숫자 객체), <c>ctx.gradientAt("슬롯", 위치[, x, y])</c>,
+/// <c>ctx.hasGradient("슬롯")</c>, <c>ctx.position("키")</c>, <c>ctx.hash</c>, <c>ctx.random</c>, <c>ctx.bayer2</c>, <c>ctx.bayer4</c>, <c>ctx.frameSource</c>, <c>ctx.matchPixels</c>(모드는 문자열 리터럴).</item>
 /// <item>함수: <c>const</c>에 묶은 화살표·<c>function</c>과 <c>function</c> 선언을 부르는 자리에 펼친다(재귀 불가, 함수를 돌려주기 불가).</item>
 /// </list>
 /// <para>
@@ -189,6 +189,20 @@ internal sealed class FastCompiler
                 case ScriptSettingType.Layer:
                 case ScriptSettingType.Font:
                     break;
+                // 위치: 기준(값의 번호 — s.키.anchor === "pivot"처럼 비교)·X·Y 세 칸. 그림 좌표는 ctx.position("키")로
+                case ScriptSettingType.Position:
+                    fields[setting.Key] = new Val
+                    {
+                        Kind = Kind.Record,
+                        Fields = new(StringComparer.Ordinal)
+                        {
+                            ["anchor"] = new Val { Kind = Kind.Choice, Expr = Slot(_sv, slot), Name = setting.Key, Choices = ScriptPosition.Anchors },
+                            ["x"] = Val.Num(Slot(_sv, slot + 1)),
+                            ["y"] = Val.Num(Slot(_sv, slot + 2)),
+                        },
+                    };
+                    slot += 3;
+                    break;
             }
         }
         _settings = new Val { Kind = Kind.Record, Fields = fields };
@@ -213,9 +227,9 @@ internal sealed class FastCompiler
         };
     }
 
-    /// <summary>설정 칸 배치(선언 순서): 숫자·참거짓·고르기(값의 번호)·색 목록과 색 쌍 목록(항목 수) = 1칸, 색 = r, g, b, a 4칸, 레이어·글꼴 고르기 = 0칸.</summary>
+    /// <summary>설정 칸 배치(선언 순서): 숫자·참거짓·고르기(값의 번호)·색 목록과 색 쌍 목록(항목 수) = 1칸, 색 = r, g, b, a 4칸, 위치 = 기준 번호·X·Y 3칸, 레이어·글꼴 고르기 = 0칸.</summary>
     public static int SlotCount(IReadOnlyList<ScriptSetting> settings)
-        => settings.Sum(s => s.Type switch { ScriptSettingType.Color => 4, ScriptSettingType.Layer or ScriptSettingType.Font => 0, _ => 1 });
+        => settings.Sum(s => s.Type switch { ScriptSettingType.Color => 4, ScriptSettingType.Position => 3, ScriptSettingType.Layer or ScriptSettingType.Font => 0, _ => 1 });
 
     /// <summary>
     /// <paramref name="script"/>(해석한 원문)의 render를 컴파일한다. 부분집합 밖이면 <see cref="FastUnsupportedException"/>.
@@ -1233,6 +1247,14 @@ internal sealed class FastCompiler
                     throw NameError(Describe(callee) + "(\"" + slot.Value + "\")", c);
                 E call = E.Call(Op(nameof(JsOps.HasGradient)), _colors, E.Constant(SchemaIndex(setting.Key)), E.Constant(item), E.Constant(to));
                 return Val.Bool(call);
+            }
+            case "position":
+            {
+                // 위치 설정 키는 문자열 리터럴 하나만(컴파일할 때 설정을 정한다). 결과 { x, y }는 render 한 번 동안 같다
+                if (c.Arguments.Count != 1 || c.Arguments[0] is not StringLiteral key) throw NameError(Describe(callee), c);
+                int index = SchemaIndex(key.Value);
+                if (index < 0 || _schema[index].Type != ScriptSettingType.Position) throw NameError(Describe(callee) + "(\"" + key.Value + "\")", c);
+                return Record(("x", E.Call(Op(nameof(JsOps.PositionX)), _colors, E.Constant(index))), ("y", E.Call(Op(nameof(JsOps.PositionY)), _colors, E.Constant(index))));
             }
             case "layer" or "layerWithEffects":
             {

@@ -399,9 +399,9 @@ internal static partial class ScriptDeclarationReader
     }
 
     /// <summary>
-    /// <c>translations: { "언어 코드": { name?, description?, labels?: { 설정키: "이름", "설정키.항목값": "이름" } } }</c>.
+    /// <c>translations: { "언어 코드": { name?, description?, labels?: { 설정키: "이름", "설정키.항목값": "이름", "group:묶음 제목": "이름" } } }</c>.
     /// 언어 코드는 BCP-47 모양(대소문자를 가리지 않고 겹치지 않음), 이름은 1~<see cref="AssetManifest.MaxNameLength"/>자, 설명은
-    /// <see cref="ScriptEffectProgram.MaxDescriptionLength"/>자까지, 설정 이름은 선언한 설정 키·고르기 항목만 1~<see cref="ScriptTranslations.MaxLabelLength"/>자.
+    /// <see cref="ScriptEffectProgram.MaxDescriptionLength"/>자까지, 설정 이름은 선언한 설정 키·고르기 항목·묶음 제목만 1~<see cref="ScriptTranslations.MaxLabelLength"/>자.
     /// 언어 항목 안의 모르는 키는 다음 버전을 위해 무시한다. 없으면 빈 표.
     /// </summary>
     private static IReadOnlyDictionary<string, ScriptTranslation> ReadTranslations(JsValue value, IReadOnlyList<ScriptSetting> settings, Action<string, object[]> fail)
@@ -423,6 +423,7 @@ internal static partial class ScriptDeclarationReader
         {
             labelKeys.Add(setting.Key);
             foreach (var choice in setting.Choices) labelKeys.Add(ScriptTranslation.ChoiceKey(setting.Key, choice.Value));
+            if (setting.Group is { } group) labelKeys.Add(ScriptTranslation.GroupKey(group));
         }
         static string? Text(JsValue v, int max) => v is JsString && v.AsString().Trim() is { Length: > 0 } t && t.Length <= max ? t : null;
 
@@ -525,6 +526,7 @@ internal static partial class ScriptDeclarationReader
             "layer" => ScriptSettingType.Layer,
             "text" => ScriptSettingType.Text,
             "font" => ScriptSettingType.Font,
+            "position" => ScriptSettingType.Position,
             _ => null,
         } : null;
         if (type is null)
@@ -578,7 +580,12 @@ internal static partial class ScriptDeclarationReader
             }
             else fail(DomainStrings.FormatScript_InvalidSettingWhen(key: key), ["settings", index, "when"]);
         }
-        ScriptSetting Done(ScriptSetting result) => result with { Alpha = alpha, Widget = widget, Pair = pair, When = when };
+        // group: 묶음 제목(앞뒤 공백을 지운 1~MaxLabelLength자 글)
+        var groupValue = setting.Get("group");
+        string? group = groupValue is JsString && groupValue.AsString().Trim() is { Length: > 0 and <= ScriptTranslations.MaxLabelLength } title ? title : null;
+        if (!groupValue.IsUndefined() && group is null)
+            fail(DomainStrings.FormatScript_InvalidSettingGroup(key: key, max: ScriptTranslations.MaxLabelLength), ["settings", index, "group"]);
+        ScriptSetting Done(ScriptSetting result) => result with { Alpha = alpha, Widget = widget, Pair = pair, When = when, Group = group };
         var defaultValue = setting.Get("default");
         void BadDefault() => fail(DomainStrings.FormatScript_InvalidSettingDefault(key: key), ["settings", index, "default"]);
         switch (type)
@@ -689,6 +696,55 @@ internal static partial class ScriptDeclarationReader
                     return null;
                 }
                 return Done(new(key, label, type.Value, null, null, null, fontName, []));
+            }
+            case ScriptSettingType.Position:
+            {
+                // 위치: key·label·min·max(X·Y 범위, 정수)·default({ anchor?, x?, y? } — 빠진 칸은 캔버스 중심·0). 간격·고르기 항목은 받지 않는다
+                foreach (string field in (string[])["step", "choices"])
+                    if (!setting.Get(field).IsUndefined())
+                    {
+                        fail(DomainStrings.FormatScript_InvalidPositionSettingField(key: key, field: field), ["settings", index, field]);
+                        return null;
+                    }
+                double? Bound(string field, out bool ok)
+                {
+                    var bound = setting.Get(field);
+                    ok = bound.IsUndefined() || Whole(bound) is { } w && Math.Abs(w) <= int.MaxValue;
+                    return ok && !bound.IsUndefined() ? bound.AsNumber() : null;
+                }
+                var min = Bound("min", out bool minOk);
+                var max = Bound("max", out bool maxOk);
+                if (!minOk || !maxOk || min > max)
+                {
+                    fail(DomainStrings.FormatScript_InvalidSettingRange(key: key), ["settings", index, !minOk ? "min" : "max"]);
+                    return null;
+                }
+                var fallback = ScriptPosition.Default with
+                {
+                    X = (int)Math.Clamp(0, min ?? int.MinValue, max ?? int.MaxValue), Y = (int)Math.Clamp(0, min ?? int.MinValue, max ?? int.MaxValue),
+                };
+                var position = fallback;
+                if (!defaultValue.IsUndefined())
+                {
+                    // 선언 값은 고치지 않고 받는다: 기준은 아는 이름, X·Y는 범위 안 정수
+                    if (defaultValue is not ObjectInstance given || defaultValue is ArrayInstance || defaultValue.IsCallable())
+                    {
+                        BadDefault();
+                        return null;
+                    }
+                    var anchor = given.Get("anchor");
+                    var x = given.Get("x");
+                    var y = given.Get("y");
+                    bool Fits(JsValue v) => v.IsUndefined() || Whole(v) is { } w && w >= (min ?? int.MinValue) && w <= (max ?? int.MaxValue);
+                    if (!anchor.IsUndefined() && !(anchor is JsString && ScriptPosition.Anchors.Contains(anchor.AsString())) || !Fits(x) || !Fits(y))
+                    {
+                        BadDefault();
+                        return null;
+                    }
+                    position = new ScriptPosition(anchor.IsUndefined() ? fallback.Anchor : anchor.AsString(),
+                        x.IsUndefined() ? fallback.X : (int)x.AsNumber(), y.IsUndefined() ? fallback.Y : (int)y.AsNumber());
+                }
+                return Done(new(key, label, type.Value, min, max, null, position, []));
             }
             case ScriptSettingType.ColorList:
             case ScriptSettingType.ColorPairs:

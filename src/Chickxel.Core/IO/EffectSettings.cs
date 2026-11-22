@@ -162,6 +162,10 @@ public static class EffectSettings
             case EffectParameterKind.ColorPairList:
                 if (value is JsonArray) return value.DeepClone();
                 break;
+            case EffectParameterKind.Position:
+                // { anchor, x, y }: 모르는 기준·틀린 칸은 읽을 때(TryRead) 거부, 범위는 schema가 자른다
+                if (value is JsonObject) return value.DeepClone();
+                break;
             case EffectParameterKind.Text:
                 if (EffectJson.String(value) is { } words)
                 {

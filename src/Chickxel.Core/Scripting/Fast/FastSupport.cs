@@ -520,6 +520,12 @@ internal static class JsOps
     /// <summary><c>ctx.hasGradient("슬롯")</c>(슬롯은 컴파일할 때 정함 — 지금 목록에 없는 항목이면 false).</summary>
     public static bool HasGradient(ScriptColors colors, int setting, int item, bool to) => colors.Has(setting, item) && colors.HasGradient(setting, item, to);
 
+    /// <summary><c>ctx.position("키").x</c>(설정은 컴파일할 때 정함 — Jint와 같은 <see cref="ScriptColors.Position"/>).</summary>
+    public static double PositionX(ScriptColors colors, int setting) => colors.Position(setting).X;
+
+    /// <summary><c>ctx.position("키").y</c>.</summary>
+    public static double PositionY(ScriptColors colors, int setting) => colors.Position(setting).Y;
+
     /// <summary><c>ctx.gradientAt("슬롯", 위치[, x, y])</c>(슬롯은 컴파일할 때 정함 — 지금 목록에 없는 항목이면 Jint로, Jint가 오류를 낸다).</summary>
     public static Color32 GradientAt(ScriptColors colors, int setting, int item, bool to, double position, double x, double y)
         => colors.Has(setting, item) ? colors.SampleAt(setting, item, to, position, ToInt32(x), ToInt32(y)) : throw new FastDeoptException();

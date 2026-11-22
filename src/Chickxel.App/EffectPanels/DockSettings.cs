@@ -48,7 +48,7 @@ public sealed partial class LayerEffectsDialog
     internal static void AddScriptEffectRows(EffectForm form, ScriptEffectProgram program, ScriptEffect script, Action<Func<LayerEffect, LayerEffect>> set,
         Action rebuild, ScriptLayerChoices choices)
     {
-        AddScriptSettingRows(program, script, set, rebuild, choices, form.ScriptRow);
+        AddScriptSettingRows(program, script, set, rebuild, choices, form);
         if (program.Animated && program.Motion) AddTimingEditors(form, script, set);
         AddMovePivotEditor(form, script, set);
         AddHoldEndEditor(form, script, set);

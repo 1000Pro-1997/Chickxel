@@ -123,6 +123,7 @@ internal static class ScriptHostApi
                     pair.PreventExtensions();
                     return (JsValue)pair;
                 })),
+                ScriptPosition position => PositionObject(engine, position),
                 _ => new JsString((string)value),
             };
             settings.DefineOwnProperty(setting.Key, new PropertyDescriptor(js, Fixed));
@@ -139,6 +140,17 @@ internal static class ScriptHostApi
             array.DefineOwnProperty(i, new PropertyDescriptor(array[i], Fixed));
         array.PreventExtensions();
         return array;
+    }
+
+    // 위치 설정 값 { anchor, x, y }(고정)
+    private static JsObject PositionObject(Engine engine, ScriptPosition position)
+    {
+        var value = new JsObject(engine);
+        value.DefineOwnProperty("anchor", new PropertyDescriptor(new JsString(position.Anchor), Fixed));
+        Define(value, "x", position.X);
+        Define(value, "y", position.Y);
+        value.PreventExtensions();
+        return value;
     }
 
     /// <summary>
@@ -320,6 +332,17 @@ internal static class ScriptHostApi
                     DomainStrings.FormatScript_InvalidColorIndex(key: setting.Key, index: item.ToString(System.Globalization.CultureInfo.InvariantCulture)));
             var color = colors.SampleAt(index, item, to, TypeConverter.ToNumber(Arg(args, 1)), TypeConverter.ToInt32(Arg(args, 2)), TypeConverter.ToInt32(Arg(args, 3)));
             return ColorObject(engine, color, frozen: true);
+        });
+        // ctx.position("키"): 위치 설정(type: "position")이 가리키는 그림 좌표 { x, y } — 빠른 경로와 같은 ScriptColors
+        Method(ctx, engine, "position", 1, args =>
+        {
+            int setting = Setting(Arg(args, 0), ScriptSettingType.Position, key => DomainStrings.FormatScript_UnknownPositionSetting(key: key));
+            var (x, y) = colors.Position(setting);
+            var point = new JsObject(engine);
+            Define(point, "x", x);
+            Define(point, "y", y);
+            point.PreventExtensions();
+            return point;
         });
 
         // 무작위: 위치·시드·용도(salt, 기본 0) 해시(프레임과 무관)와 프레임·시드 값. 계산 순서에 따라 바뀌는 생성기는 두지 않는다(12.4)

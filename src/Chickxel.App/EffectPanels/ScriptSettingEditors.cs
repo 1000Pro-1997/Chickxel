@@ -15,15 +15,16 @@ internal sealed record ScriptLayerChoices(IReadOnlyList<string> Names, string? E
 public sealed partial class LayerEffectsDialog
 {
     /// <summary>
-    /// 스크립트 설정 칸들(효과 창의 설정 칸과 효과 만들기 창의 미리보기 설정 칸이 함께 씀): 선언 순서대로 설정마다 <paramref name="row"/>(이름, 편집기,
-    /// 여러 줄 덩어리인지)를 부른다. 정수·실수는 슬라이더·숫자 칸(<c>widget: "angle"</c>이면 각도 다이얼도, <c>"point"</c>면 짝 Y 설정과 함께 X·Y 칸과
+    /// 스크립트 설정 칸들(효과 창의 설정 칸과 효과 만들기 창의 미리보기 설정 칸이 함께 씀): 선언 순서대로 설정마다 <paramref name="form"/>에 줄(이름, 편집기)을
+    /// 넣고, 묶음(<see cref="ScriptSetting.Group"/>)이 같은 이어진 설정은 제목 달린 상자 하나로 둘러싼다(<see cref="EffectForm.BeginGroup"/>).
+    /// 정수·실수는 슬라이더·숫자 칸(<c>widget: "angle"</c>이면 각도 다이얼도, <c>"point"</c>면 짝 Y 설정과 함께 X·Y 칸과
     /// 점 고르기 — Y 설정은 따로 줄이 없음), 켜고 끔, 여러 줄 글, 색(단색·그라데이션 — 기본 효과 색 칸과 같고 슬롯은 설정 키), 고르기,
     /// 색 목록·색 쌍 목록(항목마다 단색·그라데이션, 더하기·빼기·순서 바꾸기 — 그라데이션은 항목을 따라 옮김),
     /// 레이어 고르기(<paramref name="layers"/>의 이름 — <see cref="ScriptLayerEditor"/>), 글꼴 고르기(글씨 효과와 같은 칸 — <see cref="FontPicker.EffectField"/>).
     /// 값과 그라데이션은 <paramref name="set"/>으로 효과를 바꿔 고치고, 항목 수·순서가 바뀌면 <paramref name="rebuild"/>로 칸을 다시 만든다.
     /// </summary>
     internal static void AddScriptSettingRows(ScriptEffectProgram program, ScriptEffect effect, Action<Func<LayerEffect, LayerEffect>> set,
-        Action rebuild, ScriptLayerChoices layers, Action<string, Control, bool> row)
+        Action rebuild, ScriptLayerChoices layers, EffectForm form)
     {
         var values = program.NormalizeSettings(effect.Settings);
         var culture = CultureInfo.CurrentUICulture;
@@ -41,9 +42,18 @@ public sealed partial class LayerEffectsDialog
         // 대상 도움말(F1): 따로 설명이 있는 설정 칸(점·각도·시드·색 목록·레이어 — "스크립트 효과" 설정 그림 ⑦~⑪, 색은 EffectColorEditor)에 그 항목.
         // 숫자·켜고 끔·고르기 줄은 자리를 붙이지 않는다 — 효과 창·독·효과 만들기가 그 효과(설정 칸)를 설명하는 자리로 보낸다.
         const string page = "screen-script-effects";
+        void row(string name, Control editor, bool block) => form.ScriptRow(name, editor, block);
+        // 묶음(group): 보이는 설정이 다른 묶음으로 넘어갈 때 상자를 닫고, 묶음의 첫 보이는 설정에서 새 상자를 연다(숨은 설정은 상자를 끊지 않음)
+        string? openGroup = null;
         foreach (var setting in program.Settings)
         {
             if (paired.Contains(setting.Key) || !program.IsShown(setting, values)) continue;
+            if (setting.Group != openGroup)
+            {
+                if (setting.Group is { } group) form.BeginGroup(program.GroupLabelFor(group, culture));
+                else form.EndGroup();
+                openGroup = setting.Group;
+            }
             string key = setting.Key;
             string label = program.LabelFor(setting, culture);
             void SetValue(string k, object value)
@@ -59,6 +69,23 @@ public sealed partial class LayerEffectsDialog
                     row(label, ScriptPointEditor(setting, y, Convert.ToInt32(values[key], CultureInfo.InvariantCulture),
                         Convert.ToInt32(values[yKey], CultureInfo.InvariantCulture), v => SetValue(key, v), v => SetValue(yKey, v)).HelpAt(page, anchor: "An integer with widget"), false);
                     break;
+                case ScriptSettingType.Position:
+                {
+                    // 위치: 기준 고르기 줄 + 직접 지정일 때만 보이는 X·Y 줄(점 고르기 판 — 범위는 선언의 min·max). 기준을 바꿔도 X·Y는 남는다
+                    var current = (ScriptPosition)values[key];
+                    var point = ScriptPointEditor(setting, setting, current.X, current.Y,
+                        v => SetValue(key, current = current with { X = v }), v => SetValue(key, current = current with { Y = v }));
+                    point.IsVisible = current.Anchor == ScriptPosition.Custom;
+                    string[] names = [UiStrings.ScriptPosition_Custom, UiStrings.ScriptPosition_Center, UiStrings.ScriptPosition_Pivot, UiStrings.ScriptPosition_Content];
+                    row(label, ChoiceEditor(names, Math.Max(0, ScriptPosition.Anchors.ToList().IndexOf(current.Anchor)), k =>
+                    {
+                        current = current with { Anchor = ScriptPosition.Anchors[k] };
+                        point.IsVisible = current.Anchor == ScriptPosition.Custom;
+                        SetValue(key, current);
+                    }), false);
+                    row("", point, false);
+                    break;
+                }
                 case ScriptSettingType.Int:
                 case ScriptSettingType.Number:
                     double number = Convert.ToDouble(values[key], CultureInfo.InvariantCulture);
@@ -114,6 +141,7 @@ public sealed partial class LayerEffectsDialog
                     break;
             }
         }
+        form.EndGroup();
     }
 
     /// <summary><c>widget: "point"</c> 정수 설정의 Y 설정(<see cref="ScriptSetting.Pair"/>가 가리키는 다른 정수 설정). 아니면 null.</summary>

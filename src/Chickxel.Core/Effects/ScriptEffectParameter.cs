@@ -42,7 +42,8 @@ internal sealed class ScriptEffectParameter : EffectParameter
 
     public override string? ColorSlot => _setting.IsColor ? Key : null;
 
-    public override bool Exposed => _setting.Type != ScriptSettingType.Layer && base.Exposed;
+    // 레이어·글꼴·위치는 레시피 매개변수로 내보내지 않는다(레이어는 문서마다 다르고, 글꼴은 글 상자가 아니라 글꼴 고르기가, 위치는 기준 고르기와 점 칸이 필요함)
+    public override bool Exposed => _setting.Type is not (ScriptSettingType.Layer or ScriptSettingType.Font or ScriptSettingType.Position) && base.Exposed;
 
     internal override JsonNode Write(LayerEffect effect)
     {
@@ -55,6 +56,7 @@ internal sealed class ScriptEffectParameter : EffectParameter
             ScriptSettingType.Color => JsonValue.Create(((Color32)value).ToHex()),
             ScriptSettingType.ColorList => ScriptSettingValues.ColorsJson((IReadOnlyList<Color32>)value),
             ScriptSettingType.ColorPairs => ScriptSettingValues.PairsJson((IReadOnlyList<ScriptColorPair>)value),
+            ScriptSettingType.Position => ((ScriptPosition)value).ToJson(),
             _ => JsonValue.Create((string)value),
         };
     }
@@ -91,6 +93,9 @@ internal sealed class ScriptEffectParameter : EffectParameter
                 return EffectJson.String(node);
             case ScriptSettingType.Font:
                 return ScriptSetting.FontName(EffectJson.String(node));
+            case ScriptSettingType.Position:
+                // { anchor?, x?, y? } 객체: 빠진 칸은 선언의 기본값, 자리는 범위로. 모르는 기준·틀린 칸은 null(거부)
+                return ScriptPosition.Read(node, (ScriptPosition)_setting.Default, _setting.Min, _setting.Max);
             default:
                 // 고르기: 저장 ID 그대로, 없으면 대소문자만 다른 ID(기본 효과의 열거 이름 읽기와 같게)
                 if (EffectJson.String(node) is not { } name) return null;
@@ -107,8 +112,9 @@ internal sealed class ScriptEffectParameter : EffectParameter
         ScriptSettingType.Color => EffectParameterKind.Color,
         ScriptSettingType.ColorList => EffectParameterKind.ColorList,
         ScriptSettingType.ColorPairs => EffectParameterKind.ColorPairList,
-        // 레이어 고르기는 글(레이어 이름) — 레시피 매개변수로는 내보내지 않는다(고를 레이어가 문서마다 다름)
         ScriptSettingType.Text or ScriptSettingType.Font => EffectParameterKind.Text,
+        ScriptSettingType.Position => EffectParameterKind.Position,
+        // 레이어 고르기는 글(레이어 이름) — 레시피 매개변수로는 내보내지 않는다(고를 레이어가 문서마다 다름)
         ScriptSettingType.Layer => EffectParameterKind.Text,
         _ => EffectParameterKind.Choice,
     };

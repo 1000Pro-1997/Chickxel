@@ -92,6 +92,7 @@ public sealed class ScriptSettingValues : IReadOnlyDictionary<string, object>, I
         JsonNode node => FromNode(node),
         IReadOnlyList<Color32> colors => new ScriptRawValue(ColorsJson(colors).ToJsonString()),
         IReadOnlyList<ScriptColorPair> pairs => new ScriptRawValue(PairsJson(pairs).ToJsonString()),
+        ScriptPosition position => new ScriptRawValue(position.ToJson().ToJsonString()),
         _ => throw new ArgumentException(value.GetType().Name, nameof(value)),
     };
 

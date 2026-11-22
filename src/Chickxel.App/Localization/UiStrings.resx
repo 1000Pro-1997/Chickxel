@@ -9177,6 +9177,10 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="ScriptEffect_ErrorAtLine" xml:space="preserve"><value>줄 {line}: {message}</value><comment>line = 원문 줄(1부터); message = 오류 설명.</comment></data>
   <data name="ScriptEffect_NoSettings" xml:space="preserve"><value>이 스크립트에는 설정이 없습니다.</value></data>
   <data name="ScriptEffect_LayerNone" xml:space="preserve"><value>(고르지 않음)</value><comment>레이어 고르기 설정의 첫 항목 — 레이어를 고르지 않음.</comment></data>
+  <data name="ScriptPosition_Custom" xml:space="preserve"><value>직접 지정</value><comment>위치 설정의 기준: 아래 X·Y(원본 왼쪽 위 기준) 자리.</comment></data>
+  <data name="ScriptPosition_Center" xml:space="preserve"><value>캔버스 중심</value><comment>위치 설정의 기준: 효과 원본(캔버스, 부위면 부위 칸) 가운데.</comment></data>
+  <data name="ScriptPosition_Pivot" xml:space="preserve"><value>피벗</value><comment>위치 설정의 기준: 피벗.</comment></data>
+  <data name="ScriptPosition_Content" xml:space="preserve"><value>그림 중심</value><comment>위치 설정의 기준: 그림의 불투명 범위 가운데.</comment></data>
   <data name="ScriptEffect_LayerMissing" xml:space="preserve"><value>{name} (문서에 없음)</value><comment>name = 저장된 레이어 이름(지금 문서에 그런 레이어가 없음).</comment></data>
   <data name="ScriptSetting_AddColor" xml:space="preserve"><value>색 추가</value></data>
   <data name="ScriptSetting_AddPair" xml:space="preserve"><value>쌍 추가</value></data>

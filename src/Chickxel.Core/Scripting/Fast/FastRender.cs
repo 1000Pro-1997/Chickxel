@@ -161,6 +161,14 @@ internal sealed class FastRender
                 case ScriptSettingType.ColorPairs:
                     sv[slot++] = ((IReadOnlyList<ScriptColorPair>)value).Count;
                     break;
+                case ScriptSettingType.Position:
+                    var position = (ScriptPosition)value;
+                    int anchor = 0;
+                    while (ScriptPosition.Anchors[anchor] != position.Anchor) anchor++;
+                    sv[slot++] = anchor;
+                    sv[slot++] = position.X;
+                    sv[slot++] = position.Y;
+                    break;
             }
         }
         return sv;
