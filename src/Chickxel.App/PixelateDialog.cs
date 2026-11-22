@@ -328,7 +328,7 @@ public sealed class OptimizePreset
     /// 그 격자 그대로 켠 칸의 항목을 찾는다.
     /// </summary>
     public bool GridFirst { get; set; }
-    /// <summary>시작 설정의 격자를 최적화에서 고정(<see cref="PixelateOptimizeOptions.LockGrid"/>). 다른 단계는 계속 찾는다.</summary>
+    /// <summary>칸 경계를 줄·열마다 ±30% 안에서 맞추고, 그 격자만 최적화에서 고정(<see cref="PixelateOptimizeOptions.LockGrid"/>).</summary>
     public bool LockGrid { get; set; }
     /// <summary>
     /// 뽑아서 찾을 프레임 수(0 = 모든 프레임 — <see cref="PixelateOptimizeOptions.SampleFrames"/>): 프레임이 많은 원본은 처음·끝을 넣어 고르게 이만큼만 뽑아 찾고,
@@ -350,7 +350,20 @@ public sealed class OptimizePreset
         & ~(KeepDither ? OptimizeParam.Dither : OptimizeParam.None);
 
     /// <summary>시작 단계 설정(없거나 읽을 수 없으면 기본 설정 — <see cref="Canonical"/> 모양이라 예전에 저장한 그림별 격자 값은 빠짐).</summary>
-    public PixelateSettings StartSettings() => Canonical(PixelatePresets.ParseSettings(Settings) ?? DefaultSettings);
+    public PixelateSettings StartSettings()
+    {
+        var s = Canonical(PixelatePresets.ParseSettings(Settings) ?? DefaultSettings);
+        return LockGrid ? s with { Grid = RowGrid(s.Grid) } : s;
+    }
+    /// <summary>균일한 전체 격자에서 시작해 한 줄·한 열씩 경계를 ±30% 안에서 보정한다.</summary>
+    public static PixelGridSettings RowGrid(PixelGridSettings grid) => grid with
+    {
+        Jitter = 0,
+        LocalCorrection = true,
+        LocalShift = 0.30,
+        LocalBand = 1,
+        LocalMinCell = 4,
+    };
 
     /// <summary>픽셀로 정리 창의 처음 단계 설정: 엔진 기본값에서 배경 지우기만 '지우지 않음'(배경은 사용자가 켤 때만 지움 — 원본 아래 막대의 지우개 토글이나 1. 배경).</summary>
     public static PixelateSettings DefaultSettings => new() { Background = new BackgroundSettings { Mode = BackgroundMode.None } };
@@ -770,7 +783,7 @@ public sealed class PixelateDialog : DialogBase
     /// <summary>칸 경계 지역 보정: 최대 이동(칸 %)·띠 너비(칸)·최소 평균 칸 크기(px).</summary>
     private readonly NumericUpDown _grLocalShift, _grLocalBand, _grLocalMinCell;
     private readonly ComboBox _grSource;
-    /// <summary>격자 고정(<see cref="OptimizePreset.LockGrid"/>)·칸 맞추기 따로 최적화(<see cref="OptimizePreset.GridFirst"/>)와 '칸 나눠보기'.</summary>
+    /// <summary>간편 설정의 줄별 칸 맞추기(<see cref="OptimizePreset.LockGrid"/>)와 격자 칸의 먼저 최적화(<see cref="OptimizePreset.GridFirst"/>).</summary>
     private readonly CheckBox _grLock, _grFirst;
     private readonly Button _grPreview;
     private readonly TextBlock _grInfo;
@@ -1137,7 +1150,6 @@ public sealed class PixelateDialog : DialogBase
             .Tip(UiStrings.Pixelate_Grid_Source_Tip);
         _grInfo = Info();
         var useDetected = Ui.Button(UiStrings.Pixelate_Grid_UseDetected, (_, _) => UseDetectedGrid());
-        _grLock = Ui.Check(UiStrings.Pixelate_Grid_Lock).Tip(UiStrings.Pixelate_Grid_Lock_Tip);
         _grFirst = Ui.Check(UiStrings.Pixelate_Grid_First).Tip(UiStrings.Pixelate_Grid_First_Tip);
         _grPreview = Ui.Button(UiStrings.Pixelate_Grid_Preview, (_, _) => PreviewGrid()).Tip(UiStrings.Pixelate_Grid_Preview_Tip);
         var grModeLabel = Ui.Label(UiStrings.Pixelate_Mode);
@@ -1150,7 +1162,6 @@ public sealed class PixelateDialog : DialogBase
         var grLocalBandLabel = Ui.Label(UiStrings.Pixelate_Grid_LocalBand);
         var grLocalMinCellLabel = Ui.Label(UiStrings.Pixelate_Grid_LocalMinCell);
         var grBody = Ui.Stack(
-            _grLock,
             Ui.Row(_grFirst, _grPreview),
             Ui.Row(grModeLabel, _grMode, useDetected),
             Ui.Row(grScaleLabel, _grScale, grOffsetLabel, _grOffX, _grOffY),
@@ -1411,7 +1422,7 @@ public sealed class PixelateDialog : DialogBase
         _aiReference.HelpAt("pixelate-ai", anchor: "Add the source to AI references");
         HelpTargets.HelpGroup("pixelate-ai", "Ask AI to rank candidates", rank, aiRankLabel, _aiRankCount);
 
-        // ── 간편 설정: 자주 바꾸는 값(4. 결과 크기, 6. 팔레트와 같은 설정)을 맨 위에 모은다.
+        // ── 간편 설정: 자주 바꾸는 값(격자·결과 크기·팔레트)을 맨 위에 모은다.
         // 결과 크기: 자동이면 회색 숫자로 지금 결과 크기, 끄면 적은 가로×세로에 맞춤.
         _quickAuto = Ui.Check(UiStrings.Pixelate_Auto, true).Tip(UiStrings.Pixelate_Quick_AutoTip);
         _quickW = Ui.Num(4, 1024, 32, 58).Presets(16, 24, 32, 48, 64, 96, 128);
@@ -1433,6 +1444,8 @@ public sealed class PixelateDialog : DialogBase
         _quickBg.IsCheckedChanged += (_, _) => { if (!_barSyncing) _bgRemove!.IsChecked = _quickBg.On(); };
         _quickShared = Ui.Check(UiStrings.Pixelate_Pal_Shared).Tip(UiStrings.Pixelate_Quick_SharedTip);
         _quickShared.IsCheckedChanged += (_, _) => { if (!_barSyncing) _palShared.IsChecked = _quickShared.On(); };
+        _grLock = Ui.Check(UiStrings.Pixelate_Grid_Lock).Tip(UiStrings.Pixelate_Grid_Lock_Tip);
+        _grLock.IsCheckedChanged += (_, _) => QuickRowFitChanged();
         _quickTargetColors = Ui.Num(2, 256, 16, 64, 0, 1).Presets(4, 8, 12, 16, 24, 32, 48, 64).Tip(UiStrings.Pixelate_Opt_TargetColorsTip);
         _quickTargetAuto = Ui.Check(UiStrings.Pixelate_Auto, true).Tip(UiStrings.Pixelate_Opt_TargetColorsAutoTip);
         _quickTargetColors.ValueChanged += (_, _) => { if (!_barSyncing && _quickTargetColors.Value is { } v) _crTargetColors.Value = v; };
@@ -1446,6 +1459,7 @@ public sealed class PixelateDialog : DialogBase
         var quickByLabel = Ui.Label(UiStrings.Pixelate_Size_By);
         var quickBody = Ui.Stack(
             Ui.Row(quickSizeLabel, _quickAuto, _quickW, quickByLabel, _quickH, _quickAspect),
+            _grLock,
             Ui.Row(quickTargetLabel, _quickTargetColors, _quickTargetAuto, _quickTargetStrict),
             Ui.Row(Ui.Label(UiStrings.Pixelate_Opt_SampleFrames), _quickSampleFrames),
             _quickBg,
@@ -1764,7 +1778,7 @@ public sealed class PixelateDialog : DialogBase
         _frMode.SelectionChanged += (_, _) => ResetManualFrames();
         foreach (var n in new[] { _frCols, _frRows, _frMerge, _frMergeDist })
             n.ValueChanged += (_, _) => ResetManualFrames();
-        foreach (var c in new[] { _bgAutoTol, _bgConnected, _bgKeepAlpha, _bgSticker, _bgKeep, _frCommon, _grLock, _grFirst, _grLocal, _szAspect, _palAuto, _palShared, _palSnap, _palDistinct, _palShade, _palMethodKeep, _palDitherKeep,
+        foreach (var c in new[] { _bgAutoTol, _bgConnected, _bgKeepAlpha, _bgSticker, _bgKeep, _frCommon, _grFirst, _grLocal, _szAspect, _palAuto, _palShared, _palSnap, _palDistinct, _palShade, _palMethodKeep, _palDitherKeep,
                      _clOrphans, _clHoles, _clJaggies, _clVecClean, _clSourceOutline, _coTemporal, _crTargetAuto, _crTargetStrict })
             c.IsCheckedChanged += (_, _) => Changed();
         foreach (var c in new[] { _crDistance, _crFidelity, _crCellRef }) c.SelectionChanged += (_, _) => Changed();
@@ -2285,12 +2299,12 @@ public sealed class PixelateDialog : DialogBase
                 Scale = D(_grScale),
                 OffsetX = D(_grOffX),
                 OffsetY = D(_grOffY),
-                Jitter = D(_grJitter) / 100,
+                Jitter = _grLock.On() ? 0 : D(_grJitter) / 100,
                 ScaleAdjust = D(_grAdjust),
-                LocalCorrection = _grLocal.On(),
-                LocalShift = D(_grLocalShift) / 100,
-                LocalBand = (int)D(_grLocalBand),
-                LocalMinCell = D(_grLocalMinCell),
+                LocalCorrection = _grLock.On() || _grLocal.On(),
+                LocalShift = _grLock.On() ? 0.30 : D(_grLocalShift) / 100,
+                LocalBand = _grLock.On() ? 1 : (int)D(_grLocalBand),
+                LocalMinCell = _grLock.On() ? 4 : D(_grLocalMinCell),
                 Source = At<ScaleSource>(_grSource),
             },
             Size = new SizeSettings
@@ -2369,7 +2383,6 @@ public sealed class PixelateDialog : DialogBase
         bool manual = At<GridMode>(_grMode) == GridMode.Manual;
         Applies(manual, _grScale, _grOffX, _grOffY);
         Applies(!manual, _grJitter, _grAdjust, _grSource);
-        _grLocalShift.IsEnabled = _grLocalBand.IsEnabled = _grLocalMinCell.IsEnabled = _grLocal.On();
         // 외곽선 맞추기(7. 정리)가 "크기를 줄여서"면 칸 크기 기준은 외곽선 두께로 정해진다 — 다른 칸의 설정이라 숨기지 않고 끈다.
         _grSource.IsEnabled = At<OutlineFit>(_clFit) != OutlineFit.Shrink;
         var sz = At<OutputSizeMode>(_szMode);
@@ -2402,9 +2415,11 @@ public sealed class PixelateDialog : DialogBase
         Applies(cellJudge && _crCellRef.SelectedIndex != 1, _crGroupRadius);
         // 팔레트 칸을 최적화할 때만 뜻이 있다.
         _palMethodKeep.IsEnabled = _palDitherKeep.IsEnabled = _sectionToggles.TryGetValue(OptimizeSection.Palette, out var palToggle) && palToggle.On();
-        // 고정 중에는 격자 단계와 격자 칸 전체를 건너뛰되, 체크 상태는 나중에 다시 켤 수 있도록 남긴다.
+        // 줄별 칸 맞추기에서는 격자값을 고정해 다른 항목만 최적화한다.
         _grFirst.IsEnabled = !_grLock.On();
         if (_sectionToggles.TryGetValue(OptimizeSection.Grid, out var gridToggle)) gridToggle.IsEnabled = !_grFirst.On() && !_grLock.On();
+        _grLocal.IsEnabled = _grJitter.IsEnabled = !_grLock.On();
+        _grLocalShift.IsEnabled = _grLocalBand.IsEnabled = _grLocalMinCell.IsEnabled = _grLocal.On() && !_grLock.On();
         SyncQuickSettings();
         ShowSampledFrames();
         SyncBarBackground();
@@ -2502,6 +2517,27 @@ public sealed class PixelateDialog : DialogBase
             _barSyncing = false;
         }
         _sourceView.ShowAlt = on;
+    }
+
+    /// <summary>간편 설정: 줄·열마다 칸 경계를 따로 맞추되 각 칸 크기와 경계 이동을 최대 30%로 제한한다.</summary>
+    private void QuickRowFitChanged()
+    {
+        if (_loading || _barSyncing) return;
+        _loading = true;
+        try
+        {
+            if (_grLock.On())
+            {
+                _grJitter.Value = 0;
+                _grLocal.IsChecked = true;
+                _grLocalShift.Value = 30;
+                _grLocalBand.Value = 1;
+                _grLocalMinCell.Value = 4;
+            }
+            else _grLocal.IsChecked = false;
+        }
+        finally { _loading = false; }
+        Changed();
     }
 
     /// <summary>막대의 배경 지우기를 바꿈: 켜면 마지막으로 쓴 지우는 방식(처음은 자동), 끄면 지우지 않음 — 1단계 배경 방식에 적는다(정리하기를 눌러야 결과에 반영).</summary>

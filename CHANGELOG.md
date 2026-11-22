@@ -4,9 +4,9 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 
 ## Unreleased
 
-### Pixelate: keep the grid while optimizing other settings
-- Keep grid in the Pixel grid section preserves the current pixel size and cell boundaries while optimizing colors, cleanup, and other steps.
-- Outline darkness, outline fit, and sticker border removal are also held fixed because they can change the grid. Presets save this choice; for uniform cells, set size jitter to zero and turn off local correction.
+### Pixelate: fit cells by row within 30%
+- Fit cells by row in Quick settings starts with a uniform grid and follows source color edges separately for each row and column, with cell size and boundary shifts limited to 30% of the base cell.
+- With this on, optimization keeps the grid while trying colors, cleanup, and other steps; presets save the choice. Turning it off removes per-row correction.
 
 ### Clean straight lines and curves for vector-redrawn outlines
 - Pixelate's Cleanup adds Clean lines and curves (on by default) and Corner angle (40° by default) for Redraw as vector.

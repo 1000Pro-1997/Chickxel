@@ -2971,6 +2971,49 @@ public class PixelateTests
             $"dominant {dominant.Metrics.Fidelity:0.000}, mean {Run(CellReference.Mean).Metrics.Fidelity:0.000}");
     }
 
+    /// <summary>전체 격자는 균일하게, 줄마다 보정한 칸은 가로·세로 각각 원래 칸 크기의 ±30% 안에서만 움직인다.</summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RowGridFitsBothAxesWithinThirtyPercent(bool transpose)
+    {
+        const int cell = 10, count = 12;
+        var img = new PixelImage(count * cell, count * cell);
+        var colors = new[] { new Color32(220, 60, 60), new Color32(60, 170, 90), new Color32(70, 90, 220) };
+        for (int y = 0; y < img.Height; y++)
+            for (int x = 0; x < img.Width; x++)
+            {
+                int across = transpose ? y : x, row = transpose ? x : y;
+                int col = Math.Clamp((across - (row / cell % 2 == 0 ? 0 : 3) + cell) / cell - 1, 0, count - 1);
+                img[x, y] = colors[(col + row / cell) % colors.Length];
+            }
+        var settings = new PixelateSettings
+        {
+            Background = new BackgroundSettings { Mode = BackgroundMode.None },
+            Frames = new FrameSettings { Mode = FrameSplitMode.Single },
+            Grid = new PixelGridSettings { Mode = GridMode.Manual, Scale = cell, Jitter = 0,
+                LocalCorrection = true, LocalShift = 0.30, LocalBand = 1 },
+            Palette = new PaletteSettings { Method = PaletteMethod.KeepOriginal, SnapOutline = false },
+            Cleanup = new CleanupSettings { RemoveOrphans = false, FillHoles = false, OutlineFit = OutlineFit.Off },
+        };
+        var map = Assert.Single(Pixelator.Run(img, settings).Maps);
+        var layout = map.Layout();
+        Assert.NotNull(map.Local);
+        if (transpose)
+            Assert.Contains(Enumerable.Range(1, layout.Columns - 1), c => !layout.YCutsFor(c).SequenceEqual(layout.YCutsFor(0)));
+        else
+            Assert.Contains(Enumerable.Range(1, layout.Rows - 1), r => !layout.XCutsFor(r).SequenceEqual(layout.XCutsFor(0)));
+        for (int r = 0; r < layout.Rows; r++)
+            for (int c = 0; c < layout.Columns; c++)
+            {
+                var (x0, y0, x1, y1) = layout.Cell(c, r);
+                Assert.InRange(x0, layout.XCuts[c] - 3, layout.XCuts[c] + 3);
+                Assert.InRange(y0, layout.YCuts[r] - 3, layout.YCuts[r] + 3);
+                Assert.InRange(x1 - x0, 7, 13);
+                Assert.InRange(y1 - y0, 7, 13);
+            }
+    }
+
     /// <summary>
     /// 벽돌 무늬: 10px 덩어리(무작위 5색, 불투명), 줄마다 세로 경계가 반 칸(5px)씩 엇갈림 — 축 전체에 한 줄인 세로 칸 경계는 줄의 반만 맞는다.
     /// 칸 경계 지역 보정(띠 1칸, 최대 이동 0.5칸)은 줄마다 경계를 덩어리 경계로 옮겨 맞는 비율과 충실도가 나아지고, 원본 자리 → 칸(<see cref="CellLayout.Locate"/>)은
