@@ -6,10 +6,10 @@ using Chickxel.App.Localization;
 namespace Chickxel.App;
 
 /// <summary>
-/// 적용 프레임(<see cref="EditorContext.StrokeFrames"/>): 그리기 도구의 획을 지금 프레임에 그린 뒤 범위 안 다른 프레임의 같은 레이어에도 같은 자리로
-/// 다시 한다(지금 프레임과 함께 실행취소 한 단계). 붓 도구는 획이 픽셀마다 한 일(색 넣기·밝게/어둡게·지우기·색 바꾸기·모양 합성)을 기록해 그 프레임의
-/// 픽셀에 다시 하고, 채우기는 같은 자리를 그 프레임에서 다시 채우고, 그라데이션은 같은 시작·끝으로 다시 칠한다.
-/// 링크된 셀(그림 하나를 같이 씀)은 한 번만 고치고, 캔버스 밖 그림(일반 레이어)도 같은 자리로 고친다.
+/// 적용 프레임(<see cref="EditorContext.StrokeFrames"/>)과 지우개 적용 레이어(<see cref="EditorContext.StrokeLayers"/>):
+/// 현재 셀에 그린 획을 대상 셀의 같은 자리에서 다시 한다(한 번의 실행취소). 붓 도구는 픽셀별 색 넣기·밝게/어둡게·
+/// 지우기·색 바꾸기·모양 합성을 기록하고, 채우기는 대상 프레임에서 다시 채우고, 그라데이션은 같은 시작·끝으로 다시 칠한다.
+/// 링크된 셀은 한 번만 고치고, 캔버스 밖 그림(일반 레이어)도 같은 자리로 고친다.
 /// </summary>
 public sealed partial class PixelCanvas
 {
@@ -41,6 +41,8 @@ public sealed partial class PixelCanvas
 
     /// <summary>이번 획을 함께 적용할 다른 프레임(없으면 null — 기록하지 않음).</summary>
     private List<int>? _frameTargets;
+    /// <summary>지우개의 같은 프레임에도 획을 적용할 다른 레이어.</summary>
+    private List<int>? _layerTargets;
     /// <summary>획을 시작한 셀 그림(링크된 셀은 이 그림을 같이 쓰므로 건너뜀).</summary>
     private PixelImage? _frameStrokeCel;
     /// <summary>픽셀(편집 좌표)마다 이번 획이 한 일.</summary>
@@ -48,14 +50,16 @@ public sealed partial class PixelCanvas
     /// <summary>채우기를 누른 자리들(대칭 자리 포함).</summary>
     private List<Point>? _frameFillSeeds;
 
-    /// <summary>획을 시작할 때: 적용 프레임에 다른 프레임이 있으면 기록을 준비한다.</summary>
+    /// <summary>획을 시작할 때: 적용 프레임·레이어에 다른 셀이 있으면 픽셀 작업을 기록한다.</summary>
     private void BeginFrameRecord(PixelImage cel)
     {
         EndFrameRecord();
         if (_ctx.Project is null || _ctx.IsGroupSelected) return;
-        var targets = _ctx.StrokeFrameTargets();
-        if (targets.Count == 0) return;
-        _frameTargets = targets;
+        var frames = _ctx.StrokeFrameTargets();
+        var layers = _strokeTool == ToolKind.Eraser ? _ctx.StrokeLayerTargets() : [];
+        if (frames.Count == 0 && layers.Count == 0) return;
+        _frameTargets = frames;
+        _layerTargets = layers;
         _frameStrokeCel = cel;
         _frameOps = new Dictionary<Point, OpChain>();
         _frameFillSeeds = new List<Point>();
@@ -64,6 +68,7 @@ public sealed partial class PixelCanvas
     private void EndFrameRecord()
     {
         _frameTargets = null;
+        _layerTargets = null;
         _frameStrokeCel = null;
         _frameOps = null;
         _frameFillSeeds = null;
@@ -104,12 +109,12 @@ public sealed partial class PixelCanvas
     }
 
     /// <summary>
-    /// 획을 확정한다: 적용 프레임에 다른 프레임이 있으면 지금 프레임의 획과 그 프레임들의 같은 자리 고침을 실행취소 한 단계로 묶는다
-    /// (이미 열린 묶음 — AI 차례 등 — 안이면 그 묶음에 넣음). 함께 고친 프레임 수를 상태 표시줄에 알린다.
+    /// 획을 확정한다: 다른 프레임·레이어의 같은 자리 고침을 현재 셀과 실행취소 한 단계로 묶는다
+    /// (이미 열린 묶음 — AI 차례 등 — 안이면 그 묶음에 넣음). 함께 고친 셀 수를 상태 표시줄에 알린다.
     /// </summary>
     private void CommitStrokeWithFrames(string label)
     {
-        if (_frameTargets is not { Count: > 0 } targets || _ctx.Project is not { } p)
+        if ((_frameTargets is not { Count: > 0 } && _layerTargets is not { Count: > 0 }) || _ctx.Project is not { } p)
         {
             _ctx.CommitStroke(label);
             return;
@@ -123,36 +128,41 @@ public sealed partial class PixelCanvas
         try
         {
             _ctx.CommitStroke(label);
-            others = ApplyToFrames(p, targets, label);
+            others = ApplyToTargets(p, label);
         }
         finally
         {
             if (own) p.History.EndGroup();
         }
-        if (others > 0) Message?.Invoke(this, string.Format(CultureInfo.CurrentCulture, UiStrings.FrameRange_Applied, others));
+        if (others > 0) Message?.Invoke(this, string.Format(CultureInfo.CurrentCulture,
+            _layerTargets is { Count: > 0 } ? UiStrings.StrokeRange_Applied : UiStrings.FrameRange_Applied, others));
     }
 
-    /// <summary>이번 획을 <paramref name="targets"/> 프레임의 같은 레이어에 같은 자리로 다시 한다(편집 하나). 바꾼 프레임 수.</summary>
-    private int ApplyToFrames(SpriteProject p, List<int> targets, string label)
+    /// <summary>현재 셀 외의 범위 셀에 획을 다시 한다. 잠긴 레이어·그룹·타일맵 및 공유 그림은 건너뛴다.</summary>
+    private int ApplyToTargets(SpriteProject p, string label)
     {
-        int layer = _ctx.CurrentLayer;
-        if (layer < 0 || layer >= p.Layers.Count || p.Layers[layer].IsGroup || p.IsLayerLocked(layer)) return 0;
-        bool normal = p.Layers[layer].Kind == LayerKind.Normal;
-        var size = p.CelSize(p.Layers[layer]);
+        int current = _ctx.CurrentLayer, frame = _ctx.CurrentFrame;
         var seen = new HashSet<PixelImage>(ReferenceEqualityComparer.Instance);
         if (_frameStrokeCel is { } start) seen.Add(start);
-        var changes = new List<(int Frame, PixelImage Cel, (PixelImage Image, Point Origin)? Full)>();
-        foreach (int f in targets)
+        var changes = new List<(int Layer, int Frame, PixelImage Cel, (PixelImage Image, Point Origin)? Full)>();
+        foreach (int layer in (_layerTargets ?? []).Prepend(current))
         {
-            if (f < 0 || f >= p.Frames.Count) continue;
-            var cel = p.GetCel(layer, f);
-            if (cel is not null && !seen.Add(cel)) continue;
-            if (ReplayOn(p, layer, f, cel, size, normal) is { } change) changes.Add(change);
+            if (layer < 0 || layer >= p.Layers.Count || p.Layers[layer].IsGroup || p.Layers[layer].IsTilemap || p.IsLayerLocked(layer)) continue;
+            bool normal = p.Layers[layer].Kind == LayerKind.Normal;
+            var size = p.CelSize(p.Layers[layer]);
+            foreach (int f in layer == current ? (_frameTargets ?? []) : (_frameTargets ?? []).Prepend(frame))
+            {
+                if (f < 0 || f >= p.Frames.Count) continue;
+                var cel = p.GetCel(layer, f);
+                if (cel is not null && !seen.Add(cel)) continue;
+                if (ReplayOn(p, layer, f, cel, size, normal) is { } change)
+                    changes.Add((layer, change.Frame, change.Cel, change.Full));
+            }
         }
         if (changes.Count == 0) return 0;
         p.Edit(label, ProjectChange.Pixels, () =>
         {
-            foreach (var (f, cel, full) in changes)
+            foreach (var (layer, f, cel, full) in changes)
                 if (full is { } whole) p.SetFullCel(layer, f, whole.Image, whole.Origin, label);
                 else p.SetCel(layer, f, cel, label);
         });

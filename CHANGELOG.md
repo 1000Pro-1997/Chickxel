@@ -12,6 +12,14 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 
 ## v1.14.136 (2026-11-22)
 
+### Apply eraser strokes to layers
+- Eraser options now include an Apply to layers range: current layer by default, above/below by count, up to either end, all layers, or layers selected in the timeline.
+- The eraser stroke also affects matching cels in the selected frame range; locked layers, groups and tilemaps are skipped, and one undo reverts the whole stroke.
+
+### Collapse the preview pane
+- A button in the preview header collapses the image and playback controls, giving their space to Tool options.
+- Expanding restores the previous height; the collapsed state and expanded height persist across restarts without stopping playback.
+
 ### Pixelate: fit cells by row within 30%
 - Fit cells by row in Quick settings starts with a uniform grid and follows source color edges separately for each row and column, with cell size and boundary shifts limited to 30% of the base cell.
 - With this on, optimization keeps the grid while trying colors, cleanup, and other steps; presets save the choice. Turning it off removes per-row correction.

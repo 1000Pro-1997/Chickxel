@@ -2261,6 +2261,8 @@ Move Chickxel.app to the Applications folder or similar and relaunch it to use a
   <data name="Preview_ZoomTitle" xml:space="preserve"><value>Preview (large)</value></data>
   <data name="Preview_ZoomTip" xml:space="preserve"><value>Click to open a large preview window (resize it to scale the picture, Space = play/pause, Esc = close). Right-click: copy and save</value></data>
   <data name="Preview_OpenTabTip" xml:space="preserve"><value>Open as a tab: show the preview in a tab on the right side (splits the view if needed; only one preview tab)</value></data>
+  <data name="Preview_CollapseTip" xml:space="preserve"><value>Collapse preview</value></data>
+  <data name="Preview_ExpandTip" xml:space="preserve"><value>Expand preview</value></data>
   <data name="Timeline_CopyRendered" xml:space="preserve"><value>Copy cels (as image with effects)</value></data>
   <data name="Timeline_CopyFrameImage" xml:space="preserve"><value>Copy frame {0} as shown</value></data>
   <data name="Timeline_CopiedRendered" xml:space="preserve"><value>Copied {1} layer(s) of frame {0} as an image with effects ({2}×{3}).</value></data>
@@ -4270,6 +4272,23 @@ Clicking an already selected pixel measures from that pixel again; with Shift+cl
   <data name="FrameRange_Span" xml:space="preserve"><value>Applies to frames {0}–{1} ({2})</value></data>
   <data name="FrameRange_SpanOne" xml:space="preserve"><value>Applies to frame {0} only</value></data>
   <data name="FrameRange_Applied" xml:space="preserve"><value>Also applied at the same place on {0} other frames. One Ctrl+Z undoes all of it.</value></data>
+  <data name="LayerRange_Group" xml:space="preserve"><value>Apply to layers</value></data>
+  <data name="LayerRange_Info" xml:space="preserve"><value>After erasing on the current layer, apply the same stroke to other layers at the same place in the same frame. If a frame range is also selected, apply it across those frames in each target layer. Above and below follow layer stacking order. Select layers by their names in the timeline (without a selection, only the current layer is changed). Locked layers, groups and tilemaps are skipped. Undo once to revert everything. The app always starts with only the current layer.</value></data>
+  <data name="LayerRange_Tip" xml:space="preserve"><value>Layers that also receive the eraser stroke</value></data>
+  <data name="LayerRange_Current" xml:space="preserve"><value>Current layer only</value></data>
+  <data name="LayerRange_Above" xml:space="preserve"><value>Up to N layers above</value></data>
+  <data name="LayerRange_Below" xml:space="preserve"><value>Up to N layers below</value></data>
+  <data name="LayerRange_AboveAndBelow" xml:space="preserve"><value>Above and below</value></data>
+  <data name="LayerRange_ToTop" xml:space="preserve"><value>Up to the top layer</value></data>
+  <data name="LayerRange_ToBottom" xml:space="preserve"><value>Down to the bottom layer</value></data>
+  <data name="LayerRange_All" xml:space="preserve"><value>All layers</value></data>
+  <data name="LayerRange_Selected" xml:space="preserve"><value>Selected layers</value></data>
+  <data name="LayerRange_AboveCount" xml:space="preserve"><value>Above</value></data>
+  <data name="LayerRange_BelowCount" xml:space="preserve"><value>Below</value></data>
+  <data name="LayerRange_Unit" xml:space="preserve"><value>layers</value></data>
+  <data name="LayerRange_Span" xml:space="preserve"><value>Layers in range: {0} (locked layers, groups and tilemaps skipped)</value></data>
+  <data name="LayerRange_SpanSelected" xml:space="preserve"><value>Applies to the current layer and selected timeline layers</value></data>
+  <data name="StrokeRange_Applied" xml:space="preserve"><value>Also applied at the same place in {0} other cels. One Ctrl+Z undoes all of it.</value></data>
   <data name="EffectCanvas_Staged" xml:space="preserve"><value>On OK: {0}×{1} → {2}×{3}</value></data>
   <data name="EffectCanvas_Drop" xml:space="preserve"><value>Don't expand — keep the canvas; effects past it are cut off</value></data>
   <data name="ShapeCanvas_NoDocument" xml:space="preserve"><value>No document is open — open the picture to turn into shapes first</value></data>

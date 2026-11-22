@@ -108,8 +108,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private readonly Grid _splitFiles, _splitPalette, _splitRight, _splitTimeline, _splitRightDock;
     private readonly ColumnDefinition _colFiles, _colPalette, _colRight;
     private readonly RowDefinition _rowBottom, _rowPreview;
-    private readonly GridSplitter _filesSplitter;
-
+    private readonly GridSplitter _filesSplitter, _previewSplitter;
+    private int _expandedPreviewHeight;
     private readonly List<ToolSlotButton> _toolSlots = new();
     private ToggleButton _tbFiles = null!;
     /// <summary>도구 막대 아래 끝 저장·되돌리기 단추(<see cref="UpdateSaveButtons"/>가 켜고 끈다).</summary>
@@ -208,16 +208,19 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _toolOptions = new ToolOptionsPanel(_ctx);
         _preview = new PreviewPanel(_ctx);
         _timeline = new TimelinePanel(_ctx, _preview);
+        _ctx.SelectedStrokeLayers = _timeline.SelectedLayersForStroke;
 
         var canvasHost = BuildPaneArea();
         AttachWindowDrop();
 
         var s0 = _settings;
-        (_splitRightDock, _rowPreview, var previewSplitter) = MakeRowSplit(_preview, _toolOptions, fixedFirst: true, s0.PreviewHeight);
+        (_splitRightDock, _rowPreview, _previewSplitter) = MakeRowSplit(_preview, _toolOptions, fixedFirst: true, s0.PreviewHeight);
         // 미리보기·도구 설정 사이 막대는 잡기 쉽게 위아래로 3px씩 더 넓힌다(보이는 선은 가운데 3px — 바깥은 패널 색).
-        previewSplitter.Height = previewSplitter.MinHeight = SplitterSize + 6;
-        previewSplitter.BorderThickness = new Thickness(0, 3);
-        previewSplitter.BorderBrush = AppTheme.PanelBrush;
+        _previewSplitter.Height = _previewSplitter.MinHeight = SplitterSize + 6;
+        _previewSplitter.BorderThickness = new Thickness(0, 3);
+        _previewSplitter.BorderBrush = AppTheme.PanelBrush;
+        _expandedPreviewHeight = s0.PreviewHeight;
+        _preview.CollapsedChanged += (_, _) => SetPreviewCollapsed(_preview.Collapsed);
         (_splitTimeline, _rowBottom, _) = MakeRowSplit(canvasHost, _timeline, fixedFirst: false, s0.BottomHeight);
         (_splitRight, _colRight, _) = MakeColumnSplit(_splitTimeline, _splitRightDock, fixedFirst: false, s0.RightWidth);
         // 왼쪽 패널 자리: 색 패널, 타일맵 레이어를 고르면 타일셋 패널(UpdateTileMode)
@@ -383,6 +386,24 @@ public sealed partial class MainForm : Window, Ai.IAiHost
 
     private static void SetSplit(RowDefinition row, Grid grid, int height)
         => row.Height = new GridLength(ClampSplit(height, grid.Bounds.Height));
+    /// <summary>접으면 제목 줄만 남기고 도구 설정에 자리를 돌려준다. 펼치면 접기 전 높이를 복원한다.</summary>
+    private void SetPreviewCollapsed(bool collapsed)
+    {
+        if (collapsed)
+        {
+            if (!_previewSplitter.IsVisible) return;
+            _expandedPreviewHeight = (int)Math.Round(_rowPreview.ActualHeight);
+            if (_expandedPreviewHeight < MinPanelSize) _expandedPreviewHeight = _settings.PreviewHeight;
+            _previewSplitter.IsVisible = false;
+            _rowPreview.Height = new GridLength(MinPanelSize);
+        }
+        else
+        {
+            _previewSplitter.IsVisible = true;
+            SetSplit(_rowPreview, _splitRightDock, _expandedPreviewHeight);
+        }
+    }
+
 
     private static TextBlock StatusLabel(DockPanel host, int width)
     {
@@ -1379,6 +1400,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         SetSplit(_colRight, _splitRight, s.RightWidth);
         SetSplit(_rowBottom, _splitTimeline, s.BottomHeight);
         SetSplit(_rowPreview, _splitRightDock, s.PreviewHeight);
+        _preview.Collapsed = s.PreviewCollapsed;
         _browser.TreeHeight = s.BrowserTreeHeight;
         SetFilesVisible(s.FilesVisible);
         _settingsApplied = true;
@@ -1495,7 +1517,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             s.PaletteWidth = (int)Math.Round(_colPalette.ActualWidth);
             s.RightWidth = (int)Math.Round(_colRight.ActualWidth);
             s.BottomHeight = (int)Math.Round(_rowBottom.ActualHeight);
-            s.PreviewHeight = (int)Math.Round(_rowPreview.ActualHeight);
+            s.PreviewHeight = _preview.Collapsed ? _expandedPreviewHeight : (int)Math.Round(_rowPreview.ActualHeight);
+            s.PreviewCollapsed = _preview.Collapsed;
             s.BrowserTreeHeight = _browser.TreeHeight;
         }
         s.TimelineThumbnails = _timeline.Thumbnails;

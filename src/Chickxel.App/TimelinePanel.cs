@@ -195,6 +195,10 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
         return _grid.Kind == SelKind.Cels && a >= 0 ? Enumerable.Range(a, b - a + 1).ToList() : [_ctx.CurrentFrame];
     }
 
+    /// <summary>지우개 적용 레이어에서 쓸 타임라인 이름 칸 선택. 별도 선택이 없으면 현재 레이어.</summary>
+    public List<int> SelectedLayersForStroke()
+        => _grid.Kind == SelKind.Layers ? _grid.SelectedLayerList() : [_ctx.CurrentLayer];
+
     /// <summary>
     /// 셀 동작의 대상 행(레이어 번호, 위→아래) × 프레임: 레이어 선택이면 그 레이어들의 모든 프레임, 아니면 셀 묶음
     /// (떨어진 칸 묶음이면 그 칸들이 걸친 행·프레임 — 칸 하나하나는 <see cref="SelectedCels"/>).

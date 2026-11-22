@@ -27,6 +27,19 @@ public enum StrokeFrameRange
     All,
 }
 
+/// <summary>지우개 획을 현재 레이어 외에 함께 적용할 레이어 범위. 레이어 번호는 아래에서 위로 증가한다.</summary>
+public enum StrokeLayerRange
+{
+    Current,
+    Above,
+    Below,
+    AboveAndBelow,
+    ToTop,
+    ToBottom,
+    All,
+    Selected,
+}
+
 /// <summary>편집 도구 종류.</summary>
 public enum ToolKind
 {
@@ -354,6 +367,56 @@ public sealed partial class EditorContext
     {
         get => _strokeFramesAfter;
         set { value = Math.Clamp(value, 1, MaxStrokeFrameCount); if (_strokeFramesAfter == value) return; _strokeFramesAfter = value; OptionsChanged(); }
+    }
+
+    private StrokeLayerRange _strokeLayers;
+    private int _strokeLayersAbove = 1, _strokeLayersBelow = 1;
+    /// <summary>지우개의 적용 레이어(시작할 때마다 현재 레이어로 초기화, 저장하지 않음).</summary>
+    public StrokeLayerRange StrokeLayers
+    {
+        get => _strokeLayers;
+        set { if (!Enum.IsDefined(value)) value = StrokeLayerRange.Current; if (_strokeLayers == value) return; _strokeLayers = value; OptionsChanged(); }
+    }
+    public int StrokeLayersAbove
+    {
+        get => _strokeLayersAbove;
+        set { value = Math.Clamp(value, 1, MaxStrokeFrameCount); if (_strokeLayersAbove == value) return; _strokeLayersAbove = value; OptionsChanged(); }
+    }
+    public int StrokeLayersBelow
+    {
+        get => _strokeLayersBelow;
+        set { value = Math.Clamp(value, 1, MaxStrokeFrameCount); if (_strokeLayersBelow == value) return; _strokeLayersBelow = value; OptionsChanged(); }
+    }
+    /// <summary>타임라인의 이름 칸에서 선택한 레이어 번호. 선택하지 않았으면 현재 레이어만.</summary>
+    public Func<List<int>>? SelectedStrokeLayers { get; set; }
+
+    public (int First, int Last)? StrokeLayerSpan()
+    {
+        if (Project is not { } p || p.Layers.Count == 0) return null;
+        int current = Math.Clamp(_layer, 0, p.Layers.Count - 1), top = p.Layers.Count - 1;
+        var (first, last) = _strokeLayers switch
+        {
+            StrokeLayerRange.Above => (current, current + _strokeLayersAbove),
+            StrokeLayerRange.Below => (current - _strokeLayersBelow, current),
+            StrokeLayerRange.AboveAndBelow => (current - _strokeLayersBelow, current + _strokeLayersAbove),
+            StrokeLayerRange.ToTop => (current, top),
+            StrokeLayerRange.ToBottom => (0, current),
+            StrokeLayerRange.All => (0, top),
+            _ => (current, current),
+        };
+        return (Math.Max(0, first), Math.Min(top, last));
+    }
+
+    /// <summary>현재 레이어 외에 지우개 획을 적용할 레이어(아래에서 위로, 중복 없음).</summary>
+    public List<int> StrokeLayerTargets()
+    {
+        if (Project is not { } p || StrokeLayerSpan() is not { } span) return [];
+        if (_strokeLayers == StrokeLayerRange.Selected)
+            return [.. (SelectedStrokeLayers?.Invoke() ?? []).Where(i => i >= 0 && i < p.Layers.Count && i != _layer).Distinct().Order()];
+        var targets = new List<int>();
+        for (int l = span.First; l <= span.Last; l++)
+            if (l != _layer) targets.Add(l);
+        return targets;
     }
 
     /// <summary>지금 프레임 기준으로 <see cref="StrokeFrames"/>가 덮는 프레임 범위(0부터, 양 끝 포함 — 타임라인 밖은 잘림). 프로젝트가 없으면 null.</summary>

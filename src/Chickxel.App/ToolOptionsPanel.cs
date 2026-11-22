@@ -98,6 +98,13 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
     /// <summary>지금 프레임 기준으로 덮는 프레임(예: "프레임 3~7 (5개)").</summary>
     private readonly TextBlock _frameRangeSpan;
 
+    // 지우개 적용 레이어(현재 레이어 외에 위·아래·선택 레이어)
+    private readonly Border _layerRangeBox;
+    private readonly ComboBox _layerRange;
+    private readonly NumericUpDown _layersAbove, _layersBelow;
+    private readonly StackPanel _layersAboveRow, _layersBelowRow;
+    private readonly TextBlock _layerRangeSpan;
+
     // 글씨
     private readonly FontPicker _textFont = new(170);
     /// <summary>고른 글꼴이 이 컴퓨터에 없을 때 경고(기본 글꼴로 그림).</summary>
@@ -509,6 +516,28 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
             _framesAfterRow,
             _frameRangeSpan));
 
+        _layerRange = Ui.Combo(170, UiStrings.LayerRange_Current, UiStrings.LayerRange_Above, UiStrings.LayerRange_Below,
+            UiStrings.LayerRange_AboveAndBelow, UiStrings.LayerRange_ToTop, UiStrings.LayerRange_ToBottom,
+            UiStrings.LayerRange_All, UiStrings.LayerRange_Selected);
+        _layerRange.SelectionChanged += (_, _) =>
+        {
+            if (!_updating && _layerRange.SelectedIndex >= 0) _ctx.StrokeLayers = (StrokeLayerRange)_layerRange.SelectedIndex;
+        };
+        _layerRange.Tip(UiStrings.LayerRange_Tip);
+        _layersAbove = NumBox(1, EditorContext.MaxStrokeFrameCount, v => _ctx.StrokeLayersAbove = v)
+            .Presets(1, 2, 3, 4, 5, 6, 8, 10, 12, 16).RecentKey("stroke.layers");
+        _layersBelow = NumBox(1, EditorContext.MaxStrokeFrameCount, v => _ctx.StrokeLayersBelow = v)
+            .Presets(1, 2, 3, 4, 5, 6, 8, 10, 12, 16).RecentKey("stroke.layers");
+        _layersAboveRow = Ui.Row(Ui.Label(UiStrings.LayerRange_AboveCount), _layersAbove, Ui.Label(UiStrings.LayerRange_Unit));
+        _layersBelowRow = Ui.Row(Ui.Label(UiStrings.LayerRange_BelowCount), _layersBelow, Ui.Label(UiStrings.LayerRange_Unit));
+        _layerRangeSpan = Dim("");
+        _layerRangeSpan.TextWrapping = TextWrapping.Wrap;
+        _layerRangeBox = InfoGroup(UiStrings.LayerRange_Group, UiStrings.LayerRange_Info, Ui.Stack(
+            Ui.Row(Ui.Label(UiStrings.FrameRange_Label), _layerRange),
+            _layersAboveRow,
+            _layersBelowRow,
+            _layerRangeSpan));
+
         // ── 피벗(픽셀: X는 왼쪽에서, Y는 아래에서)
         // 5×5: 가로·세로 0, 1/4, 1/2, 3/4, 1 지점(위 왼쪽 단추 = 왼쪽 위).
         var stepDefs = string.Join(",", Enumerable.Repeat("Auto", PivotSteps));
@@ -755,7 +784,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         PointerExited += (_, _) => EndEffectEdit();
 
         BuildTileOptions();
-        Control[] boxes = [_canvasResizeBox, _transformBox, _tileBox, _tileFloorBox, _shapeBox, _brushBox, _pencilGradientBox, _shapePenBox, _curvePenBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _frameRangeBox, _pivotBox, _sliceBox];
+        Control[] boxes = [_canvasResizeBox, _transformBox, _tileBox, _tileFloorBox, _shapeBox, _brushBox, _pencilGradientBox, _shapePenBox, _curvePenBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _frameRangeBox, _layerRangeBox, _pivotBox, _sliceBox];
         foreach (var box in boxes) Ui.Foldable((Border)box);
         Ui.Foldable(_effectBox);
         var header = Ui.Header(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E39101186F);
@@ -995,6 +1024,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         _mirrorBox.IsVisible = paint;
         // 적용 프레임: 셀 그림을 칠하는 도구(그라데이션 포함)
         _frameRangeBox.IsVisible = paint || tool == ToolKind.Gradient;
+        _layerRangeBox.IsVisible = tool == ToolKind.Eraser;
         _pivotBox.IsVisible = tool == ToolKind.Pivot;
         _sliceBox.IsVisible = tool == ToolKind.Slice;
         var hint = tool switch
@@ -1022,7 +1052,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
                 : layer ? UiStrings.LayerTransform_PanelTitle : UiStrings.S_ToolOptionsPanel_Refresh_DD7EA3035B;
             _tfTitle.Text = layer ? UiStrings.LayerTransform_GroupTitle : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E4C9B1697C;
             ToolTip.SetTip(_tfHelp, layer ? UiStrings.LayerTransform_Info : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_BFD255FFEA);
-            foreach (var box in new Control[] { _shapeBox, _brushBox, _pencilGradientBox, _shapePenBox, _curvePenBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _frameRangeBox, _pivotBox, _sliceBox, _hint })
+            foreach (var box in new Control[] { _shapeBox, _brushBox, _pencilGradientBox, _shapePenBox, _curvePenBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _frameRangeBox, _layerRangeBox, _pivotBox, _sliceBox, _hint })
                 box.IsVisible = false;
         }
 
@@ -1066,6 +1096,9 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
             _frameRange.SelectedIndex = (int)_ctx.StrokeFrames;
             _framesBefore.Value = _ctx.StrokeFramesBefore;
             _framesAfter.Value = _ctx.StrokeFramesAfter;
+            _layerRange.SelectedIndex = (int)_ctx.StrokeLayers;
+            _layersAbove.Value = _ctx.StrokeLayersAbove;
+            _layersBelow.Value = _ctx.StrokeLayersBelow;
             _pencilGradientMode.SelectedIndex = (int)_ctx.PencilGradientMode;
             _pencilIntervalNum.Value = _ctx.PencilGradientInterval;
             _pencilIntervalRow.IsVisible = _ctx.PencilGradientMode == GradientStrokeMode.Repeat;
@@ -1082,6 +1115,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
             _updating = false;
         }
         RefreshFrameRange();
+        RefreshLayerRange();
         RefreshPivot();
         RefreshSlice();
         RefreshTransform();
@@ -1104,6 +1138,27 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
             ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.FrameRange_SpanOne, span.First + 1)
             : string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.FrameRange_Span, span.First + 1, span.Last + 1, count);
         _frameRangeSpan.Foreground = count > 1 ? AppTheme.WarningBrush : AppTheme.DimTextBrush;
+    }
+
+    private void RefreshLayerRange()
+    {
+        var range = _ctx.StrokeLayers;
+        _layersAboveRow.IsVisible = range is StrokeLayerRange.Above or StrokeLayerRange.AboveAndBelow;
+        _layersBelowRow.IsVisible = range is StrokeLayerRange.Below or StrokeLayerRange.AboveAndBelow;
+        if (_ctx.StrokeLayerSpan() is not { } span)
+        {
+            _layerRangeSpan.Text = "";
+            return;
+        }
+        if (range == StrokeLayerRange.Selected)
+        {
+            _layerRangeSpan.Text = UiStrings.LayerRange_SpanSelected;
+            _layerRangeSpan.Foreground = AppTheme.WarningBrush;
+            return;
+        }
+        int count = span.Last - span.First + 1;
+        _layerRangeSpan.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.LayerRange_Span, count);
+        _layerRangeSpan.Foreground = count > 1 ? AppTheme.WarningBrush : AppTheme.DimTextBrush;
     }
 
     /// <summary>글씨 설정 칸에 글씨 도구 설정(<see cref="EditorContext.TextStyle"/>)을 보인다. 매끄럽게는 벡터 글꼴일 때만 쓸 수 있다.</summary>

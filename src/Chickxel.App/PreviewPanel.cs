@@ -12,7 +12,7 @@ namespace Chickxel.App;
 /// 자체 FPS(0 = 프레임 길이 사용), 배율 1×/2×/4×/맞춤, 배경색을 고를 수 있고, 멈춰 있으면 현재 프레임을 보여 준다.
 /// 그룹(스킨 슬롯)이 있으면 아래쪽 "착장" 줄에서 그룹마다(타임라인처럼 위→아래) 보일 스킨을 고르고, "관리…"로 스킨 관리 창을 연다.
 /// 그림을 누르면 크기를 바꿀 수 있는 크게 보기 창(<see cref="ZoomWindow"/>)이 열리고, 우클릭하면 보이는 프레임을 복사(1×·×4)·PNG로 저장하거나 내보내기 창(GIF)을 연다.
-/// 제목 줄 오른쪽 끝 단추는 미리보기 탭(<see cref="TabView"/>를 메인 창이 나눈 칸에 닮)을 열어 달라고 알린다. 미리보기 탭이 열려 있으면 그림을 눌러도 그 탭을 보인다(큰 미리보기는 하나만).
+/// 제목 줄에는 미리보기 탭 단추와 접기·펼치기 단추가 있다. 접어도 재생 상태는 유지하고 메인 창의 도구 설정 칸이 빈 자리를 쓴다.
 /// </summary>
 public sealed class PreviewPanel : UserControl, IHelpTargetSource
 {
@@ -26,6 +26,9 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(15) };
     private readonly Stopwatch _clock = new();
     private readonly View _view;
+    private readonly WrapPanel _bar;
+    private readonly Border _collapseButton;
+    private bool _collapsed;
     private readonly Button _play;
     private readonly NumericUpDown _fps;
     /// <summary>배경 단추(지금 배경 견본 — 누르면 다음 배경)와 그 옆 아래 화살표(배경 목록) 묶음.</summary>
@@ -64,6 +67,24 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
     public event EventHandler<string>? FileSaved;
     /// <summary>"탭으로 열기"(제목 줄 오른쪽 끝 단추, 미리보기 탭이 열려 있으면 그림 누르기도): 미리보기 탭을 열거나 보여 달라.</summary>
     public event EventHandler? TabRequested;
+    /// <summary>제목 줄에서 접기·펼치기 상태가 바뀜(메인 창이 분할 높이를 맞춘다).</summary>
+    public event EventHandler? CollapsedChanged;
+
+    /// <summary>제목 줄만 남기고 그림·재생 설정·착장 줄을 숨긴다.</summary>
+    public bool Collapsed
+    {
+        get => _collapsed;
+        set
+        {
+            if (_collapsed == value) return;
+            _collapsed = value;
+            _bar.IsVisible = _view.IsVisible = !value;
+            _outfitHost.IsVisible = !value && _outfit.Children.Count > 0;
+            ((IconView)_collapseButton.Child!).Icon = value ? VectorIcon.ChevronDown : VectorIcon.ChevronUp;
+            ToolTip.SetTip(_collapseButton, value ? UiStrings.Preview_ExpandTip : UiStrings.Preview_CollapseTip);
+            CollapsedChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
 
     /// <summary>미리보기 탭이 열려 있는지(메인 창이 맞춤). 열려 있으면 그림을 눌러도 크게 보기 창 대신 그 탭을 보인다 — 큰 미리보기는 하나만.</summary>
     public bool TabOpen { get; set; }
@@ -109,15 +130,15 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
         _background.ContextRequested += (_, e) => PopupMenus.Show(_background, BackgroundMenuItems(), e);
         _backgroundGroup = Ui.WithMenuArrow(_background, UiStrings.Preview_BackgroundMenuTip, ShowBackgroundMenu);
         SetBackground(0, pickCustom: false);
-        var bar = new WrapPanel { Orientation = Orientation.Horizontal, Background = AppTheme.PanelBrush };
-        DockPanel.SetDock(bar, Dock.Bottom);
-        bar.Children.Add(_play);
+        _bar = new WrapPanel { Orientation = Orientation.Horizontal, Background = AppTheme.PanelBrush };
+        DockPanel.SetDock(_bar, Dock.Bottom);
+        _bar.Children.Add(_play);
         var fpsLabel = Ui.Label("FPS");
         fpsLabel.VerticalAlignment = VerticalAlignment.Center;
-        bar.Children.Add(fpsLabel);
-        bar.Children.Add(_fps);
-        bar.Children.Add(_scaleGroup);
-        bar.Children.Add(_backgroundGroup);
+        _bar.Children.Add(fpsLabel);
+        _bar.Children.Add(_fps);
+        _bar.Children.Add(_scaleGroup);
+        _bar.Children.Add(_backgroundGroup);
         _outfitHost = new Border
         {
             Background = AppTheme.PanelBrush,
@@ -138,10 +159,12 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
         var title = (Control)header.Child!;
         header.Child = null;
         _tabButton = HeaderIconButton(VectorIcon.Columns2, UiStrings.Preview_OpenTabTip, () => TabRequested?.Invoke(this, EventArgs.Empty));
+        _collapseButton = HeaderIconButton(VectorIcon.ChevronUp, UiStrings.Preview_CollapseTip, () => Collapsed = !Collapsed);
+        DockPanel.SetDock(_collapseButton, Dock.Right);
         DockPanel.SetDock(_tabButton, Dock.Right);
-        header.Child = new DockPanel { Children = { _tabButton, title } };
+        header.Child = new DockPanel { Children = { _collapseButton, _tabButton, title } };
         root.Children.Add(header);
-        root.Children.Add(bar);
+        root.Children.Add(_bar);
         root.Children.Add(_outfitHost);
         root.Children.Add(_view);
         PopupMenus.Attach(_view, ViewMenu);
@@ -197,6 +220,7 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
         if (ReferenceEquals(c, _backgroundGroup)) return new(page, Anchor: UiStrings.S_GifExportDialog_GifExportDialog_7934F88ACA);
         if (ReferenceEquals(c, _outfitHost)) return new(page, Anchor: UiStrings.S_PreviewPanel_RebuildOutfit_E5D30D48F5);
         if (ReferenceEquals(c, _tabButton)) return new(page, Anchor: "Enlarged view and preview tab");
+        if (ReferenceEquals(c, _collapseButton)) return new(page);
         if (ReferenceEquals(c, this)) return new(page);
         return null;
     }
@@ -212,7 +236,7 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
             _outfit.Children.Clear();
             var p = _ctx.Project;
             var groups = p is null ? [] : p.Layers.Where(l => l.IsGroup).Reverse().ToList();
-            _outfitHost.IsVisible = groups.Count > 0;
+            _outfitHost.IsVisible = !_collapsed && groups.Count > 0;
             if (p is null || groups.Count == 0) return;
             var title = Ui.Label(UiStrings.S_PreviewPanel_RebuildOutfit_E5D30D48F5);
             title.Foreground = AppTheme.DimTextBrush;

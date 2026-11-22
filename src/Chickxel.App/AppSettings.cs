@@ -183,6 +183,8 @@ public sealed class AppSettings
     public string PreviewBackground { get; set; } = "checker";
     public int PreviewZoom { get; set; } = 0;
     public int PreviewFps { get; set; } = 0;
+    /// <summary>오른쪽 미리보기를 제목 줄만 남기고 접음(펼쳤을 때 높이는 <see cref="PreviewHeight"/>).</summary>
+    public bool PreviewCollapsed { get; set; }
 
     // AI 채팅(Claude Code·Codex)
     /// <summary>채팅에 쓰는 CLI("claude" / "codex", 모르는 값 = claude).</summary>
