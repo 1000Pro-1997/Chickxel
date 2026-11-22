@@ -4,7 +4,7 @@ head.2,Chickxel 다운로드 — 처음 실행할 때,Download Chickxel — Firs
 head.3.content,"Chickxel을 내려받고, Windows·macOS에서 처음 실행할 때 뜨는 보안 경고를 넘기는 법과 Linux에서 실행하는 법을 그림과 함께 안내합니다.","Download Chickxel and see, with pictures, how to get past the security warning Windows and macOS show on first launch, and how to run it on Linux."
 head.4.content,Chickxel 다운로드 — 처음 실행할 때,Download Chickxel — First launch
 head.5.content,"Chickxel을 내려받고, Windows·macOS에서 처음 실행할 때 뜨는 보안 경고를 넘기는 법과 Linux에서 실행하는 법을 그림과 함께 안내합니다.","Download Chickxel and see, with pictures, how to get past the security warning Windows and macOS show on first launch, and how to run it on Linux."
-head.6.content,https://chickxel.com/assets/screenshot.png,https://chickxel.com/assets/screenshot-en.png
+head.6.content,https://chickxel.com/assets/hero.jpg,https://chickxel.com/assets/hero.jpg
 head.canonical,https://chickxel.com/download,https://chickxel.com/en/download
 head.7.script,  if (want !== 'ko') location.replace('en/' + 'download.html' + location.search + location.hash);,  if (want !== 'en') location.replace('../' + 'download.html' + location.search + location.hash);
 nav.main,주 메뉴,Main menu
