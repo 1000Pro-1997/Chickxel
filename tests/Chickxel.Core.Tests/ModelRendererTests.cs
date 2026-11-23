@@ -179,8 +179,6 @@ public class ModelRendererTests(ITestOutputHelper output)
     [InlineData(ModelAlphaMode.Mask, 0.3f, 0.5f, false)]
     [InlineData(ModelAlphaMode.Mask, 0.7f, 0.5f, true)]
     [InlineData(ModelAlphaMode.Mask, 0.7f, 0.8f, false)]
-    [InlineData(ModelAlphaMode.Blend, 0.4f, 0.9f, false)]
-    [InlineData(ModelAlphaMode.Blend, 0.6f, 0.9f, true)]
     [InlineData(ModelAlphaMode.Opaque, 0.1f, 0.5f, true)]
     public void AlphaCutoff_DiscardsWithoutWritingDepth(ModelAlphaMode mode, float alpha, float cutoff, bool drawn)
     {
@@ -189,6 +187,72 @@ public class ModelRendererTests(ITestOutputHelper output)
         var back = Quad(new Vector3(0, 0, -1), Vector3.UnitX, Vector3.UnitY, Unlit(0, 1, 0));
         var img = Draw(new PosedMesh([front, back]), Front());
         Assert.Equal(drawn ? Red : Green, img[16, 16]);
+    }
+
+    private static PosedPrimitive Glass(Vector3 c, float half, Vector4 tint, float roughness = 1) =>
+        Quad(c, Vector3.UnitX * half, Vector3.UnitY * half, new ModelMaterial { BaseColor = tint, Unlit = true, Transmission = 1, Roughness = roughness });
+
+    private static void Close(Color32 expected, Color32 actual)
+    {
+        Assert.InRange(actual.R, expected.R - 1, expected.R + 1);
+        Assert.InRange(actual.G, expected.G - 1, expected.G + 1);
+        Assert.InRange(actual.B, expected.B - 1, expected.B + 1);
+        Assert.Equal(expected.A, actual.A);
+    }
+
+    [Fact]
+    public void Blend_MixesWithWhatIsBehindInLinearLight()
+    {
+        var front = Quad(Vector3.Zero, Vector3.UnitX * 0.5f, Vector3.UnitY * 0.5f, Unlit(new Vector4(1, 0, 0, 0.4f), ModelAlphaMode.Blend));
+        var back = Quad(new Vector3(0, 0, -1), Vector3.UnitX, Vector3.UnitY, Unlit(0, 1, 0));
+        var img = Draw(new PosedMesh([front, back]), Front());
+        // 선형 0.4 빨강 + 0.6 초록 → sRGB.
+        Close(new Color32(170, 203, 0), img[16, 16]);
+        Assert.Equal(Green, img[10, 16]);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Blend_LayersSortPerSampleWhateverTheTriangleOrder(bool nearFirst)
+    {
+        // 가까운 빨강(반)과 먼 파랑(반)이 겹친다 — 넣은 순서와 상관없이 파랑 위에 빨강.
+        var red = Quad(Vector3.Zero, Vector3.UnitX * 0.5f, Vector3.UnitY * 0.5f, Unlit(new Vector4(1, 0, 0, 0.5f), ModelAlphaMode.Blend));
+        var blue = Quad(new Vector3(0, 0, -0.5f), Vector3.UnitX * 0.5f, Vector3.UnitY * 0.5f, Unlit(new Vector4(0, 0, 1, 0.5f), ModelAlphaMode.Blend));
+        var back = Quad(new Vector3(0, 0, -1), Vector3.UnitX, Vector3.UnitY, Unlit(0, 1, 0));
+        var img = Draw(new PosedMesh(nearFirst ? [red, blue, back] : [back, blue, red]), Front());
+        // 0.5 빨강 + 0.25 파랑 + 0.25 초록.
+        Close(new Color32(188, 137, 137), img[16, 16]);
+    }
+
+    [Fact]
+    public void Transmission_PassesLightTintedByBaseColor()
+    {
+        var white = Quad(new Vector3(0, 0, -1), Vector3.UnitX, Vector3.UnitY, Unlit(1, 1, 1));
+        var clear = Draw(new PosedMesh([Glass(Vector3.Zero, 0.5f, Vector4.One), white]), Front());
+        Assert.Equal(new Color32(255, 255, 255), clear[16, 16]);
+        var green = Draw(new PosedMesh([Glass(Vector3.Zero, 0.5f, new Vector4(0, 1, 0, 1)), white]), Front());
+        Assert.Equal(Green, green[16, 16]);
+    }
+
+    [Fact]
+    public void Transmission_OverEmptyBackgroundIsPartlyTransparent()
+    {
+        var img = Draw(new PosedMesh([Glass(Vector3.Zero, 0.5f, new Vector4(0.5f, 0.5f, 0.5f, 1))]), Front());
+        // 지나가는 빛 절반 → 알파 절반.
+        Assert.InRange(img[16, 16].A, 120, 135);
+    }
+
+    [Fact]
+    public void Glass_ReflectsSkyMoreAtGrazingAngles()
+    {
+        var glass = new ModelMaterial { BaseColor = Vector4.One, Unlit = true, Transmission = 1, Roughness = 0 };
+        var img = Draw(Sphere(24, 32, glass), Front(64) with { Background = new Color32(0, 0, 0) });
+        // 구 반지름은 약 18.5px(맞춤 구 반지름 √3) — 가로 가장자리 근처는 하늘 지평선을 비춘다.
+        var center = img[32, 32];
+        var rim = img[14, 32];
+        Assert.True(center.R > 0, "정면도 조금은 비춘다");
+        Assert.True(rim.R > center.R + 25, $"가장자리 {rim.R}가 가운데 {center.R}보다 훨씬 밝아야 함");
     }
 
     [Fact]

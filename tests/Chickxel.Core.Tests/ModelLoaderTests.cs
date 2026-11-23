@@ -128,6 +128,22 @@ public class ModelLoaderTests : IDisposable
     private const string TriangleMesh = "\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":0},\"indices\":1,\"material\":0}]}]";
 
     [Fact]
+    public void Glb_reads_transmission_ior_and_roughness()
+    {
+        var path = WriteFile("glass.glb", Triangle().Glb(
+            TriangleMesh + ",\"materials\":[{\"pbrMetallicRoughness\":{\"roughnessFactor\":0.2}," +
+            "\"extensions\":{\"KHR_materials_transmission\":{\"transmissionFactor\":0.8},\"KHR_materials_ior\":{\"ior\":1.33}}}]," +
+            "\"extensionsRequired\":[\"KHR_materials_transmission\",\"KHR_materials_ior\"]," +
+            "\"nodes\":[{\"mesh\":0}],\"scenes\":[{\"nodes\":[0]}],\"scene\":0"));
+
+        var mat = Assert.Single(ModelLoader.Load(path).Materials);
+        Assert.Equal(0.8f, mat.Transmission);
+        Assert.Equal(1.33f, mat.Ior);
+        Assert.Equal(0.2f, mat.Roughness);
+        Assert.Equal(ModelAlphaMode.Opaque, mat.AlphaMode);
+    }
+
+    [Fact]
     public void Glb_triangle_reads_geometry_material_and_node_translation()
     {
         var g = Triangle();

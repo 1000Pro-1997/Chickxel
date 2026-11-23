@@ -14,6 +14,8 @@ namespace Chickxel.Core.Scene3D;
 /// </para>
 /// <para>
 /// 표본마다 깊이 버퍼(가까운 것이 이김)로 가리고, 뒷면을 버리지 않는다(한쪽 면만 내보낸 모델이 흔함 — 뒷면은 법선을 뒤집어 빛을 받음).
+/// 반투명(<see cref="ModelAlphaMode.Blend"/>)·유리(<see cref="ModelMaterial.Transmission"/>) 재질은 불투명을 다 그린 뒤 표본마다 먼 겹부터 섞는다
+/// (표본은 미리 곱한 색 + 알파). 섞은 겹은 서로 가리지 않고 불투명에만 가려지며, 가장 가까운 겹의 깊이·법선은 외곽선용으로 따로 남겨 외곽선이 유리 겉면을 따른다.
 /// 텍스처는 가장 가까운 텍셀을 그대로 쓴다(픽셀 그림에는 흐린 쌍선형보다 또렷한 쪽이 낫고, 부드러움은 표본 나눔이 맡는다).
 /// 색 계산과 표본 평균은 선형광에서 하고 끝에 sRGB 8비트로 바꾼다.
 /// </para>
@@ -30,7 +32,15 @@ public static class ModelRenderer
     private const double Snap = 256;
     /// <summary>격자에 맞춘 좌표에서 변 함수가 가질 수 있는 가장 작은 양수(1/256 × 1/256) — 위·왼쪽 규칙의 "0 초과"를 "≥ 이 값"으로 바꾼다.</summary>
     private const double EdgeQuantum = 1.0 / (Snap * Snap);
-    private const ulong CoveredBit = 1UL << 48;
+    /// <summary>표본 알파(위 16비트 — 0이면 빈 표본). 불투명 표본은 꽉 찬 값, 색은 알파를 미리 곱한 선형 16비트.</summary>
+    private const int AlphaShift = 48;
+    private const ulong OpaqueAlpha = 0xFFFFUL << AlphaShift;
+    /// <summary>둘레 하늘(선형): 꼭대기·지평선·땅 — 유리·반투명이 비추는 색.</summary>
+    private static readonly Vector3 SkyZenith = new(0.30f, 0.45f, 0.75f), SkyHorizon = new(0.80f, 0.85f, 0.90f), SkyGround = new(0.10f, 0.10f, 0.11f);
+    /// <summary>반짝임 날카로움의 상한을 정하는 가장 작은 거칠기.</summary>
+    private const float MinRoughness = 0.12f;
+    /// <summary>표본 하나에 섞는 반투명 겹의 상한(가까운 것부터 남고 그 너머는 버림) — 유리 상자 몇 겹·병 안 액체까지 넉넉하다.</summary>
+    private const int MaxBlendLayers = 16;
 
     /// <summary>선형 16비트 → sRGB 8비트.</summary>
     private static readonly byte[] ToSrgb = BuildToSrgb();
@@ -222,11 +232,16 @@ public static class ModelRenderer
         public Color32[]? Texture;
         public int TexWidth, TexHeight;
         public bool Repeat;
-        /// <summary>이 값보다 알파가 작으면 버림(불투명 재질은 알파를 보지 않음).</summary>
+        /// <summary>이 값보다 알파가 작으면 버림(<see cref="ModelAlphaMode.Mask"/>만).</summary>
         public bool AlphaTest;
         public float Cutoff;
         public Vector3 Emissive;
         public bool Unlit;
+        /// <summary>반투명·유리: 불투명 뒤에 표본마다 먼 겹부터 섞어 그림(깊이 벗기기).</summary>
+        public bool Blend;
+        public float Transmission;
+        /// <summary>정면 반사율, 비침 세기(1 − 거칠기), 반짝임 지수.</summary>
+        public float F0, Gloss, Shininess;
     }
 
     private sealed class Rasterizer
@@ -238,7 +253,7 @@ public static class ModelRenderer
         /// <summary>정사영: 화면 짧은 변 절반에 해당하는 월드 길이. 원근: tan(반 시야각) / 확대.</summary>
         private readonly float _half, _tan, _near;
         private readonly double _cx, _cy, _scale;
-        private readonly float _ambient, _strength;
+        private readonly float _ambient, _strength, _envScale;
         private readonly int _steps;
         private readonly float _invRadius;
 
@@ -246,7 +261,22 @@ public static class ModelRenderer
         public float PixelScale { get; }
 
         // 현재 띠(표본 버퍼 가로줄 [_bandY0, _bandY1)).
+        /// <summary>불투명 표본 깊이 — 가림은 이것만 본다.</summary>
         private float[] _depth = [];
+        /// <summary>
+        /// 섞어 그린 가장 가까운 겹의 깊이(섞을 것이 없으면 빈 배열). 섞은 겹은 서로 가리지 않고 표본마다 먼 겹부터 벗겨 섞으므로(깊이 벗기기)
+        /// 이것은 외곽선용 깊이·법선을 고르는 데만 쓴다.
+        /// </summary>
+        private float[] _blendDepth = [];
+        /// <summary>
+        /// 깊이 벗기기: 표본마다 이미 섞은 겹 중 가장 가까운 것의 (깊이, 삼각형 번호)와, 이번 차례에 고른 그다음 먼 겹.
+        /// 같은 깊이는 번호로 가른다(번호가 클수록 먼저 = 아래).
+        /// </summary>
+        private float[] _peelZ = [], _pickZ = [];
+        private int[] _peelId = [], _pickId = [];
+        private PeelPass _pass;
+        private int _triId;
+        private bool _picked;
         private ulong[] _color = [];
         /// <summary>표본 법선(월드, 카메라 쪽으로 뒤집은 단위 벡터를 8면체 16:16으로 묶음) — 덮인 표본만 뜻이 있다.</summary>
         private uint[] _normal = [];
@@ -291,40 +321,124 @@ public static class ModelRenderer
             _ambient = s.Ambient;
             _strength = s.LightStrength;
             _steps = s.ShadeSteps;
+            // 하늘 비침 밝기: 빛 설정을 따라가 어두운 장면에서 유리만 떠 보이지 않게.
+            _envScale = _ambient + _strength * 0.5f;
             PixelScale = _persp ? (float)(_tan * _ss / _scale) : (float)(_half * _ss / _scale) * _invRadius;
         }
 
         public void Run(PosedMesh mesh, ModelRenderLayers output, CancellationToken ct)
         {
-            var prims = new List<PreparedPrimitive>(mesh.Primitives.Count);
+            var opaque = new List<PreparedPrimitive>(mesh.Primitives.Count);
+            var blended = new List<PreparedPrimitive>();
             foreach (var p in mesh.Primitives)
             {
                 if (p.Indices.Length < 3 || p.Positions.Length == 0) continue;
-                prims.Add(Prepare(p));
+                var prep = Prepare(p);
+                (prep.Blend ? blended : opaque).Add(prep);
             }
+            var blendTris = BlendTriangles(blended);
+            bool any = opaque.Count > 0 || blendTris.Length > 0;
             int rowsPerBand = Math.Clamp(BandSamples / (_bw * _ss), 1, _s.Height);
             int bandLength = rowsPerBand * _ss * _bw;
-            if (prims.Count > 0)
+            if (any)
             {
                 _depth = new float[bandLength];
                 _color = new ulong[bandLength];
                 _normal = new uint[bandLength];
             }
+            if (blendTris.Length > 0)
+            {
+                _blendDepth = new float[bandLength];
+                _peelZ = new float[bandLength];
+                _pickZ = new float[bandLength];
+                _peelId = new int[bandLength];
+                _pickId = new int[bandLength];
+            }
             int counter = 0;
             for (int oy0 = 0; oy0 < _s.Height; oy0 += rowsPerBand)
             {
                 int oy1 = Math.Min(_s.Height, oy0 + rowsPerBand);
-                if (prims.Count > 0)
+                if (any)
                 {
                     _bandY0 = oy0 * _ss;
                     _bandY1 = oy1 * _ss;
                     int used = (_bandY1 - _bandY0) * _bw;
                     _depth.AsSpan(0, used).Fill(float.PositiveInfinity);
                     _color.AsSpan(0, used).Clear();
-                    foreach (var p in prims) DrawPrimitive(p, ref counter, ct);
+                    _pass = PeelPass.Opaque;
+                    foreach (var p in opaque) DrawPrimitive(p, ref counter, ct);
+                    if (blendTris.Length > 0) DrawBlended(blendTris, used, ref counter, ct);
                 }
-                Resolve(output, oy0, oy1, prims.Count > 0, ct);
+                Resolve(output, oy0, oy1, any, ct);
             }
+        }
+
+        /// <summary>
+        /// 섞을 겹을 표본마다 먼 것부터 하나씩 벗겨 섞는다(깊이 벗기기): 한 차례에 삼각형을 두 번 훑어 — 먼저 표본마다 이미 섞은 겹보다 가까운 것 중
+        /// 가장 먼 겹을 고르고, 다음에 고른 겹만 칠한다. 고를 겹이 없거나 <see cref="MaxBlendLayers"/>번이면 멈춘다(가장 가까운 겹부터 남음 — 그 너머는 버림).
+        /// 삼각형 순서와 상관없이 표본마다 정확한 순서라 큰 삼각형·맞물린 유리에도 줄무늬가 생기지 않는다.
+        /// </summary>
+        private void DrawBlended((PreparedPrimitive P, int T)[] tris, int used, ref int counter, CancellationToken ct)
+        {
+            _blendDepth.AsSpan(0, used).Fill(float.PositiveInfinity);
+            _peelZ.AsSpan(0, used).Fill(float.PositiveInfinity);
+            _peelId.AsSpan(0, used).Fill(int.MaxValue);
+            for (int layer = 0; layer < MaxBlendLayers; layer++)
+            {
+                _pickZ.AsSpan(0, used).Fill(float.NegativeInfinity);
+                _pickId.AsSpan(0, used).Fill(-1);
+                _picked = false;
+                foreach (var pass in (ReadOnlySpan<PeelPass>)[PeelPass.Pick, PeelPass.Paint])
+                {
+                    _pass = pass;
+                    for (int k = 0; k < tris.Length; k++)
+                    {
+                        if (++counter >= CancelBatch)
+                        {
+                            counter = 0;
+                            ct.ThrowIfCancellationRequested();
+                        }
+                        _triId = k;
+                        DrawTriangle(tris[k].P, tris[k].T);
+                    }
+                    if (!_picked) return;
+                }
+                for (int i = 0; i < used; i++)
+                {
+                    if (_pickId[i] < 0) continue;
+                    _peelZ[i] = _pickZ[i];
+                    _peelId[i] = _pickId[i];
+                }
+            }
+        }
+
+        /// <summary>섞어 그릴 삼각형(잘못된 꼭짓점이 있는 것은 뺌) — 목록 안 번호가 깊이 벗기기의 삼각형 번호.</summary>
+        private static (PreparedPrimitive P, int T)[] BlendTriangles(List<PreparedPrimitive> prims)
+        {
+            var items = new List<(PreparedPrimitive P, int T)>();
+            foreach (var p in prims)
+            {
+                var idx = p.Source.Indices;
+                int n = idx.Length - idx.Length % 3, count = p.Source.Positions.Length;
+                for (int t = 0; t < n; t += 3)
+                {
+                    int i0 = idx[t], i1 = idx[t + 1], i2 = idx[t + 2];
+                    if ((uint)i0 >= (uint)count || (uint)i1 >= (uint)count || (uint)i2 >= (uint)count) continue;
+                    if (((p.State[i0] | p.State[i1] | p.State[i2]) & 2) != 0) continue;
+                    items.Add((p, t));
+                }
+            }
+            return items.ToArray();
+        }
+
+        private enum PeelPass
+        {
+            /// <summary>불투명: 깊이 버퍼로 가리고 덮는다.</summary>
+            Opaque,
+            /// <summary>섞을 겹 고르기: 칠하지 않고 표본마다 다음에 벗길 겹만 정한다.</summary>
+            Pick,
+            /// <summary>고른 겹 칠하기: 표본의 고른 삼각형만 섞는다.</summary>
+            Paint,
         }
 
         private PreparedPrimitive Prepare(PosedPrimitive p)
@@ -349,12 +463,22 @@ public static class ModelRenderer
                 TexWidth = tex?.Width ?? 0,
                 TexHeight = tex?.Height ?? 0,
                 Repeat = m.Repeat,
-                AlphaTest = m.AlphaMode != ModelAlphaMode.Opaque,
-                Cutoff = m.AlphaMode == ModelAlphaMode.Mask ? m.AlphaCutoff : 0.5f,
+                AlphaTest = m.AlphaMode == ModelAlphaMode.Mask,
+                Cutoff = m.AlphaCutoff,
                 Emissive = m.Emissive,
                 Unlit = m.Unlit,
+                Blend = m.AlphaMode == ModelAlphaMode.Blend || m.Transmission > 0,
+                Transmission = Math.Clamp(Finite(m.Transmission, 0), 0, 1),
             };
-            if (!prep.AlphaTest) prep.Base.W = 1;
+            if (m.AlphaMode == ModelAlphaMode.Opaque) prep.Base.W = 1;
+            if (prep.Blend)
+            {
+                float ior = Finite(m.Ior, 1.5f), f = (ior - 1) / (ior + 1);
+                float rough = Math.Clamp(Finite(m.Roughness, 1), 0, 1), r = MathF.Max(rough, MinRoughness);
+                prep.F0 = Math.Clamp(f * f, 0, 1);
+                prep.Gloss = 1 - rough;
+                prep.Shininess = 2 / (r * r);
+            }
             var pos = p.Positions;
             for (int i = 0; i < n; i++)
             {
@@ -408,13 +532,7 @@ public static class ModelRenderer
 
         private void DrawPrimitive(PreparedPrimitive p, ref int counter, CancellationToken ct)
         {
-            var src = p.Source;
-            var idx = src.Indices;
-            int n = idx.Length - idx.Length % 3;
-            int count = src.Positions.Length;
-            var state = p.State;
-            var ys = p.Y;
-            double bandTop = _bandY0, bandBottom = _bandY1;
+            int n = p.Source.Indices.Length - p.Source.Indices.Length % 3;
             for (int t = 0; t < n; t += 3)
             {
                 if (++counter >= CancelBatch)
@@ -422,26 +540,37 @@ public static class ModelRenderer
                     counter = 0;
                     ct.ThrowIfCancellationRequested();
                 }
-                int i0 = idx[t], i1 = idx[t + 1], i2 = idx[t + 2];
-                if ((uint)i0 >= (uint)count || (uint)i1 >= (uint)count || (uint)i2 >= (uint)count) continue;
-                int st = state[i0] | state[i1] | state[i2];
-                if ((st & 2) != 0) continue;
-                if (st == 0)
-                {
-                    // 띠 밖이면 바로 건너뛴다.
-                    double minY = Math.Min(ys[i0], Math.Min(ys[i1], ys[i2]));
-                    double maxY = Math.Max(ys[i0], Math.Max(ys[i1], ys[i2]));
-                    if (maxY - 0.5 < bandTop || minY - 0.5 >= bandBottom) continue;
-                    var fn = p.HasNormals ? default : FaceNormal(src.Positions, i0, i1, i2);
-                    var a = Vertex(p, i0, fn);
-                    var b = Vertex(p, i1, fn);
-                    var c = Vertex(p, i2, fn);
-                    Triangle(a, b, c, p);
-                }
-                else
-                {
-                    ClipNear(p, i0, i1, i2);
-                }
+                DrawTriangle(p, t);
+            }
+        }
+
+        /// <summary>삼각형 하나(번호 목록의 <paramref name="t"/>번째부터 셋)를 현재 띠에 그린다.</summary>
+        private void DrawTriangle(PreparedPrimitive p, int t)
+        {
+            var src = p.Source;
+            var idx = src.Indices;
+            int count = src.Positions.Length;
+            var state = p.State;
+            var ys = p.Y;
+            int i0 = idx[t], i1 = idx[t + 1], i2 = idx[t + 2];
+            if ((uint)i0 >= (uint)count || (uint)i1 >= (uint)count || (uint)i2 >= (uint)count) return;
+            int st = state[i0] | state[i1] | state[i2];
+            if ((st & 2) != 0) return;
+            if (st == 0)
+            {
+                // 띠 밖이면 바로 건너뛴다.
+                double minY = Math.Min(ys[i0], Math.Min(ys[i1], ys[i2]));
+                double maxY = Math.Max(ys[i0], Math.Max(ys[i1], ys[i2]));
+                if (maxY - 0.5 < _bandY0 || minY - 0.5 >= _bandY1) return;
+                var fn = p.HasNormals ? default : FaceNormal(src.Positions, i0, i1, i2);
+                var a = Vertex(p, i0, fn);
+                var b = Vertex(p, i1, fn);
+                var c = Vertex(p, i2, fn);
+                Triangle(a, b, c, p);
+            }
+            else
+            {
+                ClipNear(p, i0, i1, i2);
             }
         }
 
@@ -557,8 +686,17 @@ public static class ModelRenderer
             float za = a.Z, zb = b.Z, zc = c.Z;
             float wa = a.Iw, wb = b.Iw, wc = c.Iw;
             var depth = _depth;
+            var blendDepth = _blendDepth;
+            bool blend = p.Blend;
             var color = _color;
             var normals = _normal;
+            var peelZ = _peelZ;
+            var pickZ = _pickZ;
+            var peelId = _peelId;
+            var pickId = _pickId;
+            // 섞을 삼각형은 벗기기 차례(고르기·칠하기)대로, 불투명은 늘 덮기.
+            var pass = blend ? _pass : PeelPass.Opaque;
+            int id = _triId;
             int bw = _bw;
             for (int y = y0; y <= y1; y++)
             {
@@ -573,17 +711,38 @@ public static class ModelRenderer
                         int i = row + x;
                         if (z < depth[i])
                         {
-                            // 원근 보정 무게: 화면에서 선형인 l × (1/w)를 다시 합 1로.
-                            float q0 = l0 * wa, q1 = l1 * wb, q2 = l2 * wc;
-                            float inv = 1 / (q0 + q1 + q2);
-                            q0 *= inv;
-                            q1 *= inv;
-                            q2 *= inv;
-                            if (Shade(p, a, b, c, q0, q1, q2, x + 0.5f, y + 0.5f, out ulong packed, out uint normal))
+                            if (pass == PeelPass.Pick)
                             {
-                                depth[i] = z;
-                                color[i] = packed;
-                                normals[i] = normal;
+                                // 이미 섞은 겹보다 가깝고, 지금까지 고른 것보다 먼 겹(같은 깊이는 번호가 큰 쪽이 멂).
+                                if ((z < peelZ[i] || (z == peelZ[i] && id < peelId[i])) && (z > pickZ[i] || (z == pickZ[i] && id > pickId[i])))
+                                {
+                                    pickZ[i] = z;
+                                    pickId[i] = id;
+                                    _picked = true;
+                                }
+                            }
+                            else if (pass == PeelPass.Opaque || pickId[i] == id)
+                            {
+                                // 원근 보정 무게: 화면에서 선형인 l × (1/w)를 다시 합 1로.
+                                float q0 = l0 * wa, q1 = l1 * wb, q2 = l2 * wc;
+                                float inv = 1 / (q0 + q1 + q2);
+                                q0 *= inv;
+                                q1 *= inv;
+                                q2 *= inv;
+                                if (Shade(p, a, b, c, q0, q1, q2, x + 0.5f, y + 0.5f, color[i], out ulong packed, out uint normal))
+                                {
+                                    color[i] = packed;
+                                    if (!blend)
+                                    {
+                                        depth[i] = z;
+                                        normals[i] = normal;
+                                    }
+                                    else if (z < blendDepth[i])
+                                    {
+                                        blendDepth[i] = z;
+                                        normals[i] = normal;
+                                    }
+                                }
                             }
                         }
                     }
@@ -598,12 +757,13 @@ public static class ModelRenderer
         }
 
         /// <summary>
-        /// 표본 하나의 색(선형 16비트 RGB + 덮음 비트)과 법선(카메라 쪽으로 뒤집은 단위 벡터, 묶음 — 빛 없는 재질도 외곽선용으로 채움).
-        /// 알파 문턱에 걸리면 false(깊이도 쓰지 않음).
+        /// 표본 하나의 색(알파를 미리 곱한 선형 16비트 RGB + 16비트 알파)과 법선(카메라 쪽으로 뒤집은 단위 벡터, 묶음 — 빛 없는 재질도 외곽선용으로 채움).
+        /// 불투명은 그 색으로 덮고, 반투명·유리(<see cref="PreparedPrimitive.Blend"/>)는 그 표본에 이미 있던 <paramref name="under"/> 위에 섞는다.
+        /// 알파 문턱에 걸리거나 섞어도 아무것도 남지 않으면 false(깊이도 쓰지 않음).
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool Shade(PreparedPrimitive p, in RasterVertex a, in RasterVertex b, in RasterVertex c,
-            float q0, float q1, float q2, float sx, float sy, out ulong packed, out uint normal)
+            float q0, float q1, float q2, float sx, float sy, ulong under, out ulong packed, out uint normal)
         {
             var baseColor = p.Base;
             if (p.HasColors) baseColor *= a.C * q0 + b.C * q1 + c.C * q2;
@@ -614,7 +774,7 @@ public static class ModelRenderer
                 normal = 0;
                 return false;
             }
-            var rgb = new Vector3(baseColor.X, baseColor.Y, baseColor.Z);
+            var albedo = new Vector3(baseColor.X, baseColor.Y, baseColor.Z);
             var n = a.N * q0 + b.N * q1 + c.N * q2;
             float len = n.Length();
             n = len > 1e-12f && float.IsFinite(len) ? n / len : _back;
@@ -626,6 +786,7 @@ public static class ModelRenderer
                 toEye = _back - _right * xn - _up * yn;
             }
             if (Vector3.Dot(n, toEye) < 0) n = -n;
+            var rgb = albedo;
             if (!p.Unlit)
             {
                 float diffuse = MathF.Max(0, Vector3.Dot(n, _light));
@@ -633,9 +794,72 @@ public static class ModelRenderer
                 rgb *= _ambient + _strength * diffuse;
             }
             rgb += p.Emissive;
-            packed = To16(rgb.X) | ((ulong)To16(rgb.Y) << 16) | ((ulong)To16(rgb.Z) << 32) | CoveredBit;
             normal = PackNormal(n);
+            if (!p.Blend)
+            {
+                packed = To16(rgb.X) | ((ulong)To16(rgb.Y) << 16) | ((ulong)To16(rgb.Z) << 32) | OpaqueAlpha;
+                return true;
+            }
+            return Blend(p, rgb, albedo, Math.Clamp(baseColor.W, 0, 1), n, toEye, under, out packed);
+        }
+
+        /// <summary>
+        /// 반투명·유리 한 겹을 표본 <paramref name="under"/>(미리 곱한 색 + 알파) 위에 섞는다. 보는 쪽 반사율 F(슐릭 프레넬 × 비침 세기) 만큼 하늘을 비추고
+        /// 빛 쪽 반짝임(블린–퐁)을 더하며, 나머지 중 <see cref="PreparedPrimitive.Transmission"/>만큼은 바탕 색으로 물들어 지나가고 그 밖은 빛 받은 색으로 덮는다.
+        /// 재질 알파는 이 한 겹이 덮는 몫이다(나머지는 그대로 지나감). 결과 알파 = 이 겹이 막은 빛의 평균 + 아래 알파 중 남은 몫.
+        /// </summary>
+        private bool Blend(PreparedPrimitive p, Vector3 lit, Vector3 albedo, float alpha, Vector3 n, Vector3 toEye, ulong under, out ulong packed)
+        {
+            float t = p.Transmission, fresnel = 0;
+            var reflect = Vector3.Zero;
+            if (p.Gloss > 0)
+            {
+                var v = Vector3.Normalize(toEye);
+                float nv = Math.Clamp(Vector3.Dot(n, v), 0, 1);
+                fresnel = Schlick(p.F0, nv);
+                reflect = Sky(2 * nv * n - v) * (_envScale * fresnel);
+                float nl = Vector3.Dot(n, _light);
+                if (!p.Unlit && nl > 0)
+                {
+                    var h = Vector3.Normalize(_light + v);
+                    float nh = MathF.Max(0, Vector3.Dot(n, h));
+                    // 정규화한 블린–퐁: 날카로울수록 작고 밝다.
+                    reflect += new Vector3(_strength * Schlick(p.F0, MathF.Max(0, Vector3.Dot(h, v))) * MathF.Pow(nh, p.Shininess) * (p.Shininess + 2) / 8);
+                }
+                reflect *= p.Gloss;
+                fresnel *= p.Gloss;
+            }
+            float keep = 1 - fresnel;
+            var add = alpha * (keep * (1 - t) * lit + reflect);
+            var pass = alpha * keep * t * albedo + new Vector3(1 - alpha);
+            const float Inv = 1 / 65535f;
+            var below = new Vector3(under & 0xFFFF, (under >> 16) & 0xFFFF, (under >> 32) & 0xFFFF) * Inv;
+            float belowAlpha = (under >> AlphaShift) * Inv;
+            var outColor = add + pass * below;
+            float cover = Math.Clamp(1 - (pass.X + pass.Y + pass.Z) / 3, 0, 1);
+            float outAlpha = cover + (1 - cover) * belowAlpha;
+            if (!(outAlpha > 0))
+            {
+                packed = 0;
+                return false;
+            }
+            packed = To16(outColor.X) | ((ulong)To16(outColor.Y) << 16) | ((ulong)To16(outColor.Z) << 32) | ((ulong)Math.Max(1u, To16(outAlpha)) << AlphaShift);
             return true;
+        }
+
+        private static float Schlick(float f0, float cos)
+        {
+            float k = 1 - cos, k2 = k * k;
+            return f0 + (1 - f0) * (k2 * k2 * k);
+        }
+
+        /// <summary>월드 방향 <paramref name="dir"/>의 둘레 하늘(위 = +Y): 지평선에서 꼭대기로, 아래는 땅으로 어두워진다.</summary>
+        private static Vector3 Sky(Vector3 dir)
+        {
+            float y = dir.Y / MathF.Max(1e-6f, dir.Length());
+            return y >= 0
+                ? Vector3.Lerp(SkyHorizon, SkyZenith, MathF.Sqrt(MathF.Min(1, y)))
+                : Vector3.Lerp(SkyHorizon * 0.55f, SkyGround, MathF.Sqrt(MathF.Min(1, -y)));
         }
 
         /// <summary>단위 벡터 → 8면체 사상 16:16비트(아래 반구는 접어 넣음).</summary>
@@ -690,10 +914,12 @@ public static class ModelRenderer
         }
 
         /// <summary>
-        /// 띠의 표본을 출력 픽셀로 모은다: 알파 = 덮인 표본 비율, 색 = 덮인 표본만의 평균(가장자리가 어두워지지 않게).
-        /// 바탕이 불투명하면 덮이지 않은 표본 자리에 바탕 색을 넣어 선형광에서 섞는다.
-        /// 덮인 픽셀은 덮음(알파와 같은 식)·가장 가까운 표본의 깊이·대표 법선(덮인 표본 법선 중 그 평균에 가장 가까운 것 — 꺾인 곳에 걸친 픽셀도
-        /// 두 면의 중간이 아니라 더 많이 덮은 면의 법선이라 각진 곳 선이 표본 수와 상관없이 같은 문턱에서 나온다)도 채운다.
+        /// 띠의 표본을 출력 픽셀로 모은다. 표본 색은 알파를 미리 곱한 값이고 불투명 표본의 알파는 1이다:
+        /// 알파 = 표본 알파의 평균, 색 = 표본 색의 합 ÷ 알파의 합(가장자리가 어두워지지 않게 — 모두 불투명이면 덮인 표본만의 평균).
+        /// 바탕이 불투명하면 비어 있는 몫(1 − 알파)만큼 바탕 색을 넣어 선형광에서 섞는다.
+        /// 덮인 픽셀(알파가 0이 아닌 표본이 있음)은 덮음(그런 표본의 비율 — 유리처럼 옅게 비친 곳도 모양으로 셈)·가장 가까운 표본의 깊이·대표 법선
+        /// (덮인 표본 법선 중 그 평균에 가장 가까운 것 — 꺾인 곳에 걸친 픽셀도 두 면의 중간이 아니라 더 많이 덮은 면의 법선이라 각진 곳 선이 표본 수와
+        /// 상관없이 같은 문턱에서 나온다)도 채운다.
         /// </summary>
         private void Resolve(ModelRenderLayers layers, int oy0, int oy1, bool drawn, CancellationToken ct)
         {
@@ -710,6 +936,8 @@ public static class ModelRenderer
             uint bgR = To16(OkLab.ToLinear(bg.R)), bgG = To16(OkLab.ToLinear(bg.G)), bgB = To16(OkLab.ToLinear(bg.B));
             var color = _color;
             var depth = _depth;
+            var blendDepth = _blendDepth;
+            bool hasBlend = blendDepth.Length > 0;
             var packedNormals = _normal;
             var coverage = layers.Coverage;
             var outDepth = layers.Depth;
@@ -724,7 +952,7 @@ public static class ModelRenderer
                 for (int ox = 0; ox < w; ox++)
                 {
                     int covered = 0;
-                    uint r = 0, g = 0, b = 0;
+                    uint r = 0, g = 0, b = 0, aSum = 0;
                     float front = float.PositiveInfinity;
                     var sum = Vector3.Zero;
                     int start = sampleRow + ox * ss;
@@ -735,11 +963,13 @@ public static class ModelRenderer
                         {
                             int k = s0 + sx;
                             ulong c = color[k];
-                            if (c == 0) continue;
+                            uint sa = (uint)(c >> AlphaShift);
+                            if (sa == 0) continue;
                             r += (uint)(c & 0xFFFF);
                             g += (uint)((c >> 16) & 0xFFFF);
                             b += (uint)((c >> 32) & 0xFFFF);
-                            front = MathF.Min(front, depth[k]);
+                            aSum += sa;
+                            front = MathF.Min(front, hasBlend ? MathF.Min(depth[k], blendDepth[k]) : depth[k]);
                             var sn = UnpackNormal(packedNormals[k]);
                             sampleNormals[covered++] = sn;
                             sum += sn;
@@ -766,6 +996,7 @@ public static class ModelRenderer
                     }
                     Color32 result;
                     if (covered == 0) result = bg;
+                    else if (aSum != (uint)covered * 0xFFFF) result = Partial(r, g, b, aSum, n, bgOpaque, bgR, bgG, bgB, bg);
                     else if (bgOpaque)
                     {
                         uint rest = (uint)(n - covered), half = (uint)n / 2;
@@ -784,6 +1015,32 @@ public static class ModelRenderer
                     output[outRow + ox] = result;
                 }
             }
+        }
+
+        /// <summary>반투명 표본이 섞인 픽셀: 미리 곱한 색 합 <paramref name="r"/>·<paramref name="g"/>·<paramref name="b"/>와 알파 합(16비트 단위) → 결과 색.</summary>
+        private static Color32 Partial(uint r, uint g, uint b, uint aSum, int n, bool bgOpaque, uint bgR, uint bgG, uint bgB, Color32 bg)
+        {
+            var srgb = ToSrgb;
+            ulong full = (ulong)n * 0xFFFF;
+            if (bgOpaque)
+            {
+                // 채널 = (Σ 색 + Σ(1 − 알파) × 바탕) ÷ n, 16비트 단위로 한 번에 나눈다.
+                ulong rest = full - aSum, h = full / 2;
+                return new Color32(
+                    srgb[Math.Min(0xFFFFUL, (r * 0xFFFFUL + rest * bgR + h) / full)],
+                    srgb[Math.Min(0xFFFFUL, (g * 0xFFFFUL + rest * bgG + h) / full)],
+                    srgb[Math.Min(0xFFFFUL, (b * 0xFFFFUL + rest * bgB + h) / full)]);
+            }
+            byte alpha = (byte)((aSum * 255UL + full / 2) / full);
+            if (alpha == 0) return bg;
+            ulong ah = aSum / 2;
+            // 반짝임은 덮는 몫보다 밝을 수 있다(더하는 빛) — 알파를 나눈 색은 흰색에서 멈춘다.
+            var result = new Color32(
+                srgb[Math.Min(0xFFFFUL, (r * 0xFFFFUL + ah) / aSum)],
+                srgb[Math.Min(0xFFFFUL, (g * 0xFFFFUL + ah) / aSum)],
+                srgb[Math.Min(0xFFFFUL, (b * 0xFFFFUL + ah) / aSum)],
+                alpha);
+            return bg.A != 0 ? Color32.BlendOver(bg, result) : result;
         }
     }
 }
@@ -813,7 +1070,10 @@ public sealed class ModelRenderLayers
     public PixelImage Image { get; }
     public int Width => Image.Width;
     public int Height => Image.Height;
-    /// <summary>덮인 표본 비율(0~255 — 바탕이 투명할 때의 알파와 같은 값, 바탕이 불투명해도 그대로). 128 이상이면 모델 픽셀.</summary>
+    /// <summary>
+    /// 덮인 표본 비율(0~255, 바탕이 불투명해도 그대로). 128 이상이면 모델 픽셀. 불투명 재질만 덮었으면 바탕이 투명할 때의 알파와 같고,
+    /// 유리·반투명이 덮은 표본도 덮인 것으로 세므로 거기서는 알파보다 클 수 있다(옅은 유리도 외곽선 모양에 들어감).
+    /// </summary>
     public byte[] Coverage { get; }
     /// <summary>
     /// 가장 가까운 덮인 표본의 앞쪽 거리 ÷ 맞춤 범위의 둘레 구 반지름(클수록 멂 — 그림 크기·모델 크기와 상관없는 단위).

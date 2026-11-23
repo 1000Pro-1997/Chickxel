@@ -9,7 +9,7 @@ public enum ModelAlphaMode
     Opaque,
     /// <summary>알파가 <see cref="ModelMaterial.AlphaCutoff"/>보다 작으면 그리지 않는다.</summary>
     Mask,
-    /// <summary>반투명 — 그리기는 <see cref="Mask"/>처럼 문턱 0.5로 자른다(픽셀 그림에는 반투명 겹침이 필요 없음).</summary>
+    /// <summary>반투명 — 알파만큼 앞에 덮어 뒤가 비쳐 보인다(불투명을 다 그린 뒤 표본마다 먼 겹부터 섞음).</summary>
     Blend,
 }
 
@@ -31,6 +31,18 @@ public sealed class ModelMaterial
     public Vector3 Emissive { get; init; }
     /// <summary>빛 계산 없이 바탕 색 그대로(KHR_materials_unlit).</summary>
     public bool Unlit { get; init; }
+    /// <summary>
+    /// 빛이 지나가는 정도(0~1, KHR_materials_transmission) — 유리. 0보다 크면 <see cref="ModelAlphaMode.Blend"/>처럼 뒤에 섞어 그리고,
+    /// 지나간 빛은 바탕 색으로 물들며, 보는 각도에 따라 하늘을 비추고(프레넬) 빛 쪽에 반짝임이 생긴다.
+    /// </summary>
+    public float Transmission { get; init; }
+    /// <summary>굴절률(KHR_materials_ior, 기본 1.5) — 정면 반사율 ((n − 1) / (n + 1))²을 정한다.</summary>
+    public float Ior { get; init; } = 1.5f;
+    /// <summary>
+    /// 거칠기(glTF roughnessFactor, 0~1, 기본 1). 유리·반투명 재질만 쓴다: 1 − 거칠기가 하늘 비침·반짝임의 세기이고, 작을수록 반짝임이 작고 또렷하다
+    /// (1이면 반사 없이 알파만 섞음 — 반투명 잎·머리카락 같은 재질은 그대로).
+    /// </summary>
+    public float Roughness { get; init; } = 1;
 
     public static ModelMaterial Default { get; } = new() { Name = "default", BaseColor = new Vector4(0.8f, 0.8f, 0.8f, 1) };
 }

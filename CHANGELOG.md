@@ -2,6 +2,14 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.147 (2026-11-23)
+
+### 3D: glass and see-through materials
+- Glass materials (glTF `KHR_materials_transmission` with `KHR_materials_ior`) now render like in 3D programs: light passing through is tinted by the base color, glancing angles reflect more of the sky, and smooth glass gets a highlight toward the light.
+- Semi-transparent materials (glTF `BLEND`, OBJ and FBX opacity below 1) now let what is behind them show through instead of being cut at 50 % alpha.
+- Overlapping glass and liquid inside glass blend in the correct order for every pixel, up to 16 layers, so tanks, bottles and windows show no streaks.
+- Over a transparent background, glass gives partly transparent pixels; Remove semi-transparency still makes them fully opaque or fully clear.
+
 ## v1.14.146 (2026-11-23)
 
 ### 3D light: the sun moves on the yellow circle

@@ -30,6 +30,7 @@ internal sealed class GltfReader
     [
         "KHR_materials_unlit", "KHR_mesh_quantization", "EXT_texture_webp",
         "KHR_materials_emissive_strength", "KHR_materials_pbrSpecularGlossiness",
+        "KHR_materials_transmission", "KHR_materials_ior",
     ];
 
     private readonly JsonElement _root;
@@ -450,11 +451,15 @@ internal sealed class GltfReader
         // 스스로 내는 빛 텍스처는 그리지 않는다: 그 텍스처가 가리는 작은 곳(불빛·화면)만 빛나야 하는데 계수만 쓰면 재질 전체가 흰색이 된다.
         var emissive = Prop(m, "emissiveTexture") is null ? Vec3(m, "emissiveFactor", Vector3.Zero, where + ".emissiveFactor") : Vector3.Zero;
         bool unlit = false;
+        float transmission = 0, ior = 1.5f;
         if (ext is { } e)
         {
             unlit = Prop(e, "KHR_materials_unlit") != null;
             if (Prop(e, "KHR_materials_emissive_strength") is { } es) emissive *= Float(es, "emissiveStrength", 1, where + ".emissiveStrength");
+            if (Prop(e, "KHR_materials_transmission") is { } tr) transmission = Float(tr, "transmissionFactor", 0, where + ".transmissionFactor");
+            if (Prop(e, "KHR_materials_ior") is { } ir) ior = Float(ir, "ior", 1.5f, where + ".ior");
         }
+        float roughness = pbr is { } pr ? Float(pr, "roughnessFactor", 1, where + ".roughnessFactor") : 1;
         return new ModelMaterial
         {
             Name = Str(m, "name") ?? "",
@@ -465,6 +470,10 @@ internal sealed class GltfReader
             AlphaCutoff = Float(m, "alphaCutoff", 0.5f, where + ".alphaCutoff"),
             Emissive = emissive,
             Unlit = unlit,
+            Transmission = Math.Clamp(transmission, 0, 1),
+            // glTF: ior 0은 반사율 1(완전 거울)이라는 뜻 — 그 밖의 1 미만은 1로.
+            Ior = ior == 0 ? 0 : Math.Max(1, ior),
+            Roughness = Math.Clamp(roughness, 0, 1),
         };
     }
 
