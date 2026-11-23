@@ -2,13 +2,15 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
-## 미배포
+## v1.14.140 (2026-11-23)
 
 ### Effect list in the tool bar: drag effects onto timeline cels
 - The new **Effects** button under the file browser button in the tool bar opens a list of every effect and preset (the same ones as the effects dialog) in the left column where the file browser sits. With the file browser also open, the column splits into files on top and effects below, and opening or closing either one slides the split smoothly; press the button again to close it.
 - Drag an effect onto a timeline cel to add it to that layer for that frame with default settings, without opening the effects dialog (inside a selected block of cels it takes that frame range). Double-click adds it to the current cel.
 - Drag the right edge of an effect box in the effect row past the last frame to add that many frames linked to the last frame and stretch the effect over them, in one undo step.
 - At the bottom of the list, **Get more** (blue) opens the website store in your browser and **Effect Maker** (green) next to it opens the Effect Maker.
+
+### Effect list: search and favorites
 - A search box at the top of the list filters effects and presets as you type, by name, description or author.
 - Right-click an effect or preset and choose **Add to favorites** to pin it under **Favorites** at the top of its tab, marked with a star; favorites are remembered across restarts.
 
@@ -30,7 +32,22 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 - Folding works as before.
 
 ### Shared highlight sparkle
-- The glow and twinkling stars of the gallery button after a manual save are now one shared highlight that other buttons can reuse; the gallery button looks and behaves the same.
+- The glow and twinkling stars of the gallery button after a manual save are now one shared highlight that other buttons can reuse.
+- The gallery button looks and behaves the same as before.
+
+### Script effects: font and position settings, setting groups
+- New setting type `font`: the effects window shows the same font list as the Text effect, with Add Font, Open Font Folder and the missing-font warning.
+- New setting type `position`: an anchor list (custom, canvas center, pivot, image center) plus an X/Y point for custom; `ctx.position(key)` gives image coordinates.
+- Consecutive settings with the same group title are framed in one titled box; group titles can be translated.
+- Recipes and the Effect Maker AI now accept text settings (they were always rejected before).
+
+### Tool bar tips
+- The Move tooltip says it works like Ctrl+drag in another tool.
+- The Dodge/burn tooltip says left-click lightens and right-click darkens.
+
+### User guide
+- New screenshots for the curve pen, eraser target layers, line cleanup, the edit menu, preview collapse, Effect Maker revert and past chats, and pixelate row fit.
+- The script guide and Effect Maker AI now say to draw outside the source only with declared padding.
 
 ## v1.14.139 (2026-11-22)
 
