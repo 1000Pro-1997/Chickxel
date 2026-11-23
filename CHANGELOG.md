@@ -2,6 +2,12 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.146 (2026-11-23)
+
+### 3D light: the sun moves on the yellow circle
+- The Front/Back slider sets how far forward or back the light sits on the sphere; the sun then moves only around the yellow circle, the slice of the sphere parallel to the screen at that depth.
+- Moving the slider grows or shrinks the yellow circle as the light goes front or back (solid in front, dashed behind).
+
 ## v1.14.145 (2026-11-23)
 
 ### 3D preview: light on a sphere around the model

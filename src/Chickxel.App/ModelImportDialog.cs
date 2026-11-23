@@ -167,12 +167,8 @@ public sealed class ModelImportDialog : DialogBase
             _pitch.Value = (decimal)pitch;
             _roll.Value = 0;
         };
-        _preview.LightMoved += (yaw, pitch) =>
-        {
-            _lightYaw.Value = (decimal)Math.Round(yaw, 1);
-            _lightPitch.Value = (decimal)Math.Round(pitch, 1);
-        };
-        // 원본 칸 왼쪽 세로 막대 = 설정 칸 '빛 앞뒤'와 같음(해 손잡이 방향은 그대로 두고 구 위 앞뒤만)
+        // 해 손잡이 = 지금 앞뒤에서 화면과 나란한 원(노란 원) 위의 방향만, 세로 막대 = 구 위의 앞뒤(설정 칸 '빛 앞뒤'와 같음)
+        _preview.LightTurned += SetLightTurn;
         _preview.LightDepthMoved += SetLightDepth;
         // 끄는 동안은 원본 칸을 가볍게 그리고, 놓으면 제대로 다시 그린다
         _preview.DragEnded += Schedule;
@@ -700,14 +696,26 @@ public sealed class ModelImportDialog : DialogBase
     }
 
     /// <summary>
-    /// 앞뒤 막대: 빛을 정면에서 <paramref name="degrees"/>도(0 = 정면, 180 = 정뒤)로 옮긴다 — 화면 안 방향(해 손잡이가 가리키는 쪽)은 그대로 두고
-    /// 빛 가로·세로 값과 뒤쪽 여부를 다시 맞춘다.
+    /// 앞뒤 막대: 빛을 정면에서 <paramref name="degrees"/>도(0 = 정면, 180 = 정뒤)로 옮긴다 — 화면 안 방향(해 손잡이가 가리키는 쪽)은 그대로.
     /// </summary>
     private void SetLightDepth(double degrees)
     {
         double ly = (double)_lightYaw.NumValue() * Math.PI / 180, lp = (double)_lightPitch.NumValue() * Math.PI / 180;
         double x = Math.Sin(ly) * Math.Cos(lp), y = Math.Sin(lp);
         if (x * x + y * y > 1e-6) _lightTurn = Math.Atan2(y, x);
+        PlaceLight(degrees);
+    }
+
+    /// <summary>해 손잡이: 앞뒤는 그대로 두고 화면 안 방향만 <paramref name="turn"/>(라디안, 오른쪽 = 0 · 위 = π/2)으로 — 노란 원 위를 돈다.</summary>
+    private void SetLightTurn(double turn)
+    {
+        _lightTurn = turn;
+        PlaceLight(LightDepthOf(RenderSettings));
+    }
+
+    /// <summary>빛을 구 위 (앞뒤 <paramref name="degrees"/>°, 화면 방향 <see cref="_lightTurn"/>)에 놓고 빛 가로·세로 값과 뒤쪽 여부를 맞춘다.</summary>
+    private void PlaceLight(double degrees)
+    {
         double v = degrees * Math.PI / 180, ring = Math.Sin(v), z = Math.Cos(v);
         double nx = ring * Math.Cos(_lightTurn), ny = ring * Math.Sin(_lightTurn);
         _syncing = true;
@@ -869,7 +877,10 @@ public sealed class ModelImportDialog : DialogBase
         private const double LightRadius = 148;
         /// <summary>빛 앞뒤 세로 막대(원본 칸 왼쪽 가장자리): x와 위(앞, 0°)·아래(뒤, 180°) 끝.</summary>
         private const double DepthX = 9, DepthTop = 46, DepthBottom = 236;
-        private static readonly Pen LightCirclePen = new(new SolidColorBrush(Color.FromArgb(70, 255, 211, 91)), 1.5) { DashStyle = new DashStyle([4, 4], 0) };
+        /// <summary>빛 구 테두리(흐린 점선)와 노란 원(해가 도는 단면 — 앞쪽 반 실선, 뒤쪽 반 점선).</summary>
+        private static readonly Pen LightCirclePen = new(new SolidColorBrush(Color.FromArgb(60, 255, 211, 91)), 1.5) { DashStyle = new DashStyle([4, 4], 0) };
+        private static readonly Pen ConstraintPen = new(new SolidColorBrush(Color.FromArgb(230, 255, 211, 91)), 2);
+        private static readonly Pen ConstraintBackPen = new(new SolidColorBrush(Color.FromArgb(200, 255, 211, 91)), 2) { DashStyle = new DashStyle([5, 4], 0) };
         private static readonly Pen DepthTrackPen = new(new SolidColorBrush(Color.FromArgb(150, 220, 230, 240)), 3) { LineCap = PenLineCap.Round };
         private static readonly Pen RingPen = new(new SolidColorBrush(Color.FromArgb(105, 210, 220, 230)), 1.5);
         private static readonly Pen RearRingPen = new(new SolidColorBrush(Color.FromArgb(40, 210, 220, 230)), 1.5);
@@ -917,7 +928,8 @@ public sealed class ModelImportDialog : DialogBase
         public event Action<double, double>? Rotated;
         public event Action<double>? Rolled;
         public event Action<double, double>? Faced;
-        public event Action<double, double>? LightMoved;
+        /// <summary>해 손잡이를 끎: 화면 안 빛 방향(라디안, 오른쪽 = 0 · 위 = π/2) — 앞뒤는 그대로.</summary>
+        public event Action<double>? LightTurned;
         /// <summary>빛 앞뒤 막대를 끎(정면에서 잰 각도 0~180°).</summary>
         public event Action<double>? LightDepthMoved;
         /// <summary>끌기(돌리기·고리·해)를 마침 — 가볍게 그리던 미리보기를 제대로 다시 그릴 때.</summary>
@@ -1096,15 +1108,20 @@ public sealed class ModelImportDialog : DialogBase
             return Math.Acos(Math.Clamp(z, -1, 1)) * 180 / Math.PI;
         }
 
-        /// <summary>빛 구(해 손잡이를 가리키거나 끌 때만 점선 원과 가운데에서 해까지 선)와 해 손잡이(뒤쪽 반구면 속이 빈 해).</summary>
+        /// <summary>
+        /// 해 손잡이와 빛 구: 가리키거나 끄는 동안 구의 테두리(점선)와 노란 원 — 지금 앞뒤에서 화면과 나란히 자른 구의 단면(반지름 = 구 × sin 앞뒤,
+        /// 앞쪽 반이면 실선·뒤쪽 반이면 점선)이 보이고, 해는 그 원 위에서만 돈다. 앞뒤 막대를 움직이면 노란 원이 커졌다 작아지며 앞뒤로 간다.
+        /// </summary>
         private void DrawSun(DrawingContext g)
         {
             var p = SunPoint();
             bool lit = _hover is "sun" or "depth" || _active is "sun" or "depth";
             if (lit)
             {
+                double depth = LightDepth();
+                double ring = LightRadius * Math.Sin(depth * Math.PI / 180);
                 g.DrawEllipse(null, LightCirclePen, Center, LightRadius, LightRadius);
-                g.DrawLine(LightCirclePen, Center, p);
+                g.DrawEllipse(null, depth <= 90 ? ConstraintPen : ConstraintBackPen, Center, ring, ring);
             }
             for (int n = 0; n < 8; n++)
             {
@@ -1153,13 +1170,11 @@ public sealed class ModelImportDialog : DialogBase
             return "orbit";
         }
 
+        /// <summary>해 끌기: 커서 쪽 화면 방향만 알린다(해는 노란 원 위에 머묾 — 원의 크기는 앞뒤 막대가 정함).</summary>
         private void MoveSun(Avalonia.Point p)
         {
-            double x = (p.X - Center.X) / LightRadius, y = (Center.Y - p.Y) / LightRadius;
-            double radius = Math.Sqrt(x * x + y * y);
-            if (radius > 0.999) { x *= 0.999 / radius; y *= 0.999 / radius; }
-            double pitch = Math.Asin(y), yaw = Math.Atan2(x, Math.Sqrt(Math.Max(0, 1 - x * x - y * y)));
-            LightMoved?.Invoke(yaw * 180 / Math.PI, pitch * 180 / Math.PI);
+            if (Distance(p, Center) < 1) return;
+            LightTurned?.Invoke(Math.Atan2(Center.Y - p.Y, p.X - Center.X));
         }
 
         protected override void OnPointerPressed(PointerPressedEventArgs e)
