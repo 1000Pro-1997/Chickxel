@@ -9,17 +9,16 @@ using Chickxel.Core.Scripting;
 namespace Chickxel.App;
 
 /// <summary>
-/// 효과 창 왼쪽 끝의 효과 종류 칸: 종류마다 미리보기 그림(지금 프레임 그림에 기본 설정으로 입힌 모습 — 움직이는 효과는 돌려 보임) + 이름 상자.
+/// 효과 창 왼쪽 끝의 효과 종류 칸: 종류마다 미리보기 그림(효과가 정한 미리보기 병아리에 기본 설정으로 입힌 모습 — 움직이는 효과는 돌려 보임, <see cref="EffectTile"/>) + 이름 상자.
 /// 두 번 누르거나 효과 목록으로 끌어 놓으면 "추가 범위"로 추가한다(끌어 놓으면 놓은 자리에).
-/// 효과 탭은 하나씩 넣는 효과를 모두 한 격자에 보인다: 켜진 공식 효과 패키지의 스크립트(예전 기본 효과 차례 — <see cref="OfficialEffects.Ordered"/>),
-/// 공식 스크립트가 없는 C# 효과(<see cref="EffectRegistry.Selectable"/> — 글씨), 다른 켜진 패키지의 스크립트, 개인 스크립트 효과 차례.
-/// 프리셋 탭은 효과 레시피(여러 효과와 값을 묶은 것)만 보이고, 저장·이름 바꾸기·삭제는 개인 에셋 저장소에 한다.
+/// 상자 차례·풍선·우클릭 메뉴는 효과 목록 패널과 같이 쓰는 <see cref="EffectTileCatalog"/>가 정한다(효과 탭 = 하나씩 넣는 효과, 프리셋 탭 = 효과 레시피).
+/// 프리셋 저장·이름 바꾸기·삭제는 개인 에셋 저장소에 한다.
 /// 레시피를 넣으면 효과 값과 스크립트 원문을 복사하므로 나중에 레시피를 지우거나 꺼도 이미 넣은 효과는 바뀌지 않는다.
 /// 스크립트가 든 상자는 모서리에 코드 표시를 그리고, 실행을 허용하지 않은 스크립트가 있으면 풍선에 알린다(넣어도 허용 전에는 그리지 않음).
 /// </summary>
 public sealed partial class LayerEffectsDialog
 {
-    private const int TileWidth = 88, TileHeight = 110, ThumbSteps = AssetPreview.Steps, ThumbHold = 4, ThumbMaxSize = 128;
+    private const int TileWidth = 88, TileHeight = 110, ThumbSteps = AssetPreview.Steps, ThumbHold = 4;
     /// <summary>효과 종류 칸의 한 줄 상자 수.</summary>
     private const int PaletteColumns = 4;
 
@@ -31,7 +30,6 @@ public sealed partial class LayerEffectsDialog
     /// <summary>효과 탭 위의 개인 에셋 읽기 오류(읽었으면 숨김).</summary>
     private readonly TextBlock _effectsError = Ui.Label("");
     private readonly DispatcherTimer _thumbTimer = new() { Interval = TimeSpan.FromMilliseconds(100) };
-    private PixelImage _thumbSource = SampleSprite();
     private int _thumbTick;
     private EffectTile? _pressedTile;
     private Avalonia.Point _pressPoint;
@@ -43,7 +41,6 @@ public sealed partial class LayerEffectsDialog
 
     private Control BuildPalette(string? motionTip)
     {
-        _thumbSource = ThumbSource();
         _motionTip = motionTip;
 
         var store = Ui.Button(VectorIcon.Store, UiStrings.EffectPreset_OpenStore,
@@ -74,7 +71,7 @@ public sealed partial class LayerEffectsDialog
             _thumbTick = (_thumbTick + 1) % (ThumbSteps + ThumbHold);
             int step = Math.Min(_thumbTick, ThumbSteps - 1);
             foreach (var tile in _tiles)
-                if (tile.Animated) tile.Show(step, RenderThumb);
+                if (tile.Animated) tile.Show(step);
         };
         _thumbTimer.Start();
 
@@ -101,32 +98,15 @@ public sealed partial class LayerEffectsDialog
             .HelpAt(HelpPage, anchor: "⑥ Effects tab"), tabs);
     }
 
-    /// <summary>공식 스크립트가 없는 C# 효과(<see cref="EffectRegistry.Selectable"/> — 글씨)마다 기본 설정 효과 하나짜리 상자.</summary>
-    private IEnumerable<EffectTile> SelectableTiles()
-    {
-        foreach (var definition in EffectRegistry.Selectable)
-        {
-            var ui = UiOf(definition);
-            var tile = new EffectTile(ui.Name, [definition.Create()]) { Description = ui.Description };
-            ToolTip.SetTip(tile, $"{ui.Name}\n{ui.Description}" + MotionNote(tile));
-            tile.HelpAt("screen-effect-list", anchor: definition.TypeId == TextDefinition.Id ? "Text" : null);
-            yield return tile;
-        }
-    }
-
-    /// <summary>움직이는 효과 상자 풍선 끝에 붙는 안내(움직이는 효과 + 추가 범위).</summary>
-    private string MotionNote(EffectTile tile)
-        => tile.Animated ? UiStrings.S_LayerEffectsDialog_Palette_BuildPalette_164E2EA098 + (_motionTip is not null ? " " + _motionTip : "") : "";
-
     private void AddPaletteTile(EffectTile tile, Panel panel)
     {
         tile.Width = TileWidth;
         tile.Height = TileHeight;
         tile.Margin = new Thickness(2);
-        tile.Show(0, RenderThumb);
+        tile.Show(0);
         AttachTileInput(tile);
         if (tile.Entry is { } entry)
-            PopupMenus.Attach(tile, () => AssetTileMenu(entry));
+            PopupMenus.Attach(tile, () => EffectTileCatalog.Menu(this, entry));
         _tiles.Add(tile);
         panel.Children.Add(tile);
     }
@@ -141,84 +121,20 @@ public sealed partial class LayerEffectsDialog
         _tiles.Clear();
         _effectsWrap.Children.Clear();
         _presetWrap.Children.Clear();
-        var culture = global::System.Globalization.CultureInfo.CurrentCulture;
-        var scripts = AppAssets.Catalog.EffectScripts;
-        // 공식 스크립트 → 고를 수 있는 C# 효과 → 받은 스크립트·내 스크립트
-        int officialCount = scripts.TakeWhile(entry => AssetCatalog.OfficialIdOf(entry) is not null).Count();
-        foreach (var entry in scripts.Take(officialCount)) AddAssetTile(entry, culture);
-        foreach (var builtIn in SelectableTiles()) AddPaletteTile(builtIn, _effectsWrap);
-        foreach (var entry in scripts.Skip(officialCount)) AddAssetTile(entry, culture);
-        var recipes = AppAssets.Catalog.Recipes;
-        foreach (var entry in recipes) AddAssetTile(entry, culture);
-        string? error = AppAssets.Store.LibraryError is { } problem ? string.Format(culture, UiStrings.EffectPreset_LoadError, problem) : null;
+        var (effects, presets) = EffectTileCatalog.Create(_motionTip);
+        foreach (var tile in effects) AddPaletteTile(tile, _effectsWrap);
+        foreach (var tile in presets) AddPaletteTile(tile, _presetWrap);
+        string? error = EffectTileCatalog.LoadError;
         _effectsError.Text = error ?? "";
         _effectsError.IsVisible = error is not null;
         _presetEmpty.Text = error ?? UiStrings.EffectPreset_Empty;
-        _presetEmpty.IsVisible = recipes.Count == 0 || error is not null;
+        _presetEmpty.IsVisible = presets.Count == 0 || error is not null;
     }
-
-    /// <summary>에셋 하나의 상자: 스크립트 효과는 효과 탭, 효과 레시피는 프리셋 탭.</summary>
-    private void AddAssetTile(AssetEntry entry, global::System.Globalization.CultureInfo culture)
-    {
-        var recipe = entry.EffectTemplate!;
-        bool script = entry.Kind == AssetKinds.EffectScript;
-        var tile = new EffectTile(entry.DisplayName, recipe.Effects, entry, recipe);
-        string tip = (script, AppAssets.IsMine(entry)) switch
-        {
-            (true, true) => UiStrings.EffectPreset_ScriptTileTip,
-            (true, false) => string.Format(culture, UiStrings.EffectPreset_ReceivedScriptTileTip, ReceivedFrom(entry)),
-            (false, true) => string.Format(culture, UiStrings.EffectPreset_TileTip, recipe.Effects.Count),
-            (false, false) => string.Format(culture, UiStrings.EffectPreset_ReceivedTileTip, ReceivedFrom(entry), recipe.Effects.Count),
-        };
-        string? description = entry.Script?.DescriptionFor(global::System.Globalization.CultureInfo.CurrentUICulture) is { Length: > 0 } text ? text : null;
-        if (description is not null) tip = description + "\n" + tip;
-        if (entry.ScriptHashes.Any(hash => ScriptLibrary.TrustOf(hash) != ScriptTrust.Trusted))
-            tip += "\n" + string.Format(culture, UiStrings.EffectPreset_ScriptTileNote, recipe.Effects.Count(effect => effect is ScriptEffect));
-        tile.Description = description;
-        ToolTip.SetTip(tile, tip + (script ? MotionNote(tile) : ""));
-        // 대상 도움말(F1): 공식 효과 = 기본 효과 목록의 그 효과 줄, 받은·내 스크립트 = 스크립트 효과 ① 상자 항목, 프리셋 = 프리셋 탭 ①~③ 항목
-        if (OfficialHelpTarget(AssetCatalog.OfficialIdOf(entry)) is { } official) tile.HelpAt(official.PageId, anchor: official.Anchor);
-        else if (script) tile.HelpAt("screen-script-effects", anchor: "After the official effects and Text");
-        else tile.HelpAt("screen-effect-recipes", anchor: "Build an effect list in the effects dialog and click");
-        AddPaletteTile(tile, script ? _effectsWrap : _presetWrap);
-    }
-
-    /// <summary>받은 에셋의 출처 이름: 상점 이름, 없으면 만든 사람.</summary>
-    private static string ReceivedFrom(AssetEntry entry) => entry.Store?.DisplayName ?? entry.Author?.Name ?? entry.Id;
-
-    private IEnumerable<object> AssetTileMenu(AssetEntry entry)
-    {
-        MenuItem Item(string text, VectorIcon icon, Action action)
-        {
-            var item = new MenuItem { Header = text, Icon = Ui.Icon(icon, 14) };
-            item.Click += (_, _) => Dispatcher.UIThread.Post(action);
-            return item;
-        }
-        var show = Item(UiStrings.EffectPreset_ShowInManager, VectorIcon.Package, () => AssetManagerWindow.Open(this, entry.Kind, entry.Id));
-        if (!AppAssets.IsMine(entry)) return [show];
-        // 효과 만들기는 스크립트만 다룬다. 스크립트 에셋의 이름은 원문의 선언이라 여기서 바꾸지 않는다
-        if (entry.Script is not null)
-        {
-            var maker = Item(UiStrings.EffectMaker_EditIn, VectorIcon.Sparkles, () => EffectMakerWindow.OpenFromAnywhere(entry.Id));
-            return [maker, Item(UiStrings.EffectPreset_Delete, VectorIcon.Trash, () => DeletePreset(entry)), new Separator(), show];
-        }
-        return
-        [
-            Item(UiStrings.EffectPreset_Rename, VectorIcon.Pencil, () => RenamePreset(entry)),
-            Item(UiStrings.RecipeParams_Edit, VectorIcon.SlidersHorizontal, () => RecipeParametersDialog.Edit(this, entry)),
-            Item(UiStrings.EffectPreset_Delete, VectorIcon.Trash, () => DeletePreset(entry)),
-            new Separator(),
-            show,
-        ];
-    }
-
-    /// <summary>내 효과 레시피(이름 겹침 검사·덮어쓰기 대상). 받은 레시피는 고치지 않는다.</summary>
-    private static IEnumerable<AssetEntry> MyRecipes => AppAssets.Catalog.Recipes.Where(AppAssets.IsMine);
 
     private void SavePresetGroup()
     {
         if (_effects.Count == 0) return;
-        var personal = MyRecipes.ToList();
+        var personal = EffectTileCatalog.MyRecipes.ToList();
         if (RecipeSaveDialog.Ask(this, _effects[0].DisplayName, PreviewChicks.Default, personal.Select(entry => entry.Name)) is not { } saved) return;
         var (name, chick) = saved;
 
@@ -227,49 +143,8 @@ public sealed partial class LayerEffectsDialog
                 UiStrings.EffectPreset_OverwriteQuestion, name), UiStrings.EffectPreset_SaveTitle,
                 MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
         var recipe = EffectRecipe.Capture(duplicate?.Id ?? "", name, _effects, _project) with { PreviewChick = chick };
-        PersistRecipe(() => AppAssets.Store.SaveRecipe(recipe));
+        EffectTileCatalog.Persist(this, () => AppAssets.Store.SaveRecipe(recipe));
     }
-
-    private void RenamePreset(AssetEntry entry)
-    {
-        if (!AppAssets.IsMine(entry) || entry.Recipe is not { } recipe) return;
-        var personal = MyRecipes.ToList();
-        var name = InputDialog.Ask(this, UiStrings.EffectPreset_RenameTitle, UiStrings.EffectPreset_NamePrompt,
-            recipe.Name, personal.Select(item => item.Name))?.Trim();
-        if (string.IsNullOrEmpty(name) || name == recipe.Name) return;
-        if (personal.Any(item => item.Name == name))
-        {
-            Ui.Warn(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,
-                UiStrings.EffectPreset_DuplicateName, name), UiStrings.EffectPreset_RenameTitle);
-            return;
-        }
-        PersistRecipe(() => AppAssets.Store.SaveRecipe(recipe with { Name = name }));
-    }
-
-    private void DeletePreset(AssetEntry entry)
-    {
-        if (Ui.Ask(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,
-                UiStrings.EffectPreset_DeleteQuestion, entry.Name), UiStrings.EffectPreset_Delete,
-                MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
-        PersistRecipe(() => AppAssets.Store.Remove(entry.Id));
-    }
-
-    /// <summary>내 에셋을 바꾼다. 상자는 저장소 변경 알림(<see cref="ReloadAssetTiles"/>)으로 다시 만들어진다.</summary>
-    private void PersistRecipe(Action change) => AppAssets.Try(this, change, UiStrings.EffectPreset_SaveError);
-
-    /// <summary>미리보기 원본: 지금 프레임 그림(투명 여백을 잘라 냄). 비었거나 너무 크면 작은 견본 그림.</summary>
-    private PixelImage ThumbSource()
-    {
-        if (SourceAt(_frame) is not { } src) return SampleSprite();
-        var bounds = src.GetOpaqueBounds();
-        if (bounds.IsEmpty || bounds.Width > ThumbMaxSize || bounds.Height > ThumbMaxSize) return SampleSprite();
-        return src.Crop(bounds);
-    }
-
-    private static PixelImage SampleSprite() => AssetPreview.SampleSprite();
-
-    /// <summary>효과 묶음을 미리보기 원본에 입힌 그림 — 움직이는 효과는 <see cref="ThumbSteps"/>칸 중 <paramref name="step"/>번째.</summary>
-    private PixelImage RenderThumb(IReadOnlyList<LayerEffect> template, int step) => AssetPreview.Render(template, _thumbSource, step);
 
     // ───────────── 두 번 누르기·끌어 놓기 ─────────────
 
@@ -282,7 +157,7 @@ public sealed partial class LayerEffectsDialog
             if (tile.HelpHit(e.GetPosition(tile)))
             {
                 e.Handled = true;
-                ShowTileHelp(tile);
+                EffectTileCatalog.ShowHelp(tile);
                 return;
             }
             if (e.ClickCount == 2)
@@ -316,18 +191,6 @@ public sealed partial class LayerEffectsDialog
         {
             if (_pressedTile == tile) EndTileDrag();
         };
-    }
-
-    /// <summary>상자 오른쪽 위 물음표를 누르면 효과 이름과 설명만 띄운다. 같은 물음표를 다시 누르거나 바깥을 누르면 닫힌다.</summary>
-    private void ShowTileHelp(EffectTile tile)
-    {
-        var text = new TextBlock { Text = tile.Description, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.TextBrush };
-        var flyout = new Flyout
-        {
-            Placement = PlacementMode.RightEdgeAlignedTop,
-            Content = new Border { Width = 300, Padding = new Thickness(4), Child = Ui.Stack(Ui.Label(tile.Title, bold: true), text) },
-        };
-        PopupMenus.Show(tile, flyout);
     }
 
     private void EndTileDrag()
@@ -368,148 +231,5 @@ public sealed partial class LayerEffectsDialog
         _thumbTimer.Stop();
         if (_onAssetsChanged is { } changed) AppAssets.Changed -= changed;
         foreach (var tile in _tiles) tile.Dispose();
-    }
-
-    /// <summary>효과 종류 상자: 위 = 미리보기(같은 정수 배율, 작으면 맞춤 축소), 아래 = 이름.</summary>
-    private sealed class EffectTile : Control, IDisposable
-    {
-        private readonly WriteableBitmap?[] _frames;
-        private int _shown;
-        private bool _hover, _helpHover;
-
-        public EffectTile(string name, IReadOnlyList<LayerEffect> effects, AssetEntry? entry = null, EffectRecipe? template = null)
-        {
-            Title = name;
-            Effects = effects;
-            Entry = entry;
-            Template = template;
-            // 스크립트 표시는 공식 효과가 아닌 원문이 든 상자에만(공식 효과는 예전 기본 효과 상자처럼 보임)
-            _codeMark = template?.Scripts.Keys.Any(hash => !OfficialEffects.IsOfficialHash(hash)) == true;
-            _frames = new WriteableBitmap?[effects.Any(effect => Moves(effect, entry)) ? ThumbSteps : 1];
-            if (entry?.Store is not null && entry.Author is { } author) LoadAvatar(author);
-            Cursor = new Cursor(StandardCursorType.Hand);
-        }
-
-        private readonly bool _codeMark;
-        private Bitmap? _avatar;
-        private bool _disposed;
-
-        private async void LoadAvatar(AssetAuthor author)
-        {
-            var bitmap = await AuthorAvatarView.LoadAsync(author);
-            if (_disposed) return;
-            _avatar = bitmap;
-            InvalidateVisual();
-        }
-
-        /// <summary>
-        /// 효과가 진행에 따라 바뀌는지: 움직이는 그라데이션, 선언이 <c>animated</c>인 스크립트(에셋의 선언, 없으면 실행할 수 있는 원문 — 모르면 움직인다고 봄),
-        /// 다른 움직이는 효과.
-        /// </summary>
-        private static bool Moves(LayerEffect effect, AssetEntry? entry)
-            => effect.ColorGradients.Values.Any(gradient => gradient.Animated) || effect switch
-            {
-                ScriptEffect script => entry?.Script is { } asset && asset.Hash == script.ScriptHash ? asset.Animated
-                    : ScriptLibrary.Runnable(script.ScriptHash)?.Animated ?? true,
-                AnimatedEffect => true,
-                _ => false,
-            };
-
-        public string Title { get; }
-        /// <summary>효과 설명(물음표 창의 글). 없으면 물음표를 그리지 않는다.</summary>
-        public string? Description { get; set; }
-        public IReadOnlyList<LayerEffect> Effects { get; }
-        /// <summary>카탈로그 에셋 상자의 항목(앱에 든 효과 종류 상자는 null).</summary>
-        public AssetEntry? Entry { get; }
-        /// <summary>넣을 레시피(에셋 항목의 <see cref="AssetEntry.EffectTemplate"/> — 스크립트 원문을 함께 복사함, 앱에 든 효과 종류 상자는 null).</summary>
-        public EffectRecipe? Template { get; }
-        public bool Animated => _frames.Length > 1;
-        /// <summary><paramref name="step"/>번째 모습을 보인다(처음 볼 때 한 번만 그림).</summary>
-        public void Show(int step, Func<IReadOnlyList<LayerEffect>, int, PixelImage> render)
-        {
-            step = Math.Clamp(step, 0, _frames.Length - 1);
-            _frames[step] ??= ImageUtil.ToBitmap(render(Effects, step));
-            if (_shown == step) return;
-            _shown = step;
-            InvalidateVisual();
-        }
-
-        /// <summary>오른쪽 위 물음표 자리(상자 좌표).</summary>
-        private static Rect HelpRect(Avalonia.Size size) => new(size.Width - 19, 3, 16, 16);
-
-        /// <summary><paramref name="p"/>(상자 좌표)가 물음표 위인가(조금 넉넉히). 설명이 없으면 물음표가 없어 늘 false.</summary>
-        public bool HelpHit(Avalonia.Point p) => Description is not null && HelpRect(Bounds.Size).Inflate(2).Contains(p);
-
-        protected override void OnPointerMoved(PointerEventArgs e)
-        {
-            base.OnPointerMoved(e);
-            bool over = HelpHit(e.GetPosition(this));
-            if (over == _helpHover) return;
-            _helpHover = over;
-            InvalidateVisual();
-        }
-
-        protected override void OnPointerEntered(PointerEventArgs e)
-        {
-            base.OnPointerEntered(e);
-            _hover = true;
-            InvalidateVisual();
-        }
-
-        protected override void OnPointerExited(PointerEventArgs e)
-        {
-            base.OnPointerExited(e);
-            _hover = _helpHover = false;
-            InvalidateVisual();
-        }
-
-        public override void Render(DrawingContext g)
-        {
-            var b = new Rect(Bounds.Size);
-            g.FillRectangle(_hover ? AppTheme.HoverBrush : AppTheme.PanelBrush, b);
-            g.DrawRectangle(new Pen(AppTheme.BorderBrush, 1), b.Deflate(0.5));
-            if (_frames[_shown] is { } bmp)
-            {
-                var area = new Rect(5, 5, b.Width - 10, b.Height - (Entry is null ? 28 : 45));
-                var src = new Rectangle(0, 0, bmp.PixelSize.Width, bmp.PixelSize.Height);
-                double fit = Math.Min(area.Width / src.Width, area.Height / src.Height);
-                ImageUtil.DrawFitted(g, bmp, src, area, fit >= 1 ? (int)Math.Floor(fit) : 0, checker: true);
-            }
-            AppTheme.DrawTextIn(g, Title, new Rect(2, b.Height - (Entry is null ? 21 : 36), b.Width - 4, 18),
-                AppTheme.TextBrush, AppTheme.SmallFontSize, center: true);
-            if (Entry is { } entry)
-            {
-                var icon = new Rect(3, b.Height - 17, 13, 13);
-                if (_avatar is { } avatar)
-                    g.DrawImage(avatar, new Rect(0, 0, avatar.PixelSize.Width, avatar.PixelSize.Height), icon);
-                else
-                    VectorIcons.Draw(g, VectorIcon.CircleUser, icon, 12, AppTheme.DimTextBrush);
-                if (entry.Author is { } author)
-                    AppTheme.DrawTextIn(g, author.Name, new Rect(18, b.Height - 19, Math.Max(1, b.Width - 21), 17),
-                        AppTheme.DimTextBrush, AppTheme.SmallFontSize);
-            }
-            // 설명이 있으면 오른쪽 위 물음표(누르면 설명 창), 공식 효과가 아닌 스크립트 효과가 든 상자는 그 왼쪽(물음표가 없으면 오른쪽 위)에 코드 표시
-            double codeRight = b.Width - 3;
-            if (Description is not null)
-            {
-                var help = HelpRect(b.Size);
-                var helpBrush = _helpHover ? AppTheme.TextBrush : AppTheme.DimTextBrush;
-                g.DrawRectangle(_helpHover ? AppTheme.PanelBrush : null, new Pen(helpBrush, 1), help.Deflate(0.5), 4, 4);
-                VectorIcons.Draw(g, VectorIcon.QuestionMark, help, 11, helpBrush, 2.6);
-                codeRight = help.X - 3;
-            }
-            if (_codeMark)
-                VectorIcons.Draw(g, VectorIcon.Code, new Rect(codeRight - 14, 3, 14, 14), 12, AppTheme.DimTextBrush);
-        }
-
-        public void Dispose()
-        {
-            _disposed = true;
-            for (int i = 0; i < _frames.Length; i++)
-            {
-                _frames[i]?.Dispose();
-                _frames[i] = null;
-            }
-        }
     }
 }

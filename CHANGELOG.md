@@ -2,6 +2,26 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## 미배포
+
+### Effect list in the tool bar: drag effects onto timeline cels
+- The new **Effects** button under the file browser button in the tool bar opens a list of every effect and preset (the same ones as the effects dialog) in the left column where the file browser sits. With the file browser also open, the column splits into files on top and effects below, and opening or closing either one slides the split smoothly; press the button again to close it.
+- Drag an effect onto a timeline cel to add it to that layer for that frame with default settings, without opening the effects dialog (inside a selected block of cels it takes that frame range). Double-click adds it to the current cel.
+- Drag the right edge of an effect box in the effect row past the last frame to add that many frames linked to the last frame and stretch the effect over them, in one undo step.
+- At the bottom of the list, **Get more** opens the website store in your browser and **Effect Maker** next to it opens the Effect Maker.
+
+### Effect previews use the chick
+- Effect thumbnails in the effects dialog and the effect list now show the effect on its preview chick (the same chick as the store preview) instead of the current drawing.
+- Rendered thumbnails are reused while the app is open, so reopening the effects dialog or changing the drawing no longer re-renders them and stutters less.
+
+### Open a 3D model from its own menu item, by drag and drop
+- **File > Open 3D model…** opens the Import 3D model window without a model. Drop a glTF, GLB, OBJ or FBX file onto the window or press **Open model…** to load it; **Import** turns on once a model is loaded.
+- While the window is open, dropping or picking another model swaps it and keeps the current settings.
+
+### Setting boxes with the title on the border
+- Every titled settings box (tool settings, effect settings and script setting groups, Effect Maker, export windows) now draws its title on the top border line, which breaks around the title, info box, fold arrow and header buttons.
+- Folding works as before.
+
 ## v1.14.139 (2026-11-22)
 
 ### Pick effect colors by gradient position (ctx.gradientAt)

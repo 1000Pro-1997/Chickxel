@@ -240,7 +240,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         DockPanel.SetDock(toolBar, Dock.Left);
         work.Children.Add(toolBar);
         work.Children.Add(_splitPalette);
-        (_splitFiles, _colFiles, _filesSplitter) = MakeColumnSplit(_browser, work, fixedFirst: true, s0.LeftWidth);
+        // 맨 왼쪽 칸: 파일 브라우저(F8)·효과 목록(도구 막대 효과 단추) — 둘 다 켜면 위아래로 나눔(MainForm.EffectList.cs)
+        (_splitFiles, _colFiles, _filesSplitter) = MakeColumnSplit(BuildLeftDock(), work, fixedFirst: true, s0.LeftWidth);
 
         // ── 상태 표시줄
         var statusBar = new DockPanel { Height = 22, LastChildFill = true };
@@ -450,9 +451,12 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     {
         var stack = new StackPanel { Orientation = Orientation.Vertical, Spacing = 1 };
         _tbFiles = ToolBarButton(Icons.Folder, MainStrings.Ui_036);
-        _tbFiles.Margin = new Thickness(1, 1, 1, 6);
+        _tbFiles.Margin = new Thickness(1);
         _tbFiles.Click += (_, _) => SetFilesVisible(!_filesShown, animate: true);
         stack.Children.Add(_tbFiles);
+        var effects = BuildEffectListButton();
+        effects.Margin = new Thickness(1, 1, 1, 6);
+        stack.Children.Add(effects);
         foreach (var slotTools in ToolSlots)
         {
             var slot = new ToolSlotButton(slotTools.Select(t => ToolDefs.First(d => d.Tool == t)).Select(d => (d.Tool, d.Name)).ToList(), ToolKeyText);
@@ -731,6 +735,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         AddItems(file,
             Cmd("새 프로젝트…", MainStrings.Menu_File_NewProject_063, () => NewProject(null), "Ctrl+N", KeyScope.Global, (Key.N, Ctrl)),
             Cmd("열기(.chickxel / PNG 가져오기)…", MainStrings.Menu_File_OpenFileDialogCmd_065, OpenFileDialogCmd, "Ctrl+O", KeyScope.Global, (Key.O, Ctrl)),
+            WithIcon(Cmd("3D 모델 열기…", MainStrings.Menu_File_OpenModel, OpenModelWindow), VectorIcon.Cube),
             Cmd("폴더 열기…", MainStrings.Menu_File_OpenFolder_067, OpenFolder, "Ctrl+Shift+O", KeyScope.Global, (Key.O, Ctrl | Shift)),
             Cmd("Unity 프로젝트 열기…", MainStrings.Menu_File_OpenUnityProject_069, OpenUnityProject, "Ctrl+Shift+U", KeyScope.Global, (Key.U, Ctrl | Shift)),
             _miRecentFolders,
@@ -1413,7 +1418,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         SetSplit(_rowPreview, _splitRightDock, s.PreviewHeight);
         _preview.Collapsed = s.PreviewCollapsed;
         _browser.TreeHeight = s.BrowserTreeHeight;
-        SetFilesVisible(s.FilesVisible);
+        SetLeftPanes(s.FilesVisible, s.EffectListVisible);
         _settingsApplied = true;
         RememberNormalBounds();
         _start.LoadHub();
@@ -1524,7 +1529,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         if (_settingsApplied)
         {
             s.FilesVisible = _filesShown;
-            if (s.FilesVisible && _filesAnim is null) s.LeftWidth = (int)Math.Round(_colFiles.ActualWidth);
+            s.EffectListVisible = _effectListShown;
+            if (LeftShown && _filesAnim is null) s.LeftWidth = (int)Math.Round(_colFiles.ActualWidth);
             s.PaletteWidth = (int)Math.Round(_colPalette.ActualWidth);
             s.RightWidth = (int)Math.Round(_colRight.ActualWidth);
             s.BottomHeight = (int)Math.Round(_rowBottom.ActualHeight);
@@ -1976,6 +1982,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _cbTileView.Refresh();
         _cbFit.IsChecked = _canvas.AutoFit;
         _tbFiles.IsChecked = _miFiles.IsChecked = _filesShown;
+        _tbEffects.IsChecked = _effectListShown;
         UpdateTileToolUi();
     }
 
@@ -2003,26 +2010,40 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private bool _filesShown = true;
     private DispatcherTimer? _filesAnim;
 
+    /// <summary>맨 왼쪽 칸에 보이는 것이 있는지(파일 브라우저나 효과 목록).</summary>
+    private bool LeftShown => _filesShown || _effectListShown;
+
+    /// <summary>파일 브라우저 보이기/숨기기(효과 목록은 그대로) — <see cref="SetLeftPanes"/>.</summary>
+    private void SetFilesVisible(bool visible, bool animate = false) => SetLeftPanes(visible, _effectListShown, animate);
+
     /// <summary>
-    /// 파일 브라우저 칸 보이기/숨기기(숨기면 칸과 나눔 막대를 접는다). <paramref name="animate"/>면 폭이 부드럽게 늘고 준다(약 0.18초);
+    /// 맨 왼쪽 칸의 파일 브라우저·효과 목록 보이기/숨기기. 둘 다 켜면 위아래로 나누고(사이 막대로 높이 조절), 하나만 켜면 그것이 칸을 채운다.
+    /// 칸이 처음 열리거나 마지막 것이 닫힐 때만 칸과 나눔 막대를 펴고 접는다 — <paramref name="animate"/>면 폭이 부드럽게 늘고 준다(약 0.18초);
     /// 도중에 다시 누르면 지금 폭에서 반대로 간다.
     /// </summary>
-    private void SetFilesVisible(bool visible, bool animate = false)
+    private void SetLeftPanes(bool files, bool effects, bool animate = false)
     {
-        if (!visible && _filesShown && _browser.IsVisible && _settingsApplied && _filesAnim is null)
+        bool wasShown = LeftShown, visible = files || effects;
+        if (!visible && wasShown && _leftDock.IsVisible && _settingsApplied && _filesAnim is null)
             _settings.LeftWidth = (int)Math.Round(_colFiles.ActualWidth);
-        _filesShown = visible;
+        // 칸이 닫히는 동안은 안의 패널을 그대로 두고(접히며 사라지게) 다 닫힌 뒤 맞춘다
+        // 칸이 이미 열려 있으면 위아래 나눔이 부드럽게 움직이고, 칸이 새로 열리면 폭이 펴지므로 안은 바로 맞춘다
+        if (visible) ArrangeLeftDock(files, effects, animate && wasShown && _leftDock.IsVisible && _filesAnim is null);
+        _filesShown = files;
+        _effectListShown = effects;
+        UpdateToolUi();
+        if (visible == wasShown && _leftDock.IsVisible == visible && _filesAnim is null) return;
         _filesAnim?.Stop();
         _filesAnim = null;
         double target = visible ? ClampSplit(_settings.LeftWidth, _splitFiles.Bounds.Width) : 0;
         void Finish()
         {
-            _browser.IsVisible = visible;
+            if (!visible) ArrangeLeftDock(false, false);
+            _leftDock.IsVisible = visible;
             _filesSplitter.IsVisible = visible;
             _colFiles.MinWidth = visible ? MinPanelSize : 0;
             if (!visible) _colFiles.Width = new GridLength(0);
             else if (_settingsApplied || _colFiles.Width.Value == 0) SetSplit(_colFiles, _splitFiles, _settings.LeftWidth);
-            UpdateToolUi();
         }
         if (!animate || _splitFiles.Bounds.Width <= 0)
         {
@@ -2030,8 +2051,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             return;
         }
         // 움직이는 동안은 칸을 보이게 두고 최소 폭을 풀어 0까지 줄 수 있게 한다.
-        _browser.IsVisible = true;
-        _browser.ClipToBounds = true;
+        _leftDock.IsVisible = true;
+        _leftDock.ClipToBounds = true;
         _filesSplitter.IsVisible = true;
         _colFiles.MinWidth = 0;
         double from = _colFiles.ActualWidth;
@@ -2050,7 +2071,6 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         };
         _filesAnim = timer;
         timer.Start();
-        UpdateToolUi();
     }
 
     private void GridSettings()

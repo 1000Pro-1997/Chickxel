@@ -29,6 +29,7 @@ public sealed partial class MainForm : IHelpPickerHost, IHelpTargetSource
         if (ReferenceEquals(c, _tbSave)) return new("files-save");
         if (ReferenceEquals(c, _tbRevert)) return new("files-revert");
         if (ReferenceEquals(c, _tbFiles) || ReferenceEquals(c, _browser)) return new("screen-file-browser");
+        if (ReferenceEquals(c, _tbEffects)) return new("screen-effect-list");
         if (ReferenceEquals(c, _cbZoom) || ReferenceEquals(c, _cbFit)) return new("screen-top-bar", "screen-top-bar-2");
         if (ReferenceEquals(c, _cbGrid)) return new("screen-top-bar", "screen-top-bar-3");
         if (ReferenceEquals(c, _cbTiles)) return new("screen-top-bar", "screen-top-bar-4");

@@ -1438,7 +1438,7 @@ public sealed class EffectMakerWindow : Window
     }
 
     /// <summary>묶음 상자(<see cref="Ui.Group"/>)의 제목 줄 오른쪽에 <paramref name="buttons"/>를 둔다.</summary>
-    private static void HeaderButtons(Border group, Control buttons)
+    private static void HeaderButtons(GroupBox group, Control buttons)
     {
         var stack = (StackPanel)group.Child!;
         var title = stack.Children[0];

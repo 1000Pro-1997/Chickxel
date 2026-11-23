@@ -69,7 +69,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
     private bool _gradientSyncing, _pencilGradientSyncing;
 
     // 브러시
-    private readonly Border _brushBox;
+    private readonly GroupBox _brushBox;
     private readonly TextBlock _brushTitle, _fillTitle;
     /// <summary>브러시 모양(<see cref="BrushShapes"/> 순서). 클릭해도 캔버스 포커스를 빼앗지 않는다.</summary>
     private readonly TabStrip _shapes = new(TabStripKind.Segmented) { Focusable = false, IsTabStop = false, Margin = default };
@@ -77,7 +77,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
     private readonly BrushPreview _brushPreview = new();
 
     // 도구별
-    private readonly Border _fillBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox;
+    private readonly GroupBox _fillBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox;
     private readonly NumericUpDown _tolNum, _dodgeNum, _eraserNum;
     private readonly CheckBox _contiguous, _diagonal, _pixelPerfect, _shapeFilled, _rightErase, _wrap, _mirrorX, _mirrorY, _mirrorAtPivot;
     private readonly CheckBox _eraseRed, _eraseGreen, _eraseBlue;
@@ -90,7 +90,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
     private readonly InfoBadge _hint;
 
     // 적용 프레임(그리기 도구의 획을 다른 프레임에도 같은 자리로)
-    private readonly Border _frameRangeBox;
+    private readonly GroupBox _frameRangeBox;
     /// <summary>범위(<see cref="StrokeFrameRange"/> 순서).</summary>
     private readonly ComboBox _frameRange;
     private readonly NumericUpDown _framesBefore, _framesAfter;
@@ -99,7 +99,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
     private readonly TextBlock _frameRangeSpan;
 
     // 지우개 적용 레이어(현재 레이어 외에 위·아래·선택 레이어)
-    private readonly Border _layerRangeBox;
+    private readonly GroupBox _layerRangeBox;
     private readonly ComboBox _layerRange;
     private readonly NumericUpDown _layersAbove, _layersBelow;
     private readonly StackPanel _layersAboveRow, _layersBelowRow;
@@ -118,7 +118,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
     private readonly StackPanel _textFontButtons;
 
     // 도형
-    private readonly Border _shapeBox;
+    private readonly GroupBox _shapeBox;
     /// <summary>모양 단추(<see cref="ShapeDefs"/> 순서). 클릭해도 캔버스 포커스를 빼앗지 않는다.</summary>
     private readonly Button[] _shapeButtons = new Button[ShapeDefs.Length];
     private readonly TextBlock _shapeHint;
@@ -132,11 +132,11 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
     private readonly StackPanel _pencilStepsRow;
 
     // 그라데이션
-    private readonly Border _gradientBox;
+    private readonly GroupBox _gradientBox;
     private readonly GradientEditor _gradientEditor;
 
     // 그라데이션 연필
-    private readonly Border _pencilGradientBox;
+    private readonly GroupBox _pencilGradientBox;
     private readonly GradientEditor _pencilGradientEditor;
     /// <summary>획 전체 / 반복. 클릭해도 캔버스 포커스를 빼앗지 않는다.</summary>
     private readonly TabStrip _pencilGradientMode = new(TabStripKind.Segmented) { Focusable = false, IsTabStop = false, Margin = default };
@@ -146,14 +146,14 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
     private readonly StackPanel _pencilPresetRow;
 
     // 모양 펜(ToolOptionsPanel.ShapePen.cs)
-    private readonly Border _shapePenBox;
+    private readonly GroupBox _shapePenBox;
 
     // 곡선 펜(ToolOptionsPanel.CurvePen.cs)
-    private readonly Border _curvePenBox;
+    private readonly GroupBox _curvePenBox;
 
     // 피벗
-    private readonly Border _pivotBox;
-    private readonly Border _sliceBox;
+    private readonly GroupBox _pivotBox;
+    private readonly GroupBox _sliceBox;
     private readonly NumericUpDown _sL, _sT, _sR, _sB;
     private readonly Button _sliceClear;
     private readonly TextBlock _sliceTarget;
@@ -166,7 +166,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
     private readonly StackPanel _pivotLayerRow;
 
     // 변형 모드(Ctrl+T 지금 셀 · Alt+Shift+C 레이어 전체 — 제목·설명만 바뀜)
-    private readonly Border _transformBox;
+    private readonly GroupBox _transformBox;
     private readonly NumericUpDown _tfAngle, _tfScaleX, _tfScaleY, _tfX, _tfY, _tfBoxWidth, _tfBoxHeight;
     private readonly ComboBox _tfResample;
     private readonly TextBlock _tfInfo;
@@ -178,7 +178,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
     private readonly Control _tfHelp;
 
     // 캔버스 크기 모드
-    private readonly Border _canvasResizeBox;
+    private readonly GroupBox _canvasResizeBox;
     /// <summary>캔버스 크기 묶음 제목(부위 화면에서 시작하면 "부위 크기").</summary>
     private readonly TextBlock _crTitle;
     private readonly NumericUpDown _crWidth, _crHeight, _crImageWidth, _crImageHeight, _crX, _crY;
@@ -198,7 +198,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
 
     // 타임라인에서 고른 효과(하나만 골랐을 때): 도구 설정 아래 "효과" 제목 줄(접고 폄)과 그 효과 이름의 묶음 상자
     private readonly StackPanel _effectSection;
-    private readonly Border _effectBox;
+    private readonly GroupBox _effectBox;
     private readonly TextBlock _effectTitle;
     private readonly Control _effectInfo;
     /// <summary>스크립트 효과를 그리지 못할 때의 까닭(그 밖엔 비어 있음).</summary>
@@ -785,7 +785,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
 
         BuildTileOptions();
         Control[] boxes = [_canvasResizeBox, _transformBox, _tileBox, _tileFloorBox, _shapeBox, _brushBox, _pencilGradientBox, _shapePenBox, _curvePenBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _frameRangeBox, _layerRangeBox, _pivotBox, _sliceBox];
-        foreach (var box in boxes) Ui.Foldable((Border)box);
+        foreach (var box in boxes) Ui.Foldable((GroupBox)box);
         Ui.Foldable(_effectBox);
         var header = Ui.Header(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E39101186F);
         _title = (TextBlock)header.Child!;
@@ -837,10 +837,10 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         return t;
     }
 
-    private static TextBlock GroupTitle(Border group) => (TextBlock)((StackPanel)group.Child!).Children[0];
+    private static TextBlock GroupTitle(GroupBox group) => (TextBlock)((StackPanel)group.Child!).Children[0];
 
     /// <summary>제목 오른쪽에 긴 설명 "i"(마우스를 올리면 풍선)를 단 묶음 상자.</summary>
-    private static Border InfoGroup(string title, string info, Control content)
+    private static GroupBox InfoGroup(string title, string info, Control content)
     {
         var box = Ui.Group(title, content);
         var stack = (StackPanel)box.Child!;

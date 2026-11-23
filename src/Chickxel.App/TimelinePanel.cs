@@ -2647,8 +2647,8 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
         public void UpdateScrollSize()
         {
             // 마지막 프레임 뒤 "다음 프레임" 칸, 마지막 행 아래 "다음 레이어" 줄까지. 애니메이션 중에는 지금·끝 배치 중 큰 쪽(줄어들 때 스크롤이 튀지 않게).
-            // "다음 프레임" 칸을 끄는 중에는 붙일 프레임 미리보기 + 한 칸 더(오른쪽 끝 자동 스크롤로 더 늘릴 수 있게).
-            int ghostW = _ghostDragShown ? (_ghostDragCount + 1) * CellW : CellW;
+            // "다음 프레임" 칸을 끄는 중(효과 범위를 끝 너머로 끄는 중도)에는 붙일 프레임 미리보기 + 한 칸 더(오른쪽 끝 자동 스크롤로 더 늘릴 수 있게).
+            int ghostW = GhostPreview ? (GhostColumns + 1) * CellW : CellW;
             int contentW = Math.Max(_colT.Total, _colT.TargetTotal) + ghostW, contentH = Math.Max(_rowT.Total, _rowT.TargetTotal) + CellH;
             int viewW = Math.Max(1, ViewW), viewH = Math.Max(1, ViewH);
             _h.Maximum = Math.Max(0, contentW - viewW);
@@ -2714,8 +2714,8 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
         private bool IsGhostColumn(double x)
             => x >= NameW && ContentX(x) >= _colT.Total && ContentX(x) < _colT.Total + CellW;
 
-        /// <summary>그릴 "다음 프레임" 칸 수: 평소 1, 단추를 끄는 중이면 붙일 프레임 수.</summary>
-        private int GhostColumns => _ghostDragShown ? _ghostDragCount : 1;
+        /// <summary>그릴 "다음 프레임" 칸 수: 평소 1, 단추를 끄는 중이면 붙일 프레임 수, 효과 범위를 끝 너머로 끄는 중이면 더할 프레임 수.</summary>
+        private int GhostColumns => _ghostDragShown ? _ghostDragCount : _fxExtra > 0 ? _fxExtra : 1;
 
         /// <summary>"다음 레이어" 줄(마지막 행 아래 한 줄) 위인지.</summary>
         private bool IsGhostRow(double y)
@@ -3218,6 +3218,8 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
                 bool editing = ReferenceEquals(_fxLayer, layer) && _fxIndex == k;
                 var effect = editing && _fxDragged is { } dragged ? dragged : layer.Effects[k];
                 var (x0, x1) = FxX(effect, frames);
+                // 끝을 마지막 프레임 너머로 끄는 중: 더할 칸 끝까지
+                if (editing && _fxExtra > 0) x1 = FrameX(frames) + _fxExtra * CellW - 2;
                 if (x1 - x0 < 1) return;
                 var box = new Rect(x0, ry + 1, x1 - x0, FxH - 3);
                 var color = LayerEffectsDialog.TimelineColorOf(effect);
@@ -3294,7 +3296,8 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
                         }
                         else DrawCell(cx, cy, l, f);
                     }
-                    // "다음 프레임" 칸: ⧉ 마지막 프레임 복사해서 추가 · ＋ 빈 프레임 추가. 단추를 끄는 중이면 붙일 프레임 수만큼 옅은 파란 칸(복사면 ⧉).
+                    // "다음 프레임" 칸: ⧉ 마지막 프레임 복사해서 추가 · ＋ 빈 프레임 추가. 단추를 끄는 중이면 붙일 프레임 수만큼 옅은 파란 칸(복사면 ⧉),
+                    // 효과 범위를 끝 너머로 끄는 중이면 더할 프레임 수만큼(마지막 프레임과 링크되므로 사슬 표시).
                     int gx = left + _colT.Total;
                     for (int k = 0; k < GhostColumns && gx + k * CellW < cellsClip.Right; k++)
                     {
@@ -3304,10 +3307,11 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
                         {
                             var r = new Rect(kx + 1, cy + 1, CellW - 2, CellH - 2);
                             g.FillRectangle(GhostBrush, r);
-                            if (_ghostDragShown)
+                            if (GhostPreview)
                             {
                                 g.FillRectangle(MarqueeBrush, r);
-                                if (_ghostDrag == false) VectorIcons.Draw(g, VectorIcon.Copy, r, 12, AppTheme.AccentBrush);
+                                if (_fxExtra > 0) VectorIcons.Draw(g, VectorIcon.Link, r, 12, AppTheme.AccentBrush);
+                                else if (_ghostDrag == false) VectorIcons.Draw(g, VectorIcon.Copy, r, 12, AppTheme.AccentBrush);
                             }
                             // 어느 줄의 ⧉든 프레임 전체를 복사하므로 열의 ⧉를 함께 강조
                             else DrawGhostButton(g, r, VectorIcon.Copy, _hover is { Frame: var hf, Header: false } && hf == frames);
@@ -3352,9 +3356,10 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
                         }
                     }
                 }
-                // "다음 프레임" 단추를 끄는 중: 붙일 프레임 칸 묶음을 파란 테두리로(행 전체 높이)
-                if (_ghostDragShown && _rowT.Total > 0)
+                // "다음 프레임" 단추·효과 범위 끝을 끄는 중: 붙일 프레임 칸 묶음을 파란 테두리로(행 전체 높이)
+                if (GhostPreview && _rowT.Total > 0)
                     g.DrawRectangle(null, MarqueePen, new Rect(left + _colT.Total + 0.5, top + 0.5, GhostColumns * CellW - 1, _rowT.Total - 1));
+                DrawEffectDrop(g, p);
                 // 셀 묶음(두 칸 이상) 둘레의 흐린 파란 테두리(한 칸이면 현재 칸 테두리가 그 표시)
                 if (multiCel && selRows.Count > 0)
                 {
@@ -3478,22 +3483,22 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
                     }
                     else DrawHeader(x, f);
                 }
-                // "다음 프레임" 칸 ＋. 단추를 끄는 중이면 붙일 프레임 수만큼 옅은 파란 칸: 붙은 뒤의 프레임 번호와 ＋(빈 프레임)·⧉(복사), 묶음 둘레 파란 테두리.
+                // "다음 프레임" 칸 ＋. 단추를 끄는 중이면 붙일 프레임 수만큼 옅은 파란 칸: 붙은 뒤의 프레임 번호와 ＋(빈 프레임)·⧉(복사)·사슬(효과 범위 늘리기 — 링크된 사본), 묶음 둘레 파란 테두리.
                 for (int k = 0, gx = FrameX(frames); k < GhostColumns && gx + k * CellW < headerClip.Right; k++)
                 {
                     int kx = gx + k * CellW;
                     var r = new Rect(kx + 1, TagH + 1, CellW - 2, HeadH - 2);
                     g.FillRectangle(GhostBrush, r);
-                    if (!_ghostDragShown)
+                    if (!GhostPreview)
                     {
                         DrawGhostButton(g, r, VectorIcon.Plus, _hover is { Frame: var hf, Header: true } && hf == frames);
                         continue;
                     }
                     g.FillRectangle(MarqueeBrush, r);
                     Text(g, (frames + k + 1).ToString(), new Rect(kx, TagH, CellW, 16), AppTheme.AccentBrush, small: !_thumbnails && frames + k >= 99, bold: true, center: true);
-                    VectorIcons.Draw(g, _ghostDrag == true ? VectorIcon.Plus : VectorIcon.Copy, new Rect(kx, TagH + 15, CellW, 14), 10, AppTheme.AccentBrush);
+                    VectorIcons.Draw(g, _fxExtra > 0 ? VectorIcon.Link : _ghostDrag == true ? VectorIcon.Plus : VectorIcon.Copy, new Rect(kx, TagH + 15, CellW, 14), 10, AppTheme.AccentBrush);
                 }
-                if (_ghostDragShown)
+                if (GhostPreview)
                     g.DrawRectangle(null, MarqueePen, new Rect(FrameX(frames) + 0.5, TagH + 0.5, GhostColumns * CellW - 1, HeadH - 1));
                 // 태그는 머리글 칸까지 내려오는 괄호로 묶어 보인다.
                 foreach (var tag in p.Tags)
@@ -4287,17 +4292,23 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
             return moving;
         }
 
-        /// <summary>효과 범위 끌기 중: 프레임 칸에 맞춰 새 범위를 상자에만 보인다(모든 프레임을 덮으면 "모든 프레임"). 레이어 효과는 놓을 때 바꾼다.</summary>
+        /// <summary>
+        /// 효과 범위 끌기 중: 프레임 칸에 맞춰 새 범위를 상자에만 보인다(모든 프레임을 덮으면 "모든 프레임"). 레이어 효과는 놓을 때 바꾼다.
+        /// 오른쪽 끝을 마지막 프레임 너머로 끌면 덮은 칸 수만큼 더할 프레임(<see cref="_fxExtra"/>)을 "다음 프레임" 자리에 보이고, 오른쪽 가장자리면 자동 스크롤.
+        /// </summary>
         private void DragFx(Avalonia.Point pos)
         {
             if (Ctx.Project is not { } p || _fxLayer is not { } layer || _fxOriginal is not { } original) return;
+            _lastPointer = pos;
             int n = p.Frames.Count;
             if (_fxIndex >= original.Count) return;
             int f = FrameAtClamped(pos.X), from = _fxFrom, to = _fxTo;
+            double past = ContentX(pos.X) - _colT.Total;
+            int extra = _fxGrip == FxGrip.Right && past >= 0 ? Math.Min(FrameExtension.MaxCount - 1, (int)Math.Floor(past / CellW) + 1) : 0;
             switch (_fxGrip)
             {
                 case FxGrip.Left: from = Math.Min(f, _fxTo); break;
-                case FxGrip.Right: to = Math.Max(f, _fxFrom); break;
+                case FxGrip.Right: to = extra > 0 ? n - 1 : Math.Max(f, _fxFrom); break;
                 default:
                     int d = Math.Clamp(f - _fxGrab, -_fxFrom, n - 1 - _fxTo);
                     from += d;
@@ -4305,25 +4316,44 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
                     break;
             }
             Cursor = _fxGrip == FxGrip.Body ? MoveCursor : ResizeCursor;
+            if (_fxGrip == FxGrip.Right) _scrollH.Set(ReorderCore.EdgeSpeed(pos.X, NameW, ClientW));
+            if (extra != _fxExtra)
+            {
+                _fxExtra = extra;
+                UpdateScrollSize();
+                InvalidateVisual();
+            }
             var effect = original[_fxIndex] with { Frames = FrameRange.Of(from, to, n) };
             if ((_fxDragged ?? original[_fxIndex]) == effect) return;
             _fxDragged = effect;
             InvalidateVisual();
         }
 
-        /// <summary>효과 범위 끌기 끝: <paramref name="commit"/>이고 범위가 바뀌었으면 실행취소 한 단계로 넣는다(여기서 한 번만 다시 계산), 아니면 그대로.</summary>
+        /// <summary>
+        /// 효과 범위 끌기 끝: <paramref name="commit"/>이고 범위가 바뀌었으면 실행취소 한 단계로 넣는다(여기서 한 번만 다시 계산), 아니면 그대로.
+        /// 끝을 마지막 프레임 너머로 끌었으면 프레임을 더하며 늘린다(<see cref="TimelinePanel.ExtendEffectPastEnd"/>).
+        /// </summary>
         private void FinishFx(bool commit)
         {
-            var (layer, original, dragged) = (_fxLayer, _fxOriginal, _fxDragged);
+            var (layer, original, dragged, extra) = (_fxLayer, _fxOriginal, _fxDragged, _fxExtra);
             _fxLayer = null;
             _fxOriginal = null;
             _fxDragged = null;
+            _fxExtra = 0;
+            _scrollH.Set(0);
             Cursor = Cursor.Default;
+            if (extra > 0) UpdateScrollSize();
             InvalidateVisual();
-            if (!commit || layer is null || original is null || dragged is null || Ctx.Project is not { } p) return;
+            if (!commit || layer is null || original is null || Ctx.Project is not { } p) return;
             int index = p.IndexOf(layer);
             // 끄는 동안 다른 곳(AI 도구 등)이 효과를 바꿨으면 넣지 않는다
-            if (index < 0 || !ReferenceEquals(layer.Effects, original) || dragged == original[_fxIndex]) return;
+            if (index < 0 || !ReferenceEquals(layer.Effects, original)) return;
+            if (extra > 0)
+            {
+                _owner.ExtendEffectPastEnd(layer, _fxIndex, _fxFrom, extra);
+                return;
+            }
+            if (dragged is null || dragged == original[_fxIndex]) return;
             var list = original.ToArray();
             list[_fxIndex] = dragged;
             Ctx.Structural(() => p.SetLayerEffects(index, list));
@@ -4540,15 +4570,16 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
 
         private double RowBottom(SpriteProject p, Layer layer) => RowTop(p, layer) + _rowT.Px(RowItem(p.IndexOf(layer)));
 
-        /// <summary>끄는 동안(순서 바꾸기·사각형 고르기·"다음 프레임" 단추 끌기) 가장자리 자동 스크롤: <paramref name="bar"/>를 움직이고 놓을 자리·고른 범위·붙일 수를 다시 센다.</summary>
+        /// <summary>끄는 동안(순서 바꾸기·사각형 고르기·"다음 프레임" 단추 끌기·효과 범위 끝 끌기) 가장자리 자동 스크롤: <paramref name="bar"/>를 움직이고 놓을 자리·고른 범위·붙일 수를 다시 센다.</summary>
         private bool AutoScrollBy(ScrollBar bar, double delta)
         {
-            if (!_reordering && !_fxReordering && _marquee is null && !_ghostDragShown) return false;
+            if (!_reordering && !_fxReordering && _marquee is null && !_ghostDragShown && _fxLayer is null) return false;
             if (!bar.IsEnabled) return false;
             double old = bar.Value;
             bar.Value = Math.Clamp(old + delta, 0, bar.Maximum);
             if (bar.Value == old) return false;
             if (_ghostDragShown) UpdateGhostDrag(_lastPointer);
+            else if (_fxLayer is not null) DragFx(_lastPointer);
             else if (_marquee is not null) UpdateMarquee();
             else if (_fxReordering) UpdateFxReorder(_lastPointer);
             else UpdateReorder(_lastPointer);

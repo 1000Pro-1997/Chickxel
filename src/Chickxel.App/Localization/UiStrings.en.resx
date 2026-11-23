@@ -4974,4 +4974,17 @@ Enter, or switching tool, layer or frame, paints it in the primary color (second
   <data name="LineArt_Done" xml:space="preserve"><value>Line cleanup: changed {pixels} pixel(s).</value></data>
   <data name="LineArt_DoneFrames" xml:space="preserve"><value>Line cleanup: changed {cels} cel(s).</value></data>
   <data name="LineArt_NoChange" xml:space="preserve"><value>Line cleanup: nothing changed.</value></data>
+  <data name="EffectList_Title" xml:space="preserve"><value>Effects</value></data>
+  <data name="EffectList_ToolbarTip" xml:space="preserve"><value>Show/hide the effect list: opens it in the left column (below the file browser when that is open) so you can drag effects onto timeline cels</value></data>
+  <data name="EffectList_Hint" xml:space="preserve"><value>Drag onto a timeline cel</value></data>
+  <data name="EffectList_Help" xml:space="preserve"><value>Drag an effect onto a timeline cel (layer × frame) to add it to that layer with default settings, without opening the effects dialog. Dropping inside a selected block of cels uses that frame range; double-clicking adds it to the current cel. Added effects show as boxes in the effect rows under the layer: drag a box edge to change its range, and drag the right edge past the last frame to add that many frames linked to the last frame. Double-click a box to change its settings in the effects dialog.</value></data>
+  <data name="EffectList_Added" xml:space="preserve"><value>Effect added: {0} → {1}, {2} · Drag the edges of its box in the effect row to change the range</value></data>
+  <data name="EffectList_Extended" xml:space="preserve"><value>Effect range extended: added {1} frame(s) linked to the last frame ({0} frames total)</value></data>
+  <data name="EffectList_MoreDownloads" xml:space="preserve"><value>Get more</value></data>
+  <data name="EffectList_MoreDownloadsTip" xml:space="preserve"><value>Opens the website store ({0}) in your browser to get effects made by others.</value></data>
+  <data name="EffectList_MakerTip" xml:space="preserve"><value>Opens the Effect Maker to make a new effect or edit your own.</value></data>
+  <data name="Model_OpenModel" xml:space="preserve"><value>Open model…</value></data>
+  <data name="Model_OpenModelTip" xml:space="preserve"><value>Pick a 3D model file (glTF, GLB, OBJ, FBX). If a model is already open, only the model changes and the settings stay. You can also drop a file onto the window.</value></data>
+  <data name="Model_DropHint" xml:space="preserve"><value>Drop a 3D model file (glTF, GLB, OBJ, FBX) here or press "Open model…"</value></data>
+  <data name="Model_NoModel" xml:space="preserve"><value>No model opened yet.</value></data>
 </root>

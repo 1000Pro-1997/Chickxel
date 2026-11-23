@@ -119,16 +119,51 @@ public sealed partial class MainForm
             if (!cancelled && interactive) Ui.Error(this, message);
             return false;
         }
-        var project = SpriteProject.FromFrames(anim.Images, anim.DurationsMs, Path.GetFileNameWithoutExtension(full));
-        // 아직 .chickxel이 없다 — 저장하면 위치를 묻는다(같은 이름 PNG 내보내기가 원본 옆 파일을 덮지 않게).
-        OpenInNewTab(new OpenDocument(project, full));
-        project.IsDirty = true;
-        AppSettings.PushRecent(_settings.RecentFiles, full);
-        _browser.SelectFile(full);
+        OpenDecoded(full, anim);
         message = MainStrings.FormatOpen_Opened(name: Path.GetFileName(full), frames: anim.FrameCount, width: anim.Width, height: anim.Height,
             ms: anim.DurationsMs.Sum());
         ShowMessage(message);
         return true;
+    }
+
+    /// <summary>풀어 둔 프레임을 새 탭의 새 문서로(아직 .chickxel이 없다 — 저장하면 위치를 묻는다, 같은 이름 PNG 내보내기가 원본 옆 파일을 덮지 않게).</summary>
+    private void OpenDecoded(string full, DecodedAnimation anim)
+    {
+        var project = SpriteProject.FromFrames(anim.Images, anim.DurationsMs, Path.GetFileNameWithoutExtension(full));
+        OpenInNewTab(new OpenDocument(project, full));
+        project.IsDirty = true;
+        AppSettings.PushRecent(_settings.RecentFiles, full);
+        _browser.SelectFile(full);
+    }
+
+    /// <summary>
+    /// 파일 > 3D 모델 열기…: 모델 없이 3D 모델 가져오기 창(<see cref="ModelImportDialog"/>)을 열어 모델 파일을 끌어 놓거나 '모델 열기…'로 고르게 하고,
+    /// 가져오면 그린 프레임을 새 탭으로 연다(파일 > 열기로 모델을 연 것과 같은 결과). 그 모델이 이미 탭으로 열려 있으면 그 탭으로.
+    /// </summary>
+    private void OpenModelWindow()
+    {
+        var dlg = new ModelImportDialog(null, null, _browser.CurrentFolder ?? _settings.LastFolder);
+        if (dlg.ShowDialog(this) != DialogResult.OK || dlg.ModelPath is not { } path) return;
+        if (FindDoc(path) is { } open)
+        {
+            ShowDocument(open);
+            ShowMessage(MainStrings.FormatMessage_355(value: Path.GetFileName(path)) + UnsavedSuffix);
+            return;
+        }
+        DecodedAnimation? anim;
+        try
+        {
+            anim = RenderModel(this, dlg);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException or InvalidOperationException)
+        {
+            Ui.Error(this, MainStrings.FormatMessage_358(full: path, message: ex.Message));
+            return;
+        }
+        if (anim is null) return;
+        OpenDecoded(path, anim);
+        ShowMessage(MainStrings.FormatOpen_Opened(name: Path.GetFileName(path), frames: anim.FrameCount, width: anim.Width, height: anim.Height,
+            ms: anim.DurationsMs.Sum()));
     }
 
     /// <summary>
@@ -240,25 +275,24 @@ public sealed partial class MainForm
             cancelled = true;
             return null;
         }
-        var render = new ModelRenderSettings();
-        var frames = new ModelFrameOptions();
-        if (interactive)
+        if (!interactive) return ModelFrames.Render(scene, new ModelRenderSettings(), new ModelFrameOptions());
+        var dlg = new ModelImportDialog(path, scene);
+        if (dlg.ShowDialog(owner) != DialogResult.OK)
         {
-            var dlg = new ModelImportDialog(name, scene, Path.GetDirectoryName(path));
-            if (dlg.ShowDialog(owner) != DialogResult.OK)
-            {
-                cancelled = true;
-                return null;
-            }
-            dlg.Remember();
-            render = dlg.RenderSettings;
-            frames = dlg.FrameOptions;
-            scene = dlg.Scene;
+            cancelled = true;
+            return null;
         }
-        if (!interactive) return ModelFrames.Render(scene, render, frames);
-        var anim = ProgressDialog<DecodedAnimation>.Run(owner, UiStrings.Model_RenderingTitle, UiStrings.FormatModel_Rendering(name: name),
-            ModelFrames.Plan(scene, frames).Count, (progress, token) => ModelFrames.Render(scene, render, frames, progress, token));
+        var anim = RenderModel(owner, dlg);
         if (anim is null) cancelled = true;
         return anim;
+    }
+
+    /// <summary>가져오기 창에서 고른 설정을 다음 처음 값으로 남기고, 그 설정으로 모든 프레임을 그린다(진행 창 — 취소하면 null).</summary>
+    private static DecodedAnimation? RenderModel(Visual owner, ModelImportDialog dlg)
+    {
+        dlg.Remember();
+        var (scene, render, frames) = (dlg.Scene, dlg.RenderSettings, dlg.FrameOptions);
+        return ProgressDialog<DecodedAnimation>.Run(owner, UiStrings.Model_RenderingTitle, UiStrings.FormatModel_Rendering(name: Path.GetFileName(dlg.ModelPath)),
+            ModelFrames.Plan(scene, frames).Count, (progress, token) => ModelFrames.Render(scene, render, frames, progress, token));
     }
 }

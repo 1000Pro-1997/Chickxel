@@ -49,7 +49,7 @@ public sealed partial class ToolOptionsPanel
     private (StampSet? Set, PixelImage[] Shapes) _shapeTilesShown = (null, []);
 
     /// <summary>모양 펜 묶음을 만든다(생성자에서 한 번).</summary>
-    private Border BuildShapePen()
+    private GroupBox BuildShapePen()
     {
         _shapePenSets.ItemTemplate = new FuncDataTemplate<StampSet>((set, _) => set is null ? null : SetItem(set));
         _shapePenSets.Tip(UiStrings.ShapePen_SetTip);

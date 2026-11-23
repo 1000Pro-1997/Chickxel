@@ -7,14 +7,14 @@ namespace Chickxel.App;
 // 도구 쓰는 법은 위 막대 안내에, 칸 격자·층 보기·타일 움직임 같은 보기는 위 막대에 있다.
 public sealed partial class ToolOptionsPanel
 {
-    private Border _tileBox = null!, _tileFloorBox = null!;
+    private GroupBox _tileBox = null!, _tileFloorBox = null!;
     private TilePickCard _tilePick = null!;
     private TileFloorList _tileFloors = null!;
     private ToggleButton _tileFlipX = null!, _tileFlipY = null!, _tileRotate = null!;
     private CheckBox _tileRandom = null!;
     private Control _tileTransformRow = null!, _tileRandomRow = null!;
 
-    private Border BuildTileOptions()
+    private GroupBox BuildTileOptions()
     {
         _tileFlipX = TextToggle(VectorIcon.FlipLeftRight, UiStrings.TileOptions_FlipXTip, _ => _ctx.TileTransform ^= TileTransform.FlipX);
         _tileFlipY = TextToggle(VectorIcon.FlipUpDown, UiStrings.TileOptions_FlipYTip, _ => _ctx.TileTransform ^= TileTransform.FlipY);

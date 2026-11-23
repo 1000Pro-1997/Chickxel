@@ -756,7 +756,7 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
     };
 
     /// <summary>공식 효과 <paramref name="officialId"/>(공식이 아니면 null)를 설명하는 "기본 효과 목록" 표 줄. 모르는 ID면 null.</summary>
-    private static HelpTarget? OfficialHelpTarget(string? officialId)
+    internal static HelpTarget? OfficialHelpTarget(string? officialId)
         => officialId is not null && OfficialGuideRows.TryGetValue(officialId, out var row) ? new HelpTarget("screen-effect-list", Anchor: row) : null;
 
     /// <summary>

@@ -10689,4 +10689,17 @@ Enter나 다른 도구·레이어·프레임으로 바꾸면 기본색(오른쪽
   <data name="LineArt_Done" xml:space="preserve"><value>선 정리: 픽셀 {pixels}개를 바꿨습니다.</value></data>
   <data name="LineArt_DoneFrames" xml:space="preserve"><value>선 정리: 셀 {cels}개를 바꿨습니다.</value></data>
   <data name="LineArt_NoChange" xml:space="preserve"><value>선 정리: 바뀐 것이 없습니다.</value></data>
+  <data name="EffectList_Title" xml:space="preserve"><value>효과</value><comment>맨 왼쪽 칸(파일 브라우저 자리)에 여는 효과 목록 패널의 제목.</comment></data>
+  <data name="EffectList_ToolbarTip" xml:space="preserve"><value>효과 목록 보이기/숨기기: 맨 왼쪽 칸(파일 브라우저를 켰으면 그 아래)에 효과 목록을 열고, 효과를 타임라인 칸으로 끌어 넣습니다</value></data>
+  <data name="EffectList_Hint" xml:space="preserve"><value>타임라인 칸으로 끌어 넣기</value><comment>효과 목록 패널 위 한 줄 안내.</comment></data>
+  <data name="EffectList_Help" xml:space="preserve"><value>효과를 타임라인의 칸(레이어 × 프레임)으로 끌어 놓으면 효과 창을 띄우지 않고 기본 설정으로 그 레이어에 넣습니다. 고른 칸 묶음 안에 놓으면 그 프레임 범위에, 두 번 누르면 지금 칸에 넣습니다. 넣은 효과는 레이어 아래 효과 줄에 상자로 보입니다: 상자 끝을 끌어 범위를 바꾸고, 오른쪽 끝을 마지막 프레임 너머로 끌면 마지막 프레임과 링크된 프레임이 그만큼 늘어납니다. 설정은 상자를 두 번 눌러 효과 창에서 고칩니다.</value></data>
+  <data name="EffectList_Added" xml:space="preserve"><value>효과 추가: {0} → {1}, {2} · 효과 줄 상자 끝을 끌어 범위를 바꿉니다</value><comment>{0} 효과 이름, {1} 레이어 이름, {2} "프레임 3"·"프레임 2–5"·"모든 프레임".</comment></data>
+  <data name="EffectList_Extended" xml:space="preserve"><value>효과 범위 늘림: 마지막 프레임과 링크된 프레임 {1}개를 더했습니다(모두 {0}프레임)</value><comment>{0} 늘린 뒤 프레임 수, {1} 더한 프레임 수.</comment></data>
+  <data name="EffectList_MoreDownloads" xml:space="preserve"><value>추가 다운로드</value><comment>효과 목록 패널 맨 아래 단추: 홈페이지 상점을 브라우저로 엶.</comment></data>
+  <data name="EffectList_MoreDownloadsTip" xml:space="preserve"><value>홈페이지 상점({0})을 브라우저로 열어 다른 사람이 만든 효과를 받습니다.</value><comment>{0} 상점 주소.</comment></data>
+  <data name="EffectList_MakerTip" xml:space="preserve"><value>효과 만들기 창을 열어 새 효과를 만들거나 내 효과를 고칩니다.</value><comment>효과 목록 패널 맨 아래 오른쪽 단추.</comment></data>
+  <data name="Model_OpenModel" xml:space="preserve"><value>모델 열기…</value><comment>3D 모델 가져오기 창: 모델 파일 고르기(열려 있으면 바꾸기).</comment></data>
+  <data name="Model_OpenModelTip" xml:space="preserve"><value>3D 모델 파일(glTF·GLB·OBJ·FBX)을 골라 엽니다. 이미 연 모델이 있으면 설정은 그대로 두고 모델만 바꿉니다. 창에 파일을 끌어 놓아도 됩니다.</value></data>
+  <data name="Model_DropHint" xml:space="preserve"><value>3D 모델 파일(glTF·GLB·OBJ·FBX)을 여기로 끌어 놓거나 '모델 열기…'를 누릅니다</value></data>
+  <data name="Model_NoModel" xml:space="preserve"><value>아직 모델을 열지 않았습니다.</value></data>
 </root>

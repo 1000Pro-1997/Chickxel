@@ -33,7 +33,7 @@ public sealed class AnimationExportPart
     private readonly NumericUpDown _scale, _plays;
     private readonly ColorField _color;
     private readonly GifTimingField _timing;
-    private readonly Border _timingGroup, _loopGroup;
+    private readonly GroupBox _timingGroup, _loopGroup;
     private readonly Preview _preview;
     private readonly TextBlock _info, _result;
     private readonly DispatcherTimer _timer = new();
@@ -88,7 +88,7 @@ public sealed class AnimationExportPart
         _result = new TextBlock { Foreground = AppTheme.AccentBrush, Margin = new Thickness(2, 2, 2, 0), TextWrapping = TextWrapping.Wrap, IsVisible = false };
 
         // 대상 도움말(F1): 묶음마다 설정 목록의 그 항목(①~⑤), 태그 목록 ⑧ 그림, 미리보기 ⑥·정보 ⑦ 문단. 묶음 상자는 빈 곳도 눌리게 투명 배경을 준다.
-        static Border Section(string title, Control content, string? anchor)
+        static GroupBox Section(string title, Control content, string? anchor)
         {
             var group = Ui.Group(title, content).HelpAt(GuidePage, anchor: anchor);
             group.Background = Brushes.Transparent;

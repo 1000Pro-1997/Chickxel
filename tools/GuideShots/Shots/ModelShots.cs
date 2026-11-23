@@ -86,7 +86,7 @@ internal static class ModelShots
     private static void OpenImport(ShotKit k, MainForm m, string path, Action<Window> withWindow)
     {
         var scene = ModelLoader.Load(path);
-        k.Dialog(() => new ModelImportDialog(Path.GetFileName(path), scene, Path.GetDirectoryName(path)).ShowDialog(m), w =>
+        k.Dialog(() => new ModelImportDialog(path, scene).ShowDialog(m), w =>
         {
             WaitPreview();
             withWindow(w);

@@ -11,7 +11,7 @@ public sealed partial class ToolOptionsPanel
     private Control _curvePenToleranceRow = null!, _curvePenCornerAngleRow = null!;
 
     /// <summary>곡선 펜 묶음을 만든다(생성자에서 한 번).</summary>
-    private Border BuildCurvePen()
+    private GroupBox BuildCurvePen()
     {
         // 순서 = CurvePenMode 값
         _curvePenMode = Ui.Combo(150, UiStrings.CurvePen_ModePoints, UiStrings.CurvePen_ModeFreehand);

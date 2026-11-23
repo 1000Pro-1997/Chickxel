@@ -1147,4 +1147,5 @@
   <data name="Tool_ShapePen_Hint" xml:space="preserve"><value>고른 모양을 누른 곳에 찍기(끌면 간격마다, 세트·순서는 도구 설정) · 오른쪽: 물들이기면 보조색(오른쪽 버튼 = 지우개면 모양대로 지움) · Alt+클릭: 색 집기</value></data>
   <data name="Tool_CurvePen_Name" xml:space="preserve"><value>곡선 펜</value><comment>도구 이름: 고정점과 손잡이로 만든 베지어 곡선을 깨끗한 1px 선으로 칠하는 펜</comment></data>
   <data name="Tool_CurvePen_Hint" xml:space="preserve"><value>점 찍기: 누르기 = 모서리 점, 끌기 = 매끈한 점 · 손으로 그리기: 끈 획을 곡선으로 맞춤 · 점·손잡이를 끌어 고치기 · Enter = 확정, Esc = 취소 · Alt+클릭: 색 집기(고정점 위면 모서리 바꾸기)</value><comment>곡선 펜 상태 줄 안내</comment></data>
+  <data name="Menu_File_OpenModel" xml:space="preserve"><value>3D 모델 열기…</value><comment>파일 메뉴: 모델 없이 3D 모델 가져오기 창을 엶(끌어 놓기·모델 열기로 고름)</comment></data>
 </root>

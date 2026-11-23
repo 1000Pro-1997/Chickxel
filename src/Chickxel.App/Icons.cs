@@ -45,6 +45,9 @@ public static class Icons
     /// <summary>파일 브라우저 열고 닫기 아이콘.</summary>
     public static Bitmap Folder => Load("folder");
 
+    /// <summary>효과 목록 패널 열고 닫기 아이콘(큰 반짝임과 작은 반짝임 둘).</summary>
+    public static Bitmap Effects => Load("effects");
+
     /// <summary>AI 채팅(Claude·Codex) 단추 아이콘(주황색 별, 16×16).</summary>
     public static Bitmap Claude => Load("claude");
 

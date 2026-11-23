@@ -28,6 +28,8 @@ public sealed class AppSettings
     public int WindowHeight { get; set; } = 900;
     public bool Maximized { get; set; }
     public bool FilesVisible { get; set; } = true;
+    /// <summary>왼쪽 칸의 효과 목록(도구 막대 효과 단추)을 보이는지 — 파일 브라우저와 함께 켜면 위아래로 나눔.</summary>
+    public bool EffectListVisible { get; set; }
     public int LeftWidth { get; set; } = 230;
     public int PaletteWidth { get; set; } = 214;
     public int RightWidth { get; set; } = 300;
@@ -485,7 +487,7 @@ public sealed class AppSettings
     private static readonly HashSet<string> KeptOnReset =
     [
         nameof(RecentFolders), nameof(RecentFiles), nameof(LastFolder), nameof(OpenTabs),
-        nameof(WindowX), nameof(WindowY), nameof(WindowWidth), nameof(WindowHeight), nameof(Maximized), nameof(FilesVisible),
+        nameof(WindowX), nameof(WindowY), nameof(WindowWidth), nameof(WindowHeight), nameof(Maximized), nameof(FilesVisible), nameof(EffectListVisible),
         nameof(LeftWidth), nameof(PaletteWidth), nameof(RightWidth), nameof(BottomHeight), nameof(BrowserTreeHeight), nameof(PreviewHeight),
         nameof(TimelineNameWidth), nameof(Zoom),
         nameof(ChatX), nameof(ChatY), nameof(ChatWidth), nameof(ChatHeight), nameof(ChatOpen),

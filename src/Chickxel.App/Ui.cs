@@ -288,18 +288,15 @@ public static class Ui
         return f;
     }
 
-    /// <summary>제목 줄이 있는 묶음 상자.</summary>
-    public static Border Group(string title, Control content)
+    /// <summary>제목이 테두리 윗변에 걸린 묶음 상자(<see cref="GroupBox"/> — 윗변은 제목 줄 가운데를 지나고 제목 줄 항목 자리에서 끊김).</summary>
+    public static GroupBox Group(string title, Control content)
     {
         var stack = new StackPanel { Spacing = 2 };
         stack.Children.Add(new TextBlock { Text = title, FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush, Margin = new Thickness(2, 0, 0, 2) });
         stack.Children.Add(content);
-        return new Border
+        return new GroupBox
         {
-            BorderBrush = AppTheme.BorderBrush,
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(3),
-            Padding = new Thickness(6, 4, 6, 6),
+            Padding = new Thickness(6, 0, 6, 6),
             Margin = new Thickness(2, 4, 2, 2),
             Child = stack,
         };
@@ -309,7 +306,7 @@ public static class Ui
     /// <see cref="Group"/> 묶음 상자의 제목 줄 오른쪽에 접기 화살표를 달아, 제목 줄을 누르면 내용이 부드럽게 접히고 펴지게 한다(<see cref="FoldBody"/>).
     /// 접으면 화살표가 오른쪽을, 펴면 아래를 가리킨다. 같은 상자를 돌려준다.
     /// </summary>
-    public static Border Foldable(Border group)
+    public static GroupBox Foldable(GroupBox group)
     {
         var stack = (StackPanel)group.Child!;
         var head = stack.Children[0];

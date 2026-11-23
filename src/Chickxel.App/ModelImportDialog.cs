@@ -1,3 +1,4 @@
+using Avalonia.Platform.Storage;
 using Chickxel.App.Localization;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
@@ -10,6 +11,8 @@ namespace Chickxel.App;
 /// 오른쪽 위 프리셋(기본 제공 + 저장한 것 — 고르면 아래 값을 모두 바꿈, 지금 값 저장·지우기), 크기·보는 각도·보기 방식·빛·명암 단계·가장자리·텍스처,
 /// 픽셀 다듬기(반투명 없애기·색 수)·외곽선(겉·안쪽 겹침·각진 곳, 두께·색), 프레임(한 장 / 한 바퀴 돌려 보기 / 애니메이션).
 /// 고친 설정은 앱을 끌 때까지 다음 모델의 처음 값이 된다.
+/// 모델 없이 열 수도 있다(파일 > 3D 모델 열기…): 모델 파일을 창에 끌어 놓거나 '모델 열기…'로 고르면 읽어 들이고, 그 전에는 가져오기 단추가 꺼져 있다.
+/// 이미 모델이 있어도 다른 모델을 끌어 놓거나 골라 바꿀 수 있다(설정은 그대로).
 /// </summary>
 public sealed class ModelImportDialog : DialogBase
 {
@@ -20,12 +23,16 @@ public sealed class ModelImportDialog : DialogBase
     /// <summary>사용자 프리셋 파일(설정 파일과 같은 폴더).</summary>
     public static string PresetPath => Path.Combine(Path.GetDirectoryName(AppSettings.FilePath)!, ModelPresets.FileName);
 
-    /// <summary>그릴 장면(애니메이션을 불러오면 그 애니메이션을 붙인 새 장면으로 바뀜 — <see cref="Scene"/>).</summary>
-    private ModelScene _scene;
-    private readonly string _fileName;
-    /// <summary>애니메이션 불러오기의 처음 폴더(모델 파일의 폴더).</summary>
-    private readonly string? _folder;
+    /// <summary>그릴 장면(애니메이션을 불러오면 그 애니메이션을 붙인 새 장면으로 바뀜 — <see cref="Scene"/>). 아직 모델을 열지 않았으면 null.</summary>
+    private ModelScene? _scene;
+    private string _fileName;
+    /// <summary>애니메이션 불러오기·모델 열기 창의 처음 폴더(모델 파일의 폴더).</summary>
+    private string? _folder;
     private readonly TextBlock _summary;
+    /// <summary>모델을 읽을 때 난 주의 사항(없으면 숨김).</summary>
+    private readonly TextBlock _warnings;
+    /// <summary>미리보기 위 안내: 모델이 없으면 끌어 놓기·열기 안내, 끌어 오는 중이면 강조.</summary>
+    private readonly Border _dropHint;
     private readonly Button _importAnim;
     private readonly NumericUpDown _width, _height, _yaw, _pitch, _roll, _zoom, _fov, _lightYaw, _lightPitch, _ambient, _light, _steps, _turnFrames, _fps, _maxFrames;
     private readonly NumericUpDown _colors, _crease, _outlineWidth, _darken;
@@ -48,13 +55,15 @@ public sealed class ModelImportDialog : DialogBase
     /// <summary>가장자리 다듬기 단계(콤보 순서): 끔 = 1, 2×2, 4×4, 8×8 표본.</summary>
     private static readonly int[] SmoothLevels = [1, 2, 4, 8];
 
-    /// <param name="folder">애니메이션 불러오기 창의 처음 폴더(모델 파일의 폴더, 없으면 null).</param>
-    public ModelImportDialog(string fileName, ModelScene scene, string? folder = null) : base(UiStrings.Model_Title, UiStrings.Model_Import)
+    /// <param name="path">모델 파일 경로(<paramref name="scene"/>을 읽어 온 파일, 모델 없이 열면 null).</param>
+    /// <param name="scene">읽은 장면(null이면 모델 없이 열고 끌어 놓기·'모델 열기…'를 기다림).</param>
+    /// <param name="folder">모델이 없을 때 '모델 열기…' 창의 처음 폴더.</param>
+    public ModelImportDialog(string? path, ModelScene? scene, string? folder = null) : base(UiStrings.Model_Title, UiStrings.Model_Import)
     {
         _scene = scene;
-        _fileName = fileName;
-        _folder = folder;
-
+        ModelPath = path;
+        _fileName = path is null ? "" : Path.GetFileName(path);
+        _folder = path is null ? folder : Path.GetDirectoryName(path);
         _width = Ui.Num(1, 2048, 128, 70).Presets(Ui.SpriteSizes).Unit("px").RecentKey("model.width");
         _height = Ui.Num(1, 2048, 128, 70).Presets(Ui.SpriteSizes).Unit("px").RecentKey("model.height");
         _yaw = Ui.Num(-360, 360, 0, 70, decimals: 1, increment: 15).Unit("°");
@@ -99,6 +108,27 @@ public sealed class ModelImportDialog : DialogBase
         _deletePreset = Ui.Button(UiStrings.Model_PresetDelete, (_, _) => DeletePreset()).Tip(UiStrings.Model_PresetDeleteTip);
 
         _preview = new ModelPreview { Width = 664, Height = 330 };
+        _dropHint = new Border
+        {
+            Background = AppTheme.Brush(Color.FromArgb(200, 32, 32, 36)),
+            BorderThickness = new Thickness(2),
+            IsHitTestVisible = false,
+            Child = new StackPanel
+            {
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Spacing = 8,
+                Children =
+                {
+                    new IconView(VectorIcon.Cube, AppTheme.DimTextBrush) { Width = 40, Height = 40, HorizontalAlignment = HorizontalAlignment.Center },
+                    new TextBlock
+                    {
+                        Text = UiStrings.Model_DropHint, Foreground = AppTheme.TextBrush, TextWrapping = TextWrapping.Wrap,
+                        TextAlignment = TextAlignment.Center, MaxWidth = 420,
+                    },
+                },
+            },
+        };
         _preview.Rotated += (dx, dy) =>
         {
             _yaw.Value = Wrap((double)_yaw.NumValue() + dx * 0.5);
@@ -139,7 +169,7 @@ public sealed class ModelImportDialog : DialogBase
                         pixelLabel,
                     },
                 },
-                new Border { BorderBrush = AppTheme.BorderBrush, BorderThickness = new Thickness(1), Child = _preview },
+                new Border { BorderBrush = AppTheme.BorderBrush, BorderThickness = new Thickness(1), Child = new Panel { Children = { _preview, _dropHint } } },
                 previewHint,
                 Ui.Row(_play, _frame),
             },
@@ -179,19 +209,23 @@ public sealed class ModelImportDialog : DialogBase
         _summary = Dim(Ui.Label(""));
         _summary.TextWrapping = TextWrapping.Wrap;
         _summary.MaxWidth = 480;
-        UpdateSummary();
+        var openModel = Ui.Button(VectorIcon.FolderOpen, UiStrings.Model_OpenModel, (_, _) => Dispatcher.UIThread.Post(PickModel)).Tip(UiStrings.Model_OpenModelTip);
         _estimate = Ui.Label("");
         _estimate.FontWeight = FontWeight.SemiBold;
-        var settings = new StackPanel { Spacing = 6, Width = 490, Children = { _summary, grid, _estimate } };
-        if (scene.Warnings.Count > 0)
-        {
-            var warn = Ui.Label(UiStrings.FormatModel_Warnings(list: string.Join(" · ", scene.Warnings.Distinct())));
-            warn.Foreground = AppTheme.WarningBrush;
-            warn.TextWrapping = TextWrapping.Wrap;
-            warn.MaxWidth = 480;
-            settings.Children.Add(warn);
-        }
+        _warnings = Ui.Label("");
+        _warnings.Foreground = AppTheme.WarningBrush;
+        _warnings.TextWrapping = TextWrapping.Wrap;
+        _warnings.MaxWidth = 480;
+        var settings = new StackPanel { Spacing = 6, Width = 490, Children = { Ui.Row(openModel), _summary, grid, _estimate, _warnings } };
         Body.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Children = { previewBox, settings } });
+        ShowModelState();
+
+        // 모델 파일 끌어 놓기(창 어디든): 놓으면 그 모델을 읽어 바꾼다(여러 개면 첫 것)
+        DragDrop.SetAllowDrop(this, true);
+        AddHandler(DragDrop.DragEnterEvent, OnModelDragOver);
+        AddHandler(DragDrop.DragOverEvent, OnModelDragOver);
+        AddHandler(DragDrop.DragLeaveEvent, (_, _) => ShowDropTarget(false));
+        AddHandler(DragDrop.DropEvent, OnModelDrop);
 
         _debounce = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(40) };
         _debounce.Tick += (_, _) =>
@@ -285,11 +319,90 @@ public sealed class ModelImportDialog : DialogBase
         _lastFrames = FrameOptions;
     }
 
-    /// <summary>그릴 장면(불러온 애니메이션까지 붙은 것 — 가져오기는 이 장면으로 그린다).</summary>
-    public ModelScene Scene => _scene;
+    /// <summary>그릴 장면(불러온 애니메이션까지 붙은 것 — 가져오기는 이 장면으로 그린다). 모델을 연 뒤에만(가져오기 단추가 그때 켜짐).</summary>
+    public ModelScene Scene => _scene ?? throw new InvalidOperationException("no model");
 
-    private void UpdateSummary() => _summary.Text = UiStrings.FormatModel_Summary(name: _fileName, triangles: CountTriangles(_scene),
-        materials: _scene.Materials.Count, animations: _scene.Animations.Count);
+    /// <summary>지금 연 모델 파일(모델 없이 열고 아직 고르지 않았으면 null).</summary>
+    public string? ModelPath { get; private set; }
+
+    // ───────────── 모델 열기·끌어 놓기 ─────────────
+
+    /// <summary>끌어 온 것 중 첫 3D 모델 파일.</summary>
+    private static string? DroppedModel(DragEventArgs e)
+        => e.DataTransfer.TryGetFiles()?.Select(f => f.TryGetLocalPath()).OfType<string>().FirstOrDefault(ModelLoader.IsModelFile);
+
+    private void OnModelDragOver(object? sender, DragEventArgs e)
+    {
+        e.Handled = true;
+        bool ok = DroppedModel(e) is not null;
+        e.DragEffects = ok ? DragDropEffects.Copy : DragDropEffects.None;
+        ShowDropTarget(ok);
+    }
+
+    private void OnModelDrop(object? sender, DragEventArgs e)
+    {
+        e.Handled = true;
+        ShowDropTarget(false);
+        if (DroppedModel(e) is not { } path) return;
+        e.DragEffects = DragDropEffects.Copy;
+        // 끌어 놓기가 끝난 뒤에 읽는다(진행 창이 끌기 도중에 뜨지 않게)
+        Dispatcher.UIThread.Post(() => LoadModel(path));
+    }
+
+    /// <summary>끌어 오는 중이면 미리보기 위에 안내를 강조 테두리로 보인다(모델이 있으면 그 위에 잠깐 덮음).</summary>
+    private void ShowDropTarget(bool on)
+    {
+        _dropHint.BorderBrush = on ? AppTheme.AccentBrush : null;
+        _dropHint.IsVisible = on || _scene is null;
+    }
+
+    /// <summary>'모델 열기…': 3D 모델 파일을 골라 읽는다.</summary>
+    private void PickModel()
+    {
+        var paths = Ui.OpenFiles(this, UiStrings.Model_OpenModel, _folder,
+            new FileFilter(MainStrings.Open_FilterModels, MediaFormats.Patterns(MediaFormats.ModelExtensions)));
+        if (paths.Count > 0) LoadModel(paths[0]);
+    }
+
+    /// <summary>모델 파일을 읽어(진행 창) 지금 모델로 바꾼다 — 설정은 그대로, 애니메이션 목록·요약·주의 사항·미리보기만 새 모델로. 읽지 못하면 알리고 그대로.</summary>
+    private void LoadModel(string path)
+    {
+        var name = Path.GetFileName(path);
+        ModelScene? scene;
+        try
+        {
+            scene = ProgressDialog<ModelScene>.Run(this, UiStrings.Model_LoadingTitle, UiStrings.FormatModel_Loading(name: name), 0, (_, _) => ModelLoader.Load(path));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException)
+        {
+            Ui.Error(this, MainStrings.FormatMessage_358(full: path, message: ex.Message));
+            return;
+        }
+        if (scene is null) return;
+        StopPlay();
+        _scene = scene;
+        ModelPath = path;
+        _fileName = name;
+        _folder = Path.GetDirectoryName(path);
+        _posed = null;
+        FillClips(0);
+        ShowModelState();
+        Sync();
+    }
+
+    /// <summary>모델 유무에 맞춰 요약·주의 사항·끌어 놓기 안내·가져오기·애니메이션 불러오기 단추를 맞춘다.</summary>
+    private void ShowModelState()
+    {
+        UpdateSummary();
+        var warnings = _scene?.Warnings.Distinct().ToList() ?? [];
+        _warnings.Text = warnings.Count > 0 ? UiStrings.FormatModel_Warnings(list: string.Join(" · ", warnings)) : "";
+        _warnings.IsVisible = warnings.Count > 0;
+        ShowDropTarget(false);
+        OkButton.IsEnabled = _importAnim.IsEnabled = _scene is not null;
+    }
+
+    private void UpdateSummary() => _summary.Text = _scene is not { } scene ? UiStrings.Model_NoModel
+        : UiStrings.FormatModel_Summary(name: _fileName, triangles: CountTriangles(scene), materials: scene.Materials.Count, animations: scene.Animations.Count);
 
     /// <summary>애니메이션 목록을 지금 장면으로 다시 채우고 <paramref name="select"/>번을 고른다. 애니메이션이 있으면 프레임 방식에 '애니메이션'을 더한다.</summary>
     private void FillClips(int select)
@@ -297,18 +410,25 @@ public sealed class ModelImportDialog : DialogBase
         bool was = _syncing;
         _syncing = true;
         _clip.Items.Clear();
-        for (int i = 0; i < _scene.Animations.Count; i++)
+        int count = _scene?.Animations.Count ?? 0;
+        for (int i = 0; i < count; i++)
         {
-            var a = _scene.Animations[i];
+            var a = _scene!.Animations[i];
             var seconds = a.Duration.ToString("0.##");
             _clip.Items.Add(string.IsNullOrWhiteSpace(a.Name)
                 ? UiStrings.FormatModel_ClipUnnamed(number: i + 1, seconds: seconds)
                 : UiStrings.FormatModel_ClipNamed(name: a.Name, seconds: seconds));
         }
-        if (_scene.Animations.Count > 0)
+        if (count > 0)
         {
-            _clip.SelectedIndex = Math.Clamp(select, 0, _scene.Animations.Count - 1);
+            _clip.SelectedIndex = Math.Clamp(select, 0, count - 1);
             if (_mode.ItemCount < 3) _mode.Items.Add(UiStrings.Model_ModeAnimation);
+        }
+        else if (_mode.ItemCount >= 3)
+        {
+            // 애니메이션 없는 모델로 바꿈: 그 방식을 빼고(골라 두었으면 한 장으로)
+            if (_mode.SelectedIndex == (int)ModelFrameMode.Animation) _mode.SelectedIndex = (int)ModelFrameMode.Still;
+            _mode.Items.RemoveAt((int)ModelFrameMode.Animation);
         }
         _syncing = was;
     }
@@ -322,7 +442,7 @@ public sealed class ModelImportDialog : DialogBase
         var paths = Ui.OpenFiles(this, UiStrings.Model_ImportAnimation, _folder,
             new FileFilter(MainStrings.Open_FilterModels, MediaFormats.Patterns(MediaFormats.ModelExtensions)));
         if (paths.Count == 0) return;
-        var scene = _scene;
+        if (_scene is not { } scene) return;
         var notes = new List<string>();
         int added = 0, first = scene.Animations.Count;
         foreach (var path in paths)
@@ -390,7 +510,7 @@ public sealed class ModelImportDialog : DialogBase
         _outlineColorMode.SelectedIndex = r.OutlineColorMode == ModelOutlineColor.Darken ? 1 : 0;
         SetOutlineColor(r.OutlineColor);
         _darken.Value = Clamp(_darken, Math.Round(r.OutlineDarken * 100));
-        var mode = f.Mode == ModelFrameMode.Animation && _scene.Animations.Count == 0 ? ModelFrameMode.Still : f.Mode;
+        var mode = f.Mode == ModelFrameMode.Animation && (_scene?.Animations.Count ?? 0) == 0 ? ModelFrameMode.Still : f.Mode;
         _mode.SelectedIndex = (int)mode;
         _turnFrames.Value = Clamp(_turnFrames, f.TurntableFrames);
         _fps.Value = Clamp(_fps, f.Fps);
@@ -513,7 +633,7 @@ public sealed class ModelImportDialog : DialogBase
         _outlineColor.IsEnabled = outline && _outlineColorMode.SelectedIndex == 0;
         _darken.IsEnabled = outline && _outlineColorMode.SelectedIndex == 1;
         var o = FrameOptions;
-        var frames = ModelFrames.Plan(_scene, o);
+        IReadOnlyList<ModelFrame> frames = _scene is null ? [] : ModelFrames.Plan(_scene, o);
         _frame.Maximum = Math.Max(0, frames.Count - 1);
         if (_frame.Value > _frame.Maximum) _frame.Value = _frame.Maximum;
         _frame.IsEnabled = _play.IsEnabled = frames.Count > 1;
@@ -521,7 +641,7 @@ public sealed class ModelImportDialog : DialogBase
         _player.Interval = TimeSpan.FromMilliseconds(ModelFrames.DurationMs(o));
         var r = RenderSettings;
         _preview.SetOrientation(r);
-        _estimate.Text = UiStrings.FormatModel_Estimate(frames: frames.Count, width: r.Width, height: r.Height, ms: ModelFrames.DurationMs(o));
+        _estimate.Text = _scene is null ? "" : UiStrings.FormatModel_Estimate(frames: frames.Count, width: r.Width, height: r.Height, ms: ModelFrames.DurationMs(o));
         _syncing = false;
         Schedule();
     }
@@ -541,7 +661,7 @@ public sealed class ModelImportDialog : DialogBase
         var settings = RenderSettings;
         int index = (int)_frame.Value;
         var posed = _posed is { } p && p.Options == options ? p : ((ModelFrameOptions, IReadOnlyList<ModelFrame>, PosedMesh[], ModelBounds)?)null;
-        var scene = _scene;
+        if (_scene is not { } scene) return;
         Task.Run(() =>
         {
             try
