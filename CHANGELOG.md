@@ -9,6 +9,8 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 - Drag an effect onto a timeline cel to add it to that layer for that frame with default settings, without opening the effects dialog (inside a selected block of cels it takes that frame range). Double-click adds it to the current cel.
 - Drag the right edge of an effect box in the effect row past the last frame to add that many frames linked to the last frame and stretch the effect over them, in one undo step.
 - At the bottom of the list, **Get more** (blue) opens the website store in your browser and **Effect Maker** (green) next to it opens the Effect Maker.
+- A search box at the top of the list filters effects and presets as you type, by name, description or author.
+- Right-click an effect or preset and choose **Add to favorites** to pin it under **Favorites** at the top of its tab, marked with a star; favorites are remembered across restarts.
 
 ### Effect previews use the chick
 - Effect thumbnails in the effects dialog and the effect list now show the effect on its preview chick (the same chick as the store preview) instead of the current drawing.

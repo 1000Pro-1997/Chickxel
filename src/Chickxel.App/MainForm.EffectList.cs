@@ -26,7 +26,7 @@ public sealed partial class MainForm
     /// <summary>맨 왼쪽 칸(파일 브라우저·효과 목록을 위아래로 담음). 보이는 것은 <see cref="ArrangeLeftDock"/>가 정한다.</summary>
     private Grid BuildLeftDock()
     {
-        _effectList = new EffectListPanel(_timeline) { IsVisible = false };
+        _effectList = new EffectListPanel(_timeline, _settings) { IsVisible = false };
         _leftDockSplitter = Splitter(GridResizeDirection.Rows);
         _leftDockSplitter.IsVisible = false;
         _leftDock = new Grid { Background = AppTheme.PanelBrush };

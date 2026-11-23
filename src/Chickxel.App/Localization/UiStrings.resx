@@ -10694,7 +10694,14 @@ Enter나 다른 도구·레이어·프레임으로 바꾸면 기본색(오른쪽
   <data name="EffectList_Title" xml:space="preserve"><value>효과</value><comment>맨 왼쪽 칸(파일 브라우저 자리)에 여는 효과 목록 패널의 제목.</comment></data>
   <data name="EffectList_ToolbarTip" xml:space="preserve"><value>효과 목록 보이기/숨기기: 맨 왼쪽 칸(파일 브라우저를 켰으면 그 아래)에 효과 목록을 열고, 효과를 타임라인 칸으로 끌어 넣습니다</value></data>
   <data name="EffectList_Hint" xml:space="preserve"><value>타임라인 칸으로 끌어 넣기</value><comment>효과 목록 패널 위 한 줄 안내.</comment></data>
-  <data name="EffectList_Help" xml:space="preserve"><value>효과를 타임라인의 칸(레이어 × 프레임)으로 끌어 놓으면 효과 창을 띄우지 않고 기본 설정으로 그 레이어에 넣습니다. 고른 칸 묶음 안에 놓으면 그 프레임 범위에, 두 번 누르면 지금 칸에 넣습니다. 넣은 효과는 레이어 아래 효과 줄에 상자로 보입니다: 상자 끝을 끌어 범위를 바꾸고, 오른쪽 끝을 마지막 프레임 너머로 끌면 마지막 프레임과 링크된 프레임이 그만큼 늘어납니다. 설정은 상자를 두 번 눌러 효과 창에서 고칩니다.</value></data>
+  <data name="EffectList_Help" xml:space="preserve"><value>효과를 타임라인의 칸(레이어 × 프레임)으로 끌어 놓으면 효과 창을 띄우지 않고 기본 설정으로 그 레이어에 넣습니다. 고른 칸 묶음 안에 놓으면 그 프레임 범위에, 두 번 누르면 지금 칸에 넣습니다. 넣은 효과는 레이어 아래 효과 줄에 상자로 보입니다: 상자 끝을 끌어 범위를 바꾸고, 오른쪽 끝을 마지막 프레임 너머로 끌면 마지막 프레임과 링크된 프레임이 그만큼 늘어납니다. 설정은 상자를 두 번 눌러 효과 창에서 고칩니다. 위 검색 칸으로 이름·설명·만든 사람을 찾고, 효과를 우클릭해 즐겨찾기에 추가하면 목록 맨 위에 모아 보입니다.</value></data>
+  <data name="EffectList_Search" xml:space="preserve"><value>효과 검색</value><comment>효과 목록 패널 맨 위 검색 칸의 흐린 안내 글.</comment></data>
+  <data name="EffectList_SearchTip" xml:space="preserve"><value>이름·설명·만든 사람으로 효과와 프리셋을 거릅니다</value></data>
+  <data name="EffectList_NoMatch" xml:space="preserve"><value>"{0}"와 맞는 것이 없습니다</value><comment>{0} 검색어.</comment></data>
+  <data name="EffectList_Favorites" xml:space="preserve"><value>즐겨찾기</value><comment>효과 목록 패널 탭 맨 위, 즐겨찾기한 효과 묶음 머리.</comment></data>
+  <data name="EffectList_Others" xml:space="preserve"><value>나머지</value><comment>즐겨찾기 묶음 아래, 나머지 효과 묶음 머리.</comment></data>
+  <data name="EffectList_Favorite" xml:space="preserve"><value>즐겨찾기에 추가</value></data>
+  <data name="EffectList_Unfavorite" xml:space="preserve"><value>즐겨찾기에서 빼기</value></data>
   <data name="EffectList_Added" xml:space="preserve"><value>효과 추가: {0} → {1}, {2} · 효과 줄 상자 끝을 끌어 범위를 바꿉니다</value><comment>{0} 효과 이름, {1} 레이어 이름, {2} "프레임 3"·"프레임 2–5"·"모든 프레임".</comment></data>
   <data name="EffectList_Extended" xml:space="preserve"><value>효과 범위 늘림: 마지막 프레임과 링크된 프레임 {1}개를 더했습니다(모두 {0}프레임)</value><comment>{0} 늘린 뒤 프레임 수, {1} 더한 프레임 수.</comment></data>
   <data name="EffectList_MoreDownloads" xml:space="preserve"><value>추가 다운로드</value><comment>효과 목록 패널 맨 아래 단추: 홈페이지 상점을 브라우저로 엶.</comment></data>

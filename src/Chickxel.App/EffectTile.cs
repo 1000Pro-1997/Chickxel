@@ -29,6 +29,7 @@ internal sealed class EffectTile : Control, IDisposable
     public EffectTile(string name, IReadOnlyList<LayerEffect> effects, AssetEntry? entry = null, EffectRecipe? template = null)
     {
         Title = name;
+        Key = entry?.Id ?? name;
         Effects = effects;
         Entry = entry;
         Template = template;
@@ -75,6 +76,29 @@ internal sealed class EffectTile : Control, IDisposable
     /// <summary>넣을 레시피(에셋 항목의 <see cref="AssetEntry.EffectTemplate"/> — 스크립트 원문을 함께 복사함, 앱에 든 효과 종류 상자는 null).</summary>
     public EffectRecipe? Template { get; }
     public bool Animated => _frames.Length > 1;
+    /// <summary>즐겨찾기 열쇠: 에셋 상자는 에셋 ID, 앱에 든 효과는 <c>effect:</c> + 종류 ID(<see cref="EffectTileCatalog.Create"/>).</summary>
+    public string Key { get; init; }
+
+    /// <summary>즐겨찾기한 상자(한 줄 모양이면 이름 앞에 별).</summary>
+    public bool Favorite
+    {
+        get => _favorite;
+        set
+        {
+            if (_favorite == value) return;
+            _favorite = value;
+            InvalidateVisual();
+        }
+    }
+    private bool _favorite;
+
+    /// <summary>검색어 <paramref name="query"/>가 이름·설명·만든 사람·상점 이름 어딘가에 드는지(대소문자 무시, 빈 검색어는 늘 맞음).</summary>
+    public bool Matches(string query)
+    {
+        if (query.Length == 0) return true;
+        bool In(string? text) => text?.Contains(query, StringComparison.CurrentCultureIgnoreCase) == true;
+        return In(Title) || In(Description) || In(Entry?.Author?.Name) || In(Entry?.Store?.DisplayName);
+    }
     /// <summary>한 줄 모양(왼쪽 작은 미리보기, 오른쪽 이름·만든 사람) — 좁은 효과 목록 패널.</summary>
     public bool Compact { get; init; }
 
@@ -179,6 +203,13 @@ internal sealed class EffectTile : Control, IDisposable
         double side = b.Height - 8;
         DrawThumb(g, new Rect(4, 4, side, side));
         double x = side + 10;
+        if (_favorite)
+        {
+            // 이름 줄 앞 별(에셋이면 이름 줄, 아니면 가운데 줄)
+            double starY = Entry is not null ? b.Height / 2 - 16 : (b.Height - 14) / 2;
+            VectorIcons.Draw(g, VectorIcon.Star, new Rect(x, starY, 14, 14), 12, AppTheme.FavoriteBrush);
+            x += 17;
+        }
         if (Entry is { } entry)
         {
             AppTheme.DrawTextIn(g, Title, new Rect(x, b.Height / 2 - 18, Math.Max(1, right - x), 18), AppTheme.TextBrush, AppTheme.FontSize);
@@ -221,7 +252,7 @@ internal static class EffectTileCatalog
         foreach (var definition in EffectRegistry.Selectable)
         {
             var ui = LayerEffectsDialog.UiOf(definition);
-            var tile = new EffectTile(ui.Name, [definition.Create()]) { Description = ui.Description, Compact = compact };
+            var tile = new EffectTile(ui.Name, [definition.Create()]) { Description = ui.Description, Compact = compact, Key = "effect:" + definition.TypeId };
             ToolTip.SetTip(tile, $"{ui.Name}\n{ui.Description}" + MotionNote(tile, motionTip));
             tile.HelpAt("screen-effect-list", anchor: definition.TypeId == TextDefinition.Id ? "Text" : null);
             effects.Add(tile);

@@ -4979,7 +4979,14 @@ Enter, or switching tool, layer or frame, paints it in the primary color (second
   <data name="EffectList_Title" xml:space="preserve"><value>Effects</value></data>
   <data name="EffectList_ToolbarTip" xml:space="preserve"><value>Show/hide the effect list: opens it in the left column (below the file browser when that is open) so you can drag effects onto timeline cels</value></data>
   <data name="EffectList_Hint" xml:space="preserve"><value>Drag onto a timeline cel</value></data>
-  <data name="EffectList_Help" xml:space="preserve"><value>Drag an effect onto a timeline cel (layer × frame) to add it to that layer with default settings, without opening the effects dialog. Dropping inside a selected block of cels uses that frame range; double-clicking adds it to the current cel. Added effects show as boxes in the effect rows under the layer: drag a box edge to change its range, and drag the right edge past the last frame to add that many frames linked to the last frame. Double-click a box to change its settings in the effects dialog.</value></data>
+  <data name="EffectList_Help" xml:space="preserve"><value>Drag an effect onto a timeline cel (layer × frame) to add it to that layer with default settings, without opening the effects dialog. Dropping inside a selected block of cels uses that frame range; double-clicking adds it to the current cel. Added effects show as boxes in the effect rows under the layer: drag a box edge to change its range, and drag the right edge past the last frame to add that many frames linked to the last frame. Double-click a box to change its settings in the effects dialog. Use the search box at the top to find effects by name, description or author, and right-click an effect to add it to Favorites at the top of the list.</value></data>
+  <data name="EffectList_Search" xml:space="preserve"><value>Search effects</value></data>
+  <data name="EffectList_SearchTip" xml:space="preserve"><value>Filter effects and presets by name, description or author</value></data>
+  <data name="EffectList_NoMatch" xml:space="preserve"><value>Nothing matches "{0}"</value></data>
+  <data name="EffectList_Favorites" xml:space="preserve"><value>Favorites</value></data>
+  <data name="EffectList_Others" xml:space="preserve"><value>Others</value></data>
+  <data name="EffectList_Favorite" xml:space="preserve"><value>Add to favorites</value></data>
+  <data name="EffectList_Unfavorite" xml:space="preserve"><value>Remove from favorites</value></data>
   <data name="EffectList_Added" xml:space="preserve"><value>Effect added: {0} → {1}, {2} · Drag the edges of its box in the effect row to change the range</value></data>
   <data name="EffectList_Extended" xml:space="preserve"><value>Effect range extended: added {1} frame(s) linked to the last frame ({0} frames total)</value></data>
   <data name="EffectList_MoreDownloads" xml:space="preserve"><value>Get more</value></data>
