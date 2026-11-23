@@ -10548,8 +10548,10 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="Model_ZoomTip" xml:space="preserve"><value>100% = 모델이 그림의 짧은 변에 꼭 맞음(애니메이션·돌려 보기는 모든 프레임을 합친 크기). 미리보기에서 휠로도 바꿉니다.</value></data>
   <data name="Model_Fit" xml:space="preserve"><value>맞춤</value></data>
   <data name="Model_Light" xml:space="preserve"><value>빛 방향</value></data>
-  <data name="Model_LightBack" xml:space="preserve"><value>뒤쪽 빛</value></data>
-  <data name="Model_LightBackTip" xml:space="preserve"><value>빛 방향을 카메라의 뒤쪽 반구로 옮깁니다. 미리보기의 해를 두 번 눌러도 앞·뒤를 바꿀 수 있습니다.</value></data>
+  <data name="Model_LightDepth" xml:space="preserve"><value>빛 앞뒤</value><comment>3D 모델 가져오기: 빛이 정면(카메라 쪽)에서 뒤까지 몇 도 돌아가 있는지 고르는 막대 줄.</comment></data>
+  <data name="Model_LightDepthTip" xml:space="preserve"><value>빛을 앞(카메라 쪽 정면, 0°)에서 옆(90°), 뒤(정뒤, 180°)로 옮깁니다. 해 손잡이가 가리키는 화면 방향은 그대로입니다.</value></data>
+  <data name="Model_LightFront" xml:space="preserve"><value>앞</value></data>
+  <data name="Model_LightBehind" xml:space="preserve"><value>뒤</value></data>
   <data name="Model_Brightness" xml:space="preserve"><value>밝기</value></data>
   <data name="Model_Ambient" xml:space="preserve"><value>주변광</value></data>
   <data name="Model_LightStrength" xml:space="preserve"><value>빛 세기</value></data>
@@ -10571,7 +10573,7 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="Model_Fps" xml:space="preserve"><value>초당 프레임</value></data>
   <data name="Model_MaxFrames" xml:space="preserve"><value>최대</value></data>
   <data name="Model_PlayTip" xml:space="preserve"><value>미리보기 재생/멈춤</value></data>
-  <data name="Model_PreviewHint" xml:space="preserve"><value>모델을 끌어 돌리기 · 고리를 끌어 각도/화면 회전 · 축을 눌러 정면 보기 · 해를 끌어 빛 이동(두 번 눌러 앞/뒤) · 휠로 확대</value></data>
+  <data name="Model_PreviewHint" xml:space="preserve"><value>모델을 끌어 돌리기 · 고리를 끌어 각도/화면 회전 · 축을 눌러 정면 보기 · 해를 끌어 빛 방향(앞뒤는 빛 앞뒤 막대) · 휠로 확대</value></data>
   <data name="Model_Original" xml:space="preserve"><value>원본 모델</value></data>
   <data name="Model_PixelResult" xml:space="preserve"><value>픽셀 결과</value></data>
   <data name="Model_Summary" xml:space="preserve"><value>{name}: 삼각형 {triangles}개 · 재질 {materials}개 · 애니메이션 {animations}개</value></data>

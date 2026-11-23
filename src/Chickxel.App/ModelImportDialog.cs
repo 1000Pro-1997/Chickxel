@@ -37,7 +37,14 @@ public sealed class ModelImportDialog : DialogBase
     private readonly NumericUpDown _width, _height, _yaw, _pitch, _roll, _zoom, _fov, _lightYaw, _lightPitch, _ambient, _light, _steps, _turnFrames, _fps, _maxFrames;
     private readonly NumericUpDown _colors, _crease, _outlineWidth, _darken;
     private readonly ComboBox _projection, _smooth, _mode, _clip, _outlineColorMode, _preset;
-    private readonly CheckBox _textures, _hardAlpha, _outer, _outside, _inner, _creaseOn, _lightBack;
+    private readonly CheckBox _textures, _hardAlpha, _outer, _outside, _inner, _creaseOn;
+    /// <summary>빛 앞뒤(정면에서 잰 각도: 0° = 카메라 쪽 정면, 90° = 옆, 180° = 뒤) — 빛 가로·세로 값과 뒤쪽 여부를 함께 바꾼다.</summary>
+    private readonly Slider _lightDepth;
+    private readonly TextBlock _lightDepthValue;
+    /// <summary>빛이 카메라 뒤쪽 반구에 있는지(<see cref="ModelRenderSettings.LightBack"/>).</summary>
+    private bool _lightBehind;
+    /// <summary>앞뒤를 바꿀 때 지킬 화면 안 빛 방향(라디안, 오른쪽 = 0 · 위 = π/2). 빛이 정면·정뒤라 방향이 없을 때 쓰려고 마지막 값을 둔다.</summary>
+    private double _lightTurn = Math.PI / 2;
     private readonly Button _outlineColor, _deletePreset;
     private Color32 _outlineColorValue;
     private List<ModelPreset> _userPresets = [];
@@ -74,7 +81,10 @@ public sealed class ModelImportDialog : DialogBase
         _zoom = Ui.Num(10, 1000, 100, 70, increment: 10).Unit("%").Tip(UiStrings.Model_ZoomTip);
         _lightYaw = Ui.Num(-90, 90, 0, 70, increment: 15).Unit("°");
         _lightPitch = Ui.Num(-90, 90, 0, 70, increment: 15).Unit("°");
-        _lightBack = Ui.Check(UiStrings.Model_LightBack).Tip(UiStrings.Model_LightBackTip);
+        _lightDepth = new Slider { Minimum = 0, Maximum = 180, Width = 180, VerticalAlignment = VerticalAlignment.Center };
+        _lightDepth.Tip(UiStrings.Model_LightDepthTip);
+        _lightDepthValue = Ui.Label("");
+        _lightDepthValue.MinWidth = 40;
         _ambient = Ui.Num(0, 100, 40, 60, increment: 5).Unit("%");
         _light = Ui.Num(0, 200, 80, 60, increment: 10).Unit("%");
         _steps = Ui.Num(0, 16, 0, 60).Tip(UiStrings.Model_StepsTip);
@@ -129,9 +139,10 @@ public sealed class ModelImportDialog : DialogBase
                 },
             },
         };
+        // 끄는 쪽으로 모델이 돈다: 오른쪽으로 끌면 모델 앞이 오른쪽으로(카메라 가로 각도는 줄어듦), 아래로 끌면 앞이 아래로(위에서 보게)
         _preview.Rotated += (dx, dy) =>
         {
-            _yaw.Value = Wrap((double)_yaw.NumValue() + dx * 0.5);
+            _yaw.Value = Wrap((double)_yaw.NumValue() - dx * 0.5);
             _pitch.Value = (decimal)Math.Clamp((double)_pitch.NumValue() + dy * 0.5, -90, 90);
         };
         _preview.Rolled += degrees => _roll.Value = Wrap((double)_roll.NumValue() + degrees);
@@ -146,7 +157,6 @@ public sealed class ModelImportDialog : DialogBase
             _lightYaw.Value = (decimal)Math.Round(yaw, 1);
             _lightPitch.Value = (decimal)Math.Round(pitch, 1);
         };
-        _preview.LightFlipped += () => _lightBack.IsChecked = !_lightBack.On();
         _preview.Zoomed += factor => _zoom.Value = Math.Clamp(Math.Round(_zoom.NumValue() * (decimal)factor), _zoom.Minimum, _zoom.Maximum);
         _frame = new Slider { Minimum = 0, Maximum = 0, Width = 300, IsSnapToTickEnabled = true, TickFrequency = 1, VerticalAlignment = VerticalAlignment.Center };
         _play = Ui.IconButton(VectorIcon.Play, UiStrings.Model_PlayTip, (_, _) => TogglePlay());
@@ -194,7 +204,8 @@ public sealed class ModelImportDialog : DialogBase
         AddRow(UiStrings.Model_Angle, Ui.Row(Ui.Label(UiStrings.Model_Yaw), _yaw, Ui.Label(UiStrings.Model_Pitch), _pitch, Ui.Label(UiStrings.Model_Roll), _roll));
         AddRow(UiStrings.Model_Projection, Ui.Row(_projection, Ui.Label(UiStrings.Model_Fov), _fov));
         AddRow(UiStrings.Model_Zoom, Ui.Row(_zoom, Ui.Button(UiStrings.Model_Fit, (_, _) => _zoom.Value = 100)));
-        AddRow(UiStrings.Model_Light, Ui.Row(Ui.Label(UiStrings.Model_Yaw), _lightYaw, Ui.Label(UiStrings.Model_Pitch), _lightPitch, _lightBack));
+        AddRow(UiStrings.Model_Light, Ui.Row(Ui.Label(UiStrings.Model_Yaw), _lightYaw, Ui.Label(UiStrings.Model_Pitch), _lightPitch));
+        AddRow(UiStrings.Model_LightDepth, Ui.Row(Ui.Label(UiStrings.Model_LightFront), _lightDepth, Ui.Label(UiStrings.Model_LightBehind), _lightDepthValue));
         AddRow(UiStrings.Model_Brightness, Ui.Row(Ui.Label(UiStrings.Model_Ambient), _ambient, Ui.Label(UiStrings.Model_LightStrength), _light));
         AddRow(UiStrings.Model_Steps, _steps);
         AddRow(UiStrings.Model_Smooth, Ui.Row(_smooth, _textures));
@@ -257,7 +268,11 @@ public sealed class ModelImportDialog : DialogBase
                      _colors, _crease, _outlineWidth, _darken })
             n.ValueChanged += (_, _) => Sync();
         foreach (var c in new[] { _projection, _smooth, _mode, _clip, _outlineColorMode }) c.SelectionChanged += (_, _) => Sync();
-        foreach (var c in new[] { _textures, _hardAlpha, _outer, _outside, _inner, _creaseOn, _lightBack }) c.IsCheckedChanged += (_, _) => Sync();
+        foreach (var c in new[] { _textures, _hardAlpha, _outer, _outside, _inner, _creaseOn }) c.IsCheckedChanged += (_, _) => Sync();
+        _lightDepth.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == RangeBase.ValueProperty && !_syncing) SetLightDepth(_lightDepth.Value);
+        };
         _frame.PropertyChanged += (_, e) =>
         {
             if (e.Property == RangeBase.ValueProperty) Schedule();
@@ -284,7 +299,7 @@ public sealed class ModelImportDialog : DialogBase
         Zoom = (float)_zoom.NumValue() / 100f,
         LightYaw = (float)_lightYaw.NumValue(),
         LightPitch = (float)_lightPitch.NumValue(),
-        LightBack = _lightBack.On(),
+        LightBack = _lightBehind,
         Ambient = (float)_ambient.NumValue() / 100f,
         LightStrength = (float)_light.NumValue() / 100f,
         ShadeSteps = (int)_steps.NumValue() == 1 ? 0 : (int)_steps.NumValue(),
@@ -493,7 +508,7 @@ public sealed class ModelImportDialog : DialogBase
         if (lightYaw < -90) { lightYaw = -180 - lightYaw; lightBack = !lightBack; }
         _lightYaw.Value = Clamp(_lightYaw, lightYaw);
         _lightPitch.Value = Clamp(_lightPitch, r.LightPitch);
-        _lightBack.IsChecked = lightBack;
+        _lightBehind = lightBack;
         _ambient.Value = Clamp(_ambient, Math.Round(r.Ambient * 100));
         _light.Value = Clamp(_light, Math.Round(r.LightStrength * 100));
         _steps.Value = Clamp(_steps, r.ShadeSteps);
@@ -641,9 +656,38 @@ public sealed class ModelImportDialog : DialogBase
         _player.Interval = TimeSpan.FromMilliseconds(ModelFrames.DurationMs(o));
         var r = RenderSettings;
         _preview.SetOrientation(r);
+        _lightDepth.Value = LightDepthOf(r);
+        _lightDepthValue.Text = $"{_lightDepth.Value:0}°";
         _estimate.Text = _scene is null ? "" : UiStrings.FormatModel_Estimate(frames: frames.Count, width: r.Width, height: r.Height, ms: ModelFrames.DurationMs(o));
         _syncing = false;
         Schedule();
+    }
+
+    /// <summary>빛이 정면(카메라 쪽)에서 몇 도 돌아가 있는지: 0° = 정면, 90° = 옆, 180° = 정뒤(빛 가로·세로·뒤쪽 여부로 잼).</summary>
+    private static double LightDepthOf(ModelRenderSettings r)
+    {
+        double ly = r.LightYaw * Math.PI / 180, lp = r.LightPitch * Math.PI / 180;
+        double z = (r.LightBack ? -1 : 1) * Math.Cos(ly) * Math.Cos(lp);
+        return Math.Acos(Math.Clamp(z, -1, 1)) * 180 / Math.PI;
+    }
+
+    /// <summary>
+    /// 앞뒤 막대: 빛을 정면에서 <paramref name="degrees"/>도(0 = 정면, 180 = 정뒤)로 옮긴다 — 화면 안 방향(해 손잡이가 가리키는 쪽)은 그대로 두고
+    /// 빛 가로·세로 값과 뒤쪽 여부를 다시 맞춘다.
+    /// </summary>
+    private void SetLightDepth(double degrees)
+    {
+        double ly = (double)_lightYaw.NumValue() * Math.PI / 180, lp = (double)_lightPitch.NumValue() * Math.PI / 180;
+        double x = Math.Sin(ly) * Math.Cos(lp), y = Math.Sin(lp);
+        if (x * x + y * y > 1e-6) _lightTurn = Math.Atan2(y, x);
+        double v = degrees * Math.PI / 180, ring = Math.Sin(v), z = Math.Cos(v);
+        double nx = ring * Math.Cos(_lightTurn), ny = ring * Math.Sin(_lightTurn);
+        _syncing = true;
+        _lightYaw.Value = Math.Clamp((decimal)Math.Round(Math.Atan2(nx, Math.Abs(z)) * 180 / Math.PI, 1), _lightYaw.Minimum, _lightYaw.Maximum);
+        _lightPitch.Value = Math.Clamp((decimal)Math.Round(Math.Asin(Math.Clamp(ny, -1, 1)) * 180 / Math.PI, 1), _lightPitch.Minimum, _lightPitch.Maximum);
+        _lightBehind = z < 0;
+        _syncing = false;
+        Sync();
     }
 
     private void Schedule()
@@ -734,7 +778,10 @@ public sealed class ModelImportDialog : DialogBase
         return label;
     }
 
-    /// <summary>두 결과가 같은 프레임을 보며, 왼쪽에 카메라 고리·축·빛 핸들을 겹쳐 그린다.</summary>
+    /// <summary>
+    /// 두 결과가 같은 프레임을 보며, 왼쪽에 카메라 고리·축·빛 핸들을 겹쳐 그린다. X·Y 고리는 모델 공간의 원(X축·Y축 둘레)을 지금 보는 방향으로 비춰 그려
+    /// 모델을 돌리면 함께 돌고(카메라 쪽 반은 진하게, 뒤쪽 반은 흐리게), 바깥 Z 고리는 화면 회전이라 화면에 붙어 있다.
+    /// </summary>
     private sealed class ModelPreview : Control
     {
         private const double Pane = 330;
@@ -742,6 +789,11 @@ public sealed class ModelImportDialog : DialogBase
         private static readonly Avalonia.Point AxisCenter = new(43, Pane - 44);
         private static readonly Avalonia.Point SunCenter = new(Pane - 43, 44);
         private static readonly Pen RingPen = new(new SolidColorBrush(Color.FromArgb(105, 210, 220, 230)), 1.5);
+        private static readonly Pen RearRingPen = new(new SolidColorBrush(Color.FromArgb(40, 210, 220, 230)), 1.5);
+        private static readonly Pen RearHoverPen = new(new SolidColorBrush(Color.FromArgb(110, 112, 189, 255)), 2);
+        /// <summary>X·Y 고리 반지름과 그릴 때 나누는 토막 수.</summary>
+        private const double RingRadius = 112;
+        private const int RingSegments = 72;
         private static readonly Pen HoverPen = new(new SolidColorBrush(Color.FromArgb(240, 112, 189, 255)), 3);
         private static readonly Pen AxisPen = new(new SolidColorBrush(Color.FromArgb(210, 220, 230, 240)), 1.5);
         private static readonly Pen SunPen = new(new SolidColorBrush(Color.FromRgb(255, 211, 91)), 2);
@@ -779,7 +831,6 @@ public sealed class ModelImportDialog : DialogBase
         public event Action<double>? Rolled;
         public event Action<double, double>? Faced;
         public event Action<double, double>? LightMoved;
-        public event Action? LightFlipped;
         public event Action<double>? Zoomed;
 
         public ModelPreview()
@@ -844,16 +895,66 @@ public sealed class ModelImportDialog : DialogBase
             g.DrawLine(AxisPen, new Avalonia.Point(Pane + 2, 0), new Avalonia.Point(Pane + 2, Pane));
             if (_hover.Length != 0 || _active.Length != 0)
             {
-                // X = pitch, Y = yaw, Z = roll. The outer ring stays independent of orbit.
+                // X = pitch, Y = yaw, Z = roll. X·Y 고리는 모델과 함께 돌고, 바깥 Z 고리는 화면에 붙어 있다.
                 g.DrawEllipse(null, _hover == "roll" || _active == "roll" ? HoverPen : RingPen, Center, 137, 137);
-                g.DrawEllipse(null, _hover == "yaw" || _active == "yaw" ? HoverPen : RingPen, Center, 112, 39);
-                g.DrawEllipse(null, _hover == "pitch" || _active == "pitch" ? HoverPen : RingPen, Center, 39, 112);
+                DrawRing(g, 1, "yaw", "Y");
+                DrawRing(g, 0, "pitch", "X");
                 AppTheme.DrawText(g, "Z", new Avalonia.Point(Center.X - 4, Center.Y - 148), Brushes.White, 11, bold: true);
-                AppTheme.DrawText(g, "X", new Avalonia.Point(Center.X - 4, Center.Y - 123), Brushes.White, 11, bold: true);
-                AppTheme.DrawText(g, "Y", new Avalonia.Point(Center.X + 115, Center.Y - 8), Brushes.White, 11, bold: true);
             }
             DrawAxes(g);
             DrawSun(g);
+        }
+
+        /// <summary>
+        /// 축 <paramref name="axis"/>(0 = X, 1 = Y) 둘레 고리의 <paramref name="t"/>(라디안) 자리: 모델 공간 원 위 점을 지금 보는 방향으로 비춘 화면 자리와,
+        /// 그 점이 카메라 쪽 반에 있는지.
+        /// </summary>
+        private (Avalonia.Point Point, bool Front) RingPoint(int axis, double t)
+        {
+            var (u, w) = axis == 0
+                ? (System.Numerics.Vector3.UnitY, System.Numerics.Vector3.UnitZ)
+                : (System.Numerics.Vector3.UnitZ, System.Numerics.Vector3.UnitX);
+            var v = u * (float)Math.Cos(t) + w * (float)Math.Sin(t);
+            return (new Avalonia.Point(Center.X + RingRadius * System.Numerics.Vector3.Dot(v, _right), Center.Y - RingRadius * System.Numerics.Vector3.Dot(v, _up)),
+                System.Numerics.Vector3.Dot(v, _back) >= 0);
+        }
+
+        /// <summary>X·Y 고리 하나: 토막마다 카메라 쪽이면 진하게, 뒤쪽이면 흐리게(가리키거나 끄는 중이면 파랗게). 이름은 Y 고리 오른쪽 끝·X 고리 위쪽 끝에.</summary>
+        private void DrawRing(DrawingContext g, int axis, string id, string label)
+        {
+            bool lit = _hover == id || _active == id;
+            var prev = RingPoint(axis, 0);
+            var labelAt = prev.Point;
+            for (int i = 1; i <= RingSegments; i++)
+            {
+                var next = RingPoint(axis, i * 2 * Math.PI / RingSegments);
+                bool front = prev.Front || next.Front;
+                g.DrawLine(front ? lit ? HoverPen : RingPen : lit ? RearHoverPen : RearRingPen, prev.Point, next.Point);
+                if (axis == 1 ? next.Point.X > labelAt.X : next.Point.Y < labelAt.Y) labelAt = next.Point;
+                prev = next;
+            }
+            var at = axis == 1 ? new Avalonia.Point(labelAt.X + 4, labelAt.Y - 8) : new Avalonia.Point(labelAt.X - 4, labelAt.Y - 18);
+            AppTheme.DrawText(g, label, at, Brushes.White, 11, bold: true);
+        }
+
+        /// <summary>점이 X·Y 고리(비춘 모양) 가까이인지.</summary>
+        private bool NearRing(int axis, Avalonia.Point p)
+        {
+            var prev = RingPoint(axis, 0).Point;
+            for (int i = 1; i <= RingSegments; i++)
+            {
+                var next = RingPoint(axis, i * 2 * Math.PI / RingSegments).Point;
+                if (SegmentDistance(p, prev, next) < 7) return true;
+                prev = next;
+            }
+            return false;
+        }
+
+        private static double SegmentDistance(Avalonia.Point p, Avalonia.Point a, Avalonia.Point b)
+        {
+            double dx = b.X - a.X, dy = b.Y - a.Y, len = dx * dx + dy * dy;
+            double t = len <= 0 ? 0 : Math.Clamp(((p.X - a.X) * dx + (p.Y - a.Y) * dy) / len, 0, 1);
+            return Distance(p, new Avalonia.Point(a.X + t * dx, a.Y + t * dy));
         }
 
         private Avalonia.Point AxisPoint(System.Numerics.Vector3 axis, double length)
@@ -920,8 +1021,8 @@ public sealed class ModelImportDialog : DialogBase
                             return AxisHits[side > 0 ? 1 : 0, i];
             double dx = p.X - Center.X, dy = p.Y - Center.Y;
             if (Math.Abs(Math.Sqrt(dx * dx + dy * dy) - 137) <= 8) return "roll";
-            if (Math.Abs(Math.Sqrt(dx * dx / (112 * 112) + dy * dy / (39 * 39)) - 1) < 0.09) return "yaw";
-            if (Math.Abs(Math.Sqrt(dx * dx / (39 * 39) + dy * dy / (112 * 112)) - 1) < 0.09) return "pitch";
+            if (NearRing(1, p)) return "yaw";
+            if (NearRing(0, p)) return "pitch";
             return "orbit";
         }
 
@@ -941,12 +1042,6 @@ public sealed class ModelImportDialog : DialogBase
             var p = e.GetPosition(this);
             var hit = Hit(p);
             if (hit.Length == 0) return;
-            if (hit == "sun" && e.ClickCount == 2)
-            {
-                LightFlipped?.Invoke();
-                e.Handled = true;
-                return;
-            }
             if (hit.StartsWith("axis:", StringComparison.Ordinal))
             {
                 int axis = hit[5] - '0', side = hit[7] == '-' ? -1 : 1;

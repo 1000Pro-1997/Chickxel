@@ -66,14 +66,14 @@ public sealed class EffectListPanel : UserControl
         tabs.Items.Add(Tab(UiStrings.EffectPreset_EffectsTab, Scroll(_effectRows)).HelpAt("screen-effect-list"));
         tabs.Items.Add(Tab(UiStrings.EffectPreset_PresetsTab, presets).HelpAt("screen-effect-recipes", anchor: "Presets tab"));
 
-        // 맨 아래 강조색 단추 둘(왼쪽·오른쪽 반씩): 추가 다운로드 = 홈페이지 상점(패키지 목록)을 브라우저로, 효과 만들기 = 효과 만들기 창
-        static Button Accent(VectorIcon icon, string text, string tip, Action onClick)
+        // 맨 아래 색 단추 둘(왼쪽·오른쪽 반씩, 서로 다른 색): 추가 다운로드(파랑) = 홈페이지 상점(패키지 목록)을 브라우저로, 효과 만들기(초록) = 효과 만들기 창
+        static Button Accent(VectorIcon icon, string text, string tip, IBrush fill, Action onClick)
         {
             var b = Ui.Button(icon, text, (_, _) => onClick());
             b.HorizontalAlignment = HorizontalAlignment.Stretch;
             b.HorizontalContentAlignment = HorizontalAlignment.Center;
             b.Padding = new Thickness(4, b.Padding.Top, 4, b.Padding.Bottom);
-            b.Background = AppTheme.AccentBrush;
+            b.Background = fill;
             b.Foreground = Brushes.White;
             if (b.Content is StackPanel { Children: [IconView view, ..] }) view.Foreground = Brushes.White;
             Ui.KeepFillOnHover(b);
@@ -82,8 +82,8 @@ public sealed class EffectListPanel : UserControl
         }
         var store = Accent(VectorIcon.Download, UiStrings.EffectList_MoreDownloads,
             string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.EffectList_MoreDownloadsTip, AppInfo.StoreUrl),
-            () => Updater.OpenUrl(this, AppInfo.StoreUrl)).HelpAt("screen-asset-manager");
-        var maker = Accent(VectorIcon.Sparkles, UiStrings.EffectMaker_Title, UiStrings.EffectList_MakerTip, () =>
+            AppTheme.AccentBrush, () => Updater.OpenUrl(this, AppInfo.StoreUrl)).HelpAt("screen-asset-manager");
+        var maker = Accent(VectorIcon.Sparkles, UiStrings.EffectMaker_Title, UiStrings.EffectList_MakerTip, AppTheme.SavedBrush, () =>
         {
             if (TopLevel.GetTopLevel(this) is MainForm main) EffectMakerWindow.Open(main, ((Ai.IAiHost)main).Context);
         }).HelpAt("screen-effect-maker");

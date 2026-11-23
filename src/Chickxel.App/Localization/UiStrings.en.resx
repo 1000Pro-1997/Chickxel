@@ -4833,8 +4833,10 @@ Cancel: keep the files and only remove the row.</value></data>
   <data name="Model_ZoomTip" xml:space="preserve"><value>100% = the model just fits the shorter side of the image (for animations and turntables, all frames together). The mouse wheel over the preview changes it too.</value></data>
   <data name="Model_Fit" xml:space="preserve"><value>Fit</value></data>
   <data name="Model_Light" xml:space="preserve"><value>Light direction</value></data>
-  <data name="Model_LightBack" xml:space="preserve"><value>Light behind</value></data>
-  <data name="Model_LightBackTip" xml:space="preserve"><value>Move the light to the hemisphere behind the camera. Double-click the sun in the preview to flip front/back.</value></data>
+  <data name="Model_LightDepth" xml:space="preserve"><value>Light front/back</value></data>
+  <data name="Model_LightDepthTip" xml:space="preserve"><value>Moves the light from the front (facing the camera, 0°) to the side (90°) and behind (180°). The screen direction the sun handle points to stays the same.</value></data>
+  <data name="Model_LightFront" xml:space="preserve"><value>Front</value></data>
+  <data name="Model_LightBehind" xml:space="preserve"><value>Back</value></data>
   <data name="Model_Brightness" xml:space="preserve"><value>Brightness</value></data>
   <data name="Model_Ambient" xml:space="preserve"><value>Ambient</value></data>
   <data name="Model_LightStrength" xml:space="preserve"><value>Light strength</value></data>
@@ -4856,7 +4858,7 @@ Cancel: keep the files and only remove the row.</value></data>
   <data name="Model_Fps" xml:space="preserve"><value>Frames per second</value></data>
   <data name="Model_MaxFrames" xml:space="preserve"><value>Max</value></data>
   <data name="Model_PlayTip" xml:space="preserve"><value>Play/pause the preview</value></data>
-  <data name="Model_PreviewHint" xml:space="preserve"><value>Drag model: orbit · Drag rings: angle/roll · Click an axis: face it · Drag sun: light (double-click: front/back) · Wheel: zoom</value></data>
+  <data name="Model_PreviewHint" xml:space="preserve"><value>Drag model: orbit · Drag rings: angle/roll · Click an axis: face it · Drag sun: light direction (front/back: light slider) · Wheel: zoom</value></data>
   <data name="Model_Original" xml:space="preserve"><value>Original model</value></data>
   <data name="Model_PixelResult" xml:space="preserve"><value>Pixel result</value></data>
   <data name="Model_Summary" xml:space="preserve"><value>{name}: triangles {triangles} · materials {materials} · animations {animations}</value></data>
