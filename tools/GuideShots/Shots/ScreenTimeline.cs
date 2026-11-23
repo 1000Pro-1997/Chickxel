@@ -381,6 +381,72 @@ internal static class ScreenTimelineShots
         SaveMenu(k, main, "screen-layer-effects-9", empty, [extra], 20);
     }
 
+    /// <summary>
+    /// 효과 목록 패널을 연 메인 창: ① 도구 막대 효과 단추 ② 효과 목록(맨 왼쪽 칸) ③ 목록의 줄을 타임라인 칸으로 끄는 중 넣을 칸 표시(반짝이 프레임 3).
+    /// </summary>
+    [Shot("screen-effect-list")]
+    public static void EffectListPanel(ShotKit k)
+    {
+        var main = OpenTall(k, 330);
+        Build(k, main, effects: true);
+        CleanTitle(main);
+        ShotKit.Call(main, "SetLeftPanes", false, true, false);
+        k.Settle(2500);
+        var panel = ShotKit.Get<Control>(main, "_effectList");
+        var tile = ShotKit.All<Control>(panel).Where(c => c.GetType().Name == "EffectTile" && c.IsEffectivelyVisible).Skip(1).First();
+        var from = ShotKit.Bounds(tile, main).Center;
+        var to = Cell(main, RowSparkle, 2);
+        main.MouseMove(from);
+        main.MouseDown(from, MouseButton.Left);
+        ShotKit.Pump(60);
+        for (int s = 1; s <= 10; s++)
+        {
+            double t = s / 10.0;
+            main.MouseMove(new Point(from.X + (to.X - from.X) * t, from.Y + (to.Y - from.Y) * t));
+            ShotKit.Pump(30);
+        }
+        ShotKit.Pump(400);
+        k.Save(main, "screen-effect-list", marks:
+        [
+            ShotKit.Bounds(ShotKit.Get<Control>(main, "_tbEffects"), main).Inflate(new Thickness(8, 8, 1, 1)),
+            ShotKit.Bounds(panel, main).Deflate(3),
+            PadLeft(Cells(main, RowSparkle, RowSparkle, 2, 2), 14),
+        ]);
+        // 칸 밖(도구 막대 위)에서 놓아 넣지 않고 끝낸다.
+        main.MouseMove(new Point(4, 300));
+        main.MouseUp(new Point(4, 300), MouseButton.Left);
+        ShotKit.Pump(300);
+    }
+
+    /// <summary>효과 줄: 피격 번쩍임(프레임 5~6, 마지막 프레임까지) 상자 오른쪽 끝을 두 칸 너머로 끄는 중 — ㉑ 더할 프레임의 사슬 칸.</summary>
+    [Shot("screen-effect-timeline")]
+    public static void EffectExtendPastEnd(ShotKit k)
+    {
+        var main = OpenTall(k, 370);
+        Build(k, main, effects: true);
+        k.Settle(300);
+        double y = RowY(RowBody + 1, 1) + FxH / 2.0;
+        var from = At(main, NameW + 6 * CellW - 2, y);
+        var to = At(main, NameW + 8 * CellW - 10, y);
+        main.MouseMove(from);
+        main.MouseDown(from, MouseButton.Left);
+        ShotKit.Pump(60);
+        for (int s = 1; s <= 8; s++)
+        {
+            double t = s / 8.0;
+            main.MouseMove(new Point(from.X + (to.X - from.X) * t, y: from.Y));
+            ShotKit.Pump(30);
+        }
+        ShotKit.Pump(400);
+        var ghost = GridRect(main, NameW + 6 * CellW, TagH, 2 * CellW, RowY(RowBody + 1, 2) - TagH);
+        k.Save(main, "screen-effect-timeline", crop: TimelineCrop(main), marks: [PadLeft(ghost, 14)], firstNumber: 21);
+        // Esc로 끌기를 취소한다.
+        main.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
+        main.KeyRelease(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
+        main.MouseUp(from, MouseButton.Left);
+        ShotKit.Pump(300);
+    }
+
     /// <summary>효과 창: 색 설정(-2, ③~⑤), 색 팝업(-3), 전체(-4, ⑥~⑭), 프리셋 탭(-5, ⑮), 프레임 줄 지우기 칸(-10 끄는 중 ㉑, -11 놓은 뒤 ㉒).</summary>
     private static void EffectsDialog(ShotKit k, Window w)
     {
@@ -551,6 +617,25 @@ internal static class ScreenTimelineShots
             const label = ctx.text(s.message, { size: 12, color: "#ff6666", bold: true });
             img.blendOver(label, Math.floor((img.width - label.width) / 2),
               Math.floor(img.height / 2 - ctx.progress * 12));
+          },
+        });
+        """;
+
+    /// <summary>설정 묶음 예시(-7): 묶음 밖 크기, "Label" 묶음 안 글꼴(font)·위치(position, 직접 지정), 묶음 밖 색. 영어 이름.</summary>
+    private const string NameTagScript = """
+        effect({
+          name: "Name tag",
+          author: "pixel-cat",
+          settings: [
+            { key: "size", label: "Size", type: "int", min: 6, max: 24, default: 12 },
+            { key: "font", label: "Font", type: "font", group: "Label", default: "Galmuri11" },
+            { key: "pos", label: "Position", type: "position", group: "Label", min: -20, max: 60, default: { anchor: "custom", x: 4, y: 2 } },
+            { key: "color", label: "Color", type: "color", default: "#ffffff" },
+          ],
+          render(img, ctx, s) {
+            const p = ctx.position("pos");
+            const label = ctx.text("Hero", { font: s.font, size: s.size, color: "#ffffff" });
+            img.blendOver(label, Math.round(p.x), Math.round(p.y));
           },
         });
         """;
@@ -836,6 +921,31 @@ internal static class ScreenTimelineShots
             var textArea = InWindow(w, textRow);
             k.Save(w, "screen-script-effects-6", crop: PadLeft(textArea, 14).Inflate(new Thickness(12, 6, 12, 6)).Intersect(new Rect(w.ClientSize)),
                 marks: [PadLeft(textArea, 10)], firstNumber: 19);
+
+            // 7: 설정 묶음(group "Label") 상자 안의 글꼴 고르기(font)·위치(position — 직접 지정이라 X·Y 점 고르기 판이 보임)
+            string nameTag = project.AddScript(NameTagScript);
+            trust.GetMethod("TrustLocal", Any)!.Invoke(null, [nameTag]);
+            ShotKit.Call(w, "AddScriptEffect", nameTag);
+            ShotKit.Pump(1200);
+            ScrollToSettings(w);
+            // 묶음 상자 안 줄: 이름 열이 있는 줄 Grid
+            Control InnerRow(Control c) => c.GetVisualAncestors().OfType<Grid>().First(g => g.ColumnDefinitions.Count == 2 && g.ColumnDefinitions[0].SharedSizeGroup == "EffectSettingsLabel");
+            TextBlock LabelText(string text) => ShotKit.All<TextBlock>(settings).First(t => t.Text == text && t.IsEffectivelyVisible);
+            var fontRow = InnerRow(LabelText("Font"));
+            var posRow = InnerRow(LabelText("Position"));
+            var posStack = (Panel)posRow.Parent!;
+            var posPoint = posStack.Children[posStack.Children.IndexOf(posRow) + 1];
+            Control TopRow(Control c) => c.GetVisualAncestors().OfType<Control>().First(a => settings.Children.Contains(a));
+            var labelGroup = TopRow(fontRow);
+            var sizeRow = TopRow(LabelText("Size"));
+            var colorRow = TopRow(LabelText("Color"));
+            var tagArea = Union(w, sizeRow, labelGroup, colorRow);
+            k.Save(w, "screen-script-effects-7", crop: PadLeft(tagArea, 26).Inflate(new Thickness(10, 2, 10, 8)).Intersect(new Rect(w.ClientSize)), marks:
+            [
+                InWindow(w, fontRow),
+                Union(w, posRow, posPoint),
+                PadLeft(InWindow(w, labelGroup), 14),
+            ], firstNumber: 20);
         }, settleMs: 900);
 
         // 3: 실행 확인 창(처음 보는 스크립트가 든 프로젝트를 열 때)

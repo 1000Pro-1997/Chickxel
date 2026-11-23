@@ -171,7 +171,8 @@ internal static class ScreenAssetShots
         k.Dialog(() => _ = AssetPublishDialog.RunAsync(main, script.Id), w =>
         {
             ShotKit.Pump(1200);
-            Control Group(string title) => ShotKit.All<Border>(w).First(b => b.Child is StackPanel { Children: [TextBlock t, ..] } && t.Text == title);
+            Control Group(string title) => ShotKit.All<GroupBox>(w).Where(b => ShotKit.All<TextBlock>(b).Any(t => t.Text == title))
+                .OrderBy(b => b.Bounds.Width * b.Bounds.Height).First();
             var preview = ShotKit.FindText(w, UiStrings.Publish_Preview).FindAncestorOfType<Border>()!;
             k.Save(w, "screen-asset-manager-3", marks:
             [

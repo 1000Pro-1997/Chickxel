@@ -149,8 +149,9 @@ internal static class ScreenMainShots
         Build(k, main);
         var gallery = ShotKit.Get<Button>(main, "_galleryButton");
         ShotKit.Call(gallery, "Saved", Project(main), true);
-        ShotKit.Get<Avalonia.Threading.DispatcherTimer>(gallery, "_timer").Stop();
-        ShotKit.Set(ShotKit.Get<Control>(gallery, "_icon"), "Phase", 3.0);
+        var sparkle = ShotKit.Get<Control>(gallery, "_sparkle");
+        ShotKit.Get<Avalonia.Threading.DispatcherTimer>(sparkle, "_timer").Stop();
+        ShotKit.Call(sparkle, "SetPhase", 3.0);
         k.Settle(300);
         var account = ShotKit.All<Button>(main).First(b => b.GetType().Name == "AccountButton");
         var row = ShotKit.Bounds((Control)gallery.Parent!, main);
@@ -184,7 +185,7 @@ internal static class ScreenMainShots
             [Left(U(main, label, size)), listMark, ShotKit.Bounds(spin, main).Inflate(2)], only: [panel, list]);
     }
 
-    /// <summary>도구 막대: ① 폴더 단추 ② 묶음 칸 ③ 펼친 목록 ④ 저장 ⑤ 되돌리기.</summary>
+    /// <summary>도구 막대: ① 폴더 단추 ② 묶음 칸 ③ 펼친 목록 ④ 저장 ⑤ 되돌리기 ⑥ 효과 목록 단추.</summary>
     [Shot("screen-toolbar")]
     public static void Toolbar(ShotKit k)
     {
@@ -193,6 +194,7 @@ internal static class ScreenMainShots
         var slots = ShotKit.Get<List<ToolSlotButton>>(main, "_toolSlots");
         var group = slots.First(s => s.IsGroup && s.Contains(ToolKind.Fill));
         var files = ShotKit.Get<Control>(main, "_tbFiles");
+        var effects = ShotKit.Get<Control>(main, "_tbEffects");
         var save = ShotKit.Get<Control>(main, "_tbSave");
         var revert = ShotKit.Get<Control>(main, "_tbRevert");
         // 저장·되돌리기 단추가 켜지게 한 번 고친다(수정됨 상태).
@@ -203,7 +205,8 @@ internal static class ScreenMainShots
         var column = ToolbarColumn(main);
         static Rect Corner(Rect r) => r.Inflate(new Thickness(8, 8, 1, 1));
         Shot(k, main, null, column.Union(list).Inflate(8),
-            [Corner(ShotKit.Bounds(files, main)), Corner(ShotKit.Bounds(group, main)), Pop(list), Corner(ShotKit.Bounds(save, main)), Corner(ShotKit.Bounds(revert, main))],
+            [Corner(ShotKit.Bounds(files, main)), Corner(ShotKit.Bounds(group, main)), Pop(list), Corner(ShotKit.Bounds(save, main)), Corner(ShotKit.Bounds(revert, main)),
+             Corner(ShotKit.Bounds(effects, main))],
             only: [column, list]);
     }
 
@@ -271,7 +274,7 @@ internal static class ScreenMainShots
         Build(k, main);
         var options = ShotKit.Get<Control>(main, "_toolOptions");
         var title = ShotKit.Get<TextBlock>(options, "_title");
-        Rect Body() => ShotKit.All<Border>(options)
+        Rect Body() => ShotKit.All<GroupBox>(options)
             .Where(b => b.IsEffectivelyVisible && b.Parent is StackPanel s && s.Parent is not null && b.Bounds.Height > 30 && b.Bounds.Width > 150)
             .Select(b => ShotKit.Bounds(b, main)).Aggregate((a, b) => a.Union(b));
         var o = ShotKit.Bounds(options, main);
