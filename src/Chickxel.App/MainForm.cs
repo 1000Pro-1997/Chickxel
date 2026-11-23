@@ -735,7 +735,6 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         AddItems(file,
             Cmd("새 프로젝트…", MainStrings.Menu_File_NewProject_063, () => NewProject(null), "Ctrl+N", KeyScope.Global, (Key.N, Ctrl)),
             Cmd("열기(.chickxel / PNG 가져오기)…", MainStrings.Menu_File_OpenFileDialogCmd_065, OpenFileDialogCmd, "Ctrl+O", KeyScope.Global, (Key.O, Ctrl)),
-            WithIcon(Cmd("3D 모델 열기…", MainStrings.Menu_File_OpenModel, OpenModelWindow), VectorIcon.Cube),
             Cmd("폴더 열기…", MainStrings.Menu_File_OpenFolder_067, OpenFolder, "Ctrl+Shift+O", KeyScope.Global, (Key.O, Ctrl | Shift)),
             Cmd("Unity 프로젝트 열기…", MainStrings.Menu_File_OpenUnityProject_069, OpenUnityProject, "Ctrl+Shift+U", KeyScope.Global, (Key.U, Ctrl | Shift)),
             _miRecentFolders,
@@ -939,6 +938,11 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             new Separator(),
             WithIcon(Cmd("효과 만들기", UiStrings.EffectMaker_Menu, () => EffectMakerWindow.Open(this, _ctx)), VectorIcon.Sparkles));
 
+        // 3D: 3D 모델과 3D 효과
+        var threeD = TopMenu("3D(_D)", MainStrings.Menu_3D);
+        AddItems(threeD,
+            WithIcon(Cmd("3D 모델 열기…", MainStrings.Menu_3D_OpenModel, OpenModelWindow), VectorIcon.Cube));
+
         // 도움말
         var help = TopMenu("도움말(_H)", MainStrings.Menu_Help);
         var website = Cmd("홈페이지", MainStrings.Menu_Help_Website, () => Updater.OpenUrl(this, AppInfo.LocalizedWebsiteUrl));
@@ -960,7 +964,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             Cmd("업데이트 확인…", MainStrings.Menu_Help_CheckAsync_236, () => _ = _updater.CheckAsync(manual: true)),
             Cmd("Chickxel 정보…", MainStrings.Menu_Help_AboutDialog_238, () => new AboutDialog().ShowDialog(this)));
 
-        foreach (var top in new[] { file, edit, view, frame, tools, ai, help }) menu.Items.Add(top);
+        foreach (var top in new[] { file, edit, view, frame, tools, ai, threeD, help }) menu.Items.Add(top);
         return menu;
     }
 
@@ -977,6 +981,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             "도구" => MainStrings.ShortcutCategory_Tools,
             "테스트" => MainStrings.ShortcutCategory_Test,
             "AI" => MainStrings.ShortcutCategory_Ai,
+            "3D" => MainStrings.ShortcutCategory_3D,
             "도움말" => MainStrings.ShortcutCategory_Help,
             _ => throw new InvalidOperationException(id),
         };

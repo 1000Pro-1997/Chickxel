@@ -2,6 +2,16 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.141 (2026-11-23)
+
+### 3D menu
+- A new **3D** menu next to AI gathers 3D features; 3D effects will be added there.
+- **Open 3D model…** moved there from the File menu.
+
+### Help
+- The app help describes the new **Light front/back** slider in the Import 3D model window.
+- The shortcut list shows Open 3D model under 3D.
+
 ## v1.14.140 (2026-11-23)
 
 ### Effect list in the tool bar: drag effects onto timeline cels

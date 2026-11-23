@@ -338,6 +338,8 @@ Reloading will discard your current edits. Reload?</value></data>
   <data name="ShortcutCategory_Tools" xml:space="preserve"><value>Tools</value></data>
   <data name="ShortcutCategory_Test" xml:space="preserve"><value>Test</value></data>
   <data name="ShortcutCategory_Ai" xml:space="preserve"><value>AI</value></data>
+  <data name="ShortcutCategory_3D" xml:space="preserve"><value>3D</value></data>
+  <data name="Menu_3D" xml:space="preserve"><value>3_D</value></data>
   <data name="ShortcutCategory_Help" xml:space="preserve"><value>Help</value></data>
   <data name="Export_FailureTitle" xml:space="preserve"><value>Export failed</value></data>
   <data name="Export_TrashOne" xml:space="preserve"><value>Export cleanup: {name}</value></data>
@@ -421,5 +423,5 @@ Open all frames, or only the first {limit}?</value></data>
   <data name="Tool_ShapePen_Hint" xml:space="preserve"><value>Stamps the chosen shape where you click (dragging stamps every spacing; sets and order in tool settings) · Right: secondary color when tinting (erases in the shape if the right button erases) · Alt+click: pick color</value></data>
   <data name="Tool_CurvePen_Name" xml:space="preserve"><value>Curve Pen</value></data>
   <data name="Tool_CurvePen_Hint" xml:space="preserve"><value>Points: click = corner point, drag = smooth point · Freehand: a dragged stroke is fitted into a curve · drag points and handles to adjust · Enter confirms, Esc cancels · Alt+click: pick color (on an anchor: toggle corner)</value></data>
-  <data name="Menu_File_OpenModel" xml:space="preserve"><value>Open 3D model…</value></data>
+  <data name="Menu_3D_OpenModel" xml:space="preserve"><value>Open 3D model…</value></data>
 </root>
