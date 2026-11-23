@@ -6,7 +6,8 @@ namespace GuideShots;
 
 /// <summary>
 /// 3D 모델 가이드의 예시 파일: 상자로 쌓은 병아리(GLB — 노드 7개, 재질 7개, 쉬는 애니메이션 "Idle"), 따로 받은 애니메이션 두 개(뼈대와 키만 든 GLB,
-/// 뼈 이름 앞에 <c>mixamorig:</c> — 믹사모 Without Skin 파일처럼), 나무 상자(OBJ + MTL). 샷마다 코드로 만들어 저장소에 3D 파일을 두지 않는다.
+/// 뼈 이름 앞에 <c>mixamorig:</c> — 믹사모 Without Skin 파일처럼), 나무 상자(OBJ + MTL), 바닥 위 자판기(오브젝트 경계용 — 노드 셋),
+/// 유리 수조(유리·반투명 재질용). 샷마다 코드로 만들어 저장소에 3D 파일을 두지 않는다.
 /// </summary>
 internal static class ModelSample
 {
@@ -176,6 +177,81 @@ internal static class ModelSample
         File.WriteAllText(path, obj.ToString());
         return path;
     }
+
+    /// <summary>
+    /// 바닥 위 자판기(<c>kiosk.glb</c> — 노드 셋: 바닥판, 상자 여럿을 쌓은 자판기, 옆에 붙은 휴지통). 자판기와 휴지통이 바닥·서로에 맞닿아
+    /// 깊이로는 경계가 없어, 오브젝트 경계 외곽선(노드마다 / 이어진 덩어리마다)의 차이를 보인다.
+    /// </summary>
+    public static string Kiosk(string dir)
+    {
+        var g = new Glb();
+        const int Floor = 0, Body = 1, Panel = 2, Button = 3, Slot = 4, Bin = 5, Lid = 6;
+        var meshes = new List<string>
+        {
+            g.Mesh("Floor", [(Floor, Box(new(0.15f, -0.05f, 0), new(1.9f, 0.1f, 1.2f)))]),
+            g.Mesh("Machine",
+            [
+                (Body, Box(new(0, 0.75f, 0), new(0.8f, 1.5f, 0.6f))),
+                (Panel, Box(new(-0.1f, 0.95f, 0.31f), new(0.46f, 0.8f, 0.04f))),
+                (Button, Box(new(0.27f, 1.05f, 0.31f), new(0.12f, 0.4f, 0.04f))),
+                (Slot, Box(new(-0.05f, 0.25f, 0.31f), new(0.5f, 0.16f, 0.04f))),
+            ]),
+            g.Mesh("Bin", [(Bin, Box(new(0, 0.3f, 0), new(0.36f, 0.6f, 0.36f))), (Lid, Box(new(0, 0.62f, 0), new(0.4f, 0.06f, 0.4f)))]),
+        };
+        (string Name, float R, float G, float B)[] materials =
+        [
+            ("Floor", 0.42f, 0.44f, 0.48f), ("Body", 0.75f, 0.08f, 0.08f), ("Panel", 0.12f, 0.32f, 0.6f), ("Button", 0.85f, 0.85f, 0.8f),
+            ("Slot", 0.05f, 0.05f, 0.06f), ("Bin", 0.1f, 0.42f, 0.18f), ("Lid", 0.06f, 0.2f, 0.09f),
+        ];
+        var mats = string.Join(",", materials.Select(m => Material(m.Name, m.R, m.G, m.B)));
+        const string nodes = "\"nodes\":[{\"name\":\"Floor\",\"mesh\":0},{\"name\":\"Machine\",\"mesh\":1},{\"name\":\"Bin\",\"mesh\":2,\"translation\":[0.58,0,0.08]}]," +
+            "\"scenes\":[{\"nodes\":[0,1,2]}],\"scene\":0";
+        var path = Path.Combine(dir, "kiosk.glb");
+        File.WriteAllBytes(path, g.Build(nodes, $"\"meshes\":[{string.Join(",", meshes)}],\"materials\":[{mats}]"));
+        return path;
+    }
+
+    /// <summary>
+    /// 유리 수조(<c>aquarium.glb</c>): 나무 받침 위 유리 상자(KHR_materials_transmission·KHR_materials_ior), 안에 반투명 물(BLEND)과 모래·물풀·물고기,
+    /// 위에 검은 뚜껑. 유리·물 너머로 바탕이 비쳐 반투명 픽셀이 생긴다(반투명 없애기 비교용).
+    /// </summary>
+    public static string Aquarium(string dir)
+    {
+        var g = new Glb();
+        const int Wood = 0, Glass = 1, Water = 2, Sand = 3, Plant = 4, Fish = 5, Lid = 6;
+        var meshes = new List<string>
+        {
+            g.Mesh("Stand", [(Wood, Box(new(0, 0.08f, 0), new(1.3f, 0.16f, 0.7f)))]),
+            g.Mesh("Tank", [(Glass, Box(new(0, 0.56f, 0), new(1.2f, 0.8f, 0.6f)))]),
+            g.Mesh("Water", [(Water, Box(new(0, 0.42f, 0), new(1.14f, 0.46f, 0.54f)))]),
+            g.Mesh("Inside",
+            [
+                (Sand, Box(new(0, 0.22f, 0), new(1.14f, 0.1f, 0.54f))),
+                (Plant, Box(new(-0.4f, 0.42f, -0.1f), new(0.08f, 0.32f, 0.08f)).Concat(Box(new(-0.3f, 0.36f, 0.05f), new(0.08f, 0.2f, 0.08f)))
+                    .Concat(Box(new(0.42f, 0.4f, -0.12f), new(0.08f, 0.28f, 0.08f)))),
+                (Fish, Box(new(0.05f, 0.55f, 0.02f), new(0.26f, 0.14f, 0.08f)).Concat(Box(new(0.22f, 0.55f, 0.02f), new(0.08f, 0.12f, 0.04f)))),
+            ]),
+            g.Mesh("Lid", [(Lid, Box(new(0, 0.98f, 0), new(1.24f, 0.04f, 0.64f)))]),
+        };
+        var mats = string.Join(",",
+            Material("Wood", 0.35f, 0.17f, 0.06f),
+            Material("Glass", 0.8f, 0.95f, 1f, extra: ",\"extensions\":{\"KHR_materials_transmission\":{\"transmissionFactor\":1},\"KHR_materials_ior\":{\"ior\":1.5}}", roughness: 0.05f),
+            Material("Water", 0.15f, 0.5f, 0.85f, 0.3f, ",\"alphaMode\":\"BLEND\"", roughness: 0.2f),
+            Material("Sand", 0.85f, 0.68f, 0.38f),
+            Material("Plant", 0.08f, 0.55f, 0.14f),
+            Material("Fish", 1f, 0.32f, 0.02f),
+            Material("Lid", 0.05f, 0.05f, 0.06f));
+        const string nodes = "\"nodes\":[{\"name\":\"Stand\",\"mesh\":0},{\"name\":\"Tank\",\"mesh\":1},{\"name\":\"Water\",\"mesh\":2},{\"name\":\"Inside\",\"mesh\":3},{\"name\":\"Lid\",\"mesh\":4}]," +
+            "\"scenes\":[{\"nodes\":[0,1,2,3,4]}],\"scene\":0";
+        var path = Path.Combine(dir, "aquarium.glb");
+        File.WriteAllBytes(path, g.Build(nodes,
+            $"\"extensionsUsed\":[\"KHR_materials_transmission\",\"KHR_materials_ior\"],\"meshes\":[{string.Join(",", meshes)}],\"materials\":[{mats}]"));
+        return path;
+    }
+
+    /// <summary>glTF 재질 하나(선형 RGB 바탕 색, 금속 아님) — <paramref name="extra"/>는 뒤에 붙일 JSON 조각(알파 방식·확장).</summary>
+    private static string Material(string name, float r, float g, float b, float a = 1, string extra = "", float roughness = 0.9f)
+        => $"{{\"name\":\"{name}\",\"pbrMetallicRoughness\":{{\"baseColorFactor\":[{F(r)},{F(g)},{F(b)},{F(a)}],\"metallicFactor\":0,\"roughnessFactor\":{F(roughness)}}}{extra}}}";
 
     private static string Nodes(string prefix, int[]? meshOf)
     {

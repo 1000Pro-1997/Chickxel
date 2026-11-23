@@ -1,5 +1,4 @@
 using Avalonia;
-using Avalonia.VisualTree;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Chickxel.App;
@@ -55,20 +54,19 @@ internal static class ModelShots
 
     /// <summary>
     /// 띠는 그 줄 맨 위 한 줄 픽셀(줄 사이 빈 곳)을 늘려 칠한다. <paramref name="rows"/>마다 (그 줄 안 컨트롤, 표시들) — 번호는 적은 순서대로.
-    /// 가로 범위는 그 줄이 든 묶음 상자 폭(양옆 번호 자리 포함).
+    /// 줄마다 이름표 왼쪽(번호 자리)부터 자르고, 폭은 가장 긴 줄에 맞춘 한 폭이다(줄이 다른 상자에 있어도 이름표가 한 줄로 서고, 상자 밖 화면이 끼지 않게).
     /// </summary>
     private static void SaveRows(ShotKit k, Window w, string name, IReadOnlyList<(Control Row, Rect[] Marks)> rows, int firstNumber = 1)
     {
-        const int Band = 24, Side = 30;
+        const int Band = 24, Side = 20, Right = 12;
         var frame = k.Capture(w);
-        var crops = rows.Select(r =>
+        var bounds = rows.Select(r =>
         {
             var (label, content) = RowOf(r.Row);
-            var box = ShotKit.Bounds(label.FindAncestorOfType<GroupBox>() ?? (Control)label.Parent!, w);
-            var b = ShotKit.Bounds(label, w).Union(ShotKit.Bounds(content, w));
-            return new Rect(box.X - Side, b.Y - 2, box.Width + Side * 2, b.Height + 4);
+            return ShotKit.Bounds(label, w).Union(ShotKit.Bounds(content, w));
         }).ToList();
-        int width = (int)Math.Ceiling(crops.Max(c => c.Width));
+        int width = (int)Math.Ceiling(bounds.Max(b => b.Right - Math.Max(0, b.X - Side))) + Right;
+        var crops = bounds.Select(b => new Rect(Math.Max(0, b.X - Side), b.Y - 2, width, b.Height + 4)).ToList();
         int height = (int)Math.Ceiling(crops.Sum(c => c.Height + Band)) + 4;
         using var target = new Avalonia.Media.Imaging.RenderTargetBitmap(new PixelSize(width, height), new Vector(96, 96));
         var rects = new List<Rect>();
@@ -118,7 +116,10 @@ internal static class ModelShots
 
     // ───────────── 3D 모델 열기 ─────────────
 
-    /// <summary>① 모델 썸네일 ② 상자 배지 ③ OBJ 썸네일(파일 브라우저), ④ 종류 ⑤ 삼각형·재질·애니메이션 수(상세 정보 창).</summary>
+    /// <summary>
+    /// ① 모델 썸네일 ② 상자 배지 ③ OBJ 썸네일(파일 브라우저), ④ 종류 ⑤ 삼각형·재질·애니메이션 수(상세 정보 창),
+    /// 모델 없이 연 가져오기 창(3D > 3D 모델 열기… — ⑥ 끌어 놓기 안내(끌어 오는 중의 파란 테두리) ⑦ 모델 열기… ⑧ 꺼진 가져오기).
+    /// </summary>
     [Shot("model-open")]
     public static void Open(ShotKit k)
     {
@@ -166,14 +167,29 @@ internal static class ModelShots
                 ValueOf(UiStrings.FileInfo_Triangles).Union(ValueOf(UiStrings.FileInfo_Materials)).Union(ValueOf(UiStrings.FileInfo_Animations)),
             ], firstNumber: 4);
         });
+
+        // 3D > 3D 모델 열기…가 여는 창(MainForm.OpenModelWindow와 같이 모델 없이) — 파일을 끌어 오는 중의 모습(파란 테두리)으로.
+        k.Dialog(() => new ModelImportDialog(null, null, dir).ShowDialog(m), w =>
+        {
+            ShotKit.Pump(800);
+            ShotKit.Call(w, "ShowDropTarget", true);
+            ShotKit.Pump(200);
+            var preview = ShotKit.Bounds(F<Control>(w, "_preview"), w);
+            k.Save(w, "model-open-3", marks:
+            [
+                preview.Inflate(2),
+                Box(ShotKit.FindText(w, UiStrings.Model_OpenModel, ancestorControl: true), w, 2),
+                Box(F<Button>(w, "OkButton"), w, 2),
+            ], firstNumber: 6);
+        });
     }
 
     // ───────────── 가져오기 창 ─────────────
 
     /// <summary>
-    /// 창 전체(① 원본 ② 픽셀 결과 ③ 재생 ④ 요약 ⑤ 프리셋 ⑥ 설정 ⑦ 예상 ⑧ 가져오기),
-    /// 원본 손잡이(⑨ 축 표시 ⑩ 회전 고리 ⑪ 바깥 기울이기 고리 ⑫ 해),
-    /// 프리셋 목록(⑬ 목록 ⑭ 저장 ⑮ 지우기).
+    /// 창 전체(① 원본 ② 픽셀 결과 ③ 재생 ④ 요약 ⑤ 프리셋 ⑥ 오른쪽 설정 상자 ⑦ 예상 ⑧ 가져오기 ⑨ 출력 상자 ⑩ 모델 열기…),
+    /// 원본 손잡이(⑪ 축 표시 ⑫ 회전 고리 ⑬ 바깥 기울이기 고리 ⑭ 해와 노란 원 ⑮ 빛 앞뒤 막대 — 해를 가리켜 노란 원이 보이게),
+    /// 프리셋 목록(⑯ 목록 ⑰ 저장 ⑱ 지우기).
     /// </summary>
     [Shot("model-import")]
     public static void Import(ShotKit k)
@@ -198,6 +214,7 @@ internal static class ModelShots
             var panes = ShotKit.Bounds(preview, w);
             var play = F<Control>(w, "_play");
             var bar = F<Control>(w, "_frame");
+            var groups = ShotKit.All<GroupBox>(w).Where(g => g.IsVisible).ToList();
             k.Save(w, "model-import", marks:
             [
                 new Rect(panes.X, panes.Y, 330, 330).Inflate(2),
@@ -206,23 +223,29 @@ internal static class ModelShots
                 ShotKit.Bounds(F<Control>(w, "_summary"), w).Inflate(new Thickness(14, 3, 3, 3)),
                 GridRow(w, "_preset"),
                 // 오른쪽 설정 묶음 상자들(카메라~외곽선)
-                ShotKit.All<GroupBox>(w).Where(g => g.IsVisible).Select(g => ShotKit.Bounds(g, w))
-                    .Where(b => b.X > panes.Right).Aggregate((a, b) => a.Union(b)).Inflate(new Thickness(14, 3, 3, 3)),
+                groups.Select(g => ShotKit.Bounds(g, w)).Where(b => b.X > panes.Right).Aggregate((a, b) => a.Union(b)).Inflate(new Thickness(14, 3, 3, 3)),
                 ShotKit.Bounds(F<Control>(w, "_estimate"), w).Inflate(new Thickness(14, 3, 3, 3)),
                 Box(F<Button>(w, "OkButton"), w, 2),
+                // 미리보기 아래 출력 상자
+                groups.Select(g => ShotKit.Bounds(g, w)).Where(b => b.X < panes.Right).Aggregate((a, b) => a.Union(b)).Inflate(new Thickness(3, 3, 3, 3)),
+                Box(ShotKit.FindText(w, UiStrings.Model_OpenModel, ancestorControl: true), w, 2),
             ]);
 
-            // 실제 ModelPreview 왼쪽 원본 칸에 그려진 축·회전 고리·기울이기 고리·해를 자른다.
+            // 실제 ModelPreview 왼쪽 원본 칸에 그려진 축·회전 고리·기울이기 고리·해·앞뒤 막대를 자른다. 해를 가리키면 고리와 함께 빛 구 테두리·노란 원이 보인다.
             var o = new Rect(panes.X, panes.Y, 330, 330);
-            k.Hover(w, new Point(o.Center.X, o.Center.Y), 200);
+            var sun = SunMark(w, o);
+            k.Hover(w, sun.Center, 300);
             k.Save(w, "model-import-controls", crop: o.Inflate(18), marks:
             [
-                new Rect(o.X + 6, o.Bottom - 88, 78, 78),
-                // 회전 고리는 미리보기 가운데(165, 165) 둘레: 가로 고리 반지름 112×39, 바깥 기울이기 고리 137. 해 손잡이는 가운데 둘레 빛 구 위(빛 방향에 따라).
+                // 번호 동그라미가 '뒤' 글자를 가리지 않게 왼쪽 여백까지 넓힌다.
+                new Rect(o.X - 12, o.Y + 262, 100, 62),
+                // 회전 고리는 미리보기 가운데(165, 165) 둘레: 가로 고리 반지름 112, 바깥 기울이기 고리 137.
                 new Rect(o.X + 165 - 116, o.Y + 165 - 43, 232, 86),
                 new Rect(o.X + 165 + 137 - 12, o.Y + 165 - 55, 24, 110),
-                SunMark(w, o),
-            ], firstNumber: 9);
+                sun,
+                // 빛 앞뒤 막대: 원본 칸 왼쪽 x 9, '앞' 글자(위 26)부터 '뒤' 글자(아래 254)까지 — 번호는 왼쪽 여백에
+                new Rect(o.X - 12, o.Y + 24, 36, 232),
+            ], firstNumber: 11);
 
             var preset = F<ComboBox>(w, "_preset");
             var row = GridRow(w, "_preset");
@@ -234,7 +257,7 @@ internal static class ModelShots
             ShotKit.Pump(600);
             var list = PixelateKit.DropDownBounds(preset, w);
             k.Save(w, "model-import-2", crop: new Rect(row.X - 20, row.Y - 24, Math.Max(list.Right, row.Right) - row.X + 40, list.Bottom - row.Y + 40),
-                marks: [list.Inflate(2), Box(save, w, 2), Box(delete, w, 2)], firstNumber: 13);
+                marks: [list.Inflate(2), Box(save, w, 2), Box(delete, w, 2)], firstNumber: 16);
             preset.IsDropDownOpen = false;
             ShotKit.Pump(200);
         });
@@ -242,7 +265,10 @@ internal static class ModelShots
 
     // ───────────── 보는 각도·빛·명암 ─────────────
 
-    /// <summary>① 크기 ② 보는 각도 ③ 보기 방식·시야각 ④ 확대·맞춤 ⑤ 빛 방향 ⑥ 밝기 ⑦ 명암 단계 ⑧ 가장자리 다듬기·텍스처 + 비교 그림.</summary>
+    /// <summary>
+    /// ① 크기 ② 보는 각도 ③ 보기 방식·시야각 ④ 확대·맞춤 ⑤ 빛 방향 ⑥ 빛 앞뒤 ⑦ 밝기 ⑧ 명암 단계 ⑨ 가장자리 다듬기·텍스처,
+    /// 미리보기 아래 색 줄(⑩ 원본 모델 색 — 부리·다리 색을 눌러 ⑪ 원본 칸에 쓰인 곳 표시, ⑫ 이 프레임에 쓴 색) + 비교 그림(명암 단계·가장자리 다듬기·정사영/원근·색 바꾸기).
+    /// </summary>
     [Shot("model-view")]
     public static void View(ShotKit k)
     {
@@ -255,6 +281,23 @@ internal static class ModelShots
             WaitPreview();
             SaveRows(k, w, "model-view",
                 [.. new[] { "_size", "_yaw", "_projection", "_zoom", "_lightYaw", "_lightDepth", "_ambient", "_steps", "_smooth" }.Select(f => (Row(w, f), new[] { GridRow(w, f) }))]);
+
+            // 원본 모델 색 줄에서 부리·다리 색(주황)을 눌러 쓰인 곳을 보인다(색 칸 누르기가 하는 일 그대로).
+            F<ComboBox>(w, "_projection").SelectedIndex = 0;
+            UsePreset(w, ModelPresets.BuiltIns.Count - 1);
+            var colors = ShotKit.Get<IReadOnlyList<Color32>>(w, "_sourceColors");
+            int beak = Enumerable.Range(0, colors.Count).MinBy(i => Math.Abs(colors[i].R - 255) + Math.Abs(colors[i].G - 139) + Math.Abs(colors[i].B - 37));
+            ShotKit.Call(w, "ToggleHighlight", beak);
+            WaitPreview();
+            var panes = ShotKit.Bounds(F<Control>(w, "_preview"), w);
+            var source = ShotKit.Bounds(F<Control>(w, "_sourceRow"), w);
+            var used = ShotKit.Bounds(F<Control>(w, "_usedRow"), w);
+            k.Save(w, "model-view-2", crop: new Rect(panes.X - 14, panes.Y - 30, panes.Width + 28, Math.Max(source.Bottom, used.Bottom) - panes.Y + 36), marks:
+            [
+                source.Inflate(2),
+                new Rect(panes.X, panes.Y, 330, 330).Inflate(2),
+                used.Inflate(2),
+            ], firstNumber: 10);
         });
 
         var still = new ModelFrameOptions();
@@ -270,12 +313,19 @@ internal static class ModelShots
         var box = basic with { Yaw = 35, Pitch = 30, ShadeSteps = 3, HardAlpha = true };
         Compare.Save(k, "model-view-compare-3", 4,
             Compare.Render(crate, box, still), Compare.Render(crate, box with { Projection = ModelProjection.Perspective, FieldOfView = 70 }, still));
+        // 원본 모델 색 바꾸기: 몸 깃털 색을 밤색으로 — 창이 그리는 장면(ModelColors.Recolor) 그대로. 재질 색보다 밝게는 못 만들어 어두운 쪽으로 바꾼다.
+        var standard = ModelPresets.Standard.Render with { Yaw = 30 };
+        var feather = ModelColors.Used(scene).MinBy(c => Math.Abs(c.R - 255) + Math.Abs(c.G - 219) + Math.Abs(c.B - 80));
+        Compare.Save(k, "model-view-compare-4", 4,
+            Compare.Render(scene, standard, still),
+            Compare.Render(ModelColors.Recolor(scene, new Dictionary<Color32, Color32> { [feather] = new(190, 80, 50) }), standard, still));
     }
 
     // ───────────── 픽셀 다듬기·외곽선 ─────────────
 
     /// <summary>
-    /// ① 반투명 없애기 ② 색 수 ③ 겉·바깥에 ④ 안쪽 겹침 ⑤ 각진 곳·각도 ⑥ 두께 ⑦ 선 색 방식 ⑧ 선 색(한 가지 색) ⑨ 어둡게 할 정도 + 비교 그림.
+    /// ① 색 수 ② 반투명 없애기 ③ 겉·바깥에 ④ 안쪽 겹침 ⑤ 오브젝트 경계 ⑥ 각진 곳·각도 ⑦ 색 바뀌는 곳·값 ⑧ 두께 ⑨ 선 색 방식 ⑩ 선 색(한 가지 색)
+    /// ⑪ 어둡게 할 정도 + 비교 그림(외곽선 종류·선 색·다듬기·색 바뀌는 곳·오브젝트 경계·유리).
     /// </summary>
     [Shot("model-pixel")]
     public static void Pixel(ShotKit k)
@@ -287,13 +337,16 @@ internal static class ModelShots
             UsePreset(w, 0);
             F<CheckBox>(w, "_inner").IsChecked = true;
             F<CheckBox>(w, "_creaseOn").IsChecked = true;
+            F<CheckBox>(w, "_colorEdgeOn").IsChecked = true;
+            F<ComboBox>(w, "_outlineObjects").SelectedIndex = (int)ModelOutlineObjects.Nodes;
             F<ComboBox>(w, "_outlineColorMode").SelectedIndex = 0;
             WaitPreview();
             SaveRows(k, w, "model-pixel",
             [
                 (Row(w, "_colors"), [Up(w, ShotKit.FindText(w, UiStrings.Model_Colors), F<Control>(w, "_colors")), Up(w, F<Control>(w, "_hardAlpha"))]),
                 (Row(w, "_outer"), [Up(w, F<Control>(w, "_outer"), F<Control>(w, "_outside")), Up(w, F<Control>(w, "_inner"))]),
-                (Row(w, "_creaseOn"), [Up(w, F<Control>(w, "_creaseOn"), F<Control>(w, "_crease"))]),
+                (Row(w, "_outlineObjects"), [Up(w, F<Control>(w, "_outlineObjects"))]),
+                (Row(w, "_creaseOn"), [Up(w, F<Control>(w, "_creaseOn"), F<Control>(w, "_crease")), Up(w, F<Control>(w, "_colorEdgeOn"), F<Control>(w, "_colorEdge"))]),
                 (Row(w, "_outlineWidth"),
                 [
                     Up(w, ShotKit.FindText(w, UiStrings.Model_OutlineWidth), F<Control>(w, "_outlineWidth")), Up(w, F<Control>(w, "_outlineColorMode")),
@@ -317,6 +370,25 @@ internal static class ModelShots
         var soft = new ModelRenderSettings { Width = 64, Height = 64, Yaw = 35, Pitch = 20, Supersample = 4 };
         Compare.Save(k, "model-pixel-compare-3", 4,
             Compare.Render(scene, soft, still), Compare.Render(scene, soft with { HardAlpha = true, Colors = 8 }, still));
+
+        // 색 바뀌는 곳: 기본 프리셋(겉 + 안쪽 겹침)에 더한 것 — 같은 색 면의 명암에는 선이 없다.
+        var standard = ModelPresets.Standard.Render with { Yaw = 35, Pitch = 20 };
+        Compare.Save(k, "model-pixel-compare-4", 4,
+            Compare.Render(scene, standard, still), Compare.Render(scene, standard with { OutlineColorEdge = 15 }, still));
+
+        // 오브젝트 경계: 바닥 위 자판기와 휴지통(노드 셋, 자판기는 상자 넷을 쌓음) — 끔 · 파일의 오브젝트마다 · 이어진 덩어리마다.
+        var kiosk = ModelLoader.Load(ModelSample.Kiosk(k.WorkDir));
+        var stand = ModelPresets.Standard.Render with { Yaw = 30, Pitch = 25, OutlineInner = false };
+        Compare.Save(k, "model-pixel-compare-5", 4,
+            Compare.Render(kiosk, stand, still),
+            Compare.Render(kiosk, stand with { OutlineObjects = ModelOutlineObjects.Nodes }, still),
+            Compare.Render(kiosk, stand with { OutlineObjects = ModelOutlineObjects.Connected }, still));
+
+        // 유리·반투명 재질: 유리 수조를 반투명 없애기 끔·켬으로.
+        var aquarium = ModelLoader.Load(ModelSample.Aquarium(k.WorkDir));
+        var glass = new ModelRenderSettings { Width = 64, Height = 64, Yaw = 25, Pitch = 20, Supersample = 4, LightYaw = -40, LightPitch = 50, Ambient = 0.45f };
+        Compare.Save(k, "model-pixel-compare-6", 4,
+            Compare.Render(aquarium, glass, still), Compare.Render(aquarium, glass with { HardAlpha = true }, still));
     }
 
     // ───────────── 프레임 ─────────────
@@ -404,6 +476,10 @@ internal static class ModelShots
             F<Slider>(w, "_frame").Value = 2;
             WaitPreview();
             var clip = F<ComboBox>(w, "_clip");
+            // 애니메이션 줄이 창 아래쪽이라 목록이 위로 펼쳐져 프레임 줄(④)을 가린다 — 창을 늘려 아래로 펼치게.
+            w.SizeToContent = SizeToContent.Manual;
+            w.Height = w.Bounds.Height + 110;
+            ShotKit.Pump(300);
             clip.IsDropDownOpen = true;
             ShotKit.Pump(600);
             var list = PixelateKit.DropDownBounds(clip, w);

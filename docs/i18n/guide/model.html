@@ -21,6 +21,7 @@
 <thead><tr><th>{{model-open.h-way}}</th><th>{{model-open.h-how}}</th></tr></thead>
 <tbody>
 <tr><td>{{model-open.menu}}</td><td>{{model-open.menu-how}}</td></tr>
+<tr><td>{{model-open.menu3d}}</td><td>{{model-open.menu3d-how}}</td></tr>
 <tr><td>{{model-open.drop}}</td><td>{{model-open.drop-how}}</td></tr>
 <tr><td>{{model-open.browser}}</td><td>{{model-open.browser-how}}</td></tr>
 <tr><td>{{model-open.pixelate}}</td><td>{{model-open.pixelate-how}}</td></tr>
@@ -36,15 +37,20 @@
 </tbody>
 </table></div>
 <p>{{model-open.read}}</p>
+<p>{{model-open.blend}}</p>
 <h4>{{model-open.browser-title}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/model-open.png" alt="{{model-open.alt}}" width="230" height="579" loading="lazy"><figcaption>{{model-open.caption}}</figcaption></figure>
 <p>{{model-open.thumb}}</p>
-<figure class="shot"><img src="{{root}}assets/guide/model-open-2.png" alt="{{model-open.alt2}}" width="329" height="278" loading="lazy"><figcaption>{{model-open.caption2}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/model-open-2.png" alt="{{model-open.alt2}}" width="332" height="278" loading="lazy"><figcaption>{{model-open.caption2}}</figcaption></figure>
 <p>{{model-open.info}}</p>
+<h4 id="model-open-window">{{model-open.window-title}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/model-open-3.png" alt="{{model-open.alt3}}" width="1192" height="760" loading="lazy"><figcaption>{{model-open.caption3}}</figcaption></figure>
+<p>{{model-open.window}}</p>
+<p>{{model-open.window2}}</p>
 
 <h3 id="model-import">{{model-import.1}}</h3>
 <p>{{model-import.intro}}</p>
-<figure class="shot"><img src="{{root}}assets/guide/model-import.png" alt="{{model-import.alt}}" width="1192" height="632" loading="lazy"><figcaption>{{model-import.caption}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/model-import.png" alt="{{model-import.alt}}" width="1192" height="798" loading="lazy"><figcaption>{{model-import.caption}}</figcaption></figure>
 <ul class="marks">
 <li>{{model-import.m1}}</li>
 <li>{{model-import.m2}}</li>
@@ -54,6 +60,8 @@
 <li>{{model-import.m6}}</li>
 <li>{{model-import.m7}}</li>
 <li>{{model-import.m8}}</li>
+<li>{{model-import.m9}}</li>
+<li>{{model-import.m10}}</li>
 </ul>
 <figure class="shot"><img src="{{root}}assets/guide/model-import-controls.png" alt="{{model-import.controls-alt}}" width="361" height="366" loading="lazy"><figcaption>{{model-import.controls-caption}}</figcaption></figure>
 <ul class="marks">
@@ -61,10 +69,11 @@
 <li>{{model-import.controls-rings}}</li>
 <li>{{model-import.controls-roll}}</li>
 <li>{{model-import.controls-sun}}</li>
+<li>{{model-import.controls-depth}}</li>
 </ul>
 <p>{{model-import.remember}}</p>
 <h4>{{model-import.presets-title}}</h4>
-<figure class="shot"><img src="{{root}}assets/guide/model-import-2.png" alt="{{model-import.alt2}}" width="517" height="298" loading="lazy"><figcaption>{{model-import.caption2}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/model-import-2.png" alt="{{model-import.alt2}}" width="503" height="326" loading="lazy"><figcaption>{{model-import.caption2}}</figcaption></figure>
 <p>{{model-import.presets}}</p>
 <div class="table-wrap"><table>
 <thead><tr><th>{{model-import.h-preset}}</th><th>{{model-import.h-values}}</th><th>{{model-import.h-use}}</th></tr></thead>
@@ -76,6 +85,7 @@
 <tr><td>{{CoreStrings.ModelPreset_Icon32}}</td><td>{{model-import.icon}}</td><td>{{model-import.icon-use}}</td></tr>
 <tr><td>{{CoreStrings.ModelPreset_Character}}</td><td>{{model-import.char}}</td><td>{{model-import.char-use}}</td></tr>
 <tr><td>{{CoreStrings.ModelPreset_LargeForPixelate}}</td><td>{{model-import.large}}</td><td>{{model-import.large-use}}</td></tr>
+<tr><td>{{CoreStrings.ModelPreset_Turntable64}}</td><td>{{model-import.std}}</td><td>{{model-import.std-use}}</td></tr>
 </tbody>
 </table></div>
 <p>{{model-import.pixel-common}}</p>
@@ -83,7 +93,7 @@
 
 <h3 id="model-view">{{model-view.1}}</h3>
 <p>{{model-view.intro}}</p>
-<figure class="shot"><img src="{{root}}assets/guide/model-view.png" alt="{{model-view.alt}}" width="550" height="462" loading="lazy"><figcaption>{{model-view.caption}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/model-view.png" alt="{{model-view.alt}}" width="499" height="540" loading="lazy"><figcaption>{{model-view.caption}}</figcaption></figure>
 <div class="table-wrap"><table>
 <thead><tr><th>{{model-view.h-row}}</th><th>{{model-view.h-does}}</th></tr></thead>
 <tbody>
@@ -92,11 +102,23 @@
 <tr><td>{{model-view.proj}}</td><td>{{model-view.proj-does}}</td></tr>
 <tr><td>{{model-view.zoom}}</td><td>{{model-view.zoom-does}}</td></tr>
 <tr><td>{{model-view.light}}</td><td>{{model-view.light-does}}</td></tr>
+<tr><td>{{model-view.depth}}</td><td>{{model-view.depth-does}}</td></tr>
 <tr><td>{{model-view.bright}}</td><td>{{model-view.bright-does}}</td></tr>
 <tr><td>{{model-view.steps}}</td><td>{{model-view.steps-does}}</td></tr>
 <tr><td>{{model-view.smooth}}</td><td>{{model-view.smooth-does}}</td></tr>
 </tbody>
 </table></div>
+<h4>{{model-view.colors-title}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/model-view-2.png" alt="{{model-view.alt2}}" width="691" height="413" loading="lazy"><figcaption>{{model-view.caption2}}</figcaption></figure>
+<ul class="marks">
+<li>{{model-view.source}}</li>
+<li>{{model-view.highlight}}</li>
+<li>{{model-view.used}}</li>
+</ul>
+<h4>{{model-view.recolor-title}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/model-view-compare-4.png" alt="{{model-view.compare4-alt}}" width="568" height="288" loading="lazy"><figcaption>{{model-view.compare4-caption}}</figcaption></figure>
+<p>{{model-view.recolor}}</p>
+<p>{{model-view.compare4}}</p>
 <h4>{{model-view.steps-title}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/model-view-compare.png" alt="{{model-view.compare-alt}}" width="568" height="288" loading="lazy"><figcaption>{{model-view.compare-caption}}</figcaption></figure>
 <p>{{model-view.compare}}</p>
@@ -109,15 +131,17 @@
 
 <h3 id="model-pixel">{{model-pixel.1}}</h3>
 <p>{{model-pixel.intro}}</p>
-<figure class="shot"><img src="{{root}}assets/guide/model-pixel.png" alt="{{model-pixel.alt}}" width="550" height="178" loading="lazy"><figcaption>{{model-pixel.caption}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/model-pixel.png" alt="{{model-pixel.alt}}" width="495" height="286" loading="lazy"><figcaption>{{model-pixel.caption}}</figcaption></figure>
 <div class="table-wrap"><table>
 <thead><tr><th>{{model-pixel.h-box}}</th><th>{{model-pixel.h-does}}</th></tr></thead>
 <tbody>
-<tr><td>{{model-pixel.hard}}</td><td>{{model-pixel.hard-does}}</td></tr>
 <tr><td>{{model-pixel.colors}}</td><td>{{model-pixel.colors-does}}</td></tr>
+<tr><td>{{model-pixel.hard}}</td><td>{{model-pixel.hard-does}}</td></tr>
 <tr><td>{{model-pixel.outer}}</td><td>{{model-pixel.outer-does}}</td></tr>
 <tr><td>{{model-pixel.inner}}</td><td>{{model-pixel.inner-does}}</td></tr>
+<tr><td>{{model-pixel.objects}}</td><td>{{model-pixel.objects-does}}</td></tr>
 <tr><td>{{model-pixel.crease}}</td><td>{{model-pixel.crease-does}}</td></tr>
+<tr><td>{{model-pixel.coloredge}}</td><td>{{model-pixel.coloredge-does}}</td></tr>
 <tr><td>{{model-pixel.width}}</td><td>{{model-pixel.width-does}}</td></tr>
 <tr><td>{{model-pixel.mode}}</td><td>{{model-pixel.mode-does}}</td></tr>
 <tr><td>{{model-pixel.color}}</td><td>{{model-pixel.color-does}}</td></tr>
@@ -134,10 +158,19 @@
 <h4>{{model-pixel.tidy-title}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/model-pixel-compare-3.png" alt="{{model-pixel.compare3-alt}}" width="568" height="288" loading="lazy"><figcaption>{{model-pixel.compare3-caption}}</figcaption></figure>
 <p>{{model-pixel.compare3}}</p>
+<h4>{{model-pixel.coloredge-title}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/model-pixel-compare-4.png" alt="{{model-pixel.compare4-alt}}" width="568" height="288" loading="lazy"><figcaption>{{model-pixel.compare4-caption}}</figcaption></figure>
+<p>{{model-pixel.compare4}}</p>
+<h4>{{model-pixel.objects-title}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/model-pixel-compare-5.png" alt="{{model-pixel.compare5-alt}}" width="848" height="288" loading="lazy"><figcaption>{{model-pixel.compare5-caption}}</figcaption></figure>
+<p>{{model-pixel.compare5}}</p>
+<h4>{{model-pixel.glass-title}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/model-pixel-compare-6.png" alt="{{model-pixel.compare6-alt}}" width="568" height="288" loading="lazy"><figcaption>{{model-pixel.compare6-caption}}</figcaption></figure>
+<p>{{model-pixel.compare6}}</p>
 
 <h3 id="model-frames">{{model-frames.1}}</h3>
 <p>{{model-frames.intro}}</p>
-<figure class="shot"><img src="{{root}}assets/guide/model-frames.png" alt="{{model-frames.alt}}" width="550" height="224" loading="lazy"><figcaption>{{model-frames.caption}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/model-frames.png" alt="{{model-frames.alt}}" width="415" height="230" loading="lazy"><figcaption>{{model-frames.caption}}</figcaption></figure>
 <div class="table-wrap"><table>
 <thead><tr><th>{{model-frames.h-mode}}</th><th>{{model-frames.h-makes}}</th></tr></thead>
 <tbody>
@@ -156,7 +189,7 @@
 
 <h3 id="model-animation">{{model-animation.1}}</h3>
 <p>{{model-animation.intro}}</p>
-<figure class="shot"><img src="{{root}}assets/guide/model-animation.png" alt="{{model-animation.alt}}" width="888" height="632" loading="lazy"><figcaption>{{model-animation.caption}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/model-animation.png" alt="{{model-animation.alt}}" width="1192" height="924" loading="lazy"><figcaption>{{model-animation.caption}}</figcaption></figure>
 <p>{{model-animation.how}}</p>
 <ul>
 <li>{{model-animation.match}}</li>
