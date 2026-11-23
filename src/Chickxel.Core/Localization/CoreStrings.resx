@@ -72,6 +72,7 @@
   <data name="ModelPreset_Icon32" xml:space="preserve"><value>아이템 아이콘 32px</value></data>
   <data name="ModelPreset_Character" xml:space="preserve"><value>캐릭터 애니메이션 64px</value></data>
   <data name="ModelPreset_LargeForPixelate" xml:space="preserve"><value>크게 부드럽게(픽셀로 정리용)</value></data>
+  <data name="ModelPreset_Turntable64" xml:space="preserve"><value>8방향 돌려 보기 64px(기본)</value><comment>3D 모델 가져오기 기본 제공 프리셋 맨 끝이자 창의 처음 값.</comment></data>
   <data name="AnimImport_NoAnimations" xml:space="preserve"><value>고른 파일에 애니메이션이 없습니다.</value></data>
   <data name="AnimImport_NoMatchingBones" xml:space="preserve"><value>애니메이션의 뼈 이름이 캐릭터의 뼈와 하나도 맞지 않습니다. 캐릭터와 애니메이션은 같은 뼈대를 써야 합니다(예: 둘 다 Mixamo에서 받은 것).</value></data>
   <data name="AnimImport_Warning_DuplicateBone" xml:space="preserve"><value>같은 이름의 뼈가 여럿이라 하나에만 애니메이션을 붙입니다: {bone}</value><comment>bone = 무시한 노드 이름.</comment></data>

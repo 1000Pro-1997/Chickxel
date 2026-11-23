@@ -998,14 +998,6 @@ echo __LOGIN_FAILED__
     <value>알파(#RRGGBBAA)로 진하기를 정합니다.</value>
     <comment>src/Chickxel.App\Dialogs.cs:411 · GridSettingsDialog · "알파(#RRGGBBAA)로 진하기를 정합니다."</comment>
   </data>
-  <data name="S_Dialogs_GridSettingsDialog_8997F6CAB3" xml:space="preserve">
-    <value>가로</value>
-    <comment>src/Chickxel.App\Dialogs.cs:409 · GridSettingsDialog · "가로"</comment>
-  </data>
-  <data name="S_Dialogs_GridSettingsDialog_934A32A181" xml:space="preserve">
-    <value>세로</value>
-    <comment>src/Chickxel.App\Dialogs.cs:409 · GridSettingsDialog · "세로"</comment>
-  </data>
   <data name="S_Dialogs_ImportKindDialog_0162B199AF" xml:space="preserve">
     <value>어떻게 가져올까요?</value>
     <comment>src/Chickxel.App\Dialogs.cs:129 · ImportKindDialog · "어떻게 가져올까요?"</comment>
@@ -1033,10 +1025,6 @@ echo __LOGIN_FAILED__
   <data name="S_Dialogs_ImportKindDialog_F7F2CAA9B5" xml:space="preserve">
     <value>{0}: 칸 {1}개가 모두 같은 크기({2}×{3})입니다.</value>
     <comment>src/Chickxel.App\Dialogs.cs:128 · ImportKindDialog · $"{fileName}: 칸 {sliceCount}개가 모두 같은 크기({sliceSize.Width}×{sliceSize.Height})입니다."</comment>
-  </data>
-  <data name="S_Dialogs_NewImageDialog_03DEAAFD72" xml:space="preserve">
-    <value>세로</value>
-    <comment>src/Chickxel.App\Dialogs.cs:30 · NewImageDialog · "세로"</comment>
   </data>
   <data name="S_Dialogs_NewImageDialog_0F2FF932AA" xml:space="preserve">
     <value>부위로 시작(그룹 + 첫 부위 · 예: 머리·몸·팔·다리)</value>
@@ -1078,10 +1066,6 @@ echo __LOGIN_FAILED__
     <value>파일 이름</value>
     <comment>src/Chickxel.App\Dialogs.cs:36 · NewImageDialog · "파일 이름"</comment>
   </data>
-  <data name="S_Dialogs_NewImageDialog_D02D24EC7E" xml:space="preserve">
-    <value>가로</value>
-    <comment>src/Chickxel.App\Dialogs.cs:30 · NewImageDialog · "가로"</comment>
-  </data>
   <data name="S_Dialogs_NewImageDialog_DA31ACDA8F" xml:space="preserve">
     <value>시작</value>
     <comment>src/Chickxel.App\Dialogs.cs:43 · NewImageDialog · "시작"</comment>
@@ -1093,10 +1077,6 @@ echo __LOGIN_FAILED__
   <data name="S_Dialogs_NewImageDialog_E71C7CF793" xml:space="preserve">
     <value>파일 이름이 비었거나 쓸 수 없는 문자가 있습니다.</value>
     <comment>src/Chickxel.App\Dialogs.cs:53 · NewImageDialog · "파일 이름이 비었거나 쓸 수 없는 문자가 있습니다."</comment>
-  </data>
-  <data name="S_Dialogs_NewPartDialog_0DFD005474" xml:space="preserve">
-    <value>가로</value>
-    <comment>src/Chickxel.App\Dialogs.cs:91 · NewPartDialog · "가로"</comment>
   </data>
   <data name="S_Dialogs_NewPartDialog_24E2B88EB7" xml:space="preserve">
     <value>몸</value>
@@ -1125,10 +1105,6 @@ echo __LOGIN_FAILED__
   <data name="S_Dialogs_NewPartDialog_EA5F33CDE6" xml:space="preserve">
     <value>팔</value>
     <comment>src/Chickxel.App\Dialogs.cs:88 · NewPartDialog · "팔"</comment>
-  </data>
-  <data name="S_Dialogs_NewPartDialog_F6B6C03DD0" xml:space="preserve">
-    <value>세로</value>
-    <comment>src/Chickxel.App\Dialogs.cs:91 · NewPartDialog · "세로"</comment>
   </data>
   <data name="S_Dialogs_NewPartDialog_FE7511726E" xml:space="preserve">
     <value>다리</value>
@@ -1170,17 +1146,9 @@ echo __LOGIN_FAILED__
     <value>기준점(기존 그림이 놓일 위치)</value>
     <comment>src/Chickxel.App\Dialogs.cs:163 · ResizeDialog · "기준점(기존 그림이 놓일 위치)"</comment>
   </data>
-  <data name="S_Dialogs_ResizeDialog_C4A4F3494A" xml:space="preserve">
-    <value>가로</value>
-    <comment>src/Chickxel.App\Dialogs.cs:162 · ResizeDialog · "가로"</comment>
-  </data>
   <data name="S_Dialogs_ResizeDialog_EA62E1C6CB" xml:space="preserve">
     <value>현재 크기: {0} × {1}</value>
     <comment>src/Chickxel.App\Dialogs.cs:161 · ResizeDialog · $"현재 크기: {width} × {height}"</comment>
-  </data>
-  <data name="S_Dialogs_ResizeDialog_F0673D9964" xml:space="preserve">
-    <value>세로</value>
-    <comment>src/Chickxel.App\Dialogs.cs:162 · ResizeDialog · "세로"</comment>
   </data>
   <data name="S_Dialogs_ShortcutHelpDialog_12C51EAE62" xml:space="preserve">
     <value>분류</value>
@@ -1654,10 +1622,6 @@ echo __LOGIN_FAILED__
     <value>자동: 최소 크기</value>
     <comment>src/Chickxel.App\Dialogs.cs:261 · SplitFramesDialog · "자동: 최소 크기"</comment>
   </data>
-  <data name="S_Dialogs_SplitFramesDialog_5473AAAF60" xml:space="preserve">
-    <value>세로</value>
-    <comment>src/Chickxel.App\Dialogs.cs:257 · SplitFramesDialog · "세로"</comment>
-  </data>
   <data name="S_Dialogs_SplitFramesDialog_6D54D43F1D" xml:space="preserve">
     <value>격자 – 칸 수</value>
     <comment>src/Chickxel.App\Dialogs.cs:241 · SplitFramesDialog · "격자 – 칸 수"</comment>
@@ -1669,10 +1633,6 @@ echo __LOGIN_FAILED__
   <data name="S_Dialogs_SplitFramesDialog_7F8BCA446D" xml:space="preserve">
     <value>행</value>
     <comment>src/Chickxel.App\Dialogs.cs:260 · SplitFramesDialog · "행"</comment>
-  </data>
-  <data name="S_Dialogs_SplitFramesDialog_84FD67B968" xml:space="preserve">
-    <value>칸 가로</value>
-    <comment>src/Chickxel.App\Dialogs.cs:257 · SplitFramesDialog · "칸 가로"</comment>
   </data>
   <data name="S_Dialogs_SplitFramesDialog_9C87DD306F" xml:space="preserve">
     <value>여백 X</value>
@@ -3410,10 +3370,6 @@ echo __LOGIN_FAILED__
     <value>그림 파일마다 레이어 1개, 프로젝트(.chickxel)는 레이어·그룹·스킨을 통째로(첫 파일이 맨 위)</value>
     <comment>src/Chickxel.App\MergeDialog.cs:47 · MergeDialog · "그림 파일마다 레이어 1개, 프로젝트(.chickxel)는 레이어·그룹·스킨을 통째로(첫 파일이 맨 위)"</comment>
   </data>
-  <data name="S_MergeDialog_MergeDialog_9EA164CE93" xml:space="preserve">
-    <value>가로</value>
-    <comment>src/Chickxel.App\MergeDialog.cs:74 · MergeDialog · "가로"</comment>
-  </data>
   <data name="S_MergeDialog_MergeDialog_A54A1EF2B9" xml:space="preserve">
     <value>(원래 스킨·부위 전용 스킨 유지, 그림은 크기가 같은 부위 또는 가장 큰 부위에). 없으면 부위 1개, 첫 파일 = 기본 스킨, 부위 크기 = 가장 큰 파일</value>
     <comment>src/Chickxel.App\MergeDialog.cs:50 · MergeDialog · "(원래 스킨·부위 전용 스킨 유지, 그림은 크기가 같은 부위 또는 가장 큰 부위에). 없으면 부위 1개, 첫 파일 = 기본 스킨, 부위 크기 = 가장 큰 파일"</comment>
@@ -3421,10 +3377,6 @@ echo __LOGIN_FAILED__
   <data name="S_MergeDialog_MergeDialog_B3BA45594D" xml:space="preserve">
     <value>레이어로</value>
     <comment>src/Chickxel.App\MergeDialog.cs:47 · MergeDialog · "레이어로"</comment>
-  </data>
-  <data name="S_MergeDialog_MergeDialog_B655521669" xml:space="preserve">
-    <value>세로</value>
-    <comment>src/Chickxel.App\MergeDialog.cs:74 · MergeDialog · "세로"</comment>
   </data>
   <data name="S_MergeDialog_MergeDialog_B96DE665FA" xml:space="preserve">
     <value>파일 {0}개 합치기</value>
@@ -6363,10 +6315,6 @@ echo __LOGIN_FAILED__
     <value>스포이드</value>
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:125 · ToolOptionsPanel · "스포이드"</comment>
   </data>
-  <data name="S_ToolOptionsPanel_ToolOptionsPanel_42E9812F72" xml:space="preserve">
-    <value>그림 가로</value>
-    <comment>src/Chickxel.App\ToolOptionsPanel.cs:332 · ToolOptionsPanel · "그림 가로"</comment>
-  </data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_43C9B223D1" xml:space="preserve">
     <value>세기</value>
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:131 · ToolOptionsPanel · "세기"</comment>
@@ -6390,10 +6338,6 @@ echo __LOGIN_FAILED__
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_4E9F04FE20" xml:space="preserve">
     <value>오른쪽 버튼 = 지우개</value>
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:164 · ToolOptionsPanel · "오른쪽 버튼 = 지우개"</comment>
-  </data>
-  <data name="S_ToolOptionsPanel_ToolOptionsPanel_4ED6D3C2A9" xml:space="preserve">
-    <value>캔버스 가로</value>
-    <comment>src/Chickxel.App\ToolOptionsPanel.cs:331 · ToolOptionsPanel · "캔버스 가로"</comment>
   </data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_51B15B9385" xml:space="preserve">
     <value>각도</value>
@@ -6484,10 +6428,6 @@ echo __LOGIN_FAILED__
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_8D7A9F13B5" xml:space="preserve">
     <value>적용</value>
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:282 · ToolOptionsPanel · "적용"</comment>
-  </data>
-  <data name="S_ToolOptionsPanel_ToolOptionsPanel_93E9A22B2D" xml:space="preserve">
-    <value>그림 비율 유지</value>
-    <comment>src/Chickxel.App\ToolOptionsPanel.cs:296 · ToolOptionsPanel · "그림 비율 유지"</comment>
   </data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_98ABAB10EB" xml:space="preserve">
     <value>테두리 지우기(9-slice 끄기)</value>
@@ -6596,10 +6536,6 @@ echo __LOGIN_FAILED__
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_E905102901" xml:space="preserve">
     <value>캔버스 크기를 적용합니다(Enter) — 실행취소 한 단계</value>
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:326 · ToolOptionsPanel · "캔버스 크기를 적용합니다(Enter) — 실행취소 한 단계"</comment>
-  </data>
-  <data name="S_ToolOptionsPanel_ToolOptionsPanel_EA7C872715" xml:space="preserve">
-    <value>그림 세로</value>
-    <comment>src/Chickxel.App\ToolOptionsPanel.cs:333 · ToolOptionsPanel · "그림 세로"</comment>
   </data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_EA92356D34" xml:space="preserve">
     <value>RotSprite: Scale2x를 세 번(8배) 키운 그림에서 집어 회전한 선이 덜 깨집니다(섞지 않아 새 색 없음). 최근접: 원본 픽셀을 그대로 집습니다. 0°·90°·180°·270°는 둘이 같습니다.</value>
@@ -8518,7 +8454,6 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Pixelate_Selected" xml:space="preserve"><value>{name} · {score}점 · 칸 {scale}px · {colors}색 · {width}×{height} · {frames}프레임</value></data>
   <data name="Pixelate_Dither_Bayer2" xml:space="preserve"><value>Bayer 2×2</value></data>
   <data name="Pixelate_Dither_Bayer4" xml:space="preserve"><value>Bayer 4×4</value></data>
-  <data name="Pixelate_Size_By" xml:space="preserve"><value>×</value></data>
   <data name="Pixelate_Grid_Source" xml:space="preserve"><value>칸 크기 기준</value></data>
   <data name="Pixelate_Grid_SourceAuto" xml:space="preserve"><value>자동(경계가 가장 잘 맞는 쪽)</value></data>
   <data name="Pixelate_Grid_SourceOutline" xml:space="preserve"><value>외곽선 두께</value></data>
@@ -9763,7 +9698,6 @@ TOML(Codex CLI·ChatGPT 데스크톱 앱):
   <data name="LayerTransform_Group" xml:space="preserve"><value>그룹은 레이어 전체로 변형할 수 없습니다. 부위나 레이어를 고르세요.</value><comment>레이어 전체 변형(Alt+Shift+C)을 그룹에서 열려 할 때 상태 표시줄</comment></data>
   <data name="LayerTransform_Locked" xml:space="preserve"><value>잠긴 레이어는 변형할 수 없습니다.</value></data>
   <data name="LayerTransform_Empty" xml:space="preserve"><value>이 레이어에는 어느 프레임에도 변형할 그림이 없습니다.</value></data>
-  <data name="Transform_BoxWidth" xml:space="preserve"><value>상자 가로</value><comment>변형 도구 설정: 상자(여백) 가로(다음 칸 세로)</comment></data>
   <data name="Transform_BoxTip" xml:space="preserve"><value>여백: 그림은 그대로 두고 상자 크기만 바꿉니다(왼쪽 위 고정). 좁히면 밖은 잘리고, 넓히면 선택 영역은 가장자리 픽셀로 늘고 아니면 빈 자리가 됩니다. 캔버스에서는 손잡이 우클릭 끌기.</value></data>
   <data name="Transform_FlipHorizontalTip" xml:space="preserve"><value>상자를 좌우로 뒤집습니다(적용할 때 바뀜).</value></data>
   <data name="Transform_FlipVerticalTip" xml:space="preserve"><value>상자를 상하로 뒤집습니다(적용할 때 바뀜).</value></data>
@@ -10711,4 +10645,10 @@ Enter나 다른 도구·레이어·프레임으로 바꾸면 기본색(오른쪽
   <data name="Model_OpenModelTip" xml:space="preserve"><value>3D 모델 파일(glTF·GLB·OBJ·FBX)을 골라 엽니다. 이미 연 모델이 있으면 설정은 그대로 두고 모델만 바꿉니다. 창에 파일을 끌어 놓아도 됩니다.</value></data>
   <data name="Model_DropHint" xml:space="preserve"><value>3D 모델 파일(glTF·GLB·OBJ·FBX)을 여기로 끌어 놓거나 '모델 열기…'를 누릅니다</value></data>
   <data name="Model_NoModel" xml:space="preserve"><value>아직 모델을 열지 않았습니다.</value></data>
+  <data name="SizeField_Width" xml:space="preserve"><value>가로</value><comment>공용 크기 입력(가로 × 세로)의 가로 상자 풍선 도움말.</comment></data>
+  <data name="SizeField_Height" xml:space="preserve"><value>세로</value><comment>공용 크기 입력의 세로 상자 풍선 도움말.</comment></data>
+  <data name="SizeField_LinkTip" xml:space="preserve"><value>비율 고정: 켜면 가로나 세로를 바꿀 때 다른 쪽이 같은 비율로 따라 바뀝니다</value><comment>공용 크기 입력 끝의 사슬 단추.</comment></data>
+  <data name="SizeField_Size" xml:space="preserve"><value>크기</value><comment>공용 크기 입력 앞 줄 이름(따로 이름이 없는 곳).</comment></data>
+  <data name="SizeField_CellSize" xml:space="preserve"><value>칸 크기</value><comment>프레임 나누기 등: 한 칸의 가로 × 세로.</comment></data>
+  <data name="CanvasResize_Image" xml:space="preserve"><value>그림</value><comment>캔버스 크기 모드: 그림 가로 × 세로 줄 이름</comment></data>
 </root>

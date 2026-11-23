@@ -16,9 +16,9 @@ namespace Chickxel.App;
 /// </summary>
 public sealed class ModelImportDialog : DialogBase
 {
-    /// <summary>마지막으로 쓴 설정(다음에 여는 모델의 처음 값 — 애니메이션 번호는 빼고).</summary>
-    private static ModelRenderSettings _lastRender = new();
-    private static ModelFrameOptions _lastFrames = new();
+    /// <summary>마지막으로 쓴 설정(다음에 여는 모델의 처음 값 — 애니메이션 번호는 빼고). 처음은 기본 프리셋(<see cref="ModelPresets.Standard"/>).</summary>
+    private static ModelRenderSettings _lastRender = ModelPresets.Standard.Render;
+    private static ModelFrameOptions _lastFrames = ModelPresets.Standard.Frames;
 
     /// <summary>사용자 프리셋 파일(설정 파일과 같은 폴더).</summary>
     public static string PresetPath => Path.Combine(Path.GetDirectoryName(AppSettings.FilePath)!, ModelPresets.FileName);
@@ -34,7 +34,8 @@ public sealed class ModelImportDialog : DialogBase
     /// <summary>미리보기 위 안내: 모델이 없으면 끌어 놓기·열기 안내, 끌어 오는 중이면 강조.</summary>
     private readonly Border _dropHint;
     private readonly Button _importAnim;
-    private readonly NumericUpDown _width, _height, _yaw, _pitch, _roll, _zoom, _fov, _lightYaw, _lightPitch, _ambient, _light, _steps, _turnFrames, _fps, _maxFrames;
+    private readonly NumericUpDown _yaw, _pitch, _roll, _zoom, _fov, _lightYaw, _lightPitch, _ambient, _light, _steps, _turnFrames, _fps, _maxFrames;
+    private readonly SizeField _size;
     private readonly NumericUpDown _colors, _crease, _outlineWidth, _darken;
     private readonly ComboBox _projection, _smooth, _mode, _clip, _outlineColorMode, _preset;
     private readonly CheckBox _textures, _hardAlpha, _outer, _outside, _inner, _creaseOn;
@@ -52,10 +53,12 @@ public sealed class ModelImportDialog : DialogBase
     private readonly Slider _frame;
     private readonly Button _play;
     private readonly TextBlock _estimate;
-    private readonly DispatcherTimer _debounce, _player;
+    private readonly DispatcherTimer _player;
+    /// <summary>미리보기를 그리는 중 / 그리는 동안 값이 또 바뀌어 끝나면 다시 그려야 함 / 다시 그리기를 이미 부탁해 둠(같은 틱의 변경을 한 번으로).</summary>
+    private bool _rendering, _renderAgain, _renderQueued;
     private CancellationTokenSource? _renderCts;
-    /// <summary>지금 프레임 설정의 자세와 맞춤 범위(프레임 설정이 바뀔 때만 다시 — 그리기 설정과는 상관없음).</summary>
-    private (ModelFrameOptions Options, IReadOnlyList<ModelFrame> Frames, PosedMesh[] Poses, ModelBounds Fit)? _posed;
+    /// <summary>지금 모델·프레임 설정의 자세와 맞춤 범위(모델이나 프레임 설정이 바뀔 때만 다시 — 그리기 설정과는 상관없음).</summary>
+    private (ModelScene Scene, ModelFrameOptions Options, IReadOnlyList<ModelFrame> Frames, PosedMesh[] Poses, ModelBounds Fit)? _posed;
     /// <summary>값을 한꺼번에 바꾸는 중(프리셋 불러오기·맞추기) — 칸마다 다시 그리지 않게.</summary>
     private bool _syncing;
 
@@ -71,8 +74,7 @@ public sealed class ModelImportDialog : DialogBase
         ModelPath = path;
         _fileName = path is null ? "" : Path.GetFileName(path);
         _folder = path is null ? folder : Path.GetDirectoryName(path);
-        _width = Ui.Num(1, 2048, 128, 70).Presets(Ui.SpriteSizes).Unit("px").RecentKey("model.width");
-        _height = Ui.Num(1, 2048, 128, 70).Presets(Ui.SpriteSizes).Unit("px").RecentKey("model.height");
+        _size = new SizeField(1, 2048, 128, 128, 70).Presets(Ui.SpriteSizes).RecentKey("model.size");
         _yaw = Ui.Num(-360, 360, 0, 70, decimals: 1, increment: 15).Unit("°");
         _pitch = Ui.Num(-90, 90, 0, 70, decimals: 1, increment: 5).Unit("°");
         _roll = Ui.Num(-180, 180, 0, 70, decimals: 1, increment: 15).Unit("°");
@@ -158,6 +160,8 @@ public sealed class ModelImportDialog : DialogBase
             _lightPitch.Value = (decimal)Math.Round(pitch, 1);
         };
         _preview.Zoomed += factor => _zoom.Value = Math.Clamp(Math.Round(_zoom.NumValue() * (decimal)factor), _zoom.Minimum, _zoom.Maximum);
+        // 끄는 동안은 원본 칸을 가볍게 그리고, 놓으면 제대로 다시 그린다
+        _preview.DragEnded += Schedule;
         _frame = new Slider { Minimum = 0, Maximum = 0, Width = 300, IsSnapToTickEnabled = true, TickFrequency = 1, VerticalAlignment = VerticalAlignment.Center };
         _play = Ui.IconButton(VectorIcon.Play, UiStrings.Model_PlayTip, (_, _) => TogglePlay());
         var previewHint = Dim(Ui.Label(UiStrings.Model_PreviewHint));
@@ -200,7 +204,7 @@ public sealed class ModelImportDialog : DialogBase
             grid.Children.Add(content);
         }
         AddRow(UiStrings.Model_Preset, Ui.Row(_preset, savePreset, _deletePreset));
-        AddRow(UiStrings.Model_Size, Ui.Row(_width, Ui.Label("×"), _height));
+        AddRow(UiStrings.Model_Size, _size);
         AddRow(UiStrings.Model_Angle, Ui.Row(Ui.Label(UiStrings.Model_Yaw), _yaw, Ui.Label(UiStrings.Model_Pitch), _pitch, Ui.Label(UiStrings.Model_Roll), _roll));
         AddRow(UiStrings.Model_Projection, Ui.Row(_projection, Ui.Label(UiStrings.Model_Fov), _fov));
         AddRow(UiStrings.Model_Zoom, Ui.Row(_zoom, Ui.Button(UiStrings.Model_Fit, (_, _) => _zoom.Value = 100)));
@@ -238,12 +242,6 @@ public sealed class ModelImportDialog : DialogBase
         AddHandler(DragDrop.DragLeaveEvent, (_, _) => ShowDropTarget(false));
         AddHandler(DragDrop.DropEvent, OnModelDrop);
 
-        _debounce = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(40) };
-        _debounce.Tick += (_, _) =>
-        {
-            _debounce.Stop();
-            RenderPreview();
-        };
         _player = new DispatcherTimer();
         _player.Tick += (_, _) => _frame.Value = _frame.Value >= _frame.Maximum ? 0 : _frame.Value + 1;
 
@@ -264,7 +262,8 @@ public sealed class ModelImportDialog : DialogBase
             _deletePreset.IsEnabled = !p.BuiltIn;
         };
 
-        foreach (var n in new[] { _width, _height, _yaw, _pitch, _roll, _zoom, _fov, _lightYaw, _lightPitch, _ambient, _light, _steps, _turnFrames, _fps, _maxFrames,
+        _size.Changed += (_, _) => Sync();
+        foreach (var n in new[] { _yaw, _pitch, _roll, _zoom, _fov, _lightYaw, _lightPitch, _ambient, _light, _steps, _turnFrames, _fps, _maxFrames,
                      _colors, _crease, _outlineWidth, _darken })
             n.ValueChanged += (_, _) => Sync();
         foreach (var c in new[] { _projection, _smooth, _mode, _clip, _outlineColorMode }) c.SelectionChanged += (_, _) => Sync();
@@ -280,7 +279,6 @@ public sealed class ModelImportDialog : DialogBase
         Closed += (_, _) =>
         {
             _player.Stop();
-            _debounce.Stop();
             _renderCts?.Cancel();
         };
         Sync();
@@ -289,8 +287,8 @@ public sealed class ModelImportDialog : DialogBase
     /// <summary>고른 그리기 설정.</summary>
     public ModelRenderSettings RenderSettings => new()
     {
-        Width = (int)_width.NumValue(),
-        Height = (int)_height.NumValue(),
+        Width = _size.Size.Width,
+        Height = _size.Size.Height,
         Yaw = (float)_yaw.NumValue(),
         Pitch = (float)_pitch.NumValue(),
         Roll = (float)_roll.NumValue(),
@@ -494,8 +492,7 @@ public sealed class ModelImportDialog : DialogBase
     {
         _syncing = true;
         static decimal Clamp(NumericUpDown n, double v) => Math.Clamp((decimal)v, n.Minimum, n.Maximum);
-        _width.Value = Clamp(_width, r.Width);
-        _height.Value = Clamp(_height, r.Height);
+        _size.Size = new PixelSize((int)r.Width, (int)r.Height);
         _yaw.Value = Clamp(_yaw, r.Yaw);
         _pitch.Value = Clamp(_pitch, r.Pitch);
         _roll.Value = Clamp(_roll, r.Roll);
@@ -690,63 +687,93 @@ public sealed class ModelImportDialog : DialogBase
         Sync();
     }
 
+    /// <summary>
+    /// 미리보기를 다시 그리게 한다. 같은 틱의 변경은 한 번으로 모으고, 그리는 중이면 끝난 뒤 지금 값으로 한 번 더 그린다
+    /// (그리던 것을 버리지 않아 끄는 동안에도 끝난 그림이 계속 나온다 — 끄기마다 처음부터 다시 그리면 손을 멈출 때까지 아무것도 안 보임).
+    /// </summary>
     private void Schedule()
     {
-        _debounce.Stop();
-        _debounce.Start();
+        if (_renderQueued) return;
+        _renderQueued = true;
+        Dispatcher.UIThread.Post(() =>
+        {
+            _renderQueued = false;
+            if (_rendering) _renderAgain = true;
+            else RenderPreview();
+        }, DispatcherPriority.Background);
     }
 
-    /// <summary>지금 설정·프레임 막대 자리의 프레임을 다른 스레드에서 그려 미리보기에 보인다(앞서 그리던 것은 멈춤).</summary>
+    /// <summary>
+    /// 지금 설정·프레임 막대 자리의 프레임을 다른 스레드에서 그려 미리보기에 보인다. 원본 칸은 미리보기를 끄는 동안 2×2 표본(가볍게),
+    /// 아니면 4×4 표본으로 그린다(놓으면 <see cref="ModelPreview.DragEnded"/>로 다시 그림).
+    /// </summary>
     private void RenderPreview()
     {
-        _renderCts?.Cancel();
-        var cts = _renderCts = new CancellationTokenSource();
+        if (_scene is not { } scene) return;
+        _renderCts ??= new CancellationTokenSource();
+        var cts = _renderCts;
         var options = FrameOptions;
         var settings = RenderSettings;
         int index = (int)_frame.Value;
-        var posed = _posed is { } p && p.Options == options ? p : ((ModelFrameOptions, IReadOnlyList<ModelFrame>, PosedMesh[], ModelBounds)?)null;
-        if (_scene is not { } scene) return;
+        int originalSamples = _preview.Dragging ? 2 : 4;
+        var posed = _posed is { } p && p.Options == options && ReferenceEquals(p.Scene, scene) ? p : ((ModelScene, ModelFrameOptions, IReadOnlyList<ModelFrame>, PosedMesh[], ModelBounds)?)null;
+        _rendering = true;
         Task.Run(() =>
         {
+            string? error = null;
+            (ModelScene, ModelFrameOptions, IReadOnlyList<ModelFrame>, PosedMesh[], ModelBounds)? done = null;
+            PixelImage? original = null, image = null;
+            ModelRenderSettings view = settings;
             try
             {
-                var (o, frames, poses, fit) = posed ?? Pose(scene, options, cts.Token);
+                var (s, o, frames, poses, fit) = posed ?? Pose(scene, options, cts.Token);
                 int i = Math.Clamp(index, 0, frames.Count - 1);
-                var view = settings with { Yaw = settings.Yaw + frames[i].YawOffset };
-                var image = ModelRenderer.Render(poses[i], view, fit, cts.Token);
+                view = settings with { Yaw = settings.Yaw + frames[i].YawOffset };
+                image = ModelRenderer.Render(poses[i], view, fit, cts.Token);
                 // 원본은 같은 자세·카메라·빛으로 출력 픽셀 다듬기 전에 독립적으로 부드럽게 그린다.
                 // 긴 변을 제한해 큰 내보내기 크기에서도 미리보기 비용은 일정하다.
                 double scale = 330d / Math.Max(settings.Width, settings.Height);
                 int smoothWidth = Math.Max(1, (int)Math.Round(settings.Width * scale));
                 int smoothHeight = Math.Max(1, (int)Math.Round(settings.Height * scale));
-                var original = ModelRenderer.RenderLayers(poses[i], view with
+                original = ModelRenderer.RenderLayers(poses[i], view with
                 {
-                    Width = smoothWidth, Height = smoothHeight, Supersample = 4, ShadeSteps = 0,
+                    Width = smoothWidth, Height = smoothHeight, Supersample = originalSamples, ShadeSteps = 0,
                     HardAlpha = false, Colors = 0, OutlineOuter = false, OutlineInner = false, OutlineCrease = 0,
                 }, fit, cts.Token).Image;
-                Dispatcher.UIThread.Post(() =>
-                {
-                    if (cts.IsCancellationRequested) return;
-                    _posed = (o, frames, poses, fit);
-                    _preview.SetOrientation(view);
-                    _preview.Show(original, image);
-                });
+                done = (s, o, frames, poses, fit);
             }
             catch (OperationCanceledException)
             {
             }
             catch (Exception ex) when (ex is InvalidDataException or ArgumentException or InvalidOperationException)
             {
-                Dispatcher.UIThread.Post(() => { if (!cts.IsCancellationRequested) _estimate.Text = ex.Message; });
+                error = ex.Message;
             }
+            Dispatcher.UIThread.Post(() =>
+            {
+                _rendering = false;
+                if (cts.IsCancellationRequested) return;
+                if (error is not null) _estimate.Text = error;
+                if (done is { } d && original is not null && image is not null)
+                {
+                    _posed = d;
+                    _preview.SetOrientation(view);
+                    _preview.Show(original, image);
+                }
+                if (_renderAgain)
+                {
+                    _renderAgain = false;
+                    RenderPreview();
+                }
+            });
         });
     }
 
-    private static (ModelFrameOptions, IReadOnlyList<ModelFrame>, PosedMesh[], ModelBounds) Pose(ModelScene scene, ModelFrameOptions options, CancellationToken ct)
+    private static (ModelScene, ModelFrameOptions, IReadOnlyList<ModelFrame>, PosedMesh[], ModelBounds) Pose(ModelScene scene, ModelFrameOptions options, CancellationToken ct)
     {
         var frames = ModelFrames.Plan(scene, options);
         var poses = ModelFrames.Pose(scene, frames, ct);
-        return (options, frames, poses, ModelFrames.Fit(poses));
+        return (scene, options, frames, poses, ModelFrames.Fit(poses));
     }
 
     private void TogglePlay()
@@ -832,6 +859,11 @@ public sealed class ModelImportDialog : DialogBase
         public event Action<double, double>? Faced;
         public event Action<double, double>? LightMoved;
         public event Action<double>? Zoomed;
+        /// <summary>끌기(돌리기·고리·해)를 마침 — 가볍게 그리던 미리보기를 제대로 다시 그릴 때.</summary>
+        public event Action? DragEnded;
+
+        /// <summary>지금 미리보기를 끌고 있는지.</summary>
+        public bool Dragging => _drag is not null;
 
         public ModelPreview()
         {
@@ -1097,10 +1129,12 @@ public sealed class ModelImportDialog : DialogBase
         protected override void OnPointerReleased(PointerReleasedEventArgs e)
         {
             base.OnPointerReleased(e);
+            bool dragged = _drag is not null;
             _drag = null;
             _active = "";
             e.Pointer.Capture(null);
             InvalidateVisual();
+            if (dragged) DragEnded?.Invoke();
         }
 
         protected override void OnPointerWheelChanged(PointerWheelEventArgs e)

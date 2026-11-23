@@ -68,6 +68,17 @@ public static class ModelPresets
         Ambient = 0.45f,
     };
 
+    /// <summary>
+    /// 3D 모델 가져오기 창의 처음 값이자 기본 제공 프리셋 맨 끝: 64px 정사영, 정면에서 세로 30°로 내려다보며 8방향 돌려 보기,
+    /// 다듬기 없이 또렷하게(반투명 없애기·12색·겉+안쪽 겹침 외곽선 한 가지 색).
+    /// </summary>
+    public static ModelPreset Standard => new()
+    {
+        Name = CoreStrings.ModelPreset_Turntable64, BuiltIn = true,
+        Render = Pixel(64, 12) with { Yaw = 0, Pitch = 30, Supersample = 1, OutlineInner = true, OutlineColorMode = ModelOutlineColor.Fixed },
+        Frames = new ModelFrameOptions { Mode = ModelFrameMode.Turntable, TurntableFrames = 8 },
+    };
+
     /// <summary>기본 제공 프리셋(화면 언어로 이름).</summary>
     public static IReadOnlyList<ModelPreset> BuiltIns =>
     [
@@ -115,6 +126,7 @@ public static class ModelPresets
             Render = new ModelRenderSettings { Width = 256, Height = 256, Supersample = 4 },
             Frames = new ModelFrameOptions { Mode = ModelFrameMode.Still },
         },
+        Standard,
     ];
 
     /// <summary>JSON 텍스트 → 사용자 프리셋(이름 없는 것은 건너뜀, 이름이 겹치면 뒤의 것). 형식이 틀리면 <see cref="InvalidDataException"/>.</summary>

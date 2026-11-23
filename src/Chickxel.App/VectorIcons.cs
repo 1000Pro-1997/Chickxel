@@ -117,6 +117,8 @@ public enum VectorIcon
     CircleAlert,
     /// <summary>사슬 고리(비율 묶기 — Lucide link).</summary>
     Link,
+    /// <summary>끊긴 사슬(비율 고정 꺼짐 — Lucide unlink).</summary>
+    Unlink,
     /// <summary>세로로 둘로 나뉜 사각형(좌우로 나눠 열기 — Lucide columns-2).</summary>
     Columns2,
     /// <summary>원 안의 "i"(설명 — Lucide info).</summary>
@@ -448,6 +450,12 @@ public static class VectorIcons
         VectorIcon.Undo2 => ["M9 14 4 9l5-5", "M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"],
         VectorIcon.CircleAlert => [Circle(12, 12, 10), "M12 8v4", "M12 16h.01"],
         VectorIcon.Link => ["M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71", "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"],
+        VectorIcon.Unlink =>
+        [
+            "m18.84 12.25 1.72-1.71h-.02a5.004 5.004 0 0 0-.12-7.07 5.006 5.006 0 0 0-6.95 0l-1.72 1.71",
+            "m5.17 11.75-1.71 1.71a5.004 5.004 0 0 0 .12 7.07 5.006 5.006 0 0 0 6.95 0l1.71-1.71",
+            "M8 2v3", "M2 8h3", "M16 19v3", "M19 16h3",
+        ],
         VectorIcon.Columns2 => ["M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z", "M12 3v18"],
         VectorIcon.Info => [Circle(12, 12, 10), "M12 16v-4", "M12 8h.01"],
         VectorIcon.Oval => ["M2 12a10 7 0 1 0 20 0a10 7 0 1 0-20 0z"],

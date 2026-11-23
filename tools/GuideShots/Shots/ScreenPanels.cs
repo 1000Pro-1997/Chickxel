@@ -87,7 +87,7 @@ internal static class ScreenPanelShots
                 U(w, [order, .. moveButtons]),
                 ShotKit.Get<Control>(w, "_name"),
                 U(w, ShotKit.Get<Control>(w, "_layers"), ShotKit.Get<Control>(w, "_group"), ShotKit.Get<Control>(w, "_skins"), ShotKit.Get<Control>(w, "_frames"), ShotKit.Get<Control>(w, "_blankCover")),
-                U(w, ShotKit.Get<Control>(w, "_w"), ShotKit.Get<Control>(w, "_h"), ShotKit.Get<Control>(w, "_anchor"), ShotKit.Get<Control>(w, "_deleteOriginals")),
+                U(w, ShotKit.Get<Control>(w, "_size"), ShotKit.Get<Control>(w, "_anchor"), ShotKit.Get<Control>(w, "_deleteOriginals")),
                 ShotKit.Get<Control>(w, "_preview"),
                 ShotKit.Get<Control>(w, "_timeline"),
             ], firstNumber: 12);

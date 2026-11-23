@@ -16,9 +16,9 @@ namespace GuideShots;
 internal static class ModelShots
 {
     // 설정 칸 줄 번호(ModelImportDialog의 AddRow 순서).
-    private const int RowPreset = 0, RowSize = 1, RowSmooth = 8, RowPixel = 9, RowOutlineLook = 11, RowFrames = 12, RowFps = 15;
+    private const int RowPreset = 0, RowSize = 1, RowSmooth = 9, RowPixel = 10, RowOutlineLook = 12, RowFrames = 13, RowFps = 16;
 
-    private static Grid SettingsGrid(Window w) => (Grid)((Control)ShotKit.Get<Control>(w, "_width").Parent!).Parent!;
+    private static Grid SettingsGrid(Window w) => (Grid)ShotKit.Get<Control>(w, "_size").Parent!;
 
     /// <summary>
     /// 설정 칸 한 줄(이름표 + 내용)의 창 좌표 — 번호 동그라미가 이름표 왼쪽 여백에 오게 왼쪽으로 넓히고, 이웃 줄 표시와 겹치지 않게 위아래는 조금 줄인다.

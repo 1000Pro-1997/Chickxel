@@ -20,7 +20,8 @@ public sealed class GroupLayoutDialog : DialogBase
     private readonly TabStrip _order = new(TabStripKind.Segmented, UiStrings.S_GroupLayoutDialog__order_76C685F2DF, UiStrings.S_GroupLayoutDialog__order_BBF74458D7);
     private readonly CheckBox _includeHidden;
     private readonly CheckBox _wholeCanvas;
-    private readonly NumericUpDown _ax, _ay, _aw, _ah;
+    private readonly NumericUpDown _ax, _ay;
+    private readonly SizeField _areaSize;
     private readonly GroupLayoutPreview _preview;
 
     public GroupLayoutDialog(SpriteProject project, Layer group, int frameIndex)
@@ -43,8 +44,7 @@ public sealed class GroupLayoutDialog : DialogBase
         _wholeCanvas = Ui.Check(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_2586C42060, l.Area is null);
         _ax = Ui.Num(-PixelImage.MaxSize, PixelImage.MaxSize, area.X, 56).Presets(Ui.Offsets).Unit("px").RecentKey("layout.area.pos");
         _ay = Ui.Num(-PixelImage.MaxSize, PixelImage.MaxSize, area.Y, 56).Presets(Ui.Offsets).Unit("px").RecentKey("layout.area.pos");
-        _aw = Ui.Num(1, PixelImage.MaxSize, area.Width, 56).Presets(Ui.SpriteSizes).Unit("px").RecentKey("layout.area.size");
-        _ah = Ui.Num(1, PixelImage.MaxSize, area.Height, 56).Presets(Ui.SpriteSizes).Unit("px").RecentKey("layout.area.size");
+        _areaSize = new SizeField(1, PixelImage.MaxSize, area.Width, area.Height, 56).Presets(Ui.SpriteSizes).RecentKey("layout.area.size");
         _preview = new GroupLayoutPreview(project, group, frameIndex) { Width = 340, Height = 190 };
 
         _columnsRow = Ui.Row(Ui.Label(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_4B983CA7BF), _columns);
@@ -58,7 +58,7 @@ public sealed class GroupLayoutDialog : DialogBase
         Body.Children.Add(Ui.Row(_distLabel, _distribution).HelpAt(page, anchor: "Distribution"));
         Body.Children.Add(Ui.Row(FieldLabel(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_3C32EBCE78), _gap, Ui.Label("px"), Ui.Label(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_BE647B487C), _margin, Ui.Label("px")).HelpAt(page, anchor: "Spacing · padding"));
         Body.Children.Add(Ui.Row(FieldLabel(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_915D00697D), _order).HelpAt(page, anchor: "Order"));
-        Body.Children.Add(Ui.Row(FieldLabel(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_639D409AD1), _wholeCanvas, Ui.Label("X"), _ax, Ui.Label("Y"), _ay, Ui.Label("W"), _aw, Ui.Label("H"), _ah).HelpAt(page, anchor: "Area"));
+        Body.Children.Add(Ui.Row(FieldLabel(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_639D409AD1), _wholeCanvas, Ui.Label("X"), _ax, Ui.Label("Y"), _ay, _areaSize).HelpAt(page, anchor: "Area"));
         Body.Children.Add(Ui.Row(FieldLabel(""), _includeHidden).HelpAt(page, anchor: "Hidden parts keep their space"));
         Body.Children.Add(new Border
         {
@@ -83,7 +83,8 @@ public sealed class GroupLayoutDialog : DialogBase
         _align.SelectionChanged += (_, _) => Refresh();
         _distribution.SelectionChanged += (_, _) => Refresh();
         _order.SelectionChanged += (_, _) => Refresh();
-        foreach (var n in new[] { _columns, _gap, _margin, _ax, _ay, _aw, _ah }) n.ValueChanged += (_, _) => Refresh();
+        foreach (var n in new[] { _columns, _gap, _margin, _ax, _ay }) n.ValueChanged += (_, _) => Refresh();
+        _areaSize.Changed += (_, _) => Refresh();
         _includeHidden.IsCheckedChanged += (_, _) => Refresh();
         _wholeCanvas.IsCheckedChanged += (_, _) => Refresh();
         Refresh();
@@ -100,7 +101,7 @@ public sealed class GroupLayoutDialog : DialogBase
         Margin = (int)_margin.NumValue(),
         Order = (GroupLayoutOrder)Math.Max(0, _order.SelectedIndex),
         IncludeHidden = _includeHidden.On(),
-        Area = _wholeCanvas.On() ? null : new Rectangle((int)_ax.NumValue(), (int)_ay.NumValue(), (int)_aw.NumValue(), (int)_ah.NumValue()),
+        Area = _wholeCanvas.On() ? null : new Rectangle((int)_ax.NumValue(), (int)_ay.NumValue(), _areaSize.Size.Width, _areaSize.Size.Height),
     }.Normalized();
 
     private void Refresh()
@@ -120,7 +121,7 @@ public sealed class GroupLayoutDialog : DialogBase
             _ => (UiStrings.S_GroupLayoutDialog_Refresh_B49F4A4010, UiStrings.S_GroupLayoutDialog_Refresh_2B96211826),
         };
         _align.SetTip(0, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_GroupLayoutDialog_Refresh_6AC90345A7,start)).SetTip(1, UiStrings.S_GroupLayoutDialog_Refresh_10B14D798B).SetTip(2, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_GroupLayoutDialog_Refresh_6AC90345A7,end));
-        foreach (var n in new[] { _ax, _ay, _aw, _ah }) n.IsEnabled = !_wholeCanvas.On();
+        _ax.IsEnabled = _ay.IsEnabled = _areaSize.IsEnabled = !_wholeCanvas.On();
         _preview.Layout = Layout;
     }
 

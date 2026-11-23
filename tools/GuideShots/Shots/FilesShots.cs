@@ -297,7 +297,7 @@ internal static class FilesShots
             SaveWindow(k, w, "files-png-import-3", [list], 4);
             method.IsDropDownOpen = false;
             ShotKit.Pump(200);
-            var cellH = ShotKit.Get<Control>(w, "_cellH");
+            var cellH = ShotKit.Get<Control>(w, "_cellSize");
             var rows = ShotKit.Get<Control>(w, "_rows");
             var min = ShotKit.Get<Control>(w, "_minSize");
             SaveWindow(k, w, "files-png-import-4", [RowUpTo(cellH, w, 6), RowUpTo(rows, w, 6), RowUpTo(min, w, 6)], 5);

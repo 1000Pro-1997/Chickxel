@@ -361,7 +361,7 @@ internal static class PixelateShots
                 a, b!,
                 PixelateKit.LeftBox(ModeRow("_grMode"), dlg, 10, 0),
                 PixelateKit.LeftBox(ModeRow("_szMode"), dlg, 10, 0),
-                PixelateKit.LeftBox((Control)ShotKit.Get<Control>(dlg, "_szW").Parent!, dlg, 10, 0),
+                PixelateKit.LeftBox((Control)ShotKit.Get<Control>(dlg, "_szSize").Parent!, dlg, 10, 0),
                 PixelateKit.Union(dlg, padLabel, pad).Inflate(new Thickness(12, 2, 2, 2)),
             ];
         });

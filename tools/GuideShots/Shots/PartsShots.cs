@@ -54,7 +54,7 @@ internal static class PartsShots
             name.Text = "Arm";
             name.SelectionStart = name.SelectionEnd = name.CaretIndex = 3;
             ShotKit.Pump(200);
-            var size = AfterLabel(w, (Panel)ShotKit.Get<Control>(w, "_w").Parent!);
+            var size = AfterLabel(w, (Panel)ShotKit.Get<Control>(w, "_size").Parent!);
             k.Save(w, "parts-create-3", marks: [name, size], firstNumber: 5);
         });
         // ⑦ 새 그룹 ⑧ 새 부위… (그룹 우클릭 > 새로 만들기)

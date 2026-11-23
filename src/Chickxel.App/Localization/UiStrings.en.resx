@@ -315,8 +315,6 @@ Run "{1}" in a terminal yourself, then click "Check again".</value></data>
   <data name="S_Dialogs_GridSettingsDialog_1E51753746" xml:space="preserve"><value>Tile grid</value></data>
   <data name="S_Dialogs_GridSettingsDialog_32C718E6B0" xml:space="preserve"><value>Pixel grid (visible at 6x zoom or more)</value></data>
   <data name="S_Dialogs_GridSettingsDialog_356D2B7E9E" xml:space="preserve"><value>Alpha (#RRGGBBAA) sets the intensity.</value></data>
-  <data name="S_Dialogs_GridSettingsDialog_8997F6CAB3" xml:space="preserve"><value>Width</value></data>
-  <data name="S_Dialogs_GridSettingsDialog_934A32A181" xml:space="preserve"><value>Height</value></data>
   <data name="S_Dialogs_ImportKindDialog_0162B199AF" xml:space="preserve"><value>How do you want to import?</value></data>
   <data name="S_Dialogs_ImportKindDialog_5EAAD1D0AB" xml:space="preserve"><value>As parts</value></data>
   <data name="S_Dialogs_ImportKindDialog_6C0B0B1FB9" xml:space="preserve"><value>· As parts: one part per cell in a single group (name, size and pivot kept, placed at the original sheet position)</value></data>
@@ -324,7 +322,6 @@ Run "{1}" in a terminal yourself, then click "Check again".</value></data>
   <data name="S_Dialogs_ImportKindDialog_E1ED0FF7D0" xml:space="preserve"><value>Import PNG</value></data>
   <data name="S_Dialogs_ImportKindDialog_F16B548693" xml:space="preserve"><value>As animation frames</value></data>
   <data name="S_Dialogs_ImportKindDialog_F7F2CAA9B5" xml:space="preserve"><value>{0}: all {1} cells are the same size ({2}×{3}).</value></data>
-  <data name="S_Dialogs_NewImageDialog_03DEAAFD72" xml:space="preserve"><value>Height</value></data>
   <data name="S_Dialogs_NewImageDialog_0F2FF932AA" xml:space="preserve"><value>Start with parts (group + first part · e.g. head, body, arm, leg)</value></data>
   <data name="S_Dialogs_NewImageDialog_1BD6059500" xml:space="preserve"><value>Transparent background</value></data>
   <data name="S_Dialogs_NewImageDialog_3231BB27CA" xml:space="preserve"><value>Canvas</value></data>
@@ -335,11 +332,9 @@ Run "{1}" in a terminal yourself, then click "Check again".</value></data>
   <data name="S_Dialogs_NewImageDialog_8376337E30" xml:space="preserve"><value>If not transparent, fills with the secondary color.</value></data>
   <data name="S_Dialogs_NewImageDialog_AB87E30975" xml:space="preserve"><value>Head</value></data>
   <data name="S_Dialogs_NewImageDialog_BF763338DC" xml:space="preserve"><value>File name</value></data>
-  <data name="S_Dialogs_NewImageDialog_D02D24EC7E" xml:space="preserve"><value>Width</value></data>
   <data name="S_Dialogs_NewImageDialog_DA31ACDA8F" xml:space="preserve"><value>Start</value></data>
   <data name="S_Dialogs_NewImageDialog_DFFA42AA00" xml:space="preserve"><value>Enter a name for the first part.</value></data>
   <data name="S_Dialogs_NewImageDialog_E71C7CF793" xml:space="preserve"><value>The file name is empty or contains invalid characters.</value></data>
-  <data name="S_Dialogs_NewPartDialog_0DFD005474" xml:space="preserve"><value>Width</value></data>
   <data name="S_Dialogs_NewPartDialog_24E2B88EB7" xml:space="preserve"><value>Body</value></data>
   <data name="S_Dialogs_NewPartDialog_2C2DA45F93" xml:space="preserve"><value>Head</value></data>
   <data name="S_Dialogs_NewPartDialog_2F37A51A37" xml:space="preserve"><value>New part</value></data>
@@ -347,7 +342,6 @@ Run "{1}" in a terminal yourself, then click "Check again".</value></data>
   <data name="S_Dialogs_NewPartDialog_A37D1FAE04" xml:space="preserve"><value>Name</value></data>
   <data name="S_Dialogs_NewPartDialog_A409FD6D21" xml:space="preserve"><value>Duplicate names get _1, _2 … appended. Initial position is the canvas center — select the group and drag to place it.</value></data>
   <data name="S_Dialogs_NewPartDialog_EA5F33CDE6" xml:space="preserve"><value>Arm</value></data>
-  <data name="S_Dialogs_NewPartDialog_F6B6C03DD0" xml:space="preserve"><value>Height</value></data>
   <data name="S_Dialogs_NewPartDialog_FE7511726E" xml:space="preserve"><value>Leg</value></data>
   <data name="S_Dialogs_PartOffsetDialog_0C8997B97B" xml:space="preserve"><value>Top-left position of the part on the frame canvas (shared by all frames)</value></data>
   <data name="S_Dialogs_PartOffsetDialog_24B8E24EE4" xml:space="preserve"><value>Part position — {0}</value></data>
@@ -358,9 +352,7 @@ Run "{1}" in a terminal yourself, then click "Check again".</value></data>
   <data name="S_Dialogs_ReplaceColorDialog_D512F65023" xml:space="preserve"><value>Replace color</value></data>
   <data name="S_Dialogs_ReplaceColorDialog_EDA3D827F9" xml:space="preserve"><value>Replace</value></data>
   <data name="S_Dialogs_ResizeDialog_497FE1221E" xml:space="preserve"><value>Anchor (where the existing image is placed)</value></data>
-  <data name="S_Dialogs_ResizeDialog_C4A4F3494A" xml:space="preserve"><value>Width</value></data>
   <data name="S_Dialogs_ResizeDialog_EA62E1C6CB" xml:space="preserve"><value>Current size: {0} × {1}</value></data>
-  <data name="S_Dialogs_ResizeDialog_F0673D9964" xml:space="preserve"><value>Height</value></data>
   <data name="S_Dialogs_ShortcutHelpDialog_12C51EAE62" xml:space="preserve"><value>Category</value></data>
   <data name="S_Dialogs_ShortcutHelpDialog_378916AAF8" xml:space="preserve"><value>Key</value></data>
   <data name="S_Dialogs_ShortcutHelpDialog_40F6EB91B0" xml:space="preserve"><value>Shortcuts</value></data>
@@ -479,11 +471,9 @@ Run "{1}" in a terminal yourself, then click "Check again".</value></data>
   <data name="S_Dialogs_Shortcuts_FEE4BB43A7" xml:space="preserve"><value>Ctrl+wheel (canvas)</value></data>
   <data name="S_Dialogs_SplitFramesDialog_08AC8DBD4F" xml:space="preserve"><value>Auto (per blob)</value></data>
   <data name="S_Dialogs_SplitFramesDialog_36ABCCA237" xml:space="preserve"><value>Auto: minimum size</value></data>
-  <data name="S_Dialogs_SplitFramesDialog_5473AAAF60" xml:space="preserve"><value>Vertical</value></data>
   <data name="S_Dialogs_SplitFramesDialog_6D54D43F1D" xml:space="preserve"><value>Grid – cell count</value></data>
   <data name="S_Dialogs_SplitFramesDialog_7AE557EFFF" xml:space="preserve"><value>No cells would be created. Check the settings.</value></data>
   <data name="S_Dialogs_SplitFramesDialog_7F8BCA446D" xml:space="preserve"><value>Rows</value></data>
-  <data name="S_Dialogs_SplitFramesDialog_84FD67B968" xml:space="preserve"><value>Cell width</value></data>
   <data name="S_Dialogs_SplitFramesDialog_9C87DD306F" xml:space="preserve"><value>Margin X</value></data>
   <data name="S_Dialogs_SplitFramesDialog_AA00952270" xml:space="preserve"><value>Split into frames by grid</value></data>
   <data name="S_Dialogs_SplitFramesDialog_B6C30C0EF4" xml:space="preserve"><value>Skip empty cells</value></data>
@@ -946,10 +936,8 @@ Moving effect — animates over the frame range.</value></data>
   <data name="S_MergeDialog_MergeDialog_7306C9C995" xml:space="preserve"><value>One group with one part per image file (at file size). If a .chickxel with groups is included, parts are added to its first group (parts and skins kept)</value></data>
   <data name="S_MergeDialog_MergeDialog_7C6B20A094" xml:space="preserve"><value>Leaves the group row (thumbnail) and frame sheet empty — all parts are created hidden; part images are unchanged, so all are exported to the part atlas. </value></data>
   <data name="S_MergeDialog_MergeDialog_9D32BDB124" xml:space="preserve"><value>One layer per image file; projects (.chickxel) bring their layers, groups and skins whole (first file on top)</value></data>
-  <data name="S_MergeDialog_MergeDialog_9EA164CE93" xml:space="preserve"><value>Horizontal</value></data>
   <data name="S_MergeDialog_MergeDialog_A54A1EF2B9" xml:space="preserve"><value>(original skins and part-specific skins kept; images go to a same-size part or the largest part). Otherwise one part, first file = default skin, part size = largest file</value></data>
   <data name="S_MergeDialog_MergeDialog_B3BA45594D" xml:space="preserve"><value>As layers</value></data>
-  <data name="S_MergeDialog_MergeDialog_B655521669" xml:space="preserve"><value>Vertical</value></data>
   <data name="S_MergeDialog_MergeDialog_B96DE665FA" xml:space="preserve"><value>Merge {0} files</value></data>
   <data name="S_MergeDialog_MergeDialog_BC8C862A07" xml:space="preserve"><value>Parts become visible when you turn on the eye in the timeline. Available when "As a group" is selected.</value></data>
   <data name="S_MergeDialog_MergeDialog_BDD18DAAB9" xml:space="preserve"><value>Down (later)</value></data>
@@ -1769,14 +1757,12 @@ Unavailable items (skipped):
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_37EFFDFA5B" xml:space="preserve"><value>Image to sample for region bounds. With all visible layers, boundaries come from the composite while painting still goes to the current layer.</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_3FD1E9A85E" xml:space="preserve"><value>Vertical symmetry drawing (Shift+Y)</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_410CC5D3AF" xml:space="preserve"><value>Eyedropper</value></data>
-  <data name="S_ToolOptionsPanel_ToolOptionsPanel_42E9812F72" xml:space="preserve"><value>Image width</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_43C9B223D1" xml:space="preserve"><value>Strength</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_48CEA6539D" xml:space="preserve"><value>Y of the transformed area's center (pixels, top is 0)</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_495785D5E4" xml:space="preserve"><value>Finish without changes (Esc, Ctrl+Z)</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_4AF6C42C92" xml:space="preserve"><value>Cycle</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_4DC4117198" xml:space="preserve"><value>Remove L-shaped corners for 1px pencil/eraser (P)</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_4E9F04FE20" xml:space="preserve"><value>Right button = eraser</value></data>
-  <data name="S_ToolOptionsPanel_ToolOptionsPanel_4ED6D3C2A9" xml:space="preserve"><value>Canvas width</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_51B15B9385" xml:space="preserve"><value>Angle</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_571538645F" xml:space="preserve"><value>Width</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_592987DB9E" xml:space="preserve"><value>Nearest</value></data>
@@ -1804,7 +1790,6 @@ Unavailable items (skipped):
   <data name="CanvasResize_FillTip" xml:space="preserve"><value>How the middle is filled: Stretch = nearest-neighbor stretch or shrink (Unity Sliced), Tile = repeat the original pattern at its size (Unity Tiled — good for patterned middles).</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_8CE505E7D6" xml:space="preserve"><value>Canvas: drag a square handle = stretch (the image resizes too — with 9-slice when Stretch with 9-slice is on), right-drag a handle = margin (only that edge moves, the image stays; margin grows or is cropped). In both, Shift = keep ratio (a side handle grows the other side too, from its center), Alt = from center (opposite side too), Ctrl (⌘) = move border corners freely (a corner moves that corner, a side its two ends — the new canvas is the rectangle enclosing that shape; when stretching, the image is skewed in perspective to that shape and the leftover space is margin; for margin, everything outside that shape is cropped). Pressing or releasing Ctrl, Alt or Shift during a drag takes effect right away. With Anchor at canvas center on, resizing via numbers or handles always moves both sides together. Drag inside the image or arrow keys = move the image.</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_8D7A9F13B5" xml:space="preserve"><value>Apply</value></data>
-  <data name="S_ToolOptionsPanel_ToolOptionsPanel_93E9A22B2D" xml:space="preserve"><value>Keep image ratio</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_98ABAB10EB" xml:space="preserve"><value>Clear borders (turn off 9-slice)</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_A181F0EEA8" xml:space="preserve"><value>Dense (75%)</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_A41D1B8B02" xml:space="preserve"><value>Tolerance</value></data>
@@ -1832,7 +1817,6 @@ Unavailable items (skipped):
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_E39101186F" xml:space="preserve"><value>Tool options</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_E4C9B1697C" xml:space="preserve"><value>Transform · current cel</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_E905102901" xml:space="preserve"><value>Apply the canvas size (Enter) — one undo step</value></data>
-  <data name="S_ToolOptionsPanel_ToolOptionsPanel_EA7C872715" xml:space="preserve"><value>Image height</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_EA92356D34" xml:space="preserve"><value>RotSprite: samples from an image upscaled with Scale2x three times (8×) so rotated lines break less (no blending, so no new colors). Nearest: samples original pixels as is. Both are the same at 0°/90°/180°/270°.</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_EDE86CE801" xml:space="preserve"><value>Canvas size</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_F1CB28FBF9" xml:space="preserve"><value>Revert to before the transform (Esc, Ctrl+Z)</value></data>
@@ -2803,7 +2787,6 @@ Removes everything added or removed with the brush and returns to the automatica
   <data name="Pixelate_Selected" xml:space="preserve"><value>{name} · {score} · pixel {scale}px · {colors} colors · {width}×{height} · {frames} frames</value></data>
   <data name="Pixelate_Dither_Bayer2" xml:space="preserve"><value>Bayer 2×2</value></data>
   <data name="Pixelate_Dither_Bayer4" xml:space="preserve"><value>Bayer 4×4</value></data>
-  <data name="Pixelate_Size_By" xml:space="preserve"><value>×</value></data>
   <data name="Pixelate_Grid_Source" xml:space="preserve"><value>Pixel size from</value></data>
   <data name="Pixelate_Grid_SourceAuto" xml:space="preserve"><value>Auto (best edge match)</value></data>
   <data name="Pixelate_Grid_SourceOutline" xml:space="preserve"><value>Outline thickness</value></data>
@@ -4048,7 +4031,6 @@ TOML (Codex CLI and the ChatGPT desktop app):
   <data name="LayerTransform_Group" xml:space="preserve"><value>A group can't be transformed as a whole layer. Select a part or a layer.</value></data>
   <data name="LayerTransform_Locked" xml:space="preserve"><value>The layer is locked and can't be transformed.</value></data>
   <data name="LayerTransform_Empty" xml:space="preserve"><value>This layer has nothing to transform in any frame.</value></data>
-  <data name="Transform_BoxWidth" xml:space="preserve"><value>Box width</value></data>
   <data name="Transform_BoxTip" xml:space="preserve"><value>Margin: changes only the box size and leaves the drawing where it is (top left stays). Shrinking crops what falls outside; growing extends a selection by repeating its edge pixels and otherwise adds empty space. On the canvas, right-drag a handle.</value></data>
   <data name="Transform_FlipHorizontalTip" xml:space="preserve"><value>Flip the box horizontally (takes effect when you apply).</value></data>
   <data name="Transform_FlipVerticalTip" xml:space="preserve"><value>Flip the box vertically (takes effect when you apply).</value></data>
@@ -4996,4 +4978,10 @@ Enter, or switching tool, layer or frame, paints it in the primary color (second
   <data name="Model_OpenModelTip" xml:space="preserve"><value>Pick a 3D model file (glTF, GLB, OBJ, FBX). If a model is already open, only the model changes and the settings stay. You can also drop a file onto the window.</value></data>
   <data name="Model_DropHint" xml:space="preserve"><value>Drop a 3D model file (glTF, GLB, OBJ, FBX) here or press "Open model…"</value></data>
   <data name="Model_NoModel" xml:space="preserve"><value>No model opened yet.</value></data>
+  <data name="SizeField_Width" xml:space="preserve"><value>Width</value></data>
+  <data name="SizeField_Height" xml:space="preserve"><value>Height</value></data>
+  <data name="SizeField_LinkTip" xml:space="preserve"><value>Lock aspect ratio: when on, changing the width or height changes the other in proportion</value></data>
+  <data name="SizeField_Size" xml:space="preserve"><value>Size</value></data>
+  <data name="SizeField_CellSize" xml:space="preserve"><value>Cell size</value></data>
+  <data name="CanvasResize_Image" xml:space="preserve"><value>Image</value></data>
 </root>

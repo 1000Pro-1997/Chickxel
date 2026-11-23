@@ -11,7 +11,7 @@ namespace Chickxel.App;
 /// </summary>
 public sealed class NewImageDialog : DialogBase
 {
-    private readonly NumericUpDown _w, _h, _partW, _partH;
+    private readonly SizeField _size, _partSize;
     private readonly CheckBox _transparent;
     private readonly CheckBox? _paste;
     private readonly PixelImage? _clipboard;
@@ -26,28 +26,23 @@ public sealed class NewImageDialog : DialogBase
         // 대상 도움말(F1): 창 = "새 프로젝트", 줄마다 설정 표의 ①~④ 줄, 파일 이름 줄 = 파일 브라우저의 새 파일 만들기
         const string page = "start-new-project";
         this.HelpAt(page);
-        _w = Ui.Num(1, PixelImage.MaxSize, width, 80).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
-        _h = Ui.Num(1, PixelImage.MaxSize, height, 80).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
+        _size = new SizeField(1, PixelImage.MaxSize, width, height, 80).Presets(Ui.SpriteSizes).RecentKey("canvas.size");
         _transparent = Ui.Check(UiStrings.S_Dialogs_NewImageDialog_1BD6059500, true);
         _normal = new RadioButton { GroupName = "start", Content = UiStrings.S_Dialogs_NewImageDialog_6F947592B8, IsChecked = true, Foreground = AppTheme.TextBrush };
         _parts = new RadioButton { GroupName = "start", Content = UiStrings.S_Dialogs_NewImageDialog_0F2FF932AA, Foreground = AppTheme.TextBrush };
         _partName = Ui.Text(UiStrings.S_Dialogs_NewImageDialog_AB87E30975, 100);
         // 부위도 레이어처럼 캔버스 크기로 시작: 부위 칸을 직접 고치기 전까지 캔버스 크기를 따라간다
-        _partW = Ui.Num(1, PixelImage.MaxSize, width, 70).Presets(Ui.PartSizes).Unit("px").RecentKey("part.size");
-        _partH = Ui.Num(1, PixelImage.MaxSize, height, 70).Presets(Ui.PartSizes).Unit("px").RecentKey("part.size");
+        _partSize = new SizeField(1, PixelImage.MaxSize, width, height, 70).Presets(Ui.PartSizes).RecentKey("part.size");
         bool partEdited = false, syncing = false;
-        void FollowCanvas(NumericUpDown part, NumericUpDown canvas)
+        _size.Changed += (_, _) =>
         {
             if (partEdited) return;
             syncing = true;
-            part.Value = canvas.Value;
+            _partSize.Size = _size.Size;
             syncing = false;
-        }
-        _w.ValueChanged += (_, _) => FollowCanvas(_partW, _w);
-        _h.ValueChanged += (_, _) => FollowCanvas(_partH, _h);
-        _partW.ValueChanged += (_, _) => partEdited |= !syncing;
-        _partH.ValueChanged += (_, _) => partEdited |= !syncing;
-        _partRow = Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_7C07F3BD59), _partName, Ui.Label(UiStrings.S_Dialogs_NewImageDialog_D02D24EC7E), _partW, Ui.Label(UiStrings.S_Dialogs_NewImageDialog_03DEAAFD72), _partH, Ui.Label("px"))
+        };
+        _partSize.Changed += (_, _) => partEdited |= !syncing;
+        _partRow = Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_7C07F3BD59), _partName, _partSize)
             .HelpAt(page, anchor: "Start");
         _partRow.IsEnabled = false;
         _parts.IsCheckedChanged += (_, _) => _partRow.IsEnabled = _parts.On();
@@ -74,19 +69,18 @@ public sealed class NewImageDialog : DialogBase
                 bool on = _paste.On();
                 if (on)
                 {
-                    _w.Value = clipboard.Width;
-                    _h.Value = clipboard.Height;
+                    _size.Size = new PixelSize(clipboard.Width, clipboard.Height);
                     _normal.IsChecked = true;
                 }
                 _parts.IsEnabled = !on;
             };
             Body.Children.Add(Ui.Row(thumb, _paste).HelpAt(page, anchor: "Paste the clipboard image"));
         }
-        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_3231BB27CA), Ui.Label(UiStrings.S_Dialogs_NewImageDialog_D02D24EC7E), _w, Ui.Label(UiStrings.S_Dialogs_NewImageDialog_03DEAAFD72), _h, Ui.Label("px"))
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_3231BB27CA), _size)
             .HelpAt(page, anchor: "Canvas"));
         var presets = Ui.Row().HelpAt(page, anchor: "Canvas");
         foreach (var (pw, ph) in new[] { (16, 16), (32, 32), (16, 32), (64, 64), (128, 128), (256, 256) })
-            presets.Children.Add(Ui.Button($"{pw}×{ph}", (_, _) => { _w.Value = pw; _h.Value = ph; }));
+            presets.Children.Add(Ui.Button($"{pw}×{ph}", (_, _) => _size.Size = new PixelSize(pw, ph)));
         Body.Children.Add(presets);
         Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_DA31ACDA8F, bold: true).HelpAt(page, anchor: "Start"));
         Body.Children.Add(_normal.HelpAt(page, anchor: "Start"));
@@ -110,8 +104,8 @@ public sealed class NewImageDialog : DialogBase
         };
     }
 
-    public int ImageWidth => (int)_w.NumValue();
-    public int ImageHeight => (int)_h.NumValue();
+    public int ImageWidth => _size.Size.Width;
+    public int ImageHeight => _size.Size.Height;
     public bool Transparent => _transparent.On();
     /// <summary>첫 레이어에 붙여넣을 클립보드 그림(고르지 않았으면 null).</summary>
     public PixelImage? PasteImage => _paste?.On() == true ? _clipboard : null;
@@ -119,39 +113,38 @@ public sealed class NewImageDialog : DialogBase
     /// <summary>그룹 + 첫 부위로 시작(아니면 일반 레이어 1).</summary>
     public bool StartWithParts => _parts.On();
     public string PartName => _partName.Text?.Trim() ?? "";
-    public int PartWidth => (int)_partW.NumValue();
-    public int PartHeight => (int)_partH.NumValue();
+    public int PartWidth => _partSize.Size.Width;
+    public int PartHeight => _partSize.Size.Height;
 }
 
 /// <summary>부위 추가: 이름 + 크기(부위 캔버스).</summary>
 public sealed class NewPartDialog : DialogBase
 {
     private readonly TextBox _name;
-    private readonly NumericUpDown _w, _h;
+    private readonly SizeField _size;
 
     public NewPartDialog(string name, int width, int height) : base(UiStrings.S_Dialogs_NewPartDialog_2F37A51A37, UiStrings.S_Dialogs_NewPartDialog_961BAAAD27)
     {
         // 대상 도움말(F1): 창 = "만들기"의 부위 추가 창 그림, 이름 줄 ⑤·크기 줄 ⑥, 아래 안내 = 새 부위가 놓이는 자리 문단
         this.HelpAt("parts-create", shot: "parts-create-3");
         _name = Ui.Text(name, 200);
-        _w = Ui.Num(1, PixelImage.MaxSize, width, 80).Presets(Ui.PartSizes).Unit("px").RecentKey("part.size");
-        _h = Ui.Num(1, PixelImage.MaxSize, height, 80).Presets(Ui.PartSizes).Unit("px").RecentKey("part.size");
+        _size = new SizeField(1, PixelImage.MaxSize, width, height, 80).Presets(Ui.PartSizes).RecentKey("part.size");
         var names = Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewPartDialog_A37D1FAE04), _name).HelpAt("parts-create", anchor: "⑤");
         foreach (var n in new[] { UiStrings.S_Dialogs_NewPartDialog_2C2DA45F93, UiStrings.S_Dialogs_NewPartDialog_24E2B88EB7, UiStrings.S_Dialogs_NewPartDialog_EA5F33CDE6, UiStrings.S_Dialogs_NewPartDialog_FE7511726E })
             names.Children.Add(Ui.Button(n, (_, _) => _name.Text = n));
         Body.Children.Add(names);
-        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewPartDialog_0DFD005474), _w, Ui.Label(UiStrings.S_Dialogs_NewPartDialog_F6B6C03DD0), _h, Ui.Label("px")).HelpAt("parts-create", anchor: "⑥"));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.SizeField_Size), _size).HelpAt("parts-create", anchor: "⑥"));
         var presets = Ui.Row().HelpAt("parts-create", anchor: "⑥");
         foreach (var (pw, ph) in new[] { (8, 8), (8, 5), (16, 16), (16, 32), (32, 32) })
-            presets.Children.Add(Ui.Button($"{pw}×{ph}", (_, _) => { _w.Value = pw; _h.Value = ph; }));
+            presets.Children.Add(Ui.Button($"{pw}×{ph}", (_, _) => _size.Size = new PixelSize(pw, ph)));
         Body.Children.Add(presets);
         Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_NewPartDialog_A409FD6D21).HelpAt("parts-create", anchor: "A new part goes in as the top part"));
         Opened += (_, _) => { _name.Focus(); _name.SelectAll(); };
     }
 
     public string PartName => _name.Text?.Trim() ?? "";
-    public int PartWidth => (int)_w.NumValue();
-    public int PartHeight => (int)_h.NumValue();
+    public int PartWidth => _size.Size.Width;
+    public int PartHeight => _size.Size.Height;
 }
 
 /// <summary>부위 위치: 프레임 캔버스 안 왼쪽 위 X·Y(밖으로 나가도 됨).</summary>
@@ -209,23 +202,22 @@ public sealed class ImportKindDialog : DialogBase
 /// <summary>부위 크기 바꾸기: 새 크기 + 기존 그림 기준점(9방향). 캔버스 크기는 캔버스 크기 모드(Ctrl+Alt+C)로 바꾼다.</summary>
 public sealed class ResizeDialog : DialogBase
 {
-    private readonly NumericUpDown _w, _h;
+    private readonly SizeField _size;
     private readonly AnchorPicker _anchor = new();
 
     public ResizeDialog(int width, int height, string title) : base(title)
     {
         // 대상 도움말(F1): 부위 크기 창(부위에만 쓰임) — 창·크기 줄 = "그리기(부위 선택)"의 크기 바꾸기 항목, 기준점 = ⑥ 9방향 기준점 그림
         this.HelpAt("parts-draw", anchor: "Resize: Frame·Layer");
-        _w = Ui.Num(1, PixelImage.MaxSize, width, 80).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
-        _h = Ui.Num(1, PixelImage.MaxSize, height, 80).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
+        _size = new SizeField(1, PixelImage.MaxSize, width, height, 80).Presets(Ui.SpriteSizes).RecentKey("canvas.size");
         Body.Children.Add(Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Dialogs_ResizeDialog_EA62E1C6CB,width,height)));
-        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_ResizeDialog_C4A4F3494A), _w, Ui.Label(UiStrings.S_Dialogs_ResizeDialog_F0673D9964), _h, Ui.Label("px")).HelpAt("parts-draw", anchor: "Resize: Frame·Layer"));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.SizeField_Size), _size).HelpAt("parts-draw", anchor: "Resize: Frame·Layer"));
         Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_ResizeDialog_497FE1221E).HelpAt("parts-draw", shot: "parts-draw-4"));
         Body.Children.Add(_anchor.HelpAt("parts-draw", shot: "parts-draw-4"));
     }
 
-    public int NewWidth => (int)_w.NumValue();
-    public int NewHeight => (int)_h.NumValue();
+    public int NewWidth => _size.Size.Width;
+    public int NewHeight => _size.Size.Height;
     public Chickxel.Core.Model.Anchor ImageAnchor => _anchor.Value;
 }
 
@@ -290,7 +282,8 @@ public sealed class AnchorPicker : Grid
 public sealed class SplitFramesDialog : DialogBase
 {
     private readonly ComboBox _method;
-    private readonly NumericUpDown _cellW, _cellH, _offX, _offY, _padX, _padY, _cols, _rows, _minSize;
+    private readonly SizeField _cellSize;
+    private readonly NumericUpDown _offX, _offY, _padX, _padY, _cols, _rows, _minSize;
     private readonly CheckBox _skipEmpty;
     private readonly TextBlock _result;
     private readonly Chickxel.Core.Model.PixelImage _image;
@@ -304,8 +297,8 @@ public sealed class SplitFramesDialog : DialogBase
             .HelpAt("files-png-import", shot: "files-png-import-3");
         if (_method.SelectedIndex < 0) _method.SelectedIndex = 0;
         decimal[] counts = [1, 2, 3, 4, 5, 6, 8, 10, 12, 16];
-        _cellW = Ui.Num(1, image.Width, Math.Min(cellW, image.Width), 60).Presets(Ui.SpriteSizes).Unit("px").RecentKey("cell.size");
-        _cellH = Ui.Num(1, image.Height, Math.Min(cellH, image.Height), 60).Presets(Ui.SpriteSizes).Unit("px").RecentKey("cell.size");
+        _cellSize = new SizeField(1, image.Width, Math.Min(cellW, image.Width), Math.Min(cellH, image.Height), 60, maxHeight: image.Height)
+            .Presets(Ui.SpriteSizes).RecentKey("cell.size");
         _offX = Ui.Num(0, image.Width - 1, 0, 60).Presets(Ui.Spacings).Unit("px").RecentKey("sheet.margin");
         _offY = Ui.Num(0, image.Height - 1, 0, 60).Presets(Ui.Spacings).Unit("px").RecentKey("sheet.margin");
         _padX = Ui.Num(0, image.Width, 0, 60).Presets(Ui.Spacings).Unit("px").RecentKey("sheet.spacing");
@@ -317,14 +310,15 @@ public sealed class SplitFramesDialog : DialogBase
         _result = Ui.Label("");
         Body.Children.Add(Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Dialogs_SplitFramesDialog_B7C2E8311F,image.Width,image.Height)));
         Body.Children.Add(_method);
-        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_84FD67B968), _cellW, Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_5473AAAF60), _cellH).HelpAt("files-png-import", shot: "files-png-import-4"));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.SizeField_CellSize), _cellSize).HelpAt("files-png-import", shot: "files-png-import-4"));
         Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_9C87DD306F), _offX, Ui.Label("Y"), _offY));
         Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_DC3CD0F4DA), _padX, Ui.Label("Y"), _padY));
         Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_D213350F0D), _cols, Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_7F8BCA446D), _rows).HelpAt("files-png-import", shot: "files-png-import-4"));
         Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_36ABCCA237), _minSize).HelpAt("files-png-import", shot: "files-png-import-4"));
         Body.Children.Add(_skipEmpty);
         Body.Children.Add(_result);
-        foreach (var n in new[] { _cellW, _cellH, _offX, _offY, _padX, _padY, _cols, _rows, _minSize })
+        _cellSize.Changed += (_, _) => UpdateResult();
+        foreach (var n in new[] { _offX, _offY, _padX, _padY, _cols, _rows, _minSize })
             n.ValueChanged += (_, _) => UpdateResult();
         _method.SelectionChanged += (_, _) => UpdateResult();
         _skipEmpty.IsCheckedChanged += (_, _) => UpdateResult();
@@ -351,7 +345,7 @@ public sealed class SplitFramesDialog : DialogBase
                 default:
                     var grid = new Chickxel.Core.Model.GridSettings
                     {
-                        CellW = (int)_cellW.NumValue(), CellH = (int)_cellH.NumValue(),
+                        CellW = _cellSize.Size.Width, CellH = _cellSize.Size.Height,
                         OffsetX = (int)_offX.NumValue(), OffsetY = (int)_offY.NumValue(),
                         PadX = (int)_padX.NumValue(), PadY = (int)_padY.NumValue(),
                     };
@@ -473,7 +467,7 @@ public sealed class ReplaceColorDialog : DialogBase
 public sealed class GridSettingsDialog : DialogBase
 {
     private readonly ColorField _pixelColor, _tileColor;
-    private readonly NumericUpDown _tileW, _tileH;
+    private readonly SizeField _tileSize;
 
     public GridSettingsDialog(Color32 pixelColor, Size tile, Color32 tileColor) : base(UiStrings.S_Dialogs_GridSettingsDialog_100AEB4ECD)
     {
@@ -482,19 +476,18 @@ public sealed class GridSettingsDialog : DialogBase
         this.HelpAt(page, anchor: "sets the grid colors and tile size");
         _pixelColor = new ColorField(pixelColor);
         _tileColor = new ColorField(tileColor);
-        _tileW = Ui.Num(1, 4096, tile.Width, 64).Presets(Ui.TileSizes).Unit("px").RecentKey("tile.size");
-        _tileH = Ui.Num(1, 4096, tile.Height, 64).Presets(Ui.TileSizes).Unit("px").RecentKey("tile.size");
+        _tileSize = new SizeField(1, 4096, tile.Width, tile.Height, 64).Presets(Ui.TileSizes).RecentKey("tile.size");
         Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_32C718E6B0, bold: true).HelpAt(page, anchor: "Pixel grid"));
         Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_0F749AB890), _pixelColor).HelpAt(page, anchor: "Pixel grid"));
         Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_1E51753746, bold: true).HelpAt(page, anchor: "Tile grid"));
-        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_8997F6CAB3), _tileW, Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_934A32A181), _tileH, Ui.Label("px")).HelpAt(page, anchor: "Tile grid"));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.SizeField_Size), _tileSize).HelpAt(page, anchor: "Tile grid"));
         Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_0F749AB890), _tileColor).HelpAt(page, anchor: "Tile grid"));
         Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_356D2B7E9E));
     }
 
     public Color32 PixelGridColor => _pixelColor.Color;
     public Color32 TileGridColor => _tileColor.Color;
-    public Size TileSize => new((int)_tileW.NumValue(), (int)_tileH.NumValue());
+    public Size TileSize => new(_tileSize.Size.Width, _tileSize.Size.Height);
 }
 
 /// <summary>한 줄 입력(선택 목록 제안 포함 가능).</summary>

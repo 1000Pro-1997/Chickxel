@@ -15,7 +15,7 @@ public sealed class MergeDialog : DialogBase
     private readonly ListBox _order;
     private readonly TextBox _name;
     private readonly RadioButton _layers, _group, _skins, _frames;
-    private readonly NumericUpDown _w, _h;
+    private readonly SizeField _size;
     private readonly AnchorPicker _anchor = new();
     private readonly CheckBox _deleteOriginals, _blankCover;
     private readonly DragReorder _drag = new();
@@ -54,9 +54,8 @@ public sealed class MergeDialog : DialogBase
                                   + UiStrings.S_MergeDialog_MergeDialog_A54A1EF2B9, false).HelpAt(page, anchor: "As skins");
         _frames = Radio(UiStrings.S_MergeDialog_MergeDialog_6233362607, UiStrings.S_MergeDialog_MergeDialog_C112F96D7C, false).HelpAt(page, anchor: "As frames");
         _name = Ui.Text(UniqueName(ProjectMerge.SuggestName(items.Select(i => i.Source.Name).ToList())), 200);
-        _w = Ui.Num(1, PixelImage.MaxSize, maxW, 70).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
-        _h = Ui.Num(1, PixelImage.MaxSize, maxH, 70).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
-        var fit = Ui.Button(UiStrings.S_MergeDialog_MergeDialog_FAF5E33EF9, (_, _) => { _w.Value = maxW; _h.Value = maxH; });
+        _size = new SizeField(1, PixelImage.MaxSize, maxW, maxH, 70).Presets(Ui.SpriteSizes).RecentKey("canvas.size");
+        var fit = Ui.Button(UiStrings.S_MergeDialog_MergeDialog_FAF5E33EF9, (_, _) => _size.Size = new PixelSize(maxW, maxH));
         _deleteOriginals = Ui.Check(UiStrings.S_MergeDialog_MergeDialog_FBCED3F611).HelpAt(page, anchor: "Canvas size (at first");
         _info = Ui.Label("");
         _warning = Ui.Label("");
@@ -76,7 +75,7 @@ public sealed class MergeDialog : DialogBase
             Ui.Label(UiStrings.S_MergeDialog_MergeDialog_0D1516342C, bold: true).HelpAt(page, anchor: "Mode: see the table"),
             _layers, GroupRow(), _skins, _frames,
             Ui.Label(UiStrings.S_MergeDialog_MergeDialog_6DB1865E38, bold: true).HelpAt(page, anchor: size),
-            Ui.Row(Ui.Label(UiStrings.S_MergeDialog_MergeDialog_9EA164CE93), _w, Ui.Label(UiStrings.S_MergeDialog_MergeDialog_B655521669), _h, Ui.Label("px"), fit).HelpAt(page, anchor: size),
+            Ui.Row(Ui.Label(UiStrings.SizeField_Size), _size, fit).HelpAt(page, anchor: size),
             Ui.Label(UiStrings.S_MergeDialog_MergeDialog_58E4493C15).HelpAt(page, anchor: size),
             _anchor.HelpAt(page, anchor: size),
             _deleteOriginals,
@@ -99,8 +98,7 @@ public sealed class MergeDialog : DialogBase
 
         foreach (var r in new[] { _layers, _group, _skins, _frames }) r.IsCheckedChanged += (_, _) => { _blankCover.IsEnabled = _group.On(); UpdatePreview(); };
         _blankCover.IsCheckedChanged += (_, _) => UpdatePreview();
-        _w.ValueChanged += (_, _) => UpdatePreview();
-        _h.ValueChanged += (_, _) => UpdatePreview();
+        _size.Changed += (_, _) => UpdatePreview();
         _anchor.Changed += (_, _) => UpdatePreview();
         _name.TextChanged += (_, _) => UpdateWarning();
         _deleteOriginals.IsCheckedChanged += (_, _) => UpdateWarning();
@@ -126,7 +124,7 @@ public sealed class MergeDialog : DialogBase
     public MergeMode Mode => _group.On() ? MergeMode.Group : _skins.On() ? MergeMode.Skins : _frames.On() ? MergeMode.Frames : MergeMode.Layers;
     /// <summary>빈 대표 이미지(그룹 방식에서 켰을 때만).</summary>
     private bool BlankCover => _blankCover.On() && Mode == MergeMode.Group;
-    public MergeOptions Options => new(Mode, (int)_w.NumValue(), (int)_h.NumValue(), _anchor.Value, ResultName, BlankCover);
+    public MergeOptions Options => new(Mode, _size.Size.Width, _size.Size.Height, _anchor.Value, ResultName, BlankCover);
 
     /// <summary>저장하면 생기는 파일: 프로젝트, 기본 내보내기 프레임 시트(그룹·스킨이면 부위 아틀라스도).</summary>
     public IEnumerable<string> TargetPaths(string name)

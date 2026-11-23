@@ -2,6 +2,21 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.142 (2026-11-23)
+
+### One size input everywhere, with a ratio chain
+- Every width × height input (new project and first part, new part, resize, split into frames, grid, merge, group layout area, tileset cell and footprint, transform box, canvas size, Pixelate output size, 3D model size) now looks the same: width × height, unit, and a chain button.
+- Turn on the chain to lock the ratio: changing one side changes the other in proportion.
+- In canvas size mode the image size chain replaces the Keep image ratio checkbox and still keeps the original image ratio; in Pixelate the chain keeps the result's ratio in both size rows.
+
+### 3D preview rotates in real time
+- Dragging the model in the Import 3D model window now redraws continuously instead of waiting until you stop moving.
+- While you drag, the smooth original is drawn lighter and is redrawn at full quality when you let go.
+
+### New default 3D preset
+- **8-direction turntable 64 px (default)** is added at the end of the built-in presets: 64 px orthographic, 30° from above, no edge smoothing, 12 colors, outer and overlap outlines, 8 turntable frames.
+- The Import 3D model window now starts with these settings.
+
 ## v1.14.141 (2026-11-23)
 
 ### 3D menu

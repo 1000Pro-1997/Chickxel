@@ -158,7 +158,7 @@ internal static class StartShots
             var paste = ShotKit.Get<CheckBox>(w, "_paste");
             paste.IsChecked = true;
             ShotKit.Pump(200);
-            var size = (Control)ShotKit.Get<Control>(w, "_w").Parent!;
+            var size = (Control)ShotKit.Get<Control>(w, "_size").Parent!;
             var normal = ShotKit.Get<Control>(w, "_normal");
             var parts = ShotKit.Get<Control>(w, "_parts");
             var transparent = ShotKit.Get<Control>(w, "_transparent");

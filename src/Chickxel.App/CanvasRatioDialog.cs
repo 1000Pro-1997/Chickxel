@@ -6,7 +6,7 @@ using Chickxel.Core.Model;
 namespace Chickxel.App;
 
 /// <summary>
-/// 캔버스 크기 모드의 특수 비율(도구 설정 '그림 비율 유지' 옆 단추): 비율(빠른 고르기·직접 넣기), 기준(가로·세로 유지), 방식(캔버스만·그림 늘리기)을 고르고
+/// 캔버스 크기 모드의 특수 비율(도구 설정 그림 크기 사슬 옆 단추): 비율(빠른 고르기·직접 넣기), 기준(가로·세로 유지), 방식(캔버스만·그림 늘리기)을 고르고
 /// 미리보기로 확인한다. 확인하면 계산한 값(<see cref="CanvasRatio.Plan"/>)을 돌려줄 뿐이고, 모드에 넣는 것은 부르는 쪽 — 적용·취소는 그 모드가 한다.
 /// </summary>
 internal sealed class CanvasRatioDialog : DialogBase

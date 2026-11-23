@@ -290,7 +290,7 @@ internal static class TilemapShots
         // ① 차지 칸 ② 그림 위치 ③ 그림 아래 맞춤 (나무: 차지 1×1, 그림 32×44)
         k.Dialog(() => TilesetSettingsWindow.Run(main, ctx, ts.Key, TilesetSettingsWindow.Page.Tiles, TileAt(ts, 0, 0)), w =>
         {
-            var w0 = ShotKit.Get<Control>(w, "_tileW");
+            var w0 = ShotKit.Get<Control>(w, "_footprint");
             var off = ShotKit.Get<Control>(w, "_offX");
             var bottom = FindButton(w, UiStrings.Tileset_AlignBottom);
             k.Save(w, marks: [w0.Parent as Control ?? w0, off.Parent as Control ?? off, bottom], titleBar: true);

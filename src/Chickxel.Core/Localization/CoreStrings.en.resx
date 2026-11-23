@@ -60,6 +60,7 @@
   <data name="ModelPreset_Icon32" xml:space="preserve"><value>Item icon 32 px</value></data>
   <data name="ModelPreset_Character" xml:space="preserve"><value>Character animation 64 px</value></data>
   <data name="ModelPreset_LargeForPixelate" xml:space="preserve"><value>Large and smooth (for Pixelate)</value></data>
+  <data name="ModelPreset_Turntable64" xml:space="preserve"><value>8-direction turntable 64 px (default)</value></data>
   <data name="AnimImport_NoAnimations" xml:space="preserve"><value>The selected file contains no animation.</value></data>
   <data name="AnimImport_NoMatchingBones" xml:space="preserve"><value>None of the animation's bone names match the character's bones. The character and the animation must use the same skeleton (for example, both downloaded from Mixamo).</value></data>
   <data name="AnimImport_Warning_DuplicateBone" xml:space="preserve"><value>Several bones share the same name; the animation is attached to only one of them: {bone}</value></data>

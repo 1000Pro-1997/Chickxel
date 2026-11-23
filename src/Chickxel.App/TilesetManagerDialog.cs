@@ -13,7 +13,7 @@ public sealed class TilesetManagerDialog : DialogBase
     private readonly EditorContext _ctx;
     private readonly StackPanel _list = new() { Spacing = 4 };
     private readonly TextBox _newName;
-    private readonly NumericUpDown _cellW, _cellH;
+    private readonly SizeField _cellSize;
 
     private TilesetManagerDialog(EditorContext ctx) : base(UiStrings.TilesetManager_Title)
     {
@@ -31,10 +31,9 @@ public sealed class TilesetManagerDialog : DialogBase
         Body.Children.Add(head);
         _newName = Ui.Text(UiStrings.TilesetChoice_DefaultName, 160);
         var cell = ctx.CurrentTileset is { } cur ? new Size(cur.CellWidth, cur.CellHeight) : new Size(16, 16);
-        _cellW = Ui.Num(1, Tileset.MaxCellSize, cell.Width, 60).Presets(8, 16, 24, 32, 48, 64).Unit("px");
-        _cellH = Ui.Num(1, Tileset.MaxCellSize, cell.Height, 60).Presets(8, 16, 24, 32, 48, 64).Unit("px");
+        _cellSize = new SizeField(1, Tileset.MaxCellSize, cell.Width, cell.Height, 60).Presets(8, 16, 24, 32, 48, 64);
         Body.Children.Add(Ui.Row(Ui.Label(UiStrings.TilesetChoice_Name), _newName));
-        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.TilesetChoice_CellSize), _cellW, Ui.Label("×"), _cellH, Ui.InfoBadge(UiStrings.TilesetChoice_CellSizeInfo),
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.TilesetChoice_CellSize), _cellSize, Ui.InfoBadge(UiStrings.TilesetChoice_CellSizeInfo),
             Ui.Button(VectorIcon.Plus, UiStrings.TilesetChoice_Create, (_, _) => CreateEmpty())));
         Body.Children.Add(Ui.Row(Ui.Button(VectorIcon.FolderOpen, UiStrings.TilesetManager_ImportFile, (_, _) => ImportFile())));
         BuildList();
@@ -91,7 +90,7 @@ public sealed class TilesetManagerDialog : DialogBase
     {
         if (_ctx.Project is not { } p) return;
         var name = string.IsNullOrWhiteSpace(_newName.Text) ? UiStrings.TilesetChoice_DefaultName : _newName.Text.Trim();
-        var ts = Tileset.Create(name, (int)_cellW.NumValue(), (int)_cellH.NumValue());
+        var ts = Tileset.Create(name, _cellSize.Size.Width, _cellSize.Size.Height);
         _ctx.Structural(() => p.AddTileset(ts));
         BuildList();
     }

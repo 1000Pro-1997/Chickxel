@@ -25,7 +25,8 @@ public sealed class TilesetSettingsWindow : DialogBase
     private readonly TileThumb _thumb = new(48) { Margin = new Thickness(0, 0, 8, 0) };
     private readonly TextBlock _tileInfo;
     private readonly TextBox _tileName;
-    private readonly NumericUpDown _tileW, _tileH, _offX, _offY, _sortY;
+    private readonly NumericUpDown _offX, _offY, _sortY;
+    private readonly SizeField _footprint;
     private readonly ComboBox _tileFloor, _drawClass;
     private readonly Control _drawClassRow, _sortYRow;
     private readonly Control _singleOnly;
@@ -35,7 +36,7 @@ public sealed class TilesetSettingsWindow : DialogBase
     private readonly StackPanel _groups = new() { Spacing = 3 };
     // 타일셋 페이지
     private readonly TextBox _tsName;
-    private readonly NumericUpDown _cellW, _cellH;
+    private readonly SizeField _cellSize;
     private readonly ComboBox _sortMode;
     private readonly TextBlock _tsFile, _cellNote;
     private readonly Button _reload;
@@ -72,10 +73,8 @@ public sealed class TilesetSettingsWindow : DialogBase
         _tileName = Ui.Text("", 170);
         _tileName.LostFocus += (_, _) => ApplyName();
         _tileName.KeyDown += (_, e) => { if (e.Key == Key.Enter) ApplyName(); };
-        _tileW = Ui.Num(1, Tileset.MaxFootprint, 1, 50);
-        _tileH = Ui.Num(1, Tileset.MaxFootprint, 1, 50);
-        _tileW.ValueChanged += (_, _) => ApplyFootprint();
-        _tileH.ValueChanged += (_, _) => ApplyFootprint();
+        _footprint = new SizeField(1, Tileset.MaxFootprint, 1, 1, 50, unit: null);
+        _footprint.Changed += (_, _) => ApplyFootprint();
         _offX = Ui.Num(-4096, 4096, 0, 60).Unit("px");
         _offY = Ui.Num(-4096, 4096, 0, 60).Unit("px");
         _offX.ValueChanged += (_, _) => ApplyOne(t => t with { DrawOffset = new Point((int)_offX.NumValue(), t.DrawOffset.Y) });
@@ -99,7 +98,7 @@ public sealed class TilesetSettingsWindow : DialogBase
                 Ui.Button(UiStrings.Tileset_SortYImage, (_, _) => ApplyOne(t => t with { SortY = t.ImageCellBottom(Ts!.CellHeight) }))));
         _singleOnly = Ui.Stack(
             Ui.Row(Ui.Label(UiStrings.TilesetChoice_Name), _tileName),
-            Ui.Row(Ui.Label(UiStrings.Tileset_Footprint), _tileW, Ui.Label("×"), _tileH, Ui.InfoBadge(UiStrings.Tileset_FootprintInfo)),
+            Ui.Row(Ui.Label(UiStrings.Tileset_Footprint), _footprint, Ui.InfoBadge(UiStrings.Tileset_FootprintInfo)),
             Ui.Row(Ui.Label(UiStrings.Tileset_DrawOffset), _offX, _offY),
             Ui.Row(bottom),
             _sortYRow);
@@ -151,10 +150,8 @@ public sealed class TilesetSettingsWindow : DialogBase
         _tsName = Ui.Text("", 200);
         _tsName.LostFocus += (_, _) => ApplyTilesetName();
         _tsName.KeyDown += (_, e) => { if (e.Key == Key.Enter) ApplyTilesetName(); };
-        _cellW = Ui.Num(1, Tileset.MaxCellSize, 16, 60).Unit("px");
-        _cellH = Ui.Num(1, Tileset.MaxCellSize, 16, 60).Unit("px");
-        _cellW.ValueChanged += (_, _) => ApplyCellSize();
-        _cellH.ValueChanged += (_, _) => ApplyCellSize();
+        _cellSize = new SizeField(1, Tileset.MaxCellSize, 16, 16, 60);
+        _cellSize.Changed += (_, _) => ApplyCellSize();
         _cellNote = Ui.Label("");
         _sortMode = Ui.Combo(170, UiStrings.Tileset_SortByFloor, UiStrings.Tileset_SortByPosition);
         _sortMode.SelectionChanged += (_, _) => ApplySortMode();
@@ -168,7 +165,7 @@ public sealed class TilesetSettingsWindow : DialogBase
         _reload = Ui.Button(VectorIcon.Refresh, UiStrings.Tileset_ReloadFile, (_, _) => ReloadFile());
         var tilesetPage = Ui.Stack(
             Ui.Row(Ui.Label(UiStrings.TilesetChoice_Name), _tsName),
-            Ui.Row(Ui.Label(UiStrings.TilesetChoice_CellSize), _cellW, Ui.Label("×"), _cellH),
+            Ui.Row(Ui.Label(UiStrings.TilesetChoice_CellSize), _cellSize),
             _cellNote,
             Ui.Row(Ui.Label(UiStrings.Tileset_SortMode), _sortMode, Ui.InfoBadge(UiStrings.Tileset_SortModeInfo)),
             Ui.Row(Ui.Label(UiStrings.TilesetWin_File), _tsFile, Ui.InfoBadge(UiStrings.Tileset_NotSavedTip)),
@@ -249,9 +246,8 @@ public sealed class TilesetSettingsWindow : DialogBase
         try
         {
             if (!_tsName.IsFocused) _tsName.Text = ts.Name;
-            _cellW.Value = ts.CellWidth;
-            _cellH.Value = ts.CellHeight;
-            _cellW.IsEnabled = _cellH.IsEnabled = ts.Tiles.Length == 0;
+            _cellSize.Size = new PixelSize(ts.CellWidth, ts.CellHeight);
+            _cellSize.IsEnabled = ts.Tiles.Length == 0;
             _cellNote.Text = ts.Tiles.Length == 0 ? UiStrings.TilesetChoice_CellSizeInfo : UiStrings.TilesetSettings_CellLocked;
             _tsFile.Text = ts.SourcePath ?? UiStrings.Tileset_NotSaved;
             _sortMode.SelectedIndex = ts.SortMode == TileSortMode.ByPosition ? 1 : 0;
@@ -301,8 +297,7 @@ public sealed class TilesetSettingsWindow : DialogBase
             _drawClass.SelectedIndex = classes.Count == 1 ? (int)classes[0] : -1;
             if (one is null) return;
             if (!_tileName.IsFocused) _tileName.Text = one.Name;
-            _tileW.Value = one.Width;
-            _tileH.Value = one.Height;
+            _footprint.Size = new PixelSize(one.Width, one.Height);
             _offX.Value = one.DrawOffset.X;
             _offY.Value = one.DrawOffset.Y;
             _sortY.Value = one.SortY ?? one.Height * ts.CellHeight;
@@ -329,7 +324,7 @@ public sealed class TilesetSettingsWindow : DialogBase
     private void ApplyFootprint()
     {
         if (_updating || Ts is not { } ts) return;
-        int w = (int)_tileW.NumValue(), h = (int)_tileH.NumValue();
+        int w = _footprint.Size.Width, h = _footprint.Size.Height;
         ApplyOne(t => t with { Width = w, Height = h, DrawOffset = TileDef.BottomAligned(t.Image.Height, h, ts.CellHeight) });
     }
 
@@ -573,7 +568,7 @@ public sealed class TilesetSettingsWindow : DialogBase
     private void ApplyCellSize()
     {
         if (_updating || Ts is not { Tiles.Length: 0 } ts) return;
-        int w = (int)_cellW.NumValue(), h = (int)_cellH.NumValue();
+        int w = _cellSize.Size.Width, h = _cellSize.Size.Height;
         if (w == ts.CellWidth && h == ts.CellHeight) return;
         Edit(UiStrings.TilesetSettings_Title, t => t with { CellWidth = w, CellHeight = h });
     }

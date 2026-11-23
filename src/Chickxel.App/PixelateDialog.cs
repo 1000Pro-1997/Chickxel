@@ -701,12 +701,11 @@ public sealed class PixelateDialog : DialogBase
     /// <summary>원본 보기의 외곽선을 뒤에서 구하는 차례(늦게 끝난 옛 계산은 버림).</summary>
     private int _outlineGen;
     /// <summary>
-    /// 설정 칸 '간편 설정'(0번 다음)의 결과 크기: 자동(= 4단계 방식이 고정 크기가 아님) · 가로×세로 · 비율 묶기.
+    /// 설정 칸 '간편 설정'(0번 다음)의 결과 크기: 자동(= 4단계 방식이 고정 크기가 아님) · 가로 × 세로(사슬 = 비율 유지).
     /// 4단계 칸과 같은 설정을 함께 쓴다 — 간편 설정을 바꾸면 4단계 칸에 적고, 4단계 칸(불러오기 포함)이 바뀌면 <see cref="SyncQuickSettings"/>가 간편 설정을 맞춘다.
     /// </summary>
     private readonly CheckBox _quickAuto;
-    private readonly NumericUpDown _quickW, _quickH;
-    private readonly ToggleButton _quickAspect;
+    private readonly SizeField _quickSize;
     /// <summary>간편 설정의 '모든 프레임이 한 팔레트' — 6단계 <see cref="_palShared"/>와 같은 설정.</summary>
     private readonly CheckBox _quickShared;
     /// <summary>간편 설정의 배경 지우기(원본 아래 막대의 배경 지우기 단추와 같은 값).</summary>
@@ -791,8 +790,9 @@ public sealed class PixelateDialog : DialogBase
     private GridFit? _detected;
     // 4. 크기
     private readonly ComboBox _szMode;
-    private readonly NumericUpDown _szW, _szH, _szPad, _szFactor;
-    private readonly CheckBox _szAspect;
+    private readonly NumericUpDown _szPad, _szFactor;
+    /// <summary>4단계 고정 크기(가로 × 세로, 사슬 = 비율 유지 — 지금 결과(없으면 원본) 비율대로 따라 바꾸고 그림도 비율을 지켜 맞춤).</summary>
+    private readonly SizeField _szSize;
     /// <summary>4단계의 "자동" — 원본 아래 막대의 "자동"(<see cref="_barAuto"/>)과 같은 값(한쪽을 바꾸면 다른 쪽도).</summary>
     private readonly CheckBox _szAuto;
     private readonly TextBlock _szInfo;
@@ -1199,9 +1199,8 @@ public sealed class PixelateDialog : DialogBase
 
         // ── 4. 크기
         _szMode = Ui.Combo(170, UiStrings.Pixelate_Size_FromScale, UiStrings.Pixelate_Size_Fixed, UiStrings.Pixelate_Size_Factor);
-        _szW = Num(4, 1024, 32, 0).Presets(16, 24, 32, 48, 64, 96, 128);
-        _szH = Num(4, 1024, 32, 0).Presets(16, 24, 32, 48, 64, 96, 128);
-        _szAspect = Ui.Check(UiStrings.Pixelate_Size_KeepAspect);
+        _szSize = new SizeField(4, 1024, 32, 32, 64, unit: null).Presets(16, 24, 32, 48, 64, 96, 128).LinkTip(UiStrings.Pixelate_Size_KeepAspect);
+        _szSize.RatioSource = AspectRatio;
         _szAuto = Ui.Check(UiStrings.Pixelate_Auto, true).Tip(UiStrings.Pixelate_Quick_AutoTip);
         _szAuto.IsCheckedChanged += (_, _) => { if (!_barSyncing) _quickAuto!.IsChecked = _szAuto.On(); };
         _szPad = Num(0, 64, 1, 0);
@@ -1209,18 +1208,17 @@ public sealed class PixelateDialog : DialogBase
         _szInfo = Info();
         var szModeLabel = Ui.Label(UiStrings.Pixelate_Mode);
         var szSizeLabel = Ui.Label(UiStrings.Pixelate_Size_WH);
-        var szByLabel = Ui.Label(UiStrings.Pixelate_Size_By);
         var szFactorLabel = Ui.Label(UiStrings.Pixelate_Size_FactorLabel);
         var szPadLabel = Ui.Label(UiStrings.Pixelate_Size_Padding);
         var szBody = Ui.Stack(
             Ui.Row(szModeLabel, _szMode, _szAuto),
-            Ui.Row(szSizeLabel, _szW, szByLabel, _szH, _szAspect),
+            Ui.Row(szSizeLabel, _szSize),
             Ui.Row(szFactorLabel, _szFactor, szPadLabel, _szPad),
             _szInfo);
         // 대상 도움말(F1): 4. 결과 크기 문단·방식 표의 줄.
         HelpTargets.HelpGroup("pixelate-grid", "4. Output size", szModeLabel, _szMode, _szAuto);
         _szMode.HelpOptions("pixelate-grid", "From pixel size", "Fit a fixed size", "Scale factor");
-        HelpTargets.HelpGroup("pixelate-grid", "Fit a fixed size", szSizeLabel, _szW, szByLabel, _szH, _szAspect);
+        HelpTargets.HelpGroup("pixelate-grid", "Fit a fixed size", szSizeLabel, _szSize);
         HelpTargets.HelpGroup("pixelate-grid", "Scale factor", szFactorLabel, _szFactor);
         HelpTargets.HelpGroup("pixelate-grid", "Fit a fixed size", szPadLabel, _szPad);
 
@@ -1432,21 +1430,11 @@ public sealed class PixelateDialog : DialogBase
         // ── 간편 설정: 자주 바꾸는 값(격자·결과 크기·팔레트)을 맨 위에 모은다.
         // 결과 크기: 자동이면 회색 숫자로 지금 결과 크기, 끄면 적은 가로×세로에 맞춤.
         _quickAuto = Ui.Check(UiStrings.Pixelate_Auto, true).Tip(UiStrings.Pixelate_Quick_AutoTip);
-        _quickW = Ui.Num(4, 1024, 32, 58).Presets(16, 24, 32, 48, 64, 96, 128);
-        _quickH = Ui.Num(4, 1024, 32, 58).Presets(16, 24, 32, 48, 64, 96, 128);
-        var linkIcon = Ui.Icon(VectorIcon.Link, 14);
-        linkIcon.Margin = new Thickness(0, 1);
-        _quickAspect = new ToggleButton
-        {
-            Content = linkIcon,
-            Margin = new Thickness(2, 0),
-            HorizontalContentAlignment = HorizontalAlignment.Center,
-            VerticalContentAlignment = VerticalAlignment.Center,
-        }.Tip(UiStrings.Pixelate_Quick_KeepAspectTip);
+        _quickSize = new SizeField(4, 1024, 32, 32, 58, unit: null).Presets(16, 24, 32, 48, 64, 96, 128).LinkTip(UiStrings.Pixelate_Quick_KeepAspectTip);
+        _quickSize.RatioSource = AspectRatio;
         _quickAuto.IsCheckedChanged += (_, _) => QuickAutoChanged();
-        _quickW.ValueChanged += (_, _) => QuickSizeChanged(width: true);
-        _quickH.ValueChanged += (_, _) => QuickSizeChanged(width: false);
-        _quickAspect.IsCheckedChanged += (_, _) => { if (!_barSyncing) _szAspect.IsChecked = _quickAspect.On(); };
+        _quickSize.Changed += (_, width) => QuickSizeChanged(width);
+        _quickSize.LinkChanged += _ => { if (!_barSyncing) _szSize.Linked = _quickSize.Linked; };
         _quickBg = Ui.Check(UiStrings.Pixelate_Quick_RemoveBg, true).Tip(UiStrings.Pixelate_RemoveBgTip);
         _quickBg.IsCheckedChanged += (_, _) => BarBackgroundChanged();
         _quickShared = Ui.Check(UiStrings.Pixelate_Pal_Shared).Tip(UiStrings.Pixelate_Quick_SharedTip);
@@ -1463,17 +1451,16 @@ public sealed class PixelateDialog : DialogBase
         _quickSampleFrames.ValueChanged += (_, _) => { if (!_barSyncing && _quickSampleFrames.Value is { } v) _crSampleFrames.Value = v; };
         var quickTargetLabel = Ui.Label(UiStrings.Pixelate_Opt_TargetColors);
         var quickSizeLabel = Ui.Label(UiStrings.Pixelate_Quick_Size);
-        var quickByLabel = Ui.Label(UiStrings.Pixelate_Size_By);
         var quickBody = Ui.Stack(
-            Ui.Row(quickSizeLabel, _quickAuto, _quickW, quickByLabel, _quickH, _quickAspect),
+            Ui.Row(quickSizeLabel, _quickAuto, _quickSize),
             _grLock,
             Ui.Row(quickTargetLabel, _quickTargetColors, _quickTargetAuto, _quickTargetStrict),
             Ui.Row(Ui.Label(UiStrings.Pixelate_Opt_SampleFrames), _quickSampleFrames),
             _quickBg,
             _quickShared);
         // 대상 도움말(F1): 간편 설정 목록의 항목.
-        HelpTargets.HelpGroup("pixelate-settings", "In the output size row", quickSizeLabel, _quickAuto, _quickW, quickByLabel, _quickH);
-        _quickAspect.HelpAt("pixelate-settings", anchor: "With the link button");
+        HelpTargets.HelpGroup("pixelate-settings", "In the output size row", quickSizeLabel, _quickAuto, _quickSize);
+        _quickSize.LinkButton.HelpAt("pixelate-settings", anchor: "With the link button");
         _quickShared.HelpAt("pixelate-settings", anchor: "One palette for all frames");
         _quickBg.HelpAt("pixelate-settings", anchor: "The Remove background check");
         HelpTargets.HelpGroup("pixelate-settings", "In the target colors row", quickTargetLabel, _quickTargetColors, _quickTargetAuto, _quickTargetStrict);
@@ -1776,14 +1763,17 @@ public sealed class PixelateDialog : DialogBase
         foreach (var c in new Control[] { _bgMode, _frMode, _frAlign, _grMode, _grSource, _szMode, _dsMode, _palMethod, _palWhich, _palSource, _palDither, _palDistance, _clOutline, _clFit })
             ((ComboBox)c).SelectionChanged += (_, _) => Changed();
         foreach (var n in new[] { _bgTol, _bgAlpha, _bgSpecks, _frCols, _frRows, _frMerge, _frMergeDist, _grScale, _grOffX, _grOffY, _grJitter, _grAdjust, _grLocalShift, _grLocalBand, _grLocalMinCell,
-                     _szW, _szH, _szPad, _szFactor, _dsBorder, _dsAlpha, _dsSnap, _palColors, _palEdge, _palDark, _palHueWeight, _palHueChroma, _palHueMin, _palHueArea, _palOkL, _palOkC, _palOkH, _palRadius,
+                     _szPad, _szFactor, _dsBorder, _dsAlpha, _dsSnap, _palColors, _palEdge, _palDark, _palHueWeight, _palHueChroma, _palHueMin, _palHueArea, _palOkL, _palOkC, _palOkH, _palRadius,
                      _clContrast, _clVecTol, _clVecBlob, _clVecCorner, _coContrast, _crTrials, _crSeconds, _crSampleFrames, _crLightWeight, _crChromaWeight, _crHueWeight, _crTargetColors, _crGroupRadius }.Concat(_crWeights))
             n.ValueChanged += (_, _) => Changed();
+        // 고정 크기는 사슬로 따라 바뀐 쪽까지 맞춘 뒤 한 번 알린다.
+        _szSize.Changed += (_, _) => Changed();
+        _szSize.LinkChanged += _ => Changed();
         // 나누기 조건이 바뀌면 이전 조건에서 편집한 슬롯은 버린다.
         _frMode.SelectionChanged += (_, _) => ResetManualFrames();
         foreach (var n in new[] { _frCols, _frRows, _frMerge, _frMergeDist })
             n.ValueChanged += (_, _) => ResetManualFrames();
-        foreach (var c in new[] { _bgAutoTol, _bgConnected, _bgKeepAlpha, _bgSticker, _bgKeep, _frCommon, _grFirst, _grLocal, _szAspect, _palAuto, _palShared, _palSnap, _palDistinct, _palShade, _palMethodKeep, _palDitherKeep,
+        foreach (var c in new[] { _bgAutoTol, _bgConnected, _bgKeepAlpha, _bgSticker, _bgKeep, _frCommon, _grFirst, _grLocal, _palAuto, _palShared, _palSnap, _palDistinct, _palShade, _palMethodKeep, _palDitherKeep,
                      _clOrphans, _clHoles, _clJaggies, _clVecClean, _clSourceOutline, _coTemporal, _crTargetAuto, _crTargetStrict })
             c.IsCheckedChanged += (_, _) => Changed();
         foreach (var c in new[] { _crDistance, _crFidelity, _crCellRef }) c.SelectionChanged += (_, _) => Changed();
@@ -2198,9 +2188,8 @@ public sealed class PixelateDialog : DialogBase
 
             var sz = s.Size;
             _szMode.SelectedIndex = Index(sz.Mode);
-            _szW.Value = Math.Clamp(sz.Width, 4, 1024);
-            _szH.Value = Math.Clamp(sz.Height, 4, 1024);
-            _szAspect.IsChecked = sz.KeepAspect;
+            _szSize.Size = new PixelSize(Math.Clamp(sz.Width, 4, 1024), Math.Clamp(sz.Height, 4, 1024));
+            _szSize.Linked = sz.KeepAspect;
             _szPad.Value = Math.Clamp(sz.Padding, 0, 64);
             _szFactor.Value = In(PixelateRanges.Factor, sz.Factor);
 
@@ -2315,9 +2304,9 @@ public sealed class PixelateDialog : DialogBase
             Size = new SizeSettings
             {
                 Mode = At<OutputSizeMode>(_szMode),
-                Width = I(_szW),
-                Height = I(_szH),
-                KeepAspect = _szAspect.On(),
+                Width = I(_szSize.WidthBox),
+                Height = I(_szSize.HeightBox),
+                KeepAspect = _szSize.Linked,
                 Padding = I(_szPad),
                 Factor = D(_szFactor),
             },
@@ -2391,7 +2380,7 @@ public sealed class PixelateDialog : DialogBase
         // 외곽선 맞추기(7. 정리)가 "크기를 줄여서"면 칸 크기 기준은 외곽선 두께로 정해진다 — 다른 칸의 설정이라 숨기지 않고 끈다.
         _grSource.IsEnabled = At<OutlineFit>(_clFit) != OutlineFit.Shrink;
         var sz = At<OutputSizeMode>(_szMode);
-        Applies(sz == OutputSizeMode.FixedSize, _szW, _szH, _szAspect);
+        Applies(sz == OutputSizeMode.FixedSize, _szSize);
         Applies(sz == OutputSizeMode.ScaleFactor, _szFactor);
         var pm = At<PaletteMethod>(_palMethod);
         Applies(pm is PaletteMethod.KMeans or PaletteMethod.MedianCut, _palColors, _palAuto);
@@ -2457,23 +2446,25 @@ public sealed class PixelateDialog : DialogBase
         {
             _quickAuto.IsChecked = auto;
             _szAuto.IsChecked = auto;
-            _quickAspect.IsChecked = _szAspect.On();
-            _quickW.IsEnabled = _quickH.IsEnabled = _quickAspect.IsEnabled = !auto;
+            _quickSize.Linked = _szSize.Linked;
+            var (qw, qh) = (_quickSize.WidthBox, _quickSize.HeightBox);
+            qw.IsEnabled = qh.IsEnabled = _quickSize.LinkButton.IsEnabled = !auto;
+            // 가로를 넣을 때 사슬로 세로가 잠깐 따라 바뀌어도 바로 세로를 넣으므로 결과는 같다.
             if (auto)
             {
                 // 자동: 고른 결과의 실제 크기(4~1024 밖일 수도 있어 범위를 넓힘), 결과가 없으면 비움.
                 var size = _selected?.Result.Size;
-                _quickW.Minimum = _quickH.Minimum = 0;
-                _quickW.Maximum = _quickH.Maximum = int.MaxValue;
-                _quickW.Value = size is { Width: > 0 } s ? s.Width : null;
-                _quickH.Value = size is { Height: > 0 } t ? t.Height : null;
+                qw.Minimum = qh.Minimum = 0;
+                qw.Maximum = qh.Maximum = int.MaxValue;
+                qw.Value = size is { Width: > 0 } s ? s.Width : null;
+                qh.Value = size is { Height: > 0 } t ? t.Height : null;
             }
             else
             {
-                _quickW.Minimum = _quickH.Minimum = _szW.Minimum;
-                _quickW.Maximum = _quickH.Maximum = _szW.Maximum;
-                _quickW.Value = _szW.Value;
-                _quickH.Value = _szH.Value;
+                qw.Minimum = qh.Minimum = _szSize.WidthBox.Minimum;
+                qw.Maximum = qh.Maximum = _szSize.WidthBox.Maximum;
+                qw.Value = _szSize.WidthBox.Value;
+                qh.Value = _szSize.HeightBox.Value;
             }
             // 6단계와 같은 값·켜짐(팔레트 방식에 따라 꺼짐).
             _quickShared.IsChecked = _palShared.On();
@@ -2563,35 +2554,36 @@ public sealed class PixelateDialog : DialogBase
         if (_selected?.Result.Size is { Width: > 0, Height: > 0 } size)
         {
             _loading = true;
-            _szW.Value = Math.Clamp(size.Width, 4, 1024);
-            _szH.Value = Math.Clamp(size.Height, 4, 1024);
+            _szSize.Size = new PixelSize(Math.Clamp(size.Width, 4, 1024), Math.Clamp(size.Height, 4, 1024));
             _loading = false;
         }
         _szMode.SelectedIndex = Index(OutputSizeMode.FixedSize);
     }
 
-    /// <summary>간편 설정의 가로·세로를 바꿈(고정 크기일 때): 4단계 칸에 적고, 비율 묶기면 다른 쪽을 지금 결과(없으면 원본) 비율대로 맞춘다.</summary>
+    /// <summary>
+    /// 간편 설정의 가로·세로를 바꿈(고정 크기일 때): 고친 쪽을 4단계 칸에 적는다. 사슬이 켜져 있으면 간편 설정 칸이 이미
+    /// 다른 쪽을 지금 결과(없으면 원본) 비율대로 맞췄으므로(<see cref="AspectRatio"/>) 그 값도 함께 적는다.
+    /// </summary>
     private void QuickSizeChanged(bool width)
     {
         if (_barSyncing || _quickAuto.On()) return;
-        var (edited, target, other) = width ? (_quickW, _szW, _szH) : (_quickH, _szH, _szW);
-        if (edited.Value is not { } v) return;
+        var (qw, qh) = (_quickSize.WidthBox, _quickSize.HeightBox);
+        if ((width ? qw : qh).Value is null) return;
+        var size = _szSize.Size;
+        bool linked = _quickSize.Linked;
+        int w = (width || linked) && qw.Value is { } a ? (int)Math.Round(a) : size.Width;
+        int h = (!width || linked) && qh.Value is { } b ? (int)Math.Round(b) : size.Height;
         _loading = true;
-        target.Value = Math.Clamp(v, target.Minimum, target.Maximum);
-        if (_quickAspect.On() && AspectBasis() is { } a)
-        {
-            double ratio = width ? a.Height / (double)a.Width : a.Width / (double)a.Height;
-            other.Value = Math.Clamp(Math.Round(v * (decimal)ratio), other.Minimum, other.Maximum);
-        }
+        _szSize.Size = new PixelSize(w, h);
         _loading = false;
         Changed();
     }
 
-    /// <summary>비율 묶기의 기준 비율: 고른 결과 크기, 없으면 원본 그림 크기.</summary>
-    private (int Width, int Height)? AspectBasis()
+    /// <summary>사슬(비율 유지)이 지킬 가로 ÷ 세로: 고른 결과 크기, 없으면 원본 그림 크기(둘 다 없으면 null = 따라 바꾸지 않음).</summary>
+    private double? AspectRatio()
     {
-        if (_selected?.Result.Size is { Width: > 0, Height: > 0 } s) return (s.Width, s.Height);
-        if (_input is { Image: { Width: > 0, Height: > 0 } img }) return (img.Width, img.Height);
+        if (_selected?.Result.Size is { Width: > 0, Height: > 0 } s) return s.Width / (double)s.Height;
+        if (_input is { Image: { Width: > 0, Height: > 0 } img }) return img.Width / (double)img.Height;
         return null;
     }
 
