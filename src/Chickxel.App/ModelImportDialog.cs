@@ -56,6 +56,12 @@ public sealed class ModelImportDialog : DialogBase
     private readonly DispatcherTimer _player;
     /// <summary>미리보기를 그리는 중 / 그리는 동안 값이 또 바뀌어 끝나면 다시 그려야 함 / 다시 그리기를 이미 부탁해 둠(같은 틱의 변경을 한 번으로).</summary>
     private bool _rendering, _renderAgain, _renderQueued;
+    /// <summary>픽셀 결과 칸 아래: 지금 프레임에 쓴 색 수와 색 칸(많이 쓴 색부터).</summary>
+    private readonly TextBlock _usedLabel = Ui.Label("");
+    private readonly ColorSwatches _usedColors = new() { Width = 332 };
+    private readonly StackPanel _usedRow;
+    /// <summary>색 칸에 보일 최대 수(넘으면 앞쪽만 — 수는 그대로 다 셈).</summary>
+    private const int MaxShownColors = 256;
     private CancellationTokenSource? _renderCts;
     /// <summary>지금 모델·프레임 설정의 자세와 맞춤 범위(모델이나 프레임 설정이 바뀔 때만 다시 — 그리기 설정과는 상관없음).</summary>
     private (ModelScene Scene, ModelFrameOptions Options, IReadOnlyList<ModelFrame> Frames, PosedMesh[] Poses, ModelBounds Fit)? _posed;
@@ -184,6 +190,7 @@ public sealed class ModelImportDialog : DialogBase
                     },
                 },
                 new Border { BorderBrush = AppTheme.BorderBrush, BorderThickness = new Thickness(1), Child = new Panel { Children = { _preview, _dropHint } } },
+                (_usedRow = new StackPanel { Spacing = 2, Margin = new Thickness(333, 0, 0, 0), IsVisible = false, Children = { _usedLabel, _usedColors } }),
                 previewHint,
                 Ui.Row(_play, _frame),
             },
@@ -724,12 +731,15 @@ public sealed class ModelImportDialog : DialogBase
             (ModelScene, ModelFrameOptions, IReadOnlyList<ModelFrame>, PosedMesh[], ModelBounds)? done = null;
             PixelImage? original = null, image = null;
             ModelRenderSettings view = settings;
+            IReadOnlyList<Color32> used = [];
+            int usedCount = 0;
             try
             {
                 var (s, o, frames, poses, fit) = posed ?? Pose(scene, options, cts.Token);
                 int i = Math.Clamp(index, 0, frames.Count - 1);
                 view = settings with { Yaw = settings.Yaw + frames[i].YawOffset };
                 image = ModelRenderer.Render(poses[i], view, fit, cts.Token);
+                (used, usedCount) = UsedColors(image);
                 // 원본은 같은 자세·카메라·빛으로 출력 픽셀 다듬기 전에 독립적으로 부드럽게 그린다.
                 // 긴 변을 제한해 큰 내보내기 크기에서도 미리보기 비용은 일정하다.
                 double scale = 330d / Math.Max(settings.Width, settings.Height);
@@ -759,6 +769,9 @@ public sealed class ModelImportDialog : DialogBase
                     _posed = d;
                     _preview.SetOrientation(view);
                     _preview.Show(original, image);
+                    _usedColors.SetColors(used);
+                    _usedLabel.Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.Model_UsedColors, usedCount);
+                    _usedRow.IsVisible = true;
                 }
                 if (_renderAgain)
                 {
@@ -774,6 +787,15 @@ public sealed class ModelImportDialog : DialogBase
         var frames = ModelFrames.Plan(scene, options);
         var poses = ModelFrames.Pose(scene, frames, ct);
         return (scene, options, frames, poses, ModelFrames.Fit(poses));
+    }
+
+    /// <summary>그림에 쓴 색(완전히 투명한 픽셀은 빼고): 많이 쓴 색부터 앞 <see cref="MaxShownColors"/>개와 전체 색 수.</summary>
+    private static (IReadOnlyList<Color32> Colors, int Count) UsedColors(PixelImage image)
+    {
+        var counts = new Dictionary<Color32, int>();
+        foreach (var c in image.Pixels)
+            if (c.A > 0) counts[c] = counts.GetValueOrDefault(c) + 1;
+        return ([.. counts.OrderByDescending(p => p.Value).Take(MaxShownColors).Select(p => p.Key)], counts.Count);
     }
 
     private void TogglePlay()

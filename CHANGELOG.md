@@ -2,6 +2,12 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.143 (2026-11-23)
+
+### 3D import shows the colors used
+- Under the pixel result in the Import 3D model window you now see how many colors the current frame uses and a swatch for each, most used first.
+- Point at a swatch to see its hex code.
+
 ## v1.14.142 (2026-11-23)
 
 ### One size input everywhere, with a ratio chain

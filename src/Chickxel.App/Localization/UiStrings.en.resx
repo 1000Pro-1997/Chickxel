@@ -4984,4 +4984,5 @@ Enter, or switching tool, layer or frame, paints it in the primary color (second
   <data name="SizeField_Size" xml:space="preserve"><value>Size</value></data>
   <data name="SizeField_CellSize" xml:space="preserve"><value>Cell size</value></data>
   <data name="CanvasResize_Image" xml:space="preserve"><value>Image</value></data>
+  <data name="Model_UsedColors" xml:space="preserve"><value>Colors in this frame: {0}</value></data>
 </root>

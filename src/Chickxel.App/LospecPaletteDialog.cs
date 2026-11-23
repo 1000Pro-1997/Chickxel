@@ -49,7 +49,7 @@ public sealed class LospecPaletteDialog : DialogBase
     private readonly Button _retry, _more;
     private readonly ListBox _list;
     private readonly TextBlock _detailTitle, _detailInfo, _hoverHex, _note;
-    private readonly BigSwatches _swatches;
+    private readonly ColorSwatches _swatches;
     private readonly ExampleStrip _examples;
     private readonly TextBlock _examplesNote;
     private CancellationTokenSource? _examplesCts;
@@ -160,13 +160,13 @@ public sealed class LospecPaletteDialog : DialogBase
         _detailTitle = new TextBlock { FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush, TextTrimming = TextTrimming.CharacterEllipsis };
         _detailInfo = new TextBlock { Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, TextTrimming = TextTrimming.CharacterEllipsis };
         _hoverHex = new TextBlock { Foreground = AppTheme.TextBrush, FontFamily = new FontFamily("Menlo, Consolas, monospace"), VerticalAlignment = VerticalAlignment.Center, MinWidth = 80 };
-        _swatches = new BigSwatches();
+        _swatches = new ColorSwatches();
         _swatches.HoverChanged += (_, c) => _hoverHex.Text = c?.ToHex() ?? "";
         // 왼쪽: 팔레트 칸과 같은 크기로 줄바꿈한 색 칸. 오른쪽: 이 팔레트로 그린 예시 그림.
         var swatchHost = new ScrollViewer
         {
             Content = _swatches,
-            Width = BigSwatches.PreferredWidth,
+            Width = ColorSwatches.WidthFor(12),
             Height = ExampleHeight,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
@@ -743,81 +743,6 @@ public sealed class LospecPaletteDialog : DialogBase
                 ImageUtil.DrawSwatch(g, r, colors[i]);
                 g.DrawRectangle(null, border, r.Deflate(0.5));
             }
-        }
-    }
-
-    /// <summary>고른 팔레트의 큰 색 칸(너비에 맞춰 줄바꿈). 마우스를 올린 색은 풍선 도움말과 <see cref="HoverChanged"/>로 알린다.</summary>
-    private sealed class BigSwatches : Control
-    {
-        /// <summary>편집기 팔레트 칸과 같은 크기(14px + 2px 간격).</summary>
-        private const double Cell = 14, GapPx = 2;
-        /// <summary>한 줄 12칸 너비(편집기 팔레트 열과 비슷하게).</summary>
-        public const double PreferredWidth = GapPx + 12 * (Cell + GapPx) + 14;
-        private IReadOnlyList<Color32> _colors = [];
-        private int _hover = -1;
-
-        public event EventHandler<Color32?>? HoverChanged;
-
-        public BigSwatches() => TipPlacement.FollowPointer(this);
-
-        public void SetColors(IReadOnlyList<Color32> colors)
-        {
-            _colors = colors;
-            _hover = -1;
-            ToolTip.SetTip(this, null);
-            InvalidateMeasure();
-            InvalidateVisual();
-        }
-
-        private int Columns(double width) => Math.Max(1, (int)((width - GapPx) / (Cell + GapPx)));
-
-        protected override Avalonia.Size MeasureOverride(Avalonia.Size available)
-        {
-            double width = double.IsInfinity(available.Width) ? 600 : available.Width;
-            int rows = (_colors.Count + Columns(width) - 1) / Columns(width);
-            return new Avalonia.Size(width, Math.Max(Cell + 2 * GapPx, rows * (Cell + GapPx) + GapPx));
-        }
-
-        private Rect CellRect(int i, int cols)
-            => new(GapPx + i % cols * (Cell + GapPx), GapPx + i / cols * (Cell + GapPx), Cell, Cell);
-
-        public override void Render(DrawingContext g)
-        {
-            g.FillRectangle(AppTheme.InputBrush, new Rect(Bounds.Size));
-            int cols = Columns(Bounds.Width);
-            for (int i = 0; i < _colors.Count; i++)
-            {
-                var r = CellRect(i, cols);
-                ImageUtil.DrawSwatch(g, r, _colors[i]);
-                g.DrawRectangle(null, i == _hover ? AppTheme.Pen(Colors.White, 2) : AppTheme.Pen(AppTheme.BorderColor), r.Deflate(i == _hover ? 1 : 0.5));
-            }
-        }
-
-        protected override void OnPointerMoved(PointerEventArgs e)
-        {
-            base.OnPointerMoved(e);
-            var pos = e.GetPosition(this);
-            int cols = Columns(Bounds.Width);
-            int col = (int)((pos.X - GapPx) / (Cell + GapPx)), row = (int)((pos.Y - GapPx) / (Cell + GapPx));
-            int i = pos.X >= GapPx && pos.Y >= GapPx && col < cols ? row * cols + col : -1;
-            if (i >= _colors.Count || (i >= 0 && !CellRect(i, cols).Contains(pos))) i = -1;
-            SetHover(i);
-        }
-
-        protected override void OnPointerExited(PointerEventArgs e)
-        {
-            base.OnPointerExited(e);
-            SetHover(-1);
-        }
-
-        private void SetHover(int i)
-        {
-            if (i == _hover) return;
-            _hover = i;
-            Color32? c = i >= 0 ? _colors[i] : null;
-            ToolTip.SetTip(this, c?.ToHex());
-            HoverChanged?.Invoke(this, c);
-            InvalidateVisual();
         }
     }
 

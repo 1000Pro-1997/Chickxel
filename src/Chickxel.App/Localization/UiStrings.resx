@@ -10651,4 +10651,5 @@ Enter나 다른 도구·레이어·프레임으로 바꾸면 기본색(오른쪽
   <data name="SizeField_Size" xml:space="preserve"><value>크기</value><comment>공용 크기 입력 앞 줄 이름(따로 이름이 없는 곳).</comment></data>
   <data name="SizeField_CellSize" xml:space="preserve"><value>칸 크기</value><comment>프레임 나누기 등: 한 칸의 가로 × 세로.</comment></data>
   <data name="CanvasResize_Image" xml:space="preserve"><value>그림</value><comment>캔버스 크기 모드: 그림 가로 × 세로 줄 이름</comment></data>
+  <data name="Model_UsedColors" xml:space="preserve"><value>이 프레임에 쓴 색 {0}개</value><comment>3D 모델 가져오기: 픽셀 결과 칸 아래 색 칸 목록 머리. {0} 색 수.</comment></data>
 </root>
