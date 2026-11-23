@@ -23,8 +23,26 @@ public sealed class ModelImportDialog : DialogBase
     /// <summary>사용자 프리셋 파일(설정 파일과 같은 폴더).</summary>
     public static string PresetPath => Path.Combine(Path.GetDirectoryName(AppSettings.FilePath)!, ModelPresets.FileName);
 
-    /// <summary>그릴 장면(애니메이션을 불러오면 그 애니메이션을 붙인 새 장면으로 바뀜 — <see cref="Scene"/>). 아직 모델을 열지 않았으면 null.</summary>
+    /// <summary>
+    /// 그릴 장면 = 읽은 장면(<see cref="_baseScene"/>)에 원본 색 바꾸기(<see cref="_colorMap"/>)를 입힌 것(<see cref="Scene"/> — 가져오기도 이것으로 그림).
+    /// 아직 모델을 열지 않았으면 null.
+    /// </summary>
     private ModelScene? _scene;
+    /// <summary>읽은 장면(애니메이션을 불러오면 그 애니메이션을 붙인 새 장면으로 바뀜) — 색을 바꾸기 전.</summary>
+    private ModelScene? _baseScene;
+    /// <summary>원본 색 바꾸기: 원래 바탕 색 → 새 색(모델을 바꾸면 비움).</summary>
+    private readonly Dictionary<Color32, Color32> _colorMap = [];
+    /// <summary>원본 모델이 쓰는 바탕 색(바꾸기 전, 많이 쓴 색부터 — <see cref="ModelColors.Used"/>).</summary>
+    private IReadOnlyList<Color32> _sourceColors = [];
+    /// <summary>원본 칸 아래: 원본 모델 색 수와 색 칸(바꾼 색은 새 색으로 보임). 누르면 쓰인 곳 표시, 우클릭 = 색 바꾸기 메뉴.</summary>
+    private readonly TextBlock _sourceLabel = Ui.Label("");
+    private readonly ColorSwatches _sourceSwatches = new() { Width = 332 };
+    private readonly StackPanel _sourceRow;
+    /// <summary>쓰인 곳을 보일 원래 색(null = 표시 안 함).</summary>
+    private Color32? _highlight;
+    /// <summary>마지막 원본 칸 그림·그 바탕 색 층·픽셀 결과(쓰인 곳 표시를 다시 그릴 때).</summary>
+    private PixelImage? _lastOriginal, _lastPixel;
+    private Color32[] _lastAlbedo = [];
     private string _fileName;
     /// <summary>애니메이션 불러오기·모델 열기 창의 처음 폴더(모델 파일의 폴더).</summary>
     private string? _folder;
@@ -50,8 +68,14 @@ public sealed class ModelImportDialog : DialogBase
     private readonly TextBlock _lightDepthValue;
     /// <summary>빛이 카메라 뒤쪽 반구에 있는지(<see cref="ModelRenderSettings.LightBack"/>).</summary>
     private bool _lightBehind;
-    /// <summary>앞뒤를 바꿀 때 지킬 화면 안 빛 방향(라디안, 오른쪽 = 0 · 위 = π/2). 빛이 정면·정뒤라 방향이 없을 때 쓰려고 마지막 값을 둔다.</summary>
-    private double _lightTurn = Math.PI / 2;
+    /// <summary>
+    /// 빛 자리: 앞뒤 막대가 정한 단면(구를 화면과 나란히 자른 원 = 노란 원)의 앞뒤 <see cref="_lightPlane"/>(정면에서 잰 각도)와 그 원 안 자리 —
+    /// 가운데에서 떨어진 비율 <see cref="_lightFraction"/>(0 = 가운데, 1 = 테두리)과 화면 안 방향 <see cref="_lightTurn"/>(라디안, 오른쪽 = 0 · 위 = π/2).
+    /// 빛 방향 = 모델 가운데에서 그 자리 쪽. 방향이 없을 때(가운데) 쓰려고 마지막 방향을 둔다.
+    /// </summary>
+    private double _lightPlane = 45, _lightFraction = 1, _lightTurn = Math.PI / 2;
+    /// <summary><see cref="PlaceLight"/>가 마지막으로 넣은 빛 가로·세로·뒤쪽 — 숫자 칸·프리셋으로 빛이 바뀌었는지 알아본다(바뀌면 그 방향의 테두리 자리로).</summary>
+    private (decimal Yaw, decimal Pitch, bool Back) _placed = (decimal.MinValue, 0, false);
     private readonly Button _outlineColor, _deletePreset;
     private Color32 _outlineColorValue;
     private List<ModelPreset> _userPresets = [];
@@ -82,7 +106,16 @@ public sealed class ModelImportDialog : DialogBase
     /// <param name="folder">모델이 없을 때 '모델 열기…' 창의 처음 폴더.</param>
     public ModelImportDialog(string? path, ModelScene? scene, string? folder = null) : base(UiStrings.Model_Title, UiStrings.Model_Import)
     {
-        _scene = scene;
+        _sourceSwatches.CellClicked += (_, i) => ToggleHighlight(i);
+        _sourceSwatches.CellRightClicked += SourceColorMenu;
+        _sourceSwatches.TipFor = SourceColorTip;
+        _sourceRow = new StackPanel
+        {
+            Spacing = 2,
+            IsVisible = false,
+            Children = { Ui.Row(_sourceLabel, Ui.InfoBadge(UiStrings.Model_SourceColorsInfo)), _sourceSwatches },
+        };
+        SetScene(scene, resetColors: true);
         ModelPath = path;
         _fileName = path is null ? "" : Path.GetFileName(path);
         _folder = path is null ? folder : Path.GetDirectoryName(path);
@@ -172,8 +205,8 @@ public sealed class ModelImportDialog : DialogBase
             _pitch.Value = (decimal)pitch;
             _roll.Value = 0;
         };
-        // 해 손잡이 = 지금 앞뒤에서 화면과 나란한 원(노란 원) 위의 방향만, 세로 막대 = 구 위의 앞뒤(설정 칸 '빛 앞뒤'와 같음)
-        _preview.LightTurned += SetLightTurn;
+        // 해 손잡이 = 지금 앞뒤에서 화면과 나란한 원(노란 원)을 평면으로 보고 그 안 아무 데나, 세로 막대 = 그 원의 앞뒤(설정 칸 '빛 앞뒤'와 같음)
+        _preview.LightMoved += MoveLight;
         _preview.LightDepthMoved += SetLightDepth;
         // 끄는 동안은 원본 칸을 가볍게 그리고, 놓으면 제대로 다시 그린다
         _preview.DragEnded += Schedule;
@@ -184,6 +217,9 @@ public sealed class ModelImportDialog : DialogBase
         previewHint.MaxWidth = 664;
         var pixelLabel = Ui.Label(UiStrings.Model_PixelResult);
         Grid.SetColumn(pixelLabel, 1);
+        // 두 칸 아래 색 줄: 왼쪽 원본 모델 색, 오른쪽 이 프레임에 쓴 색
+        _usedRow = new StackPanel { Spacing = 2, IsVisible = false, Children = { _usedLabel, _usedColors } };
+        Grid.SetColumn(_usedRow, 1);
         var previewBox = new StackPanel
         {
             Spacing = 4,
@@ -199,7 +235,11 @@ public sealed class ModelImportDialog : DialogBase
                     },
                 },
                 new Border { BorderBrush = AppTheme.BorderBrush, BorderThickness = new Thickness(1), Child = new Panel { Children = { _preview, _dropHint } } },
-                (_usedRow = new StackPanel { Spacing = 2, Margin = new Thickness(333, 0, 0, 0), IsVisible = false, Children = { _usedLabel, _usedColors } }),
+                new Grid
+                {
+                    ColumnDefinitions = new ColumnDefinitions("333,332"),
+                    Children = { _sourceRow, _usedRow },
+                },
                 previewHint,
                 Ui.Row(_play, _frame, _turnAngle),
             },
@@ -448,7 +488,7 @@ public sealed class ModelImportDialog : DialogBase
         }
         if (scene is null) return;
         StopPlay();
-        _scene = scene;
+        SetScene(scene, resetColors: true);
         ModelPath = path;
         _fileName = name;
         _folder = Path.GetDirectoryName(path);
@@ -510,7 +550,7 @@ public sealed class ModelImportDialog : DialogBase
         var paths = Ui.OpenFiles(this, UiStrings.Model_ImportAnimation, _folder,
             new FileFilter(MainStrings.Open_FilterModels, MediaFormats.Patterns(MediaFormats.ModelExtensions)));
         if (paths.Count == 0) return;
-        if (_scene is not { } scene) return;
+        if (_baseScene is not { } scene) return;
         var notes = new List<string>();
         int added = 0, first = scene.Animations.Count;
         foreach (var path in paths)
@@ -531,7 +571,7 @@ public sealed class ModelImportDialog : DialogBase
         }
         if (added > 0)
         {
-            _scene = scene;
+            SetScene(scene, resetColors: false);
             _posed = null;
             FillClips(first);
             _mode.SelectedIndex = (int)ModelFrameMode.Animation;
@@ -715,7 +755,9 @@ public sealed class ModelImportDialog : DialogBase
         _turnAngle.Text = $"{_frame.Value:0}°";
         var r = RenderSettings;
         _preview.SetOrientation(r);
-        _lightDepth.Value = LightDepthOf(r);
+        SyncLightPlane(r);
+        _preview.SetLightPlane(_lightPlane, _lightFraction, _lightTurn);
+        _lightDepth.Value = _lightPlane;
         _lightDepthValue.Text = $"{_lightDepth.Value:0}°";
         _estimate.Text = _scene is null ? "" : UiStrings.FormatModel_Estimate(frames: frames.Count, width: r.Width, height: r.Height, ms: ModelFrames.DurationMs(o));
         _syncing = false;
@@ -731,32 +773,54 @@ public sealed class ModelImportDialog : DialogBase
     }
 
     /// <summary>
-    /// 앞뒤 막대: 빛을 정면에서 <paramref name="degrees"/>도(0 = 정면, 180 = 정뒤)로 옮긴다 — 화면 안 방향(해 손잡이가 가리키는 쪽)은 그대로.
+    /// 빛이 단면 자리(<see cref="PlaceLight"/>)가 아닌 곳에서 바뀌었으면(숫자 칸·프리셋·처음 값) 그 빛 방향의 테두리 자리로 맞춘다
+    /// (앞뒤 = 그 방향이 정면에서 돈 각도, 원 안 비율 1).
     /// </summary>
-    private void SetLightDepth(double degrees)
+    private void SyncLightPlane(ModelRenderSettings r)
     {
-        double ly = (double)_lightYaw.NumValue() * Math.PI / 180, lp = (double)_lightPitch.NumValue() * Math.PI / 180;
+        var now = (_lightYaw.NumValue(), _lightPitch.NumValue(), _lightBehind);
+        if (now == _placed) return;
+        _placed = now;
+        _lightPlane = LightDepthOf(r);
+        _lightFraction = 1;
+        double ly = r.LightYaw * Math.PI / 180, lp = r.LightPitch * Math.PI / 180;
         double x = Math.Sin(ly) * Math.Cos(lp), y = Math.Sin(lp);
         if (x * x + y * y > 1e-6) _lightTurn = Math.Atan2(y, x);
-        PlaceLight(degrees);
     }
 
-    /// <summary>해 손잡이: 앞뒤는 그대로 두고 화면 안 방향만 <paramref name="turn"/>(라디안, 오른쪽 = 0 · 위 = π/2)으로 — 노란 원 위를 돈다.</summary>
-    private void SetLightTurn(double turn)
+    /// <summary>앞뒤 막대: 단면을 정면에서 <paramref name="degrees"/>도(0 = 정면, 180 = 정뒤)로 옮긴다 — 원 안 자리(비율·방향)는 그대로.</summary>
+    private void SetLightDepth(double degrees)
     {
-        _lightTurn = turn;
-        PlaceLight(LightDepthOf(RenderSettings));
+        _lightPlane = Math.Clamp(degrees, 0, 180);
+        PlaceLight();
     }
 
-    /// <summary>빛을 구 위 (앞뒤 <paramref name="degrees"/>°, 화면 방향 <see cref="_lightTurn"/>)에 놓고 빛 가로·세로 값과 뒤쪽 여부를 맞춘다.</summary>
-    private void PlaceLight(double degrees)
+    /// <summary>
+    /// 해 손잡이: 노란 원을 평면으로 보고 그 안 아무 데나 놓는다(<paramref name="x"/>·<paramref name="y"/> = 빛 구 반지름으로 나눈 화면 자리, 오른쪽·위 +).
+    /// 원 밖으로 끌면 테두리에 붙는다. 앞뒤(원의 크기)는 막대가 정한다.
+    /// </summary>
+    private void MoveLight(double x, double y)
     {
-        double v = degrees * Math.PI / 180, ring = Math.Sin(v), z = Math.Cos(v);
-        double nx = ring * Math.Cos(_lightTurn), ny = ring * Math.Sin(_lightTurn);
+        double ring = Math.Sin(_lightPlane * Math.PI / 180), r = Math.Sqrt(x * x + y * y);
+        if (ring < 1e-3) return;
+        _lightFraction = Math.Min(1, r / ring);
+        if (r > 1e-6) _lightTurn = Math.Atan2(y, x);
+        PlaceLight();
+    }
+
+    /// <summary>빛을 단면 자리(앞뒤 <see cref="_lightPlane"/>, 원 안 <see cref="_lightFraction"/>·<see cref="_lightTurn"/>) 쪽으로 두고 빛 가로·세로 값과 뒤쪽 여부를 맞춘다.</summary>
+    private void PlaceLight()
+    {
+        double v = _lightPlane * Math.PI / 180, ring = Math.Sin(v) * _lightFraction;
+        var dir = new System.Numerics.Vector3((float)(ring * Math.Cos(_lightTurn)), (float)(ring * Math.Sin(_lightTurn)), (float)Math.Cos(v));
+        // 옆(90°) 단면의 가운데는 모델 가운데라 방향이 없다 — 그대로 둔다.
+        if (dir.Length() < 1e-3f) return;
+        dir = System.Numerics.Vector3.Normalize(dir);
         _syncing = true;
-        _lightYaw.Value = Math.Clamp((decimal)Math.Round(Math.Atan2(nx, Math.Abs(z)) * 180 / Math.PI, 1), _lightYaw.Minimum, _lightYaw.Maximum);
-        _lightPitch.Value = Math.Clamp((decimal)Math.Round(Math.Asin(Math.Clamp(ny, -1, 1)) * 180 / Math.PI, 1), _lightPitch.Minimum, _lightPitch.Maximum);
-        _lightBehind = z < 0;
+        _lightYaw.Value = Math.Clamp((decimal)Math.Round(Math.Atan2(dir.X, Math.Abs(dir.Z)) * 180 / Math.PI, 1), _lightYaw.Minimum, _lightYaw.Maximum);
+        _lightPitch.Value = Math.Clamp((decimal)Math.Round(Math.Asin(Math.Clamp(dir.Y, -1, 1)) * 180 / Math.PI, 1), _lightPitch.Minimum, _lightPitch.Maximum);
+        _lightBehind = dir.Z < 0;
+        _placed = (_lightYaw.NumValue(), _lightPitch.NumValue(), _lightBehind);
         _syncing = false;
         Sync();
     }
@@ -798,6 +862,7 @@ public sealed class ModelImportDialog : DialogBase
             string? error = null;
             (ModelScene, ModelFrameOptions, IReadOnlyList<ModelFrame>, PosedMesh[], ModelBounds)? done = null;
             PixelImage? original = null, image = null;
+            Color32[] albedo = [];
             ModelRenderSettings view = settings;
             IReadOnlyList<Color32> used = [];
             int usedCount = 0;
@@ -814,12 +879,17 @@ public sealed class ModelImportDialog : DialogBase
                 double scale = 330d / Math.Max(settings.Width, settings.Height);
                 int smoothWidth = Math.Max(1, (int)Math.Round(settings.Width * scale));
                 int smoothHeight = Math.Max(1, (int)Math.Round(settings.Height * scale));
-                original = ModelRenderer.RenderLayers(poses[i], view with
+                var originalLayers = ModelRenderer.RenderLayers(poses[i], view with
                 {
                     Width = smoothWidth, Height = smoothHeight, Supersample = originalSamples, ShadeSteps = 0,
                     HardAlpha = false, Colors = 0, OutlineOuter = false, OutlineInner = false, OutlineCrease = 0, OutlineColorEdge = 0,
                     OutlineObjects = ModelOutlineObjects.Off,
-                }, fit, cts.Token).Image;
+                }, fit, cts.Token);
+                original = originalLayers.Image;
+                // 쓰인 곳 표시용: 덮인 픽셀만 바탕 색, 나머지는 투명
+                albedo = originalLayers.Albedo;
+                for (int k = 0; k < albedo.Length; k++)
+                    if (originalLayers.Coverage[k] < 128) albedo[k] = Color32.Transparent;
                 done = (s, o, frames, poses, fit);
             }
             catch (OperationCanceledException)
@@ -838,7 +908,10 @@ public sealed class ModelImportDialog : DialogBase
                 {
                     _posed = d;
                     _preview.SetOrientation(view);
-                    _preview.Show(original, image);
+                    _lastOriginal = original;
+                    _lastPixel = image;
+                    _lastAlbedo = albedo;
+                    ShowPreviewImages();
                     _usedColors.SetColors(used);
                     _usedLabel.Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.Model_UsedColors, usedCount);
                     _usedRow.IsVisible = true;
@@ -866,6 +939,140 @@ public sealed class ModelImportDialog : DialogBase
         foreach (var c in image.Pixels)
             if (c.A > 0) counts[c] = counts.GetValueOrDefault(c) + 1;
         return ([.. counts.OrderByDescending(p => p.Value).Take(MaxShownColors).Select(p => p.Key)], counts.Count);
+    }
+
+    // ───────────── 원본 모델 색(쓰인 곳 표시·바꾸기) ─────────────
+
+    /// <summary>읽은 장면을 바꾼다. <paramref name="resetColors"/>면 색 바꾸기·쓰인 곳 표시를 비우고, 아니면 새 장면에 없는 색만 뺀다.</summary>
+    private void SetScene(ModelScene? scene, bool resetColors)
+    {
+        _baseScene = scene;
+        if (resetColors)
+        {
+            _colorMap.Clear();
+            _highlight = null;
+        }
+        _sourceColors = scene is null ? [] : ModelColors.Used(scene);
+        var known = _sourceColors.ToHashSet();
+        foreach (var gone in _colorMap.Keys.Where(k => !known.Contains(k)).ToList()) _colorMap.Remove(gone);
+        if (_highlight is { } h && !known.Contains(h)) _highlight = null;
+        ApplyColors();
+    }
+
+    /// <summary>색 바꾸기를 입힌 그릴 장면을 만들고(자세는 다시) 원본 색 칸을 맞춘다.</summary>
+    private void ApplyColors()
+    {
+        _scene = _baseScene is null ? null : ModelColors.Recolor(_baseScene, _colorMap);
+        _posed = null;
+        var shown = _sourceColors.Take(MaxShownColors).Select(c => _colorMap.GetValueOrDefault(c, c)).ToList();
+        _sourceSwatches.SetColors(shown);
+        _sourceSwatches.SelectedIndex = _highlight is { } h ? IndexOfSource(h) : -1;
+        var culture = System.Globalization.CultureInfo.CurrentCulture;
+        _sourceLabel.Text = _colorMap.Count == 0
+            ? string.Format(culture, UiStrings.Model_SourceColors, _sourceColors.Count)
+            : string.Format(culture, UiStrings.Model_SourceColorsChanged, _sourceColors.Count, _colorMap.Count);
+        _sourceRow.IsVisible = _sourceColors.Count > 0;
+    }
+
+    private int IndexOfSource(Color32 c)
+    {
+        for (int i = 0; i < _sourceColors.Count && i < MaxShownColors; i++)
+            if (_sourceColors[i] == c) return i;
+        return -1;
+    }
+
+    private string SourceColorTip(int i)
+    {
+        var c = _sourceColors[i];
+        return _colorMap.TryGetValue(c, out var to) ? $"{c.ToHex()} → {to.ToHex()}" : c.ToHex();
+    }
+
+    /// <summary>색 칸 누르기: 그 색이 쓰인 곳을 원본 칸에 보인다(같은 칸을 다시 누르면 끔).</summary>
+    private void ToggleHighlight(int i)
+    {
+        var c = _sourceColors[i];
+        _highlight = _highlight == c ? null : c;
+        _sourceSwatches.SelectedIndex = _highlight is null ? -1 : i;
+        ShowPreviewImages();
+    }
+
+    /// <summary>색 칸 우클릭: 색 바꾸기… · 원래 색으로 · 모든 색 원래대로.</summary>
+    private void SourceColorMenu(int i, PointerPressedEventArgs e)
+    {
+        var c = _sourceColors[i];
+        PopupMenus.Show(_sourceSwatches,
+        [
+            Item(UiStrings.Model_SourceColorChange, VectorIcon.Brush, () => Dispatcher.UIThread.Post(() => ChangeSourceColor(c))),
+            Item(UiStrings.Model_SourceColorReset, VectorIcon.Undo2, () => SetSourceColor(c, null), _colorMap.ContainsKey(c)),
+            new Separator(),
+            Item(UiStrings.Model_SourceColorResetAll, VectorIcon.Refresh, () =>
+            {
+                _colorMap.Clear();
+                ApplyColors();
+                Schedule();
+            }, _colorMap.Count > 0),
+        ], e);
+
+        static MenuItem Item(string text, VectorIcon icon, Action action, bool enabled = true)
+        {
+            var item = new MenuItem { Header = text, Icon = Ui.Icon(icon, 14), IsEnabled = enabled };
+            item.Click += (_, _) => action();
+            return item;
+        }
+    }
+
+    /// <summary>색 고르기 창으로 원래 색 <paramref name="original"/>을 바꾼다 — 고르는 동안 미리보기에 바로 보이고, 취소하면 전으로. 그 색이 쓰인 곳도 함께 보인다.</summary>
+    private void ChangeSourceColor(Color32 original)
+    {
+        Color32? before = _colorMap.TryGetValue(original, out var b) ? b : null;
+        _highlight = original;
+        var picked = Ui.PickColor(this, before ?? original, UiStrings.Model_SourceColorChange, c => SetSourceColor(original, c));
+        SetSourceColor(original, picked ?? before);
+    }
+
+    /// <summary>원래 색 <paramref name="original"/>을 <paramref name="to"/>로(null이거나 원래 색과 같으면 바꾸기를 뺌) 바꾸고 다시 그린다.</summary>
+    private void SetSourceColor(Color32 original, Color32? to)
+    {
+        if (to is { } c && c.WithAlpha(255) != original) _colorMap[original] = c.WithAlpha(255);
+        else _colorMap.Remove(original);
+        ApplyColors();
+        Schedule();
+    }
+
+    /// <summary>마지막으로 그린 두 칸을 보인다 — 쓰인 곳을 보일 색이 있으면 원본 칸에 표시를 얹어서.</summary>
+    private void ShowPreviewImages()
+    {
+        if (_lastOriginal is not { } original || _lastPixel is not { } pixel) return;
+        _preview.Show(_highlight is { } h && _lastAlbedo.Length == original.Pixels.Length
+            ? Highlighted(original, _lastAlbedo, _colorMap.GetValueOrDefault(h, h))
+            : original, pixel);
+    }
+
+    /// <summary>
+    /// 바탕 색이 <paramref name="color"/>(그린 값의 반올림 차 ±2 안)인 픽셀만 그대로 두고 나머지 모델 픽셀은 어둡게, 그 둘레(상하좌우로 맞닿은 어두운 픽셀)는 강조색으로.
+    /// </summary>
+    private static PixelImage Highlighted(PixelImage image, Color32[] albedo, Color32 color)
+    {
+        int w = image.Width, h = image.Height;
+        var hit = new bool[albedo.Length];
+        for (int i = 0; i < hit.Length; i++)
+        {
+            var a = albedo[i];
+            hit[i] = a.A != 0 && Math.Abs(a.R - color.R) <= 2 && Math.Abs(a.G - color.G) <= 2 && Math.Abs(a.B - color.B) <= 2;
+        }
+        var result = image.Clone();
+        var px = result.Pixels;
+        var accent = new Color32(AppTheme.AccentColor.R, AppTheme.AccentColor.G, AppTheme.AccentColor.B);
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                int i = y * w + x;
+                if (hit[i] || px[i].A == 0) continue;
+                bool edge = (x > 0 && hit[i - 1]) || (x < w - 1 && hit[i + 1]) || (y > 0 && hit[i - w]) || (y < h - 1 && hit[i + w]);
+                var c = px[i];
+                px[i] = edge ? accent.WithAlpha(c.A) : new Color32((byte)(c.R * 0.3 + 18 * 0.7), (byte)(c.G * 0.3 + 18 * 0.7), (byte)(c.B * 0.3 + 22 * 0.7), c.A);
+            }
+        return result;
     }
 
     private void TogglePlay()
@@ -959,13 +1166,15 @@ public sealed class ModelImportDialog : DialogBase
         private Vector _viewOffset;
         private Avalonia.Point? _pan;
         private ModelRenderSettings _orientation = new();
+        /// <summary>빛 단면(노란 원)의 앞뒤(°)와 원 안 자리(비율 0~1, 방향 라디안) — 창이 <see cref="SetLightPlane"/>로 넣는다.</summary>
+        private double _lightPlane = 45, _lightFraction = 1, _lightTurn = Math.PI / 2;
         private System.Numerics.Vector3 _right, _up, _back;
 
         public event Action<double, double>? Rotated;
         public event Action<double>? Rolled;
         public event Action<double, double>? Faced;
-        /// <summary>해 손잡이를 끎: 화면 안 빛 방향(라디안, 오른쪽 = 0 · 위 = π/2) — 앞뒤는 그대로.</summary>
-        public event Action<double>? LightTurned;
+        /// <summary>해 손잡이를 끎: 빛 구 반지름으로 나눈 화면 자리(x 오른쪽 · y 위 +, 노란 원 안을 평면으로).</summary>
+        public event Action<double, double>? LightMoved;
         /// <summary>빛 앞뒤 막대를 끎(정면에서 잰 각도 0~180°).</summary>
         public event Action<double>? LightDepthMoved;
         /// <summary>끌기(돌리기·고리·해)를 마침 — 가볍게 그리던 미리보기를 제대로 다시 그릴 때.</summary>
@@ -979,6 +1188,15 @@ public sealed class ModelImportDialog : DialogBase
             ClipToBounds = true;
             Cursor = OrbitCursor;
             SetOrientation(_orientation);
+        }
+
+        /// <summary>빛 단면(노란 원)과 그 안 해 자리를 넣는다(해·노란 원·앞뒤 막대 손잡이를 그릴 때 씀).</summary>
+        public void SetLightPlane(double plane, double fraction, double turn)
+        {
+            _lightPlane = plane;
+            _lightFraction = fraction;
+            _lightTurn = turn;
+            InvalidateVisual();
         }
 
         public void SetOrientation(ModelRenderSettings settings)
@@ -1129,24 +1347,20 @@ public sealed class ModelImportDialog : DialogBase
                 }
         }
 
-        /// <summary>해 손잡이 자리: 빛 구 가운데에서 빛 방향의 화면 성분(오른쪽 = 가로, 위 = 세로)만큼.</summary>
+        /// <summary>해 손잡이 자리: 빛 구 가운데에서 노란 원(반지름 = 구 × sin 앞뒤) 안의 자리(비율 × 방향).</summary>
         private Avalonia.Point SunPoint()
         {
-            double yaw = _orientation.LightYaw * Math.PI / 180, pitch = _orientation.LightPitch * Math.PI / 180;
-            return new Avalonia.Point(Center.X + LightRadius * Math.Sin(yaw) * Math.Cos(pitch), Center.Y - LightRadius * Math.Sin(pitch));
+            double ring = LightRadius * Math.Sin(_lightPlane * Math.PI / 180) * _lightFraction;
+            return new Avalonia.Point(Center.X + ring * Math.Cos(_lightTurn), Center.Y - ring * Math.Sin(_lightTurn));
         }
 
-        /// <summary>빛이 정면에서 몇 도(0 = 카메라 쪽 정면, 180 = 정뒤).</summary>
-        private double LightDepth()
-        {
-            double ly = _orientation.LightYaw * Math.PI / 180, lp = _orientation.LightPitch * Math.PI / 180;
-            double z = (_orientation.LightBack ? -1 : 1) * Math.Cos(ly) * Math.Cos(lp);
-            return Math.Acos(Math.Clamp(z, -1, 1)) * 180 / Math.PI;
-        }
+        /// <summary>빛 단면이 정면에서 몇 도(0 = 카메라 쪽 정면, 180 = 정뒤).</summary>
+        private double LightDepth() => _lightPlane;
 
         /// <summary>
         /// 해 손잡이와 빛 구: 가리키거나 끄는 동안 구의 테두리(점선)와 노란 원 — 지금 앞뒤에서 화면과 나란히 자른 구의 단면(반지름 = 구 × sin 앞뒤,
-        /// 앞쪽 반이면 실선·뒤쪽 반이면 점선)이 보이고, 해는 그 원 위에서만 돈다. 앞뒤 막대를 움직이면 노란 원이 커졌다 작아지며 앞뒤로 간다.
+        /// 앞쪽 반이면 실선·뒤쪽 반이면 점선)이 보이고, 해는 그 원을 평면으로 보고 원 안 아무 데나 놓인다(가운데 = 정면·정뒤 쪽, 테두리 = 구 위).
+        /// 앞뒤 막대를 움직이면 노란 원이 커졌다 작아지며 앞뒤로 간다.
         /// </summary>
         private void DrawSun(DrawingContext g)
         {
@@ -1165,7 +1379,7 @@ public sealed class ModelImportDialog : DialogBase
                 g.DrawLine(SunPen, new Avalonia.Point(p.X + 10 * Math.Cos(a), p.Y + 10 * Math.Sin(a)),
                     new Avalonia.Point(p.X + 14 * Math.Cos(a), p.Y + 14 * Math.Sin(a)));
             }
-            g.DrawEllipse(_orientation.LightBack ? AppTheme.BackBrush : SunBrush,
+            g.DrawEllipse(_lightPlane > 90 ? AppTheme.BackBrush : SunBrush,
                 _hover == "sun" || _active == "sun" ? HoverPen : SunPen, p, 8, 8);
         }
 
@@ -1206,12 +1420,8 @@ public sealed class ModelImportDialog : DialogBase
             return "orbit";
         }
 
-        /// <summary>해 끌기: 커서 쪽 화면 방향만 알린다(해는 노란 원 위에 머묾 — 원의 크기는 앞뒤 막대가 정함).</summary>
-        private void MoveSun(Avalonia.Point p)
-        {
-            if (Distance(p, Center) < 1) return;
-            LightTurned?.Invoke(Math.Atan2(Center.Y - p.Y, p.X - Center.X));
-        }
+        /// <summary>해 끌기: 커서 자리를 빛 구 반지름으로 나눠 알린다(창이 노란 원 안으로 맞춤 — 원 크기는 앞뒤 막대가 정함).</summary>
+        private void MoveSun(Avalonia.Point p) => LightMoved?.Invoke((p.X - Center.X) / LightRadius, (Center.Y - p.Y) / LightRadius);
 
         protected override void OnPointerPressed(PointerPressedEventArgs e)
         {

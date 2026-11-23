@@ -4997,6 +4997,12 @@ Enter, or switching tool, layer or frame, paints it in the primary color (second
   <data name="SizeField_CellSize" xml:space="preserve"><value>Cell size</value></data>
   <data name="CanvasResize_Image" xml:space="preserve"><value>Image</value></data>
   <data name="Model_UsedColors" xml:space="preserve"><value>Colors in this frame: {0}</value></data>
+  <data name="Model_SourceColors" xml:space="preserve"><value>Model colors: {0}</value></data>
+  <data name="Model_SourceColorsChanged" xml:space="preserve"><value>Model colors: {0} · changed: {1}</value></data>
+  <data name="Model_SourceColorsInfo" xml:space="preserve"><value>The material colors the model uses (base colors without light and shade, most used first). Click a swatch to show only where that color is used (click again to turn it off); right-click to change it to another color. Changed colors are used for the preview and the import; the model file stays the same. Parts painted by textures are not listed.</value></data>
+  <data name="Model_SourceColorChange" xml:space="preserve"><value>Change color…</value></data>
+  <data name="Model_SourceColorReset" xml:space="preserve"><value>Back to original</value></data>
+  <data name="Model_SourceColorResetAll" xml:space="preserve"><value>Reset all colors</value></data>
   <data name="Model_FreeTurn" xml:space="preserve"><value>Free rotation</value></data>
   <data name="Model_FreeTurnTip" xml:space="preserve"><value>Turns the preview slider into a 0–359° rotation in 1° steps instead of frames, so you can look from any angle. The number of imported frames stays the same.</value></data>
 </root>

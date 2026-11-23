@@ -2,6 +2,17 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.149 (2026-11-23)
+
+### 3D import: see and change the model's colors
+- Under the original pane, **Model colors** lists the material colors the model uses (without light and shade, most used first).
+- Click a swatch to show only where that color is used: everything else dims and the spot gets a blue outline; click again to turn it off.
+- Right-click a swatch to change that color (live while you pick), put it back, or reset all colors; changed colors are used for the preview and the import, and the model file stays the same.
+
+### 3D light: move the sun anywhere inside the yellow circle
+- The sun handle is no longer stuck on the yellow circle: drag it anywhere inside, and the light shines from the model's center toward that point.
+- The center points the light straight from the front (or straight from behind on the back half); the Front/Back slider still sets the circle.
+
 ## v1.14.148 (2026-11-23)
 
 ### 3D outline: color changes and object edges

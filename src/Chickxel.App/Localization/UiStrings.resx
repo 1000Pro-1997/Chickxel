@@ -10664,6 +10664,12 @@ Enter나 다른 도구·레이어·프레임으로 바꾸면 기본색(오른쪽
   <data name="SizeField_CellSize" xml:space="preserve"><value>칸 크기</value><comment>프레임 나누기 등: 한 칸의 가로 × 세로.</comment></data>
   <data name="CanvasResize_Image" xml:space="preserve"><value>그림</value><comment>캔버스 크기 모드: 그림 가로 × 세로 줄 이름</comment></data>
   <data name="Model_UsedColors" xml:space="preserve"><value>이 프레임에 쓴 색 {0}개</value><comment>3D 모델 가져오기: 픽셀 결과 칸 아래 색 칸 목록 머리. {0} 색 수.</comment></data>
+  <data name="Model_SourceColors" xml:space="preserve"><value>원본 모델 색 {0}개</value><comment>3D 모델 가져오기: 원본 칸 아래 색 칸 목록 머리. {0} 색 수.</comment></data>
+  <data name="Model_SourceColorsChanged" xml:space="preserve"><value>원본 모델 색 {0}개 · 바꾼 색 {1}개</value><comment>{0} 색 수, {1} 바꾼 색 수.</comment></data>
+  <data name="Model_SourceColorsInfo" xml:space="preserve"><value>모델이 쓰는 재질 색(빛·그늘을 빼고 본 바탕 색, 많이 쓴 색부터)입니다. 색 칸을 누르면 그 색이 쓰인 곳만 밝게 보이고(다시 누르면 끔), 우클릭하면 그 색을 다른 색으로 바꿀 수 있습니다. 바꾼 색은 미리보기와 가져오기에 모두 쓰이고, 모델 파일은 바뀌지 않습니다. 텍스처로 칠한 부분은 목록에 없습니다.</value></data>
+  <data name="Model_SourceColorChange" xml:space="preserve"><value>색 바꾸기…</value></data>
+  <data name="Model_SourceColorReset" xml:space="preserve"><value>원래 색으로</value></data>
+  <data name="Model_SourceColorResetAll" xml:space="preserve"><value>모든 색 원래대로</value></data>
   <data name="Model_FreeTurn" xml:space="preserve"><value>자유 회전</value><comment>3D 모델 가져오기 돌려 보기 프레임 수 옆 체크.</comment></data>
   <data name="Model_FreeTurnTip" xml:space="preserve"><value>미리보기 막대를 프레임 대신 0~359° 회전(1°씩)으로 바꿔 아무 각도에서나 봅니다. 가져오는 프레임 수는 그대로입니다.</value></data>
 </root>

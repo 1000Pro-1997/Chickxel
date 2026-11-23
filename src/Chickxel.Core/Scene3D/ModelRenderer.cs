@@ -57,6 +57,11 @@ public static class ModelRenderer
         return t;
     }
 
+    /// <summary>선형 RGB(0~1 밖은 자름) → 불투명 sRGB 8비트 — 바탕 색 층(<see cref="ModelRenderLayers.Albedo"/>)과 같은 반올림.</summary>
+    internal static Color32 Srgb8(Vector3 linear) => new(ToSrgb[Quantize(linear.X)], ToSrgb[Quantize(linear.Y)], ToSrgb[Quantize(linear.Z)]);
+
+    private static int Quantize(float v) => v >= 1 ? 65535 : v > 0 ? (int)(v * 65535 + 0.5f) : 0;
+
     /// <summary>
     /// 삼각형 꼭짓점들이 차지하는 축 정렬 상자(번호가 가리키는 위치만, NaN·무한대는 뺌). 그릴 것이 없으면 <see cref="ModelBounds.Empty"/>.
     /// </summary>
@@ -896,8 +901,8 @@ public static class ModelRenderer
             }
             rgb += p.Emissive;
             normal = PackNormal(n);
-            var srgb = ToSrgb;
-            albedoKey = (uint)srgb[To16(albedo.X)] << 16 | (uint)srgb[To16(albedo.Y)] << 8 | srgb[To16(albedo.Z)];
+            var a8 = Srgb8(albedo);
+            albedoKey = (uint)a8.R << 16 | (uint)a8.G << 8 | a8.B;
             if (!p.Blend)
             {
                 packed = To16(rgb.X) | ((ulong)To16(rgb.Y) << 16) | ((ulong)To16(rgb.Z) << 32) | OpaqueAlpha;
