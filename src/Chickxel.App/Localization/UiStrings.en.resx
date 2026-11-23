@@ -4840,7 +4840,7 @@ Cancel: keep the files and only remove the row.</value></data>
   <data name="Model_Fps" xml:space="preserve"><value>Frames per second</value></data>
   <data name="Model_MaxFrames" xml:space="preserve"><value>Max</value></data>
   <data name="Model_PlayTip" xml:space="preserve"><value>Play/pause the preview</value></data>
-  <data name="Model_PreviewHint" xml:space="preserve"><value>Drag model: orbit · Drag rings: angle/roll · Click an axis: face it · Drag sun: light direction (front/back: light slider) · Wheel: zoom</value></data>
+  <data name="Model_PreviewHint" xml:space="preserve"><value>Drag model: orbit · Drag rings: angle/roll · Click an axis: face it · Drag sun: light direction (front/back: light slider) · Wheel: zoom the view (right-drag to move while zoomed)</value></data>
   <data name="Model_Original" xml:space="preserve"><value>Original model</value></data>
   <data name="Model_PixelResult" xml:space="preserve"><value>Pixel result</value></data>
   <data name="Model_Summary" xml:space="preserve"><value>{name}: triangles {triangles} · materials {materials} · animations {animations}</value></data>
@@ -4985,4 +4985,6 @@ Enter, or switching tool, layer or frame, paints it in the primary color (second
   <data name="SizeField_CellSize" xml:space="preserve"><value>Cell size</value></data>
   <data name="CanvasResize_Image" xml:space="preserve"><value>Image</value></data>
   <data name="Model_UsedColors" xml:space="preserve"><value>Colors in this frame: {0}</value></data>
+  <data name="Model_FreeTurn" xml:space="preserve"><value>Free rotation</value></data>
+  <data name="Model_FreeTurnTip" xml:space="preserve"><value>Turns the preview slider into a 0–359° rotation in 1° steps instead of frames, so you can look from any angle. The number of imported frames stays the same.</value></data>
 </root>

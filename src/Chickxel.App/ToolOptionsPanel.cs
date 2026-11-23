@@ -696,7 +696,6 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
                 (w, h) => SetCanvasResizeImage(i => i with { Width = w ?? i.Width, Height = h ?? i.Height }))
             .RecentKey("canvas.size").LinkTip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_2CD545CAF3);
         _crImage.RatioSource = () => _ctx.CanvasResizeSource is { Width: > 0, Height: > 0 } s ? (double)s.Width / s.Height : null;
-        _crImage.Linked = true;
         _crRatio = Ui.IconButton(VectorIcon.Ratio, UiStrings.CanvasRatio_ButtonTip, (_, _) => ApplyCanvasRatio(), size: 16);
         _crRatio.Focusable = false;
         _crFromCenter = Ui.Check(UiStrings.CanvasResize_FromCenter, false).Tip(UiStrings.CanvasResize_FromCenterTip);

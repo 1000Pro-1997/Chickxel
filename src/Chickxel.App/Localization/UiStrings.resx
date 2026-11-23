@@ -10507,7 +10507,7 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="Model_Fps" xml:space="preserve"><value>초당 프레임</value></data>
   <data name="Model_MaxFrames" xml:space="preserve"><value>최대</value></data>
   <data name="Model_PlayTip" xml:space="preserve"><value>미리보기 재생/멈춤</value></data>
-  <data name="Model_PreviewHint" xml:space="preserve"><value>모델을 끌어 돌리기 · 고리를 끌어 각도/화면 회전 · 축을 눌러 정면 보기 · 해를 끌어 빛 방향(앞뒤는 빛 앞뒤 막대) · 휠로 확대</value></data>
+  <data name="Model_PreviewHint" xml:space="preserve"><value>모델을 끌어 돌리기 · 고리를 끌어 각도/화면 회전 · 축을 눌러 정면 보기 · 해를 끌어 빛 방향(앞뒤는 빛 앞뒤 막대) · 휠로 보기 확대(확대 중 오른쪽 끌기로 옮기기)</value></data>
   <data name="Model_Original" xml:space="preserve"><value>원본 모델</value></data>
   <data name="Model_PixelResult" xml:space="preserve"><value>픽셀 결과</value></data>
   <data name="Model_Summary" xml:space="preserve"><value>{name}: 삼각형 {triangles}개 · 재질 {materials}개 · 애니메이션 {animations}개</value></data>
@@ -10652,4 +10652,6 @@ Enter나 다른 도구·레이어·프레임으로 바꾸면 기본색(오른쪽
   <data name="SizeField_CellSize" xml:space="preserve"><value>칸 크기</value><comment>프레임 나누기 등: 한 칸의 가로 × 세로.</comment></data>
   <data name="CanvasResize_Image" xml:space="preserve"><value>그림</value><comment>캔버스 크기 모드: 그림 가로 × 세로 줄 이름</comment></data>
   <data name="Model_UsedColors" xml:space="preserve"><value>이 프레임에 쓴 색 {0}개</value><comment>3D 모델 가져오기: 픽셀 결과 칸 아래 색 칸 목록 머리. {0} 색 수.</comment></data>
+  <data name="Model_FreeTurn" xml:space="preserve"><value>자유 회전</value><comment>3D 모델 가져오기 돌려 보기 프레임 수 옆 체크.</comment></data>
+  <data name="Model_FreeTurnTip" xml:space="preserve"><value>미리보기 막대를 프레임 대신 0~359° 회전(1°씩)으로 바꿔 아무 각도에서나 봅니다. 가져오는 프레임 수는 그대로입니다.</value></data>
 </root>

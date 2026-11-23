@@ -2,6 +2,16 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.144 (2026-11-23)
+
+### 3D preview: wheel zooms the view, free rotation
+- The mouse wheel in the Import 3D model preview now zooms the view around the cursor like the canvas (both panes together, up to 16×) instead of changing the output zoom; right- or middle-drag moves the view while zoomed.
+- **Free rotation** next to the turntable frame count turns the preview slider into a 0–359° rotation in 1° steps, with the angle shown beside it; the imported frames stay the same.
+
+### Size chain on by default
+- The ratio chain of every size input starts turned on.
+- Pixelate still follows its saved setting.
+
 ## v1.14.143 (2026-11-23)
 
 ### 3D import shows the colors used

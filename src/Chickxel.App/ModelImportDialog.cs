@@ -39,6 +39,12 @@ public sealed class ModelImportDialog : DialogBase
     private readonly NumericUpDown _colors, _crease, _outlineWidth, _darken;
     private readonly ComboBox _projection, _smooth, _mode, _clip, _outlineColorMode, _preset;
     private readonly CheckBox _textures, _hardAlpha, _outer, _outside, _inner, _creaseOn;
+    /// <summary>돌려 보기 옆 '자유 회전': 켜면 미리보기 막대가 프레임 대신 0~359° 회전(1°씩) — 가져오는 프레임은 그대로.</summary>
+    private readonly CheckBox _freeTurn;
+    /// <summary>자유 회전 중 막대 옆 각도.</summary>
+    private readonly TextBlock _turnAngle = Ui.Label("");
+    /// <summary>자유 회전을 재생할 때 1°씩 넘기는 간격.</summary>
+    private const int FreeTurnTickMs = 30;
     /// <summary>빛 앞뒤(정면에서 잰 각도: 0° = 카메라 쪽 정면, 90° = 옆, 180° = 뒤) — 빛 가로·세로 값과 뒤쪽 여부를 함께 바꾼다.</summary>
     private readonly Slider _lightDepth;
     private readonly TextBlock _lightDepthValue;
@@ -114,6 +120,7 @@ public sealed class ModelImportDialog : DialogBase
         // 애니메이션이 없으면 그 방식은 목록에 넣지 않는다(한 장·돌려 보기만 — 애니메이션을 불러오면 더함, FillClips).
         _mode = Ui.Combo(170, UiStrings.Model_ModeStill, UiStrings.Model_ModeTurntable);
         _turnFrames = Ui.Num(1, ModelFrameOptions.MaxTurntableFrames, 8, 60).Presets(4, 8, 16, 32).Tip(UiStrings.Model_TurntableTip);
+        _freeTurn = Ui.Check(UiStrings.Model_FreeTurn).Tip(UiStrings.Model_FreeTurnTip);
         _clip = Ui.Combo(200);
         _importAnim = Ui.Button(UiStrings.Model_ImportAnimation, (_, _) => Dispatcher.UIThread.Post(ImportAnimations)).Tip(UiStrings.Model_ImportAnimationTip);
         FillClips(0);
@@ -165,7 +172,6 @@ public sealed class ModelImportDialog : DialogBase
             _lightYaw.Value = (decimal)Math.Round(yaw, 1);
             _lightPitch.Value = (decimal)Math.Round(pitch, 1);
         };
-        _preview.Zoomed += factor => _zoom.Value = Math.Clamp(Math.Round(_zoom.NumValue() * (decimal)factor), _zoom.Minimum, _zoom.Maximum);
         // 끄는 동안은 원본 칸을 가볍게 그리고, 놓으면 제대로 다시 그린다
         _preview.DragEnded += Schedule;
         _frame = new Slider { Minimum = 0, Maximum = 0, Width = 300, IsSnapToTickEnabled = true, TickFrequency = 1, VerticalAlignment = VerticalAlignment.Center };
@@ -192,7 +198,7 @@ public sealed class ModelImportDialog : DialogBase
                 new Border { BorderBrush = AppTheme.BorderBrush, BorderThickness = new Thickness(1), Child = new Panel { Children = { _preview, _dropHint } } },
                 (_usedRow = new StackPanel { Spacing = 2, Margin = new Thickness(333, 0, 0, 0), IsVisible = false, Children = { _usedLabel, _usedColors } }),
                 previewHint,
-                Ui.Row(_play, _frame),
+                Ui.Row(_play, _frame, _turnAngle),
             },
         };
 
@@ -224,7 +230,7 @@ public sealed class ModelImportDialog : DialogBase
         AddRow(UiStrings.Model_Outline, Ui.Row(_outer, _outside, _inner, _creaseOn, _crease));
         AddRow(UiStrings.Model_OutlineLook, Ui.Row(Ui.Label(UiStrings.Model_OutlineWidth), _outlineWidth, _outlineColorMode, _outlineColor, _darken));
         AddRow(UiStrings.Model_Frames, _mode);
-        AddRow(UiStrings.Model_Turntable, _turnFrames);
+        AddRow(UiStrings.Model_Turntable, Ui.Row(_turnFrames, _freeTurn));
         AddRow(UiStrings.Model_Clip, Ui.Row(_clip, _importAnim));
         AddRow(UiStrings.Model_Fps, Ui.Row(_fps, Ui.Label(UiStrings.Model_MaxFrames), _maxFrames));
 
@@ -275,13 +281,23 @@ public sealed class ModelImportDialog : DialogBase
             n.ValueChanged += (_, _) => Sync();
         foreach (var c in new[] { _projection, _smooth, _mode, _clip, _outlineColorMode }) c.SelectionChanged += (_, _) => Sync();
         foreach (var c in new[] { _textures, _hardAlpha, _outer, _outside, _inner, _creaseOn }) c.IsCheckedChanged += (_, _) => Sync();
+        _freeTurn.IsCheckedChanged += (_, _) =>
+        {
+            // 막대 자리를 같은 각도로 옮긴다(프레임 k ↔ k × 360 / N°)
+            int n = Math.Max(1, (int)_turnFrames.NumValue());
+            double target = _freeTurn.On() ? Math.Round(_frame.Value * 360.0 / n) % 360 : Math.Round(_frame.Value * n / 360.0) % n;
+            Sync();
+            _frame.Value = Math.Min(target, _frame.Maximum);
+        };
         _lightDepth.PropertyChanged += (_, e) =>
         {
             if (e.Property == RangeBase.ValueProperty && !_syncing) SetLightDepth(_lightDepth.Value);
         };
         _frame.PropertyChanged += (_, e) =>
         {
-            if (e.Property == RangeBase.ValueProperty) Schedule();
+            if (e.Property != RangeBase.ValueProperty) return;
+            _turnAngle.Text = $"{_frame.Value:0}°";
+            Schedule();
         };
         Closed += (_, _) =>
         {
@@ -290,6 +306,9 @@ public sealed class ModelImportDialog : DialogBase
         };
         Sync();
     }
+
+    /// <summary>자유 회전 중인지(돌려 보기이고 '자유 회전'을 켬).</summary>
+    private bool FreeTurn => _freeTurn.On() && (ModelFrameMode)Math.Clamp(_mode.SelectedIndex, 0, 2) == ModelFrameMode.Turntable;
 
     /// <summary>고른 그리기 설정.</summary>
     public ModelRenderSettings RenderSettings => new()
@@ -642,7 +661,7 @@ public sealed class ModelImportDialog : DialogBase
         if (_syncing) return;
         _syncing = true;
         var mode = (ModelFrameMode)Math.Clamp(_mode.SelectedIndex, 0, 2);
-        _turnFrames.IsEnabled = mode == ModelFrameMode.Turntable;
+        _turnFrames.IsEnabled = _freeTurn.IsEnabled = mode == ModelFrameMode.Turntable;
         _clip.IsEnabled = _fps.IsEnabled = _maxFrames.IsEnabled = mode == ModelFrameMode.Animation;
         _fov.IsEnabled = _projection.SelectedIndex == 1;
         bool outline = _outer.On() || _inner.On() || _creaseOn.On();
@@ -653,11 +672,14 @@ public sealed class ModelImportDialog : DialogBase
         _darken.IsEnabled = outline && _outlineColorMode.SelectedIndex == 1;
         var o = FrameOptions;
         IReadOnlyList<ModelFrame> frames = _scene is null ? [] : ModelFrames.Plan(_scene, o);
-        _frame.Maximum = Math.Max(0, frames.Count - 1);
+        bool free = FreeTurn;
+        _frame.Maximum = free ? 359 : Math.Max(0, frames.Count - 1);
         if (_frame.Value > _frame.Maximum) _frame.Value = _frame.Maximum;
-        _frame.IsEnabled = _play.IsEnabled = frames.Count > 1;
-        if (frames.Count <= 1) StopPlay();
-        _player.Interval = TimeSpan.FromMilliseconds(ModelFrames.DurationMs(o));
+        _frame.IsEnabled = _play.IsEnabled = free || frames.Count > 1;
+        if (!free && frames.Count <= 1) StopPlay();
+        _player.Interval = TimeSpan.FromMilliseconds(free ? FreeTurnTickMs : ModelFrames.DurationMs(o));
+        _turnAngle.IsVisible = free;
+        _turnAngle.Text = $"{_frame.Value:0}°";
         var r = RenderSettings;
         _preview.SetOrientation(r);
         _lightDepth.Value = LightDepthOf(r);
@@ -722,6 +744,7 @@ public sealed class ModelImportDialog : DialogBase
         var options = FrameOptions;
         var settings = RenderSettings;
         int index = (int)_frame.Value;
+        bool free = FreeTurn;
         int originalSamples = _preview.Dragging ? 2 : 4;
         var posed = _posed is { } p && p.Options == options && ReferenceEquals(p.Scene, scene) ? p : ((ModelScene, ModelFrameOptions, IReadOnlyList<ModelFrame>, PosedMesh[], ModelBounds)?)null;
         _rendering = true;
@@ -736,8 +759,9 @@ public sealed class ModelImportDialog : DialogBase
             try
             {
                 var (s, o, frames, poses, fit) = posed ?? Pose(scene, options, cts.Token);
-                int i = Math.Clamp(index, 0, frames.Count - 1);
-                view = settings with { Yaw = settings.Yaw + frames[i].YawOffset };
+                // 자유 회전: 첫 자세를 막대 각도(°)만큼 돌려 본다(돌려 보기 자세는 모두 같음)
+                int i = free ? 0 : Math.Clamp(index, 0, frames.Count - 1);
+                view = settings with { Yaw = settings.Yaw + (free ? index : frames[i].YawOffset) };
                 image = ModelRenderer.Render(poses[i], view, fit, cts.Token);
                 (used, usedCount) = UsedColors(image);
                 // 원본은 같은 자세·카메라·빛으로 출력 픽셀 다듬기 전에 독립적으로 부드럽게 그린다.
@@ -873,6 +897,10 @@ public sealed class ModelImportDialog : DialogBase
         private Avalonia.Point? _drag;
         private string _active = "", _hover = "";
         private double _lastRollAngle;
+        /// <summary>보기 확대(1 = 칸에 맞춤)와 옮김(칸 좌표) — 두 칸이 같이 쓴다. 휠로 바꾸고, 확대 중 오른쪽·가운데 끌기로 옮긴다.</summary>
+        private double _viewScale = 1;
+        private Vector _viewOffset;
+        private Avalonia.Point? _pan;
         private ModelRenderSettings _orientation = new();
         private System.Numerics.Vector3 _right, _up, _back;
 
@@ -880,7 +908,6 @@ public sealed class ModelImportDialog : DialogBase
         public event Action<double>? Rolled;
         public event Action<double, double>? Faced;
         public event Action<double, double>? LightMoved;
-        public event Action<double>? Zoomed;
         /// <summary>끌기(돌리기·고리·해)를 마침 — 가볍게 그리던 미리보기를 제대로 다시 그릴 때.</summary>
         public event Action? DragEnded;
 
@@ -925,20 +952,24 @@ public sealed class ModelImportDialog : DialogBase
             InvalidateVisual();
         }
 
-        private static void DrawImage(DrawingContext g, WriteableBitmap? bmp, double left, bool pixel)
+        /// <summary>칸 하나에 그림을 맞춰 그리고 보기 확대·옮김을 입힌다(칸 밖은 잘림). 픽셀 결과는 계단 그대로.</summary>
+        private void DrawImage(DrawingContext g, WriteableBitmap? bmp, double left, bool pixel)
         {
             if (bmp is null) return;
             var size = bmp.PixelSize;
-            double scale = Math.Min(Pane / size.Width, Pane / size.Height);
-            var dest = new Rect(left + (Pane - size.Width * scale) / 2, (Pane - size.Height * scale) / 2,
-                size.Width * scale, size.Height * scale);
-            AppTheme.DrawChecker(g, dest, 8);
-            if (pixel)
+            double fit = Math.Min(Pane / size.Width, Pane / size.Height) * _viewScale;
+            double baseX = (Pane - size.Width * fit / _viewScale) / 2 * _viewScale, baseY = (Pane - size.Height * fit / _viewScale) / 2 * _viewScale;
+            var dest = new Rect(left + baseX + _viewOffset.X, baseY + _viewOffset.Y, size.Width * fit, size.Height * fit);
+            using (g.PushClip(new Rect(left, 0, Pane, Pane)))
             {
-                using (ImageUtil.Pixelated(g))
-                    g.DrawImage(bmp, new Rect(0, 0, size.Width, size.Height), dest);
+                AppTheme.DrawChecker(g, dest, 8);
+                if (pixel)
+                {
+                    using (ImageUtil.Pixelated(g))
+                        g.DrawImage(bmp, new Rect(0, 0, size.Width, size.Height), dest);
+                }
+                else g.DrawImage(bmp, new Rect(0, 0, size.Width, size.Height), dest);
             }
-            else g.DrawImage(bmp, new Rect(0, 0, size.Width, size.Height), dest);
         }
 
         public override void Render(DrawingContext g)
@@ -1092,7 +1123,16 @@ public sealed class ModelImportDialog : DialogBase
         protected override void OnPointerPressed(PointerPressedEventArgs e)
         {
             base.OnPointerPressed(e);
-            if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+            var props = e.GetCurrentPoint(this).Properties;
+            // 확대해 본 뒤 오른쪽·가운데 끌기 = 보기 옮기기
+            if ((props.IsRightButtonPressed || props.IsMiddleButtonPressed) && _viewScale > 1)
+            {
+                _pan = e.GetPosition(this);
+                e.Pointer.Capture(this);
+                e.Handled = true;
+                return;
+            }
+            if (!props.IsLeftButtonPressed) return;
             var p = e.GetPosition(this);
             var hit = Hit(p);
             if (hit.Length == 0) return;
@@ -1118,6 +1158,13 @@ public sealed class ModelImportDialog : DialogBase
         {
             base.OnPointerMoved(e);
             var p = e.GetPosition(this);
+            if (_pan is { } from)
+            {
+                _viewOffset = ClampOffset(_viewOffset + (p - from), _viewScale);
+                _pan = p;
+                InvalidateVisual();
+                return;
+            }
             if (_drag is { } last)
             {
                 if (_active == "sun") MoveSun(p);
@@ -1153,18 +1200,38 @@ public sealed class ModelImportDialog : DialogBase
             base.OnPointerReleased(e);
             bool dragged = _drag is not null;
             _drag = null;
+            _pan = null;
             _active = "";
             e.Pointer.Capture(null);
             InvalidateVisual();
             if (dragged) DragEnded?.Invoke();
         }
 
+        /// <summary>휠 = 보기 확대·축소(캔버스처럼 커서 자리 기준, 두 칸이 같이 — 1배에서 16배). 출력 확대 설정은 바꾸지 않는다.</summary>
         protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
         {
             base.OnPointerWheelChanged(e);
-            Zoomed?.Invoke(e.Delta.Y > 0 ? 1.1 : 1 / 1.1);
+            var p = e.GetPosition(this);
+            var at = new Vector(p.X >= Pane + 4 ? p.X - (Pane + 4) : Math.Min(p.X, Pane), p.Y);
+            double scale = Math.Clamp(_viewScale * (e.Delta.Y > 0 ? 1.25 : 0.8), 1, 16);
+            if (scale <= 1.001)
+            {
+                _viewScale = 1;
+                _viewOffset = default;
+            }
+            else
+            {
+                // 커서 아래 자리가 그대로 있도록: 화면 = 칸 맞춤 자리 × 배율 + 옮김
+                _viewOffset = ClampOffset(at - (at - _viewOffset) * (scale / _viewScale), scale);
+                _viewScale = scale;
+            }
+            InvalidateVisual();
             e.Handled = true;
         }
+
+        /// <summary>확대한 그림이 칸 밖으로 빠져 빈 곳이 보이지 않게 옮김을 가둔다.</summary>
+        private static Vector ClampOffset(Vector offset, double scale)
+            => new(Math.Clamp(offset.X, Pane * (1 - scale), 0), Math.Clamp(offset.Y, Pane * (1 - scale), 0));
 
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
         {

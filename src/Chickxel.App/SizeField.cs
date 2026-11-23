@@ -4,7 +4,7 @@ namespace Chickxel.App;
 
 /// <summary>
 /// 가로 × 세로 크기 입력(공용 — 크기를 받는 곳은 모두 이것을 쓴다): [가로] × [세로] (단위) [사슬].
-/// 사슬(비율 고정)을 켜면 한쪽을 고칠 때 다른 쪽이 같은 비율로 따라간다(반올림해 범위 안으로). 비율은 켤 때의 가로 ÷ 세로이고
+/// 사슬(비율 고정, 기본 켬)을 켜면 한쪽을 고칠 때 다른 쪽이 같은 비율로 따라간다(반올림해 범위 안으로). 비율은 켤 때의 가로 ÷ 세로이고
 /// (<see cref="Size"/>로 값을 통째로 바꾸면 그 값으로 다시 잡음), <see cref="RatioSource"/>를 주면 그 비율(예: 원본 그림 비율)을 쓴다.
 /// 숫자 상자는 <see cref="WidthBox"/>·<see cref="HeightBox"/>로 열어 두어 우클릭 예시·최근 값·풍선 도움말·대상 도움말을 그대로 붙인다.
 /// </summary>
@@ -20,7 +20,7 @@ public sealed class SizeField : StackPanel
     /// <param name="max">가로 최댓값(세로도 같음, <paramref name="maxHeight"/>를 주면 세로만 그것).</param>
     /// <param name="unit">상자 메뉴 단위이자 세로 상자 뒤에 붙는 글(null = 없음).</param>
     /// <param name="link">사슬 단추를 둘지.</param>
-    public SizeField(decimal min, decimal max, int width, int height, int boxWidth = 64, string? unit = "px", bool linked = false,
+    public SizeField(decimal min, decimal max, int width, int height, int boxWidth = 64, string? unit = "px", bool linked = true,
         bool link = true, decimal? maxHeight = null)
     {
         Orientation = Orientation.Horizontal;
