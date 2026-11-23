@@ -157,12 +157,11 @@ internal static class FilesShots
     /// <summary>환경 설정 탭 머리(글자 둘레).</summary>
     private static Rect TabHeader(Window w, string text) => ShotKit.Bounds(ShotKit.FindText(w, text), w).Inflate(new Thickness(10, 4));
 
-    /// <summary>환경 설정 일반 탭에서 굵은 제목 <paramref name="header"/>부터 다음 제목 <paramref name="next"/> 앞까지(창 폭 전체).</summary>
-    private static Rect PrefsSection(Window w, string header, string next)
+    /// <summary>환경 설정 일반 탭에서 제목이 <paramref name="title"/>인 묶음 상자(창 좌표, 둘레 조금 넉넉히).</summary>
+    private static Rect PrefsSection(Window w, string title)
     {
-        var top = ShotKit.Bounds(ShotKit.FindText(w, header), w);
-        var bottom = ShotKit.Bounds(ShotKit.FindText(w, next), w);
-        return new Rect(-22, top.Y - 8, w.Bounds.Width + 22, bottom.Y - top.Y + 4);
+        var box = ShotKit.FindText(w, title).FindAncestorOfType<GroupBox>()!;
+        return ShotKit.Bounds(box, w).Inflate(new Thickness(30, 6, 6, 6));
     }
 
     /// <summary>대화상자 단추(글자로 찾음).</summary>
@@ -231,7 +230,7 @@ internal static class FilesShots
         // ②③ 환경 설정 > 일반 > 저장: 자동 저장 켜기, 기다리는 시간.
         Preferences(k, w =>
         {
-            var crop = PrefsSection(w, UiStrings.S_PreferencesDialog_PreferencesDialog_06B0DD01B8, UiStrings.S_PreferencesDialog_PreferencesDialog_B57D05987F);
+            var crop = PrefsSection(w, UiStrings.S_PreferencesDialog_PreferencesDialog_06B0DD01B8);
             var autoSave = ShotKit.Get<Control>(w, "_autoSave");
             var delay = ShotKit.Get<Control>(w, "_autoSaveDelay");
             SaveOut(k, w, "files-autosave-2", crop, [Lead(autoSave, w), Lead(delay, w, 6)], 2);
@@ -263,7 +262,7 @@ internal static class FilesShots
         // ① 기록 남기기 ② 보관 기간 ③ 최대 용량 ④ 기록 모두 지우기.
         Preferences(k, w =>
         {
-            var crop = PrefsSection(w, UiStrings.S_PreferencesDialog_PreferencesDialog_02113E25F5, UiStrings.S_PreferencesDialog_PreferencesDialog_06B0DD01B8);
+            var crop = PrefsSection(w, UiStrings.S_PreferencesDialog_PreferencesDialog_02113E25F5);
             var on = ShotKit.Get<Control>(w, "_historyOn");
             var days = ShotKit.Get<Control>(w, "_historyDays");
             var mb = ShotKit.Get<Control>(w, "_historyMb");
@@ -535,7 +534,7 @@ internal static class FilesShots
             search.Text = "save";
             ShotKit.Pump(400);
             var rows = ShotKit.Get<StackPanel>(w, "_rows");
-            var firstRow = (Panel)rows.Children[0];
+            var firstRow = ShotKit.All<Grid>(rows).First();
             var rowButtons = firstRow.Children[^1];
             var import = Button(w, UiStrings.S_PreferencesDialog_PreferencesDialog_1B59D72F85);
             var export = Button(w, UiStrings.S_PreferencesDialog_PreferencesDialog_CC8999072A);

@@ -84,6 +84,7 @@ public sealed class PreferencesDialog : DialogBase
             historyUsage.Text = history.DescribeUsage();
         });
         var historyNote = Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_BF42374CBC);
+        Wrap(historyNote, ColumnText);
         historyNote.Foreground = AppTheme.DimTextBrush;
         _autoSave = Ui.Check(UiStrings.S_PreferencesDialog_PreferencesDialog_D3AF99B338, autoSave);
         _autoSaveDelay = Ui.Num(AppSettings.MinAutoSaveDelay, AppSettings.MaxAutoSaveDelay,
@@ -92,11 +93,13 @@ public sealed class PreferencesDialog : DialogBase
         _autoSaveDelay.IsEnabled = autoSave;
         _autoSave.IsCheckedChanged += (_, _) => _autoSaveDelay.IsEnabled = _autoSave.On();
         var autoSaveNote = Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_0D594ECE55);
+        Wrap(autoSaveNote, ColumnText);
         autoSaveNote.Foreground = AppTheme.DimTextBrush;
         _updateCheck = Ui.Check(UiStrings.S_PreferencesDialog_PreferencesDialog_20E707DCCA, updateCheck);
         var updateNote = Ui.Label(AppInfo.IsDevBuild
             ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_4B32B49831,AppInfo.VersionText)
             : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_80B1F80264,AppInfo.VersionText));
+        Wrap(updateNote, ColumnText);
         updateNote.Foreground = AppTheme.DimTextBrush;
         _discord = Ui.Check(UiStrings.Prefs_Discord_Show, discordPresence);
         const string languagePage = "language-change", makePage = "language-make";
@@ -114,20 +117,20 @@ public sealed class PreferencesDialog : DialogBase
             languageNote.HelpAt(languagePage, anchor: "Restarting to apply"),
             _languageStatus.HelpAt(makePage, anchor: "The number of strings added"))).HelpAt(languagePage, anchor: "Choosing a language");
         var undoGroup = Ui.Group(UiStrings.Language_UndoTitle, Ui.Stack(
-            Ui.Row(Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_1F7416F7D9), _undo, Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_20DF2ED64F,UndoStack.DefaultCapacity,UndoStack.MaxCapacity)))
+            Ui.Row(Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_1F7416F7D9), _undo, Wrap(Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_20DF2ED64F,UndoStack.DefaultCapacity,UndoStack.MaxCapacity)), 260))
                 .HelpAt(page, anchor: "Undo steps"),
-            Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_D87D2E02E0).HelpAt(page, anchor: "Undo steps"))).HelpAt(page, anchor: "Undo steps");
+            Wrap(Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_D87D2E02E0), ColumnText).HelpAt(page, anchor: "Undo steps"))).HelpAt(page, anchor: "Undo steps");
         var historyGroup = Ui.Group(UiStrings.S_PreferencesDialog_PreferencesDialog_02113E25F5, Ui.Stack(
             _historyOn.HelpAt("files-history", shot: "files-history"),
-            Ui.Row(Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_566552BAB9), _historyDays, Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_8FA707928D))
+            Ui.Row(Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_566552BAB9), _historyDays, Wrap(Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_8FA707928D), 250))
                 .Tip(UiStrings.S_PreferencesDialog_PreferencesDialog_F8AA857BED).HelpAt("files-history", shot: "files-history"),
-            Ui.Row(Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_AFE766F9E0), _historyMb, Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_F7A34332AC,UndoHistoryPolicy.DefaultMaxMegabytes)))
+            Ui.Row(Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_AFE766F9E0), _historyMb, Wrap(Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_F7A34332AC,UndoHistoryPolicy.DefaultMaxMegabytes)), 250))
                 .HelpAt("files-history", shot: "files-history"),
             Ui.Row(historyUsage, historyClear).HelpAt("files-history", shot: "files-history"),
             historyNote.HelpAt("files-history", anchor: "When history is discarded"))).HelpAt("files-history", shot: "files-history");
         var autoSaveGroup = Ui.Group(UiStrings.S_PreferencesDialog_PreferencesDialog_06B0DD01B8, Ui.Stack(
             Ui.Row(_autoSave, _autoSaveDelay,
-                Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_19CDB23584,AppSettings.DefaultAutoSaveDelay,AppSettings.MinAutoSaveDelay,AppSettings.MaxAutoSaveDelay)))
+                Wrap(Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_19CDB23584,AppSettings.DefaultAutoSaveDelay,AppSettings.MinAutoSaveDelay,AppSettings.MaxAutoSaveDelay)), 200))
                 .HelpAt("files-autosave", anchor: "Turning it on/off and the wait time"),
             autoSaveNote.HelpAt("files-autosave", anchor: "When it saves and when it doesn't"))).HelpAt("files-autosave", anchor: "Turning it on/off and the wait time");
         var trashGroup = Ui.Group(UiStrings.S_PreferencesDialog_PreferencesDialog_B57D05987F,
@@ -390,6 +393,18 @@ public sealed class PreferencesDialog : DialogBase
     public bool DiscordPresence => _discord.On();
     /// <summary>명령 Id → 정한 단축키(모든 명령).</summary>
     public IReadOnlyDictionary<string, List<KeyChord>> Keys => _keys;
+
+    /// <summary>일반 탭 두 칸(왼쪽·오른쪽) 안 설명 글의 최대 폭 — 창이 1000px 남짓을 넘지 않게.</summary>
+    private const double ColumnText = 430;
+
+    /// <summary>긴 글을 <paramref name="max"/> 폭에서 줄바꿈한다(가로 줄 안에서도 칸 폭을 넘지 않게).</summary>
+    private static TextBlock Wrap(TextBlock text, double max)
+    {
+        text.TextWrapping = TextWrapping.Wrap;
+        text.MaxWidth = max;
+        text.HorizontalAlignment = HorizontalAlignment.Left;
+        return text;
+    }
 
     private void RebuildRows()
     {
