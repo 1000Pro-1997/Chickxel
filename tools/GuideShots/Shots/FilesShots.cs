@@ -573,6 +573,6 @@ internal static class FilesShots
             SaveWindow(k, w, "files-crash-log", [Lead(message, w, 8), folder, discord], 1);
         });
         // ④ 도움말 메뉴의 오류 로그 폴더 열기.
-        MenuShot(k, m, 6, "도움말/오류 로그 폴더 열기", "files-crash-log-2", 4);
+        MenuShot(k, m, 7, "도움말/오류 로그 폴더 열기", "files-crash-log-2", 4);
     }
 }

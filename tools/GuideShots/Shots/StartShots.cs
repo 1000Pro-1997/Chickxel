@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.VisualTree;
 using Chickxel.App;
 using Chickxel.App.Localization;
 using Chickxel.Core.IO;
@@ -24,7 +25,7 @@ internal static class StartMenus
         return local.Translate(new Vector(pos.X - origin.X, pos.Y - origin.Y));
     }
 
-    /// <summary><paramref name="index"/>번째 위 메뉴(파일 0, 편집 1, 보기 2, 프레임·레이어 3, 도구 4, AI 5, 도움말 6)를 펼친다.</summary>
+    /// <summary><paramref name="index"/>번째 위 메뉴(파일 0, 편집 1, 보기 2, 프레임·레이어 3, 도구 4, AI 5, 3D 6, 도움말 7)를 펼친다.</summary>
     public static MenuItem Open(ShotKit k, MainForm main, int index)
     {
         var top = ShotKit.Find<Menu>(main).Items.OfType<MenuItem>().ElementAt(index);
@@ -216,7 +217,7 @@ internal static class StartShots
         });
 
         // ⑦ 도움말 > 업데이트 확인…
-        var help = StartMenus.Open(k, main, 6);
+        var help = StartMenus.Open(k, main, 7);
         var check = StartMenus.Item(help, MainStrings.Menu_Help_CheckAsync_236.TrimEnd('…'));
         k.Save(main, "start-update-3", crop: StartMenus.Crop(main, help), marks: [StartMenus.PopupRect(check, main)], firstNumber: 7);
         k.Key(main, Avalonia.Input.Key.Escape);
@@ -228,10 +229,8 @@ internal static class StartShots
             Scrub(w, heads[0].Version.ToString());
             ShotKit.Pump(200);
             var box = ShotKit.Get<CheckBox>(w, "_updateCheck");
-            var panel = (Panel)box.Parent!;
-            int i = panel.Children.IndexOf(box);
-            var area = new[] { panel.Children[i - 1], box, panel.Children[i + 1] }.Select(c => ShotKit.Bounds(c, w)).Aggregate((x, y) => x.Union(y));
-            area = new Rect(0, area.Y - 4, area.Right + 12, area.Height + 14);
+            var group = ShotKit.Bounds(box.FindAncestorOfType<GroupBox>()!, w);
+            var area = group.Inflate(new Thickness(30, 6, 6, 6));
             k.Save(w, "start-update-4", crop: area, marks: [Pad(box, w, 12)], firstNumber: 8);
         });
     }
@@ -257,7 +256,7 @@ internal static class StartShots
     {
         var main = Open(k);
         Build(k, main);
-        var help = StartMenus.Open(k, main, 6);
+        var help = StartMenus.Open(k, main, 7);
         var report = StartMenus.Item(help, MainStrings.Menu_Help_Discord.TrimEnd('…'));
         var about = StartMenus.Item(help, MainStrings.Menu_Help_AboutDialog_238.TrimEnd('…'));
         k.Save(main, crop: StartMenus.Crop(main, help), marks: [StartMenus.Head(help, main), StartMenus.PopupRect(report, main), StartMenus.PopupRect(about, main)]);

@@ -20,7 +20,7 @@ internal static class GuideStartLangKeysShots
         Build(k, main);
         CleanTitle(main);
 
-        var help = StartMenus.Open(k, main, 6);
+        var help = StartMenus.Open(k, main, 7);
         var pick = StartMenus.Item(help, UiStrings.Help_SelectTarget);
         var guide = StartMenus.Item(help, MainStrings.Menu_Help_Guide.TrimEnd('…'));
         k.Save(main, "start-help", crop: StartMenus.Crop(main, help), marks: [StartMenus.PopupRect(pick, main), StartMenus.PopupRect(guide, main)]);
