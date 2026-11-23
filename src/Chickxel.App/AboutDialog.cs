@@ -34,9 +34,16 @@ public sealed class AboutDialog : DialogBase
             Link(UiStrings.S_AboutDialog_AboutDialog_617FEF961D, AppUpdate.ReleasesUrl),
             Ui.DiscordButton(UiStrings.About_Discord, (_, _) => Updater.OpenUrl(this, AppInfo.DiscordUrl)),
             Link(UiStrings.S_AboutDialog_AboutDialog_9A9BD8295A, AppUpdate.IssuesUrl)).HelpAt(page, anchor: "Where to report"));
+        // 후원 단추는 눈에 띄게 커피 노랑 바탕 + 어두운 글자·아이콘(마우스를 올려도 색 유지).
+        var coffee = Link(VectorIcon.Coffee, UiStrings.About_BuyCoffee, AppInfo.SupportUrl);
+        var ink = AppTheme.Brush(Color.FromRgb(0x23, 0x1A, 0x0E));
+        coffee.Background = AppTheme.Brush(Color.FromRgb(0xFF, 0xD2, 0x3F));
+        coffee.Foreground = ink;
+        if (coffee.Content is StackPanel { Children: [IconView view, ..] }) view.Foreground = ink;
+        Ui.KeepFillOnHover(coffee);
         Body.Children.Add(Ui.Row(
             Link(VectorIcon.Globe, UiStrings.About_Website, AppInfo.LocalizedWebsiteUrl),
-            Link(VectorIcon.Coffee, UiStrings.About_BuyCoffee, AppInfo.SupportUrl)).HelpAt(page, anchor: "Supporting development"));
+            coffee).HelpAt(page, anchor: "Supporting development"));
         Body.Children.Add(Section(UiStrings.S_AboutDialog_AboutDialog_E3F28341F4));
         Body.Children.Add(Text(UiStrings.S_AboutDialog_AboutDialog_BE04412652));
         Body.Children.Add(Text(UiStrings.S_AboutDialog_AboutDialog_38A0479DD2));

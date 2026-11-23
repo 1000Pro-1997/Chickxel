@@ -208,6 +208,63 @@ public class ModelPixelPassTests
         Assert.True(lines > 8);
     }
 
+    /// <summary>나란히 붙은 두 사각형(왼쪽 x −1~0, 오른쪽 0~1+<paramref name="gap"/>, 같은 깊이).</summary>
+    private static (PosedPrimitive Left, PosedPrimitive Right) Pair(ModelMaterial left, ModelMaterial right, float gap = 0) =>
+        (Quad(new Vector3(-0.5f, 0, 0), Vector3.UnitX * 0.5f, Vector3.UnitY * 0.5f, left),
+         Quad(new Vector3(0.5f + gap, 0, 0), Vector3.UnitX * 0.5f, Vector3.UnitY * 0.5f, right));
+
+    /// <summary>가운데 줄에서 선으로 바뀐 픽셀의 x들.</summary>
+    private static List<int> LineColumns(PixelImage plain, PixelImage lined, int y = 16)
+    {
+        var xs = new List<int>();
+        for (int x = 0; x < plain.Width; x++)
+            if (lined[x, y] != plain[x, y])
+            {
+                Assert.Equal(Line, lined[x, y]);
+                xs.Add(x);
+            }
+        return xs;
+    }
+
+    [Fact]
+    public void ColorEdge_LinesDarkerSideWhereMaterialColorChanges()
+    {
+        var (left, right) = Pair(Unlit(1, 0, 0), Unlit(0, 1, 0));
+        var mesh = new PosedMesh([left, right]);
+        var (plain, lined) = Both(mesh, Front() with { OutlineColorEdge = 10 });
+        // 빨강(OKLab L 0.63)이 초록(0.87)보다 어둡다 → 경계의 빨강 쪽 한 칸.
+        var xs = LineColumns(plain, lined);
+        Assert.Single(xs);
+        Assert.Equal(Red, plain[xs[0], 16]);
+        Assert.Equal(Green, plain[xs[0] + 1, 16]);
+        Assert.Empty(LineColumns(plain, Both(mesh, Front() with { OutlineColorEdge = 80 }).Lined));
+    }
+
+    [Fact]
+    public void ColorEdge_IgnoresShadingOfOneColor()
+    {
+        var gray = new ModelMaterial { BaseColor = new Vector4(0.6f, 0.6f, 0.6f, 1) };
+        PosedPrimitive Face(Vector3 n, Vector3 u) => Quad(n * 0.5f, u * 0.5f, Vector3.Cross(n, u) * 0.5f, gray);
+        var cube = new PosedMesh([Face(Vector3.UnitZ, Vector3.UnitX), Face(Vector3.UnitX, -Vector3.UnitZ), Face(Vector3.UnitY, Vector3.UnitX)]);
+        var (plain, lined) = Both(cube, Front() with { Yaw = 30, Pitch = 25, OutlineColorEdge = 3 });
+        // 세 면의 명암은 다르지만 바탕 색이 같아 선이 없다.
+        Assert.True(plain.ContentEquals(lined));
+    }
+
+    [Theory]
+    [InlineData(ModelOutlineObjects.Off, 0f, false)]
+    [InlineData(ModelOutlineObjects.Nodes, 0f, true)]
+    [InlineData(ModelOutlineObjects.Connected, 0f, false)]
+    [InlineData(ModelOutlineObjects.Connected, 0.001f, true)]
+    public void Objects_LineBetweenDifferentObjects(ModelOutlineObjects mode, float gap, bool expected)
+    {
+        // 같은 색 두 사각형: 노드가 다르고, 틈이 없으면 경계 꼭짓점 자리가 같아 한 덩어리.
+        var (left, right) = Pair(Unlit(1, 0, 0), Unlit(1, 0, 0), gap);
+        var mesh = new PosedMesh([left with { Node = 0 }, right with { Node = 1 }]);
+        var (plain, lined) = Both(mesh, Front() with { OutlineObjects = mode });
+        Assert.Equal(expected ? 1 : 0, LineColumns(plain, lined).Count);
+    }
+
     [Fact]
     public void HardAlpha_LeavesOnlyOpaqueOrTransparent()
     {

@@ -66,7 +66,17 @@ public sealed record ModelRenderSettings
     public bool OutlineInner { get; init; }
     /// <summary>각진 곳 선: 면이 이 각도(도)보다 크게 꺾인 곳(0 = 끔, 상자 모서리는 90°). 카메라를 덜 보는 면 쪽 픽셀에 1px.</summary>
     public float OutlineCrease { get; init; }
-    /// <summary>겉 외곽선 두께(결과 px, 1~3). 안쪽 겹침선·각진 곳 선은 늘 1px.</summary>
+    /// <summary>
+    /// 색 바뀌는 곳 선: 이웃한 두 모델 픽셀의 바탕 색(빛을 받기 전 재질·꼭짓점·텍스처 색)이 OKLab 거리 × 100으로 이 값보다 다르면(0 = 끔, 1~100)
+    /// 더 어두운 바탕 색 쪽 픽셀에 1px. 빛·그늘 차이는 보지 않으므로 같은 색 면의 명암에는 선이 생기지 않는다.
+    /// </summary>
+    public float OutlineColorEdge { get; init; }
+    /// <summary>
+    /// 오브젝트 경계 선: 이웃한 두 모델 픽셀이 다른 오브젝트면(<see cref="ModelOutlineObjects"/>로 가름) 더 먼 쪽 픽셀에 1px — 앞 오브젝트 윤곽은 그대로.
+    /// 겹치지 않고 맞닿은 오브젝트(바닥 위 자판기) 사이에도 선이 생긴다.
+    /// </summary>
+    public ModelOutlineObjects OutlineObjects { get; init; }
+    /// <summary>겉 외곽선 두께(결과 px, 1~3). 안쪽 겹침선·각진 곳 선·색 바뀌는 곳 선·오브젝트 경계 선은 늘 1px.</summary>
     public int OutlineWidth { get; init; } = 1;
     public ModelOutlineColor OutlineColorMode { get; init; } = ModelOutlineColor.Fixed;
     /// <summary>고정 색 외곽선의 색.</summary>
@@ -76,7 +86,7 @@ public sealed record ModelRenderSettings
 
     /// <summary>외곽선을 하나라도 그리는지.</summary>
     [System.Text.Json.Serialization.JsonIgnore]
-    public bool HasOutline => OutlineOuter || OutlineInner || OutlineCrease > 0;
+    public bool HasOutline => OutlineOuter || OutlineInner || OutlineCrease > 0 || OutlineColorEdge > 0 || OutlineObjects != ModelOutlineObjects.Off;
 }
 
 /// <summary>외곽선 색을 정하는 방식.</summary>
@@ -86,6 +96,18 @@ public enum ModelOutlineColor
     Fixed,
     /// <summary>선 자리 모델 색을 어둡게(셀아웃 — 밝은 면은 옅은 선, 어두운 면은 짙은 선).</summary>
     Darken,
+}
+
+/// <summary>오브젝트 경계 외곽선이 오브젝트를 가르는 방식.</summary>
+public enum ModelOutlineObjects
+{
+    Off,
+    /// <summary>장면 노드(메시를 단 노드)마다 하나 — 모델 파일에서 나눈 오브젝트 그대로.</summary>
+    Nodes,
+    /// <summary>
+    /// 꼭짓점 자리가 이어진 삼각형 덩어리마다 하나(같은 자리 꼭짓점은 하나로 봄, 노드·재질과 상관없음) — 한 메시 안의 따로 떨어진 조각도 가른다.
+    /// </summary>
+    Connected,
 }
 
 /// <summary>카메라를 맞출 범위(월드 좌표 축 정렬 상자). 여러 자세(돌려 보기·애니메이션 프레임)를 합쳐 쓰면 프레임마다 크기·자리가 흔들리지 않는다.</summary>

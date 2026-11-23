@@ -10536,6 +10536,18 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="Model_OutlineInnerTip" xml:space="preserve"><value>앞에 있는 부분과 그 뒤 부분 사이(몸 앞의 팔처럼 깊이가 크게 다른 곳)에 선을 그립니다.</value></data>
   <data name="Model_OutlineCrease" xml:space="preserve"><value>각진 곳</value></data>
   <data name="Model_OutlineCreaseTip" xml:space="preserve"><value>면이 이 각도보다 크게 꺾인 곳(상자 모서리 = 90°)에 선을 그립니다. 각도가 작을수록 선이 많아집니다.</value></data>
+  <data name="Model_OutlineColorEdge" xml:space="preserve"><value>색 바뀌는 곳</value></data>
+  <data name="Model_OutlineColorEdgeTip" xml:space="preserve"><value>이웃한 픽셀의 재질 색(빛·그늘을 빼고 본 바탕 색)이 이 값보다 다른 곳에 선을 그립니다(더 어두운 색 쪽). 값이 작을수록 비슷한 색 사이에도 선이 생깁니다.</value></data>
+  <data name="Model_OutlineShape" xml:space="preserve"><value>윤곽</value></data>
+  <data name="Model_OutlineSurface" xml:space="preserve"><value>면 경계</value></data>
+  <data name="Model_GroupOutput" xml:space="preserve"><value>출력</value></data>
+  <data name="Model_GroupCamera" xml:space="preserve"><value>카메라</value></data>
+  <data name="Model_GroupLight" xml:space="preserve"><value>빛</value></data>
+  <data name="Model_OutlineObjects" xml:space="preserve"><value>오브젝트 경계</value></data>
+  <data name="Model_OutlineObjectsOff" xml:space="preserve"><value>끔</value></data>
+  <data name="Model_OutlineObjectsNodes" xml:space="preserve"><value>파일의 오브젝트마다</value></data>
+  <data name="Model_OutlineObjectsConnected" xml:space="preserve"><value>이어진 덩어리마다</value></data>
+  <data name="Model_OutlineObjectsTip" xml:space="preserve"><value>서로 다른 오브젝트가 겹치거나 맞닿은 곳(바닥 위 자판기 등)에 뒤쪽 오브젝트 쪽으로 선을 그립니다. 파일의 오브젝트마다 = 모델 파일에서 나눈 오브젝트(노드), 이어진 덩어리마다 = 면이 이어진 조각 하나를 오브젝트 하나로 봅니다.</value></data>
   <data name="Model_OutlineLook" xml:space="preserve"><value>선 모양</value></data>
   <data name="Model_OutlineWidth" xml:space="preserve"><value>두께</value></data>
   <data name="Model_OutlineFixed" xml:space="preserve"><value>한 가지 색</value></data>

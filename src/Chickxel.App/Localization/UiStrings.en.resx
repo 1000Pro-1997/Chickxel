@@ -4869,6 +4869,18 @@ Cancel: keep the files and only remove the row.</value></data>
   <data name="Model_OutlineInnerTip" xml:space="preserve"><value>Draws a line where a nearer part meets what is behind it (an arm in front of the body, where depth changes a lot).</value></data>
   <data name="Model_OutlineCrease" xml:space="preserve"><value>Creases</value></data>
   <data name="Model_OutlineCreaseTip" xml:space="preserve"><value>Draws a line where the surface bends more than this angle (a box corner is 90°). Smaller angles give more lines.</value></data>
+  <data name="Model_OutlineColorEdge" xml:space="preserve"><value>Color changes</value></data>
+  <data name="Model_OutlineColorEdgeTip" xml:space="preserve"><value>Draws a line where neighboring pixels' material colors (the base color without light and shade) differ by more than this value, on the darker side. Smaller values add lines between similar colors too.</value></data>
+  <data name="Model_OutlineShape" xml:space="preserve"><value>Silhouette</value></data>
+  <data name="Model_OutlineSurface" xml:space="preserve"><value>Surface edges</value></data>
+  <data name="Model_GroupOutput" xml:space="preserve"><value>Output</value></data>
+  <data name="Model_GroupCamera" xml:space="preserve"><value>Camera</value></data>
+  <data name="Model_GroupLight" xml:space="preserve"><value>Lighting</value></data>
+  <data name="Model_OutlineObjects" xml:space="preserve"><value>Object edges</value></data>
+  <data name="Model_OutlineObjectsOff" xml:space="preserve"><value>Off</value></data>
+  <data name="Model_OutlineObjectsNodes" xml:space="preserve"><value>Each object in the file</value></data>
+  <data name="Model_OutlineObjectsConnected" xml:space="preserve"><value>Each connected piece</value></data>
+  <data name="Model_OutlineObjectsTip" xml:space="preserve"><value>Draws a line where different objects overlap or touch (a vending machine on the ground), on the object behind. Each object in the file = the objects (nodes) the model file defines; each connected piece = every piece whose faces join up counts as one object.</value></data>
   <data name="Model_OutlineLook" xml:space="preserve"><value>Line style</value></data>
   <data name="Model_OutlineWidth" xml:space="preserve"><value>Width</value></data>
   <data name="Model_OutlineFixed" xml:space="preserve"><value>Single color</value></data>

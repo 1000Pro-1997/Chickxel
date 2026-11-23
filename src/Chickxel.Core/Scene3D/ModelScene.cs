@@ -151,7 +151,11 @@ public sealed class ModelScene
 /// <summary>
 /// 한 자세로 놓은 삼각형 묶음(월드 좌표 — 노드 변환·뼈대 변형을 마친 것). 법선은 월드 좌표의 단위 벡터, 꼭짓점마다 하나(늘 채움).
 /// </summary>
-public sealed record PosedPrimitive(Vector3[] Positions, Vector3[] Normals, Vector2[]? Uvs, Vector4[]? Colors, int[] Indices, ModelMaterial Material);
+public sealed record PosedPrimitive(Vector3[] Positions, Vector3[] Normals, Vector2[]? Uvs, Vector4[]? Colors, int[] Indices, ModelMaterial Material)
+{
+    /// <summary>이 묶음을 단 장면 노드 번호(−1 = 모름) — 오브젝트 경계 외곽선이 노드마다 오브젝트를 가른다.</summary>
+    public int Node { get; init; } = -1;
+}
 
 /// <summary>한 자세의 장면 전체(<see cref="ModelPose.Pose"/>의 결과).</summary>
 public sealed record PosedMesh(IReadOnlyList<PosedPrimitive> Primitives)

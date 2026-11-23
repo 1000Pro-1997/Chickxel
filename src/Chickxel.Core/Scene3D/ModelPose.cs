@@ -51,7 +51,7 @@ public static class ModelPose
                     skin = skins[node.Skin] ??= SkinMatrices.Of(scene.Skins[node.Skin], world);
                 var normalMatrix = NormalMatrix(world[i]);
                 foreach (var p in scene.Meshes[node.Mesh].Primitives)
-                    if (PosePrimitive(scene, p, world[i], normalMatrix, skin) is { } posed) result.Add(posed);
+                    if (PosePrimitive(scene, p, world[i], normalMatrix, skin) is { } posed) result.Add(posed with { Node = i });
             }
             for (int c = node.Children.Count - 1; c >= 0; c--) stack.Push(node.Children[c]);
         }

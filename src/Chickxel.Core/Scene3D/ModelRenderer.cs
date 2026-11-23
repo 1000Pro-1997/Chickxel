@@ -153,6 +153,7 @@ public static class ModelRenderer
         public int ShadeSteps { get; init; }
         public bool Textures { get; init; }
         public Color32 Background { get; init; }
+        public ModelOutlineObjects Objects { get; init; }
         /// <summary>겉 외곽선을 바깥에 그릴 때 둘레에 남길 결과 픽셀 수(선 두께, 아니면 0).</summary>
         public int OutlineMargin { get; init; }
 
@@ -185,6 +186,7 @@ public static class ModelRenderer
                 ShadeSteps = steps,
                 Textures = s.Textures,
                 Background = s.Background,
+                Objects = s.OutlineObjects,
                 OutlineMargin = s.OutlineOuter && s.OutlineOutside ? Math.Clamp(s.OutlineWidth, 1, 3) : 0,
             };
         }
@@ -242,6 +244,9 @@ public static class ModelRenderer
         public float Transmission;
         /// <summary>정면 반사율, 비침 세기(1 − 거칠기), 반짝임 지수.</summary>
         public float F0, Gloss, Shininess;
+        /// <summary>오브젝트 번호(노드마다) — 이어진 덩어리로 가르면 삼각형마다 <see cref="TriObject"/>.</summary>
+        public int ObjectId;
+        public int[]? TriObject;
     }
 
     private sealed class Rasterizer
@@ -280,6 +285,12 @@ public static class ModelRenderer
         private ulong[] _color = [];
         /// <summary>표본 법선(월드, 카메라 쪽으로 뒤집은 단위 벡터를 8면체 16:16으로 묶음) — 덮인 표본만 뜻이 있다.</summary>
         private uint[] _normal = [];
+        /// <summary>표본 바탕 색(빛을 받기 전, sRGB 0xRRGGBB) — 법선과 같은 표본이 쓴다(색 바뀌는 곳 외곽선용).</summary>
+        private uint[] _albedo = [];
+        /// <summary>표본 오브젝트 번호 — 법선과 같은 표본이 쓴다(오브젝트 경계 외곽선용).</summary>
+        private int[] _object = [];
+        /// <summary>지금 그리는 삼각형의 오브젝트 번호.</summary>
+        private int _curObject;
         private int _bandY0, _bandY1;
         private readonly ClipVertex[] _clipIn = new ClipVertex[3];
         private readonly ClipVertex[] _clipOut = new ClipVertex[4];
@@ -330,12 +341,15 @@ public static class ModelRenderer
         {
             var opaque = new List<PreparedPrimitive>(mesh.Primitives.Count);
             var blended = new List<PreparedPrimitive>();
+            var all = new List<PreparedPrimitive>(mesh.Primitives.Count);
             foreach (var p in mesh.Primitives)
             {
                 if (p.Indices.Length < 3 || p.Positions.Length == 0) continue;
                 var prep = Prepare(p);
+                all.Add(prep);
                 (prep.Blend ? blended : opaque).Add(prep);
             }
+            AssignObjects(all);
             var blendTris = BlendTriangles(blended);
             bool any = opaque.Count > 0 || blendTris.Length > 0;
             int rowsPerBand = Math.Clamp(BandSamples / (_bw * _ss), 1, _s.Height);
@@ -345,6 +359,8 @@ public static class ModelRenderer
                 _depth = new float[bandLength];
                 _color = new ulong[bandLength];
                 _normal = new uint[bandLength];
+                _albedo = new uint[bandLength];
+                _object = new int[bandLength];
             }
             if (blendTris.Length > 0)
             {
@@ -429,6 +445,81 @@ public static class ModelRenderer
                 }
             }
             return items.ToArray();
+        }
+
+        /// <summary>
+        /// 오브젝트 번호를 정한다(<see cref="ModelRenderSettings.OutlineObjects"/>): 노드마다(노드를 모르면 묶음마다 따로) 또는 같은 자리 꼭짓점으로 이어진
+        /// 삼각형 덩어리마다(덩어리에서 가장 앞 꼭짓점 번호). 꺼져 있으면 모두 0.
+        /// </summary>
+        private void AssignObjects(List<PreparedPrimitive> prims)
+        {
+            if (_s.Objects == ModelOutlineObjects.Nodes)
+            {
+                for (int k = 0; k < prims.Count; k++) prims[k].ObjectId = prims[k].Source.Node >= 0 ? prims[k].Source.Node : -1 - k;
+                return;
+            }
+            if (_s.Objects != ModelOutlineObjects.Connected) return;
+            var offsets = new int[prims.Count];
+            int total = 0;
+            for (int k = 0; k < prims.Count; k++)
+            {
+                offsets[k] = total;
+                total += prims[k].Source.Positions.Length;
+            }
+            var parent = new int[total];
+            for (int i = 0; i < total; i++) parent[i] = i;
+            // 같은 자리 꼭짓점: 맞춤 반지름의 10만분의 1 격자에 맞춰 하나로 본다(묶음·노드가 달라도).
+            float step = 1e-5f / _invRadius;
+            var seen = new Dictionary<(long, long, long), int>(total);
+            for (int k = 0; k < prims.Count; k++)
+            {
+                var pos = prims[k].Source.Positions;
+                for (int i = 0; i < pos.Length; i++)
+                {
+                    var v = pos[i];
+                    if (!IsFinite(v)) continue;
+                    var key = ((long)MathF.Round(v.X / step), (long)MathF.Round(v.Y / step), (long)MathF.Round(v.Z / step));
+                    if (seen.TryGetValue(key, out int first)) Union(parent, first, offsets[k] + i);
+                    else seen[key] = offsets[k] + i;
+                }
+            }
+            for (int k = 0; k < prims.Count; k++)
+            {
+                var idx = prims[k].Source.Indices;
+                int count = prims[k].Source.Positions.Length, off = offsets[k];
+                for (int t = 0; t + 2 < idx.Length; t += 3)
+                {
+                    int i0 = idx[t], i1 = idx[t + 1], i2 = idx[t + 2];
+                    if ((uint)i0 >= (uint)count || (uint)i1 >= (uint)count || (uint)i2 >= (uint)count) continue;
+                    Union(parent, off + i0, off + i1);
+                    Union(parent, off + i0, off + i2);
+                }
+            }
+            for (int k = 0; k < prims.Count; k++)
+            {
+                var idx = prims[k].Source.Indices;
+                int count = prims[k].Source.Positions.Length, off = offsets[k];
+                var tri = prims[k].TriObject = new int[idx.Length / 3];
+                for (int t = 0; t + 2 < idx.Length; t += 3)
+                    tri[t / 3] = (uint)idx[t] < (uint)count ? Find(parent, off + idx[t]) : 0;
+            }
+
+            static int Find(int[] parent, int x)
+            {
+                while (parent[x] != x)
+                {
+                    parent[x] = parent[parent[x]];
+                    x = parent[x];
+                }
+                return x;
+            }
+
+            static void Union(int[] parent, int a, int b)
+            {
+                a = Find(parent, a);
+                b = Find(parent, b);
+                if (a != b) parent[Math.Max(a, b)] = Math.Min(a, b);
+            }
         }
 
         private enum PeelPass
@@ -553,6 +644,7 @@ public static class ModelRenderer
             var state = p.State;
             var ys = p.Y;
             int i0 = idx[t], i1 = idx[t + 1], i2 = idx[t + 2];
+            _curObject = p.TriObject is { } tri ? tri[t / 3] : p.ObjectId;
             if ((uint)i0 >= (uint)count || (uint)i1 >= (uint)count || (uint)i2 >= (uint)count) return;
             int st = state[i0] | state[i1] | state[i2];
             if ((st & 2) != 0) return;
@@ -690,6 +782,9 @@ public static class ModelRenderer
             bool blend = p.Blend;
             var color = _color;
             var normals = _normal;
+            var albedos = _albedo;
+            var objects = _object;
+            int obj = _curObject;
             var peelZ = _peelZ;
             var pickZ = _pickZ;
             var peelId = _peelId;
@@ -729,18 +824,22 @@ public static class ModelRenderer
                                 q0 *= inv;
                                 q1 *= inv;
                                 q2 *= inv;
-                                if (Shade(p, a, b, c, q0, q1, q2, x + 0.5f, y + 0.5f, color[i], out ulong packed, out uint normal))
+                                if (Shade(p, a, b, c, q0, q1, q2, x + 0.5f, y + 0.5f, color[i], out ulong packed, out uint normal, out uint albedo))
                                 {
                                     color[i] = packed;
                                     if (!blend)
                                     {
                                         depth[i] = z;
                                         normals[i] = normal;
+                                        albedos[i] = albedo;
+                                        objects[i] = obj;
                                     }
                                     else if (z < blendDepth[i])
                                     {
                                         blendDepth[i] = z;
                                         normals[i] = normal;
+                                        albedos[i] = albedo;
+                                        objects[i] = obj;
                                     }
                                 }
                             }
@@ -757,13 +856,14 @@ public static class ModelRenderer
         }
 
         /// <summary>
-        /// 표본 하나의 색(알파를 미리 곱한 선형 16비트 RGB + 16비트 알파)과 법선(카메라 쪽으로 뒤집은 단위 벡터, 묶음 — 빛 없는 재질도 외곽선용으로 채움).
+        /// 표본 하나의 색(알파를 미리 곱한 선형 16비트 RGB + 16비트 알파)과 법선(카메라 쪽으로 뒤집은 단위 벡터, 묶음 — 빛 없는 재질도 외곽선용으로 채움),
+        /// 빛을 받기 전 바탕 색(sRGB 0xRRGGBB).
         /// 불투명은 그 색으로 덮고, 반투명·유리(<see cref="PreparedPrimitive.Blend"/>)는 그 표본에 이미 있던 <paramref name="under"/> 위에 섞는다.
         /// 알파 문턱에 걸리거나 섞어도 아무것도 남지 않으면 false(깊이도 쓰지 않음).
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool Shade(PreparedPrimitive p, in RasterVertex a, in RasterVertex b, in RasterVertex c,
-            float q0, float q1, float q2, float sx, float sy, ulong under, out ulong packed, out uint normal)
+            float q0, float q1, float q2, float sx, float sy, ulong under, out ulong packed, out uint normal, out uint albedoKey)
         {
             var baseColor = p.Base;
             if (p.HasColors) baseColor *= a.C * q0 + b.C * q1 + c.C * q2;
@@ -772,6 +872,7 @@ public static class ModelRenderer
             {
                 packed = 0;
                 normal = 0;
+                albedoKey = 0;
                 return false;
             }
             var albedo = new Vector3(baseColor.X, baseColor.Y, baseColor.Z);
@@ -795,6 +896,8 @@ public static class ModelRenderer
             }
             rgb += p.Emissive;
             normal = PackNormal(n);
+            var srgb = ToSrgb;
+            albedoKey = (uint)srgb[To16(albedo.X)] << 16 | (uint)srgb[To16(albedo.Y)] << 8 | srgb[To16(albedo.Z)];
             if (!p.Blend)
             {
                 packed = To16(rgb.X) | ((ulong)To16(rgb.Y) << 16) | ((ulong)To16(rgb.Z) << 32) | OpaqueAlpha;
@@ -939,11 +1042,16 @@ public static class ModelRenderer
             var blendDepth = _blendDepth;
             bool hasBlend = blendDepth.Length > 0;
             var packedNormals = _normal;
+            var packedAlbedo = _albedo;
+            var outAlbedo = layers.Albedo;
+            var packedObjects = _object;
+            var outObject = layers.Object;
             var coverage = layers.Coverage;
             var outDepth = layers.Depth;
             var outNormal = layers.Normal;
             var srgb = ToSrgb;
             Span<Vector3> sampleNormals = stackalloc Vector3[64];
+            Span<int> sampleIndex = stackalloc int[64];
             for (int oy = oy0; oy < oy1; oy++)
             {
                 ct.ThrowIfCancellationRequested();
@@ -971,6 +1079,7 @@ public static class ModelRenderer
                             aSum += sa;
                             front = MathF.Min(front, hasBlend ? MathF.Min(depth[k], blendDepth[k]) : depth[k]);
                             var sn = UnpackNormal(packedNormals[k]);
+                            sampleIndex[covered] = k;
                             sampleNormals[covered++] = sn;
                             sum += sn;
                         }
@@ -978,17 +1087,21 @@ public static class ModelRenderer
                     if (covered > 0)
                     {
                         int at = outRow + ox;
-                        var best = sampleNormals[0];
-                        float bestDot = Vector3.Dot(best, sum);
+                        int bestAt = 0;
+                        float bestDot = Vector3.Dot(sampleNormals[0], sum);
                         for (int k = 1; k < covered; k++)
                         {
                             float d = Vector3.Dot(sampleNormals[k], sum);
                             if (d > bestDot)
                             {
                                 bestDot = d;
-                                best = sampleNormals[k];
+                                bestAt = k;
                             }
                         }
+                        var best = sampleNormals[bestAt];
+                        uint key = packedAlbedo[sampleIndex[bestAt]];
+                        outAlbedo[at] = new Color32((byte)(key >> 16), (byte)(key >> 8), (byte)key);
+                        outObject[at] = packedObjects[sampleIndex[bestAt]];
                         coverage[at] = (byte)((covered * 255 + n / 2) / n);
                         // 깊이 키 → 앞쪽 거리(정사영: 맞춤 가운데를 지나는 면에서, 원근: 눈에서) ÷ 맞춤 반지름.
                         outDepth[at] = (_persp ? -1 / front : front) * _invRadius;
@@ -1047,7 +1160,7 @@ public static class ModelRenderer
 
 /// <summary>
 /// <see cref="ModelRenderer.RenderLayers"/>의 결과: 다듬기 전 그림과 결과 픽셀마다(가로줄 순서, 번호 = y × 가로 + x) 외곽선 찾기에 쓰는 값.
-/// 덮이지 않은 픽셀은 덮음 0, 깊이 +∞, 법선 0.
+/// 덮이지 않은 픽셀은 덮음 0, 깊이 +∞, 법선 0, 바탕 색 투명.
 /// </summary>
 public sealed class ModelRenderLayers
 {
@@ -1062,6 +1175,8 @@ public sealed class ModelRenderLayers
         Depth = new float[n];
         Array.Fill(Depth, float.PositiveInfinity);
         Normal = new Vector3[n];
+        Albedo = new Color32[n];
+        Object = new int[n];
         _pixelScale = pixelScale;
         _perspective = perspective;
     }
@@ -1085,6 +1200,10 @@ public sealed class ModelRenderLayers
     /// 덮인 표본 법선 중 그 평균에 가장 가까운 것(걸친 픽셀은 더 많이 덮은 면).
     /// </summary>
     public Vector3[] Normal { get; }
+    /// <summary>대표 법선과 같은 표본의 바탕 색(빛을 받기 전 재질·꼭짓점·텍스처 색, sRGB 불투명) — 색 바뀌는 곳 외곽선이 본다.</summary>
+    public Color32[] Albedo { get; }
+    /// <summary>대표 법선과 같은 표본의 오브젝트 번호(<see cref="ModelRenderSettings.OutlineObjects"/>가 꺼져 있으면 모두 0) — 오브젝트 경계 외곽선이 본다.</summary>
+    public int[] Object { get; }
 
     /// <summary>픽셀 <paramref name="index"/> 한 칸의 월드 크기를 <see cref="Depth"/>와 같은 단위로(원근은 깊이에 비례).</summary>
     public float PixelSize(int index) => _perspective ? _pixelScale * Depth[index] : _pixelScale;

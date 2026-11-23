@@ -36,9 +36,9 @@ public sealed class ModelImportDialog : DialogBase
     private readonly Button _importAnim;
     private readonly NumericUpDown _yaw, _pitch, _roll, _zoom, _fov, _lightYaw, _lightPitch, _ambient, _light, _steps, _turnFrames, _fps, _maxFrames;
     private readonly SizeField _size;
-    private readonly NumericUpDown _colors, _crease, _outlineWidth, _darken;
-    private readonly ComboBox _projection, _smooth, _mode, _clip, _outlineColorMode, _preset;
-    private readonly CheckBox _textures, _hardAlpha, _outer, _outside, _inner, _creaseOn;
+    private readonly NumericUpDown _colors, _crease, _colorEdge, _outlineWidth, _darken;
+    private readonly ComboBox _projection, _smooth, _mode, _clip, _outlineColorMode, _outlineObjects, _preset;
+    private readonly CheckBox _textures, _hardAlpha, _outer, _outside, _inner, _creaseOn, _colorEdgeOn;
     /// <summary>돌려 보기 옆 '자유 회전': 켜면 미리보기 막대가 프레임 대신 0~359° 회전(1°씩) — 가져오는 프레임은 그대로.</summary>
     private readonly CheckBox _freeTurn;
     /// <summary>자유 회전 중 막대 옆 각도.</summary>
@@ -112,8 +112,13 @@ public sealed class ModelImportDialog : DialogBase
         _inner = Ui.Check(UiStrings.Model_OutlineInner).Tip(UiStrings.Model_OutlineInnerTip);
         _creaseOn = Ui.Check(UiStrings.Model_OutlineCrease).Tip(UiStrings.Model_OutlineCreaseTip);
         _crease = Ui.Num(1, 179, 60, 60, increment: 5).Unit("°").Tip(UiStrings.Model_OutlineCreaseTip);
+        _colorEdgeOn = Ui.Check(UiStrings.Model_OutlineColorEdge).Tip(UiStrings.Model_OutlineColorEdgeTip);
+        _colorEdge = Ui.Num(1, 100, 15, 60, increment: 5).Presets(5, 10, 15, 25, 40).Tip(UiStrings.Model_OutlineColorEdgeTip);
+        // 순서 = ModelOutlineObjects 값 순서
+        _outlineObjects = Ui.Combo(200, UiStrings.Model_OutlineObjectsOff, UiStrings.Model_OutlineObjectsNodes, UiStrings.Model_OutlineObjectsConnected)
+            .Tip(UiStrings.Model_OutlineObjectsTip);
         _outlineWidth = Ui.Num(1, 3, 1, 50).Unit("px");
-        _outlineColorMode = Ui.Combo(165, UiStrings.Model_OutlineFixed, UiStrings.Model_OutlineDarken).Tip(UiStrings.Model_OutlineColorTip);
+        _outlineColorMode = Ui.Combo(145, UiStrings.Model_OutlineFixed, UiStrings.Model_OutlineDarken).Tip(UiStrings.Model_OutlineColorTip);
         _outlineColor = Ui.Button("", (_, _) => PickOutlineColor()).Tip(UiStrings.Model_OutlineColorPick);
         _darken = Ui.Num(0, 100, 50, 60, increment: 5).Unit("%").Tip(UiStrings.Model_OutlineDarkenTip);
 
@@ -200,37 +205,61 @@ public sealed class ModelImportDialog : DialogBase
             },
         };
 
-        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*") };
-        void AddRow(string label, Control content)
+        // 비슷한 설정끼리 묶음 상자로: 출력(미리보기 아래) · 카메라 · 빛 · 픽셀 다듬기 · 외곽선(오른쪽). 오른쪽 상자들은 줄 이름 칸이 같은 폭(SharedSizeGroup).
+        Grid Rows(params (string Label, Control Content)[] rows)
         {
-            int row = grid.RowDefinitions.Count;
-            grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-            var l = Ui.Label(label);
-            l.VerticalAlignment = VerticalAlignment.Center;
-            Grid.SetRow(l, row);
-            Grid.SetRow(content, row);
-            Grid.SetColumn(content, 1);
-            content.HorizontalAlignment = HorizontalAlignment.Left;
-            grid.Children.Add(l);
-            grid.Children.Add(content);
+            var grid = new Grid { ColumnDefinitions = { new ColumnDefinition(GridLength.Auto) { SharedSizeGroup = "label" }, new ColumnDefinition(GridLength.Star) } };
+            foreach (var (label, content) in rows)
+            {
+                int row = grid.RowDefinitions.Count;
+                grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+                var l = Ui.Label(label);
+                l.VerticalAlignment = VerticalAlignment.Center;
+                Grid.SetRow(l, row);
+                Grid.SetRow(content, row);
+                Grid.SetColumn(content, 1);
+                content.HorizontalAlignment = HorizontalAlignment.Left;
+                grid.Children.Add(l);
+                grid.Children.Add(content);
+            }
+            return grid;
         }
-        AddRow(UiStrings.Model_Preset, Ui.Row(_preset, savePreset, _deletePreset));
-        AddRow(UiStrings.Model_Size, _size);
-        AddRow(UiStrings.Model_Angle, Ui.Row(Ui.Label(UiStrings.Model_Yaw), _yaw, Ui.Label(UiStrings.Model_Pitch), _pitch, Ui.Label(UiStrings.Model_Roll), _roll));
-        AddRow(UiStrings.Model_Projection, Ui.Row(_projection, Ui.Label(UiStrings.Model_Fov), _fov));
-        AddRow(UiStrings.Model_Zoom, Ui.Row(_zoom, Ui.Button(UiStrings.Model_Fit, (_, _) => _zoom.Value = 100)));
-        AddRow(UiStrings.Model_Light, Ui.Row(Ui.Label(UiStrings.Model_Yaw), _lightYaw, Ui.Label(UiStrings.Model_Pitch), _lightPitch));
-        AddRow(UiStrings.Model_LightDepth, Ui.Row(Ui.Label(UiStrings.Model_LightFront), _lightDepth, Ui.Label(UiStrings.Model_LightBehind), _lightDepthValue));
-        AddRow(UiStrings.Model_Brightness, Ui.Row(Ui.Label(UiStrings.Model_Ambient), _ambient, Ui.Label(UiStrings.Model_LightStrength), _light));
-        AddRow(UiStrings.Model_Steps, _steps);
-        AddRow(UiStrings.Model_Smooth, Ui.Row(_smooth, _textures));
-        AddRow(UiStrings.Model_PixelTidy, Ui.Row(_hardAlpha, Ui.Label(UiStrings.Model_Colors), _colors));
-        AddRow(UiStrings.Model_Outline, Ui.Row(_outer, _outside, _inner, _creaseOn, _crease));
-        AddRow(UiStrings.Model_OutlineLook, Ui.Row(Ui.Label(UiStrings.Model_OutlineWidth), _outlineWidth, _outlineColorMode, _outlineColor, _darken));
-        AddRow(UiStrings.Model_Frames, _mode);
-        AddRow(UiStrings.Model_Turntable, Ui.Row(_turnFrames, _freeTurn));
-        AddRow(UiStrings.Model_Clip, Ui.Row(_clip, _importAnim));
-        AddRow(UiStrings.Model_Fps, Ui.Row(_fps, Ui.Label(UiStrings.Model_MaxFrames), _maxFrames));
+        GroupBox Box(string title, params (string, Control)[] rows) => Ui.Foldable(Ui.Group(title, Rows(rows)));
+        // 출력 상자는 미리보기 아래 빈자리에 — 두 칸 높이가 비슷해져 창이 길어지지 않는다.
+        var output = Box(UiStrings.Model_GroupOutput,
+            (UiStrings.Model_Size, _size),
+            (UiStrings.Model_Frames, _mode),
+            (UiStrings.Model_Turntable, Ui.Row(_turnFrames, _freeTurn)),
+            (UiStrings.Model_Clip, Ui.Row(_clip, _importAnim)),
+            (UiStrings.Model_Fps, Ui.Row(_fps, Ui.Label(UiStrings.Model_MaxFrames), _maxFrames)));
+        Grid.SetIsSharedSizeScope(output, true);
+        previewBox.Children.Add(output);
+        var groups = new StackPanel
+        {
+            Spacing = 2,
+            Children =
+            {
+                Rows((UiStrings.Model_Preset, Ui.Row(_preset, savePreset, _deletePreset))),
+                Box(UiStrings.Model_GroupCamera,
+                    (UiStrings.Model_Angle, Ui.Row(Ui.Label(UiStrings.Model_Yaw), _yaw, Ui.Label(UiStrings.Model_Pitch), _pitch, Ui.Label(UiStrings.Model_Roll), _roll)),
+                    (UiStrings.Model_Projection, Ui.Row(_projection, Ui.Label(UiStrings.Model_Fov), _fov)),
+                    (UiStrings.Model_Zoom, Ui.Row(_zoom, Ui.Button(UiStrings.Model_Fit, (_, _) => _zoom.Value = 100)))),
+                Box(UiStrings.Model_GroupLight,
+                    (UiStrings.Model_Light, Ui.Row(Ui.Label(UiStrings.Model_Yaw), _lightYaw, Ui.Label(UiStrings.Model_Pitch), _lightPitch)),
+                    (UiStrings.Model_LightDepth, Ui.Row(Ui.Label(UiStrings.Model_LightFront), _lightDepth, Ui.Label(UiStrings.Model_LightBehind), _lightDepthValue)),
+                    (UiStrings.Model_Brightness, Ui.Row(Ui.Label(UiStrings.Model_Ambient), _ambient, Ui.Label(UiStrings.Model_LightStrength), _light)),
+                    (UiStrings.Model_Steps, _steps)),
+                Box(UiStrings.Model_PixelTidy,
+                    (UiStrings.Model_Smooth, Ui.Row(_smooth, _textures)),
+                    (UiStrings.Model_Colors, Ui.Row(_colors, _hardAlpha))),
+                Box(UiStrings.Model_Outline,
+                    (UiStrings.Model_OutlineShape, Ui.Row(_outer, _outside, _inner)),
+                    (UiStrings.Model_OutlineObjects, _outlineObjects),
+                    (UiStrings.Model_OutlineSurface, Ui.Row(_creaseOn, _crease, _colorEdgeOn, _colorEdge)),
+                    (UiStrings.Model_OutlineLook, Ui.Row(Ui.Label(UiStrings.Model_OutlineWidth), _outlineWidth, _outlineColorMode, _outlineColor, _darken))),
+            },
+        };
+        Grid.SetIsSharedSizeScope(groups, true);
 
         _summary = Dim(Ui.Label(""));
         _summary.TextWrapping = TextWrapping.Wrap;
@@ -242,7 +271,7 @@ public sealed class ModelImportDialog : DialogBase
         _warnings.Foreground = AppTheme.WarningBrush;
         _warnings.TextWrapping = TextWrapping.Wrap;
         _warnings.MaxWidth = 480;
-        var settings = new StackPanel { Spacing = 6, Width = 490, Children = { Ui.Row(openModel), _summary, grid, _estimate, _warnings } };
+        var settings = new StackPanel { Spacing = 6, Width = 490, Children = { Ui.Row(openModel), _summary, groups, _estimate, _warnings } };
         Body.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Children = { previewBox, settings } });
         ShowModelState();
 
@@ -275,10 +304,10 @@ public sealed class ModelImportDialog : DialogBase
 
         _size.Changed += (_, _) => Sync();
         foreach (var n in new[] { _yaw, _pitch, _roll, _zoom, _fov, _lightYaw, _lightPitch, _ambient, _light, _steps, _turnFrames, _fps, _maxFrames,
-                     _colors, _crease, _outlineWidth, _darken })
+                     _colors, _crease, _colorEdge, _outlineWidth, _darken })
             n.ValueChanged += (_, _) => Sync();
-        foreach (var c in new[] { _projection, _smooth, _mode, _clip, _outlineColorMode }) c.SelectionChanged += (_, _) => Sync();
-        foreach (var c in new[] { _textures, _hardAlpha, _outer, _outside, _inner, _creaseOn }) c.IsCheckedChanged += (_, _) => Sync();
+        foreach (var c in new[] { _projection, _smooth, _mode, _clip, _outlineColorMode, _outlineObjects }) c.SelectionChanged += (_, _) => Sync();
+        foreach (var c in new[] { _textures, _hardAlpha, _outer, _outside, _inner, _creaseOn, _colorEdgeOn }) c.IsCheckedChanged += (_, _) => Sync();
         _freeTurn.IsCheckedChanged += (_, _) =>
         {
             // 막대 자리를 같은 각도로 옮긴다(프레임 k ↔ k × 360 / N°)
@@ -333,6 +362,8 @@ public sealed class ModelImportDialog : DialogBase
         OutlineOutside = _outside.On(),
         OutlineInner = _inner.On(),
         OutlineCrease = _creaseOn.On() ? (float)_crease.NumValue() : 0,
+        OutlineColorEdge = _colorEdgeOn.On() ? (float)_colorEdge.NumValue() : 0,
+        OutlineObjects = (ModelOutlineObjects)Math.Max(0, _outlineObjects.SelectedIndex),
         OutlineWidth = (int)_outlineWidth.NumValue(),
         OutlineColorMode = _outlineColorMode.SelectedIndex == 1 ? ModelOutlineColor.Darken : ModelOutlineColor.Fixed,
         OutlineColor = _outlineColorValue,
@@ -542,6 +573,9 @@ public sealed class ModelImportDialog : DialogBase
         _inner.IsChecked = r.OutlineInner;
         _creaseOn.IsChecked = r.OutlineCrease > 0;
         if (r.OutlineCrease > 0) _crease.Value = Clamp(_crease, r.OutlineCrease);
+        _colorEdgeOn.IsChecked = r.OutlineColorEdge > 0;
+        if (r.OutlineColorEdge > 0) _colorEdge.Value = Clamp(_colorEdge, r.OutlineColorEdge);
+        _outlineObjects.SelectedIndex = (int)r.OutlineObjects;
         _outlineWidth.Value = Clamp(_outlineWidth, r.OutlineWidth);
         _outlineColorMode.SelectedIndex = r.OutlineColorMode == ModelOutlineColor.Darken ? 1 : 0;
         SetOutlineColor(r.OutlineColor);
@@ -662,9 +696,10 @@ public sealed class ModelImportDialog : DialogBase
         _turnFrames.IsEnabled = _freeTurn.IsEnabled = mode == ModelFrameMode.Turntable;
         _clip.IsEnabled = _fps.IsEnabled = _maxFrames.IsEnabled = mode == ModelFrameMode.Animation;
         _fov.IsEnabled = _projection.SelectedIndex == 1;
-        bool outline = _outer.On() || _inner.On() || _creaseOn.On();
+        bool outline = _outer.On() || _inner.On() || _creaseOn.On() || _colorEdgeOn.On() || _outlineObjects.SelectedIndex > 0;
         _outside.IsEnabled = _outer.On();
         _crease.IsEnabled = _creaseOn.On();
+        _colorEdge.IsEnabled = _colorEdgeOn.On();
         _outlineWidth.IsEnabled = _outlineColorMode.IsEnabled = outline;
         _outlineColor.IsEnabled = outline && _outlineColorMode.SelectedIndex == 0;
         _darken.IsEnabled = outline && _outlineColorMode.SelectedIndex == 1;
@@ -782,7 +817,8 @@ public sealed class ModelImportDialog : DialogBase
                 original = ModelRenderer.RenderLayers(poses[i], view with
                 {
                     Width = smoothWidth, Height = smoothHeight, Supersample = originalSamples, ShadeSteps = 0,
-                    HardAlpha = false, Colors = 0, OutlineOuter = false, OutlineInner = false, OutlineCrease = 0,
+                    HardAlpha = false, Colors = 0, OutlineOuter = false, OutlineInner = false, OutlineCrease = 0, OutlineColorEdge = 0,
+                    OutlineObjects = ModelOutlineObjects.Off,
                 }, fit, cts.Token).Image;
                 done = (s, o, frames, poses, fit);
             }

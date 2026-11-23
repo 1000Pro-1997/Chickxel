@@ -16,7 +16,11 @@ namespace Chickxel.Core.Scene3D;
 /// 픽셀 <see cref="InnerThresholdPixels"/>칸 넘게 앞) 먼 쪽 픽셀을 칠한다 — 앞 물체의 윤곽은 그대로 남는다. 둥근 몸은 바깥 픽셀일수록 면이 가팔라
 /// 먼 쪽 기울기가 늘 깊이 차이를 설명하므로 선이 생기지 않고, 몸 앞의 팔은 뒤 몸통 면이 평평해 선이 생긴다.</item>
 /// <item>각진 곳 선: 겹침이 아닌 이웃 모델 픽셀의 법선 사이 각도가 <see cref="ModelRenderSettings.OutlineCrease"/>보다 크면 카메라를 덜 보는(법선 Z가 작은) 쪽을 칠한다.</item>
-/// <item>안쪽 겹침선·각진 곳 선은 늘 1px(두께는 겉 외곽선만).</item>
+/// <item>색 바뀌는 곳 선: 겹침·각진 곳이 아닌 이웃 모델 픽셀의 바탕 색(<see cref="ModelRenderLayers.Albedo"/> — 빛을 받기 전)이 OKLab 거리 × 100으로
+/// <see cref="ModelRenderSettings.OutlineColorEdge"/>보다 다르면 바탕 색이 더 어두운(OKLab L이 작은) 쪽을 칠한다(같으면 아래·오른쪽 픽셀).</item>
+/// <item>오브젝트 경계 선: 이웃 모델 픽셀의 오브젝트(<see cref="ModelRenderLayers.Object"/> — <see cref="ModelRenderSettings.OutlineObjects"/>로 가름)가 다르면
+/// 겹침이든 맞닿음이든 먼 쪽 픽셀을 칠한다(안쪽 겹침선 다음, 각진 곳 선 앞).</item>
+/// <item>안쪽 겹침선·각진 곳 선·색 바뀌는 곳 선·오브젝트 경계 선은 늘 1px(두께는 겉 외곽선만).</item>
 /// <item>색: 고정이면 <see cref="ModelRenderSettings.OutlineColor"/>(불투명), 어둡게면 선 자리 모델 픽셀(바깥 선이면 붙은 모델 픽셀) 색의 OKLab 밝기에
 /// 1 − <see cref="ModelRenderSettings.OutlineDarken"/>를 곱한 불투명 색.</item>
 /// <item>선 자리는 모두 칠하기 전 값(덮음·깊이·법선)으로 먼저 정하고, 색은 칠하기 전 그림에서 읽는다 — 그린 선이 다른 선을 만들지 않는다.</item>
@@ -123,7 +127,9 @@ public static class ModelPixelPass
             else GrowInside(model, source, w, h, width);
         }
         float crease = float.IsFinite(settings.OutlineCrease) ? Math.Min(settings.OutlineCrease, 180) : 0;
-        if (settings.OutlineInner || crease > 0) FindEdges(layers, model, source, settings.OutlineInner, crease);
+        float colorEdge = float.IsFinite(settings.OutlineColorEdge) ? Math.Max(0, settings.OutlineColorEdge) : 0;
+        bool objects = settings.OutlineObjects != ModelOutlineObjects.Off;
+        if (settings.OutlineInner || crease > 0 || colorEdge > 0 || objects) FindEdges(layers, model, source, settings.OutlineInner, crease, colorEdge, objects);
         int count = 0;
         for (int i = 0; i < n; i++)
             if (source[i] >= 0) count++;
@@ -218,13 +224,30 @@ public static class ModelPixelPass
         }
     }
 
-    /// <summary>오른쪽·아래 이웃 쌍마다 안쪽 겹침선·각진 곳 선.</summary>
-    private static void FindEdges(ModelRenderLayers layers, bool[] model, int[] source, bool inner, float crease)
+    /// <summary>오른쪽·아래 이웃 쌍마다 안쪽 겹침선·오브젝트 경계 선·각진 곳 선·색 바뀌는 곳 선(앞 규칙에 걸린 쌍은 뒤 규칙을 보지 않음).</summary>
+    private static void FindEdges(ModelRenderLayers layers, bool[] model, int[] source, bool inner, float crease, float colorEdge, bool objects)
     {
         int w = layers.Width, h = layers.Height;
+        var objectIds = layers.Object;
         var depth = layers.Depth;
         var normal = layers.Normal;
         float cosLimit = crease > 0 ? MathF.Cos(crease * (MathF.PI / 180)) : float.NegativeInfinity;
+        // 색 문턱은 OKLab 거리 × 100 — 제곱 거리로 비교. 바탕 색은 모델 픽셀만, 같은 색은 한 번만 바꾼다.
+        float colorLimit = colorEdge / 100 * (colorEdge / 100);
+        Lab[]? labs = null;
+        if (colorEdge > 0)
+        {
+            labs = new Lab[w * h];
+            var albedo = layers.Albedo;
+            var cache = new Dictionary<uint, Lab>();
+            for (int i = 0; i < labs.Length; i++)
+            {
+                if (!model[i]) continue;
+                uint key = albedo[i].Argb & 0x00FFFFFFu;
+                if (!cache.TryGetValue(key, out var lab)) cache[key] = lab = OkLab.FromColor(albedo[i]);
+                labs[i] = lab;
+            }
+        }
         for (int y = 0; y < h; y++)
         {
             int row = y * w;
@@ -242,14 +265,28 @@ public static class ModelPixelPass
                     bool iNear = depth[i] <= depth[j];
                     int near = iNear ? i : j, far = iNear ? j : i;
                     int stepX = iNear ? -sx : sx, stepY = iNear ? -sy : sy;
-                    if (DepthEdge(layers, far, near, stepX, stepY))
+                    bool overlap = DepthEdge(layers, far, near, stepX, stepY);
+                    if (overlap && inner)
                     {
-                        if (inner) source[far] = far;
+                        source[far] = far;
                         continue;
                     }
+                    // 다른 오브젝트끼리는 겹치든 맞닿든 먼 쪽에 선(앞 오브젝트 윤곽은 그대로).
+                    if (objects && objectIds[i] != objectIds[j])
+                    {
+                        source[far] = far;
+                        continue;
+                    }
+                    if (overlap) continue;
                     if (crease > 0 && Vector3.Dot(normal[i], normal[j]) < cosLimit)
                     {
                         int p = normal[i].Z < normal[j].Z ? i : j;
+                        source[p] = p;
+                        continue;
+                    }
+                    if (labs != null && Lab.DistanceSquared(labs[i], labs[j]) > colorLimit)
+                    {
+                        int p = labs[i].L < labs[j].L ? i : j;
                         source[p] = p;
                     }
                 }

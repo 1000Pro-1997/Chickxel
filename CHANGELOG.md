@@ -2,6 +2,19 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.148 (2026-11-23)
+
+### 3D outline: color changes and object edges
+- **Color changes** draws a line where neighboring pixels have different material colors (ignoring light and shade), on the darker side; the threshold runs from 1 to 100.
+- **Object edges** draws a line where different objects overlap or touch, on the object behind: either each object (node) in the model file or each connected piece of geometry.
+
+### Settings grouped into boxes
+- The Import 3D model window groups its settings into boxes: Output under the preview, and Camera, Lighting, Pixel cleanup and Outline on the right; click a box title to fold it.
+- Preferences groups each tab into boxes, the General tab in two columns, and the Shortcuts tab lists one box per command category.
+
+### About window
+- The Buy the developer a coffee button now stands out in coffee yellow.
+
 ## v1.14.147 (2026-11-23)
 
 ### 3D: glass and see-through materials

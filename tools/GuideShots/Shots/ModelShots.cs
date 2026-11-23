@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.VisualTree;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Chickxel.App;
@@ -15,10 +16,20 @@ namespace GuideShots;
 /// </summary>
 internal static class ModelShots
 {
-    // 설정 칸 줄 번호(ModelImportDialog의 AddRow 순서).
-    private const int RowPreset = 0, RowSize = 1, RowSmooth = 9, RowPixel = 10, RowOutlineLook = 12, RowFrames = 13, RowFps = 16;
+    /// <summary>
+    /// 설정 한 줄(이름표, 내용)을 그 줄 안 컨트롤로 찾는다: 위로 올라가 묶음 상자 안 줄 칸(이름 칸이 SharedSizeGroup "label"인 두 칸 Grid)의
+    /// 내용 칸을 만나면 그 바로 앞 자식이 이름표.
+    /// </summary>
+    private static (Control Label, Control Content) RowOf(Control c)
+    {
+        var cur = c;
+        while (cur.Parent is Control parent && !(parent is Grid g && g.ColumnDefinitions.Count == 2 && g.ColumnDefinitions[0].SharedSizeGroup == "label"))
+            cur = parent;
+        var grid = (Grid)cur.Parent!;
+        return ((Control)grid.Children[grid.Children.IndexOf(cur) - 1], cur);
+    }
 
-    private static Grid SettingsGrid(Window w) => (Grid)ShotKit.Get<Control>(w, "_size").Parent!;
+    private static Control Row(Window w, string field) => ShotKit.Get<Control>(w, field);
 
     /// <summary>원본 칸의 해 손잡이 둘레(창 좌표 — 손잡이 자리는 빛 방향에 따라 빛 구 위 어디든).</summary>
     private static Rect SunMark(Window w, Rect pane)
@@ -31,33 +42,31 @@ internal static class ModelShots
     /// <summary>
     /// 설정 칸 한 줄(이름표 + 내용)의 창 좌표 — 번호 동그라미가 이름표 왼쪽 여백에 오게 왼쪽으로 넓히고, 이웃 줄 표시와 겹치지 않게 위아래는 조금 줄인다.
     /// </summary>
-    private static Rect GridRow(Window w, int row, double left = 14)
+    private static Rect GridRow(Window w, Control inRow, double left = 14)
     {
-        var g = SettingsGrid(w);
-        var label = (Control)g.Children[row * 2];
-        var content = (Control)g.Children[row * 2 + 1];
+        var (label, content) = RowOf(inRow);
         return ShotKit.Bounds(label, w).Union(ShotKit.Bounds(content, w)).Inflate(new Thickness(left, -3, 3, -3));
     }
 
-    private static Rect Rows(Window w, int from, int to) => Enumerable.Range(from, to - from + 1).Select(r => GridRow(w, r)).Aggregate((a, b) => a.Union(b));
+    private static Rect GridRow(Window w, string field, double left = 14) => GridRow(w, Row(w, field), left);
 
     /// <summary>줄 안의 작은 컨트롤 표시: 번호 동그라미가 컨트롤 위 빈 띠(<see cref="SaveRows"/>)에 오게 위로 넓힌다.</summary>
     private static Rect Up(Window w, params Control[] controls) => Union(w, controls).Inflate(new Thickness(3, 13, 3, 1));
 
     /// <summary>
-    /// 설정 줄 여럿을 줄마다 위에 빈 띠(번호 동그라미 자리)를 두고 세로로 쌓아 저장한다 — 한 줄에 작은 컨트롤이 붙어 있어 번호가 위 줄을 가리지 않게.
-    /// 띠는 그 줄 맨 위 한 줄 픽셀(줄 사이 빈 곳)을 늘려 칠한다. <paramref name="rows"/>마다 (줄 번호, 표시들) — 번호는 적은 순서대로.
+    /// 띠는 그 줄 맨 위 한 줄 픽셀(줄 사이 빈 곳)을 늘려 칠한다. <paramref name="rows"/>마다 (그 줄 안 컨트롤, 표시들) — 번호는 적은 순서대로.
+    /// 가로 범위는 그 줄이 든 묶음 상자 폭(양옆 번호 자리 포함).
     /// </summary>
-    private static void SaveRows(ShotKit k, Window w, string name, IReadOnlyList<(int Row, Rect[] Marks)> rows, int firstNumber = 1)
+    private static void SaveRows(ShotKit k, Window w, string name, IReadOnlyList<(Control Row, Rect[] Marks)> rows, int firstNumber = 1)
     {
         const int Band = 24, Side = 30;
-        var grid = ShotKit.Bounds(SettingsGrid(w), w);
         var frame = k.Capture(w);
         var crops = rows.Select(r =>
         {
-            var g = SettingsGrid(w);
-            var b = ShotKit.Bounds((Control)g.Children[r.Row * 2], w).Union(ShotKit.Bounds((Control)g.Children[r.Row * 2 + 1], w));
-            return new Rect(grid.X - Side, b.Y - 2, grid.Width + Side * 2, b.Height + 4);
+            var (label, content) = RowOf(r.Row);
+            var box = ShotKit.Bounds(label.FindAncestorOfType<GroupBox>() ?? (Control)label.Parent!, w);
+            var b = ShotKit.Bounds(label, w).Union(ShotKit.Bounds(content, w));
+            return new Rect(box.X - Side, b.Y - 2, box.Width + Side * 2, b.Height + 4);
         }).ToList();
         int width = (int)Math.Ceiling(crops.Max(c => c.Width));
         int height = (int)Math.Ceiling(crops.Sum(c => c.Height + Band)) + 4;
@@ -195,8 +204,10 @@ internal static class ModelShots
                 new Rect(panes.X + 334, panes.Y, 330, 330).Inflate(2),
                 Union(w, play, bar).Inflate(new Thickness(3, -2, 3, 3)),
                 ShotKit.Bounds(F<Control>(w, "_summary"), w).Inflate(new Thickness(14, 3, 3, 3)),
-                GridRow(w, RowPreset),
-                Rows(w, RowSize, RowFps),
+                GridRow(w, "_preset"),
+                // 오른쪽 설정 묶음 상자들(카메라~외곽선)
+                ShotKit.All<GroupBox>(w).Where(g => g.IsVisible).Select(g => ShotKit.Bounds(g, w))
+                    .Where(b => b.X > panes.Right).Aggregate((a, b) => a.Union(b)).Inflate(new Thickness(14, 3, 3, 3)),
                 ShotKit.Bounds(F<Control>(w, "_estimate"), w).Inflate(new Thickness(14, 3, 3, 3)),
                 Box(F<Button>(w, "OkButton"), w, 2),
             ]);
@@ -214,7 +225,7 @@ internal static class ModelShots
             ], firstNumber: 9);
 
             var preset = F<ComboBox>(w, "_preset");
-            var row = GridRow(w, RowPreset);
+            var row = GridRow(w, "_preset");
             var save = ShotKit.FindText(w, UiStrings.Model_PresetSave, ancestorControl: true);
             var delete = F<Control>(w, "_deletePreset");
             preset.SelectedIndex = preset.ItemCount - 1;
@@ -242,7 +253,8 @@ internal static class ModelShots
             F<ComboBox>(w, "_projection").SelectedIndex = 1;
             F<NumericUpDown>(w, "_steps").Value = 3;
             WaitPreview();
-            SaveRows(k, w, "model-view", [.. Enumerable.Range(RowSize, RowSmooth - RowSize + 1).Select(r => (r, new[] { GridRow(w, r) }))]);
+            SaveRows(k, w, "model-view",
+                [.. new[] { "_size", "_yaw", "_projection", "_zoom", "_lightYaw", "_lightDepth", "_ambient", "_steps", "_smooth" }.Select(f => (Row(w, f), new[] { GridRow(w, f) }))]);
         });
 
         var still = new ModelFrameOptions();
@@ -279,9 +291,10 @@ internal static class ModelShots
             WaitPreview();
             SaveRows(k, w, "model-pixel",
             [
-                (RowPixel, [Up(w, F<Control>(w, "_hardAlpha")), Up(w, ShotKit.FindText(w, UiStrings.Model_Colors), F<Control>(w, "_colors"))]),
-                (RowPixel + 1, [Up(w, F<Control>(w, "_outer"), F<Control>(w, "_outside")), Up(w, F<Control>(w, "_inner")), Up(w, F<Control>(w, "_creaseOn"), F<Control>(w, "_crease"))]),
-                (RowOutlineLook,
+                (Row(w, "_colors"), [Up(w, ShotKit.FindText(w, UiStrings.Model_Colors), F<Control>(w, "_colors")), Up(w, F<Control>(w, "_hardAlpha"))]),
+                (Row(w, "_outer"), [Up(w, F<Control>(w, "_outer"), F<Control>(w, "_outside")), Up(w, F<Control>(w, "_inner"))]),
+                (Row(w, "_creaseOn"), [Up(w, F<Control>(w, "_creaseOn"), F<Control>(w, "_crease"))]),
+                (Row(w, "_outlineWidth"),
                 [
                     Up(w, ShotKit.FindText(w, UiStrings.Model_OutlineWidth), F<Control>(w, "_outlineWidth")), Up(w, F<Control>(w, "_outlineColorMode")),
                     Up(w, F<Control>(w, "_outlineColor")), Up(w, F<Control>(w, "_darken")),
@@ -318,7 +331,7 @@ internal static class ModelShots
         OpenImport(k, m, chick, w =>
         {
             UsePreset(w, 0);
-            SaveRows(k, w, "model-frames", [.. Enumerable.Range(RowFrames, RowFps - RowFrames + 1).Select(r => (r, new[] { GridRow(w, r) }))]);
+            SaveRows(k, w, "model-frames", [.. new[] { "_mode", "_turnFrames", "_clip", "_fps" }.Select(f => (Row(w, f), new[] { GridRow(w, f) }))]);
         });
 
         var scene = ModelLoader.Load(chick);
