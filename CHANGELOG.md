@@ -2,6 +2,12 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.145 (2026-11-23)
+
+### 3D preview: light on a sphere around the model
+- The sun handle now sits on a large light circle around the model (half of the sphere the light moves on) instead of a small circle in the corner; drag it to set where the light comes from on screen.
+- A vertical **Front/Back** slider on the left of the original pane moves the light from the front (top) to straight behind (bottom) on that sphere, keeping its screen direction, so together they reach every direction.
+
 ## v1.14.144 (2026-11-23)
 
 ### 3D preview: wheel zooms the view, free rotation

@@ -20,6 +20,14 @@ internal static class ModelShots
 
     private static Grid SettingsGrid(Window w) => (Grid)ShotKit.Get<Control>(w, "_size").Parent!;
 
+    /// <summary>원본 칸의 해 손잡이 둘레(창 좌표 — 손잡이 자리는 빛 방향에 따라 빛 구 위 어디든).</summary>
+    private static Rect SunMark(Window w, Rect pane)
+    {
+        var preview = ShotKit.All<Control>(w).First(c => c.GetType().Name == "ModelPreview");
+        var sun = (Avalonia.Point)ShotKit.Call(preview, "SunPoint")!;
+        return new Rect(pane.X + sun.X - 32, pane.Y + sun.Y - 32, 64, 64);
+    }
+
     /// <summary>
     /// 설정 칸 한 줄(이름표 + 내용)의 창 좌표 — 번호 동그라미가 이름표 왼쪽 여백에 오게 왼쪽으로 넓히고, 이웃 줄 표시와 겹치지 않게 위아래는 조금 줄인다.
     /// </summary>
@@ -199,10 +207,10 @@ internal static class ModelShots
             k.Save(w, "model-import-controls", crop: o.Inflate(18), marks:
             [
                 new Rect(o.X + 6, o.Bottom - 88, 78, 78),
-                // 회전 고리는 미리보기 가운데(165, 165) 둘레: 가로 고리 반지름 112×39, 바깥 기울이기 고리 137, 해 손잡이 (287, 44).
+                // 회전 고리는 미리보기 가운데(165, 165) 둘레: 가로 고리 반지름 112×39, 바깥 기울이기 고리 137. 해 손잡이는 가운데 둘레 빛 구 위(빛 방향에 따라).
                 new Rect(o.X + 165 - 116, o.Y + 165 - 43, 232, 86),
                 new Rect(o.X + 165 + 137 - 12, o.Y + 165 - 55, 24, 110),
-                new Rect(o.X + 287 - 32, o.Y + 44 - 32, 64, 64),
+                SunMark(w, o),
             ], firstNumber: 9);
 
             var preset = F<ComboBox>(w, "_preset");

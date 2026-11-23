@@ -172,6 +172,8 @@ public sealed class ModelImportDialog : DialogBase
             _lightYaw.Value = (decimal)Math.Round(yaw, 1);
             _lightPitch.Value = (decimal)Math.Round(pitch, 1);
         };
+        // 원본 칸 왼쪽 세로 막대 = 설정 칸 '빛 앞뒤'와 같음(해 손잡이 방향은 그대로 두고 구 위 앞뒤만)
+        _preview.LightDepthMoved += SetLightDepth;
         // 끄는 동안은 원본 칸을 가볍게 그리고, 놓으면 제대로 다시 그린다
         _preview.DragEnded += Schedule;
         _frame = new Slider { Minimum = 0, Maximum = 0, Width = 300, IsSnapToTickEnabled = true, TickFrequency = 1, VerticalAlignment = VerticalAlignment.Center };
@@ -860,7 +862,15 @@ public sealed class ModelImportDialog : DialogBase
         private const double Pane = 330;
         private static readonly Avalonia.Point Center = new(Pane / 2, Pane / 2);
         private static readonly Avalonia.Point AxisCenter = new(43, Pane - 44);
-        private static readonly Avalonia.Point SunCenter = new(Pane - 43, 44);
+        /// <summary>
+        /// 빛 구(모델 가운데 둘레의 큰 원 — 빛이 놓이는 구를 반으로 잘라 본 것): 해 손잡이 자리 = 빛 방향의 화면 성분(가운데 = 정면·정뒤, 테두리 = 옆).
+        /// 왼쪽 세로 막대가 구 위의 앞뒤(0° = 카메라 쪽 정면 ~ 180° = 정뒤)를 정한다.
+        /// </summary>
+        private const double LightRadius = 148;
+        /// <summary>빛 앞뒤 세로 막대(원본 칸 왼쪽 가장자리): x와 위(앞, 0°)·아래(뒤, 180°) 끝.</summary>
+        private const double DepthX = 9, DepthTop = 46, DepthBottom = 236;
+        private static readonly Pen LightCirclePen = new(new SolidColorBrush(Color.FromArgb(70, 255, 211, 91)), 1.5) { DashStyle = new DashStyle([4, 4], 0) };
+        private static readonly Pen DepthTrackPen = new(new SolidColorBrush(Color.FromArgb(150, 220, 230, 240)), 3) { LineCap = PenLineCap.Round };
         private static readonly Pen RingPen = new(new SolidColorBrush(Color.FromArgb(105, 210, 220, 230)), 1.5);
         private static readonly Pen RearRingPen = new(new SolidColorBrush(Color.FromArgb(40, 210, 220, 230)), 1.5);
         private static readonly Pen RearHoverPen = new(new SolidColorBrush(Color.FromArgb(110, 112, 189, 255)), 2);
@@ -908,6 +918,8 @@ public sealed class ModelImportDialog : DialogBase
         public event Action<double>? Rolled;
         public event Action<double, double>? Faced;
         public event Action<double, double>? LightMoved;
+        /// <summary>빛 앞뒤 막대를 끎(정면에서 잰 각도 0~180°).</summary>
+        public event Action<double>? LightDepthMoved;
         /// <summary>끌기(돌리기·고리·해)를 마침 — 가볍게 그리던 미리보기를 제대로 다시 그릴 때.</summary>
         public event Action? DragEnded;
 
@@ -988,6 +1000,7 @@ public sealed class ModelImportDialog : DialogBase
             }
             DrawAxes(g);
             DrawSun(g);
+            DrawDepth(g);
         }
 
         /// <summary>
@@ -1068,17 +1081,31 @@ public sealed class ModelImportDialog : DialogBase
                 }
         }
 
+        /// <summary>해 손잡이 자리: 빛 구 가운데에서 빛 방향의 화면 성분(오른쪽 = 가로, 위 = 세로)만큼.</summary>
         private Avalonia.Point SunPoint()
         {
             double yaw = _orientation.LightYaw * Math.PI / 180, pitch = _orientation.LightPitch * Math.PI / 180;
-            return new Avalonia.Point(SunCenter.X + 24 * Math.Sin(yaw) * Math.Cos(pitch), SunCenter.Y - 24 * Math.Sin(pitch));
+            return new Avalonia.Point(Center.X + LightRadius * Math.Sin(yaw) * Math.Cos(pitch), Center.Y - LightRadius * Math.Sin(pitch));
         }
 
+        /// <summary>빛이 정면에서 몇 도(0 = 카메라 쪽 정면, 180 = 정뒤).</summary>
+        private double LightDepth()
+        {
+            double ly = _orientation.LightYaw * Math.PI / 180, lp = _orientation.LightPitch * Math.PI / 180;
+            double z = (_orientation.LightBack ? -1 : 1) * Math.Cos(ly) * Math.Cos(lp);
+            return Math.Acos(Math.Clamp(z, -1, 1)) * 180 / Math.PI;
+        }
+
+        /// <summary>빛 구(해 손잡이를 가리키거나 끌 때만 점선 원과 가운데에서 해까지 선)와 해 손잡이(뒤쪽 반구면 속이 빈 해).</summary>
         private void DrawSun(DrawingContext g)
         {
-            g.DrawEllipse(null, AxisPen, SunCenter, 27, 27);
             var p = SunPoint();
-            g.DrawLine(SunPen, SunCenter, p);
+            bool lit = _hover is "sun" or "depth" || _active is "sun" or "depth";
+            if (lit)
+            {
+                g.DrawEllipse(null, LightCirclePen, Center, LightRadius, LightRadius);
+                g.DrawLine(LightCirclePen, Center, p);
+            }
             for (int n = 0; n < 8; n++)
             {
                 double a = n * Math.PI / 4;
@@ -1089,12 +1116,27 @@ public sealed class ModelImportDialog : DialogBase
                 _hover == "sun" || _active == "sun" ? HoverPen : SunPen, p, 8, 8);
         }
 
+        /// <summary>빛 앞뒤 세로 막대: 위 '앞'(0°) ~ 아래 '뒤'(180°), 손잡이는 지금 앞뒤(뒤쪽 반이면 속이 빔).</summary>
+        private void DrawDepth(DrawingContext g)
+        {
+            bool lit = _hover == "depth" || _active == "depth";
+            g.DrawLine(DepthTrackPen, new Avalonia.Point(DepthX, DepthTop), new Avalonia.Point(DepthX, DepthBottom));
+            AppTheme.DrawText(g, UiStrings.Model_LightFront, new Avalonia.Point(DepthX - 5, DepthTop - 20), Brushes.White, 10, bold: true);
+            AppTheme.DrawText(g, UiStrings.Model_LightBehind, new Avalonia.Point(DepthX - 5, DepthBottom + 5), Brushes.White, 10, bold: true);
+            double depth = LightDepth();
+            var knob = new Avalonia.Point(DepthX, DepthTop + (DepthBottom - DepthTop) * depth / 180);
+            g.DrawEllipse(depth > 90 ? AppTheme.BackBrush : SunBrush, lit ? HoverPen : SunPen, knob, 6, 6);
+        }
+
+        private double DepthAt(double y) => Math.Clamp((y - DepthTop) / (DepthBottom - DepthTop), 0, 1) * 180;
+
         private static double Distance(Avalonia.Point a, Avalonia.Point b) => Math.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
 
         private string Hit(Avalonia.Point p)
         {
             if (p.X < 0 || p.X >= Pane || p.Y < 0 || p.Y >= Pane) return "";
             if (Distance(p, SunPoint()) <= 17) return "sun";
+            if (p.X <= DepthX + 12 && p.Y >= DepthTop - 10 && p.Y <= DepthBottom + 10) return "depth";
             var axes = Axes;
             var back = _back;
             // When opposite endpoints overlap, the one toward the camera wins.
@@ -1113,7 +1155,7 @@ public sealed class ModelImportDialog : DialogBase
 
         private void MoveSun(Avalonia.Point p)
         {
-            double x = (p.X - SunCenter.X) / 24, y = (SunCenter.Y - p.Y) / 24;
+            double x = (p.X - Center.X) / LightRadius, y = (Center.Y - p.Y) / LightRadius;
             double radius = Math.Sqrt(x * x + y * y);
             if (radius > 0.999) { x *= 0.999 / radius; y *= 0.999 / radius; }
             double pitch = Math.Asin(y), yaw = Math.Atan2(x, Math.Sqrt(Math.Max(0, 1 - x * x - y * y)));
@@ -1148,6 +1190,7 @@ public sealed class ModelImportDialog : DialogBase
                 _drag = p;
                 _lastRollAngle = Math.Atan2(p.Y - Center.Y, p.X - Center.X);
                 if (hit == "sun") MoveSun(p);
+                else if (hit == "depth") LightDepthMoved?.Invoke(DepthAt(p.Y));
                 e.Pointer.Capture(this);
             }
             e.Handled = true;
@@ -1168,6 +1211,7 @@ public sealed class ModelImportDialog : DialogBase
             if (_drag is { } last)
             {
                 if (_active == "sun") MoveSun(p);
+                else if (_active == "depth") LightDepthMoved?.Invoke(DepthAt(p.Y));
                 else if (_active == "roll")
                 {
                     double angle = Math.Atan2(p.Y - Center.Y, p.X - Center.X);
@@ -1188,7 +1232,7 @@ public sealed class ModelImportDialog : DialogBase
                 if (_hover != hover)
                 {
                     _hover = hover;
-                    Cursor = hover is "roll" or "yaw" or "pitch" or "sun" || hover.StartsWith("axis:", StringComparison.Ordinal)
+                    Cursor = hover is "roll" or "yaw" or "pitch" or "sun" or "depth" || hover.StartsWith("axis:", StringComparison.Ordinal)
                         ? HandleCursor : OrbitCursor;
                     InvalidateVisual();
                 }
