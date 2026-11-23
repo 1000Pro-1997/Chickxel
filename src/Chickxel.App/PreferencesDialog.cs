@@ -100,8 +100,8 @@ public sealed class PreferencesDialog : DialogBase
         updateNote.Foreground = AppTheme.DimTextBrush;
         _discord = Ui.Check(UiStrings.Prefs_Discord_Show, discordPresence);
         const string languagePage = "language-change", makePage = "language-make";
-        var general = Ui.Stack(
-            Ui.Label(UiStrings.Language_Title, bold: true).HelpAt(languagePage, anchor: "Choosing a language"),
+        // 묶음 상자: 위는 언어, 아래 왼쪽은 편집 기록(실행취소·기록), 오른쪽은 저장(자동 저장·휴지통)과 앱(업데이트·Discord·초기화).
+        var languageGroup = Ui.Group(UiStrings.Language_Title, Ui.Stack(
             Ui.Row(Ui.Label(UiStrings.Language_Label), _language).HelpAt(languagePage, anchor: "Choose from the"),
             Ui.Row(
                 Ui.Button(UiStrings.Language_Export, (_, _) => ExportLanguages()).HelpAt(makePage, anchor: "Save a CSV file with"),
@@ -112,34 +112,41 @@ public sealed class PreferencesDialog : DialogBase
                     Platform.OpenFolder(UiLanguage.Folder);
                 }).HelpAt(page, anchor: "Languages/")),
             languageNote.HelpAt(languagePage, anchor: "Restarting to apply"),
-            _languageStatus.HelpAt(makePage, anchor: "The number of strings added"),
-            Ui.Label(UiStrings.Language_UndoTitle, bold: true).HelpAt(page, anchor: "Undo steps"),
+            _languageStatus.HelpAt(makePage, anchor: "The number of strings added"))).HelpAt(languagePage, anchor: "Choosing a language");
+        var undoGroup = Ui.Group(UiStrings.Language_UndoTitle, Ui.Stack(
             Ui.Row(Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_1F7416F7D9), _undo, Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_20DF2ED64F,UndoStack.DefaultCapacity,UndoStack.MaxCapacity)))
                 .HelpAt(page, anchor: "Undo steps"),
-            Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_D87D2E02E0).HelpAt(page, anchor: "Undo steps"),
-            Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_02113E25F5, bold: true).HelpAt("files-history", shot: "files-history"),
+            Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_D87D2E02E0).HelpAt(page, anchor: "Undo steps"))).HelpAt(page, anchor: "Undo steps");
+        var historyGroup = Ui.Group(UiStrings.S_PreferencesDialog_PreferencesDialog_02113E25F5, Ui.Stack(
             _historyOn.HelpAt("files-history", shot: "files-history"),
             Ui.Row(Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_566552BAB9), _historyDays, Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_8FA707928D))
                 .Tip(UiStrings.S_PreferencesDialog_PreferencesDialog_F8AA857BED).HelpAt("files-history", shot: "files-history"),
             Ui.Row(Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_AFE766F9E0), _historyMb, Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_F7A34332AC,UndoHistoryPolicy.DefaultMaxMegabytes)))
                 .HelpAt("files-history", shot: "files-history"),
             Ui.Row(historyUsage, historyClear).HelpAt("files-history", shot: "files-history"),
-            historyNote.HelpAt("files-history", anchor: "When history is discarded"),
-            Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_06B0DD01B8, bold: true).HelpAt("files-autosave", anchor: "Turning it on/off and the wait time"),
+            historyNote.HelpAt("files-history", anchor: "When history is discarded"))).HelpAt("files-history", shot: "files-history");
+        var autoSaveGroup = Ui.Group(UiStrings.S_PreferencesDialog_PreferencesDialog_06B0DD01B8, Ui.Stack(
             Ui.Row(_autoSave, _autoSaveDelay,
                 Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_19CDB23584,AppSettings.DefaultAutoSaveDelay,AppSettings.MinAutoSaveDelay,AppSettings.MaxAutoSaveDelay)))
                 .HelpAt("files-autosave", anchor: "Turning it on/off and the wait time"),
-            autoSaveNote.HelpAt("files-autosave", anchor: "When it saves and when it doesn't"),
-            Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_B57D05987F, bold: true).HelpAt("screen-file-browser", anchor: "Retention policy"),
-            _trash.HelpAt("screen-file-browser", anchor: "Retention policy"),
-            Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_B4D135E19E, bold: true).HelpAt("start-update", anchor: "Clear this checkbox"),
+            autoSaveNote.HelpAt("files-autosave", anchor: "When it saves and when it doesn't"))).HelpAt("files-autosave", anchor: "Turning it on/off and the wait time");
+        var trashGroup = Ui.Group(UiStrings.S_PreferencesDialog_PreferencesDialog_B57D05987F,
+            _trash.HelpAt("screen-file-browser", anchor: "Retention policy")).HelpAt("screen-file-browser", anchor: "Retention policy");
+        var updateGroup = Ui.Group(UiStrings.S_PreferencesDialog_PreferencesDialog_B4D135E19E, Ui.Stack(
             _updateCheck.HelpAt("start-update", anchor: "Clear this checkbox"),
-            updateNote.HelpAt("start-update", anchor: "Clear this checkbox"),
-            Ui.Label(UiStrings.Prefs_Discord_Title, bold: true).HelpAt(page),
-            Ui.Row(_discord, Ui.InfoBadge(UiStrings.Prefs_Discord_Info)).HelpAt(page),
-            Ui.Label(UiStrings.Prefs_ResetSettings_Title, bold: true).HelpAt(page, anchor: "Reset settings"),
+            updateNote.HelpAt("start-update", anchor: "Clear this checkbox"))).HelpAt("start-update", anchor: "Clear this checkbox");
+        var discordGroup = Ui.Group(UiStrings.Prefs_Discord_Title,
+            Ui.Row(_discord, Ui.InfoBadge(UiStrings.Prefs_Discord_Info)).HelpAt(page)).HelpAt(page);
+        var resetGroup = Ui.Group(UiStrings.Prefs_ResetSettings_Title,
             Ui.Row(Ui.Button(VectorIcon.Undo2, UiStrings.Prefs_ResetSettings_Button, (_, _) => RequestReset()),
-                Ui.InfoBadge(UiStrings.Prefs_ResetSettings_Info)).HelpAt(page, anchor: "Reset settings"));
+                Ui.InfoBadge(UiStrings.Prefs_ResetSettings_Info)).HelpAt(page, anchor: "Reset settings")).HelpAt(page, anchor: "Reset settings");
+        var leftColumn = Ui.Stack(undoGroup, historyGroup, discordGroup, resetGroup);
+        var rightColumn = Ui.Stack(autoSaveGroup, trashGroup, updateGroup);
+        var columns = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto") };
+        Grid.SetColumn(rightColumn, 1);
+        columns.Children.Add(leftColumn);
+        columns.Children.Add(rightColumn);
+        var general = Ui.Stack(languageGroup, columns);
 
         const string keysPage = "shortcuts-customize";
         _search = new TextBox { Watermark = UiStrings.S_PreferencesDialog_PreferencesDialog_3384322E72, Width = 260, Margin = new Thickness(2) }.HelpAt(keysPage, anchor: "Search by command");
@@ -172,8 +179,7 @@ public sealed class PreferencesDialog : DialogBase
         refsNote.TextWrapping = TextWrapping.Wrap;
         refsNote.MaxWidth = 640;
         refsNote.HorizontalAlignment = HorizontalAlignment.Left;
-        var references = Ui.Stack(
-            Ui.Label(UiStrings.Refs_Prefs_Folder, bold: true).HelpAt("ai-references", anchor: "Folder (⑭)"),
+        var references = Ui.Stack(Ui.Group(UiStrings.Refs_Prefs_Folder, Ui.Stack(
             _refsFolderBox.HelpAt("ai-references", anchor: "Folder (⑭)"),
             Ui.Row(
                 Ui.Button(UiStrings.Refs_Prefs_ChangeFolder, (_, _) =>
@@ -201,7 +207,7 @@ public sealed class PreferencesDialog : DialogBase
                     }
                 })),
             _refsExamples.HelpAt("ai-references", anchor: "Built-in references (marked"),
-            refsNote).HelpAt("ai-references", anchor: "Preferences: in Edit");
+            refsNote)).HelpAt("ai-references", anchor: "Folder (⑭)")).HelpAt("ai-references", anchor: "Preferences: in Edit");
 
         // 영상(ffmpeg)
         _ffmpegBox = new TextBox { Text = ffmpegPath ?? "", Watermark = UiStrings.Ffmpeg_Prefs_Auto, Width = 460, Margin = new Thickness(2) };
@@ -226,8 +232,7 @@ public sealed class PreferencesDialog : DialogBase
         ffmpegNote.TextWrapping = TextWrapping.Wrap;
         ffmpegNote.MaxWidth = 640;
         ffmpegNote.HorizontalAlignment = HorizontalAlignment.Left;
-        var video = Ui.Stack(
-            Ui.Label(UiStrings.Ffmpeg_Prefs_Location, bold: true),
+        var video = Ui.Stack(Ui.Group(UiStrings.Ffmpeg_Prefs_Location, Ui.Stack(
             _ffmpegBox,
             Ui.Row(
                 Ui.Button(UiStrings.Ffmpeg_Prefs_Browse, (_, _) =>
@@ -244,17 +249,16 @@ public sealed class PreferencesDialog : DialogBase
                 }),
                 Ui.Button(UiStrings.Ffmpeg_OpenDownload, (_, _) => Updater.OpenUrl(this, FfmpegTool.DownloadUrl))),
             ffmpegStatus,
-            ffmpegNote).HelpAt("files-open-media", shot: "files-open-media-4");
+            ffmpegNote))).HelpAt("files-open-media", shot: "files-open-media-4");
 
         var aiStatusNote = Ui.Label(UiStrings.AiStatus_SettingsNote);
         aiStatusNote.TextWrapping = TextWrapping.Wrap;
         aiStatusNote.Foreground = AppTheme.DimTextBrush;
         aiStatusNote.MaxWidth = 640;
         aiStatusNote.HorizontalAlignment = HorizontalAlignment.Left;
-        var ai = Ui.Stack(
-            Ui.Label(UiStrings.AiStatus_SettingsTitle, bold: true),
+        var ai = Ui.Stack(Ui.Group(UiStrings.AiStatus_SettingsTitle, Ui.Stack(
             aiStatusNote,
-            Ui.Button(VectorIcon.Info, UiStrings.AiStatus_Open, (_, _) => showAiStatus(this))).HelpAt("ai-setup", anchor: "Open AI status and settings in Preferences");
+            Ui.Button(VectorIcon.Info, UiStrings.AiStatus_Open, (_, _) => showAiStatus(this))))).HelpAt("ai-setup", anchor: "Open AI status and settings in Preferences");
 
         // 프리셋: 지운 기본 프리셋 되살리기(누르면 바로 저장 — 확인·취소와 무관).
         var presetsNote = Ui.Label(UiStrings.Presets_Prefs_Note);
@@ -264,8 +268,7 @@ public sealed class PreferencesDialog : DialogBase
         presetsNote.HorizontalAlignment = HorizontalAlignment.Left;
         var presetsStatus = Ui.Label("");
         presetsStatus.Foreground = AppTheme.DimTextBrush;
-        var presets = Ui.Stack(
-            Ui.Label(UiStrings.Presets_Prefs_Title, bold: true),
+        var presets = Ui.Stack(Ui.Group(UiStrings.Presets_Prefs_Title, Ui.Stack(
             presetsNote,
             Ui.Button(VectorIcon.Undo2, UiStrings.Presets_RestoreOptimizer, (_, _) =>
             {
@@ -280,7 +283,7 @@ public sealed class PreferencesDialog : DialogBase
             Ui.Button(VectorIcon.Undo2, UiStrings.Presets_RestoreGradients,
                 async (sender, _) => await AppAssets.RestoreDefaultsAsync(this, Chickxel.Core.Assets.AssetKinds.Gradient, UiStrings.Presets_RestoreGradients, (Control)sender!))
                 .Tip(UiStrings.Assets_RestoreGradientsTip),
-            presetsStatus).HelpAt(page, anchor: "Presets");
+            presetsStatus))).HelpAt(page, anchor: "Presets");
 
         var tabs = new TabView();
         tabs.AddPage(UiStrings.S_PreferencesDialog_PreferencesDialog_2626F2C3C7, general.HelpAt(page, anchor: "General tab"));
@@ -392,37 +395,41 @@ public sealed class PreferencesDialog : DialogBase
     {
         _rows.Children.Clear();
         var q = (_search.Text ?? "").Trim();
-        foreach (var c in _commands)
+        // 분류마다 묶음 상자 하나(처음 나온 차례). 찾기로 다 빠진 분류는 상자를 만들지 않는다.
+        foreach (var category in _commands.GroupBy(c => c.Category))
         {
-            var keys = _keys[c.Id];
-            var keyText = string.Join(", ", keys.Select(k => Ui.Shortcut(Shortcuts.Format(k))));
-            if (q.Length > 0 && !c.Name.Contains(q, StringComparison.OrdinalIgnoreCase) && !c.Category.Contains(q, StringComparison.OrdinalIgnoreCase)
-                && !keyText.Contains(q, StringComparison.OrdinalIgnoreCase)) continue;
-            bool changed = !keys.SequenceEqual(c.Defaults);
-            bool capturing = _capture?.Id == c.Id;
-            var row = new Grid { ColumnDefinitions = new ColumnDefinitions("70,250,170,Auto"), Margin = new Thickness(4, 0) };
-            var cat = Ui.Label(c.Category);
-            cat.Foreground = AppTheme.DimTextBrush;
-            var name = Ui.Label(c.Name, bold: changed);
-            name.TextTrimming = TextTrimming.CharacterEllipsis;
-            ToolTip.SetTip(name, $"{c.Category}/{c.Name}");
-            var key = Ui.Label(capturing ? UiStrings.S_PreferencesDialog_RebuildRows_57377CDB79 : keyText.Length > 0 ? keyText : "—");
-            if (capturing) key.Foreground = AppTheme.AccentBrush;
-            key.TextTrimming = TextTrimming.CharacterEllipsis;
-            var id = c.Id;
-            var buttons = Ui.Row(
-                SmallButton(UiStrings.S_PreferencesDialog_RebuildRows_6C524CA777, () => StartCapture(id, replace: true)),
-                SmallButton(UiStrings.S_PreferencesDialog_RebuildRows_9004EC4503, () => StartCapture(id, replace: false)),
-                SmallButton(UiStrings.S_PreferencesDialog_RebuildRows_688679199B, () => { _keys[id] = new(); RebuildRows(); }),
-                SmallButton(UiStrings.S_PreferencesDialog_RebuildRows_49F151E4F2, () => SetKeys(id, c.Defaults.ToList())));
-            Grid.SetColumn(name, 1);
-            Grid.SetColumn(key, 2);
-            Grid.SetColumn(buttons, 3);
-            row.Children.Add(cat);
-            row.Children.Add(name);
-            row.Children.Add(key);
-            row.Children.Add(buttons);
-            _rows.Children.Add(row);
+            var list = Ui.Stack();
+            list.Margin = new Thickness(0);
+            foreach (var c in category)
+            {
+                var keys = _keys[c.Id];
+                var keyText = string.Join(", ", keys.Select(k => Ui.Shortcut(Shortcuts.Format(k))));
+                if (q.Length > 0 && !c.Name.Contains(q, StringComparison.OrdinalIgnoreCase) && !c.Category.Contains(q, StringComparison.OrdinalIgnoreCase)
+                    && !keyText.Contains(q, StringComparison.OrdinalIgnoreCase)) continue;
+                bool changed = !keys.SequenceEqual(c.Defaults);
+                bool capturing = _capture?.Id == c.Id;
+                // 칸 너비를 고정해 상자끼리 이름·키·단추 칸이 줄 맞게 한다.
+                var row = new Grid { ColumnDefinitions = new ColumnDefinitions("300,170,Auto") };
+                var name = Ui.Label(c.Name, bold: changed);
+                name.TextTrimming = TextTrimming.CharacterEllipsis;
+                ToolTip.SetTip(name, $"{c.Category}/{c.Name}");
+                var key = Ui.Label(capturing ? UiStrings.S_PreferencesDialog_RebuildRows_57377CDB79 : keyText.Length > 0 ? keyText : "—");
+                if (capturing) key.Foreground = AppTheme.AccentBrush;
+                key.TextTrimming = TextTrimming.CharacterEllipsis;
+                var id = c.Id;
+                var buttons = Ui.Row(
+                    SmallButton(UiStrings.S_PreferencesDialog_RebuildRows_6C524CA777, () => StartCapture(id, replace: true)),
+                    SmallButton(UiStrings.S_PreferencesDialog_RebuildRows_9004EC4503, () => StartCapture(id, replace: false)),
+                    SmallButton(UiStrings.S_PreferencesDialog_RebuildRows_688679199B, () => { _keys[id] = new(); RebuildRows(); }),
+                    SmallButton(UiStrings.S_PreferencesDialog_RebuildRows_49F151E4F2, () => SetKeys(id, c.Defaults.ToList())));
+                Grid.SetColumn(key, 1);
+                Grid.SetColumn(buttons, 2);
+                row.Children.Add(name);
+                row.Children.Add(key);
+                row.Children.Add(buttons);
+                list.Children.Add(row);
+            }
+            if (list.Children.Count > 0) _rows.Children.Add(Ui.Group(category.Key, list));
         }
     }
 
