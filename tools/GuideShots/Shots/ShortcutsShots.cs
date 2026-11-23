@@ -38,13 +38,14 @@ internal static class ShortcutsShots
             ShotKit.Call(w, "StartCapture", ExampleId, true);
             ShotKit.Pump(400);
             var rows = ShotKit.Get<StackPanel>(w, "_rows");
-            var row = rows.Children.OfType<Grid>().First(g => g.Children.OfType<TextBlock>().Any(t => t.Text == ExampleName));
+            // 줄은 명령 분류 묶음 상자 안: [이름, 키, 단추들]
+            var row = ShotKit.All<Grid>(rows).First(g => g.Children.OfType<TextBlock>().Any(t => t.Text == ExampleName));
             var buttons = ShotKit.All<Button>(row).ToList();
             k.Save(w, marks:
             [
                 PadLeft(ShotKit.FindText(w, "Shortcuts", ancestorControl: true), w, 10),
                 buttons[0], buttons[1], buttons[2], buttons[3],
-                PadLeft(row.Children[2], w, 12),
+                PadLeft(row.Children[1], w, 12),
                 search,
                 ShotKit.FindText(w, "Reset all", ancestorControl: true),
                 ShotKit.FindText(w, "Export (JSON)…", ancestorControl: true),
@@ -71,7 +72,7 @@ internal static class ShortcutsShots
         CloseMenu(k, main);
 
         // 도움말 > 단축키 목록, 그 창(기본값 목록).
-        var help = StartMenus.Open(k, main, 6);
+        var help = StartMenus.Open(k, main, 7);
         var list = StartMenus.Item(help, "Shortcut list");
         k.Save(main, "shortcuts-customize-4", crop: StartMenus.Crop(main, help), marks: [StartMenus.PopupRect(list, main)], firstNumber: 13);
         CloseMenu(k, main);
