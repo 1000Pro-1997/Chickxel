@@ -44,6 +44,22 @@ public sealed class ModelMaterial
     /// </summary>
     public float Roughness { get; init; } = 1;
 
+    /// <summary>바탕 색만 <paramref name="baseColor"/>로 바꾼 사본(나머지 성질은 모두 그대로 — 성질을 더하면 여기에도 더한다).</summary>
+    public ModelMaterial WithBaseColor(Vector4 baseColor) => new()
+    {
+        Name = Name,
+        BaseColor = baseColor,
+        Texture = Texture,
+        Repeat = Repeat,
+        AlphaMode = AlphaMode,
+        AlphaCutoff = AlphaCutoff,
+        Emissive = Emissive,
+        Unlit = Unlit,
+        Transmission = Transmission,
+        Ior = Ior,
+        Roughness = Roughness,
+    };
+
     public static ModelMaterial Default { get; } = new() { Name = "default", BaseColor = new Vector4(0.8f, 0.8f, 0.8f, 1) };
 }
 

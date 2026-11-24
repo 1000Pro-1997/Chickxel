@@ -30,15 +30,27 @@ public static class ModelColors
     }
 
     /// <summary>
-    /// <paramref name="map"/>(원래 바탕 색 → 새 색)대로 색을 바꾼 새 장면. 바뀐 색이 있는 묶음은 꼭짓점 색을 새로 만들어(재질 색 ÷ 새 색 — 재질은 그대로라
-    /// 같은 재질을 쓰는 다른 색에는 번지지 않음) 바꾸고, 나머지(노드·애니메이션·재질 등)는 그대로 나눠 쓴다. 바꿀 것이 없으면 <paramref name="scene"/> 그대로.
-    /// 재질 색보다 밝게는 못 만든다(꼭짓점 색은 0~1 — 넘는 만큼 잘림).
+    /// <paramref name="map"/>(원래 바탕 색 → 새 색)대로 색을 바꾼 새 장면. 새 색으로 그대로 바꾼다(원래 색에 물들이지 않음 — 노랑을 파랑으로 바꾸면 파랑):
+    /// 바뀐 색이 있는 묶음은 재질 색을 꼭짓점 색으로 옮기고(꼭짓점마다 원래 바탕 색, 바꿀 꼭짓점은 새 색) 바탕 색이 흰색인 재질 사본을 쓴다
+    /// (사본은 원래 재질마다 하나를 장면 재질 끝에 더함 — 원래 재질은 그대로라 같은 재질을 쓰는 다른 묶음에는 번지지 않음, 알파·빛·유리 등 다른 성질은 그대로).
+    /// 나머지(노드·애니메이션 등)는 그대로 나눠 쓰고, 바꿀 것이 없으면 <paramref name="scene"/> 그대로.
     /// </summary>
     public static ModelScene Recolor(ModelScene scene, IReadOnlyDictionary<Color32, Color32> map)
     {
         ArgumentNullException.ThrowIfNull(scene);
         ArgumentNullException.ThrowIfNull(map);
         if (map.Count == 0) return scene;
+        var materials = new List<ModelMaterial>(scene.Materials);
+        // 원래 재질 번호(-1 = 기본 재질) → 바탕 색을 흰색으로 둔 사본 번호
+        var whites = new Dictionary<int, int>();
+        int White(int material)
+        {
+            int key = (uint)material < (uint)scene.Materials.Count ? material : -1;
+            if (whites.TryGetValue(key, out int index)) return index;
+            var m = key >= 0 ? scene.Materials[key] : ModelMaterial.Default;
+            materials.Add(m.WithBaseColor(new Vector4(1, 1, 1, m.BaseColor.W)));
+            return whites[key] = materials.Count - 1;
+        }
         bool any = false;
         var meshes = new List<ModelMesh>(scene.Meshes.Count);
         foreach (var mesh in scene.Meshes)
@@ -47,7 +59,7 @@ public static class ModelColors
             bool changed = false;
             foreach (var p in mesh.Primitives)
             {
-                var q = Plain(scene, p, out var base_) ? RecolorPrimitive(p, base_, map) : p;
+                var q = Plain(scene, p, out var base_) ? RecolorPrimitive(p, base_, map, White) : p;
                 changed |= !ReferenceEquals(q, p);
                 prims.Add(q);
             }
@@ -61,14 +73,18 @@ public static class ModelColors
             Nodes = scene.Nodes,
             Roots = scene.Roots,
             Meshes = meshes,
-            Materials = scene.Materials,
+            Materials = materials,
             Skins = scene.Skins,
             Animations = scene.Animations,
             Warnings = scene.Warnings,
         };
     }
 
-    private static ModelPrimitive RecolorPrimitive(ModelPrimitive p, Vector4 base_, IReadOnlyDictionary<Color32, Color32> map)
+    /// <summary>
+    /// 바꿀 꼭짓점이 있으면: 꼭짓점 색 = 원래 바탕 색(재질 색 × 꼭짓점 색, 알파는 꼭짓점 알파) 또는 새 색(선형), 재질 = 흰 사본(<paramref name="white"/>).
+    /// 바꾸지 않은 꼭짓점은 재질 × 꼭짓점과 같은 값이라 그대로 보인다.
+    /// </summary>
+    private static ModelPrimitive RecolorPrimitive(ModelPrimitive p, Vector4 base_, IReadOnlyDictionary<Color32, Color32> map, Func<int, int> white)
     {
         int n = p.Positions.Length;
         var vc = VertexColors(p);
@@ -76,9 +92,16 @@ public static class ModelColors
         for (int i = 0; i < n; i++)
         {
             if (!map.TryGetValue(Key(base_, vc, i), out var target)) continue;
-            colors ??= vc is not null ? (Vector4[])vc.Clone() : Filled(n);
-            var t = new Vector3(OkLab.ToLinear(target.R), OkLab.ToLinear(target.G), OkLab.ToLinear(target.B));
-            colors[i] = new Vector4(Divide(t.X, base_.X), Divide(t.Y, base_.Y), Divide(t.Z, base_.Z), colors[i].W);
+            if (colors is null)
+            {
+                colors = new Vector4[n];
+                for (int j = 0; j < n; j++)
+                {
+                    var c = vc is not null ? vc[j] : Vector4.One;
+                    colors[j] = new Vector4(base_.X * c.X, base_.Y * c.Y, base_.Z * c.Z, c.W);
+                }
+            }
+            colors[i] = new Vector4(OkLab.ToLinear(target.R), OkLab.ToLinear(target.G), OkLab.ToLinear(target.B), colors[i].W);
         }
         if (colors is null) return p;
         return new ModelPrimitive
@@ -88,20 +111,11 @@ public static class ModelColors
             Uvs = p.Uvs,
             Colors = colors,
             Indices = p.Indices,
-            Material = p.Material,
+            Material = white(p.Material),
             Joints = p.Joints,
             Weights = p.Weights,
         };
     }
-
-    private static Vector4[] Filled(int n)
-    {
-        var a = new Vector4[n];
-        Array.Fill(a, Vector4.One);
-        return a;
-    }
-
-    private static float Divide(float target, float base_) => base_ > 1e-6f ? Math.Clamp(target / base_, 0, 1) : 0;
 
     /// <summary>그리기가 쓰는 꼭짓점 색(꼭짓점 수보다 짧으면 쓰지 않음 — 그리기와 같음).</summary>
     private static Vector4[]? VertexColors(ModelPrimitive p) => p.Colors is { } c && c.Length >= p.Positions.Length ? c : null;

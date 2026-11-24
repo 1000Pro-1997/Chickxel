@@ -62,10 +62,31 @@ public class ModelColorsTests
         var dark = new Color32(60, 60, 60);
         var recolored = ModelColors.Recolor(scene, new Dictionary<Color32, Color32> { [Red] = blue, [Gray] = dark });
         Assert.Equal([dark, blue], ModelColors.Used(recolored));
-        // 재질은 그대로(같은 재질의 다른 색에 번지지 않게 꼭짓점 색으로 바꿈), 텍스처 묶음과 원래 장면은 그대로.
-        Assert.Same(scene.Materials, recolored.Materials);
+        // 원래 재질은 그대로 앞에 두고(바꾼 묶음만 끝에 더한 흰 사본을 씀), 텍스처 묶음과 원래 장면은 그대로.
+        Assert.Equal(scene.Materials, recolored.Materials.Take(scene.Materials.Count));
         Assert.Same(scene.Meshes[0].Primitives[2], recolored.Meshes[0].Primitives[2]);
         Assert.Equal([Gray, Red], ModelColors.Used(scene));
         Assert.Same(scene, ModelColors.Recolor(scene, new Dictionary<Color32, Color32>()));
+    }
+
+    [Fact]
+    public void Recolor_ReplacesWithColorsTheMaterialHasNoneOf()
+    {
+        // 파랑이 전혀 없는 노란 재질: 예전에는 꼭짓점 색으로만 물들여 파랑을 만들 수 없었다.
+        var yellowMaterial = new ModelMaterial { BaseColor = new Vector4(1, 0.5f, 0, 1), Unlit = true };
+        var scene = new ModelScene
+        {
+            Nodes = [new ModelNode { Mesh = 0 }],
+            Roots = [0],
+            Meshes = [new ModelMesh { Primitives = [Triangles(2, null, 0)] }],
+            Materials = [yellowMaterial],
+        };
+        var yellow = ModelColors.Used(scene).Single();
+        var blue = new Color32(40, 90, 255);
+        var recolored = ModelColors.Recolor(scene, new Dictionary<Color32, Color32> { [yellow] = blue });
+        Assert.Equal([blue], ModelColors.Used(recolored));
+        var copy = recolored.Materials[recolored.Meshes[0].Primitives[0].Material];
+        Assert.True(copy.Unlit);
+        Assert.Equal(new Vector4(1, 0.5f, 0, 1), yellowMaterial.BaseColor);
     }
 }
