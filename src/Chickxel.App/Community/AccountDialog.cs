@@ -8,12 +8,16 @@ namespace Chickxel.App;
 /// <summary>
 /// Chickxel 계정 창(메뉴 줄 오른쪽 계정 단추, 도움말 메뉴 > Chickxel 계정…, 로그인이 필요한 올리기에서도 열림).
 /// 로그인하지 않았으면 Google·GitHub·Discord 단추: 누르면 브라우저에 로그인 쪽을 열고(그 제공자를 골라 둠) 127.0.0.1 되돌아오기를 기다린다.
-/// 로그인했으면 프로필 그림·이름·핸들, 이름·핸들 고치기(<c>PATCH /api/me</c>), 내 갤러리 쪽 열기, 로그아웃, 다른 계정 추가.
+/// 로그인했으면 맨 위 프로필 카드(장착한 레벨 보상으로 꾸민 프로필 그림·이름·칭호·레벨·경험치), 레벨 보상(새로 받은 보상·다음 보상·홈페이지에서 바꾸기 —
+/// 창을 열면 새 보상을 본 것으로 기억해 계정 단추의 반짝임이 멈춤), 이름·핸들 고치기(<c>PATCH /api/me</c>), 내 갤러리 쪽 열기, 로그아웃, 다른 계정 추가.
 /// 이 컴퓨터에 로그인해 둔 다른 계정은 아래 목록에서 바꾸거나 로그아웃한다. 창을 닫으면 기다리던 로그인은 취소된다.
 /// </summary>
 public sealed class AccountDialog : DialogBase
 {
-    private readonly StackPanel _view = new() { Spacing = 6, Width = 380 };
+    private const double ViewWidth = 420;
+    private readonly StackPanel _view = new() { Spacing = 8, Width = ViewWidth };
+    /// <summary>계정마다 이 창을 열 때까지 본 보상 레벨(그보다 높은 레벨의 보상이 이 창에서 "새 보상"으로 보임).</summary>
+    private readonly Dictionary<string, int> _seenAtOpen = new();
     private readonly TextBlock _status = new() { TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.DimTextBrush, IsVisible = false };
     private readonly string? _reason;
     private CancellationTokenSource? _work;
@@ -163,14 +167,14 @@ public sealed class AccountDialog : DialogBase
 
     private void BuildSignedIn(CommunityUser user)
     {
-        // 프로필 머리와 레벨·경험치 막대는 한 칸(대상 도움말·가이드 그림이 칸 순서를 씀)
-        var head = new StackPanel { Spacing = 8, Children = { IdentityBadge.User(user, 56, handle: IdentityHandle.Below, bold: true) } };
-        if (LevelChip.Progress(user, 240) is { } level)
+        // 프로필 카드(프로필 머리와 레벨·경험치 막대 — 대상 도움말·가이드 그림이 칸 순서를 씀)
+        _view.Children.Add(RewardViews.ProfileCard(user, ViewWidth).HelpAt("start-account", anchor: "The signed-in account's picture"));
+        if (user.Level > 0)
         {
-            level.Margin = new Thickness(66, 0, 0, 0);
-            head.Children.Add(level);
+            if (!_seenAtOpen.TryGetValue(user.Id, out int seen)) _seenAtOpen[user.Id] = seen = RewardNotice.SeenLevel(user);
+            _view.Children.Add(RewardViews.Section(this, user, LevelRewards.Between(seen, user.Level).ToList()));
+            RewardNotice.MarkSeen(user);
         }
-        _view.Children.Add(head.HelpAt("start-account", anchor: "The signed-in account's picture"));
 
         var name = new TextBox { Text = user.Name, Width = 240, MaxLength = CommunityRules.MaxNameLength };
         // 에셋 패키지를 올린 뒤에는 서버가 핸들을 바꾸지 않으므로(패키지 ID·작성자 ID가 핸들) 고칠 수 없는 칸으로 보인다.

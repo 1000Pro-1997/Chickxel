@@ -359,6 +359,9 @@ public sealed class AppSettings
     /// <summary>에셋 게시 창이 기억하는 계정 표시 이름과 이 컴퓨터에서 올린 패키지(<see cref="AssetPublishDialog"/>).</summary>
     public AssetPublishSettings AssetPublish { get; set; } = new();
 
+    /// <summary>계정마다(계정 ID) 레벨 보상을 어느 레벨까지 봤는지 — 그보다 높으면 계정 단추·메뉴가 반짝여 새 보상을 알린다(<see cref="RewardNotice"/>). 없으면 1(아직 하나도 안 봄).</summary>
+    public Dictionary<string, int> RewardsSeenLevel { get; set; } = new();
+
     /// <summary>처음 실행할 때 쓰는 기본 팔레트(DawnBringer 32).</summary>
     public const string DefaultPaletteName = "DawnBringer 32";
 
@@ -495,7 +498,7 @@ public sealed class AppSettings
         nameof(ChatX), nameof(ChatY), nameof(ChatWidth), nameof(ChatHeight), nameof(ChatOpen),
         nameof(ExportX), nameof(ExportY), nameof(ExportWidth), nameof(ExportHeight), nameof(ExportSplit), nameof(ExportCollapsed),
         nameof(Palettes), nameof(RecentColors), nameof(Pixelate), nameof(PixelateSettings), nameof(AssetPublish), nameof(ScriptTrust),
-        nameof(ChatLastOpen), nameof(EffectMakerChatLastOpen), nameof(ClaudeResolvedModels),
+        nameof(ChatLastOpen), nameof(EffectMakerChatLastOpen), nameof(ClaudeResolvedModels), nameof(RewardsSeenLevel),
     ];
 
     /// <summary>

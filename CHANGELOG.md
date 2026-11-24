@@ -7,7 +7,18 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 ### Pixel-art level badge that gets flashier as you level up
 - The `Lv N` badge next to account names is now drawn as pixel art, with a pixel font and a pixel frame.
 - Higher levels animate more: bronze and silver get a passing shine, gold adds sparkles, crystal gets flowing colors and a glowing edge, and level 50+ has a flowing rainbow, a rainbow glow, more sparkles and rising embers.
-- Within a tier, more sparkles appear as the level rises; levels 1–4 stay still.
+- Levels 1–4 stay still; the tier look is what you get until you equip a badge reward.
+
+### Level rewards: one reward every level from 2 to 50
+- Each level from 2 to 50 unlocks one reward: a title, a level badge skin, a small or large pixel frame around your profile picture, an effect around it, or a profile card.
+- When you level up, the level badge on the account button sparkles and the account menu's Manage account shows how many rewards are new.
+- The account window now opens with your profile card and a Level rewards section: what you just unlocked, the next reward and how much XP it needs, and a Change button that opens chickxel.com to equip them.
+- Gallery art and asset packages no longer have a daily XP limit; liking others still counts up to 3 a day.
+
+### Faster startup
+- The window appears sooner: installed assets are read in the background while the window is being built, instead of before it.
+- The last session's tabs, the file browser folder and the Unity Hub list now load right after the first frame, so many open tabs no longer delay the window.
+- Release builds are precompiled (ReadyToRun), which cuts about a third of a second from startup.
 
 ## v1.14.151 (2026-11-23)
 

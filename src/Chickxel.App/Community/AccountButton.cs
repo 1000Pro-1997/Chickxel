@@ -42,19 +42,24 @@ internal sealed class AccountButton : Button
     {
         base.OnAttachedToVisualTree(e);
         AppCommunity.Client.AccountsChanged += OnAccountsChanged;
+        RewardNotice.Changed += Update;
         Update();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         AppCommunity.Client.AccountsChanged -= OnAccountsChanged;
+        RewardNotice.Changed -= Update;
         base.OnDetachedFromVisualTree(e);
     }
 
     // 요청을 마친 스레드에서 올 수 있다.
     private void OnAccountsChanged() => Dispatcher.UIThread.Post(Update);
 
-    /// <summary>지금 계정으로 그림과 이름을 다시 그린다(이름은 확인한 정보, 없으면 저장해 둔 정보; 프로필 그림은 이번 실행에서 확인한 뒤에만).</summary>
+    /// <summary>
+    /// 지금 계정으로 그림과 이름을 다시 그린다(이름은 확인한 정보, 없으면 저장해 둔 정보; 프로필 그림은 이번 실행에서 확인한 뒤에만).
+    /// 아직 보지 않은 새 레벨 보상이 있으면 레벨 배지가 반짝인다(<see cref="RewardNotice"/>).
+    /// </summary>
     private void Update()
     {
         var client = AppCommunity.Client;
@@ -62,7 +67,9 @@ internal sealed class AccountButton : Button
         _content.Children.Clear();
         if (saved.Current is { } current)
         {
-            _content.Children.Add(IdentityBadge.User(client.User ?? current.User, AvatarSize, loadPicture: client.User is not null, maxWidth: BadgeMaxWidth));
+            var user = client.User ?? current.User;
+            _content.Children.Add(IdentityBadge.User(user, AvatarSize, loadPicture: client.User is not null, maxWidth: BadgeMaxWidth,
+                rewardAttention: RewardNotice.HasNew(user)));
         }
         else
         {
@@ -98,7 +105,11 @@ internal sealed class AccountButton : Button
         items.Add(Item(UiStrings.Account_AddAccount, Ui.Icon(VectorIcon.UserPlus, 14), () => AccountDialog.Show(_owner, addAccount: true)));
         if (saved.Current is not null)
         {
-            items.Add(Item(UiStrings.Account_Manage, Ui.Icon(VectorIcon.CircleUser, 14), () => AccountDialog.Show(_owner)));
+            int news = RewardNotice.New(client.User ?? saved.Current.User).Count;
+            items.Add(news > 0
+                ? Item(Ui.Row(new TextBlock { Text = UiStrings.Account_Manage, VerticalAlignment = VerticalAlignment.Center }, NewRewardsPill(news)),
+                    new PixelArtView(new RewardStarArt(), 2), () => AccountDialog.Show(_owner))
+                : Item(UiStrings.Account_Manage, Ui.Icon(VectorIcon.CircleUser, 14), () => AccountDialog.Show(_owner)));
             items.Add(Item(UiStrings.Account_SignOut, Ui.Icon(VectorIcon.LogOut, 14), () => _ = client.SignOutAsync()));
         }
         else
@@ -122,6 +133,22 @@ internal sealed class AccountButton : Button
         }
         return row;
     }
+
+    /// <summary>"새 보상 N개" 알약(금빛 바탕).</summary>
+    internal static Border NewRewardsPill(int count) => new()
+    {
+        Background = new SolidColorBrush(Color.Parse("#FFD54A")),
+        CornerRadius = new CornerRadius(8),
+        Padding = new Thickness(6, 0, 6, 1),
+        VerticalAlignment = VerticalAlignment.Center,
+        Child = new TextBlock
+        {
+            Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.Account_NewRewards, count),
+            Foreground = new SolidColorBrush(Color.Parse("#3A2600")),
+            FontWeight = FontWeight.Bold,
+            FontSize = AppTheme.SmallFontSize,
+        },
+    };
 
     private static MenuItem Item(object header, Control? icon, Action action)
     {

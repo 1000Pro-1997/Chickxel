@@ -135,6 +135,9 @@ public sealed class CommunityClient
 
     public Uri UserPageUrl(string handle) => new(BaseUrl, "gallery/u/" + Uri.EscapeDataString(handle));
 
+    /// <summary>내 계정 쪽의 레벨 보상 칸(장착을 바꾸는 곳 — 로그인하지 않았으면 사이트가 로그인 쪽으로 보냄).</summary>
+    public Uri RewardsPageUrl() => new(BaseUrl, "me#rewards");
+
     /// <summary>사이트 기준 경로(<c>/files/…</c>)나 절대 주소를 절대 주소로. HTTPS(또는 개발 서버와 같은 사이트)가 아니면 null.</summary>
     public Uri? Resolve(string? url)
     {

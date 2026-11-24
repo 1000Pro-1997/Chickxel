@@ -8,13 +8,16 @@ namespace Chickxel.Core.Community;
 /// 커뮤니티 계정 하나(<c>User</c> JSON): ID, 핸들(에셋 패키지 작성자 ID와 같음), 표시 이름, 프로필 그림 주소(없으면 null),
 /// 만든 때(ISO 8601), 관리자인지·핸들이 잠겼는지(에셋 패키지를 올린 뒤 — 서버가 핸들 바꾸기를 거절함)(둘 다 내 정보일 때만 옴),
 /// 공유로 쌓은 레벨(<c>level</c>, 0 = 모름 — 예전 서버)과 내 정보(<c>GET /api/me</c>)일 때만 오는 경험치·지금 레벨 시작 XP·다음 레벨 XP
-/// (예전 서버면 null, <see cref="CommunityLevel"/>).
+/// (예전 서버면 null, <see cref="CommunityLevel"/>), 장착한 레벨 보상(<c>rewards</c> — 없으면 <see cref="ProfileRewards.None"/>).
 /// </summary>
 public sealed record CommunityUser(string Id, string Handle, string Name, string? AvatarUrl, string CreatedAt, bool IsAdmin, bool HandleLocked = false,
-    int Level = 0, int Xp = 0, int LevelStartXp = 0, int? NextLevelXp = null)
+    int Level = 0, int Xp = 0, int LevelStartXp = 0, int? NextLevelXp = null, ProfileRewards? Rewards = null)
 {
     /// <summary>경험치 정보가 있다(내 정보 — 레벨과 다음 레벨 XP가 옴). 레벨만 온 다른 사람 정보면 false.</summary>
     public bool HasXp => Level > 0 && NextLevelXp is not null;
+
+    /// <summary>장착한 보상(없으면 빈 것).</summary>
+    public ProfileRewards Equipped => Rewards ?? ProfileRewards.None;
 
     internal static CommunityUser Read(JsonNode? node)
     {
@@ -22,7 +25,7 @@ public sealed record CommunityUser(string Id, string Handle, string Name, string
         return new CommunityUser(
             CommunityJson.Required(o, "id"), CommunityJson.Required(o, "handle"), CommunityJson.Required(o, "name"),
             CommunityJson.String(o["avatarUrl"]), CommunityJson.String(o["createdAt"]) ?? "",
-            Flag(o["isAdmin"]), Flag(o["handleLocked"]))
+            Flag(o["isAdmin"]), Flag(o["handleLocked"]), Rewards: ProfileRewards.Read(o["rewards"]) is { IsEmpty: false } rewards ? rewards : null)
             .WithLevel(o);
     }
 
@@ -54,6 +57,7 @@ public sealed record CommunityUser(string Id, string Handle, string Name, string
             o["levelStartXp"] = LevelStartXp;
             if (NextLevelXp is { } next) o["nextLevelXp"] = next;
         }
+        if (Rewards is { IsEmpty: false } rewards) o["rewards"] = rewards.ToJson();
         return o;
     }
 }

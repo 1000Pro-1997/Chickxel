@@ -52,7 +52,7 @@ internal static class CommunityShots
         typeof(AppCommunity).GetField("_client", Any)!.SetValue(null, client);
     }
 
-    /// <summary>1 = 로그인 전(로그인 단추), 2 = 로그인한 뒤(① 계정 ② 레벨·경험치 ③ 프로필 ④ 단추 ⑤ 다른 계정).</summary>
+    /// <summary>1 = 로그인 전(로그인 단추), 2 = 로그인한 뒤(① 계정 ② 레벨·경험치 ③ 레벨 보상 ④ 프로필 ⑤ 단추 ⑥ 다른 계정).</summary>
     [Shot("start-account")]
     public static void Account(ShotKit k)
     {
@@ -65,11 +65,11 @@ internal static class CommunityShots
         {
             ShotKit.Pump(600);
             var view = ShotKit.Get<StackPanel>(w, "_view");
-            // 계정 줄(프로필 배지 + 레벨 줄), 프로필 묶음, 단추 두 줄, 다른 계정 묶음
+            // 프로필 카드(프로필 배지 + 레벨 줄), 레벨 보상, 프로필 묶음, 단추 두 줄, 다른 계정 묶음
             Rect Part(int i) => ShotKit.Bounds(view.Children[i], w).Inflate(3);
-            var head = (StackPanel)view.Children[0];
+            var head = ((Panel)((Border)view.Children[0]).Child!).Children.OfType<StackPanel>().First();
             Rect Head(int i) => ShotKit.Bounds(head.Children[i], w).Inflate(3);
-            k.Save(w, "start-account-2", marks: [Head(0), Head(1), Part(1), Part(2).Union(Part(3)), Part(4)]);
+            k.Save(w, "start-account-2", marks: [Head(0), Head(1), Part(1), Part(2), Part(3).Union(Part(4)), Part(5)]);
         }, settleMs: 700);
     }
 

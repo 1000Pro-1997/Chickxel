@@ -35,25 +35,26 @@ public static class IdentityBadge
     {
         var avatar = Circle(size);
         AuthorAvatarView.Show(avatar, author);
-        return Build(avatar, author?.Name ?? fallback ?? "", author?.Id, size, handle, bold, dim, fontSize, caption, maxWidth, author is null ? 0 : level);
+        return Build(avatar, author?.Name ?? fallback ?? "", author?.Id, size, handle, bold, dim, fontSize, caption, maxWidth, author is null ? 0 : level, ProfileRewards.None, false);
     }
 
     /// <summary>
     /// 계정 배지. <paramref name="user"/>가 null이면 사람 아이콘과 <paramref name="fallback"/>(없으면 "확인하지 않은 계정").
     /// <paramref name="loadPicture"/>가 false면 이름만 그 계정 것으로 보이고 그림은 받지 않는다(확인 전 계정 단추).
+    /// 장착한 레벨 보상(테두리·효과·배지 모양, 큰 배지면 칭호)으로 꾸민다. <paramref name="rewardAttention"/>이면 레벨 배지가 반짝여 새 보상을 알린다.
     /// </summary>
     public static Control User(CommunityUser? user, double size, bool loadPicture = true, string? fallback = null,
         IdentityHandle handle = IdentityHandle.None, bool bold = false, bool dim = false, double fontSize = double.NaN, string? caption = null,
-        double maxWidth = double.PositiveInfinity)
+        double maxWidth = double.PositiveInfinity, bool rewardAttention = false)
     {
         var avatar = Circle(size);
         if (loadPicture) AppCommunity.ShowAvatar(avatar, user);
         string name = user?.Name ?? fallback ?? AppCommunity.DisplayName(null);
-        return Build(avatar, name, user?.Handle, size, handle, bold, dim, fontSize, caption, maxWidth, user?.Level ?? 0);
+        return Build(avatar, name, user?.Handle, size, handle, bold, dim, fontSize, caption, maxWidth, user?.Level ?? 0, user?.Equipped ?? ProfileRewards.None, rewardAttention);
     }
 
     /// <summary>둥근 그림 칸(처음엔 사람 아이콘 — 그림을 받으면 그 그림으로 바뀜).</summary>
-    private static Border Circle(double size)
+    internal static Border Circle(double size)
     {
         double icon = Math.Round(size * 0.72);
         return new Border
@@ -66,10 +67,11 @@ public static class IdentityBadge
     }
 
     private static Control Build(Border avatar, string name, string? handle, double size, IdentityHandle handlePlace,
-        bool bold, bool dim, double fontSize, string? caption, double maxWidth, int level)
+        bool bold, bool dim, double fontSize, string? caption, double maxWidth, int level, ProfileRewards rewards, bool attention)
     {
         bool large = size >= LargeSize;
         avatar.Margin = new Thickness(0, 0, Math.Clamp(Math.Round(size * 0.3), 4, 10), 0);
+        var picture = ProfileAvatar.Decorate(avatar, size, rewards, level);
         var line = new TrimmedText();
         if (dim) line.Foreground = AppTheme.DimTextBrush;
         if (!double.IsNaN(fontSize)) line.FontSize = fontSize;
@@ -82,12 +84,20 @@ public static class IdentityBadge
             line.Add((line.FullText.Length > 0 ? " · " : "") + caption, FontWeight.Normal, AppTheme.DimTextBrush);
 
         Control text = line;
-        if (hasHandle && handlePlace == IdentityHandle.Below)
+        // 큰 배지는 이름 아래 칭호(장착했으면)
+        var title = large ? rewards.Equipped(RewardSlot.Title, level) : null;
+        if (title is not null || (hasHandle && handlePlace == IdentityHandle.Below))
         {
-            var second = new TrimmedText { Foreground = AppTheme.DimTextBrush };
-            if (!large) second.FontSize = AppTheme.SmallFontSize;
-            second.Add("@" + handle, FontWeight.Normal, null);
-            text = new StackPanel { Spacing = large ? 2 : 0, VerticalAlignment = VerticalAlignment.Center, Children = { line, second } };
+            var lines = new StackPanel { Spacing = large ? 2 : 0, VerticalAlignment = VerticalAlignment.Center, Children = { line } };
+            if (title is not null) lines.Children.Add(ProfileAvatar.Title(title, AppTheme.FontSize));
+            if (hasHandle && handlePlace == IdentityHandle.Below)
+            {
+                var second = new TrimmedText { Foreground = AppTheme.DimTextBrush };
+                if (!large) second.FontSize = AppTheme.SmallFontSize;
+                second.Add("@" + handle, FontWeight.Normal, null);
+                lines.Children.Add(second);
+            }
+            text = lines;
         }
         Grid.SetColumn(text, 1);
         var grid = new Grid
@@ -96,11 +106,11 @@ public static class IdentityBadge
             HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Center,
             MaxWidth = maxWidth,
-            Children = { avatar, text },
+            Children = { picture, text },
         };
         if (level > 0)
         {
-            var chip = LevelChip.Create(level, large);
+            var chip = LevelChip.Create(level, large, rewards.Equipped(RewardSlot.Badge, level)?.Id, attention);
             // 핸들이 아래 줄이면 이름 줄 높이에 맞춘다
             bool twoLines = text is StackPanel;
             chip.Margin = new Thickness(5, twoLines ? (large ? 4 : 1) : 0, 0, 0);
