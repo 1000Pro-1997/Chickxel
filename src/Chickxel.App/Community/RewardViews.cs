@@ -6,7 +6,7 @@ namespace Chickxel.App;
 
 /// <summary>
 /// 계정 창의 레벨 보상 화면 조각: 프로필 카드(장착한 카드 바탕 위 큰 프로필 그림·이름·칭호·배지·경험치), 보상 상자(칸마다 실제 모양 미리보기 — 내 프로필 그림·내 레벨로),
-/// 레벨 보상 묶음(새로 받은 보상, 다음 보상, 받은 수, 홈페이지에서 바꾸기).
+/// 레벨 보상 묶음(이번 레벨 보상, 다음 보상, 받은 수, 홈페이지에서 바꾸기).
 /// </summary>
 internal static class RewardViews
 {
@@ -50,39 +50,27 @@ internal static class RewardViews
     }
 
     /// <summary>
-    /// 레벨 보상 묶음: 새로 받은 보상(<paramref name="fresh"/> — 금빛 상자, 많으면 앞 7개 + 나머지 수), 다음 보상과 남은 경험치, 받은 수와 홈페이지에서 바꾸기 단추.
+    /// 레벨 보상 묶음: 이번 레벨 보상(지금 레벨까지 받은 것 중 가장 최근 하나 — 아직 안 본 것이면 금빛 상자·별), 다음 보상과 남은 경험치,
+    /// 받은 수와 홈페이지에서 바꾸기 단추. 지난 보상은 늘어놓지 않는다(전부는 홈페이지 레벨 보상 쪽에서).
     /// </summary>
-    public static Control Section(Window owner, CommunityUser user, IReadOnlyList<LevelReward> fresh)
+    public static Control Section(Window owner, CommunityUser user, int seenLevel)
     {
         var body = new StackPanel { Spacing = 10 };
-        if (fresh.Count > 0)
+        if (LevelRewards.All.LastOrDefault(r => r.Level <= user.Level) is { } current)
         {
-            var title = Ui.Row(new PixelArtView(new RewardStarArt(), 2), new TextBlock
-            {
-                Text = UiStrings.Account_NewRewardsTitle, FontWeight = FontWeight.Bold, VerticalAlignment = VerticalAlignment.Center,
-            }, AccountButton.NewRewardsPill(fresh.Count));
-            var tiles = new WrapPanel { Orientation = Orientation.Horizontal };
-            // 높은 레벨에서 받은 것부터
-            foreach (var reward in fresh.Reverse().Take(fresh.Count > 8 ? 7 : 8)) tiles.Children.Add(Tile(user, reward, isNew: true));
-            if (fresh.Count > 8) tiles.Children.Add(MoreTile(fresh.Count - 7));
-            body.Children.Add(Ui.Stack(title, tiles));
+            bool isNew = current.Level > seenLevel;
+            var title = new TextBlock { Text = F(UiStrings.Account_CurrentReward, current.Level), FontWeight = FontWeight.Bold, VerticalAlignment = VerticalAlignment.Center };
+            body.Children.Add(Ui.Row(Tile(user, current, isNew: isNew), Info(isNew ? Ui.Row(new PixelArtView(new RewardStarArt(), 2), title) : title, current)));
         }
 
         if (LevelRewards.Next(user.Level) is { } next)
         {
-            long need = Math.Max(0, CommunityLevel.StartXp(next.Level) - user.Xp);
-            var info = new StackPanel
-            {
-                Spacing = 3,
-                VerticalAlignment = VerticalAlignment.Center,
-                Children =
-                {
-                    new TextBlock { Text = F(UiStrings.Account_NextReward, next.Level), FontWeight = FontWeight.Bold },
-                    new TextBlock { Text = next.Name + " · " + LevelRewards.SlotName(next.Slot), Foreground = AppTheme.TextBrush },
-                },
-            };
+            var info = Info(new TextBlock { Text = F(UiStrings.Account_NextReward, next.Level), FontWeight = FontWeight.Bold }, next);
             if (user.HasXp)
+            {
+                long need = Math.Max(0, CommunityLevel.StartXp(next.Level) - user.Xp);
                 info.Children.Add(new TextBlock { Text = F(UiStrings.Account_NextRewardXp, need), Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize });
+            }
             body.Children.Add(Ui.Row(Tile(user, next, locked: true), info));
         }
         else body.Children.Add(new TextBlock { Text = UiStrings.Account_AllRewardsDone, Foreground = AppTheme.DimTextBrush });
@@ -101,6 +89,14 @@ internal static class RewardViews
         body.Children.Add(footer);
         return Ui.Group(UiStrings.Account_Rewards, body);
     }
+
+    /// <summary>상자 옆 설명: 제목 줄, 보상 이름 · 칸.</summary>
+    private static StackPanel Info(Control title, LevelReward reward) => new()
+    {
+        Spacing = 3,
+        VerticalAlignment = VerticalAlignment.Center,
+        Children = { title, new TextBlock { Text = reward.Name + " · " + LevelRewards.SlotName(reward.Slot), Foreground = AppTheme.TextBrush } },
+    };
 
     /// <summary>
     /// 보상 상자 하나: 위에 실제 모양 미리보기(칭호 글, 내 레벨 배지, 내 프로필 그림에 테두리·효과, 내 이름에 이름 효과, 작은 카드), 아래 이름과 "Lv N · 칸".
@@ -139,22 +135,6 @@ internal static class RewardViews
         ToolTip.SetTip(tile, reward.Name + " — " + F(UiStrings.Account_RewardLevel, reward.Level, LevelRewards.SlotName(reward.Slot)));
         return tile;
     }
-
-    private static Control MoreTile(int more) => new Border
-    {
-        Width = TileWidth,
-        Height = PreviewHeight + 44,
-        Margin = new Thickness(0, 0, 6, 6),
-        CornerRadius = new CornerRadius(6),
-        Background = AppTheme.InputBrush,
-        BorderBrush = AppTheme.BorderBrush,
-        BorderThickness = new Thickness(1),
-        Child = new TextBlock
-        {
-            Text = F(UiStrings.Account_RewardMore, more), FontSize = 18, FontWeight = FontWeight.Bold, Foreground = AppTheme.DimTextBrush,
-            HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
-        },
-    };
 
     /// <summary>칸별 미리보기(내 프로필 그림·내 이름·내 레벨로 — 장착하면 보일 모양 그대로). 테두리는 큰 프로필 그림의 큰 모양으로 보인다.</summary>
     private static Control Preview(CommunityUser user, LevelReward reward)

@@ -172,7 +172,7 @@ public sealed class AccountDialog : DialogBase
         if (user.Level > 0)
         {
             if (!_seenAtOpen.TryGetValue(user.Id, out int seen)) _seenAtOpen[user.Id] = seen = RewardNotice.SeenLevel(user);
-            _view.Children.Add(RewardViews.Section(this, user, LevelRewards.Between(seen, user.Level).ToList()));
+            _view.Children.Add(RewardViews.Section(this, user, seen));
             RewardNotice.MarkSeen(user);
         }
 
