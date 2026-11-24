@@ -28,14 +28,17 @@ public static class IdentityBadge
 
     /// <summary>
     /// 게시 작성자 배지. <paramref name="author"/>가 null이면(로컬 에셋 등) 사람 아이콘과 <paramref name="fallback"/>을 보인다.
-    /// 이름은 작성자 이름, 없으면 <paramref name="fallback"/>. <paramref name="level"/>(온라인 목록이 알려 준 작성자 레벨)이 0보다 크면 레벨 칩.
+    /// 이름은 작성자 이름, 없으면 <paramref name="fallback"/>. <paramref name="level"/>(온라인 목록이 알려 준 작성자 레벨)이 0보다 크면 레벨 배지,
+    /// <paramref name="rewards"/>(온라인 목록이 알려 준 장착 보상)가 있으면 계정 배지와 같이 테두리·배지 모양·칭호로 꾸민다.
     /// </summary>
     public static Control Author(AssetAuthor? author, double size, string? fallback = null, IdentityHandle handle = IdentityHandle.None,
-        bool bold = false, bool dim = false, double fontSize = double.NaN, string? caption = null, double maxWidth = double.PositiveInfinity, int level = 0)
+        bool bold = false, bool dim = false, double fontSize = double.NaN, string? caption = null, double maxWidth = double.PositiveInfinity, int level = 0,
+        ProfileRewards? rewards = null)
     {
         var avatar = Circle(size);
         AuthorAvatarView.Show(avatar, author);
-        return Build(avatar, author?.Name ?? fallback ?? "", author?.Id, size, handle, bold, dim, fontSize, caption, maxWidth, author is null ? 0 : level, ProfileRewards.None, false);
+        return Build(avatar, author?.Name ?? fallback ?? "", author?.Id, size, handle, bold, dim, fontSize, caption, maxWidth,
+            author is null ? 0 : level, author is null ? ProfileRewards.None : rewards ?? ProfileRewards.None, false);
     }
 
     /// <summary>

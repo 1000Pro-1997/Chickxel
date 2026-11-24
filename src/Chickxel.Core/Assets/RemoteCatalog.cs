@@ -39,6 +39,8 @@ public sealed record RemoteCatalogEntry
     public AssetAuthor Author { get; init; } = new("", "");
     /// <summary>작성자 계정의 공유 레벨(<c>author.level</c>, 0 = 모름 — 예전 카탈로그, <see cref="Community.CommunityLevel"/>).</summary>
     public int AuthorLevel { get; init; }
+    /// <summary>작성자가 장착한 레벨 보상(<c>author.rewards</c>, 없으면 null — 작성자 배지의 테두리·배지 모양).</summary>
+    public Community.ProfileRewards? AuthorRewards { get; init; }
     public string License { get; init; } = "";
     /// <summary>에셋 종류(<see cref="AssetKinds"/>의 kind 값) → 개수. 앱이 모르는 종류도 그대로 남는다(호환성 판단에 씀).</summary>
     public IReadOnlyDictionary<string, int> Kinds { get; init; } = new Dictionary<string, int>();
@@ -192,6 +194,7 @@ public static class RemoteCatalogFormat
             Id = id, Version = version, Name = name.Trim(), Summary = summary.Trim(), Translations = translations, Tags = tags,
             Author = new AssetAuthor(authorId, authorName.Trim(), authorUrl, avatarUrl),
             AuthorLevel = AssetJson.TryInt(a["level"], out int level) ? Math.Max(0, level) : 0,
+            AuthorRewards = Community.ProfileRewards.Read(a["rewards"]) is { IsEmpty: false } rewards ? rewards : null,
             License = license, Kinds = kinds, MinAppVersion = minApp,
             Package = package, Preview = preview, Published = published, Updated = updated, Review = review,
         };
@@ -234,6 +237,7 @@ public static class RemoteCatalogFormat
         if (entry.Author.Url is { Length: > 0 } url) author["url"] = url;
         if (entry.Author.AvatarUrl is { Length: > 0 } avatarUrl) author["avatarUrl"] = avatarUrl;
         if (entry.AuthorLevel > 0) author["level"] = entry.AuthorLevel;
+        if (entry.AuthorRewards is { IsEmpty: false } rewards) author["rewards"] = rewards.ToJson();
         var kinds = new JsonObject();
         foreach (var (kind, count) in entry.Kinds.OrderBy(pair => pair.Key, StringComparer.Ordinal)) kinds[kind] = count;
         var json = new JsonObject
