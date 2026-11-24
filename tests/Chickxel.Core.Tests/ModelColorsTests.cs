@@ -89,4 +89,18 @@ public class ModelColorsTests
         Assert.True(copy.Unlit);
         Assert.Equal(new Vector4(1, 0.5f, 0, 1), yellowMaterial.BaseColor);
     }
+
+    [Fact]
+    public void Recolor_WithTransparentColorMakesThatPartTranslucent()
+    {
+        var scene = Scene();
+        var glassBlue = new Color32(0, 0, 255, 128);
+        var recolored = ModelColors.Recolor(scene, new Dictionary<Color32, Color32> { [Red] = glassBlue });
+        var p = recolored.Meshes[0].Primitives[0];
+        Assert.Equal(ModelAlphaMode.Blend, recolored.Materials[p.Material].AlphaMode);
+        Assert.All(p.Colors!, c => Assert.Equal(128 / 255f, c.W, 3));
+        // 투명도 없이 바꾼 회색 묶음은 반투명이 되지 않는다
+        var gray = ModelColors.Recolor(scene, new Dictionary<Color32, Color32> { [Gray] = new Color32(60, 60, 60) });
+        Assert.Equal(ModelAlphaMode.Opaque, gray.Materials[gray.Meshes[0].Primitives[1].Material].AlphaMode);
+    }
 }

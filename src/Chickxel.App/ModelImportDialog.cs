@@ -1033,7 +1033,8 @@ public sealed class ModelImportDialog : DialogBase
     /// <summary>원래 색 <paramref name="original"/>을 <paramref name="to"/>로(null이거나 원래 색과 같으면 바꾸기를 뺌) 바꾸고 다시 그린다.</summary>
     private void SetSourceColor(Color32 original, Color32? to)
     {
-        if (to is { } c && c.WithAlpha(255) != original) _colorMap[original] = c.WithAlpha(255);
+        // 투명도(알파)도 그대로 — 알파가 255보다 작으면 그 부분이 반투명으로 그려진다
+        if (to is { } c && c != original) _colorMap[original] = c;
         else _colorMap.Remove(original);
         ApplyColors();
         Schedule();
