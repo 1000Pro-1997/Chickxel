@@ -2,6 +2,27 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.153 (2026-11-25)
+
+### Effect Maker saves automatically
+- Every edit is saved on its own a moment after you stop typing; while the source has errors it waits until they are fixed, so the last working version stays saved.
+- Switching to another effect or closing the window saves first, and only asks when the source can't be saved because of errors.
+- The Save button is now a red Undo button that steps back through source edits (the same history as Ctrl+Z, up to 300 steps). Ctrl+S still saves right away.
+- Opening the Effect Maker from the AI menu now starts on a new script, ready to write.
+
+### Update effects from the effects window
+- The bottom of the Effects tab has the same Get more and Effect Maker buttons as the effect list panel, in place of Open Store.
+- Check all effects for updates downloads the online list (with a progress bar and cancel), counts new versions of effects and effect presets you got from the Store, and Update all installs them one by one.
+- When the selected script effect in the list comes from a Store effect that has a newer version, an Update button appears next to Delete; it switches the effect to the new version and keeps the setting values the new version still has, plus the range, easing and repeat.
+
+### Publish window edits your language's name
+- When your app language differs from the package's base language, the Name and Short description fields edit the translation for your language; empty fields show the base text dimmed.
+- The base-language name and description move to the top of the Languages window, and the other-languages line lists the base language first, like "한국어 (base)".
+
+### AI writes effects for the fast path
+- The effect-writing rules now explain how the fast path works (variables hold only numbers and booleans) and which patterns to use, such as typed arrays instead of array literals and choice settings compared with strings directly.
+- The Effect Maker AI keeps rewriting until the effect runs on the fast path, and stays on the slower interpreter only when the effect truly needs it.
+
 ## v1.14.152 (2026-11-24)
 
 ### Pixel-art level badge
