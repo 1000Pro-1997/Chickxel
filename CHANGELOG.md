@@ -14,7 +14,7 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 - Frames come as sets: one frame has a small look for small pictures and a matching large look for your profile header.
 - Every slot is on Auto by default and wears the best reward you have unlocked; you can pick another one or none on chickxel.com.
 - When you level up, the level badge on the account button sparkles and Manage account shows how many rewards are new; the account window shows your profile card, what you just unlocked and the next reward, and Change opens the rewards page.
-- Gallery art and asset packages no longer have a daily XP limit; liking others still counts up to 3 a day.
+- Leveling up is faster: each level needs 1 more XP than the last (10, 11, 12 …) instead of 2 more, and gallery art and asset packages no longer have a daily XP limit (liking others still counts up to 3 a day).
 
 ### Faster startup
 - The window appears sooner: installed assets are read in the background while the window is being built, instead of before it.

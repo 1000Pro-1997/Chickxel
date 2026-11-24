@@ -19,8 +19,8 @@ public enum CommunityLevelTier
 
 /// <summary>
 /// 서버와 같은 계정 레벨 규칙. 경험치(XP)는 서버가 지금 올라 있는 공유(갤러리 그림·에셋 패키지·받은 좋아요)와 앱을 켜 둔 시간에서 계산한다.
-/// 레벨 L에서 L+1까지는 <c>10 + 2 × (L − 1)</c> XP(10, 12, 14 …)라 레벨 L(1부터)은 <c>(L − 1) × (L + 8)</c> XP에서 시작한다
-/// (L1 = 0, L2 = 10, L3 = 22, L4 = 36). 최고 레벨은 없다.
+/// 레벨 L에서 L+1까지는 <c>L + 9</c> XP(10, 11, 12 …)라 레벨 L(1부터)은 <c>(L − 1) × (L + 18) / 2</c> XP에서 시작한다
+/// (L1 = 0, L2 = 10, L3 = 21, L4 = 33, L100 = 5,841). 최고 레벨은 없다.
 /// </summary>
 public static class CommunityLevel
 {
@@ -28,14 +28,14 @@ public static class CommunityLevel
     public static long StartXp(int level)
     {
         long l = Math.Max(1, level);
-        return (l - 1) * (l + 8);
+        return (l - 1) * (l + 18) / 2;
     }
 
-    /// <summary>XP <paramref name="xp"/>(음수는 0)의 레벨: <c>⌊(−7 + √(81 + 4·xp)) / 2⌋</c>를 정수로 바로잡은 값(1 이상).</summary>
+    /// <summary>XP <paramref name="xp"/>(음수는 0)의 레벨: <c>⌊(−17 + √(361 + 8·xp)) / 2⌋</c>를 정수로 바로잡은 값(1 이상).</summary>
     public static int LevelOf(long xp)
     {
         xp = Math.Max(0, xp);
-        int level = Math.Max(1, (int)Math.Floor((-7 + Math.Sqrt(81 + 4.0 * xp)) / 2));
+        int level = Math.Max(1, (int)Math.Floor((-17 + Math.Sqrt(361 + 8.0 * xp)) / 2));
         // 큰 값의 부동소수 오차를 정수로 바로잡는다.
         while (level > 1 && StartXp(level) > xp) level--;
         while (StartXp(level + 1) <= xp) level++;

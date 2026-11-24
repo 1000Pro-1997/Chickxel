@@ -10,11 +10,12 @@ public class CommunityLevelTests
     private static CommunityUser RoundTrip(CommunityUser user) => CommunityUser.Read(JsonNode.Parse(user.ToJson().ToJsonString()));
 
     [Fact]
-    public void Curve_StepsGrowByTwo_AndMatchTheServer()
+    public void Curve_StepsGrowByOne_AndMatchTheServer()
     {
-        Assert.Equal([0L, 10, 22, 36, 52], Enumerable.Range(1, 5).Select(CommunityLevel.StartXp));
+        Assert.Equal([0L, 10, 21, 33, 46], Enumerable.Range(1, 5).Select(CommunityLevel.StartXp));
+        Assert.Equal(5_841, CommunityLevel.StartXp(100));
         for (int level = 1; level < 200; level++)
-            Assert.Equal(10 + 2 * (level - 1), CommunityLevel.StartXp(level + 1) - CommunityLevel.StartXp(level));
+            Assert.Equal(level + 9, CommunityLevel.StartXp(level + 1) - CommunityLevel.StartXp(level));
         Assert.Equal(0, CommunityLevel.StartXp(0));
     }
 
@@ -22,10 +23,10 @@ public class CommunityLevelTests
     [InlineData(0, 1)]
     [InlineData(9, 1)]
     [InlineData(10, 2)]
-    [InlineData(21, 2)]
-    [InlineData(22, 3)]
-    [InlineData(35, 3)]
-    [InlineData(36, 4)]
+    [InlineData(20, 2)]
+    [InlineData(21, 3)]
+    [InlineData(32, 3)]
+    [InlineData(33, 4)]
     [InlineData(-5, 1)]
     public void LevelOf_SmallValues(long xp, int level) => Assert.Equal(level, CommunityLevel.LevelOf(xp));
 
@@ -39,7 +40,7 @@ public class CommunityLevelTests
             Assert.Equal(level - 1, CommunityLevel.LevelOf(start - 1));
             Assert.Equal(level, CommunityLevel.LevelOf(CommunityLevel.StartXp(level + 1) - 1));
         }
-        Assert.True(CommunityLevel.LevelOf(int.MaxValue) > 46_000);
+        Assert.True(CommunityLevel.LevelOf(int.MaxValue) > 65_000);
     }
 
     [Theory]
