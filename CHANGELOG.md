@@ -9,10 +9,11 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 - Without a badge reward it shows your level tier's colors and stays still: gray, bronze, silver, gold, teal–violet at 30 and a rainbow band at 50.
 - Moving effects (shine, sparkles, flowing colors, glow, embers) come with badge rewards.
 
-### Level rewards: one reward every level from 2 to 50
-- Each level from 2 to 50 unlocks one reward: a title, a level badge skin, a small or large pixel frame around your profile picture, an effect around it, or a profile card.
-- When you level up, the level badge on the account button sparkles and the account menu's Manage account shows how many rewards are new.
-- The account window now opens with your profile card and a Level rewards section: what you just unlocked, the next reward and how much XP it needs, and a Change button that opens chickxel.com to equip them.
+### Level rewards: one reward every level from 2 to 100
+- Each level from 2 to 100 unlocks one reward: a title, a level badge skin, a pixel frame around your profile picture, an effect around it, a profile card, or a nickname effect (colors plus wave, glitch, teleport, hallucination, fire and more).
+- Frames come as sets: one frame has a small look for small pictures and a matching large look for your profile header.
+- Every slot is on Auto by default and wears the best reward you have unlocked; you can pick another one or none on chickxel.com.
+- When you level up, the level badge on the account button sparkles and Manage account shows how many rewards are new; the account window shows your profile card, what you just unlocked and the next reward, and Change opens the rewards page.
 - Gallery art and asset packages no longer have a daily XP limit; liking others still counts up to 3 a day.
 
 ### Faster startup

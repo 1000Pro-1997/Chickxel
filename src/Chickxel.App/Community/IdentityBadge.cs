@@ -17,6 +17,7 @@ public enum IdentityHandle
 
 /// <summary>
 /// 사람 하나를 보이는 한 묶음: 둥근 프로필 그림과 이름(선택: @핸들, 굵게, 흐리게, 뒤에 붙는 흐린 덧붙임), 계정이면 레벨을 알 때 이름 뒤 레벨 칩(<see cref="LevelChip"/>).
+/// 이름 효과(<see cref="NameStyle"/>)를 장착했으면 이름 부분만 <see cref="NameEffectText"/>로 그린다(@핸들·덧붙임은 그대로).
 /// 게시 작성자(<see cref="AssetAuthor"/>)는 <see cref="AuthorAvatarView"/>의 규칙(같은 사이트 HTTPS·디스크 보관)으로,
 /// 로그인한 계정(<see cref="CommunityUser"/>)은 <see cref="AppCommunity"/>의 규칙으로 그림을 받는다. 그림이 없으면 사람 아이콘.
 /// 그림과 글 사이 간격·큰 그림의 글 크기는 그림 크기에서 정하고, 글이 잘리면 풍선 도움말로 전체를 보인다(레벨 칩은 잘리지 않음).
@@ -79,19 +80,31 @@ public static class IdentityBadge
         if (dim) line.Foreground = AppTheme.DimTextBrush;
         if (!double.IsNaN(fontSize)) line.FontSize = fontSize;
         else if (large) line.FontSize = 16;
-        line.Add(name, bold ? FontWeight.Bold : FontWeight.Normal, null);
+        var weight = bold ? FontWeight.Bold : FontWeight.Normal;
+        line.Add(name, weight, null);
         bool hasHandle = handlePlace != IdentityHandle.None && !string.IsNullOrEmpty(handle);
         if (hasHandle && handlePlace == IdentityHandle.Inline)
             line.Add((name.Length > 0 ? " @" : "@") + handle, FontWeight.Normal, AppTheme.DimTextBrush);
         if (!string.IsNullOrEmpty(caption))
             line.Add((line.FullText.Length > 0 ? " · " : "") + caption, FontWeight.Normal, AppTheme.DimTextBrush);
 
-        Control text = line;
+        // 이름 효과: 평범한 글 그대로 자리를 잡고 이름 위에 효과를 겹쳐 그림(잘리면 평범한 글로)
+        Control nameLine = line;
+        if (name.Length > 0 && NameStyle.Find(rewards.Equipped(RewardSlot.NameStyle, level)?.Id) is { } nameStyle)
+        {
+            var effect = new NameEffectText(name, nameStyle) { FontWeight = weight, VerticalAlignment = VerticalAlignment.Center };
+            if (line.IsSet(TextBlock.FontSizeProperty)) effect.FontSize = line.FontSize;
+            if (dim) effect.Opacity = 0.7;
+            line.ShowEffect(effect);
+            nameLine = new Panel { VerticalAlignment = VerticalAlignment.Center, Children = { line, effect } };
+        }
+
+        Control text = nameLine;
         // 큰 배지는 이름 아래 칭호(장착했으면)
         var title = large ? rewards.Equipped(RewardSlot.Title, level) : null;
         if (title is not null || (hasHandle && handlePlace == IdentityHandle.Below))
         {
-            var lines = new StackPanel { Spacing = large ? 2 : 0, VerticalAlignment = VerticalAlignment.Center, Children = { line } };
+            var lines = new StackPanel { Spacing = large ? 2 : 0, VerticalAlignment = VerticalAlignment.Center, Children = { nameLine } };
             if (title is not null) lines.Children.Add(ProfileAvatar.Title(title, AppTheme.FontSize));
             if (hasHandle && handlePlace == IdentityHandle.Below)
             {
@@ -124,10 +137,14 @@ public static class IdentityBadge
         return grid;
     }
 
-    /// <summary>한 줄 글(조각마다 굵기·색): 칸이 좁아 잘리면 전체 글을 풍선 도움말로 보인다.</summary>
+    /// <summary>
+    /// 한 줄 글(조각마다 굵기·색): 칸이 좁아 잘리면 전체 글을 풍선 도움말로 보인다.
+    /// 이름 효과(<see cref="ShowEffect"/>)가 있으면 다 들어갈 때는 첫 조각(이름)을 투명하게 두고 효과를 보이며, 잘리면 효과를 숨기고 평범한 글로 보인다.
+    /// </summary>
     private sealed class TrimmedText : TextBlock
     {
         public string FullText { get; private set; } = "";
+        private NameEffectText? _effect;
 
         public TrimmedText()
         {
@@ -146,10 +163,24 @@ public static class IdentityBadge
             FullText += text;
         }
 
+        /// <summary>첫 조각(이름) 위에 겹쳐 그리는 이름 효과.</summary>
+        public void ShowEffect(NameEffectText effect)
+        {
+            _effect = effect;
+            Inlines![0].Foreground = Brushes.Transparent;
+        }
+
         protected override Avalonia.Size ArrangeOverride(Avalonia.Size finalSize)
         {
             var arranged = base.ArrangeOverride(finalSize);
-            ToolTip.SetTip(this, TextLayout.TextLines.Any(textLine => textLine.HasCollapsed) ? FullText : null);
+            bool trimmed = TextLayout.TextLines.Any(textLine => textLine.HasCollapsed);
+            ToolTip.SetTip(this, trimmed ? FullText : null);
+            if (_effect is not null)
+            {
+                _effect.IsVisible = !trimmed;
+                if (trimmed) Inlines![0].ClearValue(TextElement.ForegroundProperty);
+                else Inlines![0].Foreground = Brushes.Transparent;
+            }
             return arranged;
         }
     }

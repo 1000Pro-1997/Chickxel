@@ -77,58 +77,108 @@
   <data name="Fbx_Warning_AnimationLayers" xml:space="preserve"><value>The animation has several layers; only the first layer is used: {name}</value></data>
   <data name="Fbx_Warning_LayerMapping" xml:space="preserve"><value>Unsupported FBX layer mapping, ignored: {element} ({mapping})</value></data>
   <data name="Reward_badge_mint" xml:space="preserve"><value>Mint</value></data>
-  <data name="Reward_frame_s_wood" xml:space="preserve"><value>Wooden Frame</value></data>
+  <data name="Reward_frame_wood" xml:space="preserve"><value>Wooden Frame</value></data>
   <data name="Reward_effect_twinkle" xml:space="preserve"><value>Twinkle Dust</value></data>
-  <data name="Reward_frame_l_bronze" xml:space="preserve"><value>Bronze Medal</value></data>
-  <data name="Reward_title_cluck" xml:space="preserve"><value>Cluck</value></data>
+  <data name="Reward_frame_medal" xml:space="preserve"><value>Bronze Medal</value></data>
+  <data name="Reward_name_sunrise" xml:space="preserve"><value>Sunrise</value></data>
   <data name="Reward_badge_strawberry" xml:space="preserve"><value>Strawberry</value></data>
-  <data name="Reward_frame_s_bronze" xml:space="preserve"><value>Bronze Frame</value></data>
+  <data name="Reward_frame_bronze" xml:space="preserve"><value>Bronze Frame</value></data>
   <data name="Reward_effect_feathers" xml:space="preserve"><value>Feathers</value></data>
   <data name="Reward_card_silver" xml:space="preserve"><value>Silver Card</value></data>
-  <data name="Reward_title_dot_artisan" xml:space="preserve"><value>Dot Artisan</value></data>
+  <data name="Reward_title_cluck" xml:space="preserve"><value>Cluck</value></data>
   <data name="Reward_badge_heart" xml:space="preserve"><value>Heart</value></data>
-  <data name="Reward_frame_s_silver" xml:space="preserve"><value>Silver Frame</value></data>
+  <data name="Reward_frame_silver" xml:space="preserve"><value>Silver Frame</value></data>
   <data name="Reward_effect_snow" xml:space="preserve"><value>Snowflakes</value></data>
-  <data name="Reward_frame_l_silver_wings" xml:space="preserve"><value>Silver Wings</value></data>
-  <data name="Reward_title_palette_collector" xml:space="preserve"><value>Palette Collector</value></data>
+  <data name="Reward_frame_silver_wings" xml:space="preserve"><value>Silver Wings</value></data>
+  <data name="Reward_name_ocean" xml:space="preserve"><value>Ocean Glow</value></data>
   <data name="Reward_badge_ocean" xml:space="preserve"><value>Ocean</value></data>
-  <data name="Reward_frame_s_marching" xml:space="preserve"><value>Marching Dots</value></data>
+  <data name="Reward_frame_marching" xml:space="preserve"><value>Marching Dots</value></data>
   <data name="Reward_effect_notes" xml:space="preserve"><value>Music Notes</value></data>
   <data name="Reward_card_gold" xml:space="preserve"><value>Gold Card</value></data>
-  <data name="Reward_title_rooster" xml:space="preserve"><value>Rooster</value></data>
+  <data name="Reward_title_dot_artisan" xml:space="preserve"><value>Dot Artisan</value></data>
   <data name="Reward_badge_forest" xml:space="preserve"><value>Forest</value></data>
-  <data name="Reward_frame_s_gold" xml:space="preserve"><value>Gold Frame</value></data>
+  <data name="Reward_frame_gold" xml:space="preserve"><value>Gold Frame</value></data>
   <data name="Reward_effect_hearts" xml:space="preserve"><value>Floating Hearts</value></data>
-  <data name="Reward_frame_l_crown" xml:space="preserve"><value>Golden Crown</value></data>
-  <data name="Reward_title_animator" xml:space="preserve"><value>Animator</value></data>
+  <data name="Reward_frame_crown" xml:space="preserve"><value>Golden Crown</value></data>
+  <data name="Reward_name_neon" xml:space="preserve"><value>Neon Sign</value></data>
   <data name="Reward_badge_neon" xml:space="preserve"><value>Neon</value></data>
-  <data name="Reward_frame_s_neon" xml:space="preserve"><value>Neon Frame</value></data>
+  <data name="Reward_frame_neon" xml:space="preserve"><value>Neon Frame</value></data>
   <data name="Reward_effect_bubbles" xml:space="preserve"><value>Bubbles</value></data>
   <data name="Reward_card_crystal" xml:space="preserve"><value>Crystal Card</value></data>
-  <data name="Reward_title_tile_architect" xml:space="preserve"><value>Tile Architect</value></data>
+  <data name="Reward_title_palette_collector" xml:space="preserve"><value>Palette Collector</value></data>
   <data name="Reward_badge_lava" xml:space="preserve"><value>Lava</value></data>
-  <data name="Reward_frame_s_crystal" xml:space="preserve"><value>Crystal Frame</value></data>
+  <data name="Reward_frame_crystal" xml:space="preserve"><value>Crystal Frame</value></data>
   <data name="Reward_effect_shooting_stars" xml:space="preserve"><value>Shooting Stars</value></data>
-  <data name="Reward_frame_l_crystal_shards" xml:space="preserve"><value>Crystal Shards</value></data>
-  <data name="Reward_title_pixel_wizard" xml:space="preserve"><value>Pixel Wizard</value></data>
+  <data name="Reward_frame_crystal_shards" xml:space="preserve"><value>Crystal Shards</value></data>
+  <data name="Reward_name_wave" xml:space="preserve"><value>Wave</value></data>
   <data name="Reward_badge_galaxy" xml:space="preserve"><value>Galaxy</value></data>
-  <data name="Reward_frame_s_vine" xml:space="preserve"><value>Flower Vine</value></data>
+  <data name="Reward_frame_vine" xml:space="preserve"><value>Flower Vine</value></data>
   <data name="Reward_effect_gold_dust" xml:space="preserve"><value>Gold Dust</value></data>
   <data name="Reward_card_night_sky" xml:space="preserve"><value>Night Sky Card</value></data>
-  <data name="Reward_title_legendary_dotter" xml:space="preserve"><value>Legendary Dotter</value></data>
+  <data name="Reward_title_rooster" xml:space="preserve"><value>Rooster</value></data>
   <data name="Reward_badge_ice" xml:space="preserve"><value>Ice</value></data>
-  <data name="Reward_frame_s_flame" xml:space="preserve"><value>Flame Frame</value></data>
+  <data name="Reward_frame_flame" xml:space="preserve"><value>Flame Frame</value></data>
   <data name="Reward_effect_sparks" xml:space="preserve"><value>Sparks</value></data>
-  <data name="Reward_frame_l_phoenix" xml:space="preserve"><value>Phoenix Wings</value></data>
-  <data name="Reward_title_phoenix" xml:space="preserve"><value>Phoenix</value></data>
+  <data name="Reward_frame_phoenix" xml:space="preserve"><value>Phoenix Wings</value></data>
+  <data name="Reward_name_glitch" xml:space="preserve"><value>Glitch</value></data>
   <data name="Reward_badge_legend_gold" xml:space="preserve"><value>Golden Legend</value></data>
-  <data name="Reward_frame_s_rainbow" xml:space="preserve"><value>Rainbow Frame</value></data>
+  <data name="Reward_frame_rainbow" xml:space="preserve"><value>Rainbow Frame</value></data>
   <data name="Reward_effect_aura" xml:space="preserve"><value>Rainbow Aura</value></data>
   <data name="Reward_card_phoenix" xml:space="preserve"><value>Phoenix Card</value></data>
+  <data name="Reward_title_animator" xml:space="preserve"><value>Animator</value></data>
+  <data name="Reward_badge_sakura" xml:space="preserve"><value>Cherry Blossom</value></data>
+  <data name="Reward_frame_sakura" xml:space="preserve"><value>Cherry Blossom Frame</value></data>
+  <data name="Reward_effect_petals" xml:space="preserve"><value>Petals</value></data>
+  <data name="Reward_frame_frost" xml:space="preserve"><value>Frost Frame</value></data>
+  <data name="Reward_name_teleport" xml:space="preserve"><value>Teleport</value></data>
+  <data name="Reward_badge_sunset" xml:space="preserve"><value>Sunset</value></data>
+  <data name="Reward_frame_candy" xml:space="preserve"><value>Candy Frame</value></data>
+  <data name="Reward_effect_fireflies" xml:space="preserve"><value>Fireflies</value></data>
+  <data name="Reward_card_sakura" xml:space="preserve"><value>Cherry Blossom Card</value></data>
+  <data name="Reward_title_tile_architect" xml:space="preserve"><value>Tile Architect</value></data>
+  <data name="Reward_badge_emerald" xml:space="preserve"><value>Emerald</value></data>
+  <data name="Reward_frame_emerald" xml:space="preserve"><value>Emerald Frame</value></data>
+  <data name="Reward_effect_leaves" xml:space="preserve"><value>Falling Leaves</value></data>
+  <data name="Reward_frame_dragon" xml:space="preserve"><value>Dragon Horns</value></data>
+  <data name="Reward_name_hallucination" xml:space="preserve"><value>Hallucination</value></data>
+  <data name="Reward_badge_thunder" xml:space="preserve"><value>Thunder</value></data>
+  <data name="Reward_frame_electric" xml:space="preserve"><value>Electric Frame</value></data>
+  <data name="Reward_effect_confetti" xml:space="preserve"><value>Confetti</value></data>
+  <data name="Reward_card_deep_sea" xml:space="preserve"><value>Deep Sea Card</value></data>
+  <data name="Reward_title_pixel_wizard" xml:space="preserve"><value>Pixel Wizard</value></data>
+  <data name="Reward_badge_ruby" xml:space="preserve"><value>Ruby</value></data>
+  <data name="Reward_frame_ruby" xml:space="preserve"><value>Ruby Frame</value></data>
+  <data name="Reward_effect_planets" xml:space="preserve"><value>Orbiting Planets</value></data>
+  <data name="Reward_frame_halo" xml:space="preserve"><value>Angel Halo</value></data>
+  <data name="Reward_name_fire" xml:space="preserve"><value>Fire Letters</value></data>
+  <data name="Reward_badge_aurora" xml:space="preserve"><value>Aurora</value></data>
+  <data name="Reward_frame_ocean" xml:space="preserve"><value>Wave Frame</value></data>
+  <data name="Reward_effect_runes" xml:space="preserve"><value>Runes</value></data>
+  <data name="Reward_card_aurora" xml:space="preserve"><value>Aurora Card</value></data>
+  <data name="Reward_title_legendary_dotter" xml:space="preserve"><value>Legendary Dotter</value></data>
+  <data name="Reward_badge_starlight" xml:space="preserve"><value>Starlight</value></data>
+  <data name="Reward_frame_lava" xml:space="preserve"><value>Lava Frame</value></data>
+  <data name="Reward_effect_flames" xml:space="preserve"><value>Flame Aura</value></data>
+  <data name="Reward_frame_night_wings" xml:space="preserve"><value>Night Wings</value></data>
+  <data name="Reward_name_galaxy" xml:space="preserve"><value>Galaxy Letters</value></data>
+  <data name="Reward_badge_obsidian" xml:space="preserve"><value>Obsidian</value></data>
+  <data name="Reward_frame_galaxy" xml:space="preserve"><value>Galaxy Frame</value></data>
+  <data name="Reward_effect_galaxy_swirl" xml:space="preserve"><value>Galaxy Swirl</value></data>
+  <data name="Reward_card_cosmos" xml:space="preserve"><value>Cosmos Card</value></data>
+  <data name="Reward_title_phoenix" xml:space="preserve"><value>Phoenix</value></data>
+  <data name="Reward_badge_prism" xml:space="preserve"><value>Prism</value></data>
+  <data name="Reward_frame_prism" xml:space="preserve"><value>Prism Frame</value></data>
+  <data name="Reward_effect_meteors" xml:space="preserve"><value>Meteor Shower</value></data>
+  <data name="Reward_frame_royal" xml:space="preserve"><value>Royal Frame</value></data>
+  <data name="Reward_name_legend" xml:space="preserve"><value>Rainbow Legend</value></data>
+  <data name="Reward_badge_celestial" xml:space="preserve"><value>Celestial</value></data>
+  <data name="Reward_frame_celestial" xml:space="preserve"><value>Celestial Frame</value></data>
+  <data name="Reward_effect_phoenix_aura" xml:space="preserve"><value>Phoenix Aura</value></data>
+  <data name="Reward_card_legend" xml:space="preserve"><value>Legend Card</value></data>
   <data name="RewardSlot_Title" xml:space="preserve"><value>Title</value></data>
   <data name="RewardSlot_Badge" xml:space="preserve"><value>Level badge</value></data>
-  <data name="RewardSlot_FrameSmall" xml:space="preserve"><value>Small frame</value></data>
-  <data name="RewardSlot_FrameLarge" xml:space="preserve"><value>Large frame</value></data>
+  <data name="RewardSlot_Frame" xml:space="preserve"><value>Frame</value></data>
   <data name="RewardSlot_Effect" xml:space="preserve"><value>Effect</value></data>
   <data name="RewardSlot_Card" xml:space="preserve"><value>Card</value></data>
+  <data name="RewardSlot_NameStyle" xml:space="preserve"><value>Name effect</value></data>
 </root>

@@ -19,18 +19,18 @@ public static class ProfileAvatar
 
     /// <summary>꾸민 큰 프로필 그림인지(양옆에 <see cref="LargeRoom"/>을 둠).</summary>
     public static bool HasLargeDecoration(ProfileRewards rewards, int level)
-        => rewards.Equipped(RewardSlot.FrameLarge, level) is not null || rewards.Equipped(RewardSlot.Effect, level) is not null;
+        => rewards.Equipped(RewardSlot.Frame, level) is not null || rewards.Equipped(RewardSlot.Effect, level) is not null;
 
     /// <summary>
-    /// <paramref name="avatar"/>(지름 <paramref name="size"/>의 둥근 그림)에 <paramref name="rewards"/>의 테두리·효과(레벨 <paramref name="level"/>로 받을 수 있는 것만)를 겹친 칸.
-    /// 꾸밀 것이 없으면 <paramref name="avatar"/> 그대로. 큰 그림을 꾸미면 양옆에 <see cref="LargeRoom"/>을 더 비운다.
+    /// <paramref name="avatar"/>(지름 <paramref name="size"/>의 둥근 그림)에 <paramref name="rewards"/>의 테두리(작은 그림은 작은 모양, 큰 그림은 같은 디자인의 큰 모양)·
+    /// 효과(큰 그림만)를 겹친 칸(레벨 <paramref name="level"/>로 받을 수 있는 것만). 꾸밀 것이 없으면 <paramref name="avatar"/> 그대로. 큰 그림을 꾸미면 양옆에 <see cref="LargeRoom"/>을 더 비운다.
     /// </summary>
     public static Control Decorate(Control avatar, double size, ProfileRewards rewards, int level)
     {
         bool large = size >= LargeSize;
         int scale = large ? 3 : 2;
         int diameter = Math.Max(4, (int)Math.Round(size / scale));
-        var frame = rewards.Equipped(large ? RewardSlot.FrameLarge : RewardSlot.FrameSmall, level);
+        var frame = rewards.Equipped(RewardSlot.Frame, level);
         var effect = large ? rewards.Equipped(RewardSlot.Effect, level) : null;
         if (frame is null && effect is null) return avatar;
         var m = avatar.Margin;
@@ -43,7 +43,7 @@ public static class ProfileAvatar
         avatar.Margin = default;
         if (effect is not null) panel.Children.Add(new PixelArtView(new AvatarEffectArt(effect.Id, diameter), scale) { Fill = true });
         panel.Children.Add(avatar);
-        if (frame is not null) panel.Children.Add(new PixelArtView(new AvatarFrameArt(frame.Id, diameter), scale) { Fill = true });
+        if (frame is not null) panel.Children.Add(new PixelArtView(new AvatarFrameArt(frame.Id, diameter, large), scale) { Fill = true });
         return panel;
     }
 

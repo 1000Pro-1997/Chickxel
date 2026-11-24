@@ -103,11 +103,12 @@ foreach (var reward in LevelRewards.All)
 {
     switch (reward.Slot)
     {
-        case RewardSlot.FrameSmall:
-            frames[reward.Id] = BySize([22, 28, 36], px => Sheet(new AvatarFrameArt(reward.Id, px / 2), $"{reward.Id}-{px}.png", 2));
-            break;
-        case RewardSlot.FrameLarge:
-            frames[reward.Id] = BySize([56, 72], px => Sheet(new AvatarFrameArt(reward.Id, px / 4), $"{reward.Id}-{px}.png", 4));
+        case RewardSlot.Frame:
+            // 같은 테두리의 작은 모양(22·28·36px, 2배)과 큰 모양(56·72px, 4배)
+            var sizes = BySize([22, 28, 36], px => Sheet(new AvatarFrameArt(reward.Id, px / 2, large: false), $"{reward.Id}-{px}.png", 2));
+            foreach (int px in new[] { 56, 72 })
+                sizes[Key(px)] = Sheet(new AvatarFrameArt(reward.Id, px / 4, large: true), $"{reward.Id}-{px}.png", 4);
+            frames[reward.Id] = sizes;
             break;
         case RewardSlot.Effect:
             effects[reward.Id] = BySize([56, 72], px => Sheet(new AvatarEffectArt(reward.Id, px / 4), $"{reward.Id}-{px}.png", 4));
@@ -118,9 +119,18 @@ foreach (var reward in LevelRewards.All)
     }
 }
 
+var nameStyles = new JsonObject();
+foreach (var style in NameStyle.All)
+    nameStyles[style.Id] = new JsonObject
+    {
+        ["effect"] = JsonNamingPolicy.CamelCase.ConvertName(style.Effect.ToString()),
+        ["colors"] = new JsonArray(style.Colors.Select(c => (JsonNode)Hex(c)).ToArray()),
+        ["periodMs"] = style.PeriodMs,
+    };
+
 var catalog = new JsonObject
 {
-    ["version"] = 1,
+    ["version"] = 2,
     ["maxLevel"] = LevelRewards.MaxLevel,
     ["frameMs"] = RewardArt.FrameMs,
     ["slots"] = new JsonArray(Enum.GetValues<RewardSlot>().Select(s => (JsonNode)LevelRewards.SlotKey(s)).ToArray()),
@@ -135,6 +145,7 @@ var catalog = new JsonObject
     ["frames"] = frames,
     ["effects"] = effects,
     ["cards"] = cards,
+    ["nameStyles"] = nameStyles,
 };
 
 File.WriteAllText(Path.Combine(output, "catalog.json"), catalog.ToJsonString(new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }) + "\n");

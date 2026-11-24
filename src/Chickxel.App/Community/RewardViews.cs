@@ -103,7 +103,7 @@ internal static class RewardViews
     }
 
     /// <summary>
-    /// 보상 상자 하나: 위에 실제 모양 미리보기(칭호 글, 내 레벨 배지, 내 프로필 그림에 테두리·효과, 작은 카드), 아래 이름과 "Lv N · 칸".
+    /// 보상 상자 하나: 위에 실제 모양 미리보기(칭호 글, 내 레벨 배지, 내 프로필 그림에 테두리·효과, 내 이름에 이름 효과, 작은 카드), 아래 이름과 "Lv N · 칸".
     /// <paramref name="isNew"/>면 금빛 테두리, <paramref name="locked"/>면 흐리게, 장착 중이면 체크.
     /// </summary>
     public static Control Tile(CommunityUser user, LevelReward reward, bool isNew = false, bool locked = false)
@@ -156,7 +156,7 @@ internal static class RewardViews
         },
     };
 
-    /// <summary>칸별 미리보기(내 프로필 그림·내 레벨로 — 장착하면 보일 모양 그대로).</summary>
+    /// <summary>칸별 미리보기(내 프로필 그림·내 이름·내 레벨로 — 장착하면 보일 모양 그대로). 테두리는 큰 프로필 그림의 큰 모양으로 보인다.</summary>
     private static Control Preview(CommunityUser user, LevelReward reward)
     {
         Control Avatar(double size, Func<int, IPixelArt>? under, Func<int, IPixelArt>? over)
@@ -174,14 +174,21 @@ internal static class RewardViews
         {
             RewardSlot.Title => Centered(ProfileAvatar.Title(reward, 13)),
             RewardSlot.Badge => Centered(new PixelArtView(new LevelBadgeArt(Math.Max(1, user.Level), reward.Id), 2)),
-            RewardSlot.FrameSmall => Avatar(28, null, d => new AvatarFrameArt(reward.Id, d)),
-            RewardSlot.FrameLarge => Avatar(24, null, d => new AvatarFrameArt(reward.Id, d)),
+            RewardSlot.Frame => Avatar(24, null, d => new AvatarFrameArt(reward.Id, d, large: true)),
             RewardSlot.Effect => Avatar(24, d => new AvatarEffectArt(reward.Id, d), null),
-            _ => Centered(new Border
+            RewardSlot.NameStyle when NameStyle.Find(reward.Id) is { } style => Centered(new Viewbox
+            {
+                // 긴 이름은 상자 폭에 맞게 줄여 보인다
+                Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, MaxWidth = TileWidth - 16,
+                Child = new NameEffectText(AppCommunity.DisplayName(user), style) { FontSize = 15, FontWeight = FontWeight.Bold },
+            }),
+            RewardSlot.Card => Centered(new Border
             {
                 CornerRadius = new CornerRadius(4), ClipToBounds = true, Width = 80, Height = 48,
                 Child = new PixelArtView(new ProfileCardArt(reward.Id, 40, 24), 2),
             }),
+            // 목록에 없는 이름 효과
+            _ => new Panel(),
         };
     }
 

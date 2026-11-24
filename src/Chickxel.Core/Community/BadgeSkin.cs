@@ -146,6 +146,60 @@ public sealed record BadgeSkin(string Id)
             ShinePeriod = 24, ShineWidth = 3, Glow = BadgeGlow.Rainbow, GlowRings = 2, Sparkles = 6, RainbowSparkles = true,
             Embers = 3, EmberColors = [Hex(0xFFE58A), Hex(0xFFD23F), Hex(0xFFFFFF)],
         },
+
+        // ───────────── 51~100: 높을수록 빛·반짝이·불티가 많아짐
+        new("badge.sakura")
+        {
+            Outline = Hex(0x7A2048), Top = Hex(0xFFE4EF), Mid = Hex(0xF9A8C9), Bottom = Hex(0xE36B9C), Text = Hex(0x5A1730), Shadow = Hex(0xFFF0F6),
+            ShinePeriod = 40, ShineWidth = 2, Sparkles = 4, SparkleShape = SparkleShape.Leaf, Sparkle = Hex(0xF9A8D4),
+        },
+        new("badge.sunset")
+        {
+            Fill = BadgeFill.Flow, Outline = Hex(0x4A1530), Top = Hex(0xF97316), Bottom = Hex(0xA21CAF), Shadow = Hex(0x3B0A24),
+            ShinePeriod = 30, ShineWidth = 2, Glow = BadgeGlow.Solid, GlowColor = Hex(0xFB7185), Sparkles = 2, Sparkle = Hex(0xFFE4B5),
+        },
+        new("badge.emerald")
+        {
+            Fill = BadgeFill.Facets, Outline = Hex(0x064E3B), Top = Hex(0x6EE7B7), Mid = Hex(0x10B981), Bottom = Hex(0x047857), Shadow = Hex(0x022C22),
+            ShinePeriod = 24, ShineWidth = 2, Glow = BadgeGlow.Solid, GlowColor = Hex(0x34D399), Sparkles = 3, Sparkle = Hex(0xD1FAE5),
+        },
+        new("badge.thunder")
+        {
+            Fill = BadgeFill.Neon, Outline = Hex(0xFDE047), Top = Hex(0x1E1B4B), Mid = Hex(0x111033), Bottom = Hex(0x0A0920), Text = Hex(0xFEF9C3), Shadow = Hex(0x3730A3),
+            Glow = BadgeGlow.Neon, Sparkles = 3, Sparkle = Hex(0xFFFFFF), Embers = 2, EmberColors = [Hex(0xFDE047), Hex(0xBFDBFE)],
+        },
+        new("badge.ruby")
+        {
+            Fill = BadgeFill.Facets, Outline = Hex(0x4C0519), Top = Hex(0xFDA4AF), Mid = Hex(0xE11D48), Bottom = Hex(0x9F1239), Shadow = Hex(0x3B0A14),
+            ShinePeriod = 24, ShineWidth = 3, Glow = BadgeGlow.Solid, GlowColor = Hex(0xF43F5E), GlowRings = 2, Sparkles = 4, Sparkle = Hex(0xFFE4E6),
+        },
+        new("badge.aurora")
+        {
+            Fill = BadgeFill.Flow, Outline = Hex(0x0B2A3A), Top = Hex(0x10B981), Bottom = Hex(0x7C3AED), Shadow = Hex(0x06202C),
+            ShinePeriod = 30, ShineWidth = 2, Glow = BadgeGlow.Rainbow, Sparkles = 4, Sparkle = Hex(0xA7F3D0),
+        },
+        new("badge.starlight")
+        {
+            Fill = BadgeFill.Galaxy, Outline = Hex(0x0B1026), Top = Hex(0x1E2A6B), Bottom = Hex(0x0E1440), Text = Hex(0xFFF7CC), Shadow = Hex(0x050818),
+            Glow = BadgeGlow.Solid, GlowColor = Hex(0xFDE68A), GlowRings = 2, Sparkles = 5, Sparkle = Hex(0xFFF3B0),
+        },
+        new("badge.obsidian")
+        {
+            Fill = BadgeFill.Facets, Outline = Hex(0x000000), Top = Hex(0x3F3A52), Mid = Hex(0x1C1A26), Bottom = Hex(0x0B0A10), Text = Hex(0xE9D5FF), Shadow = Hex(0x000000),
+            ShinePeriod = 24, ShineWidth = 2, Glow = BadgeGlow.Solid, GlowColor = Hex(0xA855F7), GlowRings = 2, Sparkles = 3, Sparkle = Hex(0xD8B4FE),
+            Embers = 3, EmberColors = [Hex(0xC084FC), Hex(0x7C3AED)],
+        },
+        new("badge.prism")
+        {
+            Fill = BadgeFill.Rainbow, Outline = Hex(0x1A0A2A), Shadow = Hex(0x14061F),
+            ShinePeriod = 24, ShineWidth = 3, Glow = BadgeGlow.Rainbow, GlowRings = 2, Sparkles = 6, RainbowSparkles = true,
+        },
+        new("badge.celestial")
+        {
+            Fill = BadgeFill.Flow, Outline = Hex(0x7A5A00), Top = Hex(0xFFFBEB), Bottom = Hex(0xFDE68A), Text = Hex(0x5A3A00), Shadow = Hex(0xFFFFFF),
+            ShinePeriod = 24, ShineWidth = 3, Glow = BadgeGlow.Rainbow, GlowRings = 2, Sparkles = 8, RainbowSparkles = true,
+            Embers = 4, EmberColors = [Hex(0xFFF3B0), Hex(0xFFFFFF), Hex(0xFDE68A)],
+        },
     ];
 
     private static readonly Dictionary<string, BadgeSkin> ById =

@@ -88,59 +88,109 @@
   <data name="Fbx_Warning_BlendShapes" xml:space="preserve"><value>블렌드 셰이프(모프)는 그리지 않고 기본 모양만 그립니다.</value></data>
   <data name="Fbx_Warning_AnimationLayers" xml:space="preserve"><value>애니메이션 층이 여럿이라 첫 층만 씁니다: {name}</value><comment>name = 애니메이션 이름.</comment></data>
   <data name="Fbx_Warning_LayerMapping" xml:space="preserve"><value>지원하지 않는 FBX 층 매핑이라 무시합니다: {element} ({mapping})</value><comment>element = FBX 층 이름(예: LayerElementNormal), mapping = MappingInformationType 값.</comment></data>
-  <data name="Reward_badge_mint" xml:space="preserve"><value>민트</value><comment>레벨 보상 이름(badge.mint).</comment></data>
-  <data name="Reward_frame_s_wood" xml:space="preserve"><value>나무 테두리</value><comment>레벨 보상 이름(frame-s.wood).</comment></data>
-  <data name="Reward_effect_twinkle" xml:space="preserve"><value>반짝 먼지</value><comment>레벨 보상 이름(effect.twinkle).</comment></data>
-  <data name="Reward_frame_l_bronze" xml:space="preserve"><value>동 메달</value><comment>레벨 보상 이름(frame-l.bronze).</comment></data>
-  <data name="Reward_title_cluck" xml:space="preserve"><value>꼬꼬</value><comment>레벨 보상 이름(title.cluck).</comment></data>
-  <data name="Reward_badge_strawberry" xml:space="preserve"><value>딸기</value><comment>레벨 보상 이름(badge.strawberry).</comment></data>
-  <data name="Reward_frame_s_bronze" xml:space="preserve"><value>동 테두리</value><comment>레벨 보상 이름(frame-s.bronze).</comment></data>
-  <data name="Reward_effect_feathers" xml:space="preserve"><value>깃털</value><comment>레벨 보상 이름(effect.feathers).</comment></data>
-  <data name="Reward_card_silver" xml:space="preserve"><value>은빛 카드</value><comment>레벨 보상 이름(card.silver).</comment></data>
-  <data name="Reward_title_dot_artisan" xml:space="preserve"><value>도트 장인</value><comment>레벨 보상 이름(title.dot-artisan).</comment></data>
-  <data name="Reward_badge_heart" xml:space="preserve"><value>하트</value><comment>레벨 보상 이름(badge.heart).</comment></data>
-  <data name="Reward_frame_s_silver" xml:space="preserve"><value>은 테두리</value><comment>레벨 보상 이름(frame-s.silver).</comment></data>
-  <data name="Reward_effect_snow" xml:space="preserve"><value>눈송이</value><comment>레벨 보상 이름(effect.snow).</comment></data>
-  <data name="Reward_frame_l_silver_wings" xml:space="preserve"><value>은빛 날개</value><comment>레벨 보상 이름(frame-l.silver-wings).</comment></data>
-  <data name="Reward_title_palette_collector" xml:space="preserve"><value>팔레트 수집가</value><comment>레벨 보상 이름(title.palette-collector).</comment></data>
-  <data name="Reward_badge_ocean" xml:space="preserve"><value>바다</value><comment>레벨 보상 이름(badge.ocean).</comment></data>
-  <data name="Reward_frame_s_marching" xml:space="preserve"><value>행진 점선</value><comment>레벨 보상 이름(frame-s.marching).</comment></data>
-  <data name="Reward_effect_notes" xml:space="preserve"><value>음표</value><comment>레벨 보상 이름(effect.notes).</comment></data>
-  <data name="Reward_card_gold" xml:space="preserve"><value>금빛 카드</value><comment>레벨 보상 이름(card.gold).</comment></data>
-  <data name="Reward_title_rooster" xml:space="preserve"><value>닭</value><comment>레벨 보상 이름(title.rooster).</comment></data>
-  <data name="Reward_badge_forest" xml:space="preserve"><value>숲</value><comment>레벨 보상 이름(badge.forest).</comment></data>
-  <data name="Reward_frame_s_gold" xml:space="preserve"><value>금 테두리</value><comment>레벨 보상 이름(frame-s.gold).</comment></data>
-  <data name="Reward_effect_hearts" xml:space="preserve"><value>하트 방울</value><comment>레벨 보상 이름(effect.hearts).</comment></data>
-  <data name="Reward_frame_l_crown" xml:space="preserve"><value>황금 왕관</value><comment>레벨 보상 이름(frame-l.crown).</comment></data>
-  <data name="Reward_title_animator" xml:space="preserve"><value>애니메이터</value><comment>레벨 보상 이름(title.animator).</comment></data>
-  <data name="Reward_badge_neon" xml:space="preserve"><value>네온</value><comment>레벨 보상 이름(badge.neon).</comment></data>
-  <data name="Reward_frame_s_neon" xml:space="preserve"><value>네온 테두리</value><comment>레벨 보상 이름(frame-s.neon).</comment></data>
-  <data name="Reward_effect_bubbles" xml:space="preserve"><value>비눗방울</value><comment>레벨 보상 이름(effect.bubbles).</comment></data>
-  <data name="Reward_card_crystal" xml:space="preserve"><value>크리스털 카드</value><comment>레벨 보상 이름(card.crystal).</comment></data>
-  <data name="Reward_title_tile_architect" xml:space="preserve"><value>타일 건축가</value><comment>레벨 보상 이름(title.tile-architect).</comment></data>
-  <data name="Reward_badge_lava" xml:space="preserve"><value>용암</value><comment>레벨 보상 이름(badge.lava).</comment></data>
-  <data name="Reward_frame_s_crystal" xml:space="preserve"><value>크리스털 테두리</value><comment>레벨 보상 이름(frame-s.crystal).</comment></data>
-  <data name="Reward_effect_shooting_stars" xml:space="preserve"><value>별똥별</value><comment>레벨 보상 이름(effect.shooting-stars).</comment></data>
-  <data name="Reward_frame_l_crystal_shards" xml:space="preserve"><value>크리스털 결정</value><comment>레벨 보상 이름(frame-l.crystal-shards).</comment></data>
-  <data name="Reward_title_pixel_wizard" xml:space="preserve"><value>픽셀 마법사</value><comment>레벨 보상 이름(title.pixel-wizard).</comment></data>
-  <data name="Reward_badge_galaxy" xml:space="preserve"><value>은하</value><comment>레벨 보상 이름(badge.galaxy).</comment></data>
-  <data name="Reward_frame_s_vine" xml:space="preserve"><value>꽃 덩굴</value><comment>레벨 보상 이름(frame-s.vine).</comment></data>
-  <data name="Reward_effect_gold_dust" xml:space="preserve"><value>금가루</value><comment>레벨 보상 이름(effect.gold-dust).</comment></data>
-  <data name="Reward_card_night_sky" xml:space="preserve"><value>밤하늘 카드</value><comment>레벨 보상 이름(card.night-sky).</comment></data>
-  <data name="Reward_title_legendary_dotter" xml:space="preserve"><value>전설의 도트</value><comment>레벨 보상 이름(title.legendary-dotter).</comment></data>
-  <data name="Reward_badge_ice" xml:space="preserve"><value>얼음</value><comment>레벨 보상 이름(badge.ice).</comment></data>
-  <data name="Reward_frame_s_flame" xml:space="preserve"><value>불꽃 테두리</value><comment>레벨 보상 이름(frame-s.flame).</comment></data>
-  <data name="Reward_effect_sparks" xml:space="preserve"><value>번개</value><comment>레벨 보상 이름(effect.sparks).</comment></data>
-  <data name="Reward_frame_l_phoenix" xml:space="preserve"><value>불사조 날개</value><comment>레벨 보상 이름(frame-l.phoenix).</comment></data>
-  <data name="Reward_title_phoenix" xml:space="preserve"><value>불사조</value><comment>레벨 보상 이름(title.phoenix).</comment></data>
-  <data name="Reward_badge_legend_gold" xml:space="preserve"><value>황금 전설</value><comment>레벨 보상 이름(badge.legend-gold).</comment></data>
-  <data name="Reward_frame_s_rainbow" xml:space="preserve"><value>무지개 테두리</value><comment>레벨 보상 이름(frame-s.rainbow).</comment></data>
-  <data name="Reward_effect_aura" xml:space="preserve"><value>무지개 오라</value><comment>레벨 보상 이름(effect.aura).</comment></data>
-  <data name="Reward_card_phoenix" xml:space="preserve"><value>불사조 카드</value><comment>레벨 보상 이름(card.phoenix).</comment></data>
+  <data name="Reward_badge_mint" xml:space="preserve"><value>민트</value><comment>레벨 보상 이름(badge.mint, Lv 2).</comment></data>
+  <data name="Reward_frame_wood" xml:space="preserve"><value>나무 테두리</value><comment>레벨 보상 이름(frame.wood, Lv 3).</comment></data>
+  <data name="Reward_effect_twinkle" xml:space="preserve"><value>반짝 먼지</value><comment>레벨 보상 이름(effect.twinkle, Lv 4).</comment></data>
+  <data name="Reward_frame_medal" xml:space="preserve"><value>동 메달</value><comment>레벨 보상 이름(frame.medal, Lv 5).</comment></data>
+  <data name="Reward_name_sunrise" xml:space="preserve"><value>해돋이</value><comment>레벨 보상 이름(name.sunrise, Lv 6).</comment></data>
+  <data name="Reward_badge_strawberry" xml:space="preserve"><value>딸기</value><comment>레벨 보상 이름(badge.strawberry, Lv 7).</comment></data>
+  <data name="Reward_frame_bronze" xml:space="preserve"><value>동 테두리</value><comment>레벨 보상 이름(frame.bronze, Lv 8).</comment></data>
+  <data name="Reward_effect_feathers" xml:space="preserve"><value>깃털</value><comment>레벨 보상 이름(effect.feathers, Lv 9).</comment></data>
+  <data name="Reward_card_silver" xml:space="preserve"><value>은빛 카드</value><comment>레벨 보상 이름(card.silver, Lv 10).</comment></data>
+  <data name="Reward_title_cluck" xml:space="preserve"><value>꼬꼬</value><comment>레벨 보상 이름(title.cluck, Lv 11).</comment></data>
+  <data name="Reward_badge_heart" xml:space="preserve"><value>하트</value><comment>레벨 보상 이름(badge.heart, Lv 12).</comment></data>
+  <data name="Reward_frame_silver" xml:space="preserve"><value>은 테두리</value><comment>레벨 보상 이름(frame.silver, Lv 13).</comment></data>
+  <data name="Reward_effect_snow" xml:space="preserve"><value>눈송이</value><comment>레벨 보상 이름(effect.snow, Lv 14).</comment></data>
+  <data name="Reward_frame_silver_wings" xml:space="preserve"><value>은빛 날개</value><comment>레벨 보상 이름(frame.silver-wings, Lv 15).</comment></data>
+  <data name="Reward_name_ocean" xml:space="preserve"><value>바다빛</value><comment>레벨 보상 이름(name.ocean, Lv 16).</comment></data>
+  <data name="Reward_badge_ocean" xml:space="preserve"><value>바다</value><comment>레벨 보상 이름(badge.ocean, Lv 17).</comment></data>
+  <data name="Reward_frame_marching" xml:space="preserve"><value>행진 점선</value><comment>레벨 보상 이름(frame.marching, Lv 18).</comment></data>
+  <data name="Reward_effect_notes" xml:space="preserve"><value>음표</value><comment>레벨 보상 이름(effect.notes, Lv 19).</comment></data>
+  <data name="Reward_card_gold" xml:space="preserve"><value>금빛 카드</value><comment>레벨 보상 이름(card.gold, Lv 20).</comment></data>
+  <data name="Reward_title_dot_artisan" xml:space="preserve"><value>도트 장인</value><comment>레벨 보상 이름(title.dot-artisan, Lv 21).</comment></data>
+  <data name="Reward_badge_forest" xml:space="preserve"><value>숲</value><comment>레벨 보상 이름(badge.forest, Lv 22).</comment></data>
+  <data name="Reward_frame_gold" xml:space="preserve"><value>금 테두리</value><comment>레벨 보상 이름(frame.gold, Lv 23).</comment></data>
+  <data name="Reward_effect_hearts" xml:space="preserve"><value>하트 방울</value><comment>레벨 보상 이름(effect.hearts, Lv 24).</comment></data>
+  <data name="Reward_frame_crown" xml:space="preserve"><value>황금 왕관</value><comment>레벨 보상 이름(frame.crown, Lv 25).</comment></data>
+  <data name="Reward_name_neon" xml:space="preserve"><value>네온 사인</value><comment>레벨 보상 이름(name.neon, Lv 26).</comment></data>
+  <data name="Reward_badge_neon" xml:space="preserve"><value>네온</value><comment>레벨 보상 이름(badge.neon, Lv 27).</comment></data>
+  <data name="Reward_frame_neon" xml:space="preserve"><value>네온 테두리</value><comment>레벨 보상 이름(frame.neon, Lv 28).</comment></data>
+  <data name="Reward_effect_bubbles" xml:space="preserve"><value>비눗방울</value><comment>레벨 보상 이름(effect.bubbles, Lv 29).</comment></data>
+  <data name="Reward_card_crystal" xml:space="preserve"><value>크리스털 카드</value><comment>레벨 보상 이름(card.crystal, Lv 30).</comment></data>
+  <data name="Reward_title_palette_collector" xml:space="preserve"><value>팔레트 수집가</value><comment>레벨 보상 이름(title.palette-collector, Lv 31).</comment></data>
+  <data name="Reward_badge_lava" xml:space="preserve"><value>용암</value><comment>레벨 보상 이름(badge.lava, Lv 32).</comment></data>
+  <data name="Reward_frame_crystal" xml:space="preserve"><value>크리스털 테두리</value><comment>레벨 보상 이름(frame.crystal, Lv 33).</comment></data>
+  <data name="Reward_effect_shooting_stars" xml:space="preserve"><value>별똥별</value><comment>레벨 보상 이름(effect.shooting-stars, Lv 34).</comment></data>
+  <data name="Reward_frame_crystal_shards" xml:space="preserve"><value>크리스털 결정</value><comment>레벨 보상 이름(frame.crystal-shards, Lv 35).</comment></data>
+  <data name="Reward_name_wave" xml:space="preserve"><value>물결</value><comment>레벨 보상 이름(name.wave, Lv 36).</comment></data>
+  <data name="Reward_badge_galaxy" xml:space="preserve"><value>은하</value><comment>레벨 보상 이름(badge.galaxy, Lv 37).</comment></data>
+  <data name="Reward_frame_vine" xml:space="preserve"><value>꽃 덩굴</value><comment>레벨 보상 이름(frame.vine, Lv 38).</comment></data>
+  <data name="Reward_effect_gold_dust" xml:space="preserve"><value>금가루</value><comment>레벨 보상 이름(effect.gold-dust, Lv 39).</comment></data>
+  <data name="Reward_card_night_sky" xml:space="preserve"><value>밤하늘 카드</value><comment>레벨 보상 이름(card.night-sky, Lv 40).</comment></data>
+  <data name="Reward_title_rooster" xml:space="preserve"><value>닭</value><comment>레벨 보상 이름(title.rooster, Lv 41).</comment></data>
+  <data name="Reward_badge_ice" xml:space="preserve"><value>얼음</value><comment>레벨 보상 이름(badge.ice, Lv 42).</comment></data>
+  <data name="Reward_frame_flame" xml:space="preserve"><value>불꽃 테두리</value><comment>레벨 보상 이름(frame.flame, Lv 43).</comment></data>
+  <data name="Reward_effect_sparks" xml:space="preserve"><value>번개</value><comment>레벨 보상 이름(effect.sparks, Lv 44).</comment></data>
+  <data name="Reward_frame_phoenix" xml:space="preserve"><value>불사조 날개</value><comment>레벨 보상 이름(frame.phoenix, Lv 45).</comment></data>
+  <data name="Reward_name_glitch" xml:space="preserve"><value>글리치</value><comment>레벨 보상 이름(name.glitch, Lv 46).</comment></data>
+  <data name="Reward_badge_legend_gold" xml:space="preserve"><value>황금 전설</value><comment>레벨 보상 이름(badge.legend-gold, Lv 47).</comment></data>
+  <data name="Reward_frame_rainbow" xml:space="preserve"><value>무지개 테두리</value><comment>레벨 보상 이름(frame.rainbow, Lv 48).</comment></data>
+  <data name="Reward_effect_aura" xml:space="preserve"><value>무지개 오라</value><comment>레벨 보상 이름(effect.aura, Lv 49).</comment></data>
+  <data name="Reward_card_phoenix" xml:space="preserve"><value>불사조 카드</value><comment>레벨 보상 이름(card.phoenix, Lv 50).</comment></data>
+  <data name="Reward_title_animator" xml:space="preserve"><value>애니메이터</value><comment>레벨 보상 이름(title.animator, Lv 51).</comment></data>
+  <data name="Reward_badge_sakura" xml:space="preserve"><value>벚꽃</value><comment>레벨 보상 이름(badge.sakura, Lv 52).</comment></data>
+  <data name="Reward_frame_sakura" xml:space="preserve"><value>벚꽃 테두리</value><comment>레벨 보상 이름(frame.sakura, Lv 53).</comment></data>
+  <data name="Reward_effect_petals" xml:space="preserve"><value>벚꽃잎</value><comment>레벨 보상 이름(effect.petals, Lv 54).</comment></data>
+  <data name="Reward_frame_frost" xml:space="preserve"><value>서리 테두리</value><comment>레벨 보상 이름(frame.frost, Lv 55).</comment></data>
+  <data name="Reward_name_teleport" xml:space="preserve"><value>순간이동</value><comment>레벨 보상 이름(name.teleport, Lv 56).</comment></data>
+  <data name="Reward_badge_sunset" xml:space="preserve"><value>노을</value><comment>레벨 보상 이름(badge.sunset, Lv 57).</comment></data>
+  <data name="Reward_frame_candy" xml:space="preserve"><value>사탕 테두리</value><comment>레벨 보상 이름(frame.candy, Lv 58).</comment></data>
+  <data name="Reward_effect_fireflies" xml:space="preserve"><value>반딧불</value><comment>레벨 보상 이름(effect.fireflies, Lv 59).</comment></data>
+  <data name="Reward_card_sakura" xml:space="preserve"><value>벚꽃 카드</value><comment>레벨 보상 이름(card.sakura, Lv 60).</comment></data>
+  <data name="Reward_title_tile_architect" xml:space="preserve"><value>타일 건축가</value><comment>레벨 보상 이름(title.tile-architect, Lv 61).</comment></data>
+  <data name="Reward_badge_emerald" xml:space="preserve"><value>에메랄드</value><comment>레벨 보상 이름(badge.emerald, Lv 62).</comment></data>
+  <data name="Reward_frame_emerald" xml:space="preserve"><value>에메랄드 테두리</value><comment>레벨 보상 이름(frame.emerald, Lv 63).</comment></data>
+  <data name="Reward_effect_leaves" xml:space="preserve"><value>낙엽</value><comment>레벨 보상 이름(effect.leaves, Lv 64).</comment></data>
+  <data name="Reward_frame_dragon" xml:space="preserve"><value>용의 뿔</value><comment>레벨 보상 이름(frame.dragon, Lv 65).</comment></data>
+  <data name="Reward_name_hallucination" xml:space="preserve"><value>환각</value><comment>레벨 보상 이름(name.hallucination, Lv 66).</comment></data>
+  <data name="Reward_badge_thunder" xml:space="preserve"><value>번개</value><comment>레벨 보상 이름(badge.thunder, Lv 67).</comment></data>
+  <data name="Reward_frame_electric" xml:space="preserve"><value>전기 테두리</value><comment>레벨 보상 이름(frame.electric, Lv 68).</comment></data>
+  <data name="Reward_effect_confetti" xml:space="preserve"><value>꽃가루</value><comment>레벨 보상 이름(effect.confetti, Lv 69).</comment></data>
+  <data name="Reward_card_deep_sea" xml:space="preserve"><value>깊은 바다 카드</value><comment>레벨 보상 이름(card.deep-sea, Lv 70).</comment></data>
+  <data name="Reward_title_pixel_wizard" xml:space="preserve"><value>픽셀 마법사</value><comment>레벨 보상 이름(title.pixel-wizard, Lv 71).</comment></data>
+  <data name="Reward_badge_ruby" xml:space="preserve"><value>루비</value><comment>레벨 보상 이름(badge.ruby, Lv 72).</comment></data>
+  <data name="Reward_frame_ruby" xml:space="preserve"><value>루비 테두리</value><comment>레벨 보상 이름(frame.ruby, Lv 73).</comment></data>
+  <data name="Reward_effect_planets" xml:space="preserve"><value>행성</value><comment>레벨 보상 이름(effect.planets, Lv 74).</comment></data>
+  <data name="Reward_frame_halo" xml:space="preserve"><value>천사의 고리</value><comment>레벨 보상 이름(frame.halo, Lv 75).</comment></data>
+  <data name="Reward_name_fire" xml:space="preserve"><value>불꽃 글씨</value><comment>레벨 보상 이름(name.fire, Lv 76).</comment></data>
+  <data name="Reward_badge_aurora" xml:space="preserve"><value>오로라</value><comment>레벨 보상 이름(badge.aurora, Lv 77).</comment></data>
+  <data name="Reward_frame_ocean" xml:space="preserve"><value>파도 테두리</value><comment>레벨 보상 이름(frame.ocean, Lv 78).</comment></data>
+  <data name="Reward_effect_runes" xml:space="preserve"><value>룬</value><comment>레벨 보상 이름(effect.runes, Lv 79).</comment></data>
+  <data name="Reward_card_aurora" xml:space="preserve"><value>오로라 카드</value><comment>레벨 보상 이름(card.aurora, Lv 80).</comment></data>
+  <data name="Reward_title_legendary_dotter" xml:space="preserve"><value>전설의 도트</value><comment>레벨 보상 이름(title.legendary-dotter, Lv 81).</comment></data>
+  <data name="Reward_badge_starlight" xml:space="preserve"><value>별빛</value><comment>레벨 보상 이름(badge.starlight, Lv 82).</comment></data>
+  <data name="Reward_frame_lava" xml:space="preserve"><value>용암 테두리</value><comment>레벨 보상 이름(frame.lava, Lv 83).</comment></data>
+  <data name="Reward_effect_flames" xml:space="preserve"><value>불꽃 오라</value><comment>레벨 보상 이름(effect.flames, Lv 84).</comment></data>
+  <data name="Reward_frame_night_wings" xml:space="preserve"><value>밤의 날개</value><comment>레벨 보상 이름(frame.night-wings, Lv 85).</comment></data>
+  <data name="Reward_name_galaxy" xml:space="preserve"><value>은하 글씨</value><comment>레벨 보상 이름(name.galaxy, Lv 86).</comment></data>
+  <data name="Reward_badge_obsidian" xml:space="preserve"><value>흑요석</value><comment>레벨 보상 이름(badge.obsidian, Lv 87).</comment></data>
+  <data name="Reward_frame_galaxy" xml:space="preserve"><value>은하 테두리</value><comment>레벨 보상 이름(frame.galaxy, Lv 88).</comment></data>
+  <data name="Reward_effect_galaxy_swirl" xml:space="preserve"><value>은하 소용돌이</value><comment>레벨 보상 이름(effect.galaxy-swirl, Lv 89).</comment></data>
+  <data name="Reward_card_cosmos" xml:space="preserve"><value>우주 카드</value><comment>레벨 보상 이름(card.cosmos, Lv 90).</comment></data>
+  <data name="Reward_title_phoenix" xml:space="preserve"><value>불사조</value><comment>레벨 보상 이름(title.phoenix, Lv 91).</comment></data>
+  <data name="Reward_badge_prism" xml:space="preserve"><value>프리즘</value><comment>레벨 보상 이름(badge.prism, Lv 92).</comment></data>
+  <data name="Reward_frame_prism" xml:space="preserve"><value>프리즘 테두리</value><comment>레벨 보상 이름(frame.prism, Lv 93).</comment></data>
+  <data name="Reward_effect_meteors" xml:space="preserve"><value>유성우</value><comment>레벨 보상 이름(effect.meteors, Lv 94).</comment></data>
+  <data name="Reward_frame_royal" xml:space="preserve"><value>제왕의 테두리</value><comment>레벨 보상 이름(frame.royal, Lv 95).</comment></data>
+  <data name="Reward_name_legend" xml:space="preserve"><value>무지개 전설</value><comment>레벨 보상 이름(name.legend, Lv 96).</comment></data>
+  <data name="Reward_badge_celestial" xml:space="preserve"><value>천상</value><comment>레벨 보상 이름(badge.celestial, Lv 97).</comment></data>
+  <data name="Reward_frame_celestial" xml:space="preserve"><value>천상의 테두리</value><comment>레벨 보상 이름(frame.celestial, Lv 98).</comment></data>
+  <data name="Reward_effect_phoenix_aura" xml:space="preserve"><value>불사조 오라</value><comment>레벨 보상 이름(effect.phoenix-aura, Lv 99).</comment></data>
+  <data name="Reward_card_legend" xml:space="preserve"><value>전설 카드</value><comment>레벨 보상 이름(card.legend, Lv 100).</comment></data>
   <data name="RewardSlot_Title" xml:space="preserve"><value>칭호</value><comment>레벨 보상 칸 이름.</comment></data>
   <data name="RewardSlot_Badge" xml:space="preserve"><value>레벨 배지</value><comment>레벨 보상 칸 이름.</comment></data>
-  <data name="RewardSlot_FrameSmall" xml:space="preserve"><value>작은 테두리</value><comment>레벨 보상 칸 이름.</comment></data>
-  <data name="RewardSlot_FrameLarge" xml:space="preserve"><value>큰 테두리</value><comment>레벨 보상 칸 이름.</comment></data>
+  <data name="RewardSlot_Frame" xml:space="preserve"><value>테두리</value><comment>레벨 보상 칸 이름.</comment></data>
   <data name="RewardSlot_Effect" xml:space="preserve"><value>효과</value><comment>레벨 보상 칸 이름.</comment></data>
   <data name="RewardSlot_Card" xml:space="preserve"><value>카드</value><comment>레벨 보상 칸 이름.</comment></data>
+  <data name="RewardSlot_NameStyle" xml:space="preserve"><value>이름 효과</value><comment>레벨 보상 칸 이름.</comment></data>
 </root>

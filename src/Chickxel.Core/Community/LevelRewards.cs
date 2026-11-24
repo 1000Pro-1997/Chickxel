@@ -11,14 +11,14 @@ public enum RewardSlot
     Title,
     /// <summary>레벨 배지 스킨: 이름 옆 <c>Lv N</c> 배지 모양(<see cref="LevelBadgeArt"/>).</summary>
     Badge,
-    /// <summary>작은 테두리: 목록·작성자·이름 줄의 작은 프로필 그림 둘레(<see cref="AvatarFrameArt"/>).</summary>
-    FrameSmall,
-    /// <summary>큰 테두리: 프로필 쪽·계정 창의 큰 프로필 그림 둘레.</summary>
-    FrameLarge,
+    /// <summary>테두리: 프로필 그림 둘레의 픽셀 테두리 세트 — 작은 프로필 그림(목록·이름 줄)에는 작은 모양, 큰 프로필 그림(프로필 머리·계정 창)에는 같은 디자인의 큰 모양(<see cref="AvatarFrameArt"/>).</summary>
+    Frame,
     /// <summary>효과: 큰 프로필 그림 둘레에서 움직이는 것(<see cref="AvatarEffectArt"/>).</summary>
     Effect,
     /// <summary>카드: 프로필 머리 뒤 바탕(<see cref="ProfileCardArt"/>).</summary>
     Card,
+    /// <summary>이름 효과: 닉네임 글자의 색과 움직임(물결·글리치·순간이동·환각 등, <see cref="NameStyle"/>).</summary>
+    NameStyle,
 }
 
 /// <summary>레벨 <see cref="Level"/>에 오르면 받는 보상 하나(<see cref="LevelRewards"/>).</summary>
@@ -33,64 +33,115 @@ public sealed record LevelReward(string Id, int Level, RewardSlot Slot)
 
 /// <summary>
 /// 레벨 보상 목록(앱·홈페이지·서버가 같은 것을 씀 — <c>tools/RewardExport</c>가 홈페이지용 <c>catalog.json</c>으로 내보냄).
-/// 1레벨은 보상이 없고 2~50레벨에 하나씩(49개). 열 레벨마다 같은 차례로 돌아 칸이 고르게 늘어난다:
-/// 끝자리 2·7 배지, 3·8 작은 테두리, 4·9 효과, 5 큰 테두리, 6·1 칭호, 0 카드. 해금은 레벨만으로 정해진다(레벨이 내려가면 다시 잠김).
+/// 1레벨은 보상이 없고 2~100레벨에 하나씩(99개). 열 레벨마다 같은 차례로 돌아 칸이 고르게 늘어난다:
+/// 끝자리 1 칭호, 2·7 배지, 3·5·8 테두리, 4·9 효과, 6 이름 효과, 0 카드. 해금은 레벨만으로 정해진다(레벨이 내려가면 다시 잠김).
+/// 보상이 더 생기면 101레벨부터 이어 붙인다.
 /// </summary>
 public static class LevelRewards
 {
-    public const int MaxLevel = 50;
+    public const int MaxLevel = 100;
 
     public static IReadOnlyList<LevelReward> All { get; } =
     [
         new("badge.mint", 2, RewardSlot.Badge),
-        new("frame-s.wood", 3, RewardSlot.FrameSmall),
+        new("frame.wood", 3, RewardSlot.Frame),
         new("effect.twinkle", 4, RewardSlot.Effect),
-        new("frame-l.bronze", 5, RewardSlot.FrameLarge),
-        new("title.cluck", 6, RewardSlot.Title),
+        new("frame.medal", 5, RewardSlot.Frame),
+        new("name.sunrise", 6, RewardSlot.NameStyle),
         new("badge.strawberry", 7, RewardSlot.Badge),
-        new("frame-s.bronze", 8, RewardSlot.FrameSmall),
+        new("frame.bronze", 8, RewardSlot.Frame),
         new("effect.feathers", 9, RewardSlot.Effect),
         new("card.silver", 10, RewardSlot.Card),
-        new("title.dot-artisan", 11, RewardSlot.Title),
+        new("title.cluck", 11, RewardSlot.Title),
         new("badge.heart", 12, RewardSlot.Badge),
-        new("frame-s.silver", 13, RewardSlot.FrameSmall),
+        new("frame.silver", 13, RewardSlot.Frame),
         new("effect.snow", 14, RewardSlot.Effect),
-        new("frame-l.silver-wings", 15, RewardSlot.FrameLarge),
-        new("title.palette-collector", 16, RewardSlot.Title),
+        new("frame.silver-wings", 15, RewardSlot.Frame),
+        new("name.ocean", 16, RewardSlot.NameStyle),
         new("badge.ocean", 17, RewardSlot.Badge),
-        new("frame-s.marching", 18, RewardSlot.FrameSmall),
+        new("frame.marching", 18, RewardSlot.Frame),
         new("effect.notes", 19, RewardSlot.Effect),
         new("card.gold", 20, RewardSlot.Card),
-        new("title.rooster", 21, RewardSlot.Title),
+        new("title.dot-artisan", 21, RewardSlot.Title),
         new("badge.forest", 22, RewardSlot.Badge),
-        new("frame-s.gold", 23, RewardSlot.FrameSmall),
+        new("frame.gold", 23, RewardSlot.Frame),
         new("effect.hearts", 24, RewardSlot.Effect),
-        new("frame-l.crown", 25, RewardSlot.FrameLarge),
-        new("title.animator", 26, RewardSlot.Title),
+        new("frame.crown", 25, RewardSlot.Frame),
+        new("name.neon", 26, RewardSlot.NameStyle),
         new("badge.neon", 27, RewardSlot.Badge),
-        new("frame-s.neon", 28, RewardSlot.FrameSmall),
+        new("frame.neon", 28, RewardSlot.Frame),
         new("effect.bubbles", 29, RewardSlot.Effect),
         new("card.crystal", 30, RewardSlot.Card),
-        new("title.tile-architect", 31, RewardSlot.Title),
+        new("title.palette-collector", 31, RewardSlot.Title),
         new("badge.lava", 32, RewardSlot.Badge),
-        new("frame-s.crystal", 33, RewardSlot.FrameSmall),
+        new("frame.crystal", 33, RewardSlot.Frame),
         new("effect.shooting-stars", 34, RewardSlot.Effect),
-        new("frame-l.crystal-shards", 35, RewardSlot.FrameLarge),
-        new("title.pixel-wizard", 36, RewardSlot.Title),
+        new("frame.crystal-shards", 35, RewardSlot.Frame),
+        new("name.wave", 36, RewardSlot.NameStyle),
         new("badge.galaxy", 37, RewardSlot.Badge),
-        new("frame-s.vine", 38, RewardSlot.FrameSmall),
+        new("frame.vine", 38, RewardSlot.Frame),
         new("effect.gold-dust", 39, RewardSlot.Effect),
         new("card.night-sky", 40, RewardSlot.Card),
-        new("title.legendary-dotter", 41, RewardSlot.Title),
+        new("title.rooster", 41, RewardSlot.Title),
         new("badge.ice", 42, RewardSlot.Badge),
-        new("frame-s.flame", 43, RewardSlot.FrameSmall),
+        new("frame.flame", 43, RewardSlot.Frame),
         new("effect.sparks", 44, RewardSlot.Effect),
-        new("frame-l.phoenix", 45, RewardSlot.FrameLarge),
-        new("title.phoenix", 46, RewardSlot.Title),
+        new("frame.phoenix", 45, RewardSlot.Frame),
+        new("name.glitch", 46, RewardSlot.NameStyle),
         new("badge.legend-gold", 47, RewardSlot.Badge),
-        new("frame-s.rainbow", 48, RewardSlot.FrameSmall),
+        new("frame.rainbow", 48, RewardSlot.Frame),
         new("effect.aura", 49, RewardSlot.Effect),
         new("card.phoenix", 50, RewardSlot.Card),
+        new("title.animator", 51, RewardSlot.Title),
+        new("badge.sakura", 52, RewardSlot.Badge),
+        new("frame.sakura", 53, RewardSlot.Frame),
+        new("effect.petals", 54, RewardSlot.Effect),
+        new("frame.frost", 55, RewardSlot.Frame),
+        new("name.teleport", 56, RewardSlot.NameStyle),
+        new("badge.sunset", 57, RewardSlot.Badge),
+        new("frame.candy", 58, RewardSlot.Frame),
+        new("effect.fireflies", 59, RewardSlot.Effect),
+        new("card.sakura", 60, RewardSlot.Card),
+        new("title.tile-architect", 61, RewardSlot.Title),
+        new("badge.emerald", 62, RewardSlot.Badge),
+        new("frame.emerald", 63, RewardSlot.Frame),
+        new("effect.leaves", 64, RewardSlot.Effect),
+        new("frame.dragon", 65, RewardSlot.Frame),
+        new("name.hallucination", 66, RewardSlot.NameStyle),
+        new("badge.thunder", 67, RewardSlot.Badge),
+        new("frame.electric", 68, RewardSlot.Frame),
+        new("effect.confetti", 69, RewardSlot.Effect),
+        new("card.deep-sea", 70, RewardSlot.Card),
+        new("title.pixel-wizard", 71, RewardSlot.Title),
+        new("badge.ruby", 72, RewardSlot.Badge),
+        new("frame.ruby", 73, RewardSlot.Frame),
+        new("effect.planets", 74, RewardSlot.Effect),
+        new("frame.halo", 75, RewardSlot.Frame),
+        new("name.fire", 76, RewardSlot.NameStyle),
+        new("badge.aurora", 77, RewardSlot.Badge),
+        new("frame.ocean", 78, RewardSlot.Frame),
+        new("effect.runes", 79, RewardSlot.Effect),
+        new("card.aurora", 80, RewardSlot.Card),
+        new("title.legendary-dotter", 81, RewardSlot.Title),
+        new("badge.starlight", 82, RewardSlot.Badge),
+        new("frame.lava", 83, RewardSlot.Frame),
+        new("effect.flames", 84, RewardSlot.Effect),
+        new("frame.night-wings", 85, RewardSlot.Frame),
+        new("name.galaxy", 86, RewardSlot.NameStyle),
+        new("badge.obsidian", 87, RewardSlot.Badge),
+        new("frame.galaxy", 88, RewardSlot.Frame),
+        new("effect.galaxy-swirl", 89, RewardSlot.Effect),
+        new("card.cosmos", 90, RewardSlot.Card),
+        new("title.phoenix", 91, RewardSlot.Title),
+        new("badge.prism", 92, RewardSlot.Badge),
+        new("frame.prism", 93, RewardSlot.Frame),
+        new("effect.meteors", 94, RewardSlot.Effect),
+        new("frame.royal", 95, RewardSlot.Frame),
+        new("name.legend", 96, RewardSlot.NameStyle),
+        new("badge.celestial", 97, RewardSlot.Badge),
+        new("frame.celestial", 98, RewardSlot.Frame),
+        new("effect.phoenix-aura", 99, RewardSlot.Effect),
+        new("card.legend", 100, RewardSlot.Card),
     ];
 
     private static readonly Dictionary<string, LevelReward> ById = All.ToDictionary(r => r.Id, StringComparer.Ordinal);
@@ -117,56 +168,73 @@ public static class LevelRewards
     public static string SlotNameIn(RewardSlot slot, CultureInfo culture) => CoreStrings.ResourceManager.GetString("RewardSlot_" + slot, culture) ?? slot.ToString();
 
     /// <summary>
-    /// 칭호 글자 색: 받은 레벨의 배지 단계 색(동·은·금·크리스털 — 6~29는 단계 색, 30~39 청록). 40 이상 칭호는 무지개로 흐른다(<see cref="IsRainbowTitle"/> — 이 색은 멈춘 화면용).
+    /// 칭호 글자 색: 받은 레벨이 높을수록 귀한 색(11 동·21 은·31 금·41 청록·51~61 분홍, 71 이상은 무지개로 흐름 — <see cref="IsRainbowTitle"/>, 이 색은 멈춘 화면용).
     /// </summary>
-    public static Model.Color32 TitleColor(LevelReward reward) => CommunityLevel.Tier(reward.Level) switch
+    public static Model.Color32 TitleColor(LevelReward reward) => reward.Level switch
     {
-        CommunityLevelTier.Legend or CommunityLevelTier.Crystal when reward.Level >= 40 => new Model.Color32(0xF9, 0xA8, 0xD4),
-        CommunityLevelTier.Legend or CommunityLevelTier.Crystal => new Model.Color32(0x67, 0xE8, 0xF9),
-        CommunityLevelTier.Gold => new Model.Color32(0xFF, 0xD5, 0x4A),
-        CommunityLevelTier.Silver => new Model.Color32(0xC9, 0xD3, 0xDD),
+        >= 51 => new Model.Color32(0xF9, 0xA8, 0xD4),
+        >= 41 => new Model.Color32(0x67, 0xE8, 0xF9),
+        >= 31 => new Model.Color32(0xFF, 0xD5, 0x4A),
+        >= 21 => new Model.Color32(0xC9, 0xD3, 0xDD),
         _ => new Model.Color32(0xE0, 0xA0, 0x66),
     };
 
-    /// <summary>무지개로 흐르는 칭호(40레벨 이상에서 받은 것).</summary>
-    public static bool IsRainbowTitle(LevelReward reward) => reward.Slot == RewardSlot.Title && reward.Level >= 40;
+    /// <summary>무지개로 흐르는 칭호(71레벨 이상에서 받은 것).</summary>
+    public static bool IsRainbowTitle(LevelReward reward) => reward.Slot == RewardSlot.Title && reward.Level >= 71;
 
-    /// <summary>칸의 JSON 이름(<c>title</c>, <c>badge</c>, <c>frameSmall</c>, <c>frameLarge</c>, <c>effect</c>, <c>card</c>).</summary>
+    /// <summary>칸에서 "없음"을 고른 값(장착 선택에 저장 — 고르지 않은 칸은 자동).</summary>
+    public const string NoneChoice = "none";
+
+    /// <summary>"자동"이 낄 보상: 레벨 <paramref name="level"/>까지 그 칸에서 받은 것 중 가장 높은 레벨(없으면 null).</summary>
+    public static LevelReward? Highest(RewardSlot slot, int level) => All.LastOrDefault(r => r.Slot == slot && r.Level <= level);
+
+    /// <summary>
+    /// 고른 값(<paramref name="choice"/> — null = 자동, <see cref="NoneChoice"/> = 없음, 아니면 보상 ID)을 레벨 <paramref name="level"/>에서 실제로 낄 보상으로 푼다.
+    /// 아직 못 받은(레벨이 내려간) 보상이나 칸이 다른 ID는 자동으로 본다.
+    /// </summary>
+    public static LevelReward? Resolve(RewardSlot slot, string? choice, int level)
+    {
+        if (choice == NoneChoice) return null;
+        return Find(choice) is { } chosen && chosen.Slot == slot && chosen.Level <= level ? chosen : Highest(slot, level);
+    }
+
+    /// <summary>칸의 JSON 이름(<c>title</c>, <c>badge</c>, <c>frame</c>, <c>effect</c>, <c>card</c>, <c>nameStyle</c>).</summary>
     public static string SlotKey(RewardSlot slot) => slot switch
     {
         RewardSlot.Title => "title",
         RewardSlot.Badge => "badge",
-        RewardSlot.FrameSmall => "frameSmall",
-        RewardSlot.FrameLarge => "frameLarge",
+        RewardSlot.Frame => "frame",
         RewardSlot.Effect => "effect",
-        _ => "card",
+        RewardSlot.Card => "card",
+        _ => "nameStyle",
     };
 
     internal static string NameKey(string id) => "Reward_" + id.Replace('.', '_').Replace('-', '_');
 }
 
 /// <summary>
-/// 계정이 장착한 보상(칸마다 보상 ID, null = 기본 — 칭호 없음·배지는 레벨 단계 모양·테두리·효과·카드 없음). 사용자 JSON의 <c>rewards</c> 칸.
-/// 레벨보다 높은 보상이나 칸이 맞지 않는 ID는 장착하지 않은 것으로 본다(서버도 그렇게 거름).
+/// 계정이 실제로 낀 보상(칸마다 보상 ID, null = 없음). 사용자 JSON의 <c>rewards</c> 칸으로, 서버가 고른 값을 풀어서 보낸다:
+/// 고르지 않은 칸은 "자동"(그 칸에서 받은 것 중 가장 높은 레벨 — <see cref="LevelRewards.Highest"/>), "없음"(<see cref="LevelRewards.NoneChoice"/>)을 고른 칸은 빠진다.
+/// 레벨보다 높은 보상이나 칸이 맞지 않는 ID는 끼지 않은 것으로 본다(서버도 그렇게 거름).
 /// </summary>
-public sealed record ProfileRewards(string? Title = null, string? Badge = null, string? FrameSmall = null, string? FrameLarge = null, string? Effect = null, string? Card = null)
+public sealed record ProfileRewards(string? Title = null, string? Badge = null, string? Frame = null, string? Effect = null, string? Card = null, string? NameStyle = null)
 {
     public static ProfileRewards None { get; } = new();
 
-    public bool IsEmpty => Title is null && Badge is null && FrameSmall is null && FrameLarge is null && Effect is null && Card is null;
+    public bool IsEmpty => Title is null && Badge is null && Frame is null && Effect is null && Card is null && NameStyle is null;
 
-    /// <summary>칸의 장착 ID.</summary>
+    /// <summary>칸의 ID.</summary>
     public string? this[RewardSlot slot] => slot switch
     {
         RewardSlot.Title => Title,
         RewardSlot.Badge => Badge,
-        RewardSlot.FrameSmall => FrameSmall,
-        RewardSlot.FrameLarge => FrameLarge,
+        RewardSlot.Frame => Frame,
         RewardSlot.Effect => Effect,
-        _ => Card,
+        RewardSlot.Card => Card,
+        _ => NameStyle,
     };
 
-    /// <summary>칸에 장착한 보상(레벨 <paramref name="level"/>로 받을 수 있는 것만, 아니면 null).</summary>
+    /// <summary>칸에 낀 보상(레벨 <paramref name="level"/>로 받을 수 있는 것만, 아니면 null).</summary>
     public LevelReward? Equipped(RewardSlot slot, int level)
         => LevelRewards.Find(this[slot]) is { } reward && reward.Slot == slot && reward.Level <= level ? reward : null;
 
@@ -174,7 +242,7 @@ public sealed record ProfileRewards(string? Title = null, string? Badge = null, 
     {
         if (node is not JsonObject o) return None;
         string? Id(RewardSlot slot) => CommunityJson.String(o[LevelRewards.SlotKey(slot)]);
-        return new ProfileRewards(Id(RewardSlot.Title), Id(RewardSlot.Badge), Id(RewardSlot.FrameSmall), Id(RewardSlot.FrameLarge), Id(RewardSlot.Effect), Id(RewardSlot.Card));
+        return new ProfileRewards(Id(RewardSlot.Title), Id(RewardSlot.Badge), Id(RewardSlot.Frame), Id(RewardSlot.Effect), Id(RewardSlot.Card), Id(RewardSlot.NameStyle));
     }
 
     internal JsonObject ToJson()

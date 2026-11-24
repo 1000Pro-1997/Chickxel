@@ -143,10 +143,10 @@ public class RemoteCatalogTests
     [Fact]
     public void Index_AuthorRewards_AreReadWhenPresent()
     {
-        var page = OnePage(Entry() with { AuthorLevel = 21, AuthorRewards = new Chickxel.Core.Community.ProfileRewards(Badge: "badge.mint", FrameSmall: "frame-s.wood") });
+        var page = OnePage(Entry() with { AuthorLevel = 21, AuthorRewards = new Chickxel.Core.Community.ProfileRewards(Badge: "badge.mint", Frame: "frame.wood") });
         var read = Assert.Single(RemoteCatalogFormat.Read(PageBytes(page)).Packages);
         Assert.Equal("badge.mint", read.AuthorRewards?.Badge);
-        Assert.Equal("frame-s.wood", read.AuthorRewards?.FrameSmall);
+        Assert.Equal("frame.wood", read.AuthorRewards?.Frame);
         page["packages"]![0]!["author"]!.AsObject().Remove("rewards");
         Assert.Null(Assert.Single(RemoteCatalogFormat.Read(PageBytes(page)).Packages).AuthorRewards);
     }
