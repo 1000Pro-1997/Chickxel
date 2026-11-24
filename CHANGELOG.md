@@ -2,6 +2,13 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.152 (2026-11-24)
+
+### Pixel-art level badge that gets flashier as you level up
+- The `Lv N` badge next to account names is now drawn as pixel art, with a pixel font and a pixel frame.
+- Higher levels animate more: bronze and silver get a passing shine, gold adds sparkles, crystal gets flowing colors and a glowing edge, and level 50+ has a flowing rainbow, a rainbow glow, more sparkles and rising embers.
+- Within a tier, more sparkles appear as the level rises; levels 1–4 stay still.
+
 ## v1.14.151 (2026-11-23)
 
 ### 3D model colors can be made see-through

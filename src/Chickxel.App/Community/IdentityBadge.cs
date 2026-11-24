@@ -100,7 +100,7 @@ public static class IdentityBadge
         };
         if (level > 0)
         {
-            var chip = LevelChip.Create(level, large ? AppTheme.SmallFontSize : double.NaN);
+            var chip = LevelChip.Create(level, large);
             // 핸들이 아래 줄이면 이름 줄 높이에 맞춘다
             bool twoLines = text is StackPanel;
             chip.Margin = new Thickness(5, twoLines ? (large ? 4 : 1) : 0, 0, 0);
