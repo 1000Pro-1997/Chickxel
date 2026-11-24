@@ -2335,9 +2335,7 @@ Unconfirmed changes made in this window are discarded and the window closes. If 
   <data name="Presets_Restored" xml:space="preserve"><value>Built-in presets restored.</value></data>
   <data name="EffectPreset_EffectsTab" xml:space="preserve"><value>Effects</value></data>
   <data name="EffectPreset_PresetsTab" xml:space="preserve"><value>Presets</value></data>
-  <data name="EffectPreset_PaletteHelp" xml:space="preserve"><value>The Effects tab has every effect you add one at a time: the official effects the app installs by default (Outline, Shadow and so on), then ones you made and ones from installed packages. The Presets tab has presets: several effects saved together with their values and clipping. Double-click or drag onto the effect list to add (dropping inserts at that spot). Get new effects from the Store or make your own in AI > Effect Maker. Bring back deleted official effects with "Restore default effects" in the Asset Manager.</value></data>
-  <data name="EffectPreset_OpenStore" xml:space="preserve"><value>Open Store</value></data>
-  <data name="EffectPreset_OpenStoreTip" xml:space="preserve"><value>Find and install effects made by others in the Asset Manager's Store. Installed effects show up in this tab.</value></data>
+  <data name="EffectPreset_PaletteHelp" xml:space="preserve"><value>The Effects tab has every effect you add one at a time: the official effects the app installs by default (Outline, Shadow and so on), then ones you made and ones from installed packages. The Presets tab has presets: several effects saved together with their values and clipping. Double-click or drag onto the effect list to add (dropping inserts at that spot). Get new effects with Get more (the website store) below the Effects tab or make your own in the Effect Maker; get new versions of downloaded effects with Check all effects for updates. Bring back deleted official effects with "Restore default effects" in the Asset Manager.</value></data>
   <data name="EffectPreset_SavePreset" xml:space="preserve"><value>Save Current Effects as Preset</value></data>
   <data name="EffectPreset_SaveGroupTip" xml:space="preserve"><value>Saves every effect in the current list with its values and clipping relationships as a preset.</value></data>
   <data name="EffectPreset_PresetsHelp" xml:space="preserve"><value>Set up effects, values and clipping in the effect list, then save them as a preset. Adding a preset inserts all of those effects at once.</value></data>
@@ -3288,6 +3286,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Publish_Languages" xml:space="preserve"><value>Languages…</value></data>
   <data name="Publish_LanguagesTip" xml:space="preserve"><value>Enter the package name and short description per language. People who view the Store or chickxel.com in that language see them.</value></data>
   <data name="Publish_LanguagesNone" xml:space="preserve"><value>None (the name and description above are shown in every language)</value></data>
+  <data name="Publish_LanguageBase" xml:space="preserve"><value>{0} (base)</value></data>
   <data name="Publish_Tags" xml:space="preserve"><value>Tags</value></data>
   <data name="Publish_TagsTip" xml:space="preserve"><value>Type a tag like #neon and press Space, Enter or comma to add it. Up to 8 tags of lowercase English letters, digits and hyphens.</value></data>
   <data name="Publish_LayerReferenceTag" xml:space="preserve"><value>This effect reads other layers, so it always carries the layer-reference tag (it can't be removed and counts toward the 8 tags).</value></data>
@@ -3297,7 +3296,10 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Publish_Asset" xml:space="preserve"><value>Asset</value></data>
   <data name="Publish_Preview" xml:space="preserve"><value>List preview</value></data>
   <data name="Publish_PreviewTip" xml:space="preserve"><value>The image shown in the Store list and details: the asset's preview, or a PNG you choose (up to 512×512, 1 MB).</value></data>
-  <data name="PublishLanguages_Hint" xml:space="preserve"><value>Write a package name and short description per language; people who view the Store or chickxel.com in that language see them. Empty fields show the name and description of the publish window.</value></data>
+  <data name="PublishLanguages_Hint" xml:space="preserve"><value>Write a package name and short description per language; people who view the Store or chickxel.com in that language see them. Empty fields show the base name and description.</value></data>
+  <data name="PublishLanguages_BaseHint" xml:space="preserve"><value>Shown to people viewing in a language that has no name or description of its own.</value></data>
+  <data name="PublishLanguages_BaseNameRequired" xml:space="preserve"><value>Enter the name in the base language.</value></data>
+  <data name="PublishLanguages_InWindow" xml:space="preserve"><value>Language '{0}' is edited in the Name and Short description fields of the publish window. Remove this one.</value></data>
   <data name="TagChips_Hint" xml:space="preserve"><value>Type #tag, then Space</value></data>
   <data name="TagChips_Remove" xml:space="preserve"><value>Remove #{0}</value></data>
   <data name="TagChips_Invalid" xml:space="preserve"><value>#{0}: tags use lowercase English letters, digits and inner hyphens, up to {1} characters.</value></data>
@@ -3758,7 +3760,8 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="EffectMaker_RunFailed" xml:space="preserve"><value>The effect was skipped because of a run error.</value></data>
   <data name="EffectMaker_FixSourceFirst" xml:space="preserve"><value>Fix the errors in the source first.</value></data>
   <data name="EffectMaker_Save" xml:space="preserve"><value>Save</value></data>
-  <data name="EffectMaker_SaveTip" xml:space="preserve"><value>Saves it as a personal script effect (Ctrl+S). It shows in the Effects tab of the effects window and in the Asset Manager.</value></data>
+  <data name="EffectMaker_Undo" xml:space="preserve"><value>Undo</value></data>
+  <data name="EffectMaker_UndoTip" xml:space="preserve"><value>Undoes source edits one at a time (same as Ctrl+Z, up to {0} steps). The effect is saved automatically after every edit (while the source has errors, it waits until they're fixed).</value></data>
   <data name="EffectMaker_Discard" xml:space="preserve"><value>Discard</value></data>
   <data name="EffectMaker_SaveError" xml:space="preserve"><value>Couldn't save the effect: {0}</value></data>
   <data name="EffectMaker_UnsavedQuestion" xml:space="preserve"><value>Save your changes to '{0}'?</value></data>
@@ -4998,6 +5001,19 @@ Enter, or switching tool, layer or frame, paints it in the primary color (second
   <data name="EffectList_MoreDownloads" xml:space="preserve"><value>Get more</value></data>
   <data name="EffectList_MoreDownloadsTip" xml:space="preserve"><value>Opens the website store ({0}) in your browser to get effects made by others.</value></data>
   <data name="EffectList_MakerTip" xml:space="preserve"><value>Opens the Effect Maker to make a new effect or edit your own.</value></data>
+  <data name="EffectUpdates_Check" xml:space="preserve"><value>Check all effects for updates</value></data>
+  <data name="EffectUpdates_CheckTip" xml:space="preserve"><value>Downloads the online list and checks whether effects and effect presets you got from the Store have new versions.</value></data>
+  <data name="EffectUpdates_Checking" xml:space="preserve"><value>Checking for updates…</value></data>
+  <data name="EffectUpdates_FetchFailed" xml:space="preserve"><value>Couldn't download the online list: {0}</value></data>
+  <data name="EffectUpdates_None" xml:space="preserve"><value>All effects are up to date.</value></data>
+  <data name="EffectUpdates_Found" xml:space="preserve"><value>{0} update(s) available.</value></data>
+  <data name="EffectUpdates_NeedsNewerApp" xml:space="preserve"><value>{0} need a newer version of the app.</value></data>
+  <data name="EffectUpdates_UpdateAll" xml:space="preserve"><value>Update all</value></data>
+  <data name="EffectUpdates_Updating" xml:space="preserve"><value>Updating {0} of {1}: {2}</value></data>
+  <data name="EffectUpdates_Done" xml:space="preserve"><value>Updated {0}.</value></data>
+  <data name="EffectUpdate_Button" xml:space="preserve"><value>Update</value></data>
+  <data name="EffectUpdate_RemoteTip" xml:space="preserve"><value>Downloads the new Store version ({0}) and switches this effect to it. Setting values the new version still has and shared values such as range, easing and repeat are kept.</value></data>
+  <data name="EffectUpdate_LocalTip" xml:space="preserve"><value>Switches this effect to the latest installed version. Setting values the new version still has and shared values such as range, easing and repeat are kept.</value></data>
   <data name="Model_OpenModel" xml:space="preserve"><value>Open model…</value></data>
   <data name="Model_OpenModelTip" xml:space="preserve"><value>Pick a 3D model file (glTF, GLB, OBJ, FBX). If a model is already open, only the model changes and the settings stay. You can also drop a file onto the window.</value></data>
   <data name="Model_DropHint" xml:space="preserve"><value>Drop a 3D model file (glTF, GLB, OBJ, FBX) here or press "Open model…"</value></data>

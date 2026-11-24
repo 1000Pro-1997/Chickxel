@@ -112,6 +112,7 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
         _addFrom.ValueChanged += (_, _) => { _addRangeTouched = true; SyncStripRange(); };
         _addTo.ValueChanged += (_, _) => { _addRangeTouched = true; SyncStripRange(); };
         _remove = Ui.Button(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_DEC8D5CC64, (_, _) => Remove(), 60);
+        _updateEffect = UpdateEffectButton();
         _up = Ui.Button(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4E920AEA13, (_, _) => Move(-1), 60);
         _down = Ui.Button(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_FE8FEDFCFF, (_, _) => Move(1), 60);
         _bake = Ui.Button(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_769C41A711, (_, _) => Bake(), 80).HelpAt("screen-layer-effects", anchor: "Applying permanently");
@@ -166,7 +167,7 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
         var left = Ui.Stack(
             Ui.Row(rangeLabel, _addAll, Ui.Label(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4782D0C688), _addFrom, Ui.Label("~"), _addTo).HelpAt(HelpPage, anchor: "⑧ Add range"),
             _list,
-            Ui.Row(_remove, _up, _down, _bake).HelpAt(HelpPage, anchor: "⑨ Effect list"),
+            Ui.Row(_remove, _updateEffect, _up, _down, _bake).HelpAt(HelpPage, anchor: "⑨ Effect list"),
             // 공통 설정·설정 칸은 높이를 고정한 스크롤 하나에 둔다 — 효과를 넣거나 고를 때마다 창 높이가 바뀌어 아래 확인 단추가 화면 밖으로 밀리지 않게.
             _settingsScroll);
         _settingsScroll.Content = Ui.Stack(shared, Ui.Group(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4D4CF63BB1, _settings).HelpAt(HelpPage, anchor: "⑩ Settings"));
@@ -285,6 +286,7 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
         int extra = chosen.Count > 0 ? LayerEffects.BakeSet(_effects, chosen).Count - chosen.Count : 0;
         ToolTip.SetTip(_bake, why ?? (UiStrings.S_LayerEffectsDialog_UpdateButtons_ADC8E0220B
                                       + (extra > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_UpdateButtons_DFC3F498B4,extra) : "")));
+        UpdateEffectButtonState();
     }
 
     /// <summary>고른 줄의 효과 번호들(묶음 머리면 구성 효과 전부).</summary>

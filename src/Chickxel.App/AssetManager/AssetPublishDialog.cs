@@ -10,7 +10,8 @@ namespace Chickxel.App;
 /// <summary>
 /// 에셋 게시 창(계획 8.4, 9.3, 14장 5단계): 내 에셋 하나를 공개 패키지로 Chickxel 커뮤니티 서비스에 올린다(로그인 필요).
 /// 왼쪽은 작성자(로그인한 계정의 프로필 배지 — 이름·@핸들, 고칠 수 없음), 패키지 묶음 맨 위의 모드 줄(서버에 물어 "새 패키지" / "이름 업데이트: 1.0.0 → 1.0.1"),
-/// 이름·짧은 설명(언어 설정으로 언어별 이름·설명), 고칠 수 없는 패키지 ID(<see cref="AssetPublishCheck.ResolveTarget"/> — 내가 올린 에셋이면 그 상점 ID, 아니면 핸들.이름 조각),
+/// 이름·짧은 설명(화면 언어가 기본 언어와 다르면 화면 언어의 번역 — 효과 만들기 정보 칸과 같음, 기본 언어와 다른 언어는 언어 설정 창),
+/// 고칠 수 없는 패키지 ID(<see cref="AssetPublishCheck.ResolveTarget"/> — 내가 올린 에셋이면 그 상점 ID, 아니면 핸들.이름 조각),
 /// 버전(이미 올린 버전에서 다음 수 버전 제안)·태그(<see cref="TagChipEditor"/>), 고정 라이선스(<see cref="AssetPublishCheck.License"/>),
 /// 오른쪽은 올릴 에셋, 목록 미리보기(에셋 미리보기나 고른 PNG), 올리기 전 검사 결과.
 /// 내가 올린 에셋은 그 상점 목록 정보로, 스크립트 효과는 선언의 이름·설명·번역·태그로, 그라데이션은 전에 올린 기록(없으면 에셋 이름)으로 채운다.
@@ -47,8 +48,17 @@ public sealed class AssetPublishDialog : DialogBase
     private readonly TextBlock _progressText = Note("");
     private readonly StackPanel _progressRow;
     private readonly Control _columns;
-    /// <summary>언어별 이름·짧은 설명(언어 설정 창에서 고침, 언어 차례).</summary>
+    /// <summary>언어별 이름·짧은 설명(언어 설정 창에서 고침, 언어 차례). <see cref="_fieldLanguage"/>의 번역은 빼고 이름·설명 칸에 둔다.</summary>
     private IReadOnlyList<KeyValuePair<string, AssetTranslation>> _translations;
+    /// <summary>
+    /// 이름·짧은 설명 칸이 고치는 번역 언어: 화면 언어가 기본 언어와 다르면 화면 언어(<see cref="FieldLanguage"/>), 같거나 기본 언어를 모르면 null(칸 = 기본 이름·설명).
+    /// </summary>
+    private readonly string? _fieldLanguage;
+    /// <summary>기본 이름·설명의 언어(스크립트 선언의 <c>language</c>, 없으면 글자로 짐작 — 모르면 null).</summary>
+    private readonly string? _baseLanguage;
+    /// <summary><see cref="_fieldLanguage"/>가 있을 때의 기본 이름·짧은 설명(언어 설정 창의 기본 언어 칸에서 고침).</summary>
+    private string _baseName, _baseSummary;
+    private readonly TextBlock _fieldCaption = Note("");
     private byte[]? _customPreview;
     private bool _versionEdited, _filling = true;
     /// <summary>지금 이름으로 정한 패키지 ID와 그 출처(<see cref="AssetPublishCheck.ResolveTarget"/>).</summary>
@@ -115,6 +125,7 @@ public sealed class AssetPublishDialog : DialogBase
         // 그 밖은 전에 올린 기록이나 에셋 이름.
         var record = _settings.Saved.FirstOrDefault(r => r.Assets.Contains(asset.Id));
         string name, summary;
+        string? declaredLanguage = null;
         IReadOnlyList<string> tags;
         if (AssetPublishCheck.IsOwnListed(asset, user.Handle))
         {
@@ -129,6 +140,7 @@ public sealed class AssetPublishDialog : DialogBase
             name = script.Name;
             summary = script.Description ?? "";
             _translations = ScriptTranslationsOf(script);
+            declaredLanguage = script.Language;
             tags = script.Tags.Count > 0 ? script.Tags : record?.Tags ?? [];
         }
         else
@@ -142,13 +154,28 @@ public sealed class AssetPublishDialog : DialogBase
         // ── 왼쪽: 작성자·패키지·라이선스 ──
         // 작성자 ID = 계정 핸들(서버가 패키지 ID 첫 조각·작성자 ID를 핸들과 맞춰 봄), 표시 이름 = 계정 이름. 둘 다 계정 창에서 바꾼다.
         _author.Content = AuthorBadge(user);
-        _name = Field(name);
+        // 화면 언어가 기본 언어와 다르면 이름·설명 칸은 화면 언어의 번역(빈 칸은 흐린 글로 기본 값), 기본 값은 언어 설정 창에서 고친다.
+        _baseLanguage = declaredLanguage ?? ScriptTranslations.GuessLanguage(name, summary);
+        _fieldLanguage = FieldLanguage(_baseLanguage, _translations, CultureInfo.CurrentUICulture);
+        _baseName = name;
+        _baseSummary = summary;
+        AssetTranslation? own = null;
+        if (_fieldLanguage is { } fieldLanguage)
+        {
+            own = _translations.FirstOrDefault(pair => SameLanguage(pair.Key, fieldLanguage)).Value;
+            _translations = _translations.Where(pair => !SameLanguage(pair.Key, fieldLanguage)).ToList();
+        }
+        _name = Field(_fieldLanguage is null ? name : own?.Name ?? "");
         _name.MaxLength = AssetManifest.MaxNameLength;
         _summary = new TextBox
         {
-            Text = summary, Width = FieldWidth, Height = 56, Margin = new Thickness(3), TextWrapping = TextWrapping.Wrap,
-            MaxLength = RemoteCatalogFormat.MaxSummaryLength, Watermark = UiStrings.Publish_SummaryHint,
+            Text = _fieldLanguage is null ? summary : own?.Summary ?? "", Width = FieldWidth, Height = 56, Margin = new Thickness(3), TextWrapping = TextWrapping.Wrap,
+            MaxLength = RemoteCatalogFormat.MaxSummaryLength,
         };
+        ShowBaseWatermarks();
+        string caption = (_fieldLanguage ?? _baseLanguage) is { } shownLanguage ? LanguagePicker.NativeName(shownLanguage) : "";
+        _fieldCaption.Text = caption;
+        _fieldCaption.IsVisible = caption.Length > 0;
         var languages = Ui.Button(VectorIcon.Languages, UiStrings.Publish_Languages, (_, _) => EditLanguages()).Tip(UiStrings.Publish_LanguagesTip);
         // 패키지 ID는 고칠 수 없다: 내가 올린 에셋이면 그 상점 ID, 아니면 "핸들.이름 조각"(UpdateTarget).
         _idText = new SelectableTextBlock { Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, Margin = new Thickness(3, 6, 3, 3) };
@@ -194,7 +221,7 @@ public sealed class AssetPublishDialog : DialogBase
                 Ui.Group(UiStrings.Publish_Package, Ui.Stack(
                     mode,
                     Rows((UiStrings.Publish_Name, _name, null),
-                        (UiStrings.Publish_Summary, _summary, null),
+                        (UiStrings.Publish_Summary, Ui.Stack(_summary, _fieldCaption), null),
                         (UiStrings.Publish_LanguagesLabel, Ui.Stack(languages, _languages), null),
                         (UiStrings.Publish_Id, _idText, UiStrings.Publish_IdTip),
                         (UiStrings.Publish_Version, Ui.Row(_version, _useSuggestion), null),
@@ -314,6 +341,48 @@ public sealed class AssetPublishDialog : DialogBase
             .Take(AssetTranslations.MaxLanguages)
             .ToList();
 
+    /// <summary>
+    /// 이름·짧은 설명 칸이 고칠 번역 언어(<see cref="_fieldLanguage"/>): 기본 언어를 모르거나 화면 언어가 기본 언어면 null, 아니면 화면 언어의 찾는 차례에 있는
+    /// 번역 키(적힌 그대로), 없으면 화면 언어 코드(<see cref="ScriptTranslations.LanguageOf"/> — 고정 문화권이면 null).
+    /// </summary>
+    private static string? FieldLanguage(string? baseLanguage, IReadOnlyList<KeyValuePair<string, AssetTranslation>> translations, CultureInfo culture)
+    {
+        if (baseLanguage is null || ScriptTranslations.Matches(baseLanguage, culture)) return null;
+        for (var c = culture; !string.IsNullOrEmpty(c.Name); c = c.Parent)
+        {
+            string code = c.Name;
+            if (translations.FirstOrDefault(pair => SameLanguage(pair.Key, code)).Key is { } key) return key;
+        }
+        return ScriptTranslations.LanguageOf(culture);
+    }
+
+    private static bool SameLanguage(string a, string b) => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+
+    private static string? Trimmed(string? text) => text?.Trim() is { Length: > 0 } trimmed ? trimmed : null;
+
+    /// <summary>패키지의 기본 이름·짧은 설명: 칸이 기본 값이면 칸, 번역을 고치면 언어 설정 창에서 고친 값.</summary>
+    private string BaseName => _fieldLanguage is null ? _name.Text ?? "" : _baseName;
+
+    private string BaseSummary => _fieldLanguage is null ? _summary.Text ?? "" : _baseSummary;
+
+    /// <summary>올릴 번역: 언어 설정 창의 번역과 칸의 번역(<see cref="_fieldLanguage"/> — 두 칸이 모두 비었으면 뺌).</summary>
+    private IEnumerable<KeyValuePair<string, AssetTranslation>> AllTranslations
+    {
+        get
+        {
+            foreach (var pair in _translations) yield return pair;
+            if (_fieldLanguage is { } code && (Trimmed(_name.Text) is not null || Trimmed(_summary.Text) is not null))
+                yield return new KeyValuePair<string, AssetTranslation>(code, new AssetTranslation(Trimmed(_name.Text), Trimmed(_summary.Text)));
+        }
+    }
+
+    /// <summary>번역을 고치는 칸의 흐린 글은 기본 이름·설명(빈 칸이 그것으로 보임), 기본 값을 고치면 보통 안내.</summary>
+    private void ShowBaseWatermarks()
+    {
+        _name.Watermark = _fieldLanguage is null ? null : _baseName;
+        _summary.Watermark = _fieldLanguage is not null && _baseSummary.Length > 0 ? _baseSummary : UiStrings.Publish_SummaryHint;
+    }
+
     // ───────────── 입력 ─────────────
 
     private static TextBox Field(string value, string? watermark = null)
@@ -363,8 +432,8 @@ public sealed class AssetPublishDialog : DialogBase
     /// </summary>
     private void UpdateTarget()
     {
-        string? english = _translations.FirstOrDefault(pair => string.Equals(pair.Key, "en", StringComparison.OrdinalIgnoreCase)).Value?.Name;
-        _target = AssetPublishCheck.ResolveTarget(_user.Handle, _asset, AppAssets.Catalog, _name.Text, english, _asset.Name);
+        string? english = AllTranslations.FirstOrDefault(pair => SameLanguage(pair.Key, "en")).Value?.Name;
+        _target = AssetPublishCheck.ResolveTarget(_user.Handle, _asset, AppAssets.Catalog, BaseName, english, _asset.Name);
         _idText.Text = _target.Id;
         if (!_lookups.ContainsKey(_target.Id) && AssetManifest.IsValidId(_target.Id)) LookUp(_target.Id);
         UpdateVersion();
@@ -449,16 +518,27 @@ public sealed class AssetPublishDialog : DialogBase
     /// <summary>언어 설정 창으로 언어별 이름·짧은 설명을 고친다.</summary>
     private void EditLanguages()
     {
-        if (PackageTranslationsDialog.Ask(this, _name.Text ?? "", _summary.Text ?? "", _translations) is not { } edited) return;
-        _translations = edited;
+        if (PackageTranslationsDialog.Ask(this, BaseName, BaseSummary, _translations, _baseLanguage, _fieldLanguage) is not { } edited) return;
+        _translations = edited.Translations;
+        if (_fieldLanguage is not null)
+        {
+            _baseName = edited.Name;
+            _baseSummary = edited.Summary;
+            ShowBaseWatermarks();
+        }
         ShowLanguages();
         UpdateTarget();
         Changed();
     }
 
+    /// <summary>다른 언어 줄: 칸이 번역을 고치면 맨 앞에 기본 언어, 그다음 언어 설정 창의 번역 언어.</summary>
     private void ShowLanguages()
-        => _languages.Text = _translations.Count == 0 ? UiStrings.Publish_LanguagesNone
-            : string.Join(", ", _translations.Select(pair => LanguagePicker.NativeName(pair.Key)));
+    {
+        var names = _translations.Select(pair => LanguagePicker.NativeName(pair.Key));
+        if (_fieldLanguage is not null) names = names.Prepend(F(UiStrings.Publish_LanguageBase, LanguagePicker.NativeName(_baseLanguage!)));
+        string text = string.Join(", ", names);
+        _languages.Text = text.Length > 0 ? text : UiStrings.Publish_LanguagesNone;
+    }
 
     // ───────────── 미리보기 ─────────────
 
@@ -492,14 +572,14 @@ public sealed class AssetPublishDialog : DialogBase
     private PublishRequest BuildRequest()
     {
         var translations = new Dictionary<string, AssetTranslation>(StringComparer.OrdinalIgnoreCase);
-        foreach (var (code, translation) in _translations) translations.TryAdd(code, translation);
+        foreach (var (code, translation) in AllTranslations) translations.TryAdd(code, translation);
         return new PublishRequest
         {
             Author = new AssetAuthor(_user.Handle, _user.Name, AvatarUrl: AppCommunity.PublishAvatarUrl(_user)),
             Id = _target.Id,
             Version = _version.Text?.Trim() ?? "",
-            Name = _name.Text ?? "",
-            Summary = _summary.Text ?? "",
+            Name = BaseName,
+            Summary = BaseSummary,
             Translations = translations,
             Tags = _tags.Tags,
             Asset = new PublishAsset(_asset.Kind, _asset.Data, _assetPreview),

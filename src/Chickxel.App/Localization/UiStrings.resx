@@ -8002,9 +8002,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Presets_Restored" xml:space="preserve"><value>기본 프리셋을 되돌렸습니다.</value></data>
   <data name="EffectPreset_EffectsTab" xml:space="preserve"><value>효과</value><comment>효과 창 종류 칸의 탭: 하나씩 넣는 효과 모두.</comment></data>
   <data name="EffectPreset_PresetsTab" xml:space="preserve"><value>프리셋</value><comment>효과 창 종류 칸의 탭: 여러 효과와 값을 묶어 저장한 프리셋.</comment></data>
-  <data name="EffectPreset_PaletteHelp" xml:space="preserve"><value>효과 탭에는 하나씩 넣는 효과가 모두 있습니다: 앱이 기본으로 설치하는 공식 효과(외곽선·그림자 등) 다음에 직접 만들었거나 설치한 패키지의 효과. 프리셋 탭에는 여러 효과와 값, 클리핑 관계를 묶어 저장한 프리셋이 있습니다. 두 번 누르거나 효과 목록으로 끌어 놓으면 추가합니다(끌어 놓으면 놓은 자리에). 새 효과는 상점에서 받거나 AI > 효과 만들기에서 만듭니다. 지운 공식 효과는 에셋 관리자의 "기본 효과 되돌리기"로 다시 넣습니다.</value></data>
-  <data name="EffectPreset_OpenStore" xml:space="preserve"><value>상점 보기</value></data>
-  <data name="EffectPreset_OpenStoreTip" xml:space="preserve"><value>에셋 관리자의 상점에서 다른 사람이 만든 효과를 찾아 설치합니다. 설치한 효과는 이 탭에 함께 보입니다.</value></data>
+  <data name="EffectPreset_PaletteHelp" xml:space="preserve"><value>효과 탭에는 하나씩 넣는 효과가 모두 있습니다: 앱이 기본으로 설치하는 공식 효과(외곽선·그림자 등) 다음에 직접 만들었거나 설치한 패키지의 효과. 프리셋 탭에는 여러 효과와 값, 클리핑 관계를 묶어 저장한 프리셋이 있습니다. 두 번 누르거나 효과 목록으로 끌어 놓으면 추가합니다(끌어 놓으면 놓은 자리에). 새 효과는 효과 탭 아래 추가 다운로드(홈페이지 상점)로 받거나 효과 만들기에서 만들고, 받은 효과의 새 버전은 모든 효과 업데이트 확인으로 받습니다. 지운 공식 효과는 에셋 관리자의 "기본 효과 되돌리기"로 다시 넣습니다.</value></data>
   <data name="EffectPreset_SavePreset" xml:space="preserve"><value>현재 효과 프리셋 저장</value></data>
   <data name="EffectPreset_SaveGroupTip" xml:space="preserve"><value>현재 목록의 모든 효과와 값, 클리핑 관계를 프리셋으로 저장합니다.</value></data>
   <data name="EffectPreset_PresetsHelp" xml:space="preserve"><value>효과 목록에서 효과와 값, 클리핑 관계를 만든 뒤 프리셋으로 저장하세요. 프리셋을 넣으면 그 효과들이 한 번에 들어갑니다.</value></data>
@@ -8955,6 +8953,7 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Publish_Languages" xml:space="preserve"><value>언어 설정…</value></data>
   <data name="Publish_LanguagesTip" xml:space="preserve"><value>언어마다 패키지 이름과 짧은 설명을 적습니다. 상점이나 chickxel.com을 그 언어로 보는 사람에게 보입니다.</value></data>
   <data name="Publish_LanguagesNone" xml:space="preserve"><value>없음(모든 언어에 위 이름·설명이 보임)</value></data>
+  <data name="Publish_LanguageBase" xml:space="preserve"><value>{0}(기본)</value><comment>다른 언어 목록에서 기본 언어. 0 = 언어 이름.</comment></data>
   <data name="Publish_Tags" xml:space="preserve"><value>태그</value></data>
   <data name="Publish_TagsTip" xml:space="preserve"><value>#neon처럼 적고 Space·Enter·쉼표로 더합니다. 8개까지, 소문자 영어·숫자·하이픈으로.</value></data>
   <data name="Publish_LayerReferenceTag" xml:space="preserve"><value>다른 레이어를 읽는 효과라 layer-reference 태그가 꼭 붙습니다(뺄 수 없고 8개에 셉니다).</value></data>
@@ -8964,7 +8963,10 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Publish_Asset" xml:space="preserve"><value>올릴 에셋</value></data>
   <data name="Publish_Preview" xml:space="preserve"><value>목록 미리보기</value></data>
   <data name="Publish_PreviewTip" xml:space="preserve"><value>상점 목록과 상세에 보일 그림. 에셋 미리보기를 쓰거나 PNG(512×512, 1MB 이하)로 바꿉니다.</value></data>
-  <data name="PublishLanguages_Hint" xml:space="preserve"><value>언어마다 패키지 이름과 짧은 설명을 적으면 상점과 chickxel.com을 그 언어로 보는 사람에게 그것이 보입니다. 비워 둔 칸은 게시 창의 이름·설명으로 보입니다.</value></data>
+  <data name="PublishLanguages_Hint" xml:space="preserve"><value>언어마다 패키지 이름과 짧은 설명을 적으면 상점과 chickxel.com을 그 언어로 보는 사람에게 그것이 보입니다. 비워 둔 칸은 기본 이름·설명으로 보입니다.</value></data>
+  <data name="PublishLanguages_BaseHint" xml:space="preserve"><value>이름·설명을 따로 적지 않은 언어로 보는 사람에게 보이는 이름·설명입니다.</value></data>
+  <data name="PublishLanguages_BaseNameRequired" xml:space="preserve"><value>기본 언어의 이름을 적으세요.</value></data>
+  <data name="PublishLanguages_InWindow" xml:space="preserve"><value>'{0}' 언어는 게시 창의 이름·짧은 설명 칸에서 고칩니다. 이 칸을 빼세요.</value><comment>0 = 언어 코드.</comment></data>
   <data name="TagChips_Hint" xml:space="preserve"><value>#태그 적고 Space</value></data>
   <data name="TagChips_Remove" xml:space="preserve"><value>#{0} 빼기</value><comment>0 = 태그.</comment></data>
   <data name="TagChips_Invalid" xml:space="preserve"><value>#{0}: 태그는 소문자 영어·숫자와 가운데 하이픈으로 {1}자까지입니다.</value><comment>0 = 태그, 1 = 최대 글자 수.</comment></data>
@@ -9425,7 +9427,8 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="EffectMaker_RunFailed" xml:space="preserve"><value>실행 중 오류가 나서 효과를 건너뛰었습니다.</value></data>
   <data name="EffectMaker_FixSourceFirst" xml:space="preserve"><value>원문의 오류를 먼저 고치세요.</value></data>
   <data name="EffectMaker_Save" xml:space="preserve"><value>저장</value></data>
-  <data name="EffectMaker_SaveTip" xml:space="preserve"><value>개인 스크립트 효과로 저장합니다(Ctrl+S). 효과 창 효과 탭과 에셋 관리자에 보입니다.</value></data>
+  <data name="EffectMaker_Undo" xml:space="preserve"><value>되돌리기</value><comment>효과 만들기 아래 줄 빨간 단추(저장 단추 자리 — 효과는 저절로 저장됨).</comment></data>
+  <data name="EffectMaker_UndoTip" xml:space="preserve"><value>원문 고침을 하나씩 되돌립니다(Ctrl+Z와 같음, {0}번까지). 효과는 고칠 때마다 저절로 저장됩니다(원문에 오류가 있으면 고칠 때까지 기다림).</value><comment>0 = 되돌릴 수 있는 횟수.</comment></data>
   <data name="EffectMaker_Discard" xml:space="preserve"><value>버리기</value></data>
   <data name="EffectMaker_SaveError" xml:space="preserve"><value>효과를 저장하지 못했습니다: {0}</value><comment>0 = 까닭.</comment></data>
   <data name="EffectMaker_UnsavedQuestion" xml:space="preserve"><value>'{0}'의 고친 내용을 저장할까요?</value><comment>0 = 효과 이름.</comment></data>
@@ -10665,6 +10668,19 @@ Enter나 다른 도구·레이어·프레임으로 바꾸면 기본색(오른쪽
   <data name="EffectList_MoreDownloads" xml:space="preserve"><value>추가 다운로드</value><comment>효과 목록 패널 맨 아래 단추: 홈페이지 상점을 브라우저로 엶.</comment></data>
   <data name="EffectList_MoreDownloadsTip" xml:space="preserve"><value>홈페이지 상점({0})을 브라우저로 열어 다른 사람이 만든 효과를 받습니다.</value><comment>{0} 상점 주소.</comment></data>
   <data name="EffectList_MakerTip" xml:space="preserve"><value>효과 만들기 창을 열어 새 효과를 만들거나 내 효과를 고칩니다.</value><comment>효과 목록 패널 맨 아래 오른쪽 단추.</comment></data>
+  <data name="EffectUpdates_Check" xml:space="preserve"><value>모든 효과 업데이트 확인</value><comment>효과 창 효과 탭 맨 아래 단추.</comment></data>
+  <data name="EffectUpdates_CheckTip" xml:space="preserve"><value>온라인 목록을 받아 상점에서 받은 효과와 효과 프리셋에 새 버전이 있는지 봅니다.</value></data>
+  <data name="EffectUpdates_Checking" xml:space="preserve"><value>업데이트를 확인하는 중…</value></data>
+  <data name="EffectUpdates_FetchFailed" xml:space="preserve"><value>온라인 목록을 받지 못했습니다: {0}</value><comment>0 = 까닭.</comment></data>
+  <data name="EffectUpdates_None" xml:space="preserve"><value>모든 효과가 최신입니다.</value></data>
+  <data name="EffectUpdates_Found" xml:space="preserve"><value>업데이트 {0}개가 있습니다.</value><comment>0 = 개수.</comment></data>
+  <data name="EffectUpdates_NeedsNewerApp" xml:space="preserve"><value>{0}개는 앱을 업데이트해야 받을 수 있습니다.</value><comment>0 = 개수.</comment></data>
+  <data name="EffectUpdates_UpdateAll" xml:space="preserve"><value>모두 업데이트</value></data>
+  <data name="EffectUpdates_Updating" xml:space="preserve"><value>{0}/{1} 업데이트하는 중: {2}</value><comment>0 = 지금 차례, 1 = 전체 수, 2 = 이름.</comment></data>
+  <data name="EffectUpdates_Done" xml:space="preserve"><value>{0}개를 업데이트했습니다.</value><comment>0 = 개수.</comment></data>
+  <data name="EffectUpdate_Button" xml:space="preserve"><value>업데이트</value><comment>효과 창 효과 목록의 삭제 옆 단추(고른 효과에 업데이트가 있을 때만).</comment></data>
+  <data name="EffectUpdate_RemoteTip" xml:space="preserve"><value>상점의 새 버전({0})을 받아 이 효과를 바꿉니다. 새 버전에도 있는 설정 값과 범위·빠르기·반복 같은 공통 값은 그대로 둡니다.</value><comment>0 = 버전.</comment></data>
+  <data name="EffectUpdate_LocalTip" xml:space="preserve"><value>설치된 최신 버전으로 이 효과를 바꿉니다. 새 버전에도 있는 설정 값과 범위·빠르기·반복 같은 공통 값은 그대로 둡니다.</value></data>
   <data name="Model_OpenModel" xml:space="preserve"><value>모델 열기…</value><comment>3D 모델 가져오기 창: 모델 파일 고르기(열려 있으면 바꾸기).</comment></data>
   <data name="Model_OpenModelTip" xml:space="preserve"><value>3D 모델 파일(glTF·GLB·OBJ·FBX)을 골라 엽니다. 이미 연 모델이 있으면 설정은 그대로 두고 모델만 바꿉니다. 창에 파일을 끌어 놓아도 됩니다.</value></data>
   <data name="Model_DropHint" xml:space="preserve"><value>3D 모델 파일(glTF·GLB·OBJ·FBX)을 여기로 끌어 놓거나 '모델 열기…'를 누릅니다</value></data>

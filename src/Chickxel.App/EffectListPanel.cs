@@ -88,34 +88,8 @@ public sealed class EffectListPanel : UserControl
         tabs.Items.Add(Tab(UiStrings.EffectPreset_EffectsTab, effects).HelpAt("screen-effect-list"));
         tabs.Items.Add(Tab(UiStrings.EffectPreset_PresetsTab, presets).HelpAt("screen-effect-recipes", anchor: "Presets tab"));
 
-        // 맨 아래 색 단추 둘(왼쪽·오른쪽 반씩, 서로 다른 색): 추가 다운로드(파랑) = 홈페이지 상점(패키지 목록)을 브라우저로, 효과 만들기(초록) = 효과 만들기 창
-        static Button Accent(VectorIcon icon, string text, string tip, IBrush fill, Action onClick)
-        {
-            var b = Ui.Button(icon, text, (_, _) => onClick());
-            b.HorizontalAlignment = HorizontalAlignment.Stretch;
-            b.HorizontalContentAlignment = HorizontalAlignment.Center;
-            b.Padding = new Thickness(4, b.Padding.Top, 4, b.Padding.Bottom);
-            b.Background = fill;
-            b.Foreground = Brushes.White;
-            if (b.Content is StackPanel { Children: [IconView view, ..] }) view.Foreground = Brushes.White;
-            Ui.KeepFillOnHover(b);
-            ToolTip.SetTip(b, tip);
-            return b;
-        }
-        var store = Accent(VectorIcon.Download, UiStrings.EffectList_MoreDownloads,
-            string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.EffectList_MoreDownloadsTip, AppInfo.StoreUrl),
-            AppTheme.AccentBrush, () => Updater.OpenUrl(this, AppInfo.StoreUrl)).HelpAt("screen-asset-manager");
-        var maker = Accent(VectorIcon.Sparkles, UiStrings.EffectMaker_Title, UiStrings.EffectList_MakerTip, AppTheme.SavedBrush, () =>
-        {
-            if (TopLevel.GetTopLevel(this) is MainForm main) EffectMakerWindow.Open(main, ((Ai.IAiHost)main).Context);
-        }).HelpAt("screen-effect-maker");
-        Grid.SetColumn(maker, 2);
-        var actions = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("*,4,*"),
-            Margin = new Thickness(4, 4, 4, 6),
-            Children = { store, maker },
-        };
+        var actions = StoreAndMakerButtons(this);
+        actions.Margin = new Thickness(4, 4, 4, 6);
         DockPanel.SetDock(actions, Dock.Bottom);
 
         Content = new DockPanel { Children = { header, hintRow, _search, _error, actions, tabs } };
@@ -145,6 +119,34 @@ public sealed class EffectListPanel : UserControl
             }
         };
         this.HelpAt("screen-effect-list");
+    }
+
+    /// <summary>
+    /// 효과 목록 아래 색 단추 둘(왼쪽·오른쪽 반씩, 서로 다른 색): 추가 다운로드(파랑) = 홈페이지 상점(패키지 목록)을 브라우저로, 효과 만들기(초록) = 효과 만들기 창.
+    /// 효과 목록 패널과 효과 창 효과 탭이 같이 쓴다.
+    /// </summary>
+    internal static Grid StoreAndMakerButtons(Visual owner)
+    {
+        static Button Accent(VectorIcon icon, string text, string tip, IBrush fill, Action onClick)
+        {
+            var b = Ui.Button(icon, text, (_, _) => onClick());
+            b.HorizontalAlignment = HorizontalAlignment.Stretch;
+            b.HorizontalContentAlignment = HorizontalAlignment.Center;
+            b.Padding = new Thickness(4, b.Padding.Top, 4, b.Padding.Bottom);
+            b.Background = fill;
+            b.Foreground = Brushes.White;
+            if (b.Content is StackPanel { Children: [IconView view, ..] }) view.Foreground = Brushes.White;
+            Ui.KeepFillOnHover(b);
+            ToolTip.SetTip(b, tip);
+            return b;
+        }
+        var store = Accent(VectorIcon.Download, UiStrings.EffectList_MoreDownloads,
+            string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.EffectList_MoreDownloadsTip, AppInfo.StoreUrl),
+            AppTheme.AccentBrush, () => Updater.OpenUrl(owner, AppInfo.StoreUrl)).HelpAt("screen-asset-manager");
+        var maker = Accent(VectorIcon.Sparkles, UiStrings.EffectMaker_Title, UiStrings.EffectList_MakerTip, AppTheme.SavedBrush,
+            () => EffectMakerWindow.OpenFromAnywhere(null)).HelpAt("screen-effect-maker");
+        Grid.SetColumn(maker, 2);
+        return new Grid { ColumnDefinitions = new ColumnDefinitions("*,4,*"), Children = { store, maker } };
     }
 
     private void Shown()

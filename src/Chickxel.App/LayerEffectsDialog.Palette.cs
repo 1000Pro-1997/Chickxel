@@ -43,12 +43,10 @@ public sealed partial class LayerEffectsDialog
     {
         _motionTip = motionTip;
 
-        var store = Ui.Button(VectorIcon.Store, UiStrings.EffectPreset_OpenStore,
-            (_, _) => AssetManagerWindow.Open(this, AssetKinds.EffectScript, tab: AssetManagerTab.Store));
-        store.HorizontalAlignment = HorizontalAlignment.Stretch;
-        store.Margin = new Thickness(2, 6, 2, 0);
-        ToolTip.SetTip(store, UiStrings.EffectPreset_OpenStoreTip);
-        store.HelpAt("screen-asset-manager", anchor: "Open Store at the bottom of the Effects tab");
+        // 효과 탭 맨 아래: 효과 목록 패널과 같은 추가 다운로드·효과 만들기 단추, 그 아래 효과 업데이트 확인
+        var actions = EffectListPanel.StoreAndMakerButtons(this);
+        actions.Margin = new Thickness(2, 6, 2, 0);
+        var bottom = new StackPanel { Spacing = 2, Children = { actions, BuildUpdatesPanel() } };
         _savePreset = Ui.Button(VectorIcon.Layers, UiStrings.EffectPreset_SavePreset, (_, _) => SavePresetGroup())
             .HelpAt("screen-effect-recipes", anchor: "① Save Current Effects as Preset");
         _savePreset.HorizontalAlignment = HorizontalAlignment.Stretch;
@@ -61,8 +59,12 @@ public sealed partial class LayerEffectsDialog
         }
         _effectsError.Foreground = AppTheme.WarningBrush;
         ReloadAssetTiles();
-        // 에셋 관리자에서 켜고 끄거나 지우면 에셋 상자만 다시 만든다(이미 넣은 효과는 값 사본이라 그대로).
-        _onAssetsChanged = () => Dispatcher.UIThread.Post(ReloadAssetTiles);
+        // 에셋 관리자에서 켜고 끄거나 지우거나 업데이트하면 에셋 상자를 다시 만들고(이미 넣은 효과는 값 사본이라 그대로) 고른 효과의 업데이트 단추를 다시 본다.
+        _onAssetsChanged = () => Dispatcher.UIThread.Post(() =>
+        {
+            ReloadAssetTiles();
+            UpdateButtons();
+        });
         AppAssets.Changed += _onAssetsChanged;
 
         _thumbTimer.Tick += (_, _) =>
@@ -82,10 +84,10 @@ public sealed partial class LayerEffectsDialog
             Content = content,
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
         };
-        // 효과 탭: 맨 아래에 상점 단추를 고정하고 격자는 남은 자리에서 스크롤한다(효과를 만드는 일은 효과 만들기 창에서).
+        // 효과 탭: 맨 아래에 단추 줄과 업데이트 칸을 고정하고 격자는 남은 자리에서 스크롤한다(효과를 만드는 일은 효과 만들기 창에서).
         DockPanel.SetDock(_effectsError, Dock.Top);
-        DockPanel.SetDock(store, Dock.Bottom);
-        var effects = new DockPanel { Children = { _effectsError, store, Scroll(_effectsWrap) } }.HelpAt("screen-effect-list");
+        DockPanel.SetDock(bottom, Dock.Bottom);
+        var effects = new DockPanel { Children = { _effectsError, bottom, Scroll(_effectsWrap) } }.HelpAt("screen-effect-list");
         var presetHead = Ui.Stack(_savePreset, presetsHelp, _presetEmpty);
         presetHead.Margin = new Thickness(0);
         DockPanel.SetDock(presetHead, Dock.Top);

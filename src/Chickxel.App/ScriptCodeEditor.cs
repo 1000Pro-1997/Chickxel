@@ -49,6 +49,7 @@ internal sealed class ScriptCodeEditor : UserControl
         _editor.TextArea.TextView.CurrentLineBorder = null;
         _editor.TextArea.SelectionBrush = AppTheme.Brush(Color.FromArgb(90, AppTheme.AccentColor.R, AppTheme.AccentColor.G, AppTheme.AccentColor.B));
         _editor.TextArea.TextView.BackgroundRenderers.Add(_errors);
+        _editor.Document.UndoStack.SizeLimit = UndoLimit;
 
         _editor.TextChanged += (_, _) => TextChanged?.Invoke(this, EventArgs.Empty);
         _editor.TextArea.TextEntering += OnTextEntering;
@@ -61,6 +62,9 @@ internal sealed class ScriptCodeEditor : UserControl
         Content = new Border { BorderBrush = AppTheme.BorderBrush, BorderThickness = new Thickness(1), Child = _editor };
     }
 
+    /// <summary>실행취소 기록 수 한도(Ctrl+Z와 효과 만들기의 되돌리기 단추).</summary>
+    public const int UndoLimit = 300;
+
     /// <summary>원문이 바뀜(사용자 입력과 <see cref="Text"/> 설정 모두).</summary>
     public event EventHandler? TextChanged;
 
@@ -71,9 +75,20 @@ internal sealed class ScriptCodeEditor : UserControl
         {
             if (_editor.Text == value) return;
             _editor.Document = new TextDocument(value); // 다른 원문을 열면 실행취소 기록도 새로
+            _editor.Document.UndoStack.SizeLimit = UndoLimit;
             _editor.TextArea.Caret.Offset = 0;
         }
     }
+
+    /// <summary>되돌릴 고침이 있는지(읽기 전용이면 false).</summary>
+    public bool CanUndo => !_editor.IsReadOnly && _editor.Document.UndoStack.CanUndo;
+
+    /// <summary>고침 하나를 되돌린다(Ctrl+Z와 같음).</summary>
+    public void Undo()
+    {
+        if (CanUndo) _editor.Undo();
+    }
+
     public bool IsReadOnly
     {
         get => _editor.IsReadOnly;

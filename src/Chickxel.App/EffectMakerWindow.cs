@@ -35,13 +35,6 @@ public sealed class EffectMakerWindow : Window
     private const int BaseMinWidth = 980;
     /// <summary>작게 보기의 미리보기 크기(메인 편집기에서 장면을 고치는 동안).</summary>
     private const int CompactPreviewBox = 200;
-    /// <summary>저장하지 않은 변경이 있을 때 저장 단추에 붙이는 클래스(반짝이는 바탕을 마우스를 올려도 유지).</summary>
-    private const string UnsavedClass = "unsaved";
-    /// <summary>저장할 것이 있을 때 저장 단추 바탕이 오가는 색: 보통 단추 바탕에 강조색을 반쯤 섞은 것.</summary>
-    private static readonly IBrush SavePulseBrush = AppTheme.Brush(Color.FromRgb(
-        (byte)((AppTheme.InputColor.R + AppTheme.AccentColor.R) / 2),
-        (byte)((AppTheme.InputColor.G + AppTheme.AccentColor.G) / 2),
-        (byte)((AppTheme.InputColor.B + AppTheme.AccentColor.B) / 2)));
     private static EffectMakerWindow? s_window;
 
     private readonly EditorContext _ctx;
@@ -78,7 +71,7 @@ public sealed class EffectMakerWindow : Window
     private readonly ScrollViewer _stripScroll;
     private readonly TextBlock _status = new() { TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.DimTextBrush, MaxWidth = PreviewBox };
     private readonly StackPanel _errors = new() { Spacing = 2 };
-    private readonly Button _save, _copy, _insert, _validate, _upload;
+    private readonly Button _undo, _copy, _insert, _validate, _upload;
     /// <summary>아래 줄의 상태 단추(아이콘 + 짧은 글, 상태 색). 누르면 <see cref="_statusFlyout"/>에 자세한 상태(<see cref="_status"/>·<see cref="_errors"/>).</summary>
     private readonly Button _statusButton;
     private readonly IconView _statusIcon = Ui.Icon(VectorIcon.Info, 14);
@@ -97,12 +90,14 @@ public sealed class EffectMakerWindow : Window
     };
     /// <summary>원문·장면·값을 고친 뒤 조용해지면(300ms) 다시 그린다(고치던 장면이 있으면 먼저 다시 읽음).</summary>
     private readonly UiDebouncer _debounce;
+    /// <summary>다시 그린 뒤 더 고치지 않으면(<see cref="AutoSaveDelay"/>) 저절로 저장한다(<see cref="AutoSave"/>).</summary>
+    private readonly UiDebouncer _autosave;
+    /// <summary>자동 저장까지 기다리는 시간: 치는 동안 저장(과 효과 상자 다시 만들기)이 이어지지 않게.</summary>
+    private static readonly TimeSpan AutoSaveDelay = TimeSpan.FromSeconds(1.5);
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(AssetPreview.PackageFrameMs) };
     private readonly Action _onAssetsChanged, _onAccountsChanged;
     /// <summary>창을 닫으면 취소(올린 효과 목록 받기·내려받기).</summary>
     private readonly CancellationTokenSource _closing = new();
-    /// <summary>저장 단추 반짝임을 멈출 토큰(null = 멈춤, <see cref="UpdateButtons"/>가 맞춤).</summary>
-    private CancellationTokenSource? _savePulse;
     /// <summary>이 계정으로 올렸지만 이 컴퓨터에 설치하지 않은 스크립트 효과(온라인 목록에서, 목록 아래 회색 줄).</summary>
     private IReadOnlyList<RemoteCatalogEntry> _uploads = [];
     /// <summary>마지막으로 읽은 온라인 목록(패키지 ID → 최신 버전 줄). 웹과 다른 효과 표시(<see cref="WebDifference"/>)와 <see cref="_uploads"/>에 쓴다.</summary>
@@ -149,8 +144,8 @@ public sealed class EffectMakerWindow : Window
     private (EffectEasing? Easing, EffectRepeat? Repeat, int? RepeatCount, bool? MovePivot) _previewCommon;
     private bool _loading, _syncingList, _syncingInfo, _syncingFrames;
     /// <summary>
-    /// 마지막으로 불러오거나 저장한 원문(새 스크립트면 null). 고친 것이 있는지는 이것과 견줘 정한다 — 편집기의 TextChanged는 값을 넣은 뒤에 늦게 올 수 있어
-    /// "불러오는 중" 표시로는 막을 수 없다.
+    /// 마지막으로 불러오거나 저장한 원문(새 스크립트면 null, 손대지 않은 새 스크립트 뼈대면 그 뼈대 — 잃을 것이 없어 묻지 않음).
+    /// 고친 것이 있는지는 이것과 견줘 정한다 — 편집기의 TextChanged는 값을 넣은 뒤에 늦게 올 수 있어 "불러오는 중" 표시로는 막을 수 없다.
     /// </summary>
     private string? _savedSource;
     private CancellationTokenSource? _render, _check;
@@ -202,8 +197,9 @@ public sealed class EffectMakerWindow : Window
             window.Height = Math.Min(window.Height, screen.WorkingArea.Height / screen.Scaling);
         }
         window.Show(owner);
+        // 따로 고른 효과가 없으면 새 스크립트로 시작한다(들어가자마자 만들 수 있게).
         if (assetId is not null) window.TryOpen(assetId);
-        else if (window.Entries().FirstOrDefault() is { } first) window.TryOpen(first.Id);
+        else window.NewScript(ScriptTemplates.Starter);
         // 고칠 수 있는 효과를 열었으면 AI 칸을 연다. 열지 못했으면(단추가 꺼짐·AI 서버 실패) 넣어 둔 너비를 되돌린다.
         if (window._aiToggle.IsEnabled) window._aiToggle.IsChecked = true;
         if (window._aiPreSized)
@@ -217,12 +213,14 @@ public sealed class EffectMakerWindow : Window
     private EffectMakerWindow(EditorContext ctx)
     {
         _ctx = ctx;
+        _autosave = new UiDebouncer(AutoSaveDelay, AutoSave);
         _debounce = new UiDebouncer(TimeSpan.FromMilliseconds(300), () =>
         {
             // 고치던 장면이 있으면 먼저 다시 읽는다(못 읽으면 앞 장면으로 그리고 까닭을 상태 칸에)
             string? sceneError = _sceneStale ? RebuildScene() : null;
             Rerender();
             if (sceneError is not null) AddNote(sceneError, warning: true);
+            if (Dirty) _autosave.Restart();
         });
         Title = UiStrings.EffectMaker_Title;
         Width = 1240;
@@ -383,10 +381,15 @@ public sealed class EffectMakerWindow : Window
         // ── 아래 줄
         _copy = Ui.Button(VectorIcon.Copy, UiStrings.Assets_CopyToPersonal, (_, _) => CopySelected()).Tip(UiStrings.Assets_CopyToPersonalTip)
             .HelpAt(HelpPage, anchor: "Received effects are read-only");
-        _save = Ui.Button(VectorIcon.Save, UiStrings.EffectMaker_Save, (_, _) => Save()).Tip(UiStrings.EffectMaker_SaveTip).HelpAt(HelpPage, anchor: "Save (Ctrl+S) saves it");
-        ToolTip.SetShowOnDisabled(_save, true);
-        Ui.KeepFillOnHover(_save, UnsavedClass);
-        _insert = Ui.Button(VectorIcon.Plus, UiStrings.EffectMaker_Insert, (_, _) => InsertIntoLayer()).Tip(UiStrings.EffectMaker_InsertTip).HelpAt(HelpPage, anchor: "Save (Ctrl+S) saves it");
+        // 효과는 고칠 때마다 저절로 저장하므로 저장 단추 대신 빨간 되돌리기(원문 고침 하나씩, Ctrl+Z와 같은 기록 — ScriptCodeEditor.UndoLimit번까지)
+        _undo = Ui.Button(VectorIcon.Undo2, UiStrings.EffectMaker_Undo, (_, _) => _code.Undo())
+            .Tip(string.Format(CultureInfo.CurrentCulture, UiStrings.EffectMaker_UndoTip, ScriptCodeEditor.UndoLimit)).HelpAt(HelpPage, anchor: "steps back through source edits");
+        _undo.Background = AppTheme.UnsavedBrush;
+        _undo.Foreground = Brushes.White;
+        if (_undo.Content is StackPanel { Children: [IconView undoIcon, ..] }) undoIcon.Foreground = Brushes.White;
+        Ui.KeepFillOnHover(_undo);
+        ToolTip.SetShowOnDisabled(_undo, true);
+        _insert = Ui.Button(VectorIcon.Plus, UiStrings.EffectMaker_Insert, (_, _) => InsertIntoLayer()).Tip(UiStrings.EffectMaker_InsertTip).HelpAt(HelpPage, anchor: "steps back through source edits");
         _validate = Ui.Button(VectorIcon.Check, UiStrings.EffectMaker_Validate, async (_, _) => await ValidateAsync()).Tip(UiStrings.EffectMaker_ValidateTip)
             .HelpAt(HelpPage, anchor: "Check: runs the install-time");
         _upload = Ui.Button(VectorIcon.Upload, UiStrings.EffectMaker_Upload, (_, _) => Upload()).Tip(UiStrings.EffectMaker_UploadTip).HelpAt(HelpPage, anchor: "Upload…: saves");
@@ -413,7 +416,7 @@ public sealed class EffectMakerWindow : Window
         var rightButtons = Ui.Row(_validate, _upload, close);
         DockPanel.SetDock(rightButtons, Dock.Right);
         bottom.Children.Add(rightButtons);
-        bottom.Children.Add(Ui.Row(_save, _copy, _insert, _statusButton));
+        bottom.Children.Add(Ui.Row(_undo, _copy, _insert, _statusButton));
 
         _aiHost = new Border { Width = AiPanelWidth, Margin = new Thickness(8, 0, 0, 0), IsVisible = false };
         var columns = new DockPanel { LastChildFill = true };
@@ -492,6 +495,7 @@ public sealed class EffectMakerWindow : Window
             _check?.Cancel();
             _timer.Stop();
             _debounce.Cancel();
+            _autosave.Cancel();
             DetachScene(closeTab: true);
             _aiPanel?.Shutdown();
             _rules?.Close();
@@ -816,7 +820,7 @@ public sealed class EffectMakerWindow : Window
         _previewCommon = default;
         _program = null;
         _loading = false;
-        _savedSource = saved ? _source : null;
+        _savedSource = saved || source == ScriptTemplates.Starter ? _source : null;
         _scene = scene;
         _savedScene = saved ? scene : null;
         _readsLayers = false;
@@ -869,23 +873,7 @@ public sealed class EffectMakerWindow : Window
     {
         bool editable = _open && !Foreign;
         _code.IsReadOnly = !editable;
-        // 저장 단추는 늘 보통 단추 색 — 고친 것이 있으면 바탕이 강조색 쪽으로 천천히 반짝인다(Ui.PulseBackground)
-        bool unsaved = editable && Dirty;
-        _save.IsEnabled = editable;
-        _save.Classes.Set(UnsavedClass, unsaved);
-        if (unsaved != (_savePulse is not null))
-        {
-            if (unsaved)
-            {
-                _savePulse = CancellationTokenSource.CreateLinkedTokenSource(_closing.Token);
-                Ui.PulseBackground(_save, AppTheme.InputBrush, SavePulseBrush, _savePulse.Token);
-            }
-            else
-            {
-                _savePulse!.Cancel();
-                _savePulse = null;
-            }
-        }
+        _undo.IsEnabled = _code.CanUndo;
         _copy.IsVisible = Foreign;
         _insert.IsEnabled = _open && _ctx.Project is not null;
         _validate.IsEnabled = _open;
@@ -1962,13 +1950,13 @@ public sealed class EffectMakerWindow : Window
     // ───────────── 저장·넣기·올리기 ─────────────
 
     /// <summary>
-    /// 내 스크립트 에셋으로 저장한다(오류 없이 해석될 때만, 미리보기 장면도 함께 — 고치던 장면 탭이 있으면 마지막 고침까지 읽어서).
-    /// 받은 에셋은 먼저 내 에셋으로 복사해야 한다. 되면 true.
+    /// 내 스크립트 에셋으로 저장한다(지금 원문이 오류 없이 해석될 때만, 미리보기 장면도 함께 — 고치던 장면 탭이 있으면 마지막 고침까지 읽어서).
+    /// 받은 에셋은 먼저 내 에셋으로 복사해야 한다. 되면 true. 고칠 때마다 저절로 부르고(<see cref="AutoSave"/>), Ctrl+S·올리기·창 닫기도 부른다.
     /// </summary>
     private bool Save()
     {
         if (!_open || Foreign) return false;
-        if (_program is null)
+        if (!ScriptEffectProgram.Parse(_source).Success)
         {
             Ui.Info(this, UiStrings.EffectMaker_FixSourceFirst, UiStrings.EffectMaker_Title);
             return false;
@@ -1987,6 +1975,16 @@ public sealed class EffectMakerWindow : Window
         SelectInList(saved.Id);
         UpdateButtons();
         return true;
+    }
+
+    /// <summary>
+    /// 자동 저장: 고칠 수 있는 효과를 고쳤고 지금 원문이 오류 없이 해석되면 저장한다. 다시 그리기가 남았으면 그 뒤로 미루고(그때 다시 잡음),
+    /// 원문에 오류가 있으면 고칠 때까지 저장하지 않는다(마지막으로 저장한 원문이 남음).
+    /// </summary>
+    private void AutoSave()
+    {
+        if (!_open || Foreign || !Dirty || _debounce.IsPending || _program is null) return;
+        Save();
     }
 
     /// <summary>지금 메인 편집기의 레이어 끝에 미리보기 설정 값·그라데이션의 스크립트 효과를 넣는다(모든 프레임, 실행취소 한 단계).</summary>
@@ -2031,9 +2029,13 @@ public sealed class EffectMakerWindow : Window
         await AssetPublishDialog.RunAsync(this, id);
     }
 
-    /// <summary>저장하지 않은 고침이 있으면 저장·버림·취소를 묻는다. 계속해도 되면 true.</summary>
+    /// <summary>
+    /// 다른 효과로 바꾸거나 창을 닫기 전: 고친 것이 있으면 먼저 저장하고, 원문에 오류가 있어 저장할 수 없으면 저장·버림·취소를 묻는다. 계속해도 되면 true.
+    /// </summary>
     private bool ConfirmDiscard()
     {
+        _autosave.Cancel();
+        if (Dirty && !Foreign && ScriptEffectProgram.Parse(_source).Success && Save()) return true;
         if (!Dirty) return true;
         var answer = Ui.Ask(this, string.Format(CultureInfo.CurrentCulture, UiStrings.EffectMaker_UnsavedQuestion, CurrentName()), UiStrings.EffectMaker_Title,
             MessageButtons.YesNoCancel, MessageIcon.Question, okText: UiStrings.EffectMaker_Save, noText: UiStrings.EffectMaker_Discard);

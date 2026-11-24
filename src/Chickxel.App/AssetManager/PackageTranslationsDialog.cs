@@ -8,17 +8,25 @@ namespace Chickxel.App;
 /// <summary>
 /// 게시 창의 "언어 설정" 창: 패키지 이름·짧은 설명을 언어마다 한 묶음(언어 코드, 이름, 짧은 설명)으로 적는다(manifest의 <c>translations</c>).
 /// 언어 고르기는 효과 만들기의 언어 설정 창과 같은 칸(<see cref="LanguagePicker"/>, 글이 있는 언어는 초록)이고, 비워 둔 칸은 기본 이름·설명으로 보인다.
+/// 게시 창 칸이 화면 언어의 번역을 고치면(화면 언어가 기본 언어와 다를 때) 맨 위에 기본 언어 칸(기본 이름·설명, 뺄 수 없음)이 있고,
+/// 화면 언어는 게시 창에서 고치므로 여기에 더할 수 없다.
 /// </summary>
 public sealed class PackageTranslationsDialog : DialogBase
 {
     private const int FieldWidth = 360;
 
     private readonly string _name, _summary;
+    /// <summary>게시 창 칸이 고치는 언어(이 창에 더할 수 없음). null이면 게시 창 칸이 기본 이름·설명이고 기본 언어 칸이 없다.</summary>
+    private readonly string? _windowLanguage;
+    /// <summary>기본 언어 코드와 이름·설명 칸(<see cref="_windowLanguage"/>가 있을 때만).</summary>
+    private readonly string? _baseLanguage;
+    private readonly TextBox? _baseName, _baseSummary;
     private readonly StackPanel _sections = new() { Spacing = 8 };
     private readonly TextBlock _empty;
     private readonly List<Section> _list = [];
 
-    private PackageTranslationsDialog(string name, string summary, IEnumerable<KeyValuePair<string, AssetTranslation>> translations)
+    private PackageTranslationsDialog(string name, string summary, IEnumerable<KeyValuePair<string, AssetTranslation>> translations,
+        string? baseLanguage, string? windowLanguage)
         : base(UiStrings.ScriptLanguages_Title)
     {
         _name = name;
@@ -31,7 +39,27 @@ public sealed class PackageTranslationsDialog : DialogBase
             Text = UiStrings.PublishLanguages_Hint, Width = FieldWidth + 160, TextWrapping = TextWrapping.Wrap,
             Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, Margin = new Thickness(3, 0, 3, 6),
         });
-        Body.Children.Add(new ScrollViewer { Content = Ui.Stack(_empty, _sections), MaxHeight = 520, Width = FieldWidth + 190 });
+        var content = Ui.Stack(_empty, _sections);
+        if (windowLanguage is not null && baseLanguage is not null)
+        {
+            _windowLanguage = windowLanguage;
+            _baseLanguage = baseLanguage;
+            _baseName = NameBox(name, "");
+            _baseSummary = SummaryBox(summary, UiStrings.Publish_SummaryHint);
+            var baseHint = new TextBlock
+            {
+                Text = UiStrings.PublishLanguages_BaseHint, Width = FieldWidth + 140, TextWrapping = TextWrapping.Wrap,
+                Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, Margin = new Thickness(3, 0, 3, 2),
+            };
+            content.Children.Insert(0, new Border
+            {
+                Child = Ui.Stack(Ui.Row(Ui.Label(UiStrings.ScriptLanguages_Base, bold: true), Ui.Label(LanguagePicker.NativeName(baseLanguage))), baseHint,
+                    Row(UiStrings.Publish_Name, _baseName), Row(UiStrings.Publish_Summary, _baseSummary)),
+                BorderBrush = AppTheme.BorderBrush, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(6),
+                Margin = new Thickness(0, 0, 0, 8),
+            });
+        }
+        Body.Children.Add(new ScrollViewer { Content = content, MaxHeight = 520, Width = FieldWidth + 190 });
         Body.Children.Add(Ui.Button(VectorIcon.Plus, UiStrings.ScriptLanguages_Add, (_, _) => AddSection(NextLanguage(), null)));
         foreach (var (code, translation) in translations) AddSection(code, translation);
         UpdateEmpty();
@@ -45,36 +73,50 @@ public sealed class PackageTranslationsDialog : DialogBase
         };
     }
 
+    /// <summary>확인한 값: 기본 이름·설명(기본 언어 칸이 없으면 받은 그대로)과 언어 차례대로의 번역(모두 비운 언어는 뺌).</summary>
+    public sealed record Answer(string Name, string Summary, IReadOnlyList<KeyValuePair<string, AssetTranslation>> Translations);
+
     /// <summary>
-    /// 언어 설정 창을 연다. <paramref name="name"/>·<paramref name="summary"/>는 기본 이름·설명(빈 칸의 흐린 글). 확인하면 언어 차례대로의 번역
-    /// (모두 비운 언어는 뺌), 취소하면 null.
+    /// 언어 설정 창을 연다. <paramref name="name"/>·<paramref name="summary"/>는 기본 이름·설명(빈 칸의 흐린 글).
+    /// <paramref name="windowLanguage"/>(게시 창 칸이 고치는 번역 언어)와 <paramref name="baseLanguage"/>가 있으면 기본 이름·설명을 맨 위 기본 언어 칸에서 고친다.
+    /// 취소하면 null.
     /// </summary>
-    public static IReadOnlyList<KeyValuePair<string, AssetTranslation>>? Ask(Visual? owner, string name, string summary,
-        IEnumerable<KeyValuePair<string, AssetTranslation>> translations)
+    public static Answer? Ask(Visual? owner, string name, string summary, IEnumerable<KeyValuePair<string, AssetTranslation>> translations,
+        string? baseLanguage = null, string? windowLanguage = null)
     {
-        var dialog = new PackageTranslationsDialog(name, summary, translations);
-        return dialog.ShowDialog(owner) == DialogResult.OK ? dialog.Result : null;
+        var dialog = new PackageTranslationsDialog(name, summary, translations, baseLanguage, windowLanguage);
+        if (dialog.ShowDialog(owner) != DialogResult.OK) return null;
+        return dialog._baseName is { } baseName
+            ? new Answer(baseName.Text?.Trim() ?? "", dialog._baseSummary!.Text?.Trim() ?? "", dialog.Result)
+            : new Answer(name, summary, dialog.Result);
     }
 
     /// <summary>지금 칸들의 번역(언어 차례, 빈 칸은 뺌, 모두 빈 언어도 뺌).</summary>
     public IReadOnlyList<KeyValuePair<string, AssetTranslation>> Result
         => _list.Where(section => section.HasContent).Select(section => new KeyValuePair<string, AssetTranslation>(section.Code, section.Translation())).ToList();
 
-    /// <summary>확인할 수 없는 까닭(틀린 코드·겹친 언어), 없으면 null.</summary>
+    /// <summary>확인할 수 없는 까닭(기본 이름 없음, 틀린 코드·겹친 언어, 게시 창에서 고치는 언어), 없으면 null.</summary>
     private string? Problem()
     {
+        if (_baseName is not null && string.IsNullOrWhiteSpace(_baseName.Text)) return UiStrings.PublishLanguages_BaseNameRequired;
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (_baseLanguage is not null) seen.Add(_baseLanguage);
         foreach (var section in _list)
         {
             if (!ScriptTranslations.IsLanguageCode(section.Code)) return string.Format(CultureInfo.CurrentCulture, UiStrings.ScriptLanguages_BadCode, section.Code);
+            if (string.Equals(section.Code, _windowLanguage, StringComparison.OrdinalIgnoreCase))
+                return string.Format(CultureInfo.CurrentCulture, UiStrings.PublishLanguages_InWindow, section.Code);
             if (!seen.Add(section.Code)) return string.Format(CultureInfo.CurrentCulture, UiStrings.ScriptLanguages_DuplicateCode, section.Code);
         }
         return null;
     }
 
-    /// <summary>아직 없는 흔한 언어 중 첫째(모두 있으면 빈 코드 — 직접 적음).</summary>
+    /// <summary>아직 없는 흔한 언어 중 첫째(기본 언어·게시 창 언어 빼고, 모두 있으면 빈 코드 — 직접 적음).</summary>
     private string NextLanguage()
-        => LanguagePicker.CommonLanguages.Select(l => l.Code).FirstOrDefault(code => !_list.Any(s => string.Equals(s.Code, code, StringComparison.OrdinalIgnoreCase))) ?? "";
+        => LanguagePicker.CommonLanguages.Select(l => l.Code)
+            .FirstOrDefault(code => !string.Equals(code, _baseLanguage, StringComparison.OrdinalIgnoreCase)
+                                    && !string.Equals(code, _windowLanguage, StringComparison.OrdinalIgnoreCase)
+                                    && !_list.Any(s => string.Equals(s.Code, code, StringComparison.OrdinalIgnoreCase))) ?? "";
 
     private void AddSection(string code, AssetTranslation? translation)
     {
@@ -95,11 +137,31 @@ public sealed class PackageTranslationsDialog : DialogBase
 
     private void UpdateEmpty() => _empty.IsVisible = _list.Count == 0;
 
-    /// <summary>글이 있는 언어를 모든 언어 목록에 초록으로 보인다.</summary>
+    /// <summary>글이 있는 언어(기본 언어·게시 창 언어 포함)를 모든 언어 목록에 초록으로 보인다.</summary>
     private void UpdateFilled()
     {
         var filled = _list.Where(s => s.HasContent).Select(s => s.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (_baseLanguage is not null) filled.Add(_baseLanguage);
+        if (_windowLanguage is not null) filled.Add(_windowLanguage);
         foreach (var section in _list) section.Picker.SetFilled(filled);
+    }
+
+    private TextBox NameBox(string? text, string watermark)
+        => new() { Width = FieldWidth, Margin = new Thickness(3), MaxLength = AssetManifest.MaxNameLength, Watermark = watermark, Text = text ?? "" };
+
+    private TextBox SummaryBox(string? text, string watermark) => new()
+    {
+        Width = FieldWidth, Height = 52, Margin = new Thickness(3), TextWrapping = TextWrapping.Wrap, MaxLength = RemoteCatalogFormat.MaxSummaryLength,
+        Watermark = watermark, Text = text ?? "",
+    };
+
+    private static Control Row(string label, Control field)
+    {
+        var text = Ui.Label(label);
+        text.Width = 140;
+        text.VerticalAlignment = VerticalAlignment.Center;
+        text.TextTrimming = TextTrimming.CharacterEllipsis;
+        return Ui.Row(text, field);
     }
 
     /// <summary>언어 하나의 칸들(언어, 이름, 짧은 설명).</summary>
@@ -121,12 +183,8 @@ public sealed class PackageTranslationsDialog : DialogBase
             header.Children.Add(remove);
             header.Children.Add(Ui.Row(Ui.Label(UiStrings.ScriptLanguages_Language, bold: true), Picker.View));
 
-            _name = new TextBox { Width = FieldWidth, Margin = new Thickness(3), MaxLength = AssetManifest.MaxNameLength, Watermark = owner._name, Text = translation?.Name ?? "" };
-            _summary = new TextBox
-            {
-                Width = FieldWidth, Height = 52, Margin = new Thickness(3), TextWrapping = TextWrapping.Wrap, MaxLength = RemoteCatalogFormat.MaxSummaryLength,
-                Watermark = owner._summary, Text = translation?.Summary ?? "",
-            };
+            _name = owner.NameBox(translation?.Name, owner._name);
+            _summary = owner.SummaryBox(translation?.Summary, owner._summary);
             _name.TextChanged += (_, _) => owner.UpdateFilled();
             _summary.TextChanged += (_, _) => owner.UpdateFilled();
             View = new Border
@@ -143,14 +201,5 @@ public sealed class PackageTranslationsDialog : DialogBase
         public AssetTranslation Translation() => new(Text(_name), Text(_summary));
 
         private static string? Text(TextBox box) => box.Text?.Trim() is { Length: > 0 } text ? text : null;
-
-        private static Control Row(string label, Control field)
-        {
-            var text = Ui.Label(label);
-            text.Width = 140;
-            text.VerticalAlignment = VerticalAlignment.Center;
-            text.TextTrimming = TextTrimming.CharacterEllipsis;
-            return Ui.Row(text, field);
-        }
     }
 }

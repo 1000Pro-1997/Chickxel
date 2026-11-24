@@ -253,7 +253,7 @@ internal static class EffectMakerShots
             Union(maker, preview, strip),
             chickRows,
             play,
-            Union(maker, ShotKit.Get<Control>(maker, "_save"), ShotKit.Get<Control>(maker, "_insert")),
+            Union(maker, ShotKit.Get<Control>(maker, "_undo"), ShotKit.Get<Control>(maker, "_insert")),
             status,
             Union(maker, ShotKit.Get<Control>(maker, "_validate"), (Control)ShotKit.Get<Control>(maker, "_upload").Parent!),
         ]);
@@ -386,7 +386,7 @@ internal static class EffectMakerShots
         k.Settle(300);
         k.Click(status, settleMs: 600);
         var flyout = PopupArea(maker) ?? throw new InvalidOperationException("no status flyout");
-        var bottomRow = Union(maker, ShotKit.Get<Control>(maker, "_save"), status);
+        var bottomRow = Union(maker, ShotKit.Get<Control>(maker, "_undo"), status);
         k.Save(maker, "screen-effect-maker-7", crop: bottomRow.Union(flyout).Inflate(10).Intersect(new Rect(maker.ClientSize)), marks: [status, flyout], firstNumber: 23);
         PopupMenus.CloseAll();
         k.Settle(200);
