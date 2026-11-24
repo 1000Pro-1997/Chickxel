@@ -1,6 +1,8 @@
 using System.Net;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Avalonia;
 using Avalonia.Controls;
 using Chickxel.App;
@@ -15,11 +17,19 @@ internal static class CommunityShots
 {
     private const BindingFlags Any = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
 
-    // 레벨 7(동, 90~112 XP 중 103)과 레벨 12(은, 220~252 XP 중 236) — 칩 색 단계가 둘 보이게
+    // 레벨 7(동, 75~91 XP 중 85)과 레벨 12(은, 165~186 XP 중 176) — 배지 색 단계가 둘 보이게. 보상은 서버처럼 칸마다 자동(그 레벨까지 가장 높은 것).
     private static readonly CommunityUser Me = new("u1", "pixel-cat", "Pixel Cat", null, "2026-10-01T00:00:00Z", false,
-        Level: 7, Xp: 103, LevelStartXp: 90, NextLevelXp: 112);
+        Level: 7, Xp: 85, LevelStartXp: 75, NextLevelXp: 91, Rewards: Auto(7));
     private static readonly CommunityUser Other = new("u2", "studio-mole", "Mole Studio", null, "2026-10-02T00:00:00Z", false,
-        Level: 12, Xp: 236, LevelStartXp: 220, NextLevelXp: 252);
+        Level: 12, Xp: 176, LevelStartXp: 165, NextLevelXp: 186, Rewards: Auto(12));
+
+    private static readonly JsonSerializerOptions RewardsJson = new(JsonSerializerDefaults.Web) { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
+
+    private static ProfileRewards Auto(int level)
+    {
+        string? Id(RewardSlot slot) => LevelRewards.Highest(slot, level)?.Id;
+        return new(Id(RewardSlot.Title), Id(RewardSlot.Badge), Id(RewardSlot.Frame), Id(RewardSlot.Effect), Id(RewardSlot.Card), Id(RewardSlot.NameStyle));
+    }
 
     /// <summary><c>api/me</c>는 토큰에 맞는 사용자, 나머지는 404(올린 적 없는 새 패키지).</summary>
     private sealed class FakeSite : HttpMessageHandler
@@ -29,7 +39,7 @@ internal static class CommunityShots
             if (request.RequestUri!.AbsolutePath.TrimEnd('/') == "/api/me")
             {
                 var user = request.Headers.Authorization?.Parameter == "t2" ? Other : Me;
-                string json = $$"""{"id":"{{user.Id}}","handle":"{{user.Handle}}","name":"{{user.Name}}","createdAt":"{{user.CreatedAt}}","level":{{user.Level}},"xp":{{user.Xp}},"levelStartXp":{{user.LevelStartXp}},"nextLevelXp":{{user.NextLevelXp}}}""";
+                string json = $$"""{"id":"{{user.Id}}","handle":"{{user.Handle}}","name":"{{user.Name}}","createdAt":"{{user.CreatedAt}}","level":{{user.Level}},"xp":{{user.Xp}},"levelStartXp":{{user.LevelStartXp}},"nextLevelXp":{{user.NextLevelXp}},"rewards":{{JsonSerializer.Serialize(user.Rewards, RewardsJson)}}}""";
                 return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(json, Encoding.UTF8, "application/json") });
             }
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("""{"error":"not found"}""", Encoding.UTF8, "application/json") });
