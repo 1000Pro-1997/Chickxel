@@ -80,6 +80,8 @@ public sealed class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
+            // 에셋 저장소는 창을 만드는 동안 백그라운드에서 연다(첫 화면을 늦추지 않게).
+            AppAssets.Preload();
             var main = new MainForm(Args, Settings);
             // 창이 뜬 뒤에 넣어야 Avalonia의 앱 초기화가 덮어쓰지 않는다.
             if (OperatingSystem.IsMacOS()) main.Opened += (_, _) => Platform.SetMacDockIcon(Icons.AppIconPng());

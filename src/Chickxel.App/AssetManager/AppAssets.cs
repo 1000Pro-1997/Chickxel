@@ -50,9 +50,11 @@ public static class AppAssets
                         problems.Add(string.Format(CultureInfo.CurrentCulture, UiStrings.Assets_MigrationError, error));
                     _notice = problems.Count > 0 ? string.Join(Environment.NewLine, problems) : null;
                     LinkPublishRecords(opened);
+                    // 열기 전에 단 구독자(효과 목록 등)에게도 저장소의 변경을 넘긴다
+                    opened.Changed += () => s_changed?.Invoke();
                     _store = opened;
-                    // 계정이 바뀌면 핸들을 기억한다(로그아웃한 뒤에도 내가 올린 에셋을 내 것으로 보게)
-                    AppCommunity.Client.AccountsChanged += () => Dispatcher.UIThread.Post(() => _ = MyHandle);
+                    // 계정이 바뀌면 핸들을 기억한다(로그아웃한 뒤에도 내가 올린 에셋을 내 것으로 보게) — 계정 client는 UI 스레드에서만 만든다(백그라운드에서 열 수 있음)
+                    Dispatcher.UIThread.Post(() => AppCommunity.Client.AccountsChanged += () => Dispatcher.UIThread.Post(() => _ = MyHandle));
                     // 공식 패키지: 할 일이 있을 때만(처음 실행·앱 업데이트) 백그라운드에서 — 끝나면 Changed로 효과 탭·그라데이션·모양 펜 세트가 다시 그려진다
                     if (BundledPackages.NeedsSync(opened)) StartBundledSync();
                     // 설치하면 바로 믿기 전에 받아 둔 에셋의 스크립트도 믿는다(설정 파일을 쓰므로 UI 스레드에서)
@@ -62,6 +64,12 @@ public static class AppAssets
             }
         }
     }
+
+    /// <summary>
+    /// 저장소를 백그라운드에서 미리 연다(앱을 켤 때 창을 만드는 동안 — 설치한 에셋을 읽고 검사하는 데 수백 ms가 걸려 첫 화면을 늦추지 않게).
+    /// 다 열기 전에 UI 스레드에서 <see cref="Store"/>를 쓰면 열기가 끝날 때까지 기다린다(같은 잠금).
+    /// </summary>
+    public static void Preload() => _ = Task.Run(() => _ = Store);
 
     /// <summary>
     /// 예전 게시 기록(<see cref="AssetPublishSettings.Saved"/>, 최근 것부터)을 그 에셋의 상점 연결로 한 번 잇는다: 기록의 에셋이 아직 이 컴퓨터에서 만든 것
@@ -251,11 +259,13 @@ public static class AppAssets
     public static RemoteAssetClient Remote
         => _remote ??= new RemoteAssetClient(RemoteHttp, CatalogIndexUrl, Store.CacheDirectory, $"{AppUpdate.UserAgent}/{AppInfo.VersionText}");
 
-    /// <summary>카탈로그가 바뀌었다(가져오기, 저장, 삭제, 즐겨찾기).</summary>
+    private static event Action? s_changed;
+
+    /// <summary>카탈로그가 바뀌었다(가져오기, 저장, 삭제, 즐겨찾기). 구독만으로는 저장소를 열지 않는다(열린 뒤의 변경부터 알림).</summary>
     public static event Action? Changed
     {
-        add => Store.Changed += value;
-        remove => Store.Changed -= value;
+        add => s_changed += value;
+        remove => s_changed -= value;
     }
 
     /// <summary>저장소를 열 때 만난 문제(손상된 상태 파일, migration 실패)를 한 번 알린다.</summary>

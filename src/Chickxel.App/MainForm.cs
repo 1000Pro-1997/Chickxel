@@ -170,6 +170,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     /// <summary>자동 저장: 편집할 때마다 다시 재는 한 번짜리 타이머(<see cref="RestartAutoSave"/>, <see cref="AutoSaveTick"/>).</summary>
     private readonly DispatcherTimer _autoSave = new();
     private bool _settingsApplied;
+    /// <summary>켤 때 지난번 탭을 다시 열었다(<see cref="LoadStartupContent"/>) — 그 전에 닫히면 저장한 탭 목록을 그대로 둔다.</summary>
+    private bool _startupLoaded;
     private bool _closeConfirmed, _closePending;
     private Ai.McpServer? _mcp;
     /// <summary>대상 도움말을 고르기 전 상태 표시줄 글(고르기를 마치면 되돌림).</summary>
@@ -1426,21 +1428,29 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         SetLeftPanes(s.FilesVisible, s.EffectListVisible);
         _settingsApplied = true;
         RememberNormalBounds();
-        _start.LoadHub();
-        var folder = _args.OpenFolder ?? s.LastFolder;
-        if (folder is not null && Directory.Exists(folder)) SetRootFolder(folder);
-        else if (_args.OpenFolder is not null) Ui.Error(this, MainStrings.FormatMessage_337(openFolder: _args.OpenFolder));
-        RestoreSession();
-        if (_args.OpenFile is not null) OpenFile(_args.OpenFile);
         if (s.ChatOpen) Dispatcher.UIThread.Post(ToggleChat);
         _canvas.Focus();
         _updater.OnStartup();
         StartAccount();
         UpdateDiscord();
         ApplyExternalMcp();
+        // 불러오는 것(Unity Hub 목록·파일 브라우저 폴더·지난번 탭·명령줄 파일)은 첫 화면을 그린 다음에 — 탭이 많아도 창이 바로 뜬다.
+        RequestAnimationFrame(_ => Dispatcher.UIThread.Post(LoadStartupContent, DispatcherPriority.Background));
+    }
+
+    /// <summary>켤 때 불러오는 것: 첫 화면을 그린 뒤 한 번(<see cref="OnShown"/>).</summary>
+    private void LoadStartupContent()
+    {
+        _start.LoadHub();
+        var folder = _args.OpenFolder ?? _settings.LastFolder;
+        if (folder is not null && Directory.Exists(folder)) SetRootFolder(folder);
+        else if (_args.OpenFolder is not null) Ui.Error(this, MainStrings.FormatMessage_337(openFolder: _args.OpenFolder));
+        RestoreSession();
+        _startupLoaded = true;
+        if (_args.OpenFile is not null) OpenFile(_args.OpenFile);
         // 에셋 저장소를 열어 첫 실행의 예전 프리셋 migration을 끝내고, 손상된 상태 파일이 있으면 한 번 알린다.
         Dispatcher.UIThread.Post(() => AppAssets.ShowProblems(this), DispatcherPriority.Background);
-        // OS가 넘긴 주소·패키지·프로젝트 파일은 시작을 마친 뒤에 처리한다(그 뒤에 온 것도 바로).
+        // OS가 넘긴 주소·패키지·프로젝트 파일은 지난번 탭을 연 뒤에 처리한다(그 뒤에 온 것도 바로 — 그 파일이 앞 탭이 되게).
         Dispatcher.UIThread.Post(() => AppActivation.SetHandler(HandleActivation), DispatcherPriority.Background);
     }
 
@@ -1636,7 +1646,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         s.PreviewFps = _preview.FpsSetting;
         s.PreviewBackground = _preview.BackgroundSetting;
         // 다음에 켤 때 다시 열 탭(프로젝트 경로가 없는 문서 — 저장한 적 없는 새 문서·영상 등에서 만든 문서 — 와 미리보기 탭은 빼고).
-        s.OpenTabs = _tabs.ToSession(t => t.Doc is not { } d || d.Project.Path is null ? null : d.DiskPath);
+        // 켜자마자 지난번 탭을 열기 전에 닫혔으면 저장한 목록 그대로.
+        if (_startupLoaded) s.OpenTabs = _tabs.ToSession(t => t.Doc is not { } d || d.Project.Path is null ? null : d.DiskPath);
         s.Save();
     }
 

@@ -19,6 +19,8 @@
     <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
     <!-- Windows exe 아이콘(기본 병아리를 놓은 16×16 점 그림을 정수배로 키운 16~256) -->
     <ApplicationIcon>Assets\AppIcon\chickxel.ico</ApplicationIcon>
+    <!-- 배포(publish)는 미리 컴파일(ReadyToRun): 켤 때 JIT를 줄여 첫 화면이 약 0.35초 빨라짐(풀린 크기 +약 36MB). 빌드·dotnet run에는 상관없음. -->
+    <PublishReadyToRun>true</PublishReadyToRun>
   </PropertyGroup>
 
   <ItemGroup>
