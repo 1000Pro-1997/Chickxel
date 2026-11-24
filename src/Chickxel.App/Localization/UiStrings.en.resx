@@ -3680,14 +3680,13 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Level_ChipNewTip" xml:space="preserve"><value>Level {0} — you have new level rewards! Open the account menu > Manage account to see them.</value></data>
   <data name="Account_Rewards" xml:space="preserve"><value>Level rewards</value></data>
   <data name="Account_NewRewards" xml:space="preserve"><value>{0} new</value></data>
-  <data name="Account_NewRewardsTitle" xml:space="preserve"><value>New rewards</value></data>
+  <data name="Account_CurrentReward" xml:space="preserve"><value>This level's reward · Lv {0}</value></data>
   <data name="Account_NextReward" xml:space="preserve"><value>Next reward · Lv {0}</value></data>
   <data name="Account_NextRewardXp" xml:space="preserve"><value>{0:N0} more XP to unlock</value></data>
   <data name="Account_AllRewardsDone" xml:space="preserve"><value>You've unlocked every reward!</value></data>
   <data name="Account_RewardsCount" xml:space="preserve"><value>Unlocked {0}/{1}</value></data>
   <data name="Account_RewardsChange" xml:space="preserve"><value>Change…</value></data>
   <data name="Account_RewardsChangeTip" xml:space="preserve"><value>Choose your title, level badge, frames, effect and card on chickxel.com (opens your browser).</value></data>
-  <data name="Account_RewardMore" xml:space="preserve"><value>+{0}</value></data>
   <data name="Account_RewardLevel" xml:space="preserve"><value>Lv {0} · {1}</value></data>
   <data name="Account_RewardEquipped" xml:space="preserve"><value>Equipped</value></data>
   <data name="Prefs_Discord_Title" xml:space="preserve"><value>Discord</value></data>
