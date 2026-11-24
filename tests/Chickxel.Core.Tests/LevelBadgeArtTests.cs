@@ -18,13 +18,16 @@ public class LevelBadgeArtTests
     }
 
     [Fact]
-    public void LowLevelsStayStill_HigherTiersMove()
+    public void DefaultTierBadgesStayStill_BadgeRewardsMove()
     {
-        var still = Frames(new LevelBadgeArt(3), 60);
-        Assert.All(still, f => Assert.Equal(still[0], f));
-        foreach (int level in new[] { 7, 15, 21, 35, 55 })
+        foreach (int level in new[] { 3, 7, 15, 21, 35, 55 })
         {
-            var frames = Frames(new LevelBadgeArt(level), 60);
+            var still = Frames(new LevelBadgeArt(level), 60);
+            Assert.All(still, f => Assert.Equal(still[0], f));
+        }
+        foreach (string skin in new[] { "badge.mint", "badge.ocean", "badge.lava", "badge.legend-gold" })
+        {
+            var frames = Frames(new LevelBadgeArt(21, skin), 60);
             Assert.Contains(frames, f => !f.AsSpan().SequenceEqual(frames[0]));
         }
     }

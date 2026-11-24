@@ -4,10 +4,10 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 
 ## v1.14.152 (2026-11-24)
 
-### Pixel-art level badge that gets flashier as you level up
+### Pixel-art level badge
 - The `Lv N` badge next to account names is now drawn as pixel art, with a pixel font and a pixel frame.
-- Higher levels animate more: bronze and silver get a passing shine, gold adds sparkles, crystal gets flowing colors and a glowing edge, and level 50+ has a flowing rainbow, a rainbow glow, more sparkles and rising embers.
-- Levels 1–4 stay still; the tier look is what you get until you equip a badge reward.
+- Without a badge reward it shows your level tier's colors and stays still: gray, bronze, silver, gold, teal–violet at 30 and a rainbow band at 50.
+- Moving effects (shine, sparkles, flowing colors, glow, embers) come with badge rewards.
 
 ### Level rewards: one reward every level from 2 to 50
 - Each level from 2 to 50 unlocks one reward: a title, a level badge skin, a small or large pixel frame around your profile picture, an effect around it, or a profile card.

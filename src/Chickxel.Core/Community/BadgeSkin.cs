@@ -58,39 +58,37 @@ public sealed record BadgeSkin(string Id)
     public int Embers { get; init; }
     public Color32[] EmberColors { get; init; } = [];
 
-    public bool Animated => ShinePeriod > 0 || Glow != BadgeGlow.None || Sparkles > 0 || Embers > 0 || Fill is not (BadgeFill.Bands or BadgeFill.Seeds or BadgeFill.Facets);
+    /// <summary>멈춘 그림으로 그린다(흐르는 바탕도 첫 프레임 그대로) — 레벨 단계 기본 모양.</summary>
+    public bool Still { get; init; }
+
+    public bool Animated => !Still && (ShinePeriod > 0 || Glow != BadgeGlow.None || Sparkles > 0 || Embers > 0 || Fill is not (BadgeFill.Bands or BadgeFill.Seeds or BadgeFill.Facets));
 
     // ───────────── 레벨 단계(기본) ─────────────
+    // 기본 모양은 단계 색만 보이는 멈춘 그림이다(회색·동·은·금·청록–보라·무지개 띠). 빛·반짝이·흐르는 색·불티 같은 움직임은 배지 보상에만 있다.
 
     public static readonly BadgeSkin Plain = new("tier.plain")
     {
-        Outline = Hex(0x55555F), Top = Hex(0x4A4A54), Mid = Hex(0x3C3C44), Bottom = Hex(0x33333A), Text = Hex(0xC8C8D0), Shadow = Hex(0x26262C),
+        Outline = Hex(0x55555F), Top = Hex(0x4A4A54), Mid = Hex(0x3C3C44), Bottom = Hex(0x33333A), Text = Hex(0xC8C8D0), Shadow = Hex(0x26262C), Still = true,
     };
     public static readonly BadgeSkin Bronze = new("tier.bronze")
     {
-        Outline = Hex(0x5A3416), Top = Hex(0xE0A066), Mid = Hex(0xB87333), Bottom = Hex(0x8E5527), Text = Hex(0xFFF1E0), Shadow = Hex(0x5A3416),
-        ShinePeriod = 60, ShineWidth = 1,
+        Outline = Hex(0x5A3416), Top = Hex(0xE0A066), Mid = Hex(0xB87333), Bottom = Hex(0x8E5527), Text = Hex(0xFFF1E0), Shadow = Hex(0x5A3416), Still = true,
     };
     public static readonly BadgeSkin Silver = new("tier.silver")
     {
-        Outline = Hex(0x4A525C), Top = Hex(0xF4F7FA), Mid = Hex(0xC4CCD6), Bottom = Hex(0x9AA4B0), Text = Hex(0x1F242B), Shadow = Hex(0xEEF2F6),
-        ShinePeriod = 40, ShineWidth = 2,
+        Outline = Hex(0x4A525C), Top = Hex(0xF4F7FA), Mid = Hex(0xC4CCD6), Bottom = Hex(0x9AA4B0), Text = Hex(0x1F242B), Shadow = Hex(0xEEF2F6), Still = true,
     };
     public static readonly BadgeSkin Gold = new("tier.gold")
     {
-        Outline = Hex(0x6B4A00), Top = Hex(0xFFF0A8), Mid = Hex(0xFFD54A), Bottom = Hex(0xD9A21B), Text = Hex(0x3A2600), Shadow = Hex(0xFFF0B0),
-        ShinePeriod = 30, ShineWidth = 2, Sparkles = 2, Sparkle = Hex(0xFFF3B0),
+        Outline = Hex(0x6B4A00), Top = Hex(0xFFF0A8), Mid = Hex(0xFFD54A), Bottom = Hex(0xD9A21B), Text = Hex(0x3A2600), Shadow = Hex(0xFFF0B0), Still = true,
     };
     public static readonly BadgeSkin Crystal = new("tier.crystal")
     {
-        Fill = BadgeFill.Flow, Outline = Hex(0x2A1E6B), Top = Hex(0x0891B2), Bottom = Hex(0x6D28D9), Shadow = Hex(0x2A1E6B),
-        ShinePeriod = 30, ShineWidth = 2, Glow = BadgeGlow.Solid, GlowColor = Hex(0x8B5CF6), Sparkles = 3, Sparkle = Hex(0xBFF6FF),
+        Fill = BadgeFill.Flow, Outline = Hex(0x2A1E6B), Top = Hex(0x0891B2), Bottom = Hex(0x6D28D9), Shadow = Hex(0x2A1E6B), Still = true,
     };
     public static readonly BadgeSkin Legend = new("tier.legend")
     {
-        Fill = BadgeFill.Rainbow, Outline = Hex(0x3A1450), Shadow = Hex(0x2A0A3A),
-        ShinePeriod = 24, ShineWidth = 3, Glow = BadgeGlow.Rainbow, GlowRings = 2, Sparkles = 6, RainbowSparkles = true,
-        Embers = 2, EmberColors = Rainbow,
+        Fill = BadgeFill.Rainbow, Outline = Hex(0x3A1450), Shadow = Hex(0x2A0A3A), Still = true,
     };
 
     // ───────────── 배지 보상 ─────────────
