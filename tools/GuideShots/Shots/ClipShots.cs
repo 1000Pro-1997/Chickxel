@@ -661,4 +661,70 @@ internal static class ClipShots
         rec.Hold(2600);
         rec.Save("docs/assets/feature-convert", ClipFormat.Mp4);
     }
+
+    /// <summary>타임라인 칸(레이어 <paramref name="name"/> × 프레임 <paramref name="frame"/>) 가운데의 창 좌표.</summary>
+    private static Point CellCenter(MainForm m, string name, int frame)
+    {
+        var p = ScreenDemo.Project(m);
+        var grid = TimelineGrid(m);
+        int y = (int)ShotKit.Call(grid, "LayerY", p.IndexOf(p.Layers.First(l => l.Name == name)))!;
+        int x = (int)ShotKit.Call(grid, "FrameX", frame)!;
+        return grid.TranslatePoint(new Point(x + 21, y + 18), m)!.Value;
+    }
+
+    /// <summary>
+    /// 효과 목록에서 끌어 넣기: 도구 막대의 효과 단추로 효과 목록을 열고, 몸 레이어의 칸들을 끌어 골라 둔 뒤 외곽선 상자를 그 칸으로 끌어 놓는다
+    /// (효과 창 없이 고른 프레임 범위에 들어감 — 타임라인에 효과 줄이 펼쳐짐). 끝으로 재생해 모든 프레임에 들어간 것을 보인다.
+    /// </summary>
+    [Shot("clip-feature-effect-drop")]
+    public static void EffectDrop(ShotKit k)
+    {
+        App.Settings.BottomHeight = 240;
+        var m = ScreenDemo.OpenFolder(k, width: 1280, height: 656);
+        ScreenDemo.Build(k, m, group: false);
+        // 파일 칸은 닫아 두어 효과 목록이 맨 왼쪽 칸을 채우게.
+        ShotKit.Call(m, "SetLeftPanes", false, false, false);
+        k.Settle(300);
+        ToolFileHelp.Canvas(m).SetZoom(3);
+        k.Settle(300);
+        var p = ScreenDemo.Project(m);
+        var body = p.Layers.First(l => l.Name == "Body");
+        using var rec = new ClipRecorder(k, m, new Rect(0, 0, 1280, 656), titleBar: true, frameMs: 42) { TitleFilter = PrettyTitle(k) };
+        rec.Place(new Point(700, 300));
+        rec.Hold(700);
+
+        // ① 도구 막대의 효과 단추 → 맨 왼쪽 칸에 효과 목록.
+        var button = ShotKit.Get<Control>(m, "_tbEffects");
+        rec.Click(rec.At(button), 800, pressMs: 120, afterMs: 1200);
+        var panel = ShotKit.Get<Control>(m, "_effectList");
+        if (!panel.IsEffectivelyVisible) throw new InvalidOperationException("effect list not shown");
+
+        // ② 몸 레이어의 1~4프레임 칸을 끌어 고른다(넣을 프레임 범위 — 5·6프레임은 그대로라 재생하면 차이가 보임).
+        rec.Drag(CellCenter(m, "Body", 0), CellCenter(m, "Body", 3), 900);
+        rec.Hold(700);
+
+        // ③ 터지기 상자를 고른 칸으로 끌어 놓는다(움직이는 효과라 재생하면 넣은 범위가 잘 보임).
+        var tile = ShotKit.All<Control>(panel).First(c => c.GetType().Name == "EffectTile" && c.IsEffectivelyVisible
+            && ((string)c.GetType().GetProperty("Title")!.GetValue(c)!).Contains("Explode", StringComparison.OrdinalIgnoreCase));
+        rec.Move(rec.At(tile), 800);
+        rec.Hold(400);
+        rec.Drag(rec.At(tile), CellCenter(m, "Body", 2), 1100);
+        rec.Hold(1200);
+        if (body.Effects.Count == 0) throw new InvalidOperationException("effect not dropped");
+
+        // ④ 프레임을 차례로 넘겨 보인다(두 바퀴): 1~4프레임에만 터지기가 들어가고 5·6프레임은 그대로.
+        rec.Move(new Point(1130, 230), 700);
+        var ctx = ScreenDemo.Ctx(m);
+        int bi = p.IndexOf(body);
+        for (int loop = 0; loop < 2; loop++)
+            for (int f = 0; f < p.Frames.Count; f++)
+            {
+                ctx.SetCurrent(bi, f);
+                if (loop == 0 && f == 2) rec.MarkPoster();
+                rec.Hold(f < 4 ? 260 : 360);
+            }
+        ctx.SetCurrent(bi, 0);
+        rec.Hold(800);
+        rec.Save("docs/assets/feature-effect-drop", ClipFormat.Mp4);
+    }
 }

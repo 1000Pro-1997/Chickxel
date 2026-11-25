@@ -77,7 +77,7 @@
 <ol><li><a href="#featured-pixelate-zoom">크게 보기로 칸 단위 비교</a></li><li><a href="#featured-pixelate-convert">이미지를 픽셀 아트로</a></li><li><a href="#featured-pixelate-colors">색 빼기·더하기</a></li></ol>
 </li>
 <li><a href="#featured-anim">애니메이션 효과</a>
-<ol><li><a href="#featured-effects">효과 겹치기</a></li><li><a href="#featured-clip">효과 클리핑</a></li></ol>
+<ol><li><a href="#featured-effect-drop">효과 목록에서 끌어 넣기</a></li><li><a href="#featured-effects">효과 겹치기</a></li><li><a href="#featured-clip">효과 클리핑</a></li></ol>
 </li>
 <li><a href="#featured-palettes">팔레트 사용</a>
 <ol><li><a href="#featured-palette-web">Lospec 팔레트 가져오기</a></li><li><a href="#featured-palette-convert">팔레트로 색 바꾸기</a></li></ol>
@@ -220,6 +220,16 @@
 <section class="doc" id="featured-anim">
 <h2>애니메이션 효과</h2>
 <p>그림을 고치지 않고 효과를 덧입혀 움직임을 만듭니다. 효과 종류와 설정은 <a href="#screen-layer-effects">레이어 효과</a>에 있습니다.</p>
+
+<h3 id="featured-effect-drop">효과 목록에서 끌어 넣기</h3>
+<figure class="core-media wide guide-media"><video src="assets/feature-effect-drop.mp4" poster="assets/feature-effect-drop.jpg" autoplay loop muted playsinline preload="metadata" aria-label="도구 막대의 효과 단추로 효과 목록을 열고 몸 레이어의 1~4프레임 칸을 고른 뒤 터지기 효과를 그 칸으로 끌어 놓아 넣고 프레임을 넘겨 보는 모습" width="1280" height="688"></video></figure>
+<p><a class="term" href="#screen-effects-dialog">효과 창</a>을 열지 않고, 효과 목록의 효과를 <a class="term" href="#screen-timeline">타임라인</a> 칸으로 끌어 놓아 바로 넣습니다. 넣은 효과는 기본 설정으로 그 <a class="term" href="#screen-timeline">레이어</a>에 들어가고, 놓은 칸의 <a class="term" href="#screen-timeline">프레임</a>에만 적용됩니다.</p>
+<ol class="core-steps">
+<li><strong>효과 목록 열기</strong><span>왼쪽 <a class="term" href="#screen-toolbar">도구 막대</a> 맨 위(파일 단추 아래)의 효과 단추를 누르면 맨 왼쪽 칸에 <a href="#screen-effect-list">효과 목록</a>이 열립니다. 다시 누르면 닫힙니다.</span></li>
+<li><strong>넣을 프레임 고르기</strong><span>효과를 넣을 레이어의 칸들을 끌어 고릅니다. 고르지 않으면 효과를 놓은 칸의 프레임 하나에만 들어갑니다.</span></li>
+<li><strong>효과를 칸으로 끌어 놓기</strong><span>목록의 효과를 고른 칸 위로 끌어 놓으면 그 프레임 범위에 들어가고 타임라인에 <a class="term" href="#screen-effect-timeline">효과 줄</a>이 펼쳐집니다. 프레임을 넘겨 보면 그 범위에만 효과가 보입니다.</span></li>
+</ol>
+<div class="note"><p>효과를 두 번 누르면 지금 레이어의 지금 칸에 넣습니다. 넣은 범위는 타임라인 효과 줄의 상자 끝을 끌어 바꾸고, 설정은 효과 줄을 두 번 눌러 연 효과 창에서 고칩니다.</p></div>
 
 <h3 id="featured-effects">효과 겹치기</h3>
 <figure class="core-media wide guide-media"><video src="assets/feature-effects.mp4" poster="assets/feature-effects.jpg" autoplay loop muted playsinline preload="metadata" aria-label="나무 통 그림에 효과 창에서 여러 효과를 차례로 추가하고 프레임 범위를 정해 애니메이션으로 재생하는 모습" width="1280" height="720"></video></figure>
@@ -1204,7 +1214,7 @@
 <p>⑤ 셀을 우클릭하면 ⑥ 선택한 셀을 효과까지 그림으로 복사하거나 전체 프레임 화면을 그림으로 복사하는 항목이 나옵니다.</p>
 <p>셀을 우클릭한 '셀 복사 (효과 포함 그림)'은 해당 프레임에서 고른 칸(그룹 행이면 부위들)만 보이는 그대로 효과·불투명도·<a class="term" href="#parts-outfits">착장</a>까지 합쳐 캔버스 크기 이미지로 클립보드에 넣습니다(숨긴 레이어 제외). '프레임 N 화면 복사'는 전체 프레임 합성 그림으로 미리보기의 '이미지 복사'와 같습니다. 다른 앱이나 캔버스에 그림으로 붙이고, 타임라인 셀 복사 내용은 비웁니다. 보이는 그림이 없으면 알립니다.</p>
 <h4>그룹에 넣고 빼기와 스킨 추가</h4>
-<p>레이어 이름을 <kbd>Shift</kbd>를 누른 채 끌면 순서 바꾸기 대신 그룹에 넣거나 꺼냅니다. 일반 레이어를 우클릭해 <strong>스킨 추가 (그룹으로 바꿈)</strong>를 고르면 그 레이어를 그룹으로 바꾸며 새 스킨을 더합니다. 놓는 자리마다의 결과와 바뀌는 그림·<a class="term" href="#tools-pivot">피벗</a>은 <a href="#parts-nest">레이어를 그룹에 넣고 빼기</a>에 있습니다.</p>
+<p>레이어 이름을 <kbd>Shift</kbd>를 누른 채 끌면 순서 바꾸기 대신 그룹에 넣거나 꺼냅니다. 일반 레이어를 우클릭해 <strong>스킨 추가</strong>를 고르면 그 레이어를 그룹으로 바꾸며 새 스킨을 더합니다. 놓는 자리마다의 결과와 바뀌는 그림·<a class="term" href="#tools-pivot">피벗</a>은 <a href="#parts-nest">레이어를 그룹에 넣고 빼기</a>에 있습니다.</p>
 
 <h3 id="screen-tags">태그</h3>
 <figure class="clip"><img src="assets/guide/screen-tags.webp" alt="프레임 1~4를 고르고 우클릭 태그 만들기로 태그를 만든 뒤, 태그 상자 끝을 끌어 범위를 바꾸고 재생하는 모습" width="1028" height="760" loading="lazy"></figure>
@@ -1979,10 +1989,10 @@
 <p>⑦ 배경 목록에서 체커·검정·흰색·회색·초록·사용자 색을 고릅니다. 목록에서 사용자 색을 고르면 <a class="term" href="#screen-color-picker">색 고르기</a> 창이 열리고, 단추를 눌러 차례로 넘길 때는 마지막으로 고른 사용자 색을 그대로 씁니다.</p>
 <p>배경은 미리보기에만 쓰이고 그림이나 내보내기에는 들어가지 않습니다. 이미지 복사·프레임 저장도 배경 없이 투명한 그대로입니다.</p>
 <h4>착장</h4>
-<p><a href="#parts-concept">그룹</a>이 있는 프로젝트에서는 미리보기 아래에 <strong><a class="term" href="#parts-outfits">착장</a></strong> 줄이 생깁니다. <a class="term" href="#parts-concept">그룹</a>마다 보일 <a class="term" href="#parts-skins">스킨</a>을 고르는 목록이 있고(스킨이 하나면 꺼짐, <a class="term" href="#parts-skins">첫 스킨</a>에는 "(기본)"), 고르면 그 그룹의 스킨이 바뀌며 <a class="term" href="#parts-concept">부위</a>마다 따로 고른 스킨은 그대로입니다. 그룹 이름 뒤 <code>*</code>는 따로 고른 스킨이 있는 부위가 있다는 표시입니다. 그룹 이름이나 <strong>관리…</strong>을 누르면 <a href="#parts-skin-manager">스킨 관리</a> 창이 열립니다.</p>
+<p><a href="#parts-concept">그룹</a>이 있는 프로젝트에서는 미리보기 아래에 <strong><a class="term" href="#parts-skins">스킨</a></strong> 줄이 생깁니다. <a class="term" href="#parts-concept">그룹</a>마다 보일 스킨을 고르는 목록이 있고(스킨이 하나면 꺼짐, <a class="term" href="#parts-skins">첫 스킨</a>에는 "(기본)"), 고르면 그 그룹의 스킨이 바뀌며 <a class="term" href="#parts-concept">부위</a>마다 따로 고른 스킨은 그대로입니다. 그룹 이름 뒤 <code>*</code>는 따로 고른 스킨이 있는 부위가 있다는 표시입니다. 그룹 이름이나 <strong>설정…</strong>을 누르면 <a href="#parts-skin-manager">스킨 관리</a> 창이 열립니다.</p>
 <h4>크게 보기와 미리보기 탭</h4>
 <figure class="shot"><img src="assets/guide/screen-preview-large.png" alt="늑대귀 모험가를 크게 보여 주는 미리보기 크게 보기 창" width="750" height="782" loading="lazy"><figcaption>⑧ 미리보기 크게 보기 창</figcaption></figure>
-<p>⑧ 크게 보기 창은 미리보기의 재생 중인 그림과 착장·배경을 창에 맞는 정수 배율로 보여 줍니다.</p>
+<p>⑧ 크게 보기 창은 미리보기의 재생 중인 그림과 <a class="term" href="#parts-outfits">착장</a>·배경을 창에 맞는 정수 배율로 보여 줍니다.</p>
 <p>미리보기 그림 위 손 모양 커서로 누르면 크기 조절 가능한 '미리보기 크게 보기' 창이 열리고 같은 재생·배경·착장을 창에 들어가는 가장 큰 정수 배율로 보여 줍니다. 한 창만 열리며 다시 누르면 앞으로 옵니다. 창 크기는 앱을 켜 둔 동안 기억하고 창 안에서 Space는 재생/정지, Esc는 닫기, 우클릭은 미리보기 메뉴입니다. <a class="term" href="#screen-tabs">미리보기 탭</a>이 열린 동안에는 그림을 누르면 크게 보기 대신 그 탭으로 갑니다.</p>
 <p>크게 보기 창과 미리보기 탭에서는 휠로 커서 아래를 중심으로 확대하고(1~2배는 0.25배씩, 2~4배는 0.5배씩, 그 위로는 두 배 구간마다 간격이 두 배, 최대 64배) 끌어서 옮깁니다. 더블클릭하면 다시 창에 맞추고, 크게 보기 창에서는 <kbd>0</kbd>으로도 맞춥니다.</p>
 <p>미리보기 제목 줄의 '탭으로 열기'를 누르면 편집 문서를 <a href="#screen-tabs">나눈 화면의 미리보기 탭</a>으로 크게 볼 수 있습니다. 탭이 열린 동안 미리보기 그림을 누르면 그 탭을 앞으로 가져옵니다.</p>
@@ -2110,7 +2120,7 @@
 <h4>Unity 프리팹과 애니메이션</h4>
 <p>⑧에서 Unity를 고르면 그 아래에 Unity에서 바로 쓸 오브젝트와 애니메이션을 함께 만드는 옵션 두 개가 보입니다(처음엔 꺼짐). 파일은 프레임 시트와 같은 폴더에 프레임 시트 이름으로 생기고, 시트를 내보낼 때마다 같이 씁니다.</p>
 <ul class="marks">
-<li>⑨ <strong>프리팹(부위 배치)</strong>: <code>시트이름.prefab</code>을 씁니다. 부위가 있으면 맨 위 오브젝트(자리 = <a class="term" href="#tools-pivot">캔버스 피벗</a>) 아래에 <a class="term" href="#parts-concept">그룹</a>마다 빈 오브젝트를 두고, 그 아래에 부위마다 SpriteRenderer를 둡니다. 부위는 부위 아틀라스 스프라이트를 쓰고 <a class="term" href="#tools-pivot">부위 피벗</a> 자리에 놓입니다. 그리는 순서는 <a class="term" href="#screen-timeline">레이어</a> 순서이고, 숨긴 레이어는 꺼진 오브젝트, <a class="term" href="#parts-skins">스킨</a>은 지금 보이는 스킨입니다. 부위가 없으면 프레임 시트 스프라이트 하나짜리 프리팹입니다.</li>
+<li>⑨ <strong>프리팹(<a class="term" href="#screen-timeline">레이어</a> 배치)</strong>: <code>시트이름.prefab</code>을 씁니다. 부위가 있으면 맨 위 오브젝트(자리 = <a class="term" href="#tools-pivot">캔버스 피벗</a>) 아래에 <a class="term" href="#parts-concept">그룹</a>마다 빈 오브젝트를 두고, 그 아래에 부위마다 SpriteRenderer를 둡니다. 부위는 부위 아틀라스 스프라이트를 쓰고 <a class="term" href="#tools-pivot">부위 피벗</a> 자리에 놓입니다. 그리는 순서는 레이어 순서이고, 숨긴 레이어는 꺼진 오브젝트, <a class="term" href="#parts-skins">스킨</a>은 지금 보이는 스킨입니다. 부위가 없으면 프레임 시트 스프라이트 하나짜리 프리팹입니다.</li>
 <li>⑩ <strong>애니메이션(클립·Animator)</strong>: 태그마다 애니메이션 클립 <code>시트이름_태그.anim</code>(태그가 없으면 <code>시트이름.anim</code> 하나)과, 그 클립들을 상태로 담은 Animator Controller <code>시트이름.controller</code>를 씁니다. 클립은 프레임마다 스프라이트와 부위 자리를 바꾸고, <a class="term" href="#screen-timeline">프레임 길이</a>·재생 방향·반복은 태그를 따릅니다. 첫 태그가 기본 상태이고 상태 사이 전환은 없습니다. 프리팹도 쓰면 맨 위 오브젝트에 이 Animator가 붙습니다.</li>
 <li>⑪ <strong>만들어질 파일</strong>: 둘 중 하나라도 켜면 만들어질 파일 이름이 보입니다(파일마다 <code>.meta</code>도 씀). 프레임 시트나 부위 아틀라스를 내보내지 않으면 만들어지지 않는다고 알려 줍니다.</li>
 </ul>
@@ -3146,7 +3156,7 @@
 <p>모든 프레임·레이어에 적용되고, 부위 자리도 함께 맞춰집니다. 줄여서 잘린 부분은 지워지지 않고 <a href="#tools-move">캔버스 밖 그림</a>으로 남아, 다시 키우면 돌아옵니다. 그림 크기를 바꾸면(손잡이 끌기·그림 크기 줄) 캔버스 안과 밖 그림이 원래 캔버스 기준의 같은 배율로 이음매 없이 함께 늘거나 줄고(9-slice면 캔버스 밖은 1:1), 캔버스 뒤집기·회전도 캔버스 밖 그림까지 따라갑니다.</p>
 <p>모드 중에는 피벗 표시가 적용 뒤 지금 레이어의 피벗이 놓일 자리에 보입니다. 피벗은 그림의 같은 지점을 따라가므로, 그림을 옮기거나 늘이면 피벗 표시도 같이 움직이고 적용하면 모든 레이어의 피벗과 <a class="term" href="#tools-pivot">캔버스 피벗</a>이 그 자리로 바뀝니다. 손잡이 우클릭 끌기로 여백만 바꿔 그림이 제자리면 피벗도 그림 위 같은 자리에 남습니다.</p>
 <h4>부위를 고른 채 쓰면: 부위 크기</h4>
-<p><a href="#parts-draw">부위 화면</a>에서 <span class="key" data-cmd="편집/캔버스 크기…"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd></span>를 누르면 캔버스 대신 그 부위의 칸 크기와 그림 자리·크기를 바꾸는 <strong>부위 크기</strong> 모드가 됩니다. <a class="term" href="#screen-tool-settings">도구 설정</a> 묶음 제목도 부위 크기로 바뀝니다. 조작은 위와 같고, 적용하면 그 부위의 모든 프레임·스킨 그림에 함께 적용됩니다. 뒤집기 단추는 꺼지고, 우클릭 여백 모양과 <kbd>Ctrl</kbd> 원근 변형은 쓰지 않습니다. <strong>모든 그림에 맞추기</strong>는 그 부위의 모든 프레임 그림을 감싸는 크기로 맞춥니다. 모드 중에도 다른 레이어가 둘레에 보입니다.</p>
+<p><a href="#parts-draw">부위 화면</a>에서 <span class="key" data-cmd="편집/캔버스 크기…"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd></span>를 누르면 캔버스 대신 그 부위의 칸 크기와 그림 자리·크기를 바꾸는 <strong>레이어 크기</strong> 모드가 됩니다. <a class="term" href="#screen-tool-settings">도구 설정</a> 묶음 제목도 레이어 크기로 바뀝니다. 조작은 위와 같고, 적용하면 그 부위의 모든 프레임·스킨 그림에 함께 적용됩니다. 뒤집기 단추는 꺼지고, 우클릭 여백 모양과 <kbd>Ctrl</kbd> 원근 변형은 쓰지 않습니다. <strong>모든 그림에 맞추기</strong>는 그 부위의 모든 프레임 그림을 감싸는 크기로 맞춥니다. 모드 중에도 다른 레이어가 둘레에 보입니다.</p>
 <h4>9-slice로 늘리기</h4>
 <figure class="clip"><img src="assets/guide/tools-canvas-size-slice.webp" alt="9-slice 도구로 초록 선을 정한 뒤 캔버스 크기 모드에서 손잡이를 끌어 9-slice로 늘이고 줄이며, 가운데 채우기를 되풀이로 바꿔 가운데 무늬가 반복되는 모습" width="1000" height="706" loading="lazy"></figure>
 <ul>
@@ -3329,7 +3339,7 @@
 <tr><td>부위 아틀라스</td><td><code>hero_parts.png</code></td><td>부위가 있고 부위 아틀라스 내보내기를 켰을 때(<a href="#parts-export">내보내기: 프레임 시트와 부위 아틀라스</a>)</td></tr>
 <tr><td>메타 파일</td><td><code>hero.png.meta</code>, <code>hero_parts.png.meta</code></td><td><strong>게임 엔진</strong>을 <strong>Unity(.meta)</strong>로 골랐을 때(<a href="#files-save">저장하기</a>)</td></tr>
 <tr><td>Sprite Library</td><td><a class="term" href="#parts-concept">그룹</a>·스킨마다 하나</td><td>게임 엔진이 Unity이고 Sprite Library를 켰을 때(<a href="#parts-sprite-library">Unity Sprite Library</a>)</td></tr>
-<tr><td>Unity 프리팹·애니메이션</td><td><code>hero.prefab</code>, <code>hero_idle.anim</code>, <code>hero.controller</code></td><td>게임 엔진이 Unity이고 내보내기 창에서 <strong>프리팹(부위 배치)</strong>·<strong>애니메이션(클립·Animator)</strong>를 켰을 때. 클립은 태그마다 하나입니다(<a href="#screen-export">내보내기 창</a>).</td></tr>
+<tr><td>Unity 프리팹·애니메이션</td><td><code>hero.prefab</code>, <code>hero_idle.anim</code>, <code>hero.controller</code></td><td>게임 엔진이 Unity이고 내보내기 창에서 <strong>프리팹(레이어 배치)</strong>·<strong>애니메이션(클립·Animator)</strong>를 켰을 때. 클립은 태그마다 하나입니다(<a href="#screen-export">내보내기 창</a>).</td></tr>
 <tr><td>Godot 4</td><td><code>hero.tres</code>, <code>hero.tscn</code></td><td>게임 엔진이 Godot 4일 때. <code>.tscn</code>은 씬을 켰을 때만 만듭니다(<a href="#screen-export">내보내기 창</a>).</td></tr>
 <tr><td>JSON</td><td><code>hero.json</code></td><td>게임 엔진이 JSON일 때. 프레임 시트 파일마다 같은 이름으로 하나입니다.</td></tr>
 <tr><td>GIF·APNG·프레임 PNG</td><td><code>hero_idle.gif</code></td><td>내보내기 목록의 그 줄에 저장할 때 체크가 켜져 있을 때. 이름은 줄마다 정합니다(<a href="#screen-gif">GIF · APNG · 프레임 PNG로 내보내기</a>).</td></tr>
@@ -4743,7 +4753,7 @@
 </ul>
 <h4>스킨 추가로 그룹 만들기</h4>
 <figure class="shot"><img src="assets/guide/parts-nest-2.png" alt="일반 레이어 Body의 우클릭 메뉴: 스킨 추가 (그룹으로 바꿈) 하위 메뉴에 새 스킨(빈)과 지금 그림 복제" width="606" height="487" loading="lazy"><figcaption>③ 일반 레이어 · ④ 스킨 추가 (그룹으로 바꿈)</figcaption></figure>
-<p>③ 일반 레이어를 우클릭해 ④ <strong>스킨 추가 (그룹으로 바꿈)</strong>에서 <strong>새 스킨(빈)</strong>이나 <strong>지금 그림 복제</strong>를 고릅니다.</p>
+<p>③ 일반 레이어를 우클릭해 ④ <strong>스킨 추가</strong>에서 <strong>새 스킨(빈)</strong>이나 <strong>지금 그림 복제…</strong>를 고릅니다.</p>
 <p>그 자리에 레이어 이름으로 그룹을 만들고(이름이 겹치면 번호를 붙임), 레이어를 그 그룹의 부위로 넣은 뒤 새 스킨을 더해 지금 스킨으로 고릅니다. 원래 그림은 첫 스킨에 남습니다. 새 스킨(빈)은 그릴 때까지 비어 있고, 지금 그림 복제는 그림도 복사해 시작합니다. 부위 영역은 위의 <strong>일반 레이어가 부위가 될 때</strong>와 같습니다.</p>
 
 <h3 id="parts-timeline">타임라인에서 보기</h3>
@@ -4777,7 +4787,7 @@
 </ul>
 <p>잠긴 부위는 옮길 수 없고 <a class="term" href="#screen-status-bar">상태 표시줄</a>에 알려 줍니다. 한 프레임에서만 옮기려면 <a href="#parts-frame-position">프레임마다 부위 위치 바꾸기</a>를 봅니다.</p>
 <h4>자동 배치 중인 그룹</h4>
-<p><a class="term" href="#parts-auto-layout">자동 배치</a>가 켜진 그룹의 부위를 끌기 시작하면 <strong>이 그룹은 자동 배치 중입니다. 자동 배치를 풀고 옮길까요?</strong>를 묻습니다. 확인하면 자동 배치만 꺼지고, 다시 끌어야 옮겨집니다. 방향키나 부위 우클릭 <strong>위치…</strong>로 옮길 때는 확인하면 자동 배치 끄기와 옮기기가 실행취소 한 단계로 함께 됩니다.</p>
+<p><a class="term" href="#parts-auto-layout">자동 배치</a>가 켜진 그룹의 부위를 끌기 시작하면 <strong>이 레이어의 부모는 자동 배치 중입니다. 자동 배치를 풀고 옮길까요?</strong>를 묻습니다. 확인하면 자동 배치만 꺼지고, 다시 끌어야 옮겨집니다. 방향키나 부위 우클릭 <strong>위치…</strong>로 옮길 때는 확인하면 자동 배치 끄기와 옮기기가 실행취소 한 단계로 함께 됩니다.</p>
 <h4>피벗 표시</h4>
 <p>③ <a class="term" href="#tools-pivot">부위 피벗</a>은 파란 점으로 표시됩니다. 큰 주황 표시는 <a href="#tools-pivot">피벗 도구</a>가 고치는 대상의 <a class="term" href="#tools-pivot">피벗</a>으로, 그룹을 고른 이 화면에서는 ④ 그룹의 피벗(캔버스 기준)입니다. 타임라인 왼쪽 위 캔버스 칩의 글자를 눌러 <a class="term" href="#tools-pivot">캔버스 피벗</a>을 대상으로 하면 큰 표시는 캔버스 피벗(시트·Unity 내보내기 피벗)이 됩니다. <a class="term" href="#screen-top-bar">위 막대</a>의 <strong>피벗</strong> 보기가 켜져 있으면 부위 피벗에 부위 이름이 붙고, 그룹 밖 레이어와 캔버스 피벗도 이름표가 붙은 작은 주황 점으로 함께 보입니다(<a href="#screen-canvas">캔버스</a>). 보기를 끄면 <a class="term" href="#tools-pivot">피벗 도구</a>를 고른 동안에만 부위 피벗과 대상 피벗이 보입니다. 피벗은 피벗 도구로 바꿉니다.</p>
 
@@ -4835,7 +4845,7 @@
 <figure class="shot"><img src="assets/guide/parts-draw-4.png" alt="부위 크기 창: 지금 크기, 너비·높이 칸, 아래에 3×3 화살표 단추로 된 기준점" width="305" height="266" loading="lazy"><figcaption>⑥ 기준점 9방향(Anchor — 그린 그림이 놓일 자리)</figcaption></figure>
 <ul>
 <li>크기 바꾸기: <strong>프레임·레이어 &gt; ③ 부위 크기…</strong> 또는 부위 우클릭 ④ <strong>부위 크기…</strong>. ⑥ 기준점 9방향으로 그림이 놓일 자리를 고릅니다. 모든 프레임·<a class="term" href="#parts-skins">스킨</a>의 그림에 적용되고, 그린 픽셀은 <a class="term" href="#screen-canvas">캔버스</a>의 같은 자리에 남으며 <a class="term" href="#tools-pivot">피벗</a>은 같은 그림 지점을 가리킵니다.</li>
-<li>캔버스에서 바꾸기: 부위를 고른 채 <span class="key" data-cmd="편집/캔버스 크기…"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd></span>를 누르면 <a href="#tools-canvas-size">캔버스 크기 모드</a> 대신 <strong>부위 크기</strong> 모드가 됩니다. 손잡이나 숫자로 칸 크기와 그림 자리·크기를 바꾸고, 모든 프레임·스킨에 적용됩니다. 뒤집기는 쓸 수 없고, <strong>모든 그림에 맞추기</strong>는 그 부위 그림에 맞춥니다.</li>
+<li>캔버스에서 바꾸기: 부위를 고른 채 <span class="key" data-cmd="편집/캔버스 크기…"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd></span>를 누르면 <a href="#tools-canvas-size">캔버스 크기 모드</a> 대신 <strong>레이어 크기</strong> 모드가 됩니다. 손잡이나 숫자로 칸 크기와 그림 자리·크기를 바꾸고, 모든 프레임·스킨에 적용됩니다. 뒤집기는 쓸 수 없고, <strong>모든 그림에 맞추기</strong>는 그 부위 그림에 맞춥니다.</li>
 <li>위치를 숫자로: 부위 우클릭 ⑤ <strong>위치…</strong>. 메뉴와 창에는 지금 프레임의 위치가 보이고, 바꾸면 모든 프레임이 같은 만큼 옮겨집니다.</li>
 <li>모든 프레임의 크기와 자리를 캔버스에서 함께 바꾸려면 <a href="#tools-layer-size">레이어 전체 변형</a>(<span class="key" data-cmd="편집/레이어 크기…"><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd></span>)을 씁니다. 한 프레임의 자리만 옮기려면 그 프레임에서 <a class="term" href="#tools-select">선택 영역</a> 없이 <a href="#tools-transform">변형 모드</a>(<span class="key" data-cmd="편집/변형(회전·크기)…"><kbd>Ctrl</kbd>+<kbd>T</kbd></span>)로 옮깁니다(<a href="#parts-frame-position">프레임마다 부위 위치 바꾸기</a>).</li>
 </ul>
@@ -4916,7 +4926,7 @@
 </tbody>
 </table></div>
 <h4>스킨 만들기</h4>
-<p><a href="#parts-skin-manager">스킨 관리 창</a>의 <strong>새 스킨(빈)</strong>·<strong>복제</strong>, 그룹 우클릭 <strong>스킨</strong> 하위 메뉴로 만듭니다. 일반 레이어에는 우클릭 <strong>스킨 추가 (그룹으로 바꿈)</strong>로 그룹과 스킨을 한 번에 만듭니다(<a href="#parts-nest">레이어를 그룹에 넣고 빼기</a>). 빈 스킨과 복제한 스킨의 차이는 <a href="#parts-skin-empty">빈 스킨과 스킨 복제</a>를 봅니다.</p>
+<p><a href="#parts-skin-manager">스킨 관리 창</a>의 <strong>새 스킨(빈)</strong>·<strong>복제</strong>, 그룹 우클릭 <strong>스킨</strong> 하위 메뉴로 만듭니다. 일반 레이어에는 우클릭 <strong>스킨 추가</strong>로 그룹과 스킨을 한 번에 만듭니다(<a href="#parts-nest">레이어를 그룹에 넣고 빼기</a>). 빈 스킨과 복제한 스킨의 차이는 <a href="#parts-skin-empty">빈 스킨과 스킨 복제</a>를 봅니다.</p>
 
 <h3 id="parts-skin-empty">빈 스킨과 스킨 복제</h3>
 <p><a class="term" href="#parts-skins">스킨</a>은 자기 그림만 보여 줍니다. <a class="term" href="#parts-skins">첫 스킨</a>이 아닌 스킨이나 <a class="term" href="#parts-per-part">부위 전용 스킨</a>에서 그리지 않은 칸은 첫 스킨 그림을 빌려 오지 않고 비어 보입니다. 같은 그림에서 시작하려면 스킨을 <strong>복제</strong>로 만듭니다.</p>
@@ -5488,7 +5498,7 @@
 <tr><td>그리기·고치기</td><td>16×16 슬라임 캐릭터를 그려 줘. 투명 배경, 초록 계열 4색, 어두운 외곽선.</td><td><a href="#ai-edits">AI가 할 수 있는 편집</a></td></tr>
 <tr><td>큰 그림 생성 → 픽셀 아트(Codex)</td><td>검을 든 기사 그려 줘.</td><td><a href="#ai-generate">그림 생성 → 픽셀 변환</a></td></tr>
 <tr><td>애니메이션·프레임</td><td>이 캐릭터로 4프레임 걷기 애니메이션을 만들고 walk <a class="term" href="#screen-tags">태그</a>를 달아 줘(프레임마다 120ms).</td><td><a href="#ai-edits">AI가 할 수 있는 편집</a></td></tr>
-<tr><td><a class="term" href="#parts-concept">부위</a>·<a class="term" href="#parts-skins">스킨</a></td><td>머리·몸·팔·다리를 부위로 나눈 캐릭터 <a class="term" href="#parts-concept">그룹</a>을 만들어 줘.</td><td><a href="#ai-edits">AI가 할 수 있는 편집</a></td></tr>
+<tr><td><a class="term" href="#parts-concept">부위</a>·<a class="term" href="#parts-skins">스킨</a></td><td>몸통 <a class="term" href="#screen-timeline">레이어</a> 아래에 머리·팔·다리 레이어를 넣은 캐릭터를 만들어 줘.</td><td><a href="#ai-edits">AI가 할 수 있는 편집</a></td></tr>
 <tr><td><a class="term" href="#screen-layer-effects">레이어 효과</a></td><td>캐릭터에 1px 검은 외곽선을 넣고, 프레임 3~4에 흰 피격 번쩍임 효과를 넣어 줘.</td><td><a href="#ai-effects">레이어 효과 부탁하기</a></td></tr>
 <tr><td>새 <a class="term" href="#screen-effect-maker">효과 만들기</a>(스크립트)</td><td>맞으면 빨갛게 번쩍이면서 조각으로 흩어지는 효과를 스크립트로 만들어서 내 효과로 저장해 줘.</td><td><a href="#ai-effects">레이어 효과 부탁하기</a></td></tr>
 <tr><td>내 <a class="term" href="#ai-references">참고 자료</a> 따라 그리기</td><td>참고 자료의 슬라임처럼 32px 박쥐 그려 줘.</td><td><a href="#ai-references">참고 자료로 그림 실력 높이기</a></td></tr>
@@ -5809,8 +5819,8 @@ tool_timeout_sec = 3600</code></pre>
 <tr><td><strong>그리기</strong></td><td>픽셀 블록 칠하기, 점 찍기, 선·사각형·원, 채우기, 지우기, 색 바꾸기.</td><td><code>draw_pixels</code> <code>set_pixels</code> <code>draw_shape</code> <code>fill</code> <code>clear</code> <code>replace_color</code></td></tr>
 <tr><td><strong>프레임·애니메이션</strong></td><td>프레임을 더하거나(복사 포함) 지우고, 프레임 시간과 애니메이션 <a class="term" href="#screen-tags">태그</a>를 정합니다. 여러 프레임의 <a class="term" href="#screen-timeline">셀</a>을 링크로 묶거나 풀고 링크 색을 바꿉니다.</td><td><code>add_frame</code> <code>delete_frame</code> <code>set_frame_duration</code> <code>add_tag</code> <code>link_cels</code> <code>unlink_cels</code> <code>set_link_color</code></td></tr>
 <tr><td><strong>레이어</strong></td><td>레이어를 더하고 이름·보이기·불투명도·<a class="term" href="#tools-pivot">피벗</a>을 바꾸며, 편집기에서 보는 프레임·레이어를 고릅니다.</td><td><code>add_layer</code> <code>set_layer</code> <code>set_current</code></td></tr>
-<tr><td><strong><a class="term" href="#parts-concept">그룹</a>·<a class="term" href="#parts-concept">부위</a></strong></td><td>캐릭터를 머리·몸·팔 같은 부위로 나누고, 부위의 위치·크기를 정합니다.</td><td><code>add_group</code> <code>add_part</code> <code>set_part</code></td></tr>
-<tr><td><strong><a class="term" href="#parts-skins">스킨</a>·의상</strong></td><td>같은 부위의 다른 그림(옷 등)을 만들어 바꿔 입히고, 의상 프리셋을 저장·적용합니다.</td><td><code>list_skins</code> <code>add_skin</code> <code>set_skin</code> <code>edit_skin</code> <code>list_outfits</code> <code>save_outfit</code> <code>apply_outfit</code></td></tr>
+<tr><td><strong>레이어 나무</strong></td><td>빈 레이어와 자식 레이어를 만들어 캐릭터를 머리·몸·팔 같은 레이어로 나누고, 위치·크기·부모를 정합니다.</td><td><code>add_group</code> <code>add_part</code> <code>set_part</code></td></tr>
+<tr><td><strong><a class="term" href="#parts-skins">스킨</a>·스킨 프리셋</strong></td><td>레이어마다 다른 그림(옷 등)을 만들어 바꾸고, 스킨 프리셋을 저장·적용합니다.</td><td><code>list_skins</code> <code>add_skin</code> <code>set_skin</code> <code>edit_skin</code> <code>list_outfits</code> <code>save_outfit</code> <code>apply_outfit</code></td></tr>
 <tr><td><strong><a href="#ai-effects">레이어 효과</a></strong></td><td>외곽선·그림자·빛·피격 번쩍임·흔들기·나타나기/사라지기 같은 <a class="term" href="#screen-layer-effects">레이어 효과</a>(그림은 그대로 둠)를 넣고 고치고 지웁니다. 부탁하면 <a class="term" href="#screen-layer-effects">영구 적용</a>하거나 효과에 맞춰 <a class="term" href="#screen-canvas">캔버스</a>를 늘립니다.</td><td><code>list_effect_types</code> <code>get_effects</code> <code>add_effect</code> <code>set_effect</code> <code>remove_effect</code> <code>apply_effects</code> <code>expand_canvas_for_effects</code></td></tr>
 <tr><td><strong><a href="#ai-effects">효과 만들기</a></strong></td><td>설치된 효과(<a class="term" href="#screen-effect-list">공식 효과</a>와 내 패키지)로 안 되는 모습은 <a class="term" href="#screen-script-effects">스크립트 효과</a>(JavaScript)로 직접 짜서 넣고, 병아리에 입힌 미리보기로 확인합니다. 다 만든 스크립트는 개인 스크립트 효과로 저장해 <a class="term" href="#screen-effect-maker">효과 만들기</a> 창에서 엽니다(올리기는 직접). 효과 만들기 창이 열려 있으면 그 편집기의 원문을 읽고 고치고 검증합니다.</td><td><code>get_script_api</code> <code>write_script_effect</code> <code>preview_effects</code> <code>save_script_effect</code> <code>list_script_effects</code> <code>get_script_effect_source</code> <code>get_effect_maker_source</code> <code>set_effect_maker_source</code> <code>set_effect_maker_preview</code> <code>check_effect_maker</code></td></tr>
 <tr><td><strong>캔버스·색</strong></td><td>캔버스 크기와 캔버스(내보내기) 피벗·<a class="term" href="#tools-pivot">대표 레이어</a>, <a class="term" href="#screen-palette">팔레트</a> 색, 주·보조 색을 바꿉니다.</td><td><code>resize_canvas</code> <code>set_canvas_pivot</code> <code>set_palette</code> <code>set_colors</code></td></tr>
@@ -5837,7 +5847,7 @@ rows:
 <h4>도구 줄</h4>
 <p>①·② 도구 줄 끝의 괄호에는 그 도구가 걸린 시간이 붙습니다(예: <code>get_image (22s)</code>, <code>get_image (1m 20s)</code>). 실패한 도구는 오류 글 뒤에 붙고, 지난 대화를 다시 열어도 그대로 보입니다. 아직 도는 도구에는 붙지 않습니다.</p>
 <h4>셀 링크</h4>
-<p>AI에게 '4~8 프레임 링크해 줘' 또는 '그 링크 초록으로'라고 하면 <code>link_cels</code>·<code>unlink_cels</code>·<code>set_link_color</code>로 셀을 묶고 풀고 색을 바꿉니다. <code>get_document</code>는 각 레이어·그룹의 링크 프레임과 색을 보여 줍니다. 링크 풀기 결과에는 풀린 칸 수와 효과의 끝 모습을 그림에 넣은 칸 수도 나옵니다.</p>
+<p>AI에게 '4~8 프레임 링크해 줘' 또는 '그 링크 초록으로'라고 하면 <code>link_cels</code>·<code>unlink_cels</code>·<code>set_link_color</code>로 셀을 묶고 풀고 색을 바꿉니다. <code>get_document</code>는 각 레이어·<a class="term" href="#parts-concept">그룹</a>의 링크 프레임과 색을 보여 줍니다. 링크 풀기 결과에는 풀린 칸 수와 효과의 끝 모습을 그림에 넣은 칸 수도 나옵니다.</p>
 <h4>저장과 임시 제목</h4>
 <p>저장은 부탁할 때만 합니다. 저장한 적 없는 새 프로젝트에 수정이 있으면 다른 문서로 바꾸기 전에 저장할지 물어봅니다. 저장하지 않은 새 그림에 그릴 때 <a href="#screen-tabs">임시 제목</a>이 없으면 AI가 사용자 언어로 짧은 제목을 붙입니다(<code>new_project</code>의 제목, <code>set_document_title</code> — 파일이 있는 문서에는 붙이지 않음). <a href="#ai-file-only">지금 그림만</a>이 켜져 있어도 그 그림의 임시 제목은 바꿀 수 있습니다.</p>
 
@@ -6210,12 +6220,10 @@ rows:
 <tr><td>프레임 복제</td><td><span class="key" data-cmd="프레임·레이어/프레임 복제"><kbd>Alt</kbd>+<kbd>D</kbd></span></td><td>지금 프레임을 복사해 더합니다.</td></tr>
 <tr><td>프레임 삭제</td><td><span class="key" data-cmd="프레임·레이어/프레임 삭제">없음</span></td><td>지금 프레임을 지웁니다.</td></tr>
 <tr><td>새 레이어</td><td><span class="key" data-cmd="프레임·레이어/새 레이어"><kbd>Shift</kbd>+<kbd>N</kbd></span></td><td>빈 레이어를 더합니다.</td></tr>
-<tr><td>새 그룹</td><td><span class="key" data-cmd="프레임·레이어/새 그룹"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd></span></td><td><a class="term" href="#parts-concept">부위</a>를 담을 그룹을 만듭니다(부위 <a href="#parts-create">만들기</a>).</td></tr>
-<tr><td>새 부위…</td><td><span class="key" data-cmd="프레임·레이어/새 부위…"><kbd>Shift</kbd>+<kbd>P</kbd></span></td><td>지금 그룹에 부위를 더합니다. 그룹이 없으면 그룹도 만듭니다.</td></tr>
-<tr><td>부위 크기…</td><td><span class="key" data-cmd="프레임·레이어/부위 크기…">없음</span></td><td>고른 부위의 크기를 바꿉니다.</td></tr>
+<tr><td>레이어 크기…</td><td><span class="key" data-cmd="프레임·레이어/부위 크기…">없음</span></td><td>고른 <a class="term" href="#parts-concept">부위</a>의 크기를 바꿉니다.</td></tr>
 <tr><td>레이어 이름 바꾸기</td><td><span class="key" data-cmd="프레임·레이어/레이어 이름 바꾸기"><kbd>F2</kbd></span></td><td>지금 레이어 이름을 고칩니다. 이름을 더블클릭해도 됩니다.</td></tr>
-<tr><td>이전 스킨(현재 그룹) / 다음 스킨(현재 그룹)</td><td><span class="key" data-cmd="프레임·레이어/이전 스킨(현재 그룹)"><kbd>Alt</kbd>+<kbd>[</kbd></span> / <span class="key" data-cmd="프레임·레이어/다음 스킨(현재 그룹)"><kbd>Alt</kbd>+<kbd>]</kbd></span></td><td>지금 그룹(부위를 골랐으면 그 부위의 그룹)의 스킨을 바꿉니다. <a class="term" href="#files-history">실행취소 기록</a>에 남지 않습니다.</td></tr>
-<tr><td>스킨 관리…</td><td><span class="key" data-cmd="프레임·레이어/스킨 관리…">없음</span></td><td><a class="term" href="#parts-skin-manager">스킨 관리 창</a>을 엽니다(<a href="#parts-skin-manager">스킨 관리 창</a>).</td></tr>
+<tr><td>이전 스킨(현재 레이어) / 다음 스킨(현재 레이어)</td><td><span class="key" data-cmd="프레임·레이어/이전 스킨(현재 그룹)"><kbd>Alt</kbd>+<kbd>[</kbd></span> / <span class="key" data-cmd="프레임·레이어/다음 스킨(현재 그룹)"><kbd>Alt</kbd>+<kbd>]</kbd></span></td><td>지금 그룹(부위를 골랐으면 그 부위의 그룹)의 스킨을 바꿉니다. <a class="term" href="#files-history">실행취소 기록</a>에 남지 않습니다.</td></tr>
+<tr><td>스킨 설정…</td><td><span class="key" data-cmd="프레임·레이어/스킨 관리…">없음</span></td><td><a class="term" href="#parts-skin-manager">스킨 관리 창</a>을 엽니다(<a href="#parts-skin-manager">스킨 관리 창</a>).</td></tr>
 <tr><td>새 태그(애니메이션)…</td><td><span class="key" data-cmd="프레임·레이어/새 태그(애니메이션)…">없음</span></td><td>프레임 범위에 이름을 붙여 애니메이션 태그를 만듭니다.</td></tr>
 <tr><td>격자로 나눠 프레임 만들기(시트 → 프레임)…</td><td><span class="key" data-cmd="프레임·레이어/격자로 나눠 프레임 만들기(시트 → 프레임)…">없음</span></td><td>스프라이트 시트 한 장을 칸마다 프레임으로 나눕니다.</td></tr>
 </tbody>

@@ -150,8 +150,6 @@ shortcuts-timeline.h-cmd.d4,빈 프레임을 더합니다.,Adds an empty frame.
 shortcuts-timeline.h-cmd.d5,지금 프레임을 복사해 더합니다.,Adds a copy of the current frame.
 shortcuts-timeline.h-cmd.d6,지금 프레임을 지웁니다.,Deletes the current frame.
 shortcuts-timeline.h-cmd.d7,빈 레이어를 더합니다.,Adds an empty layer.
-shortcuts-timeline.h-cmd.d8,"부위를 담을 그룹을 만듭니다(부위 <a href=""#parts-create"">만들기</a>).","Creates a group for parts (see <a href=""#parts-create"">Creating</a> parts)."
-shortcuts-timeline.h-cmd.d9,지금 그룹에 부위를 더합니다. 그룹이 없으면 그룹도 만듭니다.,"Adds a part to the current group, creating a group if there is none."
 shortcuts-timeline.h-cmd.d10,고른 부위의 크기를 바꿉니다.,Changes the size of the selected part.
 shortcuts-timeline.h-cmd.d11,지금 레이어 이름을 고칩니다. 이름을 더블클릭해도 됩니다.,Renames the current layer. Double-clicking the name works too.
 shortcuts-timeline.h-cmd.d12,지금 그룹(부위를 골랐으면 그 부위의 그룹)의 스킨을 바꿉니다. 실행취소 기록에 남지 않습니다.,Switches the skin of the current group (or the selected part's group). It isn't recorded in undo history.
