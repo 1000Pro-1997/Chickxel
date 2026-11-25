@@ -290,7 +290,11 @@ def block(n: Node, base: str, page_id: str) -> list[dict]:
                 "title": runs_of(title, base) if title else [],
                 "runs": runs_of(text, base) if text else runs_of(li, base, skip=lambda x: x is title),
             })
-        return [{"type": "steps", "items": items}]
+        steps = {"type": "steps", "items": items}
+        # 그림마다 나눈 단계 목록은 앞 목록에 이어 번호를 매긴다(<ol start="2">).
+        if (start := int(n.attrs.get("start", "1"))) != 1:
+            steps["start"] = start
+        return [steps]
     if n.tag in ("ul", "ol"):
         return [list_block(n, base)]
     if n.tag == "table":

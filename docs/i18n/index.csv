@@ -61,7 +61,7 @@ core.32,"<span class=""core-tag"">유니티 연동</span>","<span class=""core-t
 core.33,피벗 연동,Pivot sync
 core.34.aria-label,"피벗 도구로 몸 레이어의 피벗을 발밑으로 옮기고, 그림자 레이어와 Props 그룹(부위마다 파란 점)의 따로 둔 피벗을 본 뒤, 타임라인 캔버스 칩으로 캔버스 피벗을 고치고 몸 레이어를 캔버스 피벗 대표 레이어(이름 앞 왕관)로 정하는 모습","Moving the Body layer's pivot to the feet with the Pivot tool, showing the separate pivots of the Shadow layer and the Props group (a blue dot per part), then editing the canvas pivot from the timeline canvas chip and making Body the canvas pivot representative layer (crown before its name)"
 core.35,내보내기,Export
-core.36.aria-label,내보내기 창에서 스킨을 따로 내보내거나 한 장에 모으도록 바꾸며 미리보기와 파일 목록이 바뀌는 모습,"Switching between exporting skins separately and packing them into one image in the export window, with the preview and file list updating"
+core.36.aria-label,"내보내기 창에서 게임 엔진을 Unity로, 스킨을 고른 스킨으로 바꿔 모든 스킨이 한 장에 모이고, 스킨마다 따로 파일로 바꿔 만들어질 파일이 12개로 늘고, 칸 간격을 넓히며 미리보기가 바로 바뀌는 모습","In the export window, switching the game engine to Unity and the skins to selected skins so every skin is packed into one image, then to one file per skin so 12 files will be written, and widening the cell spacing while the preview updates right away"
 features.1,무엇을 할 수 있나요,What it does
 features.2,게임에 바로 넣을 스프라이트를 그리는 데 필요한 것을 한 곳에.,Everything you need to draw sprites that go straight into your game.
 features.3,저장하면 Unity로 바로,Save straight to Unity

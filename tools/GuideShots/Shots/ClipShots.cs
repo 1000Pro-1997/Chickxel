@@ -1,7 +1,10 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.LogicalTree;
+using Avalonia.VisualTree;
 using Chickxel.App;
+using Chickxel.App.Localization;
 using Chickxel.Core.Edit;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
@@ -726,5 +729,190 @@ internal static class ClipShots
         ctx.SetCurrent(bi, 0);
         rec.Hold(800);
         rec.Save("docs/assets/feature-effect-drop", ClipFormat.Mp4);
+    }
+
+    // ───────────── 내보내기(단계마다 영상 하나: 창 열기 · 설정 · 저장) ─────────────
+
+    /// <summary>
+    /// 부위·스킨 예시 프로젝트(늑대 모험가 — 스킨 기본·knight·zombie)를 예시 폴더(<see cref="ScreenDemo.FolderName"/>)에 두고 파일 브라우저와 함께 연 1280×656 창.
+    /// 내보내기는 프레임 시트만(미리보기가 한 줄로 보이게).
+    /// </summary>
+    private static MainForm ExportMain(ShotKit k)
+    {
+        var built = PartsSample.Build(k, p => p.Export.ExportParts = false);
+        var dir = Path.Combine(k.WorkDir, ScreenDemo.FolderName);
+        Directory.CreateDirectory(dir);
+        var path = Path.Combine(dir, Path.GetFileName(built));
+        File.Move(built, path, overwrite: true);
+        App.Settings.BottomHeight = 218;
+        var m = k.Main(path, dir, 1280, 656);
+        ScreenDemo.PrettyRoot(m);
+        ShotKit.Call(ShotKit.Get<Control>(m, "_canvas"), "FitToWindow");
+        k.Settle(400);
+        return m;
+    }
+
+    /// <summary>내보내기 창을 낮은 창 안에 들어오게 줄이고(본문은 스크롤) 폴더 글자의 샷 작업 폴더 경로를 예시 경로로.</summary>
+    private static void FitExportDialog(ShotKit k, Window w)
+    {
+        w.Height = 656 - ShotKit.TitleHeight - 24;
+        ShotKit.Pump(400);
+        ScrubExportFolder(k, w);
+    }
+
+    private static void ScrubExportFolder(ShotKit k, Window w)
+    {
+        var label = ShotKit.Get<Control>(w, "_folderLabel");
+        var text = label.GetType().GetProperty("Text")!;
+        var real = Path.Combine(k.WorkDir, ScreenDemo.FolderName);
+        if (text.GetValue(label) is string s && s.Contains(real, StringComparison.OrdinalIgnoreCase))
+            text.SetValue(label, s.Replace(real, @"D:\MyGame\Assets\" + ScreenDemo.FolderName, StringComparison.OrdinalIgnoreCase));
+        ShotKit.Pump(100);
+    }
+
+    /// <summary>내보내기 창 설정 칸에서 글자가 <paramref name="text"/>인 나눔 단추 칸·라디오.</summary>
+    private static Control ExportChoice(Window w, string text)
+        => ShotKit.All<RadioButton>(w).FirstOrDefault(r => r.IsEffectivelyVisible && r.Content as string == text)
+           ?? (Control?)ShotKit.All<TextBlock>(w).FirstOrDefault(t => t.IsEffectivelyVisible && t.Text == text)?.GetVisualAncestors().OfType<Control>().First(c => c is Button or Border)
+           ?? throw new InvalidOperationException("no export choice " + text);
+
+    /// <summary>① 파일 메뉴 > 내보내기…로 창을 열면 오른쪽에 만들어질 시트 미리보기와 파일 이름이 바로 보인다.</summary>
+    [Shot("clip-feature-export-open")]
+    public static void ExportOpen(ShotKit k)
+    {
+        var m = ExportMain(k);
+        using var rec = new ClipRecorder(k, m, new Rect(0, 0, 1280, 656), titleBar: true, frameMs: 42) { TitleFilter = PrettyTitle(k) };
+        rec.Place(new Point(640, 330));
+        rec.Hold(700);
+        var item = CommandItem(m, "내보내기…");
+        var top = item.GetLogicalAncestors().OfType<MenuItem>().Last();
+        rec.Click(rec.At(top), 800, pressMs: 0, afterMs: 700);
+        rec.Move(rec.At(item), 700);
+        rec.Hold(450);
+        k.Dialog(() => rec.PressAndRelease(rec.At(item), 0, pressMs: 0), w =>
+        {
+            FitExportDialog(k, w);
+            rec.Hold(900);
+            // 미리보기 쪽: 만들어질 파일 이름 → 시트 칸.
+            var head = ShotKit.All<TextBlock>(w).First(t => t.IsEffectivelyVisible && t.Text?.StartsWith("① ", StringComparison.Ordinal) == true);
+            var at = rec.BoundsOf(head);
+            rec.Move(new Point(at.X + 90, at.Center.Y + 2), 900);
+            rec.Hold(900);
+            rec.MarkPoster();
+            rec.Move(new Point(at.X + 200, at.Y + 260), 800);
+            rec.Hold(1800);
+        }, settleMs: 600);
+        rec.Save("docs/assets/feature-export-open", ClipFormat.Mp4);
+    }
+
+    /// <summary>
+    /// ② 내보내기 창에서 게임 엔진(Unity — .meta), 스킨(고른 스킨 → 스킨마다 따로 파일), 칸 간격을 바꾸면 오른쪽 미리보기와 만들어질 파일 이름이 바로 바뀐다.
+    /// </summary>
+    [Shot("clip-feature-export-settings")]
+    public static void ExportSettings(ShotKit k)
+    {
+        var m = ExportMain(k);
+        k.Dialog(() => k.Command("파일/내보내기…"), w =>
+        {
+            FitExportDialog(k, w);
+            using var rec = new ClipRecorder(k, m, new Rect(0, 0, 1280, 656), titleBar: true, frameMs: 42) { TitleFilter = PrettyTitle(k) };
+            rec.Place(new Point(640, 330));
+            rec.Hold(800);
+            void Pick(string text, int after = 1300)
+            {
+                rec.Click(rec.At(ExportChoice(w, text)), 700, pressMs: 120, afterMs: 200);
+                ScrubExportFolder(k, w);
+                rec.Hold(after);
+            }
+            Pick(UiStrings.Export_EngineUnity);
+            // 설정 칸을 스킨 줄이 보이게 내린다(휠로 내리듯 몇 프레임에 걸쳐).
+            var skins = ExportChoice(w, UiStrings.S_UnityExportDialog_SheetRows_BB56BA3E03);
+            var scroll = skins.GetVisualAncestors().OfType<ScrollViewer>().First();
+            double from = scroll.Offset.Y, to = Math.Min(scroll.Extent.Height - scroll.Viewport.Height, from + rec.BoundsOf(skins).Y - rec.BoundsOf(scroll).Y - 120);
+            for (int i = 1; i <= 8; i++)
+            {
+                scroll.Offset = new Vector(0, from + (to - from) * i / 8);
+                rec.Hold(42);
+            }
+            rec.Hold(400);
+            Pick(UiStrings.S_UnityExportDialog_SheetRows_BB56BA3E03);
+            Pick(UiStrings.S_UnityExportDialog_SheetRows_2F498E0DBD, 1600);
+            rec.MarkPoster();
+            // 칸 간격: 숫자 칸 위 단추를 세 번(미리보기 칸 사이가 벌어짐).
+            var spacingLabel = ShotKit.All<TextBlock>(w).First(t => t.IsEffectivelyVisible && t.Text == "Spacing between cells");
+            var spacing = ShotKit.All<NumericUpDown>(w).Where(n => n.IsEffectivelyVisible)
+                .MinBy(n => Math.Abs(rec.BoundsOf(n).Center.Y - rec.BoundsOf(spacingLabel).Center.Y))!;
+            var sb = rec.BoundsOf(spacing);
+            var up = new Point(sb.Right - 9, sb.Y + sb.Height * 0.28);
+            rec.Move(up, 800);
+            for (int i = 0; i < 3; i++) rec.Click(up, 0, pressMs: 120, afterMs: 600);
+            rec.Hold(800);
+            // 만들어질 파일 이름 줄.
+            var files = ShotKit.All<TextBlock>(w).First(t => t.IsEffectivelyVisible && t.Text?.StartsWith("① ", StringComparison.Ordinal) == true);
+            rec.Move(rec.BoundsOf(files).Center, 900);
+            rec.Hold(1800);
+            rec.Save("docs/assets/feature-export-settings", ClipFormat.Mp4);
+        }, settleMs: 600);
+    }
+
+    /// <summary>
+    /// ③ 저장하면 설정대로 시트가 함께 나간다: 파일 > 저장 → 파일 브라우저는 내보낸 PNG를 .chickxel 하나로 보이고, 마우스를 올리면 내보낸 파일 이름,
+    /// 내보낸 파일 이름(스킨 이름)으로 검색해도 그 .chickxel이 나온다.
+    /// </summary>
+    [Shot("clip-feature-export-save")]
+    public static void ExportSave(ShotKit k)
+    {
+        var m = ExportMain(k);
+        // 스킨마다 따로 파일로 내보내게 바꿔 둔(저장 안 한) 상태에서 시작.
+        var p = ScreenDemo.Project(m);
+        p.Edit("export", Chickxel.Core.Model.ProjectChange.Settings, () =>
+        {
+            p.Export.Common.Skins = SkinSource.Selected;
+            p.Export.Common.SplitSkins = true;
+        });
+        k.Settle(400);
+        var browser = ShotKit.Get<FileBrowserPanel>(m, "_browser");
+        using var rec = new ClipRecorder(k, m, new Rect(0, 0, 1280, 656), titleBar: true, frameMs: 42) { TitleFilter = PrettyTitle(k) };
+        rec.Place(new Point(640, 330));
+        rec.Hold(800);
+        var item = CommandItem(m, "저장(+ 시트 내보내기)");
+        var top = item.GetLogicalAncestors().OfType<MenuItem>().Last();
+        rec.Click(rec.At(top), 800, pressMs: 0, afterMs: 700);
+        rec.Move(rec.At(item), 600);
+        rec.Hold(400);
+        rec.Click(rec.At(item), 0, pressMs: 120, afterMs: 300);
+        // 파일 브라우저가 새 파일을 읽어 목록을 다시 만들 때까지(그 뒤의 칸을 잡는다).
+        for (int i = 0; i < 30; i++) rec.Hold(50);
+        ListBoxItem ProjectTile() => ShotKit.All<ListBoxItem>(browser).First(i => i.IsEffectivelyVisible && TopLevel.GetTopLevel(i) is not null
+            && ToolTip.GetTip(i) is string s && s.Contains(".png", StringComparison.OrdinalIgnoreCase));
+        rec.Move(rec.At(ProjectTile()), 800);
+        rec.Hold(300);
+        // 마우스를 올린 모습: 화면 없는 실행에는 마우스 자리가 없어 풍선 자리를 칸 오른쪽으로 정해 연다.
+        var tile = ProjectTile();
+        ToolTip.SetPlacement(tile, Avalonia.Controls.PlacementMode.Right);
+        ToolTip.SetIsOpen(tile, true);
+        k.Settle(500);
+        if (!ShotKit.OpenPopups.Any(pp => pp.Host is not null)) throw new InvalidOperationException("file tooltip did not open");
+        rec.Hold(400);
+        rec.MarkPoster();
+        rec.Hold(2600);
+        ToolTip.SetIsOpen(tile, false);
+        // 내보낸 파일 이름(스킨 이름)으로 검색.
+        var search = ShotKit.Get<TextBox>(browser, "_search");
+        rec.Cursor = ClipCursor.IBeam;
+        rec.Click(rec.At(search), 800, pressMs: 120, afterMs: 500);
+        rec.Type("zombie", 180);
+        rec.Cursor = ClipCursor.Arrow;
+        rec.Move(rec.At(search) + new Vector(60, 160), 600);
+        rec.Hold(2400);
+        rec.Save("docs/assets/feature-export-save", ClipFormat.Mp4);
+    }
+
+    /// <summary>명령 id 끝이 <paramref name="tail"/>인 위 메뉴 항목.</summary>
+    private static MenuItem CommandItem(MainForm main, string tail)
+    {
+        var entries = ShotKit.Get<System.Collections.IEnumerable>(main, "_commands").Cast<object>().ToList();
+        var entry = entries.First(c => ShotKit.Get<ShortcutCommand>(c, "Info").Id.EndsWith("/" + tail, StringComparison.Ordinal));
+        return ShotKit.Get<MenuItem?>(entry, "Item") ?? throw new InvalidOperationException("command has no menu item: " + tail);
     }
 }

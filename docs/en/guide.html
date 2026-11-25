@@ -18,7 +18,7 @@
 <link rel="alternate" hreflang="x-default" href="https://chickxel.com/en/guide">
 <link rel="icon" href="../assets/icon-256.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="../style.css?v=2b7ea4b5bb">
+<link rel="stylesheet" href="../style.css?v=f51a46daad">
 <script src="/static/analytics.js" defer></script>
 <script>
 // 처음 온 사람은 브라우저 언어로(한국어가 아니면 영어). 고른 언어는 기억한다.
@@ -319,11 +319,17 @@
 
 <section class="doc" id="featured-export">
 <h2>Export</h2>
-<figure class="core-media wide guide-media"><video src="../assets/feature-export.mp4" poster="../assets/feature-export.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Switching between exporting skins separately and packing them into one image in the export window, with the preview and file list updating" width="1280" height="688"></video></figure>
+<figure class="core-media wide guide-media"><video src="../assets/feature-export-open.mp4" poster="../assets/feature-export-open.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Opening the export window from File > Export…, with the sheet preview and the file name to be written shown on the right" width="1280" height="688"></video></figure>
 <p>In the <span class="key" data-cmd="파일/내보내기…"><kbd>Ctrl</kbd>+<kbd>E</kbd></span> export window, set the sheet layout, how <a class="term" href="#parts-skins">skins</a> are packed, whether to split files, and the Unity import settings. Even when it exports several files, one <code>.chickxel</code> keeps them together.</p>
 <ol class="core-steps">
 <li><strong>Open the export window</strong><span><span class="key" data-cmd="파일/내보내기…"><kbd>Ctrl</kbd>+<kbd>E</kbd></span>. A preview of the sheets and the list of files to be written appear on the right.</span></li>
+</ol>
+<figure class="core-media wide guide-media"><video src="../assets/feature-export-settings.mp4" poster="../assets/feature-export-settings.jpg" autoplay loop muted playsinline preload="metadata" aria-label="In the export window, switching the game engine to Unity and the skins to selected skins so every skin is packed into one image, then to one file per skin so 12 files will be written, and widening the cell spacing while the preview updates right away" width="1280" height="688"></video></figure>
+<ol class="core-steps" start="2">
 <li><strong>Set layout, skins and splitting</strong><span>Choose cell layout and spacing, whether to pack all skins in one image or one file per skin, and whether to split by <a class="term" href="#screen-tags">tag</a>, part or skin. Unity <a class="term" href="#parts-sprite-library">Sprite Library</a> and import settings (<code>.meta</code>) are set here too, and you can save favorite settings as presets.</span></li>
+</ol>
+<figure class="core-media wide guide-media"><video src="../assets/feature-export-save.mp4" poster="../assets/feature-export-save.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Saving with File > Save writes the 12 sheets with it; the file browser shows only the .chickxel, hovering lists the exported file names, and typing zombie in the search box still finds that .chickxel" width="1280" height="688"></video></figure>
+<ol class="core-steps" start="3">
 <li><strong>Save to export them together</strong><span>Every save rewrites the PNGs and <code>.meta</code> with these settings. The <a class="term" href="#screen-file-browser">file browser</a> hides the exported PNGs and shows the single <code>.chickxel</code>; hover to see the exported file names, and searching by those names finds it too.</span></li>
 </ol>
 <div class="note"><p>Every export setting is in <a href="#screen-export">Export dialog</a>.</p></div>

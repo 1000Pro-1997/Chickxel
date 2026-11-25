@@ -58,7 +58,7 @@
 
 ### 내보내기
 
-<a href="https://1000pro-1997.github.io/Chickxel/guide.html#featured-export"><img src="src/Chickxel.App/Assets/Help/media/feature-export.webp" alt="내보내기 창에서 스킨을 따로 내보내거나 한 장에 모으도록 바꾸며 미리보기와 파일 목록이 바뀌는 모습" width="640"></a>
+<a href="https://1000pro-1997.github.io/Chickxel/guide.html#featured-export"><img src="src/Chickxel.App/Assets/Help/media/feature-export-settings.webp" alt="내보내기 창에서 게임 엔진을 Unity로, 스킨을 고른 스킨으로 바꿔 모든 스킨이 한 장에 모이고, 스킨마다 따로 파일로 바꿔 만들어질 파일이 12개로 늘고, 칸 간격을 넓히며 미리보기가 바로 바뀌는 모습" width="640"></a>
 
 ## 내려받기
 

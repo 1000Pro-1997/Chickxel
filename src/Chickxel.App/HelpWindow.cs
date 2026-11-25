@@ -746,7 +746,7 @@ public sealed class HelpWindow : Window
     private Control Steps(HelpBlock b, int mark = -1)
     {
         var stack = new StackPanel { Spacing = 8, Margin = new Thickness(0, 2, 0, 14) };
-        int n = 0;
+        int n = b.Start - 1;
         foreach (var item in b.Items ?? [])
         {
             n++;
@@ -1164,13 +1164,17 @@ internal sealed class HelpPage
     [System.Text.Json.Serialization.JsonIgnore] public int Index { get; set; }
 }
 
-/// <summary>블록: p·h4(Runs), ul·ol·steps(Items, Marks = 칸이 그림 번호로 시작해 머리표 없음), table(Head·Rows), note(Blocks), pre(Text), media(Alt·Page·Src), shot(Src·Alt, Runs = 번호 설명).</summary>
+/// <summary>
+/// 블록: p·h4(Runs), ul·ol·steps(Items, Marks = 칸이 그림 번호로 시작해 머리표 없음, Start = steps 첫 번호 — 그림마다 나눈 단계 목록), table(Head·Rows), note(Blocks), pre(Text),
+/// media(Alt·Page·Src), shot(Src·Alt, Runs = 번호 설명).
+/// </summary>
 internal sealed class HelpBlock
 {
     public string Type { get; set; } = "";
     public HelpRun[]? Runs { get; set; }
     public HelpItem[]? Items { get; set; }
     public bool Marks { get; set; }
+    public int Start { get; set; } = 1;
     public HelpRun[][]? Head { get; set; }
     public HelpRun[][][]? Rows { get; set; }
     public HelpBlock[]? Blocks { get; set; }
