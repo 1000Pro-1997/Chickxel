@@ -14,7 +14,7 @@ namespace Chickxel.App;
 /// 모델 없이 열 수도 있다(파일 > 3D 모델 열기…): 모델 파일을 창에 끌어 놓거나 '모델 열기…'로 고르면 읽어 들이고, 그 전에는 가져오기 단추가 꺼져 있다.
 /// 이미 모델이 있어도 다른 모델을 끌어 놓거나 골라 바꿀 수 있다(설정은 그대로).
 /// </summary>
-public sealed class ModelImportDialog : DialogBase
+public sealed partial class ModelImportDialog : DialogBase
 {
     /// <summary>마지막으로 쓴 설정(다음에 여는 모델의 처음 값 — 애니메이션 번호는 빼고). 처음은 기본 프리셋(<see cref="ModelPresets.Standard"/>).</summary>
     private static ModelRenderSettings _lastRender = ModelPresets.Standard.Render;
@@ -266,7 +266,7 @@ public sealed class ModelImportDialog : DialogBase
         }
         GroupBox Box(string title, params (string, Control)[] rows) => Ui.Foldable(Ui.Group(title, Rows(rows)));
         // 출력 상자는 미리보기 아래 빈자리에 — 두 칸 높이가 비슷해져 창이 길어지지 않는다.
-        var output = Box(UiStrings.Model_GroupOutput,
+        var output = _outputBox = Box(UiStrings.Model_GroupOutput,
             (UiStrings.Model_Size, _size),
             (UiStrings.Model_Frames, _mode),
             (UiStrings.Model_Turntable, Ui.Row(_turnFrames, _freeTurn)),
@@ -274,7 +274,7 @@ public sealed class ModelImportDialog : DialogBase
             (UiStrings.Model_Fps, Ui.Row(_fps, Ui.Label(UiStrings.Model_MaxFrames), _maxFrames)));
         Grid.SetIsSharedSizeScope(output, true);
         previewBox.Children.Add(output);
-        var groups = new StackPanel
+        var groups = _settingsGroups = new StackPanel
         {
             Spacing = 2,
             Children =

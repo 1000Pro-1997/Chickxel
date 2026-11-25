@@ -165,6 +165,11 @@ public sealed class EffectMakerWindow : Window
     private bool Dirty => _open && (_savedSource is null || _source != _savedSource || _sceneStale || !ReferenceEquals(_scene, _savedScene));
     private bool Foreign => _shownId is { } id && AppAssets.Catalog.Find(id) is { } entry && !AppAssets.IsMine(entry);
 
+    /// <summary>튜토리얼 '효과 만들기'가 비추는 곳: 오른쪽 AI 칸(닫혀 있으면 여는 AI 단추), 가운데 코드 칸, 미리보기, 왼쪽 내 효과 목록.</summary>
+    internal Control TutorialAi => _aiHost.IsVisible ? _aiHost : _aiToggle;
+    internal Control TutorialCode => _code;
+    internal Control TutorialPreview => _preview;
+    internal Control TutorialList => _list;
 
     /// <summary>메인 창에 딸린 효과 만들기를 연다(효과 창 커스텀 탭·에셋 관리자처럼 메인 창 밖에서).</summary>
     public static void OpenFromAnywhere(string? assetId)

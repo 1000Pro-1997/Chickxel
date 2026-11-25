@@ -2744,8 +2744,8 @@ public class PixelateTests
     }
 
     /// <summary>
-    /// AI 그리기 도구의 변환 전체(<see cref="AiDrawConversion.Convert"/> — 정리 창 기본 자동 최적화 항목: 외곽선 맞추기 방식만 빼고 모두)로
-    /// 엘프 시트를 바꾸면 실패하지 않은 6프레임 결과(칸 약 3.5px = 외곽선 두께)를 얻는다.
+    /// AI 그리기 엘프 시트를 정리 창에서 자동 나누기(6프레임)와 자동 최적화(정리 창 기본 자동 최적화 항목: 외곽선 맞추기 방식만 빼고 모두)로 바꾸면
+    /// 실패하지 않은 6프레임 결과(칸 약 3.5px = 외곽선 두께)가 된다.
     /// 시험 시간을 줄이려고 시도 수 예산은 700번으로 제한한다.
     /// </summary>
     [Fact]
@@ -2753,13 +2753,14 @@ public class PixelateTests
     public void ElfSheetAiDrawConversionWithDefaultOptimizer()
     {
         var sheet = PngIO.Load(TestUtil.Fixture("ai-elf-walk-sheet.png"));
-        var settings = new PixelateSettings();
+        var settings = SheetAuto(6);
         int reports = 0;
         var options = new PixelateOptimizeOptions { Params = OptimizeParam.SelectAll, MaxTrials = 700, MaxTime = TimeSpan.FromMinutes(5) };
-        var (r, used) = AiDrawConversion.Run(sheet, settings, 6, AiDrawSheetLayout.For(6), optimize: true, options, p =>
+        var best = PixelateOptimizer.Run(PixelateSource.Prepare(sheet, settings), settings, options, p =>
         {
             Interlocked.Increment(ref reports);
-        });
+        }).Best;
+        var (r, used) = (best.Result, best.Settings);
         Assert.False(r.Failed, r.Failure.ToString());
         Assert.Equal(6, r.CommonFrames().Count);
         Assert.Equal(OutlineFit.Shrink, used.Cleanup.OutlineFit);

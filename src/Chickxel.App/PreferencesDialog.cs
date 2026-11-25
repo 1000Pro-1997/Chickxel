@@ -24,6 +24,10 @@ public sealed class PreferencesDialog : DialogBase
     private readonly NumericUpDown _autoSaveDelay;
     private readonly CheckBox _updateCheck;
     private readonly CheckBox _discord;
+    private readonly CheckBox _notify, _notifyWhenActive;
+    private readonly ComboBox _notifySound;
+    /// <summary>소리 칸의 차례(<see cref="ComboBox"/> 항목 순서) — 맨 앞은 소리 없음.</summary>
+    private static readonly string[] NotifySoundIds = [NotificationSounds.None, .. NotificationSounds.Ids];
     private readonly IReadOnlyList<ShortcutCommand> _commands;
     private readonly Dictionary<string, List<KeyChord>> _keys;
     private readonly TextBox _search;
@@ -43,7 +47,8 @@ public sealed class PreferencesDialog : DialogBase
     public PreferencesDialog(string language, int undoSteps, bool historyEnabled, UndoHistoryPolicy historyPolicy, UndoHistoryKeeper history,
         bool autoSave, int autoSaveDelay, TrashPolicy trashPolicy, bool updateCheck, bool discordPresence,
         IReadOnlyList<ShortcutCommand> commands, IReadOnlyDictionary<string, List<KeyChord>> keys,
-        string? referencesFolder, bool showReferenceExamples, string? ffmpegPath, Action<Window> showAiStatus)
+        string? referencesFolder, bool showReferenceExamples, string? ffmpegPath, Action<Window> showAiStatus,
+        bool notify, string notifySound, bool notifyWhenActive)
         : base(UiStrings.S_PreferencesDialog_PreferencesDialog_0B1C3F663F)
     {
         // 대상 도움말(F1): 창 = "환경 설정", 탭 머리글 = 그 탭을 설명하는 표 줄·소제목, 탭 안의 묶음 = 그 설정을 자세히 설명하는 쪽
@@ -259,9 +264,25 @@ public sealed class PreferencesDialog : DialogBase
         aiStatusNote.Foreground = AppTheme.DimTextBrush;
         aiStatusNote.MaxWidth = 640;
         aiStatusNote.HorizontalAlignment = HorizontalAlignment.Left;
-        var ai = Ui.Stack(Ui.Group(UiStrings.AiStatus_SettingsTitle, Ui.Stack(
-            aiStatusNote,
-            Ui.Button(VectorIcon.Info, UiStrings.AiStatus_Open, (_, _) => showAiStatus(this))))).HelpAt("ai-setup", anchor: "Open AI status and settings in Preferences");
+        // 알림: 켜기 · 소리(고르기 + 미리 듣기) · 보고 있을 때도 알리기.
+        _notify = Ui.Check(UiStrings.Notify_Enabled, notify);
+        _notifySound = Ui.Combo(160, [.. NotifySoundIds.Select(NotificationSounds.Name)]);
+        _notifySound.SelectedIndex = Math.Max(0, Array.IndexOf(NotifySoundIds, notifySound));
+        // 고르면 그 소리를 들려준다.
+        _notifySound.SelectionChanged += (_, _) => NotificationSounds.Play(NotifySound);
+        var notifyPreview = Ui.Button(VectorIcon.Play, UiStrings.Notify_Preview, (_, _) => AppNotifications.Preview(this, NotifySound));
+        _notifyWhenActive = Ui.Check(UiStrings.Notify_WhenActive, notifyWhenActive);
+        void SyncNotify() => _notifySound.IsEnabled = notifyPreview.IsEnabled = _notifyWhenActive.IsEnabled = _notify.On();
+        _notify.IsCheckedChanged += (_, _) => SyncNotify();
+        SyncNotify();
+        var ai = Ui.Stack(
+            Ui.Group(UiStrings.AiStatus_SettingsTitle, Ui.Stack(
+                aiStatusNote,
+                Ui.Button(VectorIcon.Info, UiStrings.AiStatus_Open, (_, _) => showAiStatus(this)))).HelpAt("ai-setup", anchor: "Open AI status and settings in Preferences"),
+            Ui.Group(UiStrings.Notify_Title, Ui.Stack(
+                Ui.Row(_notify, Ui.InfoBadge(UiStrings.Notify_Info)),
+                Ui.Row(Ui.Label(UiStrings.Notify_Sound), _notifySound, notifyPreview),
+                _notifyWhenActive)));
 
         // 프리셋: 지운 기본 프리셋 되살리기(누르면 바로 저장 — 확인·취소와 무관).
         var presetsNote = Ui.Label(UiStrings.Presets_Prefs_Note);
@@ -391,6 +412,10 @@ public sealed class PreferencesDialog : DialogBase
     public TrashPolicy TrashPolicy => _trash.Policy;
     public bool UpdateCheck => _updateCheck.On();
     public bool DiscordPresence => _discord.On();
+    public bool Notify => _notify.On();
+    /// <summary>고른 알림 소리 id(<see cref="NotificationSounds.None"/> = 소리 없음).</summary>
+    public string NotifySound => NotifySoundIds[Math.Clamp(_notifySound.SelectedIndex, 0, NotifySoundIds.Length - 1)];
+    public bool NotifyWhenActive => _notifyWhenActive.On();
     /// <summary>명령 Id → 정한 단축키(모든 명령).</summary>
     public IReadOnlyDictionary<string, List<KeyChord>> Keys => _keys;
 

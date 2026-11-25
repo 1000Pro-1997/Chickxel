@@ -1057,6 +1057,7 @@
   <data name="Edit_AddOutline" xml:space="preserve"><value>외곽선 추가</value></data>
   <data name="Edit_ReplaceColor" xml:space="preserve"><value>색 바꾸기</value></data>
   <data name="Menu_Help_Guide" xml:space="preserve"><value>사용 가이드…</value></data>
+  <data name="Menu_Help_Tutorial" xml:space="preserve"><value>튜토리얼…</value></data>
   <data name="Menu_Help_Website" xml:space="preserve"><value>홈페이지</value></data>
   <data name="Menu_Help_Discord" xml:space="preserve"><value>제보·아이디어 (Discord)…</value></data>
   <data name="Drop_UndoLabel" xml:space="preserve"><value>이미지 끌어 넣기</value></data>

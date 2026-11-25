@@ -108,15 +108,15 @@ internal static class ChatImages
     public static void AttachImageMenu(Control view, Bitmap bmp)
         => PopupMenus.Attach(view, () => ImageActions.Menu(view, () => ToPixelImage(bmp), () => "chickxel-chat.png"));
 
-    /// <summary>대화 속 그림: 한 번 누르면 크게 보기(<see cref="ShowChipFlyout"/>), 우클릭하면 이미지 저장·복사.</summary>
-    public static Control WithImageActions(Control view, Bitmap bmp)
+    /// <summary>대화 속 그림: 한 번 누르면 <paramref name="open"/>(그림에 표시해 AI에게 고쳐 달라고 하는 창), 우클릭하면 이미지 저장·복사.</summary>
+    public static Control WithImageActions(Control view, Bitmap bmp, Action open)
     {
         view.Cursor = new Cursor(StandardCursorType.Hand);
         view.PointerReleased += (_, e) =>
         {
             if (e.InitialPressMouseButton != MouseButton.Left) return;
             e.Handled = true;
-            ShowChipFlyout(view, bmp, null);
+            open();
         };
         AttachImageMenu(view, bmp);
         return view;

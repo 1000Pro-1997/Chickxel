@@ -165,8 +165,8 @@ public sealed class HelpWindow : Window
         // 오른쪽: 위 막대(홈페이지에서 열기) + 쪽
         var website = Ui.Button(VectorIcon.ExternalLink, UiStrings.Help_OpenWebsite, (_, _) => Updater.OpenUrl(this, PageUrl(_page.Id)));
         website.Tip(UiStrings.Help_OpenWebsite).HelpAt(help, anchor: "Open on website opens");
-        var support = Ui.Button(VectorIcon.Heart, UiStrings.Help_Support, (_, _) => Updater.OpenUrl(this, AppInfo.SupportUrl));
-        support.Tip(UiStrings.Help_Support).HelpAt(help, anchor: "Open on website opens");
+        var support = Ui.CoffeeButton(UiStrings.Help_Support, (_, _) => Updater.OpenUrl(this, AppInfo.SupportUrl));
+        support.Tip(AppInfo.SupportUrl).HelpAt(help, anchor: "Open on website opens");
         var header = new Border
         {
             BorderBrush = AppTheme.BorderBrush,
@@ -431,7 +431,7 @@ public sealed class HelpWindow : Window
 
         if (page.Chapter.HasSubPages)
         {
-            var crumb = Text(new[] { new HelpRun { T = page.Chapter.Title } }, Gold, AppTheme.SmallFontSize, bold: true);
+            var crumb = Text(new[] { new HelpRun { T = page.Chapter.Title } }, Gold, AppTheme.SmallFontSize, bold: true, selectable: false);
             crumb.Cursor = HandCursor;
             crumb.PointerPressed += (_, e) => { e.Handled = true; Show(page.Chapter.Pages[0]); };
             crumb.Margin = new Thickness(0, 0, 0, 4);
@@ -863,8 +863,8 @@ public sealed class HelpWindow : Window
         return new StackPanel { Spacing = 4, Margin = new Thickness(0, 2, 0, 14), Children = { frame, link } };
     }
 
-    /// <summary>내장 움짤 <c>Chickxel.Help.media.&lt;이름&gt;.webp</c>를 여는 함수(붙을 때마다 새로 연다).</summary>
-    private static Func<Stream?> MediaOpener(string name) =>
+    /// <summary>내장 움짤 <c>Chickxel.Help.media.&lt;이름&gt;.webp</c>를 여는 함수(붙을 때마다 새로 연다 — 튜토리얼 창도 씀).</summary>
+    internal static Func<Stream?> MediaOpener(string name) =>
         () => typeof(HelpWindow).Assembly.GetManifestResourceStream($"Chickxel.Help.media.{name}.webp");
 
     /// <summary>
@@ -975,19 +975,19 @@ public sealed class HelpWindow : Window
     // ───────────── 글 줄 ─────────────
 
     /// <summary>
-    /// 글 조각들로 줄바꿈되는 글 줄 하나(굵게·코드·키·링크, 검색 중이면 찾은 말을 노랗게).
+    /// 글 조각들로 줄바꿈되는 글 줄 하나(굵게·코드·키·링크, 검색 중이면 찾은 말을 노랗게). 끌어서 글을 고르고 Ctrl+C로 복사할 수 있다
+    /// (<paramref name="selectable"/> — 누르면 쪽을 여는 글 줄은 false).
     /// 링크도 Run이라 다른 글자처럼 줄바꿈되고, 누른 곳의 글자 위치로 어느 링크인지 찾는다.
     /// </summary>
-    private TextBlock Text(IEnumerable<HelpRun> runs, IBrush fg, double size = BodySize, bool bold = false)
+    private TextBlock Text(IEnumerable<HelpRun> runs, IBrush fg, double size = BodySize, bool bold = false, bool selectable = true)
     {
-        var tb = new TextBlock
-        {
-            Foreground = fg,
-            FontSize = size,
-            FontWeight = bold ? FontWeight.Bold : FontWeight.Normal,
-            LineHeight = size >= 20 ? double.NaN : Math.Round(size * 1.6),
-            TextWrapping = TextWrapping.Wrap,
-        };
+        // 고를 수 있는 글 줄은 투명 바탕으로 글자 사이·줄 끝 빈자리에서도 끌기를 시작할 수 있게.
+        var tb = selectable ? new SelectableTextBlock { Background = Brushes.Transparent } : new TextBlock();
+        tb.Foreground = fg;
+        tb.FontSize = size;
+        tb.FontWeight = bold ? FontWeight.Bold : FontWeight.Normal;
+        tb.LineHeight = size >= 20 ? double.NaN : Math.Round(size * 1.6);
+        tb.TextWrapping = TextWrapping.Wrap;
         var inlines = NewInlines(tb);
         List<(int Start, int End, string Href)>? links = null;
         int pos = 0;
@@ -1105,7 +1105,10 @@ public sealed class HelpWindow : Window
     /// <summary>키 글자 양옆 여백(좁은 빈칸).</summary>
     private const string KeyPad = "\u2009";
 
-    /// <summary>링크 글자 위에서 손 모양, 누르면 <c>#쪽id</c>는 이 창에서 그 쪽을 열고 바깥 주소는 브라우저로 연다.</summary>
+    /// <summary>
+    /// 링크 글자 위에서 손 모양, 누르면 <c>#쪽id</c>는 이 창에서 그 쪽을 열고 바깥 주소는 브라우저로 연다.
+    /// 누름은 터널로 먼저 받아 링크면 처리하고 끝낸다(고를 수 있는 글 줄이 누름을 글 고르기로 가져가기 전에).
+    /// </summary>
     private void AttachLinks(TextBlock tb, List<(int Start, int End, string Href)> links)
     {
         string? HrefAt(PointerEventArgs e)
@@ -1118,14 +1121,18 @@ public sealed class HelpWindow : Window
                 if (index >= start && index < end) return href;
             return null;
         }
-        tb.PointerMoved += (_, e) => tb.Cursor = HrefAt(e) is null ? null : HandCursor;
-        tb.PointerPressed += (_, e) =>
+        tb.PointerMoved += (_, e) =>
+        {
+            if (HrefAt(e) is null) tb.ClearValue(CursorProperty);
+            else tb.Cursor = HandCursor;
+        };
+        tb.AddHandler(PointerPressedEvent, (_, e) =>
         {
             if (!e.GetCurrentPoint(tb).Properties.IsLeftButtonPressed || HrefAt(e) is not { } href) return;
             e.Handled = true;
             if (href.StartsWith('#')) ShowPage(href[1..]);
             else Updater.OpenUrl(this, href);
-        };
+        }, RoutingStrategies.Tunnel);
     }
 }
 

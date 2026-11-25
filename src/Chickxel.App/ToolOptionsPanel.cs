@@ -204,6 +204,8 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
 
     // 타임라인에서 고른 효과(하나만 골랐을 때): 도구 설정 아래 "효과" 제목 줄(접고 폄)과 그 효과 이름의 묶음 상자
     private readonly StackPanel _effectSection;
+    /// <summary>넣은 효과의 설정 칸(튜토리얼 '효과 쓰기'가 비춤).</summary>
+    internal Control EffectSection => _effectSection;
     private readonly GroupBox _effectBox;
     private readonly TextBlock _effectTitle;
     private readonly Control _effectInfo;

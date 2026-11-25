@@ -37,7 +37,7 @@ public sealed class ChatItem
     public int ImageCount { get; set; }
     /// <summary><see cref="ChatItemKind.Tool"/>: 도구가 실패함.</summary>
     public bool Error { get; set; }
-    /// <summary><see cref="ChatItemKind.AiDraw"/>: 생성 기록 id(<c>Chickxel.Core.AiDraw.AiDrawJobStore</c> — "변환 설정 보기"로 다시 엶). 없으면 null.</summary>
+    /// <summary><see cref="ChatItemKind.AiDraw"/>: 생성 기록 id(<c>Chickxel.Core.AiDraw.AiDrawJobStore</c> — "변환하기"로 정리 창을 엶). 없으면 null.</summary>
     public string? Job { get; set; }
     /// <summary><see cref="ChatItemKind.AiDrawPrompt"/>: 접힌 줄에 보일 사용자 질문 요약.</summary>
     public string? PromptSummary { get; set; }

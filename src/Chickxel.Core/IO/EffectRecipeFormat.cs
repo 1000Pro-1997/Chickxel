@@ -75,6 +75,21 @@ public sealed record EffectRecipe : IAssetData
     public IReadOnlyList<LayerEffect> Instantiate(SpriteProject project, FrameRange? addRange)
     {
         foreach (var source in Scripts.Values) project.AddScript(source);
+        return Placed(addRange);
+    }
+
+    /// <summary>
+    /// 넣기 전 미리보기용 효과 목록(<see cref="Instantiate"/>와 같은 모양): 프로젝트는 건드리지 않고 스크립트 원문은 앱 전체 표(<see cref="ScriptLibrary"/>)에만 올린다
+    /// (스크립트 효과가 원문을 찾아 그리게).
+    /// </summary>
+    public IReadOnlyList<LayerEffect> PreviewEffects(FrameRange? addRange)
+    {
+        foreach (var source in Scripts.Values) ScriptLibrary.Add(source);
+        return Placed(addRange);
+    }
+
+    private LayerEffect[] Placed(FrameRange? addRange)
+    {
         var frames = FrameRange == RecipeFrameRange.AllFrames ? null : addRange;
         var instance = Parameters.Count == 0
             ? null

@@ -11,12 +11,14 @@ namespace Chickxel.App;
 internal static class RewardViews
 {
     private const double PreviewHeight = 64, NamePreviewMaxWidth = 170;
+    /// <summary>프로필 카드의 경험치 막대 폭(이름 칸 아래 — 카드 가운데에 놓는 프로필 덩어리가 너무 넓어지지 않게).</summary>
+    private const double CardProgressWidth = 200;
 
     private static string F(string format, params object?[] args) => string.Format(CultureInfo.CurrentCulture, format, args);
 
     /// <summary>
     /// 프로필 카드: 장착한 카드 그림(3배, 가로로 칸을 채움)을 바탕으로 큰 프로필 그림(효과·큰 테두리)·이름·칭호·@핸들·레벨 배지, 그 아래 경험치 막대.
-    /// 카드가 없으면 패널 색 바탕.
+    /// 프로필 덩어리(그림·이름·막대)는 카드 바탕 가운데에 놓는다. 카드가 없으면 패널 색 바탕.
     /// </summary>
     public static Control ProfileCard(CommunityUser user, double width)
     {
@@ -24,11 +26,12 @@ internal static class RewardViews
         {
             Spacing = 8,
             Margin = new Thickness(16, 14),
+            HorizontalAlignment = HorizontalAlignment.Center,
             Children = { IdentityBadge.User(user, 56, handle: IdentityHandle.Below, bold: true) },
         };
         // 경험치 막대는 이름 칸과 같은 자리에서(프로필 그림 56 + 간격 10, 꾸민 큰 그림이면 양옆 자리만큼 더)
         double indent = 56 + 10 + (ProfileAvatar.HasLargeDecoration(user.Equipped, user.Level) ? 2 * ProfileAvatar.LargeRoom : 0);
-        if (LevelChip.Progress(user, width - indent - 54) is { } level)
+        if (LevelChip.Progress(user, Math.Min(CardProgressWidth, width - indent - 54)) is { } level)
         {
             level.Margin = new Thickness(indent, 0, 0, 0);
             head.Children.Add(level);
@@ -56,23 +59,25 @@ internal static class RewardViews
     public static Control Section(Window owner, CommunityUser user, int seenLevel)
     {
         var body = new StackPanel { Spacing = 10 };
-        var pair = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*") };
+        // 제목 줄 · 상자 줄: 두 상자는 같은 줄에 있어 높이가 같다(남은 경험치 글은 다음 보상 상자 안에).
+        var pair = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*"), RowDefinitions = new RowDefinitions("Auto,*"), RowSpacing = 5 };
         if (LevelRewards.All.LastOrDefault(r => r.Level <= user.Level) is { } current)
         {
             bool isNew = current.Level > seenLevel;
             var title = Heading(F(UiStrings.Account_CurrentReward, current.Level));
-            pair.Children.Add(Column(isNew ? Ui.Row(new PixelArtView(new RewardStarArt(), 2), title) : title, Tile(user, current, isNew: isNew), null, 0));
+            Place(pair, isNew ? Ui.Row(new PixelArtView(new RewardStarArt(), 2), title) : title, Tile(user, current, isNew: isNew), 0);
         }
 
         if (LevelRewards.Next(user.Level) is { } next)
         {
             string? need = user.HasXp ? F(UiStrings.Account_NextRewardXp, Math.Max(0, CommunityLevel.StartXp(next.Level) - user.Xp)) : null;
-            pair.Children.Add(Column(Heading(F(UiStrings.Account_NextReward, next.Level)), Tile(user, next, locked: true), need, 1));
+            Place(pair, Heading(F(UiStrings.Account_NextReward, next.Level)), Tile(user, next, locked: true, note: need), 1);
         }
         else
         {
             var done = new TextBlock { Text = UiStrings.Account_AllRewardsDone, Foreground = AppTheme.DimTextBrush, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(5, 0, 0, 0) };
             Grid.SetColumn(done, 1);
+            Grid.SetRowSpan(done, 2);
             pair.Children.Add(done);
         }
         body.Children.Add(pair);
@@ -94,21 +99,25 @@ internal static class RewardViews
 
     private static TextBlock Heading(string text) => new() { Text = text, FontWeight = FontWeight.Bold, VerticalAlignment = VerticalAlignment.Center };
 
-    /// <summary>보상 한 칸(<paramref name="column"/> 0 왼쪽·1 오른쪽): 위 제목, 가운데 상자(칸 너비를 채움), 아래 덧붙임 글(없으면 생략).</summary>
-    private static StackPanel Column(Control title, Control tile, string? note, int column)
+    /// <summary>보상 한 칸(<paramref name="column"/> 0 왼쪽·1 오른쪽)을 표에 놓는다: 위 줄 제목, 아래 줄 상자(칸 너비·줄 높이를 채움 — 두 상자 높이가 같음).</summary>
+    private static void Place(Grid grid, Control title, Control tile, int column)
     {
-        var stack = new StackPanel { Spacing = 5, Margin = new Thickness(column == 0 ? 0 : 5, 0, column == 0 ? 5 : 0, 0), Children = { title, tile } };
-        if (note is not null)
-            stack.Children.Add(new TextBlock { Text = note, Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, HorizontalAlignment = HorizontalAlignment.Center });
-        Grid.SetColumn(stack, column);
-        return stack;
+        var margin = new Thickness(column == 0 ? 0 : 5, 0, column == 0 ? 5 : 0, 0);
+        title.Margin = margin;
+        tile.Margin = margin;
+        Grid.SetColumn(title, column);
+        Grid.SetColumn(tile, column);
+        Grid.SetRow(tile, 1);
+        grid.Children.Add(title);
+        grid.Children.Add(tile);
     }
 
     /// <summary>
-    /// 보상 상자 하나: 위에 실제 모양 미리보기(칭호 글, 내 레벨 배지, 내 프로필 그림에 테두리·효과, 내 이름에 이름 효과, 작은 카드), 아래 이름과 "Lv N · 칸".
+    /// 보상 상자 하나: 위에 실제 모양 미리보기(칭호 글, 내 레벨 배지, 내 프로필 그림에 테두리·효과, 내 이름에 이름 효과, 작은 카드), 아래 이름과 "Lv N · 칸",
+    /// 그 아래 덧붙임 글(<paramref name="note"/> — 다음 보상까지 남은 경험치, 없으면 생략). 내용은 상자 가운데(옆 상자와 높이를 맞추면 위아래 가운데).
     /// <paramref name="isNew"/>면 금빛 테두리, <paramref name="locked"/>면 흐리게, 장착 중이면 체크.
     /// </summary>
-    private static Control Tile(CommunityUser user, LevelReward reward, bool isNew = false, bool locked = false)
+    private static Control Tile(CommunityUser user, LevelReward reward, bool isNew = false, bool locked = false, string? note = null)
     {
         var preview = new Panel { Height = PreviewHeight, ClipToBounds = false };
         preview.Children.Add(Preview(user, reward));
@@ -123,13 +132,19 @@ internal static class RewardViews
             Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, HorizontalAlignment = HorizontalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis,
         };
-        var stack = new StackPanel { Spacing = 2, Children = { preview, name, meta } };
+        var stack = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { preview, name, meta } };
         if (equipped)
         {
             var mark = Ui.Row(Ui.Icon(VectorIcon.Check, 11), new TextBlock { Text = UiStrings.Account_RewardEquipped, FontSize = AppTheme.SmallFontSize, Foreground = AppTheme.SavedBrush });
             mark.HorizontalAlignment = HorizontalAlignment.Center;
             stack.Children.Add(mark);
         }
+        if (note is not null)
+            stack.Children.Add(new TextBlock
+            {
+                Text = note, Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, HorizontalAlignment = HorizontalAlignment.Center,
+                TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 2, 0, 0),
+            });
         var tile = new Border
         {
             Padding = new Thickness(4, 6),

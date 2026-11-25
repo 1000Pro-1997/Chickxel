@@ -2276,7 +2276,7 @@ Unconfirmed changes made in this window are discarded and the window closes. If 
   <data name="Help_ClearSearch" xml:space="preserve"><value>Clear search</value></data>
   <data name="Help_NoResults" xml:space="preserve"><value>No results</value></data>
   <data name="Help_OpenWebsite" xml:space="preserve"><value>Open on website</value></data>
-  <data name="Help_Support" xml:space="preserve"><value>Support development</value></data>
+  <data name="Help_Support" xml:space="preserve"><value>Send a coffee</value></data>
   <data name="Help_WatchVideo" xml:space="preserve"><value>Watch the video on the website</value></data>
   <data name="Help_WatchLarger" xml:space="preserve"><value>Watch larger on the website</value></data>
   <data name="Help_Previous" xml:space="preserve"><value>Previous</value></data>
@@ -2469,7 +2469,8 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Preset_SaveDirty" xml:space="preserve"><value>There are unsaved changes - click to save them to the chosen preset (settings, per-step optimize and optimize criteria)</value></data>
   <data name="Pixelate_Preset_SaveClean" xml:space="preserve"><value>Matches the chosen preset as saved</value></data>
   <data name="Pixelate_Preset_Rename" xml:space="preserve"><value>Rename the chosen preset</value></data>
-  <data name="Pixelate_Preset_Copy" xml:space="preserve"><value>Copy the chosen preset (makes 'name copy 1' from the current values on the left)</value></data>
+  <data name="Pixelate_Preset_Copy" xml:space="preserve"><value>Copy the chosen preset (makes 'name copy 1' — from the current values on the left if it's the open preset)</value></data>
+  <data name="Pixelate_Preset_Settings" xml:space="preserve"><value>Preset settings: rename, copy, delete, and choose presets for Auto optimize and the main preset</value></data>
   <data name="Pixelate_Preset_CopyName" xml:space="preserve"><value>{name} copy {index}</value></data>
   <data name="Pixelate_Preset_New" xml:space="preserve"><value>New preset</value></data>
   <data name="Pixelate_Preset_UnsavedQuestion" xml:space="preserve"><value>The preset '{name}' has unsaved changes. Save them?</value></data>
@@ -2819,10 +2820,9 @@ Off: decides from the result alone, as before.</value></data>
   <data name="Pixelate_Opt_PresetLine" xml:space="preserve"><value>{name}: {summary}</value></data>
   <data name="OptimizePreset_DefaultName" xml:space="preserve"><value>Default</value></data>
   <data name="OptimizePreset_NewName" xml:space="preserve"><value>New preset</value></data>
-  <data name="OptimizePreset_List" xml:space="preserve"><value>Auto optimize runs all checked presets. The preset whose 'Main' button is green is the AI image conversion preset (edit values in the settings on the left).</value></data>
+  <data name="OptimizePreset_List" xml:space="preserve"><value>Auto optimize runs all checked presets (edit values in the settings on the left). Use the buttons below to rename, copy or delete the selected preset.</value></data>
   <data name="OptimizePreset_EnabledTip" xml:space="preserve"><value>When checked, Auto optimize also runs this preset (one best candidate per preset, named after the preset).</value></data>
   <data name="OptimizePreset_Representative" xml:space="preserve"><value>AI image conversion preset</value></data>
-  <data name="OptimizePreset_RepresentativeTip" xml:space="preserve"><value>Generated AI images are converted with this preset's saved settings and optimization criteria, regardless of its Auto optimize checkbox.</value></data>
   <data name="OptimizePreset_RepresentativeBadge" xml:space="preserve"><value>Main</value></data>
   <data name="OptimizePreset_Add" xml:space="preserve"><value>Add preset</value></data>
   <data name="OptimizePreset_Duplicate" xml:space="preserve"><value>Duplicate preset</value></data>
@@ -2914,9 +2914,9 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="AiDraw_Settings_Title" xml:space="preserve"><value>Drawing settings</value></data>
   <data name="AiDraw_Mode_Title" xml:space="preserve"><value>Drawing mode</value></data>
   <data name="AiDraw_Mode_Auto" xml:space="preserve"><value>Auto</value></data>
-  <data name="AiDraw_Mode_Auto_Text" xml:space="preserve"><value>In Codex, "Current file only" edits pixels directly; otherwise image generation and pixel conversion are tried first. For animations, the generated frames are assembled into an animated GIF and automatically converted from the GIF to pixels. If generation fails, the same request is drawn with pixel tools. Claude draws pixels directly.</value></data>
+  <data name="AiDraw_Mode_Auto_Text" xml:space="preserve"><value>In Codex, "Current file only" edits pixels directly; otherwise image generation is tried first. The generated original appears in the chat; press Convert to turn it into pixel art yourself in the Pixelate window. For animations, the generated frames are assembled into an animated GIF and lined up as one original. If generation fails, the same request is drawn with pixel tools. Claude draws pixels directly.</value></data>
   <data name="AiDraw_Mode_Generate" xml:space="preserve"><value>Generate image → pixelate</value></data>
-  <data name="AiDraw_Mode_Generate_Text" xml:space="preserve"><value>Codex generates an image and Chickxel converts it to pixel art (background removal, grid and palette are automatic). Animations use the selected method below (default: one sprite sheet). Each image takes about 30 to 90 seconds. The Claude tab draws pixels directly; ask it to "let Codex do it" to generate just that drawing with Codex.</value></data>
+  <data name="AiDraw_Mode_Generate_Text" xml:space="preserve"><value>When Codex generates an image, the chat shows the original with a Convert button. Convert opens the Pixelate window, where you convert it and insert it yourself (nothing is converted automatically). Animations use the selected method below (default: one sprite sheet). Each image takes about 30 to 90 seconds. The Claude tab draws pixels directly; ask it to "let Codex do it" to generate just that drawing with Codex.</value></data>
   <data name="AiDraw_Mode_Direct" xml:space="preserve"><value>Draw pixels directly</value></data>
   <data name="AiDraw_Mode_Direct_Text" xml:space="preserve"><value>The AI places pixels one by one with the pixel tools. Best for small fixes and exact pixel-level edits.</value></data>
   <data name="AiDraw_Mode_ClaudeWarning" xml:space="preserve"><value>Claude can't create images, so it draws pixels directly. Image generation is available in the Codex tab.</value></data>
@@ -2927,15 +2927,9 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="AiDraw_Codex_Unknown" xml:space="preserve"><value>Couldn't check Codex CLI: {message}</value></data>
   <data name="AiDraw_Options_Title" xml:space="preserve"><value>Generation options</value></data>
   <data name="AiDraw_Size" xml:space="preserve"><value>Result size</value></data>
-  <data name="AiDraw_Size_Tip" xml:space="preserve"><value>Size (long side, px) to fit the converted result to when result-size correction is on.</value></data>
-  <data name="AiDraw_Size_Custom" xml:space="preserve"><value>Custom</value></data>
   <data name="AiDraw_RemoveBackground" xml:space="preserve"><value>Remove background</value></data>
-  <data name="AiDraw_RemoveBackground_Tip" xml:space="preserve"><value>Off (default): converts with the main preset's background settings. On: removes the background automatically when converting, regardless of the preset. Unless you ask for a background, images are also generated on a plain transparent background.</value></data>
   <data name="AiDraw_AutoOptimize" xml:space="preserve"><value>Auto-optimize the conversion</value></data>
-  <data name="AiDraw_AutoOptimize_Tip" xml:space="preserve"><value>Generated images are converted with the Pixelate window's main preset (background, palette, output size and alignment — only result-size correction and background removal above override it when on); only the frame split follows the number of generated frames. On: like Auto optimize in that window, tries settings within the main preset's per-section optimization, trials and time and inserts the top-scoring result. Off: converts once with those settings (same as Clean up). If the top result is a failed one (empty or too small), nothing is inserted.</value></data>
-  <data name="AiDraw_Insert" xml:space="preserve"><value>Insert as</value></data>
   <data name="AiDraw_Insert_Layer" xml:space="preserve"><value>New layer</value></data>
-  <data name="AiDraw_Insert_Document" xml:space="preserve"><value>New document</value></data>
   <data name="AiDraw_Style" xml:space="preserve"><value>Style reference</value></data>
   <data name="AiDraw_Style_Auto" xml:space="preserve"><value>Auto</value></data>
   <data name="AiDraw_Style_None" xml:space="preserve"><value>None</value></data>
@@ -2954,8 +2948,6 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="AiDraw_Progress_Size" xml:space="preserve"><value>Selecting a pixel size from the reference image (Codex)…</value></data>
   <data name="AiDraw_Progress_Frame" xml:space="preserve"><value>Generating frame {index}/{count} (Codex)…</value></data>
   <data name="AiDraw_Progress_Converting" xml:space="preserve"><value>Converting to pixel art…</value></data>
-  <data name="AiDraw_Progress_Optimizing" xml:space="preserve"><value>Converting to pixel art and auto-optimizing…</value></data>
-  <data name="AiDraw_Progress_OptimizeTrial" xml:space="preserve"><value>Optimizing conversion… pass {pass} · trial {done}/{total} · best {score}</value></data>
   <data name="AiDraw_Cancelled" xml:space="preserve"><value>Image generation stopped.</value></data>
   <data name="AiDraw_Error_Busy" xml:space="preserve"><value>An image is already being generated.</value></data>
   <data name="AiDraw_Error_NoSubject" xml:space="preserve"><value>The subject to draw is empty.</value></data>
@@ -2968,12 +2960,12 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="AiDraw_Error_SizeSelection" xml:space="preserve"><value>Couldn't select a pixel-art size (expected JSON with a size from 8 to 256): {reason}</value></data>
   <data name="AiDraw_Error_NoImage" xml:space="preserve"><value>Codex didn't produce an image: {reason}</value></data>
   <data name="AiDraw_Error_Read" xml:space="preserve"><value>Couldn't read the generated image file.</value></data>
-  <data name="AiDraw_Error_NoSprite" xml:space="preserve"><value>No sprite was found in the generated image (only background).</value></data>
-  <data name="AiDraw_Error_ConversionFailed" xml:space="preserve"><value>Couldn't convert the generated image to pixel art, so nothing was inserted: {reason} — the pixel size was detected wrong ({scale}px). Try generating again.</value></data>
   <data name="AiDraw_Error_NoImageAttached" xml:space="preserve"><value>No image is attached to this message.</value></data>
-  <data name="AiDraw_Job_Missing" xml:space="preserve"><value>The generation record for this result was deleted, so its conversion settings can't be opened.</value></data>
+  <data name="AiDraw_Job_Missing" xml:space="preserve"><value>The generation record for this result was deleted, so the Pixelate window can't be opened.</value></data>
+  <data name="AiDraw_Convert" xml:space="preserve"><value>Convert</value></data>
+  <data name="AiDraw_Convert_Tip" xml:space="preserve"><value>Opens the 'Pixelate AI image' window with this original (same settings and presets as opening it from the menu). Convert and optimize it there, then insert it as a new layer or document.</value></data>
+  <data name="AiDraw_Generated" xml:space="preserve"><value>Generated the '{name}' original. Press Convert to turn it into pixel art.</value></data>
   <data name="AiDraw_ViewSettings" xml:space="preserve"><value>View conversion settings</value></data>
-  <data name="AiDraw_ViewSettings_Tip" xml:space="preserve"><value>Opens the 'Pixelate AI image' window with the generated source image and the conversion settings used. Tweak them and insert again.</value></data>
   <data name="AiDraw_Error_NoPrevious" xml:space="preserve"><value>There is no previously generated image to attach as the reference.</value></data>
   <data name="Chat_Image_Label" xml:space="preserve"><value>Image</value></data>
   <data name="Chat_InsertImage" xml:space="preserve"><value>Add as new layer</value></data>
@@ -3038,9 +3030,8 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="AiDraw_PaletteOnly_Text" xml:space="preserve"><value>Colors the AI paints directly (pixels, shapes, fills, color replacement) are changed to the nearest color in the active palette. Erasing (fully transparent) is allowed and semi-transparent colors become opaque. Generated images (the converter's palette settings) and layer effects are not affected. When off, the AI can't see the palette and picks whatever colors suit the drawing.</value></data>
   <data name="AiDraw_PaletteSnapped" xml:space="preserve"><value>Snapped to palette colors: {changes}</value></data>
   <data name="AiDraw_AutoPrompt" xml:space="preserve"><value>Refine the generation request</value></data>
-  <data name="AiDraw_AutoPrompt_Text" xml:space="preserve"><value>On (default): your words are turned into a request suited to image generation — the subject the AI wrote is wrapped with pixel-art style, background, sprite-sheet layout and pose instructions, and the AI drawing tips you turned on are applied. Off: your chat message is sent to image generation exactly as written (with attached images in order) to make one image, which is converted to pixel art without the size check, style reference or splitting into animation frames.</value></data>
+  <data name="AiDraw_AutoPrompt_Text" xml:space="preserve"><value>On (default): your words are turned into a request suited to image generation — the subject the AI wrote is wrapped with pixel-art style, background, sprite-sheet layout and pose instructions, and the AI drawing tips you turned on are applied. Off: your chat message is sent to image generation exactly as written (with attached images in order) to make one image, without the size check, style reference or splitting into animation frames.</value></data>
   <data name="AiDraw_ResizeResult" xml:space="preserve"><value>Result-size correction</value></data>
-  <data name="AiDraw_ResizeResult_Text" xml:space="preserve"><value>Off (default): converts with the main preset's output size, and sizes in chat are only rough hints for generation. On: the converted result is fitted to the size below or the size from chat.</value></data>
   <data name="AiStatus_Title" xml:space="preserve"><value>AI Status and Settings</value></data>
   <data name="AiStatus_Continue" xml:space="preserve"><value>Continue to AI</value></data>
   <data name="AiStatus_Close" xml:space="preserve"><value>Close</value></data>
@@ -3446,25 +3437,33 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="AiQuestion_Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="AiCrop_Title" xml:space="preserve"><value>Choose crop position</value></data>
   <data name="AiCrop_Keep" xml:space="preserve"><value>Keep this area</value></data>
-  <data name="AiCrop_Instruction" xml:space="preserve"><value>The highlighted outline shows what will be kept. Drag it or click outside to reposition. Arrow keys move by one pixel; Shift+arrow keys move by ten. Canvas space beyond the image remains transparent.</value></data>
-  <data name="AiCrop_Position" xml:space="preserve"><value>Keep {0}×{1} px · Position X: {2}, Y: {3}</value></data>
   <data name="AiDraw_Prompt_Label" xml:space="preserve"><value>Generation prompt</value></data>
   <data name="AiDraw_Prompt_Tip" xml:space="preserve"><value>Click to see the full prompt sent to Codex image generation.</value></data>
   <data name="AiQuestion_Invalid" xml:space="preserve"><value>A question with 2 to 5 options is required.</value></data>
   <data name="AiQuestion_Cancelled" xml:space="preserve"><value>The user canceled the question. Do not guess their choice.</value></data>
   <data name="AiQuestion_Selected" xml:space="preserve"><value>User selected: {choice}</value></data>
   <data name="AiQuestion_Custom" xml:space="preserve"><value>User entered another answer: {answer}</value></data>
-  <data name="AiDraw_Insert_Question" xml:space="preserve"><value>The generated image ({width}×{height}) is larger than the current canvas ({canvasWidth}×{canvasHeight}). Expand the canvas without cropping existing art, or choose which part of the new image to keep?</value></data>
   <data name="AiDraw_Insert_Expand" xml:space="preserve"><value>Expand canvas</value></data>
   <data name="AiDraw_Insert_Crop" xml:space="preserve"><value>Choose crop position</value></data>
-  <data name="AiDraw_Insert_CanvasChanged" xml:space="preserve"><value>The open document or canvas size changed while waiting for your answer. Nothing was inserted.</value></data>
-  <data name="AiDraw_Insert_Locked" xml:space="preserve"><value>Locked layers prevent expanding the canvas. Unlock them or choose a crop. Nothing was inserted.</value></data>
-  <data name="AiDraw_Insert_Cancelled" xml:space="preserve"><value>Insertion was canceled. The image was neither cropped nor inserted.</value></data>
-  <data name="AiDraw_Insert_Custom" xml:space="preserve"><value>The user requested another approach: {answer}. Nothing was inserted yet. Do not crop or expand the canvas without their choice.</value></data>
   <data name="AiNotify_Question" xml:space="preserve"><value>Chickxel AI has a question</value></data>
   <data name="AiNotify_Done" xml:space="preserve"><value>Chickxel AI finished</value></data>
   <data name="AiNotify_Error" xml:space="preserve"><value>Chickxel AI encountered an error</value></data>
   <data name="AiNotify_DoneBody" xml:space="preserve"><value>Open the chat to see the result.</value></data>
+  <data name="Notify_Title" xml:space="preserve"><value>Notifications</value></data>
+  <data name="Notify_Enabled" xml:space="preserve"><value>Notify me when the AI finishes or asks a question</value></data>
+  <data name="Notify_Info" xml:space="preserve"><value>A small notification pops up at the bottom right of the screen for a moment and the chosen sound plays. Only one notification is shown at a time: a new one replaces its text, and it disappears after 6 seconds (it stays while the mouse is over it). Click it to bring the AI chat window to the front. While messages are still queued, you're notified only when the last turn finishes.</value></data>
+  <data name="Notify_Sound" xml:space="preserve"><value>Sound</value></data>
+  <data name="Notify_Preview" xml:space="preserve"><value>Preview</value></data>
+  <data name="Notify_WhenActive" xml:space="preserve"><value>Notify even while I'm looking at the AI chat window</value></data>
+  <data name="Notify_Close" xml:space="preserve"><value>Close notification</value></data>
+  <data name="Notify_Sound_None" xml:space="preserve"><value>No sound</value></data>
+  <data name="Notify_Sound_Chime" xml:space="preserve"><value>Chime</value></data>
+  <data name="Notify_Sound_Ding" xml:space="preserve"><value>Ding</value></data>
+  <data name="Notify_Sound_Pop" xml:space="preserve"><value>Pop</value></data>
+  <data name="Notify_Sound_Bloop" xml:space="preserve"><value>Bloop</value></data>
+  <data name="Notify_Sound_TwoTone" xml:space="preserve"><value>Two-tone</value></data>
+  <data name="Notify_Sound_Sonar" xml:space="preserve"><value>Sonar</value></data>
+  <data name="Notify_Sound_Bell" xml:space="preserve"><value>Bell</value></data>
   <data name="Account_Title" xml:space="preserve"><value>Chickxel Account</value></data>
   <data name="Account_Menu" xml:space="preserve"><value>Chickxel Account…</value></data>
   <data name="Account_Intro" xml:space="preserve"><value>With a Chickxel account you can upload pictures to the gallery and share effect and gradient assets. The account is created the first time you sign in.</value></data>
@@ -3503,7 +3502,30 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Chat_Pending" xml:space="preserve"><value>Queued</value></data>
   <data name="Chat_PendingTip" xml:space="preserve"><value>Sent when the current turn finishes.</value></data>
   <data name="Chat_Pending_Images" xml:space="preserve"><value>{0} images</value></data>
-  <data name="Chat_Pending_RemoveTip" xml:space="preserve"><value>Remove from the queue (back into the input box if it's empty)</value></data>
+  <data name="Chat_Pending_RemoveTip" xml:space="preserve"><value>Remove from the queue</value></data>
+  <data name="Chat_Pending_DragTip" xml:space="preserve"><value>Drag to change the sending order</value></data>
+  <data name="Chat_Pending_EditTip" xml:space="preserve"><value>Edit in the input box (anything you were typing waits in this spot)</value></data>
+  <data name="Chat_Pending_SendNow" xml:space="preserve"><value>Send now</value></data>
+  <data name="Chat_Pending_SendNowTip" xml:space="preserve"><value>Stops the current turn and sends this message right away.</value></data>
+  <data name="Chat_ImageMarkup_NotReady" xml:space="preserve"><value>The AI in this tab isn't ready yet, so this can't be sent. Finish installing and signing in in the chat window, then send again.</value></data>
+  <data name="Chat_ImageMarkup_Open" xml:space="preserve"><value>Edit image</value></data>
+  <data name="Chat_ImageMarkup_OpenTip" xml:space="preserve"><value>Mark up the image with drawings and comments and ask the AI to change it (same as clicking the image).</value></data>
+  <data name="ImageMarkup_Title" xml:space="preserve"><value>Mark up the image</value></data>
+  <data name="ImageMarkup_Draw" xml:space="preserve"><value>Draw</value></data>
+  <data name="ImageMarkup_DrawTip" xml:space="preserve"><value>Drag to draw lines over the parts to change</value></data>
+  <data name="ImageMarkup_Comment" xml:space="preserve"><value>Comment</value></data>
+  <data name="ImageMarkup_CommentTip" xml:space="preserve"><value>Click the image to place a numbered mark and write a comment. Click a placed mark to edit its text</value></data>
+  <data name="ImageMarkup_Erase" xml:space="preserve"><value>Erase</value></data>
+  <data name="ImageMarkup_EraseTip" xml:space="preserve"><value>Click or drag to erase the lines and comment marks you pass over</value></data>
+  <data name="ImageMarkup_UndoTip" xml:space="preserve"><value>Undo (Ctrl+Z) — undoes the last line or comment added or erased</value></data>
+  <data name="ImageMarkup_Info" xml:space="preserve"><value>Mark the parts to change on the image, describe the change below and send it to the AI. Draw lines, add numbered comments with short notes, and erase marks you don't need. Sending includes the original image, the marked-up image and the list of comments (numbers and positions).</value></data>
+  <data name="ImageMarkup_CommentWatermark" xml:space="preserve"><value>Comment (Enter to confirm · Esc to cancel)</value></data>
+  <data name="ImageMarkup_Watermark" xml:space="preserve"><value>Describe what to change</value></data>
+  <data name="ImageMarkup_Send" xml:space="preserve"><value>Send</value></data>
+  <data name="ImageMarkup_SendTip" xml:space="preserve"><value>Enter — sends the original image, the marked-up image and the comments (Shift+Enter for a new line)</value></data>
+  <data name="ImageMarkup_ImagesLine" xml:space="preserve"><value>{0} original, {1} marked-up image</value></data>
+  <data name="ImageMarkup_CommentsHeader" xml:space="preserve"><value>Comments (numbers on the image · positions are horizontal/vertical % from the image's top-left):</value></data>
+  <data name="ImageMarkup_CommentLine" xml:space="preserve"><value>{0}. (x {1}%, y {2}%) {3}</value></data>
   <data name="Chat_SendQueuesTip" xml:space="preserve"><value>Enter — sent when the current turn finishes</value></data>
   <data name="EffectMaker_Uploaded" xml:space="preserve"><value>Published</value></data>
   <data name="EffectMaker_UploadedModified" xml:space="preserve"><value>Published · edited</value></data>
@@ -4964,4 +4986,113 @@ Enter, or switching tool, layer or frame, paints it in the primary color (second
   <data name="FrameLength_Each" xml:space="preserve"><value>Each frame {ms} ms · {fps} fps · {game} frames at 60 fps</value></data>
   <data name="FrameLength_EachRange" xml:space="preserve"><value>Each frame {min}–{max} ms</value></data>
   <data name="FrameLength_TotalLine" xml:space="preserve"><value>Total {from} s → {to} s</value></data>
+  <data name="Tutorial_Title" xml:space="preserve"><value>Chickxel tutorial</value></data>
+  <data name="Tutorial_Heading" xml:space="preserve"><value>Try Chickxel's key features</value></data>
+  <data name="Tutorial_Intro" xml:space="preserve"><value>Pick one and the app highlights each spot on screen so you can follow along step by step.</value></data>
+  <data name="Tutorial_Pixelate_Title" xml:space="preserve"><value>Turn an image into pixel art</value></data>
+  <data name="Tutorial_Pixelate_Desc" xml:space="preserve"><value>Snap an AI-made image to a pixel grid, then remove or add result colors.</value></data>
+  <data name="Tutorial_Effects_Title" xml:space="preserve"><value>Use effects</value></data>
+  <data name="Tutorial_Effects_Desc" xml:space="preserve"><value>Add an effect from the effect list and change its values in the effect settings on the right.</value></data>
+  <data name="Tutorial_Ai_Title" xml:space="preserve"><value>Draw with AI (MCP)</value></data>
+  <data name="Tutorial_Ai_Desc" xml:space="preserve"><value>Sign in to Claude or Codex in AI chat, and connect outside AI apps through MCP.</value></data>
+  <data name="Tutorial_Model_Title" xml:space="preserve"><value>Turn 3D into pixel art</value></data>
+  <data name="Tutorial_Model_Desc" xml:space="preserve"><value>Turn a 3D model into pixel art frames with the angle, light, and outline you want.</value></data>
+  <data name="Tutorial_Md_Open" xml:space="preserve"><value>The window that turns a 3D model (glb, gltf, obj, fbx) into pixel art opens from the menu {menu}. Opening a model file from the Files panel brings up this window too. Open the menu and try it.</value></data>
+  <data name="Tutorial_Md_Load" xml:space="preserve"><value>Drag a model onto this window or use '{button}' to load one. An example chick model has been put in. The left is the original model, the right is the pixel result rendered from it.</value></data>
+  <data name="Tutorial_Md_Rotate" xml:space="preserve"><value>Drag the original model on the left to rotate it. The pixel result on the right changes as soon as the view angle does. Use the mouse wheel to zoom both panes together.</value></data>
+  <data name="Tutorial_Md_Output" xml:space="preserve"><value>Output sets the result size and frames: a single frame, a turntable that spins around, or an animation in the model. Try changing the size.</value></data>
+  <data name="Tutorial_Md_Look" xml:space="preserve"><value>The groups on the right shape the result: camera (angle, zoom), light (direction, shading steps), pixel cleanup (colors, edges), and outline. The preset at the top changes them all at once.</value></data>
+  <data name="Tutorial_Md_Import" xml:space="preserve"><value>Press '{button}' to render the frames with these settings and open them in a new tab. Pressing it ends the tutorial.</value></data>
+  <data name="Tutorial_More" xml:space="preserve"><value>Learn more</value></data>
+  <data name="Tutorial_NeedsFirst" xml:space="preserve"><value>Finish these first:</value></data>
+  <data name="Tutorial_Maker_Title" xml:space="preserve"><value>Effect Maker</value></data>
+  <data name="Tutorial_Maker_Desc" xml:space="preserve"><value>Ask the AI in words to make your own effect.</value></data>
+  <data name="Tutorial_Export_Title" xml:space="preserve"><value>Exporting</value></data>
+  <data name="Tutorial_Export_Desc" xml:space="preserve"><value>Export several files at once, automatically on save.</value></data>
+  <data name="Tutorial_Layers_Title" xml:space="preserve"><value>Layers and frames</value></data>
+  <data name="Tutorial_Layers_Desc" xml:space="preserve"><value>Layers, adding and removing frames, linked frames.</value></data>
+  <data name="Tutorial_Level_Title" xml:space="preserve"><value>Levels</value></data>
+  <data name="Tutorial_Level_Desc" xml:space="preserve"><value>XP, level rewards, and the fastest way to level up.</value></data>
+  <data name="Tutorial_Canvas_Title" xml:space="preserve"><value>Working the canvas</value></data>
+  <data name="Tutorial_Canvas_Desc" xml:space="preserve"><value>Zoom and pan, mouse buttons and Ctrl, canvas size and layer transform.</value></data>
+  <data name="Tutorial_Tilemap_Title" xml:space="preserve"><value>Tilemaps</value></data>
+  <data name="Tutorial_Tilemap_Desc" xml:space="preserve"><value>Lay tiles from a tileset on a grid to build maps.</value></data>
+  <data name="Tutorial_Skins_Title" xml:space="preserve"><value>Layer groups and skins</value></data>
+  <data name="Tutorial_Skins_Desc" xml:space="preserve"><value>Parent and child layers, swapping skins, stacking.</value></data>
+  <data name="Tutorial_Cv_View" xml:space="preserve"><value>An example image is open in a new tab. On the canvas, the mouse wheel zooms in and out around the cursor, and dragging with the middle button (or holding Space while dragging) moves the view (the art stays put).</value></data>
+  <data name="Tutorial_Cv_Mouse" xml:space="preserve"><value>Drawing tools like the pencil paint with the primary color on the left button and the secondary color on the right. Turn on '{option}' in the tool settings on the right to make the right button erase. Hold Alt and click to pick the color there (left = primary, right = secondary), and Shift+click draws a straight line from the last point. The bar at the top always describes the current tool's buttons.</value></data>
+  <data name="Tutorial_Cv_Ctrl" xml:space="preserve"><value>While you hold Ctrl, the tool becomes Move for a moment. Drag to move the selection (or the current layer's art if nothing is selected); release to go back to your tool. Hold Ctrl and drag with the right button to move while keeping the pivot in place. Ctrl+wheel changes the brush size.</value></data>
+  <data name="Tutorial_Cv_Resize" xml:space="preserve"><value>Change the canvas size with {key} (menu {menu}). Try it.</value></data>
+  <data name="Tutorial_Cv_ResizeEdit" xml:space="preserve"><value>Handles appeared around the canvas. Drag a handle with the left button to stretch the art with it; drag with the right button to change only the canvas, adding margin or cropping. Drag inside to move the art. Shift keeps the ratio, Alt resizes from the center. Press Enter to apply or Esc to cancel to move on.</value></data>
+  <data name="Tutorial_Cv_Layer" xml:space="preserve"><value>To resize or move just the current layer, use {key} (menu {menu}). Try it.</value></data>
+  <data name="Tutorial_Cv_LayerEdit" xml:space="preserve"><value>The orange box wraps the current layer across every frame. Drag the handles to scale it and drag inside to move it; the canvas size stays the same. Press Enter to apply or Esc to cancel to finish the tutorial.</value></data>
+  <data name="Tutorial_Tm_Create" xml:space="preserve"><value>An empty example image is open in a new tab. A tilemap is a layer where you lay same-size tiles on a grid to build a map. Create a tilemap layer with the menu {menu} ({key}). It's also under right-click > New in the timeline.</value></data>
+  <data name="Tutorial_Tm_Tileset" xml:space="preserve"><value>With a tilemap layer selected, the tileset appears on the left: a set of tiles cut to the same size. Click a tile, or drag across several, to load it onto the brush. You can add more tilesets and draw your own.</value></data>
+  <data name="Tutorial_Tm_Tools" xml:space="preserve"><value>While a tilemap is selected, the toolbar switches to tile tools: tile brush, auto-tile, eraser, rectangle, fill, tile picker, and select.</value></data>
+  <data name="Tutorial_Tm_Paint" xml:space="preserve"><value>Click the canvas to lay the selected tile in a cell. Drag to keep laying tiles.</value></data>
+  <data name="Tutorial_Tm_Cells" xml:space="preserve"><value>This button turns the cell grid on and off. One tilemap is shared by every frame, and it stacks with your other layers.</value></data>
+  <data name="Tutorial_Sk_Child" xml:space="preserve"><value>A layer can go inside another as its child, grouping them. Right-click the wolf layer's name and choose New > New child layer…, or use the menu {menu} ({key}), to make a child. Dragging a layer's name onto another while holding Shift also makes it that layer's child.</value></data>
+  <data name="Tutorial_Sk_Tree" xml:space="preserve"><value>Children show indented under their parent, and the triangle before the name folds the group. Moving the parent moves its children; hiding or locking the parent does the same to them, and the parent's opacity applies to the whole group. Drag a child's name to the left to take it out of the group.</value></data>
+  <data name="Tutorial_Sk_Add" xml:space="preserve"><value>A skin is a swappable version of one layer's art (outfits, expressions, colors). Right-click the wolf layer's name and choose '{menu}' > '{copy}' to make a skin from a copy of the current drawing.</value></data>
+  <data name="Tutorial_Sk_Switch" xml:space="preserve"><value>With two or more skins, a skin chip appears on the name row. Click the chip to switch skins. Switching changes the layer's art in every frame, while its size, position, and pivot stay the same.</value></data>
+  <data name="Tutorial_Sk_Stack" xml:space="preserve"><value>Stacking: layers stack in timeline order, so upper layers cover lower ones. A layer's skins never stack; only one shows at a time and they swap with each other. Skin presets switch a combination of skins across several layers at once.</value></data>
+  <data name="Tutorial_Ai_Lock" xml:space="preserve"><value>Lock layers you want to protect. A layer locked with the padlock on its timeline name row (and its children) can't be changed by the AI through MCP; if it needs to, it asks you to unlock it. This holds whether or not 'Current file only' is on.</value></data>
+  <data name="Tutorial_Fx_Store" xml:space="preserve"><value>Anything not in the effect list can be found in the store. Press '{button}' to open the store on the website, where you can get all kinds of assets other people made: effects, script effects, gradients, shape pen sets, and more. Opening it ends the tutorial.</value></data>
+  <data name="Tutorial_Ai_Open" xml:space="preserve"><value>Open AI chat with this button. You can also use the menu {menu} or {key}. Press it to open the chat.</value></data>
+  <data name="Tutorial_Ai_Settings" xml:space="preserve"><value>This button opens the drawing settings, where you choose how the AI draws (auto / generate an image, then pixelate / place pixels directly). The question-mark button next to it shows what the AI can do, with examples.</value></data>
+  <data name="Tutorial_Ai_External" xml:space="preserve"><value>AI apps you use outside Chickxel, like Claude Desktop or the Codex app, can also drive Chickxel through MCP. In the menu {menu}, turn on 'Allow external AI apps' and paste the connection settings shown there into that app's MCP settings. 'How to connect' in that window says where each app keeps them.</value></data>
+  <data name="Tutorial_Mk_Open" xml:space="preserve"><value>The '{button}' button under the effect list opens the Effect Maker. You can also use the menu {menu}. Press it to open the window.</value></data>
+  <data name="Tutorial_Mk_Ai" xml:space="preserve"><value>Describe the effect you want in this AI panel and send it, for example 'a light that runs once around the outline'. The AI writes the effect script, and keeps fixing it when you ask. Sign-in is shared with AI chat.</value></data>
+  <data name="Tutorial_Mk_Code" xml:space="preserve"><value>The effect script the AI wrote shows here. You can edit it yourself; edits are saved automatically after a moment. Try the effect's settings in the preview settings box below.</value></data>
+  <data name="Tutorial_Mk_Preview" xml:space="preserve"><value>This is the preview: the sample image with the effect, played frame by frame. It redraws as soon as the script changes.</value></data>
+  <data name="Tutorial_Mk_Use" xml:space="preserve"><value>Effects you make collect in the list on the left and show up right away in the main window's effect list. Use '{insert}' to put one into the current image, or '{upload}' to share it in the store.</value></data>
+  <data name="Tutorial_Ex_Open" xml:space="preserve"><value>An example image (5 frames) is open in a new tab. Open the export window with the menu {menu} ({key}).</value></data>
+  <data name="Tutorial_Ex_List" xml:space="preserve"><value>On the left is the export list. Each row is one file. At first there is one row: a sheet image with every frame laid out on one picture.</value></data>
+  <data name="Tutorial_Ex_Add" xml:space="preserve"><value>Press '{button}' to copy the selected row and add another one. Try it.</value></data>
+  <data name="Tutorial_Ex_Format" xml:space="preserve"><value>Change the new row's format to GIF. Exporting now makes two files at once: the sheet image and a GIF animation. Add more rows to export more files together.</value></data>
+  <data name="Tutorial_Ex_OnSave" xml:space="preserve"><value>With the checkbox at the start of a row on, that row is exported again automatically every time you save the project ({menu}, {key}). Just edit and save, and the exported files stay up to date.</value></data>
+  <data name="Tutorial_Ex_Run" xml:space="preserve"><value>Press this button to export right now. Set the file name and folder on the right. Closing the window ends the tutorial.</value></data>
+  <data name="Tutorial_Lf_Layer" xml:space="preserve"><value>An example image is open in a new tab. Each row on the left is a layer. Layers are transparent sheets stacked on top of each other, so upper layers cover lower ones. Hide one with the eye button, or drag its name to reorder.</value></data>
+  <data name="Tutorial_Lf_AddLayer" xml:space="preserve"><value>Press the + in the bottom row to add a new layer. Try it.</value></data>
+  <data name="Tutorial_Lf_AddFrame" xml:space="preserve"><value>Each number along the top is a frame, one picture of the animation. Press the + next to the last number to add an empty frame, or drag it right and release to add several at once. Try it.</value></data>
+  <data name="Tutorial_Lf_DeleteFrame" xml:space="preserve"><value>To remove a frame, right-click its number and choose 'Delete'. Delete the frame you just added.</value></data>
+  <data name="Tutorial_Lf_Link" xml:space="preserve"><value>Frames 1 and 2 have the same picture. That's when you link frames. Drag across the frame 1 and 2 cels to select them, then right-click and choose '{menu}'.</value></data>
+  <data name="Tutorial_Lf_Linked" xml:space="preserve"><value>Linked cels share one picture, so editing one changes the others too. Linked cels show a colored stripe along the bottom. To undo it, right-click and choose '{menu}'.</value></data>
+  <data name="Tutorial_Lv_Badge" xml:space="preserve"><value>The Lv on the account button is your current level ({level}). Earn XP to level up: +10 for your first launch each day, +1 per hour the app stays open, +2 when your art or assets get a like, and +1 when you like someone else's work (up to three a day).</value></data>
+  <data name="Tutorial_Lv_SignIn" xml:space="preserve"><value>Sign in with a Chickxel account to get a level. Press this button to sign in. Earn XP to level up: +10 for your first launch each day, +1 per hour the app stays open, +2 for each like you get.</value></data>
+  <data name="Tutorial_Lv_Upload" xml:space="preserve"><value>The fastest way to level up is uploading art to the gallery: +10 XP for each upload, plus 5 XP more when you include the editable file (.chickxel). Upload with this button or the menu {menu}.</value></data>
+  <data name="Tutorial_Lv_Rewards" xml:space="preserve"><value>Each new level unlocks a reward such as a title, badge, or profile frame. See your XP and the next reward under '{menu}' on the account button.</value></data>
+  <data name="Tutorial_Start" xml:space="preserve"><value>Start</value></data>
+  <data name="Tutorial_Again" xml:space="preserve"><value>Do again</value></data>
+  <data name="Tutorial_Done" xml:space="preserve"><value>Done</value></data>
+  <data name="Tutorial_DontShow" xml:space="preserve"><value>Don't show again</value></data>
+  <data name="Tutorial_DontShowTip" xml:space="preserve"><value>Check this and close to stop showing this window at startup (saved on this computer only). Reopen it anytime from Help > Tutorial or the graduation cap button at the right of the menu bar.</value></data>
+  <data name="Tutorial_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Tutorial_ButtonTip" xml:space="preserve"><value>Tutorial: learn the key features by following along on screen</value></data>
+  <data name="Tutorial_Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Tutorial_Finish" xml:space="preserve"><value>Finish</value></data>
+  <data name="Tutorial_Prev" xml:space="preserve"><value>Back</value></data>
+  <data name="Tutorial_DoIt" xml:space="preserve"><value>Try it — moves on when done</value></data>
+  <data name="Tutorial_Stop" xml:space="preserve"><value>Quit</value></data>
+  <data name="Tutorial_StepCount" xml:space="preserve"><value>{index} / {count}</value></data>
+  <data name="Tutorial_ExampleTitle" xml:space="preserve"><value>Tutorial example</value></data>
+  <data name="Tutorial_ExampleLayer" xml:space="preserve"><value>Wolf</value></data>
+  <data name="Tutorial_Px_Open" xml:space="preserve"><value>The window that turns a regular image, such as AI-made art, into pixel art opens from the menu {menu}. You can also right-click an image file in the Files panel on the left and choose '{file}' to open it with that image. Open the menu and try it.</value></data>
+  <data name="Tutorial_Px_Source" xml:space="preserve"><value>This window turns an image into pixel art. Drag an image onto this area, paste it with Ctrl+V, or browse for a file. An example image has been put in.</value></data>
+  <data name="Tutorial_Px_Wait" xml:space="preserve"><value>Reading the image and finding its pixel grid. The tutorial moves on when it's done.</value></data>
+  <data name="Tutorial_Px_Rerun" xml:space="preserve"><value>Right-click a candidate to run just that preset. Right-click '{preset}' and choose '{menu}' to run it now (optional).</value></data>
+  <data name="Tutorial_Px_Optimize" xml:space="preserve"><value>Optimizing tries many settings and scores them, so it takes time (up to a few minutes per preset), and results land in the candidates only when it finishes. While it runs, the best result so far is shown. To stop, press this button (Cancel while running) or right-click it and choose Cancel all.</value></data>
+  <data name="Tutorial_Px_Settings" xml:space="preserve"><value>Press '{button}' to open the settings column on the left.</value></data>
+  <data name="Tutorial_Px_Quick" xml:space="preserve"><value>Quick settings gathers the values you change most. Change one, such as the output size or target colors.</value></data>
+  <data name="Tutorial_Px_Run" xml:space="preserve"><value>Press the play button ('{button}') to clean up with the new settings (optional).</value></data>
+  <data name="Tutorial_Px_Colors" xml:space="preserve"><value>These are the result's colors. Right-click a color to remove it, or press + and then click the source image to add that color. You can change them once optimizing has finished.</value></data>
+  <data name="Tutorial_Px_Apply" xml:space="preserve"><value>All done. Pick the candidate you like and press '{button}' to put the result into your image.</value></data>
+  <data name="Tutorial_Fx_Open" xml:space="preserve"><value>An example image (5 frames) is open in a new tab. Press the Effects button in the toolbar to open the effect list.</value></data>
+  <data name="Tutorial_Fx_Select" xml:space="preserve"><value>Let's add an effect to just some frames. In the timeline, drag from the frame {from} cel to the frame {to} cel to select them.</value></data>
+  <data name="Tutorial_Fx_Add" xml:space="preserve"><value>Drag the '{effect}' tile onto the selected frame {from}–{to} cels, or double-click it. It goes into just those frames. While dragging, the canvas previews the effect.</value></data>
+  <data name="Tutorial_Fx_Adjust" xml:space="preserve"><value>The added effect's settings opened on the right. Change a number or a color; the canvas updates right away.</value></data>
+  <data name="Tutorial_Fx_Timeline" xml:space="preserve"><value>Added effects stack up in the timeline's effect rows. Play it back and the effect shows only in the selected frames. Double-click a row to open the effect window, or drag its ends to change the frames it covers.</value></data>
+  <data name="Tutorial_Ai_Login" xml:space="preserve"><value>This is the AI chat window. Pick Claude or Codex here, then install and sign in following the guide below. The tutorial moves on once it's connected. Press Next to do this later.</value></data>
+  <data name="Tutorial_Ai_Ready" xml:space="preserve"><value>Connected. Type something like 'draw a 32×32 wooden barrel' in this box and send it; the AI drives Chickxel through MCP to draw into the open image.</value></data>
+  <data name="Tutorial_Ai_Later" xml:space="preserve"><value>You can sign in from this window anytime. Once connected, type something like 'draw a 32×32 wooden barrel' in the box at the bottom and send it; the AI drives Chickxel through MCP to draw into the open image.</value></data>
 </root>

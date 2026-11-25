@@ -25,7 +25,7 @@ namespace Chickxel.App.Ai;
 /// 입력란에 쓰면 새 대화), 탭마다 마지막으로 보던 대화(또는 목록)를 다시 열 때 되살린다. "?" 단추는 대화 오른쪽에 도움말 칸
 /// (AI가 할 수 있는 일·예시·요령)을 연다 — 창이 그만큼 오른쪽으로 부드럽게 넓어지고(최대화면 대화 칸이 좁아짐) 대화는 그대로 쓸 수 있다.
 /// 그 옆 설정 단추는 같은 자리에 그리기 설정 칸(그리는 방식·생성 옵션 — <c>ChatWindow.DrawSettings.cs</c>)을 열며, 둘 중 하나만 열린다.
-/// 그림 생성 도구(<see cref="PixelTools.CallAsync"/>)의 진행은 진행 줄에, 결과는 결과 칸("변환 설정 보기" 단추)으로 붙는다.
+/// 그림 생성 도구(<see cref="PixelTools.CallAsync"/>)의 진행은 진행 줄에, 결과는 결과 칸(원본 · "변환하기"·"이미지 수정" 단추)으로 붙는다.
 /// </summary>
 public sealed partial class ChatWindow : Window
 {
@@ -224,7 +224,6 @@ public sealed partial class ChatWindow : Window
         _ctx.UndoChanged += OnUndoChanged;
         _mcp.Tools.AiDrawProgress += OnAiDrawProgress;
         _mcp.Tools.AiDrawPromptReady += OnAiDrawPromptReady;
-        _mcp.Tools.AiDrawPreview += OnAiDrawPreview;
         _mcp.Tools.AiDrawCompleted += OnAiDrawCompleted;
         _ctx.ProjectReplaced += OnProjectReplaced;
         PositionChanged += (_, _) => SaveBounds();
@@ -293,7 +292,7 @@ public sealed partial class ChatWindow : Window
     {
         if (_shutdown) return;
         SaveBounds();
-        AiSystemNotifications.Clear(this);
+        AppNotifications.Clear(this);
         foreach (var t in _tabs) t.StopTurn();
         _shutdown = true;
         _helpTimer.Stop();
@@ -301,7 +300,6 @@ public sealed partial class ChatWindow : Window
         _ctx.UndoChanged -= OnUndoChanged;
         _mcp.Tools.AiDrawProgress -= OnAiDrawProgress;
         _mcp.Tools.AiDrawPromptReady -= OnAiDrawPromptReady;
-        _mcp.Tools.AiDrawPreview -= OnAiDrawPreview;
         _mcp.Tools.AiDrawCompleted -= OnAiDrawCompleted;
         _ctx.ProjectReplaced -= OnProjectReplaced;
     }
@@ -369,6 +367,18 @@ public sealed partial class ChatWindow : Window
 
     /// <summary>차례가 도는 탭(없으면 null). 차례는 모든 탭을 통틀어 하나만 돈다.</summary>
     private ChatTab? RunningTab => _tabs.FirstOrDefault(t => t.IsRunning);
+
+    /// <summary>Claude·Codex 중 하나라도 로그인해 채팅 화면인지(튜토리얼 'AI로 그리기'가 연결됨을 알림).</summary>
+    internal bool AnyProviderReady => _tabs.Any(t => t.InChat);
+
+    /// <summary>위쪽 Claude·Codex 고르기 줄(튜토리얼 'AI로 그리기'가 비춤).</summary>
+    internal Control TutorialProviderToggle => _providerToggle;
+
+    /// <summary>위쪽 그리기 설정 단추(튜토리얼 'AI로 그리기'가 비춤).</summary>
+    internal Control TutorialDrawSettings => _drawSettings;
+
+    /// <summary>보이는 탭의 메시지 입력란(그림 칩 자리 포함, 튜토리얼 'AI로 그리기'가 비춤 — 로그인 화면이면 보이지 않음).</summary>
+    internal Control TutorialInput => _visible.InputArea;
 
     /// <summary>"지금 그림만"(두 탭 공통 설정): 설정에 넣고 모든 탭의 단추를 맞춘다. 진행 중인 차례의 범위는 그대로(다음 메시지부터).</summary>
     private void SetCurrentFileOnly(bool on)
@@ -446,18 +456,18 @@ public sealed partial class ChatWindow : Window
 
     // ───────────── 이미지 도우미 ─────────────
 
-    private static Control Thumb(Bitmap bmp, bool pixelArt, int size)
+    private Control Thumb(Bitmap bmp, bool pixelArt, int size)
     {
         var px = bmp.PixelSize;
         double k = Math.Min((double)size / Math.Max(1, px.Width), (double)size / Math.Max(1, px.Height));
         if (pixelArt && k > 1) k = Math.Floor(k);
         var image = new Image { Source = bmp, Width = Math.Max(1, px.Width * k), Height = Math.Max(1, px.Height * k), Stretch = Stretch.Fill };
         if (pixelArt) RenderOptions.SetBitmapInterpolationMode(image, BitmapInterpolationMode.None);
-        return ChatImages.WithImageActions(new ChatImages.CheckerBackground { Child = image, Margin = new Thickness(2), HorizontalAlignment = HorizontalAlignment.Left }, bmp);
+        return ChatImages.WithImageActions(new ChatImages.CheckerBackground { Child = image, Margin = new Thickness(2), HorizontalAlignment = HorizontalAlignment.Left }, bmp, () => OpenImageMarkup(bmp));
     }
 
-    /// <summary>차례가 끝난 뒤의 캔버스 모습(작으면 정수 배로 키우고, 크면 <see cref="SnapshotMax"/>에 맞춰 줄임).</summary>
-    private static Control SnapshotView(Bitmap bmp)
+    /// <summary>차례가 끝난 뒤의 캔버스 모습·생성한 원본(작으면 정수 배로 키우고, 크면 <see cref="SnapshotMax"/>에 맞춰 줄임). 누르면 그림 표시 창.</summary>
+    private Control SnapshotView(Bitmap bmp)
     {
         var px = bmp.PixelSize;
         int longSide = Math.Max(1, Math.Max(px.Width, px.Height));
@@ -470,8 +480,12 @@ public sealed partial class ChatWindow : Window
             BorderThickness = new Thickness(1),
             HorizontalAlignment = HorizontalAlignment.Left,
             Child = new ChatImages.CheckerBackground { Child = image },
-        }, bmp);
+        }, bmp, () => OpenImageMarkup(bmp));
     }
+
+    /// <summary>대화 속 그림을 누르면: 그림에 그리기·댓글로 표시해 AI에게 고쳐 달라고 하는 창(보내면 보이는 탭의 대화로 — 차례가 돌면 대기 줄).</summary>
+    private void OpenImageMarkup(Bitmap bmp)
+        => new ImageMarkupWindow(bmp, (text, attachments) => _visible.SendComposed(text, attachments)).Show(this);
 
     /// <summary>
     /// 대화 속 그림 아래 "새 레이어로 넣기": 그 그림을 지금 문서의 현재 프레임에 새 레이어로(열린 문서가 없으면 새 탭의 새 문서로) 다시 넣는다.
@@ -924,12 +938,11 @@ public sealed partial class ChatWindow : Window
         private readonly ScrollViewer _listScroll;
         private readonly StackPanel _list;
         private readonly TextBlock _thinking;
-        private readonly Image _conversionImage;
-        private readonly Border _conversionPreview;
-        private WriteableBitmap? _conversionBitmap;
         /// <summary>그림 칩이 들어가는 입력란(<see cref="ChatImageInput"/>)과 그 글 상자.</summary>
         private readonly ChatImageInput _imageInput;
         private readonly TextBox _input;
+        /// <summary>메시지 입력란(튜토리얼이 비춤).</summary>
+        public Control InputArea => _imageInput;
         private readonly Button _sendButton, _stopButton;
         /// <summary>차례가 도는 동안(이 탭이든 다른 탭이든) 보낸 메시지의 대기 줄 — 어느 탭의 차례도 돌지 않게 되면 차례로 보낸다.</summary>
         private readonly PendingMessages _pending;
@@ -957,7 +970,6 @@ public sealed partial class ChatWindow : Window
         private int _phaseChars;
         /// <summary>그림 생성 도구가 알린 진행("프레임 2/6 생성 중") — 도구 실행 단계의 진행 줄에 보인다.</summary>
         private string? _aiDrawStatus;
-        private bool _previewClosed;
 
         private string? _cliPath;
         private IChatSession? _session;
@@ -1005,19 +1017,17 @@ public sealed partial class ChatWindow : Window
                 Margin = new Thickness(2, 2),
                 TextWrapping = TextWrapping.Wrap,
             };
-            _conversionImage = new Image { Stretch = Stretch.Uniform };
-            RenderOptions.SetBitmapInterpolationMode(_conversionImage, BitmapInterpolationMode.None);
-            _conversionPreview = new Border
-            {
-                Width = 96, Height = 96, HorizontalAlignment = HorizontalAlignment.Left,
-                BorderBrush = AppTheme.BorderBrush, BorderThickness = new Thickness(1),
-                Child = new ChatImages.CheckerBackground { Child = _conversionImage },
-            };
 
             _imageInput = new ChatImageInput(Ui.Shortcut(UiStrings.S_ChatWindow_ChatTab_95FEEA4ADC));
             _input = _imageInput.Input;
             _input.AddHandler(InputElement.KeyDownEvent, OnInputKeyDown, RoutingStrategies.Tunnel);
             _pending = new PendingMessages(_imageInput);
+            // 지금 보내기: 도는 차례(어느 탭이든)를 멈추면 차례 끝에서 이 탭(보이는 탭)의 맨 앞 메시지가 나간다. 도는 차례가 없으면 바로.
+            _pending.SendNowRequested += () =>
+            {
+                if (_w.RunningTab is { } running) running.StopTurn();
+                else SendQueued();
+            };
             var imageButton = Ui.Button(UiStrings.S_ChatWindow_ChatTab_B428204BA3, (_, _) => _imageInput.AttachFile()).Tip(UiStrings.S_ChatWindow_ChatTab_046C36A571);
             var canvasButton = Ui.Button(UiStrings.S_ChatWindow_ChatTab_F9D4399092, (_, _) => AttachCanvas()).Tip(UiStrings.S_ChatWindow_ChatTab_B9C7852D0E);
             _scopeToggle = new ToggleButton
@@ -1068,7 +1078,6 @@ public sealed partial class ChatWindow : Window
             _pending.HelpAt("ai-chat", anchor: "Sending while a reply is coming in");
             _questionHost.HelpAt("ai-questions");
             _thinking.HelpAt("ai-progress");
-            _conversionPreview.HelpAt("ai-progress");
             _listScroll.HelpAt("ai-history");
 
             _terminalPoll.Tick += async (_, _) => await PollLoginAsync();
@@ -1119,7 +1128,7 @@ public sealed partial class ChatWindow : Window
             var pending = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
             _questionCompletion = pending;
             _questionHost.Children.Add(new AiQuestionPanel(question, options, choice => pending.TrySetResult(choice)));
-            AiSystemNotifications.Show(_w, UiStrings.AiNotify_Question, question);
+            AppNotifications.Show(_w, UiStrings.AiNotify_Question, question);
             using var cancellation = ct.Register(() => Dispatcher.UIThread.Post(() => pending.TrySetResult(null)));
             try
             {
@@ -1652,6 +1661,25 @@ public sealed partial class ChatWindow : Window
             if (SendMessage(text, attachments)) _imageInput.Clear();
         }
 
+        /// <summary>
+        /// 그림 표시 창에서 보낸 메시지(글 + 첨부): 어느 탭의 차례가 돌면 대기 줄에, 아니면 바로 보낸다(입력란은 그대로).
+        /// AI가 아직 준비되지 않았으면(설치·로그인 전) 알리고 false.
+        /// </summary>
+        public bool SendComposed(string text, IReadOnlyList<ChatAttachment> attachments)
+        {
+            if (_session is null || _w._shutdown)
+            {
+                Ui.Warn(_w, UiStrings.Chat_ImageMarkup_NotReady);
+                return false;
+            }
+            if (_turn is not null || _w.RunningTab is not null)
+            {
+                _pending.Add(text, attachments);
+                return true;
+            }
+            return SendMessage(text, attachments);
+        }
+
         /// <summary>대기 줄에 메시지가 있는지(차례가 끝나면 창이 <see cref="SendQueued"/>를 부름).</summary>
         public bool HasPending => _pending.Count > 0;
 
@@ -1761,7 +1789,6 @@ public sealed partial class ChatWindow : Window
             }
             _turn = turn;
             _messages.Children.Add(_thinking);
-            _previewClosed = false;
             _turnStart = DateTime.UtcNow;
             SetPhase("wait", null);
             _progressTimer.Start();
@@ -1790,7 +1817,6 @@ public sealed partial class ChatWindow : Window
             _w._mcp.Tools.TurnMessage = "";
             _aiDrawStatus = null;
             FinishStream(turn);
-            CloseConversionPreview();
             _messages.Children.Remove(_thinking);
             _progressTimer.Stop();
 
@@ -1806,8 +1832,9 @@ public sealed partial class ChatWindow : Window
             AddItem(FooterLine(footer));
             Record(new ChatItem { Kind = ChatItemKind.Footer, Text = footer });
             SaveChat();
-            if (!cancelled)
-                AiSystemNotifications.Show(_w, error is null ? UiStrings.AiNotify_Done : UiStrings.AiNotify_Error,
+            // 대기 줄에 보낼 메시지가 남아 곧 다음 차례가 이어지면 알리지 않는다(마지막 차례에 한 번만). 오류는 늘 알린다.
+            if (!cancelled && (error is not null || !_w._tabs.Any(t => t.HasPending)))
+                AppNotifications.Show(_w, error is null ? UiStrings.AiNotify_Done : UiStrings.AiNotify_Error,
                     UiStrings.AiNotify_DoneBody);
             _w.OnTurnsChanged();
         }
@@ -1939,7 +1966,7 @@ public sealed partial class ChatWindow : Window
                     break;
                 case ChatItemKind.Snapshot:
                     if (item.Images is [var png, ..] && ChatHistoryViews.DecodeImage(png) is { } shot)
-                        AddItem(new StackPanel { Spacing = 4, Margin = new Thickness(2, 2, 0, 0), Children = { SnapshotView(shot), _w.InsertImageButton(shot) } }.HelpAt("ai-undo"));
+                        AddItem(new StackPanel { Spacing = 4, Margin = new Thickness(2, 2, 0, 0), Children = { _w.SnapshotView(shot), _w.InsertImageButton(shot) } }.HelpAt("ai-undo"));
                     break;
                 case ChatItemKind.AiDraw:
                     AddItem(_w.AiDrawCard(item.Images is [var drawn, ..] ? ChatHistoryViews.DecodeImage(drawn) : null, item.Text,
@@ -2074,52 +2101,14 @@ public sealed partial class ChatWindow : Window
             Record(new ChatItem { Kind = ChatItemKind.AiDrawPrompt, Text = instruction, PromptSummary = summary });
         }
 
-
-        /// <summary>변환 최선 결과를 진행 줄 앞에 작게 표시한다. 완료·취소 시 제거한다.</summary>
-        public void OnAiDrawPreview(PixelImage frame)
-        {
-            if (_turn is null || _previewClosed) return;
-            if (_conversionBitmap is { } existing && existing.PixelSize.Width == frame.Width && existing.PixelSize.Height == frame.Height)
-            {
-                ImageUtil.CopyToBitmap(frame, existing);
-                _conversionImage.InvalidateVisual();
-            }
-            else
-            {
-                var bitmap = ImageUtil.ToBitmap(frame);
-                _conversionImage.Source = bitmap;
-                _conversionBitmap?.Dispose();
-                _conversionBitmap = bitmap;
-            }
-            if (!_messages.Children.Contains(_conversionPreview))
-            {
-                int idx = _messages.Children.IndexOf(_thinking);
-                _messages.Children.Insert(idx >= 0 ? idx : _messages.Children.Count, _conversionPreview);
-            }
-        }
-
-        private void CloseConversionPreview()
-        {
-            _previewClosed = true;
-            _messages.Children.Remove(_conversionPreview);
-            _conversionImage.Source = null;
-            _conversionBitmap?.Dispose();
-            _conversionBitmap = null;
-        }
-
-        /// <summary>그림 생성 결과 칸(결과 그림·결과 글·"변환 설정 보기")을 붙이고 저장할 내용에 넣는다(그림이 너무 크면 그림은 남기지 않음).</summary>
+        /// <summary>그림 생성 결과 칸(생성한 원본·결과 글·"변환하기")을 붙이고 저장할 내용에 넣는다(원본이 크면 저장할 그림은 줄여서).</summary>
         public void OnAiDrawCompleted(AiDrawOutcome o)
         {
-            CloseConversionPreview();
-            string? png = null;
-            if (Math.Max(o.Preview.Width, o.Preview.Height) <= SavedAiDrawSide)
-            {
-                using var ms = new MemoryStream();
-                PngIO.Save(o.Preview, ms);
-                png = Convert.ToBase64String(ms.ToArray());
-            }
-            AddItem(_w.AiDrawCard(ImageUtil.ToBitmap(o.Preview), o.Message, o.Job.Id));
-            Record(new ChatItem { Kind = ChatItemKind.AiDraw, Text = o.Message, Images = png is null ? null : [png], Job = o.Job.Id });
+            var saved = Math.Max(o.Original.Width, o.Original.Height) <= SavedAiDrawSide ? o.Original : AiDrawConversion.Downscale(o.Original, SavedAiDrawSide);
+            using var ms = new MemoryStream();
+            PngIO.Save(saved, ms);
+            AddItem(_w.AiDrawCard(ImageUtil.ToBitmap(o.Original), o.Message, o.Job.Id));
+            Record(new ChatItem { Kind = ChatItemKind.AiDraw, Text = o.Message, Images = [Convert.ToBase64String(ms.ToArray())], Job = o.Job.Id });
         }
 
         /// <summary>진행 단계를 바꾼다(받은 양·단계 시간은 0부터).</summary>
@@ -2187,7 +2176,7 @@ public sealed partial class ChatWindow : Window
             if (ChatImageTokens.Split(item.Text).Any(s => s.IsImage)) stack.Children.Add(ChatImages.BubbleText(item.Text, images));
             else
             {
-                var thumbs = images.OfType<Bitmap>().Select(b => Thumb(b, pixelArt: true, 72)).ToList();
+                var thumbs = images.OfType<Bitmap>().Select(b => _w.Thumb(b, pixelArt: true, 72)).ToList();
                 if (thumbs.Count > 0)
                 {
                     var wrap = new WrapPanel { Margin = new Thickness(8, 6, 8, 0) };
@@ -2416,7 +2405,7 @@ public sealed partial class ChatWindow : Window
             if (_w.Composite(project) is { } img)
             {
                 shot = ImageUtil.ToBitmap(img);
-                panel.Children.Add(SnapshotView(shot));
+                panel.Children.Add(_w.SnapshotView(shot));
                 if (Math.Max(img.Width, img.Height) <= SavedSnapshotSide)
                 {
                     using var ms = new MemoryStream();

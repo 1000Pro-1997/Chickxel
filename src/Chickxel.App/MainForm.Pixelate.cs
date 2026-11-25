@@ -74,11 +74,10 @@ public sealed partial class MainForm
     /// 창을 연다(<paramref name="input"/>이 null이면 빈 창 — 창에서 끌어 놓기·붙여 넣기·파일 찾기로 원본을 넣음). 창은 닫아도 숨기기만 하므로(앱을 끝낼 때까지)
     /// 원본 없이 다시 열면 지난 창(원본·후보·고른 칸·돌던 최적화)을 그대로 다시 띄우고, 새 원본으로 열면 지난 창을 정말 닫고 새로 만든다.
     /// </summary>
-    /// <param name="preset">처음 단계 설정(채팅의 "변환 설정 보기" — 그 설정을 기억한 설정 대신 쓰고, 다시 최적화하지 않음). null = 기억한 설정.</param>
-    private void ShowPixelate(PixelateInput? input, PixelateSettings? preset = null)
+    private void ShowPixelate(PixelateInput? input)
     {
         bool canInsertLayer = _ctx.Project is not null && !_ctx.IsCanvasResizing;
-        if (input is null && preset is null && _pixelate is { } kept)
+        if (input is null && _pixelate is { } kept)
         {
             kept.Reopen(this, canInsertLayer);
             return;
@@ -86,13 +85,13 @@ public sealed partial class MainForm
         _pixelate?.CloseForGood();
         var dlg = new PixelateDialog(_settings, input, _colors.Palettes, canInsertLayer,
             ApplyPixelate, AskAiAboutCandidates, () => _browser.CurrentFolder ?? _settings.LastFolder, LoadPixelateSource, ReadClipboard,
-            img => PutImageOnClipboard(img, null), preset);
+            img => PutImageOnClipboard(img, null));
         dlg.Closed += (_, _) => { if (ReferenceEquals(_pixelate, dlg)) _pixelate = null; };
         _pixelate = dlg;
         dlg.Show(this);
     }
 
-    void Ai.IAiHost.ShowPixelate(PixelateInput input, PixelateSettings settings) => ShowPixelate(input, settings);
+    void Ai.IAiHost.ShowPixelate(PixelateInput input) => ShowPixelate(input);
 
     string Ai.IAiHost.InsertImage(string name, PixelImage image)
     {
@@ -107,58 +106,6 @@ public sealed partial class MainForm
 
     Task<string?> Ai.IAiHost.AskUserAsync(string question, IReadOnlyList<string> options, CancellationToken ct)
         => _chat?.AskUserAsync(question, options, ct) ?? Task.FromResult<string?>(null);
-
-    async Task<Ai.AiInsertResult> Ai.IAiHost.InsertPixelArtAsync(
-        string name, IReadOnlyList<PixelImage> frames, int frameDurationMs, bool newDocument, CancellationToken ct)
-    {
-        if (frames.Count == 0) return new(false, UiStrings.AiDraw_Error_NoSprite);
-        if (!newDocument && _ctx.IsCanvasResizing) return new(false, UiStrings.AiDraw_Insert_CanvasChanged);
-        if (!newDocument && _ctx.Project is { } project && !_ctx.IsCanvasResizing)
-        {
-            int width = frames.Max(f => f.Width), height = frames.Max(f => f.Height);
-            int canvasWidth = project.Width, canvasHeight = project.Height;
-            if (width > canvasWidth || height > canvasHeight)
-            {
-                var choices = new[] { UiStrings.AiDraw_Insert_Expand, UiStrings.AiDraw_Insert_Crop };
-                var question = UiStrings.FormatAiDraw_Insert_Question(
-                    width: width, height: height, canvasWidth: canvasWidth, canvasHeight: canvasHeight);
-                var answer = await ((Ai.IAiHost)this).AskUserAsync(question, choices, ct);
-                ct.ThrowIfCancellationRequested();
-                if (_ctx.IsCanvasResizing || !ReferenceEquals(project, _ctx.Project)
-                    || project.Width != canvasWidth || project.Height != canvasHeight)
-                    return new(false, UiStrings.AiDraw_Insert_CanvasChanged);
-                if (answer == choices[0])
-                {
-                    if (project.Layers.Where((_, i) => project.IsLayerLocked(i)).Any())
-                        return new(false, UiStrings.AiDraw_Insert_Locked);
-                    _ctx.Structural(() => project.ResizeCanvas(Math.Max(width, canvasWidth), Math.Max(height, canvasHeight), Anchor.Center));
-                }
-                else if (answer == choices[1])
-                {
-                    var crop = new Ai.AiCropDialog(frames[0], canvasWidth, canvasHeight);
-                    using var cancelCrop = ct.Register(() => Avalonia.Threading.Dispatcher.UIThread.Post(crop.Close));
-                    if (crop.ShowDialog((Avalonia.Controls.Window?)_chat ?? this) != DialogResult.OK)
-                        return new(false, UiStrings.AiDraw_Insert_Cancelled);
-                    ct.ThrowIfCancellationRequested();
-                    if (_ctx.IsCanvasResizing || !ReferenceEquals(project, _ctx.Project)
-                        || project.Width != canvasWidth || project.Height != canvasHeight)
-                        return new(false, UiStrings.AiDraw_Insert_CanvasChanged);
-                    var origin = crop.CropOrigin;
-                    frames = frames.Select(frame =>
-                    {
-                        var kept = new PixelImage(canvasWidth, canvasHeight);
-                        kept.Blit(frame, frame.Width < canvasWidth ? (canvasWidth - frame.Width) / 2 : -origin.X,
-                            frame.Height < canvasHeight ? (canvasHeight - frame.Height) / 2 : -origin.Y);
-                        return kept;
-                    }).ToList();
-                }
-                else if (answer is null) return new(false, UiStrings.AiDraw_Insert_Cancelled);
-                else return new(false, UiStrings.FormatAiDraw_Insert_Custom(answer: answer));
-            }
-        }
-        bool inserted = InsertPixelated(name, frames, frameDurationMs, newDocument, interactive: false, out var message);
-        return new(inserted, message);
-    }
 
     private void ApplyPixelate(PixelateOutcome o)
     {

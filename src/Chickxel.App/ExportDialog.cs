@@ -50,6 +50,9 @@ public sealed class ExportDialog : DialogBase
     private readonly SpriteProject _project;
     /// <summary>내보내기 목록 줄들(프로젝트의 시트 + 목록의 줄).</summary>
     private readonly StackPanel _list = new() { Spacing = 1 };
+    /// <summary>왼쪽 칸 "내보내기 목록" 전체와 그 [더하기] 단추(튜토리얼 '내보내기'가 비춤).</summary>
+    private Control _listPane = null!;
+    private Button _addButton = null!;
     /// <summary>고른 줄: −1 = 프로젝트의 시트, 0 이상 = <see cref="ExportSettings.Entries"/>의 그 줄.</summary>
     private int _selected = -1;
     private readonly EventHandler<ProjectChangedEventArgs> _onProjectChanged;
@@ -226,11 +229,20 @@ public sealed class ExportDialog : DialogBase
     private string ProjectDir => _project.Path is { } p ? Path.GetDirectoryName(Path.GetFullPath(p))!
         : _settings.LastFolder ?? Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
 
+    /// <summary>튜토리얼 '내보내기'가 비추는 곳: 왼쪽 목록 칸, [더하기], 형식 칸, 파란 [내보내기].</summary>
+    internal Control TutorialListPane => _listPane;
+    internal Control TutorialAdd => _addButton;
+    internal Control TutorialFormat => _formatCombo;
+    internal Control TutorialExport => OkButton;
+
+    /// <summary>지금 고른 형식(튜토리얼이 바뀌었는지 봄).</summary>
+    internal ExportFormat TutorialFormatKind => _format;
+
     /// <summary>왼쪽 칸 "내보내기 목록": 제목 줄(오른쪽 끝 [더하기]) + 줄마다 [저장할 때] 이름·종류 [빼기].</summary>
     private Control ListPane()
     {
         var title = new TextBlock { Text = UiStrings.ExportList_Title, FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(2, 0, 0, 0) };
-        var add = new Button { Content = Ui.IconLabel(VectorIcon.Plus, UiStrings.ExportList_Add), Padding = new Thickness(8, 1) }.Tip(UiStrings.ExportList_AddTip);
+        var add = _addButton = new Button { Content = Ui.IconLabel(VectorIcon.Plus, UiStrings.ExportList_Add), Padding = new Thickness(8, 1) }.Tip(UiStrings.ExportList_AddTip);
         add.Click += (_, _) => Dispatcher.UIThread.Post(AddCopy);
         var presets = Ui.Button(VectorIcon.ChevronDown, UiStrings.ExportList_Presets, null, iconAfter: true).Tip(UiStrings.ExportList_PresetsTip);
         presets.Padding = new Thickness(8, 1);
@@ -246,7 +258,7 @@ public sealed class ExportDialog : DialogBase
         DockPanel.SetDock(header, Dock.Top);
         var hint = new TextBlock { Text = UiStrings.ExportList_SaveHint, Foreground = AppTheme.DimTextBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(2, 6, 2, 0) };
         DockPanel.SetDock(hint, Dock.Bottom);
-        return new Border
+        return _listPane = new Border
         {
             BorderBrush = AppTheme.BorderBrush,
             BorderThickness = new Thickness(1),

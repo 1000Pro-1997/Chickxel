@@ -118,6 +118,12 @@ internal sealed class EffectMakerAiPanel : Border
         _imageInput = new ChatImageInput(UiStrings.EffectMakerAi_Watermark).HelpAt(page, anchor: "㉖ Send the effect you want");
         _imageInput.Input.AddHandler(InputElement.KeyDownEvent, OnInputKeyDown, RoutingStrategies.Tunnel);
         _pending = new PendingMessages(_imageInput).HelpAt(page, anchor: "Pressing Enter or Send while the AI's turn is running");
+        // 지금 보내기: 도는 차례를 멈추면 차례 끝에서 맨 앞 메시지가 나간다. 도는 차례가 없으면 바로.
+        _pending.SendNowRequested += () =>
+        {
+            if (_running) StopTurn();
+            else SendQueued();
+        };
         var attachFile = Ui.IconButton(VectorIcon.FolderOpen, UiStrings.S_ChatWindow_ChatTab_046C36A571, (_, _) => _imageInput.AttachFile());
         var attachCanvas = Ui.IconButton(VectorIcon.Image, UiStrings.EffectMakerAi_AttachCanvasTip, (_, _) => AttachCanvas());
         var attachPreview = Ui.IconButton(VectorIcon.Film, UiStrings.EffectMakerAi_AttachPreviewTip, (_, _) => AttachPreview());

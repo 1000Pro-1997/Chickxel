@@ -1798,13 +1798,15 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
         /// 이름 칸: 눈(0~24) · 자물쇠(24~48) · 깊이만큼 들여 쓴 접기 단추(16) · 이름 · 스킨 칩 · (자리 있는 레이어) 크기.
         /// 들여쓰기는 깊이마다 <see cref="Indent"/>px, <see cref="MaxIndentDepth"/>단계까지(더 깊으면 이름 앞에 깊이 숫자).
         /// </summary>
-        private const int ToggleX = 48, NameX = 64, Indent = 14, MaxIndentDepth = 5;
+        private const int ToggleX = 48, NameX = 64, Indent = 20, MaxIndentDepth = 5;
         /// <summary>스킨 칩 폭: 최대(긴 스킨 이름은 …), 최소(이름이 길어도 이만큼은 보임). 이름이 먼저 자리를 차지한다.</summary>
         private const int SkinChipMaxW = 96, SkinChipMinW = 34;
         private static readonly IPen ChipAccentPen = AppTheme.Pen(AppTheme.AccentColor);
         private static readonly IBrush ChipAccentBrush = AppTheme.Brush(Color.FromArgb(90, AppTheme.AccentColor.R, AppTheme.AccentColor.G, AppTheme.AccentColor.B));
 
         private static readonly IPen BorderPen = AppTheme.Pen(AppTheme.BorderColor);
+        /// <summary>레이어 나무 안내선(부모에서 자식으로 이어지는 줄).</summary>
+        private static readonly IPen TreeGuidePen = AppTheme.Pen(AppTheme.WarningColor);
         private static readonly IPen AccentPen = AppTheme.Pen(AppTheme.AccentColor, 2);
         /// <summary>여러 칸 셀 선택의 둘레(현재 칸 테두리 <see cref="AccentPen"/>보다 흐린 파랑, 겹쳐 칠해도 같은 색이게 불투명).</summary>
         private static readonly Color SelEdgeColor = Color.FromRgb(
@@ -2547,6 +2549,10 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
             return rows.GetRange(Math.Min(a, b), Math.Abs(a - b) + 1);
         }
 
+        /// <summary>레이어 <paramref name="layer"/>의 프레임 <paramref name="from"/>~<paramref name="to"/>를 셀 묶음(한 덩어리)으로 골랐는지(튜토리얼 '효과 쓰기').</summary>
+        internal bool CelsSelected(int layer, int from, int to)
+            => _kind == SelKind.Cels && !ScatteredCels && Range == (from, to) && SelectedRowLayers().Contains(layer);
+
         /// <summary>셀 묶음을 고른다: 시작 칸(현재) = (<paramref name="layer"/>, <paramref name="frameA"/>), 끝 = (<paramref name="end"/>, <paramref name="frameB"/>).</summary>
         public void SelectRect(int layer, int frameA, Layer? end, int frameB)
         {
@@ -2723,6 +2729,24 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
         /// <summary>레이어 행의 위쪽 y.</summary>
         private int LayerY(int layer) => TagH + HeadH + _rowT.Pos(RowItem(layer)) - VValue;
 
+        /// <summary>레이어 <paramref name="layer"/> × 프레임 <paramref name="frame"/> 칸(격자 좌표, 레이어 본줄만 — 튜토리얼이 끌어 놓을 자리로 비춤).</summary>
+        internal Rect CelRect(int layer, int frame) => new(FrameX(frame), LayerY(layer), FrameW(frame), CellH);
+
+        /// <summary>레이어 <paramref name="layer"/>의 이름 칸(튜토리얼 '레이어와 프레임').</summary>
+        internal Rect LayerNameRect(int layer) => new(0, LayerY(layer), NameW, CellH);
+
+        /// <summary>레이어 <paramref name="layer"/> 이름 칸의 자물쇠 단추(누르는 자리 x 24~48, 튜토리얼 'AI로 그리기').</summary>
+        internal Rect LockRect(int layer) => new(24, LayerY(layer), 24, CellH);
+
+        /// <summary>"다음 레이어" 줄의 이름 칸(＋ 새 레이어, 튜토리얼 '레이어와 프레임').</summary>
+        internal Rect AddLayerRect() => new(0, TagH + HeadH + _rowT.Total - VValue, NameW, CellH);
+
+        /// <summary>"다음 프레임" 칸의 머리글(＋ 빈 프레임, 튜토리얼 '레이어와 프레임').</summary>
+        internal Rect AddFrameRect() => new(NameW + _colT.Total - HValue, TagH, CellW, HeadH);
+
+        /// <summary>프레임 번호 머리글 줄 전체(튜토리얼 '레이어와 프레임').</summary>
+        internal Rect FrameHeadersRect() => new(FrameX(0), TagH, _colT.Total, HeadH);
+
         /// <summary>격자 내용 좌표(스크롤 포함).</summary>
         private double ContentX(double x) => x - NameW + HValue;
         private double ContentY(double y) => y - TagH - HeadH + VValue;
@@ -2798,8 +2822,8 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
         /// <summary>효과 상자의 잡는 곳: 왼쪽 끝 손잡이 · 오른쪽 끝 손잡이 · 몸통(범위 통째로 옮김).</summary>
         private enum FxGrip { Left, Right, Body }
 
-        /// <summary>레이어 행 아래 효과 줄 수(효과마다 한 줄, 효과 줄을 접었으면 0).</summary>
-        private static int FxRows(Layer layer) => layer.EffectsCollapsed ? 0 : layer.Effects.Count;
+        /// <summary>레이어 행 아래 효과 줄 수(효과마다 한 줄, 효과 줄을 접었으면 0 — 효과 목록에서 끄며 넣은 모습을 미리 보는 동안은 미리보기 전 수).</summary>
+        private int FxRows(Layer layer) => layer.EffectsCollapsed ? 0 : _owner.ShownEffectCount(layer);
 
         /// <summary>레이어 행의 높이(본줄 + 효과 줄).</summary>
         private int RowFull(Layer layer) => CellH + FxRows(layer) * FxH;
@@ -2906,6 +2930,15 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
 
         /// <summary>깊이만큼 들여 쓸 폭(px, <see cref="MaxIndentDepth"/>단계까지).</summary>
         private static int IndentOf(int depth) => Math.Min(depth, MaxIndentDepth) * Indent;
+
+        /// <summary>화면에서 <paramref name="layer"/> 아래(목록 번호가 더 작은 쪽)에 같은 부모의 형제가 더 있는지. 프로젝트에 없는 레이어(사라지는 행)는 false.</summary>
+        private static bool HasSiblingBelow(SpriteProject p, Layer layer)
+        {
+            int i = p.IndexOf(layer);
+            if (i < 0) return false;
+            int below = p.SubtreeStart(i) - 1;
+            return below >= 0 && ReferenceEquals(p.Layers[below].Parent, layer.Parent);
+        }
 
         /// <summary>들여쓰기 끝보다 깊은 레이어 이름 앞의 깊이 숫자(아니면 null).</summary>
         private static string? DepthMark(int depth) => depth > MaxIndentDepth ? depth.ToString(System.Globalization.CultureInfo.InvariantCulture) : null;
@@ -3552,6 +3585,35 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
                     }
             }
 
+            // 나무 안내선(주황): 깊이마다 그 단계 레이어(자신 또는 조상)의 부모 접기 단추 아래에 세로줄. 그 레이어 아래에 형제가 더 있으면
+            // 행 끝까지(ㅏ), 자기 행에서 마지막 형제면 가운데까지만(ㄴ) 긋고 이름 쪽으로 가로줄. 효과 줄(own = false)은 위 행의 세로줄을 이어 주고,
+            // 펼친 부모의 효과 줄은 아래 자식들로 내려가는 줄도 긋는다. 들여쓰기 끝보다 깊은 단계는 긋지 않는다(깊이 숫자로 보임).
+            void DrawTreeGuides(double y, double h, Layer layer, bool own)
+            {
+                for (var n = layer; n.Parent is not null; n = n.Parent)
+                {
+                    int k = DepthOf(n);
+                    if (k > MaxIndentDepth) continue;
+                    double gx = ToggleX + IndentOf(k - 1) + (NameX - ToggleX) / 2.0 + 0.5;
+                    bool below = HasSiblingBelow(p, n);
+                    if (own && ReferenceEquals(n, layer))
+                    {
+                        double mid = y + h / 2.0;
+                        g.DrawLine(TreeGuidePen, new Avalonia.Point(gx, y), new Avalonia.Point(gx, below ? y + h : mid));
+                        int fold = FoldX(layer);
+                        double end = p.HasChildren(layer) ? fold + 3 : fold + (NameX - ToggleX) - 4;
+                        g.DrawLine(TreeGuidePen, new Avalonia.Point(gx, mid), new Avalonia.Point(end, mid));
+                    }
+                    else if (below)
+                        g.DrawLine(TreeGuidePen, new Avalonia.Point(gx, y), new Avalonia.Point(gx, y + h));
+                }
+                if (!own && !layer.Collapsed && p.HasChildren(layer) && DepthOf(layer) is var d && d < MaxIndentDepth)
+                {
+                    double gx = ToggleX + IndentOf(d) + (NameX - ToggleX) / 2.0 + 0.5;
+                    g.DrawLine(TreeGuidePen, new Avalonia.Point(gx, y), new Avalonia.Point(gx, y + h));
+                }
+            }
+
             // 레이어 이름 한 줄(지워져 줄어드는 유령 행은 흐리게)
             void DrawName(int y, int l, Layer layer, double open)
             {
@@ -3566,13 +3628,7 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
                     layer.Locked ? AppTheme.WarningBrush : AppTheme.BorderBrush);
                 int depth = DepthOf(layer), fold = FoldX(layer);
                 bool parent = l >= 0 && p.HasChildren(layer);
-                if (depth > 0 && depth <= MaxIndentDepth)
-                {
-                    // 부모의 접기 단추에서 내려오는 안내선
-                    double gx = ToggleX + IndentOf(depth - 1) + (NameX - ToggleX) / 2.0 + 0.5;
-                    g.DrawLine(BorderPen, new Avalonia.Point(gx, y), new Avalonia.Point(gx, y + CellH));
-                    g.DrawLine(BorderPen, new Avalonia.Point(gx, y + CellH / 2.0), new Avalonia.Point(parent ? fold + 3 : fold + (NameX - ToggleX) - 4, y + CellH / 2.0));
-                }
+                if (depth > 0) DrawTreeGuides(y, CellH, layer, own: true);
                 if (parent)
                     DrawDisclosure(g, fold + (NameX - ToggleX) / 2.0, y + CellH / 2.0, open);
                 if (DepthMark(depth) is { } mark)
@@ -3625,11 +3681,7 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
                 g.FillRectangle(FxNameBrush, new Rect(0, ry, NameW, FxH));
                 bool selected = IsEffectSelected(layer, k);
                 if (selected) g.FillRectangle(RangeBrush, new Rect(0, ry, NameW, FxH));
-                if (DepthOf(layer) is var depth and > 0 and <= MaxIndentDepth)
-                {
-                    double gx = ToggleX + IndentOf(depth - 1) + (NameX - ToggleX) / 2.0 + 0.5;
-                    g.DrawLine(BorderPen, new Avalonia.Point(gx, ry), new Avalonia.Point(gx, ry + FxH));
-                }
+                DrawTreeGuides(ry, FxH, layer, own: false);
                 if (last) g.DrawLine(BorderPen, new Avalonia.Point(0, ry + FxH - 0.5), new Avalonia.Point(NameW, ry + FxH - 0.5));
                 if (k >= layer.Effects.Count) return;
                 var effect = layer.Effects[k];
@@ -4563,7 +4615,8 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
                 if (_layerDrop is { } drop)
                 {
                     _gapY.Go(at < rest.Count ? tops[at] : restTotal, now, animate: _gapShown);
-                    _gapX.Go(ToggleX + IndentOf(drop.Depth) + 4, now, animate: _gapShown);
+                    // 맨 위 단계면 뜬 덩어리와 같은 x(들여쓰기 없음), 한 단계 깊어질 때마다 Indent만큼 들여 씀
+                    _gapX.Go(1 + IndentOf(drop.Depth), now, animate: _gapShown);
                     _gapShown = true;
                 }
                 else _gapShown = false;

@@ -60,24 +60,8 @@ public sealed class PixelateOptions
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Legacy { get; set; }
 
-    /// <summary>AI 생성 그림을 변환할 대표 프리셋(고른 것이 없으면 기본 프리셋 '같은 색상 계열', 그것도 없으면 첫 프리셋). 체크 여부는 정리 창의 일괄 최적화에만 적용한다.</summary>
-    [JsonIgnore]
-    public OptimizePreset PrimaryPreset => OptimizePresets.FirstOrDefault(p => p.Representative)
-        ?? OptimizePresets.FirstOrDefault(p => p.BuiltIn == DefaultRepresentative)
-        ?? OptimizePresets[0];
-
-    /// <summary>처음 설치·초기화 때의 대표 프리셋 id(<see cref="OptimizePreset.BuiltIn"/>).</summary>
-    public const string DefaultRepresentative = "shade";
-
     /// <summary>판 9 전의 기본 프리셋 OKLCH1000 id(판 9가 직접 만든 프리셋으로 바꿈 — 기본 프리셋에서 빠짐).</summary>
     private const string RemovedOkLch1000 = "oklch1000";
-
-    /// <summary>대표 프리셋은 목록에서 정확히 하나만 유지한다.</summary>
-    public void SetRepresentative(OptimizePreset preset)
-    {
-        if (!OptimizePresets.Contains(preset)) throw new ArgumentException("Preset is not in the list.", nameof(preset));
-        foreach (var item in OptimizePresets) item.Representative = ReferenceEquals(item, preset);
-    }
 
     /// <summary>지금 옵션 판.</summary>
     public const int CurrentVersion = 13;
@@ -93,8 +77,7 @@ public sealed class PixelateOptions
     /// 단계 설정 JSON(마지막 설정·프리셋)은 빠진 값이 기본값이라 예전에 저장한 설정도 새 기본값(OKLCh 색상 가중·다른 색상 지키기·명암 계열 우선 켬)으로 읽힌다.
     /// 판 7 = 이미지 붙여넣기를 포함해 원본을 넣을 때의 자동 최적화를 기본으로 끈다(사용자가 다시 켜면 이후에는 그대로 기억한다).
     /// 판 8 = 프리셋 단계 설정에서 그림마다 다른 격자 값('자동 칸 크기에 더하기'·수동 격자 시작 X·Y — 예전 최적화가 써 넣은 값)을 지운다(<see cref="OptimizePreset.Canonical"/>).
-    /// 판 9 = 기본 프리셋에서 빠진 OKLCH1000은 지우지 않고 직접 만든 프리셋으로 바꾸고(값 그대로 — 초기화하면 지워짐), 그것이 대표였으면(예전 처음 값) 대표를
-    /// '같은 색상 계열'(<see cref="DefaultRepresentative"/>)로 옮긴다.
+    /// 판 9 = 기본 프리셋에서 빠진 OKLCH1000은 지우지 않고 직접 만든 프리셋으로 바꾼다(값 그대로 — 초기화하면 지워짐).
     /// 판 10 = 기본 프리셋의 디더링을 새 처음 값 '없음'으로(예전 처음 값 Bayer 2×2이거나 최적화가 써 넣은 디더). 디더링 '최적화 제외'(<see cref="OptimizePreset.KeepDither"/>)는
     /// 저장된 값이 없는 예전 프리셋이면 모두 켬으로 읽힌다.
     /// 판 11 = 기본 프리셋 '같은 색상 계열'을 '기본' 바로 뒤로 옮긴다(둘 다 있을 때 — 후보 줄도 이 차례).
@@ -145,11 +128,7 @@ public sealed class PixelateOptions
                 foreach (var p in OptimizePresets.Where(p => p.Settings is not null))
                     p.Settings = OptimizePreset.Serialize(p.StartSettings());
             if (Version < 9 && OptimizePresets.FirstOrDefault(p => p.BuiltIn == RemovedOkLch1000) is { } oklch)
-            {
                 oklch.BuiltIn = null;
-                if (oklch.Representative && OptimizePresets.FirstOrDefault(p => p.BuiltIn == DefaultRepresentative) is { } shade)
-                    SetRepresentative(shade);
-            }
             if (Version < 10)
                 foreach (var p in OptimizePresets.Where(p => p.BuiltIn is not null && p.Settings is not null))
                 {
@@ -181,7 +160,6 @@ public sealed class PixelateOptions
         OptimizePresets.RemoveAll(p => p is null);
         if (OptimizePresets.Count == 0) OptimizePresets.AddRange(OptimizePreset.BuiltIns());
         OptimizePreset.LocalizeBuiltIns(OptimizePresets);
-        SetRepresentative(PrimaryPreset);
     }
 
     /// <summary><see cref="Migrate(string?, string?)"/>에 이 앱의 마지막 단계 설정과 예전 수동 프리셋 파일을 넘긴다(모든 호출은 이것으로).</summary>
@@ -291,8 +269,6 @@ public sealed class OptimizePreset
     /// </summary>
     public string? BuiltIn { get; set; }
     public bool Enabled { get; set; } = true;
-    /// <summary>AI 생성 그림 변환에 사용할 대표 프리셋(일괄 최적화 체크와 무관).</summary>
-    public bool Representative { get; set; }
     public bool Favorite { get; set; }
     /// <summary>시작 단계 설정 JSON(<see cref="PixelatePresets.SerializeSettings"/> — 고정 색·뺀 색은 넣지 않음). null = 기본 설정.</summary>
     public string? Settings { get; set; }
@@ -412,7 +388,6 @@ public sealed class OptimizePreset
         copy.Name = name;
         copy.BuiltIn = null;
         copy.Favorite = false;
-        copy.Representative = false;
         return copy;
     }
 
@@ -546,7 +521,6 @@ public sealed class OptimizePreset
             }
             else
             {
-                builtIn.Representative = presets[index].Representative;
                 builtIn.Favorite = presets[index].Favorite;
                 presets[index] = builtIn;
                 if (i < front) insertAt = Math.Max(insertAt, index + 1);
@@ -609,7 +583,7 @@ public sealed record PixelateOutcome(
 /// 창은 모달이 아니다(채팅에 후보 평가를 부탁하며 열어 둘 수 있음).
 /// 원본 없이 열 수 있고(AI 메뉴), 창에 그림 파일 끌어 놓기·Ctrl+V 붙여 넣기·파일 찾기로 원본을 넣거나 바꾼다(<see cref="SetSource"/>).
 /// </summary>
-public sealed class PixelateDialog : DialogBase
+public sealed partial class PixelateDialog : DialogBase
 {
     /// <summary>원본으로 넣을 수 있는 파일: 그림(움직이는 것 포함), 영상(ffmpeg로 프레임을 뽑음), 3D 모델(각도·프레임을 정해 그림) — 주 창 열기와 같은 길.</summary>
     private static readonly string[] SourceExtensions = [.. MediaFormats.ImageExtensions, .. MediaFormats.VideoExtensions, .. MediaFormats.ModelExtensions];
@@ -644,8 +618,6 @@ public sealed class PixelateDialog : DialogBase
     private readonly Action<PixelImage> _copyImage;
     /// <summary>여러 프레임을 이은 원본이면 기억한 프레임 나누기 설정(닫거나 원본을 바꿀 때 되돌림).</summary>
     private FrameSettings? _restoreFrames;
-    /// <summary>처음 설정을 받아 열었음(채팅의 "변환 설정 보기"): 닫을 때 단계 설정을 기억하지 않는다(사용자가 기억한 설정 그대로).</summary>
-    private readonly bool _presetGiven;
     private readonly List<(string Name, IReadOnlyList<Color32> Colors)> _palettes;
     private readonly DispatcherTimer _play = new();
     private CancellationTokenSource? _cts;
@@ -745,7 +717,7 @@ public sealed class PixelateDialog : DialogBase
 
     // 프리셋(설정 칸 맨 위에 고정)
     private readonly ComboBox _preset;
-    private readonly Button _presetSave, _presetRename, _presetCopy, _presetDelete, _runButton;
+    private readonly Button _presetSave, _presetSettings, _runButton;
     /// <summary>지금 고른 프리셋(목록의 것 또는 아직 저장하지 않은 새 프리셋 <see cref="_draft"/>) — null = 고르지 않음(왼쪽 값은 어느 프리셋도 아님).</summary>
     private OptimizePreset? _current;
     /// <summary>'새 프리셋'으로 만든, 아직 목록에 없는 프리셋(저장을 누르면 목록에 들어감).</summary>
@@ -829,6 +801,8 @@ public sealed class PixelateDialog : DialogBase
     private ListBox? _optPresetList;
     /// <summary>설정 창의 '초기화' 단추(창이 열려 있을 때만 — 도는 동안 끔).</summary>
     private Button? _optResetButton;
+    /// <summary>설정 창의 프리셋 단추(이름 바꾸기·복사·지우기)를 고른 줄·최적화 상태에 맞춤(창이 열려 있을 때만).</summary>
+    private Action? _optPresetButtonsUpdate;
     /// <summary>"자동 최적화"(누르면 체크한 프리셋을 모두 차례로 돌림) ↔ 도는 동안 "취소".</summary>
     private readonly Button _optRun;
     /// <summary>최적화 전 설정으로 되돌리기(한 번 돌린 뒤 그래프 옆).</summary>
@@ -927,11 +901,9 @@ public sealed class PixelateDialog : DialogBase
     /// <param name="browseFolder">파일 찾기의 처음 폴더.</param>
     /// <param name="loadSource">그림 파일을 원본으로 풀기(못 읽으면 알리고 null).</param>
     /// <param name="readClipboardImage">클립보드 그림(없으면 null).</param>
-    /// <param name="preset">처음 단계 설정(AI 그리기 결과를 다시 조정 — 그 설정으로 후보를 만들고 자동 최적화는 다시 돌리지 않음). null = 기억한 설정.</param>
     public PixelateDialog(AppSettings settings, PixelateInput? input, IEnumerable<NamedPalette> palettes, bool canInsertLayer,
         Action<PixelateOutcome> apply, Action<string, string, IReadOnlyList<PixelImage>> askAi,
-        Func<string?> browseFolder, Func<Visual, string, PixelateInput?> loadSource, Func<PixelImage?> readClipboardImage, Action<PixelImage> copyImage,
-        PixelateSettings? preset = null)
+        Func<string?> browseFolder, Func<Visual, string, PixelateInput?> loadSource, Func<PixelImage?> readClipboardImage, Action<PixelImage> copyImage)
         : base(TitleFor(input), UiStrings.Pixelate_Apply)
     {
         _settings = settings;
@@ -956,27 +928,22 @@ public sealed class PixelateDialog : DialogBase
         ShowInTaskbar = true;
         this.HelpAt("pixelate-open");
 
-        // 기억한 마지막 설정은 다른 그림에 쓰므로 그림마다 다른 격자 값은 뺀다(AI 그리기의 '변환 설정 보기'는 같은 그림이라 그대로).
-        var initial = preset ?? (PixelatePresets.ParseSettings(settings.PixelateSettings) is { } last ? OptimizePreset.WithoutImageGrid(last) : null) ?? OptimizePreset.DefaultSettings;
-        _presetGiven = preset is not null;
-        if (input is { Frames: > 1 } && preset is null)
+        // 기억한 마지막 설정은 다른 그림에 쓰므로 그림마다 다른 격자 값은 뺀다.
+        var initial = (PixelatePresets.ParseSettings(settings.PixelateSettings) is { } last ? OptimizePreset.WithoutImageGrid(last) : null) ?? OptimizePreset.DefaultSettings;
+        if (input is { Frames: > 1 })
         {
             // 여러 프레임을 이은 그림: 칸마다 한 프레임(기억한 나누기 설정은 닫을 때 되돌림).
             _restoreFrames = initial.Frames;
             initial = initial with { Frames = SourceGrid(initial.Frames, input) };
         }
 
-        // ── 프리셋(설정 칸 맨 위에 고정): 고르기 · 저장(빨강 = 저장 안 된 변경, 저장한 그대로면 꺼짐) · 이름 바꾸기 · 복사 · 지우기(빨강) · 정리하기(초록, 아이콘만)
+        // ── 프리셋(설정 칸 맨 위에 고정): 고르기 · 저장(파랑 = 저장 안 된 변경, 저장한 그대로면 꺼짐) · 프리셋 설정(이름 바꾸기·복사·지우기가 든 자동 최적화 설정 창) · 정리하기(초록, 아이콘만)
         _preset = Ui.Combo(160);
         _preset.SelectionChanged += (_, _) => OnPresetChosen();
         _presetSave = Ui.IconButton(VectorIcon.Save, UiStrings.Pixelate_Preset_Save, (_, _) => SavePreset());
         ToolTip.SetShowOnDisabled(_presetSave, true);
-        _presetRename = Ui.IconButton(VectorIcon.Pencil, UiStrings.Pixelate_Preset_Rename, (_, _) => RenamePreset());
-        _presetCopy = Ui.IconButton(VectorIcon.Copy, UiStrings.Pixelate_Preset_Copy, (_, _) => CopyPreset());
-        _presetDelete = Ui.IconButton(VectorIcon.Trash, UiStrings.Pixelate_Preset_Delete, (_, _) => DeletePreset());
-        _presetDelete.Background = AppTheme.UnsavedBrush;
-        _presetDelete.Foreground = Brushes.White;
-        Ui.KeepFillOnHover(_presetDelete);
+        Ui.KeepFillOnHover(_presetSave, DirtyClass);
+        _presetSettings = Ui.IconButton(VectorIcon.Settings, UiStrings.Pixelate_Preset_Settings, (_, _) => OpenOptimizeSettings());
         _runButton = Ui.IconButton(VectorIcon.Play, UiStrings.Pixelate_Run, (_, _) => RunCurrent());
         AutomationProperties.SetName(_runButton, UiStrings.Pixelate_Run);
         _runButton.Background = AppTheme.SavedBrush;
@@ -986,9 +953,7 @@ public sealed class PixelateDialog : DialogBase
         // 대상 도움말(F1): 프리셋 줄 단추마다 "프리셋 줄" 표의 그 줄.
         _preset.HelpAt("pixelate-presets", anchor: "Preset list");
         _presetSave.HelpAt("pixelate-presets", anchor: "Save");
-        _presetRename.HelpAt("pixelate-presets", anchor: "Rename");
-        _presetCopy.HelpAt("pixelate-presets", anchor: "Copy");
-        _presetDelete.HelpAt("pixelate-presets", anchor: "Delete");
+        _presetSettings.HelpAt("pixelate-presets", anchor: "Rename");
         _runButton.HelpAt("pixelate-presets", anchor: "Clean up");
 
         // ── 0. 최적화 기준(프리셋에 함께 저장): 예산·점수용 색 거리·점수 항목별 비중
@@ -1468,7 +1433,7 @@ public sealed class PixelateDialog : DialogBase
         var left = new StackPanel { Spacing = 2, Margin = new Thickness(0, 0, 8, 0) };
         // 설정 칸마다 그 단계를 설명하는 가이드 자리(안쪽 컨트롤에 따로 붙인 자리가 먼저).
         left.Children.Add(Section(UiStrings.Pixelate_Section_Criteria, crBody, false).HelpAt("pixelate-score", anchor: "0. Optimize criteria"));
-        left.Children.Add(Section(UiStrings.Pixelate_Section_Quick, quickBody, true).HelpAt("pixelate-settings", anchor: "Quick settings"));
+        left.Children.Add(_quickSection = Section(UiStrings.Pixelate_Section_Quick, quickBody, true).HelpAt("pixelate-settings", anchor: "Quick settings"));
         left.Children.Add(Section(UiStrings.Pixelate_Section_Background, bgBody, true, OptimizeSection.Background).HelpAt("pixelate-settings", anchor: "1. Background"));
         left.Children.Add(Section(UiStrings.Pixelate_Section_Frames, frBody, true).HelpAt("pixelate-settings", anchor: "2. Frames"));
         left.Children.Add(Section(UiStrings.Pixelate_Section_Grid, grBody, true, OptimizeSection.Grid).HelpAt("pixelate-grid", shot: "pixelate-grid"));
@@ -1480,7 +1445,7 @@ public sealed class PixelateDialog : DialogBase
         left.Children.Add(Section(UiStrings.Pixelate_Section_Output, outBody, true).HelpAt("pixelate-output", shot: "pixelate-output"));
         left.Children.Add(Section(UiStrings.Pixelate_Section_Ai, aiBody, false).HelpAt("pixelate-ai", shot: "pixelate-ai"));
         // 프리셋 줄은 설정을 굴려도 맨 위에 고정한다.
-        var presetBar = Ui.Row(_preset, _presetSave, _presetRename, _presetCopy, _presetDelete, _runButton).HelpAt("pixelate-presets", anchor: "The preset bar");
+        var presetBar = Ui.Row(_preset, _presetSave, _presetSettings, _runButton).HelpAt("pixelate-presets", anchor: "The preset bar");
         presetBar.Margin = new Thickness(0, 0, 8, 4);
         DockPanel.SetDock(presetBar, Dock.Top);
         var leftScroll = new ScrollViewer
@@ -1806,22 +1771,21 @@ public sealed class PixelateDialog : DialogBase
         OkButton.HelpAt("pixelate-output", shot: "pixelate-output-2");
         CancelButtonControl.HelpAt("pixelate-open", anchor: "Closing the window");
 
-        // 처음: 기억한 설정, 칸별 최적화·최적화 기준은 마지막으로 고른 프리셋의 것(AI 그리기의 '변환 설정 보기'는 프리셋 없이).
-        _current = _presetGiven ? null : _opt.OptimizePresets.FirstOrDefault(p => p.Name == _opt.SelectedPreset);
+        // 처음: 기억한 설정, 칸별 최적화·최적화 기준은 마지막으로 고른 프리셋의 것.
+        _current = _opt.OptimizePresets.FirstOrDefault(p => p.Name == _opt.SelectedPreset);
         LoadPresetValues(_current ?? new OptimizePreset { Sections = 0 }, settingsToo: false);
         LoadSettings(initial);
         FillPresets();
         UpdateSourceState();
         // 원본을 넣기 전에도 체크한 프리셋 칸을 자리 잡아 둔다.
         RebuildTiles();
-        _autoOptimizePending = input is not null && _optAuto.On() && !_presetGiven;
+        _autoOptimizePending = input is not null && _optAuto.On();
         Opened += (_, _) =>
         {
             if (_openedOnce) return;
             _openedOnce = true;
             Dispatcher.UIThread.Post(() => { if (!_settingsAnim.IsEnabled) _settingsHost.IsVisible = _settingsExpanded; }, DispatcherPriority.Background);
-            // AI 그리기의 '변환 설정 보기'는 그 설정으로 바로 보인다(불러오면 자동 최적화와 관계없이).
-            Rerun(lineup: _autoOptimizePending || _presetGiven);
+            Rerun(lineup: _autoOptimizePending);
         };
         Closed += (_, _) => OnClosedSave();
     }
@@ -2761,7 +2725,7 @@ public sealed class PixelateDialog : DialogBase
 
     /// <summary>
     /// 원본을 준비한 뒤 처음 후보 줄: '불러오면 자동 최적화'가 기다리면 체크한 프리셋을 모두 최적화하고, 아니면 체크한 프리셋을 저장한 설정 그대로 한 번씩 돌려
-    /// 프리셋마다 칸 하나("설정 그대로")로 채운다. AI 그리기의 '변환 설정 보기'로 열었거나 체크한 프리셋이 없으면 지금 왼쪽 설정 하나("지금 설정").
+    /// 프리셋마다 칸 하나("설정 그대로")로 채운다. 체크한 프리셋이 없으면 지금 왼쪽 설정 하나("지금 설정").
     /// </summary>
     private void StartLineup()
     {
@@ -2771,7 +2735,7 @@ public sealed class PixelateDialog : DialogBase
             StartOptimize();
             return;
         }
-        var runs = _presetGiven ? new List<PresetRun>() : _opt.OptimizePresets.Where(p => p.Enabled).Select(p => SavedRun(p) with { Target = null, AsIs = true }).ToList();
+        var runs = _opt.OptimizePresets.Where(p => p.Enabled).Select(p => SavedRun(p) with { Target = null, AsIs = true }).ToList();
         if (runs.Count == 0)
         {
             var panel = PanelPreset();
@@ -2956,9 +2920,8 @@ public sealed class PixelateDialog : DialogBase
 
     /// <summary>
     /// 체크했지만 후보 줄에 아직 칸이 없는 프리셋(목록 순서): 같은 이름의 후보 칸, 모든 프리셋을 돌리는 중의 대기 칸, 하나만 돌릴 때 맨 앞에 만드는 빈 칸이 없는 것.
-    /// AI 그리기의 '변환 설정 보기'로 열었으면 없음(그때 후보 줄은 지금 설정 하나).
     /// </summary>
-    private IEnumerable<OptimizePreset> IdlePresets() => _presetGiven ? [] : _opt.OptimizePresets.Where(p => p.Enabled
+    private IEnumerable<OptimizePreset> IdlePresets() => _opt.OptimizePresets.Where(p => p.Enabled
         && p.Name != _singlePending
         && _optPending?.Contains(p.Name) != true
         && !_candidates.Any(c => _optimized.TryGetValue(c, out var o) && o.Name == p.Name));
@@ -3863,8 +3826,8 @@ public sealed class PixelateDialog : DialogBase
     }
 
     /// <summary>
-    /// 자동 최적화 설정 창: 일괄 최적화 체크와 AI 그림 변환의 대표 프리셋('대표' 단추 — 고른 것은 초록), 마지막 시도 기록,
-    /// '불러오면 자동 최적화', 처음 설치 상태로 초기화. 도는 동안은 선택을 바꿀 수 없다. 닫으면 설정 파일에 저장한다.
+    /// 자동 최적화 설정 창: 일괄 최적화 체크, 고른 줄의 프리셋 이름 바꾸기·복사·지우기, 마지막 시도 기록,
+    /// '불러오면 자동 최적화', 처음 설치 상태로 초기화. 도는 동안은 선택·프리셋을 바꿀 수 없다. 닫으면 설정 파일에 저장한다.
     /// </summary>
     private void OpenOptimizeSettings()
     {
@@ -3886,24 +3849,9 @@ public sealed class PixelateDialog : DialogBase
         }.HelpAt("pixelate-optimize-settings");
         var list = new ListBox { Background = AppTheme.InputBrush, Foreground = AppTheme.TextBrush, Margin = new Thickness(8, 0, 8, 4) }
             .HelpAt("pixelate-optimize-settings", anchor: "Preset checklist");
-        var badges = new List<(OptimizePreset Preset, Button Badge)>();
-        // '대표' 단추: 고른 프리셋만 초록 바탕, 나머지는 테두리만.
-        void PaintBadges()
-        {
-            var primary = _opt.PrimaryPreset;
-            foreach (var (preset, badge) in badges)
-            {
-                bool on = ReferenceEquals(preset, primary);
-                badge.Background = on ? AppTheme.SavedBrush : Brushes.Transparent;
-                badge.BorderBrush = on ? AppTheme.SavedBrush : AppTheme.BorderBrush;
-                badge.Foreground = on ? Brushes.White : AppTheme.DimTextBrush;
-                badge.FontWeight = on ? FontWeight.Bold : FontWeight.Normal;
-            }
-        }
-        void FillList()
+        void FillList(OptimizePreset? select = null)
         {
             list.Items.Clear();
-            badges.Clear();
             foreach (var preset in _opt.OptimizePresets)
             {
                 var check = new CheckBox { IsChecked = preset.Enabled, VerticalAlignment = VerticalAlignment.Center }.Tip(UiStrings.OptimizePreset_EnabledTip);
@@ -3913,36 +3861,45 @@ public sealed class PixelateDialog : DialogBase
                     UpdateOptimizeButtons();
                     RebuildTiles();
                 };
-                var badge = new Button
-                {
-                    Content = UiStrings.OptimizePreset_RepresentativeBadge,
-                    FontSize = AppTheme.SmallFontSize,
-                    Padding = new Thickness(7, 1),
-                    MinHeight = 0,
-                    BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(4),
-                    VerticalAlignment = VerticalAlignment.Center,
-                }.Tip(UiStrings.OptimizePreset_RepresentativeTip);
-                AutomationProperties.SetName(badge, $"{UiStrings.OptimizePreset_Representative}: {preset.Name}");
-                Ui.KeepFillOnHover(badge);
-                badge.Click += (_, _) =>
-                {
-                    if (ReferenceEquals(preset, _opt.PrimaryPreset)) return;
-                    _opt.SetRepresentative(preset);
-                    _settings.Save();
-                    PaintBadges();
-                };
-                badges.Add((preset, badge));
-                badge.HelpAt("pixelate-optimize-settings", anchor: "Main");
-                var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { check, badge } };
+                var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { check } };
                 row.Children.Add(new TextBlock { Text = preset.Name, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis });
                 list.Items.Add(new ListBoxItem { Content = row, Tag = preset });
             }
-            PaintBadges();
-            if (list.ItemCount > 0) list.SelectedIndex = _opt.OptimizePresets.IndexOf(_opt.PrimaryPreset);
+            // 처음 고른 줄: 넘겨받은 프리셋, 없으면 왼쪽에 열린 프리셋, 그것도 없으면 첫 줄.
+            var chosen = select ?? _current;
+            if (list.ItemCount > 0) list.SelectedIndex = Math.Max(0, chosen is null ? 0 : _opt.OptimizePresets.IndexOf(chosen));
         }
         FillList();
-        list.SelectionChanged += (_, _) => FillOptimizeHistory();
+        // 고른 줄의 프리셋: 이름 바꾸기 · 복사 · 지우기(빨강, 마지막 하나는 못 지움). 도는 동안은 끔.
+        OptimizePreset? Selected() => (list.SelectedItem as ListBoxItem)?.Tag as OptimizePreset;
+        var rename = Ui.IconButton(VectorIcon.Pencil, UiStrings.Pixelate_Preset_Rename, (_, _) =>
+        {
+            if (Selected() is { } p && RenamePreset(popup, p)) FillList(p);
+        });
+        var copy = Ui.IconButton(VectorIcon.Copy, UiStrings.Pixelate_Preset_Copy, (_, _) =>
+        {
+            if (Selected() is { } p) FillList(CopyPreset(p));
+        });
+        var delete = Ui.IconButton(VectorIcon.Trash, UiStrings.Pixelate_Preset_Delete, (_, _) =>
+        {
+            if (Selected() is { } p && DeletePreset(popup, p)) FillList();
+        });
+        delete.Background = AppTheme.UnsavedBrush;
+        delete.Foreground = Brushes.White;
+        Ui.KeepFillOnHover(delete);
+        foreach (var b in new[] { rename, copy, delete }) ToolTip.SetShowOnDisabled(b, true);
+        void UpdatePresetButtons()
+        {
+            bool idle = _optCts is null && Selected() is not null;
+            rename.IsEnabled = copy.IsEnabled = idle;
+            delete.IsEnabled = idle && _opt.OptimizePresets.Count > 1;
+        }
+        list.SelectionChanged += (_, _) =>
+        {
+            FillOptimizeHistory();
+            UpdatePresetButtons();
+        };
+        var presetButtons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Margin = new Thickness(8, 0, 8, 6), Children = { rename, copy, delete } };
         var header = Ui.Label(UiStrings.OptimizePreset_List, bold: true);
         header.Margin = new Thickness(8, 8, 8, 4);
         header.TextWrapping = TextWrapping.Wrap;
@@ -3975,14 +3932,17 @@ public sealed class PixelateDialog : DialogBase
         DockPanel.SetDock(header, Dock.Top);
         DockPanel.SetDock(bottom, Dock.Bottom);
         DockPanel.SetDock(history, Dock.Bottom);
+        DockPanel.SetDock(presetButtons, Dock.Bottom);
         content.Children.Add(header);
         content.Children.Add(bottom);
         content.Children.Add(history);
+        content.Children.Add(presetButtons);
         content.Children.Add(list);
         // 대상 도움말(F1): 표의 그 줄('불러오면 자동 최적화'는 만들 때 붙임).
         header.HelpAt("pixelate-optimize-settings", anchor: "Preset checklist");
         history.HelpAt("pixelate-optimize-settings", anchor: "Trial history");
         reset.HelpAt("pixelate-optimize-settings", anchor: "Reset");
+        presetButtons.HelpAt("pixelate-presets", anchor: "Rename");
         popup.Content = content;
         popup.Closed += (_, _) =>
         {
@@ -3991,11 +3951,13 @@ public sealed class PixelateDialog : DialogBase
             historyScroll.Content = null;
             _optPresetList = null;
             _optResetButton = null;
+            _optPresetButtonsUpdate = null;
             _optSettingsWindow = null;
             _settings.Save();
         };
         _optPresetList = list;
         _optResetButton = reset;
+        _optPresetButtonsUpdate = UpdatePresetButtons;
         _optSettingsWindow = popup;
         UpdateOptimizeButtons();
         FillOptimizeHistory();
@@ -4013,7 +3975,6 @@ public sealed class PixelateDialog : DialogBase
         string? openId = _current?.BuiltIn;
         _opt.OptimizePresets.Clear();
         _opt.OptimizePresets.AddRange(fresh);
-        _opt.SetRepresentative(_opt.PrimaryPreset);
         _opt.AutoOptimizeOnLoad = false;
         _optAuto.IsChecked = false;
         _optResults.Clear();
@@ -4062,6 +4023,7 @@ public sealed class PixelateDialog : DialogBase
         _optRevert.IsVisible = !running && _optRevertTo is not null;
         if (_optPresetList is not null) _optPresetList.IsEnabled = !running;
         if (_optResetButton is not null) _optResetButton.IsEnabled = !running;
+        _optPresetButtonsUpdate?.Invoke();
         _runButton.IsEnabled = _grPreview.IsEnabled = _input is not null && !running;
         UpdateRunPulse();
         _runButton.Tip(UiStrings.Pixelate_Run + "\n" + (_input is null ? UiStrings.Pixelate_RunNoSourceTip : UiStrings.Pixelate_RunTip));
@@ -4098,6 +4060,8 @@ public sealed class PixelateDialog : DialogBase
 
     /// <summary>빨간 '취소' 단추에 붙이는 클래스(그때만 마우스를 올려도 빨강 유지 — <see cref="KeepFillOnHover"/>).</summary>
     private const string DangerClass = "danger";
+    /// <summary>저장할 변경이 있는 저장 단추(파랑 바탕을 올림·누름에도 유지).</summary>
+    private const string DirtyClass = "dirty";
 
     /// <summary>
     /// 자동 최적화 단추: 돌지 않으면 시작, 돌면 지금 도는 프리셋만 멈춘다(그때까지 찾은 1위는 남기고 다음 프리셋으로 — 다음 프리셋이 시작할 때까지 단추를 끔).
@@ -4983,16 +4947,24 @@ public sealed class PixelateDialog : DialogBase
     /// <summary>고른 프리셋과 왼쪽 값이 다른지(새 프리셋은 늘 저장 전, 고르지 않았으면 저장할 곳이 없으므로 다름).</summary>
     private bool IsDirty() => _current is null || ReferenceEquals(_current, _draft) || !_current.SameValues(PanelPreset());
 
-    /// <summary>저장 단추: 저장할 변경이 있으면 빨강, 저장한 그대로면 꺼짐. 이름 바꾸기·복사·지우기는 고른 프리셋이 있을 때만.</summary>
+    /// <summary>저장 단추: 저장할 변경이 있으면 파랑(누를 수 있음), 저장한 그대로면 꺼짐.</summary>
     private void UpdateSaveState()
     {
         if (_presetSave is null) return;
         bool dirty = IsDirty();
         _presetSave.IsEnabled = dirty;
-        if (dirty) _presetSave.Background = AppTheme.UnsavedBrush;
-        else _presetSave.ClearValue(BackgroundProperty);
+        _presetSave.Classes.Set(DirtyClass, dirty);
+        if (dirty)
+        {
+            _presetSave.Background = AppTheme.AccentBrush;
+            _presetSave.Foreground = Brushes.White;
+        }
+        else
+        {
+            _presetSave.ClearValue(BackgroundProperty);
+            _presetSave.ClearValue(ForegroundProperty);
+        }
         _presetSave.Tip(dirty ? UiStrings.Pixelate_Preset_SaveDirty : UiStrings.Pixelate_Preset_SaveClean);
-        _presetRename.IsEnabled = _presetCopy.IsEnabled = _presetDelete.IsEnabled = _current is not null;
     }
 
     /// <summary>다른 프리셋과 겹치지 않는 이름: <paramref name="name"/>, 겹치면 "<paramref name="name"/> 2", "… 3"….</summary>
@@ -5005,15 +4977,15 @@ public sealed class PixelateDialog : DialogBase
             if ($"{name} {i}" is var candidate && !Taken(candidate)) return candidate;
     }
 
-    /// <summary>이름을 묻는다(빈 이름·취소 = null). 다른 프리셋과 같은 이름(대소문자 무시)이면 알리고 다시 묻는다.</summary>
-    private string? AskPresetName(string title, string initial, OptimizePreset? renaming)
+    /// <summary>이름을 묻는다(빈 이름·취소 = null). 다른 프리셋과 같은 이름(대소문자 무시)이면 알리고 다시 묻는다. 묻는 창은 <paramref name="owner"/> 위에.</summary>
+    private string? AskPresetName(Window owner, string title, string initial, OptimizePreset? renaming)
     {
         while (true)
         {
-            string? name = InputDialog.Ask(this, title, UiStrings.OptimizePreset_NamePrompt, initial)?.Trim();
+            string? name = InputDialog.Ask(owner, title, UiStrings.OptimizePreset_NamePrompt, initial)?.Trim();
             if (string.IsNullOrEmpty(name)) return null;
             if (UniquePresetName(name, renaming) == name) return name;
-            Ui.Warn(this, UiStrings.FormatOptimizePreset_DuplicateName(name: name), title);
+            Ui.Warn(owner, UiStrings.FormatOptimizePreset_DuplicateName(name: name), title);
             initial = name;
         }
     }
@@ -5025,7 +4997,7 @@ public sealed class PixelateDialog : DialogBase
     {
         if (_current is null)
         {
-            if (AskPresetName(UiStrings.Pixelate_Preset_Save, UniquePresetName(UiStrings.OptimizePreset_NewName), null) is not { } name) return;
+            if (AskPresetName(this, UiStrings.Pixelate_Preset_Save, UniquePresetName(UiStrings.OptimizePreset_NewName), null) is not { } name) return;
             _current = new OptimizePreset { Name = name, Enabled = false };
             _opt.OptimizePresets.Add(_current);
         }
@@ -5042,26 +5014,29 @@ public sealed class PixelateDialog : DialogBase
     }
 
     /// <summary>
-    /// 복사: 지금 왼쪽 값(고른 프리셋 + 저장하지 않은 변경)으로 "이름 복사본 1"(겹치면 2, 3…) 프리셋을 고른 프리셋 바로 뒤에 만들어 저장하고 고른다
-    /// (원래 프리셋은 저장된 그대로, 복사본은 체크 없음). 복사본을 다시 복사하면 원래 이름에 번호만 올린다("이름 복사본 2"). 저장하지 않은 새 프리셋을
-    /// 복사하면 그 새 프리셋은 복사본으로 바뀐다.
+    /// 복사(설정 창의 고른 줄): "이름 복사본 1"(겹치면 2, 3…) 프리셋을 그 프리셋 바로 뒤에 만들어 저장하고 돌려준다(체크 없음). 복사본을 다시 복사하면
+    /// 원래 이름에 번호만 올린다("이름 복사본 2"). 왼쪽에 열린 프리셋이면 지금 왼쪽 값(저장하지 않은 변경 포함)으로 만들고 복사본을 고르며(원래 프리셋은
+    /// 저장된 그대로), 아니면 그 프리셋에 저장된 값으로 만들고 왼쪽은 그대로 둔다.
     /// </summary>
-    private void CopyPreset()
+    private OptimizePreset CopyPreset(OptimizePreset source)
     {
-        if (_current is not { } source) return;
         string baseName = CopyBaseName(source.Name), name;
         for (int i = 1; ; i++)
             if (UniquePresetName(name = UiStrings.FormatPixelate_Preset_CopyName(name: baseName, index: i)) == name) break;
         var copy = new OptimizePreset { Name = name, Enabled = false };
-        copy.CopyValues(PanelPreset());
-        if (ReferenceEquals(source, _draft)) _draft = null;
+        bool open = ReferenceEquals(source, _current);
+        copy.CopyValues(open ? PanelPreset() : source);
         int at = _opt.OptimizePresets.IndexOf(source);
         _opt.OptimizePresets.Insert(at < 0 ? _opt.OptimizePresets.Count : at + 1, copy);
-        _current = copy;
+        if (open)
+        {
+            _current = copy;
+            _panelEdited = false;
+        }
         _settings.Save();
-        _panelEdited = false;
         FillPresets();
         RebuildTiles();
+        return copy;
     }
 
     /// <summary>복사본 이름("이름 복사본 3")이면 원래 이름, 아니면 그대로.</summary>
@@ -5074,39 +5049,33 @@ public sealed class PixelateDialog : DialogBase
         return m.Success ? m.Groups["name"].Value : name;
     }
 
-    /// <summary>고른 프리셋의 이름 바꾸기(저장한 프리셋이면 바로 설정 파일에, 새 프리셋은 저장할 때 함께).</summary>
-    private void RenamePreset()
+    /// <summary>프리셋 이름 바꾸기(설정 창의 고른 줄 — 바로 설정 파일에). 바꿨으면 true.</summary>
+    private bool RenamePreset(Window owner, OptimizePreset preset)
     {
-        if (_current is not { } preset) return;
-        if (AskPresetName(UiStrings.Pixelate_Preset_Rename, preset.Name, preset) is not { } name || name == preset.Name) return;
+        if (AskPresetName(owner, UiStrings.Pixelate_Preset_Rename, preset.Name, preset) is not { } name || name == preset.Name) return false;
         preset.Name = name;
         preset.BuiltIn = null; // 직접 붙인 이름은 화면 언어를 바꿔도 그대로 둔다.
-        if (!ReferenceEquals(preset, _draft)) _settings.Save();
+        _settings.Save();
         FillPresets();
         RebuildTiles();
+        return true;
     }
 
-    /// <summary>고른 프리셋 지우기(물어봄 — 새 프리셋은 그냥 버림). 마지막 하나는 지우지 않는다. 왼쪽 값은 그대로 두고 고르지 않은 상태가 된다.</summary>
-    private void DeletePreset()
+    /// <summary>
+    /// 프리셋 지우기(설정 창의 고른 줄 — 물어봄). 마지막 하나는 지우지 않는다. 왼쪽에 열린 프리셋이면 왼쪽 값은 그대로 두고 고르지 않은 상태가 된다. 지웠으면 true.
+    /// </summary>
+    private bool DeletePreset(Window owner, OptimizePreset preset)
     {
-        if (_current is not { } preset) return;
-        if (ReferenceEquals(preset, _draft))
-        {
-            _draft = null;
-            _current = null;
-            FillPresets();
-            return;
-        }
-        if (_opt.OptimizePresets.Count <= 1) return;
-        if (Ui.Ask(this, UiStrings.FormatOptimizePreset_DeleteQuestion(name: preset.Name), UiStrings.OptimizePreset_Delete,
-                MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
+        if (_opt.OptimizePresets.Count <= 1) return false;
+        if (Ui.Ask(owner, UiStrings.FormatOptimizePreset_DeleteQuestion(name: preset.Name), UiStrings.OptimizePreset_Delete,
+                MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return false;
         _opt.OptimizePresets.Remove(preset);
-        _opt.SetRepresentative(_opt.PrimaryPreset);
-        _current = null;
+        if (ReferenceEquals(_current, preset)) _current = null;
         _settings.Save();
         FillPresets();
         UpdateOptimizeButtons();
         RebuildTiles();
+        return true;
     }
 
     // ───────────── 기억 ─────────────
@@ -5133,12 +5102,9 @@ public sealed class PixelateDialog : DialogBase
             _opt.Width = (int)Width;
             _opt.Height = (int)Height;
         }
-        if (!_presetGiven)
-        {
-            var s = ReadSettings();
-            if (_restoreFrames is { } frames) s = s with { Frames = frames };
-            _settings.PixelateSettings = PixelatePresets.SerializeSettings(s, indented: false);
-        }
+        var s = ReadSettings();
+        if (_restoreFrames is { } frames) s = s with { Frames = frames };
+        _settings.PixelateSettings = PixelatePresets.SerializeSettings(s, indented: false);
         _settings.Save();
     }
 

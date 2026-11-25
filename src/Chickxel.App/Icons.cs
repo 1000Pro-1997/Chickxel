@@ -75,6 +75,16 @@ public static class Icons
         return new WindowIcon(stream);
     }
 
+    private static Bitmap? _appIconBitmap;
+
+    /// <summary>앱 아이콘 그림(알림 창 등 화면 안에 그릴 때 — 한 번 읽어 둠).</summary>
+    public static Bitmap AppIconBitmap()
+    {
+        if (_appIconBitmap is not null) return _appIconBitmap;
+        using var stream = AssetLoader.Open(AppIconUri);
+        return _appIconBitmap = new Bitmap(stream);
+    }
+
     /// <summary>앱 아이콘 PNG 바이트(macOS Dock 아이콘용).</summary>
     public static byte[] AppIconPng()
     {

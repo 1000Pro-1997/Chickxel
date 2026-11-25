@@ -42,6 +42,8 @@
     <EmbeddedResource Include="Assets\Help\media\*.webp" LogicalName="Chickxel.Help.media.%(Filename)%(Extension)" WithCulture="false" />
     <!-- 가이드 화면 그림(docs/assets/guide/*.png를 build-help.py가 무손실 WebP로 옮긴 것, 빨간 번호 표시 포함). -->
     <EmbeddedResource Include="Assets\Help\shots\*.webp" LogicalName="Chickxel.Help.shots.%(Filename)%(Extension)" WithCulture="false" />
+    <!-- 튜토리얼 예시 파일(MainForm.ExtractTutorialFile가 앱 폴더 Tutorial로 꺼냄): 효과 쓰기의 예시 픽셀 그림, 픽셀 아트로의 AI 그림 흉내 JPG(GuideShots tutorial-assets로 다시 만듦). -->
+    <EmbeddedResource Include="Assets\Tutorial\*" LogicalName="Chickxel.Tutorial.%(Filename)%(Extension)" WithCulture="false" />
   </ItemGroup>
 
   <!-- Windows 탐색기 썸네일 처리기(src/Chickxel.ThumbnailProvider, zig cc로 만든 네이티브 DLL): publish.sh·publish.bat이 만들어 경로를 넘긴다.

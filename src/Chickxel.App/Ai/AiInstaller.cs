@@ -82,11 +82,12 @@ internal static partial class AiInstaller
     // PSModulePath는 비운다: PowerShell 7(pwsh)에서 띄운 Chickxel이면 그 모듈 경로가 물려 와 Windows PowerShell 5.1이 Get-FileHash 같은
     // 기본 명령을 못 찾고(Claude 설치 스크립트·Node 확인이 실패) — 비우면 5.1이 제 기본 경로를 쓴다.
     // 내려받는 동안 창이 비어 보이지 않게 먼저 시작 안내를 보이고, 업데이트(login 아님)는 로그인 줄을 빼고 업데이트 안내로 끝낸다.
+    // 리소스 글의 줄 끝은 체크아웃에 따라 CRLF일 수 있어 LF로 맞춘 뒤 고친다(CRLF면 시작 줄을 못 찾아 PSModulePath를 비우지 못했음) — 파일에 쓸 때 CRLF로.
     private static string WindowsScript(AiProvider provider, bool login)
     {
         var script = UiStrings.ResourceManager.GetString(
             provider.Id == "claude" ? "S_AiInstaller_WindowsScript_CF3206EDC2" : "S_AiInstaller_WindowsScript_60DF0BBF87",
-            System.Globalization.CultureInfo.InvariantCulture)!;
+            System.Globalization.CultureInfo.InvariantCulture)!.ReplaceLineEndings("\n");
         if (!login) script = LoginLines().Replace(script, "");
         var start = "chcp 65001 >nul\n";
         script = script.Replace(start, start + "set \"PSModulePath=\"\n" + BatchMessage(UiStrings.FormatAiInstaller_Starting(product: provider.ProductName)) + "\n");
@@ -154,11 +155,11 @@ internal static partial class AiInstaller
               command -v codex >/dev/null 2>&1 || fail
               codex login || fail
               """;
-        // 업데이트는 로그인 줄을 빼고 업데이트 안내로 끝낸다.
-        if (!login) setup = string.Join('\n', setup.Split('\n').Where(l => !l.TrimStart().StartsWith("claude auth login", StringComparison.Ordinal) && !l.TrimStart().StartsWith("codex login", StringComparison.Ordinal)));
-        return "#!/bin/bash\nexport PATH=\"$HOME/.local/bin:$HOME/.npm-global/bin:/opt/homebrew/bin:/usr/local/bin:$PATH\"\n" +
-               "fail() { printf '%s\\n' " + ShellQuote(login ? UiStrings.AiInstaller_LoginFailed : UiStrings.AiInstaller_UpdateFailed) + "; exit 1; }\n" +
-               "printf '%s\\n' " + ShellQuote(UiStrings.FormatAiInstaller_Starting(product: provider.ProductName)) + "\n" +
-               setup + "\nprintf '%s\\n' " + ShellQuote(login ? UiStrings.AiInstaller_LoginComplete : UiStrings.AiInstaller_UpdateComplete) + "\n";
+        // 업데이트는 로그인 줄을 빼고 업데이트 안내로 끝낸다. 원문 줄 끝은 체크아웃에 따라 CRLF일 수 있어 LF로 맞춘다(bash는 CR을 명령의 일부로 읽음).
+        if (!login) setup = string.Join('\n', setup.ReplaceLineEndings("\n").Split('\n').Where(l => !l.TrimStart().StartsWith("claude auth login", StringComparison.Ordinal) && !l.TrimStart().StartsWith("codex login", StringComparison.Ordinal)));
+        return ("#!/bin/bash\nexport PATH=\"$HOME/.local/bin:$HOME/.npm-global/bin:/opt/homebrew/bin:/usr/local/bin:$PATH\"\n" +
+                "fail() { printf '%s\\n' " + ShellQuote(login ? UiStrings.AiInstaller_LoginFailed : UiStrings.AiInstaller_UpdateFailed) + "; exit 1; }\n" +
+                "printf '%s\\n' " + ShellQuote(UiStrings.FormatAiInstaller_Starting(product: provider.ProductName)) + "\n" +
+                setup + "\nprintf '%s\\n' " + ShellQuote(login ? UiStrings.AiInstaller_LoginComplete : UiStrings.AiInstaller_UpdateComplete) + "\n").ReplaceLineEndings("\n");
     }
 }

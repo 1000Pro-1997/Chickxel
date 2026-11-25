@@ -7,7 +7,7 @@ using Chickxel.Core.Pixelate;
 namespace Chickxel.Core.AiDraw;
 
 /// <summary>
-/// 생성한 그림을 픽셀 아트로: 프레임을 같은 크기로 맞춰 가로로 잇고(프레임마다 한 칸), 한 원본으로 대표 프리셋 설정 그대로(프레임 나누기만 프레임 수에 맞춰) 변환한다.
+/// 생성한 그림을 픽셀 아트 정리 창에 넘길 준비: 프레임을 같은 크기로 맞춰 가로로 잇는다(프레임마다 한 칸). 변환 설정은 사용자가 정리 창에서 고른다.
 /// </summary>
 public static class AiDrawConversion
 {
@@ -67,82 +67,24 @@ public static class AiDrawConversion
         }
         return strip;
     }
-
-    /// <summary>
-    /// 그리기 설정에서 켠 것만 대표 프리셋 시작 설정(<paramref name="preset"/>) 위에 덮어쓴다(둘 다 기본 끔 — 끄면 프리셋 그대로):
-    /// 결과 크기 보정(<paramref name="sizeTarget"/> &gt; 0 — 그 정사각형 안에 비율 유지로 맞춤), 배경 지우기(<paramref name="removeBackground"/> — 자동으로 지움).
-    /// </summary>
-    public static PixelateSettings WithDrawOptions(PixelateSettings preset, int sizeTarget, bool removeBackground)
-    {
-        var s = removeBackground ? preset with { Background = preset.Background with { Mode = BackgroundMode.Auto } } : preset;
-        return sizeTarget > 0
-            ? s with { Size = s.Size with { Mode = OutputSizeMode.FixedSize, Width = sizeTarget, Height = sizeTarget, KeepAspect = true } }
-            : s;
-    }
-
-    /// <summary>
-    /// 생성한 그림(<paramref name="source"/> — 시트 한 장 또는 <see cref="Combine"/>한 띠, 프레임 <paramref name="frames"/>개가 <paramref name="layout"/>대로 놓임)을
-    /// 대표 프리셋의 시작 설정(<paramref name="preset"/> — 그리기 설정에서 켠 것은 <see cref="WithDrawOptions"/>로 덮어쓴 것)으로 변환한다.
-    /// 배경·팔레트·결과 크기·맞춤·공통 캔버스·덩어리 합치기는 모두 그 설정 그대로이고,
-    /// 프레임 나누기만 생성한 프레임 수에 맞춘다: 한 장이면 나누지 않고, 여럿이면 자동 나누기(기대 프레임 수 = <paramref name="frames"/>) — 나온 프레임 수가
-    /// 다르면(맞닿은 프레임 등) <paramref name="layout"/> 격자로 나눈다.
-    /// <paramref name="optimize"/>면 자동 최적화(<paramref name="options"/> — 대표 프리셋의 칸별 최적화·예산, 진행은 <paramref name="onProgress"/>)의 1위
-    /// (실패한 결과는 1위가 되지 않음 — 모두 실패면 시작 결과), 아니면 설정 그대로 한 번. 쓴 설정을 함께 돌려준다.
-    /// 스프라이트를 못 찾으면 <see cref="InvalidOperationException"/>. 결과가 실패했는지(<see cref="PixelateResult.Failed"/>)는 부르는 쪽이 보고 넣지 않는다.
-    /// </summary>
-    public static (PixelateResult Result, PixelateSettings Settings) Run(PixelImage source, PixelateSettings preset, int frames, AiDrawSheetLayout layout,
-        bool optimize, PixelateOptimizeOptions options, Action<PixelateOptimizeProgress>? onProgress = null, CancellationToken ct = default)
-    {
-        var settings = preset with
-        {
-            Frames = preset.Frames with
-            {
-                Mode = frames > 1 ? FrameSplitMode.Auto : FrameSplitMode.Single,
-                ExpectedFrames = frames > 1 ? frames : 0,
-                ManualRegions = null,
-            },
-        };
-        var src = PixelateSource.Prepare(source, settings);
-        if (frames > 1 && src.Split.Frames.Count != frames)
-        {
-            settings = settings with { Frames = settings.Frames with { Mode = FrameSplitMode.Grid, Columns = Math.Max(1, layout.Columns), Rows = Math.Max(1, layout.Rows) } };
-            src = PixelateSource.Prepare(source, settings);
-        }
-        return Run(src, settings, optimize, options, onProgress, ct);
-    }
-
-    /// <summary>준비한 원본을 <paramref name="settings"/>로 변환한다(<see cref="Run(PixelImage, PixelateSettings, int, AiDrawSheetLayout, bool, PixelateOptimizeOptions, Action{PixelateOptimizeProgress}?, CancellationToken)"/>의 변환 부분).</summary>
-    public static (PixelateResult Result, PixelateSettings Settings) Run(PixelateSource src, PixelateSettings settings, bool optimize,
-        PixelateOptimizeOptions options, Action<PixelateOptimizeProgress>? onProgress = null, CancellationToken ct = default)
-    {
-        ct.ThrowIfCancellationRequested();
-        if (src.Split.Frames.Count == 0) throw new InvalidOperationException("no sprite found in the generated image");
-        if (!optimize)
-        {
-            var r = Pixelator.Run(src, settings, ct);
-            return (r, settings);
-        }
-        var best = PixelateOptimizer.Run(src, settings, options, onProgress, ct).Best;
-        return (best.Result, best.Settings);
-    }
 }
 
 /// <summary>
-/// 생성·변환 기록 하나(채팅의 "변환 설정 보기"로 다시 연다): 이름, 프레임 수, 쓴 변환 설정(JSON), 동작, 프레임마다 보낸 프롬프트, 만든 때.
-/// 원본 그림(이은 그림)은 같은 폴더의 <see cref="AiDrawJobStore.SourceFile"/>.
+/// 생성 기록 하나(채팅의 "변환하기"로 정리 창을 연다): 이름, 프레임 수와 원본 안 프레임 격자(가로·세로 칸 수 — 띠는 프레임 수 × 1, 시트는 시트 배치),
+/// 동작, 프레임마다 보낸 프롬프트, 만든 때. 원본 그림(이은 그림)은 같은 폴더의 <see cref="AiDrawJobStore.SourceFile"/>.
+/// 예전 기록에 있던 변환 설정(<c>Settings</c>)은 읽지 않는다(격자가 없으면 한 장으로 연다).
 /// </summary>
 public sealed class AiDrawJob
 {
     public string Id { get; set; } = "";
     public string Name { get; set; } = "";
     public int Frames { get; set; } = 1;
+    public int Columns { get; set; } = 1;
+    public int Rows { get; set; } = 1;
     public string? Action { get; set; }
-    public string Settings { get; set; } = "";
     public List<string> Prompts { get; set; } = new();
     public DateTime CreatedUtc { get; set; }
     public int FrameDurationMs { get; set; } = 100;
-
-    public PixelateSettings ReadSettings() => PixelatePresets.ParseSettings(Settings) ?? new PixelateSettings();
 }
 
 /// <summary>
@@ -174,7 +116,7 @@ public sealed class AiDrawJobStore(string root)
 
     public string FramePath(string id, int index) => Path.Combine(DirectoryOf(id), $"frame-{index + 1:00}.png");
 
-    /// <summary>기록이 남아 있는지(지워졌으면 "변환 설정 보기"를 보이지 않음).</summary>
+    /// <summary>기록이 남아 있는지(지워졌으면 "변환하기"를 보이지 않음).</summary>
     public bool Exists(string id) => ChatHistoryStore.IsValidName(id) && File.Exists(Path.Combine(Root, id, JobFile));
 
     /// <summary>기록과 이은 원본을 쓰고 오래된 기록을 지운다.</summary>

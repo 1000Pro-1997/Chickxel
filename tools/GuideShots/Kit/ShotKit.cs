@@ -68,6 +68,8 @@ public sealed class ShotKit
         App.Settings.Language = Language;
         // 샷을 찍는 동안 이 컴퓨터의 Discord에 활동 상태를 보내지 않는다.
         App.Settings.DiscordPresence = false;
+        // 켤 때 뜨는 튜토리얼 창이 샷을 가리지 않게(튜토리얼 점검 샷은 직접 연다).
+        App.Settings.ShowTutorialOnStart = false;
         Chickxel.App.Localization.UiLanguage.Apply(Language);
     }
 

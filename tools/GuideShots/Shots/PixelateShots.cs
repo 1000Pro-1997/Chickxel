@@ -505,7 +505,7 @@ internal static class PixelateShots
             PixelateKit.LeftBox(marker, dlg),
         ]);
 
-        // 자동 최적화 설정 창: 돌릴 프리셋 체크 목록·대표 단추·시도 기록(펼침)·불러오면 자동 최적화·초기화.
+        // 자동 최적화 설정 창: 돌릴 프리셋 체크 목록·시도 기록(펼침)·불러오면 자동 최적화·초기화.
         ShotKit.Call(dlg, "OpenOptimizeSettings");
         k.Settle(800);
         var win = ShotKit.Get<Window>(dlg, "_optSettingsWindow");
@@ -515,13 +515,11 @@ internal static class PixelateShots
         history.IsExpanded = true;
         k.Settle(600);
         var presetList = ShotKit.Get<ListBox>(dlg, "_optPresetList");
-        var badge = ShotKit.All<Button>(presetList).First(b => b.Content as string == UiStrings.OptimizePreset_RepresentativeBadge && ReferenceEquals(b.Background, AppTheme.SavedBrush));
         var auto = ShotKit.Get<CheckBox>(dlg, "_optAuto");
         var reset = ShotKit.Get<Button>(dlg, "_optResetButton");
         k.Save(win, "pixelate-optimize-settings", marks:
         [
             PixelateKit.Box(presetList, win, 2),
-            PixelateKit.Box(badge, win, 2),
             PixelateKit.Box(history, win, 2),
             PixelateKit.UpBox(auto, win, 10),
             PixelateKit.UpBox(reset, win, 10),
@@ -759,7 +757,7 @@ internal static class PixelateShots
         combo.IsDropDownOpen = false;
         k.Settle(300);
 
-        k.Dialog(() => ShotKit.Call(dlg, "RenamePreset"), w =>
+        k.Dialog(() => ShotKit.Call(dlg, "RenamePreset", dlg, ShotKit.Get<object>(dlg, "_current")), w =>
         {
             var box = ShotKit.Find<TextBox>(w);
             box.Text = "Chibi 48px";

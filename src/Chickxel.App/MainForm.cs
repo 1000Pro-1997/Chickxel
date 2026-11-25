@@ -178,6 +178,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private string? _helpPreviousMessage;
     private Control _helpMenuRow = null!, _helpContextBar = null!, _helpStatus = null!;
     private Ai.ChatWindow? _chat;
+    /// <summary>위 막대 오른쪽의 AI 채팅 단추(Claude 아이콘, 튜토리얼 'AI로 그리기'가 비춤).</summary>
+    private Button _tbChat = null!;
     /// <summary>AI 참고 자료 보관소(처음 쓸 때 연다, 폴더 설정을 바꾸면 다시 연다).</summary>
     private Chickxel.Core.References.ReferenceLibrary? _refs;
     private ReferenceManagerWindow? _refsWindow;
@@ -284,14 +286,18 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             Child = statusBar,
         };
 
-        // 메뉴 줄: 왼쪽 메뉴, 오른쪽 끝 계정 단추(로그인·계정 전환)와 그 왼쪽 갤러리 단추(갤러리에 올리기 — 손으로 저장하면 반짝여 공유를 권함)
+        // 메뉴 줄: 왼쪽 메뉴, 오른쪽 끝 계정 단추(로그인·계정 전환)와 그 왼쪽 갤러리 단추(갤러리에 올리기 — 손으로 저장하면 반짝여 공유를 권함),
+        // 그 왼쪽 튜토리얼 단추(학사모 — 튜토리얼 창을 다시 엶)
         var account = new AccountButton(this);
         _galleryButton = new GalleryButton(UploadToGallery);
+        var tutorial = BuildTutorialButton();
         var menuRow = new DockPanel { Background = AppTheme.PanelBrush };
         DockPanel.SetDock(account, Dock.Right);
         DockPanel.SetDock(_galleryButton, Dock.Right);
+        DockPanel.SetDock(tutorial, Dock.Right);
         menuRow.Children.Add(account);
         menuRow.Children.Add(_galleryButton);
+        menuRow.Children.Add(tutorial);
         menuRow.Children.Add(BuildMenu());
         var contextBar = BuildContextBar();
         _helpMenuRow = menuRow;
@@ -579,7 +585,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             if (_canvas.AutoFit) _canvas.FitToWindow();
         });
         right.Children.Add(BarSeparator());
-        var claude = BarButton(right, "", MainStrings.Ui_055, ToggleChat);
+        var claude = _tbChat = BarButton(right, "", MainStrings.Ui_055, ToggleChat);
         claude.Content = IconImage(Icons.Claude, 16);
         claude.Padding = new Thickness(5, 3);
         bar.Children.Add(right);
@@ -956,6 +962,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         AddItems(help,
             Cmd("대상 도움말", UiStrings.Help_SelectTarget, () => HelpPicker.Toggle(this), "F1", KeyScope.Global, (Key.F1, NoMods)),
             Cmd("사용 가이드", MainStrings.Menu_Help_Guide, () => HelpWindow.Open(this)),
+            WithIcon(Cmd("튜토리얼", MainStrings.Menu_Help_Tutorial, () => TutorialWindow.Open(this, _settings)), VectorIcon.GraduationCap),
             website,
             WithIcon(Cmd("Chickxel 계정", UiStrings.Account_Menu, () => AccountDialog.Show(this)), VectorIcon.CircleUser),
             Cmd("단축키 목록", MainStrings.Menu_Help_ShowShortcuts_230, ShowShortcuts),
@@ -1452,6 +1459,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         Dispatcher.UIThread.Post(() => AppAssets.ShowProblems(this), DispatcherPriority.Background);
         // OS가 넘긴 주소·패키지·프로젝트 파일은 지난번 탭을 연 뒤에 처리한다(그 뒤에 온 것도 바로 — 그 파일이 앞 탭이 되게).
         Dispatcher.UIThread.Post(() => AppActivation.SetHandler(HandleActivation), DispatcherPriority.Background);
+        // 튜토리얼 창은 지난번 탭을 다 연 뒤에(그 위에 뜨게).
+        Dispatcher.UIThread.Post(ShowTutorialAtStartup, DispatcherPriority.Background);
     }
 
     /// <summary>
@@ -2222,7 +2231,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         var dlg = new PreferencesDialog(_settings.Language ?? UiLanguage.Current, _settings.UndoSteps, _settings.UndoHistoryEnabled, _settings.UndoHistoryPolicy, _history,
             _settings.AutoSave, _settings.AutoSaveIdleSeconds, _settings.TrashPolicy, _settings.UpdateCheck, _settings.DiscordPresence,
             _commands.Select(c => c.Info).ToList(), _commands.ToDictionary(c => c.Info.Id, c => c.Keys.ToList()),
-            _settings.ReferencesFolder, _settings.ReferencesShowExamples, _settings.FfmpegPath, owner => ShowAiStatus(owner));
+            _settings.ReferencesFolder, _settings.ReferencesShowExamples, _settings.FfmpegPath, owner => ShowAiStatus(owner),
+            _settings.NotifyEnabled, _settings.NotifySound, _settings.NotifyWhenActive);
         var result = dlg.ShowDialog(this);
         if (dlg.ResetRequested)
         {
@@ -2246,6 +2256,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _settings.TrashPolicy = dlg.TrashPolicy;
         _settings.UpdateCheck = dlg.UpdateCheck;
         _settings.DiscordPresence = dlg.DiscordPresence;
+        _settings.NotifyEnabled = dlg.Notify;
+        _settings.NotifySound = dlg.NotifySound;
+        _settings.NotifyWhenActive = dlg.NotifyWhenActive;
         UpdateDiscord();
         _settings.FfmpegPath = dlg.FfmpegPath;
         // 끄면 기다리던 자동 저장도 바로 멈춘다. 바꾼 시간은 다음 편집부터.

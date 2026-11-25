@@ -348,6 +348,20 @@ public sealed class AppSettings
     /// </summary>
     public bool DiscordPresence { get; set; } = true;
 
+    // 알림
+    /// <summary>AI가 작업을 끝내거나 질문하면 알림 창과 소리로 알린다(<see cref="AppNotifications"/>).</summary>
+    public bool NotifyEnabled { get; set; } = true;
+    /// <summary>알림 소리 id(<see cref="NotificationSounds.Ids"/>, <see cref="NotificationSounds.None"/> = 소리 없음).</summary>
+    public string NotifySound { get; set; } = NotificationSounds.Default;
+    /// <summary>알린 창(AI 채팅)을 보고 있을 때도 알린다(기본 끔 — 보고 있으면 알리지 않음).</summary>
+    public bool NotifyWhenActive { get; set; }
+
+    // 튜토리얼(이 컴퓨터의 settings.json에만 — 계정과 상관없음)
+    /// <summary>켤 때 튜토리얼 창(<see cref="TutorialWindow"/>)을 띄운다. 그 창의 "다시 보지 않기"를 켜고 닫으면 false, 끄고 닫으면 true.</summary>
+    public bool ShowTutorialOnStart { get; set; } = true;
+    /// <summary>끝까지 마친 튜토리얼(<see cref="TutorialKind"/> 이름) — 튜토리얼 창 카드에 "완료" 표시.</summary>
+    public List<string> TutorialsDone { get; set; } = [];
+
     // 스크립트 효과
     /// <summary>
     /// 스크립트 효과를 실행할지 사용자가 정한 것: 원문 해시(SHA-256) → 실행(true)·실행 안 함(false). 없는 해시는 아직 묻지 않은 것이다(13.5).

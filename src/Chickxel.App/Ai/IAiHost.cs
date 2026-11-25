@@ -46,11 +46,8 @@ public interface IAiHost
     /// <summary>모호한 선택을 채팅 입력란 위에서 사용자에게 묻는다. 취소·창 닫기는 null.</summary>
     Task<string?> AskUserAsync(string question, IReadOnlyList<string> options, CancellationToken ct);
 
-    /// <summary>변환한 픽셀 아트를 넣는다. 열린 캔버스보다 크면 사용자에게 확장·자르기·새 문서를 묻고, 자르기는 위치 미리보기를 연다.</summary>
-    Task<AiInsertResult> InsertPixelArtAsync(string name, IReadOnlyList<PixelImage> frames, int frameDurationMs, bool newDocument, CancellationToken ct);
-
-    /// <summary>AI 그림 픽셀로 정리 창을 이 원본과 변환 설정(프레임 나누기 포함)으로 연다(다시 조정해 적용).</summary>
-    void ShowPixelate(PixelateInput input, Chickxel.Core.Pixelate.PixelateSettings settings);
+    /// <summary>AI 그림 픽셀로 정리 창을 이 원본으로 연다(메뉴로 여는 것과 같이 기억한 설정·프리셋으로 — 사용자가 변환해 넣음).</summary>
+    void ShowPixelate(PixelateInput input);
 
     /// <summary>
     /// 대화 속 그림 하나를 지금 문서의 현재 프레임에 새 레이어로 넣는다(캔버스 가운데, 넣은 뒤 변형 모드 — 떠 있는 선택·캔버스 크기 모드는 먼저 적용).
@@ -58,5 +55,3 @@ public interface IAiHost
     /// </summary>
     string InsertImage(string name, PixelImage image);
 }
-
-public readonly record struct AiInsertResult(bool Inserted, string Message);

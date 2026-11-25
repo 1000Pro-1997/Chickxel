@@ -156,6 +156,18 @@ public static class Ui
         return b.Tip(AppInfo.DiscordUrl);
     }
 
+    /// <summary>후원(커피 보내기) 단추: 커피 아이콘, 눈에 띄는 커피 노랑 바탕 + 어두운 글자·아이콘(마우스를 올려도 색 유지).</summary>
+    public static Button CoffeeButton(string text, EventHandler<RoutedEventArgs> onClick)
+    {
+        var ink = AppTheme.Brush(Color.FromRgb(0x23, 0x1A, 0x0E));
+        var b = Button(VectorIcon.Coffee, text, onClick);
+        b.Background = AppTheme.Brush(Color.FromRgb(0xFF, 0xD2, 0x3F));
+        b.Foreground = ink;
+        if (b.Content is StackPanel { Children: [IconView view, ..] }) view.Foreground = ink;
+        KeepFillOnHover(b);
+        return b;
+    }
+
     /// <summary>아이콘만 있는 단추(뜻은 풍선 <paramref name="tip"/>으로).</summary>
     public static Button IconButton(VectorIcon icon, string? tip, EventHandler<RoutedEventArgs>? onClick = null, int width = 0, double size = 14)
     {
@@ -713,12 +725,24 @@ public class DialogBase : Window
         Close(r);
     }
 
+    /// <summary>모달로 떠 있는지(<see cref="ShowDialog"/> 중) — 튜토리얼은 말풍선이 없는 모달 창을 어둡게 막지 않는다(막으면 앱 전체가 멈춤).</summary>
+    public bool IsModal { get; private set; }
+
     /// <summary>닫힐 때까지 기다리는 모달 대화상자. 창 닫기 단추로 닫으면 Cancel.</summary>
     public DialogResult ShowDialog(Visual? owner)
     {
         _vetoed = false;
         if (Ui.Owner(owner) is { } o) LimitToScreen(o.Screens.ScreenFromWindow(o));
-        var r = Ui.ShowModal<DialogResult>(this, owner);
+        IsModal = true;
+        DialogResult r;
+        try
+        {
+            r = Ui.ShowModal<DialogResult>(this, owner);
+        }
+        finally
+        {
+            IsModal = false;
+        }
         return r == DialogResult.None ? (_result == DialogResult.None ? DialogResult.Cancel : _result) : r;
     }
 

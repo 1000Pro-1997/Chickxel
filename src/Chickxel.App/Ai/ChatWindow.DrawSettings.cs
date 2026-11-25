@@ -5,26 +5,20 @@ using Chickxel.App.Localization;
 namespace Chickxel.App.Ai;
 
 // 그리기 설정 칸(머리줄 "?" 옆 슬라이더 단추): 도움말 칸과 같은 오른쪽 자리·움직임을 쓰고, 둘 중 하나만 열린다.
-// 자동(Codex: "지금 그림만"이면 직접 찍기, 아니면 그림 생성 먼저·안 되면 직접 찍기) / 그림 생성 → 픽셀 변환 / 직접 찍기.
-// 자동 애니메이션은 GIF 프레임을 만들어 변환하므로 수동 생성 방식 선택은 그림 생성 모드에서만 쓴다.
+// 자동(Codex: "지금 그림만"이면 직접 찍기, 아니면 그림 생성 먼저·안 되면 직접 찍기) / 그림 생성(원본 — 사용자가 정리 창에서 변환) / 직접 찍기.
+// 자동 애니메이션은 GIF 프레임을 만들어 한 원본으로 이으므로 수동 생성 방식 선택은 그림 생성 모드에서만 쓴다.
 public sealed partial class ChatWindow
 {
-    /// <summary>결과 크기 칸의 고정 값(마지막 칸은 직접 입력).</summary>
-    private static readonly int[] SizeChoices = [32, 48, 64];
-
     private RadioButton? _modeAuto, _modeGenerate, _modeDirect;
     private Border? _modeWarning;
     private TextBlock? _codexStatus;
     private Control? _generateOptions;
-    private ComboBox? _sizeCombo, _styleCombo, _styleRefCombo, _insertCombo, _animCombo;
+    private ComboBox? _styleCombo, _styleRefCombo, _animCombo;
     /// <summary>"프레임마다 따로"를 고르면 보이는 일관성 경고 아이콘.</summary>
     private Control? _animWarning;
-    private NumericUpDown? _sizeCustom;
-    private CheckBox? _removeBackground, _autoOptimize, _paletteOnly, _resizeResult, _autoPrompt;
+    private CheckBox? _paletteOnly, _autoPrompt;
     /// <summary>"생성 요청 다듬기"(자동 프롬프트)를 끄면 쓰이지 않는 칸(스타일 참고, 애니메이션 생성 방식, 기본 프레임 수).</summary>
     private readonly List<Control> _autoPromptRows = [];
-    /// <summary>결과 크기 칸(결과 크기 보정이 켜졌을 때만 쓸 수 있음).</summary>
-    private Control? _sizeRow;
     /// <summary>팔레트 색만 사용 줄(직접 찍기를 골랐을 때만 보임).</summary>
     private Control? _paletteRow;
     private readonly Dictionary<string, NumericUpDown> _frameBoxes = new();
@@ -41,7 +35,6 @@ public sealed partial class ChatWindow
     /// <summary>그림 생성 진행·결과는 차례가 도는 탭에 붙인다(차례가 없으면 버림 — 멈춘 뒤 늦게 온 것).</summary>
     private void OnAiDrawProgress(string text) => RunningTab?.OnAiDrawProgress(text);
     private void OnAiDrawPromptReady(string instruction, int index, int count) => RunningTab?.OnAiDrawPromptReady(instruction, index, count);
-    private void OnAiDrawPreview(PixelImage frame) => RunningTab?.OnAiDrawPreview(frame);
 
     private void OnAiDrawCompleted(AiDrawOutcome outcome) => RunningTab?.OnAiDrawCompleted(outcome);
 
@@ -140,29 +133,6 @@ public sealed partial class ChatWindow
         _autoPrompt = Ui.Check(UiStrings.AiDraw_AutoPrompt);
         _autoPrompt.IsCheckedChanged += (_, _) => OnDrawOptionChanged();
         options.Children.Add(WithInfo(_autoPrompt, UiStrings.AiDraw_AutoPrompt_Text).HelpAt(page, anchor: "Refine the generation request"));
-
-        _resizeResult = Ui.Check(UiStrings.AiDraw_ResizeResult);
-        _resizeResult.IsCheckedChanged += (_, _) => OnDrawOptionChanged();
-        options.Children.Add(WithInfo(_resizeResult, UiStrings.AiDraw_ResizeResult_Text).HelpAt(page, anchor: "Result-size correction"));
-        _sizeCombo = Ui.Combo(120, "32", "48", "64", UiStrings.AiDraw_Size_Custom);
-        _sizeCustom = Ui.Num(AiDrawSettings.MinSize, AiDrawSettings.MaxSize, 32, 64);
-        _sizeCombo.SelectionChanged += (_, _) => OnDrawOptionChanged();
-        _sizeCustom.ValueChanged += (_, _) => OnDrawOptionChanged();
-        _sizeRow = OptionRow(UiStrings.AiDraw_Size, UiStrings.AiDraw_Size_Tip, Ui.Row(_sizeCombo, _sizeCustom)).HelpAt(page, anchor: "Result size");
-        _sizeRow.Margin = new Thickness(22, 0, 0, 0);
-        options.Children.Add(_sizeRow);
-
-        _removeBackground = Ui.Check(UiStrings.AiDraw_RemoveBackground);
-        _removeBackground.IsCheckedChanged += (_, _) => OnDrawOptionChanged();
-        options.Children.Add(WithInfo(_removeBackground, UiStrings.AiDraw_RemoveBackground_Tip).HelpAt(page, anchor: "Remove background"));
-        _autoOptimize = Ui.Check(UiStrings.AiDraw_AutoOptimize);
-        _autoOptimize.IsCheckedChanged += (_, _) => OnDrawOptionChanged();
-        options.Children.Add(WithInfo(_autoOptimize, UiStrings.AiDraw_AutoOptimize_Tip).HelpAt(page, anchor: "Auto-optimize the conversion"));
-
-        _insertCombo = Ui.Combo(150, UiStrings.AiDraw_Insert_Layer, UiStrings.AiDraw_Insert_Document);
-        _insertCombo.SelectionChanged += (_, _) => OnDrawOptionChanged();
-        options.Children.Add(OptionRow(UiStrings.AiDraw_Insert, null, _insertCombo).HelpAt(page, anchor: "Insert as"));
-
         _styleCombo = Ui.Combo(150, UiStrings.AiDraw_Style_Auto, UiStrings.AiDraw_Style_None, UiStrings.AiDraw_Style_Specific);
         _styleCombo.SelectionChanged += (_, _) => OnDrawOptionChanged();
         var styleRow = OptionRow(UiStrings.AiDraw_Style, UiStrings.AiDraw_Style_Text, _styleCombo).HelpAt(page, anchor: "Style reference");
@@ -287,16 +257,8 @@ public sealed partial class ChatWindow
             _modeGenerate!.IsChecked = o.Mode == AiDrawMode.Generate;
             _modeDirect!.IsChecked = o.Mode == AiDrawMode.Direct;
             _modeWarning!.IsVisible = _visible.Provider.Id != AiDrawSettings.GeneratingProvider;
-            int size = o.SizeTargetClamped;
-            int index = Array.IndexOf(SizeChoices, size);
-            _sizeCombo!.SelectedIndex = index >= 0 ? index : SizeChoices.Length;
-            _sizeCustom!.Value = size;
-            _resizeResult!.IsChecked = o.ResizeResult;
             _autoPrompt!.IsChecked = o.AutoPrompt;
-            _removeBackground!.IsChecked = o.ForceRemoveBackground;
             _paletteOnly!.IsChecked = o.PaletteOnly;
-            _autoOptimize!.IsChecked = o.AutoOptimize;
-            _insertCombo!.SelectedIndex = o.Insert == AiDrawInsert.NewDocument ? 1 : 0;
             _styleCombo!.SelectedIndex = (int)o.StyleReference;
             _animCombo!.SelectedIndex = o.AnimationMethod == AiDrawAnimationMethod.PerFrame ? 1 : 0;
             FillStyleReferences(o.StyleReferenceId);
@@ -346,8 +308,6 @@ public sealed partial class ChatWindow
         _generateOptions.IsVisible = mode != AiDrawMode.Direct;
         _paletteRow!.IsVisible = mode != AiDrawMode.Generate;
         _styleRefCombo!.IsVisible = _styleCombo!.SelectedIndex == (int)AiDrawStyleReference.Specific;
-        _sizeCustom!.IsVisible = _sizeCombo!.SelectedIndex == SizeChoices.Length;
-        _sizeRow!.IsEnabled = _resizeResult!.On();
         _animCombo!.IsEnabled = mode == AiDrawMode.Generate;
         _animWarning!.IsVisible = mode == AiDrawMode.Generate && _animCombo.SelectedIndex == 1;
         bool autoPrompt = _autoPrompt!.On();
@@ -370,13 +330,7 @@ public sealed partial class ChatWindow
         if (_drawFilling || _autoPrompt is null) return;
         var o = _settings.AiDraw;
         o.AutoPrompt = _autoPrompt.On();
-        int si = _sizeCombo!.SelectedIndex;
-        o.SizeTarget = si >= 0 && si < SizeChoices.Length ? SizeChoices[si] : (int)_sizeCustom!.NumValue();
-        o.ResizeResult = _resizeResult!.On();
-        o.ForceRemoveBackground = _removeBackground!.On();
         o.PaletteOnly = _paletteOnly!.On();
-        o.AutoOptimize = _autoOptimize!.On();
-        o.Insert = _insertCombo!.SelectedIndex == 1 ? AiDrawInsert.NewDocument : AiDrawInsert.NewLayer;
         o.StyleReference = (AiDrawStyleReference)Math.Max(0, _styleCombo!.SelectedIndex);
         o.AnimationMethod = _animCombo!.SelectedIndex == 1 ? AiDrawAnimationMethod.PerFrame : AiDrawAnimationMethod.SingleSheet;
         if (_styleRefCombo!.SelectedIndex is int ri && ri >= 0 && ri < _styleRefIds.Count) o.StyleReferenceId = _styleRefIds[ri];
@@ -410,7 +364,10 @@ public sealed partial class ChatWindow
         if (!_shutdown) _codexStatus.Text = text;
     }
 
-    /// <summary>"변환 설정 보기": 생성 기록의 원본과 변환 설정으로 정리 창을 연다(기록이 지워졌으면 알림).</summary>
+    /// <summary>
+    /// "변환하기": 생성 기록의 원본을 픽셀 아트 정리 창에 넣어 연다(메뉴로 여는 것과 같이 기억한 설정·프리셋 — 프레임이 여럿이면 칸마다 한 프레임).
+    /// 기록이 지워졌으면 알린다. 사용자가 창에서 변환해 넣는다.
+    /// </summary>
     private void OpenAiDrawJob(string jobId)
     {
         if (_mcp.Tools.Jobs.Load(jobId) is not { } loaded)
@@ -419,7 +376,7 @@ public sealed partial class ChatWindow
             return;
         }
         var (job, source) = loaded;
-        _mcp.Tools.Host.ShowPixelate(new PixelateInput(source, job.Name, null), job.ReadSettings());
+        _mcp.Tools.Host.ShowPixelate(PixelTools.PixelateInputOf(job, source));
     }
 
     /// <summary>보낸 질문 한 줄을 눌러 Codex 이미지 생성에 전달한 프롬프트 전문을 보는 카드.</summary>
@@ -477,7 +434,10 @@ public sealed partial class ChatWindow
         }.HelpAt("ai-generate", anchor: "Generation prompt card");
     }
 
-    /// <summary>AI 그리기 결과 칸: 결과 그림, 결과 글, "변환 설정 보기"(기록이 있을 때)·"새 레이어로 넣기"(그림이 있을 때) 단추.</summary>
+    /// <summary>
+    /// AI 그리기 결과 칸: 생성한 원본, 결과 글, 단추 줄 — "변환하기"(기록이 있을 때 — 정리 창) 또는 기록이 없는 그림이면 "새 레이어로 넣기",
+    /// 그림이 있으면 그 옆에 "이미지 수정"(그림을 누른 것과 같이 표시해 고쳐 달라고 하는 창).
+    /// </summary>
     private Control AiDrawCard(Bitmap? image, string text, string? jobId)
     {
         var panel = new StackPanel { Spacing = 4, Margin = new Thickness(2, 2, 0, 0) }.HelpAt("ai-generate", anchor: "Result card");
@@ -485,8 +445,10 @@ public sealed partial class ChatWindow
         if (text.Length > 0) panel.Children.Add(new SelectableTextBlock { Text = text, Foreground = AppTheme.DimTextBrush, TextWrapping = TextWrapping.Wrap });
         var buttons = new List<Control>();
         if (jobId is not null)
-            buttons.Add(Ui.Button(VectorIcon.SlidersHorizontal, UiStrings.AiDraw_ViewSettings, (_, _) => OpenAiDrawJob(jobId)).Tip(UiStrings.AiDraw_ViewSettings_Tip));
-        if (image is not null) buttons.Add(InsertImageButton(image));
+            buttons.Add(Ui.Button(VectorIcon.Sparkles, UiStrings.AiDraw_Convert, (_, _) => OpenAiDrawJob(jobId)).Tip(UiStrings.AiDraw_Convert_Tip));
+        else if (image is not null) buttons.Add(InsertImageButton(image));
+        if (image is not null)
+            buttons.Add(Ui.Button(VectorIcon.Pencil, UiStrings.Chat_ImageMarkup_Open, (_, _) => OpenImageMarkup(image)).Tip(UiStrings.Chat_ImageMarkup_OpenTip));
         if (buttons.Count > 0) panel.Children.Add(ButtonRow([.. buttons]));
         return panel;
     }

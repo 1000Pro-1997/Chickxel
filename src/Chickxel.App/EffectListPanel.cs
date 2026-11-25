@@ -6,7 +6,8 @@ namespace Chickxel.App;
 
 /// <summary>
 /// 효과 목록 패널(도구 막대의 효과 단추로 맨 왼쪽 칸에 엶 — 파일 브라우저와 함께면 그 아래, <see cref="MainForm"/>): 효과 창 왼쪽 칸과 같은 효과·프리셋 상자(<see cref="EffectTileCatalog"/>)를 한 줄씩 보인다.
-/// 상자를 타임라인 칸(레이어 × 프레임)으로 끌어 놓으면 효과 창을 띄우지 않고 기본 설정으로 그 레이어에 넣고(<see cref="TimelinePanel.DropEffects"/> — 실행취소 한 단계),
+/// 상자를 타임라인 칸(레이어 × 프레임)으로 끌어 놓으면 효과 창을 띄우지 않고 기본 설정으로 그 레이어에 넣고(<see cref="TimelinePanel.DropEffects"/> — 실행취소 한 단계,
+/// 끄는 동안은 포인터 아래 칸에 넣은 모습을 캔버스·미리보기에 미리 보임 — <see cref="TimelinePanel.ShowEffectDrop"/>),
 /// 두 번 누르면 지금 레이어의 지금 칸(고른 칸 묶음이면 그 프레임 범위)에 넣는다. 넣은 효과의 범위는 타임라인 효과 줄 끝을 끌어 바꾸고,
 /// 마지막 프레임 너머로 끌면 마지막 프레임과 링크된 프레임이 늘어난다. 미리보기는 효과가 정한 미리보기 병아리에 입힌 모습이다(<see cref="EffectTile"/> — 지금 그림과 상관없어 다시 그리지 않음).
 /// 맨 위 검색 칸은 두 탭을 이름·설명·만든 사람으로 바로 거르고, 우클릭 > 즐겨찾기에 추가한 상자는 탭 맨 위 "즐겨찾기" 묶음에 별을 달고 보인다
@@ -283,7 +284,7 @@ public sealed class EffectListPanel : UserControl
             if (_pressed != tile) return;
             if (!_dragging && ReorderCore.Exceeded(_pressPoint, e.GetPosition(this))) _dragging = true;
             if (!_dragging) return;
-            bool over = _timeline.ShowEffectDrop(e);
+            bool over = _timeline.ShowEffectDrop(e, tile.Effects, tile.Template);
             tile.Cursor = new Cursor(over ? StandardCursorType.DragCopy : StandardCursorType.No);
         };
         tile.PointerReleased += (_, e) =>

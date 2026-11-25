@@ -357,9 +357,18 @@ public sealed class ClipRecorder : IDisposable
         _frames.Add((path, ms));
     }
 
+    /// <summary>
+    /// 떨어진 여러 영역(메인 창 좌표, 왼쪽부터)을 사이를 좁혀 한 줄로 붙여 찍는다 — 멀리 있는 두 곳 사이 끌기를 가까이 보이게(예: 효과 목록 상자 → 타임라인 칸).
+    /// 사이 간격에는 옅은 화살표를 그리고, 포인터가 두 영역 사이를 지나는 동안은 간격 안에서 비례해 옮겨 그린다. 없으면(기본) 찍을 영역 하나.
+    /// </summary>
+    public IReadOnlyList<Rect>? Regions { get; init; }
+
+    private const int RegionGap = 28;
+
     /// <summary>메인 창 + 대화상자(제목 줄 포함)를 합쳐 찍을 영역만 자르고 커서를 얹은 한 프레임.</summary>
     private RenderTargetBitmap Render()
     {
+        if (Regions is { Count: > 1 } regions) return RenderRegions(regions);
         int bar = _titleBar ? ShotKit.TitleHeight : 0;
         var size = new PixelSize((int)_crop.Width, (int)_crop.Height + bar);
         var target = new RenderTargetBitmap(size, new Vector(96, 96));
@@ -376,28 +385,91 @@ public sealed class ClipRecorder : IDisposable
             using (ctx.PushClip(new Rect(0, bar, size.Width, size.Height - bar)))
             using (ctx.PushTransform(Matrix.CreateTranslation(-_crop.X, bar - _crop.Y)))
             {
-                var main = _kit.Capture(_main);
-                captures.Add(main);
-                ctx.DrawImage(main, new Rect(0, 0, main.PixelSize.Width, main.PixelSize.Height));
-                foreach (var w in Dialogs())
-                {
-                    var origin = DialogOrigin(w);
-                    var img = _kit.Capture(w);
-                    captures.Add(img);
-                    // 화면 없이 띄운 창에는 OS 그림자·테두리가 없다: 어두운 그림자 띠와 테두리 한 줄로 창이 떠 보이게.
-                    var whole = new Rect(origin.X, origin.Y, img.PixelSize.Width, img.PixelSize.Height + ShotKit.TitleHeight);
-                    for (int i = 1; i <= 8; i++)
-                        ctx.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromArgb((byte)(40 - i * 4), 0, 0, 0)), 2), whole.Inflate(i * 2 - 1));
-                    using (ctx.PushTransform(Matrix.CreateTranslation(origin.X, origin.Y)))
-                        ShotKit.DrawTitleBar(ctx, w.Title ?? "", img.PixelSize.Width);
-                    ctx.DrawImage(img, new Rect(origin.X, origin.Y + ShotKit.TitleHeight, img.PixelSize.Width, img.PixelSize.Height));
-                    ctx.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromRgb(70, 70, 78)), 1), whole.Inflate(0.5));
-                }
+                DrawScene(ctx, captures);
                 DrawCursor(ctx, Pointer, Cursor, _button is not null || _ringAfterUp);
             }
         }
         foreach (var c in captures) c.Dispose();
         return target;
+    }
+
+    /// <summary>메인 창과 그 위 대화상자(제목 줄·그림자 포함)를 메인 창 좌표로 그린다.</summary>
+    private void DrawScene(DrawingContext ctx, List<Bitmap> captures)
+    {
+        var main = _kit.Capture(_main);
+        captures.Add(main);
+        ctx.DrawImage(main, new Rect(0, 0, main.PixelSize.Width, main.PixelSize.Height));
+        foreach (var w in Dialogs())
+        {
+            var origin = DialogOrigin(w);
+            var img = _kit.Capture(w);
+            captures.Add(img);
+            // 화면 없이 띄운 창에는 OS 그림자·테두리가 없다: 어두운 그림자 띠와 테두리 한 줄로 창이 떠 보이게.
+            var whole = new Rect(origin.X, origin.Y, img.PixelSize.Width, img.PixelSize.Height + ShotKit.TitleHeight);
+            for (int i = 1; i <= 8; i++)
+                ctx.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromArgb((byte)(40 - i * 4), 0, 0, 0)), 2), whole.Inflate(i * 2 - 1));
+            using (ctx.PushTransform(Matrix.CreateTranslation(origin.X, origin.Y)))
+                ShotKit.DrawTitleBar(ctx, w.Title ?? "", img.PixelSize.Width);
+            ctx.DrawImage(img, new Rect(origin.X, origin.Y + ShotKit.TitleHeight, img.PixelSize.Width, img.PixelSize.Height));
+            ctx.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromRgb(70, 70, 78)), 1), whole.Inflate(0.5));
+        }
+    }
+
+    /// <summary><see cref="Regions"/>를 한 줄로 붙인 한 프레임(영역마다 세로 가운데, 사이 간격에 화살표, 포인터는 붙인 자리로 옮겨 그림).</summary>
+    private RenderTargetBitmap RenderRegions(IReadOnlyList<Rect> regions)
+    {
+        var client = _main.ClientSize;
+        var captures = new List<Bitmap>();
+        using var scene = new RenderTargetBitmap(new PixelSize((int)client.Width, (int)client.Height), new Vector(96, 96));
+        using (var sctx = scene.CreateDrawingContext()) DrawScene(sctx, captures);
+        int height = (int)regions.Max(r => r.Height);
+        int width = (int)regions.Sum(r => r.Width) + RegionGap * (regions.Count - 1);
+        var target = new RenderTargetBitmap(new PixelSize(width + width % 2, height + height % 2), new Vector(96, 96));
+        var dest = new List<Rect>();
+        using (var ctx = target.CreateDrawingContext())
+        {
+            ctx.FillRectangle(new SolidColorBrush(Color.FromRgb(24, 24, 28)), new Rect(target.Size));
+            double x = 0;
+            for (int i = 0; i < regions.Count; i++)
+            {
+                var r = regions[i];
+                var d = new Rect(x, Math.Round((height - r.Height) / 2), r.Width, r.Height);
+                dest.Add(d);
+                ctx.DrawImage(scene, r, d);
+                ctx.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromRgb(70, 70, 78)), 1), d.Deflate(0.5));
+                if (i < regions.Count - 1)
+                {
+                    // 사이 화살표(옅게): 다음 영역 쪽으로.
+                    double cx = d.Right + RegionGap / 2.0, cy = height / 2.0;
+                    var arrow = new Pen(new SolidColorBrush(Color.FromArgb(150, 200, 200, 210)), 2, lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round);
+                    ctx.DrawLine(arrow, new Point(cx - 7, cy), new Point(cx + 6, cy));
+                    ctx.DrawGeometry(null, arrow, Geometry.Parse($"M{cx + 1},{cy - 5} L{cx + 6},{cy} L{cx + 1},{cy + 5}"));
+                }
+                x = d.Right + RegionGap;
+            }
+            DrawCursor(ctx, MapPointer(regions, dest), Cursor, _button is not null || _ringAfterUp);
+        }
+        foreach (var c in captures) c.Dispose();
+        return target;
+    }
+
+    /// <summary>포인터(메인 창 좌표)를 붙인 그림 좌표로: 영역 안이면 그 영역 자리로, 두 영역 사이면 간격 안에서 가로로 비례해(세로는 두 자리 사이를 같은 비율로).</summary>
+    private Point MapPointer(IReadOnlyList<Rect> regions, IReadOnlyList<Rect> dest)
+    {
+        var p = Pointer;
+        Point In(int i) => new(dest[i].X + (p.X - regions[i].X), dest[i].Y + (p.Y - regions[i].Y));
+        for (int i = 0; i < regions.Count; i++)
+            if (p.X <= regions[i].Right || i == regions.Count - 1)
+            {
+                if (p.X >= regions[i].X || i == 0) return In(i);
+                // 영역 i-1과 i 사이.
+                var a = regions[i - 1];
+                var b = regions[i];
+                double t = Math.Clamp((p.X - a.Right) / Math.Max(1, b.X - a.Right), 0, 1);
+                double ya = dest[i - 1].Y + (p.Y - a.Y), yb = dest[i].Y + (p.Y - b.Y);
+                return new Point(dest[i - 1].Right + t * RegionGap, ya + (yb - ya) * t);
+            }
+        return In(regions.Count - 1);
     }
 
     private static readonly Color Ring = Color.FromArgb(220, 229, 57, 53);
@@ -451,14 +523,15 @@ public sealed class ClipRecorder : IDisposable
 
     /// <summary>
     /// 찍은 프레임을 <paramref name="name"/>(저장소 루트 기준 경로, 확장자 없이 — 예: <c>docs/assets/feature-pivot</c>)으로 저장한다.
-    /// <paramref name="webpLossless"/>가 아니면 WebP 품질 <paramref name="webpQuality"/>. MP4는 <paramref name="fps"/> 고정 프레임.
+    /// <paramref name="webpLossless"/>가 아니면 WebP 품질 <paramref name="webpQuality"/>, <paramref name="webpWidth"/>가 있으면 WebP만 그 폭으로 줄여(Lanczos) 쓴다
+    /// (작게만 보이는 앱 내장 움짤의 파일 크기). MP4는 <paramref name="fps"/> 고정 프레임.
     /// </summary>
-    public void Save(string name, ClipFormat formats, bool webpLossless = true, int webpQuality = 90, int fps = 24, int crf = 20)
+    public void Save(string name, ClipFormat formats, bool webpLossless = true, int webpQuality = 90, int fps = 24, int crf = 20, int? webpWidth = null)
     {
         if (_frames.Count == 0) throw new InvalidOperationException("no frames recorded");
         var basePath = Path.Combine(ShotKit.Root, name.Replace('/', Path.DirectorySeparatorChar));
         Directory.CreateDirectory(Path.GetDirectoryName(basePath)!);
-        if (formats.HasFlag(ClipFormat.WebP)) SaveWebP(basePath + ".webp", webpLossless, webpQuality);
+        if (formats.HasFlag(ClipFormat.WebP)) SaveWebP(basePath + ".webp", webpLossless, webpQuality, webpWidth);
         if (formats.HasFlag(ClipFormat.Gif) || formats.HasFlag(ClipFormat.Mp4))
         {
             var ffmpeg = Chickxel.App.FfmpegTool.Locate((string?)null) ?? throw new InvalidOperationException("ffmpeg not found");
@@ -508,7 +581,7 @@ public sealed class ClipRecorder : IDisposable
     }
 
     /// <summary>애니메이션 WebP: Pillow로 프레임마다 길이를 그대로(ffmpeg의 WebP는 길이를 반올림해서).</summary>
-    private void SaveWebP(string file, bool lossless, int quality)
+    private void SaveWebP(string file, bool lossless, int quality, int? width)
     {
         var python = FindPython() ?? throw new InvalidOperationException("python (with Pillow) not found on PATH — needed for animated WebP");
         var spec = Path.Combine(_dir, "webp.json");
@@ -519,6 +592,7 @@ public sealed class ClipRecorder : IDisposable
             output = file,
             lossless,
             quality,
+            width,
         }));
         var script = Path.Combine(_dir, "webp.py");
         File.WriteAllText(script, """
@@ -526,8 +600,11 @@ public sealed class ClipRecorder : IDisposable
             from PIL import Image
             spec = json.load(open(sys.argv[1], encoding="utf-8"))
             frames = [Image.open(f).convert("RGB") for f in spec["files"]]
+            w = spec["width"]
+            if w:
+                frames = [f.resize((w, round(f.height * w / f.width)), Image.LANCZOS) for f in frames]
             frames[0].save(spec["output"], save_all=True, append_images=frames[1:], duration=spec["durations"], loop=0,
-                           lossless=spec["lossless"], quality=spec["quality"], method=6)
+                           lossless=spec["lossless"], quality=spec["quality"], method=6, minimize_size=True)
             """);
         Run(python, script, spec);
         Record(file);

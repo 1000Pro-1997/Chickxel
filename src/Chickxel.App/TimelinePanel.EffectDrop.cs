@@ -4,23 +4,75 @@ using Chickxel.Core.Model;
 
 namespace Chickxel.App;
 
-// 타임라인의 효과 넣기·늘리기: 효과 목록 패널(EffectListPanel)에서 끌어 온 효과를 칸(레이어 × 프레임)에 효과 창 없이 넣기,
+// 타임라인의 효과 넣기·늘리기: 효과 목록 패널(EffectListPanel)에서 끌어 온 효과를 칸(레이어 × 프레임)에 효과 창 없이 넣기(끄는 동안 넣은 모습을 미리 보임),
 // 효과 상자 오른쪽 끝을 마지막 프레임 너머로 끌어 마지막 프레임과 링크된 프레임을 더하며 범위 늘리기.
 public sealed partial class TimelinePanel
 {
-    /// <summary>효과 목록 패널에서 끄는 중: 포인터 아래 칸에 넣을 자리(레이어 행 × 프레임 범위)를 보인다. 놓을 수 있는 자리면 true.</summary>
-    public bool ShowEffectDrop(PointerEventArgs e) => _grid.ShowEffectDrop(e.GetPosition(_grid));
+    /// <summary>
+    /// 끄는 중 넣은 모습 미리보기: 효과를 잠시 더해 둔 프로젝트·레이어, 미리보기 전 효과, 그 자리(레이어 번호, 프레임 범위). 없으면 null.
+    /// 미리 더한 효과는 실행취소 기록·수정됨 표시 없이 들어가고(<see cref="SpriteProject.PreviewLayerEffects"/>), 타임라인 효과 줄은 미리보기 전 그대로 그린다
+    /// (줄이 늘었다 줄었다 하며 포인터 아래 칸이 바뀌지 않게 — <see cref="ShownEffectCount"/>).
+    /// </summary>
+    private (SpriteProject Project, Layer Layer, LayerEffect[] Original, (int Layer, int From, int To) Target)? _dropPreview;
 
-    /// <summary>효과 목록 패널 끌기가 끝남(놓았거나 취소): 넣을 자리 표시를 지운다.</summary>
-    public void HideEffectDrop() => _grid.ShowEffectDrop(null);
+    /// <summary>효과 목록에서 끄는 중 넣은 모습을 미리 보이는 중인지(효과가 아직 들어가지 않음 — 튜토리얼이 확정된 추가와 가름).</summary>
+    internal bool PreviewingEffectDrop => _dropPreview is not null;
 
-    /// <summary>효과 목록 패널에서 놓음: 포인터 아래 칸이면 그 레이어에 그 프레임(범위)으로 넣는다(<see cref="AddEffects"/>), 칸 밖이면 아무것도 하지 않는다.</summary>
+    /// <summary>
+    /// 효과 목록 패널에서 끄는 중: 포인터 아래 칸에 넣을 자리(레이어 행 × 프레임 범위)를 보이고, 캔버스·미리보기에는 그 자리에 효과를 넣은 모습을 미리 보인다
+    /// (자리가 바뀌면 다시, 칸 밖이면 되돌림). 놓을 수 있는 자리면 true.
+    /// </summary>
+    public bool ShowEffectDrop(PointerEventArgs e, IReadOnlyList<LayerEffect> effects, EffectRecipe? template)
+    {
+        var target = _grid.ShowEffectDrop(e.GetPosition(_grid));
+        PreviewDrop(target, effects, template);
+        return target is not null;
+    }
+
+    /// <summary>효과 목록 패널 끌기가 끝남(놓았거나 취소): 넣을 자리 표시와 미리보기를 지운다.</summary>
+    public void HideEffectDrop()
+    {
+        _grid.ShowEffectDrop(null);
+        EndDropPreview();
+    }
+
+    /// <summary>효과 목록 패널에서 놓음: 미리보기를 되돌리고, 포인터 아래 칸이면 그 레이어에 그 프레임(범위)으로 넣는다(<see cref="AddEffects"/>), 칸 밖이면 아무것도 하지 않는다.</summary>
     public void DropEffects(PointerEventArgs e, IReadOnlyList<LayerEffect> effects, EffectRecipe? template)
     {
         var target = _grid.EffectDropAt(e.GetPosition(_grid));
-        _grid.ShowEffectDrop(null);
+        HideEffectDrop();
         if (target is { } t) AddEffects(t.Layer, t.From, t.To, effects, template);
     }
+
+    /// <summary>넣을 자리 <paramref name="target"/>에 효과를 넣은 모습을 미리 보인다(같은 자리면 그대로, 자리가 없으면 되돌리기만).</summary>
+    private void PreviewDrop((int Layer, int From, int To)? target, IReadOnlyList<LayerEffect> effects, EffectRecipe? template)
+    {
+        if (target == _dropPreview?.Target && ReferenceEquals(P, _dropPreview?.Project)) return;
+        EndDropPreview();
+        if (target is not { } t || P is not { } p || t.Layer >= p.Layers.Count || effects.Count == 0) return;
+        var layer = p.Layers[t.Layer];
+        var original = layer.Effects.ToArray();
+        var range = FrameRange.Of(t.From, t.To, p.Frames.Count);
+        var added = template?.PreviewEffects(range) ?? Placed(effects, range);
+        _dropPreview = (p, layer, original, t);
+        p.PreviewLayerEffects(t.Layer, [.. original, .. added]);
+    }
+
+    /// <summary>넣은 모습 미리보기를 미리보기 전 효과로 되돌린다(없으면 아무것도 안 함).</summary>
+    private void EndDropPreview()
+    {
+        if (_dropPreview is not { } d) return;
+        _dropPreview = null;
+        if (d.Project.IndexOf(d.Layer) is var index && index >= 0) d.Project.EndLayerEffectsPreview(index, d.Original, commit: false);
+    }
+
+    /// <summary>타임라인에 줄로 그릴 효과 수: 넣은 모습을 미리 보는 레이어는 미리보기 전 효과 수.</summary>
+    private int ShownEffectCount(Layer layer)
+        => _dropPreview is { } d && ReferenceEquals(d.Layer, layer) ? d.Original.Length : layer.Effects.Count;
+
+    /// <summary>목록의 효과를 프레임 <paramref name="range"/>에 넣을 모양으로(첫 효과는 클리핑 없음).</summary>
+    private static LayerEffect[] Placed(IReadOnlyList<LayerEffect> effects, FrameRange? range)
+        => [.. effects.Select((effect, index) => effect with { Frames = range, ClipToPrevious = index > 0 && effect.ClipToPrevious })];
 
     /// <summary>효과 목록 패널에서 두 번 누름: 지금 레이어의 지금 칸(그 칸이 든 셀 묶음이면 그 프레임 범위)에 넣는다.</summary>
     public void AddEffectsAtCurrent(IReadOnlyList<LayerEffect> effects, EffectRecipe? template)
@@ -45,11 +97,7 @@ public sealed partial class TimelinePanel
         IReadOnlyList<LayerEffect> added = [];
         _ctx.Structural(() =>
         {
-            added = template?.Instantiate(p, range) ?? effects.Select((effect, index) => effect with
-            {
-                Frames = range,
-                ClipToPrevious = index > 0 && effect.ClipToPrevious,
-            }).ToArray();
+            added = template?.Instantiate(p, range) ?? Placed(effects, range);
             p.SetLayerEffects(layer, [.. target.Effects, .. added]);
         });
         if (target.Effects.Count != first + added.Count) return;
@@ -97,8 +145,8 @@ public sealed partial class TimelinePanel
         /// <summary>마지막 프레임 뒤에 붙일 칸을 미리 보이는 중인지("다음 프레임" 단추 끌기 · 효과 범위를 끝 너머로 끌기).</summary>
         private bool GhostPreview => _ghostDragShown || _fxExtra > 0;
 
-        /// <summary>점 <paramref name="pos"/>(없으면 지움)에 맞춰 넣을 자리 표시를 바꾼다. 놓을 수 있는 자리면 true.</summary>
-        public bool ShowEffectDrop(Avalonia.Point? pos)
+        /// <summary>점 <paramref name="pos"/>(없으면 지움)에 맞춰 넣을 자리 표시를 바꾸고 그 자리(놓을 수 없으면 null)를 돌려준다.</summary>
+        public (int Layer, int From, int To)? ShowEffectDrop(Avalonia.Point? pos)
         {
             var target = pos is { } p ? EffectDropAt(p) : null;
             if (target != _effectDrop)
@@ -106,7 +154,7 @@ public sealed partial class TimelinePanel
                 _effectDrop = target;
                 InvalidateVisual();
             }
-            return target is not null;
+            return target;
         }
 
         /// <summary>점 아래 칸(레이어 본줄·효과 줄 × 프레임 열)에 효과를 넣을 자리: 그 레이어와 프레임 범위(<see cref="EffectDropFrames"/>). 칸 밖이면 null.</summary>
