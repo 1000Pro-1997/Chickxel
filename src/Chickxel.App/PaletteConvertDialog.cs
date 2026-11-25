@@ -63,7 +63,7 @@ public sealed class PaletteConvertDialog : DialogBase
         _noDither = Radio("dither", UiStrings.S_PaletteConvertDialog_PaletteConvertDialog_541E54A55D);
         _bayer = Radio("dither", UiStrings.S_PaletteConvertDialog_PaletteConvertDialog_BDEC5A51EB);
         _cel.IsEnabled = ctx.CanEdit;
-        _layer.IsEnabled = ctx.CurrentLayerObject is { IsGroup: false } && !project.IsLayerLocked(ctx.CurrentLayer);
+        _layer.IsEnabled = ctx.CurrentLayerObject is { IsTilemap: false } current && !ctx.IsArrangeParent(current) && !project.IsLayerLocked(ctx.CurrentLayer);
         (_cel.IsEnabled ? _cel : _layer.IsEnabled ? _layer : _all).IsChecked = true;
         _rules[Math.Max(0, Array.IndexOf(Rules, App.Settings.PaletteConvertRule))].IsChecked = true;
         _distance.SelectedIndex = Math.Max(0, Array.IndexOf(Distances, App.Settings.PaletteConvertDistance));

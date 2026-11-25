@@ -202,7 +202,7 @@ internal abstract class RenderStep
 
     /// <summary>
     /// <paramref name="target"/>의 (<paramref name="ox"/>, <paramref name="oy"/>)를 원점으로 그린다.
-    /// <paramref name="present"/>: 이 단계가 바깥 그룹 안이면 그룹 버퍼를 중간 그림으로 알리는 함수(null = 가장 바깥).
+    /// <paramref name="present"/>: 이 단계가 바깥 덩어리 안이면 덩어리 버퍼를 중간 그림으로 알리는 함수(null = 가장 바깥).
     /// </summary>
     public abstract void Run(RenderRun run, PixelImage target, int ox, int oy, Action? present);
 
@@ -240,7 +240,7 @@ internal abstract class RenderStep
 }
 
 /// <summary>
-/// 잔상이 볼 다른 프레임: 프레임마다의 원본(일반 레이어·부위는 셀 참조, 그룹은 부위를 합치는 작은 순서표)과 피벗.
+/// 잔상이 볼 다른 프레임: 프레임마다의 원본(자기 셀 효과는 셀 참조, 자손까지 효과는 덩어리를 합치는 작은 순서표)과 피벗.
 /// 순서표를 만들 때 담아 두므로 그리는 동안 프로젝트를 읽지 않는다.
 /// </summary>
 internal sealed class FrameSources
@@ -261,7 +261,7 @@ internal sealed class FrameSources
     /// <summary>프레임 피벗(범위 밖이면 가까운 끝 — <see cref="SpriteProject.EffectPivot"/>와 같다).</summary>
     public PointF PivotAt(int frame) => _pivots[Math.Clamp(frame, 0, _pivots.Length - 1)];
 
-    /// <summary>프레임 번호 → 그 프레임 원본(범위 밖·빈 셀이면 null). 그룹 원본은 캐시가 있으면 다시 쓴다.</summary>
+    /// <summary>프레임 번호 → 그 프레임 원본(범위 밖·빈 셀이면 null). 덩어리 원본은 캐시가 있으면 다시 쓴다.</summary>
     public Func<int, PixelImage?> SourceFor(RenderRun run) => f =>
     {
         if ((uint)f >= (uint)_pivots.Length) return null;
@@ -324,10 +324,11 @@ internal sealed class CelStep(Layer layer, PixelImage cel, IReadOnlyList<LayerEf
 }
 
 /// <summary>
-/// 효과가 켜진 그룹: 부위들을 효과 여백만큼 넓힌 캔버스에 먼저 합친 뒤 그룹 효과(이 프레임 범위 안인 것)를 입혀 그룹 불투명도로 그린다
-/// (캔버스 밖은 잘림). <paramref name="layers"/>는 그룹 효과의 스크립트가 보는 배치·다른 레이어(없으면 null), <paramref name="frameTag"/>는 볼 태그 이름(<see cref="CelStep"/>과 같음).
+/// 레이어 덩어리 합성: 덩어리 안 단계들(부모 자신의 그림 + 자식 덩어리들)을 효과 여백만큼 넓힌 캔버스에 먼저 합친 뒤 자손까지 효과(이 프레임 범위 안인 것)를 입혀
+/// 그 레이어 불투명도로 그린다(캔버스 밖은 잘림). 안쪽 단계가 또 덩어리일 수 있다(여러 단계 나무).
+/// <paramref name="layers"/>는 효과의 스크립트가 보는 배치·다른 레이어(없으면 null), <paramref name="frameTag"/>는 볼 태그 이름(<see cref="CelStep"/>과 같음).
 /// </summary>
-internal sealed class GroupStep(Layer group, IReadOnlyList<CelStep> parts, IReadOnlyList<LayerEffect> groupEffects, int frame, int frameCount,
+internal sealed class BlockStep(Layer group, IReadOnlyList<RenderStep> parts, IReadOnlyList<LayerEffect> groupEffects, int frame, int frameCount,
     PointF pivot, FrameSources? sources, ScriptLayerContext? layers, string frameTag, byte opacity, int width, int height) : RenderStep
 {
     public override int Units { get; } = parts.Sum(p => p.Units) + ActiveUnits(groupEffects, frame) + 1;

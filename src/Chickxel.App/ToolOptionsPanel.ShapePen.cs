@@ -217,7 +217,7 @@ public sealed partial class ToolOptionsPanel
     /// <summary>모양 더하기 메뉴: 선택 영역(있을 때)·지금 셀·PNG 파일.</summary>
     private IEnumerable<object> AddShapeMenu()
     {
-        bool hasCel = _ctx.EditImage is not null && !_ctx.IsGroupSelected;
+        bool hasCel = _ctx.EditImage is not null && !_ctx.IsArrangeParentSelected;
         return
         [
             MenuItemFor(UiStrings.ShapePen_AddFromSelection, () => AddShapes([_ctx.Selection.Copy(_ctx.EditImageOrEmpty)]), hasCel && _ctx.Selection.HasSelection),

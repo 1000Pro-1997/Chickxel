@@ -272,7 +272,7 @@ public sealed partial class PixelCanvas : Control
         {
             if (_ctx.HasProject) SyncShownView();
             _groupOutsideKey = null;
-            if (!_ctx.IsGroupSelected) _hoverPart = null;
+            if (!_ctx.IsArrangeParentSelected) _hoverPart = null;
             ResetWandPreview();
             InvalidateVisual();
         };
@@ -427,7 +427,7 @@ public sealed partial class PixelCanvas : Control
     /// </summary>
     private void BeginTempMove()
     {
-        if (_tempMoveFrom is not null || !_ctx.HasProject || _drag != DragMode.None || _ctx.IsGroupSelected || _ctx.IsTilemapSelected || _ctx.IsTransforming || _ctx.IsCanvasResizing
+        if (_tempMoveFrom is not null || !_ctx.HasProject || _drag != DragMode.None || _ctx.IsArrangeParentSelected || _ctx.IsTilemapSelected || _ctx.IsTransforming || _ctx.IsCanvasResizing
             || _ctx.Tool == ToolKind.Move || _text is not null || TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is TextBox)
             return;
         _tempMoveFrom = _ctx.Tool;
@@ -987,11 +987,11 @@ public sealed partial class PixelCanvas : Control
         {
             // 부위 화면: 일반 레이어처럼 프레임 전체를 레이어 순서대로 — 체커 → 부위보다 아래 레이어 → 부위 그림 → 부위보다 위 레이어
             // (다른 레이어 흐리게면 위 레이어도 부위 앞에 그려 부위가 맨 위).
-            // 그룹에 효과가 있으면 그 효과는 부위를 모두 합친 그림에 들므로 나눠 그리지 않고 프레임 합성을 그대로 그린다(흐리게 보기는 빼고).
+            // 조상에 자식까지 합친 그림 효과가 있으면 그 효과는 자식을 모두 합친 그림에 들므로 나눠 그리지 않고 프레임 합성을 그대로 그린다(흐리게 보기는 빼고).
             bool partView = _ctx.CurrentPart is not null && !_tiledMode;
             int partFrameIndex = peek ? frame - 1 : frame;
-            bool partComposite = partView && partFrame && !_focusLayer && dragged is null && _ctx.CurrentPart is { Visible: true, Parent: { Visible: true } partGroup }
-                                 && partGroup.HasActiveEffectsAt(partFrameIndex);
+            bool partComposite = partView && partFrame && !_focusLayer && dragged is null && _ctx.Project is { } pp && _ctx.CurrentPart is { } shownPart
+                                 && pp.IsLayerVisible(shownPart) && pp.AncestorsOf(shownPart).Any(a => LayerEffects.AnyActive(pp.SubtreeEffectsOf(a), partFrameIndex));
             if (partComposite)
             {
                 var composite = _ctx.CanvasCompositeView(partFrameIndex);
@@ -1036,7 +1036,7 @@ public sealed partial class PixelCanvas : Control
             if (view.Overlay && dragged is null) DrawPendingFrame(g);
             if (dragged is not null) DrawDraggedPart(g, dragged, frame);
             // 숨긴 일반 레이어도 그릴 수 있으므로, 현재 레이어가 숨김이면 그 셀을 반투명하게 위에 얹어 그리는 것이 보이게 한다(합성·내보내기는 그대로 숨김).
-            if (!peek && !_tiledMode && _ctx.Project is { } hp && _ctx.CurrentPart is null && hp.Layers[_ctx.CurrentLayer] is { IsGroup: false } cur
+            if (!peek && !_tiledMode && _ctx.Project is { } hp && _ctx.CurrentPart is null && !_ctx.IsArrangeParentSelected
                 && !hp.IsLayerVisible(_ctx.CurrentLayer) && _ctx.CelBitmap(_ctx.CurrentLayer, frame) is { } hiddenCel)
                 using (g.PushOpacity(0.6))
                     DrawBitmapAt(g, hiddenCel, 0, 0, W, H, checker: false);
@@ -1053,13 +1053,13 @@ public sealed partial class PixelCanvas : Control
         DrawSymmetryGuides(g);
         bool slicing = _ctx.Tool == ToolKind.Slice && !_peekPrevious;
         if (!slicing) DrawPartBorder(g);
-        if (_ctx.IsGroupSelected && !_peekPrevious) DrawPartOutlines(g);
+        if (_ctx.IsArrangeParentSelected && !_peekPrevious) DrawPartOutlines(g);
         if (slicing) DrawSliceEditor(g);
         // 피벗 보기: 보이는 모든 레이어·캔버스 피벗(이름 붙임), 그 위에 피벗 대상을 크게. 보기를 끈 피벗 도구는 대상(+ 그룹 화면의 부위 피벗)만.
         // 타일맵 화면은 피벗 단추가 숨고 피벗 도구도 없으므로 그리지 않는다.
         bool pivots = _showPivot && !_ctx.IsTilemapSelected;
         if (pivots && !_peekPrevious) DrawAllPivots(g);
-        else if (_ctx.Tool == ToolKind.Pivot && _ctx.IsGroupSelected && !_peekPrevious) DrawPartPivots(g);
+        else if (_ctx.Tool == ToolKind.Pivot && _ctx.IsArrangeParentSelected && !_peekPrevious) DrawPartPivots(g);
         if (pivots || _ctx.Tool == ToolKind.Pivot && !_ctx.IsTilemapSelected) DrawPivot(g);
         if (_ctx.IsTransforming) { if (!_peekPrevious) DrawTransform(g); }
         else if (_ctx.Selection.HasSelection) DrawSelection(g);
@@ -1083,7 +1083,7 @@ public sealed partial class PixelCanvas : Control
             AppTheme.DrawText(g, _ctx.CurrentFrame > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_Render_28FC63DF57,_ctx.CurrentFrame) : UiStrings.S_PixelCanvas_Render_5D74D360AD,
                 new Avalonia.Point(8, 8), AppTheme.WarningBrush, bold: true);
         // 캔버스 아래 안내는 그릴 수 없을 때(잠금) 경고만 — 사용법 설명은 도움말·상태 표시줄에.
-        if (!_ctx.IsGroupSelected && !_ctx.IsTransforming && !_ctx.CanEdit && !(_ctx.IsTilemapSelected && _ctx.TileEditBlocker() is null))
+        if (!_ctx.IsArrangeParentSelected && !_ctx.IsTransforming && !_ctx.CanEdit && !(_ctx.IsTilemapSelected && _ctx.TileEditBlocker() is null))
             AppTheme.DrawText(g, UiStrings.S_PixelCanvas_Render_77C8A3EDEF, new Avalonia.Point(8, Bounds.Height - 24), AppTheme.WarningBrush);
     }
 
@@ -1121,11 +1121,11 @@ public sealed partial class PixelCanvas : Control
 
     /// <summary>
     /// 지금 일반 레이어 셀의 캔버스 밖 그림을 그린다. 보기 설정과 레이어 불투명도를 적용하며, 그리기 도구에서는 작업 중인 그림을 쓴다.
-    /// 그룹이면 그 부위들이 캔버스 밖으로 나간 부분(<see cref="DrawGroupOutside"/>).
+    /// 자식 배치 중인 빈 부모면 그 자식들이 캔버스 밖으로 나간 부분(<see cref="DrawGroupOutside"/>).
     /// </summary>
     private void DrawCelOutside(DrawingContext g)
     {
-        if (_ctx.Project is { } gp && gp.Layers[_ctx.CurrentLayer] is { IsGroup: true } group)
+        if (_ctx.Project is { } gp && _ctx.IsArrangeParentSelected && gp.Layers[_ctx.CurrentLayer] is var group)
         {
             DrawGroupOutside(g, gp, group);
             return;
@@ -1169,14 +1169,14 @@ public sealed partial class PixelCanvas : Control
     private (Layer Group, int Frame, Rectangle Bounds)? _groupOutsideKey;
 
     /// <summary>
-    /// 그룹 화면: 보이는 부위들이 캔버스 밖으로 나간 부분을 보기 설정대로 그린다(그룹을 한 레이어처럼 — 캔버스 안은 이미 합성에 있음).
+    /// 자식 배치 화면: 보이는 자식들이 캔버스 밖으로 나간 부분을 보기 설정대로 그린다(부모를 한 레이어처럼 — 캔버스 안은 이미 합성에 있음).
     /// 부위 자리를 모두 감싸는 곳의 그룹 합성을 그리며, 스크립트 효과가 있으면(계산이 길 수 있음) 그리지 않는다.
     /// </summary>
     private void DrawGroupOutside(DrawingContext g, SpriteProject p, Layer group)
     {
         int frame = _ctx.CurrentFrame;
         var bounds = Rectangle.Empty;
-        foreach (var part in p.ChildrenOf(group))
+        foreach (var part in p.DescendantsOf(group))
         {
             if (!p.IsLayerVisible(p.IndexOf(part)) || part.PartSize.Width < 1 || part.PartSize.Height < 1) continue;
             var r = FrameRectOf(part);
@@ -1186,7 +1186,7 @@ public sealed partial class PixelCanvas : Control
         var key = (group, frame, bounds);
         if (_groupOutsideKey != key || _groupOutsideBmp is null)
         {
-            var plan = p.PlanGroup(group, frame);
+            var plan = p.PlanSubtree(group, frame);
             if (plan.RunsScripts) return;
             var image = plan.Cropped(bounds).Render();
             if (_groupOutsideBmp is null || _groupOutsideBmp.PixelSize.Width != image.Width || _groupOutsideBmp.PixelSize.Height != image.Height)
@@ -1218,7 +1218,7 @@ public sealed partial class PixelCanvas : Control
         using (g.PushOpacity(_focusOpacity / 100.0)) DrawBitmapAt(g, others, 0, 0, W, H, checker: false);
         if (!p.IsLayerVisible(index)) return;
         Bitmap? mine;
-        if (!layer.IsGroup && p.IsStrokeActive && _ctx.EditImage is { } cel && cel.Width == W && cel.Height == H)
+        if (!_ctx.IsArrangeParentSelected && p.IsStrokeActive && _ctx.EditImage is { } cel && cel.Width == W && cel.Height == H)
         {
             if (_strokeBmp is null || _strokeBmp.PixelSize.Width != W || _strokeBmp.PixelSize.Height != H)
             {
@@ -1230,7 +1230,7 @@ public sealed partial class PixelCanvas : Control
         }
         else mine = _ctx.CelBitmap(index, frame);
         if (mine is null) return;
-        using (g.PushOpacity(layer.IsGroup ? 1 : layer.Opacity / 255.0)) DrawBitmapAt(g, mine, 0, 0, W, H, checker: false);
+        using (g.PushOpacity(_ctx.IsArrangeParentSelected ? 1 : layer.Opacity / 255.0)) DrawBitmapAt(g, mine, 0, 0, W, H, checker: false);
     }
 
     /// <summary>떠 있는 픽셀: 캔버스 안은 그대로, 캔버스 밖으로 나간 부분은 보기 설정에 따름(<paramref name="clipToCanvas"/>가 아니면 모두 그대로).</summary>
@@ -1326,11 +1326,11 @@ public sealed partial class PixelCanvas : Control
         g.DrawRectangle(null, FrameBoundsPen, new Rect(r.X - 0.5, r.Y - 0.5, r.Width + 1, r.Height + 1));
     }
 
-    /// <summary>그룹 화면에서 끄는 부위를 옮긴 자리에 그린다(그룹·부위 불투명도 반영).</summary>
+    /// <summary>자식 배치 화면에서 끄는 자식을 옮긴 자리에 그린다(조상·자식 불투명도 반영).</summary>
     private void DrawDraggedPart(DrawingContext g, Layer part, int frame)
     {
         if (_ctx.Project is not { } p || _ctx.CelBitmap(p.IndexOf(part), frame) is not { } cel) return;
-        double opacity = (part.Parent?.Opacity ?? 255) * part.Opacity / (255.0 * 255.0);
+        double opacity = p.AncestorsOf(part).Aggregate(part.Opacity / 255.0, (o, a) => o * a.Opacity / 255.0);
         using (g.PushOpacity(opacity))
             DrawBitmapAt(g, cel, _arrangeOffset.X, _arrangeOffset.Y, part.PartSize.Width, part.PartSize.Height, checker: false);
     }
@@ -1338,7 +1338,7 @@ public sealed partial class PixelCanvas : Control
     /// <summary>그룹 화면: 보이는 부위마다 흐린 테두리, 올리거나 끄는 부위는 밝은 테두리 + 이름·크기(끄는 중이면 위치).</summary>
     private void DrawPartOutlines(DrawingContext g)
     {
-        if (_ctx.Project is not { } p || _ctx.CurrentGroup is not { } group) return;
+        if (_ctx.Project is not { } p || _ctx.CurrentArrangeParent is not { } group) return;
         var selected = SelectedPartIn(p, group);
         var hover = _arrangePart ?? _hoverPart;
         foreach (var part in p.ChildrenOf(group))
@@ -1436,12 +1436,12 @@ public sealed partial class PixelCanvas : Control
     private IEnumerable<SliceTarget> SliceTargets()
     {
         if (_ctx.Project is not { } p) yield break;
-        if (!_ctx.IsGroupSelected)
+        if (!_ctx.IsArrangeParentSelected)
         {
             yield return new SliceTarget(null, new Rectangle(0, 0, W, H), _ctx.SliceBorder);
             yield break;
         }
-        if (_ctx.CurrentGroup is not { } group) yield break;
+        if (_ctx.CurrentArrangeParent is not { } group) yield break;
         foreach (var part in p.ChildrenOf(group))
         {
             if (!p.IsLayerVisible(p.IndexOf(part))) continue;
@@ -1541,7 +1541,7 @@ public sealed partial class PixelCanvas : Control
     /// </summary>
     private void DrawPartPivots(DrawingContext g)
     {
-        if (_ctx.Project is not { } p || _ctx.CurrentGroup is not { } group) return;
+        if (_ctx.Project is not { } p || _ctx.CurrentArrangeParent is not { } group) return;
         foreach (var part in p.ChildrenOf(group))
         {
             if (!p.IsLayerVisible(p.IndexOf(part))) continue;
@@ -1778,7 +1778,7 @@ public sealed partial class PixelCanvas : Control
     {
         if (_drag != DragMode.None || _cursorPx is null || _lastStrokeEnd is not { } from || !IsStrokeTool(_ctx.Tool)
             || !(KeyState.IsDown(Key.LeftShift) || KeyState.IsDown(Key.RightShift))
-            || _ctx.IsGroupSelected || _ctx.IsTransforming || _ctx.IsCanvasResizing || !_ctx.CanEdit) return;
+            || _ctx.IsArrangeParentSelected || _ctx.IsTransforming || _ctx.IsCanvasResizing || !_ctx.CanEdit) return;
         var to = ScreenToPixel(_mouseScreen);
         var cells = new HashSet<Point>();
         foreach (var p in StrokeLine(from, to, OrthogonalStroke(_ctx.Tool)))
@@ -1829,7 +1829,7 @@ public sealed partial class PixelCanvas : Control
 
     private void DrawBrushCursor(DrawingContext g)
     {
-        if (_cursorPx is not { } p || _drag == DragMode.Pan || !UsesBrush(_ctx.Tool) || _ctx.IsGroupSelected || _ctx.IsTilemapSelected || _ctx.IsTransforming) return;
+        if (_cursorPx is not { } p || _drag == DragMode.Pan || !UsesBrush(_ctx.Tool) || _ctx.IsArrangeParentSelected || _ctx.IsTilemapSelected || _ctx.IsTransforming) return;
         var brush = _ctx.Brush;
         var cells = new HashSet<Point>(brush.Offsets.Select(o => new Point(p.X + o.X, p.Y + o.Y)));
         DrawMirrorGhosts(g, cells);
@@ -2053,7 +2053,7 @@ public sealed partial class PixelCanvas : Control
             if (BeginTileDrag(button, px, e.KeyModifiers)) e.Pointer.Capture(this);
             return;
         }
-        if (_ctx.IsGroupSelected)
+        if (_ctx.IsArrangeParentSelected)
         {
             // 그룹 화면: 9-slice 도구로 부위의 초록 선을 잡으면 그 선을, 아니면 어떤 도구든 부위 배치.
             if (button == MouseButton.Left && _ctx.Tool == ToolKind.Slice && BeginSliceDrag(loc)) { }
@@ -2209,7 +2209,7 @@ public sealed partial class PixelCanvas : Control
         switch (_drag)
         {
             case DragMode.None:
-                if (_ctx.IsGroupSelected) UpdateHoverPart(px);
+                if (_ctx.IsArrangeParentSelected) UpdateHoverPart(px);
                 if (_ctx.IsTilemapSelected) UpdateTileHover(px);
                 UpdateCurvePenHover(loc);
                 UpdateCursor(px);
@@ -2801,7 +2801,7 @@ public sealed partial class PixelCanvas : Control
         if (_curve is not { } curve) return false;
         _curve = null;
         // 빈 셀은 EditImage가 null이지만 획을 시작하면(BeginPixelStroke) 셀이 생긴다.
-        if (_ctx.CanEdit && !_ctx.IsGroupSelected && !_ctx.IsTilemapSelected)
+        if (_ctx.CanEdit && !_ctx.IsArrangeParentSelected && !_ctx.IsTilemapSelected)
         {
             BeginPixelStroke(ToolKind.Shape, curve.Button, curve.A);
             _strokeShape = _strokeShape with { Kind = ShapeKind.Curve };
@@ -2996,7 +2996,7 @@ public sealed partial class PixelCanvas : Control
     private void DrawWandPreview(DrawingContext g)
     {
         if (_ctx.Tool != ToolKind.MagicWand || !_ctx.WandPreview || _drag != DragMode.None || _hoverPx is not { } p || !_ctx.HasProject
-            || _ctx.IsTransforming || _ctx.IsCanvasResizing || _ctx.IsGroupSelected || _ctx.IsTilemapSelected || _ctx.Selection.IsFloating || _peekPrevious) return;
+            || _ctx.IsTransforming || _ctx.IsCanvasResizing || _ctx.IsArrangeParentSelected || _ctx.IsTilemapSelected || _ctx.Selection.IsFloating || _peekPrevious) return;
         var combine = CombineOf(_mods);
         if (_wandPreview is not { } pv || pv.At != p || pv.Combine != combine) _wandPreview = pv = BuildWandPreview(p, combine);
         foreach (var r in pv.Removed) g.FillRectangle(WandRemoveBrush, ToRect(ImageToScreen(r)));
@@ -3082,7 +3082,7 @@ public sealed partial class PixelCanvas : Control
     }
 
     /// <summary>←→가 프레임 대신 내용을 옮기는 모드인지: 이동 도구·변형·캔버스 크기·그룹 부위 배치.</summary>
-    public bool ArrowsMoveContent => _ctx.IsCanvasResizing || _ctx.IsGroupSelected || _ctx.IsTransforming || _ctx.Tool == ToolKind.Move;
+    public bool ArrowsMoveContent => _ctx.IsCanvasResizing || _ctx.IsArrangeParentSelected || _ctx.IsTransforming || _ctx.Tool == ToolKind.Move;
 
     /// <summary>방향키로 선택 내용(없으면 이동 도구에서 레이어 내용, 그룹 화면이면 부위 위치, 캔버스 크기 모드면 그림 자리)을 옮긴다.</summary>
     public bool Nudge(int dx, int dy)
@@ -3092,7 +3092,7 @@ public sealed partial class PixelCanvas : Control
             _ctx.MoveCanvasResizeImage(dx, dy);
             return true;
         }
-        if (_ctx.IsGroupSelected) return NudgePart(dx, dy);
+        if (_ctx.IsArrangeParentSelected) return NudgePart(dx, dy);
         if (_ctx.IsTransforming)
         {
             var p = _ctx.TransformParams;
@@ -3180,7 +3180,7 @@ public sealed partial class PixelCanvas : Control
     {
         var painted = new List<Layer>();
         var byRect = new List<Layer>();
-        if (_ctx.Project is not { } p || _ctx.CurrentGroup is not { } group) return painted;
+        if (_ctx.Project is not { } p || _ctx.CurrentArrangeParent is not { } group) return painted;
         var parts = p.ChildrenOf(group);
         for (int i = parts.Count - 1; i >= 0; i--)
         {
@@ -3202,7 +3202,7 @@ public sealed partial class PixelCanvas : Control
     /// <summary>그룹 화면에서 고른 부위를 푼다(Esc). 풀었으면 true.</summary>
     public bool ClearPartSelection()
     {
-        if (_selectedPart is null || !_ctx.IsGroupSelected) return false;
+        if (_selectedPart is null || !_ctx.IsArrangeParentSelected) return false;
         _selectedPart = null;
         InvalidateVisual();
         return true;
@@ -3281,7 +3281,7 @@ public sealed partial class PixelCanvas : Control
                     Message?.Invoke(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_BeginArrange_B1F7BBC533,group.Name));
                     return;
                 }
-                _ctx.SetGroupLayout(group, null);
+                _ctx.SetChildLayout(group, null);
                 Message?.Invoke(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_BeginArrange_32D63E2C46,group.Name));
             });
             return;
@@ -3320,7 +3320,7 @@ public sealed partial class PixelCanvas : Control
     /// <summary>그룹 화면 방향키: 마지막으로 올리거나 끈 부위(없으면 그룹 맨 위 부위)를 옮긴다.</summary>
     private bool NudgePart(int dx, int dy)
     {
-        if (_ctx.Project is not { } p || _ctx.CurrentGroup is not { } group || _drag != DragMode.None) return false;
+        if (_ctx.Project is not { } p || _ctx.CurrentArrangeParent is not { } group || _drag != DragMode.None) return false;
         if (SelectedPartIn(p, group) is not { } part)
         {
             Message?.Invoke(this, UiStrings.S_PixelCanvas_NudgePart_386C0383DB);
@@ -4179,7 +4179,7 @@ public sealed partial class PixelCanvas : Control
             Cursor = hit.Edge is SliceEdge.Left or SliceEdge.Right ? SizeWeCursor : SizeNsCursor;
             return;
         }
-        if (_ctx.IsGroupSelected)
+        if (_ctx.IsArrangeParentSelected)
         {
             Cursor = PartAt(px) is null ? ArrowCursor : SizeAllCursor;
             return;

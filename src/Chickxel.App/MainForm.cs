@@ -860,8 +860,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             DocCmd("프레임 삭제", MainStrings.Menu_FrameLayer_Command_178, _timeline.DeleteFrame),
             new Separator(),
             DocCmd("새 레이어", MainStrings.Menu_FrameLayer_AddLayer_180, _timeline.AddLayer, "Shift+N", KeyScope.NotInText, (Key.N, Shift)),
-            DocCmd("새 그룹", MainStrings.Menu_FrameLayer_AddGroup_182, _timeline.AddGroup, "Ctrl+Shift+N", KeyScope.Global, (Key.N, Ctrl | Shift)),
-            DocCmd("새 부위…", MainStrings.Menu_FrameLayer_AddPart_184, _timeline.AddPart, "Shift+P", KeyScope.NotInText, (Key.P, Shift)),
+            DocCmd("새 빈 레이어", MainStrings.Menu_FrameLayer_AddEmptyLayer, _timeline.AddEmptyLayer, "Ctrl+Shift+N", KeyScope.Global, (Key.N, Ctrl | Shift)),
+            DocCmd("새 자식 레이어…", MainStrings.Menu_FrameLayer_AddChildLayer, _timeline.AddChildLayer, "Shift+P", KeyScope.NotInText, (Key.P, Shift)),
             WithIcon(DocCmd("새 타일맵 레이어…", UiStrings.Tile_MenuAddLayer, _timeline.AddTilemapLayer, "Alt+Shift+N", KeyScope.NotInText, (Key.N, Alt | Shift)), VectorIcon.Grid3x3),
             DocCmd("타일맵을 레이어로 변환", UiStrings.Tile_MenuConvert, () => _timeline.ConvertTilemap(_ctx.CurrentLayer)),
             DocCmd("부위 크기…", MainStrings.Menu_FrameLayer_Command_186, _timeline.ResizePart),
@@ -1902,7 +1902,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         }
     }
 
-    /// <summary>상태 표시줄의 "프레임 i/n · L k 이름" (부위면 크기도).</summary>
+    /// <summary>상태 표시줄의 "프레임 i/n · L k 이름" (자리 있는 레이어면 크기도).</summary>
     private string StatusFrameText(SpriteProject p)
     {
         var text = MainStrings.FormatMessage_339(value: _ctx.CurrentFrame + 1, count: p.Frames.Count, value2: _ctx.CurrentLayer + 1);
@@ -1910,7 +1910,6 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         {
             text += $" {layer.Name}";
             if (layer.IsPart) text += $" ({layer.PartSize.Width}×{layer.PartSize.Height})";
-            else if (layer.IsGroup) text += MainStrings.Ui_245;
         }
         return text;
     }
@@ -2578,12 +2577,11 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         var p = doc.Project;
         AppSettings.PushRecent(_settings.RecentFiles, result!.Imported ? full : p.Path ?? full);
         _browser.SelectFile(p.Path is { } pp && File.Exists(pp) ? pp : full);
-        int parts = p.Layers.Count(l => l.IsPart);
-        var contents = MainStrings.FormatMessage_359(count: p.Frames.Count, count2: p.Tags.Count) + (parts > 0 ? MainStrings.FormatMessage_360(parts: parts) : "");
+        var contents = MainStrings.FormatMessage_359(count: p.Frames.Count, count2: p.Tags.Count);
         message = result.Imported
             ? MainStrings.FormatMessage_361(value: Path.GetFileName(full), contents: contents, path: Path.GetFileName(p.Path))
             : MainStrings.FormatMessage_362(displayName: p.DisplayName, count: p.Layers.Count, contents: contents);
-        // 예전 형식 파일이면 새 형식으로 바꿔 읽었음을 알린다(레이어마다 캔버스 피벗을 복사함 — 저장하면 새 형식).
+        // 예전 형식 파일이면 새 형식으로 바꿔 읽었음을 알린다(그룹 → 자식이 있는 레이어 등 — 저장하면 새 형식).
         if (!result.Imported && p.ConvertedFromVersion is { } oldVersion) message += " " + MainStrings.FormatMessage_ConvertedProject(version: oldVersion);
         message += historyNote + UnsavedSuffix;
         ShowMessage(message);
@@ -2666,10 +2664,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
                 return;
             }
         }
-        var p = BuildProject(dlg.ImageWidth, dlg.ImageHeight, dlg.Transparent ? null : _ctx.Secondary,
-            dlg.StartWithParts, dlg.PartName, dlg.PartWidth, dlg.PartHeight, dlg.PasteImage);
+        var p = BuildProject(dlg.ImageWidth, dlg.ImageHeight, dlg.Transparent ? null : _ctx.Secondary, dlg.PasteImage);
         OpenInNewTab(new OpenDocument(p, null));
-        SelectFirstPart(p);
         if (path is null)
         {
             p.IsDirty = true;
@@ -2683,10 +2679,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     /// <summary>
     /// 새 프로젝트(기록 없음). <paramref name="background"/>가 있으면 첫 레이어 셀을 그 색으로 채운다.
     /// <paramref name="startImage"/>가 있으면 첫 레이어 왼쪽 위에 그 그림을 놓는다(배경색 위에 겹쳐서, 캔버스 밖은 잘림).
-    /// <paramref name="startWithParts"/>면 그룹 + 첫 부위를 만들고 그 부위를 현재 레이어로 고른다(<see cref="SelectFirstPart"/>).
     /// </summary>
-    private SpriteProject BuildProject(int width, int height, Color32? background,
-        bool startWithParts = false, string? partName = null, int partWidth = 0, int partHeight = 0, PixelImage? startImage = null)
+    private SpriteProject BuildProject(int width, int height, Color32? background, PixelImage? startImage = null)
     {
         var p = new SpriteProject(width, height);
         p.Edit(MainStrings.Ui_295, ProjectChange.Settings | ProjectChange.Pixels, () =>
@@ -2700,21 +2694,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
                 p.SetCel(0, 0, cel);
             }
         });
-        if (startWithParts)
-        {
-            var group = p.AddGroup();
-            p.AddPart(group, string.IsNullOrWhiteSpace(partName) ? null : partName.Trim(),
-                Math.Clamp(partWidth, 1, width), Math.Clamp(partHeight, 1, height));
-        }
         p.History.Clear();
         return p;
-    }
-
-    /// <summary>새로 연 프로젝트에 부위가 있으면 맨 위 부위를 현재 레이어로 고른다.</summary>
-    private void SelectFirstPart(SpriteProject p)
-    {
-        for (int i = p.Layers.Count - 1; i >= 0; i--)
-            if (p.Layers[i].IsPart) { _ctx.SetCurrentLayer(i); return; }
     }
 
     /// <summary>Ctrl+S: 지금 문서 저장(모양 펜 세트·타일 그림을 고치는 문서면 세트·타일에 저장 — <see cref="SaveShapeSetEdit"/>, <see cref="SaveTileImageEdit"/>).</summary>
@@ -3499,16 +3480,16 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         if (LineArtDialog.Run(_ctx, this) is { } message) ShowMessage(message);
     }
 
-    /// <summary>현재 그룹(부위면 그 그룹)의 스킨을 앞뒤로 바꾼다(착장 전환, 실행취소 기록 없음).</summary>
+    /// <summary>현재 레이어의 스킨을 앞뒤로 바꾼다(실행취소 기록 없음).</summary>
     private void StepSkin(int delta)
     {
-        if (_ctx.CurrentGroup is not { } group)
+        if (_ctx.CurrentLayerObject is not { IsTilemap: false } layer)
         {
             ShowMessage(MainStrings.Message_328);
             return;
         }
-        if (_ctx.StepSkin(group, delta)) ShowMessage(MainStrings.FormatMessage_390(name: group.Name, name2: group.ActiveSkin!.Name));
-        else ShowMessage(MainStrings.FormatMessage_391(name: group.Name));
+        if (_ctx.StepSkin(layer, delta)) ShowMessage(MainStrings.FormatMessage_390(name: layer.Name, name2: layer.ActiveSkin!.Name));
+        else ShowMessage(MainStrings.FormatMessage_391(name: layer.Name));
     }
 
     /// <summary>현재 프레임 그림(시트)을 격자/자동으로 나눠 칸마다 프레임 하나인 프로젝트로 바꾼다.</summary>

@@ -72,12 +72,12 @@ public class LayerPivotTests
     }
 
     [Fact]
-    public void NewLayersAndGroups_StartWithTheCanvasDefaultPivot()
+    public void NewNormalLayers_StartWithTheCanvasDefaultPivot_NewPositionedLayersAtTheirCenter()
     {
         var p = new SpriteProject(8, 8);
         p.Edit("피벗", ProjectChange.Settings, () => p.Sprite.DefaultPivot = Pivot.BottomCenter);
         Assert.Equal(Pivot.BottomCenter, p.AddLayer().Pivot);
-        Assert.Equal(Pivot.BottomCenter, p.AddGroup("g").Pivot);
+        Assert.Equal(Pivot.Center, p.AddEmptyParent("g").Pivot); // 자리 있는 레이어 피벗은 자기 기준
     }
 
     [Fact]
@@ -128,7 +128,7 @@ public class LayerPivotTests
     {
         var p = new SpriteProject(8, 8);
         p.AddFrame();
-        var group = p.AddGroup("g");
+        var group = p.AddEmptyParent("g");
         var part = p.AddPart(group, "부위", 4, 2, new Point(0, 0));
         p.SetLayerPivot(0, At(1.5f, 2.5f));
         p.SetLayerFramePivot(0, 1, At(0.5f, 0.5f));
@@ -170,7 +170,7 @@ public class LayerPivotTests
         Assert.Equal([At(2, 6), At(4, 2)], ProjectExport.BuildSheet(p, "hero", allFrames: true).Entries.Select(e => e.Pivot));
 
         // 부위가 대표면 그 프레임의 부위 자리 + 부위 피벗(캔버스 기준으로)
-        var group = p.AddGroup("g");
+        var group = p.AddEmptyParent("g");
         var part = p.AddPart(group, "부위", 4, 4, new Point(2, 2));
         p.MovePartFrom(p.IndexOf(part), 1, 2, 0);
         p.SetPivotLayer(part);
@@ -202,7 +202,7 @@ public class LayerPivotTests
     }
 
     [Fact]
-    public void MoveIntoAndOutOfGroup_KeepTheSamePivotPointOnTheCanvas()
+    public void MoveIntoAndOutOfParent_KeepTheSamePivotPointOnTheCanvas()
     {
         var p = new SpriteProject(8, 8);
         p.AddFrame();
@@ -214,25 +214,28 @@ public class LayerPivotTests
         var layer = p.Layers[0];
         p.SetLayerPivot(0, At(3, 3));
         p.SetLayerFramePivot(0, 1, At(5, 4));
-        var group = p.AddGroup("g");
+        var group = p.AddEmptyParent("g");
 
-        // 일반 → 부위: 피벗을 부위 기준으로(캔버스의 같은 점)
-        p.MoveIntoGroup([layer], group, 0);
+        // 일반 → 자리 있는 레이어: 피벗을 자기 기준으로(캔버스의 같은 점)
+        p.MoveLayersTo([layer], group, 0);
         Assert.True(layer.IsPart);
         Assert.Equal(new Rectangle(2, 2, 4, 2), layer.PartRect);
         Assert.Equal(Pivot.FromLocalPixel(1, 1, 4, 2), layer.Pivot);
         Assert.Equal([new PointF(3, 3), new PointF(5, 4)], Enumerable.Range(0, 2).Select(f => p.LayerPivotPixel(layer, f)));
 
-        // 프레임 1만 옮긴 뒤 꺼내기: 부위 기준 → 캔버스 기준(옮긴 프레임은 그 프레임만의 피벗으로)
+        // 프레임 1만 옮긴 뒤 꺼내기: 자리 있는 레이어 그대로라 피벗·자리도 그대로
         p.MovePartFrom(p.IndexOf(layer), 1, 1, 0);
         Assert.Equal(new PointF(6, 4), p.LayerPivotPixel(layer, 1));
-        p.MoveOutOfGroup([layer], 0);
-        Assert.False(layer.IsPart);
-        Assert.Equal(At(3, 3), layer.Pivot);
+        p.MoveOutOfParent([layer]);
+        Assert.True(layer.IsPart);
+        Assert.Null(layer.Parent);
+        Assert.Equal(Pivot.FromLocalPixel(1, 1, 4, 2), layer.Pivot);
         Assert.Equal([new PointF(3, 3), new PointF(6, 4)], Enumerable.Range(0, 2).Select(f => p.LayerPivotPixel(layer, f)));
         p.Undo();
-        Assert.True(layer.IsPart);
-        Assert.Equal(Pivot.FromLocalPixel(1, 1, 4, 2), layer.Pivot);
+        p.Undo();
+        p.Undo();
+        Assert.False(layer.IsPart);
+        Assert.Equal(At(3, 3), layer.Pivot);
     }
 
     [Fact]
@@ -240,7 +243,7 @@ public class LayerPivotTests
     {
         var p = new SpriteProject(8, 8);
         p.AddFrame();
-        var group = p.AddGroup("g");
+        var group = p.AddEmptyParent("g");
         var part = p.AddPart(group, "부위", 4, 4);
         p.SetLayerPivot(0, At(1, 2));
         p.SetLayerFramePivot(0, 1, At(3, 4));
@@ -268,7 +271,7 @@ public class LayerPivotTests
         var p = new SpriteProject(8, 8);
         p.AddFrame();
         for (int f = 0; f < 2; f++) p.SetCel(0, f, Dot(2, 2));
-        var group = p.AddGroup("g");
+        var group = p.AddEmptyParent("g");
         var part = p.AddPart(group, "부위", 4, 4, new Point(4, 4));
         p.SetCel(p.IndexOf(part), 0, new PixelImage(4, 4) { [1, 1] = White });
         var canvas = At(2.5f, 2.5f);
@@ -283,10 +286,10 @@ public class LayerPivotTests
         p.SetLayerPivot(p.IndexOf(part), Pivot.BottomCenter);
         p.SetLayerFramePivot(p.IndexOf(part), 1, Pivot.Center);
         p.SetLayerEffects(0, [Rotate90()]);
-        p.SetLayerEffects(p.IndexOf(group), [Rotate90()]);
+        p.SetLayerEffects(p.IndexOf(group), [Rotate90() with { IncludeChildren = true }]); // 예전 그룹 효과 = 자손까지
         var expected = Enumerable.Range(0, 2).Select(f => p.Flatten(f)).ToList();
 
-        var file = Downgrade(p);
+        var file = Downgrade(p, groups: [p.IndexOf(group)]);
         var old = ProjectIO.Load(file);
         Assert.Equal(4, old.ConvertedFromVersion);
         Assert.Null(old.PivotLayer);
@@ -317,7 +320,7 @@ public class LayerPivotTests
         a.SetLayerPivot(0, At(1, 1));
         a.SetLayerFramePivot(0, 1, At(2, 2));
         var p = ProjectMerge.Merge([new MergeSource("a", a)], new MergeOptions(MergeMode.Layers, 12, 10, Anchor.BottomCenter, "x"));
-        var layer = p.Layers.Single(l => !l.IsPart && !l.IsGroup);
+        var layer = p.Layers.Single(l => !l.IsPart);
         // 아래 가운데: 그림이 (2,2)만큼 옮겨지므로 피벗도
         foreach (var (f, x, y) in new[] { (0, 3f, 3f), (1, 4f, 4f) })
         {
@@ -387,11 +390,15 @@ public class LayerPivotTests
         return ms;
     }
 
-    /// <summary>형식 4로 낮춘 파일: 부위만 피벗(<c>partPivot</c>·프레임의 <c>partPivots</c>), 일반 레이어·그룹 피벗과 대표 레이어 없음.</summary>
-    private static MemoryStream Downgrade(SpriteProject p) => Rewrite(p, json =>
+    /// <summary>
+    /// 형식 4로 낮춘 파일: 부위만 피벗(<c>partPivot</c>·프레임의 <c>partPivots</c>), 일반 레이어·그룹 피벗과 대표 레이어 없음.
+    /// <paramref name="groups"/> 번호의 빈 부모는 그룹으로(자리·스킨·적용 대상 없이).
+    /// </summary>
+    private static MemoryStream Downgrade(SpriteProject p, int[]? groups = null) => Rewrite(p, json =>
     {
         json["version"] = 4;
         json.AsObject().Remove("pivotLayer");
+        json.AsObject().Remove("presets");
         var layers = json["layers"]!.AsArray();
         var parts = new HashSet<int>();
         for (int i = 0; i < layers.Count; i++)
@@ -399,6 +406,16 @@ public class LayerPivotTests
             var l = layers[i]!.AsObject();
             var pivot = l["pivot"]?.DeepClone();
             l.Remove("pivot");
+            l.Remove("skins");
+            l.Remove("activeSkin");
+            if (groups is not null && groups.Contains(i))
+            {
+                l["kind"] = "Group";
+                foreach (var key in new[] { "partWidth", "partHeight", "partX", "partY", "partBorder", "partSource" }) l.Remove(key);
+                if (l["effects"] is JsonArray fx)
+                    foreach (var e in fx) e!.AsObject().Remove("includeChildren");
+                continue;
+            }
             if (l["kind"]?.GetValue<string>() != "Part") continue;
             parts.Add(i);
             l["partPivot"] = pivot;

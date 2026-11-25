@@ -32,7 +32,7 @@ public class LayerIsolateTests
     public void AltLock_LocksOthers_KeepsGroupAndItsParts_ThenUnlocksAll()
     {
         var p = new SpriteProject(8, 8);
-        var group = p.AddGroup();
+        var group = p.AddEmptyParent();
         var arm = p.AddPart(group, "팔", 2, 2, new System.Drawing.Point(0, 0));
         var leg = p.AddPart(group, "다리", 2, 2, new System.Drawing.Point(2, 2));
         var normal = p.Layers[0];

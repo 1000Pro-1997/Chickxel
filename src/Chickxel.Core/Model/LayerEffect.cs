@@ -1,7 +1,7 @@
 namespace Chickxel.Core.Model;
 
 /// <summary>
-/// 레이어 효과 하나(비파괴): 셀 픽셀은 그대로 두고 합성할 때 레이어(그룹이면 그 그룹의 합성)의 그림에 입힌다.
+/// 레이어 효과 하나(비파괴): 셀 픽셀은 그대로 두고 합성할 때 레이어의 그림(<see cref="IncludeChildren"/>면 자손까지 합친 그림)에 입힌다.
 /// 값 객체(불변 record)라 실행취소 기록은 목록 참조만 담는다. 바꿀 때는 <c>with</c>로 새 값을 만들어
 /// <see cref="SpriteProject.SetLayerEffects"/>로 넣는다. 모든 효과는 픽셀 단위(번짐·안티에일리어싱 없음)다.
 /// </summary>
@@ -30,6 +30,12 @@ public abstract record LayerEffect
     /// 저장된다(꺼졌을 때만 — 없으면 켜짐).
     /// </summary>
     public bool MovePivot { get; init; } = true;
+
+    /// <summary>
+    /// 적용 대상: false(기본) = 이 레이어 자신의 셀에만, true = 이 레이어 자신의 그림과 모든 자손을 합친 그림에(예전 그룹 효과).
+    /// 자식이 없는 레이어에서는 자기 셀에 입힌다(값과 관계없이). 저장된다(<c>includeChildren</c>, 켜졌을 때만).
+    /// </summary>
+    public bool IncludeChildren { get; init; }
 
     /// <summary>각 색 설정의 그라데이션. 키는 색 속성 이름(목록 색은 인덱스 포함); 없는 키는 단색 설정을 쓴다.</summary>
     public IReadOnlyDictionary<string, EffectColorGradient> ColorGradients { get; init; }

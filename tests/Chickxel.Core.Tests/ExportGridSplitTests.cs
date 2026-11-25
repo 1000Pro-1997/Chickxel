@@ -24,7 +24,7 @@ public class ExportGridSplitTests
     {
         var p = new SpriteProject(4, 4);
         p.AddFrame();
-        var g = p.AddGroup();
+        var g = p.AddEmptyParent();
         p.AddPart(g, "Head", 2, 2);
         var e = p.Export;
         Assert.Equal((true, false, 1, SheetLayout.Grid, SheetGrid.Auto, false, SkinSource.Current),
@@ -47,7 +47,7 @@ public class ExportGridSplitTests
     private static SpriteProject Rig()
     {
         var p = new SpriteProject(8, 8);
-        var g = p.AddGroup("rig");
+        var g = p.AddEmptyParent("rig");
         var arm = p.AddPart(g, "Arm", 2, 3);
         var head = p.AddPart(g, "Head", 4, 2);
         for (int i = 1; i < 5; i++) p.AddFrame();

@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Globalization;
+using System.Diagnostics.CodeAnalysis;
 using System.IO.Compression;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -21,26 +22,32 @@ public sealed record ProjectSaveResult(string ProjectPath, ProjectExportResult? 
 
 /// <summary>
 /// <c>.chickxel</c> 프로젝트 파일 읽기/쓰기. 형식은 ZIP:
-/// <c>project.json</c>(버전 4, 캔버스·레이어(종류·그룹·스킨·부위 크기·위치·피벗·테두리·효과)·프레임·태그·Unity·내보내기 설정,
+/// <c>project.json</c>(버전 7, 캔버스·레이어(종류·부모·스킨·자리 있는 레이어의 크기·자리·테두리·피벗·효과)·프레임·태그·스킨 프리셋·Unity·내보내기 설정,
 /// 스크립트 효과가 있으면 스크립트 표 <c>scripts</c>: 원문 해시 → 원문, 링크된 셀이 있으면 <c>celLinks</c>: 같은 그림을 같이 쓰는 셀) +
-/// <c>cels/L{레이어 번호}_F{프레임 번호}.png</c>(셀, 부위 셀은 부위 크기 — 부위는 그룹의 첫 스킨 셀) +
-/// <c>cels/L{레이어}_F{프레임}_S{스킨 번호}.png</c>(부위의 첫 스킨이 아닌 스킨 셀, 스킨 번호 = 그룹 스킨 목록 번호 1~) +
+/// <c>cels/L{레이어 번호}_F{프레임 번호}.png</c>(레이어의 첫 스킨 셀 — 자리 있는 레이어는 자기 크기, 일반 레이어는 캔버스 크기) +
+/// <c>cels/L{레이어}_F{프레임}_S{스킨 번호}.png</c>(첫 스킨이 아닌 스킨 셀, 스킨 번호 = 그 레이어의 스킨 목록 번호 1~) +
+/// <c>overflow/L{레이어}_F{프레임}[_S{스킨 번호}]_X{x}_Y{y}.png</c>(일반 레이어 셀의 캔버스 밖 그림, 스킨마다) +
 /// <c>thumbnail.png</c>(첫 프레임 합성, 긴 변 <see cref="ThumbnailMaxSize"/>px 이하 — 읽을 때는 쓰지 않고 Windows 탐색기 미리보기가 읽음, 압축 없이 저장).
-/// 빈 셀은 생략, 번호는 0부터, 레이어 0 = 맨 아래.
+/// 빈 셀은 생략, 번호는 0부터, 레이어 0 = 맨 아래. 나무는 레이어마다 부모 번호(<c>parent</c>)로 적는다(자손은 그 레이어 바로 아래 번호들).
 /// <para>
-/// 버전 2 이하 파일은 그대로 읽는다(그룹마다 스킨 "기본" 하나). 버전 1 아틀라스 파일(<c>kind: Atlas</c>, <c>atlas/S{스프라이트}_L{레이어}.png</c>)은
-/// 그룹 "부위" + 스프라이트마다 부위 하나로 바꿔 읽는다(부위 아틀라스 이름은 예전 내보내기 이름이라 Unity guid·spriteID가 유지됨).
+/// 버전 6 이하 파일(그룹·부위)은 레이어 나무로 바꿔 읽는다: 그룹 → 같은 이름의 셀 없는 캔버스 크기 레이어(자리 (0,0), 피벗·보이기·잠금·불투명도·접기·자동 배치 그대로,
+/// 효과는 자손까지 합친 그림에 — <see cref="LayerEffect.IncludeChildren"/>), 그 부위들 → 자식(순서 그대로). 그룹 전체 스킨 → 부위마다 같은 이름의 스킨(그룹 스킨 순서,
+/// 첫 스킨 = 기본) + 전체 스킨이 둘 이상이면 스킨마다 같은 이름의 스킨 프리셋, 부위 전용 스킨 → 그 부위의 스킨, 착장 → 같은 이름의 스킨 프리셋.
+/// 버전 2 이하 파일은 그룹마다 스킨 "기본" 하나로 본다. 버전 1 아틀라스 파일(<c>kind: Atlas</c>, <c>atlas/S{스프라이트}_L{레이어}.png</c>)은
+/// 빈 부모 레이어 "부위" + 스프라이트마다 자식 레이어 하나로 바꿔 읽는다(레이어 아틀라스 이름은 예전 내보내기 이름이라 Unity guid·spriteID가 유지됨).
 /// </para>
 /// </summary>
 public static partial class ProjectIO
 {
     /// <summary>
+    /// 7 = 레이어 나무를 쓰는 판: 레이어 종류는 일반·자리 있는 레이어(<c>Part</c>)·타일맵, 부모(<c>parent</c>)는 아무 자리 있는 레이어, 스킨(<c>skins</c>·<c>activeSkin</c>)은
+    /// 일반·자리 있는 레이어마다, 스킨 프리셋(<c>presets</c>), 효과 대상(<c>includeChildren</c>). 6 이하 파일은 바꿔 읽는다(<see cref="SpriteProject.ConvertedFromVersion"/>).
     /// 6 = 타일맵 레이어(레이어의 <c>tilesetKey</c>·<c>tileOrigin</c>, 맵 <c>tilemaps/L{레이어}.bin</c>, 타일셋 <c>tilesets</c> + <c>tilesets/&lt;이름표&gt;.chickxel-tileset</c>)를 쓰는 판.
     /// 5 = 레이어마다 피벗(일반 레이어·그룹 포함 — 레이어의 <c>pivot</c>, 프레임의 <c>layerPivots</c>)과 캔버스 피벗의 대표 레이어(<c>pivotLayer</c>)를 쓰는 판.
-    /// 4 이하 파일은 일반 레이어·그룹이 캔버스 피벗(기본 + 프레임마다)을 자기 피벗으로 갖도록 바꿔 읽는다(그림은 그대로, <see cref="SpriteProject.ConvertedFromVersion"/>).
+    /// 4 이하 파일은 일반 레이어·그룹이 캔버스 피벗(기본 + 프레임마다)을 자기 피벗으로 갖도록 바꿔 읽는다(그림은 그대로).
     /// 4 = 레이어 효과를 안정된 종류 ID와 설정 객체로 쓰는 판(<see cref="EffectCodec"/>). 3 이하의 짧은 효과 ID는 읽을 때 바꾼다.
     /// </summary>
-    public const int CurrentVersion = 6;
+    public const int CurrentVersion = 7;
     public const string ProjectEntryName = "project.json";
     public const string ThumbnailEntryName = "thumbnail.png";
 
@@ -64,17 +71,20 @@ public static partial class ProjectIO
     [GeneratedRegex(@"^cels/L(\d+)_F(\d+)(?:_S(\d+))?\.png$", RegexOptions.IgnoreCase)]
     private static partial Regex CelEntry();
 
-    [GeneratedRegex(@"^overflow/L(\d+)_F(\d+)_X(-?\d+)_Y(-?\d+)\.png$", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^overflow/L(\d+)_F(\d+)(?:_S(\d+))?_X(-?\d+)_Y(-?\d+)\.png$", RegexOptions.IgnoreCase)]
     private static partial Regex OverflowEntry();
 
     /// <summary>일반 레이어 셀의 캔버스 밖 그림 PNG 이름(왼쪽 위 = 캔버스 좌표 (<paramref name="x"/>, <paramref name="y"/>)).</summary>
-    public static string OverflowEntryName(int layerIndex, int frameIndex, int x, int y)
-        => string.Create(CultureInfo.InvariantCulture, $"overflow/L{layerIndex}_F{frameIndex}_X{x}_Y{y}.png");
+    /// <param name="skinIndex">레이어의 스킨 번호(0 = 첫 스킨, 이름에 넣지 않음).</param>
+    public static string OverflowEntryName(int layerIndex, int frameIndex, int x, int y, int skinIndex = 0)
+        => skinIndex == 0
+            ? string.Create(CultureInfo.InvariantCulture, $"overflow/L{layerIndex}_F{frameIndex}_X{x}_Y{y}.png")
+            : string.Create(CultureInfo.InvariantCulture, $"overflow/L{layerIndex}_F{frameIndex}_S{skinIndex}_X{x}_Y{y}.png");
 
     [GeneratedRegex(@"^atlas/S(\d+)_L(\d+)\.png$", RegexOptions.IgnoreCase)]
     private static partial Regex AtlasEntry();
 
-    /// <param name="skinIndex">부위의 스킨 번호(0 = 첫 스킨·일반 레이어).</param>
+    /// <param name="skinIndex">레이어의 스킨 번호(0 = 첫 스킨, 이름에 넣지 않음).</param>
     public static string CelEntryName(int layerIndex, int frameIndex, int skinIndex = 0)
         => skinIndex == 0 ? $"cels/L{layerIndex}_F{frameIndex}.png" : $"cels/L{layerIndex}_F{frameIndex}_S{skinIndex}.png";
 
@@ -249,23 +259,25 @@ public static partial class ProjectIO
             Math.Max(1, image.Width * ThumbnailMaxSize / longest), Math.Max(1, image.Height * ThumbnailMaxSize / longest));
     }
 
-    /// <summary>저장할 셀(이름, 그림) — 레이어 → 프레임 → 스킨 차례, 일반 레이어 셀 뒤에 그 셀의 캔버스 밖 그림. 빈 셀도 들어 있다(<see cref="EncodeCel"/>이 거른다).</summary>
+    /// <summary>
+    /// 저장할 셀(이름, 그림) — 레이어 → 프레임 → 스킨 차례, 일반 레이어 셀 뒤에 그 셀의 캔버스 밖 그림. 빈 셀도 들어 있다(<see cref="EncodeCel"/>이 거른다).
+    /// </summary>
     private static List<(string Name, PixelImage Cel)> CelsToWrite(SpriteProject project)
     {
         var list = new List<(string, PixelImage)>();
         for (int li = 0; li < project.Layers.Count; li++)
         {
             var layer = project.Layers[li];
-            if (layer.IsGroup) continue;
-            var skins = layer is { IsPart: true, Parent: { IsGroup: true } g } ? g.AllSkins : [];
+            var skins = layer.Skins;
             for (int fi = 0; fi < project.Frames.Count; fi++)
             {
                 var frame = project.Frames[fi];
-                if (project.GetCelRaw(layer, frame, null) is { } cel) list.Add((CelEntryName(li, fi), cel));
-                if (project.GetOverflowRaw(layer, frame) is { } overflow)
-                    list.Add((OverflowEntryName(li, fi, overflow.Origin.X, overflow.Origin.Y), overflow.Image));
-                for (int si = 1; si < skins.Count; si++)
-                    if (project.GetCelRaw(layer, frame, skins[si]) is { } skinCel) list.Add((CelEntryName(li, fi, si), skinCel));
+                for (int si = 0; si < skins.Count; si++)
+                {
+                    if (project.GetCelRaw(layer, frame, skins[si]) is { } cel) list.Add((CelEntryName(li, fi, si), cel));
+                    if (project.GetOverflowRaw(layer, frame, skins[si]) is { } overflow)
+                        list.Add((OverflowEntryName(li, fi, overflow.Origin.X, overflow.Origin.Y, si), overflow.Image));
+                }
             }
         }
         return list;
@@ -355,22 +367,24 @@ public static partial class ProjectIO
     /// </summary>
     internal static SpriteProject SnapshotForSave(SpriteProject project, string fullPath)
     {
-        var (copy, fileLayers) = FromDto(ToDto(project, fullPath), null);
-        var cels = new List<(Layer Layer, Frame Frame, Skin? Skin, PixelImage Source)>();
+        var (copy, files) = FromDto(ToDto(project, fullPath), null);
+        var fileLayers = files.Layers;
+        var cels = new List<(Layer Layer, Frame Frame, Skin Skin, PixelImage Source)>();
         for (int li = 0; li < project.Layers.Count; li++)
         {
             var layer = project.Layers[li];
-            if (layer.IsGroup) continue;
-            var skins = layer is { IsPart: true, Parent: { IsGroup: true } g } ? g.AllSkins : [];
-            var copySkins = fileLayers[li] is { IsPart: true, Parent: { IsGroup: true } cg } ? cg.AllSkins : [];
+            var skins = layer.Skins;
+            var copySkins = fileLayers[li].Skins;
             for (int fi = 0; fi < project.Frames.Count; fi++)
             {
                 var frame = project.Frames[fi];
-                if (project.GetCelRaw(layer, frame, null) is { } cel) cels.Add((fileLayers[li], copy.Frames[fi], null, cel));
-                // 캔버스 밖 그림은 고치지 않으므로 복사하지 않고 같이 쓴다.
-                if (project.GetOverflowRaw(layer, frame) is { } overflow) copy.SetOverflowRaw(fileLayers[li], copy.Frames[fi], overflow.Image, overflow.Origin);
-                for (int si = 1; si < skins.Count && si < copySkins.Count; si++)
-                    if (project.GetCelRaw(layer, frame, skins[si]) is { } skinCel) cels.Add((fileLayers[li], copy.Frames[fi], copySkins[si], skinCel));
+                for (int si = 0; si < skins.Count && si < copySkins.Count; si++)
+                {
+                    if (project.GetCelRaw(layer, frame, skins[si]) is { } cel) cels.Add((fileLayers[li], copy.Frames[fi], copySkins[si], cel));
+                    // 캔버스 밖 그림은 고치지 않으므로 복사하지 않고 같이 쓴다.
+                    if (project.GetOverflowRaw(layer, frame, skins[si]) is { } overflow)
+                        copy.SetOverflowRaw(fileLayers[li], copy.Frames[fi], overflow.Image, overflow.Origin, copySkins[si]);
+                }
             }
         }
         // 타일셋·맵은 바뀌지 않는 값이라 같이 쓴다.
@@ -391,7 +405,6 @@ public static partial class ProjectIO
             if (firstOf[i] == i && project.LinkColorRaw(cels[i].Source) is var color and >= 0) copy.SetLinkColorRaw(copies[i], color);
             copy.SetCelRaw(cels[i].Layer, cels[i].Frame, copies[firstOf[i]], cels[i].Skin);
         }
-        copy.NormalizeSkins();
         copy.ExportedFiles = project.ExportedFiles;
         copy.Path = fullPath;
         copy.IsDirty = false;
@@ -528,7 +541,7 @@ public static partial class ProjectIO
     private static bool IsDefaultNamed(string path, string dir, string stem)
         => string.Equals(Path.GetDirectoryName(path), dir, StringComparison.OrdinalIgnoreCase) && HasStem(Path.GetFileName(path), stem);
 
-    /// <summary>이름이 <c>{stem}.…</c>, <c>{stem}_…</c>, <c>{stem}@…</c>(착장·스킨 파일)인지.</summary>
+    /// <summary>이름이 <c>{stem}.…</c>, <c>{stem}_…</c>, <c>{stem}@…</c>(스킨·스킨 프리셋 파일)인지.</summary>
     internal static bool HasStem(string fileName, string stem)
         => fileName.StartsWith(stem + ".", StringComparison.OrdinalIgnoreCase) || fileName.StartsWith(stem + "_", StringComparison.OrdinalIgnoreCase)
            || fileName.StartsWith(stem + ProjectExport.SkinSeparator, StringComparison.OrdinalIgnoreCase);
@@ -731,14 +744,14 @@ public static partial class ProjectIO
                 throw new InvalidDataException(Chickxel.Core.Localization.DomainStrings.FormatProject_InvalidCanvas(width: dto.Width, height: dto.Height));
             if (dto.Kind == V1Kind.Atlas) return ConvertV1Atlas(zip, dto, warnings, baseName ?? "sprite");
 
-            var (project, fileLayers) = FromDto(dto, warnings);
+            var (project, files) = FromDto(dto, warnings);
             if (fullPath is not null) LegacyAutoEngine(project, dto, fullPath);
             project.ExportedFiles = ResolveRecord(dto.Exported, fullPath);
-            ReadTiles(zip, dto, fileLayers, project, fullPath, warnings);
+            ReadTiles(zip, dto, files.Layers, project, fullPath, warnings);
             // 예전 합치기로 첫 타일셋 층에 뭉친 다른 타일셋의 칸을 제 층으로(읽고 바로 — 실행취소 기록 없음)
             project.UpgradeCombinedTileFloors();
             // 링크된 셀은 같이 쓰는 앞 프레임 셀 그림을 쓰므로 그 셀의 PNG(예전 판이 읽도록 따로 든 것)는 풀지 않는다
-            var links = ReadCelLinks(dto.CelLinks, fileLayers, project.Frames.Count, warnings);
+            var links = ReadCelLinks(dto.CelLinks, files, project.Frames.Count, warnings);
             var linked = links.Select(l => (l.Layer, l.Frame, l.SkinIndex)).ToHashSet();
             // 셀 PNG는 ZIP에서 차례대로 읽어 여러 코어에서 풀고, 프로젝트·경고에는 파일 차례대로 넣는다(한 번에 차례대로 읽은 것과 같다).
             var slots = new List<(ZipArchiveEntry Entry, Layer? Layer, int Frame, Skin? Skin, Point? Overflow)>();
@@ -748,20 +761,19 @@ public static partial class ProjectIO
                 if (OverflowEntry().Match(name) is { Success: true } om)
                 {
                     // 캔버스 밖 그림: 일반 레이어 셀만(그 밖의 것은 쓰지 않는 항목으로 알림).
-                    if (TryIndex(om, 1, fileLayers.Count, out var oli) && TryIndex(om, 2, project.Frames.Count, out var ofi)
-                        && fileLayers[oli].Kind == LayerKind.Normal
-                        && int.TryParse(om.Groups[3].Value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var ox)
-                        && int.TryParse(om.Groups[4].Value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var oy))
-                        slots.Add((e, fileLayers[oli], ofi, null, new Point(ox, oy)));
+                    if (TryIndex(om, 1, files.Layers.Count, out var oli) && TryIndex(om, 2, project.Frames.Count, out var ofi)
+                        && files.Layers[oli].Kind == LayerKind.Normal && TrySkin(om, files, oli, out var oskin)
+                        && int.TryParse(om.Groups[4].Value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var ox)
+                        && int.TryParse(om.Groups[5].Value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var oy))
+                        slots.Add((e, files.Layers[oli], ofi, oskin, new Point(ox, oy)));
                     else slots.Add((e, null, 0, null, null));
                     continue;
                 }
                 if (CelEntry().Match(name) is not { Success: true } m) continue;
-                if (!TryIndex(m, 1, fileLayers.Count, out var li) || !TryIndex(m, 2, project.Frames.Count, out var fi)
-                    || fileLayers[li].IsGroup || fileLayers[li].IsTilemap || !TrySkin(m, fileLayers[li], out var skin))
+                if (!TryIndex(m, 1, files.Layers.Count, out var li) || !TryIndex(m, 2, project.Frames.Count, out var fi) || !TrySkin(m, files, li, out var skin))
                     slots.Add((e, null, 0, null, null));
-                else if (!linked.Contains((li, fi, m.Groups[3].Success ? int.Parse(m.Groups[3].Value, CultureInfo.InvariantCulture) : 0)))
-                    slots.Add((e, fileLayers[li], fi, skin, null));
+                else if (!linked.Contains((li, fi, SkinIndexOf(m))))
+                    slots.Add((e, files.Layers[li], fi, skin, null));
             }
             var cels = new (PixelImage? Image, string? Warning)[slots.Count];
             var bytes = new byte[]?[slots.Count];
@@ -787,26 +799,28 @@ public static partial class ProjectIO
                 }
                 if (cels[i].Warning is { } warning) warnings?.Add(warning);
                 if (cels[i].Image is not { } img) continue;
-                if (overflowAt is { } at) project.SetOverflowRaw(layer, project.Frames[fi], img, at);
+                if (overflowAt is { } at) project.SetOverflowRaw(layer, project.Frames[fi], img, at, skin);
                 else project.SetCelRaw(layer, project.Frames[fi], img, skin);
             }
-            ApplyCelLinks(project, fileLayers, links);
-            ApplyCelLinkColors(project, fileLayers, dto.CelLinkColors);
-            project.NormalizeSkins();
+            ApplyCelLinks(project, files, links);
+            ApplyCelLinkColors(project, files, dto.CelLinkColors);
             return project;
         }
     }
 
-    /// <summary>셀 파일의 스킨 번호(<c>_S{n}</c>): 없으면 첫 스킨(null). 있으면 그룹에 그 번호(1~)의 스킨이 있는 부위일 때만 유효.</summary>
-    private static bool TrySkin(Match m, Layer layer, out Skin? skin)
+    /// <summary>
+    /// 셀·캔버스 밖 그림 파일의 스킨 번호(<c>_S{n}</c>, 없으면 첫 스킨 — <c>_S0</c>은 쓰지 않으므로 잘못된 이름)가 그 레이어의 스킨인지.
+    /// 버전 6 이하 부위의 번호는 그룹 스킨 번호(<see cref="ConvertLegacySkins"/>의 표로 부위 스킨에 이음).
+    /// </summary>
+    private static bool TrySkin(Match m, FileIndex files, int layer, [NotNullWhen(true)] out Skin? skin)
     {
         skin = null;
-        if (!m.Groups[3].Success) return true;
-        var skins = layer is { IsPart: true, Parent: { IsGroup: true } g } ? g.AllSkins : [];
-        if (!TryIndex(m, 3, skins.Count, out var si) || si == 0) return false;
-        skin = skins[si];
-        return true;
+        if (m.Groups[3].Success && (!TryIndex(m, 3, int.MaxValue, out var si) || si == 0)) return false;
+        return files.TrySkin(layer, SkinIndexOf(m), out skin);
     }
+
+    /// <summary>파일 이름의 스킨 번호(<see cref="TrySkin(Match, FileIndex, int, out Skin?)"/>를 통과한 것만).</summary>
+    private static int SkinIndexOf(Match m) => m.Groups[3].Success ? int.Parse(m.Groups[3].Value, CultureInfo.InvariantCulture) : 0;
 
     /// <summary><c>project.json</c>을 읽고 버전을 확인한다.</summary>
     private static ProjectDto ReadDto(ZipArchive zip)
@@ -885,9 +899,9 @@ public static partial class ProjectIO
     // ───────────── 버전 1 아틀라스 변환 ─────────────
 
     /// <summary>
-    /// 버전 1 아틀라스 → 그룹 "부위" + 스프라이트마다 부위 하나(첫 스프라이트 = 맨 위 부위), 프레임 1개.
-    /// 부위 셀 = 그 스프라이트의 보이는 레이어 합성. 모든 스프라이트에 원래 칸이 있으면 캔버스 = 원래 시트 크기, 위치 = 원래 칸,
-    /// 아니면 왼쪽부터 1px 간격으로 늘어놓는다. 내보내기: 부위 아틀라스 = 예전 이름, 프레임 시트 = <c>{예전 이름}_frames</c>.
+    /// 버전 1 아틀라스 → 빈 부모 레이어 "부위"(캔버스 크기, 자리 (0,0)) + 스프라이트마다 자식 레이어 하나(첫 스프라이트 = 맨 위), 프레임 1개.
+    /// 자식 셀 = 그 스프라이트의 보이는 레이어 합성. 모든 스프라이트에 원래 칸이 있으면 캔버스 = 원래 시트 크기, 위치 = 원래 칸,
+    /// 아니면 왼쪽부터 1px 간격으로 늘어놓는다. 내보내기: 레이어 아틀라스 = 예전 이름, 프레임 시트 = <c>{예전 이름}_frames</c>.
     /// </summary>
     private static SpriteProject ConvertV1Atlas(ZipArchive zip, ProjectDto dto, ICollection<string>? warnings, string baseName)
     {
@@ -977,17 +991,23 @@ public static partial class ProjectIO
                 if (visible[li].Item1 && cels.TryGetValue((si, li), out var cel)) flat.Composite(cel, 0, 0, visible[li].Item2);
             if (!flat.IsRegionEmpty(flat.Bounds)) project.SetCelRaw(part, frame, flat);
         }
-        var group = new Layer(project.UniqueLayerName("부위")) { Kind = LayerKind.Group, Pivot = project.Sprite.DefaultPivot };
+        // 스프라이트들을 담는 빈 부모 레이어(캔버스 크기, 자리 (0,0) — 피벗은 캔버스 기준이던 예전 그룹 피벗과 같은 점)
+        var parent = new Layer(project.UniqueLayerName("부위"))
+        {
+            Kind = LayerKind.Part,
+            PartSize = new Size(canvasW, canvasH),
+            Pivot = project.Sprite.DefaultPivot,
+        };
         project.ConvertedFromVersion = dto.Version;
-        foreach (var part in parts) part.Parent = group;
-        project.ReplaceLayersRaw([.. Enumerable.Reverse(parts), group]);
+        foreach (var part in parts) part.Parent = parent;
+        project.ReplaceLayersRaw([.. Enumerable.Reverse(parts), parent]);
 
         var oldName = project.Export.FileName ?? baseName;
         project.Export.ExportParts = true;
         project.Export.PartsFileName = oldName;
         project.Export.ExportFrames = true;
         project.Export.FileName = oldName + "_frames";
-        ApplySheets(project, dto.Export ?? new ExportDto(), [], warnings);
+        ApplySheets(project, dto.Export ?? new ExportDto(), new FileIndex(legacy: true), warnings);
         return project;
     }
 
@@ -1004,9 +1024,9 @@ public static partial class ProjectIO
             Visible = l.Visible,
             Locked = l.Locked,
             Opacity = l.Opacity,
-            Kind = l.Kind == LayerKind.Normal ? null : l.Kind,
-            Parent = l.Parent is { } g ? p.IndexOf(g) : null,
-            Collapsed = l.IsGroup && l.Collapsed ? true : null,
+            Kind = l.Kind switch { LayerKind.Part => FileLayerKind.Part, LayerKind.Tilemap => FileLayerKind.Tilemap, _ => null },
+            Parent = l.Parent is { } parent ? p.IndexOf(parent) : null,
+            Collapsed = l.Collapsed ? true : null,
             EffectsCollapsed = l.EffectsCollapsed ? true : null,
             PartWidth = l.IsPart ? l.PartSize.Width : null,
             PartHeight = l.IsPart ? l.PartSize.Height : null,
@@ -1015,12 +1035,10 @@ public static partial class ProjectIO
             Pivot = PivotDto.From(l.Pivot),
             PartBorder = l.IsPart && !l.PartBorder.IsNone ? [l.PartBorder.Left, l.PartBorder.Top, l.PartBorder.Right, l.PartBorder.Bottom] : null,
             PartSource = l.IsPart && l.PartSourceRect is { } r ? [r.X, r.Y, r.Width, r.Height] : null,
-            Skins = l.IsGroup ? l.AllSkins.Select(s => s.Name).ToList() : null,
-            SkinOwners = l.IsGroup && l.AllSkins.Any(s => s.Owner is not null) ? l.AllSkins.Select(s => s.Owner is { } o ? p.IndexOf(o) : -1).ToList() : null,
-            ActiveSkin = l.IsGroup && l.SkinList.IndexOf(l.ActiveSkin!) is > 0 and var ai ? ai : null,
-            Skin = l is { IsPart: true, SkinOverride: { } so, Parent: { } pg } ? pg.SkinList.IndexOf(so) : null,
+            Skins = l.IsTilemap ? null : l.Skins.Select(s => s.Name).ToList(),
+            ActiveSkin = !l.IsTilemap && IndexOf(l.Skins, l.ActiveSkin!) is > 0 and var ai ? ai : null,
             Effects = l.Effects.Count > 0 ? l.Effects.Select(e => (JsonObject?)EffectCodec.Write(e)).ToList() : null,
-            AutoLayout = l is { IsGroup: true, AutoLayout: { } al } ? GroupLayoutDto.From(al) : null,
+            AutoLayout = l is { IsPart: true, AutoLayout: { } al } ? GroupLayoutDto.From(al) : null,
             TilesetKeys = l.Tiles is { } td ? [.. td.TilesetKeys] : null,
             TileOrigin = l.Tiles is { Origin: { IsEmpty: false } o } ? [o.X, o.Y] : null,
             TileHidden = l.Tiles is { HiddenFloors.Length: > 0 } th ? [.. th.HiddenFloors] : null,
@@ -1043,11 +1061,10 @@ public static partial class ProjectIO
         PivotLayer = p.PivotLayer is { } pivotLayer && p.IndexOf(pivotLayer) is >= 0 and var pli ? pli : null,
         Unity = UnityDto.From(p.Sprite),
         Export = ExportDto.From(p.Export, p),
-        Outfits = p.Outfits.Count == 0 ? null : p.Outfits.Select(o => new OutfitDto
+        Presets = p.SkinPresets.Count == 0 ? null : p.SkinPresets.Select(s => new SkinPresetDto
         {
-            Name = o.Name,
-            Slots = o.Slots.Select(s => SkinRef(p, s.Group, s.Group, s.Skin)).OfType<SkinRefDto>().ToList(),
-            Parts = o.Parts.Select(s => SkinRef(p, s.Part, s.Part.Parent, s.Skin)).OfType<SkinRefDto>().ToList(),
+            Name = s.Name,
+            Entries = s.Entries.Select(e => SkinRef(p, e.Layer, e.Skin)).OfType<SkinRefDto>().ToList(),
         }).ToList(),
         Exported = ToRecordDto(p.ExportedFiles, projectPath),
         Scripts = p.ScriptsInUse() is { Count: > 0 } scripts ? scripts : null,
@@ -1058,7 +1075,7 @@ public static partial class ProjectIO
 
     /// <summary>
     /// 링크된 셀 표(<see cref="ProjectDto.CelLinks"/>): 레이어 → 스킨 → 프레임 차례로 보며, 앞 프레임과 같은 그림을 쓰는 셀마다
-    /// [레이어, 프레임, 그 그림을 처음 쓴 프레임(, 스킨 번호 — 첫 스킨이면 생략)]. 링크가 없으면 null.
+    /// [레이어, 프레임, 그 그림을 처음 쓴 프레임(, 그 레이어의 스킨 번호 — 첫 스킨이면 생략)]. 링크가 없으면 null.
     /// <paramref name="colors"/> = 색이 붙은 링크 묶음마다 [레이어, 묶음의 첫 프레임, 색 번호(, 스킨 번호)](<see cref="ProjectDto.CelLinkColors"/>).
     /// </summary>
     private static List<int[]>? CelLinksOf(SpriteProject p, out List<int[]>? colors)
@@ -1069,15 +1086,13 @@ public static partial class ProjectIO
         var colored = new HashSet<PixelImage>(ReferenceEqualityComparer.Instance);
         for (int li = 0; li < p.Layers.Count; li++)
         {
-            var layer = p.Layers[li];
-            if (layer.IsGroup) continue;
-            var skins = layer is { IsPart: true, Parent: { IsGroup: true } g } ? g.AllSkins : [];
-            for (int si = 0; si < Math.Max(1, skins.Count); si++)
+            var skins = p.Layers[li].Skins;
+            for (int si = 0; si < skins.Count; si++)
             {
                 first.Clear();
                 for (int fi = 0; fi < p.Frames.Count; fi++)
                 {
-                    if (p.GetCelRaw(layer, p.Frames[fi], si == 0 ? null : skins[si]) is not { } cel) continue;
+                    if (p.GetCelRaw(p.Layers[li], p.Frames[fi], skins[si]) is not { } cel) continue;
                     if (first.TryAdd(cel, fi)) continue;
                     int from = first[cel];
                     links.Add(si == 0 ? [li, fi, from] : [li, fi, from, si]);
@@ -1092,13 +1107,12 @@ public static partial class ProjectIO
     }
 
     /// <summary>읽은 링크 묶음에 파일의 색을 붙인다(맞지 않는 줄은 건너뜀 — 그 묶음은 행에서 쓰지 않은 색으로 보임).</summary>
-    private static void ApplyCelLinkColors(SpriteProject project, IReadOnlyList<Layer> fileLayers, List<int[]>? colors)
+    private static void ApplyCelLinkColors(SpriteProject project, FileIndex files, List<int[]>? colors)
     {
         foreach (var c in colors ?? [])
         {
-            if (c is not { Length: 3 or 4 } || c[0] < 0 || c[0] >= fileLayers.Count || fileLayers[c[0]].IsGroup || c[1] < 0 || c[1] >= project.Frames.Count
-                || !TrySkinIndex(fileLayers[c[0]], c.Length > 3 ? c[3] : 0, out var skin)) continue;
-            if (project.GetCelRaw(fileLayers[c[0]], project.Frames[c[1]], skin) is { } image) project.SetLinkColorRaw(image, c[2]);
+            if (c is not { Length: 3 or 4 } || c[1] < 0 || c[1] >= project.Frames.Count || !files.TrySkin(c[0], c.Length > 3 ? c[3] : 0, out var skin)) continue;
+            if (project.GetCelRaw(files.Layers[c[0]], project.Frames[c[1]], skin) is { } image) project.SetLinkColorRaw(image, c[2]);
         }
     }
 
@@ -1106,15 +1120,14 @@ public static partial class ProjectIO
     /// 파일의 링크된 셀 표에서 맞는 줄(레이어 번호, 프레임, 같이 쓰는 앞 프레임, 스킨 번호, 스킨). 맞지 않는 줄은 알리고 뺀다
     /// (그 셀은 따로 들어 있는 PNG로 읽힌다).
     /// </summary>
-    private static List<(int Layer, int Frame, int From, int SkinIndex, Skin? Skin)> ReadCelLinks(List<int[]>? links, IReadOnlyList<Layer> fileLayers, int frameCount,
+    private static List<(int Layer, int Frame, int From, int SkinIndex, Skin Skin)> ReadCelLinks(List<int[]>? links, FileIndex files, int frameCount,
         ICollection<string>? warnings)
     {
-        var list = new List<(int, int, int, int, Skin?)>();
+        var list = new List<(int, int, int, int, Skin)>();
         foreach (var link in links ?? [])
         {
-            if (link is { Length: 3 or 4 } && link[0] >= 0 && link[0] < fileLayers.Count && !fileLayers[link[0]].IsGroup
-                && link[1] >= 0 && link[1] < frameCount && link[2] >= 0 && link[2] < link[1]
-                && TrySkinIndex(fileLayers[link[0]], link.Length > 3 ? link[3] : 0, out var skin))
+            if (link is { Length: 3 or 4 } && link[1] >= 0 && link[1] < frameCount && link[2] >= 0 && link[2] < link[1]
+                && files.TrySkin(link[0], link.Length > 3 ? link[3] : 0, out var skin))
                 list.Add((link[0], link[1], link[2], link.Length > 3 ? link[3] : 0, skin));
             else warnings?.Add(Chickxel.Core.Localization.DomainStrings.FormatProject_BadCelLink(link: string.Join(", ", link ?? [])));
         }
@@ -1125,11 +1138,11 @@ public static partial class ProjectIO
     /// 읽은 프로젝트에 링크를 넣는다: 셀마다 같은 레이어·스킨의 앞 프레임 셀 그림을 같이 쓰게 한다.
     /// 앞 프레임 셀이 비었으면(빈 셀은 저장하지 않음) 빈 그림 하나를 같이 쓴다.
     /// </summary>
-    private static void ApplyCelLinks(SpriteProject project, IReadOnlyList<Layer> fileLayers, List<(int Layer, int Frame, int From, int SkinIndex, Skin? Skin)> links)
+    private static void ApplyCelLinks(SpriteProject project, FileIndex files, List<(int Layer, int Frame, int From, int SkinIndex, Skin Skin)> links)
     {
         foreach (var (li, fi, from, _, skin) in links.OrderBy(l => l.Frame))
         {
-            var layer = fileLayers[li];
+            var layer = files.Layers[li];
             var source = project.GetCelRaw(layer, project.Frames[from], skin);
             if (source is null)
             {
@@ -1139,17 +1152,6 @@ public static partial class ProjectIO
             }
             project.SetCelRaw(layer, project.Frames[fi], source, skin);
         }
-    }
-
-    /// <summary>스킨 번호(0 = 첫 스킨·일반 레이어 → null)가 이 레이어에 맞는지.</summary>
-    private static bool TrySkinIndex(Layer layer, int index, out Skin? skin)
-    {
-        skin = null;
-        if (index == 0) return true;
-        var skins = layer is { IsPart: true, Parent: { IsGroup: true } g } ? g.AllSkins : [];
-        if (index < 0 || index >= skins.Count) return false;
-        skin = skins[index];
-        return true;
     }
 
     /// <summary>알림에 보일 해시 앞부분(12자).</summary>
@@ -1164,17 +1166,16 @@ public static partial class ProjectIO
         return -1;
     }
 
-    /// <summary>(레이어 번호, 그 그룹의 스킨 번호). 레이어가 프로젝트에 없거나 스킨이 그룹에 없으면 null(지운 항목은 저장하지 않음).</summary>
-    private static SkinRefDto? SkinRef(SpriteProject p, Layer layer, Layer? group, Skin skin)
-        => p.IndexOf(layer) is >= 0 and var li && group is { IsGroup: true } g && p.IndexOf(g) >= 0 && IndexOf(g.AllSkins, skin) is >= 0 and var si
-            ? new SkinRefDto { Layer = li, Skin = si } : null;
+    /// <summary>(레이어 번호, 그 레이어의 스킨 번호). 레이어가 프로젝트에 없거나 스킨이 그 레이어에 없으면 null(지운 항목은 저장하지 않음).</summary>
+    private static SkinRefDto? SkinRef(SpriteProject p, Layer layer, Skin skin)
+        => p.IndexOf(layer) is >= 0 and var li && IndexOf(layer.Skins, skin) is >= 0 and var si ? new SkinRefDto { Layer = li, Skin = si } : null;
 
-    /// <summary>스킨이 든 그룹 기준 참조(내보내기에서 뺄 스킨).</summary>
-    private static SkinRefDto? GroupSkinRef(SpriteProject p, Skin skin)
-        => p.Layers.FirstOrDefault(l => l.IsGroup && IndexOf(l.Skins, skin) >= 0) is { } g ? SkinRef(p, g, g, skin) : null;
+    /// <summary>스킨이 든 레이어 기준 참조(내보내기에서 뺄 스킨). 어느 레이어에도 없으면 null.</summary>
+    private static SkinRefDto? LayerSkinRef(SpriteProject p, Skin skin)
+        => p.Layers.FirstOrDefault(l => IndexOf(l.Skins, skin) >= 0) is { } layer ? SkinRef(p, layer, skin) : null;
 
-    /// <summary>JSON → 프로젝트(셀 제외). 파일 안 레이어 순서 목록도 돌려준다(셀 파일 번호용, 구조를 고치면 순서가 바뀔 수 있음).</summary>
-    private static (SpriteProject Project, List<Layer> FileLayers) FromDto(ProjectDto dto, ICollection<string>? warnings)
+    /// <summary>JSON → 프로젝트(셀 제외). 파일 안 번호 → 객체 표(<see cref="FileIndex"/>)도 돌려준다(셀 파일·링크용 — 나무를 고치면 목록 순서가 바뀔 수 있음).</summary>
+    private static (SpriteProject Project, FileIndex Files) FromDto(ProjectDto dto, ICollection<string>? warnings)
     {
         var p = SpriteProject.CreateBlank(dto.Width, dto.Height);
         // 스크립트 표는 효과보다 먼저 넣는다(효과 설정을 그 schema에 맞춰 읽음). 원문과 해시가 다르면 쓰지 않는다(효과는 남고 그리지 않음).
@@ -1185,51 +1186,60 @@ public static partial class ProjectIO
         }
         // 버전 4 이하: 부위만 피벗이 있었다(일반 레이어·그룹은 아래에서 캔버스 피벗을 옮겨 받음)
         bool legacyPivots = dto.Version < 5;
+        // 버전 6 이하: 그룹·부위 형식 — 레이어 나무로 바꿔 읽는다
+        var files = new FileIndex(dto.Version < 7);
         var layerDtos = dto.Layers ?? [];
-        var fileLayers = new List<Layer>(layerDtos.Count);
         foreach (var l in layerDtos)
         {
-            var kind = l.Kind is { } k && Enum.IsDefined(k) ? k : LayerKind.Normal;
+            // 그룹은 버전 6 이하에만 있다(버전 7 파일의 그룹은 손상 — 일반 레이어로)
+            var fileKind = l.Kind is { } k && Enum.IsDefined(k) && (files.Legacy || k != FileLayerKind.Group) ? k : FileLayerKind.Normal;
+            bool group = fileKind == FileLayerKind.Group;
+            var kind = fileKind switch
+            {
+                FileLayerKind.Part or FileLayerKind.Group => LayerKind.Part,
+                FileLayerKind.Tilemap => LayerKind.Tilemap,
+                _ => LayerKind.Normal,
+            };
             var layer = new Layer(string.IsNullOrWhiteSpace(l.Name) ? p.NextLayerName() : l.Name)
             {
                 Visible = l.Visible,
                 Locked = l.Locked,
                 Opacity = (byte)Math.Clamp(l.Opacity, 0, 255),
                 Kind = kind,
-                Collapsed = kind == LayerKind.Group && l.Collapsed == true,
+                Collapsed = l.Collapsed == true,
                 EffectsCollapsed = l.EffectsCollapsed == true,
-                Pivot = (legacyPivots ? kind == LayerKind.Part ? l.PartPivot : null : l.Pivot)?.ToPivot() ?? Pivot.Center,
+                Pivot = (legacyPivots ? fileKind == FileLayerKind.Part ? l.PartPivot : null : l.Pivot)?.ToPivot() ?? Pivot.Center,
             };
-            if (kind == LayerKind.Part)
+            if (group)
+            {
+                // 그룹 → 셀 없는 캔버스 크기 레이어(자리 (0,0)): 캔버스 기준이던 그룹 피벗 수가 그대로 같은 점을 가리킨다
+                layer.PartSize = new Size(dto.Width, dto.Height);
+                layer.PartOffset = Point.Empty;
+            }
+            else if (kind == LayerKind.Part)
             {
                 layer.PartSize = new Size(Math.Clamp(l.PartWidth ?? 1, 1, PixelImage.MaxSize), Math.Clamp(l.PartHeight ?? 1, 1, PixelImage.MaxSize));
                 layer.PartOffset = new Point(l.PartX ?? 0, l.PartY ?? 0);
                 layer.PartBorder = l.PartBorder is { Length: >= 4 } b ? new SpriteBorder(b[0], b[1], b[2], b[3]) : SpriteBorder.None;
                 layer.PartSourceRect = l.PartSource is { Length: >= 4 } r && r[2] > 0 && r[3] > 0 ? new Rectangle(r[0], r[1], r[2], r[3]) : null;
             }
-            else if (kind == LayerKind.Group && l.Skins is { Count: > 0 } names)
+            if (kind == LayerKind.Part && l.AutoLayout is { } layoutDto) layer.AutoLayout = layoutDto.ToLayout();
+            if (kind == LayerKind.Tilemap) layer.Tiles = TilemapOf(l);
+            else if (!files.Legacy && l.Skins is { Count: > 0 } names)
             {
-                // 스킨 이름은 그룹 안에서 겹치지 않게(손상된 파일 대비). 스킨이 없던 예전 파일은 "기본" 하나.
-                var skins = new List<Skin>(names.Count);
-                foreach (var n in names)
-                {
-                    var name = string.IsNullOrWhiteSpace(n) ? "스킨" : n.Trim();
-                    var unique = name;
-                    for (int i = 2; skins.Any(s => s.Name == unique); i++) unique = $"{name} {i}";
-                    skins.Add(new Skin(unique));
-                }
+                // 스킨 이름은 레이어 안에서 겹치지 않게(손상된 파일 대비). 스킨이 없으면 "기본" 하나.
+                var skins = UniqueSkinNames(names).Select(n => new Skin(n)).ToList();
                 layer.ReplaceSkinsRaw(skins);
                 if (l.ActiveSkin is int ai && ai >= 0 && ai < skins.Count) layer.SetActiveSkinRaw(skins[ai]);
             }
-            if (kind == LayerKind.Group && l.AutoLayout is { } layoutDto) layer.AutoLayout = layoutDto.ToLayout();
-            if (kind == LayerKind.Tilemap) layer.Tiles = TilemapOf(l);
             if (l.Effects is { Count: > 0 } effects)
             {
                 var list = new List<LayerEffect>(effects.Count);
                 foreach (var e in effects)
                 {
                     var effect = e is null ? null : EffectCodec.Read(e);
-                    if (effect is not null) list.Add(effect);
+                    // 그룹 효과는 부위들을 합친 그림에 입혔다 → 자손까지 합친 그림에
+                    if (effect is not null) list.Add(group ? effect with { IncludeChildren = true } : effect);
                     // 예전 기본 효과는 공식 스크립트로 바뀌어 읽힌다(EffectCodec) — 그 원문을 표에 넣어 저장하면 스크립트로 쓴다
                     if (effect is ScriptEffect official && !p.Scripts.ContainsKey(official.ScriptHash) && OfficialEffects.IdOfHash(official.ScriptHash) is { } officialId)
                         p.AddScript(OfficialEffects.Source(officialId));
@@ -1241,24 +1251,26 @@ public static partial class ProjectIO
                 }
                 layer.Effects = list;
             }
-            fileLayers.Add(layer);
+            // 셀 파일 스킨 번호 표: 레이어의 스킨(예전 그룹은 셀 없음, 예전 부위는 ConvertLegacySkins가 채움)
+            files.Add(layer, fileKind, kind == LayerKind.Tilemap || group ? [] : [.. layer.SkinList]);
             p.AddLayerRaw(layer);
         }
-        for (int i = 0; i < fileLayers.Count; i++)
-            if (fileLayers[i].IsPart && layerDtos[i].Parent is int gi && gi >= 0 && gi < fileLayers.Count && fileLayers[gi].IsGroup)
-                fileLayers[i].Parent = fileLayers[gi];
-        if (p.NormalizeHierarchy()) warnings?.Add(Chickxel.Core.Localization.DomainStrings.Project_RepairedHierarchy);
-        for (int i = 0; i < fileLayers.Count; i++)
-            if (fileLayers[i] is { IsPart: true, Parent: { IsGroup: true } pg } part && layerDtos[i].Skin is int si && si >= 0 && si < pg.AllSkins.Count)
-                part.SetSkinOverrideRaw(pg.AllSkins[si]);
-        // 부위 전용 스킨의 주인(그 그룹의 부위가 아니면 전체 스킨으로 — 순서 정리는 셀을 읽은 뒤 NormalizeSkins)
-        for (int i = 0; i < fileLayers.Count; i++)
-            if (fileLayers[i].IsGroup && layerDtos[i].SkinOwners is { } owners)
+        // 부모: 버전 7은 아무 레이어 번호(자리 있는 레이어끼리만·고리 없게 NormalizeHierarchy가 바로잡음), 예전 파일은 부위의 그룹만(그룹 없는 부위는 최상위)
+        bool repaired = false;
+        for (int i = 0; i < layerDtos.Count; i++)
+        {
+            int pi = layerDtos[i].Parent ?? -1;
+            var parent = files.LayerAt(pi);
+            if (files.Legacy)
             {
-                var all = fileLayers[i].AllSkins;
-                for (int k = 1; k < all.Count && k < owners.Count; k++)
-                    if (ResolveLayer(fileLayers, owners[k]) is { IsPart: true } owner && ReferenceEquals(owner.Parent, fileLayers[i])) all[k].Owner = owner;
+                if (files.Kinds[i] == FileLayerKind.Part && parent is not null && files.KindAt(pi) == FileLayerKind.Group) files.Layers[i].Parent = parent;
+                else if (files.Kinds[i] == FileLayerKind.Part || layerDtos[i].Parent is not null) repaired = true;
             }
+            else if (parent is not null) files.Layers[i].Parent = parent;
+            else if (layerDtos[i].Parent is not null) repaired = true;
+        }
+        if (p.NormalizeHierarchy() | repaired) warnings?.Add(Chickxel.Core.Localization.DomainStrings.Project_RepairedHierarchy);
+        if (files.Legacy) ConvertLegacySkins(files, layerDtos);
         Layer? fallback = null;
         if (p.Layers.Count == 0) p.AddLayerRaw(fallback = new Layer(p.NextLayerName()));
 
@@ -1272,11 +1284,12 @@ public static partial class ProjectIO
             };
             // 레이어마다 이 프레임만의 피벗(없는 번호는 버림 — 버전 4 이하는 부위만)
             foreach (var pp in (legacyPivots ? f.PartPivots : f.LayerPivots) ?? [])
-                if (ResolveLayer(fileLayers, pp.Layer) is { } owner && (!legacyPivots || owner.IsPart) && pp.Pivot is { } pivot)
+                if (files.LayerAt(pp.Layer) is { } owner && (!legacyPivots || files.KindAt(pp.Layer) == FileLayerKind.Part) && pp.Pivot is { } pivot)
                     frame.LayerPivots[owner] = pivot.ToPivot();
-            // 부위마다 이 프레임에서 옮긴 거리(부위가 아닌 레이어·없는 번호·0은 버림)
+            // 자리 있는 레이어마다 이 프레임에서 옮긴 거리(그 밖의 레이어·예전 그룹·없는 번호·0은 버림)
             foreach (var ps in f.PartShifts ?? [])
-                if (ResolveLayer(fileLayers, ps.Layer) is { IsPart: true } part && (ps.X != 0 || ps.Y != 0)) frame.PartShifts[part] = new Point(ps.X, ps.Y);
+                if (files.LayerAt(ps.Layer) is { IsPart: true } part && files.KindAt(ps.Layer) != FileLayerKind.Group && (ps.X != 0 || ps.Y != 0))
+                    frame.PartShifts[part] = new Point(ps.X, ps.Y);
             p.AddFrameRaw(frame);
         }
         if (p.Frames.Count == 0) p.AddFrameRaw(new Frame());
@@ -1301,51 +1314,260 @@ public static partial class ProjectIO
 
         ApplySettings(p, dto);
         if (fallback is not null) fallback.Pivot = p.Sprite.DefaultPivot;
-        if (legacyPivots) MigrateCanvasPivots(p, dto.Version);
-        else if (dto.PivotLayer is int pli && ResolveLayer(fileLayers, pli) is { } pivotLayer && p.IndexOf(pivotLayer) >= 0) p.SetPivotLayerRaw(pivotLayer);
-        ApplyOutfits(p, dto, fileLayers);
-        if (dto.Export is { } export) ApplySheets(p, export, fileLayers, warnings);
-        return (p, fileLayers);
+        if (legacyPivots) MigrateCanvasPivots(p, files);
+        else if (dto.PivotLayer is int pli && files.LayerAt(pli) is { } pivotLayer && p.IndexOf(pivotLayer) >= 0) p.SetPivotLayerRaw(pivotLayer);
+        if (files.Legacy) p.ConvertedFromVersion = dto.Version;
+        ReadSkinPresets(p, dto, files);
+        if (dto.Export is { } export) ApplySheets(p, export, files, warnings);
+        return (p, files);
+    }
+
+    /// <summary>파일 안 번호 → 읽은 객체(셀 파일·링크된 셀·스킨 프리셋·내보내기 참조를 풀 때).</summary>
+    private sealed class FileIndex(bool legacy)
+    {
+        private readonly Dictionary<Layer, LegacyGroup> _groups = new();
+
+        /// <summary>버전 6 이하(그룹·부위 형식을 바꿔 읽음).</summary>
+        public bool Legacy { get; } = legacy;
+        /// <summary>파일 레이어 차례의 레이어.</summary>
+        public List<Layer> Layers { get; } = [];
+        /// <summary>파일에 적힌 레이어 종류(버전 6 이하는 그룹·부위를 가름).</summary>
+        public List<FileLayerKind> Kinds { get; } = [];
+        /// <summary>레이어마다 파일 스킨 번호 → 그 레이어의 스킨(쓸 수 없는 번호는 null). 타일맵·예전 그룹은 빈 배열.</summary>
+        public List<Skin?[]> Skins { get; } = [];
+        /// <summary>파일 프리셋 번호(버전 6 이하는 착장 번호) → 스킨 프리셋.</summary>
+        public List<SkinPreset> Presets { get; } = [];
+
+        public void Add(Layer layer, FileLayerKind kind, Skin?[] skins)
+        {
+            Layers.Add(layer);
+            Kinds.Add(kind);
+            Skins.Add(skins);
+        }
+
+        public Layer? LayerAt(int index) => index >= 0 && index < Layers.Count ? Layers[index] : null;
+
+        public FileLayerKind KindAt(int index) => index >= 0 && index < Kinds.Count ? Kinds[index] : FileLayerKind.Normal;
+
+        /// <summary>파일의 레이어 종류(파일에 없던 레이어는 일반).</summary>
+        public FileLayerKind KindOf(Layer layer) => KindAt(Layers.IndexOf(layer));
+
+        /// <summary>(레이어 번호, 파일 스킨 번호)가 그 레이어의 스킨인지.</summary>
+        public bool TrySkin(int layer, int index, [NotNullWhen(true)] out Skin? skin)
+        {
+            skin = layer >= 0 && layer < Skins.Count && index >= 0 && index < Skins[layer].Length ? Skins[layer][index] : null;
+            return skin is not null;
+        }
+
+        /// <summary>파일 프리셋 번호들 → 프리셋(잘못된 번호는 건너뜀, 겹치면 하나).</summary>
+        public SkinPreset[] PresetsAt(List<int>? indices)
+            => [.. (indices ?? []).Where(i => i >= 0 && i < Presets.Count).Select(i => Presets[i]).Distinct()];
+
+        /// <summary>뺄 레이어 번호들 → 레이어(버전 6 이하는 부위를 뺄 수 없었으므로 건너뜀).</summary>
+        public Layer[] ExcludableLayers(List<int>? indices)
+            => [.. (indices ?? []).Where(i => !Legacy || KindAt(i) != FileLayerKind.Part).Select(LayerAt).OfType<Layer>().Distinct()];
+
+        public void AddGroup(Layer layer, LegacyGroup group) => _groups[layer] = group;
+
+        /// <summary>버전 6 이하 그룹 번호 → 그 그룹.</summary>
+        public LegacyGroup? GroupAt(int index) => LayerAt(index) is { } l && _groups.TryGetValue(l, out var g) ? g : null;
+
+        /// <summary>버전 6 이하 스킨 참조의 그룹: 그룹 번호면 그 그룹, 부위 번호면 그 부위의 그룹(예전에는 부위 참조도 그룹 스킨을 가리켰다).</summary>
+        private LegacyGroup? GroupOfRef(int index)
+            => GroupAt(index) ?? (KindAt(index) == FileLayerKind.Part && Layers[index].Parent is { } parent && _groups.TryGetValue(parent, out var g) ? g : null);
+
+        /// <summary>버전 6 이하 그룹들(위 그룹부터).</summary>
+        public IEnumerable<LegacyGroup> GroupsTopFirst(SpriteProject p)
+        {
+            for (int i = p.Layers.Count - 1; i >= 0; i--)
+                if (_groups.TryGetValue(p.Layers[i], out var g)) yield return g;
+        }
+
+        /// <summary>
+        /// 버전 6 이하 "고른 스킨" 바꾸기. <paramref name="refs"/> = 뺀 그룹 스킨(<paramref name="allWholeExcluded"/>면 무시하고 모든 그룹 전체 스킨을 뺀 것으로).
+        /// <c>Excluded</c> = 뺀 그룹 스킨마다 부위들의 그 스킨(부위 전용 스킨은 그 부위의 스킨). <paramref name="selected"/>면 빼지 않은 그룹 전체 스킨마다(첫 스킨 포함,
+        /// 위 그룹부터 그룹 스킨 차례) <c>Presets</c>에 그 스킨 프리셋, 첫 스킨이 아니면 <c>FrameOnly</c>에 부위들의 그 스킨(프레임 시트에서 레이어마다의 항목으로 또 나오지 않게 —
+        /// 첫 스킨은 프레임 시트 항목이 아님).
+        /// </summary>
+        public (Skin[] Excluded, Skin[] FrameOnly, SkinPreset[] Presets) LegacySkinChoice(SpriteProject p, List<SkinRefDto>? refs, bool allWholeExcluded, bool selected)
+        {
+            var off = new HashSet<(LegacyGroup, int)>();
+            foreach (var r in refs ?? [])
+                if (GroupOfRef(r.Layer) is { } g && r.Skin >= 0 && r.Skin < g.Owners.Length) off.Add((g, r.Skin));
+            var excluded = new List<Skin>();
+            var frameOnly = new List<Skin>();
+            var presets = new List<SkinPreset>();
+            foreach (var g in GroupsTopFirst(p))
+                for (int k = 0; k < g.Owners.Length; k++)
+                {
+                    bool whole = g.Owners[k] < 0;
+                    var skins = g.Children.Select(c => Skins[c][k]).OfType<Skin>();
+                    if (allWholeExcluded ? whole : off.Contains((g, k))) excluded.AddRange(skins);
+                    else if (whole && selected && g.Presets[k] is { } preset)
+                    {
+                        presets.Add(preset);
+                        if (k > 0) frameOnly.AddRange(skins);
+                    }
+                }
+            return ([.. excluded.Distinct()], [.. frameOnly.Distinct()], [.. presets]);
+        }
+    }
+
+    /// <summary>
+    /// 버전 6 이하 그룹(바꿔 읽은 빈 부모 레이어): 부위들(파일 번호, 목록 차례), 그룹 스킨마다 부위 전용 스킨의 주인 부위 파일 번호(−1 = 전체 스킨),
+    /// 전체 스킨마다 만든 스킨 프리셋(전체 스킨이 둘 이상일 때).
+    /// </summary>
+    private sealed class LegacyGroup(List<int> children, int[] owners)
+    {
+        public List<int> Children { get; } = children;
+        public int[] Owners { get; } = owners;
+        public SkinPreset?[] Presets { get; } = new SkinPreset?[owners.Length];
     }
 
     /// <summary>
     /// 버전 4 이하 파일 바꾸기: 일반 레이어·그룹의 효과는 캔버스 피벗을 썼으므로 캔버스 피벗(기본 = 레이어 피벗, 프레임마다 = 그 프레임만의 피벗)을
-    /// 일반 레이어·그룹마다 옮겨 받아 그림이 같게 한다(캔버스 피벗은 그대로, 대표 레이어 없음). 바꾼 버전을 <see cref="SpriteProject.ConvertedFromVersion"/>에 남긴다.
+    /// 일반 레이어·바꿔 읽은 그룹(캔버스 크기, 자리 (0,0)이라 캔버스 기준과 같은 점)마다 옮겨 받아 그림이 같게 한다(캔버스 피벗은 그대로, 대표 레이어 없음).
     /// </summary>
-    private static void MigrateCanvasPivots(SpriteProject p, int version)
+    private static void MigrateCanvasPivots(SpriteProject p, FileIndex files)
     {
         foreach (var layer in p.Layers)
         {
-            if (layer.IsPart) continue;
+            if (files.KindOf(layer) == FileLayerKind.Part) continue;
             layer.Pivot = p.Sprite.DefaultPivot;
             foreach (var frame in p.Frames)
                 if (frame.Pivot is { } own) frame.LayerPivots[layer] = own;
         }
-        p.ConvertedFromVersion = version;
     }
 
-    /// <summary>파일 안 (레이어 번호, 스킨 번호) → 그룹 스킨. 그룹이 아니거나 번호가 잘못되면 null.</summary>
-    private static Skin? ResolveSkin(List<Layer> fileLayers, SkinRefDto r)
-        => r.Layer >= 0 && r.Layer < fileLayers.Count && fileLayers[r.Layer] is var l
-           && (l.IsGroup ? l : l.IsPart ? l.Parent : null) is { IsGroup: true } g && r.Skin >= 0 && r.Skin < g.AllSkins.Count ? g.AllSkins[r.Skin] : null;
-
-    private static Layer? ResolveLayer(List<Layer> fileLayers, int index) => index >= 0 && index < fileLayers.Count ? fileLayers[index] : null;
-
-    /// <summary>착장 프리셋을 읽는다. 잘못된 항목은 건너뛴다.</summary>
-    private static void ApplyOutfits(SpriteProject p, ProjectDto dto, List<Layer> fileLayers)
+    /// <summary>스킨 이름 목록(파일 차례): 빈 이름은 "스킨", 겹치는 이름은 뒤에 번호를 붙인다(손상된 파일 대비).</summary>
+    private static List<string> UniqueSkinNames(IEnumerable<string?> names)
     {
-        foreach (var o in dto.Outfits ?? [])
+        var list = new List<string>();
+        foreach (var n in names)
         {
-            var slots = new List<OutfitSlot>();
-            foreach (var s in o.Slots ?? [])
-                if (ResolveLayer(fileLayers, s.Layer) is { IsGroup: true } g && ResolveSkin(fileLayers, s) is { } skin && !slots.Any(x => x.Group == g))
-                    slots.Add(new OutfitSlot(g, skin));
-            var parts = new List<OutfitPart>();
-            foreach (var s in o.Parts ?? [])
-                if (ResolveLayer(fileLayers, s.Layer) is { IsPart: true } part && ResolveSkin(fileLayers, s) is { } skin && !parts.Any(x => x.Part == part))
-                    parts.Add(new OutfitPart(part, skin));
-            p.AddOutfitRaw(new Outfit(p.UniqueOutfitName(o.Name ?? ""), slots, parts));
+            var name = string.IsNullOrWhiteSpace(n) ? "스킨" : n.Trim();
+            var unique = name;
+            for (int i = 2; list.Contains(unique); i++) unique = $"{name} {i}";
+            list.Add(unique);
         }
+        return list;
+    }
+
+    /// <summary>
+    /// 버전 6 이하 스킨 바꾸기: 그룹 스킨 목록(전체 스킨 + <c>skinOwners</c>의 부위 전용 스킨)을 부위마다의 스킨으로 나눈다 — 부위마다 그룹 전체 스킨을
+    /// 같은 이름·차례로(첫 스킨 = 기본), 그다음 그 부위 전용 스킨. 부위의 지금 스킨 = 재정의(<c>skin</c>), 없으면 그룹의 지금 스킨.
+    /// 셀 파일·링크·참조의 그룹 스킨 번호는 부위마다의 표(<see cref="FileIndex.Skins"/>)로 새 스킨에 잇는다. 그룹 자신(빈 부모 레이어)은 "기본" 하나.
+    /// </summary>
+    private static void ConvertLegacySkins(FileIndex files, List<LayerDto> dtos)
+    {
+        for (int gi = 0; gi < files.Layers.Count; gi++)
+        {
+            if (files.Kinds[gi] != FileLayerKind.Group) continue;
+            var group = files.Layers[gi];
+            var d = dtos[gi];
+            List<string> names = d.Skins is { Count: > 0 } named ? UniqueSkinNames(named) : [Layer.DefaultSkinName];
+            var children = Enumerable.Range(0, files.Layers.Count).Where(i => ReferenceEquals(files.Layers[i].Parent, group)).ToList();
+            // 부위 전용 스킨의 주인(그 그룹의 부위가 아니면 전체 스킨, 첫 스킨은 늘 전체 스킨)
+            var owners = new int[names.Count];
+            Array.Fill(owners, -1);
+            for (int k = 1; k < names.Count && k < (d.SkinOwners?.Count ?? 0); k++)
+                if (children.Contains(d.SkinOwners![k])) owners[k] = d.SkinOwners[k];
+            // 그룹의 지금 스킨은 전체 스킨만(아니면 첫 스킨)
+            int active = d.ActiveSkin is int ai && ai >= 0 && ai < names.Count && owners[ai] < 0 ? ai : 0;
+            foreach (var c in children)
+            {
+                var table = new Skin?[names.Count];
+                var skins = new List<Skin>(names.Count);
+                for (int k = 0; k < names.Count; k++)
+                    if (owners[k] < 0) skins.Add(table[k] = new Skin(names[k]));
+                for (int k = 0; k < names.Count; k++)
+                    if (owners[k] == c) skins.Add(table[k] = new Skin(names[k]));
+                var part = files.Layers[c];
+                part.ReplaceSkinsRaw(skins);
+                // 재정의는 그룹 전체 스킨이나 이 부위 전용 스킨만 유효
+                int shown = dtos[c].Skin is int si && si >= 0 && si < names.Count && table[si] is not null ? si : active;
+                part.SetActiveSkinRaw(table[shown]);
+                files.Skins[c] = table;
+            }
+            files.AddGroup(group, new LegacyGroup(children, owners));
+        }
+    }
+
+    /// <summary>
+    /// 스킨 프리셋을 읽는다(잘못된 항목은 건너뜀, 레이어마다 한 항목). 버전 6 이하: 착장 → 같은 이름의 프리셋(그룹 항목은 그 부위마다 같은 이름의 스킨,
+    /// 부위 항목은 그 부위의 스킨으로), 전체 스킨이 둘 이상인 그룹은 전체 스킨마다 같은 이름의 프리셋(부위 모두 → 그 스킨, 첫 스킨 포함)을 착장 앞에 만든다.
+    /// 이름이 겹치면 착장 이름을 그대로 두고 그룹 스킨 프리셋 이름에 번호를 붙인다.
+    /// </summary>
+    private static void ReadSkinPresets(SpriteProject p, ProjectDto dto, FileIndex files)
+    {
+        if (!files.Legacy)
+        {
+            foreach (var d in dto.Presets ?? [])
+            {
+                var entries = new List<SkinPresetEntry>();
+                foreach (var r in d.Entries ?? [])
+                    if (files.TrySkin(r.Layer, r.Skin, out var skin)) PutEntry(entries, new SkinPresetEntry(files.Layers[r.Layer], skin));
+                var preset = new SkinPreset(p.UniqueSkinPresetName(d.Name ?? ""), entries);
+                p.AddSkinPresetRaw(preset);
+                files.Presets.Add(preset);
+            }
+            return;
+        }
+        var taken = new HashSet<string>(StringComparer.Ordinal);
+        var outfits = (dto.Outfits ?? []).Select(o => new SkinPreset(UniquePresetName(o.Name, taken), OutfitEntries(o, files))).ToList();
+        var groupPresets = new List<SkinPreset>();
+        foreach (var g in files.GroupsTopFirst(p))
+        {
+            if (g.Children.Count == 0 || g.Owners.Count(o => o < 0) < 2) continue;
+            for (int k = 0; k < g.Owners.Length; k++)
+            {
+                if (g.Owners[k] >= 0) continue;
+                var entries = new List<SkinPresetEntry>(g.Children.Count);
+                for (int c = g.Children.Count - 1; c >= 0; c--)
+                    entries.Add(new SkinPresetEntry(files.Layers[g.Children[c]], files.Skins[g.Children[c]][k]!));
+                var preset = new SkinPreset(UniquePresetName(entries[0].Skin.Name, taken), entries);
+                g.Presets[k] = preset;
+                groupPresets.Add(preset);
+            }
+        }
+        foreach (var preset in groupPresets.Concat(outfits)) p.AddSkinPresetRaw(preset);
+        files.Presets.AddRange(outfits);
+    }
+
+    /// <summary>버전 6 이하 착장의 항목: 그룹마다(처음 것만) 그 부위들(위 부위부터) → 같은 그룹 스킨, 그다음 부위 재정의가 그 부위 항목을 덮는다.</summary>
+    private static List<SkinPresetEntry> OutfitEntries(OutfitDto o, FileIndex files)
+    {
+        var entries = new List<SkinPresetEntry>();
+        var groups = new HashSet<LegacyGroup>();
+        foreach (var s in o.Slots ?? [])
+        {
+            if (files.GroupAt(s.Layer) is not { } g || s.Skin < 0 || s.Skin >= g.Owners.Length || !groups.Add(g)) continue;
+            // 부위 전용 스킨을 그룹에 입힌 착장은 예전에도 첫 스킨으로 보였다
+            int k = g.Owners[s.Skin] < 0 ? s.Skin : 0;
+            for (int c = g.Children.Count - 1; c >= 0; c--)
+                if (files.Skins[g.Children[c]][k] is { } skin) PutEntry(entries, new SkinPresetEntry(files.Layers[g.Children[c]], skin));
+        }
+        foreach (var s in o.Parts ?? [])
+            if (files.KindAt(s.Layer) == FileLayerKind.Part && files.Layers[s.Layer].Parent is not null && files.TrySkin(s.Layer, s.Skin, out var skin))
+                PutEntry(entries, new SkinPresetEntry(files.Layers[s.Layer], skin));
+        return entries;
+    }
+
+    /// <summary>프리셋 항목을 넣는다: 같은 레이어 항목이 있으면 그 자리에서 바꾼다(레이어마다 하나).</summary>
+    private static void PutEntry(List<SkinPresetEntry> entries, SkinPresetEntry entry)
+    {
+        int at = entries.FindIndex(e => ReferenceEquals(e.Layer, entry.Layer));
+        if (at >= 0) entries[at] = entry;
+        else entries.Add(entry);
+    }
+
+    /// <summary>겹치지 않는 프리셋 이름(<see cref="SpriteProject.UniqueSkinPresetName"/>과 같은 규칙 — 겹치면 " 2", " 3" …, 비면 "프리셋")을 정해 <paramref name="taken"/>에 넣는다.</summary>
+    private static string UniquePresetName(string? baseName, HashSet<string> taken)
+    {
+        var name = baseName?.Trim() is { Length: > 0 } trimmed ? trimmed : Chickxel.Core.Localization.DomainStrings.Project_DefaultPresetName;
+        var unique = name;
+        for (int i = 2; !taken.Add(unique); i++) unique = $"{name} {i}";
+        return unique;
     }
 
     /// <summary>Unity·내보내기 설정(시트 설정 제외 — <see cref="ApplySheets"/>)을 적용한다.</summary>
@@ -1406,36 +1628,21 @@ public static partial class ProjectIO
     }
 
     /// <summary>
-    /// 시트 설정: 새 파일은 <c>sheet</c>(공통)·<c>partsSheet</c>(부위 아틀라스 따로). 예전 파일(프레임 시트·부위 아틀라스 설정이 따로 있던 형식)은
-    /// 두 설정을 각각 만들어, 부위 아틀라스 결과가 공통(프레임 시트) 설정으로도 같으면(또는 한쪽 결과를 내보내지 않으면) 하나로 합치고,
-    /// 다르면 부위 아틀라스를 "따로"(<see cref="ExportSettings.PartsOverride"/>)로 남겨 결과가 조용히 바뀌지 않게 한다.
+    /// 시트 설정: 새 파일은 <c>sheet</c>(공통)·<c>partsSheet</c>(레이어 아틀라스 따로). 예전 파일(프레임 시트·부위 아틀라스 설정이 따로 있던 형식)은
+    /// 두 설정을 각각 만들어, 레이어 아틀라스 결과가 공통(프레임 시트) 설정으로도 같으면(또는 한쪽 결과를 내보내지 않으면) 하나로 합치고,
+    /// 다르면 레이어 아틀라스를 "따로"(<see cref="ExportSettings.PartsOverride"/>)로 남겨 결과가 조용히 바뀌지 않게 한다.
     /// </summary>
-    private static void ApplySheets(SpriteProject p, ExportDto e, List<Layer> fileLayers, ICollection<string>? warnings)
+    private static void ApplySheets(SpriteProject p, ExportDto e, FileIndex files, ICollection<string>? warnings)
     {
         var x = p.Export;
         // 목록의 시트 줄: 줄 차례대로(새 형식만 있음)
         var sheetDtos = (e.Entries ?? []).Where(d => d.Sheet is not null).Select(d => d.Sheet!).ToList();
         var sheets = x.Entries.Where(d => d.Sheet is not null).Select(d => d.Sheet!).ToList();
         for (int i = 0; i < sheets.Count && i < sheetDtos.Count; i++)
-            if (sheetDtos[i].Sheet is { } entrySheet)
-            {
-                entrySheet.ApplyTo(sheets[i].Common, p, fileLayers);
-                if (sheetDtos[i].PartsSheet is { } eps)
-                {
-                    var o = new SheetOptions();
-                    eps.ApplyTo(o, p, fileLayers);
-                    sheets[i].PartsOverride = o;
-                }
-            }
+            if (sheetDtos[i].Sheet is { } entrySheet) ApplySheetPair(p, sheets[i], entrySheet, sheetDtos[i].PartsSheet, files);
         if (e.Sheet is { } sheet)
         {
-            sheet.ApplyTo(x.Common, p, fileLayers);
-            if (e.PartsSheet is { } ps)
-            {
-                var o = new SheetOptions();
-                ps.ApplyTo(o, p, fileLayers);
-                x.PartsOverride = o;
-            }
+            ApplySheetPair(p, x, sheet, e.PartsSheet, files);
             return;
         }
 
@@ -1450,7 +1657,7 @@ public static partial class ProjectIO
             SplitTags = e.SplitFrames == true,
             SplitParts = e.SplitParts == true,
             Naming = SpriteNaming.ByTag,
-            ExcludedLayers = (e.FrameExcludedLayers ?? []).Select(i => ResolveLayer(fileLayers, i)).OfType<Layer>().Where(l => !l.IsPart).Distinct().ToArray(),
+            ExcludedLayers = files.ExcludableLayers(e.FrameExcludedLayers),
         };
         // 예전 프레임 시트: 태그마다 한 줄(줄바꿈 없음, 태그가 없던 파일은 격자와 같았음) / 격자(프레임 순, 칸 수 설정 — 설정이 없던 파일은 열 수 > 0 = 가로 N칸, 0 = 한 줄)
         if (string.Equals(e.Layout, "RowPerTag", StringComparison.OrdinalIgnoreCase) && p.Tags.Count > 0)
@@ -1474,13 +1681,13 @@ public static partial class ProjectIO
             frames.Grid = SheetGrid.Rows;
             frames.GridCount = 1;
         }
-        var outfits = (e.FrameOutfits ?? []).Where(i => i >= 0 && i < p.Outfits.Count).Select(i => p.Outfits[i]).Distinct().ToArray();
+        var outfits = files.PresetsAt(e.FrameOutfits);
         if (outfits.Length > 0)
         {
-            // 예전 "착장마다 따로 파일" → 고른 스킨(착장만) + 스킨마다 따로 파일
+            // 예전 "착장마다 따로 파일" → 고른 스킨(착장이던 프리셋 + 부위 전용 스킨 — 그룹 전체 스킨이던 스킨은 모두 뺌) + 스킨마다 따로 파일
             frames.Skins = SkinSource.Selected;
-            frames.Outfits = outfits;
-            frames.ExcludedSkins = p.Layers.Where(l => l.IsGroup).SelectMany(l => l.Skins).ToArray();
+            frames.Presets = outfits;
+            frames.ExcludedSkins = files.LegacySkinChoice(p, null, allWholeExcluded: true, selected: true).Excluded;
             frames.SplitSkins = true;
             if (e.FrameCurrentOutfit != false)
                 warnings?.Add(Chickxel.Core.Localization.DomainStrings.Project_MigratedLegacyOutfit);
@@ -1507,8 +1714,9 @@ public static partial class ProjectIO
             // 이름 규칙이 없던 파일은 프레임 번호(이름이 바뀌면 Unity 참조가 끊김).
             Naming = e.PartsNaming is { } pn && Enum.IsDefined(pn) ? pn : SpriteNaming.FrameNumber,
             Skins = SkinSource.Selected,
-            ExcludedSkins = (e.ExcludedSkins ?? []).Select(r => ResolveSkin(fileLayers, r)).OfType<Skin>().Distinct().ToArray(),
-            Outfits = frames.Outfits,
+            // 레이어 아틀라스에는 프레임 시트 항목이 없으므로 그룹 전체 스킨을 프리셋으로 옮기지 않는다(뺀 스킨만 부위마다 뺌)
+            ExcludedSkins = files.LegacySkinChoice(p, e.ExcludedSkins, allWholeExcluded: false, selected: false).Excluded,
+            Presets = frames.Presets,
         };
 
         bool partsMatter = x.ExportParts && p.Layers.Any(l => l.IsPart);
@@ -1520,11 +1728,50 @@ public static partial class ProjectIO
         }
     }
 
-    /// <summary>부위 아틀라스 결과가 두 설정에서 같은지(이 프로젝트에서 뜻이 있는 항목만 비교 — 예전 파일 이행용).</summary>
+    /// <summary>
+    /// 시트 한 벌(공통 <paramref name="common"/> + 레이어 아틀라스만 따로 <paramref name="parts"/>)을 읽는다. 프레임 시트에서만 뺄 스킨
+    /// (<see cref="ApplySheetRefs"/>, 버전 6 이하)이 있으면 레이어 아틀라스는 그것 없이 내보내도록 따로 둔다(따로가 없었으면 공통을 복사).
+    /// </summary>
+    private static void ApplySheetPair(SpriteProject p, ExportSettings target, SheetDto common, SheetDto? parts, FileIndex files)
+    {
+        var frameOnly = ApplySheetRefs(common, target.Common, p, files);
+        if (parts is not null)
+        {
+            var o = new SheetOptions();
+            ApplySheetRefs(parts, o, p, files);
+            target.PartsOverride = o;
+        }
+        if (frameOnly.Length == 0) return;
+        target.PartsOverride ??= target.Common.Clone();
+        target.Common.ExcludedSkins = [.. target.Common.ExcludedSkins.Concat(frameOnly).Distinct()];
+    }
+
+    /// <summary>
+    /// 시트 설정 한 벌을 읽는다(값 + 뺄 스킨·스킨 프리셋·뺄 레이어). 버전 6 이하: 뺀 그룹 스킨 → 부위마다 그 스킨을 뺌, 고른 착장 → 그 프리셋,
+    /// 고른 스킨이면 고른(빼지 않은) 그룹 전체 스킨(첫 스킨 포함) → 그 스킨 프리셋(착장 프리셋 앞). 돌려주는 것 = 프레임 시트에서만 더 뺄 스킨:
+    /// 프리셋으로 옮긴 첫 스킨이 아닌 그룹 스킨의 부위 스킨(레이어마다의 항목으로 또 나오지 않게). 버전 7이면 빈 배열.
+    /// </summary>
+    private static Skin[] ApplySheetRefs(SheetDto d, SheetOptions o, SpriteProject p, FileIndex files)
+    {
+        d.ApplyValues(o);
+        o.ExcludedLayers = files.ExcludableLayers(d.ExcludedLayers);
+        if (!files.Legacy)
+        {
+            o.ExcludedSkins = (d.ExcludedSkins ?? []).Select(r => files.TrySkin(r.Layer, r.Skin, out var s) ? s : null).OfType<Skin>().Distinct().ToArray();
+            o.Presets = files.PresetsAt(d.Presets);
+            return [];
+        }
+        var (excluded, frameOnly, groupPresets) = files.LegacySkinChoice(p, d.ExcludedSkins, allWholeExcluded: false, selected: o.Skins == SkinSource.Selected);
+        o.ExcludedSkins = excluded;
+        o.Presets = [.. groupPresets.Concat(files.PresetsAt(d.Outfits)).Distinct()];
+        return frameOnly;
+    }
+
+    /// <summary>레이어 아틀라스 결과가 두 설정에서 같은지(이 프로젝트에서 뜻이 있는 항목만 비교 — 예전 파일 이행용).</summary>
     internal static bool SameForParts(SpriteProject p, SheetOptions a, SheetOptions b)
     {
         bool tags = p.Tags.Count > 0;
-        bool skins = p.Layers.Any(l => l.IsGroup && l.Skins.Count > 1);
+        bool skins = p.Layers.Any(l => l.Skins.Count > 1);
         GridOrder Effective(GridOrder o)
         {
             if (tags || !o.Keys.Contains(GridKey.Tag)) return o;
@@ -1554,6 +1801,15 @@ public static partial class ProjectIO
         Atlas,
     }
 
+    /// <summary>파일의 레이어 종류. <see cref="Group"/>은 버전 6 이하 전용(읽을 때 빈 부모 레이어로 바꿈).</summary>
+    private enum FileLayerKind
+    {
+        Normal,
+        Group,
+        Part,
+        Tilemap,
+    }
+
     private sealed class ProjectDto
     {
         public int Version { get; set; } = CurrentVersion;
@@ -1573,7 +1829,9 @@ public static partial class ProjectIO
         public ExportDto? Export { get; set; }
         /// <summary>마지막으로 내보낸 결과 파일(없으면 기록 없음 — 예전 파일).</summary>
         public ExportRecordDto? Exported { get; set; }
-        /// <summary>착장 프리셋(없으면 없음 — 예전 파일).</summary>
+        /// <summary>스킨 프리셋(없으면 없음, 버전 7부터).</summary>
+        public List<SkinPresetDto>? Presets { get; set; }
+        /// <summary>버전 6 이하 전용(쓰지 않음): 착장 프리셋.</summary>
         public List<OutfitDto>? Outfits { get; set; }
         /// <summary>스크립트 표: 원문 해시 → 원문(스크립트 효과가 쓰는 것만, 없으면 스크립트 효과 없음).</summary>
         public SortedDictionary<string, string>? Scripts { get; set; }
@@ -1599,7 +1857,14 @@ public static partial class ProjectIO
         public string? Path { get; set; }
     }
 
-    /// <summary>착장 프리셋: 이름, 그룹마다 스킨(레이어 = 그룹 번호), 부위 재정의(레이어 = 부위 번호, 스킨 = 그 그룹의 스킨 번호).</summary>
+    /// <summary>스킨 프리셋: 이름, 레이어마다 입힐 스킨(레이어 번호, 그 레이어의 스킨 번호).</summary>
+    private sealed class SkinPresetDto
+    {
+        public string? Name { get; set; }
+        public List<SkinRefDto>? Entries { get; set; }
+    }
+
+    /// <summary>버전 6 이하 전용(읽기만) 착장 프리셋: 이름, 그룹마다 스킨(레이어 = 그룹 번호), 부위 재정의(레이어 = 부위 번호, 스킨 = 그 그룹의 스킨 번호).</summary>
     private sealed class OutfitDto
     {
         public string? Name { get; set; }
@@ -1607,7 +1872,7 @@ public static partial class ProjectIO
         public List<SkinRefDto>? Parts { get; set; }
     }
 
-    /// <summary>(레이어 번호, 그 레이어(부위면 그 그룹)의 스킨 번호).</summary>
+    /// <summary>(레이어 번호, 그 레이어의 스킨 번호). 버전 6 이하: 스킨 번호는 그룹(부위면 그 그룹)의 스킨 번호.</summary>
     internal sealed class SkinRefDto
     {
         public int Layer { get; set; } = -1;
@@ -1628,10 +1893,10 @@ public static partial class ProjectIO
         public bool Locked { get; set; }
         public int Opacity { get; set; } = 255;
         /// <summary>null = 일반.</summary>
-        public LayerKind? Kind { get; set; }
-        /// <summary>부위: 그룹 레이어 번호.</summary>
+        public FileLayerKind? Kind { get; set; }
+        /// <summary>부모 레이어 번호(자리 있는 레이어, 없으면 최상위). 버전 6 이하: 부위의 그룹 번호.</summary>
         public int? Parent { get; set; }
-        /// <summary>그룹: 타임라인에서 접힘.</summary>
+        /// <summary>타임라인에서 자식 줄을 접음(버전 6 이하: 그룹만).</summary>
         public bool? Collapsed { get; set; }
         /// <summary>타임라인에서 효과 줄을 접음.</summary>
         public bool? EffectsCollapsed { get; set; }
@@ -1639,25 +1904,27 @@ public static partial class ProjectIO
         public int? PartHeight { get; set; }
         public int? PartX { get; set; }
         public int? PartY { get; set; }
-        /// <summary>레이어 피벗(부위는 부위 기준, 그 밖에는 캔버스 기준 — 버전 5부터 모든 레이어).</summary>
+        /// <summary>레이어 피벗(자리 있는 레이어는 자기 셀 기준, 그 밖에는 캔버스 기준 — 버전 5부터 모든 레이어).</summary>
         public PivotDto? Pivot { get; set; }
         /// <summary>버전 4 이하 전용(쓰지 않음): 부위 피벗.</summary>
         public PivotDto? PartPivot { get; set; }
-        /// <summary>부위 테두리 [왼쪽, 위, 오른쪽, 아래].</summary>
+        /// <summary>자리 있는 레이어 테두리 [왼쪽, 위, 오른쪽, 아래].</summary>
         public int[]? PartBorder { get; set; }
-        /// <summary>부위의 가져온 원래 칸 [x, y, w, h](왼쪽 위 원점).</summary>
+        /// <summary>자리 있는 레이어의 가져온 원래 칸 [x, y, w, h](왼쪽 위 원점).</summary>
         public int[]? PartSource { get; set; }
-        /// <summary>그룹: 스킨 이름(순서대로, 첫 스킨 = 기본). 없으면(예전 파일) "기본" 하나.</summary>
+        /// <summary>
+        /// 스킨 이름(순서대로, 첫 스킨 = 기본 — 버전 7부터 일반·자리 있는 레이어마다). 버전 6 이하: 그룹의 스킨(전체 스킨 + 부위 전용 스킨), 없으면 "기본" 하나.
+        /// </summary>
         public List<string>? Skins { get; set; }
-        /// <summary>그룹: 스킨마다 부위 전용 스킨의 주인 부위 번호(−1 = 전체 스킨). 없으면 모두 전체 스킨.</summary>
+        /// <summary>버전 6 이하 전용(쓰지 않음): 그룹 스킨마다 부위 전용 스킨의 주인 부위 번호(−1 = 전체 스킨). 없으면 모두 전체 스킨.</summary>
         public List<int>? SkinOwners { get; set; }
-        /// <summary>그룹: 지금 스킨 번호(없으면 0).</summary>
+        /// <summary>지금 스킨(<see cref="Skins"/> 번호, 없으면 0). 버전 6 이하: 그룹의 지금 스킨.</summary>
         public int? ActiveSkin { get; set; }
-        /// <summary>부위: 그룹 스킨 대신 보일 스킨 번호(재정의, 없으면 그룹을 따름).</summary>
+        /// <summary>버전 6 이하 전용(쓰지 않음): 부위가 그룹 스킨 대신 보일 스킨 번호(재정의, 없으면 그룹을 따름).</summary>
         public int? Skin { get; set; }
-        /// <summary>레이어 효과(적용 순서대로). 없으면 효과 없음.</summary>
+        /// <summary>레이어 효과(적용 순서대로, 대상은 효과의 <c>includeChildren</c>). 없으면 효과 없음.</summary>
         public List<JsonObject?>? Effects { get; set; }
-        /// <summary>그룹: 자동 배치 설정. 없으면 끔.</summary>
+        /// <summary>자리 있는 레이어: 자식 자동 배치 설정. 없으면 끔(버전 6 이하: 그룹만).</summary>
         public GroupLayoutDto? AutoLayout { get; set; }
         /// <summary>타일맵 레이어: 쓰는 타일셋 이름표들(자리 차례, 첫 것이 칸 크기·층을 정함 — 맵은 <c>tilemaps/L{레이어}.bin</c>, 버전 6부터).</summary>
         public List<string>? TilesetKeys { get; set; }
@@ -1976,12 +2243,14 @@ public static partial class ProjectIO
         public bool? SplitParts { get; set; }
         public bool? SplitSkins { get; set; }
         public bool? FrameCurrentOutfit { get; set; }
+        /// <summary>예전 프레임 시트 착장(<c>outfits</c> 번호).</summary>
         public List<int>? FrameOutfits { get; set; }
         public List<int>? FrameExcludedLayers { get; set; }
+        /// <summary>예전 부위 아틀라스에서 뺄 스킨(그룹 번호, 그룹 스킨 번호).</summary>
         public List<SkinRefDto>? ExcludedSkins { get; set; }
         public SpriteNaming? PartsNaming { get; set; }
 
-        /// <param name="p">시트 설정의 스킨·레이어·착장을 파일 안 번호로 적을 프로젝트. null이면 적지 않는다(실행취소 기록은 따로 적음).</param>
+        /// <param name="p">시트 설정의 스킨·레이어·스킨 프리셋을 파일 안 번호로 적을 프로젝트. null이면 적지 않는다(실행취소 기록은 따로 적음).</param>
         public static ExportDto From(ExportSettings x, SpriteProject? p) => new()
         {
             OnSave = x.ExportOnSave,
@@ -2021,7 +2290,7 @@ public static partial class ProjectIO
         };
     }
 
-    /// <summary>시트 설정 한 벌(<see cref="SheetOptions"/>). 스킨·레이어·착장은 파일 안 번호.</summary>
+    /// <summary>시트 설정 한 벌(<see cref="SheetOptions"/>). 스킨·레이어·스킨 프리셋은 파일 안 번호.</summary>
     internal sealed class SheetDto
     {
         public SheetLayout Layout { get; set; } = SheetLayout.Grid;
@@ -2041,11 +2310,16 @@ public static partial class ProjectIO
         public bool SplitParts { get; set; }
         public SpriteNaming Naming { get; set; } = SpriteNaming.ByTag;
         public SkinSource Skins { get; set; } = SkinSource.Current;
+        /// <summary>뺄 스킨: (레이어 번호, 그 레이어의 스킨 번호). 버전 6 이하: (그룹 번호, 그룹 스킨 번호).</summary>
         public List<SkinRefDto>? ExcludedSkins { get; set; }
+        /// <summary>고른 스킨 프리셋(<c>presets</c> 번호, 버전 7부터).</summary>
+        public List<int>? Presets { get; set; }
+        /// <summary>버전 6 이하 전용(쓰지 않음): 고른 착장(<c>outfits</c> 번호).</summary>
         public List<int>? Outfits { get; set; }
+        /// <summary>뺄 레이어(자손째). 버전 6 이하: 일반 레이어·그룹만.</summary>
         public List<int>? ExcludedLayers { get; set; }
 
-        /// <param name="p">스킨·레이어·착장을 파일 안 번호로 적을 프로젝트. null이면 값만 적는다.</param>
+        /// <param name="p">스킨·레이어·스킨 프리셋을 파일 안 번호로 적을 프로젝트. null이면 값만 적는다.</param>
         public static SheetDto From(SpriteProject? p, SheetOptions o) => new()
         {
             Layout = o.Layout,
@@ -2064,18 +2338,10 @@ public static partial class ProjectIO
             SplitParts = o.SplitParts,
             Naming = o.Naming,
             Skins = o.Skins,
-            ExcludedSkins = p is null ? null : NullIfEmpty(o.ExcludedSkins.Select(s => GroupSkinRef(p, s)).OfType<SkinRefDto>()),
-            Outfits = p is null ? null : NullIfEmpty(o.Outfits.Select(x => IndexOf(p.Outfits, x)).Where(i => i >= 0)),
+            ExcludedSkins = p is null ? null : NullIfEmpty(o.ExcludedSkins.Select(s => LayerSkinRef(p, s)).OfType<SkinRefDto>()),
+            Presets = p is null ? null : NullIfEmpty(o.Presets.Select(x => IndexOf(p.SkinPresets, x)).Where(i => i >= 0)),
             ExcludedLayers = p is null ? null : NullIfEmpty(o.ExcludedLayers.Select(p.IndexOf).Where(i => i >= 0)),
         };
-
-        public void ApplyTo(SheetOptions o, SpriteProject p, List<Layer> fileLayers)
-        {
-            ApplyValues(o);
-            o.ExcludedSkins = (ExcludedSkins ?? []).Select(r => ResolveSkin(fileLayers, r)).OfType<Skin>().Distinct().ToArray();
-            o.Outfits = (Outfits ?? []).Where(i => i >= 0 && i < p.Outfits.Count).Select(i => p.Outfits[i]).Distinct().ToArray();
-            o.ExcludedLayers = (ExcludedLayers ?? []).Select(i => ResolveLayer(fileLayers, i)).OfType<Layer>().Where(l => !l.IsPart).Distinct().ToArray();
-        }
 
         /// <summary>스킨·레이어·착장 목록을 뺀 값만 적용한다.</summary>
         public void ApplyValues(SheetOptions o)

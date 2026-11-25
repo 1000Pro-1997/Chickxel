@@ -458,11 +458,14 @@ public class LayerEffectTests
 
     // ───────────── 합성 ─────────────
 
-    /// <summary>8×8 캔버스, 그룹 안 부위 둘(2×2 빨강을 (2,2), 2×2 파랑을 (4,2) — 나란히 붙음).</summary>
+    /// <summary>자식이 있는 레이어(하나뿐).</summary>
+    private static Layer ParentOf(SpriteProject p) => p.Layers.Single(p.HasChildren);
+
+    /// <summary>8×8 캔버스, 빈 부모 아래 자식 둘(2×2 빨강을 (2,2), 2×2 파랑을 (4,2) — 나란히 붙음).</summary>
     private static (SpriteProject P, Layer Group, Layer Left, Layer Right) TwoParts()
     {
         var p = new SpriteProject(8, 8);
-        var g = p.AddGroup("몸");
+        var g = p.AddEmptyParent("몸");
         var left = p.AddPart(g, "왼", 2, 2, new Point(2, 2));
         var right = p.AddPart(g, "오른", 2, 2, new Point(4, 2));
         p.SetCel(p.IndexOf(left), 0, Filled(2, 2, Red));
@@ -474,7 +477,7 @@ public class LayerEffectTests
     public void GroupOutline_WrapsWholeGroupWithoutInnerSeam()
     {
         var (p, g, _, _) = TwoParts();
-        p.SetLayerEffects(p.IndexOf(g), [new OutlineEffect { Color = Black }]);
+        p.SetLayerEffects(p.IndexOf(g), [new OutlineEffect { Color = Black, IncludeChildren = true }]);
         var flat = p.Flatten(0);
         // 4×2 덩어리 둘레(4방향): 위·아래 4 + 4, 좌우 2 + 2 = 12
         Assert.Equal(12, Count(flat, Black));
@@ -483,9 +486,9 @@ public class LayerEffectTests
         Assert.Equal(Black, flat.Get(1, 2));
         Assert.Equal(Black, flat.Get(6, 3));
         // 썸네일(그룹 합성)도 같다
-        Assert.True(p.FlattenGroup(g, 0).ContentEquals(flat));
+        Assert.True(p.FlattenSubtree(g, 0).ContentEquals(flat));
         // 효과 원본은 효과 없이
-        Assert.Equal(0, Count(p.EffectSource(g, 0)!, Black));
+        Assert.Equal(0, Count(p.SubtreeEffectSource(g, 0)!, Black));
     }
 
     [Fact]
@@ -518,12 +521,12 @@ public class LayerEffectTests
     public void HiddenOrExcludedGroupWithEffects_IsNotDrawn()
     {
         var (p, g, _, _) = TwoParts();
-        p.SetLayerEffects(p.IndexOf(g), [new OutlineEffect { Color = Black }]);
+        p.SetLayerEffects(p.IndexOf(g), [new OutlineEffect { Color = Black, IncludeChildren = true }]);
         p.SetLayerProperties(p.IndexOf(g), visible: false);
         Assert.True(p.Flatten(0).IsRegionEmpty(new Rectangle(0, 0, 8, 8)));
         p.SetLayerProperties(p.IndexOf(g), visible: true);
-        Assert.True(p.FlattenOutfit(0, null, [g]).IsRegionEmpty(new Rectangle(0, 0, 8, 8)));
-        Assert.True(p.FlattenOutfit(0, null).ContentEquals(p.Flatten(0)));
+        Assert.True(p.FlattenSkinPreset(0, null, [g]).IsRegionEmpty(new Rectangle(0, 0, 8, 8)));
+        Assert.True(p.FlattenSkinPreset(0, null).ContentEquals(p.Flatten(0)));
     }
 
     [Fact]
@@ -550,15 +553,15 @@ public class LayerEffectTests
         var (p, g, _, _) = TwoParts();
         int gi = p.IndexOf(g);
         int steps = p.History.UndoCount;
-        p.SetLayerEffects(gi, [new OutlineEffect { Color = Black }]);
+        p.SetLayerEffects(gi, [new OutlineEffect { Color = Black, IncludeChildren = true }]);
         Assert.Equal(steps + 1, p.History.UndoCount);
-        p.SetLayerEffects(gi, [new OutlineEffect { Color = Black }]);
+        p.SetLayerEffects(gi, [new OutlineEffect { Color = Black, IncludeChildren = true }]);
         Assert.Equal(steps + 1, p.History.UndoCount);
         Assert.True(p.Undo());
         Assert.Empty(g.Effects);
         Assert.Equal(0, Count(p.Flatten(0), Black));
         Assert.True(p.Redo());
-        Assert.Equal([new OutlineEffect { Color = Black }], g.Effects);
+        Assert.Equal([new OutlineEffect { Color = Black, IncludeChildren = true }], g.Effects);
     }
 
     [Fact]
@@ -606,10 +609,10 @@ public class LayerEffectTests
         var (p, g, left, _) = TwoParts();
         LayerEffect[] groupFx =
         [
-            new OutlineEffect { Color = new Color32(1, 2, 3, 200), Thickness = 3, Diagonal = true, Inside = true, HideOriginal = true },
-            new ShadowEffect { Color = new Color32(9, 8, 7, 100), OffsetX = -4, OffsetY = 5, Enabled = false },
-            new RimLightEffect { Light = new Color32(250, 240, 10, 90), Shade = Color32.Transparent, Direction = LightDirection.BottomRight, Size = 3 },
-            new ColorOverlayEffect { Color = Blue, Amount = 37 },
+            new OutlineEffect { Color = new Color32(1, 2, 3, 200), Thickness = 3, Diagonal = true, Inside = true, HideOriginal = true, IncludeChildren = true },
+            new ShadowEffect { Color = new Color32(9, 8, 7, 100), OffsetX = -4, OffsetY = 5, Enabled = false, IncludeChildren = true },
+            new RimLightEffect { Light = new Color32(250, 240, 10, 90), Shade = Color32.Transparent, Direction = LightDirection.BottomRight, Size = 3, IncludeChildren = true },
+            new ColorOverlayEffect { Color = Blue, Amount = 37, IncludeChildren = true },
         ];
         p.SetLayerEffects(p.IndexOf(g), groupFx);
         p.SetLayerEffects(p.IndexOf(left), [new OutlineEffect()]);
@@ -620,7 +623,7 @@ public class LayerEffectTests
         var back = ProjectIO.Load(path, warnings);
         Assert.Empty(warnings);
         // 열면 같은 설정의 공식 스크립트 효과(같은 그림 — 아래 합성 비교)
-        Assert.Equal(TestUtil.ConvertedJson(groupFx), TestUtil.EffectJson(back.Layers.Single(l => l.IsGroup).Effects));
+        Assert.Equal(TestUtil.ConvertedJson(groupFx), TestUtil.EffectJson(back.Layers.Single(back.HasChildren).Effects));
         Assert.Equal(TestUtil.ConvertedJson([new OutlineEffect()]), TestUtil.EffectJson(back.Layers.Single(l => l.Name == "왼").Effects));
         Assert.Empty(back.Layers.Single(l => l.Name == "오른").Effects);
         Assert.True(back.Flatten(0).ContentEquals(p.Flatten(0)));
@@ -649,7 +652,7 @@ public class LayerEffectTests
         int li = p.IndexOf(left);
         p.SetLayerPivot(li, new Pivot(0.5f, 0f));
         p.SetPartBorder(li, new SpriteBorder(1, 0, 0, 0));
-        p.SetLayerEffects(p.IndexOf(g), [new OutlineEffect { Color = Black }]);
+        p.SetLayerEffects(p.IndexOf(g), [new OutlineEffect { Color = Black, IncludeChildren = true }]);
         p.SetLayerEffects(li, [new ShadowEffect { Color = Black, OffsetX = 1, OffsetY = 1 }]);
 
         var frames = ProjectExport.BuildSheet(p, "f");
@@ -686,13 +689,13 @@ public class LayerEffectTests
     public void FrameRange_EffectOnlyOnItsFrames_InEveryCompositeAndExport()
     {
         var (p, g, left, _) = TwoPartsFourFrames();
-        p.SetLayerEffects(p.IndexOf(g), [new OutlineEffect { Color = Black, Frames = new FrameRange(1, 2) }]);
+        p.SetLayerEffects(p.IndexOf(g), [new OutlineEffect { Color = Black, Frames = new FrameRange(1, 2), IncludeChildren = true }]);
         int[] expected = [0, 12, 12, 0];
         for (int f = 0; f < 4; f++)
         {
             Assert.Equal(expected[f], Count(p.Flatten(f), Black));
-            Assert.True(p.FlattenGroup(g, f).ContentEquals(p.Flatten(f)));
-            Assert.True(p.FlattenOutfit(f, null).ContentEquals(p.Flatten(f)));
+            Assert.True(p.FlattenSubtree(g, f).ContentEquals(p.Flatten(f)));
+            Assert.True(p.FlattenSkinPreset(f, null).ContentEquals(p.Flatten(f)));
         }
 
         // 프레임 시트: 칸마다 그 프레임 합성 그대로
@@ -716,7 +719,7 @@ public class LayerEffectTests
     {
         var (p, g, _, _) = TwoPartsFourFrames();
         int gi = p.IndexOf(g);
-        p.SetLayerEffects(gi, [new OutlineEffect { Color = Black }]);
+        p.SetLayerEffects(gi, [new OutlineEffect { Color = Black, IncludeChildren = true }]);
         int steps = p.History.UndoCount;
         p.SetLayerEffects(gi, [g.Effects[0] with { Frames = new FrameRange(2, 3) }]);
         Assert.Equal(steps + 1, p.History.UndoCount);
@@ -866,7 +869,7 @@ public class LayerEffectTests
 
         stream.Position = 0;
         // 열면 같은 설정·범위의 공식 스크립트 효과
-        Assert.Equal(TestUtil.ConvertedJson(fx), TestUtil.EffectJson(ProjectIO.Load(stream).Layers.Single(l => l.IsGroup).Effects));
+        Assert.Equal(TestUtil.ConvertedJson(fx), TestUtil.EffectJson(ParentOf(ProjectIO.Load(stream)).Effects));
 
         // 예전 파일(범위 없음) = 모든 프레임, 프레임 수 밖 범위는 안으로(모든 프레임을 덮으면 모든 프레임)
         using (var zip = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Update, leaveOpen: true))
@@ -884,7 +887,7 @@ public class LayerEffectTests
             root.WriteTo(writer);
         }
         stream.Position = 0;
-        var back = ProjectIO.Load(stream).Layers.Single(l => l.IsGroup).Effects;
+        var back = ParentOf(ProjectIO.Load(stream)).Effects;
         Assert.Equal([null, new FrameRange(2, 3), null], back.Select(e => e.Frames));
     }
 }

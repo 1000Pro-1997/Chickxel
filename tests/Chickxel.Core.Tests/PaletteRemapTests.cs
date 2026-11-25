@@ -167,20 +167,20 @@ public class PaletteRemapTests
     public void MapCels_ReachesHiddenSkinCels()
     {
         var p = new SpriteProject(4, 4);
-        var g = p.AddGroup("body");
+        var g = p.AddEmptyParent("body");
         var head = p.AddPart(g, "Head", 2, 2, new System.Drawing.Point(0, 0));
         var off = new Color32(250, 5, 5);
         p.BeginCelStroke(p.IndexOf(head), 0).Set(0, 0, off);
         p.CommitCelStroke("점");
-        var knight = p.AddSkin(g, "knight");
+        var knight = p.AddSkin(head, "knight");
         p.BeginCelStroke(p.IndexOf(head), 0).Set(1, 1, new Color32(5, 5, 250));
         p.CommitCelStroke("점");
-        p.SetActiveSkin(g, g.BaseSkin!);
+        p.SetActiveSkin(head, head.BaseSkin!);
 
         var remap = new PaletteRemap([Red, Blue]);
         Assert.Equal(2, p.MapCels("팔레트 색으로", (_, _) => true, img => remap.Remapped(img)));
 
-        Assert.Equal(Red, p.GetOwnCel(head, p.Frames[0], g.BaseSkin!)![0, 0]);
+        Assert.Equal(Red, p.GetOwnCel(head, p.Frames[0], head.BaseSkin!)![0, 0]);
         var own = p.GetOwnCel(head, p.Frames[0], knight)!;
         Assert.Equal((Color32.Transparent, Blue), (own[0, 0], own[1, 1]));
     }

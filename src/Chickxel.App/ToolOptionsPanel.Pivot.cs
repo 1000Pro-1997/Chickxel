@@ -98,7 +98,7 @@ public sealed partial class ToolOptionsPanel
             return own
                 ? string.Format(culture, UiStrings.Pivot_PartFrameTarget, layer.Name, f + 1, layer.PartSize.Width, layer.PartSize.Height)
                 : string.Format(culture, UiStrings.S_ToolOptionsPanel_RefreshPivot_7752FB81E5, layer.Name, layer.PartSize.Width, layer.PartSize.Height);
-        string kind = layer.IsGroup ? UiStrings.Pivot_KindGroup : UiStrings.Pivot_KindLayer;
+        string kind = UiStrings.Pivot_KindLayer;
         return own
             ? string.Format(culture, UiStrings.Pivot_LayerFrameTarget, kind, layer.Name, f + 1, p.Width, p.Height)
             : string.Format(culture, UiStrings.Pivot_LayerTarget, kind, layer.Name, p.Width, p.Height);

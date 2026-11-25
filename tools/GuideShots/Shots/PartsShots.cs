@@ -34,21 +34,20 @@ internal static class PartsShots
     public static void Create(ShotKit k)
     {
         var main = Open(k);
-        // ① 부위로 시작 ② 첫 부위 이름·크기
+        // 새 프로젝트 창(부위로 시작 선택지는 없어짐)
+        // 도움말 대기: ① 부위로 시작 ② 첫 부위 이름·크기 — 새 프로젝트 창에서 없어져 표시 없이 창만 담는다.
         k.Dialog(() => k.Command("파일/새 프로젝트"), w =>
         {
-            var parts = ShotKit.All<RadioButton>(w).First(r => r.Content as string == UiStrings.S_Dialogs_NewImageDialog_0F2FF932AA);
-            parts.IsChecked = true;
             ShotKit.Pump(200);
-            k.Save(w, marks: [parts, AfterLabel(w, ShotKit.Get<Panel>(w, "_partRow"))]);
+            k.Save(w);
         });
-        // ③ 새 그룹 ④ 새 부위… (프레임·레이어 메뉴)
-        var newGroup = OpenCommandMenu(k, main, "새 그룹");
-        var newPart = CommandItem(main, "새 부위");
+        // ③ 새 빈 레이어 ④ 새 자식 레이어… (프레임·레이어 메뉴)
+        var newGroup = OpenCommandMenu(k, main, "새 빈 레이어");
+        var newPart = CommandItem(main, "새 자식 레이어…");
         SaveTopMenu(k, main, "parts-create-2", [newGroup, newPart], 3);
         CloseMenus(k, main);
-        // ⑤ 이름 ⑥ 크기 (새 부위 창)
-        k.Dialog(() => k.Command("프레임·레이어/새 부위"), w =>
+        // ⑤ 이름 ⑥ 크기 (새 자식 레이어 창)
+        k.Dialog(() => k.Command("프레임·레이어/새 자식 레이어…"), w =>
         {
             var name = ShotKit.All<TextBox>(w).First();
             name.Text = "Arm";
@@ -177,7 +176,7 @@ internal static class PartsShots
         CloseMenus(k, main);
         // ② 미리 보기 ③ 적용, ④~⑩ 설정 표의 줄 순서
         GroupLayout? layout = null;
-        k.Dialog(() => ShotKit.Call(Timeline(main), "EditGroupLayout", g), w =>
+        k.Dialog(() => ShotKit.Call(Timeline(main), "EditChildLayout", g), w =>
         {
             ShotKit.Pump(300);
             layout = ((GroupLayoutDialog)w).Layout;
@@ -190,7 +189,7 @@ internal static class PartsShots
                 preview, apply, Field(1), Field(2), Field(3), Field(4), Field(5), Field(6), ShotKit.Get<Control>(w, "_includeHidden"),
             ], firstNumber: 2);
         });
-        Ctx(main).SetGroupLayout(group, layout);
+        Ctx(main).SetChildLayout(group, layout);
         k.Settle(300);
         ShotKit.Call(Canvas(main), "FitToWindow");
         k.Settle(300);
@@ -249,47 +248,46 @@ internal static class PartsShots
     {
         var main = Open(k);
         var ctx = Ctx(main);
-        var group = Layer(main, GroupName);
         var head = Layer(main, "Head");
         int hi = Index(main, "Head"), bi = Index(main, "Body"), g = Index(main, GroupName);
-        // 몸은 그룹 스킨 knight, 머리만 zombie
-        ctx.SetPartSkin(head, group.Skins.First(s => s.Name == "zombie"));
+        // 몸은 knight 그대로, 머리 레이어만 zombie
+        // 도움말 대기: "부위 재정의"는 없어졌다 — 레이어마다 자기 스킨을 고르는 것이 가장 가까운 모습.
+        ctx.SetActiveSkin(head, head.Skins.First(s => s.Name == "zombie"));
         k.Settle(300);
         var canvas = ShotKit.Bounds(Canvas(main), main);
         var tl = ShotKit.Bounds(Timeline(main), main);
         var crop = new Rect(canvas.X, canvas.Y, canvas.Width, tl.Bottom - canvas.Y);
-        // ① 몸(그룹을 따름) ② 머리(부위 재정의) ③ 그룹의 지금 스킨
+        // ① 몸의 스킨 ② 머리의 스킨 ③ 부모 레이어의 스킨
         k.Save(main, crop: crop, marks: [ChipRect(main, bi), ChipRect(main, hi), ChipRect(main, g)]);
 
-        // ④ 이 부위 스킨 단추 ⑤ "개별" 표시 (스킨 관리 창 Head 줄)
+        // ④ 새 스킨 단추 ⑤ Head에만 있는 "모자" 카드 (스킨 관리 창 Head 줄)
+        // 도움말 대기: "부위 전용 스킨"은 없어졌다 — Head 레이어 한 곳에만 있는 스킨으로 대신 보인다.
         var w = OpenSkinManager(k, main, head, height: 1120);
-        var box = GroupBox(w, "Per part (3");
-        var add = ShotKit.FindText(box, "This part's skins", ancestorControl: true);
-        var hat = ShotKit.Bounds(Card(box, "Hat"), w).Inflate(6);
+        var box = LayerRowBox(w, "Head");
+        var add = ShotKit.FindText(box, "New skin", ancestorControl: true);
+        var hat = ShotKit.Bounds(Card(box, HatSkin), w).Inflate(6);
         k.SaveControl(box, "parts-per-part-2", pad: 6, marks: [add, hat], firstNumber: 4);
-        // ⑨ 전체 스킨으로 올리기 (Hat 카드 우클릭)
-        k.Click(Card(box, "Hat"), MouseButton.Right, settleMs: 400);
-        SaveWindowMenu(k, w, "parts-per-part-4", box, [MenuItemByText(UiStrings.S_SkinManagerWindow_PartOnlyCardMenu_C1E4068EB0)], 9);
+        // ⑨ Hat 카드 우클릭 메뉴(복제)
+        // 도움말 대기: "전체 스킨으로 올리기"는 없어졌다 — 같은 카드 메뉴의 복제로 대신한다.
+        k.Click(Card(box, HatSkin), MouseButton.Right, settleMs: 400);
+        SaveWindowMenu(k, w, "parts-per-part-4", box, [MenuItemByText(UiStrings.S_SkinManagerWindow_GroupCardMenu_F64B3478B8)], 9);
         CloseMenus(k, w);
-        // ⑩ 이 부위 전용으로 추가 (Head 줄의 knight 카드 우클릭)
-        box = GroupBox(w, "Per part (3");
-        var headKnight = Card(box, "knight", 1);
-        k.Click(headKnight, MouseButton.Right, settleMs: 400);
-        SaveWindowMenu(k, w, "parts-per-part-5", box, [MenuItemStarting(UiStrings.SkinManager_AddAsPartOnly)], 10);
+        // ⑩ Head 줄 knight 카드 우클릭 메뉴(이름 바꾸기)
+        // 도움말 대기: "이 부위 전용으로 추가"는 없어졌다 — 스킨이 이미 레이어마다 따로라 카드 메뉴만 보인다.
+        box = LayerRowBox(w, "Head");
+        k.Click(Card(box, "knight"), MouseButton.Right, settleMs: 400);
+        SaveWindowMenu(k, w, "parts-per-part-5", box, [MenuItemByText(UiStrings.S_SkinManagerWindow_GroupCardMenu_120694637E)], 10);
         CloseMenus(k, w);
         w.Close();
         k.Settle(200);
 
-        // ⑥ 이 부위 스킨 하위 메뉴 ⑦ 이 부위 스킨… (새로 만들기) ⑧ 모자 (개별)
+        // ⑥ 레이어 스킨 하위 메뉴 (Head 우클릭)
+        // 도움말 대기: ⑦ 이 부위 스킨…·⑧ 모자(개별) 항목은 없어졌다 — 하위 메뉴만 표시한다.
         RightClickRow(k, main, hi);
         var sub = OpenMenuItems().First(m => m.ItemsSource is not null);
         sub.IsSubMenuOpen = true;
         k.Settle(400);
-        SaveMenu(k, main, "parts-per-part-3", hi,
-        [
-            sub, MenuItemByText(UiStrings.S_TimelinePanel_PartSkinMenuItems_AD14B32035),
-            MenuItemByText(string.Format(UiStrings.S_TimelinePanel_PartSkinMenuItems_6C100EAA80, HatSkin)),
-        ], 6);
+        SaveMenu(k, main, "parts-per-part-3", hi, [sub], 6);
     }
 
     [Shot("parts-skin-manager")]
@@ -298,36 +296,31 @@ internal static class PartsShots
         var main = Open(k);
         int g = Index(main, GroupName);
         // ① 스킨 칩 ② 프레임·레이어 > 스킨 관리… ③ 착장 줄의 관리…
-        var manage = ShotKit.All<Button>(ShotKit.Get<Control>(Preview(main), "_outfitHost")).First(b => b.Content is string s && s.StartsWith("Manage", StringComparison.Ordinal));
+        var manage = ShotKit.All<Button>(ShotKit.Get<Control>(Preview(main), "_skinsHost")).First(b => b.Content as string == UiStrings.S_PreviewPanel_RebuildOutfit_090268890B);
         var item = OpenCommandMenu(k, main, "스킨 관리");
         k.Save(main, marks: [ChipRect(main, g), InTop(main, item), ShotKit.Bounds(manage, main).Inflate(4)]);
         CloseMenus(k, main);
 
         var w = OpenSkinManager(k, main, null, height: 1120);
-        var filter = ShotKit.Get<Control>(w, "_filter");
-        var preview = ShotKit.Get<Control>(w, "_preview");
-        var box = GroupBox(w, "Per part (3");
-        // 캐릭터 그룹의 "부위별"을 펼친다(부위 줄·없음 카드).
-        if (!ShotKit.All<TextBlock>(box).Any(t => t.Text == "None"))
-        {
-            k.Click(PerPartButton(box));
-            k.Settle(500);
-            box = GroupBox(w, "Per part (3");
-        }
+        var presets = ShotKit.Get<Control>(w, "_presetBox");
+        var layers = ShotKit.Get<Control>(w, "_layerBox");
+        var box = LayerRowBox(w, GroupName);
         var cards = new[] { Card(box, t => t.StartsWith(BaseSkin, StringComparison.Ordinal)), Card(box, "knight"), Card(box, "zombie") };
         var cardsRect = cards.Select(c => ShotKit.Bounds(c, w)).Aggregate((a, b) => a.Union(b));
         var newSkin = ShotKit.FindText(box, "New skin", ancestorControl: true);
         var dup = ShotKit.FindText(box, "Duplicate", ancestorControl: true);
-        // ④ 전체 착장 ⑤ 그룹 스킨 카드 ⑥ 새 스킨 ⑦ 복제 — 창 위쪽부터 캐릭터 그룹 카드까지
+        // ④ 스킨 프리셋 ⑤ 부모 레이어 스킨 카드 ⑥ 새 스킨 ⑦ 복제 — 창 위쪽부터 캐릭터 줄 카드까지
+        // 도움말 대기: ④는 예전 "전체 착장" 미리 보기 자리 — 지금은 프리셋 묶음.
         k.Save(w, "parts-skin-manager-2", crop: new Rect(0, 0, w.Bounds.Width, cardsRect.Bottom + 14), titleBar: true,
-            marks: [ShotKit.Bounds(preview, w).Deflate(12), cardsRect, newSkin, dup], firstNumber: 4);
-        // ⑧ 카드 우클릭 메뉴(이름 바꾸기…·삭제·앞으로/뒤로) ⑨ 부위별 ⑩ 없음 카드 ⑪ 보기 거르기
-        var perPart = PerPartButton(box);
-        var none = Card(box, "None");
+            marks: [ShotKit.Bounds(presets, w).Deflate(4), cardsRect, newSkin, dup], firstNumber: 4);
+        // ⑧ 카드 우클릭 메뉴(이름 바꾸기…·삭제·앞으로/뒤로) ⑨ 자식 줄(Head) ⑩ 장비의 없음 카드 ⑪ 레이어 목록
+        // 도움말 대기: "부위별" 단추·보기 거르기는 없어졌다 — 자식 레이어 줄과 레이어 목록으로 대신한다.
+        var child = LayerRowBox(w, "Head");
+        var none = Card(LayerRowBox(w, GearName), t => t.StartsWith(NoneSkin, StringComparison.Ordinal));
         k.Click(Card(box, "zombie"), MouseButton.Right, settleMs: 400);
         var edits = InTop(w, MenuItemByText(UiStrings.S_SkinManagerWindow_GroupCardMenu_120694637E))
             .Union(InTop(w, MenuItemByText(UiStrings.S_SkinManagerWindow_GroupCardMenu_B0B89947BD)));
-        k.Save(w, "parts-skin-manager-3", marks: [edits, perPart, none, filter], firstNumber: 8);
+        k.Save(w, "parts-skin-manager-3", marks: [edits, child, none, layers], firstNumber: 8);
         CloseMenus(k, w);
         w.Close();
     }
@@ -337,7 +330,7 @@ internal static class PartsShots
     {
         var main = Open(k);
         var preview = Preview(main);
-        var host = ShotKit.Get<Control>(preview, "_outfitHost");
+        var host = ShotKit.Get<Control>(preview, "_skinsHost");
         // ① 착장 줄
         k.SaveControl(preview, pad: 2, marks: [host]);
         // ② 그룹 우클릭 > 스킨
@@ -358,10 +351,9 @@ internal static class PartsShots
         CloseMenus(k, main);
         // ④ 지금 착장 저장… ⑤ 착장 프리셋 카드 ⑥ 카드 우클릭 메뉴
         var w = OpenSkinManager(k, main, null, width: 560);
-        var outfits = ShotKit.Get<Control>(w, "_outfits");
-        var save = ShotKit.All<Button>(outfits).First(b => ShotKit.All<TextBlock>(b).Any(t => t.Text?.StartsWith("Save current outfit", StringComparison.Ordinal) == true)
-                                                          || b.Content is string s && s.StartsWith("Save current outfit", StringComparison.Ordinal));
-        var cards = ShotKit.Bounds(Card(outfits, OutfitName), w).Union(ShotKit.Bounds(Card(outfits, "Zombie"), w));
+        var outfits = ShotKit.Get<Control>(w, "_presetBox");
+        var save = ShotKit.Get<Control>(w, "_savePreset");
+        var cards = ShotKit.Bounds(Card(outfits, PresetName), w).Union(ShotKit.Bounds(Card(outfits, "Zombie"), w));
         // 카드 오른쪽 아래에서 우클릭(메뉴가 카드를 덮지 않게)
         var zombie = ShotKit.Bounds(Card(outfits, "Zombie"), w);
         k.Click(w, new Point(zombie.Right - 3, zombie.Bottom - 3), MouseButton.Right, settleMs: 400);
@@ -387,7 +379,7 @@ internal static class PartsShots
                 .GetVisualAncestors().OfType<Control>().First(c => c is Button or Border);
             // ① 지금 착장 ② 고른 스킨 ③ 스킨 고르기… ④ 한 이미지 ⑤ 따로 파일
             Rect B(string text) => ShotKit.Bounds(Btn(text), w).Inflate(3);
-            k.Save(w, marks: [B("Current outfit"), B("Selected skins"), B("Choose skins"), B("One image"), B("Separate files")]);
+            k.Save(w, marks: [B(UiStrings.S_UnityExportDialog_SheetRows_1543B3F118), B(UiStrings.S_UnityExportDialog_SheetRows_BB56BA3E03), B("Choose skins"), B("One image"), B("Separate files")]);
         });
         var p = Project(main);
         k.Dialog(() => new SkinPickerWindow(p, p.Export.Common, partsOnly: false, 0).ShowDialog(main), w =>
@@ -396,14 +388,16 @@ internal static class PartsShots
             w.SizeToContent = SizeToContent.Height;
             ShotKit.Pump(600);
             Rect Heading(string text) => ShotKit.Bounds(ShotKit.All<TextBlock>(w).First(t => t.Text == text), w);
-            var skins = Heading("Skins");
-            var outfits = Heading("Outfit presets");
-            var layers = Heading("Layers to composite");
+            // 스킨 고르기는 이제 "레이어와 스킨" 한 묶음(레이어 체크 + 그 레이어 스킨 체크) 뒤에 스킨 프리셋 묶음이 온다.
+            var skins = Heading(UiStrings.S_SkinPickerWindow_SkinPickerWindow_76ACD5089E);
+            var outfits = Heading(UiStrings.S_SkinPickerWindow_SkinPickerWindow_E73FD24EBA);
             double right = w.Bounds.Width - 16;
+            double presetBottom = ShotKit.All<CheckBox>(w).Select(c => ShotKit.Bounds(c, w)).Where(r => r.Y > outfits.Y).Select(r => r.Bottom).DefaultIfEmpty(outfits.Bottom + 40).Max();
             // 묶음 테두리를 제목 위 빈틈까지 올려 번호가 제목 글자를 가리지 않게 한다.
             var skinArea = new Rect(skins.X, skins.Y - 14, right - skins.X, outfits.Y - 20 - skins.Y + 14);
-            var outfitArea = new Rect(outfits.X, outfits.Y - 14, right - outfits.X, layers.Y - 6 - outfits.Y + 14);
-            // ⑥ 스킨 ⑦ 착장 프리셋
+            var outfitArea = new Rect(outfits.X, outfits.Y - 14, right - outfits.X, presetBottom + 6 - outfits.Y + 14);
+            // ⑥ 레이어와 스킨 ⑦ 스킨 프리셋
+            // 도움말 대기: 예전 "스킨"·"합성할 레이어" 두 묶음이 "레이어와 스킨" 하나로 합쳐짐.
             k.Save(w, "parts-skin-export-2", marks: [skinArea, outfitArea], firstNumber: 6);
         });
     }
@@ -442,8 +436,7 @@ internal static class PartsShots
         {
             for (int f = p.Frames.Count - 1; f > 0; f--) p.DeleteFrame(f);
             p.DeleteLayer(p.IndexOf(p.Layers.First(l => l.Name == GearName)));
-            var group = p.Layers.First(l => l.Name == GroupName);
-            p.SetActiveSkin(group, group.Skins[0]);
+            PartsSample.Wear(p, p.Layers.First(l => l.Name == GroupName), BaseSkin);
             p.Edit("export", ProjectChange.Settings, () =>
             {
                 p.Export.ExportFrames = false;
@@ -464,8 +457,9 @@ internal static class PartsShots
         var canvas = ShotKit.Bounds(Canvas(main), main);
         var tl = ShotKit.Bounds(Timeline(main), main);
         var p = Project(main);
-        int g = p.Layers.ToList().FindIndex(l => l.IsGroup);
-        int first = p.Layers.ToList().FindIndex(l => l.IsPart), last = p.Layers.ToList().FindLastIndex(l => l.IsPart);
+        int g = p.Layers.ToList().FindIndex(l => p.HasChildren(l));
+        var children = p.DescendantsOf(p.Layers[g]);
+        int first = p.IndexOf(children[0]), last = p.IndexOf(children[^1]);
         // ① 그룹 하나 ② 칸마다 부위
         k.Save(main, crop: new Rect(canvas.X, canvas.Y, canvas.Width, tl.Bottom - canvas.Y),
             marks: [RowRect(main, g), RowRect(main, Math.Min(first, last)).Union(RowRect(main, Math.Max(first, last)))]);
@@ -709,16 +703,12 @@ internal static class PartsShots
     private static Expander SectionStarting(Window w, string title)
         => ShotKit.All<Expander>(w).First(e => e.Header is TextBlock t && t.Text?.StartsWith(title, StringComparison.Ordinal) == true);
 
-    /// <summary>스킨 관리 창의 그룹 상자(<paramref name="perPart"/> = 그 상자의 "부위별" 단추 글자 앞부분).</summary>
-    private static Control GroupBox(Window w, string perPart)
+    /// <summary>스킨 관리 창에서 이름이 <paramref name="layerName"/>인 레이어 줄.</summary>
+    private static Control LayerRowBox(Window w, string layerName)
     {
         var list = ShotKit.Get<StackPanel>(w, "_list");
-        return list.Children.First(c => ShotKit.All<TextBlock>(c).Any(t => t.Text?.StartsWith(perPart, StringComparison.Ordinal) == true));
+        return list.Children.First(c => ShotKit.All<TextBlock>(c).Any(t => t.Text == layerName && t.FontWeight == Avalonia.Media.FontWeight.Bold));
     }
-
-    private static Control PerPartButton(Control box)
-        => ShotKit.All<TextBlock>(box).First(t => t.Text?.StartsWith("Per part", StringComparison.Ordinal) == true)
-            .GetVisualAncestors().OfType<Button>().First();
 
     /// <summary>제목이 <paramref name="title"/>인 스킨·착장 카드(<paramref name="nth"/>번째, 화면 순서).</summary>
     private static Control Card(Visual root, string title, int nth = 0) => Card(root, t => t == title, nth);

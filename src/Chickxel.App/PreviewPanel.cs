@@ -10,7 +10,7 @@ namespace Chickxel.App;
 /// <summary>
 /// Piskel식 미리보기(오른쪽 위): 현재 태그(없으면 전체 프레임)를 실시간으로 재생한다.
 /// 자체 FPS(0 = 프레임 길이 사용), 배율 1×/2×/4×/맞춤, 배경색을 고를 수 있고, 멈춰 있으면 현재 프레임을 보여 준다.
-/// 그룹(스킨 슬롯)이 있으면 아래쪽 "착장" 줄에서 그룹마다(타임라인처럼 위→아래) 보일 스킨을 고르고, "관리…"로 스킨 관리 창을 연다.
+/// 스킨 프리셋이나 스킨이 둘 이상인 레이어가 있으면 아래쪽 "스킨" 줄에서 프리셋을 입히거나 레이어마다(타임라인처럼 위→아래) 보일 스킨을 고르고, "설정…"으로 스킨 설정 창을 연다.
 /// 그림을 누르면 크기를 바꿀 수 있는 크게 보기 창(<see cref="ZoomWindow"/>)이 열리고, 우클릭하면 보이는 프레임을 복사(1×·×4)·PNG로 저장하거나 내보내기 창(GIF)을 연다.
 /// 제목 줄에는 미리보기 탭 단추와 접기·펼치기 단추가 있다. 접어도 재생 상태는 유지하고 메인 창의 도구 설정 칸이 빈 자리를 쓴다.
 /// </summary>
@@ -48,11 +48,11 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
     private List<int> _order = new();
     private int _orderIndex;
     private double _elapsedInFrame;
-    /// <summary>착장 줄: 그룹마다 이름 + 스킨 고르기 상자. 그룹이 없으면 숨김.</summary>
-    private readonly WrapPanel _outfit = new() { Orientation = Orientation.Horizontal, Margin = new Thickness(2, 1) };
-    private readonly Border _outfitHost;
-    /// <summary>착장 줄을 다시 만드는 중(상자 선택 바뀜을 스킨 고르기로 보지 않음).</summary>
-    private bool _syncingOutfit;
+    /// <summary>스킨 줄: 스킨 프리셋 상자 + 스킨이 둘 이상인 레이어마다 이름 + 스킨 고르기 상자. 둘 다 없으면 숨김.</summary>
+    private readonly WrapPanel _skins = new() { Orientation = Orientation.Horizontal, Margin = new Thickness(2, 1) };
+    private readonly Border _skinsHost;
+    /// <summary>스킨 줄을 다시 만드는 중(상자 선택 바뀜을 고르기로 보지 않음).</summary>
+    private bool _syncingSkins;
 
     /// <summary>재생 중 보이는 프레임이 바뀜(-1 = 재생 멈춤).</summary>
     public event EventHandler<int>? PlayingFrameChanged;
@@ -70,7 +70,7 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
     /// <summary>제목 줄에서 접기·펼치기 상태가 바뀜(메인 창이 분할 높이를 맞춘다).</summary>
     public event EventHandler? CollapsedChanged;
 
-    /// <summary>제목 줄만 남기고 그림·재생 설정·착장 줄을 숨긴다.</summary>
+    /// <summary>제목 줄만 남기고 그림·재생 설정·스킨 줄을 숨긴다.</summary>
     public bool Collapsed
     {
         get => _collapsed;
@@ -79,7 +79,7 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
             if (_collapsed == value) return;
             _collapsed = value;
             _bar.IsVisible = _view.IsVisible = !value;
-            _outfitHost.IsVisible = !value && _outfit.Children.Count > 0;
+            _skinsHost.IsVisible = !value && _skins.Children.Count > 0;
             ((IconView)_collapseButton.Child!).Icon = value ? VectorIcon.ChevronDown : VectorIcon.ChevronUp;
             ToolTip.SetTip(_collapseButton, value ? UiStrings.Preview_ExpandTip : UiStrings.Preview_CollapseTip);
             CollapsedChanged?.Invoke(this, EventArgs.Empty);
@@ -139,7 +139,7 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
         _bar.Children.Add(_fps);
         _bar.Children.Add(_scaleGroup);
         _bar.Children.Add(_backgroundGroup);
-        _outfitHost = new Border
+        _skinsHost = new Border
         {
             Background = AppTheme.PanelBrush,
             BorderBrush = AppTheme.BorderBrush,
@@ -147,13 +147,13 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
             IsVisible = false,
             Child = new ScrollViewer
             {
-                Content = _outfit,
+                Content = _skins,
                 MaxHeight = 92,
                 HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
                 VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
             },
         };
-        DockPanel.SetDock(_outfitHost, Dock.Bottom);
+        DockPanel.SetDock(_skinsHost, Dock.Bottom);
         var root = new DockPanel();
         var header = Ui.Header(UiStrings.S_PreviewPanel_PreviewPanel_015AD8431D);
         var title = (Control)header.Child!;
@@ -165,7 +165,7 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
         header.Child = new DockPanel { Children = { _collapseButton, _tabButton, title } };
         root.Children.Add(header);
         root.Children.Add(_bar);
-        root.Children.Add(_outfitHost);
+        root.Children.Add(_skinsHost);
         root.Children.Add(_view);
         PopupMenus.Attach(_view, ViewMenu);
         // 그림을 누르면 크기를 바꿀 수 있는 큰 창으로 본다(우클릭은 위 메뉴)
@@ -185,7 +185,7 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
         ctx.ProjectReplaced += (_, _) =>
         {
             Stop();
-            RebuildOutfit();
+            RebuildSkins();
             Redraw();
         };
         ctx.ViewChanged += (_, _) => Redraw();
@@ -198,10 +198,10 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
         ctx.ProjectChanged += (_, e) =>
         {
             if ((e.Change & (ProjectChange.Tags | ProjectChange.Frames)) != 0) RefreshOrder();
-            // 스킨 고르기·추가·삭제·이름·순서와 그룹 추가·삭제·이름은 모두 Layers 변경이다(실행취소 포함).
-            if ((e.Change & ProjectChange.Layers) != 0) RebuildOutfit();
+            // 스킨 고르기·추가·삭제·이름·순서, 프리셋 편집, 레이어 추가·삭제·이름은 모두 Layers 변경이다(실행취소 포함).
+            if ((e.Change & ProjectChange.Layers) != 0) RebuildSkins();
         };
-        RebuildOutfit();
+        RebuildSkins();
     }
 
     (HelpTarget Target, Rect Area)? IHelpTargetSource.HelpTargetFor(Control c, Avalonia.Point local) => HelpTargets.Whole(c, HelpTargetFor(c));
@@ -218,32 +218,34 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
         if (ReferenceEquals(c, _fps)) return new(page, Anchor: "②");
         if (ReferenceEquals(c, _scaleGroup)) return new(page, Anchor: "③");
         if (ReferenceEquals(c, _backgroundGroup)) return new(page, Anchor: UiStrings.S_GifExportDialog_GifExportDialog_7934F88ACA);
-        if (ReferenceEquals(c, _outfitHost)) return new(page, Anchor: UiStrings.S_PreviewPanel_RebuildOutfit_E5D30D48F5);
+        if (ReferenceEquals(c, _skinsHost)) return new(page, Anchor: UiStrings.S_PreviewPanel_RebuildOutfit_E5D30D48F5);
         if (ReferenceEquals(c, _tabButton)) return new(page, Anchor: "Enlarged view and preview tab");
         if (ReferenceEquals(c, _collapseButton)) return new(page);
         if (ReferenceEquals(c, this)) return new(page);
         return null;
     }
 
-    // ───────────── 착장(그룹마다 보일 스킨) ─────────────
+    // ───────────── 스킨(프리셋 · 레이어마다 보일 스킨) ─────────────
 
-    /// <summary>착장 줄을 프로젝트에 맞춰 다시 만든다(그룹이 없으면 숨김).</summary>
-    private void RebuildOutfit()
+    /// <summary>스킨 줄을 프로젝트에 맞춰 다시 만든다(스킨 프리셋도 스킨이 둘 이상인 레이어도 없으면 숨김).</summary>
+    private void RebuildSkins()
     {
-        _syncingOutfit = true;
+        _syncingSkins = true;
         try
         {
-            _outfit.Children.Clear();
+            _skins.Children.Clear();
             var p = _ctx.Project;
-            var groups = p is null ? [] : p.Layers.Where(l => l.IsGroup).Reverse().ToList();
-            _outfitHost.IsVisible = !_collapsed && groups.Count > 0;
-            if (p is null || groups.Count == 0) return;
+            var layers = p is null ? [] : p.Layers.Where(l => l.Skins.Count > 1).Reverse().ToList();
+            bool show = p is not null && (layers.Count > 0 || p.SkinPresets.Count > 0);
+            _skinsHost.IsVisible = !_collapsed && show;
+            if (p is null || !show) return;
             var title = Ui.Label(UiStrings.S_PreviewPanel_RebuildOutfit_E5D30D48F5);
             title.Foreground = AppTheme.DimTextBrush;
             title.VerticalAlignment = VerticalAlignment.Center;
             title.Margin = new Thickness(2, 0, 4, 0);
-            _outfit.Children.Add(title);
-            foreach (var group in groups) _outfit.Children.Add(OutfitItem(p, group));
+            _skins.Children.Add(title);
+            if (p.SkinPresets.Count > 0) _skins.Children.Add(PresetBox(p));
+            foreach (var layer in layers) _skins.Children.Add(LayerItem(layer));
             var manage = new Button
             {
                 Content = UiStrings.S_PreviewPanel_RebuildOutfit_090268890B,
@@ -254,36 +256,61 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
                 Focusable = false,
             }.Tip(UiStrings.S_PreviewPanel_RebuildOutfit_12AE9802EA);
             manage.Click += (_, _) => SkinManagerWindow.Open(_ctx, this);
-            _outfit.Children.Add(manage);
+            _skins.Children.Add(manage);
         }
         finally
         {
-            _syncingOutfit = false;
+            _syncingSkins = false;
         }
     }
 
     /// <summary>
-    /// 그룹 하나: 이름(누르면 스킨 관리 창이 그 그룹으로, 부위만 따로 고른 스킨이 있으면 "*") + 스킨 상자(스킨이 하나뿐이면 끔).
-    /// 고르면 그 그룹의 지금 스킨이 바뀐다(부위만 따로 고른 스킨은 그대로).
+    /// 스킨 프리셋 상자: 고르면 그 프리셋을 입힌다(담긴 레이어만 바뀜). 지금 입은 그대로인 첫 프리셋을 골라 보이고, 없으면 빈 상자("프리셋").
     /// </summary>
-    private Control OutfitItem(SpriteProject p, Layer group)
+    private ComboBox PresetBox(SpriteProject p)
     {
-        int overrides = p.ChildrenOf(group).Count(x => x.SkinOverride is not null);
+        var presets = p.SkinPresets.ToList();
+        var combo = new ComboBox
+        {
+            Width = 110,
+            MinWidth = 0,
+            Margin = new Thickness(1, 2, 6, 2),
+            VerticalAlignment = VerticalAlignment.Center,
+            PlaceholderText = UiStrings.Preview_PresetPlaceholder,
+        }.Tip(UiStrings.Preview_PresetTip);
+        foreach (var preset in presets) combo.Items.Add(preset.Name);
+        combo.SelectedIndex = presets.FindIndex(x => SkinManagerWindow.IsCurrentPreset(p, x));
+        combo.SelectionChanged += (_, _) =>
+        {
+            if (_syncingSkins || combo.SelectedIndex < 0 || combo.SelectedIndex >= presets.Count) return;
+            var preset = presets[combo.SelectedIndex];
+            // 입히기가 스킨 줄을 다시 만드므로, 상자가 닫힌 뒤에 입힌다.
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (_ctx.Project is { } cur && cur.SkinPresets.Contains(preset)) _ctx.Structural(() => cur.ApplySkinPreset(preset));
+            });
+        };
+        return combo;
+    }
+
+    /// <summary>레이어 하나: 이름(누르면 스킨 설정 창이 그 레이어로) + 스킨 상자. 고르면 그 레이어의 지금 스킨이 바뀐다.</summary>
+    private Control LayerItem(Layer layer)
+    {
         var label = new TextBlock
         {
-            Text = overrides > 0 ? group.Name + " *" : group.Name,
-            Foreground = group.Visible ? AppTheme.TextBrush : AppTheme.DimTextBrush,
+            Text = layer.Name,
+            Foreground = layer.Visible ? AppTheme.TextBrush : AppTheme.DimTextBrush,
             VerticalAlignment = VerticalAlignment.Center,
             MaxWidth = 80,
             TextTrimming = TextTrimming.CharacterEllipsis,
             Margin = new Thickness(4, 0, 2, 0),
             Cursor = new Cursor(StandardCursorType.Hand),
-        }.Tip(overrides > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreviewPanel_OutfitItem_210601903B,group.Name,overrides) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreviewPanel_OutfitItem_0C4037D29A,group.Name));
+        }.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreviewPanel_OutfitItem_0C4037D29A,layer.Name));
         label.PointerPressed += (_, e) =>
         {
             if (!e.GetCurrentPoint(label).Properties.IsLeftButtonPressed) return;
             e.Handled = true;
-            Dispatcher.UIThread.Post(() => SkinManagerWindow.Open(_ctx, this, group));
+            Dispatcher.UIThread.Post(() => SkinManagerWindow.Open(_ctx, this, layer));
         };
         var combo = new ComboBox
         {
@@ -291,25 +318,22 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
             MinWidth = 0,
             Margin = new Thickness(1, 2, 4, 2),
             VerticalAlignment = VerticalAlignment.Center,
-            IsEnabled = group.Skins.Count > 1,
         };
-        var skins = group.Skins.ToList();
+        var skins = layer.Skins.ToList();
         for (int i = 0; i < skins.Count; i++)
         {
-            combo.Items.Add(i == 0 && skins.Count > 1 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreviewPanel_OutfitItem_CC61BCD084,skins[i].Name) : skins[i].Name);
-            if (ReferenceEquals(skins[i], group.ActiveSkin)) combo.SelectedIndex = i;
+            combo.Items.Add(i == 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreviewPanel_OutfitItem_CC61BCD084,skins[i].Name) : skins[i].Name);
+            if (ReferenceEquals(skins[i], layer.ActiveSkin)) combo.SelectedIndex = i;
         }
-        combo.Tip(skins.Count > 1
-            ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreviewPanel_OutfitItem_1F81422509,group.Name)
-            : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreviewPanel_OutfitItem_78809E4FDB,group.Name));
+        combo.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreviewPanel_OutfitItem_1F81422509,layer.Name));
         combo.SelectionChanged += (_, _) =>
         {
-            if (_syncingOutfit || combo.SelectedIndex < 0 || combo.SelectedIndex >= skins.Count) return;
+            if (_syncingSkins || combo.SelectedIndex < 0 || combo.SelectedIndex >= skins.Count) return;
             var skin = skins[combo.SelectedIndex];
-            // 고르기가 착장 줄을 다시 만들므로, 상자가 닫힌 뒤에 바꾼다.
+            // 고르기가 스킨 줄을 다시 만들므로, 상자가 닫힌 뒤에 바꾼다.
             Dispatcher.UIThread.Post(() =>
             {
-                if (_ctx.Project is { } p && p.Layers.Contains(group) && group.Skins.Contains(skin)) _ctx.SetActiveSkin(group, skin);
+                if (_ctx.Project is { } p && p.IndexOf(layer) >= 0 && layer.Skins.Contains(skin)) _ctx.SetActiveSkin(layer, skin);
             });
         };
         return new StackPanel { Orientation = Orientation.Horizontal, Children = { label, combo } };
@@ -468,7 +492,7 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
     }
 
     /// <summary>
-    /// 미리보기가 그리는 그대로의 프레임 그림(보이는 레이어·효과·지금 착장, 투명 유지, 미리보기 배경 없음)을
+    /// 미리보기가 그리는 그대로의 프레임 그림(보이는 레이어·효과·지금 스킨, 투명 유지, 미리보기 배경 없음)을
     /// <paramref name="scale"/>배 최근접 확대한 새 그림. 프레임이 없으면 null.
     /// </summary>
     private PixelImage? FrameImage(int frame, int scale)
@@ -689,7 +713,7 @@ public sealed class PreviewPanel : UserControl, IHelpTargetSource
     }
 
     /// <summary>
-    /// 크게 보기: 미리보기와 같은 그림(재생·배경·착장·우클릭 메뉴 그대로)을 창 크기에 맞는 가장 큰 정수 배율로 보이는 창.
+    /// 크게 보기: 미리보기와 같은 그림(재생·배경·스킨·우클릭 메뉴 그대로)을 창 크기에 맞는 가장 큰 정수 배율로 보이는 창.
     /// 휠 = 포인터 자리를 기준으로 확대·축소(정수 배율 1~64×), 끌기 = 옮기기, 두 번 누르기·0 = 다시 창에 맞춤.
     /// 크기를 바꿀 수 있고(앱을 켜 둔 동안 마지막 크기 기억), Space = 재생/멈춤, Esc = 닫기.
     /// </summary>

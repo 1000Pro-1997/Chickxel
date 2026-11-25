@@ -506,7 +506,7 @@ public sealed partial class ChatWindow : Window
         return row;
     }
 
-    /// <summary>지금 프레임의 보이는 레이어 합성(그룹은 부위를 배치한 대로).</summary>
+    /// <summary>지금 프레임의 보이는 레이어 합성(자식 레이어는 놓인 자리대로).</summary>
     private PixelImage? Composite(SpriteProject p)
     {
         return p.Frames.Count == 0 ? null : p.Flatten(Math.Clamp(_ctx.CurrentFrame, 0, p.Frames.Count - 1));
@@ -755,8 +755,8 @@ public sealed partial class ChatWindow : Window
         (UiStrings.Chat_Help_GroupDraw, UiStrings.Chat_Help_GroupDraw_Text, ["draw_pixels", "set_pixels", "draw_shape", "fill", "clear", "replace_color"]),
         (UiStrings.Chat_Help_GroupFrames, UiStrings.Chat_Help_GroupFrames_Text, ["add_frame", "delete_frame", "set_frame_duration", "add_tag", "link_cels", "unlink_cels", "set_link_color"]),
         (UiStrings.Chat_Help_GroupLayers, UiStrings.Chat_Help_GroupLayers_Text, ["add_layer", "set_layer", "set_current"]),
-        (UiStrings.Chat_Help_GroupParts, UiStrings.Chat_Help_GroupParts_Text, ["add_group", "add_part", "set_part"]),
-        (UiStrings.Chat_Help_GroupSkins, UiStrings.Chat_Help_GroupSkins_Text, ["list_skins", "add_skin", "set_skin", "edit_skin", "list_outfits", "save_outfit", "apply_outfit"]),
+        (UiStrings.Chat_Help_GroupParts, UiStrings.Chat_Help_GroupParts_Text, ["add_empty_layer", "add_part", "set_part", "move_layer"]),
+        (UiStrings.Chat_Help_GroupSkins, UiStrings.Chat_Help_GroupSkins_Text, ["list_skins", "add_skin", "set_skin", "edit_skin", "list_skin_presets", "save_skin_preset", "apply_skin_preset"]),
         (UiStrings.Chat_Help_GroupEffects, UiStrings.Chat_Help_GroupEffects_Text,
             ["list_effect_types", "get_effects", "add_effect", "set_effect", "remove_effect", "apply_effects", "expand_canvas_for_effects"]),
         (UiStrings.Chat_Help_GroupEffectMaker, UiStrings.Chat_Help_GroupEffectMaker_Text,
@@ -1506,7 +1506,7 @@ public sealed partial class ChatWindow : Window
 
         private static bool AffectsDrawing(string name) => name is
             "draw_pixels" or "set_pixels" or "draw_shape" or "fill" or "clear" or "replace_color" or
-            "add_part" or "set_part" or "set_skin" or "edit_skin" or "apply_outfit" or
+            "add_part" or "set_part" or "move_layer" or "set_skin" or "edit_skin" or "apply_skin_preset" or
             "add_effect" or "set_effect" or "remove_effect" or "apply_effects" or "resize_canvas";
 
         private void HookSession(IChatSession s)

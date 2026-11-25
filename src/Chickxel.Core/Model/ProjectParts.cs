@@ -10,7 +10,7 @@ public enum ProjectChange
     None = 0,
     /// <summary>셀 픽셀 내용.</summary>
     Pixels = 1,
-    /// <summary>레이어 목록·속성(이름·보이기·잠금·불투명도·순서·그룹·부위 크기·위치·피벗).</summary>
+    /// <summary>레이어 목록·속성(이름·보이기·잠금·불투명도·순서·나무·크기·자리·피벗·스킨).</summary>
     Layers = 2,
     /// <summary>프레임 목록·속성(길이·피벗·이름·순서).</summary>
     Frames = 4,
@@ -32,74 +32,76 @@ public sealed class ProjectChangedEventArgs(ProjectChange change) : EventArgs
 /// <summary>레이어 종류.</summary>
 public enum LayerKind
 {
-    /// <summary>일반 레이어: 셀이 캔버스 크기이고 (0,0)에 그려진다.</summary>
+    /// <summary>일반 레이어: 셀이 캔버스 크기이고 (0,0)에 그려진다. 나무에 들 수 없다(부모·자식이 되면 먼저 <see cref="Part"/>로 바뀜).</summary>
     Normal,
-    /// <summary>그룹(합친 레이어): 셀이 없고, 바로 아래에 붙은 부위 레이어들을 묶는다.</summary>
-    Group,
-    /// <summary>부위 레이어: 자기 크기의 셀을 프레임마다 갖고, 부위 위치(<see cref="Layer.PartOffset"/> + 그 프레임에서 옮긴 거리)에 그려진다.</summary>
+    /// <summary>
+    /// 자리 있는 레이어(예전 "부위"): 자기 크기의 셀을 프레임마다 갖고, 자리(<see cref="Layer.PartOffset"/> + 그 프레임에서 옮긴 거리)에 그려진다.
+    /// 레이어 나무(부모·자식)에 드는 것은 이 종류뿐이다. 셀이 없는 것이 "빈 레이어"(예전 그룹 자리).
+    /// </summary>
     Part,
-    /// <summary>타일맵 레이어: 셀이 없고, 타일셋의 타일을 칸에 찍은 맵(<see cref="Layer.Tiles"/>)을 그린다. 모든 프레임이 같은 맵을 쓴다.</summary>
+    /// <summary>타일맵 레이어: 셀이 없고, 타일셋의 타일을 칸에 찍은 맵(<see cref="Layer.Tiles"/>)을 그린다. 모든 프레임이 같은 맵을 쓴다. 늘 최상위(부모·자식 없음).</summary>
     Tilemap,
 }
 
 /// <summary>
-/// 레이어. 순서는 <see cref="SpriteProject.Layers"/>에서 0번이 맨 아래. 그룹의 부위들은 그룹 바로 아래에 이어 붙어 있다.
-/// 종류·부모·부위 속성은 <see cref="SpriteProject"/>의 메서드로만 바뀐다(실행취소됨).
+/// 레이어. 순서는 <see cref="SpriteProject.Layers"/>에서 0번이 맨 아래. 레이어 나무: 레이어의 자손은 그 레이어 바로 아래 번호들에 이어 붙어 있고
+/// (형제끼리는 목록 순서), 그리는 차례는 부모 자신의 그림이 아래, 그 위에 자식 덩어리들이다.
+/// 종류·부모·자리 속성은 <see cref="SpriteProject"/>의 메서드로만 바뀐다(실행취소됨).
 /// </summary>
 public sealed class Layer
 {
     public Layer(string name) => Name = name;
 
     public string Name { get; set; }
+    /// <summary>자신의 보이기(조상 중 하나라도 숨겨져 있으면 실제로는 안 보임 — <see cref="SpriteProject.IsLayerVisible(Layer)"/>).</summary>
     public bool Visible { get; set; } = true;
-    /// <summary>잠긴 레이어에는 그릴 수 없다.</summary>
+    /// <summary>자신의 잠금(조상 중 하나라도 잠겨 있으면 실제로 잠김 — <see cref="SpriteProject.IsLayerLocked(Layer)"/>). 잠긴 레이어에는 그릴 수 없다.</summary>
     public bool Locked { get; set; }
-    /// <summary>불투명도 0~255.</summary>
+    /// <summary>불투명도 0~255. 자식이 있으면 자손까지 합친 그림에 한 번 입힌다.</summary>
     public byte Opacity { get; set; } = 255;
 
     public LayerKind Kind { get; internal set; }
-    /// <summary>부위 레이어의 그룹. 그 밖에는 null.</summary>
+    /// <summary>나무의 부모(자리 있는 레이어 <see cref="LayerKind.Part"/>). 최상위면 null.</summary>
     public Layer? Parent { get; internal set; }
-    public bool IsGroup => Kind == LayerKind.Group;
     public bool IsPart => Kind == LayerKind.Part;
     public bool IsTilemap => Kind == LayerKind.Tilemap;
     /// <summary>타일맵 레이어: 쓰는 타일셋(이름표)·맵·격자 원점. 그 밖에는 null. 바꿀 때는 <see cref="SpriteProject"/>의 타일 메서드로(실행취소됨).</summary>
     public TilemapData? Tiles { get; internal set; }
-    /// <summary>그룹: 타임라인에서 접혀 있는지(파일에 저장, 실행취소·수정됨 표시 없음).</summary>
+    /// <summary>자식이 있는 레이어: 타임라인에서 자식 줄을 접었는지(파일에 저장, 실행취소·수정됨 표시 없음).</summary>
     public bool Collapsed { get; internal set; }
     /// <summary>타임라인에서 효과 줄(효과마다 한 줄)을 접어 두었는지(파일에 저장, 실행취소·수정됨 표시 없음).</summary>
     public bool EffectsCollapsed { get; internal set; }
     /// <summary>
-    /// 그룹: 자동 배치 설정(null = 끔). 켜져 있으면 부위 위치를 <see cref="SpriteProject"/>가 편집마다 다시 계산하고, 부위를 손으로 옮길 수 없다(먼저 끄기).
-    /// 바꿀 때는 <see cref="SpriteProject.SetGroupLayout"/>로(실행취소됨).
+    /// 자식 자동 배치 설정(null = 끔, 자리 있는 레이어만). 켜져 있으면 바로 아래 자식들의 자리를 <see cref="SpriteProject"/>가 편집마다 다시 계산하고
+    /// (자식은 자손째 옮겨 감), 그 자식들을 손으로 옮길 수 없다(먼저 끄기). 바꿀 때는 <see cref="SpriteProject.SetChildLayout"/>로(실행취소됨).
     /// </summary>
     public GroupLayout? AutoLayout { get; internal set; }
-    /// <summary>부위: 그룹이 자동 배치 중이라 위치를 손으로 바꿀 수 없는지.</summary>
-    public bool IsAutoLaidOut => IsPart && Parent is { IsGroup: true, AutoLayout: not null };
+    /// <summary>부모가 자동 배치 중이라 자리를 손으로 바꿀 수 없는지.</summary>
+    public bool IsAutoLaidOut => IsPart && Parent is { AutoLayout: not null };
 
-    /// <summary>부위: 셀 크기(부위 셀은 정확히 이 크기).</summary>
+    /// <summary>자리 있는 레이어: 셀 크기(셀은 정확히 이 크기).</summary>
     public Size PartSize { get; internal set; }
     /// <summary>
-    /// 부위: 프레임 캔버스 안 왼쪽 위 위치(기준 — 프레임마다 옮긴 거리 <see cref="Frame.PartShifts"/>를 더한 것이 그 프레임의 위치, 캔버스 밖으로 나가도 됨).
-    /// 프레임의 실제 위치는 <see cref="SpriteProject.GetPartOffset"/>로 읽는다.
+    /// 자리 있는 레이어: 프레임 캔버스 안 왼쪽 위 자리(캔버스 좌표, 부모와 관계없는 절대 자리 — 프레임마다 옮긴 거리 <see cref="Frame.PartShifts"/>를 더한 것이
+    /// 그 프레임의 자리, 캔버스 밖으로 나가도 됨). 프레임의 실제 자리는 <see cref="SpriteProject.GetPartOffset"/>로 읽는다.
     /// </summary>
     public Point PartOffset { get; internal set; }
-    /// <summary>부위: 캔버스 안 영역(기준 위치 — 프레임의 영역은 <see cref="SpriteProject.GetPartRect"/>).</summary>
+    /// <summary>자리 있는 레이어: 캔버스 안 영역(기준 자리 — 프레임의 영역은 <see cref="SpriteProject.GetPartRect"/>).</summary>
     public Rectangle PartRect => new(PartOffset, PartSize);
     /// <summary>
     /// 레이어 피벗(0~1, 아래 왼쪽 원점) — 그 프레임만의 피벗(<see cref="Frame.LayerPivots"/>)이 없는 프레임에 쓴다. 레이어 효과의 피벗이며,
-    /// 부위는 부위 기준(부위 아틀라스 내보내기 피벗), 일반 레이어·그룹은 캔버스 기준(<see cref="SpriteSettings.DefaultPivot"/>와 같은 공간)이다.
+    /// 자리 있는 레이어는 자기 셀 기준(레이어 아틀라스 내보내기 피벗), 일반 레이어는 캔버스 기준(<see cref="SpriteSettings.DefaultPivot"/>와 같은 공간)이다.
     /// 프레임의 실제 피벗은 <see cref="SpriteProject.GetLayerPivot"/>로 읽는다.
     /// </summary>
     public Pivot Pivot { get; internal set; } = Pivot.Center;
-    /// <summary>부위: 부위 아틀라스 내보내기 9-slice 테두리(px).</summary>
+    /// <summary>자리 있는 레이어: 레이어 아틀라스 내보내기 9-slice 테두리(px).</summary>
     public SpriteBorder PartBorder { get; internal set; }
-    /// <summary>부위: 가져온 시트에서의 원래 칸(왼쪽 위 원점). "원래 위치 유지" 내보내기에 쓴다. 없으면 null.</summary>
+    /// <summary>자리 있는 레이어: 가져온 시트에서의 원래 칸(왼쪽 위 원점). "원래 위치 유지" 내보내기에 쓴다. 없으면 null.</summary>
     public Rectangle? PartSourceRect { get; internal set; }
 
     /// <summary>
-    /// 레이어 효과(앞에서부터 차례로 적용, 비파괴 — 셀 픽셀은 그대로). 일반·부위는 그 셀에, 그룹은 그 부위들을 합친 그림에 입힌다.
-    /// 바꿀 때는 <see cref="SpriteProject.SetLayerEffects"/>로.
+    /// 레이어 효과(앞에서부터 차례로 적용, 비파괴 — 셀 픽셀은 그대로). 효과마다 적용 대상이 있다(<see cref="LayerEffect.IncludeChildren"/>):
+    /// 자기 셀에만, 또는 자손까지 합친 그림에(자식이 있을 때만 — 없으면 자기 셀). 바꿀 때는 <see cref="SpriteProject.SetLayerEffects"/>로.
     /// </summary>
     public IReadOnlyList<LayerEffect> Effects { get; internal set; } = [];
 
@@ -109,32 +111,42 @@ public sealed class Layer
     /// <summary>프레임 <paramref name="frameIndex"/>에 입혀질(켜져 있고 프레임 범위 안인) 효과가 있는지.</summary>
     public bool HasActiveEffectsAt(int frameIndex) => Edit.LayerEffects.AnyActive(Effects, frameIndex);
 
-    /// <summary>그룹의 첫 스킨 기본 이름(스킨이 없던 예전 파일·새 그룹, 화면 언어를 따름 — 이미 저장된 이름은 바꾸지 않음).</summary>
+    private sealed record EffectSplit(IReadOnlyList<LayerEffect> Of, IReadOnlyList<LayerEffect> Own, IReadOnlyList<LayerEffect> Subtree);
+
+    private EffectSplit? _split;
+
+    /// <summary>
+    /// 효과 목록을 적용 대상(<see cref="LayerEffect.IncludeChildren"/>)대로 나눈 것 — 자식이 있을 때 쓴다. 같은 목록이면 늘 같은 객체를 돌려주고
+    /// (렌더 캐시 열쇠가 목록 객체를 보므로), 자손까지 효과가 없으면 자기 셀 쪽이 <see cref="Effects"/> 그대로다.
+    /// </summary>
+    internal (IReadOnlyList<LayerEffect> Own, IReadOnlyList<LayerEffect> Subtree) SplitEffects()
+    {
+        var effects = Effects;
+        var split = _split;
+        if (split is null || !ReferenceEquals(split.Of, effects))
+        {
+            split = effects.Any(e => e.IncludeChildren)
+                ? new EffectSplit(effects, effects.Where(e => !e.IncludeChildren).ToArray(), effects.Where(e => e.IncludeChildren).ToArray())
+                : new EffectSplit(effects, effects, Array.Empty<LayerEffect>());
+            _split = split;
+        }
+        return (split.Own, split.Subtree);
+    }
+
+    /// <summary>레이어의 첫 스킨 기본 이름(새 레이어·스킨이 없던 예전 파일, 화면 언어를 따름 — 이미 저장된 이름은 바꾸지 않음).</summary>
     public static string DefaultSkinName => Localization.DomainStrings.Project_BaseSkinName;
 
     private readonly List<Skin> _skins = new();
     private Skin? _activeSkin;
 
     /// <summary>
-    /// 그룹(스킨 슬롯): 그룹 전체 스킨 목록(적어도 하나, 첫 스킨 = 기본). 같은 그룹의 스킨끼리는 서로 바뀌고(교체형), 그룹끼리는 레이어 순서대로 겹친다(겹치기형).
-    /// 부위 하나에만 있는 스킨(<see cref="Skin.Owner"/>)은 빠진다 — 모두 보려면 <see cref="AllSkins"/>, 부위가 고를 수 있는 것은 <see cref="SkinChoices"/>.
-    /// 비어 있던 그룹은 처음 볼 때 "기본" 스킨 하나를 만든다. 그룹이 아니면 빈 목록. 바꿀 때는 <see cref="SpriteProject"/>의 스킨 메서드로.
+    /// 이 레이어의 스킨 목록(일반·자리 있는 레이어는 적어도 하나, 첫 스킨 = 기본). 스킨끼리는 서로 바뀌고(교체형), 지금 스킨(<see cref="ActiveSkin"/>)만 보인다.
+    /// 비어 있던 레이어는 처음 볼 때 "기본" 스킨 하나를 만든다. 타일맵이면 빈 목록. 바꿀 때는 <see cref="SpriteProject"/>의 스킨 메서드로.
+    /// 스킨이 하나뿐이면 화면에 스킨 칩을 보이지 않는다.
     /// </summary>
-    public IReadOnlyList<Skin> Skins => IsGroup ? SkinList.Where(s => s.Owner is null).ToList() : Array.Empty<Skin>();
+    public IReadOnlyList<Skin> Skins => IsTilemap ? Array.Empty<Skin>() : SkinList;
 
-    /// <summary>그룹: 전체 스킨 + 부위 전용 스킨(저장 순서 — 전체 스킨이 먼저). 그룹이 아니면 빈 목록.</summary>
-    public IReadOnlyList<Skin> AllSkins => IsGroup ? SkinList : Array.Empty<Skin>();
-
-    /// <summary>
-    /// 고를 수 있는 스킨: 부위면 그룹 전체 스킨 + 이 부위 전용 스킨, 그룹이면 <see cref="Skins"/>. 그 밖은 빈 목록.
-    /// </summary>
-    public IReadOnlyList<Skin> SkinChoices => IsGroup ? Skins
-        : IsPart && Parent is { IsGroup: true } g ? g.SkinList.Where(s => s.Owner is null || ReferenceEquals(s.Owner, this)).ToList() : Array.Empty<Skin>();
-
-    /// <summary>부위: 이 부위 전용 스킨들. 그 밖은 빈 목록.</summary>
-    public IReadOnlyList<Skin> OwnSkins => IsPart && Parent is { IsGroup: true } g ? g.SkinList.Where(s => ReferenceEquals(s.Owner, this)).ToList() : Array.Empty<Skin>();
-
-    /// <summary>스킨 목록 원본(그룹이 비어 있으면 "기본"을 만든다). 전체 스킨이 앞, 부위 전용 스킨이 뒤.</summary>
+    /// <summary>스킨 목록 원본(비어 있으면 "기본"을 만든다).</summary>
     internal List<Skin> SkinList
     {
         get
@@ -144,34 +156,18 @@ public sealed class Layer
         }
     }
 
-    /// <summary>그룹: 지금 보이는(편집·재생·합성하는) 전체 스킨. 그룹이 아니면 null.</summary>
-    public Skin? ActiveSkin => IsGroup ? (_activeSkin is { Owner: null } s && _skins.Contains(s) ? s : SkinList[0]) : null;
+    /// <summary>
+    /// 지금 보이는(편집·재생·합성하는) 스킨. 보기 상태라 실행취소 대상이 아니다 — <see cref="SpriteProject.SetActiveSkin"/>로 바꾼다. 타일맵이면 null.
+    /// </summary>
+    public Skin? ActiveSkin => IsTilemap ? null : _activeSkin is { } s && _skins.Contains(s) ? s : SkinList[0];
 
-    /// <summary>그룹: 첫 스킨(기본 스킨, 늘 전체 스킨). 그룹이 아니면 null.</summary>
-    public Skin? BaseSkin => IsGroup ? SkinList[0] : null;
+    /// <summary>첫 스킨(기본 스킨). 타일맵이면 null.</summary>
+    public Skin? BaseSkin => IsTilemap ? null : SkinList[0];
 
     /// <summary>지금 고른 스킨 값 그대로(목록에 없을 수도 있음, 실행취소 복원용).</summary>
     internal Skin? ActiveSkinRaw => _activeSkin;
 
     internal void SetActiveSkinRaw(Skin? skin) => _activeSkin = skin;
-
-    private Skin? _skinOverride;
-
-    /// <summary>
-    /// 부위: 그룹 스킨 대신 이 부위만 보일 스킨(재정의 — 그룹 전체 스킨이나 이 부위 전용 스킨). null이면 그룹의 지금 스킨을 따른다.
-    /// 그룹에 없는 스킨(지운 스킨)·다른 부위 전용 스킨을 가리키면 null. 착장(보기 상태)이라 실행취소 대상이 아니다 — <see cref="SpriteProject.SetPartSkin"/>로 바꾼다.
-    /// </summary>
-    public Skin? SkinOverride => IsPart && _skinOverride is { } s && Parent is { IsGroup: true } g && g._skins.Contains(s)
-                                 && (s.Owner is null || ReferenceEquals(s.Owner, this)) ? s : null;
-
-    /// <summary>
-    /// 지금 보이는 스킨: 부위면 재정의 → 그룹의 지금 스킨, 그룹이면 <see cref="ActiveSkin"/>. 그 밖(일반 레이어·그룹 없는 부위)은 null.
-    /// </summary>
-    public Skin? ShownSkin => IsGroup ? ActiveSkin : IsPart && Parent is { IsGroup: true } g ? SkinOverride ?? g.ActiveSkin : null;
-
-    internal Skin? SkinOverrideRaw => _skinOverride;
-
-    internal void SetSkinOverrideRaw(Skin? skin) => _skinOverride = skin;
 
     /// <summary>스킨 목록을 통째로 바꾼다(비어 있으면 그대로 두지 않고 다음에 볼 때 "기본"이 생김).</summary>
     internal void ReplaceSkinsRaw(IEnumerable<Skin> skins)
@@ -185,55 +181,38 @@ public sealed class Layer
 }
 
 /// <summary>
-/// 스킨(교체 변형): 그룹(스킨 슬롯) 안에서 이름 붙은 의상·체형 하나. 그룹의 부위 목록·크기·위치·피벗·테두리는 모든 스킨이 같이 쓰고,
-/// 셀만 스킨마다 따로다. 스킨의 빈 셀은 빈 칸으로 보인다(다른 스킨 셀로 채우지 않음). 이름은 그룹 안에서(부위 전용 스킨까지) 겹치지 않는다.
-/// <see cref="Owner"/>가 있으면 그 부위에만 있는 "부위 전용(개별) 스킨"이다(예: Head에만 "모자") — 그 부위의 재정의로만 입힌다.
+/// 스킨(교체 변형): 레이어 하나의 이름 붙은 그림 한 벌(의상·체형 등). 레이어의 크기·자리·피벗·테두리는 모든 스킨이 같이 쓰고 셀만 스킨마다 따로다.
+/// 스킨의 빈 셀은 빈 칸으로 보인다(다른 스킨 셀로 채우지 않음). 이름은 그 레이어 안에서 겹치지 않는다. 여러 레이어의 스킨 묶음은 <see cref="SkinPreset"/>.
 /// </summary>
 public sealed class Skin
 {
-    internal Skin(string name, Layer? owner = null)
-    {
-        Name = name;
-        Owner = owner;
-    }
+    internal Skin(string name) => Name = name;
 
     public string Name { get; internal set; }
-
-    /// <summary>부위 전용 스킨이면 그 부위, 그룹 전체 스킨이면 null.</summary>
-    public Layer? Owner { get; internal set; }
-
-    public bool IsPartOnly => Owner is not null;
 
     public override string ToString() => Name;
 }
 
-/// <summary>착장 프리셋 항목: 그룹(슬롯)에 입힐 스킨.</summary>
-public readonly record struct OutfitSlot(Layer Group, Skin Skin);
-
-/// <summary>착장 프리셋 항목: 그룹 스킨 대신 부위 하나에 입힐 스킨(부위 재정의).</summary>
-public readonly record struct OutfitPart(Layer Part, Skin Skin);
+/// <summary>스킨 프리셋 항목: 레이어에 입힐 스킨.</summary>
+public readonly record struct SkinPresetEntry(Layer Layer, Skin Skin);
 
 /// <summary>
-/// 착장(Outfit) 프리셋: 이름 붙은 "그룹마다 스킨 + 부위 재정의" 묶음. 그룹·부위·스킨을 객체로 가리키므로 이름을 바꿔도 따라가고,
-/// 지운 그룹·부위·스킨을 가리키는 항목은 적용·합성할 때 건너뛴다(실행취소로 되살리면 다시 쓰임).
-/// 저장할 때 없던 그룹은 그때의 착장을 그대로 쓴다. 이름·내용은 <see cref="SpriteProject"/>의 착장 메서드로만 바뀐다(실행취소됨).
+/// 스킨 프리셋: 이름 붙은 "레이어마다 입힐 스킨" 묶음. 입히면 담긴 레이어의 지금 스킨만 바뀌고 나머지 레이어는 그대로라 여러 프리셋을 겹쳐 입힐 수 있다.
+/// 레이어·스킨을 객체로 가리키므로 이름을 바꿔도 따라가고, 지운 레이어·스킨을 가리키는 항목은 입히기·합성할 때 건너뛴다(실행취소로 되살리면 다시 쓰임).
+/// 이름·내용은 <see cref="SpriteProject"/>의 스킨 프리셋 메서드로만 바뀐다(실행취소됨).
 /// </summary>
-public sealed class Outfit
+public sealed class SkinPreset
 {
-    internal Outfit(string name, IReadOnlyList<OutfitSlot> slots, IReadOnlyList<OutfitPart> parts)
+    internal SkinPreset(string name, IReadOnlyList<SkinPresetEntry> entries)
     {
         Name = name;
-        Slots = slots;
-        Parts = parts;
+        Entries = entries;
     }
 
     public string Name { get; internal set; }
 
-    /// <summary>그룹마다 입힐 스킨(저장할 때의 그룹 순서).</summary>
-    public IReadOnlyList<OutfitSlot> Slots { get; internal set; }
-
-    /// <summary>그룹 스킨 대신 따로 입힐 부위(저장할 때 재정의가 있던 부위만).</summary>
-    public IReadOnlyList<OutfitPart> Parts { get; internal set; }
+    /// <summary>레이어마다 입힐 스킨(레이어마다 하나, 등록한 차례).</summary>
+    public IReadOnlyList<SkinPresetEntry> Entries { get; internal set; }
 
     public override string ToString() => Name;
 }
@@ -456,12 +435,13 @@ public enum SpriteNaming
 public enum SkinSource
 {
     /// <summary>
-    /// 지금 착장만: 프레임 시트는 지금 착장 합성 한 벌, 부위 아틀라스·Sprite Library는 부위마다 지금 보이는 스킨.
+    /// 지금 착장만: 프레임 시트는 지금 착장(레이어마다 지금 스킨) 합성 한 벌, 레이어 아틀라스는 레이어마다 지금 보이는 스킨.
     /// </summary>
     Current,
     /// <summary>
-    /// 고른 스킨: 체크한 스킨(<see cref="SheetOptions.ExcludedSkins"/>에 없는 것)과 착장 프리셋(<see cref="SheetOptions.Outfits"/>, 프레임 시트만).
-    /// 프레임 시트는 스킨마다 "그 그룹만 그 스킨, 나머지 그룹은 지금 착장" 합성 한 벌씩(스킨마다 따로 파일이 아니면 한 이미지에 모두).
+    /// 고른 스킨: 체크한 스킨(<see cref="SheetOptions.ExcludedSkins"/>에 없는 것)과 스킨 프리셋(<see cref="SheetOptions.Presets"/>, 프레임 시트만).
+    /// 프레임 시트는 레이어의 첫 스킨이 아닌 스킨마다 "그 레이어만 그 스킨, 나머지는 지금 착장" 합성 한 벌, 프리셋마다 "지금 착장에 프리셋을 입힌" 합성 한 벌씩
+    /// (스킨마다 따로 파일이 아니면 한 이미지에 모두).
     /// </summary>
     Selected,
 }
@@ -589,13 +569,16 @@ public sealed class SheetOptions
     /// <summary>내보낼 스킨(지금 착장만 / 고른 스킨). 기본 = 지금 착장만.</summary>
     public SkinSource Skins { get; set; } = SkinSource.Current;
 
-    /// <summary>고른 스킨에서 뺄 스킨(체크 해제). 비면 부위가 있는 그룹의 모든 스킨.</summary>
+    /// <summary>
+    /// 고른 스킨에서 뺄 스킨(체크 해제 — 레이어마다의 스킨 객체). 프레임 시트: 비면 스킨이 둘 이상인 레이어의 첫 스킨이 아닌 모든 스킨이 항목(지금 스킨 항목은 늘 있음).
+    /// 레이어 아틀라스: 비면 아틀라스 레이어의 모든 스킨(첫 스킨 포함).
+    /// </summary>
     public IReadOnlyList<Skin> ExcludedSkins { get; set; } = [];
 
     /// <summary>고른 스킨에 더할 착장 프리셋(프레임 시트만 — 착장마다 합성 한 벌, <c>@{착장}</c>). 지운 착장은 건너뛴다.</summary>
-    public IReadOnlyList<Outfit> Outfits { get; set; } = [];
+    public IReadOnlyList<SkinPreset> Presets { get; set; } = [];
 
-    /// <summary>뺄 최상위 레이어(그룹 = 슬롯째, 일반 레이어): 프레임 시트 합성에서 빼고, 부위 아틀라스에서는 그 그룹의 부위를 뺀다.</summary>
+    /// <summary>뺄 레이어(자손째 — 숨긴 것처럼): 프레임 시트 합성에서 빼고, 레이어 아틀라스에서도 그 레이어와 자손을 뺀다.</summary>
     public IReadOnlyList<Layer> ExcludedLayers { get; set; } = [];
 
     public SheetOptions Clone() => (SheetOptions)MemberwiseClone();
@@ -619,7 +602,7 @@ public sealed class SheetOptions
         Naming = other.Naming;
         Skins = other.Skins;
         ExcludedSkins = other.ExcludedSkins;
-        Outfits = other.Outfits;
+        Presets = other.Presets;
         ExcludedLayers = other.ExcludedLayers;
     }
 }
@@ -782,13 +765,14 @@ public sealed class ExportSettings
     public bool KeepImportedRects { get; set; } = true;
 
     /// <summary>
-    /// 부위 아틀라스 옆에 Unity Sprite Library Asset(<c>.spriteLib</c>, com.unity.2d.animation)을 그룹 × 스킨마다 같이 쓴다
+    /// 레이어 아틀라스 옆에 Unity Sprite Library Asset(<c>.spriteLib</c>, com.unity.2d.animation)을 같이 쓴다 — 기본 <c>{아틀라스}.spriteLib</c>(레이어마다 첫 스킨)와
+    /// 스킨 프리셋마다 <c>{아틀라스}@{프리셋}.spriteLib</c>
     /// (부위 아틀라스가 켜져 있을 때, 스프라이트를 가리키려고 부위 아틀라스 <c>.meta</c>도 항상 씀).
     /// </summary>
     public bool WriteSpriteLibrary { get; set; }
 
     /// <summary>
-    /// Unity 프리팹(<c>{시트}.prefab</c>)을 같이 쓴다: 부위가 있으면 그룹마다 빈 오브젝트 아래 부위마다 SpriteRenderer(부위 아틀라스 스프라이트·자리·순서),
+    /// Unity 프리팹(<c>{시트}.prefab</c>)을 같이 쓴다: 자리 있는 레이어가 있으면 레이어 나무 그대로 중첩한 오브젝트(셀 있는 레이어는 SpriteRenderer — 레이어 아틀라스 스프라이트·자리·그리는 차례),
     /// 없으면 프레임 시트 스프라이트 하나. Unity(<see cref="Engine"/>)일 때만 — <see cref="WritesUnityAssets"/>.
     /// </summary>
     public bool WritePrefab { get; set; }

@@ -270,7 +270,7 @@ public sealed partial class PixelCanvas
         _curvePen = null;
         EndCurvePenHandle();
         // 빈 셀은 EditImage가 null이지만 획을 시작하면(BeginPixelStroke) 셀이 생긴다.
-        if (_ctx.CanEdit && !_ctx.IsGroupSelected && !_ctx.IsTilemapSelected)
+        if (_ctx.CanEdit && !_ctx.IsArrangeParentSelected && !_ctx.IsTilemapSelected)
         {
             var pixels = CurvePenPixels(draft);
             BeginPixelStroke(ToolKind.CurvePen, draft.Button, pixels.Count > 0 ? pixels[0] : Point.Empty);
@@ -504,7 +504,7 @@ public sealed partial class PixelCanvas
             if (_curvePenHover is not null || _curvePenGrab is not null) return;
         }
         if (_ctx.Tool != ToolKind.CurvePen || _cursorPx is not { } p || _drag != DragMode.None
-            || _ctx.IsGroupSelected || _ctx.IsTilemapSelected || _ctx.IsTransforming || _ctx.IsCanvasResizing) return;
+            || _ctx.IsArrangeParentSelected || _ctx.IsTilemapSelected || _ctx.IsTransforming || _ctx.IsCanvasResizing) return;
         var cells = new HashSet<Point> { p };
         DrawMirrorGhosts(g, cells);
         DrawCellOutline(g, cells, CursorOutlineBackPen, CursorOutlineFrontPen);

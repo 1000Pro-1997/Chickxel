@@ -10,7 +10,7 @@ public class GroupLayoutTests
     private static (SpriteProject P, Layer Group, Layer A, Layer B, Layer C) Rig()
     {
         var p = new SpriteProject(32, 16);
-        var g = p.AddGroup("rig");
+        var g = p.AddEmptyParent("rig");
         var a = p.AddPart(g, "A", 4, 4, new Point(20, 1));
         var b = p.AddPart(g, "B", 6, 2, new Point(3, 9));
         var c = p.AddPart(g, "C", 2, 8, new Point(-5, 0));
@@ -30,7 +30,7 @@ public class GroupLayoutTests
         int cx, int cy, int bx, int by, int ax, int ay)
     {
         var (p, g, a, b, c) = Rig();
-        p.SetGroupLayout(g, new GroupLayout { Direction = GroupLayoutDirection.Row, Gap = 2, Margin = 1, Distribution = dist, Align = align });
+        p.SetChildLayout(g, new GroupLayout { Direction = GroupLayoutDirection.Row, Gap = 2, Margin = 1, Distribution = dist, Align = align });
         Assert.Equal([new Point(cx, cy), new Point(bx, by), new Point(ax, ay)], Offsets(c, b, a));
         Assert.Equal(new Size(6, 2), b.PartSize); // 크기는 그대로
     }
@@ -39,7 +39,7 @@ public class GroupLayoutTests
     public void Column_StacksTopFirstWithGap()
     {
         var (p, g, a, b, c) = Rig();
-        p.SetGroupLayout(g, new GroupLayout
+        p.SetChildLayout(g, new GroupLayout
         {
             Direction = GroupLayoutDirection.Column, Gap = 1, Distribution = LayoutDistribution.Start, Align = LayoutAlign.End,
         });
@@ -51,7 +51,7 @@ public class GroupLayoutTests
     public void Grid_UsesColumnWidthsAndRowHeightsAndAlignsInCell()
     {
         var (p, g, a, b, c) = Rig();
-        p.SetGroupLayout(g, new GroupLayout
+        p.SetChildLayout(g, new GroupLayout
         {
             Direction = GroupLayoutDirection.Grid, Columns = 2, Gap = 1, Distribution = LayoutDistribution.Start, Align = LayoutAlign.Center,
         });
@@ -63,7 +63,7 @@ public class GroupLayoutTests
     public void BottomFirstOrder_ReversesTimelineOrder()
     {
         var (p, g, a, b, c) = Rig();
-        p.SetGroupLayout(g, new GroupLayout { Gap = 0, Distribution = LayoutDistribution.Start, Align = LayoutAlign.Start, Order = GroupLayoutOrder.BottomFirst });
+        p.SetChildLayout(g, new GroupLayout { Gap = 0, Distribution = LayoutDistribution.Start, Align = LayoutAlign.Start, Order = GroupLayoutOrder.BottomFirst });
         Assert.Equal([new Point(0, 0), new Point(4, 0), new Point(10, 0)], Offsets(a, b, c));
     }
 
@@ -71,7 +71,7 @@ public class GroupLayoutTests
     public void CustomArea_LaysOutInsideArea()
     {
         var (p, g, a, b, c) = Rig();
-        p.SetGroupLayout(g, new GroupLayout
+        p.SetChildLayout(g, new GroupLayout
         {
             Gap = 0, Distribution = LayoutDistribution.Start, Align = LayoutAlign.Start, Area = new Rectangle(10, 2, 12, 12),
         });
@@ -84,7 +84,7 @@ public class GroupLayoutTests
         var (p, g, a, b, c) = Rig();
         var before = Offsets(a, b, c);
         int depth = p.History.UndoCount;
-        p.SetGroupLayout(g, new GroupLayout());
+        p.SetChildLayout(g, new GroupLayout());
         Assert.Equal(depth + 1, p.History.UndoCount);
         Assert.NotEqual(before, Offsets(a, b, c));
         var after = Offsets(a, b, c);
@@ -101,7 +101,7 @@ public class GroupLayoutTests
     public void AddingPart_RelaysOutInSameUndoStep()
     {
         var (p, g, a, b, c) = Rig();
-        p.SetGroupLayout(g, new GroupLayout { Gap = 0, Distribution = LayoutDistribution.Start, Align = LayoutAlign.Start });
+        p.SetChildLayout(g, new GroupLayout { Gap = 0, Distribution = LayoutDistribution.Start, Align = LayoutAlign.Start });
         var laidOut = Offsets(a, b, c);
         int depth = p.History.UndoCount;
 
@@ -118,7 +118,7 @@ public class GroupLayoutTests
     public void ResizingPart_RelaysOutInSameUndoStep()
     {
         var (p, g, a, b, c) = Rig();
-        p.SetGroupLayout(g, new GroupLayout { Gap = 1, Distribution = LayoutDistribution.Start, Align = LayoutAlign.Start });
+        p.SetChildLayout(g, new GroupLayout { Gap = 1, Distribution = LayoutDistribution.Start, Align = LayoutAlign.Start });
         var laidOut = Offsets(a, b, c); // C 0, B 3, A 10
         int depth = p.History.UndoCount;
 
@@ -135,7 +135,7 @@ public class GroupLayoutTests
     public void ReorderingAndDeletingParts_Relayout()
     {
         var (p, g, a, b, c) = Rig();
-        p.SetGroupLayout(g, new GroupLayout { Gap = 0, Distribution = LayoutDistribution.Start, Align = LayoutAlign.Start });
+        p.SetChildLayout(g, new GroupLayout { Gap = 0, Distribution = LayoutDistribution.Start, Align = LayoutAlign.Start });
         p.MoveLayer(p.IndexOf(a), p.IndexOf(c)); // A를 맨 위로 → A, C, B
         Assert.Equal([new Point(0, 0), new Point(4, 0), new Point(6, 0)], Offsets(a, c, b));
         p.DeleteLayer(p.IndexOf(c));
@@ -146,7 +146,7 @@ public class GroupLayoutTests
     public void CanvasResize_RecentersLayout()
     {
         var (p, g, a, b, c) = Rig();
-        p.SetGroupLayout(g, new GroupLayout { Gap = 0, Align = LayoutAlign.Start, Distribution = LayoutDistribution.Center });
+        p.SetChildLayout(g, new GroupLayout { Gap = 0, Align = LayoutAlign.Start, Distribution = LayoutDistribution.Center });
         Assert.Equal(10, c.PartOffset.X); // (32 - 12) / 2
         p.ResizeCanvas(40, 16, Anchor.TopLeft);
         Assert.Equal([new Point(14, 0), new Point(16, 0), new Point(22, 0)], Offsets(c, b, a));
@@ -157,11 +157,11 @@ public class GroupLayoutTests
     {
         var (p, g, a, b, c) = Rig();
         var layout = new GroupLayout { Gap = 0, Distribution = LayoutDistribution.Start, Align = LayoutAlign.Start };
-        p.SetGroupLayout(g, layout);
+        p.SetChildLayout(g, layout);
         p.SetLayerProperties(p.IndexOf(b), visible: false);
         Assert.Equal([new Point(0, 0), new Point(2, 0), new Point(8, 0)], Offsets(c, b, a));
 
-        p.SetGroupLayout(g, layout with { IncludeHidden = false });
+        p.SetChildLayout(g, layout with { IncludeHidden = false });
         Assert.Equal(new Point(2, 0), b.PartOffset); // 숨긴 부위는 제자리
         Assert.Equal([new Point(0, 0), new Point(2, 0)], Offsets(c, a));
         p.SetLayerProperties(p.IndexOf(b), visible: true);
@@ -172,13 +172,13 @@ public class GroupLayoutTests
     public void TurningOff_KeepsCurrentOffsetsAndAllowsManualMoves()
     {
         var (p, g, a, b, c) = Rig();
-        p.SetGroupLayout(g, new GroupLayout { Direction = GroupLayoutDirection.Grid, Columns = 2 });
+        p.SetChildLayout(g, new GroupLayout { Direction = GroupLayoutDirection.Grid, Columns = 2 });
         var laidOut = Offsets(a, b, c);
         Assert.True(b.IsAutoLaidOut);
         Assert.Throws<InvalidOperationException>(() => p.SetPartOffset(p.IndexOf(b), new Point(0, 0)));
         Assert.Equal(laidOut, Offsets(a, b, c));
 
-        p.SetGroupLayout(g, null);
+        p.SetChildLayout(g, null);
         Assert.False(b.IsAutoLaidOut);
         Assert.Equal(laidOut, Offsets(a, b, c));
         p.SetPartOffset(p.IndexOf(b), new Point(0, 0));
@@ -190,12 +190,12 @@ public class GroupLayoutTests
     {
         var (p, g, a, b, c) = Rig();
         var layout = new GroupLayout();
-        p.SetGroupLayout(g, layout);
+        p.SetChildLayout(g, layout);
         var laidOut = Offsets(a, b, c);
         int depth = p.History.UndoCount;
         p.Edit("부위 위치", ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
-            p.SetGroupLayout(g, null);
+            p.SetChildLayout(g, null);
             p.SetPartOffset(p.IndexOf(b), new Point(0, 0));
         });
         Assert.Equal(depth + 1, p.History.UndoCount);
@@ -219,14 +219,14 @@ public class GroupLayoutTests
     {
         using var dir = new TempDir();
         var (p, g, a, b, c) = Rig();
-        var other = p.AddGroup("plain");
+        var other = p.AddEmptyParent("plain");
         p.AddPart(other, "X", 2, 2, new Point(3, 3));
         var layout = new GroupLayout
         {
             Direction = GroupLayoutDirection.Grid, Columns = 3, Align = LayoutAlign.End, Distribution = LayoutDistribution.SpaceBetween,
             Gap = 2, Margin = 3, Order = GroupLayoutOrder.BottomFirst, IncludeHidden = false, Area = new Rectangle(1, 2, 20, 10),
         };
-        p.SetGroupLayout(g, layout);
+        p.SetChildLayout(g, layout);
         var laidOut = Offsets(a, b, c);
         var path = dir.File("layout.chickxel");
         ProjectIO.Save(p, path);

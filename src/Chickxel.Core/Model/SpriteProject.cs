@@ -9,13 +9,14 @@ namespace Chickxel.Core.Model;
 /// Chickxel 프로젝트(<c>.chickxel</c>): 공통 캔버스 크기 × 레이어 × 프레임의 셀(cel) + 태그(애니메이션) +
 /// Unity·내보내기 설정 + 실행취소 기록.
 /// <para>
-/// 레이어는 아래 → 위 평평한 목록이다. 그룹(합친 레이어)의 부위 레이어들은 그룹 바로 아래에 이어 붙어 있고(<c>g-n … g-1</c>),
-/// 그룹·일반 레이어만 최상위이며 그룹은 겹치지 않는다. 부위는 자기 크기의 셀을 프레임마다 갖고, 모든 프레임에 공통인 위치에 합성된다.
+/// 레이어는 아래 → 위 평평한 목록이고, 그 위에 레이어 나무(<see cref="Layer.Parent"/>)가 있다: 레이어의 자손은 그 레이어 바로 아래 번호들에
+/// 이어 붙어 있고(형제끼리는 목록 순서), 나무에 드는 레이어는 자리 있는 레이어(<see cref="LayerKind.Part"/>)뿐이다. 그리는 차례는 부모 자신의 그림이 아래,
+/// 그 위에 자식 덩어리들(아래 → 위)이다(<see cref="DrawOrder"/>). 부모를 옮기면 자손이 같이 옮겨 가고, 숨기기·잠그기·불투명도는 자손까지 미친다.
 /// </para>
 /// <para>
-/// 그룹은 스킨 슬롯이다: 스킨(<see cref="Skin"/>) 목록을 갖고 그중 하나(<see cref="Layer.ActiveSkin"/>)만 보인다. 부위 셀은 스킨마다 따로이고,
+/// 레이어마다 스킨(<see cref="Skin"/>) 목록을 갖고 그중 하나(<see cref="Layer.ActiveSkin"/>)만 보인다. 셀은 스킨마다 따로이고,
 /// 스킨의 빈 셀(없거나 모두 투명)은 다른 스킨 셀로 채우지 않고 빈 칸으로 보인다. 셀을 읽는 메서드(<see cref="GetCel(int, int)"/>·합성)와
-/// 그리는 메서드(스트로크·<see cref="SetCel"/>) 모두 지금 스킨 자신의 셀을 쓴다.
+/// 그리는 메서드(스트로크·<see cref="SetCel"/>) 모두 지금 스킨 자신의 셀을 쓴다. 여러 레이어의 스킨 묶음은 스킨 프리셋(<see cref="SkinPresets"/>).
 /// </para>
 /// <para>
 /// 모든 구조 변경 메서드(레이어·프레임·태그·캔버스·설정)는 <see cref="History"/>에 기록되고
@@ -41,10 +42,10 @@ public sealed partial class SpriteProject
     private readonly List<Layer> _layers = new();
     private readonly List<Frame> _frames = new();
     private readonly List<AnimationTag> _tags = new();
-    private readonly List<Outfit> _outfits = new();
+    private readonly List<SkinPreset> _presets = new();
     /// <summary>
-    /// 셀: (레이어, 프레임, 스킨) → 이미지. 일반 레이어는 캔버스 크기, 부위는 부위 크기, 그룹은 셀이 없다.
-    /// 스킨 키는 부위의 첫 스킨이 아닌 스킨일 때만 쓰고, 일반 레이어·첫 스킨 셀은 null 키다(그룹을 잃은 부위·가져오기 중인 부위도 그대로 읽힘).
+    /// 셀: (레이어, 프레임, 스킨) → 이미지. 일반 레이어는 캔버스 크기, 자리 있는 레이어는 자기 크기, 타일맵은 셀이 없다.
+    /// 스킨 키는 레이어의 첫 스킨이 아닌 스킨일 때만 쓰고, 첫 스킨 셀은 null 키다.
     /// </summary>
     private readonly Dictionary<CelKey, PixelImage> _cels = new();
     private int _width, _height;
@@ -113,13 +114,13 @@ public sealed partial class SpriteProject
     public Size Size => new(_width, _height);
     public Rectangle Bounds => new(0, 0, _width, _height);
 
-    /// <summary>레이어(0 = 맨 아래). 그룹의 부위는 그룹 바로 아래에 이어 붙어 있다.</summary>
+    /// <summary>레이어(0 = 맨 아래). 레이어의 자손은 그 레이어 바로 아래에 이어 붙어 있다(그리는 차례는 <see cref="DrawOrder"/>).</summary>
     public IReadOnlyList<Layer> Layers => _layers;
     public IReadOnlyList<Frame> Frames => _frames;
     public IReadOnlyList<AnimationTag> Tags => _tags;
 
-    /// <summary>착장 프리셋(그룹마다 스킨 + 부위 재정의). 바꿀 때는 착장 메서드로(실행취소됨).</summary>
-    public IReadOnlyList<Outfit> Outfits => _outfits;
+    /// <summary>스킨 프리셋(레이어마다 입힐 스킨 묶음). 바꿀 때는 스킨 프리셋 메서드로(실행취소됨).</summary>
+    public IReadOnlyList<SkinPreset> SkinPresets => _presets;
 
     /// <summary>Unity 설정(모드·PPU·기본 피벗·Single 테두리·메시·Read/Write). 바꿀 때는 <see cref="Edit(string, ProjectChange, Action)"/> 안에서.</summary>
     public SpriteSettings Sprite { get; } = new() { Mode = SpriteMode.Multiple };
@@ -273,21 +274,21 @@ public sealed partial class SpriteProject
 
     // ───────────── 셀 ─────────────
 
-    /// <summary>셀 키(스킨 = 첫 스킨이 아닌 부위 스킨, 아니면 null).</summary>
+    /// <summary>셀 키(스킨 = 레이어의 첫 스킨이 아닌 스킨, 아니면 null).</summary>
     internal readonly record struct CelKey(Layer Layer, Frame Frame, Skin? Skin);
 
-    /// <summary>셀 키의 스킨: 부위이고 그룹의 첫 스킨이 아닌 스킨이면 그 스킨, 아니면 null(첫 스킨·일반 레이어).</summary>
+    /// <summary>셀 키의 스킨: 레이어의 첫 스킨이 아닌 스킨이면 그 스킨, 아니면 null(첫 스킨·타일맵).</summary>
     private static Skin? SkinKey(Layer layer, Skin? skin)
-        => layer.IsPart && skin is not null && layer.Parent is { IsGroup: true } g && !ReferenceEquals(g.SkinList[0], skin) ? skin : null;
+        => skin is not null && !layer.IsTilemap && !ReferenceEquals(layer.SkinList[0], skin) ? skin : null;
 
-    /// <summary>지금 보이는 스킨(부위 재정의 → 그룹의 지금 스킨)의 셀 키 스킨.</summary>
-    private static Skin? ActiveKey(Layer layer) => SkinKey(layer, layer.ShownSkin);
+    /// <summary>지금 스킨(<see cref="Layer.ActiveSkin"/>)의 셀 키 스킨.</summary>
+    private static Skin? ActiveKey(Layer layer) => SkinKey(layer, layer.ActiveSkin);
 
     private static bool HasContent(PixelImage? image) => image is not null && !image.IsRegionEmpty(image.Bounds);
 
     /// <summary>
-    /// 보이는 셀 이미지(빈 셀이면 null): 부위면 지금 보이는 스킨(<see cref="Layer.ShownSkin"/> — 부위 재정의 → 그룹의 지금 스킨) 자신의 셀.
-    /// 부위 셀은 부위 크기, 그룹은 항상 null. 반환값을 직접 고치지 말고 스트로크로 고친다.
+    /// 보이는 셀 이미지(빈 셀이면 null): 지금 스킨(<see cref="Layer.ActiveSkin"/>) 자신의 셀.
+    /// 자리 있는 레이어 셀은 자기 크기, 타일맵은 항상 null. 반환값을 직접 고치지 말고 스트로크로 고친다.
     /// </summary>
     public PixelImage? GetCel(int layerIndex, int frameIndex) => GetCel(_layers[layerIndex], _frames[frameIndex]);
 
@@ -295,7 +296,7 @@ public sealed partial class SpriteProject
     public PixelImage? GetCel(Layer layer, Frame frame) => _cels.GetValueOrDefault(new(layer, frame, ActiveKey(layer)));
 
     /// <summary>
-    /// 스킨 자신의 셀(빈 셀이면 null — 다른 스킨 셀로 채우지 않음). <paramref name="skin"/>이 null이면 지금 보이는 스킨. 일반 레이어면 그 셀.
+    /// 스킨 자신의 셀(빈 셀이면 null — 다른 스킨 셀로 채우지 않음). <paramref name="skin"/>이 null이면 지금 스킨. 그 레이어의 스킨이 아니면 null.
     /// </summary>
     public PixelImage? GetOwnCel(Layer layer, Frame frame, Skin? skin = null)
         => _cels.GetValueOrDefault(new(layer, frame, skin is null ? ActiveKey(layer) : SkinKey(layer, skin)));
@@ -306,7 +307,7 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 일반 레이어에 원본 없이 그림을 만드는 효과(<see cref="LayerEffects.GeneratesContent"/> — 글씨, <c>ctx.frameSource</c>를 읽는 스크립트)가 프레임 <paramref name="frameIndex"/>에 켜져 있는지
-    /// (켜져 있고 범위 안). 그러면 그 프레임에 셀이 없어도 빈 그림 위에 효과를 그린다(합성·셀 썸네일·효과 원본·아래로 합치기·영구 적용·내보내기). 부위·그룹은 false.
+    /// (켜져 있고 범위 안). 그러면 그 프레임에 셀이 없어도 빈 그림 위에 효과를 그린다(합성·셀 썸네일·효과 원본·아래로 합치기·영구 적용·내보내기). 자리 있는 레이어·타일맵은 false.
     /// </summary>
     public bool HasContentEffect(int layerIndex, int frameIndex) => HasContentEffect(_layers[layerIndex], frameIndex);
 
@@ -329,7 +330,7 @@ public sealed partial class SpriteProject
         if (layer.Kind != LayerKind.Normal) return list;
         for (int f = 0; f < _frames.Count; f++)
         {
-            var key = new CelKey(layer, _frames[f], null);
+            var key = new CelKey(layer, _frames[f], ActiveKey(layer));
             if (!_cels.ContainsKey(key) && LayerEffects.GeneratesContent(effects, f)) list.Add((key, BlankCel()));
         }
         return list;
@@ -348,7 +349,7 @@ public sealed partial class SpriteProject
     /// <summary>
     /// 지금 스킨의 셀 내용을 통째로 바꾼다(null = 비우기, 실행취소됨). 링크된 셀이면 링크된 셀도 모두
     /// 같은 새 그림이 된다(비우기는 이 셀만 비우고 링크에서 뺀다 — 셀 자체를 갈아 끼우려면 <see cref="PlaceCel"/>).
-    /// 이미지 크기는 캔버스(부위면 부위) 크기와 같아야 한다. 그룹이면 <see cref="InvalidOperationException"/>.
+    /// 이미지 크기는 캔버스(자리 있는 레이어면 자기) 크기와 같아야 한다. 타일맵이면 <see cref="InvalidOperationException"/>.
     /// </summary>
     public void SetCel(int layerIndex, int frameIndex, PixelImage? image, string? label = null)
     {
@@ -360,11 +361,10 @@ public sealed partial class SpriteProject
         });
     }
 
-    /// <summary>지금 스킨의 셀 키(그룹이면 <see cref="InvalidOperationException"/>, 넣을 그림 크기가 셀 크기와 다르면 <see cref="ArgumentException"/>).</summary>
+    /// <summary>지금 스킨의 셀 키(타일맵이면 <see cref="InvalidOperationException"/>, 넣을 그림 크기가 셀 크기와 다르면 <see cref="ArgumentException"/>).</summary>
     private CelKey CelKeyFor(int layerIndex, int frameIndex, PixelImage? image)
     {
         var layer = _layers[layerIndex];
-        if (layer.IsGroup) throw new InvalidOperationException(GroupHasNoCelsMessage);
         if (layer.IsTilemap) throw new InvalidOperationException(DomainStrings.Tile_CannotDrawPixels);
         var size = CelSize(layer);
         if (image is not null && image.Size != size)
@@ -372,15 +372,15 @@ public sealed partial class SpriteProject
         return new CelKey(layer, _frames[frameIndex], ActiveKey(layer));
     }
 
-    /// <summary>저장된 모든 셀(부위면 모든 스킨 자신의 셀). 읽기 전용으로 쓴다(고치려면 스트로크나 <see cref="MapCels"/>).</summary>
+    /// <summary>저장된 모든 셀(모든 스킨 자신의 셀). 읽기 전용으로 쓴다(고치려면 스트로크나 <see cref="MapCels"/>).</summary>
     public IEnumerable<(Layer Layer, Frame Frame, PixelImage Cel)> StoredCels
         => _cels.Select(kv => (kv.Key.Layer, kv.Key.Frame, kv.Value));
 
     /// <summary>
     /// 여러 셀의 픽셀을 한꺼번에 바꾼다(실행취소 한 단계). <paramref name="include"/>가 참인 레이어·프레임의 저장된 셀마다
-    /// (부위면 모든 스킨 자신의 셀) <paramref name="map"/>을 부르고, 새 이미지(같은 크기)를 돌려주면 그것으로 바꿔 넣는다(null = 그대로).
+    /// (모든 스킨 자신의 셀) <paramref name="map"/>을 부르고, 새 이미지(같은 크기)를 돌려주면 그것으로 바꿔 넣는다(null = 그대로).
     /// 링크된 셀은 그림 하나에 한 번만 부르고, 링크된 셀 모두(<paramref name="include"/>가 거짓인 프레임도)에 같은 새 그림을 넣는다.
-    /// 잠긴 레이어(잠긴 그룹의 부위 포함)는 건너뛴다. 바꾼 셀 수를 돌려준다(0이면 기록 없음).
+    /// 잠긴 레이어(조상이 잠긴 레이어 포함)는 건너뛴다. 바꾼 셀 수를 돌려준다(0이면 기록 없음).
     /// </summary>
     public int MapCels(string label, Func<Layer, Frame, bool> include, Func<PixelImage, PixelImage?> map)
     {
@@ -388,7 +388,7 @@ public sealed partial class SpriteProject
         var mapped = new Dictionary<PixelImage, PixelImage?>(ReferenceEqualityComparer.Instance);
         foreach (var (key, cel) in _cels)
         {
-            if (mapped.ContainsKey(cel) || key.Layer.Locked || (key.Layer.Parent?.Locked ?? false) || !include(key.Layer, key.Frame)) continue;
+            if (mapped.ContainsKey(cel) || IsLayerLocked(key.Layer) || !include(key.Layer, key.Frame)) continue;
             var image = map(cel);
             if (image is not null && image.Size != cel.Size) throw new ArgumentException(DomainStrings.Project_ChangedCelSizeMismatch, nameof(map));
             if (image is not null) InheritLinkTag(cel, image);
@@ -403,11 +403,11 @@ public sealed partial class SpriteProject
         return changes.Count;
     }
 
-    /// <summary>레이어 셀의 크기: 부위면 부위 크기, 아니면 캔버스 크기.</summary>
+    /// <summary>레이어 셀의 크기: 자리 있는 레이어면 자기 크기, 아니면 캔버스 크기.</summary>
     public Size CelSize(Layer layer) => layer.IsPart ? layer.PartSize : Size;
 
     /// <summary>
-    /// 프레임의 보이는 레이어를 아래부터 불투명도를 곱해 합성한 새 이미지(그룹은 지금 스킨).
+    /// 프레임의 보이는 레이어를 그리는 차례(<see cref="DrawOrder"/>)대로 합성한 새 이미지(레이어마다 지금 스킨).
     /// </summary>
     public PixelImage Flatten(int frameIndex, bool includeHidden = false)
     {
@@ -418,10 +418,11 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// <paramref name="target"/>(캔버스 크기)을 지우고 프레임을 합성해 넣는다(메모리 재사용).
-    /// 일반 레이어는 (0,0)에, 부위는 그 프레임의 부위 위치(<see cref="GetPartOffset"/>)에 불투명도 그룹×부위로 그린다(부위마다 지금 보이는 스킨 자신의 셀). 숨긴 그룹은 부위도 숨긴다.
-    /// 레이어 효과(<see cref="Layer.Effects"/>, 이 프레임이 범위 안인 것만)는 셀마다 입혀 그리고(밖으로 번진 부분은 캔버스에서 잘림), 이 프레임에 효과가 켜진 그룹은
-    /// 부위들을 먼저 합친 그림에 그룹 효과를 입혀 그룹 불투명도로 한 번에 그린다. 순서표는 <see cref="PlanFrame"/>과 같다.
-    /// <paramref name="layerFilter"/>가 있으면 그리는 레이어(일반·부위)마다 걸러낸다(보이기 여부는 <paramref name="includeHidden"/>로).
+    /// 일반 레이어는 (0,0)에, 자리 있는 레이어는 그 프레임의 자리(<see cref="GetPartOffset"/>)에 그린다(레이어마다 지금 스킨 자신의 셀). 숨긴 레이어는 자손도 숨긴다.
+    /// 레이어 덩어리(자기 그림 + 자식 덩어리들)는 자기 그림이 아래다. 자기 셀에만 입히는 효과는 셀마다 입혀 그리고(밖으로 번진 부분은 캔버스에서 잘림),
+    /// 자손까지 합친 그림에 입히는 효과(<see cref="LayerEffect.IncludeChildren"/>)가 이 프레임에 켜져 있거나 불투명도가 255보다 작은 부모는 덩어리를 먼저 합친 그림에
+    /// 그 효과를 입혀 자기 불투명도로 한 번에 그린다. 순서표는 <see cref="PlanFrame"/>과 같다.
+    /// <paramref name="layerFilter"/>가 있으면 레이어마다 자기 그림을 걸러낸다(자식은 따로 거름, 보이기 여부는 <paramref name="includeHidden"/>로).
     /// <paramref name="celMap"/>이 있으면 그리기 전에 셀 이미지를 그 결과로 바꿔 그린다(미리보기용, 셀은 그대로 — 효과는 바꾼 그림에 입힘).
     /// </summary>
     public void FlattenInto(PixelImage target, int frameIndex, bool includeHidden = false, Func<Layer, bool>? layerFilter = null,
@@ -433,35 +434,53 @@ public sealed partial class SpriteProject
     }
 
     /// <summary>
-    /// 그룹 하나의 보이는 부위만 합성한 캔버스 크기 이미지(썸네일용, 그룹 자신의 보이기 여부는 무시, 효과 포함). 부위마다 지금 보이는 스킨으로,
-    /// <paramref name="skin"/>을 주면 부위 재정의와 관계없이 모든 부위를 그 스킨으로 입혀 본다(그 스킨의 빈 셀은 빈 칸).
+    /// 레이어 하나의 덩어리(자기 그림 + 보이는 자손)만 합성한 캔버스 크기 이미지(썸네일용, 그 레이어 자신의 보이기 여부는 무시, 효과·불투명도 포함 — <see cref="PlanSubtree"/>).
+    /// <paramref name="skins"/>에 든 레이어는 그 스킨으로 입혀 본다(나머지는 지금 스킨, 그 스킨의 빈 셀은 빈 칸).
     /// </summary>
-    public PixelImage FlattenGroup(Layer group, int frameIndex, Skin? skin = null) => PlanGroup(group, frameIndex, skin).Render();
+    public PixelImage FlattenSubtree(Layer layer, int frameIndex, IReadOnlyDictionary<Layer, Skin>? skins = null) => PlanSubtree(layer, frameIndex, skins).Render();
 
     /// <summary>
-    /// 레이어 효과가 입혀질 그림(효과 미리보기용, 효과 없이): 일반 레이어·부위는 지금 보이는 셀(셀이 없어도 <see cref="HasContentEffect(Layer, int)"/>면 빈 그림),
-    /// 그룹은 보이는 부위들을 부위 불투명도·부위 효과로 합친 캔버스 크기 그림(그룹 효과·그룹 불투명도 없이). 빈 셀(그룹이면 그릴 부위 없음)이면 null.
-    /// 돌려준 그림은 고치지 않는다.
+    /// 자기 셀에 입히는 효과(<see cref="OwnEffectsOf"/>)가 입혀질 그림(효과 미리보기용, 효과 없이): 지금 보이는 셀(셀이 없어도 <see cref="HasContentEffect(Layer, int)"/>면 빈 그림).
+    /// 빈 셀이면 null. 돌려준 그림은 고치지 않는다. 자손까지 합친 그림은 <see cref="SubtreeEffectSource"/>.
     /// </summary>
-    public PixelImage? EffectSource(Layer layer, int frameIndex)
+    public PixelImage? EffectSource(Layer layer, int frameIndex) => RenderCel(layer, frameIndex);
+
+    /// <summary>
+    /// 자손까지 합친 그림에 입히는 효과(<see cref="SubtreeEffectsOf"/>)가 입혀질 그림(효과 미리보기용): 자기 그림(자기 효과까지)과 보이는 자손 덩어리를
+    /// 그 불투명도·효과로 합친 캔버스 크기 그림(이 레이어의 자손까지 효과·불투명도 없이). 그릴 것이 없으면 null. 돌려준 그림은 고치지 않는다.
+    /// </summary>
+    public PixelImage? SubtreeEffectSource(Layer layer, int frameIndex)
     {
-        if (!layer.IsGroup) return RenderCel(layer, frameIndex);
-        var plan = GroupSourcePlan(layer, frameIndex);
+        var plan = SubtreeSourcePlan(layer, frameIndex);
         return plan.IsEmpty ? null : plan.Render();
     }
 
     /// <summary>
-    /// 프레임 <paramref name="frameIndex"/>에 입힐 레이어 효과(<see cref="LayerEffects.At"/>): 범위 밖 효과를 빼고, 움직이는 효과는 그 프레임의 진행과
+    /// 프레임 <paramref name="frameIndex"/>에 자기 셀에 입힐 레이어 효과(<see cref="OwnEffectsOf"/>를 <see cref="LayerEffects.At"/>로): 범위 밖 효과를 빼고, 움직이는 효과는 그 프레임의 진행과
     /// 피벗(<see cref="EffectPivot"/>)을, 다른 프레임 그림을 쓰는 효과(잔상)가 있으면 다른 프레임 원본(<see cref="EffectFrameSource"/>)도 채운다.
     /// 다른 레이어나 <c>ctx.slice</c>를 읽는 스크립트 효과에는 그 프레임의 배치·이웃 레이어(<see cref="ScriptLayersAt"/>)를 채운다.
-    /// <paramref name="skin"/>을 주면 다른 프레임도 그 스킨 셀로 본다(부위 아틀라스의 스킨별 셀 — 같은 그룹의 이웃 부위도 그 스킨으로).
+    /// <paramref name="skin"/>을 주면 다른 프레임도 그 스킨 셀로 본다(레이어 아틀라스의 스킨별 셀). 자손까지 합친 그림에 입히는 효과는 <see cref="SubtreeEffectsAt"/>.
     /// </summary>
     public IReadOnlyList<LayerEffect> EffectsAt(Layer layer, int frameIndex, Skin? skin = null)
-        => EffectsAt(layer, layer.Effects, frameIndex, skin is null ? ActiveKey(layer) : SkinKey(layer, skin), skin is null || layer.IsGroup ? null : f => GetOwnCel(layer, _frames[f], skin),
-            skin is null || layer.IsGroup ? null : (other, f) => other.IsPart && ReferenceEquals(other.Parent, layer.Parent) ? GetOwnCel(other, _frames[f], skin) : GetCel(other, _frames[f]));
+        => EffectsAt(layer, OwnEffectsOf(layer), frameIndex, skin is null ? ActiveKey(layer) : SkinKey(layer, skin), skin is null ? null : f => GetOwnCel(layer, _frames[f], skin));
 
     /// <summary>
-    /// 레이어의 효과 목록 <paramref name="effects"/>를 프레임 <paramref name="frameIndex"/>에 맞춘다(링크된 칸의 효과 끝 모습 포함 — 셀 키 스킨 <paramref name="celSkin"/>).
+    /// 프레임 <paramref name="frameIndex"/>에 자손까지 합친 그림에 입힐 효과(<see cref="SubtreeEffectsOf"/>를 <see cref="LayerEffects.At"/>로 — 피벗은 <see cref="SubtreeEffectPivot"/>,
+    /// 다른 프레임 원본은 <see cref="SubtreeFrameSource"/>, 배치는 캔버스 기준). 자식이 없으면 빈 목록.
+    /// </summary>
+    public IReadOnlyList<LayerEffect> SubtreeEffectsAt(Layer layer, int frameIndex) => SubtreeEffectsAt(layer, SubtreeEffectsOf(layer), frameIndex);
+
+    private IReadOnlyList<LayerEffect> SubtreeEffectsAt(Layer layer, IReadOnlyList<LayerEffect> effects, int frameIndex)
+    {
+        if (effects.Count == 0) return effects;
+        Func<int, PixelImage?>? source = LayerEffects.UsesOtherFrames(effects) ? SubtreeFrameSource(layer) : null;
+        return LayerEffects.WithFrameTag(LayerEffects.WithScriptLayers(LayerEffects.At(effects, frameIndex, _frames.Count, SubtreeEffectPivot(layer, frameIndex), source,
+            source is null ? null : f => SubtreeEffectPivot(layer, f)), ScriptLayersOf(layer, frameIndex, effects, DefaultCels, nested: false, subtree: true)),
+            FrameTagFor(effects, frameIndex));
+    }
+
+    /// <summary>
+    /// 레이어의 효과 목록 <paramref name="effects"/>(자기 셀에 입히는 것)를 프레임 <paramref name="frameIndex"/>에 맞춘다(링크된 칸의 효과 끝 모습 포함 — 셀 키 스킨 <paramref name="celSkin"/>).
     /// 다른 프레임 원본은 <paramref name="cels"/>(프레임 번호 → 셀, null = <see cref="EffectFrameSource"/>), 잔상이 없으면 넣지 않는다(만들 것 없음).
     /// 스크립트가 보는 이웃 레이어 셀은 <paramref name="neighborCels"/>(null = 지금 보이는 셀).
     /// </summary>
@@ -478,26 +497,28 @@ public sealed partial class SpriteProject
     }
 
     /// <summary>
-    /// 효과가 다른 프레임 그림을 볼 때 쓰는 원본(프레임 번호 → <see cref="EffectSource"/> — 셀 그대로, 그룹이면 부위 합성, 범위 밖·빈 셀이면 null).
+    /// 자기 셀 효과가 다른 프레임 그림을 볼 때 쓰는 원본(프레임 번호 → <see cref="EffectSource"/> — 셀 그대로, 범위 밖·빈 셀이면 null).
     /// 원본만 제공하고 잔상은 그 프레임의 다른 효과를 별도로 적용하므로 효과 재귀 없이 그 프레임 모습을 얻는다.
     /// </summary>
     public Func<int, PixelImage?> EffectFrameSource(Layer layer) => f => (uint)f < (uint)_frames.Count ? EffectSource(layer, f) : null;
+
+    /// <summary>자손까지 합친 그림 효과가 다른 프레임 그림을 볼 때 쓰는 원본(프레임 번호 → <see cref="SubtreeEffectSource"/>).</summary>
+    public Func<int, PixelImage?> SubtreeFrameSource(Layer layer) => f => (uint)f < (uint)_frames.Count ? SubtreeEffectSource(layer, f) : null;
 
     // ───────────── 스트로크(픽셀 편집) ─────────────
 
     public bool IsStrokeActive => _stroke is not null;
 
     /// <summary>
-    /// 셀에 그리기 시작: 편집할 셀 이미지(없으면 투명 셀을 새로 만듦, 부위면 부위 크기)를 돌려준다. 이 이미지를 직접 고친 뒤
-    /// <see cref="CommitCelStroke"/>로 바뀐 픽셀을 한 단계로 기록한다. 부위면 지금 보이는 스킨 자신의 셀이다(비어 있으면 빈 셀에서 시작 —
+    /// 셀에 그리기 시작: 편집할 셀 이미지(없으면 투명 셀을 새로 만듦, 자리 있는 레이어면 자기 크기)를 돌려준다. 이 이미지를 직접 고친 뒤
+    /// <see cref="CommitCelStroke"/>로 바뀐 픽셀을 한 단계로 기록한다. 지금 스킨 자신의 셀이다(비어 있으면 빈 셀에서 시작 —
     /// 다른 스킨 그림을 복사하지 않음, 바꾼 픽셀이 없으면 기록 없이 원래대로).
-    /// 잠긴 레이어(또는 잠긴 그룹의 부위)·그룹이면 <see cref="InvalidOperationException"/>.
+    /// 잠긴 레이어(조상이 잠긴 레이어 포함)·타일맵이면 <see cref="InvalidOperationException"/>.
     /// </summary>
     public PixelImage BeginCelStroke(int layerIndex, int frameIndex)
     {
         var layer = _layers[layerIndex];
         var frame = _frames[frameIndex];
-        if (layer.IsGroup) throw new InvalidOperationException(GroupHasNoCelsMessage);
         if (layer.IsTilemap) throw new InvalidOperationException(DomainStrings.Tile_CannotDrawPixels);
         CommitOpenStrokes();
         if (IsLayerLocked(layerIndex)) throw new InvalidOperationException(DomainStrings.Project_LockedLayerCannotDraw);
@@ -574,7 +595,7 @@ public sealed partial class SpriteProject
     /// <summary>
     /// 실행취소 가능한 편집 하나: 전후 상태(레이어·프레임·태그 목록과 속성, 셀 참조, 캔버스 크기, 설정)를
     /// 기록한다. 안에서 다른 편집 메서드를 불러도 한 단계로 묶인다. 예외가 나면 편집 전으로 되돌린다.
-    /// 끝에 자동 배치가 켜진 그룹의 부위 위치를 다시 계산해 같은 단계에 넣는다(<see cref="Layer.AutoLayout"/>).
+    /// 끝에 자동 배치가 켜진 레이어의 자식 자리를 다시 계산해 같은 단계에 넣는다(<see cref="Layer.AutoLayout"/>).
     /// 셀 이미지는 참조만 기록하므로 <paramref name="action"/> 안에서 기존 셀 픽셀을 직접 고치지 말고
     /// 새 이미지로 바꿔 넣어야 한다(픽셀 편집은 스트로크로).
     /// </summary>
@@ -591,7 +612,7 @@ public sealed partial class SpriteProject
         try
         {
             action();
-            change |= RelayoutGroups();
+            change |= RelayoutChildren();
         }
         catch
         {
@@ -614,166 +635,6 @@ public sealed partial class SpriteProject
     }
 
     // ───────────── 레이어 ─────────────
-
-    private static string GroupHasNoCelsMessage => DomainStrings.Project_GroupCannotDraw;
-
-    /// <summary>그룹의 부위들(아래 → 위). 그룹이 아니면 빈 목록.</summary>
-    public IReadOnlyList<Layer> ChildrenOf(Layer group)
-    {
-        int g = _layers.IndexOf(group);
-        int n = ChildCount(g);
-        return n == 0 ? [] : _layers.GetRange(g - n, n);
-    }
-
-    /// <summary>그룹의 부위 수(그룹이 아니면 0).</summary>
-    public int ChildCount(Layer group) => ChildCount(_layers.IndexOf(group));
-
-    private int ChildCount(int groupIndex)
-    {
-        if (groupIndex < 0 || !_layers[groupIndex].IsGroup) return 0;
-        var group = _layers[groupIndex];
-        int n = 0;
-        while (groupIndex - n - 1 >= 0 && ReferenceEquals(_layers[groupIndex - n - 1].Parent, group)) n++;
-        return n;
-    }
-
-    /// <summary>실제로 보이는지: 자신이 보이고, 부위면 그룹도 보일 때.</summary>
-    public bool IsLayerVisible(int index)
-    {
-        var layer = _layers[index];
-        return layer.Visible && (layer.Parent?.Visible ?? true);
-    }
-
-    /// <summary>실제로 잠겼는지: 자신이 잠겼거나, 부위면 그룹이 잠겼을 때.</summary>
-    public bool IsLayerLocked(int index)
-    {
-        var layer = _layers[index];
-        return layer.Locked || (layer.Parent?.Locked ?? false);
-    }
-
-    /// <summary>프레임에 그림(어느 스킨이든 내용 있는 셀)이 있는 잠긴 레이어(<see cref="IsLayerLocked"/>)들, 아래 → 위. 그 프레임을 지우면 이 그림이 사라진다.</summary>
-    public IReadOnlyList<Layer> LockedLayersWithContent(int frameIndex)
-    {
-        var frame = _frames[frameIndex];
-        var found = new HashSet<Layer>();
-        foreach (var (key, cel) in _cels)
-            if (ReferenceEquals(key.Frame, frame) && (key.Layer.Locked || (key.Layer.Parent?.Locked ?? false)) && HasContent(cel))
-                found.Add(key.Layer);
-        return found.Count == 0 ? [] : _layers.Where(found.Contains).ToList();
-    }
-
-    /// <summary>최상위 레이어(일반·그룹) 덩어리의 시작 번호(그룹이면 맨 아래 부위).</summary>
-    private int BlockStart(int topIndex) => topIndex - ChildCount(topIndex);
-
-    /// <summary>최상위 레이어를 넣을 자리를 덩어리를 쪼개지 않는 경계로 맞춘다(그룹 안이면 그 그룹 바로 위).</summary>
-    private int TopLevelInsertIndex(int index)
-    {
-        int at = Math.Clamp(index, 0, _layers.Count);
-        if (at > 0 && _layers[at - 1].Parent is { } group) at = _layers.IndexOf(group) + 1;
-        return at;
-    }
-
-    private Layer RequirePart(int layerIndex)
-    {
-        var layer = _layers[layerIndex];
-        return layer.IsPart ? layer : throw new ArgumentException(DomainStrings.Project_NotPartLayer, nameof(layerIndex));
-    }
-
-    /// <summary>빈 일반 레이어를 <paramref name="index"/>(기본: 맨 위, 그룹 안이면 그 그룹 위)에 넣는다. 피벗은 캔버스 기본 피벗.</summary>
-    public Layer AddLayer(int? index = null, string? name = null)
-    {
-        int at = TopLevelInsertIndex(index ?? _layers.Count);
-        var layer = new Layer(string.IsNullOrWhiteSpace(name) ? NextLayerName() : UniqueLayerName(name.Trim())) { Pivot = Sprite.DefaultPivot };
-        Edit(DomainStrings.Project_AddLayer, ProjectChange.Layers, () => _layers.Insert(at, layer));
-        return layer;
-    }
-
-    /// <summary>빈 그룹(합친 레이어)을 <paramref name="index"/>(기본: 맨 위, 그룹 안이면 그 그룹 위)에 넣는다. 피벗은 캔버스 기본 피벗.</summary>
-    public Layer AddGroup(string? name = null, int? index = null)
-    {
-        int at = TopLevelInsertIndex(index ?? _layers.Count);
-        var group = new Layer(UniqueLayerName(string.IsNullOrWhiteSpace(name) ? DomainStrings.Project_DefaultGroupName : name.Trim()))
-        {
-            Kind = LayerKind.Group,
-            Pivot = Sprite.DefaultPivot,
-        };
-        Edit(DomainStrings.Project_AddGroup, ProjectChange.Layers, () => _layers.Insert(at, group));
-        return group;
-    }
-
-    /// <summary>
-    /// 그룹의 맨 위 부위로 빈 부위 레이어를 넣는다. 위치를 안 주면 캔버스 가운데. 이름은 겹치지 않게 바뀐다.
-    /// 그룹이 아니거나 크기가 잘못되면 <see cref="ArgumentException"/>.
-    /// </summary>
-    public Layer AddPart(Layer group, string? name, int width, int height, Point? offset = null)
-    {
-        if (!group.IsGroup || !_layers.Contains(group))
-            throw new ArgumentException(DomainStrings.Project_AddPartRequiresGroup, nameof(group));
-        ValidatePartSize(width, height);
-        var part = new Layer(UniqueLayerName(string.IsNullOrWhiteSpace(name) ? DomainStrings.Project_DefaultPartName : name.Trim()))
-        {
-            Kind = LayerKind.Part,
-            Parent = group,
-            PartSize = new Size(width, height),
-            PartOffset = offset ?? new Point((_width - width) / 2, (_height - height) / 2),
-        };
-        Edit(DomainStrings.Project_AddPart, ProjectChange.Layers, () => _layers.Insert(_layers.IndexOf(group), part));
-        return part;
-    }
-
-    /// <summary>
-    /// 부위 기준 위치(캔버스 안 왼쪽 위 — 프레임마다 옮긴 거리는 그대로 두므로 모든 프레임이 같이 옮겨 감). 자동 배치 중인 그룹의 부위면
-    /// <see cref="InvalidOperationException"/>(먼저 <see cref="SetGroupLayout"/>로 끄기). 한 프레임부터만 옮기려면 <see cref="MovePartFrom"/>.
-    /// </summary>
-    public void SetPartOffset(int layerIndex, Point offset)
-    {
-        var part = RequirePart(layerIndex);
-        if (part.PartOffset == offset) return;
-        if (part.IsAutoLaidOut)
-            throw new InvalidOperationException(DomainStrings.FormatProject_AutoLayoutBlocksMove(name: part.Parent!.Name));
-        Edit(DomainStrings.Project_MovePart, ProjectChange.Layers | ProjectChange.Pixels, () => part.PartOffset = offset);
-    }
-
-    /// <summary>
-    /// 그룹 자동 배치 켜기·설정 바꾸기(<paramref name="layout"/>, 범위 밖 값은 맞춤) 또는 끄기(null — 부위는 지금 위치에 그대로). 실행취소 한 단계, 같으면 기록 없음.
-    /// 켜면 부위 위치를 바로 다시 계산하고, 그 뒤 편집마다 다시 맞춘다.
-    /// </summary>
-    public void SetGroupLayout(Layer group, GroupLayout? layout)
-    {
-        if (!group.IsGroup || !_layers.Contains(group)) throw new ArgumentException(DomainStrings.Project_GroupNotInProject, nameof(group));
-        layout = layout?.Normalized();
-        if (Equals(group.AutoLayout, layout)) return;
-        var label = layout is null ? DomainStrings.Project_DisableAutoLayout : group.AutoLayout is null ? DomainStrings.Project_AutoLayout : DomainStrings.Project_AutoLayoutSettings;
-        Edit(label, ProjectChange.Layers | ProjectChange.Pixels, () => group.AutoLayout = layout);
-    }
-
-    /// <summary>
-    /// <paramref name="layout"/>대로 놓았을 때 그룹 부위들의 위치(넣는 순서, 숨긴 부위를 빼면 그 부위는 없음). 프로젝트는 바꾸지 않는다(미리 보기·다시 배치용).
-    /// </summary>
-    public IReadOnlyList<(Layer Part, Point Offset)> ComputeGroupLayout(Layer group, GroupLayout layout)
-    {
-        var parts = ChildrenOf(group).Where(l => layout.IncludeHidden || l.Visible).ToList();
-        if (layout.Order == GroupLayoutOrder.TopFirst) parts.Reverse();
-        var offsets = layout.Arrange(parts.Select(l => l.PartSize).ToList(), Bounds);
-        return parts.Select((l, i) => (l, offsets[i])).ToList();
-    }
-
-    /// <summary>자동 배치가 켜진 그룹마다 부위 위치를 다시 맞춘다(편집 안에서만 — <see cref="Edit(string, ProjectChange, Action)"/> 끝). 옮긴 것이 있으면 바뀐 부분.</summary>
-    private ProjectChange RelayoutGroups()
-    {
-        bool moved = false;
-        for (int i = 0; i < _layers.Count; i++)
-        {
-            if (_layers[i] is not { IsGroup: true, AutoLayout: { } layout } group) continue;
-            foreach (var (part, offset) in ComputeGroupLayout(group, layout))
-            {
-                if (part.PartOffset == offset) continue;
-                part.PartOffset = offset;
-                moved = true;
-            }
-        }
-        return moved ? ProjectChange.Layers | ProjectChange.Pixels : ProjectChange.None;
-    }
 
     /// <summary>
     /// 부위 크기 바꾸기: 모든 프레임의 셀을 <paramref name="anchor"/> 기준으로 옮기고, 그림이 캔버스에서 같은 자리에 남도록 위치를,
@@ -836,13 +697,12 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 레이어 크기(타임라인 칸 썸네일 자리, 캔버스 좌표): 부위는 부위 영역, 일반 레이어는 모든 프레임 셀(캔버스 밖 그림 포함)의 칠한 픽셀을 감싸는 사각형.
-    /// 칠한 픽셀이 없거나 그룹이면 <see cref="Rectangle.Empty"/>.
+    /// 칠한 픽셀이 없으면 <see cref="Rectangle.Empty"/>.
     /// </summary>
     public Rectangle LayerBounds(int layerIndex)
     {
         var layer = _layers[layerIndex];
         if (layer.IsPart) return layer.PartRect;
-        if (layer.IsGroup) return Rectangle.Empty;
         if (layer.IsTilemap) return TilemapBounds(layer);
         var bounds = Rectangle.Empty;
         foreach (var key in LayerCelKeys(layer))
@@ -858,7 +718,7 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 모든 레이어 그림을 감싸는 가장 작은 사각형(캔버스 좌표 — 캔버스 밖으로 나갈 수 있음): 일반·타일맵 레이어는 <see cref="LayerBounds"/>(모든 프레임, 캔버스 밖 그림 포함),
-    /// 부위는 부위 영역(프레임마다 옮긴 자리 모두). 숨긴 레이어도 넣는다. 그림이 하나도 없으면 <see cref="Rectangle.Empty"/>.
+    /// 자리 있는 레이어는 그 영역(프레임마다 옮긴 자리 모두 — 셀 없는 빈 부모는 빼고). 숨긴 레이어도 넣는다. 그림이 하나도 없으면 <see cref="Rectangle.Empty"/>.
     /// </summary>
     public Rectangle ContentBounds()
     {
@@ -870,12 +730,12 @@ public sealed partial class SpriteProject
         for (int i = 0; i < _layers.Count; i++)
         {
             var layer = _layers[i];
-            if (layer.IsGroup) continue;
             if (!layer.IsPart)
             {
                 Add(LayerBounds(i));
                 continue;
             }
+            if (HasChildren(layer) && !_cels.Keys.Any(k => ReferenceEquals(k.Layer, layer))) continue; // 셀 없는 빈 부모는 담는 칸일 뿐
             Add(layer.PartRect);
             foreach (var f in _frames)
                 if (f.PartShifts.TryGetValue(layer, out var s)) Add(layer.PartRect with { X = layer.PartOffset.X + s.X, Y = layer.PartOffset.Y + s.Y });
@@ -885,26 +745,28 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 타임라인 칸 썸네일로 보일 자리(캔버스 좌표 — 그 레이어가 칸에 크게 보이게, 썸네일이 효과 없는 그림이라 효과 여백 없이): 일반 레이어는 <see cref="LayerBounds"/>,
-    /// 그룹은 부위 영역들(프레임마다 옮긴 자리 모두)을 합친 사각형을 캔버스 안으로 자른 것. 모든 프레임에서 같으므로 칸마다 같은 자리·배율이다.
-    /// 부위(썸네일이 이미 부위 크기)·칠한 픽셀이 없음·캔버스 전체면 <see cref="Rectangle.Empty"/>(자르지 않음).
+    /// <paramref name="withChildren"/>이고 자식이 있으면 자기와 자손의 영역들(프레임마다 옮긴 자리 모두, 셀 없는 빈 부모는 빼고)을 합친 사각형을 캔버스 안으로 자른 것
+    /// (<see cref="PlanCelThumbnail"/>의 <c>withChildren</c>과 짝). 모든 프레임에서 같으므로 칸마다 같은 자리·배율이다.
+    /// 자리 있는 레이어 자기 그림만(썸네일이 이미 자기 크기)·칠한 픽셀이 없음·캔버스 전체면 <see cref="Rectangle.Empty"/>(자르지 않음).
     /// </summary>
-    public Rectangle ThumbnailBounds(int layerIndex)
+    public Rectangle ThumbnailBounds(int layerIndex, bool withChildren = false)
     {
         var layer = _layers[layerIndex];
-        if (layer.IsPart) return Rectangle.Empty;
         Rectangle bounds;
-        if (layer.IsGroup)
+        if (withChildren && HasChildren(layer))
         {
             bounds = Rectangle.Empty;
-            foreach (var part in ChildrenOf(layer))
+            foreach (var part in SubtreeOf(layer))
             {
                 if (part.PartSize.Width < 1 || part.PartSize.Height < 1) continue;
+                if (HasChildren(part) && !_cels.Keys.Any(k => ReferenceEquals(k.Layer, part))) continue; // 셀 없는 빈 부모는 담는 칸일 뿐
                 var r = part.PartRect;
                 foreach (var f in _frames)
                     if (f.PartShifts.TryGetValue(part, out var s)) r = Rectangle.Union(r, part.PartRect with { X = part.PartOffset.X + s.X, Y = part.PartOffset.Y + s.Y });
                 bounds = bounds.IsEmpty ? r : Rectangle.Union(bounds, r);
             }
         }
+        else if (layer.IsPart) return Rectangle.Empty;
         else bounds = LayerBounds(layerIndex);
         if (bounds.IsEmpty) return Rectangle.Empty;
         bounds = Rectangle.Intersect(bounds, new Rectangle(0, 0, _width, _height));
@@ -927,30 +789,6 @@ public sealed partial class SpriteProject
     private List<CelKey> LayerCelKeys(Layer layer)
         => _cels.Keys.Where(k => ReferenceEquals(k.Layer, layer)).Concat(_overflow.Keys.Where(k => ReferenceEquals(k.Layer, layer))).Distinct().ToList();
 
-    /// <summary>
-    /// 부위를 프레임 <paramref name="fromFrame"/>부터 끝까지 (<paramref name="dx"/>, <paramref name="dy"/>)px 옮긴다(실행취소 한 단계). 피벗은 부위 기준 비율이라 부위와 같이 옮겨 간다.
-    /// 첫 프레임부터면 기준 위치를 옮기고(자동 배치 중인 그룹의 부위는 빼고), 아니면 그 프레임들에 옮긴 거리를 더한다(앞 프레임은 그대로).
-    /// </summary>
-    public void MovePartFrom(int layerIndex, int fromFrame, int dx, int dy)
-    {
-        var part = RequirePart(layerIndex);
-        var frames = FramesFrom(fromFrame);
-        if (dx == 0 && dy == 0) return;
-        Edit(DomainStrings.Project_MovePart, ProjectChange.Layers | ProjectChange.Pixels, () =>
-        {
-            if (fromFrame == 0 && !part.IsAutoLaidOut)
-            {
-                part.PartOffset = new Point(part.PartOffset.X + dx, part.PartOffset.Y + dy);
-                return;
-            }
-            foreach (var f in frames)
-            {
-                var s = f.PartShifts.GetValueOrDefault(part);
-                SetShift(f, part, new Point(s.X + dx, s.Y + dy));
-            }
-        });
-    }
-
     /// <summary>프레임 <paramref name="fromFrame"/>부터 끝까지(범위 밖이면 <see cref="ArgumentOutOfRangeException"/>).</summary>
     private List<Frame> FramesFrom(int fromFrame)
     {
@@ -966,16 +804,6 @@ public sealed partial class SpriteProject
         Edit(DomainStrings.Project_PartBorder, ProjectChange.Layers, () => part.PartBorder = border);
     }
 
-    /// <summary>그룹 접기/펼치기(타임라인 표시용, 실행취소·수정됨 표시 없음).</summary>
-    public void SetLayerCollapsed(int layerIndex, bool collapsed)
-    {
-        var group = _layers[layerIndex];
-        if (!group.IsGroup) throw new ArgumentException(DomainStrings.Project_NotGroupLayer, nameof(layerIndex));
-        if (group.Collapsed == collapsed) return;
-        group.Collapsed = collapsed;
-        NotifyChanged(ProjectChange.Layers, markDirty: false);
-    }
-
     /// <summary>타임라인 효과 줄 접기/펼치기(표시용, 실행취소·수정됨 표시 없음).</summary>
     public void SetLayerEffectsCollapsed(int layerIndex, bool collapsed)
     {
@@ -986,179 +814,8 @@ public sealed partial class SpriteProject
     }
 
     /// <summary>
-    /// 레이어를 셀까지 복사해 바로 위에 넣는다. 그룹은 부위·스킨까지 통째로(덩어리 바로 위), 부위는 같은 그룹 안 바로 위(모든 스킨 셀).
-    /// </summary>
-    public Layer DuplicateLayer(int index)
-    {
-        var src = _layers[index];
-        return Edit(DomainStrings.Project_DuplicateLayer, ProjectChange.Layers | ProjectChange.Pixels, () =>
-        {
-            var skinMap = new Dictionary<Skin, Skin>();
-            if (src is { IsPart: true, Parent: { IsGroup: true } group })
-                // 같은 그룹 안 부위 복제: 원래 부위 전용 스킨을 복사본 전용으로도 하나씩 만든다.
-                foreach (var s in src.OwnSkins)
-                {
-                    var dup = new Skin(UniqueSkinName(group, DomainStrings.FormatProject_CopiedName(name: s.Name)));
-                    skinMap[s] = dup;
-                    group.SkinList.Add(dup);
-                }
-            var copy = CopyLayer(src, src.Parent, skinMap);
-            _layers.Insert(index + 1, copy);
-            var partMap = new Dictionary<Layer, Layer> { [src] = copy };
-            if (src.IsGroup)
-            {
-                var children = ChildrenOf(src).ToList();
-                for (int k = 0; k < children.Count; k++)
-                {
-                    var child = CopyLayer(children[k], copy, skinMap);
-                    partMap[children[k]] = child;
-                    _layers.Insert(index + 1 + k, child);
-                }
-            }
-            foreach (var (from, to) in skinMap)
-                if (from.Owner is { } owner && partMap.TryGetValue(owner, out var newOwner)) to.Owner = newOwner;
-            return copy;
-        });
-    }
-
-    /// <summary>
-    /// 레이어 하나를 셀까지 복사한 새 레이어(목록에는 넣지 않음, 원래 칸 기억은 복사하지 않음).
-    /// 그룹이면 스킨(부위 전용 포함 — 주인은 부르는 쪽이 새 부위로 바꿈)도 복사하고 원래 스킨 → 새 스킨을 <paramref name="skinMap"/>에 넣는다.
-    /// 부위 셀·재정의의 스킨은 <paramref name="skinMap"/>으로 바꾼다(없으면 그대로 — 같은 그룹 안 복제).
-    /// </summary>
-    private Layer CopyLayer(Layer src, Layer? parent, Dictionary<Skin, Skin> skinMap)
-    {
-        var copy = new Layer(NextNumberedName(src.Name, n => _layers.Any(l => l.Name == n)))
-        {
-            Visible = src.Visible,
-            Opacity = src.Opacity,
-            Kind = src.Kind,
-            Parent = parent,
-            Collapsed = src.Collapsed,
-            EffectsCollapsed = src.EffectsCollapsed,
-            AutoLayout = src.AutoLayout,
-            PartSize = src.PartSize,
-            PartOffset = src.PartOffset,
-            Pivot = src.Pivot,
-            PartBorder = src.PartBorder,
-            Effects = src.Effects,
-            Tiles = src.Tiles,
-        };
-        if (src.IsGroup)
-        {
-            foreach (var s in src.AllSkins) skinMap[s] = new Skin(s.Name, s.Owner);
-            copy.ReplaceSkinsRaw(src.AllSkins.Select(s => skinMap[s]));
-            copy.SetActiveSkinRaw(skinMap[src.ActiveSkin!]);
-        }
-        if (src.SkinOverride is { } over) copy.SetSkinOverrideRaw(skinMap.TryGetValue(over, out var mappedOver) ? mappedOver : over);
-        var clone = OncePerImage(cel => cel.Clone()); // 링크된 셀은 사본에서도 링크
-        foreach (var (key, cel) in CelsOf(src))
-            _cels[new(copy, key.Frame, key.Skin is { } s && skinMap.TryGetValue(s, out var mapped) ? mapped : key.Skin)] = clone(cel);
-        foreach (var f in _frames)
-        {
-            if (f.LayerPivots.TryGetValue(src, out var own)) f.LayerPivots[copy] = own;
-            if (f.PartShifts.TryGetValue(src, out var shift)) f.PartShifts[copy] = shift;
-        }
-        foreach (var (key, overflow) in _overflow.Where(kv => ReferenceEquals(kv.Key.Layer, src)).ToList())
-            _overflow[key with { Layer = copy }] = overflow;
-        return copy;
-    }
-
-    /// <summary>레이어 삭제. 그룹은 부위까지 지운다(부위를 지우면 그 부위 전용 스킨도). 남는 레이어가 없으면 <see cref="InvalidOperationException"/>.</summary>
-    public void DeleteLayer(int index)
-    {
-        var layer = _layers[index];
-        int start = layer.IsGroup ? BlockStart(index) : index;
-        int count = index - start + 1;
-        if (_layers.Count - count < 1) throw new InvalidOperationException(DomainStrings.Project_CannotDeleteLastLayer);
-        Edit(DomainStrings.Project_DeleteLayer, ProjectChange.Layers | ProjectChange.Pixels, () =>
-        {
-            foreach (var l in _layers.GetRange(start, count))
-            {
-                foreach (var (key, _) in CelsOf(l)) _cels.Remove(key);
-                RemoveOverflowOf(l);
-            }
-            if (layer is { IsPart: true, Parent: { IsGroup: true } g })
-                g.ReplaceSkinsRaw(g.SkinList.Where(s => !ReferenceEquals(s.Owner, layer)).ToList());
-            if (PivotLayer is { } rep && _layers.IndexOf(rep) is var ri && ri >= start && ri < start + count) PivotLayer = null;
-            _layers.RemoveRange(start, count);
-        });
-    }
-
-    /// <summary>
-    /// 레이어 순서 바꾸기. 부위는 자기 그룹 안에서만(<paramref name="to"/> = 옮긴 뒤 위치, 그룹 범위로 자름).
-    /// 일반 레이어·그룹은 덩어리째 옮기고, <paramref name="to"/>는 덩어리를 뺀 목록에서 덩어리가 들어갈 자리
-    /// (그룹 안이면 가까운 그룹 경계로 맞춤). 일반 레이어만 있으면 옮긴 뒤 위치와 같다.
-    /// </summary>
-    public void MoveLayer(int from, int to)
-    {
-        var layer = _layers[from];
-        if (layer.IsPart)
-        {
-            int g = _layers.IndexOf(layer.Parent!);
-            to = Math.Clamp(to, g - ChildCount(g), g - 1);
-            if (from == to) return;
-            Edit(DomainStrings.Project_MoveLayer, ProjectChange.Layers, () =>
-            {
-                _layers.RemoveAt(from);
-                _layers.Insert(to, layer);
-            });
-            return;
-        }
-
-        int start = BlockStart(from);
-        int count = from - start + 1;
-        var rest = new List<Layer>(_layers);
-        rest.RemoveRange(start, count);
-        int at = Math.Clamp(to, 0, rest.Count);
-        if (at > 0 && rest[at - 1].Parent is { } group)
-        {
-            int top = rest.IndexOf(group);
-            int bottom = top - rest.Count(l => ReferenceEquals(l.Parent, group));
-            int below = at - bottom, above = top + 1 - at;
-            at = below < above || (below == above && at < start) ? bottom : top + 1;
-        }
-        if (at == start) return;
-        var block = _layers.GetRange(start, count);
-        Edit(DomainStrings.Project_MoveLayer, ProjectChange.Layers, () =>
-        {
-            _layers.RemoveRange(start, count);
-            _layers.InsertRange(at, block);
-        });
-    }
-
-    /// <summary>한 칸 위로(▲): 부위는 그룹 안에서 위 부위와, 일반 레이어·그룹은 바로 위 덩어리와 자리를 바꾼다. 맨 위면 그대로.</summary>
-    public void MoveLayerUp(int index)
-    {
-        var layer = _layers[index];
-        if (layer.IsPart)
-        {
-            if (_layers[index + 1].IsPart) MoveLayer(index, index + 1);
-            return;
-        }
-        if (index == _layers.Count - 1) return;
-        var next = _layers[index + 1];
-        int aboveTop = next.Parent is { } g ? _layers.IndexOf(g) : index + 1;
-        MoveLayer(index, BlockStart(index) + (aboveTop - index));
-    }
-
-    /// <summary>한 칸 아래로(▼): 부위는 그룹 안에서 아래 부위와, 일반 레이어·그룹은 바로 아래 덩어리와 자리를 바꾼다. 맨 아래면 그대로.</summary>
-    public void MoveLayerDown(int index)
-    {
-        var layer = _layers[index];
-        if (layer.IsPart)
-        {
-            if (index > 0 && ReferenceEquals(_layers[index - 1].Parent, layer.Parent)) MoveLayer(index, index - 1);
-            return;
-        }
-        int start = BlockStart(index);
-        if (start == 0) return;
-        MoveLayer(index, BlockStart(start - 1));
-    }
-
-    /// <summary>
     /// 일반 레이어를 바로 아래 일반 레이어에 병합한다(위 레이어를 효과를 구워 넣고 불투명도대로 합성, 보이기 여부와 관계없이 — 캔버스 밖으로 번진 효과는 잘림).
-    /// 위 레이어는 삭제된다. 부위·그룹이 끼면 <see cref="InvalidOperationException"/>.
+    /// 위 레이어는 삭제된다. 일반 레이어가 아니거나(자리 있는 레이어·타일맵) 스킨이 둘 이상인 레이어가 끼면 <see cref="InvalidOperationException"/>.
     /// </summary>
     public void MergeLayerDown(int index)
     {
@@ -1167,6 +824,7 @@ public sealed partial class SpriteProject
         var lower = _layers[index - 1];
         if (upper.Kind != LayerKind.Normal || lower.Kind != LayerKind.Normal)
             throw new InvalidOperationException(DomainStrings.Project_CannotMergePartGroup);
+        if (upper.SkinList.Count > 1 || lower.SkinList.Count > 1) throw new InvalidOperationException(DomainStrings.Project_CannotMergeSkins);
         Edit(DomainStrings.Project_MergeDown, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             // 효과(잔상)가 위 레이어의 다른 프레임 셀을 볼 수 있으므로 셀을 바꾸기 전에 모두 그려 둔다. 셀이 없어도 글씨처럼 원본 없이 그리는 효과가 켜진 프레임은 빈 그림에 그린다.
@@ -1266,13 +924,13 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 효과 영구 적용(실행취소 한 단계): <see cref="LayerEffects.BakeSet"/>의 효과(고른 효과 + 그 위의 켜진 효과)를 그 효과들이 입혀지는 프레임의
-    /// 저장된 셀마다(부위면 모든 스킨 자신의 셀) 보이던 그대로 구워 넣고 목록에서 뺀다.
+    /// 저장된 셀마다(모든 스킨 자신의 셀) 보이던 그대로 구워 넣고 목록에서 뺀다.
     /// 일반 레이어에서 구울 효과 중 글씨처럼 원본 없이 그리는 효과가 켜진 프레임은 셀이 없어도 빈 그림에 구워 새 셀로 넣는다.
     /// 아래(뒤) 효과는 효과로 남는다. 일반 레이어는 캔버스 크기로 잘리고, 부위는 번진 그림이 들어가도록 부위 크기·위치를 넓힌다
     /// (모든 프레임·스킨 셀을 같이 옮기고, 피벗·테두리는 같은 그림 지점 — 자동 배치 그룹이면 다시 배치). 효과가 바꾸지 않는 프레임도 그대로 구운 것으로 친다.
     /// 부위에서 피벗 같이 옮기기가 켜진 효과(흔들기·둥실둥실 등)가 그림을 옮긴 거리는 그림에 굽지 않고, 그 프레임의 부위 위치를 그만큼(반올림) 옮긴다
     /// (<see cref="GetPartOffset"/> — 피벗은 부위 기준 비율이라 같이 따라가고, 그 프레임은 "현재 프레임부터" 따로 둔 프레임이 된다).
-    /// 그룹(효과가 여러 부위의 합성에 입혀짐)·잠긴 레이어는 <see cref="InvalidOperationException"/>.
+    /// 자손까지 합친 그림에 입히는 효과(자식이 있는 레이어의 <see cref="LayerEffect.IncludeChildren"/>)가 끼거나 잠긴 레이어면 <see cref="InvalidOperationException"/>.
     /// </summary>
     /// <returns>구운 효과(목록 순서)와 그 프레임 범위(합, null = 모든 프레임), 바꾼 셀 수, 부위를 넓혔는지.</returns>
     public (IReadOnlyList<LayerEffect> Baked, FrameRange? Frames, int Cels, bool Grown) BakeLayerEffects(int layerIndex, IEnumerable<int> effectIndices)
@@ -1280,15 +938,15 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 굽기 계산(<see cref="BakeLayerEffects"/>의 무거운 부분 — 셀마다 효과 입히기). 프로젝트는 읽기만 하므로 아무도 프로젝트를 고치지 않는 동안
-    /// 작업 스레드에서 돌려도 된다. 결과는 <see cref="ApplyBake"/>로 같은 상태에 넣는다. 그룹·잠긴 레이어·구울 효과 없음은 여기서 예외.
+    /// 작업 스레드에서 돌려도 된다. 결과는 <see cref="ApplyBake"/>로 같은 상태에 넣는다. 자손까지 효과·잠긴 레이어·구울 효과 없음은 여기서 예외.
     /// </summary>
     public BakePlan PrepareBake(int layerIndex, IEnumerable<int> effectIndices)
     {
         var layer = _layers[layerIndex];
-        if (layer.IsGroup) throw new InvalidOperationException(DomainStrings.Project_CannotBakeGroupEffects);
-        if (layer.Locked || layer.Parent is { Locked: true }) throw new InvalidOperationException(DomainStrings.Project_CannotBakeLockedLayerEffects);
+        if (IsLayerLocked(layer)) throw new InvalidOperationException(DomainStrings.Project_CannotBakeLockedLayerEffects);
         var order = LayerEffects.BakeSet(layer.Effects, effectIndices);
         if (order.Count == 0) throw new ArgumentException(DomainStrings.Project_NoEffectsToBake, nameof(effectIndices));
+        if (HasChildren(layer) && order.Any(i => layer.Effects[i].IncludeChildren)) throw new InvalidOperationException(DomainStrings.Project_CannotBakeGroupEffects);
         LayerEffect[] baked = [.. order.Select(i => layer.Effects[i] with { Enabled = true })];
         LayerEffect[] rest = [.. layer.Effects.Where((_, i) => !order.Contains(i))];
         FrameRange? range = baked.Any(e => e.Frames is null) ? null
@@ -1415,508 +1073,6 @@ public sealed partial class SpriteProject
         internal IReadOnlyList<(CelKey Key, PixelImage Image, Point Offset)> Rendered { get; }
         /// <summary>부위: 프레임마다 효과가 옮긴 거리(0이 아닌 것만) — 그림 대신 그 프레임의 부위 위치를 옮긴다.</summary>
         internal IReadOnlyDictionary<Frame, Point> Shifts { get; }
-    }
-
-    // ───────────── 스킨(그룹 = 스킨 슬롯) ─────────────
-
-    private int RequireSkin(Layer group, Skin skin)
-    {
-        if (!group.IsGroup || !_layers.Contains(group)) throw new ArgumentException(DomainStrings.Project_GroupNotInProject, nameof(group));
-        int index = group.SkinList.IndexOf(skin);
-        return index >= 0 ? index : throw new ArgumentException(DomainStrings.Project_SkinNotInGroup, nameof(skin));
-    }
-
-    private Layer RequireGroupPart(Layer part)
-    {
-        if (!part.IsPart || part.Parent is not { IsGroup: true } group || !_layers.Contains(part))
-            throw new ArgumentException(DomainStrings.Project_PartNotInProjectGroup, nameof(part));
-        return group;
-    }
-
-    /// <summary>그룹 안에서(부위 전용 스킨까지) 겹치지 않는 스킨 이름(겹치면 " 2", " 3" …). 비면 "스킨".</summary>
-    public string UniqueSkinName(Layer group, string baseName, Skin? self = null)
-    {
-        baseName = baseName.Trim();
-        if (baseName.Length == 0) baseName = DomainStrings.Project_DefaultSkinName;
-        bool Taken(string n) => group.SkinList.Any(s => !ReferenceEquals(s, self) && s.Name == n);
-        if (!Taken(baseName)) return baseName;
-        for (int i = 2; ; i++)
-            if (!Taken($"{baseName} {i}")) return $"{baseName} {i}";
-    }
-
-    /// <summary>전체 스킨 수(부위 전용 스킨 앞까지 — 목록에서 전체 스킨은 늘 앞에 모여 있다).</summary>
-    private static int GroupSkinCount(Layer group) => group.SkinList.TakeWhile(s => s.Owner is null).Count();
-
-    /// <summary>
-    /// 그룹에 전체 스킨을 하나 더 넣고(전체 스킨 끝) 지금 스킨으로 고른다. <paramref name="copyFrom"/>이 있으면 그 스킨 자신의 셀을 복사한다
-    /// (첫 스킨을 복사하면 모든 셀, 다른 스킨이면 그 스킨이 직접 그린 셀만 — 나머지 칸은 빈 칸). 이름은 겹치지 않게 바뀐다.
-    /// 새 스킨은 처음에 링크도 원본(<paramref name="copyFrom"/>, 없으면 첫 스킨)과 같다: 링크 묶음마다 그림 하나(빈 스킨이면 빈 그림)를 같은 색으로 같이 쓴다.
-    /// </summary>
-    public Skin AddSkin(Layer group, string? name = null, Skin? copyFrom = null)
-    {
-        if (!group.IsGroup || !_layers.Contains(group)) throw new ArgumentException(DomainStrings.Project_AddSkinRequiresGroup, nameof(group));
-        if (copyFrom is not null) RequireSkin(group, copyFrom);
-        var skin = new Skin(UniqueSkinName(group, string.IsNullOrWhiteSpace(name) ? (copyFrom is null ? DomainStrings.Project_DefaultSkinName : DomainStrings.FormatProject_CopiedName(name: copyFrom.Name)) : name));
-        Edit(copyFrom is null ? DomainStrings.Project_AddSkin : DomainStrings.Project_DuplicateSkin, ProjectChange.Layers | ProjectChange.Pixels, () =>
-        {
-            group.SkinList.Insert(GroupSkinCount(group), skin);
-            foreach (var part in ChildrenOf(group))
-                if (copyFrom is null || copyFrom.Owner is null || ReferenceEquals(copyFrom.Owner, part))
-                    CopySkinCels(part, copyFrom ?? group.SkinList[0], skin, pixels: copyFrom is not null);
-            group.SetActiveSkinRaw(skin);
-        });
-        return skin;
-    }
-
-    /// <summary>
-    /// 부위의 <paramref name="from"/> 스킨 자신의 셀을 <paramref name="to"/> 스킨 셀로 가져온다(<see cref="Edit(string, ProjectChange, Action)"/> 안에서):
-    /// <paramref name="pixels"/>면 그림이 있는 셀을 복사하고, 링크 묶음은 그림이 없어도(<paramref name="pixels"/>가 false면 늘) 빈 그림 하나를 같이 써
-    /// 새 스킨에서도 같은 프레임끼리 같은 색으로 링크된다. 빈 셀은 빈 칸으로 보이고, 링크된 칸에 그리면 링크된 칸이 함께 바뀐다.
-    /// </summary>
-    private void CopySkinCels(Layer part, Skin from, Skin to, bool pixels)
-    {
-        var fromKey = SkinKey(part, from);
-        var size = CelSize(part);
-        var take = OncePerImage(cel => pixels && HasContent(cel) ? cel.Clone() : new PixelImage(size.Width, size.Height));
-        var linked = new HashSet<int>(LinkGroupsOf(part, fromKey).SelectMany(g => g.Frames));
-        for (int f = 0; f < _frames.Count; f++)
-            if (_cels.TryGetValue(new(part, _frames[f], fromKey), out var cel) && (linked.Contains(f) || pixels && HasContent(cel)))
-                _cels[new(part, _frames[f], to)] = take(cel);
-    }
-
-    /// <summary>
-    /// 부위 하나에만 있는 스킨(부위 전용·개별 스킨, 예: Head에만 "모자")을 만들고 그 부위에 입힌다(재정의). 다른 부위·그룹 목록에는 나타나지 않는다.
-    /// <paramref name="copyFrom"/>(그 부위가 고를 수 있는 스킨)이 있으면 그 부위의 그 스킨 셀을 복사한다. 이름은 그룹 안에서 겹치지 않게 바뀐다. 실행취소됨.
-    /// 링크는 처음에 원본(없으면 첫 스킨)과 같다(<see cref="AddSkin"/>).
-    /// </summary>
-    public Skin AddPartSkin(Layer part, string? name = null, Skin? copyFrom = null)
-    {
-        var group = RequireGroupPart(part);
-        if (copyFrom is not null && (RequireSkin(group, copyFrom) < 0 || copyFrom.Owner is not null && !ReferenceEquals(copyFrom.Owner, part)))
-            throw new ArgumentException(DomainStrings.Project_InvalidPartSkin, nameof(copyFrom));
-        var skin = new Skin(UniqueSkinName(group, string.IsNullOrWhiteSpace(name) ? (copyFrom is null ? DomainStrings.FormatProject_PartSkinName(part: part.Name) : DomainStrings.FormatProject_CopiedName(name: copyFrom.Name)) : name), part);
-        Edit(copyFrom is null ? DomainStrings.Project_AddPartSkin : DomainStrings.Project_DuplicatePartSkin, ProjectChange.Layers | ProjectChange.Pixels, () =>
-        {
-            group.SkinList.Add(skin);
-            CopySkinCels(part, copyFrom ?? group.SkinList[0], skin, pixels: copyFrom is not null);
-        });
-        part.SetSkinOverrideRaw(skin);
-        NotifyChanged(ProjectChange.Layers | ProjectChange.Pixels);
-        return skin;
-    }
-
-    /// <summary>부위 전용 스킨을 그룹 전체 스킨으로 올린다(다른 부위에서도 고를 수 있게 — 그 부위들은 빈 칸). 실행취소됨.</summary>
-    public void PromoteSkin(Layer group, Skin skin)
-    {
-        RequireSkin(group, skin);
-        if (skin.Owner is null) return;
-        Edit(DomainStrings.Project_PromoteSkin, ProjectChange.Layers, () =>
-        {
-            group.SkinList.Remove(skin);
-            skin.Owner = null;
-            group.SkinList.Insert(GroupSkinCount(group), skin);
-        });
-    }
-
-    /// <summary>
-    /// 전체 스킨을 <paramref name="part"/> 전용 스킨으로 내린다: 다른 부위의 그 스킨 셀은 지우고(실행취소로 되살림), 그룹 지금 스킨이었으면 첫 스킨으로,
-    /// 다른 부위의 재정의는 그룹을 따르게 한다. 첫 스킨·마지막 전체 스킨은 내릴 수 없다(<see cref="InvalidOperationException"/>).
-    /// </summary>
-    public void DemoteSkin(Layer group, Skin skin, Layer part)
-    {
-        int index = RequireSkin(group, skin);
-        if (!ReferenceEquals(RequireGroupPart(part), group)) throw new ArgumentException(DomainStrings.Project_PartNotInGroup, nameof(part));
-        if (skin.Owner is not null) return;
-        if (index == 0 || GroupSkinCount(group) <= 1) throw new InvalidOperationException(DomainStrings.Project_CannotDemoteBaseSkin);
-        Edit(DomainStrings.Project_DemoteSkin, ProjectChange.Layers | ProjectChange.Pixels, () =>
-        {
-            foreach (var other in ChildrenOf(group))
-            {
-                if (ReferenceEquals(other, part)) continue;
-                foreach (var (key, _) in CelsOf(other))
-                    if (ReferenceEquals(key.Skin, skin)) _cels.Remove(key);
-            }
-            group.SkinList.Remove(skin);
-            skin.Owner = part;
-            group.SkinList.Add(skin);
-            if (ReferenceEquals(group.ActiveSkinRaw, skin)) group.SetActiveSkinRaw(group.SkinList[0]);
-        });
-        if (ReferenceEquals(group.ActiveSkinRaw, skin)) group.SetActiveSkinRaw(group.SkinList[0]);
-    }
-
-    /// <summary>스킨 이름 바꾸기. 비었거나 그룹 안(부위 전용 스킨 포함)에 같은 이름이 있으면 <see cref="ArgumentException"/>.</summary>
-    public void RenameSkin(Layer group, Skin skin, string name)
-    {
-        RequireSkin(group, skin);
-        name = name.Trim();
-        if (name.Length == 0) throw new ArgumentException(DomainStrings.Project_EmptySkinName, nameof(name));
-        if (group.SkinList.Any(s => !ReferenceEquals(s, skin) && s.Name == name))
-            throw new ArgumentException(DomainStrings.FormatProject_DuplicateSkinName(name: name), nameof(name));
-        if (skin.Name == name) return;
-        Edit(DomainStrings.Project_RenameSkin, ProjectChange.Layers, () => skin.Name = name);
-    }
-
-    /// <summary>
-    /// 스킨 삭제(그 스킨의 셀도 지움). 첫 스킨을 지우면 다음 전체 스킨이 첫 스킨이 된다.
-    /// 지금 스킨이었으면 바로 앞(없으면 새 첫) 스킨을 고른다. 마지막 전체 스킨은 지울 수 없다(<see cref="InvalidOperationException"/>).
-    /// 부위 전용 스킨은 언제든 지울 수 있다.
-    /// </summary>
-    public void DeleteSkin(Layer group, Skin skin)
-    {
-        int index = RequireSkin(group, skin);
-        if (skin.Owner is null && GroupSkinCount(group) <= 1) throw new InvalidOperationException(DomainStrings.Project_CannotDeleteLastSkin);
-        bool wasActive = ReferenceEquals(group.ActiveSkin, skin);
-        Edit(DomainStrings.Project_DeleteSkin, ProjectChange.Layers | ProjectChange.Pixels, () =>
-        {
-            var skins = group.SkinList;
-            foreach (var part in ChildrenOf(group))
-            {
-                foreach (var (key, _) in CelsOf(part))
-                    if (index == 0 ? key.Skin is null : ReferenceEquals(key.Skin, skin)) _cels.Remove(key);
-                if (index == 0)
-                    foreach (var (key, cel) in CelsOf(part))
-                        if (ReferenceEquals(key.Skin, skins[1]))
-                        {
-                            _cels.Remove(key);
-                            _cels[key with { Skin = null }] = cel;
-                        }
-            }
-            skins.RemoveAt(index);
-            if (wasActive) group.SetActiveSkinRaw(skins[Math.Max(0, index - 1)]);
-        });
-    }
-
-    /// <summary>
-    /// 전체 스킨 순서 바꾸기(<see cref="Layer.Skins"/> 안 번호, <paramref name="to"/> = 옮긴 뒤 위치). 첫 스킨이 바뀌면 새 첫 스킨이 기본 스킨이 된다.
-    /// </summary>
-    public void MoveSkin(Layer group, int from, int to)
-    {
-        if (!group.IsGroup || !_layers.Contains(group)) throw new ArgumentException(DomainStrings.Project_GroupNotInProject, nameof(group));
-        var skins = group.SkinList;
-        int count = GroupSkinCount(group);
-        if (from < 0 || from >= count) throw new ArgumentOutOfRangeException(nameof(from));
-        to = Math.Clamp(to, 0, count - 1);
-        if (from == to) return;
-        Edit(DomainStrings.Project_ReorderSkin, ProjectChange.Layers | ProjectChange.Pixels, () =>
-        {
-            var oldBase = skins[0];
-            var skin = skins[from];
-            skins.RemoveAt(from);
-            skins.Insert(to, skin);
-            var newBase = skins[0];
-            if (ReferenceEquals(oldBase, newBase)) return;
-            // 첫 스킨 셀은 null 키라 키를 맞바꾼다: 옛 첫 스킨 셀 → 옛 첫 스킨 키, 새 첫 스킨 셀 → null 키.
-            foreach (var part in ChildrenOf(group))
-            {
-                var cels = CelsOf(part);
-                foreach (var (key, _) in cels)
-                    if (key.Skin is null || ReferenceEquals(key.Skin, newBase)) _cels.Remove(key);
-                foreach (var (key, cel) in cels)
-                {
-                    if (key.Skin is null) _cels[key with { Skin = oldBase }] = cel;
-                    else if (ReferenceEquals(key.Skin, newBase)) _cels[key with { Skin = null }] = cel;
-                }
-            }
-        });
-    }
-
-    /// <summary>
-    /// 스킨 하나를 같은 목록 안에서 앞(−)/뒤(+)로: 전체 스킨은 전체 스킨끼리(<see cref="MoveSkin(Layer, int, int)"/>), 부위 전용 스킨은 같은 부위 전용 스킨끼리.
-    /// 끝이면 그대로. 실행취소됨.
-    /// </summary>
-    public void MoveSkin(Layer group, Skin skin, int delta)
-    {
-        RequireSkin(group, skin);
-        if (skin.Owner is null)
-        {
-            int i = group.SkinList.IndexOf(skin);
-            MoveSkin(group, i, i + delta);
-            return;
-        }
-        var own = group.SkinList.Where(s => ReferenceEquals(s.Owner, skin.Owner)).ToList();
-        int at = own.IndexOf(skin), target = Math.Clamp(at + delta, 0, own.Count - 1);
-        if (at == target) return;
-        Edit(DomainStrings.Project_ReorderSkin, ProjectChange.Layers, () =>
-        {
-            // 같은 부위 전용 스킨들이 차지한 자리는 그대로 두고, 그 자리 안에서 순서만 옮긴다.
-            var skins = group.SkinList;
-            var slots = Enumerable.Range(0, skins.Count).Where(i => ReferenceEquals(skins[i].Owner, skin.Owner)).ToList();
-            own.RemoveAt(at);
-            own.Insert(target, skin);
-            for (int k = 0; k < slots.Count; k++) skins[slots[k]] = own[k];
-        });
-    }
-
-    /// <summary>
-    /// 그룹의 지금 스킨(착장) 고르기(전체 스킨만). 재정의가 없는 부위만 따라 바뀐다(재정의한 부위는 그대로 — <see cref="ResetPartSkins"/>로 되돌림).
-    /// 보기 전환이라 실행취소 기록에는 남기지 않지만 파일에 저장되고 프레임 시트 결과가 바뀌므로 수정됨 표시를 켠다. 열린 스트로크는 먼저 확정한다.
-    /// </summary>
-    public void SetActiveSkin(Layer group, Skin skin)
-    {
-        RequireSkin(group, skin);
-        if (skin.Owner is not null) throw new ArgumentException(DomainStrings.Project_PartSkinCannotApplyToGroup, nameof(skin));
-        if (ReferenceEquals(group.ActiveSkin, skin)) return;
-        CommitOpenStrokes();
-        group.SetActiveSkinRaw(skin);
-        NotifyChanged(ProjectChange.Layers | ProjectChange.Pixels);
-    }
-
-    /// <summary>
-    /// 부위 하나만 보일 스킨 고르기(재정의, null = 그룹 스킨을 따름 — 그룹 전체 스킨이나 이 부위 전용 스킨). 그룹 스킨과 같은 스킨을 골라도 재정의로 남는다.
-    /// <see cref="SetActiveSkin"/>과 같이 실행취소 기록 없이 수정됨 표시를 켜고 파일에 저장된다. 부위가 아니거나 고를 수 없는 스킨이면 <see cref="ArgumentException"/>.
-    /// </summary>
-    public void SetPartSkin(Layer part, Skin? skin)
-    {
-        var group = RequireGroupPart(part);
-        if (skin is not null)
-        {
-            RequireSkin(group, skin);
-            if (skin.Owner is not null && !ReferenceEquals(skin.Owner, part))
-                throw new ArgumentException(DomainStrings.Project_OtherPartSkin, nameof(skin));
-        }
-        if (ReferenceEquals(part.SkinOverride, skin)) return;
-        CommitOpenStrokes();
-        part.SetSkinOverrideRaw(skin);
-        NotifyChanged(ProjectChange.Layers | ProjectChange.Pixels);
-    }
-
-    /// <summary>그룹의 모든 부위 재정의를 지워 그룹 스킨을 따르게 한다(바뀐 것이 있으면 true, 실행취소 기록 없음).</summary>
-    public bool ResetPartSkins(Layer group)
-    {
-        if (!group.IsGroup || !_layers.Contains(group)) throw new ArgumentException(DomainStrings.Project_GroupNotInProject, nameof(group));
-        var parts = ChildrenOf(group).Where(p => p.SkinOverrideRaw is not null).ToList();
-        if (parts.Count == 0) return false;
-        CommitOpenStrokes();
-        bool visible = parts.Any(p => p.SkinOverride is not null);
-        foreach (var p in parts) p.SetSkinOverrideRaw(null);
-        if (visible) NotifyChanged(ProjectChange.Layers | ProjectChange.Pixels);
-        return visible;
-    }
-
-    /// <summary>
-    /// 파일 읽기용: 그룹마다 스킨 목록을 바로잡는다 — 부위 전용 스킨의 주인이 그 그룹의 부위가 아니면 전체 스킨으로, 전체 스킨을 앞으로 모은다
-    /// (첫 스킨은 늘 전체 스킨). 셀은 스킨 객체로 걸려 있어 그대로다(첫 스킨이 바뀌는 순서 문제는 생기지 않도록 첫 스킨은 처음부터 전체 스킨).
-    /// </summary>
-    internal void NormalizeSkins()
-    {
-        foreach (var g in _layers.Where(l => l.IsGroup))
-        {
-            var children = ChildrenOf(g);
-            var list = g.SkinList;
-            foreach (var s in list)
-                if (s.Owner is not null && !children.Contains(s.Owner)) s.Owner = null;
-            if (list[0].Owner is not null) list[0].Owner = null;
-            var ordered = list.Where(s => s.Owner is null).Concat(list.Where(s => s.Owner is not null)).ToList();
-            if (!ordered.SequenceEqual(list)) g.ReplaceSkinsRaw(ordered);
-        }
-    }
-
-    // ───────────── 착장 프리셋 ─────────────
-
-    private void RequireOutfit(Outfit outfit)
-    {
-        if (!_outfits.Contains(outfit)) throw new ArgumentException(DomainStrings.Project_OutfitNotInProject, nameof(outfit));
-    }
-
-    /// <summary>겹치지 않는 착장 이름(겹치면 " 2", " 3" …). 비면 "착장".</summary>
-    public string UniqueOutfitName(string baseName, Outfit? self = null)
-    {
-        baseName = baseName.Trim();
-        if (baseName.Length == 0) baseName = DomainStrings.Project_DefaultOutfitName;
-        bool Taken(string n) => _outfits.Any(o => !ReferenceEquals(o, self) && o.Name == n);
-        if (!Taken(baseName)) return baseName;
-        for (int i = 2; ; i++)
-            if (!Taken($"{baseName} {i}")) return $"{baseName} {i}";
-    }
-
-    /// <summary>지금 착장: 그룹마다(위 그룹부터) 지금 스킨 + 재정의한 부위.</summary>
-    private (OutfitSlot[] Slots, OutfitPart[] Parts) CaptureOutfit()
-    {
-        var slots = new List<OutfitSlot>();
-        var parts = new List<OutfitPart>();
-        for (int i = _layers.Count - 1; i >= 0; i--)
-        {
-            var l = _layers[i];
-            if (l.IsGroup) slots.Add(new OutfitSlot(l, l.ActiveSkin!));
-            else if (l is { IsPart: true, SkinOverride: { } over }) parts.Add(new OutfitPart(l, over));
-        }
-        return ([.. slots], [.. parts]);
-    }
-
-    /// <summary>지금 착장을 새 착장 프리셋으로 저장한다(맨 끝, 이름은 겹치지 않게, 실행취소됨).</summary>
-    public Outfit SaveOutfit(string? name = null)
-    {
-        var (slots, parts) = CaptureOutfit();
-        var outfit = new Outfit(UniqueOutfitName(name ?? ""), slots, parts);
-        Edit(DomainStrings.Project_SaveOutfit, ProjectChange.Layers | ProjectChange.Settings, () => _outfits.Add(outfit));
-        return outfit;
-    }
-
-    /// <summary>착장 프리셋 내용을 지금 착장으로 바꾼다(이름은 그대로, 실행취소됨).</summary>
-    public void OverwriteOutfit(Outfit outfit)
-    {
-        RequireOutfit(outfit);
-        var (slots, parts) = CaptureOutfit();
-        Edit(DomainStrings.Project_OverwriteOutfit, ProjectChange.Layers | ProjectChange.Settings, () =>
-        {
-            outfit.Slots = slots;
-            outfit.Parts = parts;
-        });
-    }
-
-    /// <summary>착장 이름 바꾸기. 비었거나 같은 이름이 있으면 <see cref="ArgumentException"/>.</summary>
-    public void RenameOutfit(Outfit outfit, string name)
-    {
-        RequireOutfit(outfit);
-        name = name.Trim();
-        if (name.Length == 0) throw new ArgumentException(DomainStrings.Project_EmptyOutfitName, nameof(name));
-        if (_outfits.Any(o => !ReferenceEquals(o, outfit) && o.Name == name))
-            throw new ArgumentException(DomainStrings.FormatProject_DuplicateOutfitName(name: name), nameof(name));
-        if (outfit.Name == name) return;
-        Edit(DomainStrings.Project_RenameOutfit, ProjectChange.Layers | ProjectChange.Settings, () => outfit.Name = name);
-    }
-
-    /// <summary>착장 삭제(프레임 시트 내보내기 착장 목록에서도 뺀다, 실행취소됨).</summary>
-    public void DeleteOutfit(Outfit outfit)
-    {
-        RequireOutfit(outfit);
-        Edit(DomainStrings.Project_DeleteOutfit, ProjectChange.Layers | ProjectChange.Settings, () =>
-        {
-            _outfits.Remove(outfit);
-            foreach (var o in Export.AllSheets.SelectMany(s => (SheetOptions?[])[s.Common, s.PartsOverride]))
-                if (o is not null && o.Outfits.Contains(outfit)) o.Outfits = o.Outfits.Where(x => !ReferenceEquals(x, outfit)).ToArray();
-        });
-    }
-
-    /// <summary>착장 순서 바꾸기(<paramref name="to"/> = 옮긴 뒤 위치, 실행취소됨).</summary>
-    public void MoveOutfit(int from, int to)
-    {
-        var outfit = _outfits[from];
-        to = Math.Clamp(to, 0, _outfits.Count - 1);
-        if (from == to) return;
-        Edit(DomainStrings.Project_ReorderOutfit, ProjectChange.Layers | ProjectChange.Settings, () =>
-        {
-            _outfits.RemoveAt(from);
-            _outfits.Insert(to, outfit);
-        });
-    }
-
-    /// <summary>착장 항목 중 지금 프로젝트에서 쓸 수 없는 것(지운 그룹·부위·스킨)의 설명. 비면 모두 쓸 수 있다.</summary>
-    public IReadOnlyList<string> MissingOutfitEntries(Outfit outfit)
-    {
-        var missing = new List<string>();
-        foreach (var (group, skin) in outfit.Slots)
-        {
-            if (!_layers.Contains(group)) missing.Add(DomainStrings.FormatProject_MissingOutfitGroup(name: group.Name));
-            else if (!group.SkinList.Contains(skin)) missing.Add(DomainStrings.FormatProject_MissingOutfitGroupSkin(group: group.Name, skin: skin.Name));
-        }
-        foreach (var (part, skin) in outfit.Parts)
-        {
-            if (!_layers.Contains(part) || part.Parent is not { IsGroup: true } g) missing.Add(DomainStrings.FormatProject_MissingOutfitPart(name: part.Name));
-            else if (!g.SkinList.Contains(skin)) missing.Add(DomainStrings.FormatProject_MissingOutfitPartSkin(part: part.Name, skin: skin.Name));
-        }
-        return missing;
-    }
-
-    /// <summary>
-    /// 착장 프리셋을 지금 착장으로 입힌다: 착장에 든 그룹마다 스킨을 고르고 그 부위들의 재정의를 착장대로(없으면 그룹 따름) 맞춘다.
-    /// 착장에 없는 그룹(나중에 만든 그룹)은 그대로 둔다. 쓸 수 없는 항목(지운 그룹·부위·스킨)은 건너뛰고 그 설명을 돌려준다.
-    /// 착장 바꾸기와 같이 실행취소 기록 없이 수정됨 표시를 켠다.
-    /// </summary>
-    public IReadOnlyList<string> ApplyOutfit(Outfit outfit)
-    {
-        RequireOutfit(outfit);
-        CommitOpenStrokes();
-        bool changed = false;
-        foreach (var (group, skin) in outfit.Slots)
-        {
-            if (!_layers.Contains(group)) continue;
-            if (group.SkinList.Contains(skin) && !ReferenceEquals(group.ActiveSkin, skin))
-            {
-                group.SetActiveSkinRaw(skin);
-                changed = true;
-            }
-            foreach (var part in ChildrenOf(group))
-            {
-                var over = OutfitOverride(outfit, group, part);
-                if (ReferenceEquals(part.SkinOverride, over)) continue;
-                part.SetSkinOverrideRaw(over);
-                changed = true;
-            }
-        }
-        if (changed) NotifyChanged(ProjectChange.Layers | ProjectChange.Pixels);
-        return MissingOutfitEntries(outfit);
-    }
-
-    /// <summary>
-    /// 착장을 입히면(<see cref="ApplyOutfit"/>) 바뀔 잠긴 레이어들: 지금 스킨이 바뀔 잠긴 그룹, 재정의가 바뀔 잠긴 부위(그룹이 잠긴 부위 포함).
-    /// 비면 잠긴 레이어는 그대로다.
-    /// </summary>
-    public IReadOnlyList<Layer> LockedLayersChangedBy(Outfit outfit)
-    {
-        RequireOutfit(outfit);
-        var changed = new List<Layer>();
-        foreach (var (group, skin) in outfit.Slots)
-        {
-            if (!_layers.Contains(group)) continue;
-            if (group.Locked && group.SkinList.Contains(skin) && !ReferenceEquals(group.ActiveSkin, skin)) changed.Add(group);
-            foreach (var part in ChildrenOf(group))
-                if ((part.Locked || group.Locked) && !ReferenceEquals(part.SkinOverride, OutfitOverride(outfit, group, part)))
-                    changed.Add(part);
-        }
-        return changed;
-    }
-
-    /// <summary>착장을 입혔을 때 부위의 재정의: 착장의 부위 항목(그룹 스킨 목록에 있을 때), 없으면 null(그룹 따름).</summary>
-    private static Skin? OutfitOverride(Outfit outfit, Layer group, Layer part)
-    {
-        Skin? over = null;
-        foreach (var e in outfit.Parts)
-            if (ReferenceEquals(e.Part, part) && group.SkinList.Contains(e.Skin)) over = e.Skin;
-        return over;
-    }
-
-    /// <summary>
-    /// 착장을 입혔을 때 부위가 보일 스킨: 착장의 부위 항목 → 착장의 그룹 항목 → (착장에 없거나 쓸 수 없으면) 지금 보이는 스킨.
-    /// <paramref name="outfit"/>이 null이면 지금 보이는 스킨.
-    /// </summary>
-    public static Skin? SkinUnder(Layer part, Outfit? outfit)
-    {
-        if (outfit is null || part.Parent is not { IsGroup: true } g) return part.ShownSkin;
-        foreach (var e in outfit.Parts)
-            if (ReferenceEquals(e.Part, part) && g.SkinList.Contains(e.Skin)) return e.Skin;
-        foreach (var s in outfit.Slots)
-            if (ReferenceEquals(s.Group, g) && g.SkinList.Contains(s.Skin)) return s.Skin;
-        return part.ShownSkin;
-    }
-
-    /// <summary>
-    /// 프레임을 착장 프리셋으로 입혀 합성한 새 이미지(지금 착장은 바꾸지 않음, <paramref name="outfit"/> null = 지금 착장).
-    /// <paramref name="excluded"/>에 든 최상위 레이어(그룹이면 그 부위 전부)는 빼고, 보이기·불투명도는 <see cref="Flatten"/>과 같다.
-    /// <paramref name="cache"/>를 주면 잔상 원본 등을 이웃 프레임과 나눠 쓴다(결과는 같다).
-    /// </summary>
-    public PixelImage FlattenOutfit(int frameIndex, Outfit? outfit, IReadOnlyCollection<Layer>? excluded = null, EffectRenderCache? cache = null)
-    {
-        var frame = _frames[frameIndex];
-        bool Excluded(Layer layer) => excluded is { Count: > 0 } && excluded.Contains(layer);
-        PixelImage? PartCel(Layer part) => _cels.GetValueOrDefault(new(part, frame, SkinKey(part, SkinUnder(part, outfit))));
-        PixelImage? Cels(Layer layer, int f) => layer.IsPart ? _cels.GetValueOrDefault(new(layer, _frames[f], SkinKey(layer, SkinUnder(layer, outfit)))) : RenderCel(layer, f);
-        var steps = new List<RenderStep>();
-        foreach (var layer in _layers)
-        {
-            if (layer.IsGroup)
-            {
-                if (layer.HasActiveEffectsAt(frameIndex) && layer.Visible && !Excluded(layer)
-                    && GroupStepOf(layer, frameIndex, part => part.Visible ? PartCel(part) : null, Cels, layer.Opacity) is { } group)
-                    steps.Add(group);
-                continue;
-            }
-            if (layer.Parent is { IsGroup: true } pg && pg.HasActiveEffectsAt(frameIndex)) continue; // 그룹 차례에 함께 그린다
-            if (!(layer.Visible && (layer.Parent?.Visible ?? true))) continue;
-            if (Excluded(layer) || (layer.Parent is { } g && Excluded(g))) continue;
-            if ((layer.IsPart ? PartCel(layer) : RenderCel(layer, frameIndex)) is { } cel) steps.Add(CelStepOf(layer, frameIndex, cel, DrawOpacity(layer), Cels));
-        }
-        return new RenderPlan(_width, _height, steps).Render(cache is null ? null : new RenderPlanOptions { Cache = cache });
     }
 
     // ───────────── 프레임 ─────────────
@@ -2493,49 +1649,12 @@ public sealed partial class SpriteProject
     }
     internal void AddFrameRaw(Frame frame) => _frames.Add(frame);
     internal void AddTagRaw(AnimationTag tag) => _tags.Add(tag);
-    internal void AddOutfitRaw(Outfit outfit) => _outfits.Add(outfit);
-    /// <summary>파일 읽기·가져오기용: 셀 하나를 넣는다. <paramref name="skin"/>이 null이거나 첫 스킨이면 첫 스킨(일반 레이어) 셀.</summary>
+    internal void AddSkinPresetRaw(SkinPreset preset) => _presets.Add(preset);
+    /// <summary>파일 읽기·가져오기용: 셀 하나를 넣는다. <paramref name="skin"/>이 null이거나 첫 스킨이면 첫 스킨 셀.</summary>
     internal void SetCelRaw(Layer layer, Frame frame, PixelImage image, Skin? skin = null) => _cels[new(layer, frame, SkinKey(layer, skin))] = image;
 
-    /// <summary>파일 쓰기용: 스킨 자신의 셀(<paramref name="skin"/> null = 첫 스킨·일반 레이어).</summary>
+    /// <summary>파일 쓰기용: 스킨 자신의 셀(<paramref name="skin"/> null = 첫 스킨).</summary>
     internal PixelImage? GetCelRaw(Layer layer, Frame frame, Skin? skin) => _cels.GetValueOrDefault(new(layer, frame, SkinKey(layer, skin)));
-
-    /// <summary>
-    /// 파일 읽기용: 그룹이 없는(또는 그룹이 아닌 부모를 가진) 부위는 일반 레이어로 바꾸고, 그룹의 부위를 그룹 바로 아래로 모은다.
-    /// 바꾼 것이 있으면 true.
-    /// </summary>
-    internal bool NormalizeHierarchy()
-    {
-        bool changed = false;
-        foreach (var layer in _layers)
-        {
-            if (layer.IsPart && (layer.Parent is not { IsGroup: true } parent || !_layers.Contains(parent)))
-            {
-                layer.Kind = LayerKind.Normal;
-                layer.Parent = null;
-                changed = true;
-            }
-            else if (!layer.IsPart && layer.Parent is not null)
-            {
-                layer.Parent = null;
-                changed = true;
-            }
-        }
-        var ordered = new List<Layer>(_layers.Count);
-        foreach (var layer in _layers)
-        {
-            if (layer.IsPart) continue;
-            if (layer.IsGroup) ordered.AddRange(_layers.Where(l => ReferenceEquals(l.Parent, layer)));
-            ordered.Add(layer);
-        }
-        if (!ordered.SequenceEqual(_layers))
-        {
-            _layers.Clear();
-            _layers.AddRange(ordered);
-            changed = true;
-        }
-        return changed;
-    }
 
     private static void ValidateSize(int width, int height)
     {
@@ -2599,12 +1718,12 @@ public sealed partial class SpriteProject
     private readonly record struct LayerState(
         Layer Layer, string Name, bool Visible, bool Locked, byte Opacity, LayerKind Kind, Layer? Parent,
         Size PartSize, Point PartOffset, Pivot Pivot, SpriteBorder PartBorder, Rectangle? PartSourceRect,
-        (Skin Skin, string Name, Layer? Owner)[]? Skins, Skin? ActiveSkin, IReadOnlyList<LayerEffect> Effects, GroupLayout? AutoLayout,
+        (Skin Skin, string Name)[]? Skins, Skin? ActiveSkin, IReadOnlyList<LayerEffect> Effects, GroupLayout? AutoLayout,
         TilemapData? Tiles)
     {
         public static LayerState Of(Layer l) => new(l, l.Name, l.Visible, l.Locked, l.Opacity, l.Kind, l.Parent,
             l.PartSize, l.PartOffset, l.Pivot, l.PartBorder, l.PartSourceRect,
-            l.IsGroup ? l.SkinList.Select(s => (s, s.Name, s.Owner)).ToArray() : null, l.IsGroup ? l.ActiveSkin : null, l.Effects, l.AutoLayout, l.Tiles);
+            l.IsTilemap ? null : l.SkinList.Select(s => (s, s.Name)).ToArray(), l.ActiveSkin, l.Effects, l.AutoLayout, l.Tiles);
 
         /// <summary>
         /// 상태를 되돌린다. 지금 스킨(착장)은 실행취소 대상이 아니므로 스킨 목록 구성이 같으면 지금 고른 스킨을 그대로 두고,
@@ -2631,11 +1750,7 @@ public sealed partial class SpriteProject
                 var current = Layer.ActiveSkinRaw;
                 var restored = Skins.Select(s => s.Skin).ToList();
                 bool sameSet = Layer.SkinList.Count == restored.Count && restored.All(Layer.SkinList.Contains);
-                foreach (var (skin, name, owner) in Skins)
-                {
-                    skin.Name = name;
-                    skin.Owner = owner;
-                }
+                foreach (var (skin, name) in Skins) skin.Name = name;
                 Layer.ReplaceSkinsRaw(restored);
                 Layer.SetActiveSkinRaw(sameSet && current is not null && restored.Contains(current) ? current : ActiveSkin);
             }
@@ -2643,7 +1758,7 @@ public sealed partial class SpriteProject
         }
     }
 
-    /// <summary>구조 상태 사본(그룹 접힘은 제외). 셀 이미지는 참조만 담는다(구조 편집은 셀을 새 이미지로 바꿔 넣으므로 안전).</summary>
+    /// <summary>구조 상태 사본(접힘·지금 스킨 선택은 보기 상태라 되돌리지 않음 — <see cref="LayerState.Apply"/>). 셀 이미지는 참조만 담는다(구조 편집은 셀을 새 이미지로 바꿔 넣으므로 안전).</summary>
     private sealed partial class Snapshot
     {
         private int _w, _h;
@@ -2652,7 +1767,7 @@ public sealed partial class SpriteProject
         /// <summary>캔버스 피벗의 대표 레이어(<see cref="SpriteProject.PivotLayer"/>).</summary>
         private Layer? _pivotLayer;
         private (AnimationTag Tag, AnimationTag State)[] _tags = [];
-        private (Outfit Outfit, string Name, IReadOnlyList<OutfitSlot> Slots, IReadOnlyList<OutfitPart> Parts)[] _outfits = [];
+        private (SkinPreset Preset, string Name, IReadOnlyList<SkinPresetEntry> Entries)[] _presets = [];
         private KeyValuePair<CelKey, PixelImage>[] _cels = [];
         private KeyValuePair<CelKey, CelOverflow>[] _overflow = [];
         private SpriteSettings _sprite = new();
@@ -2669,7 +1784,7 @@ public sealed partial class SpriteProject
                 f.PartShifts.Where(kv => p._layers.Contains(kv.Key)).ToArray())).ToArray(),
             _pivotLayer = p.PivotLayer,
             _tags = p._tags.Select(t => (t, t.Clone())).ToArray(),
-            _outfits = p._outfits.Select(o => (o, o.Name, o.Slots, o.Parts)).ToArray(),
+            _presets = p._presets.Select(o => (o, o.Name, o.Entries)).ToArray(),
             _cels = p._cels.ToArray(),
             _overflow = p._overflow.ToArray(),
             _sprite = p.Sprite.Clone(),
@@ -2707,13 +1822,12 @@ public sealed partial class SpriteProject
                 tag.Color = state.Color;
                 p._tags.Add(tag);
             }
-            p._outfits.Clear();
-            foreach (var (outfit, name, slots, parts) in _outfits)
+            p._presets.Clear();
+            foreach (var (preset, name, entries) in _presets)
             {
-                outfit.Name = name;
-                outfit.Slots = slots;
-                outfit.Parts = parts;
-                p._outfits.Add(outfit);
+                preset.Name = name;
+                preset.Entries = entries;
+                p._presets.Add(preset);
             }
             p._cels.Clear();
             foreach (var kv in _cels) p._cels[kv.Key] = kv.Value;

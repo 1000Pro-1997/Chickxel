@@ -7,9 +7,10 @@ using Chickxel.Core.Model;
 namespace GuideShots;
 
 /// <summary>
-/// 부위·스킨 장 예시 프로젝트: 늑대귀 모험가(49×98)를 Head/Body/Legs 부위로 잘라 "캐릭터" 그룹에 넣고(스킨: 기본·knight·zombie, Head 전용 "모자"),
-/// 그 위 "장비" 그룹(스킨: 없음·검, 부위 Weapon)과 착장 프리셋 하나, 머리가 까딱이는 4프레임 idle 태그를 둔다.
-/// 저장한 상태: 캐릭터 = knight, 장비 = 검, 부위 재정의 없음.
+/// 부위·스킨 장 예시 프로젝트: 늑대귀 모험가(49×98)를 Head/Body/Legs 레이어로 잘라 빈 부모 레이어 "캐릭터" 아래에 넣고
+/// (하위 트리 스킨: 기본·knight·zombie, Head에만 "모자"), 그 위 빈 부모 "장비"(스킨: 없음·검, 자식 Weapon)와
+/// 스킨 프리셋 둘(Knight set·Zombie), 머리가 까딱이는 4프레임 idle 태그를 둔다.
+/// 저장한 상태: 캐릭터 하위 트리 = knight, 장비 하위 트리 = 검.
 /// </summary>
 internal static class PartsSample
 {
@@ -21,7 +22,7 @@ internal static class PartsSample
     public const string HatSkin = "Hat";
     public const string NoneSkin = "None";
     public const string SwordSkin = "Sword";
-    public const string OutfitName = "Knight set";
+    public const string PresetName = "Knight set";
 
     /// <summary>예시 프로젝트를 만들어 저장하고 그 경로를 돌려준다.</summary>
     public static string Build(ShotKit k, Action<SpriteProject>? tweak = null)
@@ -31,8 +32,8 @@ internal static class PartsSample
         for (int i = 1; i < 4; i++) p.AddFrame();
         p.AddTag("idle", 0, 3);
 
-        // ── 캐릭터 그룹: 아래 부위부터 넣어 Head가 맨 위 ──
-        var group = p.AddGroup(GroupName);
+        // ── 캐릭터(빈 부모 레이어): 아래 자식부터 넣어 Head가 맨 위 ──
+        var group = p.AddPart(null, GroupName, CanvasW, CanvasH, Point.Empty);
         var bands = new (string Name, int Top, int Bottom, bool Bob)[] { ("Legs", 72, wolf.Height, false), ("Body", 40, 72, false), ("Head", 0, 40, true) };
         var parts = new Dictionary<string, (Layer Part, PixelImage Image)>();
         foreach (var (name, top, bottom, bob) in bands)
@@ -43,45 +44,44 @@ internal static class PartsSample
             var part = p.AddPart(group, name, r.Width, r.Height + (bob ? 1 : 0), new Point(CharX + r.X, CharY + r.Y));
             parts[name] = (part, img);
         }
-        // 첫 스킨 이름(언어별)
-        p.RenameSkin(group, group.Skins[0], BaseSkin);
-        var knight = p.AddSkin(group, "knight");
-        var zombie = p.AddSkin(group, "zombie");
+        // 첫 스킨 이름(언어별) — 부모와 자식 모두
+        foreach (var l in Subtree(p, group)) p.RenameSkin(l, l.Skins[0], BaseSkin);
+        AddSubtreeSkin(p, group, "knight");
+        AddSubtreeSkin(p, group, "zombie");
         var head = parts["Head"].Part;
-        var hat = p.AddPartSkin(head, HatSkin);
-        p.SetPartSkin(head, null);
+        // Head에만 있는 스킨(예전 "부위 전용 스킨" 자리)
+        var hat = p.AddSkin(head, HatSkin);
 
-        p.SetActiveSkin(group, group.Skins[0]);
+        Wear(p, group, BaseSkin);
         foreach (var (name, (part, img)) in parts) FillFrames(p, part, img, name == "Head");
-        // 스킨은 다른 스킨 그림을 빌려 오지 않으므로(빈 칸은 비어 보임) 스킨마다 모든 부위를 그린다.
-        p.SetActiveSkin(group, knight);
+        // 스킨은 다른 스킨 그림을 빌려 오지 않으므로(빈 칸은 비어 보임) 스킨마다 모든 레이어를 그린다.
+        Wear(p, group, "knight");
         FillFrames(p, head, parts["Head"].Image, true);
         FillFrames(p, parts["Body"].Part, Recolor(parts["Body"].Image, Knight), false);
         FillFrames(p, parts["Legs"].Part, Recolor(parts["Legs"].Image, Knight), false);
-        p.SetActiveSkin(group, zombie);
+        Wear(p, group, "zombie");
         FillFrames(p, head, Recolor(parts["Head"].Image, Zombie), true);
         FillFrames(p, parts["Body"].Part, Recolor(parts["Body"].Image, Zombie), false);
         FillFrames(p, parts["Legs"].Part, Recolor(parts["Legs"].Image, Zombie), false);
-        p.SetPartSkin(head, hat);
+        p.SetActiveSkin(head, hat);
         FillFrames(p, head, DrawHat(parts["Head"].Image), true);
-        p.SetPartSkin(head, null);
 
-        // ── 장비 그룹(위에 겹침): 첫 스킨 "없음"은 비워 둠 ──
-        var gear = p.AddGroup(GearName);
+        // ── 장비(빈 부모 레이어, 위에 겹침): 첫 스킨 "없음"은 비워 둠 ──
+        var gear = p.AddPart(null, GearName, CanvasW, CanvasH, Point.Empty);
         var weapon = p.AddPart(gear, "Weapon", 7, 34, new Point(CharX + 40, CharY + 36));
-        p.RenameSkin(gear, gear.Skins[0], NoneSkin);
-        var sword = p.AddSkin(gear, SwordSkin);
-        p.SetActiveSkin(gear, sword);
+        foreach (var l in Subtree(p, gear)) p.RenameSkin(l, l.Skins[0], NoneSkin);
+        AddSubtreeSkin(p, gear, SwordSkin);
         p.DeleteLayer(p.IndexOf(p.Layers.First(l => l.Kind == LayerKind.Normal)));
         FillFrames(p, weapon, DrawSword(), false);
 
-        p.SetActiveSkin(group, knight);
-        p.SaveOutfit(OutfitName);
-        p.SetActiveSkin(group, zombie);
-        p.SetActiveSkin(gear, gear.Skins[0]);
-        p.SaveOutfit("Zombie");
-        p.SetActiveSkin(group, knight);
-        p.SetActiveSkin(gear, sword);
+        Wear(p, group, "knight");
+        Wear(p, gear, SwordSkin);
+        p.SaveSkinPreset(PresetName);
+        Wear(p, group, "zombie");
+        Wear(p, gear, NoneSkin);
+        p.SaveSkinPreset("Zombie");
+        Wear(p, group, "knight");
+        Wear(p, gear, SwordSkin);
 
         p.Edit("export", ProjectChange.Settings, () =>
         {
@@ -115,6 +115,27 @@ internal static class PartsSample
     {
         Ctx(main).SetCurrentLayer(Index(main, layerName));
         k.Settle(250);
+    }
+
+    /// <summary>레이어와 그 모든 자손(위 → 아래).</summary>
+    public static IReadOnlyList<Layer> Subtree(SpriteProject p, Layer layer) => [layer, .. p.DescendantsOf(layer).Reverse()];
+
+    /// <summary>하위 트리 전체에 같은 이름의 빈 스킨을 더한다(예전 "그룹 새 스킨"). 함께 생기는 같은 이름 프리셋은 지워 예시 프리셋만 남긴다.</summary>
+    private static void AddSubtreeSkin(SpriteProject p, Layer layer, string name)
+        => p.DeleteSkinPreset(p.AddSkinToSubtree(layer, name));
+
+    /// <summary>하위 트리에서 이 이름의 스킨이 있는 레이어마다 그 스킨을 입힌다(예전 "그룹 스킨 고르기").</summary>
+    public static void Wear(SpriteProject p, Layer layer, string skin)
+    {
+        foreach (var l in Subtree(p, layer))
+            if (l.Skins.FirstOrDefault(x => x.Name == skin) is { } s) p.SetActiveSkin(l, s);
+    }
+
+    /// <summary>열린 창에서 <see cref="Wear(SpriteProject, Layer, string)"/>(화면 갱신은 편집 문맥을 거침).</summary>
+    public static void Wear(EditorContext ctx, Layer layer, string skin)
+    {
+        foreach (var l in Subtree(ctx.Project!, layer))
+            if (l.Skins.FirstOrDefault(x => x.Name == skin) is { } s) ctx.SetActiveSkin(l, s);
     }
 
     // ───────────── 그림 ─────────────

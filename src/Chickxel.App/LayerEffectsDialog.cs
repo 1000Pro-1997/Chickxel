@@ -131,6 +131,7 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
             if (_syncing) return;
             ShowSettings();
             UpdateButtons();
+            SyncScope();
             SyncPlayback(restart: true);
             SyncStripRange();
         };
@@ -206,7 +207,7 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
         ToolTip.SetTip(_loop, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_0500474F59);
         _timer.Tick += (_, _) => NextPreviewFrame();
         var right = Ui.Stack(
-            Ui.Row(_play, _effectOnly, _loop, Ui.InfoBadge(Intro(layer))).HelpAt(HelpPage, anchor: PreviewAnchor),
+            Ui.Row(_play, _effectOnly, _loop, Ui.InfoBadge(Intro(_project, layer))).HelpAt(HelpPage, anchor: PreviewAnchor),
             _caption.HelpAt(HelpPage, anchor: PreviewAnchor),
             _preview.HelpAt(HelpPage, anchor: PreviewAnchor),
             BuildFrameStrip().HelpAt(HelpPage, anchor: StripAnchor));
@@ -219,6 +220,7 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
         Body.Children.Add(root);
 
         RebuildList(_effects.Count == 0 ? -1 : focus >= 0 && focus < _effects.Count ? focus : 0);
+        SyncScope();
         AttachScriptEvents();
         NumberScrub.Started += OnScrubStarted;
         NumberScrub.Ended += OnScrubEnded;
@@ -257,11 +259,11 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
         ReleaseHold();
     }
 
-    private static string Intro(Layer layer)
+    private static string Intro(SpriteProject project, Layer layer)
         => UiStrings.S_LayerEffectsDialog_Intro_AA476847D8
            + UiStrings.S_LayerEffectsDialog_Intro_3052848546
            + UiStrings.S_LayerEffectsDialog_Intro_C71F0948BE
-           + (layer.IsGroup ? UiStrings.S_LayerEffectsDialog_Intro_5F6126CBFA : "")
+           + (project.HasChildren(layer) ? UiStrings.LayerEffects_IntroChildren : "")
            + (layer.IsPart ? UiStrings.S_LayerEffectsDialog_Intro_03C1A71EB9 : "");
 
     // ───────────── 목록 ─────────────
@@ -282,6 +284,9 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
         if (_savePreset is not null) _savePreset.IsEnabled = block is not null;
         var (canBake, why) = CanBake(_project, _layer);
         var chosen = SelectedIndices();
+        // 자식까지 합친 그림 효과는 셀이 없는 합친 그림에 들므로 구울 수 없다(Core도 거절)
+        if (canBake && _project.HasChildren(_layer) && chosen.Any(i => _effects[i].IncludeChildren))
+            (canBake, why) = (false, UiStrings.LayerEffects_BakeChildrenEffect);
         _bake.IsEnabled = canBake && chosen.Any(i => _effects[i] is not MissingEffect);
         int extra = chosen.Count > 0 ? LayerEffects.BakeSet(_effects, chosen).Count - chosen.Count : 0;
         ToolTip.SetTip(_bake, why ?? (UiStrings.S_LayerEffectsDialog_UpdateButtons_ADC8E0220B
@@ -386,6 +391,8 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
             if (HoldRenders) _canvasHeld = true;
             else _project.PreviewLayerEffects(index, _effects);
         }
+        // 자식까지 합친 그림 원본은 이 레이어만 효과를 입힌 그림이라 효과가 바뀌면 다시 만든다
+        if (_subtreeScope) _sources.Clear();
         RestartRenders();
     }
 
@@ -403,7 +410,6 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
     /// <summary>레이어에 효과를 영구 적용할 수 있는지와, 안 되면 그 까닭.</summary>
     internal static (bool Ok, string? Why) CanBake(SpriteProject project, Layer layer)
     {
-        if (layer.IsGroup) return (false, UiStrings.S_LayerEffectsDialog_CanBake_F0B223C43A);
         if (layer.IsTilemap) return (false, UiStrings.Tile_PixelOnly);
         if (project.IsLayerLocked(project.IndexOf(layer))) return (false, UiStrings.S_LayerEffectsDialog_CanBake_235F1CD0DC);
         return (true, null);
@@ -610,6 +616,29 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
         _rangeRow = HelpRow(_form.Row(UiStrings.S_LayerEffectsDialog_AddRangeEditor_C773F4F9DC, all, from, Ui.Label("~"), to), "screen-effect-settings", "Effect range");
     }
 
+    /// <summary>
+    /// 자식이 있는 레이어에서 효과마다 적용 대상: "이 레이어만"(제 그림에) / "자식까지 합친 그림"(<see cref="LayerEffect.IncludeChildren"/>).
+    /// 클리핑 칸과 같은 "적용 대상" 줄 앞에 둔다(<see cref="AddClipEditor"/>). 자식이 없으면 null(보이지 않음).
+    /// </summary>
+    private TabStrip? ScopeEditor(int i)
+    {
+        if (!_project.HasChildren(_layer)) return null;
+        var scope = new TabStrip(TabStripKind.Segmented, UiStrings.LayerEffects_ScopeOwn, UiStrings.LayerEffects_ScopeChildren)
+        {
+            SelectedIndex = _effects[i].IncludeChildren ? 1 : 0,
+        };
+        scope.SetTip(0, UiStrings.LayerEffects_ScopeOwnTip).SetTip(1, UiStrings.LayerEffects_ScopeChildrenTip);
+        scope.SelectionChanged += (_, _) =>
+        {
+            bool children = scope.SelectedIndex == 1;
+            if (Selected != i || _effects[i].IncludeChildren == children) return;
+            Update(i, _effects[i] with { IncludeChildren = children });
+            UpdateButtons();
+            SyncScope();
+        };
+        return scope;
+    }
+
     /// <summary>고른 효과를 앞의 비클리핑 효과에 클리핑하는 칸(그 효과만 그려졌다고 보고 그림).</summary>
     private void AddClipEditor(int i)
     {
@@ -626,7 +655,8 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
             ReplaceEffect(i, _effects[i] with { ClipToPrevious = clip.On() });
             RebuildList(i);
         };
-        HelpRow(_form.Row(UiStrings.EffectPreset_ApplyTarget, clip), "screen-effect-colors", "Clipping");
+        Control[] controls = ScopeEditor(i) is { } scope ? [scope, clip] : [clip];
+        HelpRow(_form.Row(UiStrings.EffectPreset_ApplyTarget, controls), "screen-effect-colors", "Clipping");
     }
 
     /// <summary>
@@ -900,10 +930,39 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
         RefreshPreview();
     }
 
-    /// <summary>효과 원본(그 프레임, 창이 열린 동안 바뀌지 않으므로 프레임마다 한 번만 만든다).</summary>
+    /// <summary>
+    /// 미리보기 대상(자식이 있는 레이어만): true면 고른 효과가 "자식까지 합친 그림" 효과라 원본 = 자식까지 합친 그림(<see cref="SpriteProject.SubtreeEffectSource"/>)에
+    /// 그 효과들만, false면 원본 = 제 셀에 "이 레이어만" 효과들만 입혀 보인다(다른 쪽 효과는 꺼서 번호는 그대로).
+    /// </summary>
+    private bool _subtreeScope;
+
+    /// <summary>고른 효과에 맞춰 미리보기 대상(<see cref="_subtreeScope"/>)을 바꾼다. 바뀌면 원본을 버리고 다시 그린다.</summary>
+    private void SyncScope()
+    {
+        bool subtree = _project.HasChildren(_layer) && SelectedIndices() is { Count: > 0 } chosen && _effects[chosen[0]].IncludeChildren;
+        if (subtree == _subtreeScope) return;
+        _subtreeScope = subtree;
+        _sources.Clear();
+        RestartRenders();
+    }
+
+    /// <summary>미리보기에 쓸 효과 목록(<see cref="VirtualEffects"/>에서 지금 대상이 아닌 효과는 끔 — 자식이 없으면 그대로).</summary>
+    private IReadOnlyList<LayerEffect> PreviewEffects()
+    {
+        var all = VirtualEffects();
+        if (!_project.HasChildren(_layer)) return all;
+        return all.Select(e => e.IncludeChildren == _subtreeScope ? e : e with { Enabled = false }).ToArray();
+    }
+
+    /// <summary>미리보기 대상의 효과 피벗(원래 프레임 <paramref name="original"/>).</summary>
+    private System.Drawing.PointF PivotAt(int original)
+        => _subtreeScope ? _project.SubtreeEffectPivot(_layer, original) : _project.EffectPivot(_layer, original);
+
+    /// <summary>효과 원본(그 프레임, 미리보기 대상이 같은 동안 바뀌지 않으므로 프레임마다 한 번만 만든다).</summary>
     private PixelImage? SourceAt(int frame)
     {
-        if (!_sources.TryGetValue(frame, out var src)) _sources[frame] = src = _project.EffectSource(_layer, frame);
+        if (!_sources.TryGetValue(frame, out var src))
+            _sources[frame] = src = _subtreeScope ? _project.SubtreeEffectSource(_layer, frame) : _project.EffectSource(_layer, frame);
         return src;
     }
 
@@ -916,9 +975,9 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
     {
         int f = _previewFrame;
         _strip.Current = f;
-        var all = VirtualEffects();
+        var all = PreviewEffects();
         var source = VirtualSourceAt(f);
-        string where = _layer.IsGroup ? UiStrings.S_LayerEffectsDialog_RefreshPreview_BDAFE80FE8 : _layer.IsPart ? UiStrings.S_LayerEffectsDialog_RefreshPreview_BD6BE5C32E : "";
+        string where = _subtreeScope ? UiStrings.LayerEffects_PreviewChildren : _layer.IsPart ? UiStrings.S_LayerEffectsDialog_RefreshPreview_BD6BE5C32E : "";
         if (_extension is not null)
             where = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_RefreshPreview_6A782EF4D8,VirtualCount,where,OriginalOf(f) + 1,(IsCopyFrame(f) ? UiStrings.S_LayerEffectsDialog_RefreshPreview_E18A9F9C35 : ""));
         var bounds = _previewBounds;
@@ -934,7 +993,7 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
             return;
         }
         string progress = Selected >= 0 && Selected < all.Count && all[Selected] is AnimatedEffect a && a.AppliesTo(f)
-            ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_RefreshPreview_19220A5382,a.AtFrame(f, VirtualCount, _project.EffectPivot(_layer, OriginalOf(f))).Time * 100) : "";
+            ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_RefreshPreview_19220A5382,a.AtFrame(f, VirtualCount, PivotAt(OriginalOf(f))).Time * 100) : "";
         _caption.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_RefreshPreview_64659703DD,f + 1,where,progress);
         if (_largeCaption is not null) _largeCaption.Text = _caption.Text;
         if (RenderedFrame(f) is not { } result)

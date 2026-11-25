@@ -285,7 +285,7 @@ public sealed class PreviewScene
     }
 
     /// <summary>
-    /// 문서에서 장면을 다시 읽는다: 최상위 일반 레이어만(그룹·부위·효과는 무시) 프로젝트 차례대로, 프레임은 앞에서 <see cref="MaxFrames"/>개까지.
+    /// 문서에서 장면을 다시 읽는다: 최상위 일반 레이어만(자리 있는 레이어와 그 자손·효과는 무시) 프로젝트 차례대로, 프레임은 앞에서 <see cref="MaxFrames"/>개까지.
     /// 병아리 자리 = <paramref name="chickLayer"/> 프레임 0의 불투명 영역 아래 가운데 — 비었으면 <paramref name="emptyChickAnchor"/>
     /// (병아리 없음 <see cref="PreviewChicks.None"/>의 빈 캔버스는 그릴 것이 없으므로 앞 장면의 자리). 병아리 레이어가 프로젝트에 없거나
     /// 프레임 0이 비었는데 <paramref name="emptyChickAnchor"/>가 없으면 <see cref="InvalidOperationException"/>, 장면 한도(크기·레이어 수·칸 격자)를 넘으면 <see cref="ArgumentException"/>.
@@ -308,7 +308,8 @@ public sealed class PreviewScene
                 chickIndex = layers.Count;
                 continue;
             }
-            if (layer.Parent is not null || layer.IsGroup || layer.IsPart) continue;
+            // 자리 있는 레이어(나무에 드는 유일한 종류)는 장면에 없다 — 자식이 있는 레이어도 늘 자리 있는 레이어라 자손째 빠진다.
+            if (layer.IsPart) continue;
             var images = new PixelImage[frames];
             for (int f = 0; f < frames; f++) images[f] = project.GetCel(layer, project.Frames[f])?.Clone() ?? new PixelImage(project.Width, project.Height);
             layers.Add(new PreviewSceneLayer(LayerName(layer.Name), images, layer.Opacity, layer.Visible));

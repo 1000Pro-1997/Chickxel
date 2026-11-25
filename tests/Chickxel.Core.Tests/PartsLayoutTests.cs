@@ -10,7 +10,7 @@ public class PartsLayoutTests
     private static SpriteProject Rig()
     {
         var p = new SpriteProject(8, 8);
-        var g = p.AddGroup("rig");
+        var g = p.AddEmptyParent("rig");
         var arm = p.AddPart(g, "Arm", 2, 5);
         var head = p.AddPart(g, "Head", 4, 2);
         p.AddFrame();

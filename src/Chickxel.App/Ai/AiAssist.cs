@@ -44,8 +44,8 @@ public static class AiToolGroups
     public static IReadOnlyList<string> ToolsOf(AiToolGroup g) => g switch
     {
         AiToolGroup.Frames => ["add_frame", "delete_frame", "set_frame_duration", "add_tag", "link_cels", "unlink_cels", "set_link_color"],
-        AiToolGroup.Layers => ["add_layer", "set_layer", "add_group", "add_part", "set_part"],
-        AiToolGroup.Skins => ["list_skins", "add_skin", "set_skin", "edit_skin", "list_outfits", "save_outfit", "apply_outfit"],
+        AiToolGroup.Layers => ["add_layer", "set_layer", "add_empty_layer", "add_part", "set_part", "move_layer"],
+        AiToolGroup.Skins => ["list_skins", "add_skin", "set_skin", "edit_skin", "list_skin_presets", "save_skin_preset", "apply_skin_preset"],
         AiToolGroup.Effects => ["list_effect_types", "get_effects", "add_effect", "set_effect", "remove_effect", "apply_effects", "expand_canvas_for_effects", "preview_effects"],
         AiToolGroup.ScriptEffects => ["get_script_api", "write_script_effect", "save_script_effect", "list_script_effects", "get_script_effect_source",
             "get_effect_maker_source", "set_effect_maker_source", "set_effect_maker_preview", "check_effect_maker"],
@@ -114,8 +114,8 @@ public static class AiToolGroups
     internal static string ModelName(AiToolGroup g) => g switch
     {
         AiToolGroup.Frames => "frames, tags and linked cels",
-        AiToolGroup.Layers => "layers, groups and parts",
-        AiToolGroup.Skins => "skins and outfits",
+        AiToolGroup.Layers => "layers and child layers",
+        AiToolGroup.Skins => "skins and skin presets",
         AiToolGroup.Effects => "layer effects",
         AiToolGroup.ScriptEffects => "writing script effects",
         AiToolGroup.References => "the reference library",

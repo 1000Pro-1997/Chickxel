@@ -47,22 +47,22 @@ public class UndoHistoryTests
         return states;
     }
 
-    /// <summary>스트로크·레이어 추가·부위·스킨·효과·프레임·태그·레이어 삭제가 섞인 프로젝트(마지막 두 단계는 실행취소해 다시 실행 목록에 둠).</summary>
+    /// <summary>스트로크·레이어 추가·나무·스킨·스킨 프리셋·효과·프레임·태그·레이어 삭제가 섞인 프로젝트(마지막 두 단계는 실행취소해 다시 실행 목록에 둠).</summary>
     private static SpriteProject BuildMixed()
     {
         var p = new SpriteProject(16, 16);
         Draw(p, 0, 0, 1, 1, Color32.Black);
         var top = p.AddLayer(name: "위");
         Draw(p, p.IndexOf(top), 0, 2, 2, new Color32(200, 10, 10));
-        var group = p.AddGroup("몸");
+        var group = p.AddEmptyParent("몸");
         var head = p.AddPart(group, "머리", 8, 8);
         Draw(p, p.IndexOf(head), 0, 3, 3, new Color32(10, 200, 10));
-        var alt = p.AddSkin(group, "갑옷");
-        p.SetActiveSkin(group, alt);
+        var alt = p.AddSkin(head, "갑옷");
+        p.SetActiveSkin(head, alt);
         Draw(p, p.IndexOf(head), 0, 4, 4, new Color32(10, 10, 200));
         // 앱의 효과는 스크립트 효과(예전 외곽선을 바꾼 공식 스크립트 — 읽은 기록도 같은 효과로 돌아와야 함)
         p.SetLayerEffects(0, [LegacyEffects.Convert(new OutlineEffect { Color = new Color32(255, 0, 255), Thickness = 2 })]);
-        p.SaveOutfit("전투");
+        p.SaveSkinPreset("전투");
         p.AddFrame();
         Draw(p, 0, 1, 5, 5, Color32.White);
         p.SetLayerFramePivot(p.IndexOf(head), 1, new Pivot(0.25f, 0.75f));
@@ -283,7 +283,7 @@ public class UndoHistoryTests
         var dir = tmp.File("history");
         var p = new SpriteProject(8, 8);
         p.AddFrame();
-        var group = p.AddGroup("g");
+        var group = p.AddEmptyParent("g");
         p.SetLayerPivot(0, new Pivot(0.25f, 0.25f));
         p.SetLayerFramePivot(0, 1, new Pivot(0.75f, 0.5f));
         p.SetLayerPivot(p.IndexOf(group), new Pivot(0.125f, 0.5f));
@@ -306,109 +306,40 @@ public class UndoHistoryTests
     }
 
     [Fact]
-    public void Version3History_GivesNormalLayersAndGroupsTheCanvasPivots()
+    public void OlderHistoryVersion_IsDiscarded_ProjectOpensWithoutHistory()
     {
+        // 그룹·착장 모델의 기록(형식 5 이하)은 나무 모델로 옮길 수 없다: 읽으면 0단계, 예외 없음, 다음 쓰기가 덮어씀
         using var tmp = new TempDir();
         var file = tmp.File("a.chickxel");
         var dir = tmp.File("history");
         var p = new SpriteProject(8, 8);
         p.AddFrame();
-        var group = p.AddGroup("g");
-        var part = p.AddPart(group, "부위", 4, 4);
-        p.SetLayerPivot(p.IndexOf(part), Pivot.BottomCenter);
-        p.SetLayerFramePivot(p.IndexOf(part), 1, Pivot.Center);
-        var framePivot = new Pivot(0.25f, 0.75f);
-        p.SetFramePivot(1, framePivot);
+        p.AddEmptyParent("g");
         ProjectIO.Save(p, file);
         UndoHistoryIO.Write(UndoHistoryIO.Capture(p, 1000)!, dir);
-        DowngradeHistoryTo3(dir);
+        SetHistoryVersion(dir, UndoHistoryIO.FormatVersion - 1);
 
         var q = ProjectIO.Load(file);
-        Assert.Equal(p.History.UndoCount, UndoHistoryIO.Read(q, dir));
-        Layer normal = q.Layers[0], qGroup = q.Layers[p.IndexOf(group)], qPart = q.Layers[p.IndexOf(part)];
-        // 예전 기록의 상태: 일반 레이어·그룹은 캔버스 피벗(기본 + 프레임마다)을 자기 피벗으로, 부위는 부위 피벗 그대로
-        q.Undo();
-        Assert.Null(q.Frames[1].Pivot);
-        foreach (var layer in new[] { normal, qGroup })
-        {
-            Assert.Equal(q.Sprite.DefaultPivot, layer.Pivot);
-            Assert.False(q.HasLayerFramePivot(layer, 1));
-        }
-        Assert.Equal([Pivot.BottomCenter, Pivot.Center], Enumerable.Range(0, 2).Select(f => q.GetLayerPivot(qPart, f)));
-        q.Redo();
-        Assert.Equal(framePivot, q.Frames[1].Pivot);
-        foreach (var layer in new[] { normal, qGroup }) Assert.Equal(framePivot, q.GetLayerPivot(layer, 1));
-        q.Undo();
-        q.Undo();
-        Assert.False(q.HasLayerFramePivot(qPart, 1));
-        Assert.Equal(Pivot.BottomCenter, qPart.Pivot);
-        q.Undo();
-        Assert.Equal(Pivot.Center, qPart.Pivot);
-
-        // 다시 쓰면 새 형식(예전 상태 조각을 그대로 쓰지 않음) — 다시 읽어도 같은 상태들(지금 상태는 파일에서 읽으므로 빼고 비교)
-        while (q.History.CanRedo) q.Redo();
+        Assert.Equal(0, UndoHistoryIO.Read(q, dir));
+        Assert.False(q.History.CanUndo);
         UndoHistoryIO.Write(UndoHistoryIO.Capture(q, 1000)!, dir);
-        var r = ProjectIO.Load(file);
-        UndoHistoryIO.Read(r, dir);
-        Assert.Equal(Walk(q).Skip(1), Walk(r).Skip(1));
+        Assert.Equal(0, UndoHistoryIO.Read(ProjectIO.Load(file), dir));
+
+        // 더 새 판은 여전히 읽을 수 없다고 알린다
+        SetHistoryVersion(dir, UndoHistoryIO.FormatVersion + 1);
+        Assert.Throws<InvalidDataException>(() => UndoHistoryIO.Read(ProjectIO.Load(file), dir));
     }
 
-    /// <summary>
-    /// 기록을 형식 3으로 낮춘다: 상태 조각마다 부위만 피벗(<c>partPivot</c>·프레임의 <c>partPivots</c>), 일반 레이어·그룹 피벗과 대표 레이어 없음
-    /// (조각 이름 = 내용 해시이므로 새 이름으로 쓰고 목록의 이름도 바꾼다).
-    /// </summary>
-    private static void DowngradeHistoryTo3(string dir)
+    /// <summary>기록 목록(<c>history.json.gz</c>)의 형식 버전만 바꾼다.</summary>
+    private static void SetHistoryVersion(string dir, int version)
     {
-        static byte[] Inflate(byte[] data)
-        {
-            using var z = new ZLibStream(new MemoryStream(data), CompressionMode.Decompress);
-            using var ms = new MemoryStream();
-            z.CopyTo(ms);
-            return ms.ToArray();
-        }
-        static byte[] Deflate(byte[] data)
-        {
-            using var ms = new MemoryStream();
-            using (var z = new ZLibStream(ms, CompressionLevel.Optimal, leaveOpen: true)) z.Write(data);
-            return ms.ToArray();
-        }
-        var blobs = Path.Combine(dir, UndoHistoryIO.BlobFolder);
         var manifestPath = Path.Combine(dir, UndoHistoryIO.ManifestName);
-        var manifest = System.Text.Encoding.UTF8.GetString(Inflate(File.ReadAllBytes(manifestPath)));
-        foreach (var path in Directory.GetFiles(blobs))
-        {
-            var payload = Inflate(File.ReadAllBytes(path));
-            if (payload.Length == 0 || payload[0] != (byte)'{') continue;
-            var json = System.Text.Json.Nodes.JsonNode.Parse(payload)!.AsObject();
-            if (json["layers"] is not System.Text.Json.Nodes.JsonArray layers) continue;
-            var parts = new HashSet<int>();
-            foreach (var node in layers)
-            {
-                var l = node!.AsObject();
-                var pivot = l["pivot"]?.DeepClone();
-                l.Remove("pivot");
-                if (l["kind"]?.GetValue<string>() != "Part") continue;
-                parts.Add(l["id"]!.GetValue<int>());
-                l["partPivot"] = pivot;
-            }
-            foreach (var node in json["frames"]!.AsArray())
-            {
-                var f = node!.AsObject();
-                if (f["layerPivots"] is System.Text.Json.Nodes.JsonArray list)
-                {
-                    var kept = list.Where(e => parts.Contains(e!["layer"]!.GetValue<int>())).Select(e => e!.DeepClone()).ToArray();
-                    if (kept.Length > 0) f["partPivots"] = new System.Text.Json.Nodes.JsonArray(kept);
-                }
-                f.Remove("layerPivots");
-            }
-            json.Remove("pivotLayer");
-            var bytes = System.Text.Encoding.UTF8.GetBytes(json.ToJsonString());
-            var hash = Convert.ToHexStringLower(SHA256.HashData(bytes))[..32];
-            File.WriteAllBytes(Path.Combine(blobs, hash), Deflate(bytes));
-            manifest = manifest.Replace(Path.GetFileName(path), hash);
-        }
+        string manifest;
+        using (var z = new ZLibStream(File.OpenRead(manifestPath), CompressionMode.Decompress))
+        using (var r = new StreamReader(z)) manifest = r.ReadToEnd();
         var m = System.Text.Json.Nodes.JsonNode.Parse(manifest)!;
-        m["version"] = 3;
-        File.WriteAllBytes(manifestPath, Deflate(System.Text.Encoding.UTF8.GetBytes(m.ToJsonString())));
+        m["version"] = version;
+        using var w = new ZLibStream(File.Create(manifestPath), CompressionLevel.Optimal);
+        w.Write(System.Text.Encoding.UTF8.GetBytes(m.ToJsonString()));
     }
 }

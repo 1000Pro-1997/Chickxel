@@ -146,9 +146,9 @@ public sealed partial class LayerEffectsDialog
         int original = OriginalOf(frame);
         if (SourceAt(original) is not { } source) return (null, []);
         effects = HeldAt(effects, frame);
-        return (source, LayerEffects.WithFrameTag(LayerEffects.WithScriptLayers(LayerEffects.At(effects, frame, VirtualCount, _project.EffectPivot(_layer, original),
+        return (source, LayerEffects.WithFrameTag(LayerEffects.WithScriptLayers(LayerEffects.At(effects, frame, VirtualCount, PivotAt(original),
             LayerEffects.UsesOtherFrames(effects) ? VirtualSourceAt : null,
-            f => _project.EffectPivot(_layer, OriginalOf(f))), _project.ScriptLayersAt(_layer, original, effects)), _project.FrameTagFor(effects, original)));
+            f => PivotAt(OriginalOf(f))), _project.ScriptLayersAt(_layer, original, effects, _subtreeScope)), _project.FrameTagFor(effects, original)));
     }
 
     /// <summary>
@@ -161,18 +161,18 @@ public sealed partial class LayerEffectsDialog
         Func<int, System.Drawing.PointF?>? framePivot = null)
     {
         int layer = _project.IndexOf(_layer);
-        if (layer < 0 || _layer.IsGroup) return effects;
+        if (layer < 0 || _subtreeScope) return effects;
         if (LayerEffects.HeldEnds(effects, frame, (a, b) => OriginalOf(a) == OriginalOf(b) || _project.CelsShareDrawing(layer, OriginalOf(a), OriginalOf(b))) is not { } held)
             return effects;
         frameSource ??= VirtualSourceAt;
-        framePivot ??= f => _project.EffectPivot(_layer, OriginalOf(f));
+        framePivot ??= f => PivotAt(OriginalOf(f));
         var list = effects.ToArray();
         foreach (var h in held)
         {
             LayerEffect[] one = [effects[h.Index]];
             int original = OriginalOf(h.End);
-            var resolved = LayerEffects.WithFrameTag(LayerEffects.WithScriptLayers(LayerEffects.At(one, h.End, VirtualCount, _project.EffectPivot(_layer, original),
-                LayerEffects.UsesOtherFrames(one) ? frameSource : null, framePivot), _project.ScriptLayersAt(_layer, original, one)), _project.FrameTagFor(one, original));
+            var resolved = LayerEffects.WithFrameTag(LayerEffects.WithScriptLayers(LayerEffects.At(one, h.End, VirtualCount, PivotAt(original),
+                LayerEffects.UsesOtherFrames(one) ? frameSource : null, framePivot), _project.ScriptLayersAt(_layer, original, one, _subtreeScope)), _project.FrameTagFor(one, original));
             if (LayerEffects.Pin(resolved[0], h, h.Linked ? null : frameSource(h.End)) is { } pinned) list[h.Index] = pinned;
         }
         return list;

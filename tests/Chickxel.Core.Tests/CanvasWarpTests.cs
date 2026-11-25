@@ -116,18 +116,18 @@ public class CanvasWarpTests
     public void WarpCanvas_Part_EnclosesMappedRect_KeepsPivotPoint_AllSkins_AndShifts()
     {
         var p = new SpriteProject(8, 8);
-        var g = p.AddGroup("몸");
+        var g = p.AddEmptyParent("몸");
         var part = p.AddPart(g, "팔", 2, 3, new Point(1, 2));
         int pi = p.IndexOf(part);
         p.AddFrame();
         var red = new PixelImage(2, 3);
         red.Clear(Red);
         p.SetCel(pi, 0, red);
-        var baseSkin = g.BaseSkin!;
-        var knight = p.AddSkin(g, "knight");
-        p.SetActiveSkin(g, knight);
+        var baseSkin = part.BaseSkin!;
+        var knight = p.AddSkin(part, "knight");
+        p.SetActiveSkin(part, knight);
         Paint(p, pi, 0, 0, 2, Blue);
-        p.SetActiveSkin(g, baseSkin);
+        p.SetActiveSkin(part, baseSkin);
         p.SetPartBorder(pi, new SpriteBorder(1, 1, 0, 1));
         p.SetLayerPivot(pi, new Pivot(0.25f, 0f)); // 캔버스 (1.5, 5)
         p.MovePartFrom(pi, 1, 2, 1);

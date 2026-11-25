@@ -173,7 +173,7 @@ public sealed partial class PixelCanvas
             return;
         }
         FinishTextEditing();
-        if (_ctx.Project is not { } p || _ctx.CurrentLayerObject is not { IsGroup: false } current) return;
+        if (_ctx.Project is not { } p || _ctx.IsArrangeParentSelected || _ctx.CurrentLayerObject is not { } current) return;
         _ctx.CommitFloating();
         if (TextAt(p, current, px) is { } hit)
         {
@@ -195,7 +195,7 @@ public sealed partial class PixelCanvas
         for (int i = p.Layers.Count - 1; i >= 0; i--)
         {
             var layer = p.Layers[i];
-            if (ReferenceEquals(layer, current) || layer.IsGroup || layer.IsPart || !p.IsLayerVisible(i)) continue;
+            if (ReferenceEquals(layer, current) || layer.IsPart || !p.IsLayerVisible(i)) continue;
             if (HitText(layer, px) is { } k) return (layer, k);
         }
         return null;
@@ -238,7 +238,7 @@ public sealed partial class PixelCanvas
     /// </summary>
     private void EndTextCreate()
     {
-        if (_ctx.Project is not { } p || _ctx.CurrentLayerObject is not { IsGroup: false } current) return;
+        if (_ctx.Project is not { } p || _ctx.IsArrangeParentSelected || _ctx.CurrentLayerObject is not { } current) return;
         var r = TextCreateRect();
         bool box = _dragMoved && r.Width >= 2;
         var offset = current.IsPart ? p.GetPartOffset(current, _ctx.CurrentFrame) : Point.Empty;
@@ -265,12 +265,12 @@ public sealed partial class PixelCanvas
             Math.Max(_startPx.X, _lastPx.X) + 1, Math.Max(_startPx.Y, _lastPx.Y) + 1);
 
     /// <summary>
-    /// 빈 글씨 레이어를 <paramref name="anchor"/>(부위면 그 그룹) 바로 위에 만들어 고르고 고치기 시작한다.
+    /// 빈 글씨 레이어를 <paramref name="anchor"/>(자식이면 그 맨 위 조상) 바로 위에 만들어 고르고 고치기 시작한다.
     /// 만든 기록은 끝낼 때 최종 글씨 한 단계로 바뀐다(<see cref="NewTextInfo"/>).
     /// </summary>
     private void BeginNewText(SpriteProject p, Layer anchor, TextEffect effect)
     {
-        int top = p.IndexOf(anchor.Parent ?? anchor);
+        int top = p.IndexOf(p.AncestorsOf(anchor).LastOrDefault() ?? anchor);
         int slot = top < 0 ? p.Layers.Count : top + 1;
         bool wasDirty = p.IsDirty;
         Layer? added = null;
@@ -898,7 +898,7 @@ public sealed partial class PixelCanvas
         int index = _ctx.CurrentLayer;
         if (index < 0 || index >= p.Layers.Count) return null;
         var layer = p.Layers[index];
-        if (layer.IsGroup || !layer.Effects.Any(e => e is TextEffect) || !p.IsCelEmpty(index, _ctx.CurrentFrame)) return null;
+        if (_ctx.IsArrangeParent(layer) || !layer.Effects.Any(e => e is TextEffect) || !p.IsCelEmpty(index, _ctx.CurrentFrame)) return null;
         return layer.Effects;
     }
 

@@ -1313,7 +1313,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
     private void RefreshSlice()
     {
         if (!_sliceBox.IsVisible) return;
-        bool group = _ctx.IsGroupSelected;
+        bool group = _ctx.IsArrangeParentSelected;
         _sliceBox.IsEnabled = _ctx.HasProject;
         // 그룹 화면: 부위마다 캔버스의 초록 선을 끌어 바꾼다(숫자는 부위 하나를 고르면).
         foreach (var c in new Control[] { _sL, _sT, _sR, _sB, _sliceClear }) c.IsEnabled = !group;

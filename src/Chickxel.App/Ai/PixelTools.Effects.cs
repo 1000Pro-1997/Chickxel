@@ -13,7 +13,7 @@ namespace Chickxel.App.Ai;
 /// <summary>
 /// 레이어 효과 도구: 종류·설정 보기, 넣기·고치기·빼기, 영구 적용, 효과에 맞춰 캔버스 늘리기. 설정은 프로젝트 파일과 같은 JSON(<see cref="EffectSettings"/>)이라
 /// 모든 효과 종류를 같은 방식으로 다룬다. 바꾸는 호출은 효과 창과 같은 프로젝트 메서드를 바깥 편집으로 감싸 실행취소 한 단계("AI: 도구이름")를 남긴다.
-/// 잠긴 레이어(잠긴 그룹의 부위 포함)의 효과는 고치지 않는다.
+/// 잠긴 레이어(잠긴 조상 아래 레이어 포함)의 효과는 고치지 않는다.
 /// </summary>
 public sealed partial class PixelTools
 {
@@ -23,7 +23,7 @@ public sealed partial class PixelTools
     {
         yield return Tool("list_effect_types",
             "List the layer effects you can add with add_effect. Layer effects are non-destructive: they never change pixels, are drawn on top of a " +
-            "layer's (or a group's composite) image in stack order, and can be changed, disabled or removed at any time. The effects are the script effects " +
+            "layer's own picture (or, with includeChildren, on the picture of the layer together with all its children) in stack order, and can be changed, disabled or removed at any time. The effects are the script effects " +
             "in the user's asset library: the official Chickxel effects (installed by default; ids like \"outline\", \"shadow\", \"rimlight\", " +
             "\"coloroverlay\", \"innerglow\", \"paletteswap\", \"coloradjust\", \"reflection\", \"explode\", \"shine\", \"squash\", \"hitflash\", \"blink\", " +
             "\"shake\", \"bob\", \"appear\", \"fade\", \"melt\", \"rotate\", \"afterimage\", \"colorcycle\", \"shockwave\", \"hologram\"), effects the user " +
@@ -35,19 +35,19 @@ public sealed partial class PixelTools
             "package id when known; each is a stack of effects with order and clipping). Works without an open project.",
             new JsonObject());
         yield return Tool("get_effects",
-            "List the effects of a layer or group in stack order (index 0 is applied first): index, type, name, enabled, frames (\"all\" or {from,to} " +
-            "frame indices, inclusive), clipToAbove (" + ClipNote + "), " +
+            "List the effects of a layer in stack order (index 0 is applied first): index, type, name, enabled, frames (\"all\" or {from,to} " +
+            "frame indices, inclusive), clipToAbove (" + ClipNote + "), includeChildren (only when on: " + IncludeChildrenNote + "), " +
             "holdEnd (only when on), movePivot (false only when the effect does not move later effects' pivot) and the full settings.",
-            new JsonObject { ["layer"] = Int("Layer index (normal, part or group). Default: current.", 0) });
+            new JsonObject { ["layer"] = Int("Layer index. Default: current.", 0) });
         yield return Tool("add_effect",
-            "Add a layer effect (or an effect recipe stack) to a normal, part or group layer. Non-destructive; one undo step. " +
+            "Add a layer effect (or an effect recipe stack) to a normal or part layer. Non-destructive; one undo step. " +
             "Pass either `type` (an effect id from list_effect_types; the old built-in type ids such as \"chickxel.effect.outline\" also work and add the " +
             "official script effect) with optional partial `settings` (only the keys you want to change; the rest keep the effect's defaults from list_effect_types), " +
             "or `preset` (an effect recipe name or id from list_effect_types; its effect values are copied into the layer). Animated effects play across their frame range, so choose from_frame/to_frame " +
             "for the moment it should happen (e.g. a hit flash on frames 3-4). " + FrameRangeNote + " Returns the new effect indices and the layer's effects.",
             new JsonObject
             {
-                ["layer"] = Int("Layer index (normal, part or group). Default: current.", 0),
+                ["layer"] = Int("Layer index. Default: current.", 0),
                 ["type"] = Str("Effect id from list_effect_types (e.g. \"outline\")."),
                 ["preset"] = Str("Effect recipe name or id from list_effect_types (instead of type)."),
                 ["settings"] = EffectSettingsProp(),
@@ -56,11 +56,12 @@ public sealed partial class PixelTools
                 ["enabled"] = Bool("Draw the effect (default true)."),
                 ["clip_to_above"] = Bool(ClipNote + ". Not allowed at index 0 (default false)."),
                 ["move_pivot"] = Bool(MovePivotNote + " Default: the effect's own initial value (true, or false when a script declares movePivot: false; a preset keeps its own value)."),
+                ["include_children"] = Bool(IncludeChildrenNote + " Default false (only this layer's own picture)."),
                 ["index"] = Int("Stack position to insert at (0 = applied first; default: end).", 0),
             });
         yield return Tool("set_effect",
             "Change one effect of a layer: partial `settings` (only the keys to change; null resets a key to its default), frame range, enabled, " +
-            "clip_to_above, hold_end, move_pivot, and/or its stack position (move_to). One undo step.",
+            "clip_to_above, hold_end, move_pivot, include_children and/or its stack position (move_to). One undo step.",
             new JsonObject
             {
                 ["layer"] = Int("Layer index. Default: current.", 0),
@@ -77,6 +78,7 @@ public sealed partial class PixelTools
                                     "moved to where the effect moved the subject at the range end, and later effects' pivot follows when move_pivot is on (only effects that report " +
                                     "their movement, see move_pivot). The timeline shows a faint tail."),
                 ["move_pivot"] = Bool(MovePivotNote),
+                ["include_children"] = Bool(IncludeChildrenNote),
             },
             "effect");
         yield return Tool("remove_effect",
@@ -90,7 +92,7 @@ public sealed partial class PixelTools
         yield return Tool("apply_effects",
             "Bake effects permanently into the pixels of a normal or part layer (destructive, like the editor's \"apply effects permanently\"): every stored " +
             "cel in the effects' frame range is replaced by its look with the effects, and the baked effects are removed from the stack. Enabled effects above " +
-            "(lower index than) a chosen effect are baked too, and clip groups are baked whole. A part grows to fit what spills outside it. Groups cannot be baked. " +
+            "(lower index than) a chosen effect are baked too, and clip groups are baked whole. A part grows to fit what spills outside it. Effects with includeChildren on a layer that has children cannot be baked. " +
             "Only do this when the user asks for it; effects are normally kept non-destructive. One undo step.",
             new JsonObject
             {
@@ -121,6 +123,9 @@ public sealed partial class PixelTools
     private const string MovePivotNote = "true = when this effect moves the drawing (shake, bob, jump, throw…; script effects report it with ctx.movePivot(dx, dy)), the pivot of " +
                                          "the effects after it in the stack (rotate, squash, …) moves along by the same amount; false = only the drawing moves and later effects keep " +
                                          "the original pivot. get_effects reports movePivot: false only when off.";
+
+    private const string IncludeChildrenNote = "true = the effect is drawn on the picture of this layer together with all its children (e.g. one outline around a whole " +
+                                               "character made of child layers); false = only on this layer's own picture. Has no extra effect on a layer without children";
 
     private static JsonObject EffectSettingsProp() => new()
     {
@@ -299,6 +304,7 @@ public sealed partial class PixelTools
                 ["enabled"] = e.Enabled,
                 ["frames"] = e.Frames is { } r ? new JsonObject { ["from"] = r.From, ["to"] = r.To } : (JsonNode)"all",
                 ["clipToAbove"] = e.ClipToPrevious,
+                ["includeChildren"] = e.IncludeChildren ? true : null,
                 ["holdEnd"] = e is AnimatedEffect { HoldEnd: true } ? true : null,
                 ["movePivot"] = e.MovePivot ? null : false,
                 ["settings"] = EffectSettings.ToJson(e),
@@ -327,6 +333,7 @@ public sealed partial class PixelTools
         bool enabled = OptBool(a, "enabled") ?? true;
         bool clip = OptBool(a, "clip_to_above") ?? false;
         bool? movePivot = OptBool(a, "move_pivot");
+        bool includeChildren = OptBool(a, "include_children") ?? false;
         int at = OptInt(a, "index", 0, layer.Effects.Count) ?? layer.Effects.Count;
         if (clip && at == 0) throw new ToolError(UiStrings.Ai_Effect_ClipFirst);
 
@@ -341,7 +348,7 @@ public sealed partial class PixelTools
             var created = choice.Template is { } template ? template.Instantiate(p, range)[0] : choice.Effect;
             var (effect, adjusted) = MergeSettings(created, settings);
             clamped = adjusted;
-            added = [effect with { Frames = range, Enabled = enabled, ClipToPrevious = clip, MovePivot = movePivot ?? effect.MovePivot }];
+            added = [effect with { Frames = range, Enabled = enabled, ClipToPrevious = clip, MovePivot = movePivot ?? effect.MovePivot, IncludeChildren = includeChildren }];
         }
         else
         {
@@ -359,6 +366,7 @@ public sealed partial class PixelTools
             {
                 Enabled = enabled,
                 MovePivot = movePivot ?? effect.MovePivot,
+                IncludeChildren = includeChildren,
                 ClipToPrevious = i == 0 ? clip : effect.ClipToPrevious,
             }).ToArray();
         }
@@ -383,10 +391,11 @@ public sealed partial class PixelTools
         bool? clip = OptBool(a, "clip_to_above");
         bool? holdEnd = OptBool(a, "hold_end");
         bool? movePivot = OptBool(a, "move_pivot");
+        bool? includeChildren = OptBool(a, "include_children");
         int? moveTo = OptInt(a, "move_to", 0, layer.Effects.Count - 1);
         var effect = layer.Effects[e];
         var (rangeGiven, range) = ChangedRange(a, p, effect.Frames);
-        if (settings is null && !rangeGiven && enabled is null && clip is null && holdEnd is null && movePivot is null && moveTo is null)
+        if (settings is null && !rangeGiven && enabled is null && clip is null && holdEnd is null && movePivot is null && includeChildren is null && moveTo is null)
             throw new ToolError(UiStrings.Ai_Effect_NothingToChange);
         if (holdEnd is not null && effect is not AnimatedEffect) throw new ToolError(UiStrings.Ai_Effect_HoldEndNotAnimated);
         RequireUnlocked(p, index);
@@ -395,6 +404,7 @@ public sealed partial class PixelTools
         if (rangeGiven) changed = changed with { Frames = range };
         if (enabled is { } on) changed = changed with { Enabled = on };
         if (movePivot is { } follow) changed = changed with { MovePivot = follow };
+        if (includeChildren is { } subtree) changed = changed with { IncludeChildren = subtree };
         if (holdEnd is { } hold && changed is AnimatedEffect animated) changed = animated with { HoldEnd = hold };
         var list = layer.Effects.ToList();
         list[e] = changed;
@@ -457,7 +467,7 @@ public sealed partial class PixelTools
         }
         else chosen = Enumerable.Range(0, layer.Effects.Count).Where(i => layer.Effects[i].Enabled).ToList();
         if (chosen.Count == 0) throw new ToolError(UiStrings.FormatAi_Effect_NoneToBake(layer: index, name: layer.Name));
-        // 부위가 넓어지면 자동 배치 그룹은 다시 배치된다
+        // 크기가 넓어지면 자동 배치 부모는 자식을 다시 배치한다
         if (layer.IsAutoLaidOut) RequireLayoutKeepsLocked(p, layer.Parent!);
         var result = p.Edit(Label(tool), ProjectChange.Layers | ProjectChange.Pixels, () => p.BakeLayerEffects(index, chosen));
         Ctx.SetCurrentLayer(p.IndexOf(layer));

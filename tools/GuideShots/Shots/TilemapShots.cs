@@ -539,7 +539,7 @@ internal static class TilemapShots
         ShotKit.Call(Timeline(main), "ConvertTilemap", row);
         k.Settle(500);
         var p = Project(main);
-        var group = p.Layers.First(l => l.Kind == LayerKind.Group);
+        var group = p.Layers.First(l => p.HasChildren(l));
         var parts = p.Layers.Where(l => l.Parent == group).ToList();
         var tl = Timeline(main);
         var b = ShotKit.Bounds(tl, main);

@@ -203,7 +203,7 @@ public class PreviewSceneTests
         AssertSameScene(scene, PreviewScene.FromProject(project, chickLayer));
 
         // 그룹은 무시하고, 병아리를 옮기면 발 자리도 옮겨진다
-        project.AddGroup("group");
+        project.AddEmptyParent("group");
         var moved = new PixelImage(w, h);
         var at = scene.ChickOffset(chick);
         moved.Blit(chick, at.X + 3, at.Y - 2);

@@ -461,9 +461,9 @@ public class LinkedCelTests
         var p = Frames(3);
         Draw(p, 1, 1, Green, frame: 1);
         var layer = p.Layers[0];
-        var g = p.AddSkinToLayer(layer, copy: false); // 새 빈 스킨이 지금 스킨: 모든 칸이 빈 칸(첫 스킨 그림을 빌리지 않음)
+        p.AddSkin(layer); // 새 빈 스킨이 지금 스킨: 모든 칸이 빈 칸(첫 스킨 그림을 빌리지 않음)
         int li = p.IndexOf(layer);
-        var baseCels = Enumerable.Range(0, 3).Select(f => p.GetOwnCel(layer, p.Frames[f], g.BaseSkin!)).ToList();
+        var baseCels = Enumerable.Range(0, 3).Select(f => p.GetOwnCel(layer, p.Frames[f], layer.BaseSkin!)).ToList();
         Assert.True(p.IsCelEmpty(li, 1));
 
         // 이 스킨 자신의 그림이 없으므로 링크할 것이 없다(기록 없음)
@@ -472,7 +472,7 @@ public class LinkedCelTests
         Assert.Equal(undo, p.History.UndoCount);
         Assert.All([0, 1, 2], f => Assert.False(p.IsCelLinked(li, f)));
         // 첫 스킨 그림은 그대로(링크도 없음)
-        for (int f = 0; f < 3; f++) Assert.Same(baseCels[f], p.GetOwnCel(layer, p.Frames[f], g.BaseSkin!));
+        for (int f = 0; f < 3; f++) Assert.Same(baseCels[f], p.GetOwnCel(layer, p.Frames[f], layer.BaseSkin!));
     }
 
     [Fact]
@@ -482,9 +482,9 @@ public class LinkedCelTests
         Link(p, 0, 1, 2);
         int color = p.LinkMarks(0)[0].Color;
         var layer = p.Layers[0];
-        var g = p.AddSkinToLayer(layer, copy: false);
+        p.AddSkin(layer);
         int li = p.IndexOf(layer);
-        var baseSkin = g.BaseSkin!;
+        var baseSkin = layer.BaseSkin!;
 
         // 빈 새 스킨: 첫 스킨과 같은 프레임끼리 같은 색으로 링크, 그림은 빈 칸
         Assert.All([0, 1, 2], f => Assert.True(p.IsCelLinked(li, f)));
@@ -493,60 +493,18 @@ public class LinkedCelTests
         Assert.All([0, 1, 2], f => Assert.True(p.IsCelEmpty(li, f)));
 
         // 링크된 칸에 그리면 이 스킨의 묶음이 함께 바뀌고 첫 스킨은 그대로
-        Draw(p, 0, 0, Green, layer: li, frame: 1); // 부위는 빨간 점 하나 크기
+        Draw(p, 0, 0, Green, layer: li, frame: 1);
         Assert.All([0, 2], f => Assert.Equal(Green, p.GetCel(layer, p.Frames[f])![0, 0]));
         Assert.All([0, 1, 2], f => Assert.Equal(Red, p.GetOwnCel(layer, p.Frames[f], baseSkin)![0, 0]));
 
-        // 복제한 스킨·부위 전용 빈 스킨도 원본 링크(색 포함)를 그대로
-        var copy = p.AddSkin(g, null, g.ActiveSkin);
+        // 복제한 스킨·또 다른 빈 스킨도 원본 링크(색 포함)를 그대로
+        var copy = p.AddSkin(layer, null, layer.ActiveSkin);
         Assert.Same(p.GetOwnCel(layer, p.Frames[0], copy), p.GetOwnCel(layer, p.Frames[2], copy));
-        Assert.NotSame(p.GetOwnCel(layer, p.Frames[0], copy), p.GetOwnCel(layer, p.Frames[0], g.Skins[1]));
+        Assert.NotSame(p.GetOwnCel(layer, p.Frames[0], copy), p.GetOwnCel(layer, p.Frames[0], layer.Skins[1]));
         Assert.Equal(color, p.LinkMarks(li)[0].Color);
-        p.AddPartSkin(layer, "hat");
+        p.AddSkin(layer, "hat");
         Assert.True(p.AreCelsLinked(li, 0, 2));
         Assert.False(p.IsCelLinked(li, 3));
-    }
-
-    [Fact]
-    public void LinkCels_GroupRow_LinksEveryPartFreshly_GroupWinsOverPartLinks_MarksAndUnlink()
-    {
-        var p = new SpriteProject(8, 8);
-        for (int i = 1; i < 4; i++) p.AddFrame();
-        var g = p.AddGroup("G");
-        var a = p.AddPart(g, "A", 2, 2, new Point(0, 0));
-        var b = p.AddPart(g, "B", 2, 2, new Point(4, 4));
-        int ai = p.IndexOf(a), bi = p.IndexOf(b), gi = p.IndexOf(g);
-        Draw(p, 0, 0, Red, layer: ai, frame: 1);
-        Draw(p, 1, 1, Blue, layer: bi, frame: 1);
-        // B만 따로 1·3을 링크해 둠(프레임 1 그림을 같이 씀)
-        p.LinkCels([(bi, 1), (bi, 3)], mainFrame: 1);
-        Assert.False(p.IsCelLinked(gi, 1));
-
-        // 그룹 행 0~2: 부위마다 누른 칸(1)의 그림으로 새 묶음, B의 프레임 1은 3과의 링크에서 빠짐(그룹이 먼저)
-        Assert.Equal(6, p.LinkCels([(gi, 0), (gi, 1), (gi, 2)], mainFrame: 1));
-        Assert.All([0, 1, 2], f => Assert.True(p.AreCelsLinked(ai, 1, f) || f == 1));
-        Assert.All([0, 2], f => Assert.True(p.AreCelsLinked(bi, 1, f)));
-        Assert.False(p.AreCelsLinked(bi, 1, 3));
-        Assert.False(p.IsCelLinked(bi, 3)); // 혼자 남은 프레임 3
-        Assert.Equal(Red, At(p, 2, 0, 0, ai));
-        Assert.Equal(Blue, At(p, 0, 1, 1, bi));
-        Assert.Equal(Blue, At(p, 3, 1, 1, bi)); // 프레임 3은 원래 그림 그대로
-        // 그룹 행 표시: 0~2가 한 묶음(부위들이 같은 색)
-        var marks = p.LinkMarks(gi);
-        Assert.All([0, 1, 2], f => Assert.True(marks[f].IsLinked));
-        Assert.False(marks[3].IsLinked);
-        Assert.Equal(p.LinkMarks(ai)[0].Color, p.LinkMarks(bi)[0].Color);
-        Assert.Equal(marks[0].Color, p.LinkMarks(ai)[0].Color);
-
-        // 부위 하나만 따로 고치면 그 프레임은 그룹 묶음이 아님
-        p.UnlinkCels([(ai, 2)]);
-        Assert.False(p.LinkMarks(gi)[2].IsLinked);
-        Assert.True(p.LinkMarks(gi)[0].IsLinked);
-
-        // 그룹 행 풀기: 모든 부위의 그 프레임
-        Assert.True(p.UnlinkCels([(gi, 0)]).Unlinked >= 2);
-        Assert.False(p.IsCelLinked(ai, 0));
-        Assert.False(p.IsCelLinked(bi, 0));
     }
 
     /// <summary>프레임 <paramref name="frames"/>개: 0·1 = 파랑 묶음(빨간 점), 2·3 = 주황 묶음(초록 점).</summary>

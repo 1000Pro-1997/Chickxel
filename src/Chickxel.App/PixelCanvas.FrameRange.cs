@@ -54,7 +54,7 @@ public sealed partial class PixelCanvas
     private void BeginFrameRecord(PixelImage cel)
     {
         EndFrameRecord();
-        if (_ctx.Project is null || _ctx.IsGroupSelected) return;
+        if (_ctx.Project is null || _ctx.IsArrangeParentSelected) return;
         var frames = _ctx.StrokeFrameTargets();
         var layers = _strokeTool == ToolKind.Eraser ? _ctx.StrokeLayerTargets() : [];
         if (frames.Count == 0 && layers.Count == 0) return;
@@ -147,7 +147,7 @@ public sealed partial class PixelCanvas
         var changes = new List<(int Layer, int Frame, PixelImage Cel, (PixelImage Image, Point Origin)? Full)>();
         foreach (int layer in (_layerTargets ?? []).Prepend(current))
         {
-            if (layer < 0 || layer >= p.Layers.Count || p.Layers[layer].IsGroup || p.Layers[layer].IsTilemap || p.IsLayerLocked(layer)) continue;
+            if (layer < 0 || layer >= p.Layers.Count || _ctx.IsArrangeParent(p.Layers[layer]) || p.Layers[layer].IsTilemap || p.IsLayerLocked(layer)) continue;
             bool normal = p.Layers[layer].Kind == LayerKind.Normal;
             var size = p.CelSize(p.Layers[layer]);
             foreach (int f in layer == current ? (_frameTargets ?? []) : (_frameTargets ?? []).Prepend(frame))

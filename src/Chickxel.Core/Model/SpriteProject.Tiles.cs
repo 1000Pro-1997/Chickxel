@@ -107,7 +107,7 @@ public sealed partial class SpriteProject
         => layer.IsTilemap && layer.Tiles is not null && _layers.Contains(layer) ? layer : throw new ArgumentException(DomainStrings.Tile_NotTilemapLayer, nameof(layer));
 
     /// <summary>
-    /// 빈 타일맵 레이어를 <paramref name="index"/>(기본: 맨 위, 그룹 안이면 그 그룹 위)에 넣는다. 타일셋은 프로젝트에 담는다(같은 이름표가 있으면 이것으로 바꿈).
+    /// 빈 타일맵 레이어를 <paramref name="index"/>(기본: 맨 위, 레이어 덩어리 안이면 그 최상위 레이어 위)에 최상위로 넣는다. 타일셋은 프로젝트에 담는다(같은 이름표가 있으면 이것으로 바꿈).
     /// </summary>
     public Layer AddTilemapLayer(Tileset tileset, int? index = null, string? name = null)
     {
@@ -466,19 +466,20 @@ public sealed partial class SpriteProject
     // ───────────── 레이어로 변환 ─────────────
 
     /// <summary>
-    /// 타일맵 레이어를 그룹으로 바꾼다(실행취소 한 단계): 층마다(아래 층부터) 그 층 그림을 감싼 크기의 부위 하나. 프레임마다 그 프레임의 타일 시각(내보내기와 같음 —
+    /// 타일맵 레이어를 레이어 나무로 바꾼다(실행취소 한 단계): 빈 부모(캔버스 크기 자리 있는 레이어, 셀 없음) 아래에 층마다(아래 층부터) 그 층 그림을 감싼 크기의 자식 레이어 하나. 프레임마다 그 프레임의 타일 시각(내보내기와 같음 —
     /// 프레임이 시작하는 시각)의 그림이라 움직이는 타일이 프레임을 따라 움직이고, 같은 그림이 되는 프레임끼리는 한 그림을 나눠 쓴다(링크).
     /// 프레임이 하나뿐인데 맵에 움직이는 타일이 있으면 먼저 프레임을 맵의 움직이는 타일 모두가 한 바퀴 도는 길이(주기들의 최소공배수)만큼, 그림이 바뀌는 간격
     /// (장당 시간들의 최대공약수)마다 늘린다(다른 레이어는 원래 프레임과 링크) — 주기가 다른 타일도 끊김 없이 되풀이된다.
-    /// 그룹은 타일맵 레이어의 이름·보이기·잠금·불투명도·효과·피벗을 물려받는다. 그릴 것이 없는 층은 빠진다.
+    /// 부모는 타일맵 레이어의 이름·보이기·잠금·불투명도·효과·피벗을 물려받는다(효과는 자손까지 합친 그림에 — <see cref="LayerEffect.IncludeChildren"/>). 그릴 것이 없는 층은 빠진다.
+    /// 만든 부모를 돌려준다.
     /// </summary>
-    public Layer ConvertTilemapToGroup(int index)
+    public Layer ConvertTilemapToLayers(int index)
     {
         var layer = RequireTilemap(_layers[index]);
         var tileset = TilesetOf(layer) ?? throw new InvalidOperationException(DomainStrings.Tile_TilesetNotInProject);
         var data = layer.Tiles!;
         bool grouping = _frames.Count == 1 && MapAnimation(tileset, data.Map) is { Frames: > 1 } && !History.InGroup;
-        if (grouping) History.BeginGroup(DomainStrings.Tile_ConvertToGroup);
+        if (grouping) History.BeginGroup(DomainStrings.Tile_ConvertToLayers);
         try
         {
             if (_frames.Count == 1 && MapAnimation(tileset, data.Map) is { Frames: > 1 } anim)
@@ -530,17 +531,20 @@ public sealed partial class SpriteProject
 
     private Layer ConvertTilemapCore(Layer layer, Tileset tileset, TilemapData data)
     {
-        return Edit(DomainStrings.Tile_ConvertToGroup, ProjectChange.Layers | ProjectChange.Pixels, () =>
+        return Edit(DomainStrings.Tile_ConvertToLayers, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             int at = _layers.IndexOf(layer);
             _layers.RemoveAt(at);
+            // 빈 부모(캔버스 크기, (0, 0) — 캔버스 기준이던 피벗 숫자가 그대로 같은 지점), 부위마다 자식
             var group = new Layer(UniqueLayerName(layer.Name))
             {
-                Kind = LayerKind.Group,
+                Kind = LayerKind.Part,
+                PartSize = Size,
+                PartOffset = Point.Empty,
                 Visible = layer.Visible,
                 Locked = layer.Locked,
                 Opacity = layer.Opacity,
-                Effects = layer.Effects,
+                Effects = layer.Effects.Select(e => e with { IncludeChildren = true }).ToArray(),
                 Pivot = layer.Pivot,
                 EffectsCollapsed = layer.EffectsCollapsed,
             };
@@ -571,7 +575,7 @@ public sealed partial class SpriteProject
                 }
                 foreach (var (image, frames) in byPhase.Values)
                     if (frames > 1) Tagged(image, linkColor++);
-                var layerPart = new Layer(UniqueLayerName(part.Name.Length > 0 ? part.Name : DomainStrings.Project_DefaultPartName))
+                var layerPart = new Layer(UniqueLayerName(part.Name.Length > 0 ? part.Name : NextLayerName()))
                 {
                     Kind = LayerKind.Part,
                     Parent = group,

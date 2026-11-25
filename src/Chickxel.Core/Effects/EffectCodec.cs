@@ -9,7 +9,8 @@ namespace Chickxel.Core.Effects;
 /// 효과 하나의 저장 JSON(프로젝트, 사용자 정의 효과, 실행취소 기록이 같이 씀):
 /// <code>{ "type": "chickxel.effect.outline", "version": 1, "enabled": true, "clipToPrevious": false, "frames": [0, 3],
 ///   "settings": { "color": "#000000", "thickness": 1, … }, "colorGradients": { "Color": { … } } }</code>
-/// <c>frames</c>는 범위가 있을 때만, <c>holdEnd</c>는 켰을 때만, <c>movePivot</c>은 껐을 때만(<c>false</c>), <c>colorGradients</c>는 그라데이션이 있을 때만,
+/// <c>frames</c>는 범위가 있을 때만, <c>holdEnd</c>는 켰을 때만, <c>movePivot</c>은 껐을 때만(<c>false</c>), <c>includeChildren</c>은 켰을 때만(<c>true</c> — 자손까지 합친 그림에),
+/// <c>colorGradients</c>는 그라데이션이 있을 때만,
 /// <c>recipe</c>는 매개변수 레시피 묶음의 구성 효과일 때만 쓴다
 /// (<see cref="RecipeParameterFormat"/> — 프로젝트 형식 4의 선택 필드, 모르는 앱은 무시하고 보통 효과로 읽음). 스크립트 효과는 원문 해시 <c>script</c>가 붙는다(<see cref="ScriptDefinition"/>).
 /// <para>
@@ -23,7 +24,8 @@ namespace Chickxel.Core.Effects;
 public static class EffectCodec
 {
     public const string TypeKey = "type", VersionKey = "version", EnabledKey = "enabled", ClipKey = "clipToPrevious", FramesKey = "frames",
-        SettingsKey = "settings", GradientsKey = "colorGradients", HoldEndKey = "holdEnd", MovePivotKey = "movePivot";
+        SettingsKey = "settings", GradientsKey = "colorGradients", HoldEndKey = "holdEnd", MovePivotKey = "movePivot",
+        IncludeChildrenKey = "includeChildren";
 
     /// <summary>예전 키(읽지 않음): 예전 레시피·에셋 검사가 받아들이게 이름만 남긴다.</summary>
     public const string RetiredExpandCanvasKey = "expandCanvas";
@@ -46,6 +48,8 @@ public static class EffectCodec
         if (effect is AnimatedEffect { HoldEnd: true }) json[HoldEndKey] = true;
         // 뒤 효과의 피벗 같이 옮기기: 껐을 때만(없으면 켜짐 — 예전 파일·예전 판과 같은 JSON)
         if (!effect.MovePivot) json[MovePivotKey] = false;
+        // 적용 대상 자손까지: 켰을 때만(없으면 이 레이어만 — 예전 판과 같은 JSON)
+        if (effect.IncludeChildren) json[IncludeChildrenKey] = true;
         json[SettingsKey] = definition.WriteSettings(effect);
         definition.WriteRoot(effect, json);
         if (effect.ColorGradients.Count > 0) json[GradientsKey] = WriteGradients(effect.ColorGradients);
@@ -86,6 +90,7 @@ public static class EffectCodec
             Enabled = EffectJson.Bool(json[EnabledKey]) ?? true,
             ClipToPrevious = EffectJson.Bool(json[ClipKey]) ?? false,
             MovePivot = EffectJson.Bool(json[MovePivotKey]) ?? true,
+            IncludeChildren = EffectJson.Bool(json[IncludeChildrenKey]) ?? false,
             Frames = EffectJson.Frames(json[FramesKey]),
         };
         return effect is AnimatedEffect animated && EffectJson.Bool(json[HoldEndKey]) == true ? animated with { HoldEnd = true } : effect;
@@ -133,7 +138,7 @@ public static class EffectCodec
         => JsonSerializer.SerializeToNode(gradients.ToDictionary(entry => entry.Key, entry => ProjectIO.ColorGradientDto.From(entry.Value)), ProjectIO.Options)!;
 
     /// <summary>
-    /// 모르는 효과: 원본 JSON에서 켜짐·클리핑·피벗 같이 옮기기·프레임 범위·레시피 묶음 자리만 지금 값으로 바꾼다(원본에 없던 기본값 키는 더하지 않음).
+    /// 모르는 효과: 원본 JSON에서 켜짐·클리핑·피벗 같이 옮기기·적용 대상·프레임 범위·레시피 묶음 자리만 지금 값으로 바꾼다(원본에 없던 기본값 키는 더하지 않음).
     /// </summary>
     private static JsonObject WriteMissing(MissingEffect missing)
     {
@@ -141,6 +146,7 @@ public static class EffectCodec
         if (json.ContainsKey(EnabledKey) || !missing.Enabled) json[EnabledKey] = missing.Enabled;
         if (json.ContainsKey(ClipKey) || missing.ClipToPrevious) json[ClipKey] = missing.ClipToPrevious;
         if (json.ContainsKey(MovePivotKey) || !missing.MovePivot) json[MovePivotKey] = missing.MovePivot;
+        if (json.ContainsKey(IncludeChildrenKey) || missing.IncludeChildren) json[IncludeChildrenKey] = missing.IncludeChildren;
         if (missing.Frames is { } f) json[FramesKey] = new JsonArray(f.From, f.To);
         else json.Remove(FramesKey);
         if (missing.Recipe is { } link) json[RecipeParameterFormat.LinkKey] = RecipeParameterFormat.WriteLink(link);

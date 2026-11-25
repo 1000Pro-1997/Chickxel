@@ -4,29 +4,30 @@ using Chickxel.App.Localization;
 namespace Chickxel.App;
 
 /// <summary>
-/// 내보낼 스킨 고르기(내보내기 창 시트 설정의 "스킨 고르기…"): 시트 설정 한 벌(공통 또는 부위 아틀라스 따로)의
-/// 스킨 체크(끄면 <see cref="SheetOptions.ExcludedSkins"/>), 착장 프리셋(<see cref="SheetOptions.Outfits"/>, 프레임 시트만),
-/// 넣을 최상위 레이어(끄면 <see cref="SheetOptions.ExcludedLayers"/>).
+/// 내보낼 스킨 고르기(내보내기 창 시트 설정의 "스킨 고르기…"): 시트 설정 한 벌(공통 또는 레이어 아틀라스 따로)의
+/// 넣을 레이어(끄면 자식째 <see cref="SheetOptions.ExcludedLayers"/>)와 그 레이어의 스킨 체크(끄면 <see cref="SheetOptions.ExcludedSkins"/>)를
+/// 레이어 나무 그대로(위→아래, 깊이만큼 들여 써서), 그리고 스킨 프리셋(<see cref="SheetOptions.Presets"/>, 프레임 시트만)을 고른다.
+/// 프레임 시트 쪽에는 레이어의 첫 스킨을 항목으로 내놓지 않는다(첫 스킨 = 지금 스킨 합성에 이미 있음). 레이어 아틀라스만 쓰는 설정은 첫 스킨도 고른다.
 /// 창 안에서는 고르기만 하고, 확인을 누르면 호출한 쪽이 <see cref="ApplyTo"/>로 한 번에 반영한다(실행취소 1단계).
 /// </summary>
 public sealed class SkinPickerWindow : DialogBase
 {
-    private const int ThumbSize = 32;
+    private const int ThumbSize = 32, IndentStep = 16;
 
     private readonly List<(Skin Skin, CheckBox Box)> _skins = new();
-    private readonly List<(Outfit Outfit, CheckBox Box)> _outfits = new();
+    private readonly List<(SkinPreset Preset, CheckBox Box)> _presets = new();
     private readonly List<(Layer Layer, CheckBox Box)> _layers = new();
     private readonly List<WriteableBitmap> _bitmaps = new();
 
-    /// <param name="project">프로젝트(그룹·스킨·착장·레이어 목록과 썸네일).</param>
+    /// <param name="project">프로젝트(레이어 나무·스킨·프리셋 목록과 썸네일).</param>
     /// <param name="options">처음 체크 상태를 읽을 시트 설정.</param>
-    /// <param name="partsOnly">부위 아틀라스만 쓰는 설정(착장 프리셋 칸을 숨김).</param>
+    /// <param name="partsOnly">레이어 아틀라스만 쓰는 설정(자리 있는 레이어만, 첫 스킨도 고름, 스킨 프리셋 칸을 숨김).</param>
     /// <param name="frame">썸네일로 그릴 프레임 번호.</param>
     public SkinPickerWindow(SpriteProject project, SheetOptions options, bool partsOnly, int frame)
         : base(partsOnly ? UiStrings.S_SkinPickerWindow_SkinPickerWindow_CDBDEDBE4D : UiStrings.S_SkinPickerWindow_SkinPickerWindow_30B8F1EF08)
     {
         frame = Math.Clamp(frame, 0, Math.Max(0, project.Frames.Count - 1));
-        // 대상 도움말(F1): 창 = "스킨 내보내기"의 스킨 고르기 창 그림, 스킨 칸 ⑥·착장 프리셋 칸 ⑦(같은 문단),
+        // 대상 도움말(F1): 창 = "스킨 내보내기"의 스킨 고르기 창 그림, 스킨 칸 ⑥·스킨 프리셋 칸 ⑦(같은 문단),
         // 레이어 칸 = 내보내기 창 공통 설정의 스킨 고르기… 항목(합칠 레이어를 고른다는 설명)
         const string page = "parts-skin-export";
         this.HelpAt(page, shot: "parts-skin-export-2");
@@ -43,8 +44,10 @@ public sealed class SkinPickerWindow : DialogBase
             content.Children.Add(current);
         }
 
-        var groups = project.Layers.Where(l => l.IsGroup && project.ChildCount(l) > 0).Reverse().ToList();
-        bool anyChoice = groups.Count > 0 || (!partsOnly && project.Outfits.Count > 0);
+        // 레이어 아틀라스만 쓰는 설정이면 자리 있는 레이어만(맨 위 일반 레이어·타임라인은 아틀라스에 들지 않음).
+        var layers = Enumerable.Range(0, project.Layers.Count).Reverse().Select(i => project.Layers[i]).Where(l => !partsOnly || l.IsPart).ToList();
+        bool anySkin = layers.Any(l => SkinChoices(l, partsOnly).Count > 0);
+        bool anyChoice = anySkin || (!partsOnly && project.SkinPresets.Count > 0);
         if (anyChoice)
         {
             var all = Ui.Button(UiStrings.S_SkinPickerWindow_SkinPickerWindow_EB479F1895, (_, _) => SetAll(true));
@@ -54,92 +57,61 @@ public sealed class SkinPickerWindow : DialogBase
             content.Children.Add(Ui.Row(all, none));
         }
 
-        if (groups.Count > 0)
+        if (layers.Count > 0)
         {
-            content.Children.Add(Heading(UiStrings.S_SkinPickerWindow_SkinPickerWindow_FFE48329B5).HelpAt(page, anchor: "⑥"));
-            foreach (var group in groups)
+            content.Children.Add(Heading(UiStrings.S_SkinPickerWindow_SkinPickerWindow_76ACD5089E).HelpAt(page, anchor: "⑥"));
+            content.Children.Add(Note(partsOnly
+                ? UiStrings.S_SkinPickerWindow_SkinPickerWindow_CB68D989C3
+                : UiStrings.S_SkinPickerWindow_SkinPickerWindow_8D6FC7397A).HelpAt("screen-export", anchor: "Choose skins…"));
+            foreach (var layer in layers)
             {
-                var name = Ui.Label(options.ExcludedLayers.Contains(group) ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinPickerWindow_SkinPickerWindow_E3EF38CCC4,group.Name) : group.Name, bold: true);
-                name.TextWrapping = TextWrapping.Wrap;
-                content.Children.Add(name.HelpAt(page, anchor: "⑥"));
-                var wrap = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(8, 0, 0, 2) }.HelpAt(page, anchor: "⑥");
-                var skins = group.Skins;
-                int gi = project.IndexOf(group);
-                for (int i = 0; i < skins.Count; i++)
+                double indent = 8 + project.DepthOf(layer) * IndentStep;
+                bool visible = project.IsLayerVisible(layer);
+                var box = Ui.Check(layer.Name + (visible ? "" : UiStrings.S_SkinPickerWindow_SkinPickerWindow_5EBB32EC59), !options.ExcludedLayers.Contains(layer));
+                box.FontWeight = FontWeight.Bold;
+                box.Margin = new Thickness(indent, 4, 0, 0);
+                if (!visible) box.Tip(UiStrings.S_SkinPickerWindow_SkinPickerWindow_A3D6B146CF);
+                _layers.Add((layer, box));
+                content.Children.Add(box.HelpAt("screen-export", anchor: "Choose skins…"));
+
+                var choices = SkinChoices(layer, partsOnly);
+                if (choices.Count == 0) continue;
+                var wrap = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(indent + 20, 0, 0, 2) }.HelpAt(page, anchor: "⑥");
+                int index = project.IndexOf(layer);
+                foreach (var skin in choices)
                 {
-                    var skin = skins[i];
-                    // 타임라인 그룹 칸·스킨 관리 카드와 같은 썸네일(효과 없이, 부위 자리로 자름)
-                    var picture = project.RenderCelThumbnail(gi, frame, skin) ?? new PixelImage(1, 1);
-                    var box = SkinBox(ImageUtil.MakeThumbnail(picture, ThumbSize), i == 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinPickerWindow_SkinPickerWindow_20A6248C03,skin.Name) : skin.Name,
-                        options, skin, partOnly: false);
-                    box.Tip(i == 0
-                        ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinPickerWindow_SkinPickerWindow_11E58C3A27,group.Name)
-                        : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinPickerWindow_SkinPickerWindow_91FAFEFE55,group.Name,skin.Name));
-                    wrap.Children.Add(box);
+                    bool first = ReferenceEquals(skin, layer.BaseSkin);
+                    // 타임라인 칸·스킨 설정 카드와 같은 썸네일(효과 없이, 그 레이어 자리로 자름)
+                    var picture = project.RenderCelThumbnail(index, frame, skin) ?? new PixelImage(1, 1);
+                    var skinBox = SkinBox(ImageUtil.MakeThumbnail(picture, ThumbSize),
+                        first ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_SkinPickerWindow_SkinPickerWindow_20A6248C03, skin.Name) : skin.Name, options, skin);
+                    skinBox.Tip(first
+                        ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_SkinPickerWindow_SkinPickerWindow_11E58C3A27, layer.Name)
+                        : string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_SkinPickerWindow_SkinPickerWindow_91FAFEFE55, layer.Name, skin.Name));
+                    wrap.Children.Add(skinBox);
                 }
                 content.Children.Add(wrap);
-                // 부위 전용(개별) 스킨: 그 부위 이름 아래 들여 써서(부위는 타임라인처럼 위→아래)
-                foreach (var part in project.ChildrenOf(group).Reverse())
-                {
-                    var own = part.OwnSkins;
-                    if (own.Count == 0) continue;
-                    var partName = Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinPickerWindow_SkinPickerWindow_4B4DDD65E9,part.Name));
-                    partName.Foreground = AppTheme.DimTextBrush;
-                    partName.Margin = new Thickness(20, 0, 0, 0);
-                    content.Children.Add(partName.HelpAt(page, anchor: "⑥"));
-                    var partWrap = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(28, 0, 0, 2) }.HelpAt(page, anchor: "⑥");
-                    var f = project.Frames[frame];
-                    foreach (var skin in own)
-                    {
-                        var cel = project.GetOwnCel(part, f, skin);
-                        var thumb = ImageUtil.MakeThumbnail(cel ?? new PixelImage(Math.Max(1, part.PartSize.Width), Math.Max(1, part.PartSize.Height)), ThumbSize);
-                        var box = SkinBox(thumb, skin.Name, options, skin, partOnly: true);
-                        box.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinPickerWindow_SkinPickerWindow_6068D0001B,part.Name,skin.Name,part.Name,skin.Name,skin.Name));
-                        partWrap.Children.Add(box);
-                    }
-                    content.Children.Add(partWrap);
-                }
             }
         }
 
-        if (!partsOnly && project.Outfits.Count > 0)
+        if (!partsOnly && project.SkinPresets.Count > 0)
         {
             content.Children.Add(Heading(UiStrings.S_SkinPickerWindow_SkinPickerWindow_E73FD24EBA).HelpAt(page, anchor: "⑦"));
             content.Children.Add(Note(UiStrings.S_SkinPickerWindow_SkinPickerWindow_F5BB7790A1).HelpAt(page, anchor: "⑦"));
             var wrap = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(8, 0, 0, 2) }.HelpAt(page, anchor: "⑦");
-            foreach (var outfit in project.Outfits)
+            foreach (var preset in project.SkinPresets)
             {
-                var box = Ui.Check(outfit.Name, options.Outfits.Contains(outfit));
+                var box = Ui.Check(preset.Name, options.Presets.Contains(preset));
                 box.Margin = new Thickness(0, 1, 10, 1);
-                _outfits.Add((outfit, box));
+                _presets.Add((preset, box));
                 wrap.Children.Add(box);
             }
             content.Children.Add(wrap);
         }
-        else if (!partsOnly && groups.Count > 0)
+        else if (!partsOnly && anySkin)
             content.Children.Add(Note(UiStrings.S_SkinPickerWindow_SkinPickerWindow_FC0997D1E7));
 
-        var tops = project.Layers.Where(l => !l.IsPart).Reverse().ToList();
-        if (tops.Count > 0)
-        {
-            content.Children.Add(Heading(UiStrings.S_SkinPickerWindow_SkinPickerWindow_76ACD5089E).HelpAt("screen-export", anchor: "Choose skins…"));
-            content.Children.Add(Note(partsOnly
-                ? UiStrings.S_SkinPickerWindow_SkinPickerWindow_CB68D989C3
-                : UiStrings.S_SkinPickerWindow_SkinPickerWindow_8D6FC7397A).HelpAt("screen-export", anchor: "Choose skins…"));
-            var wrap = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(8, 0, 0, 2) }.HelpAt("screen-export", anchor: "Choose skins…");
-            foreach (var layer in tops)
-            {
-                var text = (layer.IsGroup ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinPickerWindow_SkinPickerWindow_8923EA543C,layer.Name) : layer.Name) + (layer.Visible ? "" : UiStrings.S_SkinPickerWindow_SkinPickerWindow_5EBB32EC59);
-                var box = Ui.Check(text, !options.ExcludedLayers.Contains(layer));
-                box.Margin = new Thickness(0, 1, 10, 1);
-                if (!layer.Visible) box.Tip(UiStrings.S_SkinPickerWindow_SkinPickerWindow_A3D6B146CF);
-                _layers.Add((layer, box));
-                wrap.Children.Add(box);
-            }
-            content.Children.Add(wrap);
-        }
-
-        if (!anyChoice && tops.Count == 0)
+        if (layers.Count == 0)
             content.Children.Add(Note(UiStrings.S_SkinPickerWindow_SkinPickerWindow_3CDC91DE0A));
 
         Body.Children.Add(new ScrollViewer
@@ -156,8 +128,18 @@ public sealed class SkinPickerWindow : DialogBase
         };
     }
 
-    /// <summary>썸네일 + 이름(+ 부위 전용이면 "개별" 표시) 체크 상자 하나(<see cref="_skins"/>에 더함).</summary>
-    private CheckBox SkinBox(WriteableBitmap thumb, string title, SheetOptions options, Skin skin, bool partOnly)
+    /// <summary>
+    /// 레이어에서 고를 수 있는 스킨: 스킨이 둘 이상일 때만 — 레이어 아틀라스만 쓰는 설정이면 모든 스킨, 아니면 첫 스킨이 아닌 스킨(프레임 시트 항목).
+    /// </summary>
+    private static IReadOnlyList<Skin> SkinChoices(Layer layer, bool partsOnly)
+    {
+        var skins = layer.Skins;
+        if (skins.Count < 2) return [];
+        return partsOnly ? skins : skins.Skip(1).ToList();
+    }
+
+    /// <summary>썸네일 + 이름 체크 상자 하나(<see cref="_skins"/>에 더함).</summary>
+    private CheckBox SkinBox(WriteableBitmap thumb, string title, SheetOptions options, Skin skin)
     {
         _bitmaps.Add(thumb);
         var image = new Image { Source = thumb, Width = ThumbSize, Height = ThumbSize };
@@ -170,11 +152,9 @@ public sealed class SkinPickerWindow : DialogBase
             TextWrapping = TextWrapping.Wrap,
             MaxWidth = 140,
         };
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Children = { image, text } };
-        if (partOnly) row.Children.Add(Badge());
         var box = new CheckBox
         {
-            Content = row,
+            Content = new StackPanel { Orientation = Orientation.Horizontal, Children = { image, text } },
             IsChecked = !options.ExcludedSkins.Contains(skin),
             Margin = new Thickness(0, 1, 10, 1),
         };
@@ -182,43 +162,35 @@ public sealed class SkinPickerWindow : DialogBase
         return box;
     }
 
-    /// <summary>부위 전용(개별) 스킨 표시("개별" 작은 띠).</summary>
-    public static Border Badge() => new()
+    /// <summary>
+    /// 체크한 스킨 수 + (<paramref name="partsOnly"/>가 아니면) 체크한 스킨 프리셋 수 — "스킨 고르기… (N개)"의 N.
+    /// 스킨은 창과 같은 기준(레이어 아틀라스만이면 자리 있는 레이어의 모든 스킨, 아니면 첫 스킨이 아닌 스킨).
+    /// </summary>
+    public static int SelectedCount(SpriteProject project, SheetOptions options, bool partsOnly)
     {
-        Background = AppTheme.AccentBrush,
-        CornerRadius = new CornerRadius(2),
-        Padding = new Thickness(3, 0),
-        Margin = new Thickness(4, 0, 0, 0),
-        VerticalAlignment = VerticalAlignment.Center,
-        Child = new TextBlock { Text = UiStrings.S_SkinPickerWindow_Badge_42A5136FFC, FontSize = AppTheme.SmallFontSize - 1, Foreground = Brushes.White },
-    };
-
-    /// <summary>체크한 스킨 수(부위 전용 스킨 포함) + 체크한 착장 프리셋 수(<paramref name="countOutfits"/>면) — "스킨 고르기… (N개)"의 N.</summary>
-    public static int SelectedCount(SpriteProject project, SheetOptions options, bool countOutfits)
-    {
-        int n = project.Layers.Where(l => l.IsGroup && project.ChildCount(l) > 0).Sum(g => g.AllSkins.Count(s => !options.ExcludedSkins.Contains(s)));
-        if (countOutfits) n += project.Outfits.Count(options.Outfits.Contains);
+        int n = project.Layers.Where(l => !partsOnly || l.IsPart).Sum(l => SkinChoices(l, partsOnly).Count(s => !options.ExcludedSkins.Contains(s)));
+        if (!partsOnly) n += project.SkinPresets.Count(options.Presets.Contains);
         return n;
     }
 
     /// <summary>고른 것이 <paramref name="options"/>와 다른지.</summary>
     public bool Differs(SheetOptions options)
-        => !SameSet(Excluded(options), options.ExcludedSkins) || !SameSet(Outfits(options), options.Outfits)
+        => !SameSet(Excluded(options), options.ExcludedSkins) || !SameSet(Presets(options), options.Presets)
            || !SameSet(ExcludedLayers(options), options.ExcludedLayers);
 
-    /// <summary>고른 것을 <paramref name="options"/>에 넣는다(이 창에 없던 항목 — 지운 그룹의 스킨 등 — 은 그대로 둔다).</summary>
+    /// <summary>고른 것을 <paramref name="options"/>에 넣는다(이 창에 없던 항목 — 지운 레이어의 스킨 등 — 은 그대로 둔다).</summary>
     public void ApplyTo(SheetOptions options)
     {
         options.ExcludedSkins = Excluded(options);
-        options.Outfits = Outfits(options);
+        options.Presets = Presets(options);
         options.ExcludedLayers = ExcludedLayers(options);
     }
 
     private IReadOnlyList<Skin> Excluded(SheetOptions o)
         => [.. o.ExcludedSkins.Where(s => !_skins.Any(x => ReferenceEquals(x.Skin, s))), .. _skins.Where(x => !x.Box.On()).Select(x => x.Skin)];
 
-    private IReadOnlyList<Outfit> Outfits(SheetOptions o)
-        => [.. o.Outfits.Where(s => !_outfits.Any(x => ReferenceEquals(x.Outfit, s))), .. _outfits.Where(x => x.Box.On()).Select(x => x.Outfit)];
+    private IReadOnlyList<SkinPreset> Presets(SheetOptions o)
+        => [.. o.Presets.Where(s => !_presets.Any(x => ReferenceEquals(x.Preset, s))), .. _presets.Where(x => x.Box.On()).Select(x => x.Preset)];
 
     private IReadOnlyList<Layer> ExcludedLayers(SheetOptions o)
         => [.. o.ExcludedLayers.Where(s => !_layers.Any(x => ReferenceEquals(x.Layer, s))), .. _layers.Where(x => !x.Box.On()).Select(x => x.Layer)];
@@ -229,7 +201,7 @@ public sealed class SkinPickerWindow : DialogBase
     private void SetAll(bool on)
     {
         foreach (var (_, box) in _skins) box.IsChecked = on;
-        foreach (var (_, box) in _outfits) box.IsChecked = on;
+        foreach (var (_, box) in _presets) box.IsChecked = on;
     }
 
     private static TextBlock Heading(string text)

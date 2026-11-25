@@ -10,14 +10,14 @@ public static partial class ProjectExport
     public const string ClipExtension = ".anim";
     public const string ControllerExtension = ".controller";
 
-    /// <summary>프리팹·애니메이션이 가리킬 스프라이트: 부위 아틀라스(부위마다 오브젝트), 프레임 시트(오브젝트 하나), 없음.</summary>
+    /// <summary>프리팹·애니메이션이 가리킬 스프라이트: 레이어 아틀라스(레이어 나무대로 오브젝트), 프레임 시트(오브젝트 하나), 없음.</summary>
     private enum UnityRig { None, Parts, Frames }
 
     private static UnityRig RigOf(SpriteProject project, bool assumePartContent)
     {
         var x = Sheet(project);
         if (!x.WritesUnityAssets) return UnityRig.None;
-        if (x.ExportParts && (assumePartContent ? PartLayers(project).Count > 0 : PartCels(project).Count > 0)) return UnityRig.Parts;
+        if (x.ExportParts && (assumePartContent ? AssumedContentLayers(project).Count > 0 : PartCels(project).Count > 0)) return UnityRig.Parts;
         return x.ExportFrames ? UnityRig.Frames : UnityRig.None;
     }
 
@@ -96,12 +96,19 @@ public static partial class ProjectExport
         }
     }
 
-    /// <summary>오브젝트 하나의 프레임마다 값: 스프라이트와 부모 기준 위치(유닛).</summary>
-    private sealed record RigTrack(string Path, Func<int, SpriteLibraryAssetWriter.SpriteRef?> Sprite, Func<int, PointF> Position);
+    /// <summary>오브젝트 하나의 프레임마다 값: 스프라이트(SpriteRenderer가 없는 빈 오브젝트면 <paramref name="Sprite"/> null — 스프라이트 곡선 없음)와 부모 기준 위치(유닛).</summary>
+    private sealed record RigTrack(string Path, Func<int, SpriteLibraryAssetWriter.SpriteRef?>? Sprite, Func<int, PointF> Position);
 
     /// <summary>
     /// 계획의 Unity 경로대로 클립 → Controller → 프리팹 순서로 쓴다(서로 가리킬 guid를 먼저 정함). 클립·Controller·프리팹 <c>.meta</c>는 없을 때만 새로 만들고
     /// 있으면 guid를 그대로 쓴다. 내용이 같으면 파일을 다시 쓰지 않는다.
+    /// <para>
+    /// 레이어 아틀라스 오브젝트: 맨 위 오브젝트(프레임 시트 이름, 캔버스 피벗 자리) 아래에 아틀라스 레이어(<see cref="AtlasLayers"/>)를 레이어 나무 그대로 중첩한다
+    /// (형제는 위 레이어부터, 이름이 겹치면 <c>_1</c> …). 아틀라스에 스프라이트가 있는 레이어만 SpriteRenderer(지금 스킨의 스프라이트, 정렬 순서 = 최종 그리는 차례 번호),
+    /// 셀이 없는 레이어(예전 그룹 같은 빈 부모)는 Transform만 있는 빈 오브젝트. 오브젝트 자리 = 그 레이어의 피벗(<see cref="SpriteProject.LayerPivotPixel"/>)이고
+    /// 위치는 부모 오브젝트(부모 레이어의 피벗, 맨 위면 캔버스 피벗) 기준 — 그래서 화면 자리는 나무와 관계없이 캔버스와 같다. 숨긴 레이어는 꺼진 오브젝트.
+    /// 클립 곡선 경로는 이 중첩 경로(<c>부모/자식/…</c>)다.
+    /// </para>
     /// </summary>
     private static List<ExportResult> WriteUnityAssets(SpriteProject project, ExportPlan plan,
         IReadOnlyDictionary<(Layer Part, int Frame, Skin? Skin), SpriteLibraryAssetWriter.SpriteRef> partSprites,
@@ -123,40 +130,51 @@ public static partial class ProjectExport
         var tracks = new List<RigTrack>();
         if (rig == UnityRig.Parts)
         {
-            PointF RootPixel(int f)
+            // 레이어 오브젝트의 맨 위 오브젝트 기준 자리(유닛, y 위로): 그 프레임의 레이어 피벗(캔버스 px) − 캔버스 피벗. 자식 오브젝트는 부모 오브젝트 기준이라 둘의 차.
+            PointF WorldAt(Layer layer, int f)
             {
-                var (x, y) = project.GetFramePivot(f).ToLocalPixel(project.Width, project.Height);
-                return new PointF(x, y);
+                var at = project.LayerPivotPixel(layer, f);
+                var (ox, oy) = project.GetFramePivot(f).ToLocalPixel(project.Width, project.Height);
+                return new PointF((at.X - ox) / ppu, -(at.Y - oy) / ppu);
             }
-            // 정렬 순서: 아래 레이어부터 0, 1, …
-            var parts = PartLayers(project);
-            var order = parts.OrderBy(project.IndexOf).Select((p, i) => (p, i)).ToDictionary(t => t.p, t => t.i);
-            var groups = new List<UnityAssetWriter.Node>();
-            var usedGroups = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var group in parts.Select(p => p.Parent!).Distinct())
+            var layers = AtlasLayers(project);
+            var inRig = layers.ToHashSet();
+            // SpriteRenderer는 아틀라스에 스프라이트가 있는 레이어만, 정렬 순서 = 최종 그리는 차례(DrawOrder)에서 그 레이어들의 번호 0, 1, …
+            var drawn = PartCels(project).Select(c => c.Part).ToHashSet();
+            var order = project.DrawOrder().Where(drawn.Contains).Select((l, i) => (l, i)).ToDictionary(t => t.l, t => t.i);
+
+            // 레이어 나무 그대로 중첩(형제는 타임라인 순서 — 위 레이어부터), 이름은 형제 안에서 겹치지 않게
+            List<UnityAssetWriter.Node> Nodes(IEnumerable<Layer> siblings, Layer? parent, string parentPath)
             {
-                var groupName = Unique(usedGroups, CleanSpriteName(group.Name));
-                var usedParts = new HashSet<string>(StringComparer.Ordinal);
-                var children = new List<UnityAssetWriter.Node>();
-                foreach (var part in parts.Where(p => ReferenceEquals(p.Parent, group)))
+                var used = new HashSet<string>(StringComparer.Ordinal);
+                var nodes = new List<UnityAssetWriter.Node>();
+                foreach (var layer in siblings)
                 {
-                    var name = Unique(usedParts, CleanSpriteName(part.Name));
-                    var shown = part.ShownSkin;
-                    Skin? key = shown is null || ReferenceEquals(shown, group.BaseSkin) ? null : shown;
-                    SpriteLibraryAssetWriter.SpriteRef? SpriteAt(int f) => partSprites.GetValueOrDefault((part, f, key));
+                    var name = Unique(used, CleanSpriteName(layer.Name));
+                    var path = parentPath.Length == 0 ? name : parentPath + "/" + name;
                     PointF PositionAt(int f)
                     {
-                        var at = project.LayerPivotPixel(part, f);
-                        var origin = RootPixel(f);
-                        return new PointF((at.X - origin.X) / ppu, -(at.Y - origin.Y) / ppu);
+                        var at = WorldAt(layer, f);
+                        if (parent is null) return at;
+                        var origin = WorldAt(parent, f);
+                        return new PointF(at.X - origin.X, at.Y - origin.Y);
                     }
+                    Func<int, SpriteLibraryAssetWriter.SpriteRef?>? spriteAt = null;
+                    if (drawn.Contains(layer))
+                    {
+                        var shown = layer.ActiveSkin;
+                        Skin? key = shown is null || ReferenceEquals(shown, layer.Skins[0]) ? null : shown;
+                        spriteAt = f => partSprites.GetValueOrDefault((layer, f, key));
+                    }
+                    tracks.Add(new RigTrack(path, spriteAt, PositionAt));
                     var start = PositionAt(firstFrame);
-                    children.Add(new UnityAssetWriter.Node(name, part.Visible, start.X, start.Y, true, SpriteAt(firstFrame), order[part], []));
-                    tracks.Add(new RigTrack(groupName + "/" + name, SpriteAt, PositionAt));
+                    var children = Nodes(project.ChildrenOf(layer).Reverse().Where(inRig.Contains), layer, path);
+                    nodes.Add(new UnityAssetWriter.Node(name, layer.Visible, start.X, start.Y, spriteAt is not null, spriteAt?.Invoke(firstFrame),
+                        order.GetValueOrDefault(layer), children));
                 }
-                groups.Add(new UnityAssetWriter.Node(groupName, group.Visible, 0, 0, false, null, 0, children));
+                return nodes;
             }
-            root = new UnityAssetWriter.Node(CleanSpriteName(baseName), true, 0, 0, false, null, 0, groups);
+            root = new UnityAssetWriter.Node(CleanSpriteName(baseName), true, 0, 0, false, null, 0, Nodes(layers.Where(l => l.Parent is null), null, ""));
         }
         else
         {
@@ -232,17 +250,21 @@ public static partial class ProjectExport
         foreach (var track in tracks)
         {
             if (frames.Count == 0) break;
-            var keys = new List<(float, SpriteLibraryAssetWriter.SpriteRef?)>();
-            SpriteLibraryAssetWriter.SpriteRef? last = null;
-            for (int i = 0; i < frames.Count; i++)
+            // 빈 오브젝트(SpriteRenderer 없음)는 위치 곡선만
+            if (track.Sprite is { } spriteAt)
             {
-                var s = track.Sprite(frames[i]);
-                if (i > 0 && Equals(s, last)) continue;
-                keys.Add((starts[i], s));
-                last = s;
+                var keys = new List<(float, SpriteLibraryAssetWriter.SpriteRef?)>();
+                SpriteLibraryAssetWriter.SpriteRef? last = null;
+                for (int i = 0; i < frames.Count; i++)
+                {
+                    var s = spriteAt(frames[i]);
+                    if (i > 0 && Equals(s, last)) continue;
+                    keys.Add((starts[i], s));
+                    last = s;
+                }
+                if (endKey > keys[^1].Item1 + 1e-6f) keys.Add((endKey, last));
+                sprites.Add(new UnityAssetWriter.SpriteCurve(track.Path, keys));
             }
-            if (endKey > keys[^1].Item1 + 1e-6f) keys.Add((endKey, last));
-            sprites.Add(new UnityAssetWriter.SpriteCurve(track.Path, keys));
 
             var at = frames.Select(track.Position).ToList();
             var home = statics.GetValueOrDefault(track.Path);

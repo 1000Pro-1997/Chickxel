@@ -774,7 +774,7 @@ public class ProjectTests
         using var dir = new TempDir();
         var projectPath = dir.File("hero.chickxel");
         var p = new SpriteProject(4, 4);
-        var g = p.AddGroup();
+        var g = p.AddEmptyParent();
         p.AddPart(g, "Head", 2, 2);
         p.Edit("이름", ProjectChange.Settings, () =>
         {

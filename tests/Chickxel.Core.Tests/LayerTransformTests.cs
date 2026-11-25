@@ -156,7 +156,7 @@ public class LayerTransformTests
     public void WholeLayer_Part_Rotate_AreaWrapsTheTurnedBox_BorderRemoved_PivotStaysOnTheImage()
     {
         var p = new SpriteProject(10, 10);
-        var g = p.AddGroup();
+        var g = p.AddEmptyParent();
         var part = p.AddPart(g, "팔", 4, 2, new Point(1, 1));
         int pi = p.IndexOf(part);
         Draw(p, pi, 0, 0, 0, Red);   // 캔버스 (1,1)
@@ -177,7 +177,7 @@ public class LayerTransformTests
     public void WholeLayer_Part_StretchWithNineSlice_KeepsTheBorderPixels()
     {
         var p = new SpriteProject(10, 10);
-        var g = p.AddGroup();
+        var g = p.AddEmptyParent();
         var part = p.AddPart(g, "바", 3, 1, new Point(0, 0));
         int pi = p.IndexOf(part);
         Draw(p, pi, 0, 0, 0, Red);
@@ -200,7 +200,7 @@ public class LayerTransformTests
     public void Cel_Part_MoveOnly_MovesThatFramesPartPosition_LeavesOtherFrames()
     {
         var p = new SpriteProject(10, 10);
-        var g = p.AddGroup();
+        var g = p.AddEmptyParent();
         var part = p.AddPart(g, "팔", 2, 2, new Point(1, 1));
         int pi = p.IndexOf(part);
         p.AddFrame();
@@ -223,7 +223,7 @@ public class LayerTransformTests
     public void Cel_Part_GrowingPastTheArea_WidensTheAreaForEveryFrame_OtherFramesStayInPlace()
     {
         var p = new SpriteProject(10, 10);
-        var g = p.AddGroup();
+        var g = p.AddEmptyParent();
         var part = p.AddPart(g, "팔", 2, 2, new Point(2, 2));
         int pi = p.IndexOf(part);
         p.AddFrame();
@@ -361,7 +361,7 @@ public class LayerTransformTests
     public void Distorted_ClearsNineSliceBorder_AndIsNotAPartMove()
     {
         var p = new SpriteProject(10, 10);
-        var g = p.AddGroup();
+        var g = p.AddEmptyParent();
         var part = p.AddPart(g, "바", 4, 4, new Point(1, 1));
         int pi = p.IndexOf(part);
         for (int y = 0; y < 4; y++)
@@ -408,7 +408,7 @@ public class LayerTransformTests
     public void PivotSlip_ShiftOnly_KeepsThePivotInPlace_Part()
     {
         var p = new SpriteProject(10, 10);
-        var g = p.AddGroup();
+        var g = p.AddEmptyParent();
         var part = p.AddPart(g, "팔", 2, 2, new Point(1, 1));
         int pi = p.IndexOf(part);
         p.AddFrame();
@@ -438,7 +438,7 @@ public class LayerTransformTests
     public void PivotSlip_Default_PivotStillFollowsTheDrawing_Part()
     {
         var p = new SpriteProject(10, 10);
-        var g = p.AddGroup();
+        var g = p.AddEmptyParent();
         var part = p.AddPart(g, "팔", 2, 2, new Point(1, 1));
         int pi = p.IndexOf(part);
         Draw(p, pi, 0, 0, 0, Red);

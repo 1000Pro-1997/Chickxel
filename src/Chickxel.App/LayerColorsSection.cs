@@ -142,7 +142,7 @@ internal sealed class LayerColorsSection : StackPanel
         {
             if (image is not null && seen.Add(image)) list.Add(image);
         }
-        var layers = layer.IsGroup ? p.ChildrenOf(layer) : [layer];
+        IReadOnlyList<Layer> layers = [layer, .. p.DescendantsOf(layer)];
         foreach (var l in layers)
         {
             int index = p.IndexOf(l);

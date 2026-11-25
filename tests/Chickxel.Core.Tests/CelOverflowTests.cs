@@ -181,7 +181,7 @@ public class CelOverflowTests
     public void PaintOutside_OnlyNormalLayers()
     {
         var p = new SpriteProject(8, 8);
-        var g = p.AddGroup("G");
+        var g = p.AddEmptyParent("G");
         var a = p.AddPart(g, "A", 2, 2, new Point(0, 0));
         p.BeginCelStroke(p.IndexOf(a), 0);
         Assert.False(p.SetStrokeOutside(-1, 0, Red));
@@ -195,7 +195,7 @@ public class CelOverflowTests
         Draw(p, 1, 1, Red);
         Draw(p, 3, 2, Red);
         Assert.Equal(1, p.ShiftCels("옮기기", [(0, 0)], 2, 0)); // 칠한 칸: (3,1), (5,2) — (5,2)는 캔버스 밖
-        var g = p.AddGroup("G");
+        var g = p.AddEmptyParent("G");
         p.AddPart(g, "A", 2, 2, new Point(-1, -1));
         p.AddLayer(name: "빈 레이어");
 

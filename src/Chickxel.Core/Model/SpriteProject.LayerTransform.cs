@@ -110,7 +110,7 @@ public sealed partial class SpriteProject
 
         public IReadOnlyList<Target> Targets => _targets;
 
-        /// <summary>기준 레이어의 프레임 <paramref name="frame"/>에서 지금 보이는 셀(부위면 보이는 스킨)의 대상. 그 셀을 바꾸지 않으면 null.</summary>
+        /// <summary>기준 레이어의 프레임 <paramref name="frame"/>에서 지금 보이는 셀(지금 스킨)의 대상. 그 셀을 바꾸지 않으면 null.</summary>
         public Target? ShownTarget(Frame frame)
         {
             var key = new CelKey(ReferenceLayer, frame, ActiveKey(ReferenceLayer));
@@ -122,22 +122,23 @@ public sealed partial class SpriteProject
 
         /// <summary>
         /// 셀에서 원본을 뗀다. <paramref name="layer"/>·<paramref name="frame"/>은 기준(캔버스에 보이는 셀), <paramref name="selection"/>은 기준 레이어 좌표의 선택 영역
-        /// (null = 셀마다 칠한 픽셀 전체). <paramref name="wholeLayer"/>면 그 레이어의 모든 프레임(부위는 모든 스킨), 아니면 그 셀 하나.
-        /// 그룹·빈 셀·잠긴 레이어면 뗄 것이 없어 null.
+        /// (null = 셀마다 칠한 픽셀 전체). <paramref name="wholeLayer"/>면 그 레이어의 모든 프레임·모든 스킨, 아니면 그 셀 하나(지금 스킨).
+        /// 타일맵·빈 셀·잠긴 레이어(조상 포함)면 뗄 것이 없어 null.
         /// </summary>
         public static LayerTransform? Create(SpriteProject project, int layer, int frame, PixelMask? selection, bool wholeLayer)
         {
             if (layer < 0 || layer >= project._layers.Count || frame < 0 || frame >= project._frames.Count) return null;
             var reference = project._layers[layer];
             var refFrame = project._frames[frame];
-            if (reference.IsGroup || project.IsLayerLocked(layer)) return null;
+            if (reference.IsTilemap || project.IsLayerLocked(layer)) return null;
             if (selection is { IsEmpty: true }) selection = null;
             IEnumerable<int> frames = wholeLayer ? Enumerable.Range(0, project._frames.Count) : [frame];
             var targets = new List<Target>();
             foreach (var f in frames)
             {
-                var keys = reference.IsPart && wholeLayer
-                    ? project.CelsOf(reference).Where(c => ReferenceEquals(c.Key.Frame, project._frames[f])).Select(c => c.Key).ToList()
+                var keys = wholeLayer
+                    ? project.CelsOf(reference).Select(c => c.Key).Concat(project._overflow.Keys.Where(k => ReferenceEquals(k.Layer, reference)))
+                        .Where(k => ReferenceEquals(k.Frame, project._frames[f])).Distinct().ToList()
                     : [new CelKey(reference, project._frames[f], ActiveKey(reference))];
                 foreach (var key in keys)
                 {
@@ -453,20 +454,15 @@ public sealed partial class SpriteProject
         }
 
         /// <summary>
-        /// 부위를 옮기기만 함: 그림 대신 부위 위치를 옮긴다(레이어 전체면 모든 프레임, 아니면 그 셀들의 프레임). 피벗은 부위 기준이라 같이 따라가고,
-        /// 부위 안에서 <paramref name="slip"/>만큼 더 옮긴다.
+        /// 자리 있는 레이어를 옮기기만 함: 그림 대신 자리를 옮긴다(레이어 전체면 모든 프레임, 아니면 그 셀들의 프레임 — 자손도 같이). 피벗은 자기 기준이라 같이 따라가고,
+        /// 레이어 안에서 <paramref name="slip"/>만큼 더 옮긴다.
         /// </summary>
         private void ShiftPart(Layer part, List<Target> targets, int dx, int dy, (double X, double Y) slip)
         {
             var frames = WholeLayer ? _project._frames.ToList() : targets.Select(t => t.Frame).Distinct().ToList();
-            if (frames.Count == _project._frames.Count && !part.IsAutoLaidOut)
-                part.PartOffset = new Point(part.PartOffset.X + dx, part.PartOffset.Y + dy);
-            else
-                foreach (var f in frames)
-                {
-                    var s = f.PartShifts.GetValueOrDefault(part);
-                    SetShift(f, part, new Point(s.X + dx, s.Y + dy));
-                }
+            IReadOnlyList<Frame>? moved = frames.Count == _project._frames.Count ? null : frames;
+            _project.MoveOne(part, new Point(dx, dy), moved);
+            _project.MoveDescendants(part, new Point(dx, dy), moved);
             if (slip == default) return;
             var size = part.PartSize;
             Pivot ToPivot(double x, double y) => new((float)(x / size.Width), 1f - (float)(y / size.Height));

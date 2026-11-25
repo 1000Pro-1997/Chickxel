@@ -332,15 +332,17 @@ public class TilemapTests
     }
 
     [Fact]
-    public void ConvertToGroup_MakesOnePartPerFloor_WithSamePixels()
+    public void ConvertToLayers_MakesOneChildPerFloor_UnderEmptyParent_WithSamePixels()
     {
         var ts = Sample();
         var (p, layer) = NewProject(ts);
         p.AddFrame();
         Paint(p, layer, m => m.Place(ts, 1, new Point(0, 0), new TileCell(2)).Place(ts, 2, new Point(1, 1), new TileCell(3)));
         var before = p.Flatten(1);
-        var group = p.ConvertTilemapToGroup(p.IndexOf(layer));
-        Assert.True(group.IsGroup);
+        var group = p.ConvertTilemapToLayers(p.IndexOf(layer));
+        Assert.True(group.IsPart && p.HasChildren(group));
+        Assert.Equal(new Rectangle(0, 0, p.Width, p.Height), group.PartRect);
+        Assert.Null(p.GetCel(p.IndexOf(group), 0));
         var parts = p.ChildrenOf(group);
         Assert.Equal(["바닥", "장식"], parts.Select(l => l.Name));
         Assert.Equal(new Rectangle(4, 4, 4, 4), parts[1].PartRect);
@@ -367,7 +369,7 @@ public class TilemapTests
         var (p, layer) = NewProject(ts);
         Paint(p, layer, m => m.Place(ts, 1, new Point(0, 0), new TileCell(1)).Place(ts, 2, new Point(1, 1), new TileCell(3)));
         int undoBefore = p.History.UndoCount;
-        var group = p.ConvertTilemapToGroup(p.IndexOf(layer));
+        var group = p.ConvertTilemapToLayers(p.IndexOf(layer));
         Assert.Equal(12, p.Frames.Count);
         Assert.All(p.Frames, f => Assert.Equal(50, f.DurationMs));
         var parts = p.ChildrenOf(group);

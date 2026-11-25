@@ -49,24 +49,23 @@ public sealed partial class SpriteProject
     }
 
     /// <summary>
-    /// 일반 레이어 셀의 캔버스 밖 그림(이미지와 그 왼쪽 위의 캔버스 좌표 — 이미지의 캔버스와 겹치는 칸은 투명). 없거나 부위·그룹이면 null. 돌려준 그림은 고치지 않는다.
+    /// 일반 레이어 셀(지금 스킨)의 캔버스 밖 그림(이미지와 그 왼쪽 위의 캔버스 좌표 — 이미지의 캔버스와 겹치는 칸은 투명). 없거나 자리 있는 레이어면 null. 돌려준 그림은 고치지 않는다.
     /// </summary>
     public (PixelImage Image, Point Origin)? GetCelOverflow(int layerIndex, int frameIndex)
     {
         var layer = _layers[layerIndex];
         if (layer.IsTilemap) return TilemapOutside(layer, frameIndex) is { } t ? (t.Image, t.Origin) : null;
-        if (layer.Kind != LayerKind.Normal || !_overflow.TryGetValue(new(layer, _frames[frameIndex], null), out var o)) return null;
+        if (layer.Kind != LayerKind.Normal || !_overflow.TryGetValue(new(layer, _frames[frameIndex], ActiveKey(layer)), out var o)) return null;
         return (o.Image, o.Origin);
     }
 
     /// <summary>
-    /// 셀 전체(일반 레이어면 캔버스 안 셀 + 캔버스 밖 그림)와 그 왼쪽 위의 캔버스 좌표. 캔버스 밖 그림이 없으면 셀 그대로(없으면 빈 그림)와 (0,0).
-    /// 부위는 부위 셀 그대로와 (0,0)(부위 기준). 그룹이면 <see cref="InvalidOperationException"/>. 돌려준 그림은 고치지 않는다.
+    /// 지금 스킨 셀 전체(일반 레이어면 캔버스 안 셀 + 캔버스 밖 그림)와 그 왼쪽 위의 캔버스 좌표. 캔버스 밖 그림이 없으면 셀 그대로(없으면 빈 그림)와 (0,0).
+    /// 자리 있는 레이어는 셀 그대로와 (0,0)(자기 기준). 돌려준 그림은 고치지 않는다.
     /// </summary>
     public (PixelImage Image, Point Origin) GetFullCel(int layerIndex, int frameIndex)
     {
         var layer = _layers[layerIndex];
-        if (layer.IsGroup) throw new InvalidOperationException(GroupHasNoCelsMessage);
         if (layer.IsTilemap)
         {
             var bounds = Rectangle.Union(Bounds, Rectangle.Intersect(TilemapBounds(layer), OverflowBounds));
@@ -74,7 +73,7 @@ public sealed partial class SpriteProject
             return TilesetOf(layer) is { } ts ? (TileMapRenderer.RenderArea(ts, data.Map, data.Origin, bounds), bounds.Location) : (new PixelImage(_width, _height), Point.Empty);
         }
         if (layer.IsPart) return (GetCel(layerIndex, frameIndex) ?? new PixelImage(layer.PartSize.Width, layer.PartSize.Height), Point.Empty);
-        var key = new CelKey(layer, _frames[frameIndex], null);
+        var key = new CelKey(layer, _frames[frameIndex], ActiveKey(layer));
         return FullOf(key, _cels.GetValueOrDefault(key), Size);
     }
 
@@ -142,7 +141,7 @@ public sealed partial class SpriteProject
     {
         var layer = _layers[layerIndex];
         if (layer.Kind != LayerKind.Normal) throw new ArgumentException(DomainStrings.Project_NotNormalLayer, nameof(layerIndex));
-        var key = new CelKey(layer, _frames[frameIndex], null);
+        var key = new CelKey(layer, _frames[frameIndex], ActiveKey(layer));
         var (cel, overflow) = Split(image, origin, Size);
         Edit(label ?? DomainStrings.Project_ChangeCel, ProjectChange.Pixels, () =>
         {
@@ -175,7 +174,7 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 일반 레이어 셀들의 내용을 캔버스 밖 그림까지 통째로 (<paramref name="dx"/>, <paramref name="dy"/>)만큼 옮긴다(실행취소 한 단계, 밖으로 나간 픽셀은 캔버스 밖 그림으로 남음).
-    /// 링크된 셀은 함께 옮겨지고(한 번만), 부위·그룹·잠긴 레이어·빈 셀은 건너뛴다. <paramref name="movePivots"/>면 그림이 옮겨진 프레임(링크된 셀의 프레임 포함)의
+    /// 지금 스킨의 셀이고, 링크된 셀은 함께 옮겨지고(한 번만), 자리 있는 레이어·잠긴 레이어·빈 셀은 건너뛴다. <paramref name="movePivots"/>면 그림이 옮겨진 프레임(링크된 셀의 프레임 포함)의
     /// 레이어 피벗도 같이 옮기고, 아니면 피벗은 제자리다. 옮긴 셀 수(고른 셀 기준)를 돌려준다(0이면 기록 없음).
     /// </summary>
     public int ShiftCels(string label, IEnumerable<(int Layer, int Frame)> cels, int dx, int dy, bool movePivots = true)
@@ -190,7 +189,7 @@ public sealed partial class SpriteProject
                 if (li < 0 || li >= _layers.Count || fi < 0 || fi >= _frames.Count) continue;
                 var layer = _layers[li];
                 if (layer.Kind != LayerKind.Normal || IsLayerLocked(li)) continue;
-                var key = new CelKey(layer, _frames[fi], null);
+                var key = new CelKey(layer, _frames[fi], ActiveKey(layer));
                 var cel = _cels.GetValueOrDefault(key);
                 if (!HasContent(cel) && !_overflow.ContainsKey(key)) continue;
                 count++;
@@ -422,14 +421,14 @@ public sealed partial class SpriteProject
 
     // ───────────── 파일 읽기·쓰기 ─────────────
 
-    /// <summary>파일 쓰기용: 일반 레이어 셀의 캔버스 밖 그림.</summary>
-    internal (PixelImage Image, Point Origin)? GetOverflowRaw(Layer layer, Frame frame)
-        => layer.Kind == LayerKind.Normal && _overflow.TryGetValue(new(layer, frame, null), out var o) ? (o.Image, o.Origin) : null;
+    /// <summary>파일 쓰기용: 일반 레이어 셀(스킨 <paramref name="skin"/>, null = 첫 스킨)의 캔버스 밖 그림.</summary>
+    internal (PixelImage Image, Point Origin)? GetOverflowRaw(Layer layer, Frame frame, Skin? skin = null)
+        => layer.Kind == LayerKind.Normal && _overflow.TryGetValue(new(layer, frame, SkinKey(layer, skin)), out var o) ? (o.Image, o.Origin) : null;
 
-    /// <summary>파일 읽기용: 일반 레이어 셀의 캔버스 밖 그림을 넣는다(캔버스와 겹치는 칸은 지우고 꼭 맞게 자름, 남는 것이 없으면 넣지 않음).</summary>
-    internal void SetOverflowRaw(Layer layer, Frame frame, PixelImage image, Point origin)
+    /// <summary>파일 읽기용: 일반 레이어 셀(스킨 <paramref name="skin"/>, null = 첫 스킨)의 캔버스 밖 그림을 넣는다(캔버스와 겹치는 칸은 지우고 꼭 맞게 자름, 남는 것이 없으면 넣지 않음).</summary>
+    internal void SetOverflowRaw(Layer layer, Frame frame, PixelImage image, Point origin, Skin? skin = null)
     {
         if (layer.Kind != LayerKind.Normal) return;
-        SetOverflow(new(layer, frame, null), OutsideOf(image, origin, Size));
+        SetOverflow(new(layer, frame, SkinKey(layer, skin)), OutsideOf(image, origin, Size));
     }
 }

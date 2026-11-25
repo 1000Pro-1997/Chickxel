@@ -23,7 +23,7 @@ public static class UnityAssetWriter
     /// <summary>프리팹 오브젝트 하나: 이름, 켜짐, 부모 기준 위치(유닛), SpriteRenderer(있으면 스프라이트·정렬 순서), 자식.</summary>
     public sealed record Node(string Name, bool Active, float X, float Y, bool HasRenderer, SpriteLibraryAssetWriter.SpriteRef? Sprite, int SortingOrder, IReadOnlyList<Node> Children);
 
-    /// <summary>스프라이트 곡선: 오브젝트 경로(맨 위 기준, <c>Group/Part</c>, 맨 위면 빈 문자열)와 시각(초)마다 스프라이트(null = 비움).</summary>
+    /// <summary>스프라이트 곡선: 오브젝트 경로(맨 위 기준, <c>부모/자식/…</c>, 맨 위면 빈 문자열)와 시각(초)마다 스프라이트(null = 비움).</summary>
     public sealed record SpriteCurve(string Path, IReadOnlyList<(float Time, SpriteLibraryAssetWriter.SpriteRef? Sprite)> Keys);
 
     /// <summary>위치 곡선(계단): 오브젝트 경로와 시각마다 부모 기준 위치(유닛).</summary>

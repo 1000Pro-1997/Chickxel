@@ -353,12 +353,13 @@ public class ScriptAssetTests
         Assert.True(SameFrames(p, q));
         Assert.Contains(h1, q.ScriptsInUse().Keys);
 
-        // 형식 2 기록(원문 없음)도 읽는다
+        // 예전 판 기록(그룹 모델)은 읽지 않는다 — 기록 없이 시작, 예전 원문도 돌아오지 않음
         manifest["version"] = 2;
         manifest.AsObject().Remove("scripts");
         File.WriteAllBytes(Path.Combine(dir, UndoHistoryIO.ManifestName), UndoHistoryIO.Compress(Encoding.UTF8.GetBytes(manifest.ToJsonString())));
         var r = ProjectIO.Load(file);
-        Assert.Equal(steps, UndoHistoryIO.Read(r, dir));
+        Assert.Equal(0, UndoHistoryIO.Read(r, dir));
+        Assert.True(steps > 0);
         Assert.False(r.Scripts.ContainsKey(h1));
     }
 

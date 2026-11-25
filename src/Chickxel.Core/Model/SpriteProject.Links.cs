@@ -43,7 +43,7 @@ public sealed class CelCopy
     public bool IsLinked => Link is not null;
 }
 
-// 링크된 셀: 같은 레이어(부위면 같은 스킨)의 여러 프레임 셀이 그림 하나(같은 PixelImage)를 같이 쓴다.
+// 링크된 셀: 같은 레이어(같은 스킨)의 여러 프레임 셀이 그림 하나(같은 PixelImage)를 같이 쓴다.
 // 스트로크는 그 그림을 그 자리에서 고치므로 링크된 셀이 모두 함께 바뀌고, 셀 내용을 새 그림으로 바꾸는 편집(SetCel·MapCels·옮기기·변형·
 // 캔버스·레이어 크기 등)도 링크된 셀 모두에 같은 새 그림을 넣어 링크를 지킨다. 캔버스 밖 그림도 링크된 셀끼리 같다.
 // 셀을 갈아 끼우거나(PlaceCel — 붙여넣기 등) 비우면 그 셀만 링크에서 빠진다. 실행취소 사본은 그림 참조를 담으므로 링크도 함께 돌아온다.
@@ -185,15 +185,9 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 지금 스킨 자신의 셀이 다른 프레임 셀과 링크되어(같은 그림을 같이 써) 있는지. 셀이 없으면 false.
-    /// 그룹이면 그룹 행 링크 표시(<see cref="LinkMarks"/> — 부위 모두가 같은 프레임들과 링크)로 본다.
     /// </summary>
     public bool IsCelLinked(Layer layer, Frame frame)
     {
-        if (layer.IsGroup)
-        {
-            int f = _frames.IndexOf(frame);
-            return f >= 0 && LinkMarks(_layers.IndexOf(layer))[f].IsLinked;
-        }
         var key = new CelKey(layer, frame, ActiveKey(layer));
         return _cels.ContainsKey(key) && LinkedKeys(key).Count > 1;
     }
@@ -231,12 +225,12 @@ public sealed partial class SpriteProject
     /// 그릴 효과 목록에 범위 뒤 칸의 효과 끝 모습을 넣는다(<see cref="LayerEffects.HeldEnds"/>): 끝 모습 이어 가기를 켠 움직이는 효과의 범위가 이 프레임 앞에서 끝났으면
     /// 그 효과를 범위 끝 프레임의 조건 그대로(진행·피벗·다른 프레임·다른 레이어 <paramref name="cels"/>·태그) 맞춰 고정한 사본으로 바꾼다 — 이 프레임 셀(셀 키 스킨
     /// <paramref name="skin"/>)이 범위 끝 프레임 셀과 링크되어 있으면 범위 끝 프레임의 결과를 그대로 다시 그리고, 아니면(옮긴 거리를 알리는 효과만) 범위 끝에서 옮긴 자리로
-    /// 이 셀을 옮긴다. 그룹은 셀이 없어 그대로.
+    /// 이 셀을 옮긴다. <paramref name="effects"/>는 자기 셀에 입히는 효과(자손까지 효과는 셀이 없는 덩어리 그림이라 넣지 않음).
     /// </summary>
     private IReadOnlyList<LayerEffect> WithHeldEnds(Layer layer, IReadOnlyList<LayerEffect> effects, int frameIndex, Skin? skin,
         Func<Layer, int, PixelImage?> cels, bool nested)
     {
-        if (layer.IsGroup || effects.Count == 0) return effects;
+        if (layer.IsTilemap || effects.Count == 0) return effects;
         if (LayerEffects.HeldEnds(effects, frameIndex, (a, b) => ShareDrawing(layer, skin, a, b)) is not { } held) return effects;
         var list = effects.ToArray();
         foreach (var h in held)
@@ -253,53 +247,18 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 레이어의 프레임마다 링크 표시(지금 스킨 자신의 셀 기준): 묶음 번호(묶음의 첫 프레임 차례로 0부터)와 묶음 색. 링크되지 않은 칸은 <see cref="CelLinkMark.None"/>.
-    /// 색이 붙지 않은 묶음(실행취소 기록에서 되살린 예전 그림 등)은 그 행에서 쓰지 않은 첫 색으로 보인다. 그룹 행은 <see cref="GroupLinkMarks"/>.
+    /// 색이 붙지 않은 묶음(실행취소 기록에서 되살린 예전 그림 등)은 그 행에서 쓰지 않은 첫 색으로 보인다.
     /// </summary>
     public CelLinkMark[] LinkMarks(int layerIndex)
     {
         var marks = new CelLinkMark[_frames.Count];
         Array.Fill(marks, CelLinkMark.None);
         var layer = _layers[layerIndex];
-        if (layer.IsGroup) return GroupLinkMarks(layer, marks);
         var groups = LinkGroupsOf(layer, ActiveKey(layer));
         var used = groups.Select(g => ColorOf(g.Image)).Where(c => c >= 0).ToHashSet();
         for (int i = 0; i < groups.Count; i++)
         {
             int color = ColorOf(groups[i].Image);
-            if (color < 0)
-            {
-                color = Enumerable.Range(0, LinkColorNames.Count).FirstOrDefault(c => !used.Contains(c), i % LinkColorNames.Count);
-                used.Add(color);
-            }
-            foreach (var f in groups[i].Frames) marks[f] = new CelLinkMark(i, color);
-        }
-        return marks;
-    }
-
-    /// <summary>
-    /// 그룹 행의 링크 표시: 그룹의 부위 모두가(지금 스킨 자신의 셀 기준) 같은 프레임들끼리 같은 그림을 쓰면 그 프레임들이 한 묶음이다 —
-    /// 그룹 행에서 링크한 칸(<see cref="LinkCels"/>), 또는 부위마다 같은 프레임들을 따로 링크한 칸. 자기 그림이 있는 부위가 하나도 없는 프레임은 빼고,
-    /// 색은 그 묶음 첫 부위 그림의 색(없으면 그 행에서 쓰지 않은 첫 색).
-    /// </summary>
-    private CelLinkMark[] GroupLinkMarks(Layer group, CelLinkMark[] marks)
-    {
-        var rows = ChildrenOf(group).Select(part => (Part: part, Skin: ActiveKey(part))).ToList();
-        if (rows.Count == 0) return marks;
-        var groups = new List<(PixelImage?[] Cels, List<int> Frames)>();
-        for (int f = 0; f < _frames.Count; f++)
-        {
-            var cels = rows.Select(r => _cels.GetValueOrDefault(new CelKey(r.Part, _frames[f], r.Skin))).ToArray();
-            if (cels.All(c => c is null)) continue;
-            int i = groups.FindIndex(g => g.Cels.Zip(cels).All(p => ReferenceEquals(p.First, p.Second)));
-            if (i < 0) groups.Add((cels, [f]));
-            else groups[i].Frames.Add(f);
-        }
-        groups.RemoveAll(g => g.Frames.Count < 2);
-        int ColorOfGroup(int i) => groups[i].Cels.FirstOrDefault(c => c is not null) is { } image ? ColorOf(image) : -1;
-        var used = Enumerable.Range(0, groups.Count).Select(ColorOfGroup).Where(c => c >= 0).ToHashSet();
-        for (int i = 0; i < groups.Count; i++)
-        {
-            int color = ColorOfGroup(i);
             if (color < 0)
             {
                 color = Enumerable.Range(0, LinkColorNames.Count).FirstOrDefault(c => !used.Contains(c), i % LinkColorNames.Count);
@@ -324,11 +283,6 @@ public sealed partial class SpriteProject
     /// 고른 칸이 그 링크 묶음(과 색)에 들어간다 —. 아니면 고른 셀 중 이미 링크된(다른 칸과 그림을 같이 쓰는) 그림 있는 첫 프레임 셀의 것(그 묶음에 들어감),
     /// 없으면 그림이 있는 첫 프레임 셀(지금 스킨 자신의 셀)의 것으로 새 묶음을 만든다(색 = 그 행에서 아직 쓰지 않은 첫 색).
     /// 나머지 셀의 그림(빈 셀 포함)은 그 그림으로 바뀌고, 일반 레이어면 캔버스 밖 그림도 같아진다.
-    /// <para>
-    /// 그룹 행을 고르면 그 그룹의 부위마다(잠긴 부위 빼고) 고른 프레임들을 새 묶음 하나로 묶는다(부위들이 같은 색): 부위마다 누른 칸(없으면 그림이 보이는 첫 칸)의
-    /// 보이는 그림 사본을 같이 쓰고, 그 칸들이 들어 있던 다른 묶음에서는 빠진다 — 그룹 링크가 부위 링크보다 먼저. 같은 그룹의 부위 행을 함께 골랐으면 그 부위 행은
-    /// 그룹 링크를 따른다. 이미 고른 프레임들만으로 묶여 있는 부위는 그대로.
-    /// </para>
     /// 잠긴 레이어·그림이 보이는 셀이 없는 레이어는 건너뛴다. 새로 링크한 셀 수를 돌려준다(0이면 기록 없음).
     /// </summary>
     public int LinkCels(IEnumerable<(int Layer, int Frame)> cels, int mainFrame = -1)
@@ -336,36 +290,14 @@ public sealed partial class SpriteProject
         var plan = new List<(CelKey Source, bool Join, List<CelKey> Keys, int Color)>();
         int count = 0;
         var rows = cels.Where(c => c.Frame >= 0 && c.Frame < _frames.Count && c.Layer >= 0 && c.Layer < _layers.Count).Distinct().GroupBy(c => c.Layer).ToList();
-        var groupRows = rows.Where(r => _layers[r.Key].IsGroup && !IsLayerLocked(r.Key)).Select(r => _layers[r.Key]).ToHashSet();
         int MainIndex(List<CelKey> keys) => mainFrame >= 0 && mainFrame < _frames.Count ? keys.FindIndex(k => ReferenceEquals(k.Frame, _frames[mainFrame])) : -1;
         foreach (var row in rows)
         {
             int li = row.Key;
             var frames = row.Select(c => c.Frame).Order().ToList();
             if (IsLayerLocked(li)) continue;
-            if (_layers[li].IsGroup)
-            {
-                // 그룹 링크: 부위마다 고른 프레임들이 새 묶음 하나(부위들이 같은 색)
-                int color = -1;
-                foreach (var part in ChildrenOf(_layers[li]))
-                {
-                    if (IsLayerLocked(IndexOf(part))) continue;
-                    var partSkin = ActiveKey(part);
-                    var partKeys = frames.Select(f => new CelKey(part, _frames[f], partSkin)).ToList();
-                    bool Shown(CelKey k) => HasContent(_cels.GetValueOrDefault(k));
-                    int pm = MainIndex(partKeys);
-                    int from = pm >= 0 && Shown(partKeys[pm]) ? pm : partKeys.FindIndex(Shown);
-                    if (from < 0) continue;
-                    var own = _cels.GetValueOrDefault(partKeys[0]);
-                    if (own is not null && partKeys.All(k => ReferenceEquals(_cels.GetValueOrDefault(k), own)) && LinkedKeys(partKeys[0]).Count == partKeys.Count) continue;
-                    if (color < 0) color = NextLinkColor(part, partSkin);
-                    plan.Add((partKeys[from], false, partKeys, color));
-                    count += partKeys.Count;
-                }
-                continue;
-            }
             var layer = _layers[li];
-            if (layer.Parent is { } parent && groupRows.Contains(parent)) continue; // 그룹 링크가 먼저
+            if (layer.IsTilemap) continue;
             var skin = ActiveKey(layer);
             var keys = frames.Select(f => new CelKey(layer, _frames[f], skin)).ToList();
             int main = MainIndex(keys);
@@ -400,21 +332,11 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 링크 묶음 색 바꾸기(실행취소 한 단계): 프레임 <paramref name="frameIndex"/>의 셀(지금 스킨 자신의 셀)이 든 링크 묶음의 색을 <paramref name="color"/>
-    /// (<see cref="LinkColorNames"/> 번호)로. 그룹이면 그 프레임 셀이 링크된 부위마다. 링크된 셀이 없으면 false(기록 없음).
+    /// (<see cref="LinkColorNames"/> 번호)로. 링크된 셀이 없으면 false(기록 없음).
     /// </summary>
     public bool SetLinkColor(int layerIndex, int frameIndex, int color)
     {
         if ((uint)color >= (uint)LinkColorNames.Count) throw new ArgumentOutOfRangeException(nameof(color));
-        if (_layers[layerIndex].IsGroup)
-        {
-            var parts = ChildrenOf(_layers[layerIndex]).Select(IndexOf).Where(pi => IsCelLinked(pi, frameIndex)).ToList();
-            if (parts.Count == 0) return false;
-            Edit(DomainStrings.Project_LinkColor, ProjectChange.Pixels, () =>
-            {
-                foreach (int pi in parts) SetLinkColor(pi, frameIndex, color);
-            });
-            return true;
-        }
         var key = CelKeyFor(layerIndex, frameIndex, null);
         if (!_cels.TryGetValue(key, out var image) || LinkedKeys(key).Count < 2) return false;
         if (ColorOf(image) == color) return true;
@@ -423,8 +345,7 @@ public sealed partial class SpriteProject
     }
 
     /// <summary>
-    /// 셀 링크 풀기(실행취소 한 단계): 고른 셀(지금 스킨 자신의 셀) 중 다른 셀과 링크된 것이 저마다 그림 사본을 갖게 한다. 그룹 행의 칸이면 그 그룹의 부위마다
-    /// 그 프레임 셀을 푼다. 잠긴 레이어·빈 칸은 건너뛰고, 묶음의 마지막 셀은 혼자 남으므로 사본이 필요 없다.
+    /// 셀 링크 풀기(실행취소 한 단계): 고른 셀(지금 스킨 자신의 셀) 중 다른 셀과 링크된 것이 저마다 그림 사본을 갖게 한다. 잠긴 레이어·빈 칸은 건너뛰고, 묶음의 마지막 셀은 혼자 남으므로 사본이 필요 없다.
     /// <para>
     /// 링크된 칸의 효과 끝 모습(<see cref="AnimatedEffect.HoldEnd"/>)은 링크로 보이던 것이라 풀면 사라진다(옮긴 거리를 알리는 효과면 옮긴 자리만 남는다). 그래서 풀기 전에
     /// 그 모습을 잃고 이어 가는 끝 모습이 하나도 남지 않는 칸 — 떼어 낸 칸, 그리고 범위 끝 프레임 칸을 떼어 내 끝 모습을 잃는 남은 칸 — 은 지금 보이는 그대로
@@ -440,13 +361,9 @@ public sealed partial class SpriteProject
         foreach (var (li, fi) in cels.Distinct())
         {
             if (li < 0 || li >= _layers.Count || fi < 0 || fi >= _frames.Count || IsLayerLocked(li)) continue;
-            // 그룹 행이면 그 그룹의 부위마다(잠긴 부위 빼고)
-            var rowLayers = _layers[li].IsGroup ? ChildrenOf(_layers[li]).Where(part => !IsLayerLocked(IndexOf(part))) : [_layers[li]];
-            foreach (var layer in rowLayers)
-            {
-                var key = new CelKey(layer, _frames[fi], ActiveKey(layer));
-                if (_cels.ContainsKey(key) && LinkedKeys(key).Count > 1 && !keys.Contains(key)) keys.Add(key);
-            }
+            var layer = _layers[li];
+            var key = new CelKey(layer, _frames[fi], ActiveKey(layer));
+            if (_cels.ContainsKey(key) && LinkedKeys(key).Count > 1 && !keys.Contains(key)) keys.Add(key);
         }
         if (keys.Count == 0) return default;
 
@@ -471,7 +388,7 @@ public sealed partial class SpriteProject
         foreach (var k in members)
         {
             int f = _frames.IndexOf(k.Frame);
-            var effects = k.Layer.Effects;
+            var effects = OwnEffectsOf(k.Layer);
             if (effects.Any(e => e.Enabled && e.AppliesTo(f))) continue; // 범위 안 효과는 풀어도 계속 입혀진다
             if (LayerEffects.HeldEnds(effects, f, (a, b) => ShareDrawing(k.Layer, k.Skin, a, b))?.Exists(h => h.Linked) != true) continue;
             // 풀고 난 뒤에도 이어 가는 끝 모습이 있으면(남은 칸이 범위 끝 프레임과 계속 링크, 또는 링크 없이 옮긴 자리만) 그 위에 계속 입혀지므로 그림 그대로
@@ -519,14 +436,14 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 고른 셀(지금 스킨 자신의 셀)의 그림을 지운다(실행취소 한 단계). 링크된 셀은 링크를 남긴 채 묶음의 그림을 빈 그림으로 바꾸고(링크된 칸이 모두 비고 색도 그대로),
-    /// 링크되지 않은 셀은 비운다(<see cref="SetCel"/>에 null). 그룹·잠긴 레이어·빈 칸은 건너뛴다. 지운 셀 수를 돌려준다(0이면 기록 없음).
+    /// 링크되지 않은 셀은 비운다(<see cref="SetCel"/>에 null). 타일맵·잠긴 레이어·빈 칸은 건너뛴다. 지운 셀 수를 돌려준다(0이면 기록 없음).
     /// </summary>
     public int EraseCels(IEnumerable<(int Layer, int Frame)> cels, string? label = null)
     {
         var keys = new List<(CelKey Key, bool Linked)>();
         foreach (var (li, fi) in cels.Distinct())
         {
-            if (li < 0 || li >= _layers.Count || fi < 0 || fi >= _frames.Count || _layers[li].IsGroup || IsLayerLocked(li)) continue;
+            if (li < 0 || li >= _layers.Count || fi < 0 || fi >= _frames.Count || _layers[li].IsTilemap || IsLayerLocked(li)) continue;
             var layer = _layers[li];
             var key = new CelKey(layer, _frames[fi], ActiveKey(layer));
             if (!HasContent(_cels.GetValueOrDefault(key))) continue;
@@ -566,12 +483,12 @@ public sealed partial class SpriteProject
     /// <summary>
     /// 레이어 <paramref name="layer"/>의 프레임 <paramref name="frames"/> 셀(지금 스킨 자신의 셀, 빈 셀 = null)을 붙여넣기용으로 복사한다(<see cref="PasteCels"/>).
     /// 일반 레이어면 캔버스 밖 그림도 담는다. <paramref name="links"/>면 링크된 셀은 그 묶음·색도 담고, 아니면 그림만. 같은 그림을 쓰던 셀은 사본 하나를 같이 쓴다.
-    /// 그룹이면 모두 null.
+    /// 타일맵이면 모두 null.
     /// </summary>
     public CelCopy?[] CopyCels(Layer layer, IReadOnlyList<int> frames, bool links = true)
     {
         var result = new CelCopy?[frames.Count];
-        if (layer.IsGroup) return result;
+        if (layer.IsTilemap) return result;
         var skin = ActiveKey(layer);
         var marks = links ? LinkMarks(_layers.IndexOf(layer)) : null;
         var clones = new Dictionary<PixelImage, PixelImage>(ReferenceEqualityComparer.Instance);
@@ -601,7 +518,7 @@ public sealed partial class SpriteProject
     /// 캔버스 밖 그림도 묶음과 같게), 없으면(다른 레이어·다른 문서, 묶음이 사라짐) 같은 묶음에서 온 사본이 한 행에 둘 이상일 때 그 칸들이 새 묶음 하나를
     /// 같이 쓴다(복사할 때 그림·캔버스 밖 그림, 색 = 원래 색 — 그 행의 다른 묶음이 쓰는 색이면 쓰지 않은 첫 색). 하나뿐이면 따로 둔다.
     /// </para>
-    /// 그룹이면 <see cref="InvalidOperationException"/>, 부위에 놓을 그림 크기가 부위 크기와 다르면 <see cref="ArgumentException"/>.
+    /// 타일맵이면 <see cref="InvalidOperationException"/>, 자리 있는 레이어에 놓을 그림 크기가 셀 크기와 다르면 <see cref="ArgumentException"/>.
     /// </summary>
     public void PasteCels(IReadOnlyList<(int Layer, int Frame, CelCopy? Cel)> cels, string? label = null)
     {

@@ -2,7 +2,7 @@ using System.Drawing;
 
 namespace Chickxel.Core.Model;
 
-/// <summary>그룹 자동 배치 방향.</summary>
+/// <summary>자식 자동 배치 방향.</summary>
 public enum GroupLayoutDirection
 {
     /// <summary>가로 한 줄(왼쪽 → 오른쪽).</summary>
@@ -41,9 +41,9 @@ public enum GroupLayoutOrder
 }
 
 /// <summary>
-/// 그룹 자동 배치 설정(<see cref="Layer.AutoLayout"/>): 그룹 부위들의 위치(<see cref="Layer.PartOffset"/>)를 크기(<see cref="Layer.PartSize"/>)로
-/// 늘 다시 계산한다(부위 추가·삭제·순서·크기·캔버스 크기·설정이 바뀌는 편집과 같은 실행취소 단계). 테두리 상자 기준이라 피벗은 그대로다.
-/// 캔버스 밖으로 넘쳐도 자르지 않는다. 바꿀 때는 <see cref="SpriteProject.SetGroupLayout"/>로.
+/// 자식 자동 배치 설정(<see cref="Layer.AutoLayout"/>): 부모 레이어의 바로 아래 자식들의 자리(<see cref="Layer.PartOffset"/>)를 크기(<see cref="Layer.PartSize"/>)로
+/// 늘 다시 계산한다(자식은 자손째 옮겨 감 — 자식 추가·삭제·순서·크기·캔버스 크기·설정이 바뀌는 편집과 같은 실행취소 단계). 테두리 상자 기준이라 피벗은 그대로다.
+/// 캔버스 밖으로 넘쳐도 자르지 않는다. 바꿀 때는 <see cref="SpriteProject.SetChildLayout"/>로.
 /// </summary>
 public sealed record GroupLayout
 {

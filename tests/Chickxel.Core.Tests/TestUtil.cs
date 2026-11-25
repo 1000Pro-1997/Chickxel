@@ -4,6 +4,12 @@ namespace Chickxel.Core.Tests;
 
 internal static class TestUtil
 {
+    /// <summary>
+    /// 빈 부모 레이어(예전 그룹 자리)를 맨 위 최상위로 넣는다: 캔버스 크기 자리 있는 레이어, (0, 0), 셀 없음. 이름이 비면 새 레이어 이름.
+    /// </summary>
+    public static Layer AddEmptyParent(this SpriteProject p, string? name = null)
+        => p.AddPart(null, name, p.Width, p.Height, System.Drawing.Point.Empty);
+
     /// <summary>출력 폴더에 복사된 Unity 참조 파일 폴더.</summary>
     public static string FixturesDir => Path.Combine(AppContext.BaseDirectory, "fixtures");
 

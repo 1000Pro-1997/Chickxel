@@ -252,7 +252,7 @@ public class EffectMovePivotTests
     public void PartInFrame_DrawsOnlyThatPartWithPartAndGroupEffects_AtFullOpacity()
     {
         var p = new SpriteProject(12, 12);
-        var group = p.AddGroup("몸");
+        var group = p.AddEmptyParent("몸");
         var part = p.AddPart(group, "공", 4, 4, new Point(2, 2));
         var other = p.AddPart(group, "다른", 2, 2, new Point(8, 8));
         var cel = new PixelImage(4, 4);
@@ -271,8 +271,8 @@ public class EffectMovePivotTests
         Assert.Equal(White, alone[5, 3]);
         Assert.Equal(new PointF(2, 0), p.EffectPivotShift(part, 0));
 
-        // 그룹 효과도 입힌다(이 부위만 든 그룹 합성) — 피벗 이동도 부위 + 그룹
-        p.SetLayerEffects(p.IndexOf(group), [Slide()]);
+        // 부모의 자손까지 효과도 입힌다(이 레이어만 든 덩어리) — 피벗 이동도 자기 + 부모
+        p.SetLayerEffects(p.IndexOf(group), [Slide() with { IncludeChildren = true }]);
         Assert.Equal(new Point(7, 3), OnlyDot(p.PlanPartInFrame(part, 0).Render()));
         Assert.Equal(new PointF(4, 0), p.EffectPivotShift(part, 0));
         Assert.Equal(new PointF(2, 0), p.EffectPivotShift(group, 0));

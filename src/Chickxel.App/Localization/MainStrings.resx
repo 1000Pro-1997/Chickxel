@@ -159,7 +159,7 @@
     <value>피벗</value>
   </data>
   <data name="Ui_048" xml:space="preserve">
-    <value>피벗 표시: 보이는 모든 레이어와 캔버스의 지금 프레임 피벗(이름 붙임, 부위는 파랑) · 지금 레이어 피벗은 크게</value>
+    <value>피벗 표시: 보이는 모든 레이어와 캔버스의 지금 프레임 피벗(이름 붙임, 자기 크기가 있는 레이어는 파랑) · 지금 레이어 피벗은 크게</value>
   </data>
   <data name="Ui_049" xml:space="preserve">
     <value>양파</value>
@@ -383,26 +383,26 @@
   <data name="Menu_FrameLayer_AddLayer_180" xml:space="preserve">
     <value>새 레이어</value>
   </data>
-  <data name="Menu_FrameLayer_AddGroup_182" xml:space="preserve">
-    <value>새 그룹</value>
+  <data name="Menu_FrameLayer_AddEmptyLayer" xml:space="preserve">
+    <value>새 빈 레이어</value>
   </data>
-  <data name="Menu_FrameLayer_AddPart_184" xml:space="preserve">
-    <value>새 부위…</value>
+  <data name="Menu_FrameLayer_AddChildLayer" xml:space="preserve">
+    <value>새 자식 레이어…</value>
   </data>
   <data name="Menu_FrameLayer_Command_186" xml:space="preserve">
-    <value>부위 크기…</value>
+    <value>레이어 크기…</value>
   </data>
   <data name="Menu_FrameLayer_BeginRenameLayer_188" xml:space="preserve">
     <value>레이어 이름 바꾸기</value>
   </data>
   <data name="Menu_FrameLayer_StepSkin_190" xml:space="preserve">
-    <value>이전 스킨(현재 그룹)</value>
+    <value>이전 스킨(현재 레이어)</value>
   </data>
   <data name="Menu_FrameLayer_StepSkin_192" xml:space="preserve">
-    <value>다음 스킨(현재 그룹)</value>
+    <value>다음 스킨(현재 레이어)</value>
   </data>
   <data name="Menu_FrameLayer_OpenSkinManager_194" xml:space="preserve">
-    <value>스킨 관리…</value>
+    <value>스킨 설정…</value>
   </data>
   <data name="Menu_FrameLayer_Command_196" xml:space="preserve">
     <value>새 태그(애니메이션)…</value>
@@ -484,9 +484,6 @@
   </data>
   <data name="Ui_244" xml:space="preserve">
     <value>저장됨</value>
-  </data>
-  <data name="Ui_245" xml:space="preserve">
-    <value> (그룹)</value>
   </data>
   <data name="Ui_246" xml:space="preserve">
     <value>투명</value>
@@ -627,7 +624,7 @@
     <value>프레임</value>
   </data>
   <data name="Ui_302" xml:space="preserve">
-    <value>부위</value>
+    <value>레이어 아틀라스</value>
   </data>
   <data name="Ui_303" xml:space="preserve">
     <value>라벨</value>
@@ -696,7 +693,7 @@
     <value>현재 레이어가 잠겨 있습니다.</value>
   </data>
   <data name="Message_328" xml:space="preserve">
-    <value>그룹이나 부위를 고르면 그 그룹의 스킨을 바꿀 수 있습니다.</value>
+    <value>타일맵 레이어에는 스킨이 없습니다. 다른 레이어를 고르세요.</value>
   </data>
   <data name="Ui_331" xml:space="preserve">
     <value>격자로 나누기</value>
@@ -815,10 +812,6 @@
   <data name="Message_359" xml:space="preserve">
     <value>프레임 {count}개 · 태그 {count2}개</value>
     <comment>count = p.Frames.Count; count2 = p.Tags.Count</comment>
-  </data>
-  <data name="Message_360" xml:space="preserve">
-    <value> · 부위 {parts}개</value>
-    <comment>parts = parts</comment>
   </data>
   <data name="Message_361" xml:space="preserve">
     <value>PNG 가져옴: {value} → {contents} — 저장하면 {path}이(가) 만들어집니다.</value>
@@ -950,7 +943,7 @@
     <comment>name = group.Name; name2 = group.ActiveSkin!.Name</comment>
   </data>
   <data name="Message_391" xml:space="preserve">
-    <value>"{name}" 그룹은 스킨이 하나뿐입니다 — 타임라인 이름 칸의 스킨 칩을 눌러 스킨 관리 창에서 스킨을 더하세요.</value>
+    <value>"{name}" 레이어는 스킨이 하나뿐입니다 — 타임라인 이름 칸의 스킨 칩을 눌러 스킨 설정 창에서 스킨을 더하세요.</value>
     <comment>name = group.Name</comment>
   </data>
   <data name="Message_392" xml:space="preserve">
@@ -1099,12 +1092,12 @@
   <data name="Tabs_Previous" xml:space="preserve"><value>이전 탭</value></data>
   <data name="Tabs_DropSplit" xml:space="preserve"><value>놓으면 오른쪽 화면으로 옮김</value></data>
   <data name="Tabs_DropMove" xml:space="preserve"><value>놓으면 이쪽으로 옮김</value></data>
-  <data name="Tabs_PreviewTip" xml:space="preserve"><value>미리보기 탭: 지금 편집하는 문서를 미리보기와 같은 재생·배경·착장으로 보입니다(휠 = 확대·축소, 끌기 = 옮기기, 두 번 누르기 = 맞춤, 우클릭 = 복사·저장)</value></data>
+  <data name="Tabs_PreviewTip" xml:space="preserve"><value>미리보기 탭: 지금 편집하는 문서를 미리보기와 같은 재생·배경·스킨으로 보입니다(휠 = 확대·축소, 끌기 = 옮기기, 두 번 누르기 = 맞춤, 우클릭 = 복사·저장)</value></data>
   <data name="Tabs_Reloaded" xml:space="preserve"><value>밖에서 바뀐 파일을 다시 읽었습니다: {name}</value></data>
   <data name="Tabs_Restored" xml:space="preserve"><value>지난번 탭 {count}개를 다시 열었습니다</value></data>
   <data name="Tabs_RestoredMissing" xml:space="preserve"><value> · 열 수 없는 파일 {count}개는 건너뜀</value></data>
-  <data name="Tabs_RestoredConverted" xml:space="preserve"><value> · 예전 형식 파일 {count}개는 새 형식으로 바꿔 열었습니다(레이어마다 캔버스 피벗을 복사함, 저장하면 새 형식으로 저장)</value><comment>{count}=예전 형식(레이어 피벗이 없던 버전)에서 바꿔 연 파일 수</comment></data>
-  <data name="Message_ConvertedProject" xml:space="preserve"><value>· 예전 형식(버전 {version}) 파일이라 새 형식으로 바꿔 열었습니다: 레이어마다 예전 캔버스 피벗을 복사해 두었고, 저장하면 새 형식으로 저장됩니다.</value><comment>열기 상태 표시줄에 덧붙임. {version}=파일의 예전 형식 버전</comment></data>
+  <data name="Tabs_RestoredConverted" xml:space="preserve"><value> · 예전 형식 파일 {count}개는 새 형식으로 바꿔 열었습니다(그룹은 자식이 있는 레이어로, 부위는 그 자식 레이어로 바뀜, 저장하면 새 형식으로 저장)</value><comment>{count}=예전 형식에서 바꿔 연 파일 수</comment></data>
+  <data name="Message_ConvertedProject" xml:space="preserve"><value>· 예전 형식(버전 {version}) 파일이라 새 형식으로 바꿔 열었습니다: 그룹은 자식이 있는 레이어로, 부위는 그 자식 레이어로, 그룹 스킨은 레이어마다의 스킨과 스킨 프리셋으로 바뀌었습니다(더 예전 파일은 캔버스 피벗도 레이어마다 복사). 저장하면 새 형식으로 저장됩니다.</value><comment>열기 상태 표시줄에 덧붙임. {version}=파일의 예전 형식 버전</comment></data>
   <data name="Tabs_TempTitle" xml:space="preserve"><value>임시 제목…</value></data>
   <data name="Tabs_TempTitle_DialogTitle" xml:space="preserve"><value>임시 제목</value></data>
   <data name="Tabs_TempTitle_Prompt" xml:space="preserve"><value>저장하기 전까지 탭에 보일 이름입니다. 처음 저장할 때 파일 이름으로 제안합니다(비우면 지움).</value></data>

@@ -7,7 +7,7 @@ using Chickxel.Core.Model;
 namespace Chickxel.App.Ai;
 
 /// <summary>
-/// 피벗 도구: 레이어마다의 피벗(set_layer의 pivot_* 인자 — 부위는 부위 기준, 일반 레이어·그룹은 캔버스 기준)과 캔버스 피벗(set_canvas_pivot — 내보내기 피벗,
+/// 피벗 도구: 레이어마다의 피벗(set_layer의 pivot_* 인자 — 위치 레이어는 그 레이어 기준, 일반 레이어는 캔버스 기준)과 캔버스 피벗(set_canvas_pivot — 내보내기 피벗,
 /// 캔버스 자신의 값 또는 대표 레이어의 피벗), get_document의 피벗 항목. 피벗은 0~1, 아래 왼쪽 원점이다(<see cref="Pivot"/>).
 /// 바꾸는 호출은 프로젝트 메서드를 바깥 편집으로 감싸 실행취소 한 단계를 남기고, 바뀌는 것이 없으면 기록하지 않는다.
 /// </summary>
@@ -29,7 +29,7 @@ public sealed partial class PixelTools
                 ["pivot_y"] = UnitProp("Canvas pivot y (0 = bottom, 1 = top)."),
                 ["pivot_from_frame"] = Int(PivotFromFrameNote, 0),
                 ["clear_frame_pivots"] = Bool(ClearFramePivotsNote),
-                ["representative_layer"] = Int("Layer index (normal, part or group) whose pivot becomes the canvas pivot of every frame; -1 = none (use the canvas's own pivot).", -1),
+                ["representative_layer"] = Int("Layer index whose pivot becomes the canvas pivot of every frame; -1 = none (use the canvas's own pivot).", -1),
             }),
     ];
 

@@ -38,7 +38,7 @@ public sealed partial class PixelTools
             new JsonObject
             {
                 ["source"] = Str("Full JavaScript source."),
-                ["layer"] = Int("Layer index (normal, part or group). Default: current.", 0),
+                ["layer"] = Int("Layer index (normal or part). Default: current.", 0),
                 ["effect"] = Int("Index of an existing script effect on that layer to replace (keeps its frame range and matching setting values). Omit to add a new effect.", 0),
                 ["settings"] = new JsonObject { ["type"] = "object", ["description"] = "Setting values by key (as declared in settings; colors \"#RRGGBB\"). Omitted keys use the declared defaults. To make a color setting a gradient, call set_effect with settings.colorGradients afterwards." },
                 ["from_frame"] = Int("First frame of a new effect (0-based).", 0),
@@ -506,7 +506,7 @@ public sealed partial class PixelTools
         return Enlarge(SideBySide(frames), null).Base64;
     }
 
-    /// <summary>레이어의 효과를 입힌 그 레이어 그림을 프레임 몇 칸 이어 붙인 PNG(base64).</summary>
+    /// <summary>레이어의 효과를 입힌 그 레이어 그림(자식까지 합친 효과가 있으면 자식까지 합친 그림)을 프레임 몇 칸 이어 붙인 PNG(base64).</summary>
     private static string LayerStrip(SpriteProject p, Layer layer)
     {
         int n = p.Frames.Count, count = Math.Min(PreviewStripFrames, n);
@@ -514,6 +514,12 @@ public sealed partial class PixelTools
         for (int i = 0; i < count; i++)
         {
             int frame = count == 1 ? 0 : (int)Math.Round(i * (n - 1) / (double)(count - 1));
+            if (p.HasChildren(layer) && p.SubtreeEffectsOf(layer).Count > 0)
+            {
+                if (p.SubtreeEffectSource(layer, frame) is not { } block) continue;
+                frames.Add(LayerEffects.Render(block, p.SubtreeEffectsAt(layer, frame)).Image);
+                continue;
+            }
             if (p.EffectSource(layer, frame) is not { } source) continue;
             frames.Add(LayerEffects.Render(source, p.EffectsAt(layer, frame)).Image);
         }

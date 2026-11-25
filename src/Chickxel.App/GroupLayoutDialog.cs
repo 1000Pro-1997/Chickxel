@@ -4,7 +4,7 @@ using Chickxel.App.Localization;
 namespace Chickxel.App;
 
 /// <summary>
-/// 그룹 자동 배치 설정: 방향(가로·세로·격자 + 열 수)·맞춤·배치·간격·여백·순서·숨긴 부위·영역. 아래 미리 보기에 지금 프레임 부위 그림을 놓아 보인다
+/// 자식 자동 배치 설정(자식이 있는 자리 있는 레이어): 방향(가로·세로·격자 + 열 수)·맞춤·배치·간격·여백·순서·숨긴 자식·영역. 아래 미리 보기에 지금 프레임 자식 그림을 놓아 보인다
 /// (프로젝트는 바꾸지 않음). 적용 = OK(<see cref="Layout"/>), 이미 켜져 있으면 "자동 배치 끄기" = No.
 /// </summary>
 public sealed class GroupLayoutDialog : DialogBase
@@ -51,7 +51,7 @@ public sealed class GroupLayoutDialog : DialogBase
         // 대상 도움말(F1): 창 = "자동 배치" 설정 창 그림, 줄마다 설정 표의 그 줄(④~⑩), 미리 보기 ②·적용 ③, 끄기 = 끄는 법 항목
         const string page = "parts-auto-layout";
         this.HelpAt(page, shot: "parts-auto-layout-2");
-        int parts = project.ChildCount(group);
+        int parts = project.ChildrenOf(group).Count;
         Body.Children.Add(Note(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_6446F8431F,parts)));
         Body.Children.Add(Ui.Row(FieldLabel(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_9331E25300), _direction, _columnsRow).HelpAt(page, anchor: "Direction"));
         Body.Children.Add(Ui.Row(_alignLabel, _align).HelpAt(page, anchor: "Align"));
@@ -143,7 +143,7 @@ public sealed class GroupLayoutDialog : DialogBase
     }
 
     /// <summary>
-    /// 자동 배치 중인 그룹의 부위를 손으로 옮기기 전에 묻는다. 자동 배치가 아니면 바로 true, 확인하면 true(끄기는 부르는 쪽이 옮기기와 함께), 취소하면 false.
+    /// 자동 배치 중인 부모의 자식을 손으로 옮기기 전에 묻는다. 자동 배치가 아니면 바로 true, 확인하면 true(끄기는 부르는 쪽이 옮기기와 함께), 취소하면 false.
     /// </summary>
     public static bool ConfirmManualMove(Visual? owner, Layer part)
         => !part.IsAutoLaidOut
@@ -196,9 +196,9 @@ internal sealed class GroupLayoutPreview : Control
     {
         var view = new Rect(Bounds.Size);
         g.FillRectangle(AppTheme.BackBrush, view);
-        var placed = _project.ComputeGroupLayout(_group, _layout);
+        var placed = _project.ComputeChildLayout(_group, _layout);
         var order = new Dictionary<Layer, (Point Offset, int Number)>();
-        for (int i = 0; i < placed.Count; i++) order[placed[i].Part] = (placed[i].Offset, i + 1);
+        for (int i = 0; i < placed.Count; i++) order[placed[i].Child] = (placed[i].Offset, i + 1);
         var parts = _project.ChildrenOf(_group); // 아래 → 위(그리는 순서)
         var canvas = _project.Bounds;
         var area = _layout.Area ?? canvas;

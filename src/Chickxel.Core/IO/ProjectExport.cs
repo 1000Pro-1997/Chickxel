@@ -12,9 +12,9 @@ namespace Chickxel.Core.IO;
 /// <param name="Rect">시트 안 영역(왼쪽 위 원점).</param>
 /// <param name="Pivot">칸 기준 피벗(아래 왼쪽 원점, 잘라낸 경우 0~1 밖일 수 있음).</param>
 /// <param name="Tag">이 칸이 속한(이름을 정한) 태그 이름. 없으면 null.</param>
-/// <param name="Border">9-slice 테두리(부위 아틀라스).</param>
-/// <param name="Part">부위 아틀라스 칸이면 그 부위 레이어, 프레임 시트면 null.</param>
-/// <param name="Skin">부위 아틀라스 칸이 그룹의 첫 스킨이 아닌 스킨이면 그 스킨(첫 스킨·프레임 시트면 null).</param>
+/// <param name="Border">9-slice 테두리(레이어 아틀라스).</param>
+/// <param name="Part">레이어 아틀라스 칸이면 그 레이어, 프레임 시트면 null.</param>
+/// <param name="Skin">레이어 아틀라스 칸이 그 레이어의 첫 스킨이 아닌 스킨이면 그 스킨(첫 스킨·프레임 시트면 null).</param>
 /// <param name="Variant">프레임 시트 칸이면 합성한 스킨 항목.</param>
 public sealed record SheetEntry(int FrameIndex, string Name, Rectangle Rect, Pivot Pivot, string? Tag, SpriteBorder Border = default, Layer? Part = null,
     Skin? Skin = null, FrameVariant? Variant = null);
@@ -22,26 +22,26 @@ public sealed record SheetEntry(int FrameIndex, string Name, Rectangle Rect, Piv
 /// <summary>만들어진 시트 이미지와 칸 목록. <paramref name="Scale"/>은 칸 그림을 키운 배율(<see cref="SheetOptions.Scale"/>, Unity PPU에도 곱함).</summary>
 public sealed record SheetResult(PixelImage Image, IReadOnlyList<SheetEntry> Entries, Size CellSize, int Scale = 1);
 
-/// <summary>결과 파일 하나의 시트: 파일 이름(확장자 없이)과 시트. 태그·부위·스킨마다 나눴으면 그 태그·부위·스킨(프레임 시트는 스킨 항목).</summary>
+/// <summary>결과 파일 하나의 시트: 파일 이름(확장자 없이)과 시트. 태그·레이어·스킨마다 나눴으면 그 태그·레이어·스킨(프레임 시트는 스킨 항목).</summary>
 public sealed record SheetFile(string Name, SheetResult Sheet, AnimationTag? Tag = null, Layer? Part = null, string? SkinName = null, FrameVariant? Variant = null);
 
 /// <summary>
-/// 프레임 시트의 스킨 항목 하나: 지금 착장(<see cref="IsCurrent"/>), 그룹 하나만 그 스킨으로 바꾼 착장(나머지 그룹은 지금 착장), 또는 착장 프리셋.
-/// <paramref name="Suffix"/>는 이름 뒤 <c>@…</c>(null = 원래 이름 — 지금 착장·첫 번째로 고른 첫 스킨 항목).
+/// 프레임 시트의 스킨 항목 하나: 지금 스킨 그대로(<see cref="IsCurrent"/>), 레이어 하나만 그 스킨으로 바꾼 것(나머지 레이어는 지금 스킨), 또는 스킨 프리셋을 입힌 것
+/// (프리셋에 없는 레이어는 지금 스킨). <paramref name="Suffix"/>는 이름 뒤 <c>@…</c>(null = 원래 이름 — 지금 스킨 항목).
 /// </summary>
-public sealed record FrameVariant(string? Suffix, Layer? Group, Skin? Skin, Outfit? Outfit)
+public sealed record FrameVariant(string? Suffix, Layer? Layer, Skin? Skin, SkinPreset? Preset)
 {
-    public bool IsCurrent => Group is null && Outfit is null;
+    public bool IsCurrent => Layer is null && Preset is null;
 
     /// <summary>화면 표시용 이름.</summary>
-    public string Label => Outfit is { } o ? o.Name : Group is { } g && Skin is { } s ? $"{g.Name} · {s.Name}" : Chickxel.Core.Localization.DomainStrings.Export_CurrentOutfit;
+    public string Label => Preset is { } p ? p.Name : Layer is { } l && Skin is { } s ? $"{l.Name} · {s.Name}" : Chickxel.Core.Localization.DomainStrings.Export_CurrentSkins;
 }
 
 /// <summary>결과 파일 하나(이미지 또는 <c>.spriteLib</c>)를 내보낸 결과. 스프라이트 수는 Sprite Library면 항목(라벨) 수.</summary>
 public sealed record ExportResult(string ImagePath, bool MetaWritten, int SpriteCount);
 
 /// <summary>
-/// 프로젝트 내보내기 결과: 프레임 시트 파일들, 부위 아틀라스 파일들, Sprite Library(<c>.spriteLib</c>) 파일들(꺼져 있거나 쓸 것이 없으면 빈 목록),
+/// 프로젝트 내보내기 결과: 프레임 시트 파일들, 레이어 아틀라스 파일들, Sprite Library(<c>.spriteLib</c>) 파일들(꺼져 있거나 쓸 것이 없으면 빈 목록),
 /// 그리고 정리할 옛 결과(<see cref="SpriteProject.ExportedFiles"/>에 있었지만 이번에 만들지 않은, 아직 있는 파일과 딸린 <c>.meta</c>).
 /// 옛 결과는 지우지 않고 돌려주기만 한다(앱이 앱 휴지통으로 옮김).
 /// </summary>
@@ -58,14 +58,14 @@ public sealed record ProjectExportResult(IReadOnlyList<ExportResult> Frames, IRe
     /// </summary>
     public IReadOnlyList<ExportResult> Engine => EngineFiles ?? [];
 
-    /// <summary>프레임 시트 → 부위 아틀라스 → Sprite Library → Unity 프리팹·애니메이션 순서의 모든 결과 파일.</summary>
+    /// <summary>프레임 시트 → 레이어 아틀라스 → Sprite Library → Unity 프리팹·애니메이션 순서의 모든 결과 파일.</summary>
     public IEnumerable<ExportResult> All => Frames.Concat(Parts).Concat(Libraries).Concat(Engine).Concat(Animations);
 
     public bool IsEmpty => Frames.Count == 0 && Parts.Count == 0 && Libraries.Count == 0 && Engine.Count == 0 && Animations.Count == 0;
 }
 
 /// <summary>
-/// 내보내기 계획: 만들 파일 경로(프레임 시트·부위 아틀라스 이미지, Sprite Library), 새 기록(결과 파일 + 쓰거나 이미 있는 <c>.meta</c>), 정리할 옛 결과.
+/// 내보내기 계획: 만들 파일 경로(프레임 시트·레이어 아틀라스 이미지, Sprite Library), 새 기록(결과 파일 + 쓰거나 이미 있는 <c>.meta</c>), 정리할 옛 결과.
 /// <paramref name="FramesBaseName"/>·<paramref name="PartsBaseName"/>이 있으면 설정의 이름 대신 그 이름이 앞부분(칸 이름도 그 기준),
 /// <paramref name="UnityFiles"/>가 false면 <c>.meta</c>를 쓰지 않는다(다른 이름으로 저장 — <see cref="ProjectExport.PlanCopy"/>).
 /// <paramref name="UnityPaths"/> = Unity 프리팹·클립·Controller(<see cref="ProjectExport.GetUnityAssetPaths"/>),
@@ -82,19 +82,19 @@ public sealed record SheetPlan(int Entry, ExportPlan Plan);
 
 /// <summary>
 /// 프로젝트 → 스프라이트 시트 이미지 + Unity 메타 내보내기. 편집 정보(칸·태그 애니메이션)는 <c>.chickxel</c>에만 있고 이미지 옆에 따로 쓰지 않는다.
-/// 프레임 시트와 부위 아틀라스는 같은 시트 설정(<see cref="SheetOptions"/>, <see cref="ExportSettings.Frames"/>·<see cref="ExportSettings.Parts"/>)을 쓴다.
+/// 프레임 시트와 레이어 아틀라스는 같은 시트 설정(<see cref="SheetOptions"/>, <see cref="ExportSettings.Frames"/>·<see cref="ExportSettings.Parts"/>)을 쓴다.
 /// <list type="bullet">
 /// <item>프레임 시트(<c>{시트}</c>): 프레임마다 합성한 칸. 스킨이 "고른 스킨"이면 스킨 항목(<see cref="FrameVariants"/>)마다 한 벌씩 —
 /// 한 이미지에 모두(칸 이름 <c>{이름}@{항목}</c>) 또는 스킨마다 따로 파일(<c>{시트}@{항목}</c>, 칸 이름은 같음). Single 모드는 항목마다 따로 파일.</item>
 /// <item>칸 이름: 프레임 시트 = 프레임 이름 재정의 → (태그 기준이면) <c>{태그}_{태그 안 번호}</c> → <c>{시트}_{프레임}</c>;
-/// 부위 아틀라스 = 프레임 번호(<c>{부위}</c>, <c>{부위}_{프레임}</c>) 또는 태그 기준(<c>{부위}_{태그}_{태그 안 번호}</c>), 첫 스킨이 아닌 스킨은 <c>@{스킨}</c>.
+/// 레이어 아틀라스 = 프레임 번호(<c>{레이어}</c>, <c>{레이어}_{프레임}</c>) 또는 태그 기준(<c>{레이어}_{태그}_{태그 안 번호}</c>), 첫 스킨이 아닌 스킨은 <c>@{스킨}</c>.
 /// 정리(<see cref="CleanSpriteName"/>) 후 파일 안에서 겹치면 <c>_1</c>, <c>_2</c> …. 배치·정렬·나누기를 바꿔도 이름은 그대로.</item>
 /// <item>배치: 격자(정렬 기준·줄바꿈 단위 <see cref="SheetOptions.Order"/> + 칸 수) 또는 자동 배치(<see cref="AtlasPacker"/>, 넣는 순서 = 정렬 기준).</item>
-/// <item>따로 파일: 태그마다 <c>_{태그}</c>(태그 없는 프레임 <c>_untagged</c>), 부위마다 <c>_{부위}</c>(부위 아틀라스), 스킨마다 <c>@{스킨}</c> — 조합 가능.</item>
-/// <item>부위 아틀라스(<c>{시트}_parts</c> 또는 <see cref="ExportSettings.PartsFileName"/>): 부위 × 내용 있는 프레임 × 내보낼 스킨마다 스프라이트 하나(항상 Multiple).
-/// 첫 스킨이 아닌 스킨은 그 스킨이 직접 그린 셀만(빈 셀은 다른 빈 셀처럼 스프라이트 없음).</item>
-/// <item>Sprite Library(<see cref="ExportSettings.WriteSpriteLibrary"/>): 그룹 × 내보낼 스킨마다 <c>{부위 아틀라스}_{그룹}@{스킨}.spriteLib</c>(+ <c>.meta</c>) —
-/// <see cref="SpriteLibraryAssetWriter"/> 참고.</item>
+/// <item>따로 파일: 태그마다 <c>_{태그}</c>(태그 없는 프레임 <c>_untagged</c>), 레이어마다 <c>_{레이어}</c>(레이어 아틀라스), 스킨마다 <c>@{스킨}</c> — 조합 가능.</item>
+/// <item>레이어 아틀라스(<c>{시트}_parts</c> 또는 <see cref="ExportSettings.PartsFileName"/>): 나무에 든(자기 크기) 레이어 × 내용 있는 프레임 × 내보낼 스킨마다
+/// 스프라이트 하나(항상 Multiple). 첫 스킨이 아닌 스킨은 그 스킨이 직접 그린 셀만(빈 셀은 다른 빈 셀처럼 스프라이트 없음).</item>
+/// <item>Sprite Library(<see cref="ExportSettings.WriteSpriteLibrary"/>): 기본 <c>{레이어 아틀라스}.spriteLib</c> + 스킨 프리셋마다
+/// <c>{레이어 아틀라스}@{프리셋}.spriteLib</c>(+ <c>.meta</c>) — <see cref="BuildLibrary"/>, <see cref="SpriteLibraryAssetWriter"/> 참고.</item>
 /// </list>
 /// </summary>
 public static partial class ProjectExport
@@ -121,7 +121,7 @@ public static partial class ProjectExport
         return Path.Combine(GetExportFolder(export, projectPath), name + export.ImageFormat.Extension());
     }
 
-    /// <summary>부위 아틀라스 이미지 경로: 프레임 시트와 같은 폴더의 (지정 이름 또는 <c>{프레임 시트 이름}_parts</c>).(형식 확장자). 나누면 이 이름이 앞부분.</summary>
+    /// <summary>레이어 아틀라스 이미지 경로: 프레임 시트와 같은 폴더의 (지정 이름 또는 <c>{프레임 시트 이름}_parts</c>).(형식 확장자). 나누면 이 이름이 앞부분.</summary>
     public static string GetPartsImagePath(SpriteProject project, string? projectPath = null)
         => GetPartsImagePath(Sheet(project), RequirePath(project, projectPath));
 
@@ -146,13 +146,16 @@ public static partial class ProjectExport
     }
 
     /// <summary>
-    /// 켜진 결과 이미지 경로(존재 여부와 무관): 프레임 시트 파일들, 부위 아틀라스 파일들(내용 있는 부위가 있을 때). 나누면 여러 개.
+    /// 켜진 결과 이미지 경로(존재 여부와 무관): 프레임 시트 파일들, 레이어 아틀라스 파일들(내용 있는 레이어가 있을 때). 나누면 여러 개.
     /// Sprite Library 경로는 <see cref="GetLibraryPaths(SpriteProject, string, bool)"/>.
     /// </summary>
     public static (IReadOnlyList<string> Frames, IReadOnlyList<string> Parts) GetOutputPaths(SpriteProject project, string? projectPath = null)
         => GetOutputPaths(project, RequirePath(project, projectPath), assumePartContent: false);
 
-    /// <param name="assumePartContent">true면 셀 내용을 보지 않고 모든 부위 레이어·스킨을 쓴다(셀을 풀지 않은 프로젝트 정보·자주 부르는 화면 표시용).</param>
+    /// <param name="assumePartContent">
+    /// true면 셀 내용을 보지 않는다(셀을 풀지 않은 프로젝트 정보·자주 부르는 화면 표시용): 자식이 없는 레이어와 저장된 셀이 있는 레이어(<see cref="AssumedContentLayers"/>)의
+    /// 모든 내보낼 스킨에 내용이 있다고 본다.
+    /// </param>
     public static (IReadOnlyList<string> Frames, IReadOnlyList<string> Parts) GetOutputPaths(SpriteProject project, string projectPath, bool assumePartContent)
     {
         var export = Sheet(project);
@@ -161,7 +164,7 @@ public static partial class ProjectExport
             Path.GetFileNameWithoutExtension(GetPartsImagePath(export, projectPath)), assumePartContent);
     }
 
-    /// <summary>켜진 결과 이미지 경로: <paramref name="folder"/> 안의 프레임 시트(<paramref name="framesBase"/>로 시작)·부위 아틀라스(<paramref name="partsBase"/>로 시작) 파일들.</summary>
+    /// <summary>켜진 결과 이미지 경로: <paramref name="folder"/> 안의 프레임 시트(<paramref name="framesBase"/>로 시작)·레이어 아틀라스(<paramref name="partsBase"/>로 시작) 파일들.</summary>
     private static (IReadOnlyList<string> Frames, IReadOnlyList<string> Parts) OutputPaths(SpriteProject project, string folder, string framesBase, string partsBase, bool assumePartContent)
     {
         var export = Sheet(project);
@@ -180,8 +183,8 @@ public static partial class ProjectExport
     }
 
     /// <summary>
-    /// 다른 이름으로 저장 계획: 지금 설정이 만드는 시트 이미지(프레임 시트·부위 아틀라스, 나눈 파일 포함)를 <paramref name="path"/>의 폴더에
-    /// 그 파일 이름(확장자 뺀)을 앞부분으로 — 부위 아틀라스는 프레임 시트도 만들면 <c>{이름}_parts</c> — 설정의 이미지 형식으로 쓴다.
+    /// 다른 이름으로 저장 계획: 지금 설정이 만드는 시트 이미지(프레임 시트·레이어 아틀라스, 나눈 파일 포함)를 <paramref name="path"/>의 폴더에
+    /// 그 파일 이름(확장자 뺀)을 앞부분으로 — 레이어 아틀라스는 프레임 시트도 만들면 <c>{이름}_parts</c> — 설정의 이미지 형식으로 쓴다.
     /// 독립 파일이라 <c>.meta</c>·Sprite Library를 쓰지 않고 기록(<see cref="SpriteProject.ExportedFiles"/>)·정리할 옛 결과도 없다.
     /// <see cref="Write(SpriteProject, ExportPlan, WorkProgress?)"/>로 쓰며 프로젝트는 바꾸지 않는다. 결과 파일 이름이 겹치면 <see cref="InvalidOperationException"/>.
     /// </summary>
@@ -199,21 +202,19 @@ public static partial class ProjectExport
     }
 
     /// <summary>
-    /// Sprite Library(<c>.spriteLib</c>) 경로: 부위 아틀라스와 Sprite Library가 켜져 있을 때 내용 있는 부위가 있는 그룹 × 내보낼 스킨마다
-    /// <c>{부위 아틀라스}_{그룹}@{스킨}.spriteLib</c>(부위 아틀라스와 같은 폴더).
+    /// Sprite Library(<c>.spriteLib</c>) 경로: 레이어 아틀라스와 Sprite Library가 켜져 있고 아틀라스에 스프라이트가 있을 때 기본 <c>{레이어 아틀라스}.spriteLib</c>
+    /// + 내보내는 스킨을 하나라도 가리키는 스킨 프리셋마다 <c>{레이어 아틀라스}@{프리셋}.spriteLib</c>(레이어 아틀라스와 같은 폴더, <see cref="LibraryOutputs"/>).
     /// </summary>
-    /// <param name="assumePartContent">true면 셀 내용을 보지 않고 부위가 있는 모든 그룹을 쓴다(화면 표시용).</param>
+    /// <param name="assumePartContent">true면 셀 내용을 보지 않는다(화면 표시용, <see cref="GetOutputPaths(SpriteProject, string, bool)"/>와 같음).</param>
     public static IReadOnlyList<string> GetLibraryPaths(SpriteProject project, string projectPath, bool assumePartContent)
     {
         var export = Sheet(project);
         if (!export.ExportParts || !export.WriteSpriteLibrary || export.Engine != ExportEngine.Unity) return [];
-        var groups = assumePartContent
-            ? PartLayers(project).Select(p => p.Parent!).Distinct().ToList()
-            : PartCels(project).Select(c => c.Part.Parent!).Distinct().ToList();
-        if (groups.Count == 0) return [];
+        var exported = AtlasSkins(project, assumePartContent);
+        if (exported.Count == 0) return [];
         var folder = GetExportFolder(export, projectPath);
         var baseName = Path.GetFileNameWithoutExtension(GetPartsImagePath(export, projectPath));
-        return LibraryOutputs(project, baseName, groups).Select(o => Path.Combine(folder, o.Name + SpriteLibraryExtension)).ToList();
+        return LibraryOutputs(project, baseName, exported).Select(o => Path.Combine(folder, o.Name + SpriteLibraryExtension)).ToList();
     }
 
     /// <summary>시트 이미지 <paramref name="pngPath"/>에 Unity 메타를 쓸지: 엔진이 Unity일 때.</summary>
@@ -286,7 +287,7 @@ public static partial class ProjectExport
     internal static string FrameKey(SpriteProject project, int frameIndex, bool byTag)
         => byTag && project.TagOfFrame(frameIndex) is { } tag ? $"{tag.Name}_{frameIndex - tag.From}" : frameIndex.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
-    // ───────────── 배치 엔진(프레임 시트·부위 아틀라스 공통) ─────────────
+    // ───────────── 배치 엔진(프레임 시트·레이어 아틀라스 공통) ─────────────
 
     /// <summary>값 배열의 사전순 비교.</summary>
     private sealed class KeyComparer : IComparer<int[]>, IEqualityComparer<int[]>
@@ -505,17 +506,17 @@ public static partial class ProjectExport
     }
 
     /// <summary>
-    /// 부위 아틀라스 스프라이트 하나: 부위 셀에 그 부위 자신의 효과(<see cref="Layer.Effects"/> 중 프레임 <paramref name="frameIndex"/>가 범위 안인 것)를 입힌 그림.
+    /// 레이어 아틀라스 스프라이트 하나: 레이어 셀에 그 레이어 자신의 셀 효과(<see cref="SpriteProject.OwnEffectsOf"/> 중 프레임 <paramref name="frameIndex"/>가 범위 안인 것)를 입힌 그림.
     /// 바깥 외곽선·그림자처럼 밖으로 번지는 효과가 있으면 스프라이트를 효과 여백만큼 넓히고 — 여백은 프레임 범위와 관계없이 켜진 모든 효과 기준이라
     /// 효과가 없는 프레임도 같은 크기(모든 프레임·스킨 같은 크기) — 피벗은 같은 픽셀을, 9-slice 테두리는 같은 선을 가리키도록 옮긴다
-    /// (Unity에서 같은 피벗에 놓으면 그림이 캔버스와 같은 자리에 보인다). 그룹 효과는 부위들을 합친 모양에 대한 것이라 부위 스프라이트에는 넣지 않는다
-    /// (프레임 시트에만). 효과가 없으면 셀·피벗·테두리 그대로.
+    /// (Unity에서 같은 피벗에 놓으면 그림이 캔버스와 같은 자리에 보인다). "자식까지" 효과(<see cref="LayerEffect.IncludeChildren"/>)는 자손까지 합친 모양에 대한 것이라
+    /// 레이어 스프라이트에는 넣지 않는다(프레임 시트에만). 효과가 없으면 셀·피벗·테두리 그대로.
     /// </summary>
     private static (PixelImage Image, Pivot Pivot, SpriteBorder Border) PartSprite(SpriteProject project, Layer part, Skin? skin, PixelImage cel, int frameIndex)
     {
-        var pad = LayerEffects.Padding(part.Effects, cel.Width, cel.Height);
+        var pad = LayerEffects.Padding(project.OwnEffectsOf(part), cel.Width, cel.Height);
         // 다른 프레임을 보는 효과(잔상)도 이 칸과 같은 스킨(없으면 첫 스킨)의 셀을 본다
-        var effects = project.EffectsAt(part, frameIndex, skin ?? part.Parent?.SkinList.FirstOrDefault());
+        var effects = project.EffectsAt(part, frameIndex, skin ?? part.Skins[0]);
         var (image, dx, dy) = LayerEffects.Render(cel, effects, pad);
         // 그 프레임만의 피벗이 있으면 그것(Unity 스프라이트마다 피벗)
         var partPivot = project.GetLayerPivot(part, frameIndex);
@@ -531,53 +532,56 @@ public static partial class ProjectExport
     // ───────────── 프레임 시트 ─────────────
 
     /// <summary>
-    /// 프레임 시트 스킨 항목: 스킨이 "지금 착장만"이면 지금 착장 하나. "고른 스킨"이면 부위가 있는(뺀 레이어가 아닌) 그룹마다 체크한 스킨
-    /// (그 그룹만 그 스킨, 나머지 그룹은 지금 착장) → 고른 착장 프리셋. 고른 것이 없으면 지금 착장.
-    /// 이름 뒤 <c>@…</c>: 첫 번째로 고른 첫 스킨 항목은 없음(원래 이름), 나머지는 스킨·착장 이름 — 스킨 이름이 겹치면 <c>@{그룹}.{스킨}</c>.
+    /// 프레임 시트 스킨 항목: 스킨이 "지금 스킨만"이면 지금 스킨 하나. "고른 스킨"이면 스킨이 둘 이상인 레이어(뺀 레이어와 그 자손 제외, 위 레이어부터)마다
+    /// 첫 스킨이 아닌 고른 스킨(그 레이어만 그 스킨, 나머지는 지금 스킨) → 고른 스킨 프리셋(프로젝트 프리셋 순서, 프리셋에 없는 레이어는 지금 스킨).
+    /// 원래 이름(<c>@</c> 없음) 항목은 맨 앞: 고른 프리셋 중 쓸 수 있는 항목이 모두 그 레이어의 첫 스킨인 첫 프리셋(예전 그룹 첫 스킨을 옮긴 프리셋 — 예전과 같은 원래 이름 시트),
+    /// 그런 프리셋이 없으면 지금 스킨 항목을 더한다. 나머지는 <c>@{스킨}</c>·<c>@{프리셋}</c> — 스킨 이름이 겹치면 <c>@{레이어}.{스킨}</c>, 그래도 겹치면 <c>_1</c> ….
     /// </summary>
     public static IReadOnlyList<FrameVariant> FrameVariants(SpriteProject project)
     {
         var o = Sheet(project).Frames;
         FrameVariant current = new(null, null, null, null);
         if (o.Skins == SkinSource.Current) return [current];
-        var items = new List<(Layer? Group, Skin? Skin, Outfit? Outfit)>();
+        var items = new List<(Layer? Layer, Skin? Skin, SkinPreset? Preset)>();
         for (int i = project.Layers.Count - 1; i >= 0; i--)
         {
-            var g = project.Layers[i];
-            if (!g.IsGroup || project.ChildCount(g) == 0 || o.ExcludedLayers.Contains(g)) continue;
-            // 전체 스킨, 그다음 부위 전용 스킨(그 부위만 그 스킨, 나머지는 지금 착장)
-            foreach (var s in g.AllSkins)
-                if (!o.ExcludedSkins.Contains(s)) items.Add((g, s, null));
+            var layer = project.Layers[i];
+            if (layer.Skins.Count < 2 || IsExcluded(project, o.ExcludedLayers, layer)) continue;
+            foreach (var s in layer.Skins.Skip(1))
+                if (!o.ExcludedSkins.Contains(s)) items.Add((layer, s, null));
         }
-        foreach (var outfit in project.Outfits)
-            if (o.Outfits.Contains(outfit)) items.Add((null, null, outfit));
-        if (items.Count == 0) return [current];
+        SkinPreset? plain = null;
+        foreach (var preset in project.SkinPresets)
+        {
+            if (!o.Presets.Contains(preset)) continue;
+            if (plain is null && project.DressOf(preset) is { Count: > 0 } dress && dress.All(kv => ReferenceEquals(kv.Value, kv.Key.Skins[0])))
+                plain = preset;
+            else items.Add((null, null, preset));
+        }
 
-        int plain = items.FindIndex(t => t.Group is { } g && ReferenceEquals(t.Skin, g.BaseSkin));
-        var names = items.Select(t => t.Outfit?.Name ?? t.Skin!.Name).ToList();
-        var counts = names.Where((_, i) => i != plain).GroupBy(n => n, StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
+        var names = items.Select(t => t.Preset?.Name ?? t.Skin!.Name).ToList();
+        var counts = names.GroupBy(n => n, StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
         var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var list = new List<FrameVariant>(items.Count);
+        var list = new List<FrameVariant>(items.Count + 1) { plain is null ? current : new FrameVariant(null, null, null, plain) };
         for (int i = 0; i < items.Count; i++)
         {
-            var (g, s, outfit) = items[i];
-            string? suffix = null;
-            if (i != plain)
-            {
-                var name = names[i];
-                if (outfit is null && counts[name] > 1) name = $"{g!.Name}.{s!.Name}";
-                suffix = Unique(used, name);
-            }
-            list.Add(new FrameVariant(suffix, g, s, outfit));
+            var (layer, s, preset) = items[i];
+            var name = names[i];
+            if (preset is null && counts[name] > 1) name = $"{layer!.Name}.{s!.Name}";
+            list.Add(new FrameVariant(Unique(used, name), layer, s, preset));
         }
         return list;
     }
 
-    /// <summary>항목을 입힐 착장(지금 착장이면 null, 그룹 스킨 항목이면 그 그룹만 그 스킨, 부위 전용 스킨이면 그 부위만 그 스킨인 임시 착장).</summary>
-    private static Outfit? Dress(FrameVariant v)
-        => v.Outfit ?? (v.Group is { } g && v.Skin is { } s
-            ? s.Owner is { } part ? new Outfit("", [], [new OutfitPart(part, s)]) : new Outfit("", [new OutfitSlot(g, s)], [])
-            : null);
+    /// <summary>항목을 입힐 스킨 표(지금 스킨 항목이면 null, 레이어 스킨 항목이면 그 레이어만 그 스킨, 프리셋이면 그 프리셋의 쓸 수 있는 항목).</summary>
+    private static IReadOnlyDictionary<Layer, Skin>? Dress(SpriteProject project, FrameVariant v)
+        => v.Preset is { } preset ? project.DressOf(preset)
+            : v.Layer is { } layer && v.Skin is { } skin ? new Dictionary<Layer, Skin> { [layer] = skin }
+            : null;
+
+    /// <summary>레이어가 뺀 레이어 목록에 들었는지(자신 또는 조상 — 뺀 레이어는 자손째 빠진다).</summary>
+    private static bool IsExcluded(SpriteProject project, IReadOnlyList<Layer> excluded, Layer layer)
+        => excluded.Count > 0 && (excluded.Contains(layer) || project.AncestorsOf(layer).Any(a => excluded.Contains(a)));
 
     /// <summary>프레임 시트 결과 파일: 이름, 이름을 정하는 태그, 프레임들(null = 모든 프레임), 담을 스킨 항목들.</summary>
     private sealed record FrameOutput(string Name, AnimationTag? Tag, IReadOnlyList<int>? Frames, IReadOnlyList<FrameVariant> Variants);
@@ -612,7 +616,7 @@ public static partial class ProjectExport
     }
 
     /// <summary>
-    /// 한 장짜리 프레임 시트(지금 착장, 나누기·스킨 항목·배율 설정과 무관): 모든 프레임을 배치·정렬 설정대로. Single 모드이고 <paramref name="allFrames"/>가 false면 프레임 하나짜리 시트.
+    /// 한 장짜리 프레임 시트(지금 스킨, 나누기·스킨 항목·배율 설정과 무관): 모든 프레임을 배치·정렬 설정대로. Single 모드이고 <paramref name="allFrames"/>가 false면 프레임 하나짜리 시트.
     /// 움직임 테스트·미리보기용. 뺀 레이어(<see cref="SheetOptions.ExcludedLayers"/>)는 합성하지 않는다.
     /// </summary>
     /// <param name="baseName">이름 규칙의 <c>{시트 이름}</c>(보통 내보낼 이미지 이름).</param>
@@ -624,11 +628,11 @@ public static partial class ProjectExport
         return FrameSheet(project, baseName, null, null, [current], null, cache, 1);
     }
 
-    /// <summary>Single 모드 시트: <see cref="ExportSettings.SingleFrameIndex"/> 프레임 하나를 캔버스 크기 그대로(항목의 착장으로) × <paramref name="scale"/>.</summary>
+    /// <summary>Single 모드 시트: <see cref="ExportSettings.SingleFrameIndex"/> 프레임 하나를 캔버스 크기 그대로(항목의 스킨으로) × <paramref name="scale"/>.</summary>
     private static SheetResult SingleSheet(SpriteProject project, string baseName, FrameVariant variant, WorkStage? stage, EffectRenderCache cache, int scale)
     {
         int fi = Math.Clamp(Sheet(project).SingleFrameIndex, 0, project.Frames.Count - 1);
-        var image = Enlarge(Composite(project, fi, Dress(variant), cache), scale);
+        var image = Enlarge(Composite(project, fi, Dress(project, variant), cache), scale);
         stage?.Step(CompositeUnits(project));
         var entry = new SheetEntry(fi, CleanSpriteName(baseName), image.Bounds, project.GetFramePivot(fi), null, Variant: variant);
         return new SheetResult(image, [entry], image.Size, scale);
@@ -650,12 +654,12 @@ public static partial class ProjectExport
             .ToList();
     }
 
-    /// <summary>프레임 하나를 착장을 입혀 합성(내보내기에서 뺀 레이어 제외).</summary>
-    private static PixelImage Composite(SpriteProject project, int frameIndex, Outfit? outfit, EffectRenderCache? cache)
-        => project.FlattenOutfit(frameIndex, outfit, Sheet(project).Frames.ExcludedLayers, cache);
+    /// <summary>프레임 하나를 스킨 표대로 입혀 합성(표에 없는 레이어는 지금 스킨, 내보내기에서 뺀 레이어는 자손째 제외).</summary>
+    private static PixelImage Composite(SpriteProject project, int frameIndex, IReadOnlyDictionary<Layer, Skin>? dress, EffectRenderCache? cache)
+        => project.FlattenDressed(frameIndex, dress, Sheet(project).Frames.ExcludedLayers, cache);
 
     /// <summary>
-    /// 프레임 하나를 프레임 시트 칸과 똑같이(지금 착장, 레이어 효과, 숨긴·내보내기에서 뺀 레이어 제외) 캔버스 크기 그대로 합성 — GIF 등 애니메이션 내보내기용.
+    /// 프레임 하나를 프레임 시트 칸과 똑같이(지금 스킨, 레이어 효과, 숨긴·내보내기에서 뺀 레이어 제외) 캔버스 크기 그대로 합성 — GIF 등 애니메이션 내보내기용.
     /// 여러 프레임을 이어 합성하면 같은 <paramref name="cache"/>(<see cref="NewCache"/>)를 넘겨 잔상 원본을 나눠 쓴다.
     /// </summary>
     public static PixelImage CompositeFrame(SpriteProject project, int frameIndex, EffectRenderCache? cache = null) => Composite(project, frameIndex, null, cache);
@@ -715,7 +719,7 @@ public static partial class ProjectExport
 
         // 2) 합성·잘라내기·키우기(항목 × 프레임마다 한 번)
         var content = new Dictionary<(int, int), (PixelImage Image, Pivot Pivot)>();
-        var dresses = variants.Select(Dress).ToList();
+        var dresses = variants.Select(v => Dress(project, v)).ToList();
         foreach (var (vi, fi, _, _, _) in cells)
             if (!content.ContainsKey((vi, fi)))
             {
@@ -757,59 +761,80 @@ public static partial class ProjectExport
         return new SheetResult(sheet, entries, cell, scale);
     }
 
-    // ───────────── 부위 아틀라스 ─────────────
+    // ───────────── 레이어 아틀라스 ─────────────
 
-    /// <summary>부위 레이어: 그룹 위 → 아래, 그룹 안 위 부위부터.</summary>
-    private static List<Layer> PartLayers(SpriteProject project)
+    /// <summary>
+    /// 레이어 아틀라스에 들 수 있는 레이어: 자리 있는 레이어(<see cref="LayerKind.Part"/> — 나무에 든 레이어와 맨 위 자리 있는 레이어, 맨 위 일반 레이어는 아님)
+    /// 중 뺀 레이어(자신 또는 조상)가 아닌 것, 타임라인 순서(위 → 아래, 부모 다음에 그 자식들). 셀 내용은 보지 않는다.
+    /// </summary>
+    private static List<Layer> AtlasLayers(SpriteProject project)
     {
-        var parts = new List<Layer>();
-        for (int g = project.Layers.Count - 1; g >= 0; g--)
+        var excluded = Sheet(project).Parts.ExcludedLayers;
+        var layers = new List<Layer>();
+        for (int i = project.Layers.Count - 1; i >= 0; i--)
         {
-            var group = project.Layers[g];
-            if (!group.IsGroup || Sheet(project).Parts.ExcludedLayers.Contains(group)) continue;
-            var children = project.ChildrenOf(group);
-            for (int c = children.Count - 1; c >= 0; c--) parts.Add(children[c]);
+            var layer = project.Layers[i];
+            if (layer.IsPart && !IsExcluded(project, excluded, layer)) layers.Add(layer);
         }
-        return parts;
+        return layers;
     }
 
-    /// <summary>부위 아틀라스 스프라이트 하나: 부위 × 스킨(null = 그룹의 첫 스킨) × 프레임.</summary>
+    /// <summary>
+    /// 셀 내용을 보지 않고 내용이 있다고 볼 아틀라스 레이어: 자식이 없는 레이어(자기 그림 레이어)와 저장된 셀이 있는 레이어.
+    /// 셀이 없는 부모(예전 그룹 같은 빈 레이어)는 빠진다(셀을 풀지 않은 프로젝트에서는 부모를 모두 뺀다).
+    /// </summary>
+    private static List<Layer> AssumedContentLayers(SpriteProject project)
+    {
+        var stored = project.StoredCels.Select(c => c.Layer).ToHashSet();
+        return AtlasLayers(project).Where(l => !project.HasChildren(l) || stored.Contains(l)).ToList();
+    }
+
+    /// <summary>레이어 아틀라스 스프라이트 하나: 레이어 × 스킨(null = 그 레이어의 첫 스킨) × 프레임.</summary>
     private readonly record struct PartCel(Layer Part, Skin? Skin, int Frame);
 
-    /// <summary>부위 아틀라스에 이 스킨을 내보낼지: 지금 착장만이면 부위가 지금 보이는 스킨, 고른 스킨이면 체크한 스킨.</summary>
-    private static bool Exported(SheetOptions o, Layer part, Skin skin)
-        => o.Skins == SkinSource.Current ? ReferenceEquals(part.ShownSkin, skin) : !o.ExcludedSkins.Contains(skin);
+    /// <summary>레이어 아틀라스에 이 스킨을 내보낼지: 지금 스킨만이면 레이어의 지금 스킨, 고른 스킨이면 체크한 스킨.</summary>
+    private static bool Exported(SheetOptions o, Layer layer, Skin skin)
+        => o.Skins == SkinSource.Current ? ReferenceEquals(layer.ActiveSkin, skin) : !o.ExcludedSkins.Contains(skin);
 
     private static bool HasContent(PixelImage? image) => image is not null && !image.IsRegionEmpty(image.Bounds);
 
     /// <summary>
-    /// 부위 아틀라스에 들어갈 스프라이트 목록(이름을 정하는 기본 순서): <see cref="PartLayers"/> 순서로 부위마다 첫 스킨의 내용 있는 프레임(첫 스킨을 내보낼 때),
+    /// 레이어 아틀라스에 들어갈 스프라이트 목록(이름을 정하는 기본 순서): <see cref="AtlasLayers"/> 순서로 레이어마다 첫 스킨의 내용 있는 프레임(첫 스킨을 내보낼 때),
     /// 그다음 내보낼 스킨 순서대로 그 스킨이 직접 그린 프레임.
     /// </summary>
     private static List<PartCel> PartCels(SpriteProject project)
     {
         var o = Sheet(project).Parts;
         var cels = new List<PartCel>();
-        foreach (var part in PartLayers(project))
+        foreach (var layer in AtlasLayers(project))
         {
-            var group = part.Parent!;
-            // 이 부위가 고를 수 있는 스킨(전체 스킨 + 이 부위 전용 스킨) 중 첫 스킨이 아닌 것
-            var extras = part.SkinChoices.Skip(1).Where(s => Exported(o, part, s)).ToList();
-            if (Exported(o, part, group.BaseSkin!))
+            var skins = layer.Skins;
+            if (Exported(o, layer, skins[0]))
                 for (int fi = 0; fi < project.Frames.Count; fi++)
-                    if (HasContent(project.GetCelRaw(part, project.Frames[fi], null)))
-                        cels.Add(new PartCel(part, null, fi));
-            foreach (var skin in extras)
+                    if (HasContent(project.GetCelRaw(layer, project.Frames[fi], null)))
+                        cels.Add(new PartCel(layer, null, fi));
+            foreach (var skin in skins.Skip(1).Where(s => Exported(o, layer, s)))
                 for (int fi = 0; fi < project.Frames.Count; fi++)
-                    if (HasContent(project.GetCelRaw(part, project.Frames[fi], skin)))
-                        cels.Add(new PartCel(part, skin, fi));
+                    if (HasContent(project.GetCelRaw(layer, project.Frames[fi], skin)))
+                        cels.Add(new PartCel(layer, skin, fi));
         }
         return cels;
     }
 
     /// <summary>
-    /// 부위 아틀라스 칸 이름(<see cref="SheetOptions.Naming"/>): 프레임 번호 = 프레임 0이 <c>{부위}</c>, 그다음 <c>{부위}_{프레임}</c>;
-    /// 태그 기준 = <c>{부위}_{첫 태그}_{태그 안 번호}</c>(태그 없는 프레임은 프레임 번호 규칙). 첫 스킨이 아닌 스킨은 뒤에 <c>@{스킨}</c>.
+    /// 레이어 아틀라스에 스프라이트가 있는 (레이어, 스킨) — 첫 스킨도 스킨 객체로. <paramref name="assumeContent"/>면 셀 내용을 보지 않고
+    /// <see cref="AssumedContentLayers"/>의 내보낼 스킨 모두.
+    /// </summary>
+    private static HashSet<(Layer Layer, Skin Skin)> AtlasSkins(SpriteProject project, bool assumeContent)
+    {
+        if (!assumeContent) return PartCels(project).Select(c => (c.Part, c.Skin ?? c.Part.Skins[0])).ToHashSet();
+        var o = Sheet(project).Parts;
+        return AssumedContentLayers(project).SelectMany(l => l.Skins.Where(s => Exported(o, l, s)).Select(s => (l, s))).ToHashSet();
+    }
+
+    /// <summary>
+    /// 레이어 아틀라스 칸 이름(<see cref="SheetOptions.Naming"/>): 프레임 번호 = 프레임 0이 <c>{레이어}</c>, 그다음 <c>{레이어}_{프레임}</c>;
+    /// 태그 기준 = <c>{레이어}_{첫 태그}_{태그 안 번호}</c>(태그 없는 프레임은 프레임 번호 규칙). 첫 스킨이 아닌 스킨은 뒤에 <c>@{스킨}</c>.
     /// 정리 후 아틀라스 전체에서 겹치면 <c>_1</c> …(첫 스킨 이름을 먼저 정해 스킨이 없던 때와 같은 이름을 쓴다). 배치·나누기와 관계없이 같다.
     /// </summary>
     private static List<string> PartNames(SpriteProject project, List<PartCel> cels)
@@ -830,7 +855,7 @@ public static partial class ProjectExport
         return [.. names];
     }
 
-    /// <summary>부위 아틀라스 스프라이트가 들어갈 파일의 열쇠(나누지 않은 축은 기본값: 부위 null, 태그 −1, 스킨 이름 null).</summary>
+    /// <summary>레이어 아틀라스 스프라이트가 들어갈 파일의 열쇠(나누지 않은 축은 기본값: 레이어 null, 태그 −1, 스킨 이름 null).</summary>
     private readonly record struct PartsFileKey(Layer? Part, int Tag, string? SkinName);
 
     private static bool SplitPartTags(SpriteProject project) => Sheet(project).Parts.SplitTags && project.Tags.Count > 0;
@@ -842,7 +867,7 @@ public static partial class ProjectExport
             o.SplitSkins ? c.Skin?.Name : null);
     }
 
-    /// <summary>셀 내용을 보지 않은 모든 파일 열쇠(부위 × 태그 묶음 × 첫 스킨·내보낼 스킨).</summary>
+    /// <summary>셀 내용을 보지 않은 모든 파일 열쇠(<see cref="AssumedContentLayers"/> × 태그 묶음 × 첫 스킨·내보낼 스킨).</summary>
     private static List<PartsFileKey> AllPartFileKeys(SpriteProject project)
     {
         var o = Sheet(project).Parts;
@@ -850,19 +875,19 @@ public static partial class ProjectExport
             ? Enumerable.Range(0, project.Frames.Count).Select(fi => IndexOfTag(project, project.TagOfFrame(fi))).Distinct().Order().ToList()
             : [-1];
         var keys = new List<PartsFileKey>();
-        foreach (var part in PartLayers(project))
-            foreach (var skin in part.SkinChoices.Skip(1).Where(s => Exported(o, part, s)).Prepend<Skin?>(null))
+        foreach (var layer in AssumedContentLayers(project))
+            foreach (var skin in layer.Skins.Skip(1).Where(s => Exported(o, layer, s)).Prepend<Skin?>(null))
                 foreach (var t in tags)
-                    keys.Add(new PartsFileKey(o.SplitParts ? part : null, t, o.SplitSkins ? skin?.Name : null));
+                    keys.Add(new PartsFileKey(o.SplitParts ? layer : null, t, o.SplitSkins ? skin?.Name : null));
         return keys;
     }
 
-    /// <summary>부위 아틀라스 결과 파일: 이름과 열쇠.</summary>
+    /// <summary>레이어 아틀라스 결과 파일: 이름과 열쇠.</summary>
     private sealed record PartsFile(string Name, PartsFileKey Key);
 
     /// <summary>
-    /// 부위 아틀라스 결과 파일들: 나누지 않으면 한 장. <c>{baseName}</c> + 부위마다 <c>_{부위}</c> + 태그마다 <c>_{태그}</c>(태그 없는 프레임 <c>_untagged</c>)
-    /// + 스킨마다 <c>@{스킨}</c>(첫 스킨은 없음, 여러 그룹에 같은 이름의 스킨이 있으면 같은 파일). 첫 스킨 파일들이 먼저.
+    /// 레이어 아틀라스 결과 파일들: 나누지 않으면 한 장. <c>{baseName}</c> + 레이어마다 <c>_{레이어}</c> + 태그마다 <c>_{태그}</c>(태그 없는 프레임 <c>_untagged</c>)
+    /// + 스킨마다 <c>@{스킨}</c>(첫 스킨은 없음, 여러 레이어에 같은 이름의 스킨이 있으면 같은 파일). 첫 스킨 파일들이 먼저.
     /// </summary>
     private static List<PartsFile> PartsOutputs(SpriteProject project, string baseName, IReadOnlyList<PartsFileKey> keys)
     {
@@ -879,35 +904,32 @@ public static partial class ProjectExport
         }).ToList();
     }
 
-    /// <summary>Sprite Library 결과 파일(확장자 없이): 그룹 × 내보낼 스킨마다 <c>{baseName}_{그룹}@{스킨}</c>.</summary>
-    private static List<(string Name, Layer Group, Skin Skin)> LibraryOutputs(SpriteProject project, string baseName, IEnumerable<Layer> groups)
+    /// <summary>
+    /// Sprite Library 결과 파일(확장자 없이): 기본 <c>{baseName}</c>(프리셋 null) + 스킨 프리셋마다(프로젝트 순서) <c>{baseName}@{프리셋}</c>.
+    /// 프리셋은 쓸 수 있는 항목 중 하나라도 아틀라스에 스프라이트가 있는 스킨(<paramref name="exported"/>)을 가리킬 때만. 이름이 겹치면 <c>_1</c> ….
+    /// </summary>
+    private static List<(string Name, SkinPreset? Preset)> LibraryOutputs(SpriteProject project, string baseName, IReadOnlySet<(Layer Layer, Skin Skin)> exported)
     {
-        var o = Sheet(project).Parts;
         var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var list = new List<(string, Layer, Skin)>();
-        foreach (var g in groups)
-        {
-            var children = project.ChildrenOf(g);
-            // 부위 전용 스킨도 라이브러리 하나(그 부위만 그 스킨 스프라이트, 다른 부위는 첫 스킨 스프라이트 — "기본 + 모자"처럼 바꿔 끼움)
-            foreach (var s in g.AllSkins)
-                if (children.Any(p => (s.Owner is null || ReferenceEquals(s.Owner, p)) && Exported(o, p, s)))
-                    list.Add((Unique(used, $"{baseName}_{CleanFileName(g.Name)}{SkinSeparator}{CleanFileName(s.Name)}"), g, s));
-        }
+        var list = new List<(string, SkinPreset?)> { (Unique(used, baseName), null) };
+        foreach (var preset in project.SkinPresets)
+            if (preset.Entries.Any(e => exported.Contains((e.Layer, e.Skin))))
+                list.Add((Unique(used, baseName + SkinSeparator + CleanFileName(preset.Name)), preset));
         return list;
     }
 
     /// <summary>
-    /// 한 장짜리 부위 아틀라스(나누기·배율 설정과 무관): 부위 × 내용 있는 프레임 × 내보낼 스킨마다 스프라이트 하나. 배치·정렬은 시트 설정대로.
-    /// 부위가 없으면 칸 없는 1×1 시트.
+    /// 한 장짜리 레이어 아틀라스(나누기·배율 설정과 무관): 레이어 × 내용 있는 프레임 × 내보낼 스킨마다 스프라이트 하나. 배치·정렬은 시트 설정대로.
+    /// 내용 있는 레이어가 없으면 칸 없는 1×1 시트.
     /// </summary>
-    /// <param name="baseName">내보낼 부위 아틀라스 이름(칸 이름에는 쓰지 않음, <see cref="BuildSheet"/>와 같은 꼴).</param>
+    /// <param name="baseName">내보낼 레이어 아틀라스 이름(칸 이름에는 쓰지 않음, <see cref="BuildSheet"/>와 같은 꼴).</param>
     public static SheetResult BuildPartsSheet(SpriteProject project, string baseName)
     {
         var cels = PartCels(project);
         return cels.Count == 0 ? EmptySheet() : PartsSheet(project, cels, PartNames(project, cels), whole: true, tagFile: false, stage: null, scale: 1);
     }
 
-    /// <summary>결과 파일마다의 부위 아틀라스(부위·태그·스킨마다 나누기 설정대로, 배율 적용). 내용 있는 부위가 없으면 빈 시트 한 장.</summary>
+    /// <summary>결과 파일마다의 레이어 아틀라스(레이어·태그·스킨마다 나누기 설정대로, 배율 적용). 내용 있는 레이어가 없으면 빈 시트 한 장.</summary>
     public static IReadOnlyList<SheetFile> BuildPartsSheets(SpriteProject project, string baseName) => BuildPartsSheets(project, baseName, null);
 
     private static IReadOnlyList<SheetFile> BuildPartsSheets(SpriteProject project, string baseName, WorkStage? stage)
@@ -930,7 +952,7 @@ public static partial class ProjectExport
 
     private static SheetResult EmptySheet() => new(new PixelImage(1, 1), [], new Size(1, 1));
 
-    /// <param name="whole">부위마다 나누지 않은 파일이면 "원래 위치 유지"를 쓴다(부위마다 나눈 파일에서는 원래 칸 위치가 뜻이 없음).</param>
+    /// <param name="whole">레이어마다 나누지 않은 파일이면 "원래 위치 유지"를 쓴다(레이어마다 나눈 파일에서는 원래 칸 위치가 뜻이 없음).</param>
     /// <param name="tagFile">태그마다 나눈 파일이면 프레임 자리 값은 파일 안 프레임 순번.</param>
     /// <param name="scale">잘라낸 스프라이트를 키울 배율(9-slice 테두리·원래 위치도 같이 키움).</param>
     private static SheetResult PartsSheet(SpriteProject project, List<PartCel> cels, IReadOnlyList<string> names, bool whole, bool tagFile, WorkStage? stage, int scale)
@@ -938,11 +960,11 @@ public static partial class ProjectExport
         var o = Sheet(project).Parts;
         var (keys, rowBreak) = o.Order.For(hasParts: true);
         bool tagKey = keys.Contains(GridKey.Tag);
-        var partIndex = PartLayers(project).Select((p, i) => (p, i)).ToDictionary(t => t.p, t => t.i);
+        var partIndex = AtlasLayers(project).Select((p, i) => (p, i)).ToDictionary(t => t.p, t => t.i);
         var untagged = Enumerable.Range(0, project.Frames.Count).Where(i => project.TagOfFrame(i) is null).ToList();
         var fileFrames = cels.Select(c => c.Frame).Distinct().Order().ToList();
 
-        // 그림 + 부위 효과·잘라내기·키우기
+        // 그림 + 레이어 자신의 효과·잘라내기·키우기
         var images = new (PixelImage Image, Pivot Pivot, SpriteBorder Border)[cels.Count];
         for (int i = 0; i < cels.Count; i++)
         {
@@ -962,7 +984,7 @@ public static partial class ProjectExport
             return keys.Select(k => k switch
             {
                 GridKey.Part => partIndex[c.Part],
-                GridKey.Skin => c.Skin is null ? 0 : IndexOf(c.Part.Parent!.AllSkins, c.Skin),
+                GridKey.Skin => c.Skin is null ? 0 : IndexOf(c.Part.Skins, c.Skin),
                 GridKey.Tag => IndexOfTag(project, tag),
                 _ => frameValue,
             }).ToArray();
@@ -995,7 +1017,7 @@ public static partial class ProjectExport
 
     // ───────────── 문서 ─────────────
 
-    /// <summary>부위 아틀라스 문서(항상 Multiple, 칸마다 피벗·테두리, 애니메이션 없음).</summary>
+    /// <summary>레이어 아틀라스 문서(항상 Multiple, 칸마다 피벗·테두리, 애니메이션 없음).</summary>
     private static Document PartsDocument(SpriteProject project, SheetResult sheet)
     {
         var doc = new Document(sheet.Image);
@@ -1011,7 +1033,7 @@ public static partial class ProjectExport
     }
 
     /// <summary>
-    /// 내보낼 내용을 메모리 <see cref="Document"/>로 만든다(한 장짜리 프레임 시트, 지금 착장): 시트 이미지, 칸(이름·피벗), 태그를 방향대로 펼친
+    /// 내보낼 내용을 메모리 <see cref="Document"/>로 만든다(한 장짜리 프레임 시트, 지금 스킨): 시트 이미지, 칸(이름·피벗), 태그를 방향대로 펼친
     /// 애니메이션(프레임별 ms), 스프라이트 설정. 미리보기·움직임 테스트에도 쓴다.
     /// </summary>
     /// <param name="allFrames">true면 Single 모드여도 모든 프레임 시트(움직임 테스트용).</param>
@@ -1067,7 +1089,7 @@ public static partial class ProjectExport
     /// 내보내기 목록의 다른 줄(<see cref="ExportSettings.Entries"/>)은 <paramref name="writeEntry"/>가 고른 줄만 쓰고, 쓰지 않는 줄의 결과도 디스크에 있으면
     /// 기록에 남긴다(목록에서 뺀 줄의 결과만 정리 대상). 기록이 없으면(예전 파일) 아무것도 정리하지 않는다. 결과 파일 이름이 겹치면 <see cref="InvalidOperationException"/>.
     /// </summary>
-    /// <param name="sheets">프로젝트의 시트(목록 첫 줄 — 프레임 시트·부위 아틀라스·Sprite Library·Unity 파일)를 쓰는지.</param>
+    /// <param name="sheets">프로젝트의 시트(목록 첫 줄 — 프레임 시트·레이어 아틀라스·Sprite Library·Unity 파일)를 쓰는지.</param>
     /// <param name="writeEntry">목록의 몇 번째 줄을 쓰는지. null이면 저장할 때 만드는 줄(<see cref="ExportEntry.OnSave"/>).</param>
     public static ExportPlan Plan(SpriteProject project, string projectPath, bool sheets = true, Func<int, bool>? writeEntry = null)
     {
@@ -1184,7 +1206,7 @@ public static partial class ProjectExport
 
     /// <summary>
     /// 계획대로 이미지(+ 메타)와 Sprite Library(+ 메타)를 쓴다(프로젝트의 시트, 목록의 시트 줄, 애니메이션 줄 차례). 기존 메타의 guid·spriteID·internalID는
-    /// 파일마다 칸 이름 기준으로 유지되고, Sprite Library는 방금 쓴 부위 아틀라스 메타의 guid·internalID로 스프라이트를 가리킨다. 기록은 바꾸지 않는다.
+    /// 파일마다 칸 이름 기준으로 유지되고, Sprite Library는 방금 쓴 레이어 아틀라스 메타의 guid·internalID로 스프라이트를 가리킨다. 기록은 바꾸지 않는다.
     /// </summary>
     /// <param name="progress">진행(합성 → 이미지 쓰기). 시작할 때 <see cref="EstimateWork"/>만큼 단계를 잡는다.</param>
     public static ProjectExportResult Write(SpriteProject project, ExportPlan plan, WorkProgress? progress = null)
@@ -1259,11 +1281,11 @@ public static partial class ProjectExport
         if (plan.LibraryPaths.Count > 0)
         {
             var baseName = plan.PartsBaseName ?? Path.GetFileNameWithoutExtension(GetPartsImagePath(export, plan.ProjectPath));
-            var groups = PartCels(project).Select(c => c.Part.Parent!).Distinct();
-            var outputs = LibraryOutputs(project, baseName, groups);
+            var outputs = LibraryOutputs(project, baseName, AtlasSkins(project, assumeContent: false));
+            var categories = LibraryCategories(project, sprites);
             for (int i = 0; i < outputs.Count && i < plan.LibraryPaths.Count; i++)
             {
-                var library = BuildLibrary(project, outputs[i].Group, outputs[i].Skin, sprites);
+                var library = BuildLibrary(project, categories, outputs[i].Preset, sprites);
                 SpriteLibraryAssetWriter.Write(plan.LibraryPaths[i], library);
                 libraries.Add(new ExportResult(plan.LibraryPaths[i], true, library.Sum(c => c.Labels.Count)));
             }
@@ -1274,37 +1296,52 @@ public static partial class ProjectExport
     }
 
     /// <summary>
-    /// 그룹 하나 × 스킨 하나의 Sprite Library 내용: 범주 = 그룹의 부위(위 부위부터, 어느 스킨에든 내용이 있는 부위만),
-    /// 라벨 = 그 부위에 어느 스킨이든 내용이 있는 프레임의 칸 열쇠(<see cref="FrameKey"/>). 스프라이트 = 이 스킨이 직접 그린 스프라이트,
-    /// 없으면 빈 항목(그 프레임에 이 스킨은 아무것도 안 보임). 부위 전용 스킨의 라이브러리에서 주인이 아닌 부위는 첫 스킨 스프라이트. 같은 그룹의 모든 스킨 라이브러리는
-    /// 범주·라벨이 같아서 Sprite Library 에셋만 바꿔 끼우면 Sprite Resolver 키프레임을 그대로 쓴 채 스킨이 바뀐다.
+    /// Sprite Library 범주들(모든 라이브러리가 같이 씀): 레이어 아틀라스 레이어(<see cref="AtlasLayers"/> 순서 — 위 레이어부터) 중 어느 스킨에든 스프라이트가 있는 레이어마다,
+    /// 그 레이어에 어느 스킨이든 스프라이트가 있는 프레임들. 범주 이름 = 정리한 레이어 이름, 겹치면 나무 순서로 두 번째부터 <c>{이름} 2</c>, <c>{이름} 3</c> …
+    /// (아틀라스 스프라이트 이름은 그대로).
     /// </summary>
-    private static List<SpriteLibraryAssetWriter.Category> BuildLibrary(SpriteProject project, Layer group, Skin skin,
+    private static List<(Layer Layer, string Name, List<int> Frames)> LibraryCategories(SpriteProject project,
         IReadOnlyDictionary<(Layer Part, int Frame, Skin? Skin), SpriteLibraryAssetWriter.SpriteRef> sprites)
     {
-        bool byTag = Sheet(project).Parts.Naming == SpriteNaming.ByTag;
-        Skin? key = ReferenceEquals(skin, group.BaseSkin) ? null : skin;
-        var skins = group.AllSkins.Skip(1).Prepend<Skin?>(null).ToList();
-        var categories = new List<SpriteLibraryAssetWriter.Category>();
-        var usedCategories = new HashSet<string>(StringComparer.Ordinal);
-        var children = project.ChildrenOf(group);
-        for (int c = children.Count - 1; c >= 0; c--)
+        var used = new HashSet<string>(StringComparer.Ordinal);
+        var list = new List<(Layer, string, List<int>)>();
+        foreach (var layer in AtlasLayers(project))
         {
-            var part = children[c];
-            var frames = Enumerable.Range(0, project.Frames.Count).Where(fi => skins.Any(s => sprites.ContainsKey((part, fi, s)))).ToList();
+            var skins = layer.Skins.Skip(1).Prepend<Skin?>(null).ToList();
+            var frames = Enumerable.Range(0, project.Frames.Count).Where(fi => skins.Any(s => sprites.ContainsKey((layer, fi, s)))).ToList();
             if (frames.Count == 0) continue;
-            // 부위 전용 스킨은 주인 부위에만 있다 — 다른 부위는 그룹의 첫 스킨
-            Skin? partKey = key is not null && (skin.Owner is null || ReferenceEquals(skin.Owner, part)) ? key : null;
-            var usedLabels = new HashSet<string>(StringComparer.Ordinal);
-            var labels = frames.Select(fi => new SpriteLibraryAssetWriter.Label(
-                Unique(usedLabels, FrameKey(project, fi, byTag)), sprites.GetValueOrDefault((part, fi, partKey)))).ToList();
-            categories.Add(new SpriteLibraryAssetWriter.Category(Unique(usedCategories, CleanSpriteName(part.Name)), labels));
+            var name = CleanSpriteName(layer.Name);
+            var unique = name;
+            for (int n = 2; !used.Add(unique); n++) unique = $"{name} {n}";
+            list.Add((layer, unique, frames));
         }
-        return categories;
+        return list;
     }
 
     /// <summary>
-    /// 내보내기 진행의 전체 단위(<see cref="Write"/>가 잡는 단계): 합성할 프레임·부위 셀마다 합성 몫 + 결과 이미지에 들어갈 만큼의 압축 몫.
+    /// Sprite Library 하나의 내용: 범주(<see cref="LibraryCategories"/>)마다 라벨 = 프레임의 칸 열쇠(<see cref="FrameKey"/>), 스프라이트 = <paramref name="preset"/>에 든 레이어는
+    /// 그 프리셋 스킨의 스프라이트, 나머지 레이어(또는 기본 라이브러리 — <paramref name="preset"/> null)는 첫 스킨 스프라이트. 그 스킨이 그 프레임에 그린 것이 없으면 빈 항목
+    /// (그 프레임에 아무것도 안 보임). 모든 라이브러리의 범주·라벨이 같아서 Sprite Library 에셋만 바꿔 끼우면 Sprite Resolver 키프레임을 그대로 쓴 채 스킨이 바뀐다.
+    /// </summary>
+    private static List<SpriteLibraryAssetWriter.Category> BuildLibrary(SpriteProject project, IReadOnlyList<(Layer Layer, string Name, List<int> Frames)> categories,
+        SkinPreset? preset, IReadOnlyDictionary<(Layer Part, int Frame, Skin? Skin), SpriteLibraryAssetWriter.SpriteRef> sprites)
+    {
+        bool byTag = Sheet(project).Parts.Naming == SpriteNaming.ByTag;
+        var dress = project.DressOf(preset);
+        var result = new List<SpriteLibraryAssetWriter.Category>(categories.Count);
+        foreach (var (layer, name, frames) in categories)
+        {
+            Skin? key = dress.TryGetValue(layer, out var skin) && !ReferenceEquals(skin, layer.Skins[0]) ? skin : null;
+            var usedLabels = new HashSet<string>(StringComparer.Ordinal);
+            var labels = frames.Select(fi => new SpriteLibraryAssetWriter.Label(
+                Unique(usedLabels, FrameKey(project, fi, byTag)), sprites.GetValueOrDefault((layer, fi, key)))).ToList();
+            result.Add(new SpriteLibraryAssetWriter.Category(name, labels));
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// 내보내기 진행의 전체 단위(<see cref="Write"/>가 잡는 단계): 합성할 프레임·레이어 셀마다 합성 몫 + 결과 이미지에 들어갈 만큼의 압축 몫.
     /// 잘라내기·여백으로 실제 시트 크기와는 다르다 — 남는 몫은 단계 끝에 채운다.
     /// </summary>
     public static long EstimateWork(SpriteProject project, ExportPlan plan)
@@ -1342,7 +1379,7 @@ public static partial class ProjectExport
         return units;
     }
 
-    /// <summary>부위 셀 하나(효과 포함)를 그리는 몫.</summary>
+    /// <summary>레이어 아틀라스 셀 하나(효과 포함)를 그리는 몫.</summary>
     private static long PartUnits(PixelImage cel) => (long)cel.Width * cel.Height * CompositeWeight;
 
     /// <summary>

@@ -177,19 +177,19 @@ internal static class GuideFeatureShots
     {
         var m = Demo(k);
         var p = Project(m);
-        var group = p.Layers.First(l => l.IsGroup);
-        var baseSkin = group.BaseSkin;
+        var group = p.Layers.First(l => p.HasChildren(l));
+        // 하위 트리 전체에 같은 이름 스킨(예전 "그룹 새 스킨"): 빈 스킨과 지금 스킨을 복사한 스킨
         Ctx(m).Structural(() =>
         {
-            p.AddSkin(group, "Empty", null);
-            p.AddSkin(group, "Copy", baseSkin);
+            p.AddSkinToSubtree(group, "Empty");
+            p.AddSkinToSubtree(group, "Copy", copy: true);
         });
-        Ctx(m).SetActiveSkin(group, group.Skins.First(s => s.Name == "Empty"));
+        PartsSample.Wear(Ctx(m), group, "Empty");
         k.Settle(350);
         var row = Row(m, p.IndexOf(group));
         var crop = R(m, Canvas(m)).Union(R(m, Preview(m))).Union(R(m, Timeline(m)));
         k.Save(m, crop: crop, marks: [row, R(m, Canvas(m)).Deflate(60), R(m, Preview(m)).Deflate(20)]);
-        Ctx(m).SetActiveSkin(group, group.Skins.First(s => s.Name == "Copy"));
+        PartsSample.Wear(Ctx(m), group, "Copy");
         k.Settle(350);
         k.Save(m, "parts-skin-blank-clone-2", crop: crop, marks: [row, R(m, Canvas(m)).Deflate(60)], firstNumber: 4);
     }
@@ -267,9 +267,17 @@ internal static class GuideFeatureShots
     {
         var m = Demo(k);
         var p = Project(m);
-        var group = p.Layers.First(l => l.IsGroup);
+        // 도움말 대기: 부모 줄 하나로 자식 칸을 모두 잇는 일은 없어졌다 — 자식 레이어마다 자기 칸을 잇는 모습으로 대신한다.
+        var group = p.Layers.First(l => p.HasChildren(l));
         var groupIndex = p.IndexOf(group);
-        Ctx(m).Structural(() => p.LinkCels([(groupIndex, 0), (groupIndex, 1), (groupIndex, 2)], 0));
+        Ctx(m).Structural(() =>
+        {
+            foreach (var child in p.ChildrenOf(group))
+            {
+                int ci = p.IndexOf(child);
+                p.LinkCels([(ci, 0), (ci, 1), (ci, 2)], 0);
+            }
+        });
         k.Settle(350);
         var r = Row(m, groupIndex);
         var children = p.ChildrenOf(group).Select(l => Row(m, p.IndexOf(l))).ToList();
@@ -298,13 +306,20 @@ internal static class GuideFeatureShots
             m.MouseMove(lifting + (to - lifting) * (i / 16.0), RawInputModifiers.Shift);
             k.Settle(25);
         }
-        k.Settle(350);
+        // 행이 비켜 서는 애니메이션 끝까지(헤드리스에서는 타임라인 애니메이션 틱을 직접 돌림)
+        for (int i = 0; i < 25; i++)
+        {
+            ShotKit.Call(Grid(m), "OnAnimTick", null, EventArgs.Empty);
+            k.Settle(16);
+        }
         var reordering = ShotKit.Get<bool>(Grid(m), "_reordering");
         var nesting = ShotKit.Get<bool>(Grid(m), "_nestMode");
-        var drop = ShotKit.Get<object?>(Grid(m), "_nestDrop");
+        var drop = ShotKit.Get<object?>(Grid(m), "_layerDrop");
         if (!reordering || !nesting || drop is null)
             throw new InvalidOperationException($"Shift nesting preview was not active: reordering={reordering}, nesting={nesting}, target={drop}");
-        k.Save(m, crop: R(m, Timeline(m)), marks: [source, target]);
+        // ① 떠서 포인터를 따라오는 Body(반투명 — 밑의 강조된 받을 레이어 Props가 비침) ② Props 바로 아래 한 단계 들여 쓴 틈(맨 위 자식 자리)
+        var props = Row(m, Layer(m, "Props"));
+        k.Save(m, crop: R(m, Timeline(m)), marks: [Row(m, Layer(m, "Body")), new Rect(props.X, props.Bottom, props.Width + 6 * 42 + 24, props.Height)]);
         m.MouseUp(to, MouseButton.Left, RawInputModifiers.Shift);
     }
 
@@ -359,7 +374,7 @@ internal static class GuideFeatureShots
         var group = p.Layers.First(l => l.Name == PartsSample.GroupName);
         var head = p.Layers.First(l => l.Name == "Head");
         int index = p.IndexOf(head);
-        Ctx(m).SetActiveSkin(group, group.BaseSkin!);
+        PartsSample.Wear(Ctx(m), group, PartsSample.BaseSkin);
         var shake = Chickxel.Core.Effects.LegacyEffects.Convert(new ShakeEffect
         {
             Frames = new FrameRange(0, 3), Amount = 8, Axis = EffectAxis.Both, Decay = false, Seed = 3

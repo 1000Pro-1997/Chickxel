@@ -57,6 +57,7 @@ public static class LegacyEffects
             Frames = builtIn.Frames,
             ClipToPrevious = builtIn.ClipToPrevious,
             MovePivot = builtIn.MovePivot,
+            IncludeChildren = builtIn.IncludeChildren,
             Recipe = builtIn.Recipe,
             // 그라데이션이 없으면 빈 표를 그대로(새 사전을 만들면 같은 효과 값이 달라 보임)
             ColorGradients = builtIn.ColorGradients.Count == 0 ? builtIn.ColorGradients : builtIn.ColorGradients.ToDictionary(e => ScriptSlot(e.Key), e => e.Value),

@@ -54,14 +54,14 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 레이어가 프레임 <paramref name="frameIndex"/>에서 따로 둔 것이 있는지(도구 설정의 "현재 프레임부터"): 부위는 <see cref="HasPartFrameOverride"/>,
-    /// 일반 레이어·그룹은 <see cref="HasLayerFramePivot"/>.
+    /// 일반 레이어는 <see cref="HasLayerFramePivot"/>.
     /// </summary>
     public bool HasLayerFrameOverride(Layer layer, int frameIndex)
         => layer.IsPart ? HasPartFrameOverride(layer, frameIndex) : HasLayerFramePivot(layer, frameIndex);
 
     /// <summary>
     /// 레이어 피벗의 캔버스 픽셀 좌표(왼쪽 위 기준, 연속): 부위는 그 프레임의 부위 위치(<see cref="GetPartOffset"/>) + 부위 안 피벗 픽셀,
-    /// 일반 레이어·그룹은 캔버스 기준 피벗 픽셀. 캔버스 피벗 표시·거울 그리기·변형 가운데·대표 레이어 바꾸기에 쓴다.
+    /// 일반 레이어는 캔버스 기준 피벗 픽셀. 캔버스 피벗 표시·거울 그리기·변형 가운데·대표 레이어 바꾸기에 쓴다.
     /// </summary>
     public PointF LayerPivotPixel(Layer layer, int frameIndex)
     {
@@ -76,7 +76,7 @@ public sealed partial class SpriteProject
         return new PointF(offset.X + x, offset.Y + y);
     }
 
-    /// <summary>효과의 "피벗" 자리(효과 원본 왼쪽 위 기준 px): 그 레이어의 그 프레임 피벗 — 부위는 부위 셀 기준, 일반 레이어·그룹은 캔버스 기준.</summary>
+    /// <summary>효과의 "피벗" 자리(효과 원본 왼쪽 위 기준 px): 그 레이어의 그 프레임 피벗 — 자리 있는 레이어는 자기 셀 기준, 일반 레이어는 캔버스 기준.</summary>
     public PointF EffectPivot(Layer layer, int frameIndex)
     {
         var pivot = GetLayerPivot(layer, Math.Clamp(frameIndex, 0, _frames.Count - 1));
@@ -110,7 +110,7 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 레이어를 프레임 <paramref name="fromFrame"/>부터 끝까지 따로 두거나(<paramref name="own"/> — 그 프레임들의 지금 피벗을 그 프레임만의 피벗으로, 모습은 그대로)
-    /// 되돌린다(그 프레임들에 따로 둔 피벗을 지워 레이어 피벗을 따름 — 부위는 옮긴 위치도 지워 기준 위치를 따름). 도구 설정의 "현재 프레임부터".
+    /// 되돌린다(그 프레임들에 따로 둔 피벗을 지워 레이어 피벗을 따름 — 자리 있는 레이어는 옮긴 자리도 지워 기준 자리를 따름, 자손도 같은 만큼 되돌아감). 도구 설정의 "현재 프레임부터".
     /// 실행취소 한 단계, 바뀌는 것이 없으면 기록 없음.
     /// </summary>
     public void SetLayerFramesFrom(int layerIndex, int fromFrame, bool own)
@@ -128,7 +128,8 @@ public sealed partial class SpriteProject
                 else
                 {
                     f.LayerPivots.Remove(layer);
-                    f.PartShifts.Remove(layer);
+                    // 옮긴 거리를 지우면 그 프레임에서 그만큼 되돌아가므로 자손도 같이 되돌린다
+                    if (f.PartShifts.Remove(layer, out var undone)) MoveDescendants(layer, new Point(-undone.X, -undone.Y), [f]);
                 }
             }
         });
@@ -229,7 +230,7 @@ public sealed partial class SpriteProject
     }
 
     /// <summary>
-    /// 캔버스 기준 피벗 모두(캔버스 자신의 기본·프레임 피벗, 일반 레이어·그룹의 피벗과 프레임별 피벗)를 <paramref name="map"/>으로 바꾼다
+    /// 캔버스 기준 피벗 모두(캔버스 자신의 기본·프레임 피벗, 일반 레이어의 피벗과 프레임별 피벗)를 <paramref name="map"/>으로 바꾼다
     /// (캔버스 뒤집기·회전·크기 바꾸기 — 부위 피벗은 부위 기준이라 부르는 쪽이 따로). Edit 안에서.
     /// </summary>
     private void MapCanvasPivots(Func<Pivot, Pivot> map)
@@ -252,7 +253,7 @@ public sealed partial class SpriteProject
     };
 
     /// <summary>
-    /// 일반 레이어·그룹의 피벗을 프레임 <paramref name="frames"/>에서만 캔버스에서 (<paramref name="dx"/>, <paramref name="dy"/>)px 옮긴다(그 프레임들의 그림을 옮길 때).
+    /// 일반 레이어의 피벗을 프레임 <paramref name="frames"/>에서만 캔버스에서 (<paramref name="dx"/>, <paramref name="dy"/>)px 옮긴다(그 프레임들의 그림을 옮길 때).
     /// 모든 프레임이면 레이어 피벗과 프레임별 피벗을 같이 옮기고, 아니면 그 프레임들에 옮긴 피벗을 그 프레임만의 피벗으로 둔다. Edit 안에서.
     /// </summary>
     private void ShiftLayerPivots(Layer layer, HashSet<Frame> frames, int dx, int dy)
@@ -268,7 +269,7 @@ public sealed partial class SpriteProject
     }
 
     /// <summary>
-    /// 캔버스 기준 피벗(일반 레이어·그룹)을 <paramref name="area"/>(캔버스 좌표) 부위 기준 피벗으로 바꾼다(같은 그림 지점). 일반 레이어를 부위로 바꿀 때.
+    /// 캔버스 기준 피벗(일반 레이어)을 <paramref name="area"/>(캔버스 좌표) 부위 기준 피벗으로 바꾼다(같은 그림 지점). 일반 레이어를 부위로 바꿀 때.
     /// </summary>
     private Pivot CanvasPivotToPart(Pivot p, Rectangle area)
     {

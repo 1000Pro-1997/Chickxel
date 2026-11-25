@@ -689,7 +689,7 @@ public sealed class SheetExportPages
     /// <summary>
     /// 시트 설정 칸 한 벌: 스킨(+ 스킨 고르기 창)·스킨 담기·배치·정렬·줄바꿈·칸 수·최대 가로·넣는 순서·따로 파일·칸 이름·간격·잘라내기·2의 거듭제곱.
     /// <paramref name="options"/>가 편집할 설정(공통 = <see cref="ExportSettings.Common"/>, 따로 = <see cref="ExportSettings.PartsOverride"/> — null이면 칸을 숨기므로 공통 값으로 채워 둠).
-    /// <paramref name="overrideBlock"/>이면 부위 아틀라스만 쓰는 설정(착장 프리셋 없음, 실행취소 이름에 "부위 아틀라스").
+    /// <paramref name="overrideBlock"/>이면 레이어 아틀라스만 쓰는 설정(스킨 프리셋 없음, 실행취소 이름에 "레이어 아틀라스").
     /// 한쪽 결과에만 의미 있는 칸(부위마다 따로 파일, 정렬의 부위 기준)은 그 결과가 이 설정을 쓸 때만 보인다.
     /// </summary>
     private StackPanel SheetRows(Func<SpriteProject, SheetOptions?> options, bool overrideBlock)
@@ -707,20 +707,19 @@ public sealed class SheetExportPages
                 : UiStrings.S_UnityExportDialog_SheetRows_7899007C04);
         var pick = Ui.Button(UiStrings.S_UnityExportDialog_SheetRows_464CB34F8D, (_, _) => PickSkins(options, overrideBlock)).HelpAt("parts-skin-export", anchor: "Choose skins dialog");
         pick.Tip(UiStrings.S_UnityExportDialog_SheetRows_6FEB1E8831);
-        // 스킨 줄 = "스킨 내보내기" 그림(① 지금 착장 · ② 고른 스킨 · ③ 스킨 고르기), 스킨 담기 = 고른 스킨 표 줄(④ 한 이미지 · ⑤ 따로 파일)
+        // 스킨 줄 = "스킨 내보내기" 그림(① 지금 스킨 · ② 고른 스킨 · ③ 스킨 고르기), 스킨 담기 = 고른 스킨 표 줄(④ 한 이미지 · ⑤ 따로 파일)
         var skinRow = Setting(UiStrings.S_UnityExportDialog_SheetRows_4EAC72F29F, UiStrings.S_UnityExportDialog_SheetRows_2ADE7F7827, Line(skins, pick)).HelpAt("parts-skin-export", shot: "parts-skin-export");
         var skinLabel = RowLabel(skinRow);
         _refresh.Add(p =>
         {
             var o = O(p);
-            bool anySkin = PartGroups(p).Count > 0 || (!overrideBlock && p.Outfits.Count > 0) || o.Skins != SkinSource.Current;
-            var tops = TopLayers(p);
-            int excluded = tops.Count(o.ExcludedLayers.Contains);
+            bool anySkin = p.Layers.Any(l => l.Skins.Count > 1 && (!overrideBlock || l.IsPart)) || (!overrideBlock && p.SkinPresets.Count > 0) || o.Skins != SkinSource.Current;
+            int excluded = p.Layers.Count(o.ExcludedLayers.Contains);
             skins.IsVisible = anySkin;
             skinLabel.Text = anySkin ? UiStrings.S_UnityExportDialog_SheetRows_4EAC72F29F : UiStrings.S_UnityExportDialog_SheetRows_ED3CFCD2B9;
-            pick.Content = (anySkin ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UnityExportDialog_SheetRows_4125CFA2B0,SkinPickerWindow.SelectedCount(p, o, countOutfits: !overrideBlock)) : UiStrings.S_UnityExportDialog_SheetRows_5CB8E8AD24)
+            pick.Content = (anySkin ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UnityExportDialog_SheetRows_4125CFA2B0,SkinPickerWindow.SelectedCount(p, o, partsOnly: overrideBlock)) : UiStrings.S_UnityExportDialog_SheetRows_5CB8E8AD24)
                            + (excluded > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UnityExportDialog_SheetRows_B57003BD68,excluded) : "");
-            skinRow.IsVisible = anySkin || tops.Count > 1 || excluded > 0;
+            skinRow.IsVisible = anySkin || p.Layers.Count > 1 || excluded > 0;
         });
         var splitSkins = Setting(UiStrings.S_UnityExportDialog_SheetRows_F65F934352, UiStrings.S_UnityExportDialog_SheetRows_EF7328D2A3,
             Seg(u + UiStrings.S_UnityExportDialog_SheetRows_960330D064, [false, true], [UiStrings.S_UnityExportDialog_SheetRows_FDB5482E0D, UiStrings.S_UnityExportDialog_SheetRows_2F498E0DBD], p => O(p).SplitSkins, (p, v) => O(p).SplitSkins = v)
@@ -830,12 +829,6 @@ public sealed class SheetExportPages
                                UiStrings.S_UnityExportDialog_OrderRow_BE3BD0187B +
                                UiStrings.S_UnityExportDialog_OrderRow_8372486881, list);
     }
-
-    /// <summary>합성에서 켜고 끌 수 있는 최상위 레이어(그룹 = 스킨 칸째, 일반 레이어), 타임라인처럼 위→아래.</summary>
-    private static List<Layer> TopLayers(SpriteProject p) => p.Layers.Where(l => !l.IsPart).Reverse().ToList();
-
-    /// <summary>부위 아틀라스에 들어가는(부위가 있는) 그룹, 위→아래.</summary>
-    private static List<Layer> PartGroups(SpriteProject p) => p.Layers.Where(l => l.IsGroup && p.ChildCount(l) > 0).Reverse().ToList();
 
     /// <summary>작은 선택(2~4개) 단추 묶음(<see cref="Choice"/>의 <see cref="TabStripKind.Segmented"/> 꼴). 값이 목록에 없으면 아무것도 고르지 않은 모양.</summary>
     private TabStrip Seg<T>(string undo, T[] values, string[] labels, Func<SpriteProject, T> get, Action<SpriteProject, T> set)
@@ -1217,28 +1210,22 @@ public sealed class SheetExportPages
             ? files[0].Name + ext
             : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UnityExportDialog_FileNames_83F9DDF23F,files.Count) + string.Join(", ", files.Take(4).Select(f => f.Name + ext)) + (files.Count > 4 ? ", …" : "");
 
-    /// <summary>부위 아틀라스 칸 → 그 부위 레이어·프레임을 현재로(다른 스킨 칸이면 그 그룹의 스킨도 그 스킨으로).</summary>
+    /// <summary>레이어 아틀라스 칸 → 그 레이어·프레임을 현재로(다른 스킨 칸이면 그 레이어의 지금 스킨도 그 스킨으로).</summary>
     private void SelectPartEntry(SheetEntry e)
     {
         if (_ctx.Project is not { } p) return;
         int layer = PartLayerOf(p, e);
-        if (layer >= 0 && p.Layers[layer] is { Parent: { IsGroup: true } group } part)
-        {
-            // 부위 전용 스킨 칸이거나 부위를 따로 고른 중이면 그 부위만, 아니면 그룹 착장을 그 칸의 스킨으로
-            var skin = e.Skin ?? group.BaseSkin!;
-            if (skin.IsPartOnly || part.SkinOverride is not null) _ctx.SetPartSkin(part, skin);
-            else _ctx.SetActiveSkin(group, skin);
-        }
+        if (layer >= 0 && p.Layers[layer] is var part && (e.Skin ?? part.BaseSkin) is { } skin) _ctx.SetActiveSkin(part, skin);
         if (layer >= 0) _ctx.SetCurrent(layer, e.FrameIndex);
         else _ctx.SetCurrentFrame(e.FrameIndex);
     }
 
-    /// <summary>부위 아틀라스 칸의 부위 레이어 번호(없으면 -1).</summary>
+    /// <summary>레이어 아틀라스 칸의 레이어 번호(없으면 -1).</summary>
     private static int PartLayerOf(SpriteProject p, SheetEntry e) => e.Part is { } part ? p.IndexOf(part) : -1;
 
-    /// <summary>칸이 그 부위의 지금 보이는 스킨 것인지(첫 스킨 칸은 <see cref="SheetEntry.Skin"/>이 null).</summary>
+    /// <summary>칸이 그 레이어의 지금 스킨 것인지(첫 스킨 칸은 <see cref="SheetEntry.Skin"/>이 null).</summary>
     private static bool IsActiveSkinEntry(SheetEntry e)
-        => e.Part is not { Parent: { IsGroup: true } g } part || ReferenceEquals(e.Skin ?? g.BaseSkin, part.ShownSkin);
+        => e.Part is not { } part || ReferenceEquals(e.Skin ?? part.BaseSkin, part.ActiveSkin);
 
     /// <summary>칸 목록의 한 줄(이름 · 번호 60 · 위치 130).</summary>
     private static Grid EntryRow(string name, string number, string rect)
@@ -1326,7 +1313,7 @@ public sealed class SheetExportPages
         int frame = _ctx.CurrentFrame;
         foreach (var preview in _framesSection.Sheets)
         {
-            // 스킨 항목이 한 이미지에 여럿이면 지금 보이는 착장 항목 칸
+            // 스킨 항목이 한 이미지에 여럿이면 지금 보이는 스킨 항목 칸
             var entries = preview.Sheet?.Entries.Where(e => e.FrameIndex == frame).ToList() ?? [];
             preview.Highlight = (entries.FirstOrDefault(IsShownVariant) ?? entries.FirstOrDefault())?.Rect;
         }
@@ -1340,9 +1327,9 @@ public sealed class SheetExportPages
         }
     }
 
-    /// <summary>프레임 시트 칸이 지금 보이는 착장의 것인지(지금 착장 항목, 또는 그 그룹이 지금 그 스킨인 항목).</summary>
+    /// <summary>프레임 시트 칸이 지금 보이는 스킨의 것인지(지금 스킨 항목, 또는 그 레이어가 지금 그 스킨인 항목).</summary>
     private static bool IsShownVariant(SheetEntry e)
-        => e.Variant is not { } v || v.IsCurrent || (v.Group is { } g && ReferenceEquals(g.ActiveSkin, v.Skin));
+        => e.Variant is not { } v || v.IsCurrent || (v.Layer is { } l && ReferenceEquals(l.ActiveSkin, v.Skin));
 
     /// <summary>만들어질 시트와 칸 테두리(부위 아틀라스면 칸 이름도)를 보여 준다. 높이는 받은 너비에 시트 비율을 맞춘다(최소 120, 최대 720).</summary>
     private sealed class SheetPreview : Control

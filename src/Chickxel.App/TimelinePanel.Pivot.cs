@@ -80,7 +80,7 @@ public sealed partial class TimelinePanel
         /// <summary>프레임 머리글의 피벗 표시: 캔버스 피벗 대상일 때만, 대상(캔버스 자신 또는 대표 레이어)이 그 프레임에 따로 둔 피벗이 있으면.</summary>
         private bool HeaderPivotMark(int frame) => Ctx.IsPivotCanvasTarget && Ctx.PivotTargetOwnsFrame(frame);
 
-        /// <summary>셀의 피벗 표시: 그 레이어가 그 프레임에 따로 둔 피벗(부위는 위치도)이 있으면 — 부위는 늘, 일반 레이어·그룹은 지금 레이어 행만.</summary>
+        /// <summary>셀의 피벗 표시: 그 레이어가 그 프레임에 따로 둔 피벗(자리 있는 레이어는 위치도)이 있으면 — 자리 있는 레이어는 늘, 일반 레이어는 지금 레이어 행만.</summary>
         private bool CellPivotMark(SpriteProject p, int layer, int frame)
             => (p.Layers[layer].IsPart || layer == Ctx.CurrentLayer) && p.HasLayerFrameOverride(p.Layers[layer], frame);
 

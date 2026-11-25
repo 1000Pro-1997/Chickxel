@@ -15,25 +15,24 @@ public sealed partial class PixelTools
             "Link cels of one layer so the given frames share ONE drawing: editing any linked cel (drawing, clear, fill…) changes all of them. " +
             "Frames need not be adjacent. If one of the frames is already linked, the others join that link (and its color); otherwise the first frame that has pixels " +
             "becomes the shared drawing and the other frames' pixels are replaced (empty frames too). New links get the next unused timeline color " +
-            "in the order links are made (" + LinkColorList + "); pass `color` to choose it. A group layer links every part of the group: each part gets one new link of " +
-            "exactly those frames (its drawing in `frames[0]`, or the first frame showing one), taken out of any other link of those cels — group links win over part links. " +
-            "get_document lists each layer's links (a group lists the frames where all its parts are linked together).",
+            "in the order links are made (" + LinkColorList + "); pass `color` to choose it. Only the layer's own cels are linked (its children are separate layers). " +
+            "get_document lists each layer's links.",
             new JsonObject
             {
-                ["layer"] = Int("Layer index (0 = bottom): normal, part or group layer. Default: current.", 0),
+                ["layer"] = Int("Layer index (0 = bottom). Default: current.", 0),
                 ["frames"] = IntArray("Frame indices to link (at least 2)."),
                 ["color"] = Enum("Timeline color of the link (default: keep / next unused).", [.. SpriteProject.LinkColorNames]),
             },
             "frames"),
         Tool("unlink_cels",
-            "Unlink cels: each given frame of the layer (of every part, for a group layer) gets its own copy of the drawing so it can be edited alone. Pixels are unchanged, except: a cel that was showing " +
+            "Unlink cels: each given frame of the layer gets its own copy of the drawing so it can be edited alone. Pixels are unchanged, except: a cel that was showing " +
             "an animated effect's held end look only because it was linked to the effect range's last cel (holdEnd) gets that look baked into its drawing exactly as shown " +
             "(enabled effects only, clipped to the cel; not when an enabled effect's range covers that frame, or when a held end still applies after unlinking — e.g. an effect " +
             "that reports its movement keeps moving the unlinked cel to the end position — then it keeps the raw copy). " +
             "If unlinking a range-end cel makes other still-linked cels lose the held look, those are baked too.",
             new JsonObject
             {
-                ["layer"] = Int("Layer index (0 = bottom): normal, part or group layer. Default: current.", 0),
+                ["layer"] = Int("Layer index (0 = bottom). Default: current.", 0),
                 ["frames"] = IntArray("Frame indices to unlink."),
             },
             "frames"),
@@ -55,7 +54,7 @@ public sealed partial class PixelTools
         ["description"] = description,
     };
 
-    /// <summary>링크 도구의 레이어(그룹이면 그 부위들에 적용): 잠긴 레이어면 도구 오류.</summary>
+    /// <summary>링크 도구의 레이어: 잠긴 레이어면 도구 오류.</summary>
     private int LinkLayer(SpriteProject p, JsonObject? a)
     {
         int layer = LayerIndex(a);

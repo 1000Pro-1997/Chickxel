@@ -261,7 +261,7 @@ public class ScriptLayerContextTests
     public void Parts_and_groups_are_aligned_through_part_offsets_and_the_group_holding_the_reader_is_not_found()
     {
         var p = new SpriteProject(W, H);
-        var group = p.AddGroup("g");
+        var group = p.AddEmptyParent("g");
         var lower = p.AddPart(group, "lower", 3, 3, new Point(1, 1));
         var upper = p.AddPart(group, "upper", 3, 3, new Point(4, 2));
         p.SetCel(p.IndexOf(lower), 0, Dot(3, 3, 2, 0, Red)); // 캔버스 (3, 1)
@@ -300,7 +300,7 @@ public class ScriptLayerContextTests
     public void Group_chosen_inside_another_layer_render_gives_null_image()
     {
         var p = new SpriteProject(W, H);
-        var group = p.AddGroup("g");
+        var group = p.AddEmptyParent("g");
         var lower = p.AddPart(group, "lower", 3, 3, new Point(1, 1));
         p.SetCel(p.IndexOf(lower), 0, Dot(3, 3, 2, 0, Red)); // 캔버스 (3, 1)
         var x = p.AddLayer(name: "x");
@@ -431,7 +431,7 @@ public class ScriptLayerContextTests
         p.Sprite.Border = new SpriteBorder(5, 0, 5, 0); // 원본보다 넓음 → 맞지 않음
         Assert.Equal(new Color32(200, 200, 200, 200), Rendered(p, p.Layers[0])[1, 0]);
 
-        var group = p.AddGroup("g");
+        var group = p.AddEmptyParent("g");
         var part = p.AddPart(group, "part", 4, 4, new Point(3, 1));
         p.SetCel(p.IndexOf(part), 0, new PixelImage(4, 4));
         p.SetPartBorder(p.IndexOf(part), new SpriteBorder(1, 1, 1, 1));

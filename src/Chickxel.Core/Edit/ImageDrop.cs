@@ -16,7 +16,7 @@ public sealed record DroppedImage(string Name, IReadOnlyList<PixelImage> Frames,
 public sealed record ImageDropResult(IReadOnlyList<Layer> Layers, IReadOnlyList<Point> Locations, int AddedFrames, bool Oversized);
 
 /// <summary>
-/// 파일 끌어 넣기: 그림마다 새 일반 레이어를 현재 레이어(부위면 그 그룹, 그룹이면 그 그룹) 위에 넣고, 현재 프레임부터 그림 프레임을 차례로 넣는다.
+/// 파일 끌어 넣기: 그림마다 새 일반 레이어를 현재 레이어(자식이면 그 최상위 조상) 위에 최상위로 넣고, 현재 프레임부터 그림 프레임을 차례로 넣는다.
 /// 위치는 놓은 픽셀이 그림 가운데가 되게(정수 픽셀), 그림이 캔버스보다 크면(한 변이라도) 캔버스 가운데. 캔버스 밖으로 나간 픽셀은 잘리지 않고
 /// 캔버스 밖 그림으로 남는다(캔버스를 키우면 보임). 프레임이 모자라면 맨 끝에 더하고 길이는 그림 프레임 길이를 쓴다. 모두 실행취소 한 단계.
 /// </summary>
@@ -38,7 +38,7 @@ public static class ImageDrop
 
     /// <summary>
     /// 그림들을 새 레이어로 넣는다(실행취소 한 단계 <paramref name="label"/>). <paramref name="currentLayer"/> 위 자리는 레이어 추가와 같다
-    /// (부위면 그 그룹 위 — 그룹 안에는 넣지 않음). 그림이 없으면 아무것도 하지 않는다.
+    /// (나무 안의 레이어면 그 최상위 조상 덩어리 위 — 나무 안에는 넣지 않음). 그림이 없으면 아무것도 하지 않는다.
     /// <paramref name="growCanvas"/>면 먼저 캔버스를 가장 큰 그림이 들어가게 가운데 기준으로 늘린다(줄이지는 않음 — 같은 실행취소 단계, 놓는 자리는
     /// 늘린 캔버스의 같은 지점).
     /// </summary>
@@ -65,7 +65,9 @@ public static class ImageDrop
                 }
             }
             var current = p.Layers[Math.Clamp(currentLayer, 0, p.Layers.Count - 1)];
-            int at = p.IndexOf(current.Parent ?? current) + 1;
+            var ancestors = p.AncestorsOf(current);
+            var root = ancestors.Count > 0 ? ancestors[ancestors.Count - 1] : current;
+            int at = p.IndexOf(root) + 1;
             foreach (var image in images)
             {
                 var layer = p.AddLayer(at, image.Name);

@@ -43,7 +43,7 @@ public sealed record EffectRecipe : IAssetData
     private static readonly IReadOnlyDictionary<string, string> EmptyScripts = new SortedDictionary<string, string>(StringComparer.Ordinal);
 
     /// <summary>
-    /// 프로젝트 효과 목록의 사본(프레임 범위와 묶음 정보를 지우고 첫 효과의 클리핑을 끔, 예전 기본 효과는 공식 스크립트로 — <see cref="LegacyEffects"/>).
+    /// 프로젝트 효과 목록의 사본(프레임 범위·묶음 정보·적용 대상(자손까지)을 지우고 첫 효과의 클리핑을 끔, 예전 기본 효과는 공식 스크립트로 — <see cref="LegacyEffects"/>).
     /// 스크립트 효과의 원문은 <paramref name="project"/>의 스크립트 표에서(없으면 앱이 아는 원문 <see cref="ScriptLibrary"/>에서) 가져온다.
     /// </summary>
     public static EffectRecipe Capture(string id, string name, IEnumerable<LayerEffect> effects, SpriteProject? project = null)
@@ -52,6 +52,7 @@ public sealed record EffectRecipe : IAssetData
         {
             Frames = null,
             ClipToPrevious = index > 0 && effect.ClipToPrevious,
+            IncludeChildren = false,
             Recipe = null,
         }).ToArray();
         var scripts = new SortedDictionary<string, string>(StringComparer.Ordinal);

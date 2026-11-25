@@ -13,7 +13,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="ExportPreset_BuiltInFrame" xml:space="preserve"><value>프레임 시트 기본</value><comment>기본 제공 내보내기 프리셋의 표시 이름. ExportPresets.BuiltIns에 저장된 식별자는 번역하지 않음.</comment></data>
-  <data name="ExportPreset_BuiltInParts" xml:space="preserve"><value>부위 아틀라스 + Sprite Library</value><comment>기본 제공 내보내기 프리셋의 표시 이름.</comment></data>
+  <data name="ExportPreset_BuiltInParts" xml:space="preserve"><value>레이어 아틀라스 + Sprite Library</value><comment>기본 제공 내보내기 프리셋의 표시 이름.</comment></data>
   <data name="ExportPreset_BuiltInSplitSkins" xml:space="preserve"><value>스킨마다 따로 파일</value><comment>기본 제공 내보내기 프리셋의 표시 이름.</comment></data>
   <data name="EffectShared_Title" xml:space="preserve"><value>공통 설정</value></data>
   <data name="EffectShared_FrameExtend" xml:space="preserve"><value>프레임 늘리기</value></data>
@@ -1003,11 +1003,11 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\Dialogs.cs:129 · ImportKindDialog · "어떻게 가져올까요?"</comment>
   </data>
   <data name="S_Dialogs_ImportKindDialog_5EAAD1D0AB" xml:space="preserve">
-    <value>부위로</value>
+    <value>자식 레이어로</value>
     <comment>src/Chickxel.App\Dialogs.cs:126 · ImportKindDialog · "부위로"</comment>
   </data>
   <data name="S_Dialogs_ImportKindDialog_6C0B0B1FB9" xml:space="preserve">
-    <value>· 부위로: 그룹 하나에 칸마다 부위 1개(이름·크기·피벗 그대로, 시트의 원래 위치에 배치)</value>
+    <value>· 자식 레이어로: 빈 레이어 하나 아래에 칸마다 자식 레이어 1개(이름·크기·피벗 그대로, 시트의 원래 위치에 배치)</value>
     <comment>src/Chickxel.App\Dialogs.cs:130 · ImportKindDialog · "· 부위로: 그룹 하나에 칸마다 부위 1개(이름·크기·피벗 그대로, 시트의 원래 위치에 배치)"</comment>
   </data>
   <data name="S_Dialogs_ImportKindDialog_C65D508A8F" xml:space="preserve">
@@ -1026,10 +1026,6 @@ echo __LOGIN_FAILED__
     <value>{0}: 칸 {1}개가 모두 같은 크기({2}×{3})입니다.</value>
     <comment>src/Chickxel.App\Dialogs.cs:128 · ImportKindDialog · $"{fileName}: 칸 {sliceCount}개가 모두 같은 크기({sliceSize.Width}×{sliceSize.Height})입니다."</comment>
   </data>
-  <data name="S_Dialogs_NewImageDialog_0F2FF932AA" xml:space="preserve">
-    <value>부위로 시작(그룹 + 첫 부위 · 예: 머리·몸·팔·다리)</value>
-    <comment>src/Chickxel.App\Dialogs.cs:26 · NewImageDialog · "부위로 시작(그룹 + 첫 부위 · 예: 머리·몸·팔·다리)"</comment>
-  </data>
   <data name="S_Dialogs_NewImageDialog_1BD6059500" xml:space="preserve">
     <value>배경 투명</value>
     <comment>src/Chickxel.App\Dialogs.cs:24 · NewImageDialog · "배경 투명"</comment>
@@ -1038,17 +1034,9 @@ echo __LOGIN_FAILED__
     <value>캔버스</value>
     <comment>src/Chickxel.App\Dialogs.cs:38 · NewImageDialog · "캔버스"</comment>
   </data>
-  <data name="S_Dialogs_NewImageDialog_6F947592B8" xml:space="preserve">
-    <value>일반(레이어 1)</value>
-    <comment>src/Chickxel.App\Dialogs.cs:25 · NewImageDialog · "일반(레이어 1)"</comment>
-  </data>
   <data name="S_Dialogs_NewImageDialog_7A2F4AE34E" xml:space="preserve">
     <value>새 프로젝트</value>
     <comment>src/Chickxel.App\Dialogs.cs:20 · NewImageDialog · "새 프로젝트"</comment>
-  </data>
-  <data name="S_Dialogs_NewImageDialog_7C07F3BD59" xml:space="preserve">
-    <value>   첫 부위</value>
-    <comment>src/Chickxel.App\Dialogs.cs:30 · NewImageDialog · "   첫 부위"</comment>
   </data>
   <data name="S_Dialogs_NewImageDialog_7D347172F9" xml:space="preserve">
     <value>만들기</value>
@@ -1058,21 +1046,9 @@ echo __LOGIN_FAILED__
     <value>투명이 아니면 보조색으로 채웁니다.</value>
     <comment>src/Chickxel.App\Dialogs.cs:48 · NewImageDialog · "투명이 아니면 보조색으로 채웁니다."</comment>
   </data>
-  <data name="S_Dialogs_NewImageDialog_AB87E30975" xml:space="preserve">
-    <value>머리</value>
-    <comment>src/Chickxel.App\Dialogs.cs:27 · NewImageDialog · "머리"</comment>
-  </data>
   <data name="S_Dialogs_NewImageDialog_BF763338DC" xml:space="preserve">
     <value>파일 이름</value>
     <comment>src/Chickxel.App\Dialogs.cs:36 · NewImageDialog · "파일 이름"</comment>
-  </data>
-  <data name="S_Dialogs_NewImageDialog_DA31ACDA8F" xml:space="preserve">
-    <value>시작</value>
-    <comment>src/Chickxel.App\Dialogs.cs:43 · NewImageDialog · "시작"</comment>
-  </data>
-  <data name="S_Dialogs_NewImageDialog_DFFA42AA00" xml:space="preserve">
-    <value>첫 부위 이름을 입력하세요.</value>
-    <comment>src/Chickxel.App\Dialogs.cs:59 · NewImageDialog · "첫 부위 이름을 입력하세요."</comment>
   </data>
   <data name="S_Dialogs_NewImageDialog_E71C7CF793" xml:space="preserve">
     <value>파일 이름이 비었거나 쓸 수 없는 문자가 있습니다.</value>
@@ -1087,7 +1063,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\Dialogs.cs:88 · NewPartDialog · "머리"</comment>
   </data>
   <data name="S_Dialogs_NewPartDialog_2F37A51A37" xml:space="preserve">
-    <value>새 부위</value>
+    <value>새 자식 레이어</value>
     <comment>src/Chickxel.App\Dialogs.cs:82 · NewPartDialog · "새 부위"</comment>
   </data>
   <data name="S_Dialogs_NewPartDialog_961BAAAD27" xml:space="preserve">
@@ -1099,7 +1075,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\Dialogs.cs:87 · NewPartDialog · "이름"</comment>
   </data>
   <data name="S_Dialogs_NewPartDialog_A409FD6D21" xml:space="preserve">
-    <value>이름이 겹치면 _1, _2 …가 붙습니다. 처음 위치는 캔버스 가운데 — 그룹을 골라 끌어 배치하세요.</value>
+    <value>이름이 겹치면 _1, _2 …가 붙습니다. 처음 위치는 캔버스 가운데입니다.</value>
     <comment>src/Chickxel.App\Dialogs.cs:96 · NewPartDialog · "이름이 겹치면 _1, _2 …가 붙습니다. 처음 위치는 캔버스 가운데 — 그룹을 골라 끌어 배치하세요."</comment>
   </data>
   <data name="S_Dialogs_NewPartDialog_EA5F33CDE6" xml:space="preserve">
@@ -1111,11 +1087,11 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\Dialogs.cs:88 · NewPartDialog · "다리"</comment>
   </data>
   <data name="S_Dialogs_PartOffsetDialog_0C8997B97B" xml:space="preserve">
-    <value>프레임 캔버스에서 부위 왼쪽 위 위치(모든 프레임 공통)</value>
+    <value>프레임 캔버스에서 레이어 왼쪽 위 위치(모든 프레임 공통)</value>
     <comment>src/Chickxel.App\Dialogs.cs:116 · PartOffsetDialog · "프레임 캔버스에서 부위 왼쪽 위 위치(모든 프레임 공통)"</comment>
   </data>
   <data name="S_Dialogs_PartOffsetDialog_24B8E24EE4" xml:space="preserve">
-    <value>부위 위치 — {0}</value>
+    <value>레이어 위치 — {0}</value>
     <comment>src/Chickxel.App\Dialogs.cs:110 · PartOffsetDialog · $"부위 위치 — {partName}"</comment>
   </data>
   <data name="S_Dialogs_ReplaceColorDialog_0B7DF97295" xml:space="preserve">
@@ -1215,11 +1191,11 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\Dialogs.cs:486 · Shortcuts · "새 빈 프레임 / 프레임 복제"</comment>
   </data>
   <data name="S_Dialogs_Shortcuts_1C2B1A1E5E" xml:space="preserve">
-    <value>그 부위 고르기(부위 크기 캔버스로 그리기)</value>
+    <value>그 자식 레이어 고르기(레이어 크기 캔버스로 그리기)</value>
     <comment>src/Chickxel.App\Dialogs.cs:500 · Shortcuts · "그 부위 고르기(부위 크기 캔버스로 그리기)"</comment>
   </data>
   <data name="S_Dialogs_Shortcuts_1C35C1C5A5" xml:space="preserve">
-    <value>그룹 이름 앞 삼각형</value>
+    <value>레이어 이름 앞 삼각형</value>
     <comment>src/Chickxel.App\Dialogs.cs:491 · Shortcuts · "그룹 이름 앞 삼각형"</comment>
   </data>
   <data name="S_Dialogs_Shortcuts_1D4D69FEBB" xml:space="preserve">
@@ -1355,11 +1331,11 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\Dialogs.cs:460 · Shortcuts · "열기(.chickxel · 이미지 · GIF · 영상)"</comment>
   </data>
   <data name="S_Dialogs_Shortcuts_699BE4B36E" xml:space="preserve">
-    <value>부위 배치(방향키 1px · Shift 8px)</value>
+    <value>자식 레이어 배치(방향키 1px · Shift 8px)</value>
     <comment>src/Chickxel.App\Dialogs.cs:499 · Shortcuts · "부위 배치(방향키 1px · Shift 8px)"</comment>
   </data>
   <data name="S_Dialogs_Shortcuts_6AF34AD7B6" xml:space="preserve">
-    <value>그룹에서 부위 더블클릭</value>
+    <value>빈 레이어 화면에서 자식 더블클릭</value>
     <comment>src/Chickxel.App\Dialogs.cs:500 · Shortcuts · "그룹에서 부위 더블클릭"</comment>
   </data>
   <data name="S_Dialogs_Shortcuts_6DB7F163BF" xml:space="preserve">
@@ -1403,7 +1379,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\Dialogs.cs:533 · Shortcuts · "양파 껍질"</comment>
   </data>
   <data name="S_Dialogs_Shortcuts_846D4758F6" xml:space="preserve">
-    <value>그룹 접기 / 펼치기</value>
+    <value>자식 레이어 접기 / 펼치기</value>
     <comment>src/Chickxel.App\Dialogs.cs:491 · Shortcuts · "그룹 접기 / 펼치기"</comment>
   </data>
   <data name="S_Dialogs_Shortcuts_864C7AA661" xml:space="preserve">
@@ -1467,7 +1443,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\Dialogs.cs:474 · Shortcuts · "좌우 / 상하 뒤집기(선택, 없으면 현재 셀)"</comment>
   </data>
   <data name="S_Dialogs_Shortcuts_BA96D2C3EB" xml:space="preserve">
-    <value>그룹 고르고 끌기</value>
+    <value>빈 레이어 고르고 자식 끌기</value>
     <comment>src/Chickxel.App\Dialogs.cs:499 · Shortcuts · "그룹 고르고 끌기"</comment>
   </data>
   <data name="S_Dialogs_Shortcuts_BC827F884D" xml:space="preserve">
@@ -1483,7 +1459,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\Dialogs.cs:479 · Shortcuts · "Shift+방향키"</comment>
   </data>
   <data name="S_Dialogs_Shortcuts_BF8A231C98" xml:space="preserve">
-    <value>부위</value>
+    <value>자식 레이어</value>
     <comment>src/Chickxel.App\Dialogs.cs:499 · Shortcuts · "부위"</comment>
   </data>
   <data name="S_Dialogs_Shortcuts_BFE4A309E1" xml:space="preserve">
@@ -1503,7 +1479,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\Dialogs.cs:525 · Shortcuts · "보기"</comment>
   </data>
   <data name="S_Dialogs_Shortcuts_CD3EC97621" xml:space="preserve">
-    <value>현재 그룹에 새 부위(그룹이 없으면 그룹도)</value>
+    <value>현재 레이어 아래에 새 자식 레이어</value>
     <comment>src/Chickxel.App\Dialogs.cs:489 · Shortcuts · "현재 그룹에 새 부위(그룹이 없으면 그룹도)"</comment>
   </data>
   <data name="S_Dialogs_Shortcuts_D1CD5B98A5" xml:space="preserve">
@@ -1551,7 +1527,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\Dialogs.cs:477 · Shortcuts · "변형 중 Enter / Esc · Ctrl+Z"</comment>
   </data>
   <data name="S_Dialogs_Shortcuts_E485ABF61D" xml:space="preserve">
-    <value>새 그룹</value>
+    <value>새 빈 레이어</value>
     <comment>src/Chickxel.App\Dialogs.cs:488 · Shortcuts · "새 그룹"</comment>
   </data>
   <data name="S_Dialogs_Shortcuts_E4A0BFBB0C" xml:space="preserve">
@@ -1695,7 +1671,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\EditorContext.cs:733 · BeginCanvasResize · "열린 프로젝트가 없습니다."</comment>
   </data>
   <data name="S_EditorContext_BeginTransform_10405489AE" xml:space="preserve">
-    <value>그룹 화면에서는 변형할 수 없습니다. 부위나 레이어를 고르세요.</value>
+    <value>자식을 배치하는 빈 레이어에서는 변형할 수 없습니다. 자식 레이어나 다른 레이어를 고르세요.</value>
     <comment>src/Chickxel.App\EditorContext.cs:576 · BeginTransform · "그룹 화면에서는 변형할 수 없습니다. 부위나 레이어를 고르세요."</comment>
   </data>
   <data name="S_EditorContext_BeginTransform_433795A813" xml:space="preserve">
@@ -1731,11 +1707,11 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\EditorContext.cs:226 · GradientStops · "그라데이션 정지점은 2개 이상이어야 합니다."</comment>
   </data>
   <data name="S_EditorContext_MovePart_9205E8CE1C" xml:space="preserve">
-    <value>부위 위치 (자동 배치 끄기)</value>
+    <value>레이어 위치 (자동 배치 끄기)</value>
     <comment>src/Chickxel.App\EditorContext.cs:828 · MovePart · "부위 위치 (자동 배치 끄기)"</comment>
   </data>
   <data name="S_EditorContext_MovePart_B02E0EA2B6" xml:space="preserve">
-    <value>부위 위치</value>
+    <value>레이어 위치</value>
     <comment>src/Chickxel.App\EditorContext.cs:828 · MovePart · "부위 위치"</comment>
   </data>
   <data name="S_EditorContext_SetSliceBorder_738B84377F" xml:space="preserve">
@@ -1775,7 +1751,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\ExportPresetBar.cs:82 · Describe · "격자"</comment>
   </data>
   <data name="S_ExportPresetBar_Describe_3967EC3179" xml:space="preserve">
-    <value>지금 착장</value>
+    <value>지금 스킨</value>
     <comment>src/Chickxel.App\ExportPresetBar.cs:82 · Describe · "지금 착장"</comment>
   </data>
   <data name="S_ExportPresetBar_Describe_447C8E9BD3" xml:space="preserve">
@@ -1787,7 +1763,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\ExportPresetBar.cs:83 · Describe · "스킨마다 따로 파일"</comment>
   </data>
   <data name="S_ExportPresetBar_Describe_70797FAAFD" xml:space="preserve">
-    <value>프레임 시트 + 부위 아틀라스</value>
+    <value>프레임 시트 + 레이어 아틀라스</value>
     <comment>src/Chickxel.App\ExportPresetBar.cs:81 · Describe · "프레임 시트 + 부위 아틀라스"</comment>
   </data>
   <data name="S_ExportPresetBar_Describe_CFA916E467" xml:space="preserve">
@@ -1795,7 +1771,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\ExportPresetBar.cs:81 · Describe · "프레임 시트"</comment>
   </data>
   <data name="S_ExportPresetBar_Describe_D33CCA9022" xml:space="preserve">
-    <value>부위 아틀라스</value>
+    <value>레이어 아틀라스</value>
     <comment>src/Chickxel.App\ExportPresetBar.cs:81 · Describe · "부위 아틀라스"</comment>
   </data>
   <data name="S_ExportPresetBar_Describe_DB36FF4EB4" xml:space="preserve">
@@ -1824,7 +1800,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\ExportPresetBar.cs:44 · ExportPresetBar · "내보내기 설정을 처음 값으로 되돌립니다(파일 이름·폴더는 그대로, 실행취소 1단계)"</comment>
   </data>
   <data name="S_ExportPresetBar_ExportPresetBar_72F5D68487" xml:space="preserve">
-    <value>지금 내보내기 설정을 이름 붙여 저장합니다(파일 이름·폴더·고른 스킨·착장·뺀 레이어·Single 프레임·원래 위치 유지는 담지 않음)</value>
+    <value>지금 내보내기 설정을 이름 붙여 저장합니다(파일 이름·폴더·고른 스킨·스킨 프리셋·뺀 레이어·Single 프레임·원래 위치 유지는 담지 않음)</value>
     <comment>src/Chickxel.App\ExportPresetBar.cs:29 · ExportPresetBar · "지금 내보내기 설정을 이름 붙여 저장합니다(파일 이름·폴더·고른 스킨·착장·뺀 레이어·Single 프레임·원래 위치 유지는 담지 않음)"</comment>
   </data>
   <data name="S_ExportPresetBar_ExportPresetBar_9E8DD13E00" xml:space="preserve">
@@ -2325,7 +2301,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\GifExportDialog.cs:210 · UpdateInfo · $"결과: {_project.Width * Scale}×{_project.Height * Scale}px · 프레임 {_frames.Count}개 · {totalCs / 100.0:0.##}초 · {colorText}\n"</comment>
   </data>
   <data name="S_GifExportDialog_UpdateInfo_A51D1C2D3A" xml:space="preserve">
-    <value>프레임 시트와 같은 합성(레이어 효과·지금 착장, 숨긴·내보내기에서 뺀 레이어 제외). GIF 지연은 1/100초 단위(최소 0.02초)입니다.</value>
+    <value>프레임 시트와 같은 합성(레이어 효과·지금 스킨, 숨긴·내보내기에서 뺀 레이어 제외). GIF 지연은 1/100초 단위(최소 0.02초)입니다.</value>
     <comment>src/Chickxel.App\GifExportDialog.cs:211 · UpdateInfo · "프레임 시트와 같은 합성(레이어 효과·지금 착장, 숨긴·내보내기에서 뺀 레이어 제외). GIF 지연은 1/100초 단위(최소 0.02초)입니다."</comment>
   </data>
   <data name="EffectGradient_AngularAnimated" xml:space="preserve">
@@ -2482,15 +2458,15 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\GroupLayoutDialog.cs:17 · _distribution · "앞"</comment>
   </data>
   <data name="S_GroupLayoutDialog__order_76C685F2DF" xml:space="preserve">
-    <value>위 부위부터</value>
+    <value>위 자식부터</value>
     <comment>src/Chickxel.App\GroupLayoutDialog.cs:19 · _order · "위 부위부터"</comment>
   </data>
   <data name="S_GroupLayoutDialog__order_BBF74458D7" xml:space="preserve">
-    <value>아래 부위부터</value>
+    <value>아래 자식부터</value>
     <comment>src/Chickxel.App\GroupLayoutDialog.cs:19 · _order · "아래 부위부터"</comment>
   </data>
   <data name="S_GroupLayoutDialog_ConfirmManualMove_3813FDBEE5" xml:space="preserve">
-    <value>이 그룹은 자동 배치 중입니다. 자동 배치를 풀고 옮길까요?</value>
+    <value>이 레이어의 부모는 자동 배치 중입니다. 자동 배치를 풀고 옮길까요?</value>
     <comment>src/Chickxel.App\GroupLayoutDialog.cs:144 · ConfirmManualMove · "이 그룹은 자동 배치 중입니다. 자동 배치를 풀고 옮길까요?"</comment>
   </data>
   <data name="S_GroupLayoutDialog_ConfirmManualMove_B57E70811F" xml:space="preserve">
@@ -2510,7 +2486,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\GroupLayoutDialog.cs:72 · GroupLayoutDialog · "자동 배치 끄기"</comment>
   </data>
   <data name="S_GroupLayoutDialog_GroupLayoutDialog_29C26D42F5" xml:space="preserve">
-    <value>첫 부위는 영역 시작, 끝 부위는 영역 끝에 붙이고 사이를 고르게(간격보다 좁아지면 간격으로 앞에서 모음)</value>
+    <value>첫 자식은 영역 시작, 끝 자식은 영역 끝에 붙이고 사이를 고르게(간격보다 좁아지면 간격으로 앞에서 모음)</value>
     <comment>src/Chickxel.App\GroupLayoutDialog.cs:34 · GroupLayoutDialog · "첫 부위는 영역 시작, 끝 부위는 영역 끝에 붙이고 사이를 고르게(간격보다 좁아지면 간격으로 앞에서 모음)"</comment>
   </data>
   <data name="S_GroupLayoutDialog_GroupLayoutDialog_330CFAC850" xml:space="preserve">
@@ -2530,15 +2506,15 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\GroupLayoutDialog.cs:57 · GroupLayoutDialog · "영역"</comment>
   </data>
   <data name="S_GroupLayoutDialog_GroupLayoutDialog_6446F8431F" xml:space="preserve">
-    <value>부위 {0}개를 크기(테두리 상자)대로 늘어놓습니다. 켜 두면 부위를 더하거나 지우거나 순서·크기·캔버스를 바꿀 때마다 다시 배치합니다(피벗은 그대로).</value>
+    <value>자식 {0}개를 크기(테두리 상자)대로 늘어놓습니다(자식의 자식은 함께 옮겨짐). 켜 두면 자식을 더하거나 지우거나 순서·크기·캔버스를 바꿀 때마다 다시 배치합니다(피벗은 그대로).</value>
     <comment>src/Chickxel.App\GroupLayoutDialog.cs:51 · GroupLayoutDialog · $"부위 {parts}개를 크기(테두리 상자)대로 늘어놓습니다. 켜 두면 부위를 더하거나 지우거나 순서·크기·캔버스를 바꿀 때마다 다시 배치합니다(피벗은 그대로)."</comment>
   </data>
   <data name="S_GroupLayoutDialog_GroupLayoutDialog_6754C5A624" xml:space="preserve">
-    <value>숨긴 부위도 자리 차지</value>
+    <value>숨긴 자식도 자리 차지</value>
     <comment>src/Chickxel.App\GroupLayoutDialog.cs:39 · GroupLayoutDialog · "숨긴 부위도 자리 차지"</comment>
   </data>
   <data name="S_GroupLayoutDialog_GroupLayoutDialog_878F07851A" xml:space="preserve">
-    <value>켜 두면 부위를 손으로 옮길 때 자동 배치를 풀지 물어봅니다.</value>
+    <value>켜 두면 자식을 손으로 옮길 때 자동 배치를 풀지 물어봅니다.</value>
     <comment>src/Chickxel.App\GroupLayoutDialog.cs:68 · GroupLayoutDialog · "켜 두면 부위를 손으로 옮길 때 자동 배치를 풀지 물어봅니다."</comment>
   </data>
   <data name="S_GroupLayoutDialog_GroupLayoutDialog_915D00697D" xml:space="preserve">
@@ -2550,11 +2526,11 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\GroupLayoutDialog.cs:52 · GroupLayoutDialog · "방향"</comment>
   </data>
   <data name="S_GroupLayoutDialog_GroupLayoutDialog_9566846ECA" xml:space="preserve">
-    <value>타임라인 거꾸로: 맨 아래 부위가 먼저</value>
+    <value>타임라인 거꾸로: 맨 아래 자식이 먼저</value>
     <comment>src/Chickxel.App\GroupLayoutDialog.cs:38 · GroupLayoutDialog · "타임라인 거꾸로: 맨 아래 부위가 먼저"</comment>
   </data>
   <data name="S_GroupLayoutDialog_GroupLayoutDialog_AE6AA2A01D" xml:space="preserve">
-    <value>타임라인 순서: 맨 위 부위가 먼저(왼쪽·위)</value>
+    <value>타임라인 순서: 맨 위 자식이 먼저(왼쪽·위)</value>
     <comment>src/Chickxel.App\GroupLayoutDialog.cs:38 · GroupLayoutDialog · "타임라인 순서: 맨 위 부위가 먼저(왼쪽·위)"</comment>
   </data>
   <data name="S_GroupLayoutDialog_GroupLayoutDialog_BE647B487C" xml:space="preserve">
@@ -2562,11 +2538,11 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\GroupLayoutDialog.cs:55 · GroupLayoutDialog · "   여백"</comment>
   </data>
   <data name="S_GroupLayoutDialog_GroupLayoutDialog_FA3F69CD5B" xml:space="preserve">
-    <value>자동 배치 켜짐 — 손으로 옮기려면 끄세요(부위는 지금 자리에 그대로).</value>
+    <value>자동 배치 켜짐 — 손으로 옮기려면 끄세요(자식은 지금 자리에 그대로).</value>
     <comment>src/Chickxel.App\GroupLayoutDialog.cs:69 · GroupLayoutDialog · "자동 배치 켜짐 — 손으로 옮기려면 끄세요(부위는 지금 자리에 그대로)."</comment>
   </data>
   <data name="S_GroupLayoutDialog_GroupLayoutDialog_FC0D1D2082" xml:space="preserve">
-    <value>켜면(기본) 보이기를 켜고 꺼도 다른 부위가 움직이지 않습니다. 끄면 숨긴 부위는 제자리에 두고 보이는 부위만 배치합니다.</value>
+    <value>켜면(기본) 보이기를 켜고 꺼도 다른 자식이 움직이지 않습니다. 끄면 숨긴 자식은 제자리에 두고 보이는 자식만 배치합니다.</value>
     <comment>src/Chickxel.App\GroupLayoutDialog.cs:40 · GroupLayoutDialog · "켜면(기본) 보이기를 켜고 꺼도 다른 부위가 움직이지 않습니다. 끄면 숨긴 부위는 제자리에 두고 보이는 부위만 배치합니다."</comment>
   </data>
   <data name="S_GroupLayoutDialog_Refresh_10B14D798B" xml:space="preserve">
@@ -2694,17 +2670,14 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\LayerEffectsDialog.cs:505 · BakeSummary · $"프레임 {f.From + 1}"</comment>
   </data>
   <data name="S_LayerEffectsDialog_BakeSummary_E39243C108" xml:space="preserve">
-    <value> · 부위 크기 {0}×{1}로 넓힘</value>
+    <value> · 레이어 크기 {0}×{1}로 넓힘</value>
     <comment>src/Chickxel.App\LayerEffectsDialog.cs:507 · BakeSummary · $" · 부위 크기 {layer.PartSize.Width}×{layer.PartSize.Height}로 넓힘"</comment>
   </data>
   <data name="S_LayerEffectsDialog_CanBake_235F1CD0DC" xml:space="preserve">
     <value>잠긴 레이어에는 영구 적용할 수 없습니다.</value>
     <comment>src/Chickxel.App\LayerEffectsDialog.cs:496 · CanBake · "잠긴 레이어에는 영구 적용할 수 없습니다."</comment>
   </data>
-  <data name="S_LayerEffectsDialog_CanBake_F0B223C43A" xml:space="preserve">
-    <value>그룹 효과는 영구 적용할 수 없습니다 — 부위에 적용하세요.</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:495 · CanBake · "그룹 효과는 영구 적용할 수 없습니다 — 부위에 적용하세요."</comment>
-  </data>
+  <data name="LayerEffects_BakeChildrenEffect" xml:space="preserve"><value>"자식까지 합친 그림" 효과는 영구 적용할 수 없습니다 — "이 레이어만"으로 바꾸거나 자식 레이어에 적용하세요.</value></data>
   <data name="S_LayerEffectsDialog_Canvas_CanvasExpansionSummary_332F7D70DF" xml:space="preserve">
     <value>캔버스 {0}×{1} → {2}×{3}로 확대</value>
     <comment>src/Chickxel.App\LayerEffectsDialog.Canvas.cs:64 · CanvasExpansionSummary · $"캔버스 {oldWidth}×{oldHeight} → {plan.Width}×{plan.Height}로 확대"</comment>
@@ -2895,7 +2868,7 @@ echo __LOGIN_FAILED__
   </data>
   <data name="S_LayerEffectsDialog_Intro_03C1A71EB9" xml:space="preserve">
     <value>
-부위 아틀라스에서는 번지는 만큼 스프라이트가 커지고 피벗은 같은 자리를 가리킵니다.</value>
+레이어 아틀라스에서는 번지는 만큼 스프라이트가 커지고 피벗은 같은 자리를 가리킵니다.</value>
     <comment>src/Chickxel.App\LayerEffectsDialog.cs:326 · Intro · "\n부위 아틀라스에서는 번지는 만큼 스프라이트가 커지고 피벗은 같은 자리를 가리킵니다."</comment>
   </data>
   <data name="S_LayerEffectsDialog_Intro_3052848546" xml:space="preserve">
@@ -2903,11 +2876,8 @@ echo __LOGIN_FAILED__
 </value>
     <comment>src/Chickxel.App\LayerEffectsDialog.cs:323 · Intro · "움직이는 효과는 프레임 범위의 처음에서 시작해 끝에서 끝납니다(범위가 길수록 느림).\n"</comment>
   </data>
-  <data name="S_LayerEffectsDialog_Intro_5F6126CBFA" xml:space="preserve">
-    <value>
-그룹 효과는 부위들을 합친 모양에 입혀지며 프레임 시트에만 들어갑니다.</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:325 · Intro · "\n그룹 효과는 부위들을 합친 모양에 입혀지며 프레임 시트에만 들어갑니다."</comment>
-  </data>
+  <data name="LayerEffects_IntroChildren" xml:space="preserve"><value>
+자식이 있는 레이어: 효과마다 적용 대상을 고릅니다 — "이 레이어만"은 이 레이어 그림에만, "자식까지 합친 그림"은 자식까지 합친 모양에 입혀지며 프레임 시트에만 들어갑니다.</value></data>
   <data name="S_LayerEffectsDialog_Intro_AA476847D8" xml:space="preserve">
     <value>효과는 그림을 고치지 않고 보일 때만 입혀집니다(나중에 그린 것에도). 위에서부터 차례로 적용됩니다.
 </value>
@@ -3031,13 +3001,10 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\LayerEffectsDialog.cs:1019 · RefreshPreview · $"프레임 {f + 1}{where}"</comment>
   </data>
   <data name="S_LayerEffectsDialog_RefreshPreview_BD6BE5C32E" xml:space="preserve">
-    <value> (부위)</value>
+    <value> (레이어 크기)</value>
     <comment>src/Chickxel.App\LayerEffectsDialog.cs:1014 · RefreshPreview · " (부위)"</comment>
   </data>
-  <data name="S_LayerEffectsDialog_RefreshPreview_BDAFE80FE8" xml:space="preserve">
-    <value> (그룹 합성)</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:1014 · RefreshPreview · " (그룹 합성)"</comment>
-  </data>
+  <data name="LayerEffects_PreviewChildren" xml:space="preserve"><value> (자식까지 합친 그림)</value></data>
   <data name="S_LayerEffectsDialog_RefreshPreview_E18A9F9C35" xml:space="preserve">
     <value> 사본</value>
     <comment>src/Chickxel.App\LayerEffectsDialog.cs:1016 · RefreshPreview · " 사본"</comment>
@@ -3331,7 +3298,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\MergeDialog.cs:36 · MergeDialog · "위로(먼저)"</comment>
   </data>
   <data name="S_MergeDialog_MergeDialog_2A89E3C4B6" xml:space="preserve">
-    <value>그룹으로</value>
+    <value>한 레이어 아래로</value>
     <comment>src/Chickxel.App\MergeDialog.cs:48 · MergeDialog · "그룹으로"</comment>
   </data>
   <data name="S_MergeDialog_MergeDialog_34FC6D6063" xml:space="preserve">
@@ -3359,19 +3326,19 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\MergeDialog.cs:73 · MergeDialog · "캔버스"</comment>
   </data>
   <data name="S_MergeDialog_MergeDialog_7306C9C995" xml:space="preserve">
-    <value>그룹 하나에 그림 파일마다 부위 1개(파일 크기 그대로). 그룹이 있는 .chickxel이 있으면 그 첫 그룹에 부위를 더합니다(부위·스킨 유지)</value>
+    <value>빈 레이어 하나 아래에 그림 파일마다 자식 레이어 1개(파일 크기 그대로). 자식이 있는 레이어가 든 .chickxel이 있으면 그 첫 부모 아래에 더합니다(자식·스킨 유지)</value>
     <comment>src/Chickxel.App\MergeDialog.cs:48 · MergeDialog · "그룹 하나에 그림 파일마다 부위 1개(파일 크기 그대로). 그룹이 있는 .chickxel이 있으면 그 첫 그룹에 부위를 더합니다(부위·스킨 유지)"</comment>
   </data>
   <data name="S_MergeDialog_MergeDialog_7C6B20A094" xml:space="preserve">
-    <value>그룹 행(대표 이미지)과 프레임 시트를 비워 둡니다 — 부위를 모두 숨긴 채로 만들고, 부위 그림은 그대로라 부위 아틀라스에는 모두 나갑니다. </value>
+    <value>부모 레이어 행(대표 이미지)과 프레임 시트를 비워 둡니다 — 자식 레이어를 모두 숨긴 채로 만들고, 그림은 그대로라 레이어 아틀라스에는 모두 나갑니다. </value>
     <comment>src/Chickxel.App\MergeDialog.cs:41 · MergeDialog · "그룹 행(대표 이미지)과 프레임 시트를 비워 둡니다 — 부위를 모두 숨긴 채로 만들고, 부위 그림은 그대로라 부위 아틀라스에는 모두 나갑니다. "</comment>
   </data>
   <data name="S_MergeDialog_MergeDialog_9D32BDB124" xml:space="preserve">
-    <value>그림 파일마다 레이어 1개, 프로젝트(.chickxel)는 레이어·그룹·스킨을 통째로(첫 파일이 맨 위)</value>
+    <value>그림 파일마다 레이어 1개, 프로젝트(.chickxel)는 레이어 나무·스킨을 통째로(첫 파일이 맨 위)</value>
     <comment>src/Chickxel.App\MergeDialog.cs:47 · MergeDialog · "그림 파일마다 레이어 1개, 프로젝트(.chickxel)는 레이어·그룹·스킨을 통째로(첫 파일이 맨 위)"</comment>
   </data>
   <data name="S_MergeDialog_MergeDialog_A54A1EF2B9" xml:space="preserve">
-    <value>(원래 스킨·부위 전용 스킨 유지, 그림은 크기가 같은 부위 또는 가장 큰 부위에). 없으면 부위 1개, 첫 파일 = 기본 스킨, 부위 크기 = 가장 큰 파일</value>
+    <value>(원래 스킨 유지, 그림은 크기가 같은 레이어 또는 가장 큰 레이어에). 없으면 레이어 1개, 첫 파일 = 기본 스킨, 레이어 크기 = 가장 큰 파일</value>
     <comment>src/Chickxel.App\MergeDialog.cs:50 · MergeDialog · "(원래 스킨·부위 전용 스킨 유지, 그림은 크기가 같은 부위 또는 가장 큰 부위에). 없으면 부위 1개, 첫 파일 = 기본 스킨, 부위 크기 = 가장 큰 파일"</comment>
   </data>
   <data name="S_MergeDialog_MergeDialog_B3BA45594D" xml:space="preserve">
@@ -3383,7 +3350,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\MergeDialog.cs:28 · MergeDialog · $"파일 {items.Count}개 합치기"</comment>
   </data>
   <data name="S_MergeDialog_MergeDialog_BC8C862A07" xml:space="preserve">
-    <value>부위는 타임라인에서 눈을 켜면 보입니다. "그룹으로"를 고르면 켤 수 있습니다.</value>
+    <value>자식 레이어는 타임라인에서 눈을 켜면 보입니다. "한 레이어 아래로"를 고르면 켤 수 있습니다.</value>
     <comment>src/Chickxel.App\MergeDialog.cs:42 · MergeDialog · "부위는 타임라인에서 눈을 켜면 보입니다. \"그룹으로\"를 고르면 켤 수 있습니다."</comment>
   </data>
   <data name="S_MergeDialog_MergeDialog_BDD18DAAB9" xml:space="preserve">
@@ -3399,7 +3366,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\MergeDialog.cs:70 · MergeDialog · "이름"</comment>
   </data>
   <data name="S_MergeDialog_MergeDialog_C9D3632FB9" xml:space="preserve">
-    <value>그룹 하나에 그림 파일마다 스킨 1개(스킨 이름 = 파일 이름). 그룹이 있는 .chickxel이 있으면 그 그룹에 새 스킨으로 더합니다</value>
+    <value>레이어 하나에 그림 파일마다 스킨 1개(스킨 이름 = 파일 이름). 스킨이 여럿인 .chickxel이 있으면 그 레이어들에 새 스킨으로 더합니다</value>
     <comment>src/Chickxel.App\MergeDialog.cs:49 · MergeDialog · "그룹 하나에 그림 파일마다 스킨 1개(스킨 이름 = 파일 이름). 그룹이 있는 .chickxel이 있으면 그 그룹에 새 스킨으로 더합니다"</comment>
   </data>
   <data name="S_MergeDialog_MergeDialog_D350916435" xml:space="preserve">
@@ -3443,12 +3410,8 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\MergeDialog.cs:318 · SetProject · $"{layer.Name}  {layer.PartSize.Width}×{layer.PartSize.Height}{(layer.Visible ? "" : "  (숨김)")}"</comment>
   </data>
   <data name="S_MergeDialog_UpdatePreview_140D4F9E33" xml:space="preserve">
-    <value> · 대표 이미지 비움(부위 숨김)</value>
+    <value> · 대표 이미지 비움(자식 숨김)</value>
     <comment>src/Chickxel.App\MergeDialog.cs:236 · UpdatePreview · " · 대표 이미지 비움(부위 숨김)"</comment>
-  </data>
-  <data name="S_MergeDialog_UpdatePreview_190EF86F30" xml:space="preserve">
-    <value>(부위 {0}개)</value>
-    <comment>src/Chickxel.App\MergeDialog.cs:234 · UpdatePreview · $"(부위 {parts}개)"</comment>
   </data>
   <data name="S_MergeDialog_UpdatePreview_2981429CE0" xml:space="preserve">
     <value> · 프레임 {0}개</value>
@@ -3544,7 +3507,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\PaletteConvertDialog.cs:50 · PaletteConvertDialog · "전"</comment>
   </data>
   <data name="S_PaletteConvertDialog_PaletteConvertDialog_982BB7EF41" xml:space="preserve">
-    <value>현재 레이어의 모든 프레임(부위면 모든 스킨)</value>
+    <value>현재 레이어의 모든 프레임(모든 스킨)</value>
     <comment>src/Chickxel.App\PaletteConvertDialog.cs:41 · PaletteConvertDialog · "현재 레이어의 모든 프레임(부위면 모든 스킨)"</comment>
   </data>
   <data name="S_PaletteConvertDialog_PaletteConvertDialog_BDEC5A51EB" xml:space="preserve">
@@ -3576,23 +3539,23 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\PaletteSection.cs:79 · PaletteSection · "팔레트 색을 누르면 선택됩니다"</comment>
   </data>
   <data name="S_PixelCanvas_BeginArrange_28B8E5E745" xml:space="preserve">
-    <value>부위 선택 해제</value>
+    <value>자식 레이어 선택 해제</value>
     <comment>src/Chickxel.App\PixelCanvas.cs:1925 · BeginArrange · "부위 선택 해제"</comment>
   </data>
   <data name="S_PixelCanvas_BeginArrange_32D63E2C46" xml:space="preserve">
-    <value>그룹 "{0}" 자동 배치를 껐습니다 — 이제 부위를 끌어 옮길 수 있습니다</value>
+    <value>"{0}" 자동 배치를 껐습니다 — 이제 자식 레이어를 끌어 옮길 수 있습니다</value>
     <comment>src/Chickxel.App\PixelCanvas.cs:1956 · BeginArrange · $"그룹 \"{group.Name}\" 자동 배치를 껐습니다 — 이제 부위를 끌어 옮길 수 있습니다"</comment>
   </data>
   <data name="S_PixelCanvas_BeginArrange_914451A106" xml:space="preserve">
-    <value>부위 "{0}" 고름</value>
+    <value>자식 레이어 "{0}" 고름</value>
     <comment>src/Chickxel.App\PixelCanvas.cs:1936 · BeginArrange · $"부위 \"{part.Name}\" 고름"</comment>
   </data>
   <data name="S_PixelCanvas_BeginArrange_9D0F6205A8" xml:space="preserve">
-    <value>부위 "{0}"이(가) 잠겨 있어 옮길 수 없습니다.</value>
+    <value>레이어 "{0}"이(가) 잠겨 있어 옮길 수 없습니다.</value>
     <comment>src/Chickxel.App\PixelCanvas.cs:1941 · BeginArrange · $"부위 \"{part.Name}\"이(가) 잠겨 있어 옮길 수 없습니다."</comment>
   </data>
   <data name="S_PixelCanvas_BeginArrange_B1F7BBC533" xml:space="preserve">
-    <value>그룹 "{0}" 자동 배치 그대로 — 부위를 옮기지 않았습니다</value>
+    <value>"{0}" 자동 배치 그대로 — 레이어를 옮기지 않았습니다</value>
     <comment>src/Chickxel.App\PixelCanvas.cs:1952 · BeginArrange · $"그룹 \"{group.Name}\" 자동 배치 그대로 — 부위를 옮기지 않았습니다"</comment>
   </data>
   <data name="S_PixelCanvas_BeginMoveLayer_95920E31EA" xml:space="preserve">
@@ -3620,7 +3583,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\PixelCanvas.cs:1776 · DeselectByRightClick · "선택 해제"</comment>
   </data>
   <data name="S_PixelCanvas_EndArrange_A643730044" xml:space="preserve">
-    <value>부위 "{0}" 위치 {1}, {2}</value>
+    <value>레이어 "{0}" 위치 {1}, {2}</value>
     <comment>src/Chickxel.App\PixelCanvas.cs:1975 · EndArrange · $"부위 \"{part.Name}\" 위치 {offset.X}, {offset.Y}"</comment>
   </data>
   <data name="S_PixelCanvas_EndDrag_685B820F08" xml:space="preserve">
@@ -3672,19 +3635,19 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\PixelCanvas.cs:1850 · Nudge · "내용 이동"</comment>
   </data>
   <data name="S_PixelCanvas_NudgePart_20E5A45EA7" xml:space="preserve">
-    <value>부위 "{0}"이(가) 잠겨 있어 옮길 수 없습니다.</value>
+    <value>레이어 "{0}"이(가) 잠겨 있어 옮길 수 없습니다.</value>
     <comment>src/Chickxel.App\PixelCanvas.cs:1990 · NudgePart · $"부위 \"{part.Name}\"이(가) 잠겨 있어 옮길 수 없습니다."</comment>
   </data>
   <data name="S_PixelCanvas_NudgePart_386C0383DB" xml:space="preserve">
-    <value>부위를 클릭해 고른 뒤 방향키로 옮깁니다.</value>
+    <value>자식 레이어를 클릭해 고른 뒤 방향키로 옮깁니다.</value>
     <comment>src/Chickxel.App\PixelCanvas.cs:1984 · NudgePart · "부위를 클릭해 고른 뒤 방향키로 옮깁니다."</comment>
   </data>
   <data name="S_PixelCanvas_NudgePart_4EE81EE408" xml:space="preserve">
-    <value>부위 "{0}" 위치 {1}, {2}</value>
+    <value>레이어 "{0}" 위치 {1}, {2}</value>
     <comment>src/Chickxel.App\PixelCanvas.cs:2000 · NudgePart · $"부위 \"{part.Name}\" 위치 {offset.X}, {offset.Y}"</comment>
   </data>
   <data name="S_PixelCanvas_NudgePart_61255F9462" xml:space="preserve">
-    <value>그룹 "{0}" 자동 배치 그대로 — 부위를 옮기지 않았습니다</value>
+    <value>"{0}" 자동 배치 그대로 — 레이어를 옮기지 않았습니다</value>
     <comment>src/Chickxel.App\PixelCanvas.cs:1996 · NudgePart · $"그룹 \"{group.Name}\" 자동 배치 그대로 — 부위를 옮기지 않았습니다"</comment>
   </data>
   <data name="S_PixelCanvas_OnPointerPressed_F29C349441" xml:space="preserve">
@@ -3724,48 +3687,28 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\Ai\PixelTools.cs:828 · AddFrame · $" (frame {after} 복제)"</comment>
   </data>
   <data name="S_PixelTools_AddGroup_E09E45483A" xml:space="preserve">
-    <value>{0}: group {1} "{2}" 추가 — add_part(group={3})로 부위를 더하세요</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:929 · AddGroup · $"{tool}: group {index} \"{group.Name}\" 추가 — add_part(group={index})로 부위를 더하세요"</comment>
+    <value>{0}: 빈 레이어 {1} "{2}" 추가 — add_part(parent={3})로 자식 레이어를 넣으세요. 놓인 곳: </value>
+    <comment>AI 도구 결과(add_empty_layer). 0 = 도구 이름, 1·3 = 레이어 번호, 2 = 이름. 뒤에 부모 설명이 붙음.</comment>
   </data>
   <data name="S_PixelTools_AddLayer_7D353B4074" xml:space="preserve">
     <value>{0}: layer {1} "{2}" 추가 — 지금 layer {3}</value>
     <comment>src/Chickxel.App\Ai\PixelTools.cs:863 · AddLayer · $"{tool}: layer {index} \"{layer.Name}\" 추가 — 지금 layer {index}"</comment>
   </data>
   <data name="S_PixelTools_AddPart_09DD29C130" xml:space="preserve">
-    <value>name: 부위 이름이 비어 있습니다</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:942 · AddPart · "name: 부위 이름이 비어 있습니다"</comment>
-  </data>
-  <data name="S_PixelTools_AddPart_15F86D7485" xml:space="preserve">
-    <value>layer {0} "{1}"은(는) 그룹이 아닙니다 — add_group으로 먼저 그룹을 만드세요</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:940 · AddPart · $"layer {groupIndex} \"{group.Name}\"은(는) 그룹이 아닙니다 — add_group으로 먼저 그룹을 만드세요"</comment>
-  </data>
-  <data name="S_PixelTools_AddPart_25FD2C2EF3" xml:space="preserve">
-    <value>group: 고른 그룹이 없습니다 — group 번호를 주거나 add_group으로 먼저 그룹을 만드세요</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:938 · AddPart · "group: 고른 그룹이 없습니다 — group 번호를 주거나 add_group으로 먼저 그룹을 만드세요"</comment>
+    <value>name: 레이어 이름이 비어 있습니다</value>
+    <comment>AI 도구 오류(add_part).</comment>
   </data>
   <data name="S_PixelTools_AddPart_3061D4B6E3" xml:space="preserve">
-    <value>{0}: part {1} "{2}" {3}x{4} @({5},{6}) 추가 — 지금 layer {7} (좌표는 부위 안 기준), </value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:952 · AddPart · $"{tool}: part {index} \"{part.Name}\" {width}x{height} @({part.PartOffset.X},{part.PartOffset.Y}) 추가 — 지금 layer {index} (좌표는 부위 안 기준), "</comment>
+    <value>{0}: 레이어 {1} "{2}" {3}x{4} @({5},{6}) 추가 — 지금 layer {7} (좌표는 레이어 안 기준). 놓인 곳: </value>
+    <comment>AI 도구 결과(add_part). 뒤에 부모 설명이 붙음.</comment>
   </data>
   <data name="S_PixelTools_AddPart_A07448527C" xml:space="preserve">
-    <value>group "{0}"은(는) 이제 layer {1}</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:953 · AddPart · $"group \"{group.Name}\"은(는) 이제 layer {p.IndexOf(group)}"</comment>
-  </data>
-  <data name="S_PixelTools_AddPart_BC2BD68B08" xml:space="preserve">
-    <value>레이어</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:936 · AddPart · "레이어"</comment>
-  </data>
-  <data name="S_PixelTools_AddSkin_1EA783533B" xml:space="preserve">
-    <value>{0}: part {1} "{2}" 전용 스킨 "{3}" 추가{4} — 이 부위가 입음. </value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1065 · AddSkin · $"{tool}: part {p.IndexOf(part)} \"{part.Name}\" 전용 스킨 \"{partSkin.Name}\" 추가{(shown is null ? "" : $"(\"{shown.Name}\" 복제)")} — 이 부위가 입음. "</comment>
-  </data>
-  <data name="S_PixelTools_AddSkin_393B167AD9" xml:space="preserve">
-    <value>이 부위 전용 스킨: {0} (그룹 "{1}" 스킨: {2})</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1066 · AddSkin · $"이 부위 전용 스킨: {SkinNames(part.OwnSkins)} (그룹 \"{owner.Name}\" 스킨: {SkinNames(owner)})"</comment>
+    <value>부모 "{0}" 아래(부모는 이제 layer {1})</value>
+    <comment>AI 도구 결과의 부모 설명. 0 = 부모 이름, 1 = 부모 레이어 번호.</comment>
   </data>
   <data name="S_PixelTools_AddSkin_54FCA02E4C" xml:space="preserve">
-    <value>{0}: group {1} "{2}"에 스킨 "{3}" 추가{4} — 지금 스킨. 스킨: {5}</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1073 · AddSkin · $"{tool}: group {p.IndexOf(group)} \"{group.Name}\"에 스킨 \"{skin.Name}\" 추가{(from is null ? "" : $"(\"{from.Name}\" 복제)")} — 지금 스킨. 스킨: {SkinNames(group)}"</comment>
+    <value>{0}: layer {1} "{2}"에 스킨 "{3}" 추가{4} — 지금 스킨. 스킨: {5}</value>
+    <comment>AI 도구 결과(add_skin). 4 = 복제 설명, 5 = 그 레이어의 스킨 이름 목록.</comment>
   </data>
   <data name="S_PixelTools_AddSkin_F888789A15" xml:space="preserve">
     <value>("{0}" 복제)</value>
@@ -3800,24 +3743,24 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\Ai\PixelTools.cs:901 · AddTag · "name: 태그 이름이 비어 있습니다"</comment>
   </data>
   <data name="S_PixelTools_ApplyOutfit_2BAE4914BE" xml:space="preserve">
-    <value>"{0}" 착장이 없습니다 — 있는 착장: {1}</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1175 · ApplyOutfit · $"\"{name}\" 착장이 없습니다 — 있는 착장: {string.Join(", ", p.Outfits.Select(o =&gt; o.Name))}"</comment>
+    <value>"{0}" 스킨 프리셋이 없습니다 — 있는 프리셋: {1}</value>
+    <comment>AI 도구 오류(apply_skin_preset).</comment>
   </data>
   <data name="S_PixelTools_ApplyOutfit_4168EF87C1" xml:space="preserve">
     <value> — 건너뛴 항목: {0}</value>
     <comment>src/Chickxel.App\Ai\PixelTools.cs:1178 · ApplyOutfit · $" — 건너뛴 항목: {string.Join(", ", missing)}"</comment>
   </data>
   <data name="S_PixelTools_ApplyOutfit_CBD0035EE8" xml:space="preserve">
-    <value>name: 착장 이름이 필요합니다(list_outfits로 확인)</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1170 · ApplyOutfit · "name: 착장 이름이 필요합니다(list_outfits로 확인)"</comment>
+    <value>name: 스킨 프리셋 이름이 필요합니다(list_skin_presets로 확인)</value>
+    <comment>AI 도구 오류(apply_skin_preset).</comment>
   </data>
   <data name="S_PixelTools_ApplyOutfit_F49A169E48" xml:space="preserve">
-    <value>{0}: 착장 "{1}" 입힘</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1178 · ApplyOutfit · $"{tool}: 착장 \"{outfit.Name}\" 입힘"</comment>
+    <value>{0}: 스킨 프리셋 "{1}" 적용</value>
+    <comment>AI 도구 결과(apply_skin_preset).</comment>
   </data>
   <data name="S_PixelTools_ApplyOutfit_F6B996D5D3" xml:space="preserve">
-    <value>착장 프리셋이 없습니다 — save_outfit으로 저장하세요</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1174 · ApplyOutfit · "착장 프리셋이 없습니다 — save_outfit으로 저장하세요"</comment>
+    <value>스킨 프리셋이 없습니다 — save_skin_preset으로 저장하세요</value>
+    <comment>AI 도구 오류(apply_skin_preset).</comment>
   </data>
   <data name="S_PixelTools_BeginMutation_F25614FB73" xml:space="preserve">
     <value>사용자가 지금 그리는 중입니다 — 잠시 뒤 다시 시도하세요</value>
@@ -3825,29 +3768,32 @@ echo __LOGIN_FAILED__
   </data>
   <data name="Ai_Scope_FileOnly" xml:space="preserve"><value>사용자가 AI를 지금 그림만 고치도록 제한해서 다른 파일을 열거나 새로 만들 수 없습니다(채팅에서 "지금 그림만"을 끄면 됨)</value><comment>AI 도구 오류: "지금 그림만"이 켜진 차례에 open_file·new_project를 부름.</comment></data>
   <data name="Ai_Scope_OtherDocument" xml:space="preserve"><value>사용자가 AI를 이 차례를 시작할 때 열려 있던 그림만 고치도록 제한했는데 지금은 다른 문서가 열려 있어 볼 수만 있습니다(그 그림으로 돌아가면 고칠 수 있음)</value><comment>AI 도구 오류: "지금 그림만"이 켜진 차례 중에 사용자가 다른 문서로 바꿈.</comment></data>
-  <data name="Ai_Locked_Layer" xml:space="preserve"><value>레이어 {index} "{name}"(또는 그 그룹)이(가) 잠겨 있어 바꿀 수 없습니다 — 사용자에게 잠금 해제를 부탁하세요</value><comment>AI 도구 오류. index = 레이어 번호, name = 레이어 이름.</comment></data>
+  <data name="Ai_Locked_Layer" xml:space="preserve"><value>레이어 {index} "{name}"(또는 그 부모 레이어)이(가) 잠겨 있어 바꿀 수 없습니다 — 사용자에게 잠금 해제를 부탁하세요</value><comment>AI 도구 오류. index = 레이어 번호, name = 레이어 이름.</comment></data>
   <data name="Ai_Link_BadFrame" xml:space="preserve"><value>프레임 번호가 잘못되었습니다: {value} (0~{count}보다 작은 수)</value><comment>AI 도구 오류. value = 받은 값, count = 프레임 수.</comment></data>
   <data name="Ai_Link_BadColor" xml:space="preserve"><value>링크 색 이름이 잘못되었습니다: {value} — 쓸 수 있는 색: {colors}</value><comment>AI 도구 오류. value = 받은 값, colors = 색 이름 목록(영어).</comment></data>
   <data name="Ai_Link_TwoFrames" xml:space="preserve"><value>링크하려면 프레임을 둘 이상 주세요</value></data>
   <data name="Ai_Pivot_FromFrameAlone" xml:space="preserve"><value>pivot_from_frame은 pivot_x·pivot_y나 clear_frame_pivots와 함께 주세요</value><comment>AI 도구 오류.</comment></data>
   <data name="Ai_Pivot_CanvasNothing" xml:space="preserve"><value>바꿀 값(pivot_x, pivot_y, clear_frame_pivots, representative_layer) 중 하나 이상이 필요합니다</value><comment>AI 도구 오류(set_canvas_pivot).</comment></data>
   <data name="Ai_Pivot_Unchanged" xml:space="preserve"><value>바뀐 것 없음</value></data>
-  <data name="Ai_Pivot_SpacePart" xml:space="preserve"><value>부위 기준</value><comment>AI 도구 결과: 피벗 좌표 공간.</comment></data>
+  <data name="Ai_Pivot_SpacePart" xml:space="preserve"><value>레이어 칸 기준</value><comment>AI 도구 결과: 피벗 좌표 공간(자기 크기 레이어의 칸 안).</comment></data>
   <data name="Ai_Pivot_SpaceCanvas" xml:space="preserve"><value>캔버스 기준</value><comment>AI 도구 결과: 피벗 좌표 공간.</comment></data>
   <data name="Ai_Pivot_OwnFrames" xml:space="preserve"><value>, 따로 둔 프레임 {frames}</value><comment>AI 도구 결과 꼬리. frames = 프레임 번호 목록(예: 3-5, 8).</comment></data>
   <data name="Ai_Pivot_NoRepresentative" xml:space="preserve"><value>없음</value><comment>AI 도구 결과: 대표 레이어 없음.</comment></data>
   <data name="Ai_Pivot_LayerText" xml:space="preserve"><value>피벗 {pivot}({space}{frames}), 프레임 {frame}: {current} = 캔버스 픽셀 {pixel}</value><comment>AI 도구 결과. pivot = 기본 피벗(0~1, 아래 왼쪽 원점), space = 좌표 공간, frames = 따로 둔 프레임 꼬리, current = 그 프레임 피벗, pixel = 캔버스 픽셀.</comment></data>
   <data name="Ai_Pivot_CanvasText" xml:space="preserve"><value>캔버스 자신의 피벗 {pivot}{frames}, 대표 레이어 {representative}, 프레임 {frame}의 캔버스(내보내기) 피벗 {effective} = 캔버스 픽셀 {pixel}</value><comment>AI 도구 결과. pivot = 캔버스 기본 피벗, frames = 따로 둔 프레임 꼬리, representative = 대표 레이어, effective = 실제 캔버스 피벗, pixel = 캔버스 픽셀.</comment></data>
-  <data name="AiSkin_Edit_Nothing" xml:space="preserve"><value>바꿀 것이 없습니다 — name, position, part_only, delete 중 하나 이상을 주세요</value><comment>AI 도구 오류(edit_skin).</comment></data>
-  <data name="AiSkin_Edit_DeleteAlone" xml:space="preserve"><value>delete는 다른 변경(name, position, part_only)과 같이 쓸 수 없습니다</value><comment>AI 도구 오류(edit_skin).</comment></data>
-  <data name="AiSkin_Edit_PartOnlyNeedsPart" xml:space="preserve"><value>part_only=true에는 스킨을 가질 부위 이름(part)이 필요합니다</value><comment>AI 도구 오류(edit_skin).</comment></data>
+  <data name="AiSkin_Edit_Nothing" xml:space="preserve"><value>바꿀 것이 없습니다 — name, position, delete 중 하나 이상을 주세요</value><comment>AI 도구 오류(edit_skin).</comment></data>
+  <data name="AiSkin_Edit_DeleteAlone" xml:space="preserve"><value>delete는 다른 변경(name, position)과 같이 쓸 수 없습니다</value><comment>AI 도구 오류(edit_skin).</comment></data>
   <data name="AiSkin_Edit_Renamed" xml:space="preserve"><value>"{from}" 이름을 "{to}"(으)로 바꿈</value><comment>AI 도구 결과(edit_skin). from·to = 스킨 이름.</comment></data>
-  <data name="AiSkin_Edit_Demoted" xml:space="preserve"><value>"{skin}"을(를) "{part}" 전용 스킨으로 바꿈(다른 부위의 그림은 지움)</value><comment>AI 도구 결과(edit_skin). skin = 스킨 이름, part = 부위 이름.</comment></data>
-  <data name="AiSkin_Edit_Promoted" xml:space="preserve"><value>"{skin}"을(를) 그룹 스킨으로 바꿈(다른 부위는 빈 칸)</value><comment>AI 도구 결과(edit_skin). skin = 스킨 이름.</comment></data>
   <data name="AiSkin_Edit_Moved" xml:space="preserve"><value>"{skin}"을(를) {position}번 자리로 옮김</value><comment>AI 도구 결과(edit_skin). position = 0부터 센 자리.</comment></data>
   <data name="AiSkin_Edit_Deleted" xml:space="preserve"><value>"{skin}" 삭제(그 스킨 그림도 지움)</value><comment>AI 도구 결과(edit_skin).</comment></data>
   <data name="AiSkin_Edit_Unchanged" xml:space="preserve"><value>이미 그대로라 바뀐 것 없음</value><comment>AI 도구 결과(edit_skin): 준 값이 지금과 같음.</comment></data>
-  <data name="AiSkin_Edit_Result" xml:space="preserve"><value>{tool}: group {index} "{group}": {changes}. 스킨: {skins} (지금 스킨 "{active}")</value><comment>AI 도구 결과(edit_skin). changes = 바꾼 내용 목록, skins = 그룹 스킨 이름 목록.</comment></data>
+  <data name="AiSkin_Edit_Result" xml:space="preserve"><value>{tool}: layer {index} "{layer}": {changes}. 스킨: {skins} (지금 스킨 "{active}")</value><comment>AI 도구 결과(edit_skin). layer = 레이어 이름, changes = 바꾼 내용 목록, skins = 그 레이어의 스킨 이름 목록.</comment></data>
+  <data name="AiTree_TopLevel" xml:space="preserve"><value>맨 위 단계(부모 없음)</value><comment>AI 도구 결과의 부모 설명: 부모 없이 맨 위 단계에 놓임.</comment></data>
+  <data name="AiTree_MoveLayer_Result" xml:space="preserve"><value>{tool}: 레이어 "{name}"을(를) 자손 {descendants}개와 함께 옮김 — 지금 layer {index}, 형제 중 자리 {position}. 놓인 곳: </value><comment>AI 도구 결과(move_layer). 뒤에 부모 설명이 붙음.</comment></data>
+  <data name="AiTree_MoveIntoItself" xml:space="preserve"><value>layer {index} "{name}"은(는) 자기 자신이나 자기 자손 아래로 옮길 수 없습니다</value><comment>AI 도구 오류(move_layer).</comment></data>
+  <data name="AiTree_NoLayerNamed" xml:space="preserve"><value>parent: "{name}" 레이어가 없습니다 — get_document로 레이어 이름을 확인하세요</value><comment>AI 도구 오류.</comment></data>
+  <data name="AiTree_LayerNameAmbiguous" xml:space="preserve"><value>parent: "{name}" 이름의 레이어가 여럿입니다 — 레이어 번호를 주세요</value><comment>AI 도구 오류.</comment></data>
+  <data name="AiTree_AddSkinSubtree" xml:space="preserve"><value>{tool}: layer {index} "{name}"과(와) 자손 {count}개에 스킨 "{skin}" 추가 — 모두 지금 스킨. 스킨 프리셋 "{preset}"으로 저장함</value><comment>AI 도구 결과(add_skin, include_children).</comment></data>
   <data name="Ai_Link_Nothing" xml:space="preserve"><value>링크할 칸이 없습니다 — 이미 모두 링크되어 있거나 그림이 있는 칸이 없습니다</value></data>
   <data name="Ai_Link_NoneLinked" xml:space="preserve"><value>준 프레임 중 링크된 셀이 없습니다</value></data>
   <data name="Ai_Link_NotLinked" xml:space="preserve"><value>레이어 {layer} 프레임 {frame}의 셀은 링크되어 있지 않습니다</value><comment>AI 도구 오류(set_link_color). layer = 레이어 번호, frame = 프레임 번호.</comment></data>
@@ -3858,8 +3804,8 @@ echo __LOGIN_FAILED__
   <data name="Ai_Effect_HoldEndNotAnimated" xml:space="preserve"><value>hold_end는 움직이는 효과에만 쓸 수 있습니다</value><comment>AI 도구 오류(set_effect).</comment></data>
   <data name="Ai_Locked_DeleteFrame" xml:space="preserve"><value>프레임 {frame}에 잠긴 레이어의 그림이 있어 지울 수 없습니다: {layers} — 사용자에게 잠금 해제를 부탁하세요</value><comment>AI 도구 오류. frame = 프레임 번호, layers = 잠긴 레이어 목록(번호 "이름", 쉼표로 구분).</comment></data>
   <data name="Ai_Locked_ResizeCanvas" xml:space="preserve"><value>잠긴 레이어가 있어 캔버스 크기를 바꿀 수 없습니다(모든 레이어가 잘리거나 옮겨짐): {layers} — 사용자에게 잠금 해제를 부탁하세요</value><comment>AI 도구 오류. layers = 잠긴 레이어 목록(번호 "이름", 쉼표로 구분).</comment></data>
-  <data name="Ai_Locked_Outfit" xml:space="preserve"><value>착장 "{outfit}"을(를) 입히면 잠긴 레이어가 바뀝니다: {layers} — 사용자에게 잠금 해제를 부탁하세요</value><comment>AI 도구 오류. outfit = 착장 이름, layers = 잠긴 레이어 목록(번호 "이름", 쉼표로 구분).</comment></data>
-  <data name="Ai_Locked_AutoLayout" xml:space="preserve"><value>그룹 "{group}"은(는) 자동 배치 중이라 이 변경은 잠긴 부위 {index} "{name}"을(를) 옮길 수 있습니다 — 사용자에게 잠금 해제나 자동 배치 끄기를 부탁하세요</value><comment>AI 도구 오류. group = 그룹 이름, index = 부위 레이어 번호, name = 부위 이름.</comment></data>
+  <data name="Ai_Locked_Preset" xml:space="preserve"><value>스킨 프리셋 "{preset}"을(를) 적용하면 잠긴 레이어가 바뀝니다: {layers} — 사용자에게 잠금 해제를 부탁하세요</value><comment>AI 도구 오류. preset = 스킨 프리셋 이름, layers = 잠긴 레이어 목록(번호 "이름", 쉼표로 구분).</comment></data>
+  <data name="Ai_Locked_AutoLayout" xml:space="preserve"><value>부모 "{parent}"은(는) 자동 배치 중이라 이 변경은 잠긴 레이어 {index} "{name}"을(를) 옮길 수 있습니다 — 사용자에게 잠금 해제나 자동 배치 끄기를 부탁하세요</value><comment>AI 도구 오류. parent = 부모 레이어 이름, index = 잠긴 자식 레이어 번호, name = 그 이름.</comment></data>
   <data name="Ai_Effect_What" xml:space="preserve"><value>효과</value><comment>AI 도구 오류의 번호 종류("effect 3: 효과 번호는 0~1 범위여야 합니다").</comment></data>
   <data name="Ai_Effect_TypeOrPreset" xml:space="preserve"><value>type(list_effect_types의 효과 종류)과 preset(효과 프리셋 이름이나 ID) 중 하나만 주세요</value><comment>AI 도구 오류: add_effect에 둘 다 주거나 둘 다 빠짐.</comment></data>
   <data name="Ai_Effect_ClipFirst" xml:space="preserve"><value>clip_to_above: 첫 효과(번호 0)는 위에 클리핑할 효과가 없습니다</value><comment>AI 도구 오류.</comment></data>
@@ -3869,7 +3815,7 @@ echo __LOGIN_FAILED__
   <data name="Ai_Effect_NoPresets" xml:space="preserve"><value>preset: 쓸 수 있는 효과 프리셋이 없습니다 — 대신 효과 종류를 넣으세요(list_effect_types 참고)</value><comment>AI 도구 오류.</comment></data>
   <data name="Ai_Effect_UnknownPreset" xml:space="preserve"><value>preset: 효과 프리셋 "{name}"이(가) 없습니다 — 있는 것: {presets}</value><comment>AI 도구 오류. name = 받은 이름, presets = 쓸 수 있는 효과 프리셋 이름 목록.</comment></data>
   <data name="Ai_Effect_Added" xml:space="preserve"><value>{tool}: 레이어 {layer} "{name}"에 {effects} 추가(효과 번호 {indices})</value><comment>AI 도구 결과. tool = 도구 이름, effects = 넣은 효과 종류 이름들, layer = 레이어 번호, name = 레이어 이름, indices = 효과 번호(또는 범위).</comment></data>
-  <data name="Ai_Effect_NothingToChange" xml:space="preserve"><value>settings, from_frame/to_frame/all_frames, enabled, clip_to_above, move_to 중 하나는 주세요</value><comment>AI 도구 오류: set_effect에 바꿀 것이 없음.</comment></data>
+  <data name="Ai_Effect_NothingToChange" xml:space="preserve"><value>settings, from_frame/to_frame/all_frames, enabled, clip_to_above, include_children, move_to 중 하나는 주세요</value><comment>AI 도구 오류: set_effect에 바꿀 것이 없음.</comment></data>
   <data name="Ai_Effect_Unchanged" xml:space="preserve"><value>{tool}: 레이어 {layer}의 효과 {effect}은(는) 이미 그렇습니다 — 바뀐 것 없음</value><comment>AI 도구 결과. tool = 도구 이름, effect = 효과 번호, layer = 레이어 번호.</comment></data>
   <data name="Ai_Effect_Changed" xml:space="preserve"><value>{tool}: 레이어 {layer} "{name}"의 효과 {effect}({type}) 바꿈</value><comment>AI 도구 결과. tool = 도구 이름, effect = 효과 번호, type = 효과 종류 이름, layer = 레이어 번호, name = 레이어 이름.</comment></data>
   <data name="Ai_Effect_Removed" xml:space="preserve"><value>{tool}: 레이어 {layer} "{name}"에서 효과 {effect}({type}) 지움</value><comment>AI 도구 결과. tool = 도구 이름, effect = 효과 번호, type = 효과 종류 이름, layer = 레이어 번호, name = 레이어 이름.</comment></data>
@@ -3911,8 +3857,8 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\Ai\PixelTools.cs:836 · DeleteFrame · "프레임"</comment>
   </data>
   <data name="S_PixelTools_Done_73DD65CE69" xml:space="preserve">
-    <value>, 부위 안 좌표</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1339 · Done · ", 부위 안 좌표"</comment>
+    <value>, 레이어 안 좌표</value>
+    <comment>AI 도구 결과: 위치 레이어의 좌표는 레이어 안 기준.</comment>
   </data>
   <data name="S_PixelTools_Done_F6B2C3D9C5" xml:space="preserve">
     <value>{0}: {1} px 바뀜 (frame {2}, layer {3}{4}){5}</value>
@@ -3942,33 +3888,9 @@ echo __LOGIN_FAILED__
     <value>rows[{0}]: 문자열이 필요합니다</value>
     <comment>src/Chickxel.App\Ai\PixelTools.cs:684 · DrawPixels · $"rows[{i}]: 문자열이 필요합니다"</comment>
   </data>
-  <data name="S_PixelTools_EditTarget_1DEA54562E" xml:space="preserve">
-    <value>그룹 레이어에는 그릴 수 없습니다 — 부위 레이어를 고르세요</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1308 · EditTarget · "그룹 레이어에는 그릴 수 없습니다 — 부위 레이어를 고르세요"</comment>
-  </data>
-  <data name="S_PixelTools_FindPart_3F27777CE1" xml:space="preserve">
-    <value>part: "{0}" 부위가 여러 그룹에 있습니다 — group 번호를 함께 주세요</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1101 · FindPart · $"part: \"{partName}\" 부위가 여러 그룹에 있습니다 — group 번호를 함께 주세요"</comment>
-  </data>
-  <data name="S_PixelTools_FindPart_77F7827042" xml:space="preserve">
-    <value>part: "{0}" 부위가 없습니다{1} — get_document로 부위 이름을 확인하세요</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1100 · FindPart · $"part: \"{partName}\" 부위가 없습니다{(only is null ? "" : $"(group \"{only.Name}\" 안)")} — get_document로 부위 이름을 확인하세요"</comment>
-  </data>
-  <data name="S_PixelTools_FindPart_F1C0C05B87" xml:space="preserve">
-    <value>(group "{0}" 안)</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1100 · FindPart · $"(group \"{only.Name}\" 안)"</comment>
-  </data>
   <data name="S_PixelTools_FindSkin_0757E1B5D3" xml:space="preserve">
-    <value>group "{0}"에 "{1}" 스킨이 없습니다 — 있는 스킨: {2}</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1087 · FindSkin · $"group \"{group.Name}\"에 \"{name}\" 스킨이 없습니다 — 있는 스킨: {SkinNames(group)}"</comment>
-  </data>
-  <data name="S_PixelTools_FindSkin_6CF8F35517" xml:space="preserve">
-    <value>"{0}"은(는) "{1}" 부위 전용 스킨입니다 — part "{2}"와 함께 set_skin하세요</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1085 · FindSkin · $"\"{name}\"은(는) \"{owner.Name}\" 부위 전용 스킨입니다 — part \"{owner.Name}\"와 함께 set_skin하세요"</comment>
-  </data>
-  <data name="S_PixelTools_FindSkin_77883ACBEF" xml:space="preserve">
-    <value>part "{0}"가 고를 수 있는 "{1}" 스킨이 없습니다 — 고를 수 있는 스킨: {2}</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1088 · FindSkin · $"part \"{part.Name}\"가 고를 수 있는 \"{name}\" 스킨이 없습니다 — 고를 수 있는 스킨: {SkinNames(list)}"</comment>
+    <value>layer "{0}"에 "{1}" 스킨이 없습니다 — 있는 스킨: {2}</value>
+    <comment>AI 도구 오류. 0 = 레이어 이름, 1 = 받은 스킨 이름, 2 = 있는 스킨 목록.</comment>
   </data>
   <data name="S_PixelTools_Frame_CAED4A473B" xml:space="preserve">
     <value>프레임</value>
@@ -4008,24 +3930,20 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\Ai\PixelTools.cs:666 · GetPixels · $"x={r.X} y={r.Y} width={r.Width} height={r.Height} (frame {frame}, {(layer is { } l ? $"layer {l}" : "합성")})\n"</comment>
   </data>
   <data name="S_PixelTools_ListOutfits_AC348035B4" xml:space="preserve">
-    <value>착장 프리셋이 없습니다 — save_outfit으로 지금 착장을 저장하세요</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1154 · ListOutfits · "착장 프리셋이 없습니다 — save_outfit으로 지금 착장을 저장하세요"</comment>
+    <value>스킨 프리셋이 없습니다 — save_skin_preset으로 지금 스킨들을 저장하세요</value>
+    <comment>AI 도구 결과(list_skin_presets).</comment>
   </data>
   <data name="S_PixelTools_ListSkins_8CD8E58EBF" xml:space="preserve">
-    <value>그룹이 없습니다 — add_group으로 만드세요</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1050 · ListSkins · "그룹이 없습니다 — add_group으로 만드세요"</comment>
+    <value>스킨이 둘 이상인 레이어가 없습니다 — add_skin으로 더하세요</value>
+    <comment>AI 도구 결과(list_skins).</comment>
   </data>
   <data name="S_PixelTools_ListTools_72B03826BE" xml:space="preserve">
-    <value>Only the user can turn auto layout off (timeline group menu "자동 배치 끄기").</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:273 · ListTools · "Only the user can turn auto layout off (timeline group menu \"자동 배치 끄기\")."</comment>
+    <value>Only the user can turn auto layout off (timeline layer menu "자동 배치 끄기").</value>
+    <comment>AI 도구 설명(set_part).</comment>
   </data>
   <data name="S_PixelTools_ListTools_9ECBDEAA4B" xml:space="preserve">
-    <value>Outfit name (default "착장"; made unique).</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:327 · ListTools · "Outfit name (default \"착장\"; made unique)."</comment>
-  </data>
-  <data name="S_PixelTools_ListTools_AB0616E25B" xml:space="preserve">
-    <value>or one of that part's part-only skins); follow_group=true (or skin "그룹"/empty) makes the part follow its group's skin again. Not recorded in undo history.</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:310 · ListTools · "or one of that part's part-only skins); follow_group=true (or skin \"그룹\"/empty) makes the part follow its group's skin again. Not recorded in undo history."</comment>
+    <value>Skin preset name (default "프리셋"; made unique).</value>
+    <comment>AI 도구 설명(save_skin_preset).</comment>
   </data>
   <data name="S_PixelTools_OpenFile_DED3780569" xml:space="preserve">
     <value>path가 비어 있습니다</value>
@@ -4112,12 +4030,12 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\Ai\PixelTools.cs:1215 · ResizeCanvas · $"{tool}: 캔버스 {oldW}x{oldH} → {width}x{height}"</comment>
   </data>
   <data name="S_PixelTools_SaveOutfit_852122358E" xml:space="preserve">
-    <value>{0}: 착장 "{1}" 저장 (그룹 {2}개, 부위 재정의 {3}개). 착장: {4}</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1163 · SaveOutfit · $"{tool}: 착장 \"{outfit.Name}\" 저장 (그룹 {outfit.Slots.Count}개, 부위 재정의 {outfit.Parts.Count}개). 착장: {string.Join(", ", p.Outfits.Select(o =&gt; o.Name))}"</comment>
+    <value>{0}: 스킨 프리셋 "{1}" 저장 (레이어 {2}개). 프리셋: {3}</value>
+    <comment>AI 도구 결과(save_skin_preset). 2 = 담긴 레이어 수, 3 = 프리셋 이름 목록.</comment>
   </data>
   <data name="S_PixelTools_SaveOutfit_F985F9316F" xml:space="preserve">
-    <value>그룹이 없습니다 — 착장은 그룹(스킨 칸)마다 스킨을 저장합니다</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1160 · SaveOutfit · "그룹이 없습니다 — 착장은 그룹(스킨 칸)마다 스킨을 저장합니다"</comment>
+    <value>스킨이 둘 이상인 레이어가 없어 저장할 것이 없습니다</value>
+    <comment>AI 도구 오류(save_skin_preset).</comment>
   </data>
   <data name="S_PixelTools_SetColors_6BD8E48BBD" xml:space="preserve">
     <value>primary 또는 secondary 중 하나 이상이 필요합니다</value>
@@ -4180,20 +4098,20 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\Ai\PixelTools.cs:966 · SetPart · "레이어"</comment>
   </data>
   <data name="S_PixelTools_SetPart_CAF27E7871" xml:space="preserve">
-    <value>옮기려면 사용자에게 타임라인 그룹 메뉴의 "자동 배치 끄기"를 부탁하세요</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:979 · SetPart · "옮기려면 사용자에게 타임라인 그룹 메뉴의 \"자동 배치 끄기\"를 부탁하세요"</comment>
+    <value>옮기려면 사용자에게 타임라인 레이어 메뉴의 "자동 배치 끄기"를 부탁하세요</value>
+    <comment>AI 도구 오류(set_part).</comment>
   </data>
   <data name="S_PixelTools_SetPart_DC2B0B514A" xml:space="preserve">
     <value>바꿀 값(x, y, width, height) 중 하나 이상이 필요합니다</value>
     <comment>src/Chickxel.App\Ai\PixelTools.cs:974 · SetPart · "바꿀 값(x, y, width, height, pivot_x, pivot_y) 중 하나 이상이 필요합니다"</comment>
   </data>
   <data name="S_PixelTools_SetPart_E4221AFE6B" xml:space="preserve">
-    <value>layer {0} "{1}"은(는) 부위 레이어가 아닙니다</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:968 · SetPart · $"layer {index} \"{part.Name}\"은(는) 부위 레이어가 아닙니다"</comment>
+    <value>layer {0} "{1}"은(는) 위치 레이어(part)가 아닙니다</value>
+    <comment>AI 도구 오류(set_part).</comment>
   </data>
   <data name="S_PixelTools_SetPart_F85DAA9BD6" xml:space="preserve">
-    <value>part {0} "{1}"의 group "{2}"은(는) 자동 배치(auto layout: {3}) 중이라 </value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:977 · SetPart · $"part {index} \"{part.Name}\"의 group \"{part.Parent!.Name}\"은(는) 자동 배치(auto layout: {LayoutText(part.Parent.AutoLayout!)}) 중이라 "</comment>
+    <value>layer {0} "{1}"의 부모 "{2}"은(는) 자동 배치(auto layout: {3}) 중이라 </value>
+    <comment>AI 도구 오류(set_part). 2 = 부모 이름, 3 = 자동 배치 설정 요약.</comment>
   </data>
   <data name="S_PixelTools_SetPixels_87EB8FF2FA" xml:space="preserve">
     <value> — 캔버스 밖 {0} px 무시</value>
@@ -4207,41 +4125,17 @@ echo __LOGIN_FAILED__
     <value>pixels가 너무 많습니다 ({0}개, 최대 65536) — draw_pixels를 쓰세요</value>
     <comment>src/Chickxel.App\Ai\PixelTools.cs:720 · SetPixels · $"pixels가 너무 많습니다 ({nodes.Count}개, 최대 65536) — draw_pixels를 쓰세요"</comment>
   </data>
-  <data name="S_PixelTools_SetSkin_1F0ADB2566" xml:space="preserve">
-    <value> (부위 전용)</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1131 · SetSkin · " (부위 전용)"</comment>
-  </data>
   <data name="S_PixelTools_SetSkin_5A7BD93C92" xml:space="preserve">
     <value>skin: 스킨 이름이 필요합니다(list_skins로 확인)</value>
     <comment>src/Chickxel.App\Ai\PixelTools.cs:1114 · SetSkin · "skin: 스킨 이름이 필요합니다(list_skins로 확인)"</comment>
   </data>
-  <data name="S_PixelTools_SetSkin_7A841A0D99" xml:space="preserve">
-    <value>{0}: part {1} "{2}"만 스킨 "{3}"{4} (그룹 "{5}" 스킨은 "{6}")</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1131 · SetSkin · $"{tool}: part {p.IndexOf(part)} \"{part.Name}\"만 스킨 \"{own.Name}\"{(own.IsPartOnly ? " (부위 전용)" : "")} (그룹 \"{owner.Name}\" 스킨은 \"{owner.ActiveSkin?.Name}\")"</comment>
-  </data>
-  <data name="S_PixelTools_SetSkin_B5C70D7B8B" xml:space="preserve">
-    <value>{0}: part {1} "{2}" 그룹 스킨 따름 (지금 "{3}")</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1127 · SetSkin · $"{tool}: part {p.IndexOf(part)} \"{part.Name}\" 그룹 스킨 따름 (지금 \"{owner.ActiveSkin?.Name}\")"</comment>
-  </data>
-  <data name="S_PixelTools_SetSkin_DD7C155818" xml:space="preserve">
-    <value>follow_group: part(부위 이름)와 함께 쓰세요</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1113 · SetSkin · "follow_group: part(부위 이름)와 함께 쓰세요"</comment>
-  </data>
   <data name="S_PixelTools_SetSkin_EF3CA69B88" xml:space="preserve">
-    <value>{0}: group {1} "{2}" 지금 스킨 = "{3}"</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1118 · SetSkin · $"{tool}: group {p.IndexOf(group)} \"{group.Name}\" 지금 스킨 = \"{skin.Name}\""</comment>
-  </data>
-  <data name="S_PixelTools_SkinGroup_0CF99DE2D6" xml:space="preserve">
-    <value>group: 고른 그룹이 없습니다 — group 번호를 주세요(list_skins로 확인)</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1013 · SkinGroup · "group: 고른 그룹이 없습니다 — group 번호를 주세요(list_skins로 확인)"</comment>
-  </data>
-  <data name="S_PixelTools_SkinGroup_2D95F83BA1" xml:space="preserve">
-    <value>레이어</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1011 · SkinGroup · "레이어"</comment>
+    <value>{0}: layer {1} "{2}" 지금 스킨 = "{3}"</value>
+    <comment>AI 도구 결과(set_skin).</comment>
   </data>
   <data name="S_PixelTools_SkinGroup_D5D19F5AF0" xml:space="preserve">
-    <value>layer {0} "{1}"은(는) 그룹이 아닙니다 — 스킨은 그룹에만 있습니다</value>
-    <comment>src/Chickxel.App\Ai\PixelTools.cs:1015 · SkinGroup · $"layer {index} \"{group.Name}\"은(는) 그룹이 아닙니다 — 스킨은 그룹에만 있습니다"</comment>
+    <value>layer {0} "{1}"은(는) 타일맵이라 스킨이 없습니다</value>
+    <comment>AI 도구 오류(스킨 도구).</comment>
   </data>
   <data name="S_Platform_FileManagerName_3FB771636C" xml:space="preserve">
     <value>파일 관리자</value>
@@ -4745,20 +4639,12 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\PreviewPanel.cs:14 · Backgrounds · "흰색"</comment>
   </data>
   <data name="S_PreviewPanel_OutfitItem_0C4037D29A" xml:space="preserve">
-    <value>"{0}" — 눌러서 스킨 관리</value>
+    <value>"{0}" — 눌러서 스킨 설정</value>
     <comment>src/Chickxel.App\PreviewPanel.cs:189 · OutfitItem · $"\"{group.Name}\" — 눌러서 스킨 관리"</comment>
   </data>
   <data name="S_PreviewPanel_OutfitItem_1F81422509" xml:space="preserve">
-    <value>"{0}" 그룹에 보일 스킨</value>
+    <value>"{0}" 레이어에 보일 스킨</value>
     <comment>src/Chickxel.App\PreviewPanel.cs:211 · OutfitItem · $"\"{group.Name}\" 그룹에 보일 스킨"</comment>
-  </data>
-  <data name="S_PreviewPanel_OutfitItem_210601903B" xml:space="preserve">
-    <value>"{0}": 부위 {1}개는 따로 고른 스킨 — 눌러서 스킨 관리</value>
-    <comment>src/Chickxel.App\PreviewPanel.cs:189 · OutfitItem · $"\"{group.Name}\": 부위 {overrides}개는 따로 고른 스킨 — 눌러서 스킨 관리"</comment>
-  </data>
-  <data name="S_PreviewPanel_OutfitItem_78809E4FDB" xml:space="preserve">
-    <value>"{0}" 그룹은 스킨이 하나뿐입니다 — "관리…"에서 스킨을 더하세요</value>
-    <comment>src/Chickxel.App\PreviewPanel.cs:212 · OutfitItem · $"\"{group.Name}\" 그룹은 스킨이 하나뿐입니다 — \"관리…\"에서 스킨을 더하세요"</comment>
   </data>
   <data name="S_PreviewPanel_OutfitItem_CC61BCD084" xml:space="preserve">
     <value>{0} (기본)</value>
@@ -4789,15 +4675,15 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\PreviewPanel.cs:54 · PreviewPanel · "미리보기 FPS (0 = 프레임마다 정한 길이)"</comment>
   </data>
   <data name="S_PreviewPanel_RebuildOutfit_090268890B" xml:space="preserve">
-    <value>관리…</value>
+    <value>설정…</value>
     <comment>src/Chickxel.App\PreviewPanel.cs:157 · RebuildOutfit · "관리…"</comment>
   </data>
   <data name="S_PreviewPanel_RebuildOutfit_12AE9802EA" xml:space="preserve">
-    <value>스킨 관리 창: 스킨 카드로 갈아입히기·추가·복제·이름·삭제, 부위마다 따로 고르기</value>
+    <value>스킨 설정 창: 스킨 프리셋 입히기·등록, 레이어마다 스킨 갈아입히기·추가·복제·이름·삭제</value>
     <comment>src/Chickxel.App\PreviewPanel.cs:163 · RebuildOutfit · "스킨 관리 창: 스킨 카드로 갈아입히기·추가·복제·이름·삭제, 부위마다 따로 고르기"</comment>
   </data>
   <data name="S_PreviewPanel_RebuildOutfit_E5D30D48F5" xml:space="preserve">
-    <value>착장</value>
+    <value>스킨</value>
     <comment>src/Chickxel.App\PreviewPanel.cs:149 · RebuildOutfit · "착장"</comment>
   </data>
   <data name="S_PreviewPanel_SetScale_EBF1B9D1AA" xml:space="preserve">
@@ -4812,46 +4698,6 @@ echo __LOGIN_FAILED__
     <value>JSON 객체가 아닙니다.</value>
     <comment>src/Chickxel.App\Shortcuts.cs:102 · FromJson · "JSON 객체가 아닙니다."</comment>
   </data>
-  <data name="S_SkinManagerWindow__filter_019CB16352" xml:space="preserve">
-    <value>그룹 스킨</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:39 · _filter · "그룹 스킨"</comment>
-  </data>
-  <data name="S_SkinManagerWindow__filter_2A6ACC3CF0" xml:space="preserve">
-    <value>개별 스킨</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:39 · _filter · "개별 스킨"</comment>
-  </data>
-  <data name="S_SkinManagerWindow__filter_589BE1A031" xml:space="preserve">
-    <value>전체</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:39 · _filter · "전체"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_AddPartSkin_0CED2C9CCF" xml:space="preserve">
-    <value> 복사</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:892 · AddPartSkin · " 복사"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_AddPartSkin_1B501B2226" xml:space="preserve">
-    <value>부위 스킨 추가</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:893 · AddPartSkin · "부위 스킨 추가"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_AddPartSkin_2575BCDF95" xml:space="preserve">
-    <value>"{0}"의 "{1}" 그림을 복제한 부위 전용 스킨 이름</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:896 · AddPartSkin · $"\"{part.Name}\"의 \"{copyFrom.Name}\" 그림을 복제한 부위 전용 스킨 이름"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_AddPartSkin_36C8BCB7E0" xml:space="preserve">
-    <value> 스킨</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:892 · AddPartSkin · " 스킨"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_AddPartSkin_56578CE0FC" xml:space="preserve">
-    <value>"{0}"에만 있는 새 스킨 이름(그리기 전까지 빈 그림)</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs · AddPartSkin · $"\"{part.Name}\"에만 있는 새 스킨 이름(그리기 전까지 빈 그림)"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_AddPartSkin_F025057A5B" xml:space="preserve">
-    <value>부위 스킨 복제</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:893 · AddPartSkin · "부위 스킨 복제"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_ApplyOutfit_8925AE2CD4" xml:space="preserve">
-    <value>"{0}" 착장에서 건너뛴 항목: {1}</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:401 · ApplyOutfit · $"\"{outfit.Name}\" 착장에서 건너뛴 항목: {string.Join(", ", missing)}"</comment>
-  </data>
   <data name="S_SkinManagerWindow_GroupCardMenu_120694637E" xml:space="preserve">
     <value>이름 바꾸기…</value>
     <comment>src/Chickxel.App\SkinManagerWindow.cs:715 · GroupCardMenu · "이름 바꾸기…"</comment>
@@ -4863,10 +4709,6 @@ echo __LOGIN_FAILED__
   <data name="S_SkinManagerWindow_GroupCardMenu_676B513AAC" xml:space="preserve">
     <value>앞으로</value>
     <comment>src/Chickxel.App\SkinManagerWindow.cs:717 · GroupCardMenu · "앞으로"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_GroupCardMenu_73046F601D" xml:space="preserve">
-    <value>모든 부위를 그룹 스킨으로</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:720 · GroupCardMenu · "모든 부위를 그룹 스킨으로"</comment>
   </data>
   <data name="S_SkinManagerWindow_GroupCardMenu_B0B89947BD" xml:space="preserve">
     <value>뒤로</value>
@@ -4884,22 +4726,6 @@ echo __LOGIN_FAILED__
     <value>{0} (기본)</value>
     <comment>src/Chickxel.App\SkinManagerWindow.cs:502 · GroupRow · $"{skin.Name} (기본)"</comment>
   </data>
-  <data name="S_SkinManagerWindow_GroupRow_5734D99416" xml:space="preserve">
-    <value>부위마다 따로 스킨 고르기 · 부위 전용(개별) 스킨</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:461 · GroupRow · "부위마다 따로 스킨 고르기 · 부위 전용(개별) 스킨"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_GroupRow_6FDB1B90E3" xml:space="preserve">
-    <value>모든 부위를 그룹 스킨으로 ({0})</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:480 · GroupRow · $"모든 부위를 그룹 스킨으로 ({overrides})"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_GroupRow_815B0DD317" xml:space="preserve">
-    <value> · 개별 {0}</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:456 · GroupRow · $" · 개별 {partOnly}"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_GroupRow_9B00A60A58" xml:space="preserve">
-    <value>부위별 ({0}{1})</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:456 · GroupRow · $"부위별 ({parts.Count}{(partOnly &gt; 0 ? $" · 개별 {partOnly}" : "")})"</comment>
-  </data>
   <data name="S_SkinManagerWindow_GroupRow_9C2AC337EC" xml:space="preserve">
     <value>새 스킨</value>
     <comment>src/Chickxel.App\SkinManagerWindow.cs:509 · GroupRow · "새 스킨"</comment>
@@ -4912,21 +4738,9 @@ echo __LOGIN_FAILED__
     <value>복제</value>
     <comment>src/Chickxel.App\SkinManagerWindow.cs:510 · GroupRow · "복제"</comment>
   </data>
-  <data name="S_SkinManagerWindow_GroupRow_C9B42D4872" xml:space="preserve">
-    <value>부위가 없습니다 — 개별 스킨은 부위마다 만듭니다.</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:516 · GroupRow · "부위가 없습니다 — 개별 스킨은 부위마다 만듭니다."</comment>
-  </data>
-  <data name="S_SkinManagerWindow_GroupRow_D93BDD8066" xml:space="preserve">
-    <value>부위마다 따로 고른 스킨을 지우고 모두 그룹 스킨을 따르게 합니다</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:481 · GroupRow · "부위마다 따로 고른 스킨을 지우고 모두 그룹 스킨을 따르게 합니다"</comment>
-  </data>
   <data name="S_SkinManagerWindow_GroupRow_DB88A91B7D" xml:space="preserve">
     <value>빈 스킨 추가(그리기 전까지 아무것도 보이지 않음)</value>
     <comment>src/Chickxel.App\SkinManagerWindow.cs · GroupRow · "빈 스킨 추가(그리기 전까지 아무것도 보이지 않음)"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_GroupRow_FC60E8F0BD" xml:space="preserve">
-    <value>"{0}" 그룹에 "{1}" 입히기 · 끌어서 순서 바꾸기(맨 앞 = 기본) · 우클릭 = 메뉴</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:503 · GroupRow · $"\"{group.Name}\" 그룹에 \"{skin.Name}\" 입히기 · 끌어서 순서 바꾸기(맨 앞 = 기본) · 우클릭 = 메뉴"</comment>
   </data>
   <data name="S_SkinManagerWindow_OutfitCardMenu_4992E182C5" xml:space="preserve">
     <value>앞으로</value>
@@ -4940,10 +4754,6 @@ echo __LOGIN_FAILED__
     <value>이름 바꾸기…</value>
     <comment>src/Chickxel.App\SkinManagerWindow.cs:439 · OutfitCardMenu · "이름 바꾸기…"</comment>
   </data>
-  <data name="S_SkinManagerWindow_OutfitCardMenu_C760B7FF32" xml:space="preserve">
-    <value>지금 착장으로 덮어쓰기</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:438 · OutfitCardMenu · "지금 착장으로 덮어쓰기"</comment>
-  </data>
   <data name="S_SkinManagerWindow_OutfitCardMenu_C88DD8A38B" xml:space="preserve">
     <value>적용</value>
     <comment>src/Chickxel.App\SkinManagerWindow.cs:437 · OutfitCardMenu · "적용"</comment>
@@ -4952,230 +4762,55 @@ echo __LOGIN_FAILED__
     <value>뒤로</value>
     <comment>src/Chickxel.App\SkinManagerWindow.cs:442 · OutfitCardMenu · "뒤로"</comment>
   </data>
-  <data name="S_SkinManagerWindow_OutfitSection_0F04D53B38" xml:space="preserve">
-    <value>지금 착장을 저장해 두면 클릭 한 번으로 바꾸고, 내보내기 설정의 "스킨 고르기"에서 체크하면 착장마다 프레임 시트를 만듭니다.</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:343 · OutfitSection · "지금 착장을 저장해 두면 클릭 한 번으로 바꾸고, 내보내기 설정의 \"스킨 고르기\"에서 체크하면 착장마다 프레임 시트를 만듭니다."</comment>
-  </data>
-  <data name="S_SkinManagerWindow_OutfitSection_104A3435D1" xml:space="preserve">
-    <value>"{0}" 착장 입히기 · 우클릭 = 메뉴</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:357 · OutfitSection · $"\"{outfit.Name}\" 착장 입히기 · 우클릭 = 메뉴"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_OutfitSection_199CA8C134" xml:space="preserve">
-    <value>그룹마다 지금 스킨과 부위별 스킨을 착장 프리셋으로 저장</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:313 · OutfitSection · "그룹마다 지금 스킨과 부위별 스킨을 착장 프리셋으로 저장"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_OutfitSection_B497B58B96" xml:space="preserve">
-    <value>"{0}" 착장 입히기 · 우클릭 = 메뉴
-쓸 수 없는 항목(건너뜀):
-</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:358 · OutfitSection · $"\"{outfit.Name}\" 착장 입히기 · 우클릭 = 메뉴\n쓸 수 없는 항목(건너뜀):\n"</comment>
-  </data>
   <data name="S_SkinManagerWindow_OutfitSection_C353654C72" xml:space="preserve">
     <value> (눌러서 닫기)</value>
     <comment>src/Chickxel.App\SkinManagerWindow.cs:326 · OutfitSection · " (눌러서 닫기)"</comment>
   </data>
-  <data name="S_SkinManagerWindow_OutfitSection_D0B9C07D70" xml:space="preserve">
-    <value>지금 착장 저장…</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:312 · OutfitSection · "지금 착장 저장…"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_OutfitSection_E9FE78438D" xml:space="preserve">
-    <value>착장 프리셋</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:315 · OutfitSection · "착장 프리셋"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartCardMenu_17D1AA6157" xml:space="preserve">
-    <value>그룹 전체에 적용</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:729 · PartCardMenu · "그룹 전체에 적용"</comment>
-  </data>
-  <data name="SkinManager_AddAsPartOnly" xml:space="preserve"><value>"{0}" 전용으로 추가</value><comment>스킨 관리 창 부위 줄의 그룹 스킨 카드 우클릭 메뉴. 0 = 부위 이름.</comment></data>
-  <data name="SkinManager_AddAsPartOnly_Tip" xml:space="preserve"><value>이 스킨의 "{0}" 그림을 복사해 "{0}"에만 있는 새 스킨("{1}")으로 더하고 입힙니다. 그룹 스킨과 다른 부위는 그대로입니다.</value><comment>0 = 부위 이름, 1 = 복사할 스킨 이름.</comment></data>
   <data name="Canvas_PivotCanvas" xml:space="preserve"><value>캔버스</value><comment>피벗 보기에서 캔버스 피벗(내보내기 피벗) 표시 이름, 대표 레이어면 레이어 이름 뒤 괄호.</comment></data>
   <data name="Canvas_PivotMore" xml:space="preserve"><value>{names} 외 {count}개</value><comment>피벗 보기에서 같은 자리에 피벗이 넷 이상일 때. names = 앞 두 이름, count = 나머지 수.</comment></data>
-  <data name="S_SkinManagerWindow_PartCardMenu_88C8CE302D" xml:space="preserve">
-    <value>모든 부위를 그룹 스킨으로</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:731 · PartCardMenu · "모든 부위를 그룹 스킨으로"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartCardMenu_A682C5668A" xml:space="preserve">
-    <value>"{0}"에만 적용</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:728 · PartCardMenu · $"\"{part.Name}\"에만 적용"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartCardMenu_B707E8D06F" xml:space="preserve">
-    <value>그룹 스킨 따르기</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:728 · PartCardMenu · "그룹 스킨 따르기"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartOnlyCardMenu_1059723A6A" xml:space="preserve">
-    <value>적용</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:746 · PartOnlyCardMenu · "적용"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartOnlyCardMenu_234DD226C3" xml:space="preserve">
-    <value>뒤로</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:752 · PartOnlyCardMenu · "뒤로"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartOnlyCardMenu_387D5AE48C" xml:space="preserve">
-    <value>이름 바꾸기…</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:749 · PartOnlyCardMenu · "이름 바꾸기…"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartOnlyCardMenu_7E4FA46FDD" xml:space="preserve">
-    <value>복제</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:748 · PartOnlyCardMenu · "복제"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartOnlyCardMenu_856030E730" xml:space="preserve">
-    <value>그룹 스킨 따르기</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:747 · PartOnlyCardMenu · "그룹 스킨 따르기"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartOnlyCardMenu_9B7916FEF1" xml:space="preserve">
-    <value>삭제</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:750 · PartOnlyCardMenu · "삭제"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartOnlyCardMenu_A9D6CC16B0" xml:space="preserve">
-    <value>앞으로</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:751 · PartOnlyCardMenu · "앞으로"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartOnlyCardMenu_C1E4068EB0" xml:space="preserve">
-    <value>전체 스킨으로 올리기</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:754 · PartOnlyCardMenu · "전체 스킨으로 올리기"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartRow_085BBE8C28" xml:space="preserve">
-    <value>{0}: 부위만 따로 "{1}"</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:606 · PartRow · $"{part.Name}: 부위만 따로 \"{own.Name}\""</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartRow_7B30E64531" xml:space="preserve">
-    <value>없음</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:558 · PartRow · "없음"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartRow_85DEDD2457" xml:space="preserve">
-    <value>"{0}" 전용(개별) 스킨 "{1}" 입히기 — 다른 부위·그룹 목록에는 없습니다</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:583 · PartRow · $"\"{part.Name}\" 전용(개별) 스킨 \"{skin.Name}\" 입히기 — 다른 부위·그룹 목록에는 없습니다"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartRow_99B0FAABB1" xml:space="preserve">
-    <value>부위만 따로 입힌 스킨 없음 — 그룹 스킨("{0}")을 그대로 보임</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:559 · PartRow · $"부위만 따로 입힌 스킨 없음 — 그룹 스킨(\"{group.ActiveSkin?.Name}\")을 그대로 보임"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartRow_A8A111B223" xml:space="preserve">
-    <value>"{0}"에만 있는 새 스킨(개별 스킨) 추가 — 빈 그림에서 시작</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs · PartRow · $"\"{part.Name}\"에만 있는 새 스킨(개별 스킨) 추가 — 빈 그림에서 시작"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartRow_CEF2198767" xml:space="preserve">
-    <value>"{0}"만 "{1}" 입히기</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:570 · PartRow · $"\"{part.Name}\"만 \"{skin.Name}\" 입히기"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartRow_D7A2D2C8A0" xml:space="preserve">
-    <value>"{0}"에 지금 보이는 스킨("{1}") 그림을 복제해 이 부위 전용 스킨으로</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:592 · PartRow · $"\"{part.Name}\"에 지금 보이는 스킨(\"{part.ShownSkin?.Name}\") 그림을 복제해 이 부위 전용 스킨으로"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartRow_DA413B86D8" xml:space="preserve">
-    <value>{0}: 그룹 스킨을 따름</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:606 · PartRow · $"{part.Name}: 그룹 스킨을 따름"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartRow_E3B6A5EA65" xml:space="preserve">
-    <value>{0} (기본)</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:567 · PartRow · $"{skin.Name} (기본)"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartRow_E91B568A36" xml:space="preserve">
-    <value>복제</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:591 · PartRow · "복제"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartRow_EA54194A02" xml:space="preserve">
-    <value> · 우클릭 = 메뉴</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:584 · PartRow · " · 우클릭 = 메뉴"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartRow_F72FB89182" xml:space="preserve">
-    <value>이 부위 스킨</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:589 · PartRow · "이 부위 스킨"</comment>
-  </data>
   <data name="S_SkinManagerWindow_Rebuild_5A6FE8B9B0" xml:space="preserve">
     <value>열린 프로젝트가 없습니다.</value>
     <comment>src/Chickxel.App\SkinManagerWindow.cs:267 · Rebuild · "열린 프로젝트가 없습니다."</comment>
-  </data>
-  <data name="S_SkinManagerWindow_Rebuild_C420DB5CFC" xml:space="preserve">
-    <value>그룹이 없습니다 — 새 그룹(Ctrl+Shift+N)을 만들고 부위를 넣으세요.</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:281 · Rebuild · "그룹이 없습니다 — 새 그룹(Ctrl+Shift+N)을 만들고 부위를 넣으세요."</comment>
-  </data>
-  <data name="S_SkinManagerWindow_RenameOutfit_226D912006" xml:space="preserve">
-    <value>착장 이름 바꾸기</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:416 · RenameOutfit · "착장 이름 바꾸기"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_RenameOutfit_5C05120DC5" xml:space="preserve">
-    <value>착장 이름</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:416 · RenameOutfit · "착장 이름"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_RenameSkin_358214944C" xml:space="preserve">
-    <value>"{0}" 부위 전용 스킨 이름</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:843 · RenameSkin · $"\"{part.Name}\" 부위 전용 스킨 이름"</comment>
   </data>
   <data name="S_SkinManagerWindow_RenameSkin_5BEFE451AB" xml:space="preserve">
     <value>스킨 이름 바꾸기</value>
     <comment>src/Chickxel.App\SkinManagerWindow.cs:844 · RenameSkin · "스킨 이름 바꾸기"</comment>
   </data>
-  <data name="S_SkinManagerWindow_RenameSkin_D01A9D1D35" xml:space="preserve">
-    <value>"{0}" 그룹의 스킨 이름</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:843 · RenameSkin · $"\"{group.Name}\" 그룹의 스킨 이름"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_SaveOutfit_6E8AA7A306" xml:space="preserve">
-    <value>착장</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:408 · SaveOutfit · "착장"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_SaveOutfit_89DDDF35E8" xml:space="preserve">
-    <value>착장 저장</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:408 · SaveOutfit · "착장 저장"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_SaveOutfit_FAA68D3AB2" xml:space="preserve">
-    <value>지금 착장(그룹마다 스킨 + 부위별 스킨)을 저장할 이름</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:408 · SaveOutfit · "지금 착장(그룹마다 스킨 + 부위별 스킨)을 저장할 이름"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_SkinManagerWindow_146FFB4EDB" xml:space="preserve">
-    <value>그룹 = 스킨 칸: 같은 그룹의 스킨은 서로 갈아입히는 그림이고(한 번에 하나), 그룹들은 레이어 순서대로 겹칩니다. </value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:58 · SkinManagerWindow · "그룹 = 스킨 칸: 같은 그룹의 스킨은 서로 갈아입히는 그림이고(한 번에 하나), 그룹들은 레이어 순서대로 겹칩니다. "</comment>
-  </data>
-  <data name="S_SkinManagerWindow_SkinManagerWindow_1D9038A43F" xml:space="preserve">
-    <value>카드를 누르면 바로 적용 · 두 번 누르면 적용하고 창 닫기 · 우클릭 = 복제·이름·삭제·순서. "부위별"에서 부위 하나만 다른 스킨을 입히거나, 그 부위에만 있는 개별 스킨("이 부위 스킨")을 만들 수 있습니다.</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:59 · SkinManagerWindow · "카드를 누르면 바로 적용 · 두 번 누르면 적용하고 창 닫기 · 우클릭 = 복제·이름·삭제·순서. \"부위별\"에서 부위 하나만 다른 스킨을 입히거나, 그 부위에만 있는 개별 스킨(\"이 부위 스킨\")을 만들 수 있습니다."</comment>
-  </data>
-  <data name="S_SkinManagerWindow_SkinManagerWindow_2AEC4F8E08" xml:space="preserve">
-    <value>그룹 스킨과 부위 전용(개별) 스킨을 모두 보기</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:67 · SkinManagerWindow · "그룹 스킨과 부위 전용(개별) 스킨을 모두 보기"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_SkinManagerWindow_479B536E62" xml:space="preserve">
-    <value>보기</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:71 · SkinManagerWindow · "보기"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_SkinManagerWindow_5094948406" xml:space="preserve">
-    <value>그룹 전체 스킨만 보기(부위 줄에는 "없음" + 그룹 스킨)</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:68 · SkinManagerWindow · "그룹 전체 스킨만 보기(부위 줄에는 \"없음\" + 그룹 스킨)"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_SkinManagerWindow_98420F8C46" xml:space="preserve">
-    <value>전체 착장 (지금 프레임)</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:64 · SkinManagerWindow · "전체 착장 (지금 프레임)"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_SkinManagerWindow_BDF2DCD897" xml:space="preserve">
-    <value>스킨 관리</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:47 · SkinManagerWindow · "스킨 관리"</comment>
-  </data>
   <data name="S_SkinManagerWindow_SkinManagerWindow_E08E14A158" xml:space="preserve">
     <value>확인</value>
     <comment>src/Chickxel.App\SkinManagerWindow.cs:74 · SkinManagerWindow · "확인"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_SkinManagerWindow_FE001EBC56" xml:space="preserve">
-    <value>부위 하나에만 있는 개별 스킨만 보기(부위 줄을 모두 펼침)</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:69 · SkinManagerWindow · "부위 하나에만 있는 개별 스킨만 보기(부위 줄을 모두 펼침)"</comment>
   </data>
   <data name="S_SkinManagerWindow_SkinStatus_24731B367D" xml:space="preserve">
     <value>스킨: {0}</value>
     <comment>src/Chickxel.App\SkinManagerWindow.cs:814 · SkinStatus · $"스킨: {shown.Name}"</comment>
   </data>
-  <data name="S_SkinManagerWindow_SkinStatus_A6C337D7ED" xml:space="preserve">
-    <value> · 이 부위 전용(개별)</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:816 · SkinStatus · " · 이 부위 전용(개별)"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_SkinStatus_F066020B99" xml:space="preserve">
-    <value> · 부위만 따로</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:816 · SkinStatus · " · 부위만 따로"</comment>
-  </data>
-  <data name="S_SkinPickerWindow_Badge_42A5136FFC" xml:space="preserve">
-    <value>개별</value>
-    <comment>src/Chickxel.App\SkinPickerWindow.cs:197 · Badge · "개별"</comment>
-  </data>
+  <data name="SkinSettings_Title" xml:space="preserve"><value>스킨 설정</value></data>
+  <data name="SkinSettings_Help" xml:space="preserve"><value>카드를 누르면 바로 입힘 · 두 번 누르면 입히고 창 닫기 · 우클릭 = 복제·이름·삭제·순서 · 스킨 카드 끌기 = 순서 바꾸기(맨 앞 = 기본). 스킨 프리셋은 여러 레이어의 스킨 묶음이라 입히면 담긴 레이어만 바뀝니다(여러 프리셋을 겹쳐 입을 수 있음). 스킨 카드를 Ctrl/⌘+클릭해 레이어마다 하나씩 고르고 "프리셋으로 등록…"을 누르세요.</value></data>
+  <data name="SkinSettings_Presets" xml:space="preserve"><value>스킨 프리셋</value></data>
+  <data name="SkinSettings_PresetsEmpty" xml:space="preserve"><value>스킨 프리셋이 없습니다. 아래 스킨 카드를 Ctrl/⌘+클릭으로 고르고(고르지 않으면 지금 스킨 전체) "프리셋으로 등록…"을 누르면 클릭 한 번으로 갈아입히고, 내보내기의 "스킨 고르기"에서 체크하면 프리셋마다 프레임 시트를 만듭니다.</value></data>
+  <data name="SkinSettings_PresetTip" xml:space="preserve"><value>"{0}" 프리셋 입히기(담긴 레이어 {1}개만 바뀜) · 두 번 누르면 입히고 닫기 · 우클릭 = 메뉴</value></data>
+  <data name="SkinSettings_PresetMissing" xml:space="preserve"><value>쓸 수 없는 항목(건너뜀):</value></data>
+  <data name="SkinSettings_PresetSkipped" xml:space="preserve"><value>"{0}" 프리셋에서 건너뛴 항목: {1}</value></data>
+  <data name="SkinSettings_Overwrite" xml:space="preserve"><value>지금 스킨으로 덮어쓰기</value></data>
+  <data name="SkinSettings_OverwriteTip" xml:space="preserve"><value>프리셋에 담긴 레이어마다 지금 스킨으로 바꿉니다(담긴 레이어는 그대로)</value></data>
+  <data name="SkinSettings_RenamePreset" xml:space="preserve"><value>프리셋 이름 바꾸기</value></data>
+  <data name="SkinSettings_PresetName" xml:space="preserve"><value>프리셋 이름</value></data>
+  <data name="SkinSettings_Layers" xml:space="preserve"><value>레이어 스킨</value></data>
+  <data name="SkinSettings_LayersEmpty" xml:space="preserve"><value>스킨이 둘 이상인 레이어가 없습니다 — 레이어를 우클릭해 스킨을 추가하세요.</value></data>
+  <data name="SkinSettings_SkinTip" xml:space="preserve"><value>"{0}"에 "{1}" 입히기 · Ctrl/⌘+클릭 = 프리셋에 넣을 스킨으로 고르기 · 끌어서 순서 바꾸기(맨 앞 = 기본) · 우클릭 = 메뉴</value></data>
+  <data name="SkinSettings_Pick" xml:space="preserve"><value>프리셋에 넣을 스킨으로 고르기</value></data>
+  <data name="SkinSettings_Unpick" xml:space="preserve"><value>고르기 풀기</value></data>
+  <data name="SkinSettings_SavePreset" xml:space="preserve"><value>프리셋으로 등록…</value></data>
+  <data name="SkinSettings_SavePresetTip" xml:space="preserve"><value>고른 스킨(레이어마다 하나)을 스킨 프리셋으로 등록합니다. 고른 것이 없으면 스킨이 둘 이상인 모든 레이어의 지금 스킨을 등록합니다.</value></data>
+  <data name="SkinSettings_SavePresetTitle" xml:space="preserve"><value>스킨 프리셋 등록</value></data>
+  <data name="SkinSettings_SavePresetPicked" xml:space="preserve"><value>고른 스킨 {0}개를 담을 프리셋 이름</value></data>
+  <data name="SkinSettings_SavePresetAll" xml:space="preserve"><value>지금 스킨(스킨이 둘 이상인 모든 레이어)을 담을 프리셋 이름</value></data>
+  <data name="SkinSettings_ClearPicked" xml:space="preserve"><value>고르기 지우기</value></data>
+  <data name="SkinSettings_Picked" xml:space="preserve"><value>고른 스킨 {0}개</value></data>
+  <data name="SkinSettings_PickedNone" xml:space="preserve"><value>고른 스킨 없음 — 지금 스킨 전체를 등록합니다</value></data>
+  <data name="SkinSettings_RenameSkinPrompt" xml:space="preserve"><value>"{0}" 레이어의 스킨 이름</value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_09AC71786E" xml:space="preserve">
-    <value>체크한 스킨마다 프레임 시트 한 벌(그 그룹만 그 스킨, 나머지 그룹은 지금 착장)을 합성하고, 부위 아틀라스에는 그 스킨의 부위 스프라이트를 넣습니다.</value>
+    <value>체크한 스킨마다 프레임 시트 한 벌(그 레이어만 그 스킨, 나머지는 지금 스킨)을 합성하고, 레이어 아틀라스에는 체크한 스킨의 레이어 스프라이트를 넣습니다.</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:34 · SkinPickerWindow · "체크한 스킨마다 프레임 시트 한 벌(그 그룹만 그 스킨, 나머지 그룹은 지금 착장)을 합성하고, 부위 아틀라스에는 그 스킨의 부위 스프라이트를 넣습니다."</comment>
   </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_11E58C3A27" xml:space="preserve">
@@ -5195,47 +4830,35 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\SkinPickerWindow.cs:27 · SkinPickerWindow · "내보낼 스킨 고르기"</comment>
   </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_3CDC91DE0A" xml:space="preserve">
-    <value>고를 스킨·레이어가 없습니다(그룹에 부위를 넣으면 스킨이 생깁니다).</value>
+    <value>고를 레이어가 없습니다.</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:147 · SkinPickerWindow · "고를 스킨·레이어가 없습니다(그룹에 부위를 넣으면 스킨이 생깁니다)."</comment>
   </data>
-  <data name="S_SkinPickerWindow_SkinPickerWindow_4B4DDD65E9" xml:space="preserve">
-    <value>{0} 전용</value>
-    <comment>src/Chickxel.App\SkinPickerWindow.cs:80 · SkinPickerWindow · $"{part.Name} 전용"</comment>
-  </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_5049C75A28" xml:space="preserve">
-    <value>체크한 스킨의 부위 스프라이트를 부위 아틀라스(와 Sprite Library)에 넣습니다.</value>
+    <value>체크한 스킨의 레이어 스프라이트를 레이어 아틀라스(와 Sprite Library)에 넣습니다.</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:33 · SkinPickerWindow · "체크한 스킨의 부위 스프라이트를 부위 아틀라스(와 Sprite Library)에 넣습니다."</comment>
   </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_5EBB32EC59" xml:space="preserve">
     <value> (숨김)</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:126 · SkinPickerWindow · " (숨김)"</comment>
   </data>
-  <data name="S_SkinPickerWindow_SkinPickerWindow_6068D0001B" xml:space="preserve">
-    <value>"{0}" 부위 전용(개별) 스킨 — 그 부위만 "{1}", 나머지는 지금 착장(부위 아틀라스: {2}@{3}, Sprite Library: 기본 + {4})</value>
-    <comment>src/Chickxel.App\SkinPickerWindow.cs:91 · SkinPickerWindow · $"\"{part.Name}\" 부위 전용(개별) 스킨 — 그 부위만 \"{skin.Name}\", 나머지는 지금 착장(부위 아틀라스: {part.Name}@{skin.Name}, Sprite Library: 기본 + {skin.Name})"</comment>
-  </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_6D5AE7FB88" xml:space="preserve">
-    <value>모든 스킨과 착장 프리셋 체크</value>
+    <value>모든 스킨과 스킨 프리셋 체크</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:49 · SkinPickerWindow · "모든 스킨과 착장 프리셋 체크"</comment>
   </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_76ACD5089E" xml:space="preserve">
-    <value>합성에 넣을 레이어</value>
+    <value>넣을 레이어와 스킨</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:119 · SkinPickerWindow · "합성에 넣을 레이어"</comment>
   </data>
-  <data name="S_SkinPickerWindow_SkinPickerWindow_8923EA543C" xml:space="preserve">
-    <value>{0} (그룹)</value>
-    <comment>src/Chickxel.App\SkinPickerWindow.cs:126 · SkinPickerWindow · $"{layer.Name} (그룹)"</comment>
-  </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_8D6FC7397A" xml:space="preserve">
-    <value>끈 레이어는 프레임 시트 합성에서 빼고(그룹은 스킨 칸째), 그룹이면 그 부위를 부위 아틀라스에서도 뺍니다 — 예: 장비 그룹만 남기면 장비만의 시트.</value>
+    <value>끈 레이어는 자식째 프레임 시트 합성과 레이어 아틀라스에서 뺍니다 — 예: 장비 레이어만 남기면 장비만의 시트.</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:122 · SkinPickerWindow · "끈 레이어는 프레임 시트 합성에서 빼고(그룹은 스킨 칸째), 그룹이면 그 부위를 부위 아틀라스에서도 뺍니다 — 예: 장비 그룹만 남기면 장비만의 시트."</comment>
   </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_91FAFEFE55" xml:space="preserve">
-    <value>"{0}" 그룹을 "{1}"으로</value>
+    <value>"{0}"만 "{1}"으로(나머지는 지금 스킨)</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:71 · SkinPickerWindow · $"\"{group.Name}\" 그룹을 \"{skin.Name}\"으로"</comment>
   </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_A307A08B56" xml:space="preserve">
-    <value>지금은 "지금 착장"으로 내보냅니다 — 스킨·착장 체크는 "고른 스킨"일 때 쓰이고, 레이어 체크는 늘 쓰입니다.</value>
+    <value>지금은 "지금 스킨"으로 내보냅니다 — 스킨·프리셋 체크는 "고른 스킨"일 때 쓰이고, 레이어 체크는 늘 쓰입니다.</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:38 · SkinPickerWindow · "지금은 \"지금 착장\"으로 내보냅니다 — 스킨·착장 체크는 \"고른 스킨\"일 때 쓰이고, 레이어 체크는 늘 쓰입니다."</comment>
   </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_A3D6B146CF" xml:space="preserve">
@@ -5243,19 +4866,15 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\SkinPickerWindow.cs:129 · SkinPickerWindow · "숨긴 레이어는 켜 두어도 합성되지 않습니다"</comment>
   </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_CB68D989C3" xml:space="preserve">
-    <value>끈 그룹의 부위는 부위 아틀라스에서 뺍니다.</value>
+    <value>끈 레이어는 자식째 레이어 아틀라스에서 뺍니다.</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:121 · SkinPickerWindow · "끈 그룹의 부위는 부위 아틀라스에서 뺍니다."</comment>
   </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_CDBDEDBE4D" xml:space="preserve">
-    <value>부위 아틀라스 스킨 고르기</value>
+    <value>레이어 아틀라스 스킨 고르기</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:27 · SkinPickerWindow · "부위 아틀라스 스킨 고르기"</comment>
   </data>
-  <data name="S_SkinPickerWindow_SkinPickerWindow_E3EF38CCC4" xml:space="preserve">
-    <value>{0} (넣을 레이어에서 뺌)</value>
-    <comment>src/Chickxel.App\SkinPickerWindow.cs:59 · SkinPickerWindow · $"{group.Name} (넣을 레이어에서 뺌)"</comment>
-  </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_E73FD24EBA" xml:space="preserve">
-    <value>착장 프리셋</value>
+    <value>스킨 프리셋</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:101 · SkinPickerWindow · "착장 프리셋"</comment>
   </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_EB479F1895" xml:space="preserve">
@@ -5263,20 +4882,16 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\SkinPickerWindow.cs:47 · SkinPickerWindow · "모두 선택"</comment>
   </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_F5BB7790A1" xml:space="preserve">
-    <value>프레임 시트만 — 체크한 착장마다 합성 한 벌(이름 뒤 @착장). 부위 아틀라스에는 쓰이지 않습니다.</value>
+    <value>프레임 시트만 — 체크한 프리셋마다 합성 한 벌(이름 뒤 @프리셋, 프리셋에 없는 레이어는 지금 스킨). 레이어 아틀라스에는 쓰이지 않습니다.</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:102 · SkinPickerWindow · "프레임 시트만 — 체크한 착장마다 합성 한 벌(이름 뒤 @착장). 부위 아틀라스에는 쓰이지 않습니다."</comment>
   </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_FC0997D1E7" xml:space="preserve">
-    <value>착장 프리셋은 스킨 관리 창에서 저장하면 여기에 나옵니다(프레임 시트만).</value>
+    <value>스킨 프리셋은 스킨 설정 창에서 등록하면 여기에 나옵니다(프레임 시트만).</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:114 · SkinPickerWindow · "착장 프리셋은 스킨 관리 창에서 저장하면 여기에 나옵니다(프레임 시트만)."</comment>
   </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_FF0C503AFE" xml:space="preserve">
-    <value>모든 스킨과 착장 프리셋 체크 해제(아무것도 고르지 않으면 지금 착장으로 내보냄)</value>
+    <value>모든 스킨과 스킨 프리셋 체크 해제(아무것도 고르지 않으면 지금 스킨으로 내보냄)</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:50 · SkinPickerWindow · "모든 스킨과 착장 프리셋 체크 해제(아무것도 고르지 않으면 지금 착장으로 내보냄)"</comment>
-  </data>
-  <data name="S_SkinPickerWindow_SkinPickerWindow_FFE48329B5" xml:space="preserve">
-    <value>스킨</value>
-    <comment>src/Chickxel.App\SkinPickerWindow.cs:56 · SkinPickerWindow · "스킨"</comment>
   </data>
   <data name="S_SortOrderList_BreakSlot_96A2217ADC" xml:space="preserve">
     <value>앞쪽 기준({0})이 같은 칸끼리 한 줄로 묶어 새 줄에서 시작</value>
@@ -5303,7 +4918,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\SortOrderList.cs:137 · KeyName · "프레임"</comment>
   </data>
   <data name="S_SortOrderList_KeyName_E8D6C14662" xml:space="preserve">
-    <value>부위</value>
+    <value>레이어</value>
     <comment>src/Chickxel.App\SortOrderList.cs:134 · KeyName · "부위"</comment>
   </data>
   <data name="S_SortOrderList_KeyName_FA40090501" xml:space="preserve">
@@ -5414,14 +5029,6 @@ echo __LOGIN_FAILED__
     <value>내보낼 칸 이름(비우면 규칙: {태그}_{번호})</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:1043 · AddFrameTail · "내보낼 칸 이름(비우면 규칙: {태그}_{번호})"</comment>
   </data>
-  <data name="S_TimelinePanel_AddPartTo_315E69F074" xml:space="preserve">
-    <value>부위 추가</value>
-    <comment>src/Chickxel.App\TimelinePanel.cs:661 · AddPartTo · "부위 추가"</comment>
-  </data>
-  <data name="S_TimelinePanel_AddPartTo_3720B51812" xml:space="preserve">
-    <value>부위</value>
-    <comment>src/Chickxel.App\TimelinePanel.cs:654 · AddPartTo · "부위"</comment>
-  </data>
   <data name="S_TimelinePanel_BakeItem_1998F6F6DC" xml:space="preserve">
     <value>효과를 셀 픽셀에 구워 넣고(이후 그림처럼 고칠 수 있음) 효과는 지웁니다. 실행취소 한 단계.</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:1249 · BakeItem · "효과를 셀 픽셀에 구워 넣고(이후 그림처럼 고칠 수 있음) 효과는 지웁니다. 실행취소 한 단계."</comment>
@@ -5491,11 +5098,11 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\TimelinePanel.cs:243 · DeleteSelectedLayers · $"레이어 {targets.Count}개 삭제 — Ctrl+Z로 되돌립니다."</comment>
   </data>
   <data name="S_TimelinePanel_EditGroupLayout_5EF8040D39" xml:space="preserve">
-    <value>그룹 "{0}" 자동 배치 켜짐 — 부위를 더하거나 크기를 바꾸면 다시 배치합니다</value>
+    <value>"{0}" 자식 자동 배치 켜짐 — 자식을 더하거나 크기를 바꾸면 다시 배치합니다</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:714 · EditGroupLayout · $"그룹 \"{group.Name}\" 자동 배치 켜짐 — 부위를 더하거나 크기를 바꾸면 다시 배치합니다"</comment>
   </data>
   <data name="S_TimelinePanel_EditGroupLayout_6F86F3E62E" xml:space="preserve">
-    <value>그룹 "{0}" 자동 배치 설정을 바꿨습니다</value>
+    <value>"{0}" 자식 자동 배치 설정을 바꿨습니다</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:714 · EditGroupLayout · $"그룹 \"{group.Name}\" 자동 배치 설정을 바꿨습니다"</comment>
   </data>
   <data name="S_TimelinePanel_FramesText_48424FAB15" xml:space="preserve">
@@ -5524,7 +5131,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\TimelinePanel.cs:799 · MergeDown · "맨 아래 레이어는 아래로 병합할 수 없습니다."</comment>
   </data>
   <data name="S_TimelinePanel_MergeDown_D5363E1C76" xml:space="preserve">
-    <value>부위·그룹 레이어는 아래로 병합할 수 없습니다.</value>
+    <value>나무에 든 레이어나 스킨이 둘 이상인 레이어는 아래로 병합할 수 없습니다.</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:799 · MergeDown · "부위·그룹 레이어는 아래로 병합할 수 없습니다."</comment>
   </data>
   <data name="S_TimelinePanel_MoveBlock_0DFDF5525C" xml:space="preserve">
@@ -5532,7 +5139,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\TimelinePanel.cs:455 · MoveBlock · "셀 옮기기"</comment>
   </data>
   <data name="S_TimelinePanel_MoveBlock_1527D93EE0" xml:space="preserve">
-    <value>셀 크기나 종류가 다른 행으로는 옮길 수 없습니다(부위는 같은 크기, 그룹은 그룹 행으로).</value>
+    <value>셀 크기가 다른 행으로는 옮길 수 없습니다.</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:447 · MoveBlock · "셀 크기나 종류가 다른 행으로는 옮길 수 없습니다(부위는 같은 크기, 그룹은 그룹 행으로)."</comment>
   </data>
   <data name="S_TimelinePanel_MoveBlock_5B9FB74E7C" xml:space="preserve">
@@ -5575,28 +5182,8 @@ echo __LOGIN_FAILED__
     <value> (1회)</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:2645 · Paint · " (1회)"</comment>
   </data>
-  <data name="S_TimelinePanel_PartSkinMenuItems_179840054C" xml:space="preserve">
-    <value>스킨 관리…</value>
-    <comment>src/Chickxel.App\TimelinePanel.cs:947 · PartSkinMenuItems · "스킨 관리…"</comment>
-  </data>
-  <data name="S_TimelinePanel_PartSkinMenuItems_6C100EAA80" xml:space="preserve">
-    <value>{0} (개별)</value>
-    <comment>src/Chickxel.App\TimelinePanel.cs:936 · PartSkinMenuItems · $"{skin.Name} (개별)"</comment>
-  </data>
-  <data name="S_TimelinePanel_PartSkinMenuItems_AD14B32035" xml:space="preserve">
-    <value>이 부위 스킨…</value>
-    <comment>src/Chickxel.App\TimelinePanel.cs:944 · PartSkinMenuItems · "이 부위 스킨…"</comment>
-  </data>
-  <data name="S_TimelinePanel_PartSkinMenuItems_CF3C760D28" xml:space="preserve">
-    <value>{0} (기본)</value>
-    <comment>src/Chickxel.App\TimelinePanel.cs:936 · PartSkinMenuItems · $"{skin.Name} (기본)"</comment>
-  </data>
-  <data name="S_TimelinePanel_PartSkinMenuItems_EB384BCB51" xml:space="preserve">
-    <value>없음 (그룹 스킨 {0} 그대로)</value>
-    <comment>src/Chickxel.App\TimelinePanel.cs:924 · PartSkinMenuItems · $"없음 (그룹 스킨 {group.ActiveSkin!.Name} 그대로)"</comment>
-  </data>
   <data name="S_TimelinePanel_PasteSelection_1A8BE9258F" xml:space="preserve">
-    <value>붙여 넣을 수 있는 칸이 없습니다. 일반 레이어나 크기가 같은 부위(그룹은 그룹 행)를 골라 주세요.</value>
+    <value>붙여 넣을 수 있는 칸이 없습니다. 일반 레이어나 크기가 같은 레이어를 골라 주세요.</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:592 · PasteSelection · "붙여 넣을 수 있는 칸이 없습니다. 일반 레이어나 크기가 같은 부위(그룹은 그룹 행)를 골라 주세요."</comment>
   </data>
   <data name="S_TimelinePanel_PasteSelection_7024507CB1" xml:space="preserve">
@@ -5631,20 +5218,16 @@ echo __LOGIN_FAILED__
     <value> · 전체 {0}ms</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:97 · RefreshUi · $" · 전체 {total}ms"</comment>
   </data>
-  <data name="S_TimelinePanel_RefreshUi_974D2C80BE" xml:space="preserve">
-    <value>그룹</value>
-    <comment>src/Chickxel.App\TimelinePanel.cs:91 · RefreshUi · "그룹"</comment>
-  </data>
   <data name="S_TimelinePanel_RefreshUi_FB257005C1" xml:space="preserve">
-    <value>부위 {0}×{1} @{2},{3}</value>
+    <value>{0}×{1} @{2},{3}</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:92 · RefreshUi · $"부위 {layer.PartSize.Width}×{layer.PartSize.Height} @{layer.PartOffset.X},{layer.PartOffset.Y}"</comment>
   </data>
   <data name="S_TimelinePanel_ResizePartAt_98A5871C4A" xml:space="preserve">
-    <value>부위 레이어를 고르세요.</value>
+    <value>자리 있는 레이어(부모나 자식이 있는 레이어)를 고르세요.</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:684 · ResizePartAt · "부위 레이어를 고르세요."</comment>
   </data>
   <data name="S_TimelinePanel_ResizePartAt_AAF40A125F" xml:space="preserve">
-    <value>부위 크기 — {0}</value>
+    <value>레이어 크기 — {0}</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:687 · ResizePartAt · $"부위 크기 — {part.Name}"</comment>
   </data>
   <data name="S_TimelinePanel_SelectionLabel_075B714127" xml:space="preserve">
@@ -5675,24 +5258,12 @@ echo __LOGIN_FAILED__
     <value>프레임 길이</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:604 · SetDuration · "프레임 길이"</comment>
   </data>
-  <data name="S_TimelinePanel_SetDuration_8569508DA9" xml:space="preserve">
-    <value>1~60000 사이 숫자를 입력하세요.</value>
-    <comment>src/Chickxel.App\TimelinePanel.cs:609 · SetDuration · "1~60000 사이 숫자를 입력하세요."</comment>
-  </data>
-  <data name="S_TimelinePanel_SetDuration_9A16EE4A6C" xml:space="preserve">
-    <value>프레임 길이(ms)</value>
-    <comment>src/Chickxel.App\TimelinePanel.cs:604 · SetDuration · "프레임 길이(ms)"</comment>
-  </data>
-  <data name="S_TimelinePanel_SetDuration_F54842A5D1" xml:space="preserve">
-    <value>프레임 {0}개의 길이(ms)</value>
-    <comment>src/Chickxel.App\TimelinePanel.cs:604 · SetDuration · $"프레임 {frames.Count}개의 길이(ms)"</comment>
-  </data>
   <data name="S_TimelinePanel_SetLayerOpacity_CF46646372" xml:space="preserve">
     <value>레이어 불투명도</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:834 · SetLayerOpacity · "레이어 불투명도"</comment>
   </data>
   <data name="S_TimelinePanel_SetLayoutBadgeHover_309A0A0649" xml:space="preserve">
-    <value>그룹 "{0}": {1}</value>
+    <value>"{0}": {1}</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:3418 · SetLayoutBadgeHover · $"그룹 \"{group.Name}\": {tip}"</comment>
   </data>
   <data name="S_TimelinePanel_ShowCelMenu_1631708D81" xml:space="preserve">
@@ -5804,11 +5375,11 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\TimelinePanel.cs:1219 · ShowEffectMenu · "이 프레임부터 끝까지"</comment>
   </data>
   <data name="S_TimelinePanel_ShowEmptyMenu_3C96CCD165" xml:space="preserve">
-    <value>새 그룹</value>
+    <value>새 빈 레이어 (Ctrl+Shift+N)</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:1120 · ShowEmptyMenu · "새 그룹"</comment>
   </data>
   <data name="S_TimelinePanel_ShowEmptyMenu_3E26686E9F" xml:space="preserve">
-    <value>새 부위… (Shift+P)</value>
+    <value>새 자식 레이어… (Shift+P)</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:1121 · ShowEmptyMenu · "새 부위… (Shift+P)"</comment>
   </data>
   <data name="S_TimelinePanel_ShowEmptyMenu_43E7688224" xml:space="preserve">
@@ -5888,7 +5459,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\TimelinePanel.cs:1172 · ShowLayerMenu · $"스킨: {layer.ActiveSkin!.Name}"</comment>
   </data>
   <data name="S_TimelinePanel_ShowLayerMenu_13B10F0946" xml:space="preserve">
-    <value>새 그룹</value>
+    <value>새 빈 레이어</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:1176 · ShowLayerMenu · "새 그룹"</comment>
   </data>
   <data name="S_TimelinePanel_ShowLayerMenu_14ED4902E9" xml:space="preserve">
@@ -5907,10 +5478,6 @@ echo __LOGIN_FAILED__
     <value>잠금/풀기</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:1142 · ShowLayerMenu · "잠금/풀기"</comment>
   </data>
-  <data name="S_TimelinePanel_ShowLayerMenu_24F3803FE4" xml:space="preserve">
-    <value>이 부위 스킨: {0} ({1})</value>
-    <comment>src/Chickxel.App\TimelinePanel.cs:1153 · ShowLayerMenu · $"이 부위 스킨: {own.Name} ({(own.IsPartOnly ? "개별" : "부위만 따로")})"</comment>
-  </data>
   <data name="S_TimelinePanel_ShowLayerMenu_4572E665BD" xml:space="preserve">
     <value>삭제 (레이어 {0}개) ({1})</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:1183 · ShowLayerMenu · $"삭제 (레이어 {selected}개) ({DeleteKeyName})"</comment>
@@ -5920,12 +5487,8 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\TimelinePanel.cs:1136 · ShowLayerMenu · $"효과… ({layer.Effects.Count})"</comment>
   </data>
   <data name="S_TimelinePanel_ShowLayerMenu_51558AB208" xml:space="preserve">
-    <value>아래로</value>
+    <value>아래로 (Alt+↓)</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:1180 · ShowLayerMenu · "아래로"</comment>
-  </data>
-  <data name="S_TimelinePanel_ShowLayerMenu_5312E16A53" xml:space="preserve">
-    <value>그룹 스킨: {0}</value>
-    <comment>src/Chickxel.App\TimelinePanel.cs:1156 · ShowLayerMenu · $"그룹 스킨: {owner.ActiveSkin!.Name}"</comment>
   </data>
   <data name="S_TimelinePanel_ShowLayerMenu_54B2D67C9E" xml:space="preserve">
     <value>아래와 병합</value>
@@ -5935,16 +5498,8 @@ echo __LOGIN_FAILED__
     <value>삭제 ({0})</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:1183 · ShowLayerMenu · $"삭제 ({DeleteKeyName})"</comment>
   </data>
-  <data name="S_TimelinePanel_ShowLayerMenu_595B6531BF" xml:space="preserve">
-    <value>이 부위 스킨: 없음 (그룹 스킨 {0} 그대로)</value>
-    <comment>src/Chickxel.App\TimelinePanel.cs:1153 · ShowLayerMenu · $"이 부위 스킨: 없음 (그룹 스킨 {owner.ActiveSkin!.Name} 그대로)"</comment>
-  </data>
-  <data name="S_TimelinePanel_ShowLayerMenu_5BB456B67D" xml:space="preserve">
-    <value>개별</value>
-    <comment>src/Chickxel.App\TimelinePanel.cs:1153 · ShowLayerMenu · "개별"</comment>
-  </data>
   <data name="S_TimelinePanel_ShowLayerMenu_66BE4C8AA7" xml:space="preserve">
-    <value>부위 크기… ({0}×{1})</value>
+    <value>레이어 크기… ({0}×{1})</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:1147 · ShowLayerMenu · $"부위 크기… ({layer.PartSize.Width}×{layer.PartSize.Height})"</comment>
   </data>
   <data name="S_TimelinePanel_ShowLayerMenu_73BDC86998" xml:space="preserve">
@@ -5952,7 +5507,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\TimelinePanel.cs:1148 · ShowLayerMenu · $"위치… ({layer.PartOffset.X}, {layer.PartOffset.Y})"</comment>
   </data>
   <data name="S_TimelinePanel_ShowLayerMenu_804EB6B1D9" xml:space="preserve">
-    <value>새 부위…</value>
+    <value>새 자식 레이어…</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:1177 · ShowLayerMenu · "새 부위…"</comment>
   </data>
   <data name="S_TimelinePanel_ShowLayerMenu_89E0EF3AE5" xml:space="preserve">
@@ -5968,7 +5523,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\TimelinePanel.cs:1163 · ShowLayerMenu · "펼치기"</comment>
   </data>
   <data name="S_TimelinePanel_ShowLayerMenu_9BA618B63B" xml:space="preserve">
-    <value>위로</value>
+    <value>위로 (Alt+↑)</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:1179 · ShowLayerMenu · "위로"</comment>
   </data>
   <data name="S_TimelinePanel_ShowLayerMenu_AA2FF06061" xml:space="preserve">
@@ -5999,10 +5554,6 @@ echo __LOGIN_FAILED__
     <value>자동 배치…</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:1164 · ShowLayerMenu · "자동 배치…"</comment>
   </data>
-  <data name="S_TimelinePanel_ShowLayerMenu_FA9043A1C8" xml:space="preserve">
-    <value>부위만 따로</value>
-    <comment>src/Chickxel.App\TimelinePanel.cs:1153 · ShowLayerMenu · "부위만 따로"</comment>
-  </data>
   <data name="S_TimelinePanel_ShowTagMenu_2102446206" xml:space="preserve">
     <value>태그 속성…</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:1188 · ShowTagMenu · "태그 속성…"</comment>
@@ -6027,29 +5578,21 @@ echo __LOGIN_FAILED__
     <value>스킨 앞으로</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:909 · SkinMenuItems · "스킨 앞으로"</comment>
   </data>
-  <data name="S_TimelinePanel_SkinMenuItems_40DF34EC49" xml:space="preserve">
-    <value>모든 부위를 그룹 스킨으로</value>
-    <comment>src/Chickxel.App\TimelinePanel.cs:913 · SkinMenuItems · "모든 부위를 그룹 스킨으로"</comment>
-  </data>
   <data name="S_TimelinePanel_SkinMenuItems_721A9DB29E" xml:space="preserve">
     <value>스킨 뒤로</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:910 · SkinMenuItems · "스킨 뒤로"</comment>
   </data>
   <data name="S_TimelinePanel_SkinMenuItems_B0E982373D" xml:space="preserve">
-    <value>새 스킨(빈)</value>
+    <value>빈 스킨…</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:905 · SkinMenuItems · "새 스킨(빈)"</comment>
   </data>
   <data name="S_TimelinePanel_SkinMenuItems_B61606E9A0" xml:space="preserve">
-    <value>스킨 관리…</value>
+    <value>스킨 설정…</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:914 · SkinMenuItems · "스킨 관리…"</comment>
   </data>
   <data name="S_TimelinePanel_SkinMenuItems_BF2AA28CBD" xml:space="preserve">
     <value>스킨 삭제</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:908 · SkinMenuItems · "스킨 삭제"</comment>
-  </data>
-  <data name="S_TimelinePanel_SkinMenuItems_F014A7BFC2" xml:space="preserve">
-    <value>지금 스킨 복제</value>
-    <comment>src/Chickxel.App\TimelinePanel.cs:906 · SkinMenuItems · "지금 스킨 복제"</comment>
   </data>
   <data name="S_TimelinePanel_TagDialog_0F6A4740E4" xml:space="preserve">
     <value>프레임</value>
@@ -6108,7 +5651,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\TimelinePanel.cs:53 · TimelinePanel · "타임라인"</comment>
   </data>
   <data name="S_TimelinePanel_TurnOffGroupLayout_B5D4ABA3A0" xml:space="preserve">
-    <value>그룹 "{0}" 자동 배치 끔 — 부위는 지금 자리에 그대로</value>
+    <value>"{0}" 자식 자동 배치 끔 — 자식은 지금 자리에 그대로</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:725 · TurnOffGroupLayout · $"그룹 \"{group.Name}\" 자동 배치 끔 — 부위는 지금 자리에 그대로"</comment>
   </data>
   <data name="S_ToolOptionsPanel_Refresh_00F0C73AC7" xml:space="preserve">
@@ -6164,13 +5707,12 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:468 · Refresh · "선 두께·펜 모양"</comment>
   </data>
   <data name="S_ToolOptionsPanel_RefreshPivot_7752FB81E5" xml:space="preserve">
-    <value>대상: 부위 "{0}" ({1}×{2}, 부위 아틀라스)</value>
+    <value>대상: 레이어 "{0}" ({1}×{2}, 레이어 아틀라스)</value>
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:679 · RefreshPivot · $"대상: 부위 \"{part.Name}\" ({part.PartSize.Width}×{part.PartSize.Height}, 부위 아틀라스)"</comment>
   </data>
-  <data name="Pivot_PartFrameTarget" xml:space="preserve"><value>대상: 부위 "{0}"의 프레임 {1}부터 끝까지 ({2}×{3}, 부위 아틀라스)</value><comment>피벗 도구 설정의 대상 글: 부위를 이 프레임부터 끝까지 따로 둔 위치·피벗(0 = 부위 이름, 1 = 프레임 번호, 2·3 = 부위 크기)</comment></data>
-  <data name="Pivot_FramesFromTip" xml:space="preserve"><value>켜면 이 프레임부터 끝 프레임까지 피벗(부위면 위치도)을 다른 프레임과 따로 둡니다. 켠 채로 피벗을 바꾸면 이 프레임과 그 뒤 프레임이 모두 같은 만큼 바뀌고, 앞 프레임은 그대로입니다. 레이어 크기 모드(Alt+Shift+C)에서 부위를 옮기거나 그림을 옮기는 효과를 영구 적용하면 저절로 켜집니다. 끄면 이 프레임부터 끝까지 따로 둔 것을 지웁니다.</value><comment>피벗 도구 설정 "현재 프레임부터" 체크의 도움말</comment></data>
+  <data name="Pivot_PartFrameTarget" xml:space="preserve"><value>대상: 레이어 "{0}"의 프레임 {1}부터 끝까지 ({2}×{3}, 레이어 아틀라스)</value><comment>피벗 도구 설정의 대상 글: 부위를 이 프레임부터 끝까지 따로 둔 위치·피벗(0 = 부위 이름, 1 = 프레임 번호, 2·3 = 부위 크기)</comment></data>
+  <data name="Pivot_FramesFromTip" xml:space="preserve"><value>켜면 이 프레임부터 끝 프레임까지 피벗(레이어 위치가 있으면 위치도)을 다른 프레임과 따로 둡니다. 켠 채로 피벗을 바꾸면 이 프레임과 그 뒤 프레임이 모두 같은 만큼 바뀌고, 앞 프레임은 그대로입니다. 레이어 크기 모드(Alt+Shift+C)에서 레이어를 옮기거나 그림을 옮기는 효과를 영구 적용하면 저절로 켜집니다. 끄면 이 프레임부터 끝까지 따로 둔 것을 지웁니다.</value><comment>피벗 도구 설정 "현재 프레임부터" 체크의 도움말</comment></data>
   <data name="Pivot_KindLayer" xml:space="preserve"><value>레이어</value><comment>피벗 대상 글의 종류({0}): 일반 레이어</comment></data>
-  <data name="Pivot_KindGroup" xml:space="preserve"><value>그룹</value><comment>피벗 대상 글의 종류({0}): 그룹</comment></data>
   <data name="Pivot_LayerTarget" xml:space="preserve"><value>대상: {0} "{1}"의 피벗 (캔버스 기준 {2}×{3})</value><comment>피벗 도구 설정의 대상 글: 0 = 레이어 종류(레이어/그룹), 1 = 이름, 2·3 = 캔버스 크기</comment></data>
   <data name="Pivot_LayerFrameTarget" xml:space="preserve"><value>대상: {0} "{1}"의 프레임 {2}부터 끝까지 (캔버스 기준 {3}×{4})</value><comment>피벗 도구 설정의 대상 글: 0 = 레이어 종류, 1 = 이름, 2 = 프레임 번호, 3·4 = 캔버스 크기</comment></data>
   <data name="Pivot_CanvasTarget" xml:space="preserve"><value>대상: 캔버스 피벗 (내보내기, 모든 프레임)</value><comment>피벗 도구 설정의 대상 글: 타임라인 캔버스 칩으로 고른 캔버스 자신의 피벗</comment></data>
@@ -6184,11 +5726,11 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:628 · RefreshSlice · $"대상: 프레임 시트 모든 칸 ({w}×{h})"</comment>
   </data>
   <data name="S_ToolOptionsPanel_RefreshSlice_4979FEE313" xml:space="preserve">
-    <value>그룹 화면: 부위마다 캔버스의 초록 선을 끌어 바꿉니다. 숫자로 바꾸려면 타임라인에서 부위를 고르세요.</value>
+    <value>자식 배치 화면: 자식마다 캔버스의 초록 선을 끌어 바꿉니다. 숫자로 바꾸려면 타임라인에서 자식 레이어를 고르세요.</value>
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:625 · RefreshSlice · "그룹 화면: 부위마다 캔버스의 초록 선을 끌어 바꿉니다. 숫자로 바꾸려면 타임라인에서 부위를 고르세요."</comment>
   </data>
   <data name="S_ToolOptionsPanel_RefreshSlice_6437D6774C" xml:space="preserve">
-    <value>대상: 부위 "{0}" ({1}×{2})</value>
+    <value>대상: 레이어 "{0}" ({1}×{2})</value>
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:627 · RefreshSlice · $"대상: 부위 \"{part.Name}\" ({part.PartSize.Width}×{part.PartSize.Height})"</comment>
   </data>
   <data name="S_ToolOptionsPanel_RefreshTransform_08535E328B" xml:space="preserve">
@@ -6416,8 +5958,8 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\ToolOptionsPanel.cs · 중심 기준 설명</comment>
   </data>
   <data name="CanvasResize_NineSlice" xml:space="preserve"><value>9-slice로 늘리기</value><comment>캔버스 크기 모드 체크 상자</comment></data>
-  <data name="CanvasResize_NineSliceTip" xml:space="preserve"><value>켜면(기본) 그림 크기를 바꿀 때(손잡이 끌기, 그림 가로/세로) 9-slice 테두리(초록 점선) 바깥의 모서리·가장자리는 그대로 두고 가운데만 늘이거나 줄입니다(Unity Image Type = Sliced). 끄면 그림 전체를 최근접으로 늘입니다. 손잡이 우클릭 끌기(여백)는 어느 쪽이든 캔버스 가장자리만 옮깁니다. 테두리는 그림 가장자리에서 같은 픽셀 수로 남고, 자기 테두리가 있는 부위는 그 테두리로 늘입니다.</value><comment>캔버스 크기 모드 9-slice 체크 상자 풍선</comment></data>
-  <data name="CanvasResize_NineSliceNone" xml:space="preserve"><value>9-slice 테두리가 없습니다. 9-slice 도구(S)로 프레임이나 부위의 테두리를 먼저 정하세요.</value><comment>캔버스 크기 모드 9-slice 체크 상자가 꺼졌을 때 풍선</comment></data>
+  <data name="CanvasResize_NineSliceTip" xml:space="preserve"><value>켜면(기본) 그림 크기를 바꿀 때(손잡이 끌기, 그림 가로/세로) 9-slice 테두리(초록 점선) 바깥의 모서리·가장자리는 그대로 두고 가운데만 늘이거나 줄입니다(Unity Image Type = Sliced). 끄면 그림 전체를 최근접으로 늘입니다. 손잡이 우클릭 끌기(여백)는 어느 쪽이든 캔버스 가장자리만 옮깁니다. 테두리는 그림 가장자리에서 같은 픽셀 수로 남고, 자기 테두리가 있는 레이어는 그 테두리로 늘입니다.</value><comment>캔버스 크기 모드 9-slice 체크 상자 풍선</comment></data>
+  <data name="CanvasResize_NineSliceNone" xml:space="preserve"><value>9-slice 테두리가 없습니다. 9-slice 도구(S)로 프레임이나 레이어의 테두리를 먼저 정하세요.</value><comment>캔버스 크기 모드 9-slice 체크 상자가 꺼졌을 때 풍선</comment></data>
   <data name="CanvasResize_FillStretch" xml:space="preserve"><value>늘이기</value><comment>9-slice 가운데 채우기: 늘이기</comment></data>
   <data name="CanvasResize_FillTile" xml:space="preserve"><value>되풀이</value><comment>9-slice 가운데 채우기: 되풀이</comment></data>
   <data name="CanvasResize_FillTip" xml:space="preserve"><value>가운데를 채우는 방법: 늘이기 = 최근접으로 늘이거나 줄임(Unity Sliced), 되풀이 = 원래 무늬를 크기 그대로 반복(Unity Tiled — 무늬가 있는 가운데에 알맞음).</value><comment>9-slice 가운데 채우기 목록 풍선</comment></data>
@@ -6482,7 +6024,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:283 · ToolOptionsPanel · "취소"</comment>
   </data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_BFD255FFEA" xml:space="preserve">
-    <value>지금 셀 하나만 바꿉니다(파란 상자). 캔버스: 안쪽 끌기 = 옮기기(1px 단위), 네모 손잡이 = 크기(Shift 비율 유지, Alt 가운데 기준, 반대쪽을 넘기면 뒤집기), Ctrl(⌘)+손잡이 = 자유 변형(모서리는 그 꼭짓점만, 변은 그 변 전체를 마음대로 — Alt면 맞은편이 반대로), 바깥 = 회전(Shift 15°), 가운데 표시 끌기 = 회전 중심(더블클릭 = 가운데로), 우클릭 = 180°·90° 회전과 뒤집기 메뉴, 안쪽 우클릭 끌기 = 그림만 옮기기(회전 중심과 피벗은 제자리), 바깥 우클릭 끌기 = 상자 가운데 기준 회전(회전 중심은 그림을 따라 돎), 손잡이 우클릭 끌기 = 여백(그림은 그대로 두고 상자만 — 좁히면 밖은 잘리고, 선택 영역은 넓히면 가장자리 픽셀로 늘림. Shift 비율 유지, Alt 가운데 기준, Ctrl 꼭짓점을 마음대로 — 그 모양 밖은 잘림). 방향키 = 1px 옮기기. 선택 영역이 없으면 그 프레임의 피벗도 그림을 따라가고, 부위는 그림이 영역 밖으로 나가면 영역을 넓힙니다.</value>
+    <value>지금 셀 하나만 바꿉니다(파란 상자). 캔버스: 안쪽 끌기 = 옮기기(1px 단위), 네모 손잡이 = 크기(Shift 비율 유지, Alt 가운데 기준, 반대쪽을 넘기면 뒤집기), Ctrl(⌘)+손잡이 = 자유 변형(모서리는 그 꼭짓점만, 변은 그 변 전체를 마음대로 — Alt면 맞은편이 반대로), 바깥 = 회전(Shift 15°), 가운데 표시 끌기 = 회전 중심(더블클릭 = 가운데로), 우클릭 = 180°·90° 회전과 뒤집기 메뉴, 안쪽 우클릭 끌기 = 그림만 옮기기(회전 중심과 피벗은 제자리), 바깥 우클릭 끌기 = 상자 가운데 기준 회전(회전 중심은 그림을 따라 돎), 손잡이 우클릭 끌기 = 여백(그림은 그대로 두고 상자만 — 좁히면 밖은 잘리고, 선택 영역은 넓히면 가장자리 픽셀로 늘림. Shift 비율 유지, Alt 가운데 기준, Ctrl 꼭짓점을 마음대로 — 그 모양 밖은 잘림). 방향키 = 1px 옮기기. 선택 영역이 없으면 그 프레임의 피벗도 그림을 따라가고, 자기 크기가 있는 레이어는 그림이 영역 밖으로 나가면 영역을 넓힙니다.</value>
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:284 · ToolOptionsPanel · "캔버스: 안쪽 끌기 = 옮기기(1px 단위), 네모 손잡이 = 크기(Shift 비율 유지, Alt 가운데 기준, 반대쪽을 넘기면 뒤집기), 바깥 = 회전(Shift 15°), 가운데 표시 끌기 = 회전 중심(더블클릭 = 가운데로). 방향키 = 1px 옮기기."</comment>
   </data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_C554693D22" xml:space="preserve">
@@ -6749,15 +6291,15 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:555 · BrowseFolder · "시트 이미지를 내보낼 폴더"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildCommonBlock_273B7FFE21" xml:space="preserve">
-    <value>공통 — 프레임 시트만(부위 아틀라스는 고급에서 따로 설정)</value>
+    <value>공통 — 프레임 시트만(레이어 아틀라스는 고급에서 따로 설정)</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:499 · BuildCommonBlock · "공통 — 프레임 시트만(부위 아틀라스는 고급에서 따로 설정)"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildCommonBlock_2AD6FF8A7C" xml:space="preserve">
-    <value>공통 — 프레임 시트·부위 아틀라스에 같이 적용</value>
+    <value>공통 — 프레임 시트·레이어 아틀라스에 같이 적용</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:498 · BuildCommonBlock · "공통 — 프레임 시트·부위 아틀라스에 같이 적용"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildCommonBlock_AB2884C1DF" xml:space="preserve">
-    <value>공통 — 부위 아틀라스</value>
+    <value>공통 — 레이어 아틀라스</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:500 · BuildCommonBlock · "공통 — 부위 아틀라스"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildCommonBlock_C139B30E27" xml:space="preserve">
@@ -6765,7 +6307,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:499 · BuildCommonBlock · "공통 — 프레임 시트"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildCommonBlock_D98FB679E2" xml:space="preserve">
-    <value>공통 — 지금은 쓰이지 않음(부위 아틀라스는 고급에서 따로 설정)</value>
+    <value>공통 — 지금은 쓰이지 않음(레이어 아틀라스는 고급에서 따로 설정)</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:501 · BuildCommonBlock · "공통 — 지금은 쓰이지 않음(부위 아틀라스는 고급에서 따로 설정)"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildCommonBlock_FE8EEAD4AB" xml:space="preserve">
@@ -6793,7 +6335,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:375 · BuildExportSections · "PNG(무손실·투명)"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_2816B7AEDB" xml:space="preserve">
-    <value>공통 시트 설정(스킨·배치·정렬·칸 수·따로 파일·칸 이름·간격·잘라내기·2의 거듭제곱)을 부위 아틀라스만 다르게 쓰려면 켭니다. </value>
+    <value>공통 시트 설정(스킨·배치·정렬·칸 수·따로 파일·칸 이름·간격·잘라내기·2의 거듭제곱)을 레이어 아틀라스만 다르게 쓰려면 켭니다. </value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:434 · BuildExportSections · "공통 시트 설정(스킨·배치·정렬·칸 수·따로 파일·칸 이름·간격·잘라내기·2의 거듭제곱)을 부위 아틀라스만 다르게 쓰려면 켭니다. "</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_28B6043259" xml:space="preserve">
@@ -6801,11 +6343,11 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:372 · BuildExportSections · "(프로젝트 폴더)"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_30370BD8DD" xml:space="preserve">
-    <value>부위 아틀라스만 따로 설정합니다(켜는 순간의 공통 설정을 복사해 시작 — 아래에 설정 칸이 한 벌 더 생김).</value>
+    <value>레이어 아틀라스만 따로 설정합니다(켜는 순간의 공통 설정을 복사해 시작 — 아래에 설정 칸이 한 벌 더 생김).</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:433 · BuildExportSections · "부위 아틀라스만 따로 설정합니다(켜는 순간의 공통 설정을 복사해 시작 — 아래에 설정 칸이 한 벌 더 생김)."</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_44908E5316" xml:space="preserve">
-    <value>부위 아틀라스 옆에 Unity 2D Animation 패키지의 Sprite Library Asset을 그룹 × 스킨마다 하나씩 씁니다: {부위 아틀라스}_{그룹}@{스킨}.spriteLib(+ .meta). </value>
+    <value>레이어 아틀라스 옆에 Unity 2D Animation 패키지의 Sprite Library Asset을 씁니다: 기본 {레이어 아틀라스}.spriteLib 하나와 스킨 프리셋마다 {레이어 아틀라스}@{프리셋}.spriteLib(+ .meta). </value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:419 · BuildExportSections · "부위 아틀라스 옆에 Unity 2D Animation 패키지의 Sprite Library Asset을 그룹 × 스킨마다 하나씩 씁니다: {부위 아틀라스}_{그룹}@{스킨}.spriteLib(+ .meta). "</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_46BC96CB04" xml:space="preserve">
@@ -6817,7 +6359,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:372 · BuildExportSections · "내보낼 폴더"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_543B1162BD" xml:space="preserve">
-    <value>자동 배치일 때: 가져온 PNG의 칸 안에 아직 들어가는 부위는 원래 자리에 두고, 새로 생겼거나 커진 것만 빈 곳에 배치합니다(부위마다 따로 파일이면 쓰지 않음).</value>
+    <value>자동 배치일 때: 가져온 PNG의 칸 안에 아직 들어가는 레이어는 원래 자리에 두고, 새로 생겼거나 커진 것만 빈 곳에 배치합니다(레이어마다 따로 파일이면 쓰지 않음).</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:415 · BuildExportSections · "자동 배치일 때: 가져온 PNG의 칸 안에 아직 들어가는 부위는 원래 자리에 두고, 새로 생겼거나 커진 것만 빈 곳에 배치합니다(부위마다 따로 파일이면 쓰지 않음)."</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_56D4255A96" xml:space="preserve">
@@ -6837,7 +6379,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:475 · BuildExportSections · "프레임 시트 내보내기 꺼짐"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_6C1F44F368" xml:space="preserve">
-    <value>같은 그룹의 라이브러리는 Category·Label이 같으므로 Sprite Resolver 키프레임은 그대로 두고 그룹의 Sprite Library 컴포넌트에 넣는 에셋만 바꾸면 스킨이 바뀝니다. </value>
+    <value>Sprite Resolver 키프레임은 그대로 두고 맨 위 오브젝트의 Sprite Library 컴포넌트에 넣는 에셋만 바꾸면 스킨이 바뀝니다. 레이어 하나만 따로 바꾸려면 그 레이어 오브젝트에 Sprite Library를 하나 더 둡니다. </value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:423 · BuildExportSections · "같은 그룹의 라이브러리는 Category·Label이 같으므로 Sprite Resolver 키프레임은 그대로 두고 그룹의 Sprite Library 컴포넌트에 넣는 에셋만 바꾸면 스킨이 바뀝니다. "</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_6D98D40F29" xml:space="preserve">
@@ -6845,7 +6387,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:388 · BuildExportSections · "폴더"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_7E8861FA23" xml:space="preserve">
-    <value>부위 아틀라스도 공통 시트 설정을 씁니다.</value>
+    <value>레이어 아틀라스도 공통 시트 설정을 씁니다.</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:432 · BuildExportSections · "부위 아틀라스도 공통 시트 설정을 씁니다."</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_801EC51603" xml:space="preserve">
@@ -6861,7 +6403,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:410 · BuildExportSections · "내보낼 이름"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_87AC546C92" xml:space="preserve">
-    <value>Category = 부위, Label = 프레임(프레임 번호 또는 {태그}_{번호}), 스프라이트 = 그 스킨의 부위 스프라이트(그 스킨이 그리지 않은 칸은 빈 항목). </value>
+    <value>Category = 레이어, Label = 프레임(프레임 번호 또는 {태그}_{번호}), 스프라이트 = 기본 라이브러리는 첫 스킨, 프리셋 라이브러리는 프리셋에 담긴 레이어만 그 스킨(그 스킨이 그리지 않은 칸은 빈 항목). </value>
     <comment>src/Chickxel.App\UnityExportDialog.cs · BuildExportSections · "Category = 부위, Label = 프레임(프레임 번호 또는 {태그}_{번호}), 스프라이트 = 그 스킨의 부위 스프라이트(그 스킨이 그리지 않은 칸은 빈 항목). "</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_8C3B4A4899" xml:space="preserve">
@@ -6869,7 +6411,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:452 · BuildExportSections · "(시트 이름_parts)"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_8C604F71D0" xml:space="preserve">
-    <value>스프라이트를 가리키려고 부위 아틀라스 .meta를 항상 씁니다(com.unity.2d.animation 패키지 필요).</value>
+    <value>스프라이트를 가리키려고 레이어 아틀라스 .meta를 항상 씁니다(com.unity.2d.animation 패키지 필요).</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:424 · BuildExportSections · "스프라이트를 가리키려고 부위 아틀라스 .meta를 항상 씁니다(com.unity.2d.animation 패키지 필요)."</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_8F1FF0667F" xml:space="preserve">
@@ -6881,11 +6423,11 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:415 · BuildExportSections · "원래 위치 유지"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_9119F759EB" xml:space="preserve">
-    <value>Category·Label이 다른 라이브러리와 같아 바꿔 끼우면 그 부위만 바뀝니다("기본 + 모자"). </value>
+    <value>모든 라이브러리의 Category·Label이 같아 바꿔 끼우면 그 프리셋에 담긴 레이어만 바뀝니다. </value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:422 · BuildExportSections · "Category·Label이 다른 라이브러리와 같아 바꿔 끼우면 그 부위만 바뀝니다(\"기본 + 모자\"). "</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_924DFE7AE7" xml:space="preserve">
-    <value>부위 아틀라스 이름</value>
+    <value>레이어 아틀라스 이름</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:452 · BuildExportSections · "부위 아틀라스 이름"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_987E11A4E7" xml:space="preserve">
@@ -6905,7 +6447,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:451 · BuildExportSections · "비우면 {프레임 시트 이름}_parts. 나누면 파일 이름 앞부분이 됩니다."</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_B3B5CB7352" xml:space="preserve">
-    <value>그룹 × 스킨마다 .spriteLib — 그룹의 Sprite Library 에셋만 바꿔 끼우면 키프레임 그대로 스킨이 바뀝니다(부위 아틀라스 .meta 항상 씀).</value>
+    <value>기본 + 스킨 프리셋마다 .spriteLib — Sprite Library 에셋만 바꿔 끼우면 키프레임 그대로 스킨이 바뀝니다(레이어 아틀라스 .meta 항상 씀).</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:425 · BuildExportSections · "그룹 × 스킨마다 .spriteLib — 그룹의 Sprite Library 에셋만 바꿔 끼우면 키프레임 그대로 스킨이 바뀝니다(부위 아틀라스 .meta 항상 씀)."</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_BCF7ED2A02" xml:space="preserve">
@@ -6917,15 +6459,15 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:409 · BuildExportSections · "이름"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_C0FA3B7B99" xml:space="preserve">
-    <value>부위 아틀라스 내보내기 꺼짐</value>
+    <value>레이어 아틀라스 내보내기 꺼짐</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:476 · BuildExportSections · "부위 아틀라스 내보내기 꺼짐"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_C5222F3E88" xml:space="preserve">
-    <value>이 파일은 부위 아틀라스가 따로 시트 설정을 씁니다 — 예전 파일이면 결과를 그대로 두려고 부위 아틀라스를 따로 두었습니다.</value>
+    <value>이 파일은 레이어 아틀라스가 따로 시트 설정을 씁니다 — 예전 파일이면 결과를 그대로 두려고 레이어 아틀라스를 따로 두었습니다.</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:440 · BuildExportSections · "이 파일은 부위 아틀라스가 따로 시트 설정을 씁니다 — 예전 파일이면 결과를 그대로 두려고 부위 아틀라스를 따로 두었습니다."</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_D05205E66E" xml:space="preserve">
-    <value>부위 아틀라스도 공통 시트 설정을 쓰게 합니다(부위 아틀라스 결과가 바뀔 수 있음, 실행취소 가능)</value>
+    <value>레이어 아틀라스도 공통 시트 설정을 쓰게 합니다(레이어 아틀라스 결과가 바뀔 수 있음, 실행취소 가능)</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:442 · BuildExportSections · "부위 아틀라스도 공통 시트 설정을 쓰게 합니다(부위 아틀라스 결과가 바뀔 수 있음, 실행취소 가능)"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_DB40109609" xml:space="preserve">
@@ -6933,7 +6475,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:468 · BuildExportSections · "저장하면 프로젝트 옆에 시트를 내보냅니다."</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_DC750ED123" xml:space="preserve">
-    <value> — 체크한 스킨만</value>
+    <value> — 체크한 스킨이 든 프리셋만</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:481 · BuildExportSections · " — 체크한 스킨만"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_E3C647CE07" xml:space="preserve">
@@ -6941,11 +6483,11 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:441 · BuildExportSections · "공통으로 맞추기"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_E5B4608A6B" xml:space="preserve">
-    <value>→ (부위가 있는 그룹·내보낼 스킨 없음)</value>
+    <value>→ (내보낼 레이어 아틀라스 레이어 없음)</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:479 · BuildExportSections · "→ (부위가 있는 그룹·내보낼 스킨 없음)"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_EF4A7BEB35" xml:space="preserve">
-    <value>"고른 스킨"이면 체크한 스킨만 .spriteLib을 씁니다. 부위 전용(개별) 스킨도 .spriteLib 하나({그룹}@{스킨}): 그 부위 Category만 그 스킨 스프라이트, 나머지 Category는 기본 스킨 스프라이트 — </value>
+    <value>"고른 스킨"이면 체크한 스킨이 든 프리셋만 .spriteLib을 씁니다. 이름이 같은 레이어는 Category 이름 뒤에 " 2" …를 붙입니다. </value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:421 · BuildExportSections · "\"고른 스킨\"이면 체크한 스킨만 .spriteLib을 씁니다. 부위 전용(개별) 스킨도 .spriteLib 하나({그룹}@{스킨}): 그 부위 Category만 그 스킨 스프라이트, 나머지 Category는 기본 스킨 스프라이트 — "</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_F059194EC7" xml:space="preserve">
@@ -6973,7 +6515,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:358 · BuildImportTab · "비스듬히 볼 때의 텍스처 품질(0~16). 밉맵이 있을 때 쓰입니다."</comment>
   </data>
   <data name="S_UnityExportDialog_BuildImportTab_1D025CB8E9" xml:space="preserve">
-    <value>프레임 시트·부위 아틀라스의 .meta에 쓰는 Unity Texture Importer 설정입니다(부위 아틀라스는 Sprite Mode가 항상 Multiple).</value>
+    <value>프레임 시트·레이어 아틀라스의 .meta에 쓰는 Unity Texture Importer 설정입니다(레이어 아틀라스는 Sprite Mode가 항상 Multiple).</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:333 · BuildImportTab · "프레임 시트·부위 아틀라스의 .meta에 쓰는 Unity Texture Importer 설정입니다(부위 아틀라스는 Sprite Mode가 항상 Multiple)."</comment>
   </data>
   <data name="S_UnityExportDialog_BuildImportTab_293AA29819" xml:space="preserve">
@@ -7017,7 +6559,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:308 · BuildImportTab · "밉맵"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildImportTab_97B943F75D" xml:space="preserve">
-    <value>Single = 이미지 전체가 스프라이트 1개, Multiple = 칸마다 스프라이트. 프레임 시트에만 적용(부위 아틀라스는 항상 Multiple).</value>
+    <value>Single = 이미지 전체가 스프라이트 1개, Multiple = 칸마다 스프라이트. 프레임 시트에만 적용(레이어 아틀라스는 항상 Multiple).</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:342 · BuildImportTab · "Single = 이미지 전체가 스프라이트 1개, Multiple = 칸마다 스프라이트. 프레임 시트에만 적용(부위 아틀라스는 항상 Multiple)."</comment>
   </data>
   <data name="S_UnityExportDialog_BuildImportTab_9DE48FB914" xml:space="preserve">
@@ -7105,11 +6647,11 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:716 · OrderRow · "자동 배치면 \"정렬 순서대로\" 넣을 때 씁니다."</comment>
   </data>
   <data name="S_UnityExportDialog_OrderRow_BE3BD0187B" xml:space="preserve">
-    <value>프레임 시트에는 부위 축이 없어 건너뜁니다. 격자면 줄 사이 "여기서 새 줄"을 골라 앞쪽 기준이 같은 칸끼리 한 줄로 묶고, </value>
+    <value>프레임 시트에는 레이어 축이 없어 건너뜁니다. 격자면 줄 사이 "여기서 새 줄"을 골라 앞쪽 기준이 같은 칸끼리 한 줄로 묶고, </value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:715 · OrderRow · "프레임 시트에는 부위 축이 없어 건너뜁니다. 격자면 줄 사이 \"여기서 새 줄\"을 골라 앞쪽 기준이 같은 칸끼리 한 줄로 묶고, "</comment>
   </data>
   <data name="S_UnityExportDialog_OutputChoice_08EC141D30" xml:space="preserve">
-    <value>부위 × 프레임마다 한 칸(부위별 스프라이트, 항상 Multiple)</value>
+    <value>레이어 × 프레임마다 한 칸(레이어별 스프라이트, 항상 Multiple)</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:518 · OutputChoice · "부위 × 프레임마다 한 칸(부위별 스프라이트, 항상 Multiple)"</comment>
   </data>
   <data name="S_UnityExportDialog_OutputChoice_593A305BCD" xml:space="preserve">
@@ -7121,7 +6663,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:510 · OutputChoice · "둘 다"</comment>
   </data>
   <data name="S_UnityExportDialog_OutputChoice_93F369B5AE" xml:space="preserve">
-    <value>부위 아틀라스</value>
+    <value>레이어 아틀라스</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:510 · OutputChoice · "부위 아틀라스"</comment>
   </data>
   <data name="S_UnityExportDialog_OutputChoice_AB62772949" xml:space="preserve">
@@ -7129,7 +6671,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:510 · OutputChoice · "내보낼 결과"</comment>
   </data>
   <data name="S_UnityExportDialog_OutputChoice_C4EC679FE3" xml:space="preserve">
-    <value>그룹·부위를 합성한 프레임마다 한 칸(애니메이션용)</value>
+    <value>레이어를 합성한 프레임마다 한 칸(애니메이션용)</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:517 · OutputChoice · "그룹·부위를 합성한 프레임마다 한 칸(애니메이션용)"</comment>
   </data>
   <data name="S_UnityExportDialog_OutputChoice_F37E64C73E" xml:space="preserve">
@@ -7145,7 +6687,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:701 · PickSkins · "내보낼 스킨 고르기"</comment>
   </data>
   <data name="S_UnityExportDialog_PickSkins_4F2869B2C4" xml:space="preserve">
-    <value>부위 아틀라스 스킨 고르기</value>
+    <value>레이어 아틀라스 스킨 고르기</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:701 · PickSkins · "부위 아틀라스 스킨 고르기"</comment>
   </data>
   <data name="S_UnityExportDialog_RebuildPreview_27C575FC02" xml:space="preserve">
@@ -7177,7 +6719,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:1158 · RebuildPreview · " (태그가 없어 한 장)"</comment>
   </data>
   <data name="S_UnityExportDialog_RebuildPreview_FFABCA970A" xml:space="preserve">
-    <value>{0}부위 아틀라스: {1}{2}</value>
+    <value>{0}레이어 아틀라스: {1}{2}</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:1167 · RebuildPreview · $"{_partsSection.Number}부위 아틀라스: {FileNames(partFiles, ext)}{Off(p.Export.ExportParts)}"</comment>
   </data>
   <data name="S_UnityExportDialog_Render_16815EEA0C" xml:space="preserve">
@@ -7197,7 +6739,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:665 · SheetRows · "칸 이름 규칙을 바꿨습니다 — Unity는 스프라이트를 이름으로 이어받으므로, 이미 쓰던 곳(프리팹·애니메이션 등)의 참조가 끊길 수 있습니다. "</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_1543B3F118" xml:space="preserve">
-    <value>지금 착장</value>
+    <value>지금 스킨</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:592 · SheetRows · "지금 착장"</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_1EF56C7D67" xml:space="preserve">
@@ -7205,7 +6747,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:630 · SheetRows · "칸"</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_20795363BC" xml:space="preserve">
-    <value>프레임 시트: 지금 착장 합성 한 벌. 부위 아틀라스: 부위마다 지금 보이는 스킨만.</value>
+    <value>프레임 시트: 지금 스킨 합성 한 벌. 레이어 아틀라스: 레이어마다 지금 스킨만.</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:593 · SheetRows · "프레임 시트: 지금 착장 합성 한 벌. 부위 아틀라스: 부위마다 지금 보이는 스킨만."</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_265CCB0B30" xml:space="preserve">
@@ -7229,11 +6771,11 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:614 · SheetRows · "따로 파일"</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_2FD0706089" xml:space="preserve">
-    <value>부위마다</value>
+    <value>레이어마다</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:654 · SheetRows · "부위마다"</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_30EC589AAC" xml:space="preserve">
-    <value>프레임 시트 {태그}_{태그 안 번호}, 부위 아틀라스 {부위}_{태그}_{번호}. 태그 없는 프레임은 프레임 번호 규칙.</value>
+    <value>프레임 시트 {태그}_{태그 안 번호}, 레이어 아틀라스 {레이어}_{태그}_{번호}. 태그 없는 프레임은 프레임 번호 규칙.</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:664 · SheetRows · "프레임 시트 {태그}_{태그 안 번호}, 부위 아틀라스 {부위}_{태그}_{번호}. 태그 없는 프레임은 프레임 번호 규칙."</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_39B41ACDA5" xml:space="preserve">
@@ -7277,11 +6819,11 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:626 · SheetRows · "시트가 정사각형에 가깝게(긴 변이 가장 작게 → 빈 칸이 적게 → 가로로 넓게)."</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_6080E49509" xml:space="preserve">
-    <value>프레임 시트 {시트}_{프레임}, 부위 아틀라스 {부위}(프레임 0)·{부위}_{프레임} — 프레임을 늘려도 이름이 그대로.</value>
+    <value>프레임 시트 {시트}_{프레임}, 레이어 아틀라스 {레이어}(프레임 0)·{레이어}_{프레임} — 프레임을 늘려도 이름이 그대로.</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:663 · SheetRows · "프레임 시트 {시트}_{프레임}, 부위 아틀라스 {부위}(프레임 0)·{부위}_{프레임} — 프레임을 늘려도 이름이 그대로."</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_62FC29D723" xml:space="preserve">
-    <value>한 이미지 대신 나눠 내보내기. 함께 켜면 겹쳐 나눕니다({시트}_{부위}_{태그}@{스킨}). 스킨은 위 "스킨 담기".</value>
+    <value>한 이미지 대신 나눠 내보내기. 함께 켜면 겹쳐 나눕니다({시트}_{레이어}_{태그}@{스킨}). 스킨은 위 "스킨 담기".</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:656 · SheetRows · "한 이미지 대신 나눠 내보내기. 함께 켜면 겹쳐 나눕니다({시트}_{부위}_{태그}@{스킨}). 스킨은 위 \"스킨 담기\"."</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_633C0A1A7E" xml:space="preserve">
@@ -7293,11 +6835,11 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:662 · SheetRows · "칸 이름 규칙"</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_6930EA0067" xml:space="preserve">
-    <value>부위 아틀라스 </value>
+    <value>레이어 아틀라스 </value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:589 · SheetRows · "부위 아틀라스 "</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_6FEB1E8831" xml:space="preserve">
-    <value>스킨·착장 프리셋·합성에 넣을 레이어 체크(확인하면 실행취소 1단계)</value>
+    <value>스킨·스킨 프리셋·합성에 넣을 레이어 체크(확인하면 실행취소 1단계)</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:598 · SheetRows · "스킨·착장 프리셋·합성에 넣을 레이어 체크(확인하면 실행취소 1단계)"</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_6FF563E16C" xml:space="preserve">
@@ -7317,7 +6859,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:634 · SheetRows · "px (0 = 자동)"</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_7899007C04" xml:space="preserve">
-    <value>체크한 스킨(과 착장 프리셋)마다: 프레임 시트는 그 그룹만 그 스킨으로 바꾼 합성 한 벌씩(나머지 그룹은 지금 착장), 부위 아틀라스는 체크한 스킨의 부위 스프라이트.</value>
+    <value>체크한 스킨(과 스킨 프리셋)마다: 프레임 시트는 그 레이어만 그 스킨으로 바꾼 합성 한 벌씩(나머지는 지금 스킨), 레이어 아틀라스는 체크한 스킨의 레이어 스프라이트.</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:596 · SheetRows · "체크한 스킨(과 착장 프리셋)마다: 프레임 시트는 그 그룹만 그 스킨으로 바꾼 합성 한 벌씩(나머지 그룹은 지금 착장), 부위 아틀라스는 체크한 스킨의 부위 스프라이트."</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_7C6D9F2388" xml:space="preserve">
@@ -7329,7 +6871,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:636 · SheetRows · "정렬 순서대로"</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_87AFE7E2DF" xml:space="preserve">
-    <value>부위 아틀라스만: 부위마다 {부위 아틀라스}_{부위} 이미지 하나(+ .meta). 칸 이름은 한 장일 때와 같습니다(원래 위치 유지는 쓰지 않음).</value>
+    <value>레이어 아틀라스만: 레이어마다 {레이어 아틀라스}_{레이어} 이미지 하나(+ .meta). 칸 이름은 한 장일 때와 같습니다(원래 위치 유지는 쓰지 않음).</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:655 · SheetRows · "부위 아틀라스만: 부위마다 {부위 아틀라스}_{부위} 이미지 하나(+ .meta). 칸 이름은 한 장일 때와 같습니다(원래 위치 유지는 쓰지 않음)."</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_8BCD5F0C5E" xml:space="preserve">
@@ -7397,7 +6939,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:592 · SheetRows · "내보낼 스킨"</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_D02E3A264C" xml:space="preserve">
-    <value>부위마다 따로 파일</value>
+    <value>레이어마다 따로 파일</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:654 · SheetRows · "부위마다 따로 파일"</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_D0C0CFBF0A" xml:space="preserve">
@@ -7449,7 +6991,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:613 · SheetRows · "고른 스킨 항목을 파일에 담는 방법."</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_F2F5553CF3" xml:space="preserve">
-    <value>체크한 스킨의 부위 스프라이트(첫 스킨이 아닌 스킨이 직접 그린 칸은 {이름}@{스킨}).</value>
+    <value>체크한 스킨의 레이어 스프라이트(첫 스킨이 아닌 스킨이 직접 그린 칸은 {이름}@{스킨}).</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:595 · SheetRows · "체크한 스킨의 부위 스프라이트(첫 스킨이 아닌 스킨이 직접 그린 칸은 {이름}@{스킨})."</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_F65F934352" xml:space="preserve">
@@ -7469,7 +7011,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:120 · UnityExportDialog · "끌어서 설정·미리보기 너비 바꾸기"</comment>
   </data>
   <data name="S_UnityExportDialog_UnityExportDialog_6A9E6CDC2F" xml:space="preserve">
-    <value>고급 — 부위 아틀라스만 다른 시트 설정</value>
+    <value>고급 — 레이어 아틀라스만 다른 시트 설정</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:90 · UnityExportDialog · "고급 — 부위 아틀라스만 다른 시트 설정"</comment>
   </data>
   <data name="S_UnityExportDialog_UnityExportDialog_73AC3FD6C5" xml:space="preserve">
@@ -7481,15 +7023,15 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:76 · UnityExportDialog · "설정 보기"</comment>
   </data>
   <data name="S_UnityExportDialog_UnityExportDialog_97F3AEFCEC" xml:space="preserve">
-    <value>부위 아틀라스는 따로 설정을 씁니다(고급 &gt; 시트별 다르게 — 공통 시트 설정은 프레임 시트만).</value>
+    <value>레이어 아틀라스는 따로 설정을 씁니다(고급 &gt; 시트별 다르게 — 공통 시트 설정은 프레임 시트만).</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:75 · UnityExportDialog · "부위 아틀라스는 따로 설정을 씁니다(고급 &gt; 시트별 다르게 — 공통 시트 설정은 프레임 시트만)."</comment>
   </data>
   <data name="S_UnityExportDialog_UnityExportDialog_A76A76E0B6" xml:space="preserve">
-    <value>왼쪽 고급 묶음의 부위 아틀라스 설정으로</value>
+    <value>왼쪽 고급 묶음의 레이어 아틀라스 설정으로</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:76 · UnityExportDialog · "왼쪽 고급 묶음의 부위 아틀라스 설정으로"</comment>
   </data>
   <data name="S_UnityExportDialog_UnityExportDialog_B18F4A0368" xml:space="preserve">
-    <value>부위 아틀라스 (부위 × 프레임마다 한 칸, 항상 Multiple)</value>
+    <value>레이어 아틀라스 (레이어 × 프레임마다 한 칸, 항상 Multiple)</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:89 · UnityExportDialog · "부위 아틀라스 (부위 × 프레임마다 한 칸, 항상 Multiple)"</comment>
   </data>
   <data name="S_UnityExportDialog_UnityExportDialog_C53EAC78FD" xml:space="preserve">
@@ -7949,7 +7491,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="EffectCanvasExpand_KeepCenter" xml:space="preserve"><value>중심 유지 확대</value></data>
   <data name="EffectCanvas_Title" xml:space="preserve"><value>효과에 맞춰 캔버스 늘리기</value></data>
   <data name="EffectCanvas_Apply" xml:space="preserve"><value>늘리기</value></data>
-  <data name="EffectCanvas_Intro" xml:space="preserve"><value>"{effect}" 효과의 결과(모든 프레임, 앞 효과 포함)가 캔버스 밖으로 나가지 않게 캔버스를 늘립니다. 그림 크기는 바꾸지 않고 모든 레이어·부위·피벗을 함께 옮깁니다(실행취소 한 단계).</value><comment>effect = 효과 이름</comment></data>
+  <data name="EffectCanvas_Intro" xml:space="preserve"><value>"{effect}" 효과의 결과(모든 프레임, 앞 효과 포함)가 캔버스 밖으로 나가지 않게 캔버스를 늘립니다. 그림 크기는 바꾸지 않고 모든 레이어·피벗을 함께 옮깁니다(실행취소 한 단계).</value><comment>effect = 효과 이름</comment></data>
   <data name="EffectCanvas_Mode" xml:space="preserve"><value>늘리는 방식</value></data>
   <data name="EffectCanvas_Menu" xml:space="preserve"><value>캔버스 늘리기…</value><comment>효과 줄 우클릭 메뉴·효과 칸 단추: 이 효과 결과에 맞춰 캔버스를 늘리는 작은 창</comment></data>
   <data name="EffectCanvas_MenuTip" xml:space="preserve"><value>이 효과 결과가 캔버스 밖으로 나가는 만큼 캔버스를 늘립니다(방식을 고르는 작은 창).</value></data>
@@ -8022,6 +7564,10 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="EffectPreset_LoadError" xml:space="preserve"><value>에셋 라이브러리를 읽지 못했습니다: {0}</value></data>
   <data name="EffectPreset_SaveError" xml:space="preserve"><value>바꾼 내용을 저장하지 못했습니다: {0}</value></data>
   <data name="EffectPreset_ApplyTarget" xml:space="preserve"><value>적용 대상</value></data>
+  <data name="LayerEffects_ScopeOwn" xml:space="preserve"><value>이 레이어만</value></data>
+  <data name="LayerEffects_ScopeOwnTip" xml:space="preserve"><value>이 레이어 자신의 그림에만 입힙니다(자식은 그대로). 레이어 아틀라스의 스프라이트에도 들어갑니다.</value></data>
+  <data name="LayerEffects_ScopeChildren" xml:space="preserve"><value>자식까지 합친 그림</value></data>
+  <data name="LayerEffects_ScopeChildrenTip" xml:space="preserve"><value>이 레이어와 자식들을 합친 그림에 입힙니다(프레임 시트에만 들어가고 영구 적용할 수 없음).</value></data>
   <data name="EffectPreset_ClipToPrevious" xml:space="preserve"><value>바로 위 효과에 클리핑</value></data>
   <data name="EffectPreset_ClipTip" xml:space="preserve"><value>앞의 비클리핑 효과만 그려졌다고 보고 이 효과를 그립니다: 그 효과가 그린 픽셀만 보고 만든 결과를 그림 위에 얹으며, 결과는 그 픽셀 밖으로도 번집니다. 이어진 클리핑 효과는 앞 클리핑 효과의 결과를 이어받습니다.</value></data>
   <data name="EffectPreset_ClipUnavailableTip" xml:space="preserve"><value>앞에 기준 효과가 있어야 합니다. 잔상은 클리핑 기준으로 사용할 수 없습니다.</value></data>
@@ -8087,10 +7633,10 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Chat_Help_GroupFrames_Text" xml:space="preserve"><value>프레임을 더하거나(복사 포함) 지우고, 프레임 시간과 애니메이션 태그를 정합니다. 여러 프레임의 셀을 링크로 묶거나 풀고 링크 색을 바꿉니다.</value></data>
   <data name="Chat_Help_GroupLayers" xml:space="preserve"><value>레이어</value></data>
   <data name="Chat_Help_GroupLayers_Text" xml:space="preserve"><value>레이어를 더하고 이름·보이기·불투명도·피벗을 바꾸며, 편집기에서 보는 프레임·레이어를 고릅니다.</value></data>
-  <data name="Chat_Help_GroupParts" xml:space="preserve"><value>그룹·부위</value></data>
-  <data name="Chat_Help_GroupParts_Text" xml:space="preserve"><value>캐릭터를 머리·몸·팔 같은 부위로 나누고, 부위의 위치·크기를 정합니다.</value></data>
-  <data name="Chat_Help_GroupSkins" xml:space="preserve"><value>스킨·의상</value></data>
-  <data name="Chat_Help_GroupSkins_Text" xml:space="preserve"><value>같은 부위의 다른 그림(옷 등)을 만들어 바꿔 입히고, 의상 프리셋을 저장·적용합니다.</value></data>
+  <data name="Chat_Help_GroupParts" xml:space="preserve"><value>레이어 나무</value></data>
+  <data name="Chat_Help_GroupParts_Text" xml:space="preserve"><value>빈 레이어와 자식 레이어를 만들어 캐릭터를 머리·몸·팔 같은 레이어로 나누고, 위치·크기·부모를 정합니다.</value></data>
+  <data name="Chat_Help_GroupSkins" xml:space="preserve"><value>스킨·스킨 프리셋</value></data>
+  <data name="Chat_Help_GroupSkins_Text" xml:space="preserve"><value>레이어마다 다른 그림(옷 등)을 만들어 바꾸고, 스킨 프리셋을 저장·적용합니다.</value></data>
   <data name="Chat_Help_GroupCanvas" xml:space="preserve"><value>캔버스·색</value></data>
   <data name="Chat_Help_GroupCanvas_Text" xml:space="preserve"><value>캔버스 크기와 캔버스(내보내기) 피벗·대표 레이어, 팔레트 색, 주·보조 색을 바꿉니다.</value></data>
   <data name="Chat_Help_GroupFiles" xml:space="preserve"><value>파일</value></data>
@@ -8105,8 +7651,8 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Chat_Help_Example2" xml:space="preserve"><value>외곽선을 지금보다 한 단계 더 어둡게 해 줘.</value></data>
   <data name="Chat_Help_Example3" xml:space="preserve"><value>이 캐릭터로 4프레임 걷기 애니메이션을 만들고 walk 태그를 달아 줘(프레임마다 120ms).</value></data>
   <data name="Chat_Help_Example4" xml:space="preserve"><value>지금 팔레트에 있는 색만 써서 다시 칠해 줘.</value></data>
-  <data name="Chat_Help_Example5" xml:space="preserve"><value>머리·몸·팔·다리를 부위로 나눈 캐릭터 그룹을 만들어 줘.</value></data>
-  <data name="Chat_Help_Example6" xml:space="preserve"><value>캐릭터 그룹에 winter 스킨을 더해서 겨울옷을 입혀 줘.</value></data>
+  <data name="Chat_Help_Example5" xml:space="preserve"><value>몸통 레이어 아래에 머리·팔·다리 레이어를 넣은 캐릭터를 만들어 줘.</value></data>
+  <data name="Chat_Help_Example6" xml:space="preserve"><value>캐릭터 몸통과 자식 레이어 모두에 winter 스킨을 더해서 겨울옷을 입혀 줘.</value></data>
   <data name="Chat_Help_Example7" xml:space="preserve"><value>빛이 왼쪽 위에서 오는 것처럼 명암을 두 단계 더해 줘.</value></data>
   <data name="Chat_Help_Example8" xml:space="preserve"><value>캔버스를 32×32로 늘리고 캐릭터를 가운데로 옮겨 줘.</value></data>
   <data name="Chat_Help_Example9" xml:space="preserve"><value>캐릭터에 1px 검은 외곽선을 넣고, 프레임 3~4에 흰 피격 번쩍임 효과를 넣어 줘.</value></data>
@@ -9090,6 +8636,8 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Preview_ScaleMenuTip" xml:space="preserve"><value>배율 목록(단추 우클릭과 같음)</value><comment>미리보기 배율 단추 옆 아래 화살표의 풍선.</comment></data>
   <data name="Preview_BackgroundTip" xml:space="preserve"><value>미리보기 배경: 누르면 다음 배경(체커 → 검정 → 흰색 → 회색 → 초록 → 사용자 색), 옆 화살표나 우클릭은 배경 목록</value><comment>미리보기 배경 단추 풍선.</comment></data>
   <data name="Preview_BackgroundMenuTip" xml:space="preserve"><value>배경 목록(단추 우클릭과 같음)</value><comment>미리보기 배경 단추 옆 아래 화살표의 풍선.</comment></data>
+  <data name="Preview_PresetPlaceholder" xml:space="preserve"><value>프리셋</value></data>
+  <data name="Preview_PresetTip" xml:space="preserve"><value>스킨 프리셋 입히기 — 프리셋에 담긴 레이어만 바뀝니다</value></data>
   <data name="EffectPreset_ReceivedTileTip" xml:space="preserve"><value>받은 프리셋입니다({0}). 효과 {1}개를 묶었습니다. 두 번 누르거나 효과 목록으로 끌어 넣습니다.</value></data>
   <data name="ScriptEffect_Name" xml:space="preserve"><value>스크립트 효과</value></data>
   <data name="ScriptEffect_Description" xml:space="preserve"><value>JavaScript로 직접 쓴 효과입니다. 원문은 프로젝트에 함께 저장됩니다.</value></data>
@@ -9618,7 +9166,7 @@ TOML(Codex CLI·ChatGPT 데스크톱 앱):
   <data name="GradientPencil_ResetTip" xml:space="preserve"><value>검정 → 흰색 그라데이션으로 되돌립니다.</value></data>
   <data name="GradientPencil_Info" xml:space="preserve"><value>연필처럼 그리되(브러시·픽셀 퍼펙트·대칭·선택 영역) 칠하는 픽셀의 색을 그라데이션에서 고릅니다. 스트로크 전체 = 획의 시작부터 끝까지 한 번, 반복 = 간격마다 다시. 불투명도 정지점도 연필 색처럼 그대로 칠합니다(투명하면 아래를 지움). 막대를 고치거나 우클릭·프리셋 단추로 프리셋을 고릅니다.</value></data>
   <data name="Mirror_AtPivot" xml:space="preserve"><value>피벗 기준</value><comment>대칭 그리기: 축을 피벗에</comment></data>
-  <data name="Mirror_AtPivotTip" xml:space="preserve"><value>대칭 축을 캔버스 가운데 대신 피벗(피벗 도구 K로 정함)을 지나는 선으로 둡니다. 부위를 고르면 그 부위의 피벗, 아니면 현재 프레임의 피벗을 씁니다.</value></data>
+  <data name="Mirror_AtPivotTip" xml:space="preserve"><value>대칭 축을 캔버스 가운데 대신 피벗(피벗 도구 K로 정함)을 지나는 선으로 둡니다. 자기 크기가 있는 레이어를 고르면 그 레이어의 피벗, 아니면 현재 프레임의 피벗을 씁니다.</value></data>
   <data name="Eraser_Group" xml:space="preserve"><value>지우기</value><comment>도구 설정: 지우개 강도·채널 묶음</comment></data>
   <data name="Eraser_Strength" xml:space="preserve"><value>강도</value></data>
   <data name="Eraser_StrengthTip" xml:space="preserve"><value>한 번 문지를 때 줄이는 정도입니다. 100%면 완전히 지우고, 낮으면 조금씩 투명해집니다. 한 획 안에서는 겹쳐 문질러도 한 번만 줄고, 손을 뗐다가 다시 문지르면 남은 값에서 또 줄어듭니다.</value></data>
@@ -9710,13 +9258,13 @@ TOML(Codex CLI·ChatGPT 데스크톱 앱):
   <data name="Timeline_UnlinkCels_Done" xml:space="preserve"><value>셀 {0}개의 링크를 풀었습니다. 이제 칸마다 따로 고칩니다.</value><comment>{0}=링크를 푼 셀 수</comment></data>
   <data name="Timeline_UnlinkCels_DoneBaked" xml:space="preserve"><value>셀 {0}개의 링크를 풀었습니다(효과 끝 모습 {1}개는 보이는 그대로 그림에 넣음).</value><comment>{0}=링크를 푼 셀 수, {1}=링크로 이어 가던 효과 끝 모습(끝 모습 이어 가기)을 지금 보이는 그대로 그림에 넣은 셀 수</comment></data>
   <data name="Timeline_ScatteredCelsCopy" xml:space="preserve"><value>Ctrl+클릭으로 고른 떨어진 칸은 복사할 수 없습니다. 끌어서 이어진 칸을 고르세요.</value><comment>떨어진 칸 묶음에서 Ctrl+C·X를 누를 때 상태 표시줄</comment></data>
-  <data name="LayerTransform_Group" xml:space="preserve"><value>그룹은 레이어 전체로 변형할 수 없습니다. 부위나 레이어를 고르세요.</value><comment>레이어 전체 변형(Alt+Shift+C)을 그룹에서 열려 할 때 상태 표시줄</comment></data>
+  <data name="LayerTransform_Group" xml:space="preserve"><value>자식을 배치하는 빈 레이어는 레이어 전체로 변형할 수 없습니다. 자식 레이어나 다른 레이어를 고르세요.</value><comment>레이어 전체 변형(Alt+Shift+C)을 그룹에서 열려 할 때 상태 표시줄</comment></data>
   <data name="LayerTransform_Locked" xml:space="preserve"><value>잠긴 레이어는 변형할 수 없습니다.</value></data>
   <data name="LayerTransform_Empty" xml:space="preserve"><value>이 레이어에는 어느 프레임에도 변형할 그림이 없습니다.</value></data>
   <data name="Transform_BoxTip" xml:space="preserve"><value>여백: 그림은 그대로 두고 상자 크기만 바꿉니다(왼쪽 위 고정). 좁히면 밖은 잘리고, 넓히면 선택 영역은 가장자리 픽셀로 늘고 아니면 빈 자리가 됩니다. 캔버스에서는 손잡이 우클릭 끌기.</value></data>
   <data name="Transform_FlipHorizontalTip" xml:space="preserve"><value>상자를 좌우로 뒤집습니다(적용할 때 바뀜).</value></data>
   <data name="Transform_FlipVerticalTip" xml:space="preserve"><value>상자를 상하로 뒤집습니다(적용할 때 바뀜).</value></data>
-  <data name="Transform_NineSliceTip" xml:space="preserve"><value>돌리지 않고 늘릴 때 부위의 9-slice 테두리는 그대로 두고 가운데만 늘립니다. 캔버스 크기 모드와 같은 설정입니다.</value></data>
+  <data name="Transform_NineSliceTip" xml:space="preserve"><value>돌리지 않고 늘릴 때 레이어의 9-slice 테두리는 그대로 두고 가운데만 늘립니다. 캔버스 크기 모드와 같은 설정입니다.</value></data>
   <data name="Transform_Rotate180" xml:space="preserve"><value>180° 회전</value><comment>변형 모드 캔버스 우클릭 메뉴: 회전 중심 기준</comment></data>
   <data name="Transform_RotateClockwise" xml:space="preserve"><value>시계 방향으로 90° 회전</value><comment>변형 모드 캔버스 우클릭 메뉴</comment></data>
   <data name="Transform_RotateCounterclockwise" xml:space="preserve"><value>시계 반대 방향으로 90° 회전</value><comment>변형 모드 캔버스 우클릭 메뉴</comment></data>
@@ -9729,11 +9277,11 @@ TOML(Codex CLI·ChatGPT 데스크톱 앱):
   <data name="Flip_DirHorizontal" xml:space="preserve"><value>좌우로</value></data>
   <data name="Flip_DirVertical" xml:space="preserve"><value>상하로</value></data>
   <data name="LayerColors_Title" xml:space="preserve"><value>레이어 색</value><comment>색 패널 맨 아래 머리글: 지금 고른 레이어에 쓰인 색</comment></data>
-  <data name="LayerColors_Tip" xml:space="preserve"><value>지금 고른 레이어의 모든 프레임에 쓰인 색입니다(많이 쓰인 순, 투명 제외 — 그룹이면 그 부위들, 부위면 보이는 스킨). 칸을 누르면 기본색, 오른쪽 클릭하면 보조색이 됩니다. 머리글을 누르면 접고 펼칩니다.</value><comment>"레이어 색" 머리글의 도움말</comment></data>
+  <data name="LayerColors_Tip" xml:space="preserve"><value>지금 고른 레이어의 모든 프레임에 쓰인 색입니다(많이 쓰인 순, 투명 제외 — 자식 레이어까지, 보이는 스킨). 칸을 누르면 기본색, 오른쪽 클릭하면 보조색이 됩니다. 머리글을 누르면 접고 펼칩니다.</value><comment>"레이어 색" 머리글의 도움말</comment></data>
   <data name="LayerColors_CountCapped" xml:space="preserve"><value>{0} / {1}</value><comment>레이어 색이 너무 많아 일부만 보일 때 개수: 0 = 보이는 색 수, 1 = 전체 색 수</comment></data>
   <data name="LayerTransform_PanelTitle" xml:space="preserve"><value>도구 설정 · 레이어 전체 변형</value></data>
   <data name="LayerTransform_GroupTitle" xml:space="preserve"><value>변형 · 레이어 전체</value></data>
-  <data name="LayerTransform_Info" xml:space="preserve"><value>지금 레이어의 모든 프레임(부위는 모든 스킨)을 함께 바꿉니다(주황 상자). 캔버스: 안쪽 끌기 = 옮기기, 네모 손잡이 = 크기(Shift 비율 유지, Alt 가운데 기준), Ctrl(⌘)+손잡이 = 자유 변형(모서리는 그 꼭짓점만, 변은 그 변 전체 — Alt면 맞은편이 반대로), 바깥 = 회전(Shift 15°, 프레임마다 그 프레임의 피벗을 중심으로), 가운데 표시 끌기 = 회전 중심, 우클릭 = 180°·90° 회전과 뒤집기 메뉴, 안쪽 우클릭 끌기 = 그림만 옮기기(회전 중심과 피벗은 제자리), 바깥 우클릭 끌기 = 상자 가운데 기준 회전(회전 중심은 그림을 따라 돎), 손잡이 우클릭 끌기 = 여백(그림은 그대로 두고 상자만 — 좁히면 밖은 잘림. Shift 비율 유지, Alt 가운데 기준, Ctrl 꼭짓점을 마음대로 — 그 모양 밖은 잘림). 선택 영역이 있으면 모든 프레임에서 그 자리만 바꾸고(여백을 넓히면 가장자리 픽셀로 늘림) 피벗은 그대로, 없으면 칠한 그림 전체를 바꾸고 피벗도 따라갑니다. 부위는 영역이 상자를 따라가고(돌리면 감싸는 크기), 돌리거나 자유 변형하면 9-slice 테두리가 지워집니다. 같은 레이어의 다른 프레임을 눌러도 이어지고 다른 레이어를 고르면 취소됩니다. 미리보기는 레이어 효과 없이 보입니다.</value><comment>도구 설정 레이어 전체 변형 묶음의 정보박스</comment></data>
+  <data name="LayerTransform_Info" xml:space="preserve"><value>지금 레이어의 모든 프레임(모든 스킨)을 함께 바꿉니다(주황 상자). 캔버스: 안쪽 끌기 = 옮기기, 네모 손잡이 = 크기(Shift 비율 유지, Alt 가운데 기준), Ctrl(⌘)+손잡이 = 자유 변형(모서리는 그 꼭짓점만, 변은 그 변 전체 — Alt면 맞은편이 반대로), 바깥 = 회전(Shift 15°, 프레임마다 그 프레임의 피벗을 중심으로), 가운데 표시 끌기 = 회전 중심, 우클릭 = 180°·90° 회전과 뒤집기 메뉴, 안쪽 우클릭 끌기 = 그림만 옮기기(회전 중심과 피벗은 제자리), 바깥 우클릭 끌기 = 상자 가운데 기준 회전(회전 중심은 그림을 따라 돎), 손잡이 우클릭 끌기 = 여백(그림은 그대로 두고 상자만 — 좁히면 밖은 잘림. Shift 비율 유지, Alt 가운데 기준, Ctrl 꼭짓점을 마음대로 — 그 모양 밖은 잘림). 선택 영역이 있으면 모든 프레임에서 그 자리만 바꾸고(여백을 넓히면 가장자리 픽셀로 늘림) 피벗은 그대로, 없으면 칠한 그림 전체를 바꾸고 피벗도 따라갑니다. 자기 크기가 있는 레이어는 영역이 상자를 따라가고(돌리면 감싸는 크기), 돌리거나 자유 변형하면 9-slice 테두리가 지워집니다. 같은 레이어의 다른 프레임을 눌러도 이어지고 다른 레이어를 고르면 취소됩니다. 미리보기는 레이어 효과 없이 보입니다.</value><comment>도구 설정 레이어 전체 변형 묶음의 정보박스</comment></data>
   <data name="LayerTransform_Undo" xml:space="preserve"><value>레이어 변형</value><comment>실행취소 이름: 레이어 전체(모든 프레임) 변형 적용</comment></data>
   <data name="LayerTransform_Shortcut" xml:space="preserve"><value>레이어 전체 변형(모든 프레임)</value><comment>단축키 목록 설명</comment></data>
   <data name="Fold_Collapse" xml:space="preserve"><value>접기</value><comment>묶음 상자 제목 줄의 접기 화살표 풍선</comment></data>
@@ -9741,12 +9289,15 @@ TOML(Codex CLI·ChatGPT 데스크톱 앱):
   <data name="EffectDock_Header" xml:space="preserve"><value>효과</value><comment>도구 설정 아래 효과 설정 패널의 제목 줄(누르면 접고 폄). 그 아래 묶음 상자 제목은 타임라인에서 고른 효과 이름.</comment></data>
   <data name="EffectDock_Open" xml:space="preserve"><value>효과 창에서 열기…</value><comment>도구 설정 효과 묶음 단추: 그 효과를 고른 채 효과 창을 연다</comment></data>
   <data name="EffectDock_OpenTip" xml:space="preserve"><value>프레임 범위·클리핑·스크립트 편집·영구 적용 같은 나머지 설정은 효과 창에서 고칩니다. 타임라인의 효과 줄을 두 번 눌러도 열립니다.</value></data>
-  <data name="Timeline_NestHint" xml:space="preserve"><value>끄는 중에 Shift를 누르면 그룹에 넣거나 그룹에서 꺼냅니다(다른 그룹 줄 위 = 넣기, 그룹 밖 줄 위 = 꺼내기).</value><comment>타임라인에서 레이어를 끌기 시작할 때 상태 표시줄 안내(그룹이 있을 때만)</comment></data>
-  <data name="Timeline_NestLosesSkinsTitle" xml:space="preserve"><value>다른 스킨 그림이 없어집니다</value></data>
-  <data name="Timeline_NestLosesSkins" xml:space="preserve"><value>{0}은(는) 지금 보이는 스킨 그림만 가져가고, 다른 스킨 그림과 부위 전용 스킨은 없어집니다(실행취소로 되돌릴 수 있음). 계속할까요?</value><comment>0 = 그룹에서 꺼내거나 다른 그룹으로 옮기는 부위 이름들(쉼표로 이음).</comment></data>
-  <data name="Timeline_AddSkinToLayer" xml:space="preserve"><value>스킨 추가 (그룹으로 바꿈)</value><comment>일반 레이어 우클릭 메뉴: 레이어를 같은 이름 그룹의 부위로 넣고 스킨을 더함</comment></data>
-  <data name="Timeline_AddSkinToLayer_Copy" xml:space="preserve"><value>지금 그림 복제</value><comment>'스킨 추가' 하위 항목: 지금 그림을 복제한 새 스킨</comment></data>
-  <data name="Timeline_AddSkinToLayer_Done" xml:space="preserve"><value>'{0}'을(를) 그룹 '{1}'의 부위로 넣고 스킨 '{2}'를 더했습니다. 지금 그림은 스킨 '{3}'에 있습니다.</value><comment>{0}=레이어 이름, {1}=새 그룹 이름, {2}=새 스킨 이름, {3}=첫 스킨 이름</comment></data>
+  <data name="Timeline_NestHint" xml:space="preserve"><value>끌면 같은 부모 안에서 순서만 바꿈 · Shift를 누르고 놓으면 그 레이어의 자식으로 · 왼쪽으로 끌면 부모 밖으로</value><comment>타임라인에서 레이어를 끌기 시작할 때 상태 표시줄 안내</comment></data>
+  <data name="Timeline_MoveOutOfParent" xml:space="preserve"><value>부모에서 꺼내기</value><comment>레이어 우클릭 메뉴: 한 단계 바깥으로(부모 바로 위)</comment></data>
+  <data name="Timeline_TilemapNoChildren" xml:space="preserve"><value>타일맵 레이어에는 자식 레이어를 넣을 수 없습니다.</value></data>
+  <data name="Timeline_AddSkinToLayer" xml:space="preserve"><value>스킨 추가</value><comment>레이어 우클릭 하위 메뉴·이름 입력 창 제목</comment></data>
+  <data name="Timeline_AddSkinToLayer_Copy" xml:space="preserve"><value>지금 그림 복제…</value><comment>'스킨 추가' 하위 항목: 지금 스킨 그림을 복제한 새 스킨</comment></data>
+  <data name="Timeline_AddSkinToSubtree" xml:space="preserve"><value>자식까지…</value><comment>'스킨 추가' 하위 항목(자식이 있을 때): 그 레이어와 자손 모두에 같은 이름 스킨 + 같은 이름 스킨 프리셋</comment></data>
+  <data name="Timeline_AddSkin_Prompt" xml:space="preserve"><value>'{0}'에 더할 스킨 이름:</value><comment>{0}=레이어 이름</comment></data>
+  <data name="Timeline_AddSkinToSubtree_Prompt" xml:space="preserve"><value>'{0}'와(과) 모든 자손 레이어에 더할 스킨 이름(같은 이름의 스킨 프리셋도 만듭니다):</value><comment>{0}=레이어 이름</comment></data>
+  <data name="Timeline_AddSkinToSubtree_Done" xml:space="preserve"><value>'{0}'와(과) 자손 레이어 {1}개에 스킨 '{2}'를 더하고 스킨 프리셋 '{3}'(으)로 등록했습니다.</value><comment>{0}=레이어 이름, {1}=자손 수, {2}=새 스킨 이름, {3}=프리셋 이름</comment></data>
   <data name="Publish_PivotMoveTag" xml:space="preserve"><value>그림을 옮긴 거리를 알리는(ctx.movePivot) 효과라 pivot-move 태그가 꼭 붙습니다(뺄 수 없고 8개에 셉니다).</value></data>
   <data name="Help_SelectTarget" xml:space="preserve"><value>화면에서 도움말 선택</value></data>
   <data name="Help_SelectHint" xml:space="preserve"><value>도움말을 볼 곳을 클릭하세요. Esc·F1·오른쪽 클릭으로 취소합니다.</value></data>
@@ -9799,7 +9350,6 @@ HSV 명도: 예전 방식. 명도를 더하고 빼며, 가장 밝으면 채도�
   <data name="FileInfo_Canvas" xml:space="preserve"><value>캔버스 크기</value><comment>.chickxel 프로젝트의 가로×세로.</comment></data>
   <data name="FileInfo_Frames" xml:space="preserve"><value>프레임 수</value></data>
   <data name="FileInfo_Layers" xml:space="preserve"><value>레이어 수</value><comment>일반 레이어 + 그룹(부위 제외).</comment></data>
-  <data name="FileInfo_Parts" xml:space="preserve"><value>부위 수</value></data>
   <data name="FileInfo_Duration" xml:space="preserve"><value>길이</value><comment>영상 재생 시간.</comment></data>
   <data name="FileInfo_FrameRate" xml:space="preserve"><value>초당 프레임</value></data>
   <data name="FileInfo_Contents" xml:space="preserve"><value>들어 있는 항목</value><comment>폴더 바로 안의 파일·폴더 수.</comment></data>
@@ -9947,7 +9497,7 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="FrameRange_SpanOne" xml:space="preserve"><value>프레임 {0}에만 적용</value><comment>0 = 프레임 번호(1부터).</comment></data>
   <data name="FrameRange_Applied" xml:space="preserve"><value>다른 프레임 {0}개에도 같은 자리로 적용했습니다 — Ctrl+Z 한 번으로 모두 되돌립니다.</value><comment>0 = 함께 고친 프레임 수.</comment></data>
   <data name="LayerRange_Group" xml:space="preserve"><value>적용 레이어</value></data>
-  <data name="LayerRange_Info" xml:space="preserve"><value>지우개 획을 현재 레이어에 그린 뒤 같은 프레임의 다른 레이어에도 같은 자리로 적용합니다. 적용 프레임을 함께 고르면 각 대상 레이어의 대상 프레임에도 적용합니다. 위아래는 레이어 쌓임 순서이며, 선택 레이어는 타임라인의 레이어 이름 칸에서 선택합니다(선택이 없으면 현재 레이어만). 잠긴 레이어·그룹·타일맵은 건너뛰고 한 번의 실행취소로 되돌립니다. 앱을 켜면 현재 레이어만으로 시작합니다.</value></data>
+  <data name="LayerRange_Info" xml:space="preserve"><value>지우개 획을 현재 레이어에 그린 뒤 같은 프레임의 다른 레이어에도 같은 자리로 적용합니다. 적용 프레임을 함께 고르면 각 대상 레이어의 대상 프레임에도 적용합니다. 위아래는 레이어 쌓임 순서이며, 선택 레이어는 타임라인의 레이어 이름 칸에서 선택합니다(선택이 없으면 현재 레이어만). 잠긴 레이어·자식을 배치하는 빈 레이어·타일맵은 건너뛰고 한 번의 실행취소로 되돌립니다. 앱을 켜면 현재 레이어만으로 시작합니다.</value></data>
   <data name="LayerRange_Tip" xml:space="preserve"><value>지우개 획을 함께 적용할 레이어 범위</value></data>
   <data name="LayerRange_Current" xml:space="preserve"><value>현재 레이어만</value></data>
   <data name="LayerRange_Above" xml:space="preserve"><value>위 레이어 N개까지</value></data>
@@ -9960,7 +9510,7 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="LayerRange_AboveCount" xml:space="preserve"><value>위</value></data>
   <data name="LayerRange_BelowCount" xml:space="preserve"><value>아래</value></data>
   <data name="LayerRange_Unit" xml:space="preserve"><value>레이어</value></data>
-  <data name="LayerRange_Span" xml:space="preserve"><value>범위에 레이어 {0}개 (잠긴 레이어·그룹·타일맵은 건너뜀)</value></data>
+  <data name="LayerRange_Span" xml:space="preserve"><value>범위에 레이어 {0}개 (잠긴 레이어·자식을 배치하는 빈 레이어·타일맵은 건너뜀)</value></data>
   <data name="LayerRange_SpanSelected" xml:space="preserve"><value>현재 레이어와 타임라인에서 선택한 레이어에 적용</value></data>
   <data name="StrokeRange_Applied" xml:space="preserve"><value>다른 셀 {0}개에도 같은 자리로 적용했습니다. Ctrl+Z 한 번으로 모두 되돌립니다.</value></data>
   <data name="EffectCanvas_Staged" xml:space="preserve"><value>확인하면 {0}×{1} → {2}×{3}</value><comment>효과 창 '캔버스 늘리기…' 옆: 정해 둔 확대(확인할 때 효과와 함께 늘림). 0·1 = 지금 캔버스 크기, 2·3 = 늘린 크기.</comment></data>
@@ -10187,7 +9737,7 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="Tile_ToolUnavailable" xml:space="preserve"><value>타일맵 레이어에서는 {0} 도구를 쓸 수 없습니다.</value></data>
   <data name="Tile_StampTurned" xml:space="preserve"><value>타일 붓을 뒤집거나 돌렸습니다.</value></data>
   <data name="Tile_LayerAdded" xml:space="preserve"><value>타일맵 레이어를 만들었습니다. 타일셋 패널에서 타일을 고르고 찍으세요(타일셋은 타일셋 제목을 눌러 바꿉니다).</value></data>
-  <data name="Tile_Converted" xml:space="preserve"><value>타일맵을 그룹(층마다 부위)으로 바꿨습니다.</value></data>
+  <data name="Tile_Converted" xml:space="preserve"><value>타일맵을 레이어(빈 레이어 아래 층마다 레이어)로 바꿨습니다.</value></data>
   <data name="Tile_MenuAddLayer" xml:space="preserve"><value>새 타일맵 레이어</value></data>
   <data name="Tile_MenuConvert" xml:space="preserve"><value>타일맵을 레이어로 변환</value></data>
   <data name="Tileset_Rename" xml:space="preserve"><value>이름 바꾸기</value></data>
@@ -10312,9 +9862,9 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="Export_FormatFrames" xml:space="preserve"><value>프레임마다 PNG(폴더로)</value></data>
   <data name="Export_BgKeepAlpha" xml:space="preserve"><value>투명(알파 그대로)</value><comment>내보내기 창 배경 묶음(APNG·프레임 PNG)</comment></data>
   <data name="Export_ApngInfo" xml:space="preserve"><value>결과: {width}×{height}px · 프레임 {count}개 · {seconds}초
-프레임 시트와 같은 합성(레이어 효과·지금 착장, 숨긴·내보내기에서 뺀 레이어 제외). 색 수 제한 없이 반투명도 그대로 씁니다.</value><comment>width·height = 결과 크기, count = 프레임 수, seconds = 전체 길이(초)</comment></data>
+프레임 시트와 같은 합성(레이어 효과·지금 스킨, 숨긴·내보내기에서 뺀 레이어 제외). 색 수 제한 없이 반투명도 그대로 씁니다.</value><comment>width·height = 결과 크기, count = 프레임 수, seconds = 전체 길이(초)</comment></data>
   <data name="Export_FramesInfo" xml:space="preserve"><value>결과: {width}×{height}px PNG {count}개({first} …)
-프레임 시트와 같은 합성(레이어 효과·지금 착장, 숨긴·내보내기에서 뺀 레이어 제외). 재생 순서(태그 방향 그대로)로 1부터 번호를 붙입니다.</value><comment>width·height = 결과 크기, count = 파일 수, first = 첫 파일 이름</comment></data>
+프레임 시트와 같은 합성(레이어 효과·지금 스킨, 숨긴·내보내기에서 뺀 레이어 제외). 재생 순서(태그 방향 그대로)로 1부터 번호를 붙입니다.</value><comment>width·height = 결과 크기, count = 파일 수, first = 첫 파일 이름</comment></data>
   <data name="Export_ApngDone" xml:space="preserve"><value>APNG 내보내기: {file} ({width}×{height}, 프레임 {count}개, {seconds}초, {loops}, {size})</value><comment>상태 표시줄. loops = "무한 반복"/"N번 재생", size = 파일 크기</comment></data>
   <data name="Export_FramesDone" xml:space="preserve"><value>프레임 PNG 내보내기: {folder} (파일 {count}개, {width}×{height}, {size})</value><comment>상태 표시줄. size = 파일 크기 합</comment></data>
   <data name="Export_FramesSaved" xml:space="preserve"><value>저장함: {folder}
@@ -10335,10 +9885,10 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="AiTools_ToolList" xml:space="preserve"><value>도구: {tools}</value><comment>tools = 쉼표로 이은 MCP 도구 이름.</comment></data>
   <data name="AiTools_Frames" xml:space="preserve"><value>프레임·태그·셀 연결</value></data>
   <data name="AiTools_Frames_Tip" xml:space="preserve"><value>프레임 넣기·지우기·길이, 애니메이션 태그, 셀 연결을 바꿉니다.</value></data>
-  <data name="AiTools_Layers" xml:space="preserve"><value>레이어·그룹·부위</value></data>
-  <data name="AiTools_Layers_Tip" xml:space="preserve"><value>레이어를 더하거나 이름·보이기·불투명도·피벗을 바꾸고, 캐릭터 부위 그룹을 만듭니다.</value></data>
-  <data name="AiTools_Skins" xml:space="preserve"><value>스킨·의상</value></data>
-  <data name="AiTools_Skins_Tip" xml:space="preserve"><value>그룹의 스킨(옷)과 의상 프리셋을 보고 만들고 바꿉니다.</value></data>
+  <data name="AiTools_Layers" xml:space="preserve"><value>레이어</value></data>
+  <data name="AiTools_Layers_Tip" xml:space="preserve"><value>레이어를 더하거나 이름·보이기·불투명도·피벗을 바꾸고, 빈 레이어와 자식 레이어를 만들어 옮깁니다.</value></data>
+  <data name="AiTools_Skins" xml:space="preserve"><value>스킨·스킨 프리셋</value></data>
+  <data name="AiTools_Skins_Tip" xml:space="preserve"><value>레이어의 스킨(옷 등)과 스킨 프리셋을 보고 만들고 바꿉니다.</value></data>
   <data name="AiTools_Effects" xml:space="preserve"><value>레이어 효과 사용</value></data>
   <data name="AiTools_Effects_Tip" xml:space="preserve"><value>외곽선·그림자·빛남·흔들림 같은 레이어 효과를 넣고 고치고 지우고 굽습니다. 끄면 AI가 효과 대신 픽셀로만 그립니다.</value></data>
   <data name="AiTools_ScriptEffects" xml:space="preserve"><value>스크립트 효과 만들기</value></data>
@@ -10405,27 +9955,27 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
 
 {steps}</value><comment>product = CLI 이름, steps = 실행할 명령.</comment></data>
   <data name="CanvasResize_Fit" xml:space="preserve"><value>모든 그림에 맞추기</value></data>
-  <data name="CanvasResize_FitTip" xml:space="preserve"><value>모든 레이어·프레임의 그림(캔버스 밖 그림과 부위 영역 포함, 숨긴 레이어도)을 다 담는 가장 작은 캔버스로 맞춥니다. 그림은 늘이지 않고 자리만 옮기며, 확인을 눌러야 적용됩니다.</value></data>
+  <data name="CanvasResize_FitTip" xml:space="preserve"><value>모든 레이어·프레임의 그림(캔버스 밖 그림과 레이어 영역 포함, 숨긴 레이어도)을 다 담는 가장 작은 캔버스로 맞춥니다. 그림은 늘이지 않고 자리만 옮기며, 확인을 눌러야 적용됩니다.</value></data>
   <data name="CanvasResize_FitEmpty" xml:space="preserve"><value>맞출 그림이 없습니다.</value></data>
   <data name="CanvasResize_Fitted" xml:space="preserve"><value>모든 그림에 맞춘 캔버스: {width}×{height} — 확인을 누르면 적용됩니다.</value><comment>width·height = 새 캔버스 크기.</comment></data>
   <data name="FocusLayer_Bar" xml:space="preserve"><value>강조</value></data>
-  <data name="FocusLayer_Tip" xml:space="preserve"><value>다른 레이어 흐리게(`): 지금 레이어(그룹이면 그 부위들까지)만 또렷이 보이고 다른 레이어는 흐리게 보입니다. 화면에만 적용되고 그림·내보내기는 그대로입니다. 우클릭이나 옆 삼각형으로 흐린 정도를 고릅니다.</value></data>
+  <data name="FocusLayer_Tip" xml:space="preserve"><value>다른 레이어 흐리게(`): 지금 레이어(자식을 배치하는 빈 레이어면 그 자식들까지)만 또렷이 보이고 다른 레이어는 흐리게 보입니다. 화면에만 적용되고 그림·내보내기는 그대로입니다. 우클릭이나 옆 삼각형으로 흐린 정도를 고릅니다.</value></data>
   <data name="FocusLayer_Menu" xml:space="preserve"><value>다른 레이어 흐리게</value></data>
   <data name="FocusLayer_Opacity" xml:space="preserve"><value>다른 레이어 불투명도</value></data>
-  <data name="PartCycle_Selected" xml:space="preserve"><value>아래 부위 "{name}"을(를) 골랐습니다 — 같은 자리를 다시 누르면 그 아래 부위로 넘어갑니다.</value><comment>name = 부위 이름.</comment></data>
-  <data name="CanvasResize_PartTitle" xml:space="preserve"><value>부위 크기</value></data>
-  <data name="CanvasResize_PartBegin" xml:space="preserve"><value>부위 크기: 손잡이나 숫자로 이 부위의 칸 크기와 그림 자리·크기를 바꾸고 Enter·확인으로 적용합니다(모든 프레임·스킨). Esc는 취소.</value></data>
-  <data name="CanvasResize_PartNoFlip" xml:space="preserve"><value>부위 크기를 바꾸는 중에는 뒤집을 수 없습니다. 레이어 크기(Alt+Shift+C)에서 뒤집으세요.</value></data>
-  <data name="CanvasResize_PartResized" xml:space="preserve"><value>부위 "{name}" 크기: {width}×{height}</value><comment>name = 부위 이름, width·height = 새 크기.</comment></data>
+  <data name="PartCycle_Selected" xml:space="preserve"><value>아래 레이어 "{name}"을(를) 골랐습니다 — 같은 자리를 다시 누르면 그 아래 레이어로 넘어갑니다.</value><comment>name = 부위 이름.</comment></data>
+  <data name="CanvasResize_PartTitle" xml:space="preserve"><value>레이어 크기</value></data>
+  <data name="CanvasResize_PartBegin" xml:space="preserve"><value>레이어 크기: 손잡이나 숫자로 이 레이어의 칸 크기와 그림 자리·크기를 바꾸고 Enter·확인으로 적용합니다(모든 프레임·스킨). Esc는 취소.</value></data>
+  <data name="CanvasResize_PartNoFlip" xml:space="preserve"><value>레이어 크기를 바꾸는 중에는 뒤집을 수 없습니다. 레이어 크기(Alt+Shift+C)에서 뒤집으세요.</value></data>
+  <data name="CanvasResize_PartResized" xml:space="preserve"><value>레이어 "{name}" 크기: {width}×{height}</value><comment>name = 부위 이름, width·height = 새 크기.</comment></data>
   <data name="Timeline_NewMenu" xml:space="preserve"><value>새로 만들기</value></data>
   <data name="LayerOpacity_Label" xml:space="preserve"><value>불투명도</value></data>
   <data name="LayerOpacity_PercentTip" xml:space="preserve"><value>퍼센트(0~100%)로 보고 입력합니다.</value></data>
   <data name="LayerOpacity_ByteTip" xml:space="preserve"><value>0~255 값으로 보고 입력합니다(255 = 불투명).</value></data>
-  <data name="Export_UnityPrefab" xml:space="preserve"><value>프리팹(부위 배치)</value></data>
-  <data name="Export_UnityPrefabTip" xml:space="preserve"><value>프레임 시트 이름의 프리팹(.prefab)을 같이 씁니다. 부위가 있으면 그룹마다 빈 오브젝트 아래 부위마다 SpriteRenderer를 두고 부위 아틀라스 스프라이트·자리·그리는 순서를 맞춥니다(맨 위 오브젝트 자리 = 캔버스 피벗). 부위가 없으면 프레임 시트 스프라이트 하나입니다. 그룹 효과와 일반 레이어는 들어가지 않습니다. 내보낼 때마다 다시 쓰므로 Unity에서 덧붙일 것은 프리팹 변형(Prefab Variant)에 하세요.</value></data>
+  <data name="Export_UnityPrefab" xml:space="preserve"><value>프리팹(레이어 배치)</value></data>
+  <data name="Export_UnityPrefabTip" xml:space="preserve"><value>프레임 시트 이름의 프리팹(.prefab)을 같이 씁니다. 레이어 아틀라스가 있으면 레이어 나무 그대로 오브젝트를 중첩하고(빈 레이어는 빈 오브젝트) 아틀라스 레이어마다 SpriteRenderer를 두어 스프라이트·자리·그리는 순서를 맞춥니다(맨 위 오브젝트 자리 = 캔버스 피벗). 없으면 프레임 시트 스프라이트 하나입니다. 자식까지 합친 그림에 거는 효과와 맨 위 일반 레이어는 들어가지 않습니다. 내보낼 때마다 다시 쓰므로 Unity에서 덧붙일 것은 프리팹 변형(Prefab Variant)에 하세요.</value></data>
   <data name="Export_UnityAnimations" xml:space="preserve"><value>애니메이션(클립·Animator)</value></data>
-  <data name="Export_UnityAnimationsTip" xml:space="preserve"><value>태그마다 애니메이션 클립(시트 이름_태그.anim, 태그가 없으면 시트 이름.anim 하나)과 그 클립들을 상태로 담은 Animator Controller(시트 이름.controller)를 씁니다. 프레임마다 스프라이트와 부위 자리가 바뀌고 프레임 길이·재생 방향·반복은 태그를 따릅니다. 프리팹도 쓰면 맨 위 오브젝트에 이 Animator가 붙습니다.</value></data>
-  <data name="Export_UnityAssetsNone" xml:space="preserve"><value>프레임 시트나 부위 아틀라스를 내보내야 만들어집니다.</value></data>
+  <data name="Export_UnityAnimationsTip" xml:space="preserve"><value>태그마다 애니메이션 클립(시트 이름_태그.anim, 태그가 없으면 시트 이름.anim 하나)과 그 클립들을 상태로 담은 Animator Controller(시트 이름.controller)를 씁니다. 프레임마다 스프라이트와 레이어 자리가 바뀌고 프레임 길이·재생 방향·반복은 태그를 따릅니다. 프리팹도 쓰면 맨 위 오브젝트에 이 Animator가 붙습니다.</value></data>
+  <data name="Export_UnityAssetsNone" xml:space="preserve"><value>프레임 시트나 레이어 아틀라스를 내보내야 만들어집니다.</value></data>
   <data name="FileInfo_ExportLeftovers" xml:space="preserve"><value>지난번에 내보냈지만 지금 설정으로는 만들지 않는 파일</value></data>
   <data name="FileInfo_ExportNotYet" xml:space="preserve"><value>없음 — 저장하면 만들어짐</value></data>
   <data name="FileInfo_ExportReveal" xml:space="preserve"><value>파일 위치 보기</value></data>
@@ -10462,9 +10012,9 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="Export_EngineNone" xml:space="preserve"><value>없음(이미지만)</value></data>
   <data name="Export_EngineNoneTip" xml:space="preserve"><value>이미지만 씁니다. 엔진 파일(.meta 등)은 쓰지 않습니다.</value></data>
   <data name="Export_EngineUnity" xml:space="preserve"><value>Unity(.meta)</value></data>
-  <data name="Export_EngineUnityTip" xml:space="preserve"><value>이미지 옆에 Unity 스프라이트 설정(.meta)을 씁니다. 항목은 아래 Unity Import Settings 묶음에 있습니다. 프리팹·애니메이션과 부위 아틀라스의 Sprite Library도 쓸 수 있습니다.</value></data>
+  <data name="Export_EngineUnityTip" xml:space="preserve"><value>이미지 옆에 Unity 스프라이트 설정(.meta)을 씁니다. 항목은 아래 Unity Import Settings 묶음에 있습니다. 프리팹·애니메이션과 레이어 아틀라스의 Sprite Library도 쓸 수 있습니다.</value></data>
   <data name="Export_EngineGodot" xml:space="preserve"><value>Godot 4(SpriteFrames)</value></data>
-  <data name="Export_EngineGodotTip" xml:space="preserve"><value>프레임 시트로 Godot 4 SpriteFrames(.tres)를 씁니다. 태그마다 애니메이션이 되고 프레임 길이와 반복은 그대로입니다. Godot 프로젝트 안이면 res:// 경로로 이미지를 가리킵니다. 부위 아틀라스로는 만들지 않습니다.</value></data>
+  <data name="Export_EngineGodotTip" xml:space="preserve"><value>프레임 시트로 Godot 4 SpriteFrames(.tres)를 씁니다. 태그마다 애니메이션이 되고 프레임 길이와 반복은 그대로입니다. Godot 프로젝트 안이면 res:// 경로로 이미지를 가리킵니다. 레이어 아틀라스로는 만들지 않습니다.</value></data>
   <data name="Export_GodotScene" xml:space="preserve"><value>씬(.tscn, AnimatedSprite2D)</value></data>
   <data name="Export_GodotSceneTip" xml:space="preserve"><value>그 SpriteFrames를 쓰는 AnimatedSprite2D 씬을 함께 씁니다. 픽셀 그대로(Nearest) 그리고, 캔버스 피벗이 노드 원점이며, 첫 애니메이션을 자동 재생합니다.</value></data>
   <data name="Export_EngineJson" xml:space="preserve"><value>JSON(Aseprite 형식, Phaser·PixiJS 등)</value></data>
@@ -10498,7 +10048,7 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="Model_Fit" xml:space="preserve"><value>맞춤</value></data>
   <data name="Model_Light" xml:space="preserve"><value>빛 방향</value></data>
   <data name="Model_LightDepth" xml:space="preserve"><value>빛 앞뒤</value><comment>3D 모델 가져오기: 빛이 정면(카메라 쪽)에서 뒤까지 몇 도 돌아가 있는지 고르는 막대 줄.</comment></data>
-  <data name="Model_LightDepthTip" xml:space="preserve"><value>빛을 앞(카메라 쪽 정면, 0°)에서 옆(90°), 뒤(정뒤, 180°)로 옮깁니다. 해 손잡이가 가리키는 화면 방향은 그대로입니다.</value></data>
+  <data name="Model_LightDepthTip" xml:space="preserve"><value>빛을 앞(카메라 쪽)에서 옆, 뒤로 옮깁니다. 빛은 화면을 뚫고 나가는 원기둥 위에 있어서 노란 원 크기와 해 손잡이 자리는 그대로입니다. 옆 숫자는 빛이 정면에서 돌아간 각도(0° = 정면, 90° = 옆, 180° = 정뒤)입니다.</value></data>
   <data name="Model_LightFront" xml:space="preserve"><value>앞</value></data>
   <data name="Model_LightBehind" xml:space="preserve"><value>뒤</value></data>
   <data name="Model_Brightness" xml:space="preserve"><value>밝기</value></data>
@@ -10648,7 +10198,7 @@ Enter나 다른 도구·레이어·프레임으로 바꾸면 기본색(오른쪽
   <data name="LineArt_Reset" xml:space="preserve"><value>기본값</value></data>
   <data name="LineArt_Busy" xml:space="preserve"><value>선 정리하는 중</value></data>
   <data name="LineArt_Empty" xml:space="preserve"><value>지금 프레임의 이 레이어에 정리할 그림이 없습니다.</value></data>
-  <data name="LineArt_CannotEdit" xml:space="preserve"><value>이 레이어에는 선 정리를 쓸 수 없습니다(그룹·타일맵·잠긴 레이어).</value></data>
+  <data name="LineArt_CannotEdit" xml:space="preserve"><value>이 레이어에는 선 정리를 쓸 수 없습니다(자식을 배치하는 빈 레이어·타일맵·잠긴 레이어).</value></data>
   <data name="LineArt_Done" xml:space="preserve"><value>선 정리: 픽셀 {pixels}개를 바꿨습니다.</value></data>
   <data name="LineArt_DoneFrames" xml:space="preserve"><value>선 정리: 셀 {cels}개를 바꿨습니다.</value></data>
   <data name="LineArt_NoChange" xml:space="preserve"><value>선 정리: 바뀐 것이 없습니다.</value></data>
@@ -10692,6 +10242,9 @@ Enter나 다른 도구·레이어·프레임으로 바꾸면 기본색(오른쪽
   <data name="SizeField_CellSize" xml:space="preserve"><value>칸 크기</value><comment>프레임 나누기 등: 한 칸의 가로 × 세로.</comment></data>
   <data name="CanvasResize_Image" xml:space="preserve"><value>그림</value><comment>캔버스 크기 모드: 그림 가로 × 세로 줄 이름</comment></data>
   <data name="Model_UsedColors" xml:space="preserve"><value>이 프레임에 쓴 색 {0}개</value><comment>3D 모델 가져오기: 픽셀 결과 칸 아래 색 칸 목록 머리. {0} 색 수.</comment></data>
+  <data name="Model_UsedColorsExcluded" xml:space="preserve"><value>이 프레임에 쓴 색 {0}개 · 뺀 색 {1}개</value><comment>{0} 색 수, {1} 뺀 색 수.</comment></data>
+  <data name="Model_UsedColorTip" xml:space="preserve"><value>{hex} · 우클릭하면 이 색을 빼고 비슷한 색으로 바꿉니다</value></data>
+  <data name="Model_UsedColorTip_Excluded" xml:space="preserve"><value>{hex} · 뺀 색 · 우클릭하면 되살립니다</value></data>
   <data name="Model_SourceColors" xml:space="preserve"><value>원본 모델 색 {0}개</value><comment>3D 모델 가져오기: 원본 칸 아래 색 칸 목록 머리. {0} 색 수.</comment></data>
   <data name="Model_SourceColorsChanged" xml:space="preserve"><value>원본 모델 색 {0}개 · 바꾼 색 {1}개</value><comment>{0} 색 수, {1} 바꾼 색 수.</comment></data>
   <data name="Model_SourceColorsInfo" xml:space="preserve"><value>모델이 쓰는 재질 색(빛·그늘을 빼고 본 바탕 색, 많이 쓴 색부터)입니다. 색 칸을 누르면 그 색이 쓰인 곳만 밝게 보이고(다시 누르면 끔), 우클릭하면 그 색을 다른 색으로 바꿀 수 있습니다. 바꾼 색은 미리보기와 가져오기에 모두 쓰이고, 모델 파일은 바뀌지 않습니다. 텍스처로 칠한 부분은 목록에 없습니다.</value></data>
@@ -10700,4 +10253,19 @@ Enter나 다른 도구·레이어·프레임으로 바꾸면 기본색(오른쪽
   <data name="Model_SourceColorResetAll" xml:space="preserve"><value>모든 색 원래대로</value></data>
   <data name="Model_FreeTurn" xml:space="preserve"><value>자유 회전</value><comment>3D 모델 가져오기 돌려 보기 프레임 수 옆 체크.</comment></data>
   <data name="Model_FreeTurnTip" xml:space="preserve"><value>미리보기 막대를 프레임 대신 0~359° 회전(1°씩)으로 바꿔 아무 각도에서나 봅니다. 가져오는 프레임 수는 그대로입니다.</value></data>
+  <data name="FrameLength_Count" xml:space="preserve"><value>고른 프레임 {count}개</value><comment>프레임 길이 창 맨 위. count = 고른 프레임 수.</comment></data>
+  <data name="FrameLength_Method" xml:space="preserve"><value>정하는 방법</value></data>
+  <data name="FrameLength_Ms" xml:space="preserve"><value>길이(ms)</value></data>
+  <data name="FrameLength_Fps" xml:space="preserve"><value>FPS(초당 프레임)</value></data>
+  <data name="FrameLength_Seconds" xml:space="preserve"><value>길이(초)</value></data>
+  <data name="FrameLength_SecondsUnit" xml:space="preserve"><value>초</value></data>
+  <data name="FrameLength_GameFrames" xml:space="preserve"><value>게임 프레임(60fps)</value></data>
+  <data name="FrameLength_GameFramesUnit" xml:space="preserve"><value>프레임</value></data>
+  <data name="FrameLength_Speed" xml:space="preserve"><value>배속</value></data>
+  <data name="FrameLength_Total" xml:space="preserve"><value>전체 길이</value></data>
+  <data name="FrameLength_Tip" xml:space="preserve"><value>길이(ms)·FPS·길이(초)·게임 프레임은 고른 프레임을 모두 같은 길이로 맞춥니다(FPS = 1초 ÷ FPS, 게임 프레임 = 60fps 게임에서 몇 프레임 동안 보일지). 배속은 프레임마다 지금 길이 ÷ 배속이라 프레임끼리의 길이 차이가 그대로입니다(2× = 두 배 빠르게). 전체 길이는 고른 프레임 길이의 합을 그 값으로 맞추고 지금 길이 비율대로 나눕니다. 길이는 1ms 단위로 반올림합니다.</value></data>
+  <data name="FrameLength_Result" xml:space="preserve"><value>결과</value></data>
+  <data name="FrameLength_Each" xml:space="preserve"><value>프레임마다 {ms}ms · {fps}fps · 60fps 게임 {game}프레임</value><comment>ms = 새 길이, fps = 1000 ÷ 길이, game = 60fps 게임 프레임 수(소수 둘째 자리까지).</comment></data>
+  <data name="FrameLength_EachRange" xml:space="preserve"><value>프레임마다 {min}~{max}ms</value><comment>min·max = 새 길이 중 가장 짧은·긴 것(ms).</comment></data>
+  <data name="FrameLength_TotalLine" xml:space="preserve"><value>전체 {from}초 → {to}초</value><comment>from = 지금 고른 프레임 길이 합, to = 바꾼 뒤 합(초).</comment></data>
 </root>

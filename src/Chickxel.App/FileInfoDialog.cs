@@ -134,14 +134,12 @@ public sealed class FileInfoDialog : DialogBase
         {
             var p = ProjectIO.Load(path);
             project = p;
-            int parts = p.Layers.Count(l => l.IsPart);
             var rows = new List<(string, string)>
             {
                 (UiStrings.FileInfo_Canvas, PixelSize(p.Width, p.Height)),
                 (UiStrings.FileInfo_Frames, Count(p.Frames.Count)),
-                (UiStrings.FileInfo_Layers, Count(p.Layers.Count - parts)),
+                (UiStrings.FileInfo_Layers, Count(p.Layers.Count)),
             };
-            if (parts > 0) rows.Add((UiStrings.FileInfo_Parts, Count(parts)));
             return rows;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException or JsonException or NotSupportedException)

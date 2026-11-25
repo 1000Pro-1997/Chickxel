@@ -4,17 +4,18 @@ using Chickxel.App.Localization;
 namespace Chickxel.App;
 
 /// <summary>
-/// 스킨 관리 창(모드리스, 하나만): 맨 위 보기 거르기 [전체 | 그룹 스킨 | 개별 스킨], 지금 프레임의 전체 착장, 착장 프리셋 카드 줄, 그룹마다(타임라인처럼 위→아래) 스킨 카드 줄.
-/// 카드를 누르면 바로 그 스킨(착장)을 입히고, 우클릭 메뉴로 복제·이름·삭제·순서를 고친다(실행취소됨 — 이 창에서도 실행취소·다시 실행 단축키가 듣는다). "▸ 부위별"을 펼치면
-/// 부위마다 "없음" + 그룹 스킨 카드 + 그 부위 전용(개별) 스킨 카드("개별" 표시)가 보여 부위 하나만 다른 스킨을 입힐 수 있고, 줄 끝 "＋ 이 부위 스킨"으로 부위 전용 스킨을 만든다.
-/// "개별 스킨" 거르기면 그룹 카드는 숨기고 부위 줄을 모두 펼쳐 부위 전용 스킨만 보인다.
+/// 스킨 설정 창(모드리스, 하나만): 위 "스킨 프리셋" 카드 줄(썸네일 = 그 프리셋을 입힌 지금 프레임), 아래 "레이어 스킨" — 스킨이 둘 이상인 레이어마다
+/// (타임라인처럼 위→아래, 나무 깊이만큼 들여 써서) 스킨 카드 줄. 카드를 누르면 바로 입히고, 우클릭 메뉴로 복제·이름·삭제·순서를 고친다
+/// (실행취소됨 — 이 창에서도 실행취소·다시 실행 단축키가 듣는다). 스킨 카드를 Ctrl/⌘+클릭하면 프리셋에 넣을 스킨으로 고르고(레이어마다 하나),
+/// 아래 "프리셋으로 등록…"이 고른 스킨(고른 것이 없으면 지금 스킨 전체)을 프리셋으로 등록한다.
 /// 프로젝트 변경·현재 프레임 변경·다른 프로젝트 열기 때 약 100ms 늦춰 다시 만든다(그리는 중에는 끝날 때까지 미룸).
 /// </summary>
 public sealed class SkinManagerWindow : Window
 {
-    private const int GroupThumb = 72, PartThumb = 52, PreviewH = 200;
+    private const int PresetThumb = 72, CardThumb = 56, IndentStep = 18;
     /// <summary>대상 도움말(F1) 가이드 쪽.</summary>
     private const string Page = "parts-skin-manager";
+    private const string PresetsPage = "parts-outfits";
     private static readonly Cursor HandCursor = new(StandardCursorType.Hand);
     private static readonly Cursor PanCursor = new(StandardCursorType.SizeWestEast);
     /// <summary>처음 크기(예전 680×720의 1.7배 — 화면보다 크면 화면 안으로 줄임).</summary>
@@ -24,30 +25,27 @@ public sealed class SkinManagerWindow : Window
 
     private readonly EditorContext _ctx;
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(100) };
-    private readonly SkinThumb _preview = new(null, default) { Height = PreviewH, Margin = new Thickness(0, 0, 0, 6) };
-    private readonly StackPanel _outfits = new() { Margin = new Thickness(0, 0, 0, 6) };
+    private readonly StackPanel _presets = new();
     private readonly StackPanel _list = new() { Spacing = 6 };
-    /// <summary>마지막 착장 적용에서 건너뛴 항목 안내(다음 적용·프로젝트 바꾸기 때 지움).</summary>
-    private string? _outfitWarning;
+    private readonly Control _presetBox, _layerBox;
+    private readonly Button _savePreset, _clearPicked;
+    private readonly TextBlock _pickedText = new() { VerticalAlignment = VerticalAlignment.Center, Foreground = AppTheme.DimTextBrush, Margin = new Thickness(8, 0) };
+    /// <summary>마지막 프리셋 입히기에서 건너뛴 항목 안내(다음 입히기·프로젝트 바꾸기 때 지움).</summary>
+    private string? _presetWarning;
     /// <summary>이번에 만든 썸네일 비트맵(다시 만들거나 닫을 때 Dispose).</summary>
     private readonly List<WriteableBitmap> _bitmaps = new();
-    /// <summary>부위 줄을 펼친 그룹.</summary>
-    private readonly HashSet<Layer> _expanded = new(ReferenceEqualityComparer.Instance);
-    /// <summary>강조할 그룹/부위(칩을 눌러 열었을 때), 다음 다시 만들기에서 그 줄로 스크롤할지.</summary>
+    /// <summary>Ctrl/⌘+클릭으로 프리셋에 넣으려고 고른 스킨(레이어마다 하나).</summary>
+    private readonly Dictionary<Layer, Skin> _picked = new(ReferenceEqualityComparer.Instance);
+    /// <summary>강조할 레이어(칩·메뉴로 열었을 때 — 스킨이 하나뿐이어도 줄을 보임), 다음 다시 만들기에서 그 줄로 스크롤할지.</summary>
     private Layer? _focus;
     private bool _scrollToFocus;
-    /// <summary>그룹 상자의 가로 스크롤 위치(카드를 눌러 다시 만들어도 보던 자리 그대로).</summary>
+    /// <summary>레이어 줄의 가로 스크롤 위치(카드를 눌러 다시 만들어도 보던 자리 그대로).</summary>
     private readonly Dictionary<Layer, double> _scrollX = new(ReferenceEqualityComparer.Instance);
-    /// <summary>보기 거르기: 0 = 전체, 1 = 그룹 스킨(전체 스킨)만, 2 = 개별 스킨(부위 전용)만.</summary>
-    private readonly TabStrip _filter = new(TabStripKind.Segmented, UiStrings.S_SkinManagerWindow__filter_589BE1A031, UiStrings.S_SkinManagerWindow__filter_019CB16352, UiStrings.S_SkinManagerWindow__filter_2A6ACC3CF0);
-
-    private bool ShowFull => _filter.SelectedIndex != 2;
-    private bool ShowPartOnly => _filter.SelectedIndex != 1;
 
     private SkinManagerWindow(EditorContext ctx)
     {
         _ctx = ctx;
-        Title = UiStrings.S_SkinManagerWindow_SkinManagerWindow_BDF2DCD897;
+        Title = UiStrings.SkinSettings_Title;
         ShowInTaskbar = false;
         Width = StartWidth;
         Height = StartHeight;
@@ -58,34 +56,40 @@ public sealed class SkinManagerWindow : Window
 
         var help = new TextBlock
         {
-            Text = UiStrings.S_SkinManagerWindow_SkinManagerWindow_146FFB4EDB +
-                   UiStrings.S_SkinManagerWindow_SkinManagerWindow_1D9038A43F,
+            Text = UiStrings.SkinSettings_Help,
             TextWrapping = TextWrapping.Wrap,
             Foreground = AppTheme.DimTextBrush,
-            Margin = new Thickness(0, 0, 0, 6),
+            Margin = new Thickness(2, 0, 2, 6),
         };
-        var previewTitle = Ui.Label(UiStrings.S_SkinManagerWindow_SkinManagerWindow_98420F8C46, bold: true).HelpAt(Page, anchor: "The full outfit is at the top");
-        previewTitle.Margin = new Thickness(0, 0, 0, 2);
-        _filter.SelectedIndex = 0;
-        _filter.SetTip(0, UiStrings.S_SkinManagerWindow_SkinManagerWindow_2AEC4F8E08)
-            .SetTip(1, UiStrings.S_SkinManagerWindow_SkinManagerWindow_5094948406)
-            .SetTip(2, UiStrings.S_SkinManagerWindow_SkinManagerWindow_FE001EBC56);
-        _filter.SelectionChanged += (_, _) => Dispatcher.UIThread.Post(Rebuild);
-        var filterLine = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4), Background = Brushes.Transparent, Children = { Ui.Label(UiStrings.S_SkinManagerWindow_SkinManagerWindow_479B536E62), _filter } }
-            .HelpAt(Page, anchor: "Use the ⑪ All");
-        // 대상 도움말(F1): 창 = "스킨 관리 창" 쪽, 위 거르기 ⑪·전체 착장 ④, 카드·줄은 만들 때(Rebuild) 그 자리를 붙인다
+        // 대상 도움말(F1): 창 = "스킨 설정 창" 쪽, 프리셋 묶음 = 스킨 프리셋, 카드·줄은 만들 때(Rebuild) 그 자리를 붙인다
         this.HelpAt(Page);
-        _preview.HelpAt(Page, anchor: "The full outfit is at the top");
-        var content = new StackPanel { Margin = new Thickness(10, 8), Children = { filterLine, help, previewTitle, _preview, _outfits, _list } };
-        // 아래 확인 단추(Esc도 닫기): 카드를 누를 때마다 이미 적용되므로 창만 닫는다.
+        _presetBox = Ui.Group(UiStrings.SkinSettings_Presets, _presets).HelpAt(PresetsPage, anchor: "Outfit presets");
+        _layerBox = Ui.Group(UiStrings.SkinSettings_Layers, _list).HelpAt(Page, anchor: "skin cards for each group");
+        var content = new StackPanel { Margin = new Thickness(10, 8), Children = { help, _presetBox, _layerBox } };
+
+        // 아래: 프리셋으로 등록(고른 스킨 또는 지금 스킨 전체) · 고르기 지우기 · 고른 개수 | 확인(Esc도 닫기 — 카드를 누를 때마다 이미 입혔으므로 창만 닫는다)
+        _savePreset = new Button { Content = UiStrings.SkinSettings_SavePreset, Padding = new Thickness(8, 2) }
+            .HelpAt(PresetsPage, anchor: "Use ④ Save current outfit")
+            .Tip(UiStrings.SkinSettings_SavePresetTip);
+        _savePreset.Click += (_, _) => Dispatcher.UIThread.Post(SavePreset);
+        _clearPicked = new Button { Content = UiStrings.SkinSettings_ClearPicked, Padding = new Thickness(8, 2), Margin = new Thickness(4, 0, 0, 0) };
+        _clearPicked.Click += (_, _) =>
+        {
+            _picked.Clear();
+            Dispatcher.UIThread.Post(Rebuild);
+        };
         var ok = new Button { Content = UiStrings.S_SkinManagerWindow_SkinManagerWindow_E08E14A158, MinWidth = 90, IsCancel = true, HorizontalContentAlignment = HorizontalAlignment.Center };
         ok.Click += (_, _) => Close();
+        var buttons = new DockPanel { LastChildFill = true };
+        DockPanel.SetDock(ok, Dock.Right);
+        buttons.Children.Add(ok);
+        buttons.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { _savePreset, _clearPicked, _pickedText } });
         var footer = new Border
         {
             BorderBrush = AppTheme.BorderBrush,
             BorderThickness = new Thickness(0, 1, 0, 0),
             Padding = new Thickness(10, 6),
-            Child = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Children = { ok } },
+            Child = buttons,
         };
         var root = new DockPanel();
         DockPanel.SetDock(footer, Dock.Bottom);
@@ -129,10 +133,10 @@ public sealed class SkinManagerWindow : Window
     }
 
     /// <summary>
-    /// 그룹 상자 안(그룹 카드 줄 + 부위 줄)을 한 가로 스크롤로 묶고, 카드 사이 빈 곳을 잡아 좌우로 끌면 통째로 옮긴다.
+    /// 레이어 줄의 카드를 한 가로 스크롤로 묶고, 카드 사이 빈 곳을 잡아 좌우로 끌면 통째로 옮긴다.
     /// 카드·단추는 누르기를 먼저 처리하므로 여기까지 오지 않는다(카드 끌기 = 순서 바꾸기 그대로).
     /// </summary>
-    private ScrollViewer PanScroll(Layer group, Control content)
+    private ScrollViewer PanScroll(Layer layer, Control content)
     {
         var sv = new ScrollViewer
         {
@@ -170,15 +174,15 @@ public sealed class SkinManagerWindow : Window
             e.Pointer.Capture(null);
         };
         sv.PointerCaptureLost += (_, _) => End();
-        sv.ScrollChanged += (_, _) => _scrollX[group] = sv.Offset.X;
-        if (_scrollX.TryGetValue(group, out var x) && x > 0)
+        sv.ScrollChanged += (_, _) => _scrollX[layer] = sv.Offset.X;
+        if (_scrollX.TryGetValue(layer, out var x) && x > 0)
             Dispatcher.UIThread.Post(() => sv.Offset = sv.Offset.WithX(x), DispatcherPriority.Loaded);
         return sv;
     }
 
     /// <summary>
-    /// 스킨 관리 창을 연다(이미 열려 있으면 앞으로). <paramref name="focus"/>가 그룹/부위면 그 줄을 강조하고 그 줄로 스크롤한다
-    /// (부위면 그 그룹의 부위 줄을 펼침).
+    /// 스킨 설정 창을 연다(이미 열려 있으면 앞으로). <paramref name="focus"/>가 있으면 그 레이어 줄을 강조하고 그 줄로 스크롤한다
+    /// (스킨이 하나뿐인 레이어도 줄을 보여 거기서 스킨을 더할 수 있다).
     /// </summary>
     public static void Open(EditorContext ctx, Visual? owner, Layer? focus = null)
     {
@@ -202,9 +206,8 @@ public sealed class SkinManagerWindow : Window
 
     private void SetFocus(Layer? focus)
     {
-        _focus = focus;
-        _scrollToFocus = focus is not null;
-        if (focus is { IsPart: true, Parent: { IsGroup: true } g }) _expanded.Add(g);
+        _focus = focus is { IsTilemap: false } ? focus : null;
+        _scrollToFocus = _focus is not null;
     }
 
     protected override void OnClosed(EventArgs e)
@@ -213,8 +216,7 @@ public sealed class SkinManagerWindow : Window
         _ctx.ProjectChanged -= OnProjectChanged;
         _ctx.CurrentChanged -= OnCurrentChanged;
         _ctx.ProjectReplaced -= OnProjectReplaced;
-        _preview.Picture = null;
-        _outfits.Children.Clear();
+        _presets.Children.Clear();
         _list.Children.Clear();
         DisposeBitmaps();
         base.OnClosed(e);
@@ -231,7 +233,7 @@ public sealed class SkinManagerWindow : Window
 
     private void OnProjectChanged(object? sender, ProjectChangedEventArgs e)
     {
-        // 착장 목록 편집은 Layers | Settings로 온다(Settings만 와도 다시 만듦).
+        // 프리셋 목록 편집은 Layers | Settings로 온다(Settings만 와도 다시 만듦).
         if ((e.Change & (ProjectChange.Layers | ProjectChange.Pixels | ProjectChange.Frames | ProjectChange.Canvas | ProjectChange.Settings)) != 0) Schedule();
     }
 
@@ -242,10 +244,11 @@ public sealed class SkinManagerWindow : Window
 
     private void OnProjectReplaced(object? sender, EventArgs e)
     {
-        _expanded.Clear();
         _focus = null;
-        _outfitWarning = null;
+        _presetWarning = null;
         _scrollToFocus = false;
+        _picked.Clear();
+        _scrollX.Clear();
         Schedule();
     }
 
@@ -262,44 +265,42 @@ public sealed class SkinManagerWindow : Window
         return b;
     }
 
-    private static bool HasContent(PixelImage? image) => image is not null && !image.IsRegionEmpty(image.Bounds);
-
     private void Rebuild()
     {
         _timer.Stop();
-        _preview.Picture = null;
         _list.Children.Clear();
-        _outfits.Children.Clear();
+        _presets.Children.Clear();
         DisposeBitmaps();
         if (_ctx.Project is not { } p || p.Frames.Count == 0)
         {
             _builtFrame = -1;
-            _preview.IsVisible = false;
-            _outfits.IsVisible = false;
+            _picked.Clear();
+            _presetBox.IsVisible = false;
             _list.Children.Add(Note(UiStrings.S_SkinManagerWindow_Rebuild_5A6FE8B9B0));
+            UpdateFooter(null);
             return;
         }
         int frame = Math.Clamp(_ctx.CurrentFrame, 0, p.Frames.Count - 1);
         _builtFrame = _ctx.CurrentFrame;
-        _preview.IsVisible = true;
-        _preview.Source = p.Size;
-        _preview.Picture = Track(p.Flatten(frame));
+        // 지운 레이어·스킨을 가리키는 고르기는 버린다.
+        foreach (var (layer, skin) in _picked.ToList())
+            if (p.IndexOf(layer) < 0 || !layer.Skins.Contains(skin)) _picked.Remove(layer);
+        if (_focus is not null && p.IndexOf(_focus) < 0) _focus = null;
 
-        var groups = p.Layers.Where(l => l.IsGroup).Reverse().ToList();
-        _outfits.IsVisible = groups.Count > 0 || p.Outfits.Count > 0;
-        if (_outfits.IsVisible) _outfits.Children.Add(OutfitSection(p, frame));
-        if (groups.Count == 0)
-        {
-            _list.Children.Add(Note(UiStrings.S_SkinManagerWindow_Rebuild_C420DB5CFC));
-            return;
-        }
-        if (_focus is not null && !p.Layers.Contains(_focus)) _focus = null;
+        _presetBox.IsVisible = true;
+        BuildPresets(p, frame);
+
         Control? focusRow = null;
-        foreach (var group in groups)
+        for (int i = p.Layers.Count - 1; i >= 0; i--)
         {
-            var row = GroupRow(p, group, frame, ref focusRow);
+            var layer = p.Layers[i];
+            if (layer.IsTilemap || (layer.Skins.Count < 2 && !ReferenceEquals(layer, _focus))) continue;
+            var row = LayerRow(p, layer, i, frame);
+            if (ReferenceEquals(layer, _focus)) focusRow = row;
             _list.Children.Add(row);
         }
+        if (_list.Children.Count == 0) _list.Children.Add(Note(UiStrings.SkinSettings_LayersEmpty));
+        UpdateFooter(p);
         if (_scrollToFocus && focusRow is not null)
         {
             _scrollToFocus = false;
@@ -308,32 +309,29 @@ public sealed class SkinManagerWindow : Window
         }
     }
 
+    private void UpdateFooter(SpriteProject? p)
+    {
+        _savePreset.IsEnabled = p is not null && (_picked.Count > 0 || p.CurrentSkinEntries().Count > 0);
+        _clearPicked.IsVisible = _picked.Count > 0;
+        _pickedText.Text = p is null ? ""
+            : _picked.Count > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.SkinSettings_Picked, _picked.Count)
+            : UiStrings.SkinSettings_PickedNone;
+    }
+
     private static TextBlock Note(string text) => new()
     {
         Text = text,
         Foreground = AppTheme.DimTextBrush,
         TextWrapping = TextWrapping.Wrap,
-        Margin = new Thickness(2, 8),
+        Margin = new Thickness(2, 4),
     };
 
-    // ───────────── 착장 프리셋 ─────────────
+    // ───────────── 스킨 프리셋 ─────────────
 
-    /// <summary>착장 프리셋 묶음: 제목 + "지금 착장 저장…", 건너뛴 항목 안내, 착장 카드(누르면 적용, 우클릭 = 메뉴).</summary>
-    private Control OutfitSection(SpriteProject p, int frame)
+    /// <summary>스킨 프리셋 묶음 안: 건너뛴 항목 안내, 프리셋 카드(누르면 입힘, 두 번 = 입히고 닫기, 우클릭 = 메뉴).</summary>
+    private void BuildPresets(SpriteProject p, int frame)
     {
-        const string outfitsPage = "parts-outfits";
-        var save = new Button { Content = UiStrings.S_SkinManagerWindow_OutfitSection_D0B9C07D70, Padding = new Thickness(6, 1), VerticalAlignment = VerticalAlignment.Center }
-            .HelpAt(outfitsPage, anchor: "Use ④ Save current outfit")
-            .Tip(UiStrings.S_SkinManagerWindow_OutfitSection_199CA8C134);
-        save.Click += (_, _) => Dispatcher.UIThread.Post(SaveOutfit);
-        var title = new TextBlock { Text = UiStrings.S_SkinManagerWindow_OutfitSection_E9FE78438D, FontWeight = FontWeight.Bold, VerticalAlignment = VerticalAlignment.Center };
-        var head = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 0, 0, 4) };
-        DockPanel.SetDock(save, Dock.Right);
-        head.Children.Add(save);
-        head.Children.Add(title);
-
-        var body = new StackPanel { Children = { head } };
-        if (_outfitWarning is { } warning)
+        if (_presetWarning is { } warning)
         {
             var line = new TextBlock
             {
@@ -346,321 +344,216 @@ public sealed class SkinManagerWindow : Window
             line.PointerPressed += (_, e) =>
             {
                 e.Handled = true;
-                _outfitWarning = null;
+                _presetWarning = null;
                 Dispatcher.UIThread.Post(Rebuild);
             };
-            body.Children.Add(line);
+            _presets.Children.Add(line);
         }
-        var outfits = p.Outfits;
-        if (outfits.Count == 0)
+        var presets = p.SkinPresets;
+        if (presets.Count == 0)
         {
-            var hint = Note(UiStrings.S_SkinManagerWindow_OutfitSection_0F04D53B38);
-            hint.Margin = new Thickness(2, 2);
-            body.Children.Add(hint);
+            _presets.Children.Add(Note(UiStrings.SkinSettings_PresetsEmpty));
+            return;
         }
-        else
+        var cards = new WrapPanel { Orientation = Orientation.Horizontal };
+        for (int i = 0; i < presets.Count; i++)
         {
-            var cards = new WrapPanel { Orientation = Orientation.Horizontal };
-            for (int i = 0; i < outfits.Count; i++)
-            {
-                var outfit = outfits[i];
-                var missing = p.MissingOutfitEntries(outfit);
-                var bmp = Track(p.FlattenOutfit(frame, outfit, null));
-                var card = Card(bmp, p.Size, GroupThumb, outfit.Name, IsCurrentOutfit(p, outfit), missing.Count > 0 ? "!" : null).HelpAt(outfitsPage, anchor: "click ⑤ its card");
-                card.Tip(missing.Count == 0
-                    ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_OutfitSection_104A3435D1,outfit.Name)
-                    : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_OutfitSection_B497B58B96,outfit.Name) + string.Join("\n", missing.Select(m => "· " + m)));
-                int index = i;
-                Clickable(card, () => ApplyOutfit(outfit), () => OutfitCardMenu(outfit, index));
-                cards.Children.Add(card);
-            }
-            body.Children.Add(cards);
+            var preset = presets[i];
+            var missing = p.MissingSkinPresetEntries(preset);
+            var bmp = Track(p.FlattenSkinPreset(frame, preset));
+            var card = Card(bmp, PresetThumb, preset.Name, IsCurrentPreset(p, preset), picked: false, missing: missing.Count > 0).HelpAt(PresetsPage, anchor: "click ⑤ its card");
+            var tip = string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.SkinSettings_PresetTip, preset.Name, preset.Entries.Count);
+            if (missing.Count > 0) tip += "\n" + UiStrings.SkinSettings_PresetMissing + "\n" + string.Join("\n", missing.Select(m => "· " + m));
+            card.Tip(tip);
+            int index = i;
+            Clickable(card, () => ApplyPreset(preset), pick: null, () => PresetCardMenu(preset, index));
+            cards.Children.Add(card);
         }
-        // 대상 도움말(F1): 착장 프리셋 묶음 = "착장 바꾸기와 착장 프리셋"의 착장 프리셋(저장 단추 ④·카드 ⑤ 문단)
-        return new Border
-        {
-            Background = AppTheme.BackBrush,
-            BorderBrush = AppTheme.BorderBrush,
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(3),
-            Padding = new Thickness(6),
-            Child = body,
-        }.HelpAt(outfitsPage, anchor: "Outfit presets");
+        _presets.Children.Add(cards);
     }
 
-    /// <summary>지금 착장이 이 착장 프리셋과 같은지(<see cref="SpriteProject.ApplyOutfit"/>가 바꿀 것이 없으면 같음).</summary>
-    public static bool IsCurrentOutfit(SpriteProject p, Outfit outfit)
+    /// <summary>이 스킨 프리셋을 입혀도 바뀔 것이 없는지(쓸 수 있는 항목이 하나 이상이고 그 레이어가 모두 이미 그 스킨).</summary>
+    public static bool IsCurrentPreset(SpriteProject p, SkinPreset preset)
     {
         bool any = false;
-        foreach (var (group, skin) in outfit.Slots)
+        foreach (var (layer, skin) in preset.Entries)
         {
-            if (!p.Layers.Contains(group)) continue;
+            if (layer.IsTilemap || p.IndexOf(layer) < 0 || !layer.Skins.Contains(skin)) continue;
             any = true;
-            if (group.Skins.Contains(skin) && !ReferenceEquals(group.ActiveSkin, skin)) return false;
-            foreach (var part in p.ChildrenOf(group))
-            {
-                Skin? over = null;
-                foreach (var e in outfit.Parts)
-                    if (ReferenceEquals(e.Part, part) && part.SkinChoices.Contains(e.Skin)) over = e.Skin;
-                if (!ReferenceEquals(part.SkinOverride, over)) return false;
-            }
+            if (!ReferenceEquals(layer.ActiveSkin, skin)) return false;
         }
         return any;
     }
 
-    private void ApplyOutfit(Outfit outfit)
+    private void ApplyPreset(SkinPreset preset)
     {
-        if (_ctx.Project is not { } p || !p.Outfits.Contains(outfit)) return;
+        if (_ctx.Project is not { } p || !p.SkinPresets.Contains(preset)) return;
         IReadOnlyList<string> missing = [];
-        _ctx.Structural(() => missing = p.ApplyOutfit(outfit));
-        _outfitWarning = missing.Count == 0 ? null : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_ApplyOutfit_8925AE2CD4,outfit.Name,string.Join(", ", missing));
+        _ctx.Structural(() => missing = p.ApplySkinPreset(preset));
+        _presetWarning = missing.Count == 0 ? null : string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.SkinSettings_PresetSkipped, preset.Name, string.Join(", ", missing));
         Schedule();
     }
 
-    private void SaveOutfit()
-    {
-        if (_ctx.Project is not { } p) return;
-        var name = InputDialog.Ask(this, UiStrings.S_SkinManagerWindow_SaveOutfit_89DDDF35E8, UiStrings.S_SkinManagerWindow_SaveOutfit_FAA68D3AB2, p.UniqueOutfitName(UiStrings.S_SkinManagerWindow_SaveOutfit_6E8AA7A306));
-        if (name is null || _ctx.Project != p) return;
-        _ctx.Structural(() => p.SaveOutfit(name));
-    }
+    /// <summary>고른 스킨(위 레이어부터), 고른 것이 없으면 빈 목록.</summary>
+    private List<SkinPresetEntry> PickedEntries(SpriteProject p)
+        => _picked.Select(x => new SkinPresetEntry(x.Key, x.Value)).OrderByDescending(e => p.IndexOf(e.Layer)).ToList();
 
-    private void RenameOutfit(Outfit outfit)
+    /// <summary>고른 스킨(없으면 스킨이 둘 이상인 모든 레이어의 지금 스킨)을 이름을 물어 스킨 프리셋으로 등록한다(프리셋 줄 끝, 실행취소됨).</summary>
+    private void SavePreset()
     {
         if (_ctx.Project is not { } p) return;
-        var name = InputDialog.Ask(this, UiStrings.S_SkinManagerWindow_RenameOutfit_226D912006, UiStrings.S_SkinManagerWindow_RenameOutfit_5C05120DC5, outfit.Name);
-        if (name is null || !p.Outfits.Contains(outfit)) return;
+        var entries = PickedEntries(p);
+        // 고른 스킨 이름이 모두 같으면 그 이름을 제안(예: 레이어마다 "knight")
+        string suggested = entries.Count > 0 && entries.All(e => e.Skin.Name == entries[0].Skin.Name) ? entries[0].Skin.Name : "";
+        var name = InputDialog.Ask(this, UiStrings.SkinSettings_SavePresetTitle, entries.Count > 0
+            ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.SkinSettings_SavePresetPicked, entries.Count)
+            : UiStrings.SkinSettings_SavePresetAll, p.UniqueSkinPresetName(suggested));
+        if (name is null || !ReferenceEquals(_ctx.Project, p)) return;
         try
         {
-            _ctx.Structural(() => p.RenameOutfit(outfit, name));
+            _ctx.Structural(() => p.SaveSkinPreset(name, entries.Count > 0 ? entries : null));
+            _picked.Clear();
+            Schedule();
         }
         catch (ArgumentException ex)
         {
-            Ui.Error(this, ex.ParamName is { } param ? ex.Message.Replace($" (Parameter '{param}')", "") : ex.Message);
+            Ui.Error(this, SkinOps.Message(ex));
         }
     }
 
-    private Control[] OutfitCardMenu(Outfit outfit, int index)
+    private void RenamePreset(SkinPreset preset)
     {
-        int count = _ctx.Project?.Outfits.Count ?? 0;
+        if (_ctx.Project is not { } p) return;
+        var name = InputDialog.Ask(this, UiStrings.SkinSettings_RenamePreset, UiStrings.SkinSettings_PresetName, preset.Name);
+        if (name is null || !p.SkinPresets.Contains(preset)) return;
+        try
+        {
+            _ctx.Structural(() => p.RenameSkinPreset(preset, name));
+        }
+        catch (ArgumentException ex)
+        {
+            Ui.Error(this, SkinOps.Message(ex));
+        }
+    }
+
+    private Control[] PresetCardMenu(SkinPreset preset, int index)
+    {
+        int count = _ctx.Project?.SkinPresets.Count ?? 0;
         void Run(Action<SpriteProject> action)
         {
-            if (_ctx.Project is { } p && p.Outfits.Contains(outfit)) _ctx.Structural(() => action(p));
+            if (_ctx.Project is { } p && p.SkinPresets.Contains(preset)) _ctx.Structural(() => action(p));
         }
         return
         [
-            Item(UiStrings.S_SkinManagerWindow_OutfitCardMenu_C88DD8A38B, () => ApplyOutfit(outfit)),
-            Item(UiStrings.S_SkinManagerWindow_OutfitCardMenu_C760B7FF32, () => Run(p => p.OverwriteOutfit(outfit))),
-            Item(UiStrings.S_SkinManagerWindow_OutfitCardMenu_B895F5A706, () => RenameOutfit(outfit)),
-            Item(UiStrings.S_SkinManagerWindow_OutfitCardMenu_890201A7A6, () => Run(p => p.DeleteOutfit(outfit))),
-            Item(UiStrings.S_SkinManagerWindow_OutfitCardMenu_4992E182C5, () => Run(p => p.MoveOutfit(index, index - 1)), index > 0),
-            Item(UiStrings.S_SkinManagerWindow_OutfitCardMenu_DAFD1AEAB0, () => Run(p => p.MoveOutfit(index, index + 1)), index < count - 1),
+            Item(UiStrings.S_SkinManagerWindow_OutfitCardMenu_C88DD8A38B, () => ApplyPreset(preset)),
+            Item(UiStrings.SkinSettings_Overwrite, () => Run(p => p.OverwriteSkinPreset(preset))).Tip(UiStrings.SkinSettings_OverwriteTip),
+            Item(UiStrings.S_SkinManagerWindow_OutfitCardMenu_B895F5A706, () => RenamePreset(preset)),
+            Item(UiStrings.S_SkinManagerWindow_OutfitCardMenu_890201A7A6, () => Run(p => p.DeleteSkinPreset(preset))),
+            Item(UiStrings.S_SkinManagerWindow_OutfitCardMenu_4992E182C5, () => Run(p => p.MoveSkinPreset(index, index - 1)), index > 0),
+            Item(UiStrings.S_SkinManagerWindow_OutfitCardMenu_DAFD1AEAB0, () => Run(p => p.MoveSkinPreset(index, index + 1)), index < count - 1),
         ];
     }
 
-    /// <summary>그룹 한 줄: 머리(펼치기 · 이름 · 부위 재정의 되돌리기) + 스킨 카드 + 새 스킨/복제, 펼쳤으면 부위 줄("개별 스킨" 거르기면 부위 줄만, 늘 펼침).</summary>
-    private Control GroupRow(SpriteProject p, Layer group, int frame, ref Control? focusRow)
-    {
-        var parts = p.ChildrenOf(group).Reverse().ToList();
-        int overrides = parts.Count(x => x.SkinOverride is not null);
-        int partOnly = group.AllSkins.Count(s => s.IsPartOnly);
-        bool expanded = _expanded.Contains(group) || (!ShowFull && parts.Count > 0);
+    // ───────────── 레이어 스킨 ─────────────
 
-        var toggle = new Button
-        {
-            Content = Ui.IconLabel(expanded ? VectorIcon.ChevronDown : VectorIcon.ChevronRight, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_GroupRow_9B00A60A58,parts.Count,(partOnly > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_GroupRow_815B0DD317,partOnly) : "")), 12),
-            Padding = new Thickness(6, 1),
-            Margin = new Thickness(0, 0, 6, 0),
-            VerticalAlignment = VerticalAlignment.Center,
-            IsEnabled = parts.Count > 0 && ShowFull,
-        }.HelpAt(Page, anchor: "Expand ⑨ Per part").Tip(UiStrings.S_SkinManagerWindow_GroupRow_5734D99416);
-        toggle.Click += (_, _) =>
-        {
-            if (!_expanded.Remove(group)) _expanded.Add(group);
-            Dispatcher.UIThread.Post(Rebuild);
-        };
+    /// <summary>레이어 한 줄(나무 깊이만큼 들여 씀): 이름 + 스킨 카드(끌어서 순서, 맨 앞 = 기본) + 새 스킨/복제.</summary>
+    private Control LayerRow(SpriteProject p, Layer layer, int index, int frame)
+    {
+        bool focused = ReferenceEquals(layer, _focus);
         var name = new TextBlock
         {
-            Text = group.Name,
+            Text = layer.Name,
             FontWeight = FontWeight.Bold,
-            Foreground = group.Visible ? AppTheme.TextBrush : AppTheme.DimTextBrush,
+            Foreground = p.IsLayerVisible(layer) ? AppTheme.TextBrush : AppTheme.DimTextBrush,
             VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis,
+            Margin = new Thickness(0, 0, 0, 4),
         };
-        var head = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 0, 0, 4) };
-        DockPanel.SetDock(toggle, Dock.Left);
-        head.Children.Add(toggle);
-        if (overrides > 0)
-        {
-            var reset = new Button { Content = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_GroupRow_6FDB1B90E3,overrides), Padding = new Thickness(6, 1), VerticalAlignment = VerticalAlignment.Center }
-                .HelpAt("parts-per-part", anchor: "A single part in a group can wear a different skin").Tip(UiStrings.S_SkinManagerWindow_GroupRow_D93BDD8066);
-            reset.Click += (_, _) => _ctx.ResetPartSkins(group);
-            DockPanel.SetDock(reset, Dock.Right);
-            head.Children.Add(reset);
-        }
-        head.Children.Add(name);
 
-        // 그룹 카드 줄과 부위 줄은 한 가로 스크롤로 함께 움직인다(빈 곳을 잡고 좌우로 끌기).
-        var inner = new StackPanel();
-        var body = new StackPanel { Children = { head, PanScroll(group, inner) } };
-        if (ShowFull)
-        {
-            // 카드는 한 줄로 늘어놓아 끌어서 순서를 바꾼다(맨 앞 = 기본 스킨). 누르기만 하면 그 스킨을 입힌다.
-            var cards = new StackPanel { Orientation = Orientation.Horizontal };
-            var drag = new DragReorder(Orientation.Horizontal);
-            drag.Moved += (from, to) => Dispatcher.UIThread.Post(() => SkinOps.MoveSkin(_ctx, group, from, to));
-            var skins = group.Skins;
-            // 카드 그림 = 타임라인 그룹 칸과 같은 썸네일(효과 없이, 부위 자리로 자름 — SpriteProject.RenderCelThumbnail)
-            int gi = p.IndexOf(group);
-            var area = p.ThumbnailBounds(gi);
-            var cardSize = area.IsEmpty ? p.Size : area.Size;
-            for (int i = 0; i < skins.Count; i++)
-            {
-                var skin = skins[i];
-                var bmp = p.RenderCelThumbnail(gi, frame, skin) is { } thumb ? Track(thumb) : null;
-                var card = Card(bmp, cardSize, GroupThumb, i == 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_GroupRow_3C53E562C4,skin.Name) : skin.Name, ReferenceEquals(skin, group.ActiveSkin), badge: null)
-                    .HelpAt(Page, anchor: "In a card's right-click menu");
-                card.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_GroupRow_FC60E8F0BD,group.Name,skin.Name));
-                int index = i;
-                Clickable(card, () => _ctx.SetActiveSkin(group, skin), () => GroupCardMenu(group, skin, index), onRelease: true);
-                drag.Attach(card);
-                cards.Children.Add(card);
-            }
-            var add = Ui.Button(VectorIcon.Plus, UiStrings.S_SkinManagerWindow_GroupRow_9C2AC337EC, (_, _) => SkinOps.AddSkin(_ctx, group, null)).HelpAt("parts-skin-empty", anchor: "New skin (empty)").Tip(UiStrings.S_SkinManagerWindow_GroupRow_DB88A91B7D);
-            var dup = Ui.Button(UiStrings.S_SkinManagerWindow_GroupRow_A6B044A804, (_, _) => SkinOps.AddSkin(_ctx, group, group.ActiveSkin)).HelpAt("parts-skin-empty", anchor: "Duplicate").Tip(UiStrings.S_SkinManagerWindow_GroupRow_9D0EB19E37);
-            add.HorizontalAlignment = dup.HorizontalAlignment = HorizontalAlignment.Stretch;
-            // 단추는 카드 줄 끝에(등록하지 않은 줄이라 끄는 동안 제자리를 지킨다).
-            cards.Children.Add(new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0), Children = { add, dup } });
-            inner.Children.Add(cards);
-        }
-        else if (parts.Count == 0) inner.Children.Add(Note(UiStrings.S_SkinManagerWindow_GroupRow_C9B42D4872));
-        if (expanded)
-        {
-            foreach (var part in parts)
-            {
-                var partRow = PartRow(p, group, part, frame);
-                if (ReferenceEquals(part, _focus)) focusRow = partRow;
-                inner.Children.Add(partRow);
-            }
-        }
-        var row = new Border
-        {
-            Background = AppTheme.BackBrush,
-            BorderBrush = ReferenceEquals(group, _focus) ? AppTheme.AccentBrush : AppTheme.BorderBrush,
-            BorderThickness = new Thickness(ReferenceEquals(group, _focus) ? 2 : 1),
-            CornerRadius = new CornerRadius(3),
-            Padding = new Thickness(6),
-            Child = body,
-        }.HelpAt(Page, anchor: "skin cards for each group");
-        if (ReferenceEquals(group, _focus)) focusRow = row;
-        return row;
-    }
-
-    /// <summary>
-    /// 부위 한 줄: 이름 + "없음" 카드 + 그룹 스킨 카드 + 이 부위 전용(개별) 스킨 카드 + "＋ 이 부위 스킨"/"복제".
-    /// 거르기에 따라 그룹 스킨 쪽("없음" 포함)이나 개별 스킨 쪽만.
-    /// </summary>
-    private Control PartRow(SpriteProject p, Layer group, Layer part, int frame)
-    {
-        var f = p.Frames[frame];
-        var size = part.PartSize;
-        var own = part.SkinOverride;
-
-        // 한 줄로(줄바꿈하지 않음) — 넘치면 그룹 상자째 가로로 끌어 본다.
+        // 카드는 한 줄로 늘어놓아 끌어서 순서를 바꾼다(맨 앞 = 기본 스킨). 누르기만 하면 그 스킨을 입힌다.
         var cards = new StackPanel { Orientation = Orientation.Horizontal };
-        WriteableBitmap? Cel(Skin skin) => p.GetOwnCel(part, f, skin) is { } cel && HasContent(cel) ? Track(cel) : null;
-
-        if (ShowFull)
+        var drag = new DragReorder(Orientation.Horizontal);
+        drag.Moved += (from, to) => Dispatcher.UIThread.Post(() => SkinOps.MoveSkin(_ctx, layer, from, to));
+        var skins = layer.Skins;
+        _picked.TryGetValue(layer, out var picked);
+        for (int i = 0; i < skins.Count; i++)
         {
-            // 첫 카드 "없음" = 이 부위만 따로 입힌 스킨 없음(그룹 스킨을 그대로 보임) — 그림 대신 금지 표시.
-            var follow = Card(null, size, PartThumb, UiStrings.S_SkinManagerWindow_PartRow_7B30E64531, own is null, badge: null, none: true).HelpAt(Page, anchor: "Expand ⑨ Per part");
-            follow.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_99B0FAABB1,group.ActiveSkin?.Name));
-            Clickable(follow, () => _ctx.SetPartSkin(part, null), () => PartCardMenu(group, part, null));
-            cards.Children.Add(follow);
-            var skins = group.Skins;
-            for (int i = 0; i < skins.Count; i++)
-            {
-                var skin = skins[i];
-                var card = Card(Cel(skin), size, PartThumb, i == 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_E3B6A5EA65,skin.Name) : skin.Name, ReferenceEquals(skin, own), badge: null)
-                    .HelpAt(Page, anchor: "Expand ⑨ Per part");
-                card.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_CEF2198767,part.Name,skin.Name));
-                Clickable(card, () => _ctx.SetPartSkin(part, skin), () => PartCardMenu(group, part, skin));
-                cards.Children.Add(card);
-            }
+            var skin = skins[i];
+            // 카드 그림 = 타임라인 칸과 같은 썸네일(효과 없이, 그 레이어 자리로 자름 — SpriteProject.RenderCelThumbnail)
+            var bmp = p.RenderCelThumbnail(index, frame, skin) is { } thumb ? Track(thumb) : null;
+            var card = Card(bmp, CardThumb, i == 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_SkinManagerWindow_GroupRow_3C53E562C4, skin.Name) : skin.Name,
+                    ReferenceEquals(skin, layer.ActiveSkin), ReferenceEquals(skin, picked), missing: false, empty: SizeOf(p, layer, index))
+                .HelpAt(Page, anchor: "In a card's right-click menu");
+            card.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.SkinSettings_SkinTip, layer.Name, skin.Name));
+            int at = i;
+            Clickable(card, () => _ctx.SetActiveSkin(layer, skin), () => TogglePick(layer, skin), () => SkinCardMenu(layer, skin, at), onRelease: true);
+            drag.Attach(card);
+            cards.Children.Add(card);
         }
-        if (ShowPartOnly)
-        {
-            var ownSkins = part.OwnSkins;
-            for (int i = 0; i < ownSkins.Count; i++)
-            {
-                var skin = ownSkins[i];
-                var card = Card(Cel(skin), size, PartThumb, skin.Name, ReferenceEquals(skin, own), badge: null, partOnly: true).HelpAt("parts-per-part", anchor: "Part-only skins");
-                card.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_85DEDD2457,part.Name,skin.Name) + UiStrings.S_SkinManagerWindow_PartRow_EA54194A02);
-                int index = i, count = ownSkins.Count;
-                Clickable(card, () => _ctx.SetPartSkin(part, skin), () => PartOnlyCardMenu(group, part, skin, index, count));
-                cards.Children.Add(card);
-            }
-            var add = Ui.Button(VectorIcon.Plus, UiStrings.S_SkinManagerWindow_PartRow_F72FB89182, (_, _) => SkinOps.AddPartSkin(_ctx, this, part, null, prompt: true)).HelpAt("parts-per-part", anchor: "Part-only skins")
-                .Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_A8A111B223,part.Name));
-            var dup = Ui.Button(UiStrings.S_SkinManagerWindow_PartRow_E91B568A36, (_, _) => SkinOps.AddPartSkin(_ctx, this, part, part.ShownSkin, prompt: true)).HelpAt("parts-per-part", anchor: "Part-only skins")
-                .Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_D7A2D2C8A0,part.Name,part.ShownSkin?.Name));
-            add.HorizontalAlignment = dup.HorizontalAlignment = HorizontalAlignment.Stretch;
-            cards.Children.Add(new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0), Children = { add, dup } });
-        }
+        var add = Ui.Button(VectorIcon.Plus, UiStrings.S_SkinManagerWindow_GroupRow_9C2AC337EC, (_, _) => SkinOps.AddSkin(_ctx, layer, null)).HelpAt("parts-skin-empty", anchor: "New skin (empty)").Tip(UiStrings.S_SkinManagerWindow_GroupRow_DB88A91B7D);
+        var dup = Ui.Button(UiStrings.S_SkinManagerWindow_GroupRow_A6B044A804, (_, _) => SkinOps.AddSkin(_ctx, layer, layer.ActiveSkin)).HelpAt("parts-skin-empty", anchor: "Duplicate").Tip(UiStrings.S_SkinManagerWindow_GroupRow_9D0EB19E37);
+        add.HorizontalAlignment = dup.HorizontalAlignment = HorizontalAlignment.Stretch;
+        // 단추는 카드 줄 끝에(등록하지 않은 줄이라 끄는 동안 제자리를 지킨다).
+        cards.Children.Add(new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0), Children = { add, dup } });
 
-        bool focused = ReferenceEquals(part, _focus);
-        var label = new TextBlock
-        {
-            Text = part.Name,
-            Foreground = part.Visible ? AppTheme.TextBrush : AppTheme.DimTextBrush,
-            FontWeight = focused ? FontWeight.Bold : FontWeight.Normal,
-            TextTrimming = TextTrimming.CharacterEllipsis,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(4, 0, 6, 0),
-        }.Tip(own is null ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_DA413B86D8,part.Name) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_085BBE8C28,part.Name,own.Name));
-        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("110,Auto") };
-        grid.Children.Add(label);
-        Grid.SetColumn(cards, 1);
-        grid.Children.Add(cards);
-        // 대상 도움말(F1): 부위 줄 = "부위마다" ⑨ 항목(빈 곳도 눌리게 투명 배경)
         return new Border
         {
-            Margin = new Thickness(0, 4, 0, 0),
-            Padding = new Thickness(2),
-            Background = Brushes.Transparent,
+            Margin = new Thickness(p.DepthOf(layer) * IndentStep, 0, 0, 0),
+            Background = AppTheme.BackBrush,
             BorderBrush = focused ? AppTheme.AccentBrush : AppTheme.BorderBrush,
-            BorderThickness = new Thickness(focused ? 2 : 0, focused ? 2 : 1, focused ? 2 : 0, focused ? 2 : 0),
-            CornerRadius = new CornerRadius(focused ? 3 : 0),
-            Child = grid,
-        }.HelpAt(Page, anchor: "Expand ⑨ Per part");
+            BorderThickness = new Thickness(focused ? 2 : 1),
+            CornerRadius = new CornerRadius(3),
+            Padding = new Thickness(6),
+            Child = new StackPanel { Children = { name, PanScroll(layer, cards) } },
+        }.HelpAt(Page, anchor: "skin cards for each group");
     }
 
-    /// <summary>썸네일 + 이름(+ 작은 표시, 부위 전용이면 왼쪽 위 "개별") 카드. 고른 카드는 강조 테두리.</summary>
-    private static Border Card(Bitmap? bmp, Size source, int thumb, string title, bool selected, string? badge, bool none = false, bool partOnly = false)
+    /// <summary>빈 셀 카드의 체커 비율: 자리 있는 레이어는 그 크기, 일반 레이어는 썸네일 자리(없으면 캔버스).</summary>
+    private static Size SizeOf(SpriteProject p, Layer layer, int index)
     {
-        var image = new SkinThumb(bmp, source) { Width = thumb, Height = thumb, ShowNone = none };
+        if (layer.IsPart) return layer.PartSize;
+        var area = p.ThumbnailBounds(index);
+        return area.IsEmpty ? p.Size : area.Size;
+    }
+
+    /// <summary>Ctrl/⌘+클릭: 그 레이어에서 이 스킨을 고르거나(같은 줄의 다른 고르기는 바뀜), 이미 고른 스킨이면 고르기를 푼다.</summary>
+    private void TogglePick(Layer layer, Skin skin)
+    {
+        if (_picked.TryGetValue(layer, out var old) && ReferenceEquals(old, skin)) _picked.Remove(layer);
+        else _picked[layer] = skin;
+        Rebuild();
+    }
+
+    private Control[] SkinCardMenu(Layer layer, Skin skin, int index)
+    {
+        int count = layer.Skins.Count;
+        bool picked = _picked.TryGetValue(layer, out var cur) && ReferenceEquals(cur, skin);
+        return
+        [
+            Item(UiStrings.S_SkinManagerWindow_GroupCardMenu_DBEF21539E, () => _ctx.SetActiveSkin(layer, skin)),
+            Item(picked ? UiStrings.SkinSettings_Unpick : UiStrings.SkinSettings_Pick, () => TogglePick(layer, skin)),
+            new Separator(),
+            Item(UiStrings.S_SkinManagerWindow_GroupCardMenu_F64B3478B8, () => SkinOps.AddSkin(_ctx, layer, skin)),
+            Item(UiStrings.S_SkinManagerWindow_GroupCardMenu_120694637E, () => SkinOps.RenameSkin(_ctx, this, layer, skin)),
+            Item(UiStrings.S_SkinManagerWindow_GroupCardMenu_61F6FB267B, () => SkinOps.DeleteSkin(_ctx, this, layer, skin), count > 1),
+            Item(UiStrings.S_SkinManagerWindow_GroupCardMenu_676B513AAC, () => SkinOps.MoveSkin(_ctx, layer, index, index - 1), index > 0),
+            Item(UiStrings.S_SkinManagerWindow_GroupCardMenu_B0B89947BD, () => SkinOps.MoveSkin(_ctx, layer, index, index + 1), index < count - 1),
+        ];
+    }
+
+    // ───────────── 카드 ─────────────
+
+    /// <summary>
+    /// 썸네일 + 이름 카드. 지금 스킨(입힌 프리셋)이면 강조 테두리, 프리셋용으로 고른 카드면 왼쪽 위 체크 표시,
+    /// 쓸 수 없는 항목이 있는 프리셋이면 오른쪽 위 경고 표시. <paramref name="empty"/> = 그림이 없을 때 체커 비율.
+    /// </summary>
+    private static Border Card(Bitmap? bmp, int thumb, string title, bool selected, bool picked, bool missing, Size? empty = null)
+    {
+        var source = bmp is not null ? new Size(bmp.PixelSize.Width, bmp.PixelSize.Height) : empty ?? new Size(1, 1);
+        var image = new SkinThumb(bmp, source) { Width = thumb, Height = thumb };
         var panel = new Panel { Children = { image } };
-        if (badge is not null)
-        {
-            panel.Children.Add(new Border
-            {
-                Background = AppTheme.WarningBrush,
-                CornerRadius = new CornerRadius(2),
-                Padding = new Thickness(3, 0),
-                HorizontalAlignment = HorizontalAlignment.Right,
-                VerticalAlignment = VerticalAlignment.Top,
-                Margin = new Thickness(0, 2, 2, 0),
-                Child = new TextBlock { Text = badge, FontSize = AppTheme.SmallFontSize - 1, Foreground = Brushes.Black },
-            });
-        }
-        if (partOnly)
-        {
-            var mark = SkinPickerWindow.Badge();
-            mark.HorizontalAlignment = HorizontalAlignment.Left;
-            mark.VerticalAlignment = VerticalAlignment.Top;
-            mark.Margin = new Thickness(2, 2, 0, 0);
-            panel.Children.Add(mark);
-        }
+        if (missing) panel.Children.Add(Mark(VectorIcon.CircleAlert, AppTheme.WarningBrush, HorizontalAlignment.Right));
+        if (picked) panel.Children.Add(Mark(VectorIcon.Check, AppTheme.AccentBrush, HorizontalAlignment.Left));
         var text = new TextBlock
         {
             Text = title,
@@ -678,7 +571,7 @@ public sealed class SkinManagerWindow : Window
             Margin = new Thickness(0, 0, 4, 4),
             Padding = new Thickness(selected ? 3 : 4),
             Background = selected ? AppTheme.HoverBrush : AppTheme.PanelBrush,
-            BorderBrush = selected ? AppTheme.AccentBrush : AppTheme.BorderBrush,
+            BorderBrush = selected ? AppTheme.AccentBrush : picked ? AppTheme.TextBrush : AppTheme.BorderBrush,
             BorderThickness = new Thickness(selected ? 2 : 1),
             CornerRadius = new CornerRadius(3),
             Cursor = HandCursor,
@@ -686,14 +579,35 @@ public sealed class SkinManagerWindow : Window
         };
     }
 
-    /// <summary>왼쪽 클릭 = <paramref name="apply"/>, 두 번 누르기 = 적용하고 창 닫기, 오른쪽 클릭 = 메뉴.</summary>
-    /// <param name="onRelease">끌어서 순서를 바꾸는 카드: 누를 때가 아니라 끌지 않고 놓을 때 입힌다(끌면 <see cref="DragReorder"/>가 놓기를 처리함).</param>
-    private void Clickable(Control card, Action apply, Func<Control[]> menu, bool onRelease = false)
+    /// <summary>카드 위쪽 모서리의 작은 원 바탕 아이콘(고름 = 체크, 빠진 항목 = 경고).</summary>
+    private static Border Mark(VectorIcon icon, IBrush brush, HorizontalAlignment side) => new()
     {
+        Width = 16,
+        Height = 16,
+        CornerRadius = new CornerRadius(8),
+        Background = brush,
+        HorizontalAlignment = side,
+        VerticalAlignment = VerticalAlignment.Top,
+        Margin = new Thickness(2),
+        Child = new IconView(icon, Brushes.White, 2.6) { Width = 11, Height = 11, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center },
+    };
+
+    /// <summary>
+    /// 왼쪽 클릭 = <paramref name="apply"/>, 두 번 누르기 = 적용하고 창 닫기, Ctrl/⌘+클릭 = <paramref name="pick"/>(있을 때), 오른쪽 클릭 = 메뉴.
+    /// </summary>
+    /// <param name="onRelease">끌어서 순서를 바꾸는 카드: 누를 때가 아니라 끌지 않고 놓을 때 입힌다(끌면 <see cref="DragReorder"/>가 놓기를 처리함).</param>
+    private void Clickable(Control card, Action apply, Action? pick, Func<Control[]> menu, bool onRelease = false)
+    {
+        bool PickKey(KeyModifiers mods) => pick is not null && (mods & Platform.CommandModifier) != 0;
         card.PointerPressed += (_, e) =>
         {
             if (!e.GetCurrentPoint(card).Properties.IsLeftButtonPressed) return;
             e.Handled = true;
+            if (PickKey(e.KeyModifiers))
+            {
+                if (!onRelease) Dispatcher.UIThread.Post(pick!);
+                return;
+            }
             if (e.ClickCount >= 2)
             {
                 Dispatcher.UIThread.Post(() => { apply(); Close(); });
@@ -707,7 +621,7 @@ public sealed class SkinManagerWindow : Window
             {
                 if (e.InitialPressMouseButton != MouseButton.Left || !card.Bounds.WithX(0).WithY(0).Contains(e.GetPosition(card))) return;
                 e.Handled = true;
-                Dispatcher.UIThread.Post(apply);
+                Dispatcher.UIThread.Post(PickKey(e.KeyModifiers) ? pick! : apply);
             };
         PopupMenus.Attach(card, menu);
     }
@@ -720,99 +634,26 @@ public sealed class SkinManagerWindow : Window
         return item;
     }
 
-    private Control[] GroupCardMenu(Layer group, Skin skin, int index)
-    {
-        int count = group.Skins.Count;
-        bool anyOverride = _ctx.Project is { } p && p.ChildrenOf(group).Any(x => x.SkinOverride is not null);
-        return
-        [
-            Item(UiStrings.S_SkinManagerWindow_GroupCardMenu_DBEF21539E, () => _ctx.SetActiveSkin(group, skin)),
-            Item(UiStrings.S_SkinManagerWindow_GroupCardMenu_F64B3478B8, () => SkinOps.AddSkin(_ctx, group, skin)),
-            Item(UiStrings.S_SkinManagerWindow_GroupCardMenu_120694637E, () => SkinOps.RenameSkin(_ctx, this, group, skin)),
-            Item(UiStrings.S_SkinManagerWindow_GroupCardMenu_61F6FB267B, () => SkinOps.DeleteSkin(_ctx, this, group, skin), count > 1),
-            Item(UiStrings.S_SkinManagerWindow_GroupCardMenu_676B513AAC, () => SkinOps.MoveSkin(_ctx, group, index, index - 1), index > 0),
-            Item(UiStrings.S_SkinManagerWindow_GroupCardMenu_B0B89947BD, () => SkinOps.MoveSkin(_ctx, group, index, index + 1), index < count - 1),
-            new Separator(),
-            Item(UiStrings.S_SkinManagerWindow_GroupCardMenu_73046F601D, () => _ctx.ResetPartSkins(group), anyOverride),
-        ];
-    }
-
-    private Control[] PartCardMenu(Layer group, Layer part, Skin? skin)
-    {
-        var items = new List<Control>
-        {
-            Item(skin is null ? UiStrings.S_SkinManagerWindow_PartCardMenu_B707E8D06F : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartCardMenu_A682C5668A,part.Name), () => _ctx.SetPartSkin(part, skin)),
-            Item(UiStrings.S_SkinManagerWindow_PartCardMenu_17D1AA6157, () => _ctx.SetActiveSkin(group, skin ?? group.ActiveSkin!), skin is not null),
-            new Separator(),
-            Item(UiStrings.S_SkinManagerWindow_PartCardMenu_88C8CE302D, () => _ctx.ResetPartSkins(group),
-                _ctx.Project is { } p && p.ChildrenOf(group).Any(x => x.SkinOverride is not null)),
-        };
-        if (skin is not null)
-        {
-            items.Add(new Separator());
-            items.Add(Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.SkinManager_AddAsPartOnly, part.Name),
-                () => SkinOps.AddPartSkinFrom(_ctx, this, part, skin)).Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.SkinManager_AddAsPartOnly_Tip, part.Name, skin.Name)));
-        }
-        return [.. items];
-    }
-
-    /// <summary>부위 전용(개별) 스킨 카드 메뉴(<paramref name="index"/>/<paramref name="count"/> = 그 부위 전용 스킨 안 순서).</summary>
-    private Control[] PartOnlyCardMenu(Layer group, Layer part, Skin skin, int index, int count) =>
-    [
-        Item(UiStrings.S_SkinManagerWindow_PartOnlyCardMenu_1059723A6A, () => _ctx.SetPartSkin(part, skin)),
-        Item(UiStrings.S_SkinManagerWindow_PartOnlyCardMenu_856030E730, () => _ctx.SetPartSkin(part, null), ReferenceEquals(part.SkinOverride, skin)),
-        Item(UiStrings.S_SkinManagerWindow_PartOnlyCardMenu_7E4FA46FDD, () => SkinOps.AddPartSkin(_ctx, this, part, skin, prompt: false)),
-        Item(UiStrings.S_SkinManagerWindow_PartOnlyCardMenu_387D5AE48C, () => SkinOps.RenameSkin(_ctx, this, group, skin)),
-        Item(UiStrings.S_SkinManagerWindow_PartOnlyCardMenu_9B7916FEF1, () => SkinOps.DeleteSkin(_ctx, this, group, skin)),
-        Item(UiStrings.S_SkinManagerWindow_PartOnlyCardMenu_A9D6CC16B0, () => SkinOps.MoveSkinBy(_ctx, group, skin, -1), index > 0),
-        Item(UiStrings.S_SkinManagerWindow_PartOnlyCardMenu_234DD226C3, () => SkinOps.MoveSkinBy(_ctx, group, skin, 1), index < count - 1),
-        new Separator(),
-        Item(UiStrings.S_SkinManagerWindow_PartOnlyCardMenu_C1E4068EB0, () => SkinOps.PromoteSkin(_ctx, group, skin)),
-    ];
-
     // ───────────── 썸네일 ─────────────
 
     /// <summary>체커 위에 비트맵을 정수 배율(최근접)로 가운데 맞춰 그린다. 비트맵이 없으면 원본 비율의 체커만.</summary>
     private sealed class SkinThumb(Bitmap? bitmap, Size source) : Control
     {
-        private Bitmap? _bitmap = bitmap;
-
-        public Size Source { get; set; } = source;
-
-        /// <summary>그림 대신 회색 금지 표시(원 + 사선): "없음" 카드(부위만 따로 입힌 스킨 없음).</summary>
-        public bool ShowNone { get; init; }
-
-        public Bitmap? Picture
-        {
-            get => _bitmap;
-            set { _bitmap = value; InvalidateVisual(); }
-        }
-
         public override void Render(DrawingContext g)
         {
             var area = new Rect(Bounds.Size);
             g.FillRectangle(AppTheme.InputBrush, area);
             var inner = area.Deflate(2);
-            if (ShowNone)
+            if (source.Width <= 0 || source.Height <= 0 || inner.Width <= 0 || inner.Height <= 0) return;
+            var src = new Rectangle(0, 0, source.Width, source.Height);
+            if (bitmap is not null)
             {
-                double r = Math.Min(inner.Width, inner.Height) * 0.32;
-                var c = inner.Center;
-                var pen = new Pen(AppTheme.DimTextBrush, Math.Max(2, r * 0.18));
-                g.DrawEllipse(null, pen, c, r, r);
-                double d = r * Math.Sqrt(0.5);
-                g.DrawLine(pen, new Avalonia.Point(c.X - d, c.Y - d), new Avalonia.Point(c.X + d, c.Y + d));
+                ImageUtil.DrawFitted(g, bitmap, src, inner, checker: true);
                 return;
             }
-            if (Source.Width <= 0 || Source.Height <= 0 || inner.Width <= 0 || inner.Height <= 0) return;
-            var src = new Rectangle(0, 0, Source.Width, Source.Height);
-            if (_bitmap is not null)
-            {
-                ImageUtil.DrawFitted(g, _bitmap, src, inner, checker: true);
-                return;
-            }
-            double fit = Math.Min(inner.Width / Source.Width, inner.Height / Source.Height);
+            double fit = Math.Min(inner.Width / source.Width, inner.Height / source.Height);
             double scale = fit >= 1 ? Math.Floor(fit) : fit;
-            double w = Math.Max(1, Math.Floor(Source.Width * scale)), h = Math.Max(1, Math.Floor(Source.Height * scale));
+            double w = Math.Max(1, Math.Floor(source.Width * scale)), h = Math.Max(1, Math.Floor(source.Height * scale));
             var dest = new Rect(Math.Floor(inner.X + (inner.Width - w) / 2), Math.Floor(inner.Y + (inner.Height - h) / 2), w, h);
             AppTheme.DrawChecker(g, dest, Math.Max(2, Math.Min(8, (int)scale * 2)));
         }
@@ -820,38 +661,31 @@ public sealed class SkinManagerWindow : Window
 
     // ───────────── 상태 글 ─────────────
 
-    /// <summary>
-    /// 레이어의 스킨 상태 한 줄(그룹·부위가 아니면 ""): "스킨: knight", 부위면 "스킨: knight · 부위만 따로".
-    /// </summary>
+    /// <summary>레이어의 스킨 상태 한 줄("스킨: knight"). 스킨이 하나뿐이거나 타일맵이면 "".</summary>
     public static string SkinStatus(Layer layer)
-    {
-        if (layer.ShownSkin is not { } shown) return "";
-        var text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_SkinStatus_24731B367D,shown.Name);
-        if (!layer.IsPart) return text;
-        if (layer.SkinOverride is { } over) text += over.IsPartOnly ? UiStrings.S_SkinManagerWindow_SkinStatus_A6C337D7ED : UiStrings.S_SkinManagerWindow_SkinStatus_F066020B99;
-        return text;
-    }
+        => layer.Skins.Count < 2 || layer.ActiveSkin is not { } active ? "" : string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_SkinManagerWindow_SkinStatus_24731B367D, active.Name);
 }
 
-/// <summary>스킨 편집(실행취소됨) 공용 동작: 타임라인 메뉴와 스킨 관리 창이 함께 쓴다. 오류는 대화상자로 알린다.</summary>
+/// <summary>스킨 편집(실행취소됨) 공용 동작: 타임라인 메뉴와 스킨 설정 창이 함께 쓴다. 오류는 대화상자로 알린다.</summary>
 public static class SkinOps
 {
-    /// <summary>그룹에 스킨을 더한다(<paramref name="copyFrom"/>이 있으면 그 스킨 그림 복제). 새 스킨이 지금 스킨이 된다.</summary>
-    public static void AddSkin(EditorContext ctx, Layer group, Skin? copyFrom)
+    /// <summary>레이어에 스킨을 더한다(<paramref name="copyFrom"/>이 있으면 그 스킨 그림 복제). 새 스킨이 지금 스킨이 된다.</summary>
+    public static void AddSkin(EditorContext ctx, Layer layer, Skin? copyFrom)
     {
         if (ctx.Project is not { } p) return;
-        ctx.Structural(() => p.AddSkin(group, null, copyFrom));
+        ctx.Structural(() => p.AddSkin(layer, null, copyFrom));
     }
 
-    public static void RenameSkin(EditorContext ctx, Visual owner, Layer group, Skin skin)
+    /// <summary>
+    /// "자식까지": 레이어와 모든 자손에 같은 이름 스킨을 더해 입히고 그 묶음을 같은 이름의 스킨 프리셋으로 등록한다
+    /// (<paramref name="copy"/>면 레이어마다 지금 스킨 그림 복제, 아니면 빈 스킨).
+    /// </summary>
+    public static void AddSkinToSubtree(EditorContext ctx, Visual owner, Layer layer, bool copy)
     {
         if (ctx.Project is not { } p) return;
-        var prompt = skin.Owner is { } part ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_RenameSkin_358214944C,part.Name) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_RenameSkin_D01A9D1D35,group.Name);
-        var name = InputDialog.Ask(owner, UiStrings.S_SkinManagerWindow_RenameSkin_5BEFE451AB, prompt, skin.Name);
-        if (name is null) return;
         try
         {
-            ctx.Structural(() => p.RenameSkin(group, skin, name));
+            ctx.Structural(() => p.AddSkinToSubtree(layer, null, copy));
         }
         catch (ArgumentException ex)
         {
@@ -859,12 +693,28 @@ public static class SkinOps
         }
     }
 
-    public static void DeleteSkin(EditorContext ctx, Visual owner, Layer group, Skin skin)
+    public static void RenameSkin(EditorContext ctx, Visual owner, Layer layer, Skin skin)
+    {
+        if (ctx.Project is not { } p) return;
+        var name = InputDialog.Ask(owner, UiStrings.S_SkinManagerWindow_RenameSkin_5BEFE451AB,
+            string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.SkinSettings_RenameSkinPrompt, layer.Name), skin.Name);
+        if (name is null) return;
+        try
+        {
+            ctx.Structural(() => p.RenameSkin(layer, skin, name));
+        }
+        catch (ArgumentException ex)
+        {
+            Ui.Error(owner, Message(ex));
+        }
+    }
+
+    public static void DeleteSkin(EditorContext ctx, Visual owner, Layer layer, Skin skin)
     {
         if (ctx.Project is not { } p) return;
         try
         {
-            ctx.Structural(() => p.DeleteSkin(group, skin));
+            ctx.Structural(() => p.DeleteSkin(layer, skin));
         }
         catch (InvalidOperationException ex)
         {
@@ -872,72 +722,13 @@ public static class SkinOps
         }
     }
 
-    public static void MoveSkin(EditorContext ctx, Layer group, int from, int to)
+    public static void MoveSkin(EditorContext ctx, Layer layer, int from, int to)
     {
-        if (ctx.Project is not { } p || to < 0 || to >= group.Skins.Count) return;
-        ctx.Structural(() => p.MoveSkin(group, from, to));
-    }
-
-    /// <summary>스킨을 같은 목록 안에서 앞(−)/뒤(+)로(전체 스킨은 전체 스킨끼리, 부위 전용 스킨은 같은 부위 전용끼리).</summary>
-    public static void MoveSkinBy(EditorContext ctx, Layer group, Skin skin, int delta)
-    {
-        if (ctx.Project is not { } p) return;
-        ctx.Structural(() => p.MoveSkin(group, skin, delta));
-    }
-
-    /// <summary>
-    /// 부위 하나에만 있는 스킨(부위 전용·개별 스킨)을 만들고 그 부위에 입힌다. <paramref name="copyFrom"/>이 있으면 그 부위의 그 스킨 그림 복제.
-    /// <paramref name="prompt"/>면 이름을 묻는다(제안: "{부위} 스킨" / "{스킨} 복사", 그룹 안에서 겹치지 않게).
-    /// </summary>
-    public static void AddPartSkin(EditorContext ctx, Visual owner, Layer part, Skin? copyFrom, bool prompt)
-    {
-        if (ctx.Project is not { } p || part.Parent is not { IsGroup: true } group) return;
-        string? name = null;
-        if (prompt)
-        {
-            var suggested = p.UniqueSkinName(group, copyFrom is null ? part.Name + UiStrings.S_SkinManagerWindow_AddPartSkin_36C8BCB7E0 : copyFrom.Name + UiStrings.S_SkinManagerWindow_AddPartSkin_0CED2C9CCF);
-            name = InputDialog.Ask(owner, copyFrom is null ? UiStrings.S_SkinManagerWindow_AddPartSkin_1B501B2226 : UiStrings.S_SkinManagerWindow_AddPartSkin_F025057A5B,
-                copyFrom is null
-                    ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_AddPartSkin_56578CE0FC,part.Name)
-                    : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_AddPartSkin_2575BCDF95,part.Name,copyFrom.Name),
-                suggested);
-            if (name is null || !ReferenceEquals(ctx.Project, p)) return;
-        }
-        try
-        {
-            ctx.Structural(() => p.AddPartSkin(part, name, copyFrom));
-        }
-        catch (ArgumentException ex)
-        {
-            Ui.Error(owner, Message(ex));
-        }
-    }
-
-    /// <summary>
-    /// 전체 스킨 <paramref name="skin"/>의 그 부위 그림을 복사해 같은 이름(겹치면 " 2" …)의 <paramref name="part"/> 전용 스킨을 하나 더하고 입힌다.
-    /// 전체 스킨과 다른 부위는 그대로다(실행취소됨).
-    /// </summary>
-    public static void AddPartSkinFrom(EditorContext ctx, Visual owner, Layer part, Skin skin)
-    {
-        if (ctx.Project is not { } p) return;
-        try
-        {
-            ctx.Structural(() => p.AddPartSkin(part, skin.Name, skin));
-        }
-        catch (ArgumentException ex)
-        {
-            Ui.Error(owner, Message(ex));
-        }
-    }
-
-    /// <summary>부위 전용 스킨을 그룹 전체 스킨으로 올린다(다른 부위에서도 고를 수 있게).</summary>
-    public static void PromoteSkin(EditorContext ctx, Layer group, Skin skin)
-    {
-        if (ctx.Project is not { } p) return;
-        ctx.Structural(() => p.PromoteSkin(group, skin));
+        if (ctx.Project is not { } p || to < 0 || to >= layer.Skins.Count) return;
+        ctx.Structural(() => p.MoveSkin(layer, from, to));
     }
 
     /// <summary>예외 글에서 " (Parameter '…')"를 뗀다.</summary>
-    private static string Message(ArgumentException ex)
+    internal static string Message(ArgumentException ex)
         => ex.ParamName is { } param ? ex.Message.Replace($" (Parameter '{param}')", "") : ex.Message;
 }

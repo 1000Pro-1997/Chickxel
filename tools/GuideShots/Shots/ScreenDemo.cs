@@ -110,7 +110,8 @@ internal static class ScreenDemo
 
             if (group)
             {
-                var g = p.AddGroup("Props");
+                // 빈 부모 레이어(예전 그룹) 아래에 자식 두 개
+                var g = p.AddPart(null, "Props", p.Width, p.Height, System.Drawing.Point.Empty);
                 var star = p.AddPart(g, "Sparkle", 7, 7, new System.Drawing.Point(38, 6));
                 var gem = p.AddPart(g, "Gem", 5, 5, new System.Drawing.Point(4, 40));
                 for (int f = 0; f < p.Frames.Count; f++)

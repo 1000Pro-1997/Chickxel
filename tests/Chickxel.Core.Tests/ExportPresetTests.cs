@@ -7,14 +7,14 @@ namespace Chickxel.Core.Tests;
 /// <summary>내보내기 설정 프리셋: 담기·적용(프로젝트 의존 값 유지), 시트별 다르게, JSON 왕복·오류, 합치기, 기본 제공 프리셋, 실행취소.</summary>
 public class ExportPresetTests
 {
-    /// <summary>그룹 하나(부위·스킨 둘·착장 하나) 프로젝트 — 고른 스킨·착장·뺀 레이어 목록용.</summary>
-    private static (SpriteProject P, Layer Group, Skin Knight, Outfit Outfit) Project()
+    /// <summary>빈 부모 하나(자식·스킨 둘·스킨 프리셋 하나) 프로젝트 — 고른 스킨·프리셋·뺀 레이어 목록용.</summary>
+    private static (SpriteProject P, Layer Group, Skin Knight, SkinPreset Outfit) Project()
     {
         var p = new SpriteProject(4, 4);
-        var g = p.AddGroup("body");
-        p.AddPart(g, "Head", 2, 2, new Point(0, 0));
-        var knight = p.AddSkin(g, "knight");
-        var outfit = p.SaveOutfit("기사");
+        var g = p.AddEmptyParent("body");
+        var head = p.AddPart(g, "Head", 2, 2, new Point(0, 0));
+        var knight = p.AddSkin(head, "knight");
+        var outfit = p.SaveSkinPreset("기사");
         return (p, g, knight, outfit);
     }
 
@@ -137,7 +137,7 @@ public class ExportPresetTests
         x.SingleFrameIndex = 3;
         x.KeepImportedRects = false;
         x.Common.ExcludedSkins = [knight];
-        x.Common.Outfits = [outfit];
+        x.Common.Presets = [outfit];
         x.Common.ExcludedLayers = [g];
         var excludedSkins = x.Common.ExcludedSkins;
 
@@ -148,12 +148,12 @@ public class ExportPresetTests
         Assert.Equal(3, x.SingleFrameIndex);
         Assert.False(x.KeepImportedRects);
         Assert.Same(excludedSkins, x.Common.ExcludedSkins);
-        Assert.Equal([outfit], x.Common.Outfits);
+        Assert.Equal([outfit], x.Common.Presets);
         Assert.Equal([g], x.Common.ExcludedLayers);
         var po = x.PartsOverride!;
         Assert.NotSame(x.Common, po);
         Assert.Equal([knight], po.ExcludedSkins);
-        Assert.Equal([outfit], po.Outfits);
+        Assert.Equal([outfit], po.Presets);
         Assert.Equal([g], po.ExcludedLayers);
         Assert.Equal(13, po.Spacing);
 
@@ -181,7 +181,7 @@ public class ExportPresetTests
         p.Export.Common.Spacing = 2;
         var before = ExportPresets.Serialize([ExportPreset.Capture(p.Export, "before")]);
         int undo = p.History.UndoCount;
-        var preset = ExportPresets.BuiltIns.Single(b => b.Name == "부위 아틀라스 + Sprite Library");
+        var preset = ExportPresets.BuiltIns.Single(b => b.Name == "레이어 아틀라스 + Sprite Library");
         p.Edit("내보내기 프리셋 적용", ProjectChange.Settings, () => preset.ApplyTo(p.Export));
         Assert.Equal(undo + 1, p.History.UndoCount);
         Assert.Equal(SheetLayout.Packed, p.Export.Common.Layout);
@@ -199,7 +199,7 @@ public class ExportPresetTests
     [Fact]
     public void BuiltIns_ApplySensibly()
     {
-        Assert.Equal(["프레임 시트 기본", "부위 아틀라스 + Sprite Library", "스킨마다 따로 파일"], ExportPresets.BuiltIns.Select(b => b.Name));
+        Assert.Equal(["프레임 시트 기본", "레이어 아틀라스 + Sprite Library", "스킨마다 따로 파일"], ExportPresets.BuiltIns.Select(b => b.Name));
         Assert.All(ExportPresets.BuiltIns, b => Assert.True(b.BuiltIn));
 
         var x = Custom();
@@ -306,7 +306,7 @@ public class ExportPresetTests
         Assert.False(clash.BuiltIn);
 
         var merged = ExportPresets.Merge([.. ExportPresets.BuiltIns, a, c], [importedA, clash]);
-        Assert.Equal(["a", "c", "부위 아틀라스 + Sprite Library (가져옴)"], merged.Select(p => p.Name));
+        Assert.Equal(["a", "c", "레이어 아틀라스 + Sprite Library (가져옴)"], merged.Select(p => p.Name));
         Assert.Equal(5, merged[0].Sheet.Spacing);
         Assert.NotSame(importedA, merged[0]); // 사본
         Assert.True(merged[2].WriteSpriteLibrary);

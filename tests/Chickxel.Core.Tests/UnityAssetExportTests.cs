@@ -6,7 +6,7 @@ namespace Chickxel.Core.Tests;
 
 /// <summary>
 /// Unity 프리팹·애니메이션 내보내기(<see cref="ExportSettings.WritePrefab"/>·<see cref="ExportSettings.WriteAnimations"/>):
-/// 부위 자리·스프라이트 참조, 태그마다 클립(스프라이트·움직인 부위 자리·길이), Controller·Animator 연결, 다시 내보내도 guid 유지, 끄면 옛 파일 정리.
+/// 레이어 나무대로 중첩한 오브젝트 자리·스프라이트 참조, 태그마다 클립(스프라이트·움직인 레이어 자리·길이), Controller·Animator 연결, 다시 내보내도 guid 유지, 끄면 옛 파일 정리.
 /// (같은 꼴의 파일을 Unity 6000.6 배치 모드로 가져와 Animator 재생까지 확인함.)
 /// </summary>
 public class UnityAssetExportTests
@@ -20,14 +20,15 @@ public class UnityAssetExportTests
     }
 
     /// <summary>
-    /// 16×16, 프레임 4개(idle 0~1 100ms, walk 2~3 150ms). 그룹 Hero: Legs 8×6 @ (4,10), Head 8×8 @ (4,2) — walk에서 Head가 1px 아래로.
+    /// 16×16, 프레임 4개(idle 0~1 100ms, walk 2~3 150ms). 빈 부모 Hero(캔버스 크기 @ (0,0), 피벗 가운데 (8,8)) 아래 Legs 8×6 @ (4,10), Head 8×8 @ (4,2)
+    /// — walk에서 Head가 1px 아래로.
     /// 캔버스 피벗 = 아래 가운데, PPU 16.
     /// </summary>
     private static (SpriteProject P, Layer Head) Hero()
     {
         var p = new SpriteProject(16, 16);
         for (int i = 0; i < 3; i++) p.AddFrame();
-        var g = p.AddGroup("Hero");
+        var g = p.AddEmptyParent("Hero");
         var legs = p.AddPart(g, "Legs", 8, 6, new Point(4, 10));
         var head = p.AddPart(g, "Head", 8, 8, new Point(4, 2));
         for (int f = 0; f < 4; f++)
@@ -79,21 +80,25 @@ public class UnityAssetExportTests
         var atlas = dir.File("hero_parts.png");
         var atlasGuid = Guid(atlas);
         var prefab = File.ReadAllText(dir.File("hero.prefab"));
-        // 맨 위 = 캔버스 피벗(8,16). Head 피벗(가운데) (8,6) → 위로 10px = 0.625, Legs (8,13) → 0.1875. 그리는 순서는 아래 레이어부터.
-        Assert.Equal("{x: 0, y: 0.625, z: 0}", After(prefab, "m_Name: Head", "m_LocalPosition:"));
-        Assert.Equal("{x: 0, y: 0.1875, z: 0}", After(prefab, "m_Name: Legs", "m_LocalPosition:"));
+        // 맨 위 = 캔버스 피벗(8,16). 빈 부모 Hero = 자기 피벗 (8,8) → 위로 8px = 0.5(SpriteRenderer 없음).
+        // 자식은 부모 기준: Head 피벗(가운데) (8,6) → Hero보다 위로 2px = 0.125(맨 위 기준 0.625), Legs (8,13) → 아래로 5px = −0.3125(맨 위 기준 0.1875).
+        Assert.Equal("{x: 0, y: 0.5, z: 0}", After(prefab, "m_Name: Hero", "m_LocalPosition:"));
+        Assert.Equal("{x: 0, y: 0.125, z: 0}", After(prefab, "m_Name: Head", "m_LocalPosition:"));
+        Assert.Equal("{x: 0, y: -0.3125, z: 0}", After(prefab, "m_Name: Legs", "m_LocalPosition:"));
+        Assert.Equal(2, prefab.Split("\nSpriteRenderer:").Length - 1);
+        // 그리는 순서 = 최종 그리는 차례(SpriteRenderer 있는 레이어만): Legs(아래) 0, Head 1
         Assert.Equal("1", After(prefab, "m_Name: Head", "m_SortingOrder:"));
         Assert.Equal("0", After(prefab, "m_Name: Legs", "m_SortingOrder:"));
         Assert.Equal($"{{fileID: {SpriteId(atlas, "Head_idle_0")}, guid: {atlasGuid}, type: 3}}", After(prefab, "m_Name: Head", "m_Sprite:"));
         Assert.Equal($"{{fileID: 9100000, guid: {Guid(dir.File("hero.controller"))}, type: 2}}", After(prefab, "Animator:", "m_Controller:"));
         Assert.Contains(UnityAssetWriter.BuiltInSpriteMaterial, prefab); // Unity 프로젝트 밖 = 내장 머티리얼
 
-        // walk: 150ms 두 칸 → 샘플 20, 길이 0.3. Head는 1px 아래(0.5625)로 움직이고 스프라이트는 walk 칸.
+        // walk: 150ms 두 칸 → 샘플 20, 길이 0.3. Head는 1px 아래(Hero 기준 0.0625, 맨 위 기준 0.5625)로 움직이고 스프라이트는 walk 칸.
         var walk = File.ReadAllText(dir.File("hero_walk.anim"));
         Assert.Equal("hero_walk", After(walk, "AnimationClip:", "m_Name:"));
         Assert.Equal("20", After(walk, "m_PPtrCurves", "m_SampleRate:"));
         Assert.Equal("0.3", After(walk, "m_AnimationClipSettings", "m_StopTime:"));
-        Assert.Equal("{x: 0, y: 0.5625, z: 0}", After(walk, "m_PositionCurves", "value:"));
+        Assert.Equal("{x: 0, y: 0.0625, z: 0}", After(walk, "m_PositionCurves", "value:"));
         Assert.Equal("Hero/Head", After(walk, "m_PositionCurves", "path:"));
         Assert.Equal($"{{fileID: {SpriteId(atlas, "Head_walk_1")}, guid: {atlasGuid}, type: 3}}", After(walk, "time: 0.15\n", "value:"));
         // idle: Head가 제자리라 위치 곡선 없음

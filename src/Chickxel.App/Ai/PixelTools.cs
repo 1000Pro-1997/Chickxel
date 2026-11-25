@@ -17,11 +17,11 @@ namespace Chickxel.App.Ai;
 /// AI(Claude·Codex)가 MCP로 부르는 편집 도구 모음. 도구 설명·입력 스키마는 모델이 읽으므로 영어, 결과 요약·오류 문구는 한국어다.
 /// <para>
 /// <see cref="Call"/>은 UI 스레드에서 불린다(호출자가 넘겨 줌). 대화상자는 절대 띄우지 않는다.
-/// 바꾸는 도구는 떠 있는 선택을 먼저 내려놓고, 잠긴 레이어(잠긴 그룹의 부위 포함)를 바꾸는 호출과 그룹 레이어에 그리기는 거부하고
+/// 바꾸는 도구는 떠 있는 선택을 먼저 내려놓고, 잠긴 레이어(잠긴 조상 아래 레이어 포함)를 바꾸는 호출은 거부하고
 /// (<see cref="Scope"/>와 관계없이 항상), 캔버스 밖은 잘라 내며,
 /// 실행취소 기록을 정확히 하나("AI: 도구이름") 남기고, 고친 프레임·레이어를 현재로 만든다. <see cref="Scope"/>가 있으면 그 문서만 고친다.
-/// 픽셀은 셀 스트로크로, 구조(프레임·레이어·그룹·부위·태그·캔버스)는 프로젝트 메서드를 바깥 <see cref="SpriteProject.Edit(string, ProjectChange, Action)"/>로 감싸 한 단계로 기록한다.
-/// <c>frame</c>은 항상 프레임 번호다. <c>layer</c>가 부위면 좌표는 부위 안 좌표(부위 왼쪽 위 = 0,0)다.
+/// 픽셀은 셀 스트로크로, 구조(프레임·레이어 나무·스킨·태그·캔버스)는 프로젝트 메서드를 바깥 <see cref="SpriteProject.Edit(string, ProjectChange, Action)"/>로 감싸 한 단계로 기록한다.
+/// <c>frame</c>은 항상 프레임 번호다. <c>layer</c>가 위치 레이어면 좌표는 레이어 안 좌표(레이어 왼쪽 위 = 0,0)다.
 /// </para>
 /// </summary>
 public sealed partial class PixelTools
@@ -49,7 +49,7 @@ public sealed partial class PixelTools
     public PixelTools(IAiHost host) => _host = host;
 
     /// <summary>
-    /// 편집 범위(채팅의 "지금 그림만" — 차례 동안). 있으면 그 문서 안에서만 고치고(레이어·프레임·그룹·부위·스킨·태그 추가도 됨),
+    /// 편집 범위(채팅의 "지금 그림만" — 차례 동안). 있으면 그 문서 안에서만 고치고(레이어·자식 레이어·프레임·스킨·태그 추가도 됨),
     /// 다른 파일을 열거나 새로 만드는 도구(<see cref="FileSwitchTools"/>)는 거부한다. 차례 중에 사용자가 다른 문서로 바꿨으면
     /// 읽기 도구(<see cref="ReadTools"/>) 말고는 모두 거부한다. 잠긴 레이어는 범위와 관계없이 고치지 않는다. null = 제한 없음.
     /// 외부 AI 연결의 호출에는 쓰지 않는다(<see cref="CallScope"/>).
@@ -65,7 +65,7 @@ public sealed partial class PixelTools
     /// <summary>문서도 편집기 상태도 바꾸지 않는 도구(범위 밖 문서가 열려 있어도 쓸 수 있음). 참고 자료 읽기·효과 만들기 원문 읽기·검증 포함.</summary>
     private static readonly HashSet<string> ReadTools =
     [
-        "get_document", "get_image", "get_pixels", "list_skins", "list_outfits", "list_effect_types", "get_effects",
+        "get_document", "get_image", "get_pixels", "list_skins", "list_skin_presets", "list_effect_types", "get_effects",
         "get_script_api", "preview_effects", "get_effect_maker_source", "check_effect_maker", "list_script_effects", "get_script_effect_source",
         "search_references", "get_reference", "get_style_rules",
     ];
@@ -90,13 +90,14 @@ public sealed partial class PixelTools
         Tool("get_document",
             "Describe the open document as JSON: file path (null for a never-saved new project), tempTitle (never-saved projects only: temporary title or null, see set_document_title), " +
             "canvas (frame) width/height, frames [{index,durationMs,name}], " +
-            "layers [{index,name,kind (normal/group/part),parent (group layer index, parts only),visible,locked (also true for parts of a locked group; locked layers are never changed),opacity," +
-            "partWidth,partHeight,partX,partY,skinOverride (parts only; skinOverride = skin this part wears instead of its group's, only when set)," +
-            "collapsed,skins,activeSkin (groups only),effects (layer effect type ids in stack order, only when the layer has effects; see get_effects)," +
+            "layers [{index,name,kind (normal/part/tilemap; part = positioned layer with its own size and position),parent (index of the parent layer, only for child layers)," +
+            "children (indices of the direct children, bottom to top, only when it has any),collapsed (only with children),visible,locked (also true under a locked ancestor; locked layers are never changed),opacity," +
+            "partWidth,partHeight,partX,partY (part layers only),autoLayout (parts whose children are auto-arranged),skins,activeSkin (only when the layer has more than one skin)," +
+            "effects (layer effect type ids in stack order, only when the layer has effects; see get_effects)," +
             "links (linked cels: [{frames, color}] — frames that share one drawing, only when the layer has links; see link_cels)," +
             "pivot {x,y} (the layer's own base pivot, 0..1, origin bottom-left; parts: part-local, other layers: canvas; used by its effects and, for parts, the part export), " +
             "pivotPx {x,y} (that pivot in the current frame as canvas pixels, origin top-left), framePivots ([{from,to,x,y}] runs of frames with their own pivot, only when any)}] " +
-            "(bottom to top; a group's parts are the layers directly below it), canvasPivot {pivot (the canvas's own base pivot), framePivots, representative ({layer,name} " +
+            "(bottom to top; a layer's descendants are the layers directly below it, and children draw ABOVE their parent's own picture), canvasPivot {pivot (the canvas's own base pivot), framePivots, representative ({layer,name} " +
             "whose pivot is the canvas pivot, or null), effective {x,y,frame,px} (the export pivot of the current frame)}, " +
             "tags, current {frame,layer}, editScope (only when the user limited this turn to the current file: change only this document, never open or create other files), " +
             "primary/secondary color, palette (only when the user limited drawing to palette colors), dirty flag, selection bounds, current folder. " +
@@ -104,7 +105,7 @@ public sealed partial class PixelTools
             new JsonObject()),
         Tool("get_image",
             "Render a frame as a PNG so you can look at it. Omit `layer` for the composite of ALL visible layers: inspect this whole image after assembling parts to catch misaligned limbs, proportions and overall style before replying. " +
-            "Pass a normal or part layer index to see that layer alone (a part renders at its own size), or a group index for that group's composite. " +
+            "Pass a layer index to see that layer's own picture alone, without its children (a part renders at its own size). " +
             "Pixels are enlarged with nearest neighbor; transparent areas are drawn over a light gray checkerboard that is NOT part of the image.",
             new JsonObject
             {
@@ -124,7 +125,7 @@ public sealed partial class PixelTools
                 ["width"] = Int("Region width (default: to the right edge).", 1),
                 ["height"] = Int("Region height (default: to the bottom edge).", 1),
                 ["frame"] = FrameProp(),
-                ["layer"] = Int("Layer index (0 = bottom) to read alone (part: part-local coordinates; group: its composite). Omit for the visible composite."),
+                ["layer"] = Int("Layer index (0 = bottom) to read alone: its own picture without children (part: part-local coordinates). Omit for the visible composite."),
             }),
         Tool("draw_pixels",
             "Main drawing tool. Paints a block of pixels whose top-left corner is (x, y). Each string in `rows` is one " +
@@ -280,108 +281,114 @@ public sealed partial class PixelTools
                 ["loop"] = Bool("Loop playback (default true)."),
             },
             "name", "from", "to"),
-        Tool("add_group",
-            "Add an empty group layer on top (a container for character parts such as head, body, arms, legs). " +
-            "It becomes the current layer. Returns its index; then use add_part to add parts to it.",
-            new JsonObject { ["name"] = Str("Group name (default: automatic).") }),
-        Tool("add_part",
-            "Add a part layer to a group. A part has its own size and its own drawing in every frame, and one position (x, y = its " +
-            "top-left inside the frame canvas) shared by all frames. It becomes the top part of the group and the current layer. " +
-            "Drawing tools on a part use part-local coordinates (0,0 = the part's top-left). Returns its index and the group's " +
-            "new index: parts are inserted directly below their group in the layer list, so indices of the group and of layers above it grow by 1. " +
-            "If the group has auto layout (get_document `autoLayout`), x/y are ignored and the group's parts are re-arranged.",
+        Tool("add_empty_layer",
+            "Add an empty layer: a canvas-size part layer at (0,0) with no drawing, meant as a parent that holds child layers (e.g. a character whose " +
+            "children are head, body, arms, legs). Moving a parent moves all its children; children draw above the parent's own picture. " +
+            "It becomes the current layer. Returns its index; then use add_part(parent=...) or move_layer to give it children.",
             new JsonObject
             {
-                ["group"] = Int("Index of the group layer (default: the selected group, or the group of the selected part).", 0),
-                ["name"] = Str("Part name, e.g. Head (made unique automatically)."),
-                ["width"] = Int("Part width in pixels.", 1, PixelImage.MaxSize),
-                ["height"] = Int("Part height in pixels.", 1, PixelImage.MaxSize),
+                ["name"] = Str("Layer name (default: automatic)."),
+                ["parent"] = ParentProp(),
+                ["position"] = Int("Place among the parent's children: number of siblings below it (0 = bottom; default: on top).", 0),
+            }),
+        Tool("add_part",
+            "Add a part layer (positioned layer) at the top level or as a child of `parent`. A part has its own size and its own drawing in every frame, and one position (x, y = its " +
+            "top-left inside the frame canvas) shared by all frames. It becomes the current layer. Children draw above their parent's own picture, and moving a parent moves its children. " +
+            "Drawing tools on a part use part-local coordinates (0,0 = the part's top-left). A child is inserted directly below its parent in the layer list, " +
+            "so the indices of the parent and of layers above it grow by 1 (the result tells the parent's new index). A normal parent becomes a part layer (its pixels stay in place). " +
+            "If the parent has auto layout (get_document `autoLayout`), x/y are ignored and its children are re-arranged.",
+            new JsonObject
+            {
+                ["parent"] = ParentProp(),
+                ["name"] = Str("Layer name, e.g. Head (made unique automatically)."),
+                ["width"] = Int("Width in pixels.", 1, PixelImage.MaxSize),
+                ["height"] = Int("Height in pixels.", 1, PixelImage.MaxSize),
                 ["x"] = Int("Left edge inside the frame canvas (default: centered)."),
                 ["y"] = Int("Top edge inside the frame canvas (default: centered)."),
+                ["position"] = Int("Place among the parent's children: number of siblings below it (0 = bottom; default: on top).", 0),
             },
             "name", "width", "height"),
         Tool("set_part",
-            "Change a part layer: its position (x, y inside the frame canvas, shared by all frames) and/or its size (width/height; " +
-            "every frame's drawing stays attached to `anchor` and the position is adjusted so pixels stay where they are on the canvas). " +
-            "Set its pivot with set_layer. A part of a group with auto layout (get_document `autoLayout`) " +
-            "cannot be moved with x/y (error) — its position is computed automatically; resizing re-arranges the group. " +
+            "Change a part (positioned) layer: its position (x, y inside the frame canvas, shared by all frames; its children move along by the same amount) and/or its size (width/height; " +
+            "every frame's drawing stays attached to `anchor` and the position is adjusted so pixels stay where they are on the canvas; children don't move). " +
+            "Set its pivot with set_layer. A child of a parent with auto layout (get_document `autoLayout`) " +
+            "cannot be moved with x/y (error) — its position is computed automatically; resizing re-arranges the parent's children. " +
             UiStrings.S_PixelTools_ListTools_72B03826BE,
             new JsonObject
             {
                 ["layer"] = Int("Part layer index.", 0),
                 ["x"] = Int("New left edge inside the frame canvas."),
                 ["y"] = Int("New top edge inside the frame canvas."),
-                ["width"] = Int("New part width.", 1, PixelImage.MaxSize),
-                ["height"] = Int("New part height.", 1, PixelImage.MaxSize),
+                ["width"] = Int("New width.", 1, PixelImage.MaxSize),
+                ["height"] = Int("New height.", 1, PixelImage.MaxSize),
                 ["anchor"] = Enum("Where the existing drawing is kept when resizing (default center).",
                     "top-left", "top", "top-right", "left", "center", "right", "bottom-left", "bottom", "bottom-right"),
             },
             "layer"),
+        Tool("move_layer",
+            "Move a layer together with all its children under another parent (or to the top level), undoable. Pixels stay where they are on the canvas; " +
+            "a normal layer moved under a parent becomes a part layer. A layer can't be moved into itself or its own descendants. Layer indices change: the result tells the new index.",
+            new JsonObject
+            {
+                ["layer"] = Int("Index of the layer to move.", 0),
+                ["parent"] = ParentProp(),
+                ["position"] = Int("Place among the new siblings: number of siblings below it (0 = bottom; default: on top).", 0),
+            },
+            "layer"),
         Tool("list_skins",
-            "List every group with its skins (top to bottom like the timeline). A group is a skin slot: its skins are alternative " +
-            "drawings of the same parts (e.g. outfits); only the active skin is visible, and groups stack in layer order. The first " +
-            "skin is the default. Each skin shows only its own cels: a part's empty cel in a skin is empty (nothing is borrowed from another skin). A part may wear a different skin than " +
-            "its group (override, listed under `overrides`). A part may also own part-only skins (listed under `partSkins`, e.g. a hat " +
-            "only for Head): no other part or the group list has them, and they are worn only as that part's override (set_skin with part). " +
-            "All reading and drawing tools work on the part's shown skin (its override, " +
-            "else the group's active skin).",
+            "List every layer that has more than one skin (top to bottom like the timeline). Every normal or part layer has its own skin list: " +
+            "alternative drawings of that layer (e.g. outfits, expressions). Only the active skin is visible and edited; the first skin is the base. " +
+            "Each skin shows only its own cels (nothing is borrowed from another skin). All reading and drawing tools work on the layer's active skin.",
             new JsonObject()),
         Tool("add_skin",
-            "Add a skin to a group; it becomes the group's active skin, so following drawing on its parts goes to the new skin. " +
-            "copy_active=true copies the active skin's own drawings; otherwise it starts empty (its parts show nothing until you draw). " +
-            "With `part`: add a part-only skin that only that part has (e.g. a hat for Head) and make the part wear it; copy_shown=true copies the part's shown drawing.",
+            "Add a skin to a layer; it becomes that layer's active skin, so following drawing on the layer goes to the new skin. " +
+            "copy_active=true copies the active skin's drawings; otherwise it starts empty. " +
+            "include_children=true adds a same-name skin to the layer and every descendant (all become active) and saves a skin preset of that name.",
             new JsonObject
             {
-                ["group"] = Int("Index of the group layer (default: the selected group, or the group of the selected part; with `part`, narrows the part search).", 0),
-                ["name"] = Str("Skin name (default: automatic; made unique within the group, including part-only skins)."),
-                ["copy_active"] = Bool("Copy the active skin's drawings (default false; group skins only)."),
-                ["part"] = Str("Part layer name: create a part-only skin for this part instead of a group skin."),
-                ["copy_shown"] = Bool("With `part`: copy the part's currently shown skin drawings into the new part-only skin (default false)."),
+                ["layer"] = Int("Layer index (default: current).", 0),
+                ["name"] = Str("Skin name (default: automatic; made unique within the layer)."),
+                ["copy_active"] = Bool("Copy each layer's active skin drawings (default false)."),
+                ["include_children"] = Bool("Also add the skin to every descendant layer and save a skin preset (default false)."),
             }),
         Tool("set_skin",
-            "Choose which skin of a group is visible and edited (switch outfit). With `part`, only that part wears `skin` (override — a group skin " +
-            UiStrings.S_PixelTools_ListTools_AB0616E25B,
+            "Choose which skin of a layer is visible and edited. Other layers keep their skins. Not recorded in undo history.",
             new JsonObject
             {
-                ["group"] = Int("Index of the group layer (default: the selected group, or the group of the selected part; with `part`, the part's group).", 0),
-                ["skin"] = Str("Skin name (see list_skins). Required unless part + follow_group. Part-only skins need `part`."),
-                ["part"] = Str("Part layer name: set the skin for this part only instead of the whole group."),
-                ["follow_group"] = Bool("With `part`: clear the part's own skin so it follows the group again (default false)."),
-            }),
+                ["layer"] = Int("Layer index (default: current).", 0),
+                ["skin"] = Str("Skin name (see list_skins)."),
+            },
+            "skin"),
         Tool("edit_skin",
-            "Change an existing skin (undoable, one step): rename it (`name`), reorder it (`position`: 0-based place among the group skins — 0 makes it the base " +
-            "(default) skin; for a part-only skin, its place among that part's part-only skins), turn a part-only skin into a group skin every part can wear " +
-            "(`part_only`=false; the other parts start empty) or a group skin into a part-only skin of `part` (`part_only`=true; the other parts' drawings in it " +
-            "are deleted; not the base skin or the last group skin), or delete it (`delete`=true, alone; deletes its drawings; the last group skin can't be deleted). " +
+            "Change an existing skin of a layer (undoable, one step): rename it (`name`), reorder it (`position`: 0-based place in the layer's skins — 0 makes it the base " +
+            "skin), or delete it (`delete`=true, alone; deletes its drawings; a layer's last skin can't be deleted). " +
             "Pass at least one change. Use list_skins for the names.",
             new JsonObject
             {
-                ["group"] = Int("Index of the group layer (default: the selected group, or the group of the selected part; with `part`, narrows the part search).", 0),
-                ["skin"] = Str("Current skin name (see list_skins). Part-only skins need `part`."),
-                ["part"] = Str("Part layer name: the part that owns the part-only skin, or the part to give the skin to with part_only=true."),
-                ["name"] = Str("New skin name (must be unique within the group, including part-only skins)."),
+                ["layer"] = Int("Layer index (default: current).", 0),
+                ["skin"] = Str("Current skin name (see list_skins)."),
+                ["name"] = Str("New skin name (must be unique within the layer)."),
                 ["position"] = Int("New 0-based position (clamped to the list).", 0),
-                ["part_only"] = Bool("true: make the group skin a part-only skin of `part`; false: make the part-only skin a group skin."),
                 ["delete"] = Bool("Delete the skin and its drawings (cannot be combined with other changes)."),
             },
             "skin"),
-        Tool("list_outfits",
-            "List outfit presets: named snapshots of every group's skin plus per-part skin overrides. Each entry has its slots " +
-            "(group → skin), part overrides, whether it matches what is shown now, and entries that no longer exist (deleted group/part/skin, skipped on apply).",
+        Tool("list_skin_presets",
+            "List skin presets: named sets of (layer → skin) entries. Each entry lists its layers and skins, whether applying it would change nothing now (`current`), " +
+            "and entries that no longer exist (deleted layer/skin, skipped on apply).",
             new JsonObject()),
-        Tool("save_outfit",
-            "Save the current outfit (each group's active skin + part overrides) as a new outfit preset (undoable). " +
-            "Outfit presets can also be exported as extra frame sheets ({sheet}@{outfit}).",
+        Tool("save_skin_preset",
+            "Save the active skin of every layer that has more than one skin as a new skin preset (undoable). " +
+            "Skin presets can also be exported as extra frame sheets ({sheet}@{preset}).",
             new JsonObject
             {
                 ["name"] = Str(UiStrings.S_PixelTools_ListTools_9ECBDEAA4B),
             }),
-        Tool("apply_outfit",
-            "Wear an outfit preset: set each saved group's skin and its parts' overrides (see list_outfits). Groups not in the outfit stay as they are. " +
+        Tool("apply_skin_preset",
+            "Apply a skin preset: set the active skin of each layer listed in it (see list_skin_presets). Layers not in the preset keep their skins. " +
             "Not recorded in undo history (like set_skin).",
             new JsonObject
             {
-                ["name"] = Str("Outfit preset name."),
+                ["name"] = Str("Skin preset name."),
             },
             "name"),
         Tool("resize_canvas",
@@ -476,7 +483,14 @@ public sealed partial class PixelTools
 
     private static JsonObject FrameProp() => Int("Frame index. Default: current.", 0);
 
-    private static JsonObject LayerProp() => Int("Layer index (0 = bottom; a part uses part-local coordinates; groups cannot be drawn on). Default: current.", 0);
+    private static JsonObject LayerProp() => Int("Layer index (0 = bottom; a part layer uses part-local coordinates). Default: current.", 0);
+
+    /// <summary>부모 레이어 인자: 번호 또는 이름, -1·없음 = 맨 위 단계.</summary>
+    private static JsonObject ParentProp() => new()
+    {
+        ["type"] = new JsonArray("integer", "string"),
+        ["description"] = "Parent layer: its index or its exact name. -1 or omitted = top level (no parent).",
+    };
 
     // ───────────── 실행 ─────────────
 
@@ -541,13 +555,14 @@ public sealed partial class PixelTools
                 "set_layer" => SetLayer(name, a),
                 "set_current" => SetCurrent(name, a),
                 "add_tag" => AddTag(name, a),
-                "add_group" => AddGroup(name, a),
+                "add_empty_layer" => AddEmptyLayer(name, a),
                 "add_part" => AddPart(name, a),
                 "set_part" => SetPart(name, a),
+                "move_layer" => MoveLayer(name, a),
                 "list_skins" => ListSkins(),
-                "list_outfits" => ListOutfits(),
-                "save_outfit" => SaveOutfit(name, a),
-                "apply_outfit" => ApplyOutfit(name, a),
+                "list_skin_presets" => ListSkinPresets(),
+                "save_skin_preset" => SaveSkinPreset(name, a),
+                "apply_skin_preset" => ApplySkinPreset(name, a),
                 "add_skin" => AddSkin(name, a),
                 "set_skin" => SetSkin(name, a),
                 "edit_skin" => EditSkin(name, a),
@@ -645,22 +660,24 @@ public sealed partial class PixelTools
                     ["index"] = i, ["name"] = l.Name, ["kind"] = KindName(l.Kind),
                     ["visible"] = l.Visible, ["locked"] = p.IsLayerLocked(i), ["opacity"] = (int)l.Opacity,
                 };
+                if (l.Parent is { } parent) o["parent"] = p.IndexOf(parent);
+                if (p.HasChildren(l))
+                {
+                    o["children"] = new JsonArray([.. p.ChildrenOf(l).Select(c => (JsonNode)p.IndexOf(c))]);
+                    o["collapsed"] = l.Collapsed;
+                }
                 if (l.IsPart)
                 {
-                    o["parent"] = l.Parent is { } g ? p.IndexOf(g) : null;
                     o["partWidth"] = l.PartSize.Width;
                     o["partHeight"] = l.PartSize.Height;
                     o["partX"] = l.PartOffset.X;
                     o["partY"] = l.PartOffset.Y;
-                    if (l.SkinOverride is { } own) o["skinOverride"] = own.Name;
-                    if (l.OwnSkins is { Count: > 0 } partSkins) o["partSkins"] = Strings(partSkins.Select(s => s.Name).ToArray());
+                    if (l.AutoLayout is { } al) o["autoLayout"] = LayoutText(al);
                 }
-                else if (l.IsGroup)
+                if (l.Skins.Count > 1)
                 {
-                    o["collapsed"] = l.Collapsed;
                     o["skins"] = Strings(l.Skins.Select(s => s.Name).ToArray());
                     o["activeSkin"] = l.ActiveSkin?.Name;
-                    if (l.AutoLayout is { } al) o["autoLayout"] = LayoutText(al);
                 }
                 if (l.Effects.Count > 0) o["effects"] = Strings(l.Effects.Select(EffectRegistry.TypeIdOf).ToArray());
                 if (LinksJson(p, i) is { } links) o["links"] = links;
@@ -1065,7 +1082,7 @@ public sealed partial class PixelTools
                               + (pivotArgs is null ? "" : "; " + LayerPivotText(p, layer, frame)));
         }
         RequireUnlocked(p, index);
-        // 숨긴 부위를 빼고 배치하는 그룹이면 보이기를 바꾸면 다른 부위가 옮겨진다.
+        // 숨긴 자식을 빼고 배치하는 부모면 보이기를 바꾸면 다른 자식이 옮겨진다.
         if (visible is { } shown && shown != layer.Visible && layer.IsPart && layer.Parent is { AutoLayout.IncludeHidden: false } layoutGroup)
             RequireLayoutKeepsLocked(p, layoutGroup);
         p.Edit(Label(tool), ProjectChange.Layers | (pivotEdit is null ? ProjectChange.None : ProjectChange.Frames), () =>
@@ -1112,49 +1129,105 @@ public sealed partial class PixelTools
         return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddTag_863CFC4389,tool,tag.Name,from,to,DirectionName(direction),(loop ? UiStrings.S_PixelTools_AddTag_EAF043AC5F : UiStrings.S_PixelTools_AddTag_3AE2286F4B)));
     }
 
-    private JsonObject AddGroup(string tool, JsonObject? a)
+    private JsonObject AddEmptyLayer(string tool, JsonObject? a)
     {
         var p = BeginMutation();
         var name = OptString(a, "name");
         if (string.IsNullOrWhiteSpace(name)) name = null;
-        var group = p.Edit<Layer>(Label(tool), ProjectChange.Layers, () => p.AddGroup(name?.Trim()));
-        int index = p.IndexOf(group);
+        var parent = ParentArg(p, a);
+        if (parent is not null)
+        {
+            RequireUnlocked(p, p.IndexOf(parent));
+            RequireLayoutKeepsLocked(p, parent);
+        }
+        int? slot = OptInt(a, "position", 0, int.MaxValue);
+        // 빈 레이어 = 캔버스 크기, 왼쪽 위 (0,0)의 그림 없는 위치 레이어(자식을 담는 부모로 쓴다)
+        var layer = p.Edit<Layer>(Label(tool), ProjectChange.Layers, () => p.AddPart(parent, name?.Trim(), p.Width, p.Height, Point.Empty, slot));
+        int index = p.IndexOf(layer);
         Ctx.SetCurrentLayer(index);
-        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddGroup_E09E45483A,tool,index,group.Name,index));
+        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddGroup_E09E45483A,tool,index,layer.Name,index)
+                          + ParentText(p, parent));
     }
 
     private JsonObject AddPart(string tool, JsonObject? a)
     {
         var p = BeginMutation();
-        int groupIndex;
-        if (a?["group"] is not null) groupIndex = ReqIndex(a, "group", p.Layers.Count, UiStrings.S_PixelTools_AddPart_BC2BD68B08);
-        else if (Ctx.CurrentGroup is { } current) groupIndex = p.IndexOf(current);
-        else throw new ToolError(UiStrings.S_PixelTools_AddPart_25FD2C2EF3);
-        var group = p.Layers[groupIndex];
-        if (!group.IsGroup) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddPart_15F86D7485,groupIndex,group.Name));
-        RequireUnlocked(p, groupIndex);
-        RequireLayoutKeepsLocked(p, group);
+        var parent = ParentArg(p, a);
+        if (parent is not null)
+        {
+            RequireUnlocked(p, p.IndexOf(parent));
+            RequireLayoutKeepsLocked(p, parent);
+        }
         var name = ReqString(a, "name").Trim();
         if (name.Length == 0) throw new ToolError(UiStrings.S_PixelTools_AddPart_09DD29C130);
         int width = ReqInt(a, "width", 1, PixelImage.MaxSize), height = ReqInt(a, "height", 1, PixelImage.MaxSize);
         int? x = OptInt(a, "x", -CoordLimit, CoordLimit), y = OptInt(a, "y", -CoordLimit, CoordLimit);
         Point? offset = x is null && y is null ? null
             : new Point(x ?? (p.Width - width) / 2, y ?? (p.Height - height) / 2);
-        var part = p.Edit<Layer>(Label(tool), ProjectChange.Layers | ProjectChange.Pixels, () => p.AddPart(group, name, width, height, offset));
+        int? slot = OptInt(a, "position", 0, int.MaxValue);
+        var part = p.Edit<Layer>(Label(tool), ProjectChange.Layers | ProjectChange.Pixels, () => p.AddPart(parent, name, width, height, offset, slot));
         int index = p.IndexOf(part);
         Ctx.SetCurrentLayer(index);
-        var laidOut = group.AutoLayout is null ? "" : offset is null ? $" — group auto layout ({LayoutText(group.AutoLayout)}) re-arranged its parts"
-            : $" — x/y ignored: group has auto layout ({LayoutText(group.AutoLayout)}), its parts were re-arranged";
-        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddPart_3061D4B6E3,tool,index,part.Name,width,height,part.PartOffset.X,part.PartOffset.Y,index) +
-                          string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddPart_A07448527C,group.Name,p.IndexOf(group)) + laidOut);
+        var laidOut = parent?.AutoLayout is not { } layout ? "" : offset is null ? $" — parent auto layout ({LayoutText(layout)}) re-arranged its children"
+            : $" — x/y ignored: parent has auto layout ({LayoutText(layout)}), its children were re-arranged";
+        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddPart_3061D4B6E3,tool,index,part.Name,width,height,part.PartOffset.X,part.PartOffset.Y,index)
+                          + ParentText(p, parent) + laidOut);
     }
+
+    /// <summary>레이어를 (자식과 함께) 다른 부모 아래로 옮긴다. 일반 레이어는 같은 단계에서 위치 레이어로 바뀐다.</summary>
+    private JsonObject MoveLayer(string tool, JsonObject? a)
+    {
+        var p = BeginMutation();
+        int index = ReqIndex(a, "layer", p.Layers.Count, UiStrings.S_PixelTools_SetPart_9A098737D8);
+        var layer = p.Layers[index];
+        RequireUnlocked(p, index);
+        var parent = ParentArg(p, a);
+        if (parent is not null)
+        {
+            if (ReferenceEquals(parent, layer) || p.IsAncestorOf(layer, parent))
+                throw new ToolError(UiStrings.FormatAiTree_MoveIntoItself(index: index, name: layer.Name));
+            RequireUnlocked(p, p.IndexOf(parent));
+            RequireLayoutKeepsLocked(p, parent);
+        }
+        if (layer.Parent is { } oldParent) RequireLayoutKeepsLocked(p, oldParent);
+        int siblings = (parent is null ? p.Layers.Count(l => l.Parent is null) : p.ChildrenOf(parent).Count)
+                       - (ReferenceEquals(layer.Parent, parent) ? 1 : 0);
+        int slot = Math.Clamp(OptInt(a, "position", 0, int.MaxValue) ?? siblings, 0, siblings);
+        p.Edit(Label(tool), ProjectChange.Layers | ProjectChange.Pixels, () => p.MoveLayersTo([layer], parent, slot));
+        int now = p.IndexOf(layer);
+        Ctx.SetCurrentLayer(now);
+        return TextResult(UiStrings.FormatAiTree_MoveLayer_Result(tool: tool, name: layer.Name, index: now, position: slot,
+            descendants: p.DescendantCount(layer)) + ParentText(p, parent));
+    }
+
+    /// <summary><c>parent</c> 인자: 레이어 번호 또는 이름, -1·없음 = 맨 위 단계(null).</summary>
+    private static Layer? ParentArg(SpriteProject p, JsonObject? a)
+    {
+        if (Arg(a, "parent") is not { } n) return null;
+        if (n is JsonValue v && v.TryGetValue(out string? text) && !int.TryParse(text.Trim(), out _))
+        {
+            var name = text.Trim();
+            var matches = p.Layers.Where(l => l.Name == name).ToList();
+            if (matches.Count == 0) matches = p.Layers.Where(l => string.Equals(l.Name, name, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (matches.Count == 0) throw new ToolError(UiStrings.FormatAiTree_NoLayerNamed(name: name));
+            if (matches.Count > 1) throw new ToolError(UiStrings.FormatAiTree_LayerNameAmbiguous(name: name));
+            return matches[0];
+        }
+        int index = ReqInt(a, "parent", -1, p.Layers.Count - 1);
+        return index < 0 ? null : p.Layers[index];
+    }
+
+    /// <summary>결과 문구의 부모 설명(맨 위 단계 또는 부모 이름·번호).</summary>
+    private static string ParentText(SpriteProject p, Layer? parent)
+        => parent is null ? UiStrings.AiTree_TopLevel
+            : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddPart_A07448527C,parent.Name,p.IndexOf(parent));
 
     /// <summary>자동 배치 설정 한 줄 요약(AI에게 알려 줌).</summary>
     private static string LayoutText(GroupLayout l)
         => $"{l.Direction.ToString().ToLowerInvariant()}{(l.Direction == GroupLayoutDirection.Grid ? $" {l.Columns} columns" : "")}, " +
            $"align {l.Align.ToString().ToLowerInvariant()}, distribution {l.Distribution.ToString().ToLowerInvariant()}, gap {l.Gap}, margin {l.Margin}, " +
-           $"order {(l.Order == GroupLayoutOrder.TopFirst ? "top part first" : "bottom part first")}" +
-           (l.IncludeHidden ? "" : ", hidden parts excluded") + (l.Area is { } a ? $", area ({a.X},{a.Y}) {a.Width}x{a.Height}" : "");
+           $"order {(l.Order == GroupLayoutOrder.TopFirst ? "top child first" : "bottom child first")}" +
+           (l.IncludeHidden ? "" : ", hidden children excluded") + (l.Area is { } a ? $", area ({a.X},{a.Y}) {a.Width}x{a.Height}" : "");
 
     private JsonObject SetPart(string tool, JsonObject? a)
     {
@@ -1173,6 +1246,10 @@ public sealed partial class PixelTools
             throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetPart_F85DAA9BD6,index,part.Name,part.Parent!.Name,LayoutText(part.Parent.AutoLayout!)) +
                                 UiStrings.S_PixelTools_SetPart_5D875D42AD +
                                 UiStrings.S_PixelTools_SetPart_CAF27E7871);
+        // 위치를 옮기면 자손도 같이 옮겨진다: 잠긴 자손이 있으면 거부
+        if (x is not null || y is not null)
+            foreach (var d in p.DescendantsOf(part))
+                RequireUnlocked(p, p.IndexOf(d));
         var size = part.PartSize;
         int newW = width ?? size.Width, newH = height ?? size.Height;
         bool resize = newW != size.Width || newH != size.Height;
@@ -1190,55 +1267,38 @@ public sealed partial class PixelTools
         });
         Ctx.SetCurrentLayer(index);
         var r = part.PartRect;
-        return TextResult($"{tool}: part {index} \"{part.Name}\" {r.Width}x{r.Height} @({r.X},{r.Y}), pivot ({part.Pivot.X:0.###},{part.Pivot.Y:0.###})");
+        return TextResult($"{tool}: layer {index} \"{part.Name}\" {r.Width}x{r.Height} @({r.X},{r.Y}), pivot ({part.Pivot.X:0.###},{part.Pivot.Y:0.###})");
     }
 
-    // ───────────── 스킨(그룹 = 스킨 슬롯) ─────────────
+    // ───────────── 스킨(레이어마다) · 스킨 프리셋 ─────────────
 
-    /// <summary>스킨 도구의 그룹: <c>group</c> 인자, 없으면 고른 그룹(부위면 그 그룹).</summary>
-    private Layer SkinGroup(SpriteProject p, JsonObject? a)
+    /// <summary>스킨 도구의 레이어: <c>layer</c> 인자, 없으면 지금 레이어. 타일맵이면 도구 오류.</summary>
+    private Layer SkinLayer(SpriteProject p, JsonObject? a)
     {
-        int index;
-        if (Arg(a, "group") is not null) index = ReqIndex(a, "group", p.Layers.Count, UiStrings.S_PixelTools_SkinGroup_2D95F83BA1);
-        else if (Ctx.CurrentGroup is { } current) index = p.IndexOf(current);
-        else throw new ToolError(UiStrings.S_PixelTools_SkinGroup_0CF99DE2D6);
-        var group = p.Layers[index];
-        if (!group.IsGroup) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SkinGroup_D5D19F5AF0,index,group.Name));
-        return group;
+        int index = LayerIndex(a);
+        var layer = p.Layers[index];
+        if (layer.IsTilemap) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SkinGroup_D5D19F5AF0,index,layer.Name));
+        return layer;
     }
 
-    private static string SkinNames(IEnumerable<Skin> skins) => string.Join(", ", skins.Select(s => s.Name));
-
-    private static string SkinNames(Layer group) => SkinNames(group.Skins);
+    private static string SkinNames(Layer layer) => string.Join(", ", layer.Skins.Select(s => s.Name));
 
     private JsonObject ListSkins()
     {
         var p = RequireProject();
-        var groups = new JsonArray();
+        var layers = new JsonArray();
         for (int i = p.Layers.Count - 1; i >= 0; i--)
         {
-            var g = p.Layers[i];
-            if (!g.IsGroup) continue;
-            var o = new JsonObject
+            var l = p.Layers[i];
+            if (l.Skins.Count < 2) continue;
+            layers.Add(new JsonObject
             {
-                ["group"] = i, ["name"] = g.Name, ["visible"] = g.Visible,
-                ["skins"] = Strings(g.Skins.Select(s => s.Name).ToArray()),
-                ["active"] = g.ActiveSkin?.Name, ["base"] = g.BaseSkin?.Name,
-            };
-            var overrides = new JsonArray();
-            var partSkins = new JsonArray();
-            foreach (var part in p.ChildrenOf(g).Reverse())
-            {
-                if (part.SkinOverride is { } own)
-                    overrides.Add(new JsonObject { ["part"] = p.IndexOf(part), ["name"] = part.Name, ["skin"] = own.Name, ["partOnly"] = own.IsPartOnly });
-                if (part.OwnSkins is { Count: > 0 } ownSkins)
-                    partSkins.Add(new JsonObject { ["part"] = p.IndexOf(part), ["name"] = part.Name, ["skins"] = Strings(ownSkins.Select(s => s.Name).ToArray()) });
-            }
-            if (overrides.Count > 0) o["overrides"] = overrides;
-            if (partSkins.Count > 0) o["partSkins"] = partSkins;
-            groups.Add(o);
+                ["layer"] = i, ["name"] = l.Name, ["visible"] = l.Visible,
+                ["skins"] = Strings(l.Skins.Select(s => s.Name).ToArray()),
+                ["active"] = l.ActiveSkin?.Name,
+            });
         }
-        return TextResult(groups.Count == 0 ? UiStrings.S_PixelTools_ListSkins_8CD8E58EBF : groups.ToJsonString(JsonOptions));
+        return TextResult(layers.Count == 0 ? UiStrings.S_PixelTools_ListSkins_8CD8E58EBF : layers.ToJsonString(JsonOptions));
     }
 
     private JsonObject AddSkin(string tool, JsonObject? a)
@@ -1246,114 +1306,67 @@ public sealed partial class PixelTools
         var p = BeginMutation();
         var name = OptString(a, "name");
         if (string.IsNullOrWhiteSpace(name)) name = null;
-        if (!string.IsNullOrEmpty(OptString(a, "part")?.Trim()))
-        {
-            var part = FindPart(p, a);
-            RequireUnlocked(p, p.IndexOf(part));
-            var owner = part.Parent!;
-            var shown = (OptBool(a, "copy_shown") ?? false) ? part.ShownSkin : null;
-            var partSkin = p.Edit<Skin>(Label(tool), ProjectChange.Layers | ProjectChange.Pixels, () => p.AddPartSkin(part, name?.Trim(), shown));
-            Ctx.SetCurrentLayer(p.IndexOf(part));
-            return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddSkin_1EA783533B,tool,p.IndexOf(part),part.Name,partSkin.Name,(shown is null ? "" : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddSkin_F888789A15,shown.Name))) +
-                              string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddSkin_393B167AD9,SkinNames(part.OwnSkins),owner.Name,SkinNames(owner)));
-        }
-        var group = SkinGroup(p, a);
-        RequireUnlocked(p, p.IndexOf(group));
+        var layer = SkinLayer(p, a);
+        int index = p.IndexOf(layer);
+        RequireUnlocked(p, index);
         bool copy = OptBool(a, "copy_active") ?? false;
-        var from = copy ? group.ActiveSkin : null;
-        var skin = p.Edit<Skin>(Label(tool), ProjectChange.Layers | ProjectChange.Pixels, () => p.AddSkin(group, name?.Trim(), from));
-        if (!ReferenceEquals(Ctx.CurrentGroup, group)) Ctx.SetCurrentLayer(p.IndexOf(group));
-        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddSkin_54FCA02E4C,tool,p.IndexOf(group),group.Name,skin.Name,(from is null ? "" : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddSkin_F888789A15,from.Name)),SkinNames(group)));
+        if (OptBool(a, "include_children") == true && p.HasChildren(layer))
+        {
+            foreach (var d in p.DescendantsOf(layer)) RequireUnlocked(p, p.IndexOf(d));
+            var preset = p.Edit<SkinPreset>(Label(tool), ProjectChange.Layers | ProjectChange.Pixels | ProjectChange.Settings,
+                () => p.AddSkinToSubtree(layer, name?.Trim(), copy));
+            Ctx.SetCurrentLayer(p.IndexOf(layer));
+            return TextResult(UiStrings.FormatAiTree_AddSkinSubtree(tool: tool, index: p.IndexOf(layer), name: layer.Name, skin: layer.ActiveSkin?.Name ?? "",
+                count: p.DescendantCount(layer), preset: preset.Name));
+        }
+        var from = copy ? layer.ActiveSkin : null;
+        var skin = p.Edit<Skin>(Label(tool), ProjectChange.Layers | ProjectChange.Pixels, () => p.AddSkin(layer, name?.Trim(), from));
+        Ctx.SetCurrentLayer(p.IndexOf(layer));
+        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddSkin_54FCA02E4C,tool,p.IndexOf(layer),layer.Name,skin.Name,(from is null ? "" : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddSkin_F888789A15,from.Name)),SkinNames(layer)));
     }
 
-    /// <summary>
-    /// 스킨을 이름으로(대소문자 무시 대비) 찾는다: <paramref name="part"/>가 있으면 그 부위가 고를 수 있는 스킨(그룹 스킨 + 그 부위 전용), 없으면 그룹 스킨. 없으면 도구 오류.
-    /// </summary>
-    private static Skin FindSkin(Layer group, string name, Layer? part = null)
-    {
-        var list = part?.SkinChoices ?? group.Skins;
-        if ((list.FirstOrDefault(s => s.Name == name) ?? list.FirstOrDefault(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase))) is { } found)
-            return found;
-        if (part is null && group.AllSkins.FirstOrDefault(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase)) is { Owner: { } owner })
-            throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_FindSkin_6CF8F35517,name,owner.Name,owner.Name));
-        throw new ToolError(part is null
-            ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_FindSkin_0757E1B5D3,group.Name,name,SkinNames(group))
-            : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_FindSkin_77883ACBEF,part.Name,name,SkinNames(list)));
-    }
-
-    /// <summary>스킨 도구의 <c>part</c>(부위 이름, <c>group</c>이 있으면 그 그룹 안에서만). 없거나 여럿이면 도구 오류.</summary>
-    private Layer FindPart(SpriteProject p, JsonObject? a)
-    {
-        var partName = OptString(a, "part")?.Trim() ?? "";
-        var only = Arg(a, "group") is not null ? SkinGroup(p, a) : null;
-        var candidates = p.Layers.Where(l => l.IsPart && l.Parent is { IsGroup: true } && (only is null || ReferenceEquals(l.Parent, only))).ToList();
-        var matches = candidates.Where(l => l.Name == partName).ToList();
-        if (matches.Count == 0) matches = candidates.Where(l => string.Equals(l.Name, partName, StringComparison.OrdinalIgnoreCase)).ToList();
-        if (matches.Count == 0)
-            throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_FindPart_77F7827042,partName,(only is null ? "" : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_FindPart_F1C0C05B87,only.Name))));
-        if (matches.Count > 1) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_FindPart_3F27777CE1,partName));
-        return matches[0];
-    }
+    /// <summary>레이어의 스킨을 이름으로(대소문자 무시 대비) 찾는다. 없으면 도구 오류.</summary>
+    private static Skin FindSkin(Layer layer, string name)
+        => layer.Skins.FirstOrDefault(s => s.Name == name)
+           ?? layer.Skins.FirstOrDefault(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase))
+           ?? throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_FindSkin_0757E1B5D3,layer.Name,name,SkinNames(layer)));
 
     private JsonObject SetSkin(string tool, JsonObject? a)
     {
         var p = BeginMutation();
         var name = OptString(a, "skin")?.Trim() ?? "";
-        bool follow = OptBool(a, "follow_group") ?? false;
-        var partName = OptString(a, "part")?.Trim();
-        if (string.IsNullOrEmpty(partName))
-        {
-            if (follow) throw new ToolError(UiStrings.S_PixelTools_SetSkin_DD7C155818);
-            if (name.Length == 0) throw new ToolError(UiStrings.S_PixelTools_SetSkin_5A7BD93C92);
-            var group = SkinGroup(p, a);
-            RequireUnlocked(p, p.IndexOf(group));
-            var skin = FindSkin(group, name);
-            Ctx.SetActiveSkin(group, skin);
-            return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetSkin_EF3CA69B88,tool,p.IndexOf(group),group.Name,skin.Name));
-        }
-
-        var part = FindPart(p, a);
-        RequireUnlocked(p, p.IndexOf(part));
-        var owner = part.Parent!;
-        // "그룹"은 그 이름의 스킨이 없을 때만 "그룹 따름"으로 본다.
-        if (follow || name.Length == 0 || (name == "그룹" && part.SkinChoices.All(s => s.Name != name)))
-        {
-            Ctx.SetPartSkin(part, null);
-            return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetSkin_B5C70D7B8B,tool,p.IndexOf(part),part.Name,owner.ActiveSkin?.Name));
-        }
-        var own = FindSkin(owner, name, part);
-        Ctx.SetPartSkin(part, own);
-        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetSkin_7A841A0D99,tool,p.IndexOf(part),part.Name,own.Name,(own.IsPartOnly ? UiStrings.S_PixelTools_SetSkin_1F0ADB2566 : ""),owner.Name,owner.ActiveSkin?.Name));
+        if (name.Length == 0) throw new ToolError(UiStrings.S_PixelTools_SetSkin_5A7BD93C92);
+        var layer = SkinLayer(p, a);
+        RequireUnlocked(p, p.IndexOf(layer));
+        var skin = FindSkin(layer, name);
+        Ctx.SetActiveSkin(layer, skin);
+        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetSkin_EF3CA69B88,tool,p.IndexOf(layer),layer.Name,skin.Name));
     }
 
     /// <summary>
-    /// 있는 스킨 고치기(이름·순서·부위 전용 ↔ 그룹 스킨·삭제)를 실행취소 한 단계로. 삭제는 다른 변경과 같이 쓸 수 없다.
-    /// 순서는 이름 → 부위 전용/그룹 스킨 바꾸기 → 위치(바꾼 뒤 목록 기준). 중간에 실패하면 모델이 전부 되돌린다.
+    /// 있는 스킨 고치기(이름·순서·삭제)를 실행취소 한 단계로. 삭제는 다른 변경과 같이 쓸 수 없다.
+    /// 순서는 이름 → 위치. 중간에 실패하면 모델이 전부 되돌린다.
     /// </summary>
     private JsonObject EditSkin(string tool, JsonObject? a)
     {
         var p = BeginMutation();
         var skinName = OptString(a, "skin")?.Trim() ?? "";
         if (skinName.Length == 0) throw new ToolError(UiStrings.S_PixelTools_SetSkin_5A7BD93C92);
-        var part = string.IsNullOrEmpty(OptString(a, "part")?.Trim()) ? null : FindPart(p, a);
-        var group = part?.Parent ?? SkinGroup(p, a);
-        RequireUnlocked(p, p.IndexOf(group));
-        if (part is not null) RequireUnlocked(p, p.IndexOf(part));
-        var skin = FindSkin(group, skinName, part);
+        var layer = SkinLayer(p, a);
+        RequireUnlocked(p, p.IndexOf(layer));
+        var skin = FindSkin(layer, skinName);
         var newName = OptString(a, "name")?.Trim();
         if (newName?.Length == 0) newName = null;
         int? position = OptInt(a, "position", 0, int.MaxValue);
-        bool? partOnly = OptBool(a, "part_only");
         bool delete = OptBool(a, "delete") ?? false;
-        if (delete && (newName is not null || position is not null || partOnly is not null)) throw new ToolError(UiStrings.AiSkin_Edit_DeleteAlone);
-        if (!delete && newName is null && position is null && partOnly is null) throw new ToolError(UiStrings.AiSkin_Edit_Nothing);
-        if (partOnly == true && part is null) throw new ToolError(UiStrings.AiSkin_Edit_PartOnlyNeedsPart);
+        if (delete && (newName is not null || position is not null)) throw new ToolError(UiStrings.AiSkin_Edit_DeleteAlone);
+        if (!delete && newName is null && position is null) throw new ToolError(UiStrings.AiSkin_Edit_Nothing);
 
         var oldName = skin.Name;
         var changes = new List<string>();
         if (delete)
         {
-            p.Edit(Label(tool), ProjectChange.Layers | ProjectChange.Pixels, () => p.DeleteSkin(group, skin));
+            p.Edit(Label(tool), ProjectChange.Layers | ProjectChange.Pixels, () => p.DeleteSkin(layer, skin));
             changes.Add(UiStrings.FormatAiSkin_Edit_Deleted(skin: oldName));
         }
         else
@@ -1361,84 +1374,66 @@ public sealed partial class PixelTools
             {
                 if (newName is not null && newName != skin.Name)
                 {
-                    p.RenameSkin(group, skin, newName);
+                    p.RenameSkin(layer, skin, newName);
                     changes.Add(UiStrings.FormatAiSkin_Edit_Renamed(from: oldName, to: skin.Name));
-                }
-                if (partOnly == true && skin.Owner is null)
-                {
-                    p.DemoteSkin(group, skin, part!);
-                    changes.Add(UiStrings.FormatAiSkin_Edit_Demoted(skin: skin.Name, part: part!.Name));
-                }
-                else if (partOnly == false && skin.Owner is not null)
-                {
-                    p.PromoteSkin(group, skin);
-                    changes.Add(UiStrings.FormatAiSkin_Edit_Promoted(skin: skin.Name));
                 }
                 if (position is { } to)
                 {
-                    var list = skin.Owner is { } owner ? group.AllSkins.Where(s => ReferenceEquals(s.Owner, owner)).ToList() : group.Skins.ToList();
-                    int from = list.IndexOf(skin), target = Math.Clamp(to, 0, list.Count - 1);
+                    int from = layer.Skins.ToList().IndexOf(skin), target = Math.Clamp(to, 0, layer.Skins.Count - 1);
                     if (from != target)
                     {
-                        p.MoveSkin(group, skin, target - from);
+                        p.MoveSkin(layer, skin, target - from);
                         changes.Add(UiStrings.FormatAiSkin_Edit_Moved(skin: skin.Name, position: target));
                     }
                 }
             });
         var summary = changes.Count == 0 ? UiStrings.AiSkin_Edit_Unchanged : string.Join("; ", changes);
-        var partSkins = p.ChildrenOf(group).Where(l => l.OwnSkins is { Count: > 0 })
-            .Select(l => $"{l.Name}: {SkinNames(l.OwnSkins!)}").ToList();
-        return TextResult(UiStrings.FormatAiSkin_Edit_Result(tool: tool, index: p.IndexOf(group), group: group.Name, changes: summary,
-            skins: SkinNames(group), active: group.ActiveSkin?.Name ?? "") + (partSkins.Count > 0 ? " · partSkins " + string.Join(" / ", partSkins) : ""));
+        return TextResult(UiStrings.FormatAiSkin_Edit_Result(tool: tool, index: p.IndexOf(layer), layer: layer.Name, changes: summary,
+            skins: SkinNames(layer), active: layer.ActiveSkin?.Name ?? ""));
     }
 
-    private JsonObject ListOutfits()
+    private JsonObject ListSkinPresets()
     {
         var p = RequireProject();
-        var outfits = new JsonArray();
-        foreach (var outfit in p.Outfits)
+        var presets = new JsonArray();
+        foreach (var preset in p.SkinPresets)
         {
-            var slots = new JsonArray();
-            foreach (var (group, skin) in outfit.Slots)
-                if (p.Layers.Contains(group))
-                    slots.Add(new JsonObject { ["group"] = p.IndexOf(group), ["name"] = group.Name, ["skin"] = skin.Name });
-            var parts = new JsonArray();
-            foreach (var (part, skin) in outfit.Parts)
-                if (p.Layers.Contains(part))
-                    parts.Add(new JsonObject { ["part"] = p.IndexOf(part), ["name"] = part.Name, ["skin"] = skin.Name });
-            var o = new JsonObject { ["name"] = outfit.Name, ["slots"] = slots, ["current"] = SkinManagerWindow.IsCurrentOutfit(p, outfit) };
-            if (parts.Count > 0) o["overrides"] = parts;
-            var missing = p.MissingOutfitEntries(outfit);
+            var entries = new JsonArray();
+            foreach (var (layer, skin) in preset.Entries)
+                if (p.Layers.Contains(layer))
+                    entries.Add(new JsonObject { ["layer"] = p.IndexOf(layer), ["name"] = layer.Name, ["skin"] = skin.Name });
+            var o = new JsonObject { ["name"] = preset.Name, ["entries"] = entries, ["current"] = SkinManagerWindow.IsCurrentPreset(p, preset) };
+            var missing = p.MissingSkinPresetEntries(preset);
             if (missing.Count > 0) o["missing"] = Strings(missing.ToArray());
-            outfits.Add(o);
+            presets.Add(o);
         }
-        return TextResult(outfits.Count == 0 ? UiStrings.S_PixelTools_ListOutfits_AC348035B4 : outfits.ToJsonString(JsonOptions));
+        return TextResult(presets.Count == 0 ? UiStrings.S_PixelTools_ListOutfits_AC348035B4 : presets.ToJsonString(JsonOptions));
     }
 
-    private JsonObject SaveOutfit(string tool, JsonObject? a)
+    private JsonObject SaveSkinPreset(string tool, JsonObject? a)
     {
         var p = BeginMutation();
-        if (!p.Layers.Any(l => l.IsGroup)) throw new ToolError(UiStrings.S_PixelTools_SaveOutfit_F985F9316F);
+        if (p.CurrentSkinEntries().Count == 0) throw new ToolError(UiStrings.S_PixelTools_SaveOutfit_F985F9316F);
         var name = OptString(a, "name")?.Trim();
-        var outfit = p.Edit<Outfit>(Label(tool), ProjectChange.Layers | ProjectChange.Settings, () => p.SaveOutfit(string.IsNullOrEmpty(name) ? null : name));
-        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SaveOutfit_852122358E,tool,outfit.Name,outfit.Slots.Count,outfit.Parts.Count,string.Join(", ", p.Outfits.Select(o => o.Name))));
+        var preset = p.Edit<SkinPreset>(Label(tool), ProjectChange.Layers | ProjectChange.Settings, () => p.SaveSkinPreset(string.IsNullOrEmpty(name) ? null : name));
+        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SaveOutfit_852122358E,tool,preset.Name,preset.Entries.Count,string.Join(", ", p.SkinPresets.Select(o => o.Name))));
     }
 
-    private JsonObject ApplyOutfit(string tool, JsonObject? a)
+    private JsonObject ApplySkinPreset(string tool, JsonObject? a)
     {
         var p = BeginMutation();
         var name = OptString(a, "name")?.Trim() ?? "";
         if (name.Length == 0) throw new ToolError(UiStrings.S_PixelTools_ApplyOutfit_CBD0035EE8);
-        var outfit = p.Outfits.FirstOrDefault(o => o.Name == name)
-                     ?? p.Outfits.FirstOrDefault(o => string.Equals(o.Name, name, StringComparison.OrdinalIgnoreCase))
-                     ?? throw new ToolError(p.Outfits.Count == 0
+        var preset = p.SkinPresets.FirstOrDefault(o => o.Name == name)
+                     ?? p.SkinPresets.FirstOrDefault(o => string.Equals(o.Name, name, StringComparison.OrdinalIgnoreCase))
+                     ?? throw new ToolError(p.SkinPresets.Count == 0
                          ? UiStrings.S_PixelTools_ApplyOutfit_F6B996D5D3
-                         : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ApplyOutfit_2BAE4914BE,name,string.Join(", ", p.Outfits.Select(o => o.Name))));
-        if (p.LockedLayersChangedBy(outfit) is { Count: > 0 } locked)
-            throw new ToolError(UiStrings.FormatAi_Locked_Outfit(outfit: outfit.Name, layers: LayerList(p, locked)));
+                         : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ApplyOutfit_2BAE4914BE,name,string.Join(", ", p.SkinPresets.Select(o => o.Name))));
+        if (p.LockedLayersChangedBy(preset) is { Count: > 0 } locked)
+            throw new ToolError(UiStrings.FormatAi_Locked_Preset(preset: preset.Name, layers: LayerList(p, locked)));
         IReadOnlyList<string> missing = [];
-        Ctx.Structural(() => missing = p.ApplyOutfit(outfit));
-        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ApplyOutfit_F49A169E48,tool,outfit.Name) + (missing.Count == 0 ? "" : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ApplyOutfit_4168EF87C1,string.Join(", ", missing))));
+        Ctx.Structural(() => missing = p.ApplySkinPreset(preset));
+        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ApplyOutfit_F49A169E48,tool,preset.Name) + (missing.Count == 0 ? "" : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ApplyOutfit_4168EF87C1,string.Join(", ", missing))));
     }
 
     /// <summary>0~1 실수 인자.</summary>
@@ -1551,7 +1546,7 @@ public sealed partial class PixelTools
 
     // ───────────── 편집 대상·기록 ─────────────
 
-    /// <summary>픽셀을 고칠 셀(검증 끝난 프레임·레이어와 그 크기 — 부위면 부위 크기).</summary>
+    /// <summary>픽셀을 고칠 셀(검증 끝난 프레임·레이어와 그 크기 — 위치 레이어면 그 크기).</summary>
     private readonly record struct Target(SpriteProject Project, int Frame, int Layer, int Width, int Height);
 
     private static string Label(string tool) => "AI: " + tool;
@@ -1567,18 +1562,17 @@ public sealed partial class PixelTools
         return p;
     }
 
-    /// <summary>픽셀 도구의 대상 셀을 고르고 그룹·잠금을 검사한다(숨긴 레이어에는 그릴 수 있다 — 앱과 같음).</summary>
+    /// <summary>픽셀 도구의 대상 셀을 고르고 잠금을 검사한다(숨긴 레이어에는 그릴 수 있다 — 앱과 같음).</summary>
     private Target EditTarget(JsonObject? a)
     {
         var p = BeginMutation();
         int frame = Frame(a), layer = LayerIndex(a);
-        if (p.Layers[layer].IsGroup) throw new ToolError(UiStrings.S_PixelTools_EditTarget_1DEA54562E);
         RequireUnlocked(p, layer);
         var (w, h) = SourceSize(p, layer);
         return new Target(p, frame, layer, w, h);
     }
 
-    /// <summary>잠긴 레이어(잠긴 그룹의 부위 포함)면 도구 오류 — 잠긴 레이어는 <see cref="Scope"/>와 관계없이 고치지 않는다.</summary>
+    /// <summary>잠긴 레이어(잠긴 조상 아래 레이어 포함)면 도구 오류 — 잠긴 레이어는 <see cref="Scope"/>와 관계없이 고치지 않는다.</summary>
     private static void RequireUnlocked(SpriteProject p, int index)
     {
         if (p.IsLayerLocked(index))
@@ -1586,15 +1580,15 @@ public sealed partial class PixelTools
     }
 
     /// <summary>
-    /// 자동 배치 그룹의 부위 배치를 다시 계산하게 될 변경이면, 그 그룹에 잠긴 부위가 있을 때 거부한다(다시 배치하면 잠긴 부위가 옮겨질 수 있음).
-    /// 자동 배치가 꺼진 그룹은 통과.
+    /// 자동 배치 부모의 자식 배치를 다시 계산하게 될 변경이면, 그 부모나 자식이 잠겨 있을 때 거부한다(다시 배치하면 잠긴 레이어가 옮겨질 수 있음).
+    /// 자동 배치가 꺼진 부모는 통과.
     /// </summary>
-    private static void RequireLayoutKeepsLocked(SpriteProject p, Layer group)
+    private static void RequireLayoutKeepsLocked(SpriteProject p, Layer parent)
     {
-        if (group.AutoLayout is null) return;
-        foreach (var part in p.ChildrenOf(group))
-            if (part.Locked || group.Locked)
-                throw new ToolError(UiStrings.FormatAi_Locked_AutoLayout(group: group.Name, index: p.IndexOf(part), name: part.Name));
+        if (parent.AutoLayout is null) return;
+        foreach (var child in p.ChildrenOf(parent))
+            if (p.IsLayerLocked(child))
+                throw new ToolError(UiStrings.FormatAi_Locked_AutoLayout(parent: parent.Name, index: p.IndexOf(child), name: child.Name));
     }
 
     /// <summary>오류 문구용 레이어 목록: 3 "Head", 5 "Body".</summary>
@@ -1627,15 +1621,14 @@ public sealed partial class PixelTools
     private static JsonObject Done(string tool, int changed, Target t, string extra = "")
         => TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_Done_F6B2C3D9C5,tool,changed,t.Frame,t.Layer,(t.Project.Layers[t.Layer].IsPart ? UiStrings.S_PixelTools_Done_73DD65CE69 : ""),extra));
 
-    /// <summary>읽기/쓰기 대상 크기: 부위면 부위 크기, 아니면 캔버스(프레임) 크기.</summary>
+    /// <summary>읽기/쓰기 대상 크기: 위치 레이어면 그 크기, 아니면 캔버스(프레임) 크기.</summary>
     private static (int Width, int Height) SourceSize(SpriteProject p, int? layer)
         => layer is { } l && p.Layers[l].IsPart ? (p.Layers[l].PartSize.Width, p.Layers[l].PartSize.Height) : (p.Width, p.Height);
 
-    /// <summary>읽기 원본: 레이어를 고르면 그 셀(빈 셀이면 투명, 그룹이면 그룹 합성), 아니면 보이는 레이어 합성.</summary>
+    /// <summary>읽기 원본: 레이어를 고르면 그 레이어 자신의 셀(빈 셀이면 투명, 자식은 빼고), 아니면 보이는 레이어 합성.</summary>
     private static PixelImage Source(SpriteProject p, int frame, int? layer)
     {
         if (layer is not { } l) return p.Flatten(frame);
-        if (p.Layers[l].IsGroup) return p.FlattenGroup(p.Layers[l], frame);
         if (p.GetCel(l, frame) is { } cel) return cel;
         var (w, h) = SourceSize(p, l);
         return new PixelImage(w, h);
@@ -1643,8 +1636,8 @@ public sealed partial class PixelTools
 
     private static string KindName(LayerKind kind) => kind switch
     {
-        LayerKind.Group => "group",
         LayerKind.Part => "part",
+        LayerKind.Tilemap => "tilemap",
         _ => "normal",
     };
 

@@ -52,7 +52,7 @@ public sealed partial class MainForm
         if (_ctx.Project is not { } p) return;
         _ctx.CommitFloating();
         int layer = _ctx.CurrentLayer;
-        if (_ctx.CurrentLayerObject is not { IsGroup: false } current)
+        if (_ctx.IsArrangeParentSelected || _ctx.CurrentLayerObject is not { } current)
         {
             ShowMessage(MainStrings.Pixelate_EmptyLayer);
             return;

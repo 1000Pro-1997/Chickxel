@@ -12,7 +12,7 @@ public class ExportCopyTests
     {
         var p = new SpriteProject(2, 2);
         p.AddFrame();
-        var body = p.AddGroup("body");
+        var body = p.AddEmptyParent("body");
         var part = p.AddPart(body, "Body", 1, 1, new Point(0, 0));
         for (int f = 0; f < 2; f++)
         {

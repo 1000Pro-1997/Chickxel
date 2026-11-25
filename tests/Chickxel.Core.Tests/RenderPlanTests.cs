@@ -13,7 +13,7 @@ public class RenderPlanTests
     private static readonly Color32 Red = new(220, 40, 40), Blue = new(40, 60, 230), Green = new(40, 200, 80);
 
     /// <summary>
-    /// 프레임 6개: 맨 아래 움직이는 일반 레이어(외곽선·그림자·클리핑된 잔상), 효과 켜진 그룹(부위 하나는 자기 잔상, 그룹은 외곽선·잔상),
+    /// 프레임 6개: 맨 아래 움직이는 일반 레이어(외곽선·그림자·클리핑된 잔상), 자손까지 효과가 켜진 빈 부모(자식 하나는 자기 잔상, 부모는 외곽선·잔상),
     /// 맨 위 일반 레이어(흔들기 + 잔상).
     /// </summary>
     private static SpriteProject Scene()
@@ -34,7 +34,7 @@ public class RenderPlanTests
             new AfterimageEffect { ClipToPrevious = true, Count = 2, Opacity = 70 },
         ]);
 
-        var g = p.AddGroup("G");
+        var g = p.AddEmptyParent("G");
         var body = p.AddPart(g, "Body", 10, 8, new Point(18, 12));
         var arm = p.AddPart(g, "Arm", 6, 4, new Point(14, 14));
         for (int f = 0; f < 6; f++)
@@ -49,9 +49,9 @@ public class RenderPlanTests
         p.SetLayerEffects(p.IndexOf(arm), [new AfterimageEffect { Count = 1, Opacity = 50, Tint = true, TintColor = Red }]);
         p.SetLayerEffects(p.IndexOf(g),
         [
-            new OutlineEffect { Color = Red },
-            new BobEffect { Height = 2 },
-            new AfterimageEffect { Count = 3, Interval = 1, Opacity = 60 },
+            new OutlineEffect { Color = Red, IncludeChildren = true },
+            new BobEffect { Height = 2, IncludeChildren = true },
+            new AfterimageEffect { Count = 3, Interval = 1, Opacity = 60, IncludeChildren = true },
         ]);
 
         var top = p.AddLayer(name: "위");
@@ -131,22 +131,18 @@ public class RenderPlanTests
     public void Cel_plans_match_cels_and_thumbnails_show_the_raw_cel()
     {
         var p = Scene();
-        // 효과를 모두 뺀 같은 장면: 그룹 썸네일은 이 장면의 그룹 합성(부위·그룹 효과 없이)
-        var plain = Scene();
-        for (int l = 0; l < plain.Layers.Count; l++) plain.SetLayerEffects(l, []);
         for (int l = 0; l < p.Layers.Count; l++)
             for (int f = 0; f < p.Frames.Count; f++)
             {
                 var layer = p.Layers[l];
                 var plan = p.PlanCel(l, f);
-                PixelImage? expected = layer.IsGroup ? p.FlattenGroup(layer, f)
-                    : layer.IsPart ? p.GetCel(l, f)
+                PixelImage? expected = layer.IsPart ? p.GetCel(l, f)
                     : p.GetCel(l, f) is { } cel ? LayerEffects.RenderClipped(cel, p.EffectsAt(layer, f)) : null;
                 Assert.Equal(expected is null, plan is null);
                 if (expected is not null) Assert.True(plan!.Render().ContentEquals(expected), $"{layer.Name} frame {f}");
-                // 타임라인 썸네일: 효과 없는 고칠 그림(일반 레이어는 셀, 부위는 부위 셀, 그룹은 효과 없는 부위 합성)
+                // 타임라인 썸네일: 효과 없는 고칠 그림(자기 셀 — 빈 부모는 없음)
                 var thumb = p.PlanCelThumbnail(l, f);
-                var thumbExpected = layer.IsGroup ? (plan is null ? null : plain.FlattenGroup(plain.Layers[l], f)) : p.GetCel(l, f);
+                var thumbExpected = p.GetCel(l, f);
                 Assert.Equal(thumbExpected is null, thumb is null);
                 if (thumbExpected is not null) Assert.True(thumb!.Render().ContentEquals(thumbExpected), $"{layer.Name} frame {f} thumbnail");
             }
@@ -184,19 +180,21 @@ public class RenderPlanTests
             Assert.True(p.PlanCelThumbnail(moving, f)!.Cropped(area).Render().ContentEquals(full.Crop(area)), $"frame {f}");
         }
 
-        // 그룹: 부위 영역을 합친 자리(효과 여백 없이), 부위는 자르지 않음
-        int group = p.IndexOf(p.Layers.First(l => l.IsGroup));
-        var groupArea = p.ThumbnailBounds(group);
+        // 접힌 부모(자식까지): 자손 영역을 합친 자리(효과 여백 없이), 자기 그림만이면 자리 있는 레이어라 자르지 않음
+        int group = p.IndexOf(p.Layers.First(l => p.HasChildren(l)));
+        var groupArea = p.ThumbnailBounds(group, withChildren: true);
         Assert.False(groupArea.IsEmpty);
-        Assert.True(p.PlanCel(group, 2)!.Cropped(groupArea).Render().ContentEquals(p.FlattenGroup(p.Layers[group], 2).Crop(groupArea)));
-        Assert.Equal(Rectangle.Empty, p.ThumbnailBounds(p.IndexOf(p.Layers.First(l => l.IsPart))));
-        // 타임라인 칸·스킨 카드가 같이 쓰는 썸네일 그림: 효과 없는 그룹 합성을 그 자리로 자른 것(스킨을 주면 그 스킨)
+        Assert.Equal(Rectangle.Empty, p.ThumbnailBounds(group));
+        Assert.Null(p.PlanCel(group, 2)); // 빈 부모는 자기 셀이 없다
+        Assert.Equal(Rectangle.Empty, p.ThumbnailBounds(p.IndexOf(p.Layers.First(l => l.IsPart && !p.HasChildren(l)))));
+        // 접힌 부모 칸 썸네일: 효과 없는 덩어리 합성을 그 자리로 자른 것(스킨을 주면 그 레이어만 그 스킨)
         var plain = Scene();
         for (int l = 0; l < plain.Layers.Count; l++) plain.SetLayerEffects(l, []);
         var groupLayer = p.Layers[group];
-        var expected = plain.FlattenGroup(plain.Layers[group], 2).Crop(groupArea);
-        Assert.True(p.RenderCelThumbnail(group, 2)!.ContentEquals(expected));
-        Assert.True(p.RenderCelThumbnail(group, 2, groupLayer.BaseSkin)!.ContentEquals(expected));
+        var expected = plain.FlattenSubtree(plain.Layers[group], 2).Crop(groupArea);
+        Assert.True(p.RenderCelThumbnail(group, 2, withChildren: true)!.ContentEquals(expected));
+        Assert.True(p.RenderCelThumbnail(group, 2, groupLayer.BaseSkin, withChildren: true)!.ContentEquals(expected));
+        Assert.Null(p.RenderCelThumbnail(group, 2));
 
         // 칠한 픽셀이 없는 레이어는 자르지 않음
         Assert.Equal(Rectangle.Empty, p.ThumbnailBounds(p.IndexOf(p.AddLayer(name: "빈"))));

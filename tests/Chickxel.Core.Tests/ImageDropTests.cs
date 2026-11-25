@@ -189,7 +189,7 @@ public class ImageDropTests
     public void Apply_FromPartGoesAboveGroupAtTopLevel()
     {
         var p = new SpriteProject(8, 8);
-        var group = p.AddGroup("body");
+        var group = p.AddEmptyParent("body");
         var part = p.AddPart(group, "arm", 2, 2);
         p.AddLayer(); // 그룹 위 일반 레이어
         int partIndex = p.IndexOf(part);

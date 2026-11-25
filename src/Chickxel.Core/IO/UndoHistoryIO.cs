@@ -12,24 +12,22 @@ namespace Chickxel.Core.IO;
 /// 실행취소 기록 파일(문서 하나 = 폴더 하나). 프로젝트 파일(<c>.chickxel</c>)과 따로 두고, 그 파일에 저장된 상태(= 지금 상태)를 기준으로 읽는다.
 /// <list type="bullet">
 /// <item><c>history.json.gz</c>: 형식 버전, 기준 상태(<c>anchor</c>), 셀 그림 목록, 실행취소 목록(오래된 것부터), 다시 실행 목록(먼 것부터),
-/// 기록의 상태들이 쓰는 스크립트 원문(<c>scripts</c>, 형식 3부터 — 프로젝트 파일은 지금 효과가 쓰는 원문만 저장하므로).
+/// 기록의 상태들이 쓰는 스크립트 원문(<c>scripts</c> — 프로젝트 파일은 지금 효과가 쓰는 원문만 저장하므로).
 /// 단계는 <c>snapshot</c>(구조 변경 앞뒤 상태), <c>stroke</c>(셀 하나의 픽셀 패치), <c>group</c>(여러 단계를 한 단계로).</item>
 /// <item><c>blobs/{해시}</c>: 내용 주소 저장소(zlib 압축, 이름 = 압축 전 내용의 SHA-256 앞 32자). 구조 상태 JSON·픽셀 패치·셀 그림이 들어가며,
 /// 같은 내용은 한 번만 저장된다(구조 단계 1000개가 같은 셀을 가리켜도 그림은 하나).</item>
 /// </list>
-/// 레이어·스킨·프레임·태그·착장·셀 그림은 기록 안에서 번호로 가리킨다. 기준 상태에 있는 것은 읽을 때 방금 연 프로젝트의 같은 자리 객체에 이어 붙이고,
+/// 레이어·스킨·프레임·태그·스킨 프리셋·셀 그림은 기록 안에서 번호로 가리킨다. 기준 상태에 있는 것은 읽을 때 방금 연 프로젝트의 같은 자리 객체에 이어 붙이고,
 /// 지금 프로젝트에 없는 셀 그림(지운 레이어 등)만 내용을 저장한다. 쓰기는 임시 파일에 쓴 뒤 바꿔치기한다.
 /// </summary>
 public static class UndoHistoryIO
 {
     /// <summary>
-    /// 5 = 타일맵 레이어(레이어의 <c>tilesetKey</c>·<c>tileMap</c>·<c>tileOrigin</c>, 상태의 <c>tilesets</c> — 맵·타일셋은 조각)를 담는 판.
-    /// 4 = 레이어마다의 피벗(일반 레이어·그룹 포함, <c>pivot</c>·프레임의 <c>layerPivots</c>)과 캔버스 피벗의 대표 레이어(<c>pivotLayer</c>)를 담는 판.
-    /// 3 = 기록의 상태들이 쓰는 스크립트 원문(<c>scripts</c>: 해시 → 원문)을 함께 담는 판. 2 = 레이어 효과를 프로젝트 형식 4와 같은 JSON
-    /// (<see cref="Effects.EffectCodec"/>)으로 쓰는 판. 1~3판도 읽는다(원문 없음 — 프로젝트 표에 없는 원문의 효과는 원문 없음으로 남음; 3판 이하의 상태는
-    /// 예전 프로젝트 파일을 읽을 때처럼 일반 레이어·그룹이 캔버스 피벗을 자기 피벗으로 갖는다).
+    /// 6 = 레이어 나무(아무 자리 있는 레이어가 <c>parent</c>)·레이어마다 스킨(<c>skins</c> — 타일맵 빼고 모든 레이어)·스킨 프리셋(<c>presets</c>: [레이어, 스킨] 항목)·
+    /// 스킨마다 캔버스 밖 그림([레이어, 프레임, 스킨, 그림, X, Y])을 담는 판. 그룹·착장을 담던 5판 이하는 바꿔 읽을 수 없어 읽지 않는다
+    /// (<see cref="Read"/>가 0 — 연 프로젝트는 기록 없이 시작하고, 다음 쓰기가 새 판으로 덮어씀).
     /// </summary>
-    public const int FormatVersion = 5;
+    public const int FormatVersion = 6;
     public const string ManifestName = "history.json.gz";
     public const string BlobFolder = "blobs";
 
@@ -69,8 +67,10 @@ public static class UndoHistoryIO
         {
             throw new InvalidDataException(Chickxel.Core.Localization.DomainStrings.FormatHistory_CorruptMessage(error: ex.Message), ex);
         }
-        if (manifest.Version is < 1 or > FormatVersion)
+        if (manifest.Version > FormatVersion)
             throw new InvalidDataException(Chickxel.Core.Localization.DomainStrings.FormatHistory_UnsupportedVersion(version: manifest.Version));
+        // 예전 판(그룹·착장 모델)은 지금 모델로 옮길 수 없다: 기록 없이 시작한다.
+        if (manifest.Version < FormatVersion) return 0;
         return project.LoadHistory(manifest, new HistoryBlobs(directory));
     }
 
@@ -297,7 +297,7 @@ internal sealed class HistoryManifestDto
     public List<HistoryImageDto> Images { get; set; } = [];
     public List<HistoryStepDto> Undo { get; set; } = [];
     public List<HistoryStepDto> Redo { get; set; } = [];
-    /// <summary>스크립트 원문(해시 → 원문, 형식 3부터, 없으면 null).</summary>
+    /// <summary>스크립트 원문(해시 → 원문, 없으면 null).</summary>
     public SortedDictionary<string, string>? Scripts { get; set; }
 }
 
@@ -340,19 +340,19 @@ internal sealed class HistorySnapshotDto
     public List<HistoryTagDto> Tags { get; set; } = [];
     /// <summary>캔버스 피벗의 대표 레이어 번호(0 = 없음, 형식 4부터).</summary>
     public int PivotLayer { get; set; }
-    public List<HistoryOutfitDto> Outfits { get; set; } = [];
+    public List<HistoryPresetDto> Presets { get; set; } = [];
     /// <summary>셀: [레이어, 프레임, 스킨(0 = 없음), 그림].</summary>
     public List<int[]> Cels { get; set; } = [];
-    /// <summary>캔버스 밖 그림: [레이어, 프레임, 그림, 왼쪽 위 X, Y](없으면 생략).</summary>
+    /// <summary>캔버스 밖 그림: [레이어, 프레임, 스킨(0 = 첫 스킨), 그림, 왼쪽 위 X, Y](없으면 생략).</summary>
     public List<int[]>? Overflow { get; set; }
     public ProjectIO.UnityDto Sprite { get; set; } = new();
-    /// <summary>내보내기 설정(시트의 스킨·착장·레이어 목록은 <see cref="CommonRefs"/>·<see cref="PartsRefs"/>).</summary>
+    /// <summary>내보내기 설정(시트의 스킨·프리셋·레이어 목록은 <see cref="CommonRefs"/>·<see cref="PartsRefs"/>).</summary>
     public ProjectIO.ExportDto Export { get; set; } = new();
     public HistorySheetRefsDto? CommonRefs { get; set; }
     public HistorySheetRefsDto? PartsRefs { get; set; }
-    /// <summary>내보내기 목록의 시트 줄마다(차례대로) 시트의 스킨·착장·레이어 목록. 없으면 시트 줄 없음.</summary>
+    /// <summary>내보내기 목록의 시트 줄마다(차례대로) 시트의 스킨·프리셋·레이어 목록. 없으면 시트 줄 없음.</summary>
     public List<HistoryEntryRefsDto>? EntryRefs { get; set; }
-    /// <summary>타일셋: [이름표, 조각 해시(타일셋 파일 내용)] (없으면 생략, 형식 5부터).</summary>
+    /// <summary>타일셋: [이름표, 조각 해시(타일셋 파일 내용)] (없으면 생략).</summary>
     public List<string[]>? Tilesets { get; set; }
 }
 
@@ -366,18 +366,16 @@ internal sealed class HistoryLayerDto
     public LayerKind Kind { get; set; }
     public int Parent { get; set; }
     public int[] Part { get; set; } = [];
-    /// <summary>레이어 피벗(그 레이어의 공간, 형식 4부터).</summary>
+    /// <summary>레이어 피벗(그 레이어의 공간).</summary>
     public ProjectIO.PivotDto? Pivot { get; set; }
-    /// <summary>형식 3 이하 전용(쓰지 않음): 부위 피벗.</summary>
-    public ProjectIO.PivotDto? PartPivot { get; set; }
     public int[] PartBorder { get; set; } = [];
     public int[]? PartSource { get; set; }
-    /// <summary>그룹만(아니면 null).</summary>
+    /// <summary>레이어 스킨(첫 스킨 = 기본). 타일맵만 null.</summary>
     public List<HistorySkinDto>? Skins { get; set; }
     public int ActiveSkin { get; set; }
     public List<JsonObject>? Effects { get; set; }
     public ProjectIO.GroupLayoutDto? AutoLayout { get; set; }
-    /// <summary>타일맵 레이어: 타일셋 이름표들(자리 차례), 맵 조각 해시, 격자 원점 [X, Y](형식 5부터).</summary>
+    /// <summary>타일맵 레이어: 타일셋 이름표들(자리 차례), 맵 조각 해시, 격자 원점 [X, Y].</summary>
     public List<string>? TilesetKeys { get; set; }
     public string? TileMap { get; set; }
     public int[]? TileOrigin { get; set; }
@@ -389,7 +387,6 @@ internal sealed class HistorySkinDto
 {
     public int Id { get; set; }
     public string Name { get; set; } = "";
-    public int Owner { get; set; }
 }
 
 internal sealed class HistoryFrameDto
@@ -398,11 +395,9 @@ internal sealed class HistoryFrameDto
     public int DurationMs { get; set; }
     public ProjectIO.PivotDto? Pivot { get; set; }
     public string? Name { get; set; }
-    /// <summary>레이어마다 이 프레임만의 피벗(없으면 null, 형식 4부터).</summary>
+    /// <summary>레이어마다 이 프레임만의 피벗(없으면 null).</summary>
     public List<HistoryLayerPivotDto>? LayerPivots { get; set; }
-    /// <summary>형식 3 이하 전용(쓰지 않음): 부위마다 이 프레임만의 피벗.</summary>
-    public List<HistoryLayerPivotDto>? PartPivots { get; set; }
-    /// <summary>부위마다 이 프레임에서 기준 위치에서 옮긴 거리 [부위, x, y](없으면 null).</summary>
+    /// <summary>자리 있는 레이어마다 이 프레임에서 기준 자리에서 옮긴 거리 [레이어, x, y](없으면 null).</summary>
     public List<int[]>? PartShifts { get; set; }
 }
 
@@ -424,14 +419,12 @@ internal sealed class HistoryTagDto
     public string? Color { get; set; }
 }
 
-internal sealed class HistoryOutfitDto
+internal sealed class HistoryPresetDto
 {
     public int Id { get; set; }
     public string Name { get; set; } = "";
-    /// <summary>[그룹, 스킨].</summary>
-    public List<int[]> Slots { get; set; } = [];
-    /// <summary>[부위, 스킨].</summary>
-    public List<int[]> Parts { get; set; } = [];
+    /// <summary>[레이어, 스킨].</summary>
+    public List<int[]> Entries { get; set; } = [];
 }
 
 /// <summary>내보내기 목록의 시트 줄 하나의 시트 설정 참조(공통, 부위 아틀라스 따로).</summary>
@@ -444,6 +437,6 @@ internal sealed class HistoryEntryRefsDto
 internal sealed class HistorySheetRefsDto
 {
     public List<int>? ExcludedSkins { get; set; }
-    public List<int>? Outfits { get; set; }
+    public List<int>? Presets { get; set; }
     public List<int>? ExcludedLayers { get; set; }
 }

@@ -6,7 +6,7 @@ using Chickxel.Core.Model;
 
 namespace Chickxel.Core.Tests;
 
-/// <summary>스킨(그룹 = 스킨 슬롯): 빈 칸은 빈 칸·합성, 실행취소, 저장·읽기(예전 파일 포함), 부위 아틀라스 이름·나누기, Sprite Library 내보내기.</summary>
+/// <summary>레이어 스킨: 빈 칸은 빈 칸·합성, 실행취소, 저장·읽기(예전 파일 포함), 레이어 아틀라스 이름·나누기, Sprite Library 내보내기(기본 + 프리셋마다).</summary>
 public class SkinTests
 {
     private static readonly Color32 Red = new(255, 0, 0);
@@ -19,11 +19,11 @@ public class SkinTests
         Assert.True(p.CommitCelStroke("점"));
     }
 
-    /// <summary>4×4, 그룹 "body"(Arm 2×2 @ (2,2), 위에 Head 2×2 @ (0,0)), 첫 스킨 Head·Arm (0,0)에 빨강.</summary>
+    /// <summary>4×4, 빈 부모 "body"(Arm 2×2 @ (2,2), 위에 Head 2×2 @ (0,0)), 첫 스킨 Head·Arm (0,0)에 빨강.</summary>
     private static (SpriteProject P, Layer Group, Layer Head, Layer Arm) Body()
     {
         var p = new SpriteProject(4, 4);
-        var g = p.AddGroup("body");
+        var g = p.AddEmptyParent("body");
         var arm = p.AddPart(g, "Arm", 2, 2, new Point(2, 2));
         var head = p.AddPart(g, "Head", 2, 2, new Point(0, 0));
         Paint(p, head, 0, 0, 0, Red);
@@ -37,17 +37,18 @@ public class SkinTests
     public void Flatten_UsesActiveSkin_EmptyCelsStayEmpty()
     {
         var (p, g, head, arm) = Body();
-        Assert.Equal([Layer.DefaultSkinName], g.Skins.Select(s => s.Name));
-        Assert.Same(g.BaseSkin, g.ActiveSkin);
+        Assert.Equal([Layer.DefaultSkinName], head.Skins.Select(s => s.Name));
+        Assert.Same(head.BaseSkin, head.ActiveSkin);
 
-        var knight = p.AddSkin(g, "knight");
-        Assert.Same(knight, g.ActiveSkin);
+        var preset = p.AddSkinToSubtree(g, "knight");
+        var knight = head.ActiveSkin!;
+        Assert.Equal("knight", knight.Name);
         // 새 스킨은 비어 있다: 첫 스킨 그림이 있어도 빌려 오지 않는다
         Assert.Equal(Color32.Transparent, p.Flatten(0)[0, 0]);
         Assert.Equal(Color32.Transparent, p.Flatten(0)[2, 2]);
         Assert.Null(p.GetCel(head, p.Frames[0]));
         Assert.True(p.IsCelEmpty(p.IndexOf(head), 0));
-        Assert.Equal(Red, p.GetOwnCel(head, p.Frames[0], g.BaseSkin!)![0, 0]);
+        Assert.Equal(Red, p.GetOwnCel(head, p.Frames[0], head.BaseSkin!)![0, 0]);
 
         // 빈 셀에 그리면 빈 그림에서 시작한다(첫 스킨 그림을 복사하지 않음)
         var image = p.BeginCelStroke(p.IndexOf(head), 0);
@@ -58,7 +59,7 @@ public class SkinTests
         Assert.Equal((Color32.Transparent, Blue), (own[0, 0], own[1, 1]));
         Assert.Equal((Color32.Transparent, Blue), (p.Flatten(0)[0, 0], p.Flatten(0)[1, 1]));
         Assert.Equal(Color32.Transparent, p.Flatten(0)[2, 2]); // Arm은 이 스킨에 그림이 없다
-        Assert.Equal(Red, p.GetOwnCel(head, p.Frames[0], g.BaseSkin!)![0, 0]);
+        Assert.Equal(Red, p.GetOwnCel(head, p.Frames[0], head.BaseSkin!)![0, 0]);
 
         // 투명한 자기 셀도 빈 칸(첫 스킨으로 대신하지 않음)
         p.SetCel(p.IndexOf(arm), 0, new PixelImage(2, 2));
@@ -71,127 +72,126 @@ public class SkinTests
         Assert.False(p.CommitCelStroke("빈"));
         Assert.Equal(undo, p.History.UndoCount);
 
-        // 착장 바꾸기: 실행취소 기록 없음, 수정됨 표시
+        // 스킨 바꾸기: 실행취소 기록 없음, 수정됨 표시
         p.IsDirty = false;
-        p.SetActiveSkin(g, g.BaseSkin!);
+        p.SetActiveSkin(head, head.BaseSkin!);
         Assert.Equal(undo, p.History.UndoCount);
         Assert.True(p.IsDirty);
         Assert.Equal(Red, p.Flatten(0)[0, 0]);
-        Assert.Equal(Red, p.FlattenGroup(g, 0)[0, 0]);
-        Assert.Equal(Color32.Transparent, p.FlattenGroup(g, 0, knight)[0, 0]);
+        Assert.Equal(Red, p.FlattenSubtree(g, 0)[0, 0]);
+        Assert.Equal(Color32.Transparent, p.FlattenSubtree(g, 0, p.DressOf(preset))[0, 0]);
 
-        // 셀 비우기 = 빈 칸, 숨긴 그룹은 스킨째 숨김
-        p.SetActiveSkin(g, knight);
+        // 셀 비우기 = 빈 칸, 숨긴 부모는 자손째 숨김
+        p.SetActiveSkin(head, knight);
         p.SetCel(p.IndexOf(head), 0, null);
         Assert.Equal(Color32.Transparent, p.Flatten(0)[1, 1]);
-        p.SetActiveSkin(g, g.BaseSkin!);
+        p.SetActiveSkin(head, head.BaseSkin!);
         p.SetLayerProperties(p.IndexOf(g), visible: false);
         Assert.Equal(Color32.Transparent, p.Flatten(0)[0, 0]);
     }
 
     [Fact]
-    public void EquipmentSlot_EmptyFirstSkin_ShowsNothing_AndSlotsStack()
+    public void EquipmentLayer_EmptyFirstSkin_ShowsNothing_AndLayersStack()
     {
         var (p, body, _, _) = Body();
-        var armor = p.AddGroup("armor");
+        var armor = p.AddEmptyParent("armor");
         var plate = p.AddPart(armor, "Plate", 2, 2, new Point(0, 0));
-        p.RenameSkin(armor, armor.BaseSkin!, "없음");
-        var iron = p.AddSkin(armor, "철갑");
+        p.RenameSkin(plate, plate.BaseSkin!, "없음");
+        var iron = p.AddSkin(plate, "철갑");
         Paint(p, plate, 0, 0, 0, Green);
-        Assert.Equal(Green, p.Flatten(0)[0, 0]); // 위 그룹(장비)이 몸 위에 겹친다
-        p.SetActiveSkin(armor, armor.BaseSkin!);
+        Assert.Equal(Green, p.Flatten(0)[0, 0]); // 위 레이어(장비)가 몸 위에 겹친다
+        p.SetActiveSkin(plate, plate.BaseSkin!);
         Assert.Equal(Red, p.Flatten(0)[0, 0]); // "없음" = 빈 첫 스킨 → 몸만
-        Assert.Throws<ArgumentException>(() => p.RenameSkin(armor, iron, "없음"));
-        Assert.Throws<ArgumentException>(() => p.RenameSkin(armor, iron, "  "));
-        Assert.Throws<ArgumentException>(() => p.SetActiveSkin(body, iron));
-        p.DeleteSkin(armor, iron);
-        Assert.Throws<InvalidOperationException>(() => p.DeleteSkin(armor, armor.BaseSkin!));
-        Assert.Equal("철갑 2", p.UniqueSkinName(p.Layers.First(l => l.Name == "armor"), "철갑 2"));
-        Assert.Equal("없음 2", p.UniqueSkinName(armor, "없음"));
+        Assert.Throws<ArgumentException>(() => p.RenameSkin(plate, iron, "없음"));
+        Assert.Throws<ArgumentException>(() => p.RenameSkin(plate, iron, "  "));
+        Assert.Throws<ArgumentException>(() => p.SetActiveSkin(body, iron)); // 다른 레이어의 스킨
+        p.DeleteSkin(plate, iron);
+        Assert.Throws<InvalidOperationException>(() => p.DeleteSkin(plate, plate.BaseSkin!));
+        Assert.Equal("철갑 2", p.UniqueSkinName(plate, "철갑 2"));
+        Assert.Equal("없음 2", p.UniqueSkinName(plate, "없음"));
     }
 
     [Fact]
     public void SkinOperations_UndoRedo()
     {
-        var (p, g, head, arm) = Body();
-        var baseSkin = g.BaseSkin!;
+        var (p, _, head, _) = Body();
+        var baseSkin = head.BaseSkin!;
 
-        var a = p.AddSkin(g, "a");
+        var a = p.AddSkin(head, "a");
         Paint(p, head, 0, 0, 0, Blue);
         Assert.True(p.Undo()); // 그림
         Assert.True(p.Undo()); // 스킨 추가
-        Assert.Equal([Layer.DefaultSkinName], g.Skins.Select(s => s.Name));
-        Assert.Same(baseSkin, g.ActiveSkin);
+        Assert.Equal([Layer.DefaultSkinName], head.Skins.Select(s => s.Name));
+        Assert.Same(baseSkin, head.ActiveSkin);
         Assert.True(p.Redo());
-        Assert.Same(a, g.ActiveSkin);
+        Assert.Same(a, head.ActiveSkin);
         Assert.True(p.Redo());
         Assert.Equal(Blue, p.Flatten(0)[0, 0]);
 
-        p.RenameSkin(g, a, "b");
+        p.RenameSkin(head, a, "b");
         p.Undo();
         Assert.Equal("a", a.Name);
         p.Redo();
         Assert.Equal("b", a.Name);
 
         // 복제: 첫 스킨을 복제하면 모든 셀 사본
-        var copy = p.AddSkin(g, null, baseSkin);
+        var copy = p.AddSkin(head, null, baseSkin);
         Assert.Equal($"{Layer.DefaultSkinName} 복사", copy.Name);
-        Assert.NotNull(p.GetOwnCel(arm, p.Frames[0], copy));
-        Assert.NotSame(p.GetOwnCel(arm, p.Frames[0], baseSkin), p.GetOwnCel(arm, p.Frames[0], copy));
+        Assert.NotNull(p.GetOwnCel(head, p.Frames[0], copy));
+        Assert.NotSame(p.GetOwnCel(head, p.Frames[0], baseSkin), p.GetOwnCel(head, p.Frames[0], copy));
         p.Undo();
 
         // 순서: 첫 스킨이 바뀌면 새 첫 스킨이 기본이 된다
-        p.MoveSkin(g, 1, 0);
-        Assert.Equal(["b", Layer.DefaultSkinName], g.Skins.Select(s => s.Name));
-        Assert.Same(a, g.BaseSkin);
+        p.MoveSkin(head, 1, 0);
+        Assert.Equal(["b", Layer.DefaultSkinName], head.Skins.Select(s => s.Name));
+        Assert.Same(a, head.BaseSkin);
         Assert.Equal(Blue, p.Flatten(0)[0, 0]);
-        Assert.Equal(Color32.Transparent, p.Flatten(0)[2, 2]); // 새 기본(b)에는 Arm이 없다
-        p.SetActiveSkin(g, baseSkin);
-        Assert.Equal((Red, Red), (p.Flatten(0)[0, 0], p.Flatten(0)[2, 2]));
-        p.Undo();
-        Assert.Equal([Layer.DefaultSkinName, "b"], g.Skins.Select(s => s.Name));
-        Assert.Same(baseSkin, g.ActiveSkin); // 스킨 구성이 같으면 지금 착장 유지
-        Assert.Equal((Red, Red), (p.Flatten(0)[0, 0], p.Flatten(0)[2, 2]));
-
-        // 삭제: 셀도 지우고, 실행취소하면 셀까지 돌아온다
-        p.SetActiveSkin(g, a);
-        p.DeleteSkin(g, a);
-        Assert.Single(g.Skins);
-        Assert.Same(baseSkin, g.ActiveSkin);
+        p.SetActiveSkin(head, baseSkin);
         Assert.Equal(Red, p.Flatten(0)[0, 0]);
         p.Undo();
-        Assert.Same(a, g.ActiveSkin);
+        Assert.Equal([Layer.DefaultSkinName, "b"], head.Skins.Select(s => s.Name));
+        Assert.Same(baseSkin, head.ActiveSkin); // 스킨 구성이 같으면 지금 스킨 유지
+        Assert.Equal(Red, p.Flatten(0)[0, 0]);
+
+        // 삭제: 셀도 지우고, 실행취소하면 셀까지 돌아온다
+        p.SetActiveSkin(head, a);
+        p.DeleteSkin(head, a);
+        Assert.Single(head.Skins);
+        Assert.Same(baseSkin, head.ActiveSkin);
+        Assert.Equal(Red, p.Flatten(0)[0, 0]);
+        p.Undo();
+        Assert.Same(a, head.ActiveSkin);
         Assert.Equal(Blue, p.Flatten(0)[0, 0]);
 
-        // 첫 스킨 삭제: 다음 스킨이 기본(그 스킨에 없는 Arm은 빈 셀)
-        p.DeleteSkin(g, baseSkin);
-        Assert.Same(a, g.BaseSkin);
-        Assert.Equal((Blue, Color32.Transparent), (p.Flatten(0)[0, 0], p.Flatten(0)[2, 2]));
+        // 첫 스킨 삭제: 다음 스킨이 기본
+        p.DeleteSkin(head, baseSkin);
+        Assert.Same(a, head.BaseSkin);
+        Assert.Equal(Blue, p.Flatten(0)[0, 0]);
         p.Undo();
-        Assert.Same(baseSkin, g.BaseSkin);
-        Assert.Equal(Red, p.GetOwnCel(arm, p.Frames[0], baseSkin)![0, 0]);
+        Assert.Same(baseSkin, head.BaseSkin);
+        Assert.Equal(Red, p.GetOwnCel(head, p.Frames[0], baseSkin)![0, 0]);
 
-        // 다른 편집을 실행취소해도 착장은 그대로
-        p.SetActiveSkin(g, baseSkin);
+        // 다른 편집을 실행취소해도 지금 스킨은 그대로
+        p.SetActiveSkin(head, baseSkin);
         p.SetLayerProperties(p.IndexOf(head), name: "머리");
-        p.SetActiveSkin(g, a);
+        p.SetActiveSkin(head, a);
         p.Undo();
-        Assert.Same(a, g.ActiveSkin);
+        Assert.Same(a, head.ActiveSkin);
     }
 
     [Fact]
-    public void Structure_DuplicateGroupFrameAndResize_CarrySkinCels()
+    public void Structure_DuplicateParentFrameAndResize_CarrySkinCels()
     {
         var (p, g, head, _) = Body();
-        var k = p.AddSkin(g, "k");
+        var k = p.AddSkin(head, "k");
         Paint(p, head, 0, 1, 0, Blue);
 
         var dup = p.DuplicateLayer(p.IndexOf(g));
-        Assert.Equal(["기본", "k"], dup.Skins.Select(s => s.Name));
-        Assert.NotSame(k, dup.Skins[1]);
-        Assert.Same(dup.Skins[1], dup.ActiveSkin);
         var dupHead = p.ChildrenOf(dup).Single(l => l.Name.StartsWith("Head"));
-        Assert.Equal(Blue, p.GetOwnCel(dupHead, p.Frames[0], dup.Skins[1])![1, 0]);
+        Assert.Equal(["기본", "k"], dupHead.Skins.Select(s => s.Name));
+        Assert.NotSame(k, dupHead.Skins[1]);
+        Assert.Same(dupHead.Skins[1], dupHead.ActiveSkin);
+        Assert.Equal(Blue, p.GetOwnCel(dupHead, p.Frames[0], dupHead.Skins[1])![1, 0]);
 
         p.DuplicateFrame(0);
         Assert.Equal(Blue, p.GetOwnCel(head, p.Frames[1], k)![1, 0]);
@@ -202,86 +202,53 @@ public class SkinTests
     }
 
     [Fact]
-    public void PartSkinOverride_CompositesSavesAndIgnoresUndo()
+    public void ActiveSkinsPerLayer_CompositeSaveAndIgnoreUndo()
     {
         using var dir = new TempDir();
         var (p, g, head, arm) = Body();
-        var baseSkin = g.BaseSkin!;
-        var knight = p.AddSkin(g, "knight");
+        var knight = p.AddSkinToSubtree(g, "knight");
         Paint(p, head, 0, 0, 0, Blue);
         Paint(p, arm, 0, 0, 0, Green);
-        var zombie = p.AddSkin(g, "zombie"); // 비어 있음 → 아무것도 안 보임
+        var zombie = p.AddSkinToSubtree(g, "zombie"); // 비어 있음 → 아무것도 안 보임
         Assert.Equal((Color32.Transparent, Color32.Transparent), (p.Flatten(0)[0, 0], p.Flatten(0)[2, 2]));
 
-        // 머리만 knight: 부위 재정의 → 그룹 스킨(zombie, 빈 셀은 빈 칸)
+        // 머리만 knight: 레이어마다 따로 고른다(기록 없음, 수정됨)
         int undo = p.History.UndoCount;
         p.IsDirty = false;
-        p.SetPartSkin(head, knight);
+        var headKnight = head.Skins.Single(s => s.Name == "knight");
+        p.SetActiveSkin(head, headKnight);
         Assert.True(p.IsDirty);
         Assert.Equal(undo, p.History.UndoCount);
-        Assert.Same(knight, head.SkinOverride);
-        Assert.Same(knight, head.ShownSkin);
-        Assert.Same(zombie, arm.ShownSkin);
-        Assert.Null(arm.SkinOverride);
+        Assert.Equal("zombie", arm.ActiveSkin!.Name);
         Assert.Equal((Blue, Color32.Transparent), (p.Flatten(0)[0, 0], p.Flatten(0)[2, 2]));
-        Assert.Equal(Blue, p.FlattenGroup(g, 0)[0, 0]);
-        Assert.Equal(Color32.Transparent, p.FlattenGroup(g, 0, zombie)[0, 0]); // 스킨을 주면 재정의 무시
+        Assert.Equal(Blue, p.FlattenSubtree(g, 0)[0, 0]);
+        Assert.Equal(Color32.Transparent, p.FlattenSubtree(g, 0, p.DressOf(zombie))[0, 0]); // 프리셋을 입혀 보면 그 스킨
 
-        // 그룹 스킨을 바꾸면 재정의 없는 부위만 따라감
-        p.SetActiveSkin(g, knight);
+        // 프리셋을 입히면 그 레이어들만 바뀐다
+        p.ApplySkinPreset(knight);
         Assert.Equal((Blue, Green), (p.Flatten(0)[0, 0], p.Flatten(0)[2, 2]));
-        p.SetActiveSkin(g, baseSkin);
-        Assert.Equal((Blue, Red), (p.Flatten(0)[0, 0], p.Flatten(0)[2, 2]));
 
-        // 재정의한 부위에 그리면 그 스킨 셀에 그린다(빈 셀이면 빈 그림에서 시작)
-        p.SetPartSkin(arm, zombie);
-        Paint(p, arm, 0, 1, 1, Blue);
-        Assert.Equal((Color32.Transparent, Blue), (p.GetOwnCel(arm, p.Frames[0], zombie)![0, 0], p.GetOwnCel(arm, p.Frames[0], zombie)![1, 1]));
-        Assert.Equal(Color32.Transparent, p.GetOwnCel(arm, p.Frames[0], baseSkin)![1, 1]); // 그룹 스킨(기본) 셀은 그대로
-
-        // 저장 왕복
+        // 저장 왕복: 레이어마다 지금 스킨
+        p.SetActiveSkin(arm, arm.BaseSkin!);
         var path = dir.File("o.chickxel");
         ProjectIO.Save(p, path);
         var back = ProjectIO.Load(path);
-        var bg = back.Layers.Single(l => l.IsGroup);
-        var bHead = back.Layers.Single(l => l.Name == "Head");
-        var bArm = back.Layers.Single(l => l.Name == "Arm");
-        Assert.Equal("knight", bHead.SkinOverride!.Name);
-        Assert.Equal("zombie", bArm.SkinOverride!.Name);
-        Assert.Same(bg.BaseSkin, bg.ActiveSkin);
+        Assert.Equal("knight", back.Layers.Single(l => l.Name == "Head").ActiveSkin!.Name);
+        Assert.Equal("기본", back.Layers.Single(l => l.Name == "Arm").ActiveSkin!.Name);
         Assert.True(p.Flatten(0).ContentEquals(back.Flatten(0)));
 
-        // 되돌리기: 재정의 지우기(그룹 따름), 기록 없음
-        Assert.True(p.ResetPartSkins(g));
-        Assert.False(p.ResetPartSkins(g));
-        Assert.Null(head.SkinOverride);
-        Assert.Equal((Red, Red), (p.Flatten(0)[0, 0], p.Flatten(0)[2, 2]));
-        p.SetPartSkin(head, knight);
-        p.SetPartSkin(head, null);
-        Assert.Same(baseSkin, head.ShownSkin);
-
-        // 지운 스킨을 가리키던 재정의는 그룹을 따르고, 스킨 삭제를 실행취소하면 돌아온다
-        p.SetPartSkin(head, knight);
-        p.DeleteSkin(g, knight);
-        Assert.Null(head.SkinOverride);
+        // 지운 스킨이 지금 스킨이면 앞 스킨으로, 실행취소하면 돌아온다
+        p.DeleteSkin(head, headKnight);
         Assert.Equal(Red, p.Flatten(0)[0, 0]);
         p.Undo();
-        Assert.Same(knight, head.SkinOverride);
+        Assert.Same(headKnight, head.ActiveSkin);
         Assert.Equal(Blue, p.Flatten(0)[0, 0]);
 
-        // 다른 편집 실행취소는 재정의를 건드리지 않는다
+        // 다른 편집 실행취소는 지금 스킨을 건드리지 않는다
         p.SetLayerProperties(p.IndexOf(arm), name: "팔");
-        p.SetPartSkin(arm, knight);
+        p.SetActiveSkin(arm, arm.Skins[1]);
         p.Undo();
-        Assert.Same(knight, arm.SkinOverride);
-
-        // 그룹 복제: 재정의도 새 그룹의 같은 스킨으로
-        var dup = p.DuplicateLayer(p.IndexOf(g));
-        var dupHead = p.ChildrenOf(dup).Single(l => l.Name.StartsWith("Head"));
-        Assert.Same(dup.Skins[1], dupHead.SkinOverride);
-
-        Assert.Throws<ArgumentException>(() => p.SetPartSkin(g, null));
-        Assert.Throws<ArgumentException>(() => p.SetPartSkin(head, dup.Skins[1]));
+        Assert.Same(arm.Skins[1], arm.ActiveSkin);
     }
 
     // ───────────── 저장·읽기 ─────────────
@@ -293,7 +260,7 @@ public class SkinTests
         using var dir = new TempDir();
         var (p, g, head, _) = Body();
         p.AddFrame();
-        p.AddSkin(g, "knight");
+        p.AddSkinToSubtree(g, "knight");
         Paint(p, head, 1, 1, 1, Blue);
         p.AddTag("walk", 0, 1);
         // 앱의 효과는 스크립트 효과(예전 외곽선을 바꾼 공식 스크립트 — 저장하면 원문 표도 씀)
@@ -328,11 +295,11 @@ public class SkinTests
     public void SaveLoad_RoundTripsSkins_AndOldFilesGetOneDefaultSkin()
     {
         using var dir = new TempDir();
-        var (p, g, head, _) = Body();
-        var k = p.AddSkin(g, "knight");
+        var (p, _, head, _) = Body();
+        var k = p.AddSkin(head, "knight");
         Paint(p, head, 0, 1, 1, Blue);
-        p.AddSkin(g, "없음");
-        p.SetActiveSkin(g, k);
+        p.AddSkin(head, "없음");
+        p.SetActiveSkin(head, k);
         var path = dir.File("hero.chickxel");
         ProjectIO.Save(p, path);
         using (var zip = ZipFile.OpenRead(path))
@@ -341,17 +308,16 @@ public class SkinTests
         var warnings = new List<string>();
         var back = ProjectIO.Load(path, warnings);
         Assert.Empty(warnings);
-        var bg = back.Layers.Single(l => l.IsGroup);
-        Assert.Equal(["기본", "knight", "없음"], bg.Skins.Select(s => s.Name));
-        Assert.Equal("knight", bg.ActiveSkin!.Name);
-        Assert.True(p.Flatten(0).ContentEquals(back.Flatten(0)));
         var bHead = back.Layers.Single(l => l.Name == "Head");
-        Assert.Equal(Blue, back.GetOwnCel(bHead, back.Frames[0], bg.Skins[1])![1, 1]);
-        Assert.Null(back.GetOwnCel(bHead, back.Frames[0], bg.Skins[2]));
-        back.SetActiveSkin(bg, bg.Skins[2]);
+        Assert.Equal(["기본", "knight", "없음"], bHead.Skins.Select(s => s.Name));
+        Assert.Equal("knight", bHead.ActiveSkin!.Name);
+        Assert.True(p.Flatten(0).ContentEquals(back.Flatten(0)));
+        Assert.Equal(Blue, back.GetOwnCel(bHead, back.Frames[0], bHead.Skins[1])![1, 1]);
+        Assert.Null(back.GetOwnCel(bHead, back.Frames[0], bHead.Skins[2]));
+        back.SetActiveSkin(bHead, bHead.Skins[2]);
         Assert.Equal(Color32.Transparent, back.Flatten(0)[0, 0]); // 빈 스킨은 빈 칸
 
-        // 예전(버전 2) 파일: 그룹마다 "기본" 스킨 하나, 없는 스킨 번호의 셀 파일은 무시
+        // 예전(버전 2) 파일: 그룹 → 빈 부모, 레이어마다 "기본" 스킨 하나, 없는 스킨 번호의 셀 파일은 무시
         var cel = new MemoryStream();
         var img = new PixelImage(2, 2);
         img.Set(0, 0, Red);
@@ -372,33 +338,35 @@ public class SkinTests
         warnings.Clear();
         var migrated = ProjectIO.Load(old, warnings);
         var mg = migrated.Layers[1];
-        Assert.Equal([Layer.DefaultSkinName], mg.Skins.Select(s => s.Name));
-        Assert.Same(mg.BaseSkin, mg.ActiveSkin);
+        Assert.True(mg.IsPart && migrated.HasChildren(mg));
+        Assert.Equal([Layer.DefaultSkinName], migrated.Layers[0].Skins.Select(s => s.Name));
+        Assert.Empty(migrated.SkinPresets);
         Assert.Equal(Red, migrated.Flatten(0)[0, 0]);
         Assert.Contains(warnings, w => w.Contains("L0_F0_S1"));
     }
 
     // ───────────── 내보내기 ─────────────
 
-    /// <summary><see cref="Body"/> + 프레임 2(Head 프레임 1도 첫 스킨에 그림), 스킨 knight는 Head 프레임 1만 직접 그림. 부위 아틀라스 켬, 프레임 번호 이름.</summary>
+    /// <summary><see cref="Body"/> + 프레임 2(Head 프레임 1도 첫 스킨에 그림), 스킨 프리셋 knight(부모·Head·Arm 스킨 knight — Head 프레임 1만 직접 그림). 레이어 아틀라스 켬, 프레임 번호 이름.</summary>
     private static (SpriteProject P, Layer Group, Skin Knight) Rig()
     {
-        var (p, g, head, _) = Body();
+        var (p, g, head, arm) = Body();
         p.AddFrame();
         Paint(p, head, 1, 0, 0, Red);
-        var knight = p.AddSkin(g, "knight");
+        p.AddSkinToSubtree(g, "knight");
+        var knight = head.ActiveSkin!;
         Paint(p, head, 1, 1, 1, Blue);
-        p.SetActiveSkin(g, g.BaseSkin!);
+        foreach (var l in new[] { g, head, arm }) p.SetActiveSkin(l, l.BaseSkin!);
         p.Export.ExportParts = true;
         p.Export.Common.Naming = SpriteNaming.FrameNumber;
-        p.Export.Common.Skins = SkinSource.Selected; // 부위 아틀라스: 모든 스킨
+        p.Export.Common.Skins = SkinSource.Selected; // 레이어 아틀라스: 모든 스킨
         return (p, g, knight);
     }
 
     [Fact]
     public void PartsAtlas_FirstSkinKeepsNames_OtherSkinsOnlyOwnCelsWithSeparator()
     {
-        var (p, g, knight) = Rig();
+        var (p, _, knight) = Rig();
         var names = ProjectExport.BuildPartsSheet(p, "x_parts").Entries.Select(e => e.Name).ToList();
         Assert.Equal(["Head", "Head_1", "Head_1@knight", "Arm"], names);
         var entry = ProjectExport.BuildPartsSheet(p, "x_parts").Entries.Single(e => e.Name == "Head_1@knight");
@@ -413,11 +381,12 @@ public class SkinTests
         Assert.Equal(["Head", "Head_1", "Arm"], ProjectExport.BuildPartsSheet(plain, "x_parts").Entries.Select(e => e.Name));
 
         // 프레임 시트는 지금 스킨으로 합성
-        p.SetActiveSkin(g, knight);
+        var head = p.Layers.Single(l => l.Name == "Head");
+        p.SetActiveSkin(head, knight);
         var sheet = ProjectExport.BuildSheet(p, "x");
         Assert.Equal(Blue, sheet.Image[sheet.Entries[1].Rect.X + 1, sheet.Entries[1].Rect.Y + 1]);
 
-        // 스킨마다 따로 파일 (+ 부위마다)
+        // 스킨마다 따로 파일 (+ 레이어마다)
         p.Export.Common.SplitSkins = true;
         var files = ProjectExport.BuildPartsSheets(p, "x_parts");
         Assert.Equal(["x_parts", "x_parts@knight"], files.Select(f => f.Name));
@@ -438,7 +407,7 @@ public class SkinTests
     }
 
     [Fact]
-    public void SpriteLibrary_PerGroupSkin_ReferencesMetaIds_RecordedAndStableGuid()
+    public void SpriteLibrary_BasePlusOnePerPreset_ReferencesMetaIds_RecordedAndStableGuid()
     {
         using var dir = new TempDir();
         var path = dir.File("hero.chickxel");
@@ -453,7 +422,8 @@ public class SkinTests
         var meta = UnityMeta.Read(atlas.ImagePath + ".meta");
         long Id(string name) => meta.Sprites.Single(s => s.Name == name).InternalId;
 
-        Assert.Equal([dir.File("hero_parts_body@기본.spriteLib"), dir.File("hero_parts_body@knight.spriteLib")], result.Libraries.Select(r => r.ImagePath));
+        // 기본(레이어마다 첫 스킨) + 프리셋 knight
+        Assert.Equal([dir.File("hero_parts.spriteLib"), dir.File("hero_parts@knight.spriteLib")], result.Libraries.Select(r => r.ImagePath));
         Assert.All(result.Libraries, r => Assert.True(File.Exists(r.ImagePath + ".meta")));
 
         foreach (var (lib, expect) in result.Libraries.Zip(new (string? Head0, string Head1, string? Arm)[] { ("Head", "Head_1", "Arm"), (null, "Head_1@knight", null) }))
@@ -502,6 +472,12 @@ public class SkinTests
         Assert.Equal(guid, UnityMeta.Read(again.Libraries[0].ImagePath + ".meta").Guid);
         Assert.Equal(text, File.ReadAllText(again.Libraries[1].ImagePath));
 
+        // 프리셋을 지우면 그 라이브러리는 정리 대상
+        p.DeleteSkinPreset(p.SkinPresets.Single());
+        var fewer = ProjectIO.SaveWithExport(p, path).Export!;
+        Assert.Equal([dir.File("hero_parts.spriteLib")], fewer.Libraries.Select(r => r.ImagePath));
+        Assert.Contains(result.Libraries[1].ImagePath, fewer.Stale);
+
         // 끄면 옛 .spriteLib·.meta는 정리 대상
         p.Export.WriteSpriteLibrary = false;
         var off = ProjectIO.SaveWithExport(p, path).Export!;
@@ -517,10 +493,10 @@ public class SkinTests
         var p = new SpriteProject(4, 4);
         p.AddFrame();
         p.AddTag("walk", 0, 1);
-        var armor = p.AddGroup("armor");
+        var armor = p.AddEmptyParent("armor");
         var plate = p.AddPart(armor, "Plate", 2, 2);
-        p.RenameSkin(armor, armor.BaseSkin!, "없음");
-        p.AddSkin(armor, "iron");
+        p.RenameSkin(plate, plate.BaseSkin!, "없음");
+        p.AddSkinToSubtree(armor, "iron");
         Paint(p, plate, 1, 0, 0, Green);
         p.Export.ExportParts = true;
         p.Export.WriteSpriteLibrary = true;
@@ -528,7 +504,7 @@ public class SkinTests
         p.Export.Common.Naming = SpriteNaming.ByTag;
         p.Export.Common.Skins = SkinSource.Selected;
         var libs = ProjectIO.SaveWithExport(p, dir.File("a.chickxel")).Export!.Libraries;
-        Assert.Equal(["a_parts_armor@없음.spriteLib", "a_parts_armor@iron.spriteLib"], libs.Select(l => Path.GetFileName(l.ImagePath)));
+        Assert.Equal(["a_parts.spriteLib", "a_parts@iron.spriteLib"], libs.Select(l => Path.GetFileName(l.ImagePath)));
         var none = MiniYaml.Parse(File.ReadAllText(libs[0].ImagePath))["MonoBehaviour"]!["m_Library"]!.Items.Single()["m_OverrideEntries"]!.Items.Single();
         Assert.Equal("walk_1", none["m_Name"]!.Text);
         Assert.Equal("0", none["m_SpriteOverride"]!["fileID"]!.Text); // "없음"은 빈 항목(아무것도 안 그림)

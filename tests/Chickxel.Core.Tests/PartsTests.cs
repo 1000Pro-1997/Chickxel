@@ -36,28 +36,25 @@ public class PartsTests
 
     private static List<string> Names(SpriteProject p) => p.Layers.Select(l => l.Name).ToList();
 
-    /// <summary>그룹의 부위는 그룹 바로 아래에 이어 붙어 있고, 부위는 항상 그룹이 있다.</summary>
-    private static void AssertHierarchy(SpriteProject p)
+    /// <summary>레이어의 자손은 그 레이어 바로 아래에 이어 붙어 있고, 부모는 늘 자리 있는 레이어다.</summary>
+    internal static void AssertHierarchy(SpriteProject p)
     {
         var layers = p.Layers;
         for (int i = 0; i < layers.Count; i++)
         {
             var l = layers[i];
-            if (l.IsPart)
+            if (l.Parent is { } parent)
             {
-                Assert.NotNull(l.Parent);
-                Assert.True(l.Parent!.IsGroup);
-                int g = p.IndexOf(l.Parent);
-                Assert.True(g > i, $"{l.Name}의 그룹이 위에 있어야 합니다.");
-                for (int j = i; j < g; j++) Assert.Same(l.Parent, layers[j].Parent);
+                Assert.True(l.IsPart);
+                Assert.True(parent.IsPart);
+                int g = p.IndexOf(parent);
+                Assert.True(g > i, $"{l.Name}의 부모가 위에 있어야 합니다.");
+                for (int j = i; j < g; j++) Assert.True(p.IsAncestorOf(parent, layers[j]), $"{layers[j].Name}은(는) {parent.Name}의 자손이어야 합니다.");
             }
-            else Assert.Null(l.Parent);
-            if (l.IsGroup)
-            {
-                int n = layers.Count(x => ReferenceEquals(x.Parent, l));
-                Assert.Equal(n, p.ChildCount(l));
-                Assert.Equal(layers.Skip(i - n).Take(n), p.ChildrenOf(l));
-            }
+            int n = layers.Count(x => p.IsAncestorOf(l, x));
+            Assert.Equal(n, p.DescendantCount(l));
+            Assert.Equal(layers.Skip(i - n).Take(n), p.DescendantsOf(l));
+            Assert.Equal(layers.Where(x => ReferenceEquals(x.Parent, l)), p.ChildrenOf(l));
         }
     }
 
@@ -67,14 +64,17 @@ public class PartsTests
     public void Parts_HaveOwnCelSize_FlattenUsesOffsetOpacityVisibility()
     {
         var p = new SpriteProject(8, 6);
-        var g = p.AddGroup("캐릭터");
+        var g = p.AddEmptyParent("캐릭터");
         var body = p.AddPart(g, "Body", 4, 3);                    // 가운데 (2,1)
         var head = p.AddPart(g, "Head", 2, 2, new Point(-1, 5));  // 일부는 캔버스 밖
         Assert.Equal(["레이어 1", "Body", "Head", "캐릭터"], Names(p));
         Assert.Equal([body, head], p.ChildrenOf(g));
         Assert.Equal(new Point(2, 1), body.PartOffset);
         Assert.Equal(new Rectangle(-1, 5, 2, 2), head.PartRect);
-        Assert.Throws<ArgumentException>(() => p.AddPart(body, "x", 1, 1));
+        // 자리 있는 레이어 아래에도 자식을 넣을 수 있다(여러 단계 나무)
+        var nested = p.AddPart(body, "x", 1, 1);
+        Assert.Same(body, nested.Parent);
+        p.Undo();
         Assert.Throws<ArgumentException>(() => p.AddPart(g, "x", 0, 1));
         Assert.Equal("Head 2", p.AddPart(g, "Head", 1, 1).Name);
         p.Undo();
@@ -87,9 +87,8 @@ public class PartsTests
         Paint(p, 2, 0, 0, 0, Blue);  // 캔버스 (-1,5) → 밖
         Paint(p, 0, 0, 7, 0, Green);
         Assert.Equal(new Size(2, 2), p.GetCel(2, 0)!.Size);
-        Assert.Null(p.GetCel(3, 0));
-        Assert.Throws<InvalidOperationException>(() => p.BeginCelStroke(3, 0));
-        Assert.Throws<InvalidOperationException>(() => p.SetCel(3, 0, new PixelImage(8, 6)));
+        Assert.Null(p.GetCel(3, 0));                       // 빈 부모는 셀이 없다(그릴 수는 있음 — 캔버스 크기)
+        Assert.Equal(new Size(8, 6), p.CelSize(g));
         Assert.Throws<ArgumentException>(() => p.SetCel(1, 0, new PixelImage(8, 6)));
 
         var flat = p.Flatten(0);
@@ -99,7 +98,7 @@ public class PartsTests
         Assert.Equal(Blue, flat.Get(0, 5));
         Assert.Equal(Green, flat.Get(7, 0));
 
-        var group = p.FlattenGroup(g, 0);
+        var group = p.FlattenSubtree(g, 0);
         Assert.Equal(Red, group.Get(2, 1));
         Assert.Equal(Color32.Transparent, group.Get(7, 0));
 
@@ -108,24 +107,24 @@ public class PartsTests
         Assert.Equal(Blue, only.Get(0, 5));
         Assert.Equal(Color32.Transparent, only.Get(2, 1));
 
-        // 불투명도 = 그룹 × 부위
+        // 불투명도: 부모는 자손까지 합친 그림에 한 번(여기서는 부모 × 자식과 같음)
         p.SetLayerProperties(3, opacity: 128);
         p.SetLayerProperties(1, opacity: 128);
         Assert.Equal(64, p.Flatten(0).Get(2, 1).A);
 
-        // 숨긴 그룹은 부위도 숨긴다
+        // 숨긴 부모는 자손도 숨긴다
         p.SetLayerProperties(3, visible: false);
         Assert.False(p.IsLayerVisible(1));
         Assert.True(p.IsLayerVisible(0));
         Assert.Equal(Color32.Transparent, p.Flatten(0).Get(2, 1));
         Assert.Equal(64, p.Flatten(0, includeHidden: true).Get(2, 1).A);
-        Assert.Equal(Red.WithAlpha(64), p.FlattenGroup(g, 0).Get(2, 1)); // 썸네일은 그룹 보이기 무시
+        Assert.Equal(Red.WithAlpha(64), p.FlattenSubtree(g, 0).Get(2, 1)); // 덩어리 그림은 그 레이어 보이기 무시
         p.SetLayerProperties(3, visible: true);
         p.SetLayerProperties(2, visible: false);
         Assert.Equal(Color32.Transparent, p.Flatten(0).Get(0, 5));
-        Assert.Equal(Color32.Transparent, p.FlattenGroup(g, 0).Get(0, 5));
+        Assert.Equal(Color32.Transparent, p.FlattenSubtree(g, 0).Get(0, 5));
 
-        // 잠긴 그룹의 부위에는 그릴 수 없다
+        // 잠긴 부모의 자손에는 그릴 수 없다
         p.SetLayerProperties(3, locked: true);
         Assert.True(p.IsLayerLocked(1));
         Assert.False(p.IsLayerLocked(0));
@@ -145,18 +144,18 @@ public class PartsTests
         var p = new SpriteProject(4, 4);
         p.AddFrame();
         var plain = p.AddLayer(name: "Plain");
-        var g = p.AddGroup("G");
+        var g = p.AddEmptyParent("G");
         var part = p.AddPart(g, "Arm", 2, 2);
         Paint(p, p.IndexOf(plain), 0, 0, 0, Red);
-        p.AddSkin(g, "alt"); // 지금 스킨이 됨
+        p.AddSkin(part, "alt"); // 지금 스킨이 됨
         Paint(p, p.IndexOf(part), 1, 0, 0, Blue);
-        p.SetActiveSkin(g, g.BaseSkin!);
+        p.SetActiveSkin(part, part.BaseSkin!);
 
         // 잠긴 레이어가 없으면 비어 있다
         Assert.Empty(p.LockedLayersWithContent(0));
         Assert.Empty(p.LockedLayersWithContent(1));
 
-        // 잠긴 일반 레이어, 그룹이 잠긴 부위(지금 보이지 않는 스킨의 그림도 프레임을 지우면 사라짐)
+        // 잠긴 일반 레이어, 부모가 잠긴 레이어(지금 보이지 않는 스킨의 그림도 프레임을 지우면 사라짐)
         p.SetLayerProperties(p.IndexOf(plain), locked: true);
         p.SetLayerProperties(p.IndexOf(g), locked: true);
         Assert.Equal([plain], p.LockedLayersWithContent(0));
@@ -173,18 +172,18 @@ public class PartsTests
     public void Hierarchy_StaysValid_UnderAddDuplicateMoveMergeDelete()
     {
         var p = new SpriteProject(4, 4);
-        var g = p.AddGroup("G");
+        var g = p.AddEmptyParent("G");
         var a = p.AddPart(g, "A", 2, 2);
         p.AddPart(g, "B", 1, 1);
         Paint(p, 1, 0, 1, 1, Red);
-        var top = p.AddLayer(2, "위"); // 그룹 안 → 그룹 바로 위로
+        var top = p.AddLayer(2, "위"); // 덩어리 안 → 그 최상위 레이어 바로 위로
         Assert.Equal(["레이어 1", "A", "B", "G", "위"], Names(p));
         AssertHierarchy(p);
 
         var dupG = p.DuplicateLayer(3);
         Assert.Equal(["레이어 1", "A", "B", "G", "A_1", "B_1", "G_1", "위"], Names(p));
-        Assert.True(dupG.IsGroup);
-        Assert.Equal(2, p.ChildCount(dupG));
+        Assert.True(p.HasChildren(dupG));
+        Assert.Equal(2, p.ChildrenOf(dupG).Count);
         Assert.Equal(Red, p.GetCel(4, 0)!.Get(1, 1));
         Assert.NotSame(p.GetCel(1, 0), p.GetCel(4, 0));
         Assert.Equal(a.PartSize, p.Layers[4].PartSize);
@@ -195,17 +194,17 @@ public class PartsTests
         Assert.Equal(["레이어 1", "A", "B", "B_2", "G", "A_1", "B_1", "G_1", "위"], Names(p));
         AssertHierarchy(p);
 
-        // 부위는 자기 그룹 안에서만
+        // 자식은 같은 부모의 형제 사이에서만
         p.MoveLayer(1, 99);
         Assert.Equal(["레이어 1", "B", "B_2", "A", "G"], Names(p).Take(5));
         p.MoveLayer(3, 0);
         Assert.Equal(["레이어 1", "A", "B", "B_2", "G"], Names(p).Take(5));
         AssertHierarchy(p);
 
-        // 그룹은 덩어리째
+        // 부모는 덩어리(자손)째
         p.MoveLayer(7, 0);
         Assert.Equal(["A_1", "B_1", "G_1", "레이어 1", "A", "B", "B_2", "G", "위"], Names(p));
-        // 그룹 안으로 넣으면 가까운 경계로
+        // 다른 덩어리 안으로 넣으면 가까운 경계로
         p.MoveLayer(8, 5);
         Assert.Equal(["A_1", "B_1", "G_1", "레이어 1", "위", "A", "B", "B_2", "G"], Names(p));
         AssertHierarchy(p);
@@ -220,8 +219,8 @@ public class PartsTests
         int undo = p.History.UndoCount;
         p.MoveLayerDown(3);   // 맨 아래 덩어리
         p.MoveLayerUp(8);     // 맨 위
-        p.MoveLayerUp(2);     // 맨 위 부위
-        p.MoveLayerDown(0);   // 맨 아래 부위
+        p.MoveLayerUp(2);     // 맨 위 자식
+        p.MoveLayerDown(0);   // 맨 아래 자식
         Assert.Equal(undo, p.History.UndoCount);
         p.MoveLayerDown(2);
         Assert.Equal(["A", "B_2", "B", "G"], Names(p).Take(4));
@@ -229,16 +228,16 @@ public class PartsTests
         Assert.Equal(["A", "B", "B_2", "G"], Names(p).Take(4));
         AssertHierarchy(p);
 
-        // 병합은 일반 → 일반만
+        // 병합은 일반 → 일반만(자리 있는 레이어 끼면 거부)
         Assert.Throws<InvalidOperationException>(() => p.MergeLayerDown(2));
         Assert.Throws<InvalidOperationException>(() => p.MergeLayerDown(3));
-        Assert.Throws<InvalidOperationException>(() => p.MergeLayerDown(7)); // 아래가 그룹
+        Assert.Throws<InvalidOperationException>(() => p.MergeLayerDown(7)); // 아래가 빈 부모
         Paint(p, 8, 0, 0, 0, Blue);
         p.MergeLayerDown(8);
         Assert.Equal(Blue, p.GetCel(7, 0)!.Get(0, 0));
         Assert.DoesNotContain(top, p.Layers);
 
-        // 그룹 삭제는 부위까지
+        // 부모 삭제는 자손까지
         p.DeleteLayer(3);
         Assert.Equal(["A_1", "B_1", "G_1", "레이어 1"], Names(p));
         AssertHierarchy(p);
@@ -248,14 +247,16 @@ public class PartsTests
 
         // 남는 레이어가 없으면 거부
         var q = new SpriteProject(2, 2);
-        var qg = q.AddGroup();
+        var qg = q.AddEmptyParent();
         q.AddPart(qg, "p", 1, 1);
         q.DeleteLayer(0);
         Assert.Equal(2, q.Layers.Count);
         var ex = Assert.Throws<InvalidOperationException>(() => q.DeleteLayer(1));
         Assert.Equal("마지막 레이어는 지울 수 없습니다.", ex.Message);
-        q.DeleteLayer(0); // 부위만 지우면 빈 그룹이 남는다
-        Assert.True(Assert.Single(q.Layers).IsGroup);
+        q.DeleteLayer(0); // 자식만 지우면 빈 레이어가 남는다
+        var left = Assert.Single(q.Layers);
+        Assert.True(left.IsPart);
+        Assert.False(q.HasChildren(left));
     }
 
     // ───────────── 크기·캔버스 ─────────────
@@ -264,7 +265,7 @@ public class PartsTests
     public void ResizePart_KeepsPixelsOnCanvas_AndPivotOnSamePixel()
     {
         var p = new SpriteProject(10, 10);
-        var g = p.AddGroup();
+        var g = p.AddEmptyParent();
         var part = p.AddPart(g, "팔", 4, 4, new Point(3, 3));
         int pi = p.IndexOf(part);
         Paint(p, pi, 0, 0, 3, Red);   // 캔버스 (3,6)
@@ -291,7 +292,7 @@ public class PartsTests
     public void ResizePartScaled_GrowsAndScales_AllFrames_KeepingPlaceOnCanvas()
     {
         var p = new SpriteProject(10, 10);
-        var g = p.AddGroup();
+        var g = p.AddEmptyParent();
         var part = p.AddPart(g, "팔", 2, 2, new Point(4, 4));
         int pi = p.IndexOf(part);
         Paint(p, pi, 0, 0, 0, Red);   // 캔버스 (4,4)
@@ -317,7 +318,7 @@ public class PartsTests
     public void PartFramePivot_OverridesOnlyThatFrame_AndFollowsUndoSaveDuplicateResize()
     {
         var p = new SpriteProject(10, 10);
-        var g = p.AddGroup();
+        var g = p.AddEmptyParent();
         var part = p.AddPart(g, "팔", 4, 4, new Point(3, 3));
         int pi = p.IndexOf(part);
         p.AddFrame();
@@ -361,7 +362,7 @@ public class PartsTests
     public void MovePartFrom_MovesThatFrameToTheEnd_PivotFollows_KeepsThroughBaseMoveUndoSave()
     {
         var p = new SpriteProject(10, 10);
-        var g = p.AddGroup();
+        var g = p.AddEmptyParent();
         var part = p.AddPart(g, "팔", 2, 2, new Point(1, 1));
         int pi = p.IndexOf(part);
         p.AddFrame();
@@ -405,7 +406,7 @@ public class PartsTests
     public void PivotFrom_MovesThatFrameToTheEnd_BySameAmount_KeepingPerFrameDifferences()
     {
         var p = new SpriteProject(8, 8);
-        var g = p.AddGroup();
+        var g = p.AddEmptyParent();
         var part = p.AddPart(g, "팔", 4, 4, new Point(0, 0));
         int pi = p.IndexOf(part);
         p.AddFrame();
@@ -427,7 +428,7 @@ public class PartsTests
     public void Bake_PivotMovingEffectOnPart_MovesPartPerFrame_InsteadOfPixels()
     {
         var p = new SpriteProject(12, 12);
-        var g = p.AddGroup();
+        var g = p.AddEmptyParent();
         var part = p.AddPart(g, "몸", 2, 2, new Point(5, 5));
         int pi = p.IndexOf(part);
         for (int i = 0; i < 7; i++) p.AddFrame();
@@ -454,7 +455,7 @@ public class PartsTests
     {
         var p = new SpriteProject(10, 8);
         Paint(p, 0, 0, 0, 0, Green);
-        var g = p.AddGroup();
+        var g = p.AddEmptyParent();
         var part = p.AddPart(g, "몸", 4, 3, new Point(5, 2));
         int pi = p.IndexOf(part);
         var cel = p.BeginCelStroke(pi, 0);
@@ -561,18 +562,18 @@ public class PartsTests
     public void ResizeCanvasAndScale_ScalesParts_AllSkins_Border_AndPivotPoints()
     {
         var p = new SpriteProject(8, 8);
-        var g = p.AddGroup("몸");
+        var g = p.AddEmptyParent("몸");
         var part = p.AddPart(g, "팔", 2, 3, new Point(1, 2));
         int pi = p.IndexOf(part);
         Paint(p, pi, 0, 1, 0, Red);
-        var baseSkin = g.BaseSkin!;
-        var knight = p.AddSkin(g, "knight");
-        p.SetActiveSkin(g, knight);
+        var baseSkin = part.BaseSkin!;
+        var knight = p.AddSkin(part, "knight");
+        p.SetActiveSkin(part, knight);
         Paint(p, pi, 0, 0, 2, Blue);
         p.SetPartBorder(pi, new SpriteBorder(1, 1, 1, 2));
         p.SetLayerPivot(pi, new Pivot(0.25f, 0f));
         p.Edit("피벗", ProjectChange.Settings, () => p.Sprite.DefaultPivot = Pivot.BottomCenter); // 픽셀 (4,8)
-        p.SetActiveSkin(g, baseSkin);
+        p.SetActiveSkin(part, baseSkin);
 
         // 2배 + 왼쪽 위 여백 (2,1)
         p.ResizeCanvasAndScale(20, 18, new Rectangle(2, 1, 16, 16));
@@ -651,7 +652,7 @@ public class PartsTests
     public void ResizeCanvasAndScale_NineSlice_StretchesPartWithItsOwnBorder_AndKeepsIt()
     {
         var p = new SpriteProject(8, 8);
-        var g = p.AddGroup("UI");
+        var g = p.AddEmptyParent("UI");
         var part = p.AddPart(g, "단추", 4, 4, new Point(2, 2));
         int pi = p.IndexOf(part);
         Paint(p, pi, 0, 0, 0, Red);
@@ -681,7 +682,7 @@ public class PartsTests
     public void PartOps_UndoRedo_AndCollapseIsNotUndoable()
     {
         var p = new SpriteProject(8, 8);
-        var g = p.AddGroup("G");
+        var g = p.AddEmptyParent("G");
         var part = p.AddPart(g, "P", 3, 2);
         p.SetPartOffset(1, new Point(-2, 7));
         p.SetPartOffset(1, new Point(-2, 7)); // 같으면 기록 없음
@@ -695,8 +696,7 @@ public class PartsTests
         Assert.True(g.Collapsed);
         Assert.False(p.IsDirty);
         Assert.Equal(6, p.History.UndoCount);
-        Assert.Throws<ArgumentException>(() => p.SetLayerCollapsed(1, true));
-        Assert.Throws<ArgumentException>(() => p.SetPartOffset(2, Point.Empty));
+        Assert.Throws<ArgumentException>(() => p.SetPartOffset(0, Point.Empty)); // 일반 레이어
 
         for (int i = 0; i < 4; i++) p.Undo();
         Assert.Equal((new Size(3, 2), new Point(2, 3), Pivot.Center, SpriteBorder.None),
@@ -724,7 +724,7 @@ public class PartsTests
         using var dir = new TempDir();
         var p = new SpriteProject(12, 10);
         Paint(p, 0, 0, 11, 9, Green);
-        var g = p.AddGroup("캐릭터");
+        var g = p.AddEmptyParent("캐릭터");
         p.AddPart(g, "Body", 4, 6, new Point(4, 4));
         p.AddPart(g, "Head", 8, 5, new Point(-1, -2));
         p.AddLayer(name: "위");
@@ -864,7 +864,8 @@ public class PartsTests
         Assert.Equal(new Size(32, 32), p.Size);
         Assert.Equal(["lag", "Arm", "Body", "Head", "부위"], Names(p)); // 첫 스프라이트 = 맨 위 부위
         var group = p.Layers[4];
-        Assert.True(group.IsGroup);
+        Assert.True(group.IsPart && p.HasChildren(group));
+        Assert.Null(p.GetCel(4, 0));
         AssertHierarchy(p);
         Assert.Single(p.Frames);
         for (int i = 0; i < 4; i++)
@@ -887,7 +888,8 @@ public class PartsTests
         Assert.Equal(original.Sprites.Select(s => (s.Name, s.UnityRect, s.Alignment, s.Pivot, s.Border, s.SpriteId, s.InternalId)),
             meta.Sprites.Select(s => (s.Name, s.UnityRect, s.Alignment, s.Pivot, s.Border, s.SpriteId, s.InternalId)));
         Assert.True(PngIO.Load(png).ContentEquals(sheet));
-        Assert.True(ProjectIO.Load(path).Layers[4].IsGroup);
+        var reloaded = ProjectIO.Load(path);
+        Assert.True(reloaded.HasChildren(reloaded.Layers[4]));
     }
 
     [Fact]
@@ -941,7 +943,7 @@ public class PartsTests
         Directory.CreateDirectory(Path.Combine(dir.Path, "ProjectSettings"));
         var path = Path.Combine(dir.Path, "Assets", "hero.chickxel");
         var p = new SpriteProject(16, 16);
-        var g = p.AddGroup("캐릭터");
+        var g = p.AddEmptyParent("캐릭터");
         p.AddPart(g, "Body", 6, 8, new Point(5, 8));
         p.AddPart(g, "Head", 8, 5, new Point(4, 3));
         p.Export.ExportParts = true; // 새 프로젝트 기본은 프레임 시트만 — 둘 다 내보내기
@@ -1021,7 +1023,7 @@ public class PartsTests
     {
         using var dir = new TempDir();
         var p = new SpriteProject(8, 8);
-        var g = p.AddGroup("캐릭터");
+        var g = p.AddEmptyParent("캐릭터");
         p.AddPart(g, "Head", 4, 3, new Point(2, 1));
         p.BeginCelStroke(1, 0).Clear(Red);
         p.CommitCelStroke("머리");
@@ -1077,7 +1079,7 @@ public class PartsTests
     public void Export_PartsAtlasPackingOptions()
     {
         var p = new SpriteProject(8, 8);
-        var g = p.AddGroup();
+        var g = p.AddEmptyParent();
         p.AddPart(g, "tall", 3, 12);
         p.AddPart(g, "wide", 20, 4);
         p.BeginCelStroke(1, 0).Clear(Blue);
@@ -1168,7 +1170,8 @@ public class PartsTests
         ProjectIO.Save(parts, ProjectImport.GetProjectPathForPng(png));
         var again = ProjectImport.Analyze(png);
         Assert.False(again.NeedsModeChoice);
-        Assert.True(ProjectImport.Import(again).Project.Layers[2].IsGroup);
+        var reopened = ProjectImport.Import(again).Project;
+        Assert.True(reopened.HasChildren(reopened.Layers[2]));
     }
 
     // ───────────── 이름 바꾸기 ─────────────
@@ -1180,7 +1183,7 @@ public class PartsTests
         var oldPath = dir.File("hero.chickxel");
         var newPath = dir.File("renamed.chickxel");
         var p = new SpriteProject(4, 4);
-        var g = p.AddGroup();
+        var g = p.AddEmptyParent();
         p.AddPart(g, "Head", 2, 2);
         Paint(p, 1, 0, 0, 0, Red);
         p.Edit("메타", ProjectChange.Settings, () => { p.Export.Engine = ExportEngine.Unity; p.Export.ExportParts = true; });

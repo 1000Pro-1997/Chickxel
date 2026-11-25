@@ -644,19 +644,23 @@ public sealed partial class EditorContext
     public Layer? CurrentLayerObject
         => Project is { } p && p.Layers.Count > 0 ? p.Layers[Math.Clamp(_layer, 0, p.Layers.Count - 1)] : null;
 
-    /// <summary>현재 레이어가 부위면 그 부위, 아니면 null.</summary>
-    public Layer? CurrentPart => CurrentLayerObject is { IsPart: true } l ? l : null;
+    /// <summary>현재 레이어가 자리 있는 레이어면 그 레이어, 아니면 null(자식 배치 중인 빈 부모는 캔버스 크기로 보므로 null).</summary>
+    public Layer? CurrentPart => CurrentLayerObject is { IsPart: true } l && !IsArrangeParent(l) ? l : null;
 
-    /// <summary>현재 레이어가 그룹인지(캔버스는 부위 배치 모드).</summary>
-    public bool IsGroupSelected => CurrentLayerObject?.IsGroup == true;
+    /// <summary>현재 레이어가 자식 배치 모드인 빈 부모인지(자식이 있고 제 셀이 없는 자리 있는 레이어 — 캔버스에서 자식을 끌어 배치).</summary>
+    public bool IsArrangeParentSelected => CurrentLayerObject is { } l && IsArrangeParent(l);
 
-    /// <summary>고른 그룹, 또는 고른 부위가 속한 그룹(없으면 null).</summary>
-    public Layer? CurrentGroup => CurrentLayerObject switch
+    /// <summary>자식 배치 모드인 빈 부모를 골랐으면 그 레이어, 자리 있는 레이어를 골랐으면 그 부모(없으면 null).</summary>
+    public Layer? CurrentArrangeParent => CurrentLayerObject switch
     {
-        { IsGroup: true } g => g,
+        { } l when IsArrangeParent(l) => l,
         { IsPart: true } part => part.Parent,
         _ => null,
     };
+
+    /// <summary>자식이 있고 제 셀(지금 스킨)이 하나도 없는 자리 있는 레이어(예전 그룹)인지.</summary>
+    public bool IsArrangeParent(Layer layer)
+        => Project is { } p && layer.IsPart && p.HasChildren(layer) && p.Frames.All(f => p.GetOwnCel(layer, f) is null);
 
     private Size CurrentCanvasSize => new(CanvasWidth, CanvasHeight);
 
@@ -806,11 +810,11 @@ public sealed partial class EditorContext
 
     // ───────────── 그리기 대상 ─────────────
 
-    /// <summary>현재 레이어가 그룹이 아니고 잠기지 않았으면(그룹 포함) true. 숨긴 레이어에도 그릴 수 있다.</summary>
+    /// <summary>현재 레이어가 자식 배치 중인 빈 부모·타일맵이 아니고 잠기지 않았으면(조상 포함) true. 숨긴 레이어에도 그릴 수 있다.</summary>
     public bool CanEdit
-        => Project is { } p && !p.Layers[_layer].IsGroup && !p.Layers[_layer].IsTilemap && !p.IsLayerLocked(_layer);
+        => Project is { } p && !IsArrangeParentSelected && !p.Layers[_layer].IsTilemap && !p.IsLayerLocked(_layer);
 
-    /// <summary>현재 셀 이미지(스트로크 중이면 그 이미지, 부위면 부위 크기, 그룹·빈 셀이면 null).</summary>
+    /// <summary>현재 셀 이미지(스트로크 중이면 그 이미지, 자리 있는 레이어면 그 크기, 빈 셀이면 null).</summary>
     public PixelImage? EditImage => _strokeImage ?? Project?.GetCel(_layer, _frame);
 
     /// <summary>선택 영역 계산용: 현재 셀이 없으면 캔버스 크기의 빈 이미지.</summary>
@@ -825,10 +829,10 @@ public sealed partial class EditorContext
         }
     }
 
-    /// <summary>현재 셀에 그리기 시작(빈 셀이면 새로 만듦). 그룹에는 그릴 수 없다.</summary>
+    /// <summary>현재 셀에 그리기 시작(빈 셀이면 새로 만듦). 자식 배치 중인 빈 부모에는 그릴 수 없다.</summary>
     public void BeginStroke()
     {
-        if (Project is not { } p || p.Layers[_layer].IsGroup) return;
+        if (Project is not { } p || IsArrangeParentSelected) return;
         _strokeImage = p.BeginCelStroke(_layer, _frame);
     }
     /// <summary>스트로크 확정(바뀐 것이 없으면 기록 안 함).</summary>
@@ -912,7 +916,7 @@ public sealed partial class EditorContext
         var moved = new List<(int Layer, int Frame, PixelImage Image)>();
         foreach (var (l, f) in cels)
         {
-            if (l < 0 || l >= p.Layers.Count || f < 0 || f >= p.Frames.Count || p.Layers[l].IsGroup || p.IsLayerLocked(l) || p.IsCelEmpty(l, f)) continue;
+            if (l < 0 || l >= p.Layers.Count || f < 0 || f >= p.Frames.Count || p.Layers[l].IsTilemap || p.IsLayerLocked(l) || p.IsCelEmpty(l, f)) continue;
             var cel = p.GetCel(l, f)!;
             var image = new PixelImage(cel.Width, cel.Height);
             PixelOps.Shift(cel, image, cel.Bounds, dx, dy, wrap);
@@ -1094,7 +1098,7 @@ public sealed partial class EditorContext
     {
         if (Project is not { } p) return UiStrings.S_EditorContext_BeginTransform_E708BAFBC9;
         if (IsTransforming) return null;
-        if (IsGroupSelected) return wholeLayer ? UiStrings.LayerTransform_Group : UiStrings.S_EditorContext_BeginTransform_10405489AE;
+        if (IsArrangeParentSelected) return wholeLayer ? UiStrings.LayerTransform_Group : UiStrings.S_EditorContext_BeginTransform_10405489AE;
         // 캔버스 크기 모드·떠 있는 선택은 먼저 적용한다(캔버스가 바뀌면 선택이 풀리므로 선택을 읽기 전에).
         CommitFloating();
         if (!CanEdit) return wholeLayer ? UiStrings.LayerTransform_Locked : UiStrings.S_EditorContext_BeginTransform_C545365EE1;
@@ -1117,7 +1121,7 @@ public sealed partial class EditorContext
     {
         if (Project is null) return UiStrings.S_EditorContext_BeginTransform_E708BAFBC9;
         CommitFloating();
-        if (IsGroupSelected) return UiStrings.S_EditorContext_BeginTransform_10405489AE;
+        if (IsArrangeParentSelected) return UiStrings.S_EditorContext_BeginTransform_10405489AE;
         if (!CanEdit) return UiStrings.S_EditorContext_BeginTransform_C545365EE1;
         var content = image.GetOpaqueBounds();
         if (content.IsEmpty) return UiStrings.S_EditorContext_BeginTransform_433795A813;
@@ -1969,7 +1973,7 @@ public sealed partial class EditorContext
 
     /// <summary>
     /// 부위를 옮긴다(실행취소 한 단계): <paramref name="offset"/> = 지금 프레임에서 놓일 위치 — 기준 위치를 같은 만큼 옮기므로 모든 프레임이 같이 옮겨 간다
-    /// (프레임마다 옮긴 거리는 그대로). 그룹이 자동 배치 중이면 같은 단계에서 자동 배치를 끈다 — 먼저 <see cref="GroupLayoutDialog.ConfirmManualMove"/>로 물어본 뒤 부른다.
+    /// (프레임마다 옮긴 거리는 그대로). 부모가 자동 배치 중이면 같은 단계에서 자동 배치를 끈다 — 먼저 <see cref="GroupLayoutDialog.ConfirmManualMove"/>로 물어본 뒤 부른다.
     /// </summary>
     public void MovePart(Layer part, Point offset)
     {
@@ -1979,16 +1983,16 @@ public sealed partial class EditorContext
         if (target == part.PartOffset) return;
         Structural(() => p.Edit(part.IsAutoLaidOut ? UiStrings.S_EditorContext_MovePart_9205E8CE1C : UiStrings.S_EditorContext_MovePart_B02E0EA2B6, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
-            if (part.Parent is { AutoLayout: not null } group) p.SetGroupLayout(group, null);
+            if (part.Parent is { AutoLayout: not null } parent) p.SetChildLayout(parent, null);
             p.SetPartOffset(index, target);
         }));
     }
 
-    /// <summary>그룹 자동 배치 켜기·설정(null = 끄기, 부위는 그 자리에), 실행취소 한 단계.</summary>
-    public void SetGroupLayout(Layer group, GroupLayout? layout)
+    /// <summary>자식 자동 배치 켜기·설정(null = 끄기, 자식은 그 자리에), 실행취소 한 단계.</summary>
+    public void SetChildLayout(Layer parent, GroupLayout? layout)
     {
-        if (Project is not { } p || !p.Layers.Contains(group)) return;
-        Structural(() => p.SetGroupLayout(group, layout));
+        if (Project is not { } p || !p.Layers.Contains(parent)) return;
+        Structural(() => p.SetChildLayout(parent, layout));
     }
 
     public void Structural(Action action)
@@ -1998,39 +2002,23 @@ public sealed partial class EditorContext
         action();
     }
 
-    // ───────────── 스킨(착장) ─────────────
+    // ───────────── 스킨 ─────────────
 
-    /// <summary>그룹의 지금 스킨(착장)을 고른다(실행취소 기록 없음, 떠 있는 선택은 먼저 내려놓음).</summary>
-    public void SetActiveSkin(Layer group, Skin skin)
+    /// <summary>레이어의 지금 스킨을 고른다(실행취소 기록 없음, 떠 있는 선택은 먼저 내려놓음).</summary>
+    public void SetActiveSkin(Layer layer, Skin skin)
     {
-        if (Project is not { } p || ReferenceEquals(group.ActiveSkin, skin)) return;
-        Structural(() => p.SetActiveSkin(group, skin));
+        if (Project is not { } p || ReferenceEquals(layer.ActiveSkin, skin)) return;
+        Structural(() => p.SetActiveSkin(layer, skin));
     }
 
-    /// <summary>부위 하나만 보일 스킨을 고른다(null = 그룹 스킨을 따름, 실행취소 기록 없음, 떠 있는 선택은 먼저 내려놓음).</summary>
-    public void SetPartSkin(Layer part, Skin? skin)
+    /// <summary>레이어의 지금 스킨을 <paramref name="delta"/>칸 앞뒤로 돌린다(끝에서는 반대쪽으로). 스킨이 하나뿐이면 false.</summary>
+    public bool StepSkin(Layer layer, int delta)
     {
-        if (Project is not { } p || ReferenceEquals(part.SkinOverride, skin)) return;
-        Structural(() => p.SetPartSkin(part, skin));
-    }
-
-    /// <summary>그룹의 모든 부위를 그룹 스킨으로 되돌린다(재정의 지우기). 바뀐 것이 있으면 true.</summary>
-    public bool ResetPartSkins(Layer group)
-    {
-        if (Project is not { } p) return false;
-        bool changed = false;
-        Structural(() => changed = p.ResetPartSkins(group));
-        return changed;
-    }
-
-    /// <summary>그룹의 지금 스킨을 <paramref name="delta"/>칸 앞뒤로 돌린다(끝에서는 반대쪽으로). 스킨이 하나뿐이면 false.</summary>
-    public bool StepSkin(Layer group, int delta)
-    {
-        var skins = group.Skins;
-        if (skins.Count < 2 || group.ActiveSkin is not { } active) return false;
+        var skins = layer.Skins;
+        if (skins.Count < 2 || layer.ActiveSkin is not { } active) return false;
         int i = 0;
         while (i < skins.Count && !ReferenceEquals(skins[i], active)) i++;
-        SetActiveSkin(group, skins[((i + delta) % skins.Count + skins.Count) % skins.Count]);
+        SetActiveSkin(layer, skins[((i + delta) % skins.Count + skins.Count) % skins.Count]);
         return true;
     }
 
@@ -2054,7 +2042,7 @@ public sealed partial class EditorContext
     private readonly record struct LayerRenderState(Layer Layer, LayerKind Kind, Layer? Parent, bool Visible, byte Opacity,
         IReadOnlyList<LayerEffect> Effects, Point Offset, Size PartSize, Skin? Shown)
     {
-        public static LayerRenderState Of(Layer l) => new(l, l.Kind, l.Parent, l.Visible, l.Opacity, l.Effects, l.PartOffset, l.PartSize, l.ShownSkin);
+        public static LayerRenderState Of(Layer l) => new(l, l.Kind, l.Parent, l.Visible, l.Opacity, l.Effects, l.PartOffset, l.PartSize, l.ActiveSkin);
 
         /// <summary>효과 목록 말고는 같은지.</summary>
         public bool SameExceptEffects(LayerRenderState other) => this with { Effects = other.Effects } == other;
@@ -2107,7 +2095,7 @@ public sealed partial class EditorContext
         {
             if (before[i].SameRender(_layerStates[i])) continue;
             changed.Add(before[i].Layer);
-            if (before[i].Layer.Parent is { } parent) changed.Add(parent);
+            foreach (var ancestor in p.AncestorsOf(before[i].Layer)) changed.Add(ancestor);
             effectsOnly &= before[i].SameExceptEffects(_layerStates[i]);
         }
         // 다른 레이어·9-slice 테두리를 읽는 스크립트 효과가 있으면 이름·순서·이웃의 효과·테두리만 바뀌어도 다른 레이어 결과가 바뀔 수 있다 — 결과를 모두 무효로 한다
@@ -2121,9 +2109,9 @@ public sealed partial class EditorContext
         if (!effectsOnly) _renders.Effects.Clear();
         // 효과만 바뀐 레이어 하나(효과 창에서 값을 바꾸는 중): 지금 프레임 합성에서 효과 1~k 중간 결과를 담아 다음 변경 때 이어 그린다.
         _renders.CheckpointLayer = effectsOnly ? changed.FirstOrDefault(l => before.Any(s => ReferenceEquals(s.Layer, l) && !ReferenceEquals(s.Effects, l.Effects))) : null;
-        // 부위 화면의 효과 그림(RenderKind.Part)은 그 그룹 효과도 입히므로 그룹이 바뀌어도 무효
+        // 자리 있는 레이어 화면의 효과 그림(RenderKind.Part)은 조상의 자식까지 효과도 입히므로 조상이 바뀌어도 무효
         _renders.Invalidate(k => layered || k.Kind is RenderKind.Composite or RenderKind.Context or RenderKind.ContextBelow or RenderKind.ContextAbove || k.Layer is { } l && changed.Contains(l)
-                                 || k.Kind == RenderKind.Part && k.Layer?.Parent is { } g && changed.Contains(g));
+                                 || k.Kind == RenderKind.Part && k.Layer is { } pl && p.Layers.Contains(pl) && p.AncestorsOf(pl).Any(changed.Contains));
     }
 
     /// <summary>
@@ -2150,8 +2138,9 @@ public sealed partial class EditorContext
         if (Project is not { } p || _frame < 0 || _frame >= p.Frames.Count || _layer < 0 || _layer >= p.Layers.Count) return;
         var frame = p.Frames[_frame];
         var layer = p.Layers[_layer];
-        var group = layer.Parent;
-        bool others = !stroking && (LayerEffects.UsesOtherFrames(layer.Effects) || group is not null && LayerEffects.UsesOtherFrames(group.Effects));
+        var ancestors = p.AncestorsOf(layer);
+        bool others = !stroking && (LayerEffects.UsesOtherFrames(layer.Effects) || ancestors.Any(a => LayerEffects.UsesOtherFrames(a.Effects)));
+        bool Mine(Layer? l) => l is not null && (ReferenceEquals(l, layer) || ancestors.Contains(l));
         // 다른 레이어를 읽는 스크립트가 있으면 이 프레임의 다른 레이어 결과(셀·썸네일·이 레이어를 뺀 합성)도 이 셀을 본다
         bool layered = p.UsesOtherLayers;
         _renders.Effects.Clear();
@@ -2161,8 +2150,7 @@ public sealed partial class EditorContext
         {
             RenderKind.Composite => others || ReferenceEquals(k.Frame, frame),
             RenderKind.Context or RenderKind.ContextBelow or RenderKind.ContextAbove => ReferenceEquals(k.Frame, frame) && (layered || !ReferenceEquals(k.Layer, layer)),
-            _ => ReferenceEquals(k.Frame, frame) && (layered || ReferenceEquals(k.Layer, layer) || group is not null && ReferenceEquals(k.Layer, group))
-                 || others && (ReferenceEquals(k.Layer, layer) || group is not null && ReferenceEquals(k.Layer, group)),
+            _ => ReferenceEquals(k.Frame, frame) && (layered || Mine(k.Layer)) || others && Mine(k.Layer),
         });
     }
 
@@ -2294,27 +2282,30 @@ public sealed partial class EditorContext
     }
 
     /// <summary>
-    /// 프레임 합성에서 부위 하나(<paramref name="exclude"/>)를 뺀 비트맵(프레임 크기). 다른 레이어 흐리게의 흐린 배경,
-    /// 그룹 화면에서 부위를 끄는 동안의 배경에 쓴다. 호출자는 Dispose하지 않는다.
+    /// 프레임 합성에서 레이어 하나(<paramref name="exclude"/>)의 제 그림을 뺀 비트맵(프레임 크기 — 자식 배치 중인 빈 부모면 그 자손까지 뺌). 다른 레이어 흐리게의 흐린 배경,
+    /// 자식 배치 화면에서 자식을 끄는 동안의 배경에 쓴다. 호출자는 Dispose하지 않는다.
     /// </summary>
     public WriteableBitmap? ContextBitmap(int frame, Layer exclude)
     {
         if (Project is not { } p || frame < 0 || frame >= p.Frames.Count) return null;
         bool raw = !_canvasEffects;
+        bool subtree = IsArrangeParent(exclude);
+        bool Filter(Layer l) => !ReferenceEquals(l, exclude) && !(subtree && p.IsAncestorOf(exclude, l));
         return _renders.Get(new RenderKey(RenderKind.Context, p.Frames[frame], exclude, raw), RenderPriority.Current,
-            () => raw ? p.PlanFrameRaw(frame, l => !ReferenceEquals(l, exclude)) : p.PlanFrame(frame, layerFilter: l => !ReferenceEquals(l, exclude))).Bitmap;
+            () => raw ? p.PlanFrameRaw(frame, Filter) : p.PlanFrame(frame, layerFilter: Filter)).Bitmap;
     }
 
     /// <summary>
-    /// 부위 화면의 주변: 프레임 합성에서 부위 <paramref name="part"/>보다 아래(<paramref name="above"/>가 아니면) 또는 위 레이어만 그린 비트맵(프레임 크기).
-    /// 부위를 그 사이에 그려 레이어 순서 그대로 보이게 한다. 호출자는 Dispose하지 않는다.
+    /// 자리 있는 레이어 화면의 주변: 프레임 합성에서 그 레이어 <paramref name="part"/>보다 먼저 그리는(<paramref name="above"/>가 아니면) 또는 나중에 그리는 레이어만 그린 비트맵(프레임 크기).
+    /// 그 레이어를 그 사이에 그려 그리는 순서(<see cref="SpriteProject.DrawOrder"/> — 자식은 부모 제 그림 위) 그대로 보이게 한다. 호출자는 Dispose하지 않는다.
     /// </summary>
     public WriteableBitmap? PartContextBitmap(int frame, Layer part, bool above)
     {
         if (Project is not { } p || frame < 0 || frame >= p.Frames.Count) return null;
         bool raw = !_canvasEffects;
-        int index = p.IndexOf(part);
-        var keep = p.Layers.Where((l, i) => above ? i > index : i < index).ToHashSet(ReferenceEqualityComparer.Instance);
+        var order = p.DrawOrder();
+        int index = Enumerable.Range(0, order.Count).FirstOrDefault(i => ReferenceEquals(order[i], part), -1);
+        var keep = order.Where((l, i) => above ? i > index : i < index).ToHashSet(ReferenceEqualityComparer.Instance);
         bool Filter(Layer l) => keep.Contains(l);
         return _renders.Get(new RenderKey(above ? RenderKind.ContextAbove : RenderKind.ContextBelow, p.Frames[frame], part, raw), RenderPriority.Current,
             () => raw ? p.PlanFrameRaw(frame, Filter) : p.PlanFrame(frame, layerFilter: Filter)).Bitmap;
@@ -2371,15 +2362,16 @@ public sealed partial class EditorContext
     }
 
     /// <summary>
-    /// 셀 하나(레이어 × 프레임)의 그릴 것(원본 크기): 그룹이면 그 그룹의 합성(프레임 크기, 그룹 효과 포함), 일반 레이어면 효과를 입힌 셀(셀 크기로 잘림),
-    /// 부위면 셀 그대로(부위 화면에서 고치는 그림이라 효과 없이). 빈 셀(그룹이면 모든 부위가 빈 셀)이면 비트맵이 null.
+    /// 셀 하나(레이어 × 프레임)의 그릴 것(원본 크기): 일반 레이어면 효과를 입힌 셀(셀 크기로 잘림), 자리 있는 레이어면 셀 그대로
+    /// (그 레이어 화면에서 고치는 그림이라 효과 없이). 자식은 넣지 않는다 — 다만 자식 배치 중인 빈 부모는 자식까지 합친 그림(<see cref="SpriteProject.PlanSubtree"/>). 제 셀이 비었으면 비트맵이 null.
     /// </summary>
     public RenderView CelView(int layer, int frame, RenderPriority priority = RenderPriority.Background)
     {
         if (Project is not { } p || frame < 0 || frame >= p.Frames.Count || layer < 0 || layer >= p.Layers.Count) return RenderView.None;
         bool raw = !_canvasEffects;
-        return _renders.Get(new RenderKey(RenderKind.Cel, p.Frames[frame], p.Layers[layer], raw), priority,
-            () => raw ? p.PlanCelThumbnail(layer, frame) : p.PlanCel(layer, frame));
+        var obj = p.Layers[layer];
+        return _renders.Get(new RenderKey(RenderKind.Cel, p.Frames[frame], obj, raw), priority,
+            () => IsArrangeParent(obj) ? p.PlanSubtree(obj, frame) : raw ? p.PlanCelThumbnail(layer, frame) : p.PlanCel(layer, frame));
     }
 
     /// <summary><see cref="CelView"/>의 비트맵. 호출자는 Dispose하지 않는다.</summary>
@@ -2388,15 +2380,17 @@ public sealed partial class EditorContext
     /// <summary>
     /// 타임라인 칸 썸네일: 고칠 그림(<see cref="SpriteProject.PlanCelThumbnail"/> — 일반 레이어는 효과 없이)을 그 레이어 자리(<see cref="SpriteProject.ThumbnailBounds"/> — 모든 프레임 같음)로 잘라
     /// 긴 변 <see cref="RenderService.ThumbMaxSize"/>px 이하로 줄인 것(<see cref="RenderView.SourceWidth"/>·<see cref="RenderView.SourceHeight"/>는 자른 크기).
-    /// 레이어마다 칸에 크게 보이도록 캔버스 전체가 아니라 그 레이어가 칠한 자리만 보인다.
+    /// 레이어마다 칸에 크게 보이도록 캔버스 전체가 아니라 그 레이어가 칠한 자리만 보인다. 접은 부모는 자식까지 합친 그림(<c>withChildren</c>).
     /// </summary>
     public RenderView CelThumbnail(int layer, int frame)
     {
         if (Project is not { } p || frame < 0 || frame >= p.Frames.Count || layer < 0 || layer >= p.Layers.Count) return RenderView.None;
-        return _renders.Get(new RenderKey(RenderKind.Thumb, p.Frames[frame], p.Layers[layer]), RenderPriority.Background, () =>
+        var obj = p.Layers[layer];
+        bool withChildren = obj.Collapsed && p.HasChildren(obj);
+        return _renders.Get(new RenderKey(RenderKind.Thumb, p.Frames[frame], obj, withChildren), RenderPriority.Background, () =>
         {
-            if (p.PlanCelThumbnail(layer, frame) is not { } plan) return null;
-            var area = ThumbnailBounds(p, layer);
+            if (p.PlanCelThumbnail(layer, frame, withChildren: withChildren) is not { } plan) return null;
+            var area = ThumbnailBounds(p, layer, withChildren);
             return area.IsEmpty ? plan : plan.Cropped(area);
         });
     }
@@ -2405,12 +2399,12 @@ public sealed partial class EditorContext
     /// 레이어마다의 썸네일 자리(모든 프레임 셀을 훑어 셈하므로 기억해 둔다). 프로젝트가 바뀌면(<see cref="InvalidateRenders"/>) 비운다 —
     /// 그리는 중에는 그대로라 칸 썸네일은 그리기를 마친 뒤 새 자리로 맞춰진다.
     /// </summary>
-    private readonly Dictionary<Layer, Rectangle> _thumbBounds = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<(Layer, bool), Rectangle> _thumbBounds = [];
 
-    private Rectangle ThumbnailBounds(SpriteProject p, int layer)
+    private Rectangle ThumbnailBounds(SpriteProject p, int layer, bool withChildren)
     {
-        var key = p.Layers[layer];
-        if (!_thumbBounds.TryGetValue(key, out var area)) _thumbBounds[key] = area = p.ThumbnailBounds(layer);
+        var key = (p.Layers[layer], withChildren);
+        if (!_thumbBounds.TryGetValue(key, out var area)) _thumbBounds[key] = area = p.ThumbnailBounds(layer, withChildren);
         return area;
     }
 }

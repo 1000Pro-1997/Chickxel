@@ -398,7 +398,7 @@ public class AnimatedEffectTests
     public void Explode_PartsAtlasGrowsByDistanceAndGravity_CanvasClips()
     {
         var p = new SpriteProject(8, 8);
-        var g = p.AddGroup("몸");
+        var g = p.AddEmptyParent("몸");
         var part = p.AddPart(g, "머리", 2, 2, new Point(3, 3));
         p.SetCel(p.IndexOf(part), 0, Filled(2, 2, Red));
         p.SetLayerEffects(p.IndexOf(part), [new ExplodeEffect { DistanceX = 5, DistanceY = 5, Gravity = 3 }]);
@@ -658,7 +658,7 @@ public class AnimatedEffectTests
     public void Bake_PartGrowsToFitBleed_KeepsCanvasPositionAndPivot()
     {
         var p = new SpriteProject(10, 10);
-        var g = p.AddGroup("몸");
+        var g = p.AddEmptyParent("몸");
         var part = p.AddPart(g, "머리", 2, 2, new Point(4, 4));
         int pi = p.IndexOf(part);
         p.SetCel(pi, 0, Filled(2, 2, Red));
@@ -673,6 +673,8 @@ public class AnimatedEffectTests
         var (qx, qy) = part.Pivot.ToLocalPixel(3, 3);
         Assert.Equal(px, qx, 4);
         Assert.Equal(py, qy, 4);
+        // 자손까지 합친 그림에 입히는 효과는 구울 수 없다
+        p.SetLayerEffects(p.IndexOf(g), [new ShadowEffect { Color = Black, IncludeChildren = true }]);
         Assert.Throws<InvalidOperationException>(() => p.BakeLayerEffects(p.IndexOf(g), [0]));
     }
 }

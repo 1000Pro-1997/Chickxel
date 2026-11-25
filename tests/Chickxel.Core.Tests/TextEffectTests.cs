@@ -194,7 +194,7 @@ public class TextEffectTests
         Assert.False(p.HasContentEffect(0, 0));
         var expected = Points(BangAt(4, 5), BangAt(8, 5), [new Point(0, 0)]);
         Assert.Equal(expected, Ink(p.Flatten(1)));
-        Assert.Equal(expected, Ink(p.FlattenOutfit(1, null)));
+        Assert.Equal(expected, Ink(p.FlattenSkinPreset(1, null)));
         Assert.Equal(Points(BangAt(4, 5), BangAt(8, 5)), Ink(p.PlanCel(1, 0)!.Render()));
         // 셀에 칠한 픽셀이 없으면 타임라인 썸네일도 글씨(효과)까지 그린다
         Assert.Equal(Points(BangAt(4, 5), BangAt(8, 5)), Ink(p.PlanCelThumbnail(1, 0)!.Render()));

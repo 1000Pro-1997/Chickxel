@@ -9,26 +9,34 @@ public sealed partial class SpriteProject
 {
     /// <summary>
     /// 레이어 <paramref name="layer"/>의 효과 결과가 모든 프레임에서 놓이는 범위(캔버스 좌표, 효과를 그린 불투명 픽셀만 — 지금 캔버스는 넣지 않음).
+    /// 자기 셀 효과는 셀에, 자손까지 효과(자식이 있을 때)는 덩어리 그림에 입혀 잰다.
     /// <paramref name="throughEffect"/>가 있으면 그 번호까지의 효과만 쓰고(뒤 효과는 빼고, 그 효과가 앞 효과 결과 위에 그리므로 앞은 둠), 없으면 모든 효과.
     /// 켜진 효과가 어느 프레임에도 없으면 null, 켜진 효과는 있지만 그린 픽셀이 없으면 <see cref="Rectangle.Empty"/>.
     /// </summary>
     public Rectangle? EffectOutputBounds(Layer layer, int? throughEffect = null)
     {
         IReadOnlyList<LayerEffect> list = throughEffect is { } last ? [.. layer.Effects.Take(last + 1)] : layer.Effects;
+        bool tree = HasChildren(layer);
+        IReadOnlyList<LayerEffect> own = tree ? [.. list.Where(e => !e.IncludeChildren)] : list;
+        IReadOnlyList<LayerEffect> subtree = tree ? [.. list.Where(e => e.IncludeChildren)] : [];
         bool any = false;
         var bounds = Rectangle.Empty;
-        for (int frame = 0; frame < _frames.Count; frame++)
+        void Add(PixelImage source, IReadOnlyList<LayerEffect> effects, Point at)
         {
-            if (EffectSource(layer, frame) is not { } source) continue;
-            var effects = EffectsAt(layer, list, frame, ActiveKey(layer), null);
-            if (!LayerEffects.AnyEnabled(effects)) continue;
+            if (!LayerEffects.AnyEnabled(effects)) return;
             any = true;
             var (rendered, dx, dy) = LayerEffects.Render(source, effects);
             var opaque = rendered.GetOpaqueBounds();
-            if (opaque.IsEmpty) continue;
-            var at = layer.IsPart ? GetPartOffset(layer, frame) : Point.Empty;
+            if (opaque.IsEmpty) return;
             opaque.Offset(at.X + dx, at.Y + dy);
             bounds = bounds.IsEmpty ? opaque : Rectangle.Union(bounds, opaque);
+        }
+        for (int frame = 0; frame < _frames.Count; frame++)
+        {
+            if (own.Count > 0 && EffectSource(layer, frame) is { } source)
+                Add(source, EffectsAt(layer, own, frame, ActiveKey(layer), null), layer.IsPart ? GetPartOffset(layer, frame) : Point.Empty);
+            if (subtree.Count > 0 && SubtreeEffectSource(layer, frame) is { } block)
+                Add(block, SubtreeEffectsAt(layer, subtree, frame), Point.Empty);
         }
         return any ? bounds : null;
     }

@@ -147,7 +147,8 @@ internal static class StartShots
         k.Save(main, marks: [Pad(openFolder, main, 8), Pad(recent, main, 12), new Rect(browser.X, browser.Y + 56, browser.Width, browser.Height - 56), new Rect(hubRect.X - 12, hubRect.Y, hubRect.Width + 12, hubRect.Height)]);
     }
 
-    // 새 프로젝트 창(클립보드에 그림이 있을 때): ① 클립보드 그림 붙여넣기 ② 캔버스 크기 ③ 시작 방식 ④ 배경 투명.
+    // 새 프로젝트 창(클립보드에 그림이 있을 때): ① 클립보드 그림 붙여넣기 ② 캔버스 크기 ③ 배경 투명.
+    // 도움말 대기: 예전 ③ 시작 방식(보통·부위)은 새 프로젝트 창에서 없어져 번호가 하나 줄었다.
     [Shot("start-new-project")]
     public static void NewProject(ShotKit k)
     {
@@ -160,10 +161,8 @@ internal static class StartShots
             paste.IsChecked = true;
             ShotKit.Pump(200);
             var size = (Control)ShotKit.Get<Control>(w, "_size").Parent!;
-            var normal = ShotKit.Get<Control>(w, "_normal");
-            var parts = ShotKit.Get<Control>(w, "_parts");
             var transparent = ShotKit.Get<Control>(w, "_transparent");
-            k.Save(w, marks: [(Control)paste.Parent!, size, ShotKit.Bounds(normal, w).Union(ShotKit.Bounds(parts, w)), transparent]);
+            k.Save(w, marks: [(Control)paste.Parent!, size, transparent]);
         });
     }
 

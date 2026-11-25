@@ -148,7 +148,7 @@ public sealed partial class SpriteProject
     }
 
     /// <summary>
-    /// 기록 파일 내용을 실행취소 기록으로 되살린다. 기준 상태는 지금 프로젝트(방금 연 파일)와 같아야 한다(레이어·프레임·태그·착장·스킨 수와 종류, 셀).
+    /// 기록 파일 내용을 실행취소 기록으로 되살린다. 기준 상태는 지금 프로젝트(방금 연 파일)와 같아야 한다(레이어·프레임·태그·스킨 프리셋·스킨 수와 종류, 셀).
     /// 맞지 않거나 손상됐으면 <see cref="InvalidDataException"/>(프로젝트는 그대로).
     /// </summary>
     internal int LoadHistory(HistoryManifestDto m, HistoryBlobs blobs)
@@ -181,12 +181,12 @@ public sealed partial class SpriteProject
         // 기준 상태 = 지금 프로젝트: 같은 자리 객체에 번호를 붙인다.
         var anchor = ReadSnap(m.Anchor);
         if (anchor.W != _width || anchor.H != _height || anchor.Layers.Count != _layers.Count || anchor.Frames.Count != _frames.Count
-            || anchor.Tags.Count != _tags.Count || anchor.Outfits.Count != _outfits.Count)
+            || anchor.Tags.Count != _tags.Count || anchor.Presets.Count != _presets.Count)
             throw Mismatch();
         for (int i = 0; i < _layers.Count; i++)
         {
             var (layer, dto) = (_layers[i], anchor.Layers[i]);
-            if (dto.Kind != layer.Kind || (dto.Skins is null) != !layer.IsGroup) throw Mismatch();
+            if (dto.Kind != layer.Kind || (dto.Skins is null) != layer.IsTilemap) throw Mismatch();
             r.Bind(dto.Id, layer);
             if (dto.Skins is not { } skins) continue;
             if (skins.Count != layer.SkinList.Count) throw Mismatch();
@@ -194,7 +194,7 @@ public sealed partial class SpriteProject
         }
         for (int i = 0; i < _frames.Count; i++) r.Bind(anchor.Frames[i].Id, _frames[i]);
         for (int i = 0; i < _tags.Count; i++) r.Bind(anchor.Tags[i].Id, _tags[i]);
-        for (int i = 0; i < _outfits.Count; i++) r.Bind(anchor.Outfits[i].Id, _outfits[i]);
+        for (int i = 0; i < _presets.Count; i++) r.Bind(anchor.Presets[i].Id, _presets[i]);
         // 기준 상태의 셀: 프로젝트 파일에 있는 그림에 잇고, 파일에 없는 셀(빈 셀은 저장하지 않음)은 빈 그림을 새로 넣는다(아래에서, 모두 읽은 뒤).
         var blanks = new List<(CelKey Key, PixelImage Image)>();
         var anchorKeys = new HashSet<CelKey>();
@@ -219,8 +219,8 @@ public sealed partial class SpriteProject
         if (anchorOverflow.Count != _overflow.Count) throw Mismatch();
         foreach (var o in anchorOverflow)
         {
-            if (o is not [var li, var fi, var ii, var ox, var oy]) throw Corrupt();
-            var key = new CelKey(r.Bound<Layer>(li), r.Bound<Frame>(fi), null);
+            if (o is not [var li, var fi, var si, var ii, var ox, var oy]) throw Corrupt();
+            var key = new CelKey(r.Bound<Layer>(li), r.Bound<Frame>(fi), si == 0 ? null : r.Bound<Skin>(si));
             if (!_overflow.TryGetValue(key, out var current) || current.Origin != new Point(ox, oy)) throw Mismatch();
             if (r.Objects.TryGetValue(ii, out var bound) && !ReferenceEquals(bound, current.Image)) throw Mismatch();
             if (!r.Objects.ContainsKey(ii)) r.Bind(ii, current.Image);
@@ -252,7 +252,7 @@ public sealed partial class SpriteProject
         Snapshot Snap(string? hash)
         {
             if (hash is not null && snapshots.TryGetValue(hash, out var known)) return known;
-            var s = Snapshot.FromDto(ReadSnap(hash), r, legacyPivots: m.Version < 4, LoadMap, LoadTileset);
+            var s = Snapshot.FromDto(ReadSnap(hash), r, LoadMap, LoadTileset);
             snapshots[hash!] = s;
             return s;
         }
@@ -292,9 +292,7 @@ public sealed partial class SpriteProject
             // 다음 쓰기가 같은 번호·조각을 그대로 쓰게 한다(바뀐 단계만 새로 씀).
             var ids = new HistoryIdTable();
             foreach (var (id, obj) in r.Objects) ids.Set(obj, id);
-            // 형식 3 이하의 상태 조각은 피벗을 예전 방식으로 담으므로 다시 쓰지 않는다(다음 쓰기에서 새 형식으로)
-            if (m.Version >= 4)
-                foreach (var (hash, s) in snapshots) ids.SetHash(s, hash);
+            foreach (var (hash, s) in snapshots) ids.SetHash(s, hash);
             foreach (var (hash, p) in patches) ids.SetHash(p, hash);
             foreach (var (hash, map) in tileMaps) ids.SetHash(map, hash);
             foreach (var (hash, tileset) in tilesets) ids.SetHash(tileset, hash);
@@ -339,7 +337,7 @@ public sealed partial class SpriteProject
                 Pivot = ProjectIO.PivotDto.From(s.Pivot),
                 PartBorder = [s.PartBorder.Left, s.PartBorder.Top, s.PartBorder.Right, s.PartBorder.Bottom],
                 PartSource = s.PartSourceRect is { } rect ? [rect.X, rect.Y, rect.Width, rect.Height] : null,
-                Skins = s.Skins?.Select(k => new HistorySkinDto { Id = ids.Of(k.Skin), Name = k.Name, Owner = k.Owner is { } o ? ids.Of(o) : 0 }).ToList(),
+                Skins = s.Skins?.Select(k => new HistorySkinDto { Id = ids.Of(k.Skin), Name = k.Name }).ToList(),
                 ActiveSkin = s.ActiveSkin is { } active ? ids.Of(active) : 0,
                 Effects = s.Effects.Count > 0 ? s.Effects.Select(EffectCodec.Write).ToList() : null,
                 AutoLayout = s.AutoLayout is { } layout ? ProjectIO.GroupLayoutDto.From(layout) : null,
@@ -364,19 +362,20 @@ public sealed partial class SpriteProject
                 Id = ids.Of(t.Tag), Name = t.State.Name, From = t.State.From, To = t.State.To, Direction = t.State.Direction, Loop = t.State.Loop,
                 Color = t.State.Color.ToHex(),
             }).ToList(),
-            Outfits = _outfits.Select(o => new HistoryOutfitDto
+            Presets = _presets.Select(o => new HistoryPresetDto
             {
-                Id = ids.Of(o.Outfit),
+                Id = ids.Of(o.Preset),
                 Name = o.Name,
-                Slots = o.Slots.Select(s => new[] { ids.Of(s.Group), ids.Of(s.Skin) }).ToList(),
-                Parts = o.Parts.Select(s => new[] { ids.Of(s.Part), ids.Of(s.Skin) }).ToList(),
+                Entries = o.Entries.Select(e => new[] { ids.Of(e.Layer), ids.Of(e.Skin) }).ToList(),
             }).ToList(),
             // 번호 순(사전 순서는 편집 내력마다 달라서 — 같은 상태는 같은 조각이 되게).
             Cels = _cels.Select(kv => new[] { ids.Of(kv.Key.Layer), ids.Of(kv.Key.Frame), kv.Key.Skin is { } skin ? ids.Of(skin) : 0, ids.Of(kv.Value) })
                 .OrderBy(c => c[0]).ThenBy(c => c[1]).ThenBy(c => c[2]).ToList(),
             Overflow = _overflow.Length == 0 ? null
-                : _overflow.Select(kv => new[] { ids.Of(kv.Key.Layer), ids.Of(kv.Key.Frame), ids.Of(kv.Value.Image), kv.Value.Origin.X, kv.Value.Origin.Y })
-                    .OrderBy(c => c[0]).ThenBy(c => c[1]).ToList(),
+                : _overflow.Select(kv => new[]
+                    {
+                        ids.Of(kv.Key.Layer), ids.Of(kv.Key.Frame), kv.Key.Skin is { } skin ? ids.Of(skin) : 0, ids.Of(kv.Value.Image), kv.Value.Origin.X, kv.Value.Origin.Y,
+                    }).OrderBy(c => c[0]).ThenBy(c => c[1]).ThenBy(c => c[2]).ToList(),
             Sprite = ProjectIO.UnityDto.From(_sprite),
             Export = ProjectIO.ExportDto.From(_export, null),
             CommonRefs = Refs(_export.Common, ids),
@@ -394,14 +393,11 @@ public sealed partial class SpriteProject
         private static HistorySheetRefsDto Refs(SheetOptions o, HistoryIdTable ids) => new()
         {
             ExcludedSkins = o.ExcludedSkins.Count > 0 ? o.ExcludedSkins.Select(ids.Of).ToList() : null,
-            Outfits = o.Outfits.Count > 0 ? o.Outfits.Select(ids.Of).ToList() : null,
+            Presets = o.Presets.Count > 0 ? o.Presets.Select(ids.Of).ToList() : null,
             ExcludedLayers = o.ExcludedLayers.Count > 0 ? o.ExcludedLayers.Select(ids.Of).ToList() : null,
         };
 
-        /// <param name="legacyPivots">
-        /// 형식 3 이하 기록의 상태: 부위만 피벗을 가졌으므로 예전 프로젝트 파일을 읽을 때처럼 일반 레이어·그룹은 캔버스 피벗(기본 + 프레임마다)을 자기 피벗으로 갖는다.
-        /// </param>
-        public static Snapshot FromDto(HistorySnapshotDto d, HistoryResolver r, bool legacyPivots, Func<string, TileMap> map, Func<string, Tileset> tileset)
+        public static Snapshot FromDto(HistorySnapshotDto d, HistoryResolver r, Func<string, TileMap> map, Func<string, Tileset> tileset)
         {
             var sprite = new SpriteSettings();
             d.Sprite.ApplyTo(sprite);
@@ -427,14 +423,6 @@ public sealed partial class SpriteProject
                 }
             }
             var layerPivots = d.Frames.Select(f => (f.LayerPivots ?? []).Select(pp => KeyValuePair.Create(r.Layer(pp.Layer), pp.Pivot.ToPivot())).ToList()).ToList();
-            if (legacyPivots)
-                for (int i = 0; i < d.Frames.Count; i++)
-                {
-                    var f = d.Frames[i];
-                    layerPivots[i].AddRange((f.PartPivots ?? []).Select(pp => KeyValuePair.Create(r.Layer(pp.Layer), pp.Pivot.ToPivot())));
-                    if (f.Pivot?.ToPivot() is { } canvasPivot)
-                        layerPivots[i].AddRange(d.Layers.Where(l => l.Kind != LayerKind.Part).Select(l => KeyValuePair.Create(r.Layer(l.Id), canvasPivot)));
-                }
             return new Snapshot
             {
                 _w = d.W,
@@ -443,11 +431,10 @@ public sealed partial class SpriteProject
                     r.Layer(l.Id), l.Name, l.Visible, l.Locked, l.Opacity, l.Kind, l.Parent == 0 ? null : r.Layer(l.Parent),
                     l.Part is [var w, var h, _, _] ? new Size(w, h) : throw Corrupt(),
                     new Point(l.Part[2], l.Part[3]),
-                    !legacyPivots ? l.Pivot?.ToPivot() ?? Pivot.Center
-                        : l.Kind == LayerKind.Part ? l.PartPivot?.ToPivot() ?? Pivot.Center : sprite.DefaultPivot,
+                    l.Pivot?.ToPivot() ?? Pivot.Center,
                     l.PartBorder is [var bl, var bt, var br, var bb] ? new SpriteBorder(bl, bt, br, bb) : throw Corrupt(),
                     l.PartSource is [var sx, var sy, var sw, var sh] ? new Rectangle(sx, sy, sw, sh) : null,
-                    l.Skins?.Select(s => (r.Skin(s.Id), s.Name, s.Owner == 0 ? (Layer?)null : r.Layer(s.Owner))).ToArray(),
+                    l.Skins?.Select(s => (r.Skin(s.Id), s.Name)).ToArray(),
                     l.ActiveSkin == 0 ? null : r.Skin(l.ActiveSkin),
                     l.Effects?.Select(EffectCodec.Read).ToArray() ?? [],
                     l.AutoLayout?.ToLayout(),
@@ -467,15 +454,14 @@ public sealed partial class SpriteProject
                     Loop = t.Loop,
                     Color = Color32.TryParseHex(t.Color, out var c) ? c : AnimationTag.DefaultColors[0],
                 })).ToArray(),
-                _outfits = d.Outfits.Select(o => (r.Outfit(o.Id), o.Name,
-                    (IReadOnlyList<OutfitSlot>)o.Slots.Select(s => s is [var g, var k] ? new OutfitSlot(r.Layer(g), r.Skin(k)) : throw Corrupt()).ToArray(),
-                    (IReadOnlyList<OutfitPart>)o.Parts.Select(s => s is [var p, var k] ? new OutfitPart(r.Layer(p), r.Skin(k)) : throw Corrupt()).ToArray()))
+                _presets = d.Presets.Select(o => (r.Preset(o.Id), o.Name,
+                    (IReadOnlyList<SkinPresetEntry>)o.Entries.Select(e => e is [var l, var k] ? new SkinPresetEntry(r.Layer(l), r.Skin(k)) : throw Corrupt()).ToArray()))
                     .ToArray(),
                 _cels = d.Cels.Select(c => c is [var li, var fi, var si, var ii]
                     ? KeyValuePair.Create(new CelKey(r.Layer(li), r.Frame(fi), si == 0 ? null : r.Skin(si)), r.Image(ii))
                     : throw Corrupt()).ToArray(),
-                _overflow = (d.Overflow ?? []).Select(c => c is [var li, var fi, var ii, var x, var y]
-                    ? KeyValuePair.Create(new CelKey(r.Layer(li), r.Frame(fi), null), new CelOverflow(r.Image(ii), new Point(x, y)))
+                _overflow = (d.Overflow ?? []).Select(c => c is [var li, var fi, var si, var ii, var x, var y]
+                    ? KeyValuePair.Create(new CelKey(r.Layer(li), r.Frame(fi), si == 0 ? null : r.Skin(si)), new CelOverflow(r.Image(ii), new Point(x, y)))
                     : throw Corrupt()).ToArray(),
                 _sprite = sprite,
                 _export = export,
@@ -487,7 +473,7 @@ public sealed partial class SpriteProject
         {
             sheet?.ApplyValues(o);
             o.ExcludedSkins = (refs?.ExcludedSkins ?? []).Select(r.Skin).ToArray();
-            o.Outfits = (refs?.Outfits ?? []).Select(r.Outfit).ToArray();
+            o.Presets = (refs?.Presets ?? []).Select(r.Preset).ToArray();
             o.ExcludedLayers = (refs?.ExcludedLayers ?? []).Select(r.Layer).ToArray();
         }
     }
@@ -521,7 +507,7 @@ public sealed partial class SpriteProject
         public Skin Skin(int id) => Get(id, () => new Skin(""));
         public Frame Frame(int id) => Get(id, () => new Frame());
         public AnimationTag Tag(int id) => Get(id, () => new AnimationTag("", 0, 0));
-        public Outfit Outfit(int id) => Get(id, () => new Outfit("", [], []));
+        public SkinPreset Preset(int id) => Get(id, () => new SkinPreset("", []));
         public PixelImage Image(int id) => Get(id, () => LoadImage(id));
     }
 }

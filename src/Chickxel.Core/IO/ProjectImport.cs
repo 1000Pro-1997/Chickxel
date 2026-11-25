@@ -16,7 +16,7 @@ public enum ImportMode
 {
     /// <summary>칸마다 애니메이션 프레임 하나.</summary>
     Frames,
-    /// <summary>칸마다 부위 레이어 하나(그룹 하나에 모음, 칸 크기 그대로).</summary>
+    /// <summary>칸마다 자리 있는 레이어 하나(빈 부모 레이어 하나의 자식으로 모음, 칸 크기 그대로).</summary>
     Parts,
 }
 
@@ -55,9 +55,9 @@ public sealed record ImportAnalysis(
 /// 쓰는 애니메이션의 ms.</item>
 /// <item>내보내기 설정: 같은 폴더·같은 이름 PNG, 칸이 격자 모양이면 같은 열 수·간격.</item>
 /// </list>
-/// <para>부위로 가져오기: 캔버스 = 시트 크기, 파일 이름의 그룹 하나에 칸마다 부위 1개(첫 칸 = 맨 위 부위, 이름·크기·피벗·테두리 그대로,
-/// 위치 = 칸 위치, 원래 칸 기억), 프레임 1개. 칸이 없으면 이미지 전체가 부위 1개. 사이드카 애니메이션은 쓰지 않는다.
-/// 내보내기: 부위 아틀라스 = 시트 이름(기존 .meta guid 재사용, "원래 위치 유지"), 프레임 시트 = <c>{시트 이름}_frames</c>.</para>
+/// <para>부위로 가져오기: 캔버스 = 시트 크기, 파일 이름의 빈 부모 레이어(캔버스 크기, (0,0), 셀 없음) 하나에 칸마다 자리 있는 자식 레이어 1개
+/// (첫 칸 = 맨 위 자식, 이름·크기·피벗·테두리 그대로, 위치 = 칸 위치, 원래 칸 기억), 프레임 1개. 칸이 없으면 이미지 전체가 자식 1개. 사이드카 애니메이션은 쓰지 않는다.
+/// 내보내기: 레이어 아틀라스 = 시트 이름(기존 .meta guid 재사용, "원래 위치 유지" — 셀 없는 부모는 나가지 않음), 프레임 시트 = <c>{시트 이름}_frames</c>.</para>
 /// </summary>
 public static class ProjectImport
 {
@@ -236,7 +236,7 @@ public static class ProjectImport
         return project;
     }
 
-    /// <summary>시트 크기 캔버스 + 파일 이름의 그룹 하나에 칸마다 부위 1개(칸이 없으면 이미지 전체 1개)인 프로젝트.</summary>
+    /// <summary>시트 크기 캔버스 + 파일 이름의 빈 부모 레이어 하나에 칸마다 자식 레이어 1개(칸이 없으면 이미지 전체 1개)인 프로젝트.</summary>
     private static SpriteProject PartsFromDocument(Document doc, List<(Slice Slice, Rectangle Rect)> slices)
     {
         var cells = slices.Count > 0
@@ -248,7 +248,7 @@ public static class ProjectImport
         project.Sprite.CopyFrom(doc.Sprite);
         project.Sprite.Mode = SpriteMode.Multiple;
 
-        // 부위 이름이 내보내기 칸 이름(=Unity guid·spriteID 기준)이므로 그룹보다 먼저 정한다.
+        // 자식 이름이 내보내기 칸 이름(=Unity guid·spriteID 기준)이므로 부모보다 먼저 정한다.
         var parts = new List<Layer>(cells.Count);
         foreach (var (name, rect, pivot, border) in cells)
         {
@@ -266,13 +266,19 @@ public static class ProjectImport
             var cel = doc.Image.Crop(rect);
             if (!cel.IsRegionEmpty(cel.Bounds)) project.SetCelRaw(part, frame, cel);
         }
-        var group = new Layer(project.UniqueLayerName(doc.BaseName)) { Kind = LayerKind.Group, Pivot = project.Sprite.DefaultPivot };
-        foreach (var part in parts) part.Parent = group;
-        project.ReplaceLayersRaw([.. Enumerable.Reverse(parts), group]);
+        // 부모 = 캔버스 크기 빈 레이어(0,0): 캔버스 기준 기본 피벗이 그대로 셀 기준 피벗이다.
+        var parent = new Layer(project.UniqueLayerName(doc.BaseName))
+        {
+            Kind = LayerKind.Part,
+            PartSize = new Size(doc.Image.Width, doc.Image.Height),
+            Pivot = project.Sprite.DefaultPivot,
+        };
+        foreach (var part in parts) part.Parent = parent;
+        project.ReplaceLayersRaw([.. Enumerable.Reverse(parts), parent]);
 
         // 가져온 아틀라스 하나만 다시 쓴다. 프레임 시트는 같은 그림의 사본이라 기본으로 끄고, 켜면 겹치지 않는 이름을 쓴다.
         project.Export.ExportParts = true;
-        // 부위 이름 = 가져온 칸 이름(Unity guid·spriteID 기준)이므로 태그를 붙여도 이름이 바뀌지 않게 프레임 번호 규칙.
+        // 자식 이름 = 가져온 칸 이름(Unity guid·spriteID 기준)이므로 태그를 붙여도 이름이 바뀌지 않게 프레임 번호 규칙.
         project.Export.Common.Naming = SpriteNaming.FrameNumber;
         // 가져온 칸 위치를 지키는 자동 배치(원래 위치 유지).
         project.Export.Common.Layout = SheetLayout.Packed;

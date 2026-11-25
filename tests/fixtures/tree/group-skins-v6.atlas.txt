@@ -1,0 +1,10 @@
+Arm	5x5	0.4,0.6
+Arm@knight	5x5	0.4,0.6
+Arm_1	5x5	0.4,0.6
+Arm_1@knight	5x5	0.4,0.6
+Head	4x4	0.5,0.5
+Head@hat	4x4	0.5,0.5
+Head@knight	4x4	0.5,0.5
+Head_1	4x4	0.5,0.5
+Head_1@knight	4x4	0.5,0.5
+Tail	2x2	0.5,0.5

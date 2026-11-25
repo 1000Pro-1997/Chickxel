@@ -14,7 +14,7 @@ public sealed class MergeDialog : DialogBase
     private readonly string _folder;
     private readonly ListBox _order;
     private readonly TextBox _name;
-    private readonly RadioButton _layers, _group, _skins, _frames;
+    private readonly RadioButton _layers, _parent, _skins, _frames;
     private readonly SizeField _size;
     private readonly AnchorPicker _anchor = new();
     private readonly CheckBox _deleteOriginals, _blankCover;
@@ -49,7 +49,7 @@ public sealed class MergeDialog : DialogBase
         var maxW = items.Max(i => i.Source.Size.Width);
         var maxH = items.Max(i => i.Source.Size.Height);
         _layers = Radio(UiStrings.S_MergeDialog_MergeDialog_B3BA45594D, UiStrings.S_MergeDialog_MergeDialog_9D32BDB124, true).HelpAt(page, anchor: "As layers");
-        _group = Radio(UiStrings.S_MergeDialog_MergeDialog_2A89E3C4B6, UiStrings.S_MergeDialog_MergeDialog_7306C9C995, false).HelpAt(page, anchor: "As a group");
+        _parent = Radio(UiStrings.S_MergeDialog_MergeDialog_2A89E3C4B6, UiStrings.S_MergeDialog_MergeDialog_7306C9C995, false).HelpAt(page, anchor: "As a group");
         _skins = Radio(UiStrings.S_MergeDialog_MergeDialog_0A7DC12A34, UiStrings.S_MergeDialog_MergeDialog_C9D3632FB9
                                   + UiStrings.S_MergeDialog_MergeDialog_A54A1EF2B9, false).HelpAt(page, anchor: "As skins");
         _frames = Radio(UiStrings.S_MergeDialog_MergeDialog_6233362607, UiStrings.S_MergeDialog_MergeDialog_C112F96D7C, false).HelpAt(page, anchor: "As frames");
@@ -96,7 +96,7 @@ public sealed class MergeDialog : DialogBase
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
         }.HelpAt(page, anchor: "How it will look in the timeline"));
 
-        foreach (var r in new[] { _layers, _group, _skins, _frames }) r.IsCheckedChanged += (_, _) => { _blankCover.IsEnabled = _group.On(); UpdatePreview(); };
+        foreach (var r in new[] { _layers, _parent, _skins, _frames }) r.IsCheckedChanged += (_, _) => { _blankCover.IsEnabled = _parent.On(); UpdatePreview(); };
         _blankCover.IsCheckedChanged += (_, _) => UpdatePreview();
         _size.Changed += (_, _) => UpdatePreview();
         _anchor.Changed += (_, _) => UpdatePreview();
@@ -121,17 +121,17 @@ public sealed class MergeDialog : DialogBase
     public string ResultName => _name.Text?.Trim() ?? "";
     public string ProjectPath => Path.Combine(_folder, ResultName + SpriteProject.FileExtension);
     public bool DeleteOriginals => _deleteOriginals.On();
-    public MergeMode Mode => _group.On() ? MergeMode.Group : _skins.On() ? MergeMode.Skins : _frames.On() ? MergeMode.Frames : MergeMode.Layers;
-    /// <summary>빈 대표 이미지(그룹 방식에서 켰을 때만).</summary>
-    private bool BlankCover => _blankCover.On() && Mode == MergeMode.Group;
+    public MergeMode Mode => _parent.On() ? MergeMode.Parent : _skins.On() ? MergeMode.Skins : _frames.On() ? MergeMode.Frames : MergeMode.Layers;
+    /// <summary>빈 대표 이미지("한 레이어 아래로" 방식에서 켰을 때만).</summary>
+    private bool BlankCover => _blankCover.On() && Mode == MergeMode.Parent;
     public MergeOptions Options => new(Mode, _size.Size.Width, _size.Size.Height, _anchor.Value, ResultName, BlankCover);
 
-    /// <summary>저장하면 생기는 파일: 프로젝트, 기본 내보내기 프레임 시트(그룹·스킨이면 부위 아틀라스도).</summary>
+    /// <summary>저장하면 생기는 파일: 프로젝트, 기본 내보내기 프레임 시트(한 레이어 아래로·스킨이면 레이어 아틀라스도).</summary>
     public IEnumerable<string> TargetPaths(string name)
     {
         yield return Path.Combine(_folder, name + SpriteProject.FileExtension);
         yield return Path.Combine(_folder, name + ".png");
-        if (Mode is MergeMode.Group or MergeMode.Skins) yield return Path.Combine(_folder, name + "_parts.png");
+        if (Mode is MergeMode.Parent or MergeMode.Skins) yield return Path.Combine(_folder, name + "_parts.png");
     }
 
     /// <summary>원본을 지울 때 함께 지워지는 파일(원본 + 딸린 파일). 확인할 수 없는 딸린 파일은 뺀다.</summary>
@@ -154,7 +154,7 @@ public sealed class MergeDialog : DialogBase
     private Grid GroupRow()
     {
         var row = new Grid { ColumnDefinitions = new ColumnDefinitions("120,Auto") };
-        row.Children.Add(_group);
+        row.Children.Add(_parent);
         Grid.SetColumn(_blankCover, 1);
         row.Children.Add(_blankCover);
         return row;
@@ -234,9 +234,8 @@ public sealed class MergeDialog : DialogBase
         var p = ProjectMerge.Merge(_items.Select(i => i.Source).ToList(), Options, notes: notes);
         _preview.SetProject(p);
         _timeline.SetProject(p);
-        int parts = p.Layers.Count(l => l.IsPart);
-        int skins = p.Layers.Where(l => l.IsGroup).Sum(l => l.Skins.Count);
-        _info.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_MergeDialog_UpdatePreview_D7D7C6307A,p.Width,p.Height,p.Layers.Count(l => !l.IsPart)) + (parts > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_MergeDialog_UpdatePreview_190EF86F30,parts) : "")
+        int skins = p.Layers.Where(l => l.Skins.Count > 1).Sum(l => l.Skins.Count);
+        _info.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_MergeDialog_UpdatePreview_D7D7C6307A,p.Width,p.Height,p.Layers.Count)
                      + (_skins.On() ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_MergeDialog_UpdatePreview_A64CA4F418,skins) : "")
                      + (BlankCover ? UiStrings.S_MergeDialog_UpdatePreview_140D4F9E33 : "")
                      + string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_MergeDialog_UpdatePreview_2981429CE0,p.Frames.Count) + (p.Tags.Count > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_MergeDialog_UpdatePreview_6CCB9AF0FE,p.Tags.Count) : "");
@@ -308,7 +307,7 @@ public sealed class MergeDialog : DialogBase
     {
         private const double NameW = 150, CellW = 44, RowH = 34, Thumb = 28, HeadH = 30, TagH = 16;
         private SpriteProject? _project;
-        private readonly List<(string Name, bool Group, bool Part, bool Skin, bool PartOnly, WriteableBitmap?[] Thumbs)> _rows = new();
+        private readonly List<(string Name, int Depth, bool Parent, bool Skin, WriteableBitmap?[] Thumbs)> _rows = new();
 
         public void SetProject(SpriteProject p)
         {
@@ -323,10 +322,11 @@ public sealed class MergeDialog : DialogBase
                 string name = layer.IsPart ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_MergeDialog_SetProject_AB9B2445C1,layer.Name,layer.PartSize.Width,layer.PartSize.Height,(layer.Visible ? "" : UiStrings.S_MergeDialog_SetProject_00D4A9DF3D)) : layer.Name;
                 int index = li;
                 // 타임라인 칸과 같은 썸네일(효과 없이, 그 레이어가 칠한 자리로 자름 — SpriteProject.RenderCelThumbnail)
-                _rows.Add((name, layer.IsGroup, layer.IsPart, false, false, Thumbs(f => p.RenderCelThumbnail(index, f))));
-                if (layer is { IsPart: true, SkinChoices.Count: > 1 })
-                    foreach (var skin in layer.SkinChoices)
-                        _rows.Add((skin.Name, false, false, true, skin.IsPartOnly, Thumbs(f => p.GetOwnCel(layer, p.Frames[f], skin))));
+                int depth = p.DepthOf(layer);
+                _rows.Add((name, depth, p.HasChildren(layer), false, Thumbs(f => p.RenderCelThumbnail(index, f))));
+                if (layer.Skins.Count > 1)
+                    foreach (var skin in layer.Skins)
+                        _rows.Add((skin.Name, depth, false, true, Thumbs(f => p.GetOwnCel(layer, p.Frames[f], skin))));
             }
             Width = NameW + p.Frames.Count * CellW + 4;
             Height = Top + _rows.Count * RowH + 2;
@@ -372,28 +372,34 @@ public sealed class MergeDialog : DialogBase
             g.DrawLine(line, new Avalonia.Point(0, top - 0.5), new Avalonia.Point(Bounds.Width, top - 0.5));
             for (int row = 0; row < _rows.Count; row++)
             {
-                var (name, isGroup, isPart, isSkin, partOnly, thumbs) = _rows[row];
+                var (name, depth, isParent, isSkin, thumbs) = _rows[row];
                 double y = top + row * RowH, cy = y + RowH / 2;
-                if (isGroup) g.FillRectangle(AppTheme.HoverBrush, new Rect(0, y, Bounds.Width, RowH));
-                // 이름 앞 표시: 그룹 = 펼친 삼각형, 부위 = 나무 가지, 스킨 = 마름모(부위 전용이면 채움)
-                double textX = 6;
-                if (isGroup)
+                if (isParent && depth == 0) g.FillRectangle(AppTheme.HoverBrush, new Rect(0, y, Bounds.Width, RowH));
+                // 이름 앞 표시: 자식이 있는 레이어 = 펼친 삼각형, 자식 레이어 = 나무 가지(깊이만큼 들여 씀), 스킨 = 마름모
+                double indent = depth * 12;
+                double textX = 6 + indent;
+                if (isSkin)
                 {
-                    VectorIcons.Draw(g, VectorIcon.ChevronDown, new Rect(4, y, 12, RowH), 11, AppTheme.TextBrush);
-                    textX = 20;
+                    VectorIcons.Draw(g, VectorIcon.Diamond, new Rect(indent + 34, y, 10, RowH), 9, AppTheme.DimTextBrush);
+                    textX = indent + 48;
                 }
-                else if (isPart)
+                else
                 {
-                    g.DrawLine(line, new Avalonia.Point(20.5, y), new Avalonia.Point(20.5, cy + 0.5));
-                    g.DrawLine(line, new Avalonia.Point(20.5, cy + 0.5), new Avalonia.Point(28, cy + 0.5));
-                    textX = 32;
+                    if (depth > 0)
+                    {
+                        double bx = indent + 8.5;
+                        g.DrawLine(line, new Avalonia.Point(bx, y), new Avalonia.Point(bx, cy + 0.5));
+                        g.DrawLine(line, new Avalonia.Point(bx, cy + 0.5), new Avalonia.Point(bx + 7.5, cy + 0.5));
+                        textX = indent + 20;
+                    }
+                    if (isParent)
+                    {
+                        VectorIcons.Draw(g, VectorIcon.ChevronDown, new Rect(textX - 2, y, 12, RowH), 11, AppTheme.TextBrush);
+                        textX += 14;
+                    }
                 }
-                else if (isSkin)
-                {
-                    VectorIcons.Draw(g, VectorIcon.Diamond, new Rect(34, y, 10, RowH), 9, AppTheme.DimTextBrush, filled: partOnly);
-                    textX = 48;
-                }
-                AppTheme.DrawTextIn(g, name, new Rect(textX, y, NameW - textX - 2, RowH), isSkin ? AppTheme.DimTextBrush : AppTheme.TextBrush, small, bold: !isPart && !isSkin, padLeft: 0);
+                textX = Math.Min(textX, NameW - 20);
+                AppTheme.DrawTextIn(g, name, new Rect(textX, y, NameW - textX - 2, RowH), isSkin ? AppTheme.DimTextBrush : AppTheme.TextBrush, small, bold: isParent, padLeft: 0);
                 for (int f = 0; f < thumbs.Length; f++)
                 {
                     var cell = new Rect(NameW + f * CellW + (CellW - Thumb) / 2, y + (RowH - Thumb) / 2, Thumb, Thumb);

@@ -52,7 +52,7 @@
   <data name="Ui_045" xml:space="preserve"><value>Tile mode</value></data>
   <data name="Ui_046" xml:space="preserve"><value>Tiled view and seamless drawing (Ctrl+Shift+T) · Right-click = repeat size, dim surroundings</value></data>
   <data name="Ui_047" xml:space="preserve"><value>Pivot</value></data>
-  <data name="Ui_048" xml:space="preserve"><value>Show pivots: every visible layer's and the canvas's pivot on this frame (named, parts in blue) · the current layer's pivot is the large mark</value></data>
+  <data name="Ui_048" xml:space="preserve"><value>Show pivots: every visible layer's and the canvas's pivot on this frame (named, layers with their own size in blue) · the current layer's pivot is the large mark</value></data>
   <data name="Ui_049" xml:space="preserve"><value>Onion</value></data>
   <data name="Ui_050" xml:space="preserve"><value>Onion skin: overlay previous/next frames (Ctrl+J) · Right-click = frame count, strength, color</value></data>
   <data name="Ui_051" xml:space="preserve"><value>Zoom out (Ctrl+-)</value></data>
@@ -127,13 +127,13 @@
   <data name="Menu_FrameLayer_DuplicateFrame_176" xml:space="preserve"><value>Duplicate frame</value></data>
   <data name="Menu_FrameLayer_Command_178" xml:space="preserve"><value>Delete frame</value></data>
   <data name="Menu_FrameLayer_AddLayer_180" xml:space="preserve"><value>New layer</value></data>
-  <data name="Menu_FrameLayer_AddGroup_182" xml:space="preserve"><value>New group</value></data>
-  <data name="Menu_FrameLayer_AddPart_184" xml:space="preserve"><value>New part…</value></data>
-  <data name="Menu_FrameLayer_Command_186" xml:space="preserve"><value>Part size…</value></data>
+  <data name="Menu_FrameLayer_AddEmptyLayer" xml:space="preserve"><value>New empty layer</value></data>
+  <data name="Menu_FrameLayer_AddChildLayer" xml:space="preserve"><value>New child layer…</value></data>
+  <data name="Menu_FrameLayer_Command_186" xml:space="preserve"><value>Layer size…</value></data>
   <data name="Menu_FrameLayer_BeginRenameLayer_188" xml:space="preserve"><value>Rename layer</value></data>
-  <data name="Menu_FrameLayer_StepSkin_190" xml:space="preserve"><value>Previous skin (current group)</value></data>
-  <data name="Menu_FrameLayer_StepSkin_192" xml:space="preserve"><value>Next skin (current group)</value></data>
-  <data name="Menu_FrameLayer_OpenSkinManager_194" xml:space="preserve"><value>Manage skins…</value></data>
+  <data name="Menu_FrameLayer_StepSkin_190" xml:space="preserve"><value>Previous skin (current layer)</value></data>
+  <data name="Menu_FrameLayer_StepSkin_192" xml:space="preserve"><value>Next skin (current layer)</value></data>
+  <data name="Menu_FrameLayer_OpenSkinManager_194" xml:space="preserve"><value>Skin settings…</value></data>
   <data name="Menu_FrameLayer_Command_196" xml:space="preserve"><value>New tag (animation)…</value></data>
   <data name="Menu_FrameLayer_Command_198" xml:space="preserve"><value>Split into frames by grid (sheet → frames)…</value></data>
   <data name="Menu_Tools" xml:space="preserve"><value>_Tools</value></data>
@@ -161,7 +161,6 @@
   <data name="Ui_242" xml:space="preserve"><value>Clear list</value></data>
   <data name="Ui_243" xml:space="preserve"><value>Modified</value></data>
   <data name="Ui_244" xml:space="preserve"><value>Saved</value></data>
-  <data name="Ui_245" xml:space="preserve"><value> (group)</value></data>
   <data name="Ui_246" xml:space="preserve"><value>Transparent</value></data>
   <data name="Message_248" xml:space="preserve"><value>Tiled mode: drawing past an edge continues on the opposite side.</value></data>
   <data name="Message_249" xml:space="preserve"><value>Tiled mode off</value></data>
@@ -208,7 +207,7 @@
   <data name="Ui_299" xml:space="preserve"><value> (export off)</value></data>
   <data name="Ui_300" xml:space="preserve"><value>cells</value></data>
   <data name="Ui_301" xml:space="preserve"><value>frames</value></data>
-  <data name="Ui_302" xml:space="preserve"><value>parts</value></data>
+  <data name="Ui_302" xml:space="preserve"><value>layer atlas</value></data>
   <data name="Ui_303" xml:space="preserve"><value>labels</value></data>
   <data name="Message_304" xml:space="preserve"><value>Export:</value></data>
   <data name="Message_308" xml:space="preserve"><value>File changed</value></data>
@@ -231,7 +230,7 @@
   <data name="Message_325" xml:space="preserve"><value>Transform (current cel, blue box): inside = move, handles = size (Shift keeps proportions, Alt from center), Ctrl+handles = free distort, outside = rotate, right-click = rotate/flip menu, right-drag = move image only (inside) / margin (handles) / rotate around the box center (outside) — Enter to apply, Esc to cancel</value></data>
   <data name="Message_326" xml:space="preserve"><value>The current layer is locked.</value></data>
   <data name="Message_327" xml:space="preserve"><value>The current layer is locked.</value></data>
-  <data name="Message_328" xml:space="preserve"><value>Select a group or part to change that group's skin.</value></data>
+  <data name="Message_328" xml:space="preserve"><value>Tilemap layers have no skins. Select another layer.</value></data>
   <data name="Ui_331" xml:space="preserve"><value>Split by grid</value></data>
   <data name="Message_332" xml:space="preserve"><value>Canvas size: handles = stretch the image too, right-drag handles = margin (canvas edge only) — Shift keeps ratio, Alt from center, Ctrl moves corners freely (stretching skews the image to that shape with margin around it; margin crops everything outside it), inside the image = move — Enter to confirm, Esc to cancel</value></data>
   <data name="Message_333" xml:space="preserve"><value>No folder is open, so it can't be saved to a file. Create it without file_name or ask the user to open a folder.</value></data>
@@ -268,7 +267,6 @@ If "No", it is kept and deleted automatically based on the retention period and 
 
 {message}</value></data>
   <data name="Message_359" xml:space="preserve"><value>{count} frames · {count2} tags</value></data>
-  <data name="Message_360" xml:space="preserve"><value> · {parts} parts</value></data>
   <data name="Message_361" xml:space="preserve"><value>Imported PNG: {value} → {contents} — saving will create {path}.</value></data>
   <data name="Message_362" xml:space="preserve"><value>Opened: {displayName} ({count} layers · {contents})</value></data>
   <data name="Message_363" xml:space="preserve"><value>A file with the same name already exists:
@@ -308,7 +306,7 @@ Reloading will discard your current edits. Reload?</value></data>
   <data name="Message_388" xml:space="preserve"><value>Outline: {n} pixels</value></data>
   <data name="Message_389" xml:space="preserve"><value>Replace color: {n} pixels</value></data>
   <data name="Message_390" xml:space="preserve"><value>"{name}" skin: {name2}</value></data>
-  <data name="Message_391" xml:space="preserve"><value>Group "{name}" has only one skin — click the skin chip in the timeline name column to add skins in the skin manager.</value></data>
+  <data name="Message_391" xml:space="preserve"><value>Layer "{name}" has only one skin — click the skin chip in the timeline name column to add skins in skin settings.</value></data>
   <data name="Message_392" xml:space="preserve"><value>This discards the current {count} frames, layers, and tags and replaces them with {count2} frames split from the current frame's image. This can't be undone.</value></data>
   <data name="Message_393" xml:space="preserve"><value>Split by grid: {count} frames ({width}×{height}) — create tags to define animations.</value></data>
   <data name="Message_394" xml:space="preserve"><value>Couldn't start the internal AI connection server (MCP).
@@ -373,12 +371,12 @@ Reloading will discard your current edits. Reload?</value></data>
   <data name="Tabs_Previous" xml:space="preserve"><value>Previous tab</value></data>
   <data name="Tabs_DropSplit" xml:space="preserve"><value>Drop to move to a right pane</value></data>
   <data name="Tabs_DropMove" xml:space="preserve"><value>Drop to move here</value></data>
-  <data name="Tabs_PreviewTip" xml:space="preserve"><value>Preview tab: shows the document you are editing with the preview's playback, background and outfit (wheel = zoom, drag = pan, double-click = fit, right-click = copy and save)</value></data>
+  <data name="Tabs_PreviewTip" xml:space="preserve"><value>Preview tab: shows the document you are editing with the preview's playback, background and skins (wheel = zoom, drag = pan, double-click = fit, right-click = copy and save)</value></data>
   <data name="Tabs_Reloaded" xml:space="preserve"><value>Reloaded a file changed outside the app: {name}</value></data>
   <data name="Tabs_Restored" xml:space="preserve"><value>Reopened {count} tabs from last time</value></data>
   <data name="Tabs_RestoredMissing" xml:space="preserve"><value> · skipped {count} files that couldn't be opened</value></data>
-  <data name="Tabs_RestoredConverted" xml:space="preserve"><value> · converted {count} files from the older format (each layer got a copy of the canvas pivot; saving writes the new format)</value></data>
-  <data name="Message_ConvertedProject" xml:space="preserve"><value>· Converted from the older format (version {version}): each layer got a copy of the old canvas pivot. Saving writes the new format.</value></data>
+  <data name="Tabs_RestoredConverted" xml:space="preserve"><value> · converted {count} files from the older format (groups became layers with children and parts their child layers; saving writes the new format)</value></data>
+  <data name="Message_ConvertedProject" xml:space="preserve"><value>· Converted from the older format (version {version}): groups became layers with children, parts became their child layers, and group skins became per-layer skins and skin presets (older files also got the canvas pivot copied to each layer). Saving writes the new format.</value></data>
   <data name="Tabs_TempTitle" xml:space="preserve"><value>Temporary title…</value></data>
   <data name="Tabs_TempTitle_DialogTitle" xml:space="preserve"><value>Temporary title</value></data>
   <data name="Tabs_TempTitle_Prompt" xml:space="preserve"><value>Shown on the tab until you save, and suggested as the file name the first time you save (leave empty to clear).</value></data>

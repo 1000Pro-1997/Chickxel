@@ -189,7 +189,7 @@ public sealed partial class LayerEffectsDialog
         // 처음(아직 모든 프레임 범위를 모름): 미리보기 자리·배율은 지금 캔버스 — 다 그리면 효과 범위로 맞춘다
         if (_previewBounds.IsEmpty) _previewBounds = _previewCanvas = new Rectangle(0, 0, _project.Width, _project.Height);
         int count = VirtualCount;
-        var all = VirtualEffects();
+        var all = PreviewEffects();
         var sources = new PixelImage?[count];
         var pivots = new System.Drawing.PointF[count];
         // 다른 레이어·테두리를 읽는 스크립트가 볼 것과 ctx.frameTag(원래 프레임 기준) — 프로젝트를 읽으므로 여기서(UI 스레드) 담는다
@@ -198,8 +198,8 @@ public sealed partial class LayerEffectsDialog
         for (int f = 0; f < count; f++)
         {
             sources[f] = VirtualSourceAt(f);
-            pivots[f] = _project.EffectPivot(_layer, OriginalOf(f));
-            layers[f] = _project.ScriptLayersAt(_layer, OriginalOf(f), all);
+            pivots[f] = PivotAt(OriginalOf(f));
+            layers[f] = _project.ScriptLayersAt(_layer, OriginalOf(f), all, _subtreeScope);
             tags[f] = _project.FrameTagFor(all, OriginalOf(f));
         }
         // 링크된 칸의 효과 끝 모습(프로젝트를 읽으므로 여기서 — 다른 프레임 원본·피벗은 위에서 담은 것)

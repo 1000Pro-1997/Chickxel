@@ -7,7 +7,7 @@ namespace Chickxel.Core.IO;
 /// <summary>
 /// 내보내기 설정 프리셋 하나: 프로젝트에 매이지 않는 내보내기 설정(내보낼 결과, 시트 설정 — 스킨 방식·담기·배치·정렬·줄바꿈·칸 수·따로 파일·칸 이름·간격·
 /// 잘라내기·2의 거듭제곱 —, 시트별 다르게, Sprite Library, 파일 형식·JPG 품질, .meta 방식, 저장할 때 내보내기).
-/// 프로젝트마다 다른 값(파일 이름·부위 아틀라스 이름·폴더, 고른 스킨·착장·뺀 레이어 목록, Single 프레임 번호, 원래 위치 유지)은 담지 않고,
+/// 프로젝트마다 다른 값(파일 이름·레이어 아틀라스 이름·폴더, 고른 스킨·스킨 프리셋·뺀 레이어 목록, Single 프레임 번호, 원래 위치 유지)은 담지 않고,
 /// 적용할 때 프로젝트의 지금 값을 그대로 둔다.
 /// </summary>
 public sealed class ExportPreset
@@ -32,7 +32,7 @@ public sealed class ExportPreset
     public bool WritePrefab { get; set; }
     public bool WriteAnimations { get; set; }
     public PresetSheet Sheet { get; set; } = new();
-    /// <summary>부위 아틀라스만 다른 시트 설정(없으면 공통).</summary>
+    /// <summary>레이어 아틀라스만 다른 시트 설정(없으면 공통).</summary>
     public PresetSheet? PartsSheet { get; set; }
 
     /// <summary>프로젝트 내보내기 설정에서 프리셋을 만든다(프로젝트 의존 값은 빼고).</summary>
@@ -55,7 +55,7 @@ public sealed class ExportPreset
 
     /// <summary>
     /// 프로젝트 내보내기 설정에 적용한다(실행취소는 부르는 쪽이 <see cref="SpriteProject.Edit(string, ProjectChange, Action)"/>로 묶음).
-    /// 프로젝트 의존 값(이름·폴더·고른 스킨·착장·뺀 레이어·Single 프레임·원래 위치 유지)은 그대로 — "시트별 다르게"를 새로 켜면 부위 아틀라스 쪽 목록은 공통 목록을 복사한다.
+    /// 프로젝트 의존 값(이름·폴더·고른 스킨·스킨 프리셋·뺀 레이어·Single 프레임·원래 위치 유지)은 그대로 — "시트별 다르게"를 새로 켜면 레이어 아틀라스 쪽 목록은 공통 목록을 복사한다.
     /// </summary>
     public void ApplyTo(ExportSettings x)
     {
@@ -127,7 +127,7 @@ public sealed class PresetSheet
         Skins = o.Skins,
     };
 
-    /// <summary>시트 설정에 적용한다(고른 스킨·착장·뺀 레이어 목록은 그대로).</summary>
+    /// <summary>시트 설정에 적용한다(고른 스킨·스킨 프리셋·뺀 레이어 목록은 그대로).</summary>
     public void ApplyTo(SheetOptions o)
     {
         o.Layout = Enum.IsDefined(Layout) ? Layout : SheetLayout.Grid;
@@ -181,13 +181,13 @@ public static class ExportPresets
         public List<ExportPreset>? Presets { get; set; }
     }
 
-    /// <summary>기본 제공 프리셋: 프레임 시트 기본 / 부위 아틀라스 + Sprite Library / 스킨마다 따로 파일.</summary>
+    /// <summary>기본 제공 프리셋: 프레임 시트 기본 / 레이어 아틀라스 + Sprite Library / 스킨마다 따로 파일.</summary>
     public static IReadOnlyList<ExportPreset> BuiltIns { get; } =
     [
         new ExportPreset { Name = "프레임 시트 기본", BuiltIn = true },
         new ExportPreset
         {
-            Name = "부위 아틀라스 + Sprite Library", BuiltIn = true, ExportFrames = false, ExportParts = true, WriteSpriteLibrary = true, Engine = ExportEngine.Unity,
+            Name = "레이어 아틀라스 + Sprite Library", BuiltIn = true, ExportFrames = false, ExportParts = true, WriteSpriteLibrary = true, Engine = ExportEngine.Unity,
             Sheet = new PresetSheet { Layout = SheetLayout.Packed, Skins = SkinSource.Selected },
         },
         new ExportPreset
