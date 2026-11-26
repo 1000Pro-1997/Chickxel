@@ -2,6 +2,44 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.154 (2026-11-26)
+
+### Tutorials you can follow on screen
+- A Chickxel Tutorials window opens at start: four main cards (image to pixel art, 3D to pixel art, effects, AI drawing with MCP) and seven smaller ones (Effect Maker, working the canvas, layers and frames, layer groups and skins, tilemaps, export, levels).
+- Following a tutorial dims everything except the spot to use, with a bubble that explains it, shows short clips and has Back / Next. Steps you must do move on by themselves as soon as you do them.
+- Reopen it any time from Help > Tutorials… or the graduation-cap button in the menu bar; finished tutorials show Done, and "Don't show again" stops the start-up window.
+- Finishing the level tutorial gives the Sprout Pixeler title and the Sprout frame.
+
+### Layers nest inside layers
+- Groups and parts are gone: any layer can be a child of another, many levels deep. Shift-drop a layer name onto another row to nest it, drag left to take it out.
+- Children draw above their parent; hiding, locking, opacity and moving the parent apply to its children.
+- Effects can target "this layer only" or "with its children". Old files open with groups turned into empty parent layers; files saved now (format 7) need this version.
+
+### Skins on every layer, skin presets
+- Any layer can have skins (empty, copy of the current art, or including its children). With two or more, a skin chip on the name row switches them.
+- Skin presets save a combination of skins across layers and switch it from the box above the preview; presets only touch their own layers, so they can be stacked.
+- Export writes a layer atlas, one Sprite Library per preset plus a default one, and Unity prefabs that keep the layer tree.
+
+### Frame duration window
+- Set frame length by ms, FPS, seconds, game frames at 60 fps, speed factor or total length; speed and total length keep the differences between frames.
+- A Result box shows each frame's length, fps and 60 fps frame count, and the total length before and after.
+
+### AI image generation hands you the original
+- Generated images are no longer converted automatically: the chat shows the original with a Convert button that opens the pixelate window with it (animations split into frames).
+- The conversion options (result size, background removal, auto-optimize, insert target) left the drawing settings; you pick them in the pixelate window.
+- Click an image in the chat (or Edit image under a result) to draw on it or pin numbered comments, then send it back with your request.
+
+### AI notifications inside Chickxel
+- When the AI finishes or asks something, a Chickxel notification appears at the bottom right for six seconds with a sound; clicking it brings the AI chat forward.
+- Preferences > AI status has a Notifications group: on/off, the sound (with preview), and whether to notify while you are looking at the chat.
+- Queued messages can be reordered by dragging, edited, deleted, or sent right away.
+
+### Smaller changes
+- Dragging an effect from the effect list over timeline cells previews it on the canvas and preview before you drop it.
+- Pixelate: the preset row is down to list, save, preset settings and run; rename, copy and delete moved into the optimize settings window.
+- While you drag a layer with Ctrl or the Move tool, the pivot follows along in real time (right-drag still leaves it in place).
+- You can select and copy text in the user guide window; its support button became Send a coffee; the account window's profile card is centered.
+
 ## v1.14.153 (2026-11-25)
 
 ### Effect Maker saves automatically
