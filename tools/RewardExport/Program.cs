@@ -26,7 +26,7 @@ foreach (var slot in Enum.GetValues<RewardSlot>())
     slotNames[LevelRewards.SlotKey(slot)] = Names(c => LevelRewards.SlotNameIn(slot, c));
 
 var rewards = new JsonArray();
-foreach (var reward in LevelRewards.All)
+foreach (var reward in LevelRewards.All.Concat(LevelRewards.Tutorial))
 {
     var item = new JsonObject
     {
@@ -35,6 +35,8 @@ foreach (var reward in LevelRewards.All)
         ["slot"] = LevelRewards.SlotKey(reward.Slot),
         ["name"] = Names(reward.NameIn),
     };
+    // 레벨이 아니라 레벨 튜토리얼을 마쳐야 받는 보상(서버는 계정의 tutorialRewards로 해금)
+    if (reward.Tutorial) item["unlock"] = "tutorial";
     if (reward.Slot == RewardSlot.Title)
     {
         item["color"] = Hex(LevelRewards.TitleColor(reward));
@@ -99,7 +101,7 @@ foreach (var skin in BadgeSkin.All)
 var frames = new JsonObject();
 var effects = new JsonObject();
 var cards = new JsonObject();
-foreach (var reward in LevelRewards.All)
+foreach (var reward in LevelRewards.All.Concat(LevelRewards.Tutorial))
 {
     switch (reward.Slot)
     {

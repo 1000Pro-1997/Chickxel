@@ -1,5 +1,6 @@
 using Avalonia.VisualTree;
 using Chickxel.App.Localization;
+using Chickxel.Core.Community;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
 
@@ -31,6 +32,7 @@ public sealed partial class MainForm
                 Target = () => EffectListButton(UiStrings.EffectMaker_Title),
                 Done = () => M() is not null,
                 Required = true,
+                AutoAdvance = true,
             },
             new()
             {
@@ -88,8 +90,10 @@ public sealed partial class MainForm
                 },
                 Text = () => UiStrings.FormatTutorial_Ex_Open(menu: MenuPath("파일/내보내기…"), key: KeyText("파일/내보내기…")),
                 Target = () => TopMenuOf("파일/내보내기…"),
+                MenuItem = () => Command("파일/내보내기…").Item,
                 Done = () => D() is not null,
                 Required = true,
+                AutoAdvance = true,
             },
             new()
             {
@@ -105,6 +109,8 @@ public sealed partial class MainForm
                 Target = () => D()?.TutorialAdd,
                 Done = () => Rows() > rowsBefore,
                 Required = true,
+                // 누르면 바로 다음(새 줄의 형식 바꾸기)으로.
+                AutoAdvance = true,
             },
             new()
             {
@@ -117,6 +123,12 @@ public sealed partial class MainForm
             new()
             {
                 Id = "export.onsave",
+                // 왼쪽: 줄 앞 체크 켜기, 오른쪽: 저장하면 GIF가 생김(파일 칸 프로젝트 묶음).
+                Clips =
+                [
+                    new("export-onsave-check", () => UiStrings.Tutorial_Ex_OnSaveCheckClip),
+                    new("export-onsave-save", () => UiStrings.FormatTutorial_Ex_OnSaveSaveClip(key: KeyText("파일/저장(+ 시트 내보내기)"))),
+                ],
                 Text = () => UiStrings.FormatTutorial_Ex_OnSave(menu: MenuPath("파일/저장(+ 시트 내보내기)"), key: KeyText("파일/저장(+ 시트 내보내기)")),
                 Target = () => D()?.TutorialListPane,
                 PassThrough = true,
@@ -125,6 +137,8 @@ public sealed partial class MainForm
             {
                 Id = "export.run",
                 Text = () => UiStrings.Tutorial_Ex_Run,
+                // 목록에서 고른 줄만 내보내짐(체크한 줄이어도 고르지 않았으면 안 내보냄).
+                Clips = [new("export-run", () => UiStrings.Tutorial_Ex_RunClip)],
                 Target = () => D()?.TutorialExport,
             },
         ];
@@ -216,11 +230,13 @@ public sealed partial class MainForm
     // ───────────── 레벨 ─────────────
 
     /// <summary>
-    /// 레벨: 메뉴 줄의 계정 단추(Lv 표시, 경험치 얻는 법) → 갤러리에 올리기 단추(올리는 모습은 큰 움짤 — 실제로 올리지 않음) → 레벨 보상.
+    /// 레벨: 메뉴 줄의 계정 단추(Lv 표시, 경험치 얻는 법) → 갤러리에 올리기 단추(올리는 모습은 큰 움짤 — 실제로 올리지 않음) → 계정 단추에서 계정 관리 열기
+    /// → 계정 창의 레벨 보상 '변경하기…' 누르기(누르면 끝 — 그 순간 새싹 보상 <see cref="LevelRewards.Tutorial"/>을 받고 나서 홈페이지 보상 쪽이 열림).
     /// </summary>
     private List<TutorialStep> LevelTutorial()
     {
         Control? Account() => _helpMenuRow.GetVisualDescendants().OfType<AccountButton>().FirstOrDefault(b => b.IsEffectivelyVisible);
+        bool changed = false;
         return
         [
             new()
@@ -234,17 +250,49 @@ public sealed partial class MainForm
             new()
             {
                 Id = "level.upload",
-                Clip = "level-upload",
+                Clips = [new("level-upload")],
                 BigClip = true,
                 Text = () => UiStrings.FormatTutorial_Lv_Upload(menu: MenuPath("파일/갤러리에 올리기…")),
                 Target = () => _galleryButton,
             },
             new()
             {
+                // 계정 단추 → 계정 관리…(계정이 없으면 단추가 바로 계정 창을 엶). 계정 창이 뜨면 다음으로.
                 Id = "level.rewards",
                 Text = () => UiStrings.FormatTutorial_Lv_Rewards(menu: UiStrings.Account_Manage),
                 Target = Account,
                 PassThrough = true,
+                Done = () => AccountDialog.Shown is not null,
+                Required = true,
+                AutoAdvance = true,
+            },
+            new()
+            {
+                // '변경하기…'를 누르면 새싹 보상을 받은 뒤 홈페이지 보상 쪽이 열리고 튜토리얼이 끝난다. 로그인 전이면 계정 창에서 로그인부터.
+                Id = "level.change",
+                Enter = () => RewardViews.BeforeChange = async () =>
+                {
+                    RewardViews.BeforeChange = null;
+                    if (TutorialSpotlight.CurrentStepId != "level.change") return;
+                    changed = true;
+                    try
+                    {
+                        await AppCommunity.Client.ClaimTutorialRewardsAsync();
+                    }
+                    catch (CommunityException)
+                    {
+                        // 예전 서버·연결 끊김: 보상 없이 홈페이지만 연다.
+                    }
+                },
+                Text = () => AccountDialog.Shown?.TutorialChange is not null
+                    ? UiStrings.FormatTutorial_Lv_Change(button: UiStrings.Account_RewardsChange, title: LevelRewards.Find("title.sprout")!.Name, frame: LevelRewards.Find("frame.sprout")!.Name)
+                    : UiStrings.Tutorial_Lv_ChangeSignIn,
+                Target = () => AccountDialog.Shown?.TutorialChange ?? AccountDialog.Shown?.Content as Control,
+                // 로그인 전이면 계정 창의 로그인 단추를 누를 수 있게.
+                PassThrough = true,
+                Done = () => changed,
+                Required = true,
+                AutoAdvance = true,
             },
         ];
     }
@@ -332,8 +380,8 @@ public sealed partial class MainForm
     // ───────────── 타일맵 ─────────────
 
     /// <summary>
-    /// 타일맵: 빈 예시 그림(20×12 칸)을 새 탭으로 열고 메뉴 프레임·레이어 > 새 타일맵 레이어(Alt+Shift+N, 타임라인 우클릭 > 새로 만들기도)로 타일맵 레이어 만들기
-    /// → 왼쪽 타일셋에서 타일 고르기 → 타일 도구 → 캔버스에 칠하기 → 칸 격자 단추.
+    /// 타일맵: 빈 예시 그림(20×12 칸)을 새 탭으로 열고 타임라인의 레이어 이름 우클릭 > 새로 만들기 > 새 타일맵 레이어(메뉴 프레임·레이어 > 새 타일맵 레이어·Alt+Shift+N도)로
+    /// 타일맵 레이어 만들기(만들면 바로 다음) → 왼쪽 타일셋에서 타일 고르기 → 타일 도구 → 캔버스에 칠하기 → 칸 격자 단추.
     /// </summary>
     private List<TutorialStep> TilemapTutorial()
     {
@@ -354,11 +402,17 @@ public sealed partial class MainForm
                     example = new SpriteProject(20 * 16, 12 * 16);
                     OpenDetachedDocument(example, UiStrings.Tutorial_ExampleTitle, () => { });
                 },
-                Text = () => UiStrings.FormatTutorial_Tm_Create(menu: MenuPath("프레임·레이어/새 타일맵 레이어…"), key: KeyText("프레임·레이어/새 타일맵 레이어…")),
-                Target = () => TopMenuOf("프레임·레이어/새 타일맵 레이어…"),
+                Text = () => UiStrings.FormatTutorial_Tm_Create(
+                    newMenu: UiStrings.Timeline_NewMenu.Replace("_", ""), item: UiStrings.Tile_MenuAddLayer.Replace("_", ""),
+                    menu: MenuPath("프레임·레이어/새 타일맵 레이어…"), key: KeyText("프레임·레이어/새 타일맵 레이어…")),
+                // 타임라인의 지금 레이어 이름 칸을 비추고, 우클릭 메뉴의 '새로 만들기'를 펼치면 '새 타일맵 레이어'가 빛난다.
+                TargetArea = () => Current() ? _timeline.TutorialLayerName(_ctx.CurrentLayer) : null,
+                MenuItem = () => _timeline.TutorialTilemapMenuItem,
                 Done = OnTilemap,
                 Required = true,
-                // 메뉴를 열고, 타임라인 우클릭으로 만들어도 되게.
+                // 타일맵 레이어를 만들면(우클릭 메뉴·메뉴 줄·단축키 어느 것이든) 바로 다음(타일 고르기)으로.
+                AutoAdvance = true,
+                // 우클릭 메뉴를 열 수 있게(메뉴는 비춘 칸 밖에 뜸).
                 PassThrough = true,
             },
             new()

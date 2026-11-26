@@ -37,15 +37,22 @@ internal sealed class TutorialStep
     public Func<(Control Owner, Rect Area)?>? DropTarget { get; init; }
 
     /// <summary>
-    /// 참이 되면 다음 단계로(계속 다시 물음 — 처음 온 단계에서만, 이전·다음으로 돌아와 다시 볼 때는 '다음' 단추로만). null이면 '다음' 단추로만 넘어간다.
+    /// 해 볼 일을 했는지(계속 다시 물음 — 처음 온 단계에서만). 해 보면 '다음'이 켜지고(꼭 해야 하는 단계), '다음'을 눌러야 넘어간다 — 사용자가 마음껏 해 본 뒤 넘어가게.
+    /// <see cref="AutoAdvance"/>면 하는 대로 저절로 넘어간다. null이면 '다음' 단추로만 넘어간다.
     /// </summary>
     public Func<bool>? Done { get; init; }
 
     /// <summary>
-    /// 꼭 해야 하는 단계: 처음 왔을 때는 '다음' 단추 없이 <see cref="Done"/>이 참이 되어야만 넘어간다(이전·다음으로 다시 왔을 때는 '다음'이 보임).
-    /// 꺼져 있으면 해 보지 않고 '다음'으로 넘어갈 수 있다(해 보면 저절로 넘어감).
+    /// 꼭 해야 하는 단계: 처음 왔을 때는 <see cref="Done"/>이 참이 될 때까지 '다음'이 꺼져 있다(이전·다음으로 다시 왔을 때는 켜져 있음).
+    /// 꺼져 있으면 해 보지 않고 '다음'으로 넘어갈 수 있다.
     /// </summary>
     public bool Required { get; init; }
+
+    /// <summary>
+    /// <see cref="Done"/>이 참이 되면 '다음'을 기다리지 않고 저절로 넘어간다: 창을 열거나 닫아 말풍선이 있을 창이 바뀌는 단계(창 열기, 적용·가져오기로 창이 닫힘),
+    /// 누르면 앱 밖으로 나가는 마지막 단계(상점 열기). 조건이 거짓 → 참으로 바뀔 때만이고, 꼭 해야 하면 그때까지 '다음'이 없다.
+    /// </summary>
+    public bool AutoAdvance { get; init; }
 
     /// <summary>이 단계에 처음 들어올 때 한 번(예시 파일 열기, 창 띄우기, 비교할 처음 값 기억 — 이전·다음으로 다시 올 때는 부르지 않음).</summary>
     public Action? Enter { get; init; }
@@ -57,19 +64,37 @@ internal sealed class TutorialStep
     public bool PassThrough { get; init; }
 
     /// <summary>
-    /// 말풍선 위쪽에 되풀이해 보일 작은 움짤(그 단계에서 할 일만 가까이 잘라 찍은 것): 앱 내장 <c>Assets/Tutorial/clip-&lt;이름&gt;.webp</c>의 이름.
-    /// GuideShots <c>clip-tutorial-&lt;이름&gt;</c>이 만든다. null이면 글만.
+    /// 말풍선 위쪽에 되풀이해 보일 작은 움짤(그 단계에서 할 일만 가까이 잘라 찍은 것): 앱 내장 <c>Assets/Tutorial/clip-&lt;이름&gt;.webp</c>.
+    /// GuideShots <c>clip-tutorial-&lt;이름&gt;</c>이 만든다. 둘이면 좌우로 나란히(움짤마다 아래에 설명). 비었으면 글만.
     /// </summary>
-    public string? Clip { get; init; }
+    public IReadOnlyList<TutorialClip> Clips { get; init; } = [];
 
     /// <summary>움짤을 크게(말풍선 폭 640): 화면에서 직접 해 보지 않는 일(갤러리에 올리기 등)을 움짤로 대신 보일 때.</summary>
     public bool BigClip { get; init; }
+
+    /// <summary>
+    /// 열린 메뉴 안에서 눌러야 할 항목(계속 다시 찾음): 그 메뉴가 열려 있으면 항목을 노란 빛으로 감싸고, 같은 메뉴의 다른 항목은 누를 수 없게 한다
+    /// (누르면 말풍선이 번쩍임).
+    /// </summary>
+    public Func<MenuItem?>? MenuItem { get; init; }
+
+    /// <summary>참이면 말풍선을 잠깐 숨긴다(계속 다시 물음 — 스포이드로 원본을 누르는 동안처럼 말풍선이 누를 곳을 가릴 때). 비춘 칸·덮개는 그대로.</summary>
+    public Func<bool>? HideBubble { get; init; }
+
+    /// <summary>
+    /// 이 단계 동안 잠깐 숨길 앱 창(비출 곳·말풍선을 가리는 떠 있는 창 — 메인 창의 타임라인을 비출 때의 AI 채팅 창 등).
+    /// 떠 있던 것만 숨기고, 단계를 떠나거나 튜토리얼이 끝나면 다시 보인다.
+    /// </summary>
+    public Func<IEnumerable<Window?>>? HideWindows { get; init; }
 }
+
+/// <summary>말풍선 움짤 하나: 앱 내장 <c>clip-&lt;<paramref name="Name"/>&gt;.webp</c>와 그 아래 설명(<see cref="TutorialText"/> 입력 표시를 씀, 없으면 움짤만).</summary>
+internal sealed record TutorialClip(string Name, Func<string>? Caption = null);
 
 /// <summary>
 /// 화면 위 따라 하기 튜토리얼: 대상 컨트롤이 있는 창의 덮개 층(<see cref="OverlayLayer"/>)에 그 칸만 남기고 어둡게 덮은 판과 말풍선(설명 · 이전 · 다음, 머리 줄 끝 닫기)을 띄운다.
 /// 한 번에 하나만 돈다. 단계마다 대상·넘어갈 조건을 짧은 간격으로 다시 확인해, 대상 창이 바뀌면(메인 창 → 픽셀로 정리 창 → AI 채팅 창) 덮개도 따라 옮긴다.
-/// 하라는 것을 하면 저절로 다음 단계로 가고, '다음'은 하지 않고도 넘어간다. 비춘 칸은 누르기·끌어 놓기가 그대로 아래로 가고,
+/// 꼭 해야 하는 일을 하면 '다음'이 켜지고 '다음'을 눌러 넘어간다(창을 여닫는 단계만 저절로). 비춘 칸은 누르기·끌어 놓기가 그대로 아래로 가고,
 /// 어두운 곳은 막는다(<see cref="TutorialStep.PassThrough"/>면 막지 않음).
 /// </summary>
 public static class TutorialSpotlight
@@ -84,13 +109,14 @@ public static class TutorialSpotlight
 
     /// <summary>
     /// <paramref name="steps"/>를 처음부터 시작한다(돌던 튜토리얼은 그만둔다). <paramref name="home"/>은 대상이 없을 때 말풍선을 띄울 창(메인 창)이고, 닫히면 튜토리얼도 끝난다.
-    /// 마지막 단계에서 '끝내기'를 누르면 <paramref name="completed"/>(닫기로 그만두면 부르지 않음).
+    /// 마지막 단계에서 '끝내기'를 누르면 <paramref name="completed"/>, 도중에 그만두면(말풍선 닫기, 그 단계의 대상이 있던 창 닫기) <paramref name="aborted"/>
+    /// (메인 창이 닫히거나 다른 튜토리얼을 시작해 끝난 때는 어느 것도 부르지 않음).
     /// </summary>
-    internal static void Start(Window home, string title, IReadOnlyList<TutorialStep> steps, Action? completed = null)
+    internal static void Start(Window home, string title, IReadOnlyList<TutorialStep> steps, Action? completed = null, Action? aborted = null)
     {
         Stop();
         if (steps.Count == 0) return;
-        _session = new Session(home, title, steps, completed);
+        _session = new Session(home, title, steps, completed, aborted);
         _session.Begin();
     }
 
@@ -110,7 +136,7 @@ public static class TutorialSpotlight
         private const double HolePad = 6;
 
         private readonly Window _home;
-        private readonly Action? _completed;
+        private readonly Action? _completed, _aborted;
         private readonly IReadOnlyList<TutorialStep> _steps;
         private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(150) };
         private readonly Canvas _root = new();
@@ -118,10 +144,12 @@ public static class TutorialSpotlight
         private readonly Border _bubble;
         private readonly TextBlock _counter, _text;
         private readonly Button _prev, _next;
-        /// <summary>꼭 해야 하는 단계에서 '다음' 대신 보이는 "직접 해 보세요".</summary>
+        /// <summary>꼭 해야 하는 단계에서 '다음' 옆(저절로 넘어가는 단계는 그 자리)에 보이는 "직접 해 보세요".</summary>
         private readonly StackPanel _hint;
-        /// <summary>말풍선 위쪽 움짤 자리(<see cref="TutorialStep.Clip"/>가 없으면 숨김).</summary>
-        private readonly Border _clip = new() { CornerRadius = new CornerRadius(6), ClipToBounds = true, Margin = new Thickness(0, 0, 0, 8), IsVisible = false, HorizontalAlignment = HorizontalAlignment.Center };
+        /// <summary>말풍선 위쪽 움짤 자리(<see cref="TutorialStep.Clips"/>가 없으면 숨김): 움짤마다 한 칸(좌우로 나란히) — 움짤 + 아래 설명.</summary>
+        private readonly Grid _clips = new() { Margin = new Thickness(0, 0, 0, 8), IsVisible = false };
+        /// <summary>움짤 설명 글과 그 글을 읽는 함수(단계에 있는 동안 다시 읽음).</summary>
+        private readonly List<(TextBlock Block, Func<string> Text)> _captions = [];
         private OverlayLayer? _layer;
         private int _index;
         /// <summary>들어간 적 있는 단계(<see cref="TutorialStep.Enter"/>는 처음 한 번, 저절로 넘어가기도 처음 온 때만).</summary>
@@ -129,24 +157,29 @@ public static class TutorialSpotlight
         /// <summary>지금 단계에 처음 왔는지.</summary>
         private bool _firstVisit;
         /// <summary>
-        /// 지금 단계의 조건이 이 단계에서 거짓인 것을 본 뒤인지: 저절로 넘어가기는 조건이 거짓 → 참으로 바뀔 때만이다
+        /// 지금 단계의 조건이 이 단계에서 거짓인 것을 본 뒤인지: 저절로 넘어가기(<see cref="TutorialStep.AutoAdvance"/>)는 조건이 거짓 → 참으로 바뀔 때만이다
         /// (지난번에 해 둔 것 — 펼쳐 둔 설정 칸·끝난 준비 — 때문에 들어오자마자 넘어가 1 → 4처럼 건너뛰지 않게. 이미 참이면 '다음'으로).
         /// </summary>
         private bool _armed;
+        /// <summary>지금 단계에서 해 볼 일을 한 번이라도 했는지(그 뒤로는 되돌려도 '다음'이 켜진 채).</summary>
+        private bool _doneSeen;
         /// <summary>이 단계의 대상이 있던 메인 창 아닌 창(닫히면 튜토리얼 끝).</summary>
         private Window? _stepWindow;
         /// <summary>말풍선이 없는 앱 창을 통째로 덮은 어두운 판.</summary>
         private readonly Dictionary<Window, (OverlayLayer Layer, Shade Shade)> _dims = [];
+        /// <summary>지금 단계가 숨긴 창(<see cref="TutorialStep.HideWindows"/> — 단계를 떠나면 다시 보임).</summary>
+        private readonly List<Window> _hidden = [];
 
-        public Session(Window home, string title, IReadOnlyList<TutorialStep> steps, Action? completed)
+        public Session(Window home, string title, IReadOnlyList<TutorialStep> steps, Action? completed, Action? aborted)
         {
             _home = home;
             _completed = completed;
+            _aborted = aborted;
             _steps = steps;
             _counter = new TextBlock { Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, VerticalAlignment = VerticalAlignment.Center };
             var head = new DockPanel { Margin = new Thickness(0, 0, 0, 6) };
             var titleText = new TextBlock { Text = title, Foreground = HelpWindow.Yellow, FontWeight = FontWeight.Bold, FontSize = AppTheme.SmallFontSize, VerticalAlignment = VerticalAlignment.Center };
-            var close = Ui.IconButton(VectorIcon.X, UiStrings.Tutorial_Stop, (_, _) => TutorialSpotlight.Stop(), size: 11);
+            var close = Ui.IconButton(VectorIcon.X, UiStrings.Tutorial_Stop, (_, _) => Abort(), size: 11);
             close.Background = Brushes.Transparent;
             close.BorderThickness = new Thickness(0);
             close.Padding = new Thickness(3);
@@ -167,7 +200,7 @@ public static class TutorialSpotlight
             var buttons = new DockPanel { Margin = new Thickness(0, 10, 0, 0), LastChildFill = false };
             DockPanel.SetDock(_prev, Dock.Left);
             DockPanel.SetDock(_next, Dock.Right);
-            // 꼭 해야 하는 단계에서 '다음' 자리: 직접 해 보라는 표시(하면 저절로 넘어감).
+            // 꼭 해야 하는 단계: 직접 해 보라는 표시('다음' 옆, 저절로 넘어가는 단계는 '다음' 자리에).
             var hintText = new TextBlock { Text = UiStrings.Tutorial_DoIt, Foreground = HelpWindow.Yellow, FontSize = AppTheme.SmallFontSize, VerticalAlignment = VerticalAlignment.Center };
             _hint = Ui.Row(new IconView(VectorIcon.MousePointerClick, HelpWindow.Yellow) { Width = 14, Height = 14, VerticalAlignment = VerticalAlignment.Center }, hintText);
             _hint.VerticalAlignment = VerticalAlignment.Center;
@@ -175,6 +208,7 @@ public static class TutorialSpotlight
             buttons.Children.Add(_prev);
             buttons.Children.Add(_next);
             buttons.Children.Add(_hint);
+            _hint.Margin = new Thickness(0, 0, 10, 0);
             _bubble = new Border
             {
                 Background = AppTheme.PanelBrush,
@@ -183,7 +217,7 @@ public static class TutorialSpotlight
                 CornerRadius = new CornerRadius(10),
                 Padding = new Thickness(14, 12),
                 Width = 340,
-                Child = new StackPanel { Children = { head, _clip, _text, buttons } },
+                Child = new StackPanel { Children = { head, _clips, _text, buttons } },
                 BoxShadow = BoxShadows.Parse("0 6 24 0 #99000000"),
             };
             _shade.Blocked += FlashBubble;
@@ -207,9 +241,24 @@ public static class TutorialSpotlight
         {
             _timer.Stop();
             _home.Closed -= OnHomeClosed;
+            DetachMenu();
             Detach();
             foreach (var (layer, shade) in _dims.Values) layer.Children.Remove(shade);
             _dims.Clear();
+            ShowHidden();
+        }
+
+        /// <summary>앞 단계가 숨긴 창을 다시 보인다(닫힌 창은 빼고).</summary>
+        private void ShowHidden()
+        {
+            foreach (var w in _hidden)
+            {
+                if (w.PlatformImpl is null) continue;
+                // 숨기기 전처럼 주인 창 위에 뜨게(주인 없이 띄우면 메인 창 뒤로 갈 수 있음).
+                if (w.Owner is Window owner) w.Show(owner);
+                else w.Show();
+            }
+            _hidden.Clear();
         }
 
         private void EnterStep()
@@ -220,9 +269,18 @@ public static class TutorialSpotlight
             _prev.IsEnabled = _index > 0;
             _firstVisit = _visited.Add(_index);
             _armed = false;
+            _doneSeen = false;
             _counter.Text = UiStrings.FormatTutorial_StepCount(index: _index + 1, count: _steps.Count);
             if (_firstVisit) step.Enter?.Invoke();
-            ShowClip(step.Clip, step.BigClip);
+            ShowHidden();
+            foreach (var w in step.HideWindows?.Invoke() ?? [])
+            {
+                if (w is not { IsVisible: true }) continue;
+                w.Hide();
+                _hidden.Add(w);
+            }
+            ShowClips(step.Clips, step.BigClip);
+            DetachMenu();
             Update();
         }
 
@@ -246,6 +304,14 @@ public static class TutorialSpotlight
             EnterStep();
         }
 
+        /// <summary>도중에 그만둠(말풍선 닫기, 대상 창 닫기): 덮개를 걷고 <see cref="_aborted"/>.</summary>
+        private void Abort()
+        {
+            if (!ReferenceEquals(_session, this)) return;
+            TutorialSpotlight.Stop();
+            _aborted?.Invoke();
+        }
+
         /// <summary>
         /// 조건을 확인하고(맞으면 다음 단계), 대상 창에 덮개를 옮겨 비출 칸·말풍선 자리를 맞추고, 앱의 다른 창은 통째로 어둡게 덮는다.
         /// 이 단계의 대상이 있던 창(픽셀로 정리 창 등)을 닫으면 튜토리얼을 끝낸다 — 마지막 단계면 마친 것으로(적용 단추로 닫음).
@@ -254,24 +320,35 @@ public static class TutorialSpotlight
         {
             if (!ReferenceEquals(_session, this)) return;
             var step = Step;
+            bool locked = false;
             if (_firstVisit && step.Done is { } done)
             {
                 bool now = done();
-                if (now && _armed)
+                if (step.AutoAdvance)
                 {
-                    Advance();
-                    return;
+                    if (now && _armed)
+                    {
+                        Advance();
+                        return;
+                    }
+                    if (!now) _armed = true;
+                    locked = step.Required && !now;
                 }
-                if (!now) _armed = true;
-                // 꼭 해야 하는 단계는 아직 안 했을 때만 '다음'을 숨긴다(이미 해 둔 것이면 '다음'으로).
-                _next.IsVisible = !(step.Required && !now);
+                else
+                {
+                    if (now) _doneSeen = true;
+                    locked = step.Required && !_doneSeen;
+                }
             }
-            else _next.IsVisible = true;
-            _hint.IsVisible = !_next.IsVisible;
+            // 저절로 넘어가는 단계는 하기 전까지 '다음'을 숨기고 그 자리에 표시, 나머지는 '다음'을 꺼 두고 옆에 표시(해 보면 켜짐).
+            _next.IsVisible = !(locked && step.AutoAdvance);
+            _next.IsEnabled = !locked;
+            _next.Opacity = locked ? 0.4 : 1;
+            _hint.IsVisible = locked;
             if (_stepWindow is { IsVisible: false })
             {
                 if (_index == _steps.Count - 1) Advance();
-                else TutorialSpotlight.Stop();
+                else Abort();
                 return;
             }
             // 비출 곳: 컨트롤 안 사각형(TargetArea — 타임라인 칸 몇 개 등)이 있으면 그것, 아니면 컨트롤 전체.
@@ -307,8 +384,13 @@ public static class TutorialSpotlight
                 ? new Rect(dropAt, d.Area.Size).Inflate(HolePad).Intersect(new Rect(size))
                 : null;
             _shade.Set(hole, step.PassThrough, target is not null, pulse: _hint.IsVisible, drop: drop, dragAcross: step.DragAcross);
-            _text.Text = step.Text();
-            Place(hole, drop, size);
+            TutorialText.Fill(_text, step.Text());
+            foreach (var (block, text) in _captions) TutorialText.Fill(block, text());
+            UpdateMenu(step);
+            bool hidden = step.HideBubble?.Invoke() == true;
+            _bubble.IsVisible = !hidden;
+            if (hidden) _shade.SetTail(Side.None, default, default);
+            else Place(hole, drop, size);
         }
 
         /// <summary>
@@ -344,7 +426,8 @@ public static class TutorialSpotlight
         }
 
         /// <summary>
-        /// 말풍선 자리: 비춘 칸 오른쪽 → 왼쪽 → 아래 → 위(끌어 놓을 자리가 있으면 그 둘레도) 중 창 안에 들어가고 두 칸과 끄는 길을 가리지 않는 첫 자리
+        /// 말풍선 자리: 비춘 칸 오른쪽 → 왼쪽 → 아래 → 위(끌어 놓을 자리가 있으면 그 둘레도, 열린 메뉴가 있으면 그 둘레도) 중 창 안에 들어가고
+        /// 두 칸과 끄는 길, 열린 메뉴(<see cref="_menuRect"/> — 따로 뜨는 창이라 말풍선을 덮음)를 가리지 않는 첫 자리
         /// (칸이 없거나 어디도 안 되면 창 가운데). 꼬리는 붙은 칸 쪽으로.
         /// </summary>
         private void Place(Rect? hole, Rect? drop, Avalonia.Size area)
@@ -365,7 +448,7 @@ public static class TutorialSpotlight
                     (Side.Below, new(Clamp(r.Center.X - b.Width / 2, b.Width, area.Width), r.Bottom + Gap), r),
                     (Side.Above, new(Clamp(r.Center.X - b.Width / 2, b.Width, area.Width), r.Top - Gap - b.Height), r),
                 ];
-                // 가리면 안 되는 곳: 두 칸과(끌어 놓을 자리가 있으면) 대상에서 그 자리로 가는 길.
+                // 가리면 안 되는 곳: 두 칸과(끌어 놓을 자리가 있으면) 대상에서 그 자리로 가는 길, 열린 메뉴.
                 var avoid = new List<Rect> { h };
                 if (drop is { } d)
                 {
@@ -373,6 +456,11 @@ public static class TutorialSpotlight
                     avoid.Add(new Rect(h.Center, d.Center).Normalize().Inflate(18));
                 }
                 var options = drop is { } dd ? Around(h).Concat(Around(dd)) : Around(h);
+                if (_menuRect is { } menu)
+                {
+                    avoid.Add(menu);
+                    options = options.Concat(Around(menu));
+                }
                 foreach (var (s, p, r) in options)
                 {
                     var rect = new Rect(p, b);
@@ -388,7 +476,8 @@ public static class TutorialSpotlight
                     foreach (var (s, p, r) in options)
                     {
                         var rect = new Rect(p, b);
-                        if (p.X < Edge || p.Y < Edge || rect.Right > area.Width - Edge || rect.Bottom > area.Height - Edge || rect.Intersects(h)) continue;
+                        if (p.X < Edge || p.Y < Edge || rect.Right > area.Width - Edge || rect.Bottom > area.Height - Edge || rect.Intersects(h)
+                            || _menuRect is { } open && rect.Intersects(open)) continue;
                         at = p;
                         side = s;
                         anchor = r;
@@ -400,14 +489,33 @@ public static class TutorialSpotlight
             _shade.SetTail(side, new Rect(at, b), anchor);
         }
 
-        /// <summary>단계 움짤을 말풍선 위쪽에(없으면 숨김). 움짤이 있으면 말풍선을 조금(<paramref name="big"/>면 크게) 넓힌다.</summary>
-        private void ShowClip(string? name, bool big)
+        /// <summary>
+        /// 단계 움짤을 말풍선 위쪽에(없으면 숨김). 움짤이 있으면 말풍선을 넓힌다: 하나면 400(<paramref name="big"/>면 640), 둘 이상이면 좌우로 나란히 840.
+        /// </summary>
+        private void ShowClips(IReadOnlyList<TutorialClip> clips, bool big)
         {
-            var clip = name is null ? null
-                : AnimatedImage.TryCreate(() => typeof(TutorialSpotlight).Assembly.GetManifestResourceStream($"Chickxel.Tutorial.clip-{name}.webp"));
-            _clip.Child = clip;
-            _clip.IsVisible = clip is not null;
-            _bubble.Width = clip is null ? 340 : big ? 640 : 400;
+            _clips.Children.Clear();
+            _clips.ColumnDefinitions.Clear();
+            _captions.Clear();
+            foreach (var clip in clips)
+            {
+                var image = AnimatedImage.TryCreate(() => typeof(TutorialSpotlight).Assembly.GetManifestResourceStream($"Chickxel.Tutorial.clip-{clip.Name}.webp"));
+                if (image is null) continue;
+                var cell = new StackPanel { Spacing = 6, Margin = new Thickness(_clips.ColumnDefinitions.Count == 0 ? 0 : 10, 0, 0, 0) };
+                cell.Children.Add(new Border { CornerRadius = new CornerRadius(6), ClipToBounds = true, HorizontalAlignment = HorizontalAlignment.Center, Child = image });
+                if (clip.Caption is { } caption)
+                {
+                    var block = new TextBlock { Foreground = AppTheme.TextBrush, TextWrapping = TextWrapping.Wrap, LineHeight = 20 };
+                    _captions.Add((block, caption));
+                    cell.Children.Add(block);
+                }
+                Grid.SetColumn(cell, _clips.ColumnDefinitions.Count);
+                _clips.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
+                _clips.Children.Add(cell);
+            }
+            int count = _clips.ColumnDefinitions.Count;
+            _clips.IsVisible = count > 0;
+            _bubble.Width = count switch { 0 => 340, 1 => big ? 640 : 400, _ => 840 };
         }
 
         /// <summary>막힌 어두운 곳을 누르면 말풍선 테두리를 잠깐 희게(여기를 보라는 표시).</summary>
@@ -416,6 +524,83 @@ public static class TutorialSpotlight
             _bubble.BorderBrush = Brushes.White;
             DispatcherTimer.RunOnce(() => _bubble.BorderBrush = HelpWindow.Yellow, TimeSpan.FromMilliseconds(350));
         }
+
+        // ── 열린 메뉴 안의 눌러야 할 항목(TutorialStep.MenuItem) ──
+        // 메뉴는 따로 뜨는 창(팝업)이라 덮개가 닿지 않는다: 그 항목에 노란 테두리(꾸밈 층 — 팝업 안에도 있음)를 숨 쉬듯 두르고, 같은 메뉴의 다른 항목은 누르기를 막는다.
+
+        private MenuItem? _menuItem;
+        private Border? _menuGlow;
+        /// <summary>열린 메뉴(팝업 창)의 자리(덮개 좌표) — 말풍선이 그 밑에 깔려 가려지지 않게 피한다. 메뉴가 닫혀 있으면 null.</summary>
+        private Rect? _menuRect;
+        private readonly List<MenuItem> _menuBlocked = [];
+
+        /// <summary>
+        /// 단계의 메뉴 항목이 열린 메뉴에 보이면 감싸고 다른 항목을 막고, 메뉴가 닫히면 걷는다.
+        /// 항목은 메뉴 줄·하위 메뉴(펼친 MenuItem 안) 것도, 우클릭 메뉴(열린 ContextMenu 바로 안 — 하위 메뉴를 펼칠 항목 등) 것도 된다.
+        /// </summary>
+        private void UpdateMenu(TutorialStep step)
+        {
+            var item = step.MenuItem?.Invoke();
+            bool open = item is { Parent: MenuItem { IsSubMenuOpen: true } or ContextMenu { IsOpen: true } } && item.IsAttachedToVisualTree();
+            if (!open)
+            {
+                DetachMenu();
+                return;
+            }
+            if (!ReferenceEquals(item, _menuItem))
+            {
+                DetachMenu();
+                if (AdornerLayer.GetAdornerLayer(item!) is not { } layer) return;
+                _menuItem = item;
+                _menuGlow = new Border
+                {
+                    BorderBrush = HelpWindow.Yellow,
+                    BorderThickness = new Thickness(2),
+                    CornerRadius = new CornerRadius(5),
+                    IsHitTestVisible = false,
+                };
+                AdornerLayer.SetAdornedElement(_menuGlow, item);
+                layer.Children.Add(_menuGlow);
+                foreach (var other in ((ItemsControl)item!.Parent!).Items.OfType<MenuItem>().Where(m => !ReferenceEquals(m, item)))
+                {
+                    other.AddHandler(InputElement.PointerPressedEvent, BlockMenuPress, RoutingStrategies.Tunnel, handledEventsToo: true);
+                    other.AddHandler(InputElement.PointerReleasedEvent, BlockMenuRelease, RoutingStrategies.Tunnel, handledEventsToo: true);
+                    _menuBlocked.Add(other);
+                }
+            }
+            // 메뉴 팝업의 자리를 덮개 좌표로(말풍선 자리를 정할 때 피함): 따로 뜬 창(PopupRoot)이면 화면 좌표를 거쳐, 덮개 층 안 팝업이면 바로.
+            _menuRect = item!.GetVisualAncestors().OfType<IPopupHost>().FirstOrDefault() switch
+            {
+                PopupRoot popup => new Rect(_root.PointToClient(popup.PointToScreen(default)), popup.ClientSize).Inflate(4),
+                Visual host when host.TranslatePoint(default, _root) is { } at => new Rect(at, host.Bounds.Size).Inflate(4),
+                _ => null,
+            };
+            // 숨 쉬듯(1.6초 주기) 밝아졌다 흐려진다.
+            double phase = DateTime.UtcNow.TimeOfDay.TotalSeconds % 1.6 / 1.6;
+            _menuGlow!.Opacity = 0.55 + 0.45 * Math.Cos(phase * 2 * Math.PI);
+        }
+
+        private void DetachMenu()
+        {
+            if (_menuGlow?.Parent is AdornerLayer layer) layer.Children.Remove(_menuGlow);
+            foreach (var other in _menuBlocked)
+            {
+                other.RemoveHandler(InputElement.PointerPressedEvent, BlockMenuPress);
+                other.RemoveHandler(InputElement.PointerReleasedEvent, BlockMenuRelease);
+            }
+            _menuBlocked.Clear();
+            _menuGlow = null;
+            _menuItem = null;
+            _menuRect = null;
+        }
+
+        private void BlockMenuPress(object? sender, PointerPressedEventArgs e)
+        {
+            e.Handled = true;
+            FlashBubble();
+        }
+
+        private void BlockMenuRelease(object? sender, PointerReleasedEventArgs e) => e.Handled = true;
 
         /// <summary>덮개를 <paramref name="top"/>의 덮개 층으로 옮긴다(이미 거기면 그대로).</summary>
         private void Attach(TopLevel top)

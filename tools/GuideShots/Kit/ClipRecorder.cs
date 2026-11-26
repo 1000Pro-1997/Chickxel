@@ -333,6 +333,52 @@ public sealed class ClipRecorder : IDisposable
     /// <summary>바로 다음에 찍는 프레임(없으면 마지막 프레임)을 MP4 포스터(JPG)로 쓴다.</summary>
     public void MarkPoster() => _poster = _frames.Count;
 
+    // ───────────── 알림 표 ─────────────
+
+    /// <summary>프레임마다 얹는 알림 표(왼쪽 위 자리 — 메인 창 좌표, 글, 좋은 결과인지): 바뀐 결과를 짚어 준다(예: "갱신!" · "갱신 안 됨").</summary>
+    private readonly List<(Point At, string Text, bool Ok)> _notes = [];
+
+    /// <summary><paramref name="at"/>(표 왼쪽 위, 메인 창 좌표)에 알림 표를 띄운다: <paramref name="ok"/>면 초록 바탕 + 체크, 아니면 빨강 바탕 + X(벡터).</summary>
+    public void Note(Point at, string text, bool ok) => _notes.Add((at, text, ok));
+
+    /// <summary>띄운 알림 표를 모두 지운다.</summary>
+    public void ClearNotes() => _notes.Clear();
+
+    /// <summary>프레임마다 얹는 번호 동그라미(가운데 — 메인 창 좌표, 글, 색): 같은 것을 두 곳에서 같은 번호·색으로 짚을 때(목록 줄 ↔ 파일 칸).</summary>
+    private readonly List<(Point At, string Text, Color Color)> _badges = [];
+
+    /// <summary><paramref name="center"/>(메인 창 좌표)에 번호 동그라미를 띄운다(빼지 않으면 끝까지).</summary>
+    public void Badge(Point center, string text, Color color) => _badges.Add((center, text, color));
+
+    private void DrawNotes(DrawingContext ctx, Func<Point, Point> map)
+    {
+        foreach (var (at, text, ok) in _notes)
+        {
+            var p = map(at);
+            var ft = new FormattedText(text, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
+                new Typeface("Malgun Gothic, Segoe UI", FontStyle.Normal, FontWeight.Bold), 12, Brushes.White);
+            const double icon = 12, pad = 6;
+            var box = new Rect(p.X, p.Y, pad + icon + 4 + ft.Width + pad, Math.Max(icon, ft.Height) + 6);
+            ctx.DrawRectangle(new SolidColorBrush(ok ? Color.FromRgb(46, 125, 50) : Color.FromRgb(178, 59, 59)),
+                new Pen(new SolidColorBrush(Color.FromArgb(200, 255, 255, 255)), 1), box, 5, 5);
+            double ix = box.X + pad, iy = box.Y + (box.Height - icon) / 2;
+            var pen = new Pen(Brushes.White, 2, lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round);
+            ctx.DrawGeometry(null, pen, Geometry.Parse(ok
+                ? FormattableString.Invariant($"M{ix + 1},{iy + 6.5} L{ix + 4.5},{iy + 10} L{ix + 11},{iy + 2.5}")
+                : FormattableString.Invariant($"M{ix + 2},{iy + 2} L{ix + 10},{iy + 10} M{ix + 10},{iy + 2} L{ix + 2},{iy + 10}")));
+            ctx.DrawText(ft, new Point(ix + icon + 4, box.Y + (box.Height - ft.Height) / 2));
+        }
+        foreach (var (at, text, color) in _badges)
+        {
+            var c = map(at);
+            const double r = 9;
+            ctx.DrawEllipse(new SolidColorBrush(color), new Pen(Brushes.White, 1.5), c, r, r);
+            var ft = new FormattedText(text, System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
+                new Typeface("Segoe UI", FontStyle.Normal, FontWeight.Bold), 12, Brushes.White);
+            ctx.DrawText(ft, new Point(c.X - ft.Width / 2, c.Y - ft.Height / 2));
+        }
+    }
+
     // ───────────── 찍기 ─────────────
 
     private void Snap(int ms)
@@ -386,6 +432,7 @@ public sealed class ClipRecorder : IDisposable
             using (ctx.PushTransform(Matrix.CreateTranslation(-_crop.X, bar - _crop.Y)))
             {
                 DrawScene(ctx, captures);
+                DrawNotes(ctx, p => p);
                 DrawCursor(ctx, Pointer, Cursor, _button is not null || _ringAfterUp);
             }
         }
@@ -447,16 +494,16 @@ public sealed class ClipRecorder : IDisposable
                 }
                 x = d.Right + RegionGap;
             }
-            DrawCursor(ctx, MapPointer(regions, dest), Cursor, _button is not null || _ringAfterUp);
+            DrawNotes(ctx, p => MapPoint(p, regions, dest));
+            DrawCursor(ctx, MapPoint(Pointer, regions, dest), Cursor, _button is not null || _ringAfterUp);
         }
         foreach (var c in captures) c.Dispose();
         return target;
     }
 
-    /// <summary>포인터(메인 창 좌표)를 붙인 그림 좌표로: 영역 안이면 그 영역 자리로, 두 영역 사이면 간격 안에서 가로로 비례해(세로는 두 자리 사이를 같은 비율로).</summary>
-    private Point MapPointer(IReadOnlyList<Rect> regions, IReadOnlyList<Rect> dest)
+    /// <summary>점(메인 창 좌표 — 포인터·알림 표)을 붙인 그림 좌표로: 영역 안이면 그 영역 자리로, 두 영역 사이면 간격 안에서 가로로 비례해(세로는 두 자리 사이를 같은 비율로).</summary>
+    private static Point MapPoint(Point p, IReadOnlyList<Rect> regions, IReadOnlyList<Rect> dest)
     {
-        var p = Pointer;
         Point In(int i) => new(dest[i].X + (p.X - regions[i].X), dest[i].Y + (p.Y - regions[i].Y));
         for (int i = 0; i < regions.Count; i++)
             if (p.X <= regions[i].Right || i == regions.Count - 1)

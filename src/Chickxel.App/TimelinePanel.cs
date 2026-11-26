@@ -1582,10 +1582,10 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
         {
             Item(UiStrings.S_TimelinePanel_ShowLayerMenu_AA2FF06061, AddLayer),
             Item(UiStrings.S_TimelinePanel_ShowLayerMenu_13B10F0946, AddEmptyLayer),
-            Item(UiStrings.Tile_MenuAddLayer, AddTilemapLayer),
+            (_tutorialTilemapItem = Item(UiStrings.Tile_MenuAddLayer, AddTilemapLayer)),
             Item(UiStrings.S_TimelinePanel_ShowLayerMenu_804EB6B1D9, () => AddChildTo(index), !layer.IsTilemap),
         };
-        items.Add(new MenuItem { Header = Plain(UiStrings.Timeline_NewMenu), ItemsSource = create });
+        items.Add(_tutorialNewMenu = new MenuItem { Header = Plain(UiStrings.Timeline_NewMenu), ItemsSource = create });
         items.Add(new Separator());
         items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_1524FC7BD9, DuplicateLayer));
         if (layer.Parent is not null) items.Add(Item(UiStrings.Timeline_MoveOutOfParent, MoveOutOfParent));
@@ -2549,9 +2549,12 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
             return rows.GetRange(Math.Min(a, b), Math.Abs(a - b) + 1);
         }
 
-        /// <summary>레이어 <paramref name="layer"/>의 프레임 <paramref name="from"/>~<paramref name="to"/>를 셀 묶음(한 덩어리)으로 골랐는지(튜토리얼 '효과 쓰기').</summary>
+        /// <summary>
+        /// 레이어 <paramref name="layer"/>의 프레임 <paramref name="from"/>~<paramref name="to"/>를 셀 묶음(한 덩어리)으로 골랐는지(튜토리얼 '효과 쓰기').
+        /// 끌어 고르는 중이면 아직 아님(지나가는 칸에서 넘어가지 않게 — 놓아야 참).
+        /// </summary>
         internal bool CelsSelected(int layer, int from, int to)
-            => _kind == SelKind.Cels && !ScatteredCels && Range == (from, to) && SelectedRowLayers().Contains(layer);
+            => _marquee is null && _kind == SelKind.Cels && !ScatteredCels && Range == (from, to) && SelectedRowLayers().Contains(layer);
 
         /// <summary>셀 묶음을 고른다: 시작 칸(현재) = (<paramref name="layer"/>, <paramref name="frameA"/>), 끝 = (<paramref name="end"/>, <paramref name="frameB"/>).</summary>
         public void SelectRect(int layer, int frameA, Layer? end, int frameB)

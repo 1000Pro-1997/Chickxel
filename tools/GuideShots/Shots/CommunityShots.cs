@@ -36,7 +36,10 @@ internal static class CommunityShots
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            if (request.RequestUri!.AbsolutePath.TrimEnd('/') == "/api/me")
+            string path = request.RequestUri!.AbsolutePath.TrimEnd('/');
+            // 레벨 튜토리얼 새싹 보상 받기도 내 정보로 답한다(받은 횟수는 튜토리얼 점검이 봄).
+            if (path == "/api/me/tutorial-rewards" && request.Method == HttpMethod.Post) TutorialClaims++;
+            if (path is "/api/me" or "/api/me/tutorial-rewards")
             {
                 var user = request.Headers.Authorization?.Parameter == "t2" ? Other : Me;
                 string json = $$"""{"id":"{{user.Id}}","handle":"{{user.Handle}}","name":"{{user.Name}}","createdAt":"{{user.CreatedAt}}","level":{{user.Level}},"xp":{{user.Xp}},"levelStartXp":{{user.LevelStartXp}},"nextLevelXp":{{user.NextLevelXp}},"rewards":{{JsonSerializer.Serialize(user.Rewards, RewardsJson)}}}""";
@@ -45,6 +48,9 @@ internal static class CommunityShots
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("""{"error":"not found"}""", Encoding.UTF8, "application/json") });
         }
     }
+
+    /// <summary>가짜 서버가 받은 <c>POST /api/me/tutorial-rewards</c> 수.</summary>
+    internal static int TutorialClaims;
 
     private sealed class MemoryAccounts(CommunityAccounts accounts) : ICommunityAccountStore
     {

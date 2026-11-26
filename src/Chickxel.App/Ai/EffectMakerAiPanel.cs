@@ -452,9 +452,10 @@ internal sealed class EffectMakerAiPanel : Border
     private bool SendMessage(string text, IReadOnlyList<ChatAttachment> attachments)
     {
         if (_session is not { } session) return false;
-        // 설정에서 CLI 경로를 바꿨으면 다시 확인한다(보내지 않음 — 확인 뒤 다시 보냄).
+        // 설정에서 CLI 경로를 바꿨으면 다시 확인한다(보내지 않음 — AI 채팅처럼 알리고, 확인 뒤 다시 보냄).
         if (_cliPath is not null && _cliPath != _provider.Locate(_settings))
         {
+            AddLine(UiStrings.Chat_CliPathChanged, error: false);
             _ = CheckAsync();
             return false;
         }

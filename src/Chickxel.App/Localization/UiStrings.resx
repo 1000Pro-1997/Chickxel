@@ -10301,12 +10301,13 @@ Enter나 다른 도구·레이어·프레임으로 바꾸면 기본색(오른쪽
   <data name="Tutorial_Ai_Desc" xml:space="preserve"><value>AI 채팅에서 Claude·Codex에 로그인하고, 외부 AI 앱도 MCP로 연결합니다.</value></data>
   <data name="Tutorial_Model_Title" xml:space="preserve"><value>3D를 픽셀 아트로</value></data>
   <data name="Tutorial_Model_Desc" xml:space="preserve"><value>3D 모델을 원하는 각도·빛·외곽선으로 픽셀 아트 프레임으로 바꿉니다.</value></data>
-  <data name="Tutorial_Md_Open" xml:space="preserve"><value>3D 모델(glb·gltf·obj·fbx)을 픽셀 아트로 바꾸는 창은 메뉴 {menu}로 엽니다. 파일 칸에서 모델 파일을 열어도 이 창이 뜹니다. 메뉴를 열어 눌러 보세요.</value><comment>menu = 메뉴 길(3D > 3D 모델 열기…).</comment></data>
-  <data name="Tutorial_Md_Load" xml:space="preserve"><value>모델은 이 창에 끌어다 놓거나 '{button}'로 넣습니다. 지금은 예시 병아리 모델을 넣었습니다. 왼쪽이 원본 모델, 오른쪽이 그 모델을 찍은 픽셀 결과입니다.</value><comment>button = 모델 열기 단추 이름.</comment></data>
-  <data name="Tutorial_Md_Rotate" xml:space="preserve"><value>왼쪽 원본 모델을 끌어 돌려 보세요. 보는 각도가 바뀌면 오른쪽 픽셀 결과도 바로 바뀝니다. 휠로 두 칸을 함께 크게 볼 수 있습니다.</value></data>
+  <data name="Tutorial_Md_Open" xml:space="preserve"><value>3D 모델(glb·gltf·obj·fbx)을 픽셀 아트로 바꾸는 창을 엽니다. 메뉴 [[{menu}]]를 눌러 보세요. 나중에는 파일 칸에서 모델 파일을 열어도 이 창이 뜹니다.</value><comment>menu = 메뉴 길(3D > 3D 모델 열기…). [[…]]은 누를 것을 초록 칸으로 보이는 표시(그대로 둠).</comment></data>
+  <data name="Tutorial_Md_Load" xml:space="preserve"><value>모델은 이 창에 끌어다 놓거나 [[{button}]]로 넣습니다. 지금은 예시 병아리 모델을 넣었습니다. 왼쪽이 원본 모델, 오른쪽이 그 모델을 찍은 픽셀 결과입니다.</value><comment>button = 모델 열기 단추 이름.</comment></data>
+  <data name="Tutorial_Md_Rotate" xml:space="preserve"><value>왼쪽 원본 모델을 [[끌어서]] 돌려 보세요. 보는 각도가 바뀌면 오른쪽 픽셀 결과도 바로 바뀝니다. [[휠]]로 두 칸을 함께 크게 볼 수 있습니다.</value></data>
   <data name="Tutorial_Md_Output" xml:space="preserve"><value>출력에서 결과 크기와 프레임을 정합니다. 프레임은 한 장, 빙글 도는 돌려 보기, 모델에 든 애니메이션 중에서 고릅니다. 크기를 바꿔 보세요.</value></data>
-  <data name="Tutorial_Md_Look" xml:space="preserve"><value>오른쪽 묶음으로 결과 모양을 다듬습니다. 카메라(각도·확대), 빛(방향·명암 단계), 픽셀 다듬기(색 수·가장자리), 외곽선. 맨 위 프리셋으로 한 번에 바꿀 수도 있습니다.</value></data>
-  <data name="Tutorial_Md_Import" xml:space="preserve"><value>'{button}'을 누르면 지금 설정으로 프레임을 그려 새 탭으로 엽니다. 누르면 튜토리얼이 끝납니다.</value><comment>button = 가져오기 단추 이름.</comment></data>
+  <data name="Tutorial_Md_Look" xml:space="preserve"><value>오른쪽 묶음으로 결과 모양을 다듬습니다. 카메라(각도·확대), 빛(방향·명암 단계), 픽셀 다듬기(색 수·가장자리), 외곽선. 맨 위 프리셋으로 한 번에 바꿀 수도 있습니다. 마음껏 바꿔 보세요.</value></data>
+  <data name="Tutorial_Md_Import" xml:space="preserve"><value>[[{button}]]을 누르면 지금 설정으로 프레임을 그려 새 탭으로 엽니다. 눌러 보세요.</value><comment>button = 가져오기 단추 이름.</comment></data>
+  <data name="Tutorial_Md_Done" xml:space="preserve"><value>가져온 병아리 프레임이 새 탭의 캔버스에 들어갔습니다. 이제 연필·지우개 같은 도구로 자유롭게 고쳐 보세요.</value></data>
   <data name="Tutorial_More" xml:space="preserve"><value>더 알아보기</value></data>
   <data name="Tutorial_NeedsFirst" xml:space="preserve"><value>먼저 마칠 튜토리얼:</value></data>
   <data name="Tutorial_Maker_Title" xml:space="preserve"><value>효과 만들기</value></data>
@@ -10323,49 +10324,58 @@ Enter나 다른 도구·레이어·프레임으로 바꾸면 기본색(오른쪽
   <data name="Tutorial_Tilemap_Desc" xml:space="preserve"><value>타일셋의 타일을 칸에 깔아 맵을 만듭니다.</value></data>
   <data name="Tutorial_Skins_Title" xml:space="preserve"><value>레이어 묶기와 스킨</value></data>
   <data name="Tutorial_Skins_Desc" xml:space="preserve"><value>부모·자식 레이어, 스킨 갈아 끼우기, 겹쳐 쌓기.</value></data>
-  <data name="Tutorial_Cv_View" xml:space="preserve"><value>예시 그림을 새 탭으로 열었습니다. 캔버스에서 휠을 굴리면 커서 자리를 기준으로 확대·축소하고, 가운데 단추로 끌거나 스페이스를 누른 채 끌면 보는 자리를 옮깁니다(그림은 그대로).</value></data>
-  <data name="Tutorial_Cv_Mouse" xml:space="preserve"><value>연필 같은 그리기 도구는 왼쪽 단추가 기본색, 오른쪽 단추가 보조색으로 칠합니다. 오른쪽 도구 설정의 '{option}'를 켜면 오른쪽 단추가 지우개가 됩니다. Alt를 누른 채 누르면 그 자리 색을 집고(왼쪽 = 기본색, 오른쪽 = 보조색), Shift+클릭은 마지막 점에서 직선을 긋습니다. 위 막대에 지금 도구의 단추 설명이 늘 보입니다.</value><comment>option = '오른쪽 버튼 = 지우개' 설정 이름.</comment></data>
-  <data name="Tutorial_Cv_Ctrl" xml:space="preserve"><value>Ctrl을 누르고 있는 동안은 잠깐 옮기기 도구가 됩니다. 그대로 끌면 고른 영역(없으면 지금 레이어 그림)을 옮기고, 떼면 원래 도구로 돌아옵니다. Ctrl을 누른 채 오른쪽 단추로 끌면 피벗(기준점)은 그 자리에 둔 채 옮깁니다. Ctrl+휠은 붓 크기를 바꿉니다.</value></data>
-  <data name="Tutorial_Cv_Resize" xml:space="preserve"><value>캔버스 크기는 {key}(메뉴 {menu})로 바꿉니다. 눌러 보세요.</value><comment>key = 단축키(Ctrl+Alt+C), menu = 메뉴 길.</comment></data>
-  <data name="Tutorial_Cv_ResizeEdit" xml:space="preserve"><value>캔버스 둘레에 손잡이가 생겼습니다. 손잡이를 왼쪽 단추로 끌면 그림까지 함께 늘고 줄며, 오른쪽 단추로 끌면 캔버스만 바뀌어 여백이 생기거나 잘립니다. 안쪽을 끌면 그림을 옮깁니다. Shift는 비율 유지, Alt는 가운데 기준입니다. Enter로 적용하거나 Esc로 취소하면 넘어갑니다.</value></data>
-  <data name="Tutorial_Cv_Layer" xml:space="preserve"><value>지금 레이어만 크기·자리를 바꾸려면 {key}(메뉴 {menu})입니다. 눌러 보세요.</value><comment>key = 단축키(Alt+Shift+C), menu = 메뉴 길(레이어 전체 변형).</comment></data>
-  <data name="Tutorial_Cv_LayerEdit" xml:space="preserve"><value>주황 상자가 지금 레이어를 모든 프레임에 걸쳐 감쌉니다. 손잡이를 끌어 키우거나 줄이고, 안쪽을 끌어 옮깁니다. 캔버스 크기는 그대로입니다. Enter로 적용하거나 Esc로 취소하면 튜토리얼이 끝납니다.</value></data>
-  <data name="Tutorial_Tm_Create" xml:space="preserve"><value>빈 예시 그림을 새 탭으로 열었습니다. 타일맵은 같은 크기의 타일을 칸에 깔아 맵을 만드는 레이어입니다. 메뉴 {menu}({key})로 타일맵 레이어를 만드세요. 타임라인 우클릭 > 새로 만들기에도 있습니다.</value><comment>menu = 메뉴 길(프레임·레이어 > 새 타일맵 레이어), key = 단축키.</comment></data>
-  <data name="Tutorial_Tm_Tileset" xml:space="preserve"><value>타일맵 레이어를 고르면 왼쪽에 타일셋이 뜹니다. 타일셋은 같은 크기로 나뉜 타일 모음입니다. 타일 하나를 누르거나 여러 칸을 끌어 고르면 붓에 담깁니다. 타일셋은 여러 개 더하고 직접 그릴 수도 있습니다.</value></data>
+  <data name="Tutorial_Cv_View" xml:space="preserve"><value>예시 그림을 새 탭으로 열었습니다. 캔버스에서 [[휠]]을 굴리면 커서 자리를 기준으로 확대·축소하고, [[가운데 단추]]로 끌거나 [[Space]]를 누른 채 끌면 보는 자리를 옮깁니다(그림은 그대로).</value></data>
+  <data name="Tutorial_Cv_Mouse" xml:space="preserve"><value>연필 같은 그리기 도구는 [[왼쪽 단추]]가 기본색, [[오른쪽 단추]]가 보조색으로 칠합니다. 오른쪽 도구 설정의 [[{option}]]를 켜면 오른쪽 단추가 지우개가 됩니다. [[Alt]]를 누른 채 누르면 그 자리 색을 집고(왼쪽 = 기본색, 오른쪽 = 보조색), [[Shift+클릭]]은 마지막 점에서 직선을 긋습니다. 위 막대에 지금 도구의 단추 설명이 늘 보입니다.</value><comment>option = '오른쪽 버튼 = 지우개' 설정 이름.</comment></data>
+  <data name="Tutorial_Cv_Ctrl" xml:space="preserve"><value>[[Ctrl]]을 누르고 있는 동안은 잠깐 옮기기 도구가 됩니다. 그대로 끌면 고른 영역(없으면 지금 레이어 그림)을 옮기고, 떼면 원래 도구로 돌아옵니다. [[Ctrl]]을 누른 채 [[오른쪽 단추]]로 끌면 피벗(기준점)은 그 자리에 둔 채 옮깁니다. [[Ctrl+휠]]은 붓 크기를 바꿉니다.</value></data>
+  <data name="Tutorial_Cv_Resize" xml:space="preserve"><value>캔버스 크기는 [[{key}]](메뉴 [[{menu}]])로 바꿉니다. 눌러 보세요.</value><comment>key = 단축키(Ctrl+Alt+C), menu = 메뉴 길.</comment></data>
+  <data name="Tutorial_Cv_ResizeEdit" xml:space="preserve"><value>캔버스 둘레에 손잡이가 생겼습니다. 손잡이를 [[왼쪽 단추]]로 끌면 그림까지 함께 늘고 줄며, [[오른쪽 단추]]로 끌면 캔버스만 바뀌어 여백이 생기거나 잘립니다. 안쪽을 끌면 그림을 옮깁니다. [[Shift]]는 비율 유지, [[Alt]]는 가운데 기준입니다. [[Enter]]로 적용하거나 [[Esc]]로 취소합니다.</value></data>
+  <data name="Tutorial_Cv_Layer" xml:space="preserve"><value>지금 레이어만 크기·자리를 바꾸려면 [[{key}]](메뉴 [[{menu}]])입니다. 눌러 보세요.</value><comment>key = 단축키(Alt+Shift+C), menu = 메뉴 길(레이어 전체 변형).</comment></data>
+  <data name="Tutorial_Cv_LayerEdit" xml:space="preserve"><value>주황 상자가 지금 레이어를 모든 프레임에 걸쳐 감쌉니다. 손잡이를 끌어 키우거나 줄이고, 안쪽을 끌어 옮깁니다. 캔버스 크기는 그대로입니다. [[Enter]]로 적용하거나 [[Esc]]로 취소합니다.</value></data>
+  <data name="Tutorial_Tm_Create" xml:space="preserve"><value>빈 예시 그림을 새 탭으로 열었습니다. 타일맵은 같은 크기의 타일을 칸에 깔아 맵을 만드는 레이어입니다. 타임라인의 레이어 이름을 [[우클릭]]하고 [[{newMenu}]] → [[{item}]]를 고르세요. 메뉴 [[{menu}]]([[{key}]])로도 만듭니다.</value><comment>newMenu = 우클릭 메뉴 '새로 만들기', item = '새 타일맵 레이어', menu = 메뉴 길(프레임·레이어 > 새 타일맵 레이어), key = 단축키.</comment></data>
+  <data name="Tutorial_Tm_Tileset" xml:space="preserve"><value>타일맵 레이어를 고르면 왼쪽에 타일셋이 뜹니다. 타일셋은 같은 크기로 나뉜 타일 모음입니다. 타일 하나를 [[클릭]]하거나 여러 칸을 끌어 고르면 붓에 담깁니다. 타일셋은 여러 개 더하고 직접 그릴 수도 있습니다.</value></data>
   <data name="Tutorial_Tm_Tools" xml:space="preserve"><value>타일맵을 고르는 동안 도구 막대가 타일 도구로 바뀝니다: 타일 붓, 자동 타일, 지우개, 사각형, 채우기, 타일 집기, 고르기.</value></data>
-  <data name="Tutorial_Tm_Paint" xml:space="preserve"><value>캔버스를 눌러 고른 타일을 칸에 깔아 보세요. 끌면 이어서 깝니다.</value></data>
+  <data name="Tutorial_Tm_Paint" xml:space="preserve"><value>캔버스를 [[클릭]]해 고른 타일을 칸에 깔아 보세요. 끌면 이어서 깝니다.</value></data>
   <data name="Tutorial_Tm_Cells" xml:space="preserve"><value>이 단추로 칸 격자를 켜고 끕니다. 타일맵 하나는 모든 프레임에 같이 쓰이고, 다른 레이어와 겹쳐 쌓을 수 있습니다.</value></data>
-  <data name="Tutorial_Sk_Child" xml:space="preserve"><value>레이어는 다른 레이어 안에 자식으로 넣어 묶을 수 있습니다. 늑대 레이어 이름을 우클릭해 새로 만들기 > 새 자식 레이어…를 고르거나 메뉴 {menu}({key})로 자식을 만들어 보세요. 레이어 이름을 Shift를 누른 채 다른 레이어 위에 끌어 놓아도 그 레이어의 자식이 됩니다.</value><comment>menu = 메뉴 길(프레임·레이어 > 새 자식 레이어…), key = 단축키.</comment></data>
+  <data name="Tutorial_Sk_Child" xml:space="preserve"><value>레이어는 다른 레이어 안에 자식으로 넣어 묶을 수 있습니다. 늑대 레이어 이름을 [[우클릭]] → [[새로 만들기]] → [[새 자식 레이어…]]를 고르거나 메뉴 [[{menu}]]([[{key}]])로 자식을 만들어 보세요. 레이어 이름을 [[Shift]]를 누른 채 다른 레이어 위에 끌어 놓아도 그 레이어의 자식이 됩니다.</value><comment>menu = 메뉴 길(프레임·레이어 > 새 자식 레이어…), key = 단축키.</comment></data>
   <data name="Tutorial_Sk_Tree" xml:space="preserve"><value>자식은 부모 아래에 들여 써서 보이고, 이름 앞 삼각형으로 묶음을 접고 펼칩니다. 부모를 옮기면 자식도 같이 움직이고, 부모를 숨기거나 잠그면 자식도 함께, 부모 불투명도는 묶음 전체에 걸립니다. 자식 이름을 왼쪽으로 끌면 묶음 밖으로 나옵니다.</value></data>
-  <data name="Tutorial_Sk_Add" xml:space="preserve"><value>스킨은 한 레이어의 그림을 통째로 갈아 끼우는 판입니다(옷·표정·색 바꾸기). 늑대 레이어 이름을 우클릭해 '{menu}' > '{copy}'를 눌러 지금 그림을 복제한 스킨을 만들어 보세요.</value><comment>menu = 스킨 추가 메뉴 이름, copy = 그 하위 '지금 그림 복제…'.</comment></data>
-  <data name="Tutorial_Sk_Switch" xml:space="preserve"><value>스킨이 둘 이상이면 이름 줄에 스킨 칩이 생깁니다. 칩을 눌러 스킨을 바꿔 보세요. 바꾸면 그 레이어의 모든 프레임 그림이 바뀌고, 크기·자리·피벗은 그대로입니다.</value></data>
+  <data name="Tutorial_Sk_Add" xml:space="preserve"><value>스킨은 한 레이어의 그림을 통째로 갈아 끼우는 판입니다(옷·표정·색 바꾸기). 늑대 레이어 이름을 [[우클릭]] → [[{menu}]] → [[{copy}]]를 눌러 지금 그림을 복제한 스킨을 만들어 보세요.</value><comment>menu = 스킨 추가 메뉴 이름, copy = 그 하위 '지금 그림 복제…'.</comment></data>
+  <data name="Tutorial_Sk_Switch" xml:space="preserve"><value>스킨이 둘 이상이면 이름 줄에 스킨 칩이 생깁니다. 칩을 [[클릭]]해 스킨을 바꿔 보세요. 바꾸면 그 레이어의 모든 프레임 그림이 바뀌고, 크기·자리·피벗은 그대로입니다.</value></data>
   <data name="Tutorial_Sk_Stack" xml:space="preserve"><value>겹쳐 쌓기: 레이어는 타임라인 순서대로 겹쳐, 위 레이어가 아래 레이어를 가립니다. 한 레이어의 스킨끼리는 겹치지 않고 하나만 보이며 서로 갈아 끼워집니다. 여러 레이어의 스킨 조합은 스킨 프리셋으로 한 번에 바꿀 수 있습니다.</value></data>
-  <data name="Tutorial_Ai_Lock" xml:space="preserve"><value>지킬 그림은 레이어를 잠그세요. 타임라인 이름 줄의 자물쇠를 눌러 잠근 레이어(와 그 자식)는 AI가 MCP로 바꾸지 못하고, 바꿔야 하면 잠금을 풀어 달라고 묻습니다. '지금 그림만'과 상관없이 늘 지켜집니다.</value></data>
-  <data name="Tutorial_Fx_Store" xml:space="preserve"><value>효과 목록에 없는 것은 상점에서 받습니다. '{button}'을 누르면 홈페이지 상점이 열리고, 다른 사람이 만든 효과·스크립트 효과·그라데이션·모양 펜 세트 같은 에셋을 여러 가지 받아 쓸 수 있습니다. 눌러서 열면 튜토리얼이 끝납니다.</value><comment>button = 상점을 여는 단추 이름(추가 다운로드).</comment></data>
-  <data name="Tutorial_Ai_Open" xml:space="preserve"><value>AI 채팅은 이 단추로 엽니다. 메뉴 {menu}나 {key}로도 열 수 있습니다. 눌러서 열어 보세요.</value><comment>menu = 메뉴 길(AI > AI 채팅), key = 단축키.</comment></data>
+  <data name="Tutorial_Ai_Lock" xml:space="preserve"><value>지킬 그림은 레이어를 잠그세요. 타임라인 이름 줄의 자물쇠를 [[클릭]]해 잠근 레이어(와 그 자식)는 AI가 MCP로 바꾸지 못하고, 바꿔야 하면 잠금을 풀어 달라고 묻습니다. '지금 그림만'과 상관없이 늘 지켜집니다.</value></data>
+  <data name="Tutorial_Fx_Store" xml:space="preserve"><value>효과 목록에 없는 것은 상점에서 받습니다. [[{button}]]을 누르면 홈페이지 상점이 열리고, 다른 사람이 만든 효과·스크립트 효과·그라데이션·모양 펜 세트 같은 에셋을 여러 가지 받아 쓸 수 있습니다.</value><comment>button = 상점을 여는 단추 이름(추가 다운로드).</comment></data>
+  <data name="Tutorial_Ai_Open" xml:space="preserve"><value>AI 채팅은 이 단추로 엽니다. 메뉴 [[{menu}]]나 [[{key}]]로도 열 수 있습니다. 눌러서 열어 보세요.</value><comment>menu = 메뉴 길(AI > AI 채팅), key = 단축키.</comment></data>
   <data name="Tutorial_Ai_Settings" xml:space="preserve"><value>이 단추는 그리기 설정입니다. AI가 그림을 그리는 방법(자동 / 그림 생성 뒤 픽셀로 정리 / 픽셀 직접 찍기)을 고릅니다. 옆의 물음표 단추는 AI가 할 수 있는 일과 예시를 보여 줍니다.</value></data>
-  <data name="Tutorial_Ai_External" xml:space="preserve"><value>Claude Desktop이나 Codex 앱처럼 밖에서 쓰는 AI 앱도 MCP로 Chickxel을 다룰 수 있습니다. 메뉴 {menu}에서 '외부 AI 연결 허용'을 켜고, 보이는 연결 설정을 그 앱의 MCP 설정에 붙여 넣으세요. 앱마다 붙이는 곳은 그 창의 '연결 방법'에 있습니다.</value><comment>menu = 메뉴 길(AI > 외부 AI 연결…).</comment></data>
-  <data name="Tutorial_Mk_Open" xml:space="preserve"><value>효과 목록 아래 '{button}' 단추로 효과 만들기 창을 엽니다. 메뉴 {menu}로도 열 수 있습니다. 눌러서 열어 보세요.</value><comment>button = 효과 만들기 단추 이름, menu = 메뉴 길.</comment></data>
+  <data name="Tutorial_Ai_External" xml:space="preserve"><value>Claude Desktop이나 Codex 앱처럼 밖에서 쓰는 AI 앱도 MCP로 Chickxel을 다룰 수 있습니다. 메뉴 [[{menu}]]에서 [[외부 AI 연결 허용]]을 켜고, 보이는 연결 설정을 그 앱의 MCP 설정에 붙여 넣으세요. 앱마다 붙이는 곳은 그 창의 '연결 방법'에 있습니다.</value><comment>menu = 메뉴 길(AI > 외부 AI 연결…).</comment></data>
+  <data name="Tutorial_Mk_Open" xml:space="preserve"><value>효과 목록 아래 [[{button}]] 단추로 효과 만들기 창을 엽니다. 메뉴 [[{menu}]]로도 열 수 있습니다. 눌러서 열어 보세요.</value><comment>button = 효과 만들기 단추 이름, menu = 메뉴 길.</comment></data>
   <data name="Tutorial_Mk_Ai" xml:space="preserve"><value>여기 AI 칸에 만들고 싶은 효과를 말로 적어 보내세요. 예: '테두리를 따라 빛이 한 바퀴 도는 효과'. AI가 효과 스크립트를 쓰고, 고쳐 달라고 하면 이어서 고칩니다. 로그인은 AI 채팅과 같습니다.</value></data>
   <data name="Tutorial_Mk_Code" xml:space="preserve"><value>AI가 쓴 효과 스크립트가 여기 보입니다. 직접 고쳐도 되고, 고치면 잠시 뒤 저절로 저장됩니다. 아래 미리보기 설정 칸에서 효과의 설정 값을 바꿔 볼 수 있습니다.</value></data>
   <data name="Tutorial_Mk_Preview" xml:space="preserve"><value>미리보기입니다. 예시 그림에 효과를 넣은 모습이 프레임마다 돌아갑니다. 스크립트를 고치면 바로 다시 그립니다.</value></data>
-  <data name="Tutorial_Mk_Use" xml:space="preserve"><value>만든 효과는 왼쪽 목록에 쌓이고, 메인 창 효과 목록에도 바로 나옵니다. '{insert}'로 지금 그림에 넣고, '{upload}'로 상점에 올려 다른 사람과 나눌 수 있습니다.</value><comment>insert·upload = 아래 단추 이름.</comment></data>
-  <data name="Tutorial_Ex_Open" xml:space="preserve"><value>예시 그림(5프레임)을 새 탭으로 열었습니다. 메뉴 {menu}({key})로 내보내기 창을 여세요.</value><comment>menu = 메뉴 길(파일 > 내보내기…), key = 단축키.</comment></data>
+  <data name="Tutorial_Mk_Use" xml:space="preserve"><value>만든 효과는 왼쪽 목록에 쌓이고, 메인 창 효과 목록에도 바로 나옵니다. [[{insert}]]로 지금 그림에 넣고, [[{upload}]]로 상점에 올려 다른 사람과 나눌 수 있습니다.</value><comment>insert·upload = 아래 단추 이름.</comment></data>
+  <data name="Tutorial_Ex_Open" xml:space="preserve"><value>예시 그림(5프레임)을 새 탭으로 열었습니다. 메뉴 [[{menu}]]([[{key}]])로 내보내기 창을 여세요.</value><comment>menu = 메뉴 길(파일 > 내보내기…), key = 단축키.</comment></data>
   <data name="Tutorial_Ex_List" xml:space="preserve"><value>왼쪽은 내보내기 목록입니다. 줄 하나가 파일 하나입니다. 처음에는 모든 프레임을 한 장에 늘어놓은 시트 그림 한 줄이 있습니다.</value></data>
-  <data name="Tutorial_Ex_Add" xml:space="preserve"><value>'{button}'을 누르면 고른 줄을 복사해 줄이 하나 늘어납니다. 눌러 보세요.</value><comment>button = 더하기 단추 이름.</comment></data>
-  <data name="Tutorial_Ex_Format" xml:space="preserve"><value>새 줄의 형식을 GIF로 바꿔 보세요. 이제 내보낼 때 시트 그림과 GIF 움짤 두 파일이 한 번에 나옵니다. 줄을 더 늘리면 여러 장을 한꺼번에 내보냅니다.</value></data>
-  <data name="Tutorial_Ex_OnSave" xml:space="preserve"><value>줄 앞 체크 상자를 켜 두면, 프로젝트를 저장할 때({menu}, {key})마다 그 줄이 저절로 다시 내보내집니다. 그림을 고치고 저장만 하면 내보낸 파일도 늘 최신입니다.</value><comment>menu = 메뉴 길(파일 > 저장), key = 단축키.</comment></data>
-  <data name="Tutorial_Ex_Run" xml:space="preserve"><value>지금 바로 내보내려면 이 단추를 누릅니다. 파일 이름과 폴더는 오른쪽에서 정합니다. 창을 닫으면 튜토리얼이 끝납니다.</value></data>
+  <data name="Tutorial_Ex_Add" xml:space="preserve"><value>[[{button}]]을 누르면 고른 줄을 복사해 줄이 하나 늘어납니다. 눌러 보세요.</value><comment>button = 더하기 단추 이름.</comment></data>
+  <data name="Tutorial_Ex_Format" xml:space="preserve"><value>새 줄의 형식을 [[GIF]]로 바꿔 보세요. 이제 내보낼 때 시트 그림과 GIF 움짤 두 파일이 한 번에 나옵니다. 줄을 더 늘리면 여러 장을 한꺼번에 내보냅니다.</value></data>
+  <data name="Tutorial_Ex_OnSave" xml:space="preserve"><value>줄 앞 체크 상자를 켜 두면, 프로젝트를 저장할 때([[{menu}]], [[{key}]])마다 그 줄이 저절로 다시 내보내집니다. 그림을 고치고 저장만 하면 내보낸 파일도 늘 최신입니다.</value><comment>menu = 메뉴 길(파일 > 저장), key = 단축키.</comment></data>
+  <data name="Tutorial_Ex_OnSaveCheckClip" xml:space="preserve"><value>1(PNG) 줄 앞 체크를 켬 · 2(GIF)는 꺼 둠</value><comment>내보내기 튜토리얼 '저장할 때 내보내기' 왼쪽 움짤 설명(움짤의 번호 1 · 2와 맞춤).</comment></data>
+  <data name="Tutorial_Ex_OnSaveSaveClip" xml:space="preserve"><value>그림을 고치고 저장([[{key}]])하면 체크한 1(PNG)만 새로 만들어지고 2(GIF)는 그대로</value><comment>오른쪽 움짤 설명(번호 1 · 2는 왼쪽 움짤과 같은 파일). key = 저장 단축키.</comment></data>
+  <data name="Tutorial_Ex_ClipUpdated" xml:space="preserve"><value>갱신!</value><comment>내보내기 튜토리얼 움짤 안 알림 표(체크한 줄의 파일이 저장 때 새로 만들어짐).</comment></data>
+  <data name="Tutorial_Ex_ClipNotUpdated" xml:space="preserve"><value>갱신 안 됨</value><comment>내보내기 튜토리얼 움짤 안 알림 표(체크 안 한 줄의 파일은 그대로).</comment></data>
+  <data name="Tutorial_Ex_ClipExported" xml:space="preserve"><value>내보냄!</value><comment>내보내기 튜토리얼 움짤 안 알림 표(목록에서 고른 줄만 내보내짐).</comment></data>
+  <data name="Tutorial_Ex_ClipNotExported" xml:space="preserve"><value>안 내보냄</value><comment>내보내기 튜토리얼 움짤 안 알림 표(고르지 않은 줄 — 체크돼 있어도).</comment></data>
+  <data name="Tutorial_Ex_RunClip" xml:space="preserve"><value>목록에서 고른 줄(3)만 내보내짐 — 체크한 1 · 2도, 체크 안 한 4도 안 내보냄(체크는 저장할 때만)</value><comment>내보내기 튜토리얼 마지막 단계 움짤 설명(번호 1~4는 움짤의 번호).</comment></data>
+  <data name="Tutorial_Ex_Run" xml:space="preserve"><value>지금 바로 내보내려면 이 단추를 누릅니다. 목록에서 고른 줄 하나만 내보내집니다(줄 앞 체크는 저장할 때만 씀). 파일 이름과 폴더는 오른쪽에서 정합니다.</value></data>
   <data name="Tutorial_Lf_Layer" xml:space="preserve"><value>예시 그림을 새 탭으로 열었습니다. 왼쪽 줄 하나가 레이어입니다. 레이어는 겹쳐 쌓는 투명한 판이라, 위 레이어가 아래 레이어를 가립니다. 눈 단추로 숨기고, 이름을 끌어 순서를 바꿉니다.</value></data>
-  <data name="Tutorial_Lf_AddLayer" xml:space="preserve"><value>맨 아래 줄의 + 를 누르면 새 레이어가 생깁니다. 눌러 보세요.</value></data>
-  <data name="Tutorial_Lf_AddFrame" xml:space="preserve"><value>위쪽 번호 하나가 프레임(애니메이션의 한 장면)입니다. 끝 번호 옆의 + 를 누르면 빈 프레임이 늘어납니다. 오른쪽으로 끌었다 놓으면 여러 개를 한 번에 늘립니다. 눌러 보세요.</value></data>
-  <data name="Tutorial_Lf_DeleteFrame" xml:space="preserve"><value>프레임을 줄일 때는 프레임 번호를 우클릭해 '삭제'를 누릅니다. 방금 늘린 프레임을 지워 보세요.</value></data>
-  <data name="Tutorial_Lf_Link" xml:space="preserve"><value>1·2프레임은 같은 그림입니다. 이럴 때 프레임 링크를 씁니다. 1·2프레임 칸을 끌어 고른 뒤 우클릭해 '{menu}'를 누르세요.</value><comment>menu = 셀 링크 메뉴 이름.</comment></data>
-  <data name="Tutorial_Lf_Linked" xml:space="preserve"><value>링크된 칸은 그림 하나를 같이 써서, 한 칸을 고치면 다른 칸도 함께 바뀝니다. 링크된 칸 아래에는 색 띠가 보입니다. 풀려면 우클릭해 '{menu}'를 누릅니다.</value><comment>menu = 셀 링크 풀기 메뉴 이름.</comment></data>
+  <data name="Tutorial_Lf_AddLayer" xml:space="preserve"><value>맨 아래 줄의 [[+]]를 누르면 새 레이어가 생깁니다. 눌러 보세요.</value></data>
+  <data name="Tutorial_Lf_AddFrame" xml:space="preserve"><value>위쪽 번호 하나가 프레임(애니메이션의 한 장면)입니다. 끝 번호 옆의 [[+]]를 누르면 빈 프레임이 늘어납니다. 오른쪽으로 끌었다 놓으면 여러 개를 한 번에 늘립니다. 눌러 보세요.</value></data>
+  <data name="Tutorial_Lf_DeleteFrame" xml:space="preserve"><value>프레임을 줄일 때는 프레임 번호를 [[우클릭]] → [[삭제]]를 누릅니다. 방금 늘린 프레임을 지워 보세요.</value></data>
+  <data name="Tutorial_Lf_Link" xml:space="preserve"><value>1·2프레임은 같은 그림입니다. 이럴 때 프레임 링크를 씁니다. 1·2프레임 칸을 끌어 고른 뒤 [[우클릭]] → [[{menu}]]를 누르세요.</value><comment>menu = 셀 링크 메뉴 이름.</comment></data>
+  <data name="Tutorial_Lf_Linked" xml:space="preserve"><value>링크된 칸은 그림 하나를 같이 써서, 한 칸을 고치면 다른 칸도 함께 바뀝니다. 링크된 칸 아래에는 색 띠가 보입니다. 풀려면 [[우클릭]] → [[{menu}]]를 누릅니다.</value><comment>menu = 셀 링크 풀기 메뉴 이름.</comment></data>
   <data name="Tutorial_Lv_Badge" xml:space="preserve"><value>계정 단추의 Lv 표시가 지금 레벨({level})입니다. 경험치(XP)를 모으면 오릅니다. 매일 처음 켜면 +10, 켜 두면 한 시간마다 +1, 내 그림·에셋이 좋아요를 받으면 +2, 다른 사람 작품에 좋아요를 누르면 +1(하루 세 번까지).</value><comment>level = 지금 레벨.</comment></data>
   <data name="Tutorial_Lv_SignIn" xml:space="preserve"><value>Chickxel 계정으로 로그인하면 레벨이 생깁니다. 이 단추를 눌러 로그인하세요. 경험치(XP)를 모으면 레벨이 오릅니다. 매일 처음 켜면 +10, 켜 두면 한 시간마다 +1, 좋아요를 받으면 +2.</value></data>
-  <data name="Tutorial_Lv_Upload" xml:space="preserve"><value>레벨을 가장 빨리 올리는 방법은 갤러리에 그림을 올리는 것입니다. 한 번 올릴 때마다 +10 XP, 편집 파일(.chickxel)을 같이 올리면 +5 XP를 더 받습니다. 이 단추나 메뉴 {menu}로 올립니다.</value><comment>menu = 메뉴 길(파일 > 갤러리에 올리기…).</comment></data>
-  <data name="Tutorial_Lv_Rewards" xml:space="preserve"><value>레벨이 오를 때마다 칭호·배지·프로필 테두리 같은 보상이 하나씩 열립니다. 계정 단추의 '{menu}'에서 지금 경험치와 다음 보상을 봅니다.</value><comment>menu = 계정 관리 메뉴 이름.</comment></data>
+  <data name="Tutorial_Lv_Upload" xml:space="preserve"><value>레벨을 가장 빨리 올리는 방법은 갤러리에 그림을 올리는 것입니다. 한 번 올릴 때마다 +10 XP, 편집 파일(.chickxel)을 같이 올리면 +5 XP를 더 받습니다. 이 단추나 메뉴 [[{menu}]]로 올립니다.</value><comment>menu = 메뉴 길(파일 > 갤러리에 올리기…).</comment></data>
+  <data name="Tutorial_Lv_Rewards" xml:space="preserve"><value>레벨이 오를 때마다 칭호·배지·프로필 테두리 같은 보상이 하나씩 열립니다. 계정 단추를 눌러 [[{menu}]]를 여세요.</value><comment>menu = 계정 관리 메뉴 이름.</comment></data>
+  <data name="Tutorial_Lv_Change" xml:space="preserve"><value>지금 경험치와 이번·다음 보상이 여기 보입니다. [[{button}]]를 누르면 홈페이지에서 칸마다 낄 보상을 고릅니다. 레벨 튜토리얼 보상(칭호 '{title}', 테두리 '{frame}')도 거기서 낍니다.</value><comment>button = 변경하기 단추 이름, title·frame = 새싹 보상 이름.</comment></data>
+  <data name="Tutorial_Lv_ChangeSignIn" xml:space="preserve"><value>로그인하면 이 창에 레벨과 보상이 보입니다. 이 창에서 로그인하세요.</value></data>
   <data name="Tutorial_Start" xml:space="preserve"><value>따라 하기</value></data>
   <data name="Tutorial_Again" xml:space="preserve"><value>다시 하기</value></data>
   <data name="Tutorial_Done" xml:space="preserve"><value>완료</value></data>
@@ -10376,27 +10386,38 @@ Enter나 다른 도구·레이어·프레임으로 바꾸면 기본색(오른쪽
   <data name="Tutorial_Next" xml:space="preserve"><value>다음</value></data>
   <data name="Tutorial_Finish" xml:space="preserve"><value>끝내기</value></data>
   <data name="Tutorial_Prev" xml:space="preserve"><value>이전</value></data>
-  <data name="Tutorial_DoIt" xml:space="preserve"><value>직접 해 보세요 — 하면 넘어갑니다</value></data>
+  <data name="Tutorial_DoIt" xml:space="preserve"><value>직접 해 보세요</value></data>
   <data name="Tutorial_Stop" xml:space="preserve"><value>그만하기</value></data>
   <data name="Tutorial_StepCount" xml:space="preserve"><value>{index} / {count}</value><comment>index = 지금 단계 번호(1부터), count = 단계 수.</comment></data>
   <data name="Tutorial_ExampleTitle" xml:space="preserve"><value>튜토리얼 예시</value></data>
   <data name="Tutorial_ExampleLayer" xml:space="preserve"><value>늑대</value></data>
-  <data name="Tutorial_Px_Open" xml:space="preserve"><value>AI로 만든 그림 같은 일반 그림을 픽셀 아트로 바꾸는 창은 메뉴 {menu}로 엽니다. 왼쪽 파일 칸에서 그림 파일을 우클릭해 '{file}'를 눌러도 그 그림을 넣은 채 열립니다. 메뉴를 열어 눌러 보세요.</value><comment>menu = 메뉴 길(AI > AI 그림 픽셀로 정리…), file = 파일 칸 우클릭 메뉴 이름.</comment></data>
-  <data name="Tutorial_Px_Source" xml:space="preserve"><value>그림을 픽셀 아트로 정리하는 창입니다. 이 칸에 그림을 끌어다 놓거나, Ctrl+V로 붙여 넣거나, 파일 찾기로 넣습니다. 지금은 예시 그림을 넣었습니다.</value></data>
-  <data name="Tutorial_Px_Wait" xml:space="preserve"><value>그림을 읽어 픽셀 칸을 찾는 중입니다. 끝나면 다음으로 넘어갑니다.</value></data>
-  <data name="Tutorial_Px_Rerun" xml:space="preserve"><value>후보 칸을 우클릭하면 그 프리셋만 돌릴 수 있습니다. '{preset}' 칸을 우클릭해 '{menu}'를 누르면 바로 돕니다(지금 하지 않아도 됩니다).</value><comment>preset = 돌릴 프리셋 이름(같은 색상 계열), menu = 우클릭 메뉴 항목 이름.</comment></data>
-  <data name="Tutorial_Px_Optimize" xml:space="preserve"><value>최적화는 여러 설정을 시도해 점수를 매기므로 시간이 걸리고(프리셋마다 몇 분까지), 끝나야 결과가 후보 칸에 들어갑니다. 도는 동안에는 지금까지 가장 나은 결과가 보입니다. 멈추려면 이 단추(도는 중에는 '취소')를 누르거나 우클릭해 '모두 취소'를 고르세요.</value></data>
-  <data name="Tutorial_Px_Settings" xml:space="preserve"><value>'{button}' 단추를 눌러 왼쪽 설정 칸을 여세요.</value><comment>button = 설정 펼치기 단추 이름.</comment></data>
-  <data name="Tutorial_Px_Quick" xml:space="preserve"><value>간편 설정에는 자주 바꾸는 값이 모여 있습니다. 결과 크기나 목표 색 수 같은 값을 하나 바꿔 보세요.</value></data>
-  <data name="Tutorial_Px_Run" xml:space="preserve"><value>재생 단추('{button}')를 누르면 바꾼 설정으로 정리합니다(지금 하지 않아도 됩니다).</value><comment>button = 재생 단추 이름.</comment></data>
-  <data name="Tutorial_Px_Colors" xml:space="preserve"><value>결과에 쓰인 색입니다. 색을 우클릭하면 그 색을 빼고, + 단추를 누른 뒤 원본 그림을 누르면 그 색을 더합니다. 최적화가 끝난 결과에서 바꿀 수 있습니다.</value></data>
-  <data name="Tutorial_Px_Apply" xml:space="preserve"><value>다 됐습니다. 마음에 드는 후보 칸을 고르고 '{button}' 단추를 누르면 결과가 그림으로 들어갑니다.</value><comment>button = 결과를 넣는 단추 이름.</comment></data>
-  <data name="Tutorial_Fx_Open" xml:space="preserve"><value>예시 그림(5프레임)을 새 탭으로 열었습니다. 도구 막대의 효과 단추를 눌러 효과 목록을 여세요.</value></data>
-  <data name="Tutorial_Fx_Select" xml:space="preserve"><value>효과를 일부 프레임에만 넣어 봅니다. 타임라인에서 {from}프레임 칸부터 {to}프레임 칸까지 끌어 고르세요.</value><comment>from·to = 고를 첫·끝 프레임 번호(1부터).</comment></data>
-  <data name="Tutorial_Fx_Add" xml:space="preserve"><value>'{effect}' 상자를 고른 {from}~{to}프레임 칸으로 끌어다 놓거나 두 번 누르세요. 그 프레임에만 들어갑니다. 끄는 동안 캔버스에 넣은 모습이 미리 보입니다.</value><comment>effect = 넣을 효과 이름(외곽선), from·to = 고른 첫·끝 프레임 번호(1부터).</comment></data>
-  <data name="Tutorial_Fx_Adjust" xml:space="preserve"><value>넣은 효과의 설정이 오른쪽에 열렸습니다. 숫자나 색을 하나 바꿔 보세요. 캔버스에 바로 보입니다.</value></data>
-  <data name="Tutorial_Fx_Timeline" xml:space="preserve"><value>넣은 효과는 타임라인의 효과 줄에 쌓입니다. 재생하면 고른 프레임에서만 보입니다. 줄을 두 번 누르면 효과 창이 열리고, 줄 끝을 끌면 효과를 넣을 프레임 범위가 바뀝니다.</value></data>
-  <data name="Tutorial_Ai_Login" xml:space="preserve"><value>AI 채팅 창입니다. 여기서 Claude나 Codex를 고르고, 아래 안내에 따라 설치하고 로그인하세요. 연결되면 저절로 다음으로 넘어갑니다. 지금 하지 않으려면 다음을 누르세요.</value></data>
+  <data name="Tutorial_Px_Open" xml:space="preserve"><value>AI로 만든 그림 같은 일반 그림을 픽셀 아트로 바꾸는 창을 엽니다. 메뉴 [[{menu}]]를 눌러 보세요. 나중에는 왼쪽 파일 칸에서 그림 파일을 [[우클릭]] → [[{file}]]로 그 그림을 넣은 채 열 수도 있습니다.</value><comment>menu = 메뉴 길(AI > AI 그림 픽셀로 정리…), file = 파일 칸 우클릭 메뉴 이름. [[…]]은 누를 것을 초록 칸으로 보이는 표시(그대로 둠).</comment></data>
+  <data name="Tutorial_Px_Source" xml:space="preserve"><value>그림을 픽셀 아트로 정리하는 창입니다. 이 칸에 그림을 끌어다 놓거나, [[Ctrl+V]]로 붙여 넣거나, 파일 찾기로 넣습니다. 지금은 예시 그림을 넣었습니다.</value></data>
+  <data name="Tutorial_Px_Wait" xml:space="preserve"><value>그림을 읽어 픽셀 칸을 찾는 중입니다. 끝나면 후보 칸을 우클릭해 돌려 봅니다.</value></data>
+  <data name="Tutorial_Px_Rerun" xml:space="preserve"><value>후보 칸을 우클릭하면 그 프리셋만 돌릴 수 있습니다. '{preset}' 칸을 [[우클릭]] → [[{menu}]]를 눌러 보세요.</value><comment>preset = 돌릴 프리셋 이름(같은 색상 계열), menu = 우클릭 메뉴 항목 이름.</comment></data>
+  <data name="Tutorial_Px_Optimize" xml:space="preserve"><value>돌기 시작했습니다. 최적화는 여러 설정을 시도해 점수를 매기므로 프리셋마다 몇 분까지 걸리고, 끝나야 결과가 후보 칸에 들어갑니다. 이 단추 [[취소]]를 눌러 멈춰 보세요([[우클릭]] → [[모두 취소]]도 됩니다).</value></data>
+  <data name="Tutorial_Px_Settings" xml:space="preserve"><value>[[{button}]] 단추를 눌러 왼쪽 설정 칸을 여세요.</value><comment>button = 설정 펼치기 단추 이름.</comment></data>
+  <data name="Tutorial_Px_Preset" xml:space="preserve"><value>프리셋은 설정을 묶어 둔 것입니다. 이 목록을 [[클릭]]해 [[{preset}]] 프리셋을 고르세요(이미 골라져 있어도 목록에서 다시 고릅니다).</value><comment>preset = 기본 설정 프리셋 이름(기본).</comment></data>
+  <data name="Tutorial_Px_Quick" xml:space="preserve"><value>간편 설정에는 자주 바꾸는 값이 모여 있습니다. 결과 크기의 [[{auto}]]를 끄고 가로 칸을 [[우클릭]] → [[{size}]]를 골라 보세요. 이 그림은 {size}가 잘 나옵니다.</value><comment>auto = 결과 크기 자동 체크 이름, size = 고를 가로(64).</comment></data>
+  <data name="Tutorial_Px_Run" xml:space="preserve"><value>재생 단추 [[{button}]]를 눌러 바꾼 설정으로 정리해 보세요.</value><comment>button = 재생 단추 이름.</comment></data>
+  <data name="Tutorial_Px_Running" xml:space="preserve"><value>정리하는 중입니다. 끝나면 결과가 후보 칸에 들어갑니다. 잠시 기다려 주세요.</value></data>
+  <data name="Tutorial_Px_Pick" xml:space="preserve"><value>정리한 결과가 후보 칸 '{name}'에 들어갔습니다. 후보 칸을 한 번 [[클릭]]하면 그 결과가 오른쪽 미리보기에 보이고, 그 칸의 설정이 왼쪽에 불러와집니다. 이 칸을 한 번 눌러 보세요(두 번 누르면 바로 적용되고 창이 닫힙니다).</value><comment>name = 결과가 들어간 후보 칸 이름(예: 기본_1).</comment></data>
+  <data name="Tutorial_Px_Zoom" xml:space="preserve"><value>결과 그림을 [[클릭]]해 크게 보세요. 크게 보기에서는 [[휠]]로 확대·축소합니다.</value></data>
+  <data name="Tutorial_Px_Colors" xml:space="preserve"><value>결과에 쓰인 색을 고쳐 봅니다. 위 두 움짤처럼 색을 빼고 더해 보세요. [[+]] 칸을 누르면 원본 그림을 누를 수 있게 이 설명이 잠시 숨습니다.</value></data>
+  <data name="Tutorial_Px_ColorsPin" xml:space="preserve"><value>색을 뺐습니다. 오른쪽 움짤처럼 색을 더해 볼 수도 있습니다.</value></data>
+  <data name="Tutorial_Px_ColorsExclude" xml:space="preserve"><value>색을 더했습니다. 왼쪽 움짤처럼 색을 빼 볼 수도 있습니다.</value></data>
+  <data name="Tutorial_Px_ColorsBoth" xml:space="preserve"><value>색 빼기와 더하기를 둘 다 해 봤습니다. 더 바꿔 봐도 됩니다.</value></data>
+  <data name="Tutorial_Px_ExcludeClip" xml:space="preserve"><value>색 빼기: 색 칸을 [[우클릭]]하면 그 색이 빠지고 그 자리는 가까운 색으로 바뀝니다. 다시 [[우클릭]]하면 되살립니다.</value></data>
+  <data name="Tutorial_Px_PinClip" xml:space="preserve"><value>색 더하기: 색 줄 끝 [[+]] 칸('{button}')을 누른 뒤 원본 그림의 색 자리를 [[클릭]]하면 그 색이 결과 색에 더해집니다. 크게 보기에서는 오른쪽이 원본이고, [[우클릭]]하면 취소합니다.</value><comment>button = + 칸 이름(원본에서 색 추가).</comment></data>
+  <data name="Tutorial_Px_Apply" xml:space="preserve"><value>마음에 드는 후보 칸을 고르고 [[{button}]] 단추를 누르면 결과가 그림으로 들어갑니다. 눌러 보세요.</value><comment>button = 결과를 넣는 단추 이름.</comment></data>
+  <data name="Tutorial_Px_Done" xml:space="preserve"><value>정리한 픽셀 아트가 캔버스에 들어갔습니다. 이제 연필·지우개 같은 도구로 자유롭게 고쳐 보세요.</value></data>
+  <data name="Tutorial_Px_DonePlace" xml:space="preserve"><value>정리한 픽셀 아트가 캔버스에 새 레이어로 들어갔습니다. 지금은 끌어서 옮기거나 크기를 바꿀 수 있고, [[Enter]]로 자리를 확정합니다. 그다음 연필·지우개 같은 도구로 자유롭게 고쳐 보세요.</value></data>
+  <data name="Tutorial_Fx_Open" xml:space="preserve"><value>이제 도구 막대의 효과 단추를 [[클릭]]해 효과 목록을 여세요.</value></data>
+  <data name="Tutorial_Fx_Select" xml:space="preserve"><value>예시 그림(5프레임)을 새 탭으로 열었습니다. 효과를 일부 프레임에만 넣어 봅니다. 먼저 타임라인에서 {from}프레임 칸부터 {to}프레임 칸까지 [[끌어서]] 고르세요.</value><comment>from·to = 고를 첫·끝 프레임 번호(1부터).</comment></data>
+  <data name="Tutorial_Fx_Add" xml:space="preserve"><value>[[{effect}]] 상자를 고른 {from}~{to}프레임 칸으로 [[끌어다 놓거나]] [[두 번 클릭]]하세요. 그 프레임에만 들어갑니다. 끄는 동안 캔버스에 넣은 모습이 미리 보입니다.</value><comment>effect = 넣을 효과 이름(외곽선), from·to = 고른 첫·끝 프레임 번호(1부터).</comment></data>
+  <data name="Tutorial_Fx_Adjust" xml:space="preserve"><value>넣은 효과의 설정이 오른쪽에 열렸습니다. 숫자나 색을 바꿔 보세요. 캔버스에 바로 보입니다.</value></data>
+  <data name="Tutorial_Fx_Timeline" xml:space="preserve"><value>넣은 효과는 타임라인의 효과 줄에 쌓입니다. 재생하면 고른 프레임에서만 보입니다. 줄을 [[두 번 클릭]]하면 효과 창이 열리고, 줄 끝을 [[끌면]] 효과를 넣을 프레임 범위가 바뀝니다.</value></data>
+  <data name="Tutorial_Ai_Login" xml:space="preserve"><value>AI 채팅 창입니다. 여기서 Claude나 Codex를 고르고, 아래 안내에 따라 설치하고 로그인하세요. 지금 하지 않아도 됩니다.</value></data>
   <data name="Tutorial_Ai_Ready" xml:space="preserve"><value>연결됐습니다. 이 입력 칸에 '32×32 나무 통 그려 줘'처럼 적어 보내면 AI가 MCP로 Chickxel을 직접 다뤄 열린 그림에 그립니다.</value></data>
   <data name="Tutorial_Ai_Later" xml:space="preserve"><value>로그인은 나중에 이 창에서 언제든 할 수 있습니다. 연결되면 아래 입력 칸에 '32×32 나무 통 그려 줘'처럼 적어 보내면 AI가 MCP로 Chickxel을 직접 다뤄 열린 그림에 그립니다.</value></data>
 </root>

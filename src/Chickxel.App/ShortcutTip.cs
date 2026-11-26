@@ -59,19 +59,29 @@ public static partial class ShortcutTip
         var (keys, rest) = Split(text)!.Value;
         var chips = new WrapPanel { Orientation = Orientation.Horizontal };
         foreach (var key in keys)
-            chips.Children.Add(new Border
-            {
-                Background = ChipBack,
-                BorderBrush = ChipBorder,
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(3),
-                Padding = new Thickness(5, 1),
-                Margin = new Thickness(0, 0, 4, 0),
-                Child = new TextBlock { Text = key, FontFamily = MonoFont, Foreground = ChipText },
-            });
+        {
+            var chip = Chip(key);
+            chip.Margin = new Thickness(0, 0, 4, 0);
+            chips.Children.Add(chip);
+        }
         var panel = new StackPanel { Spacing = 5 };
         panel.Children.Add(chips);
         if (rest.Length > 0) panel.Children.Add(new TextBlock { Text = rest, TextWrapping = TextWrapping.Wrap });
         return panel;
     }
+
+    /// <summary>
+    /// 초록 코드 칸 하나(단축키 · 튜토리얼에서 누를 것 — <see cref="TutorialText"/>). <paramref name="inline"/>면 글 줄 안에 들어가게 낮게(작은 글자, 위아래 여백 없음).
+    /// </summary>
+    public static Border Chip(string text, bool inline = false) => new()
+    {
+        Background = ChipBack,
+        BorderBrush = ChipBorder,
+        BorderThickness = new Thickness(1),
+        CornerRadius = new CornerRadius(3),
+        Padding = inline ? new Thickness(4, 0) : new Thickness(5, 1),
+        Child = inline
+            ? new TextBlock { Text = text, FontFamily = MonoFont, Foreground = ChipText, FontSize = AppTheme.SmallFontSize, LineHeight = double.NaN }
+            : new TextBlock { Text = text, FontFamily = MonoFont, Foreground = ChipText },
+    };
 }

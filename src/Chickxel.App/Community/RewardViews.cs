@@ -54,9 +54,9 @@ internal static class RewardViews
 
     /// <summary>
     /// 레벨 보상 묶음: 왼쪽 이번 레벨 보상(지금 레벨까지 받은 것 중 가장 최근 하나 — 아직 안 본 것이면 금빛 상자·별), 오른쪽 다음 보상과 남은 경험치,
-    /// 아래 받은 수와 홈페이지에서 바꾸기 단추. 지난 보상은 늘어놓지 않는다(전부는 홈페이지 레벨 보상 쪽에서).
+    /// 아래 받은 수와 홈페이지에서 바꾸기 단추(<paramref name="change"/>). 지난 보상은 늘어놓지 않는다(전부는 홈페이지 레벨 보상 쪽에서).
     /// </summary>
-    public static Control Section(Window owner, CommunityUser user, int seenLevel)
+    public static Control Section(Window owner, CommunityUser user, int seenLevel, out Button change)
     {
         var body = new StackPanel { Spacing = 10 };
         // 제목 줄 · 상자 줄: 두 상자는 같은 줄에 있어 높이가 같다(남은 경험치 글은 다음 보상 상자 안에).
@@ -83,7 +83,12 @@ internal static class RewardViews
         body.Children.Add(pair);
 
         int unlocked = LevelRewards.UnlockedAt(user.Level).Count();
-        var change = Ui.Button(VectorIcon.ExternalLink, UiStrings.Account_RewardsChange, (_, _) => AppCommunity.Open(owner, AppCommunity.Client.RewardsPageUrl()));
+        // 레벨 튜토리얼은 누른 순간 새싹 보상을 받게 하고(BeforeChange), 받은 뒤에 홈페이지를 열어 보상 쪽에 바로 보이게 한다.
+        change = Ui.Button(VectorIcon.ExternalLink, UiStrings.Account_RewardsChange, async (_, _) =>
+        {
+            if (BeforeChange is { } before) await before();
+            AppCommunity.Open(owner, AppCommunity.Client.RewardsPageUrl());
+        });
         change.Tip(UiStrings.Account_RewardsChangeTip);
         var count = new TextBlock
         {
@@ -96,6 +101,9 @@ internal static class RewardViews
         body.Children.Add(footer);
         return Ui.Group(UiStrings.Account_Rewards, body);
     }
+
+    /// <summary>'변경하기…'를 누르면 홈페이지를 열기 전에 기다릴 일(레벨 튜토리얼의 마지막 단계가 걸어 둠 — 없으면 null).</summary>
+    internal static Func<Task>? BeforeChange { get; set; }
 
     private static TextBlock Heading(string text) => new() { Text = text, FontWeight = FontWeight.Bold, VerticalAlignment = VerticalAlignment.Center };
 

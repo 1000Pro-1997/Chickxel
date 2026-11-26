@@ -38,8 +38,8 @@ public enum TutorialKind
 /// </summary>
 public sealed class TutorialWindow : Window
 {
-    /// <summary>카드 폭(큰 카드 넷, 작은 카드는 한 줄에 넷 — 같은 폭).</summary>
-    private const double CardWidth = 264, Gap = 12;
+    /// <summary>카드 바깥 폭(큰 카드 넷, 작은 카드는 한 줄에 넷 — 같은 폭)과 카드 사이, 카드 안쪽 폭(바깥 폭 − 안쪽 여백 10 × 2 − 테두리 1 × 2).</summary>
+    private const double CardWidth = 286, Gap = 12, CardInner = CardWidth - 22;
 
     /// <summary>먼저 마쳐야 하는 튜토리얼.</summary>
     internal static IReadOnlyList<TutorialKind> Prerequisites(TutorialKind kind) => kind switch
@@ -85,30 +85,36 @@ public sealed class TutorialWindow : Window
         var heading = new TextBlock { Text = UiStrings.Tutorial_Heading, FontSize = 20, FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush };
         var intro = new TextBlock { Text = UiStrings.Tutorial_Intro, Foreground = AppTheme.DimTextBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 16) };
 
+        // 아직 안 한 튜토리얼을 앞에, 마친 것(초록 테두리)을 뒤에(같은 무리 안에서는 원래 차례 — OrderBy는 안정 정렬).
+        (TutorialKind Kind, Func<Stream?> Media, string Desc)[] big =
+        [
+            (TutorialKind.Pixelate, HelpWindow.MediaOpener("feature-pixelate"), UiStrings.Tutorial_Pixelate_Desc),
+            (TutorialKind.Model, () => typeof(TutorialWindow).Assembly.GetManifestResourceStream("Chickxel.Tutorial.card-model.webp"), UiStrings.Tutorial_Model_Desc),
+            (TutorialKind.Effects, HelpWindow.MediaOpener("feature-effect-drop"), UiStrings.Tutorial_Effects_Desc),
+            (TutorialKind.Ai, HelpWindow.MediaOpener("feature-ai-draw"), UiStrings.Tutorial_Ai_Desc),
+        ];
         var cards = new StackPanel { Orientation = Orientation.Horizontal, Spacing = Gap };
-        cards.Children.Add(Card(TutorialKind.Pixelate, HelpWindow.MediaOpener("feature-pixelate"), UiStrings.Tutorial_Pixelate_Desc));
-        cards.Children.Add(Card(TutorialKind.Model, () => typeof(TutorialWindow).Assembly.GetManifestResourceStream("Chickxel.Tutorial.card-model.webp"), UiStrings.Tutorial_Model_Desc));
-        cards.Children.Add(Card(TutorialKind.Effects, HelpWindow.MediaOpener("feature-effect-drop"), UiStrings.Tutorial_Effects_Desc));
-        cards.Children.Add(Card(TutorialKind.Ai, HelpWindow.MediaOpener("feature-ai-draw"), UiStrings.Tutorial_Ai_Desc));
+        foreach (var (kind, media, desc) in big.OrderBy(c => Done(c.Kind))) cards.Children.Add(Card(kind, media, desc));
 
         var moreHeading = new TextBlock { Text = UiStrings.Tutorial_More, FontSize = 15, FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush, Margin = new Thickness(0, 18, 0, 8) };
-        // 작은 카드는 한 줄에 넷씩(큰 카드와 같은 폭).
-        Control[] small =
+        // 작은 카드는 한 줄에 넷씩(큰 카드와 같은 폭), 모든 칸이 같은 높이라 아래 끝의 단추 자리가 같다.
+        (TutorialKind Kind, VectorIcon Icon, string Desc)[] smallCards =
         [
-            SmallCard(TutorialKind.EffectMaker, VectorIcon.Sparkles, UiStrings.Tutorial_Maker_Desc),
-            SmallCard(TutorialKind.Canvas, VectorIcon.MousePointerClick, UiStrings.Tutorial_Canvas_Desc),
-            SmallCard(TutorialKind.LayersFrames, VectorIcon.Layers, UiStrings.Tutorial_Layers_Desc),
-            SmallCard(TutorialKind.Skins, VectorIcon.Shirt, UiStrings.Tutorial_Skins_Desc),
-            SmallCard(TutorialKind.Tilemap, VectorIcon.Grid3x3, UiStrings.Tutorial_Tilemap_Desc),
-            SmallCard(TutorialKind.Export, VectorIcon.Upload, UiStrings.Tutorial_Export_Desc),
-            SmallCard(TutorialKind.Level, VectorIcon.Star, UiStrings.Tutorial_Level_Desc),
+            (TutorialKind.EffectMaker, VectorIcon.Sparkles, UiStrings.Tutorial_Maker_Desc),
+            (TutorialKind.Canvas, VectorIcon.MousePointerClick, UiStrings.Tutorial_Canvas_Desc),
+            (TutorialKind.LayersFrames, VectorIcon.Layers, UiStrings.Tutorial_Layers_Desc),
+            (TutorialKind.Skins, VectorIcon.Shirt, UiStrings.Tutorial_Skins_Desc),
+            (TutorialKind.Tilemap, VectorIcon.Grid3x3, UiStrings.Tutorial_Tilemap_Desc),
+            (TutorialKind.Export, VectorIcon.Upload, UiStrings.Tutorial_Export_Desc),
+            (TutorialKind.Level, VectorIcon.Star, UiStrings.Tutorial_Level_Desc),
         ];
-        var more = new StackPanel { Spacing = Gap };
-        for (int i = 0; i < small.Length; i += 4)
+        var small = smallCards.OrderBy(c => Done(c.Kind)).Select(c => SmallCard(c.Kind, c.Icon, c.Desc));
+        // 칸 사이(Gap)는 카드마다 오른쪽·아래 여백으로, 줄 끝·마지막 줄에서는 그만큼 바깥 여백을 줄여 큰 카드 줄과 폭을 맞춘다.
+        var more = new UniformGrid { Columns = 4, Margin = new Thickness(0, 0, -Gap, -Gap) };
+        foreach (var card in small)
         {
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = Gap };
-            foreach (var card in small.Skip(i).Take(4)) row.Children.Add(card);
-            more.Children.Add(row);
+            card.Margin = new Thickness(0, 0, Gap, Gap);
+            more.Children.Add(card);
         }
 
         _dontShow = Ui.Check(UiStrings.Tutorial_DontShow, !settings.ShowTutorialOnStart).Tip(UiStrings.Tutorial_DontShowTip);
@@ -122,7 +128,8 @@ public sealed class TutorialWindow : Window
         Content = new StackPanel
         {
             Margin = new Thickness(20, 16, 20, 16),
-            MaxWidth = 4 * CardWidth + 3 * Gap + 2 * 22,
+            // 한 줄에 카드 넷이 다 들어가는 폭(이보다 좁으면 넷째 카드가 잘림).
+            MaxWidth = 4 * CardWidth + 3 * Gap,
             Children = { heading, intro, cards, moreHeading, more, bottom },
         };
 
@@ -161,8 +168,9 @@ public sealed class TutorialWindow : Window
     }
 
     /// <summary>
-    /// 작은 카드(더 알아보기): 왼쪽 아이콘, 제목(마쳤으면 "완료"), 한 줄 설명, "따라 하기"(마쳤으면 "다시 하기").
-    /// 먼저 마쳐야 하는 튜토리얼이 남았으면 잠금 아이콘과 "먼저 마칠 튜토리얼"을 단추로 보인다(누르면 그 튜토리얼 시작).
+    /// 작은 카드(더 알아보기): 왼쪽 아이콘, 제목(마쳤으면 "완료"), 한 줄 설명, 맨 아래에 "따라 하기"(마쳤으면 "다시 하기").
+    /// 먼저 마쳐야 하는 튜토리얼이 남았으면 잠금 아이콘과 "먼저 마칠 튜토리얼"을 단추로 보인다(누르면 그 튜토리얼 시작). 단추는 늘 카드 아래 끝에 붙어
+    /// 같은 높이의 카드(<see cref="UniformGrid"/>)끼리 단추 자리가 같다.
     /// </summary>
     private Control SmallCard(TutorialKind kind, VectorIcon icon, string description)
     {
@@ -171,30 +179,34 @@ public sealed class TutorialWindow : Window
         var title = new TextBlock { Text = TitleOf(kind), FontSize = 13.5, FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center };
         var head = Ui.Row(new IconView(locked ? VectorIcon.Lock : icon, locked ? AppTheme.DimTextBrush : HelpWindow.Yellow) { Width = 16, Height = 16, VerticalAlignment = VerticalAlignment.Center }, title);
         if (done) head.Children.Add(DoneMark());
-        var stack = new StackPanel { Spacing = 6, Width = CardWidth - 20, Children = { head } };
-        stack.Children.Add(new TextBlock { Text = description, Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, TextWrapping = TextWrapping.Wrap, Height = 36 });
+        var top = new StackPanel { Spacing = 6, Children = { head } };
+        top.Children.Add(new TextBlock { Text = description, Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, TextWrapping = TextWrapping.Wrap });
+        var bottom = new StackPanel { Spacing = 4, Margin = new Thickness(0, 10, 0, 0) };
         if (locked)
         {
-            stack.Children.Add(new TextBlock { Text = UiStrings.Tutorial_NeedsFirst, Foreground = HelpWindow.Yellow, FontSize = AppTheme.SmallFontSize });
+            bottom.Children.Add(new TextBlock { Text = UiStrings.Tutorial_NeedsFirst, Foreground = HelpWindow.Yellow, FontSize = AppTheme.SmallFontSize });
             var needs = new WrapPanel();
             foreach (var p in missing)
             {
                 var go = Ui.Button(VectorIcon.Play, TitleOf(p), (_, _) => Begin(p));
-                go.Margin = new Thickness(0, 0, 6, 4);
+                go.Margin = new Thickness(0, 0, 6, 0);
                 needs.Children.Add(go);
             }
-            stack.Children.Add(needs);
+            bottom.Children.Add(needs);
         }
         else
         {
             var start = Ui.Button(done ? VectorIcon.Refresh : VectorIcon.Play, done ? UiStrings.Tutorial_Again : UiStrings.Tutorial_Start, (_, _) => Begin(kind));
             start.HorizontalAlignment = HorizontalAlignment.Left;
-            stack.Children.Add(start);
+            bottom.Children.Add(start);
         }
+        DockPanel.SetDock(bottom, Dock.Bottom);
+        var stack = new DockPanel { Width = CardInner, LastChildFill = true, Children = { bottom, top } };
         var card = new Border
         {
             Background = AppTheme.PanelBrush,
-            BorderBrush = AppTheme.BorderBrush,
+            // 마친 튜토리얼은 초록 테두리("완료" 표시와 같은 색).
+            BorderBrush = done ? AppTheme.SavedBrush : AppTheme.BorderBrush,
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
             Padding = new Thickness(10),
@@ -205,7 +217,7 @@ public sealed class TutorialWindow : Window
         {
             card.Cursor = new Cursor(StandardCursorType.Hand);
             card.PointerEntered += (_, _) => card.BorderBrush = HelpWindow.Yellow;
-            card.PointerExited += (_, _) => card.BorderBrush = AppTheme.BorderBrush;
+            card.PointerExited += (_, _) => card.BorderBrush = done ? AppTheme.SavedBrush : AppTheme.BorderBrush;
             card.PointerReleased += (_, e) =>
             {
                 if (e.InitialPressMouseButton == MouseButton.Left && !e.Handled) Begin(kind);
@@ -237,12 +249,12 @@ public sealed class TutorialWindow : Window
     {
         void Begin() => this.Begin(kind);
         bool done = Done(kind);
-        var stack = new StackPanel { Spacing = 6, Width = CardWidth };
+        var stack = new StackPanel { Spacing = 6, Width = CardInner };
         if (AnimatedImage.TryCreate(media) is { } clip)
         {
             // 움짤 비율이 조금씩 달라(16:9 · 800×484) 같은 높이로 위를 맞춰 아래를 자른다(눌러 펴지 않게 캔버스에 원래 비율로).
-            clip.Width = CardWidth;
-            var frame = new Canvas { Width = CardWidth, Height = Math.Round(CardWidth * 9 / 16), ClipToBounds = true, Children = { clip } };
+            clip.Width = CardInner;
+            var frame = new Canvas { Width = CardInner, Height = Math.Round(CardInner * 9 / 16), ClipToBounds = true, Children = { clip } };
             stack.Children.Add(new Border { CornerRadius = new CornerRadius(6), ClipToBounds = true, Child = frame });
         }
         var heading = new TextBlock { Text = TitleOf(kind), FontSize = 15, FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center };
@@ -257,7 +269,8 @@ public sealed class TutorialWindow : Window
         var card = new Border
         {
             Background = AppTheme.PanelBrush,
-            BorderBrush = AppTheme.BorderBrush,
+            // 마친 튜토리얼은 초록 테두리("완료" 표시와 같은 색).
+            BorderBrush = done ? AppTheme.SavedBrush : AppTheme.BorderBrush,
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(10),
             Padding = new Thickness(10),
@@ -266,7 +279,7 @@ public sealed class TutorialWindow : Window
             Tag = kind,
         };
         card.PointerEntered += (_, _) => card.BorderBrush = HelpWindow.Yellow;
-        card.PointerExited += (_, _) => card.BorderBrush = AppTheme.BorderBrush;
+        card.PointerExited += (_, _) => card.BorderBrush = done ? AppTheme.SavedBrush : AppTheme.BorderBrush;
         card.PointerReleased += (_, e) =>
         {
             if (e.InitialPressMouseButton == MouseButton.Left && !e.Handled) Begin();

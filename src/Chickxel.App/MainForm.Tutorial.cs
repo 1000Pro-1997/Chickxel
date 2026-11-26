@@ -15,6 +15,12 @@ public sealed partial class MainForm
     /// <summary>'그림을 픽셀 아트로'에서 미리 넣어 두는 예시 그림(AI가 만든 듯한 흐린 그림).</summary>
     public const string TutorialPixelateExample = "pixelate-example.jpg";
 
+    /// <summary>'그림을 픽셀 아트로'에서 결과 크기로 고르게 하는 가로(예시 그림에 잘 맞는 값 — 이 값이어야 넘어감).</summary>
+    private const int TutorialPixelateWidth = 64;
+
+    /// <summary>픽셀로 정리 창의 결과를 문서에 넣은 횟수(적용 · 새 탭에 추가 — 튜토리얼이 넣었는지 봄).</summary>
+    private int _pixelateApplied;
+
     /// <summary>'효과 쓰기'에서 새 탭으로 여는 예시 픽셀 그림.</summary>
     private const string TutorialEffectExample = "effect-example.png";
 
@@ -47,7 +53,8 @@ public sealed partial class MainForm
 
     /// <summary>
     /// 튜토리얼 하나를 처음부터 시작한다(튜토리얼 창의 카드). 끝까지 마치면 이 컴퓨터 설정(<see cref="AppSettings.TutorialsDone"/>)에 적고
-    /// 튜토리얼 창을 다시 띄워 그 카드에 "완료"를 보인다(다음 것을 고르게). 먼저 마칠 튜토리얼이 남았으면 시작하지 않고 튜토리얼 창(잠긴 카드에 선행 튜토리얼)을 띄운다.
+    /// 튜토리얼 창을 다시 띄워 그 카드에 "완료"를 보인다(다음 것을 고르게). 도중에 그만둬도(말풍선 닫기, 대상 창 닫기) 튜토리얼 창을 다시 띄운다.
+    /// 먼저 마칠 튜토리얼이 남았으면 시작하지 않고 튜토리얼 창(잠긴 카드에 선행 튜토리얼)을 띄운다.
     /// </summary>
     internal void StartTutorial(TutorialKind kind)
     {
@@ -80,7 +87,7 @@ public sealed partial class MainForm
                 _settings.Save();
             }
             TutorialWindow.Open(this, _settings);
-        });
+        }, () => TutorialWindow.Open(this, _settings));
     }
 
     /// <summary>
@@ -102,15 +109,20 @@ public sealed partial class MainForm
     // ───────────── 그림을 픽셀 아트로 ─────────────
 
     /// <summary>
-    /// 그림을 픽셀 아트로: 픽셀로 정리 창을 직접 열게 하고(메뉴 AI > AI 그림 픽셀로 정리…, 파일 칸 우클릭도 안내) 예시 그림을 넣어 그림 넣는 자리를 안내한 뒤
-    /// → 준비 기다리기 → 설정 펼치기 → 간편 설정 값 바꾸기(여기까지 꼭 해야 넘어감)
-    /// → 후보 칸 우클릭 '이 프리셋만 돌리기' → 재생(정리하기) → 최적화는 끝나야 결과가 나오고 취소하는 법 → 결과 색 빼기·더하기 → 넣기 안내.
-    /// 최적화는 오래 걸려 끝나기를 기다리지 않는다: 돌리기 단계는 해 보면(최적화가 시작되면) 저절로, 안 해도 '다음'으로 넘어간다.
+    /// 그림을 픽셀 아트로(꼭 해야 넘어가는 단계가 대부분): 메뉴 AI > AI 그림 픽셀로 정리…로 픽셀로 정리 창을 직접 열게 하고(열린 메뉴에서 그 항목만 누를 수 있음)
+    /// → 예시 그림을 넣었다고 알림 → 후보 칸 우클릭 '이 프리셋만 돌리기'로 돌린 뒤 '취소'로 멈추기(다 돌면 저절로 다음)
+    /// → 설정 칸을 펴고 프리셋 '기본' 불러오기 → 간편 설정의 결과 크기를 우클릭 목록으로 바꾸기 → 재생(정리하기)으로 돌려 끝나기 기다리기
+    /// → 결과가 든 후보 칸 한 번 누르기 → 결과 크게 보기 → 색 빼기와 원본에서 색 더하기(움짤 둘을 나란히) → 적용(창이 닫힘) → 결과가 들어간 캔버스를 보이며 마침.
     /// </summary>
     private List<TutorialStep> PixelateTutorial()
     {
-        string settingsBefore = "", paletteBefore = "";
+        string excludedBefore = "", pinnedBefore = "";
+        int tileClicksBefore = 0, appliedBefore = 0;
+        // 돌리기 단계: 첫 준비가 끝난 것을 봤는지(첫 준비 중의 처음 후보 만들기는 세지 않음), 프리셋 목록을 열어 봤는지.
+        bool readySeen = false, presetListOpened = false;
         PixelateDialog? D() => _pixelate is { IsVisible: true } d ? d : null;
+        bool Excluded() => D() is { } d && d.TutorialExcludedText != excludedBefore;
+        bool Pinned() => D() is { } d && d.TutorialPinnedText != pinnedBefore;
         return
         [
             new()
@@ -118,10 +130,11 @@ public sealed partial class MainForm
                 Id = "pixelate.open",
                 Text = () => UiStrings.FormatTutorial_Px_Open(menu: MenuPath("AI/AI 그림 픽셀로 정리…"), file: UiStrings.Pixelate_MenuItem),
                 Target = () => TopMenuOf("AI/AI 그림 픽셀로 정리…"),
+                // 메뉴를 열면 그 항목만 빛나고 다른 항목은 누를 수 없다(메뉴 줄의 다른 메뉴도 어두운 곳이라 막힘).
+                MenuItem = () => Command("AI/AI 그림 픽셀로 정리…").Item,
                 Done = () => D() is not null,
                 Required = true,
-                // 메뉴를 열고, 파일 칸에서 우클릭으로 열어도 되게.
-                PassThrough = true,
+                AutoAdvance = true,
             },
             new()
             {
@@ -133,68 +146,147 @@ public sealed partial class MainForm
             },
             new()
             {
-                Id = "pixelate.wait",
-                Text = () => UiStrings.Tutorial_Px_Wait,
-                Target = () => D()?.TutorialCandidates,
-                Done = () => D()?.TutorialReady == true,
-                Required = true,
-            },
-            new()
-            {
-                Id = "pixelate.settings",
-                Text = () => UiStrings.FormatTutorial_Px_Settings(button: UiStrings.Pixelate_Settings_Show),
-                Target = () => D()?.TutorialSettingsToggle,
-                Done = () => D()?.TutorialSettingsOpen == true,
-                Required = true,
-            },
-            new()
-            {
-                Id = "pixelate.quick",
-                Enter = () => settingsBefore = D()?.TutorialSettingsText ?? "",
-                Text = () => UiStrings.Tutorial_Px_Quick,
-                Target = () => D()?.TutorialQuickSection(),
-                Done = () => D() is { } d && d.TutorialSettingsText != settingsBefore,
-                Required = true,
-            },
-            new()
-            {
+                // 첫 준비 중이면 기다리라는 글, 끝나면 '같은 색상 계열' 칸 우클릭 → '이 프리셋만 돌리기'. 돌기 시작하면 저절로 다음(취소 단계)으로.
                 Id = "pixelate.rerun",
-                Clip = "pixelate-rerun",
-                Text = () => UiStrings.FormatTutorial_Px_Rerun(preset: D()?.TutorialIdleTile("shade")?.Preset ?? "", menu: UiStrings.Pixelate_Opt_RunPreset),
-                Target = () => D() is { } d ? d.TutorialIdleTile("shade")?.Tile ?? d.TutorialCandidates : null,
-                Done = () => D()?.TutorialRunning == true,
+                Clips = [new("pixelate-rerun")],
+                Text = () => D() is { TutorialReady: true } d
+                    ? UiStrings.FormatTutorial_Px_Rerun(preset: d.TutorialIdleTile("shade")?.Preset ?? "", menu: UiStrings.Pixelate_Opt_RunPreset)
+                    : UiStrings.Tutorial_Px_Wait,
+                Target = () => D() is { } d ? d.TutorialReady ? d.TutorialIdleTile("shade")?.Tile ?? d.TutorialCandidates : d.TutorialCandidates : null,
+                Done = () =>
+                {
+                    if (D() is not { } d) return false;
+                    if (d.TutorialReady) readySeen = true;
+                    // 첫 준비 중의 처음 후보 만들기는 세지 않는다(준비가 끝난 것을 본 뒤 돌기 시작해야).
+                    return readySeen && d.TutorialRunning;
+                },
+                Required = true,
+                AutoAdvance = true,
             },
             new()
             {
+                // 도는 동안 자동 최적화 단추가 '취소'가 된다 — 눌러 멈추면(또는 그 사이 다 돌면) 저절로 다음으로.
+                Id = "pixelate.cancel",
+                Text = () => UiStrings.Tutorial_Px_Optimize,
+                Target = () => D()?.TutorialOptimizeButton,
+                Done = () => D() is { TutorialRunning: false },
+                Required = true,
+                AutoAdvance = true,
+            },
+            new()
+            {
+                // 설정 칸을 펴고 프리셋 목록을 열어 '기본'을 고르면(목록이 닫히며 '기본'이 골라져 있으면) 저절로 다음으로 — 이미 '기본'이어도 목록에서 골라 보게.
+                Id = "pixelate.preset",
+                Enter = () => presetListOpened = false,
+                Text = () => D() is { TutorialSettingsOpen: true } d
+                    ? UiStrings.FormatTutorial_Px_Preset(preset: d.TutorialDefaultPresetName ?? UiStrings.Pixelate_Preset_Default)
+                    : UiStrings.FormatTutorial_Px_Settings(button: UiStrings.Pixelate_Settings_Show),
+                Target = () => D() is { } d ? d.TutorialSettingsOpen ? d.TutorialPresetBox : d.TutorialSettingsToggle : null,
+                Done = () =>
+                {
+                    if (D() is not { TutorialSettingsOpen: true } d) return false;
+                    if (d.TutorialPresetBox.IsDropDownOpen) presetListOpened = true;
+                    return presetListOpened && !d.TutorialPresetBox.IsDropDownOpen && d.TutorialDefaultPresetChosen;
+                },
+                Required = true,
+                AutoAdvance = true,
+            },
+            new()
+            {
+                // 결과 크기 '자동'을 끄고 가로를 권하는 크기(예시 그림에 잘 맞는 64)로 바꾸면(우클릭 예시 값·입력·끌기 어느 것이든) 저절로 다음으로(다른 값은 넘어가지 않음).
+                Id = "pixelate.quick",
+                Clips = [new("pixelate-size")],
+                Text = () => UiStrings.FormatTutorial_Px_Quick(auto: UiStrings.Pixelate_Auto, size: TutorialPixelateWidth),
+                Target = () => D()?.TutorialQuickSizeRow(),
+                Done = () => D()?.TutorialFixedWidth == TutorialPixelateWidth,
+                Required = true,
+                AutoAdvance = true,
+            },
+            new()
+            {
+                // 재생(정리하기)을 누르면(돌기 시작하면) 저절로 다음(결과 칸 누르기)으로 — 끝나기는 다음 단계에서 기다린다.
                 Id = "pixelate.run",
                 Text = () => UiStrings.FormatTutorial_Px_Run(button: UiStrings.Pixelate_Run),
                 Target = () => D()?.TutorialRunButton,
-                Done = () => D()?.TutorialRunning == true,
+                Done = () => D() is { TutorialRunning: true },
+                Required = true,
+                AutoAdvance = true,
             },
             new()
             {
-                Id = "pixelate.optimize",
-                Clip = "pixelate-optimize",
-                Text = () => UiStrings.Tutorial_Px_Optimize,
-                Target = () => D()?.TutorialOptimizeButton,
-                // 도는 중이면 이 단추가 '취소'(비춘 칸 안) — 우클릭 '모두 취소'도 그대로.
+                // 정리가 끝나기를 기다린 뒤, 결과가 들어간 후보 칸(저절로 골라져 있음)을 한 번 눌러 보게 한다 — 후보 칸을 누르면 그 결과가 미리보기에 보인다는 것을 익히게.
+                Id = "pixelate.pick",
+                Enter = () => tileClicksBefore = D()?.TutorialTileClicks ?? 0,
+                Text = () => D() is { TutorialRunning: true }
+                    ? UiStrings.Tutorial_Px_Running
+                    : UiStrings.FormatTutorial_Px_Pick(name: D()?.TutorialSelectedTile?.Name ?? ""),
+                Target = () => D() is { } d ? d.TutorialRunning ? d.TutorialCandidates : d.TutorialSelectedTile?.Tile ?? d.TutorialCandidates : null,
+                Done = () => D() is { TutorialRunning: false } d && d.TutorialTileClicks != tileClicksBefore,
+                Required = true,
+                AutoAdvance = true,
             },
             new()
             {
+                Id = "pixelate.zoom",
+                Text = () => UiStrings.Tutorial_Px_Zoom,
+                Target = () => D()?.TutorialPreview,
+                Done = () => D()?.TutorialZoomOpen == true,
+                Required = true,
+                // 크게 보기가 대화상자를 덮으므로 열리면 바로 다음(색 단계 — 크게 보기 안의 색 줄)으로.
+                AutoAdvance = true,
+            },
+            new()
+            {
+                // 색 빼기·더하기를 한 단계에: 움짤 둘(왼쪽 빼기, 오른쪽 더하기)을 나란히. 저절로 넘어가지 않아 마음껏 빼고 더해 본 뒤 '다음'으로만 넘어간다.
+                // + 칸을 누른 뒤(스포이드)에는 원본 그림을 비추고 말풍선을 숨긴다(넓은 말풍선이 누를 원본을 가리지 않게) — 원본을 누르거나 우클릭으로 취소하면 다시 보인다.
                 Id = "pixelate.colors",
-                Clip = "pixelate-colors",
-                Enter = () => paletteBefore = D()?.TutorialPaletteText ?? "",
-                Text = () => UiStrings.Tutorial_Px_Colors,
+                Clips =
+                [
+                    new("pixelate-colors", () => UiStrings.Tutorial_Px_ExcludeClip),
+                    new("pixelate-pin", () => UiStrings.FormatTutorial_Px_PinClip(button: UiStrings.Pixelate_Pin_Add)),
+                ],
+                Enter = () =>
+                {
+                    excludedBefore = D()?.TutorialExcludedText ?? "";
+                    pinnedBefore = D()?.TutorialPinnedText ?? "";
+                },
+                Text = () => (Excluded(), Pinned()) switch
+                {
+                    (true, true) => UiStrings.Tutorial_Px_ColorsBoth,
+                    (true, false) => UiStrings.Tutorial_Px_ColorsPin,
+                    (false, true) => UiStrings.Tutorial_Px_ColorsExclude,
+                    _ => UiStrings.Tutorial_Px_Colors,
+                },
                 Target = () => D()?.TutorialColors,
-                Done = () => D() is { } d && d.TutorialPaletteText != paletteBefore,
-                // + 단추를 누른 뒤 원본 칸(비춘 칸 밖)을 눌러 색을 더한다.
+                // 스포이드 중이면 원본 그림 자리(TargetArea가 Target보다 먼저).
+                TargetArea = () => D() is { TutorialPicking: true } d ? d.TutorialPickSource : null,
+                HideBubble = () => D()?.TutorialPicking == true,
+                // + 칸을 누른 뒤 원본 그림(비춘 칸 밖일 수 있음)을 누르게.
                 PassThrough = true,
             },
             new()
             {
+                // 적용(또는 새 탭에 추가·후보 칸 두 번 누르기)으로 결과가 캔버스에 들어가 창이 닫히면 다음(캔버스 보기)으로.
                 Id = "pixelate.apply",
+                // 크게 보기가 대화상자를 덮고 있으면 닫아 적용 단추가 보이게.
+                Enter = () =>
+                {
+                    appliedBefore = _pixelateApplied;
+                    D()?.TutorialCloseZoom();
+                },
                 Text = () => UiStrings.FormatTutorial_Px_Apply(button: D()?.TutorialApplyButton.Content as string ?? UiStrings.Pixelate_Apply),
                 Target = () => D()?.TutorialApplyButton,
+                Done = () => _pixelateApplied != appliedBefore,
+                Required = true,
+                AutoAdvance = true,
+            },
+            new()
+            {
+                // 마침: 결과가 들어간 캔버스를 비추고 자유롭게 고쳐 보라고 한다('끝내기').
+                Id = "pixelate.done",
+                // 이미 열린 문서에 넣었으면 변형 모드(옮기기·크기)로 들어와 있어 확정하는 법도 알린다.
+                Text = () => _ctx.IsTransforming ? UiStrings.Tutorial_Px_DonePlace : UiStrings.Tutorial_Px_Done,
+                Target = () => _canvas,
             },
         ];
     }
@@ -202,14 +294,22 @@ public sealed partial class MainForm
     // ───────────── 3D를 픽셀 아트로 ─────────────
 
     /// <summary>
-    /// 3D를 픽셀 아트로: 메뉴 3D > 3D 모델 열기…로 3D 모델 창 열기(모달) → 예시 병아리 모델을 넣고 원본·결과 두 칸 안내 → 원본 모델을 끌어 돌리기
-    /// → 출력(크기·프레임) → 프리셋·카메라·빛·픽셀 다듬기·외곽선 → 가져오기(새 탭으로 열림 — 창이 닫히면 마침).
+    /// 3D를 픽셀 아트로: 메뉴 3D > 3D 모델 열기…로 3D 모델 창 열기(모달, 열린 메뉴에서 그 항목만 누를 수 있음) → 예시 병아리 모델을 넣고 원본·결과 두 칸 안내
+    /// → 원본 모델을 끌어 돌리기 → 출력(크기·프레임) → 프리셋·카메라·빛·픽셀 다듬기·외곽선 → 가져오기(창이 닫히고 그린 프레임이 새 탭으로 열림)
+    /// → 들어간 캔버스를 보이며 마침.
     /// </summary>
     private List<TutorialStep> ModelTutorial()
     {
         string angleBefore = "";
         var sizeBefore = default(PixelSize);
-        ModelImportDialog? D() => OwnedWindows.OfType<ModelImportDialog>().FirstOrDefault(w => w.IsVisible);
+        // 마지막으로 보인 3D 모델 창(닫힌 뒤에도 가져오기로 닫혔는지 보려고).
+        ModelImportDialog? opened = null;
+        ModelImportDialog? D()
+        {
+            var d = OwnedWindows.OfType<ModelImportDialog>().FirstOrDefault(w => w.IsVisible);
+            if (d is not null) opened = d;
+            return d;
+        }
         return
         [
             new()
@@ -217,9 +317,11 @@ public sealed partial class MainForm
                 Id = "model.open",
                 Text = () => UiStrings.FormatTutorial_Md_Open(menu: MenuPath("3D/3D 모델 열기…")),
                 Target = () => TopMenuOf("3D/3D 모델 열기…"),
+                // 메뉴를 열면 그 항목만 빛나고 다른 항목은 누를 수 없다.
+                MenuItem = () => Command("3D/3D 모델 열기…").Item,
                 Done = () => D() is not null,
                 Required = true,
-                PassThrough = true,
+                AutoAdvance = true,
             },
             new()
             {
@@ -255,9 +357,20 @@ public sealed partial class MainForm
             },
             new()
             {
+                // 가져오기로 창이 닫히면(취소로 닫으면 그만둔 것) 다음(캔버스 보기)으로 — 그린 프레임은 창이 닫힌 뒤 진행 창을 거쳐 새 탭으로 열린다.
                 Id = "model.import",
                 Text = () => UiStrings.FormatTutorial_Md_Import(button: UiStrings.Model_Import),
                 Target = () => D()?.TutorialImport,
+                Done = () => D() is null && opened is { DialogResult: DialogResult.OK },
+                Required = true,
+                AutoAdvance = true,
+            },
+            new()
+            {
+                // 마침: 가져온 프레임이 들어간 캔버스를 비추고 자유롭게 고쳐 보라고 한다('끝내기').
+                Id = "model.done",
+                Text = () => UiStrings.Tutorial_Md_Done,
+                Target = () => _canvas,
             },
         ];
     }
@@ -265,7 +378,7 @@ public sealed partial class MainForm
     // ───────────── 효과 쓰기 ─────────────
 
     /// <summary>
-    /// 효과 쓰기: 예시 픽셀 그림(5프레임, 들썩임)을 새 탭(저장하지 않는 문서)으로 열고, 도구 막대의 효과 단추 → 타임라인에서 3~5프레임 칸 끌어 고르기
+    /// 효과 쓰기: 예시 픽셀 그림(5프레임, 들썩임)을 새 탭(저장하지 않는 문서)으로 열고, 타임라인에서 3~5프레임 칸 끌어 고르기 → 도구 막대의 효과 단추로 효과 목록 열기
     /// → 외곽선 상자를 고른 칸으로 끌어 놓거나 두 번 누르기(그 프레임에만 들어감) → 오른쪽 효과 설정에서 값 바꾸기 → 타임라인 효과 줄 안내
     /// → 효과 목록 '추가 다운로드'로 상점(홈페이지 에셋 페이지) 열기(누르면 끝).
     /// </summary>
@@ -286,30 +399,37 @@ public sealed partial class MainForm
         [
             new()
             {
-                Id = "effects.open",
+                Id = "effects.select",
                 Enter = () =>
                 {
                     example = TutorialEffectProject();
                     OpenDetachedDocument(example, UiStrings.Tutorial_ExampleTitle, () => { });
+                    // 효과 목록이 이미 열려 있으면 닫아 두고 다음 단계에서 단추로 직접 열게 한다.
+                    if (_effectListShown) SetLeftPanes(_filesShown, false, animate: false);
                 },
-                Text = () => UiStrings.Tutorial_Fx_Open,
-                Target = () => _tbEffects,
-                Done = () => _effectListShown,
-                Required = true,
-            },
-            new()
-            {
-                Id = "effects.select",
+                Clips = [new("effects-select")],
                 Text = () => UiStrings.FormatTutorial_Fx_Select(from: From + 1, to: To + 1),
                 TargetArea = Cels,
                 DragAcross = true,
                 Done = () => Current() && _timeline.TutorialCelsSelected(0, From, To),
                 Required = true,
+                // 세 칸을 끌어 고르고 놓으면 바로 다음(효과 목록 열기)으로.
+                AutoAdvance = true,
+            },
+            new()
+            {
+                Id = "effects.open",
+                Text = () => UiStrings.Tutorial_Fx_Open,
+                Target = () => _tbEffects,
+                // 단추를 눌러 목록이 열리면 바로 다음(외곽선 상자를 고른 칸으로 끌기)으로.
+                Done = () => _effectListShown,
+                Required = true,
+                AutoAdvance = true,
             },
             new()
             {
                 Id = "effects.add",
-                Clip = "effects-add",
+                Clips = [new("effects-add")],
                 Enter = () =>
                 {
                     effectsBefore = EffectCount();
@@ -322,11 +442,13 @@ public sealed partial class MainForm
                 DropTarget = Cels,
                 Done = () => Current() && EffectCount() > effectsBefore && !_timeline.PreviewingEffectDrop,
                 Required = true,
+                // 끌어다 놓거나 두 번 눌러 효과가 들어가면 바로 다음(효과 설정)으로.
+                AutoAdvance = true,
             },
             new()
             {
                 Id = "effects.adjust",
-                Clip = "effects-adjust",
+                Clips = [new("effects-adjust")],
                 Enter = () =>
                 {
                     snapshot = Effects();
@@ -350,7 +472,7 @@ public sealed partial class MainForm
             new()
             {
                 Id = "effects.timeline",
-                Clip = "effects-timeline",
+                Clips = [new("effects-timeline")],
                 Text = () => UiStrings.Tutorial_Fx_Timeline,
                 Target = () => _timeline,
             },
@@ -375,6 +497,7 @@ public sealed partial class MainForm
                     return store;
                 },
                 Done = () => storeOpened,
+                AutoAdvance = true,
             },
         ];
     }
@@ -423,6 +546,7 @@ public sealed partial class MainForm
                 Target = () => _tbChat,
                 Done = () => Chat() is not null,
                 Required = true,
+                AutoAdvance = true,
             },
             new()
             {
@@ -443,8 +567,10 @@ public sealed partial class MainForm
             {
                 Id = "ai.input",
                 Text = () => _chat?.AnyProviderReady == true ? UiStrings.Tutorial_Ai_Ready : UiStrings.Tutorial_Ai_Later,
-                // 로그인 전이면 입력 칸이 없어 Claude·Codex 고르기 줄을 비춘다.
-                Target = () => Chat() is { } chat ? chat.TutorialInput is { IsEffectivelyVisible: true } input ? input : chat.TutorialProviderToggle : null,
+                // 로그인 전이면 입력 칸이 없어(화면에서 빠져 있음 — 떨어진 컨트롤도 IsEffectivelyVisible은 참) Claude·Codex 고르기 줄을 비춘다.
+                Target = () => Chat() is { } chat
+                    ? chat.TutorialInput is { IsEffectivelyVisible: true } input && TopLevel.GetTopLevel(input) is not null ? input : chat.TutorialProviderToggle
+                    : null,
                 PassThrough = true,
             },
             new()
@@ -454,6 +580,8 @@ public sealed partial class MainForm
                 // 지금 레이어의 자물쇠(문서가 없으면 대상 없이 가운데 말풍선). 눌러 잠가 볼 수 있게.
                 TargetArea = () => _ctx.HasProject ? _timeline.TutorialLock(_ctx.CurrentLayer) : null,
                 PassThrough = true,
+                // 채팅 창이 타임라인(자물쇠)과 말풍선을 가리므로 이 단계 동안만 숨긴다(다음 단계에서 다시 보임).
+                HideWindows = () => [_chat],
             },
             new()
             {

@@ -20,6 +20,14 @@ public sealed partial class TimelinePanel
     internal (Control Owner, Rect Area)? TutorialLock(int layer)
         => P is { } p && layer >= 0 && layer < p.Layers.Count ? (_grid, _grid.LockRect(layer)) : null;
 
+    /// <summary>레이어 우클릭 메뉴의 '새로 만들기'와 그 안의 '새 타일맵 레이어'(마지막으로 연 메뉴의 것 — 튜토리얼이 빛나게 함, 연 적 없으면 null).</summary>
+    private MenuItem? _tutorialNewMenu, _tutorialTilemapItem;
+
+    /// <summary>
+    /// 튜토리얼이 빛나게 할 우클릭 메뉴 항목: '새로 만들기'를 펼쳤으면 그 안의 '새 타일맵 레이어', 아니면 '새로 만들기'(메뉴가 닫혀 있으면 튜토리얼이 무시).
+    /// </summary>
+    internal MenuItem? TutorialTilemapMenuItem => _tutorialNewMenu is { IsSubMenuOpen: true } ? _tutorialTilemapItem : _tutorialNewMenu;
+
     /// <summary>"다음 레이어" 줄의 ＋(새 레이어) 칸(문서가 없으면 null).</summary>
     internal (Control Owner, Rect Area)? TutorialAddLayer() => P is null ? null : (_grid, _grid.AddLayerRect());
 

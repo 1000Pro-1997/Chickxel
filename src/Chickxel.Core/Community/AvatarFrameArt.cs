@@ -45,6 +45,8 @@ public enum FrameOrnament
     Halo = 64,
     /// <summary>불꽃 날개와 정수리 볏(불길 고리 전용).</summary>
     FlameWings = 128,
+    /// <summary>정수리에 돋은 떡잎 새싹(잎끝이 살랑임).</summary>
+    Sprout = 256,
 }
 
 /// <summary>
@@ -195,6 +197,12 @@ public sealed record FrameStyle(string Id)
             Ornaments = FrameOrnament.Halo | FrameOrnament.Wings, OrnamentColors = WhiteWing,
             Orbiters = 4, RainbowOrbit = true, Embers = 3, EmberColors = [Hex(0xFFF3B0), Hex(0xFFFFFF)],
         },
+
+        // ── 레벨 튜토리얼 보상(LevelRewards.Tutorial)
+        M("frame.sprout", 0xD9F99D, 0x84CC16, 0x4D7C0F, 0x1A2E05) with
+        {
+            Glint = 60, Ornaments = FrameOrnament.Sprout, OrnamentColors = [Hex(0xD9F99D), Hex(0x65C32A), Hex(0x3F7A12), Hex(0x1A2E05)],
+        },
     ];
 
     private static readonly Dictionary<string, FrameStyle> ById = Styles.ToDictionary(s => s.Id, StringComparer.Ordinal);
@@ -214,7 +222,7 @@ public sealed class AvatarFrameArt : IPixelArt
     /// <summary>작은·큰 테두리 둘레 여백(장식·빛 자리, 픽셀). 작은 모양에 날개·왕관·뿔·고리 장식이 있으면 <see cref="SmallOrnamentMargin"/>.</summary>
     public const int SmallMargin = 3, SmallOrnamentMargin = 5, LargeMargin = 12;
 
-    private const FrameOrnament OutsideOrnaments = FrameOrnament.Wings | FrameOrnament.Crown | FrameOrnament.Horns | FrameOrnament.Halo | FrameOrnament.FlameWings;
+    private const FrameOrnament OutsideOrnaments = FrameOrnament.Wings | FrameOrnament.Crown | FrameOrnament.Horns | FrameOrnament.Halo | FrameOrnament.FlameWings | FrameOrnament.Sprout;
 
     private readonly FrameStyle _style;
     private readonly double _center, _radius;
@@ -260,6 +268,7 @@ public sealed class AvatarFrameArt : IPixelArt
         if ((s.Ornaments & FrameOrnament.Flowers) != 0) Flowers(p, frame);
         if ((s.Ornaments & FrameOrnament.Horns) != 0) Horns(p);
         if ((s.Ornaments & FrameOrnament.Crown) != 0) Crown(p, frame);
+        if ((s.Ornaments & FrameOrnament.Sprout) != 0) Sprout(p, frame);
         if ((s.Ornaments & FrameOrnament.Shards) != 0) Shards(p, frame);
         if (s.Orbiters > 0) Orbiters(p, frame);
         if (s.Embers > 0) Embers(p, frame);
@@ -498,6 +507,25 @@ public sealed class AvatarFrameArt : IPixelArt
             _ => jewel++ % 4 == lit % 4 ? Hex(0xBFDBFE) : Hex(0x2563EB),
         }, c[3]);
         if (Large && Mod(frame, 40) < 10) LevelBadgeArt.Sparkle(p, x + 4, y - 2, Mod(frame, 40) < 5 ? 1 : 2, SparkleShape.Star, Hex(0xFFF3B0));
+    }
+
+    // 새싹: a 밝은 잎 · b 잎 · s 줄기(바깥 선은 SpriteOutlined). 두 자세를 오가며 잎끝이 살랑인다.
+    private static readonly string[][] SproutPoses =
+    [
+        ["aa.....aa", "abb...bba", ".abbsbba.", "...bsb...", "....s....", "....s...."],
+        [".........", "aab...baa", "abbbsbbba", "...bsb...", "....s....", "....s...."],
+    ];
+    private static readonly string[][] MiniSproutPoses = [["a...a", "bbsbb", "..s.."], [".....", "absba", "..s.."]];
+
+    /// <summary>정수리 새싹: 고리 위에 줄기를 꽂고 떡잎 두 장이 30프레임마다 자세를 바꿔 살랑인다(작은 것은 5×3).</summary>
+    private void Sprout(PixelPainter p, int frame)
+    {
+        var c = _style.OrnamentColors;
+        var rows = (Large ? SproutPoses : MiniSproutPoses)[Mod(frame, 60) < 30 ? 0 : 1];
+        int x = (int)Math.Floor(_center) - rows[0].Length / 2;
+        // 줄기 밑동이 고리 몸통에 묻히게
+        int y = (int)Math.Floor(_center - _radius - (Large ? 1.4 : 0.6)) - rows.Length + 1;
+        p.SpriteOutlined(x, y, rows, ch => ch switch { 'a' => c[0], 'b' => c[1], _ => c[2] }, c[3]);
     }
 
     private static readonly string[] HornRows = ["...a", "..ab", ".abb", "abbc", "bbc.", "bc.."];

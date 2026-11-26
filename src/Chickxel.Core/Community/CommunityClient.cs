@@ -219,6 +219,17 @@ public sealed class CommunityClient
     }
 
     /// <summary>
+    /// <c>POST /api/me/tutorial-rewards</c>(지금 계정): 레벨 튜토리얼을 마쳤다고 알려 새싹 보상(<see cref="LevelRewards.Tutorial"/>)을 받는다(이미 받았으면 그대로).
+    /// 답의 내 정보를 기억한다. 로그인하지 않았으면 <see cref="CommunityErrorCode.Unauthorized"/>, 예전 서버면 <see cref="CommunityErrorCode.NotFound"/>.
+    /// </summary>
+    public async Task<CommunityUser> ClaimTutorialRewardsAsync(CancellationToken cancellationToken = default)
+    {
+        string token = Token ?? throw new CommunityException(CommunityErrorCode.Unauthorized);
+        var json = await SendAsync(HttpMethod.Post, "api/me/tutorial-rewards", null, auth: true, _options.RequestTimeout, cancellationToken, token).ConfigureAwait(false);
+        return Remember(token, CommunityUser.Read(json));
+    }
+
+    /// <summary>
     /// <c>POST /api/me/uptime</c>(지금 계정): 앱을 로그인한 채 한 시간 켜 두었다고 알린다(+1 XP — 서버는 마지막으로 준 지 58분이 안 됐으면 주지 않음).
     /// 받은 레벨·경험치는 내 정보와 저장한 계정에도 적는다(<see cref="AccountsChanged"/>). 로그인하지 않았으면 <see cref="CommunityErrorCode.Unauthorized"/>,
     /// 예전 서버면 <see cref="CommunityErrorCode.NotFound"/>.

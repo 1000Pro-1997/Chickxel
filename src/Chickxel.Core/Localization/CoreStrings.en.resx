@@ -175,6 +175,8 @@
   <data name="Reward_frame_celestial" xml:space="preserve"><value>Celestial Frame</value></data>
   <data name="Reward_effect_phoenix_aura" xml:space="preserve"><value>Phoenix Aura</value></data>
   <data name="Reward_card_legend" xml:space="preserve"><value>Legend Card</value></data>
+  <data name="Reward_title_sprout" xml:space="preserve"><value>Pixel Sprout</value></data>
+  <data name="Reward_frame_sprout" xml:space="preserve"><value>Sprout Frame</value></data>
   <data name="RewardSlot_Title" xml:space="preserve"><value>Title</value></data>
   <data name="RewardSlot_Badge" xml:space="preserve"><value>Level badge</value></data>
   <data name="RewardSlot_Frame" xml:space="preserve"><value>Frame</value></data>

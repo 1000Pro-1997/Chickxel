@@ -105,7 +105,24 @@ internal static class TutorialShots
 
         // ── 타일맵 ──
         Start(k, m, TutorialKind.Tilemap);
-        Expect(k, m, outDir, "tile.create", () => k.Command("프레임·레이어/새 타일맵 레이어…"));
+        // 타임라인 레이어 이름 우클릭 → 새로 만들기(빛남) → 펼치면 새 타일맵 레이어(빛남), 만들면 바로 다음.
+        Expect(k, m, outDir, "tile.create", () =>
+        {
+            var timeline = ShotKit.Get<Control>(m, "_timeline");
+            var session = typeof(TutorialSpotlight).GetField("_session", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!.GetValue(null)!;
+            ShotKit.Call(timeline, "ShowLayerMenu", ScreenDemo.Ctx(m).CurrentLayer);
+            k.Settle(300);
+            TutorialSpotlight.Tick();
+            var newMenu = ShotKit.Get<MenuItem?>(timeline, "_tutorialNewMenu") ?? throw new InvalidOperationException("tile.create: layer menu not built");
+            if (!ReferenceEquals(ShotKit.Get<object?>(session, "_menuItem"), newMenu)) throw new InvalidOperationException("tile.create: New not highlighted in the open layer menu");
+            newMenu.IsSubMenuOpen = true;
+            k.Settle(400);
+            TutorialSpotlight.Tick();
+            var item = ShotKit.Get<MenuItem?>(timeline, "_tutorialTilemapItem")!;
+            if (!item.IsEffectivelyVisible) throw new InvalidOperationException("tile.create: New tilemap layer item not shown");
+            if (!ReferenceEquals(ShotKit.Get<object?>(session, "_menuItem"), item)) throw new InvalidOperationException("tile.create: New tilemap layer not highlighted in the submenu");
+            k.Click(item);
+        });
         Expect(k, m, outDir, "tile.tileset", () =>
         {
             // 첫 타일셋 묶음의 첫 자동 타일 칸을 누른다.
@@ -143,11 +160,31 @@ internal static class TutorialShots
         Start(k, m, TutorialKind.Level);
         Expect(k, m, outDir, "level.badge", () => ClickBubble(k, m, UiStrings.Tutorial_Next));
         Expect(k, m, outDir, "level.upload", () => ClickBubble(k, m, UiStrings.Tutorial_Next));
-        Expect(k, m, outDir, "level.rewards", () => ClickBubble(k, m, UiStrings.Tutorial_Finish));
+        // 계정 관리(계정 창은 모달이라 그 안에서 마지막 단계를 봄). '변경하기…'는 브라우저를 열어서 누를 때 하는 일(새싹 보상 받기)만 부른다.
+        int claims = CommunityShots.TutorialClaims;
+        Expect(k, m, outDir, "level.rewards", () => k.Dialog(() => AccountDialog.Show(m), w =>
+        {
+            Expect(k, m, outDir, "level.change", () =>
+            {
+                var before = typeof(AccountDialog).Assembly.GetType("Chickxel.App.RewardViews")!.GetProperty("BeforeChange", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
+                _ = ((Func<Task>)before.GetValue(null)!)();
+            });
+            w.Close();
+        }, keepOpen: true));
         Ended(k, "level");
+        if (CommunityShots.TutorialClaims != claims + 1) throw new InvalidOperationException("level: pressing Change did not claim the tutorial rewards");
+        if (!App.Settings.TutorialsDone.Contains(nameof(TutorialKind.Level))) throw new InvalidOperationException("level: pressing Change on the last step did not finish");
 
-        // ── 효과 쓰기 ──
+        // ── 효과 쓰기: 효과 목록을 열어 둔 채 시작하면 닫혀야 한다 ──
+        if (!ShotKit.Get<bool>(m, "_effectListShown")) k.Click(ShotKit.Get<Control>(m, "_tbEffects"));
+        k.Settle(300);
         Start(k, m, TutorialKind.Effects);
+        // 3~5프레임 칸 끌어 고르기(타임라인 셀 묶음) → 효과 단추로 목록 열기.
+        Expect(k, m, outDir, "effects.select", () =>
+        {
+            if (ShotKit.Get<bool>(m, "_effectListShown")) throw new InvalidOperationException("effects.select: effect list still open at start");
+            ShotKit.Call(ShotKit.Get<Control>(ShotKit.Get<Control>(m, "_timeline"), "_grid"), "SelectRect", 0, 2, null, 4);
+        });
         Expect(k, m, outDir, "effects.open", () =>
         {
             // 어두운 곳은 막혀 있다(누르면 아래 컨트롤이 아니라 덮개 판이 받음).
@@ -155,9 +192,6 @@ internal static class TutorialShots
                 if (m.GetVisualAt(p)?.GetType().Name != "Shade") throw new InvalidOperationException($"effects.open: {p} not blocked");
             k.Click(ShotKit.Get<Control>(m, "_tbEffects"));
         });
-        // 3~5프레임 칸 끌어 고르기(타임라인 셀 묶음).
-        Expect(k, m, outDir, "effects.select", () =>
-            ShotKit.Call(ShotKit.Get<Control>(ShotKit.Get<Control>(m, "_timeline"), "_grid"), "SelectRect", 0, 2, null, 4));
         Expect(k, m, outDir, "effects.add", () =>
         {
             var tile = (Control)ShotKit.Call(m, "TutorialOutlineTile")!;
@@ -193,55 +227,146 @@ internal static class TutorialShots
             });
             Expect(k, m, outDir, "model.output", () => ShotKit.Set(ShotKit.Get<object>(w, "_size"), "Size", new PixelSize(96, 96)));
             Expect(k, m, outDir, "model.look", () => ClickBubble(k, w, UiStrings.Tutorial_Next));
-            // 가져오기를 누르면 창이 닫히며 마친다(새 탭으로 그림).
+            // 가져오기를 누르면 창이 닫히고(그린 프레임이 새 탭으로 열림) 마지막 단계(캔버스)로.
             Expect(k, m, outDir, "model.import", () => k.Click(ShotKit.Get<Control>(w, "OkButton")));
         }, keepOpen: true, settleMs: 1200));
+        Expect(k, m, outDir, "model.done", () => ClickBubble(k, m, UiStrings.Tutorial_Finish));
         Ended(k, "model");
-        if (!App.Settings.TutorialsDone.Contains(nameof(TutorialKind.Model))) throw new InvalidOperationException("model: import on the last step did not finish");
+        if (!App.Settings.TutorialsDone.Contains(nameof(TutorialKind.Model))) throw new InvalidOperationException("model: finishing on the canvas did not count as done");
 
         // ── 그림을 픽셀 아트로 ──
         Start(k, m, TutorialKind.Pixelate);
         PixelateDialog Dialog() => k.Windows.OfType<PixelateDialog>().LastOrDefault() ?? throw new InvalidOperationException("pixelate dialog not open");
-        // 창은 사용자가 메뉴(AI > AI 그림 픽셀로 정리…)로 연다 — 그 메뉴 명령으로.
-        Expect(k, m, outDir, "pixelate.open", () => k.Command("AI/AI 그림 픽셀로 정리…"));
+        bool Running() => ShotKit.Get<bool>(Dialog(), "TutorialRunning");
+        // 창은 사용자가 메뉴(AI > AI 그림 픽셀로 정리…)로 연다: 메뉴를 열면 그 항목이 빛나고 같은 메뉴의 다른 항목은 막히는지 본 뒤, 그 메뉴 명령으로.
+        Expect(k, m, outDir, "pixelate.open", () =>
+        {
+            var menu = (MenuItem)ShotKit.Call(m, "TopMenuOf", "AI/AI 그림 픽셀로 정리…")!;
+            menu.IsSubMenuOpen = true;
+            k.Settle(300);
+            TutorialSpotlight.Tick();
+            var session = typeof(TutorialSpotlight).GetField("_session", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!.GetValue(null)!;
+            if (ShotKit.Get<object?>(session, "_menuGlow") is null) throw new InvalidOperationException("pixelate.open: menu item not highlighted while the menu is open");
+            int blocked = ShotKit.Get<System.Collections.IList>(session, "_menuBlocked").Count;
+            if (blocked == 0) throw new InvalidOperationException("pixelate.open: other menu items not blocked");
+            Console.WriteLine($"  menu open: highlighted, {blocked} other items blocked");
+            // 열린 메뉴(따로 뜨는 창)가 말풍선을 덮지 않게 말풍선이 메뉴를 피했는지.
+            var menuRect = ShotKit.Get<Rect?>(session, "_menuRect") ?? throw new InvalidOperationException("pixelate.open: open menu position unknown");
+            var bubble = ShotKit.Get<Border>(session, "_bubble");
+            var bubbleRect = new Rect(Canvas.GetLeft(bubble), Canvas.GetTop(bubble), bubble.Bounds.Width, bubble.Bounds.Height);
+            Console.WriteLine($"  menu={menuRect} bubble={bubbleRect}");
+            if (bubbleRect.Intersects(menuRect)) throw new InvalidOperationException("pixelate.open: the open menu covers the bubble");
+            Snap(k, m, outDir, "pixelate.open-menu");
+            menu.IsSubMenuOpen = false;
+            k.Settle(200);
+            k.Command("AI/AI 그림 픽셀로 정리…");
+        });
         Expect(k, m, outDir, "pixelate.source", () => ClickBubble(k, Dialog(), UiStrings.Tutorial_Next));
-        // 준비 기다리기: 들어올 때 아직이면 끝나는 대로 저절로, 이미 끝났으면 '다음'(건너뛰지 않고 차례대로).
-        Expect(k, m, outDir, "pixelate.wait", () => { if (NextShown(Dialog())) ClickBubble(k, Dialog(), UiStrings.Tutorial_Next); }, waitMs: 120000);
-        // 꼭 해야 하는 단계에는 '다음'이 없다.
-        Expect(k, m, outDir, "pixelate.settings", () =>
-        {
-            if (NextShown(Dialog())) throw new InvalidOperationException("pixelate.settings: Next shown on a required step");
-            ShotKit.Call(Dialog(), "SetSettingsExpanded", true, false);
-        });
-        Expect(k, m, outDir, "pixelate.quick", () =>
-        {
-            var colors = ShotKit.Get<NumericUpDown>(Dialog(), "_quickTargetColors");
-            var auto = ShotKit.Get<CheckBox>(Dialog(), "_quickTargetAuto");
-            if (auto.IsChecked == true) auto.IsChecked = false;
-            else colors.Value = colors.Value > colors.Minimum ? colors.Value - 1 : colors.Value + 1;
-        });
-        // 돌리기는 해 보면(최적화가 시작되면) 저절로 넘어간다 — 프리셋 칸 우클릭 대신 정리하기로 시작.
+        // 첫 준비를 기다린 뒤 프리셋 하나를 돌리면(실제로는 '같은 색상 계열' 칸 우클릭 → '이 프리셋만 돌리기') 저절로 취소 단계로, 취소하면 저절로 다음으로.
+        // 점검 예산이 짧아(2초) 다 돌아 버리기 전에 같은 흐름 안에서 취소한다.
         Expect(k, m, outDir, "pixelate.rerun", () =>
         {
+            if (NextShown(Dialog())) throw new InvalidOperationException("pixelate.rerun: Next shown on a required step");
+            WaitFor(k, () => ShotKit.Get<bool>(Dialog(), "TutorialReady"), 120000, "pixelate first preparation");
             var found = ShotKit.Call(Dialog(), "TutorialIdleTile", "shade") ?? throw new InvalidOperationException("no idle preset tile");
             Console.WriteLine($"  rerun tile: {found.GetType().GetField("Item2")!.GetValue(found)}");
             ShotKit.Call(Dialog(), "RunCurrent");
+            WaitFor(k, () => TutorialSpotlight.CurrentStepId == "pixelate.cancel", 5000, "pixelate.cancel after starting a run");
+            Console.WriteLine("  -> pixelate.cancel");
+            Snap(k, Dialog(), outDir, "pixelate.cancel");
+            if (Running()) ShotKit.Call(Dialog(), "OnOptimizeClicked");
+            WaitFor(k, () => TutorialSpotlight.CurrentStepId == "pixelate.preset", 30000, "pixelate.preset after cancelling");
+        }, waitMs: 60000);
+        // 설정 칸을 펴고 프리셋 목록을 열어 '기본'을 고르면(목록이 닫히면) 저절로 다음으로 — 목록을 열기 전에는 '다음'이 없다.
+        Expect(k, m, outDir, "pixelate.preset", () =>
+        {
+            if (NextShown(Dialog())) throw new InvalidOperationException("pixelate.preset: Next shown on a required step");
+            ShotKit.Call(Dialog(), "SetSettingsExpanded", true, false);
+            k.Settle(300);
+            var name = ShotKit.Get<string?>(Dialog(), "TutorialDefaultPresetName") ?? throw new InvalidOperationException("no default preset");
+            var box = ShotKit.Get<ComboBox>(Dialog(), "_preset");
+            box.IsDropDownOpen = true;
+            k.Settle(400);
+            TutorialSpotlight.Tick();
+            box.SelectedIndex = box.Items.IndexOf(name);
+            box.IsDropDownOpen = false;
         });
-        // 앞 단계에서 이미 돌기 시작했으면 재생 단계는 '다음'으로(저절로 건너뛰지 않음).
-        Expect(k, m, outDir, "pixelate.run", () => { if (NextShown(Dialog())) ClickBubble(k, Dialog(), UiStrings.Tutorial_Next); });
-        Expect(k, m, outDir, "pixelate.optimize", () => ClickBubble(k, Dialog(), UiStrings.Tutorial_Next));
-        Expect(k, m, outDir, "pixelate.colors", () => ClickBubble(k, Dialog(), UiStrings.Tutorial_Next));
-        Expect(k, m, outDir, "pixelate.apply", () => ClickBubble(k, Dialog(), UiStrings.Tutorial_Finish));
+        // 결과 크기 '자동'을 끄고 가로 값을 바꾼다(실제로는 가로 칸 우클릭 목록): 64가 아닌 값(48)에서는 넘어가지 않고 64에서만 넘어가는지.
+        Expect(k, m, outDir, "pixelate.quick", () =>
+        {
+            if (NextShown(Dialog())) throw new InvalidOperationException("pixelate.quick: Next shown on a required step");
+            ShotKit.Get<CheckBox>(Dialog(), "_quickAuto").IsChecked = false;
+            var width = ShotKit.Get<NumericUpDown>(ShotKit.Get<object>(Dialog(), "_quickSize"), "WidthBox");
+            width.Value = 48;
+            k.Settle(300);
+            TutorialSpotlight.Tick();
+            if (TutorialSpotlight.CurrentStepId != "pixelate.quick") throw new InvalidOperationException("pixelate.quick: moved on with a width other than 64");
+            width.Value = 64;
+        });
+        // 재생(정리하기): 끝나야 넘어간다.
+        Expect(k, m, outDir, "pixelate.run", () => ShotKit.Call(Dialog(), "RunCurrent"), waitMs: 60000);
+        // 결과가 들어간 후보 칸을 한 번 누른다(실제 누르기 — 칸의 누르기 처리가 고른 횟수를 셈).
+        Expect(k, m, outDir, "pixelate.pick", () =>
+        {
+            if (NextShown(Dialog())) throw new InvalidOperationException("pixelate.pick: Next shown on a required step");
+            // 재생을 누르면 바로 이 단계로 오므로 정리가 끝나기를 먼저 기다린다.
+            WaitFor(k, () => !Running(), 60000, "pixelate.pick: cleanup finishing");
+            k.Settle(300);
+            var found = ShotKit.Get<object?>(Dialog(), "TutorialSelectedTile") ?? throw new InvalidOperationException("pixelate.pick: no selected candidate tile");
+            var tile = (Control)found.GetType().GetField("Item1")!.GetValue(found)!;
+            Console.WriteLine($"  pick tile: {found.GetType().GetField("Item2")!.GetValue(found)}");
+            k.Click(tile);
+        });
+        Expect(k, m, outDir, "pixelate.zoom", () => ShotKit.Call(Dialog(), "OpenZoom"));
+        // '다음'이 있는지 → 색 빼기(실제로는 색 칸 우클릭) → 글이 '이제 더해 보세요'로 → + 칸을 누르면(스포이드) 원본 그림을 비추고 말풍선이 숨는지,
+        // 스포이드를 끄면 다시 보이는지 본 뒤 원본 칸을 누른 것처럼 고정 색을 더한다 → 둘 다 해도 머무는지 보고 '다음'.
+        Expect(k, m, outDir, "pixelate.colors", () =>
+        {
+            var session = typeof(TutorialSpotlight).GetField("_session", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!.GetValue(null)!;
+            var bubble = ShotKit.Get<Border>(session, "_bubble");
+            bool Says(string text) => ShotKit.All<TextBlock>(OverlayLayer.GetOverlayLayer(Dialog())!).Any(t => t.Tag as string == text);
+            if (!NextShown(Dialog())) throw new InvalidOperationException("pixelate.colors: no Next button (the step should be skippable)");
+            var result = ShotKit.Get<object>(ShotKit.Get<object>(Dialog(), "_selected"), "Result");
+            var palette = ShotKit.Get<IReadOnlyList<Chickxel.Core.Model.Color32>>(result, "Palette");
+            ShotKit.Call(Dialog(), "ToggleColor", palette[^1]);
+            WaitFor(k, () => Says(UiStrings.Tutorial_Px_ColorsPin), 3000, "pixelate.colors: 'now add a color' after excluding");
+            if (TutorialSpotlight.CurrentStepId != "pixelate.colors") throw new InvalidOperationException("pixelate.colors: moved on after only excluding");
+            var before = HoleOf(Dialog());
+            ShotKit.Call(Dialog(), "SetPicking", true);
+            WaitFor(k, () => HoleOf(Dialog()) != before, 3000, "pixelate.colors: source spotlighted while picking");
+            k.Settle(300);
+            if (bubble.IsVisible) throw new InvalidOperationException("pixelate.colors: bubble still covers the source while picking");
+            Console.WriteLine($"  picking: hole={HoleOf(Dialog())}, bubble hidden");
+            Snap(k, Dialog(), outDir, "pixelate.colors-source");
+            ShotKit.Call(Dialog(), "SetPicking", false);
+            WaitFor(k, () => bubble.IsVisible, 3000, "pixelate.colors: bubble back after picking");
+            ShotKit.Set(Dialog(), "_pinned", new[] { "#FF0000" });
+            ShotKit.Call(Dialog(), "ApplyPaletteEdits");
+            // 둘 다 해도 저절로 넘어가지 않고(마음껏 해 보게) '다음'으로만.
+            WaitFor(k, () => Says(UiStrings.Tutorial_Px_ColorsBoth), 3000, "pixelate.colors: 'tried both' text");
+            if (TutorialSpotlight.CurrentStepId != "pixelate.colors") throw new InvalidOperationException("pixelate.colors: moved on by itself");
+            k.Settle(400);
+            ClickBubble(k, Dialog(), UiStrings.Tutorial_Next);
+        });
+        // 적용 단추를 눌러(실제 누르기) 결과가 캔버스에 들어가고 창이 닫히면 마지막 단계(캔버스)로 — '다음'으로는 넘어가지 않는다.
+        Expect(k, m, outDir, "pixelate.apply", () =>
+        {
+            if (ShotKit.Get<bool>(Dialog(), "TutorialZoomOpen")) throw new InvalidOperationException("pixelate.apply: zoom still covers the dialog");
+            if (NextShown(Dialog())) throw new InvalidOperationException("pixelate.apply: Next shown on a required step");
+            k.Click(ShotKit.Get<Control>(Dialog(), "OkButton"));
+        });
+        Expect(k, m, outDir, "pixelate.done", () => ClickBubble(k, m, UiStrings.Tutorial_Finish));
         Ended(k, "pixelate");
-        Dialog().Close();
+        if (!App.Settings.TutorialsDone.Contains(nameof(TutorialKind.Pixelate))) throw new InvalidOperationException("pixelate: finishing on the canvas did not count as done");
+        k.Windows.OfType<PixelateDialog>().LastOrDefault()?.Close();
         k.Settle(300);
-        // 두 번째 실행: 메뉴로 다시 연(닫으면 숨기만 하는) 픽셀로 정리 창에 예시 그림이 들어가고, 지난번에 펼쳐 둔 설정 칸·끝난 준비가 있어도 차례대로 가며,
-        // 도중에 창을 닫으면 튜토리얼이 끝나는지.
+        // 두 번째 실행: 메뉴로 다시 연(닫으면 숨기만 하는) 픽셀로 정리 창에 예시 그림이 들어가고 차례대로 가며,
+        // 도중에 창을 닫으면 튜토리얼이 끝나고 튜토리얼 창이 다시 뜨는지.
         Start(k, m, TutorialKind.Pixelate);
         Expect(k, m, outDir, "pixelate.open", () => k.Command("AI/AI 그림 픽셀로 정리…"), snap: false);
         Expect(k, m, outDir, "pixelate.source", () => ClickBubble(k, Dialog(), UiStrings.Tutorial_Next), snap: false);
-        Expect(k, m, outDir, "pixelate.wait", () => { if (NextShown(Dialog())) ClickBubble(k, Dialog(), UiStrings.Tutorial_Next); }, waitMs: 120000, snap: false);
-        Expect(k, m, outDir, "pixelate.settings", () => Dialog().Close(), snap: false);
+        Expect(k, m, outDir, "pixelate.rerun", () => Dialog().Close(), snap: false);
+        WaitFor(k, () => !TutorialSpotlight.IsRunning && TutorialWindow.Current is not null, 5000, "tutorial window after closing the pixelate window");
         Ended(k, "pixelate (closed)");
         k.Settle(300);
 
@@ -252,13 +377,27 @@ internal static class TutorialShots
         Start(k, m, TutorialKind.Ai);
         Expect(k, m, outDir, "ai.open", () => k.Click(ShotKit.Get<Control>(m, "_tbChat")));
         var chat = WaitFor(k, () => k.Windows.OfType<Chickxel.App.Ai.ChatWindow>().FirstOrDefault(), 10000, "AI chat window")!;
+        // 이 컴퓨터에 이미 로그인돼 있으면 로그인 단계는 연결을 확인하는 대로 저절로 넘어간다 — 그 확인을 잠깐 기다린 뒤에도 남아 있을 때만 '다음'.
+        for (int i = 0; i < 20 && TutorialSpotlight.CurrentStepId == "ai.login"; i++)
+        {
+            TutorialSpotlight.Tick();
+            k.Settle(100);
+        }
         if (TutorialSpotlight.CurrentStepId == "ai.login")
             Expect(k, m, outDir, "ai.login", () => ClickBubble(k, chat, UiStrings.Tutorial_Next));
         Expect(k, m, outDir, "ai.settings", () => ClickBubble(k, chat, UiStrings.Tutorial_Next));
         Expect(k, m, outDir, "ai.input", () => ClickBubble(k, chat, UiStrings.Tutorial_Next));
-        // 레이어 잠금(메인 창 타임라인의 자물쇠).
-        Expect(k, m, outDir, "ai.lock", () => ClickBubble(k, m, UiStrings.Tutorial_Next));
-        Expect(k, m, outDir, "ai.external", () => ClickBubble(k, m, UiStrings.Tutorial_Finish));
+        // 레이어 잠금(메인 창 타임라인의 자물쇠): 채팅 창이 가리지 않게 이 단계 동안 숨고, 다음 단계에서 다시 뜬다.
+        Expect(k, m, outDir, "ai.lock", () =>
+        {
+            if (chat.IsVisible) throw new InvalidOperationException("ai.lock: chat window still covers the timeline");
+            ClickBubble(k, m, UiStrings.Tutorial_Next);
+        });
+        Expect(k, m, outDir, "ai.external", () =>
+        {
+            if (!chat.IsVisible) throw new InvalidOperationException("ai.external: chat window not shown again");
+            ClickBubble(k, m, UiStrings.Tutorial_Finish);
+        });
         Ended(k, "ai");
         chat.Close();
         k.Settle(300);
@@ -291,7 +430,7 @@ internal static class TutorialShots
 
     /// <summary>
     /// 단계 <paramref name="id"/>에 왔는지 확인하고(대상이 보일 때까지 기다림), 그 창 그림을 저장한 뒤(<paramref name="snap"/>) <paramref name="act"/>로 할 일을 하고,
-    /// 다른 단계로 가거나 끝날 때까지 기다린다.
+    /// 다른 단계로 가거나 끝날 때까지 기다린다. 해 본 뒤 '다음'이 켜지는 단계(저절로 넘어가지 않음)는 켜지면 '다음'(마지막이면 '끝내기')을 누른다.
     /// </summary>
     private static void Expect(ShotKit k, MainForm m, string outDir, string id, Action act, int waitMs = 15000, bool snap = true)
     {
@@ -306,8 +445,26 @@ internal static class TutorialShots
         if (!ReferenceEquals(top, m) && !Dimmed(m)) throw new InvalidOperationException($"step {id}: main window not dimmed");
         if (snap) Snap(k, top, outDir, id);
         act();
+        // act가 '다음'을 이미 눌렀으면 넘어가기를 먼저 마치게(두 번 누르지 않게) 잠깐 기다린다.
+        k.Settle(300);
+        WaitFor(k, () => TutorialSpotlight.CurrentStepId != id || BubbleHost(k) is { } host && NextShown(host), waitMs, $"leaving {id} (or Next turning on)");
+        // 말풍선이 막 옮겨 가는 중(대상 칸 크기가 바뀐 직후 등)이면 누른 자리가 빗나갈 수 있어 몇 번 다시 누른다.
+        for (int attempt = 0; attempt < 4 && TutorialSpotlight.CurrentStepId == id && BubbleHost(k) is { } at; attempt++)
+        {
+            k.Settle(300);
+            var layer = OverlayLayer.GetOverlayLayer(at)!;
+            var button = ShotKit.All<Button>(layer).FirstOrDefault(b => b.IsEffectivelyVisible && b.IsEnabled && b.Content as string is { } t && (t == UiStrings.Tutorial_Next || t == UiStrings.Tutorial_Finish));
+            if (button is null) break;
+            k.Click(button);
+            k.Settle(300);
+        }
         WaitFor(k, () => TutorialSpotlight.CurrentStepId != id, waitMs, $"leaving {id}");
     }
+
+    /// <summary>말풍선이 있는 창(덮개 층에 '다음'·'끝내기' 단추가 있는 창), 없으면 null.</summary>
+    private static TopLevel? BubbleHost(ShotKit k)
+        => k.Windows.FirstOrDefault(w => OverlayLayer.GetOverlayLayer(w) is { } layer
+            && ShotKit.All<Button>(layer).Any(b => b.IsEffectivelyVisible && b.Content as string is { } t && (t == UiStrings.Tutorial_Next || t == UiStrings.Tutorial_Finish)));
 
     /// <summary>창이 통째로 어둡게 덮였는지(뚫린 칸 없는 덮개 판).</summary>
     private static bool Dimmed(TopLevel top)
@@ -356,7 +513,8 @@ internal static class TutorialShots
 
     /// <summary>말풍선의 '다음' 단추가 보이는지.</summary>
     private static bool NextShown(TopLevel top)
-        => OverlayLayer.GetOverlayLayer(top) is { } layer && ShotKit.All<Button>(layer).Any(b => b.IsEffectivelyVisible && b.Content as string == UiStrings.Tutorial_Next);
+        => OverlayLayer.GetOverlayLayer(top) is { } layer && ShotKit.All<Button>(layer).Any(b => b.IsEffectivelyVisible && b.IsEnabled
+            && b.Content as string is { } t && (t == UiStrings.Tutorial_Next || t == UiStrings.Tutorial_Finish));
 
     /// <summary>말풍선의 글자가 <paramref name="text"/>인 단추를 누른다.</summary>
     private static void ClickBubble(ShotKit k, TopLevel top, string text)

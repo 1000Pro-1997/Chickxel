@@ -26,6 +26,12 @@ public sealed class AccountDialog : DialogBase
     /// <summary>지금 계정을 두고 다른 계정으로 로그인하는 중(로그인 단추 화면).</summary>
     private bool _adding;
 
+    /// <summary>지금 떠 있는 계정 창(튜토리얼이 찾음 — 없으면 null).</summary>
+    internal static AccountDialog? Shown { get; private set; }
+
+    /// <summary>레벨 보상 묶음의 '변경하기…' 단추(로그인해 레벨이 있을 때만, 튜토리얼이 비춤).</summary>
+    internal Control? TutorialChange { get; private set; }
+
     /// <summary>
     /// 창을 띄운다(닫힐 때까지 기다림). <paramref name="reason"/>은 맨 위에 보일 안내(로그인이 필요한 까닭).
     /// <paramref name="addAccount"/>면 처음부터 다른 계정 추가 화면. 닫을 때 로그인돼 있으면 true.
@@ -43,8 +49,16 @@ public sealed class AccountDialog : DialogBase
         CloseOnly();
         Body.Children.Add(_view);
         Body.Children.Add(_status);
-        Closed += (_, _) => _work?.Cancel();
-        Opened += (_, _) => Refresh();
+        Closed += (_, _) =>
+        {
+            _work?.Cancel();
+            if (ReferenceEquals(Shown, this)) Shown = null;
+        };
+        Opened += (_, _) =>
+        {
+            Shown = this;
+            Refresh();
+        };
         Build();
     }
 
@@ -108,6 +122,7 @@ public sealed class AccountDialog : DialogBase
     private void Build()
     {
         _view.Children.Clear();
+        TutorialChange = null;
         // 대상 도움말(F1): 로그인한 화면은 계정 창, 아니면 로그인 설명으로.
         this.HelpAt("start-account", anchor: Client.User is null ? "Signing in" : "Account window");
         if (_reason is not null && Client.User is null)
@@ -172,7 +187,8 @@ public sealed class AccountDialog : DialogBase
         if (user.Level > 0)
         {
             if (!_seenAtOpen.TryGetValue(user.Id, out int seen)) _seenAtOpen[user.Id] = seen = RewardNotice.SeenLevel(user);
-            _view.Children.Add(RewardViews.Section(this, user, seen));
+            _view.Children.Add(RewardViews.Section(this, user, seen, out var change));
+            TutorialChange = change;
             RewardNotice.MarkSeen(user);
         }
 

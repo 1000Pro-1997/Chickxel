@@ -2887,6 +2887,7 @@ public sealed partial class PixelateDialog : DialogBase
                 _userPicked = true;
                 _watchingLive = false;
                 Select(c);
+                _tutorialTileClicks++;
             };
             tile.DoubleTapped += (_, _) =>
             {
@@ -6476,6 +6477,9 @@ public sealed partial class PixelateDialog : DialogBase
 
         private Rect LeftPane => new(0, CaptionHeight, Math.Max(0, (Bounds.Width - Gap) / 2), Math.Max(0, Bounds.Height - CaptionHeight));
         private Rect RightPane => new(LeftPane.Right + Gap, CaptionHeight, LeftPane.Width, LeftPane.Height);
+
+        /// <summary>오른쪽 원본 칸 자리(튜토리얼이 스포이드 중에 비춤).</summary>
+        public Rect SourcePane => RightPane;
 
         private void Fit(PixelSize size)
         {

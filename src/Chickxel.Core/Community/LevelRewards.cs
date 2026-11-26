@@ -21,8 +21,11 @@ public enum RewardSlot
     NameStyle,
 }
 
-/// <summary>레벨 <see cref="Level"/>에 오르면 받는 보상 하나(<see cref="LevelRewards"/>).</summary>
-public sealed record LevelReward(string Id, int Level, RewardSlot Slot)
+/// <summary>
+/// 레벨 <see cref="Level"/>에 오르면 받는 보상 하나(<see cref="LevelRewards"/>). <see cref="Tutorial"/>이면 레벨과 상관없이 레벨 튜토리얼을 마치면 받는 보상
+/// (<see cref="LevelRewards.Tutorial"/> — <see cref="Level"/>은 1로 두어 "자동"에서 가장 낮은 보상으로 침).
+/// </summary>
+public sealed record LevelReward(string Id, int Level, RewardSlot Slot, bool Tutorial = false)
 {
     /// <summary>화면 언어의 이름(CSV로 더한 언어 포함).</summary>
     public string Name => CoreStrings.GetResourceString(LevelRewards.NameKey(Id)) ?? Id;
@@ -144,7 +147,17 @@ public static class LevelRewards
         new("card.legend", 100, RewardSlot.Card),
     ];
 
-    private static readonly Dictionary<string, LevelReward> ById = All.ToDictionary(r => r.Id, StringComparer.Ordinal);
+    /// <summary>
+    /// 레벨 튜토리얼을 마치면 받는 새싹 보상(레벨 해금과 따로 — 서버가 계정에 받았음을 적어 두고 <c>tutorialRewards</c>로 알려 줌).
+    /// 카탈로그에는 <c>"unlock": "tutorial"</c>로 나간다.
+    /// </summary>
+    public static IReadOnlyList<LevelReward> Tutorial { get; } =
+    [
+        new("title.sprout", 1, RewardSlot.Title, Tutorial: true),
+        new("frame.sprout", 1, RewardSlot.Frame, Tutorial: true),
+    ];
+
+    private static readonly Dictionary<string, LevelReward> ById = All.Concat(Tutorial).ToDictionary(r => r.Id, StringComparer.Ordinal);
 
     /// <summary>ID의 보상(없으면 null).</summary>
     public static LevelReward? Find(string? id) => id is not null && ById.TryGetValue(id, out var reward) ? reward : null;
@@ -168,9 +181,9 @@ public static class LevelRewards
     public static string SlotNameIn(RewardSlot slot, CultureInfo culture) => CoreStrings.ResourceManager.GetString("RewardSlot_" + slot, culture) ?? slot.ToString();
 
     /// <summary>
-    /// 칭호 글자 색: 받은 레벨이 높을수록 귀한 색(11 동·21 은·31 금·41 청록·51~61 분홍, 71 이상은 무지개로 흐름 — <see cref="IsRainbowTitle"/>, 이 색은 멈춘 화면용).
+    /// 칭호 글자 색: 받은 레벨이 높을수록 귀한 색(11 동·21 은·31 금·41 청록·51~61 분홍, 71 이상은 무지개로 흐름 — <see cref="IsRainbowTitle"/>, 이 색은 멈춘 화면용). 튜토리얼 새싹 칭호는 연두.
     /// </summary>
-    public static Model.Color32 TitleColor(LevelReward reward) => reward.Level switch
+    public static Model.Color32 TitleColor(LevelReward reward) => reward.Tutorial ? new Model.Color32(0xA3, 0xE6, 0x35) : reward.Level switch
     {
         >= 51 => new Model.Color32(0xF9, 0xA8, 0xD4),
         >= 41 => new Model.Color32(0x67, 0xE8, 0xF9),
