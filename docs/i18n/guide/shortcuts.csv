@@ -72,7 +72,7 @@ shortcuts-edit.h-cmd.d8,선택을 풉니다.,Removes the selection.
 shortcuts-edit.h-extra,메뉴에 없는 키,Keys outside the menus
 shortcuts-edit.h-extra.d1,떠 있는 선택(붙여 넣거나 옮긴 그림)을 그 자리에 내려놓습니다. 변형 중이면 적용합니다.,"Drops a floating selection (pasted or moved pixels) in place. While transforming, applies the transform."
 shortcuts-edit.h-extra.d2,"변형·크기 모드를 취소하거나, 아니면 선택을 풉니다.","Cancels a transform or size mode, otherwise removes the selection."
-shortcuts-edit.h-extra.d3,"선택(이동 도구면 셀 그림)을 1픽셀 옮깁니다. 수정 키 없는 <kbd>←</kbd><kbd>→</kbd>는 <a href=""#shortcuts-timeline"">이전·다음 프레임</a>이라 가로는 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>를 함께 누릅니다. 이동 도구·변형·캔버스 크기·부위 배치처럼 옮기는 모드에서 캔버스에 포커스가 있으면 <kbd>←</kbd><kbd>→</kbd>만으로도 옮깁니다.","Moves the selection (the cel's pixels with the Move tool) by 1 pixel. Plain <kbd>←</kbd><kbd>→</kbd> go to the <a href=""#shortcuts-timeline"">previous and next frame</a>, so for sideways moves add <kbd>Ctrl</kbd>+<kbd>Shift</kbd>. In a moving mode (Move tool, transform, canvas size, part layout) with the canvas focused, plain <kbd>←</kbd><kbd>→</kbd> move too."
+shortcuts-edit.h-extra.d3,"선택(이동 도구면 셀 그림)을 1픽셀 옮깁니다. 수정 키 없는 <kbd>←</kbd><kbd>→</kbd>는 <a href=""#shortcuts-timeline"">이전·다음 프레임</a>이라 가로는 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>를 함께 누릅니다. 이동 도구·변형·캔버스 크기·빈 레이어 배치처럼 옮기는 모드에서 캔버스에 포커스가 있으면 <kbd>←</kbd><kbd>→</kbd>만으로도 옮깁니다.","Moves the selection (the cel's pixels with the Move tool) by 1 pixel. Plain <kbd>←</kbd><kbd>→</kbd> go to the <a href=""#shortcuts-timeline"">previous and next frame</a>, so for sideways moves add <kbd>Ctrl</kbd>+<kbd>Shift</kbd>. In a moving mode (Move tool, transform, canvas size, arranging children of an empty layer) with the canvas focused, plain <kbd>←</kbd><kbd>→</kbd> move too."
 shortcuts-edit.h-extra.d4,같은 대상을 8픽셀씩 옮깁니다.,Moves the same thing by 8 pixels.
 shortcuts-edit.h-menu,메뉴에서 키 확인,Keys in the menu
 shortcuts-edit.17.alt,편집 메뉴를 펼친 모습: 실행취소·다시 실행·잘라내기·복사·이미지만 복사·붙여넣기·지우기·모두 선택·선택 해제 오른쪽의 키,"The Edit menu open: the keys to the right of Undo, Redo, Cut, Copy, Copy images only, Paste, Delete, Select all and Deselect"
@@ -91,7 +91,7 @@ shortcuts-transform.h-cmd.d4,그림 둘레에 기본색 1픽셀 외곽선을 그
 shortcuts-transform.h-cmd.d5,대각선 방향까지 채운 외곽선을 그립니다.,Draws an outline that also fills the diagonal corners.
 shortcuts-transform.h-cmd.d6,한 색을 다른 색으로 바꿉니다.,Replaces one color with another.
 shortcuts-transform.h-cmd.d7,"<a href=""#tools-canvas-size"">캔버스 크기 모드</a>를 시작합니다.","Starts <a href=""#tools-canvas-size"">Canvas size mode</a>."
-shortcuts-transform.h-cmd.d8,"지금 레이어의 모든 프레임(부위는 모든 스킨)을 주황 상자 하나로 함께 돌리고 늘리고 옮기는 <a href=""#tools-layer-size"">레이어 전체 변형</a>을 시작합니다. 캔버스 크기는 그대로입니다.","Starts <a href=""#tools-layer-size"">Transform whole layer</a>, which rotates, scales and moves every frame of the current layer (every skin of a part) together with one orange box. The canvas size stays the same."
+shortcuts-transform.h-cmd.d8,"지금 레이어의 모든 프레임(스킨이 여럿이면 모든 스킨)을 주황 상자 하나로 함께 돌리고 늘리고 옮기는 <a href=""#tools-layer-size"">레이어 전체 변형</a>을 시작합니다. 캔버스 크기는 그대로입니다.","Starts <a href=""#tools-layer-size"">Transform whole layer</a>, which rotates, scales and moves every frame of the current layer (every skin, if it has several) together with one orange box. The canvas size stays the same."
 shortcuts-transform.h-cmd.d9,모든 레이어·프레임을 함께 뒤집습니다.,Flips every layer and frame together.
 shortcuts-transform.h-cmd.d10,"지금 그림에 쓰인 색으로 팔레트를 만듭니다(<a href=""#screen-palette"">팔레트</a>).","Makes a palette from the colors used in the image (see <a href=""#screen-palette"">Palette</a>)."
 shortcuts-transform.h-cmd.d11,"그림의 색을 지금 팔레트의 가까운 색으로 바꿉니다(<a href=""#featured-palette-convert"">팔레트로 색 바꾸기</a>).","Converts the image's colors to the nearest colors of the current palette (see <a href=""#featured-palette-convert"">Recoloring with a palette</a>)."
@@ -139,8 +139,8 @@ shortcuts-view.8,화면 이동,Pan
 shortcuts-view.9,<kbd>Space</kbd>+드래그 또는 가운데 버튼 드래그,<kbd>Space</kbd>+drag or middle-button drag
 shortcuts-file.18,"탭 줄이나 끔/켬 같은 선택 묶음에 포커스가 있으면 <kbd>←</kbd>/<kbd>→</kbd>, <kbd>Home</kbd>/<kbd>End</kbd>로도 바꿀 수 있습니다.","When a tab row or an option group such as off/on has focus, you can also switch with <kbd>←</kbd>/<kbd>→</kbd> and <kbd>Home</kbd>/<kbd>End</kbd>."
 shortcuts-view.17,<strong>보기</strong> 메뉴를 펼치면 ① 확대부터 양파 껍질까지의 키가 보입니다.,The <strong>View</strong> menu shows the keys from Zoom in to Onion skin at ①.
-shortcuts-timeline.1,타임라인·레이어·그룹,Timeline · layers · groups
-shortcuts-timeline.overview,프레임·레이어·그룹·스킨·태그를 다루는 <strong>프레임·레이어</strong> 메뉴의 키와 타임라인에서 쓰는 마우스 조작입니다.,"Keys for the <strong>Frame·Layer</strong> menu, which handles frames, layers, groups, skins and tags, plus the mouse actions used in the timeline."
+shortcuts-timeline.1,타임라인·레이어,Timeline · layers
+shortcuts-timeline.overview,프레임·레이어·스킨·태그를 다루는 <strong>프레임·레이어</strong> 메뉴의 키와 타임라인에서 쓰는 마우스 조작입니다.,"Keys for the <strong>Frame·Layer</strong> menu, which handles frames, layers, skins and tags, plus the mouse actions used in the timeline."
 shortcuts-timeline.h-cmd,메뉴 명령,Menu commands
 shortcuts-timeline.h-cmd.d1,미리보기 재생을 시작하거나 멈춥니다.,Starts or stops preview playback.
 shortcuts-timeline.h-cmd.d2,한 프레임 앞뒤로 갑니다.,Steps one frame back or forward.
@@ -149,11 +149,13 @@ shortcuts-timeline.h-cmd.d3,처음·끝 프레임으로 갑니다(캔버스에 �
 shortcuts-timeline.h-cmd.d4,빈 프레임을 더합니다.,Adds an empty frame.
 shortcuts-timeline.h-cmd.d5,지금 프레임을 복사해 더합니다.,Adds a copy of the current frame.
 shortcuts-timeline.h-cmd.d6,지금 프레임을 지웁니다.,Deletes the current frame.
-shortcuts-timeline.h-cmd.d7,빈 레이어를 더합니다.,Adds an empty layer.
-shortcuts-timeline.h-cmd.d10,고른 부위의 크기를 바꿉니다.,Changes the size of the selected part.
+shortcuts-timeline.h-cmd.d7,"지금 레이어(자식이면 맨 위 조상) 위에 새 레이어를 더합니다.","Adds a new layer above the current layer (above its topmost ancestor if it is a child)."
+shortcuts-timeline.h-cmd.d8,"지금 레이어 바로 위(같은 부모 안)에 그림 없는 <a href=""#parts-arrange"">빈 레이어</a>를 더합니다. 자식을 모아 한꺼번에 옮기는 부모로 씁니다.","Adds an <a href=""#parts-arrange"">empty layer</a> with no drawing just above the current layer (under the same parent). Use it as a parent that gathers children and moves them together."
+shortcuts-timeline.h-cmd.d9,"이름과 크기를 정해 지금 레이어의 맨 위 자식으로 새 레이어를 더합니다(<a href=""#parts-create"">자식 레이어 만들기</a>).","Adds a new layer, with the name and size you set, as the top child of the current layer (see <a href=""#parts-create"">Creating child layers</a>)."
+shortcuts-timeline.h-cmd.d10,자기 크기가 있는 지금 레이어의 크기를 바꿉니다.,Changes the size of the current layer when it has its own size.
 shortcuts-timeline.h-cmd.d11,지금 레이어 이름을 고칩니다. 이름을 더블클릭해도 됩니다.,Renames the current layer. Double-clicking the name works too.
-shortcuts-timeline.h-cmd.d12,지금 그룹(부위를 골랐으면 그 부위의 그룹)의 스킨을 바꿉니다. 실행취소 기록에 남지 않습니다.,Switches the skin of the current group (or the selected part's group). It isn't recorded in undo history.
-shortcuts-timeline.h-cmd.d13,"스킨 관리 창을 엽니다(<a href=""#parts-skin-manager"">스킨 관리 창</a>).","Opens the Skin manager (see <a href=""#parts-skin-manager"">Skin manager</a>)."
+shortcuts-timeline.h-cmd.d12,지금 레이어의 스킨을 앞뒤로 바꿉니다. 실행취소 기록에 남지 않습니다.,Steps the current layer's skin back or forward. It isn't recorded in undo history.
+shortcuts-timeline.h-cmd.d13,"스킨 설정 창을 엽니다(<a href=""#parts-skin-manager"">스킨 설정 창</a>).","Opens the Skin settings window (see <a href=""#parts-skin-manager"">Skin settings window</a>)."
 shortcuts-timeline.h-cmd.d14,프레임 범위에 이름을 붙여 애니메이션 태그를 만듭니다.,Names a frame range as an animation tag.
 shortcuts-timeline.h-cmd.d15,스프라이트 시트 한 장을 칸마다 프레임으로 나눕니다.,Splits a sprite sheet into one frame per cell.
 shortcuts-timeline.h-extra,메뉴에 없는 키와 마우스,Keys outside the menus and the mouse
@@ -170,11 +172,11 @@ shortcuts-timeline.16,프레임 좌우 스크롤(타임라인에서),Scroll fram
 shortcuts-timeline.17,<kbd>Ctrl</kbd>+휠,<kbd>Ctrl</kbd>+wheel
 shortcuts-timeline.solo-eye,이 레이어만 보이기,Show only this layer
 shortcuts-timeline.solo-eye.k,<kbd>Alt</kbd>+눈 클릭,<kbd>Alt</kbd>+click the eye
-shortcuts-timeline.solo-eye.d,"그 레이어만 남기고 나머지를 모두 숨깁니다(그룹을 누르면 그 부위들, 부위를 누르면 그 그룹도 함께 남김). 이미 그 상태면 모든 레이어를 다시 보이게 합니다. 실행취소 한 단계입니다.","Hides every other layer and keeps only this one (clicking a group keeps its parts; clicking a part keeps its group too). If that is already the state, all layers become visible again. One undo step."
+shortcuts-timeline.solo-eye.d,"그 레이어만 남기고 나머지를 모두 숨깁니다(그 레이어의 조상과 자손은 함께 남김). 이미 그 상태면 모든 레이어를 다시 보이게 합니다. 실행취소 한 단계입니다.","Hides every other layer and keeps only this one (its ancestors and descendants are kept too). If that is already the state, all layers become visible again. One undo step."
 shortcuts-timeline.solo-lock,나머지 레이어 모두 잠그기,Lock all other layers
 shortcuts-timeline.solo-lock.k,<kbd>Alt</kbd>+자물쇠 클릭,<kbd>Alt</kbd>+click the lock
-shortcuts-timeline.solo-lock.d,그 레이어만 남기고 나머지를 모두 잠급니다(그룹·부위는 눈과 같이 함께 남김). 이미 그 상태면 모든 레이어를 풉니다. 실행취소 한 단계입니다.,"Locks every other layer and leaves only this one unlocked (groups and parts are kept together as with the eye). If that is already the state, all layers are unlocked. One undo step."
-shortcuts-timeline.18,"스킨 바꾸기는 현재 그룹(부위를 골랐으면 그 부위의 그룹)에 적용되며 실행취소 기록에 남지 않습니다. 그룹·부위·스킨은 <a href=""#parts"">부위와 그룹</a> 장을 참고하세요.","Skin switching applies to the current group (or the selected part's group) and isn't recorded in undo history. For groups, parts and skins, see the <a href=""#parts"">Parts and groups</a> chapter."
+shortcuts-timeline.solo-lock.d,그 레이어만 남기고 나머지를 모두 잠급니다(조상과 자손은 눈과 같이 함께 남김). 이미 그 상태면 모든 레이어를 풉니다. 실행취소 한 단계입니다.,"Locks every other layer and leaves only this one unlocked (its ancestors and descendants are kept together as with the eye). If that is already the state, all layers are unlocked. One undo step."
+shortcuts-timeline.18,"스킨 바꾸기는 지금 레이어에 적용되며 실행취소 기록에 남지 않습니다. 레이어 나무와 스킨은 <a href=""#parts"">레이어 나무 · 스킨</a> 장을 참고하세요.","Skin switching applies to the current layer and isn't recorded in undo history. For the layer tree and skins, see the <a href=""#parts"">Layer tree · skins</a> chapter."
 guide-new.shortcuts-space-label,Space로 미리보기 재생/정지,Tap Space to play/pause preview
 guide-new.frame-drag-shortcut,다음 프레임 칸에서 여러 프레임 추가,Add multiple frames from the next-frame cell
 guide-new.frame-drag-key,다음 프레임 추가 단추를 누른 채 오른쪽으로 끌었다 놓기,Drag the Add frame button right and release

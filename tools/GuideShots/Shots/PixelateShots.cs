@@ -505,7 +505,7 @@ internal static class PixelateShots
             PixelateKit.LeftBox(marker, dlg),
         ]);
 
-        // 자동 최적화 설정 창: 돌릴 프리셋 체크 목록·시도 기록(펼침)·불러오면 자동 최적화·초기화.
+        // 자동 최적화 설정 창: 돌릴 프리셋 체크 목록·이름 바꾸기/복사/지우기·시도 기록(펼침)·불러오면 자동 최적화·초기화.
         ShotKit.Call(dlg, "OpenOptimizeSettings");
         k.Settle(800);
         var win = ShotKit.Get<Window>(dlg, "_optSettingsWindow");
@@ -516,10 +516,12 @@ internal static class PixelateShots
         k.Settle(600);
         var presetList = ShotKit.Get<ListBox>(dlg, "_optPresetList");
         var auto = ShotKit.Get<CheckBox>(dlg, "_optAuto");
+        var presetButtons = (Control)ShotKit.All<Button>(win).First(b => ToolTip.GetTip(b) as string == UiStrings.Pixelate_Preset_Rename).Parent!;
         var reset = ShotKit.Get<Button>(dlg, "_optResetButton");
         k.Save(win, "pixelate-optimize-settings", marks:
         [
             PixelateKit.Box(presetList, win, 2),
+            PixelateKit.Box(presetButtons, win, 2),
             PixelateKit.Box(history, win, 2),
             PixelateKit.UpBox(auto, win, 10),
             PixelateKit.UpBox(reset, win, 10),
@@ -737,7 +739,7 @@ internal static class PixelateShots
         provider.IsDropDownOpen = false;
     }
 
-    // 프리셋 줄: 목록(①)·저장(②)·이름 바꾸기(③)·복사(④)·삭제(⑤)·정리하기(⑥), 이름 바꾸기 창(⑦).
+    // 프리셋 줄: 목록(①)·저장(②)·프리셋 설정(③)·정리하기(④), 이름 바꾸기 창(⑥ — 자동 최적화 설정 쪽).
     [Shot("pixelate-presets")]
     public static void Presets(ShotKit k)
     {
@@ -763,7 +765,7 @@ internal static class PixelateShots
             box.Text = "Chibi 48px";
             box.CaretIndex = box.Text.Length;
             ShotKit.Pump(300);
-            k.Save(w, "pixelate-presets-2", marks: [PixelateKit.Box(box, w, 2)], firstNumber: 7);
+            k.Save(w, "pixelate-presets-2", marks: [PixelateKit.Box(box, w, 2)], firstNumber: 6);
         });
     }
 

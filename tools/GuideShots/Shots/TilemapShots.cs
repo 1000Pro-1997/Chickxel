@@ -539,14 +539,14 @@ internal static class TilemapShots
         ShotKit.Call(Timeline(main), "ConvertTilemap", row);
         k.Settle(500);
         var p = Project(main);
-        var group = p.Layers.First(l => p.HasChildren(l));
-        var parts = p.Layers.Where(l => l.Parent == group).ToList();
+        var parent = p.Layers.First(l => p.HasChildren(l));
+        var children = p.Layers.Where(l => l.Parent == parent).ToList();
         var tl = Timeline(main);
         var b = ShotKit.Bounds(tl, main);
-        var groupRow = RowRect(main, p.IndexOf(group));
-        var partRows = parts.Select(l => RowRect(main, p.IndexOf(l))).Aggregate((a, c) => a.Union(c));
-        // ② 그룹 ③ 층마다 부위
-        k.Save(main, "tilemap-convert-2", crop: new Rect(b.X, b.Y, Math.Min(b.Width, 640), b.Height), marks: [groupRow, partRows], firstNumber: 2);
+        var parentRow = RowRect(main, p.IndexOf(parent));
+        var childRows = children.Select(l => RowRect(main, p.IndexOf(l))).Aggregate((a, c) => a.Union(c));
+        // ② 빈 레이어 ③ 층마다 자식 레이어
+        k.Save(main, "tilemap-convert-2", crop: new Rect(b.X, b.Y, Math.Min(b.Width, 640), b.Height), marks: [parentRow, childRows], firstNumber: 2);
     }
 
     // ───────────── 예시 프로젝트 ─────────────

@@ -75,24 +75,24 @@ term.effect-maker.def,스크립트 효과를 쓰고 미리 보며 올리는 창�
 term.asset-manager,에셋 관리자,Asset Manager
 term.asset-manager.to,screen-asset-manager,
 term.asset-manager.def,효과·그라데이션 같은 에셋을 설치·가져오기·올리기 하는 창입니다.,"The window for installing, importing and publishing assets such as effects and gradients."
-term.group,그룹,group layer|group layers
+term.group,부모 레이어,parent layer|parent layers
 term.group.to,parts-concept,
-term.group.def,부위 레이어를 묶어 한 캐릭터로 다루는 레이어입니다.,A layer that bundles part layers into one character.
-term.part,부위,part layer|part layers
+term.group.def,"자식 레이어를 가진 레이어입니다. 숨기기·잠금·불투명도·옮기기가 자식까지 함께 적용됩니다.","A layer that has child layers. Hiding, locking, opacity and moving apply to its children as well."
+term.part,자식 레이어,child layer|child layers
 term.part.to,parts-concept,
-term.part.def,그룹 안에서 자기 크기를 가진 레이어(머리·몸통 등)입니다.,"A layer with its own size inside a group (head, body and so on)."
+term.part.def,"다른 레이어 아래에 든 레이어입니다. 자기 크기와 위치가 있고 부모 그림 위에 그려집니다.","A layer nested under another layer. It has its own size and position and is drawn above its parent's picture."
 term.skin,스킨,skin|skins
 term.skin.to,parts-skins,
-term.skin.def,같은 부위 구조에 다른 그림을 끼우는 한 벌(의상·체형 등)입니다.,"One set of drawings for the same part structure (outfit, body type and so on)."
-term.outfit,착장|착장 프리셋,outfit|outfit preset
+term.skin.def,"한 레이어에 그려 둔 그림 한 벌(의상·체형 등)입니다. 레이어마다 여러 벌을 두고 바꿔 끼웁니다.","One set of drawings for a layer (outfit, body type and so on). Each layer can keep several and swap between them."
+term.outfit,스킨 프리셋,skin preset|skin presets
 term.outfit.to,parts-outfits,
-term.outfit.def,그룹·부위마다 고른 스킨의 조합입니다. 프리셋으로 저장할 수 있습니다.,The combination of skins chosen per group and part; it can be saved as a preset.
+term.outfit.def,"여러 레이어의 스킨을 레이어마다 하나씩 묶어 이름 붙인 것입니다. 입히면 담긴 레이어만 바뀝니다.","A named set of skins, one per layer, for several layers. Applying it changes only the layers it contains."
 term.frame-sheet,프레임 시트,frame sheet
 term.frame-sheet.to,screen-export,
 term.frame-sheet.def,프레임을 한 장에 격자로 늘어놓아 내보낸 PNG입니다.,A PNG with every frame laid out in a grid.
-term.part-atlas,부위 아틀라스,part atlas
+term.part-atlas,레이어 아틀라스,layer atlas
 term.part-atlas.to,parts-export,
-term.part-atlas.def,부위 그림을 칸마다 모아 내보낸 PNG입니다.,A PNG that packs part drawings one per cell.
+term.part-atlas.def,"레이어 나무에 든 레이어의 그림을 레이어 × 프레임마다 한 칸씩 모아 내보낸 PNG입니다.","A PNG that packs the drawings of the layers in the layer tree, one cell per layer × frame."
 term.sprite-library,Sprite Library,Sprite Library
 term.sprite-library.to,parts-sprite-library,
 term.sprite-library.def,Unity에서 스킨을 바꿔 끼우는 데 쓰는 .spriteLib 에셋입니다.,The .spriteLib asset Unity uses to swap skins.

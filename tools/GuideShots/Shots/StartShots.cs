@@ -148,7 +148,6 @@ internal static class StartShots
     }
 
     // 새 프로젝트 창(클립보드에 그림이 있을 때): ① 클립보드 그림 붙여넣기 ② 캔버스 크기 ③ 배경 투명.
-    // 도움말 대기: 예전 ③ 시작 방식(보통·부위)은 새 프로젝트 창에서 없어져 번호가 하나 줄었다.
     [Shot("start-new-project")]
     public static void NewProject(ShotKit k)
     {
@@ -164,6 +163,54 @@ internal static class StartShots
             var transparent = ShotKit.Get<Control>(w, "_transparent");
             k.Save(w, marks: [(Control)paste.Parent!, size, transparent]);
         });
+    }
+
+    // 튜토리얼: ① 메뉴 줄의 학사모 단추, 튜토리얼 창 ② 대표 기능 카드 ③ 더 알아보기 ④ 잠긴 카드(효과 만들기) ⑤ 마친 카드 ⑥ 다시 보지 않기,
+    // 따라 하기 한 단계(레이어와 프레임의 첫 단계: 어둡게 덮은 화면과 말풍선).
+    [Shot("start-tutorial")]
+    public static void Tutorial(ShotKit k)
+    {
+        var main = Open(k, width: 1400, height: 860);
+        Build(k, main, group: false);
+        CleanTitle(main);
+        var cap = ShotKit.All<Button>(main).First(b => ToolTip.GetTip(b) as string == UiStrings.Tutorial_ButtonTip);
+        var c = ShotKit.Bounds(cap, main);
+        k.Save(main, "start-tutorial", crop: new Rect(c.X - 360, 0, main.ClientSize.Width - c.X + 360, c.Bottom + 8), marks: [cap]);
+
+        var done = App.Settings.TutorialsDone.ToList();
+        App.Settings.TutorialsDone = [nameof(TutorialKind.Export)];
+        try
+        {
+            TutorialWindow.Open(main, App.Settings);
+            k.Settle(1000);
+            var w = TutorialWindow.Current ?? throw new InvalidOperationException("tutorial window did not open");
+            var body = (StackPanel)w.Content!;
+            var more = (Panel)body.Children[4];
+            k.Save(w, "start-tutorial-2", firstNumber: 2, marks:
+            [
+                body.Children[2],
+                ShotKit.Bounds(body.Children[3], w).Union(ShotKit.Bounds(more, w)),
+                more.Children[0],
+                more.Children[^1],
+                ShotKit.Get<CheckBox>(w, "_dontShow"),
+            ]);
+            w.Close();
+            k.Settle(300);
+
+            ShotKit.Call(main, "StartTutorial", TutorialKind.LayersFrames);
+            for (int i = 0; i < 30; i++)
+            {
+                TutorialSpotlight.Tick();
+                k.Settle(100);
+            }
+            if (!TutorialSpotlight.IsRunning) throw new InvalidOperationException("tutorial did not start");
+            k.Save(main, "start-tutorial-3");
+            TutorialSpotlight.Stop();
+        }
+        finally
+        {
+            App.Settings.TutorialsDone = done;
+        }
     }
 
     private static Rect Pad(Control c, Visual top, double left)

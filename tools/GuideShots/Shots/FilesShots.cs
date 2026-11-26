@@ -278,7 +278,7 @@ internal static class FilesShots
     {
         var m = ToolFileHelp.Open(k, ToolFileHelp.Sample(k));
         ToolFileHelp.HideFiles(k, m);
-        // ①② 칸 크기가 모두 같은 시트: 부위로 / 애니메이션 프레임으로.
+        // ①② 칸 크기가 모두 같은 시트: 자식 레이어로 / 애니메이션 프레임으로.
         k.Dialog(() => new ImportKindDialog("hero_walk.png", 8, new System.Drawing.Size(32, 32)).ShowDialog(m), w =>
         {
             var buttons = ShotKit.All<Button>(w).Where(b => b.IsEffectivelyVisible).OrderBy(b => ShotKit.Bounds(b, w).X).ToList();
@@ -552,6 +552,17 @@ internal static class FilesShots
             var ctrlS = commands.First(c => c.Id == "파일/저장(+ 시트 내보내기)").Defaults.ToList();
             k.Dialog(() => ShotKit.Call(w, "SetKeys", revert.Id, ctrlS), ask =>
                 k.Save(ask, name: "files-settings-4", marks: [Button(ask, UiStrings.S_Ui_MessageDialog_76C4BD0F9B)], firstNumber: 12));
+
+            // ⑬~⑯ AI 상태 탭의 알림 묶음: 탭 머리, 알림 켜기, 소리와 미리 보기, 보고 있을 때도 알림.
+            PrefsTab(w, 2);
+            var preview = Button(w, UiStrings.Notify_Preview);
+            SaveWindow(k, w, "files-settings-5",
+            [
+                TabHeader(w, UiStrings.AiStatus_SettingsTab),
+                Lead(ShotKit.Get<Control>(w, "_notify"), w),
+                RowUpTo(preview, w),
+                Lead(ShotKit.Get<Control>(w, "_notifyWhenActive"), w),
+            ], 13);
         });
     }
 

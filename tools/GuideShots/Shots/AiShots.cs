@@ -6,6 +6,8 @@ using System.Text.RegularExpressions;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Headless;
+using Avalonia.Input;
 using Avalonia.VisualTree;
 using Chickxel.App;
 using Chickxel.App.Ai;
@@ -444,6 +446,79 @@ internal static class AiShots
         var stop = chat.Field<Button>(Claude, "_stopButton");
         k.Save(w, "ai-chat-6", crop: Union(w, 30, bubble, copyText).Intersect(new Rect(w.Bounds.Size)), marks: [Room(sentChip, w, left: 16, up: 0), Room(copyText, w, left: 16, up: 0)], firstNumber: 15);
         k.Save(w, "ai-chat-2", crop: Union(w, 8, chat.Field<TextBlock>(Claude, "_thinking"), chat.Input(Claude), stop), marks: [stop], firstNumber: 8);
+
+        // ⑰~⑳ 답을 받는 동안 보낸 메시지 둘이 들어간 대기 줄: 끌기 손잡이 · 고치기 · 지우기 · 지금 보내기(첫 줄에 번호).
+        ShotKit.Call(tab, "Prefill", "Then add a small blush on her cheeks");
+        k.Settle(100);
+        ShotKit.Call(tab, "Send");
+        ShotKit.Call(tab, "Prefill", "Make the eyes a little bigger");
+        k.Settle(100);
+        ShotKit.Call(tab, "Send");
+        k.Settle(400);
+        var pending = chat.Field<Panel>(Claude, "_pending");
+        var line = (DockPanel)((Border)pending.Children[0]).Child!;
+        var rowButtons = (Panel)line.Children[1];
+        k.Save(w, "ai-chat-7", crop: Union(w, 8, chat.Field<TextBlock>(Claude, "_thinking"), pending, chat.Input(Claude), stop).Intersect(new Rect(w.Bounds.Size)),
+            marks: [Room(line.Children[0], w, up: 12), Room(rowButtons.Children[0], w, up: 12), Room(rowButtons.Children[1], w, up: 12), Room(rowButtons.Children[2], w, up: 12)], firstNumber: 17);
+    }
+
+    // ───────────── 그림에 표시해 고치기 ─────────────
+
+    /// <summary>①~⑦ 그림 표시 창: 대화 속 그림(차례 끝 캔버스 모습)을 눌러 연 창에 선 하나와 댓글 하나를 단 모습(댓글에 마우스를 올려 글 풍선이 보임).</summary>
+    [Shot("ai-image-markup")]
+    public static void ImageMarkup(ShotKit k)
+    {
+        var chat = OutlineChat(k, chatWidth: 470, chatHeight: 720);
+        ShotKit.Call(chat.Window, "OpenImageMarkup", ImageUtil.ToBitmap(Wolf(chat)));
+        k.Settle(500);
+        var d = k.Windows.Last(x => x.GetType().Name == "ImageMarkupWindow");
+        d.Width = 640;
+        d.Height = 700;
+        k.Settle(400);
+        var board = ShotKit.Get<Control>(d, "_board");
+        var tools = ShotKit.Get<ToggleButton[]>(d, "_tools");
+        // 그림 기준 0~1 자리 → 창 좌표.
+        Point At(double x, double y)
+        {
+            var area = (Rect)ShotKit.Call(board, "ImageArea", board.Bounds.Size)!;
+            var p = new Point(area.X + x * area.Width, area.Y + y * area.Height);
+            return board.TranslatePoint(p, d) ?? throw new InvalidOperationException("board not attached");
+        }
+        // 그리기: 귀 둘레를 한 번에 감싸는 타원 선(가운데 0.5, 0.1 · 반지름 0.38, 0.09).
+        var start = At(0.12, 0.1);
+        d.MouseMove(start);
+        d.MouseDown(start, MouseButton.Left);
+        for (int i = 1; i <= 40; i++)
+        {
+            double t = i / 40.0 * 2 * Math.PI;
+            d.MouseMove(At(0.5 - 0.38 * Math.Cos(t), 0.1 - 0.09 * Math.Sin(t)));
+            k.Settle(10);
+        }
+        d.MouseUp(start, MouseButton.Left);
+        k.Settle(150);
+        // 댓글: 재킷 자리에 번호 표시와 글.
+        k.Click(tools[1]);
+        var commentAt = At(0.62, 0.58);
+        k.Click(d, commentAt);
+        k.Type(d, "Make the jacket red");
+        k.Key(d, Key.Enter);
+        ShotKit.Get<TextBox>(d, "_input").Text = "Make the ears pointier and keep everything else the same";
+        k.Settle(200);
+        k.Hover(d, commentAt);
+        var copy = ShotKit.All<Button>(d).First(b => ToolTip.GetTip(b) as string == UiStrings.Preview_Menu_CopyImage);
+        var save = ShotKit.All<Button>(d).First(b => ToolTip.GetTip(b) as string == UiStrings.Image_SaveMenu);
+        var send = VisibleButton(d, UiStrings.ImageMarkup_Send);
+        var input = ShotKit.Get<TextBox>(d, "_input");
+        // ① 그리기 ② 댓글 ③ 지우기 ④ 되돌리기 ⑤ 이미지 복사·저장 ⑥ 표시한 그림 ⑦ 입력 칸과 보내기.
+        k.Save(d, marks:
+        [
+            tools[0], tools[1], tools[2], ShotKit.Get<Button>(d, "_undo"),
+            Union(d, 1, copy, save),
+            Room(board, d, left: 0, up: 0).Deflate(4),
+            Union(d, 1, input, send),
+        ]);
+        d.Close();
+        k.Settle(100);
     }
 
     [Shot("ai-history")]
@@ -579,8 +654,8 @@ internal static class AiShots
         [
             Row("_autoPrompt"),
             Row("_styleCombo"),
-            Room(frameGrid, w, left: 12, up: 0),
             Row("_animCombo", 2),
+            Room(frameGrid, w, left: 12, up: 0),
         ], firstNumber: 8);
         settingsButton.IsChecked = false;
         FinishPanel(k, w);
@@ -607,13 +682,17 @@ internal static class AiShots
             .Done(null, 71300);
         chat.Resume(Codex, rest);
         var cardButton = ShotKit.All<Button>(chat.Messages(Codex)).First(b => ShotKit.All<TextBlock>(b).Any(t => t.Text == UiStrings.AiDraw_Convert));
+        var editButton = ShotKit.All<Button>(chat.Messages(Codex)).First(b => ShotKit.All<TextBlock>(b).Any(t => t.Text == UiStrings.Chat_ImageMarkup_Open));
         // 결과 카드 전체(원본·결과 글·단추 줄): 단추 줄만 표시하면 ⑲가 ⑳ 단추 번호에 가려진다.
         var card = cardButton.GetVisualAncestors().OfType<StackPanel>().First(s => s.Children.OfType<SelectableTextBlock>().Any());
         var askRow = LastUserRow(chat, Codex);
         var cardCrop = Union(w, 10, askRow, card);
-        k.Save(w, "ai-generate-4", crop: cardCrop.WithHeight(ShotKit.Bounds(card, w).Bottom + 8 - cardCrop.Y), marks: [card, cardButton], firstNumber: 19);
+        // ⑲ 결과 카드 ⑳ 변환하기 · 이미지 수정.
+        k.Save(w, "ai-generate-4", crop: cardCrop.WithHeight(ShotKit.Bounds(card, w).Bottom + 8 - cardCrop.Y), marks: [card, Union(w, 1, cardButton, editButton)], firstNumber: 19);
 
-        // ⑰⑱ 애니메이션: 스프라이트 시트 한 장 생성 중인 진행 줄과 정지 단추.
+        // ⑰⑱ 애니메이션: 스프라이트 시트 한 장 생성 중인 진행 줄과 정지 단추(창을 줄여 새 차례가 입력란 바로 위에 오게 — 자른 그림에 빈 대화 칸이 크게 남지 않게).
+        w.Height = 560;
+        k.Settle(300);
         chat.Send(Codex, "Make a 4-frame walk animation of her", new Script()
             .Think(300)
             .ToolLine("generate_pixel_art", new JsonObject { ["prompt"] = "wolf-eared adventurer walk cycle", ["animation"] = "walk", ["frames"] = 4 })
@@ -748,6 +827,14 @@ internal static class AiShots
             VisibleButton(panel, UiStrings.AiQuestion_Other),
             VisibleButton(panel, UiStrings.AiQuestion_Cancel),
         ]);
+
+        // 질문할 때 화면 오른쪽 아래에 뜨는 알림 창(앱 아이콘 · 제목 · 내용 · 닫기). 설정·소리와 관계없이 창만 띄운다.
+        var notifications = typeof(MainForm).Assembly.GetType("Chickxel.App.AppNotifications")!;
+        notifications.GetMethod("Pop", BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null, [w, UiStrings.AiNotify_Question, question]);
+        k.Settle(600);
+        var toast = (Window)notifications.GetField("_toast", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!;
+        k.Save(toast, "ai-questions-2", titleBar: false);
+        toast.Close();
         cts.Cancel();
         k.Settle(300);
     }

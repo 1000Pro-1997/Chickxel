@@ -99,9 +99,11 @@ internal static class ScreenDialogShots
                 return ShotKit.Bounds(row, w).Inflate(new Thickness(12, -2, -4, -2));
             }
             var common = ShotKit.Bounds(sections[0], w);
-            // ㉘ 스킨 고르기 단추는 스킨 줄 끝에 있어 번호가 단추 위 칸을 가리지 않게 스킨 줄 전체를 감싼다.
+            // ㉘ 스킨 줄(스킨이 없으면 넣을 레이어 줄): 끝의 고르기 단추까지 줄 전체를 감싼다. 스킨이 없을 때 "Skin"을 찾으면 정렬 목록의 줄이 잡히므로 이름표를 골라 찾는다.
+            var layersLabel = UiStrings.S_UnityExportDialog_SheetRows_ED3CFCD2B9;
+            var skinLabel = ShotKit.All<TextBlock>(sections[0]).Any(t => t.IsEffectivelyVisible && t.Text == layersLabel) ? layersLabel : "Skin";
             Shot(k, w, "screen-export-3", common,
-                [Row("Cell count"), Row("Order"), Row("Separate files"), Row("Cell names"), Row("Skin")],
+                [Row("Cell count"), Row("Order"), Row("Separate files"), Row("Cell names"), Row(skinLabel)],
                 24, only: [common]);
 
             // 4: 프리셋 팝업(형식 묶음 제목 줄 오른쪽 끝 단추)

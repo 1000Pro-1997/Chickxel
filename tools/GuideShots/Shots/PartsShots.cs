@@ -12,20 +12,20 @@ using static GuideShots.PartsSample;
 
 namespace GuideShots;
 
-/// <summary>부위(그룹) 레이어 · 스킨 장(parts-*) 그림. 번호는 쪽(h3)마다 이어진다 — 가이드 글의 ①②…와 같은 순서.</summary>
+/// <summary>레이어 나무 · 스킨 장(parts-*) 그림. 번호는 쪽(h3)마다 이어진다 — 가이드 글의 ①②…와 같은 순서.</summary>
 internal static class PartsShots
 {
-    // ───────────── 그룹과 부위 · 만들기 · 타임라인 ─────────────
+    // ───────────── 레이어 나무 · 만들기 · 타임라인 ─────────────
 
     [Shot("parts-concept")]
     public static void Concept(ShotKit k)
     {
         var main = Open(k);
         int g = Index(main, GroupName), head = Index(main, "Head"), legs = Index(main, "Legs");
-        // ① 그룹 ② 부위 행 ③ 부위 크기 ④ 프레임마다 그림 ⑤ 프레임 안 위치(캔버스의 Head 테두리)
+        // ① 부모 레이어 행 ② 자식 레이어 행 ③ 레이어 크기 ④ 프레임마다 그림 ⑤ 프레임 안 위치(캔버스의 Head 테두리)
         k.SaveArea([Canvas(main), Timeline(main)], pad: 2, marks:
         [
-            RowRect(main, g), RowRect(main, head).Union(RowRect(main, legs)), SizeRect(main, head).Inflate(4),
+            RowRect(main, g), ChildRows(main, head, legs), SizeRect(main, head).Inflate(4),
             CellsRect(main, head, 0, 3), PartOnCanvas(main, Layer(main, "Head")),
         ]);
     }
@@ -34,19 +34,20 @@ internal static class PartsShots
     public static void Create(ShotKit k)
     {
         var main = Open(k);
-        // 새 프로젝트 창(부위로 시작 선택지는 없어짐)
-        // 도움말 대기: ① 부위로 시작 ② 첫 부위 이름·크기 — 새 프로젝트 창에서 없어져 표시 없이 창만 담는다.
-        k.Dialog(() => k.Command("파일/새 프로젝트"), w =>
-        {
-            ShotKit.Pump(200);
-            k.Save(w);
-        });
-        // ③ 새 빈 레이어 ④ 새 자식 레이어… (프레임·레이어 메뉴)
-        var newGroup = OpenCommandMenu(k, main, "새 빈 레이어");
-        var newPart = CommandItem(main, "새 자식 레이어…");
-        SaveTopMenu(k, main, "parts-create-2", [newGroup, newPart], 3);
+        // ① 새 빈 레이어 ② 새 자식 레이어… (프레임·레이어 메뉴)
+        var newEmpty = OpenCommandMenu(k, main, "새 빈 레이어");
+        var newChild = CommandItem(main, "새 자식 레이어…");
+        SaveTopMenu(k, main, "parts-create", [newEmpty, newChild], 1);
         CloseMenus(k, main);
-        // ⑤ 이름 ⑥ 크기 (새 자식 레이어 창)
+        // ③ 새 빈 레이어 ④ 새 자식 레이어… (레이어 우클릭 > 새로 만들기)
+        int g = Index(main, GroupName);
+        RightClickRow(k, main, g);
+        MenuItemByText(UiStrings.Timeline_NewMenu).IsSubMenuOpen = true;
+        k.Settle(300);
+        SaveMenu(k, main, "parts-create-2", g,
+            [MenuItemByText(UiStrings.S_TimelinePanel_ShowLayerMenu_13B10F0946), MenuItemByText(UiStrings.S_TimelinePanel_ShowLayerMenu_804EB6B1D9)], 3);
+        CloseMenus(k, main);
+        // ⑤ 이름 ⑥ 크기 (새 자식 레이어 창 — 앱의 F1 도움말이 parts-create-3의 ⑤⑥을 가리킨다)
         k.Dialog(() => k.Command("프레임·레이어/새 자식 레이어…"), w =>
         {
             var name = ShotKit.All<TextBox>(w).First();
@@ -56,36 +57,36 @@ internal static class PartsShots
             var size = AfterLabel(w, (Panel)ShotKit.Get<Control>(w, "_size").Parent!);
             k.Save(w, "parts-create-3", marks: [name, size], firstNumber: 5);
         });
-        // ⑦ 새 그룹 ⑧ 새 부위… (그룹 우클릭 > 새로 만들기)
-        int g = Index(main, GroupName);
-        RightClickRow(k, main, g);
-        MenuItemByText(UiStrings.Timeline_NewMenu).IsSubMenuOpen = true;
-        k.Settle(300);
-        SaveMenu(k, main, "parts-create-4", g,
-            [MenuItemByText(UiStrings.S_TimelinePanel_ShowLayerMenu_13B10F0946), MenuItemByText(UiStrings.S_TimelinePanel_ShowLayerMenu_804EB6B1D9)], 7);
     }
 
     [Shot("parts-timeline")]
     public static void TimelineView(ShotKit k)
     {
         var main = Open(k);
-        int g = Index(main, GroupName), head = Index(main, "Head"), legs = Index(main, "Legs");
+        // 장비는 접어 둔다(접힌 부모 칸 = 자식까지 합친 썸네일).
+        ShotKit.Call(Timeline(main), "ToggleCollapsed", Index(main, GearName));
+        // 접는 애니메이션 끝까지(헤드리스에서는 타임라인 애니메이션 틱을 직접 돌림)
+        for (int i = 0; i < 30; i++)
+        {
+            ShotKit.Call(Grid(main), "OnAnimTick", null, EventArgs.Empty);
+            k.Settle(16);
+        }
+        k.Settle(300);
+        int g = Index(main, GroupName), gear = Index(main, GearName), head = Index(main, "Head"), legs = Index(main, "Legs");
         var tl = Timeline(main);
         var b = ShotKit.Bounds(tl, main);
         var crop = new Rect(b.X, b.Y, Math.Min(b.Width, 520), b.Height);
         var row = RowRect(main, g);
-        // 부위 행은 들여 쓴 이름부터(번호가 보이기·잠금 단추를 가리지 않게)
-        var parts = RowRect(main, head).Union(RowRect(main, legs));
-        parts = new Rect(parts.X + 64, parts.Y + 8, parts.Width - 64, parts.Height - 8);
-        // ① 접기 삼각형 ② 그룹 합성 썸네일 ③ 부위 행(들여쓰기·크기) ④ 스킨 칩 ⑤ 보이기·잠금
+        var children = ChildRows(main, head, legs);
+        // ① 접기 삼각형 ② 접힌 부모의 합친 썸네일 ③ 자식 행(안내선·들여쓰기·크기) ④ 스킨 칩 ⑤ 보이기·잠금
         k.Save(main, crop: crop, marks:
         [
-            ToggleRect(main, g).Inflate(6), CellsRect(main, g, 0, 3), parts, ChipRect(main, g),
+            ToggleRect(main, g).Inflate(6), CellsRect(main, gear, 0, 3), children, ChipRect(main, g),
             new Rect(row.X + 4, row.Y + 3, 44, 30),
         ]);
     }
 
-    // ───────────── 배치(그룹 선택) · 그리기(부위 선택) ─────────────
+    // ───────────── 배치(빈 레이어 선택) · 그리기(자기 크기가 있는 레이어 선택) ─────────────
 
     [Shot("parts-arrange")]
     public static void Arrange(ShotKit k)
@@ -155,6 +156,24 @@ internal static class PartsShots
         // 번호가 피벗 도구 아이콘을 가리지 않게 테두리를 위로 늘린다.
         var tools = p0.Union(s0);
         k.Save(main, "parts-draw-5", crop: area, marks: [new Rect(tools.X, tools.Y - 16, tools.Width, tools.Height + 16)], firstNumber: 7);
+    }
+
+    // ───────────── 레이어 효과의 적용 대상 ─────────────
+
+    [Shot("parts-effects")]
+    public static void EffectScope(ShotKit k)
+    {
+        // 자식이 있는 Character에 "자식까지 합친 그림" 외곽선
+        var main = Open(k, p => p.SetLayerEffects(p.IndexOf(p.Layers.First(l => l.Name == GroupName)),
+            [new OutlineEffect { Color = new Color32(255, 214, 90), IncludeChildren = true }]));
+        int g = Index(main, GroupName);
+        k.Dialog(() => ShotKit.Call(Timeline(main), "EditLayerEffects", g, 0, null, null), w =>
+        {
+            ShotKit.Pump(600);
+            var scope = ShotKit.All<Chickxel.App.TabStrip>(w).First(t => ShotKit.All<TextBlock>(t).Any(x => x.Text == UiStrings.LayerEffects_ScopeOwn));
+            // ① 적용 대상(이 레이어만 | 자식까지 합친 그림)
+            k.Save(w, marks: [ShotKit.Bounds(scope, w).Inflate(5)]);
+        }, settleMs: 700);
     }
 
     // ───────────── 자동 배치 ─────────────
@@ -236,66 +255,75 @@ internal static class PartsShots
     public static void Skins(ShotKit k)
     {
         var main = Open(k);
-        int g = Index(main, GroupName);
+        int body = Index(main, "Body");
         int gear = Index(main, GearName), weapon = Index(main, "Weapon");
         var area = ShotKit.Bounds(Canvas(main), main).Union(ShotKit.Bounds(Timeline(main), main)).Inflate(2);
-        // ① 그룹의 지금 스킨 ② 위에 겹치는 다른 그룹. 비어 있는 스킨 칸은 첫 스킨에서 빌려오지 않는다.
-        k.Save(main, crop: area, marks: [ChipRect(main, g), RowRect(main, gear).Union(RowRect(main, weapon))]);
+        // ① Body의 지금 스킨 ② 위에 겹치는 다른 레이어(Gear·Weapon). 비어 있는 스킨 칸은 첫 스킨에서 빌려오지 않는다.
+        k.Save(main, crop: area, marks: [ChipRect(main, body), RowRect(main, gear).Union(RowRect(main, weapon))]);
+
+        // ③ Character 행 ④ 스킨 추가 하위 메뉴(빈 스킨… · 지금 그림 복제… · 자식까지…) (Character 우클릭)
+        int g = Index(main, GroupName);
+        RightClickRow(k, main, g);
+        MenuItemByText(UiStrings.Timeline_AddSkinToLayer).IsSubMenuOpen = true;
+        k.Settle(400);
+        var sub = new[] { UiStrings.S_TimelinePanel_SkinMenuItems_B0E982373D, UiStrings.Timeline_AddSkinToLayer_Copy, UiStrings.Timeline_AddSkinToSubtree }
+            .Select(t => InTop(main, MenuItemByText(t))).Aggregate((a, b) => a.Union(b));
+        var rowRect = RowRect(main, g);
+        var menuArea = rowRect.Union(OpenPopupsRect(main) ?? sub);
+        k.Save(main, "parts-skins-2", crop: menuArea.Inflate(12), marks: [rowRect, sub.Inflate(4)], firstNumber: 3);
+        CloseMenus(k, main);
     }
 
     [Shot("parts-per-part")]
     public static void PerPart(ShotKit k)
     {
+        // 미리보기 스킨 줄이 두 줄 안에 다 보이게 오른쪽 칸을 넓힌다.
+        App.Settings.RightWidth = 760;
         var main = Open(k);
         var ctx = Ctx(main);
         var head = Layer(main, "Head");
-        int hi = Index(main, "Head"), bi = Index(main, "Body"), g = Index(main, GroupName);
+        int hi = Index(main, "Head"), bi = Index(main, "Body");
         // 몸은 knight 그대로, 머리 레이어만 zombie
-        // 도움말 대기: "부위 재정의"는 없어졌다 — 레이어마다 자기 스킨을 고르는 것이 가장 가까운 모습.
         ctx.SetActiveSkin(head, head.Skins.First(s => s.Name == "zombie"));
         k.Settle(300);
         var canvas = ShotKit.Bounds(Canvas(main), main);
         var tl = ShotKit.Bounds(Timeline(main), main);
         var crop = new Rect(canvas.X, canvas.Y, canvas.Width, tl.Bottom - canvas.Y);
-        // ① 몸의 스킨 ② 머리의 스킨 ③ 부모 레이어의 스킨
-        k.Save(main, crop: crop, marks: [ChipRect(main, bi), ChipRect(main, hi), ChipRect(main, g)]);
+        // ① Head의 스킨 ② 캔버스의 Head(초록 얼굴) ③ Body의 스킨(knight 그대로)
+        k.Save(main, crop: crop, marks: [ChipRect(main, hi), PartOnCanvas(main, head).Inflate(4), ChipRect(main, bi)]);
 
-        // ④ 새 스킨 단추 ⑤ Head에만 있는 "모자" 카드 (스킨 관리 창 Head 줄)
-        // 도움말 대기: "부위 전용 스킨"은 없어졌다 — Head 레이어 한 곳에만 있는 스킨으로 대신 보인다.
-        var w = OpenSkinManager(k, main, head, height: 1120);
-        var box = LayerRowBox(w, "Head");
-        var add = ShotKit.FindText(box, "New skin", ancestorControl: true);
-        var hat = ShotKit.Bounds(Card(box, HatSkin), w).Inflate(6);
-        k.SaveControl(box, "parts-per-part-2", pad: 6, marks: [add, hat], firstNumber: 4);
-        // ⑨ Hat 카드 우클릭 메뉴(복제)
-        // 도움말 대기: "전체 스킨으로 올리기"는 없어졌다 — 같은 카드 메뉴의 복제로 대신한다.
-        k.Click(Card(box, HatSkin), MouseButton.Right, settleMs: 400);
-        SaveWindowMenu(k, w, "parts-per-part-4", box, [MenuItemByText(UiStrings.S_SkinManagerWindow_GroupCardMenu_F64B3478B8)], 9);
-        CloseMenus(k, w);
-        // ⑩ Head 줄 knight 카드 우클릭 메뉴(이름 바꾸기)
-        // 도움말 대기: "이 부위 전용으로 추가"는 없어졌다 — 스킨이 이미 레이어마다 따로라 카드 메뉴만 보인다.
-        box = LayerRowBox(w, "Head");
-        k.Click(Card(box, "knight"), MouseButton.Right, settleMs: 400);
-        SaveWindowMenu(k, w, "parts-per-part-5", box, [MenuItemByText(UiStrings.S_SkinManagerWindow_GroupCardMenu_120694637E)], 10);
-        CloseMenus(k, w);
-        w.Close();
-        k.Settle(200);
+        // ④ 스킨 목록 ⑤ 스킨 설정… (Head 스킨 칩을 누른 메뉴)
+        k.Click(main, ChipRect(main, hi).Center, settleMs: 450);
+        var settings = MenuItemByText(UiStrings.S_TimelinePanel_SkinMenuItems_B61606E9A0);
+        var choices = OpenMenuItems().Where(m => m.IsVisible && !ReferenceEquals(m, settings)).Select(m => InTop(main, m)).Aggregate((a, b) => a.Union(b));
+        var menu = OpenPopupsRect(main) ?? throw new InvalidOperationException("skin chip menu did not open");
+        k.Save(main, "parts-per-part-2", crop: RowRect(main, hi).Union(menu).Inflate(14), marks: [choices, InTop(main, settings)], firstNumber: 4);
+        CloseMenus(k, main);
 
-        // ⑥ 레이어 스킨 하위 메뉴 (Head 우클릭)
-        // 도움말 대기: ⑦ 이 부위 스킨…·⑧ 모자(개별) 항목은 없어졌다 — 하위 메뉴만 표시한다.
+        // ⑥ 스킨 프리셋 상자 ⑦ 레이어마다 스킨 상자(Head) ⑧ 설정… (미리보기 아래 스킨 줄)
+        var preview = Preview(main);
+        var row = ShotKit.Get<Panel>(preview, "_skins").Children;
+        var presetBox = row.OfType<ComboBox>().First();
+        var headItem = row.First(c => ShotKit.All<TextBlock>(c).Any(t => t.Text == "Head"));
+        var manage = row.OfType<Button>().Last();
+        k.SaveControl(preview, "parts-per-part-3", pad: 2, marks: [presetBox, headItem, manage], firstNumber: 6);
+
+        // ⑨ 스킨: zombie 하위 메뉴 (Head 우클릭)
         RightClickRow(k, main, hi);
-        var sub = OpenMenuItems().First(m => m.ItemsSource is not null);
-        sub.IsSubMenuOpen = true;
+        var skin = MenuItemStarting(UiStrings.S_TimelinePanel_ShowLayerMenu_07F7E49A77);
+        skin.IsSubMenuOpen = true;
         k.Settle(400);
-        SaveMenu(k, main, "parts-per-part-3", hi, [sub], 6);
+        SaveMenu(k, main, "parts-per-part-4", hi, [skin], 9);
+        CloseMenus(k, main);
     }
 
     [Shot("parts-skin-manager")]
     public static void SkinManager(ShotKit k)
     {
+        App.Settings.RightWidth = 760;
         var main = Open(k);
         int g = Index(main, GroupName);
-        // ① 스킨 칩 ② 프레임·레이어 > 스킨 관리… ③ 착장 줄의 관리…
+        // ① 스킨 칩(메뉴의 스킨 설정…) ② 프레임·레이어 > 스킨 설정… ③ 미리보기 스킨 줄의 설정…
         var manage = ShotKit.All<Button>(ShotKit.Get<Control>(Preview(main), "_skinsHost")).First(b => b.Content as string == UiStrings.S_PreviewPanel_RebuildOutfit_090268890B);
         var item = OpenCommandMenu(k, main, "스킨 관리");
         k.Save(main, marks: [ChipRect(main, g), InTop(main, item), ShotKit.Bounds(manage, main).Inflate(4)]);
@@ -304,23 +332,21 @@ internal static class PartsShots
         var w = OpenSkinManager(k, main, null, height: 1120);
         var presets = ShotKit.Get<Control>(w, "_presetBox");
         var layers = ShotKit.Get<Control>(w, "_layerBox");
-        var box = LayerRowBox(w, GroupName);
+        var box = LayerRowBox(w, "Body");
         var cards = new[] { Card(box, t => t.StartsWith(BaseSkin, StringComparison.Ordinal)), Card(box, "knight"), Card(box, "zombie") };
         var cardsRect = cards.Select(c => ShotKit.Bounds(c, w)).Aggregate((a, b) => a.Union(b));
         var newSkin = ShotKit.FindText(box, "New skin", ancestorControl: true);
         var dup = ShotKit.FindText(box, "Duplicate", ancestorControl: true);
-        // ④ 스킨 프리셋 ⑤ 부모 레이어 스킨 카드 ⑥ 새 스킨 ⑦ 복제 — 창 위쪽부터 캐릭터 줄 카드까지
-        // 도움말 대기: ④는 예전 "전체 착장" 미리 보기 자리 — 지금은 프리셋 묶음.
-        k.Save(w, "parts-skin-manager-2", crop: new Rect(0, 0, w.Bounds.Width, cardsRect.Bottom + 14), titleBar: true,
-            marks: [ShotKit.Bounds(presets, w).Deflate(4), cardsRect, newSkin, dup], firstNumber: 4);
-        // ⑧ 카드 우클릭 메뉴(이름 바꾸기…·삭제·앞으로/뒤로) ⑨ 자식 줄(Head) ⑩ 장비의 없음 카드 ⑪ 레이어 목록
-        // 도움말 대기: "부위별" 단추·보기 거르기는 없어졌다 — 자식 레이어 줄과 레이어 목록으로 대신한다.
-        var child = LayerRowBox(w, "Head");
-        var none = Card(LayerRowBox(w, GearName), t => t.StartsWith(NoneSkin, StringComparison.Ordinal));
+        // ④ 스킨 프리셋 묶음 ⑤ 레이어 스킨 묶음 ⑥ Body 줄의 스킨 카드 ⑦ 새 스킨 ⑧ 복제
+        // 위아래로 붙은 두 단추의 번호가 겹치지 않게 복제 표시는 왼쪽으로 늘린다.
+        var dupRect = ShotKit.Bounds(dup, w);
+        k.Save(w, "parts-skin-manager-2", titleBar: true,
+            marks: [ShotKit.Bounds(presets, w).Deflate(4), ShotKit.Bounds(layers, w).Deflate(4), cardsRect.Inflate(4), newSkin,
+                new Rect(dupRect.X - 30, dupRect.Y, dupRect.Width + 30, dupRect.Height)], firstNumber: 4);
+        // ⑨ 스킨 카드 우클릭 메뉴(적용·프리셋에 넣을 스킨으로 고르기·복제·이름 바꾸기…·삭제·앞으로/뒤로)
         k.Click(Card(box, "zombie"), MouseButton.Right, settleMs: 400);
-        var edits = InTop(w, MenuItemByText(UiStrings.S_SkinManagerWindow_GroupCardMenu_120694637E))
-            .Union(InTop(w, MenuItemByText(UiStrings.S_SkinManagerWindow_GroupCardMenu_B0B89947BD)));
-        k.Save(w, "parts-skin-manager-3", marks: [edits, child, none, layers], firstNumber: 8);
+        var cardMenu = (Control)OpenPopups().First(pp => pp.Child is Control { IsVisible: true }).Child!;
+        SaveWindowMenu(k, w, "parts-skin-manager-3", box, [cardMenu], 9);
         CloseMenus(k, w);
         w.Close();
     }
@@ -329,39 +355,31 @@ internal static class PartsShots
     public static void Outfits(ShotKit k)
     {
         var main = Open(k);
-        var preview = Preview(main);
-        var host = ShotKit.Get<Control>(preview, "_skinsHost");
-        // ① 착장 줄
-        k.SaveControl(preview, pad: 2, marks: [host]);
-        // ② 그룹 우클릭 > 스킨
-        int g = Index(main, GroupName);
-        RightClickRow(k, main, g);
-        var skin = MenuItemStarting(UiStrings.S_TimelinePanel_ShowLayerMenu_07F7E49A77);
-        skin.IsSubMenuOpen = true;
+        // ① ② Ctrl/⌘+클릭으로 고른 카드(Head의 Hat · Weapon의 Sword) ③ 프리셋으로 등록… ④ 고른 스킨 수
+        var w = OpenSkinManager(k, main, null, height: 1120);
+        k.Click(Card(LayerRowBox(w, "Head"), HatSkin), mods: RawInputModifiers.Control, settleMs: 500);
+        k.Settle(300);
+        k.Click(Card(LayerRowBox(w, "Weapon"), SwordSkin), mods: RawInputModifiers.Control, settleMs: 500);
         k.Settle(400);
-        SaveMenu(k, main, "parts-outfits-2", g, [skin], 2);
-        CloseMenus(k, main);
-        // ③ 부위 우클릭 > 이 부위 스킨
-        int hi = Index(main, "Head");
-        RightClickRow(k, main, hi);
-        var sub = OpenMenuItems().First(m => m.ItemsSource is not null);
-        sub.IsSubMenuOpen = true;
-        k.Settle(400);
-        SaveMenu(k, main, "parts-outfits-3", hi, [sub], 3);
-        CloseMenus(k, main);
-        // ④ 지금 착장 저장… ⑤ 착장 프리셋 카드 ⑥ 카드 우클릭 메뉴
-        var w = OpenSkinManager(k, main, null, width: 560);
-        var outfits = ShotKit.Get<Control>(w, "_presetBox");
+        var hat = ShotKit.Bounds(Card(LayerRowBox(w, "Head"), HatSkin), w);
+        var sword = ShotKit.Bounds(Card(LayerRowBox(w, "Weapon"), SwordSkin), w);
+        var picked = ShotKit.Get<Control>(w, "_pickedText");
         var save = ShotKit.Get<Control>(w, "_savePreset");
+        k.Save(w, titleBar: true, marks: [hat.Inflate(4), sword.Inflate(4), InTop(w, save).Inflate(3), InTop(w, picked).Inflate(3)]);
+        k.Click(ShotKit.Get<Control>(w, "_clearPicked"), settleMs: 400);
+        k.Settle(300);
+
+        // ⑤ 스킨 프리셋 카드 ⑥ 카드 우클릭 메뉴(지금 스킨으로 덮어쓰기·이름 바꾸기…·삭제·순서)
+        var outfits = ShotKit.Get<Control>(w, "_presetBox");
         var cards = ShotKit.Bounds(Card(outfits, PresetName), w).Union(ShotKit.Bounds(Card(outfits, "Zombie"), w));
         // 카드 오른쪽 아래에서 우클릭(메뉴가 카드를 덮지 않게)
         var zombie = ShotKit.Bounds(Card(outfits, "Zombie"), w);
         k.Click(w, new Point(zombie.Right - 3, zombie.Bottom - 3), MouseButton.Right, settleMs: 400);
-        var menu = OpenPopupsRect(w) ?? throw new InvalidOperationException("outfit menu did not open");
+        var menu = OpenPopupsRect(w) ?? throw new InvalidOperationException("preset menu did not open");
         var area = ShotKit.Bounds(outfits, w).Union(menu).Inflate(8);
         // 덮어쓰기·이름 바꾸기·삭제·순서(맨 위 "적용" 다음부터)
         var items = OpenMenuItems().Where(m => m.IsVisible).Skip(1).Select(m => InTop(w, m)).Aggregate((a, b) => a.Union(b));
-        k.Save(w, "parts-outfits-4", crop: area, marks: [InTop(w, save), cards, items], firstNumber: 4);
+        k.Save(w, "parts-outfits-2", crop: area, marks: [cards.Inflate(4), items], firstNumber: 5);
         CloseMenus(k, w);
         w.Close();
     }
@@ -490,6 +508,13 @@ internal static class PartsShots
         int y = (int)ShotKit.Call(grid, "LayerY", layer)!;
         var p = grid.TranslatePoint(new Point(0, y), main)!.Value;
         return new Rect(p.X, p.Y, NameW, CellH);
+    }
+
+    /// <summary>자식 행들(<paramref name="top"/>~<paramref name="bottom"/>)의 안내선·이름 부분 — 번호가 부모 행의 번호·눈 단추와 겹치지 않게 들여 쓴다.</summary>
+    private static Rect ChildRows(MainForm main, int top, int bottom)
+    {
+        var rows = RowRect(main, top).Union(RowRect(main, bottom));
+        return new Rect(rows.X + 70, rows.Y + 4, rows.Width - 70, rows.Height - 4);
     }
 
     /// <summary>레이어 행의 프레임 칸들(창 좌표).</summary>

@@ -217,6 +217,11 @@ internal static class ScreenTimelineShots
         RightClickName(k, main, RowBody);
         SaveMenu(k, main, "screen-timeline-4", name, [name], 17);
 
+        // 7: 프레임 길이 창(프레임 1~3을 고른 채 — 고른 프레임 수·정하는 방법·결과 묶음)
+        k.Click(main, FrameHead(main, 0));
+        k.Click(main, FrameHead(main, 2), mods: RawInputModifiers.Shift);
+        k.Dialog(() => ShotKit.Call(Timeline(main), "SetDuration"), w => k.Save(w, "screen-timeline-7"));
+
         // 5: 레이어 메뉴의 불투명도… 창
         k.Dialog(() => ShotKit.Call(Timeline(main), "SetLayerOpacity", shadow), w => k.Save(w, "screen-timeline-5"));
 

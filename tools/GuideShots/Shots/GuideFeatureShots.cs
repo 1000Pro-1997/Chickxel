@@ -178,11 +178,11 @@ internal static class GuideFeatureShots
         var m = Demo(k);
         var p = Project(m);
         var group = p.Layers.First(l => p.HasChildren(l));
-        // 하위 트리 전체에 같은 이름 스킨(예전 "그룹 새 스킨"): 빈 스킨과 지금 스킨을 복사한 스킨
+        // 하위 트리 전체에 같은 이름 스킨("자식까지…"와 같음): 지금 스킨을 복사한 스킨을 먼저(그다음 빈 스킨이 지금 스킨이 됨)
         Ctx(m).Structural(() =>
         {
-            p.AddSkinToSubtree(group, "Empty");
             p.AddSkinToSubtree(group, "Copy", copy: true);
+            p.AddSkinToSubtree(group, "Empty");
         });
         PartsSample.Wear(Ctx(m), group, "Empty");
         k.Settle(350);
@@ -245,45 +245,6 @@ internal static class GuideFeatureShots
         k.Settle(300);
         k.Save(m, crop: R(m, Timeline(m)), marks: [ghost.Union(new Rect(end.X - 21, end.Y - 15, 42, 30))], firstNumber: 19);
         m.MouseUp(end, MouseButton.Left);
-    }
-
-    [Shot("parts-layer-skin-menu")]
-    public static void LayerSkinMenu(ShotKit k)
-    {
-        var m = Demo(k, group: false);
-        var row = Row(m, Layer(m, "Body"));
-        k.Click(m, new Point(row.X + 110, row.Center.Y), MouseButton.Right, settleMs: 450);
-        var item = ScreenTimelineShots.OpenPopups()
-            .SelectMany(p => ShotKit.All<MenuItem>(p.Child!))
-            .First(mi => mi.ItemsSource is not null && mi.Header is TextBlock t && t.Text == Chickxel.App.Localization.UiStrings.Timeline_AddSkinToLayer);
-        item.IsSubMenuOpen = true;
-        k.Settle(450);
-        var menu = ScreenTimelineShots.PopupArea(m) ?? throw new InvalidOperationException("skin submenu did not open");
-        k.Save(m, crop: row.Union(menu).Inflate(12).Intersect(new Rect(m.ClientSize)), marks: [row, menu]);
-    }
-
-    [Shot("screen-timeline-group-links")]
-    public static void GroupLinkedCels(ShotKit k)
-    {
-        var m = Demo(k);
-        var p = Project(m);
-        // 도움말 대기: 부모 줄 하나로 자식 칸을 모두 잇는 일은 없어졌다 — 자식 레이어마다 자기 칸을 잇는 모습으로 대신한다.
-        var group = p.Layers.First(l => p.HasChildren(l));
-        var groupIndex = p.IndexOf(group);
-        Ctx(m).Structural(() =>
-        {
-            foreach (var child in p.ChildrenOf(group))
-            {
-                int ci = p.IndexOf(child);
-                p.LinkCels([(ci, 0), (ci, 1), (ci, 2)], 0);
-            }
-        });
-        k.Settle(350);
-        var r = Row(m, groupIndex);
-        var children = p.ChildrenOf(group).Select(l => Row(m, p.IndexOf(l))).ToList();
-        var groupCells = new Rect(r.X + 270, r.Y, 3 * 42, r.Height);
-        var partCells = new Rect(children.Min(c => c.X) + 270, children.Min(c => c.Y), 3 * 42, children.Max(c => c.Bottom) - children.Min(c => c.Y));
-        k.Save(m, crop: R(m, Timeline(m)), marks: [groupCells, partCells], firstNumber: 4);
     }
 
     [Shot("screen-timeline-group-drag")]
@@ -394,10 +355,11 @@ internal static class GuideFeatureShots
         var original = At(pivot.X, pivot.Y);
         var effects = ShotKit.Get<Control>(m, "_cbEffects");
         var crop = R(m, canvas).Union(R(m, Preview(m))).Union(R(m, effects)).Intersect(new Rect(m.ClientSize));
-        k.Save(m, crop: crop, marks: [new Rect(moved.X - 15, moved.Y - 15, 30, 30), R(m, effects).Inflate(5)]);
+        // parts-effects 쪽은 앞 그림(적용 대상 ①) 다음이라 ②부터
+        k.Save(m, crop: crop, marks: [new Rect(moved.X - 15, moved.Y - 15, 30, 30), R(m, effects).Inflate(5)], firstNumber: 2);
         k.Command("캔버스에 효과 보기");
         k.Settle(350);
         k.Save(m, "parts-pivot-effect-view-2", crop: crop,
-            marks: [new Rect(original.X - 15, original.Y - 15, 30, 30), R(m, effects).Inflate(5)], firstNumber: 3);
+            marks: [new Rect(original.X - 15, original.Y - 15, 30, 30), R(m, effects).Inflate(5)], firstNumber: 4);
     }
 }
