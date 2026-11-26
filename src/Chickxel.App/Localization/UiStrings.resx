@@ -7774,7 +7774,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Pixelate_Preset_SaveClean" xml:space="preserve"><value>고른 프리셋에 저장된 그대로입니다</value></data>
   <data name="Pixelate_Preset_Rename" xml:space="preserve"><value>고른 프리셋 이름 바꾸기</value></data>
   <data name="Pixelate_Preset_Copy" xml:space="preserve"><value>고른 프리셋 복사('이름 복사본 1'을 만듦 — 왼쪽에 열린 프리셋이면 지금 왼쪽 값으로)</value></data>
-  <data name="Pixelate_Preset_Settings" xml:space="preserve"><value>프리셋 설정: 이름 바꾸기·복사·지우기, 자동 최적화로 돌릴 프리셋·대표 프리셋 고르기</value></data>
+  <data name="Pixelate_Preset_Settings" xml:space="preserve"><value>프리셋 설정: 이름 바꾸기·복사·지우기, 자동 최적화로 돌릴 프리셋 고르기</value></data>
   <data name="Pixelate_Preset_CopyName" xml:space="preserve"><value>{name} 복사본 {index}</value><comment>복사한 프리셋 이름 — 겹치면 번호를 올림</comment></data>
   <data name="Pixelate_Preset_Delete" xml:space="preserve"><value>고른 프리셋 지우기(마지막 하나는 지울 수 없음)</value></data>
   <data name="Pixelate_Preset_New" xml:space="preserve"><value>새 프리셋</value></data>
@@ -8126,8 +8126,6 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="OptimizePreset_NewName" xml:space="preserve"><value>새 프리셋</value></data>
   <data name="OptimizePreset_List" xml:space="preserve"><value>자동 최적화는 체크한 프리셋을 모두 돌립니다(값은 왼쪽 설정 칸에서 고침). 아래 단추로 고른 줄의 프리셋 이름을 바꾸거나 복사·지웁니다.</value></data>
   <data name="OptimizePreset_EnabledTip" xml:space="preserve"><value>체크하면 자동 최적화를 누를 때 이 프리셋도 돌립니다(프리셋마다 1위 후보 하나, 후보 이름 = 프리셋 이름).</value></data>
-  <data name="OptimizePreset_Representative" xml:space="preserve"><value>AI 그림 변환 대표 프리셋</value></data>
-  <data name="OptimizePreset_RepresentativeBadge" xml:space="preserve"><value>대표</value><comment>AI 그림 변환 대표 프리셋을 고르는 작은 단추(고른 것은 초록)</comment></data>
   <data name="OptimizePreset_Add" xml:space="preserve"><value>프리셋 추가</value></data>
   <data name="OptimizePreset_Duplicate" xml:space="preserve"><value>프리셋 복제</value></data>
   <data name="OptimizePreset_Delete" xml:space="preserve"><value>프리셋 삭제(마지막 하나는 지울 수 없음)</value></data>
@@ -8230,10 +8228,6 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="AiDraw_Codex_NotLoggedIn" xml:space="preserve"><value>Codex CLI에 로그인되어 있지 않습니다. Codex 탭에서 로그인하면 그림을 생성할 수 있습니다.</value></data>
   <data name="AiDraw_Codex_Unknown" xml:space="preserve"><value>Codex CLI 상태를 알 수 없습니다: {message}</value></data>
   <data name="AiDraw_Options_Title" xml:space="preserve"><value>생성 옵션</value></data>
-  <data name="AiDraw_Size" xml:space="preserve"><value>결과 크기</value></data>
-  <data name="AiDraw_RemoveBackground" xml:space="preserve"><value>배경 지우기</value></data>
-  <data name="AiDraw_AutoOptimize" xml:space="preserve"><value>변환 자동 최적화</value></data>
-  <data name="AiDraw_Insert_Layer" xml:space="preserve"><value>새 레이어</value></data>
   <data name="AiDraw_Style" xml:space="preserve"><value>스타일 참고</value></data>
   <data name="AiDraw_Style_Auto" xml:space="preserve"><value>자동</value></data>
   <data name="AiDraw_Style_None" xml:space="preserve"><value>사용 안 함</value></data>
@@ -8269,7 +8263,6 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="AiDraw_Convert" xml:space="preserve"><value>변환하기</value></data>
   <data name="AiDraw_Convert_Tip" xml:space="preserve"><value>이 원본을 넣어 'AI 그림 픽셀로 정리' 창을 엽니다(메뉴로 열 때와 같은 설정·프리셋). 창에서 직접 변환·최적화해 새 레이어나 새 문서로 넣습니다.</value></data>
   <data name="AiDraw_Generated" xml:space="preserve"><value>'{name}' 원본을 만들었습니다. 변환하기를 눌러 픽셀 아트로 정리하세요.</value></data>
-  <data name="AiDraw_ViewSettings" xml:space="preserve"><value>변환 설정 보기</value></data>
   <data name="AiDraw_Error_NoPrevious" xml:space="preserve"><value>앞에서 생성한 그림이 없어 참고로 붙일 수 없습니다.</value></data>
   <data name="Chat_Image_Label" xml:space="preserve"><value>이미지</value></data>
   <data name="Chat_InsertImage" xml:space="preserve"><value>새 레이어로 넣기</value></data>
@@ -8335,7 +8328,6 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="AiDraw_PaletteSnapped" xml:space="preserve"><value>팔레트 색으로 맞춤: {changes}</value></data>
   <data name="AiDraw_AutoPrompt" xml:space="preserve"><value>생성 요청 다듬기</value></data>
   <data name="AiDraw_AutoPrompt_Text" xml:space="preserve"><value>켜면(기본) 내 말을 그림 생성에 알맞은 요청으로 다듬어 보냅니다: AI가 정리한 대상 설명에 픽셀 아트 스타일·배경·스프라이트 시트 배치·자세 지시를 붙이고, 켠 AI 그리기 요령도 반영합니다. 끄면 채팅에 쓴 글을 그대로(붙인 그림도 순서대로) 이미지 생성에 보내 생성 전 크기 판정·스타일 참고·애니메이션 프레임 나누기 없이 한 장을 만듭니다.</value></data>
-  <data name="AiDraw_ResizeResult" xml:space="preserve"><value>결과 크기 보정</value></data>
   <data name="AiStatus_Title" xml:space="preserve"><value>AI 상태 및 설정</value></data>
   <data name="AiStatus_Continue" xml:space="preserve"><value>확인하고 AI 열기</value></data>
   <data name="AiStatus_Close" xml:space="preserve"><value>닫기</value></data>
@@ -8739,16 +8731,12 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="AiQuestion_OtherInput" xml:space="preserve"><value>다른 답변</value></data>
   <data name="AiQuestion_Submit" xml:space="preserve"><value>답변 보내기</value></data>
   <data name="AiQuestion_Cancel" xml:space="preserve"><value>취소</value></data>
-  <data name="AiCrop_Title" xml:space="preserve"><value>그림 자를 위치 선택</value></data>
-  <data name="AiCrop_Keep" xml:space="preserve"><value>이 영역 사용</value></data>
   <data name="AiDraw_Prompt_Label" xml:space="preserve"><value>생성 프롬프트</value></data>
   <data name="AiDraw_Prompt_Tip" xml:space="preserve"><value>누르면 Codex 이미지 생성에 보낸 프롬프트 전문이 보입니다.</value></data>
   <data name="AiQuestion_Invalid" xml:space="preserve"><value>질문과 선택지 2~5개가 필요합니다.</value></data>
   <data name="AiQuestion_Cancelled" xml:space="preserve"><value>사용자가 질문을 취소했습니다. 선택을 추측하지 마세요.</value></data>
   <data name="AiQuestion_Selected" xml:space="preserve"><value>사용자 선택: {choice}</value></data>
   <data name="AiQuestion_Custom" xml:space="preserve"><value>사용자가 직접 입력한 답변: {answer}</value></data>
-  <data name="AiDraw_Insert_Expand" xml:space="preserve"><value>캔버스 늘리기</value></data>
-  <data name="AiDraw_Insert_Crop" xml:space="preserve"><value>자를 위치 고르기</value></data>
   <data name="AiNotify_Question" xml:space="preserve"><value>Chickxel AI가 질문합니다</value></data>
   <data name="AiNotify_Done" xml:space="preserve"><value>Chickxel AI 작업 완료</value></data>
   <data name="AiNotify_Error" xml:space="preserve"><value>Chickxel AI 작업 오류</value></data>
@@ -8803,7 +8791,6 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Account_Back" xml:space="preserve"><value>돌아가기</value></data>
   <data name="Account_SessionEnded" xml:space="preserve"><value>이 계정의 로그인이 끝나 목록에서 뺐습니다. 다시 로그인하세요.</value></data>
   <data name="Account_HandleLocked" xml:space="preserve"><value>에셋 패키지를 올린 뒤에는 핸들을 바꿀 수 없습니다.</value></data>
-  <data name="Chat_Pending" xml:space="preserve"><value>대기 중</value></data>
   <data name="Chat_PendingTip" xml:space="preserve"><value>지금 차례가 끝나면 보냅니다.</value></data>
   <data name="Chat_Pending_Images" xml:space="preserve"><value>그림 {0}장</value></data>
   <data name="Chat_Pending_RemoveTip" xml:space="preserve"><value>대기에서 지우기</value></data>
@@ -10304,6 +10291,7 @@ Enter나 다른 도구·레이어·프레임으로 바꾸면 기본색(오른쪽
   <data name="Tutorial_Md_Open" xml:space="preserve"><value>3D 모델(glb·gltf·obj·fbx)을 픽셀 아트로 바꾸는 창을 엽니다. 메뉴 [[{menu}]]를 눌러 보세요. 나중에는 파일 칸에서 모델 파일을 열어도 이 창이 뜹니다.</value><comment>menu = 메뉴 길(3D > 3D 모델 열기…). [[…]]은 누를 것을 초록 칸으로 보이는 표시(그대로 둠).</comment></data>
   <data name="Tutorial_Md_Load" xml:space="preserve"><value>모델은 이 창에 끌어다 놓거나 [[{button}]]로 넣습니다. 지금은 예시 병아리 모델을 넣었습니다. 왼쪽이 원본 모델, 오른쪽이 그 모델을 찍은 픽셀 결과입니다.</value><comment>button = 모델 열기 단추 이름.</comment></data>
   <data name="Tutorial_Md_Rotate" xml:space="preserve"><value>왼쪽 원본 모델을 [[끌어서]] 돌려 보세요. 보는 각도가 바뀌면 오른쪽 픽셀 결과도 바로 바뀝니다. [[휠]]로 두 칸을 함께 크게 볼 수 있습니다.</value></data>
+  <data name="Tutorial_Md_Colors" xml:space="preserve"><value>모델 색도 바꿀 수 있습니다. 원본 칸 아래 '원본 모델 색'은 모델이 쓰는 바탕 색입니다. 색 칸을 누르면 그 색이 쓰인 곳이 밝게 보이고, [[우클릭]]해 [[{menu}]]를 고르면 다른 색으로 바꿉니다. 고르는 동안 두 칸에 바로 보이고, 모델 파일은 그대로입니다.</value><comment>menu = 색 칸 우클릭 메뉴 이름(색 바꾸기…).</comment></data>
   <data name="Tutorial_Md_Output" xml:space="preserve"><value>출력에서 결과 크기와 프레임을 정합니다. 프레임은 한 장, 빙글 도는 돌려 보기, 모델에 든 애니메이션 중에서 고릅니다. 크기를 바꿔 보세요.</value></data>
   <data name="Tutorial_Md_Look" xml:space="preserve"><value>오른쪽 묶음으로 결과 모양을 다듬습니다. 카메라(각도·확대), 빛(방향·명암 단계), 픽셀 다듬기(색 수·가장자리), 외곽선. 맨 위 프리셋으로 한 번에 바꿀 수도 있습니다. 마음껏 바꿔 보세요.</value></data>
   <data name="Tutorial_Md_Import" xml:space="preserve"><value>[[{button}]]을 누르면 지금 설정으로 프레임을 그려 새 탭으로 엽니다. 눌러 보세요.</value><comment>button = 가져오기 단추 이름.</comment></data>
@@ -10319,28 +10307,52 @@ Enter나 다른 도구·레이어·프레임으로 바꾸면 기본색(오른쪽
   <data name="Tutorial_Level_Title" xml:space="preserve"><value>레벨</value></data>
   <data name="Tutorial_Level_Desc" xml:space="preserve"><value>경험치와 레벨 보상, 레벨을 빨리 올리는 법.</value></data>
   <data name="Tutorial_Canvas_Title" xml:space="preserve"><value>캔버스 다루기</value></data>
-  <data name="Tutorial_Canvas_Desc" xml:space="preserve"><value>확대·옮기기, 마우스 단추와 Ctrl, 캔버스 크기와 레이어 변형.</value></data>
+  <data name="Tutorial_Canvas_Desc" xml:space="preserve"><value>확대·옮기기, Ctrl로 잠깐 옮기기, 캔버스 크기와 레이어 변형.</value></data>
   <data name="Tutorial_Tilemap_Title" xml:space="preserve"><value>타일맵</value></data>
   <data name="Tutorial_Tilemap_Desc" xml:space="preserve"><value>타일셋의 타일을 칸에 깔아 맵을 만듭니다.</value></data>
   <data name="Tutorial_Skins_Title" xml:space="preserve"><value>레이어 묶기와 스킨</value></data>
   <data name="Tutorial_Skins_Desc" xml:space="preserve"><value>부모·자식 레이어, 스킨 갈아 끼우기, 겹쳐 쌓기.</value></data>
   <data name="Tutorial_Cv_View" xml:space="preserve"><value>예시 그림을 새 탭으로 열었습니다. 캔버스에서 [[휠]]을 굴리면 커서 자리를 기준으로 확대·축소하고, [[가운데 단추]]로 끌거나 [[Space]]를 누른 채 끌면 보는 자리를 옮깁니다(그림은 그대로).</value></data>
-  <data name="Tutorial_Cv_Mouse" xml:space="preserve"><value>연필 같은 그리기 도구는 [[왼쪽 단추]]가 기본색, [[오른쪽 단추]]가 보조색으로 칠합니다. 오른쪽 도구 설정의 [[{option}]]를 켜면 오른쪽 단추가 지우개가 됩니다. [[Alt]]를 누른 채 누르면 그 자리 색을 집고(왼쪽 = 기본색, 오른쪽 = 보조색), [[Shift+클릭]]은 마지막 점에서 직선을 긋습니다. 위 막대에 지금 도구의 단추 설명이 늘 보입니다.</value><comment>option = '오른쪽 버튼 = 지우개' 설정 이름.</comment></data>
-  <data name="Tutorial_Cv_Ctrl" xml:space="preserve"><value>[[Ctrl]]을 누르고 있는 동안은 잠깐 옮기기 도구가 됩니다. 그대로 끌면 고른 영역(없으면 지금 레이어 그림)을 옮기고, 떼면 원래 도구로 돌아옵니다. [[Ctrl]]을 누른 채 [[오른쪽 단추]]로 끌면 피벗(기준점)은 그 자리에 둔 채 옮깁니다. [[Ctrl+휠]]은 붓 크기를 바꿉니다.</value></data>
+  <data name="Tutorial_Cv_Ctrl" xml:space="preserve"><value>[[Ctrl]]을 누르고 있는 동안은 잠깐 옮기기 도구입니다(떼면 원래 도구).
+· [[Ctrl]] + [[왼쪽 단추]] 끌기: 고른 영역(없으면 지금 레이어 그림)과 피벗을 같이 옮김
+· [[Ctrl]] + [[오른쪽 단추]] 끌기: 그림만 옮기고 피벗(기준점)은 제자리
+· [[Ctrl+휠]]: 붓 크기</value><comment>줄바꿈은 말풍선에서 그대로 줄이 나뉨.</comment></data>
+  <data name="Tutorial_Cv_CtrlLeftClip" xml:space="preserve"><value>[[Ctrl]] + [[왼쪽 단추]]: 피벗도 같이</value></data>
+  <data name="Tutorial_Cv_CtrlRightClip" xml:space="preserve"><value>[[Ctrl]] + [[오른쪽 단추]]: 피벗은 제자리</value></data>
   <data name="Tutorial_Cv_Resize" xml:space="preserve"><value>캔버스 크기는 [[{key}]](메뉴 [[{menu}]])로 바꿉니다. 눌러 보세요.</value><comment>key = 단축키(Ctrl+Alt+C), menu = 메뉴 길.</comment></data>
-  <data name="Tutorial_Cv_ResizeEdit" xml:space="preserve"><value>캔버스 둘레에 손잡이가 생겼습니다. 손잡이를 [[왼쪽 단추]]로 끌면 그림까지 함께 늘고 줄며, [[오른쪽 단추]]로 끌면 캔버스만 바뀌어 여백이 생기거나 잘립니다. 안쪽을 끌면 그림을 옮깁니다. [[Shift]]는 비율 유지, [[Alt]]는 가운데 기준입니다. [[Enter]]로 적용하거나 [[Esc]]로 취소합니다.</value></data>
+  <data name="Tutorial_Cv_ResizeEdit" xml:space="preserve"><value>캔버스 둘레에 손잡이가 생겼습니다.
+· 손잡이를 [[왼쪽 단추]]로 끌기: 그림까지 함께 늘이고 줄임
+· 손잡이를 [[오른쪽 단추]]로 끌기: 캔버스만 바뀜(여백 · 자르기)
+· 안쪽 끌기: 그림 옮기기
+· [[Shift]]: 비율 유지
+· [[Alt]]: 가운데 기준
+· [[Enter]]: 적용 · [[Esc]]: 취소</value><comment>줄바꿈은 말풍선에서 그대로 줄이 나뉨.</comment></data>
+  <data name="Tutorial_Cv_ResizeLeftClip" xml:space="preserve"><value>[[왼쪽 단추]]: 그림까지 늘어남</value></data>
+  <data name="Tutorial_Cv_ResizeRightClip" xml:space="preserve"><value>[[오른쪽 단추]]: 캔버스만 넓어짐</value></data>
   <data name="Tutorial_Cv_Layer" xml:space="preserve"><value>지금 레이어만 크기·자리를 바꾸려면 [[{key}]](메뉴 [[{menu}]])입니다. 눌러 보세요.</value><comment>key = 단축키(Alt+Shift+C), menu = 메뉴 길(레이어 전체 변형).</comment></data>
-  <data name="Tutorial_Cv_LayerEdit" xml:space="preserve"><value>주황 상자가 지금 레이어를 모든 프레임에 걸쳐 감쌉니다. 손잡이를 끌어 키우거나 줄이고, 안쪽을 끌어 옮깁니다. 캔버스 크기는 그대로입니다. [[Enter]]로 적용하거나 [[Esc]]로 취소합니다.</value></data>
+  <data name="Tutorial_Cv_LayerEdit" xml:space="preserve"><value>주황 상자가 지금 레이어를 감쌉니다. 여기서 바꾸면 이 레이어의 모든 프레임이 한꺼번에 같이 바뀝니다(지금 프레임만 바꾸려면 [[{key}]] 변형).
+· 손잡이 끌기: 키우기 · 줄이기
+· 안쪽 끌기: 옮기기
+· 캔버스 크기는 그대로
+· [[Enter]]: 적용 · [[Esc]]: 취소</value><comment>key = 지금 셀 변형 단축키(Ctrl+T). 줄바꿈은 말풍선에서 그대로 줄이 나뉨.</comment></data>
+  <data name="Tutorial_Cv_LayerFramesClip" xml:space="preserve"><value>줄이고 옮긴 뒤 [[Enter]]: 네 프레임이 모두 같이 바뀜</value></data>
   <data name="Tutorial_Tm_Create" xml:space="preserve"><value>빈 예시 그림을 새 탭으로 열었습니다. 타일맵은 같은 크기의 타일을 칸에 깔아 맵을 만드는 레이어입니다. 타임라인의 레이어 이름을 [[우클릭]]하고 [[{newMenu}]] → [[{item}]]를 고르세요. 메뉴 [[{menu}]]([[{key}]])로도 만듭니다.</value><comment>newMenu = 우클릭 메뉴 '새로 만들기', item = '새 타일맵 레이어', menu = 메뉴 길(프레임·레이어 > 새 타일맵 레이어), key = 단축키.</comment></data>
   <data name="Tutorial_Tm_Tileset" xml:space="preserve"><value>타일맵 레이어를 고르면 왼쪽에 타일셋이 뜹니다. 타일셋은 같은 크기로 나뉜 타일 모음입니다. 타일 하나를 [[클릭]]하거나 여러 칸을 끌어 고르면 붓에 담깁니다. 타일셋은 여러 개 더하고 직접 그릴 수도 있습니다.</value></data>
   <data name="Tutorial_Tm_Tools" xml:space="preserve"><value>타일맵을 고르는 동안 도구 막대가 타일 도구로 바뀝니다: 타일 붓, 자동 타일, 지우개, 사각형, 채우기, 타일 집기, 고르기.</value></data>
   <data name="Tutorial_Tm_Paint" xml:space="preserve"><value>캔버스를 [[클릭]]해 고른 타일을 칸에 깔아 보세요. 끌면 이어서 깝니다.</value></data>
   <data name="Tutorial_Tm_Cells" xml:space="preserve"><value>이 단추로 칸 격자를 켜고 끕니다. 타일맵 하나는 모든 프레임에 같이 쓰이고, 다른 레이어와 겹쳐 쌓을 수 있습니다.</value></data>
   <data name="Tutorial_Sk_Child" xml:space="preserve"><value>레이어는 다른 레이어 안에 자식으로 넣어 묶을 수 있습니다. 늑대 레이어 이름을 [[우클릭]] → [[새로 만들기]] → [[새 자식 레이어…]]를 고르거나 메뉴 [[{menu}]]([[{key}]])로 자식을 만들어 보세요. 레이어 이름을 [[Shift]]를 누른 채 다른 레이어 위에 끌어 놓아도 그 레이어의 자식이 됩니다.</value><comment>menu = 메뉴 길(프레임·레이어 > 새 자식 레이어…), key = 단축키.</comment></data>
+  <data name="Tutorial_Sk_ShiftDragClip" xml:space="preserve"><value>레이어 이름을 끌다가 [[Shift]]를 누른 채 다른 레이어 위에 놓기: 그 레이어의 자식이 됨</value></data>
   <data name="Tutorial_Sk_Tree" xml:space="preserve"><value>자식은 부모 아래에 들여 써서 보이고, 이름 앞 삼각형으로 묶음을 접고 펼칩니다. 부모를 옮기면 자식도 같이 움직이고, 부모를 숨기거나 잠그면 자식도 함께, 부모 불투명도는 묶음 전체에 걸립니다. 자식 이름을 왼쪽으로 끌면 묶음 밖으로 나옵니다.</value></data>
   <data name="Tutorial_Sk_Add" xml:space="preserve"><value>스킨은 한 레이어의 그림을 통째로 갈아 끼우는 판입니다(옷·표정·색 바꾸기). 늑대 레이어 이름을 [[우클릭]] → [[{menu}]] → [[{copy}]]를 눌러 지금 그림을 복제한 스킨을 만들어 보세요.</value><comment>menu = 스킨 추가 메뉴 이름, copy = 그 하위 '지금 그림 복제…'.</comment></data>
-  <data name="Tutorial_Sk_Switch" xml:space="preserve"><value>스킨이 둘 이상이면 이름 줄에 스킨 칩이 생깁니다. 칩을 [[클릭]]해 스킨을 바꿔 보세요. 바꾸면 그 레이어의 모든 프레임 그림이 바뀌고, 크기·자리·피벗은 그대로입니다.</value></data>
-  <data name="Tutorial_Sk_Stack" xml:space="preserve"><value>겹쳐 쌓기: 레이어는 타임라인 순서대로 겹쳐, 위 레이어가 아래 레이어를 가립니다. 한 레이어의 스킨끼리는 겹치지 않고 하나만 보이며 서로 갈아 끼워집니다. 여러 레이어의 스킨 조합은 스킨 프리셋으로 한 번에 바꿀 수 있습니다.</value></data>
+  <data name="Tutorial_Sk_Switch" xml:space="preserve"><value>스킨이 둘 이상이면 이름 줄에 스킨 칩이 생깁니다. 칩을 [[클릭]]해 목록에서 스킨을 고르면 그 레이어 그림이 통째로 갈아 끼워집니다. 옷·표정·색을 바꾼 그림을 스킨으로 여러 벌 만들어 두고 골라 끼우세요.</value></data>
+  <data name="Tutorial_Sk_SwitchClip" xml:space="preserve"><value>스킨 칩 → 스킨 고르기: 그림이 통째로 바뀜</value></data>
+  <data name="Tutorial_Sk_Stack" xml:space="preserve"><value>겹쳐 쌓기
+· 레이어: 타임라인 순서대로 겹쳐, 위 레이어가 아래 레이어를 가림(이름을 끌어 순서 바꾸기)
+· 스킨: 한 레이어의 스킨은 겹치지 않고 하나만 보임(서로 갈아 끼움)
+· 스킨 프리셋: 여러 레이어의 스킨 조합을 이름 붙여 두고, 미리보기 위 상자에서 한 번에 바꿈</value><comment>줄바꿈은 말풍선에서 그대로 줄이 나뉨.</comment></data>
+  <data name="Tutorial_Sk_StackOrderClip" xml:space="preserve"><value>이름을 위로 끌기: 위 레이어가 아래를 가림</value></data>
+  <data name="Tutorial_Sk_StackPresetClip" xml:space="preserve"><value>스킨 프리셋 고르기: 두 레이어가 한꺼번에 바뀜</value></data>
   <data name="Tutorial_Ai_Lock" xml:space="preserve"><value>지킬 그림은 레이어를 잠그세요. 타임라인 이름 줄의 자물쇠를 [[클릭]]해 잠근 레이어(와 그 자식)는 AI가 MCP로 바꾸지 못하고, 바꿔야 하면 잠금을 풀어 달라고 묻습니다. '지금 그림만'과 상관없이 늘 지켜집니다.</value></data>
   <data name="Tutorial_Fx_Store" xml:space="preserve"><value>효과 목록에 없는 것은 상점에서 받습니다. [[{button}]]을 누르면 홈페이지 상점이 열리고, 다른 사람이 만든 효과·스크립트 효과·그라데이션·모양 펜 세트 같은 에셋을 여러 가지 받아 쓸 수 있습니다.</value><comment>button = 상점을 여는 단추 이름(추가 다운로드).</comment></data>
   <data name="Tutorial_Ai_Open" xml:space="preserve"><value>AI 채팅은 이 단추로 엽니다. 메뉴 [[{menu}]]나 [[{key}]]로도 열 수 있습니다. 눌러서 열어 보세요.</value><comment>menu = 메뉴 길(AI > AI 채팅), key = 단축키.</comment></data>
@@ -10370,8 +10382,22 @@ Enter나 다른 도구·레이어·프레임으로 바꾸면 기본색(오른쪽
   <data name="Tutorial_Lf_DeleteFrame" xml:space="preserve"><value>프레임을 줄일 때는 프레임 번호를 [[우클릭]] → [[삭제]]를 누릅니다. 방금 늘린 프레임을 지워 보세요.</value></data>
   <data name="Tutorial_Lf_Link" xml:space="preserve"><value>1·2프레임은 같은 그림입니다. 이럴 때 프레임 링크를 씁니다. 1·2프레임 칸을 끌어 고른 뒤 [[우클릭]] → [[{menu}]]를 누르세요.</value><comment>menu = 셀 링크 메뉴 이름.</comment></data>
   <data name="Tutorial_Lf_Linked" xml:space="preserve"><value>링크된 칸은 그림 하나를 같이 써서, 한 칸을 고치면 다른 칸도 함께 바뀝니다. 링크된 칸 아래에는 색 띠가 보입니다. 풀려면 [[우클릭]] → [[{menu}]]를 누릅니다.</value><comment>menu = 셀 링크 풀기 메뉴 이름.</comment></data>
-  <data name="Tutorial_Lv_Badge" xml:space="preserve"><value>계정 단추의 Lv 표시가 지금 레벨({level})입니다. 경험치(XP)를 모으면 오릅니다. 매일 처음 켜면 +10, 켜 두면 한 시간마다 +1, 내 그림·에셋이 좋아요를 받으면 +2, 다른 사람 작품에 좋아요를 누르면 +1(하루 세 번까지).</value><comment>level = 지금 레벨.</comment></data>
-  <data name="Tutorial_Lv_SignIn" xml:space="preserve"><value>Chickxel 계정으로 로그인하면 레벨이 생깁니다. 이 단추를 눌러 로그인하세요. 경험치(XP)를 모으면 레벨이 오릅니다. 매일 처음 켜면 +10, 켜 두면 한 시간마다 +1, 좋아요를 받으면 +2.</value></data>
+  <data name="Tutorial_Lf_LinkClip" xml:space="preserve"><value>프레임 칸을 끌어 고른 뒤 [[우클릭]] → [[셀 링크]]. 링크는 여러 묶음으로 만들 수 있고, 묶음마다 칸 아래 띠 색이 다릅니다.</value><comment>'레이어와 프레임' 링크 움짤 설명.</comment></data>
+  <data name="Tutorial_Lf_LinkedClip" xml:space="preserve"><value>링크된 1프레임 칸에 그리면 2프레임 칸도 같은 그림으로 바뀝니다.</value><comment>'레이어와 프레임' 링크된 칸 움짤 설명.</comment></data>
+  <data name="Tutorial_Lv_Badge" xml:space="preserve"><value>계정 단추의 Lv 표시가 지금 레벨({level})입니다. 경험치(XP)를 모으면 오릅니다.
+
+경험치 올리는 법
+· 매일 처음 켜기: +10
+· 켜 두기: 한 시간마다 +1
+· 내 그림·에셋이 좋아요 받기: +2
+· 다른 사람 작품에 좋아요 누르기: +1</value><comment>level = 지금 레벨. 줄바꿈은 말풍선에서 그대로 줄이 나뉨.</comment></data>
+  <data name="Tutorial_Lv_SignIn" xml:space="preserve"><value>Chickxel 계정으로 로그인하면 레벨이 생깁니다. 이 단추를 눌러 로그인하세요. 경험치(XP)를 모으면 레벨이 오릅니다.
+
+경험치 올리는 법
+· 매일 처음 켜기: +10
+· 켜 두기: 한 시간마다 +1
+· 내 그림·에셋이 좋아요 받기: +2
+· 다른 사람 작품에 좋아요 누르기: +1</value><comment>줄바꿈은 말풍선에서 그대로 줄이 나뉨.</comment></data>
   <data name="Tutorial_Lv_Upload" xml:space="preserve"><value>레벨을 가장 빨리 올리는 방법은 갤러리에 그림을 올리는 것입니다. 한 번 올릴 때마다 +10 XP, 편집 파일(.chickxel)을 같이 올리면 +5 XP를 더 받습니다. 이 단추나 메뉴 [[{menu}]]로 올립니다.</value><comment>menu = 메뉴 길(파일 > 갤러리에 올리기…).</comment></data>
   <data name="Tutorial_Lv_Rewards" xml:space="preserve"><value>레벨이 오를 때마다 칭호·배지·프로필 테두리 같은 보상이 하나씩 열립니다. 계정 단추를 눌러 [[{menu}]]를 여세요.</value><comment>menu = 계정 관리 메뉴 이름.</comment></data>
   <data name="Tutorial_Lv_Change" xml:space="preserve"><value>지금 경험치와 이번·다음 보상이 여기 보입니다. [[{button}]]를 누르면 홈페이지에서 칸마다 낄 보상을 고릅니다. 레벨 튜토리얼 보상(칭호 '{title}', 테두리 '{frame}')도 거기서 낍니다.</value><comment>button = 변경하기 단추 이름, title·frame = 새싹 보상 이름.</comment></data>

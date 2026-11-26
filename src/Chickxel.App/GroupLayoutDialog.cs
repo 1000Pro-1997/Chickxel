@@ -59,7 +59,7 @@ public sealed class GroupLayoutDialog : DialogBase
         Body.Children.Add(Ui.Row(FieldLabel(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_3C32EBCE78), _gap, Ui.Label("px"), Ui.Label(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_BE647B487C), _margin, Ui.Label("px")).HelpAt(page, anchor: "Spacing · padding"));
         Body.Children.Add(Ui.Row(FieldLabel(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_915D00697D), _order).HelpAt(page, anchor: "Order"));
         Body.Children.Add(Ui.Row(FieldLabel(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_639D409AD1), _wholeCanvas, Ui.Label("X"), _ax, Ui.Label("Y"), _ay, _areaSize).HelpAt(page, anchor: "Area"));
-        Body.Children.Add(Ui.Row(FieldLabel(""), _includeHidden).HelpAt(page, anchor: "Hidden parts keep their space"));
+        Body.Children.Add(Ui.Row(FieldLabel(""), _includeHidden).HelpAt(page, anchor: "Hidden children keep their place"));
         Body.Children.Add(new Border
         {
             Child = _preview,

@@ -34,6 +34,9 @@ public sealed partial class TimelinePanel
     /// <summary>"다음 프레임" 머리글의 ＋(빈 프레임) 칸(문서가 없으면 null).</summary>
     internal (Control Owner, Rect Area)? TutorialAddFrame() => P is null ? null : (_grid, _grid.AddFrameRect());
 
+    /// <summary>"다음 프레임" +를 끌어 여러 개 더할 때 지나가는 자리(문서가 없으면 null — 말풍선이 피함).</summary>
+    internal (Control Owner, Rect Area)? TutorialAddFrameDrag() => P is null ? null : (_grid, _grid.AddFrameDragRect());
+
     /// <summary>프레임 번호 머리글 줄(문서가 없으면 null).</summary>
     internal (Control Owner, Rect Area)? TutorialFrameHeaders() => P is null ? null : (_grid, _grid.FrameHeadersRect());
 }

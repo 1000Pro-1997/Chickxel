@@ -953,7 +953,7 @@ public sealed partial class PixelateDialog : DialogBase
         // 대상 도움말(F1): 프리셋 줄 단추마다 "프리셋 줄" 표의 그 줄.
         _preset.HelpAt("pixelate-presets", anchor: "Preset list");
         _presetSave.HelpAt("pixelate-presets", anchor: "Save");
-        _presetSettings.HelpAt("pixelate-presets", anchor: "Rename");
+        _presetSettings.HelpAt("pixelate-presets", anchor: "Preset settings");
         _runButton.HelpAt("pixelate-presets", anchor: "Clean up");
 
         // ── 0. 최적화 기준(프리셋에 함께 저장): 예산·점수용 색 거리·점수 항목별 비중
@@ -3943,7 +3943,7 @@ public sealed partial class PixelateDialog : DialogBase
         header.HelpAt("pixelate-optimize-settings", anchor: "Preset checklist");
         history.HelpAt("pixelate-optimize-settings", anchor: "Trial history");
         reset.HelpAt("pixelate-optimize-settings", anchor: "Reset");
-        presetButtons.HelpAt("pixelate-presets", anchor: "Rename");
+        presetButtons.HelpAt("pixelate-optimize-settings", anchor: "Rename");
         popup.Content = content;
         popup.Closed += (_, _) =>
         {

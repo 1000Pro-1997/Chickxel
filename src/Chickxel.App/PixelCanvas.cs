@@ -1632,6 +1632,12 @@ public sealed partial class PixelCanvas : Control
         var at = _ctx.PivotPixel;
         var origin0 = ShownOrigin;
         float px = at.X - origin0.X, py = at.Y - origin0.Y;
+        // 이동 도구로 지금 레이어를 왼쪽 끌기 하는 중이면 피벗도 함께 옮겨지므로(놓을 때 CommitCelShift가 옮김) 끄는 만큼 따라 그린다.
+        if (_drag == DragMode.MoveLayer && _moveFull is not null && !_moveKeepPivot && ReferenceEquals(_ctx.PivotTargetLayer, _ctx.CurrentLayerObject))
+        {
+            px += _lastPx.X - _startPx.X;
+            py += _lastPx.Y - _startPx.Y;
+        }
         var shift = _ctx.PivotTargetLayer is { } layer ? _ctx.EffectPivotShift(layer, _ctx.CurrentFrame) : System.Drawing.PointF.Empty;
         var p = ImageToScreen(px + shift.X, py + shift.Y);
         var pen = _ctx.Tool == ToolKind.Pivot ? PivotActivePen : PivotPen;

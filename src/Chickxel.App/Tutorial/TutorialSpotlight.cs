@@ -72,11 +72,20 @@ internal sealed class TutorialStep
     /// <summary>움짤을 크게(말풍선 폭 640): 화면에서 직접 해 보지 않는 일(갤러리에 올리기 등)을 움짤로 대신 보일 때.</summary>
     public bool BigClip { get; init; }
 
+    /// <summary>말풍선 폭을 이 값으로(움짤이 여럿이어도 — 비춘 칸 옆 좁은 자리에 말풍선이 들어가야 할 때, 움짤은 줄여 맞춤).</summary>
+    public double? BubbleWidth { get; init; }
+
     /// <summary>
     /// 열린 메뉴 안에서 눌러야 할 항목(계속 다시 찾음): 그 메뉴가 열려 있으면 항목을 노란 빛으로 감싸고, 같은 메뉴의 다른 항목은 누를 수 없게 한다
     /// (누르면 말풍선이 번쩍임).
     /// </summary>
     public Func<MenuItem?>? MenuItem { get; init; }
+
+    /// <summary>
+    /// 말풍선이 가리면 안 되는 곳(컨트롤과 그 안 사각형, 계속 다시 찾음): 끌어서 하는 일이 지나갈 자리(프레임 + 를 오른쪽으로 끌어 여러 개 더하기 등).
+    /// 밝게 비추지는 않고 말풍선 자리만 피한다.
+    /// </summary>
+    public Func<(Control Owner, Rect Area)?>? KeepClear { get; init; }
 
     /// <summary>참이면 말풍선을 잠깐 숨긴다(계속 다시 물음 — 스포이드로 원본을 누르는 동안처럼 말풍선이 누를 곳을 가릴 때). 비춘 칸·덮개는 그대로.</summary>
     public Func<bool>? HideBubble { get; init; }
@@ -126,6 +135,37 @@ public static class TutorialSpotlight
         var s = _session;
         _session = null;
         s?.Dispose();
+    }
+
+    /// <summary>
+    /// 열린 우클릭 메뉴에서 머리글 차례 <paramref name="path"/>(맨 위 항목 → 하위 메뉴 항목)를 따라 찾은 항목: 하위 메뉴가 펼쳐져 있으면 그 안 항목, 아니면 펼칠 항목
+    /// (<see cref="TutorialStep.MenuItem"/> — 눌러야 할 곳에 노란 테두리). 머리글에 <c>{</c>가 있으면(형식 글 — "삭제 ({0})") 그 앞까지로 시작을 맞추고, 아니면 글이 같아야 한다.
+    /// 메뉴가 닫혀 있으면 null.
+    /// </summary>
+    internal static MenuItem? OpenMenuItem(params string[] path)
+    {
+        static string HeaderText(MenuItem m) => (m.Header as string ?? (m.Header as TextBlock)?.Text ?? "").Replace("_", "");
+        static bool Matches(MenuItem m, string want)
+        {
+            var text = HeaderText(m);
+            int brace = want.IndexOf('{');
+            return brace >= 0 ? text.StartsWith(want[..brace].TrimEnd(), StringComparison.Ordinal) : text == want.Replace("_", "");
+        }
+        foreach (var menu in PopupMenus.OpenContextMenus)
+        {
+            IEnumerable<MenuItem> items = menu.Items.OfType<MenuItem>();
+            MenuItem? found = null;
+            foreach (var want in path)
+            {
+                var next = items.FirstOrDefault(m => m.IsVisible && Matches(m, want));
+                if (next is null) break;
+                found = next;
+                if (!next.IsSubMenuOpen) break;
+                items = next.Items.OfType<MenuItem>();
+            }
+            if (found is not null) return found;
+        }
+        return null;
     }
 
     /// <summary>지금 단계의 대상·조건을 바로 다시 확인한다(점검 샷이 기다리지 않고 진행을 보게).</summary>
@@ -279,7 +319,7 @@ public static class TutorialSpotlight
                 w.Hide();
                 _hidden.Add(w);
             }
-            ShowClips(step.Clips, step.BigClip);
+            ShowClips(step.Clips, step.BigClip, step.BubbleWidth);
             DetachMenu();
             Update();
         }
@@ -383,6 +423,10 @@ public static class TutorialSpotlight
                          && ReferenceEquals(TopLevel.GetTopLevel(d.Owner), host) && d.Owner.TranslatePoint(d.Area.Position, _root) is { } dropAt
                 ? new Rect(dropAt, d.Area.Size).Inflate(HolePad).Intersect(new Rect(size))
                 : null;
+            Rect? clear = target is not null && step.KeepClear?.Invoke() is { } kc && kc.Owner.IsEffectivelyVisible
+                          && ReferenceEquals(TopLevel.GetTopLevel(kc.Owner), host) && kc.Owner.TranslatePoint(kc.Area.Position, _root) is { } clearAt
+                ? new Rect(clearAt, kc.Area.Size).Inflate(HolePad).Intersect(new Rect(size))
+                : null;
             _shade.Set(hole, step.PassThrough, target is not null, pulse: _hint.IsVisible, drop: drop, dragAcross: step.DragAcross);
             TutorialText.Fill(_text, step.Text());
             foreach (var (block, text) in _captions) TutorialText.Fill(block, text());
@@ -390,7 +434,7 @@ public static class TutorialSpotlight
             bool hidden = step.HideBubble?.Invoke() == true;
             _bubble.IsVisible = !hidden;
             if (hidden) _shade.SetTail(Side.None, default, default);
-            else Place(hole, drop, size);
+            else Place(hole, drop, size, clear);
         }
 
         /// <summary>
@@ -430,7 +474,7 @@ public static class TutorialSpotlight
         /// 두 칸과 끄는 길, 열린 메뉴(<see cref="_menuRect"/> — 따로 뜨는 창이라 말풍선을 덮음)를 가리지 않는 첫 자리
         /// (칸이 없거나 어디도 안 되면 창 가운데). 꼬리는 붙은 칸 쪽으로.
         /// </summary>
-        private void Place(Rect? hole, Rect? drop, Avalonia.Size area)
+        private void Place(Rect? hole, Rect? drop, Avalonia.Size area, Rect? clear = null)
         {
             _bubble.Measure(Avalonia.Size.Infinity);
             var b = _bubble.DesiredSize;
@@ -448,7 +492,7 @@ public static class TutorialSpotlight
                     (Side.Below, new(Clamp(r.Center.X - b.Width / 2, b.Width, area.Width), r.Bottom + Gap), r),
                     (Side.Above, new(Clamp(r.Center.X - b.Width / 2, b.Width, area.Width), r.Top - Gap - b.Height), r),
                 ];
-                // 가리면 안 되는 곳: 두 칸과(끌어 놓을 자리가 있으면) 대상에서 그 자리로 가는 길, 열린 메뉴.
+                // 가리면 안 되는 곳: 두 칸과(끌어 놓을 자리가 있으면) 대상에서 그 자리로 가는 길, 끌어서 하는 일이 지나갈 자리(KeepClear), 열린 메뉴.
                 var avoid = new List<Rect> { h };
                 if (drop is { } d)
                 {
@@ -456,6 +500,11 @@ public static class TutorialSpotlight
                     avoid.Add(new Rect(h.Center, d.Center).Normalize().Inflate(18));
                 }
                 var options = drop is { } dd ? Around(h).Concat(Around(dd)) : Around(h);
+                if (clear is { } c)
+                {
+                    avoid.Add(c);
+                    options = options.Concat(Around(c.Union(h)));
+                }
                 if (_menuRect is { } menu)
                 {
                     avoid.Add(menu);
@@ -491,8 +540,9 @@ public static class TutorialSpotlight
 
         /// <summary>
         /// 단계 움짤을 말풍선 위쪽에(없으면 숨김). 움짤이 있으면 말풍선을 넓힌다: 하나면 400(<paramref name="big"/>면 640), 둘 이상이면 좌우로 나란히 840.
+        /// <paramref name="width"/>가 있으면 그 폭(움짤은 그 안에 줄여 맞춤).
         /// </summary>
-        private void ShowClips(IReadOnlyList<TutorialClip> clips, bool big)
+        private void ShowClips(IReadOnlyList<TutorialClip> clips, bool big, double? width)
         {
             _clips.Children.Clear();
             _clips.ColumnDefinitions.Clear();
@@ -515,7 +565,7 @@ public static class TutorialSpotlight
             }
             int count = _clips.ColumnDefinitions.Count;
             _clips.IsVisible = count > 0;
-            _bubble.Width = count switch { 0 => 340, 1 => big ? 640 : 400, _ => 840 };
+            _bubble.Width = width ?? count switch { 0 => 340, 1 => big ? 640 : 400, _ => 840 };
         }
 
         /// <summary>막힌 어두운 곳을 누르면 말풍선 테두리를 잠깐 희게(여기를 보라는 표시).</summary>

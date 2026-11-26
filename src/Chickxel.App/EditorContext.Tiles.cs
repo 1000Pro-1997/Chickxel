@@ -218,8 +218,11 @@ public sealed partial class EditorContext
     public TileStamp? TileStamp
     {
         get => _tileStamp;
-        set { _tileStamp = value; if (value is not null) _autoSource = false; TileChanged(); }
+        set { _tileStamp = value; if (value is not null) { _autoSource = false; TilePicks++; } TileChanged(); }
     }
+
+    /// <summary>붓에 타일이나 자동 타일 세트를 담은 횟수(같은 것을 다시 골라도 셈 — 튜토리얼 '타일맵'이 골랐는지 봄).</summary>
+    public int TilePicks { get; private set; }
 
     /// <summary>붓을 찍기 전에 돌리고 뒤집기.</summary>
     public TileTransform TileTransform
@@ -246,7 +249,7 @@ public sealed partial class EditorContext
     public int AutoTileSet
     {
         get => _autoTileSet;
-        set { _autoSource = true; if (_autoTileSet == value) { TileChanged(); return; } _autoTileSet = value; TileChanged(); }
+        set { _autoSource = true; if (value != 0) TilePicks++; if (_autoTileSet == value) { TileChanged(); return; } _autoTileSet = value; TileChanged(); }
     }
 
     /// <summary>캔버스에 칸 격자를 보일지(타일맵 레이어를 골랐을 때).</summary>

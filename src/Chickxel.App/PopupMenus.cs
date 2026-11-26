@@ -29,6 +29,9 @@ public static class PopupMenus
     /// <summary>관리하는 메뉴가 하나라도 열려 있는가.</summary>
     public static bool IsOpen => OpenMenus.Count > 0;
 
+    /// <summary>지금 열린 우클릭 메뉴들(튜토리얼이 눌러야 할 항목을 찾음).</summary>
+    public static IEnumerable<ContextMenu> OpenContextMenus => OpenMenus.Select(e => e.Popup).OfType<ContextMenu>().Where(m => m.IsOpen);
+
     /// <summary>앱 시작 때 한 번: 앞으로 열리는 모든 창에 바깥 누르기·Esc 처리기를 단다.</summary>
     public static void Install() => Window.WindowOpenedEvent.AddClassHandler<Window>((w, _) => Track(w));
 

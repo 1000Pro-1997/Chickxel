@@ -2747,6 +2747,9 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
         /// <summary>"다음 프레임" 칸의 머리글(＋ 빈 프레임, 튜토리얼 '레이어와 프레임').</summary>
         internal Rect AddFrameRect() => new(NameW + _colT.Total - HValue, TagH, CellW, HeadH);
 
+        /// <summary>"다음 프레임" +를 오른쪽으로 끌어 여러 개 더할 때 지나가는 자리(+ 칸부터 칸 다섯 개, 머리글과 레이어 줄들 — 튜토리얼 말풍선이 피함).</summary>
+        internal Rect AddFrameDragRect() => new(NameW + _colT.Total - HValue, TagH, CellW * 5, HeadH + _rowT.Total - VValue + CellH);
+
         /// <summary>프레임 번호 머리글 줄 전체(튜토리얼 '레이어와 프레임').</summary>
         internal Rect FrameHeadersRect() => new(FrameX(0), TagH, _colT.Total, HeadH);
 

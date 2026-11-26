@@ -22,14 +22,25 @@ internal static class TutorialText
             int close = open < 0 ? -1 : text.IndexOf("]]", open + 2, StringComparison.Ordinal);
             if (close < 0)
             {
-                inlines.Add(new Run(text[pos..]));
+                AddText(inlines, text[pos..]);
                 break;
             }
-            if (open > pos) inlines.Add(new Run(text[pos..open]));
+            if (open > pos) AddText(inlines, text[pos..open]);
             var chip = ShortcutTip.Chip(text[(open + 2)..close], inline: true);
             chip.Margin = new Thickness(1, 0);
             inlines.Add(new InlineUIContainer(chip) { BaselineAlignment = BaselineAlignment.Center });
             pos = close + 2;
+        }
+    }
+
+    /// <summary>글 조각을 넣는다: 줄바꿈(<c>\n</c>)은 줄 나눔으로(경험치 목록처럼 여러 줄로 적은 글).</summary>
+    private static void AddText(InlineCollection inlines, string text)
+    {
+        var lines = text.Split('\n');
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (i > 0) inlines.Add(new LineBreak());
+            if (lines[i].TrimEnd('\r') is { Length: > 0 } line) inlines.Add(new Run(line));
         }
     }
 

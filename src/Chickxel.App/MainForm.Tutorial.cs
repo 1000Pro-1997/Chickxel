@@ -153,6 +153,7 @@ public sealed partial class MainForm
                     ? UiStrings.FormatTutorial_Px_Rerun(preset: d.TutorialIdleTile("shade")?.Preset ?? "", menu: UiStrings.Pixelate_Opt_RunPreset)
                     : UiStrings.Tutorial_Px_Wait,
                 Target = () => D() is { } d ? d.TutorialReady ? d.TutorialIdleTile("shade")?.Tile ?? d.TutorialCandidates : d.TutorialCandidates : null,
+                MenuItem = () => TutorialSpotlight.OpenMenuItem(UiStrings.Pixelate_Opt_RunPreset),
                 Done = () =>
                 {
                     if (D() is not { } d) return false;
@@ -295,13 +296,14 @@ public sealed partial class MainForm
 
     /// <summary>
     /// 3D를 픽셀 아트로: 메뉴 3D > 3D 모델 열기…로 3D 모델 창 열기(모달, 열린 메뉴에서 그 항목만 누를 수 있음) → 예시 병아리 모델을 넣고 원본·결과 두 칸 안내
-    /// → 원본 모델을 끌어 돌리기 → 출력(크기·프레임) → 프리셋·카메라·빛·픽셀 다듬기·외곽선 → 가져오기(창이 닫히고 그린 프레임이 새 탭으로 열림)
+    /// → 원본 모델을 끌어 돌리기 → 원본 색 바꾸기(색 칸 우클릭, 움짤) → 출력(크기·프레임) → 프리셋·카메라·빛·픽셀 다듬기·외곽선 → 가져오기(창이 닫히고 그린 프레임이 새 탭으로 열림)
     /// → 들어간 캔버스를 보이며 마침.
     /// </summary>
     private List<TutorialStep> ModelTutorial()
     {
         string angleBefore = "";
         var sizeBefore = default(PixelSize);
+        int colorsBefore = 0;
         // 마지막으로 보인 3D 모델 창(닫힌 뒤에도 가져오기로 닫혔는지 보려고).
         ModelImportDialog? opened = null;
         ModelImportDialog? D()
@@ -339,6 +341,18 @@ public sealed partial class MainForm
                 Target = () => D()?.TutorialPreview,
                 Done = () => D() is { } d && d.TutorialAngle != angleBefore,
                 Required = true,
+            },
+            new()
+            {
+                // 원본 색 바꾸기(색 칸 우클릭 → 색 바꾸기… → 색 고르기 창). 해 보면 저절로, 안 해도 '다음'.
+                Id = "model.colors",
+                Clips = [new("model-colors")],
+                BigClip = true,
+                Enter = () => colorsBefore = D()?.TutorialChangedColors ?? 0,
+                Text = () => UiStrings.FormatTutorial_Md_Colors(menu: UiStrings.Model_SourceColorChange),
+                Target = () => D()?.TutorialSourceColors,
+                MenuItem = () => TutorialSpotlight.OpenMenuItem(UiStrings.Model_SourceColorChange),
+                Done = () => D() is { } d && d.TutorialChangedColors > colorsBefore,
             },
             new()
             {

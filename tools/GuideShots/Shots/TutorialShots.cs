@@ -67,13 +67,40 @@ internal static class TutorialShots
         Start(k, m, TutorialKind.LayersFrames);
         Control Timeline() => ShotKit.Get<Control>(m, "_timeline");
         Expect(k, m, outDir, "layers.intro", () => ClickBubble(k, m, UiStrings.Tutorial_Next));
-        Expect(k, m, outDir, "layers.add", () => ShotKit.Call(Timeline(), "AddLayer"));
-        Expect(k, m, outDir, "frames.add", () => ShotKit.Call(Timeline(), "AppendFrames", false, 1, 0));
-        Expect(k, m, outDir, "frames.delete", () => ShotKit.Call(Timeline(), "DeleteFrame"));
+        Expect(k, m, outDir, "layers.add", () => ShotKit.Call(Timeline(), "AddLayer"), auto: true);
+        object Session() => typeof(TutorialSpotlight).GetField("_session", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!.GetValue(null)!;
+        // 프레임 + 단계: 말풍선이 + 를 오른쪽으로 끄는 길(칸 다섯 개)을 가리지 않는지.
+        Expect(k, m, outDir, "frames.add", () =>
+        {
+            var bubble = ShotKit.Get<Border>(Session(), "_bubble");
+            var bubbleRect = new Rect(Canvas.GetLeft(bubble), Canvas.GetTop(bubble), bubble.Bounds.Width, bubble.Bounds.Height);
+            var (owner, area) = ((Control, Rect))ShotKit.Call(Timeline(), "TutorialAddFrameDrag")!;
+            var drag = new Rect(owner.TranslatePoint(area.Position, m)!.Value, area.Size);
+            Console.WriteLine($"  drag path={drag} bubble={bubbleRect}");
+            if (bubbleRect.Intersects(drag)) throw new InvalidOperationException("frames.add: bubble covers the drag-to-add path");
+            ShotKit.Call(Timeline(), "AppendFrames", false, 1, 0);
+        }, auto: true);
+        // 프레임 번호 우클릭 메뉴가 열리면 '삭제'에 노란 테두리.
+        Expect(k, m, outDir, "frames.delete", () =>
+        {
+            ShotKit.Call(Timeline(), "ShowFrameMenu", ScreenDemo.Project(m).Frames.Count - 1);
+            k.Settle(300);
+            TutorialSpotlight.Tick();
+            var item = ShotKit.Get<MenuItem?>(Session(), "_menuItem") ?? throw new InvalidOperationException("frames.delete: Delete not highlighted in the frame menu");
+            Console.WriteLine($"  highlighted: {item.Header}");
+            k.Click(item);
+        }, auto: true);
+        // 셀 메뉴의 '셀 링크'가 빛나고, 누르면 '다음' 없이 바로 넘어간다.
         Expect(k, m, outDir, "frames.link", () =>
         {
             ShotKit.Call(ShotKit.Get<Control>(Timeline(), "_grid"), "SelectRect", 0, 0, null, 1);
-            ShotKit.Call(Timeline(), "LinkSelectedCels");
+            ShotKit.Call(Timeline(), "ShowCelMenu", 1, 0);
+            k.Settle(300);
+            TutorialSpotlight.Tick();
+            var item = ShotKit.Get<MenuItem?>(Session(), "_menuItem") ?? throw new InvalidOperationException("frames.link: Link cels not highlighted in the cel menu");
+            if ((item.Header as string ?? (item.Header as TextBlock)?.Text) != UiStrings.Timeline_LinkCels) throw new InvalidOperationException("frames.link: wrong item highlighted: " + item.Header);
+            k.Click(item);
+            WaitFor(k, () => TutorialSpotlight.CurrentStepId == "frames.linked", 5000, "frames.link auto-advance after Link cels");
         });
         Expect(k, m, outDir, "frames.linked", () => ClickBubble(k, m, UiStrings.Tutorial_Finish));
         Ended(k, "layers");
@@ -81,23 +108,22 @@ internal static class TutorialShots
         // ── 레이어 묶기와 스킨: 자식 레이어 창(모달)은 기본 이름 그대로 확인 ──
         Start(k, m, TutorialKind.Skins);
         Expect(k, m, outDir, "skins.child", () =>
-            k.Dialog(() => ShotKit.Call(Timeline(), "AddChildLayer"), w => k.Click(ShotKit.Get<Control>(w, "OkButton"))));
+            k.Dialog(() => ShotKit.Call(Timeline(), "AddChildLayer"), w => k.Click(ShotKit.Get<Control>(w, "OkButton"))), auto: true);
         Expect(k, m, outDir, "skins.tree", () => ClickBubble(k, m, UiStrings.Tutorial_Next));
         // 스킨 추가·바꾸기는 우클릭 메뉴·이름 창 대신 프로젝트 API로(같은 결과).
         var wolfLayer = ScreenDemo.Project(m).Layers.First(l => l.Parent is null);
-        Expect(k, m, outDir, "skins.add", () => ScreenDemo.Project(m).AddSkin(wolfLayer, "B", wolfLayer.ActiveSkin));
-        Expect(k, m, outDir, "skins.switch", () => ScreenDemo.Project(m).SetActiveSkin(wolfLayer, wolfLayer.Skins[0]));
+        Expect(k, m, outDir, "skins.add", () => ScreenDemo.Project(m).AddSkin(wolfLayer, "B", wolfLayer.ActiveSkin), auto: true);
+        Expect(k, m, outDir, "skins.switch", () => ScreenDemo.Project(m).SetActiveSkin(wolfLayer, wolfLayer.Skins[0]), auto: true);
         Expect(k, m, outDir, "skins.stack", () => ClickBubble(k, m, UiStrings.Tutorial_Finish));
         Ended(k, "skins");
 
         // ── 캔버스 다루기 ──
         Start(k, m, TutorialKind.Canvas);
         Expect(k, m, outDir, "canvas.view", () => ClickBubble(k, m, UiStrings.Tutorial_Next));
-        Expect(k, m, outDir, "canvas.mouse", () => ClickBubble(k, m, UiStrings.Tutorial_Next));
         Expect(k, m, outDir, "canvas.ctrl", () => ClickBubble(k, m, UiStrings.Tutorial_Next));
-        Expect(k, m, outDir, "canvas.resize", () => k.Command("편집/캔버스 크기…"));
-        Expect(k, m, outDir, "canvas.resize.edit", () => ShotKit.Call(ScreenDemo.Ctx(m), "CancelCanvasResize"));
-        Expect(k, m, outDir, "canvas.layer", () => k.Command("편집/레이어 크기…"));
+        Expect(k, m, outDir, "canvas.resize", () => k.Command("편집/캔버스 크기…"), auto: true);
+        Expect(k, m, outDir, "canvas.resize.edit", () => ShotKit.Call(ScreenDemo.Ctx(m), "CancelCanvasResize"), auto: true);
+        Expect(k, m, outDir, "canvas.layer", () => k.Command("편집/레이어 크기…"), auto: true);
         // 마지막 단계: 적용(Enter와 같음)하면 마친다.
         Expect(k, m, outDir, "canvas.layer.edit", () => ScreenDemo.Ctx(m).CommitFloating());
         Ended(k, "canvas");
@@ -125,6 +151,8 @@ internal static class TutorialShots
         });
         Expect(k, m, outDir, "tile.tileset", () =>
         {
+            // 타일을 고를 때까지 '다음'이 없고, 고르면 저절로 넘어간다.
+            if (NextShown(m)) throw new InvalidOperationException("tile.tileset: Next shown before picking a tile");
             // 첫 타일셋 묶음의 첫 자동 타일 칸을 누른다.
             var section = ShotKit.Get<System.Collections.IList>(ShotKit.Get<Control>(m, "_tilesetPanel"), "_sections").Cast<Control>().First();
             var auto = ShotKit.Get<Control>(section, "_autoView");
@@ -194,8 +222,11 @@ internal static class TutorialShots
         });
         Expect(k, m, outDir, "effects.add", () =>
         {
+            // 상자를 고른 칸(3~5프레임 가운데)으로 끌어 놓는다 — 두 번 누르기는 찍는 동안 두 번째 누르기가 늦어져 가끔 한 번 누르기로 잡힌다.
             var tile = (Control)ShotKit.Call(m, "TutorialOutlineTile")!;
-            k.DoubleClick(tile);
+            var grid = ShotKit.Get<Control>(Timeline(), "_grid");
+            var cel = (Rect)ShotKit.Call(grid, "CelRect", 0, 3)!;
+            k.Drag(m, ShotKit.Bounds(tile, m).Center, grid.TranslatePoint(cel.Center, m)!.Value);
         });
         // 고른 프레임에만 들어갔는지.
         var added = ScreenDemo.Project(m).Layers[0].Effects[^1];
@@ -224,6 +255,12 @@ internal static class TutorialShots
                 if (NextShown(w)) throw new InvalidOperationException("model.rotate: Next shown on a required step");
                 var yaw = ShotKit.Get<NumericUpDown>(w, "_yaw");
                 yaw.Value = yaw.Value + 30 <= yaw.Maximum ? yaw.Value + 30 : yaw.Value - 30;
+            });
+            // 원본 색 바꾸기: 해 보면 저절로 넘어간다(색 고르기 창 대신 바꾸기 함수로 — 같은 결과).
+            Expect(k, m, outDir, "model.colors", () =>
+            {
+                var first = ShotKit.Get<System.Collections.IList>(w, "_sourceColors")[0]!;
+                ShotKit.Call(w, "SetSourceColor", first, (Chickxel.Core.Model.Color32?)new Chickxel.Core.Model.Color32(80, 160, 255, 255));
             });
             Expect(k, m, outDir, "model.output", () => ShotKit.Set(ShotKit.Get<object>(w, "_size"), "Size", new PixelSize(96, 96)));
             Expect(k, m, outDir, "model.look", () => ClickBubble(k, w, UiStrings.Tutorial_Next));
@@ -432,7 +469,8 @@ internal static class TutorialShots
     /// 단계 <paramref name="id"/>에 왔는지 확인하고(대상이 보일 때까지 기다림), 그 창 그림을 저장한 뒤(<paramref name="snap"/>) <paramref name="act"/>로 할 일을 하고,
     /// 다른 단계로 가거나 끝날 때까지 기다린다. 해 본 뒤 '다음'이 켜지는 단계(저절로 넘어가지 않음)는 켜지면 '다음'(마지막이면 '끝내기')을 누른다.
     /// </summary>
-    private static void Expect(ShotKit k, MainForm m, string outDir, string id, Action act, int waitMs = 15000, bool snap = true)
+    /// <param name="auto">저절로 넘어가는 단계(<c>AutoAdvance</c>): act 뒤 '다음'을 누르지 않고 넘어가기만 기다린다(안 넘어가면 실패).</param>
+    private static void Expect(ShotKit k, MainForm m, string outDir, string id, Action act, int waitMs = 15000, bool snap = true, bool auto = false)
     {
         WaitFor(k, () => TutorialSpotlight.CurrentStepId == id, 20000, $"step {id} (now {TutorialSpotlight.CurrentStepId ?? "ended"})");
         // 대상(덮개가 붙은 창)이 뜰 때까지: 덮개가 메인 창이 아닌 창에 붙거나, 메인 창에서 뚫린 칸이 생기면.
@@ -445,6 +483,11 @@ internal static class TutorialShots
         if (!ReferenceEquals(top, m) && !Dimmed(m)) throw new InvalidOperationException($"step {id}: main window not dimmed");
         if (snap) Snap(k, top, outDir, id);
         act();
+        if (auto)
+        {
+            WaitFor(k, () => TutorialSpotlight.CurrentStepId != id, waitMs, $"auto-advancing from {id}");
+            return;
+        }
         // act가 '다음'을 이미 눌렀으면 넘어가기를 먼저 마치게(두 번 누르지 않게) 잠깐 기다린다.
         k.Settle(300);
         WaitFor(k, () => TutorialSpotlight.CurrentStepId != id || BubbleHost(k) is { } host && NextShown(host), waitMs, $"leaving {id} (or Next turning on)");

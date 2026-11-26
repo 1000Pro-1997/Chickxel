@@ -97,7 +97,7 @@ public sealed class NewPartDialog : DialogBase
         foreach (var (pw, ph) in new[] { (8, 8), (8, 5), (16, 16), (16, 32), (32, 32) })
             presets.Children.Add(Ui.Button($"{pw}×{ph}", (_, _) => _size.Size = new PixelSize(pw, ph)));
         Body.Children.Add(presets);
-        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_NewPartDialog_A409FD6D21).HelpAt("parts-create", anchor: "A new part goes in as the top part"));
+        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_NewPartDialog_A409FD6D21).HelpAt("parts-create", anchor: "A new child layer goes in as the parent's top child"));
         Opened += (_, _) => { _name.Focus(); _name.SelectAll(); };
     }
 
@@ -115,8 +115,8 @@ public sealed class PartOffsetDialog : DialogBase
     {
         // 프레임 캔버스 안의 왼쪽 위 위치: 흔한 칸 경계 위주, 조금 밖으로 내민 음수도
         decimal[] positions = [-8, -4, 0, 2, 4, 8, 12, 16, 24, 32, 48, 64];
-        // 대상 도움말(F1): 창 = "프레임마다 부위 위치 바꾸기"의 위치… 항목, X·Y 줄 = "그리기(부위 선택)"의 위치를 숫자로 정하기
-        this.HelpAt("parts-frame-position", anchor: "The part's right-click Position");
+        // 대상 도움말(F1): 창 = "프레임마다 위치 바꾸기"의 위치… 항목, X·Y 줄 = "그리기"의 위치를 숫자로 정하기
+        this.HelpAt("parts-frame-position", anchor: "The layer's right-click Position");
         _x = Ui.Num(-PixelImage.MaxSize, PixelImage.MaxSize, offset.X, 80).Presets(positions).Unit("px").RecentKey("part.position");
         _y = Ui.Num(-PixelImage.MaxSize, PixelImage.MaxSize, offset.Y, 80).Presets(positions).Unit("px").RecentKey("part.position");
         Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_PartOffsetDialog_0C8997B97B));

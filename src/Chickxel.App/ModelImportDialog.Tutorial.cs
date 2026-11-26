@@ -20,6 +20,12 @@ public sealed partial class ModelImportDialog
 
     internal Control TutorialOutput => _outputBox;
 
+    /// <summary>원본 칸 아래 '원본 모델 색' 줄(색 칸 우클릭 → 색 바꾸기…).</summary>
+    internal Control TutorialSourceColors => _sourceRow;
+
+    /// <summary>바꾼 원본 색 수(색을 바꿨는지).</summary>
+    internal int TutorialChangedColors => _colorMap.Count;
+
     internal Control TutorialSettings => _settingsGroups;
 
     /// <summary>가져오기 단추.</summary>

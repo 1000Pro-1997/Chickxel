@@ -307,6 +307,101 @@ internal static class TutorialClipShots
     }
 
     /// <summary>
+    /// 셀 링크(튜토리얼 '레이어와 프레임' <c>frames.link</c>): 몸 레이어 1~2프레임 칸을 끌어 골라 우클릭 → 셀 링크(파란 띠), 이어 4~6프레임을 골라 또 셀 링크(주황 띠) —
+    /// 링크는 묶음이 여럿이고 묶음마다 띠 색이 다르다. 메뉴가 뜨는 자리까지 넉넉히 자른다.
+    /// </summary>
+    [Shot("clip-tutorial-frames-link")]
+    public static void FramesLink(ShotKit k)
+    {
+        // 셀 우클릭 메뉴는 길어(아래로 펼쳐짐) 타임라인을 크게 하고 창을 세로로 넉넉히.
+        App.Settings.BottomHeight = 600;
+        App.Settings.PaletteWidth = 170;
+        App.Settings.RightWidth = 250;
+        var m = ScreenDemo.Open(k, width: 1280, height: 1000);
+        ScreenDemo.Build(k, m, group: false);
+        k.Settle(500);
+        int body = Body(m);
+        var c0 = Cel(m, body, 0);
+        var c5 = Cel(m, body, 5);
+        Console.WriteLine($"  cels {c0} .. {c5}");
+        var crop = Fit(new Rect(c0.X - 260, c0.Y - 46, c5.Right - c0.X + 520, 520), m);
+        using var rec = new ClipRecorder(k, m, crop, frameMs: 40);
+        void Link(int from, int to)
+        {
+            var a = Cel(m, body, from);
+            var b = Cel(m, body, to);
+            rec.Drag(a.Center, b.Center, 800);
+            rec.Hold(300);
+            rec.Click(b.Center, 300, MouseButton.Right, pressMs: 100, afterMs: 500);
+            var item = ShotKit.OpenPopups.Where(pop => pop.Child is not null).SelectMany(pop => ShotKit.All<MenuItem>(pop.Child!))
+                .First(i => i.IsEffectivelyVisible && (i.Header as string ?? (i.Header as TextBlock)?.Text) == UiStrings.Timeline_LinkCels);
+            var at = rec.At(item);
+            rec.Move(at, 500);
+            rec.Hold(250);
+            rec.Click(at, 0, pressMs: 100, afterMs: 1300);
+        }
+        rec.Place(new Point(c0.Center.X - 20, c0.Bottom + 30));
+        rec.Hold(500);
+        Link(0, 1);
+        Link(3, 5);
+        rec.Move(new Point(c5.Right + 60, c5.Bottom + 40), 500);
+        rec.Hold(1500);
+        var proj = ScreenDemo.Project(m);
+        if (!proj.AreCelsLinked(body, 0, 1) || !proj.AreCelsLinked(body, 3, 5)) throw new InvalidOperationException("cels not linked");
+        Save(rec, "frames-link");
+    }
+
+    /// <summary>
+    /// 링크된 칸(튜토리얼 '레이어와 프레임' <c>frames.linked</c>): 예시 늑대 4프레임(1~2프레임 링크)에서 1프레임에 연필로 빨간 줄을 그으면 2프레임 칸 그림도 같이 바뀌고,
+    /// 2프레임을 눌러 보면 같은 줄이, 링크 안 된 3프레임에는 없다. 캔버스와 타임라인 칸 두 곳만 잘라 붙인다.
+    /// </summary>
+    [Shot("clip-tutorial-frames-linked")]
+    public static void FramesLinked(ShotKit k)
+    {
+        var path = Path.Combine(k.WorkDir, "wolf.png");
+        File.Copy(ShotKit.SamplePng, path, overwrite: true);
+        App.Settings.ShowPivot = false;
+        var m = k.Main(path);
+        k.Settle(400);
+        var ctx = ScreenDemo.Ctx(m);
+        var proj = ScreenDemo.Project(m);
+        var timeline = ShotKit.Get<Control>(m, "_timeline");
+        ShotKit.Call(timeline, "AppendFrames", true, 3, 0);
+        ShotKit.Call(Grid(m), "SelectRect", 0, 0, null, 1);
+        ShotKit.Call(timeline, "LinkSelectedCels");
+        ctx.SetCurrent(0, 0);
+        ctx.Primary = new Color32(235, 60, 60);
+        k.Settle(400);
+        var canvas = ShotKit.Get<Control>(m, "_canvas");
+        Point P(double x, double y) => canvas.TranslatePoint((Point)ShotKit.Call(canvas, "ImageToScreen", x, y)!, m)!.Value;
+        var image = Fit(new Rect(P(0, 0), P(proj.Width, proj.Height)).Inflate(12), m);
+        var c0 = Cel(m, 0, 0);
+        var c2 = Cel(m, 0, 2);
+        var cels = Fit(new Rect(c0.X - 30, c0.Y - 46, c2.Right - c0.X + 60, c0.Height + 46 + 16), m);
+        using var rec = new ClipRecorder(k, m, image.Union(cels), frameMs: 40) { Regions = [image, cels] };
+        var line = Enumerable.Range(0, 9).Select(i => P(8.5 + i * 4, 52.5 + (i % 2 == 0 ? 0 : 3))).ToList();
+        rec.Place(line[0] + new Vector(-20, 30));
+        rec.Hold(600);
+        rec.Move(line[0], 400);
+        rec.Down();
+        rec.Trace(line, 1400);
+        rec.Up();
+        rec.Hold(900);
+        if (!proj.AreCelsLinked(0, 0, 1)) throw new InvalidOperationException("cels not linked");
+        // 칸을 누르는 모습에 맞춰 지금 프레임을 바꾼다(2프레임 = 링크됨 → 같은 줄, 3프레임 = 링크 안 됨 → 없음).
+        void Show(int f, int afterMs)
+        {
+            rec.Click(Cel(m, 0, f).Center, 650, pressMs: 100, afterMs: 0);
+            ctx.SetCurrent(0, f);
+            rec.Hold(afterMs);
+        }
+        Show(1, 1300);
+        Show(2, 1300);
+        Show(0, 1000);
+        Save(rec, "frames-linked");
+    }
+
+    /// <summary>
     /// 효과 넣기: 몸 레이어 3~5프레임 칸을 골라 둔 상태에서 외곽선 상자를 그 칸으로 끌어 놓으면 그 세 프레임에만 효과 줄이 생긴다.
     /// 상자와 칸은 멀리 떨어져 있어 두 곳만 잘라 붙여 찍는다(<see cref="ClipRecorder.Regions"/> — 사이를 지나는 동안은 짧게).
     /// </summary>
@@ -684,6 +779,484 @@ internal static class TutorialClipShots
             rec.Save("src/Chickxel.App/Assets/Tutorial/card-model", ClipFormat.WebP, webpLossless: false, webpQuality: 80, webpWidth: 528);
         }, settleMs: 1200);
     }
+
+    /// <summary>
+    /// 3D 모델 원본 색 바꾸기(튜토리얼 '3D를 픽셀 아트로' 4단계 <c>model.colors</c>의 큰 움짤): 원본 모델 색 첫 칸을 눌러 쓰인 곳을 보이고 → 우클릭 → '색 바꾸기…'
+    /// → 색 고르기 창에서 색상 막대를 끌면 두 칸이 따라 바뀜 → 확인 → 칸을 다시 눌러 표시를 끄고 바뀐 모델을 보임. 색 고르기 창은 미리보기 오른쪽에 둔다.
+    /// </summary>
+    [Shot("clip-tutorial-model-colors")]
+    public static void ModelColors(ShotKit k)
+    {
+        var m = ScreenDemo.Open(k, width: 1280, height: 900);
+        k.Settle(400);
+        var path = ModelSample.Chick(k.WorkDir);
+        var scene = Chickxel.Core.Scene3D.ModelLoader.Load(path);
+        k.Dialog(() => new ModelImportDialog(path, scene).ShowDialog(m), w =>
+        {
+            ShotKit.Pump(1500);
+            // 대화상자는 메인 창 가운데에 그려진다(ClipRecorder.DialogOrigin과 같은 셈).
+            var size = w.ClientSize;
+            var origin = new Point(Math.Round((m.ClientSize.Width - size.Width) / 2),
+                Math.Round(Math.Max(0, (m.ClientSize.Height - size.Height - ShotKit.TitleHeight) / 2)) + ShotKit.TitleHeight);
+            Rect At(Control c) => ShotKit.Bounds(c, w).Translate((Vector)origin);
+            var pb = At(ShotKit.Get<Control>(w, "_preview"));
+            var swatches = ShotKit.Get<Control>(w, "_sourceSwatches");
+            var sb = At(swatches);
+            // 미리보기 두 칸 + 색 줄 + 오른쪽에 색 고르기 창 자리.
+            const double PickerW = 500, PickerH = 600;
+            var crop = Fit(new Rect(pb.X - 8, pb.Y - 24, pb.Width + 16 + PickerW + 8, Math.Max(sb.Bottom + 16 - (pb.Y - 24), PickerH + 16)), m);
+            using var rec = new ClipRecorder(k, m, crop, frameMs: 100);
+            // 첫 색 칸(가장 많이 쓴 색 — 병아리 몸) 가운데(ColorSwatches: 14px 칸, 2px 간격).
+            var cell = new Point(sb.X + 2 + 7, sb.Y + 2 + 7);
+            rec.Place(new Point(cell.X + 90, cell.Y + 40));
+            rec.Hold(700);
+            rec.Click(cell, 600, pressMs: 100, afterMs: 1100);
+            rec.Click(cell, 300, MouseButton.Right, pressMs: 100, afterMs: 600);
+            var item = ShotKit.OpenPopups.Where(p => p.Child is not null).SelectMany(p => ShotKit.All<MenuItem>(p.Child!))
+                .First(i => i.IsEffectivelyVisible && (i.Header as string ?? (i.Header as TextBlock)?.Text) == UiStrings.Model_SourceColorChange);
+            var itemAt = rec.At(item);
+            rec.Move(itemAt, 500);
+            rec.Hold(300);
+            k.Dialog(() => rec.PressAndRelease(itemAt, 0, pressMs: 100), picker =>
+            {
+                Console.WriteLine($"  color picker {picker.ClientSize}");
+                // 색 고르기 창을 미리보기 오른쪽에 그리고 누른다.
+                ShotKit.Get<Dictionary<Window, Point>>(rec, "_dialogs")[picker] = new Point(pb.Right + 16, crop.Y + 8);
+                rec.Hold(600);
+                var editor = ShotKit.Get<Control>(ShotKit.Get<Control>(picker, "_editor"), "_editor");
+                var hue = ShotKit.Get<Control>(editor, "_hue");
+                if (hue.IsEffectivelyVisible)
+                {
+                    var hb = rec.BoundsOf(hue);
+                    rec.Drag(new Point(hb.Center.X, hb.Y + hb.Height * 0.15), new Point(hb.Center.X, hb.Y + hb.Height * 0.55), 2000);
+                    rec.Hold(500);
+                    rec.Drag(new Point(hb.Center.X, hb.Y + hb.Height * 0.55), new Point(hb.Center.X, hb.Y + hb.Height * 0.8), 1200);
+                }
+                else
+                {
+                    // 다른 고르기 모양이면 색을 차례로 고른다.
+                    foreach (var h in new[] { 60f, 120f, 180f, 240f, 300f })
+                    {
+                        ShotKit.Call(editor, "Pick", Color32.FromHsv(h, 0.7f, 0.9f));
+                        rec.Hold(400);
+                    }
+                }
+                rec.Hold(900);
+                rec.Click(rec.At(ShotKit.Get<Control>(picker, "OkButton")), 700, pressMs: 100, afterMs: 0);
+            }, settleMs: 300);
+            rec.Hold(700);
+            // 칸을 다시 눌러 쓰인 곳 표시를 끄고 바뀐 모델을 본다.
+            rec.Click(cell, 600, pressMs: 100, afterMs: 1800);
+            if (ShotKit.Get<System.Collections.ICollection>(w, "_colorMap").Count == 0) throw new InvalidOperationException("model color not changed");
+            rec.Save(Out + "model-colors", ClipFormat.WebP, webpLossless: false, webpQuality: 75, webpWidth: 860);
+        }, settleMs: 1200);
+    }
+
+    // ───────────── 레이어 묶기와 스킨 ─────────────
+
+    /// <summary>
+    /// Shift 끌어 놓기로 자식 만들기(튜토리얼 '레이어 묶기와 스킨' <c>skins.child</c>): Shadow 레이어 이름을 끌다가 Shift를 누른 채 Body 행 위에 놓으면
+    /// Shadow가 Body의 자식이 된다(들여쓰기). 타임라인 레이어 이름 칸 둘레만 자른다.
+    /// </summary>
+    [Shot("clip-tutorial-skins-shift-drag")]
+    public static void SkinsShiftDrag(ShotKit k)
+    {
+        App.Settings.BottomHeight = 300;
+        var m = ScreenDemo.Open(k, width: 1280, height: 800);
+        ScreenDemo.Build(k, m, group: false);
+        k.Settle(500);
+        var proj = ScreenDemo.Project(m);
+        int body = Body(m), shadow = proj.IndexOf(proj.Layers.First(l => l.Name == "Shadow"));
+        Rect Name(int layer)
+        {
+            var g = Grid(m);
+            var r = (Rect)ShotKit.Call(g, "LayerNameRect", layer)!;
+            return new Rect(g.TranslatePoint(r.Position, m)!.Value, r.Size);
+        }
+        var a = Name(shadow);
+        var b = Name(body);
+        var top = Math.Min(a.Y, b.Y);
+        var bottom = Math.Max(a.Bottom, b.Bottom);
+        var crop = Fit(new Rect(a.X, top - 60, a.Width + 210, bottom - top + 110), m);
+        using var rec = new ClipRecorder(k, m, crop, frameMs: 40);
+        // 눈·자물쇠 단추(x 0~48)를 피해 이름 글자 쪽을 잡는다.
+        var from = new Point(a.X + a.Width * 0.6, a.Center.Y);
+        var to = new Point(b.X + a.Width * 0.6 + 10, b.Center.Y);
+        rec.Place(from + new Vector(60, 30));
+        rec.Hold(600);
+        rec.Move(from, 500);
+        rec.Hold(200);
+        // 고른 이름을 눌러 끌어야 순서 바꾸기(안 고른 이름을 끌면 사각형 고르기): 먼저 한 번 눌러 고르고,
+        // 두 번 누르기(이름 바꾸기)로 잡히지 않게 조금 떨어진 자리를 다시 누른다.
+        rec.Click(from, 0, afterMs: 600);
+        from += new Vector(-30, 0);
+        rec.Move(from, 300);
+        rec.Down();
+        rec.Move(from + new Vector(10, (to.Y - from.Y) / 3), 300);
+        rec.KeyDown(Key.LeftShift);
+        rec.Modifiers = RawInputModifiers.Shift;
+        rec.Hold(200);
+        rec.Move(to, 900);
+        rec.Hold(500);
+        rec.Up();
+        rec.Modifiers = RawInputModifiers.None;
+        rec.KeyUp(Key.LeftShift);
+        // 이름 칸 위에 머물면 그 행이 흐려지고 아래 '새 레이어' 줄에선 풍선이 떠서, 잘라 낸 칸 밖 오른쪽으로 비킨다.
+        rec.Move(rec.Pointer + new Vector(360, -40), 500);
+        rec.Hold(1600);
+        if (ScreenDemo.Project(m).Layers.First(l => l.Name == "Shadow").Parent?.Name != "Body") throw new InvalidOperationException("Shadow not nested under Body");
+        Save(rec, "skins-shift-drag");
+    }
+
+    /// <summary>
+    /// 스킨 갈아 끼우기(튜토리얼 '레이어 묶기와 스킨' <c>skins.switch</c>): 늑대 레이어에 옷 색을 바꾼 스킨 둘(Red · Green)을 더해 두고,
+    /// 이름 줄의 스킨 칩을 눌러 목록에서 Red → Green → 처음 스킨으로 고르면 캔버스 그림이 통째로 바뀐다. 캔버스와 이름 줄(+ 펼친 목록) 두 곳만 잘라 붙인다.
+    /// </summary>
+    [Shot("clip-tutorial-skins-switch")]
+    public static void SkinsSwitch(ShotKit k)
+    {
+        var path = Path.Combine(k.WorkDir, "wolf.png");
+        File.Copy(ShotKit.SamplePng, path, overwrite: true);
+        App.Settings.ShowPivot = false;
+        var m = k.Main(path);
+        k.Settle(400);
+        var proj = ScreenDemo.Project(m);
+        var wolf = proj.Layers[0];
+        var first = wolf.ActiveSkin!;
+        var original = proj.GetCel(0, 0)!;
+        proj.AddSkin(wolf, "Red", first);
+        proj.SetCel(0, 0, TintClothes(original, 2.4, 0.5, 0.5));
+        proj.AddSkin(wolf, "Green", first);
+        proj.SetCel(0, 0, TintClothes(original, 0.5, 2.2, 0.7));
+        proj.SetActiveSkin(wolf, first);
+        k.Settle(400);
+        var canvas = ShotKit.Get<Control>(m, "_canvas");
+        Point P(double x, double y) => canvas.TranslatePoint((Point)ShotKit.Call(canvas, "ImageToScreen", x, y)!, m)!.Value;
+        var image = Fit(new Rect(P(0, 0), P(proj.Width, proj.Height)).Inflate(14), m);
+        var g = Grid(m);
+        var nameRow = (Rect)ShotKit.Call(g, "LayerNameRect", 0)!;
+        var (chipX, chipW) = ((int, int))ShotKit.Call(g, "SkinChip", wolf)!;
+        var chip = new Rect(g.TranslatePoint(new Point(nameRow.X + chipX, nameRow.Y), m)!.Value, new Size(chipW, nameRow.Height));
+        var row = new Rect(g.TranslatePoint(nameRow.Position, m)!.Value, nameRow.Size);
+        // 칩 아래로 펼쳐지는 스킨 목록까지.
+        var rowArea = Fit(new Rect(row.X, row.Y - 30, row.Width + 140, row.Height + 30 + 150), m);
+        using var rec = new ClipRecorder(k, m, image.Union(rowArea), frameMs: 40) { Regions = [image, rowArea] };
+        rec.Cursor = ClipCursor.Arrow;
+        // 쉬는 자리: 레이어 이름 글자 위(아래 '새 레이어' 줄·칸 쪽 '복사'·위 캔버스 줄은 타임라인이 직접 풍선을 띄운다).
+        var rest = chip.Center + new Vector(-130, 4);
+        rec.Place(rest);
+        rec.Hold(700);
+        // 첫 스킨은 목록에서 "이름 (기본)"처럼 덧붙여 보인다.
+        void Pick(Skin skin)
+        {
+            string header = ReferenceEquals(skin, wolf.Skins[0])
+                ? string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_TimelinePanel_SkinMenuItems_38CB630C12, skin.Name) : skin.Name;
+            rec.Click(chip.Center, 600, pressMs: 100, afterMs: 500);
+            var item = ShotKit.OpenPopups.Where(pop => pop.Child is not null).SelectMany(pop => ShotKit.All<MenuItem>(pop.Child!))
+                .First(i => i.IsEffectivelyVisible && (i.Header as string ?? (i.Header as TextBlock)?.Text) == header);
+            var at = rec.At(item);
+            rec.Move(at, 450);
+            rec.Hold(200);
+            rec.Click(at, 0, pressMs: 100, afterMs: 200);
+            // 목록 자리(타임라인 칸 단추 위)에 머물면 단추 풍선이 떠서 쉬는 자리로 비킨다.
+            rec.Move(rest, 400);
+            rec.Hold(900);
+            if (!ReferenceEquals(wolf.ActiveSkin, skin)) throw new InvalidOperationException($"skin {skin.Name} not picked");
+        }
+        Pick(wolf.Skins[1]);
+        Pick(wolf.Skins[2]);
+        Pick(first);
+        rec.Hold(400);
+        Save(rec, "skins-switch");
+    }
+
+    /// <summary>
+    /// 예시 늑대의 옷(머리 아래 40줄부터)에서 어두운 남색 픽셀만 밝기를 살려 (<paramref name="r"/>, <paramref name="g"/>, <paramref name="b"/>) 쪽으로 물들인 사본
+    /// — 옷 색이 확 다른 스킨용(머리카락 그림자 선은 그대로).
+    /// </summary>
+    private static PixelImage TintClothes(PixelImage original, double r, double g, double b)
+    {
+        var img = original.Clone();
+        for (int i = img.Width * 40; i < img.Pixels.Length; i++)
+        {
+            var c = img.Pixels[i];
+            double lum = 0.3 * c.R + 0.59 * c.G + 0.11 * c.B;
+            if (c.IsTransparent || c.B <= c.R + 15 || lum >= 110) continue;
+            byte Ch(double k) => (byte)Math.Clamp(30 + lum * k, 0, 255);
+            img.Pixels[i] = new Color32(Ch(r), Ch(g), Ch(b), c.A);
+        }
+        return img;
+    }
+
+    /// <summary>늑대 크기의 그림 가운데 아래쪽에 (<paramref name="fill"/>, 어두운 테두리) 둥근 방패.</summary>
+    private static PixelImage Shield(int w, int h, Color32 fill)
+    {
+        var img = new PixelImage(w, h);
+        var rim = new Color32((byte)(fill.R / 2), (byte)(fill.G / 2), (byte)(fill.B / 2));
+        double cx = 24, cy = 62, rx = 13, ry = 15;
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                double d = (x + 0.5 - cx) * (x + 0.5 - cx) / (rx * rx) + (y + 0.5 - cy) * (y + 0.5 - cy) / (ry * ry);
+                if (d <= 1) img.Pixels[y * w + x] = d > 0.72 ? rim : fill;
+            }
+        return img;
+    }
+
+    /// <summary>예시 늑대(Wolf, 아래) 위에 방패 레이어(Shield, 위)를 겹친 메인 창 — 겹쳐 쌓기 움짤용.</summary>
+    private static (MainForm M, SpriteProject P, Layer Wolf, Layer Shield) StackMain(ShotKit k)
+    {
+        var path = Path.Combine(k.WorkDir, "wolf.png");
+        File.Copy(ShotKit.SamplePng, path, overwrite: true);
+        App.Settings.ShowPivot = false;
+        var m = k.Main(path);
+        k.Settle(400);
+        var proj = ScreenDemo.Project(m);
+        var wolf = proj.Layers[0];
+        proj.SetLayerProperties(0, name: "Wolf");
+        var shield = proj.AddLayer(null, "Shield");
+        proj.SetCel(proj.IndexOf(shield), 0, Shield(proj.Width, proj.Height, new Color32(240, 150, 40)));
+        ScreenDemo.Ctx(m).SetCurrent(proj.IndexOf(shield), 0);
+        k.Settle(400);
+        return (m, proj, wolf, shield);
+    }
+
+    /// <summary>캔버스 그림 둘레(메인 창 좌표).</summary>
+    private static Rect CanvasImageArea(MainForm m, SpriteProject proj)
+    {
+        var canvas = ShotKit.Get<Control>(m, "_canvas");
+        Point P(double x, double y) => canvas.TranslatePoint((Point)ShotKit.Call(canvas, "ImageToScreen", x, y)!, m)!.Value;
+        return Fit(new Rect(P(0, 0), P(proj.Width, proj.Height)).Inflate(14), m);
+    }
+
+    /// <summary>레이어 이름 칸(메인 창 좌표).</summary>
+    private static Rect LayerName(MainForm m, int layer)
+    {
+        var g = Grid(m);
+        var r = (Rect)ShotKit.Call(g, "LayerNameRect", layer)!;
+        return new Rect(g.TranslatePoint(r.Position, m)!.Value, r.Size);
+    }
+
+    /// <summary>
+    /// 겹쳐 쌓기 순서(튜토리얼 '레이어 묶기와 스킨' <c>skins.stack</c>): 방패(위)가 늑대를 가리다가, Wolf 이름을 Shield 위로 끌어 올리면 늑대가 방패를 가린다.
+    /// 캔버스와 레이어 이름 칸 두 곳만 잘라 붙인다.
+    /// </summary>
+    [Shot("clip-tutorial-skins-stack-order")]
+    public static void SkinsStackOrder(ShotKit k)
+    {
+        var (m, proj, wolf, shield) = StackMain(k);
+        var image = CanvasImageArea(m, proj);
+        var w = LayerName(m, proj.IndexOf(wolf));
+        var s = LayerName(m, proj.IndexOf(shield));
+        var rows = Fit(new Rect(s.X, s.Y - 30, s.Width, w.Bottom - s.Y + 70), m);
+        using var rec = new ClipRecorder(k, m, image.Union(rows), frameMs: 40) { Regions = [image, rows] };
+        rec.Cursor = ClipCursor.Arrow;
+        // 눈·자물쇠 단추(x 0~48)를 피해 이름 글자 쪽을 잡는다.
+        var from = new Point(w.X + w.Width * 0.6, w.Center.Y);
+        rec.Place(from + new Vector(40, 50));
+        rec.Hold(900);
+        rec.Move(from, 500);
+        // 고른 이름을 눌러 끌어야 순서 바꾸기: 먼저 눌러 고르고, 두 번 누르기(이름 바꾸기)가 되지 않게 조금 떨어진 자리를 다시 누른다.
+        rec.Click(from, 0, afterMs: 500);
+        from += new Vector(-30, 0);
+        rec.Move(from, 300);
+        rec.Down();
+        rec.Move(new Point(from.X + 6, s.Y + 4), 900);
+        rec.Hold(400);
+        rec.Up();
+        // 이름 칸 위에 머물면 그 행이 흐려지고 아래 '새 레이어' 줄에선 풍선이 떠서, 잘라 낸 칸 밖 오른쪽으로 비킨다.
+        rec.Move(rec.Pointer + new Vector(360, 0), 500);
+        rec.Hold(1800);
+        if (proj.IndexOf(wolf) < proj.IndexOf(shield)) throw new InvalidOperationException("wolf not moved above shield");
+        Save(rec, "skins-stack-order");
+    }
+
+    /// <summary>
+    /// 스킨 프리셋(튜토리얼 '레이어 묶기와 스킨' <c>skins.stack</c>): 늑대(기본 · Red 옷)와 방패(주황 · 파랑) 레이어의 스킨 조합을 프리셋 A·B로 저장해 두고,
+    /// 미리보기 위 스킨 줄의 프리셋 상자에서 B → A를 고르면 두 레이어가 한꺼번에 바뀐다. 캔버스와 프리셋 상자(+ 펼친 목록) 두 곳만 잘라 붙인다.
+    /// </summary>
+    [Shot("clip-tutorial-skins-stack-preset")]
+    public static void SkinsStackPreset(ShotKit k)
+    {
+        var (m, proj, wolf, shield) = StackMain(k);
+        var original = proj.GetCel(proj.IndexOf(wolf), 0)!;
+        var wolfBase = wolf.ActiveSkin!;
+        var shieldBase = shield.ActiveSkin!;
+        var wolfRed = proj.AddSkin(wolf, "Red", wolfBase);
+        proj.SetCel(proj.IndexOf(wolf), 0, TintClothes(original, 2.4, 0.5, 0.5));
+        var shieldBlue = proj.AddSkin(shield, "Blue", shieldBase);
+        proj.SetCel(proj.IndexOf(shield), 0, Shield(proj.Width, proj.Height, new Color32(60, 120, 235)));
+        proj.SaveSkinPreset("A", [new(wolf, wolfBase), new(shield, shieldBase)]);
+        proj.SaveSkinPreset("B", [new(wolf, wolfRed), new(shield, shieldBlue)]);
+        proj.ApplySkinPreset(proj.SkinPresets[0]);
+        k.Settle(600);
+        var combo = ShotKit.All<ComboBox>(ShotKit.Get<Control>(m, "_preview")).First(c => c.IsEffectivelyVisible && c.PlaceholderText == UiStrings.Preview_PresetPlaceholder);
+        var box = ShotKit.Bounds(combo, m);
+        var image = CanvasImageArea(m, proj);
+        // 'Skins' 글자부터 오른쪽 레이어별 스킨 상자(Shield)까지, 아래로 펼쳐지는 목록까지.
+        var boxArea = Fit(new Rect(box.X - 46, box.Y - 16, box.Width + 46 + 120, box.Height + 16 + 90), m);
+        using var rec = new ClipRecorder(k, m, image.Union(boxArea), frameMs: 40) { Regions = [image, boxArea] };
+        rec.Cursor = ClipCursor.Arrow;
+        var rest = new Point(box.X - 40, box.Bottom + 50);
+        rec.Place(rest);
+        rec.Hold(900);
+        void Pick(string name)
+        {
+            rec.Click(box.Center, 600, pressMs: 100, afterMs: 500);
+            var item = ShotKit.OpenPopups.Where(pop => pop.Child is not null).SelectMany(pop => ShotKit.All<ComboBoxItem>(pop.Child!))
+                .First(i => i.IsEffectivelyVisible && (i.Content as string) == name);
+            var at = rec.At(item);
+            rec.Move(at, 400);
+            rec.Hold(200);
+            rec.Click(at, 0, pressMs: 100, afterMs: 200);
+            rec.Move(rest, 400);
+            rec.Hold(1300);
+            if (!ReferenceEquals(wolf.ActiveSkin, name == "B" ? wolfRed : wolfBase) || !ReferenceEquals(shield.ActiveSkin, name == "B" ? shieldBlue : shieldBase))
+                throw new InvalidOperationException($"preset {name} not applied");
+        }
+        Pick("B");
+        Pick("A");
+        Save(rec, "skins-stack-preset");
+    }
+
+    // ───────────── 캔버스 다루기 ─────────────
+
+    /// <summary>예시 늑대(49×98)를 3배로 연 메인 창과 그림 둘레를 넉넉히 둔 자르기 칸(오른쪽으로 <paramref name="right"/>px 더).</summary>
+    private static (MainForm M, Rect Crop) WolfCanvas(ShotKit k, double right = 60)
+    {
+        var path = Path.Combine(k.WorkDir, "wolf.png");
+        File.Copy(ShotKit.SamplePng, path, overwrite: true);
+        App.Settings.ShowPivot = true;
+        var m = k.Main(path);
+        ToolFileHelp.Canvas(m).SetZoom(3);
+        k.Settle(400);
+        var a = ToolFileHelp.At(m, 0, 0);
+        var b = ToolFileHelp.At(m, 49, 98);
+        // 위는 Ctrl 끌기로 그림이 올라가는 만큼 넉넉히.
+        return (m, Fit(new Rect(a, b).Inflate(new Thickness(40, 48, 40 + right, 24)), m));
+    }
+
+    /// <summary>
+    /// Ctrl 끌기 비교(튜토리얼 '캔버스 다루기' <c>canvas.ctrl</c>): <paramref name="button"/> 왼쪽 = 그림과 피벗이 같이 옮겨짐, 오른쪽 = 피벗은 제자리에 둔 채 그림만.
+    /// </summary>
+    private static void CtrlDrag(ShotKit k, MouseButton button, string name)
+    {
+        var (m, crop) = WolfCanvas(k);
+        using var rec = new ClipRecorder(k, m, crop, frameMs: 40);
+        // 피벗(가슴께)을 커서가 가리지 않게 다리 쪽을 잡는다.
+        var from = ToolFileHelp.At(m, 24, 80);
+        rec.Place(from + new Vector(30, 40));
+        rec.Hold(600);
+        rec.Move(from, 500);
+        rec.KeyDown(Key.LeftCtrl);
+        rec.Modifiers = RawInputModifiers.Control;
+        rec.Hold(300);
+        rec.Down(button);
+        // 오른쪽 위로: 옮겨진 피벗이 제자리 캔버스 피벗의 이름표(오른쪽 아래에 붙음) 밑으로 숨지 않게.
+        rec.Move(from + new Vector(14 * 3, -8 * 3), 1100);
+        rec.Hold(300);
+        rec.Up();
+        rec.Modifiers = RawInputModifiers.None;
+        rec.KeyUp(Key.LeftCtrl);
+        rec.Move(rec.Pointer + new Vector(30, 20), 400);
+        rec.Hold(1500);
+        if (button == MouseButton.Left == (ToolFileHelp.Ctx(m).PivotPixel.X == 24.5f)) throw new InvalidOperationException($"pivot {ToolFileHelp.Ctx(m).PivotPixel}");
+        Save(rec, name);
+    }
+
+    [Shot("clip-tutorial-canvas-ctrl-left")]
+    public static void CanvasCtrlLeft(ShotKit k) => CtrlDrag(k, MouseButton.Left, "canvas-ctrl-left");
+
+    [Shot("clip-tutorial-canvas-ctrl-right")]
+    public static void CanvasCtrlRight(ShotKit k) => CtrlDrag(k, MouseButton.Right, "canvas-ctrl-right");
+
+    /// <summary>
+    /// 레이어 전체 변형(튜토리얼 '캔버스 다루기' <c>canvas.layer.edit</c>): 늑대 4프레임에서 Alt+Shift+C → 오른쪽 아래 손잡이를 안으로 끌어 줄이고 안쪽을 끌어 옮긴 뒤
+    /// Enter로 적용하면 타임라인 네 칸 그림이 한꺼번에 바뀐다. 2~4프레임 칸을 눌러 보며 모두 같이 바뀐 것을 보인다. 캔버스와 타임라인 칸 두 곳만 잘라 붙인다.
+    /// </summary>
+    [Shot("clip-tutorial-canvas-layer-frames")]
+    public static void CanvasLayerFrames(ShotKit k)
+    {
+        var path = Path.Combine(k.WorkDir, "wolf.png");
+        File.Copy(ShotKit.SamplePng, path, overwrite: true);
+        App.Settings.ShowPivot = false;
+        var m = k.Main(path);
+        k.Settle(400);
+        var ctx = ScreenDemo.Ctx(m);
+        var proj = ScreenDemo.Project(m);
+        ShotKit.Call(ShotKit.Get<Control>(m, "_timeline"), "AppendFrames", true, 3, 0);
+        ctx.SetCurrent(0, 0);
+        k.Settle(400);
+        var canvas = ShotKit.Get<Control>(m, "_canvas");
+        Point P(double x, double y) => canvas.TranslatePoint((Point)ShotKit.Call(canvas, "ImageToScreen", x, y)!, m)!.Value;
+        var image = Fit(new Rect(P(0, 0), P(proj.Width, proj.Height)).Inflate(14), m);
+        var c0 = Cel(m, 0, 0);
+        // 새로 붙인 칸은 폭이 늘어나는 중이라(처음엔 0) 첫 칸 폭으로 네 칸 자리를 센다.
+        var cels = Fit(new Rect(c0.X - 30, c0.Y - 46, c0.Width * 4 + 60, c0.Height + 46 + 16), m);
+        using var rec = new ClipRecorder(k, m, image.Union(cels), frameMs: 40) { Regions = [image, cels] };
+        rec.Cursor = ClipCursor.Arrow;
+        rec.Place(P(proj.Width, proj.Height) + new Vector(10, -30));
+        rec.Hold(500);
+        k.Command("편집/레이어 크기…");
+        k.Settle(200);
+        if (!ctx.IsLayerTransform) throw new InvalidOperationException("layer transform not started");
+        rec.Hold(700);
+        (double X, double Y)[] Corners() => ctx.TransformBox!.Value.Corners(ctx.TransformParams);
+        // 오른쪽 아래 손잡이를 안쪽으로 = 줄이기.
+        var corner = P(Corners()[2].X, Corners()[2].Y);
+        rec.Drag(corner, corner + new Vector(-16 * ZoomOf(canvas), -32 * ZoomOf(canvas)), 1000);
+        rec.Hold(400);
+        // 안쪽(가운데 피벗 손잡이를 피해 아래쪽)을 끌어 옮기기.
+        var c = Corners();
+        var inside = P((c[0].X + c[2].X) / 2, c[0].Y + (c[2].Y - c[0].Y) * 0.75);
+        rec.Drag(inside, inside + new Vector(8 * ZoomOf(canvas), 18 * ZoomOf(canvas)), 900);
+        rec.Hold(500);
+        rec.Key(Key.Enter, afterMs: 600);
+        if (ctx.IsLayerTransform) throw new InvalidOperationException("layer transform not applied");
+        // 칸을 누르는 모습에 맞춰 지금 프레임을 바꾼다(모든 프레임이 같이 줄고 옮겨짐).
+        foreach (var f in new[] { 1, 2, 3, 0 })
+        {
+            rec.Click(Cel(m, 0, f).Center, 550, pressMs: 100, afterMs: 0);
+            ctx.SetCurrent(0, f);
+            rec.Hold(f == 0 ? 1400 : 700);
+        }
+        Save(rec, "canvas-layer-frames");
+    }
+
+    private static double ZoomOf(Control canvas) => ((PixelCanvas)canvas).Zoom;
+
+    /// <summary>
+    /// 캔버스 크기 손잡이 끌기 비교(튜토리얼 '캔버스 다루기' <c>canvas.resize.edit</c>): 오른쪽 손잡이를 <paramref name="button"/> 왼쪽으로 끌면 그림도 함께 늘고,
+    /// 오른쪽으로 끌면 캔버스만 넓어져 여백이 생긴다. 적용하지 않고 끝.
+    /// </summary>
+    private static void ResizeDrag(ShotKit k, MouseButton button, string name)
+    {
+        var (m, crop) = WolfCanvas(k, right: 80);
+        var ctx = ToolFileHelp.Ctx(m);
+        using var rec = new ClipRecorder(k, m, crop, frameMs: 40);
+        k.Command("편집/캔버스 크기…");
+        k.Settle(200);
+        var cv = ctx.CanvasResizeCanvas;
+        var handle = ToolFileHelp.At(m, cv.Right, cv.Y + cv.Height / 2.0);
+        rec.Place(handle + new Vector(30, 50));
+        rec.Hold(700);
+        rec.Move(handle, 500);
+        rec.Hold(200);
+        rec.Down(button);
+        rec.Move(handle + new Vector(20 * 3, 0), 1100);
+        rec.Hold(300);
+        rec.Up();
+        rec.Move(rec.Pointer + new Vector(20, 40), 400);
+        rec.Hold(1600);
+        ctx.CancelCanvasResize();
+        Save(rec, name);
+    }
+
+    [Shot("clip-tutorial-canvas-resize-left")]
+    public static void CanvasResizeLeft(ShotKit k) => ResizeDrag(k, MouseButton.Left, "canvas-resize-left");
+
+    [Shot("clip-tutorial-canvas-resize-right")]
+    public static void CanvasResizeRight(ShotKit k) => ResizeDrag(k, MouseButton.Right, "canvas-resize-right");
 
     // ───────────── 레벨 ─────────────
 

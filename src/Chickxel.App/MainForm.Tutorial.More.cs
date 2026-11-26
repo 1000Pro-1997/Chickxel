@@ -179,6 +179,7 @@ public sealed partial class MainForm
                 TargetArea = () => Current() ? _timeline.TutorialAddLayer() : null,
                 Done = () => Current() && example!.Layers.Count > before,
                 Required = true,
+                AutoAdvance = true,
             },
             new()
             {
@@ -186,8 +187,12 @@ public sealed partial class MainForm
                 Enter = () => before = example?.Frames.Count ?? 0,
                 Text = () => UiStrings.Tutorial_Lf_AddFrame,
                 TargetArea = () => Current() ? _timeline.TutorialAddFrame() : null,
+                // + 를 오른쪽으로 끌어 여러 개 더하는 길을 말풍선이 가리지 않게.
+                KeepClear = () => Current() ? _timeline.TutorialAddFrameDrag() : null,
                 Done = () => Current() && example!.Frames.Count > before,
                 Required = true,
+                // 프레임은 끌기를 놓을 때 더해져 끌기 도중에 넘어가지 않는다.
+                AutoAdvance = true,
             },
             new()
             {
@@ -195,22 +200,32 @@ public sealed partial class MainForm
                 Enter = () => before = example?.Frames.Count ?? 0,
                 Text = () => UiStrings.Tutorial_Lf_DeleteFrame,
                 TargetArea = () => Current() ? _timeline.TutorialFrameHeaders() : null,
+                // 우클릭 메뉴가 열리면 '삭제'에 노란 테두리.
+                MenuItem = () => TutorialSpotlight.OpenMenuItem(UiStrings.S_TimelinePanel_ShowFrameMenu_F31A4BEC0A),
                 Done = () => Current() && example!.Frames.Count < before,
                 Required = true,
+                AutoAdvance = true,
             },
             new()
             {
                 Id = "frames.link",
                 Text = () => UiStrings.FormatTutorial_Lf_Link(menu: UiStrings.Timeline_LinkCels),
+                // 링크가 무엇인지(묶음마다 띠 색이 다름, 여러 묶음) 움짤로.
+                Clips = [new("frames-link", () => UiStrings.Tutorial_Lf_LinkClip)],
                 TargetArea = () => _timeline.TutorialCels(Wolf(), 0, 1),
                 DragAcross = true,
+                MenuItem = () => TutorialSpotlight.OpenMenuItem(UiStrings.Timeline_LinkCels),
+                // '셀 링크'를 누르면 바로 다음으로.
                 Done = () => Wolf() is >= 0 and var l && example!.Frames.Count > 1 && example.AreCelsLinked(l, 0, 1),
                 Required = true,
+                AutoAdvance = true,
             },
             new()
             {
                 Id = "frames.linked",
                 Text = () => UiStrings.FormatTutorial_Lf_Linked(menu: UiStrings.Timeline_UnlinkCels),
+                // 링크된 한 칸에 그리면 다른 칸도 같이 바뀌는 모습.
+                Clips = [new("frames-linked", () => UiStrings.Tutorial_Lf_LinkedClip)],
                 TargetArea = () => _timeline.TutorialCels(Wolf(), 0, 1),
             },
         ];
@@ -300,8 +315,7 @@ public sealed partial class MainForm
     // ───────────── 캔버스 다루기 ─────────────
 
     /// <summary>
-    /// 캔버스 다루기: 예시 늑대 5프레임을 새 탭으로 열고 휠 확대·가운데 끌기(스페이스+끌기) 옮기기 → 왼쪽·오른쪽 단추(오른쪽 = 보조색, '오른쪽 버튼 = 지우개'),
-    /// Alt+클릭 색 집기, Shift+클릭 직선 → Ctrl 누른 채 끌기(잠깐 옮기기 — 오른쪽 끌기 포함)·Ctrl+휠 붓 크기
+    /// 캔버스 다루기: 예시 늑대 5프레임을 새 탭으로 열고 휠 확대·가운데 끌기(스페이스+끌기) 옮기기 → Ctrl 누른 채 끌기(잠깐 옮기기 — 오른쪽 끌기 포함)·Ctrl+휠 붓 크기
     /// → Ctrl+Alt+C 캔버스 크기(왼쪽 끌기 = 그림까지, 오른쪽 끌기 = 캔버스만, Enter 적용 · Esc 취소) → Alt+Shift+C 레이어 전체 변형.
     /// </summary>
     private List<TutorialStep> CanvasTutorial()
@@ -325,16 +339,12 @@ public sealed partial class MainForm
             },
             new()
             {
-                Id = "canvas.mouse",
-                Text = () => UiStrings.FormatTutorial_Cv_Mouse(option: MainStrings.Menu_Tools_RightButtonErases_212),
-                Target = Canvas,
-                // 오른쪽 도구 설정의 '오른쪽 버튼 = 지우개'도 켜 볼 수 있게.
-                PassThrough = true,
-            },
-            new()
-            {
                 Id = "canvas.ctrl",
                 Text = () => UiStrings.Tutorial_Cv_Ctrl,
+                // 왼쪽·오른쪽 단추로 끈 결과를 나란히(피벗이 같이 가는지).
+                Clips = [new("canvas-ctrl-left", () => UiStrings.Tutorial_Cv_CtrlLeftClip), new("canvas-ctrl-right", () => UiStrings.Tutorial_Cv_CtrlRightClip)],
+                // 캔버스를 가리지 않고 옆에 들어가게 좁게(움짤은 줄여 맞춤).
+                BubbleWidth = 450,
                 Target = Canvas,
             },
             new()
@@ -344,15 +354,23 @@ public sealed partial class MainForm
                 Target = Canvas,
                 Done = () => Current() && _ctx.IsCanvasResizing,
                 Required = true,
+                // 캔버스 크기 모드에 들어가면 바로 다음(손잡이 설명).
+                AutoAdvance = true,
                 PassThrough = true,
             },
             new()
             {
                 Id = "canvas.resize.edit",
                 Text = () => UiStrings.Tutorial_Cv_ResizeEdit,
+                // 손잡이를 왼쪽·오른쪽 단추로 끈 결과를 나란히(그림까지 / 캔버스만).
+                Clips = [new("canvas-resize-left", () => UiStrings.Tutorial_Cv_ResizeLeftClip), new("canvas-resize-right", () => UiStrings.Tutorial_Cv_ResizeRightClip)],
+                // 손잡이를 끌 캔버스를 가리지 않고 옆에 들어가게 좁게(움짤은 줄여 맞춤).
+                BubbleWidth = 450,
                 Target = Canvas,
                 Done = () => Current() && !_ctx.IsCanvasResizing,
                 Required = true,
+                // 적용하거나 취소하면 바로 다음.
+                AutoAdvance = true,
                 // 오른쪽 도구 설정의 확인·취소 단추도 쓸 수 있게.
                 PassThrough = true,
             },
@@ -363,12 +381,18 @@ public sealed partial class MainForm
                 Target = Canvas,
                 Done = () => Current() && _ctx.IsLayerTransform,
                 Required = true,
+                // 레이어 전체 변형에 들어가면 바로 다음(주황 상자 설명).
+                AutoAdvance = true,
                 PassThrough = true,
             },
             new()
             {
                 Id = "canvas.layer.edit",
-                Text = () => UiStrings.Tutorial_Cv_LayerEdit,
+                Text = () => UiStrings.FormatTutorial_Cv_LayerEdit(key: KeyText("편집/변형(회전·크기)…")),
+                // 한 번 바꾸면 모든 프레임이 같이 바뀌는 모습(캔버스 + 타임라인 칸).
+                Clips = [new("canvas-layer-frames", () => UiStrings.Tutorial_Cv_LayerFramesClip)],
+                // 캔버스 옆 자리에 들어가는 가장 넓은 폭(움짤 가로가 넓어 400보다 크게).
+                BubbleWidth = 460,
                 Target = Canvas,
                 Done = () => Current() && !_ctx.IsLayerTransform,
                 Required = true,
@@ -387,8 +411,7 @@ public sealed partial class MainForm
     {
         SpriteProject? example = null;
         int placedBefore = 0;
-        object? stampBefore = null;
-        int autoBefore = 0;
+        int picksBefore = 0;
         bool Current() => example is not null && ReferenceEquals(_ctx.Project, example);
         bool OnTilemap() => Current() && _ctx.IsTilemapSelected;
         int Placed() => OnTilemap() ? _ctx.CurrentTiles?.Map.Count ?? 0 : 0;
@@ -418,11 +441,13 @@ public sealed partial class MainForm
             new()
             {
                 Id = "tile.tileset",
-                Enter = () => (stampBefore, autoBefore) = (_ctx.TileStamp, _ctx.AutoTileSet),
+                Enter = () => picksBefore = _ctx.TilePicks,
                 Text = () => UiStrings.Tutorial_Tm_Tileset,
                 Target = () => OnTilemap() ? _tilesetPanel : null,
-                // 타일 칸(붓에 담김) 또는 자동 타일 세트를 고르면.
-                Done = () => OnTilemap() && (_ctx.TileStamp is not null && !ReferenceEquals(_ctx.TileStamp, stampBefore) || _ctx.AutoTileSet != autoBefore),
+                // 타일 칸(붓에 담김)이나 자동 타일 세트를 하나 고를 때까지 '다음'이 없고, 고르면 저절로 다음으로(이미 골라 둔 것을 다시 눌러도).
+                Done = () => OnTilemap() && _ctx.TilePicks > picksBefore,
+                Required = true,
+                AutoAdvance = true,
             },
             new()
             {
@@ -477,9 +502,14 @@ public sealed partial class MainForm
                     OpenDetachedDocument(example, UiStrings.Tutorial_ExampleTitle, () => { });
                 },
                 Text = () => UiStrings.FormatTutorial_Sk_Child(menu: MenuPath("프레임·레이어/새 자식 레이어…"), key: KeyText("프레임·레이어/새 자식 레이어…")),
+                // Shift 끌어 놓기로 자식 만드는 길을 움짤로.
+                Clips = [new("skins-shift-drag", () => UiStrings.Tutorial_Sk_ShiftDragClip)],
                 TargetArea = () => _timeline.TutorialLayerName(Wolf()),
+                // 우클릭 메뉴: '새로 만들기' → 펼치면 '새 자식 레이어…'에 노란 테두리.
+                MenuItem = () => TutorialSpotlight.OpenMenuItem(UiStrings.Timeline_NewMenu, UiStrings.S_TimelinePanel_ShowLayerMenu_804EB6B1D9),
                 Done = () => Current() && example!.Layers.Any(l => l.Parent is not null),
                 Required = true,
+                AutoAdvance = true,
                 // 우클릭 메뉴·메뉴 줄·다른 레이어 이름을 Shift로 끌어 놓기 모두 되게.
                 PassThrough = true,
             },
@@ -495,8 +525,11 @@ public sealed partial class MainForm
                 Enter = () => skinsBefore = wolf?.Skins.Count ?? 0,
                 Text = () => UiStrings.FormatTutorial_Sk_Add(menu: UiStrings.Timeline_AddSkinToLayer, copy: UiStrings.Timeline_AddSkinToLayer_Copy),
                 TargetArea = () => _timeline.TutorialLayerName(Wolf()),
+                // 우클릭 메뉴: '스킨 추가' → 펼치면 '지금 그림 복제…'에 노란 테두리.
+                MenuItem = () => TutorialSpotlight.OpenMenuItem(UiStrings.Timeline_AddSkinToLayer, UiStrings.Timeline_AddSkinToLayer_Copy),
                 Done = () => Current() && wolf!.Skins.Count > skinsBefore,
                 Required = true,
+                AutoAdvance = true,
                 PassThrough = true,
             },
             new()
@@ -504,14 +537,19 @@ public sealed partial class MainForm
                 Id = "skins.switch",
                 Enter = () => activeBefore = wolf?.ActiveSkin,
                 Text = () => UiStrings.Tutorial_Sk_Switch,
+                // 칩으로 스킨을 고르면 그림이 통째로 갈아 끼워지는 모습.
+                Clips = [new("skins-switch", () => UiStrings.Tutorial_Sk_SwitchClip)],
                 TargetArea = () => _timeline.TutorialLayerName(Wolf()),
                 Done = () => Current() && !ReferenceEquals(wolf!.ActiveSkin, activeBefore),
+                AutoAdvance = true,
                 PassThrough = true,
             },
             new()
             {
                 Id = "skins.stack",
                 Text = () => UiStrings.Tutorial_Sk_Stack,
+                // 순서대로 겹쳐 위가 가림 / 스킨 프리셋으로 여러 레이어를 한 번에.
+                Clips = [new("skins-stack-order", () => UiStrings.Tutorial_Sk_StackOrderClip), new("skins-stack-preset", () => UiStrings.Tutorial_Sk_StackPresetClip)],
                 Target = () => Current() ? _timeline : null,
             },
         ];

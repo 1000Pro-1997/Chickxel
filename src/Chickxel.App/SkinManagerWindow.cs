@@ -63,13 +63,13 @@ public sealed class SkinManagerWindow : Window
         };
         // 대상 도움말(F1): 창 = "스킨 설정 창" 쪽, 프리셋 묶음 = 스킨 프리셋, 카드·줄은 만들 때(Rebuild) 그 자리를 붙인다
         this.HelpAt(Page);
-        _presetBox = Ui.Group(UiStrings.SkinSettings_Presets, _presets).HelpAt(PresetsPage, anchor: "Outfit presets");
-        _layerBox = Ui.Group(UiStrings.SkinSettings_Layers, _list).HelpAt(Page, anchor: "skin cards for each group");
+        _presetBox = Ui.Group(UiStrings.SkinSettings_Presets, _presets).HelpAt(PresetsPage, anchor: "A skin preset is a named set");
+        _layerBox = Ui.Group(UiStrings.SkinSettings_Layers, _list).HelpAt(Page, anchor: "A skin card is the thumbnail");
         var content = new StackPanel { Margin = new Thickness(10, 8), Children = { help, _presetBox, _layerBox } };
 
         // 아래: 프리셋으로 등록(고른 스킨 또는 지금 스킨 전체) · 고르기 지우기 · 고른 개수 | 확인(Esc도 닫기 — 카드를 누를 때마다 이미 입혔으므로 창만 닫는다)
         _savePreset = new Button { Content = UiStrings.SkinSettings_SavePreset, Padding = new Thickness(8, 2) }
-            .HelpAt(PresetsPage, anchor: "Use ④ Save current outfit")
+            .HelpAt(PresetsPage, anchor: "Pressing ③ with nothing picked")
             .Tip(UiStrings.SkinSettings_SavePresetTip);
         _savePreset.Click += (_, _) => Dispatcher.UIThread.Post(SavePreset);
         _clearPicked = new Button { Content = UiStrings.SkinSettings_ClearPicked, Padding = new Thickness(8, 2), Margin = new Thickness(4, 0, 0, 0) };
@@ -361,7 +361,7 @@ public sealed class SkinManagerWindow : Window
             var preset = presets[i];
             var missing = p.MissingSkinPresetEntries(preset);
             var bmp = Track(p.FlattenSkinPreset(frame, preset));
-            var card = Card(bmp, PresetThumb, preset.Name, IsCurrentPreset(p, preset), picked: false, missing: missing.Count > 0).HelpAt(PresetsPage, anchor: "click ⑤ its card");
+            var card = Card(bmp, PresetThumb, preset.Name, IsCurrentPreset(p, preset), picked: false, missing: missing.Count > 0).HelpAt(PresetsPage, anchor: "Click ⑤ a preset card");
             var tip = string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.SkinSettings_PresetTip, preset.Name, preset.Entries.Count);
             if (missing.Count > 0) tip += "\n" + UiStrings.SkinSettings_PresetMissing + "\n" + string.Join("\n", missing.Select(m => "· " + m));
             card.Tip(tip);
@@ -505,7 +505,7 @@ public sealed class SkinManagerWindow : Window
             CornerRadius = new CornerRadius(3),
             Padding = new Thickness(6),
             Child = new StackPanel { Children = { name, PanScroll(layer, cards) } },
-        }.HelpAt(Page, anchor: "skin cards for each group");
+        }.HelpAt(Page, anchor: "A skin card is the thumbnail");
     }
 
     /// <summary>빈 셀 카드의 체커 비율: 자리 있는 레이어는 그 크기, 일반 레이어는 썸네일 자리(없으면 캔버스).</summary>
