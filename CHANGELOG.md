@@ -17,7 +17,6 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 - About Chickxel has a Support group: thanks, the coffee button, the names of people who bought a coffee (refreshed at most every 30 minutes) and a button to the chick supporters village on the website.
 - After a while of use, saving once asks whether you would like to star Chickxel on GitHub (it uses the GitHub CLI when signed in).
 - Village chicks move smoothly between world pixels and use four-direction walking sprites, with idle blinks when they stop.
-- Side-facing chicks show more of their backs and place their feet at different depths to match the village's overhead view.
 - With reduced motion enabled, chicks stay still while you pan, zoom or select a resident.
 
 ### The village house has a working door
@@ -27,6 +26,10 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 ### Continuous river and lake banks in the village
 - Shoreline tiles round inside and outside corners while keeping the existing river and lake layout.
 - Moving ripples stay on the water and fade as they flow into the lake.
+
+### Edit village objects in Chickxel
+- The village's props and animated sprites are available as a layered Chickxel project. Saving the project exports the PNG used by the website.
+- Side-walking chicks use their original side profiles again.
 
 ### Outside-canvas view for every layer
 - Outside: Opaque / Translucent now shows what lies outside the canvas on every visible layer (normal and tilemap), whichever layer or tool is selected.

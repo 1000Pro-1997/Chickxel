@@ -23,6 +23,7 @@ village.empty,아직 빈 마을이에요. 첫 번째 주민을 기다립니다.,
 village.search,이름 찾기,Find a name
 village.noMatch,그런 이름의 주민이 없어요.,No resident with that name.
 village.loadError,주민 목록을 불러오지 못했어요.,The resident list could not be loaded.
+village.artError,마을 그림을 불러오지 못했어요.,The village artwork could not be loaded.
 village.fold,주민 목록 접기·펴기,Fold or unfold the residents
 village.zoom,확대·축소,Zoom
 village.zoomIn,확대,Zoom in

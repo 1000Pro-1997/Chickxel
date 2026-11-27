@@ -416,11 +416,21 @@ def lint_guide(html_text: str, page: str) -> list[str]:
 # style.css 주소의 ?v= 값 = 파일 내용 해시: CSS를 고치면 모든 쪽의 주소가 바뀌어 브라우저가 옛 CSS를 캐시에서 쓰지 않는다
 # (템플릿에 적힌 값과 상관없이 덮어씀, 템플릿이 아닌 404.html도 같이). 줄 끝은 LF로 맞춰 잰다 — Windows 체크아웃(CRLF)과 CI(LF)가 같은 값을 내게.
 STYLE_REF = re.compile(r'(style\.css\?v=)[^"\']*')
+VILLAGE_ART_REF = re.compile(r'((assets/village/(?:objects\.png|scene\.json))\?v=)auto\b')
 
 
 def style_version() -> str:
     import hashlib
     return hashlib.sha256((DOCS / "style.css").read_bytes().replace(b"\r\n", b"\n")).hexdigest()[:10]
+
+
+def village_art_version(match: re.Match[str]) -> str:
+    import hashlib
+    path = DOCS / match[2]
+    data = path.read_bytes()
+    if path.suffix == ".json":
+        data = data.replace(b"\r\n", b"\n")
+    return match[1] + hashlib.sha256(data).hexdigest()[:10]
 
 
 def output_path(page: str, lang: str) -> Path:
@@ -438,6 +448,7 @@ def main() -> int:
         used: set[str] = set()
         for lang in langs:
             text = STYLE_REF.sub(lambda m: m.group(1) + version, render(template, strings, lang, page, used))
+            text = VILLAGE_ART_REF.sub(village_art_version, text)
             if lang == BASE_LANG and (problems := lint_guide(text, page)):
                 print("\n".join(problems), file=sys.stderr)
                 return 1
