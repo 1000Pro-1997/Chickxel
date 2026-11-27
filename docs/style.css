@@ -95,6 +95,21 @@ pre code { background: none; border: 0; padding: 0; }
 .village-card h1 { margin: 0 0 6px; font-size: 19px; color: var(--ink-deep); }
 .village-card p { margin: 0 0 12px; color: var(--muted); font-size: 13px; line-height: 1.55; }
 .village-card .btn { width: 100%; justify-content: center; padding: 10px 16px; font-size: 14px; }
+.village-card .village-own { margin-top: 6px; cursor: pointer; }
+.my-chick { width: min(420px, calc(100% - 32px)); max-height: calc(100dvh - 32px); padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: var(--bg); color: var(--ink); }
+.my-chick::backdrop { background: rgba(0, 0, 0, .6); }
+.my-chick h2 { margin: 0 0 12px; font-size: 21px; }
+.my-chick-status { margin: 0 0 12px; color: var(--muted); }
+.my-chick-status:empty, .my-chick [hidden] { display: none; }
+.my-chick fieldset { min-width: 0; margin: 0; padding: 12px; border: 1px solid var(--line); border-radius: 10px; }
+.my-chick legend { padding: 0 5px; font-weight: 700; }
+.my-chick label { display: grid; gap: 4px; margin-bottom: 10px; }
+.my-chick label > :is(input:not([type=checkbox]), select) { padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--soft); color: var(--ink); font: inherit; }
+.my-chick .my-chick-check { display: flex; align-items: center; gap: 8px; }
+.my-chick-preview { display: block; width: 48px; height: 48px; margin: 0 auto 8px; }
+.my-chick .btn { padding: 7px 13px; font: inherit; cursor: pointer; }
+.my-chick .btn:disabled { opacity: .6; cursor: wait; }
+#my-chick-close { margin-top: 12px; }
 .village-residents { right: 16px; top: calc(var(--top) + 16px); width: 220px; max-height: calc(100vh - var(--top) - 120px); display: flex; flex-direction: column; padding: 10px 10px 12px; }
 .residents-head { display: flex; align-items: center; gap: 8px; padding: 0 0 0 6px; color: var(--ink-deep); font-size: 14px; }
 .residents-head strong { flex: 1; }
@@ -129,6 +144,8 @@ pre code { background: none; border: 0; padding: 0; }
 @media (max-width: 700px) {
   .village-card { right: 16px; width: auto; padding: 10px 12px 12px; }
   .village-card p { display: none; }
+  .village-card .btn { width: auto; padding: 7px 10px; }
+  .village-card .village-own { margin: 4px 0 0; }
   .village-residents { top: auto; bottom: 16px; right: 70px; left: 16px; width: auto; max-height: 30vh; }
 }
 

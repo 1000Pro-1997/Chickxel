@@ -11,7 +11,7 @@
 <link rel="alternate" hreflang="en" href="https://chickxel.com/en/village">
 <link rel="icon" href="assets/icon-256.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="style.css?v=578a62e2ad">
+<link rel="stylesheet" href="style.css?v=2c9d081985">
 <script src="/static/analytics.js" defer></script>
 </head>
 <body class="village-page">
@@ -51,6 +51,7 @@
 <h1>병아리 후원 마을</h1>
 <p>Chickxel은 혼자 만드는 무료 도구입니다. 커피를 사 주신 분들은 이 마을에서 병아리로 밭을 가꾸며 살고 있어요. 진심으로 감사드립니다. 마을 밖은 아직 개척하지 않은 숲이에요.</p>
 <a class="btn support" href="https://buymeacoffee.com/chickxel" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/></svg>커피 사 주고 마을에 살기</a>
+<button class="btn village-own" type="button" id="my-chick-open">내 병아리</button>
 </section>
 <aside class="village-residents folded" id="residents" aria-label="마을 주민">
 <div class="residents-head">
@@ -62,6 +63,7 @@
 <ul id="resident-list"></ul>
 <p class="residents-empty" id="residents-empty" hidden>아직 빈 마을이에요. 첫 번째 주민을 기다립니다.</p>
 <p class="residents-empty" id="residents-none" hidden>그런 이름의 주민이 없어요.</p>
+<p class="residents-empty" id="residents-error" hidden>주민 목록을 불러오지 못했어요.</p>
 </div>
 </aside>
 
@@ -72,7 +74,52 @@
 <button type="button" id="zoom-full" title="전체 화면" aria-label="전체 화면" aria-pressed="false"><svg class="icon full-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg><svg class="icon full-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg></button>
 </div>
 </div>
+<dialog class="my-chick" id="my-chick" aria-labelledby="my-chick-title">
+<h2 id="my-chick-title">내 병아리</h2>
+<p class="my-chick-status" id="my-chick-status" role="status" aria-live="polite"
+  data-loading="내 병아리 정보를 불러오는 중입니다." data-error="요청을 처리하지 못했습니다. 잠시 뒤 다시 시도해 주세요." data-sent="연결할 수 있는 후원 내역이 있으면 이메일로 코드를 보내 드립니다. 코드는 10분 동안 사용할 수 있습니다."
+  data-bad-code="코드가 맞지 않거나 만료됐습니다. 받은 코드를 확인하거나 새 코드를 받아 주세요." data-saved="병아리 설정을 저장했습니다." data-ineligible="현재 연결된 후원 중 유효한 내역이 없어 꾸미기와 마을 공개가 중지됐습니다."></p>
+<a class="btn" id="my-chick-login" href="/login" hidden>로그인</a>
+<button type="button" class="btn" id="my-chick-start" hidden>후원 인증하기</button>
+<form id="my-chick-email" hidden>
+<fieldset><legend>후원 인증하기</legend>
+<p>이메일은 후원 내역 확인과 인증 코드 발송에만 쓰며 마을에는 표시하지 않습니다. <a href="/privacy">개인정보 처리방침</a></p>
+<label>후원할 때 사용한 이메일<input name="email" type="email" autocomplete="email" maxlength="254" required></label>
+<button class="btn" type="submit">인증 코드 보내기</button>
+</fieldset>
+</form>
+<form id="my-chick-code" hidden>
+<fieldset><legend>이메일 확인</legend>
+<label>인증 코드 여섯 자리<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required></label>
+<button class="btn" type="submit">내 계정에 연결하기</button>
+<button class="btn" type="button" id="my-chick-retry">이메일 다시 입력</button>
+</fieldset>
+</form>
+<form id="my-chick-edit" hidden>
+<fieldset><legend>내 병아리 꾸미기</legend>
+<img class="my-chick-preview pixel" id="my-chick-preview" alt="">
+<label>병아리 모습<select name="mascot">
+<option value="original">기본</option><option value="knight">기사</option>
+<option value="wizard">마법사</option><option value="pirate">해적</option>
+<option value="viking">바이킹</option><option value="ninja">닌자</option>
+<option value="king">왕</option><option value="astronaut">우주 비행사</option>
+<option value="archer">궁수</option><option value="healer">치유사</option>
+<option value="gamer">게이머</option><option value="painter">화가</option>
+<option value="designer">디자이너</option><option value="hatch">알에서 나온 병아리</option>
+</select></label>
+<label>밭 작물<select name="crop">
+<option value="carrot">당근</option><option value="cabbage">양배추</option>
+<option value="wheat">밀</option><option value="tomato">토마토</option>
+<option value="pumpkin">호박</option><option value="sunflower">해바라기</option>
+</select></label>
+<label class="my-chick-check"><input name="public" type="checkbox">마을에 내 병아리와 Chickxel 이름 공개하기</label>
+<button class="btn" type="submit">저장</button>
+</fieldset>
+</form>
+<button class="btn" type="button" id="my-chick-close">닫기</button>
+</dialog>
 <script src="nav.js?v=20261128c"></script>
-<script src="village.js?v=20261129a"></script>
+<script src="village.js?v=20261129b"></script>
+<script src="village-chick.js?v=20261129b"></script>
 </body>
 </html>

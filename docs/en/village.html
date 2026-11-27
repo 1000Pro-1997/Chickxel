@@ -11,7 +11,7 @@
 <link rel="alternate" hreflang="en" href="https://chickxel.com/en/village">
 <link rel="icon" href="../assets/icon-256.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="../style.css?v=578a62e2ad">
+<link rel="stylesheet" href="../style.css?v=2c9d081985">
 <script src="/static/analytics.js" defer></script>
 </head>
 <body class="village-page">
@@ -51,6 +51,7 @@
 <h1>Chick supporters village</h1>
 <p>Chickxel is a free tool made by one person. Everyone who bought a coffee lives here as a chick tending a little farm. Thank you so much. Beyond the village, the woods are still unexplored.</p>
 <a class="btn support" href="https://buymeacoffee.com/chickxel" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/></svg>Buy a coffee and move in</a>
+<button class="btn village-own" type="button" id="my-chick-open">My chick</button>
 </section>
 <aside class="village-residents folded" id="residents" aria-label="Residents">
 <div class="residents-head">
@@ -62,6 +63,7 @@
 <ul id="resident-list"></ul>
 <p class="residents-empty" id="residents-empty" hidden>The village is still empty. Waiting for the first resident.</p>
 <p class="residents-empty" id="residents-none" hidden>No resident with that name.</p>
+<p class="residents-empty" id="residents-error" hidden>The resident list could not be loaded.</p>
 </div>
 </aside>
 
@@ -72,7 +74,52 @@
 <button type="button" id="zoom-full" title="Full screen" aria-label="Full screen" aria-pressed="false"><svg class="icon full-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg><svg class="icon full-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg></button>
 </div>
 </div>
+<dialog class="my-chick" id="my-chick" aria-labelledby="my-chick-title">
+<h2 id="my-chick-title">My chick</h2>
+<p class="my-chick-status" id="my-chick-status" role="status" aria-live="polite"
+  data-loading="Loading your chick." data-error="Something went wrong. Try again in a moment." data-sent="If a donation can be linked to this account we’ll email you a code. It expires in 10 minutes."
+  data-bad-code="The code is incorrect or expired. Check the code or request a new one." data-saved="Your chick’s settings were saved." data-ineligible="Customization and public visibility are paused because no linked donation is currently eligible."></p>
+<a class="btn" id="my-chick-login" href="/login" hidden>Sign in</a>
+<button type="button" class="btn" id="my-chick-start" hidden>Verify your support</button>
+<form id="my-chick-email" hidden>
+<fieldset><legend>Verify your support</legend>
+<p>We use your email only to check your donation and send the code. It never appears in the village. <a href="/privacy">Privacy policy</a></p>
+<label>Email used for your donation<input name="email" type="email" autocomplete="email" maxlength="254" required></label>
+<button class="btn" type="submit">Send verification code</button>
+</fieldset>
+</form>
+<form id="my-chick-code" hidden>
+<fieldset><legend>Confirm your email</legend>
+<label>Six-digit verification code<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required></label>
+<button class="btn" type="submit">Link to my account</button>
+<button class="btn" type="button" id="my-chick-retry">Enter email again</button>
+</fieldset>
+</form>
+<form id="my-chick-edit" hidden>
+<fieldset><legend>Customize my chick</legend>
+<img class="my-chick-preview pixel" id="my-chick-preview" alt="">
+<label>Chick appearance<select name="mascot">
+<option value="original">Original</option><option value="knight">Knight</option>
+<option value="wizard">Wizard</option><option value="pirate">Pirate</option>
+<option value="viking">Viking</option><option value="ninja">Ninja</option>
+<option value="king">King</option><option value="astronaut">Astronaut</option>
+<option value="archer">Archer</option><option value="healer">Healer</option>
+<option value="gamer">Gamer</option><option value="painter">Painter</option>
+<option value="designer">Designer</option><option value="hatch">Newly hatched</option>
+</select></label>
+<label>Farm crop<select name="crop">
+<option value="carrot">Carrot</option><option value="cabbage">Cabbage</option>
+<option value="wheat">Wheat</option><option value="tomato">Tomato</option>
+<option value="pumpkin">Pumpkin</option><option value="sunflower">Sunflower</option>
+</select></label>
+<label class="my-chick-check"><input name="public" type="checkbox">Show my chick and Chickxel name in the village</label>
+<button class="btn" type="submit">Save</button>
+</fieldset>
+</form>
+<button class="btn" type="button" id="my-chick-close">Close</button>
+</dialog>
 <script src="../nav.js?v=20261128c"></script>
-<script src="../village.js?v=20261129a"></script>
+<script src="../village.js?v=20261129b"></script>
+<script src="../village-chick.js?v=20261129b"></script>
 </body>
 </html>

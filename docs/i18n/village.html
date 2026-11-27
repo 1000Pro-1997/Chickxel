@@ -51,6 +51,7 @@
 <h1>{{village.title}}</h1>
 <p>{{village.thanks}}</p>
 <a class="btn support" href="https://buymeacoffee.com/chickxel" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/></svg>{{village.buy}}</a>
+<button class="btn village-own" type="button" id="my-chick-open">{{chick.title}}</button>
 </section>
 <aside class="village-residents folded" id="residents" aria-label="{{village.residents}}">
 <div class="residents-head">
@@ -62,6 +63,7 @@
 <ul id="resident-list"></ul>
 <p class="residents-empty" id="residents-empty" hidden>{{village.empty}}</p>
 <p class="residents-empty" id="residents-none" hidden>{{village.noMatch}}</p>
+<p class="residents-empty" id="residents-error" hidden>{{village.loadError}}</p>
 </div>
 </aside>
 
@@ -72,7 +74,52 @@
 <button type="button" id="zoom-full" title="{{village.fullscreen}}" aria-label="{{village.fullscreen}}" aria-pressed="false"><svg class="icon full-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg><svg class="icon full-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg></button>
 </div>
 </div>
+<dialog class="my-chick" id="my-chick" aria-labelledby="my-chick-title">
+<h2 id="my-chick-title">{{chick.title}}</h2>
+<p class="my-chick-status" id="my-chick-status" role="status" aria-live="polite"
+  data-loading="{{chick.loading}}" data-error="{{chick.error}}" data-sent="{{chick.sent}}"
+  data-bad-code="{{chick.badCode}}" data-saved="{{chick.saved}}" data-ineligible="{{chick.ineligible}}"></p>
+<a class="btn" id="my-chick-login" href="/login" hidden>{{nav.login}}</a>
+<button type="button" class="btn" id="my-chick-start" hidden>{{chick.verify}}</button>
+<form id="my-chick-email" hidden>
+<fieldset><legend>{{chick.verify}}</legend>
+<p>{{chick.emailUse}} <a href="/privacy">{{chick.privacy}}</a></p>
+<label>{{chick.email}}<input name="email" type="email" autocomplete="email" maxlength="254" required></label>
+<button class="btn" type="submit">{{chick.send}}</button>
+</fieldset>
+</form>
+<form id="my-chick-code" hidden>
+<fieldset><legend>{{chick.codeTitle}}</legend>
+<label>{{chick.code}}<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required></label>
+<button class="btn" type="submit">{{chick.connect}}</button>
+<button class="btn" type="button" id="my-chick-retry">{{chick.retry}}</button>
+</fieldset>
+</form>
+<form id="my-chick-edit" hidden>
+<fieldset><legend>{{chick.decorate}}</legend>
+<img class="my-chick-preview pixel" id="my-chick-preview" alt="">
+<label>{{chick.look}}<select name="mascot">
+<option value="original">{{look.original}}</option><option value="knight">{{look.knight}}</option>
+<option value="wizard">{{look.wizard}}</option><option value="pirate">{{look.pirate}}</option>
+<option value="viking">{{look.viking}}</option><option value="ninja">{{look.ninja}}</option>
+<option value="king">{{look.king}}</option><option value="astronaut">{{look.astronaut}}</option>
+<option value="archer">{{look.archer}}</option><option value="healer">{{look.healer}}</option>
+<option value="gamer">{{look.gamer}}</option><option value="painter">{{look.painter}}</option>
+<option value="designer">{{look.designer}}</option><option value="hatch">{{look.hatch}}</option>
+</select></label>
+<label>{{chick.crop}}<select name="crop">
+<option value="carrot">{{crop.carrot}}</option><option value="cabbage">{{crop.cabbage}}</option>
+<option value="wheat">{{crop.wheat}}</option><option value="tomato">{{crop.tomato}}</option>
+<option value="pumpkin">{{crop.pumpkin}}</option><option value="sunflower">{{crop.sunflower}}</option>
+</select></label>
+<label class="my-chick-check"><input name="public" type="checkbox">{{chick.public}}</label>
+<button class="btn" type="submit">{{chick.save}}</button>
+</fieldset>
+</form>
+<button class="btn" type="button" id="my-chick-close">{{chick.close}}</button>
+</dialog>
 <script src="{{root}}nav.js?v=20261128c"></script>
-<script src="{{root}}village.js?v=20261129a"></script>
+<script src="{{root}}village.js?v=20261129b"></script>
+<script src="{{root}}village-chick.js?v=20261129b"></script>
 </body>
 </html>

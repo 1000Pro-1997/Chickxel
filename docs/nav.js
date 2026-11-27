@@ -1,5 +1,4 @@
-// 후원자 목록(ChickxelSupporters.load): https://chickxel.com/api/supporters를 브라우저에 한 시간 동안 두고(localStorage) 그 뒤에 다시 받는다.
-// 병아리 후원 마을(village.html, village.js)과 첫 화면 다운로드 구역의 "커피를 사 주신 분들"(.supporters, 아무도 없으면 숨김)이 쓴다.
+// 첫 화면 다운로드 구역의 "커피를 사 주신 분들": 목록을 브라우저에 한 시간 동안 둔다.
 // 위 막대의 커피 단추는 그 마을을 새 창으로 여는 링크다.
 (function () {
   var KEY = 'chickxel.supporters';
@@ -27,8 +26,6 @@
       else if (waiting === pending) waiting = null;
     });
   }
-  window.ChickxelSupporters = { load: load };
-
   var section = document.querySelector('.supporters');
   if (!section) return;
   var ICON = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/></svg>';

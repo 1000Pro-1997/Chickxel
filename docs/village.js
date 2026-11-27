@@ -5,7 +5,7 @@
 // 병아리(앱 마스코트) 한 마리가 살며, 물을 주고 집에 들르고 마을 곳곳을 걸어 다닌다. 마을 밖은 아직 개척하지 않은 숲(멀수록 안개).
 // 땅(그림자 포함)은 한 번 그려 두고, 나무·벽·가구·울타리·작물·키 큰 풀·병아리처럼 서 있는 것은 발 자리(아래 끝)가 위인 것부터 그려
 // 앞뒤가 맞게 겹친다. 끌어서 옮기고 휠·두 손가락·단추로 확대하며, 주민 이름을 누르면 따라간다.
-// 후원자 목록은 nav.js의 ChickxelSupporters.load(한 시간 동안 브라우저에 둠).
+// 공개 주민 목록에는 인증된 후원자가 선택한 병아리와 작물도 들어온다.
 (function () {
   var T = 16;
   // 온 세상(타일)과 그 안의 마을 자리(전체 보기·안개 기준)
@@ -1103,9 +1103,13 @@
   function markActive() {
     [].forEach.call(list.children, function (li, i) { li.firstChild.setAttribute('aria-pressed', String(i === follow)); });
   }
-  function showResidents(names) {
-    residents = names.map(function (name, k) {
-      var r = { name: name, plot: PLOTS[k] || null, crop: CROPS[k % CROPS.length], img: mascot(MASCOTS[nameSeed(name) % MASCOTS.length]) };
+  function showResidents(entries) {
+    if (follow >= 0) fit();
+    residents = entries.map(function (entry, k) {
+      var name = entry.name;
+      var look = MASCOTS.includes(entry.mascot) ? entry.mascot : MASCOTS[nameSeed(name) % MASCOTS.length];
+      var crop = CROPS.includes(entry.crop) ? entry.crop : CROPS[k % CROPS.length];
+      var r = { name: name, plot: PLOTS[k] || null, crop: crop, img: mascot(look) };
       buildRoute(r, k);
       return r;
     });
@@ -1136,13 +1140,23 @@
       r.label.textContent = r.name;
       namesHost.appendChild(r.label);
     });
-    document.getElementById('resident-count').textContent = String(names.length);
-    document.getElementById('residents-empty').hidden = names.length > 0;
-    if (follow >= residents.length) follow = -1;
+    document.getElementById('resident-count').textContent = String(entries.length);
+    document.getElementById('residents-empty').hidden = entries.length > 0;
     markActive();
     filter();
   }
-  (window.ChickxelSupporters ? window.ChickxelSupporters.load : function (done) { done([]); })(showResidents);
+  async function loadResidents() {
+    try {
+      var response = await fetch('/api/village/residents', { headers: { Accept: 'application/json' } });
+      if (!response.ok) throw Error('Could not load village residents.');
+      showResidents((await response.json()).residents);
+      document.getElementById('residents-error').hidden = true;
+    } catch (e) {
+      document.getElementById('residents-error').hidden = false;
+    }
+  }
+  loadResidents();
+  document.addEventListener('chickxel:residents-changed', loadResidents);
 
   var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var last = 0;
