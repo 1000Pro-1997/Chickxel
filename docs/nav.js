@@ -1,4 +1,4 @@
-// 위 막대의 커피 단추(에셋 사이트 site.js의 머리글과 같은 모양): 누르면 감사 글 · 병아리 후원 마을(village.js) · 후원 단추가 펼쳐진다.
+// 위 막대의 커피 단추(에셋 사이트 site.js의 머리글과 같은 모양): 누르면 병아리 후원 마을 창(village.js)이 열린다.
 // 첫 화면 다운로드 구역의 "커피를 사 주신 분들"(.supporters, 아무도 없으면 숨김)도 같은 후원자 목록(ChickxelVillage.load)으로 채운다.
 (function () {
   var V = window.ChickxelVillage;
@@ -18,19 +18,12 @@
     });
   }
 
-  var box = document.getElementById('coffee-menu');
-  if (!box) return;
-  var btn = box.querySelector('.coffee-btn');
-  var pop = box.querySelector('.coffee-pop');
-  function setOpen(open) {
-    pop.hidden = !open;
-    btn.setAttribute('aria-expanded', String(open));
-    if (open && V) V.mount(pop.querySelector('.chick-village'), pop.querySelector('.coffee-empty'));
-  }
-  btn.addEventListener('click', function () { setOpen(pop.hidden); });
-  document.addEventListener('click', function (e) { if (!box.contains(e.target)) setOpen(false); });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && !pop.hidden) { setOpen(false); btn.focus(); }
+  // 커피 단추: 후원 마을 창을 연다(문구는 단추의 data-*에 화면 언어로)
+  var btn = document.getElementById('coffee-btn');
+  if (!btn || !V) return;
+  btn.addEventListener('click', function () {
+    var d = btn.dataset;
+    V.open({ title: d.title, thanks: d.thanks, buy: d.buy, empty: d.empty, close: d.close }, btn);
   });
 })();
 
