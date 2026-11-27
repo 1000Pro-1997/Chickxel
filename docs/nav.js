@@ -1,3 +1,39 @@
+// 위 막대의 커피 단추(에셋 사이트 site.js의 머리글과 같은 모양): 누르면 감사 글 · 병아리 후원 마을(village.js) · 후원 단추가 펼쳐진다.
+// 첫 화면 다운로드 구역의 "커피를 사 주신 분들"(.supporters, 아무도 없으면 숨김)도 같은 후원자 목록(ChickxelVillage.load)으로 채운다.
+(function () {
+  var V = window.ChickxelVillage;
+  var section = document.querySelector('.supporters');
+  if (V && section) {
+    var ICON = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/></svg>';
+    var list = section.querySelector('.supporter-list');
+    V.load(function (names) {
+      list.textContent = '';
+      names.forEach(function (name) {
+        var li = document.createElement('li');
+        li.innerHTML = ICON;
+        li.appendChild(document.createTextNode(name));
+        list.appendChild(li);
+      });
+      section.hidden = names.length === 0;
+    });
+  }
+
+  var box = document.getElementById('coffee-menu');
+  if (!box) return;
+  var btn = box.querySelector('.coffee-btn');
+  var pop = box.querySelector('.coffee-pop');
+  function setOpen(open) {
+    pop.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+    if (open && V) V.mount(pop.querySelector('.chick-village'), pop.querySelector('.coffee-empty'));
+  }
+  btn.addEventListener('click', function () { setOpen(pop.hidden); });
+  document.addEventListener('click', function (e) { if (!box.contains(e.target)) setOpen(false); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !pop.hidden) { setOpen(false); btn.focus(); }
+  });
+})();
+
 // 위 막대의 계정 메뉴(에셋 사이트 chickxel.com/static/site.js의 머리글과 같은 모양).
 // 열고 닫기, 언어 바꾸기(고른 언어를 기억하고 같은 쪽의 그 언어 페이지로),
 // chickxel.com에서 열렸으면 로그인 상태(프로필·내 계정·관리·로그아웃)를 보인다. github.io에서는 세션을 볼 수 없어 로그인 단추만.

@@ -43,6 +43,15 @@
 <a href="https://chickxel.com/packages">{{nav.assets}}</a>
 <a href="guide.html">{{nav.guide}}</a>
 </nav>
+<div class="coffee-menu" id="coffee-menu">
+<button class="coffee-btn" type="button" aria-expanded="false" aria-controls="coffee-dropdown" title="{{nav.coffee}}" aria-label="{{nav.coffee}}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/></svg></button>
+<div class="menu coffee-pop" id="coffee-dropdown" hidden>
+<strong>{{coffee.title}}</strong><p>{{coffee.thanks}}</p>
+<div class="chick-village"></div>
+<p class="coffee-empty" hidden>{{coffee.empty}}</p>
+<a class="btn support" href="https://buymeacoffee.com/chickxel" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/></svg>{{coffee.buy}}</a>
+</div>
+</div>
 <div class="account-menu" id="account-menu">
 <button class="account-btn" type="button" aria-expanded="false" aria-controls="account-dropdown"><span class="account-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span class="label">{{nav.account}}</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
 <div class="menu" id="account-dropdown" hidden>
@@ -183,8 +192,8 @@
 <footer>
 <div class="wrap">{{download.8}}</div>
 </footer>
-<script src="{{root}}nav.js?v=20261101"></script>
+<script src="{{root}}village.js?v=20261127"></script>
+<script src="{{root}}nav.js?v=20261127"></script>
 <script src="{{root}}download.js?v=20261107"></script>
-<script src="{{root}}supporters.js?v=20261127"></script>
 </body>
 </html>

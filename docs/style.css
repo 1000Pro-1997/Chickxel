@@ -73,6 +73,22 @@ pre code { background: none; border: 0; padding: 0; }
 .menu-item .tick { margin-left: auto; color: var(--accent); visibility: hidden; }
 .menu-item[aria-current="true"] .tick { visibility: visible; }
 .menu-item.discord .icon { color: #5865f2; fill: currentColor; stroke: none; }
+/* 커피 단추(계정 옆)와 펼침: 감사 글 · 후원 단추 · 이름을 남긴 후원자(nav.js가 채움, 에셋 사이트 site.css와 같은 모양) */
+.coffee-menu { position: relative; flex: none; margin-right: -8px; }
+.coffee-menu [hidden] { display: none !important; }
+.coffee-btn { display: inline-grid; place-items: center; width: 38px; height: 38px; padding: 0; border-radius: 50%; background: var(--soft); border: 1px solid var(--line-soft); color: #ff813f; cursor: pointer; }
+.coffee-btn:hover, .coffee-btn[aria-expanded="true"] { background: var(--hover); border-color: var(--line); }
+.coffee-btn .icon { width: 18px; height: 18px; vertical-align: 0; }
+.coffee-pop { width: 422px; max-width: calc(100vw - 24px); padding: 14px; }
+.coffee-pop strong { display: block; color: var(--ink-deep); font-size: 15px; }
+.coffee-pop p { margin: 6px 0 10px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.coffee-pop .btn { width: 100%; justify-content: center; margin-top: 10px; padding: 10px 16px; font-size: 14px; }
+.coffee-pop .coffee-empty { margin: 8px 0 0; text-align: center; }
+/* 병아리 후원 마을(village.js): 픽셀 캔버스를 2배로, 이름표는 그 위 HTML 글자 */
+.chick-village { position: relative; width: 392px; height: 256px; max-width: 100%; margin: 0 auto; border-radius: 12px; overflow: hidden; background: linear-gradient(#bfe6ff, #e9f6ff 70%); }
+.village-canvas { display: block; image-rendering: pixelated; }
+.village-name { position: absolute; transform: translate(-50%, -100%); padding: 1px 7px; border-radius: 999px; background: rgba(43, 29, 14, .72); color: #fff; font-size: 11px; font-weight: 700; line-height: 1.5; white-space: nowrap; pointer-events: none; }
+.village-thanks { background: #ffcc33; color: #5a3b06; }
 
 /* 단추 */
 .buttons { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -144,7 +160,7 @@ pre code { background: none; border: 0; padding: 0; }
 .download span { font-size: 13.5px; color: var(--muted); }
 .download .get { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; font-size: 13.5px; font-weight: 700; color: var(--blue); }
 .note-line { margin: 20px 0 0; color: var(--muted); font-size: 14px; }
-/* 다운로드 구역의 "커피를 사 주신 분들"(supporters.js가 채움 — 아무도 없으면 숨김) */
+/* 다운로드 구역의 "커피를 사 주신 분들"(nav.js가 채움 — 아무도 없으면 숨김) */
 .supporters { margin: 28px 0 0; padding: 18px 20px; background: var(--card); border: 1px solid var(--line-soft); border-radius: 16px; }
 .supporters h3 { margin: 0 0 6px; font-size: 16px; }
 .supporters p { margin: 0 0 12px; color: var(--muted); font-size: 14px; }
