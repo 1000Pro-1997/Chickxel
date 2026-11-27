@@ -1,8 +1,10 @@
 // 병아리 후원 마을(village.html — 위 막대의 마을 단추로 온다).
-// 위에서 내려다본 숲속 픽셀 마을: 북쪽 언덕(절벽) 아래로 강이 폭포로 떨어져 마을 서쪽을 지나 남서쪽 호수로 흐르고, 가운데 집 앞에서
-// 흙길이 갈라진다. 울타리 친 밭마다 커피를 사 주고 이름을 남긴 사람의 병아리(앱 마스코트) 한 마리가 살며, 밭에 물을 주고 마을 곳곳을
-// 걸어 다닌다. 마을 밖은 아직 개척하지 않은 숲(멀수록 안개). 땅은 한 번 그려 두고, 나무·집·울타리·병아리처럼 서 있는 것은
-// 발 자리(아래 끝)가 위인 것부터 그려 앞뒤가 맞게 겹친다. 끌어서 옮기고 휠·두 손가락·단추로 확대하며, 주민 이름을 누르면 따라간다.
+// 네세스(Necesse)·팅커랜드(Tinkerlands)처럼 위에서 비스듬히 내려다본(3/4) 숲속 픽셀 마을: 서 있는 것은 윗면과 함께 남쪽 앞면이 보이고,
+// 집은 지붕 없이 통나무 벽(벽 윗면 + 북쪽 벽의 안쪽 앞면 + 남쪽 벽의 바깥 앞면)과 나무 바닥·가구가 보인다. 북쪽 언덕(절벽)에서 강이
+// 폭포로 떨어져 마을 서쪽을 지나 남서쪽 호수로 흐르고, 집 앞에서 돌길이 갈라진다. 울타리 친 밭마다 커피를 사 주고 이름을 남긴 사람의
+// 병아리(앱 마스코트) 한 마리가 살며, 물을 주고 집에 들르고 마을 곳곳을 걸어 다닌다. 마을 밖은 아직 개척하지 않은 숲(멀수록 안개).
+// 땅(그림자 포함)은 한 번 그려 두고, 나무·벽·가구·울타리·작물·키 큰 풀·병아리처럼 서 있는 것은 발 자리(아래 끝)가 위인 것부터 그려
+// 앞뒤가 맞게 겹친다. 끌어서 옮기고 휠·두 손가락·단추로 확대하며, 주민 이름을 누르면 따라간다.
 // 후원자 목록은 nav.js의 ChickxelSupporters.load(한 시간 동안 브라우저에 둠).
 (function () {
   var T = 16;
@@ -22,6 +24,7 @@
     return top + (bottom - top) * sy;
   }
   function canvas(w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+  function draw(w, h, fn) { var cv = canvas(w, h); g = cv.getContext('2d'); fn(); return cv; }
   var rgbCache = {};
   function rgb(hex) {
     var v = rgbCache[hex];
@@ -33,19 +36,20 @@
       for (var c = 0; c < rows[r].length; c++) if (colors[rows[r][c]]) px(x + c, y + r, 1, 1, colors[rows[r][c]]);
   }
 
-  // 빛은 왼쪽 위에서. 색은 참고한 숲 마을 그림들에서 골라 맞춤
+  // 빛은 왼쪽 위에서, 그림자는 오른쪽 아래로. 색은 네세스·팅커랜드 화면에서 골라 맞춤(짙은 올리브 풀, 누런 키 큰 풀, 회색 돌길)
   var C = {
-    grass: '#5a9c3c', grass2: '#55953a', grassLight: '#79bb48', grassRim: '#98d35c', grassDark: '#447f33', grassShade: '#3d7430',
-    tuft: '#3f7a31', tuftTip: '#6fb244',
-    dirt: '#a8693d', dirtDark: '#8f5631', dirtLight: '#c0844f', dirtShadow: '#7a4627',
-    cliff: '#9c5d36', cliffDark: '#7d4628', cliffStreak: '#874f2d', cliffLight: '#b8743f', cliffFoot: '#6a3a22', cliffLine: '#4a2a18',
-    water: '#4a86c4', water2: '#4580bd', waterDark: '#3a6ea8', waterLight: '#7bb6e6', foam: '#e3f4ff', fall: '#6aa6dc', fallLight: '#a6d6f6',
-    wood: '#a86a3a', woodDark: '#7a4a28', woodLight: '#c98a52', woodLine: '#4a2c18',
-    ink: '#24361f'
+    grass: '#4a7d2b', grass2: '#467727', grassDark: '#3b6a22', grassShade: '#325c1c', grassLight: '#5e9234', grassRim: '#79ab3e',
+    blade: '#8fae37', bladeTip: '#b9cc4e', bladeDark: '#5f8a2a',
+    dirt: '#8a5a32', dirtDark: '#734a28', dirtLight: '#a06c3e', dirtShadow: '#5e3b1f',
+    stone: '#8a8590', stone2: '#7f7a86', stoneLight: '#a5a0ab', stoneGap: '#5a5660', stoneEdge: '#6a6572',
+    cliff: '#8a5532', cliffDark: '#6e4126', cliffStreak: '#7a492b', cliffLight: '#a5683b', cliffFoot: '#5a321c', cliffLine: '#3a2112',
+    water: '#3f78b8', water2: '#3b71ae', waterDark: '#2f5f99', waterLight: '#6ea7dc', foam: '#e3f4ff', fall: '#5f9bd4', fallLight: '#a0d0f2',
+    wood: '#9a6634', woodDark: '#6e4422', woodLight: '#c08a4a', woodLine: '#2e1d0e',
+    ink: '#1c2a14', shadow: 'rgba(12,28,8,0.32)'
   };
 
   // ---------------------------------------------------------------- 지도(타일 종류)
-  // G 풀 · P 흙길 · W 물 · C 절벽 · F 폭포 · S 돌계단 · B 다리(물 위)
+  // G 풀 · P 길(마을 안은 돌길, 밖은 흙길) · W 물 · C 절벽 · F 폭포 · S 돌계단 · B 다리(물 위)
   var CLIFF = VR, PATH_ROW = VR + 6, PATH_COL = VC + 8, STAIR_COL = VC + 19;
   function riverCols(r) {
     // 북쪽 언덕에서는 조금 굽이치고, 마을에서는 곧게(VC+2, VC+3), 마을 아래에서는 호수 쪽(남서)으로 휜다
@@ -61,7 +65,7 @@
   function isRiver(c, r) { var rc = riverCols(r); return r <= VR + 15 && (c === rc[0] || c === rc[1]); }
   function isPathTile(c, r) {
     if (r === PATH_ROW && c >= VC - 8 && c <= VC + 27) return true;
-    if (c === PATH_COL && r >= VR + 5 && r <= VR + 18) return true;
+    if (c === PATH_COL && r >= VR + 6 && r <= VR + 18) return true;
     if (c === STAIR_COL && r >= VR - 6 && r <= PATH_ROW) return true;
     return false;
   }
@@ -83,7 +87,8 @@
     var dx = Math.max(VC - c, 0, c - (VC + COLS - 1)), dy = Math.max(VR - r, 0, r - (VR + ROWS - 1));
     return Math.sqrt(dx * dx + dy * dy);
   }
-  // 풀이 흙·물로 삐죽 넘어오는 길이(2~4px, 2px마다 다름)
+  function inVillage(c, r) { return c >= VC && c < VC + COLS && r >= VR && r < VR + ROWS; }
+  // 풀이 길·물로 삐죽 넘어오는 길이(2~4px, 2px마다 다름)
   function jag(u, seed) { return 2 + Math.floor(hash(u >> 1, seed) * 3); }
 
   // ---------------------------------------------------------------- 땅(픽셀 단위로 한 번)
@@ -91,13 +96,12 @@
     var c = x >> 4, r = y >> 4, lx = x & 15, ly = y & 15, t = tile(c, r);
     var up = tile(c, r - 1), down = tile(c, r + 1), left = tile(c - 1, r), right = tile(c + 1, r);
     if (t === 'P') {
-      // 마을 밖 길은 멀수록 풀에 덮인다(4px 덩어리)
       var d = distance(c, r);
-      if (d > 0.5 && hash(x >> 2, y >> 2) > 1 - d * 0.16) return grassPixel(x, y, c, r, lx, ly, up);
+      // 마을 밖 길은 멀수록 풀에 덮인다(4px 덩어리)
+      if (d > 0.5 && hash(x >> 2, y >> 2) > 1 - d * 0.16) return grassPixel(x, y, lx, ly, up);
       var e = edgeGrass(x, y, lx, ly, up, down, left, right, function (n) { return !walk(n) && n !== 'B'; });
       if (e) return e;
-      var n = hash(x >> 1, y >> 1);
-      return n > 0.93 ? C.dirtLight : n < 0.07 ? C.dirtDark : hash(x >> 3, y >> 2) > 0.8 ? '#a26539' : C.dirt;
+      return inVillage(c, r) ? cobble(x, y) : dirtPixel(x, y);
     }
     if (t === 'W' || t === 'B') {
       var e2 = edgeWater(x, y, lx, ly, up, down, left, right);
@@ -106,7 +110,7 @@
     }
     if (t === 'C') {
       var j = jag(x, 91);
-      if (ly < j - 1) return C.grassLight;
+      if (ly < j - 1) return C.grass;
       if (ly === j - 1) return C.grassRim;
       if (ly === j) return C.cliffLine;
       if (ly <= j + 2) return C.cliffDark;
@@ -122,31 +126,52 @@
     if (t === 'S') {
       if (lx < 2 || lx > 13) return lx === 0 || lx === 15 ? C.cliffLine : C.cliffFoot;
       var s = ly % 4;
-      return s === 0 ? '#c99460' : s === 3 ? C.dirtShadow : '#ad7447';
+      return s === 0 ? C.stoneLight : s === 3 ? C.stoneEdge : C.stone;
     }
-    return grassPixel(x, y, c, r, lx, ly, up);
+    return grassPixel(x, y, lx, ly, up);
   }
-  function grassPixel(x, y, c, r, lx, ly, up) {
+  function grassPixel(x, y, lx, ly, up) {
     // 절벽 바로 아래는 그늘
     if ((up === 'C' || up === 'S') && ly < 4) return ly < 2 ? C.grassShade : C.grassDark;
     var n = hash(x >> 1, y >> 1);
-    if (n > 0.95) return C.grassLight;
-    if (n < 0.04) return C.grassDark;
-    return smooth(x / 16, y / 16, 2.5, 7) > 0.58 ? C.grass2 : C.grass;
+    if (n > 0.96) return C.grassLight;
+    if (n < 0.05) return C.grassDark;
+    var p = smooth(x / 16, y / 16, 2.5, 7);
+    return p > 0.62 ? C.grass2 : p < 0.3 ? '#4d822d' : C.grass;
   }
-  // 흙길 칸: 풀 이웃 쪽 가장자리에 삐죽한 풀 테두리(위쪽 풀이면 그 아래 흙에 그늘)
+  function dirtPixel(x, y) {
+    var n = hash(x >> 1, y >> 1);
+    return n > 0.93 ? C.dirtLight : n < 0.08 ? C.dirtDark : C.dirt;
+  }
+  // 돌길: 엇갈려 깐 넓적한 돌(8×5), 돌 사이 틈, 돌마다 윗줄이 밝고 아랫줄이 어둡다
+  function cobble(x, y) {
+    var row = Math.floor(y / 5), off = (row % 2) * 4 + Math.floor(hash(row, 3) * 3), col = Math.floor((x + off) / 8);
+    var sx = (x + off) % 8, sy = y % 5;
+    if (sx === 0 || sy === 0) return C.stoneGap;
+    var h = hash(col, row);
+    if (sy === 1 && sx > 1 && sx < 7) return C.stoneLight;
+    if (sy === 4) return C.stoneEdge;
+    return h > 0.6 ? C.stone2 : h < 0.15 ? '#96919c' : C.stone;
+  }
+  // 길 칸: 풀 이웃 쪽 가장자리에 삐죽한 풀 테두리(위쪽 풀이면 그 아래 길에 그늘)
   function edgeGrass(x, y, lx, ly, up, down, left, right, grassy) {
     var j;
-    if (grassy(up)) { j = jag(x, y >> 4); if (ly < j - 1) return C.grass; if (ly === j - 1) return C.grassLight; if (ly === j) return C.dirtShadow; if (ly === j + 1) return C.dirtDark; }
-    if (grassy(down)) { j = jag(x, (y >> 4) + 50); var d = 15 - ly; if (d < j - 1) return C.grass; if (d === j - 1) return C.grassRim; }
-    if (grassy(left)) { j = jag(y, (x >> 4) + 90); if (lx < j - 1) return C.grass; if (lx === j - 1) return C.grassLight; if (lx === j) return C.dirtShadow; }
-    if (grassy(right)) { j = jag(y, (x >> 4) + 130); var d2 = 15 - lx; if (d2 < j - 1) return C.grass; if (d2 === j - 1) return C.grassLight; if (d2 === j) return C.dirtShadow; }
+    if (grassy(up)) { j = jag(x, y >> 4); if (ly < j - 1) return C.grass; if (ly === j - 1) return C.grassRim; if (ly === j) return C.grassShade; if (ly === j + 1) return C.stoneGap; }
+    if (grassy(down)) { j = jag(x, (y >> 4) + 50); var d = 15 - ly; if (d < j - 1) return C.grass; if (d === j - 1) return C.grassRim; if (d === j) return C.grassShade; }
+    if (grassy(left)) { j = jag(y, (x >> 4) + 90); if (lx < j - 1) return C.grass; if (lx === j - 1) return C.grassRim; if (lx === j) return C.grassShade; }
+    if (grassy(right)) { j = jag(y, (x >> 4) + 130); var d2 = 15 - lx; if (d2 < j - 1) return C.grass; if (d2 === j - 1) return C.grassRim; if (d2 === j) return C.grassShade; }
     return null;
   }
-  // 물 칸: 땅 이웃 쪽에 풀 테두리와 짙은 물 그늘(위쪽 땅이면 그늘이 넓다)
+  // 물 칸: 땅 이웃 쪽에 풀 테두리와 흙 둑(앞면), 짙은 물 그늘(위쪽 땅이면 둑이 보이고 그늘이 넓다)
   function edgeWater(x, y, lx, ly, up, down, left, right) {
     var j;
-    if (!wet(up)) { j = jag(x, (y >> 4) + 7); if (ly < j - 1) return C.grassLight; if (ly === j - 1) return C.ink; if (ly < j + 4) return C.waterDark; }
+    if (!wet(up)) {
+      j = jag(x, (y >> 4) + 7);
+      if (ly < j - 1) return C.grass; if (ly === j - 1) return C.grassRim;
+      if (ly < j + 3) return ly === j ? C.cliffLine : C.cliffDark;
+      if (ly === j + 3) return C.cliffLine;
+      if (ly < j + 7) return C.waterDark;
+    }
     if (up === 'F' && ly < 4) return hash(x >> 1, y) > 0.4 ? C.foam : C.waterLight;
     if (!wet(left)) { j = jag(y, (x >> 4) + 11); if (lx < j - 2) return C.grass; if (lx === j - 2) return C.ink; if (lx < j + 1) return C.waterDark; }
     if (!wet(right)) { j = jag(y, (x >> 4) + 13); var d = 15 - lx; if (d < j - 2) return C.grass; if (d === j - 2) return C.ink; if (d < j + 1) return C.waterDark; }
@@ -157,8 +182,12 @@
   // ---------------------------------------------------------------- 서 있는 것(발 자리 = 아래 끝 기준으로 앞뒤 정렬)
   var objects = [];
   // 그림 한 장(작은 캔버스)을 세상 (x, y)(왼쪽 위)에 두고, 발 자리 base(세상 y)로 정렬
-  function place(img, x, y, base) { objects.push({ img: img, x: Math.round(x), y: Math.round(y), base: base, w: img.width, h: img.height }); }
-  // 그린 모양 둘레에 1px 테두리(나무·덤불)
+  function place(img, x, y, base, list) { (list || objects).push({ img: img, x: Math.round(x), y: Math.round(y), base: base, w: img.width, h: img.height }); }
+  // 땅에 깔리는 그림자(오른쪽 아래로 조금 밀림) — 땅 그림에 바로 칠한다
+  var shadows = [];
+  function shadowEllipse(cx, cy, rx, ry) { shadows.push(function (ctx) { ctx.beginPath(); ctx.ellipse(cx + 3, cy + 1, rx, ry, 0, 0, Math.PI * 2); ctx.fill(); }); }
+  function shadowRect(x, y, w, h) { shadows.push(function (ctx) { ctx.fillRect(x, y, w, h); }); }
+  // 그린 모양 둘레에 1px 테두리
   function outline(cv, color) {
     var ctx = cv.getContext('2d'), w = cv.width, h = cv.height, data = ctx.getImageData(0, 0, w, h), a = data.data;
     var edge = [], o = rgb(color);
@@ -175,116 +204,192 @@
     }
     ctx.putImageData(data, 0, 0);
   }
-  // 둥근 덩어리 하나(빛: 왼쪽 위) — 나무 수관과 덤불은 이것을 위에서 아래로 겹쳐 쌓는다
-  function lump(cx, cy, rad, pal, seed) {
-    for (var y = -rad; y <= rad; y++)
-      for (var x = -rad; x <= rad; x++) {
-        var d = Math.sqrt(x * x + y * y);
-        if (d > rad + 0.3) continue;
-        var s = (-x * 0.55 - y * 0.85) / rad + (hash(cx + x + seed, cy + y) - 0.5) * 0.25;
-        var col = s > 0.62 && d < rad * 0.75 ? pal[3] : s > 0.2 ? pal[2] : s > -0.45 ? pal[1] : pal[0];
-        if (d > rad - 1 && s < -0.1) col = pal[0];
-        px(cx + x, cy + y, 1, 1, col);
-      }
-  }
-  var ROUND = ['#2f6a2b', '#4a8f36', '#64ab42', '#8acb57'];
-  var ROUND_DARK = ['#2a5d29', '#3f7f33', '#57993d', '#79bb4c'];
-  var treeCache = {};
-  // 둥근 활엽수(수관 반지름 rad): 뭉게뭉게한 수관, 아래로 뿌리와 짧은 줄기, 바닥 그림자
-  function roundTree(rad, seed) {
-    var key = 'r' + rad + '-' + (seed % 5);
-    if (treeCache[key]) return treeCache[key];
-    var w = rad * 2 + 8, h = rad * 2 + 14, cv = canvas(w, h), cx = w / 2;
-    g = cv.getContext('2d');
-    var pal = seed % 3 === 0 ? ROUND_DARK : ROUND;
-    // 그림자 · 뿌리 · 줄기
-    px(cx - rad + 2, h - 5, rad * 2 - 4, 3, 'rgba(20,45,20,0.35)');
-    px(cx - rad + 4, h - 4, rad * 2 - 8, 2, 'rgba(20,45,20,0.25)');
-    px(cx - 4, h - 10, 8, 7, C.woodLine); px(cx - 3, h - 10, 6, 6, '#6b4026'); px(cx - 3, h - 10, 2, 6, '#85512e');
-    px(cx - 6, h - 5, 3, 2, C.woodLine); px(cx + 3, h - 5, 3, 2, C.woodLine); px(cx - 5, h - 5, 2, 1, '#6b4026'); px(cx + 3, h - 5, 2, 1, '#6b4026');
-    // 수관: 아래 둘레 덩어리 → 가운데 → 위 순서로(위가 앞에 보이게)
-    var top = rad + 2, cy = top + 1, lumps = [];
-    var n = 7 + seed % 3;
-    for (var k = 0; k < n; k++) {
-      var a = (k / n) * Math.PI * 2 + seed;
-      lumps.push([cx + Math.cos(a) * rad * 0.55, cy + Math.sin(a) * rad * 0.5 + 2, rad * 0.48]);
+
+  // 잎 뭉치 수관: 모양(타원 + 둘레 혹) 안을 작은 잎 뭉치(반지름 ~3)로 위에서 아래로 채운다. 뭉치마다 왼쪽 위가 밝고 오른쪽 아래가 어둡고,
+  // 수관 전체로는 위·왼쪽이 밝고 아래·오른쪽이 어둡다(네세스 나무처럼 오돌토돌한 잎 덩어리)
+  function canopy(w, h, cx, cy, rx, ry, pal, seed, bumps) {
+    var mask = new Uint8Array(w * h), bs = [];
+    for (var k = 0; k < bumps; k++) {
+      var a = (k / bumps) * Math.PI * 2 + seed * 0.7;
+      bs.push([cx + Math.cos(a) * rx * 0.86, cy + Math.sin(a) * ry * 0.86, Math.min(rx, ry) * (0.3 + hash(seed, k) * 0.1)]);
     }
-    lumps.push([cx - rad * 0.2, cy - rad * 0.15, rad * 0.55]);
-    lumps.push([cx + rad * 0.25, cy - rad * 0.3, rad * 0.45]);
-    lumps.push([cx - rad * 0.1, cy - rad * 0.55, rad * 0.42]);
-    lumps.sort(function (p, q) { return q[1] - p[1]; });
-    lumps.forEach(function (l, i) { lump(Math.round(l[0]), Math.round(l[1]), Math.round(l[2]), pal, seed * 31 + i); });
-    outline(cv, '#1f3a1d');
-    var out = { img: cv, foot: h - 4 };
-    treeCache[key] = out;
-    return out;
+    for (var y = 0; y < h; y++)
+      for (var x = 0; x < w; x++) {
+        var dx = (x + 0.5 - cx) / rx, dy = (y + 0.5 - cy) / ry, inside = dx * dx + dy * dy <= 1;
+        for (var b = 0; !inside && b < bs.length; b++) inside = Math.hypot(x + 0.5 - bs[b][0], y + 0.5 - bs[b][1]) <= bs[b][2];
+        if (inside) mask[y * w + x] = 1;
+      }
+    function level(x, y) {
+      var tv = (y - (cy - ry)) / (2 * ry), sv = (x - cx) / rx;
+      var s = 0.62 - tv * 0.9 - sv * 0.25 + (hash(x + seed, y) - 0.5) * 0.12;
+      return s > 0.42 ? 3 : s > 0.12 ? 2 : s > -0.2 ? 1 : 0;
+    }
+    for (var y2 = 0; y2 < h; y2++)
+      for (var x2 = 0; x2 < w; x2++) if (mask[y2 * w + x2]) px(x2, y2, 1, 1, pal[Math.max(0, level(x2, y2) - 1)]);
+    var cl = [];
+    for (var qy = cy - ry - 2; qy < cy + ry + 3; qy += 4)
+      for (var qx = cx - rx - 2; qx < cx + rx + 3; qx += 4) {
+        var jx = qx + (hash(qx + seed, qy) - 0.5) * 3, jy = qy + (hash(qy, qx + seed) - 0.5) * 3;
+        var ix = Math.round(jx), iy = Math.round(jy);
+        if (ix >= 0 && iy >= 0 && ix < w && iy < h && mask[iy * w + ix]) cl.push([jx, jy]);
+      }
+    cl.sort(function (p, q) { return p[1] - q[1]; });
+    cl.forEach(function (q) {
+      var L = level(q[0], q[1]), rad = 2.7;
+      for (var yy = Math.floor(q[1] - rad); yy <= q[1] + rad; yy++)
+        for (var xx = Math.floor(q[0] - rad); xx <= q[0] + rad; xx++) {
+          if (xx < 0 || yy < 0 || xx >= w || yy >= h || !mask[yy * w + xx]) continue;
+          var ddx = xx + 0.5 - q[0], ddy = yy + 0.5 - q[1];
+          if (ddx * ddx + ddy * ddy > rad * rad) continue;
+          var loc = (-ddx * 0.6 - ddy * 0.8) / rad;
+          var lv = loc > 0.5 ? L + 1 : loc < -0.45 ? L - 1 : L;
+          px(xx, yy, 1, 1, pal[Math.max(0, Math.min(4, lv))]);
+        }
+    });
+    // 아래쪽 가장자리는 한 겹 더 어둡게(수관 아래 그늘)
+    for (var y3 = 1; y3 < h; y3++)
+      for (var x3 = 0; x3 < w; x3++)
+        if (mask[(y3 - 1) * w + x3] && !mask[y3 * w + x3]) px(x3, y3 - 1, 1, 1, pal[0]);
   }
-  // 전나무: 톱니 같은 층 셋, 왼쪽이 밝다
-  var PINE = ['#1f5a35', '#2f7f45', '#46a052', '#73c862'];
-  function pineTree(size, seed) {
+  var OAK = ['#1f4419', '#2c5d20', '#3f7d28', '#5a9c33', '#7fbf45'];
+  var OAK_DARK = ['#1b3c17', '#27531d', '#356f25', '#4c8a2e', '#6aa83b'];
+  var POPLAR = ['#2a5a1c', '#3d7d24', '#57a02e', '#79c03a', '#a6dc52'];
+  var AUTUMN = ['#7a3a12', '#a85418', '#d17a22', '#eca23a', '#ffd05e'];
+  var treeCache = {};
+  // 활엽수: 굵은 줄기와 땅으로 뻗은 뿌리 위에 큰 잎 뭉치 수관
+  function oak(rad, seed) {
+    var key = 'o' + rad + '-' + (seed % 5);
+    if (treeCache[key]) return treeCache[key];
+    var rx = rad, ry = Math.round(rad * 0.86), w = rx * 2 + 8, top = 3, cy = top + ry, foot = cy + ry + 9, h = foot + 2, cx = w / 2;
+    var pal = seed % 4 === 3 ? OAK_DARK : OAK;
+    var cv = draw(w, h, function () {
+      // 뿌리 · 줄기(수관 아래로 보이는 부분)
+      var tx = Math.round(cx);
+      px(tx - 4, cy + ry - 6, 8, foot - (cy + ry - 6), C.woodLine);
+      px(tx - 3, cy + ry - 6, 6, foot - (cy + ry - 6) - 1, '#5a3a20'); px(tx - 3, cy + ry - 6, 2, foot - (cy + ry - 6) - 1, '#7a5230');
+      px(tx - 8, foot - 3, 5, 2, C.woodLine); px(tx - 7, foot - 3, 3, 1, '#5a3a20');
+      px(tx + 3, foot - 3, 5, 2, C.woodLine); px(tx + 4, foot - 3, 3, 1, '#4a2e18');
+      px(tx - 1, foot - 1, 3, 1, C.woodLine);
+      canopy(w, cy + ry + 3, cx, cy, rx, ry, pal, seed, 9);
+    });
+    outline(cv, '#10240c');
+    return (treeCache[key] = { img: cv, foot: foot, w: w });
+  }
+  // 포플러(팅커랜드의 길쭉한 나무): 키 큰 타원 수관, 가는 줄기
+  function poplar(size, seed, pal) {
+    var key = 'q' + size + '-' + (seed % 4) + (pal === AUTUMN ? 'a' : '');
+    if (treeCache[key]) return treeCache[key];
+    var rx = size, ry = Math.round(size * 1.9), w = rx * 2 + 6, cy = ry + 2, foot = cy + ry + 6, h = foot + 2, cx = w / 2;
+    var cv = draw(w, h, function () {
+      var tx = Math.round(cx);
+      px(tx - 2, cy + ry - 4, 4, foot - (cy + ry - 4), C.woodLine); px(tx - 1, cy + ry - 4, 2, foot - (cy + ry - 4) - 1, '#6a4426');
+      canopy(w, cy + ry + 2, cx, cy, rx, ry, pal || POPLAR, seed, 7);
+    });
+    outline(cv, '#10240c');
+    return (treeCache[key] = { img: cv, foot: foot, w: w });
+  }
+  // 전나무: 톱니 같은 층 넷, 층마다 잎 결
+  var PINE = ['#12301e', '#1d4a2c', '#2b6a3c', '#3f8a4a', '#62ad5c'];
+  function pine(size, seed) {
     var key = 'p' + size + '-' + (seed % 4);
     if (treeCache[key]) return treeCache[key];
-    var w = size * 2 + 6, h = size * 3 + 12, cv = canvas(w, h), cx = Math.floor(w / 2);
-    g = cv.getContext('2d');
-    px(cx - size + 3, h - 5, size * 2 - 6, 3, 'rgba(20,45,20,0.35)');
-    px(cx - 3, h - 11, 6, 8, C.woodLine); px(cx - 2, h - 11, 4, 7, '#6b4026');
-    var tiers = 3, tierH = Math.round(size * 1.05);
-    for (var k = 0; k < tiers; k++) {
-      var bottom = h - 9 - k * Math.round(size * 0.78), half = Math.round(size * (1 - k * 0.24));
-      for (var y = 0; y < tierH; y++) {
-        var hw = Math.round(half * (y + 1) / tierH);
-        var yy = bottom - tierH + y;
-        for (var x = -hw; x <= hw; x++) {
-          var saw = y === tierH - 1 && ((x + k) & 3) === 0;
-          if (saw) continue;
-          var s = -x / (half + 1) + (hash(x + seed, yy) - 0.5) * 0.3;
-          var col = x === 0 && y > 2 ? PINE[1] : s > 0.45 ? PINE[3] : s > 0 ? PINE[2] : s > -0.5 ? PINE[1] : PINE[0];
-          px(cx + x, yy, 1, 1, col);
+    var w = size * 2 + 6, tierH = Math.round(size * 0.95), tiers = 4, step = Math.round(size * 0.62);
+    var foot = tierH + step * (tiers - 1) + 8, h = foot + 2, cx = Math.floor(w / 2);
+    var cv = draw(w, h, function () {
+      px(cx - 2, foot - 7, 4, 7, C.woodLine); px(cx - 1, foot - 7, 2, 6, '#5a3a20');
+      for (var k = 0; k < tiers; k++) {
+        var bottom = foot - 5 - k * step, half = Math.round(size * (1 - k * 0.2));
+        for (var y = 0; y < tierH; y++) {
+          var hw = Math.round(half * (y + 1) / tierH), yy = bottom - tierH + y;
+          for (var x = -hw; x <= hw; x++) {
+            if (y === tierH - 1 && ((x + k) & 3) === 0) continue;
+            var s = -x / (half + 1) * 0.8 - (y / tierH) * 0.5 + 0.35 + (hash(x + seed, yy) - 0.5) * 0.3;
+            var lv = s > 0.55 ? 4 : s > 0.2 ? 3 : s > -0.15 ? 2 : s > -0.45 ? 1 : 0;
+            if ((x + yy) % 3 === 0 && lv > 1 && y > 1) lv--;
+            px(cx + x, yy, 1, 1, PINE[lv]);
+          }
         }
       }
-    }
-    outline(cv, '#173a22');
-    var out = { img: cv, foot: h - 4 };
-    treeCache[key] = out;
-    return out;
-  }
-  function addRoundTree(x, foot, rad, seed) { var t = roundTree(rad, seed); place(t.img, x - t.img.width / 2, foot - t.foot, foot); }
-  function addPine(x, foot, size, seed) { var t = pineTree(size, seed); place(t.img, x - t.img.width / 2, foot - t.foot, foot); }
-  // 덤불(네 잎 클로버처럼 낮게 뭉친 것)
-  function bush(seed) {
-    var key = 'b' + (seed % 3);
-    if (treeCache[key]) return treeCache[key];
-    var cv = canvas(16, 14);
-    g = cv.getContext('2d');
-    px(2, 11, 12, 2, 'rgba(20,45,20,0.3)');
-    lump(5, 8, 4, ROUND, seed); lump(11, 8, 4, ROUND, seed + 1); lump(8, 5, 4, ROUND, seed + 2);
-    outline(cv, '#1f3a1d');
-    return (treeCache[key] = { img: cv, foot: 12 });
-  }
-  function addBush(x, foot, seed) { var b = bush(seed); place(b.img, x - 8, foot - b.foot, foot); }
-  function draw(w, h, fn) { var cv = canvas(w, h); g = cv.getContext('2d'); fn(); return cv; }
-  var ROCK = { k: '#33373f', l: '#b9bec7', g: '#8d929c', d: '#666b75', m: '#6fa046' };
-  function addRock(x, foot, big) {
-    var rows = big
-      ? ['....kkkkkk....', '..kkllllggkk..', '.kllllgggggdk.', 'kllgggggggdddk', 'klgggggggddddk', 'kgggggggdddddk', '.kgggddddddddk', '..kkkkkkkkkkk.']
-      : ['..kkkk..', '.kllggk.', 'klgggddk', 'kggdddk.', '.kkkkk..'];
-    var cv = draw(rows[0].length + 2, rows.length + 2, function () {
-      px(1, rows.length - 1, rows[0].length, 2, 'rgba(20,45,20,0.3)');
-      sprite(1, 0, rows, ROCK);
     });
-    place(cv, x - cv.width / 2, foot - rows.length, foot);
+    outline(cv, '#0a1f12');
+    return (treeCache[key] = { img: cv, foot: foot, w: w });
+  }
+  function addTree(t, x, foot) {
+    place(t.img, x - t.img.width / 2, foot - t.foot, foot);
+    shadowEllipse(x, foot - 1, t.w * 0.42, 4);
+  }
+  function addOak(x, foot, rad, seed) { addTree(oak(rad, seed), x, foot); }
+  function addPine(x, foot, size, seed) { addTree(pine(size, seed), x, foot); }
+  function addPoplar(x, foot, size, seed, pal) { addTree(poplar(size, seed, pal), x, foot); }
+  // 덤불(열매 달린 것도): 낮게 뭉친 잎
+  function addBush(x, foot, seed, berries) {
+    var key = 'b' + (seed % 3) + (berries ? berries : '');
+    var b = treeCache[key];
+    if (!b) {
+      var cv = draw(18, 14, function () {
+        canopy(18, 14, 9, 7, 8, 6, OAK, seed, 6);
+        if (berries) [[5, 6], [10, 4], [12, 8], [7, 9]].forEach(function (p) { px(p[0], p[1], 2, 2, berries); px(p[0], p[1], 1, 1, '#ffffff'); });
+      });
+      outline(cv, '#10240c');
+      b = treeCache[key] = { img: cv };
+    }
+    place(b.img, x - 9, foot - 13, foot);
+    shadowEllipse(x, foot - 1, 8, 3);
+  }
+  // 키 큰 풀(네세스의 누런 풀 무더기): 잎 서너 가닥이 위로 솟고 끝이 휜다
+  var tallGrass = [];
+  for (var tg = 0; tg < 6; tg++) {
+    tallGrass.push(draw(9, 12, function () {
+      for (var k = 0; k < 4; k++) {
+        var bx = 1 + k * 2, hgt = 6 + Math.floor(hash(tg, k) * 5), bend = hash(k, tg) > 0.5 ? 1 : -1;
+        for (var y = 0; y < hgt; y++) {
+          var xx = bx + (y > hgt - 3 ? bend : 0);
+          px(xx, 11 - y, 1, 1, y > hgt - 3 ? C.bladeTip : k % 2 ? C.bladeDark : C.blade);
+        }
+      }
+    }));
+  }
+  function addTallGrass(x, foot, seed) { place(tallGrass[seed % tallGrass.length], x - 4, foot - 11, foot); }
+  // 돌(3/4): 윗면이 밝고 남쪽 앞면이 어둡다
+  function addRock(x, foot, big) {
+    var w = big ? 18 : 11, h = big ? 13 : 8;
+    var cv = draw(w, h, function () {
+      for (var y = 0; y < h; y++)
+        for (var xx = 0; xx < w; xx++) {
+          var dx = (xx + 0.5 - w / 2) / (w / 2), dy = (y + 0.5 - h * 0.55) / (h * 0.55);
+          if (dx * dx + dy * dy > 1) continue;
+          var front = y > h * 0.55, s = -dx * 0.5 - dy * 0.6 + (hash(xx + x, y) - 0.5) * 0.2;
+          px(xx, y, 1, 1, front ? (s > -0.3 ? '#6f7480' : '#575c67') : s > 0.45 ? '#c3c8d0' : s > 0 ? '#a2a7b1' : '#8a8f99');
+        }
+      if (big) { px(w * 0.55, 2, 1, 4, '#6f7480'); px(3, 2, 4, 2, '#5f9a3a'); px(4, 1, 2, 1, '#79b54a'); }
+    });
+    outline(cv, '#2a2d34');
+    place(cv, x - w / 2, foot - h, foot);
+    shadowEllipse(x, foot - 1, w * 0.5, 2.5);
   }
   function addStump(x, foot) {
     var cv = draw(14, 12, function () {
-      px(1, 9, 12, 2, 'rgba(20,45,20,0.3)');
-      px(1, 3, 12, 7, C.woodLine); px(2, 4, 10, 5, '#7a4a28'); px(2, 4, 3, 5, '#8f5a33');
-      px(1, 1, 12, 4, C.woodLine); px(2, 1, 10, 3, '#c8955c'); px(4, 2, 6, 1, '#a8703f');
+      px(1, 4, 12, 7, '#5a3a20'); px(1, 4, 3, 7, '#7a5230'); px(10, 4, 3, 7, '#4a2e18');
+      px(0, 9, 3, 2, '#5a3a20'); px(11, 9, 3, 2, '#4a2e18');
+      px(1, 1, 12, 4, '#c8955c'); px(3, 2, 8, 2, '#a8703f'); px(5, 2, 4, 1, '#c8955c');
     });
-    place(cv, x - 7, foot - 10, foot);
+    outline(cv, C.woodLine);
+    place(cv, x - 7, foot - 11, foot);
+    shadowEllipse(x, foot - 1, 7, 2.5);
+  }
+  // 해바라기(네세스 마을 꽃): 긴 줄기와 잎, 노란 꽃잎과 갈색 씨
+  function addSunflower(x, foot) {
+    var cv = draw(11, 20, function () {
+      px(5, 8, 1, 12, '#3f7a28'); px(2, 12, 3, 2, '#4f8f2c'); px(6, 14, 3, 2, '#4f8f2c');
+      [[4, 0], [3, 1], [2, 3], [3, 5], [4, 6], [6, 6], [7, 5], [8, 3], [7, 1], [6, 0]].forEach(function (p) { px(p[0], p[1], 2, 2, '#f2c12e'); });
+      px(4, 2, 3, 4, '#6a3a12'); px(4, 2, 1, 1, '#8a5420');
+    });
+    outline(cv, '#2a1c08');
+    place(cv, x - 5, foot - 20, foot);
   }
   function addLupin(x, foot, color) {
     var cv = draw(5, 11, function () {
-      px(2, 4, 1, 7, '#3f7a31');
+      px(2, 4, 1, 7, '#3f7a28');
       for (var k = 0; k < 4; k++) { px(1, k * 2, 3, 2, color); px(2, k * 2, 1, 1, '#f1d4ff'); }
     });
     place(cv, x - 2, foot - 11, foot);
@@ -301,182 +406,283 @@
     });
     place(cv, x - 3, foot - 12, foot);
   }
+  // 쇠 가로등(네세스): 검은 기둥 위 등불, 둘레에 따뜻한 빛
   function addLamp(x, foot) {
-    var cv = draw(26, 30, function () {
-      g.fillStyle = 'rgba(255,190,90,0.18)'; g.beginPath(); g.arc(13, 8, 12, 0, Math.PI * 2); g.fill();
-      px(9, 26, 8, 3, 'rgba(20,45,20,0.35)');
-      px(11, 10, 4, 18, '#2c3038'); px(12, 10, 2, 18, '#5a5f6a');
-      px(9, 26, 8, 3, '#2c3038'); px(10, 26, 6, 2, '#6a707c');
-      px(8, 2, 10, 10, '#2c3038'); px(9, 4, 8, 6, '#ffb84a'); px(10, 5, 4, 3, '#ffe9a8'); px(8, 0, 10, 3, '#3c414c'); px(10, 0, 6, 1, '#6a707c');
+    var cv = draw(26, 32, function () {
+      g.fillStyle = 'rgba(255,190,90,0.16)'; g.beginPath(); g.arc(13, 8, 12, 0, Math.PI * 2); g.fill();
+      px(11, 12, 4, 17, '#22252c'); px(12, 12, 1, 17, '#4a4f5a');
+      px(9, 28, 8, 3, '#22252c'); px(10, 28, 6, 1, '#5a606c');
+      px(9, 2, 8, 10, '#22252c'); px(10, 4, 6, 6, '#ffb84a'); px(11, 5, 3, 3, '#fff0b8');
+      px(8, 1, 10, 2, '#2c3038'); px(10, 0, 6, 1, '#4a4f5a'); px(12, 12, 2, 1, '#ffb84a');
     });
-    place(cv, x - 13, foot - 29, foot);
+    place(cv, x - 13, foot - 31, foot);
+    shadowEllipse(x, foot - 1, 4, 2);
   }
   function addSign(x, foot) {
     var cv = draw(26, 24, function () {
-      px(10, 20, 8, 3, 'rgba(20,45,20,0.35)');
       px(11, 4, 4, 18, C.woodLine); px(12, 4, 2, 18, '#8a5530');
-      // 오른쪽 화살 판 · 왼쪽 화살 판
-      px(4, 3, 18, 7, C.woodLine); px(5, 4, 15, 5, C.woodLight); px(20, 5, 2, 3, C.woodLight); px(22, 6, 1, 1, C.woodLine); px(6, 6, 12, 1, '#a8703f');
-      px(2, 11, 18, 7, C.woodLine); px(5, 12, 14, 5, C.wood); px(3, 13, 2, 3, C.wood); px(2, 14, 1, 1, C.woodLine); px(7, 14, 11, 1, '#8a5530');
+      px(4, 3, 18, 7, C.woodLine); px(5, 4, 15, 5, C.woodLight); px(20, 5, 2, 3, C.woodLight); px(22, 6, 1, 1, C.woodLine); px(6, 6, 12, 1, '#a8703f'); px(5, 8, 15, 1, C.woodDark);
+      px(2, 11, 18, 7, C.woodLine); px(5, 12, 14, 5, C.wood); px(3, 13, 2, 3, C.wood); px(2, 14, 1, 1, C.woodLine); px(7, 14, 11, 1, '#8a5530'); px(5, 16, 14, 1, C.woodDark);
     });
     place(cv, x - 13, foot - 22, foot);
+    shadowEllipse(x, foot - 1, 4, 2);
   }
-  function addMailbox(x, foot) {
-    var cv = draw(10, 16, function () {
-      px(4, 6, 2, 10, C.woodLine);
-      px(0, 0, 10, 7, '#23344a'); px(1, 1, 8, 5, '#4f86c7'); px(1, 1, 8, 1, '#7fb0e6'); px(8, -1, 1, 4, '#e8463a');
+  // 상자·통(3/4): 윗면 밝게, 앞면 어둡게
+  function crateImg(produce) {
+    return draw(16, 15, function () {
+      px(0, 2, 16, 13, C.woodLine);
+      px(1, 3, 14, 4, C.woodLight); px(1, 7, 14, 7, C.woodDark); px(1, 7, 14, 1, '#5a361a'); px(1, 10, 14, 1, '#5a361a'); px(4, 8, 1, 6, '#5a361a'); px(11, 8, 1, 6, '#5a361a');
+      if (produce) for (var k = 0; k < 5; k++) { px(2 + k * 2.6, 1 + (k % 2), 3, 3, produce); px(2 + k * 2.6, 1 + (k % 2), 1, 1, '#fff6d6'); }
     });
-    place(cv, x - 5, foot - 16, foot);
   }
-  function addCrate(x, foot, produce) {
-    var cv = draw(16, 15, function () {
-      px(1, 12, 14, 2, 'rgba(20,45,20,0.35)');
-      px(0, 3, 16, 11, C.woodLine); px(1, 4, 14, 9, C.wood); px(1, 8, 14, 1, C.woodDark); px(1, 4, 14, 1, C.woodLight);
-      if (produce) for (var k = 0; k < 5; k++) { px(2 + k * 3, 1 + (k % 2), 3, 3, produce); px(2 + k * 3, 1 + (k % 2), 1, 1, '#fff6d6'); }
-    });
-    place(cv, x - 8, foot - 14, foot);
-  }
+  function addCrate(x, foot, produce) { place(crateImg(produce), x - 8, foot - 15, foot); shadowRect(x - 6, foot - 2, 16, 3); }
   function addBarrel(x, foot) {
-    var cv = draw(12, 16, function () {
-      px(1, 13, 10, 2, 'rgba(20,45,20,0.35)');
-      px(0, 1, 12, 14, C.woodLine); px(1, 2, 10, 12, '#9a5f33'); px(1, 2, 3, 12, '#b0703d');
-      px(1, 4, 10, 1, '#4f5560'); px(1, 11, 10, 1, '#4f5560'); px(1, 0, 10, 3, C.woodLine); px(2, 1, 8, 1, '#c8955c');
+    var cv = draw(12, 17, function () {
+      px(0, 3, 12, 14, C.woodLine); px(1, 4, 10, 12, '#7a4c26'); px(1, 4, 3, 12, '#9a6234'); px(9, 4, 2, 12, '#5a361a');
+      px(1, 6, 10, 1, '#3e424c'); px(1, 13, 10, 1, '#3e424c');
+      px(0, 0, 12, 5, C.woodLine); px(1, 1, 10, 3, '#b07a44'); px(3, 2, 6, 1, '#8a5a30');
     });
-    place(cv, x - 6, foot - 15, foot);
+    place(cv, x - 6, foot - 17, foot);
+    shadowEllipse(x, foot - 1, 6, 2);
   }
   function addLog(x, foot, len) {
     var cv = draw(len + 2, 12, function () {
-      px(1, 9, len, 3, 'rgba(20,45,20,0.35)');
-      px(0, 1, len + 2, 9, C.woodLine); px(1, 2, len, 7, '#9a5a30'); px(1, 2, len, 2, '#b06a3a'); px(1, 7, len, 1, '#7a4426');
-      for (var k = 6; k < len - 4; k += 9) px(1 + k, 4, 4, 1, '#7a4426');
-      px(len - 4, 2, 5, 7, '#c8955c'); px(len - 3, 4, 3, 3, '#a8703f');
+      px(0, 1, len + 2, 10, C.woodLine); px(1, 2, len, 4, '#9a5a30'); px(1, 2, len, 1, '#b06a3a'); px(1, 6, len, 4, '#6e3f22');
+      for (var k = 6; k < len - 4; k += 9) px(1 + k, 3, 4, 1, '#7a4426');
+      px(len - 4, 2, 5, 8, '#c8955c'); px(len - 3, 4, 3, 3, '#a8703f');
     });
-    place(cv, x, foot - 10, foot);
+    place(cv, x, foot - 11, foot);
+    shadowRect(x + 2, foot - 1, len, 3);
   }
-  // 울타리: 가로 줄(기둥 8px마다, 가로대 둘), 세로 줄(기둥만 촘촘히, 가로대는 세로로)
+  // 울타리(네세스): 굵은 기둥(앞면이 보이는 높이 13px, 윗면 밝게) 사이에 가로대 둘. 세로 줄은 기둥이 촘촘하고 가로대가 세로로 보인다
+  function post(x, y) { px(x, y, 5, 13, C.woodLine); px(x + 1, y + 1, 3, 11, '#7a4c26'); px(x + 1, y + 1, 3, 2, '#c8955c'); px(x + 1, y + 3, 1, 9, '#9a6234'); }
   function fenceH(x, y, len, gap) {
-    var cv = draw(len + 4, 14, function () {
-      px(0, 10, len + 4, 2, 'rgba(20,45,20,0.25)');
-      for (var k = 0; k <= len; k += 8) {
-        if (gap && k > gap[0] && k < gap[1]) continue;
-        px(k, 0, 4, 11, C.woodLine); px(k + 1, 1, 2, 9, C.woodLight); px(k + 1, 1, 1, 9, '#e0aa6c');
-      }
+    var cv = draw(len + 5, 14, function () {
       for (var s = 0; s < len; s++) {
         if (gap && s > gap[0] && s < gap[1]) continue;
-        px(s + 2, 3, 1, 3, C.woodLine); px(s + 2, 4, 1, 1, C.wood);
-        px(s + 2, 7, 1, 2, C.woodLine);
+        px(s + 2, 3, 1, 3, C.woodLine); px(s + 2, 4, 1, 1, '#9a6234');
+        px(s + 2, 8, 1, 3, C.woodLine); px(s + 2, 9, 1, 1, '#9a6234');
       }
+      for (var k = 0; k <= len; k += 10) { if (gap && k > gap[0] - 4 && k < gap[1]) continue; post(k, 0); }
+      if (gap) { post(gap[0] - 3, 0); post(gap[1], 0); }
     });
-    place(cv, x - 2, y - 11, y);
+    place(cv, x - 2, y - 12, y);
+    shadowRect(x, y - 1, len + 4, 3);
   }
   function fenceV(x, y, len) {
-    var cv = draw(6, len + 12, function () {
-      for (var k = 0; k <= len; k += 8) { px(1, k, 4, 11, C.woodLine); px(2, k + 1, 2, 9, C.woodLight); }
-      px(2, 3, 2, len, C.woodLine); px(2, 3, 1, len, C.wood);
+    var cv = draw(7, len + 14, function () {
+      px(2, 2, 3, len + 4, C.woodLine); px(3, 2, 1, len + 4, '#9a6234');
+      for (var k = 0; k <= len; k += 10) post(1, k);
     });
-    place(cv, x - 3, y - 11, y + len);
+    place(cv, x - 3, y - 12, y + len);
+    shadowRect(x + 2, y, 4, len);
   }
   function fenceBox(x0, y0, x1, y1, gapTop, gapBottom) {
     fenceH(x0, y0, x1 - x0, gapTop);
-    fenceH(x0, y1, x1 - x0, gapBottom);
     fenceV(x0 + 2, y0 + 2, y1 - y0 - 2);
     fenceV(x1 + 2, y0 + 2, y1 - y0 - 2);
+    fenceH(x0, y1, x1 - x0, gapBottom);
   }
-  // 집(참고 그림의 나무 골조 오두막): 짙은 초록 너와 지붕, 가운데 용마루, 크림색 벽에 나무 골조, 둥근 문과 창
-  function addHouse(cx, foot) {
-    var w = 84, h = 76;
-    var cv = draw(w, h, function () {
-      px(4, h - 4, w - 8, 4, 'rgba(20,45,20,0.35)');
-      var wallTop = 40;
-      // 벽
-      px(6, wallTop, w - 12, h - wallTop - 3, C.woodLine);
-      px(7, wallTop + 1, w - 14, h - wallTop - 5, '#f1dcb0');
-      px(7, wallTop + 1, w - 14, 2, '#d8bf8e');
-      [7, 40, w - 10].forEach(function (bx) { px(bx, wallTop + 1, 3, h - wallTop - 5, '#8a5530'); px(bx, wallTop + 1, 1, h - wallTop - 5, '#a86a3a'); });
-      px(7, wallTop + 14, w - 14, 3, '#8a5530');
-      for (var k = 0; k < 10; k++) { px(11 + k * 2.6, wallTop + 4 + k, 3, 1, '#8a5530'); px(w - 14 - k * 2.6, wallTop + 4 + k, 3, 1, '#8a5530'); }
-      // 돌 기단
-      px(6, h - 7, w - 12, 4, '#2e3138'); for (var s = 0; s < 9; s++) px(7 + s * 8, h - 6, 7, 2, s % 2 ? '#8d929c' : '#a7acb5');
-      // 창(왼쪽) · 문(가운데, 둥근 윗변) · 창(오른쪽)
-      [[14, wallTop + 18], [56, wallTop + 18]].forEach(function (p) {
-        px(p[0], p[1], 14, 12, C.woodLine); px(p[0] + 1, p[1] + 1, 12, 10, '#7ec3ea'); px(p[0] + 1, p[1] + 1, 4, 3, '#d6f0ff');
-        px(p[0] + 6, p[1] + 1, 1, 10, C.woodLine); px(p[0] + 1, p[1] + 5, 12, 1, C.woodLine);
-        px(p[0] - 1, p[1] + 12, 16, 3, '#7a4a28'); px(p[0], p[1] + 11, 3, 2, '#e85a6a'); px(p[0] + 5, p[1] + 11, 3, 2, '#ffd35c'); px(p[0] + 10, p[1] + 11, 3, 2, '#e85a6a');
-      });
-      px(33, wallTop + 16, 18, h - wallTop - 19, C.woodLine);
-      px(35, wallTop + 14, 14, 3, C.woodLine);
-      px(34, wallTop + 17, 16, h - wallTop - 21, '#8a5530'); px(36, wallTop + 15, 12, 3, '#8a5530');
-      for (var p2 = 0; p2 < 4; p2++) px(36 + p2 * 4, wallTop + 17, 1, h - wallTop - 21, '#6b4026');
-      px(46, wallTop + 26, 2, 2, '#ffd23f');
-      // 지붕: 위가 좁은 사다리꼴, 줄마다 너와 이음매, 왼쪽 밝게, 가운데 용마루
-      for (var y = 0; y < wallTop + 4; y++) {
-        var inset = Math.round((wallTop + 3 - y) * 0.22);
-        var x0 = inset, x1 = w - inset;
-        for (var x = x0; x < x1; x++) {
-          var left = x < w / 2;
-          var col = left ? '#3f8a6c' : '#2d6a55';
-          if ((y % 5) === 4) col = left ? '#2d6a55' : '#215242';
-          else if (((x + (Math.floor(y / 5) % 2) * 3) % 6) === 0) col = left ? '#347a60' : '#255c4a';
-          if (left && (y % 5) === 0 && hash(x, y) > 0.5) col = '#56a383';
-          if (x === x0 || x === x1 - 1 || y === 0) col = '#173a30';
-          px(x, y, 1, 1, col);
-        }
-      }
-      px(0, wallTop + 3, w, 2, '#173a30');
-      px(w / 2 - 3, 0, 6, wallTop + 4, '#5a3420'); px(w / 2 - 2, 0, 4, wallTop + 3, '#9a6236'); px(w / 2 - 2, 0, 1, wallTop + 3, '#c08453');
-      px(w / 2 - 5, wallTop + 1, 10, 4, '#5a3420'); px(w / 2 - 4, wallTop + 2, 8, 2, '#9a6236');
+
+  // ---------------------------------------------------------------- 집(네세스처럼 지붕 없는 통나무 집)
+  // 벽 윗면(8px: 통나무 결 + 금빛 테두리), 북쪽 벽은 안쪽 앞면(14px 세로 통나무)이 보이고, 남쪽 벽은 바깥 앞면이 보인다. 바닥은 세로 판자.
+  var WALL = 8, FACE = 14;
+  function wallTop(w, h, vertical) {
+    return draw(w, h, function () {
+      px(0, 0, w, h, '#1e1208');
+      px(1, 1, w - 2, h - 2, '#c08a32');
+      px(2, 2, w - 4, h - 4, '#4a2a12');
+      if (vertical) for (var x = 3; x < w - 2; x += 2) px(x, 2, 1, h - 4, '#5e3818');
+      else for (var y = 3; y < h - 2; y += 2) px(2, y, w - 4, 1, '#5e3818');
     });
-    place(cv, cx - w / 2, foot - h + 1, foot);
+  }
+  function wallFace(w, door) {
+    return draw(w, FACE, function () {
+      for (var x = 0; x < w; x++) {
+        if (door && x >= door[0] && x < door[1]) continue;
+        var k = x % 4;
+        px(x, 0, 1, FACE, k === 0 ? '#2a170a' : k === 1 ? '#7a4a20' : '#5a3416');
+        if (k !== 0 && hash(x >> 2, 3) > 0.5) px(x, 5 + ((x >> 2) % 3) * 2, 1, 2, '#3e220e');
+      }
+      px(0, 0, w, 2, '#2a170a');
+      px(0, FACE - 1, w, 1, '#1e1208');
+      if (door) {
+        px(door[0] - 2, 0, 2, FACE, '#1e1208'); px(door[1], 0, 2, FACE, '#1e1208');
+      }
+    });
+  }
+  var HOUSE = { x0: VX + 5 * T, x1: VX + 12 * T, y0: VY + 1 * T + 2, y1: VY + 5 * T + 14 };
+  function addHouse() {
+    var x0 = HOUSE.x0, x1 = HOUSE.x1, y0 = HOUSE.y0, y1 = HOUSE.y1, w = x1 - x0;
+    var doorX = (x0 + x1) / 2 - 8, door = [doorX - x0, doorX - x0 + 16];
+    // 북쪽 벽: 윗면 + 안쪽 앞면(바닥 위에 서 있으니 앞면 아래 끝이 발 자리)
+    place(wallTop(w, WALL, false), x0, y0, y0 + WALL);
+    place(wallFace(w - 2 * WALL, null), x0 + WALL, y0 + WALL, y0 + WALL + FACE);
+    // 서·동 벽 윗면(남쪽 벽 윗면까지)
+    var sideH = y1 - FACE - WALL - y0;
+    place(wallTop(WALL, sideH, true), x0, y0 + WALL, y1 - FACE - WALL + 1);
+    place(wallTop(WALL, sideH, true), x1 - WALL, y0 + WALL, y1 - FACE - WALL + 1);
+    // 남쪽 벽: 윗면 + 바깥 앞면(문 자리는 비움)
+    var southL = wallTop(door[0], WALL, false), southR = wallTop(w - door[1], WALL, false), southFace = wallFace(w, door);
+    var south = draw(w, WALL + FACE, function () {
+      g.drawImage(southL, 0, 0);
+      g.drawImage(southR, door[1], 0);
+      g.drawImage(southFace, 0, WALL);
+    });
+    place(south, x0, y1 - FACE - WALL, y1);
+    // 문(열린 문짝이 문틀 옆 벽에 붙어 있음)과 문 앞 깔개
+    var leaf = draw(6, FACE + 2, function () { px(0, 0, 6, FACE + 2, C.woodLine); px(1, 1, 4, FACE, '#8a5a2c'); px(1, 1, 1, FACE, '#b07a44'); px(3, 8, 1, 2, '#ffd23f'); });
+    place(leaf, x0 + door[1] + 2, y1 - FACE - 2, y1 + 0.5);
+    // 바깥 그림자(동쪽 벽 옆, 남쪽 벽 아래)
+    shadowRect(x1, y0 + 6, 6, y1 - y0 - 4);
+    shadowRect(x0 + 4, y1, w + 2, 4);
+    // 가구(3/4): 침대 · 탁자와 의자 · 난로 · 책장 · 상자 · 화분 · 촛대
+    var inX0 = x0 + WALL, inY0 = y0 + WALL + FACE;
+    furniture(bed(), inX0 + 4, inY0 - 6);
+    furniture(bookshelf(), inX0 + 26, y0 + WALL + 1);
+    furniture(stove(), x1 - WALL - 22, y0 + WALL + 2);
+    furniture(chest(), x1 - WALL - 18, inY0 + 22);
+    furniture(table(), inX0 + 40, inY0 + 10);
+    furniture(chair(false), inX0 + 44, inY0 + 2);
+    furniture(chair(false), inX0 + 54, inY0 + 2);
+    furniture(chair(true), inX0 + 44, inY0 + 22);
+    furniture(plant(), inX0 + 2, inY0 + 26);
+    furniture(candle(), x1 - WALL - 34, y0 + WALL + 4);
+  }
+  function furniture(img, x, y) { place(img, x, y, y + img.height); }
+  function bed() {
+    return draw(16, 26, function () {
+      px(0, 0, 16, 26, C.woodLine);
+      px(1, 1, 14, 5, '#9a6234'); px(1, 1, 14, 1, '#c08a4a');
+      px(2, 6, 12, 5, '#efe6d2'); px(2, 10, 12, 1, '#c9bfa8');
+      px(1, 11, 14, 11, '#b8363a'); px(1, 11, 14, 2, '#d8545a'); px(1, 17, 14, 1, '#8a2428');
+      px(1, 22, 14, 3, '#7a4c26'); px(1, 22, 14, 1, '#9a6234');
+    });
+  }
+  function table() {
+    return draw(24, 14, function () {
+      px(0, 0, 24, 10, C.woodLine); px(1, 1, 22, 6, '#c8955c'); px(2, 2, 10, 1, '#e0b07a'); px(1, 7, 22, 2, '#7a4c26');
+      px(2, 10, 2, 4, C.woodLine); px(20, 10, 2, 4, C.woodLine);
+      px(8, 2, 4, 3, '#efe6d2'); px(9, 3, 2, 1, '#d8463a'); px(15, 2, 3, 3, '#7ec3ea');
+    });
+  }
+  function chair(back) {
+    return draw(8, 12, function () {
+      if (back) { px(0, 0, 8, 12, C.woodLine); px(1, 1, 6, 5, '#9a6234'); px(1, 6, 6, 3, '#c8955c'); px(1, 9, 1, 3, C.woodLine); px(6, 9, 1, 3, C.woodLine); }
+      else { px(0, 4, 8, 8, C.woodLine); px(1, 5, 6, 3, '#c8955c'); px(1, 8, 6, 2, '#7a4c26'); px(1, 10, 1, 2, C.woodLine); px(6, 10, 1, 2, C.woodLine); }
+    });
+  }
+  function stove() {
+    return draw(18, 20, function () {
+      px(12, 0, 3, 8, '#22252c'); px(13, 0, 1, 8, '#4a4f5a');
+      px(0, 6, 18, 14, '#1a1c22'); px(1, 7, 16, 4, '#4a4f5a'); px(1, 11, 16, 8, '#2c3038');
+      px(5, 13, 8, 4, '#1a1c22'); px(6, 14, 6, 2, '#ff7a2a'); px(7, 14, 3, 1, '#ffd35c');
+    });
+  }
+  function bookshelf() {
+    return draw(18, 20, function () {
+      px(0, 0, 18, 20, C.woodLine); px(1, 1, 16, 18, '#6e4422');
+      var colors = ['#b8363a', '#3f78b8', '#4f8f2c', '#e0a030', '#8a4ab0', '#efe6d2'];
+      [2, 9].forEach(function (sy, row) {
+        for (var k = 0; k < 7; k++) px(2 + k * 2, sy + (k % 3 === 0 ? 1 : 0), 2, 6 - (k % 3 === 0 ? 1 : 0), colors[(k + row * 2) % colors.length]);
+        px(1, sy + 6, 16, 1, '#9a6234');
+      });
+      px(1, 16, 16, 3, '#5a3416');
+    });
+  }
+  function chest() {
+    return draw(16, 13, function () {
+      px(0, 0, 16, 13, C.woodLine); px(1, 1, 14, 4, '#b07a44'); px(1, 1, 14, 1, '#d8a066'); px(1, 5, 14, 7, '#7a4c26');
+      px(1, 5, 14, 1, '#3e2410'); px(0, 3, 16, 1, '#c08a32'); px(0, 9, 16, 1, '#c08a32'); px(7, 5, 2, 3, '#ffd23f');
+    });
+  }
+  function plant() {
+    return draw(10, 14, function () {
+      px(2, 9, 6, 5, '#2e1d0e'); px(3, 9, 4, 4, '#c0643a'); px(3, 9, 4, 1, '#e08a5a');
+      px(1, 3, 3, 5, '#3f7d28'); px(6, 2, 3, 6, '#3f7d28'); px(3, 0, 4, 8, '#5a9c33'); px(4, 1, 1, 3, '#7fbf45');
+    });
+  }
+  function candle() {
+    return draw(8, 12, function () {
+      px(3, 4, 2, 7, '#efe6d2'); px(2, 10, 4, 2, '#c08a32'); px(3, 1, 2, 3, '#ffb84a'); px(3, 2, 1, 1, '#fff0b8');
+      g.fillStyle = 'rgba(255,190,90,0.2)'; g.fillRect(0, 0, 8, 8);
+    });
   }
 
   // ---------------------------------------------------------------- 마을 배치(세상 픽셀)
   function X(c) { return VX + c * T; }
   function Y(r) { return VY + r * T; }
-  // 밭 자리(32×32, 잘 보이는 자리 먼저)와 울타리 안 병아리가 물 주는 자리(front), 드나드는 문(gate 안·밖)
-  var NE = { x0: X(11), y0: Y(1) + 6, x1: X(17) + 4, y1: Y(5) + 2 };
-  var SE = { x0: X(11), y0: Y(7) + 10, x1: X(20) - 4, y1: Y(11) + 12 };
-  var NE_GATE = { x: X(14) + 2, inY: NE.y1 - 7, outY: Y(6) + 9 };
+  // 밭(32×32 이랑, 둑이 있어 앞면이 보임)과 병아리가 물 주는 자리(front), 드나드는 문(gate 안·밖)
+  var NE = { x0: X(13), y0: Y(1) + 6, x1: X(18) + 6, y1: Y(5) + 4 };
+  var SE = { x0: X(11), y0: Y(7) + 12, x1: X(20) - 4, y1: Y(11) + 12 };
+  var NE_GATE = { x: X(15) + 12, inY: NE.y1 - 8, outY: Y(6) + 9 };
   var SE_GATE = { x: X(15) + 8, inY: SE.y0 + 8, outY: Y(6) + 9 };
   var PLOTS = [
-    { x: SE.x0 + 10, y: SE.y0 + 22, frontY: SE.y0 + 18, gate: SE_GATE },
-    { x: NE.x0 + 12, y: NE.y0 + 6, frontY: NE.y0 + 44, gate: NE_GATE },
-    { x: SE.x0 + 54, y: SE.y0 + 22, frontY: SE.y0 + 18, gate: SE_GATE },
-    { x: NE.x0 + 52, y: NE.y0 + 6, frontY: NE.y0 + 44, gate: NE_GATE },
-    { x: SE.x0 + 98, y: SE.y0 + 22, frontY: SE.y0 + 18, gate: SE_GATE }
+    { x: SE.x0 + 10, y: SE.y0 + 24, frontY: SE.y0 + 20, gate: SE_GATE },
+    { x: NE.x0 + 8, y: NE.y0 + 6, frontY: NE.y0 + 46, gate: NE_GATE },
+    { x: SE.x0 + 54, y: SE.y0 + 24, frontY: SE.y0 + 20, gate: SE_GATE },
+    { x: NE.x0 + 52, y: NE.y0 + 6, frontY: NE.y0 + 46, gate: NE_GATE },
+    { x: SE.x0 + 98, y: SE.y0 + 24, frontY: SE.y0 + 20, gate: SE_GATE }
   ];
-  var CROPS = ['carrot', 'cabbage', 'wheat', 'tomato', 'pumpkin', 'sprout'];
-  var HAY = { x0: X(4) + 4, y0: Y(7) + 12, x1: X(7) + 10, y1: Y(10) + 10 };
+  var CROPS = ['carrot', 'cabbage', 'wheat', 'tomato', 'pumpkin', 'sunflower'];
+  var HAY = { x0: X(4) + 4, y0: Y(7) + 12, x1: X(7) + 6, y1: Y(10) + 10 };
 
   function buildObjects() {
-    addHouse(X(8) + 8, Y(5));
-    fenceBox(NE.x0, NE.y0, NE.x1, NE.y1, null, [NE_GATE.x - NE.x0 - 10, NE_GATE.x - NE.x0 + 10]);
-    fenceBox(SE.x0, SE.y0, SE.x1, SE.y1, [SE_GATE.x - SE.x0 - 10, SE_GATE.x - SE.x0 + 10], null);
+    addHouse();
+    fenceBox(NE.x0, NE.y0, NE.x1, NE.y1, null, [NE_GATE.x - NE.x0 - 8, NE_GATE.x - NE.x0 + 8]);
+    fenceBox(SE.x0, SE.y0, SE.x1, SE.y1, [SE_GATE.x - SE.x0 - 8, SE_GATE.x - SE.x0 + 8], null);
     fenceBox(HAY.x0, HAY.y0, HAY.x1, HAY.y1, null, null);
+    // 밀밭: 키 큰 밀 줄(앞뒤가 맞게 줄마다 한 장)
+    for (var hy = HAY.y0 + 10; hy < HAY.y1 - 1; hy += 6) {
+      var row = draw(HAY.x1 - HAY.x0 - 6, 10, function () {
+        for (var k = 0; k < HAY.x1 - HAY.x0 - 8; k += 2) {
+          var hgt = 7 + Math.floor(hash(k, hy) * 3);
+          px(k, 10 - hgt, 1, hgt, k % 4 ? '#c9952f' : '#b07f22'); px(k, 10 - hgt, 2, 2, '#f6d26a');
+        }
+      });
+      place(row, HAY.x0 + 4, hy - 10, hy);
+    }
     // 다리 난간(위 줄은 병아리 뒤, 아래 줄은 앞)
     var bx0 = X(2) - 6, blen = 2 * T + 8;
     fenceH(bx0, Y(6) + 3, blen, null);
-    fenceH(bx0, Y(7) + 1, blen, null);
+    fenceH(bx0, Y(7) + 2, blen, null);
     // 집 앞과 갈림길
-    addCrate(X(6) + 2, Y(5) + 6, '#ff8a2a'); addCrate(X(6) + 14, Y(5) + 7, '#8ed36c'); addBarrel(X(5) + 6, Y(5) + 5);
-    addMailbox(X(7) + 12, Y(5) + 6);
-    addLamp(X(10) + 8, Y(6) + 1);
-    addSign(X(10) + 2, Y(7) + 12);
-    addCrate(X(18) + 4, Y(1) + 12, '#ff4b3a'); addCrate(X(18) + 4, Y(2) + 12, '#ffd35c');
-    addBush(X(18) + 6, Y(5) + 2, 1); addBush(X(9) + 12, Y(11) + 14, 2);
+    addBarrel(X(4) + 12, Y(6) - 1); addCrate(X(13) - 6, Y(6) - 1, '#ff8a2a');
+    addLamp(X(7) + 2, Y(6) + 2); addLamp(X(10) - 2, Y(6) + 2);
+    addSign(X(10) + 4, Y(7) + 13);
+    addCrate(X(18) + 14, Y(1) + 12, '#ff4b3a'); addCrate(X(18) + 14, Y(2) + 14, '#ffd35c');
+    addSunflower(X(4) + 8, Y(3)); addSunflower(X(12) + 6, Y(2) + 4); addSunflower(X(12) + 8, Y(4) + 6);
+    addBush(X(18) + 10, Y(5) + 4, 1, '#3a5ad8'); addBush(X(9) + 12, Y(11) + 14, 2, '#d8463a'); addBush(X(0) + 10, Y(7) - 1, 0);
     // 마을 안 나무 · 돌 · 꽃 · 버섯 · 통나무
-    addPine(X(4) + 10, Y(4) + 14, 9, 1); addPine(X(10) + 14, Y(10) + 6, 10, 2);
-    addRoundTree(X(0) + 10, Y(3) + 8, 14, 3); addRoundTree(X(1), Y(10) + 10, 16, 4);
-    addRock(X(1) + 8, Y(8) + 6, true); addRock(X(19) + 4, Y(11) + 10, false); addRock(X(5) + 2, Y(1) + 6, false); addRock(X(12) + 8, Y(5) + 14, false);
-    addLupin(X(0) + 12, Y(5) + 10, '#a46ad8'); addLupin(X(4) + 4, Y(6) - 1, '#a46ad8'); addLupin(X(16) + 6, Y(6) - 1, '#c88ae8'); addLupin(X(20) + 2, Y(9), '#a46ad8');
-    addMushroom(X(5) + 4, Y(2) + 12); addMushroom(X(9) + 14, Y(9) + 4); addMushroom(X(17) + 10, Y(6) - 2);
-    addLog(X(4) + 2, Y(11) + 12, 40);
-    addStump(X(20) + 6, Y(8) + 6);
+    addPine(X(4) + 6, Y(5) + 4, 9, 1); addPoplar(X(10) + 8, Y(10) + 8, 6, 2); addPoplar(X(20) - 2, Y(6) - 2, 6, 5, AUTUMN);
+    addOak(X(0) + 10, Y(3) + 8, 15, 3); addOak(X(1), Y(10) + 10, 17, 4);
+    addRock(X(1) + 8, Y(8) + 8, true); addRock(X(19) + 4, Y(11) + 12, false); addRock(X(4) + 4, Y(1) + 10, false);
+    addLupin(X(0) + 12, Y(5) + 10, '#a46ad8'); addLupin(X(16) + 6, Y(6) - 1, '#c88ae8'); addLupin(X(20) + 4, Y(9), '#a46ad8');
+    addMushroom(X(9) + 14, Y(9) + 4); addMushroom(X(17) + 10, Y(6) - 2);
+    addLog(X(4) + 2, Y(11) + 14, 40);
+    addStump(X(20) + 8, Y(8) + 8);
     addReeds(X(1) + 6, Y(12) + 2);
+    // 마을 안 키 큰 풀(길·밭·집에서 떨어진 풀밭에 듬성듬성)
+    for (var r = VR; r < VR + ROWS; r++)
+      for (var c = VC; c < VC + COLS; c++) {
+        if (tile(c, r) !== 'G' || hash(c * 7, r * 3) < 0.55) continue;
+        var gx = c * T + 3 + Math.floor(hash(c, r * 5) * 10), gy = r * T + 8 + Math.floor(hash(r, c * 5) * 7);
+        if (busy(gx, gy)) continue;
+        addTallGrass(gx, gy, c + r);
+      }
     buildWild();
-    objects.sort(function (a, b) { return a.base - b.base || a.x - b.x; });
+  }
+  // 집·울타리 안·길 옆처럼 키 큰 풀을 두지 않을 자리
+  function busy(x, y) {
+    function inside(b, pad) { return x > b.x0 - pad && x < b.x1 + pad && y > b.y0 - pad && y < b.y1 + pad; }
+    if (inside(HOUSE, 6) || inside(NE, 6) || inside(SE, 6) || inside(HAY, 6)) return true;
+    var c = x >> 4, r = y >> 4;
+    for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) if (tile(c + dx, r + dy) !== 'G') return true;
+    return false;
   }
 
-  // 마을 밖 숲: 마을에서 멀수록, 무늬 값이 클수록 나무가 빽빽(길·물·절벽 옆은 비움). 사이사이 돌·그루터기·버섯·꽃
+  // 마을 밖 숲: 마을에서 멀수록, 무늬 값이 클수록 나무가 빽빽(길·물·절벽 옆은 비움). 활엽수 · 전나무 · 포플러가 무늬별로 모이고,
+  // 사이사이 키 큰 풀 · 덤불 · 돌 · 그루터기 · 버섯 · 꽃
   function buildWild() {
     for (var r = 0; r < WR + 2; r++)
       for (var c = -1; c < WC + 1; c++) {
@@ -490,17 +696,20 @@
         var x = c * T + 4 + Math.floor(hash(c, r + 1) * 8), foot = r * T + 12 + Math.floor(hash(c + 2, r) * 4);
         var dense = smooth(c, r, 4, 1) + Math.min(d, 8) * 0.05;
         if (!clear && d >= 1.2 && dense > 0.6 && hash(c + 3, r + 5) > 0.3) {
-          if (smooth(c, r, 6, 9) > 0.6) addPine(x, foot, 9 + Math.floor(hash(c, r) * 3), c * 7 + r);
-          else addRoundTree(x, foot, 13 + Math.floor(hash(r, c) * 6), c * 3 + r * 5);
+          var kind = smooth(c, r, 6, 9);
+          if (kind > 0.62) addPine(x, foot, 8 + Math.floor(hash(c, r) * 3), c * 7 + r);
+          else if (kind < 0.3) addPoplar(x, foot, 5 + Math.floor(hash(r, c) * 2), c + r * 3, hash(c, r * 9) > 0.93 ? AUTUMN : null);
+          else addOak(x, foot, 13 + Math.floor(hash(r, c) * 6), c * 3 + r * 5);
           continue;
         }
         var f = hash(c + 11, r + 7);
-        if (clear && !wet(t)) { if (f > 0.93) addRock(x, foot, false); continue; }
-        if (f > 0.96) addBush(x, foot, c + r);
+        if (clear) { if (f > 0.93) addRock(x, foot, false); continue; }
+        if (f > 0.4 && f < 0.62) addTallGrass(x, foot, c * 3 + r);
+        else if (f > 0.96) addBush(x, foot, c + r, hash(c, r) > 0.6 ? '#3a5ad8' : null);
         else if (f > 0.93) addRock(x, foot, f > 0.95);
         else if (f < 0.03) addStump(x, foot);
         else if (f < 0.05) addMushroom(x, foot);
-        else if (f > 0.5 && f < 0.52) addLupin(x, foot, '#a46ad8');
+        else if (f > 0.7 && f < 0.72) addLupin(x, foot, '#a46ad8');
       }
     // 호숫가 갈대
     for (var rr = VR + 11; rr < WR; rr++)
@@ -508,57 +717,82 @@
         if (tile(cc, rr) === 'G' && wet(tile(cc, rr + 1)) && hash(cc, rr * 3) > 0.55) addReeds(cc * T + 8, rr * T + 15);
   }
 
-  // 땅 위에 바로 그리는 것(납작한 것): 풀 무더기, 들꽃, 연잎, 다리 판자, 밀밭, 빈 밭
+  // 땅 위에 바로 그리는 것(납작한 것): 풀 결, 들꽃, 연잎, 다리 판자, 집 바닥·깔개, 밭 이랑
   function decorateGround() {
     for (var r = 0; r < WR; r++)
       for (var c = 0; c < WC; c++) {
         var t = tile(c, r), x = c * T, y = r * T;
         if (t === 'G') {
-          for (var k = 0; k < 3; k++) {
+          for (var k = 0; k < 2; k++) {
             var hx = Math.floor(hash(c * 3 + k, r) * 12) + 1, hy = Math.floor(hash(r * 5 + k, c) * 11) + 3;
             if (tile(c, r - 1) === 'C' && hy < 6) continue;
-            px(x + hx, y + hy, 1, 2, C.tuft); px(x + hx + 2, y + hy, 1, 2, C.tuft); px(x + hx + 1, y + hy + 1, 1, 2, C.tuft);
-            px(x + hx + 1, y + hy - 1, 1, 1, C.tuftTip);
+            px(x + hx, y + hy, 1, 2, C.grassDark); px(x + hx + 2, y + hy, 1, 2, C.grassDark); px(x + hx + 1, y + hy - 1, 1, 2, C.grassLight);
           }
           var f = hash(c + 21, r + 3);
-          if (f > 0.9) { px(x + 6, y + 6, 3, 3, '#ffffff'); px(x + 7, y + 7, 1, 1, '#ffd35c'); px(x + 7, y + 9, 1, 1, C.tuft); }
-          else if (f < 0.05) { px(x + 9, y + 9, 2, 2, '#ffd35c'); px(x + 4, y + 4, 2, 2, '#ff9fb0'); }
+          if (f > 0.93) { px(x + 6, y + 6, 3, 3, '#ffffff'); px(x + 7, y + 7, 1, 1, '#ffd35c'); }
+          else if (f < 0.03) { px(x + 9, y + 9, 2, 2, '#ffd35c'); px(x + 4, y + 4, 2, 2, '#ff9fb0'); }
         }
-        if (t === 'W' && isLake(c, r) && !isRiver(c, r) && hash(c * 5, r) > 0.86) {
+        if (t === 'W' && isLake(c, r) && !isRiver(c, r) && hash(c * 5, r) > 0.84) {
           var lx2 = x + 3 + Math.floor(hash(c, r) * 6), ly2 = y + 4 + Math.floor(hash(r, c) * 6);
-          px(lx2, ly2, 7, 4, '#2f6a2b'); px(lx2 + 1, ly2, 5, 3, '#5fbf6a'); px(lx2 + 3, ly2 + 1, 1, 2, '#2f6a2b');
+          px(lx2, ly2, 7, 4, '#24501d'); px(lx2 + 1, ly2, 5, 3, '#4f9f3a'); px(lx2 + 3, ly2 + 1, 1, 2, '#24501d');
           if (hash(c, r + 3) > 0.6) { px(lx2 + 2, ly2 - 2, 3, 2, '#ffb3c1'); px(lx2 + 3, ly2 - 3, 1, 1, '#fff'); }
         }
       }
-    // 다리 판자(물 위, 양쪽 둑에 조금 걸침)
+    // 다리 판자(물 위, 양쪽 둑에 걸침)와 그 앞면(두께)
     var bx0 = X(2) - 6, bw = 2 * T + 12, by0 = Y(6) + 1;
     px(bx0, by0, bw, 15, C.woodLine);
-    for (var b = 0; b < bw - 2; b += 4) { px(bx0 + 1 + b, by0 + 1, 3, 13, b % 8 ? '#9a5f33' : C.wood); px(bx0 + 1 + b, by0 + 1, 1, 13, C.woodLight); px(bx0 + 2 + b, by0 + 3, 1, 1, C.woodLine); px(bx0 + 2 + b, by0 + 11, 1, 1, C.woodLine); }
-    px(bx0, by0 + 15, bw, 2, 'rgba(20,40,60,0.45)');
-    // 밀밭(울타리 안을 금빛 이삭 줄로)
-    for (var hy = HAY.y0 + 3; hy < HAY.y1 - 1; hy += 5)
-      for (var hx = HAY.x0 + 5; hx < HAY.x1 - 2; hx += 4) {
-        px(hx, hy, 4, 5, '#c9952f'); px(hx, hy, 3, 4, '#e8bf4f'); px(hx + 1, hy, 1, 2, '#f6dc86');
+    for (var b = 0; b < bw - 2; b += 4) { px(bx0 + 1 + b, by0 + 1, 3, 12, b % 8 ? '#8a5a2c' : C.wood); px(bx0 + 1 + b, by0 + 1, 1, 12, C.woodLight); px(bx0 + 2 + b, by0 + 3, 1, 1, C.woodLine); px(bx0 + 2 + b, by0 + 10, 1, 1, C.woodLine); }
+    px(bx0 + 1, by0 + 13, bw - 2, 3, '#4a2e16'); px(bx0, by0 + 16, bw, 3, 'rgba(10,30,60,0.45)');
+    // 집 바닥: 세로 판자, 판자 끝이 엇갈리고 못 자국(문 자리는 남쪽 벽 앞면 끝까지)
+    var fx0 = HOUSE.x0 + WALL, fx1 = HOUSE.x1 - WALL, fy0 = HOUSE.y0 + WALL, fy1 = HOUSE.y1 - FACE, dx0 = (HOUSE.x0 + HOUSE.x1) / 2 - 8;
+    for (var yy = fy0; yy < HOUSE.y1; yy++)
+      for (var xx = fx0; xx < fx1; xx++) {
+        if (yy >= fy1 && (xx < dx0 || xx >= dx0 + 16)) continue;
+        var pk = Math.floor((xx - fx0) / 4), lxp = (xx - fx0) % 4, seam = (yy - fy0 + pk * 7) % 20;
+        var col = lxp === 0 ? '#4a2a10' : seam === 0 ? '#4a2a10' : pk % 2 ? '#7a4a1e' : '#6e4218';
+        if (lxp === 1 && seam !== 0) col = '#8a5626';
+        if (seam === 2 && lxp === 2) col = '#a8763a';
+        px(xx, yy, 1, 1, col);
       }
+    // 문 앞 돌계단 · 방 가운데 깔개
+    px(HOUSE.x0 + (HOUSE.x1 - HOUSE.x0) / 2 - 9, HOUSE.y1, 18, 4, C.stoneEdge); px(HOUSE.x0 + (HOUSE.x1 - HOUSE.x0) / 2 - 8, HOUSE.y1, 16, 2, C.stoneLight);
+    var rugX = fx0 + 36, rugY = fy0 + FACE + 6;
+    px(rugX, rugY, 36, 26, '#5a2a4a'); px(rugX + 1, rugY + 1, 34, 24, '#8a3a5a'); px(rugX + 3, rugY + 3, 30, 20, '#b8546a'); px(rugX + 5, rugY + 5, 26, 16, '#8a3a5a');
     PLOTS.forEach(function (p) { soil(p.x, p.y, false); });
+    // 그림자(서 있는 것들이 모은 것)
+    g.fillStyle = C.shadow;
+    shadows.forEach(function (s) { s(g); });
   }
+  // 밭 이랑: 둑(윗면 · 앞면)으로 둘러싸인 갈아 둔 흙, 물 주면 짙다
   function soil(x, y, wetSoil) {
-    px(x, y, 32, 32, C.woodLine);
-    px(x + 1, y + 1, 30, 30, wetSoil ? '#6a3f24' : '#85532f');
-    for (var r = 0; r < 4; r++) { px(x + 1, y + 4 + r * 8, 30, 2, wetSoil ? '#55311c' : '#6e4426'); px(x + 1, y + 3 + r * 8, 30, 1, wetSoil ? '#7a4a2a' : '#9a6538'); }
+    px(x - 1, y - 1, 34, 36, '#2a1a0c');
+    px(x, y, 32, 32, wetSoil ? '#4a2e18' : '#6a4426');
+    for (var r = 0; r < 4; r++) { px(x + 1, y + 2 + r * 8, 30, 3, wetSoil ? '#5e3a1e' : '#7e5230'); px(x + 1, y + 2 + r * 8, 30, 1, wetSoil ? '#6e4626' : '#946238'); }
+    for (var k = 0; k < 16; k++) px(x + 1 + k * 2, y + 32, 1, 1, '#8a6a3a');
+    px(x, y + 32, 32, 2, '#3e2814');
   }
-  // 밭 작물(3줄 × 4포기)
-  function crops(x, y, crop) {
-    for (var r = 0; r < 3; r++)
+  // 작물(3/4로 선 것): 이랑마다 네 포기, 포기마다 발 자리가 달라 병아리와 앞뒤가 맞는다
+  var cropLayer = [];
+  function plantCrops(x, y, crop) {
+    for (var r = 0; r < 4; r++)
       for (var c = 0; c < 4; c++) {
-        var cx = x + 5 + c * 7, cy = y + 8 + r * 9;
-        if (crop === 'carrot') { px(cx, cy - 3, 1, 4, '#5fbf4a'); px(cx + 2, cy - 3, 1, 4, '#5fbf4a'); px(cx + 1, cy - 4, 1, 4, '#7fd85f'); px(cx, cy + 1, 3, 2, '#ff8a2a'); }
-        else if (crop === 'cabbage') { px(cx - 1, cy - 2, 5, 5, '#2f6f37'); px(cx, cy - 2, 3, 4, '#8ed36c'); px(cx + 1, cy - 1, 1, 2, '#c6f0a6'); }
-        else if (crop === 'wheat') { px(cx, cy - 5, 1, 7, '#c99b33'); px(cx + 2, cy - 4, 1, 6, '#c99b33'); px(cx - 1, cy - 6, 2, 2, '#ffd65c'); px(cx + 2, cy - 5, 2, 2, '#ffd65c'); }
-        else if (crop === 'tomato') { px(cx, cy - 4, 3, 6, '#3f8f45'); px(cx - 1, cy - 2, 2, 2, '#ff4b3a'); px(cx + 3, cy, 1, 2, '#ff4b3a'); px(cx + 1, cy - 1, 1, 1, '#ff6b5a'); }
-        else if (crop === 'pumpkin') { if ((r + c) % 2 === 0) { px(cx - 1, cy - 1, 5, 4, C.woodLine); px(cx, cy, 3, 2, '#ff9a2e'); px(cx + 1, cy - 2, 1, 1, '#3f8f45'); } else px(cx, cy - 1, 2, 2, '#5fbf4a'); }
-        else { px(cx, cy - 2, 1, 3, '#7fd85f'); px(cx + 1, cy - 3, 1, 2, '#7fd85f'); px(cx - 1, cy - 1, 1, 1, '#5fbf4a'); }
+        var cx = x + 4 + c * 8, foot = y + 5 + r * 8;
+        place(cropImg(crop, (c + r) % 2), cx - 3, foot - 12, foot, cropLayer);
       }
+  }
+  var cropCache = {};
+  function cropImg(crop, alt) {
+    var key = crop + alt;
+    if (cropCache[key]) return cropCache[key];
+    var cv = draw(7, 12, function () {
+      if (crop === 'carrot') { px(1, 4, 1, 6, '#4f9f3a'); px(3, 2, 1, 8, '#62b244'); px(5, 4, 1, 6, '#4f9f3a'); px(2, 6, 3, 1, '#62b244'); px(2, 10, 3, 2, '#ff8a2a'); px(2, 10, 1, 1, '#ffb05a'); }
+      else if (crop === 'cabbage') { px(0, 6, 7, 6, '#24501d'); px(1, 5, 5, 6, '#6ab54a'); px(2, 6, 3, 3, '#a6dc7a'); px(1, 10, 5, 1, '#3f7d28'); }
+      else if (crop === 'wheat') { for (var k = 0; k < 3; k++) { px(1 + k * 2, 2 + k % 2, 1, 10, '#b07f22'); px(1 + k * 2, 1 + k % 2, 2, 3, '#f2c94e'); } }
+      else if (crop === 'tomato') { px(3, 0, 1, 12, '#7a4c26'); px(1, 2, 2, 6, '#3f8f45'); px(4, 3, 2, 6, '#3f8f45'); px(1, 5, 2, 2, '#e8463a'); px(4, 7, 2, 2, '#e8463a'); px(1, 5, 1, 1, '#ff9a8a'); }
+      else if (crop === 'pumpkin') { if (alt) { px(0, 6, 7, 6, '#7a3a0a'); px(1, 6, 5, 5, '#f08a24'); px(1, 6, 2, 2, '#ffb45a'); px(3, 6, 1, 5, '#c86a14'); px(3, 4, 1, 2, '#3f7d28'); } else { px(1, 7, 5, 4, '#3f8f45'); px(2, 6, 3, 2, '#62b244'); } }
+      else { px(3, 4, 1, 8, '#3f7a28'); px(1, 7, 2, 2, '#4f8f2c'); px(4, 8, 2, 2, '#4f8f2c'); px(1, 0, 5, 5, '#f2c12e'); px(2, 1, 3, 3, '#6a3a12'); }
+    });
+    return (cropCache[key] = cv);
   }
 
   // ---------------------------------------------------------------- 움직이는 것
@@ -582,7 +816,7 @@
       } else {
         var m = Math.floor(t / 700 + hash(c, r) * 6) % 6;
         if (hash(c, r + 9) > 0.45) ctx.fillRect(x + 3 + m, y + 5 + (c % 3) * 3, 4, 1);
-        if (hash(c + 3, r) > 0.65) { ctx.fillStyle = '#6aa3d8'; ctx.fillRect(x + 9 - m, y + 11, 3, 1); }
+        if (hash(c + 3, r) > 0.65) { ctx.fillStyle = '#5a92cc'; ctx.fillRect(x + 9 - m, y + 11, 3, 1); }
       }
     }
     for (var f = 0; f < fallTiles.length; f += 2) {
@@ -621,25 +855,25 @@
   var CAN = ['..kkk...', '.kbbbkk.', 'kbbbbbbk', 'kbbbbbk.', '.kkkkk..'];
   function nameSeed(s) { var h = 7; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return h >>> 0; }
 
-  // 길 위 자리(세상 px): 집 앞 · 갈림길 · 다리 건너 · 동쪽 길 · 계단 위 · 남쪽 길. 갈래 자리는 큰길(PATH_ROW)의 갈림점을 거쳐 간다
-  var ROW_Y = Y(6) + 9;
+  // 길 위 자리(세상 px): 집 안 · 집 앞 · 갈림길 · 다리 건너 · 동쪽 길 · 계단 위 · 남쪽 길. 갈래 자리는 큰길(PATH_ROW)의 갈림점을 거쳐 간다
+  var ROW_Y = Y(6) + 9, DOOR_X = (HOUSE.x0 + HOUSE.x1) / 2;
   var SPOTS = {
-    door: { x: X(8) + 8, y: Y(5) + 6, via: X(8) + 8 },
+    home: { x: HOUSE.x0 + WALL + 26, y: HOUSE.y0 + WALL + FACE + 32, via: DOOR_X, door: true },
+    door: { x: DOOR_X, y: HOUSE.y1 + 6, via: DOOR_X },
     cross: { x: X(8) + 8, y: ROW_Y },
     west: { x: X(0) + 6, y: ROW_Y },
     east: { x: X(20) + 4, y: ROW_Y },
     hill: { x: X(19) + 8, y: Y(-2) + 8, via: X(19) + 8 },
-    south: { x: X(8) + 8, y: Y(11) + 6, via: X(8) + 8 },
-    lamp: { x: X(6) + 8, y: ROW_Y }
+    south: { x: X(8) + 8, y: Y(11) + 6, via: X(8) + 8 }
   };
-  var SPOT_NAMES = ['door', 'west', 'east', 'hill', 'south', 'lamp', 'cross'];
-  // 주민 한 마리의 하루(한 바퀴): 밭에서 물 주기 → 문 → 큰길 → 들를 곳 둘 → 다시 밭. 밭이 없으면 큰길과 들를 곳만
+  var SPOT_NAMES = ['home', 'door', 'west', 'east', 'hill', 'south', 'home'];
+  // 주민 한 마리의 하루(한 바퀴): 밭에서 물 주기 → 문 → 큰길 → 들를 곳 둘(집 안이면 문으로 들어가 잠깐 쉼) → 다시 밭. 밭이 없으면 큰길과 들를 곳만
   function buildRoute(r, index) {
     var seed = nameSeed(r.name) + index * 97, pts = [];
     function go(x, y, pause, water) { pts.push({ x: x, y: y, pause: pause || 0, water: !!water }); }
     function toRow(x) { go(x, ROW_Y); }
     var visits = [];
-    for (var k = 0; visits.length < 2 && k < 10; k++) {
+    for (var k = 0; visits.length < 2 && k < 12; k++) {
       var s = SPOT_NAMES[Math.floor(hash(seed, k) * SPOT_NAMES.length)];
       if (visits.indexOf(s) < 0) visits.push(s);
     }
@@ -652,8 +886,12 @@
     } else go(SPOTS.cross.x, ROW_Y, 1);
     visits.forEach(function (name) {
       var s = SPOTS[name];
-      if (s.via !== undefined) { toRow(s.via); go(s.x, s.y, 2.5 + hash(seed, s.x) * 2); toRow(s.via); }
-      else go(s.x, s.y, 1.5 + hash(seed, s.y) * 2);
+      if (s.via !== undefined) {
+        toRow(s.via);
+        if (s.door) { go(DOOR_X, HOUSE.y1 + 6); go(DOOR_X, HOUSE.y1 - FACE - 6); go(s.x, s.y, 4 + hash(seed, 7) * 3); go(DOOR_X, HOUSE.y1 - FACE - 6); go(DOOR_X, HOUSE.y1 + 6); }
+        else go(s.x, s.y, 2.5 + hash(seed, s.x) * 2);
+        toRow(s.via);
+      } else go(s.x, s.y, 1.5 + hash(seed, s.y) * 2);
     });
     if (r.plot) { toRow(r.plot.gate.x); go(r.plot.gate.x, r.plot.gate.inY); }
     // 구간(걷기 + 멈춤)과 한 바퀴 길이
@@ -685,8 +923,9 @@
   }
   function drawChick(ctx, r, p, t) {
     var img = r.img, x = Math.round(p.x), y = Math.round(p.y);
-    ctx.fillStyle = 'rgba(20,45,20,0.35)';
+    ctx.fillStyle = 'rgba(12,28,8,0.4)';
     ctx.fillRect(x - 5, y - 1, 10, 2);
+    ctx.fillRect(x - 4, y, 8, 1);
     if (!img.complete || !img.naturalWidth) return;
     var w = img.naturalWidth, h = img.naturalHeight, top = y - h - p.bob;
     if (p.left) { ctx.save(); ctx.translate(x * 2, 0); ctx.scale(-1, 1); }
@@ -713,6 +952,7 @@
   var namesHost = document.getElementById('world-names');
   var sctx = screen.getContext('2d');
   var ground = canvas(WW, WH), gctx = ground.getContext('2d');
+  buildObjects();
   (function paintGround() {
     var img = gctx.createImageData(WW, WH), a = img.data;
     for (var y = 0; y < WH; y++)
@@ -724,7 +964,10 @@
     g = gctx;
     decorateGround();
   })();
-  buildObjects();
+  // 그릴 순서: 서 있는 것 + 작물, 발 자리 순
+  var scene = [];
+  function sortScene() { scene = objects.concat(cropLayer); scene.sort(function (a, b) { return a.base - b.base || a.x - b.x; }); }
+  sortScene();
   // 안개: 마을에서 멀수록 짙게(4px 덩어리로 살짝 얼룩지게) — 서 있는 것까지 다 그린 뒤 덮는다
   var fog = canvas(WW, WH);
   g = fog.getContext('2d');
@@ -867,11 +1110,13 @@
     });
     // 밭: 주인 있는 밭은 물 준 흙에 작물, 나머지는 갈아만 둔 흙
     g = gctx;
+    cropLayer.length = 0;
     PLOTS.forEach(function (p, k) {
       var owner = residents[k];
       soil(p.x, p.y, !!owner);
-      if (owner) crops(p.x, p.y, owner.crop);
+      if (owner) plantCrops(p.x, p.y, owner.crop);
     });
+    sortScene();
     list.textContent = '';
     namesHost.textContent = '';
     residents.forEach(function (r, i) {
@@ -932,8 +1177,8 @@
     var chicks = residents.map(function (r, i) { return { chick: r, at: at[i], base: at[i].y + 0.5 }; });
     chicks.sort(function (p, q) { return p.base - q.base; });
     var ci = 0;
-    for (var i = 0; i < objects.length; i++) {
-      var o = objects[i];
+    for (var i = 0; i < scene.length; i++) {
+      var o = scene[i];
       while (ci < chicks.length && chicks[ci].base <= o.base) { drawChick(sctx, chicks[ci].chick, chicks[ci].at, t); ci++; }
       if (o.x + o.w < view.x0 || o.x > view.x1 || o.y + o.h < view.y0 || o.y > view.y1) continue;
       sctx.drawImage(o.img, o.x, o.y);
