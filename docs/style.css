@@ -78,21 +78,20 @@ pre code { background: none; border: 0; padding: 0; }
 .coffee-btn:hover { background: var(--hover); border-color: var(--line); text-decoration: none; }
 .coffee-btn .icon { width: 18px; height: 18px; vertical-align: 0; }
 
-/* 병아리 후원 마을(village.html): 화면 가득 픽셀 세상, 왼쪽 위 소개 · 오른쪽 위 주민 목록 · 오른쪽 아래 확대 단추 */
-.village-page { overflow: hidden; background: #101a22; overscroll-behavior: none; }
-.world { position: fixed; inset: 0; display: block; cursor: grab; touch-action: none; }
+/* 병아리 후원 마을(village.html): 위 막대 아래를 픽셀 세상으로 채움, 왼쪽 위 소개 · 오른쪽 위 주민 목록 · 오른쪽 아래 확대 단추 */
+.coffee-btn[aria-current="page"] { background: #ff813f; border-color: #ff813f; color: #fff; }
+.village-page { height: 100vh; overflow: hidden; background: #101a22; overscroll-behavior: none; }
+.world { position: fixed; left: 0; right: 0; top: var(--top); bottom: 0; display: block; width: 100%; height: calc(100% - var(--top)); cursor: grab; touch-action: none; }
 .world.dragging { cursor: grabbing; }
-.world-names { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+.world-names { position: fixed; left: 0; right: 0; top: var(--top); bottom: 0; pointer-events: none; overflow: hidden; }
 .village-name { position: absolute; left: 0; top: 0; padding: 1px 8px; border-radius: 999px; background: rgba(27, 43, 38, .82); border: 1px solid rgba(255, 255, 255, .18); color: #fff; font-size: 12px; font-weight: 700; line-height: 1.5; white-space: nowrap; will-change: transform; }
 .village-name.active { background: #ffcc33; border-color: #ffcc33; color: #3b2a06; }
 .village-card, .village-residents, .village-zoom { position: fixed; z-index: 2; background: rgba(21, 22, 27, .88); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 12px 32px rgba(0, 0, 0, .35); backdrop-filter: blur(6px); }
-.village-card { left: 16px; top: 16px; width: 300px; padding: 14px 16px 16px; }
-.village-home { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; font-weight: 700; }
-.village-home:hover { color: var(--ink); text-decoration: none; }
-.village-card h1 { margin: 8px 0 6px; font-size: 19px; color: var(--ink-deep); }
+.village-card { left: 16px; top: calc(var(--top) + 16px); width: 300px; padding: 14px 16px 16px; }
+.village-card h1 { margin: 0 0 6px; font-size: 19px; color: var(--ink-deep); }
 .village-card p { margin: 0 0 12px; color: var(--muted); font-size: 13px; line-height: 1.55; }
 .village-card .btn { width: 100%; justify-content: center; padding: 10px 16px; font-size: 14px; }
-.village-residents { right: 16px; top: 16px; width: 220px; max-height: calc(100vh - 120px); display: flex; flex-direction: column; padding: 12px; }
+.village-residents { right: 16px; top: calc(var(--top) + 16px); width: 220px; max-height: calc(100vh - var(--top) - 120px); display: flex; flex-direction: column; padding: 12px; }
 .residents-head { display: flex; align-items: baseline; justify-content: space-between; padding: 0 4px 8px; color: var(--ink-deep); font-size: 14px; }
 .residents-head span { color: var(--muted); font-size: 13px; font-weight: 700; }
 .village-residents ul { margin: 0; padding: 0; list-style: none; overflow-y: auto; }

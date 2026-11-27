@@ -288,9 +288,12 @@
         if (c >= VC && c < VC + COLS && r >= VR && r < VR + ROWS) continue;
         var x = c * T, y = r * T, d = distance(c, r);
         if (wildWater(c, r)) {
-          px(x, y, T, T, '#29566a');
+          px(x, y, T, T, '#2c5d71');
           if (hash(c, r + 9) > 0.5) px(x + 3 + Math.floor(hash(c, r) * 6), y + 6, 4, 1, '#3f7a91');
-          if (!wildWater(c, r - 1)) { px(x, y, T, 3, '#214a3c'); px(x, y, T, 1, INK); }
+          // 물가 테두리: 위가 땅일 때만(마을 연못과 이어지는 곳은 그대로 물)
+          var inVillageAbove = c >= VC && c < VC + COLS && r - 1 >= VR && r - 1 < VR + ROWS;
+          var waterAbove = inVillageAbove ? isWater(c - VC, r - 1 - VR) : wildWater(c, r - 1);
+          if (!waterAbove) { px(x, y, T, 3, '#214a3c'); px(x, y, T, 1, INK); }
           continue;
         }
         // 마을 둘레 한두 칸은 마을 풀색, 그 밖은 짙고 거친 들풀
@@ -345,6 +348,8 @@
   world.width = WW; world.height = WH;
   g = world.getContext('2d');
   drawWild();
+  // 마을 자리에도 바닥을 깔아 둔다(확대 배율이 정수가 아닐 때 마을 그림 가장자리 틈으로 빈칸이 보이지 않게)
+  g.save(); g.translate(VX, VY); drawGround(0); g.restore();
   var live = document.createElement('canvas');
   live.width = W; live.height = H;
   var lctx = live.getContext('2d');
@@ -365,11 +370,13 @@
     cam.x = Math.min(WW - hw, Math.max(hw, cam.x));
     cam.y = Math.min(WH - hh, Math.max(hh, cam.y));
   }
+  // 캔버스는 위 막대 아래 칸(CSS) — 그 크기와 화면 안 위치로 맞춘다
+  var offX = 0, offY = 0;
   function resize() {
     dpr = window.devicePixelRatio || 1;
-    vw = window.innerWidth; vh = window.innerHeight;
+    var rect = screen.getBoundingClientRect();
+    vw = rect.width; vh = rect.height; offX = rect.left; offY = rect.top;
     screen.width = Math.round(vw * dpr); screen.height = Math.round(vh * dpr);
-    screen.style.width = vw + 'px'; screen.style.height = vh + 'px';
     clamp();
   }
   window.addEventListener('resize', resize);
@@ -404,7 +411,7 @@
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointers.size === 2) {
       var p = Array.from(pointers.values()), d = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
-      if (pinch > 0) zoomAt(d / pinch, (p[0].x + p[1].x) / 2, (p[0].y + p[1].y) / 2);
+      if (pinch > 0) zoomAt(d / pinch, (p[0].x + p[1].x) / 2 - offX, (p[0].y + p[1].y) / 2 - offY);
       pinch = d;
     }
   });
@@ -413,7 +420,7 @@
   screen.addEventListener('pointercancel', release);
   screen.addEventListener('wheel', function (e) {
     e.preventDefault();
-    zoomAt(Math.pow(1.0015, -e.deltaY), e.clientX, e.clientY);
+    zoomAt(Math.pow(1.0015, -e.deltaY), e.clientX - offX, e.clientY - offY);
   }, { passive: false });
   document.getElementById('zoom-in').addEventListener('click', function () { zoomAt(1.4, vw / 2, vh / 2); });
   document.getElementById('zoom-out').addEventListener('click', function () { zoomAt(1 / 1.4, vw / 2, vh / 2); });
