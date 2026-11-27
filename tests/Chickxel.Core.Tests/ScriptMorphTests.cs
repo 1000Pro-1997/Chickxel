@@ -40,7 +40,6 @@ public class ScriptMorphTests
               } });
             // Morph_script_fills_empty_frames_between_range_ends_on_the_fast_path
             """);
-        ScriptLibrary.SetTrust(hash, true);
         var program = ScriptLibrary.Runnable(hash)!;
         Assert.True(program.ExecutionPath.Compiled, program.ExecutionPath.Reason);
         p.SetLayerEffects(0, [new ScriptEffect { ScriptHash = hash, Settings = ScriptSettingValues.Normalized(program, null) }]);

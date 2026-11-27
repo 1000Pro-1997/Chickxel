@@ -88,7 +88,7 @@ public sealed class PreviewSceneRender
     /// <summary>
     /// 진단: <paramref name="program"/>(설정 <paramref name="values"/>)을 병아리 레이어의 <paramref name="step"/>칸에 프로젝트 렌더와 같은 그림(캔버스 크기 셀 + <c>padding</c> 여백)과
     /// <c>ctx</c>(진행·피벗·다른 프레임 원본·다른 레이어 — <see cref="SpriteProject.ScriptLayersAt"/>)로 직접 한 번 돌려 실행 오류와 시간을 잰다(렌더는 오류를 삼키므로).
-    /// 다른 레이어는 실행을 허락한 원문일 때만 준다(렌더와 같음). 취소는 <see cref="OperationCanceledException"/>으로 나간다.
+    /// 다른 레이어는 프로젝트 렌더와 같이 준다. 취소는 <see cref="OperationCanceledException"/>으로 나간다.
     /// </summary>
     public ScriptProbeResult Probe(ScriptEffectProgram program, IReadOnlyDictionary<string, object>? values, int step, CancellationToken cancel)
     {

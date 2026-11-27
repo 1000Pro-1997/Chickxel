@@ -20,10 +20,9 @@ public class ScriptMorphApiTests
         return result.Program;
     }
 
-    private static string Trusted(string source)
+    private static string Register(string source)
     {
         var hash = ScriptLibrary.Add(source);
-        ScriptLibrary.SetTrust(hash, true);
         return hash;
     }
 
@@ -75,7 +74,7 @@ public class ScriptMorphApiTests
     [Fact]
     public void Frame_tag_is_the_first_tag_containing_the_drawn_frame()
     {
-        var hash = Trusted(Unique(TagScript));
+        var hash = Register(Unique(TagScript));
         var p = new SpriteProject(4, 4);
         for (int i = 1; i < 5; i++) p.DuplicateFrame(0);
         var cel = new PixelImage(4, 4);

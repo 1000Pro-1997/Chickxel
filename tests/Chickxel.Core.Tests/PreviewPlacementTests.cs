@@ -9,7 +9,7 @@ namespace Chickxel.Core.Tests;
 
 /// <summary>
 /// 미리보기 자리·피벗(<c>previewEndOffset</c>·<c>previewPivot</c>·<c>previewEndPivot</c>): 선언 검사·고치기, 미리보기 칸(끝 그림 병아리만 옮기고 기본 피벗은
-/// 시작 병아리 자리 그대로, 칸마다 피벗), 장면 미리보기. 신뢰 결정은 프로세스 전체 상태라 시험마다 원문 끝에 주석을 붙여 해시를 따로 쓴다.
+/// 시작 병아리 자리 그대로, 칸마다 피벗), 장면 미리보기. 원문을 시험마다 다른 주석과 함께 등록해 해시를 따로 쓴다.
 /// </summary>
 public class PreviewPlacementTests
 {
@@ -32,11 +32,10 @@ public class PreviewPlacementTests
 
     private static PixelImage End => PreviewChicks.Load("wizard");
 
-    private static ScriptEffectProgram Trusted(string source, [CallerMemberName] string test = "")
+    private static ScriptEffectProgram Register(string source, [CallerMemberName] string test = "")
     {
         var program = ScriptEffectProgram.Parse(source + "\n// " + test + "\n").Program!;
         ScriptLibrary.Add(program.Source);
-        ScriptLibrary.SetTrust(program.ContentHash, true);
         return program;
     }
 
@@ -127,7 +126,7 @@ public class PreviewPlacementTests
         Assert.Equal(new PointF(alone.Width / 2f + 3, alone.Height / 2f + 2), aloneContext.Pivot);
 
         // 미리보기 그리기도 같은 피벗을 효과에 준다
-        IReadOnlyList<LayerEffect> effects = [Trusted(MarkPivotSource).CreateEffect()];
+        IReadOnlyList<LayerEffect> effects = [Register(MarkPivotSource).CreateEffect()];
         var drawn = AssetPreview.Render(effects, Start, Steps - 1, Steps, End, PreviewMotion.None, placement);
         var mark = drawn.GetOpaqueBounds();
         Assert.Equal(new Rectangle((int)MathF.Floor(center.X - 5), (int)MathF.Floor(center.Y + 1), 1, 1), mark);

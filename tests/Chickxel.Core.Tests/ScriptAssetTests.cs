@@ -84,7 +84,7 @@ public class ScriptAssetTests
     // ───────────── effect-script 패키지 ─────────────
 
     [Fact]
-    public void Package_script_installs_as_an_untrusted_tile_that_renders_after_allow()
+    public void Package_script_installs_as_a_tile_that_renders()
     {
         var program = ScriptEffectProgram.Parse(Unique(OfficialEffects.Source("shine"))).Program!;
         byte[] bytes = Package(builder => builder.Add(AssetKinds.EffectScript, ScriptAsset.From("", program)));
@@ -100,18 +100,12 @@ public class ScriptAssetTests
         var script = Assert.IsType<ScriptAsset>(entry.Data);
         Assert.Equal((AssetSamples.PackageId + ".effect-script", program.ContentHash, "빛 지나가기", 5, true),
             (entry.Id, script.Hash, script.Name, script.Settings.Count, script.Animated));
-        // 설치는 실행을 허락하지 않는다
-        Assert.Equal(ScriptTrust.Unknown, ScriptLibrary.TrustOf(script.Hash));
 
         var plain = Project([]);
         var p = Project([]);
         p.SetLayerEffects(0, entry.EffectTemplate!.Instantiate(p, null));
         Assert.Equal(program.Source, p.Scripts[script.Hash]);
         var effect = Assert.IsType<ScriptEffect>(Assert.Single(p.Layers[0].Effects));
-        Assert.Equal(ScriptEffectState.NotTrusted, ScriptEffectRuntime.StatusOf(p.Layers[0], effect).State);
-        Assert.True(SameFrames(plain, p));
-
-        ScriptLibrary.SetTrust(script.Hash, true);
         // 효과 창에서 바로 넣은 기본 설정 효과와 같은 값·같은 그림
         var direct = new ScriptEffect { ScriptHash = script.Hash, Settings = ScriptSettingValues.Normalized(ScriptLibrary.Runnable(script.Hash)!, null) };
         Assert.Equal(direct, effect);
@@ -165,7 +159,6 @@ public class ScriptAssetTests
         var source = Unique(OfficialEffects.Source("shine"));
         var p = Project([]);
         var hash = p.AddScript(source);
-        ScriptLibrary.SetTrust(hash, true);
         var program = ScriptLibrary.Runnable(hash)!;
         var script = new ScriptEffect
         {
@@ -329,8 +322,6 @@ public class ScriptAssetTests
         var p = Project([]);
         var h1 = p.AddScript(v1);
         var h2 = p.AddScript(v2);
-        ScriptLibrary.SetTrust(h1, true);
-        ScriptLibrary.SetTrust(h2, true);
         var settings = ScriptSettingValues.Normalized(ScriptLibrary.Runnable(h1)!, new Dictionary<string, object> { ["angle"] = 200, ["width"] = 6 });
         p.SetLayerEffects(0, [new ScriptEffect { ScriptHash = h1, Settings = settings }]);
         p.SetLayerEffects(0, [new ScriptEffect { ScriptHash = h2, Settings = settings }]);
@@ -406,7 +397,6 @@ public class ScriptAssetTests
             """);
         var p = Project([], frames: 1);
         var hash = p.AddScript(source);
-        ScriptLibrary.SetTrust(hash, true);
         var effect = new ScriptEffect { ScriptHash = hash };
         p.SetLayerEffects(0, [effect]);
         var layer = p.Layers[0];
@@ -465,7 +455,6 @@ public class ScriptAssetTests
     private static string Trust(string source)
     {
         var hash = ScriptLibrary.Add(source);
-        ScriptLibrary.SetTrust(hash, true);
         return hash;
     }
 }

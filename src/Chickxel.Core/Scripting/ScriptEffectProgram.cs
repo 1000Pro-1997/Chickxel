@@ -128,7 +128,7 @@ public sealed class ScriptEffectProgram
     /// <summary>선언의 <c>name</c>.</summary>
     public string Name { get; }
 
-    /// <summary>선언의 <c>author</c>(선택, 없으면 null): 신뢰 확인 창에 보인다.</summary>
+    /// <summary>선언의 <c>author</c>(선택, 없으면 null): 효과 목록·에셋 관리자에 보인다.</summary>
     public string? Author { get; }
 
     /// <summary>선언의 <c>description</c>(선택, 없으면 null, <see cref="MaxDescriptionLength"/>자까지): 효과 만들기의 설명 칸·올릴 때 짧은 설명의 처음 값.</summary>

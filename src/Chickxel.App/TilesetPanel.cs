@@ -202,7 +202,7 @@ public sealed class TilesetPanel : UserControl
 
             // 타일 목록(층 이름 줄이 목록 안에 있음)
             _palette.SelectionChanged += OnPaletteSelection;
-            _palette.TileActivated += _ => Ctx.TileTool = TileTool.Brush;
+            _palette.TileActivated += _ => Ctx.PickTileTool(autoSet: false);
             _palette.TileMenuRequested += ShowTileMenu;
             var paletteScroll = new ScrollViewer
             {
@@ -371,7 +371,7 @@ public sealed class TilesetPanel : UserControl
                 return;
             }
             Ctx.AutoTileSet = TileSources.Global(_slot, _autoSets[index].Id);
-            Ctx.TileTool = TileTool.AutoTile;
+            Ctx.PickTileTool(autoSet: true);
         }
 
         private void ShowAutoMenu(int index, PointerPressedEventArgs e)
@@ -391,7 +391,7 @@ public sealed class TilesetPanel : UserControl
             if (AutoTileEditorDialog.Run(_owner, ts, set) is not { } edited) return;
             Ctx.EditTileset(ts.Key, set is null ? UiStrings.Tileset_AddAutoTile : UiStrings.Tileset_EditAutoTile, t => TilesetEdit.PutAutoTile(t, edited));
             Ctx.AutoTileSet = TileSources.Global(_slot, edited.Id);
-            Ctx.TileTool = TileTool.AutoTile;
+            Ctx.PickTileTool(autoSet: true);
         }
 
         private void DeleteAutoTile(AutoTileSet set)
@@ -420,7 +420,7 @@ public sealed class TilesetPanel : UserControl
             _owner._paletteStamp = (stamp, this);
             Ctx.TileTransform = TileTransform.None;
             Ctx.TileStamp = stamp;
-            if (Ctx.TileTool is not (TileTool.Brush or TileTool.Rect or TileTool.Fill)) Ctx.TileTool = TileTool.Brush;
+            Ctx.PickTileTool(autoSet: false);
         }
 
         /// <summary>타일 오른쪽 클릭 메뉴(<paramref name="clicked"/> = 누른 칸의 타일).</summary>

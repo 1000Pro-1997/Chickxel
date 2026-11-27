@@ -22,7 +22,7 @@ public class EffectMovePivotTests
     /// <summary>그림을 오른쪽으로 2px 옮기고 그만큼 알리는 스크립트.</summary>
     private static ScriptEffect Slide([CallerMemberName] string test = "")
     {
-        var program = EffectParity.Trusted(Unique("""
+        var program = EffectParity.Register(Unique("""
             effect({ name: "slide", padding: [0, 0, 2, 0],
               render(img, ctx, s) {
                 const w = img.width, h = img.height, d = img.data;
@@ -83,7 +83,7 @@ public class EffectMovePivotTests
     /// <summary>여백 없이 그림을 오른쪽으로 6px 옮기는 스크립트(<paramref name="report"/>면 ctx.movePivot으로 알림).</summary>
     private static ScriptEffect Hop(bool report, [CallerMemberName] string test = "")
     {
-        var program = EffectParity.Trusted(Unique($$"""
+        var program = EffectParity.Register(Unique($$"""
             effect({ name: "hop", padding: [0, 0, 0, 0],
               render(img, ctx, s) {
                 const w = img.width, h = img.height, d = img.data;
@@ -216,7 +216,7 @@ public class EffectMovePivotTests
     /// <summary>여백 [0, 0, 6, 0]을 받아 넓힌 폭만큼(원본 폭 9 밖) 그림을 오른쪽으로 옮기고 알리는 스크립트 — 경로 레이어처럼 넓힌 자리를 봐야 거리가 정해진다.</summary>
     private static ScriptEffect Reach([CallerMemberName] string test = "")
     {
-        var program = EffectParity.Trusted(Unique("""
+        var program = EffectParity.Register(Unique("""
             effect({ name: "reach", padding: [0, 0, 6, 0],
               render(img, ctx, s) {
                 const w = img.width, h = img.height, d = img.data, k = w - 9;

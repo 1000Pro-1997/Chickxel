@@ -1620,6 +1620,12 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
             Item(UiStrings.S_TimelinePanel_ShowEffectMenu_62925D147C, () => EditLayerEffects(p.IndexOf(layer), effectIndex)),
             new Separator(),
         };
+        // 상점에서 받은 효과인데 내 라이브러리에 없으면(다른 사람의 프로젝트) 그 상점 패키지의 최신 버전을 받는다
+        if (effect is ScriptEffect script && EffectUpdates.MissingStorePackage(p, script.ScriptHash) is { } package)
+        {
+            items.Add(Item(UiStrings.StoreDownload_Menu, () => DownloadFromStore(package)));
+            items.Add(new Separator());
+        }
         if (!inBox)
         {
             items.Add(Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowEffectMenu_8640EB7B98,frame + 1), () => SetRange(Math.Min(from, frame), Math.Max(to, frame))));
@@ -1644,6 +1650,13 @@ public sealed partial class TimelinePanel : UserControl, IHelpTargetSource
         items.Add(Item(UiStrings.S_TimelinePanel_ShowEffectMenu_B155BA0146, () => CopySelection(false)));
         items.Add(Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowEffectMenu_44E405DEFB), () => PasteSelection(), _fxClip is { Count: > 0 }));
         ShowMenu([.. items]);
+    }
+
+    /// <summary>상점 패키지 <paramref name="packageId"/>의 최신 버전을 라이브러리에 받고 결과를 알린다(설치 실패는 설치가 알림).</summary>
+    private async void DownloadFromStore(string packageId)
+    {
+        Say(UiStrings.StoreDownload_Working);
+        if (await EffectUpdates.DownloadAsync(this, packageId) is { } message) Say(message);
     }
 
     /// <summary>영구 적용할 효과: 효과 줄로 고른 효과들(없으면 누른 효과 하나), 레이어별.</summary>

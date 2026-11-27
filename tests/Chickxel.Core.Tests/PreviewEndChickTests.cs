@@ -10,7 +10,7 @@ namespace Chickxel.Core.Tests;
 
 /// <summary>
 /// 끝 그림 병아리(<c>previewEndChick</c>): 선언 검사, 미리보기 칸(마지막 칸 = 끝 그림 병아리, 같은 크기 캔버스, 다른 프레임 원본), 패키지·장면 미리보기.
-/// 신뢰 결정은 프로세스 전체 상태라 시험마다 원문 끝에 주석을 붙여 해시를 따로 쓴다.
+/// 원문을 시험마다 다른 주석과 함께 등록해 해시를 따로 쓴다.
 /// </summary>
 public class PreviewEndChickTests
 {
@@ -30,15 +30,14 @@ public class PreviewEndChickTests
 
     private static PixelImage End => PreviewChicks.Load("wizard");
 
-    private static ScriptEffectProgram Trusted(string source, string test)
+    private static ScriptEffectProgram Register(string source, string test)
     {
         var program = ScriptEffectProgram.Parse(source + "\n// " + test + "\n").Program!;
         ScriptLibrary.Add(program.Source);
-        ScriptLibrary.SetTrust(program.ContentHash, true);
         return program;
     }
 
-    private static ScriptEffect CopyLast([CallerMemberName] string test = "") => Trusted(CopyLastSource, test).CreateEffect();
+    private static ScriptEffect CopyLast([CallerMemberName] string test = "") => Register(CopyLastSource, test).CreateEffect();
 
     private static bool IsAnimatedPng(byte[] png)
     {
@@ -127,7 +126,7 @@ public class PreviewEndChickTests
     public void Package_preview_of_a_still_script_animates_to_the_end_chick()
     {
         const string still = "effect({ name: \"still\", tags: [\"a\"], render(img) {} });";
-        var plain = ScriptAsset.From("", Trusted(still, nameof(Package_preview_of_a_still_script_animates_to_the_end_chick)));
+        var plain = ScriptAsset.From("", Register(still, nameof(Package_preview_of_a_still_script_animates_to_the_end_chick)));
         Assert.False(IsAnimatedPng(AssetPreview.Package(plain)!.Png));
         var morph = plain with { PreviewEndChick = "wizard" };
         Assert.True(IsAnimatedPng(AssetPreview.Package(morph)!.Png));

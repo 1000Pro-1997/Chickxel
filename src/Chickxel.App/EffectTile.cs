@@ -286,8 +286,6 @@ internal static class EffectTileCatalog
         };
         string? description = entry.Script?.DescriptionFor(global::System.Globalization.CultureInfo.CurrentUICulture) is { Length: > 0 } text ? text : null;
         if (description is not null) tip = description + "\n" + tip;
-        if (entry.ScriptHashes.Any(hash => ScriptLibrary.TrustOf(hash) != ScriptTrust.Trusted))
-            tip += "\n" + string.Format(culture, UiStrings.EffectPreset_ScriptTileNote, recipe.Effects.Count(effect => effect is ScriptEffect));
         tile.Description = description;
         ToolTip.SetTip(tile, tip + (script ? MotionNote(tile, motionTip) : ""));
         // 대상 도움말(F1): 공식 효과 = 기본 효과 목록의 그 효과 줄, 받은·내 스크립트 = 스크립트 효과 ① 상자 항목, 프리셋 = 프리셋 탭 ①~③ 항목

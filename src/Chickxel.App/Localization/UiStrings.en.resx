@@ -2444,6 +2444,14 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="About_Discord" xml:space="preserve"><value>Discord (bugs and ideas)</value></data>
   <data name="About_Website" xml:space="preserve"><value>Website</value></data>
   <data name="About_BuyCoffee" xml:space="preserve"><value>Buy the developer a coffee</value></data>
+  <data name="About_SupportGroup" xml:space="preserve"><value>Support</value></data>
+  <data name="About_SupportThanks" xml:space="preserve"><value>Heartfelt thanks to everyone who bought a coffee. You keep Chickxel going.</value></data>
+  <data name="About_SupportersTitle" xml:space="preserve"><value>Coffee supporters</value></data>
+  <data name="About_Village" xml:space="preserve"><value>Visit the chick supporters village</value></data>
+  <data name="About_SupportersLoading" xml:space="preserve"><value>Loading the list…</value></data>
+  <data name="About_SupportersEmpty" xml:space="preserve"><value>Waiting for the first coffee. Leave your name when you buy one (and don't make the message private) and it shows up here.</value></data>
+  <data name="About_SupportersOffline" xml:space="preserve"><value>Couldn't get the supporter list (check your internet connection).</value></data>
+  <data name="About_SupportersCached" xml:space="preserve"><value>Couldn't reach the server; showing the last list received.</value></data>
   <data name="Crash_ReportOnDiscord" xml:space="preserve"><value>Report on Discord</value></data>
   <data name="Crash_ReportOnDiscord_Hint" xml:space="preserve"><value>When reporting on Discord, please attach the log file above.</value></data>
   <data name="Chat_Help_Feedback" xml:space="preserve"><value>Bugs or ideas? Tell us on Discord</value></data>
@@ -2778,7 +2786,7 @@ Off: decides from the result alone, as before.</value></data>
   <data name="Pixelate_Opt_Trials" xml:space="preserve"><value>Trials</value></data>
   <data name="Pixelate_Opt_Seconds" xml:space="preserve"><value>Seconds</value></data>
   <data name="Pixelate_Opt_Unlimited" xml:space="preserve"><value>unlimited</value></data>
-  <data name="Pixelate_Opt_UnlimitedTip" xml:space="preserve"><value>Set to 0 to remove this limit. With both trials and seconds at 0, optimization runs until it stops improving.</value></data>
+  <data name="Pixelate_Opt_UnlimitedTip" xml:space="preserve"><value>Set to 0 to remove this limit (the box shows ∞, and you can type ∞ too). With both trials and seconds at 0, optimization runs until it stops improving.</value></data>
   <data name="Pixelate_Opt_SampleFrames" xml:space="preserve"><value>Frames to sample</value></data>
   <data name="Pixelate_Opt_SampleFramesTip" xml:space="preserve"><value>Default 5. 0 = search with every frame. 2 or more: when there are more frames than this, that many are picked evenly (first and last included) for the trials, and the best settings are then applied once to every frame (much faster for long videos and GIFs). The sampled frames have a yellow border in the source view. When you watch the running tile, each new best is applied to every frame for the large preview. Cancelling still takes a moment to apply the best so far to every frame.</value></data>
   <data name="Pixelate_Opt_Sampled" xml:space="preserve"><value>searched with {sampled}/{total} frames, all frames {score}</value></data>
@@ -3331,7 +3339,6 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="ScriptEffect_Time" xml:space="preserve"><value>{ms} ms per frame in the current preview</value></data>
   <data name="ScriptEffect_NotRunYet" xml:space="preserve"><value>Not computed yet.</value></data>
   <data name="ScriptEffect_MissingSource" xml:space="preserve"><value>The source is not in this project, so this effect is not drawn. Open the same JS file to draw it again.</value></data>
-  <data name="ScriptEffect_NotTrusted" xml:space="preserve"><value>This script is not allowed to run, so it is not drawn. Only allow scripts you trust.</value></data>
   <data name="ScriptEffect_Allow" xml:space="preserve"><value>Allow to run</value></data>
   <data name="ScriptEffect_Invalid" xml:space="preserve"><value>The source has errors, so this effect is not drawn.</value></data>
   <data name="ScriptEffect_Failed" xml:space="preserve"><value>Some frames failed (only this effect is skipped on those frames).</value></data>
@@ -3365,11 +3372,8 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="ScriptEditor_Applied" xml:space="preserve"><value>Applied.</value></data>
   <data name="ScriptEditor_Errors" xml:space="preserve"><value>Errors: {count} — fix them and apply again.</value></data>
   <data name="ScriptTrust_Title" xml:space="preserve"><value>Run script effects?</value></data>
-  <data name="ScriptTrust_Message" xml:space="preserve"><value>This project has script effects you have not seen before. Scripts run in an isolated engine with no file or network access, but only run ones you trust. Effects that do not run are not drawn and stay in the project as they are. Your choice is remembered per source hash, and you can allow a script later in the effects window.</value></data>
   <data name="ScriptTrust_Run" xml:space="preserve"><value>Run</value></data>
   <data name="ScriptTrust_DontRun" xml:space="preserve"><value>Don't run</value></data>
-  <data name="ScriptTrust_NoAuthor" xml:space="preserve"><value>No author</value></data>
-  <data name="ScriptTrust_Unnamed" xml:space="preserve"><value>Unnamed script</value></data>
   <data name="EffectRecipe_GroupRow" xml:space="preserve"><value>{0} · preset, {1} effects</value></data>
   <data name="EffectRecipe_GroupTip" xml:space="preserve"><value>Parameter preset: changing a value updates every linked effect setting together. Expand it to edit the effects inside.</value></data>
   <data name="EffectRecipe_PanelHint" xml:space="preserve"><value>Adjust this preset with the values below. One value changes all of its linked effect settings together.</value></data>
@@ -3403,18 +3407,13 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="RecipeParams_Count" xml:space="preserve"><value>{0} parameters</value></data>
   <data name="Assets_ContentsScripts" xml:space="preserve"><value>Script effects: {0}</value></data>
   <data name="Assets_KindScript" xml:space="preserve"><value>Script effect</value></data>
-  <data name="Assets_ScriptNote" xml:space="preserve"><value>Contains script effects that aren't allowed to run (you chose Don't run when opening a project). Allow them in the script settings of the effects window, or install the package again, to draw them.</value></data>
   <data name="Assets_ScriptRun" xml:space="preserve"><value>Script run</value></data>
-  <data name="Assets_ScriptRunAllowed" xml:space="preserve"><value>Allowed</value></data>
-  <data name="Assets_ScriptRunNotAllowed" xml:space="preserve"><value>Not allowed — allow it in the script settings of the effects window</value></data>
   <data name="Assets_ScriptHash" xml:space="preserve"><value>Source hash</value></data>
   <data name="Assets_ScriptSettingCount" xml:space="preserve"><value>{0} settings</value></data>
-  <data name="EffectPreset_ScriptTileNote" xml:space="preserve"><value>Contains script effects ({0}). They don't draw until you allow them to run.</value></data>
   <data name="EffectPreset_ScriptTileTip" xml:space="preserve"><value>An effect you made. Double-click or drag into the effect list. Right-click to edit it in the Effect Maker or delete it.</value></data>
   <data name="EffectPreset_ReceivedScriptTileTip" xml:space="preserve"><value>A received effect ({0}). Double-click or drag into the effect list.</value></data>
   <data name="ScriptEffect_SaveAsset" xml:space="preserve"><value>Save as asset</value></data>
   <data name="ScriptEffect_SaveAssetTip" xml:space="preserve"><value>Saves this source as a personal script asset you can reuse from the Effects tab of the effects window and the Asset Manager, and export in a package.</value></data>
-  <data name="ScriptEffect_SaveAssetNeedsTrust" xml:space="preserve"><value>Only scripts you allowed to run can be saved as personal assets.</value></data>
   <data name="ScriptEffect_SaveAssetError" xml:space="preserve"><value>Couldn't save the script as an asset: {0}</value></data>
   <data name="Busy_EffectBounds" xml:space="preserve"><value>Measuring effect bounds</value></data>
   <data name="Busy_Baking" xml:space="preserve"><value>Baking effects</value></data>
@@ -5142,4 +5141,16 @@ How to earn XP
   <data name="Tutorial_Ai_Login" xml:space="preserve"><value>This is the AI chat window. Pick Claude or Codex here, then install and sign in following the guide below. You don't have to do it now.</value></data>
   <data name="Tutorial_Ai_Ready" xml:space="preserve"><value>Connected. Type something like 'draw a 32×32 wooden barrel' in this box and send it; the AI drives Chickxel through MCP to draw into the open image.</value></data>
   <data name="Tutorial_Ai_Later" xml:space="preserve"><value>You can sign in from this window anytime. Once connected, type something like 'draw a 32×32 wooden barrel' in the box at the bottom and send it; the AI drives Chickxel through MCP to draw into the open image.</value></data>
+  <data name="StarPrompt_Title" xml:space="preserve"><value>Star Chickxel</value></data>
+  <data name="StarPrompt_Heading" xml:space="preserve"><value>Enjoying Chickxel?</value></data>
+  <data name="StarPrompt_Body" xml:space="preserve"><value>A star on GitHub helps more people find Chickxel and keeps development going.</value></data>
+  <data name="StarPrompt_Button" xml:space="preserve"><value>Star on GitHub</value></data>
+  <data name="StarPrompt_Working" xml:space="preserve"><value>Starring…</value></data>
+  <data name="StarPrompt_Thanks" xml:space="preserve"><value>Starred on GitHub.</value></data>
+  <data name="StarPrompt_ThankButton" xml:space="preserve"><value>Thank you!</value></data>
+  <data name="StarPrompt_OpenedPage" xml:space="preserve"><value>Opened the GitHub repository in your browser. Please press Star at the top right.</value></data>
+  <data name="StoreDownload_Menu" xml:space="preserve"><value>Download from store</value></data>
+  <data name="StoreDownload_Working" xml:space="preserve"><value>Downloading the effect from the store…</value></data>
+  <data name="StoreDownload_Done" xml:space="preserve"><value>Downloaded from the store: {0} {1}. Select the effect in the effects window's effect list and press Update to switch to the latest source.</value></data>
+  <data name="StoreDownload_NotFound" xml:space="preserve"><value>Couldn't find this effect in the store (it may have been taken down).</value></data>
 </root>

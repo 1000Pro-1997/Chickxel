@@ -116,7 +116,6 @@ internal static class GuideScreenEffectsCompareShots
     {
         const int steps = 6;
         string hash = ScriptLibrary.Add(EffectMakerShots.MorphScript);
-        ScriptLibrary.SetTrust(hash, true);
         var program = ScriptLibrary.Runnable(hash) ?? throw new InvalidOperationException("morph script didn't parse");
         LayerEffect morph = program.CreateEffect();
         var chick = PreviewChicks.Load(program.PreviewChick);

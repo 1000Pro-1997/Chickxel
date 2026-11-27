@@ -89,6 +89,8 @@ public enum VectorIcon
     Globe,
     /// <summary>커피 잔(개발자에게 커피 사주기 — Lucide coffee).</summary>
     Coffee,
+    /// <summary>집(병아리 후원 마을 가기 — Lucide house).</summary>
+    House,
     /// <summary>3×3 칸 격자(AI 그림 픽셀로 정리).</summary>
     Grid3x3,
     /// <summary>잔디가 덮인 흙 블록(타임라인 타일맵 레이어 — 직접 그린 경로).</summary>
@@ -195,6 +197,8 @@ public enum VectorIcon
     MessageSquare,
     /// <summary>셔츠(스킨 — 그림 갈아입히기, Lucide shirt).</summary>
     Shirt,
+    /// <summary>글자 T(그림판 글자 도구 — Lucide type).</summary>
+    Type,
 }
 
 public static class VectorIcons
@@ -420,6 +424,11 @@ public static class VectorIcons
             "M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1",
             "M6 2v2",
         ],
+        VectorIcon.House =>
+        [
+            "M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8",
+            "M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
+        ],
         VectorIcon.Grid3x3 =>
         [
             "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z",
@@ -537,6 +546,7 @@ public static class VectorIcons
         VectorIcon.Monitor => ["M4 3h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z", "M8 21h8", "M12 17v4"],
         VectorIcon.Plug => ["M12 22v-5", "M9 8V2", "M15 8V2", "M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8z"],
         VectorIcon.MessageSquare => ["M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"],
+        VectorIcon.Type => ["M4 7V4h16v3", "M9 20h6", "M12 4v16"],
         _ => [],
     };
 

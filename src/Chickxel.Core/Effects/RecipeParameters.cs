@@ -28,7 +28,7 @@ public static class RecipeParameters
 
     /// <summary>
     /// 효과 schema(<c>EffectRegistry.ParametersOf</c>)의 설정 <paramref name="key"/>(없거나 모르는 효과면 null).
-    /// 스크립트 효과는 <paramref name="programs"/>(해시 → 해석 결과, 없으면 실행을 허락한 원문)가 선언한 설정이다.
+    /// 스크립트 효과는 <paramref name="programs"/>(해시 → 해석 결과, 없으면 앱이 아는 원문)가 선언한 설정이다.
     /// </summary>
     public static EffectParameter? SettingOf(LayerEffect effect, string key, Func<string, ScriptEffectProgram?>? programs = null)
         => EffectRegistry.ParametersOf(effect, programs).FirstOrDefault(p => p.Key == key);
@@ -126,7 +126,7 @@ public static class RecipeParameters
     /// 문제가 있는 매개변수 번호를 돌려준다. 규칙: ID 모양·중복, 이름, 연결이 하나 이상, 연결마다 있는 효과 번호·schema 키·같은 종류의 내보낼 수 있는 설정,
     /// 같은 설정을 두 번 잇지 않음, 정수 범위·기본값이 연결된 모든 설정의 schema 범위 안, 고를 수 있는 값이 연결된 모든 설정에서 고를 수 있고 기본값이 그중 하나,
     /// 글 기본값이 연결된 모든 글 설정의 최대 글자 수 안.
-    /// 스크립트 효과는 <paramref name="programs"/>(해시 → 해석 결과, 없으면 실행을 허락한 원문)가 선언한 설정으로 본다. 원문을 찾지 못한 스크립트 효과의
+    /// 스크립트 효과는 <paramref name="programs"/>(해시 → 해석 결과, 없으면 앱이 아는 원문)가 선언한 설정으로 본다. 원문을 찾지 못한 스크립트 효과의
     /// 스크립트 설정 연결은 맞는지 알 수 없어 문제로 치지 않는다(중복만 본다).
     /// </summary>
     public static IReadOnlySet<int> Check(IReadOnlyList<LayerEffect> effects, IReadOnlyList<RecipeParameter> parameters, Action<AssetIssueCode, string> add,

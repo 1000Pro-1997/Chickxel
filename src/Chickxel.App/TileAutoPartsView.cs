@@ -73,6 +73,6 @@ internal sealed class TileAutoPartsView : StackPanel
         if (index < 0 || index >= _tiles.Count || _ctx.CurrentTileset is not { } ts || ts.FindAutoTile(_ctx.AutoTileSet) is not { } set) return;
         _ctx.TileTransform = TileTransform.None;
         _ctx.TileStamp = new TileStamp([new StampCell(0, 0, new TileCell(_tiles[index]), set.Floor)]);
-        if (_ctx.TileTool is not (TileTool.Brush or TileTool.Rect or TileTool.Fill)) _ctx.TileTool = TileTool.Brush;
+        _ctx.PickTileTool(autoSet: false);
     }
 }

@@ -79,12 +79,6 @@ public sealed partial class AssetManagerWindow
         _ => UiStrings.Assets_KindEffect,
     };
 
-    /// <summary>스크립트가 든 에셋의 실행 허락 안내(주황 글씨).</summary>
-    private void ScriptNote() => _detail.Children.Add(new TextBlock
-    {
-        Text = UiStrings.Assets_ScriptNote, Foreground = AppTheme.WarningBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 4),
-    });
-
     private void Paragraph(string text)
         => _detail.Children.Add(new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.TextBrush });
 
@@ -109,8 +103,6 @@ public sealed partial class AssetManagerWindow
         if (!string.IsNullOrEmpty(description)) Paragraph(description);
 
         var store = entry.Store;
-        var scripts = entry.ScriptHashes;
-        bool allowed = scripts.All(hash => ScriptLibrary.TrustOf(hash) == ScriptTrust.Trusted);
         Facts(
             (UiStrings.Assets_Kind, KindText(entry.Kind)),
             (UiStrings.Assets_Author, IdentityBadge.Author(store is not null ? entry.Author : null, 16, fallback: entry.Author?.Name ?? UiStrings.Assets_SourceLocal)),
@@ -121,9 +113,7 @@ public sealed partial class AssetManagerWindow
             (UiStrings.Assets_Source, AppAssets.SourceText(entry.Source)),
             (UiStrings.Assets_AddedAt, entry.AddedUtc == default ? null : entry.AddedUtc.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)),
             (UiStrings.Assets_MinApp, store is { MinAppVersion: not "0.0.0" } ? store.MinAppVersion : null),
-            (UiStrings.Assets_ScriptHash, entry.Script is { } script ? script.Hash[..12] : null),
-            (UiStrings.Assets_ScriptRun, scripts.Count == 0 ? null : allowed ? UiStrings.Assets_ScriptRunAllowed : UiStrings.Assets_ScriptRunNotAllowed));
-        if (scripts.Count > 0 && !allowed) ScriptNote();
+            (UiStrings.Assets_ScriptHash, entry.Script is { } script ? script.Hash[..12] : null));
         if (entry.Script is { } declared)
             _detail.Children.Add(Dim(F(UiStrings.Assets_ScriptSettingCount, declared.Settings.Count)
                                      + (declared.Settings.Count > 0

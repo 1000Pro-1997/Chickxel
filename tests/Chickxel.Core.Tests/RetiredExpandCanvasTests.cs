@@ -46,7 +46,7 @@ public class RetiredExpandCanvasTests
     [Fact]
     public void PreviewCanvas_IsSourceInsidePadding()
     {
-        var program = EffectParity.Trusted(Unique("effect({ name: 'up', padding: [1, 3, 2, 0], " + Body));
+        var program = EffectParity.Register(Unique("effect({ name: 'up', padding: [1, 3, 2, 0], " + Body));
         IReadOnlyList<LayerEffect> effects = [program.CreateEffect()];
         var chick = new PixelImage(5, 4);
         var canvas = AssetPreview.Canvas(effects, chick);

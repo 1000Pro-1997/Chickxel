@@ -84,6 +84,48 @@ public static class Ui
     /// <summary>숫자 상자 값(비었으면 최소값).</summary>
     public static decimal NumValue(this NumericUpDown n) => n.Value ?? n.Minimum;
 
+    /// <summary>0 = 제한 없음인 숫자 상자에서 0 대신 보이는 글자(입력해도 0).</summary>
+    public const string UnlimitedText = "∞";
+
+    /// <summary>
+    /// 0이 '제한 없음'인 숫자 상자(최적화 시도 수·초 등): 값이 0이면 <see cref="UnlimitedText"/>로 보이고, 그 글자나 0을 입력하면 0.
+    /// 우클릭 예시 값 목록에도 0 대신 그 글자로(<paramref name="presets"/>).
+    /// </summary>
+    public static NumericUpDown ZeroIsUnlimited(this NumericUpDown n, params decimal[] presets)
+    {
+        n.TextConverter = new UnlimitedConverter(n);
+        // ∞ 글자는 숫자보다 작게 그려져, 0일 때만 글자를 키운다. 키운 글자로 상자가 높아지지 않게 키우기 전(보통 글자일 때 잰) 높이로 묶는다.
+        void Size()
+        {
+            bool unlimited = n.Value == 0;
+            if (unlimited && double.IsNaN(n.Height) && n.Bounds.Height > 0) n.Height = n.Bounds.Height;
+            n.ClearValue(TemplatedControl.FontSizeProperty);
+            if (unlimited) n.FontSize = Math.Round(n.FontSize * UnlimitedScale);
+            else n.ClearValue(Layoutable.HeightProperty);
+        }
+        n.ValueChanged += (_, _) => Size();
+        // 처음 붙을 때는 보통 글자로 한 번 잰 뒤(높이가 정해진 뒤) 맞춘다.
+        n.AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(Size, DispatcherPriority.Loaded);
+        return n.Presets(presets, [], v => v == 0 ? UnlimitedText : v.ToString(n.FormatString, System.Globalization.CultureInfo.CurrentCulture));
+    }
+
+    /// <summary><see cref="UnlimitedText"/>을 보일 때 글자 크기 배율.</summary>
+    private const double UnlimitedScale = 1.5;
+
+    /// <summary>숫자 상자 글자 변환(Convert = 글자 → 값, ConvertBack = 값 → 글자): "∞" ↔ 0, 나머지는 보통 숫자(식은 NumberExpression이 풂).</summary>
+    private sealed class UnlimitedConverter(NumericUpDown box) : Avalonia.Data.Converters.IValueConverter
+    {
+        public object? Convert(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture)
+        {
+            var text = (value as string)?.Trim();
+            if (text == UnlimitedText) return 0m;
+            return decimal.TryParse(text, box.ParsingNumberStyle, box.NumberFormat ?? culture.NumberFormat, out var d) ? d : null;
+        }
+
+        public object? ConvertBack(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture)
+            => value is decimal d ? d == 0 ? UnlimitedText : d.ToString(box.FormatString, box.NumberFormat ?? culture.NumberFormat) : "";
+    }
+
     // 숫자 상자 우클릭 예시 값(NumberPresets.Presets)에 여러 곳에서 쓰는 목록.
     /// <summary>스프라이트·캔버스 가로·세로(px).</summary>
     public static readonly decimal[] SpriteSizes = [8, 16, 24, 32, 48, 64, 96, 128, 256, 512, 1024];

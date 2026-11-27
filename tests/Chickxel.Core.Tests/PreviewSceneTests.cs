@@ -11,23 +11,21 @@ namespace Chickxel.Core.Tests;
 /// <summary>
 /// 효과 만들기의 미리보기 장면: 저장 PNG 왕복과 한도, 편집 문서 왕복, 장면 위 렌더(병아리만 둔 장면 = <see cref="AssetPreview.Render"/>, 장면 레이어를 읽는 효과),
 /// 진단 실행, 패키지·개인 저장소에서의 보관, 다른 레이어를 읽는 스크립트의 강제 태그.
-/// 신뢰 결정은 프로세스 전체 상태라 시험마다 원문 끝에 주석을 붙여 해시를 따로 쓴다.
 /// </summary>
 public class PreviewSceneTests
 {
     private static readonly Color32 Green = new(40, 200, 60), Magenta = new(255, 0, 255);
 
-    private static string Trusted(string source, [CallerMemberName] string test = "")
+    private static string Register(string source, [CallerMemberName] string test = "")
     {
         var hash = ScriptLibrary.Add(source + "\n// " + test + "\n");
-        ScriptLibrary.SetTrust(hash, true);
         return hash;
     }
 
     /// <summary>불투명 픽셀의 빨강을 진행(0~255)으로 바꾸는 움직이는 스크립트(크기·피벗을 쓰지 않음).</summary>
     private static ScriptEffect Tint([CallerMemberName] string test = "") => new()
     {
-        ScriptHash = Trusted("""
+        ScriptHash = Register("""
             effect({ name: "tint", animated: true, render(img, ctx) {
               const d = img.data; const v = Math.round(ctx.progress * 255);
               for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 0) d[i] = v;
@@ -38,7 +36,7 @@ public class PreviewSceneTests
     /// <summary>레이어 고르기 설정(기본값 = 장면의 "ground")으로 고른 레이어가 불투명한 자리를 자홍으로 칠하는 스크립트.</summary>
     private static ScriptEffect MarkGround([CallerMemberName] string test = "") => new()
     {
-        ScriptHash = Trusted("""
+        ScriptHash = Register("""
             effect({ name: "mark ground", settings: [{ key: "ground", label: "Ground", type: "layer", default: "ground" }], render(img, ctx) {
               const o = ctx.layer("ground");
               if (!o) return;
@@ -312,7 +310,7 @@ public class PreviewSceneTests
     public void Probe_runs_the_script_with_the_scene_layers_and_reports_errors()
     {
         var chick = Chick;
-        var hash = Trusted("""
+        var hash = Register("""
             effect({ name: 'needs ground', settings: [{ key: 'ground', type: 'layer', default: 'ground' }],
               render(img, ctx) { if (!ctx.layer('ground')) throw new Error('no ground'); } });
             """);
@@ -370,7 +368,6 @@ public class PreviewSceneTests
     {
         var program = ScriptEffectProgram.Parse(source + "\n// " + test + "\n").Program!;
         ScriptLibrary.Add(program.Source);
-        ScriptLibrary.SetTrust(program.ContentHash, true);
         return ScriptAsset.From("", program);
     }
 

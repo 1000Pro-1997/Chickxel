@@ -14,6 +14,17 @@ public sealed class AppSettings
 
     public List<string> RecentFolders { get; set; } = new();
     public List<string> RecentFiles { get; set; } = new();
+    /// <summary>시작 화면에서 별을 눌러 즐겨찾기한 폴더·파일(누른 차례 — 시작 화면 맨 위 '즐겨찾기' 목록, 폴더 먼저).</summary>
+    public List<string> FavoriteFolders { get; set; } = new();
+    public List<string> FavoriteFiles { get; set; } = new();
+    /// <summary>AI 그림 픽셀로 정리를 적용한 횟수와 앱을 켜 둔 시간(초, 끌 때 더함) — GitHub 별 부탁 창(<see cref="StarPromptShown"/>)을 띄울지 정할 때 씀.</summary>
+    public int PixelateApplyCount { get; set; }
+    public long UsageSeconds { get; set; }
+    /// <summary>GitHub 별 부탁 창을 이미 띄웠음(한 번만 뜸).</summary>
+    public bool StarPromptShown { get; set; }
+    /// <summary>Chickxel 정보 창에 마지막으로 받은 후원자 목록과 받은 때(30분이 지나야 정보 창을 열 때 다시 받음, 서버에 닿지 못하면 이 목록).</summary>
+    public List<Chickxel.Core.Community.CommunitySupporter> Supporters { get; set; } = [];
+    public DateTime SupportersFetchedUtc { get; set; }
     public string? LastFolder { get; set; }
     /// <summary>끌 때 열려 있던 문서 탭(좌우 묶음·순서·고른 탭·포커스) — 켤 때 다시 연다(없어진 파일은 건너뜀). null = 없음.</summary>
     public TabSession? OpenTabs { get; set; }
@@ -362,13 +373,6 @@ public sealed class AppSettings
     /// <summary>끝까지 마친 튜토리얼(<see cref="TutorialKind"/> 이름) — 튜토리얼 창 카드에 "완료" 표시.</summary>
     public List<string> TutorialsDone { get; set; } = [];
 
-    // 스크립트 효과
-    /// <summary>
-    /// 스크립트 효과를 실행할지 사용자가 정한 것: 원문 해시(SHA-256) → 실행(true)·실행 안 함(false). 없는 해시는 아직 묻지 않은 것이다(13.5).
-    /// 이 컴퓨터에서 쓰거나 가져온 스크립트는 자동으로 true가 된다(<see cref="ScriptTrustStore"/>).
-    /// </summary>
-    public Dictionary<string, bool> ScriptTrust { get; set; } = new();
-
     // 에셋 게시
     /// <summary>에셋 게시 창이 기억하는 계정 표시 이름과 이 컴퓨터에서 올린 패키지(<see cref="AssetPublishDialog"/>).</summary>
     public AssetPublishSettings AssetPublish { get; set; } = new();
@@ -500,18 +504,18 @@ public sealed class AppSettings
 
     /// <summary>
     /// "설정 초기화"(환경 설정)가 그대로 두는 값: 최근 목록·다시 열 탭, 창·패널 배치와 캔버스 확대율(끌 때 지금 창 상태로 다시 저장되는 것),
-    /// 사용자가 만든 것(팔레트·최근 색·픽셀로 정리 프리셋과 옵션·에셋 게시 기록), 스크립트 신뢰 결정(설치한 에셋의 스크립트도 여기에 있어
-    /// 지우면 설치한 효과가 멈춤), 저장된 AI 대화 위치·모델 ID 캐시.
+    /// 사용자가 만든 것(팔레트·최근 색·픽셀로 정리 프리셋과 옵션·에셋 게시 기록), 저장된 AI 대화 위치·모델 ID 캐시.
     /// </summary>
     private static readonly HashSet<string> KeptOnReset =
     [
-        nameof(RecentFolders), nameof(RecentFiles), nameof(LastFolder), nameof(OpenTabs),
+        nameof(RecentFolders), nameof(RecentFiles), nameof(FavoriteFolders), nameof(FavoriteFiles), nameof(PixelateApplyCount), nameof(UsageSeconds), nameof(StarPromptShown),
+        nameof(LastFolder), nameof(OpenTabs),
         nameof(WindowX), nameof(WindowY), nameof(WindowWidth), nameof(WindowHeight), nameof(Maximized), nameof(FilesVisible), nameof(EffectListVisible), nameof(EffectFavorites),
         nameof(LeftWidth), nameof(PaletteWidth), nameof(RightWidth), nameof(BottomHeight), nameof(BrowserTreeHeight), nameof(PreviewHeight),
         nameof(TimelineNameWidth), nameof(Zoom),
         nameof(ChatX), nameof(ChatY), nameof(ChatWidth), nameof(ChatHeight), nameof(ChatOpen),
         nameof(ExportX), nameof(ExportY), nameof(ExportWidth), nameof(ExportHeight), nameof(ExportSplit), nameof(ExportCollapsed),
-        nameof(Palettes), nameof(RecentColors), nameof(Pixelate), nameof(PixelateSettings), nameof(AssetPublish), nameof(ScriptTrust),
+        nameof(Palettes), nameof(RecentColors), nameof(Pixelate), nameof(PixelateSettings), nameof(AssetPublish),
         nameof(ChatLastOpen), nameof(EffectMakerChatLastOpen), nameof(ClaudeResolvedModels), nameof(RewardsSeenLevel),
     ];
 

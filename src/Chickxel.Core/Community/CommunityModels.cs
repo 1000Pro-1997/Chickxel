@@ -90,6 +90,17 @@ public sealed record CommunityCheckIn(bool Granted, int Level, int Xp)
     }
 }
 
+/// <summary>개발자에게 커피를 사 주고 이름을 공개한 사람(<c>GET /api/supporters</c>의 한 줄).</summary>
+public sealed record CommunitySupporter(string Name)
+{
+    internal static IReadOnlyList<CommunitySupporter> ReadList(JsonNode? node)
+    {
+        if (node?["supporters"] is not JsonArray list) throw CommunityJson.Bad("supporters");
+        return list.Select(item => CommunityJson.String(item?["name"]) is { Length: > 0 } name ? new CommunitySupporter(name) : null)
+            .OfType<CommunitySupporter>().ToList();
+    }
+}
+
 /// <summary>
 /// 올린 그림 하나(<c>Art</c> JSON 중 앱이 쓰는 것): ID, 제목, 대표 그림(첫 그림, <c>image</c>)의 주소(사이트 기준 경로)·크기·프레임 수·형식(png·gif),
 /// 올린 순서의 모든 그림(<c>images</c>, 첫 그림 = 대표 — 예전 서버면 대표 그림 하나), 같이 올린 <c>.chickxel</c> 파일(없거나 예전 서버면 null).

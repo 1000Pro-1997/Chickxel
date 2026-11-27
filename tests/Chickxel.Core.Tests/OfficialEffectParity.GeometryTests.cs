@@ -33,7 +33,7 @@ public class OfficialEffectParityGeometryTests
             for (int x = 1; x < 3; x++)
                 source[x, y] = new Color32(200, 40, 40);
         var outline = new OutlineEffect { Color = new Color32(0, 0, 255) };
-        var mover = EffectParity.Trusted(MoverSource).CreateEffect() with { ClipToPrevious = true };
+        var mover = EffectParity.Register(MoverSource).CreateEffect() with { ClipToPrevious = true };
         Assert.Equal(new EffectPadding(1, 1, 1, 4), LayerEffects.Padding([outline, mover], 8, 8));
 
         var (moved, mx, my) = LayerEffects.Render(source, [outline, mover]);

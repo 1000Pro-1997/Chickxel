@@ -49,7 +49,7 @@ internal static class ScriptSourceLocator
 
     /// <summary>
     /// 첫 <c>effect({...})</c> 객체에 글자 그대로 적은 속성 <paramref name="name"/>의 문자열(문자열 literal이나 치환 없는 template). 아니면 null.
-    /// 실행하지 않고 읽으므로 신뢰하기 전에도 쓸 수 있다.
+    /// 실행하지 않고 읽는다.
     /// </summary>
     public static string? DeclaredString(Script program, string name)
     {
@@ -107,7 +107,7 @@ internal static class ScriptSourceLocator
 
     /// <summary>
     /// 첫 <c>effect({...})</c> 객체의 <c>translations</c>에 글자 그대로 적은 언어별 이름(<c>translations.언어.name</c> 문자열 literal, 언어 코드 모양인 것만).
-    /// 실행하지 않고 읽으므로 신뢰하기 전 화면 이름에 쓴다. 없으면 빈 표.
+    /// 실행하지 않고 읽어 해석 전 화면 이름에 쓴다. 없으면 빈 표.
     /// </summary>
     public static IReadOnlyDictionary<string, ScriptTranslation> DeclaredTranslatedNames(Script program)
     {

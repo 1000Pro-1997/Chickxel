@@ -146,10 +146,8 @@ public sealed partial class PixelCanvas : Control
     private (PixelImage Image, Point Origin)? _moveFull;
     /// <summary>이동 도구(Ctrl을 누르는 동안의 임시 이동 도구 포함)를 우클릭으로 끄는 중: 그림만 옮기고 레이어 피벗은 제자리.</summary>
     private bool _moveKeepPivot;
-    /// <summary>캔버스 밖에 그리는 그림(<see cref="_moveFull"/> 또는 지금 셀의 캔버스 밖 그림)과 그 원본·작업 그림 번호(같으면 다시 채우지 않음).</summary>
-    private WriteableBitmap? _outsideBmp;
-    private PixelImage? _outsideSource;
-    private int _outsideVersion;
+    /// <summary>캔버스 밖 그림 비트맵(레이어마다): 원본 그림과 작업 그림 번호가 같으면 다시 채우지 않는다. 그리지 않게 된 레이어 것은 그릴 때 버린다.</summary>
+    private readonly Dictionary<Layer, (PixelImage Source, int Version, WriteableBitmap Bitmap)> _outsideBmps = new(ReferenceEqualityComparer.Instance);
     /// <summary>이번 획이 캔버스 밖(지금 일반 레이어 셀의 캔버스 밖 그림)에도 칠하는 범위(캔버스 좌표, 칠하지 않으면 빈 사각형 — 누를 때 정함).</summary>
     private Rectangle _strokeOutside;
     private PixelPerfectStroke? _ppStroke;
@@ -1030,7 +1028,7 @@ public sealed partial class PixelCanvas : Control
             else if (_focusLayer && !peek && dragged is null && _ctx.Project is { Layers.Count: > 1 }) DrawFocused(g, bmp, frame);
             else DrawImageAt(g, bmp, 0, 0);
             if (partView && !partComposite && !_focusLayer) DrawPartContext(g, _ctx.CurrentPart!, partFrameIndex, above: true);
-            // 캔버스 밖 그림은 보기 설정에 따라 현재 레이어의 셀만 따로 표시한다.
+            // 캔버스 밖 그림은 보기 설정에 따라 보이는 모든 레이어의 것을 따로 표시한다.
             if (!peek && !partView && !_tiledMode && _outsideView != OutsideImageView.Hidden) DrawCelOutside(g);
             // 계산 중(작업 스레드)이면 회색 덮개 아래 중간 결과를 보이고, 그리는 중인 셀은 효과 없이 덮개 위에 바로 보인다.
             if (view.Overlay && dragged is null) DrawPendingFrame(g);
@@ -1113,14 +1111,15 @@ public sealed partial class PixelCanvas : Control
 
     /// <summary>
     /// 지금 레이어가 캔버스 밖까지 그리는 일반 레이어인지: 그리기 도구·스포이드이고 타일 모드·변형·캔버스 크기 모드가 아닐 때.
-    /// 이때 그 셀의 캔버스 밖 그림을 또렷이 보이고, 그 위에 그리고 색을 집는다(다른 레이어의 캔버스 밖 그림은 보이지 않음).
+    /// 이때 그 셀의 캔버스 밖 그림은 칠하는 중인 작업 그림으로 보이고, 그 위에 그리고 색을 집는다.
     /// </summary>
     private bool EditsOutside
         => !_tiledMode && !_ctx.IsTransforming && !_ctx.IsCanvasResizing && (IsPaintTool(_ctx.Tool) || _ctx.Tool == ToolKind.Picker)
            && _ctx.Project is { } p && p.Layers[_ctx.CurrentLayer].Kind == LayerKind.Normal;
 
     /// <summary>
-    /// 지금 일반 레이어 셀의 캔버스 밖 그림을 그린다. 보기 설정과 레이어 불투명도를 적용하며, 그리기 도구에서는 작업 중인 그림을 쓴다.
+    /// 보이는 모든 일반·타일맵 레이어의 캔버스 밖 그림을 레이어 순서대로 그린다(어느 레이어를 골라도 같음). 보기 설정(진하게·반투명)은 합친 그림 전체에,
+    /// 레이어·그룹 불투명도는 레이어마다 적용한다. 숨긴 지금 레이어는 캔버스 안처럼 옅게 보인다. 지금 레이어는 옮기는 중·칠하는 중인 그림을 쓴다.
     /// 자식 배치 중인 빈 부모면 그 자식들이 캔버스 밖으로 나간 부분(<see cref="DrawGroupOutside"/>).
     /// </summary>
     private void DrawCelOutside(DrawingContext g)
@@ -1130,38 +1129,76 @@ public sealed partial class PixelCanvas : Control
             DrawGroupOutside(g, gp, group);
             return;
         }
-        if (_ctx.Project is not { } p || p.Layers[_ctx.CurrentLayer] is not { Kind: LayerKind.Normal or LayerKind.Tilemap } layer) return;
-        PixelImage? image = null;
-        var at = Point.Empty;
-        double opacity = layer.Opacity / 255.0 * (p.IsLayerVisible(_ctx.CurrentLayer) ? 1 : 0.6);
-        if (layer.IsTilemap)
+        if (_ctx.Project is not { } p) return;
+        var shown = new List<(WriteableBitmap Bitmap, Rectangle At, double Opacity)>();
+        var used = new HashSet<Layer>(ReferenceEqualityComparer.Instance);
+        for (int i = 0; i < p.Layers.Count; i++)
         {
-            // 타일맵: 캔버스 밖 칸에도 찍으므로 화면 시계 그림으로 그린다. 층 보기도 캔버스 안과 같다.
-            if (_ctx.WithTileClock(() => p.GetCelOverflow(_ctx.CurrentLayer, _ctx.CurrentFrame), layer) is { } tiles) (image, at) = tiles;
-        }
-        else if (_drag == DragMode.MoveLayer && _moveFull is { } full)
-        {
-            image = full.Image;
-            at = new Point(full.Origin.X + _lastPx.X - _startPx.X, full.Origin.Y + _lastPx.Y - _startPx.Y);
-        }
-        else if (_ctx.Tool == ToolKind.Move && p.GetCelOverflow(_ctx.CurrentLayer, _ctx.CurrentFrame) is { } overflow)
-            (image, at) = overflow;
-        else if (EditsOutside && p.GetCelOverflowLive(_ctx.CurrentLayer, _ctx.CurrentFrame) is { } live)
-            (image, at) = live;
-        if (image is null) return;
-        // 칠하는 중인 작업 그림은 같은 그림이 바뀌므로 번호로 알아채고, 크기가 같으면 비트맵을 다시 만들지 않고 채운다.
-        if (!ReferenceEquals(image, _outsideSource) || _outsideVersion != p.StrokeOutsideVersion || _outsideBmp is null)
-        {
-            if (_outsideBmp is null || _outsideBmp.PixelSize.Width != image.Width || _outsideBmp.PixelSize.Height != image.Height)
+            var layer = p.Layers[i];
+            if (layer.Kind is not (LayerKind.Normal or LayerKind.Tilemap)) continue;
+            bool current = i == _ctx.CurrentLayer, visible = p.IsLayerVisible(i);
+            if (!visible && !current) continue;
+            if (OutsideOf(p, i, layer, current) is not { } o) continue;
+            int version = current ? p.StrokeOutsideVersion : 0;
+            if (!_outsideBmps.TryGetValue(layer, out var cached) || !ReferenceEquals(cached.Source, o.Image) || cached.Version != version)
             {
-                _outsideBmp?.Dispose();
-                _outsideBmp = ImageUtil.NewBitmap(image.Width, image.Height);
+                // 칠하는 중인 작업 그림은 같은 그림이 바뀌므로 번호로 알아채고, 크기가 같으면 비트맵을 다시 만들지 않고 채운다.
+                var bmp = cached.Bitmap;
+                if (bmp is null || bmp.PixelSize.Width != o.Image.Width || bmp.PixelSize.Height != o.Image.Height)
+                {
+                    bmp?.Dispose();
+                    bmp = ImageUtil.NewBitmap(o.Image.Width, o.Image.Height);
+                }
+                ImageUtil.CopyToBitmap(o.Image, bmp);
+                cached = (o.Image, version, bmp);
+                _outsideBmps[layer] = cached;
             }
-            ImageUtil.CopyToBitmap(image, _outsideBmp);
-            _outsideSource = image;
-            _outsideVersion = p.StrokeOutsideVersion;
+            used.Add(layer);
+            shown.Add((cached.Bitmap, new Rectangle(o.At, o.Image.Size), TreeOpacity(layer) * (visible ? 1 : 0.6)));
         }
-        DrawOutsideCanvas(g, _outsideBmp, new Rectangle(at, image.Size), opacity);
+        foreach (var gone in _outsideBmps.Keys.Where(l => !used.Contains(l)).ToList())
+        {
+            _outsideBmps[gone].Bitmap.Dispose();
+            _outsideBmps.Remove(gone);
+        }
+        if (shown.Count == 0) return;
+        var view = new Rect(Bounds.Size);
+        var outside = new GeometryGroup { FillRule = FillRule.EvenOdd };
+        outside.Children.Add(new RectangleGeometry(view));
+        outside.Children.Add(new RectangleGeometry(ToRect(ImageScreenRect)));
+        using (g.PushGeometryClip(outside))
+        using (g.PushOpacity(OutsideOpacity))
+            foreach (var (bmp, at, opacity) in shown)
+            {
+                var dest = ToRect(ImageToScreen(at));
+                if (opacity <= 0 || dest.Intersect(view) is { Width: <= 0 } or { Height: <= 0 }) continue;
+                using (g.PushOpacity(opacity))
+                    g.DrawImage(bmp, new Rect(0, 0, bmp.PixelSize.Width, bmp.PixelSize.Height), dest);
+            }
+    }
+
+    /// <summary>
+    /// 레이어 하나의 캔버스 밖 그림과 왼쪽 위(캔버스 좌표), 없으면 null. 타일맵은 화면 시계로(지금 레이어는 층 보기도). 지금 레이어는 옮기는 중이면 옮긴 자리의 셀 전체,
+    /// 칠하는 중이면 작업 그림이고, 변형·캔버스 크기 모드에서는 그 미리보기가 따로 그리므로 null.
+    /// </summary>
+    private (PixelImage Image, Point At)? OutsideOf(SpriteProject p, int index, Layer layer, bool current)
+    {
+        int frame = _ctx.CurrentFrame;
+        if (current && (_ctx.IsTransforming || _ctx.IsCanvasResizing)) return null;
+        if (layer.IsTilemap)
+            return _ctx.WithTileClock(() => p.GetCelOverflow(index, frame), current ? layer : null) is { } tiles ? (tiles.Image, tiles.Origin) : null;
+        if (current && _drag == DragMode.MoveLayer && _moveFull is { } full)
+            return (full.Image, new Point(full.Origin.X + _lastPx.X - _startPx.X, full.Origin.Y + _lastPx.Y - _startPx.Y));
+        var cel = current && EditsOutside ? p.GetCelOverflowLive(index, frame) : p.GetCelOverflow(index, frame);
+        return cel is { } c ? (c.Image, c.Origin) : null;
+    }
+
+    /// <summary>레이어 불투명도에 그 위 그룹들의 불투명도를 곱한 값(0~1).</summary>
+    private static double TreeOpacity(Layer layer)
+    {
+        double opacity = 1;
+        for (Layer? l = layer; l is not null; l = l.Parent) opacity *= l.Opacity / 255.0;
+        return opacity;
     }
 
     private WriteableBitmap? _groupOutsideBmp;

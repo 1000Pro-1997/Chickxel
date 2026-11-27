@@ -67,6 +67,8 @@ public sealed class TileStamp(IReadOnlyList<StampCell> cells)
 public sealed partial class EditorContext
 {
     private TileTool _tileTool = TileTool.Brush;
+    // 마지막으로 쓴 칠하기 도구(붓·자동 타일 붓·사각형·채우기) — 타일을 고르면 지우개·스포이드·칸 선택에서 이 도구로 돌아온다
+    private TileTool _lastPaintTileTool = TileTool.Brush;
     private TileStamp? _tileStamp;
     private TileTransform _tileTransform;
     private int? _tileFloor;
@@ -207,11 +209,23 @@ public sealed partial class EditorContext
         {
             if (_tileTool == value) return;
             _tileTool = value;
+            if (value is TileTool.Brush or TileTool.AutoTile or TileTool.Rect or TileTool.Fill) _lastPaintTileTool = value;
             if (value == TileTool.AutoTile) _autoSource = true;
             else if (value == TileTool.Brush) _autoSource = false;
             ToolChanged?.Invoke(this, EventArgs.Empty);
             TileChanged();
         }
+    }
+
+    /// <summary>
+    /// 타일(<paramref name="autoSet"/> = false)이나 자동 타일 세트(true)를 골랐을 때 도구를 맞춘다: 마지막으로 쓴 칠하기 도구를 그대로 쓰고
+    /// (지우개·스포이드·칸 선택 중이면 그 앞의 칠하기 도구로), 점 찍기만 고른 것에 맞는 붓(타일 붓 / 자동 타일 붓)으로 바꾼다.
+    /// </summary>
+    public void PickTileTool(bool autoSet)
+    {
+        var tool = _tileTool is TileTool.Brush or TileTool.AutoTile or TileTool.Rect or TileTool.Fill ? _tileTool : _lastPaintTileTool;
+        if (tool is TileTool.Brush or TileTool.AutoTile) tool = autoSet ? TileTool.AutoTile : TileTool.Brush;
+        TileTool = tool;
     }
 
     /// <summary>붓에 든 타일들(없으면 null).</summary>
@@ -571,8 +585,8 @@ public sealed partial class EditorContext
     }
 
     /// <summary>
-    /// 스포이드: 점 <paramref name="px"/>에 보이는 맨 위 타일(그림 기준, <see cref="TileUnder(Point)"/>)을 붓에 든다(그 층·뒤집기 그대로). 자동 타일로 찍은 칸이면 그 세트를 고르고
-    /// 자동 타일 붓으로, 아니면 타일 붓으로 바꾼다. 집은 것이 없으면 false.
+    /// 스포이드: 점 <paramref name="px"/>에 보이는 맨 위 타일(그림 기준, <see cref="TileUnder(Point)"/>)을 붓에 든다(그 층·뒤집기 그대로). 자동 타일로 찍은 칸이면 그 세트를 고른다.
+    /// 도구는 <see cref="PickTileTool"/>처럼 마지막 칠하기 도구로 돌아간다. 집은 것이 없으면 false.
     /// </summary>
     public bool TilePick(Point px)
     {
@@ -580,12 +594,12 @@ public sealed partial class EditorContext
         if (hit.Cell.AutoTile != 0 && ts.FindAutoTile(hit.Cell.AutoTile) is not null)
         {
             AutoTileSet = hit.Cell.AutoTile;
-            TileTool = TileTool.AutoTile;
+            PickTileTool(autoSet: true);
             return true;
         }
         _tileTransform = TileTransform.None;
         TileStamp = new TileStamp([new StampCell(0, 0, hit.Cell, hit.Floor)]);
-        TileTool = TileTool.Brush;
+        PickTileTool(autoSet: false);
         return true;
     }
 

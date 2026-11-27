@@ -70,6 +70,8 @@ public sealed class ShotKit
         App.Settings.DiscordPresence = false;
         // 켤 때 뜨는 튜토리얼 창이 샷을 가리지 않게(튜토리얼 점검 샷은 직접 연다).
         App.Settings.ShowTutorialOnStart = false;
+        // 저장 명령 뒤에 뜨는 GitHub 별 부탁 창도(별 부탁 샷은 직접 연다).
+        App.Settings.StarPromptShown = true;
         Chickxel.App.Localization.UiLanguage.Apply(Language);
     }
 

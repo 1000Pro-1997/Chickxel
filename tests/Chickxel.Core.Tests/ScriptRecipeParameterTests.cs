@@ -39,7 +39,6 @@ public class ScriptRecipeParameterTests
     private static ScriptEffectProgram TrustedProgram(string source)
     {
         var hash = ScriptLibrary.Add(source);
-        ScriptLibrary.SetTrust(hash, true);
         return ScriptLibrary.Runnable(hash)!;
     }
 

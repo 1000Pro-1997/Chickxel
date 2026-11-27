@@ -1,4 +1,5 @@
 using Chickxel.Core.Assets;
+using Chickxel.App.Localization;
 using Chickxel.Core.Scripting;
 
 namespace Chickxel.App;
@@ -44,6 +45,38 @@ internal static class EffectUpdates
             ? newer : null;
         return remote is not null || script.Hash != hash ? new EffectUpdate(asset, remote) : null;
     }
+
+    /// <summary>저장할 때 프로젝트에 적을 상점 패키지 ID: 같은 원문의 상점 스크립트 에셋(공식 효과는 앱에 들어 있어 뺌). 없으면 null. 아무 스레드에서나 불림.</summary>
+    public static string? StorePackageOf(string hash)
+        => OfficialEffects.IsOfficialHash(hash) ? null
+            : AppAssets.Catalog.Available(AssetKinds.EffectScript).FirstOrDefault(entry => entry.Script!.Hash == hash && entry.Store is not null)?.Store!.PackageId;
+
+    /// <summary>
+    /// 라이브러리에 없는 효과를 받을 상점 패키지 ID: 공식 효과가 아니고, 같은 원문의 에셋도 원본 상점 에셋(<see cref="SourceAsset"/>)도 라이브러리에 없으며,
+    /// 프로젝트가 그 원문이 온 패키지를 알 때(<see cref="Chickxel.Core.Model.SpriteProject.ScriptStores"/>). 아니면 null.
+    /// </summary>
+    public static string? MissingStorePackage(Chickxel.Core.Model.SpriteProject project, string hash)
+        => OfficialEffects.IsOfficialHash(hash) || AppAssets.Catalog.Available(AssetKinds.EffectScript).Any(entry => entry.Script!.Hash == hash)
+           || SourceAsset(hash) is not null
+            ? null
+            : project.ScriptStores.GetValueOrDefault(hash);
+
+    /// <summary>
+    /// 상점 패키지 <paramref name="packageId"/>의 최신 버전을 받아 라이브러리에 넣는다(온라인 목록을 새로 받음). 알릴 글을 돌려준다 —
+    /// 설치 실패는 <see cref="AppAssets.InstallRemoteAsync"/>가 이미 알렸으므로 null.
+    /// </summary>
+    public static async Task<string?> DownloadAsync(Visual owner, string packageId)
+    {
+        var snapshot = await FetchAsync(CancellationToken.None);
+        if (snapshot.Find(packageId) is not { } remote)
+            return snapshot.Error is { } error ? F(UiStrings.EffectUpdates_FetchFailed, error.Message) : UiStrings.StoreDownload_NotFound;
+        if (remote.IncompatibleReason(AppAssets.Options.AppVersion) is { } reason) return reason;
+        return await AppAssets.InstallRemoteAsync(owner, remote, null, CancellationToken.None) is not null
+            ? F(UiStrings.StoreDownload_Done, remote.DisplayName, remote.Version)
+            : null;
+    }
+
+    private static string F(string format, params object[] args) => string.Format(System.Globalization.CultureInfo.CurrentCulture, format, args);
 
     /// <summary>
     /// 원문 <paramref name="hash"/>가 온 상점 스크립트 에셋: 같은 원문의 에셋(상점 연결이 없는 내 에셋뿐이면 null), 예전 앱이 넣은 공식 효과 원문이면 그 공식 효과,

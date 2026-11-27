@@ -13,7 +13,7 @@ namespace Chickxel.Core.Tests;
 /// 바이트까지 같은지 보는 시험 도구. 빠른 경로와 Jint(<see cref="ScriptEffectProgram.UseJintOnly"/>) 두 길을 모두 돌린다.
 /// <para>쓰는 법(공식 효과 하나 옮길 때):</para>
 /// <code>
-/// var program = EffectParity.Official("shine");                       // Scripting/Official/shine.js를 등록·신뢰·해석(선언 오류면 실패)
+/// var program = EffectParity.Official("shine");                       // Scripting/Official/shine.js를 등록·해석(선언 오류면 실패)
 /// EffectParity.AssertParity(new ShineEffect { Angle = 30, Width = 5 }, program);   // 기본 묶음: 아래 참고
 /// EffectParity.AssertParity(new ShineEffect(), program, gradientSlot: "Color");    // 같은 묶음을 그라데이션마다(<see cref="Gradients"/>)
 /// EffectParity.AssertSameLists([new OutlineEffect(), shine], [new OutlineEffect(), EffectParity.ToScript(shine, program)]);  // 직접 만든 목록
@@ -76,14 +76,13 @@ internal static class EffectParity
         },
     ];
 
-    /// <summary>공식 효과 원문(<see cref="OfficialEffects.Source"/>)을 등록·신뢰하고 해석한 결과(선언 오류면 실패).</summary>
-    public static ScriptEffectProgram Official(string id) => Trusted(OfficialEffects.Source(id));
+    /// <summary>공식 효과 원문(<see cref="OfficialEffects.Source"/>)을 등록하고 해석한 결과(선언 오류면 실패).</summary>
+    public static ScriptEffectProgram Official(string id) => Register(OfficialEffects.Source(id));
 
-    /// <summary>원문을 등록·신뢰하고 해석한 결과(선언 오류면 실패).</summary>
-    public static ScriptEffectProgram Trusted(string source)
+    /// <summary>원문을 등록하고 해석한 결과(선언 오류면 실패).</summary>
+    public static ScriptEffectProgram Register(string source)
     {
         var hash = ScriptLibrary.Add(source);
-        ScriptLibrary.SetTrust(hash, true);
         var parsed = ScriptLibrary.Parse(hash)!;
         if (!parsed.Success) throw new XunitException(string.Join("\n", parsed.Errors));
         return parsed.Program;

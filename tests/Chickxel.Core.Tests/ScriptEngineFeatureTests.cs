@@ -379,8 +379,6 @@ public class ScriptEngineFeatureTests
         Assert.Equal(new Color32(0, 3, 0, 0), image[1, 0]);
 
         // 저장: 효과 JSON의 설정은 기본 효과의 목록 모양 그대로(["#…"], [["#…", "#…"]]), 다시 읽으면 같은 값
-        var hash = ScriptLibrary.Add(program.Source);
-        ScriptLibrary.SetTrust(hash, true);
         var effect = program.CreateEffect(new Dictionary<string, object> { ["colors"] = five[..3], ["pairs"] = pairs }) with
         {
             ColorGradients = new Dictionary<string, EffectColorGradient> { ["colors[2]"] = EffectParity.Gradients[1], ["pairs[1].to"] = EffectParity.Gradients[0] },
@@ -609,7 +607,7 @@ public class ScriptEngineFeatureTests
     [InlineData(2, 2, 100, true)]
     public void Deferred_script_with_rendered_frames_matches_the_afterimage_pipeline(int count, int interval, int opacity, bool tint)
     {
-        var program = EffectParity.Trusted(Unique(AfterimageScript, $"afterimage{count}{interval}{opacity}{tint}"));
+        var program = EffectParity.Register(Unique(AfterimageScript, $"afterimage{count}{interval}{opacity}{tint}"));
         Assert.True(program.Deferred);
         var moving = EffectParity.Inputs.Where(i => i.Name is "moving frames" or "player" or "empty").ToList();
         var afterimage = new AfterimageEffect { Count = count, Interval = interval, Opacity = opacity, Tint = tint, TintColor = new Color32(255, 80, 40, 150) };
@@ -634,7 +632,7 @@ public class ScriptEngineFeatureTests
     [Fact]
     public void Deferred_effects_bake_with_everything_and_disable_clipping_anchors()
     {
-        var program = EffectParity.Trusted(Unique(AfterimageScript));
+        var program = EffectParity.Register(Unique(AfterimageScript));
         var script = program.CreateEffect();
         IReadOnlyList<LayerEffect> effects = [new OutlineEffect(), script, new ShadowEffect()];
         Assert.True(LayerEffects.IsDeferred(script));
@@ -706,8 +704,6 @@ public class ScriptEngineFeatureTests
         Assert.True(parameter.Exposed);
         var json = EffectCodec.Write(effect);
         Assert.Equal("line1\nline2", ((JsonObject)json[EffectCodec.SettingsKey]!)["caption"]!.GetValue<string>());
-        var hash = ScriptLibrary.Add(program.Source);
-        ScriptLibrary.SetTrust(hash, true);
         var decoded = (ScriptEffect)EffectCodec.Read((JsonObject)JsonNode.Parse(json.ToJsonString())!);
         Assert.Equal("line1\nline2", decoded.Settings["caption"]);
 
@@ -755,8 +751,6 @@ public class ScriptEngineFeatureTests
         Assert.Equal(EffectParameterKind.Text, parameter.Kind);
         var json = EffectCodec.Write(effect);
         Assert.Equal("Galmuri14", ((JsonObject)json[EffectCodec.SettingsKey]!)["font"]!.GetValue<string>());
-        var hash = ScriptLibrary.Add(program.Source);
-        ScriptLibrary.SetTrust(hash, true);
         Assert.Equal("Galmuri14", ((ScriptEffect)EffectCodec.Read((JsonObject)JsonNode.Parse(json.ToJsonString())!)).Settings["font"]);
 
         // 고른 글꼴로 그린다: Galmuri7은 기본 글꼴(Galmuri11)보다 낮다

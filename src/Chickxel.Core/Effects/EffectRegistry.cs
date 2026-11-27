@@ -81,7 +81,7 @@ public static class EffectRegistry
 
     /// <summary>
     /// 효과 하나의 설정 schema: 스크립트 효과는 그 원문이 선언한 설정 뒤에 움직이는 효과 공통 설정, 다른 효과는 정의의 schema(<see cref="EffectDefinition.Parameters"/>),
-    /// 모르는 효과는 빈 목록. 스크립트 원문은 <paramref name="programs"/>(해시 → 해석 결과)로 찾고, 주지 않으면 실행을 허락한 원문만(<see cref="ScriptLibrary.Runnable"/>).
+    /// 모르는 효과는 빈 목록. 스크립트 원문은 <paramref name="programs"/>(해시 → 해석 결과)로 찾고, 주지 않으면 앱이 아는 원문만(<see cref="ScriptLibrary.Runnable"/>).
     /// </summary>
     public static IReadOnlyList<EffectParameter> ParametersOf(LayerEffect effect, Func<string, ScriptEffectProgram?>? programs = null)
         => ParametersOf(effect, programs, out _);

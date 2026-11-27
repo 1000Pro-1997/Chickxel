@@ -261,7 +261,7 @@ public static class AssetPreview
     /// 끝 그림 병아리(<see cref="ScriptAsset.PreviewEndChick"/>)가 있는 스크립트는 마지막 칸이 그 병아리고, 움직임(<see cref="ScriptAsset.PreviewMotion"/>)이 있으면
     /// 병아리가 칸마다 옮겨 가며, 자리·피벗(<see cref="ScriptAsset.PreviewPlacement"/>)이 끝 그림 병아리 자리와 칸마다 피벗을 옮긴다(<see cref="Frame"/>).
     /// 레시피에는 끝 그림 병아리·자리·피벗이 없고 움직임은 효과 묶음에서 정한다(<see cref="MotionOf"/>).
-    /// 스크립트는 실행을 허락한 원문만 그린다. 모르는 종류면 null.
+    /// 원문을 아는 스크립트만 그린다. 모르는 종류면 null.
     /// </summary>
     public static PackagePreview? Package(IAssetData data) => data switch
     {

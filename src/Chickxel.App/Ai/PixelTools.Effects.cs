@@ -30,7 +30,7 @@ public sealed partial class PixelTools
             "received (from the online store or files) and the user's own script effects (ids = asset ids), plus app effects without a script (e.g. text). " +
             "Returns every effect id with its display name and description (user's UI language), its source (official, app, mine = made by the user, " +
             "received = from someone else; with author and store package id when known), whether it animates over its frame range, " +
-            "whether the user allowed its script to run, its settings with default values (keys and value formats of the .chickxel file), allowed values of " +
+            "its settings with default values (keys and value formats of the .chickxel file), allowed values of " +
             "choice settings, [min, max] of clamped numbers, and the user's effect recipes (presets, each with origin mine/received, author and store " +
             "package id when known; each is a stack of effects with order and clipping). Works without an open project.",
             new JsonObject());
@@ -150,10 +150,10 @@ public sealed partial class PixelTools
     /// <summary>
     /// AI가 넣을 수 있는 효과 하나: 도구 ID(공식 효과는 짧은 ID <c>outline</c>, 다른 스크립트는 에셋 ID, 앱 효과는 종류 ID), 화면 이름·설명,
     /// 출처(official/app/mine/received), 라이브러리 에셋(앱 효과·라이브러리에 없는 공식 효과는 null), 기본 설정 효과,
-    /// 넣을 때 스크립트 원문을 함께 복사할 레시피(앱 효과는 null), 움직이는지, 실행을 허락했는지.
+    /// 넣을 때 스크립트 원문을 함께 복사할 레시피(앱 효과는 null), 움직이는지.
     /// </summary>
     private sealed record EffectChoice(string Id, string Name, string? Description, string Source, AssetEntry? Entry, LayerEffect Effect, EffectRecipe? Template,
-        bool Animated, bool Allowed);
+        bool Animated);
 
     /// <summary>넣을 수 있는 효과(효과 창 효과 탭과 같은 차례): 공식 효과, 고를 수 있는 앱 효과(글씨), 받은 스크립트·내 스크립트 효과.</summary>
     private static List<EffectChoice> EffectChoices()
@@ -168,13 +168,13 @@ public sealed partial class PixelTools
             var template = asset.ToRecipe();
             var official = AssetCatalog.OfficialIdOf(entry);
             result.Add(new EffectChoice(official ?? entry.Id, entry.DisplayName, asset.DescriptionFor(culture), official is not null ? "official" : OriginOf(entry), entry,
-                template.Effects[0], template, asset.Animated, ScriptLibrary.TrustOf(asset.Hash) == ScriptTrust.Trusted));
+                template.Effects[0], template, asset.Animated));
         }
         foreach (var entry in scripts.Take(officialCount)) AddScript(entry);
         foreach (var definition in EffectRegistry.Selectable)
         {
             var ui = LayerEffectsDialog.UiOf(definition);
-            result.Add(new EffectChoice(definition.TypeId, ui.Name, ui.Description, "app", null, definition.Create(), null, definition.Animated, true));
+            result.Add(new EffectChoice(definition.TypeId, ui.Name, ui.Description, "app", null, definition.Create(), null, definition.Animated));
         }
         foreach (var entry in scripts.Skip(officialCount)) AddScript(entry);
         return result;
@@ -194,7 +194,7 @@ public sealed partial class PixelTools
             var program = OfficialEffects.Program(official);
             var template = ScriptAsset.From(OfficialEffectPackages.AssetId(official), program).ToRecipe();
             return new EffectChoice(official, program.NameFor(global::System.Globalization.CultureInfo.CurrentUICulture),
-                program.DescriptionFor(global::System.Globalization.CultureInfo.CurrentUICulture), "official", null, template.Effects[0], template, program.Animated, true);
+                program.DescriptionFor(global::System.Globalization.CultureInfo.CurrentUICulture), "official", null, template.Effects[0], template, program.Animated);
         }
         return choices.FirstOrDefault(c => c.Name.Equals(key, StringComparison.OrdinalIgnoreCase));
     }
@@ -236,7 +236,7 @@ public sealed partial class PixelTools
                     if (p.Min is not null || p.Max is not null) ranges[p.Key] = new JsonArray(JsonValue.Create(p.Min), JsonValue.Create(p.Max));
                 }
             else if (choice.Effect is ScriptEffect script)
-                settings = script.Settings.ToJson(); // 실행을 허락하지 않은 스크립트: 선언의 기본값만
+                settings = script.Settings.ToJson(); // 원문을 해석하지 못한 스크립트: 선언의 기본값만
             var o = new JsonObject
             {
                 ["type"] = choice.Id,
@@ -247,7 +247,6 @@ public sealed partial class PixelTools
             };
             if (choice.Entry is { } asset) AddAssetCredits(o, asset);
             if (choice.Description is { Length: > 0 } description) o["description"] = description;
-            if (!choice.Allowed) o["allowed"] = false;
             if (choices.Count > 0) o["choices"] = choices;
             if (ranges.Count > 0) o["ranges"] = ranges;
             types.Add(o);
@@ -274,9 +273,7 @@ public sealed partial class PixelTools
             ["presets"] = presets,
             ["notes"] = "Effects render in stack order (index 0 first) and never change pixels. Pass only the settings you want to change (null resets one). " +
                         "Color list settings = [\"#RRGGBB\", ...]; color pair settings = [[\"#from\", \"#to\"], ...]; script layer settings (declared type: \"layer\") = the name of a layer in this document (\"\" = none). " +
-                        "Every effect also accepts colorGradients (see the settings of add_effect / set_effect). Animated effects run once over their frame range; easing, repeat and repeatCount change that. " +
-                        "Effects with \"allowed\": false are scripts the user has not allowed to run yet: they can be added but are not drawn until the user allows them " +
-                        "in the effects window, and only their declared default settings are known.",
+                        "Every effect also accepts colorGradients (see the settings of add_effect / set_effect). Animated effects run once over their frame range; easing, repeat and repeatCount change that.",
         };
         if (error is not null) doc["presetsError"] = error;
         return TextResult(doc.ToJsonString(JsonOptions));

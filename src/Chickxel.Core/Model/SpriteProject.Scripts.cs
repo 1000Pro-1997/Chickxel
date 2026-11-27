@@ -9,6 +9,7 @@ namespace Chickxel.Core.Model;
 public sealed partial class SpriteProject
 {
     private readonly Dictionary<string, string> _scripts = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _scriptStores = new(StringComparer.Ordinal);
 
     /// <summary>
     /// 이 프로젝트에 넣은 스크립트 원문(해시 → 정리한 원문). 파일에서 읽은 것과 효과 창에서 쓰거나 가져온 것이다.
@@ -28,6 +29,26 @@ public sealed partial class SpriteProject
     /// 해시의 원문: 이 표, 없으면 다른 프로젝트에서 옮겨 온 효과라 <see cref="ScriptLibrary"/>(모르면 null). 저장·레시피 담기·실행취소 기록이 쓴다.
     /// </summary>
     public string? ScriptSourceOf(string hash) => _scripts.GetValueOrDefault(hash) ?? ScriptLibrary.SourceOf(hash);
+
+    /// <summary>
+    /// 스크립트 원문이 온 상점 패키지 ID(해시 → 패키지 ID): 파일에서 읽은 것(<see cref="SetScriptStore"/>). 받는 사람의 라이브러리에 그 효과가 없을 때
+    /// 상점에서 받을 수 있게 저장할 때 함께 쓴다(<see cref="ScriptStoresInUse"/>).
+    /// </summary>
+    public IReadOnlyDictionary<string, string> ScriptStores => _scriptStores;
+
+    public void SetScriptStore(string hash, string packageId) => _scriptStores[hash] = packageId;
+
+    /// <summary>
+    /// 저장할 상점 표: 레이어 효과가 쓰는 해시마다 <paramref name="resolve"/>(지금 라이브러리에서 찾은 패키지 ID — 앱이 줌), 없으면 파일에서 읽은 것.
+    /// </summary>
+    public SortedDictionary<string, string> ScriptStoresInUse(Func<string, string?>? resolve)
+    {
+        var used = new SortedDictionary<string, string>(StringComparer.Ordinal);
+        foreach (var hash in ScriptHashes())
+            if ((resolve?.Invoke(hash) ?? _scriptStores.GetValueOrDefault(hash)) is { Length: > 0 } id)
+                used[hash] = id;
+        return used;
+    }
 
     /// <summary>레이어 효과가 쓰는 스크립트 해시(레이어·효과 순서, 겹치지 않음).</summary>
     public IReadOnlyList<string> ScriptHashes() => ScriptHashesOf(_layers.SelectMany(l => l.Effects));

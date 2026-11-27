@@ -38,11 +38,10 @@ public sealed partial class LayerEffectsDialog
         var open = Ui.Button(VectorIcon.FolderOpen, UiStrings.ScriptEffect_OpenFile, (_, _) => OpenScriptFile(Selected));
         ToolTip.SetTip(open, UiStrings.ScriptEffect_ReplaceFileTip);
         var save = Ui.Button(VectorIcon.Package, UiStrings.ScriptEffect_SaveAsset, (_, _) => SaveScriptAsset(s));
-        bool trusted = ScriptLibrary.TrustOf(s.ScriptHash) == ScriptTrust.Trusted;
-        save.IsEnabled = edit.IsEnabled && trusted;
+        save.IsEnabled = edit.IsEnabled;
         // 꺼진 단추도 풍선이 보이게 감싼다
         var saveHolder = new Border { Child = save, Background = Brushes.Transparent };
-        ToolTip.SetTip(saveHolder, trusted ? UiStrings.ScriptEffect_SaveAssetTip : UiStrings.ScriptEffect_SaveAssetNeedsTrust);
+        ToolTip.SetTip(saveHolder, UiStrings.ScriptEffect_SaveAssetTip);
         _settings.Children.Add(Ui.Row(edit, open).HelpAt(page, anchor: "With a script effect selected"));
         _settings.Children.Add(Ui.Row(saveHolder).HelpAt(page, anchor: "Save as asset"));
 
@@ -149,24 +148,13 @@ public sealed partial class LayerEffectsDialog
             MaxWidth = SettingsWidth - 30,
             Foreground = status.IsProblem ? AppTheme.WarningBrush : AppTheme.DimTextBrush,
         };
-        // 대상 도움말(F1): 그리지 못하는 상태 줄 = 그 절, 허용·다시 실행 단추 = 그 절 표의 "허용 안 됨"·"멈춤" 줄
+        // 대상 도움말(F1): 그리지 못하는 상태 줄 = 그 절, 다시 실행 단추 = 그 절 표의 "멈춤" 줄
         const string page = "screen-script-effects";
         _scriptStatus.Children.Add(status.IsProblem ? Ui.Row(WarningIcon(), text).HelpAt(page, anchor: "When a script can't draw") : text);
-        var hash = effect!.ScriptHash;
-        switch (status.State)
+        if (status.State == ScriptEffectState.Suspended)
         {
-            case ScriptEffectState.NotTrusted:
-                _scriptStatus.Children.Add(Ui.Row(Ui.Button(VectorIcon.Play, UiStrings.ScriptEffect_Allow, (_, _) =>
-                {
-                    ScriptTrustStore.Decide(new Dictionary<string, bool> { [hash] = true });
-                    ScriptTrustStore.Prewarm([hash]);
-                    ShowSettings();
-                })).HelpAt(page, anchor: "Not allowed"));
-                break;
-            case ScriptEffectState.Suspended:
-                int index = Selected;
-                _scriptStatus.Children.Add(Ui.Row(Ui.Button(VectorIcon.Refresh, UiStrings.ScriptEffect_Resume, (_, _) => ResumeScript(index))).HelpAt(page, anchor: "Stopped"));
-                break;
+            int index = Selected;
+            _scriptStatus.Children.Add(Ui.Row(Ui.Button(VectorIcon.Refresh, UiStrings.ScriptEffect_Resume, (_, _) => ResumeScript(index))).HelpAt(page, anchor: "Stopped"));
         }
     }
 }
@@ -190,7 +178,6 @@ internal static class ScriptStatusText
         return status.State switch
         {
             ScriptEffectState.MissingSource => UiStrings.ScriptEffect_MissingSource,
-            ScriptEffectState.NotTrusted => UiStrings.ScriptEffect_NotTrusted,
             ScriptEffectState.Invalid => With(UiStrings.ScriptEffect_Invalid),
             ScriptEffectState.Failed => With(UiStrings.ScriptEffect_Failed),
             ScriptEffectState.Suspended => With(UiStrings.FormatScriptEffect_Suspended(count: ScriptEffectRuntime.MaxConsecutiveFailures)),

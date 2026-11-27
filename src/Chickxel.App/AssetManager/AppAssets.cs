@@ -57,8 +57,6 @@ public static class AppAssets
                     Dispatcher.UIThread.Post(() => AppCommunity.Client.AccountsChanged += () => Dispatcher.UIThread.Post(() => _ = MyHandle));
                     // 공식 패키지: 할 일이 있을 때만(처음 실행·앱 업데이트) 백그라운드에서 — 끝나면 Changed로 효과 탭·그라데이션·모양 펜 세트가 다시 그려진다
                     if (BundledPackages.NeedsSync(opened)) StartBundledSync();
-                    // 설치하면 바로 믿기 전에 받아 둔 에셋의 스크립트도 믿는다(설정 파일을 쓰므로 UI 스레드에서)
-                    Dispatcher.UIThread.Post(() => ScriptTrustStore.TrustStored(opened.Catalog.All));
                 }
                 return _store;
             }
@@ -300,15 +298,13 @@ public static class AppAssets
     /// <summary>
     /// 패키지 파일(<c>.chickxel-asset</c>)의 에셋을 하나씩 더한다(<see cref="AssetSources.File"/>). 이미 있는 에셋과 겹치면 하나마다 묻는다
     /// (<see cref="AssetImportPrompt"/>: 바꾸기·건너뛰기·둘 다 두기, "남은 항목에도 적용"이면 이 파일의 나머지에 같은 답).
-    /// 들어간 에셋(패키지 차례)을 돌려주고 그 스크립트는 바로 믿는다(<see cref="ScriptTrustStore.TrustInstalled"/>). 실패하면 알리고 null(아무것도 바뀌지 않음).
+    /// 들어간 에셋(패키지 차례)을 돌려준다. 실패하면 알리고 null(아무것도 바뀌지 않음).
     /// </summary>
     public static IReadOnlyList<AssetEntry>? InstallFile(Visual owner, string path)
     {
         var ask = Prompter(owner);
         IReadOnlyList<AssetEntry>? installed = null;
-        if (!Try(owner, () => installed = Store.Install(path, AssetSources.File, ask), UiStrings.Assets_ImportError) || installed is null) return null;
-        ScriptTrustStore.TrustInstalled(installed);
-        return installed;
+        return Try(owner, () => installed = Store.Install(path, AssetSources.File, ask), UiStrings.Assets_ImportError) ? installed : null;
     }
 
     /// <summary>
@@ -319,10 +315,8 @@ public static class AppAssets
     public static async Task<IReadOnlyList<AssetEntry>?> InstallRemoteAsync(Visual owner, RemoteCatalogEntry entry, IProgress<double>? progress, CancellationToken cancellationToken)
     {
         var ask = Prompter(owner);
-        var installed = await InstallDownloadedAsync(owner, entry, progress,
+        return await InstallDownloadedAsync(owner, entry, progress,
             path => Store.InstallRemote(path, entry.Id, entry.Version, ask, cancellationToken), cancellationToken);
-        if (installed is not null) ScriptTrustStore.TrustInstalled(installed);
-        return installed;
     }
 
     /// <summary>
@@ -338,7 +332,7 @@ public static class AppAssets
             return await InstallRemoteAsync(owner, latest, null, cancellationToken) is { } installed
                 ? Catalog.Find(entry.Id) ?? installed.FirstOrDefault(e => e.Kind == AssetKinds.EffectScript)
                 : null;
-        var reverted = await InstallDownloadedAsync(owner, latest, null, path =>
+        return await InstallDownloadedAsync(owner, latest, null, path =>
         {
             var package = AssetPackageValidator.Read(path, Options);
             var scripts = package.Items.Where(item => item.Data is ScriptAsset).ToArray();
@@ -347,8 +341,6 @@ public static class AppAssets
             if (original is null) throw new InvalidDataException(UiStrings.Assets_RevertScriptMissing);
             return Store.SaveScript(original.Source, entry.Id, original.Scene);
         }, cancellationToken);
-        if (reverted is not null) ScriptTrustStore.TrustInstalled([reverted]);
-        return reverted;
     }
 
     /// <summary>

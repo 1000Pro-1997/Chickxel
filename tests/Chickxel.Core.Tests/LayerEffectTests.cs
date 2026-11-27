@@ -410,7 +410,7 @@ public class LayerEffectTests
     public void ClippedEffect_SeesOnlyTheAnchorLayer()
     {
         // 투명한 픽셀을 모두 초록으로 채우는 스크립트: 외곽선에 클리핑되면 원본(흰 칸)은 보지 못하므로 그 자리도 투명으로 받아 채운다
-        var fill = EffectParity.Trusted("effect({ name: 'fill empty', render(img) { const d = img.data;"
+        var fill = EffectParity.Register("effect({ name: 'fill empty', render(img) { const d = img.data;"
                                         + " for (let i = 0; i < d.length; i += 4) if (d[i + 3] === 0) { d[i] = 0; d[i + 1] = 255; d[i + 2] = 0; d[i + 3] = 255; } } });");
         var green = new Color32(0, 255, 0);
         var (image, x, y) = LayerEffects.Render(Filled(1, 1, White), [new OutlineEffect { Color = Black }, fill.CreateEffect() with { ClipToPrevious = true }]);

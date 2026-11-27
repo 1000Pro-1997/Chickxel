@@ -129,7 +129,7 @@ public sealed partial class EditorContext
             if (Project is { IsStrokeActive: true } p && ReferenceEquals(image, _strokeImage)) p.AddStrokeOverflow(floating, at);
         };
         _renders.Updated += () => RenderUpdated?.Invoke(this, EventArgs.Empty);
-        // 스크립트 효과: 실행 허락·멈춤 해제로 같은 효과 값의 결과가 달라지면 다시 그리고, 실패 표시만 바뀌면 화면만 다시 그린다(작업 스레드에서도 옴).
+        // 스크립트 효과: 멈춤 해제로 같은 효과 값의 결과가 달라지면 다시 그리고, 실패 표시만 바뀌면 화면만 다시 그린다(작업 스레드에서도 옴).
         ScriptLibrary.Changed += () => Dispatcher.UIThread.Post(RerenderScripts);
         ScriptEffectRuntime.StatusChanged += () => Dispatcher.UIThread.Post(() => ViewChanged?.Invoke(this, EventArgs.Empty));
         InitTileClock();
@@ -2115,7 +2115,7 @@ public sealed partial class EditorContext
     }
 
     /// <summary>
-    /// 스크립트 실행 허락·멈춤 해제: 효과 값은 같아도 결과가 달라지므로 효과 결과 캐시를 비우고 모든 결과를 무효로 한다(그림은 다시 계산될 때까지 보임).
+    /// 스크립트 멈춤 해제: 효과 값은 같아도 결과가 달라지므로 효과 결과 캐시를 비우고 모든 결과를 무효로 한다(그림은 다시 계산될 때까지 보임).
     /// </summary>
     private void RerenderScripts()
     {

@@ -215,11 +215,10 @@ public sealed class LegacyEffectMigrationTests
     }
 
     [Fact]
-    public void OfficialScripts_AreTrustedAndResolvable()
+    public void OfficialScripts_AreResolvable()
     {
         foreach (var id in OfficialEffects.Ids)
         {
-            Assert.Equal(ScriptTrust.Trusted, ScriptLibrary.TrustOf(OfficialEffects.HashOf(id)));
             Assert.Equal(id, OfficialEffects.Resolve(id.ToUpperInvariant()));
             Assert.Equal(id, OfficialEffects.Resolve("chickxel.effect." + id));
             Assert.Equal(id, OfficialEffects.Resolve(OfficialEffectPackages.PackageId(id)));
@@ -233,11 +232,10 @@ public sealed class LegacyEffectMigrationTests
     }
 
     /// <summary>
-    /// 공식 원문을 고친 뒤에도 예전 공식 원문을 담은 프로젝트·레시피는 묻지 않고 실행된다: 내보낸 해시 목록(hashes.txt)이 지금 원문을 모두 담고,
-    /// 목록의 해시는 모두 허락한다(목록이 빠짐없는지는 CatalogBuilder --check가 카탈로그의 모든 공식 패키지 버전으로도 본다).
+    /// 공식 원문을 고친 뒤에도 예전 공식 원문을 담은 프로젝트·레시피는 실행된다: 내보낸 해시 목록(hashes.txt)이 지금 원문을 모두 담는다.
     /// </summary>
     [Fact]
-    public void ShippedHashList_HasEveryCurrentSource_AndEveryListedSourceStaysTrusted()
+    public void ShippedHashList_HasEveryCurrentSource_AndResolvesEveryListedSource()
     {
         // 커밋한 목록 파일 = 앱에 든 목록
         var committed = OfficialEffects.ParseShipped(File.ReadAllText(Path.Combine(RepoRoot(), "src", "Chickxel.Core", "Scripting", "Official", OfficialEffects.ShippedFileName)));
@@ -245,15 +243,13 @@ public sealed class LegacyEffectMigrationTests
         foreach (var id in OfficialEffects.Ids) Assert.Equal(id, OfficialEffects.ShippedHashes[OfficialEffects.HashOf(id)]);
         Assert.All(OfficialEffects.ShippedHashes, pair =>
         {
-            Assert.Equal(ScriptTrust.Trusted, ScriptLibrary.TrustOf(pair.Key));
             Assert.Equal(pair.Value, OfficialEffects.IdOfShippedHash(pair.Key));
         });
 
-        // 공식 원문을 고친 원문(목록에 없음)은 묻는다
+        // 공식 원문을 고친 원문은 목록에 없다
         var edited = ScriptLibrary.Add(OfficialEffects.Source("outline") + "\n// 고침\n");
         Assert.False(OfficialEffects.IsOfficialHash(edited));
         Assert.Null(OfficialEffects.IdOfShippedHash(edited));
-        Assert.Equal(ScriptTrust.Unknown, ScriptLibrary.TrustOf(edited));
 
         // 목록 글: 설명 줄·빈 줄·CRLF를 넘기고 FormatShipped와 왕복, 틀린 줄과 두 ID에 적힌 해시는 줄 번호와 함께 실패
         string old = new('a', 64), current = OfficialEffects.HashOf("outline");

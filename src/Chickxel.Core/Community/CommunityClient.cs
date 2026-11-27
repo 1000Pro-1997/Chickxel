@@ -385,6 +385,15 @@ public sealed class CommunityClient
     }
 
     /// <summary>
+    /// <c>GET /api/supporters</c>: 개발자에게 커피를 사 주고 공개를 고른 사람(최근 순). 공개 조회라 토큰을 붙이지 않는다. 연결 실패 등은 <see cref="CommunityException"/>.
+    /// </summary>
+    public async Task<IReadOnlyList<CommunitySupporter>> GetSupportersAsync(CancellationToken cancellationToken = default)
+    {
+        var json = await SendAsync(HttpMethod.Get, "api/supporters", null, auth: false, _options.RequestTimeout, cancellationToken).ConfigureAwait(false);
+        return CommunitySupporter.ReadList(json);
+    }
+
+    /// <summary>
     /// multipart 본문. 경계 값은 영문·숫자만 써서 머리에 따옴표 없이 적는다(<c>boundary=…</c> — 따옴표를 다르게 읽는 서버가 없게).
     /// </summary>
     private static MultipartFormDataContent Form(params HttpContent[] parts)

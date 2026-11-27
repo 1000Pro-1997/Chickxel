@@ -12,7 +12,7 @@ namespace Chickxel.Core.Tests;
 /// <summary>
 /// 미리보기 움직임(<c>previewMotion</c>): 선언 검사(이름·목록·마지막 값 유지·한도), 선언 고치기, 미리보기 칸(움직임이 없으면 다른 프레임을 쓰는 효과도 제자리,
 /// 움직임만큼 옮긴 같은 크기 캔버스, 다른 프레임 원본, 끝 그림 병아리와 함께), 효과 묶음에서 정하는 움직임, 장면·패키지 미리보기.
-/// 신뢰 결정은 프로세스 전체 상태라 시험마다 원문 끝에 주석을 붙여 해시를 따로 쓴다.
+/// 원문을 시험마다 다른 주석과 함께 등록해 해시를 따로 쓴다.
 /// </summary>
 public class PreviewMotionTests
 {
@@ -35,11 +35,10 @@ public class PreviewMotionTests
 
     private static PixelImage End => PreviewChicks.Load("wizard");
 
-    private static ScriptEffectProgram Trusted(string source, [CallerMemberName] string test = "")
+    private static ScriptEffectProgram Register(string source, [CallerMemberName] string test = "")
     {
         var program = ScriptEffectProgram.Parse(source + "\n// " + test + "\n").Program!;
         ScriptLibrary.Add(program.Source);
-        ScriptLibrary.SetTrust(program.ContentHash, true);
         return program;
     }
 
@@ -142,7 +141,7 @@ public class PreviewMotionTests
     public void Without_motion_frame_reading_effects_see_the_chick_in_place()
     {
         // 예전처럼 한 칸씩 오른쪽으로 가는 늘린 원본이 아니라 칸마다 같은 병아리
-        IReadOnlyList<LayerEffect> effects = [Trusted(CopyFirstSource).CreateEffect()];
+        IReadOnlyList<LayerEffect> effects = [Register(CopyFirstSource).CreateEffect()];
         for (int step = 0; step < Steps; step++)
         {
             Assert.True(Start.ContentEquals(AssetPreview.Render(effects, Start, step, Steps)), $"step {step}");
@@ -176,7 +175,7 @@ public class PreviewMotionTests
         Assert.True(context.FrameSource!(3)!.ContentEquals(AssetPreview.Frame(start, null, Right, 3, Steps).Image));
 
         // 효과가 읽는 첫 칸 원본 = 제자리(0칸) 병아리, 그림 크기는 칸마다 같음
-        IReadOnlyList<LayerEffect> effects = [Trusted(CopyFirstSource).CreateEffect()];
+        IReadOnlyList<LayerEffect> effects = [Register(CopyFirstSource).CreateEffect()];
         var first = AssetPreview.Frame(start, null, Right, 0, Steps).Image;
         for (int step = 0; step < Steps; step++)
             Assert.True(first.ContentEquals(AssetPreview.Render(effects, start, step, Steps, motion: Right)), $"render {step}");
@@ -198,8 +197,8 @@ public class PreviewMotionTests
     [Fact]
     public void Template_without_a_motion_argument_follows_the_first_enabled_declaring_script()
     {
-        var mover = Trusted("effect({ name: \"mover\", animated: true, previewMotion: \"right\", " + Body);
-        var still = Trusted("effect({ name: \"still\", animated: true, " + Body);
+        var mover = Register("effect({ name: \"mover\", animated: true, previewMotion: \"right\", " + Body);
+        var still = Register("effect({ name: \"still\", animated: true, " + Body);
         IReadOnlyList<LayerEffect> effects = [still.CreateEffect(), mover.CreateEffect()];
         Assert.Equal(Right, AssetPreview.MotionOf(effects));
         Assert.Same(PreviewMotion.None, AssetPreview.MotionOf([still.CreateEffect(), mover.CreateEffect() with { Enabled = false }]));
@@ -225,7 +224,7 @@ public class PreviewMotionTests
         Assert.True(At(End, -(Steps - 1)).ContentEquals(render.Original(Steps - 1, hideSceneLayers: true)));
 
         // 넘기지 않으면 효과 묶음에서 정한다
-        var mover = Trusted("effect({ name: \"mover\", animated: true, previewMotion: \"up\", " + Body);
+        var mover = Register("effect({ name: \"mover\", animated: true, previewMotion: \"up\", " + Body);
         var derived = new PreviewSceneRender(scene, [mover.CreateEffect()], Start, Steps);
         Assert.True(At(Start, -2).ContentEquals(derived.Original(2, hideSceneLayers: true)));
     }
@@ -233,7 +232,7 @@ public class PreviewMotionTests
     [Fact]
     public void Package_preview_of_a_still_script_animates_only_with_motion()
     {
-        var plain = ScriptAsset.From("", Trusted("effect({ name: \"still\", tags: [\"a\"], render(img) {} });"));
+        var plain = ScriptAsset.From("", Register("effect({ name: \"still\", tags: [\"a\"], render(img) {} });"));
         Assert.False(IsAnimatedPng(AssetPreview.Package(plain)!.Png));
         Assert.True(IsAnimatedPng(AssetPreview.Package(plain with { PreviewMotion = Right })!.Png));
     }

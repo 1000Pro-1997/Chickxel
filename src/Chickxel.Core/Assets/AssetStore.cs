@@ -557,7 +557,7 @@ public sealed partial class AssetStore
     /// 스크립트 원문을 스크립트 에셋으로 저장한다(이름·작성자는 원문의 선언). 패키지 가져오기와 같은 검사(<see cref="ScriptAssetFormat.Check"/>)를
     /// 통과하지 못하면 <see cref="AssetPackageException"/>. <paramref name="id"/>가 스크립트 에셋이면 그 자리의 원문과 미리보기 장면을 바꾸고
     /// (<paramref name="scene"/>이 null이면 장면을 지움), 아니면 이 컴퓨터에서 만든(작성자·상점 연결 없는) 같은 원문의 스크립트가 있을 때 새로 더하지 않고
-    /// 그 항목을 돌려준다 — <paramref name="scene"/>이 있고 그 항목의 장면과 다르면 그 항목의 장면만 바꾼다(null이면 그대로 둠). 실행 허락은 앱이 정한다.
+    /// 그 항목을 돌려준다 — <paramref name="scene"/>이 있고 그 항목의 장면과 다르면 그 항목의 장면만 바꾼다(null이면 그대로 둠).
     /// </summary>
     public AssetEntry SaveScript(string source, string? id, PreviewScene? scene)
     {

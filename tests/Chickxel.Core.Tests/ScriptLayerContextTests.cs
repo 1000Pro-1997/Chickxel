@@ -12,7 +12,6 @@ namespace Chickxel.Core.Tests;
 /// <summary>
 /// 스크립트가 레이어 고르기 설정(<c>type: "layer"</c>)으로 고른 레이어와 효과 원본 배치를 읽는 API(<c>ctx.layer</c>·<c>ctx.layerWithEffects</c>·<c>ctx.layerEffects</c>,
 /// <c>ctx.center</c>·<c>ctx.slice</c>): 프로젝트 렌더에서의 픽셀·자리, 이름 찾기, 겹침 규칙, 효과 이름, 설정 값 저장, 캐시 무효, 읽기 판정, 빠른 경로.
-/// 신뢰 결정은 프로세스 전체 상태라 시험마다 원문 끝에 주석을 붙여 해시를 따로 쓴다.
 /// </summary>
 public class ScriptLayerContextTests
 {
@@ -20,10 +19,9 @@ public class ScriptLayerContextTests
 
     private static readonly Color32 Red = new(255, 0, 0), Blue = new(0, 0, 255), Green = new(0, 255, 0), Mark = new(255, 0, 255), Missing = new(7, 7, 7, 7);
 
-    private static string Trusted(string source, [CallerMemberName] string test = "")
+    private static string Register(string source, [CallerMemberName] string test = "")
     {
         var hash = ScriptLibrary.Add(source + "\n// " + test + "\n");
-        ScriptLibrary.SetTrust(hash, true);
         return hash;
     }
 
@@ -36,7 +34,7 @@ public class ScriptLayerContextTests
     /// </summary>
     private static ScriptEffect Copier(string call, string target, string key = "\"target\"", [CallerMemberName] string test = "") => new()
     {
-        ScriptHash = Trusted($$"""
+        ScriptHash = Register($$"""
             effect({ name: "copy {{call}}", padding: [{{Pad}}, {{Pad}}, {{Pad}}, {{Pad}}],
               settings: [{ key: "target", label: "Target", type: "layer" }, { key: "n", type: "int", default: 1 }],
               render(img, ctx, s) {
@@ -50,7 +48,7 @@ public class ScriptLayerContextTests
     /// <summary>설정 <c>target</c>으로 고른 레이어의 <c>ctx.CALL("target")</c> 그림이 불투명한 자리를 표시 색으로 칠하는 효과(여백 없음).</summary>
     private static ScriptEffect Marker(string call, string target, [CallerMemberName] string test = "") => new()
     {
-        ScriptHash = Trusted($$"""
+        ScriptHash = Register($$"""
             effect({ name: "mark {{call}}", settings: [{ key: "target", label: "Target", type: "layer" }], render(img, ctx, s) {
               const o = ctx.{{call}}("target");
               if (!o) return;
@@ -184,7 +182,7 @@ public class ScriptLayerContextTests
         // 그리는 중 s.키는 고른 이름 그대로(글)
         var probe = new ScriptEffect
         {
-            ScriptHash = Trusted("""
+            ScriptHash = Register("""
                 effect({ name: "name probe", settings: [{ key: "target", type: "layer" }, { key: "n", type: "int", default: 1 }], render(img, ctx, s) {
                   img.data[0] = typeof s.target === "string" ? s.target.length : 99;
                   img.data[1] = s.target === "sky" ? 1 : 2;
@@ -368,7 +366,7 @@ public class ScriptLayerContextTests
         string expected0 = outline.DisplayName, expected1 = outline.DisplayName + "|" + overlay.DisplayName;
         var script = new ScriptEffect
         {
-            ScriptHash = Trusted($$"""
+            ScriptHash = Register($$"""
                 effect({ name: "names",
                   settings: [{ key: "target", type: "layer", default: "base" }, { key: "empty", type: "layer" },
                              { key: "missing", type: "layer", default: "nobody" }, { key: "n", type: "int", default: 3 }],
@@ -415,7 +413,7 @@ public class ScriptLayerContextTests
     [Fact]
     public void Center_and_slice_describe_the_canvas_or_the_part()
     {
-        var hash = Trusted(LayoutProbe);
+        var hash = Register(LayoutProbe);
         var p = new SpriteProject(W, H);
         p.SetCel(0, 0, new PixelImage(W, H));
         p.SetLayerEffects(0, [new ScriptEffect { ScriptHash = hash }]);
@@ -444,7 +442,7 @@ public class ScriptLayerContextTests
     [Fact]
     public void Without_a_project_layers_are_null_names_empty_center_is_the_source_center_and_slice_is_null()
     {
-        var program = ScriptLibrary.Runnable(Trusted("""
+        var program = ScriptLibrary.Runnable(Register("""
             effect({ name: "alone", settings: [{ key: "target", type: "layer", default: "a" }], render(img, ctx, s) {
               img.data[0] = ctx.layer("target") === null && ctx.layerWithEffects("target") === null ? 1 : 2;
               img.data[1] = s.target === "a" ? 1 : 2;
@@ -462,7 +460,7 @@ public class ScriptLayerContextTests
     [Fact]
     public void Fast_path_reads_center_and_falls_back_to_jint_for_slice_layer_effect_names_and_layer_setting_values()
     {
-        var center = ScriptLibrary.Runnable(Trusted("""
+        var center = ScriptLibrary.Runnable(Register("""
             effect({ name: "center", render(img, ctx, s) {
               for (let i = 0; i < img.data.length; i += 4) { img.data[i] = ctx.center.x * 10; img.data[i + 1] = ctx.center.y * 10; img.data[i + 3] = 255; }
             } });
@@ -477,7 +475,7 @@ public class ScriptLayerContextTests
         Assert.Equal(new Color32(25, 20, 0, 255), fast[0, 0]);
 
         // 레이어 설정을 두기만 하면 빠른 경로 그대로(칸이 없어 뒤 설정 값도 제자리)
-        var unread = ScriptLibrary.Runnable(Trusted("""
+        var unread = ScriptLibrary.Runnable(Register("""
             effect({ name: "unread", settings: [{ key: "path", type: "layer", default: "ground" }, { key: "n", type: "int", default: 7 }, { key: "c", type: "color", default: "#102030" }],
               render(img, ctx, s) { for (let i = 0; i < img.data.length; i += 4) { img.data[i] = s.n; img.data[i + 1] = s.c.g; img.data[i + 3] = 255; } } });
             """))!;
@@ -499,7 +497,7 @@ public class ScriptLayerContextTests
                      ("s.path", "img.data[0] = s.path ? 1 : 0;"),
                  })
         {
-            var program = ScriptLibrary.Runnable(Trusted($$"""effect({ name: "x", {{Settings}}, render(img, ctx, s) { {{body}} } });""" + "\n// " + name))!;
+            var program = ScriptLibrary.Runnable(Register($$"""effect({ name: "x", {{Settings}}, render(img, ctx, s) { {{body}} } });""" + "\n// " + name))!;
             Assert.False(program.ExecutionPath.Compiled, name);
             Assert.Contains(name, program.ExecutionPath.Reason);
         }
@@ -512,7 +510,7 @@ public class ScriptLayerContextTests
         p.SetLayerProperties(0, name: "ground");
         p.SetCel(0, 0, Dot(W, H, 2, 3, Red));
         var reader = p.AddLayer(name: "reader");
-        var hash = Trusted("""
+        var hash = Register("""
             effect({ name: "fast layer", settings: [{ key: "target", type: "layer", default: "ground" }, { key: "other", type: "layer" }],
               render(img, ctx, s) {
                 const g = ctx.layer("target");
@@ -621,7 +619,6 @@ public class ScriptLayerContextTests
               render(img, ctx, s) { const o = ctx.layer("target"); if (o) for (let i = 0; i < img.data.length; i++) img.data[i] = o.data[i]; } });
             // Layer_setting_values_round_trip_through_project_save_and_open
             """);
-        ScriptLibrary.SetTrust(hash, true);
         var program = ScriptLibrary.Runnable(hash)!;
         // 문서에 없는 이름도 그대로 둔다
         var effect = new ScriptEffect

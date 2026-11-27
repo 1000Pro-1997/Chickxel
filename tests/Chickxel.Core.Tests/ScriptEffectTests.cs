@@ -10,8 +10,8 @@ using Chickxel.Core.Scripting;
 namespace Chickxel.Core.Tests;
 
 /// <summary>
-/// 스크립트 효과(7단계)를 프로젝트에 넣었을 때: 저장·열기, 원문이 없거나 허락하지 않은 스크립트, 값 비교(렌더 캐시 열쇠), 실패 격리,
-/// 기본 효과와 같은 합성 결과. 신뢰 결정은 프로세스 전체 상태라 시험마다 원문 끝에 주석을 붙여 해시를 따로 쓴다.
+/// 스크립트 효과(7단계)를 프로젝트에 넣었을 때: 저장·열기, 원문이 없거나 등록되지 않은 스크립트, 값 비교(렌더 캐시 열쇠), 실패 격리,
+/// 기본 효과와 같은 합성 결과. 원문을 시험마다 다른 주석과 함께 등록해 해시를 따로 쓴다.
 /// </summary>
 public class ScriptEffectTests
 {
@@ -29,10 +29,9 @@ public class ScriptEffectTests
     /// <summary>시험마다 다른 해시가 되도록 원문 끝에 시험 이름 주석을 붙인다.</summary>
     private static string Unique(string source, [CallerMemberName] string test = "") => source + "\n// " + test + "\n";
 
-    private static string Trusted(string source)
+    private static string Register(string source)
     {
         var hash = ScriptLibrary.Add(source);
-        ScriptLibrary.SetTrust(hash, true);
         return hash;
     }
 
@@ -81,7 +80,6 @@ public class ScriptEffectTests
         var source = Unique(OfficialEffects.Source("shine"));
         var p = Project([]);
         var hash = p.AddScript(source);
-        ScriptLibrary.SetTrust(hash, true);
         var program = ScriptLibrary.Runnable(hash)!;
         var effect = new ScriptEffect
         {
@@ -113,9 +111,26 @@ public class ScriptEffectTests
     }
 
     [Fact]
+    public void Store_package_of_a_used_script_survives_save_and_open_and_unused_ones_are_dropped()
+    {
+        var p = Project([]);
+        var used = p.AddScript(Unique(OfficialEffects.Source("shine")));
+        var unused = p.AddScript(Unique(OfficialEffects.Source("shine").Replace("빛 지나가기", "안 씀")));
+        p.SetLayerEffects(0, [new ScriptEffect { ScriptHash = used }]);
+        p.SetScriptStore(used, "maker.shine-pack");
+        p.SetScriptStore(unused, "maker.other-pack");
+
+        var (loaded, _) = Reopen(p, out var json);
+
+        Assert.Equal([used], json["scriptStores"]!.AsObject().Select(entry => entry.Key));
+        Assert.Equal("maker.shine-pack", loaded.ScriptStores[used]);
+        Assert.False(loaded.ScriptStores.ContainsKey(unused));
+    }
+
+    [Fact]
     public void Reading_with_a_known_source_fits_the_settings_to_its_schema()
     {
-        var hash = Trusted(Unique(OfficialEffects.Source("shine")));
+        var hash = Register(Unique(OfficialEffects.Source("shine")));
         var json = JsonNode.Parse($$"""
             { "type": "{{ScriptDefinition.Id}}", "script": "{{hash}}",
               "settings": { "angle": 999, "width": 2.6, "color": "red?", "gone": 1, "repeat": "PingPong" } }
@@ -160,28 +175,6 @@ public class ScriptEffectTests
     }
 
     [Fact]
-    public void Untrusted_script_is_not_run_until_allowed()
-    {
-        var hash = ScriptLibrary.Add(Unique(OfficialEffects.Source("shine")));
-        var effect = new ScriptEffect { ScriptHash = hash, Settings = ShineSettings(30, 6, Color32.White, 100, 0) };
-        var plain = Project([]);
-        var p = Project([effect]);
-
-        bool Same() => Enumerable.Range(0, Frames).All(f => plain.Flatten(f).ContentEquals(p.Flatten(f)));
-
-        Assert.True(Same());
-        Assert.Equal(ScriptEffectState.NotTrusted, ScriptEffectRuntime.StatusOf(p.Layers[0], effect).State);
-        // 선언을 읽으려고 맨 위를 실행하는 해석조차 하지 않았다
-        Assert.Null(ScriptLibrary.TryGetParsed(hash));
-
-        ScriptLibrary.SetTrust(hash, true);
-        Assert.False(Same());
-        ScriptLibrary.SetTrust(hash, false);
-        Assert.True(Same());
-        Assert.Equal(ScriptEffectState.NotTrusted, ScriptEffectRuntime.StatusOf(p.Layers[0], effect).State);
-    }
-
-    [Fact]
     public void Equal_settings_give_equal_effects_and_render_cache_keys()
     {
         var hash = ScriptEffectProgram.HashOf(Unique("effect({ name: 'x', render() {} });"));
@@ -216,7 +209,7 @@ public class ScriptEffectTests
     [Fact]
     public void Failing_script_is_skipped_alone_and_stops_after_repeated_failures()
     {
-        var hash = Trusted(Unique(Loop));
+        var hash = Register(Unique(Loop));
         var loop = new ScriptEffect { ScriptHash = hash };
         var outline = new OutlineEffect { Color = new Color32(10, 20, 30), Thickness = 2 };
         var p = Project([loop, outline], frames: 1);
@@ -245,7 +238,7 @@ public class ScriptEffectTests
     [Fact]
     public void Shine_script_effect_matches_the_built_in_shine_through_flatten()
     {
-        var hash = Trusted(Unique(OfficialEffects.Source("shine")));
+        var hash = Register(Unique(OfficialEffects.Source("shine")));
         var color = new Color32(255, 220, 64);
         var range = new FrameRange(1, 7);
         var outline = new OutlineEffect { Color = new Color32(30, 10, 60) };

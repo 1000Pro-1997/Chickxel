@@ -15,7 +15,6 @@ namespace Chickxel.App.Ai;
 /// 기본 효과를 합친 레시피는 저장·올리기 대상이 아니다(효과 만들기는 스크립트만).
 /// 효과 만들기 창이 열려 있으면 그 편집기의 원문을 읽고(<c>get_effect_maker_source</c>) 바꾸고(<c>set_effect_maker_source</c>) 미리보기 설정 값·그라데이션을 바꾸고(<c>set_effect_maker_preview</c>) 검증한다(<c>check_effect_maker</c>) —
 /// 문서는 건드리지 않으므로 "지금 그림만" 범위와 상관없이 쓸 수 있다(효과 만들기 AI 칸이 주로 쓰고, 채팅 창도 쓸 수 있음).
-/// AI가 쓴 원문은 이 컴퓨터에서 쓴 원문으로 보고 실행을 허락한다(실행은 다른 스크립트처럼 Jint 샌드박스·한도 안).
 /// </summary>
 public sealed partial class PixelTools
 {
@@ -356,7 +355,6 @@ public sealed partial class PixelTools
             throw new ToolError(UiStrings.FormatAi_Script_NotScript(effect: t, layer: index));
 
         var hash = p.AddScript(source);
-        ScriptTrustStore.TrustLocal(hash);
         var list = layer.Effects.ToList();
         int position;
         if (target is { } replace)
@@ -478,7 +476,7 @@ public sealed partial class PixelTools
             throw new ToolError(string.Format(CultureInfo.CurrentCulture, UiStrings.EffectMaker_SaveError,
                 e is AssetPackageException package ? AppAssets.IssueText(package.Issues) : e.Message));
         }
-        ScriptTrustStore.TrustLocal(ScriptLibrary.Add(source));
+        ScriptLibrary.Add(source);
         // 효과 만들기는 편집기(메인 창)에 딸린 창으로 연다
         if (_host is Window owner) Dispatcher.UIThread.Post(() => EffectMakerWindow.Open(owner, Ctx, saved.Id));
         return TextResult(UiStrings.FormatAi_Asset_Saved(name: saved.Name, id: saved.Id));

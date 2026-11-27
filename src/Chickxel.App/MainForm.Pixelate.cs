@@ -114,6 +114,7 @@ public sealed partial class MainForm
         var name = o.Input.Name;
         if (!InsertPixelated(name, frames, o.FrameDurationMs, o.NewDocument, interactive: true, out var message, o.GrowCanvas)) return;
         _pixelateApplied++;
+        _settings.PixelateApplyCount++;
 
         if (o.SavePalette && o.Result.Palette.Count > 0)
             _colors.AddPalette(MainStrings.FormatPixelate_PaletteName(name: name), o.Result.Palette);

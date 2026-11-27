@@ -6,18 +6,8 @@ using Jint;
 
 namespace Chickxel.Core.Scripting;
 
-/// <summary>스크립트를 실행할지에 대한 사용자 결정(원문 해시별, 13.5).</summary>
-public enum ScriptTrust
-{
-    /// <summary>아직 묻지 않음 — 실행하지 않는다.</summary>
-    Unknown,
-    Trusted,
-    /// <summary>실행하지 않기로 함.</summary>
-    Blocked,
-}
-
 /// <summary>
-/// 실행하지 않고 원문만 읽어 안 정보(신뢰 확인 창·목록 이름용). 선언에 글자 그대로 적은 값만 읽는다.
+/// 실행하지 않고 원문만 읽어 안 정보(목록 이름용). 선언에 글자 그대로 적은 값만 읽는다.
 /// 읽기 표시는 원문에 그 이름이 나오는지로 정한다(<see cref="ScriptSourceLocator.Mentions"/>): <see cref="ReadsOtherFrames"/> = <c>ctx.frameSource</c>,
 /// <see cref="ReadsRenderedFrames"/> = <c>ctx.renderedFrameSource</c>,
 /// <see cref="ReadsOtherLayers"/> = 다른 레이어 함수(<see cref="OtherLayerNames"/> — <c>layer</c>는 흔한 이름이라 속성 이름으로 나올 때만,
@@ -57,11 +47,10 @@ public sealed record ScriptInfo(string? Name, string? Author, bool ReadsOtherFra
 }
 
 /// <summary>
-/// 이 앱 프로세스가 아는 스크립트 원문(해시 → 원문)과 해석 결과, 신뢰 결정(13.5). 여러 스레드에서 같이 쓴다.
+/// 이 앱 프로세스가 아는 스크립트 원문(해시 → 원문)과 해석 결과. 여러 스레드에서 같이 쓴다.
 /// <para>
 /// 원문 해시가 스크립트 정체이므로 열린 프로젝트끼리 같이 써도 된다. 프로젝트의 스크립트 표(<see cref="Model.SpriteProject.Scripts"/>)는
-/// 파일에 저장할 원문이고, 여기는 렌더러가 해시로 원문과 해석 결과를 찾는 곳이다. 해석은 해시마다 한 번만 하고, 신뢰한 스크립트만 해석한다
-/// (해석이 선언을 읽으려고 맨 위를 실행하기 때문). 신뢰 결정의 저장은 앱이 맡는다(<see cref="Changed"/>).
+/// 파일에 저장할 원문이고, 여기는 렌더러가 해시로 원문과 해석 결과를 찾는 곳이다. 해석은 해시마다 한 번만 한다(<see cref="Changed"/>).
 /// </para>
 /// </summary>
 public static class ScriptLibrary
@@ -81,10 +70,9 @@ public static class ScriptLibrary
     }
 
     private static readonly ConcurrentDictionary<string, Entry> s_entries = new(StringComparer.Ordinal);
-    private static readonly ConcurrentDictionary<string, bool> s_trust = new(StringComparer.Ordinal);
 
     /// <summary>
-    /// 신뢰 결정이나 실행 상태가 바뀌어 같은 효과 값의 결과가 달라질 수 있음(아무 스레드에서나 불림). 받는 쪽은 효과 결과 캐시를 버리고 다시 그린다.
+    /// 실행 상태가 바뀌어 같은 효과 값의 결과가 달라질 수 있음(아무 스레드에서나 불림). 받는 쪽은 효과 결과 캐시를 버리고 다시 그린다.
     /// </summary>
     public static event Action? Changed;
 
@@ -119,42 +107,22 @@ public static class ScriptLibrary
         return e.Info.Name is { } name ? ScriptTranslations.NameFor(e.Info.Translations, name, culture, e.Info.Language) : null;
     }
 
-    /// <summary>해시의 신뢰 결정. 공식 효과 원문(<see cref="OfficialEffects.IsOfficialHash"/> — 지금 앱에 든 것과 예전 앱이 내보낸 것)은 늘 허락한다.</summary>
-    public static ScriptTrust TrustOf(string hash)
-        => OfficialEffects.IsOfficialHash(hash) ? ScriptTrust.Trusted
-            : s_trust.TryGetValue(hash, out bool trusted) ? trusted ? ScriptTrust.Trusted : ScriptTrust.Blocked : ScriptTrust.Unknown;
-
-    /// <summary>해시의 신뢰 결정을 정한다(바뀌면 <see cref="Changed"/>).</summary>
-    public static void SetTrust(string hash, bool trusted)
-    {
-        if (s_trust.TryGetValue(hash, out bool old) && old == trusted) return;
-        s_trust[hash] = trusted;
-        Changed?.Invoke();
-    }
-
-    /// <summary>저장해 둔 결정들을 알리지 않고 넣는다(앱 시작).</summary>
-    public static void LoadTrust(IEnumerable<KeyValuePair<string, bool>> decisions)
-    {
-        foreach (var (hash, trusted) in decisions)
-            if (IsHash(hash)) s_trust[hash] = trusted;
-    }
-
     /// <summary>
-    /// 해석 결과(원문을 모르거나 신뢰하지 않았으면 null). 처음 부르면 그 스레드에서 해석한다 — 오래 걸릴 수 있어 화면 스레드에서는
+    /// 해석 결과(원문을 모르면 null). 처음 부르면 그 스레드에서 해석한다 — 오래 걸릴 수 있어 화면 스레드에서는
     /// <see cref="TryGetParsed"/>를 쓴다.
     /// </summary>
     public static ScriptParseResult? Parse(string hash)
-        => s_entries.TryGetValue(hash, out var e) && TrustOf(hash) == ScriptTrust.Trusted ? e.Parsed.Value : null;
+        => s_entries.TryGetValue(hash, out var e) ? e.Parsed.Value : null;
 
     /// <summary>이미 해석했으면 그 결과(해석을 시작하지 않음).</summary>
     public static ScriptParseResult? TryGetParsed(string hash)
-        => s_entries.TryGetValue(hash, out var e) && TrustOf(hash) == ScriptTrust.Trusted && e.Parsed.IsValueCreated ? e.Parsed.Value : null;
+        => s_entries.TryGetValue(hash, out var e) && e.Parsed.IsValueCreated ? e.Parsed.Value : null;
 
-    /// <summary>실행할 수 있는 해석 결과(원문을 알고, 신뢰했고, 오류 없이 해석됨). 아니면 null.</summary>
+    /// <summary>실행할 수 있는 해석 결과(원문을 알고 오류 없이 해석됨). 아니면 null.</summary>
     public static ScriptEffectProgram? Runnable(string hash) => Parse(hash)?.Program;
 
     /// <summary>
-    /// 이 스레드에서 신뢰한 스크립트를 미리 해석하고 Jint 실행기를 띄운다(13.4: 첫 실행이 느리므로 프로젝트를 열 때 작업 스레드에서).
+    /// 이 스레드에서 스크립트를 미리 해석하고 Jint 실행기를 띄운다(13.4: 첫 실행이 느리므로 프로젝트를 열 때 작업 스레드에서).
     /// </summary>
     public static void Prewarm(IEnumerable<string> hashes)
     {

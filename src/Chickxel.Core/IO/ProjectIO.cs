@@ -88,6 +88,12 @@ public static partial class ProjectIO
     public static string CelEntryName(int layerIndex, int frameIndex, int skinIndex = 0)
         => skinIndex == 0 ? $"cels/L{layerIndex}_F{frameIndex}.png" : $"cels/L{layerIndex}_F{frameIndex}_S{skinIndex}.png";
 
+    /// <summary>
+    /// 저장할 때 스크립트 원문 해시가 온 상점 패키지 ID를 찾는다(앱의 에셋 라이브러리 — 아무 스레드에서나 불림, 없으면 파일에서 읽은 것만 남음).
+    /// 받는 사람의 라이브러리에 없는 효과를 상점에서 받게 한다(<see cref="SpriteProject.ScriptStores"/>).
+    /// </summary>
+    public static Func<string, string?>? ScriptStoreOf { get; set; }
+
     // ───────────── 저장 ─────────────
 
     /// <summary>
@@ -132,7 +138,7 @@ public static partial class ProjectIO
     /// 남에게 줄(갤러리에 같이 올릴) <c>.chickxel</c> 내용을 스트림에 쓴다. 프로젝트는 바꾸지 않는다(경로·수정됨·내보내기 기록 그대로).
     /// 이 컴퓨터에서만 뜻이 있는 값은 빼고 쓴다: 내보내기 기록(<c>exported</c>), 내보내기 폴더(<see cref="ExportSettings.Folder"/> → 기본값 null =
     /// 프로젝트 파일 옆), 내보내기 이름(<see cref="ExportSettings.FileName"/>·<see cref="ExportSettings.PartsFileName"/>)에 든 폴더·드라이브 부분(이름만 남김).
-    /// 스크립트 효과 원문은 그대로 넣는다(여는 쪽에서 실행 허락을 묻는다).
+    /// 스크립트 효과 원문은 그대로 넣는다.
     /// 구조·설정은 처음에 한 번 읽고 그다음 셀을 읽으므로 쓰는 동안 아무도 프로젝트를 고치지 않아야 한다(작업 덮개 안에서 부름).
     /// </summary>
     /// <param name="progress">진행(단위: 셀 픽셀).</param>
@@ -1068,6 +1074,7 @@ public static partial class ProjectIO
         }).ToList(),
         Exported = ToRecordDto(p.ExportedFiles, projectPath),
         Scripts = p.ScriptsInUse() is { Count: > 0 } scripts ? scripts : null,
+        ScriptStores = p.ScriptStoresInUse(ScriptStoreOf) is { Count: > 0 } stores ? stores : null,
         CelLinks = CelLinksOf(p, out var colors),
         CelLinkColors = colors,
         Tilesets = p.AllTilesets.Count == 0 ? null : p.AllTilesets.Select(t => new TilesetRefDto { Key = t.Key, Path = TilesetPathFor(t.SourcePath, projectPath) }).ToList(),
@@ -1184,6 +1191,8 @@ public static partial class ProjectIO
             if (ScriptLibrary.IsHash(hash) && source is not null && ScriptEffectProgram.HashOf(source) == hash) p.AddScript(source);
             else warnings?.Add(Chickxel.Core.Localization.DomainStrings.FormatProject_BadScript(hash: ShortHash(hash)));
         }
+        foreach (var (hash, packageId) in dto.ScriptStores ?? [])
+            if (ScriptLibrary.IsHash(hash) && !string.IsNullOrWhiteSpace(packageId)) p.SetScriptStore(hash, packageId);
         // 버전 4 이하: 부위만 피벗이 있었다(일반 레이어·그룹은 아래에서 캔버스 피벗을 옮겨 받음)
         bool legacyPivots = dto.Version < 5;
         // 버전 6 이하: 그룹·부위 형식 — 레이어 나무로 바꿔 읽는다
@@ -1835,6 +1844,8 @@ public static partial class ProjectIO
         public List<OutfitDto>? Outfits { get; set; }
         /// <summary>스크립트 표: 원문 해시 → 원문(스크립트 효과가 쓰는 것만, 없으면 스크립트 효과 없음).</summary>
         public SortedDictionary<string, string>? Scripts { get; set; }
+        /// <summary>스크립트 원문이 온 상점 패키지: 원문 해시 → 패키지 ID(상점에서 받은 효과만, 없으면 없음).</summary>
+        public SortedDictionary<string, string>? ScriptStores { get; set; }
         /// <summary>
         /// 링크된 셀(같은 그림을 같이 쓰는 셀, 없으면 링크 없음 — 예전 파일): [레이어, 프레임, 같이 쓰는 앞 프레임(, 스킨 번호 — 첫 스킨이면 생략)].
         /// 링크된 셀도 PNG를 따로 써서 이 표를 모르는 예전 판은 저마다의 셀로 읽는다.

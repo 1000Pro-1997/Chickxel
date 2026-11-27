@@ -13,8 +13,6 @@ public enum ScriptEffectState
     Ready,
     /// <summary>프로젝트에 원문이 없음 — 그리지 않는다.</summary>
     MissingSource,
-    /// <summary>실행을 허락하지 않음(아직 묻지 않았거나 실행 안 함) — 그리지 않는다.</summary>
-    NotTrusted,
     /// <summary>원문에 문법·선언 오류가 있음 — 그리지 않는다.</summary>
     Invalid,
     /// <summary>마지막 실행이 실패해 그 프레임에서 건너뜀(다른 프레임은 계속 계산).</summary>
@@ -69,7 +67,6 @@ public static class ScriptEffectRuntime
     {
         var hash = effect.ScriptHash;
         if (ScriptLibrary.SourceOf(hash) is null) return new(ScriptEffectState.MissingSource, [], null);
-        if (ScriptLibrary.TrustOf(hash) != ScriptTrust.Trusted) return new(ScriptEffectState.NotTrusted, [], null);
         if (ScriptLibrary.TryGetParsed(hash) is { Success: false } bad) return new(ScriptEffectState.Invalid, bad.Errors, null);
         if (owner is null || !s_records.TryGetValue(owner, out var records) || !records.TryGetValue(Key(effect), out var record))
             return new(ScriptEffectState.Ready, [], null);

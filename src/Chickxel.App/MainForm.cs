@@ -195,7 +195,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _playRefresh = new UiDebouncer(TimeSpan.FromMilliseconds(400), () => _play?.DocumentChanged());
         // 사용자가 더한 글꼴은 앱 설정 폴더의 Fonts에만 둔다(글씨를 그리기 전에 정해야 프로젝트의 글꼴 이름을 찾음).
         Chickxel.Core.Text.FontLibrary.UserFolder = Path.Combine(Platform.AppFolder, "Fonts");
-        ScriptTrustStore.Load(_settings);
+        // 저장하는 프로젝트에 상점에서 받은 스크립트 효과의 패키지 ID를 적는다(받는 사람이 라이브러리에 없으면 상점에서 받게)
+        ProjectIO.ScriptStoreOf = EffectUpdates.StorePackageOf;
         _history = new UndoHistoryKeeper(_settings);
         _history.Failed += m => Dispatcher.UIThread.Post(() => ShowMessage(MainStrings.FormatMessage_336(m: m)));
         _updater = new Updater(_settings, this, ShowMessage, ShowUpdateButton, ConfirmCloseAll, ExitForUpdate);
@@ -473,7 +474,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             stack.Children.Add(slot);
         }
         stack.Children.Add(BuildTileToolBar());
-        _tbSave = ToolBarAction(Icons.Save, MainStrings.Ui_037, () => Save());
+        _tbSave = ToolBarAction(Icons.Save, MainStrings.Ui_037, () => SaveByCommand(Save()));
         _tbRevert = ToolBarAction(Icons.Revert, MainStrings.Ui_038, RevertToSaved);
         var actions = new StackPanel { Orientation = Orientation.Vertical, Spacing = 1, Margin = new Thickness(0, 6, 0, 0) };
         actions.Children.Add(_tbSave);
@@ -748,8 +749,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             _miRecentFolders,
             _miRecentFiles,
             new Separator(),
-            DocCmd("저장(+ 시트 내보내기)", MainStrings.Menu_File_Save_071, () => Save(), "Ctrl+S", KeyScope.Global, (Key.S, Ctrl)),
-            DocCmd("다른 이름으로 저장…", MainStrings.Menu_File_SaveAs_073, () => SaveAs(), "Ctrl+Shift+S", KeyScope.Global, (Key.S, Ctrl | Shift)),
+            DocCmd("저장(+ 시트 내보내기)", MainStrings.Menu_File_Save_071, () => SaveByCommand(Save()), "Ctrl+S", KeyScope.Global, (Key.S, Ctrl)),
+            DocCmd("다른 이름으로 저장…", MainStrings.Menu_File_SaveAs_073, () => SaveByCommand(SaveAs()), "Ctrl+Shift+S", KeyScope.Global, (Key.S, Ctrl | Shift)),
             _miRevert = Cmd("저장한 내용으로 되돌리기", MainStrings.Menu_File_Command_075, RevertToSaved),
             DocCmd("내보내기…", MainStrings.Menu_File_OpenExportDialog_077, OpenExportDialog, "Ctrl+E", KeyScope.Global, (Key.E, Ctrl)),
             WithIcon(DocCmd("갤러리에 올리기…", UiStrings.Gallery_Menu, UploadToGallery), VectorIcon.Upload),
@@ -1248,10 +1249,12 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         // 저장·열기 중(자동 저장 포함)에 온 파일 감시 알림은 끝난 뒤(문서의 디스크 시각을 갱신한 뒤)에 본다 — 자기 저장을 "밖에서 바뀜"으로 묻지 않게.
         _browser.FilesChanged += (_, paths) => OnFilesChangedWhenIdle(paths);
 
-        _start.FolderChosen += (_, folder) => SetRootFolder(folder);
-        _start.FileChosen += (_, file) => OpenFile(file);
+        // 시작 화면 줄(최근·즐겨찾기·엔진 프로젝트)을 열 때 없는 경로면 알리고 최근·즐겨찾기에서 뺀다.
+        _start.FolderChosen += (_, folder) => OpenStartEntry(new StartPanel.StartEntry(folder, false));
+        _start.FileChosen += (_, file) => OpenStartEntry(new StartPanel.StartEntry(file, true));
         _start.OpenFolderRequested += (_, _) => OpenFolder();
         _start.NewImageRequested += (_, _) => NewProject(null);
+        _start.FavoriteToggled += (_, entry) => ToggleFavorite(entry);
 
         _colors.PalettesChanged += (_, _) => _settings.Palettes = _colors.Palettes.Select(PaletteSetting.From).ToList();
         _colors.PaletteEdited += (before, after) => _undoOrder.PushPalette(before, after);
@@ -1314,7 +1317,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _colors.SetRecent(_ctx.RecentColors);
         var palettes = s.Palettes ?? [new PaletteSetting { Name = AppSettings.DefaultPaletteName, Colors = [.. AppSettings.DefaultPalette] }];
         _colors.SetPalettes(palettes.Select(p => p.ToPalette()));
-        _start.SetRecent(s.RecentFolders, s.RecentFiles);
+        _start.SetRecent(s.RecentFolders, s.RecentFiles, s.FavoriteFolders, s.FavoriteFiles);
     }
 
     /// <summary>
@@ -1546,6 +1549,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private void SaveSettings()
     {
         var s = _settings;
+        long now = System.Diagnostics.Stopwatch.GetTimestamp();
+        s.UsageSeconds += (long)System.Diagnostics.Stopwatch.GetElapsedTime(_usageCountedAt, now).TotalSeconds;
+        _usageCountedAt = now;
         s.Maximized = WindowState == WindowState.Maximized;
         RememberNormalBounds();
         (s.WindowX, s.WindowY, s.WindowWidth, s.WindowHeight) =
@@ -1866,7 +1872,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     {
         bool has = _ctx.HasProject;
         _start.IsVisible = !has;
-        if (!has) _start.SetRecent(_settings.RecentFolders, _settings.RecentFiles);
+        if (!has) RefreshStartLists();
         _canvas.IsVisible = has;
         foreach (var item in _docItems) item.IsEnabled = has;
         UpdateTileMode();
@@ -2521,7 +2527,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         {
             Ui.Error(this, MainStrings.FormatMessage_351(folder: folder));
             _settings.RecentFolders.Remove(folder);
-            _start.SetRecent(_settings.RecentFolders, _settings.RecentFiles);
+            RefreshStartLists();
             return;
         }
         folder = Path.GetFullPath(folder);
@@ -2529,9 +2535,42 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         if (!_filesShown) SetFilesVisible(true, animate: true);
         _settings.LastFolder = folder;
         AppSettings.PushRecent(_settings.RecentFolders, folder);
-        _start.SetRecent(_settings.RecentFolders, _settings.RecentFiles);
+        RefreshStartLists();
         var unityRoot = UnityProjectLocator.FindProjectRoot(folder);
         ShowMessage(unityRoot is null ? MainStrings.FormatMessage_352(folder: folder) : MainStrings.FormatMessage_353(value: Path.GetFileName(unityRoot)));
+    }
+
+    /// <summary>시작 화면의 즐겨찾기 · 최근 폴더 · 최근 파일을 설정에서 다시 채운다.</summary>
+    private void RefreshStartLists() => _start.SetRecent(_settings.RecentFolders, _settings.RecentFiles, _settings.FavoriteFolders, _settings.FavoriteFiles);
+
+    private static bool SamePath(string a, string b)
+        => string.Equals(Path.TrimEndingDirectorySeparator(a), Path.TrimEndingDirectorySeparator(b), StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>시작 화면 폴더·파일 줄의 별: 즐겨찾기에 있으면 빼고, 없으면 끝에 넣는다(저장).</summary>
+    private void ToggleFavorite(StartPanel.StartEntry entry)
+    {
+        var list = entry.IsFile ? _settings.FavoriteFiles : _settings.FavoriteFolders;
+        if (list.RemoveAll(f => SamePath(f, entry.Path)) == 0) list.Add(entry.Path);
+        _settings.Save();
+        RefreshStartLists();
+    }
+
+    /// <summary>시작 화면 줄을 연다. 폴더·파일이 없어졌으면 "경로가 없습니다"를 알리고 최근·즐겨찾기 목록에서 뺀다(저장).</summary>
+    private void OpenStartEntry(StartPanel.StartEntry entry)
+    {
+        bool exists = entry.IsFile ? File.Exists(entry.Path) : Directory.Exists(entry.Path);
+        if (!exists)
+        {
+            Ui.Error(this, StartStrings.FormatPathMissing(path: entry.Path));
+            var (recent, favorites) = entry.IsFile ? (_settings.RecentFiles, _settings.FavoriteFiles) : (_settings.RecentFolders, _settings.FavoriteFolders);
+            recent.RemoveAll(f => SamePath(f, entry.Path));
+            favorites.RemoveAll(f => SamePath(f, entry.Path));
+            _settings.Save();
+            RefreshStartLists();
+            return;
+        }
+        if (entry.IsFile) OpenFile(entry.Path);
+        else SetRootFolder(entry.Path);
     }
 
     private void OpenFolder()
@@ -2630,8 +2669,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
                 else mode = ImportMode.Frames;
             }
             var result = WorkOverlay.Run(this, UiStrings.Busy_Opening, progress => ProjectImport.Import(analysis, mode, progress));
-            // 처음 보는 스크립트 효과는 실행할지 묻고, 실행할 것은 작업 스레드에서 실행기를 미리 띄운다
-            ScriptTrustStore.Opened(this, result.Project, interactive);
+            // 스크립트 효과는 첫 실행이 느려서 작업 스레드에서 미리 해석하고 실행기를 띄운다
+            if (result.Project.ScriptHashes() is { Count: > 0 } scripts) Task.Run(() => Chickxel.Core.Scripting.ScriptLibrary.Prewarm(scripts));
             return result;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException or NotSupportedException
@@ -2730,6 +2769,29 @@ public sealed partial class MainForm : Window, Ai.IAiHost
 
     /// <summary>손으로 저장했다: 지금 문서면 갤러리 단추가 반짝여 공유를 권한다(그림이 있고 이번 실행에서 처음일 때).</summary>
     private void SavedByHand(SpriteProject p) => _galleryButton.Saved(p, ReferenceEquals(p, _ctx.Project));
+
+    /// <summary>앱을 켜 둔 시간을 <see cref="AppSettings.UsageSeconds"/>에 마지막으로 더한 때(<see cref="SaveSettings"/>).</summary>
+    private long _usageCountedAt = System.Diagnostics.Stopwatch.GetTimestamp();
+
+    /// <summary>
+    /// 저장 명령(Ctrl+S·다른 이름으로 저장·도구 막대 저장)으로 저장했으면 GitHub 별 부탁 창을 한 번만 띄운다: AI 그림 픽셀로 정리를 3번 적용했거나 앱을 모두 30분 넘게 썼을 때.
+    /// 닫을 때 묻는 저장·자동 저장은 이 길을 거치지 않고, 닫는 중·튜토리얼 중에는 띄우지 않는다.
+    /// </summary>
+    private void SaveByCommand(bool saved)
+    {
+        const int PixelateUses = 3;
+        const long UsageSeconds = 30 * 60;
+        var s = _settings;
+        if (!saved || s.StarPromptShown || _closeConfirmed || _closePending || TutorialSpotlight.IsRunning) return;
+        long used = s.UsageSeconds + (long)System.Diagnostics.Stopwatch.GetElapsedTime(_usageCountedAt).TotalSeconds;
+        if (s.PixelateApplyCount < PixelateUses && used < UsageSeconds) return;
+        s.StarPromptShown = true;
+        SaveSettings();
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!_closeConfirmed && !_closePending && IsVisible) StarPromptDialog.Ask(this);
+        }, DispatcherPriority.Background);
+    }
 
     /// <summary>파일 > 갤러리에 올리기(메뉴 줄 갤러리 단추도): 타임라인에서 고른 프레임을 넘겨 창을 열고, 올렸으면 다음 저장 때 다시 권할 수 있게 한다.</summary>
     private void UploadToGallery()

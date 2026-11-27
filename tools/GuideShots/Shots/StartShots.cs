@@ -116,7 +116,7 @@ internal static class StartShots
         }
     }
 
-    // 시작 화면: ① 폴더 열기 ② 최근 폴더 ③ 파일 브라우저 ④ Unity Hub 프로젝트 목록.
+    // 시작 화면: ① 폴더 열기 ② 최근 폴더(왼쪽 별 = 즐겨찾기) ③ 파일 브라우저 ④ 게임 엔진 프로젝트 목록.
     [Shot("start-first-run")]
     public static void FirstRun(ShotKit k)
     {
@@ -126,16 +126,19 @@ internal static class StartShots
         string root = @"D:\MyGame\Assets";
         start.SetRecent(
             [root + @"\Sprites", @"D:\Art\Pixel practice"],
-            [root + @"\Sprites\Wolf Adventurer.chickxel", @"D:\Art\Pixel practice\slime.chickxel"]);
-        var hub = ShotKit.Get<ListBox>(start, "_hub");
-        var cols = ShotKit.Get<double[]>(start, "HubColumns");
-        UnityHubDialog.Fill(hub,
+            [root + @"\Sprites\Wolf Adventurer.chickxel", @"D:\Art\Pixel practice\slime.chickxel"],
+            [root + @"\Sprites"],
+            [root + @"\Sprites\Wolf Adventurer.chickxel"]);
+        var hub = ShotKit.Get<ListBox>(start, "_projects");
+        DateTimeOffset At(int m, int d, int h, int min) => new(2026, m, d, h, min, 0, TimeSpan.FromHours(9));
+        start.Fill(
         [
-            new UnityHubProject("MyGame", @"D:\MyGame", "6000.0.32f1", new DateTimeOffset(2026, 10, 26, 21, 14, 0, TimeSpan.FromHours(9)), true, true),
-            new UnityHubProject("PlatformerProto", @"D:\Unity\PlatformerProto", "2022.3.50f1", new DateTimeOffset(2026, 9, 2, 18, 40, 0, TimeSpan.FromHours(9)), false, true),
-            new UnityHubProject("TileTest", @"D:\Unity\TileTest", "2022.3.50f1", new DateTimeOffset(2026, 6, 11, 10, 5, 0, TimeSpan.FromHours(9)), false, true),
-        ], cols);
-        ShotKit.Get<TextBlock>(start, "_hubMessage").IsVisible = false;
+            new EngineProject(GameEngine.Unity, "MyGame", @"D:\MyGame", @"D:\MyGame\Assets\Sprites", "6000.0.32f1", At(10, 26, 21, 14), true, true),
+            new EngineProject(GameEngine.Godot, "Slime Farm", @"D:\Godot\SlimeFarm", @"D:\Godot\SlimeFarm\assets\sprites", "4.3", At(10, 20, 19, 2), false, true),
+            new EngineProject(GameEngine.Unity, "PlatformerProto", @"D:\Unity\PlatformerProto", @"D:\Unity\PlatformerProto\Assets", "2022.3.50f1", At(9, 2, 18, 40), false, true),
+            new EngineProject(GameEngine.Unreal, "DungeonCrawl", @"D:\Unreal\DungeonCrawl", @"D:\Unreal\DungeonCrawl\Content\Textures", "5.4", At(8, 14, 22, 30), false, true),
+            new EngineProject(GameEngine.Aseprite, "Pixel practice", @"D:\Art\Pixel practice", @"D:\Art\Pixel practice", "", At(7, 3, 11, 0), false, true),
+        ]);
         k.Settle(300);
         main.Title = "Chickxel";
         var openFolder = ShotKit.FindText(start, StartStrings.OpenFolder, ancestorControl: true);

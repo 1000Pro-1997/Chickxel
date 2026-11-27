@@ -222,7 +222,7 @@ public sealed partial class LayerEffectsDialog
     }
 
     /// <summary>
-    /// 효과 <paramref name="target"/>(아직 목록에 있으면)의 원문을 <paramref name="source"/>로 바꾼다. 설정 값은 새 schema에 맞춰 같은 키 값을 잇고(실행을 허락하지 않은
+    /// 효과 <paramref name="target"/>(아직 목록에 있으면)의 원문을 <paramref name="source"/>로 바꾼다. 설정 값은 새 schema에 맞춰 같은 키 값을 잇고(해석하지 못한
     /// 원문이면 그대로), 공통 값(범위·빠르기·반복 등)은 그대로 둔다.
     /// </summary>
     private void ApplyUpdatedScript(ScriptEffect target, string source)

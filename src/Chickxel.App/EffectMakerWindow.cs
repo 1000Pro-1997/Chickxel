@@ -1024,18 +1024,7 @@ public sealed class EffectMakerWindow : Window
     internal IReadOnlyList<LayerEffect> PreviewEffects()
     {
         if (!_open || _program is null) return [];
-        return [PreviewEffect(_program) with { ScriptHash = PreviewHash(_source) }];
-    }
-
-    /// <summary>
-    /// 원문을 스크립트 목록에 더하고 실행을 허락한 해시. 미리보기는 이 창 안에서만: 실행 허락은 메모리에만 두고(설정 파일에 중간 원문이 쌓이지 않게),
-    /// 저장·넣기 때 TrustLocal로 남긴다.
-    /// </summary>
-    private static string PreviewHash(string source)
-    {
-        string hash = ScriptLibrary.Add(source);
-        if (ScriptLibrary.TrustOf(hash) != ScriptTrust.Trusted) ScriptLibrary.SetTrust(hash, true);
-        return hash;
+        return [PreviewEffect(_program) with { ScriptHash = ScriptLibrary.Add(_source) }];
     }
 
     /// <summary><paramref name="program"/>으로 만든 미리보기 설정 값·그라데이션·공통 값의 새 효과(고르지 않은 값은 선언의 처음 값).</summary>
@@ -1274,7 +1263,7 @@ public sealed class EffectMakerWindow : Window
 
     private (bool, bool, EffectEasing, EffectRepeat, int, bool, bool) CommonRows(ScriptEffectProgram program)
         => (program.Animated, program.Motion, program.Easing, program.Repeat, program.RepeatCount, program.MovePivot,
-            Chickxel.Core.Edit.LayerEffects.CanMovePivot(new ScriptEffect { ScriptHash = PreviewHash(_source) }));
+            Chickxel.Core.Edit.LayerEffects.CanMovePivot(new ScriptEffect { ScriptHash = ScriptLibrary.Add(_source) }));
 
     /// <summary>
     /// 미리보기 설정 칸: 효과를 넣었을 때 오른쪽 독에 보이는 줄과 같은 줄·차례(<see cref="LayerEffectsDialog.AddScriptEffectRows"/> — 선언의 settings,
@@ -1287,7 +1276,7 @@ public sealed class EffectMakerWindow : Window
         if (_program is not { } program) return;
         if (program.Settings.Count == 0) _scriptSettings.Children.Add(Hint(UiStrings.ScriptEffect_NoSettings));
         // 줄을 고를 때 원문 정보(피벗을 옮기는지 등)를 보므로 스크립트 목록에 올린 해시로
-        LayerEffectsDialog.AddScriptEffectRows(new EffectForm(_scriptSettings, this), program, PreviewEffect(program) with { ScriptHash = PreviewHash(_source) },
+        LayerEffectsDialog.AddScriptEffectRows(new EffectForm(_scriptSettings, this), program, PreviewEffect(program) with { ScriptHash = ScriptLibrary.Add(_source) },
             ChangePreview, BuildScriptSettings, SceneLayerChoices());
     }
 
@@ -1813,7 +1802,7 @@ public sealed class EffectMakerWindow : Window
         SetStatus(UiStrings.EffectMaker_Validating, busy: true);
         string source = _source;
         var scene = _scene;
-        if (scene is not null) PreviewHash(source); // 장면 렌더러가 이 원문을 돌리도록(실행 허락은 메모리에만)
+        if (scene is not null) ScriptLibrary.Add(source); // 장면 렌더러가 이 원문을 찾도록
         var task = Task.Run(() => Validate(source, scene, cancel.Token), cancel.Token);
         // 끝나기만 기다린다(취소·실패는 아래에서 task로 가림)
         await task.ContinueWith(_ => { }, TaskScheduler.Default);
@@ -1910,7 +1899,7 @@ public sealed class EffectMakerWindow : Window
     /// </summary>
     private static bool MovesWithoutReporting(ScriptEffectProgram program, string source, PixelImage chick, PixelImage? end, CancellationToken cancel)
     {
-        string hash = PreviewHash(source);
+        string hash = ScriptLibrary.Add(source);
         if (ScriptLibrary.InfoOf(hash) is not { MovesPivot: false }) return false;
         IReadOnlyList<LayerEffect> template = [program.CreateEffect() with { ScriptHash = hash }];
         for (int step = 0; step < program.PreviewFrames; step++)
@@ -1968,7 +1957,7 @@ public sealed class EffectMakerWindow : Window
         }
         if (_sceneStale && RebuildScene() is { } sceneError) AddNote(sceneError, warning: true);
         var scene = _scene;
-        ScriptTrustStore.TrustLocal(ScriptLibrary.Add(_source));
+        ScriptLibrary.Add(_source);
         AssetEntry? saved = null;
         if (!AppAssets.Try(this, () => saved = AppAssets.Store.SaveScript(_source, _entryId, scene), UiStrings.EffectMaker_SaveError) || saved is null)
             return false;
@@ -2014,7 +2003,6 @@ public sealed class EffectMakerWindow : Window
             return;
         }
         var hash = project.AddScript(_source);
-        ScriptTrustStore.TrustLocal(hash);
         var effect = PreviewEffect(_program) with { ScriptHash = hash };
         var list = project.Layers[index].Effects.Append(effect).ToList();
         project.Edit(string.Format(CultureInfo.CurrentCulture, UiStrings.EffectMaker_InsertUndo, CurrentName()), ProjectChange.Layers,

@@ -98,8 +98,7 @@ public sealed record ScriptAsset : IAssetData
     }
 
     /// <summary>
-    /// 프로젝트에 넣을 레시피: 선언의 기본값(설정·빠르기 곡선·그라데이션)으로 둔 스크립트 효과 하나와 그 원문. 기본값은 해석해 둔 schema에서 바로 만들므로
-    /// 실행을 허락하지 않은 원문도 허락한 뒤와 같은 효과 값이 된다.
+    /// 프로젝트에 넣을 레시피: 선언의 기본값(설정·빠르기 곡선·그라데이션)으로 둔 스크립트 효과 하나와 그 원문. 기본값은 해석해 둔 schema에서 바로 만든다.
     /// </summary>
     public EffectRecipe ToRecipe()
     {
@@ -123,7 +122,7 @@ public sealed record ScriptAsset : IAssetData
 /// <para>
 /// 검사(<see cref="Check"/>)는 크기(<see cref="AssetPackageLimits.MaxScriptBytes"/>)를 보고 <see cref="ScriptEffectProgram.Parse"/>로 해석한다.
 /// 해석은 선언을 읽으려고 원문의 맨 위를 한 번 실행한다 — 실행은 앱 렌더링과 같은 샌드박스(.NET·파일·네트워크 접근 없음, <c>eval</c>·<c>Date</c>·
-/// <c>Math.random</c> 없음)에서 렌더링보다 훨씬 좁은 <see cref="CheckLimits"/> 안에서만 하고, 신뢰 결정(<see cref="ScriptLibrary.TrustOf"/>)과 무관하다.
+/// <c>Math.random</c> 없음)에서 렌더링보다 훨씬 좁은 <see cref="CheckLimits"/> 안에서만 한다.
 /// 맨 위에서 오래 돌거나 메모리를 많이 쓰는 원문은 그 한도에 걸려 설치 전에 거부된다. <c>render</c>·<c>padding</c>은 부르지 않는다.
 /// </para>
 /// </summary>
@@ -226,7 +225,7 @@ public static class ScriptAssetFormat
         if (Check(source, field, context) is not { } program) return null;
         if (!AssetManifest.IsValidName(program.Name)) context.Bad("name");
         if (context.Issues.Count > before) return null;
-        // 렌더러·효과 이름이 해시로 찾게 원문을 앱에 알린다(실행하지 않음 — 실행 허락은 따로).
+        // 렌더러·효과 이름이 해시로 찾게 원문을 앱에 알린다(실행하지 않음).
         ScriptLibrary.Add(program.Source);
         return ScriptAsset.From(context.AssetId, program);
     }

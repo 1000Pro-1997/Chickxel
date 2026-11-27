@@ -70,12 +70,11 @@ public class PackagePreviewTests
         Assert.Equal((Decode(preview.OriginalPng!).Width, Decode(preview.OriginalPng!).Height), (Decode(preview.Png).Width, Decode(preview.Png).Height));
     }
 
-    /// <summary>실행을 허락한 스크립트 에셋(원문 끝 주석으로 시험마다 다른 해시).</summary>
+    /// <summary>스크립트 에셋(원문 끝 주석으로 시험마다 다른 해시).</summary>
     private static ScriptAsset TrustedScript(string source, string test)
     {
         var program = ScriptEffectProgram.Parse(source + "\n// " + test + "\n").Program!;
         ScriptLibrary.Add(program.Source);
-        ScriptLibrary.SetTrust(program.ContentHash, true);
         return ScriptAsset.From("", program);
     }
 
@@ -214,7 +213,6 @@ public class PackagePreviewTests
             """;
         var program = ScriptEffectProgram.Parse(source).Program!;
         ScriptLibrary.Add(program.Source);
-        ScriptLibrary.SetTrust(program.ContentHash, true);
         var preview = AssetPreview.Package(ScriptAsset.From("", program))!;
 
         var chick = PreviewChicks.Load(PreviewChicks.Default);

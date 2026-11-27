@@ -170,7 +170,7 @@ public sealed record AssetEntry(string Id, string Kind, IAssetData Data)
     /// <summary>효과로 넣을 레시피: 효과 레시피는 그대로, 스크립트 에셋은 기본 설정 스크립트 효과 하나(<see cref="ScriptAsset.ToRecipe"/>). 그 밖은 null.</summary>
     public EffectRecipe? EffectTemplate => Recipe ?? Script?.ToRecipe();
 
-    /// <summary>이 에셋이 담은 스크립트 원문 해시(레시피의 원문, 스크립트 에셋 자신). 실행 허락 표시에 쓴다.</summary>
+    /// <summary>이 에셋이 담은 스크립트 원문 해시(레시피의 원문, 스크립트 에셋 자신).</summary>
     public IReadOnlyCollection<string> ScriptHashes
         => Recipe is { } recipe ? recipe.Scripts.Keys.ToArray() : Script is { } script ? [script.Hash] : Array.Empty<string>();
 

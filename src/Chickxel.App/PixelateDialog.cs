@@ -64,7 +64,7 @@ public sealed class PixelateOptions
     private const string RemovedOkLch1000 = "oklch1000";
 
     /// <summary>지금 옵션 판.</summary>
-    public const int CurrentVersion = 13;
+    public const int CurrentVersion = 14;
 
     /// <summary>
     /// 예전 판에서 저장한 값을 한 번만 옮기고 프리셋이 하나 이상 있게 한다. 판 1 = 자동 최적화 항목·예산을 새 기본값(외곽선 맞추기 방식만 빼고 모두, 2000번, 120초)으로.
@@ -83,6 +83,7 @@ public sealed class PixelateOptions
     /// 판 11 = 기본 프리셋 '같은 색상 계열'을 '기본' 바로 뒤로 옮긴다(둘 다 있을 때 — 후보 줄도 이 차례).
     /// 판 12 = 배경 지우기의 처음 값이 '지우지 않음'이 되어, 프리셋의 배경 방식이 예전 처음 값 '자동'이면 '지우지 않음'으로(색 고르기로 정한 프리셋은 그대로).
     /// 판 13 = 기본 프리셋의 예전 기본 제한 시간(120초)을 300초로(빠른 확인의 30초와 사용자 지정 시간은 유지).
+    /// 판 14 = 기본 프리셋의 기본 제한 시간을 무제한(0 — 시도 수로만 끝남)으로: 예전 처음 값 120초·300초인 것만(빠른 확인의 30초와 사용자 지정 시간은 유지).
     /// </summary>
     public void Migrate(string? lastSettings = null, string? manualPresetsPath = null)
     {
@@ -148,11 +149,12 @@ public sealed class PixelateOptions
                     if (start.Background.Mode == BackgroundMode.Auto)
                         p.Settings = OptimizePreset.Serialize(start with { Background = start.Background with { Mode = BackgroundMode.None } });
                 }
-            if (Version < 13)
+            if (Version < 14)
             {
-                var updatedIds = OptimizePreset.BuiltIns().Where(p => p.Seconds == 300).Select(p => p.BuiltIn).ToHashSet();
-                foreach (var p in OptimizePresets.Where(p => p.Seconds == 120 && updatedIds.Contains(p.BuiltIn)))
-                    p.Seconds = 300;
+                // 판 13(120 → 300초)과 판 14(→ 무제한)를 한 번에: 지금 처음 값이 무제한인 기본 프리셋에서 예전 처음 값 그대로인 것만.
+                var unlimitedIds = OptimizePreset.BuiltIns().Where(p => p.Seconds == 0).Select(p => p.BuiltIn).ToHashSet();
+                foreach (var p in OptimizePresets.Where(p => p.Seconds is 120 or 300 && unlimitedIds.Contains(p.BuiltIn)))
+                    p.Seconds = 0;
             }
             Version = CurrentVersion;
         }
@@ -256,7 +258,8 @@ public sealed class OptimizePreset
     /// <summary>예전(판 6 전) 기본 바꿔 볼 항목 — 판 6이 칸별 최적화로 옮길 때만 쓴다.</summary>
     public const OptimizeParam DefaultParams = OptimizeParam.SelectAll;
     public const int DefaultTrials = 2000;
-    public const int DefaultSeconds = 120;
+    /// <summary>새 프리셋의 제한 시간(초) — 0 = 무제한(시도 수로만 끝남).</summary>
+    public const int DefaultSeconds = 0;
     /// <summary>시도 수·초 칸의 최소. 0은 해당 예산 제한 없음.</summary>
     public const int MinBudget = 0;
     public const int MaxTrials = 10000;
@@ -957,8 +960,9 @@ public sealed partial class PixelateDialog : DialogBase
         _runButton.HelpAt("pixelate-presets", anchor: "Clean up");
 
         // ── 0. 최적화 기준(프리셋에 함께 저장): 예산·점수용 색 거리·점수 항목별 비중
-        _crTrials = Ui.Num(OptimizePreset.MinBudget, OptimizePreset.MaxTrials, OptimizePreset.DefaultTrials, 64, 0, 10).Presets(0, 100, 200, 500, 1000, 2000, 5000, 10000).Tip(UiStrings.Pixelate_Opt_UnlimitedTip);
-        _crSeconds = Ui.Num(OptimizePreset.MinBudget, OptimizePreset.MaxSeconds, OptimizePreset.DefaultSeconds, 64, 0, 5).Presets(0, 15, 30, 60, 120, 300, 600).Tip(UiStrings.Pixelate_Opt_UnlimitedTip);
+        // 0 = 그 예산 제한 없음: 상자에 ∞로 보인다(∞를 입력해도 됨).
+        _crTrials = Ui.Num(OptimizePreset.MinBudget, OptimizePreset.MaxTrials, OptimizePreset.DefaultTrials, 64, 0, 10).ZeroIsUnlimited(0, 100, 200, 500, 1000, 2000, 5000, 10000).Tip(UiStrings.Pixelate_Opt_UnlimitedTip);
+        _crSeconds = Ui.Num(OptimizePreset.MinBudget, OptimizePreset.MaxSeconds, OptimizePreset.DefaultSeconds, 64, 0, 5).ZeroIsUnlimited(0, 15, 30, 60, 120, 300, 600).Tip(UiStrings.Pixelate_Opt_UnlimitedTip);
         _crSampleFrames = Ui.Num(0, OptimizePreset.MaxSampleFrames, OptimizePreset.DefaultSampleFrames, 64).Presets(0, 3, 5, 8, 12, 16).Tip(UiStrings.Pixelate_Opt_SampleFramesTip);
         _crDistance = Ui.Combo(170, UiStrings.Pixelate_Pal_Distance_OkLab, UiStrings.Pixelate_Pal_Distance_Ciede2000, UiStrings.Pixelate_Pal_Distance_OkLchHue);
         // OKLCh 색상 가중일 때 밝기·채도·색상 차마다 가중치(나머지 거리 방식에서는 흐리게).

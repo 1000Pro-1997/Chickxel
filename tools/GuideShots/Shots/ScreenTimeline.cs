@@ -813,15 +813,11 @@ internal static class ScreenTimelineShots
         int body = LayerIndex(main, "Body");
         Ctx(main).SetCurrentFrame(4);
         k.Settle(300);
-        string hash = "";
-
         k.Dialog(() => ShotKit.Call(Timeline(main), "EditLayerEffects", body, -1, null, null), w =>
         {
             ShotKit.Pump(600);
             var project = ShotKit.Get<SpriteProject>(w, "_project");
-            hash = project.AddScript(PulseScript);
-            var trust = typeof(LayerEffectsDialog).Assembly.GetType("Chickxel.App.ScriptTrustStore")!;
-            trust.GetMethod("TrustLocal", Any)!.Invoke(null, [hash]);
+            var hash = project.AddScript(PulseScript);
             ShotKit.Call(w, "AddScriptEffect", hash);
             ShotKit.Pump(1500);
 
@@ -883,7 +879,6 @@ internal static class ScreenTimelineShots
 
             // 5: 여러 설정 종류의 설정 칸 — 레이어 고르기 목록을 펼친 모습(첫 항목 "(없음)", 그다음 문서 레이어 위→아래)
             string sparks = project.AddScript(SparksScript);
-            trust.GetMethod("TrustLocal", Any)!.Invoke(null, [sparks]);
             ShotKit.Call(w, "AddScriptEffect", sparks);
             // 설정 칸 스크롤 높이 고정을 풀어 모든 설정 줄이 한 번에 보이게 하고, 맨 아래 레이어 고르기 목록이 아래로 펼쳐질 빈자리를 둔다
             // (창 높이는 그대로라 그림 밖인 공통 설정 묶음을 잠시 숨겨 설정 칸을 위로 올리고, 창을 화면 위로 올려 목록이 화면 밖으로 넘지 않게)
@@ -917,7 +912,6 @@ internal static class ScreenTimelineShots
             ShotKit.Pump(200);
 
             string floating = project.AddScript(FloatingDamageScript);
-            trust.GetMethod("TrustLocal", Any)!.Invoke(null, [floating]);
             ShotKit.Call(w, "AddScriptEffect", floating);
             ShotKit.Pump(700);
             ScrollToSettings(w);
@@ -929,7 +923,6 @@ internal static class ScreenTimelineShots
 
             // 7: 설정 묶음(group "Label") 상자 안의 글꼴 고르기(font)·위치(position — 직접 지정이라 X·Y 점 고르기 판이 보임)
             string nameTag = project.AddScript(NameTagScript);
-            trust.GetMethod("TrustLocal", Any)!.Invoke(null, [nameTag]);
             ShotKit.Call(w, "AddScriptEffect", nameTag);
             ShotKit.Pump(1200);
             ScrollToSettings(w);
@@ -952,16 +945,6 @@ internal static class ScreenTimelineShots
                 PadLeft(InWindow(w, labelGroup), 14),
             ], firstNumber: 20);
         }, settleMs: 900);
-
-        // 3: 실행 확인 창(처음 보는 스크립트가 든 프로젝트를 열 때)
-        var dialogType = typeof(LayerEffectsDialog).Assembly.GetType("Chickxel.App.ScriptTrustDialog")!;
-        var trustDialog = (DialogBase)Activator.CreateInstance(dialogType, Any, null, [new[] { hash }], null)!;
-        k.Dialog(() => trustDialog.ShowDialog(main), w =>
-        {
-            var list = ShotKit.All<ScrollViewer>(w).First(s => s.IsEffectivelyVisible && s.Content is StackPanel);
-            var buttons = Union(w, ShotKit.Get<Control>(trustDialog, "OkButton"), ShotKit.Get<Control>(trustDialog, "CancelButtonControl"));
-            k.Save(w, "screen-script-effects-3", marks: [list, PadLeft(buttons, 10)], firstNumber: 17);
-        }, settleMs: 600);
     }
 
     /// <summary>효과 창 가운데 스크롤 칸(공통 설정·설정 묶음)에서 <paramref name="c"/>를 담은 Ui.Group 테두리.</summary>

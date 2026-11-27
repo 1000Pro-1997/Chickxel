@@ -6,8 +6,8 @@ namespace Chickxel.App;
 
 /// <summary>
 /// 효과 창의 스크립트 효과(13.6): 설정 칸의 "JS 파일 열기"(원문 바꾸기), 편집 창(<see cref="ScriptEditorWindow"/>)과 적용,
-/// 목록의 오류 표시와 실행 상태 갱신. 새 스크립트 만들기는 효과 만들기 창이 맡는다. 이 컴퓨터에서 쓰거나 가져온 원문은 바로 실행을 허락한다
-/// (<see cref="ScriptTrustStore.TrustLocal"/>). 원문을 고치면 새 해시로 프로젝트 스크립트 표에 들어가고, 쓰지 않게 된 예전 원문은 저장할 때 빠진다.
+/// 목록의 오류 표시와 실행 상태 갱신. 새 스크립트 만들기는 효과 만들기 창이 맡는다.
+/// 원문을 고치면 새 해시로 프로젝트 스크립트 표에 들어가고, 쓰지 않게 된 예전 원문은 저장할 때 빠진다.
 /// </summary>
 public sealed partial class LayerEffectsDialog
 {
@@ -18,7 +18,7 @@ public sealed partial class LayerEffectsDialog
     private LayerEffect? _scriptEditorTarget;
     private bool _scriptEventsAttached;
 
-    /// <summary>스크립트 실행 상태·신뢰가 바뀌면 상태 칸을 고치고, 결과가 달라질 수 있으면 모든 프레임을 다시 그린다(이벤트는 작업 스레드에서도 옴).</summary>
+    /// <summary>스크립트 실행 상태가 바뀌면 상태 칸을 고치고, 결과가 달라질 수 있으면 모든 프레임을 다시 그린다(이벤트는 작업 스레드에서도 옴).</summary>
     private void AttachScriptEvents()
     {
         _scriptEventsAttached = true;
@@ -44,7 +44,7 @@ public sealed partial class LayerEffectsDialog
         _effectCache.Clear();
         RestartRenders();
         RefreshScriptStatus();
-        // 효과·프리셋 탭 상자의 미리보기·실행 허용 안내도 새로
+        // 효과·프리셋 탭 상자의 미리보기도 새로 불러온다
         ReloadAssetTiles();
     });
 
@@ -115,7 +115,7 @@ public sealed partial class LayerEffectsDialog
     }
 
     /// <summary>
-    /// 원문 적용: 해석해 오류가 있으면 그 목록을 돌려준다. 없으면 프로젝트 스크립트 표에 넣고 실행을 허락한 뒤, <paramref name="target"/>의 원문을 바꾸거나
+    /// 원문 적용: 해석해 오류가 있으면 그 목록을 돌려준다. 없으면 프로젝트 스크립트 표에 넣은 뒤, <paramref name="target"/>의 원문을 바꾸거나
     /// (설정은 새 schema에 맞춰 같은 키 값을 이어 씀) 대상이 없으면(목록에서 빠졌어도) 새 효과로 더한다. <paramref name="applied"/>는 바뀌거나 더해진 효과.
     /// </summary>
     private IReadOnlyList<ScriptError> ApplyScriptSource(ScriptEffect? target, string source, out LayerEffect? applied)
@@ -124,7 +124,6 @@ public sealed partial class LayerEffectsDialog
         var parsed = ScriptEffectProgram.Parse(source);
         if (!parsed.Success) return parsed.Errors;
         var hash = _project.AddScript(source);
-        ScriptTrustStore.TrustLocal(hash);
         if (target is not null && IndexOfEffect(target) is var i and >= 0)
         {
             var program = ScriptLibrary.Runnable(hash)!;
@@ -159,7 +158,7 @@ public sealed partial class LayerEffectsDialog
     /// </summary>
     private void SaveScriptAsset(ScriptEffect effect)
     {
-        if (ScriptLibrary.SourceOf(effect.ScriptHash) is not { } source || ScriptLibrary.TrustOf(effect.ScriptHash) != ScriptTrust.Trusted) return;
+        if (ScriptLibrary.SourceOf(effect.ScriptHash) is not { } source) return;
         AppAssets.Try(this, () => AppAssets.Store.SaveScript(source, null, null), UiStrings.ScriptEffect_SaveAssetError);
     }
 

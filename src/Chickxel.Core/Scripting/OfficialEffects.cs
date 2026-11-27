@@ -9,8 +9,8 @@ namespace Chickxel.Core.Scripting;
 /// 설정 키는 그 기본 효과의 저장 키(<see cref="Effects.EffectParameter.Key"/>)와 같다.
 /// <para>
 /// 앱은 이 원문을 공식 패키지(<see cref="Assets.OfficialEffectPackages"/>)로 기본 설치해 효과 탭에 보이고, 예전 기본 효과가 든 파일은 읽을 때 이 원문의 스크립트 효과로
-/// 바뀐다(<see cref="LegacyEffects"/>). 이 원문과 예전 앱이 내보낸 공식 원문(<see cref="ShippedFileName"/>에 적은 해시)은 묻지 않고 실행을 허락한다
-/// (<see cref="ScriptLibrary.TrustOf"/>) — 공식 원문을 고친 뒤에도 예전 원문을 담은 프로젝트·레시피가 그대로 열린다.
+/// 바뀐다(<see cref="LegacyEffects"/>). 이 원문과 예전 앱이 내보낸 공식 원문(<see cref="ShippedFileName"/>에 적은 해시)은 공식 효과로 알아본다
+/// (<see cref="IsOfficialHash"/>) — 공식 원문을 고친 뒤에도 예전 원문을 담은 프로젝트·레시피가 그대로 열린다.
 /// </para>
 /// </summary>
 public static class OfficialEffects
@@ -57,7 +57,7 @@ public static class OfficialEffects
     public static string? IdOfShippedHash(string? hash)
         => IdOfHash(hash) ?? (hash is not null && s_shipped.Value.TryGetValue(hash, out var id) ? id : null);
 
-    /// <summary>원문 해시가 지금이나 예전에 내보낸 공식 효과 원문의 것인지(묻지 않고 실행을 허락함).</summary>
+    /// <summary>원문 해시가 지금이나 예전에 내보낸 공식 효과 원문의 것인지.</summary>
     public static bool IsOfficialHash(string? hash) => IdOfShippedHash(hash) is not null;
 
     /// <summary>내보낸 공식 원문 해시 목록(해시 → 효과 ID, <see cref="ShippedFileName"/>).</summary>

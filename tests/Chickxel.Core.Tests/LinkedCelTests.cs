@@ -341,7 +341,6 @@ public class LinkedCelTests
             effect({ name: "hold probe", animated: true, settings: [{ key: "g", type: "layer", default: "ground" }],
               render(img, ctx, s) { const g = ctx.layer("g"); img.data[0] = ctx.frame * 10; img.data[1] = g && g.data[3] > 0 ? 200 : 50; img.data[3] = 255; } });
             """);
-        Chickxel.Core.Scripting.ScriptLibrary.SetTrust(hash, true);
         return new ScriptEffect { ScriptHash = hash, Frames = range, HoldEnd = holdEnd };
     }
 
