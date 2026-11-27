@@ -24,6 +24,10 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 - Chicks pause to open the wooden door before entering or leaving, then close it after crossing the threshold.
 - The door stays open when another chick is still passing through.
 
+### Continuous river and lake banks in the village
+- Shoreline tiles round inside and outside corners while keeping the existing river and lake layout.
+- Moving ripples stay on the water and fade as they flow into the lake.
+
 ### Outside-canvas view for every layer
 - Outside: Opaque / Translucent now shows what lies outside the canvas on every visible layer (normal and tilemap), whichever layer or tool is selected.
 - Layer and group opacity apply, and translucency is applied once to the combined picture.

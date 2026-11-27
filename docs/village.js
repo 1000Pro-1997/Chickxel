@@ -51,18 +51,20 @@
   // ---------------------------------------------------------------- 지도(타일 종류)
   // G 풀 · P 길(마을 안은 돌길, 밖은 흙길) · W 물 · C 절벽 · F 폭포 · S 돌계단 · B 다리(물 위)
   var CLIFF = VR, PATH_ROW = VR + 6, PATH_COL = VC + 8, STAIR_COL = VC + 19;
-  function riverCols(r) {
-    // 북쪽 언덕에서는 조금 굽이치고, 마을에서는 곧게(VC+2, VC+3), 마을 아래에서는 호수 쪽(남서)으로 휜다
-    var cx = VC + 3;
-    if (r < VR) cx += Math.round(Math.sin(r * 0.5) * 1.3);
-    else if (r > VR + 11) cx -= Math.min(4, r - (VR + 11));
-    return [cx - 1, cx];
+  function riverCol(r) {
+    var c = VC + 3;
+    if (r < VR) c += Math.round(Math.sin(r * 0.5) * 1.3);
+    else if (r > VR + 11) c -= Math.min(4, r - (VR + 11));
+    return c;
+  }
+  function isRiver(c, r) {
+    var right = riverCol(r);
+    return r <= VR + 15 && (c === right - 1 || c === right);
   }
   function isLake(c, r) {
     var dx = (c - (VC - 1)) / 7.5, dy = (r - (VR + 16)) / 4.2;
     return dx * dx + dy * dy + (smooth(c, r, 3, 5) - 0.5) * 0.6 < 1;
   }
-  function isRiver(c, r) { var rc = riverCols(r); return r <= VR + 15 && (c === rc[0] || c === rc[1]); }
   function isPathTile(c, r) {
     if (r === PATH_ROW && c >= VC - 8 && c <= VC + 27) return true;
     if (c === PATH_COL && r >= VR + 6 && r <= VR + 18) return true;
@@ -82,13 +84,45 @@
   function tile(c, r) { return c < 0 || r < 0 || c >= WC || r >= WR ? 'G' : TT[r * WC + c]; }
   function wet(t) { return t === 'W' || t === 'B' || t === 'F'; }
   function walk(t) { return t === 'P' || t === 'S'; }
+
+  // 원래 지형은 그대로 두고, 물가 오토타일만 얹는다. 가운데 칸과 이웃 여덟 칸의 물 여부로
+  // 같은 연결 모양의 타일을 재사용한다. 바깥 모서리를 깎고 안쪽 모서리를 채우는 범위는 6px이다.
+  var shore = new Int8Array(WW * WH), waterSurface = new Uint8Array(WW * WH);
+  function shoreTile(mask) {
+    var radius = 6, pixels = new Int8Array(T * T), span = radius * 2;
+    var center = (mask >> 4) & 1;
+    for (var y = 0; y < T; y++) {
+      var row = y < T / 2 ? 1 : 7, wy = Math.max(0, (radius - Math.min(y, T - 1 - y) - 0.5) / span);
+      for (var x = 0; x < T; x++) {
+        var side = x < T / 2 ? -1 : 1, wx = Math.max(0, (radius - Math.min(x, T - 1 - x) - 0.5) / span);
+        var across = (mask >> (4 + side)) & 1;
+        var near = center + (across - center) * wx;
+        var far = ((mask >> row) & 1) * (1 - wx) + ((mask >> (row + side)) & 1) * wx;
+        pixels[y * T + x] = Math.floor(16 * (near + (far - near) * wy - 0.5));
+      }
+    }
+    return pixels;
+  }
+  function mapShore() {
+    var variants = [];
+    for (var r = 0; r < WR; r++)
+      for (var c = 0; c < WC; c++) {
+        var mask = 0;
+        for (var dy = -1; dy <= 1; dy++)
+          for (var dx = -1; dx <= 1; dx++)
+            if (wet(tile(c + dx, r + dy))) mask |= 1 << ((dy + 1) * 3 + dx + 1);
+        var pixels = variants[mask] || (variants[mask] = shoreTile(mask));
+        var offset = r * T * WW + c * T;
+        for (var y = 0; y < T; y++) shore.set(pixels.subarray(y * T, (y + 1) * T), offset + y * WW);
+      }
+  }
   // 마을 가장자리에서 (c, r)까지의 거리(타일, 마을 안이면 0)
   function distance(c, r) {
     var dx = Math.max(VC - c, 0, c - (VC + COLS - 1)), dy = Math.max(VR - r, 0, r - (VR + ROWS - 1));
     return Math.sqrt(dx * dx + dy * dy);
   }
   function inVillage(c, r) { return c >= VC && c < VC + COLS && r >= VR && r < VR + ROWS; }
-  // 풀이 길·물로 삐죽 넘어오는 길이(2~4px, 2px마다 다름)
+  // 풀이 길·절벽 쪽으로 삐죽 넘어오는 길이(2~4px, 2px마다 다름)
   function jag(u, seed) { return 2 + Math.floor(hash(u >> 1, seed) * 3); }
 
   // ---------------------------------------------------------------- 땅(픽셀 단위로 한 번)
@@ -103,10 +137,21 @@
       if (e) return e;
       return inVillage(c, r) ? cobble(x, y) : dirtPixel(x, y);
     }
-    if (t === 'W' || t === 'B') {
-      var e2 = edgeWater(x, y, lx, ly, up, down, left, right);
-      if (e2) return e2;
-      return smooth(x / 16, y / 16, 3, 2) > 0.6 ? C.water2 : C.water;
+    if (t !== 'C' && t !== 'F' && t !== 'S') {
+      var i = y * WW + x, depth = shore[i];
+      if (depth >= 0) {
+        var bank = 0;
+        while (bank <= 4 && bank < y && shore[i - (bank + 1) * WW] >= 0) bank++;
+        if (bank < y && bank <= 4) {
+          if (bank === 0) return C.grassRim;
+          if (bank === 1 || bank === 3) return C.cliffLine;
+          if (bank === 2) return C.cliffDark;
+          return C.waterDark;
+        }
+        if (up === 'F' && ly < 3) return hash(x >> 1, y) > 0.5 ? C.foam : C.waterLight;
+        if (depth < 2) return C.waterDark;
+        return smooth(x / 16, y / 16, 3, 2) > 0.6 ? C.water2 : C.water;
+      }
     }
     if (t === 'C') {
       var j = jag(x, 91);
@@ -160,22 +205,6 @@
     if (grassy(down)) { j = jag(x, (y >> 4) + 50); var d = 15 - ly; if (d < j - 1) return C.grass; if (d === j - 1) return C.grassRim; if (d === j) return C.grassShade; }
     if (grassy(left)) { j = jag(y, (x >> 4) + 90); if (lx < j - 1) return C.grass; if (lx === j - 1) return C.grassRim; if (lx === j) return C.grassShade; }
     if (grassy(right)) { j = jag(y, (x >> 4) + 130); var d2 = 15 - lx; if (d2 < j - 1) return C.grass; if (d2 === j - 1) return C.grassRim; if (d2 === j) return C.grassShade; }
-    return null;
-  }
-  // 물 칸: 땅 이웃 쪽에 풀 테두리와 흙 둑(앞면), 짙은 물 그늘(위쪽 땅이면 둑이 보이고 그늘이 넓다)
-  function edgeWater(x, y, lx, ly, up, down, left, right) {
-    var j;
-    if (!wet(up)) {
-      j = jag(x, (y >> 4) + 7);
-      if (ly < j - 1) return C.grass; if (ly === j - 1) return C.grassRim;
-      if (ly < j + 3) return ly === j ? C.cliffLine : C.cliffDark;
-      if (ly === j + 3) return C.cliffLine;
-      if (ly < j + 7) return C.waterDark;
-    }
-    if (up === 'F' && ly < 4) return hash(x >> 1, y) > 0.4 ? C.foam : C.waterLight;
-    if (!wet(left)) { j = jag(y, (x >> 4) + 11); if (lx < j - 2) return C.grass; if (lx === j - 2) return C.ink; if (lx < j + 1) return C.waterDark; }
-    if (!wet(right)) { j = jag(y, (x >> 4) + 13); var d = 15 - lx; if (d < j - 2) return C.grass; if (d === j - 2) return C.ink; if (d < j + 1) return C.waterDark; }
-    if (!wet(down)) { j = jag(x, (y >> 4) + 17); var d2 = 15 - ly; if (d2 < j - 2) return C.grass; if (d2 === j - 2) return C.ink; }
     return null;
   }
 
@@ -746,21 +775,29 @@
 
   // 땅 위에 바로 그리는 것(납작한 것): 풀 결, 들꽃, 연잎, 다리 판자, 집 바닥·깔개, 밭 이랑
   function decorateGround() {
+    function coverWater(x, y, w, h) {
+      for (var row = y; row < y + h; row++) waterSurface.fill(0, row * WW + x, row * WW + x + w);
+    }
     for (var r = 0; r < WR; r++)
       for (var c = 0; c < WC; c++) {
         var t = tile(c, r), x = c * T, y = r * T;
         if (t === 'G') {
           for (var k = 0; k < 2; k++) {
             var hx = Math.floor(hash(c * 3 + k, r) * 12) + 1, hy = Math.floor(hash(r * 5 + k, c) * 11) + 3;
-            if (tile(c, r - 1) === 'C' && hy < 6) continue;
+            if ((tile(c, r - 1) === 'C' && hy < 6) || shore[(y + hy) * WW + x + hx] >= -3) continue;
             px(x + hx, y + hy, 1, 2, C.grassDark); px(x + hx + 2, y + hy, 1, 2, C.grassDark); px(x + hx + 1, y + hy - 1, 1, 2, C.grassLight);
           }
           var f = hash(c + 21, r + 3);
-          if (f > 0.93) { px(x + 6, y + 6, 3, 3, '#ffffff'); px(x + 7, y + 7, 1, 1, '#ffd35c'); }
-          else if (f < 0.03) { px(x + 9, y + 9, 2, 2, '#ffd35c'); px(x + 4, y + 4, 2, 2, '#ff9fb0'); }
+          if (f > 0.93 && shore[(y + 7) * WW + x + 7] < -3) {
+            px(x + 6, y + 6, 3, 3, '#ffffff'); px(x + 7, y + 7, 1, 1, '#ffd35c');
+          } else if (f < 0.03 && shore[(y + 6) * WW + x + 6] < -5) {
+            px(x + 9, y + 9, 2, 2, '#ffd35c'); px(x + 4, y + 4, 2, 2, '#ff9fb0');
+          }
         }
         if (t === 'W' && isLake(c, r) && !isRiver(c, r) && hash(c * 5, r) > 0.84) {
           var lx2 = x + 3 + Math.floor(hash(c, r) * 6), ly2 = y + 4 + Math.floor(hash(r, c) * 6);
+          if (shore[ly2 * WW + lx2] < 0 || shore[(ly2 + 3) * WW + lx2 + 6] < 0) continue;
+          coverWater(lx2, ly2 - 3, 7, 7);
           px(lx2, ly2, 7, 4, '#24501d'); px(lx2 + 1, ly2, 5, 3, '#4f9f3a'); px(lx2 + 3, ly2 + 1, 1, 2, '#24501d');
           if (hash(c, r + 3) > 0.6) { px(lx2 + 2, ly2 - 2, 3, 2, '#ffb3c1'); px(lx2 + 3, ly2 - 3, 1, 1, '#fff'); }
         }
@@ -770,6 +807,7 @@
     px(bx0, by0, bw, 15, C.woodLine);
     for (var b = 0; b < bw - 2; b += 4) { px(bx0 + 1 + b, by0 + 1, 3, 12, b % 8 ? '#8a5a2c' : C.wood); px(bx0 + 1 + b, by0 + 1, 1, 12, C.woodLight); px(bx0 + 2 + b, by0 + 3, 1, 1, C.woodLine); px(bx0 + 2 + b, by0 + 10, 1, 1, C.woodLine); }
     px(bx0 + 1, by0 + 13, bw - 2, 3, '#4a2e16'); px(bx0, by0 + 16, bw, 3, 'rgba(10,30,60,0.45)');
+    coverWater(bx0, by0, bw, 19);
     // 집 바닥: 세로 판자, 판자 끝이 엇갈리고 못 자국(문 자리는 남쪽 벽 앞면 끝까지)
     var fx0 = HOUSE.x0 + WALL, fx1 = HOUSE.x1 - WALL, fy0 = HOUSE.y0 + WALL, fy1 = HOUSE.y1 - FACE;
     var dx0 = DOOR_X - DOOR_W / 2;
@@ -825,40 +863,60 @@
   }
 
   // ---------------------------------------------------------------- 움직이는 것
-  // 물결: 강은 아래로 흐르고 호수는 옆으로 천천히 반짝인다. 폭포는 줄무늬가 떨어지고 밑에 물보라
-  var waterTiles = [], fallTiles = [];
+  // 물결은 실제 물 표면에만 그린다. 강에서 흘러오던 물결은 호수에 닿을 때 흐려진다.
+  var lakeTiles = [], fallTiles = [];
   for (var r1 = 0; r1 < WR; r1++)
     for (var c1 = 0; c1 < WC; c1++) {
       var t1 = tile(c1, r1);
-      if (t1 === 'W') waterTiles.push(c1, r1, isRiver(c1, r1) ? 1 : 0);
-      else if (t1 === 'F') fallTiles.push(c1, r1);
+      if (t1 === 'F') fallTiles.push(c1 * T, r1 * T);
+      else if (t1 === 'W' && !isRiver(c1, r1)) lakeTiles.push(c1 * T, r1 * T);
     }
+  function waterLine(ctx, x, y, w) {
+    if (y < 0 || y >= WH) return;
+    var end = Math.min(WW, x + w), start = -1, row = y * WW;
+    for (var i = Math.max(0, x); i < end; i++) {
+      if (waterSurface[row + i]) { if (start < 0) start = i; }
+      else if (start >= 0) { ctx.fillRect(start, y, i - start, 1); start = -1; }
+    }
+    if (start >= 0) ctx.fillRect(start, y, end - start, 1);
+  }
+  function riverCenter(y) {
+    var row = y / T - 0.5, r = Math.floor(row), c = riverCol(r);
+    return (c + (riverCol(r + 1) - c) * (row - r)) * T;
+  }
   function drawWater(ctx, t, view) {
-    for (var k = 0; k < waterTiles.length; k += 3) {
-      var c = waterTiles[k], r = waterTiles[k + 1], x = c * T, y = r * T;
-      if (x + T < view.x0 || x > view.x1 || y + T < view.y0 || y > view.y1) continue;
-      ctx.fillStyle = C.waterLight;
-      if (waterTiles[k + 2]) {
-        var s = (t / 90 + hash(c, r) * 16) % 16;
-        if (hash(c, r + 9) > 0.3) { ctx.fillRect(x + 3 + Math.floor(hash(c, r) * 6), y + Math.floor(s), 1, 3); ctx.fillRect(x + 5 + Math.floor(hash(c, r) * 6), y + Math.floor(s) + 1, 1, 2); }
-        if (hash(c + 4, r) > 0.5) ctx.fillRect(x + 10, y + Math.floor((s + 8) % 16), 1, 3);
-      } else {
-        var m = Math.floor(t / 700 + hash(c, r) * 6) % 6;
-        if (hash(c, r + 9) > 0.45) ctx.fillRect(x + 3 + m, y + 5 + (c % 3) * 3, 4, 1);
-        if (hash(c + 3, r) > 0.65) { ctx.fillStyle = '#5a92cc'; ctx.fillRect(x + 9 - m, y + 11, 3, 1); }
-      }
+    ctx.fillStyle = C.waterLight;
+    var reach = VY + 14 * T;
+    for (var i = 0; i < 27; i++) {
+      var y = Math.floor((t / 85 + i * reach / 27) % reach);
+      if (y + 2 < view.y0 || y > view.y1 || (y >= VY && y < VY + T)) continue;
+      var x = Math.floor(riverCenter(y) - 10 + hash(i, 49) * 20);
+      if (x + 6 < view.x0 || x > view.x1) continue;
+      ctx.globalAlpha = 0.65 * Math.min(1, (reach - y) / (3 * T));
+      var w = 3 + (i % 4);
+      waterLine(ctx, x, y, w);
+      if (i % 3 === 0) waterLine(ctx, x + 1, y + 2, w - 2);
     }
+    for (var k = 0; k < lakeTiles.length; k += 2) {
+      var lx = lakeTiles[k], ly = lakeTiles[k + 1];
+      if (lx + T < view.x0 || lx > view.x1 || ly + T < view.y0 || ly > view.y1) continue;
+      var phase = (t / 2400 + hash(lx, ly)) % 1;
+      ctx.globalAlpha = 0.55 * Math.sin(phase * Math.PI);
+      if (hash(lx, ly + 9) > 0.4)
+        waterLine(ctx, lx + 3 + Math.floor(phase * 4), ly + 4 + Math.floor(hash(ly, lx) * 8), 4 + Math.floor(hash(lx, 18) * 3));
+    }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = C.foam;
     for (var f = 0; f < fallTiles.length; f += 2) {
-      var fx = fallTiles[f] * T, fy = fallTiles[f + 1] * T;
-      ctx.fillStyle = C.foam;
-      for (var i = 0; i < 4; i++) {
-        var col = Math.floor(hash(fallTiles[f], i) * 14) + 1, off = (t / 40 + i * 5) % 16;
-        ctx.fillRect(fx + col, fy + Math.floor(off), 1, 4);
+      var fx = fallTiles[f], fy = fallTiles[f + 1];
+      if (fx + T < view.x0 || fx > view.x1 || fy + T + 7 < view.y0 || fy > view.y1) continue;
+      for (var j = 0; j < 4; j++) {
+        var col = 1 + Math.floor(hash(fx, j) * 14), off = Math.floor((t / 40 + j * 5) % T);
+        ctx.fillRect(fx + col, fy + off, 1, Math.min(4, T - off));
       }
       for (var b = 0; b < 5; b++) {
-        var bx = fx + Math.floor(hash(f, b) * 14), by = fy + 16 + Math.floor(((t / 120 + b * 3) % 6));
-        ctx.fillStyle = b % 2 ? C.foam : C.waterLight;
-        ctx.fillRect(bx, by, 2, 1);
+        var bx = fx + Math.floor(hash(f, b) * 14), by = fy + T + Math.floor((t / 120 + b * 3) % 6);
+        waterLine(ctx, bx, by, 2);
       }
     }
   }
@@ -1049,12 +1107,14 @@
   var namesHost = document.getElementById('world-names');
   var sctx = screen.getContext('2d');
   var ground = canvas(WW, WH), gctx = ground.getContext('2d');
+  mapShore();
   buildObjects();
   (function paintGround() {
     var img = gctx.createImageData(WW, WH), a = img.data;
     for (var y = 0; y < WH; y++)
       for (var x = 0; x < WW; x++) {
-        var col = rgb(groundPixel(x, y)), i = (y * WW + x) * 4;
+        var color = groundPixel(x, y), col = rgb(color), i = (y * WW + x) * 4;
+        waterSurface[i / 4] = color === C.water || color === C.water2 || color === C.waterDark || color === C.waterLight || color === C.foam;
         a[i] = col[0]; a[i + 1] = col[1]; a[i + 2] = col[2]; a[i + 3] = 255;
       }
     gctx.putImageData(img, 0, 0);
