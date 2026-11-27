@@ -120,6 +120,10 @@ pre code { background: none; border: 0; padding: 0; }
 .village-zoom button { display: inline-grid; place-items: center; width: 38px; height: 38px; padding: 0; border: 0; border-radius: 11px; background: none; color: var(--ink); cursor: pointer; }
 .village-zoom button:hover { background: var(--hover); }
 .village-zoom .icon { width: 18px; height: 18px; }
+.village-zoom button[hidden], #zoom-full[aria-pressed="true"] .full-on, #zoom-full[aria-pressed="false"] .full-off { display: none; }
+/* 전체 화면은 마을 칸만: 위 막대 높이를 0으로 */
+.village-stage:fullscreen { --top: 0px; background: #101a22; }
+.village-stage:-webkit-full-screen { --top: 0px; background: #101a22; }
 @media (max-width: 700px) {
   .village-card { right: 16px; width: auto; padding: 10px 12px 12px; }
   .village-card p { display: none; }

@@ -383,6 +383,22 @@
   }
   window.addEventListener('resize', resize);
   resize();
+  // 전체 화면: 위 막대·페이지는 빼고 마을 칸(#stage)만 화면 가득. 지원하지 않는 브라우저(아이폰 등)는 단추를 숨긴다
+  var stage = document.getElementById('stage');
+  var fullBtn = document.getElementById('zoom-full');
+  var canFull = !!(stage.requestFullscreen || stage.webkitRequestFullscreen);
+  fullBtn.hidden = !canFull;
+  function fullElement() { return document.fullscreenElement || document.webkitFullscreenElement || null; }
+  fullBtn.addEventListener('click', function () {
+    if (fullElement()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    else (stage.requestFullscreen || stage.webkitRequestFullscreen).call(stage);
+  });
+  function onFull() {
+    fullBtn.setAttribute('aria-pressed', String(fullElement() === stage));
+    resize();
+  }
+  document.addEventListener('fullscreenchange', onFull);
+  document.addEventListener('webkitfullscreenchange', onFull);
   cam.z = fitZoom(); clamp();
 
   function fit() { follow = -1; goal = { x: VX + W / 2, y: VY + H / 2, z: fitZoom() }; markActive(); }
@@ -434,14 +450,15 @@
   var panel = document.getElementById('residents');
   var toggle = document.getElementById('residents-toggle');
   var body = document.getElementById('residents-body');
+  // 기본은 접힘 — 펼쳐 두면 그다음에도 펼친 채로
   function setFolded(folded) {
     body.hidden = folded;
     panel.classList.toggle('folded', folded);
     toggle.setAttribute('aria-expanded', String(!folded));
-    try { localStorage.setItem('chickxel.village.folded', folded ? '1' : '0'); } catch (e) { /* 기억 못 해도 됨 */ }
+    try { localStorage.setItem('chickxel.village.open', folded ? '0' : '1'); } catch (e) { /* 기억 못 해도 됨 */ }
   }
   toggle.addEventListener('click', function () { setFolded(!body.hidden); });
-  try { if (localStorage.getItem('chickxel.village.folded') === '1') setFolded(true); } catch (e) { /* 기본은 펼침 */ }
+  try { if (localStorage.getItem('chickxel.village.open') === '1') setFolded(false); } catch (e) { /* 기본은 접힘 */ }
   function filter() {
     var q = search.value.trim().toLowerCase(), shown = 0;
     [].forEach.call(list.children, function (li, i) {
