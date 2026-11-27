@@ -1,37 +1,12 @@
-// 병아리 후원 마을 창(위 막대의 커피 단추로 열림 — 홈페이지 nav.js와 에셋 사이트 site.js가 같이 씀).
-// 위에서 내려다본 픽셀 농촌 마을: 연못과 흙길, 오두막, 나무 사이로 밭이 있고, 커피를 사 주고 이름을 남긴 사람마다 밭 한 뙈기와
-// 병아리(앱 마스코트) 한 마리가 산다. 병아리는 물뿌리개로 밭에 물을 주고, 이름표는 HTML 글자로 그 위에. 밭보다 사람이 많으면
-// 나머지 병아리는 길을 거닌다. 후원자 목록(https://chickxel.com/api/supporters)은 브라우저에 한 시간 동안 둔다(localStorage 'chickxel.supporters').
+// 병아리 후원 마을(village.html — 위 막대의 커피 단추가 새 창으로 연다).
+// 위에서 내려다본 픽셀 농촌 마을이 가운데 있고, 그 둘레는 아직 개척하지 않은 숲(안개가 낄수록 멀다). 커피를 사 주고 이름을 남긴
+// 사람마다 밭 한 뙈기와 병아리(앱 마스코트) 한 마리가 산다. 병아리는 밭 앞을 오가며 물뿌리개로 물을 주고, 밭보다 사람이 많으면
+// 나머지는 큰길을 거닌다. 끌어서 옮기고 휠·두 손가락·단추로 확대하며, 오른쪽 위 주민 이름을 누르면 그 병아리로 다가가 따라간다.
+// 후원자 목록은 nav.js의 ChickxelSupporters.load(한 시간 동안 브라우저에 둠).
 (function () {
-  var KEY = 'chickxel.supporters';
-  var HOUR = 60 * 60 * 1000;
   var T = 16, COLS = 20, ROWS = 12, W = COLS * T, H = ROWS * T;
-
-  // ---------------------------------------------------------------- 후원자 목록
-  var waiting = null;
-  function load(done) {
-    var saved = null;
-    try { saved = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { saved = null; }
-    if (saved && Array.isArray(saved.names)) done(saved.names);
-    if (saved && Date.now() - saved.at < HOUR) return;
-    if (!waiting) {
-      waiting = fetch('https://chickxel.com/api/supporters', { headers: { Accept: 'application/json' } })
-        .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (body) {
-          if (!body || !Array.isArray(body.supporters)) return null;
-          var names = body.supporters.map(function (s) { return String(s.name || ''); }).filter(function (n) { return n.length > 0; });
-          try { localStorage.setItem(KEY, JSON.stringify({ at: Date.now(), names: names })); } catch (e) { /* 저장 못 하면 다음에 다시 받음 */ }
-          return names;
-        })
-        .catch(function () { return null; });
-    }
-    // 받지 못했으면 다음에 열 때 다시 받는다
-    var pending = waiting;
-    pending.then(function (names) {
-      if (names) done(names);
-      else if (waiting === pending) waiting = null;
-    });
-  }
+  // 온 세상(타일)과 그 안의 마을 자리
+  var WC = 56, WR = 36, VC = 18, VR = 12, WW = WC * T, WH = WR * T, VX = VC * T, VY = VR * T;
 
   // ---------------------------------------------------------------- 그리기 도구(낮은 해상도 캔버스, 픽셀 단위)
   var g;
@@ -219,234 +194,297 @@
     sprite(x, y, blink ? CHICK_BLINK : CHICK, CHICK_COLORS);
   }
 
-  // ---------------------------------------------------------------- 한 마을(캔버스 + 이름표)
-  function Village(host, names) {
-    var canvas = document.createElement('canvas');
-    canvas.width = W; canvas.height = H;
-    canvas.className = 'village-canvas';
-    canvas.setAttribute('role', 'img');
-    canvas.setAttribute('aria-label', names.join(', '));
-    host.textContent = '';
-    host.appendChild(canvas);
-    var ctx = canvas.getContext('2d');
-    ctx.imageSmoothingEnabled = false;
-    var scale = 1;
+  // ---------------------------------------------------------------- 마을(살아 움직이는 부분, 320×192)
+  function drawVillage(t, residents) {
+    drawGround(t);
+    // 연못: 나무 선착장, 연잎(꽃 핀 것도), 갈대, 돌
+    dock(44, 110);
+    lily(18, 150); lily(52, 176); lily(30, 130); lily(72, 186); lilyFlower(82, 158); lilyFlower(12, 172);
+    reeds(78, 128, t); reeds(86, 146, t); reeds(100, 166, t); reeds(4, 118, t); reeds(66, 120, t);
+    rock(60, 160); rock(92, 132); rock(108, 180);
+    cottage(2, 2, t);
+    flowerBed(4, 44);
+    crate(52, 34); crate(58, 40); barrel(50, 44);
+    mailbox(40, 52);
+    well(60, 60);
+    tree(140, 24); tree(132, 60); tree(290, 72); tree(212, 72); tree(10, 80); tree(146, 176); tree(306, 146);
+    bush(120, 70); bush(306, 40); bush(196, 138); bush(250, 142); bush(116, 140); bush(176, 178);
+    bench(178, 66);
+    fenceRow(98, 12, 34); fenceRow(98, 108, 34);
+    hay(270, 178); hay(286, 172);
+    sign(120, 100);
 
-    var residents = names.map(function (name, k) {
-      var label = document.createElement('span');
-      label.className = 'village-name';
-      label.textContent = name;
-      host.appendChild(label);
-      return { label: label, plot: PLOTS[k] || null, crop: CROPS[k % CROPS.length], phase: k * 1.9 };
-    });
-
-    function place(label, x, y) {
-      label.style.left = x * scale + 'px';
-      label.style.top = y * scale + 'px';
-    }
-
-    function frame(t) {
-      g = ctx;
-      drawGround(t);
-      // 연못: 나무 선착장, 연잎(꽃 핀 것도), 갈대, 돌, 징검돌
-      dock(44, 110);
-      lily(18, 150); lily(52, 176); lily(30, 130); lily(72, 186); lilyFlower(82, 158); lilyFlower(12, 172);
-      reeds(78, 128, t); reeds(86, 146, t); reeds(100, 166, t); reeds(4, 118, t); reeds(66, 120, t);
-      rock(60, 160); rock(92, 132); rock(108, 180);
-      cottage(2, 2, t);
-      flowerBed(4, 44);
-      crate(52, 34); crate(58, 40); barrel(50, 44);
-      mailbox(40, 52);
-      well(60, 60);
-      tree(140, 24); tree(132, 60); tree(290, 72); tree(212, 72); tree(10, 80); tree(146, 176); tree(306, 146);
-      bush(120, 70); bush(306, 40); bush(196, 138); bush(250, 142); bush(116, 140); bush(176, 178);
-      bench(178, 66);
-      fenceRow(98, 12, 34); fenceRow(98, 108, 34);
-      hay(270, 178); hay(286, 172);
-      sign(120, 100);
-
-      var items = [];
-      residents.forEach(function (r) {
-        var bob = Math.sin(t / 300 + r.phase) > 0.85 ? 1 : 0;
-        var blink = Math.sin(t / 1100 + r.phase * 3) > 0.985;
-        if (r.plot) {
-          var x = r.plot[0] * T, y = r.plot[1] * T;
-          var watering = Math.sin(t / 1600 + r.phase) > 0.2;
-          plot(x, y, r.crop, true, t);
-          items.push({ y: y + 32, draw: function () {
-            var cx = x + 30, cy = y + 22;
-            chick(cx, cy - bob, blink);
-            // 물뿌리개를 기울이면 물방울이 밭으로 떨어짐
-            sprite(cx - 7, cy + 2 - (watering ? 1 : 0), CAN, { k: INK, b: '#7fb8d8' });
-            if (watering) {
-              var d = Math.floor(t / 120) % 4;
-              px(cx - 9, cy + 3 + d, 1, 1, '#bfe6ff'); px(cx - 11, cy + 5 + ((d + 2) % 4), 1, 1, '#bfe6ff');
-            }
-            place(r.label, cx + 4, cy - 2 - bob);
-          } });
-        } else {
-          // 밭이 모자라면 큰길(가로)을 천천히 오감
-          var span = 13 * T, s = ((t / 40 + r.phase * 200) % (span * 2));
-          var wx = 3 * T + (s < span ? s : span * 2 - s), wy = 5 * T + 4;
-          items.push({ y: wy + 8, draw: function () {
-            chick(wx, wy - (Math.floor(t / 200) % 2), blink);
-            place(r.label, wx + 4, wy - 2);
-          } });
+    var items = [];
+    residents.forEach(function (r) {
+      var p = residentPos(r, t);
+      if (r.plot) plot(r.plot[0] * T, r.plot[1] * T, r.crop, true, t);
+      items.push({ y: p.y + 8, draw: function () {
+        chick(p.x, p.y - p.bob, p.blink);
+        if (p.watering) {
+          // 물뿌리개를 밭 쪽(위)으로 들고, 물방울이 밭 가장자리로 떨어짐
+          sprite(p.x - 6, p.y - 5, CAN, { k: INK, b: '#7fb8d8' });
+          var d = Math.floor(t / 120) % 4;
+          px(p.x - 7, p.y - 6 + d, 1, 1, '#bfe6ff'); px(p.x - 9, p.y - 7 + ((d + 2) % 4), 1, 1, '#bfe6ff');
         }
-      });
-      items.sort(function (a, b) { return a.y - b.y; });
-      items.forEach(function (it) { it.draw(); });
-      // 나비 세 마리
-      [[90, 90, '#ffe36b', 0], [230, 120, '#ffb3c1', 2], [170, 30, '#ffffff', 4]].forEach(function (b) {
-        var a = t / 2200 + b[3];
-        butterfly(b[0] + Math.sin(a) * 26, b[1] + Math.sin(a * 2.3) * 10, t + b[3] * 100, b[2]);
-      });
-    }
-
-    var running = false;
-    function loop(t) {
-      if (!host.isConnected || host.offsetParent === null) { running = false; return; }
-      frame(t);
-      requestAnimationFrame(loop);
-    }
-    this.resize = function (s) {
-      scale = s;
-      canvas.style.width = W * s + 'px';
-      canvas.style.height = H * s + 'px';
-      host.style.width = W * s + 'px';
-      host.style.height = H * s + 'px';
-      // 창 너비를 마을 그림에 맞춘다(아래 감사 글이 그 너비로 줄바꿈)
-      var box = host.closest('.village-dialog');
-      if (box) box.style.width = W * s + 40 + 'px';
-    };
-    this.start = function () {
-      if (running) return;
-      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { frame(0); return; }
-      running = true;
-      requestAnimationFrame(loop);
-    };
-  }
-
-  // ---------------------------------------------------------------- 창
-  var dialog = null;
-  // 화면에 맞는 정수 배율(2~4)
-  function fitScale() {
-    var byW = Math.floor((window.innerWidth - 64) / W), byH = Math.floor((window.innerHeight - 230) / H);
-    return Math.max(1, Math.min(4, byW, byH));
-  }
-
-  // text: { title, thanks, buy, empty, close } — 부르는 쪽이 화면 언어로 준다.
-  function open(text) {
-    if (!dialog) dialog = build(text);
-    document.body.appendChild(dialog.root);
-    dialog.root.hidden = false;
-    document.documentElement.classList.add('village-open');
-    var resize = function () { if (dialog.village) dialog.village.resize(fitScale()); };
-    window.addEventListener('resize', resize);
-    dialog.cleanup = function () { window.removeEventListener('resize', resize); };
-    dialog.close.focus();
-    load(function (names) {
-      var key = names.join('\n');
-      if (!dialog.village || dialog.key !== key) {
-        dialog.village = new Village(dialog.map, names);
-        dialog.key = key;
-      }
-      dialog.empty.hidden = names.length > 0;
-      dialog.village.resize(fitScale());
-      dialog.village.start();
+      } });
+    });
+    items.sort(function (a, b) { return a.y - b.y; });
+    items.forEach(function (it) { it.draw(); });
+    // 나비 세 마리
+    [[90, 90, '#ffe36b', 0], [230, 120, '#ffb3c1', 2], [170, 30, '#ffffff', 4]].forEach(function (b) {
+      var a = t / 2200 + b[3];
+      butterfly(b[0] + Math.sin(a) * 26, b[1] + Math.sin(a * 2.3) * 10, t + b[3] * 100, b[2]);
     });
   }
 
-  function closeDialog() {
-    if (!dialog || dialog.root.hidden) return;
-    dialog.root.hidden = true;
-    document.documentElement.classList.remove('village-open');
-    if (dialog.cleanup) dialog.cleanup();
-    if (dialog.opener) dialog.opener.focus();
+  // 주민 병아리의 자리(마을 안 픽셀): 밭 아래 가장자리를 천천히 오가다 멈춰서 물을 준다. 밭이 없으면 큰길을 오간다.
+  function residentPos(r, t) {
+    var bob = Math.sin(t / 300 + r.phase) > 0.85 ? 1 : 0;
+    var blink = Math.sin(t / 1100 + r.phase * 3) > 0.985;
+    if (r.plot) {
+      var x0 = r.plot[0] * T + 2, x1 = r.plot[0] * T + 24, y = r.plot[1] * T + 33;
+      var s = (t / 1000 + r.phase * 3) % 14, x, watering = false;
+      if (s < 4) x = x0 + (x1 - x0) * (s / 4);
+      else if (s < 7) { x = x1; watering = true; }
+      else if (s < 11) x = x1 - (x1 - x0) * ((s - 7) / 4);
+      else { x = x0; watering = s > 12; }
+      var walking = !watering && (s < 4 || (s >= 7 && s < 11));
+      return { x: x, y: y - (walking && Math.floor(t / 180) % 2 ? 1 : 0), bob: walking ? 0 : bob, blink: blink, watering: watering };
+    }
+    var span = 13 * T, w = (t / 40 + r.phase * 200) % (span * 2);
+    return { x: 3 * T + (w < span ? w : span * 2 - w), y: 5 * T + 4 - (Math.floor(t / 200) % 2), bob: 0, blink: blink, watering: false };
   }
 
-  // 창 모양(홈페이지와 에셋 사이트가 같이 쓰도록 여기 한곳에)
-  var CSS = [
-    '.village-backdrop{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:16px;background:rgba(8,10,14,.72);backdrop-filter:blur(3px)}',
-    '.village-backdrop[hidden]{display:none}',
-    'html.village-open{overflow:hidden}',
-    '.village-dialog{max-width:100%;max-height:100%;overflow:auto;padding:16px 18px 18px;background:#15161b;border:1px solid #2c2e36;border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.5);color:#e9eaee}',
-    '.village-head{display:flex;align-items:center;gap:12px;margin:0 0 12px}',
-    '.village-head h2{flex:1;margin:0;font-size:18px;color:#fff}',
-    '.village-close{display:inline-grid;place-items:center;width:34px;height:34px;padding:0;border-radius:50%;border:1px solid #2c2e36;background:#1d1f25;color:#c6c9d2;cursor:pointer}',
-    '.village-close:hover{background:#262930}',
-    '.village-close .icon{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}',
-    '.village-stage{position:relative;border-radius:10px;overflow:hidden;border:2px solid #1b2b26}',
-    '.chick-village{position:relative}',
-    '.village-canvas{display:block;image-rendering:pixelated}',
-    '.village-name{position:absolute;transform:translate(-50%,-100%);padding:1px 8px;border-radius:999px;background:rgba(27,43,38,.82);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:12px;font-weight:700;line-height:1.5;white-space:nowrap;pointer-events:none}',
-    '.village-empty{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;padding:8px 14px;border-radius:999px;background:rgba(27,43,38,.85);color:#fff;font-size:14px;font-weight:700;white-space:nowrap}',
-    '.village-empty[hidden]{display:none}',
-    '.village-foot{display:flex;align-items:center;gap:16px;margin-top:14px}',
-    '.village-foot p{flex:1;margin:0;color:#9599a6;font-size:13.5px;line-height:1.55}',
-    '.village-foot .btn{flex:none;display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:999px;background:#ff813f;border:1px solid #ff813f;color:#fff;font-weight:700;font-size:14.5px;text-decoration:none;white-space:nowrap}',
-    '.village-foot .btn:hover{background:#e96f2f;border-color:#e96f2f}',
-    '.village-foot .btn .icon{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}',
-    '@media (max-width:640px){.village-foot{flex-direction:column;align-items:stretch}.village-foot .btn{justify-content:center}}'
-  ].join('\n');
-
-  function build(text) {
-    function el(tag, cls, content) {
-      var e = document.createElement(tag);
-      if (cls) e.className = cls;
-      if (content) e.textContent = content;
-      return e;
-    }
-    if (!document.getElementById('village-style')) {
-      var style = el('style');
-      style.id = 'village-style';
-      style.textContent = CSS;
-      document.head.appendChild(style);
-    }
-    var root = el('div', 'village-backdrop');
-    root.hidden = true;
-    var box = el('div', 'village-dialog');
-    box.setAttribute('role', 'dialog');
-    box.setAttribute('aria-modal', 'true');
-    box.setAttribute('aria-label', text.title);
-    var head = el('div', 'village-head');
-    head.appendChild(el('h2', null, text.title));
-    var close = el('button', 'village-close');
-    close.type = 'button';
-    close.title = text.close;
-    close.setAttribute('aria-label', text.close);
-    close.innerHTML = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
-    head.appendChild(close);
-    var map = el('div', 'chick-village');
-    var empty = el('p', 'village-empty', text.empty);
-    empty.hidden = true;
-    var foot = el('div', 'village-foot');
-    foot.appendChild(el('p', null, text.thanks));
-    var buy = el('a', 'btn support');
-    buy.href = 'https://buymeacoffee.com/chickxel';
-    buy.target = '_blank';
-    buy.rel = 'noopener';
-    buy.innerHTML = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/></svg>';
-    buy.appendChild(el('span', null, text.buy));
-    foot.appendChild(buy);
-    var stage = el('div', 'village-stage');
-    stage.appendChild(map);
-    stage.appendChild(empty);
-    box.appendChild(head);
-    box.appendChild(stage);
-    box.appendChild(foot);
-    root.appendChild(box);
-    close.addEventListener('click', closeDialog);
-    root.addEventListener('click', function (e) { if (e.target === root) closeDialog(); });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDialog(); });
-    return { root: root, map: map, empty: empty, close: close, village: null, key: null, cleanup: null, opener: null };
+  // ---------------------------------------------------------------- 개척하지 않은 숲(한 번만 그려 둠)
+  function smooth(x, y, cell, seed) {
+    var gx = Math.floor(x / cell), gy = Math.floor(y / cell), fx = x / cell - gx, fy = y / cell - gy;
+    function v(a, b) { return hash(a * 7 + seed, b * 13 + seed * 3); }
+    var sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+    var top = v(gx, gy) + (v(gx + 1, gy) - v(gx, gy)) * sx, bottom = v(gx, gy + 1) + (v(gx + 1, gy + 1) - v(gx, gy + 1)) * sx;
+    return top + (bottom - top) * sy;
+  }
+  // 마을 가장자리에서 (c, r) 타일까지의 거리(타일, 마을 안이면 0)
+  function distance(c, r) {
+    var dx = Math.max(VC - c, 0, c - (VC + COLS - 1)), dy = Math.max(VR - r, 0, r - (VR + ROWS - 1));
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  // 마을 밖 물: 마을 연못이 왼쪽 아래로 이어진 호수
+  function wildWater(c, r) {
+    var dx = (c - (VC - 1)) / 7.5, dy = (r - (VR + 13)) / 4.5;
+    return dx * dx + dy * dy + (smooth(c, r, 3, 5) - 0.5) * 0.6 < 1;
+  }
+  // 마을 길을 숲 쪽으로 조금 잇고, 멀어질수록 풀에 덮인다(값 = 마을에서 몇 칸째, 길이 아니면 -1)
+  function wildPath(c, r) {
+    if (r === VR + 5 && c >= VC + COLS && c < VC + COLS + 5) return c - (VC + COLS);
+    if (c === VC + 10 && r < VR && r >= VR - 5) return VR - 1 - r;
+    if (c === VC + 10 && r >= VR + ROWS && r < VR + ROWS + 5) return r - (VR + ROWS);
+    return -1;
   }
 
-  window.ChickxelVillage = {
-    load: load,
-    open: function (text, opener) {
-      open(text);
-      dialog.opener = opener || null;
+  function drawWild() {
+    var trees = [];
+    for (var r = 0; r < WR; r++)
+      for (var c = 0; c < WC; c++) {
+        if (c >= VC && c < VC + COLS && r >= VR && r < VR + ROWS) continue;
+        var x = c * T, y = r * T, d = distance(c, r);
+        if (wildWater(c, r)) {
+          px(x, y, T, T, '#29566a');
+          if (hash(c, r + 9) > 0.5) px(x + 3 + Math.floor(hash(c, r) * 6), y + 6, 4, 1, '#3f7a91');
+          if (!wildWater(c, r - 1)) { px(x, y, T, 3, '#214a3c'); px(x, y, T, 1, INK); }
+          continue;
+        }
+        // 마을 둘레 한두 칸은 마을 풀색, 그 밖은 짙고 거친 들풀
+        var near = d < 1.5;
+        px(x, y, T, T, near ? ((c + r) % 2 ? '#4b8b45' : '#4f9148') : ((c + r) % 2 ? '#3d7339' : '#3a6e37'));
+        for (var k = 0; k < (near ? 4 : 7); k++) {
+          var hx = Math.floor(hash(c * 3 + k, r) * 14), hy = Math.floor(hash(r * 5 + k, c) * 12);
+          px(x + hx, y + hy, 1, 3, near ? '#6aac5a' : '#5b9a4f'); px(x + hx + 1, y + hy + 1, 1, 2, '#2f5e2d');
+        }
+        var p = wildPath(c, r);
+        if (p >= 0) {
+          // 덮인 정도: 멀수록 흙이 듬성듬성
+          for (var b = 0; b < 16; b++) {
+            var bx = (b % 4) * 4, by = Math.floor(b / 4) * 4;
+            if (hash(c * 4 + b, r) > p * 0.22) px(x + bx, y + by, 4, 4, (b + r) % 2 ? '#c9a46b' : '#bf9a62');
+          }
+          continue;
+        }
+        var f = hash(c + 11, r + 7);
+        if (f > 0.9) px(x + 6, y + 7, 1, 1, f > 0.95 ? '#e8d36b' : '#d79fb0');
+        if (f < 0.05) rock(x + 4, y + 6);
+        if (f > 0.5 && f < 0.53) { px(x + 5, y + 9, 3, 2, '#e14b3c'); px(x + 6, y + 11, 1, 2, '#e8dccb'); }
+        // 숲: 마을에서 멀수록, 무늬 값이 클수록 나무가 빽빽
+        if (d >= 2 && smooth(c, r, 4, 1) + Math.min(d, 8) * 0.04 > 0.62 && hash(c + 3, r + 5) > 0.35) trees.push([x + 6 + Math.floor(hash(c, r + 1) * 4), y + 10]);
+        else if (d >= 2 && hash(c + 7, r + 1) > 0.86) trees.push([x + 8, y + 12, true]);
+      }
+    trees.sort(function (a, b) { return a[1] - b[1]; });
+    trees.forEach(function (tr) {
+      if (tr[2]) bush(tr[0], tr[1]);
+      else { px(tr[0] - 2, tr[1] - 2, 5, 6, INK); px(tr[0] - 1, tr[1] - 2, 3, 6, '#5c3a22'); blob(tr[0], tr[1] - 9, 8, '#2f6f37', '#4b9547', '#245a2c'); }
+    });
+    // 개척 예정 말뚝: 마을 길 끝마다
+    sign((VC + COLS + 4) * T + 2, (VR + 5) * T - 4);
+    sign((VC + 10) * T + 18, (VR - 5) * T + 2);
+    sign((VC + 10) * T + 18, (VR + ROWS + 4) * T + 2);
+    // 안개: 마을에서 멀수록 짙게, 4픽셀 덩어리로 살짝 얼룩지게
+    for (var fy = 0; fy < WH; fy += 4)
+      for (var fx = 0; fx < WW; fx += 4) {
+        var dd = distance(fx / T, fy / T);
+        if (dd < 1.5) continue;
+        var a = Math.pow(Math.min(1, (dd - 1.5) / 9), 0.8) * 0.78 + (hash(fx, fy) - 0.5) * 0.06;
+        px(fx, fy, 4, 4, 'rgba(16,26,34,' + Math.max(0, a).toFixed(3) + ')');
+      }
+  }
+
+  // ---------------------------------------------------------------- 화면(카메라 · 확대 · 따라가기)
+  var screen = document.getElementById('world');
+  if (!screen) return;
+  var namesHost = document.getElementById('world-names');
+  var sctx = screen.getContext('2d');
+  var world = document.createElement('canvas');
+  world.width = WW; world.height = WH;
+  g = world.getContext('2d');
+  drawWild();
+  var live = document.createElement('canvas');
+  live.width = W; live.height = H;
+  var lctx = live.getContext('2d');
+
+  var residents = [];
+  var cam = { x: VX + W / 2, y: VY + H / 2, z: 3 }, goal = null, follow = -1;
+  var vw = 0, vh = 0, dpr = 1;
+
+  function minZoom() { return Math.max(vw / WW, vh / WH); }
+  // 마을 전체 보기: 넓은 화면은 양옆 소개·주민 칸을 비켜서
+  function fitZoom() {
+    var side = vw > 900 ? 640 : 40;
+    return Math.min(8, Math.max(minZoom(), Math.min((vw - side) / W, (vh - 80) / H)));
+  }
+  function clamp() {
+    cam.z = Math.min(8, Math.max(minZoom(), cam.z));
+    var hw = vw / 2 / cam.z, hh = vh / 2 / cam.z;
+    cam.x = Math.min(WW - hw, Math.max(hw, cam.x));
+    cam.y = Math.min(WH - hh, Math.max(hh, cam.y));
+  }
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    vw = window.innerWidth; vh = window.innerHeight;
+    screen.width = Math.round(vw * dpr); screen.height = Math.round(vh * dpr);
+    screen.style.width = vw + 'px'; screen.style.height = vh + 'px';
+    clamp();
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  cam.z = fitZoom(); clamp();
+
+  function fit() { follow = -1; goal = { x: VX + W / 2, y: VY + H / 2, z: fitZoom() }; markActive(); }
+  function zoomAt(factor, sx, sy) {
+    var wx = cam.x + (sx - vw / 2) / cam.z, wy = cam.y + (sy - vh / 2) / cam.z;
+    cam.z = Math.min(8, Math.max(minZoom(), cam.z * factor));
+    if (follow < 0) { cam.x = wx - (sx - vw / 2) / cam.z; cam.y = wy - (sy - vh / 2) / cam.z; }
+    goal = null;
+    clamp();
+  }
+
+  // 끌기 · 두 손가락 확대
+  var pointers = new Map(), pinch = 0;
+  screen.addEventListener('pointerdown', function (e) {
+    screen.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 2) { var p = Array.from(pointers.values()); pinch = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y); }
+    screen.classList.add('dragging');
+  });
+  screen.addEventListener('pointermove', function (e) {
+    var last = pointers.get(e.pointerId);
+    if (!last) return;
+    if (pointers.size === 1 && Math.hypot(e.clientX - last.x, e.clientY - last.y) > 0) {
+      follow = -1; goal = null; markActive();
+      cam.x -= (e.clientX - last.x) / cam.z; cam.y -= (e.clientY - last.y) / cam.z;
+      clamp();
     }
-  };
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 2) {
+      var p = Array.from(pointers.values()), d = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+      if (pinch > 0) zoomAt(d / pinch, (p[0].x + p[1].x) / 2, (p[0].y + p[1].y) / 2);
+      pinch = d;
+    }
+  });
+  function release(e) { pointers.delete(e.pointerId); pinch = 0; if (pointers.size === 0) screen.classList.remove('dragging'); }
+  screen.addEventListener('pointerup', release);
+  screen.addEventListener('pointercancel', release);
+  screen.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    zoomAt(Math.pow(1.0015, -e.deltaY), e.clientX, e.clientY);
+  }, { passive: false });
+  document.getElementById('zoom-in').addEventListener('click', function () { zoomAt(1.4, vw / 2, vh / 2); });
+  document.getElementById('zoom-out').addEventListener('click', function () { zoomAt(1 / 1.4, vw / 2, vh / 2); });
+  document.getElementById('zoom-fit').addEventListener('click', fit);
+
+  // 주민 목록: 누르면 그 병아리로 다가가 따라간다(다시 누르면 마을 전체)
+  var list = document.getElementById('resident-list');
+  function markActive() {
+    [].forEach.call(list.children, function (li, i) { li.firstChild.setAttribute('aria-pressed', String(i === follow)); });
+  }
+  function showResidents(names) {
+    residents = names.map(function (name, k) {
+      return { name: name, plot: PLOTS[k] || null, crop: CROPS[k % CROPS.length], phase: k * 1.9 };
+    });
+    list.textContent = '';
+    namesHost.textContent = '';
+    residents.forEach(function (r, i) {
+      var li = document.createElement('li');
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = r.name;
+      b.addEventListener('click', function () {
+        if (follow === i) { fit(); return; }
+        follow = i; goal = null; markActive();
+      });
+      li.appendChild(b);
+      list.appendChild(li);
+      r.label = document.createElement('span');
+      r.label.className = 'village-name';
+      r.label.textContent = r.name;
+      namesHost.appendChild(r.label);
+    });
+    document.getElementById('resident-count').textContent = String(names.length);
+    document.getElementById('residents-empty').hidden = names.length > 0;
+    if (follow >= residents.length) follow = -1;
+    markActive();
+  }
+  (window.ChickxelSupporters ? window.ChickxelSupporters.load : function (done) { done([]); })(showResidents);
+
+  var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function frame(now) {
+    var t = still ? 0 : now;
+    g = lctx;
+    drawVillage(t, residents);
+    // 카메라: 따라가는 병아리 쪽으로(가까이), 또는 '전체 보기' 쪽으로 부드럽게
+    var target = goal;
+    if (follow >= 0 && residents[follow]) {
+      var p = residentPos(residents[follow], t);
+      target = { x: VX + p.x + 4, y: VY + p.y + 2, z: Math.max(cam.z, 5) };
+    }
+    if (target) {
+      cam.x += (target.x - cam.x) * 0.12; cam.y += (target.y - cam.y) * 0.12; cam.z += (target.z - cam.z) * 0.12;
+      if (goal && Math.abs(goal.z - cam.z) < 0.01 && Math.hypot(goal.x - cam.x, goal.y - cam.y) < 0.5) goal = null;
+      clamp();
+    }
+    var k = cam.z * dpr;
+    sctx.setTransform(1, 0, 0, 1, 0, 0);
+    sctx.fillStyle = '#101a22';
+    sctx.fillRect(0, 0, screen.width, screen.height);
+    sctx.imageSmoothingEnabled = false;
+    sctx.setTransform(k, 0, 0, k, (vw / 2 - cam.x * cam.z) * dpr, (vh / 2 - cam.y * cam.z) * dpr);
+    sctx.drawImage(world, 0, 0);
+    sctx.drawImage(live, VX, VY);
+    // 이름표(HTML): 병아리 머리 위
+    residents.forEach(function (r, i) {
+      var q = residentPos(r, t);
+      r.label.style.transform = 'translate(' + ((VX + q.x + 4 - cam.x) * cam.z + vw / 2) + 'px,' + ((VY + q.y - 2 - q.bob - cam.y) * cam.z + vh / 2) + 'px) translate(-50%,-100%)';
+      r.label.classList.toggle('active', i === follow);
+    });
+    if (!still) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  if (still) window.addEventListener('pointerup', function () { requestAnimationFrame(frame); });
 })();

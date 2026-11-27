@@ -73,10 +73,42 @@ pre code { background: none; border: 0; padding: 0; }
 .menu-item .tick { margin-left: auto; color: var(--accent); visibility: hidden; }
 .menu-item[aria-current="true"] .tick { visibility: visible; }
 .menu-item.discord .icon { color: #5865f2; fill: currentColor; stroke: none; }
-/* 커피 단추(계정 옆): 누르면 병아리 후원 마을 창(village.js — 창 모양도 거기서), 에셋 사이트 site.css와 같은 모양 */
+/* 커피 단추(계정 옆): 병아리 후원 마을(village.html)을 새 창으로 연다. 에셋 사이트 site.css와 같은 모양 */
 .coffee-btn { display: inline-grid; place-items: center; flex: none; width: 38px; height: 38px; margin-right: -8px; padding: 0; border-radius: 50%; background: var(--soft); border: 1px solid var(--line-soft); color: #ff813f; cursor: pointer; }
-.coffee-btn:hover { background: var(--hover); border-color: var(--line); }
+.coffee-btn:hover { background: var(--hover); border-color: var(--line); text-decoration: none; }
 .coffee-btn .icon { width: 18px; height: 18px; vertical-align: 0; }
+
+/* 병아리 후원 마을(village.html): 화면 가득 픽셀 세상, 왼쪽 위 소개 · 오른쪽 위 주민 목록 · 오른쪽 아래 확대 단추 */
+.village-page { overflow: hidden; background: #101a22; overscroll-behavior: none; }
+.world { position: fixed; inset: 0; display: block; cursor: grab; touch-action: none; }
+.world.dragging { cursor: grabbing; }
+.world-names { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+.village-name { position: absolute; left: 0; top: 0; padding: 1px 8px; border-radius: 999px; background: rgba(27, 43, 38, .82); border: 1px solid rgba(255, 255, 255, .18); color: #fff; font-size: 12px; font-weight: 700; line-height: 1.5; white-space: nowrap; will-change: transform; }
+.village-name.active { background: #ffcc33; border-color: #ffcc33; color: #3b2a06; }
+.village-card, .village-residents, .village-zoom { position: fixed; z-index: 2; background: rgba(21, 22, 27, .88); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 12px 32px rgba(0, 0, 0, .35); backdrop-filter: blur(6px); }
+.village-card { left: 16px; top: 16px; width: 300px; padding: 14px 16px 16px; }
+.village-home { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; font-weight: 700; }
+.village-home:hover { color: var(--ink); text-decoration: none; }
+.village-card h1 { margin: 8px 0 6px; font-size: 19px; color: var(--ink-deep); }
+.village-card p { margin: 0 0 12px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.village-card .btn { width: 100%; justify-content: center; padding: 10px 16px; font-size: 14px; }
+.village-residents { right: 16px; top: 16px; width: 220px; max-height: calc(100vh - 120px); display: flex; flex-direction: column; padding: 12px; }
+.residents-head { display: flex; align-items: baseline; justify-content: space-between; padding: 0 4px 8px; color: var(--ink-deep); font-size: 14px; }
+.residents-head span { color: var(--muted); font-size: 13px; font-weight: 700; }
+.village-residents ul { margin: 0; padding: 0; list-style: none; overflow-y: auto; }
+.village-residents li button { width: 100%; padding: 7px 10px; border: 0; border-radius: 9px; background: none; color: var(--ink); font: inherit; font-size: 13.5px; font-weight: 650; text-align: left; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.village-residents li button:hover { background: var(--hover); }
+.village-residents li button[aria-pressed="true"] { background: #ffcc33; color: #3b2a06; }
+.residents-empty, .residents-tip { margin: 8px 4px 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.village-zoom { right: 16px; bottom: 16px; display: flex; flex-direction: column; padding: 4px; gap: 2px; }
+.village-zoom button { display: inline-grid; place-items: center; width: 38px; height: 38px; padding: 0; border: 0; border-radius: 11px; background: none; color: var(--ink); cursor: pointer; }
+.village-zoom button:hover { background: var(--hover); }
+.village-zoom .icon { width: 18px; height: 18px; }
+@media (max-width: 700px) {
+  .village-card { right: 16px; width: auto; padding: 10px 12px 12px; }
+  .village-card p { display: none; }
+  .village-residents { top: auto; bottom: 16px; right: 70px; left: 16px; width: auto; max-height: 30vh; }
+}
 
 /* 단추 */
 .buttons { display: flex; flex-wrap: wrap; gap: 10px; }

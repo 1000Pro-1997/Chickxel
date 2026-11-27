@@ -1,0 +1,44 @@
+<!doctype html>
+<!-- tools/build-docs.py가 docs/i18n/village.html(틀)·village.csv(언어별 문구)로 만든 파일입니다. 이 파일을 직접 고치지 말고 docs/i18n을 고친 뒤 다시 만드세요. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Chick supporters village — Chickxel</title>
+<meta name="description" content="A little pixel village where everyone who bought Chickxel's developer a coffee tends a farm as a chick.">
+<link rel="canonical" href="https://chickxel.com/en/village">
+<link rel="alternate" hreflang="ko" href="https://chickxel.com/village">
+<link rel="alternate" hreflang="en" href="https://chickxel.com/en/village">
+<link rel="icon" href="../assets/icon-256.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../style.css?v=2d8cb14ae4">
+<script src="/static/analytics.js" defer></script>
+</head>
+<body class="village-page">
+<canvas id="world" class="world" role="img" aria-label="Chick supporters village"></canvas>
+<div class="world-names" id="world-names" aria-hidden="true"></div>
+
+<section class="village-card">
+<a class="village-home" href="index.html"><img class="pixel" src="../assets/icon.png" alt="" width="28" height="28">Chickxel</a>
+<h1>Chick supporters village</h1>
+<p>Chickxel is a free tool made by one person. Everyone who bought a coffee lives here as a chick tending a little farm. Thank you so much. Beyond the village, the woods are still unexplored.</p>
+<a class="btn support" href="https://buymeacoffee.com/chickxel" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/></svg>Buy a coffee and move in</a>
+</section>
+
+<aside class="village-residents" aria-label="Residents">
+<div class="residents-head"><strong>Residents</strong><span id="resident-count"></span></div>
+<ul id="resident-list"></ul>
+<p class="residents-empty" id="residents-empty" hidden>The village is still empty. Waiting for the first resident.</p>
+<p class="residents-tip">Click a name to follow that chick. Drag to move, use the wheel or two fingers to zoom.</p>
+</aside>
+
+<div class="village-zoom" role="group" aria-label="Zoom">
+<button type="button" id="zoom-in" title="Zoom in" aria-label="Zoom in"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+<button type="button" id="zoom-out" title="Zoom out" aria-label="Zoom out"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+<button type="button" id="zoom-fit" title="Show the whole village" aria-label="Show the whole village"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+</div>
+
+<script src="../nav.js?v=20261128b"></script>
+<script src="../village.js?v=20261128b"></script>
+</body>
+</html>
