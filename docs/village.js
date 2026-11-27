@@ -20,9 +20,8 @@
     return Math.sqrt(dx * dx + dy * dy);
   }
 
-  // ---------------------------------------------------------------- Chickxel 타일맵과 오브젝트 프로젝트의 내보내기 결과.
-  // scene.json: 시트 칸 [x, y, w, h], 배치 [칸 번호, 세상 x, 세상 y, 발 기준 y].
-  var atlasImg = new Image(), ground = new Image(), art, objects, houseDoor, chickSheet;
+  // scene.json: 오브젝트 시트 칸과 배치. tilemap.json: 16px 셀별 그림 번호·지형 ID·표면 종류.
+  var atlasImg = new Image(), tileImg = new Image(), ground, art, objects, houseDoor, chickSheet;
   function sceneObject(id, x, y, base) {
     var rect = art.sprites[id];
     return { rect: rect, x: x, y: y, base: base, w: rect[2], h: rect[3] };
@@ -271,19 +270,35 @@
   if (!screen) return;
   try {
     atlasImg.src = new URL(script.dataset.atlas, document.baseURI).href;
-    ground.src = new URL(script.dataset.ground, document.baseURI).href;
+    tileImg.src = new URL(script.dataset.tiles, document.baseURI).href;
     var assets = await Promise.all([
       fetch(new URL(script.dataset.scene, document.baseURI)).then(function (response) {
         if (!response.ok) throw Error('Could not load village scene.');
         return response.json();
       }),
-      atlasImg.decode(), ground.decode()
+      fetch(new URL(script.dataset.tilemap, document.baseURI)).then(function (response) {
+        if (!response.ok) throw Error('Could not load village tilemap.');
+        return response.json();
+      }),
+      atlasImg.decode(), tileImg.decode()
     ]);
     art = assets[0];
+    var tilemap = assets[1];
     if (atlasImg.naturalWidth !== art.size[0] || atlasImg.naturalHeight !== art.size[1])
       throw Error('Village sprite sheet dimensions do not match the scene.');
-    if (ground.naturalWidth !== WW || ground.naturalHeight !== WH)
-      throw Error('Village tilemap dimensions do not match the world.');
+    if (tilemap.version !== 1 || tilemap.cellSize !== T || tilemap.cols !== WC || tilemap.rows !== WR ||
+      tilemap.sprites.length !== WC * WR || tilemap.terrainIds.length !== WC * WR ||
+      tilemap.surfaces.length !== WC * WR || tileImg.naturalWidth !== tilemap.atlasColumns * T)
+      throw Error('Village tilemap does not match the world.');
+    ground = canvas(WW, WH);
+    var groundCtx = ground.getContext('2d');
+    for (var i = 0; i < tilemap.sprites.length; i++) {
+      var id = tilemap.sprites[i];
+      if (!Number.isInteger(id) || id < 0 || (Math.floor(id / tilemap.atlasColumns) + 1) * T > tileImg.naturalHeight)
+        throw Error('Invalid village tile sprite.');
+      groundCtx.drawImage(tileImg, id % tilemap.atlasColumns * T, Math.floor(id / tilemap.atlasColumns) * T,
+        T, T, i % WC * T, Math.floor(i / WC) * T, T, T);
+    }
     objects = art.objects.map(function (o) { return sceneObject(o[0], o[1], o[2], o[3]); });
     houseDoor = objects[art.door.object];
     chickSheet = art.sprites[art.chicks];
