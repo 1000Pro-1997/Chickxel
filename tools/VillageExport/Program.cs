@@ -4,7 +4,9 @@ using Chickxel.Core.IO;
 using Chickxel.Core.Model;
 using Chickxel.Core.Tiles;
 
-string folder = Path.GetFullPath(args.Length == 0 ? "docs/assets/village" : args.Single());
+string folder = Path.GetFullPath(args.Length == 0 ? "칙셀 마을" : args.Single());
+string output = Path.GetFullPath("docs/assets/village");
+Directory.CreateDirectory(output);
 var warnings = new List<string>();
 var map = ProjectIO.Load(Path.Combine(folder, "village.chickxel"), warnings);
 if (warnings.Count > 0) throw new InvalidDataException(string.Join(Environment.NewLine, warnings));
@@ -42,7 +44,7 @@ SyncArt(map.TilesetSources(plots)[0], new Dictionary<int, PixelImage> { [1] = dr
 
 var ground = new PixelImage(map.Width, map.Height);
 map.FlattenInto(ground, 0, layerFilter: l => !ReferenceEquals(l, props) && !ReferenceEquals(l, plots));
-PngIO.Save(ground, Path.Combine(folder, "ground.png"));
+PngIO.Save(ground, Path.Combine(output, "ground.png"));
 var water = DrawTiles(terrain)
     .Select(t => (At: t.Rect.Location, Kind: WaterKind(map.TilesetOf(terrain)!.Find(t.Tile.Cell.Tile)!.Name)))
     .Where(t => t.Kind != 0)
@@ -88,10 +90,10 @@ var crops = cropNames.ToDictionary(name => name, name =>
 });
 
 var (sheet, rects) = Pack(atlas);
-PngIO.Save(sheet, Path.Combine(folder, "objects.png"));
+PngIO.Save(sheet, Path.Combine(output, "objects.png"));
 var scene = new { size = new[] {sheet.Width, sheet.Height}, sprites = rects, objects = placed,
     door = new { @object = doorway, frames = doorwayFrames }, crops, chicks, can, soils, fields, water };
-File.WriteAllText(Path.Combine(folder, "scene.json"), JsonSerializer.Serialize(scene, json) + "\n");
+File.WriteAllText(Path.Combine(output, "scene.json"), JsonSerializer.Serialize(scene, json) + "\n");
 Console.WriteLine($"{map.Width}×{map.Height}, {terrain.Tiles!.Map.Count} terrain cells, {placed.Count} placed objects, {atlas.Count} sprites.");
 
 SpriteProject LoadObject(string name) => ProjectIO.Load(Path.Combine(folder, "objects", name + ".chickxel"));
