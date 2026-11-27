@@ -849,15 +849,15 @@
   var CHICK_W = 16, CHICK_H = 14, CHICK_FRAMES = 6, CHICK_SPEED = 14;
   var CHICK_COLORS = {
     k: '#5a3d00', y: '#ffd84a', s: '#eab436', h: '#ffe77e',
-    e: '#3a2600', p: '#ffab8a', o: '#ff8a2a'
+    e: '#3a2600', p: '#ffab8a', o: '#ff8a2a', d: '#d96b20'
   };
   var CHICK_BODIES = [
     ['......kk......', '...kkkkkkkk...', '..kyhhhhyyyk..', '.kyyyyyyyyyyk.',
      '.kyyeyyyyeyyk.', '.kpyyyooyyypk.', '.kyyyyyyyyyyk.', 'kyyyyyyyyyyyyk',
      'ksyyyyyyyyyysk', 'ksyyyyyyyyyysk', '.kssssssssssk.', '..kkkkkkkkkk..'],
-    ['......kk......', '....kkkkkkk...', '...kyhhhyyyk..', '...kyyyyyyyyk.',
-     '...kyyyyyeyyk.', '.kkyyyyyyyypko', 'kyyyyyyyyyyyko', '.kyyssyyyyyyk.',
-     '..kyyssyyyyk..', '..kssyyyyyyk..', '...kssssssk...', '....kkkkkk....'],
+    ['.........kk...', '......kkkkkk..', '.....khhhhyyk.', '...kkhhhhyyyk.',
+     '..khhhhhyyyeoo', '.khhyyyyyyypkd', 'kyhhyyyyyyssk.', '.kyyyhhhyyyk..',
+     '..kyyhhyysk...', '..kyyssyssk...', '...ksssskk....', '....kkkk......'],
     ['......kk......', '...kkkkkkkk...', '..kyyhhyyyyk..', '.kyyyyyyyyyyk.',
      '.kyyyyyyyyyyk.', '.kyyyyyyyyyyk.', '.kyyyyyyyyyyk.', 'ksyyyyyyyyyysk',
      'kssyyyssyyyssk', 'kyyyyssssyyyyk', '.kssssssssssk.', '..kkkkkkkkkk..']
@@ -872,8 +872,15 @@
         for (var f = 0; f < CHICK_FRAMES; f++) {
           var x = f * CHICK_W, step = CHICK_STEPS[f === 5 ? 0 : f], lift = f === 2 || f === 4 ? 1 : 0;
           if (face === WEST) { g.save(); g.translate(x * 2 + CHICK_W, 0); g.scale(-1, 1); }
-          px(x + (side ? 7 : 10) + step[0], y + 13 - step[1], 2, 1, '#d96b20');
-          px(x + (side ? 6 : 4) + step[2], y + 13 - step[3], 2, 1, CHICK_COLORS.o);
+          if (side) {
+            // 내려다보는 시점이라 먼 발은 몸 뒤쪽에, 가까운 발은 그보다 아래에 보인다.
+            px(x + 10 + step[0], y + 11 - step[1], 2, 1, CHICK_COLORS.d);
+            px(x + 7 + step[2], y + 12 - step[3], 1, 1, CHICK_COLORS.d);
+            px(x + 6 + step[2], y + 13 - step[3], 2, 1, CHICK_COLORS.o);
+          } else {
+            px(x + 10 + step[0], y + 13 - step[1], 2, 1, CHICK_COLORS.d);
+            px(x + 4 + step[2], y + 13 - step[3], 2, 1, CHICK_COLORS.o);
+          }
           sprite(x + 1, y + 1 - lift, CHICK_BODIES[side ? EAST : face], f === 5 ? blink : CHICK_COLORS);
           if (face === WEST) g.restore();
         }

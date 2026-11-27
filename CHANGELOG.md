@@ -17,6 +17,7 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 - About Chickxel has a Support group: thanks, the coffee button, the names of people who bought a coffee (refreshed at most every 30 minutes) and a button to the chick supporters village on the website.
 - After a while of use, saving once asks whether you would like to star Chickxel on GitHub (it uses the GitHub CLI when signed in).
 - Village chicks move smoothly between world pixels and use four-direction walking sprites, with idle blinks when they stop.
+- Side-facing chicks show more of their backs and place their feet at different depths to match the village's overhead view.
 - With reduced motion enabled, chicks stay still while you pan, zoom or select a resident.
 
 ### Outside-canvas view for every layer
