@@ -361,9 +361,9 @@
   var vw = 0, vh = 0, dpr = 1;
 
   function minZoom() { return Math.max(vw / WW, vh / WH); }
-  // 마을 전체 보기: 넓은 화면은 양옆 소개·주민 칸을 비켜서
+  // 마을 전체 보기: 넓은 화면은 양옆 소개·주민 칸을 비켜서(전체 화면은 칸이 없으니 가운데 가득)
   function fitZoom() {
-    var side = vw > 900 ? 640 : 40;
+    var side = fullElement() ? 40 : vw > 900 ? 640 : 40;
     return Math.min(8, Math.max(minZoom(), Math.min((vw - side) / W, (vh - 80) / H)));
   }
   function clamp() {
@@ -396,6 +396,7 @@
   function onFull() {
     fullBtn.setAttribute('aria-pressed', String(fullElement() === stage));
     resize();
+    if (follow < 0) fit();
   }
   document.addEventListener('fullscreenchange', onFull);
   document.addEventListener('webkitfullscreenchange', onFull);
