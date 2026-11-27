@@ -182,7 +182,11 @@
   // ---------------------------------------------------------------- 서 있는 것(발 자리 = 아래 끝 기준으로 앞뒤 정렬)
   var objects = [];
   // 그림 한 장(작은 캔버스)을 세상 (x, y)(왼쪽 위)에 두고, 발 자리 base(세상 y)로 정렬
-  function place(img, x, y, base, list) { (list || objects).push({ img: img, x: Math.round(x), y: Math.round(y), base: base, w: img.width, h: img.height }); }
+  function place(img, x, y, base, list) {
+    var object = { img: img, x: Math.round(x), y: Math.round(y), base: base, w: img.width, h: img.height };
+    (list || objects).push(object);
+    return object;
+  }
   // 땅에 깔리는 그림자(오른쪽 아래로 조금 밀림) — 땅 그림에 바로 칠한다
   var shadows = [];
   function shadowEllipse(cx, cy, rx, ry) { shadows.push(function (ctx) { ctx.beginPath(); ctx.ellipse(cx + 3, cy + 1, rx, ry, 0, 0, Math.PI * 2); ctx.fill(); }); }
@@ -507,14 +511,38 @@
       px(0, 0, w, 2, '#2a170a');
       px(0, FACE - 1, w, 1, '#1e1208');
       if (door) {
+        g.clearRect(door[0], 0, door[1] - door[0], FACE);
         px(door[0] - 2, 0, 2, FACE, '#1e1208'); px(door[1], 0, 2, FACE, '#1e1208');
       }
     });
   }
   var HOUSE = { x0: VX + 5 * T, x1: VX + 12 * T, y0: VY + 1 * T + 2, y1: VY + 5 * T + 14 };
+  var DOOR_X = (HOUSE.x0 + HOUSE.x1) / 2, DOOR_W = 16;
+  var DOOR_IN = HOUSE.y1 - FACE - 6, DOOR_OUT = HOUSE.y1 + 6;
+  var DOOR_SWING = 0.4, DOOR_DEPTH = 9, DOOR_FRAMES = 9;
+  var houseDoor, doorFrames;
+  function doorLeaf(frame) {
+    // 오른쪽 경첩을 기준으로 안쪽으로 돌린 문짝: 열릴수록 폭은 줄고 손잡이 쪽은 화면 위로 올라간다.
+    var angle = frame / (DOOR_FRAMES - 1) * Math.PI / 2;
+    var w = 3 + Math.round((DOOR_W - 3) * Math.cos(angle)), rise = Math.round(DOOR_DEPTH * Math.sin(angle));
+    return draw(DOOR_W, FACE + DOOR_DEPTH, function () {
+      for (var i = 0; i < w; i++) {
+        var f = i / (w - 1), x = DOOR_W - w + i, y = DOOR_DEPTH - Math.round(rise * (1 - f));
+        var plank = Math.round(f * (DOOR_W - 1)) % 4;
+        px(x, y, 1, FACE, '#2a170a');
+        if (i === 0 || i === w - 1) continue;
+        px(x, y + 1, 1, FACE - 2, plank === 0 ? '#63401d' : plank === 1 ? '#ad7840' : '#986030');
+        px(x, y + 3, 1, 2, '#754821');
+        px(x, y + 10, 1, 2, '#754821');
+        if (i === Math.max(1, Math.round((w - 1) * 0.2)) && w >= 5) {
+          px(x, y + 7, 1, 2, '#ffd23f');
+        }
+      }
+    });
+  }
   function addHouse() {
     var x0 = HOUSE.x0, x1 = HOUSE.x1, y0 = HOUSE.y0, y1 = HOUSE.y1, w = x1 - x0;
-    var doorX = (x0 + x1) / 2 - 8, door = [doorX - x0, doorX - x0 + 16];
+    var opening = DOOR_X - DOOR_W / 2 - x0, door = [opening, opening + DOOR_W];
     // 북쪽 벽: 윗면 + 안쪽 앞면(바닥 위에 서 있으니 앞면 아래 끝이 발 자리)
     place(wallTop(w, WALL, false), x0, y0, y0 + WALL);
     place(wallFace(w - 2 * WALL, null), x0 + WALL, y0 + WALL, y0 + WALL + FACE);
@@ -530,9 +558,8 @@
       g.drawImage(southFace, 0, WALL);
     });
     place(south, x0, y1 - FACE - WALL, y1);
-    // 문(열린 문짝이 문틀 옆 벽에 붙어 있음)과 문 앞 깔개
-    var leaf = draw(6, FACE + 2, function () { px(0, 0, 6, FACE + 2, C.woodLine); px(1, 1, 4, FACE, '#8a5a2c'); px(1, 1, 1, FACE, '#b07a44'); px(3, 8, 1, 2, '#ffd23f'); });
-    place(leaf, x0 + door[1] + 2, y1 - FACE - 2, y1 + 0.5);
+    doorFrames = Array.from({ length: DOOR_FRAMES }, function (_, i) { return doorLeaf(i); });
+    houseDoor = place(doorFrames[0], DOOR_X - DOOR_W / 2, y1 - FACE - DOOR_DEPTH, y1 + 0.5);
     // 바깥 그림자(동쪽 벽 옆, 남쪽 벽 아래)
     shadowRect(x1, y0 + 6, 6, y1 - y0 - 4);
     shadowRect(x0 + 4, y1, w + 2, 4);
@@ -744,10 +771,11 @@
     for (var b = 0; b < bw - 2; b += 4) { px(bx0 + 1 + b, by0 + 1, 3, 12, b % 8 ? '#8a5a2c' : C.wood); px(bx0 + 1 + b, by0 + 1, 1, 12, C.woodLight); px(bx0 + 2 + b, by0 + 3, 1, 1, C.woodLine); px(bx0 + 2 + b, by0 + 10, 1, 1, C.woodLine); }
     px(bx0 + 1, by0 + 13, bw - 2, 3, '#4a2e16'); px(bx0, by0 + 16, bw, 3, 'rgba(10,30,60,0.45)');
     // 집 바닥: 세로 판자, 판자 끝이 엇갈리고 못 자국(문 자리는 남쪽 벽 앞면 끝까지)
-    var fx0 = HOUSE.x0 + WALL, fx1 = HOUSE.x1 - WALL, fy0 = HOUSE.y0 + WALL, fy1 = HOUSE.y1 - FACE, dx0 = (HOUSE.x0 + HOUSE.x1) / 2 - 8;
+    var fx0 = HOUSE.x0 + WALL, fx1 = HOUSE.x1 - WALL, fy0 = HOUSE.y0 + WALL, fy1 = HOUSE.y1 - FACE;
+    var dx0 = DOOR_X - DOOR_W / 2;
     for (var yy = fy0; yy < HOUSE.y1; yy++)
       for (var xx = fx0; xx < fx1; xx++) {
-        if (yy >= fy1 && (xx < dx0 || xx >= dx0 + 16)) continue;
+        if (yy >= fy1 && (xx < dx0 || xx >= dx0 + DOOR_W)) continue;
         var pk = Math.floor((xx - fx0) / 4), lxp = (xx - fx0) % 4, seam = (yy - fy0 + pk * 7) % 20;
         var col = lxp === 0 ? '#4a2a10' : seam === 0 ? '#4a2a10' : pk % 2 ? '#7a4a1e' : '#6e4218';
         if (lxp === 1 && seam !== 0) col = '#8a5626';
@@ -755,7 +783,8 @@
         px(xx, yy, 1, 1, col);
       }
     // 문 앞 돌계단 · 방 가운데 깔개
-    px(HOUSE.x0 + (HOUSE.x1 - HOUSE.x0) / 2 - 9, HOUSE.y1, 18, 4, C.stoneEdge); px(HOUSE.x0 + (HOUSE.x1 - HOUSE.x0) / 2 - 8, HOUSE.y1, 16, 2, C.stoneLight);
+    px(dx0 - 1, HOUSE.y1, DOOR_W + 2, 4, C.stoneEdge);
+    px(dx0, HOUSE.y1, DOOR_W, 2, C.stoneLight);
     var rugX = fx0 + 36, rugY = fy0 + FACE + 6;
     px(rugX, rugY, 36, 26, '#5a2a4a'); px(rugX + 1, rugY + 1, 34, 24, '#8a3a5a'); px(rugX + 3, rugY + 3, 30, 20, '#b8546a'); px(rugX + 5, rugY + 5, 26, 16, '#8a3a5a');
     PLOTS.forEach(function (p) { soil(p.x, p.y, false); });
@@ -894,10 +923,10 @@
   function nameSeed(s) { var h = 7; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return h >>> 0; }
 
   // 길 위 자리(세상 px): 집 안 · 집 앞 · 갈림길 · 다리 건너 · 동쪽 길 · 계단 위 · 남쪽 길. 갈래 자리는 큰길(PATH_ROW)의 갈림점을 거쳐 간다
-  var ROW_Y = Y(6) + 9, DOOR_X = (HOUSE.x0 + HOUSE.x1) / 2;
+  var ROW_Y = Y(6) + 9;
   var SPOTS = {
     home: { x: HOUSE.x0 + WALL + 26, y: HOUSE.y0 + WALL + FACE + 32, via: DOOR_X, door: true },
-    door: { x: DOOR_X, y: HOUSE.y1 + 6, via: DOOR_X },
+    door: { x: DOOR_X, y: DOOR_OUT, via: DOOR_X },
     cross: { x: X(8) + 8, y: ROW_Y },
     west: { x: X(0) + 6, y: ROW_Y },
     east: { x: X(20) + 4, y: ROW_Y },
@@ -914,6 +943,11 @@
         prev.pause += pause || 0;
         prev.water = water || prev.water;
       } else pts.push({ x: x, y: y, pause: pause || 0, water: water || 0 });
+    }
+    function crossDoor(from, to) {
+      go(DOOR_X, from, DOOR_SWING);
+      pts[pts.length - 1].opensDoor = true;
+      go(DOOR_X, to);
     }
     function toRow(x) { go(x, ROW_Y); }
     var visits = [];
@@ -932,8 +966,11 @@
       var s = SPOTS[name];
       if (s.via !== undefined) {
         toRow(s.via);
-        if (s.door) { go(DOOR_X, HOUSE.y1 + 6); go(DOOR_X, HOUSE.y1 - FACE - 6); go(s.x, s.y, 4 + hash(seed, 7) * 3); go(DOOR_X, HOUSE.y1 - FACE - 6); go(DOOR_X, HOUSE.y1 + 6); }
-        else go(s.x, s.y, 2.5 + hash(seed, s.x) * 2);
+        if (s.door) {
+          crossDoor(DOOR_OUT, DOOR_IN);
+          go(s.x, s.y, 4 + hash(seed, 7) * 3);
+          crossDoor(DOOR_IN, DOOR_OUT);
+        } else go(s.x, s.y, 2.5 + hash(seed, s.x) * 2);
         toRow(s.via);
       } else go(s.x, s.y, 1.5 + hash(seed, s.y) * 2);
     });
@@ -965,11 +1002,14 @@
   function residentPos(r, t) {
     var s = (t / 1000 + r.offset) % r.period, i = 0;
     while (i < r.segs.length - 1 && s >= r.segs[i + 1].start) i++;
-    var seg = r.segs[i], a = seg.a, elapsed = s - seg.start - a.pause;
+    var seg = r.segs[i], a = seg.a, prev = r.segs[(i + r.segs.length - 1) % r.segs.length];
+    var age = s - seg.start, elapsed = age - a.pause;
+    // 문 앞에서 열릴 때까지 기다리고, 완전히 통과한 뒤 다음 구간에서 닫는다.
+    var door = a.opensDoor ? Math.min(1, age / DOOR_SWING) : prev.a.opensDoor ? Math.max(0, 1 - age / DOOR_SWING) : 0;
     if (elapsed < 0) {
-      var face = a.water ? (a.water < 0 ? NORTH : SOUTH) : r.segs[(i + r.segs.length - 1) % r.segs.length].face;
+      var face = a.water ? (a.water < 0 ? NORTH : SOUTH) : a.opensDoor ? seg.face : prev.face;
       var blink = !still && (t + r.offset * 1000) % 3200 < 120;
-      return { x: a.x, y: a.y, face: face, pose: blink ? 5 : 0, water: a.water };
+      return { x: a.x, y: a.y, face: face, pose: blink ? 5 : 0, water: a.water, door: door };
     }
     // 가속·감속 동안 덜 걸은 거리를 빼고, 실제 걸은 거리로 발동작을 고른다.
     var travel = elapsed;
@@ -983,7 +1023,7 @@
     }
     var distance = Math.min(seg.length, travel * CHICK_SPEED), f = distance / seg.length;
     var pose = still ? 0 : 1 + Math.floor((seg.walked + distance) / 2) % 4;
-    return { x: a.x + seg.dx * f, y: a.y + seg.dy * f, face: seg.face, pose: pose, water: 0 };
+    return { x: a.x + seg.dx * f, y: a.y + seg.dy * f, face: seg.face, pose: pose, water: 0, door: door };
   }
   function drawChick(ctx, p, t) {
     var x = p.x, y = p.y;
@@ -1236,7 +1276,12 @@
     // 지난 그림에서 흐른 시간(초): 화면 주사율과 상관없이 같은 빠르기로 다가가게
     var dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
     last = now;
-    var at = residents.map(function (r) { return residentPos(r, t); });
+    var door = 0, at = residents.map(function (r) {
+      var p = residentPos(r, t);
+      door = Math.max(door, p.door); // 겹쳐 드나들 때는 아직 통과 중인 병아리 앞에서 문이 닫히지 않는다.
+      return p;
+    });
+    houseDoor.img = doorFrames[Math.round(door * (DOOR_FRAMES - 1))];
     // 카메라: 따라가는 병아리 쪽으로(가까이), 또는 '전체 보기' 쪽으로 — 지수 감속으로 부드럽게(발 자리를 겨눠 콩콩 뛰어도 흔들리지 않게)
     var target = goal, rate = 4;
     if (follow >= 0 && at[follow]) {

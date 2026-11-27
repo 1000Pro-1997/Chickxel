@@ -20,6 +20,10 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 - Side-facing chicks show more of their backs and place their feet at different depths to match the village's overhead view.
 - With reduced motion enabled, chicks stay still while you pan, zoom or select a resident.
 
+### The village house has a working door
+- Chicks pause to open the wooden door before entering or leaving, then close it after crossing the threshold.
+- The door stays open when another chick is still passing through.
+
 ### Outside-canvas view for every layer
 - Outside: Opaque / Translucent now shows what lies outside the canvas on every visible layer (normal and tilemap), whichever layer or tool is selected.
 - Layer and group opacity apply, and translucency is applied once to the combined picture.
