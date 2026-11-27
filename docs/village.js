@@ -846,7 +846,8 @@
 
   // ---------------------------------------------------------------- 병아리(앱 마스코트 그림)
   var SCRIPT_BASE = document.currentScript ? new URL('.', document.currentScript.src).href : '';
-  var MASCOTS = ['original', 'knight', 'wizard', 'pirate', 'viking', 'ninja', 'king', 'astronaut', 'archer', 'healer', 'gamer', 'painter', 'designer', 'hatch'];
+  // 지금은 모두 기본 병아리(앱 마스코트 그대로). 코스튬(기사·마법사 등 assets/mascot/chick-*.png)은 나중에 이 목록에 더한다
+  var MASCOTS = ['original'];
   var mascotImages = {};
   function mascot(name) {
     if (!mascotImages[name]) { var img = new Image(); img.src = SCRIPT_BASE + 'assets/mascot/chick-' + name + '.png'; mascotImages[name] = img; }
