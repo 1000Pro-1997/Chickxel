@@ -2,6 +2,29 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.155 (2026-11-27)
+
+### Game engine projects and favorites on the start screen
+- The project table now gathers recent projects from Unity Hub, the Godot project manager, the Unreal editor and Aseprite, favorites first.
+- Double-clicking opens the folder where art usually goes (Unity Assets, Unreal Content, a Sprites/Art folder inside when there is one).
+- Click the star next to a recent folder or file to pin it to a new Favorites list at the top left; paths that no longer exist are dropped with a notice.
+
+### Script effects just run
+- The script trust prompt and every "allow to run" step are gone; script effects always run in the same sandbox (no files, network or .NET, time and memory limits per call).
+- Projects remember which store package each downloaded script effect came from, so someone who opens the file without it gets "Get from store" on the timeline effect row.
+
+### Supporters and the chick village
+- About Chickxel has a Support group: thanks, the coffee button, the names of people who bought a coffee (refreshed at most every 30 minutes) and a button to the chick supporters village on the website.
+- After a while of use, saving once asks whether you would like to star Chickxel on GitHub (it uses the GitHub CLI when signed in).
+
+### Outside-canvas view for every layer
+- Outside: Opaque / Translucent now shows what lies outside the canvas on every visible layer (normal and tilemap), whichever layer or tool is selected.
+- Layer and group opacity apply, and translucency is applied once to the combined picture.
+
+### Smaller changes
+- Picking a tile, an autotile set or a tile with the eyedropper keeps your last painting tool (brush, rectangle or fill) instead of switching to the brush.
+- Pixelate: try and second limits of 0 show as ∞, and the built-in presets' first time limit is now unlimited.
+
 ## v1.14.154 (2026-11-26)
 
 ### Tutorials you can follow on screen
