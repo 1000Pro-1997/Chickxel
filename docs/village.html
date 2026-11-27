@@ -11,7 +11,7 @@
 <link rel="alternate" hreflang="en" href="https://chickxel.com/en/village">
 <link rel="icon" href="assets/icon-256.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="style.css?v=685cfe911e">
+<link rel="stylesheet" href="style.css?v=f1d2e57635">
 <script src="/static/analytics.js" defer></script>
 </head>
 <body class="village-page">
@@ -52,11 +52,17 @@
 <a class="btn support" href="https://buymeacoffee.com/chickxel" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/></svg>커피 사 주고 마을에 살기</a>
 </section>
 
-<aside class="village-residents" aria-label="마을 주민">
-<div class="residents-head"><strong>마을 주민</strong><span id="resident-count"></span></div>
+<aside class="village-residents" id="residents" aria-label="마을 주민">
+<div class="residents-head">
+<strong>마을 주민</strong><span id="resident-count"></span>
+<button type="button" class="residents-toggle" id="residents-toggle" aria-expanded="true" aria-controls="residents-body" title="주민 목록 접기·펴기" aria-label="주민 목록 접기·펴기"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg></button>
+</div>
+<div class="residents-body" id="residents-body">
+<label class="residents-search"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="search" id="resident-search" placeholder="이름 찾기" aria-label="이름 찾기" autocomplete="off"></label>
 <ul id="resident-list"></ul>
 <p class="residents-empty" id="residents-empty" hidden>아직 빈 마을이에요. 첫 번째 주민을 기다립니다.</p>
-<p class="residents-tip">이름을 누르면 그 병아리를 따라갑니다. 끌어서 옮기고 휠·두 손가락으로 확대합니다.</p>
+<p class="residents-empty" id="residents-none" hidden>그런 이름의 주민이 없어요.</p>
+</div>
 </aside>
 
 <div class="village-zoom" role="group" aria-label="확대·축소">

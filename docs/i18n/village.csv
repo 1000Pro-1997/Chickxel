@@ -20,7 +20,9 @@ village.thanks,Chickxel은 혼자 만드는 무료 도구입니다. 커피를 �
 village.buy,커피 사 주고 마을에 살기,Buy a coffee and move in
 village.residents,마을 주민,Residents
 village.empty,아직 빈 마을이에요. 첫 번째 주민을 기다립니다.,The village is still empty. Waiting for the first resident.
-village.tip,이름을 누르면 그 병아리를 따라갑니다. 끌어서 옮기고 휠·두 손가락으로 확대합니다.,"Click a name to follow that chick. Drag to move, use the wheel or two fingers to zoom."
+village.search,이름 찾기,Find a name
+village.noMatch,그런 이름의 주민이 없어요.,No resident with that name.
+village.fold,주민 목록 접기·펴기,Fold or unfold the residents
 village.zoom,확대·축소,Zoom
 village.zoomIn,확대,Zoom in
 village.zoomOut,축소,Zoom out

@@ -52,11 +52,17 @@
 <a class="btn support" href="https://buymeacoffee.com/chickxel" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/></svg>{{village.buy}}</a>
 </section>
 
-<aside class="village-residents" aria-label="{{village.residents}}">
-<div class="residents-head"><strong>{{village.residents}}</strong><span id="resident-count"></span></div>
+<aside class="village-residents" id="residents" aria-label="{{village.residents}}">
+<div class="residents-head">
+<strong>{{village.residents}}</strong><span id="resident-count"></span>
+<button type="button" class="residents-toggle" id="residents-toggle" aria-expanded="true" aria-controls="residents-body" title="{{village.fold}}" aria-label="{{village.fold}}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg></button>
+</div>
+<div class="residents-body" id="residents-body">
+<label class="residents-search"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="search" id="resident-search" placeholder="{{village.search}}" aria-label="{{village.search}}" autocomplete="off"></label>
 <ul id="resident-list"></ul>
 <p class="residents-empty" id="residents-empty" hidden>{{village.empty}}</p>
-<p class="residents-tip">{{village.tip}}</p>
+<p class="residents-empty" id="residents-none" hidden>{{village.noMatch}}</p>
+</div>
 </aside>
 
 <div class="village-zoom" role="group" aria-label="{{village.zoom}}">

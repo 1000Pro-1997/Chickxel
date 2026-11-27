@@ -244,15 +244,17 @@
     if (r.plot) {
       var x0 = r.plot[0] * T + 2, x1 = r.plot[0] * T + 24, y = r.plot[1] * T + 33;
       var s = (t / 1000 + r.phase * 3) % 14, x, watering = false;
-      if (s < 4) x = x0 + (x1 - x0) * (s / 4);
+      // 걸음은 천천히 출발해 천천히 멈춘다(병아리도, 따라가는 카메라도 덜 덜컹이게)
+      var ease = function (f) { return f * f * (3 - 2 * f); };
+      if (s < 4) x = x0 + (x1 - x0) * ease(s / 4);
       else if (s < 7) { x = x1; watering = true; }
-      else if (s < 11) x = x1 - (x1 - x0) * ((s - 7) / 4);
+      else if (s < 11) x = x1 - (x1 - x0) * ease((s - 7) / 4);
       else { x = x0; watering = s > 12; }
       var walking = !watering && (s < 4 || (s >= 7 && s < 11));
-      return { x: x, y: y - (walking && Math.floor(t / 180) % 2 ? 1 : 0), bob: walking ? 0 : bob, blink: blink, watering: watering };
+      return { x: x, y: y - (walking && Math.floor(t / 180) % 2 ? 1 : 0), ground: y, bob: walking ? 0 : bob, blink: blink, watering: watering };
     }
-    var span = 13 * T, w = (t / 40 + r.phase * 200) % (span * 2);
-    return { x: 3 * T + (w < span ? w : span * 2 - w), y: 5 * T + 4 - (Math.floor(t / 200) % 2), bob: 0, blink: blink, watering: false };
+    var span = 13 * T, w = (t / 40 + r.phase * 200) % (span * 2), gy = 5 * T + 4;
+    return { x: 3 * T + (w < span ? w : span * 2 - w), y: gy - (Math.floor(t / 200) % 2), ground: gy, bob: 0, blink: blink, watering: false };
   }
 
   // ---------------------------------------------------------------- 개척하지 않은 숲(한 번만 그려 둠)
@@ -426,8 +428,36 @@
   document.getElementById('zoom-out').addEventListener('click', function () { zoomAt(1 / 1.4, vw / 2, vh / 2); });
   document.getElementById('zoom-fit').addEventListener('click', fit);
 
-  // 주민 목록: 누르면 그 병아리로 다가가 따라간다(다시 누르면 마을 전체)
+  // 주민 목록(접기·펴기, 이름 찾기): 누르면 그 병아리로 다가가 따라간다(다시 누르면 마을 전체)
   var list = document.getElementById('resident-list');
+  var search = document.getElementById('resident-search');
+  var panel = document.getElementById('residents');
+  var toggle = document.getElementById('residents-toggle');
+  var body = document.getElementById('residents-body');
+  function setFolded(folded) {
+    body.hidden = folded;
+    panel.classList.toggle('folded', folded);
+    toggle.setAttribute('aria-expanded', String(!folded));
+    try { localStorage.setItem('chickxel.village.folded', folded ? '1' : '0'); } catch (e) { /* 기억 못 해도 됨 */ }
+  }
+  toggle.addEventListener('click', function () { setFolded(!body.hidden); });
+  try { if (localStorage.getItem('chickxel.village.folded') === '1') setFolded(true); } catch (e) { /* 기본은 펼침 */ }
+  function filter() {
+    var q = search.value.trim().toLowerCase(), shown = 0;
+    [].forEach.call(list.children, function (li, i) {
+      var hit = !q || residents[i].name.toLowerCase().indexOf(q) >= 0;
+      li.hidden = !hit;
+      if (hit) shown++;
+    });
+    document.getElementById('residents-none').hidden = shown > 0 || residents.length === 0;
+  }
+  search.addEventListener('input', filter);
+  // 찾기 칸에서 Enter: 처음 맞는 주민을 따라간다
+  search.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') return;
+    var first = [].find.call(list.children, function (li) { return !li.hidden; });
+    if (first) first.firstChild.click();
+  });
   function markActive() {
     [].forEach.call(list.children, function (li, i) { li.firstChild.setAttribute('aria-pressed', String(i === follow)); });
   }
@@ -457,22 +487,30 @@
     document.getElementById('residents-empty').hidden = names.length > 0;
     if (follow >= residents.length) follow = -1;
     markActive();
+    filter();
   }
   (window.ChickxelSupporters ? window.ChickxelSupporters.load : function (done) { done([]); })(showResidents);
 
   var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var last = 0;
   function frame(now) {
     var t = still ? 0 : now;
+    // 지난 그림에서 흐른 시간(초): 화면 주사율과 상관없이 같은 빠르기로 다가가게
+    var dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
+    last = now;
     g = lctx;
     drawVillage(t, residents);
-    // 카메라: 따라가는 병아리 쪽으로(가까이), 또는 '전체 보기' 쪽으로 부드럽게
-    var target = goal;
+    // 카메라: 따라가는 병아리 쪽으로(가까이), 또는 '전체 보기' 쪽으로 — 지수 감속으로 부드럽게.
+    // 따라갈 때는 콩콩 뛰는 높이를 빼고 발 자리를 겨눈다(화면이 흔들리지 않게).
+    var target = goal, rate = 4;
     if (follow >= 0 && residents[follow]) {
       var p = residentPos(residents[follow], t);
-      target = { x: VX + p.x + 4, y: VY + p.y + 2, z: Math.max(cam.z, 5) };
+      target = { x: VX + p.x + 4, y: VY + p.ground + 2, z: Math.max(cam.z, 5) };
+      rate = 2.6;
     }
     if (target) {
-      cam.x += (target.x - cam.x) * 0.12; cam.y += (target.y - cam.y) * 0.12; cam.z += (target.z - cam.z) * 0.12;
+      var a = 1 - Math.exp(-rate * dt), az = 1 - Math.exp(-2.2 * dt);
+      cam.x += (target.x - cam.x) * a; cam.y += (target.y - cam.y) * a; cam.z += (target.z - cam.z) * az;
       if (goal && Math.abs(goal.z - cam.z) < 0.01 && Math.hypot(goal.x - cam.x, goal.y - cam.y) < 0.5) goal = null;
       clamp();
     }
