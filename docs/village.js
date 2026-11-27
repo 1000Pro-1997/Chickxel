@@ -844,16 +844,46 @@
     });
   }
 
-  // ---------------------------------------------------------------- 병아리(앱 마스코트 그림)
-  var SCRIPT_BASE = document.currentScript ? new URL('.', document.currentScript.src).href : '';
-  // 지금은 모두 기본 병아리(앱 마스코트 그대로). 코스튬(기사·마법사 등 assets/mascot/chick-*.png)은 나중에 이 목록에 더한다
-  var MASCOTS = ['original'];
-  var mascotImages = {};
-  function mascot(name) {
-    if (!mascotImages[name]) { var img = new Image(); img.src = SCRIPT_BASE + 'assets/mascot/chick-' + name + '.png'; mascotImages[name] = img; }
-    return mascotImages[name];
+  // ---------------------------------------------------------------- 병아리(기본 마스코트의 앞·오른쪽·뒤, 왼쪽은 옆모습을 뒤집음)
+  var SOUTH = 0, EAST = 1, NORTH = 2, WEST = 3;
+  var CHICK_W = 16, CHICK_H = 14, CHICK_FRAMES = 6, CHICK_SPEED = 14;
+  var CHICK_COLORS = {
+    k: '#5a3d00', y: '#ffd84a', s: '#eab436', h: '#ffe77e',
+    e: '#3a2600', p: '#ffab8a', o: '#ff8a2a'
+  };
+  var CHICK_BODIES = [
+    ['......kk......', '...kkkkkkkk...', '..kyhhhhyyyk..', '.kyyyyyyyyyyk.',
+     '.kyyeyyyyeyyk.', '.kpyyyooyyypk.', '.kyyyyyyyyyyk.', 'kyyyyyyyyyyyyk',
+     'ksyyyyyyyyyysk', 'ksyyyyyyyyyysk', '.kssssssssssk.', '..kkkkkkkkkk..'],
+    ['......kk......', '....kkkkkkk...', '...kyhhhyyyk..', '...kyyyyyyyyk.',
+     '...kyyyyyeyyk.', '.kkyyyyyyyypko', 'kyyyyyyyyyyyko', '.kyyssyyyyyyk.',
+     '..kyyssyyyyk..', '..kssyyyyyyk..', '...kssssssk...', '....kkkkkk....'],
+    ['......kk......', '...kkkkkkkk...', '..kyyhhyyyyk..', '.kyyyyyyyyyyk.',
+     '.kyyyyyyyyyyk.', '.kyyyyyyyyyyk.', '.kyyyyyyyyyyk.', 'ksyyyyyyyyyysk',
+     'kssyyyssyyyssk', 'kyyyyssssyyyyk', '.kssssssssssk.', '..kkkkkkkkkk..']
+  ];
+  // 두 발의 X 이동과 들림: 대기, 오른발 딛기, 교차, 왼발 딛기, 교차.
+  var CHICK_STEPS = [[0, 0, 0, 0], [1, 0, -1, 1], [0, 1, 0, 0], [-1, 1, 1, 0], [0, 0, 0, 1]];
+  function chickSheet() {
+    return draw(CHICK_W * CHICK_FRAMES, CHICK_H * 4, function () {
+      var blink = Object.assign({}, CHICK_COLORS, { e: '#b97c26' });
+      for (var face = SOUTH; face <= WEST; face++) {
+        var side = face === EAST || face === WEST, y = face * CHICK_H;
+        for (var f = 0; f < CHICK_FRAMES; f++) {
+          var x = f * CHICK_W, step = CHICK_STEPS[f === 5 ? 0 : f], lift = f === 2 || f === 4 ? 1 : 0;
+          if (face === WEST) { g.save(); g.translate(x * 2 + CHICK_W, 0); g.scale(-1, 1); }
+          px(x + (side ? 7 : 10) + step[0], y + 13 - step[1], 2, 1, '#d96b20');
+          px(x + (side ? 6 : 4) + step[2], y + 13 - step[3], 2, 1, CHICK_COLORS.o);
+          sprite(x + 1, y + 1 - lift, CHICK_BODIES[side ? EAST : face], f === 5 ? blink : CHICK_COLORS);
+          if (face === WEST) g.restore();
+        }
+      }
+    });
   }
-  var CAN = ['..kkk...', '.kbbbkk.', 'kbbbbbbk', 'kbbbbbk.', '.kkkkk..'];
+  var chickFrames = chickSheet();
+  var wateringCan = draw(8, 5, function () {
+    sprite(0, 0, ['...kkk..', '.kkbbbk.', 'kbbbbbbk', '.kbbbbbk', '..kkkkk.'], { k: C.ink, b: '#7fb8d8' });
+  });
   function nameSeed(s) { var h = 7; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return h >>> 0; }
 
   // 길 위 자리(세상 px): 집 안 · 집 앞 · 갈림길 · 다리 건너 · 동쪽 길 · 계단 위 · 남쪽 길. 갈래 자리는 큰길(PATH_ROW)의 갈림점을 거쳐 간다
@@ -871,7 +901,13 @@
   // 주민 한 마리의 하루(한 바퀴): 밭에서 물 주기 → 문 → 큰길 → 들를 곳 둘(집 안이면 문으로 들어가 잠깐 쉼) → 다시 밭. 밭이 없으면 큰길과 들를 곳만
   function buildRoute(r, index) {
     var seed = nameSeed(r.name) + index * 97, pts = [];
-    function go(x, y, pause, water) { pts.push({ x: x, y: y, pause: pause || 0, water: !!water }); }
+    function go(x, y, pause, water) {
+      var prev = pts[pts.length - 1];
+      if (prev && prev.x === x && prev.y === y) {
+        prev.pause += pause || 0;
+        prev.water = water || prev.water;
+      } else pts.push({ x: x, y: y, pause: pause || 0, water: water || 0 });
+    }
     function toRow(x) { go(x, ROW_Y); }
     var visits = [];
     for (var k = 0; visits.length < 2 && k < 12; k++) {
@@ -879,9 +915,9 @@
       if (visits.indexOf(s) < 0) visits.push(s);
     }
     if (r.plot) {
-      var p = r.plot, fx = p.x + 16;
-      go(fx - 8, p.frontY, 3.5, true);
-      go(fx + 8, p.frontY, 3, true);
+      var p = r.plot, fx = p.x + 16, water = p.y < p.frontY ? -1 : 1;
+      go(fx - 8, p.frontY, 3.5, water);
+      go(fx + 8, p.frontY, 3, water);
       go(p.gate.x, p.gate.inY);
       toRow(p.gate.x);
     } else go(SPOTS.cross.x, ROW_Y, 1);
@@ -895,55 +931,68 @@
       } else go(s.x, s.y, 1.5 + hash(seed, s.y) * 2);
     });
     if (r.plot) { toRow(r.plot.gate.x); go(r.plot.gate.x, r.plot.gate.inY); }
-    // 구간(걷기 + 멈춤)과 한 바퀴 길이
-    var segs = [], total = 0, speed = 14;
+    var first = pts[0], last = pts[pts.length - 1];
+    if (first.x === last.x && first.y === last.y) {
+      first.pause += last.pause;
+      first.water = first.water || last.water;
+      pts.pop();
+    }
+    // 구간을 이어 걸으며, 실제로 쉬는 지점 앞뒤에서만 속도를 줄이거나 높인다.
+    var segs = [], total = 0, walked = 0;
     for (var i = 0; i < pts.length; i++) {
-      var a = pts[i], b = pts[(i + 1) % pts.length], dur = Math.max(0.01, Math.hypot(b.x - a.x, b.y - a.y) / speed);
-      segs.push({ a: a, b: b, walk: dur, pause: a.pause, start: total });
-      total += a.pause + dur;
+      var a = pts[i], b = pts[(i + 1) % pts.length], dx = b.x - a.x, dy = b.y - a.y;
+      var length = Math.hypot(dx, dy);
+      var face = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? WEST : EAST) : (dy < 0 ? NORTH : SOUTH);
+      var travel = length / CHICK_SPEED, ramp = Math.min(0.16, travel);
+      var startRamp = a.pause ? ramp : 0, stopRamp = b.pause ? ramp : 0;
+      var walk = travel + (startRamp + stopRamp) / 2;
+      segs.push({ a: a, dx: dx, dy: dy, length: length, face: face, walk: walk,
+        startRamp: startRamp, stopRamp: stopRamp, start: total, walked: walked });
+      total += a.pause + walk;
+      walked += length;
     }
     r.segs = segs;
     r.period = total;
     r.offset = hash(seed, 3) * total;
   }
   function residentPos(r, t) {
-    var s = ((t / 1000 + r.offset) % r.period + r.period) % r.period;
-    for (var i = 0; i < r.segs.length; i++) {
-      var g2 = r.segs[i];
-      if (s >= g2.start + g2.pause + g2.walk && i < r.segs.length - 1) continue;
-      var into = s - g2.start;
-      if (into < g2.pause) {
-        var hop = !g2.a.water && Math.sin(t / 260 + r.offset) > 0.9 ? 1 : 0;
-        return { x: g2.a.x, y: g2.a.y, bob: hop, watering: g2.a.water, left: g2.b.x < g2.a.x };
-      }
-      var f = Math.min(1, (into - g2.pause) / g2.walk);
-      var e = f * f * (3 - 2 * f);
-      return { x: g2.a.x + (g2.b.x - g2.a.x) * e, y: g2.a.y + (g2.b.y - g2.a.y) * e, bob: Math.floor(t / 160) % 2, watering: false, left: g2.b.x < g2.a.x };
+    var s = (t / 1000 + r.offset) % r.period, i = 0;
+    while (i < r.segs.length - 1 && s >= r.segs[i + 1].start) i++;
+    var seg = r.segs[i], a = seg.a, elapsed = s - seg.start - a.pause;
+    if (elapsed < 0) {
+      var face = a.water ? (a.water < 0 ? NORTH : SOUTH) : r.segs[(i + r.segs.length - 1) % r.segs.length].face;
+      var blink = !still && (t + r.offset * 1000) % 3200 < 120;
+      return { x: a.x, y: a.y, face: face, pose: blink ? 5 : 0, water: a.water };
     }
-    return { x: r.segs[0].a.x, y: r.segs[0].a.y, bob: 0, watering: false, left: false };
+    // 가속·감속 동안 덜 걸은 거리를 빼고, 실제 걸은 거리로 발동작을 고른다.
+    var travel = elapsed;
+    if (seg.startRamp) {
+      var up = Math.min(elapsed, seg.startRamp);
+      travel -= up * (1 - up / (2 * seg.startRamp));
+    }
+    if (seg.stopRamp) {
+      var down = Math.max(0, elapsed - (seg.walk - seg.stopRamp));
+      travel -= down * down / (2 * seg.stopRamp);
+    }
+    var distance = Math.min(seg.length, travel * CHICK_SPEED), f = distance / seg.length;
+    var pose = still ? 0 : 1 + Math.floor((seg.walked + distance) / 2) % 4;
+    return { x: a.x + seg.dx * f, y: a.y + seg.dy * f, face: seg.face, pose: pose, water: 0 };
   }
-  function drawChick(ctx, r, p, t) {
-    var img = r.img, x = Math.round(p.x), y = Math.round(p.y);
+  function drawChick(ctx, p, t) {
+    var x = p.x, y = p.y;
     ctx.fillStyle = 'rgba(12,28,8,0.4)';
     ctx.fillRect(x - 5, y - 1, 10, 2);
     ctx.fillRect(x - 4, y, 8, 1);
-    if (!img.complete || !img.naturalWidth) return;
-    var w = img.naturalWidth, h = img.naturalHeight, top = y - h - p.bob;
-    if (p.left) { ctx.save(); ctx.translate(x * 2, 0); ctx.scale(-1, 1); }
-    ctx.drawImage(img, x - Math.floor(w / 2), top);
-    if (p.left) ctx.restore();
-    if (p.watering) {
-      var cx = x - Math.floor(w / 2) - 7, cy = top + 5;
-      for (var rr = 0; rr < CAN.length; rr++)
-        for (var cc = 0; cc < CAN[rr].length; cc++) {
-          var k = CAN[rr][cc];
-          if (k === '.') continue;
-          ctx.fillStyle = k === 'k' ? C.ink : '#7fb8d8';
-          ctx.fillRect(cx + cc, cy + rr, 1, 1);
-        }
+    // 세상 픽셀로 위치를 반올림하지 않는다. 화면에 확대할 때에도 그림 자체는 보간하지 않는다.
+    ctx.drawImage(chickFrames, p.pose * CHICK_W, p.face * CHICK_H, CHICK_W, CHICK_H,
+      x - CHICK_W / 2, y - CHICK_H, CHICK_W, CHICK_H);
+    if (p.water) {
+      var cx = x + 4, cy = y + (p.water < 0 ? -10 : -6);
+      ctx.drawImage(wateringCan, cx, cy);
       var d = Math.floor(t / 120) % 4;
       ctx.fillStyle = '#bfe6ff';
-      ctx.fillRect(cx - 1, cy + 4 + d, 1, 1); ctx.fillRect(cx - 3, cy + 3 + ((d + 2) % 4), 1, 1);
+      ctx.fillRect(cx + 8, cy + 2 + p.water * d, 1, 1);
+      ctx.fillRect(cx + 10, cy + 2 + p.water * ((d + 2) % 4), 1, 1);
     }
   }
 
@@ -983,6 +1032,13 @@
   var residents = [];
   var cam = { x: VX + W / 2, y: VY + H / 2, z: 3 }, goal = null, follow = -1;
   var vw = 0, vh = 0, dpr = 1;
+  var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var last = 0, framePending = false;
+  function requestDraw() {
+    if (framePending) return;
+    framePending = true;
+    requestAnimationFrame(frame);
+  }
 
   function minZoom() { return Math.max(vw / WW, vh / WH); }
   // 마을 전체 보기: 넓은 화면은 양옆 소개·주민 칸을 비켜서(전체 화면은 칸이 없으니 가운데 가득)
@@ -1004,6 +1060,7 @@
     vw = rect.width; vh = rect.height; offX = rect.left; offY = rect.top;
     screen.width = Math.round(vw * dpr); screen.height = Math.round(vh * dpr);
     clamp();
+    requestDraw();
   }
   window.addEventListener('resize', resize);
   resize();
@@ -1026,13 +1083,19 @@
   document.addEventListener('webkitfullscreenchange', onFull);
   cam.z = fitZoom(); clamp();
 
-  function fit() { follow = -1; goal = { x: VX + W / 2, y: VY + H / 2, z: fitZoom() }; markActive(); }
+  function fit() {
+    follow = -1;
+    goal = { x: VX + W / 2, y: VY + H / 2, z: fitZoom() };
+    markActive();
+    requestDraw();
+  }
   function zoomAt(factor, sx, sy) {
     var wx = cam.x + (sx - vw / 2) / cam.z, wy = cam.y + (sy - vh / 2) / cam.z;
     cam.z = Math.min(8, Math.max(minZoom(), cam.z * factor));
     if (follow < 0) { cam.x = wx - (sx - vw / 2) / cam.z; cam.y = wy - (sy - vh / 2) / cam.z; }
     goal = null;
     clamp();
+    requestDraw();
   }
 
   // 끌기 · 두 손가락 확대
@@ -1050,6 +1113,7 @@
       follow = -1; goal = null; markActive();
       cam.x -= (e.clientX - last.x) / cam.z; cam.y -= (e.clientY - last.y) / cam.z;
       clamp();
+      requestDraw();
     }
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointers.size === 2) {
@@ -1107,9 +1171,8 @@
     if (follow >= 0) fit();
     residents = entries.map(function (entry, k) {
       var name = entry.name;
-      var look = MASCOTS.includes(entry.mascot) ? entry.mascot : MASCOTS[nameSeed(name) % MASCOTS.length];
       var crop = CROPS.includes(entry.crop) ? entry.crop : CROPS[k % CROPS.length];
-      var r = { name: name, plot: PLOTS[k] || null, crop: crop, img: mascot(look) };
+      var r = { name: name, plot: PLOTS[k] || null, crop: crop };
       buildRoute(r, k);
       return r;
     });
@@ -1132,6 +1195,7 @@
       b.addEventListener('click', function () {
         if (follow === i) { fit(); return; }
         follow = i; goal = null; markActive();
+        requestDraw();
       });
       li.appendChild(b);
       list.appendChild(li);
@@ -1144,6 +1208,7 @@
     document.getElementById('residents-empty').hidden = entries.length > 0;
     markActive();
     filter();
+    requestDraw();
   }
   async function loadResidents() {
     try {
@@ -1158,9 +1223,8 @@
   loadResidents();
   document.addEventListener('chickxel:residents-changed', loadResidents);
 
-  var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var last = 0;
   function frame(now) {
+    framePending = false;
     var t = still ? 0 : now;
     // 지난 그림에서 흐른 시간(초): 화면 주사율과 상관없이 같은 빠르기로 다가가게
     var dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
@@ -1173,7 +1237,7 @@
       rate = 2.6;
     }
     if (target) {
-      var a = 1 - Math.exp(-rate * dt), az = 1 - Math.exp(-2.2 * dt);
+      var a = still ? 1 : 1 - Math.exp(-rate * dt), az = still ? 1 : 1 - Math.exp(-2.2 * dt);
       cam.x += (target.x - cam.x) * a; cam.y += (target.y - cam.y) * a; cam.z += (target.z - cam.z) * az;
       if (goal && Math.abs(goal.z - cam.z) < 0.01 && Math.hypot(goal.x - cam.x, goal.y - cam.y) < 0.5) goal = null;
       clamp();
@@ -1189,26 +1253,23 @@
     sctx.drawImage(ground, 0, 0);
     drawWater(sctx, t, view);
     // 서 있는 것과 병아리: 발 자리가 위인 것부터(같은 줄이면 병아리가 앞)
-    var chicks = residents.map(function (r, i) { return { chick: r, at: at[i], base: at[i].y + 0.5 }; });
-    chicks.sort(function (p, q) { return p.base - q.base; });
+    var chicks = at.slice().sort(function (p, q) { return p.y - q.y; });
     var ci = 0;
     for (var i = 0; i < scene.length; i++) {
       var o = scene[i];
-      while (ci < chicks.length && chicks[ci].base <= o.base) { drawChick(sctx, chicks[ci].chick, chicks[ci].at, t); ci++; }
+      while (ci < chicks.length && chicks[ci].y + 0.5 <= o.base) { drawChick(sctx, chicks[ci++], t); }
       if (o.x + o.w < view.x0 || o.x > view.x1 || o.y + o.h < view.y0 || o.y > view.y1) continue;
       sctx.drawImage(o.img, o.x, o.y);
     }
-    for (; ci < chicks.length; ci++) drawChick(sctx, chicks[ci].chick, chicks[ci].at, t);
+    for (; ci < chicks.length; ci++) drawChick(sctx, chicks[ci], t);
     butterflies(sctx, t);
     sctx.drawImage(fog, 0, 0);
     // 이름표(HTML): 병아리 머리 위
     residents.forEach(function (r, i) {
-      var q = at[i], h = r.img.naturalHeight || 13;
-      r.label.style.transform = 'translate(' + ((q.x - cam.x) * cam.z + vw / 2) + 'px,' + ((q.y - h - 3 - q.bob - cam.y) * cam.z + vh / 2) + 'px) translate(-50%,-100%)';
+      var q = at[i];
+      r.label.style.transform = 'translate(' + ((q.x - cam.x) * cam.z + vw / 2) + 'px,' + ((q.y - CHICK_H - 2 - cam.y) * cam.z + vh / 2) + 'px) translate(-50%,-100%)';
       r.label.classList.toggle('active', i === follow);
     });
-    if (!still) requestAnimationFrame(frame);
+    if (!still) requestDraw();
   }
-  requestAnimationFrame(frame);
-  if (still) window.addEventListener('pointerup', function () { requestAnimationFrame(frame); });
 })();

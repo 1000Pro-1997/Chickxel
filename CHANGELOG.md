@@ -16,6 +16,8 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 ### Supporters and the chick village
 - About Chickxel has a Support group: thanks, the coffee button, the names of people who bought a coffee (refreshed at most every 30 minutes) and a button to the chick supporters village on the website.
 - After a while of use, saving once asks whether you would like to star Chickxel on GitHub (it uses the GitHub CLI when signed in).
+- Village chicks move smoothly between world pixels and use four-direction walking sprites, with idle blinks when they stop.
+- With reduced motion enabled, chicks stay still while you pan, zoom or select a resident.
 
 ### Outside-canvas view for every layer
 - Outside: Opaque / Translucent now shows what lies outside the canvas on every visible layer (normal and tilemap), whichever layer or tool is selected.
