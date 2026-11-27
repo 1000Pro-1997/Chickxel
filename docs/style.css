@@ -144,6 +144,13 @@ pre code { background: none; border: 0; padding: 0; }
 .download span { font-size: 13.5px; color: var(--muted); }
 .download .get { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; font-size: 13.5px; font-weight: 700; color: var(--blue); }
 .note-line { margin: 20px 0 0; color: var(--muted); font-size: 14px; }
+/* 다운로드 구역의 "커피를 사 주신 분들"(supporters.js가 채움 — 아무도 없으면 숨김) */
+.supporters { margin: 28px 0 0; padding: 18px 20px; background: var(--card); border: 1px solid var(--line-soft); border-radius: 16px; }
+.supporters h3 { margin: 0 0 6px; font-size: 16px; }
+.supporters p { margin: 0 0 12px; color: var(--muted); font-size: 14px; }
+.supporter-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.supporter-list li { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--soft); border: 1px solid var(--line-soft); font-size: 14px; font-weight: 650; }
+.supporter-list .icon { width: 15px; height: 15px; color: #ff813f; }
 
 /* 대표 기능(첫 화면): 제목과 움직이는 화면만 담은 카드 격자. 누르면 사용 가이드의 그 쪽이 열린다 */
 .core { padding-top: 24px; }
