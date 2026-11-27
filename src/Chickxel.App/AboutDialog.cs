@@ -57,7 +57,7 @@ public sealed class AboutDialog : DialogBase
         settings.Margin = new Thickness(3, 10, 3, 3);
         left.Children.Add(settings.HelpAt("files-settings", anchor: "The settings folder"));
 
-        // 오른쪽: 후원 묶음(감사 글 · 커피 단추 · 공개를 고른 후원자 · 병아리 후원 마을 가기)
+        // 오른쪽: 후원 묶음(감사 글 · 커피 단추 · 공개를 고른 후원자 · 병아리 마을 가기)
         var coffee = Ui.CoffeeButton(UiStrings.About_BuyCoffee, (_, _) => Updater.OpenUrl(this, AppInfo.SupportUrl)).Tip(AppInfo.SupportUrl);
         var village = Ui.Button(VectorIcon.House, UiStrings.About_Village, (_, _) => Updater.OpenUrl(this, AppInfo.VillageUrl)).Tip(AppInfo.VillageUrl);
         village.HorizontalAlignment = HorizontalAlignment.Stretch;

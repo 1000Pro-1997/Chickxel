@@ -33,7 +33,7 @@ public static class AppInfo
 
     /// <summary>지금 UI 언어의 홈페이지 주소(한국어가 아니면 영어 쪽).</summary>
     public static string LocalizedWebsiteUrl => UiLanguage.Current == UiLanguage.Korean ? WebsiteUrl : WebsiteUrl + "en/";
-    /// <summary>홈페이지의 병아리 후원 마을(커피를 사 준 사람마다 병아리 한 마리가 사는 픽셀 마을), 지금 UI 언어 쪽.</summary>
+    /// <summary>홈페이지의 병아리 마을(커피를 사 준 사람마다 병아리 한 마리가 사는 픽셀 마을), 지금 UI 언어 쪽.</summary>
     public static string VillageUrl => LocalizedWebsiteUrl + "village";
 
     /// <summary>

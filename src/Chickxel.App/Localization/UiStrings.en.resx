@@ -2447,7 +2447,7 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="About_SupportGroup" xml:space="preserve"><value>Support</value></data>
   <data name="About_SupportThanks" xml:space="preserve"><value>Heartfelt thanks to everyone who bought a coffee. You keep Chickxel going.</value></data>
   <data name="About_SupportersTitle" xml:space="preserve"><value>Coffee supporters</value></data>
-  <data name="About_Village" xml:space="preserve"><value>Visit the chick supporters village</value></data>
+  <data name="About_Village" xml:space="preserve"><value>Visit Chick Village</value></data>
   <data name="About_SupportersLoading" xml:space="preserve"><value>Loading the list…</value></data>
   <data name="About_SupportersEmpty" xml:space="preserve"><value>Waiting for the first coffee. Leave your name when you buy one (and don't make the message private) and it shows up here.</value></data>
   <data name="About_SupportersOffline" xml:space="preserve"><value>Couldn't get the supporter list (check your internet connection).</value></data>

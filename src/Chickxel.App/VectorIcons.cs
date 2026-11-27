@@ -89,7 +89,7 @@ public enum VectorIcon
     Globe,
     /// <summary>커피 잔(개발자에게 커피 사주기 — Lucide coffee).</summary>
     Coffee,
-    /// <summary>집(병아리 후원 마을 가기 — Lucide house).</summary>
+    /// <summary>집(병아리 마을 가기 — Lucide house).</summary>
     House,
     /// <summary>3×3 칸 격자(AI 그림 픽셀로 정리).</summary>
     Grid3x3,
