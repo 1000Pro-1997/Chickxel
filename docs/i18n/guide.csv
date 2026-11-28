@@ -53,11 +53,26 @@ manual.22,"<a href=""#start"">시작하기</a>
 manual.28,"<a href=""#screen"">화면 구성</a>
 ","<a href=""#screen"">Screen layout</a>
 "
+manual.timeline,"<a href=""#timeline"">타임라인</a>
+","<a href=""#timeline"">Timeline</a>
+"
+manual.effects,"<a href=""#effects"">레이어 효과</a>
+","<a href=""#effects"">Layer effects</a>
+"
+manual.scripts,"<a href=""#scripts"">스크립트 효과 만들기</a>
+","<a href=""#scripts"">Making script effects</a>
+"
+manual.assets,"<a href=""#assets"">에셋 관리자</a>
+","<a href=""#assets"">Asset manager</a>
+"
 manual.47,"<a href=""#tools"">도구</a>
 ","<a href=""#tools"">Tools</a>
 "
-manual.57,"<a href=""#files"">파일 · 저장 · 내보내기</a>
-","<a href=""#files"">Files · saving · export</a>
+manual.57,"<a href=""#files"">파일 · 저장</a>
+","<a href=""#files"">Files and saving</a>
+"
+manual.export,"<a href=""#export"">내보내기와 공유</a>
+","<a href=""#export"">Export and sharing</a>
 "
 manual.model,"<a href=""#model"">3D 모델 가져오기</a>
 ","<a href=""#model"">Importing 3D models</a>
