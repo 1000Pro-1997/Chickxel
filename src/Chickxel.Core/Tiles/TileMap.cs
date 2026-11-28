@@ -6,12 +6,12 @@ namespace Chickxel.Core.Tiles;
 /// <summary>칸 하나: 타일 Id + 뒤집기·회전 + 자동 타일로 찍었으면 그 세트 Id(아니면 0).</summary>
 public readonly record struct TileCell(int Tile, TileTransform Transform = TileTransform.None, int AutoTile = 0);
 
-/// <summary>맵에 놓인 타일 하나: 층, 기준 칸(차지 칸 왼쪽 위), 칸.</summary>
+/// <summary>맵 타일 하나: 층, 기준 위치(일반 층은 칸, 자유 층은 픽셀), 칸.</summary>
 public readonly record struct PlacedTile(int Floor, Point At, TileCell Cell);
 
 /// <summary>
-/// 타일맵: 층 Id → (기준 칸 → 칸). 큰 타일은 기준 칸(차지 칸 왼쪽 위) 하나에만 들어 있고, 차지 칸은 타일셋으로 안다(<see cref="Tileset.Footprint"/>).
-/// 칸 좌표는 음수도 된다(캔버스 밖). 바뀌지 않는 값이고 고치면 새 값을 만든다(실행취소 사본은 참조만 담음).
+/// 타일맵: 층 Id → (기준 위치 → 칸). 큰 타일은 기준 위치 하나에만 들어 있고, 차지 칸은 타일셋으로 안다(<see cref="Tileset.Footprint"/>).
+/// 일반 층의 위치는 칸, 자유 층의 위치는 픽셀(둘 다 음수 가능). 바뀌지 않는 값이고 고치면 새 값을 만든다(실행취소 사본은 참조만 담음).
 /// </summary>
 public sealed class TileMap
 {

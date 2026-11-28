@@ -346,6 +346,8 @@ public sealed partial class SpriteProject
                 TileOrigin = s.Tiles is { } t ? [t.Origin.X, t.Origin.Y] : null,
                 TileHidden = s.Tiles is { HiddenFloors.Length: > 0 } th ? [.. th.HiddenFloors] : null,
                 TileLocked = s.Tiles is { LockedFloors.Length: > 0 } tl ? [.. tl.LockedFloors] : null,
+                TileFreePlacement = s.Tiles is { FreePlacement: true } ? true : null,
+                TileFreeFloors = s.Tiles is { FreeFloors.Length: > 0 } tf ? [.. tf.FreeFloors] : null,
             }).ToList(),
             Frames = _frames.Select(f => new HistoryFrameDto
             {
@@ -443,6 +445,8 @@ public sealed partial class SpriteProject
                         {
                             HiddenFloors = [.. l.TileHidden ?? []],
                             LockedFloors = [.. l.TileLocked ?? []],
+                            FreePlacement = l.TileFreePlacement == true,
+                            FreeFloors = [.. (l.TileFreeFloors ?? []).Distinct()],
                         }
                         : null)).ToArray(),
                 _frames = d.Frames.Select((f, i) => (r.Frame(f.Id), f.DurationMs, f.Pivot?.ToPivot(), f.Name, layerPivots[i].ToArray(),

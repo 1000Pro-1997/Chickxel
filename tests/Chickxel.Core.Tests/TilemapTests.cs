@@ -1,4 +1,6 @@
 using System.Collections.Immutable;
+using System.IO.Compression;
+using System.Text.Json.Nodes;
 using System.Drawing;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
@@ -306,6 +308,7 @@ public class TilemapTests
 
         var q = ProjectIO.Load(file);
         var loaded = q.Layers.Single(l => l.IsTilemap);
+        Assert.False(loaded.Tiles!.FreePlacement);
         Assert.Equal(layer.Tiles!.Map.All.OrderBy(t => t.At.X).ToList(), loaded.Tiles!.Map.All.OrderBy(t => t.At.X).ToList());
         Assert.Equal(128, loaded.Opacity);
         Assert.True(p.Flatten(0).ContentEquals(q.Flatten(0)));
@@ -316,6 +319,404 @@ public class TilemapTests
         Assert.Equal(Green.WithAlpha(128), r.Flatten(0)[1, 1]);
         // 바뀐 것이 없으면 저장해도 타일셋 파일을 다시 쓰지 않는다
         Assert.Empty(r.TilesetsToWrite);
+    }
+
+    [Fact]
+    public void FreePlacement_RequiresOnePixelPrimary_AndRejectsLargerReplacements()
+    {
+        var (ordinary, ordinaryLayer) = NewProject(Sample());
+        Assert.Throws<InvalidOperationException>(() => ordinary.SetTilemapFreePlacement(ordinaryLayer, true));
+        Assert.False(ordinaryLayer.Tiles!.FreePlacement);
+
+        var onePixel = Tileset.Create("one", 1, 1);
+        var (p, layer) = NewProject(onePixel);
+        p.SetTilemapFreePlacement(layer, true);
+        Assert.True(layer.Tiles!.FreePlacement);
+        int undo = p.History.UndoCount;
+        p.SetTilemapFreePlacement(layer, true);
+        Assert.Equal(undo, p.History.UndoCount);
+        var larger = Tileset.Create("larger", 2, 2) with { Key = onePixel.Key };
+        Assert.Throws<ArgumentException>(() => p.EditTileset("resize", larger));
+        Assert.Throws<ArgumentException>(() => p.AddTileset(larger));
+        Assert.Throws<ArgumentException>(() => p.AddTilemapLayer(larger));
+        Assert.Throws<ArgumentException>(() => p.SetLayerTileset(layer, 0, Tileset.Create("other", 2, 2)));
+        Assert.Same(onePixel, p.Tilesets[onePixel.Key]);
+        Assert.Equal(undo, p.History.UndoCount);
+
+        p.Undo();
+        Assert.False(layer.Tiles!.FreePlacement);
+        p.Redo();
+        Assert.True(layer.Tiles!.FreePlacement);
+        p.SetTilemapFreePlacement(layer, false);
+        p.EditTileset("resize", larger);
+        Assert.Same(larger, p.Tilesets[onePixel.Key]);
+
+        var (otherProject, otherLayer) = NewProject(onePixel);
+        var second = Tileset.Create("second", 1, 1);
+        Assert.True(otherProject.AddLayerTileset(otherLayer, second));
+        otherProject.SetTilemapFreePlacement(otherLayer, true);
+        Assert.Throws<ArgumentException>(() => otherProject.EditTileset("resize secondary",
+            Tileset.Create("second larger", 2, 2) with { Key = second.Key }));
+        Assert.True(otherProject.RemoveLayerTileset(otherLayer, 0));
+        Assert.True(otherLayer.Tiles!.FreePlacement);
+    }
+
+    [Fact]
+    public void SixteenPixelGridAndFreeObjectFloor_RenderTogether()
+    {
+        var ts = Tileset.Create("sixteen", 16, 16) with
+        {
+            Floors = [new TileFloor(1, "terrain"), new TileFloor(2, "objects")],
+            Tiles = [new TileDef { Id = 1, Floor = 1, Image = Solid(16, 16, Red) },
+                new TileDef { Id = 2, Floor = 2, Image = Solid(3, 3, Blue) }],
+        };
+        var p = new SpriteProject(32, 32);
+        var layer = p.AddTilemapLayer(ts);
+        p.SetTileFloorFreePlacement(layer, 2, true);
+        p.SetTileMap(layer, TileMap.Empty.With(1, new Point(1, 1), new TileCell(1))
+            .With(2, new Point(18, 19), new TileCell(2)), "mixed");
+        Assert.Equal(Red, p.Flatten(0)[16, 16]);
+        Assert.Equal(Blue, p.Flatten(0)[18, 19]);
+        Assert.Equal(Red, p.Flatten(0)[22, 22]);
+        Assert.Equal(2, TileMapRenderer.HitTest(ts, layer.Tiles!.Map, Point.Empty, new Point(18, 19),
+            freeFloor: layer.Tiles.IsFreeFloor)?.Floor);
+    }
+
+    [Fact]
+    public void MixedGridAndFreeFloors_RenderSortHitAndBoundsInTheirOwnCoordinates()
+    {
+        var ts = Sample() with
+        {
+            SortMode = TileSortMode.ByPosition,
+            Tiles = [Sample().Tiles[0] with { DrawClass = TileDrawClass.Sorted },
+                Sample().Tiles[1] with { DrawClass = TileDrawClass.Sorted },
+                Sample().Tiles[2] with { DrawClass = TileDrawClass.Sorted }],
+        };
+        var (p, layer) = NewProject(ts);
+        p.SetTileFloorFreePlacement(layer, 2, true);
+        var map = TileMap.Empty.With(1, new Point(1, 1), new TileCell(1))
+            .With(2, new Point(5, 5), new TileCell(3));
+        p.SetTileMap(layer, map, "mixed");
+        Assert.False(layer.Tiles!.IsFreeFloor(1));
+        Assert.True(layer.Tiles.IsFreeFloor(2));
+        Assert.Equal(new Point(5, 5), ts.PlacementAt(2, new Point(5, 5), new TileCell(3), free: true)!.Value.Rect.Location);
+        Assert.Equal(Blue, p.Flatten(0)[5, 5]);
+        Assert.Equal(Red, p.Flatten(0)[4, 4]);
+        Assert.Equal(new Rectangle(4, 4, 5, 5), p.TilemapBounds(layer));
+        Assert.Equal(2, TileMapRenderer.HitTest(ts, map, Point.Empty, new Point(5, 5), freeFloor: layer.Tiles.IsFreeFloor)?.Floor);
+        // Two free instances can overlap within the same floor; pixel baselines decide depth.
+        map = map.With(2, new Point(6, 5), new TileCell(2));
+        p.SetTileMap(layer, map, "overlap");
+        Assert.Equal(2, map.Floor(2).Count);
+        Assert.Equal(Green, p.Flatten(0)[6, 5]);
+        Assert.Equal(new Point(6, 5), TileMapRenderer.HitTest(ts, map, Point.Empty, new Point(6, 5),
+            freeFloor: layer.Tiles.IsFreeFloor)?.At);
+        map = map.With(2, new Point(6, 5), null).With(2, new Point(5, 5), null).With(2, new Point(5, 3), new TileCell(3));
+        p.SetTileMap(layer, map, "move");
+        Assert.Equal(Red, p.Flatten(0)[5, 5]);
+        Assert.Equal(1, TileMapRenderer.HitTest(ts, map, Point.Empty, new Point(5, 5), freeFloor: layer.Tiles.IsFreeFloor)?.Floor);
+    }
+
+    [Fact]
+    public void MixedFloors_DisablingNonemptyFreeFloorSnapsAnchors_AndHistoryAndFilePreserveAnchors()
+    {
+        using var tmp = new TempDir();
+        var ts = Sample();
+        var (p, layer) = NewProject(ts);
+        p.SetTileFloorFreePlacement(layer, 2, true);
+        var map = TileMap.Empty.With(1, new Point(1, 1), new TileCell(1))
+            .With(2, new Point(5, 5), new TileCell(3));
+        p.SetTileMap(layer, map, "mixed");
+        using var file = new MemoryStream();
+        ProjectIO.Save(p, file);
+        // 자유 층을 모르는 옛 판이 열지 못하게 자유 층 파일만 새 형식 판으로 쓴다.
+        using (var zip = new ZipArchive(file, ZipArchiveMode.Read, leaveOpen: true))
+        using (var json = zip.GetEntry(ProjectIO.ProjectEntryName)!.Open())
+            Assert.Equal(ProjectIO.FreeFloorVersion, JsonNode.Parse(json)!["version"]!.GetValue<int>());
+        var dir = tmp.File("history");
+        UndoHistoryIO.Write(UndoHistoryIO.Capture(p, 100)!, dir);
+        file.Position = 0;
+        var q = ProjectIO.Load(file);
+        var loaded = q.Layers.Single(l => l.IsTilemap);
+        Assert.Equal([2], loaded.Tiles!.FreeFloors.ToArray());
+        Assert.Equal(map.All.OrderBy(t => t.Floor).ToArray(), loaded.Tiles.Map.All.OrderBy(t => t.Floor).ToArray());
+        Assert.Equal(Blue, q.Flatten(0)[5, 5]);
+        Assert.Equal(p.History.UndoCount, UndoHistoryIO.Read(q, dir));
+        q.Undo();
+        Assert.Empty(loaded.Tiles!.Map.All);
+        Assert.True(loaded.Tiles.IsFreeFloor(2));
+        q.Undo();
+        Assert.False(loaded.Tiles!.IsFreeFloor(2));
+        q.Redo();
+        q.Redo();
+        Assert.Equal(Blue, q.Flatten(0)[5, 5]);
+        q.SetTileFloorFreePlacement(loaded, 2, false);
+        Assert.False(loaded.Tiles!.IsFreeFloor(2));
+        Assert.Equal(new TileCell(3), loaded.Tiles.Map.Get(2, new Point(1, 1)));
+        q.Undo();
+        Assert.True(loaded.Tiles!.IsFreeFloor(2));
+        Assert.Equal(new TileCell(3), loaded.Tiles.Map.Get(2, new Point(5, 5)));
+    }
+
+    [Fact]
+    public void DisablingFreeFloor_SnapsToNearestCellAndRemovesOverlappingFootprints()
+    {
+        var ts = Sample();
+        var (project, layer) = NewProject(ts);
+        project.SetTileFloorFreePlacement(layer, 1, true);
+        var map = TileMap.Empty.With(1, new Point(4, 4), new TileCell(2))
+            .With(1, new Point(7, 4), new TileCell(1))
+            .With(1, new Point(5, 5), new TileCell(1))
+            .With(1, new Point(3, 0), new TileCell(1, TileTransform.FlipX))
+            .With(1, new Point(4, 0), new TileCell(1))
+            .With(1, new Point(-2, -2), new TileCell(1))
+            .With(2, new Point(1, 1), new TileCell(3));
+        project.SetTileMap(layer, map, "free objects");
+        int before = project.History.UndoCount;
+
+        project.SetTileFloorFreePlacement(layer, 1, false);
+
+        Assert.Equal(before + 1, project.History.UndoCount);
+        Assert.False(layer.Tiles!.IsFreeFloor(1));
+        Assert.Equal(3, layer.Tiles.Map.Floor(1).Count);
+        Assert.Equal(new TileCell(2), layer.Tiles.Map.Get(1, new Point(1, 1)));
+        Assert.Null(layer.Tiles.Map.Get(1, new Point(2, 1)));
+        Assert.Equal(new TileCell(1), layer.Tiles.Map.Get(1, new Point(1, 0)));
+        Assert.Equal(new TileCell(1), layer.Tiles.Map.Get(1, Point.Empty));
+        Assert.Equal(new TileCell(3), layer.Tiles.Map.Get(2, new Point(1, 1)));
+        project.Undo();
+        Assert.True(layer.Tiles!.IsFreeFloor(1));
+        Assert.Equal(map.All.OrderBy(p => p.Floor).ThenBy(p => p.At.Y).ThenBy(p => p.At.X).ToArray(),
+            layer.Tiles.Map.All.OrderBy(p => p.Floor).ThenBy(p => p.At.Y).ThenBy(p => p.At.X).ToArray());
+        project.Redo();
+        Assert.Equal(3, layer.Tiles!.Map.Floor(1).Count);
+    }
+
+    [Fact]
+    public void EnablingFreeFloor_MigratesGridAnchorsInOneUndoStep()
+    {
+        var ts = Sample();
+        var (p, layer) = NewProject(ts);
+        var map = TileMap.Empty.With(1, new Point(0, 0), new TileCell(1))
+            .With(2, new Point(1, 1), new TileCell(3, TileTransform.FlipX));
+        p.SetTileMap(layer, map, "grid");
+        int before = p.History.UndoCount;
+        p.SetTileFloorFreePlacement(layer, 2, true);
+        Assert.Equal(before + 1, p.History.UndoCount);
+        Assert.True(layer.Tiles!.IsFreeFloor(2));
+        Assert.Null(layer.Tiles.Map.Get(2, new Point(1, 1)));
+        Assert.Equal(new TileCell(3, TileTransform.FlipX), layer.Tiles.Map.Get(2, new Point(4, 4)));
+        Assert.Equal(new TileCell(1), layer.Tiles.Map.Get(1, Point.Empty));
+        Assert.Equal(Blue, p.Flatten(0)[4, 4]);
+        p.Undo();
+        Assert.False(layer.Tiles!.IsFreeFloor(2));
+        Assert.Equal(map.All.OrderBy(t => t.Floor).ToArray(), layer.Tiles.Map.All.OrderBy(t => t.Floor).ToArray());
+        p.Redo();
+        Assert.Equal(new TileCell(3, TileTransform.FlipX), layer.Tiles!.Map.Get(2, new Point(4, 4)));
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(4)]
+    public void EnablingFreeFloor_DetachesPlacedAutoTilesWithoutChangingArt(int cellSize)
+    {
+        var set = AutoTileSet.FromPreset(9, "", 1, AutoTilePreset.Row);
+        set = set with { Rules = [.. set.Rules.Select(rule => rule with { Tiles = [new AutoTileChoice(1)] })] };
+        var ts = Tileset.Create("water", cellSize, cellSize) with
+        {
+            Floors = [new TileFloor(1, "water"), new TileFloor(2, "objects")],
+            Tiles = [new TileDef { Id = 1, Floor = 1, Image = Solid(cellSize, cellSize, Red) },
+                new TileDef { Id = 2, Floor = 2, Image = Solid(cellSize, cellSize, Blue) }],
+            AutoTiles = [set],
+        };
+        var (project, layer) = NewProject(ts);
+        var map = AutoTiler.Paint(ts, TileMap.Empty.With(2, new Point(0, 1), new TileCell(2)),
+            set, [new Point(0, 0), new Point(1, 0)]);
+        project.SetTileMap(layer, map, "water");
+        var before = project.Flatten(0);
+        int undoCount = project.History.UndoCount;
+
+        project.SetTileFloorFreePlacement(layer, 1, true);
+
+        Assert.Equal(undoCount + 1, project.History.UndoCount);
+        Assert.True(layer.Tiles!.IsFreeFloor(1));
+        Assert.Equal(new TileCell(1), layer.Tiles.Map.Get(1, Point.Empty));
+        Assert.Equal(new TileCell(1), layer.Tiles.Map.Get(1, new Point(cellSize, 0)));
+        Assert.Equal(new TileCell(2), layer.Tiles.Map.Get(2, new Point(0, 1)));
+        Assert.True(before.ContentEquals(project.Flatten(0)));
+        project.Undo();
+        Assert.False(layer.Tiles!.IsFreeFloor(1));
+        Assert.Equal(map.Get(1, new Point(1, 0)), layer.Tiles.Map.Get(1, new Point(1, 0)));
+        project.Redo();
+        Assert.True(before.ContentEquals(project.Flatten(0)));
+
+        // 격자로 되돌리면 그 층 세트의 타일이 다시 자동 타일로 이어진다.
+        project.SetTileFloorFreePlacement(layer, 1, false);
+        Assert.False(layer.Tiles!.IsFreeFloor(1));
+        Assert.Equal(map.Get(1, Point.Empty), layer.Tiles.Map.Get(1, Point.Empty));
+        Assert.Equal(map.Get(1, new Point(1, 0)), layer.Tiles.Map.Get(1, new Point(1, 0)));
+        Assert.True(before.ContentEquals(project.Flatten(0)));
+    }
+
+    /// <summary>모서리 격자 세트: 모서리마다 차례 = 북서·북동·남서·남동(덮음 = 1)인 4×4 그림(Id 100 + 차례, 색 = 차례), 반 칸 당겨 놓음.</summary>
+    private static (Tileset Tileset, AutoTileSet Set) CornerSample(int rank = 0, int setId = 9, int idBase = 100, string target = "")
+    {
+        int count = target.Length > 0 ? 81 : 16;
+        var ts = Sample();
+        var set = new AutoTileSet
+        {
+            Id = setId, Name = "corner" + setId, Floor = 1, CornerRank = rank, CornerTarget = target,
+            Rules = [new AutoTileRule { Tiles = [new AutoTileChoice(1)] }],
+            CornerTiles = [.. Enumerable.Range(0, count).Select(i => i == 0 ? 0 : idBase + i)],
+        };
+        var tiles = Enumerable.Range(1, count - 1).Select(i => new TileDef
+        {
+            Id = idBase + i, Floor = 1, Image = Solid(4, 4, new Color32((byte)i, (byte)(rank * 50), 7)), DrawOffset = new Point(-2, -2), FloorRank = rank,
+        });
+        return (ts with { Tiles = [.. ts.Tiles, .. tiles], AutoTiles = [set], SortMode = TileSortMode.ByPosition }, set);
+    }
+
+    [Fact]
+    public void CornerSet_DrawsCornerPicturesBetweenCells_InsteadOfTheCellTile()
+    {
+        var (ts, set) = CornerSample();
+        var map = AutoTiler.Paint(ts, TileMap.Empty, set, [new Point(1, 1)]);
+        var img = TileMapRenderer.RenderArea(ts, map, Point.Empty, new Rectangle(0, 0, 12, 12));
+        // 칸 (1,1)의 네 모서리: 북서 모서리는 남동 칸만 덮음(차례 1), 북동은 남서(2), 남서는 북동(4), 남동은 북서(8)
+        Assert.Equal(new Color32(1, 0, 7), img[4, 4]);
+        Assert.Equal(new Color32(2, 0, 7), img[7, 4]);
+        Assert.Equal(new Color32(4, 0, 7), img[4, 7]);
+        Assert.Equal(new Color32(8, 0, 7), img[7, 7]);
+        Assert.Equal(new Color32(1, 0, 7), img[2, 2]); // 그림은 칸 사이에 걸쳐 바깥으로도 그려짐
+        Assert.Equal(default, img[1, 1]);
+        Assert.DoesNotContain(img.Pixels, p => p == Red); // 칸 타일(빨강)은 그리지 않음
+        // 고르기는 그 모서리를 만든 칸을 가리킨다
+        Assert.Equal(new PlacedTile(1, new Point(1, 1), map.Get(1, new Point(1, 1))!.Value), TileMapRenderer.HitTest(ts, map, Point.Empty, new Point(2, 2)));
+        Assert.Equal(new Rectangle(2, 2, 8, 8), TileMapRenderer.PixelBounds(ts, map, Point.Empty));
+    }
+
+    [Fact]
+    public void CornerSets_HigherRankCoversLower_AndTargetGroupGetsItsOwnState()
+    {
+        var (low, water) = CornerSample(rank: 0, setId: 9, idBase: 100);
+        var (_, land) = CornerSample(rank: 1, setId: 10, idBase: 200, target: "corner9");
+        var landTiles = Enumerable.Range(1, 80).Select(i => new TileDef { Id = 200 + i, Floor = 1, Image = Solid(4, 4, new Color32((byte)i, 50, 7)), DrawOffset = new Point(-2, -2), FloorRank = 1 });
+        var ts = low with { Tiles = [.. low.Tiles, .. landTiles], AutoTiles = [water, land] };
+        var map = AutoTiler.Paint(ts, TileMap.Empty, water, [new Point(0, 0)]);
+        map = AutoTiler.Paint(ts, map, land, [new Point(1, 0)]);
+        var img = TileMapRenderer.RenderArea(ts, map, Point.Empty, new Rectangle(0, 0, 12, 8));
+        // 모서리 (1,1)(물 북서 · 땅 북동): 땅 차례 = (2·3 + 1)·9 = 63(물 = 무리 상태 2, 땅 = 1)이 물(땅을 덮음으로 쳐 차례 12) 위에 그려짐
+        Assert.Equal(new Color32(63, 50, 7), img[4, 4]);
+        // 물만 닿는 모서리 (0,1)(남동 칸 없음, 북동이 물): 물 차례 4
+        Assert.Equal(new Color32(4, 0, 7), img[0, 4]);
+    }
+
+    [Fact]
+    public void TilesetFile_KeepsCornerSets_AndMarksTheCornerVersion()
+    {
+        var (ts, set) = CornerSample(rank: 3, target: "water");
+        var bytes = TilesetIO.ToBytes(ts);
+        var loaded = TilesetIO.FromBytes(bytes).FindAutoTile(set.Id)!;
+        Assert.Equal(set.CornerTiles.ToArray(), loaded.CornerTiles.ToArray());
+        Assert.Equal(3, loaded.CornerRank);
+        Assert.Equal("water", loaded.CornerTarget);
+        using var zip = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
+        using var json = zip.GetEntry(TilesetIO.JsonEntryName)!.Open();
+        Assert.Equal(TilesetIO.CornerVersion, JsonNode.Parse(json)!["version"]!.GetValue<int>());
+    }
+
+    [Fact]
+    public void TilesetFile_KeepsFloorRank_AndOnlyThenUsesTheNewerVersion()
+    {
+        var plain = Sample();
+        var ranked = plain with { Tiles = [.. plain.Tiles.Select(t => t.Id == 1 ? t with { FloorRank = 2 } : t)] };
+        var loaded = TilesetIO.FromBytes(TilesetIO.ToBytes(ranked));
+        Assert.Equal(2, loaded.Find(1)!.FloorRank);
+        Assert.Equal(0, loaded.Find(2)!.FloorRank);
+        Assert.Equal(TilesetIO.FloorRankVersion, TilesetJsonVersion(TilesetIO.ToBytes(ranked)));
+        Assert.Equal(TilesetIO.CurrentVersion, TilesetJsonVersion(TilesetIO.ToBytes(plain)));
+
+        static int TilesetJsonVersion(byte[] bytes)
+        {
+            using var zip = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
+            using var json = zip.GetEntry(TilesetIO.JsonEntryName)!.Open();
+            return JsonNode.Parse(json)!["version"]!.GetValue<int>();
+        }
+    }
+
+    [Fact]
+    public void AutoTiler_GridFloorFilterIgnoresAndPreservesFreeFloorCells()
+    {
+        var ts = Sample();
+        var set = new AutoTileSet
+        {
+            Id = 9, Floor = 1, FilledFloors = [2], ClearFloors = [2],
+            Rules = [new AutoTileRule { Filled = AutoTileShapes.E, Tiles = [new AutoTileChoice(1)] }],
+        };
+        ts = ts with { AutoTiles = [set] };
+        var map = TileMap.Empty.With(2, Point.Empty, new TileCell(3))
+            .With(2, new Point(1, 0), new TileCell(3));
+        Assert.Equal(AutoTileShapes.E, AutoTiler.FilledMask(ts, map, set, Point.Empty));
+        Assert.Equal(0, AutoTiler.FilledMask(ts, map, set, Point.Empty, gridFloor: f => f != 2));
+        var painted = AutoTiler.Paint(ts, map, set, [Point.Empty], gridFloor: f => f != 2);
+        Assert.Equal(map.Floor(2).ToArray(), painted.Floor(2).ToArray());
+        Assert.Equal(new TileCell(1, AutoTile: 9), painted.Get(1, Point.Empty));
+        Assert.Throws<InvalidOperationException>(() => AutoTiler.Paint(ts, map, set, [Point.Empty], gridFloor: _ => false));
+    }
+
+    [Fact]
+    public void LegacyOnePixelFreePlacement_TurningOffOneFloorPreservesOtherFloors()
+    {
+        var ts = Tileset.Create("legacy", 1, 1) with
+        {
+            Floors = [new TileFloor(1, "one"), new TileFloor(2, "two")],
+            Tiles = [new TileDef { Id = 1, Floor = 1, Image = Solid(2, 2, Red) },
+                new TileDef { Id = 2, Floor = 2, Image = Solid(2, 2, Blue) }],
+        };
+        var (p, layer) = NewProject(ts);
+        p.SetTilemapFreePlacement(layer, true);
+        p.SetTileMap(layer, TileMap.Empty.With(1, new Point(3, 4), new TileCell(1))
+            .With(2, new Point(4, 4), new TileCell(2)), "props");
+        p.SetTileFloorFreePlacement(layer, 1, false);
+        Assert.False(layer.Tiles!.FreePlacement);
+        Assert.False(layer.Tiles.IsFreeFloor(1));
+        Assert.True(layer.Tiles.IsFreeFloor(2));
+        Assert.Equal(Blue, p.Flatten(0)[4, 4]);
+        p.Undo();
+        Assert.True(layer.Tiles!.FreePlacement);
+        Assert.Equal(Blue, p.Flatten(0)[4, 4]);
+    }
+
+    [Fact]
+    public void FreePlacement_SaveAndHistoryRoundTrip_PreservesPixelAnchorsAndMode()
+    {
+        using var tmp = new TempDir();
+        var ts = Tileset.Create("props", 1, 1) with
+        {
+            Tiles = [new TileDef { Id = 1, Image = Solid(2, 3, Red), Floor = 1 }],
+        };
+        var (p, layer) = NewProject(ts);
+        var anchor = new Point(3, 4);
+        p.SetTileMap(layer, TileMap.Empty.With(1, anchor, new TileCell(1)), "place");
+        p.SetTilemapFreePlacement(layer, true);
+        var file = tmp.File("free.chickxel");
+        ProjectIO.Save(p, file);
+        var dir = tmp.File("history");
+        UndoHistoryIO.Write(UndoHistoryIO.Capture(p, 100)!, dir);
+
+        var q = ProjectIO.Load(file);
+        var loaded = q.Layers.Single(l => l.IsTilemap);
+        Assert.True(loaded.Tiles!.FreePlacement);
+        Assert.Equal(new TileCell(1), loaded.Tiles.Map.Get(1, anchor));
+        Assert.True(loaded.Tiles.IsFreeFloor(1));
+        Assert.Equal(anchor, loaded.Tiles.CellAt(q.TilesetOf(loaded)!, anchor.X, anchor.Y));
+        Assert.Equal(p.History.UndoCount, UndoHistoryIO.Read(q, dir));
+        q.Undo();
+        Assert.False(loaded.Tiles!.FreePlacement);
+        Assert.Equal(new TileCell(1), loaded.Tiles.Map.Get(1, anchor));
+        q.Redo();
+        Assert.True(loaded.Tiles!.FreePlacement);
+        Assert.Equal(new TileCell(1), loaded.Tiles.Map.Get(1, anchor));
     }
 
     [Fact]

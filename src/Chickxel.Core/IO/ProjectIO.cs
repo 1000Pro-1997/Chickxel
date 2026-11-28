@@ -48,6 +48,12 @@ public static partial class ProjectIO
     /// 4 = 레이어 효과를 안정된 종류 ID와 설정 객체로 쓰는 판(<see cref="EffectCodec"/>). 3 이하의 짧은 효과 ID는 읽을 때 바꾼다.
     /// </summary>
     public const int CurrentVersion = 7;
+
+    /// <summary>
+    /// 8 = 7 + 타일맵 자유 배치(<c>tileFreePlacement</c>·<c>tileFreeFloors</c>, 그 층의 기준점은 픽셀). 자유 층이 있는 파일만 8로 써서
+    /// 자유 층을 모르는 옛 판이 픽셀 기준점을 칸으로 잘못 읽고 저장하며 지우지 않게 한다(옛 판은 더 새 파일이라 열지 않음).
+    /// </summary>
+    public const int FreeFloorVersion = 8;
     public const string ProjectEntryName = "project.json";
     public const string ThumbnailEntryName = "thumbnail.png";
 
@@ -844,9 +850,9 @@ public static partial class ProjectIO
         {
             throw new InvalidDataException(Chickxel.Core.Localization.DomainStrings.FormatProject_CorruptInfo(error: ex.Message), ex);
         }
-        if (dto.Version > CurrentVersion)
+        if (dto.Version > FreeFloorVersion)
             throw new InvalidDataException(
-                Chickxel.Core.Localization.DomainStrings.FormatProject_NewerVersion(version: dto.Version, current: CurrentVersion));
+                Chickxel.Core.Localization.DomainStrings.FormatProject_NewerVersion(version: dto.Version, current: FreeFloorVersion));
         return dto;
     }
 
@@ -1021,7 +1027,7 @@ public static partial class ProjectIO
 
     private static ProjectDto ToDto(SpriteProject p, string? projectPath) => new()
     {
-        Version = CurrentVersion,
+        Version = p.Layers.Any(l => l.Tiles is { FreePlacement: true } or { FreeFloors.Length: > 0 }) ? FreeFloorVersion : CurrentVersion,
         Width = p.Width,
         Height = p.Height,
         Layers = p.Layers.Select(l => new LayerDto
@@ -1049,6 +1055,8 @@ public static partial class ProjectIO
             TileOrigin = l.Tiles is { Origin: { IsEmpty: false } o } ? [o.X, o.Y] : null,
             TileHidden = l.Tiles is { HiddenFloors.Length: > 0 } th ? [.. th.HiddenFloors] : null,
             TileLocked = l.Tiles is { LockedFloors.Length: > 0 } tl ? [.. tl.LockedFloors] : null,
+            TileFreePlacement = l.Tiles is { FreePlacement: true } ? true : null,
+            TileFreeFloors = l.Tiles is { FreeFloors.Length: > 0 } tf ? [.. tf.FreeFloors] : null,
         }).ToList(),
         Frames = p.Frames.Select(f => new FrameDto
         {
@@ -1944,6 +1952,10 @@ public static partial class ProjectIO
         /// <summary>타일맵 레이어: 숨긴 층·잠근 층 Id(없으면 없음).</summary>
         public int[]? TileHidden { get; set; }
         public int[]? TileLocked { get; set; }
+        /// <summary>타일맵 레이어: 1px 칸을 자유 배치 앵커로 사용(없으면 일반 타일맵).</summary>
+        public bool? TileFreePlacement { get; set; }
+        /// <summary>타일맵 레이어: 픽셀 앵커 층 Id들(없으면 모든 층이 격자, FreePlacement가 켜져 있으면 모든 층이 픽셀).</summary>
+        public int[]? TileFreeFloors { get; set; }
     }
 
     /// <summary>그룹 자동 배치(<see cref="GroupLayout"/>). 없는 값은 기본값.</summary>

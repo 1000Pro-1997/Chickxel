@@ -27,6 +27,9 @@ public sealed partial class PixelCanvas
     private PlacedTile? _tileHoverTile;
     private Point _tileDragStart, _tileDragCell;
     private bool _tileErase;
+    private bool _tileDragFree;
+    private PlacedTile? _freeDragTile;
+    private Point _freeDragOffset, _freeDragTarget;
     private TileTool _tileDragTool;
     /// <summary>타일 그림 → 화면 비트맵(그림은 만든 뒤 바뀌지 않으므로 그림마다 한 번).</summary>
     private readonly ConditionalWeakTable<PixelImage, WriteableBitmap> _tileBitmaps = new();
@@ -49,7 +52,17 @@ public sealed partial class PixelCanvas
         var tool = (mods & KeyModifiers.Alt) != 0 ? TileTool.Picker : _ctx.TileTool;
         _tileErase = button == MouseButton.Right;
         _tileDragTool = tool;
+        var data = _ctx.CurrentTiles;
+        var under = tool is TileTool.Select or TileTool.Eraser || _tileErase ? _ctx.TileUnder(px) : null;
+        _tileDragFree = _ctx.IsFreeTilemap || tool is (TileTool.Select or TileTool.Eraser)
+            && under is { } placed && data?.IsFreeFloor(placed.Floor) == true;
+        if (_tileDragFree && data is not null) cell = new Point(px.X - data.Origin.X, px.Y - data.Origin.Y);
         _tileDragStart = _tileDragCell = cell;
+        if (_tileDragFree && tool is (TileTool.Fill or TileTool.Rect))
+        {
+            Message?.Invoke(this, UiStrings.Tile_FreePlacementTools);
+            return false;
+        }
         switch (tool)
         {
             case TileTool.Picker:
@@ -75,6 +88,13 @@ public sealed partial class PixelCanvas
                 return true;
             case TileTool.Select:
                 if (_tileErase) { _ctx.TileSelection = null; return false; }
+                if (_tileDragFree && _ctx.TileEditBlocker() is null && under is { } hit
+                    && data?.IsFreeFloor(hit.Floor) == true && !data.IsFloorLocked(hit.Floor))
+                {
+                    _freeDragTile = hit;
+                    _freeDragOffset = new Point(cell.X - hit.At.X, cell.Y - hit.At.Y);
+                    _freeDragTarget = hit.At;
+                }
                 _drag = DragMode.Tile;
                 InvalidateVisual();
                 return true;
@@ -84,8 +104,18 @@ public sealed partial class PixelCanvas
 
     private void DragTile(Point px)
     {
-        if (_ctx.TileCellAt(px) is not { } cell || cell == _tileDragCell) return;
-        if (_tileDragTool is TileTool.Brush or TileTool.Eraser or TileTool.AutoTile)
+        if ((_tileDragFree && _ctx.CurrentTiles is { } data
+                ? new Point(px.X - data.Origin.X, px.Y - data.Origin.Y)
+                : _ctx.TileCellAt(px)) is not { } cell || cell == _tileDragCell) return;
+        if (_freeDragTile is not null) _freeDragTarget = new Point(cell.X - _freeDragOffset.X, cell.Y - _freeDragOffset.Y);
+        else if (_tileDragFree && !_tileErase && _tileDragTool == TileTool.AutoTile && _ctx.CurrentTileset is { } ts)
+        {
+            var from = new Point((_tileDragCell.X - _tileDragStart.X) / ts.CellWidth, (_tileDragCell.Y - _tileDragStart.Y) / ts.CellHeight);
+            var to = new Point((cell.X - _tileDragStart.X) / ts.CellWidth, (cell.Y - _tileDragStart.Y) / ts.CellHeight);
+            foreach (var step in Raster.Line(from, to).Skip(1))
+                _ctx.TileStrokeAt(new Point(_tileDragStart.X + step.X * ts.CellWidth, _tileDragStart.Y + step.Y * ts.CellHeight), false);
+        }
+        else if (!_tileDragFree && _tileDragTool is (TileTool.Brush or TileTool.Eraser or TileTool.AutoTile))
             foreach (var c in Raster.Line(_tileDragCell, cell).Skip(1)) _ctx.TileStrokeAt(c, _tileErase, c == cell ? px : null);
         _tileDragCell = cell;
         _tileHover = cell;
@@ -95,6 +125,15 @@ public sealed partial class PixelCanvas
 
     private void EndTileDrag()
     {
+        if (_freeDragTile is { } moving)
+        {
+            _freeDragTile = null;
+            _tileDragFree = false;
+            _ctx.MoveFreeTile(moving, _freeDragTarget);
+            InvalidateVisual();
+            return;
+        }
+        _tileDragFree = false;
         switch (_tileDragTool)
         {
             case TileTool.Brush:
@@ -120,6 +159,8 @@ public sealed partial class PixelCanvas
     private void CancelTileDrag()
     {
         _drag = DragMode.None;
+        _freeDragTile = null;
+        _tileDragFree = false;
         if (_tileDragTool is TileTool.Brush or TileTool.Eraser or TileTool.AutoTile) _ctx.CancelTileStroke();
         Message?.Invoke(this, UiStrings.S_PixelCanvas_CancelPixelStroke_53972D288A);
         InvalidateVisual();
@@ -143,14 +184,19 @@ public sealed partial class PixelCanvas
     {
         if (_ctx.CurrentTiles is not { } data || _ctx.CurrentTileset is not { } ts || _peekPrevious) return;
         if (_ctx.ShowTileCells) DrawTileCells(g, data, ts);
-        if (_ctx.TileSelection is { } sel) g.DrawRectangle(null, TileSelectionPen, ToRect(ImageToScreen(data.PixelRect(ts, sel))));
+        if (_ctx.TileSelection is { } sel) g.DrawRectangle(null, TileSelectionPen, ToRect(ImageToScreen(TilePixelRect(data, ts, sel))));
         bool dragging = _drag == DragMode.Tile;
         // 마우스가 캔버스를 떠나면 미리보기도 감춘다(끄는 중은 그대로)
         if (_tileHover is not { } cell || !dragging && !IsPointerOver) return;
-        var hud = TileHud(data, ts, cell);
-        if (dragging && _tileDragTool is TileTool.Rect or TileTool.Select)
+        if (_freeDragTile is { } moving)
         {
-            var r = ToRect(ImageToScreen(data.PixelRect(ts, TileDragRect)));
+            long movingTime = _ctx.Project is { } tp ? tp.TileTimeMs(_ctx.CurrentFrame) - tp.TileClockMs + _ctx.TileClockMs : 0;
+            using (g.PushOpacity(0.65)) DrawTileGhost(g, data, ts, _freeDragTarget, moving.Cell, movingTime, moving.Floor);
+        }
+        var hud = TileHud(data, ts, cell);
+        if (dragging && _freeDragTile is null && _tileDragTool is (TileTool.Rect or TileTool.Select))
+        {
+            var r = ToRect(ImageToScreen(TilePixelRect(data, ts, TileDragRect)));
             g.FillRectangle(TileRectBrush, r);
             g.DrawRectangle(null, _tileErase ? TileErasePen : TileCursorPen, r);
         }
@@ -167,7 +213,7 @@ public sealed partial class PixelCanvas
         bool erasing = dragging ? _tileErase : tool == TileTool.Eraser;
         bool locked = pick.FloorState == TileFloorState.Locked || _ctx.TileEditBlocker() is not null;
         bool warn = locked || pick.FloorState == TileFloorState.Hidden;
-        var one = ToRect(ImageToScreen(data.PixelRect(ts, new Rectangle(cell, new Size(1, 1)))));
+        var one = ToRect(ImageToScreen(TilePixelRect(data, ts, new Rectangle(cell, new Size(1, 1)))));
         if (erasing || tool is TileTool.Picker or TileTool.Select)
         {
             // 지우기는 고정한 층(자동 타일 붓이면 세트의 층)이 잠겼을 때만 막힘
@@ -183,11 +229,25 @@ public sealed partial class PixelCanvas
         {
             if (!locked && _ctx.CurrentAutoTileSet is { } set)
             {
-                var changes = AutoGhost(ts, data, set, cell);
-                if (changes.Count > 0)
-                    using (ImageUtil.Pixelated(g))
-                    using (g.PushOpacity(0.8))
-                        foreach (var (at, c) in changes) DrawTileGhost(g, data, ts, at, c, time);
+                if (data.IsFreeFloor(set.Floor))
+                {
+                    var at = dragging && _tileDragFree
+                        ? new Point(_tileDragStart.X + (cell.X - _tileDragStart.X) / ts.CellWidth * ts.CellWidth,
+                            _tileDragStart.Y + (cell.Y - _tileDragStart.Y) / ts.CellHeight * ts.CellHeight)
+                        : cell;
+                    if (TileVisuals.Standalone(ts, set, at) is { } tile)
+                        using (ImageUtil.Pixelated(g))
+                        using (g.PushOpacity(0.8))
+                            DrawTileGhost(g, data, ts, at, tile, time, set.Floor);
+                }
+                else
+                {
+                    var changes = AutoGhost(ts, data, set, cell);
+                    if (changes.Count > 0)
+                        using (ImageUtil.Pixelated(g))
+                        using (g.PushOpacity(0.8))
+                            foreach (var (at, c) in changes) DrawTileGhost(g, data, ts, at, c, time, set.Floor);
+                }
             }
             g.DrawRectangle(null, warn ? TileWarnPen : TileCursorPen, one);
             if (warn) DrawTileWarnIcon(g, one, pick.FloorState, locked);
@@ -208,23 +268,30 @@ public sealed partial class PixelCanvas
         if (!locked)
             using (ImageUtil.Pixelated(g))
             using (g.PushOpacity(0.65))
-                foreach (var c in stamp.Cells) DrawTileGhost(g, data, ts, new Point(cell.X + c.Dx, cell.Y + c.Dy), c.Cell, time);
+                foreach (var c in stamp.Cells) DrawTileGhost(g, data, ts, new Point(cell.X + c.Dx, cell.Y + c.Dy), c.Cell, time,
+                    _ctx.TileFloor ?? c.Floor ?? ts.Find(c.Cell.Tile)?.Floor);
         var box = stamp.Bounds(ts);
         box.Offset(cell);
-        var boxRect = ToRect(ImageToScreen(data.PixelRect(ts, box)));
+        var boxRect = ToRect(ImageToScreen(TilePixelRect(data, ts, box)));
         g.DrawRectangle(null, warn ? TileWarnPen : TileCursorPen, boxRect);
         if (warn) DrawTileWarnIcon(g, boxRect, pick.FloorState, locked);
     }
 
     /// <summary>칸 <paramref name="at"/>에 놓일 타일 그림 하나(시각 <paramref name="time"/>의 그림).</summary>
-    private void DrawTileGhost(DrawingContext g, TilemapData data, Tileset ts, Point at, TileCell cell, long time)
+    private void DrawTileGhost(DrawingContext g, TilemapData data, Tileset ts, Point at, TileCell cell, long time, int? floor = null)
     {
-        if (ts.Placement(at, cell, time) is not { } placed) return;
+        int targetFloor = floor ?? _ctx.TileFloor ?? ts.Find(cell.Tile)?.Floor ?? ts.ValidFloor(0);
+        if (ts.PlacementAt(targetFloor, at, cell, time, free: data.IsFreeFloor(targetFloor)) is not { } placed) return;
         var rect = placed.Rect;
         rect.Offset(data.Origin);
         var bmp = TileBitmap(placed.Image);
         g.DrawImage(bmp, new Rect(0, 0, bmp.PixelSize.Width, bmp.PixelSize.Height), ToRect(ImageToScreen(rect)));
     }
+
+    private Rectangle TilePixelRect(TilemapData data, Tileset ts, Rectangle cells)
+        => _drag == DragMode.Tile && _tileDragFree || _ctx.IsFreeTilemap
+            ? new Rectangle(data.Origin.X + cells.X, data.Origin.Y + cells.Y, cells.Width, cells.Height)
+            : data.PixelRect(ts, cells);
 
     /// <summary>칸 테두리 오른쪽 위에 잠김(자물쇠)·숨김(감은 눈) 표시.</summary>
     private static void DrawTileWarnIcon(DrawingContext g, Rect box, TileFloorState state, bool locked)
@@ -240,7 +307,7 @@ public sealed partial class PixelCanvas
     {
         if (_autoGhost is { } c && ReferenceEquals(c.Map, data.Map) && ReferenceEquals(c.Set, set) && ReferenceEquals(c.Tileset, ts) && c.Cell == cell) return c.Changes;
         var before = data.Map;
-        var after = AutoTiler.Paint(ts, before, set, [cell]);
+        var after = AutoTiler.Paint(ts, before, set, [cell], gridFloor: f => !data.IsFreeFloor(f));
         var changes = new List<(Point At, TileCell Cell)>();
         if (!ReferenceEquals(after, before))
             foreach (var floor in ts.Floors)
@@ -315,6 +382,7 @@ public sealed partial class PixelCanvas
     /// <summary>칸 격자(보이는 곳만, 너무 촘촘하면 그리지 않음).</summary>
     private void DrawTileCells(DrawingContext g, TilemapData data, Tileset ts)
     {
+        if (_ctx.IsFreeTilemap) return;
         int cw = ts.CellWidth, ch = ts.CellHeight;
         if (cw * _zoom < 4 || ch * _zoom < 4) return;
         // 보이는 이미지 좌표 범위(캔버스 밖 포함)

@@ -769,7 +769,9 @@ public sealed partial class ChatWindow : Window
         (UiStrings.Chat_Help_GroupDraw, UiStrings.Chat_Help_GroupDraw_Text, ["draw_pixels", "set_pixels", "draw_shape", "fill", "clear", "replace_color"]),
         (UiStrings.Chat_Help_GroupFrames, UiStrings.Chat_Help_GroupFrames_Text, ["add_frame", "delete_frame", "set_frame_duration", "add_tag", "link_cels", "unlink_cels", "set_link_color"]),
         (UiStrings.Chat_Help_GroupLayers, UiStrings.Chat_Help_GroupLayers_Text, ["add_layer", "set_layer", "set_current"]),
-        (UiStrings.Chat_Help_GroupParts, UiStrings.Chat_Help_GroupParts_Text, ["add_empty_layer", "add_part", "set_part", "move_layer"]),
+        (UiStrings.Chat_Help_GroupParts, UiStrings.Chat_Help_GroupParts_Text, ["add_empty_layer", "add_part", "set_part", "move_layer", "delete_layer"]),
+        (UiStrings.Chat_Help_GroupTilemap, UiStrings.Chat_Help_GroupTilemap_Text,
+            ["get_tilemap", "set_tiles", "paint_auto_tile", "clear_tiles", "set_tile_floor", "add_tilemap_layer", "add_tile", "set_tile", "delete_tile"]),
         (UiStrings.Chat_Help_GroupSkins, UiStrings.Chat_Help_GroupSkins_Text, ["list_skins", "add_skin", "set_skin", "edit_skin", "list_skin_presets", "save_skin_preset", "apply_skin_preset"]),
         (UiStrings.Chat_Help_GroupEffects, UiStrings.Chat_Help_GroupEffects_Text,
             ["list_effect_types", "get_effects", "add_effect", "set_effect", "remove_effect", "apply_effects", "expand_canvas_for_effects"]),
@@ -1515,8 +1517,9 @@ public sealed partial class ChatWindow : Window
 
         private static bool AffectsDrawing(string name) => name is
             "draw_pixels" or "set_pixels" or "draw_shape" or "fill" or "clear" or "replace_color" or
-            "add_part" or "set_part" or "move_layer" or "set_skin" or "edit_skin" or "apply_skin_preset" or
-            "add_effect" or "set_effect" or "remove_effect" or "apply_effects" or "resize_canvas";
+            "add_part" or "set_part" or "move_layer" or "delete_layer" or "set_skin" or "edit_skin" or "apply_skin_preset" or
+            "add_effect" or "set_effect" or "remove_effect" or "apply_effects" or "resize_canvas" or
+            "set_tiles" or "paint_auto_tile" or "clear_tiles" or "set_tile_floor" or "add_tilemap_layer" or "add_tile" or "set_tile" or "delete_tile";
 
         private void HookSession(IChatSession s)
         {

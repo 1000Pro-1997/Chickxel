@@ -381,6 +381,8 @@ internal sealed class HistoryLayerDto
     public int[]? TileOrigin { get; set; }
     public int[]? TileHidden { get; set; }
     public int[]? TileLocked { get; set; }
+    public bool? TileFreePlacement { get; set; }
+    public int[]? TileFreeFloors { get; set; }
 }
 
 internal sealed class HistorySkinDto

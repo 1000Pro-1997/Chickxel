@@ -30,11 +30,28 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 
 ### Continuous river and lake banks in the village
 - Shoreline tiles round inside and outside corners while keeping the existing river and lake layout.
+- Where a river or lake bank ends beside open water, the dirt bank now curves inward toward its bottom instead of ending in a square block, in the built-in top-down village tileset too.
 - Moving ripples stay on the water and fade as they flow into the lake.
 
 ### Edit village objects in Chickxel
 - The village's props and animated sprites are available as a layered Chickxel project. Saving the project exports the PNG used by the website.
 - Side-walking chicks use their original side profiles again.
+
+### Free floors in a unified village tilemap
+- Mark individual floors free to place and drag trees or furniture at pixel coordinates alongside 16px connected terrain; free-floor names appear in bold teal instead of a suffix.
+- A separate local village draft combines terrain and objects in one editable tilemap, adds connected plot and fence brushes, and excludes the old painted shadow layer. The website remains unchanged.
+- Auto tile brushes on free floors place independent representative tiles; dragging spaces them by the tile width without recomputing neighboring tiles.
+- Floors containing auto tiles can now switch to free placement: existing shapes become fixed independent tiles at their equivalent pixel positions. Undo restores the connected auto tiles.
+- Switching a populated free floor back to the grid snaps each object to its nearest cell; overlapping tile footprints keep the closest object, and tiles from that floor's auto tile sets connect to their neighbors again. Undo restores every original placement.
+- Files with free floors are saved in a new format version, so older Chickxel versions refuse them instead of misplacing every object. Tilesets that store a per-floor draw order do the same.
+- Auto tile sets can draw on a corner grid: each picture sits between cells and is chosen from the four cells around that corner, so terrain edges stay straight while corners round off smoothly. Higher-ranked terrain covers lower terrain, and a target group such as water gets its own banks and foam. Tilesets that use corner sets are saved in a new format version.
+- Movement test draws and collides with objects on free floors at their real positions, and Delete clears free-floor objects inside a cell selection.
+
+### The AI can read and edit tilemaps
+- Both the in-app AI chat and the external AI connection get a new Tilemaps tool group: read a tilemap layer (floors, auto tile sets, placed cells), place or erase tiles, paint terrain with auto tiles, and clear areas.
+- The AI can also switch floors between free and grid placement, hide or lock them, add tilemap layers and delete layers.
+- It can cut a canvas region into a new tileset tile, change a tile's name, floor, draw group or picture, and delete tiles along with their placed copies.
+- Every change is one undo step, locked layers and floors are never changed, and the group can be turned off in the AI tool settings.
 
 ### Outside-canvas view for every layer
 - Outside: Opaque / Translucent now shows what lies outside the canvas on every visible layer (normal and tilemap), whichever layer or tool is selected.

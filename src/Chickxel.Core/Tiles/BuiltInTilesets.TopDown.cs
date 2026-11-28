@@ -221,10 +221,12 @@ public static partial class BuiltInTilesets
     /// </summary>
     private sealed class Shore
     {
-        private const int X0 = -Lap - 4, Y0 = -Lap - 4, W = Cell + 2 * Lap + 8, H = Lap + Cell + BankDepth + 8;
+        private const int X0 = -Lap - 4, Y0 = -Lap - 4, W = Cell + 2 * Lap + 8, H = Lap + Cell + BankDepth + FilletRadius + 8;
         private readonly bool[] _land = new bool[9], _wet = new bool[9];
         private readonly LandStyle? _style;
         private readonly bool[] _cover = new bool[W * H], _bank = new bool[W * H];
+        // 물길 안쪽 모서리 메움: 둑 밑단 아래, 옆이 땅인 곳의 몇 점(그 위 둑까지 줄 수, 0 = 아님)
+        private readonly byte[] _fillet = new byte[W * H];
 
         /// <summary>
         /// <paramref name="land"/>(칸 좌표 −1~1) = 땅인 칸, <paramref name="wet"/> = 물인 칸(그 위 땅이 둑을 내림), <paramref name="style"/>이 없으면 술·들쭉날쭉 없는 바탕 물결(물이 거품 자리를 셈).
@@ -241,22 +243,62 @@ public static partial class BuiltInTilesets
             for (int y = 0; y < H; y++)
                 for (int x = 0; x < W; x++)
                     _cover[y * W + x] = CoverAny(x + X0, y + Y0);
+            // 둑 끝(옆이 물인 곳)은 아래로 갈수록 안으로 깎아 둥글게 — 맞닿은 칸끼리 같은 점을 얻도록 둘레 칸 정보만으로 정한다
             for (int y = 0; y < H; y++)
                 for (int x = 0; x < W; x++)
-                    _bank[y * W + x] = !_cover[y * W + x] && BankAny(x + X0, y + Y0);
+                {
+                    int px = x + X0, py = y + Y0;
+                    if (_cover[y * W + x] || !BankAny(px, py)) continue;
+                    int inset = BankEndInset[((py % Cell) + Cell) % Cell];
+                    bool end = false;
+                    for (int t = 1; t <= inset && !end; t++)
+                        end = RawOpen(px - t, py) || RawOpen(px + t, py);
+                    _bank[y * W + x] = !end;
+                }
+            // 둑 밑단과 옆 땅(물길 벽)이 만나는 물의 안쪽 모서리는 비스듬히 메워 둥글게
+            for (int y = 0; y < H; y++)
+                for (int x = 0; x < W; x++)
+                {
+                    int px = x + X0, py = y + Y0;
+                    if (_cover[y * W + x] || _bank[y * W + x]) continue;
+                    int up = 0;
+                    for (int u = 1; u <= FilletRadius && up == 0; u++)
+                    {
+                        if (Cover(px, py - u)) break;
+                        if (Inside(px, py - u) ? _bank[(py - u - Y0) * W + px - X0] : BankAny(px, py - u)) up = u;
+                    }
+                    if (up == 0) continue;
+                    int side = 0;
+                    for (int s = 1; s <= FilletRadius && side == 0; s++)
+                        if (Cover(px - s, py) || Cover(px + s, py)) side = s;
+                    double a = FilletRadius - up + 0.5, b = FilletRadius - side + 0.5;
+                    if (side != 0 && a * a + b * b > FilletRadius * FilletRadius) _fillet[y * W + x] = (byte)up;
+                }
         }
+
+        /// <summary>안쪽 모서리 메움의 크기(px).</summary>
+        public const int FilletRadius = 5;
+
+        /// <summary>점이 땅 칸 (<paramref name="cx"/>, <paramref name="cy"/>) 둑 밑의 안쪽 모서리 메움인지(그 칸 그림이 둑 밑단 색으로 그림).</summary>
+        public bool FilletUnder(int cx, int cy, int x, int y)
+            => Inside(x, y) && _fillet[(y - Y0) * W + x - X0] is var up and > 0 && BankUnder(cx, cy, x, y - up);
 
         public bool Land(int cx, int cy) => cx is >= -1 and <= 1 && cy is >= -1 and <= 1 && _land[(cy + 1) * 3 + cx + 1];
 
         private bool Wet(int cx, int cy) => cx is >= -1 and <= 1 && cy is >= -1 and <= 1 && _wet[(cy + 1) * 3 + cx + 1];
+
+        // 둑 줄(칸 위부터 0~BankDepth−1)마다 둑 끝을 안으로 깎는 너비(px)
+        private static readonly int[] BankEndInset = [0, 0, 0, 1, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+        private bool RawOpen(int x, int y) => !Cover(x, y) && !BankAny(x, y);
 
         private static bool Inside(int x, int y) => x >= X0 && x < X0 + W && y >= Y0 && y < Y0 + H;
 
         /// <summary>점을 땅이 덮는지(어느 땅 칸이든).</summary>
         public bool Cover(int x, int y) => Inside(x, y) ? _cover[(y - Y0) * W + x - X0] : CoverAny(x, y);
 
-        /// <summary>점이 둑인지(덮이지 않고 어느 땅 칸의 둑 안).</summary>
-        public bool Bank(int x, int y) => Inside(x, y) ? _bank[(y - Y0) * W + x - X0] : !CoverAny(x, y) && BankAny(x, y);
+        /// <summary>점이 둑인지(덮이지 않고 어느 땅 칸의 둑 안, 안쪽 모서리 메움 포함).</summary>
+        public bool Bank(int x, int y) => Inside(x, y) ? _bank[(y - Y0) * W + x - X0] || _fillet[(y - Y0) * W + x - X0] > 0 : !CoverAny(x, y) && BankAny(x, y);
 
         /// <summary>땅도 둑도 아닌 점.</summary>
         public bool Open(int x, int y) => !Cover(x, y) && !Bank(x, y);
@@ -338,18 +380,21 @@ public static partial class BuiltInTilesets
     }
 
     /// <summary>
-    /// 땅 한 칸(모양 <paramref name="mask"/>, 그림 (Cell + 2·<see cref="Lap"/>) × (<see cref="Lap"/> + Cell + <see cref="BankDepth"/>), 칸 왼쪽 위 기준 (−Lap, −Lap)에 놓임):
+    /// 땅 한 칸(모양 <paramref name="mask"/>, 그림 (Cell + 2·<see cref="Lap"/>) × (<see cref="Lap"/> + Cell + <see cref="BankDepth"/> + <see cref="Shore.FilletRadius"/>), 칸 왼쪽 위 기준 (−Lap, −Lap)에 놓임):
     /// 제 칸과 넘친 가장자리, 남쪽이 물이면(<paramref name="wet"/> = 물인 남쪽 둘레 S·SE·SW 비트) 아래 칸 위쪽의 둑. 안쪽 모서리가 있으면 그 대각 칸 모서리(두 이웃의 가장자리가
     /// 만나는 곳)를 합친 모양으로 다시 그린다 — 두 이웃은 서로를 몰라 곧은 끝을 그리므로(남쪽은 그 대각이 물이 아닐 때만 — 물이면 옆 칸 둑 위로 아래 칸 땅이 겹치는 것이 맞음).
     /// 가장자리 둘레는 외곽선(둑 바로 위는 턱), 그 안 한 줄은 테, 속은 칸 주기 무늬.
     /// </summary>
     private static PixelImage LandTile(byte mask, byte wet, LandStyle st, int variant)
     {
-        var f = new Shore((cx, cy) => cx == 0 && cy == 0 || Has(mask, cx, cy), (cx, cy) => cy == 1 && Has(wet, cx, cy), st);
+        // 남쪽이 물일 때 옆 땅의 아래 대각은 47모양에서 빠지지만, 물이 아니면(wet 비트) 그 옆 땅이 이어진 물길 벽으로 본다 — 물 타일이 보는 것과 같게
+        var f = new Shore((cx, cy) => cx == 0 && cy == 0 || Has(mask, cx, cy)
+            || cy == 1 && cx != 0 && (mask & S) == 0 && (wet & S) != 0 && Has(mask, cx, 0) && !Has(wet, cx, 1),
+            (cx, cy) => cy == 1 && Has(wet, cx, cy), st);
         bool n = (mask & N) != 0, s = (mask & S) != 0, e = (mask & E) != 0, w = (mask & W) != 0;
         bool fixNE = n && e && (mask & NE) == 0, fixNW = n && w && (mask & NW) == 0;
         bool fixSE = s && e && (mask & SE) == 0 && (wet & SE) == 0, fixSW = s && w && (mask & SW) == 0 && (wet & SW) == 0;
-        return Paint(Cell + 2 * Lap, Lap + Cell + BankDepth, (ix, iy) =>
+        return Paint(Cell + 2 * Lap, Lap + Cell + BankDepth + Shore.FilletRadius, (ix, iy) =>
         {
             int x = ix - Lap, y = iy - Lap;
             bool fix = y < 0 && (fixNE && x >= Cell || fixNW && x < 0)
@@ -362,9 +407,12 @@ public static partial class BuiltInTilesets
                     || !f.Cover(x - 1, y - 1) || !f.Cover(x + 1, y - 1) || !f.Cover(x - 1, y + 1) || !f.Cover(x + 1, y + 1)) return st.Rim;
                 return st.Body(x & 15, y & 15, variant);
             }
-            if (!f.BankUnder(0, 0, x, y)) return null;
+            if (f.FilletUnder(0, 0, x, y))
+                return st.Bank(x & 15, BankDepth - 1);
+            if (!f.BankUnder(0, 0, x, y) || !f.Bank(x, y)) return null;
             if (f.Open(x - 1, y) || f.Open(x + 1, y)) return st.Outline;
-            return st.Bank(x & 15, y - Cell);
+            // 깎인 둑 끝 바로 위는 둑 밑단 색(둑 아랫면이 이어 보이게)
+            return f.Open(x, y + 1) ? st.Bank(x & 15, BankDepth - 1) : st.Bank(x & 15, y - Cell);
         });
     }
 

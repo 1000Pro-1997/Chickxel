@@ -16,6 +16,14 @@ public sealed record TilemapData(ImmutableArray<string> TilesetKeys, TileMap Map
     /// <summary>이름표 <paramref name="key"/>의 자리(쓰지 않으면 -1).</summary>
     public int SlotOf(string key) => TilesetKeys.IndexOf(key);
 
+    /// <summary>1px 칸을 픽셀 좌표 앵커로 쓰는 자유 배치 모드(기본값은 일반 타일맵).</summary>
+    public bool FreePlacement { get; init; }
+
+    /// <summary>픽셀 좌표 앵커를 쓰는 층(나머지 층은 타일셋의 칸 좌표를 사용).</summary>
+    public ImmutableArray<int> FreeFloors { get; init; } = [];
+
+    public bool IsFreeFloor(int floor) => FreePlacement || FreeFloors.Contains(floor);
+
     /// <summary>숨긴 층(합성·내보내기에서 그리지 않음).</summary>
     public ImmutableArray<int> HiddenFloors { get; init; } = [];
 

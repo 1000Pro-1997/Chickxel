@@ -1,3 +1,4 @@
+using Avalonia.Automation;
 using Chickxel.App.Localization;
 using Chickxel.Core.Tiles;
 
@@ -12,6 +13,7 @@ namespace Chickxel.App;
 internal sealed class TileFloorList : UserControl
 {
     private static readonly IBrush ManualRowBrush = AppTheme.Brush(Color.FromArgb(70, AppTheme.AccentColor.R, AppTheme.AccentColor.G, AppTheme.AccentColor.B));
+    private static readonly IBrush FreeFloorBrush = AppTheme.Brush(Color.FromRgb(101, 215, 184));
 
     private readonly EditorContext _ctx;
     private readonly bool _manage;
@@ -100,8 +102,14 @@ internal sealed class TileFloorList : UserControl
             up.IsEnabled = !added && i < ts.Floors.Length - 1;
             down.IsEnabled = !added && i > 0;
             bool isManual = manual == id;
-            var name = Ui.Label(floor.Name, bold: isManual);
-            name.Foreground = locked ? AppTheme.LockedBrush : hidden ? AppTheme.DimTextBrush : AppTheme.TextBrush;
+            bool isFree = data?.IsFreeFloor(id) == true;
+            var name = Ui.Label(floor.Name, bold: isManual || isFree);
+            name.Foreground = locked ? AppTheme.LockedBrush : hidden ? AppTheme.DimTextBrush : isFree ? FreeFloorBrush : AppTheme.TextBrush;
+            if (isFree)
+            {
+                ToolTip.SetTip(name, UiStrings.Tile_FreeFloorMenu);
+                AutomationProperties.SetName(name, $"{floor.Name}, {UiStrings.Tile_FreeFloorMenu}");
+            }
             name.TextTrimming = TextTrimming.CharacterEllipsis;
             var countText = Ui.Label(count.ToString(System.Globalization.CultureInfo.CurrentCulture));
             countText.Foreground = AppTheme.DimTextBrush;
@@ -176,9 +184,22 @@ internal sealed class TileFloorList : UserControl
     {
         var rename = new MenuItem { Header = UiStrings.Tileset_RenameFloor };
         rename.Click += (_, _) => Dispatcher.UIThread.Post(() => RenameFloor(floor));
+        var free = new MenuItem { Header = UiStrings.Tile_FreeFloorMenu, ToggleType = MenuItemToggleType.CheckBox,
+            IsChecked = _ctx.CurrentTiles?.IsFreeFloor(floor.Id) == true };
+        var data = _ctx.CurrentTiles;
+        free.IsEnabled = data is not null;
+        ToolTip.SetTip(free, data?.IsFreeFloor(floor.Id) == true
+            ? UiStrings.Tile_FreeFloorSnapTip : UiStrings.Tile_FreeFloorConvertTip);
+        free.Click += (_, _) =>
+        {
+            if (_ctx.Project is not { } p || _ctx.CurrentTilemap is not { } layer) return;
+            bool enable = !layer.Tiles!.IsFreeFloor(floor.Id);
+            _ctx.Structural(() => p.SetTileFloorFreePlacement(layer, floor.Id, enable));
+            Refresh();
+        };
         var delete = new MenuItem { Header = UiStrings.Tileset_DeleteFloor, IsEnabled = ts.Floors.Length > 1 };
         delete.Click += (_, _) => Dispatcher.UIThread.Post(() => DeleteFloor(floor));
-        return new ContextMenu { Items = { rename, new Separator(), delete } };
+        return new ContextMenu { Items = { rename, free, new Separator(), delete } };
     }
 
     private void AddFloor()

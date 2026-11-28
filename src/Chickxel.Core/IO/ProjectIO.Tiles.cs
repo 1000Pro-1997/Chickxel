@@ -111,7 +111,11 @@ public static partial class ProjectIO
                 using var s = entry.Open();
                 using var ms = new MemoryStream();
                 s.CopyTo(ms);
-                layer.Tiles = data with { Map = TileMapCodec.Decode(ms.ToArray()) };
+                var map = TileMapCodec.Decode(ms.ToArray());
+                // 예전 1px 자유 레이어인데 첫 타일셋 칸이 1px이 아니면 모든 층을 픽셀 층으로 읽는다(기준점 뜻은 그대로).
+                if (data.FreePlacement && project.Tilesets.TryGetValue(data.PrimaryTilesetKey, out var primary) && (primary.CellWidth != 1 || primary.CellHeight != 1))
+                    data = data with { FreePlacement = false, FreeFloors = [.. primary.Floors.Select(f => f.Id).Concat(map.FloorIds).Distinct()] };
+                layer.Tiles = data with { Map = map };
             }
             catch (InvalidDataException ex)
             {
@@ -126,6 +130,8 @@ public static partial class ProjectIO
         {
             HiddenFloors = [.. (l.TileHidden ?? []).Distinct()],
             LockedFloors = [.. (l.TileLocked ?? []).Distinct()],
+            FreePlacement = l.TileFreePlacement == true,
+            FreeFloors = [.. (l.TileFreeFloors ?? []).Distinct()],
         };
 
     /// <summary>

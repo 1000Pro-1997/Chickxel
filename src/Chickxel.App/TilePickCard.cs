@@ -34,9 +34,12 @@ internal static class TileVisuals
         return GroupBrushes[h % (uint)GroupBrushes.Length];
     }
 
+    /// <summary>자유 층에서 세트를 고르면 이웃과 무관하게 놓는 독립 타일(팔레트의 대표 모양, 위치별 변형은 유지).</summary>
+    public static TileCell? Standalone(Tileset ts, AutoTileSet set, Point at)
+        => AutoTiler.Pick(set, 255, 255, at) is { } p && ts.Find(p.Tile) is not null ? new TileCell(p.Tile, ts.Allowed(p.Transform)) : null;
+
     /// <summary>세트의 대표 칸: 사방이 이어진 안쪽 모양에 놓일 타일(타일 있는 규칙이 없으면 null).</summary>
-    public static TileCell? Representative(Tileset ts, AutoTileSet set)
-        => AutoTiler.Pick(set, 255, 255, default) is { } p && ts.Find(p.Tile) is not null ? new TileCell(p.Tile, ts.Allowed(p.Transform)) : null;
+    public static TileCell? Representative(Tileset ts, AutoTileSet set) => Standalone(ts, set, default);
 
     /// <summary>세트 규칙들에 넣은 타일 Id.</summary>
     public static HashSet<int> TilesOf(AutoTileSet set)

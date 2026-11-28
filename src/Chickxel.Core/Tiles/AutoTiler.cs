@@ -233,22 +233,22 @@ public static class AutoTiler
     }
 
     /// <summary>칸 <paramref name="at"/>에 <paramref name="set"/>과 이어지는 세트로 찍은 타일이 어느 층에든 있는지.</summary>
-    public static bool Joins(Tileset tileset, TileMap map, AutoTileSet set, Point at)
+    public static bool Joins(Tileset tileset, TileMap map, AutoTileSet set, Point at, Func<int, bool>? gridFloor = null)
     {
         foreach (int floor in map.FloorIds)
-            if (map.Get(floor, at) is { AutoTile: not 0 } c && (c.AutoTile == set.Id || tileset.FindAutoTile(c.AutoTile) is { } other && set.JoinsWith(other)))
+            if (gridFloor?.Invoke(floor) != false && map.Get(floor, at) is { AutoTile: not 0 } c && (c.AutoTile == set.Id || tileset.FindAutoTile(c.AutoTile) is { } other && set.JoinsWith(other)))
                 return true;
         return false;
     }
 
     /// <summary>칸 <paramref name="at"/>의 이웃 모양(이어지는 세트로 찍은 이웃, 8방향 비트).</summary>
-    public static byte NeighborMask(Tileset tileset, TileMap map, AutoTileSet set, Point at)
+    public static byte NeighborMask(Tileset tileset, TileMap map, AutoTileSet set, Point at, Func<int, bool>? gridFloor = null)
     {
         int mask = 0;
         for (int bit = 0; bit < 8; bit++)
         {
             var (dx, dy) = AutoTileShapes.Directions[bit];
-            if (Joins(tileset, map, set, new Point(at.X + dx, at.Y + dy))) mask |= 1 << bit;
+            if (Joins(tileset, map, set, new Point(at.X + dx, at.Y + dy), gridFloor)) mask |= 1 << bit;
         }
         return (byte)mask;
     }
@@ -257,17 +257,17 @@ public static class AutoTiler
     /// 칸 <paramref name="at"/>의 "뭐라도 있는" 이웃 모양(8방향 비트): 이어지는 세트로 찍은 이웃이거나, 세트가 보는 층(<see cref="AutoTileSet.FilledFloors"/>)에
     /// 어떤 타일이든 있는(큰 타일이 덮은 칸 포함) 이웃.
     /// </summary>
-    public static byte FilledMask(Tileset tileset, TileMap map, AutoTileSet set, Point at)
+    public static byte FilledMask(Tileset tileset, TileMap map, AutoTileSet set, Point at, Func<int, bool>? gridFloor = null)
     {
         int mask = 0;
         for (int bit = 0; bit < 8; bit++)
         {
             var (dx, dy) = AutoTileShapes.Directions[bit];
             var p = new Point(at.X + dx, at.Y + dy);
-            if (Joins(tileset, map, set, p)) mask |= 1 << bit;
+            if (Joins(tileset, map, set, p, gridFloor)) mask |= 1 << bit;
             else
                 foreach (int floor in map.FloorIds)
-                    if (set.CountsFloor(floor) && (map.Get(floor, p) is not null || map.Covering(tileset, floor, p) is not null))
+                    if (gridFloor?.Invoke(floor) != false && set.CountsFloor(floor) && (map.Get(floor, p) is not null || map.Covering(tileset, floor, p) is not null))
                     {
                         mask |= 1 << bit;
                         break;
@@ -279,7 +279,7 @@ public static class AutoTiler
     /// <summary>
     /// 칸 <paramref name="at"/>의 이웃 중 무리 <paramref name="group"/>(<see cref="AutoTileSet.JoinName"/>)의 세트로 찍은 타일이 어느 층에든 있는 것(8방향 비트).
     /// </summary>
-    public static byte TargetMask(Tileset tileset, TileMap map, string group, Point at)
+    public static byte TargetMask(Tileset tileset, TileMap map, string group, Point at, Func<int, bool>? gridFloor = null)
     {
         int mask = 0;
         if (group.Length == 0) return 0;
@@ -288,7 +288,7 @@ public static class AutoTiler
             var (dx, dy) = AutoTileShapes.Directions[bit];
             var p = new Point(at.X + dx, at.Y + dy);
             foreach (int floor in map.FloorIds)
-                if (map.Get(floor, p) is { AutoTile: not 0 } c && tileset.FindAutoTile(c.AutoTile) is { } s && string.Equals(s.JoinName, group, StringComparison.Ordinal))
+                if (gridFloor?.Invoke(floor) != false && map.Get(floor, p) is { AutoTile: not 0 } c && tileset.FindAutoTile(c.AutoTile) is { } s && string.Equals(s.JoinName, group, StringComparison.Ordinal))
                 {
                     mask |= 1 << bit;
                     break;
@@ -298,41 +298,42 @@ public static class AutoTiler
     }
 
     /// <summary>"뭐라도 있음"을 쓰지 않는 세트면 0(셀 필요 없음), 아니면 <see cref="FilledMask"/>.</summary>
-    private static byte FilledFor(Tileset tileset, TileMap map, AutoTileSet set, Point at)
-        => set.UsesFilled ? FilledMask(tileset, map, set, at) : (byte)0;
+    private static byte FilledFor(Tileset tileset, TileMap map, AutoTileSet set, Point at, Func<int, bool>? gridFloor)
+        => set.UsesFilled ? FilledMask(tileset, map, set, at, gridFloor) : (byte)0;
 
     /// <summary>"무리 있음"을 쓰지 않는 세트면 null, 아니면 무리마다 <see cref="TargetMask"/>(한 칸에서 같은 무리는 한 번만 셈).</summary>
-    private static Func<string, byte>? TargetsFor(Tileset tileset, TileMap map, AutoTileSet set, Point at)
+    private static Func<string, byte>? TargetsFor(Tileset tileset, TileMap map, AutoTileSet set, Point at, Func<int, bool>? gridFloor)
     {
         if (!set.UsesTarget) return null;
         var seen = new Dictionary<string, byte>(StringComparer.Ordinal);
-        return group => seen.TryGetValue(group, out var m) ? m : seen[group] = TargetMask(tileset, map, group, at);
+        return group => seen.TryGetValue(group, out var m) ? m : seen[group] = TargetMask(tileset, map, group, at, gridFloor);
     }
 
     /// <summary>칸 <paramref name="at"/>에 쓰일 규칙 번호와 조건이 그대로 맞는지(타일 있는 규칙이 없으면 null) — 시험 판·칸 정보용.</summary>
-    public static (int Rule, bool Exact)? RuleAt(Tileset tileset, TileMap map, AutoTileSet set, Point at)
-        => Lookup(set, NeighborMask(tileset, map, set, at), FilledFor(tileset, map, set, at), TargetsFor(tileset, map, set, at)) is { } hit ? (hit.Rule, hit.Exact) : null;
+    public static (int Rule, bool Exact)? RuleAt(Tileset tileset, TileMap map, AutoTileSet set, Point at, Func<int, bool>? gridFloor = null)
+        => Lookup(set, NeighborMask(tileset, map, set, at, gridFloor), FilledFor(tileset, map, set, at, gridFloor), TargetsFor(tileset, map, set, at, gridFloor)) is { } hit ? (hit.Rule, hit.Exact) : null;
 
     /// <summary>
     /// 칸들 둘레의 자동 타일을 다시 고른다. <paramref name="onlyFilled"/>(손으로 찍은 때)면 "뭐라도 있음"을 쓰는 세트만(벽을 세우면 물 수면이 바뀌는 것처럼) —
     /// 다른 세트는 손으로 놓은 모양을 그대로 둔다(구성에서 손으로 바꾼 칸 둘레가 바뀌지 않게). 아니면(칸을 지운 때) 모든 세트.
     /// </summary>
-    public static TileMap RefreshAround(Tileset tileset, TileMap map, IEnumerable<Point> cells, bool onlyFilled = true)
+    public static TileMap RefreshAround(Tileset tileset, TileMap map, IEnumerable<Point> cells, bool onlyFilled = true, Func<int, bool>? gridFloor = null)
         => onlyFilled && !tileset.AutoTiles.Any(a => a.UsesFilled) || tileset.AutoTiles.Length == 0 ? map
-            : Refresh(tileset, map, Around([.. cells]), onlyFilled);
+            : Refresh(tileset, map, Around([.. cells]), onlyFilled, gridFloor);
 
     /// <summary>
     /// 칸들에 세트로 찍는다(같은 층의 다른 타일은 덮어쓰고, 세트가 정한 다른 층(<see cref="AutoTileSet.ClearFloors"/>)의 그 칸 타일은 지움 —
     /// <paramref name="canClear"/>가 false인 층(잠긴 층)은 그대로) — 찍은 칸과 둘레의 자동 타일을 다시 고른다.
     /// </summary>
-    public static TileMap Paint(Tileset tileset, TileMap map, AutoTileSet set, IEnumerable<Point> cells, Func<int, bool>? canClear = null)
+    public static TileMap Paint(Tileset tileset, TileMap map, AutoTileSet set, IEnumerable<Point> cells, Func<int, bool>? canClear = null, Func<int, bool>? gridFloor = null)
     {
+        if (gridFloor?.Invoke(set.Floor) == false) throw new InvalidOperationException("Auto tiles require a grid floor.");
         var touched = new HashSet<Point>();
         foreach (var at in cells)
         {
             foreach (int floor in set.ClearFloors)
             {
-                if (floor == set.Floor || canClear?.Invoke(floor) == false || map.Covering(tileset, floor, at) is not { } hit) continue;
+                if (floor == set.Floor || gridFloor?.Invoke(floor) == false || canClear?.Invoke(floor) == false || map.Covering(tileset, floor, at) is not { } hit) continue;
                 map = map.With(floor, hit.At, null);
                 touched.Add(hit.At);
                 touched.Add(at);
@@ -342,12 +343,13 @@ public static class AutoTiler
             map = map.Place(tileset, set.Floor, at, new TileCell(NoTile, TileTransform.None, set.Id));
             touched.Add(at);
         }
-        return Refresh(tileset, map, Around(touched));
+        return Refresh(tileset, map, Around(touched), gridFloor: gridFloor);
     }
 
     /// <summary>칸들에서 세트로 찍은 타일을 지운다 — 둘레의 자동 타일을 다시 고른다.</summary>
-    public static TileMap Erase(Tileset tileset, TileMap map, AutoTileSet set, IEnumerable<Point> cells)
+    public static TileMap Erase(Tileset tileset, TileMap map, AutoTileSet set, IEnumerable<Point> cells, Func<int, bool>? gridFloor = null)
     {
+        if (gridFloor?.Invoke(set.Floor) == false) throw new InvalidOperationException("Auto tiles require a grid floor.");
         var touched = new HashSet<Point>();
         foreach (var at in cells)
         {
@@ -355,20 +357,20 @@ public static class AutoTiler
             map = map.With(set.Floor, at, null);
             touched.Add(at);
         }
-        return Refresh(tileset, map, Around(touched));
+        return Refresh(tileset, map, Around(touched), gridFloor: gridFloor);
     }
 
     /// <summary>칸들에 있는 자동 타일(모든 층)을 제 세트의 규칙으로 다시 고른다(<paramref name="onlyFilled"/>면 "뭐라도 있음"을 쓰는 세트만). 세트가 없어진 칸은 그대로.</summary>
-    public static TileMap Refresh(Tileset tileset, TileMap map, IEnumerable<Point> cells, bool onlyFilled = false)
+    public static TileMap Refresh(Tileset tileset, TileMap map, IEnumerable<Point> cells, bool onlyFilled = false, Func<int, bool>? gridFloor = null)
     {
         var updates = new List<(int Floor, Point At, TileCell Cell)>();
         var floors = map.FloorIds.ToList();
         foreach (var at in cells)
             foreach (int floor in floors)
             {
-                if (map.Get(floor, at) is not { AutoTile: not 0 } cell || tileset.FindAutoTile(cell.AutoTile) is not { } set) continue;
+                if (gridFloor?.Invoke(floor) == false || map.Get(floor, at) is not { AutoTile: not 0 } cell || tileset.FindAutoTile(cell.AutoTile) is not { } set) continue;
                 if (onlyFilled && !set.UsesFilled) continue;
-                var picked = Pick(set, NeighborMask(tileset, map, set, at), FilledFor(tileset, map, set, at), at, TargetsFor(tileset, map, set, at));
+                var picked = Pick(set, NeighborMask(tileset, map, set, at, gridFloor), FilledFor(tileset, map, set, at, gridFloor), at, TargetsFor(tileset, map, set, at, gridFloor));
                 var next = picked is { } p ? new TileCell(p.Tile, tileset.Allowed(p.Transform), set.Id) : cell with { Tile = NoTile, Transform = TileTransform.None };
                 if (next != cell) updates.Add((floor, at, next));
             }
@@ -377,8 +379,8 @@ public static class AutoTiler
     }
 
     /// <summary>모든 자동 타일 칸을 다시 고른다(세트의 규칙·무리를 바꾼 뒤).</summary>
-    public static TileMap RefreshAll(Tileset tileset, TileMap map)
-        => Refresh(tileset, map, map.All.Where(p => p.Cell.AutoTile != 0).Select(p => p.At).Distinct().ToList());
+    public static TileMap RefreshAll(Tileset tileset, TileMap map, Func<int, bool>? gridFloor = null)
+        => Refresh(tileset, map, map.All.Where(p => p.Cell.AutoTile != 0 && gridFloor?.Invoke(p.Floor) != false).Select(p => p.At).Distinct().ToList(), gridFloor: gridFloor);
 
     private static HashSet<Point> Around(HashSet<Point> cells)
     {

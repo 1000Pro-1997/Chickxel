@@ -567,7 +567,7 @@ internal sealed class PlaySimulation
         var data = map.Data;
         int left = (int)Math.Floor(-ox / (double)scale) - 1, top = (int)Math.Floor(-oy / (double)scale) - 1;
         var view = new Rectangle(left, top, size.Width / scale + 3, size.Height / scale + 3);
-        var draws = TileMapRenderer.DrawOrder(ts, data.Map, data.Origin, view, data.ShowsFloor, _mapClockMs);
+        var draws = TileMapRenderer.DrawOrder(ts, data.Map, data.Origin, view, data.ShowsFloor, _mapClockMs, freeFloor: data.IsFreeFloor);
         int insert = draws.Count;
         if (ts.SortMode == TileSortMode.ByPosition)
         {
@@ -576,7 +576,7 @@ internal sealed class PlaySimulation
             {
                 var t = draws[i].Tile;
                 var kind = ts.DrawClassOf(t.Cell);
-                if (kind == TileDrawClass.Overhead || kind == TileDrawClass.Sorted && ts.SortLine(t.At, t.Cell) + data.Origin.Y > pivot.Y) break;
+                if (kind == TileDrawClass.Overhead || kind == TileDrawClass.Sorted && ts.SortLineAt(t.At, t.Cell, data.IsFreeFloor(t.Floor)) + data.Origin.Y > pivot.Y) break;
                 insert = i + 1;
             }
         }

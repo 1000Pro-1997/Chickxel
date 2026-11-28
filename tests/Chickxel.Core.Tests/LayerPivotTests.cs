@@ -334,7 +334,7 @@ public class LayerPivotTests
     public void LoadingANewerVersion_IsRejected()
     {
         var p = new SpriteProject(4, 4);
-        var file = Rewrite(p, json => json["version"] = ProjectIO.CurrentVersion + 1);
+        var file = Rewrite(p, json => json["version"] = ProjectIO.FreeFloorVersion + 1);
         Assert.Throws<InvalidDataException>(() => ProjectIO.Load(file));
     }
 

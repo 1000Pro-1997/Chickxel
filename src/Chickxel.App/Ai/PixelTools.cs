@@ -67,7 +67,7 @@ public sealed partial class PixelTools
     [
         "get_document", "get_image", "get_pixels", "list_skins", "list_skin_presets", "list_effect_types", "get_effects",
         "get_script_api", "preview_effects", "get_effect_maker_source", "check_effect_maker", "list_script_effects", "get_script_effect_source",
-        "search_references", "get_reference", "get_style_rules",
+        "search_references", "get_reference", "get_style_rules", "get_tilemap",
     ];
     /// <summary>문서 밖(참고 자료 보관소·개인 에셋·효과 만들기 편집기)에만 쓰는 도구(문서를 고치지 않으므로 "지금 그림만"이어도 됨).</summary>
     private static readonly HashSet<string> LibraryTools = ["add_reference", "set_reference_info", "save_script_effect", "set_effect_maker_source", "set_effect_maker_preview"];
@@ -453,7 +453,8 @@ public sealed partial class PixelTools
         .. ReferenceToolDefinitions(),
         .. GenerateToolDefinitions(),
         .. FolderToolDefinitions(),
-        .. PivotToolDefinitions()]);
+        .. PivotToolDefinitions(),
+        .. TilemapToolDefinitions()]);
 
     private static JsonObject Tool(string name, string description, JsonObject properties, params string[] required)
     {
@@ -559,6 +560,16 @@ public sealed partial class PixelTools
                 "add_part" => AddPart(name, a),
                 "set_part" => SetPart(name, a),
                 "move_layer" => MoveLayer(name, a),
+                "get_tilemap" => GetTilemap(a),
+                "set_tiles" => SetTiles(name, a),
+                "paint_auto_tile" => PaintAutoTile(name, a),
+                "clear_tiles" => ClearTiles(name, a),
+                "set_tile_floor" => SetTileFloor(name, a),
+                "add_tilemap_layer" => AddTilemapLayer(name, a),
+                "delete_layer" => DeleteLayer(name, a),
+                "add_tile" => AddTile(name, a),
+                "set_tile" => SetTile(name, a),
+                "delete_tile" => DeleteTile(name, a),
                 "list_skins" => ListSkins(),
                 "list_skin_presets" => ListSkinPresets(),
                 "save_skin_preset" => SaveSkinPreset(name, a),

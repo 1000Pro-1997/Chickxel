@@ -70,7 +70,7 @@ public sealed partial class SpriteProject
         {
             var bounds = Rectangle.Union(Bounds, Rectangle.Intersect(TilemapBounds(layer), OverflowBounds));
             var data = layer.Tiles!;
-            return TilesetOf(layer) is { } ts ? (TileMapRenderer.RenderArea(ts, data.Map, data.Origin, bounds), bounds.Location) : (new PixelImage(_width, _height), Point.Empty);
+            return TilesetOf(layer) is { } ts ? (TileMapRenderer.RenderArea(ts, data.Map, data.Origin, bounds, freeFloor: data.IsFreeFloor), bounds.Location) : (new PixelImage(_width, _height), Point.Empty);
         }
         if (layer.IsPart) return (GetCel(layerIndex, frameIndex) ?? new PixelImage(layer.PartSize.Width, layer.PartSize.Height), Point.Empty);
         var key = new CelKey(layer, _frames[frameIndex], ActiveKey(layer));

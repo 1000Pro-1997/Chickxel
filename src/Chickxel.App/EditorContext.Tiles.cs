@@ -201,6 +201,26 @@ public sealed partial class EditorContext
 
     /// <summary>현재 타일맵 레이어 내용(없으면 null).</summary>
     public TilemapData? CurrentTiles => CurrentTilemap?.Tiles;
+    /// <summary>지금 고른 타일이 자유 층에 찍히는지. 기존 1픽셀 자유 타일맵도 유지한다.</summary>
+    public bool IsFreeTilemap
+    {
+        get
+        {
+            if (CurrentTiles is not { } data || CurrentTileset is not { } ts) return false;
+            if (data.FreePlacement) return true;
+            if (_tileFloor is { } fixedFloor) return data.IsFreeFloor(ts.ValidFloor(fixedFloor));
+            if ((_autoSource || _tileTool == TileTool.AutoTile) && ts.FindAutoTile(_autoTileSet) is { } auto)
+                return data.IsFreeFloor(auto.Floor);
+            if (_tileStamp is not { } stamp) return false;
+            for (int i = 0; i < stamp.Cells.Count; i++)
+            {
+                var c = stamp.Cells[i];
+                if (data.IsFreeFloor(ts.ValidFloor(c.Floor ?? ts.Find(c.Cell.Tile)?.Floor ?? 0))) return true;
+            }
+            return false;
+        }
+    }
+
 
     public TileTool TileTool
     {
@@ -304,8 +324,12 @@ public sealed partial class EditorContext
         TileTransform = _tileTransform.Then(step);
     }
 
-    /// <summary>캔버스 좌표(px) → 현재 타일맵의 칸.</summary>
-    public Point? TileCellAt(Point px) => CurrentTiles is { } d && CurrentTileset is { } ts ? d.CellAt(ts, px.X, px.Y) : null;
+    /// <summary>캔버스 좌표(px) → 현재 찍을 층의 좌표(자유 층이면 1픽셀, 그 밖에는 타일 칸).</summary>
+    public Point? TileCellAt(Point px)
+    {
+        if (CurrentTiles is not { } data || CurrentTileset is not { } ts) return null;
+        return IsFreeTilemap ? new Point(px.X - data.Origin.X, px.Y - data.Origin.Y) : data.CellAt(ts, px.X, px.Y);
+    }
 
     // ───────────── 찍기 ─────────────
 
@@ -347,11 +371,31 @@ public sealed partial class EditorContext
         if (_tileTool == TileTool.AutoTile && CurrentAutoTileSet is { } set)
         {
             if (data.IsFloorLocked(set.Floor)) { WarnLockedFloor(); return; }
-            map = erase ? AutoTiler.Erase(ts, map, set, [cell]) : AutoTiler.Paint(ts, map, set, [cell], f => !data.IsFloorLocked(f));
+            if (data.IsFreeFloor(set.Floor))
+            {
+                if (erase)
+                {
+                    var point = px ?? new Point(cell.X + data.Origin.X, cell.Y + data.Origin.Y);
+                    if (TileMapRenderer.HitTest(ts, map, data.Origin, point, f => f == set.Floor,
+                            freeFloor: data.IsFreeFloor) is { } hit)
+                        map = map.With(hit.Floor, hit.At, null);
+                }
+                else if (_tileStrokeDone.Add(cell) && TileVisuals.Standalone(ts, set, cell) is { } tile)
+                    map = map.With(set.Floor, cell, tile);
+            }
+            else
+                map = erase ? AutoTiler.Erase(ts, map, set, [cell], gridFloor: f => !data.IsFreeFloor(f))
+                    : AutoTiler.Paint(ts, map, set, [cell], f => !data.IsFloorLocked(f), gridFloor: f => !data.IsFreeFloor(f));
         }
         else if (erase || _tileTool == TileTool.Eraser) map = EraseCell(ts, data, map, cell, px ?? CellCenter(ts, data, cell));
         else if (EffectiveStamp is { } stamp)
         {
+            bool firstFree = data.IsFreeFloor(FloorFor(ts, _tileFloor, stamp.Cells[0]));
+            if (stamp.Cells.Any(c => data.IsFreeFloor(FloorFor(ts, _tileFloor, c)) != firstFree))
+            {
+                TileMessage?.Invoke(this, UiStrings.Tile_FreePlacementTools);
+                return;
+            }
             var size = stamp.Bounds(ts).Size;
             // 여러 칸 붓은 시작 칸에서 붓 크기마다만 찍는다(겹쳐 덮지 않게). 무작위면 한 칸씩.
             if (!_tileRandom && (size.Width > 1 || size.Height > 1))
@@ -401,13 +445,15 @@ public sealed partial class EditorContext
             int floor = FloorFor(ts, _tileFloor, c);
             if (data.IsFloorLocked(floor)) { WarnLockedFloor(); continue; }
             var p = new Point(at.X + c.Dx, at.Y + c.Dy);
-            map = map.Place(ts, floor, p, c.Cell with { AutoTile = 0 });
+            bool free = data.IsFreeFloor(floor);
+            map = free ? map.With(floor, p, c.Cell with { AutoTile = 0 }) : map.Place(ts, floor, p, c.Cell with { AutoTile = 0 });
+            if (free) continue;
             var size = ts.Footprint(c.Cell);
             for (int y = 0; y < size.Height; y++)
                 for (int x = 0; x < size.Width; x++)
                     touched.Add(new Point(p.X + x, p.Y + y));
         }
-        return touched.Count == 0 ? map : AutoTiler.RefreshAround(ts, map, touched);
+        return touched.Count == 0 ? map : AutoTiler.RefreshAround(ts, map, touched, gridFloor: f => !data.IsFreeFloor(f));
     }
 
     /// <summary>
@@ -418,11 +464,17 @@ public sealed partial class EditorContext
     private TileMap EraseCell(Tileset ts, TilemapData data, TileMap map, Point cell, Point? px)
     {
         bool FloorOk(int f) => !data.IsFloorLocked(f) && (_tileFloor is { } only ? f == only : data.ShowsFloor(f));
+        if (px is { } point && TileMapRenderer.HitTest(ts, map, data.Origin, point, FloorOk, freeFloor: data.IsFreeFloor) is { } placed
+            && data.IsFreeFloor(placed.Floor))
+            return map.With(placed.Floor, placed.At, null);
         Func<TileDrawClass, bool>? byImage = px is not null && ts.SortMode == TileSortMode.ByPosition ? c => c != TileDrawClass.Ground : null;
-        if (TileUnder(ts, data, map, cell, px ?? default, FloorOk, byImage) is not { } hit) return map;
+        var gridCell = px is { } at ? data.CellAt(ts, at.X, at.Y) : cell;
+        if (TileUnder(ts, data, map, gridCell, px ?? default, FloorOk, byImage) is not { } hit) return map;
         if (hit.Cell.AutoTile != 0 && ts.FindAutoTile(hit.Cell.AutoTile) is { } set)
-            return AutoTiler.Erase(ts, map, set.Floor == hit.Floor ? set : set with { Floor = hit.Floor }, [hit.At]);
-        return AutoTiler.RefreshAround(ts, map.With(hit.Floor, hit.At, null), [hit.At, cell]);
+            return AutoTiler.Erase(ts, map, set.Floor == hit.Floor ? set : set with { Floor = hit.Floor }, [hit.At],
+                gridFloor: f => !data.IsFreeFloor(f));
+        return AutoTiler.RefreshAround(ts, map.With(hit.Floor, hit.At, null), [hit.At, gridCell],
+            gridFloor: f => !data.IsFreeFloor(f));
     }
 
     /// <summary>
@@ -431,9 +483,10 @@ public sealed partial class EditorContext
     /// </summary>
     private static PlacedTile? TileUnder(Tileset ts, TilemapData data, TileMap map, Point cell, Point px, Func<int, bool> floorOk, Func<TileDrawClass, bool>? byImage)
     {
-        if (byImage is not null && TileMapRenderer.HitTest(ts, map, data.Origin, px, floorOk, classes: byImage) is { } hit) return hit;
+        if (byImage is not null && TileMapRenderer.HitTest(ts, map, data.Origin, px, floorOk, classes: byImage, freeFloor: data.IsFreeFloor) is { } hit)
+            return hit;
         foreach (int f in map.FloorsTopDown(ts))
-            if (floorOk(f) && map.Covering(ts, f, cell) is { } covering) return covering;
+            if (floorOk(f) && !data.IsFreeFloor(f) && map.Covering(ts, f, cell) is { } covering) return covering;
         return null;
     }
 
@@ -441,7 +494,20 @@ public sealed partial class EditorContext
     public PlacedTile? TileUnder(Point px)
     {
         if (CurrentTiles is not { } data || CurrentTileset is not { } ts) return null;
-        return TileUnder(ts, data, data.Map, data.CellAt(ts, px.X, px.Y), px, data.ShowsFloor, _ => true);
+        if (TileMapRenderer.HitTest(ts, data.Map, data.Origin, px, data.ShowsFloor, freeFloor: data.IsFreeFloor) is { } hit)
+            return hit;
+        return TileUnder(ts, data, data.Map, data.CellAt(ts, px.X, px.Y), px, data.ShowsFloor, null);
+    }
+
+    /// <summary>자유 층의 오브젝트 하나를 픽셀 좌표로 옮긴다. 같은 층의 기준점이 이미 차 있으면 덮지 않는다.</summary>
+    public void MoveFreeTile(PlacedTile source, Point at)
+    {
+        if (Project is not { } project || CurrentTilemap is not { Tiles: { } data } layer
+            || !data.IsFreeFloor(source.Floor) || data.IsFloorLocked(source.Floor) || !data.ShowsFloor(source.Floor) || source.At == at
+            || data.Map.Get(source.Floor, source.At) != source.Cell) return;
+        if (data.Map.Get(source.Floor, at) is not null) { TileMessage?.Invoke(this, UiStrings.Tile_ObjectPositionOccupied); return; }
+        CommitFloating();
+        project.SetTileMap(layer, data.Map.With(source.Floor, source.At, null).With(source.Floor, at, source.Cell), UiStrings.Tile_MoveObjectLabel);
     }
 
     /// <summary>칸 가운데의 캔버스 점.</summary>
@@ -477,6 +543,7 @@ public sealed partial class EditorContext
     public void TileRect(Rectangle cells, bool erase)
     {
         if (cells.Width < 1 || cells.Height < 1) return;
+        if (IsFreeTilemap) { TileMessage?.Invoke(this, UiStrings.Tile_FreePlacementTools); return; }
         CommitTileMap((ts, data) =>
         {
             var map = data.Map;
@@ -484,7 +551,8 @@ public sealed partial class EditorContext
             {
                 if (CurrentAutoTileSet is not { } set || data.IsFloorLocked(set.Floor)) return map;
                 var all = CellsOf(cells);
-                return erase ? AutoTiler.Erase(ts, map, set, all) : AutoTiler.Paint(ts, map, set, all, f => !data.IsFloorLocked(f));
+                return erase ? AutoTiler.Erase(ts, map, set, all, gridFloor: f => !data.IsFreeFloor(f))
+                    : AutoTiler.Paint(ts, map, set, all, f => !data.IsFloorLocked(f), gridFloor: f => !data.IsFreeFloor(f));
             }
             if (erase)
             {
@@ -521,6 +589,7 @@ public sealed partial class EditorContext
     /// </summary>
     public void TileFill(Point start, bool erase)
     {
+        if (IsFreeTilemap) { TileMessage?.Invoke(this, UiStrings.Tile_FreePlacementTools); return; }
         CommitTileMap((ts, data) =>
         {
             var map = data.Map;
@@ -528,16 +597,17 @@ public sealed partial class EditorContext
             int floor;
             if (UsesAutoTileSource && CurrentAutoTileSet is { } set) floor = set.Floor;
             else if (_tileFloor is { } f) floor = f;
-            else if (erase) floor = map.FloorsTopDown(ts).FirstOrDefault(f => map.Covering(ts, f, start) is not null, ts.ValidFloor(0));
+            else if (erase) floor = map.FloorsTopDown(ts).FirstOrDefault(f => !data.IsFreeFloor(f) && map.Covering(ts, f, start) is not null, ts.ValidFloor(0));
             else if (stamp is { Cells.Count: > 0 }) floor = FloorFor(ts, null, stamp.Cells[0]);
             else return map;
             if (data.IsFloorLocked(floor)) { WarnLockedFloor(); return map; }
             var limit = TileLimit(ts, data);
-            var floors = ts.Floors.Select(fl => fl.Id).Where(id => id == floor || data.ShowsFloor(id)).ToList();
+            var floors = ts.Floors.Select(fl => fl.Id).Where(id => !data.IsFreeFloor(id) && (id == floor || data.ShowsFloor(id))).ToList();
             var region = map.FillRegion(ts, floors, start, limit);
             if (region.Count == 0) return map;
             if (UsesAutoTileSource && CurrentAutoTileSet is { } auto)
-                return erase ? AutoTiler.Erase(ts, map, auto, region) : AutoTiler.Paint(ts, map, auto, region, f => !data.IsFloorLocked(f));
+                return erase ? AutoTiler.Erase(ts, map, auto, region, gridFloor: f => !data.IsFreeFloor(f))
+                    : AutoTiler.Paint(ts, map, auto, region, f => !data.IsFloorLocked(f), gridFloor: f => !data.IsFreeFloor(f));
             if (erase)
             {
                 var erased = new List<Point>();
@@ -547,7 +617,7 @@ public sealed partial class EditorContext
                         map = map.With(floor, hit.At, null);
                         erased.Add(hit.At);
                     }
-                return AutoTiler.RefreshAround(ts, map, erased, onlyFilled: false);
+                return AutoTiler.RefreshAround(ts, map, erased, onlyFilled: false, gridFloor: f => !data.IsFreeFloor(f));
             }
             if (stamp is null) return map;
             int salt = Environment.TickCount;
@@ -612,6 +682,7 @@ public sealed partial class EditorContext
         foreach (var floor in ts.Floors)
         {
             if (!data.ShowsFloor(floor.Id)) continue;
+            if (data.IsFreeFloor(floor.Id)) continue;
             foreach (var p in data.Map.Overlapping(ts, floor.Id, sel))
             {
                 if (!sel.Contains(p.At)) continue; // 기준 칸이 사각형 안인 타일만
@@ -633,20 +704,28 @@ public sealed partial class EditorContext
                         map = map.With(p.Floor, p.At, null);
                         erased.Add(p.At);
                     }
-                return AutoTiler.RefreshAround(CurrentTileset!, map, erased, onlyFilled: false);
+                return AutoTiler.RefreshAround(CurrentTileset!, map, erased, onlyFilled: false, gridFloor: f => !d.IsFreeFloor(f));
             }, UiStrings.Tile_CutLabel);
         return true;
     }
 
-    /// <summary>고른 칸 사각형의 타일을 지운다(보이고 잠기지 않은 층, 기준 칸이 안에 든 타일). 지운 것이 없으면 false.</summary>
+    /// <summary>고른 칸 사각형의 타일을 지운다(보이고 잠기지 않은 층, 기준점이 안에 든 타일 — 자유 층은 사각형의 픽셀 범위로). 지운 것이 없으면 false.</summary>
     public bool DeleteTileSelection()
     {
         if (_tileSelection is not { } sel || CurrentTiles is not { } data || CurrentTileset is not { } ts) return false;
         var map = data.Map;
         var erased = new List<Point>();
+        var pixels = data.PixelRect(ts, sel);
+        pixels.Offset(-data.Origin.X, -data.Origin.Y);
         foreach (var floor in ts.Floors)
         {
             if (!data.ShowsFloor(floor.Id) || data.IsFloorLocked(floor.Id)) continue;
+            if (data.IsFreeFloor(floor.Id))
+            {
+                foreach (var at in map.Floor(floor.Id).Keys.Where(pixels.Contains).ToList())
+                    map = map.With(floor.Id, at, null);
+                continue;
+            }
             foreach (var p in map.Overlapping(ts, floor.Id, sel).ToList())
                 if (sel.Contains(p.At))
                 {
@@ -655,7 +734,7 @@ public sealed partial class EditorContext
                 }
         }
         if (ReferenceEquals(map, data.Map)) return false;
-        map = AutoTiler.RefreshAround(ts, map, erased, onlyFilled: false);
+        map = AutoTiler.RefreshAround(ts, map, erased, onlyFilled: false, gridFloor: f => !data.IsFreeFloor(f));
         CommitTileMap((_, _) => map, UiStrings.Tile_EraseLabel);
         return true;
     }

@@ -84,10 +84,18 @@ public sealed partial class SpriteProject
     /// <summary>타일맵 레이어 어디선가 쓰는 타일셋인지.</summary>
     public bool IsTilesetUsed(string key) => _layers.Any(l => l.Tiles is { } d && d.SlotOf(key) >= 0);
 
+    private void RequireFreePlacementCellSize(Tileset tileset)
+    {
+        if (tileset.CellWidth == 1 && tileset.CellHeight == 1) return;
+        if (_layers.Any(l => l.Tiles is { FreePlacement: true } data && data.SlotOf(tileset.Key) >= 0))
+            throw new ArgumentException(DomainStrings.Tile_TilesetCellSizeMismatch, nameof(tileset));
+    }
+
     /// <summary>타일셋을 프로젝트에 담는다(레이어에 열지 않음, 실행취소 한 단계 — 같은 이름표가 있으면 이것으로 바꿈).</summary>
     public void AddTileset(Tileset tileset)
     {
         if (_tilesets.TryGetValue(tileset.Key, out var old) && ReferenceEquals(old, tileset)) return;
+        RequireFreePlacementCellSize(tileset);
         Edit(DomainStrings.Tile_AddProjectTileset, ProjectChange.Layers, () => _tilesets[tileset.Key] = tileset);
     }
 
@@ -111,6 +119,7 @@ public sealed partial class SpriteProject
     /// </summary>
     public Layer AddTilemapLayer(Tileset tileset, int? index = null, string? name = null)
     {
+        RequireFreePlacementCellSize(tileset);
         int at = TopLevelInsertIndex(index ?? _layers.Count);
         var layer = new Layer(UniqueLayerName(string.IsNullOrWhiteSpace(name) ? DomainStrings.Tile_DefaultLayerName : name.Trim()))
         {
@@ -134,6 +143,7 @@ public sealed partial class SpriteProject
     public void EditTileset(string label, Tileset tileset, Func<TileMap, int, TileMap>? remap = null)
     {
         if (!_tilesets.TryGetValue(tileset.Key, out var old)) throw new ArgumentException(DomainStrings.Tile_TilesetNotInProject, nameof(tileset));
+        RequireFreePlacementCellSize(tileset);
         if (ReferenceEquals(old, tileset) && remap is null) return;
         Edit(label, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
@@ -143,10 +153,17 @@ public sealed partial class SpriteProject
             {
                 if (!layer.IsTilemap || layer.Tiles is not { } data || data.SlotOf(tileset.Key) is not (>= 0 and var slot)) continue;
                 var map = remap?.Invoke(data.Map, TileSources.Offset(slot)) ?? data.Map;
-                if (setsChanged && TilesetOf(layer) is { } combined) map = AutoTiler.RefreshAll(combined, map);
+                if (setsChanged && TilesetOf(layer) is { } combined) map = RefreshGridAutoTiles(combined, map, data);
                 if (!ReferenceEquals(map, data.Map)) layer.Tiles = data with { Map = map };
             }
         });
+    }
+
+    /// <summary>자동 타일 이웃은 격자 층만 본다. 픽셀 층의 같은 숫자 좌표는 다른 공간이다.</summary>
+    private static TileMap RefreshGridAutoTiles(Tileset tileset, TileMap map, TilemapData data)
+    {
+        if (data.FreeFloors.IsEmpty && !data.FreePlacement) return AutoTiler.RefreshAll(tileset, map);
+        return AutoTiler.RefreshAll(tileset, map, gridFloor: floor => !data.IsFreeFloor(floor));
     }
 
     /// <summary>타일맵 레이어의 맵을 바꾼다(실행취소 한 단계, 같으면 기록 없음). 끌어 찍기는 <see cref="BeginTileStroke"/>로.</summary>
@@ -156,6 +173,94 @@ public sealed partial class SpriteProject
         if (ReferenceEquals(layer.Tiles!.Map, map)) return;
         Edit(label, ProjectChange.Pixels, () => layer.Tiles = layer.Tiles! with { Map = map });
     }
+
+    /// <summary>타일맵 레이어의 자유 배치를 켜거나 끈다(실행취소 한 단계). 켜려면 첫 타일셋의 칸이 1×1px이어야 한다.</summary>
+    public void SetTilemapFreePlacement(Layer layer, bool enabled)
+    {
+        RequireTilemap(layer);
+        var data = layer.Tiles!;
+        if (data.FreePlacement == enabled) return;
+        if (enabled && (!_tilesets.TryGetValue(data.PrimaryTilesetKey, out var primary) || primary.CellWidth != 1 || primary.CellHeight != 1))
+            throw new InvalidOperationException(DomainStrings.Tile_TilesetCellSizeMismatch);
+        Edit(DomainStrings.Project_Edit, ProjectChange.Layers, () => layer.Tiles = data with { FreePlacement = enabled });
+    }
+
+    /// <summary>층 배치 방식을 실행취소 가능하게 바꾼다. 자유로 바꾸면 자동 타일을 현재 모양으로 고정하고, 격자로 돌리면 가까운 칸에 맞추고(겹치면 하나만 남김) 그 층 자동 타일 세트의 타일은 다시 이웃과 잇는다.</summary>
+    public void SetTileFloorFreePlacement(Layer layer, int floor, bool enabled)
+    {
+        RequireTilemap(layer);
+        var data = layer.Tiles!;
+        var tileset = TilesetOf(layer) ?? throw new InvalidOperationException(DomainStrings.Tile_TilesetNotInProject);
+        if (tileset.FloorOrder(floor) < 0) throw new ArgumentOutOfRangeException(nameof(floor));
+        if (data.IsFreeFloor(floor) == enabled) return;
+        if (data.FreePlacement)
+        {
+            // Legacy 1px layers have identical coordinate units in either mode.
+            var others = System.Collections.Immutable.ImmutableArray.CreateRange(tileset.Floors.Where(f => f.Id != floor).Select(f => f.Id));
+            Edit(DomainStrings.Project_Edit, ProjectChange.Layers | ProjectChange.Pixels,
+                () => layer.Tiles = data with { FreePlacement = false, FreeFloors = others });
+            return;
+        }
+        var entries = data.Map.Floor(floor);
+        var next = enabled ? data.FreeFloors.Add(floor) : data.FreeFloors.Remove(floor);
+        var map = data.Map;
+        if (enabled && entries.Count != 0 && (tileset.CellWidth != 1 || tileset.CellHeight != 1 || entries.Values.Any(cell => cell.AutoTile != 0)))
+        {
+            var moved = entries.Select(kv => new PlacedTile(floor,
+                new Point(checked(kv.Key.X * tileset.CellWidth), checked(kv.Key.Y * tileset.CellHeight)), kv.Value with { AutoTile = 0 }));
+            map = TileMap.FromCells(data.Map.All.Where(p => p.Floor != floor).Concat(moved));
+        }
+        else if (!enabled && entries.Count != 0)
+        {
+            var kept = tileset.CellWidth == 1 && tileset.CellHeight == 1
+                ? [.. entries.Select(kv => new PlacedTile(floor, kv.Key, kv.Value))]
+                : SnapToGrid(tileset, floor, entries);
+            var owners = GridAutoTileOwners(tileset, floor);
+            kept = kept.ConvertAll(p => p.Cell.AutoTile == 0 && owners.TryGetValue(p.Cell.Tile, out int set) ? p with { Cell = p.Cell with { AutoTile = set } } : p);
+            map = RefreshGridAutoTiles(tileset, TileMap.FromCells(data.Map.All.Where(p => p.Floor != floor).Concat(kept)), data with { FreeFloors = next });
+        }
+        Edit(DomainStrings.Project_Edit, ProjectChange.Layers | ProjectChange.Pixels,
+            () => layer.Tiles = data with { FreeFloors = next, Map = map });
+    }
+
+    /// <summary>픽셀 기준점을 가장 가까운 칸으로 옮긴다. 차지 칸이 겹치면 칸에 더 가까운 것(같으면 위쪽·왼쪽 기준점)만 남긴다.</summary>
+    private static List<PlacedTile> SnapToGrid(Tileset tileset, int floor, IReadOnlyDictionary<Point, TileCell> entries)
+    {
+        int cw = tileset.CellWidth, ch = tileset.CellHeight;
+        var candidates = entries.Select(p => (At: p.Key, Cell: p.Value, Grid: new Point(NearestCell(p.Key.X, cw), NearestCell(p.Key.Y, ch))))
+            .OrderBy(p => Math.Abs((long)p.At.X - (long)p.Grid.X * cw) + Math.Abs((long)p.At.Y - (long)p.Grid.Y * ch))
+            .ThenBy(p => p.At.Y).ThenBy(p => p.At.X);
+        var kept = new List<PlacedTile>(entries.Count);
+        var occupied = new HashSet<Point>();
+        foreach (var p in candidates)
+        {
+            var size = tileset.Footprint(p.Cell);
+            var cells = new List<Point>(size.Width * size.Height);
+            for (int y = 0; y < size.Height; y++)
+                for (int x = 0; x < size.Width; x++)
+                    cells.Add(new Point(p.Grid.X + x, p.Grid.Y + y));
+            if (cells.Any(occupied.Contains)) continue;
+            kept.Add(new PlacedTile(floor, p.Grid, p.Cell));
+            occupied.UnionWith(cells);
+        }
+        return kept;
+    }
+
+    /// <summary>층 <paramref name="floor"/>의 자동 타일 세트가 쓰는 타일 Id → 세트 Id(두 세트가 함께 쓰는 타일은 빼서 잘못 잇지 않음).</summary>
+    private static Dictionary<int, int> GridAutoTileOwners(Tileset tileset, int floor)
+    {
+        var owners = new Dictionary<int, int>();
+        var shared = new HashSet<int>();
+        foreach (var set in tileset.AutoTiles.Where(s => s.Floor == floor))
+            foreach (int tile in set.Rules.SelectMany(r => r.Tiles).Select(c => c.Tile).Distinct())
+                if (!owners.TryAdd(tile, set.Id) && owners[tile] != set.Id) shared.Add(tile);
+        foreach (int tile in shared) owners.Remove(tile);
+        return owners;
+    }
+
+    /// <summary>픽셀 → 가장 가까운 칸(정확히 반 칸이면 +쪽, 음수 좌표도 같은 방향).</summary>
+    private static int NearestCell(int pixel, int size)
+        => (int)Math.Floor(((long)pixel + size / 2) / (double)size);
 
     /// <summary>
     /// 타일맵 레이어의 자리 <paramref name="slot"/> 타일셋을 바꾼다(실행취소 한 단계, 프로젝트에 담음 — 같은 이름표가 있으면 이것으로 바꿈, 맵은 그대로 — 같은 Id의 타일로 보임).
@@ -168,6 +273,9 @@ public sealed partial class SpriteProject
         ArgumentOutOfRangeException.ThrowIfNegative(slot);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(slot, keys.Length);
         if (keys[slot] == tileset.Key && _tilesets.TryGetValue(tileset.Key, out var current) && ReferenceEquals(current, tileset)) return;
+        if (slot == 0 && layer.Tiles.FreePlacement && (tileset.CellWidth != 1 || tileset.CellHeight != 1))
+            throw new ArgumentException(DomainStrings.Tile_TilesetCellSizeMismatch, nameof(tileset));
+        RequireFreePlacementCellSize(tileset);
         if (keys.IndexOf(tileset.Key) is >= 0 and var other && other != slot) throw new ArgumentException(DomainStrings.Tile_TilesetAlreadyInLayer, nameof(tileset));
         for (int i = 0; i < keys.Length; i++)
             if (i != slot && _tilesets.TryGetValue(keys[i], out var ts) && ts.CellSize != tileset.CellSize)
@@ -188,6 +296,7 @@ public sealed partial class SpriteProject
         RequireTilemap(layer);
         var keys = layer.Tiles!.TilesetKeys;
         if (keys.Contains(tileset.Key)) return false;
+        RequireFreePlacementCellSize(tileset);
         if (_tilesets.TryGetValue(keys[0], out var primary) && primary.CellSize != tileset.CellSize)
             throw new ArgumentException(DomainStrings.Tile_TilesetCellSizeMismatch, nameof(tileset));
         Edit(DomainStrings.Tile_AddLayerTileset, ProjectChange.Layers | ProjectChange.Pixels, () =>
@@ -211,6 +320,9 @@ public sealed partial class SpriteProject
         ArgumentOutOfRangeException.ThrowIfNegative(slot);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(slot, count);
         if (count == 1) return false;
+        if (slot == 0 && layer.Tiles.FreePlacement
+            && (!_tilesets.TryGetValue(layer.Tiles.TilesetKeys[1], out var next) || next.CellWidth != 1 || next.CellHeight != 1))
+            throw new InvalidOperationException(DomainStrings.Tile_TilesetCellSizeMismatch);
         Edit(DomainStrings.Tile_RemoveLayerTileset, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             var data = layer.Tiles!;
@@ -238,8 +350,9 @@ public sealed partial class SpriteProject
                 Map = map,
                 HiddenFloors = [.. data.HiddenFloors.Select(FloorOf).OfType<int>().Distinct()],
                 LockedFloors = [.. data.LockedFloors.Select(FloorOf).OfType<int>().Distinct()],
+                FreeFloors = [.. data.FreeFloors.Select(FloorOf).OfType<int>().Distinct()],
             };
-            if (TilesetOf(layer) is { AutoTiles.Length: > 0 } combined) layer.Tiles = layer.Tiles with { Map = AutoTiler.RefreshAll(combined, map) };
+            if (TilesetOf(layer) is { AutoTiles.Length: > 0 } combined) layer.Tiles = layer.Tiles with { Map = RefreshGridAutoTiles(combined, map, layer.Tiles) };
         });
         return true;
     }
@@ -274,7 +387,7 @@ public sealed partial class SpriteProject
                 moved++;
             }
             if (ReferenceEquals(map, data.Map)) continue;
-            layer.Tiles = data with { Map = combined.AutoTiles.Length > 0 ? AutoTiler.RefreshAll(combined, map) : map };
+            layer.Tiles = data with { Map = combined.AutoTiles.Length > 0 ? RefreshGridAutoTiles(combined, map, data) : map };
         }
         return moved;
     }
@@ -405,7 +518,7 @@ public sealed partial class SpriteProject
     }
 
     private static Rectangle MapBounds(TilemapRender r)
-        => r.Bounds ??= TileMapRenderer.PixelBounds(r.Tileset, r.Data.Map, r.Data.Origin, r.Shows);
+        => r.Bounds ??= TileMapRenderer.PixelBounds(r.Tileset, r.Data.Map, r.Data.Origin, r.Shows, freeFloor: r.Data.IsFreeFloor);
 
     /// <summary>
     /// 타일맵 레이어의 셀: 맵을 캔버스 크기로 그린 그림(그릴 타일이 없으면 null, 움직이는 타일은 프레임 <paramref name="frameIndex"/>의 타일 시각).
@@ -418,7 +531,7 @@ public sealed partial class SpriteProject
         if (!r.Cels.TryGetValue(phase, out var cel))
         {
             var bounds = Rectangle.Intersect(MapBounds(r), Bounds);
-            cel = bounds.Width < 1 || bounds.Height < 1 ? null : TileMapRenderer.RenderArea(r.Tileset, r.Data.Map, r.Data.Origin, Bounds, r.Shows, time, r.Opacity);
+            cel = bounds.Width < 1 || bounds.Height < 1 ? null : TileMapRenderer.RenderArea(r.Tileset, r.Data.Map, r.Data.Origin, Bounds, r.Shows, time, r.Opacity, freeFloor: r.Data.IsFreeFloor);
             if (r.Cels.Count >= TileRenderCacheLimit) r.Cels.Clear();
             r.Cels[phase] = cel;
         }
@@ -439,7 +552,7 @@ public sealed partial class SpriteProject
                 var keep = Rectangle.Intersect(bounds, OverflowBounds);
                 if (keep.Width > 0 && keep.Height > 0)
                 {
-                    var image = TileMapRenderer.RenderArea(r.Tileset, r.Data.Map, r.Data.Origin, keep, r.Shows, time, r.Opacity);
+                    var image = TileMapRenderer.RenderArea(r.Tileset, r.Data.Map, r.Data.Origin, keep, r.Shows, time, r.Opacity, freeFloor: r.Data.IsFreeFloor);
                     image.FillRect(new Rectangle(-keep.X, -keep.Y, _width, _height), default);
                     outside = new CelOverflow(image, keep.Location);
                 }
@@ -452,7 +565,7 @@ public sealed partial class SpriteProject
 
     /// <summary>타일맵 레이어 그림이 닿는 캔버스 사각형(캔버스 밖 포함). 없으면 빈 것.</summary>
     public Rectangle TilemapBounds(Layer layer)
-        => layer.Tiles is { } data && TilesetOf(layer) is { } ts ? TileMapRenderer.PixelBounds(ts, data.Map, data.Origin) : Rectangle.Empty;
+        => layer.Tiles is { } data && TilesetOf(layer) is { } ts ? TileMapRenderer.PixelBounds(ts, data.Map, data.Origin, freeFloor: data.IsFreeFloor) : Rectangle.Empty;
 
     /// <summary>캔버스 크기 바꾸기에서 그림이 옮겨 간 만큼 타일맵 격자 원점도 옮긴다(Edit 안에서, 배율은 무시 — 타일은 늘이지 않음).</summary>
     private void ShiftTilemaps(int dx, int dy)
@@ -551,7 +664,7 @@ public sealed partial class SpriteProject
             int linkColor = 0;
             foreach (var part in ConvertParts(tileset, data))
             {
-                var bounds = TileMapRenderer.PixelBounds(tileset, data.Map, data.Origin, part.Floors, part.Classes);
+                var bounds = TileMapRenderer.PixelBounds(tileset, data.Map, data.Origin, part.Floors, part.Classes, data.IsFreeFloor);
                 if (bounds.Width < 1 || bounds.Height < 1) continue;
                 bounds = Rectangle.Intersect(bounds, OverflowBounds);
                 if (bounds.Width < 1 || bounds.Height < 1 || bounds.Width > PixelImage.MaxSize || bounds.Height > PixelImage.MaxSize) continue;
@@ -570,7 +683,7 @@ public sealed partial class SpriteProject
                     phases[i] = phase;
                     byPhase[phase] = byPhase.TryGetValue(phase, out var hit)
                         ? (hit.Image, hit.Frames + 1)
-                        : (TileMapRenderer.RenderArea(tileset, data.Map, data.Origin, bounds, part.Floors, time, classes: part.Classes), 1);
+                        : (TileMapRenderer.RenderArea(tileset, data.Map, data.Origin, bounds, part.Floors, time, classes: part.Classes, freeFloor: data.IsFreeFloor), 1);
                     start += _frames[i].DurationMs;
                 }
                 foreach (var (image, frames) in byPhase.Values)

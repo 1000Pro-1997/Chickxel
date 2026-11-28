@@ -16,6 +16,12 @@ namespace Chickxel.Core.Tiles;
 public static class TilesetIO
 {
     public const int CurrentVersion = 1;
+
+    /// <summary>2 = 1 + 타일의 층 안 그리는 차례(<c>floorRank</c>). 쓰는 타일이 있는 파일만 2로 써서, 모르는 옛 판이 땅 겹침 차례를 잃고 저장하지 않게 한다.</summary>
+    public const int FloorRankVersion = 2;
+
+    /// <summary>3 = 2 + 모서리 격자 자동 타일(<c>cornerTiles</c>·<c>cornerRank</c>·<c>cornerTarget</c>). 쓰는 세트가 있는 파일만 3으로 쓴다(모르는 옛 판은 칸 타일만 그려 모양이 깨지므로 열지 않게).</summary>
+    public const int CornerVersion = 3;
     public const string JsonEntryName = "tileset.json";
     /// <summary>타일 그림 한 변 최대(px).</summary>
     public const int MaxTileImageSize = 4096;
@@ -56,6 +62,8 @@ public static class TilesetIO
         public string? DrawClass { get; set; }
         /// <summary>기준선(차지 칸 위 기준 px, 없으면 차지 칸 아래).</summary>
         public int? SortY { get; set; }
+        /// <summary>층 안 그리는 차례(0이면 없음 - 큰 것이 나중, 한 층에 모은 땅의 원래 층 차례).</summary>
+        public int? FloorRank { get; set; }
     }
 
     private sealed class AutoTileDto
@@ -69,6 +77,10 @@ public static class TilesetIO
         /// <summary>찍으면 그 칸을 비울 다른 층 Id(없으면 세트의 층만).</summary>
         public List<int>? ClearFloors { get; set; }
         public List<RuleDto>? Rules { get; set; }
+        /// <summary>모서리 격자 그림 타일 Id(<see cref="AutoTileSet.CornerTiles"/> 차례, 없으면 칸 규칙 세트).</summary>
+        public List<int>? CornerTiles { get; set; }
+        public int? CornerRank { get; set; }
+        public string? CornerTarget { get; set; }
     }
 
     private sealed class RuleDto
@@ -122,7 +134,7 @@ public static class TilesetIO
         using var zip = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true);
         var dto = new TilesetDto
         {
-            Version = CurrentVersion,
+            Version = tileset.HasCornerSets ? CornerVersion : tileset.Tiles.Any(t => t.FloorRank != 0) ? FloorRankVersion : CurrentVersion,
             Key = tileset.Key,
             Name = tileset.Name,
             CellWidth = tileset.CellWidth,
@@ -141,6 +153,7 @@ public static class TilesetIO
                 FrameMs = t.IsAnimated ? t.FrameMs : null,
                 DrawClass = t.DrawClass switch { TileDrawClass.Sorted => "sorted", TileDrawClass.Overhead => "overhead", _ => null },
                 SortY = t.SortY,
+                FloorRank = t.FloorRank == 0 ? null : t.FloorRank,
             }).ToList(),
             AutoTiles = tileset.AutoTiles.Length == 0 ? null : tileset.AutoTiles.Select(a => new AutoTileDto
             {
@@ -162,6 +175,9 @@ public static class TilesetIO
                     Rotate = r.AllowRotate,
                     Tiles = r.Tiles.IsDefaultOrEmpty ? null : r.Tiles.Select(c => new[] { c.Tile, c.Weight }).ToList(),
                 }).ToList(),
+                CornerTiles = a.IsCorner ? [.. a.CornerTiles] : null,
+                CornerRank = a.IsCorner && a.CornerRank != 0 ? a.CornerRank : null,
+                CornerTarget = a.IsCorner && a.CornerTarget.Length > 0 ? a.CornerTarget : null,
             }).ToList(),
             Sort = tileset.SortMode == TileSortMode.ByPosition ? "position" : null,
         };
@@ -224,7 +240,7 @@ public static class TilesetIO
             {
                 throw new InvalidDataException(DomainStrings.Tile_FileInvalid, ex);
             }
-            if (dto.Version > CurrentVersion) throw new InvalidDataException(DomainStrings.Tile_FileTooNew);
+            if (dto.Version > CornerVersion) throw new InvalidDataException(DomainStrings.Tile_FileTooNew);
             return FromDto(dto, (id, frame) =>
             {
                 var e = zip.GetEntry(TileEntryName(id, frame)) ?? throw new InvalidDataException(DomainStrings.Tile_FileInvalid);
@@ -288,6 +304,7 @@ public static class TilesetIO
                 FrameMs = Math.Max(TileDef.MinFrameMs, t.FrameMs ?? TileDef.DefaultFrameMs),
                 DrawClass = t.DrawClass switch { "sorted" => TileDrawClass.Sorted, "overhead" => TileDrawClass.Overhead, _ => TileDrawClass.Ground },
                 SortY = t.SortY,
+                FloorRank = t.FloorRank ?? 0,
             });
         }
         var autoTiles = (dto.AutoTiles ?? []).Select(a => new AutoTileSet
@@ -310,6 +327,10 @@ public static class TilesetIO
                 AllowRotate = r.Rotate,
                 Tiles = [.. (r.Tiles ?? []).Where(c => c is { Length: >= 1 } && c[0] > 0).Select(c => new AutoTileChoice(c[0], c.Length > 1 ? Math.Max(1, c[1]) : 1))],
             })],
+            // 모서리 칸 상태 수의 4제곱이 아니면 칸 규칙 세트로 읽는다
+            CornerTiles = a.CornerTiles is { } ct && ct.Count == (int)Math.Pow(string.IsNullOrWhiteSpace(a.CornerTarget) ? 2 : 3, 4) ? [.. ct] : [],
+            CornerRank = a.CornerRank ?? 0,
+            CornerTarget = a.CornerTarget?.Trim() ?? "",
         }).ToList();
         return new Tileset
         {

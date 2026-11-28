@@ -35,25 +35,32 @@ internal sealed record PlayMap(Tileset Tileset, TilemapData Data)
     }
 
     /// <summary>보이는 층의 그림이 닿는 사각형(px). 타일이 없으면 빈 것.</summary>
-    public Rectangle Bounds => TileMapRenderer.PixelBounds(Tileset, Data.Map, Data.Origin, Data.ShowsFloor);
+    public Rectangle Bounds => TileMapRenderer.PixelBounds(Tileset, Data.Map, Data.Origin, Data.ShowsFloor, freeFloor: Data.IsFreeFloor);
 
-    /// <summary>층들 <paramref name="floors"/>(타일셋에 있는 층만, 숨긴 층 포함)의 타일이 차지한 칸들.</summary>
+    /// <summary>층들 <paramref name="floors"/>(타일셋에 있는 층만, 숨긴 층 포함)의 타일이 차지한 칸들(자유 층은 차지 상자가 걸친 칸).</summary>
     public HashSet<Point> CellsOn(IEnumerable<int> floors)
     {
         var cells = new HashSet<Point>();
+        int cw = Tileset.CellWidth, ch = Tileset.CellHeight;
         foreach (int floor in floors)
         {
             if (Tileset.FindFloor(floor) is null) continue;
+            bool free = Data.IsFreeFloor(floor);
             foreach (var (at, cell) in Data.Map.Floor(floor))
             {
                 var size = Tileset.Footprint(cell);
-                for (int y = 0; y < size.Height; y++)
-                    for (int x = 0; x < size.Width; x++)
-                        cells.Add(new Point(at.X + x, at.Y + y));
+                var box = free
+                    ? Rectangle.FromLTRB(FloorDiv(at.X, cw), FloorDiv(at.Y, ch), FloorDiv(at.X + size.Width * cw - 1, cw) + 1, FloorDiv(at.Y + size.Height * ch - 1, ch) + 1)
+                    : new Rectangle(at, size);
+                for (int y = box.Top; y < box.Bottom; y++)
+                    for (int x = box.Left; x < box.Right; x++)
+                        cells.Add(new Point(x, y));
             }
         }
         return cells;
     }
+
+    private static int FloorDiv(int a, int b) => (int)Math.Floor((double)a / b);
 
     /// <summary>칸 → 캔버스 사각형(px).</summary>
     public RectangleF CellRect(int x, int y, int w = 1, int h = 1)

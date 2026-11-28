@@ -212,6 +212,26 @@ public sealed record AutoTileSet
     public ImmutableArray<int> ClearFloors { get; init; } = [];
     public ImmutableArray<AutoTileRule> Rules { get; init; } = [];
 
+    /// <summary>
+    /// 모서리 격자(듀얼 그리드) 그림. 비지 않으면 이 세트로 찍은 칸의 타일은 그리지 않고, 칸 모서리마다 둘레 네 칸으로 고른 그림을 칸 사이(반 칸 어긋난 자리)에 그린다
+    /// (<see cref="TileMapRenderer"/>) — 칸 경계에 얽매이지 않는 둥근 땅 모양. 차례 = ((북서 × B + 북동) × B + 남서) × B + 남동, B = <see cref="CornerBase"/>.
+    /// 칸 상태: 0 = 아님, 1 = 덮음(이 세트, 또는 <see cref="CornerRank"/>가 같거나 높은 다른 모서리 세트 — 그 아래를 메움), 2 = <see cref="CornerTarget"/> 무리(물가 둑처럼 그림이 달라짐).
+    /// 값은 타일 Id(0 = 그리지 않음), 그 타일의 그리기 위치는 칸 모서리 기준이 되게 반 칸 당겨 둔다. 칸에 찍히는 타일은 <see cref="Rules"/>대로(팔레트·고르기용).
+    /// </summary>
+    public ImmutableArray<int> CornerTiles { get; init; } = [];
+
+    /// <summary>모서리 격자 세트끼리 겹치는 차례: 높은 세트가 위에 그려지고, 낮은 세트는 높은 세트 칸 아래까지 메운다.</summary>
+    public int CornerRank { get; init; }
+
+    /// <summary>모서리 격자 칸 상태 2로 칠 무리 이름(그 칸 세트의 <see cref="JoinName"/>). 비면 상태는 둘(0·1).</summary>
+    public string CornerTarget { get; init; } = "";
+
+    /// <summary>모서리 격자 세트인지.</summary>
+    public bool IsCorner => !CornerTiles.IsDefaultOrEmpty;
+
+    /// <summary>모서리 칸 상태 수(<see cref="CornerTarget"/>가 있으면 3, 없으면 2) — <see cref="CornerTiles"/>는 이것의 4제곱 개.</summary>
+    public int CornerBase => CornerTarget.Length > 0 ? 3 : 2;
+
     /// <summary>규칙 중 "뭐라도 있음" 조건을 쓰는 것이 있는지.</summary>
     public bool UsesFilled => Rules.Any(r => r.Filled != 0);
 
@@ -327,6 +347,12 @@ public sealed record Tileset
 
     public AutoTileSet? FindAutoTile(int id) => AutoTiles.FirstOrDefault(a => a.Id == id);
 
+    /// <summary>모서리 격자 세트(<see cref="AutoTileSet.IsCorner"/>)가 하나라도 있는지.</summary>
+    public bool HasCornerSets => AutoTiles.Any(a => a.IsCorner);
+
+    /// <summary>칸이 모서리 격자 세트로 찍은 것이면 그 세트(아니면 null).</summary>
+    public AutoTileSet? CornerSetOf(TileCell cell) => cell.AutoTile != 0 && FindAutoTile(cell.AutoTile) is { IsCorner: true } set ? set : null;
+
     /// <summary>층의 차례(아래 = 0). 없는 층이면 -1.</summary>
     public int FloorOrder(int floorId)
     {
@@ -369,27 +395,34 @@ public sealed record Tileset
     /// 칸 <paramref name="at"/>에 놓인 타일의 기준선(격자 원점 기준 px y). 상하 뒤집기면 차지 칸 안에서 뒤집히고,
     /// 90° 회전이나 기준선을 정하지 않은 타일은 차지 칸 아래.
     /// </summary>
-    public int SortLine(Point at, TileCell cell)
+    public int SortLine(Point at, TileCell cell) => SortLineAt(at, cell);
+
+    /// <summary>타일 기준선(격자 원점 기준 px y). 자유 층에서는 <paramref name="at"/>이 픽셀 좌표다.</summary>
+    public int SortLineAt(Point at, TileCell cell, bool free = false)
     {
         int boxH = Footprint(cell).Height * CellHeight;
         int local = boxH;
         if (Find(cell.Tile) is { SortY: { } s } && !cell.Transform.SwapsAxes())
             local = (cell.Transform & TileTransform.FlipY) != 0 ? boxH - s : s;
-        return at.Y * CellHeight + local;
+        return (free ? at.Y : at.Y * CellHeight) + local;
+    }
+
+    /// <summary>타일 그림의 자리(격자 원점 기준 px). 자유 층의 <paramref name="at"/>은 픽셀, 일반 층은 칸 좌표다.</summary>
+    public (Rectangle Rect, PixelImage Image)? PlacementAt(int floor, Point at, TileCell cell, long timeMs = 0, bool free = false)
+    {
+        if (Find(cell.Tile) is not { } def) return null;
+        var box = new Size(def.Width * CellWidth, def.Height * CellHeight);
+        var local = new Rectangle(def.DrawOffset, def.Image.Size);
+        var (rect, _) = cell.Transform.ApplyToRect(local, box);
+        rect.Offset(free ? at.X : at.X * CellWidth, free ? at.Y : at.Y * CellHeight);
+        return (rect, TransformedImage(def, cell.Transform, def.FrameAt(timeMs)));
     }
 
     /// <summary>
     /// 칸 <paramref name="at"/>에 놓인 타일 그림의 자리(격자 원점 기준 px)와 돌리고 뒤집은 그림(움직이는 타일은 시각 <paramref name="timeMs"/>의 그림). 없는 타일이면 null.
     /// </summary>
     public (Rectangle Rect, PixelImage Image)? Placement(Point at, TileCell cell, long timeMs = 0)
-    {
-        if (Find(cell.Tile) is not { } def) return null;
-        var box = new Size(def.Width * CellWidth, def.Height * CellHeight);
-        var local = new Rectangle(def.DrawOffset, def.Image.Size);
-        var (rect, _) = cell.Transform.ApplyToRect(local, box);
-        rect.Offset(at.X * CellWidth, at.Y * CellHeight);
-        return (rect, TransformedImage(def, cell.Transform, def.FrameAt(timeMs)));
-    }
+        => PlacementAt(0, at, cell, timeMs);
 
     /// <summary>돌리고 뒤집은 타일 그림(움직이는 타일은 차례 <paramref name="frame"/>의 그림, 같은 것은 한 번만 만듦, 어느 스레드에서나).</summary>
     public PixelImage TransformedImage(TileDef def, TileTransform transform, int frame = 0)

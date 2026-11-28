@@ -171,7 +171,7 @@ IEnumerable<TileDraw> DrawTiles(Layer layer)
 {
     var data = layer.Tiles!;
     return layer.Visible
-        ? TileMapRenderer.DrawOrder(map.TilesetOf(layer)!, data.Map, data.Origin, map.Bounds, data.ShowsFloor)
+        ? TileMapRenderer.DrawOrder(map.TilesetOf(layer)!, data.Map, data.Origin, map.Bounds, data.ShowsFloor, freeFloor: data.IsFreeFloor)
         : [];
 }
 

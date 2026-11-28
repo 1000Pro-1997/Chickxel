@@ -3769,6 +3769,21 @@ echo __LOGIN_FAILED__
   <data name="Ai_Scope_FileOnly" xml:space="preserve"><value>사용자가 AI를 지금 그림만 고치도록 제한해서 다른 파일을 열거나 새로 만들 수 없습니다(채팅에서 "지금 그림만"을 끄면 됨)</value><comment>AI 도구 오류: "지금 그림만"이 켜진 차례에 open_file·new_project를 부름.</comment></data>
   <data name="Ai_Scope_OtherDocument" xml:space="preserve"><value>사용자가 AI를 이 차례를 시작할 때 열려 있던 그림만 고치도록 제한했는데 지금은 다른 문서가 열려 있어 볼 수만 있습니다(그 그림으로 돌아가면 고칠 수 있음)</value><comment>AI 도구 오류: "지금 그림만"이 켜진 차례 중에 사용자가 다른 문서로 바꿈.</comment></data>
   <data name="Ai_Locked_Layer" xml:space="preserve"><value>레이어 {index} "{name}"(또는 그 부모 레이어)이(가) 잠겨 있어 바꿀 수 없습니다 — 사용자에게 잠금 해제를 부탁하세요</value><comment>AI 도구 오류. index = 레이어 번호, name = 레이어 이름.</comment></data>
+  <data name="Ai_Tile_NotTilemap" xml:space="preserve"><value>레이어 {index} "{name}"은(는) 타일맵 레이어가 아닙니다</value><comment>AI 도구 오류. index = 레이어 번호, name = 레이어 이름.</comment></data>
+  <data name="Ai_Tile_UnknownFloor" xml:space="preserve"><value>이 타일맵의 타일셋에 층 {floor}이(가) 없습니다 — get_tilemap의 floors를 보세요</value><comment>AI 도구 오류. floor = 층 Id.</comment></data>
+  <data name="Ai_Tile_UnknownTile" xml:space="preserve"><value>이 타일맵의 타일셋에 타일 {tile}이(가) 없습니다 — get_tilemap(include_tiles)로 타일 Id를 보세요</value><comment>AI 도구 오류. tile = 타일 Id.</comment></data>
+  <data name="Ai_Tile_UnknownSet" xml:space="preserve"><value>자동 타일 세트 "{set}"이(가) 없습니다 — get_tilemap의 autoTiles를 보세요</value><comment>AI 도구 오류. set = 받은 세트 Id 또는 이름.</comment></data>
+  <data name="Ai_Tile_FreeFloorAuto" xml:space="preserve"><value>층 {floor}은(는) 자유 층(픽셀 좌표)이라 자동 타일로 칠할 수 없습니다 — set_tiles로 놓으세요</value><comment>AI 도구 오류. floor = 층 Id.</comment></data>
+  <data name="Ai_Tile_EraseNeedsFloor" xml:space="preserve"><value>지울 칸(tile 0)에는 floor를 함께 주세요</value><comment>AI 도구 오류.</comment></data>
+  <data name="Ai_Tile_TooMany" xml:space="preserve"><value>한 번에 칸 {max}개까지 고칠 수 있습니다 — 나눠서 부르세요</value><comment>AI 도구 오류. max = 한 번에 고칠 수 있는 칸 수.</comment></data>
+  <data name="Ai_Tile_UnknownTileset" xml:space="preserve"><value>타일셋 "{tileset}"이(가) 없습니다 — "village"(탑뷰 마을), "sandbox"(옆모습) 또는 프로젝트 타일셋의 이름표·이름을 주세요</value><comment>AI 도구 오류. tileset = 받은 값.</comment></data>
+  <data name="Ai_Tile_NotPrimary" xml:space="preserve"><value>타일 {tile}은(는) 이 레이어의 첫 타일셋에 있는 타일이 아니라 고칠 수 없습니다</value><comment>AI 도구 오류. tile = 타일 Id.</comment></data>
+  <data name="Ai_Tile_NothingToChange" xml:space="preserve"><value>바꿀 값을 하나 이상 주세요</value><comment>AI 도구 오류.</comment></data>
+  <data name="Ai_Layer_CannotDeleteLast" xml:space="preserve"><value>마지막 레이어는 지울 수 없습니다</value><comment>AI 도구 오류.</comment></data>
+  <data name="AiTools_Tilemap" xml:space="preserve"><value>타일맵</value></data>
+  <data name="AiTools_Tilemap_Tip" xml:space="preserve"><value>타일맵을 읽고, 칸에 타일을 놓거나 지우고 자동 타일로 칠하며, 층 설정·타일맵 레이어 더하기와 타일셋 타일 더하기·고치기·지우기를 합니다.</value></data>
+  <data name="Chat_Help_GroupTilemap" xml:space="preserve"><value>타일맵</value></data>
+  <data name="Chat_Help_GroupTilemap_Text" xml:space="preserve"><value>타일맵 레이어를 읽고 타일을 놓거나 지우며, 자동 타일로 땅을 칠하고, 층 설정과 타일셋의 타일을 더하거나 고치거나 지웁니다.</value></data>
   <data name="Ai_Link_BadFrame" xml:space="preserve"><value>프레임 번호가 잘못되었습니다: {value} (0~{count}보다 작은 수)</value><comment>AI 도구 오류. value = 받은 값, count = 프레임 수.</comment></data>
   <data name="Ai_Link_BadColor" xml:space="preserve"><value>링크 색 이름이 잘못되었습니다: {value} — 쓸 수 있는 색: {colors}</value><comment>AI 도구 오류. value = 받은 값, colors = 색 이름 목록(영어).</comment></data>
   <data name="Ai_Link_TwoFrames" xml:space="preserve"><value>링크하려면 프레임을 둘 이상 주세요</value></data>
@@ -9548,6 +9563,12 @@ CIEDE2000: 눈에 보이는 색차 ΔE00으로 잽니다(100% ≈ ΔE 120). 더 
   <data name="ShapeCanvas_EditHint" xml:space="preserve"><value>프레임마다 모양 하나 — 다 고치면 탭 아래 막대의 '세트에 저장'을 누르세요(저장 단축키도 같음)</value></data>
   <data name="ShapeCanvas_NotFound" xml:space="preserve"><value>모양 펜 세트를 찾을 수 없습니다</value></data>
   <data name="Tile_NotTilemap" xml:space="preserve"><value>타일맵 레이어를 고르세요.</value></data>
+  <data name="Tile_FreeFloorMenu" xml:space="preserve"><value>자유 층 (픽셀 좌표로 물건 배치)</value></data>
+  <data name="Tile_FreeFloorConvertTip" xml:space="preserve"><value>이미 놓인 자동 타일은 현재 모양을 유지한 개별 타일로 바뀌어 주변과 더는 자동으로 연결되지 않습니다. 실행 취소할 수 있습니다.</value></data>
+  <data name="Tile_FreeFloorSnapTip" xml:space="preserve"><value>물건을 가장 가까운 격자 칸에 맞춥니다. 겹치는 타일은 가까운 것 하나만 남깁니다. 실행 취소하면 원래 배치를 복원합니다.</value></data>
+  <data name="Tile_FreePlacementTools" xml:space="preserve"><value>자유 층에서는 붓이나 자동 타일 붓으로 독립 타일을 놓고, 선택 도구로 옮기거나 지우개로 지웁니다. 사각형·채우기는 일반 층에서 사용하세요.</value></data>
+  <data name="Tile_MoveObjectLabel" xml:space="preserve"><value>오브젝트 옮기기</value></data>
+  <data name="Tile_ObjectPositionOccupied" xml:space="preserve"><value>그 위치에 이미 오브젝트가 있습니다.</value></data>
   <data name="Tile_NoTileset" xml:space="preserve"><value>이 타일맵 레이어에는 타일셋이 없습니다 — 타일셋 패널에서 타일셋을 만들거나 여세요.</value></data>
   <data name="Tile_EraseLabel" xml:space="preserve"><value>타일 지우기</value></data>
   <data name="Tile_AutoTileLabel" xml:space="preserve"><value>자동 타일 칠하기</value></data>

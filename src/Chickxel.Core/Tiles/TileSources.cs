@@ -93,6 +93,7 @@ public static class TileSources
                     {
                         Tiles = r.Tiles.IsDefaultOrEmpty ? r.Tiles : [.. r.Tiles.Where(c => c.Tile >= 0 && c.Tile < Stride).Select(c => c with { Tile = offset + c.Tile })],
                     })],
+                    CornerTiles = a.CornerTiles.IsDefaultOrEmpty ? a.CornerTiles : [.. a.CornerTiles.Select(t => t > 0 && t < Stride ? offset + t : 0)],
                 });
             }
         }

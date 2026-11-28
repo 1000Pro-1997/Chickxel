@@ -1041,6 +1041,21 @@ Alpha is kept and fully transparent pixels are unchanged. One undo step.</value>
   <data name="Ai_Scope_FileOnly" xml:space="preserve"><value>The user limited the AI to the current file, so other files can't be opened or created (the user can turn this off in the chat)</value></data>
   <data name="Ai_Scope_OtherDocument" xml:space="preserve"><value>The user limited the AI to the file that was open when this turn started, and another document is open now — everything is read-only (switch back to that file to edit it)</value></data>
   <data name="Ai_Locked_Layer" xml:space="preserve"><value>Layer {index} "{name}" (or its parent layer) is locked and can't be changed — ask the user to unlock it</value></data>
+  <data name="Ai_Tile_NotTilemap" xml:space="preserve"><value>Layer {index} "{name}" is not a tilemap layer</value></data>
+  <data name="Ai_Tile_UnknownFloor" xml:space="preserve"><value>This tilemap's tileset has no floor {floor} — see floors in get_tilemap</value></data>
+  <data name="Ai_Tile_UnknownTile" xml:space="preserve"><value>This tilemap's tileset has no tile {tile} — list tile ids with get_tilemap (include_tiles)</value></data>
+  <data name="Ai_Tile_UnknownSet" xml:space="preserve"><value>No auto tile set "{set}" — see autoTiles in get_tilemap</value></data>
+  <data name="Ai_Tile_FreeFloorAuto" xml:space="preserve"><value>Floor {floor} is a free floor (pixel coordinates), so auto tiles can't paint it — place tiles with set_tiles</value></data>
+  <data name="Ai_Tile_EraseNeedsFloor" xml:space="preserve"><value>Give a floor for cells you erase (tile 0)</value></data>
+  <data name="Ai_Tile_TooMany" xml:space="preserve"><value>At most {max} cells per call — split the change into several calls</value></data>
+  <data name="Ai_Tile_UnknownTileset" xml:space="preserve"><value>No tileset "{tileset}" — use "village" (top-down village), "sandbox" (side view) or a project tileset's key or name</value></data>
+  <data name="Ai_Tile_NotPrimary" xml:space="preserve"><value>Tile {tile} doesn't belong to this layer's first tileset, so it can't be changed here</value></data>
+  <data name="Ai_Tile_NothingToChange" xml:space="preserve"><value>Give at least one value to change</value></data>
+  <data name="Ai_Layer_CannotDeleteLast" xml:space="preserve"><value>The last layer can't be deleted</value></data>
+  <data name="AiTools_Tilemap" xml:space="preserve"><value>Tilemaps</value></data>
+  <data name="AiTools_Tilemap_Tip" xml:space="preserve"><value>Read tilemaps, place or erase tiles, paint with auto tiles, change floor settings, add tilemap layers, and add, change or delete tileset tiles.</value></data>
+  <data name="Chat_Help_GroupTilemap" xml:space="preserve"><value>Tilemaps</value></data>
+  <data name="Chat_Help_GroupTilemap_Text" xml:space="preserve"><value>Reads tilemap layers, places or erases tiles, paints ground with auto tiles, and changes floor settings and adds, changes or deletes tileset tiles.</value></data>
   <data name="Ai_Link_BadFrame" xml:space="preserve"><value>Invalid frame index: {value} (must be 0 to less than {count})</value></data>
   <data name="Ai_Link_BadColor" xml:space="preserve"><value>Invalid link color: {value} — available colors: {colors}</value></data>
   <data name="Ai_Link_TwoFrames" xml:space="preserve"><value>Give at least two frames to link</value></data>
@@ -4244,6 +4259,12 @@ If you don't, the set stays as it was.</value></data>
   <data name="ShapeCanvas_EditHint" xml:space="preserve"><value>One shape per frame — when you're done, press Save to set in the bar under the tab (the Save shortcut does the same)</value></data>
   <data name="ShapeCanvas_NotFound" xml:space="preserve"><value>Couldn't find that shape pen set</value></data>
   <data name="Tile_NotTilemap" xml:space="preserve"><value>Select a tilemap layer.</value></data>
+  <data name="Tile_FreeFloorMenu" xml:space="preserve"><value>Free floor (place objects at pixel coordinates)</value></data>
+  <data name="Tile_FreeFloorConvertTip" xml:space="preserve"><value>Existing auto tiles become independent tiles with their current appearance and no longer connect to neighbors. This can be undone.</value></data>
+  <data name="Tile_FreeFloorSnapTip" xml:space="preserve"><value>Snap objects to the nearest grid cell. If tiles overlap, keep the closest one. Undo restores the original placement.</value></data>
+  <data name="Tile_FreePlacementTools" xml:space="preserve"><value>On a free floor, paint independent tiles with the brush or auto tile brush, move them with Select, or erase them. Use Rectangle and Fill on grid floors.</value></data>
+  <data name="Tile_MoveObjectLabel" xml:space="preserve"><value>Move object</value></data>
+  <data name="Tile_ObjectPositionOccupied" xml:space="preserve"><value>There is already an object at that position.</value></data>
   <data name="Tile_NoTileset" xml:space="preserve"><value>This tilemap layer has no tileset — create or open one in the Tileset panel.</value></data>
   <data name="Tile_EraseLabel" xml:space="preserve"><value>Erase tiles</value></data>
   <data name="Tile_AutoTileLabel" xml:space="preserve"><value>Paint auto tiles</value></data>
