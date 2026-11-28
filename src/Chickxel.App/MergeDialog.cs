@@ -28,8 +28,8 @@ public sealed class MergeDialog : DialogBase
     /// <param name="folder">결과 <c>.chickxel</c>을 만들 폴더.</param>
     public MergeDialog(IReadOnlyList<(string Path, MergeSource Source)> items, string folder) : base(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_MergeDialog_MergeDialog_B96DE665FA,items.Count), UiStrings.S_MergeDialog_MergeDialog_FB647D2B95)
     {
-        // 대상 도움말(F1): 창 = "파일 브라우저"의 합치기 소제목, 부분마다 ⑩~⑮ 항목·방식 표의 줄
-        const string page = "screen-file-browser";
+        // 대상 도움말(F1): 창 = "파일 합치기" 쪽, 부분마다 ⑫~⑰ 항목·방식 표의 줄
+        const string page = "screen-file-browser-merge";
         this.HelpAt(page, anchor: "Merge");
         _items = items.ToList();
         _folder = folder;
@@ -49,7 +49,7 @@ public sealed class MergeDialog : DialogBase
         var maxW = items.Max(i => i.Source.Size.Width);
         var maxH = items.Max(i => i.Source.Size.Height);
         _layers = Radio(UiStrings.S_MergeDialog_MergeDialog_B3BA45594D, UiStrings.S_MergeDialog_MergeDialog_9D32BDB124, true).HelpAt(page, anchor: "As layers");
-        _parent = Radio(UiStrings.S_MergeDialog_MergeDialog_2A89E3C4B6, UiStrings.S_MergeDialog_MergeDialog_7306C9C995, false).HelpAt(page, anchor: "As a group");
+        _parent = Radio(UiStrings.S_MergeDialog_MergeDialog_2A89E3C4B6, UiStrings.S_MergeDialog_MergeDialog_7306C9C995, false).HelpAt(page, anchor: "Under one layer");
         _skins = Radio(UiStrings.S_MergeDialog_MergeDialog_0A7DC12A34, UiStrings.S_MergeDialog_MergeDialog_C9D3632FB9
                                   + UiStrings.S_MergeDialog_MergeDialog_A54A1EF2B9, false).HelpAt(page, anchor: "As skins");
         _frames = Radio(UiStrings.S_MergeDialog_MergeDialog_6233362607, UiStrings.S_MergeDialog_MergeDialog_C112F96D7C, false).HelpAt(page, anchor: "As frames");

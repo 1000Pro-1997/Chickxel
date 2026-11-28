@@ -24,8 +24,8 @@ public sealed class FileInfoDialog : DialogBase
 
     public FileInfoDialog(string path, FileInfoHost? host = null) : base(UiStrings.FileInfo_Title)
     {
-        // 대상 도움말(F1): 창 = "파일 브라우저" 쪽 우클릭 메뉴 표의 상세 정보 보기 줄
-        this.HelpAt("screen-file-browser", anchor: "Details");
+        // 대상 도움말(F1): 창 = "파일 메뉴와 상세 정보" 쪽의 상세 정보 소제목
+        this.HelpAt("screen-file-browser-menu", anchor: "Details");
         CloseOnly();
         // 기본 정보 표와 나중에 채우는 종류별 표가 이름 칸 폭을 같이 쓴다.
         Grid.SetIsSharedSizeScope(Body, true);

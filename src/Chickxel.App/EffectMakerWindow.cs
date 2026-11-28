@@ -271,9 +271,9 @@ public sealed class EffectMakerWindow : Window
         var infoTitle = infoStack.Children[0];
         infoStack.Children.RemoveAt(0);
         infoStack.Children.Insert(0, Ui.Row(infoTitle, _authorBadge));
-        info.HelpAt(HelpPage, anchor: "Info: the header shows");
-        _authorBadge.HelpAt(HelpPage, anchor: "Effects published with your account");
-        _languages.HelpAt(HelpPage, anchor: "Languages below opens a window");
+        info.HelpAt("screen-effect-maker-info", anchor: "Title, description and tags");
+        _authorBadge.HelpAt("screen-effect-maker-info", anchor: "The header shows the developer");
+        _languages.HelpAt("screen-effect-maker-info", anchor: "Languages");
         // "정보" 제목 줄 오른쪽에 규칙 단추(효과를 만들 때 지킬 규칙·API — 복사해 다른 AI에 붙여 넣음)
         var rules = Ui.Button(VectorIcon.BookOpen, UiStrings.EffectMaker_Rules, (_, _) => ShowRules()).Tip(UiStrings.EffectMaker_RulesTip)
             .HelpAt(HelpPage, anchor: "Rules (right of the Info header");
@@ -367,12 +367,12 @@ public sealed class EffectMakerWindow : Window
         {
             Spacing = 2, Margin = new Thickness(0, 6, 0, 0), IsVisible = false,
             Children = { Ui.Row(sceneTitle, Ui.InfoBadge(UiStrings.EffectMaker_SceneTip)), Ui.Row(_sceneEdit, _sceneRemove), _sceneLayers },
-        }.HelpAt(HelpPage, anchor: "Preview scene");
-        _sceneEdit.HelpAt(HelpPage, anchor: "Edit in main editor: without a scene");
+        }.HelpAt("screen-effect-maker-scene", anchor: "Preview scene row");
+        _sceneEdit.HelpAt("screen-effect-maker-scene", anchor: "Click Edit in main editor");
         _preview.HelpAt(HelpPage, anchor: "The preview is the same image");
         _stripScroll.HelpAt(HelpPage, anchor: "The preview is the same image");
-        _previewMotion.HelpAt(HelpPage, anchor: "Preview motion");
-        _previewPlacement.HelpAt(HelpPage);
+        _previewMotion.HelpAt("screen-effect-maker-preview", anchor: "Preview motion");
+        _previewPlacement.HelpAt("screen-effect-maker-preview");
         var right = Ui.Stack(
             previewHeader.HelpAt(HelpPage, anchor: "The preview is the same image"),
             _preview,
@@ -385,7 +385,7 @@ public sealed class EffectMakerWindow : Window
 
         // ── 아래 줄
         _copy = Ui.Button(VectorIcon.Copy, UiStrings.Assets_CopyToPersonal, (_, _) => CopySelected()).Tip(UiStrings.Assets_CopyToPersonalTip)
-            .HelpAt(HelpPage, anchor: "Received effects are read-only");
+            .HelpAt("screen-effect-maker-list", anchor: "Editing a received effect");
         // 효과는 고칠 때마다 저절로 저장하므로 저장 단추 대신 빨간 되돌리기(원문 고침 하나씩, Ctrl+Z와 같은 기록 — ScriptCodeEditor.UndoLimit번까지)
         _undo = Ui.Button(VectorIcon.Undo2, UiStrings.EffectMaker_Undo, (_, _) => _code.Undo())
             .Tip(string.Format(CultureInfo.CurrentCulture, UiStrings.EffectMaker_UndoTip, ScriptCodeEditor.UndoLimit)).HelpAt(HelpPage, anchor: "steps back through source edits");
@@ -396,8 +396,8 @@ public sealed class EffectMakerWindow : Window
         ToolTip.SetShowOnDisabled(_undo, true);
         _insert = Ui.Button(VectorIcon.Plus, UiStrings.EffectMaker_Insert, (_, _) => InsertIntoLayer()).Tip(UiStrings.EffectMaker_InsertTip).HelpAt(HelpPage, anchor: "steps back through source edits");
         _validate = Ui.Button(VectorIcon.Check, UiStrings.EffectMaker_Validate, async (_, _) => await ValidateAsync()).Tip(UiStrings.EffectMaker_ValidateTip)
-            .HelpAt(HelpPage, anchor: "Check: runs the install-time");
-        _upload = Ui.Button(VectorIcon.Upload, UiStrings.EffectMaker_Upload, (_, _) => Upload()).Tip(UiStrings.EffectMaker_UploadTip).HelpAt(HelpPage, anchor: "Upload…: saves");
+            .HelpAt("screen-effect-maker-check", anchor: "Check: runs the install-time");
+        _upload = Ui.Button(VectorIcon.Upload, UiStrings.EffectMaker_Upload, (_, _) => Upload()).Tip(UiStrings.EffectMaker_UploadTip).HelpAt("screen-effect-maker-check", anchor: "Upload…: saves");
         _upload.Background = AppTheme.AccentBrush;
         _upload.Foreground = Brushes.White;
         var close = Ui.Button(UiStrings.S_Ui_CloseOnly_11312F9A81, (_, _) => Close(), 90).HelpAt(HelpPage, anchor: "Check, Upload… and Close");
@@ -406,7 +406,7 @@ public sealed class EffectMakerWindow : Window
         {
             Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5, Children = { _statusIcon, _statusLabel } },
             Margin = new Thickness(8, 2, 2, 2),
-        }.Tip(UiStrings.EffectMaker_StatusTip).HelpAt(HelpPage, anchor: "Status button: green");
+        }.Tip(UiStrings.EffectMaker_StatusTip).HelpAt("screen-effect-maker-check", anchor: "Status button: green");
         _statusFlyout = new Flyout
         {
             Placement = PlacementMode.TopEdgeAlignedLeft,
@@ -452,7 +452,7 @@ public sealed class EffectMakerWindow : Window
             e.Handled = true;
             Expand();
         };
-        var compact = new DockPanel { Margin = new Thickness(8) }.HelpAt(HelpPage, shot: "screen-effect-maker-6");
+        var compact = new DockPanel { Margin = new Thickness(8) }.HelpAt("screen-effect-maker-scene", shot: "screen-effect-maker-6");
         DockPanel.SetDock(compactHeader, Dock.Top);
         compact.Children.Add(compactHeader);
         compact.Children.Add(_compactPreviewHost);
@@ -566,7 +566,7 @@ public sealed class EffectMakerWindow : Window
             download.VerticalAlignment = VerticalAlignment.Center;
             var label = Ui.IconLabel(VectorIcon.Package, upload.DisplayName);
             label.VerticalAlignment = VerticalAlignment.Center;
-            var row = new DockPanel { Opacity = _downloadingId == upload.Id ? 0.8 : 0.5 }.HelpAt(HelpPage, anchor: "Effects published with the current account that aren't");
+            var row = new DockPanel { Opacity = _downloadingId == upload.Id ? 0.8 : 0.5 }.HelpAt("screen-effect-maker-list", anchor: "Effects published with the current account that aren't");
             DockPanel.SetDock(download, Dock.Right);
             row.Children.Add(download);
             row.Children.Add(new StackPanel

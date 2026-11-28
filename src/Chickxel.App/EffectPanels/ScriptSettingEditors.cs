@@ -41,7 +41,7 @@ public sealed partial class LayerEffectsDialog
         var controls = program.Settings.SelectMany(s => s.When).Select(c => c.Key).ToHashSet(StringComparer.Ordinal);
         // 대상 도움말(F1): 따로 설명이 있는 설정 칸(점·각도·시드·색 목록·레이어 — "스크립트 효과" 설정 그림 ⑦~⑪, 색은 EffectColorEditor)에 그 항목.
         // 숫자·켜고 끔·고르기 줄은 자리를 붙이지 않는다 — 효과 창·독·효과 만들기가 그 효과(설정 칸)를 설명하는 자리로 보낸다.
-        const string page = "screen-script-effects";
+        const string page = "screen-script-effects-settings";
         void row(string name, Control editor, bool block) => form.ScriptRow(name, editor, block);
         // 묶음(group): 보이는 설정이 다른 묶음으로 넘어갈 때 상자를 닫고, 묶음의 첫 보이는 설정에서 새 상자를 연다(숨은 설정은 상자를 끊지 않음)
         string? openGroup = null;
@@ -67,7 +67,7 @@ public sealed partial class LayerEffectsDialog
                 case ScriptSettingType.Int when points.TryGetValue(key, out var y):
                     string yKey = y.Key;
                     row(label, ScriptPointEditor(setting, y, Convert.ToInt32(values[key], CultureInfo.InvariantCulture),
-                        Convert.ToInt32(values[yKey], CultureInfo.InvariantCulture), v => SetValue(key, v), v => SetValue(yKey, v)).HelpAt(page, anchor: "An integer with widget"), false);
+                        Convert.ToInt32(values[yKey], CultureInfo.InvariantCulture), v => SetValue(key, v), v => SetValue(yKey, v)).HelpAt(page, anchor: "Point picker"), false);
                     break;
                 case ScriptSettingType.Position:
                 {
@@ -91,8 +91,8 @@ public sealed partial class LayerEffectsDialog
                     double number = Convert.ToDouble(values[key], CultureInfo.InvariantCulture);
                     row(label, setting switch
                     {
-                        { Type: ScriptSettingType.Int, Widget: ScriptSettingWidget.Angle } => ScriptAngleEditor(setting, number, v => SetValue(key, v)).HelpAt(page, anchor: "An integer with widget"),
-                        _ when IsSeed(setting) => ScriptSeedEditor(setting, number, v => SetValue(key, v)).HelpAt(page, anchor: "An integer setting with the key seed"),
+                        { Type: ScriptSettingType.Int, Widget: ScriptSettingWidget.Angle } => ScriptAngleEditor(setting, number, v => SetValue(key, v)).HelpAt(page, anchor: "Angle dial"),
+                        _ when IsSeed(setting) => ScriptSeedEditor(setting, number, v => SetValue(key, v)).HelpAt(page, anchor: "Seed"),
                         _ => ScriptNumberEditor(setting, number, v => SetValue(key, v)),
                     }, false);
                     break;
@@ -122,13 +122,13 @@ public sealed partial class LayerEffectsDialog
                     row(label, EffectColorEditor(effect, key, field, set), false);
                     break;
                 case ScriptSettingType.ColorList:
-                    row(label, ScriptColorListEditor(program, setting, effect, (IReadOnlyList<Color32>)values[key], set, rebuild).HelpAt(page, anchor: "Color lists (colorList)"), true);
+                    row(label, ScriptColorListEditor(program, setting, effect, (IReadOnlyList<Color32>)values[key], set, rebuild).HelpAt(page, anchor: "Color lists"), true);
                     break;
                 case ScriptSettingType.ColorPairs:
-                    row(label, ScriptColorPairsEditor(program, setting, effect, (IReadOnlyList<ScriptColorPair>)values[key], set, rebuild).HelpAt(page, anchor: "Color lists (colorList)"), true);
+                    row(label, ScriptColorPairsEditor(program, setting, effect, (IReadOnlyList<ScriptColorPair>)values[key], set, rebuild).HelpAt(page, anchor: "Color lists"), true);
                     break;
                 case ScriptSettingType.Layer:
-                    row(label, ScriptLayerEditor(layers, (string)values[key], v => SetValue(key, v)).HelpAt(page, anchor: "A layer picker (layer)"), false);
+                    row(label, ScriptLayerEditor(layers, (string)values[key], v => SetValue(key, v)).HelpAt(page, anchor: "Layer picker"), false);
                     break;
                 case ScriptSettingType.Font:
                     row(label, FontPicker.EffectField((string)values[key], v => SetValue(key, v)), true);

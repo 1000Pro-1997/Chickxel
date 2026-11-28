@@ -125,7 +125,7 @@ internal sealed class AiGuideDialog : DialogBase
 
     public AiGuideDialog(AiGuide guide, string text) : base(UiStrings.FormatAiGuide_EditTitle(name: AiGuides.Name(guide)), UiStrings.AiGuide_Save)
     {
-        this.HelpAt("ai-generate");
+        this.HelpAt("ai-generate-tips", anchor: "The Edit tip window");
         var about = Ui.Label(AiGuides.Tip(guide));
         about.TextWrapping = TextWrapping.Wrap;
         about.MaxWidth = 600;

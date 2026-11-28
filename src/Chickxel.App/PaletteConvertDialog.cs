@@ -92,17 +92,17 @@ public sealed class PaletteConvertDialog : DialogBase
         Body.Children.Add(Ui.Label(UiStrings.S_PaletteConvertDialog_PaletteConvertDialog_0988821852));
 
         // 대상 도움말(F1): 규칙 단추는 가이드 표의 그 규칙 줄로.
-        this.HelpAt("screen-palette", anchor: "Convert to palette colors");
-        foreach (var r in new[] { _cel, _layer, _all }) r.HelpAt("screen-palette", anchor: "Choose the target from");
+        this.HelpAt("screen-palette-convert", anchor: "Convert to palette colors");
+        foreach (var r in new[] { _cel, _layer, _all }) r.HelpAt("screen-palette-convert", anchor: "Choose the target from");
         string[] ruleRows = ["Nearest color", "Brightness order", "Palette order", "Hue first", "Lightness only"];
-        for (int i = 0; i < _rules.Length; i++) _rules[i].HelpAt("screen-palette", anchor: ruleRows[i]);
-        distanceRow.HelpAt("screen-palette", anchor: "Nearest color");
-        _distance.HelpAt("screen-palette", anchor: "Nearest color");
-        _noDither.HelpAt("screen-palette", anchor: "Dithering is No dithering");
-        _bayer.HelpAt("screen-palette", anchor: "Dithering is No dithering");
-        _before.HelpAt("screen-palette", anchor: "A before/after preview");
-        _after.HelpAt("screen-palette", anchor: "A before/after preview");
-        _count.HelpAt("screen-palette", anchor: "the change in color count");
+        for (int i = 0; i < _rules.Length; i++) _rules[i].HelpAt("screen-palette-convert", anchor: ruleRows[i]);
+        distanceRow.HelpAt("screen-palette-convert", anchor: "Nearest color");
+        _distance.HelpAt("screen-palette-convert", anchor: "Nearest color");
+        _noDither.HelpAt("screen-palette-convert", anchor: "Dithering is No dithering");
+        _bayer.HelpAt("screen-palette-convert", anchor: "Dithering is No dithering");
+        _before.HelpAt("screen-palette-convert", anchor: "A before/after preview");
+        _after.HelpAt("screen-palette-convert", anchor: "A before/after preview");
+        _count.HelpAt("screen-palette-convert", anchor: "the change in color count");
 
         _remap = BuildRemap();
         foreach (var r in new[] { _cel, _layer, _all, _noDither, _bayer }.Concat(_rules))

@@ -19,8 +19,8 @@ public sealed class TrashDialog : DialogBase
     /// <param name="restored">되살린 파일 경로들.</param>
     public TrashDialog(AppTrash trash, TrashPolicy policy, Action<TrashPolicy> policyChanged, Action<IReadOnlyList<string>> restored) : base(UiStrings.S_TrashDialog_TrashDialog_5DAE31D03A)
     {
-        // 대상 도움말(F1): 창 = "파일 브라우저"의 지우기와 앱 휴지통, 목록·미리보기 = ⑯, 단추 = ⑰, 보관 정책 = ⑱ 항목
-        const string page = "screen-file-browser";
+        // 대상 도움말(F1): 창 = "삭제와 앱 휴지통" 쪽, 목록·미리보기 = ⑱ 항목, 단추 = ⑲ 항목, 보관 정책 = ⑳ 항목
+        const string page = "screen-file-browser-trash";
         this.HelpAt(page, shot: "screen-file-browser-4");
         _trash = trash;
         _restored = restored;
@@ -60,9 +60,9 @@ public sealed class TrashDialog : DialogBase
                 _previewInfo,
             },
         };
-        Body.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { _list, previewBox } }.HelpAt(page, anchor: "⑯"));
+        Body.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { _list, previewBox } }.HelpAt(page, anchor: "In the window opened from"));
         _list.SelectionChanged += (_, _) => ShowPreview();
-        Body.Children.Add(Ui.Row(restore, delete, empty).HelpAt(page, anchor: "⑰"));
+        Body.Children.Add(Ui.Row(restore, delete, empty).HelpAt(page, anchor: "Restore (double-click)"));
         _list.DoubleTapped += (_, _) => RestoreSelected();
         Reload();
     }

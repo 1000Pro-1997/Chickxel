@@ -4,10 +4,11 @@
 <div class="table-wrap"><table>
 <thead><tr><th>{{ai.intro.th1}}</th><th>{{ai.intro.th2}}</th></tr></thead>
 <tbody>
-<tr><td>{{ai.intro.g1}}</td><td><a href="#ai-overview">{{ai-overview.1}}</a> · <a href="#ai-setup">{{ai-setup.1}}</a> · <a href="#ai-open">{{ai-open.1}}</a> · <a href="#ai-tabs">{{ai-tabs.1}}</a> · <a href="#ai-how">{{ai-how.1}}</a> · <a href="#ai-external">{{ai-external.1}}</a></td></tr>
-<tr><td>{{ai.intro.g2}}</td><td><a href="#ai-chat">{{ai-chat.1}}</a> · <a href="#ai-image-markup">{{ai-image-markup.1}}</a> · <a href="#ai-progress">{{ai-progress.1}}</a> · <a href="#ai-questions">{{ai-questions.1}}</a> · <a href="#ai-edit-last">{{ai-edit-last.1}}</a> · <a href="#ai-history">{{ai-history.1}}</a> · <a href="#ai-help">{{ai-help.1}}</a></td></tr>
-<tr><td>{{ai.intro.g3}}</td><td><a href="#ai-edits">{{ai-edits.1}}</a> · <a href="#ai-generate">{{ai-generate.1}}</a> · <a href="#ai-effects">{{ai-effects.1}}</a> · <a href="#ai-references">{{ai-references.1}}</a></td></tr>
-<tr><td>{{ai.intro.g4}}</td><td><a href="#ai-undo">{{ai-undo.1}}</a> · <a href="#ai-file-only">{{ai-file-only.1}}</a> · <a href="#ai-locked">{{ai-locked.1}}</a></td></tr>
+<tr><td>{{ai.intro.g1}}</td><td><a href="#ai-overview">{{ai-overview.1}}</a> · <a href="#ai-setup">{{ai-setup.1}}</a> · <a href="#ai-setup-status">{{ai-setup-status.1}}</a> · <a href="#ai-open">{{ai-open.1}}</a> · <a href="#ai-how">{{ai-how.1}}</a></td></tr>
+<tr><td>{{ai.intro.g2}}</td><td><a href="#ai-chat">{{ai-chat.1}}</a> · <a href="#ai-image-markup">{{ai-image-markup.1}}</a> · <a href="#ai-questions">{{ai-questions.1}}</a> · <a href="#ai-edit-last">{{ai-edit-last.1}}</a> · <a href="#ai-history">{{ai-history.1}}</a> · <a href="#ai-help">{{ai-help.1}}</a></td></tr>
+<tr><td>{{ai.intro.g3}}</td><td><a href="#ai-edits">{{ai-edits.1}}</a> · <a href="#ai-generate">{{ai-generate.1}}</a> · <a href="#ai-generate-settings">{{ai-generate-settings.1}}</a> · <a href="#ai-generate-tips">{{ai-generate-tips.1}}</a> · <a href="#ai-effects">{{ai-effects.1}}</a> · <a href="#ai-references">{{ai-references.1}}</a></td></tr>
+<tr><td>{{ai.intro.g4}}</td><td><a href="#ai-undo">{{ai-undo.1}}</a> · <a href="#ai-file-only">{{ai-file-only.1}}</a></td></tr>
+<tr><td>{{ai.intro.g6}}</td><td><a href="#ai-external">{{ai-external.1}}</a> · <a href="#ai-external-diff">{{ai-external-diff.1}}</a></td></tr>
 <tr><td>{{ai.intro.g5}}</td><td><a href="#ai-troubleshoot">{{ai-troubleshoot.1}}</a></td></tr>
 </tbody>
 </table></div>
@@ -41,48 +42,17 @@
 <h3 id="ai-setup">{{ai-setup.1}}</h3>
 <p>{{ai-setup.lead}}</p>
 <h4>{{ai-setup.h-install}}</h4>
-<p>{{ai-setup.2}}</p>
 <figure class="shot"><img src="{{root}}assets/guide/ai-setup.png" alt="{{ai-setup.6.alt}}" width="520" height="672" loading="lazy"><figcaption>{{ai-setup.7}}</figcaption></figure>
 <figure class="shot"><img src="{{root}}assets/guide/ai-setup-2.png" alt="{{ai-setup.8.alt}}" width="514" height="192" loading="lazy"><figcaption>{{ai-setup.9}}</figcaption></figure>
 <ol>
 <li>{{ai-setup.3}}</li>
 <li>{{ai-setup.4}}</li>
+<li>{{ai-setup.run}}</li>
 </ol>
 <ul>
 <li>{{ai-setup.12}}</li>
 <li>{{ai-setup.14}}</li>
 </ul>
-<h4>{{ai-setup.h-status}}</h4>
-<figure class="shot"><img src="{{root}}assets/guide/ai-setup-3.png" alt="{{ai-setup.10.alt}}" width="724" height="588" loading="lazy"><figcaption>{{ai-setup.11}}</figcaption></figure>
-<p>{{ai-setup.5}}</p>
-<p>{{ai-setup.status-open}}</p>
-<div class="table-wrap"><table>
-<thead><tr><th>{{ai-setup.th-row}}</th><th>{{ai-setup.th-check}}</th></tr></thead>
-<tbody>
-<tr><td><strong>{{UiStrings.AiStatus_McpServer}}</strong></td><td>{{ai-setup.row-server}}</td></tr>
-<tr><td><strong>{{UiStrings.AiStatus_CliVersion}}</strong></td><td>{{ai-setup.row-cli}}</td></tr>
-<tr><td><strong>{{UiStrings.AiStatus_LoginState}}</strong></td><td>{{ai-setup.row-login}}</td></tr>
-<tr><td><strong>{{UiStrings.AiStatus_McpConnection}}</strong></td><td>{{ai-setup.row-mcp}}</td></tr>
-</tbody>
-</table></div>
-<div class="table-wrap"><table>
-<thead><tr><th>{{ai-setup.th-button}}</th><th>{{ai-setup.th-does}}</th></tr></thead>
-<tbody>
-<tr><td><strong>{{UiStrings.AiStatus_InstallUpdate}}</strong></td><td>{{ai-setup.btn-install}}</td></tr>
-<tr><td><strong>{{UiStrings.AiStatus_Login}}</strong></td><td>{{ai-setup.btn-login}}</td></tr>
-<tr><td><strong>{{UiStrings.AiStatus_Logout}}</strong></td><td>{{ai-setup.btn-logout}}</td></tr>
-<tr><td><strong>{{UiStrings.AiStatus_ChangePath}}</strong></td><td>{{ai-setup.btn-path}}</td></tr>
-<tr><td><strong>{{UiStrings.AiStatus_AutomaticPath}}</strong></td><td>{{ai-setup.btn-auto}}</td></tr>
-<tr><td><strong>{{UiStrings.AiStatus_Recheck}}</strong></td><td>{{ai-setup.btn-recheck}}</td></tr>
-</tbody>
-</table></div>
-<div class="table-wrap"><table>
-<thead><tr><th>{{ai-setup.th-option}}</th><th>{{ai-setup.th-does}}</th></tr></thead>
-<tbody>
-<tr><td><strong>{{UiStrings.AiStatus_DontShowUntilChange}}</strong></td><td>{{ai-setup.opt-dontshow}}</td></tr>
-<tr><td><strong>{{UiStrings.AiStatus_CenterChat}}</strong></td><td>{{ai-setup.opt-center}}</td></tr>
-</tbody>
-</table></div>
 <h4>{{ai-setup.h-login}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/ai-setup-4.png" alt="{{ai-setup.17.alt}}" width="520" height="200" loading="lazy"><figcaption>{{ai-setup.18}}</figcaption></figure>
 <figure class="shot"><img src="{{root}}assets/guide/ai-setup-5.png" alt="{{ai-setup.19.alt}}" width="760" height="37" loading="lazy"><figcaption>{{ai-setup.20}}</figcaption></figure>
@@ -98,6 +68,42 @@
 <li>{{ai-setup.16}}</li>
 </ul>
 
+<h3 id="ai-setup-status">{{ai-setup-status.1}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/ai-setup-3.png" alt="{{ai-setup.10.alt}}" width="724" height="588" loading="lazy"><figcaption>{{ai-setup.11}}</figcaption></figure>
+<p>{{ai-setup-status.lead}}</p>
+<p>{{ai-setup.5}}</p>
+<p>{{ai-setup.status-open}}</p>
+<h4>{{ai-setup-status.h-rows}}</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-setup.th-row}}</th><th>{{ai-setup.th-check}}</th></tr></thead>
+<tbody>
+<tr><td><strong>{{UiStrings.AiStatus_McpServer}}</strong></td><td>{{ai-setup.row-server}}</td></tr>
+<tr><td><strong>{{UiStrings.AiStatus_CliVersion}}</strong></td><td>{{ai-setup.row-cli}}</td></tr>
+<tr><td><strong>{{UiStrings.AiStatus_LoginState}}</strong></td><td>{{ai-setup.row-login}}</td></tr>
+<tr><td><strong>{{UiStrings.AiStatus_McpConnection}}</strong></td><td>{{ai-setup.row-mcp}}</td></tr>
+</tbody>
+</table></div>
+<h4>{{ai-setup-status.h-buttons}}</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-setup.th-button}}</th><th>{{ai-setup.th-does}}</th></tr></thead>
+<tbody>
+<tr><td><strong>{{UiStrings.AiStatus_InstallUpdate}}</strong></td><td>{{ai-setup.btn-install}}</td></tr>
+<tr><td><strong>{{UiStrings.AiStatus_Login}}</strong></td><td>{{ai-setup.btn-login}}</td></tr>
+<tr><td><strong>{{UiStrings.AiStatus_Logout}}</strong></td><td>{{ai-setup.btn-logout}}</td></tr>
+<tr><td><strong>{{UiStrings.AiStatus_ChangePath}}</strong></td><td>{{ai-setup.btn-path}}</td></tr>
+<tr><td><strong>{{UiStrings.AiStatus_AutomaticPath}}</strong></td><td>{{ai-setup.btn-auto}}</td></tr>
+<tr><td><strong>{{UiStrings.AiStatus_Recheck}}</strong></td><td>{{ai-setup.btn-recheck}}</td></tr>
+</tbody>
+</table></div>
+<h4>{{ai-setup-status.h-options}}</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-setup.th-option}}</th><th>{{ai-setup.th-does}}</th></tr></thead>
+<tbody>
+<tr><td><strong>{{UiStrings.AiStatus_DontShowUntilChange}}</strong></td><td>{{ai-setup.opt-dontshow}}</td></tr>
+<tr><td><strong>{{UiStrings.AiStatus_CenterChat}}</strong></td><td>{{ai-setup.opt-center}}</td></tr>
+</tbody>
+</table></div>
+
 <h3 id="ai-open">{{ai-open.1}}</h3>
 <p>{{ai-open.lead}}</p>
 <figure class="shot"><img src="{{root}}assets/guide/ai-open.png" alt="{{ai-open.5.alt}}" width="1280" height="140" loading="lazy"><figcaption>{{ai-open.6}}</figcaption></figure>
@@ -107,9 +113,7 @@
 <li>{{ai-open.4}}</li>
 </ul>
 <p>{{ai-open.7}}</p>
-<p>{{ai-open.center}}</p>
-
-<h3 id="ai-tabs">{{ai-tabs.1}}</h3>
+<h4>{{ai-open.h-tabs}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/ai-tabs.png" alt="{{ai-tabs.5.alt}}" width="520" height="672" loading="lazy"><figcaption>{{ai-tabs.6}}</figcaption></figure>
 <p>{{ai-tabs.2}}</p>
 <ul>
@@ -138,6 +142,7 @@
 </tbody>
 </table></div>
 <ul>
+<li>{{ai-how.limit-web}}</li>
 <li>{{ai-how.limit-gen}}</li>
 <li>{{ai-how.limit-maker}}</li>
 </ul>
@@ -146,90 +151,6 @@
 <li>{{ai-how.data-1}}</li>
 <li>{{ai-how.data-2}}</li>
 </ul>
-
-<h3 id="ai-external">{{ai-external.1}}</h3>
-<p>{{ai-external.lead}}</p>
-<h4>{{ai-external.h-on}}</h4>
-<figure class="shot"><img src="{{root}}assets/guide/ai-external.png" alt="{{ai-external.shot1.alt}}" width="600" height="395" loading="lazy"><figcaption>{{ai-external.shot1}}</figcaption></figure>
-<ul class="marks">
-<li>{{ai-external.m1}}</li>
-<li>{{ai-external.m3}}</li>
-<li>{{ai-external.m4}}</li>
-<li>{{ai-external.m5}}</li>
-</ul>
-<p>{{ai-external.after-on}}</p>
-<h4>{{ai-external.h-apps}}</h4>
-<p>{{ai-external.apps-lead}}</p>
-<pre><code>{
-  "mcpServers": {
-    "chickxel": {
-      "command": "C:\\Users\\me\\AppData\\Local\\Programs\\Chickxel\\Chickxel.exe",
-      "args": ["--mcp"]
-    }
-  }
-}</code></pre>
-<p>{{ai-external.apps-path}}</p>
-<div class="table-wrap"><table>
-<thead><tr><th>{{ai-external.th-app}}</th><th>{{ai-external.th-where}}</th></tr></thead>
-<tbody>
-<tr><td>Claude Desktop</td><td>{{ai-external.app-desktop}}</td></tr>
-<tr><td>Claude Code</td><td>{{ai-external.app-code}}</td></tr>
-<tr><td>Cursor</td><td>{{ai-external.app-cursor}}</td></tr>
-<tr><td>Codex CLI</td><td>{{ai-external.app-codex}}</td></tr>
-<tr><td>{{ai-external.app-chatgpt-name}}</td><td>{{ai-external.app-chatgpt}}</td></tr>
-</tbody>
-</table></div>
-<pre><code>[mcp_servers.chickxel]
-command = 'C:\Users\me\AppData\Local\Programs\Chickxel\Chickxel.exe'
-args = ["--mcp"]
-tool_timeout_sec = 3600</code></pre>
-<p>{{ai-external.apps-check}}</p>
-<p>{{ai-external.apps-guide}}</p>
-<h4>{{ai-external.h-how}}</h4>
-<ol>
-<li>{{ai-external.how-1}}</li>
-<li>{{ai-external.how-2}}</li>
-<li>{{ai-external.how-3}}</li>
-<li>{{ai-external.how-4}}</li>
-</ol>
-<p>{{ai-external.how-restart}}</p>
-<h4>{{ai-external.h-status}}</h4>
-<figure class="shot"><img src="{{root}}assets/guide/ai-external-2.png" alt="{{ai-external.shot2.alt}}" width="526" height="63" loading="lazy"><figcaption>{{ai-external.shot2}}</figcaption></figure>
-<p>{{ai-external.status}}</p>
-<h4>{{ai-external.h-diff}}</h4>
-<p>{{ai-external.diff-lead}}</p>
-<div class="table-wrap"><table>
-<thead><tr><th>{{ai-external.th-item}}</th><th>{{ai-external.th-chat}}</th><th>{{ai-external.th-ext}}</th></tr></thead>
-<tbody>
-<tr><td>{{ai-external.d-start}}</td><td>{{ai-external.d-start.chat}}</td><td>{{ai-external.d-start.ext}}</td></tr>
-<tr><td>{{ai-external.d-cost}}</td><td>{{ai-external.d-cost.chat}}</td><td>{{ai-external.d-cost.ext}}</td></tr>
-<tr><td>{{ai-external.d-undo}}</td><td>{{ai-external.d-undo.chat}}</td><td>{{ai-external.d-undo.ext}}</td></tr>
-<tr><td>{{ai-external.d-ask}}</td><td>{{ai-external.d-ask.chat}}</td><td>{{ai-external.d-ask.ext}}</td></tr>
-<tr><td>{{ai-external.d-open}}</td><td>{{ai-external.d-open.chat}}</td><td>{{ai-external.d-open.ext}}</td></tr>
-<tr><td>{{ai-external.d-gen}}</td><td>{{ai-external.d-gen.chat}}</td><td>{{ai-external.d-gen.ext}}</td></tr>
-<tr><td>{{ai-external.d-file-only}}</td><td>{{ai-external.d-file-only.chat}}</td><td>{{ai-external.d-file-only.ext}}</td></tr>
-<tr><td>{{ai-external.d-locked}}</td><td>{{ai-external.d-locked.chat}}</td><td>{{ai-external.d-locked.ext}}</td></tr>
-<tr><td>{{ai-external.d-rules}}</td><td>{{ai-external.d-rules.chat}}</td><td>{{ai-external.d-rules.ext}}</td></tr>
-<tr><td>{{ai-external.d-see}}</td><td>{{ai-external.d-see.chat}}</td><td>{{ai-external.d-see.ext}}</td></tr>
-</tbody>
-</table></div>
-<h4>{{ai-external.h-safety}}</h4>
-<ul>
-<li>{{ai-external.safe-1}}</li>
-<li>{{ai-external.safe-2}}</li>
-<li>{{ai-external.safe-3}}</li>
-<li>{{ai-external.safe-4}}</li>
-</ul>
-<h4>{{ai-external.h-trouble}}</h4>
-<div class="table-wrap"><table>
-<thead><tr><th>{{ai-external.th-sym}}</th><th>{{ai-external.th-fix}}</th></tr></thead>
-<tbody>
-<tr><td>{{ai-external.t-off}}</td><td>{{ai-external.t-off.fix}}</td></tr>
-<tr><td>{{ai-external.t-notools}}</td><td>{{ai-external.t-notools.fix}}</td></tr>
-<tr><td>{{ai-external.t-missing}}</td><td>{{ai-external.t-missing.fix}}</td></tr>
-<tr><td>{{ai-external.t-image}}</td><td>{{ai-external.t-image.fix}}</td></tr>
-</tbody>
-</table></div>
 
 <h3 id="ai-chat">{{ai-chat.1}}</h3>
 <p>{{ai-chat.lead}}</p>
@@ -251,11 +172,13 @@ tool_timeout_sec = 3600</code></pre>
 <h4>{{ai-chat.h-model}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/ai-chat-3.png" alt="{{ai-chat.25.alt}}" width="520" height="187" loading="lazy"><figcaption>{{ai-chat.26}}</figcaption></figure>
 <p>{{ai-chat.24}}</p>
+<p>{{ai-chat.model-saved}}</p>
 <h4>{{ai-chat.h-chips}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/ai-chat-4.png" alt="{{ai-chat.32.alt}}" width="520" height="256" loading="lazy"><figcaption>{{ai-chat.33}}</figcaption></figure>
 <p>{{ai-chat.27}}</p>
 <ul>
-<li>{{ai-chat.28}}</li>
+<li>{{ai-chat.chip-hover}}</li>
+<li>{{ai-chat.chip-del}}</li>
 </ul>
 <figure class="shot"><img src="{{root}}assets/guide/ai-chat-5.png" alt="{{ai-chat.34.alt}}" width="520" height="567" loading="lazy"><figcaption>{{ai-chat.35}}</figcaption></figure>
 <ul>
@@ -270,6 +193,7 @@ tool_timeout_sec = 3600</code></pre>
 <ul>
 <li>{{ai-chat.38}}</li>
 <li>{{ai-chat.39}}</li>
+<li>{{ai-chat.39b}}</li>
 </ul>
 <h4>{{ai-chat.h-queue}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/ai-chat-7.png" alt="{{ai-chat.41.alt}}" width="520" height="208" loading="lazy"><figcaption>{{ai-chat.42}}</figcaption></figure>
@@ -294,13 +218,11 @@ tool_timeout_sec = 3600</code></pre>
 <li>{{ai-image-markup.m7}}</li>
 </ul>
 <h4>{{ai-image-markup.h-send}}</h4>
-<p>{{ai-image-markup.send-1}}</p>
-<p>{{ai-image-markup.send-2}}</p>
-
-<h3 id="ai-progress">{{ai-progress.1}}</h3>
-<figure class="shot"><img src="{{root}}assets/guide/ai-progress.png" alt="{{ai-progress.3.alt}}" width="470" height="752" loading="lazy"><figcaption>{{ai-progress.4}}</figcaption></figure>
-<p>{{ai-progress.2}}</p>
-<div class="note">{{ai-progress.5}}</div>
+<ul>
+<li>{{ai-image-markup.send-1}}</li>
+<li>{{ai-image-markup.send-2}}</li>
+<li>{{ai-image-markup.send-3}}</li>
+</ul>
 
 <h3 id="ai-questions">{{ai-questions.1}}</h3>
 <figure class="shot"><img src="{{root}}assets/guide/ai-questions.png" alt="{{ai-questions.6.alt}}" width="470" height="672" loading="lazy"><figcaption>{{ai-questions.7}}</figcaption></figure>
@@ -314,6 +236,10 @@ tool_timeout_sec = 3600</code></pre>
 <figure class="shot"><img src="{{root}}assets/guide/ai-questions-2.png" alt="{{ai-questions.notify.alt}}" width="368" height="103" loading="lazy"><figcaption>{{ai-questions.notify.cap}}</figcaption></figure>
 <p>{{ai-questions.13}}</p>
 <p>{{ai-questions.notify-2}}</p>
+<h4>{{ai-questions.h-progress}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/ai-progress.png" alt="{{ai-progress.3.alt}}" width="470" height="752" loading="lazy"><figcaption>{{ai-progress.4}}</figcaption></figure>
+<p>{{ai-progress.2}}</p>
+<div class="note">{{ai-progress.5}}</div>
 
 <h3 id="ai-edit-last">{{ai-edit-last.1}}</h3>
 <figure class="shot"><img src="{{root}}assets/guide/ai-edit-last.png" alt="{{ai-edit-last.3.alt}}" width="468" height="129" loading="lazy"><figcaption>{{ai-edit-last.4}}</figcaption></figure>
@@ -361,6 +287,7 @@ tool_timeout_sec = 3600</code></pre>
 <figure class="shot"><img src="{{root}}assets/guide/ai-edits.png" alt="{{ai-edits.10.alt}}" width="1280" height="812" loading="lazy"><figcaption>{{ai-edits.11}}</figcaption></figure>
 <p>{{ai-edits.fig}}</p>
 <h4>{{ai-edits.h-tools}}</h4>
+<p>{{ai-edits.tools-lead}}</p>
 <div class="table-wrap"><table>
 <thead><tr><th>{{ai-edits.th-group}}</th><th>{{ai-edits.th-does}}</th><th>{{ai-edits.th-tools}}</th></tr></thead>
 <tbody>
@@ -381,6 +308,12 @@ tool_timeout_sec = 3600</code></pre>
 </tbody>
 </table></div>
 <p>{{ai-edits.tools-off}}</p>
+<h4>{{ai-edits.h-lines}}</h4>
+<p>{{ai-edits.13}}</p>
+<h4>{{ai-edits.h-links}}</h4>
+<p>{{ai-edits.links}}</p>
+<h4>{{ai-edits.h-save}}</h4>
+<p>{{ai-edits.12}}</p>
 <h4>{{ai-edits.h-pixels}}</h4>
 <p>{{ai-edits.pixels-1}}</p>
 <pre><code>legend:
@@ -394,25 +327,18 @@ rows:
 31|...ABBBBA...
 32|..ABBBBBBA..</code></pre>
 <p>{{ai-edits.pixels-2}}</p>
-<h4>{{ai-edits.h-lines}}</h4>
-<p>{{ai-edits.13}}</p>
-<h4>{{ai-edits.h-links}}</h4>
-<p>{{guide-new.ai-links}}</p>
-<h4>{{ai-edits.h-save}}</h4>
-<p>{{ai-edits.12}}</p>
 
 <h3 id="ai-generate">{{ai-generate.1}}</h3>
 <p>{{ai-generate.2}}</p>
-<h4>{{ai-generate.h-panel}}</h4>
-<figure class="shot"><img src="{{root}}assets/guide/ai-generate.png" alt="{{ai-generate.9.alt}}" width="810" height="262" loading="lazy"><figcaption>{{ai-generate.10}}</figcaption></figure>
-<ul>
-<li>{{ai-generate.3}}</li>
-<li>{{ai-generate.4}}</li>
-<li>{{ai-generate.5}}<ul><li>{{ai-generate.6}}</li></ul></li>
-<li>{{ai-generate.42}}</li>
-</ul>
+<h4>{{ai-generate.h-steps}}</h4>
+<ol>
+<li>{{ai-generate.step-1}}</li>
+<li>{{ai-generate.step-2}}</li>
+<li>{{ai-generate.step-3}}</li>
+</ol>
 <h4>{{ai-generate.h-options}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/ai-generate-2.png" alt="{{ai-generate.29.alt}}" width="810" height="804" loading="lazy"><figcaption>{{ai-generate.30}}</figcaption></figure>
+<p>{{ai-generate.options-lead}}</p>
 <div class="table-wrap"><table>
 <thead><tr><th>{{ai-generate.11}}</th><th>{{ai-generate.12}}</th></tr></thead>
 <tbody>
@@ -425,7 +351,6 @@ rows:
 <ul>
 <li>{{ai-generate.7}}</li>
 <li>{{ai-generate.8}}</li>
-<li>{{ai-generate.31}}</li>
 </ul>
 <h4>{{ai-generate.h-anim}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/ai-generate-3.png" alt="{{ai-generate.35.alt}}" width="470" height="215" loading="lazy"><figcaption>{{ai-generate.36}}</figcaption></figure>
@@ -437,7 +362,9 @@ rows:
 <figure class="shot"><img src="{{root}}assets/guide/ai-generate-4.png" alt="{{ai-generate.37.alt}}" width="468" height="350" loading="lazy"><figcaption>{{ai-generate.38}}</figcaption></figure>
 <ul class="marks">
 <li>{{ai-generate.33}}</li>
+<li>{{ai-generate.card-2}}</li>
 </ul>
+<p>{{ai-generate.card-3}}</p>
 <h4>{{ai-generate.h-claude}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/ai-generate-5.png" alt="{{ai-generate.39.alt}}" width="416" height="188" loading="lazy"><figcaption>{{ai-generate.40}}</figcaption></figure>
 <p>{{ai-generate.34}}</p>
@@ -446,9 +373,40 @@ rows:
 <ul class="marks">
 <li>{{ai-generate.43}}</li>
 </ul>
-<h4>{{UiStrings.AiGuide_Title}}</h4>
+
+<h3 id="ai-generate-settings">{{ai-generate-settings.1}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/ai-generate.png" alt="{{ai-generate.9.alt}}" width="810" height="262" loading="lazy"><figcaption>{{ai-generate.10}}</figcaption></figure>
+<p>{{ai-generate.3}}</p>
+<ul class="marks">
+<li>{{ai-generate-settings.status}}</li>
+<li>{{ai-generate.4}}</li>
+</ul>
+<h4>{{UiStrings.AiDraw_Mode_Title}}</h4>
+<ul class="marks">
+<li>{{ai-generate.5}}</li>
+<li>{{ai-generate-settings.mode-gen}}</li>
+<li>{{ai-generate-settings.mode-direct}}</li>
+</ul>
+<p>{{ai-generate-settings.mode-shows}}</p>
+<h4>{{UiStrings.AiDraw_PaletteOnly}}</h4>
+<p>{{ai-generate.6}}</p>
+<ul>
+<li>{{ai-generate-settings.palette-alpha}}</li>
+<li>{{ai-generate-settings.palette-scope}}</li>
+<li>{{ai-generate-settings.palette-off}}</li>
+</ul>
+<h4>{{ai-generate-settings.h-review}}</h4>
+<p>{{ai-generate.42}}</p>
+<ul>
+<li>{{ai-generate-settings.review-plan}}</li>
+<li>{{ai-generate-settings.review-score}}</li>
+<li>{{ai-generate-settings.review-undo}}</li>
+</ul>
+
+<h3 id="ai-generate-tips">{{ai-generate-tips.1}}</h3>
 <figure class="shot"><img src="{{root}}assets/guide/ai-generate-7.png" alt="{{ai-generate.tips.alt}}" width="347" height="667" loading="lazy"><figcaption>{{ai-generate.tips.cap}}</figcaption></figure>
 <p>{{ai-generate.tips-1}}</p>
+<h4>{{UiStrings.AiGuide_Title}}</h4>
 <div class="table-wrap"><table>
 <thead><tr><th>{{ai-generate.tips-th1}}</th><th>{{ai-generate.tips-th2}}</th><th>{{ai-generate.tips-th3}}</th></tr></thead>
 <tbody>
@@ -479,7 +437,6 @@ rows:
 <li>{{ai-generate.edit-2}}</li>
 <li>{{ai-generate.edit-3}}</li>
 </ul>
-<div class="note"><p>{{ai-generate.41}}</p></div>
 
 <h3 id="ai-effects">{{ai-effects.1}}</h3>
 <figure class="shot"><img src="{{root}}assets/guide/ai-effects.png" alt="{{ai-effects.9.alt}}" width="1280" height="812" loading="lazy"><figcaption>{{ai-effects.10}}</figcaption></figure>
@@ -534,6 +491,7 @@ rows:
 <li>{{ai-references.4}}</li>
 <li>{{ai-references.5}}</li>
 <li>{{ai-references.28}}</li>
+<li>{{ai-references.examples}}</li>
 </ul>
 <div class="note"><p>{{ai-references.31}}</p></div>
 
@@ -543,10 +501,16 @@ rows:
 <p>{{ai-undo.2}}</p>
 <h4>{{ai-undo.h-insert}}</h4>
 <p>{{ai-undo.7}}</p>
+<ul>
+<li>{{ai-undo.insert-where}}</li>
+<li>{{ai-undo.insert-step}}</li>
+<li>{{ai-undo.insert-busy}}</li>
+</ul>
 
 <h3 id="ai-file-only">{{ai-file-only.1}}</h3>
 <figure class="shot"><img src="{{root}}assets/guide/ai-file-only.png" alt="{{ai-file-only.6.alt}}" width="470" height="592" loading="lazy"><figcaption>{{ai-file-only.7}}</figcaption></figure>
 <p>{{ai-file-only.2}}</p>
+<h4>{{ai-file-only.h-file}}</h4>
 <ul>
 <li>{{ai-file-only.3}}</li>
 <li>{{ai-file-only.4}}</li>
@@ -554,15 +518,100 @@ rows:
 <li>{{ai-file-only.switch}}</li>
 <li>{{ai-file-only.5}}</li>
 </ul>
-
-<h3 id="ai-locked">{{ai-locked.1}}</h3>
-<p>{{ai-locked.2}}</p>
+<h4>{{ai-file-only.h-locked}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/ai-locked.png" alt="{{ai-locked.6.alt}}" width="1280" height="812" loading="lazy"><figcaption>{{ai-locked.7}}</figcaption></figure>
+<p>{{ai-locked.2}}</p>
 <ul>
 <li>{{ai-locked.3}}</li>
 <li>{{ai-locked.4}}</li>
-<li>{{ai-locked.5}}</li>
 </ul>
+
+<h3 id="ai-external">{{ai-external.1}}</h3>
+<p>{{ai-external.lead}}</p>
+<h4>{{ai-external.h-on}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/ai-external.png" alt="{{ai-external.shot1.alt}}" width="600" height="395" loading="lazy"><figcaption>{{ai-external.shot1}}</figcaption></figure>
+<ul class="marks">
+<li>{{ai-external.m1}}</li>
+<li>{{ai-external.m3}}</li>
+<li>{{ai-external.m4}}</li>
+<li>{{ai-external.m5}}</li>
+</ul>
+<p>{{ai-external.after-on}}</p>
+<h4>{{ai-external.h-apps}}</h4>
+<p>{{ai-external.apps-lead}}</p>
+<pre><code>{
+  "mcpServers": {
+    "chickxel": {
+      "command": "C:\\Users\\me\\AppData\\Local\\Programs\\Chickxel\\Chickxel.exe",
+      "args": ["--mcp"]
+    }
+  }
+}</code></pre>
+<p>{{ai-external.apps-path}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-external.th-app}}</th><th>{{ai-external.th-where}}</th></tr></thead>
+<tbody>
+<tr><td>Claude Desktop</td><td>{{ai-external.app-desktop}}</td></tr>
+<tr><td>Claude Code</td><td>{{ai-external.app-code}}</td></tr>
+<tr><td>Cursor</td><td>{{ai-external.app-cursor}}</td></tr>
+<tr><td>Codex CLI</td><td>{{ai-external.app-codex}}</td></tr>
+<tr><td>{{ai-external.app-chatgpt-name}}</td><td>{{ai-external.app-chatgpt}}</td></tr>
+</tbody>
+</table></div>
+<pre><code>[mcp_servers.chickxel]
+command = 'C:\Users\me\AppData\Local\Programs\Chickxel\Chickxel.exe'
+args = ["--mcp"]
+tool_timeout_sec = 3600</code></pre>
+<p>{{ai-external.toml-note}}</p>
+<p>{{ai-external.apps-check}}</p>
+<p>{{ai-external.apps-guide}}</p>
+<h4>{{ai-external.h-status}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/ai-external-2.png" alt="{{ai-external.shot2.alt}}" width="526" height="63" loading="lazy"><figcaption>{{ai-external.shot2}}</figcaption></figure>
+<p>{{ai-external.status}}</p>
+
+<h3 id="ai-external-diff">{{ai-external-diff.1}}</h3>
+<p>{{ai-external.diff-lead}}</p>
+<h4>{{ai-external.h-how}}</h4>
+<ol>
+<li>{{ai-external.how-1}}</li>
+<li>{{ai-external.how-3}}</li>
+<li>{{ai-external.how-4}}</li>
+</ol>
+<p>{{ai-external.how-restart}}</p>
+<h4>{{ai-external.h-diff}}</h4>
+<p>{{ai-external.diff-when}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-external.th-item}}</th><th>{{ai-external.th-chat}}</th><th>{{ai-external.th-ext}}</th></tr></thead>
+<tbody>
+<tr><td>{{ai-external.d-start}}</td><td>{{ai-external.d-start.chat}}</td><td>{{ai-external.d-start.ext}}</td></tr>
+<tr><td>{{ai-external.d-cost}}</td><td>{{ai-external.d-cost.chat}}</td><td>{{ai-external.d-cost.ext}}</td></tr>
+<tr><td>{{ai-external.d-undo}}</td><td>{{ai-external.d-undo.chat}}</td><td>{{ai-external.d-undo.ext}}</td></tr>
+<tr><td>{{ai-external.d-ask}}</td><td>{{ai-external.d-ask.chat}}</td><td>{{ai-external.d-ask.ext}}</td></tr>
+<tr><td>{{ai-external.d-open}}</td><td>{{ai-external.d-open.chat}}</td><td>{{ai-external.d-open.ext}}</td></tr>
+<tr><td>{{ai-external.d-gen}}</td><td>{{ai-external.d-gen.chat}}</td><td>{{ai-external.d-gen.ext}}</td></tr>
+<tr><td>{{ai-external.d-file-only}}</td><td>{{ai-external.d-file-only.chat}}</td><td>{{ai-external.d-file-only.ext}}</td></tr>
+<tr><td>{{ai-external.d-locked}}</td><td>{{ai-external.d-locked.chat}}</td><td>{{ai-external.d-locked.ext}}</td></tr>
+<tr><td>{{ai-external.d-rules}}</td><td>{{ai-external.d-rules.chat}}</td><td>{{ai-external.d-rules.ext}}</td></tr>
+<tr><td>{{ai-external.d-see}}</td><td>{{ai-external.d-see.chat}}</td><td>{{ai-external.d-see.ext}}</td></tr>
+</tbody>
+</table></div>
+<h4>{{ai-external.h-safety}}</h4>
+<ul>
+<li>{{ai-external.safe-1}}</li>
+<li>{{ai-external.safe-2}}</li>
+<li>{{ai-external.safe-3}}</li>
+<li>{{ai-external.safe-4}}</li>
+</ul>
+<h4>{{ai-external.h-trouble}}</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-external.th-sym}}</th><th>{{ai-external.th-fix}}</th></tr></thead>
+<tbody>
+<tr><td>{{ai-external.t-off}}</td><td>{{ai-external.t-off.fix}}</td></tr>
+<tr><td>{{ai-external.t-notools}}</td><td>{{ai-external.t-notools.fix}}</td></tr>
+<tr><td>{{ai-external.t-missing}}</td><td>{{ai-external.t-missing.fix}}</td></tr>
+<tr><td>{{ai-external.t-image}}</td><td>{{ai-external.t-image.fix}}</td></tr>
+</tbody>
+</table></div>
 
 <h3 id="ai-troubleshoot">{{ai-troubleshoot.1}}</h3>
 <p>{{ai-troubleshoot.lead}}</p>
@@ -577,8 +626,11 @@ rows:
 <tr><td>{{ai-troubleshoot.s3-msg}}</td><td>{{ai-troubleshoot.s3-means}}</td><td>{{ai-troubleshoot.s3-todo}}</td></tr>
 </tbody>
 </table></div>
-<p>{{ai-troubleshoot.trace}}</p>
-<p>{{ai-troubleshoot.config}}</p>
+<ul>
+<li>{{ai-troubleshoot.trace}}</li>
+<li>{{ai-troubleshoot.compare}}</li>
+<li>{{ai-troubleshoot.config}}</li>
+</ul>
 <h4>{{ai-troubleshoot.h-path}}</h4>
 <p>{{ai-troubleshoot.path}}</p>
 <h4>{{ai-troubleshoot.h-codex}}</h4>

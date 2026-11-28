@@ -96,9 +96,9 @@ public sealed partial class ChatWindow
         DockPanel.SetDock(header, Dock.Top);
 
         // 대상 도움말(F1): 칸 전체는 "그리기 설정 칸" 절, 줄마다 그것을 설명하는 목록 항목·생성 옵션 표의 줄로(정보 아이콘은 InfoIcon이 정함).
-        const string page = "ai-generate", modeAnchor = "Drawing mode";
+        const string page = "ai-generate", settingsPage = "ai-generate-settings", tipsPage = "ai-generate-tips", modeAnchor = "Drawing mode";
         var stack = new StackPanel { Spacing = 6, Margin = new Thickness(12, 10) };
-        stack.Children.Add(TitleText(UiStrings.AiDraw_Mode_Title).HelpAt(page, anchor: modeAnchor));
+        stack.Children.Add(TitleText(UiStrings.AiDraw_Mode_Title).HelpAt(settingsPage, anchor: modeAnchor));
         _modeAuto = new RadioButton { Content = UiStrings.AiDraw_Mode_Auto, GroupName = "aidraw-mode", Foreground = AppTheme.TextBrush };
         _modeGenerate = new RadioButton { Content = UiStrings.AiDraw_Mode_Generate, GroupName = "aidraw-mode", Foreground = AppTheme.TextBrush };
         _modeDirect = new RadioButton { Content = UiStrings.AiDraw_Mode_Direct, GroupName = "aidraw-mode", Foreground = AppTheme.TextBrush };
@@ -106,25 +106,25 @@ public sealed partial class ChatWindow
         _modeAuto.IsCheckedChanged += (_, _) => OnDrawModeChanged();
         _modeGenerate.IsCheckedChanged += (_, _) => OnDrawModeChanged();
         _modeDirect.IsCheckedChanged += (_, _) => OnDrawModeChanged();
-        stack.Children.Add(WithInfo(_modeAuto, UiStrings.AiDraw_Mode_Auto_Text).HelpAt(page, anchor: modeAnchor));
-        stack.Children.Add(WithInfo(_modeGenerate, UiStrings.AiDraw_Mode_Generate_Text, _modeWarning).HelpAt(page, anchor: modeAnchor));
-        stack.Children.Add(WithInfo(_modeDirect, UiStrings.AiDraw_Mode_Direct_Text).HelpAt(page, anchor: modeAnchor));
+        stack.Children.Add(WithInfo(_modeAuto, UiStrings.AiDraw_Mode_Auto_Text).HelpAt(settingsPage, anchor: modeAnchor));
+        stack.Children.Add(WithInfo(_modeGenerate, UiStrings.AiDraw_Mode_Generate_Text, _modeWarning).HelpAt(settingsPage, anchor: modeAnchor));
+        stack.Children.Add(WithInfo(_modeDirect, UiStrings.AiDraw_Mode_Direct_Text).HelpAt(settingsPage, anchor: modeAnchor));
         // 직접 찍기를 골랐을 때만: 팔레트 색만 사용.
         _paletteOnly = Ui.Check(UiStrings.AiDraw_PaletteOnly);
         _paletteOnly.IsCheckedChanged += (_, _) => OnDrawOptionChanged();
-        _paletteRow = WithInfo(_paletteOnly, UiStrings.AiDraw_PaletteOnly_Text).HelpAt(page, anchor: "Use palette colors only");
+        _paletteRow = WithInfo(_paletteOnly, UiStrings.AiDraw_PaletteOnly_Text).HelpAt(settingsPage, anchor: "Use palette colors only");
         _paletteRow.Margin = new Thickness(22, 0, 0, 0);
         stack.Children.Add(_paletteRow);
-        _codexStatus = WrapText("", dim: true).HelpAt(page, anchor: "Drawing settings");
+        _codexStatus = WrapText("", dim: true).HelpAt(settingsPage, anchor: "Codex CLI status");
         stack.Children.Add(_codexStatus);
         // AI 그리기 요령: 대충 말해도 잘 나오게 시스템 프롬프트에 붙이는 작업별 지시(켜고 끄기·글 고치기). 모든 방식에 쓰되,
         // Codex 그림 생성에서 "생성 요청 다듬기"를 끄면 내 말이 그대로 생성에 가서 쓰이지 않으므로 흐리게 하고 까닭을 보인다.
         _assistView = new AiAssistView(() => _settings.AiChatAssist, () => _settings.AiGuideTexts, McpScope.Full, t => InfoIcon(t), OnAssistChanged);
         stack.Children.Add(new Border { Height = 1, Background = AppTheme.BorderBrush, Margin = new Thickness(0, 4) });
-        stack.Children.Add(WithInfo(TitleText(UiStrings.AiGuide_Title), UiStrings.AiGuide_Title_Tip).HelpAt(page, anchor: "AI drawing tips"));
+        stack.Children.Add(WithInfo(TitleText(UiStrings.AiGuide_Title), UiStrings.AiGuide_Title_Tip).HelpAt(tipsPage, anchor: "AI drawing tips"));
         _guidesUnused = WrapText(UiStrings.AiGuide_UnusedByGenerate, dim: true);
         stack.Children.Add(_guidesUnused);
-        stack.Children.Add(_assistView.Guides.HelpAt(page, anchor: "AI drawing tips"));
+        stack.Children.Add(_assistView.Guides.HelpAt(tipsPage, anchor: "AI drawing tips"));
         // 그림 생성을 골랐을 때만: 생성 옵션.
         var options = new StackPanel { Spacing = 6 };
         options.Children.Add(new Border { Height = 1, Background = AppTheme.BorderBrush, Margin = new Thickness(0, 4) });
@@ -174,8 +174,8 @@ public sealed partial class ChatWindow
         stack.Children.Add(options);
         // 쓸 수 있는 도구: 끈 묶음은 MCP 서버가 목록에서 빼고 호출도 거부한다.
         stack.Children.Add(new Border { Height = 1, Background = AppTheme.BorderBrush, Margin = new Thickness(0, 4) });
-        stack.Children.Add(WithInfo(TitleText(UiStrings.AiTools_Title), UiStrings.AiTools_Title_Tip).HelpAt(page, anchor: "Tools the AI can use"));
-        stack.Children.Add(_assistView.Tools.HelpAt(page, anchor: "Tools the AI can use"));
+        stack.Children.Add(WithInfo(TitleText(UiStrings.AiTools_Title), UiStrings.AiTools_Title_Tip).HelpAt(tipsPage, anchor: "Tools the AI can use"));
+        stack.Children.Add(_assistView.Tools.HelpAt(tipsPage, anchor: "Tools the AI can use"));
 
         var scroll = new ScrollViewer
         {
@@ -190,7 +190,7 @@ public sealed partial class ChatWindow
             HorizontalAlignment = HorizontalAlignment.Left,
             IsVisible = false,
             Children = { header, scroll },
-        }.HelpAt(page, anchor: "The drawing settings panel");
+        }.HelpAt(settingsPage, anchor: "The drawing settings panel");
     }
 
     /// <summary>
@@ -207,7 +207,7 @@ public sealed partial class ChatWindow
     }
 
     /// <summary>설명 풍선을 띄우는 정보박스(<see cref="InfoBadge"/>).</summary>
-    private static InfoBadge InfoIcon(string tip) => Ui.InfoBadge(tip).HelpAt("ai-generate", anchor: "Hover over an option");
+    private static InfoBadge InfoIcon(string tip) => Ui.InfoBadge(tip).HelpAt("ai-generate-settings", anchor: "Hover over an option");
 
     /// <summary>경고 풍선을 띄우는 빨간 경고 아이콘(Lucide circle-alert).</summary>
     private static Border AlertIcon(string tip) => new Border

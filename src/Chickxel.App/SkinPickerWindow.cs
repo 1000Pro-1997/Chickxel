@@ -62,7 +62,7 @@ public sealed class SkinPickerWindow : DialogBase
             content.Children.Add(Heading(UiStrings.S_SkinPickerWindow_SkinPickerWindow_76ACD5089E).HelpAt(page, anchor: "⑥"));
             content.Children.Add(Note(partsOnly
                 ? UiStrings.S_SkinPickerWindow_SkinPickerWindow_CB68D989C3
-                : UiStrings.S_SkinPickerWindow_SkinPickerWindow_8D6FC7397A).HelpAt("screen-export", anchor: "Choose skins…"));
+                : UiStrings.S_SkinPickerWindow_SkinPickerWindow_8D6FC7397A).HelpAt("screen-export-sheet", anchor: "Choose skins…"));
             foreach (var layer in layers)
             {
                 double indent = 8 + project.DepthOf(layer) * IndentStep;
@@ -72,7 +72,7 @@ public sealed class SkinPickerWindow : DialogBase
                 box.Margin = new Thickness(indent, 4, 0, 0);
                 if (!visible) box.Tip(UiStrings.S_SkinPickerWindow_SkinPickerWindow_A3D6B146CF);
                 _layers.Add((layer, box));
-                content.Children.Add(box.HelpAt("screen-export", anchor: "Choose skins…"));
+                content.Children.Add(box.HelpAt("screen-export-sheet", anchor: "Choose skins…"));
 
                 var choices = SkinChoices(layer, partsOnly);
                 if (choices.Count == 0) continue;

@@ -37,7 +37,7 @@ internal sealed class AiStatusDialog : DialogBase
         OkButton.Width = double.NaN;
         OkButton.MinWidth = 90;
         // 대상 도움말(F1): 창은 "AI 상태와 설정 창" 절, 줄·단추는 그 절 표의 줄로. 점검 결과 글은 문제 해결 쪽(먼저 다시 점검하라는 곳).
-        const string page = "ai-setup";
+        const string page = "ai-setup-status";
         this.HelpAt(page, anchor: "The AI Status and Settings window");
         OkButton.HelpAt(page, anchor: "Chickxel checks the install and login status");
 
@@ -335,7 +335,7 @@ internal sealed class AiStatusDialog : DialogBase
         {
             _owner = owner;
             _provider = provider;
-            const string page = "ai-setup";
+            const string page = "ai-setup-status";
             _install = Ui.Button(VectorIcon.Download, UiStrings.AiStatus_InstallUpdate, (_, _) => owner.StartInstall(provider)).HelpAt(page, anchor: "Install or update");
             _login = Ui.Button(UiStrings.AiStatus_Login, (_, _) => owner.StartLogin(provider)).HelpAt(page, anchor: "Sign in");
             _logout = Ui.Button(UiStrings.AiStatus_Logout, async (_, _) => await owner.LogoutAsync(provider)).HelpAt(page, anchor: "Sign out");

@@ -87,7 +87,12 @@
 <tr><td>{{shortcuts-edit.nudge8}}</td><td>{{key:편집/8px 왼쪽으로 옮기기}} {{key:편집/8px 오른쪽으로 옮기기}} {{key:편집/8px 위로 옮기기}} {{key:편집/8px 아래로 옮기기}}</td><td>{{shortcuts-edit.h-extra.d4}}</td></tr>
 </tbody>
 </table></div>
-<div class="note"><p>{{shortcuts-edit.15}}</p></div>
+<h4>{{shortcuts-edit.h-notes}}</h4>
+<ul>
+<li>{{shortcuts-edit.15}}</li>
+<li>{{shortcuts-edit.nudge-note}}</li>
+<li>{{shortcuts-edit.nudge-mode}}</li>
+</ul>
 <h4>{{shortcuts-edit.h-menu}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/shortcuts-edit.png" alt="{{shortcuts-edit.17.alt}}" width="335" height="637" loading="lazy"><figcaption>{{shortcuts-edit.18}}</figcaption></figure>
 <p>{{shortcuts-edit.16}}</p>
@@ -120,7 +125,22 @@
 <tr><td>{{shortcuts-transform.11}}</td><td>{{key:편집/선택 해제(캔버스)}} / {{key:편집/실행취소}}</td><td>{{shortcuts-transform.h-modes.d2}}</td></tr>
 </tbody>
 </table></div>
-<p>{{shortcuts-transform.13}}</p>
+<h4>{{shortcuts-transform.h-drag}}</h4>
+<p>{{shortcuts-transform.drag-intro}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{shortcuts-transform.col-do}}</th><th>{{shortcuts.col-desc}}</th></tr></thead>
+<tbody>
+<tr><td>{{shortcuts-transform.dr1}}</td><td>{{shortcuts-transform.dr1.d}}</td></tr>
+<tr><td>{{shortcuts-transform.dr2}}</td><td>{{shortcuts-transform.dr2.d}}</td></tr>
+<tr><td>{{shortcuts-transform.dr3}}</td><td>{{shortcuts-transform.dr3.d}}</td></tr>
+<tr><td>{{shortcuts-transform.dr4}}</td><td>{{shortcuts-transform.dr4.d}}</td></tr>
+<tr><td>{{shortcuts-transform.dr5}}</td><td>{{shortcuts-transform.dr5.d}}</td></tr>
+<tr><td>{{shortcuts-transform.dr6}}</td><td>{{shortcuts-transform.dr6.d}}</td></tr>
+<tr><td>{{shortcuts-transform.dr7}}</td><td>{{shortcuts-transform.dr7.d}}</td></tr>
+<tr><td>{{shortcuts-transform.dr8}}</td><td>{{shortcuts-transform.dr8.d}}</td></tr>
+<tr><td>{{shortcuts-transform.dr9}}</td><td>{{shortcuts-transform.dr9.d}}</td></tr>
+</tbody>
+</table></div>
 <h4>{{shortcuts-transform.h-menu}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/shortcuts-transform.png" alt="{{shortcuts-transform.15.alt}}" width="335" height="637" loading="lazy"><figcaption>{{shortcuts-transform.16}}</figcaption></figure>
 <p>{{shortcuts-transform.14}}</p>
@@ -198,7 +218,13 @@
 <tr><td>{{shortcuts-timeline.solo-lock}}</td><td>{{shortcuts-timeline.solo-lock.k}}</td><td>{{shortcuts-timeline.solo-lock.d}}</td></tr>
 </tbody>
 </table></div>
-<p>{{shortcuts-timeline.18}}</p>
+<h4>{{shortcuts-timeline.h-notes}}</h4>
+<ul>
+<li>{{shortcuts-timeline.18}}</li>
+<li>{{shortcuts-timeline.note-arrow}}</li>
+<li>{{shortcuts-timeline.note-layer}}</li>
+<li>{{shortcuts-timeline.note-solo}}</li>
+</ul>
 <h4>{{shortcuts-timeline.h-menu}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/shortcuts-timeline.png" alt="{{shortcuts-timeline.20.alt}}" width="319" height="487" loading="lazy"><figcaption>{{shortcuts-timeline.21}}</figcaption></figure>
 <p>{{shortcuts-timeline.19}}</p>
@@ -209,24 +235,24 @@
 <div class="table-wrap"><table>
 <thead><tr><th>{{shortcuts.col-cmd}}</th><th>{{shortcuts.col-key}}</th><th>{{shortcuts.col-desc}}</th></tr></thead>
 <tbody>
-<tr><td><a href="#tools-pencil">{{MainStrings.Tool_Pencil_Name}}</a></td><td>{{key:도구/연필}}</td><td>{{MainStrings.Tool_Pencil_Hint}}</td></tr>
-<tr><td><a href="#tools-gradient-pencil">{{MainStrings.Tool_GradientPencil_Name}}</a></td><td>{{key:도구/그라데이션 연필}}</td><td>{{MainStrings.Tool_GradientPencil_Hint}}</td></tr>
-<tr><td><a href="#tools-eraser">{{MainStrings.Tool_Eraser_Name}}</a></td><td>{{key:도구/지우개}}</td><td>{{MainStrings.Tool_Eraser_Hint}}</td></tr>
-<tr><td><a href="#tools-fill">{{MainStrings.Tool_Fill_Name}}</a></td><td>{{key:도구/채우기}}</td><td>{{MainStrings.Tool_Fill_Hint}}</td></tr>
-<tr><td><a href="#tools-gradient">{{MainStrings.Tool_Gradient_Name}}</a></td><td>{{key:도구/그라데이션}}</td><td>{{MainStrings.Tool_Gradient_Hint}}</td></tr>
-<tr><td><a href="#tools-picker">{{MainStrings.Tool_Picker_Name}}</a></td><td>{{key:도구/스포이드}}</td><td>{{MainStrings.Tool_Picker_Hint}}</td></tr>
-<tr><td><a href="#tools-shape">{{MainStrings.Tool_Shape_Name}}</a></td><td>{{key:도구/도형}}</td><td>{{MainStrings.Tool_Shape_Hint}}</td></tr>
-<tr><td><a href="#tools-text">{{MainStrings.Tool_Text_Name}}</a></td><td>{{key:도구/글씨}}</td><td>{{MainStrings.Tool_Text_Hint}}</td></tr>
-<tr><td><a href="#tools-select">{{MainStrings.Tool_Select_Name}}</a></td><td><span class="key" data-cmd="도구/사각 선택">{{shortcuts.none}}</span></td><td>{{MainStrings.Tool_Select_Hint}}</td></tr>
-<tr><td><a href="#tools-select">{{MainStrings.Tool_EllipseSelect_Name}}</a></td><td><span class="key" data-cmd="도구/원 선택">{{shortcuts.none}}</span></td><td>{{MainStrings.Tool_EllipseSelect_Hint}}</td></tr>
-<tr><td><a href="#tools-select">{{MainStrings.Tool_Lasso_Name}}</a></td><td>{{key:도구/자유 선택}}</td><td>{{MainStrings.Tool_Lasso_Hint}}</td></tr>
-<tr><td><a href="#tools-select">{{MainStrings.Tool_MagicWand_Name}}</a></td><td>{{key:도구/스마트 선택}}</td><td>{{MainStrings.Tool_MagicWand_Hint}}</td></tr>
-<tr><td><a href="#tools-move">{{MainStrings.Tool_Move_Name}}</a></td><td>{{key:도구/이동}}</td><td>{{MainStrings.Tool_Move_Hint}}</td></tr>
-<tr><td><a href="#tools-dodge">{{MainStrings.Tool_Dodge_Name}}</a></td><td>{{key:도구/밝게/어둡게}}</td><td>{{MainStrings.Tool_Dodge_Hint}}</td></tr>
-<tr><td><a href="#tools-dither">{{MainStrings.Tool_Dither_Name}}</a></td><td><span class="key" data-cmd="도구/디더링">{{shortcuts.none}}</span></td><td>{{MainStrings.Tool_Dither_Hint}}</td></tr>
-<tr><td><a href="#tools-replace-brush">{{MainStrings.Tool_ReplaceBrush_Name}}</a></td><td>{{key:도구/색 바꾸기 브러시}}</td><td>{{MainStrings.Tool_ReplaceBrush_Hint}}</td></tr>
-<tr><td><a href="#tools-pivot">{{MainStrings.Tool_Pivot_Name}}</a></td><td>{{key:도구/피벗}}</td><td>{{MainStrings.Tool_Pivot_Hint}}</td></tr>
-<tr><td><a href="#tools-nine-slice">9-slice</a></td><td>{{key:도구/9-slice}}</td><td>{{MainStrings.Ui_035}}</td></tr>
+<tr><td><a href="#tools-pencil">{{MainStrings.Tool_Pencil_Name}}</a></td><td>{{key:도구/연필}}</td><td>{{shortcuts-tools.t-pencil}}</td></tr>
+<tr><td><a href="#tools-gradient-pencil">{{MainStrings.Tool_GradientPencil_Name}}</a></td><td>{{key:도구/그라데이션 연필}}</td><td>{{shortcuts-tools.t-gradient-pencil}}</td></tr>
+<tr><td><a href="#tools-eraser">{{MainStrings.Tool_Eraser_Name}}</a></td><td>{{key:도구/지우개}}</td><td>{{shortcuts-tools.t-eraser}}</td></tr>
+<tr><td><a href="#tools-fill">{{MainStrings.Tool_Fill_Name}}</a></td><td>{{key:도구/채우기}}</td><td>{{shortcuts-tools.t-fill}}</td></tr>
+<tr><td><a href="#tools-gradient">{{MainStrings.Tool_Gradient_Name}}</a></td><td>{{key:도구/그라데이션}}</td><td>{{shortcuts-tools.t-gradient}}</td></tr>
+<tr><td><a href="#tools-picker">{{MainStrings.Tool_Picker_Name}}</a></td><td>{{key:도구/스포이드}}</td><td>{{shortcuts-tools.t-picker}}</td></tr>
+<tr><td><a href="#tools-shape">{{MainStrings.Tool_Shape_Name}}</a></td><td>{{key:도구/도형}}</td><td>{{shortcuts-tools.t-shape}}</td></tr>
+<tr><td><a href="#tools-text">{{MainStrings.Tool_Text_Name}}</a></td><td>{{key:도구/글씨}}</td><td>{{shortcuts-tools.t-text}}</td></tr>
+<tr><td><a href="#tools-select">{{MainStrings.Tool_Select_Name}}</a></td><td><span class="key" data-cmd="도구/사각 선택">{{shortcuts.none}}</span></td><td>{{shortcuts-tools.t-select}}</td></tr>
+<tr><td><a href="#tools-select">{{MainStrings.Tool_EllipseSelect_Name}}</a></td><td><span class="key" data-cmd="도구/원 선택">{{shortcuts.none}}</span></td><td>{{shortcuts-tools.t-ellipse}}</td></tr>
+<tr><td><a href="#tools-select">{{MainStrings.Tool_Lasso_Name}}</a></td><td>{{key:도구/자유 선택}}</td><td>{{shortcuts-tools.t-lasso}}</td></tr>
+<tr><td><a href="#tools-select">{{MainStrings.Tool_MagicWand_Name}}</a></td><td>{{key:도구/스마트 선택}}</td><td>{{shortcuts-tools.t-wand}}</td></tr>
+<tr><td><a href="#tools-move">{{MainStrings.Tool_Move_Name}}</a></td><td>{{key:도구/이동}}</td><td>{{shortcuts-tools.t-move}}</td></tr>
+<tr><td><a href="#tools-dodge">{{MainStrings.Tool_Dodge_Name}}</a></td><td>{{key:도구/밝게/어둡게}}</td><td>{{shortcuts-tools.t-dodge}}</td></tr>
+<tr><td><a href="#tools-dither">{{MainStrings.Tool_Dither_Name}}</a></td><td><span class="key" data-cmd="도구/디더링">{{shortcuts.none}}</span></td><td>{{shortcuts-tools.t-dither}}</td></tr>
+<tr><td><a href="#tools-replace-brush">{{MainStrings.Tool_ReplaceBrush_Name}}</a></td><td>{{key:도구/색 바꾸기 브러시}}</td><td>{{shortcuts-tools.t-replace}}</td></tr>
+<tr><td><a href="#tools-pivot">{{MainStrings.Tool_Pivot_Name}}</a></td><td>{{key:도구/피벗}}</td><td>{{shortcuts-tools.t-pivot}}</td></tr>
+<tr><td><a href="#tools-nine-slice">9-slice</a></td><td>{{key:도구/9-slice}}</td><td>{{shortcuts-tools.t-nine}}</td></tr>
 </tbody>
 </table></div>
 <h4>{{shortcuts-tools.h-select}}</h4>

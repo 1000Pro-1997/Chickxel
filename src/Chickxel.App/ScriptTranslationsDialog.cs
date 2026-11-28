@@ -25,7 +25,7 @@ public sealed class ScriptTranslationsDialog : DialogBase
     {
         _program = program;
         // 대상 도움말(F1): 창·기본 언어 = "효과 만들기"의 ③ 언어 설정 항목, 언어별 칸 = "스크립트 API" 선언 표의 translations 줄
-        this.HelpAt("screen-effect-maker", anchor: "Languages below opens a window");
+        this.HelpAt("screen-effect-maker-info", anchor: "Languages");
         _empty = new TextBlock { Text = UiStrings.ScriptLanguages_Empty, Foreground = AppTheme.DimTextBrush, Margin = new Thickness(3, 6) };
         Body.Children.Add(new TextBlock
         {

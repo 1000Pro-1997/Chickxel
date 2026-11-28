@@ -34,7 +34,7 @@ internal sealed class ScriptGuideWindow : Window
         this.HelpAt("screen-script-api");
 
         var hint = new TextBlock { Text = UiStrings.EffectRules_Hint, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.DimTextBrush, Margin = new Thickness(2, 0, 2, 8) }
-            .HelpAt("screen-effect-maker", anchor: "Rules window");
+            .HelpAt("screen-effect-maker-check", anchor: "Rules window");
         DockPanel.SetDock(hint, Dock.Top);
         var scroll = Ui.ScrollHost(new Border { Padding = new Thickness(10, 8), Child = _view });
         var body = new Border { BorderBrush = AppTheme.BorderBrush, BorderThickness = new Thickness(1), Child = scroll };
@@ -50,7 +50,7 @@ internal sealed class ScriptGuideWindow : Window
         DockPanel.SetDock(right, Dock.Right);
         bottom.Children.Add(right);
         bottom.Children.Add(Ui.Row(_includeSource, _copied));
-        bottom.HelpAt("screen-effect-maker", anchor: "㉕ Include the current source");
+        bottom.HelpAt("screen-effect-maker-check", anchor: "㉕ Include the current source");
         DockPanel.SetDock(bottom, Dock.Bottom);
 
         Content = new DockPanel { Margin = new Thickness(10), Children = { hint, bottom, body } };

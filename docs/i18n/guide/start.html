@@ -14,6 +14,8 @@
 <tr><td><a href="#start-privacy">{{start-privacy.1}}</a></td><td>{{start.11}}</td></tr>
 <tr><td><a href="#start-feedback">{{start-feedback.1}}</a></td><td>{{start.12}}</td></tr>
 <tr><td><a href="#start-account">{{start-account.1}}</a></td><td>{{start.13}}</td></tr>
+<tr><td><a href="#start-account-level">{{start-account-level.1}}</a></td><td>{{start.account-level}}</td></tr>
+<tr><td><a href="#start-account-rewards">{{start-account-rewards.1}}</a></td><td>{{start.account-rewards}}</td></tr>
 </tbody>
 </table></div>
 
@@ -33,11 +35,9 @@
 <p>{{start-install.9}}</p>
 <h4>{{start-install.10}}</h4>
 <p>{{start-install.11}}</p>
-<p>{{start-install.linux-term}}</p>
 <pre><code>curl -fsSL https://raw.githubusercontent.com/1000Pro-1997/Chickxel/main/install.sh | sh</code></pre>
 <p>{{start-install.12}}</p>
 <pre><code>irm https://raw.githubusercontent.com/1000Pro-1997/Chickxel/main/install.ps1 | iex</code></pre>
-<p>{{start-install.13}}</p>
 <h4>{{start-install.h-assoc}}</h4>
 <p>{{start-install.assoc}}</p>
 <div class="table-wrap"><table>
@@ -48,7 +48,11 @@
 <tr><td>{{start-install.assoc-link}}</td><td>{{start-install.assoc-link-result}}</td></tr>
 </tbody>
 </table></div>
-<p>{{start-install.14}}</p>
+<ul>
+<li>{{start-install.assoc-win}}</li>
+<li>{{start-install.assoc-mac}}</li>
+<li>{{start-install.assoc-linux}}</li>
+</ul>
 
 <h3 id="start-first-run">{{start-first-run.1}}</h3>
 <p>{{start-first-run.overview}}</p>
@@ -131,6 +135,7 @@
 </table></div>
 <h4>{{start-new-project.h-clip}}</h4>
 <p>{{start-new-project.3}}</p>
+<p>{{start-new-project.clip-more}}</p>
 
 <h3 id="start-help">{{start-help.1}}</h3>
 <p>{{start-help.overview}}</p>
@@ -143,36 +148,15 @@
 <li>{{start-help.step3}}</li>
 </ol>
 <p>{{start-help.cancel}}</p>
+<p>{{start-help.no-target}}</p>
 <h4>{{start-help.h-other}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/start-help-4.png" alt="{{start-help.shot4.alt}}" width="1058" height="156" loading="lazy"><figcaption>{{start-help.shot4}}</figcaption></figure>
+<p>{{start-help.windows}}</p>
 <ul>
 <li>{{start-help.other-1}}</li>
 <li>{{start-help.other-2}}</li>
 <li>{{start-help.other-3}}</li>
 </ul>
-<h4>{{start-help.h-targets}}</h4>
-<p>{{start-help.targets}}</p>
-<div class="table-wrap"><table>
-<thead><tr><th>{{start-help.col-area}}</th><th>{{start-help.col-page}}</th></tr></thead>
-<tbody>
-<tr><td>{{start-help.t-tools}}</td><td>{{start-help.t-tools-d}}</td></tr>
-<tr><td>{{start-help.t-options}}</td><td>{{start-help.t-options-d}}</td></tr>
-<tr><td>{{start-help.t-view}}</td><td>{{start-help.t-view-d}}</td></tr>
-<tr><td>{{start-help.t-save}}</td><td>{{start-help.t-save-d}}</td></tr>
-<tr><td>{{start-help.t-files}}</td><td><a href="#screen-file-browser">{{start-help.t-files-d}}</a></td></tr>
-<tr><td>{{start-help.t-colors}}</td><td>{{start-help.t-colors-d}}</td></tr>
-<tr><td>{{start-help.t-picker}}</td><td>{{start-help.t-picker-d}}</td></tr>
-<tr><td>{{start-help.t-preview}}</td><td>{{start-help.t-preview-d}}</td></tr>
-<tr><td>{{start-help.t-timeline}}</td><td>{{start-help.t-timeline-d}}</td></tr>
-<tr><td>{{start-help.t-tabs}}</td><td><a href="#screen-tabs">{{start-help.t-tabs-d}}</a></td></tr>
-<tr><td>{{start-help.t-canvas}}</td><td><a href="#screen-canvas">{{start-help.t-canvas-d}}</a></td></tr>
-<tr><td>{{start-help.t-start}}</td><td><a href="#start-first-run">{{start-first-run.1}}</a></td></tr>
-<tr><td>{{start-help.t-bars}}</td><td><a href="#screen-top-bar">{{start-help.t-bars-d}}</a></td></tr>
-<tr><td>{{start-help.t-status}}</td><td>{{start-help.t-status-d}}</td></tr>
-<tr><td>{{start-help.t-windows}}</td><td>{{start-help.t-windows-d}}</td></tr>
-<tr><td>{{start-help.t-message}}</td><td>{{start-help.t-message-d}}</td></tr>
-</tbody>
-</table></div>
 <h4>{{start-help.h-window}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/start-help-3.png" alt="{{start-help.shot3.alt}}" width="1000" height="672" loading="lazy"><figcaption>{{start-help.shot3}}</figcaption></figure>
 <ul class="marks">
@@ -207,8 +191,8 @@
 <tr><td>{{start-update.r-page}}</td><td>{{start-update.r-page-d}}</td></tr>
 </tbody>
 </table></div>
-<p>{{start-update.notes-lang}}</p>
 <p>{{start-update.manual}}</p>
+<p>{{start-update.linux}}</p>
 <h4>{{start-update.h-check}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/start-update-3.png" alt="{{start-update.11.alt}}" width="285" height="284" loading="lazy"><figcaption>{{start-update.12}}</figcaption></figure>
 <figure class="shot"><img src="{{root}}assets/guide/start-update-4.png" alt="{{start-update.13.alt}}" width="1051" height="84" loading="lazy"><figcaption>{{start-update.14}}</figcaption></figure>
@@ -260,6 +244,11 @@
 <p>{{start-account.overview}}</p>
 <h4>{{start-account.h-signin}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/start-account.png" alt="{{start-account.2.alt}}" width="444" height="294" loading="lazy"><figcaption>{{start-account.3}}</figcaption></figure>
+<ol>
+<li>{{start-account.step1}}</li>
+<li>{{start-account.step2}}</li>
+<li>{{start-account.step3}}</li>
+</ol>
 <p>{{start-account.4}}</p>
 <h4>{{start-account.h-window}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/start-account-2.png" alt="{{start-account.5.alt}}" width="444" height="745" loading="lazy"><figcaption>{{start-account.6}}</figcaption></figure>
@@ -271,8 +260,21 @@
 <li>{{start-account.9}}</li>
 <li>{{start-account.10}}</li>
 </ul>
-<h4>{{start-account.h-level}}</h4>
+<h4>{{start-account.h-button}}</h4>
+<p>{{start-account.11}}</p>
+<p>{{start-account.menu}}</p>
+<h4>{{start-account.h-notes}}</h4>
+<ul>
+<li>{{start-account.12}}</li>
+<li>{{start-account.add}}</li>
+<li>{{start-account.badge}}</li>
+<li>{{start-account.13}}</li>
+</ul>
+
+<h3 id="start-account-level">{{start-account-level.1}}</h3>
 <p>{{start-account.level-intro}}</p>
+<h4>{{start-account.h-xp}}</h4>
+<p>{{start-account.xp-intro}}</p>
 <div class="table-wrap"><table>
 <thead><tr><th>{{start-account.th-xp-how}}</th><th>{{start-account.th-xp}}</th></tr></thead>
 <tbody>
@@ -286,7 +288,14 @@
 <tr><td>{{start-account.xp-uptime}}</td><td>{{start-account.xp-uptime.n}}</td></tr>
 </tbody>
 </table></div>
+<ul>
+<li>{{start-account.level-checkin}}</li>
+<li>{{start-account.level-uptime}}</li>
+<li>{{start-account.level-day}}</li>
+</ul>
+<h4>{{start-account.h-level}}</h4>
 <p>{{start-account.level-curve}}</p>
+<p>{{start-account.tier-intro}}</p>
 <div class="table-wrap"><table>
 <thead><tr><th>{{start-account.th-tier-lv}}</th><th>{{start-account.th-tier}}</th></tr></thead>
 <tbody>
@@ -299,26 +308,39 @@
 </tbody>
 </table></div>
 <p>{{start-account.level-chip}}</p>
-<p>{{start-account.level-uptime}}</p>
-<p>{{start-account.level-checkin}}</p>
-<p>{{start-account.level-delete}}</p>
-<h4>{{start-account.h-rewards}}</h4>
-<p>{{start-account.rewards-intro}}</p>
+<h4>{{start-account.h-notes}}</h4>
 <ul>
-<li>{{start-account.rw-title}}</li>
-<li>{{start-account.rw-badge}}</li>
-<li>{{start-account.rw-frame}}</li>
-<li>{{start-account.rw-effect}}</li>
-<li>{{start-account.rw-card}}</li>
-<li>{{start-account.rw-name}}</li>
+<li>{{start-account.level-up}}</li>
+<li>{{start-account.level-chip-look}}</li>
+<li>{{start-account.level-noserver}}</li>
+<li>{{start-account.level-server}}</li>
+<li>{{start-account.level-restore}}</li>
 </ul>
+
+<h3 id="start-account-rewards">{{start-account-rewards.1}}</h3>
+<p>{{start-account.rewards-intro}}</p>
+<h4>{{start-account.h-slots}}</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>{{start-account.th-slot}}</th><th>{{start-account.th-slot-d}}</th></tr></thead>
+<tbody>
+<tr><td>{{start-account.rw-title}}</td><td>{{start-account.rw-title.d}}</td></tr>
+<tr><td>{{start-account.rw-badge}}</td><td>{{start-account.rw-badge.d}}</td></tr>
+<tr><td>{{start-account.rw-frame}}</td><td>{{start-account.rw-frame.d}}</td></tr>
+<tr><td>{{start-account.rw-effect}}</td><td>{{start-account.rw-effect.d}}</td></tr>
+<tr><td>{{start-account.rw-card}}</td><td>{{start-account.rw-card.d}}</td></tr>
+<tr><td>{{start-account.rw-name}}</td><td>{{start-account.rw-name.d}}</td></tr>
+</tbody>
+</table></div>
+<h4>{{start-account.h-choose}}</h4>
+<ol>
+<li>{{start-account.choose1}}</li>
+<li>{{start-account.choose2}}</li>
+</ol>
 <p>{{start-account.rewards-auto}}</p>
-<p>{{start-account.rewards-tutorial}}</p>
-<p>{{start-account.rewards-notice}}</p>
-<h4>{{start-account.h-button}}</h4>
-<p>{{start-account.11}}</p>
-<p>{{start-account.12}}</p>
-<p>{{start-account.badge}}</p>
-<h4>{{start-account.h-network}}</h4>
-<p>{{start-account.13}}</p>
+<h4>{{start-account.h-notes}}</h4>
+<ul>
+<li>{{start-account.rewards-notice}}</li>
+<li>{{start-account.rewards-down}}</li>
+<li>{{start-account.rewards-tutorial}}</li>
+</ul>
 </section>

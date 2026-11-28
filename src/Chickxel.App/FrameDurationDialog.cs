@@ -78,7 +78,7 @@ internal sealed class FrameDurationDialog : DialogBase
         Body.Children.Add(Ui.Label(UiStrings.FormatFrameLength_Count(count: current.Count)));
         Body.Children.Add(Ui.Group(UiStrings.FrameLength_Method, row));
         Body.Children.Add(Ui.Group(UiStrings.FrameLength_Result, Ui.Stack(_each, _total)));
-        this.HelpAt("screen-timeline");
+        this.HelpAt("screen-timeline-duration");
         Refresh();
     }
 

@@ -127,7 +127,7 @@ public sealed partial class AssetManagerWindow : DialogBase
             import.HelpAt(HelpPage, anchor: "Import from File"), export.HelpAt(HelpPage, anchor: "Import from File"),
             publish.HelpAt(HelpPage, anchor: "Import from File"), _restoreEffects.HelpAt(HelpPage, anchor: "Import from File"),
             _restoreGradients.HelpAt(HelpPage, anchor: "Import from File"),
-            _newSetFromCanvas.HelpAt(HelpPage, anchor: "Import from File"), _restoreSets.HelpAt(HelpPage, anchor: "Import from File"),
+            _newSetFromCanvas.HelpAt("screen-asset-manager-shapes", anchor: "New set from canvas"), _restoreSets.HelpAt("screen-asset-manager-shapes", anchor: "New set from canvas"),
         ]);
         ShowToolbarFor();
         foreach (var child in toolbar.Children) child.Margin = new Thickness(0, 0, 8, 0);

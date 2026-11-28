@@ -31,12 +31,12 @@ public sealed partial class MainForm : IHelpPickerHost, IHelpTargetSource
         if (ReferenceEquals(c, _tbFiles) || ReferenceEquals(c, _browser)) return new("screen-file-browser");
         if (ReferenceEquals(c, _tbEffects)) return new("screen-effect-list");
         if (ReferenceEquals(c, _cbZoom) || ReferenceEquals(c, _cbFit)) return new("screen-top-bar", "screen-top-bar-2");
-        if (ReferenceEquals(c, _cbGrid)) return new("screen-top-bar", "screen-top-bar-3");
-        if (ReferenceEquals(c, _cbTiles)) return new("screen-top-bar", "screen-top-bar-4");
-        if (ReferenceEquals(c, _cbTiled)) return new("screen-top-bar", "screen-top-bar-5");
-        if (ReferenceEquals(c, _cbOnion)) return new("screen-top-bar", "screen-top-bar-6");
-        if (ReferenceEquals(c, _cbEffects)) return new("screen-top-bar", "screen-canvas-effects-toggle");
-        if (ReferenceEquals(c, _cbPivot)) return new("screen-top-bar");
+        if (ReferenceEquals(c, _cbGrid)) return new("screen-top-bar-view", "screen-top-bar-3");
+        if (ReferenceEquals(c, _cbTiles)) return new("screen-top-bar-view", "screen-top-bar-4");
+        if (ReferenceEquals(c, _cbTiled)) return new("screen-top-bar-view", "screen-top-bar-5");
+        if (ReferenceEquals(c, _cbOnion)) return new("screen-top-bar-view", "screen-top-bar-6");
+        if (ReferenceEquals(c, _cbEffects)) return new("screen-top-bar-view", "screen-canvas-effects-toggle");
+        if (ReferenceEquals(c, _cbPivot)) return new("screen-top-bar-view");
         if (ReferenceEquals(c, _panes[0].Strip) || ReferenceEquals(c, _panes[1].Strip)) return new("screen-tabs");
         if (ReferenceEquals(c, _start)) return new("start-first-run");
         if (ReferenceEquals(c, _paneArea)) return new("screen-canvas");

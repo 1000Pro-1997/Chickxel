@@ -162,8 +162,8 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
             : null;
         var rangeLabel = Ui.Label(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_CE6B076915);
         if (motionTip is not null) ToolTip.SetTip(rangeLabel, motionTip);
-        var canvasExpand = Ui.Row(_growCanvas, _growNote, _dropGrow).HelpAt(HelpPage, anchor: "⑬ Canvas expansion method");
-        _extendPanel.HelpAt(HelpPage, anchor: "⑭ Extend frames");
+        var canvasExpand = Ui.Row(_growCanvas, _growNote, _dropGrow).HelpAt("screen-effects-frames", anchor: "Expanding the canvas");
+        _extendPanel.HelpAt("screen-effects-frames", anchor: "Extend frames");
         var shared = Ui.Group(UiStrings.EffectShared_Title, Ui.Stack(canvasExpand, _extendPanel)).HelpAt("screen-effect-settings", shot: "screen-layer-effects-current");
         var left = Ui.Stack(
             Ui.Row(rangeLabel, _addAll, Ui.Label(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4782D0C688), _addFrom, Ui.Label("~"), _addTo).HelpAt(HelpPage, anchor: "⑧ Add range"),
@@ -777,19 +777,25 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
     /// <summary>효과 창 그림의 ⑪ 전/후 미리보기 줄(크게 보기 창도), ⑫ 프레임 줄.</summary>
     private const string PreviewAnchor = "⑪ Before/after preview", StripAnchor = "⑫ Frame strip";
 
-    /// <summary>공식 효과 ID → "기본 효과 목록" 쪽 표 줄의 첫 칸(영어 가이드 글 — 한국어 화면은 같은 줄로 감).</summary>
-    private static readonly Dictionary<string, string> OfficialGuideRows = new(StringComparer.Ordinal)
+    /// <summary>모양·색 효과 쪽과 움직이는 효과 쪽(공식 효과마다 그 효과가 실린 쪽).</summary>
+    private const string LookPage = "screen-effect-look", MotionPage = "screen-effect-motion";
+
+    /// <summary>공식 효과 ID → 그 효과가 실린 쪽과 표 줄의 첫 칸(영어 가이드 글 — 한국어 화면은 같은 줄로 감).</summary>
+    private static readonly Dictionary<string, (string Page, string Row)> OfficialGuideRows = new(StringComparer.Ordinal)
     {
-        ["outline"] = "Outline", ["shadow"] = "Shadow", ["rimlight"] = "Edge light · shade", ["coloroverlay"] = "Color overlay",
-        ["innerglow"] = "Inner glow", ["paletteswap"] = "Palette swap", ["coloradjust"] = "Color adjustment", ["reflection"] = "Reflection",
-        ["explode"] = "Explode", ["shine"] = "Light sweep", ["squash"] = "Squash & stretch", ["hitflash"] = "Hit flash", ["blink"] = "Blink",
-        ["shake"] = "Shake", ["bob"] = "Bob", ["appear"] = "Appear / disappear", ["fade"] = "Fade in · out", ["melt"] = "Melt", ["rotate"] = "Rotate",
-        ["afterimage"] = "Afterimage", ["colorcycle"] = "Color cycle", ["shockwave"] = "Shockwave ring", ["hologram"] = "Hologram",
+        ["outline"] = (LookPage, "Outline"), ["shadow"] = (LookPage, "Shadow"), ["rimlight"] = (LookPage, "Edge light · shade"),
+        ["coloroverlay"] = (LookPage, "Color overlay"), ["innerglow"] = (LookPage, "Inner glow"), ["paletteswap"] = (LookPage, "Palette swap"),
+        ["coloradjust"] = (LookPage, "Color adjustment"), ["reflection"] = (LookPage, "Reflection"),
+        ["explode"] = (MotionPage, "Explode"), ["shine"] = (MotionPage, "Light sweep"), ["squash"] = (MotionPage, "Squash & stretch"),
+        ["hitflash"] = (MotionPage, "Hit flash"), ["blink"] = (MotionPage, "Blink"), ["shake"] = (MotionPage, "Shake"), ["bob"] = (MotionPage, "Bob"),
+        ["appear"] = (MotionPage, "Appear / disappear"), ["fade"] = (MotionPage, "Fade in · out"), ["melt"] = (MotionPage, "Melt"),
+        ["rotate"] = (MotionPage, "Rotate"), ["afterimage"] = (MotionPage, "Afterimage"), ["colorcycle"] = (MotionPage, "Color cycle"),
+        ["shockwave"] = (MotionPage, "Shockwave ring"), ["hologram"] = (MotionPage, "Hologram"),
     };
 
-    /// <summary>공식 효과 <paramref name="officialId"/>(공식이 아니면 null)를 설명하는 "기본 효과 목록" 표 줄. 모르는 ID면 null.</summary>
+    /// <summary>공식 효과 <paramref name="officialId"/>(공식이 아니면 null)를 설명하는 효과 표 줄. 모르는 ID면 null.</summary>
     internal static HelpTarget? OfficialHelpTarget(string? officialId)
-        => officialId is not null && OfficialGuideRows.TryGetValue(officialId, out var row) ? new HelpTarget("screen-effect-list", Anchor: row) : null;
+        => officialId is not null && OfficialGuideRows.TryGetValue(officialId, out var row) ? new HelpTarget(row.Page, Anchor: row.Row) : null;
 
     /// <summary>
     /// 설정 줄(<see cref="EffectForm.Row"/>이 돌려준 값 열)에 대상 도움말 자리를 붙이고 그 값 열을 돌려준다. 넓은 칸이면 이름 열까지 한 줄 격자 전체,
@@ -806,7 +812,7 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
     {
         if (ReferenceEquals(c, _strip))
             return _strip.TrashAt(local) is { } trash
-                ? (new HelpTarget(HelpPage, Anchor: "Deleting frames in the effects dialog"), trash)
+                ? (new HelpTarget("screen-effects-frames", Anchor: "Deleting frames in the effects dialog"), trash)
                 : (new HelpTarget(HelpPage, Anchor: StripAnchor), new Rect(c.Bounds.Size));
         return ReferenceEquals(c, _settings) ? HelpTargets.Whole(c, SettingsHelpTarget()) : null;
     }
@@ -825,7 +831,7 @@ public sealed partial class LayerEffectsDialog : DialogBase, IHelpTargetSource
             MissingEffect => new("screen-layer-effects", Anchor: "Effects this version doesn't know"),
             ScriptEffect s => OfficialHelpTarget(Chickxel.Core.Scripting.OfficialEffects.IdOfShippedHash(s.ScriptHash))
                               ?? new("screen-script-effects", Anchor: "The settings come from the declared settings"),
-            TextEffect => new("screen-effect-list", Anchor: "Text"),
+            TextEffect => new(LookPage, Anchor: "Text"),
             _ => null,
         };
     }

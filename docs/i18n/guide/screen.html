@@ -23,17 +23,30 @@
 <thead><tr><th>{{screen.th-page}}</th><th>{{screen.th-role}}</th></tr></thead>
 <tbody>
 <tr><td>{{screen.page-controls}}</td><td>{{screen.page-controls.d}}</td></tr>
+<tr><td>{{screen.page-view}}</td><td>{{screen.page-view.d}}</td></tr>
+<tr><td>{{screen.page-outside}}</td><td>{{screen.page-outside.d}}</td></tr>
+<tr><td>{{screen.page-fb-menu}}</td><td>{{screen.page-fb-menu.d}}</td></tr>
+<tr><td>{{screen.page-merge}}</td><td>{{screen.page-merge.d}}</td></tr>
+<tr><td>{{screen.page-trash}}</td><td>{{screen.page-trash.d}}</td></tr>
+<tr><td>{{screen.page-lospec}}</td><td>{{screen.page-lospec.d}}</td></tr>
+<tr><td>{{screen.page-convert}}</td><td>{{screen.page-convert.d}}</td></tr>
 <tr><td>{{screen.page-play-test}}</td><td>{{screen.page-play-test.d}}</td></tr>
-<tr><td>{{screen.page-export}}</td><td>{{screen.page-export.d}}</td></tr>
-<tr><td>{{screen.page-gif}}</td><td>{{screen.page-gif.d}}</td></tr>
-<tr><td>{{screen.page-gallery}}</td><td>{{screen.page-gallery.d}}</td></tr>
+<tr><td>{{screen.page-play-names}}</td><td>{{screen.page-play-names.d}}</td></tr>
 </tbody>
 </table></div>
+<p>{{screen.other}}</p>
 <p>{{screen.layout}}</p>
 
 <h3 id="screen-top-bar">{{screen-top-bar.1}}</h3>
 <figure class="shot"><img src="{{root}}assets/guide/screen-top-bar.png" alt="{{screen-top-bar.6.alt}}" width="1613" height="64" loading="lazy"><figcaption>{{screen-top-bar.7}}</figcaption></figure>
 <p>{{screen-top-bar.2}}</p>
+<ul class="marks">
+<li>{{screen-top-bar.m-name}}</li>
+<li>{{screen-top-bar.m-hint}}</li>
+<li>{{screen-top-bar.m-view}}</li>
+<li>{{screen-top-bar.m-zoom}}</li>
+<li>{{screen-top-bar.m-ai}}</li>
+</ul>
 <h4>{{screen-top-bar.menus}}</h4>
 <p>{{screen-top-bar.menus-intro}}</p>
 <div class="table-wrap"><table>
@@ -49,8 +62,6 @@
 <tr><td>{{screen-top-bar.menu-help}}</td><td>{{screen-top-bar.menu-help.d}}</td></tr>
 </tbody>
 </table></div>
-<h4>{{screen-top-bar.tool}}</h4>
-<p>{{screen-top-bar.tool-body}}</p>
 <h4>{{screen-top-bar.zoom}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/screen-top-bar-2.png" alt="{{screen-top-bar.8.alt}}" width="795" height="257" loading="lazy"><figcaption>{{screen-top-bar.9}}</figcaption></figure>
 <p>{{screen-top-bar.zoom-intro}}</p>
@@ -58,50 +69,70 @@
 <thead><tr><th>{{screen-top-bar.th-control}}</th><th>{{screen-top-bar.th-result}}</th></tr></thead>
 <tbody>
 <tr><td>{{screen-top-bar.zoom-box}}</td><td>{{screen-top-bar.zoom-box.d}}</td></tr>
+<tr><td>{{screen-top-bar.zoom-menu}}</td><td>{{screen-top-bar.zoom-menu.d}}</td></tr>
 <tr><td>{{screen-top-bar.zoom-pm}}</td><td>{{screen-top-bar.zoom-pm.d}}</td></tr>
 <tr><td>{{screen-top-bar.zoom-fit}}</td><td>{{screen-top-bar.zoom-fit.d}}</td></tr>
 <tr><td>{{screen-top-bar.zoom-keys}}</td><td>{{screen-top-bar.zoom-keys.d}}</td></tr>
 </tbody>
 </table></div>
-<h4>{{screen-top-bar.view}}</h4>
+<h4>{{screen-top-bar.menu-buttons}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/screen-top-bar-menu.png" alt="{{screen-top-bar.mb.alt}}" width="698" height="80" loading="lazy"><figcaption>{{screen-top-bar.mb}}</figcaption></figure>
+<ul>
+<li>{{screen-top-bar.mb-gallery}}</li>
+<li>{{screen-top-bar.mb-account}}</li>
+<li>{{screen-top-bar.mb-update}}</li>
+</ul>
+
+<h3 id="screen-top-bar-view">{{screen-top-bar-view.1}}</h3>
 <figure class="shot"><img src="{{root}}assets/guide/screen-top-bar-3.png" alt="{{screen-top-bar.20.alt}}" width="1006" height="149" loading="lazy"><figcaption>{{screen-top-bar.21}}</figcaption></figure>
 <figure class="shot"><img src="{{root}}assets/guide/screen-top-bar-4.png" alt="{{screen-top-bar.22.alt}}" width="973" height="190" loading="lazy"><figcaption>{{screen-top-bar.23}}</figcaption></figure>
 <figure class="shot"><img src="{{root}}assets/guide/screen-top-bar-5.png" alt="{{screen-top-bar.24.alt}}" width="863" height="149" loading="lazy"><figcaption>{{screen-top-bar.25}}</figcaption></figure>
 <figure class="shot"><img src="{{root}}assets/guide/screen-top-bar-6.png" alt="{{screen-top-bar.26.alt}}" width="802" height="185" loading="lazy"><figcaption>{{screen-top-bar.27}}</figcaption></figure>
-<p>{{screen-top-bar.view-intro}}</p>
+<p>{{screen-top-bar-view.lead}}</p>
+<h4>{{screen-top-bar-view.list}}</h4>
 <div class="table-wrap"><table>
-<thead><tr><th>{{screen-top-bar.th-view}}</th><th>{{screen-top-bar.th-on}}</th><th>{{screen-top-bar.th-settings}}</th></tr></thead>
+<thead><tr><th>{{screen-top-bar.th-view}}</th><th>{{screen-top-bar.th-on}}</th></tr></thead>
 <tbody>
-<tr><td>{{screen-top-bar.v-grid}}</td><td>{{screen-top-bar.v-grid.on}}</td><td>{{screen-top-bar.v-grid.set}}</td></tr>
-<tr><td>{{screen-top-bar.v-tiles}}</td><td>{{screen-top-bar.v-tiles.on}}</td><td>{{screen-top-bar.v-tiles.set}}</td></tr>
-<tr><td>{{screen-top-bar.v-tiled}}</td><td>{{screen-top-bar.v-tiled.on}}</td><td>{{screen-top-bar.v-tiled.set}}</td></tr>
-<tr><td>{{screen-top-bar.v-pivot}}</td><td>{{screen-top-bar.v-pivot.on}}</td><td>{{screen-top-bar.v-pivot.set}}</td></tr>
-<tr><td>{{screen-top-bar.v-onion}}</td><td>{{screen-top-bar.v-onion.on}}</td><td>{{screen-top-bar.v-onion.set}}</td></tr>
-<tr><td>{{screen-top-bar.v-focus}}</td><td>{{screen-top-bar.v-focus.on}}</td><td>{{screen-top-bar.v-focus.set}}</td></tr>
-<tr><td>{{screen-top-bar.v-effects}}</td><td>{{screen-top-bar.v-effects.on}}</td><td>{{screen-top-bar.v-effects.set}}</td></tr>
+<tr><td>{{screen-top-bar.v-grid}}</td><td>{{screen-top-bar.v-grid.on}}</td></tr>
+<tr><td>{{screen-top-bar.v-tiles}}</td><td>{{screen-top-bar.v-tiles.on}}</td></tr>
+<tr><td>{{screen-top-bar.v-tiled}}</td><td>{{screen-top-bar.v-tiled.on}}</td></tr>
+<tr><td>{{screen-top-bar.v-pivot}}</td><td>{{screen-top-bar.v-pivot.on}}</td></tr>
+<tr><td>{{screen-top-bar.v-onion}}</td><td>{{screen-top-bar.v-onion.on}}</td></tr>
+<tr><td>{{screen-top-bar.v-focus}}</td><td>{{screen-top-bar.v-focus.on}}</td></tr>
+<tr><td>{{screen-top-bar.v-effects}}</td><td>{{screen-top-bar.v-effects.on}}</td></tr>
 </tbody>
 </table></div>
-<p>{{screen-top-bar.outside-link}}</p>
+<h4>{{screen-top-bar-view.settings}}</h4>
+<p>{{screen-top-bar-view.popup}}</p>
+<ul>
+<li>{{screen-top-bar-view.s-grid}}</li>
+<li>{{screen-top-bar-view.s-tiles}}</li>
+<li>{{screen-top-bar-view.s-tiled}}</li>
+<li>{{screen-top-bar-view.s-onion}}</li>
+<li>{{screen-top-bar-view.s-focus}}</li>
+</ul>
+<p>{{screen-top-bar-view.keep}}</p>
 <figure class="shot"><img src="{{root}}assets/guide/screen-top-bar-compare-grid.png" alt="{{screen-top-bar.cmp-grid.alt}}" width="560" height="288" loading="lazy"><figcaption>{{screen-top-bar.cmp-grid}}</figcaption></figure>
 <figure class="shot"><img src="{{root}}assets/guide/screen-top-bar-compare-onion.png" alt="{{screen-top-bar.cmp-onion.alt}}" width="578" height="542" loading="lazy"><figcaption>{{screen-top-bar.cmp-onion}}</figcaption></figure>
 <h4>{{screen-top-bar.fx}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/screen-canvas-effects-toggle.png" alt="{{guide-shot.effects.alt}}" width="1107" height="614" loading="lazy"><figcaption>{{guide-shot.effects.caption}}</figcaption></figure>
 <p>{{guide-shot.effects.body}}</p>
-<p>{{guide-new.view-effects}}</p>
-<p>{{guide-new.canvas-effects}}</p>
-<h4>{{screen-top-bar.ai}}</h4>
-<p>{{screen-top-bar.ai-body}}</p>
-<h4>{{screen-top-bar.menu-buttons}}</h4>
-<figure class="shot"><img src="{{root}}assets/guide/screen-top-bar-menu.png" alt="{{screen-top-bar.mb.alt}}" width="698" height="80" loading="lazy"><figcaption>{{screen-top-bar.mb}}</figcaption></figure>
-<p>{{screen-top-bar.mb-gallery}}</p>
-<p>{{screen-top-bar.mb-account}}</p>
+<p>{{screen-top-bar-view.fx-key}}</p>
+<h4>{{screen-top-bar-view.good}}</h4>
+<ul>
+<li>{{screen-top-bar-view.g-keep}}</li>
+<li>{{screen-top-bar-view.g-pivot}}</li>
+<li>{{screen-top-bar-view.fx-follow}}</li>
+<li>{{screen-top-bar-view.fx-text}}</li>
+</ul>
+<p>{{screen-top-bar.outside-link}}</p>
+
 <h3 id="screen-outside-canvas">{{screen-outside-canvas.1}}</h3>
 <p>{{screen-outside-canvas.intro}}</p>
 <figure class="shot"><img src="{{root}}assets/guide/screen-top-bar-outside.png" alt="{{screen-top-bar.outside.alt}}" width="174" height="124" loading="lazy"><figcaption>{{screen-top-bar.outside.cap}}</figcaption></figure>
 <p>{{screen-top-bar.outside}}</p>
 <figure class="shot"><img src="{{root}}assets/guide/screen-top-bar-compare-outside.png" alt="{{screen-top-bar.outside-compare.alt}}" width="1306" height="644" loading="lazy"><figcaption>{{screen-top-bar.outside-compare.cap}}</figcaption></figure>
 <p>{{screen-top-bar.outside-compare}}</p>
-<p>{{screen-outside-canvas.group}}</p>
 
 <h3 id="screen-common-controls">{{screen-common-controls.1}}</h3>
 <figure class="clip"><img src="{{root}}assets/guide/screen-common-controls.webp" alt="{{screen-common-controls.8.alt}}" width="432" height="442" loading="lazy"></figure>
@@ -122,8 +153,8 @@
 <p>{{screen-common-controls.drag-note}}</p>
 <h4>{{screen-common-controls.type}}</h4>
 <p>{{screen-common-controls.3}}</p>
-<p>{{screen-common-controls.expr}}</p>
 <ul>
+<li>{{screen-common-controls.expr}}</li>
 <li>{{screen-common-controls.expr-1}}</li>
 <li>{{screen-common-controls.expr-2}}</li>
 <li>{{screen-common-controls.expr-3}}</li>
@@ -138,12 +169,10 @@
 </ul>
 <h4>{{screen-common-controls.menus}}</h4>
 <p>{{screen-common-controls.5}}</p>
-<p>{{screen-common-controls.menus-close}}</p>
 <h4>{{screen-common-controls.size}}</h4>
 <p>{{screen-common-controls.size-body}}</p>
 <h4>{{screen-common-controls.info}}</h4>
 <p>{{screen-common-controls.info-body}}</p>
-<h4>{{screen-common-controls.tips}}</h4>
 <p>{{screen-common-controls.tips-body}}</p>
 
 <h3 id="screen-toolbar">{{screen-toolbar.1}}</h3>
@@ -183,38 +212,50 @@
 <h3 id="screen-file-browser">{{screen-file-browser.1}}</h3>
 <figure class="shot"><img src="{{root}}assets/guide/screen-file-browser.png" alt="{{screen-file-browser.9.alt}}" width="252" height="500" loading="lazy"><figcaption>{{screen-file-browser.10}}</figcaption></figure>
 <p>{{screen-file-browser.2}}</p>
-<p>{{screen-file-browser.effect-list}}</p>
 <h4>{{screen-file-browser.folders}}</h4>
 <ul>
 <li>{{screen-file-browser.folders-1}}</li>
 <li>{{screen-file-browser.folders-2}}</li>
 <li>{{screen-file-browser.folders-3}}</li>
+<li>{{screen-file-browser.unity}}</li>
 </ul>
-<p>{{screen-file-browser.unity}}</p>
 <h4>{{screen-file-browser.list}}</h4>
 <ul>
 <li>{{screen-file-browser.list-1}}</li>
-<li>{{screen-file-browser.5}}</li>
-</ul>
-<figure class="shot"><img src="{{root}}assets/guide/screen-file-browser-5.png" alt="{{screen-file-browser.bundle.alt}}" width="254" height="303" loading="lazy"><figcaption>{{screen-file-browser.bundle}}</figcaption></figure>
-<ul>
 <li>{{screen-file-browser.4}}</li>
-<li>{{screen-file-browser.bundle-open}}</li>
-<li>{{screen-file-browser.bundle-use}}</li>
 <li>{{screen-file-browser.search}}</li>
+</ul>
+<h4>{{screen-file-browser.bundles}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/screen-file-browser-5.png" alt="{{screen-file-browser.bundle.alt}}" width="254" height="303" loading="lazy"><figcaption>{{screen-file-browser.bundle}}</figcaption></figure>
+<p>{{screen-file-browser.bundle-what}}</p>
+<ul class="marks">
+<li>{{screen-file-browser.bundle-open}}</li>
+<li>{{screen-file-browser.bundle-band}}</li>
 </ul>
 <h4>{{screen-file-browser.new}}</h4>
 <p>{{screen-file-browser.3}}</p>
 <p>{{screen-file-browser.new-file}}</p>
 <h4>{{screen-file-browser.select}}</h4>
-<figure class="shot"><img src="{{root}}assets/guide/screen-file-browser-2.png" alt="{{screen-file-browser.11.alt}}" width="455" height="830" loading="lazy"><figcaption>{{screen-file-browser.12}}</figcaption></figure>
 <ul>
 <li>{{screen-file-browser.6}}</li>
-<li>{{screen-file-browser.ctrl-drag}}</li>
 <li>{{screen-file-browser.7}}</li>
+<li>{{screen-file-browser.copy-out}}</li>
 </ul>
-<h4>{{screen-file-browser.menu}}</h4>
+<h4>{{screen-file-browser.13}}</h4>
+<p>{{screen-file-browser.14}}</p>
+<h4>{{screen-file-browser.good}}</h4>
+<ul>
+<li>{{screen-file-browser.g-hidden}}</li>
+<li>{{screen-file-browser.g-ffmpeg}}</li>
+<li>{{screen-file-browser.16}}</li>
+<li>{{screen-file-browser.ctrl-drag}}</li>
+<li>{{screen-file-browser.effect-list}}</li>
+</ul>
+
+<h3 id="screen-file-browser-menu">{{screen-file-browser-menu.1}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/screen-file-browser-2.png" alt="{{screen-file-browser.11.alt}}" width="455" height="830" loading="lazy"><figcaption>{{screen-file-browser.12}}</figcaption></figure>
 <p>{{screen-file-browser.menu-intro}}</p>
+<h4>{{screen-file-browser.menu}}</h4>
 <div class="table-wrap"><table>
 <thead><tr><th>{{screen-file-browser.th-item}}</th><th>{{screen-file-browser.th-does}}</th></tr></thead>
 <tbody>
@@ -231,32 +272,40 @@
 <tr><td>{{screen-file-browser.m-info}}</td><td>{{screen-file-browser.m-info.d}}</td></tr>
 </tbody>
 </table></div>
+<h4>{{screen-file-browser.rename}}</h4>
+<ol class="core-steps">
+<li>{{screen-file-browser.rename-1}}</li>
+<li>{{screen-file-browser.rename-2}}</li>
+</ol>
+<p>{{screen-file-browser.rename-body}}</p>
+<h4>{{screen-file-browser.details}}</h4>
+<p>{{screen-file-browser.details-body}}</p>
+<ul>
+<li>{{screen-file-browser.details-image}}</li>
+<li>{{screen-file-browser.details-video}}</li>
+<li>{{screen-file-browser.details-project}}</li>
+<li>{{screen-file-browser.details-folder}}</li>
+</ul>
 <h4>{{screen-file-browser.info-exports}}</h4>
 <p>{{screen-file-browser.info-exports-intro}}</p>
 <ul>
+<li>{{screen-file-browser.info-exports-check}}</li>
 <li>{{screen-file-browser.info-exports-row}}</li>
 <li>{{screen-file-browser.info-exports-files}}</li>
 <li>{{screen-file-browser.info-exports-old}}</li>
 </ul>
-<p>{{screen-file-browser.info-exports-save}}</p>
-<h4>{{screen-file-browser.rename}}</h4>
-<p>{{screen-file-browser.rename-body}}</p>
-<h4>{{screen-file-browser.13}}</h4>
-<p>{{screen-file-browser.14}}</p>
-<ul>
-<li>{{screen-file-browser.15}}</li>
-<li>{{screen-file-browser.16}}</li>
-<li>{{screen-file-browser.17}}</li>
-</ul>
-<h4>{{screen-file-browser.18}}</h4>
-<p>{{screen-file-browser.19}}</p>
+
+<h3 id="screen-file-browser-merge">{{screen-file-browser-merge.1}}</h3>
 <figure class="shot"><img src="{{root}}assets/guide/screen-file-browser-3.png" alt="{{screen-file-browser.35.alt}}" width="801" height="914" loading="lazy"><figcaption>{{screen-file-browser.36}}</figcaption></figure>
+<p>{{screen-file-browser.19}}</p>
 <ul class="marks">
 <li>{{screen-file-browser.20}}</li>
 <li>{{screen-file-browser.21}}</li>
 <li>{{screen-file-browser.22}}</li>
 <li>{{screen-file-browser.23}}</li>
+<li>{{screen-file-browser.34}}</li>
 </ul>
+<h4>{{screen-file-browser.modes-h}}</h4>
 <div class="table-wrap"><table>
 <thead><tr><th>{{screen-file-browser.24}}</th><th>{{screen-file-browser.25}}</th></tr></thead>
 <tbody>
@@ -266,35 +315,38 @@
 <tr><td>{{screen-file-browser.32}}</td><td>{{screen-file-browser.33}}</td></tr>
 </tbody>
 </table></div>
-<p>{{screen-file-browser.34}}</p>
-<h4>{{screen-file-browser.37}}</h4>
-<ul>
-<li>{{screen-file-browser.38}}</li>
-<li>{{screen-file-browser.39}}</li>
-</ul>
+<p>{{screen-file-browser.merge-result}}</p>
+
+<h3 id="screen-file-browser-trash">{{screen-file-browser-trash.1}}</h3>
 <figure class="shot"><img src="{{root}}assets/guide/screen-file-browser-4.png" alt="{{screen-file-browser.44.alt}}" width="774" height="558" loading="lazy"><figcaption>{{screen-file-browser.45}}</figcaption></figure>
+<p>{{screen-file-browser.38}}</p>
 <ul class="marks">
 <li>{{screen-file-browser.40}}</li>
+<li>{{screen-file-browser.40b}}</li>
 <li>{{screen-file-browser.41}}</li>
 </ul>
+<p>{{screen-file-browser.trash-where}}</p>
 
 <h3 id="screen-palette">{{screen-palette.1}}</h3>
 <figure class="shot"><img src="{{root}}assets/guide/screen-palette.png" alt="{{screen-palette.8.alt}}" width="248" height="424" loading="lazy"><figcaption>{{screen-palette.9}}</figcaption></figure>
 <p>{{screen-palette.2}}</p>
+<p>{{screen-palette.stack-intro}}</p>
 <h4>{{screen-palette.slots}}</h4>
-<p>{{screen-palette.slots-body}}</p>
+<ul>
+<li>{{screen-palette.slots-1}}</li>
+<li>{{screen-palette.slots-2}}</li>
+<li>{{screen-palette.slots-3}}</li>
+</ul>
 <h4>{{screen-palette.stack}}</h4>
 <ul>
 <li>{{screen-palette.3}}</li>
-<li>{{screen-palette.header}}</li>
 <li>{{screen-palette.5}}</li>
-<li>{{screen-palette.7}}</li>
+<li>{{screen-palette.header}}</li>
 </ul>
 <h4>{{screen-palette.swatches}}</h4>
 <ul>
 <li>{{screen-palette.sw-1}}</li>
 <li>{{screen-palette.6}}</li>
-<li>{{screen-palette.sw-2}}</li>
 <li>{{screen-palette.sw-3}}</li>
 </ul>
 <h4>{{screen-palette.menu}}</h4>
@@ -318,9 +370,36 @@
 <tr><td>{{screen-palette.m-delete}}</td><td>{{screen-palette.m-delete.d}}</td></tr>
 </tbody>
 </table></div>
-<h4>{{screen-palette.12}}</h4>
+
+<h3 id="screen-palette-lospec">{{screen-palette-lospec.1}}</h3>
+<p>{{screen-palette.17}}</p>
+<h4>{{screen-palette.lospec-find}}</h4>
+<ul>
+<li>{{screen-palette.18}}</li>
+<li>{{screen-palette.lospec-more}}</li>
+<li>{{screen-palette.19}}</li>
+</ul>
+<h4>{{screen-palette.lospec-use}}</h4>
+<p>{{screen-palette.20}}</p>
+<h4>{{screen-palette.lospec-fav}}</h4>
+<ul>
+<li>{{screen-palette.21}}</li>
+<li>{{screen-palette.22}}</li>
+<li>{{screen-palette.22b}}</li>
+</ul>
+<p>{{screen-palette.24}}</p>
+
+<h3 id="screen-palette-convert">{{screen-palette-convert.1}}</h3>
 <figure class="shot"><img src="{{root}}assets/guide/screen-palette-3.png" alt="{{screen-palette.14.alt}}" width="522" height="794" loading="lazy"><figcaption>{{screen-palette.15}}</figcaption></figure>
 <p>{{screen-palette.13}}</p>
+<ul class="marks">
+<li>{{screen-palette.c-target}}</li>
+<li>{{screen-palette.c-rule}}</li>
+<li>{{screen-palette.c-dither}}</li>
+<li>{{screen-palette.c-preview}}</li>
+</ul>
+<p>{{screen-palette.c-keep}}</p>
+<h4>{{screen-palette.rules}}</h4>
 <div class="table-wrap"><table>
 <thead><tr><th>{{screen-palette.th-rule}}</th><th>{{screen-palette.th-picks}}</th></tr></thead>
 <tbody>
@@ -332,25 +411,15 @@
 </tbody>
 </table></div>
 <p>{{screen-palette.rule-order}}</p>
-<p>{{screen-palette.dither}}</p>
+<h4>{{screen-palette.dither-h}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/screen-palette-compare-dither.png" alt="{{screen-palette.cmp.alt}}" width="784" height="272" loading="lazy"><figcaption>{{screen-palette.cmp}}</figcaption></figure>
 <p>{{screen-palette.cmp-body}}</p>
-<h4>{{screen-palette.16}}</h4>
-<p>{{screen-palette.17}}</p>
-<ul>
-<li>{{screen-palette.18}}</li>
-<li>{{screen-palette.lospec-more}}</li>
-<li>{{screen-palette.19}}</li>
-<li>{{screen-palette.20}}</li>
-<li>{{screen-palette.21}}</li>
-<li>{{screen-palette.22}}</li>
-<li>{{screen-palette.23}}</li>
-</ul>
-<p>{{screen-palette.24}}</p>
+<p>{{screen-palette.dither}}</p>
 
 <h3 id="screen-color-picker">{{screen-color-picker.1}}</h3>
 <figure class="shot"><img src="{{root}}assets/guide/screen-color-picker.png" alt="{{screen-color-picker.13.alt}}" width="249" height="333" loading="lazy"><figcaption>{{screen-color-picker.14}}</figcaption></figure>
 <p>{{screen-color-picker.2}}</p>
+<p>{{screen-color-picker.parts}}</p>
 <h4>{{screen-color-picker.modes}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/screen-color-picker-2.png" alt="{{screen-color-picker.15.alt}}" width="242" height="372" loading="lazy"><figcaption>{{screen-color-picker.16}}</figcaption></figure>
 <figure class="shot"><img src="{{root}}assets/guide/screen-color-picker-3.png" alt="{{screen-color-picker.17.alt}}" width="242" height="360" loading="lazy"><figcaption>{{screen-color-picker.18}}</figcaption></figure>
@@ -364,7 +433,6 @@
 <tr><td>{{screen-color-picker.11}}</td><td>{{screen-color-picker.12}}</td></tr>
 </tbody>
 </table></div>
-<p>{{screen-color-picker.21}}</p>
 <h4>{{screen-color-picker.inputs}}</h4>
 <ul>
 <li>{{screen-color-picker.in-1}}</li>
@@ -416,7 +484,11 @@
 </table></div>
 <h4>{{screen-canvas.parts}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/screen-canvas.png" alt="{{screen-canvas.6.alt}}" width="801" height="731" loading="lazy"><figcaption>{{screen-canvas.7}}</figcaption></figure>
-<p>{{screen-canvas.3}}</p>
+<ul>
+<li>{{screen-canvas.3}}</li>
+<li>{{screen-canvas.empty}}</li>
+<li>{{screen-canvas.slice}}</li>
+</ul>
 <h4>{{screen-canvas.overlays}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/screen-canvas-2.png" alt="{{screen-canvas.8.alt}}" width="801" height="731" loading="lazy"><figcaption>{{screen-canvas.9}}</figcaption></figure>
 <p>{{screen-canvas.ov-intro}}</p>
@@ -452,6 +524,7 @@
 <h4>{{screen-tabs.open}}</h4>
 <ul>
 <li>{{screen-tabs.2}}</li>
+<li>{{screen-tabs.open-new}}</li>
 <li>{{screen-tabs.3}}</li>
 <li>{{screen-tabs.4}}</li>
 <li>{{screen-tabs.close-next}}</li>
@@ -460,6 +533,7 @@
 <h4>{{screen-tabs.menu}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/screen-tabs-2.png" alt="{{screen-tabs.12.alt}}" width="809" height="125" loading="lazy"><figcaption>{{screen-tabs.13}}</figcaption></figure>
 <ul>
+<li>{{screen-tabs.order}}</li>
 <li>{{screen-tabs.6}}</li>
 <li>{{screen-tabs.17}}</li>
 </ul>
@@ -474,7 +548,11 @@
 <h4>{{screen-tabs.ptab}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/screen-preview-tab.png" alt="{{guide-shot.preview-tab.alt}}" width="1107" height="587" loading="lazy"><figcaption>{{guide-shot.preview-tab.caption}}</figcaption></figure>
 <p>{{guide-shot.preview-tab.body}}</p>
-<p>{{guide-new.preview-tab}}</p>
+<ul>
+<li>{{screen-tabs.ptab-view}}</li>
+<li>{{screen-tabs.ptab-one}}</li>
+<li>{{screen-tabs.ptab-move}}</li>
+</ul>
 <h4>{{screen-tabs.session}}</h4>
 <p>{{screen-tabs.9}}</p>
 
@@ -511,23 +589,24 @@
 <tr><td><strong>{{UiStrings.Preview_Menu_SaveGif}}</strong></td><td>{{screen-preview.21}}</td></tr>
 </tbody>
 </table></div>
-<p>{{screen-preview.22}}</p>
 <h4>{{screen-preview.bg}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/screen-preview-3.png" alt="{{screen-preview.11.alt}}" width="308" height="396" loading="lazy"><figcaption>{{screen-preview.12}}</figcaption></figure>
 <p>{{screen-preview.5}}</p>
-<p>{{screen-preview.bg-note}}</p>
 <h4>{{screen-preview.outfit}}</h4>
 <p>{{screen-preview.outfit-body}}</p>
 <h4>{{screen-preview.large}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/screen-preview-large.png" alt="{{guide-shot.preview-large.alt}}" width="750" height="782" loading="lazy"><figcaption>{{guide-shot.preview-large.caption}}</figcaption></figure>
 <p>{{guide-shot.preview-large.body}}</p>
-<p>{{guide-new.preview-large}}</p>
-<p>{{screen-preview.large-zoom}}</p>
-<p>{{guide-new.preview-tab-link}}</p>
+<ul>
+<li>{{guide-new.preview-large}}</li>
+<li>{{screen-preview.large-zoom}}</li>
+<li>{{guide-new.preview-tab-link}}</li>
+</ul>
 
 <h3 id="screen-play-test">{{screen-play-test.1}}</h3>
 <figure class="shot"><img src="{{root}}assets/guide/screen-play-test.png" alt="{{screen-play-test.alt}}" width="1060" height="862" loading="lazy"><figcaption>{{screen-play-test.caption}}</figcaption></figure>
 <p>{{screen-play-test.intro}}</p>
+<p>{{screen-play-test.use}}</p>
 <ul class="marks">
 <li>{{screen-play-test.m1}}</li>
 <li>{{screen-play-test.m2}}</li>
@@ -538,21 +617,13 @@
 <li>{{screen-play-test.m7}}</li>
 <li>{{screen-play-test.m8}}</li>
 </ul>
-<h4>{{screen-play-test.h-map}}</h4>
-<p>{{screen-play-test.map-1}}</p>
-<p>{{screen-play-test.map-2}}</p>
-<p>{{screen-play-test.map-3}}</p>
-<p>{{screen-play-test.map-4}}</p>
-<h4>{{screen-play-test.h-climb}}</h4>
-<p>{{screen-play-test.climb}}</p>
+<h4>{{screen-play-test.h-keys}}</h4>
 <div class="table-wrap"><table>
-<thead><tr><th>{{screen-play-test.c.h1}}</th><th>{{screen-play-test.c.h2}}</th><th>{{screen-play-test.c.h3}}</th></tr></thead>
+<thead><tr><th>{{screen-play-test.k.h1}}</th><th>{{screen-play-test.k.h2}}</th></tr></thead>
 <tbody>
-<tr><td>{{screen-play-test.c.1}}</td><td>{{screen-play-test.c.1l}}</td><td>{{screen-play-test.c.1w}}</td></tr>
-<tr><td>{{screen-play-test.c.2}}</td><td>{{screen-play-test.c.2l}}</td><td>{{screen-play-test.c.2w}}</td></tr>
-<tr><td>{{screen-play-test.c.3}}</td><td>{{screen-play-test.c.3l}}</td><td>{{screen-play-test.c.3w}}</td></tr>
-<tr><td>{{screen-play-test.c.4}}</td><td>{{screen-play-test.c.4l}}</td><td>{{screen-play-test.c.4w}}</td></tr>
-<tr><td>{{screen-play-test.c.5}}</td><td>{{screen-play-test.c.5l}}</td><td>{{screen-play-test.c.5w}}</td></tr>
+<tr><td>{{screen-play-test.k.1}}</td><td>{{screen-play-test.k.1d}}</td></tr>
+<tr><td>{{screen-play-test.k.2}}</td><td>{{screen-play-test.k.2d}}</td></tr>
+<tr><td>{{screen-play-test.k.3}}</td><td>{{screen-play-test.k.3d}}</td></tr>
 </tbody>
 </table></div>
 <h4>{{screen-play-test.h-settings}}</h4>
@@ -566,22 +637,35 @@
 <tr><td>{{screen-play-test.s.5}}</td><td>{{screen-play-test.s.5d}}</td></tr>
 </tbody>
 </table></div>
-<h4>{{screen-play-test.h-keys}}</h4>
+<h4>{{screen-play-test.h-map}}</h4>
+<ul>
+<li>{{screen-play-test.map-1}}</li>
+<li>{{screen-play-test.map-2}}</li>
+<li>{{screen-play-test.map-3}}</li>
+<li>{{screen-play-test.map-4}}</li>
+</ul>
+<h4>{{screen-play-test.h-climb}}</h4>
+<p>{{screen-play-test.climb}}</p>
 <div class="table-wrap"><table>
-<thead><tr><th>{{screen-play-test.k.h1}}</th><th>{{screen-play-test.k.h2}}</th></tr></thead>
+<thead><tr><th>{{screen-play-test.c.h1}}</th><th>{{screen-play-test.c.h2}}</th><th>{{screen-play-test.c.h3}}</th></tr></thead>
 <tbody>
-<tr><td>{{screen-play-test.k.1}}</td><td>{{screen-play-test.k.1d}}</td></tr>
-<tr><td>{{screen-play-test.k.2}}</td><td>{{screen-play-test.k.2d}}</td></tr>
-<tr><td>{{screen-play-test.k.3}}</td><td>{{screen-play-test.k.3d}}</td></tr>
+<tr><td>{{screen-play-test.c.1}}</td><td>{{screen-play-test.c.1l}}</td><td>{{screen-play-test.c.1w}}</td></tr>
+<tr><td>{{screen-play-test.c.2}}</td><td>{{screen-play-test.c.2l}}</td><td>{{screen-play-test.c.2w}}</td></tr>
+<tr><td>{{screen-play-test.c.3}}</td><td>{{screen-play-test.c.3l}}</td><td>{{screen-play-test.c.3w}}</td></tr>
+<tr><td>{{screen-play-test.c.4}}</td><td>{{screen-play-test.c.4l}}</td><td>{{screen-play-test.c.4w}}</td></tr>
+<tr><td>{{screen-play-test.c.5}}</td><td>{{screen-play-test.c.5l}}</td><td>{{screen-play-test.c.5w}}</td></tr>
 </tbody>
 </table></div>
-<h4>{{screen-play-test.h-names}}</h4>
+
+<h3 id="screen-play-test-names">{{screen-play-test-names.1}}</h3>
 <figure class="shot"><img src="{{root}}assets/guide/screen-play-test-2.png" alt="{{screen-play-test.alt2}}" width="290" height="538" loading="lazy"><figcaption>{{screen-play-test.caption2}}</figcaption></figure>
+<p>{{screen-play-test-names.lead}}</p>
 <ul class="marks">
 <li>{{screen-play-test.m9}}</li>
 <li>{{screen-play-test.m10}}</li>
 </ul>
 <h4>{{screen-play-test.h-rules}}</h4>
+<p>{{screen-play-test.rules-intro}}</p>
 <div class="table-wrap"><table>
 <thead><tr><th>{{screen-play-test.r.h1}}</th><th>{{screen-play-test.r.h2}}</th></tr></thead>
 <tbody>
@@ -597,10 +681,20 @@
 <tr><td>{{screen-play-test.r.10}}</td><td>{{screen-play-test.r.10d}}</td></tr>
 </tbody>
 </table></div>
-<p>{{screen-play-test.rules}}</p>
-<p>{{screen-play-test.hang}}</p>
 <h4>{{screen-play-test.h-flip}}</h4>
-<p>{{screen-play-test.flip}}</p>
+<p>{{screen-play-test.rules}}</p>
+<ul>
+<li>{{screen-play-test.dirs-top}}</li>
+<li>{{screen-play-test.dirs-side}}</li>
+</ul>
+<h4>{{screen-play-test.names-good}}</h4>
+<ul>
+<li>{{screen-play-test.fallback}}</li>
+<li>{{screen-play-test.ladder-names}}</li>
+<li>{{screen-play-test.hang}}</li>
+<li>{{screen-play-test.flip}}</li>
+<li>{{screen-play-test.tags}}</li>
+</ul>
 
 <h3 id="screen-tool-settings">{{screen-tool-settings.1}}</h3>
 <figure class="shot"><img src="{{root}}assets/guide/screen-tool-settings.png" alt="{{screen-tool-settings.3.alt}}" width="321" height="514" loading="lazy"><figcaption>{{screen-tool-settings.4}}</figcaption></figure>
@@ -612,8 +706,12 @@
 <h4>{{screen-tool-settings.effect}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/screen-effect-dock.png" alt="{{guide-shot.effect-dock.alt}}" width="1104" height="735" loading="lazy"><figcaption>{{guide-shot.effect-dock.caption}}</figcaption></figure>
 <p>{{guide-shot.effect-dock.body}}</p>
-<p>{{guide-new.dock-effect}}</p>
-<p>{{guide-new.dock-gradient}}</p>
+<ul>
+<li>{{guide-new.dock-effect}}</li>
+<li>{{screen-tool-settings.fx-canvas}}</li>
+<li>{{screen-tool-settings.fx-gone}}</li>
+<li>{{screen-tool-settings.fx-warn}}</li>
+</ul>
 <h4>{{screen-tool-settings.modes}}</h4>
 <p>{{screen-tool-settings.modes-body}}</p>
 

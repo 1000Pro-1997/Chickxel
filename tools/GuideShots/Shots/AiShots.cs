@@ -369,7 +369,7 @@ internal static class AiShots
         var toggle = ShotKit.Get<Control>(chat.Window, "_providerToggle");
         WidenGutter(k, chat, Claude);
         var pending = chat.Field<Control>(Claude, "_pending");
-        k.Save(chat.Window, marks: [toggle, Room(pending, chat.Window)]);
+        k.Save(chat.Window, marks: [toggle, Room(pending, chat.Window)], firstNumber: 4);
     }
 
     [Shot("ai-chat")]
@@ -876,8 +876,8 @@ internal static class AiShots
             .Done(0.009, 5200));
         chat.Main.Title = MainTitle;
         var at = new Point(1280 - 430 - 18, 150);
-        // ① 잠겨 있어 거절된 줄 ② 타임라인 자물쇠.
-        Composite(k, "ai-locked", chat.Main, [(chat.Window, at)], [ToolLine(chat, Claude, "replace_color"), LockRect(main, 0)]);
+        // ④ 잠겨 있어 거절된 줄 ⑤ 타임라인 자물쇠(지금 그림만과 한 쪽이라 ④부터).
+        Composite(k, "ai-locked", chat.Main, [(chat.Window, at)], [ToolLine(chat, Claude, "replace_color"), LockRect(main, 0)], firstNumber: 4);
     }
 
     [Shot("ai-progress")]
@@ -892,7 +892,7 @@ internal static class AiShots
             .Pause());
         chat.FakeElapsed(Claude, TimeSpan.FromSeconds(41), TimeSpan.FromSeconds(12));
         WidenGutter(k, chat, Claude);
-        k.Save(chat.Window, marks: [Room(chat.Field<TextBlock>(Claude, "_thinking"), chat.Window, left: Gutter - 2, up: 0)]);
+        k.Save(chat.Window, marks: [Room(chat.Field<TextBlock>(Claude, "_thinking"), chat.Window, left: Gutter - 2, up: 0)], firstNumber: 5);
     }
 
     // ───────────── 편집 · 효과 · 참고 자료 ─────────────

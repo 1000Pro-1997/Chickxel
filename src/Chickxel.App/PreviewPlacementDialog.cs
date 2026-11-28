@@ -14,7 +14,7 @@ public sealed class PreviewPlacementDialog : DialogBase
 
     private PreviewPlacementDialog(PreviewPlacement placement, bool hasEnd) : base(UiStrings.EffectMaker_PreviewPlacement)
     {
-        this.HelpAt("screen-effect-maker");
+        this.HelpAt("screen-effect-maker-preview");
         var table = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto") };
         void Add(Control cell, int row, int column)
         {

@@ -101,14 +101,14 @@ guide-home.3,처음 쓰는 흐름,First-time path
 guide-home.4,"<a href=""#start-install""><strong>설치하고 실행하기</strong></a><span>운영체제에 맞는 파일과 첫 실행 경고를 확인합니다.</span>","<a href=""#start-install""><strong>Install and launch</strong></a><span>Choose the right download for your operating system and handle the first-launch warning.</span>"
 guide-home.5,"<a href=""#screen""><strong>화면 익히기</strong></a><span>캔버스·도구 막대·타임라인이 있는 곳을 확인합니다.</span>","<a href=""#screen""><strong>Learn the screen</strong></a><span>Find the canvas, toolbar, timeline, and other main areas.</span>"
 guide-home.6,"<a href=""#tools-basics""><strong>그림 그리기</strong></a><span>기본색·보조색, 브러시, 선택 영역의 기본 조작을 익힙니다.</span>","<a href=""#tools-basics""><strong>Draw an image</strong></a><span>Learn the basic controls for colors, brushes, and selections.</span>"
-guide-home.7,"<a href=""#files-save""><strong>저장하고 내보내기</strong></a><span>프로젝트와 PNG·Unity 파일이 어떻게 저장되는지 확인합니다.</span>","<a href=""#files-save""><strong>Save and export</strong></a><span>See how projects, PNG files, and Unity files are saved.</span>"
+guide-home.7,"<a href=""#files-save""><strong>저장하고 내보내기</strong></a><span>프로젝트를 저장하고 <a href=""#export"">시트·GIF로 내보냅니다</a>.</span>","<a href=""#files-save""><strong>Save and export</strong></a><span>Save your project and <a href=""#export"">export sheets and GIFs</a>.</span>"
 guide-home.8,하려는 작업으로 찾기,Find a task
 guide-home.9,"<a href=""#featured-pixelate-convert""><strong>이미지를 픽셀 아트로 바꾸기</strong></a>","<a href=""#featured-pixelate-convert""><strong>Turn an image into pixel art</strong></a>"
 guide-home.10,"<a href=""#featured-ai-draw""><strong>AI로 그림 그리기</strong></a>","<a href=""#featured-ai-draw""><strong>Draw with AI</strong></a>"
 guide-home.11,"<a href=""#featured-effects""><strong>레이어 효과로 애니메이션 만들기</strong></a>","<a href=""#featured-effects""><strong>Animate with layer effects</strong></a>"
 guide-home.12,"<a href=""#featured-skins""><strong>스킨 바꿔 끼우기</strong></a>","<a href=""#featured-skins""><strong>Switch skins</strong></a>"
 guide-home.13,"<a href=""#featured-export""><strong>스프라이트 시트 내보내기</strong></a>","<a href=""#featured-export""><strong>Export a sprite sheet</strong></a>"
-guide-home.14,기능 이름을 알고 있다면 왼쪽 검색에 입력하세요. 목차는 자주 하는 작업과 기능별 설명을 나눠 놓았습니다.,"If you know the feature name, enter it in the search box on the left. The table of contents separates common tasks from feature reference."
+guide-home.14,"앱에서 {{key:도움말/대상 도움말}}을 누르고 궁금한 단추나 칸을 누르면 그 설명이 바로 열립니다. 기능 이름을 알면 왼쪽 검색에 입력하세요.","In the app, press {{key:도움말/대상 도움말}} and click any button or field to open its explanation. If you know the feature name, type it in the search box on the left."
 language-fix.6,"
 <span><strong>Chickxel</strong> · <a href=""https://github.com/1000Pro-1997/Chickxel/blob/main/LICENSE"">소스 공개 라이선스</a> · © 2026 천성훈 (1000Pro-1997) · 문의 <a href=""mailto:chickxel@chickxel.com"">chickxel@chickxel.com</a></span>
 <span><a href=""https://github.com/1000Pro-1997/Chickxel"">GitHub</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/releases"">릴리스</a> · <a href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">Discord</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/issues"">문제 신고</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/blob/main/THIRD-PARTY-NOTICES.md"">오픈 소스 고지</a></span>

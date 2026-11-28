@@ -186,7 +186,7 @@ public sealed class GalleryUploadDialog : DialogBase
             Children = { _preview, _previewCaption, Note(UiStrings.Gallery_PublicNote) },
         };
         previewColumn.Width = 240;
-        Body.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { _form, previewColumn.HelpAt("screen-gallery", anchor: "A still image of the current frame") } });
+        Body.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { _form, previewColumn.HelpAt("screen-gallery", anchor: "Preview") } });
         Body.Children.Add(_error.HelpAt("screen-gallery", anchor: "Uploading"));
         Body.Children.Add(_progressRow.HelpAt("screen-gallery", anchor: "Uploading"));
         AddFooterLeft(Ui.Button(VectorIcon.ExternalLink, UiStrings.Gallery_OpenGallery,

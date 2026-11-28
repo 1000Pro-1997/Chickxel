@@ -1022,20 +1022,20 @@ public sealed partial class PixelateDialog : DialogBase
             weightsLabel,
             weightGrid);
         // 대상 도움말(F1): 이름 글+값 칸 한 묶음 → 0. 최적화 기준 표의 줄, 고르기 상자 → 고른 값의 줄.
-        HelpTargets.HelpGroup("pixelate-score", "Trials", trialsLabel, _crTrials);
-        HelpTargets.HelpGroup("pixelate-score", "Seconds", secondsLabel, _crSeconds);
-        HelpTargets.HelpGroup("pixelate-score", "Target colors", targetLabel, _crTargetColors, _crTargetAuto, _crTargetStrict);
-        HelpTargets.HelpGroup("pixelate-score", "Fidelity · Center weighted", fidelityLabel, _crFidelity);
-        _crFidelity.HelpOptions("pixelate-score", "Cell by cell", "Blended with neighbors");
-        _crCenter.HelpAt("pixelate-score", anchor: "Center weighted");
-        HelpTargets.HelpGroup("pixelate-score", "Cell color · Group range", cellRefLabel, _crCellRef);
-        _crCellRef.HelpOptions("pixelate-score", "Dominant group", "Cell average");
-        HelpTargets.HelpGroup("pixelate-score", "Group range", groupRadiusLabel, _crGroupRadius);
-        HelpTargets.HelpGroup("pixelate-score", "Scoring color distance", scoreDistanceLabel, _crDistance);
-        _crDistance.HelpOptions("pixelate-score", "OKLab", "CIEDE2000", "OKLCh hue-weighted");
-        HelpTargets.HelpGroup("pixelate-score", "L weight", lightWeightLabel, _crLightWeight);
-        HelpTargets.HelpGroup("pixelate-score", "C weight", chromaWeightLabel, _crChromaWeight);
-        HelpTargets.HelpGroup("pixelate-score", "H weight", hueWeightLabel, _crHueWeight);
+        HelpTargets.HelpGroup("pixelate-criteria", "Trials", trialsLabel, _crTrials);
+        HelpTargets.HelpGroup("pixelate-criteria", "Seconds", secondsLabel, _crSeconds);
+        HelpTargets.HelpGroup("pixelate-criteria", "Target colors", targetLabel, _crTargetColors, _crTargetAuto, _crTargetStrict);
+        HelpTargets.HelpGroup("pixelate-fidelity", "How Fidelity compares", fidelityLabel, _crFidelity);
+        _crFidelity.HelpOptions("pixelate-fidelity", "Cell by cell", "Blended with neighbors");
+        _crCenter.HelpAt("pixelate-fidelity", anchor: "Center weighted");
+        HelpTargets.HelpGroup("pixelate-fidelity", "Representative cell color", cellRefLabel, _crCellRef);
+        _crCellRef.HelpOptions("pixelate-fidelity", "Dominant group", "Cell average");
+        HelpTargets.HelpGroup("pixelate-fidelity", "Group range", groupRadiusLabel, _crGroupRadius);
+        HelpTargets.HelpGroup("pixelate-fidelity", "Scoring color distance", scoreDistanceLabel, _crDistance);
+        _crDistance.HelpOptions("pixelate-fidelity", "OKLab", "CIEDE2000", "OKLCh hue-weighted");
+        HelpTargets.HelpGroup("pixelate-fidelity", "L weight", lightWeightLabel, _crLightWeight);
+        HelpTargets.HelpGroup("pixelate-fidelity", "C weight", chromaWeightLabel, _crChromaWeight);
+        HelpTargets.HelpGroup("pixelate-fidelity", "H weight", hueWeightLabel, _crHueWeight);
         weightsLabel.HelpAt("pixelate-score", anchor: "Score weights");
         weightGrid.HelpAt("pixelate-score", anchor: "Score weights");
 
@@ -1066,16 +1066,16 @@ public sealed partial class PixelateDialog : DialogBase
             Ui.Row(bgAlphaLabel, _bgAlpha, bgSpecksLabel, _bgSpecks),
             _bgInfo);
         // 대상 도움말(F1): 1. 배경 지우기 표의 줄, 방식 상자 → 방식 표의 고른 값.
-        HelpTargets.HelpGroup("pixelate-settings", "Mode", bgModeLabel, _bgMode);
-        _bgMode.HelpOptions("pixelate-settings", "Keep background", "Auto (border color)", "Pick color");
-        _bgColor.HelpAt("pixelate-settings", anchor: "Pick color");
-        HelpTargets.HelpGroup("pixelate-settings", "Tolerance", bgTolLabel, _bgTol, _bgAutoTol);
-        _bgConnected.HelpAt("pixelate-settings", anchor: "Only background connected to the border");
-        _bgKeepAlpha.HelpAt("pixelate-settings", anchor: "Use existing transparency");
-        _bgSticker.HelpAt("pixelate-settings", anchor: "Remove sticker border");
-        _bgKeep.HelpAt("pixelate-settings", anchor: "Keep background (one color)");
-        HelpTargets.HelpGroup("pixelate-settings", "Alpha threshold", bgAlphaLabel, _bgAlpha);
-        HelpTargets.HelpGroup("pixelate-settings", "Specks", bgSpecksLabel, _bgSpecks);
+        HelpTargets.HelpGroup("pixelate-background", "Mode", bgModeLabel, _bgMode);
+        _bgMode.HelpOptions("pixelate-background", "Keep background", "Auto (border color)", "Pick color");
+        _bgColor.HelpAt("pixelate-background", anchor: "Pick color");
+        HelpTargets.HelpGroup("pixelate-background", "Tolerance", bgTolLabel, _bgTol, _bgAutoTol);
+        _bgConnected.HelpAt("pixelate-background", anchor: "Only background connected to the border");
+        _bgKeepAlpha.HelpAt("pixelate-background", anchor: "Use existing transparency");
+        _bgSticker.HelpAt("pixelate-background", anchor: "Remove sticker border");
+        _bgKeep.HelpAt("pixelate-background", anchor: "Keep background (one color)");
+        HelpTargets.HelpGroup("pixelate-background", "Alpha threshold", bgAlphaLabel, _bgAlpha);
+        HelpTargets.HelpGroup("pixelate-background", "Specks", bgSpecksLabel, _bgSpecks);
 
         // ── 2. 프레임
         _frMode = Ui.Combo(170, UiStrings.Pixelate_Frames_Single, UiStrings.Pixelate_Frames_Auto, UiStrings.Pixelate_Frames_Grid);
@@ -1100,16 +1100,16 @@ public sealed partial class PixelateDialog : DialogBase
             Ui.Row(frAlignLabel, _frAlign),
             _frCommon, _frApply, _frInfo);
         // 대상 도움말(F1): 2. 프레임 나누기의 방식 표·맞추기 표.
-        HelpTargets.HelpGroup("pixelate-settings", "2. Frames", frModeLabel, _frMode);
-        _frMode.HelpOptions("pixelate-settings", "Single image", "Auto (split by empty space)", "Grid");
-        HelpTargets.HelpGroup("pixelate-settings", "Grid", frColsLabel, _frCols);
-        HelpTargets.HelpGroup("pixelate-settings", "Grid", frRowsLabel, _frRows);
-        HelpTargets.HelpGroup("pixelate-settings", "Auto (split by empty space)", frMergeLabel, _frMerge);
-        HelpTargets.HelpGroup("pixelate-settings", "Auto (split by empty space)", frMergeDistLabel, _frMergeDist);
-        HelpTargets.HelpGroup("pixelate-settings", "Align", frAlignLabel, _frAlign);
-        _frAlign.HelpOptions("pixelate-settings", "Bottom center", "Center", "Keep offsets");
-        _frCommon.HelpAt("pixelate-settings", anchor: "Same canvas size for all frames");
-        _frApply.HelpAt("pixelate-settings", anchor: "Frames are split once");
+        HelpTargets.HelpGroup("pixelate-background", "2. Frames", frModeLabel, _frMode);
+        _frMode.HelpOptions("pixelate-background", "Single image", "Auto (split by empty space)", "Grid");
+        HelpTargets.HelpGroup("pixelate-background", "Grid", frColsLabel, _frCols);
+        HelpTargets.HelpGroup("pixelate-background", "Grid", frRowsLabel, _frRows);
+        HelpTargets.HelpGroup("pixelate-background", "Auto (split by empty space)", frMergeLabel, _frMerge);
+        HelpTargets.HelpGroup("pixelate-background", "Auto (split by empty space)", frMergeDistLabel, _frMergeDist);
+        HelpTargets.HelpGroup("pixelate-background", "Align", frAlignLabel, _frAlign);
+        _frAlign.HelpOptions("pixelate-background", "Bottom center", "Center", "Keep offsets");
+        _frCommon.HelpAt("pixelate-background", anchor: "Same canvas size for all frames");
+        _frApply.HelpAt("pixelate-background", anchor: "Frames are split once");
 
         // ── 3. 격자
         _grMode = Ui.Combo(170, UiStrings.Pixelate_Grid_Auto, UiStrings.Pixelate_Grid_Manual);
@@ -1160,10 +1160,10 @@ public sealed partial class PixelateDialog : DialogBase
         _grSource.HelpOptions("pixelate-grid", "Auto (best edge match)", "Outline thickness", "Color edges", "Block edges");
         _grFirst.HelpAt("pixelate-grid", anchor: "Optimize grid fit first");
         _grPreview.HelpAt("pixelate-grid", anchor: "Preview cells");
-        _grLocal.HelpAt("pixelate-grid", anchor: "Local cell correction");
-        HelpTargets.HelpGroup("pixelate-grid", "Max shift (% of cell)", grLocalShiftLabel, _grLocalShift);
-        HelpTargets.HelpGroup("pixelate-grid", "Band (cells)", grLocalBandLabel, _grLocalBand);
-        HelpTargets.HelpGroup("pixelate-grid", "Minimum cell size (px)", grLocalMinCellLabel, _grLocalMinCell);
+        _grLocal.HelpAt("pixelate-grid-local", anchor: "Local cell correction");
+        HelpTargets.HelpGroup("pixelate-grid-local", "Max shift (% of cell)", grLocalShiftLabel, _grLocalShift);
+        HelpTargets.HelpGroup("pixelate-grid-local", "Band (cells)", grLocalBandLabel, _grLocalBand);
+        HelpTargets.HelpGroup("pixelate-grid-local", "Minimum cell size (px)", grLocalMinCellLabel, _grLocalMinCell);
         _grInfo.HelpAt("pixelate-grid", anchor: "The info line under the settings");
 
         // ── 4. 크기
@@ -1288,17 +1288,17 @@ public sealed partial class PixelateDialog : DialogBase
         _palSource.HelpOptions("pixelate-palette", "Original colors", "Average colors");
         HelpTargets.HelpGroup("pixelate-palette", "Edge cell weight", palEdgeLabel, _palEdge);
         _palShared.HelpAt("pixelate-palette", anchor: "With One palette for all frames");
-        HelpTargets.HelpGroup("pixelate-palette", "Dithering", palDitherLabel, _palDither);
-        _palDither.HelpOptions("pixelate-palette", "None", "Bayer 2×2", "Bayer 4×4");
-        _palDitherKeep.HelpAt("pixelate-palette", anchor: "Don't optimize next to dithering");
-        HelpTargets.HelpGroup("pixelate-palette", "Color distance", palDistanceLabel, _palDistance);
-        _palDistance.HelpOptions("pixelate-palette", "OKLab", "CIEDE2000", "OKLCh hue-weighted");
-        _palHueWeight.HelpAt("pixelate-palette", anchor: "Hue weight");
-        _palShade.HelpAt("pixelate-palette", anchor: "Prefer shade family");
-        _palDistinct.HelpAt("pixelate-palette", anchor: "Keep distinct hues");
-        HelpTargets.HelpGroup("pixelate-palette", "Keep distinct hues", palChromaLabel, _palHueChroma);
-        HelpTargets.HelpGroup("pixelate-palette", "Keep distinct hues", palHueLabel, _palHueMin);
-        HelpTargets.HelpGroup("pixelate-palette", "Keep distinct hues", palAreaLabel, _palHueArea);
+        HelpTargets.HelpGroup("pixelate-distance", "Dithering", palDitherLabel, _palDither);
+        _palDither.HelpOptions("pixelate-distance", "None", "Bayer 2×2", "Bayer 4×4");
+        _palDitherKeep.HelpAt("pixelate-distance", anchor: "Don't optimize next to dithering");
+        HelpTargets.HelpGroup("pixelate-distance", "Color distance", palDistanceLabel, _palDistance);
+        _palDistance.HelpOptions("pixelate-distance", "OKLab", "CIEDE2000", "OKLCh hue-weighted");
+        _palHueWeight.HelpAt("pixelate-distance", anchor: "Hue weight");
+        _palShade.HelpAt("pixelate-distance", anchor: "Prefer shade family");
+        _palDistinct.HelpAt("pixelate-distance", anchor: "Keep distinct hues");
+        HelpTargets.HelpGroup("pixelate-distance", "Keep distinct hues", palChromaLabel, _palHueChroma);
+        HelpTargets.HelpGroup("pixelate-distance", "Keep distinct hues", palHueLabel, _palHueMin);
+        HelpTargets.HelpGroup("pixelate-distance", "Keep distinct hues", palAreaLabel, _palHueArea);
         HelpTargets.HelpGroup("pixelate-palette", "Snap near-black to one outline color", _palSnap, _palDark);
 
         // ── 7. 정리
@@ -1436,10 +1436,10 @@ public sealed partial class PixelateDialog : DialogBase
 
         var left = new StackPanel { Spacing = 2, Margin = new Thickness(0, 0, 8, 0) };
         // 설정 칸마다 그 단계를 설명하는 가이드 자리(안쪽 컨트롤에 따로 붙인 자리가 먼저).
-        left.Children.Add(Section(UiStrings.Pixelate_Section_Criteria, crBody, false).HelpAt("pixelate-score", anchor: "0. Optimize criteria"));
+        left.Children.Add(Section(UiStrings.Pixelate_Section_Criteria, crBody, false).HelpAt("pixelate-criteria", anchor: "0. Optimize criteria"));
         left.Children.Add(_quickSection = Section(UiStrings.Pixelate_Section_Quick, quickBody, true).HelpAt("pixelate-settings", anchor: "Quick settings"));
-        left.Children.Add(Section(UiStrings.Pixelate_Section_Background, bgBody, true, OptimizeSection.Background).HelpAt("pixelate-settings", anchor: "1. Background"));
-        left.Children.Add(Section(UiStrings.Pixelate_Section_Frames, frBody, true).HelpAt("pixelate-settings", anchor: "2. Frames"));
+        left.Children.Add(Section(UiStrings.Pixelate_Section_Background, bgBody, true, OptimizeSection.Background).HelpAt("pixelate-background", anchor: "1. Background"));
+        left.Children.Add(Section(UiStrings.Pixelate_Section_Frames, frBody, true).HelpAt("pixelate-background", anchor: "2. Frames"));
         left.Children.Add(Section(UiStrings.Pixelate_Section_Grid, grBody, true, OptimizeSection.Grid).HelpAt("pixelate-grid", shot: "pixelate-grid"));
         left.Children.Add(Section(UiStrings.Pixelate_Section_Size, szBody, true).HelpAt("pixelate-grid", anchor: "4. Output size"));
         left.Children.Add(Section(UiStrings.Pixelate_Section_Downsample, dsBody, false, OptimizeSection.Downsample).HelpAt("pixelate-palette", anchor: "5. Cell color"));
@@ -2079,7 +2079,7 @@ public sealed partial class PixelateDialog : DialogBase
         if (optimize is { } section)
         {
             var toggle = new CheckBox { Content = UiStrings.Pixelate_Section_Optimize, Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) }
-                .Tip(UiStrings.Pixelate_Section_OptimizeTip).HelpAt("pixelate-score", anchor: "Per-step Optimize");
+                .Tip(UiStrings.Pixelate_Section_OptimizeTip).HelpAt("pixelate-criteria", anchor: "Per-step Optimize");
             toggle.IsCheckedChanged += (_, _) => Changed();
             _sectionToggles[section] = toggle;
             var dock = new DockPanel { LastChildFill = true };

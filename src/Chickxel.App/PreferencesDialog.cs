@@ -139,7 +139,7 @@ public sealed class PreferencesDialog : DialogBase
                 .HelpAt("files-autosave", anchor: "Turning it on/off and the wait time"),
             autoSaveNote.HelpAt("files-autosave", anchor: "When it saves and when it doesn't"))).HelpAt("files-autosave", anchor: "Turning it on/off and the wait time");
         var trashGroup = Ui.Group(UiStrings.S_PreferencesDialog_PreferencesDialog_B57D05987F,
-            _trash.HelpAt("screen-file-browser", anchor: "Retention policy")).HelpAt("screen-file-browser", anchor: "Retention policy");
+            _trash.HelpAt("screen-file-browser-trash", anchor: "Retention policy")).HelpAt("screen-file-browser-trash", anchor: "Retention policy");
         var updateGroup = Ui.Group(UiStrings.S_PreferencesDialog_PreferencesDialog_B4D135E19E, Ui.Stack(
             _updateCheck.HelpAt("start-update", anchor: "Clear this checkbox"),
             updateNote.HelpAt("start-update", anchor: "Clear this checkbox"))).HelpAt("start-update", anchor: "Clear this checkbox");
@@ -278,7 +278,7 @@ public sealed class PreferencesDialog : DialogBase
         var ai = Ui.Stack(
             Ui.Group(UiStrings.AiStatus_SettingsTitle, Ui.Stack(
                 aiStatusNote,
-                Ui.Button(VectorIcon.Info, UiStrings.AiStatus_Open, (_, _) => showAiStatus(this)))).HelpAt("ai-setup", anchor: "Open AI status and settings in Preferences"),
+                Ui.Button(VectorIcon.Info, UiStrings.AiStatus_Open, (_, _) => showAiStatus(this)))).HelpAt("ai-setup-status", anchor: "Open AI status and settings in Preferences"),
             Ui.Group(UiStrings.Notify_Title, Ui.Stack(
                 Ui.Row(_notify, Ui.InfoBadge(UiStrings.Notify_Info)),
                 Ui.Row(Ui.Label(UiStrings.Notify_Sound), _notifySound, notifyPreview),

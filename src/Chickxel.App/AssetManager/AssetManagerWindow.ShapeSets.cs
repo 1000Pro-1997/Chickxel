@@ -136,7 +136,7 @@ public sealed partial class AssetManagerWindow
             Ui.Button(VectorIcon.Globe, listed ? UiStrings.Assets_PublishNewVersion : UiStrings.Assets_Publish, async (_, _) => await ShapeSetActions.PublishAsync(this, ctx, set))
                 .Tip(listed ? UiStrings.Assets_PublishNewVersionTip : UiStrings.Assets_PublishEntryTip),
             Ui.Button(VectorIcon.Trash, UiStrings.Assets_Delete, (_, _) => ShapeSetActions.Delete(this, ctx, set)));
-        _detail.Children[^1].HelpAt(HelpPage, anchor: "My assets");
+        _detail.Children[^1].HelpAt("screen-asset-manager-shapes", anchor: "Buttons for your set");
     }
 
     /// <summary>내 세트 내보내기 메뉴: 세트 파일(.chickxel-shapes) 또는 에셋 패키지(.chickxel-asset — 세트를 내 에셋으로 떠 두고 그것을 내보냄).</summary>

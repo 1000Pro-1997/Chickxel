@@ -83,7 +83,7 @@ internal sealed class EffectMakerAiPanel : Border
         BorderBrush = AppTheme.BorderBrush;
         BorderThickness = new Thickness(1);
         // 대상 도움말(F1): 칸 = "효과 만들기"의 AI 칸 절, 머리줄 = 그 항목, 대화·입력 = ㉖, 첨부 단추 = ㉗, 모델·보내기 = ㉘, 대기 줄 = 그 항목
-        const string page = "screen-effect-maker";
+        const string page = "screen-effect-maker-ai";
         this.HelpAt(page, anchor: "AI panel");
 
         // ── 머리줄: 제목 · AI(Claude/Codex) · 새 대화 · 닫기, 아래 상태 글
@@ -113,9 +113,9 @@ internal sealed class EffectMakerAiPanel : Border
         DockPanel.SetDock(header, Dock.Top);
 
         // ── 채팅 화면: 대화(안내 글로 시작) + 그림 칩 입력란·첨부 단추·보내기/멈춤
-        _scroll = Ui.ScrollHost(_messages).HelpAt(page, anchor: "㉖ Send the effect you want");
+        _scroll = Ui.ScrollHost(_messages).HelpAt(page, anchor: "Send the effect you want");
         _thinking = new TextBlock { Foreground = AppTheme.DimTextBrush, FontStyle = FontStyle.Italic, Margin = new Thickness(2), TextWrapping = TextWrapping.Wrap };
-        _imageInput = new ChatImageInput(UiStrings.EffectMakerAi_Watermark).HelpAt(page, anchor: "㉖ Send the effect you want");
+        _imageInput = new ChatImageInput(UiStrings.EffectMakerAi_Watermark).HelpAt(page, anchor: "Send the effect you want");
         _imageInput.Input.AddHandler(InputElement.KeyDownEvent, OnInputKeyDown, RoutingStrategies.Tunnel);
         _pending = new PendingMessages(_imageInput).HelpAt(page, anchor: "Pressing Enter or Send while the AI's turn is running");
         // 지금 보내기: 도는 차례를 멈추면 차례 끝에서 맨 앞 메시지가 나간다. 도는 차례가 없으면 바로.

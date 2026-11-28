@@ -4,6 +4,11 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 
 ## v1.14.155 (2026-11-27)
 
+### A shorter, easier-to-search F1 guide
+- Every page now starts with what the feature is for and when to use it, and the text is about a third shorter (Korean and English).
+- Long pages are split (182 → 226 pages), and the big Screen layout chapter is now separate Timeline, Layer effects, Making script effects, Asset manager and Export and sharing chapters.
+- Choosing help with F1 still opens the matching spot on the split pages. 28 outdated screenshots and the tool clips were retaken.
+
 ### Game engine projects and favorites on the start screen
 - The project table now gathers recent projects from Unity Hub, the Godot project manager, the Unreal editor and Aseprite, favorites first.
 - Double-clicking opens the folder where art usually goes (Unity Assets, Unreal Content, a Sprites/Art folder inside when there is one).

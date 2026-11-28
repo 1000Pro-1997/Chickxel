@@ -311,7 +311,7 @@ public sealed partial class ToolOptionsPanel
         bool Is(Control control) => ReferenceEquals(c, control);
         bool InRow(Control control) => Is(control) || ReferenceEquals(c, control.Parent);
         static HelpTarget At(string anchor) => new(page, Anchor: anchor);
-        if (Is(_shapePenManage)) return At(UiStrings.ShapePen_ExportSet);
+        if (Is(_shapePenManage)) return At("Set buttons");
         if (InRow(_shapePenSets) || Is(_shapePenSetButtons) || Is(_shapePenReadOnly)) return At(UiStrings.ShapePen_Set);
         if (Is(_shapePenShapes) || c.Parent == _shapePenShapes || Is(_shapePenShapeButtons)) return At(UiStrings.ShapePen_AddShape);
         if (InRow(_shapePenOrder)) return At(UiStrings.ShapePen_Order);

@@ -796,7 +796,7 @@ public sealed class ExportDialog : DialogBase
         {
             this.HelpAt(SheetExportPages.GuidePage);
             OkButton.Content = UiStrings.S_UnityExportDialog_UnityExportDialog_C53EAC78FD;
-            OkButton.Tip(UiStrings.S_UnityExportDialog_UnityExportDialog_C7A33C7D9E).HelpAt(SheetExportPages.GuidePage, anchor: "①");
+            OkButton.Tip(UiStrings.S_UnityExportDialog_UnityExportDialog_C7A33C7D9E).HelpAt(SheetExportPages.GuidePage, anchor: "Export (blue button)");
         }
         else
         {

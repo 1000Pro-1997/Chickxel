@@ -197,10 +197,10 @@ public sealed partial class ChatWindow : Window
         var chatColumn = new DockPanel { Children = { headerBorder, _body } };
         // 대상 도움말(F1): 머리줄의 상태 글(로그인 계정)·AI 탭·모델·새 대화·그리기 설정·"?"는 그것을 설명하는 가이드 자리로.
         _status.HelpAt("ai-setup", anchor: "Signing in");
-        _providerToggle.HelpAt("ai-tabs");
+        _providerToggle.HelpAt("ai-open", anchor: "Claude and Codex tabs");
         _modelHost.HelpAt("ai-chat", anchor: "Choosing a model");
         _newChat.HelpAt("ai-history");
-        _drawSettings.HelpAt("ai-generate", anchor: "Drawing settings");
+        _drawSettings.HelpAt("ai-generate-settings", anchor: "Drawing settings");
         _help.HelpAt("ai-help");
 
         _helpPanel = BuildHelpPanel();
@@ -1077,7 +1077,7 @@ public sealed partial class ChatWindow : Window
             _imageInput.HelpAt("ai-chat", anchor: "Attaching images: image chips");
             _pending.HelpAt("ai-chat", anchor: "Sending while a reply is coming in");
             _questionHost.HelpAt("ai-questions");
-            _thinking.HelpAt("ai-progress");
+            _thinking.HelpAt("ai-questions", anchor: "Progress display");
             _listScroll.HelpAt("ai-history");
 
             _terminalPoll.Tick += async (_, _) => await PollLoginAsync();

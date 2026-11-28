@@ -409,7 +409,7 @@ public sealed class ReplaceColorDialog : DialogBase
         this.HelpAt("tools-basics", anchor: "Replace color");
         _from = new ColorField(from);
         _to = new ColorField(to);
-        _selectionOnly = Ui.Check(UiStrings.S_Dialogs_ReplaceColorDialog_0B7DF97295, hasSelection).HelpAt("tools-select", anchor: "window offers Selection only");
+        _selectionOnly = Ui.Check(UiStrings.S_Dialogs_ReplaceColorDialog_0B7DF97295, hasSelection).HelpAt("tools-select-edit", anchor: "window offers Selection only");
         _selectionOnly.IsEnabled = hasSelection;
         Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_ReplaceColorDialog_B456BDF62D), _from));
         Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_ReplaceColorDialog_D361ED4C0A), _to));
@@ -430,8 +430,8 @@ public sealed class GridSettingsDialog : DialogBase
 
     public GridSettingsDialog(Color32 pixelColor, Size tile, Color32 tileColor) : base(UiStrings.S_Dialogs_GridSettingsDialog_100AEB4ECD)
     {
-        // 대상 도움말(F1): 창 = "메뉴와 위 막대"의 격자 설정… 문단, 픽셀 격자·타일 격자 부분 = 보기 옵션 표의 ⑧·⑨ 줄
-        const string page = "screen-top-bar";
+        // 대상 도움말(F1): 창 = "보기 옵션"의 격자 설정… 문단, 픽셀 격자·타일 격자 부분 = 보기 옵션 표의 ⑧·⑨ 줄
+        const string page = "screen-top-bar-view";
         this.HelpAt(page, anchor: "sets the grid colors and tile size");
         _pixelColor = new ColorField(pixelColor);
         _tileColor = new ColorField(tileColor);

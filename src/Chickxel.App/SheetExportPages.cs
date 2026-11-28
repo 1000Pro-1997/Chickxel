@@ -70,7 +70,7 @@ public sealed class SheetExportPages
         // 부위 아틀라스가 따로 설정을 쓰면 그 설정이 있는 곳 안내(설정 칸은 왼쪽 "고급"에만 둔다).
         var overrideLine = Beside(Note(UiStrings.S_UnityExportDialog_UnityExportDialog_97F3AEFCEC),
             Ui.Button(UiStrings.S_UnityExportDialog_UnityExportDialog_777398C2AE, (_, _) => ShowAdvanced()).Tip(UiStrings.S_UnityExportDialog_UnityExportDialog_A76A76E0B6))
-            .HelpAt(GuidePage, anchor: "Turning on Advanced > Per sheet");
+            .HelpAt("screen-export-sheet", anchor: "Turning on Advanced > Per sheet");
         _refresh.Add(p => overrideLine.IsVisible = X(p).PartsOverride is not null);
         _partsSection = BuildSection("② ", overrideLine);
         Preview = Ui.ScrollHost(Ui.Stack(_framesSection.Panel, _partsSection.Panel)).HelpAt(GuidePage, anchor: "The output preview lists each file");
@@ -115,11 +115,11 @@ public sealed class SheetExportPages
         // ── 왼쪽: 설정(위에서 아래로) ──
         var commonTitle = SectionTitle();
         var (files, frames, parts, advanced) = BuildExportSections();
-        var framesBox = Section("frames", SectionTitle(UiStrings.S_UnityExportDialog_UnityExportDialog_D2793FD9C8), frames).HelpAt(GuidePage, anchor: "Frame sheet section");
-        var partsBox = Section("parts", SectionTitle(UiStrings.S_UnityExportDialog_UnityExportDialog_B18F4A0368), parts).HelpAt(GuidePage, anchor: "Part atlas section");
-        _advanced = Section("advanced", SectionTitle(UiStrings.S_UnityExportDialog_UnityExportDialog_6A9E6CDC2F), advanced).HelpAt(GuidePage, anchor: "Turning on Advanced > Per sheet");
+        var framesBox = Section("frames", SectionTitle(UiStrings.S_UnityExportDialog_UnityExportDialog_D2793FD9C8), frames).HelpAt("screen-export-sheet", anchor: "Frame sheet section");
+        var partsBox = Section("parts", SectionTitle(UiStrings.S_UnityExportDialog_UnityExportDialog_B18F4A0368), parts).HelpAt("screen-export-sheet", anchor: "Layer atlas section");
+        _advanced = Section("advanced", SectionTitle(UiStrings.S_UnityExportDialog_UnityExportDialog_6A9E6CDC2F), advanced).HelpAt("screen-export-sheet", anchor: "Turning on Advanced > Per sheet");
         // Unity Import Settings는 .meta를 쓸 때만 의미가 있다(처음엔 접힘).
-        _importSettings = Section("import", SectionTitle("Unity Import Settings"), BuildImportTab(), expandedByDefault: false).HelpAt(GuidePage, anchor: "Import Settings");
+        _importSettings = Section("import", SectionTitle("Unity Import Settings"), BuildImportTab(), expandedByDefault: false).HelpAt("screen-export-unity-import", anchor: "Import Settings");
         _refresh.Add(p =>
         {
             // 고른 결과의 묶음만 보인다(둘 다 꺼진 예전 설정이면 프레임 시트 묶음).
@@ -128,8 +128,8 @@ public sealed class SheetExportPages
             _importSettings.IsVisible = X(p).Engine == ExportEngine.Unity;
         });
         _settingsColumn = Ui.Stack(
-            Section("common", commonTitle, BuildCommonBlock(commonTitle)).HelpAt(GuidePage, anchor: "Common section"),
-            Section("files", SectionTitle(UiStrings.S_UnityExportDialog_UnityExportDialog_F066DF325B), files).HelpAt(GuidePage, anchor: "Files section"),
+            Section("common", commonTitle, BuildCommonBlock(commonTitle)).HelpAt("screen-export-sheet", anchor: "Common section"),
+            Section("files", SectionTitle(UiStrings.S_UnityExportDialog_UnityExportDialog_F066DF325B), files).HelpAt("screen-export-sheet", anchor: "Files section"),
             framesBox,
             partsBox,
             _advanced,
@@ -156,7 +156,7 @@ public sealed class SheetExportPages
         {
             Content = Ui.IconLabel(VectorIcon.ChevronDown, UiStrings.S_UnityExportDialog_UnityExportDialog_DF3C668D29, iconAfter: true),
             Padding = new Thickness(10, 1),
-        }.Tip(UiStrings.S_UnityExportDialog_UnityExportDialog_73AC3FD6C5).HelpAt(GuidePage, anchor: "Preset (right end of the Format title row");
+        }.Tip(UiStrings.S_UnityExportDialog_UnityExportDialog_73AC3FD6C5).HelpAt("screen-export-sheet", anchor: "Preset (right end of the Format title row");
         presetButton.Click += (_, _) => PopupMenus.Show(presetButton, presetFlyout);
         PresetButton = presetButton;
 
@@ -355,15 +355,15 @@ public sealed class SheetExportPages
         _refresh.Add(p => ppu.Value = (decimal)Math.Clamp(p.Sprite.PixelsPerUnit, 1, 10000));
         var mesh = Choice(UiStrings.S_UnityExportDialog_BuildImportTab_A9228F6E80, [true, false], ["Full Rect", "Tight"], p => p.Sprite.FullRectMesh, (p, v) => p.Sprite.FullRectMesh = v);
         var extrudeRow = Field("Extrude Edges", UiStrings.S_UnityExportDialog_BuildImportTab_E5A971BA01,
-            IntSlider("Extrude Edges", 0, 32, [0, 1, 2, 3, 4, 6, 8, 16, 32], "px", "unity.extrude", p => p.Sprite.ExtrudeEdges, (p, v) => p.Sprite.ExtrudeEdges = v)).HelpAt(GuidePage, anchor: "Mesh Type · Extrude Edges");
+            IntSlider("Extrude Edges", 0, 32, [0, 1, 2, 3, 4, 6, 8, 16, 32], "px", "unity.extrude", p => p.Sprite.ExtrudeEdges, (p, v) => p.Sprite.ExtrudeEdges = v)).HelpAt("screen-export-unity-import", anchor: "Mesh Type · Extrude Edges");
         _refresh.Add(p => SetEnabled(extrudeRow, !p.Sprite.FullRectMesh));
 
         // 피벗(Single 모드만): 프리셋 또는 Custom(X/Y). 피벗 도구(K)와 같은 프로젝트 기본 피벗.
         var pivot = Ui.Combo(220, PivotNames);
         var pivotX = Ui.Num(0, 1, 0.5m, 60, 3, 0.05m).Presets(0, 0.25m, 0.5m, 0.75m, 1).RecentKey("unity.pivot");
         var pivotY = Ui.Num(0, 1, 0.5m, 60, 3, 0.05m).Presets(0, 0.25m, 0.5m, 0.75m, 1).RecentKey("unity.pivot");
-        var pivotRow = Field("Pivot", UiStrings.S_UnityExportDialog_BuildImportTab_11ED340A24, pivot).HelpAt(GuidePage, anchor: "Pivot");
-        var customRow = Field("Custom Pivot", UiStrings.S_UnityExportDialog_BuildImportTab_FD5172C338, Ui.Row(Ui.Label("X"), pivotX, Ui.Label("Y"), pivotY)).HelpAt(GuidePage, anchor: "Pivot");
+        var pivotRow = Field("Pivot", UiStrings.S_UnityExportDialog_BuildImportTab_11ED340A24, pivot).HelpAt("screen-export-unity-import", anchor: "Pivot");
+        var customRow = Field("Custom Pivot", UiStrings.S_UnityExportDialog_BuildImportTab_FD5172C338, Ui.Row(Ui.Label("X"), pivotX, Ui.Label("Y"), pivotY)).HelpAt("screen-export-unity-import", anchor: "Pivot");
         pivot.SelectionChanged += (_, _) =>
         {
             if (_updating || pivot.SelectedIndex < 0) return;
@@ -418,7 +418,7 @@ public sealed class SheetExportPages
                     Toggle("Read/Write", p => p.Sprite.Readable, (p, v) => p.Sprite.Readable = v)),
                 Field("Generate Mip Maps", UiStrings.S_UnityExportDialog_BuildImportTab_D8CF27C662,
                     Toggle(UiStrings.S_UnityExportDialog_BuildImportTab_8C05EBC81F, p => p.Sprite.GenerateMipMaps, (p, v) => p.Sprite.GenerateMipMaps = v))),
-        }.HelpAt(GuidePage, shot: "screen-export-5");
+        }.HelpAt("screen-export-unity-import", shot: "screen-export-5");
 
         // 플랫폼(Default) 설정
         int[] maxSizes = [0, .. SpriteSettings.MaxTextureSizes];
@@ -440,7 +440,7 @@ public sealed class SheetExportPages
                     ["None", "Low Quality", "Normal Quality", "High Quality"], p => p.Sprite.Compression, (p, v) => p.Sprite.Compression = v)),
             Field("Use Crunch Compression", UiStrings.S_UnityExportDialog_BuildImportTab_10E5A1675F,
                 Toggle(UiStrings.S_UnityExportDialog_BuildImportTab_14113A283A, p => p.Sprite.CrunchCompression, (p, v) => p.Sprite.CrunchCompression = v)),
-            qualityRow)).HelpAt(GuidePage, anchor: "Default platform");
+            qualityRow)).HelpAt("screen-export-unity-import", anchor: "Default platform");
         platform.Background = Brushes.Transparent;
 
         var note = Ui.Label(UiStrings.S_UnityExportDialog_BuildImportTab_1D025CB8E9);
@@ -452,24 +452,24 @@ public sealed class SheetExportPages
             Field("Texture Type", UiStrings.S_UnityExportDialog_BuildImportTab_7223CFD811, ReadOnlyCombo("Sprite (2D and UI)")),
             Field("Texture Shape", UiStrings.S_UnityExportDialog_BuildImportTab_59FAD55BAB, ReadOnlyCombo("2D")),
             Rule(),
-            Field("Sprite Mode", UiStrings.S_UnityExportDialog_BuildImportTab_97B943F75D, mode).HelpAt(GuidePage, anchor: "Sprite Mode"),
-            Field("Pixels Per Unit", UiStrings.S_UnityExportDialog_BuildImportTab_732DC45A45, ppu).HelpAt(GuidePage, anchor: "Pixels Per Unit"),
-            Field("Mesh Type", UiStrings.S_UnityExportDialog_BuildImportTab_A9E5086574, mesh).HelpAt(GuidePage, anchor: "Mesh Type · Extrude Edges"),
+            Field("Sprite Mode", UiStrings.S_UnityExportDialog_BuildImportTab_97B943F75D, mode).HelpAt("screen-export-unity-import", anchor: "Sprite Mode"),
+            Field("Pixels Per Unit", UiStrings.S_UnityExportDialog_BuildImportTab_732DC45A45, ppu).HelpAt("screen-export-unity-import", anchor: "Pixels Per Unit"),
+            Field("Mesh Type", UiStrings.S_UnityExportDialog_BuildImportTab_A9E5086574, mesh).HelpAt("screen-export-unity-import", anchor: "Mesh Type · Extrude Edges"),
             extrudeRow,
             pivotRow,
             customRow,
             Field("Generate Physics Shape", UiStrings.S_UnityExportDialog_BuildImportTab_B36C666A23,
-                Toggle("Physics Shape", p => p.Sprite.GeneratePhysicsShape, (p, v) => p.Sprite.GeneratePhysicsShape = v)).HelpAt(GuidePage, anchor: "Generate Physics Shape"),
+                Toggle("Physics Shape", p => p.Sprite.GeneratePhysicsShape, (p, v) => p.Sprite.GeneratePhysicsShape = v)).HelpAt("screen-export-unity-import", anchor: "Generate Physics Shape"),
             advanced,
             Rule(),
             Field("Wrap Mode", UiStrings.S_UnityExportDialog_BuildImportTab_E72E67B19F,
                 Choice("Wrap Mode", [TextureWrap.Repeat, TextureWrap.Clamp, TextureWrap.Mirror, TextureWrap.MirrorOnce], ["Repeat", "Clamp", "Mirror", "Mirror Once"],
-                    p => p.Sprite.WrapMode, (p, v) => p.Sprite.WrapMode = v)).HelpAt(GuidePage, anchor: "Wrap · Filter · Aniso"),
+                    p => p.Sprite.WrapMode, (p, v) => p.Sprite.WrapMode = v)).HelpAt("screen-export-unity-import", anchor: "Wrap · Filter · Aniso"),
             Field("Filter Mode", UiStrings.S_UnityExportDialog_BuildImportTab_B2432FCBD9,
                 Choice("Filter Mode", [TextureFilter.Point, TextureFilter.Bilinear, TextureFilter.Trilinear], ["Point (no filter)", "Bilinear", "Trilinear"],
-                    p => p.Sprite.FilterMode, (p, v) => p.Sprite.FilterMode = v)).HelpAt(GuidePage, anchor: "Wrap · Filter · Aniso"),
+                    p => p.Sprite.FilterMode, (p, v) => p.Sprite.FilterMode = v)).HelpAt("screen-export-unity-import", anchor: "Wrap · Filter · Aniso"),
             Field("Aniso Level", UiStrings.S_UnityExportDialog_BuildImportTab_1AD908EBD2,
-                IntSlider("Aniso Level", 0, 16, [0, 1, 2, 4, 8, 16], "", "unity.aniso", p => p.Sprite.AnisoLevel, (p, v) => p.Sprite.AnisoLevel = v)).HelpAt(GuidePage, anchor: "Wrap · Filter · Aniso"),
+                IntSlider("Aniso Level", 0, 16, [0, 1, 2, 4, 8, 16], "", "unity.aniso", p => p.Sprite.AnisoLevel, (p, v) => p.Sprite.AnisoLevel = v)).HelpAt("screen-export-unity-import", anchor: "Wrap · Filter · Aniso"),
             platform);
     }
 
@@ -496,7 +496,7 @@ public sealed class SheetExportPages
             int v = (int)singleFrame.NumValue() - 1;
             EditSettings(UiStrings.S_UnityExportDialog_BuildExportSections_130FEEBB20, p => X(p).SingleFrameIndex != v, p => X(p).SingleFrameIndex = v);
         };
-        var singleRow = Setting(UiStrings.S_UnityExportDialog_BuildExportSections_130FEEBB20, UiStrings.S_UnityExportDialog_BuildExportSections_8F1FF0667F, singleFrame).HelpAt(GuidePage, anchor: "Frame sheet section");
+        var singleRow = Setting(UiStrings.S_UnityExportDialog_BuildExportSections_130FEEBB20, UiStrings.S_UnityExportDialog_BuildExportSections_8F1FF0667F, singleFrame).HelpAt("screen-export-sheet", anchor: "Frame sheet section");
         _refresh.Add(p =>
         {
             singleFrame.Maximum = Math.Max(1, p.Frames.Count);
@@ -731,22 +731,22 @@ public sealed class SheetExportPages
         var layout = Setting(UiStrings.S_UnityExportDialog_SheetRows_9F7B4168D5, null,
             Seg(u + UiStrings.S_UnityExportDialog_SheetRows_7595356F17, [SheetLayout.Grid, SheetLayout.Packed], [UiStrings.S_UnityExportDialog_SheetRows_FAA35616D9, UiStrings.S_UnityExportDialog_SheetRows_51579C6814], p => O(p).Layout, (p, v) => O(p).Layout = v)
                 .SetTip(0, UiStrings.S_UnityExportDialog_SheetRows_D5A4FBD978)
-                .SetTip(1, UiStrings.S_UnityExportDialog_SheetRows_45F33B13CA)).HelpAt(GuidePage, anchor: "Layout");
-        var order = OrderRow(O, PartsUse, u).HelpAt(GuidePage, anchor: "Sort order");
+                .SetTip(1, UiStrings.S_UnityExportDialog_SheetRows_45F33B13CA)).HelpAt("screen-export-sheet", anchor: "Layout");
+        var order = OrderRow(O, PartsUse, u).HelpAt("screen-export-sheet", anchor: "Sort order");
         var gridMode = Seg(u + UiStrings.S_UnityExportDialog_SheetRows_C060144CBD, [SheetGrid.Auto, SheetGrid.Columns, SheetGrid.Rows], [UiStrings.S_UnityExportDialog_SheetRows_B4F569F8B2, UiStrings.S_UnityExportDialog_SheetRows_265CCB0B30, UiStrings.S_UnityExportDialog_SheetRows_E451F865FA], p => O(p).Grid, (p, v) => O(p).Grid = v)
             .SetTip(0, UiStrings.S_UnityExportDialog_SheetRows_5D0E463631)
             .SetTip(1, UiStrings.S_UnityExportDialog_SheetRows_4D7C715814)
             .SetTip(2, UiStrings.S_UnityExportDialog_SheetRows_7C6D9F2388);
         var gridCount = IntNum(u + UiStrings.S_UnityExportDialog_SheetRows_C060144CBD, 1, SheetOptions.MaxGridCount, 60, p => O(p).GridCount, (p, v) => O(p).GridCount = v)
             .Presets(1, 2, 3, 4, 5, 6, 8, 10, 12, 16).Unit(UiStrings.S_UnityExportDialog_SheetRows_1EF56C7D67).RecentKey("export.grid.count");
-        var gridRow = Setting(UiStrings.S_UnityExportDialog_SheetRows_C060144CBD, UiStrings.S_UnityExportDialog_SheetRows_C46F34C2EF, Line(gridMode, gridCount)).HelpAt(GuidePage, anchor: "Cell count");
+        var gridRow = Setting(UiStrings.S_UnityExportDialog_SheetRows_C060144CBD, UiStrings.S_UnityExportDialog_SheetRows_C46F34C2EF, Line(gridMode, gridCount)).HelpAt("screen-export-sheet", anchor: "Cell count");
         var maxWidthRow = Setting(UiStrings.S_UnityExportDialog_SheetRows_D0C0CFBF0A, UiStrings.S_UnityExportDialog_SheetRows_DF2E272C7F,
             Line(IntNum(u + UiStrings.S_UnityExportDialog_SheetRows_D0C0CFBF0A, 0, PixelImage.MaxSize, 64, p => O(p).MaxWidth, (p, v) => O(p).MaxWidth = v)
-                .Presets([0, 128, 256, 512, 1024, 2048, 4096], [], v => v == 0 ? UiStrings.S_UnityExportDialog_SheetRows_E7664692A5 : $"{v:0} px").RecentKey("export.maxwidth"), Ui.Label(UiStrings.S_UnityExportDialog_SheetRows_779AC4B31C))).HelpAt(GuidePage, anchor: "Max width and packing order");
+                .Presets([0, 128, 256, 512, 1024, 2048, 4096], [], v => v == 0 ? UiStrings.S_UnityExportDialog_SheetRows_E7664692A5 : $"{v:0} px").RecentKey("export.maxwidth"), Ui.Label(UiStrings.S_UnityExportDialog_SheetRows_779AC4B31C))).HelpAt("screen-export-sheet", anchor: "Max width and packing order");
         var packOrder = Setting(UiStrings.S_UnityExportDialog_SheetRows_EDAD9AFF8D, null,
             Seg(u + UiStrings.S_UnityExportDialog_SheetRows_EDAD9AFF8D, [AtlasPackOrder.KeepOrder, AtlasPackOrder.LargestFirst], [UiStrings.S_UnityExportDialog_SheetRows_83CAF1B991, UiStrings.S_UnityExportDialog_SheetRows_E287743C3B], p => O(p).PackOrder, (p, v) => O(p).PackOrder = v)
                 .SetTip(0, UiStrings.S_UnityExportDialog_SheetRows_47D5F16C63)
-                .SetTip(1, UiStrings.S_UnityExportDialog_SheetRows_2B1F42EE49)).HelpAt(GuidePage, anchor: "Max width and packing order");
+                .SetTip(1, UiStrings.S_UnityExportDialog_SheetRows_2B1F42EE49)).HelpAt("screen-export-sheet", anchor: "Max width and packing order");
         _refresh.Add(p =>
         {
             var o = O(p);
@@ -765,7 +765,7 @@ public sealed class SheetExportPages
         var partsSplit = Line(Ui.Label(UiStrings.S_UnityExportDialog_SheetRows_2FD0706089), OnOff(u + UiStrings.S_UnityExportDialog_SheetRows_D02E3A264C, p => O(p).SplitParts, (p, v) => O(p).SplitParts = v))
             .Tip(UiStrings.S_UnityExportDialog_SheetRows_87AFE7E2DF);
         var split = Setting(UiStrings.S_UnityExportDialog_SheetRows_2F498E0DBD, UiStrings.S_UnityExportDialog_SheetRows_62FC29D723,
-            Line(tagsSplit, partsSplit)).HelpAt(GuidePage, anchor: "Separate files");
+            Line(tagsSplit, partsSplit)).HelpAt("screen-export-sheet", anchor: "Separate files");
         _refresh.Add(p => partsSplit.IsVisible = PartsUse(p));
 
         // ── 칸 이름 ──
@@ -781,15 +781,15 @@ public sealed class SheetExportPages
 
         var spacing = Setting(UiStrings.S_UnityExportDialog_SheetRows_B3349939E8, UiStrings.S_UnityExportDialog_SheetRows_D967A479A6,
             Line(IntNum(u + UiStrings.S_UnityExportDialog_SheetRows_E0A76444ED, 0, 64, 54, p => O(p).Spacing, (p, v) => O(p).Spacing = v)
-                .Presets(0, 1, 2, 3, 4, 8, 16).Unit("px").RecentKey("export.spacing"), Ui.Label("px"))).HelpAt(GuidePage, anchor: "Spacing between cells");
+                .Presets(0, 1, 2, 3, 4, 8, 16).Unit("px").RecentKey("export.spacing"), Ui.Label("px"))).HelpAt("screen-export-sheet", anchor: "Spacing between cells");
         var trim = Setting(UiStrings.S_UnityExportDialog_SheetRows_0032A9731C, UiStrings.S_UnityExportDialog_SheetRows_07C4949BB7,
-            OnOff(u + UiStrings.S_UnityExportDialog_SheetRows_0032A9731C, p => O(p).Trim, (p, v) => O(p).Trim = v)).HelpAt(GuidePage, anchor: "Trim borders");
+            OnOff(u + UiStrings.S_UnityExportDialog_SheetRows_0032A9731C, p => O(p).Trim, (p, v) => O(p).Trim = v)).HelpAt("screen-export-sheet", anchor: "Trim borders");
         var pot = Setting(UiStrings.S_UnityExportDialog_SheetRows_8BCD5F0C5E, UiStrings.S_UnityExportDialog_SheetRows_B34DD4CFD6,
-            OnOff(u + UiStrings.S_UnityExportDialog_SheetRows_8BCD5F0C5E, p => O(p).PowerOfTwo, (p, v) => O(p).PowerOfTwo = v)).HelpAt(GuidePage, anchor: "Power of two");
+            OnOff(u + UiStrings.S_UnityExportDialog_SheetRows_8BCD5F0C5E, p => O(p).PowerOfTwo, (p, v) => O(p).PowerOfTwo = v)).HelpAt("screen-export-sheet", anchor: "Power of two");
         // Single 모드 프레임 시트도 키우므로 배치 설정 묶음 밖에 둔다.
         var scale = Setting(UiStrings.ExportSheet_Scale, UiStrings.ExportSheet_ScaleTip,
             Line(IntNum(u + UiStrings.ExportSheet_Scale, 1, SheetOptions.MaxScale, 54, p => O(p).Scale, (p, v) => O(p).Scale = v)
-                .Presets(1, 2, 3, 4, 6, 8).Unit("×").RecentKey("export.scale"), Ui.Label("×"))).HelpAt(GuidePage, anchor: "Scale (at the bottom of the Common group");
+                .Presets(1, 2, 3, 4, 6, 8).Unit("×").RecentKey("export.scale"), Ui.Label("×"))).HelpAt("screen-export-sheet", anchor: "Scale");
 
         // 프레임 시트만 이 설정을 쓰는데 Single 모드면 배치 설정은 쓰이지 않는다(프레임 하나를 캔버스 크기 그대로).
         var layoutRows = Ui.Stack(layout, order, gridRow, maxWidthRow, packOrder, split, naming, namingWarning, spacing, trim, pot);

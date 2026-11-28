@@ -1506,7 +1506,7 @@ public sealed partial class ToolOptionsPanel : UserControl, IHelpTargetSource
         if (Is(_contiguous)) return At("tools-fill", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A91BCFC490);
         if (Is(_diagonal)) return At("tools-fill", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_B062F4CFD2);
         if (InRow(_fillSource)) return At("tools-fill", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_810B27E1C0);
-        if (Is(_fillBox)) return tool == ToolKind.MagicWand ? At("tools-select", MainStrings.Tool_MagicWand_Name) : At("tools-fill", "Fill settings");
+        if (Is(_fillBox)) return tool == ToolKind.MagicWand ? At("tools-select-wand", MainStrings.Tool_MagicWand_Name) : At("tools-fill", "Fill settings");
 
         // 스포이드
         if (InRow(_pickSource)) return At("tools-picker", "Source");

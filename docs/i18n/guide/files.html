@@ -1,34 +1,25 @@
 <section class="doc" id="files">
 <h2>{{files.1}}</h2>
 <p>{{files.intro}}</p>
-<ol>
-<li>{{files.flow-open}}</li>
-<li>{{files.flow-edit}}</li>
-<li>{{files.flow-save}}</li>
-<li>{{files.flow-close}}</li>
-</ol>
-<p>{{files.more}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{files.th-task}}</th><th>{{files.th-pages}}</th></tr></thead>
+<tbody>
+<tr><td>{{files.t-open}}</td><td>{{files.t-open.d}}</td></tr>
+<tr><td>{{files.t-edit}}</td><td>{{files.t-edit.d}}</td></tr>
+<tr><td>{{files.t-save}}</td><td>{{files.t-save.d}}</td></tr>
+<tr><td>{{files.t-close}}</td><td>{{files.t-close.d}}</td></tr>
+<tr><td>{{files.t-app}}</td><td>{{files.t-app.d}}</td></tr>
+</tbody>
+</table></div>
 
 <h3 id="files-roles">{{files-roles.1}}</h3>
 <p>{{files-roles.intro}}</p>
-<div class="table-wrap"><table>
-<thead><tr><th>{{files-roles.2}}</th><th>{{files-roles.3}}</th></tr></thead>
-<tbody>
-<tr><td><code>.chickxel</code></td><td>{{files-roles.4}}</td></tr>
-<tr><td>{{files-roles.5}}</td><td>{{files-roles.6}}</td></tr>
-<tr><td><code>.meta</code></td><td>{{files-roles.7}}</td></tr>
-<tr><td><code>.spriteLib</code></td><td>{{files-roles.8}}</td></tr>
-<tr><td><code>.tres</code>, <code>.tscn</code></td><td>{{files-roles.godot}}</td></tr>
-<tr><td><code>.json</code></td><td>{{files-roles.json}}</td></tr>
-<tr><td><code>.gif</code></td><td>{{files-roles.gif}}</td></tr>
-<tr><td><code>.chickxel-asset</code></td><td>{{files-roles.10}}</td></tr>
-</tbody>
-</table></div>
 <h4>{{files-roles.out-title}}</h4>
 <p>{{files-roles.out-intro}}</p>
 <div class="table-wrap"><table>
 <thead><tr><th>{{files-roles.out-h1}}</th><th>{{files-roles.out-h2}}</th><th>{{files-roles.out-h3}}</th></tr></thead>
 <tbody>
+<tr><td>{{files-roles.out-project}}</td><td><code>hero.chickxel</code></td><td>{{files-roles.out-project-when}}</td></tr>
 <tr><td>{{files-roles.out-sheet}}</td><td><code>hero.png</code></td><td>{{files-roles.out-sheet-when}}</td></tr>
 <tr><td>{{files-roles.out-parts}}</td><td><code>hero_parts.png</code></td><td>{{files-roles.out-parts-when}}</td></tr>
 <tr><td>{{files-roles.out-meta}}</td><td><code>hero.png.meta</code>, <code>hero_parts.png.meta</code></td><td>{{files-roles.out-meta-when}}</td></tr>
@@ -37,17 +28,26 @@
 <tr><td>Godot 4</td><td><code>hero.tres</code>, <code>hero.tscn</code></td><td>{{files-roles.out-godot-when}}</td></tr>
 <tr><td>JSON</td><td><code>hero.json</code></td><td>{{files-roles.out-json-when}}</td></tr>
 <tr><td>{{files-roles.out-anim}}</td><td><code>hero_idle.gif</code></td><td>{{files-roles.out-anim-when}}</td></tr>
+<tr><td>{{files-roles.out-asset}}</td><td><code>.chickxel-asset</code></td><td>{{files-roles.out-asset-when}}</td></tr>
 </tbody>
 </table></div>
 <p>{{files-roles.out-note}}</p>
-<h4>{{files-roles.inside-title}}</h4>
-<p>{{files-roles.inside}}</p>
+<h4>{{files-roles.local-title}}</h4>
 <p>{{files-roles.local-paths}}</p>
-<p>{{files-roles.local-paths-2}}</p>
-<p>{{files-roles.9}}</p>
-<p>{{files-roles.converted}}</p>
-<p>{{files-roles.newer}}</p>
-<p>{{files-roles.elsewhere}}</p>
+<h4>{{files-roles.version-title}}</h4>
+<ul>
+<li>{{files-roles.9}}</li>
+<li>{{files-roles.converted}}</li>
+<li>{{files-roles.newer}}</li>
+<li>{{files-roles.engine-old}}</li>
+</ul>
+<h4>{{files-roles.notes}}</h4>
+<ul>
+<li>{{files-roles.png-opens}}</li>
+<li>{{files-roles.inside}}</li>
+<li>{{files-roles.unknown-fx}}</li>
+<li>{{files-roles.elsewhere}}</li>
+</ul>
 
 <h3 id="files-open">{{files-open.1}}</h3>
 <p>{{files-open.intro}}</p>
@@ -89,8 +89,6 @@
 </ul>
 <h4>{{files-open.thumb-title}}</h4>
 <p>{{files-open.thumb}}</p>
-<p>{{files-open.thumb-old}}</p>
-<p>{{files-open.thumb-reg}}</p>
 <h4>{{files-open.ext-title}}</h4>
 <p>{{files-open.ext-intro}}</p>
 <div class="table-wrap"><table>
@@ -171,19 +169,6 @@
 <li>{{files-save.step3}}</li>
 <li>{{files-save.step4}}</li>
 </ol>
-<h4>{{files-save.meta-title}}</h4>
-<p>{{files-save.meta-intro}}</p>
-<div class="table-wrap"><table>
-<thead><tr><th>{{files-save.meta-h1}}</th><th>{{files-save.meta-h2}}</th></tr></thead>
-<tbody>
-<tr><td>{{UiStrings.Export_EngineNone}}</td><td>{{files-save.engine-none}}</td></tr>
-<tr><td>{{UiStrings.Export_EngineUnity}}</td><td>{{files-save.engine-unity}}</td></tr>
-<tr><td>{{UiStrings.Export_EngineGodot}}</td><td>{{files-save.engine-godot}}</td></tr>
-<tr><td class="nolink">{{UiStrings.Export_EngineJson}}</td><td>{{files-save.engine-json}}</td></tr>
-</tbody>
-</table></div>
-<p>{{files-save.engine-old}}</p>
-<p>{{files-save.meta-guid}}</p>
 <h4>{{files-save.name-title}}</h4>
 <p>{{files-save.11}}</p>
 <h4>{{files-save.as-title}}</h4>
@@ -228,7 +213,12 @@
 <figure class="shot"><img src="{{root}}assets/guide/files-revert-3.png" alt="{{files-revert.7.alt}}" width="586" height="126" loading="lazy"><figcaption>{{files-revert.8}}</figcaption></figure>
 <p>{{files-revert.2}}</p>
 <h4>{{files-revert.when-title}}</h4>
-<p>{{files-revert.when}}</p>
+<ul>
+<li>{{files-revert.n-undo}}</li>
+<li>{{files-revert.when}}</li>
+<li>{{files-revert.n-png}}</li>
+<li>{{files-revert.n-view}}</li>
+</ul>
 
 <h3 id="files-history">{{files-history.1}}</h3>
 <p>{{files-history.2}}</p>
@@ -320,6 +310,12 @@
 <figure class="shot"><img src="{{root}}assets/guide/files-settings-3.png" alt="{{files-settings.10.alt}}" width="766" height="638" loading="lazy"><figcaption>{{files-settings.11}}</figcaption></figure>
 <figure class="shot"><img src="{{root}}assets/guide/files-settings-4.png" alt="{{files-settings.12.alt}}" width="343" height="160" loading="lazy"><figcaption>{{files-settings.13}}</figcaption></figure>
 <p>{{files-settings.6}}</p>
+<ul class="marks">
+<li>{{files-settings.s-change}}</li>
+<li>{{files-settings.s-search}}</li>
+<li>{{files-settings.s-json}}</li>
+<li>{{files-settings.s-conflict}}</li>
+</ul>
 <h4>{{files-settings.other-title}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/files-settings-5.png" alt="{{files-settings.ai-shot.alt}}" width="696" height="378" loading="lazy"><figcaption>{{files-settings.ai-shot}}</figcaption></figure>
 <div class="table-wrap"><table>

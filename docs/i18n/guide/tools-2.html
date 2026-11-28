@@ -9,6 +9,7 @@
 <tr><td>{{MainStrings.Tool_MagicWand_Name}}</td><td>{{key:도구/스마트 선택}}</td><td>{{tools-select.wand}}</td></tr>
 </tbody>
 </table></div>
+<p>{{tools-select.slot}}</p>
 <h4>{{tools-select.h-rect}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/tools-select.png" alt="{{tools-select.8.alt}}" width="374" height="668" loading="lazy"><figcaption>{{tools-select.9}}</figcaption></figure>
 <ul class="marks">
@@ -16,16 +17,12 @@
 </ul>
 <ul>
 <li>{{tools-select.rect-click}}</li>
-<li>{{tools-select.rect-replace}}</li>
 <li>{{tools-select.rect-move}}</li>
 </ul>
 <h4>{{tools-select.h-lasso}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/tools-select-2.png" alt="{{tools-select.10.alt}}" width="374" height="668" loading="lazy"><figcaption>{{tools-select.11}}</figcaption></figure>
 <ul class="marks">
 <li>{{tools-select.4}}</li>
-</ul>
-<ul>
-<li>{{tools-select.lasso-click}}</li>
 </ul>
 <h4>{{tools-select.h-combine}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/tools-select-compare-combine.png" alt="{{tools-select.combine.alt}}" width="1288" height="544" loading="lazy"><figcaption>{{tools-select.combine.cap}}</figcaption></figure>
@@ -34,9 +31,9 @@
 <thead><tr><th>{{tools-select.th-combine-key}}</th><th>{{tools-select.th-combine-result}}</th></tr></thead>
 <tbody>
 <tr><td>{{tools-select.no-key}}</td><td>{{tools-select.combine-none-r}}</td></tr>
-<tr><td>{{tools-select.combine-shift}}</td><td>{{tools-select.combine-shift-r}}</td></tr>
-<tr><td>{{tools-select.combine-alt}}</td><td>{{tools-select.combine-alt-r}}</td></tr>
-<tr><td>{{tools-select.combine-both}}</td><td>{{tools-select.combine-both-r}}</td></tr>
+<tr><td><kbd>Shift</kbd></td><td>{{tools-select.combine-shift-r}}</td></tr>
+<tr><td><kbd>Alt</kbd></td><td>{{tools-select.combine-alt-r}}</td></tr>
+<tr><td><kbd>Shift</kbd>+<kbd>Alt</kbd></td><td>{{tools-select.combine-both-r}}</td></tr>
 </tbody>
 </table></div>
 <ul>
@@ -47,72 +44,103 @@
 </ul>
 <figure class="shot"><img src="{{root}}assets/guide/tools-select-compare-cursor.png" alt="{{tools-select.cursor.alt}}" width="1032" height="264" loading="lazy"><figcaption>{{tools-select.cursor.cap}}</figcaption></figure>
 <p>{{tools-select.cursor}}</p>
-<h4>{{tools-select.h-wand}}</h4>
+<p>{{tools-select.next}}</p>
+
+<h3 id="tools-select-wand">{{MainStrings.Tool_MagicWand_Name}}</h3>
+<p>{{tools-select-wand.intro}}</p>
 <figure class="shot"><img src="{{root}}assets/guide/tools-select-3.png" alt="{{tools-select.12.alt}}" width="906" height="668" loading="lazy"><figcaption>{{tools-select.13}}</figcaption></figure>
 <ul class="marks">
-<li>{{tools-select.5}}</li>
-<li>{{tools-select.wand-settings}}</li>
+<li>{{tools-select-wand.area}}</li>
+<li>{{tools-select-wand.shared}}</li>
 </ul>
 <ul>
-<li>{{tools-select.wand-keys}}</li>
-<li>{{tools-select.wand-reclick}}</li>
-<li>{{tools-select.wand-move}}</li>
+<li>{{tools-select-wand.keys}}</li>
+<li>{{tools-select-wand.reclick}}</li>
+<li>{{tools-select-wand.move}}</li>
 </ul>
+<h4>{{tools-select-wand.h-settings}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/tools-select-4.png" alt="{{tools-select.wandopt.alt}}" width="334" height="278" loading="lazy"><figcaption>{{tools-select.wandopt.cap}}</figcaption></figure>
 <ul class="marks">
-<li>{{tools-select.wand-mode}}</li>
-<li>{{tools-select.wand-preview}}</li>
+<li>{{tools-select-wand.mode}}</li>
+<li>{{tools-select-wand.preview}}</li>
 </ul>
 <div class="table-wrap"><table>
-<thead><tr><th>{{tools-select.th-mode}}</th><th>{{tools-select.th-mode-picks}}</th></tr></thead>
+<thead><tr><th>{{tools-select-wand.th-setting}}</th><th>{{tools-select-wand.th-does}}</th></tr></thead>
 <tbody>
-<tr><td>{{UiStrings.WandMode_Tolerance}}</td><td>{{tools-select.mode-tolerance-r}}</td></tr>
-<tr><td>{{UiStrings.WandMode_Grow}}</td><td>{{tools-select.mode-grow-r}}</td></tr>
-<tr><td>{{UiStrings.WandMode_Touching}}</td><td>{{tools-select.mode-touching-r}}</td></tr>
+<tr><td><strong>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A41D1B8B02}}</strong></td><td>{{tools-select-wand.tolerance}}</td></tr>
+<tr><td><strong>{{UiStrings.FillMatch_Label}}</strong></td><td>{{tools-select-wand.match}}</td></tr>
+<tr><td><strong>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A91BCFC490}}</strong></td><td>{{tools-select-wand.contiguous}}</td></tr>
+<tr><td><strong>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_B062F4CFD2}}</strong></td><td>{{tools-select-wand.diagonal}}</td></tr>
+<tr><td><strong>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_810B27E1C0}}</strong></td><td>{{tools-select-wand.source}}</td></tr>
+</tbody>
+</table></div>
+<h4>{{UiStrings.WandMode_Label}}</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>{{tools-select-wand.th-mode}}</th><th>{{tools-select-wand.th-picks}}</th></tr></thead>
+<tbody>
+<tr><td>{{UiStrings.WandMode_Tolerance}}</td><td>{{tools-select-wand.mode-tolerance}}</td></tr>
+<tr><td>{{UiStrings.WandMode_Grow}}</td><td>{{tools-select-wand.mode-grow}}</td></tr>
+<tr><td>{{UiStrings.WandMode_Touching}}</td><td>{{tools-select-wand.mode-touching}}</td></tr>
 </tbody>
 </table></div>
 <figure class="shot"><img src="{{root}}assets/guide/tools-select-compare-wand.png" alt="{{tools-select.modes.alt}}" width="1288" height="544" loading="lazy"><figcaption>{{tools-select.modes.cap}}</figcaption></figure>
-<ul>
-<li>{{tools-select.mode-diagonal}}</li>
-</ul>
-<h4>{{tools-select.h-preview}}</h4>
+<p>{{tools-select-wand.mode-diagonal}}</p>
+<h4>{{tools-select-wand.h-preview}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/tools-select-5.png" alt="{{tools-select.preview.alt}}" width="408" height="512" loading="lazy"><figcaption>{{tools-select.preview.cap}}</figcaption></figure>
 <ul class="marks">
-<li>{{tools-select.preview-current}}</li>
-<li>{{tools-select.preview-added}}</li>
+<li>{{tools-select-wand.preview-current}}</li>
+<li>{{tools-select-wand.preview-added}}</li>
 </ul>
 <figure class="shot"><img src="{{root}}assets/guide/tools-select-compare-preview.png" alt="{{tools-select.preview-compare.alt}}" width="1288" height="544" loading="lazy"><figcaption>{{tools-select.preview-compare.cap}}</figcaption></figure>
 <ul>
-<li>{{tools-select.preview-limit}}</li>
-<li>{{tools-select.preview-off}}</li>
+<li>{{tools-select-wand.preview-limit}}</li>
+<li>{{tools-select-wand.preview-off}}</li>
 </ul>
-<h4>{{tools-select.h-work}}</h4>
+
+<h3 id="tools-select-edit">{{tools-select-edit.1}}</h3>
+<p>{{tools-select-edit.intro}}</p>
+<h4>{{tools-select-edit.h-move}}</h4>
 <div class="table-wrap"><table>
-<thead><tr><th>{{tools-select.th-action}}</th><th>{{tools-select.th-result}}</th></tr></thead>
+<thead><tr><th>{{tools-select-edit.th-action}}</th><th>{{tools-select-edit.th-result}}</th></tr></thead>
 <tbody>
-<tr><td>{{tools-select.work-drag}}</td><td>{{tools-select.work-drag-r}}</td></tr>
-<tr><td>{{tools-select.work-arrows}}</td><td>{{tools-select.work-arrows-r}}</td></tr>
-<tr><td>{{key:편집/선택 내려놓기}}</td><td>{{tools-select.work-commit-r}}</td></tr>
-<tr><td>{{tools-select.work-deselect}}</td><td>{{tools-select.work-deselect-r}}</td></tr>
-<tr><td>{{key:편집/모두 선택}}</td><td>{{tools-select.work-all-r}}</td></tr>
+<tr><td>{{tools-select-edit.drag}}</td><td>{{tools-select-edit.drag-r}}</td></tr>
+<tr><td>{{key:편집/1px 왼쪽으로 옮기기}} {{key:편집/1px 오른쪽으로 옮기기}} {{key:편집/1px 위로 옮기기}} {{key:편집/1px 아래로 옮기기}}</td><td>{{tools-select-edit.arrows-r}}</td></tr>
+<tr><td>{{key:편집/8px 왼쪽으로 옮기기}} {{key:편집/8px 오른쪽으로 옮기기}} {{key:편집/8px 위로 옮기기}} {{key:편집/8px 아래로 옮기기}}</td><td>{{tools-select-edit.arrows8-r}}</td></tr>
+<tr><td>{{key:편집/선택 내려놓기}}</td><td>{{tools-select-edit.commit-r}}</td></tr>
+<tr><td>{{tools-select-edit.deselect}}</td><td>{{tools-select-edit.deselect-r}}</td></tr>
+<tr><td>{{key:편집/모두 선택}}</td><td>{{tools-select-edit.all-r}}</td></tr>
 </tbody>
 </table></div>
-<h4>{{tools-select.h-commands}}</h4>
+<ul>
+<li>{{tools-select-edit.plain-arrows}}</li>
+<li>{{tools-select-edit.switch}}</li>
+<li>{{tools-select-edit.paste-switch}}</li>
+<li>{{tools-select-edit.locked}}</li>
+</ul>
+<h4>{{tools-select-edit.h-commands}}</h4>
 <div class="table-wrap"><table>
-<thead><tr><th>{{tools-select.th-command}}</th><th>{{tools-select.th-with}}</th><th>{{tools-select.th-without}}</th></tr></thead>
+<thead><tr><th>{{tools-select-edit.th-command}}</th><th>{{tools-select-edit.th-with}}</th><th>{{tools-select-edit.th-without}}</th></tr></thead>
 <tbody>
-<tr><td>{{MainStrings.Menu_Edit_Cut_093}} {{key:편집/잘라내기}}</td><td>{{tools-select.cmd-cut-with}}</td><td>{{tools-select.cmd-cut-without}}</td></tr>
-<tr><td>{{MainStrings.Menu_Edit_Copy_095}} {{key:편집/복사}}</td><td>{{tools-select.cmd-copy-with}}</td><td>{{tools-select.cmd-copy-without}}</td></tr>
-<tr><td>{{MainStrings.Menu_Edit_Paste_097}} {{key:편집/붙여넣기}}</td><td>{{tools-select.cmd-paste-with}}</td><td>{{tools-select.cmd-paste-without}}</td></tr>
-<tr><td>{{MainStrings.Menu_Edit_DeleteSelection_099}} {{key:편집/지우기}}</td><td>{{tools-select.cmd-delete-with}}</td><td>{{tools-select.cmd-delete-without}}</td></tr>
-<tr><td>{{MainStrings.Menu_Edit_Flip_105}} {{key:편집/좌우 뒤집기(선택/셀)}} · {{MainStrings.Menu_Edit_Flip_107}} {{key:편집/상하 뒤집기(선택/셀)}}</td><td>{{tools-select.cmd-flip-with}}</td><td>{{tools-select.cmd-flip-without}}</td></tr>
-<tr><td>{{MainStrings.Menu_Edit_Rotate_109}} {{key:편집/90° 회전(선택/캔버스)}} · {{MainStrings.Menu_Edit_Rotate_111}} {{key:편집/-90° 회전(선택/캔버스)}}</td><td>{{tools-select.cmd-rotate-with}}</td><td>{{tools-select.cmd-rotate-without}}</td></tr>
-<tr><td>{{MainStrings.Menu_Edit_BeginTransform_113}} {{key:편집/변형(회전·크기)…}}</td><td>{{tools-select.cmd-transform-with}}</td><td>{{tools-select.cmd-transform-without}}</td></tr>
-<tr><td>{{MainStrings.Menu_Edit_AddOutline_115}} {{key:편집/외곽선 추가(기본색)}}</td><td>{{tools-select.cmd-outline-with}}</td><td>{{tools-select.cmd-outline-without}}</td></tr>
-<tr><td>{{tools-select.cmd-draw}}</td><td>{{tools-select.cmd-draw-with}}</td><td>{{tools-select.cmd-draw-without}}</td></tr>
+<tr><td>{{MainStrings.Menu_Edit_Cut_093}} {{key:편집/잘라내기}}</td><td>{{tools-select-edit.cut-with}}</td><td>{{tools-select-edit.cut-without}}</td></tr>
+<tr><td>{{MainStrings.Menu_Edit_Copy_095}} {{key:편집/복사}}</td><td>{{tools-select-edit.copy-with}}</td><td>{{tools-select-edit.copy-without}}</td></tr>
+<tr><td>{{MainStrings.Menu_Edit_Paste_097}} {{key:편집/붙여넣기}}</td><td>{{tools-select-edit.paste-with}}</td><td>{{tools-select-edit.paste-without}}</td></tr>
+<tr><td>{{MainStrings.Menu_Edit_DeleteSelection_099}} {{key:편집/지우기}}</td><td>{{tools-select-edit.delete-with}}</td><td>{{tools-select-edit.delete-without}}</td></tr>
+<tr><td>{{MainStrings.Menu_Edit_Flip_105}} {{key:편집/좌우 뒤집기(선택/셀)}} · {{MainStrings.Menu_Edit_Flip_107}} {{key:편집/상하 뒤집기(선택/셀)}}</td><td>{{tools-select-edit.flip-with}}</td><td>{{tools-select-edit.flip-without}}</td></tr>
+<tr><td>{{MainStrings.Menu_Edit_Rotate_109}} {{key:편집/90° 회전(선택/캔버스)}} · {{MainStrings.Menu_Edit_Rotate_111}} {{key:편집/-90° 회전(선택/캔버스)}}</td><td>{{tools-select-edit.rotate-with}}</td><td>{{tools-select-edit.rotate-without}}</td></tr>
+<tr><td>{{MainStrings.Menu_Edit_BeginTransform_113}} {{key:편집/변형(회전·크기)…}}</td><td>{{tools-select-edit.transform-with}}</td><td>{{tools-select-edit.transform-without}}</td></tr>
+<tr><td>{{MainStrings.Menu_Edit_AddOutline_115}} {{key:편집/외곽선 추가(기본색)}}</td><td>{{tools-select-edit.outline-with}}</td><td>{{tools-select-edit.outline-without}}</td></tr>
+<tr><td>{{tools-select-edit.draw}}</td><td>{{tools-select-edit.draw-with}}</td><td>{{tools-select-edit.draw-without}}</td></tr>
 </tbody>
 </table></div>
-<p>{{tools-select.cmd-notes}}</p>
+<h4>{{tools-select-edit.h-know}}</h4>
+<ul>
+<li>{{tools-select-edit.paste-spot}}</li>
+<li>{{tools-select-edit.paste-other}}</li>
+<li>{{tools-select-edit.copy-clears}}</li>
+<li>{{tools-select-edit.timeline-clip}}</li>
+<li>{{tools-select-edit.delete-timeline}}</li>
+<li>{{tools-select-edit.replace}}</li>
+</ul>
 
 <h3 id="tools-move">{{tools-move.1}}</h3>
 <p>{{tools-move.intro}}</p>
@@ -127,57 +155,91 @@
 <tr><td>{{tools-move.cels}}</td><td>{{tools-move.cels-r}}</td></tr>
 </tbody>
 </table></div>
-<h4>{{tools-move.h-wrap}}</h4>
+<ul>
+<li>{{tools-move.text-locked}}</li>
+<li>{{tools-move.cels-skip}}</li>
+<li>{{tools-move.ctrl-off}}</li>
+</ul>
+<h4>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4AF6C42C92}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/tools-move-compare.png" alt="{{tools-move.compare.alt}}" width="832" height="424" loading="lazy"><figcaption>{{tools-move.compare.caption}}</figcaption></figure>
-<p>{{tools-move.4}}</p>
-<p>{{tools-move.wrap-notes}}</p>
+<p>{{tools-move.wrap}}</p>
+<ul>
+<li>{{tools-move.wrap-where}}</li>
+<li>{{tools-move.wrap-notes}}</li>
+<li>{{tools-move.wrap-part}}</li>
+<li>{{tools-move.wrap-sel}}</li>
+</ul>
 <h4>{{tools-move.h-outside}}</h4>
-<p>{{tools-move.2}}</p>
-<p>{{tools-move.3}}</p>
-<p>{{tools-move.5}}</p>
+<p>{{tools-move.outside}}</p>
+<ul>
+<li>{{tools-move.kept-move}}</li>
+<li>{{tools-move.kept-drop}}</li>
+<li>{{tools-move.kept-place}}</li>
+<li>{{tools-move.kept-canvas}}</li>
+<li>{{tools-move.kept-copy}}</li>
+</ul>
+<p>{{tools-move.show}}</p>
+<ul>
+<li>{{tools-move.inside-only}}</li>
+<li>{{tools-move.saved}}</li>
+</ul>
 <h4>{{tools-move.h-paint}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/tools-move-paint.png" alt="{{tools-move.paint.alt}}" width="316" height="432" loading="lazy"><figcaption>{{tools-move.paint.caption}}</figcaption></figure>
 <p>{{tools-move.paint}}</p>
 <ul>
+<li>{{tools-move.paint-tools}}</li>
 <li>{{tools-move.paint-undo}}</li>
+<li>{{tools-move.paint-fill}}</li>
 <li>{{tools-move.paint-limits}}</li>
 </ul>
 
 <h3 id="tools-transform">{{tools-transform.1}}</h3>
 <figure class="clip"><img src="{{root}}assets/guide/tools-transform.webp" alt="{{tools-transform.25.alt}}" width="384" height="240" loading="lazy"></figure>
 <p>{{tools-transform.2}}</p>
+<p>{{tools-transform.redraw}}</p>
 <h4>{{tools-transform.h-use}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/tools-transform.png" alt="{{tools-transform.17.alt}}" width="936" height="671" loading="lazy"><figcaption>{{tools-transform.18}}</figcaption></figure>
 <div class="table-wrap"><table>
-<thead><tr><th>{{tools-transform.3}}</th><th>{{tools-transform.4}}</th></tr></thead>
+<thead><tr><th>{{tools-transform.th-action}}</th><th>{{tools-transform.th-result}}</th></tr></thead>
 <tbody>
-<tr><td>{{tools-transform.5}}</td><td>{{tools-transform.6}}</td></tr>
-<tr><td>{{tools-transform.7}}</td><td>{{tools-transform.8}}</td></tr>
-<tr><td>{{tools-transform.9}}</td><td>{{tools-transform.10}}</td></tr>
-<tr><td>{{tools-transform.11}}</td><td>{{tools-transform.12}}</td></tr>
-<tr><td>{{tools-transform.13}}</td><td>{{tools-transform.14}}</td></tr>
-<tr><td>{{tools-transform.15}}</td><td>{{tools-transform.16}}</td></tr>
+<tr><td>{{tools-transform.move}}</td><td>{{tools-transform.move-r}}</td></tr>
+<tr><td>{{tools-transform.scale}}</td><td>{{tools-transform.scale-r}}</td></tr>
+<tr><td>{{tools-transform.rotate}}</td><td>{{tools-transform.rotate-r}}</td></tr>
+<tr><td>{{tools-transform.center}}</td><td>{{tools-transform.center-r}}</td></tr>
+<tr><td>{{tools-transform.apply}}</td><td>{{tools-transform.apply-r}}</td></tr>
+<tr><td>{{tools-transform.cancel}}</td><td>{{tools-transform.cancel-r}}</td></tr>
 </tbody>
 </table></div>
-<p>{{tools-transform.mods-live}}</p>
-<p>{{tools-transform.21}}</p>
+<ul>
+<li>{{tools-transform.mods-live}}</li>
+<li>{{tools-transform.pivot-start}}</li>
+<li>{{tools-transform.auto-apply}}</li>
+<li>{{tools-transform.blocked}}</li>
+</ul>
 <h4>{{tools-transform.h-numbers}}</h4>
-<p>{{tools-transform.19}}</p>
-<h4>{{tools-transform.h-resample}}</h4>
-<p>{{tools-transform.20}}</p>
+<ul class="marks">
+<li>{{tools-transform.numbers}}</li>
+<li>{{tools-transform.box}}</li>
+<li>{{tools-transform.flip}}</li>
+</ul>
+<h4>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_652CB69BF4}}</h4>
+<p>{{tools-transform.resample}}</p>
 <figure class="shot"><img src="{{root}}assets/guide/tools-transform-compare.png" alt="{{tools-transform.compare.alt}}" width="668" height="326" loading="lazy"><figcaption>{{tools-transform.compare.caption}}</figcaption></figure>
 <div class="table-wrap"><table>
 <thead><tr><th>{{tools-transform.th-method}}</th><th>{{tools-transform.th-desc}}</th></tr></thead>
 <tbody>
 <tr><td>RotSprite</td><td>{{tools-transform.rotsprite}}</td></tr>
-<tr><td>{{tools-transform.nearest}}</td><td>{{tools-transform.nearest-desc}}</td></tr>
+<tr><td>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_592987DB9E}}</td><td>{{tools-transform.nearest-desc}}</td></tr>
 </tbody>
 </table></div>
-<p>{{tools-transform.axis}}</p>
+<ul>
+<li>{{tools-transform.large}}</li>
+<li>{{tools-transform.axis}}</li>
+</ul>
 <h4>{{tools-transform.h-right}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/tools-transform-2.png" alt="{{tools-transform.right.alt}}" width="378" height="648" loading="lazy"><figcaption>{{tools-transform.right.cap}}</figcaption></figure>
 <div class="table-wrap"><table>
-<thead><tr><th>{{tools-transform.3}}</th><th>{{tools-transform.4}}</th></tr></thead>
+<thead><tr><th>{{tools-transform.th-action}}</th><th>{{tools-transform.th-result}}</th></tr></thead>
 <tbody>
 <tr><td>{{tools-transform.distort}}</td><td>{{tools-transform.distort-r}}</td></tr>
 <tr><td>{{tools-transform.menu}}</td><td>{{tools-transform.menu-r}}</td></tr>
@@ -187,8 +249,11 @@
 <tr><td>{{tools-transform.rdrag-ctrl}}</td><td>{{tools-transform.rdrag-ctrl-r}}</td></tr>
 </tbody>
 </table></div>
-<h4>{{tools-transform.h-center}}</h4>
-<p>{{tools-transform.center}}</p>
+<ul>
+<li>{{tools-transform.distort-alt}}</li>
+<li>{{tools-transform.margin-grow}}</li>
+<li>{{tools-transform.margin-reset}}</li>
+</ul>
 <h4>{{tools-transform.h-changes}}</h4>
 <p>{{tools-transform.changes}}</p>
 <div class="table-wrap"><table>
@@ -199,64 +264,94 @@
 <tr><td>{{tools-transform.part}}</td><td>{{tools-transform.part-r}}</td></tr>
 </tbody>
 </table></div>
-<p>{{tools-transform.preview}}</p>
 
 <h3 id="tools-canvas-size">{{tools-canvas-size.1}}</h3>
 <figure class="clip"><img src="{{root}}assets/guide/tools-canvas-size.webp" alt="{{tools-canvas-size.19.alt}}" width="480" height="300" loading="lazy"></figure>
 <figure class="shot"><img src="{{root}}assets/guide/tools-canvas-size.png" alt="{{tools-canvas-size.17.alt}}" width="956" height="685" loading="lazy"><figcaption>{{tools-canvas-size.18}}</figcaption></figure>
 <p>{{tools-canvas-size.2}}</p>
+<p>{{tools-canvas-size.view}}</p>
 <h4>{{tools-canvas-size.h-use}}</h4>
 <div class="table-wrap"><table>
-<thead><tr><th>{{tools-canvas-size.3}}</th><th>{{tools-canvas-size.4}}</th></tr></thead>
+<thead><tr><th>{{tools-canvas-size.th-action}}</th><th>{{tools-canvas-size.th-result}}</th></tr></thead>
 <tbody>
-<tr><td>{{tools-canvas-size.5}}</td><td>{{tools-canvas-size.6}}</td></tr>
-<tr><td>{{tools-canvas-size.7}}</td><td>{{tools-canvas-size.8}}</td></tr>
-<tr><td>{{tools-canvas-size.mods}}</td><td>{{tools-canvas-size.mods-r}}</td></tr>
-<tr><td>{{tools-canvas-size.ctrl}}</td><td>{{tools-canvas-size.ctrl-r}}</td></tr>
-<tr><td>{{tools-canvas-size.ctrl-margin}}</td><td>{{tools-canvas-size.ctrl-margin-r}}</td></tr>
-<tr><td>{{tools-canvas-size.9}}</td><td>{{tools-canvas-size.10}}</td></tr>
-<tr><td>{{tools-canvas-size.11}}</td><td>{{tools-canvas-size.12}}</td></tr>
-<tr><td>{{tools-canvas-size.13}}</td><td>{{tools-canvas-size.14}}</td></tr>
+<tr><td>{{tools-canvas-size.drag}}</td><td>{{tools-canvas-size.drag-r}}</td></tr>
+<tr><td>{{tools-canvas-size.rdrag}}</td><td>{{tools-canvas-size.rdrag-r}}</td></tr>
+<tr><td>{{tools-canvas-size.mods-shift}}</td><td>{{tools-canvas-size.mods-shift-r}}</td></tr>
+<tr><td>{{tools-canvas-size.mods-alt}}</td><td>{{tools-canvas-size.mods-alt-r}}</td></tr>
+<tr><td>{{tools-canvas-size.inside}}</td><td>{{tools-canvas-size.inside-r}}</td></tr>
+<tr><td>{{tools-canvas-size.apply}}</td><td>{{tools-canvas-size.apply-r}}</td></tr>
+<tr><td>{{tools-canvas-size.cancel}}</td><td>{{tools-canvas-size.cancel-r}}</td></tr>
 <tr><td>{{tools-canvas-size.flip}}</td><td>{{tools-canvas-size.flip-r}}</td></tr>
 </tbody>
 </table></div>
-<p>{{tools-canvas-size.mods-live}}</p>
+<h4>{{tools-canvas-size.h-ctrl}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/tools-canvas-size-ctrl.png" alt="{{guide-shot.canvas-ctrl.alt}}" width="711" height="551" loading="lazy"><figcaption>{{guide-shot.canvas-ctrl.caption}}</figcaption></figure>
+<ul class="marks">
+<li>{{tools-canvas-size.margin}}</li>
+<li>{{tools-canvas-size.ctrl-crop}}</li>
+</ul>
+<ul>
+<li>{{tools-canvas-size.ctrl-skew}}</li>
+<li>{{tools-canvas-size.ctrl-alt}}</li>
+<li>{{tools-canvas-size.ctrl-bounds}}</li>
+<li>{{tools-canvas-size.ctrl-resample}}</li>
+<li>{{tools-canvas-size.ctrl-slice}}</li>
+</ul>
+<h4>{{tools-canvas-size.h-options}}</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>{{tools-canvas-size.th-setting}}</th><th>{{tools-canvas-size.th-does}}</th></tr></thead>
+<tbody>
+<tr><td>{{tools-canvas-size.opt-size}}</td><td>{{tools-canvas-size.opt-size-r}}</td></tr>
+<tr><td>{{tools-canvas-size.opt-center}}</td><td>{{tools-canvas-size.opt-center-r}}</td></tr>
+<tr><td>{{tools-canvas-size.opt-slice}}</td><td>{{tools-canvas-size.opt-slice-r}}</td></tr>
+<tr><td>{{tools-canvas-size.opt-image}}</td><td>{{tools-canvas-size.opt-image-r}}</td></tr>
+<tr><td>{{tools-canvas-size.opt-ratio}}</td><td>{{tools-canvas-size.opt-ratio-r}}</td></tr>
+<tr><td>{{tools-canvas-size.opt-pos}}</td><td>{{tools-canvas-size.opt-pos-r}}</td></tr>
+<tr><td>{{tools-canvas-size.opt-fit}}</td><td>{{tools-canvas-size.opt-fit-r}}</td></tr>
+</tbody>
+</table></div>
+<ul>
+<li>{{tools-canvas-size.opt-notes}}</li>
+<li>{{tools-canvas-size.opt-fit-count}}</li>
+</ul>
+<h4>{{UiStrings.CanvasResize_NineSlice}}</h4>
+<figure class="clip"><img src="{{root}}assets/guide/tools-canvas-size-slice.webp" alt="{{tools-canvas-size.25.alt}}" width="1000" height="706" loading="lazy"></figure>
+<ul>
+<li>{{tools-canvas-size.slice-on}}</li>
+<li>{{tools-canvas-size.slice-fill}}</li>
+<li>{{tools-canvas-size.slice-min}}</li>
+<li>{{tools-canvas-size.slice-keep}}</li>
+</ul>
+<h4>{{tools-canvas-size.h-apply}}</h4>
+<ul>
+<li>{{tools-canvas-size.applies}}</li>
+<li>{{tools-canvas-size.kept}}</li>
+<li>{{tools-canvas-size.scale}}</li>
+<li>{{tools-canvas-size.pivot}}</li>
+</ul>
 <h4>{{tools-canvas-size.tilemap-heading}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/tools-canvas-size-tilemap.png" alt="{{tools-canvas-size.tilemap-alt}}" width="966" height="671" loading="lazy"><figcaption>{{tools-canvas-size.tilemap-cap}}</figcaption></figure>
 <p>{{tools-canvas-size.tilemap-body}}</p>
-<h4>{{tools-canvas-size.h-options}}</h4>
-<p>{{tools-canvas-size.15}}</p>
-<p>{{tools-canvas-size.fit}}</p>
-<h4>{{UiStrings.CanvasRatio_Title}}</h4>
-<figure class="shot"><img src="{{root}}assets/guide/tools-canvas-size-ratio.png" alt="{{tools-canvas-size.ratio.alt}}" width="380" height="514" loading="lazy"><figcaption>{{tools-canvas-size.ratio.cap}}</figcaption></figure>
-<ul class="marks">
-<li>{{tools-canvas-size.ratio.ratio}}</li>
-<li>{{tools-canvas-size.ratio.basis}}</li>
-<li>{{tools-canvas-size.ratio.fit}}</li>
-<li>{{tools-canvas-size.ratio.preview}}</li>
-</ul>
-<p>{{tools-canvas-size.ratio.apply}}</p>
-<h4>{{tools-canvas-size.h-ctrl}}</h4>
-<figure class="shot"><img src="{{root}}assets/guide/tools-canvas-size-ctrl.png" alt="{{guide-shot.canvas-ctrl.alt}}" width="711" height="551" loading="lazy"><figcaption>{{guide-shot.canvas-ctrl.caption}}</figcaption></figure>
-<p>{{guide-shot.canvas-ctrl.body}}</p>
-<h4>{{tools-canvas-size.h-apply}}</h4>
-<p>{{tools-canvas-size.16}}</p>
-<p>{{tools-canvas-size.pivot}}</p>
 <h4>{{tools-canvas-size.h-part}}</h4>
 <p>{{tools-canvas-size.part}}</p>
-<h4>{{tools-canvas-size.20}}</h4>
-<figure class="clip"><img src="{{root}}assets/guide/tools-canvas-size-slice.webp" alt="{{tools-canvas-size.25.alt}}" width="1000" height="706" loading="lazy"></figure>
-<ul>
-<li>{{tools-canvas-size.21}}</li>
-<li>{{tools-canvas-size.22}}</li>
-<li>{{tools-canvas-size.23}}</li>
-<li>{{tools-canvas-size.24}}</li>
+<p>{{tools-canvas-size.part-limits}}</p>
+
+<h3 id="tools-canvas-size-ratio">{{tools-canvas-size-ratio.1}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/tools-canvas-size-ratio.png" alt="{{tools-canvas-size.ratio.alt}}" width="380" height="514" loading="lazy"><figcaption>{{tools-canvas-size.ratio.cap}}</figcaption></figure>
+<p>{{tools-canvas-size-ratio.intro}}</p>
+<ul class="marks">
+<li>{{tools-canvas-size-ratio.ratio}}</li>
+<li>{{tools-canvas-size-ratio.basis}}</li>
+<li>{{tools-canvas-size-ratio.fit}}</li>
+<li>{{tools-canvas-size-ratio.preview}}</li>
+<li>{{tools-canvas-size-ratio.sizes}}</li>
 </ul>
+<p>{{tools-canvas-size-ratio.apply}}</p>
 
 <h3 id="tools-layer-size">{{tools-layer-size.1}}</h3>
 <p>{{tools-layer-size.intro}}</p>
 <figure class="shot"><img src="{{root}}assets/guide/tools-layer-size.png" alt="{{guide-shot.layer-size.alt}}" width="1104" height="904" loading="lazy"><figcaption>{{guide-shot.layer-size.caption}}</figcaption></figure>
-<p>{{tools-layer-size.start}}</p>
+<p>{{tools-layer-size.same}}</p>
 <h4>{{tools-layer-size.h-use}}</h4>
 <div class="table-wrap"><table>
 <thead><tr><th>{{tools-layer-size.th-action}}</th><th>{{tools-layer-size.th-result}}</th></tr></thead>
@@ -267,11 +362,16 @@
 <tr><td>{{tools-layer-size.center}}</td><td>{{tools-layer-size.center-r}}</td></tr>
 <tr><td>{{tools-layer-size.right}}</td><td>{{tools-layer-size.right-r}}</td></tr>
 <tr><td>{{tools-layer-size.frames}}</td><td>{{tools-layer-size.frames-r}}</td></tr>
-<tr><td>{{tools-layer-size.keys}}</td><td>{{tools-layer-size.keys-r}}</td></tr>
+<tr><td>{{key:편집/선택 내려놓기}} / {{key:편집/선택 해제(캔버스)}}</td><td>{{tools-layer-size.keys-r}}</td></tr>
 </tbody>
 </table></div>
-<p>{{tools-layer-size.mods-live}}</p>
-<p>{{tools-layer-size.options}}</p>
+<ul>
+<li>{{tools-layer-size.start}}</li>
+<li>{{tools-layer-size.blocked}}</li>
+<li>{{tools-layer-size.options}}</li>
+<li>{{tools-layer-size.slice}}</li>
+<li>{{tools-layer-size.preview}}</li>
+</ul>
 <h4>{{tools-layer-size.h-apply}}</h4>
 <div class="table-wrap"><table>
 <thead><tr><th>{{tools-layer-size.th-layer}}</th><th>{{tools-layer-size.th-change}}</th></tr></thead>
@@ -282,7 +382,11 @@
 <tr><td>{{tools-layer-size.part-move}}</td><td>{{tools-layer-size.part-move-r}}</td></tr>
 </tbody>
 </table></div>
-<p>{{tools-layer-size.pivot}}</p>
+<ul>
+<li>{{tools-layer-size.pivot}}</li>
+<li>{{tools-layer-size.one-frame}}</li>
+<li>{{tools-layer-size.move-tool}}</li>
+</ul>
 
 <h3 id="tools-line-cleanup">{{UiStrings.LineArt_Title}}</h3>
 <p>{{tools-line-cleanup.intro}}</p>
@@ -290,8 +394,8 @@
 <figure class="shot"><img src="{{root}}assets/guide/tools-line-cleanup.png" alt="{{tools-line-cleanup.shot.alt}}" width="1154" height="530" loading="lazy"><figcaption>{{tools-line-cleanup.shot.cap}}</figcaption></figure>
 <ul>
 <li>{{tools-line-cleanup.selection}}</li>
-<li>{{tools-line-cleanup.blocked}}</li>
 <li>{{tools-line-cleanup.frames}}</li>
+<li>{{tools-line-cleanup.blocked}}</li>
 </ul>
 <h4>{{tools-line-cleanup.view-h}}</h4>
 <p>{{tools-line-cleanup.view}}</p>
@@ -300,9 +404,7 @@
 <tbody>
 <tr><td>{{tools-line-cleanup.hover}}</td><td>{{tools-line-cleanup.hover-r}}</td></tr>
 <tr><td>{{tools-line-cleanup.click}}</td><td>{{tools-line-cleanup.click-r}}</td></tr>
-<tr><td>{{tools-line-cleanup.wheel}}</td><td>{{tools-line-cleanup.wheel-r}}</td></tr>
-<tr><td>{{tools-line-cleanup.drag}}</td><td>{{tools-line-cleanup.drag-r}}</td></tr>
-<tr><td>{{tools-line-cleanup.dbl}}</td><td>{{tools-line-cleanup.dbl-r}}</td></tr>
+<tr><td>{{tools-line-cleanup.nav}}</td><td>{{tools-line-cleanup.nav-r}}</td></tr>
 </tbody>
 </table></div>
 <h4>{{UiStrings.LineArt_DetectGroup}}</h4>
@@ -344,6 +446,7 @@
 
 <h3 id="tools-pivot">{{tools-pivot.1}}</h3>
 <p>{{tools-pivot.intro}}</p>
+<p>{{tools-pivot.kinds}}</p>
 <figure class="shot"><img src="{{root}}assets/guide/tools-pivot.png" alt="{{tools-pivot.shot.alt}}" width="1104" height="774" loading="lazy"><figcaption>{{tools-pivot.shot.caption}}</figcaption></figure>
 <h4>{{tools-pivot.h-set}}</h4>
 <ul class="marks">
@@ -351,38 +454,61 @@
 <li>{{tools-pivot.buttons}}</li>
 <li>{{tools-pivot.xy}}</li>
 </ul>
-<h4>{{tools-pivot.h-from}}</h4>
-<p>{{tools-pivot.from-on}}</p>
 <ul>
-<li>{{tools-pivot.from-change}}</li>
-<li>{{tools-pivot.from-off}}</li>
-<li>{{tools-pivot.from-auto}}</li>
+<li>{{tools-pivot.mark}}</li>
+<li>{{tools-pivot.others}}</li>
+<li>{{tools-pivot.effects}}</li>
 </ul>
 <h4>{{tools-pivot.h-target}}</h4>
 <p>{{tools-pivot.target}}</p>
 <div class="table-wrap"><table>
-<thead><tr><th>{{tools-pivot.th-layer}}</th><th>{{tools-pivot.th-pivot}}</th><th>{{tools-pivot.th-label}}</th></tr></thead>
+<thead><tr><th>{{tools-pivot.th-layer}}</th><th>{{tools-pivot.th-pivot}}</th></tr></thead>
 <tbody>
-<tr><td>{{tools-pivot.layer-normal}}</td><td>{{tools-pivot.pivot-frame}}</td><td>{{tools-pivot.label-normal}}</td></tr>
-<tr><td>{{tools-pivot.layer-part}}</td><td>{{tools-pivot.pivot-part}}</td><td>{{tools-pivot.label-part}}</td></tr>
-<tr><td>{{tools-pivot.layer-group}}</td><td>{{tools-pivot.pivot-group}}</td><td>{{tools-pivot.label-group}}</td></tr>
-<tr><td>{{tools-pivot.layer-canvas}}</td><td>{{tools-pivot.pivot-canvas}}</td><td>{{tools-pivot.label-canvas}}</td></tr>
+<tr><td>{{tools-pivot.layer-normal}}</td><td>{{tools-pivot.pivot-normal}}</td></tr>
+<tr><td>{{tools-pivot.layer-part}}</td><td>{{tools-pivot.pivot-part}}</td></tr>
+<tr><td>{{tools-pivot.layer-group}}</td><td>{{tools-pivot.pivot-group}}</td></tr>
+<tr><td>{{tools-pivot.layer-canvas}}</td><td>{{tools-pivot.pivot-canvas}}</td></tr>
 </tbody>
 </table></div>
-<p>{{tools-pivot.representative}}</p>
-<p>{{tools-pivot.from-marks}}</p>
-<h4>{{tools-pivot.h-menu}}</h4>
-<p>{{tools-pivot.menu}}</p>
-<h4>{{tools-pivot.h-effects}}</h4>
-<p>{{tools-pivot.effects}}</p>
-<p>{{tools-pivot.uses}}</p>
+<ul>
+<li>{{tools-pivot.representative}}</li>
+<li>{{tools-pivot.crown}}</li>
+<li>{{tools-pivot.rep-menu}}</li>
+</ul>
+<h4>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8A93F258A3}}</h4>
+<p>{{tools-pivot.from-on}}</p>
+<ul>
+<li>{{tools-pivot.from-shift}}</li>
+<li>{{tools-pivot.from-off}}</li>
+<li>{{tools-pivot.from-marks}}</li>
+<li>{{tools-pivot.menu}}</li>
+<li>{{tools-pivot.from-auto}}</li>
+</ul>
+<h4>{{tools-pivot.h-uses}}</h4>
+<p>{{tools-pivot.uses-when}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{tools-pivot.th-kind}}</th><th>{{tools-pivot.th-used}}</th></tr></thead>
+<tbody>
+<tr><td>{{tools-pivot.use-canvas}}</td><td>{{tools-pivot.use-canvas-r}}</td></tr>
+<tr><td>{{tools-pivot.use-layer}}</td><td>{{tools-pivot.use-layer-r}}</td></tr>
+</tbody>
+</table></div>
+<ul>
+<li>{{tools-pivot.follow-canvas}}</li>
+<li>{{tools-pivot.follow-layer}}</li>
+<li>{{tools-pivot.follow-frame}}</li>
+</ul>
 <p>{{tools-pivot.old-files}}</p>
 
 <h3 id="tools-nine-slice">9-slice</h3>
 <p>{{tools-nine-slice.intro}}</p>
 <figure class="shot"><img src="{{root}}assets/guide/tools-nine-slice.png" alt="{{tools-nine-slice.3.alt}}" width="1003" height="400" loading="lazy"><figcaption>{{tools-nine-slice.4}}</figcaption></figure>
 <h4>{{tools-nine-slice.h-set}}</h4>
-<p>{{tools-nine-slice.1}}</p>
+<ul class="marks">
+<li>{{tools-nine-slice.lines}}</li>
+<li>{{tools-nine-slice.values}}</li>
+<li>{{tools-nine-slice.zero}}</li>
+</ul>
 <h4>{{tools-nine-slice.h-target}}</h4>
 <p>{{tools-nine-slice.2}}</p>
 <h4>{{tools-nine-slice.h-stretch}}</h4>

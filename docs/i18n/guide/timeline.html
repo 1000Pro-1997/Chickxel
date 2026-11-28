@@ -1,32 +1,81 @@
 <section class="doc" id="timeline">
 <h2>{{timeline.1}}</h2>
 <p>{{timeline.intro}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{timeline.th-page}}</th><th>{{timeline.th-covers}}</th></tr></thead>
+<tbody>
+<tr><td><a href="#screen-timeline">{{screen-timeline.1}}</a></td><td>{{timeline.p-main}}</td></tr>
+<tr><td><a href="#screen-timeline-menus">{{screen-timeline.menus}}</a></td><td>{{timeline.p-menus}}</td></tr>
+<tr><td><a href="#screen-timeline-duration">{{screen-timeline-duration.1}}</a></td><td>{{timeline.p-duration}}</td></tr>
+<tr><td><a href="#screen-timeline-select">{{screen-timeline-select.1}}</a></td><td>{{timeline.p-select}}</td></tr>
+<tr><td><a href="#screen-cel-links">{{guide-new.cel-links-title}}</a></td><td>{{timeline.p-links}}</td></tr>
+<tr><td><a href="#screen-timeline-edit">{{screen-timeline-edit.1}}</a></td><td>{{timeline.p-edit}}</td></tr>
+<tr><td><a href="#screen-tags">{{screen-tags.1}}</a></td><td>{{timeline.p-tags}}</td></tr>
+</tbody>
+</table></div>
 
 <h3 id="screen-timeline">{{screen-timeline.1}}</h3>
 <figure class="shot"><img src="{{root}}assets/guide/screen-timeline.png" alt="{{screen-timeline.9.alt}}" width="640" height="330" loading="lazy"><figcaption>{{screen-timeline.10}}</figcaption></figure>
 <p>{{screen-timeline.2}}</p>
+<p>{{screen-timeline.current}}</p>
 <h4>{{screen-timeline.rows}}</h4>
-<p>{{screen-timeline.3}}</p>
-<p>{{screen-timeline.solo}}</p>
-<p>{{screen-timeline.row-icons}}</p>
+<ul class="marks">
+<li>{{screen-timeline.r1}}</li>
+<li>{{screen-timeline.r2}}</li>
+<li>{{screen-timeline.r3}}</li>
+<li>{{screen-timeline.r4}}</li>
+<li>{{screen-timeline.r5}}</li>
+</ul>
 <figure class="shot"><img src="{{root}}assets/guide/screen-timeline-tilemap.png" alt="{{screen-timeline.tilemap.alt}}" width="286" height="52" loading="lazy"><figcaption>{{screen-timeline.tilemap.cap}}</figcaption></figure>
-<p>{{screen-timeline.tilemap}}</p>
+<ul>
+<li>{{screen-timeline.solo}}</li>
+<li>{{screen-timeline.fx}}</li>
+<li>{{screen-timeline.auto}}</li>
+<li>{{screen-timeline.skin}}</li>
+<li>{{screen-timeline.crown}}</li>
+<li>{{screen-timeline.tilemap}}</li>
+<li>{{screen-timeline.depth}}</li>
+</ul>
 <div class="note">{{screen-timeline.11}}</div>
 <h4>{{screen-timeline.cols}}</h4>
 <p>{{screen-timeline.4}}</p>
-<figure class="shot"><img src="{{root}}assets/guide/screen-timeline-7.png" alt="{{screen-timeline.dur-dialog.alt}}" width="354" height="270" loading="lazy"></figure>
-<p>{{screen-timeline.duration}}</p>
-<p>{{guide-new.timeline-thumbnails}}</p>
+<ul>
+<li>{{guide-new.timeline-thumbnails}}</li>
+<li>{{screen-timeline.thumbs-2}}</li>
+<li>{{guide-new.pivot-diamond}}</li>
+<li>{{screen-timeline.diamond-where}}</li>
+</ul>
 <h4>{{screen-timeline.strip}}</h4>
 <ul>
 <li>{{screen-timeline.5}}</li>
 <li>{{screen-timeline.33}}</li>
+<li>{{screen-timeline.33b}}</li>
 <li>{{screen-timeline.8}}</li>
 <li>{{screen-timeline.32}}</li>
 </ul>
-<h4>{{screen-timeline.menus}}</h4>
+<h4>{{screen-timeline.add}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/screen-timeline-add-drag.png" alt="{{guide-shot.add-drag.alt}}" width="711" height="350" loading="lazy"><figcaption>{{guide-shot.add-drag.caption}}</figcaption></figure>
+<ul>
+<li>{{screen-timeline.6}}</li>
+<li>{{screen-timeline.6b}}</li>
+<li>{{screen-timeline.7}}</li>
+<li>{{screen-timeline.7b}}</li>
+<li>{{guide-shot.add-drag.body}}</li>
+<li>{{screen-timeline.tags-note}}</li>
+</ul>
+<h4>{{screen-timeline.compact}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/screen-timeline-compact.png" alt="{{guide-shot.compact.alt}}" width="711" height="350" loading="lazy"><figcaption>{{guide-shot.compact.caption}}</figcaption></figure>
+<p>{{guide-shot.compact.body}}</p>
+<ul>
+<li>{{guide-new.timeline-compact}}</li>
+<li>{{screen-timeline.scroll}}</li>
+<li>{{screen-timeline.autoscroll}}</li>
+</ul>
+
+<h3 id="screen-timeline-menus">{{screen-timeline.menus}}</h3>
 <figure class="shot"><img src="{{root}}assets/guide/screen-timeline-2.png" alt="{{screen-timeline.23.alt}}" width="776" height="468" loading="lazy"><figcaption>{{screen-timeline.24}}</figcaption></figure>
 <p>{{screen-timeline.12}}</p>
+<h4>{{screen-timeline.where}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/screen-timeline-3.png" alt="{{screen-timeline.25.alt}}" width="799" height="566" loading="lazy"><figcaption>{{screen-timeline.26}}</figcaption></figure>
 <figure class="shot"><img src="{{root}}assets/guide/screen-timeline-4.png" alt="{{screen-timeline.27.alt}}" width="358" height="446" loading="lazy"><figcaption>{{screen-timeline.28}}</figcaption></figure>
 <figure class="shot"><img src="{{root}}assets/guide/screen-timeline-6.png" alt="{{screen-timeline.30.alt}}" width="528" height="279" loading="lazy"><figcaption>{{screen-timeline.31}}</figcaption></figure>
@@ -41,24 +90,40 @@
 <tr><td>{{screen-timeline.fx-row}}</td><td>{{screen-timeline.fx-row.d}}</td></tr>
 </tbody>
 </table></div>
-<p>{{screen-timeline.menu-note}}</p>
+<h4>{{screen-timeline.menu-know}}</h4>
+<ul>
+<li>{{screen-timeline.layer-extra}}</li>
+<li>{{screen-timeline.merge}}</li>
+<li>{{screen-timeline.menu-note}}</li>
+<li>{{screen-timeline.menu-pivot}}</li>
+<li>{{screen-timeline.menu-gray}}</li>
+</ul>
 <h4>{{screen-timeline.opacity}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/screen-timeline-5.png" alt="{{screen-timeline.29.alt}}" width="488" height="176" loading="lazy"></figure>
 <p>{{screen-timeline.opacity-body}}</p>
-<h4>{{screen-timeline.add}}</h4>
-<figure class="shot"><img src="{{root}}assets/guide/screen-timeline-add-drag.png" alt="{{guide-shot.add-drag.alt}}" width="711" height="350" loading="lazy"><figcaption>{{guide-shot.add-drag.caption}}</figcaption></figure>
+
+<h3 id="screen-timeline-duration">{{screen-timeline-duration.1}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/screen-timeline-7.png" alt="{{screen-timeline.dur-dialog.alt}}" width="354" height="270" loading="lazy"></figure>
+<p>{{screen-timeline.duration}}</p>
+<h4>{{screen-timeline-duration.methods}}</h4>
+<p>{{screen-timeline-duration.how}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{screen-timeline-duration.th-method}}</th><th>{{screen-timeline-duration.th-does}}</th></tr></thead>
+<tbody>
+<tr><td>{{screen-timeline-duration.ms}}</td><td>{{screen-timeline-duration.ms.d}}</td></tr>
+<tr><td>{{screen-timeline-duration.fps}}</td><td>{{screen-timeline-duration.fps.d}}</td></tr>
+<tr><td>{{screen-timeline-duration.sec}}</td><td>{{screen-timeline-duration.sec.d}}</td></tr>
+<tr><td>{{screen-timeline-duration.game}}</td><td>{{screen-timeline-duration.game.d}}</td></tr>
+<tr><td>{{screen-timeline-duration.speed}}</td><td>{{screen-timeline-duration.speed.d}}</td></tr>
+<tr><td>{{screen-timeline-duration.total}}</td><td>{{screen-timeline-duration.total.d}}</td></tr>
+</tbody>
+</table></div>
+<h4>{{screen-timeline-duration.know}}</h4>
 <ul>
-<li>{{screen-timeline.6}}</li>
-<li>{{screen-timeline.7}}</li>
+<li>{{screen-timeline-duration.result}}</li>
+<li>{{screen-timeline-duration.switch}}</li>
+<li>{{screen-timeline-duration.default}}</li>
 </ul>
-<p>{{guide-shot.add-drag.body}}</p>
-<p>{{guide-new.frame-drag}}</p>
-<p>{{guide-new.pivot-diamond}}</p>
-<h4>{{screen-timeline.compact}}</h4>
-<figure class="shot"><img src="{{root}}assets/guide/screen-timeline-compact.png" alt="{{guide-shot.compact.alt}}" width="711" height="350" loading="lazy"><figcaption>{{guide-shot.compact.caption}}</figcaption></figure>
-<p>{{guide-shot.compact.body}}</p>
-<p>{{guide-new.timeline-compact}}</p>
-<p>{{screen-timeline.scroll}}</p>
 
 <h3 id="screen-timeline-select">{{screen-timeline-select.1}}</h3>
 <figure class="clip"><img src="{{root}}assets/guide/screen-timeline-select.webp" alt="{{screen-timeline-select.12.alt}}" width="686" height="278" loading="lazy"></figure>
@@ -93,11 +158,25 @@
 <h4>{{screen-cel-links.make}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/screen-timeline-links-2.png" alt="{{guide-shot.links-menu.alt}}" width="494" height="550" loading="lazy"><figcaption>{{guide-shot.links-menu.caption}}</figcaption></figure>
 <p>{{guide-shot.links-menu.body}}</p>
-<p>{{guide-new.cel-links}}</p>
+<ul>
+<li>{{guide-new.cel-links}}</li>
+<li>{{screen-cel-links.source}}</li>
+<li>{{screen-cel-links.edit}}</li>
+<li>{{screen-cel-links.color}}</li>
+<li>{{screen-cel-links.ai}}</li>
+</ul>
 <h4>{{screen-cel-links.break}}</h4>
-<p>{{guide-new.cel-links-break}}</p>
+<ul>
+<li>{{guide-new.cel-links-break}}</li>
+<li>{{screen-cel-links.delete}}</li>
+<li>{{screen-cel-links.paste}}</li>
+<li>{{screen-cel-links.held}}</li>
+</ul>
 <h4>{{screen-cel-links.group}}</h4>
-<p>{{guide-new.cel-links-group}}</p>
+<ul>
+<li>{{guide-new.cel-links-group}}</li>
+<li>{{screen-cel-links.skins}}</li>
+</ul>
 
 <h3 id="screen-timeline-edit">{{screen-timeline-edit.1}}</h3>
 <figure class="clip"><img src="{{root}}assets/guide/screen-timeline-edit.webp" alt="{{screen-timeline-edit.19.alt}}" width="734" height="416" loading="lazy"></figure>
@@ -115,17 +194,36 @@
 <tr><td>{{screen-timeline-edit.dur}}</td><td>{{screen-timeline-edit.dur.d}}</td></tr>
 </tbody>
 </table></div>
-<p>{{screen-timeline-edit.size}}</p>
-<p>{{screen-timeline-edit.18}}</p>
+<h4>{{screen-timeline-edit.know}}</h4>
+<ul>
+<li>{{screen-timeline-edit.k-undo}}</li>
+<li>{{screen-timeline-edit.k-delete}}</li>
+<li>{{screen-timeline-edit.k-order}}</li>
+<li>{{screen-timeline-edit.k-copydrag}}</li>
+<li>{{screen-timeline-edit.k-rows}}</li>
+<li>{{screen-timeline-edit.k-paste}}</li>
+<li>{{screen-timeline-edit.k-gap}}</li>
+<li>{{screen-timeline-edit.size}}</li>
+<li>{{screen-timeline-edit.18}}</li>
+</ul>
 <h4>{{screen-timeline-edit.links}}</h4>
 <p>{{screen-timeline-edit.links-body}}</p>
+<ul>
+<li>{{screen-timeline-edit.links-same}}</li>
+<li>{{screen-timeline-edit.links-other}}</li>
+<li>{{screen-timeline-edit.links-drag}}</li>
+</ul>
 <p>{{screen-timeline-edit.images-only}}</p>
 <h4>{{screen-timeline-edit.image}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/screen-timeline-copy-image.png" alt="{{guide-shot.copy-image.alt}}" width="408" height="573" loading="lazy"><figcaption>{{guide-shot.copy-image.caption}}</figcaption></figure>
 <p>{{guide-shot.copy-image.body}}</p>
 <p>{{guide-new.cel-copy}}</p>
 <h4>{{screen-timeline-edit.groups}}</h4>
-<p>{{screen-timeline-edit.groups-body}}</p>
+<ul>
+<li>{{screen-timeline-edit.groups-body}}</li>
+<li>{{screen-timeline-edit.groups-out}}</li>
+<li>{{screen-timeline-edit.groups-skin}}</li>
+</ul>
 
 <h3 id="screen-tags">{{screen-tags.1}}</h3>
 <figure class="clip"><img src="{{root}}assets/guide/screen-tags.webp" alt="{{screen-tags.12.alt}}" width="1028" height="760" loading="lazy"></figure>

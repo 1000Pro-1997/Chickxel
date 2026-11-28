@@ -254,7 +254,7 @@ internal static class EffectTileCatalog
             var ui = LayerEffectsDialog.UiOf(definition);
             var tile = new EffectTile(ui.Name, [definition.Create()]) { Description = ui.Description, Compact = compact, Key = "effect:" + definition.TypeId };
             ToolTip.SetTip(tile, $"{ui.Name}\n{ui.Description}" + MotionNote(tile, motionTip));
-            tile.HelpAt("screen-effect-list", anchor: definition.TypeId == TextDefinition.Id ? "Text" : null);
+            tile.HelpAt("screen-effect-look", anchor: definition.TypeId == TextDefinition.Id ? "Text" : null);
             effects.Add(tile);
         }
         foreach (var entry in scripts.Skip(officialCount)) effects.Add(AssetTile(entry, culture, motionTip, compact));
